@@ -67,6 +67,7 @@ raised for division by zero and mod by zero.
 #include "_math.h"
 
 #include "clinic/mathmodule.c.h"
+#include "core_objects.h"
 
 /*[clinic input]
 module math
@@ -1209,10 +1210,8 @@ static PyObject *
 math_ceil(PyObject *module, PyObject *number)
 /*[clinic end generated code: output=6c3b8a78bc201c67 input=2725352806399cab]*/
 {
-    _Py_IDENTIFIER(__ceil__);
-
     if (!PyFloat_CheckExact(number)) {
-        PyObject *method = _PyObject_LookupSpecial(number, &PyId___ceil__);
+        PyObject *method = _PyObject_LookupSpecial(number, _Py_ID(__ceil__));
         if (method != NULL) {
             PyObject *result = _PyObject_CallNoArgs(method);
             Py_DECREF(method);
@@ -1274,14 +1273,12 @@ math_floor(PyObject *module, PyObject *number)
 {
     double x;
 
-    _Py_IDENTIFIER(__floor__);
-
     if (PyFloat_CheckExact(number)) {
         x = PyFloat_AS_DOUBLE(number);
     }
     else
     {
-        PyObject *method = _PyObject_LookupSpecial(number, &PyId___floor__);
+        PyObject *method = _PyObject_LookupSpecial(number, _Py_ID(__floor__));
         if (method != NULL) {
             PyObject *result = _PyObject_CallNoArgs(method);
             Py_DECREF(method);
@@ -2118,7 +2115,6 @@ static PyObject *
 math_trunc(PyObject *module, PyObject *x)
 /*[clinic end generated code: output=34b9697b707e1031 input=2168b34e0a09134d]*/
 {
-    _Py_IDENTIFIER(__trunc__);
     PyObject *trunc, *result;
 
     if (PyFloat_CheckExact(x)) {
@@ -2130,7 +2126,7 @@ math_trunc(PyObject *module, PyObject *x)
             return NULL;
     }
 
-    trunc = _PyObject_LookupSpecial(x, &PyId___trunc__);
+    trunc = _PyObject_LookupSpecial(x, _Py_ID(__trunc__));
     if (trunc == NULL) {
         if (!PyErr_Occurred())
             PyErr_Format(PyExc_TypeError,

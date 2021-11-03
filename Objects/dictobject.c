@@ -120,6 +120,7 @@ As a consequence of this, split keys have a maximum size of 16.
 #include "pycore_pyerrors.h"      // _PyErr_Fetch()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "stringlib/eq.h"         // unicode_eq()
+#include "core_objects.h"
 
 /*[clinic input]
 class dict "PyDictObject *" "&PyDict_Type"
@@ -2131,7 +2132,7 @@ dict_subscript(PyDictObject *mp, PyObject *key)
             /* Look up __missing__ method if we're a subclass. */
             PyObject *missing, *res;
             _Py_IDENTIFIER(__missing__);
-            missing = _PyObject_LookupSpecial((PyObject *)mp, &PyId___missing__);
+            missing = _PyObject_LookupSpecial((PyObject *)mp, _Py_ID(__missing__));
             if (missing != NULL) {
                 res = PyObject_CallOneArg(missing, key);
                 Py_DECREF(missing);

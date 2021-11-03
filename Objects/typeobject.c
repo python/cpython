@@ -14,6 +14,7 @@
 #include "pycore_frame.h"         // InterpreterFrame
 #include "opcode.h"               // MAKE_CELL
 #include "structmember.h"         // PyMemberDef
+#include "core_objects.h"
 
 #include <ctype.h>
 
@@ -1581,11 +1582,11 @@ PyType_IsSubtype(PyTypeObject *a, PyTypeObject *b)
 */
 
 PyObject *
-_PyObject_LookupSpecial(PyObject *self, _Py_Identifier *attrid)
+_PyObject_LookupSpecial(PyObject *self, PyObject *attr)
 {
     PyObject *res;
 
-    res = _PyType_LookupId(Py_TYPE(self), attrid);
+    res = _PyType_Lookup(Py_TYPE(self), attr);
     if (res != NULL) {
         descrgetfunc f;
         if ((f = Py_TYPE(res)->tp_descr_get) == NULL)
@@ -5097,7 +5098,7 @@ _PyObject_GetNewArguments(PyObject *obj, PyObject **args, PyObject **kwargs)
 
     /* We first attempt to fetch the arguments for __new__ by calling
        __getnewargs_ex__ on the object. */
-    getnewargs_ex = _PyObject_LookupSpecial(obj, &PyId___getnewargs_ex__);
+    getnewargs_ex = _PyObject_LookupSpecial(obj, _Py_ID(__getnewargs_ex__));
     if (getnewargs_ex != NULL) {
         PyObject *newargs = _PyObject_CallNoArgs(getnewargs_ex);
         Py_DECREF(getnewargs_ex);
@@ -5150,7 +5151,7 @@ _PyObject_GetNewArguments(PyObject *obj, PyObject **args, PyObject **kwargs)
 
     /* The object does not have __getnewargs_ex__ so we fallback on using
        __getnewargs__ instead. */
-    getnewargs = _PyObject_LookupSpecial(obj, &PyId___getnewargs__);
+    getnewargs = _PyObject_LookupSpecial(obj,  _Py_ID(__getnewargs__));
     if (getnewargs != NULL) {
         *args = _PyObject_CallNoArgs(getnewargs);
         Py_DECREF(getnewargs);
@@ -8527,7 +8528,7 @@ type_new_set_names(PyTypeObject *type)
     Py_ssize_t i = 0;
     PyObject *key, *value;
     while (PyDict_Next(names_to_set, &i, &key, &value)) {
-        PyObject *set_name = _PyObject_LookupSpecial(value, &PyId___set_name__);
+        PyObject *set_name = _PyObject_LookupSpecial(value, _Py_ID(__set_name__));
         if (set_name == NULL) {
             if (PyErr_Occurred()) {
                 goto error;

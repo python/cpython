@@ -2,6 +2,646 @@
 #include "core_objects.h"
 
 _PyIdStrings _Py_id_strings = {
+    .id___abc_tpflags__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 15,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'a', 'b', 'c', '_', 't', 'p', 'f', 'l', 'a', 'g', 's', '_', '_'}
+    },
+    .id___abstractmethods__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 19,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'a', 'b', 's', 't', 'r', 'a', 'c', 't', 'm', 'e', 't', 'h', 'o', 'd', 's', '_', '_'}
+    },
+    .id___adapt__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 9,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'a', 'd', 'a', 'p', 't', '_', '_'}
+    },
+    .id___aenter__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 10,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'a', 'e', 'n', 't', 'e', 'r', '_', '_'}
+    },
+    .id___aexit__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 9,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'a', 'e', 'x', 'i', 't', '_', '_'}
+    },
+    .id___aiter__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 9,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'a', 'i', 't', 'e', 'r', '_', '_'}
+    },
+    .id___all__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 7,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'a', 'l', 'l', '_', '_'}
+    },
+    .id___anext__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 9,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'a', 'n', 'e', 'x', 't', '_', '_'}
+    },
+    .id___annotations__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 15,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '_', '_'}
+    },
+    .id___args__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'a', 'r', 'g', 's', '_', '_'}
+    },
+    .id___asyncio_running_event_loop__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 30,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'a', 's', 'y', 'n', 'c', 'i', 'o', '_', 'r', 'u', 'n', 'n', 'i', 'n', 'g', '_', 'e', 'v', 'e', 'n', 't', '_', 'l', 'o', 'o', 'p', '_', '_'}
+    },
+    .id___await__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 9,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'a', 'w', 'a', 'i', 't', '_', '_'}
+    },
+    .id___bases__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 9,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'b', 'a', 's', 'e', 's', '_', '_'}
+    },
+    .id___bool__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'b', 'o', 'o', 'l', '_', '_'}
+    },
+    .id___build_class__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 15,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'b', 'u', 'i', 'l', 'd', '_', 'c', 'l', 'a', 's', 's', '_', '_'}
+    },
+    .id___builtins__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 12,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'b', 'u', 'i', 'l', 't', 'i', 'n', 's', '_', '_'}
+    },
+    .id___bytes__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 9,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'b', 'y', 't', 'e', 's', '_', '_'}
+    },
+    .id___call__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'c', 'a', 'l', 'l', '_', '_'}
+    },
+    .id___cantrace__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 12,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'c', 'a', 'n', 't', 'r', 'a', 'c', 'e', '_', '_'}
+    },
+    .id___ceil__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'c', 'e', 'i', 'l', '_', '_'}
+    },
+    .id___class__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 9,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'c', 'l', 'a', 's', 's', '_', '_'}
+    },
+    .id___class_getitem__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 17,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'c', 'l', 'a', 's', 's', '_', 'g', 'e', 't', 'i', 't', 'e', 'm', '_', '_'}
+    },
+    .id___classcell__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 13,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'c', 'l', 'a', 's', 's', 'c', 'e', 'l', 'l', '_', '_'}
+    },
+    .id___complex__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 11,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'c', 'o', 'm', 'p', 'l', 'e', 'x', '_', '_'}
+    },
+    .id___conform__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 11,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'c', 'o', 'n', 'f', 'o', 'r', 'm', '_', '_'}
+    },
+    .id___contains__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 12,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'c', 'o', 'n', 't', 'a', 'i', 'n', 's', '_', '_'}
+    },
+    .id___copy__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'c', 'o', 'p', 'y', '_', '_'}
+    },
+    .id___ctypes_from_outparam__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 24,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'c', 't', 'y', 'p', 'e', 's', '_', 'f', 'r', 'o', 'm', '_', 'o', 'u', 't', 'p', 'a', 'r', 'a', 'm', '_', '_'}
+    },
+    .id___del__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 7,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'd', 'e', 'l', '_', '_'}
+    },
+    .id___delattr__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 11,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'd', 'e', 'l', 'a', 't', 't', 'r', '_', '_'}
+    },
+    .id___delete__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 10,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'd', 'e', 'l', 'e', 't', 'e', '_', '_'}
+    },
+    .id___delitem__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 11,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'd', 'e', 'l', 'i', 't', 'e', 'm', '_', '_'}
+    },
     .id___dict__ = {
         .object = {
             .ob_base = {
@@ -21,6 +661,5066 @@ _PyIdStrings _Py_id_strings = {
             .wstr = NULL,
         },
         .text = { '_', '_', 'd', 'i', 'c', 't', '_', '_'}
+    },
+    .id___dir__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 7,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'd', 'i', 'r', '_', '_'}
+    },
+    .id___doc__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 7,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'd', 'o', 'c', '_', '_'}
+    },
+    .id___enter__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 9,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'e', 'n', 't', 'e', 'r', '_', '_'}
+    },
+    .id___eq__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 6,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'e', 'q', '_', '_'}
+    },
+    .id___exit__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'e', 'x', 'i', 't', '_', '_'}
+    },
+    .id___file__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'f', 'i', 'l', 'e', '_', '_'}
+    },
+    .id___floor__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 9,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'f', 'l', 'o', 'o', 'r', '_', '_'}
+    },
+    .id___format__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 10,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'f', 'o', 'r', 'm', 'a', 't', '_', '_'}
+    },
+    .id___fspath__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 10,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'f', 's', 'p', 'a', 't', 'h', '_', '_'}
+    },
+    .id___get__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 7,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'g', 'e', 't', '_', '_'}
+    },
+    .id___getattr__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 11,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'g', 'e', 't', 'a', 't', 't', 'r', '_', '_'}
+    },
+    .id___getattribute__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 16,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'g', 'e', 't', 'a', 't', 't', 'r', 'i', 'b', 'u', 't', 'e', '_', '_'}
+    },
+    .id___getinitargs__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 15,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'g', 'e', 't', 'i', 'n', 'i', 't', 'a', 'r', 'g', 's', '_', '_'}
+    },
+    .id___getitem__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 11,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'g', 'e', 't', 'i', 't', 'e', 'm', '_', '_'}
+    },
+    .id___getnewargs__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 14,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'g', 'e', 't', 'n', 'e', 'w', 'a', 'r', 'g', 's', '_', '_'}
+    },
+    .id___getnewargs_ex__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 17,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'g', 'e', 't', 'n', 'e', 'w', 'a', 'r', 'g', 's', '_', 'e', 'x', '_', '_'}
+    },
+    .id___getstate__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 12,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'g', 'e', 't', 's', 't', 'a', 't', 'e', '_', '_'}
+    },
+    .id___hash__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'h', 'a', 's', 'h', '_', '_'}
+    },
+    .id___import__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 10,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'i', 'm', 'p', 'o', 'r', 't', '_', '_'}
+    },
+    .id___index__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 9,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'i', 'n', 'd', 'e', 'x', '_', '_'}
+    },
+    .id___init__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'i', 'n', 'i', 't', '_', '_'}
+    },
+    .id___init_subclass__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 17,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'i', 'n', 'i', 't', '_', 's', 'u', 'b', 'c', 'l', 'a', 's', 's', '_', '_'}
+    },
+    .id___instancecheck__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 17,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'i', 'n', 's', 't', 'a', 'n', 'c', 'e', 'c', 'h', 'e', 'c', 'k', '_', '_'}
+    },
+    .id___ipow__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'i', 'p', 'o', 'w', '_', '_'}
+    },
+    .id___isabstractmethod__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 20,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'i', 's', 'a', 'b', 's', 't', 'r', 'a', 'c', 't', 'm', 'e', 't', 'h', 'o', 'd', '_', '_'}
+    },
+    .id___iter__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'i', 't', 'e', 'r', '_', '_'}
+    },
+    .id___len__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 7,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'l', 'e', 'n', '_', '_'}
+    },
+    .id___length_hint__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 15,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'l', 'e', 'n', 'g', 't', 'h', '_', 'h', 'i', 'n', 't', '_', '_'}
+    },
+    .id___loader__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 10,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'l', 'o', 'a', 'd', 'e', 'r', '_', '_'}
+    },
+    .id___ltrace__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 10,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'l', 't', 'r', 'a', 'c', 'e', '_', '_'}
+    },
+    .id___main__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'm', 'a', 'i', 'n', '_', '_'}
+    },
+    .id___missing__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 11,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'm', 'i', 's', 's', 'i', 'n', 'g', '_', '_'}
+    },
+    .id___module__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 10,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'm', 'o', 'd', 'u', 'l', 'e', '_', '_'}
+    },
+    .id___mro_entries__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 15,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'm', 'r', 'o', '_', 'e', 'n', 't', 'r', 'i', 'e', 's', '_', '_'}
+    },
+    .id___name__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'n', 'a', 'm', 'e', '_', '_'}
+    },
+    .id___new__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 7,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'n', 'e', 'w', '_', '_'}
+    },
+    .id___newobj__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 10,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'n', 'e', 'w', 'o', 'b', 'j', '_', '_'}
+    },
+    .id___newobj_ex__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 13,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'n', 'e', 'w', 'o', 'b', 'j', '_', 'e', 'x', '_', '_'}
+    },
+    .id___next__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'n', 'e', 'x', 't', '_', '_'}
+    },
+    .id___origin__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 10,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'o', 'r', 'i', 'g', 'i', 'n', '_', '_'}
+    },
+    .id___package__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 11,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'p', 'a', 'c', 'k', 'a', 'g', 'e', '_', '_'}
+    },
+    .id___parameters__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 14,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'p', 'a', 'r', 'a', 'm', 'e', 't', 'e', 'r', 's', '_', '_'}
+    },
+    .id___path__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'p', 'a', 't', 'h', '_', '_'}
+    },
+    .id___pow__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 7,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'p', 'o', 'w', '_', '_'}
+    },
+    .id___prepare__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 11,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'p', 'r', 'e', 'p', 'a', 'r', 'e', '_', '_'}
+    },
+    .id___qualname__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 12,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'q', 'u', 'a', 'l', 'n', 'a', 'm', 'e', '_', '_'}
+    },
+    .id___reduce__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 10,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'r', 'e', 'd', 'u', 'c', 'e', '_', '_'}
+    },
+    .id___reduce_ex__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 13,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'r', 'e', 'd', 'u', 'c', 'e', '_', 'e', 'x', '_', '_'}
+    },
+    .id___repr__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'r', 'e', 'p', 'r', '_', '_'}
+    },
+    .id___reversed__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 12,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'r', 'e', 'v', 'e', 'r', 's', 'e', 'd', '_', '_'}
+    },
+    .id___round__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 9,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'r', 'o', 'u', 'n', 'd', '_', '_'}
+    },
+    .id___set__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 7,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 's', 'e', 't', '_', '_'}
+    },
+    .id___set_name__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 12,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 's', 'e', 't', '_', 'n', 'a', 'm', 'e', '_', '_'}
+    },
+    .id___setattr__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 11,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 's', 'e', 't', 'a', 't', 't', 'r', '_', '_'}
+    },
+    .id___setitem__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 11,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 's', 'e', 't', 'i', 't', 'e', 'm', '_', '_'}
+    },
+    .id___setstate__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 12,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 's', 'e', 't', 's', 't', 'a', 't', 'e', '_', '_'}
+    },
+    .id___sizeof__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 10,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 's', 'i', 'z', 'e', 'o', 'f', '_', '_'}
+    },
+    .id___slotnames__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 13,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 's', 'l', 'o', 't', 'n', 'a', 'm', 'e', 's', '_', '_'}
+    },
+    .id___slots__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 9,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 's', 'l', 'o', 't', 's', '_', '_'}
+    },
+    .id___spec__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 's', 'p', 'e', 'c', '_', '_'}
+    },
+    .id___subclasscheck__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 17,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 's', 'u', 'b', 'c', 'l', 'a', 's', 's', 'c', 'h', 'e', 'c', 'k', '_', '_'}
+    },
+    .id___subclasshook__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 16,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 's', 'u', 'b', 'c', 'l', 'a', 's', 's', 'h', 'o', 'o', 'k', '_', '_'}
+    },
+    .id___tp_del__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 10,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 't', 'p', '_', 'd', 'e', 'l', '_', '_'}
+    },
+    .id___trunc__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 9,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 't', 'r', 'u', 'n', 'c', '_', '_'}
+    },
+    .id___warningregistry__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 19,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'w', 'a', 'r', 'n', 'i', 'n', 'g', 'r', 'e', 'g', 'i', 's', 't', 'r', 'y', '_', '_'}
+    },
+    .id___weakref__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 11,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'w', 'e', 'a', 'k', 'r', 'e', 'f', '_', '_'}
+    },
+    .id__ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 1,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_'}
+    },
+    .id___IOBase_closed = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 15,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', '_', 'I', 'O', 'B', 'a', 's', 'e', '_', 'c', 'l', 'o', 's', 'e', 'd'}
+    },
+    .id__abc_impl = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 9,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 'a', 'b', 'c', '_', 'i', 'm', 'p', 'l'}
+    },
+    .id__abstract_ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 10,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 'a', 'b', 's', 't', 'r', 'a', 'c', 't', '_'}
+    },
+    .id__anonymous_ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 11,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 'a', 'n', 'o', 'n', 'y', 'm', 'o', 'u', 's', '_'}
+    },
+    .id__argtypes_ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 10,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 'a', 'r', 'g', 't', 'y', 'p', 'e', 's', '_'}
+    },
+    .id__array_reconstructor = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 20,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 'a', 'r', 'r', 'a', 'y', '_', 'r', 'e', 'c', 'o', 'n', 's', 't', 'r', 'u', 'c', 't', 'o', 'r'}
+    },
+    .id__as_parameter_ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 14,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 'a', 's', '_', 'p', 'a', 'r', 'a', 'm', 'e', 't', 'e', 'r', '_'}
+    },
+    .id__asyncio_future_blocking = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 24,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 'a', 's', 'y', 'n', 'c', 'i', 'o', '_', 'f', 'u', 't', 'u', 'r', 'e', '_', 'b', 'l', 'o', 'c', 'k', 'i', 'n', 'g'}
+    },
+    .id__blksize = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 'b', 'l', 'k', 's', 'i', 'z', 'e'}
+    },
+    .id__check_retval_ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 14,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 'c', 'h', 'e', 'c', 'k', '_', 'r', 'e', 't', 'v', 'a', 'l', '_'}
+    },
+    .id__dealloc_warn = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 13,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 'd', 'e', 'a', 'l', 'l', 'o', 'c', '_', 'w', 'a', 'r', 'n'}
+    },
+    .id__fields_ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 'f', 'i', 'e', 'l', 'd', 's', '_'}
+    },
+    .id__finalizing = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 11,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 'f', 'i', 'n', 'a', 'l', 'i', 'z', 'i', 'n', 'g'}
+    },
+    .id__find_and_load = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 14,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 'f', 'i', 'n', 'd', '_', 'a', 'n', 'd', '_', 'l', 'o', 'a', 'd'}
+    },
+    .id__fix_up_module = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 14,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 'f', 'i', 'x', '_', 'u', 'p', '_', 'm', 'o', 'd', 'u', 'l', 'e'}
+    },
+    .id__flags_ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 7,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 'f', 'l', 'a', 'g', 's', '_'}
+    },
+    .id__get_sourcefile = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 15,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 'g', 'e', 't', '_', 's', 'o', 'u', 'r', 'c', 'e', 'f', 'i', 'l', 'e'}
+    },
+    .id__handle_fromlist = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 16,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 'h', 'a', 'n', 'd', 'l', 'e', '_', 'f', 'r', 'o', 'm', 'l', 'i', 's', 't'}
+    },
+    .id__initializing = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 13,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 'i', 'n', 'i', 't', 'i', 'a', 'l', 'i', 'z', 'i', 'n', 'g'}
+    },
+    .id__is_text_encoding = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 17,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 'i', 's', '_', 't', 'e', 'x', 't', '_', 'e', 'n', 'c', 'o', 'd', 'i', 'n', 'g'}
+    },
+    .id__iterdump = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 9,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 'i', 't', 'e', 'r', 'd', 'u', 'm', 'p'}
+    },
+    .id__length_ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 'l', 'e', 'n', 'g', 't', 'h', '_'}
+    },
+    .id__lock_unlock_module = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 19,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 'l', 'o', 'c', 'k', '_', 'u', 'n', 'l', 'o', 'c', 'k', '_', 'm', 'o', 'd', 'u', 'l', 'e'}
+    },
+    .id__loop = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 5,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 'l', 'o', 'o', 'p'}
+    },
+    .id__needs_com_addref_ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 18,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 'n', 'e', 'e', 'd', 's', '_', 'c', 'o', 'm', '_', 'a', 'd', 'd', 'r', 'e', 'f', '_'}
+    },
+    .id__pack_ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 6,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 'p', 'a', 'c', 'k', '_'}
+    },
+    .id__repr_info = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 10,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 'r', 'e', 'p', 'r', '_', 'i', 'n', 'f', 'o'}
+    },
+    .id__restype_ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 9,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 'r', 'e', 's', 't', 'y', 'p', 'e', '_'}
+    },
+    .id__showwarnmsg = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 12,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 's', 'h', 'o', 'w', 'w', 'a', 'r', 'n', 'm', 's', 'g'}
+    },
+    .id__shutdown = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 9,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 's', 'h', 'u', 't', 'd', 'o', 'w', 'n'}
+    },
+    .id__slotnames = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 10,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 's', 'l', 'o', 't', 'n', 'a', 'm', 'e', 's'}
+    },
+    .id__strptime_datetime = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 18,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 's', 't', 'r', 'p', 't', 'i', 'm', 'e', '_', 'd', 'a', 't', 'e', 't', 'i', 'm', 'e'}
+    },
+    .id__strptime_time = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 14,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 's', 't', 'r', 'p', 't', 'i', 'm', 'e', '_', 't', 'i', 'm', 'e'}
+    },
+    .id__swappedbytes_ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 14,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 's', 'w', 'a', 'p', 'p', 'e', 'd', 'b', 'y', 't', 'e', 's', '_'}
+    },
+    .id__type_ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 6,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 't', 'y', 'p', 'e', '_'}
+    },
+    .id__uninitialized_submodules = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 25,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 'u', 'n', 'i', 'n', 'i', 't', 'i', 'a', 'l', 'i', 'z', 'e', 'd', '_', 's', 'u', 'b', 'm', 'o', 'd', 'u', 'l', 'e', 's'}
+    },
+    .id__use_broken_old_ctypes_structure_semantics_ = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 43,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 'u', 's', 'e', '_', 'b', 'r', 'o', 'k', 'e', 'n', '_', 'o', 'l', 'd', '_', 'c', 't', 'y', 'p', 'e', 's', '_', 's', 't', 'r', 'u', 'c', 't', 'u', 'r', 'e', '_', 's', 'e', 'm', 'a', 'n', 't', 'i', 'c', 's', '_'}
+    },
+    .id__warn_unawaited_coroutine = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 25,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 'w', 'a', 'r', 'n', '_', 'u', 'n', 'a', 'w', 'a', 'i', 't', 'e', 'd', '_', 'c', 'o', 'r', 'o', 'u', 't', 'i', 'n', 'e'}
+    },
+    .id__xoptions = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 9,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { '_', 'x', 'o', 'p', 't', 'i', 'o', 'n', 's'}
+    },
+    .id_add = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 3,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'a', 'd', 'd'}
+    },
+    .id_add_done_callback = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 17,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'a', 'd', 'd', '_', 'd', 'o', 'n', 'e', '_', 'c', 'a', 'l', 'l', 'b', 'a', 'c', 'k'}
+    },
+    .id_append = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 6,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'a', 'p', 'p', 'e', 'n', 'd'}
+    },
+    .id_as_integer_ratio = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 16,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'a', 's', '_', 'i', 'n', 't', 'e', 'g', 'e', 'r', '_', 'r', 'a', 't', 'i', 'o'}
+    },
+    .id_big = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 3,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'b', 'i', 'g'}
+    },
+    .id_buffer = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 6,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'b', 'u', 'f', 'f', 'e', 'r'}
+    },
+    .id_builtins = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'b', 'u', 'i', 'l', 't', 'i', 'n', 's'}
+    },
+    .id_call_exception_handler = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 22,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'c', 'a', 'l', 'l', '_', 'e', 'x', 'c', 'e', 'p', 't', 'i', 'o', 'n', '_', 'h', 'a', 'n', 'd', 'l', 'e', 'r'}
+    },
+    .id_call_soon = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 9,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'c', 'a', 'l', 'l', '_', 's', 'o', 'o', 'n'}
+    },
+    .id_cancel = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 6,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'c', 'a', 'n', 'c', 'e', 'l'}
+    },
+    .id_clear = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 5,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'c', 'l', 'e', 'a', 'r'}
+    },
+    .id_close = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 5,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'c', 'l', 'o', 's', 'e'}
+    },
+    .id_code = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 4,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'c', 'o', 'd', 'e'}
+    },
+    .id_copy = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 4,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'c', 'o', 'p', 'y'}
+    },
+    .id_copyreg = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 7,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'c', 'o', 'p', 'y', 'r', 'e', 'g'}
+    },
+    .id_cursor = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 6,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'c', 'u', 'r', 's', 'o', 'r'}
+    },
+    .id_decode = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 6,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'd', 'e', 'c', 'o', 'd', 'e'}
+    },
+    .id_default = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 7,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'd', 'e', 'f', 'a', 'u', 'l', 't'}
+    },
+    .id_defaultaction = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 13,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'd', 'e', 'f', 'a', 'u', 'l', 't', 'a', 'c', 't', 'i', 'o', 'n'}
+    },
+    .id_difference_update = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 17,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'd', 'i', 'f', 'f', 'e', 'r', 'e', 'n', 'c', 'e', '_', 'u', 'p', 'd', 'a', 't', 'e'}
+    },
+    .id_discard = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 7,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'd', 'i', 's', 'c', 'a', 'r', 'd'}
+    },
+    .id_dispatch_table = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 14,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'd', 'i', 's', 'p', 'a', 't', 'c', 'h', '_', 't', 'a', 'b', 'l', 'e'}
+    },
+    .id_displayhook = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 11,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'd', 'i', 's', 'p', 'l', 'a', 'y', 'h', 'o', 'o', 'k'}
+    },
+    .id_doctype = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 7,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'd', 'o', 'c', 't', 'y', 'p', 'e'}
+    },
+    .id_enable = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 6,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'e', 'n', 'a', 'b', 'l', 'e'}
+    },
+    .id_encoding = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'e', 'n', 'c', 'o', 'd', 'i', 'n', 'g'}
+    },
+    .id_end_lineno = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 10,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'e', 'n', 'd', '_', 'l', 'i', 'n', 'e', 'n', 'o'}
+    },
+    .id_end_offset = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 10,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'e', 'n', 'd', '_', 'o', 'f', 'f', 's', 'e', 't'}
+    },
+    .id_errors = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 6,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'e', 'r', 'r', 'o', 'r', 's'}
+    },
+    .id_excepthook = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 10,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'e', 'x', 'c', 'e', 'p', 't', 'h', 'o', 'o', 'k'}
+    },
+    .id_exception = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 9,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'e', 'x', 'c', 'e', 'p', 't', 'i', 'o', 'n'}
+    },
+    .id_execute = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 7,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'e', 'x', 'e', 'c', 'u', 't', 'e'}
+    },
+    .id_executemany = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 11,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'e', 'x', 'e', 'c', 'u', 't', 'e', 'm', 'a', 'n', 'y'}
+    },
+    .id_executescript = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 13,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'e', 'x', 'e', 'c', 'u', 't', 'e', 's', 'c', 'r', 'i', 'p', 't'}
+    },
+    .id_extend = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 6,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'e', 'x', 't', 'e', 'n', 'd'}
+    },
+    .id_filename = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'f', 'i', 'l', 'e', 'n', 'a', 'm', 'e'}
+    },
+    .id_fileno = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 6,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'f', 'i', 'l', 'e', 'n', 'o'}
+    },
+    .id_fillvalue = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 9,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'f', 'i', 'l', 'l', 'v', 'a', 'l', 'u', 'e'}
+    },
+    .id_filters = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 7,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'f', 'i', 'l', 't', 'e', 'r', 's'}
+    },
+    .id_finalize = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'f', 'i', 'n', 'a', 'l', 'i', 'z', 'e'}
+    },
+    .id_find = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 4,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'f', 'i', 'n', 'd'}
+    },
+    .id_find_class = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 10,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'f', 'i', 'n', 'd', '_', 'c', 'l', 'a', 's', 's'}
+    },
+    .id_findall = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 7,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'f', 'i', 'n', 'd', 'a', 'l', 'l'}
+    },
+    .id_findtext = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'f', 'i', 'n', 'd', 't', 'e', 'x', 't'}
+    },
+    .id_flush = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 5,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'f', 'l', 'u', 's', 'h'}
+    },
+    .id_foo = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 3,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'f', 'o', 'o'}
+    },
+    .id_from_param = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 10,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'f', 'r', 'o', 'm', '_', 'p', 'a', 'r', 'a', 'm'}
+    },
+    .id_fromtimestamp = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 13,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'f', 'r', 'o', 'm', 't', 'i', 'm', 'e', 's', 't', 'a', 'm', 'p'}
+    },
+    .id_fromutc = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 7,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'f', 'r', 'o', 'm', 'u', 't', 'c'}
+    },
+    .id_future = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 6,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'f', 'u', 't', 'u', 'r', 'e'}
+    },
+    .id_get = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 3,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'g', 'e', 't'}
+    },
+    .id_get_debug = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 9,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'g', 'e', 't', '_', 'd', 'e', 'b', 'u', 'g'}
+    },
+    .id_get_event_loop = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 14,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'g', 'e', 't', '_', 'e', 'v', 'e', 'n', 't', '_', 'l', 'o', 'o', 'p'}
+    },
+    .id_get_loop = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'g', 'e', 't', '_', 'l', 'o', 'o', 'p'}
+    },
+    .id_get_source = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 10,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'g', 'e', 't', '_', 's', 'o', 'u', 'r', 'c', 'e'}
+    },
+    .id_getattr = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 7,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'g', 'e', 't', 'a', 't', 't', 'r'}
+    },
+    .id_getnextcabinet = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 14,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'g', 'e', 't', 'n', 'e', 'x', 't', 'c', 'a', 'b', 'i', 'n', 'e', 't'}
+    },
+    .id_ignore = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 6,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'i', 'g', 'n', 'o', 'r', 'e'}
+    },
+    .id_importlib = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 9,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'i', 'm', 'p', 'o', 'r', 't', 'l', 'i', 'b'}
+    },
+    .id_insert = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 6,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'i', 'n', 's', 'e', 'r', 't'}
+    },
+    .id_intersection = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 12,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'i', 'n', 't', 'e', 'r', 's', 'e', 'c', 't', 'i', 'o', 'n'}
+    },
+    .id_isatty = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 6,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'i', 's', 'a', 't', 't', 'y'}
+    },
+    .id_isoformat = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 9,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'i', 's', 'o', 'f', 'o', 'r', 'm', 'a', 't'}
+    },
+    .id_items = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 5,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'i', 't', 'e', 'm', 's'}
+    },
+    .id_iter = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 4,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'i', 't', 'e', 'r'}
+    },
+    .id_iterfind = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'i', 't', 'e', 'r', 'f', 'i', 'n', 'd'}
+    },
+    .id_keys = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 4,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'k', 'e', 'y', 's'}
+    },
+    .id_last_traceback = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 14,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'l', 'a', 's', 't', '_', 't', 'r', 'a', 'c', 'e', 'b', 'a', 'c', 'k'}
+    },
+    .id_last_type = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 9,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'l', 'a', 's', 't', '_', 't', 'y', 'p', 'e'}
+    },
+    .id_last_value = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 10,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'l', 'a', 's', 't', '_', 'v', 'a', 'l', 'u', 'e'}
+    },
+    .id_latin1 = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 6,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'l', 'a', 't', 'i', 'n', '1'}
+    },
+    .id_library = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 7,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'l', 'i', 'b', 'r', 'a', 'r', 'y'}
+    },
+    .id_lineno = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 6,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'l', 'i', 'n', 'e', 'n', 'o'}
+    },
+    .id_little = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 6,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'l', 'i', 't', 't', 'l', 'e'}
+    },
+    .id_match = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 5,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'm', 'a', 't', 'c', 'h'}
+    },
+    .id_message = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 7,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'm', 'e', 's', 's', 'a', 'g', 'e'}
+    },
+    .id_metaclass = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 9,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'm', 'e', 't', 'a', 'c', 'l', 'a', 's', 's'}
+    },
+    .id_mode = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 4,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'm', 'o', 'd', 'e'}
+    },
+    .id_modules = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 7,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'm', 'o', 'd', 'u', 'l', 'e', 's'}
+    },
+    .id_mro = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 3,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'm', 'r', 'o'}
+    },
+    .id_msg = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 3,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'm', 's', 'g'}
+    },
+    .id_n_fields = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'n', '_', 'f', 'i', 'e', 'l', 'd', 's'}
+    },
+    .id_n_sequence_fields = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 17,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'n', '_', 's', 'e', 'q', 'u', 'e', 'n', 'c', 'e', '_', 'f', 'i', 'e', 'l', 'd', 's'}
+    },
+    .id_n_unnamed_fields = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 16,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'n', '_', 'u', 'n', 'n', 'a', 'm', 'e', 'd', '_', 'f', 'i', 'e', 'l', 'd', 's'}
+    },
+    .id_name = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 4,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'n', 'a', 'm', 'e'}
+    },
+    .id_obj = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 3,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'o', 'b', 'j'}
+    },
+    .id_offset = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 6,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'o', 'f', 'f', 's', 'e', 't'}
+    },
+    .id_onceregistry = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 12,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'o', 'n', 'c', 'e', 'r', 'e', 'g', 'i', 's', 't', 'r', 'y'}
+    },
+    .id_open = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 4,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'o', 'p', 'e', 'n'}
+    },
+    .id_parent = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 6,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'p', 'a', 'r', 'e', 'n', 't'}
+    },
+    .id_partial = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 7,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'p', 'a', 'r', 't', 'i', 'a', 'l'}
+    },
+    .id_path = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 4,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'p', 'a', 't', 'h'}
+    },
+    .id_peek = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 4,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'p', 'e', 'e', 'k'}
+    },
+    .id_persistent_id = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 13,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'p', 'e', 'r', 's', 'i', 's', 't', 'e', 'n', 't', '_', 'i', 'd'}
+    },
+    .id_persistent_load = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 15,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'p', 'e', 'r', 's', 'i', 's', 't', 'e', 'n', 't', '_', 'l', 'o', 'a', 'd'}
+    },
+    .id_print_file_and_line = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 19,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'p', 'r', 'i', 'n', 't', '_', 'f', 'i', 'l', 'e', '_', 'a', 'n', 'd', '_', 'l', 'i', 'n', 'e'}
+    },
+    .id_ps1 = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 3,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'p', 's', '1'}
+    },
+    .id_ps2 = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 3,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'p', 's', '2'}
+    },
+    .id_raw = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 3,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'r', 'a', 'w'}
+    },
+    .id_read = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 4,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'r', 'e', 'a', 'd'}
+    },
+    .id_read1 = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 5,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'r', 'e', 'a', 'd', '1'}
+    },
+    .id_readable = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'r', 'e', 'a', 'd', 'a', 'b', 'l', 'e'}
+    },
+    .id_readall = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 7,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'r', 'e', 'a', 'd', 'a', 'l', 'l'}
+    },
+    .id_readinto = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'r', 'e', 'a', 'd', 'i', 'n', 't', 'o'}
+    },
+    .id_readinto1 = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 9,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'r', 'e', 'a', 'd', 'i', 'n', 't', 'o', '1'}
+    },
+    .id_readline = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'r', 'e', 'a', 'd', 'l', 'i', 'n', 'e'}
+    },
+    .id_reason = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 6,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'r', 'e', 'a', 's', 'o', 'n'}
+    },
+    .id_reducer_override = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 16,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'r', 'e', 'd', 'u', 'c', 'e', 'r', '_', 'o', 'v', 'e', 'r', 'r', 'i', 'd', 'e'}
+    },
+    .id_reload = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 6,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'r', 'e', 'l', 'o', 'a', 'd'}
+    },
+    .id_replace = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 7,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'r', 'e', 'p', 'l', 'a', 'c', 'e'}
+    },
+    .id_reset = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 5,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'r', 'e', 's', 'e', 't'}
+    },
+    .id_return = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 6,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'r', 'e', 't', 'u', 'r', 'n'}
+    },
+    .id_reversed = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'r', 'e', 'v', 'e', 'r', 's', 'e', 'd'}
+    },
+    .id_seek = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 4,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 's', 'e', 'e', 'k'}
+    },
+    .id_seekable = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 's', 'e', 'e', 'k', 'a', 'b', 'l', 'e'}
+    },
+    .id_send = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 4,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 's', 'e', 'n', 'd'}
+    },
+    .id_setstate = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 's', 'e', 't', 's', 't', 'a', 't', 'e'}
+    },
+    .id_sort = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 4,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 's', 'o', 'r', 't'}
+    },
+    .id_source_traceback = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 16,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 's', 'o', 'u', 'r', 'c', 'e', '_', 't', 'r', 'a', 'c', 'e', 'b', 'a', 'c', 'k'}
+    },
+    .id_special = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 7,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 's', 'p', 'e', 'c', 'i', 'a', 'l'}
+    },
+    .id_status = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 6,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 's', 't', 'a', 't', 'u', 's'}
+    },
+    .id_stderr = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 6,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 's', 't', 'd', 'e', 'r', 'r'}
+    },
+    .id_stdin = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 5,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 's', 't', 'd', 'i', 'n'}
+    },
+    .id_stdout = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 6,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 's', 't', 'd', 'o', 'u', 't'}
+    },
+    .id_strftime = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 's', 't', 'r', 'f', 't', 'i', 'm', 'e'}
+    },
+    .id_strict = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 6,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 's', 't', 'r', 'i', 'c', 't'}
+    },
+    .id_struct_time = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 11,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 's', 't', 'r', 'u', 'c', 't', '_', 't', 'i', 'm', 'e'}
+    },
+    .id_symmetric_difference_update = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 27,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 's', 'y', 'm', 'm', 'e', 't', 'r', 'i', 'c', '_', 'd', 'i', 'f', 'f', 'e', 'r', 'e', 'n', 'c', 'e', '_', 'u', 'p', 'd', 'a', 't', 'e'}
+    },
+    .id_tail = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 4,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 't', 'a', 'i', 'l'}
+    },
+    .id_task = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 4,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 't', 'a', 's', 'k'}
+    },
+    .id_tell = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 4,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 't', 'e', 'l', 'l'}
+    },
+    .id_test_unicode_id_init = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 20,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 't', 'e', 's', 't', '_', 'u', 'n', 'i', 'c', 'o', 'd', 'e', '_', 'i', 'd', '_', 'i', 'n', 'i', 't'}
+    },
+    .id_text = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 4,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 't', 'e', 'x', 't'}
+    },
+    .id_threading = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 9,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 't', 'h', 'r', 'e', 'a', 'd', 'i', 'n', 'g'}
+    },
+    .id_throw = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 5,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 't', 'h', 'r', 'o', 'w'}
+    },
+    .id_time = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 4,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 't', 'i', 'm', 'e'}
+    },
+    .id_timetuple = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 9,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 't', 'i', 'm', 'e', 't', 'u', 'p', 'l', 'e'}
+    },
+    .id_tzname = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 6,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 't', 'z', 'n', 'a', 'm', 'e'}
+    },
+    .id_unraisablehook = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 14,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'u', 'n', 'r', 'a', 'i', 's', 'a', 'b', 'l', 'e', 'h', 'o', 'o', 'k'}
+    },
+    .id_upper = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 5,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'u', 'p', 'p', 'e', 'r'}
+    },
+    .id_values = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 6,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'v', 'a', 'l', 'u', 'e', 's'}
+    },
+    .id_verify_code = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 11,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'v', 'e', 'r', 'i', 'f', 'y', '_', 'c', 'o', 'd', 'e'}
+    },
+    .id_verify_message = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 14,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'v', 'e', 'r', 'i', 'f', 'y', '_', 'm', 'e', 's', 's', 'a', 'g', 'e'}
+    },
+    .id_version = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 7,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'v', 'e', 'r', 's', 'i', 'o', 'n'}
+    },
+    .id_warnings = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'w', 'a', 'r', 'n', 'i', 'n', 'g', 's'}
+    },
+    .id_warnoptions = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 11,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'w', 'a', 'r', 'n', 'o', 'p', 't', 'i', 'o', 'n', 's'}
+    },
+    .id_writable = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'w', 'r', 'i', 't', 'a', 'b', 'l', 'e'}
     },
     .id_write = {
         .object = {
@@ -62,6 +5762,306 @@ _PyIdStrings _Py_id_strings = {
         },
         .text = { 'z', 'i', 'p', 'i', 'm', 'p', 'o', 'r', 't', 'e', 'r'}
     },
+    .id_ATTR = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 4,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'A', 'T', 'T', 'R'}
+    },
+    .id_CANCELLED = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 9,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'C', 'A', 'N', 'C', 'E', 'L', 'L', 'E', 'D'}
+    },
+    .id_COLS = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 4,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'C', 'O', 'L', 'S'}
+    },
+    .id_FIELD = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 5,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'F', 'I', 'E', 'L', 'D'}
+    },
+    .id_FINISHED = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 8,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'F', 'I', 'N', 'I', 'S', 'H', 'E', 'D'}
+    },
+    .id_JSONDecodeError = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 15,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'J', 'S', 'O', 'N', 'D', 'e', 'c', 'o', 'd', 'e', 'E', 'r', 'r', 'o', 'r'}
+    },
+    .id_LINES = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 5,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'L', 'I', 'N', 'E', 'S'}
+    },
+    .id_NFC = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 3,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'N', 'F', 'C'}
+    },
+    .id_NFD = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 3,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'N', 'F', 'D'}
+    },
+    .id_NFKC = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 4,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'N', 'F', 'K', 'C'}
+    },
+    .id_NFKD = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 4,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'N', 'F', 'K', 'D'}
+    },
+    .id_PENDING = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 7,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'P', 'E', 'N', 'D', 'I', 'N', 'G'}
+    },
+    .id_Py_Repr = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 7,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'P', 'y', '_', 'R', 'e', 'p', 'r'}
+    },
+    .id_TextIOWrapper = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 13,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'T', 'e', 'x', 't', 'I', 'O', 'W', 'r', 'a', 'p', 'p', 'e', 'r'}
+    },
+    .id_WarningMessage = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 14,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'W', 'a', 'r', 'n', 'i', 'n', 'g', 'M', 'e', 's', 's', 'a', 'g', 'e'}
+    },
 };
 
 
@@ -69,13 +6069,913 @@ _PyIdStrings _Py_id_strings = {
 void _Py_intern_identifiers(void)
 {
     PyObject *ref;
+    ref = (PyObject *)&_Py_id_strings.id___abc_tpflags__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___abstractmethods__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___adapt__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___aenter__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___aexit__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___aiter__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___all__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___anext__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___annotations__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___args__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___asyncio_running_event_loop__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___await__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___bases__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___bool__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___build_class__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___builtins__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___bytes__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___call__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___cantrace__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___ceil__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___class__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___class_getitem__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___classcell__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___complex__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___conform__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___contains__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___copy__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___ctypes_from_outparam__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___del__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___delattr__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___delete__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___delitem__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
     ref = (PyObject *)&_Py_id_strings.id___dict__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___dir__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___doc__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___enter__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___eq__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___exit__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___file__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___floor__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___format__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___fspath__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___get__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___getattr__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___getattribute__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___getinitargs__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___getitem__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___getnewargs__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___getnewargs_ex__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___getstate__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___hash__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___import__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___index__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___init__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___init_subclass__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___instancecheck__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___ipow__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___isabstractmethod__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___iter__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___len__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___length_hint__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___loader__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___ltrace__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___main__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___missing__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___module__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___mro_entries__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___name__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___new__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___newobj__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___newobj_ex__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___next__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___origin__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___package__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___parameters__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___path__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___pow__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___prepare__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___qualname__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___reduce__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___reduce_ex__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___repr__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___reversed__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___round__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___set__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___set_name__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___setattr__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___setitem__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___setstate__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___sizeof__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___slotnames__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___slots__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___spec__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___subclasscheck__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___subclasshook__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___tp_del__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___trunc__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___warningregistry__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___weakref__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id___IOBase_closed;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__abc_impl;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__abstract_;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__anonymous_;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__argtypes_;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__array_reconstructor;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__as_parameter_;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__asyncio_future_blocking;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__blksize;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__check_retval_;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__dealloc_warn;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__fields_;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__finalizing;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__find_and_load;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__fix_up_module;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__flags_;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__get_sourcefile;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__handle_fromlist;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__initializing;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__is_text_encoding;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__iterdump;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__length_;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__lock_unlock_module;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__loop;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__needs_com_addref_;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__pack_;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__repr_info;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__restype_;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__showwarnmsg;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__shutdown;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__slotnames;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__strptime_datetime;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__strptime_time;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__swappedbytes_;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__type_;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__uninitialized_submodules;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__use_broken_old_ctypes_structure_semantics_;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__warn_unawaited_coroutine;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id__xoptions;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_add;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_add_done_callback;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_append;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_as_integer_ratio;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_big;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_buffer;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_builtins;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_call_exception_handler;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_call_soon;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_cancel;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_clear;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_close;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_code;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_copy;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_copyreg;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_cursor;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_decode;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_default;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_defaultaction;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_difference_update;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_discard;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_dispatch_table;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_displayhook;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_doctype;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_enable;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_encoding;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_end_lineno;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_end_offset;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_errors;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_excepthook;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_exception;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_execute;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_executemany;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_executescript;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_extend;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_filename;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_fileno;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_fillvalue;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_filters;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_finalize;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_find;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_find_class;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_findall;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_findtext;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_flush;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_foo;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_from_param;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_fromtimestamp;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_fromutc;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_future;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_get;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_get_debug;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_get_event_loop;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_get_loop;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_get_source;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_getattr;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_getnextcabinet;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_ignore;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_importlib;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_insert;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_intersection;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_isatty;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_isoformat;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_items;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_iter;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_iterfind;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_keys;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_last_traceback;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_last_type;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_last_value;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_latin1;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_library;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_lineno;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_little;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_match;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_message;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_metaclass;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_mode;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_modules;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_mro;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_msg;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_n_fields;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_n_sequence_fields;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_n_unnamed_fields;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_name;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_obj;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_offset;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_onceregistry;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_open;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_parent;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_partial;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_path;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_peek;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_persistent_id;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_persistent_load;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_print_file_and_line;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_ps1;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_ps2;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_raw;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_read;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_read1;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_readable;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_readall;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_readinto;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_readinto1;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_readline;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_reason;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_reducer_override;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_reload;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_replace;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_reset;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_return;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_reversed;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_seek;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_seekable;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_send;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_setstate;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_sort;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_source_traceback;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_special;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_status;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_stderr;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_stdin;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_stdout;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_strftime;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_strict;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_struct_time;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_symmetric_difference_update;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_tail;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_task;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_tell;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_test_unicode_id_init;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_text;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_threading;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_throw;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_time;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_timetuple;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_tzname;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_unraisablehook;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_upper;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_values;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_verify_code;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_verify_message;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_version;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_warnings;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_warnoptions;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_writable;
     PyUnicode_InternInPlace(&ref);
     Py_DECREF(ref);
     ref = (PyObject *)&_Py_id_strings.id_write;
     PyUnicode_InternInPlace(&ref);
     Py_DECREF(ref);
     ref = (PyObject *)&_Py_id_strings.id_zipimporter;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_ATTR;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_CANCELLED;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_COLS;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_FIELD;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_FINISHED;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_JSONDecodeError;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_LINES;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_NFC;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_NFD;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_NFKC;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_NFKD;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_PENDING;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_Py_Repr;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_TextIOWrapper;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_WarningMessage;
     PyUnicode_InternInPlace(&ref);
     Py_DECREF(ref);
 }

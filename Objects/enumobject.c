@@ -4,6 +4,7 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "core_objects.h"
 
 #include "clinic/enumobject.c.h"
 
@@ -330,7 +331,7 @@ reversed_new_impl(PyTypeObject *type, PyObject *seq)
     reversedobject *ro;
     _Py_IDENTIFIER(__reversed__);
 
-    reversed_meth = _PyObject_LookupSpecial(seq, &PyId___reversed__);
+    reversed_meth = _PyObject_LookupSpecial(seq, _Py_ID(__reversed__));
     if (reversed_meth == Py_None) {
         Py_DECREF(reversed_meth);
         PyErr_Format(PyExc_TypeError,

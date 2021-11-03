@@ -24,6 +24,7 @@
 #include "structmember.h"         // PyMemberDef
 #include <float.h>                // FLT_MAX
 #include <signal.h>
+#include "core_objects.h"
 
 #ifdef MS_WINDOWS
 #  include <winsock2.h>           // struct timeval
@@ -3838,7 +3839,6 @@ test_pytime_object_to_timespec(PyObject *self, PyObject *args)
 static void
 slot_tp_del(PyObject *self)
 {
-    _Py_IDENTIFIER(__tp_del__);
     PyObject *del, *res;
     PyObject *error_type, *error_value, *error_traceback;
 
@@ -3850,7 +3850,7 @@ slot_tp_del(PyObject *self)
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
 
     /* Execute __del__ method, if any. */
-    del = _PyObject_LookupSpecial(self, &PyId___tp_del__);
+    del = _PyObject_LookupSpecial(self, _Py_ID(__tp_del__));
     if (del != NULL) {
         res = PyObject_CallNoArgs(del);
         if (res == NULL)

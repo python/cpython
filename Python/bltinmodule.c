@@ -10,6 +10,7 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 #include "pycore_ceval.h"         // _PyEval_Vector()
+#include "core_objects.h"
 
 _Py_IDENTIFIER(__builtins__);
 _Py_IDENTIFIER(__dict__);
@@ -2296,7 +2297,7 @@ builtin_round_impl(PyObject *module, PyObject *number, PyObject *ndigits)
             return NULL;
     }
 
-    round = _PyObject_LookupSpecial(number, &PyId___round__);
+    round = _PyObject_LookupSpecial(number, _Py_ID(__round__));
     if (round == NULL) {
         if (!PyErr_Occurred())
             PyErr_Format(PyExc_TypeError,

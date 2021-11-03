@@ -29,6 +29,7 @@ Data members:
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_structseq.h"     // PyStructSequence_InitType()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
+#include "core_objects.h"
 
 #include "code.h"
 #include "frameobject.h"          // PyFrame_GetBack()
@@ -1665,7 +1666,7 @@ _PySys_GetSizeOf(PyObject *o)
         return (size_t)-1;
     }
 
-    method = _PyObject_LookupSpecial(o, &PyId___sizeof__);
+    method = _PyObject_LookupSpecial(o, _Py_ID(__sizeof__));
     if (method == NULL) {
         if (!_PyErr_Occurred(tstate)) {
             _PyErr_Format(tstate, PyExc_TypeError,

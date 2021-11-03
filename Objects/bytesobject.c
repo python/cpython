@@ -12,6 +12,7 @@
 #include "pycore_object.h"        // _PyObject_GC_TRACK
 #include "pycore_pymem.h"         // PYMEM_CLEANBYTE
 #include "pycore_strhex.h"        // _Py_strhex_with_sep()
+#include "core_objects.h"
 
 #include <stddef.h>
 
@@ -572,7 +573,7 @@ format_obj(PyObject *v, const char **pbuf, Py_ssize_t *plen)
         return v;
     }
     /* does it support __bytes__? */
-    func = _PyObject_LookupSpecial(v, &PyId___bytes__);
+    func = _PyObject_LookupSpecial(v, _Py_ID(__bytes__));
     if (func != NULL) {
         result = _PyObject_CallNoArgs(func);
         Py_DECREF(func);
@@ -2623,7 +2624,7 @@ bytes_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
     /* We'd like to call PyObject_Bytes here, but we need to check for an
        integer argument before deferring to PyBytes_FromObject, something
        PyObject_Bytes doesn't do. */
-    else if ((func = _PyObject_LookupSpecial(x, &PyId___bytes__)) != NULL) {
+    else if ((func = _PyObject_LookupSpecial(x, _Py_ID(__bytes__))) != NULL) {
         bytes = _PyObject_CallNoArgs(func);
         Py_DECREF(func);
         if (bytes == NULL)

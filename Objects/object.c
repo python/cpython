@@ -17,6 +17,7 @@
 #include "pycore_unionobject.h"   // _PyUnion_Type
 #include "frameobject.h"          // PyFrame_Type
 #include "pycore_interpreteridobject.h"  // _PyInterpreterID_Type
+#include "core_objects.h"
 
 #ifdef Py_LIMITED_API
    // Prevent recursive call _Py_IncRef() <=> Py_INCREF()
@@ -561,7 +562,7 @@ PyObject_Bytes(PyObject *v)
         return v;
     }
 
-    func = _PyObject_LookupSpecial(v, &PyId___bytes__);
+    func = _PyObject_LookupSpecial(v, _Py_ID(__bytes__));
     if (func != NULL) {
         result = _PyObject_CallNoArgs(func);
         Py_DECREF(func);
@@ -1591,7 +1592,7 @@ static PyObject *
 _dir_object(PyObject *obj)
 {
     PyObject *result, *sorted;
-    PyObject *dirfunc = _PyObject_LookupSpecial(obj, &PyId___dir__);
+    PyObject *dirfunc = _PyObject_LookupSpecial(obj, _Py_ID(__dir__));
 
     assert(obj != NULL);
     if (dirfunc == NULL) {

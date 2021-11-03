@@ -11,6 +11,7 @@
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_pymath.h"        // _Py_ADJUST_ERANGE2()
 #include "structmember.h"         // PyMemberDef
+#include "core_objects.h"
 
 
 /*[clinic input]
@@ -283,7 +284,7 @@ try_complex_special_method(PyObject *op)
     PyObject *f;
     _Py_IDENTIFIER(__complex__);
 
-    f = _PyObject_LookupSpecial(op, &PyId___complex__);
+    f = _PyObject_LookupSpecial(op, _Py_ID(__complex__));
     if (f) {
         PyObject *res = _PyObject_CallNoArgs(f);
         Py_DECREF(f);

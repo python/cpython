@@ -729,6 +729,29 @@ _PyObject_CallMethodId_SizeT(PyObject *obj, _Py_Identifier *name,
     return retval;
 }
 
+PyObject *
+_PyObject_CallMethod(PyObject *obj, PyObject *name,
+                             const char *format, ...)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (obj == NULL || name == NULL) {
+        return null_error(tstate);
+    }
+
+    PyObject *callable = PyObject_GetAttr(obj, name);
+    if (callable == NULL) {
+        return NULL;
+    }
+
+    va_list va;
+    va_start(va, format);
+    PyObject *retval = callmethod(tstate, callable, format, va, 1);
+    va_end(va);
+
+    Py_DECREF(callable);
+    return retval;
+}
+
 
 /* --- Call with "..." arguments ---------------------------------- */
 

@@ -28,6 +28,7 @@
 #include "pycore_import.h"        // _PyImport_ReInitLock()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "core_objects.h"
 
 #include "structmember.h"         // PyMemberDef
 #ifndef MS_WINDOWS
@@ -342,8 +343,6 @@ corresponding Unix manual entries for more information on calls.");
 #    define HAVE_TTYNAME    1
 #  endif  /* _MSC_VER */
 #endif  /* ! __WATCOMC__ || __QNX__ */
-
-_Py_IDENTIFIER(__fspath__);
 
 /*[clinic input]
 # one of the few times we lie about this name!
@@ -1179,7 +1178,7 @@ path_converter(PyObject *o, void *p)
         /* Inline PyOS_FSPath() for better error messages. */
         PyObject *func, *res;
 
-        func = _PyObject_LookupSpecial(o, &PyId___fspath__);
+        func = _PyObject_LookupSpecial(o, _Py_ID(__fspath__));
         if (NULL == func) {
             goto error_format;
         }
@@ -14372,7 +14371,7 @@ PyOS_FSPath(PyObject *path)
         return path;
     }
 
-    func = _PyObject_LookupSpecial(path, &PyId___fspath__);
+    func = _PyObject_LookupSpecial(path, _Py_ID(__fspath__));
     if (NULL == func) {
         return PyErr_Format(PyExc_TypeError,
                             "expected str, bytes or os.PathLike object, "

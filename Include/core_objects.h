@@ -4,11 +4,62 @@
 
 #include "Python.h"
 
+#define _Py_ID(name) ((PyObject *)&_Py_id_strings.id_##name)
+
+
+
+typedef struct _ascii_1 {
+    PyASCIIObject object;
+    char text[2];
+} _PyAsciiId_1;
+
+
+typedef struct _ascii_3 {
+    PyASCIIObject object;
+    char text[4];
+} _PyAsciiId_3;
+
+
+typedef struct _ascii_4 {
+    PyASCIIObject object;
+    char text[5];
+} _PyAsciiId_4;
+
+
+typedef struct _ascii_5 {
+    PyASCIIObject object;
+    char text[6];
+} _PyAsciiId_5;
+
+
+typedef struct _ascii_6 {
+    PyASCIIObject object;
+    char text[7];
+} _PyAsciiId_6;
+
+
+typedef struct _ascii_7 {
+    PyASCIIObject object;
+    char text[8];
+} _PyAsciiId_7;
+
 
 typedef struct _ascii_8 {
     PyASCIIObject object;
     char text[9];
 } _PyAsciiId_8;
+
+
+typedef struct _ascii_9 {
+    PyASCIIObject object;
+    char text[10];
+} _PyAsciiId_9;
+
+
+typedef struct _ascii_10 {
+    PyASCIIObject object;
+    char text[11];
+} _PyAsciiId_10;
 
 
 typedef struct _ascii_11 {
@@ -17,17 +68,401 @@ typedef struct _ascii_11 {
 } _PyAsciiId_11;
 
 
-typedef struct _ascii_5 {
+typedef struct _ascii_12 {
     PyASCIIObject object;
-    char text[6];
-} _PyAsciiId_5;
+    char text[13];
+} _PyAsciiId_12;
+
+
+typedef struct _ascii_13 {
+    PyASCIIObject object;
+    char text[14];
+} _PyAsciiId_13;
+
+
+typedef struct _ascii_14 {
+    PyASCIIObject object;
+    char text[15];
+} _PyAsciiId_14;
+
+
+typedef struct _ascii_15 {
+    PyASCIIObject object;
+    char text[16];
+} _PyAsciiId_15;
+
+
+typedef struct _ascii_16 {
+    PyASCIIObject object;
+    char text[17];
+} _PyAsciiId_16;
+
+
+typedef struct _ascii_17 {
+    PyASCIIObject object;
+    char text[18];
+} _PyAsciiId_17;
+
+
+typedef struct _ascii_18 {
+    PyASCIIObject object;
+    char text[19];
+} _PyAsciiId_18;
+
+
+typedef struct _ascii_19 {
+    PyASCIIObject object;
+    char text[20];
+} _PyAsciiId_19;
+
+
+typedef struct _ascii_20 {
+    PyASCIIObject object;
+    char text[21];
+} _PyAsciiId_20;
+
+
+typedef struct _ascii_22 {
+    PyASCIIObject object;
+    char text[23];
+} _PyAsciiId_22;
+
+
+typedef struct _ascii_24 {
+    PyASCIIObject object;
+    char text[25];
+} _PyAsciiId_24;
+
+
+typedef struct _ascii_25 {
+    PyASCIIObject object;
+    char text[26];
+} _PyAsciiId_25;
+
+
+typedef struct _ascii_27 {
+    PyASCIIObject object;
+    char text[28];
+} _PyAsciiId_27;
+
+
+typedef struct _ascii_30 {
+    PyASCIIObject object;
+    char text[31];
+} _PyAsciiId_30;
+
+
+typedef struct _ascii_43 {
+    PyASCIIObject object;
+    char text[44];
+} _PyAsciiId_43;
 
 typedef struct _py_id_strings {
+    _PyAsciiId_15 id___abc_tpflags__;
+    _PyAsciiId_19 id___abstractmethods__;
+    _PyAsciiId_9 id___adapt__;
+    _PyAsciiId_10 id___aenter__;
+    _PyAsciiId_9 id___aexit__;
+    _PyAsciiId_9 id___aiter__;
+    _PyAsciiId_7 id___all__;
+    _PyAsciiId_9 id___anext__;
+    _PyAsciiId_15 id___annotations__;
+    _PyAsciiId_8 id___args__;
+    _PyAsciiId_30 id___asyncio_running_event_loop__;
+    _PyAsciiId_9 id___await__;
+    _PyAsciiId_9 id___bases__;
+    _PyAsciiId_8 id___bool__;
+    _PyAsciiId_15 id___build_class__;
+    _PyAsciiId_12 id___builtins__;
+    _PyAsciiId_9 id___bytes__;
+    _PyAsciiId_8 id___call__;
+    _PyAsciiId_12 id___cantrace__;
+    _PyAsciiId_8 id___ceil__;
+    _PyAsciiId_9 id___class__;
+    _PyAsciiId_17 id___class_getitem__;
+    _PyAsciiId_13 id___classcell__;
+    _PyAsciiId_11 id___complex__;
+    _PyAsciiId_11 id___conform__;
+    _PyAsciiId_12 id___contains__;
+    _PyAsciiId_8 id___copy__;
+    _PyAsciiId_24 id___ctypes_from_outparam__;
+    _PyAsciiId_7 id___del__;
+    _PyAsciiId_11 id___delattr__;
+    _PyAsciiId_10 id___delete__;
+    _PyAsciiId_11 id___delitem__;
     _PyAsciiId_8 id___dict__;
+    _PyAsciiId_7 id___dir__;
+    _PyAsciiId_7 id___doc__;
+    _PyAsciiId_9 id___enter__;
+    _PyAsciiId_6 id___eq__;
+    _PyAsciiId_8 id___exit__;
+    _PyAsciiId_8 id___file__;
+    _PyAsciiId_9 id___floor__;
+    _PyAsciiId_10 id___format__;
+    _PyAsciiId_10 id___fspath__;
+    _PyAsciiId_7 id___get__;
+    _PyAsciiId_11 id___getattr__;
+    _PyAsciiId_16 id___getattribute__;
+    _PyAsciiId_15 id___getinitargs__;
+    _PyAsciiId_11 id___getitem__;
+    _PyAsciiId_14 id___getnewargs__;
+    _PyAsciiId_17 id___getnewargs_ex__;
+    _PyAsciiId_12 id___getstate__;
+    _PyAsciiId_8 id___hash__;
+    _PyAsciiId_10 id___import__;
+    _PyAsciiId_9 id___index__;
+    _PyAsciiId_8 id___init__;
+    _PyAsciiId_17 id___init_subclass__;
+    _PyAsciiId_17 id___instancecheck__;
+    _PyAsciiId_8 id___ipow__;
+    _PyAsciiId_20 id___isabstractmethod__;
+    _PyAsciiId_8 id___iter__;
+    _PyAsciiId_7 id___len__;
+    _PyAsciiId_15 id___length_hint__;
+    _PyAsciiId_10 id___loader__;
+    _PyAsciiId_10 id___ltrace__;
+    _PyAsciiId_8 id___main__;
+    _PyAsciiId_11 id___missing__;
+    _PyAsciiId_10 id___module__;
+    _PyAsciiId_15 id___mro_entries__;
+    _PyAsciiId_8 id___name__;
+    _PyAsciiId_7 id___new__;
+    _PyAsciiId_10 id___newobj__;
+    _PyAsciiId_13 id___newobj_ex__;
+    _PyAsciiId_8 id___next__;
+    _PyAsciiId_10 id___origin__;
+    _PyAsciiId_11 id___package__;
+    _PyAsciiId_14 id___parameters__;
+    _PyAsciiId_8 id___path__;
+    _PyAsciiId_7 id___pow__;
+    _PyAsciiId_11 id___prepare__;
+    _PyAsciiId_12 id___qualname__;
+    _PyAsciiId_10 id___reduce__;
+    _PyAsciiId_13 id___reduce_ex__;
+    _PyAsciiId_8 id___repr__;
+    _PyAsciiId_12 id___reversed__;
+    _PyAsciiId_9 id___round__;
+    _PyAsciiId_7 id___set__;
+    _PyAsciiId_12 id___set_name__;
+    _PyAsciiId_11 id___setattr__;
+    _PyAsciiId_11 id___setitem__;
+    _PyAsciiId_12 id___setstate__;
+    _PyAsciiId_10 id___sizeof__;
+    _PyAsciiId_13 id___slotnames__;
+    _PyAsciiId_9 id___slots__;
+    _PyAsciiId_8 id___spec__;
+    _PyAsciiId_17 id___subclasscheck__;
+    _PyAsciiId_16 id___subclasshook__;
+    _PyAsciiId_10 id___tp_del__;
+    _PyAsciiId_9 id___trunc__;
+    _PyAsciiId_19 id___warningregistry__;
+    _PyAsciiId_11 id___weakref__;
+    _PyAsciiId_1 id__;
+    _PyAsciiId_15 id___IOBase_closed;
+    _PyAsciiId_9 id__abc_impl;
+    _PyAsciiId_10 id__abstract_;
+    _PyAsciiId_11 id__anonymous_;
+    _PyAsciiId_10 id__argtypes_;
+    _PyAsciiId_20 id__array_reconstructor;
+    _PyAsciiId_14 id__as_parameter_;
+    _PyAsciiId_24 id__asyncio_future_blocking;
+    _PyAsciiId_8 id__blksize;
+    _PyAsciiId_14 id__check_retval_;
+    _PyAsciiId_13 id__dealloc_warn;
+    _PyAsciiId_8 id__fields_;
+    _PyAsciiId_11 id__finalizing;
+    _PyAsciiId_14 id__find_and_load;
+    _PyAsciiId_14 id__fix_up_module;
+    _PyAsciiId_7 id__flags_;
+    _PyAsciiId_15 id__get_sourcefile;
+    _PyAsciiId_16 id__handle_fromlist;
+    _PyAsciiId_13 id__initializing;
+    _PyAsciiId_17 id__is_text_encoding;
+    _PyAsciiId_9 id__iterdump;
+    _PyAsciiId_8 id__length_;
+    _PyAsciiId_19 id__lock_unlock_module;
+    _PyAsciiId_5 id__loop;
+    _PyAsciiId_18 id__needs_com_addref_;
+    _PyAsciiId_6 id__pack_;
+    _PyAsciiId_10 id__repr_info;
+    _PyAsciiId_9 id__restype_;
+    _PyAsciiId_12 id__showwarnmsg;
+    _PyAsciiId_9 id__shutdown;
+    _PyAsciiId_10 id__slotnames;
+    _PyAsciiId_18 id__strptime_datetime;
+    _PyAsciiId_14 id__strptime_time;
+    _PyAsciiId_14 id__swappedbytes_;
+    _PyAsciiId_6 id__type_;
+    _PyAsciiId_25 id__uninitialized_submodules;
+    _PyAsciiId_43 id__use_broken_old_ctypes_structure_semantics_;
+    _PyAsciiId_25 id__warn_unawaited_coroutine;
+    _PyAsciiId_9 id__xoptions;
+    _PyAsciiId_3 id_add;
+    _PyAsciiId_17 id_add_done_callback;
+    _PyAsciiId_6 id_append;
+    _PyAsciiId_16 id_as_integer_ratio;
+    _PyAsciiId_3 id_big;
+    _PyAsciiId_6 id_buffer;
+    _PyAsciiId_8 id_builtins;
+    _PyAsciiId_22 id_call_exception_handler;
+    _PyAsciiId_9 id_call_soon;
+    _PyAsciiId_6 id_cancel;
+    _PyAsciiId_5 id_clear;
+    _PyAsciiId_5 id_close;
+    _PyAsciiId_4 id_code;
+    _PyAsciiId_4 id_copy;
+    _PyAsciiId_7 id_copyreg;
+    _PyAsciiId_6 id_cursor;
+    _PyAsciiId_6 id_decode;
+    _PyAsciiId_7 id_default;
+    _PyAsciiId_13 id_defaultaction;
+    _PyAsciiId_17 id_difference_update;
+    _PyAsciiId_7 id_discard;
+    _PyAsciiId_14 id_dispatch_table;
+    _PyAsciiId_11 id_displayhook;
+    _PyAsciiId_7 id_doctype;
+    _PyAsciiId_6 id_enable;
+    _PyAsciiId_8 id_encoding;
+    _PyAsciiId_10 id_end_lineno;
+    _PyAsciiId_10 id_end_offset;
+    _PyAsciiId_6 id_errors;
+    _PyAsciiId_10 id_excepthook;
+    _PyAsciiId_9 id_exception;
+    _PyAsciiId_7 id_execute;
+    _PyAsciiId_11 id_executemany;
+    _PyAsciiId_13 id_executescript;
+    _PyAsciiId_6 id_extend;
+    _PyAsciiId_8 id_filename;
+    _PyAsciiId_6 id_fileno;
+    _PyAsciiId_9 id_fillvalue;
+    _PyAsciiId_7 id_filters;
+    _PyAsciiId_8 id_finalize;
+    _PyAsciiId_4 id_find;
+    _PyAsciiId_10 id_find_class;
+    _PyAsciiId_7 id_findall;
+    _PyAsciiId_8 id_findtext;
+    _PyAsciiId_5 id_flush;
+    _PyAsciiId_3 id_foo;
+    _PyAsciiId_10 id_from_param;
+    _PyAsciiId_13 id_fromtimestamp;
+    _PyAsciiId_7 id_fromutc;
+    _PyAsciiId_6 id_future;
+    _PyAsciiId_3 id_get;
+    _PyAsciiId_9 id_get_debug;
+    _PyAsciiId_14 id_get_event_loop;
+    _PyAsciiId_8 id_get_loop;
+    _PyAsciiId_10 id_get_source;
+    _PyAsciiId_7 id_getattr;
+    _PyAsciiId_14 id_getnextcabinet;
+    _PyAsciiId_6 id_ignore;
+    _PyAsciiId_9 id_importlib;
+    _PyAsciiId_6 id_insert;
+    _PyAsciiId_12 id_intersection;
+    _PyAsciiId_6 id_isatty;
+    _PyAsciiId_9 id_isoformat;
+    _PyAsciiId_5 id_items;
+    _PyAsciiId_4 id_iter;
+    _PyAsciiId_8 id_iterfind;
+    _PyAsciiId_4 id_keys;
+    _PyAsciiId_14 id_last_traceback;
+    _PyAsciiId_9 id_last_type;
+    _PyAsciiId_10 id_last_value;
+    _PyAsciiId_6 id_latin1;
+    _PyAsciiId_7 id_library;
+    _PyAsciiId_6 id_lineno;
+    _PyAsciiId_6 id_little;
+    _PyAsciiId_5 id_match;
+    _PyAsciiId_7 id_message;
+    _PyAsciiId_9 id_metaclass;
+    _PyAsciiId_4 id_mode;
+    _PyAsciiId_7 id_modules;
+    _PyAsciiId_3 id_mro;
+    _PyAsciiId_3 id_msg;
+    _PyAsciiId_8 id_n_fields;
+    _PyAsciiId_17 id_n_sequence_fields;
+    _PyAsciiId_16 id_n_unnamed_fields;
+    _PyAsciiId_4 id_name;
+    _PyAsciiId_3 id_obj;
+    _PyAsciiId_6 id_offset;
+    _PyAsciiId_12 id_onceregistry;
+    _PyAsciiId_4 id_open;
+    _PyAsciiId_6 id_parent;
+    _PyAsciiId_7 id_partial;
+    _PyAsciiId_4 id_path;
+    _PyAsciiId_4 id_peek;
+    _PyAsciiId_13 id_persistent_id;
+    _PyAsciiId_15 id_persistent_load;
+    _PyAsciiId_19 id_print_file_and_line;
+    _PyAsciiId_3 id_ps1;
+    _PyAsciiId_3 id_ps2;
+    _PyAsciiId_3 id_raw;
+    _PyAsciiId_4 id_read;
+    _PyAsciiId_5 id_read1;
+    _PyAsciiId_8 id_readable;
+    _PyAsciiId_7 id_readall;
+    _PyAsciiId_8 id_readinto;
+    _PyAsciiId_9 id_readinto1;
+    _PyAsciiId_8 id_readline;
+    _PyAsciiId_6 id_reason;
+    _PyAsciiId_16 id_reducer_override;
+    _PyAsciiId_6 id_reload;
+    _PyAsciiId_7 id_replace;
+    _PyAsciiId_5 id_reset;
+    _PyAsciiId_6 id_return;
+    _PyAsciiId_8 id_reversed;
+    _PyAsciiId_4 id_seek;
+    _PyAsciiId_8 id_seekable;
+    _PyAsciiId_4 id_send;
+    _PyAsciiId_8 id_setstate;
+    _PyAsciiId_4 id_sort;
+    _PyAsciiId_16 id_source_traceback;
+    _PyAsciiId_7 id_special;
+    _PyAsciiId_6 id_status;
+    _PyAsciiId_6 id_stderr;
+    _PyAsciiId_5 id_stdin;
+    _PyAsciiId_6 id_stdout;
+    _PyAsciiId_8 id_strftime;
+    _PyAsciiId_6 id_strict;
+    _PyAsciiId_11 id_struct_time;
+    _PyAsciiId_27 id_symmetric_difference_update;
+    _PyAsciiId_4 id_tail;
+    _PyAsciiId_4 id_task;
+    _PyAsciiId_4 id_tell;
+    _PyAsciiId_20 id_test_unicode_id_init;
+    _PyAsciiId_4 id_text;
+    _PyAsciiId_9 id_threading;
+    _PyAsciiId_5 id_throw;
+    _PyAsciiId_4 id_time;
+    _PyAsciiId_9 id_timetuple;
+    _PyAsciiId_6 id_tzname;
+    _PyAsciiId_14 id_unraisablehook;
+    _PyAsciiId_5 id_upper;
+    _PyAsciiId_6 id_values;
+    _PyAsciiId_11 id_verify_code;
+    _PyAsciiId_14 id_verify_message;
+    _PyAsciiId_7 id_version;
+    _PyAsciiId_8 id_warnings;
+    _PyAsciiId_11 id_warnoptions;
+    _PyAsciiId_8 id_writable;
     _PyAsciiId_5 id_write;
     _PyAsciiId_11 id_zipimporter;
+    _PyAsciiId_4 id_ATTR;
+    _PyAsciiId_9 id_CANCELLED;
+    _PyAsciiId_4 id_COLS;
+    _PyAsciiId_5 id_FIELD;
+    _PyAsciiId_8 id_FINISHED;
+    _PyAsciiId_15 id_JSONDecodeError;
+    _PyAsciiId_5 id_LINES;
+    _PyAsciiId_3 id_NFC;
+    _PyAsciiId_3 id_NFD;
+    _PyAsciiId_4 id_NFKC;
+    _PyAsciiId_4 id_NFKD;
+    _PyAsciiId_7 id_PENDING;
+    _PyAsciiId_7 id_Py_Repr;
+    _PyAsciiId_13 id_TextIOWrapper;
+    _PyAsciiId_14 id_WarningMessage;
 } _PyIdStrings;
 
-extern _PyIdStrings _Py_id_strings;
+PyAPI_DATA(_PyIdStrings) _Py_id_strings;
 extern void _Py_intern_identifiers(void);
 #endif // _PY_CORE_OBJECTS_H

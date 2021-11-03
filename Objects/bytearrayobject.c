@@ -2114,7 +2114,7 @@ _common_reduce(PyByteArrayObject *self, int proto)
     PyObject *dict;
     char *buf;
 
-    if (_PyObject_LookupAttr((PyObject *)self, (PyObject *)&_Py_id_strings.id___dict__, &dict) < 0) {
+    if (_PyObject_LookupAttr((PyObject *)self, _Py_ID(__dict__), &dict) < 0) {
         return NULL;
     }
     if (dict == NULL) {

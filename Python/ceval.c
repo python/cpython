@@ -34,6 +34,7 @@
 #include "pydtrace.h"
 #include "setobject.h"
 #include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
+#include "core_objects.h"
 
 #include <ctype.h>
 
@@ -4274,11 +4275,9 @@ check_eval_breaker:
         }
 
         TARGET(BEFORE_ASYNC_WITH) {
-            _Py_IDENTIFIER(__aenter__);
-            _Py_IDENTIFIER(__aexit__);
             PyObject *mgr = TOP();
             PyObject *res;
-            PyObject *enter = _PyObject_LookupSpecial(mgr, &PyId___aenter__);
+            PyObject *enter = _PyObject_LookupSpecial(mgr, _Py_ID(__aenter__));
             if (enter == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
@@ -4288,7 +4287,7 @@ check_eval_breaker:
                 }
                 goto error;
             }
-            PyObject *exit = _PyObject_LookupSpecial(mgr, &PyId___aexit__);
+            PyObject *exit = _PyObject_LookupSpecial(mgr, _Py_ID(__aexit__));
             if (exit == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
@@ -4312,11 +4311,9 @@ check_eval_breaker:
         }
 
         TARGET(BEFORE_WITH) {
-            _Py_IDENTIFIER(__enter__);
-            _Py_IDENTIFIER(__exit__);
             PyObject *mgr = TOP();
             PyObject *res;
-            PyObject *enter = _PyObject_LookupSpecial(mgr, &PyId___enter__);
+            PyObject *enter = _PyObject_LookupSpecial(mgr, _Py_ID(__enter__));
             if (enter == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
@@ -4326,7 +4323,7 @@ check_eval_breaker:
                 }
                 goto error;
             }
-            PyObject *exit = _PyObject_LookupSpecial(mgr, &PyId___exit__);
+            PyObject *exit = _PyObject_LookupSpecial(mgr, _Py_ID(__exit__));
             if (exit == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
                     _PyErr_Format(tstate, PyExc_TypeError,

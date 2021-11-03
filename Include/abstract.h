@@ -203,6 +203,9 @@ PyAPI_FUNC(PyObject *) _PyObject_CallMethod_SizeT(PyObject *obj,
                                                   const char *name,
                                                   const char *format,
                                                   ...);
+PyObject *
+_PyObject_CallMethod(PyObject *obj, PyObject *name,
+                             const char *format, ...);
 
 /* Call a callable Python object 'callable' with a variable number of C
    arguments. The C arguments are provided as PyObject* values, terminated
