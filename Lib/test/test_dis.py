@@ -1202,24 +1202,6 @@ class BytecodeTests(unittest.TestCase):
         b = dis.Bytecode.from_traceback(tb)
         self.assertEqual(b.dis(), dis_traceback)
 
-class TestBytecodeTestCase(BytecodeTestCase):
-    def test_assert_not_in_with_op_not_in_bytecode(self):
-        code = compile("a = 1", "<string>", "exec")
-        self.assertInBytecode(code, "LOAD_CONST", 1)
-        self.assertNotInBytecode(code, "LOAD_NAME")
-        self.assertNotInBytecode(code, "LOAD_NAME", "a")
-
-    def test_assert_not_in_with_arg_not_in_bytecode(self):
-        code = compile("a = 1", "<string>", "exec")
-        self.assertInBytecode(code, "LOAD_CONST")
-        self.assertInBytecode(code, "LOAD_CONST", 1)
-        self.assertNotInBytecode(code, "LOAD_CONST", 2)
-
-    def test_assert_not_in_with_arg_in_bytecode(self):
-        code = compile("a = 1", "<string>", "exec")
-        with self.assertRaises(AssertionError):
-            self.assertNotInBytecode(code, "LOAD_CONST", 1)
-
 
 class TestDisTraceback(unittest.TestCase):
     def setUp(self) -> None:
