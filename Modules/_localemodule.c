@@ -634,10 +634,10 @@ PyLocale_getfirstweekday(PyObject* self, PyObject* args)
 #if defined(MS_WINDOWS)
     char locale[1];
 
-    if (GetLocaleInfo(LOCALE_USER_DEFAULT,
+    if (!GetLocaleInfo(LOCALE_USER_DEFAULT,
                       LOCALE_IFIRSTDAYOFWEEK,
                       locale, sizeof(locale))) {
-        start = (locale[0] - '0' + 1) % 7;
+        start = (locale[0] - '0') % 7;
     }
 #else
 #ifdef HAVE__NL_TIME_FIRST_WEEKDAY
