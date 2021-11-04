@@ -31,6 +31,7 @@ typedef struct _interpreter_frame {
     int f_lasti;       /* Last instruction if called */
     int stacktop;     /* Offset of TOS from localsplus  */
     PyFrameState f_state;  /* What state the frame is in */
+    int depth; /* Depth of the frame in a ceval loop */
     PyObject *localsplus[1];
 } InterpreterFrame;
 
@@ -85,6 +86,7 @@ _PyFrame_InitializeSpecials(
     frame->generator = NULL;
     frame->f_lasti = -1;
     frame->f_state = FRAME_CREATED;
+    frame->depth = 0;
 }
 
 /* Gets the pointer to the locals array
@@ -149,6 +151,21 @@ _PyFrame_LocalsToFast(InterpreterFrame *frame, int clear);
 
 InterpreterFrame *_PyThreadState_PushFrame(
     PyThreadState *tstate, PyFrameConstructor *con, PyObject *locals);
+
+extern InterpreterFrame *
+_PyThreadState_BumpFramePointerSlow(PyThreadState *tstate, size_t size);
+
+static inline InterpreterFrame *
+_PyThreadState_BumpFramePointer(PyThreadState *tstate, size_t size)
+{
+    PyObject **base = tstate->datastack_top;
+    PyObject **top = base + size;
+    if (top < tstate->datastack_limit) {
+        tstate->datastack_top = top;
+        return (InterpreterFrame *)base;
+    }
+    return _PyThreadState_BumpFramePointerSlow(tstate, size);
+}
 
 void _PyThreadState_PopFrame(PyThreadState *tstate, InterpreterFrame *frame);
 

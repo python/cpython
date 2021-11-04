@@ -175,6 +175,11 @@ Other CPython Implementation Changes
   support :class:`typing.SupportsComplex` and :class:`typing.SupportsBytes` protocols.
   (Contributed by Mark Dickinson and Dong-hee Na in :issue:`24234`.)
 
+* ``siphash13`` is added as a new internal hashing algorithms. It's has similar security
+  properties as ``siphash24`` but it is slightly faster for long inputs. ``str``, ``bytes``,
+  and some other types now use it as default algorithm for ``hash()``. :pep:`552`
+  hash-based pyc files now use ``siphash13``, too.
+  (Contributed by Inada Naoki in :issue:`29410`.)
 
 New Modules
 ===========
@@ -188,8 +193,12 @@ Improved Modules
 fractions
 ---------
 
-Support :PEP:`515`-style initialization of :class:`~fractions.Fraction` from
-string.  (Contributed by Sergey B Kirpichev in :issue:`44258`.)
+* Support :PEP:`515`-style initialization of :class:`~fractions.Fraction` from
+  string.  (Contributed by Sergey B Kirpichev in :issue:`44258`.)
+
+* :class:`~fractions.Fraction` now implements an ``__int__`` method, so
+  that an ``isinstance(some_fraction, typing.SupportsInt)`` check passes.
+  (Contributed by Mark Dickinson in :issue:`44547`.)
 
 
 math
@@ -233,11 +242,22 @@ sqlite3
   now raise :exc:`UnicodeEncodeError` instead of :exc:`sqlite3.ProgrammingError`.
   (Contributed by Erlend E. Aasland in :issue:`44688`.)
 
-* :mod:`sqlite3` exceptions now include the SQLite error code as
+* :mod:`sqlite3` exceptions now include the SQLite extended error code as
   :attr:`~sqlite3.Error.sqlite_errorcode` and the SQLite error name as
   :attr:`~sqlite3.Error.sqlite_errorname`.
   (Contributed by Aviv Palivoda, Daniel Shahaf, and Erlend E. Aasland in
-  :issue:`16379`.)
+  :issue:`16379` and :issue:`24139`.)
+
+
+* Add :meth:`~sqlite3.Connection.setlimit` and
+  :meth:`~sqlite3.Connection.getlimit` to :class:`sqlite3.Connection` for
+  setting and getting SQLite limits by connection basis.
+  (Contributed by Erlend E. Aasland in :issue:`45243`.)
+
+* :mod:`sqlite3` now sets :attr:`sqlite3.threadsafety` based on the default
+  threading mode the underlying SQLite library has been compiled with.
+  (Contributed by Erlend E. Aasland in :issue:`45613`.)
+
 
 threading
 ---------
@@ -247,7 +267,7 @@ threading
   the monotonic clock (:data:`time.CLOCK_MONOTONIC`) for the timeout, rather
   than using the system clock (:data:`time.CLOCK_REALTIME`), to not be affected
   by system clock changes.
-  (Contributed by Livius and Victor Stinner in :issue:`41710`.)
+  (Contributed by Victor Stinner in :issue:`41710`.)
 
 time
 ----
@@ -256,12 +276,12 @@ time
   ``nanosleep()`` function, if available, which has a resolution of 1 nanosecond
   (10\ :sup:`-9` seconds), rather than using ``select()`` which has a resolution
   of 1 microsecond (10\ :sup:`-6` seconds).
-  (Contributed by Livius and Victor Stinner in :issue:`21302`.)
+  (Contributed by Benjamin Szőke and Victor Stinner in :issue:`21302`.)
 
 * On Windows, :func:`time.sleep` now uses a waitable timer which has a
   resolution of 100 nanoseconds (10\ :sup:`-7` seconds). Previously, it had
   a resolution of 1 millisecond (10\ :sup:`-3` seconds).
-  (Contributed by Livius and Victor Stinner in :issue:`21302`.)
+  (Contributed by Benjamin Szőke and Victor Stinner in :issue:`21302`.)
 
 unicodedata
 -----------
@@ -299,13 +319,23 @@ CPython bytecode changes
   fashion as :opcode:`CALL_METHOD`, but also supports keyword arguments.  Works
   in tandem with :opcode:`LOAD_METHOD`.
 
+* Removed ``COPY_DICT_WITHOUT_KEYS``.
+
+* :opcode:`MATCH_CLASS` and :opcode:`MATCH_KEYS` no longer push an additional
+  boolean value indicating whether the match succeeded or failed. Instead, they
+  indicate failure with :const:`None` (where a tuple of extracted values would
+  otherwise be).
+
+* Added :opcode:`COPY`, which pushes the *i*-th item to the top of the stack.
+  The item is not removed from its original location.
+
 
 Deprecated
 ==========
 
-* The :mod:`lib2to3` package is now deprecated and may not be able to parse
-  Python 3.10 or newer. See the :pep:`617` (New PEG parser for CPython).
-  (Contributed by Victor Stinner in :issue:`40360`.)
+* The :mod:`lib2to3` package and ``2to3`` tool are now deprecated and may not
+  be able to parse Python 3.10 or newer. See the :pep:`617` (New PEG parser for
+  CPython).  (Contributed by Victor Stinner in :issue:`40360`.)
 
 * :class:`webbrowser.MacOSX` is deprecated and will be removed in Python 3.13.
   It is untested and undocumented and also not used by webbrowser itself.
@@ -358,7 +388,7 @@ Removed
   ``SO_REUSEADDR`` in UDP.
   (Contributed by Hugo van Kemenade in :issue:`45129`.)
 
-* Remove :meth:`__getitem__` methods of
+* Removed :meth:`__getitem__` methods of
   :class:`xml.dom.pulldom.DOMEventStream`, :class:`wsgiref.util.FileWrapper`
   and :class:`fileinput.FileInput`, deprecated since Python 3.9.
   (Contributed by Hugo van Kemenade in :issue:`45132`.)
@@ -397,7 +427,7 @@ Removed
   the ``l*gettext()`` functions.
   (Contributed by Dong-hee Na and Serhiy Storchaka in :issue:`44235`.)
 
-* Remove from the :mod:`configparser` module:
+* Removed from the :mod:`configparser` module:
   the :class:`SafeConfigParser` class,
   the :attr:`filename` property of the :class:`ParsingError` class,
   the :meth:`readfp` method of the :class:`ConfigParser` class,
@@ -414,8 +444,24 @@ Removed
   generator-based coroutine objects in the debug mode.
   (Contributed by Illia Volochii in :issue:`43216`.)
 
-* Remove the deprecated ``split()`` method of :class:`_tkinter.TkappType`.
+* Removed the deprecated ``split()`` method of :class:`_tkinter.TkappType`.
   (Contributed by Erlend E. Aasland in :issue:`38371`.)
+
+* Removed from the :mod:`inspect` module:
+
+  * the ``getargspec`` function, deprecated since Python 3.0;
+    use :func:`inspect.signature` or :func:`inspect.getfullargspec` instead.
+
+  * the ``formatargspec`` function, deprecated since Python 3.5;
+    use the :func:`inspect.signature` function and :class:`Signature` object
+    directly.
+
+  * the undocumented ``Signature.from_callable`` and ``Signature.from_function``
+    functions, deprecated since Python 3.5; use the
+    :meth:`Signature.from_callable() <inspect.Signature.from_callable>` method
+    instead.
+
+  (Contributed by Hugo van Kemenade in :issue:`45320`.)
 
 
 Porting to Python 3.11
@@ -445,12 +491,38 @@ Changes in the Python API
   the ``'utf-8'`` encoding.
   (Contributed by Srinivas Reddy Thatiparthy (శ్రీనివాస్  రెడ్డి తాటిపర్తి) in :issue:`41137`.)
 
+* When sorting using tuples as keys, the order of the result may differ
+  from earlier releases if the tuple elements don't define a total
+  ordering (see :ref:`expressions-value-comparisons` for
+  information on total ordering).  It's generally true that the result
+  of sorting simply isn't well-defined in the absence of a total ordering
+  on list elements.
+
 
 Build Changes
 =============
 
 * CPython can now be built with the ThinLTO option via ``--with-lto=thin``.
   (Contributed by Dong-hee Na and Brett Holman in :issue:`44340`.)
+
+* libpython is no longer linked against libcrypt.
+  (Contributed by Mike Gilbert in :issue:`45433`.)
+
+* Building Python now requires a C99 ``<math.h>`` header file providing
+  the following functions: ``copysign()``, ``hypot()``, ``isfinite()``,
+  ``isinf()``, ``isnan()``, ``round()``.
+  (Contributed by Victor Stinner in :issue:`45440`.)
+
+* Freelists for object structs can now be disabled. A new :program:`configure`
+  option :option:`!--without-freelists` can be used to disable all freelists
+  except empty tuple singleton.
+  (Contributed by Christian Heimes in :issue:`45522`)
+
+* ``Modules/Setup`` and ``Modules/makesetup`` have been improved and tied up.
+  Extension modules can now be built through ``makesetup``. All except some
+  test modules can be linked statically into main binary or library.
+  (Contributed by Brett Cannon and Christian Heimes in :issue:`45548`,
+  :issue:`45570`, :issue:`45571`, and :issue:`43974`.)
 
 
 C API Changes
@@ -464,6 +536,11 @@ New Features
 
 * Add a new :c:func:`PyType_GetQualName` function to get type's qualified name.
   (Contributed by Hai Shi in :issue:`42035`.)
+
+* Add new :c:func:`PyThreadState_EnterTracing` and
+  :c:func:`PyThreadState_LeaveTracing` functions to the limited C API to
+  suspend and resume tracing and profiling.
+  (Contributed by Victor Stinner in :issue:`43760`.)
 
 Porting to Python 3.11
 ----------------------
@@ -547,15 +624,22 @@ Porting to Python 3.11
 
   (Contributed by Victor Stinner in :issue:`39573`.)
 
+* ``<Python.h>`` no longer includes the header files ``<stdlib.h>``,
+  ``<stdio.h>``, ``<errno.h>`` and ``<string.h>`` when the ``Py_LIMITED_API``
+  macro is set to ``0x030b0000`` (Python 3.11) or higher. C extensions should
+  explicitly include the header files after ``#include <Python.h>``.
+  (Contributed by Victor Stinner in :issue:`45434`.)
+
+* The non-limited API files ``cellobject.h``, ``classobject.h``, ``context.h``,
+  ``funcobject.h``, ``genobject.h`` and ``longintrepr.h`` have been moved to
+  the ``Include/cpython`` directory. Moreover, the ``eval.h`` header file was
+  removed. These files must not be included directly, as they are already
+  included in ``Python.h``: :ref:`Include Files <api-includes>`. If they have
+  been included directly, consider including ``Python.h`` instead.
+  (Contributed by Victor Stinner in :issue:`35134`.)
+
 Deprecated
 ----------
-
-Removed
--------
-
-* :c:func:`PyFrame_BlockSetup` and :c:func:`PyFrame_BlockPop` have been
-  removed.
-  (Contributed by Mark Shannon in :issue:`40222`.)
 
 * Deprecate the following functions to configure the Python initialization:
 
@@ -572,3 +656,51 @@ Removed
   Use the new :c:type:`PyConfig` API of the :ref:`Python Initialization Configuration
   <init-config>` instead (:pep:`587`).
   (Contributed by Victor Stinner in :issue:`44113`.)
+
+Removed
+-------
+
+* :c:func:`PyFrame_BlockSetup` and :c:func:`PyFrame_BlockPop` have been
+  removed.
+  (Contributed by Mark Shannon in :issue:`40222`.)
+
+* Remove the following math macros using the ``errno`` variable:
+
+  * ``Py_ADJUST_ERANGE1()``
+  * ``Py_ADJUST_ERANGE2()``
+  * ``Py_OVERFLOWED()``
+  * ``Py_SET_ERANGE_IF_OVERFLOW()``
+  * ``Py_SET_ERRNO_ON_MATH_ERROR()``
+
+  (Contributed by Victor Stinner in :issue:`45412`.)
+
+* Remove ``Py_UNICODE_COPY()`` and ``Py_UNICODE_FILL()`` macros, deprecated
+  since Python 3.3. Use ``PyUnicode_CopyCharacters()`` or ``memcpy()``
+  (``wchar_t*`` string), and ``PyUnicode_Fill()`` functions instead.
+  (Contributed by Victor Stinner in :issue:`41123`.)
+
+* Remove the ``pystrhex.h`` header file. It only contains private functions.
+  C extensions should only include the main ``<Python.h>`` header file.
+  (Contributed by Victor Stinner in :issue:`45434`.)
+
+* Remove the ``Py_FORCE_DOUBLE()`` macro. It was used by the
+  ``Py_IS_INFINITY()`` macro.
+  (Contributed by Victor Stinner in :issue:`45440`.)
+
+* The following items are no longer available when :c:macro:`Py_LIMITED_API`
+  is defined:
+
+  * :c:func:`PyMarshal_WriteLongToFile`
+  * :c:func:`PyMarshal_WriteObjectToFile`
+  * :c:func:`PyMarshal_ReadObjectFromString`
+  * :c:func:`PyMarshal_WriteObjectToString`
+  * the ``Py_MARSHAL_VERSION`` macro
+
+  These are not part of the :ref:`limited API <stable-abi-list>`.
+
+  (Contributed by Victor Stinner in :issue:`45474`.)
+
+* Exclude :c:func:`PyWeakref_GET_OBJECT` from the limited C API. It never
+  worked since the :c:type:`PyWeakReference` structure is opaque in the
+  limited C API.
+  (Contributed by Victor Stinner in :issue:`35134`.)

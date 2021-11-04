@@ -2,8 +2,8 @@
  * C Extension module to test Python internal C APIs (Include/internal).
  */
 
-#if !defined(Py_BUILD_CORE_BUILTIN) && !defined(Py_BUILD_CORE_MODULE)
-#  error "Py_BUILD_CORE_BUILTIN or Py_BUILD_CORE_MODULE must be defined"
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
 #endif
 
 /* Always enable assertions */
@@ -14,11 +14,14 @@
 #include "Python.h"
 #include "pycore_atomic_funcs.h" // _Py_atomic_int_get()
 #include "pycore_bitutils.h"     // _Py_bswap32()
+#include "pycore_fileutils.h"    // _Py_normalize_path
 #include "pycore_gc.h"           // PyGC_Head
 #include "pycore_hashtable.h"    // _Py_hashtable_new()
 #include "pycore_initconfig.h"   // _Py_GetConfigsAsDict()
 #include "pycore_interp.h"       // _PyInterpreterState_GetConfigCopy()
-#include "pycore_pyerrors.h"      // _Py_UTF8_Edit_Cost()
+#include "pycore_pyerrors.h"     // _Py_UTF8_Edit_Cost()
+#include "pycore_pystate.h"      // _PyThreadState_GET()
+#include "osdefs.h"               // MAXPATHLEN
 
 
 static PyObject *
@@ -31,7 +34,7 @@ get_configs(PyObject *self, PyObject *Py_UNUSED(args))
 static PyObject*
 get_recursion_depth(PyObject *self, PyObject *Py_UNUSED(args))
 {
-    PyThreadState *tstate = PyThreadState_Get();
+    PyThreadState *tstate = _PyThreadState_GET();
 
     /* subtract one to ignore the frame of the get_recursion_depth() call */
     return PyLong_FromLong(tstate->recursion_depth - 1);
@@ -365,6 +368,27 @@ test_edit_cost(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 
+static PyObject *
+normalize_path(PyObject *self, PyObject *filename)
+{
+    Py_ssize_t size = -1;
+    wchar_t *encoded = PyUnicode_AsWideCharString(filename, &size);
+    if (encoded == NULL) {
+        return NULL;
+    }
+
+    wchar_t buf[MAXPATHLEN + 1];
+    int res = _Py_normalize_path(encoded, buf, Py_ARRAY_LENGTH(buf));
+    PyMem_Free(encoded);
+    if (res != 0) {
+        PyErr_SetString(PyExc_ValueError, "string too long");
+        return NULL;
+    }
+
+    return PyUnicode_FromWideChar(buf, -1);
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -376,6 +400,7 @@ static PyMethodDef TestMethods[] = {
     {"set_config", test_set_config, METH_O},
     {"test_atomic_funcs", test_atomic_funcs, METH_NOARGS},
     {"test_edit_cost", test_edit_cost, METH_NOARGS},
+    {"normalize_path", normalize_path, METH_O, NULL},
     {NULL, NULL} /* sentinel */
 };
 

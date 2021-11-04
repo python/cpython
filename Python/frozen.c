@@ -63,14 +63,15 @@
 
 /* Note that a negative size indicates a package. */
 
-static const struct _frozen _PyImport_FrozenModules[] = {
-    /* import system */
+static const struct _frozen bootstrap_modules[] = {
     {"_frozen_importlib", _Py_M__importlib__bootstrap,
         (int)sizeof(_Py_M__importlib__bootstrap)},
     {"_frozen_importlib_external", _Py_M__importlib__bootstrap_external,
         (int)sizeof(_Py_M__importlib__bootstrap_external)},
     {"zipimport", _Py_M__zipimport, (int)sizeof(_Py_M__zipimport)},
-
+    {0, 0, 0} /* bootstrap sentinel */
+};
+static const struct _frozen stdlib_modules[] = {
     /* stdlib - startup, without site (python -S) */
     {"abc", _Py_M__abc, (int)sizeof(_Py_M__abc)},
     {"codecs", _Py_M__codecs, (int)sizeof(_Py_M__codecs)},
@@ -87,8 +88,9 @@ static const struct _frozen _PyImport_FrozenModules[] = {
     {"os", _Py_M__os, (int)sizeof(_Py_M__os)},
     {"site", _Py_M__site, (int)sizeof(_Py_M__site)},
     {"stat", _Py_M__stat, (int)sizeof(_Py_M__stat)},
-
-    /* Test module */
+    {0, 0, 0} /* stdlib sentinel */
+};
+static const struct _frozen test_modules[] = {
     {"__hello__", _Py_M____hello__, (int)sizeof(_Py_M____hello__)},
     {"__hello_alias__", _Py_M____hello__, (int)sizeof(_Py_M____hello__)},
     {"__phello_alias__", _Py_M____hello__, -(int)sizeof(_Py_M____hello__)},
@@ -103,8 +105,11 @@ static const struct _frozen _PyImport_FrozenModules[] = {
     {"__phello__.spam", _Py_M____phello___spam,
         (int)sizeof(_Py_M____phello___spam)},
     {"__hello_only__", _Py_M__frozen_only, (int)sizeof(_Py_M__frozen_only)},
-    {0, 0, 0} /* modules sentinel */
+    {0, 0, 0} /* test sentinel */
 };
+const struct _frozen *_PyImport_FrozenBootstrap = bootstrap_modules;
+const struct _frozen *_PyImport_FrozenStdlib = stdlib_modules;
+const struct _frozen *_PyImport_FrozenTest = test_modules;
 
 static const struct _module_alias aliases[] = {
     {"_frozen_importlib", "importlib._bootstrap"},
@@ -124,4 +129,4 @@ const struct _module_alias *_PyImport_FrozenAliases = aliases;
 /* Embedding apps may change this pointer to point to their favorite
    collection of frozen modules: */
 
-const struct _frozen *PyImport_FrozenModules = _PyImport_FrozenModules;
+const struct _frozen *PyImport_FrozenModules = NULL;

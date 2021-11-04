@@ -12,6 +12,7 @@
 #include <pycore_import.h>
 
 #include <stdio.h>
+#include <stdlib.h>               // malloc()
 #include <sys/types.h>
 #include <sys/stat.h>
 #ifndef MS_WINDOWS
@@ -22,13 +23,16 @@
    of frozen modules instead, left deliberately blank so as to avoid
    unintentional import of a stale version of _frozen_importlib. */
 
-static const struct _frozen _PyImport_FrozenModules[] = {
+static const struct _frozen no_modules[] = {
     {0, 0, 0} /* sentinel */
 };
 static const struct _module_alias aliases[] = {
     {0, 0} /* sentinel */
 };
 
+const struct _frozen *_PyImport_FrozenBootstrap;
+const struct _frozen *_PyImport_FrozenStdlib;
+const struct _frozen *_PyImport_FrozenTest;
 const struct _frozen *PyImport_FrozenModules;
 const struct _module_alias *_PyImport_FrozenAliases;
 
@@ -187,7 +191,10 @@ main(int argc, char *argv[])
 {
     const char *name, *inpath, *outpath;
 
-    PyImport_FrozenModules = _PyImport_FrozenModules;
+    _PyImport_FrozenBootstrap = no_modules;
+    _PyImport_FrozenStdlib = no_modules;
+    _PyImport_FrozenTest = no_modules;
+    PyImport_FrozenModules = NULL;
     _PyImport_FrozenAliases = aliases;
 
     if (argc != 4) {

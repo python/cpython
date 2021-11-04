@@ -5,7 +5,10 @@
 #include "pycore_hashtable.h"
 #include <pycore_frame.h>
 
+#include <stdlib.h>               // malloc()
+
 #include "clinic/_tracemalloc.c.h"
+
 /*[clinic input]
 module _tracemalloc
 [clinic start generated code]*/
@@ -393,7 +396,7 @@ traceback_get_frames(traceback_t *traceback)
         return;
     }
 
-    InterpreterFrame *pyframe = tstate->frame;
+    InterpreterFrame *pyframe = tstate->cframe->current_frame;
     for (; pyframe != NULL;) {
         if (traceback->nframe < _Py_tracemalloc_config.max_nframe) {
             tracemalloc_get_frame(pyframe, &traceback->frames[traceback->nframe]);

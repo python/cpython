@@ -409,8 +409,11 @@ class PyBuildExt(build_ext):
                                      for filename in self.distribution.scripts]
 
         # Python header files
+        include_dir = escape(sysconfig.get_path('include'))
         headers = [sysconfig.get_config_h_filename()]
-        headers += glob(os.path.join(escape(sysconfig.get_path('include')), "*.h"))
+        headers.extend(glob(os.path.join(include_dir, "*.h")))
+        headers.extend(glob(os.path.join(include_dir, "cpython", "*.h")))
+        headers.extend(glob(os.path.join(include_dir, "internal", "*.h")))
 
         for ext in self.extensions:
             ext.sources = [ find_module_file(filename, moddirlist)
@@ -423,12 +426,13 @@ class PyBuildExt(build_ext):
             # re-compile extensions if a header file has been changed
             ext.depends.extend(headers)
 
-    def remove_configured_extensions(self):
+    def handle_configured_extensions(self):
         # The sysconfig variables built by makesetup that list the already
         # built modules and the disabled modules as configured by the Setup
         # files.
-        sysconf_built = sysconfig.get_config_var('MODBUILT_NAMES').split()
-        sysconf_dis = sysconfig.get_config_var('MODDISABLED_NAMES').split()
+        sysconf_built = set(sysconfig.get_config_var('MODBUILT_NAMES').split())
+        sysconf_shared = set(sysconfig.get_config_var('MODSHARED_NAMES').split())
+        sysconf_dis = set(sysconfig.get_config_var('MODDISABLED_NAMES').split())
 
         mods_built = []
         mods_disabled = []
@@ -446,11 +450,15 @@ class PyBuildExt(build_ext):
                                mods_configured]
             # Remove the shared libraries built by a previous build.
             for ext in mods_configured:
+                # Don't remove shared extensions which have been built
+                # by Modules/Setup
+                if ext.name in sysconf_shared:
+                    continue
                 fullpath = self.get_ext_fullpath(ext.name)
-                if os.path.exists(fullpath):
+                if os.path.lexists(fullpath):
                     os.unlink(fullpath)
 
-        return (mods_built, mods_disabled)
+        return mods_built, mods_disabled
 
     def set_compiler_executables(self):
         # When you run "make CC=altcc" or something similar, you really want
@@ -475,7 +483,7 @@ class PyBuildExt(build_ext):
             self.remove_disabled()
 
         self.update_sources_depends()
-        mods_built, mods_disabled = self.remove_configured_extensions()
+        mods_built, mods_disabled = self.handle_configured_extensions()
         self.set_compiler_executables()
 
         if LIST_MODULE_NAMES:
@@ -801,6 +809,18 @@ class PyBuildExt(build_ext):
             if env_val:
                 parser = argparse.ArgumentParser()
                 parser.add_argument(arg_name, dest="dirs", action="append")
+
+                # To prevent argparse from raising an exception about any
+                # options in env_val that it mistakes for known option, we
+                # strip out all double dashes and any dashes followed by a
+                # character that is not for the option we are dealing with.
+                #
+                # Please note that order of the regex is important!  We must
+                # strip out double-dashes first so that we don't end up with
+                # substituting "--Long" to "-Long" and thus lead to "ong" being
+                # used for a library directory.
+                env_val = re.sub(r'(^|\s+)-(-|(?!%s))' % arg_name[1],
+                                 ' ', env_val)
                 options, _ = parser.parse_known_args(env_val.split())
                 if options.dirs:
                     for directory in reversed(options.dirs):
@@ -887,26 +907,19 @@ class PyBuildExt(build_ext):
         #
 
         # array objects
-        self.add(Extension('array', ['arraymodule.c'],
-                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
+        self.add(Extension('array', ['arraymodule.c']))
 
         # Context Variables
         self.add(Extension('_contextvars', ['_contextvarsmodule.c']))
 
-        shared_math = 'Modules/_math.o'
-
         # math library functions, e.g. sin()
         self.add(Extension('math',  ['mathmodule.c'],
-                           extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
-                           extra_objects=[shared_math],
-                           depends=['_math.h', shared_math],
+                           depends=['_math.h'],
                            libraries=['m']))
 
         # complex math library functions
         self.add(Extension('cmath', ['cmathmodule.c'],
-                           extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
-                           extra_objects=[shared_math],
-                           depends=['_math.h', shared_math],
+                           depends=['_math.h'],
                            libraries=['m']))
 
         # time libraries: librt may be needed for clock_gettime()
@@ -921,43 +934,33 @@ class PyBuildExt(build_ext):
         # libm is needed by delta_new() that uses round() and by accum() that
         # uses modf().
         self.add(Extension('_datetime', ['_datetimemodule.c'],
-                           libraries=['m'],
-                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
+                           libraries=['m']))
         # zoneinfo module
-        self.add(Extension('_zoneinfo', ['_zoneinfo.c'],
-                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
+        self.add(Extension('_zoneinfo', ['_zoneinfo.c']))
         # random number generator implemented in C
-        self.add(Extension("_random", ["_randommodule.c"],
-                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
+        self.add(Extension("_random", ["_randommodule.c"]))
         # bisect
         self.add(Extension("_bisect", ["_bisectmodule.c"]))
         # heapq
-        self.add(Extension("_heapq", ["_heapqmodule.c"],
-                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
+        self.add(Extension("_heapq", ["_heapqmodule.c"]))
         # C-optimized pickle replacement
-        self.add(Extension("_pickle", ["_pickle.c"],
-                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
+        self.add(Extension("_pickle", ["_pickle.c"]))
         # _json speedups
-        self.add(Extension("_json", ["_json.c"],
-                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
+        self.add(Extension("_json", ["_json.c"]))
 
         # profiler (_lsprof is for cProfile.py)
         self.add(Extension('_lsprof', ['_lsprof.c', 'rotatingtree.c']))
         # static Unicode character database
         self.add(Extension('unicodedata', ['unicodedata.c'],
-                           depends=['unicodedata_db.h', 'unicodename_db.h'],
-                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
+                           depends=['unicodedata_db.h', 'unicodename_db.h']))
         # _opcode module
         self.add(Extension('_opcode', ['_opcode.c']))
         # asyncio speedups
-        self.add(Extension("_asyncio", ["_asynciomodule.c"],
-                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
+        self.add(Extension("_asyncio", ["_asynciomodule.c"]))
         # _abc speedups
-        self.add(Extension("_abc", ["_abc.c"],
-                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
+        self.add(Extension("_abc", ["_abc.c"]))
         # _queue module
-        self.add(Extension("_queue", ["_queuemodule.c"],
-                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
+        self.add(Extension("_queue", ["_queuemodule.c"]))
         # _statistics module
         self.add(Extension("_statistics", ["_statisticsmodule.c"]))
         # _typing module
@@ -1022,8 +1025,7 @@ class PyBuildExt(build_ext):
         self.add(Extension('_csv', ['_csv.c']))
 
         # POSIX subprocess module helper.
-        self.add(Extension('_posixsubprocess', ['_posixsubprocess.c'],
-                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
+        self.add(Extension('_posixsubprocess', ['_posixsubprocess.c']))
 
     def detect_test_extensions(self):
         # Python C API test module
@@ -1031,8 +1033,7 @@ class PyBuildExt(build_ext):
                            depends=['testcapi_long.h']))
 
         # Python Internal C API test module
-        self.add(Extension('_testinternalcapi', ['_testinternalcapi.c'],
-                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
+        self.add(Extension('_testinternalcapi', ['_testinternalcapi.c']))
 
         # Python PEP-3118 (buffer protocol) test module
         self.add(Extension('_testbuffer', ['_testbuffer.c']))
@@ -1172,7 +1173,6 @@ class PyBuildExt(build_ext):
         if curses_library.startswith('ncurses'):
             curses_libs = [curses_library]
             self.add(Extension('_curses', ['_cursesmodule.c'],
-                               extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
                                include_dirs=curses_includes,
                                define_macros=curses_defines,
                                libraries=curses_libs))
@@ -1187,7 +1187,6 @@ class PyBuildExt(build_ext):
                 curses_libs = ['curses']
 
             self.add(Extension('_curses', ['_cursesmodule.c'],
-                               extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
                                define_macros=curses_defines,
                                libraries=curses_libs))
         else:
@@ -1707,12 +1706,12 @@ class PyBuildExt(build_ext):
 
         # Helper module for various ascii-encoders.  Uses zlib for an optimized
         # crc32 if we have it.  Otherwise binascii uses its own.
+        extra_compile_args = []
         if have_zlib:
-            extra_compile_args = ['-DUSE_ZLIB_CRC32']
+            extra_compile_args.append('-DUSE_ZLIB_CRC32')
             libraries = ['z']
             extra_link_args = zlib_extra_link_args
         else:
-            extra_compile_args = []
             libraries = []
             extra_link_args = []
         self.add(Extension('binascii', ['binascii.c'],
@@ -1753,19 +1752,12 @@ class PyBuildExt(build_ext):
         #
         if '--with-system-expat' in sysconfig.get_config_var("CONFIG_ARGS"):
             expat_inc = []
-            define_macros = []
             extra_compile_args = []
             expat_lib = ['expat']
             expat_sources = []
             expat_depends = []
         else:
             expat_inc = [os.path.join(self.srcdir, 'Modules', 'expat')]
-            define_macros = [
-                ('HAVE_EXPAT_CONFIG_H', '1'),
-                # bpo-30947: Python uses best available entropy sources to
-                # call XML_SetHashSalt(), expat entropy sources are not needed
-                ('XML_POOR_ENTROPY', '1'),
-            ]
             extra_compile_args = []
             # bpo-44394: libexpat uses isnan() of math.h and needs linkage
             # against the libm
@@ -1793,7 +1785,6 @@ class PyBuildExt(build_ext):
                 extra_compile_args.append('-Wno-unreachable-code')
 
         self.add(Extension('pyexpat',
-                           define_macros=define_macros,
                            extra_compile_args=extra_compile_args,
                            include_dirs=expat_inc,
                            libraries=expat_lib,
@@ -1804,9 +1795,7 @@ class PyBuildExt(build_ext):
         # uses expat (via the CAPI hook in pyexpat).
 
         if os.path.isfile(os.path.join(self.srcdir, 'Modules', '_elementtree.c')):
-            define_macros.append(('USE_PYEXPAT_CAPI', None))
             self.add(Extension('_elementtree',
-                               define_macros=define_macros,
                                include_dirs=expat_inc,
                                libraries=expat_lib,
                                sources=['_elementtree.c'],
@@ -1853,15 +1842,15 @@ class PyBuildExt(build_ext):
 
     def detect_uuid(self):
         # Build the _uuid module if possible
-        uuid_incs = find_file("uuid.h", self.inc_dirs, ["/usr/include/uuid"])
-        if uuid_incs is not None:
-            if self.compiler.find_library_file(self.lib_dirs, 'uuid'):
-                uuid_libs = ['uuid']
+        uuid_h = sysconfig.get_config_var("HAVE_UUID_H")
+        uuid_uuid_h = sysconfig.get_config_var("HAVE_UUID_UUID_H")
+        if uuid_h or uuid_uuid_h:
+            if sysconfig.get_config_var("HAVE_LIBUUID"):
+                uuid_libs = ["uuid"]
             else:
                 uuid_libs = []
             self.add(Extension('_uuid', ['_uuidmodule.c'],
-                               libraries=uuid_libs,
-                               include_dirs=uuid_incs))
+                               libraries=uuid_libs))
         else:
             self.missing.append('_uuid')
 
@@ -2215,7 +2204,7 @@ class PyBuildExt(build_ext):
             self.use_system_libffi = '--with-system-ffi' in sysconfig.get_config_var("CONFIG_ARGS")
 
         include_dirs = []
-        extra_compile_args = ['-DPy_BUILD_CORE_MODULE']
+        extra_compile_args = []
         extra_link_args = []
         sources = ['_ctypes/_ctypes.c',
                    '_ctypes/callbacks.c',
@@ -2492,6 +2481,9 @@ class PyBuildExt(build_ext):
                 depends=[
                     'socketmodule.h',
                     '_ssl.h',
+                    '_ssl_data_111.h',
+                    '_ssl_data_300.h',
+                    '_ssl_data.h',
                     '_ssl/debughelpers.c',
                     '_ssl/misc.c',
                     '_ssl/cert.c',
@@ -2528,27 +2520,25 @@ class PyBuildExt(build_ext):
         if "sha256" in configured:
             self.add(Extension(
                 '_sha256', ['sha256module.c'],
-                extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
-                depends=['hashlib.h']
+                depends=['hashlib.h'],
             ))
 
         if "sha512" in configured:
             self.add(Extension(
                 '_sha512', ['sha512module.c'],
-                extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
-                depends=['hashlib.h']
+                depends=['hashlib.h'],
             ))
 
         if "md5" in configured:
             self.add(Extension(
                 '_md5', ['md5module.c'],
-                depends=['hashlib.h']
+                depends=['hashlib.h'],
             ))
 
         if "sha1" in configured:
             self.add(Extension(
                 '_sha1', ['sha1module.c'],
-                depends=['hashlib.h']
+                depends=['hashlib.h'],
             ))
 
         if "blake2" in configured:
@@ -2563,7 +2553,7 @@ class PyBuildExt(build_ext):
                     '_blake2/blake2b_impl.c',
                     '_blake2/blake2s_impl.c'
                 ],
-                depends=blake2_deps
+                depends=blake2_deps,
             ))
 
         if "sha3" in configured:
@@ -2574,7 +2564,7 @@ class PyBuildExt(build_ext):
             self.add(Extension(
                 '_sha3',
                 ['_sha3/sha3module.c'],
-                depends=sha3_deps
+                depends=sha3_deps,
             ))
 
     def detect_nis(self):
@@ -2730,8 +2720,7 @@ def main():
                       'install_lib': PyBuildInstallLib},
           # The struct module is defined here, because build_ext won't be
           # called unless there's at least one extension module defined.
-          ext_modules=[Extension('_struct', ['_struct.c'],
-                                 extra_compile_args=['-DPy_BUILD_CORE_MODULE'])],
+          ext_modules=[Extension('_struct', ['_struct.c'])],
 
           # If you change the scripts installed here, you also need to
           # check the PyBuildScripts command above, and change the links

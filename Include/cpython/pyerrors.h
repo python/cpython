@@ -17,6 +17,12 @@ typedef struct {
 typedef struct {
     PyException_HEAD
     PyObject *msg;
+    PyObject *excs;
+} PyBaseExceptionGroupObject;
+
+typedef struct {
+    PyException_HEAD
+    PyObject *msg;
     PyObject *filename;
     PyObject *lineno;
     PyObject *offset;

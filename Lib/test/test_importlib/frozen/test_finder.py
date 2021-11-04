@@ -44,30 +44,31 @@ class FindSpecTests(abc.FinderTests):
         if not filename:
             if not origname:
                 origname = spec.name
+            filename = resolve_stdlib_file(origname)
 
         actual = dict(vars(spec.loader_state))
-
-        # Check the code object used to import the frozen module.
-        # We can't compare the marshaled data directly because
-        # marshal.dumps() would mark "expected" (below) as a ref,
-        # which slightly changes the output.
-        # (See https://bugs.python.org/issue34093.)
-        data = actual.pop('data')
-        with import_helper.frozen_modules():
-            expected = _imp.get_frozen_object(spec.name)
-        code = marshal.loads(data)
-        self.assertEqual(code, expected)
 
         # Check the rest of spec.loader_state.
         expected = dict(
             origname=origname,
+            filename=filename if origname else None,
         )
         self.assertDictEqual(actual, expected)
 
     def check_search_locations(self, spec):
-        # Frozen packages do not have any path entries.
-        # (See https://bugs.python.org/issue21736.)
-        expected = []
+        """This is only called when testing packages."""
+        missing = object()
+        filename = getattr(spec.loader_state, 'filename', missing)
+        origname = getattr(spec.loader_state, 'origname', None)
+        if not origname or filename is missing:
+            # We deal with this in check_loader_state().
+            return
+        if not filename:
+            expected = []
+        elif origname != spec.name and not origname.startswith('<'):
+            expected = []
+        else:
+            expected = [os.path.dirname(filename)]
         self.assertListEqual(spec.submodule_search_locations, expected)
 
     def test_module(self):

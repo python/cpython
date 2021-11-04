@@ -29,9 +29,10 @@ MODULES_DIR = os.path.join(ROOT_DIR, 'Python', 'frozen_modules')
 if sys.platform != "win32":
     TOOL = os.path.join(ROOT_DIR, 'Programs', '_freeze_module')
     if not os.path.isfile(TOOL):
-        # When building out of the source tree, get the tool from the current
-        # directory
-        TOOL = os.path.join('Programs', '_freeze_module')
+        # When building out of the source tree, get the tool from directory
+        # of the Python executable
+        TOOL = os.path.dirname(sys.executable)
+        TOOL = os.path.join(TOOL, 'Programs', '_freeze_module')
         TOOL = os.path.abspath(TOOL)
         if not os.path.isfile(TOOL):
             sys.exit("ERROR: missing _freeze_module")
@@ -59,6 +60,7 @@ PCBUILD_FILTERS = os.path.join(ROOT_DIR, 'PCbuild', '_freeze_module.vcxproj.filt
 OS_PATH = 'ntpath' if os.name == 'nt' else 'posixpath'
 
 # These are modules that get frozen.
+TESTS_SECTION = 'Test module'
 FROZEN = [
     # See parse_frozen_spec() for the format.
     # In cases where the frozenid is duplicated, the first one is re-used.
@@ -93,7 +95,7 @@ FROZEN = [
         'site',
         'stat',
         ]),
-    ('Test module', [
+    (TESTS_SECTION, [
         '__hello__',
         '__hello__ : __hello_alias__',
         '__hello__ : <__phello_alias__>',
@@ -102,7 +104,7 @@ FROZEN = [
         f'frozen_only : __hello_only__ = {FROZEN_ONLY}',
         ]),
 ]
-ESSENTIAL = {
+BOOTSTRAP = {
     'importlib._bootstrap',
     'importlib._bootstrap_external',
     'zipimport',
@@ -526,16 +528,24 @@ def regen_frozen(modules):
         header = relpath_for_posix_display(src.frozenfile, parentdir)
         headerlines.append(f'#include "{header}"')
 
-    deflines = []
+    bootstraplines = []
+    stdliblines = []
+    testlines = []
     aliaslines = []
     indent = '    '
     lastsection = None
     for mod in modules:
-        if mod.section != lastsection:
-            if lastsection is not None:
-                deflines.append('')
-            deflines.append(f'/* {mod.section} */')
-        lastsection = mod.section
+        if mod.frozenid in BOOTSTRAP:
+            lines = bootstraplines
+        elif mod.section == TESTS_SECTION:
+            lines = testlines
+        else:
+            lines = stdliblines
+            if mod.section != lastsection:
+                if lastsection is not None:
+                    lines.append('')
+                lines.append(f'/* {mod.section} */')
+            lastsection = mod.section
 
         symbol = mod.symbol
         pkg = '-' if mod.ispkg else ''
@@ -543,11 +553,11 @@ def regen_frozen(modules):
                 ) % (mod.name, symbol, pkg, symbol)
         # TODO: Consider not folding lines
         if len(line) < 80:
-            deflines.append(line)
+            lines.append(line)
         else:
             line1, _, line2 = line.rpartition(' ')
-            deflines.append(line1)
-            deflines.append(indent + line2)
+            lines.append(line1)
+            lines.append(indent + line2)
 
         if mod.isalias:
             if not mod.orig:
@@ -558,11 +568,13 @@ def regen_frozen(modules):
                 entry = '{"%s", "%s"},' % (mod.name, mod.orig)
             aliaslines.append(indent + entry)
 
-    if not deflines[0]:
-        del deflines[0]
-    for i, line in enumerate(deflines):
-        if line:
-            deflines[i] = indent + line
+    for lines in (bootstraplines, stdliblines, testlines):
+        # TODO: Is this necessary any more?
+        if not lines[0]:
+            del lines[0]
+        for i, line in enumerate(lines):
+            if line:
+                lines[i] = indent + line
 
     print(f'# Updating {os.path.relpath(FROZEN_FILE)}')
     with updating_file_with_tmpfile(FROZEN_FILE) as (infile, outfile):
@@ -578,9 +590,23 @@ def regen_frozen(modules):
         )
         lines = replace_block(
             lines,
-            "static const struct _frozen _PyImport_FrozenModules[] =",
-            "/* modules sentinel */",
-            deflines,
+            "static const struct _frozen bootstrap_modules[] =",
+            "/* bootstrap sentinel */",
+            bootstraplines,
+            FROZEN_FILE,
+        )
+        lines = replace_block(
+            lines,
+            "static const struct _frozen stdlib_modules[] =",
+            "/* stdlib sentinel */",
+            stdliblines,
+            FROZEN_FILE,
+        )
+        lines = replace_block(
+            lines,
+            "static const struct _frozen test_modules[] =",
+            "/* test sentinel */",
+            testlines,
             FROZEN_FILE,
         )
         lines = replace_block(

@@ -1300,6 +1300,46 @@ class ArgsTestCase(BaseTestCase):
         self.assertIn("Warning -- Uncaught thread exception", output)
         self.assertIn("Exception: bug in thread", output)
 
+    def test_print_warning(self):
+        # bpo-45410: The order of messages must be preserved when -W and
+        # support.print_warning() are used.
+        code = textwrap.dedent(r"""
+            import sys
+            import unittest
+            from test import support
+
+            class MyObject:
+                pass
+
+            def func_bug():
+                raise Exception("bug in thread")
+
+            class Tests(unittest.TestCase):
+                def test_print_warning(self):
+                    print("msg1: stdout")
+                    support.print_warning("msg2: print_warning")
+                    # Fail with ENV CHANGED to see print_warning() log
+                    support.environment_altered = True
+        """)
+        testname = self.create_test(code=code)
+
+        # Expect an output like:
+        #
+        #   test_threading_excepthook (test.test_x.Tests) ... msg1: stdout
+        #   Warning -- msg2: print_warning
+        #   ok
+        regex = (r"test_print_warning.*msg1: stdout\n"
+                 r"Warning -- msg2: print_warning\n"
+                 r"ok\n")
+        for option in ("-v", "-W"):
+            with self.subTest(option=option):
+                cmd = ["--fail-env-changed", option, testname]
+                output = self.run_tests(*cmd, exitcode=3)
+                self.check_executed_tests(output, [testname],
+                                          env_changed=[testname],
+                                          fail_env_changed=True)
+                self.assertRegex(output, regex)
+
     def test_unicode_guard_env(self):
         guard = os.environ.get(setup.UNICODE_GUARD_ENV)
         self.assertIsNotNone(guard, f"{setup.UNICODE_GUARD_ENV} not set")
