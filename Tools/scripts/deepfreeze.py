@@ -403,14 +403,14 @@ def main() -> None:
     global verbose
     args = parser.parse_args()
     verbose = args.verbose
-    with open(args.file) as f:
+    with open(args.file, encoding="utf-8") as f:
         source = f.read()
     modname = args.module or os.path.basename(args.file).removesuffix(".py")
     output = args.output or modname + ".c"
     outdir = os.path.dirname(output)
     if outdir:
         os.makedirs(outdir, exist_ok=True)
-    with open(output, "w") as file:
+    with open(output, "w", encoding="utf-8") as file:
         with report_time("generate"):
             generate(source, f"<frozen {modname}>", modname, file)
     if verbose:
