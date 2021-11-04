@@ -18,7 +18,7 @@
  
      if (returnCode >= NSAlertFirstButtonReturn) {
  	Tcl_Obj *resultObj = Tcl_NewStringObj(alertButtonStrings[
-@@ -350,49 +350,41 @@
+@@ -350,49 +350,42 @@
      FilePanelCallbackInfo *callbackInfo)
  {
      NSInteger modalReturnCode;
@@ -85,6 +85,7 @@
 -	    [panel close];
 +			  returnCode:modalReturnCode
 +			 contextInfo:callbackInfo ];
++		[parent endSheet:panel];
  	}
 +    } else {
 +	modalReturnCode = [panel runModal];
