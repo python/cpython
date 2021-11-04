@@ -430,7 +430,9 @@ class PyBuildExt(build_ext):
         if '-j' in os.environ.get('MAKEFLAGS', ''):
             self.parallel = True
 
-    def add(self, ext):
+    def add(self, ext, *, update_flags=False):
+        if update_flags:
+            self.update_extension_flags(ext)
         self.extensions.append(ext)
 
     def set_srcdir(self):
@@ -488,6 +490,16 @@ class PyBuildExt(build_ext):
             ]
             # re-compile extensions if a header file has been changed
             ext.depends.extend(headers)
+
+    def update_extension_flags(self, ext):
+        name = ext.name.upper()
+        cflags = sysconfig.get_config_var(f"MODULE_{name}_CFLAGS")
+        if cflags:
+            ext.extra_compile_args.extend(shlex.split(cflags))
+        ldflags = sysconfig.get_config_var(f"MODULE_{name}_LDFLAGS")
+        if ldflags:
+            ext.extra_link_args.extend(shlex.split(ldflags))
+        return ext
 
     def handle_configured_extensions(self):
         # The sysconfig variables built by makesetup that list the already
@@ -2107,9 +2119,9 @@ class PyBuildExt(build_ext):
             runtime_library_dirs = [openssl_rpath]
 
         openssl_extension_kwargs = dict(
-            include_dirs=openssl_includes,
-            library_dirs=openssl_libdirs,
-            libraries=openssl_libs,
+            # include_dirs=openssl_includes,
+            # library_dirs=openssl_libdirs,
+            # libraries=openssl_libs,
             runtime_library_dirs=runtime_library_dirs,
         )
 
@@ -2134,14 +2146,14 @@ class PyBuildExt(build_ext):
                 '_ssl',
                 ['_ssl.c'],
                 **openssl_extension_kwargs
-            )
+            ), update_flags=True
         )
         self.add(
             Extension(
                 '_hashlib',
                 ['_hashopenssl.c'],
                 **openssl_extension_kwargs,
-            )
+            ), update_flags=True
         )
 
     def detect_hash_builtins(self):

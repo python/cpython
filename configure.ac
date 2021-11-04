@@ -2148,7 +2148,7 @@ dnl assume C99 compilers provide ANSI C headers
 AC_DEFINE(STDC_HEADERS, 1, [Define to 1 if you have the ANSI C header files.])
 
 # checks for header files
-AC_CHECK_HEADERS(asm/types.h crypt.h conio.h direct.h dlfcn.h errno.h \
+AC_CHECK_HEADERS(asm/types.h conio.h direct.h dlfcn.h errno.h \
 fcntl.h grp.h \
 ieeefp.h io.h langinfo.h libintl.h process.h pthread.h \
 sched.h shadow.h signal.h stropts.h termios.h \
@@ -2162,7 +2162,7 @@ sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
 libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
 linux/tipc.h linux/random.h spawn.h util.h alloca.h endian.h \
 sys/endian.h sys/sysmacros.h linux/memfd.h linux/wait.h sys/memfd.h \
-sys/mman.h sys/eventfd.h)
+sys/mman.h sys/eventfd.h linux/soundcard.h sys/soundcard.h)
 AC_HEADER_DIRENT
 AC_HEADER_MAJOR
 
@@ -2836,8 +2836,14 @@ AC_CHECK_LIB(sendfile, sendfile)
 AC_CHECK_LIB(dl, dlopen)	# Dynamic linking for SunOS/Solaris and SYSV
 AC_CHECK_LIB(dld, shl_load)	# Dynamic linking for HP-UX
 
-# checks for uuid.h location
-AC_CHECK_HEADERS([uuid/uuid.h uuid.h])
+# check for libuuid and uuid/uuid.h from util-linux
+AC_CHECK_HEADERS([uuid/uuid.h], [
+  save_LIBS=$LIBS
+  AC_CHECK_LIB([uuid], [uuid_generate_time])
+  UUID_CFLAGS=
+  UUID_LDLAGS=-luuid
+  LIBS=$save_LIBS
+])
 
 AC_CACHE_CHECK([for uuid_generate_time_safe], [ac_cv_lib_uuid_uuid_generate_time_safe], [
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <uuid/uuid.h>]], [[
@@ -2851,16 +2857,13 @@ AS_VAR_IF([ac_cv_lib_uuid_uuid_generate_time_safe], [yes], [
   AC_DEFINE(HAVE_UUID_GENERATE_TIME_SAFE, 1, [Define if uuid_generate_time_safe() exists.])
 ])
 
-# check for libuuid from util-linux
-save_LIBS=$LIBS
-AC_CHECK_LIB([uuid], [uuid_generate_time])
-LIBS=$save_LIBS
-
 # AIX provides support for RFC4122 (uuid) in libc.a starting with AIX 6.1 (anno 2007)
 # FreeBSD and OpenBSD provides support in libc as well.
 # Little-endian FreeBSD, OpenBSD and NetBSD needs encoding into an octet
 # stream in big-endian byte-order
-AC_CHECK_FUNCS([uuid_create uuid_enc_be])
+AC_CHECK_HEADERS([uuid.h],
+  [AC_CHECK_FUNCS([uuid_create uuid_enc_be])]
+)
 
 # 'Real Time' functions on Solaris
 # posix4 on Solaris 2.6
@@ -3284,22 +3287,27 @@ AC_CHECK_HEADERS([db.h], [
 AC_MSG_CHECKING(for --with-dbmliborder)
 AC_ARG_WITH(dbmliborder,
             AS_HELP_STRING([--with-dbmliborder=db1:db2:...], [override order to check db backends for dbm; a valid value is a colon separated string with the backend names `ndbm', `gdbm' and `bdb'.]),
-[
-if test x$with_dbmliborder = xyes
-then
-AC_MSG_ERROR([proper usage is --with-dbmliborder=db1:db2:...])
+[], [with_dbmliborder=ndbm:gdbm:bdb])
+
+as_save_IFS=$IFS
+IFS=:
+dbmlibs=""
+for db in $with_dbmliborder; do
+    AS_CASE($db,
+      [ndbm], [dbmlibs="$dbmlibs ndbm"],
+      [gdbm], [dbmlibs="$dbmlibs gdbm_compat"],
+      [bdb], [dbmlibs="$dbmlibs db-5.3 db-5 db"],
+      [dbmlibs="failed"; break]
+    )
+done
+IFS=$as_save_IFS
+
+if test "$dbmlibs" = failed; then
+  AC_MSG_ERROR([proper usage is --with-dbmliborder=db1:db2:...])
 else
-  as_save_IFS=$IFS
-  IFS=:
-  for db in $with_dbmliborder; do
-    if test x$db != xndbm && test x$db != xgdbm && test x$db != xbdb
-    then
-      AC_MSG_ERROR([proper usage is --with-dbmliborder=db1:db2:...])
-    fi
-  done
-  IFS=$as_save_IFS
-fi])
-AC_MSG_RESULT($with_dbmliborder)
+  AC_MSG_RESULT($with_dbmliborder (libs: $dbmlibs))
+fi
+
 
 # Templates for things AC_DEFINEd more than once.
 # For a single AC_DEFINE, no template is needed.
@@ -3812,7 +3820,7 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  explicit_memset faccessat fchmod fchmodat fchown fchownat \
  fdwalk fexecve fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
  futimens futimes gai_strerror getentropy \
- getgrgid_r getgrnam_r \
+ getgrgid getgrgid_r getgrnam_r \
  getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
  getpriority getresuid getresgid getpwent getpwnam_r getpwuid_r getspnam getspent getsid getwd \
  if_nameindex \
@@ -4005,6 +4013,12 @@ AC_CHECK_HEADERS([zlib.h], [
   LIBS="$save_LIBS"
 ])
 
+dnl binascii has optional dependency on zlib
+AS_VAR_IF([ac_cv_lib_z_gzread], [yes], [
+  BINASCII_CFLAGS=-DUSE_ZLIB_CRC32
+  BINASCII_LDFLAGS=-lz
+])
+
 AC_CHECK_HEADERS([bzlib.h], [
   save_LIBS="$LIBS"
   AC_CHECK_LIB([bz2], [BZ2_bzCompress])
@@ -4071,25 +4085,16 @@ AC_CHECK_FUNCS(setpgrp,
     [])
 )
 
-# We search for both crypt and crypt_r as one or the other may be defined
-# This gets us our -lcrypt in LIBS when required on the target platform.
-# Save/restore LIBS to avoid linking libpython with libcrypt.
-LIBS_SAVE=$LIBS
-AC_SEARCH_LIBS(crypt_r, crypt)
-LIBS="$LIBS_SAVE"
-AC_SEARCH_LIBS(crypt, crypt)
-
-AC_CHECK_FUNC(crypt_r,
-  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include <crypt.h>
-]], [[
-struct crypt_data d;
-char *r = crypt_r("", "", &d);
-]])],
-    [AC_DEFINE(HAVE_CRYPT_R, 1, [Define if you have the crypt_r() function.])],
-    [])
-)
-LIBS=$LIBS_SAVE
+AC_CHECK_HEADERS([crypt.h], [
+  LIBS_SAVE=$LIBS
+  AC_SEARCH_LIBS([crypt], [crypt])
+  LIBS="$LIBS_SAVE"
+  AC_SEARCH_LIBS(
+    [crypt_r], [crypt],
+    [AC_DEFINE(HAVE_CRYPT_R, 1, [Define if you have the crypt_r() function.])]
+  )
+  LIBS=$LIBS_SAVE
+])
 
 AC_CHECK_FUNCS(clock_gettime, [], [
     AC_CHECK_LIB(rt, clock_gettime, [
@@ -5761,7 +5766,7 @@ AC_ARG_WITH(openssl-rpath,
     [],
     [with_openssl_rpath=no]
 )
-AS_CASE($with_openssl_rpath,
+AS_CASE([$with_openssl_rpath],
     [auto|yes],[OPENSSL_RPATH=auto],
     [no],[OPENSSL_RPATH=],
     [AS_IF(
@@ -5774,7 +5779,6 @@ AC_MSG_RESULT($OPENSSL_RPATH)
 AC_SUBST([OPENSSL_RPATH])
 
 # check if OpenSSL libraries work as expected
-AC_CACHE_CHECK([whether OpenSSL provides required APIs], [ac_cv_working_openssl], [
 save_LIBS="$LIBS"
 save_CFLAGS="$CFLAGS"
 save_LDFLAGS="$LDFLAGS"
@@ -5782,18 +5786,15 @@ LIBS="$LIBS $OPENSSL_LIBS"
 CFLAGS="$CFLAGS_NODIST $OPENSSL_INCLUDES"
 LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
 
+AC_CACHE_CHECK([whether OpenSSL provides required ssl module APIs], [ac_cv_working_openssl_ssl], [
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include <openssl/opensslv.h>
-#include <openssl/evp.h>
 #include <openssl/ssl.h>
-
 #if OPENSSL_VERSION_NUMBER < 0x10101000L
-#error "OpenSSL >= 1.1.1 is required"
+  #error "OpenSSL >= 1.1.1 is required"
 #endif
-
 static void keylog_cb(const SSL *ssl, const char *line) {}
 ]], [[
-/* SSL APIs */
 SSL_CTX *ctx = SSL_CTX_new(TLS_client_method());
 SSL_CTX_set_keylog_callback(ctx, keylog_cb);
 SSL *ssl = SSL_new(ctx);
@@ -5801,20 +5802,30 @@ X509_VERIFY_PARAM *param = SSL_get0_param(ssl);
 X509_VERIFY_PARAM_set1_host(param, "python.org", 0);
 SSL_free(ssl);
 SSL_CTX_free(ctx);
+]]
+)], [ac_cv_working_openssl_ssl=yes], [ac_cv_working_openssl_ssl=no])
+])
 
-/* hashlib APIs */
+AC_CACHE_CHECK([whether OpenSSL provides required hashlib module APIs], [ac_cv_working_openssl_hashlib], [
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#include <openssl/opensslv.h>
+#include <openssl/evp.h>
+#if OPENSSL_VERSION_NUMBER < 0x10101000L
+#error "OpenSSL >= 1.1.1 is required"
+#endif
+]], [[
 OBJ_nid2sn(NID_md5);
 OBJ_nid2sn(NID_sha1);
 OBJ_nid2sn(NID_sha3_512);
 OBJ_nid2sn(NID_blake2b512);
 EVP_PBE_scrypt(NULL, 0, NULL, 0, 2, 8, 1, 0, NULL, 0);
-]])],
-  [ac_cv_working_openssl=yes],
-  [ac_cv_working_openssl=no])
+]]
+)], [ac_cv_working_openssl_hashlib=yes], [ac_cv_working_openssl_hashlib=no])
+])
+
 LIBS="$save_LIBS"
 CFLAGS="$save_CFLAGS"
 LDFLAGS="$save_LDFLAGS"
-])
 
 # ssl module default cipher suite string
 AH_TEMPLATE(PY_SSL_DEFAULT_CIPHERS,
@@ -5862,21 +5873,28 @@ AC_ARG_WITH(builtin-hashlib-hashes,
                            [builtin hash modules,
                             md5, sha1, sha256, sha512, sha3 (with shake), blake2]),
 [
-case "$withval" in
-    yes)
-        withval=$default_hashlib_hashes
-        ;;
-    no)
-        withval=""
-        ;;
-esac
-AC_MSG_RESULT($withval)
-AC_DEFINE_UNQUOTED(PY_BUILTIN_HASHLIB_HASHES, "$withval")
-],
-[
-AC_MSG_RESULT($default_hashlib_hashes);
-AC_DEFINE_UNQUOTED(PY_BUILTIN_HASHLIB_HASHES, "$default_hashlib_hashes")
-])
+  AS_CASE([$with_builtin_hashlib_hashes],
+    [yes], [with_builtin_hashlib_hashes=$default_hashlib_hashes],
+    [no], [with_builtin_hashlib_hashes=""]
+  )
+], [with_builtin_hashlib_hashes=$default_hashlib_hashes])
+
+AC_MSG_RESULT($with_builtin_hashlib_hashes)
+AC_DEFINE_UNQUOTED(PY_BUILTIN_HASHLIB_HASHES, "$with_builtin_hashlib_hashes")
+
+as_save_IFS=$IFS
+IFS=,
+for builtin_hash in $with_builtin_hashlib_hashes; do
+    AS_CASE($builtin_hash,
+      [md5], [with_builtin_md5=yes],
+      [sha1], [with_builtin_sha1=yes],
+      [sha256], [with_builtin_sha256=yes],
+      [sha512], [with_builtin_sha512=yes],
+      [sha3], [with_builtin_sha3=yes],
+      [blake2], [with_builtin_blake2=yes]
+    )
+done
+IFS=$as_save_IFS
 
 # --with-experimental-isolated-subinterpreters
 AH_TEMPLATE(EXPERIMENTAL_ISOLATED_SUBINTERPRETERS,
@@ -5936,6 +5954,175 @@ else
 fi
 AC_SUBST(TEST_MODULES)
 
+# Modules that are not available on some platforms
+AS_CASE([$ac_sys_system],
+  [AIX], [py_stdlib_not_available="_scproxy spwd"],
+  [VxWorks*], [py_stdlib_not_available="_scproxy _crypt termios grp"],
+  [Darwin], [py_stdlib_not_available=""],
+  [py_stdlib_not_available="_scproxy"]
+)
+
+# Check for stdlib extension modules
+# PY_STDLIB_MOD([NAME], [TEST], [CFLAGS], [LDFLAGS])
+AC_DEFUN([PY_STDLIB_MOD], [
+  AC_MSG_CHECKING([for stdlib extension module $1])
+  m4_pushdef([pymod], [PY_MODULE_]m4_toupper([$1]))
+  m4_pushdef([modcond], [MODULE_]m4_toupper([$1]))
+  m4_pushdef([modcflags], [MODULE_]m4_toupper([$1])[_CFLAGS])
+  m4_pushdef([modldflags], [MODULE_]m4_toupper([$1])[_LDFLAGS])
+  dnl echo
+  dnl echo "modcflags=@modldflags@"
+  dnl echo "modldflags=@modldflags@"
+  dnl echo
+  AS_IF([$2], [
+    AC_MSG_RESULT([yes])
+    dnl AC_DEFINE([pymod], [1], [Define if stdlib module "$1" is supported and enabled.])
+    AC_SUBST(modcflags, ["$3"])
+    AC_SUBST(modldflags, ["$4"])
+    AM_CONDITIONAL(modcond, [true])
+  ], [
+    AS_CASE([$py_stdlib_not_available],
+      [*$1*], [AC_MSG_RESULT([n/a])],
+      [AC_MSG_RESULT([no])])
+    AC_SUBST(modcflags, [""])
+    AC_SUBST(modldflags, [""])
+    AM_CONDITIONAL(modcond, [false])
+  ])
+  m4_popdef([pymod])
+  m4_popdef([modcond])
+  m4_popdef([modcflags])
+  m4_popdef([modldflags])
+])
+
+# reuses autoconf check values (ac_cv_*):
+# * ac_cv_func and ac_cv_header values are set to "yes" when function or header exists
+# * ac_cv_search values are set to "none required" or "-lsomelib" when function exists
+dnl Modules/Setup
+dnl PY_STDLIB_MOD([_collections], [true])
+dnl PY_STDLIB_MOD([_abc], [true])
+dnl PY_STDLIB_MOD([_codecs], [true])
+dnl PY_STDLIB_MOD([_functools], [true])
+dnl PY_STDLIB_MOD([_io], [true])
+dnl PY_STDLIB_MOD([_locale], [true])
+dnl PY_STDLIB_MOD([_operator], [true])
+dnl PY_STDLIB_MOD([_signal], [true])
+dnl PY_STDLIB_MOD([_sre], [true])
+dnl PY_STDLIB_MOD([_stat], [true])
+dnl PY_STDLIB_MOD([_symtable], [true])
+dnl PY_STDLIB_MOD([_thread], [true])
+dnl PY_STDLIB_MOD([_tracemalloc], [true])
+dnl PY_STDLIB_MOD([_weakref], [true])
+dnl PY_STDLIB_MOD([atexit], [true])
+dnl PY_STDLIB_MOD([errno], [true])
+dnl PY_STDLIB_MOD([faulthandler], [true])
+dnl PY_STDLIB_MOD([itertools], [true])
+dnl PY_STDLIB_MOD([posix], [true])
+dnl PY_STDLIB_MOD([pwd], [true])
+dnl PY_STDLIB_MOD([time], [true])
+
+dnl same order as setup.py
+dnl PY_STDLIB_MOD([_struct], [true])
+dnl PY_STDLIB_MOD([array], [true])
+dnl PY_STDLIB_MOD([_contextvars], [true])
+dnl PY_STDLIB_MOD([math], [true])
+dnl PY_STDLIB_MOD([cmath], [true])
+dnl PY_STDLIB_MOD([time], [true])
+dnl PY_STDLIB_MOD([_datetime], [true])
+dnl PY_STDLIB_MOD([_zoneinfo], [true])
+dnl PY_STDLIB_MOD([_random], [true])
+dnl PY_STDLIB_MOD([_bisect], [true])
+dnl PY_STDLIB_MOD([_heapq], [true])
+dnl PY_STDLIB_MOD([_pickle], [true])
+dnl PY_STDLIB_MOD([_json], [true])
+dnl PY_STDLIB_MOD([_lsprof], [true])
+dnl PY_STDLIB_MOD([unicodedata], [true])
+dnl PY_STDLIB_MOD([_opcode], [true])
+dnl PY_STDLIB_MOD([_asyncio], [true])
+dnl PY_STDLIB_MOD([_abc], [true])
+dnl PY_STDLIB_MOD([_queue], [true])
+dnl PY_STDLIB_MOD([_statistics], [true])
+dnl PY_STDLIB_MOD([_typing], [true])
+dnl PY_STDLIB_MOD([fcntl], [true])
+dnl PY_STDLIB_MOD([pwd], [true])
+PY_STDLIB_MOD([grp], [test "$ac_cv_func_getgrgid" = yes -o "$ac_cv_func_getgrgid_r" = yes])
+PY_STDLIB_MOD([spwd], [test "$ac_cv_func_getspent" = yes])
+dnl PY_STDLIB_MOD([select], [true])
+dnl PY_STDLIB_MOD([mmap], [true])
+dnl PY_STDLIB_MOD([syslog], [true])
+PY_STDLIB_MOD([_xxsubinterpreters], [test "$with_experimental_isolated_subinterpreters" = yes])
+dnl PY_STDLIB_MOD([audioop], [true])
+dnl PY_STDLIB_MOD([_csv], [true])
+dnl PY_STDLIB_MOD([_posixsubprocess], [true])
+PY_STDLIB_MOD([_testcapi], [test "$TEST_MODULES" = yes])
+PY_STDLIB_MOD([_testinternalcapi], [test "$TEST_MODULES" = yes])
+PY_STDLIB_MOD([_testbuffer], [test "$TEST_MODULES" = yes])
+PY_STDLIB_MOD([_testimportmultiple], [test "$TEST_MODULES" = yes])
+PY_STDLIB_MOD([_testmultiphase], [test "$TEST_MODULES" = yes])
+PY_STDLIB_MOD([_xxtestfuzz], [test "$TEST_MODULES" = yes])
+PY_STDLIB_MOD([readline], [test "$py_cv_lib_readline" = yes], [], [$READLINE_LIBS])
+dnl PY_STDLIB_MOD([_curses], [false])
+dnl PY_STDLIB_MOD([_curses_panel], [false])
+PY_STDLIB_MOD([_crypt],
+  [test "$ac_sys_system" != VxWorks -a \( "$ac_cv_search_crypt_r" != no -o "$ac_cv_search_crypt" != no \)],
+  [], [-lcrypt])
+dnl PY_STDLIB_MOD([_socket], [true])
+dnl TODO: add OPENSSL_RPATH
+PY_STDLIB_MOD([_ssl],
+  [test "$ac_cv_working_openssl_ssl" = yes],
+  [$OPENSSL_INCLUDES], [$OPENSSL_LIBS $OPENSSL_LDFLAGS])
+PY_STDLIB_MOD([_hashlib],
+  [test "$ac_cv_working_openssl_ssl" = yes],
+  [$OPENSSL_INCLUDES], [$OPENSSL_LIBS $OPENSSL_LDFLAGS])
+PY_STDLIB_MOD([_sha256], [test "$with_builtin_sha256" = yes])
+PY_STDLIB_MOD([_sha512], [test "$with_builtin_sha512" = yes])
+PY_STDLIB_MOD([_md5], [test "$with_builtin_md5" = yes])
+PY_STDLIB_MOD([_sha1], [test "$with_builtin_sha1" = yes])
+PY_STDLIB_MOD([_blake2], [test "$with_builtin_blake2" = yes])
+PY_STDLIB_MOD([_sha3], [test "$with_builtin_sha3" = yes])
+dnl PY_STDLIB_MOD([_dbm], [false])
+PY_STDLIB_MOD([_gdbm],
+  [test "$ac_cv_lib_gdbm_gdbm_open" = yes],
+  [$GDBM_CFLAGS], [$GDBM_LDFLAGS])
+dnl PY_STDLIB_MOD([_sqlite3], [false])
+PY_STDLIB_MOD([termios], [test "$ac_sys_system" != VxWorks])
+dnl PY_STDLIB_MOD([resource], [true])
+PY_STDLIB_MOD([ossaudiodev],
+  [test "$ac_cv_header_linux_soundcard_h" = yes -o "$ac_cv_header_sys_soundcard_h" = yes])
+PY_STDLIB_MOD([_scproxy],
+  [test "$ac_sys_system" = "Darwin"],
+  [], [-framework SystemConfiguration -framework CoreFoundation])
+dnl PY_STDLIB_MOD([nis], [false])
+PY_STDLIB_MOD([zlib],
+  [test "$ac_cv_header_zlib_h" = yes -a "$ac_cv_lib_z_gzread" = yes],
+  [], [-lz])
+PY_STDLIB_MOD([binascii], [true], [$BINASCII_CFLAGS], [$BINASCII_LDFLAGS])
+PY_STDLIB_MOD([_bz2],
+  [test "$ac_cv_header_bzlib_h" = yes -a "$ac_cv_lib_bz2_BZ2_bzCompress" = yes],
+  [], [-lbz2])
+PY_STDLIB_MOD([_lzma],
+  [test "$ac_cv_header_lzma_h" = yes -a "$ac_cv_lib_lzma_lzma_easy_encoder" = yes],
+  [], [-llzma])
+dnl PY_STDLIB_MOD([pyexpat], [true])
+dnl PY_STDLIB_MOD([_elementtree], [true])
+dnl PY_STDLIB_MOD([_multibytecodec], [true])
+dnl PY_STDLIB_MOD([_codecs_kr], [true])
+dnl PY_STDLIB_MOD([_codecs_jp], [true])
+dnl PY_STDLIB_MOD([_codecs_cn], [true])
+dnl PY_STDLIB_MOD([_codecs_tw], [true])
+dnl PY_STDLIB_MOD([_codecs_hk], [true])
+dnl PY_STDLIB_MOD([_codecs_iso2022], [true])
+dnl PY_STDLIB_MOD([_decimal], [true])
+dnl PY_STDLIB_MOD([_ctypes], [false])
+PY_STDLIB_MOD([_ctypes_test], [test "$TEST_MODULES" = yes])
+dnl PY_STDLIB_MOD([_multiprocessing], [true])
+dnl shm_open() requires -lrt on some platforms
+PY_STDLIB_MOD([_posixshmem], [true], [], [$ac_cv_search_shm_open])
+PY_STDLIB_MOD([_tkinter], [test -n "$TCLTK_LIBS"], [-DWITH_APPINIT=1], [$TCLTK_LIBS])
+PY_STDLIB_MOD([_uuid],
+  [test "$ac_cv_lib_uuid_uuid_generate_time" = yes -o "$ac_cv_func_uuid_create" = yes],
+  [$UUID_CFLAGS], [$UUID_LDLAGS])
+dnl PY_STDLIB_MOD([xxlimited], [true])
+dnl PY_STDLIB_MOD([xxlimited_35], [true])
 
 # generate output files
 AC_CONFIG_FILES(Makefile.pre Misc/python.pc Misc/python-embed.pc Misc/python-config.sh)

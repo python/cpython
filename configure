@@ -623,6 +623,130 @@ ac_includes_default="\
 #endif"
 
 ac_subst_vars='LTLIBOBJS
+MODULE__UUID_FALSE
+MODULE__UUID_TRUE
+MODULE__UUID_LDFLAGS
+MODULE__UUID_CFLAGS
+MODULE__TKINTER_FALSE
+MODULE__TKINTER_TRUE
+MODULE__TKINTER_LDFLAGS
+MODULE__TKINTER_CFLAGS
+MODULE__POSIXSHMEM_FALSE
+MODULE__POSIXSHMEM_TRUE
+MODULE__POSIXSHMEM_LDFLAGS
+MODULE__POSIXSHMEM_CFLAGS
+MODULE__CTYPES_TEST_FALSE
+MODULE__CTYPES_TEST_TRUE
+MODULE__CTYPES_TEST_LDFLAGS
+MODULE__CTYPES_TEST_CFLAGS
+MODULE__LZMA_FALSE
+MODULE__LZMA_TRUE
+MODULE__LZMA_LDFLAGS
+MODULE__LZMA_CFLAGS
+MODULE__BZ2_FALSE
+MODULE__BZ2_TRUE
+MODULE__BZ2_LDFLAGS
+MODULE__BZ2_CFLAGS
+MODULE_BINASCII_FALSE
+MODULE_BINASCII_TRUE
+MODULE_BINASCII_LDFLAGS
+MODULE_BINASCII_CFLAGS
+MODULE_ZLIB_FALSE
+MODULE_ZLIB_TRUE
+MODULE_ZLIB_LDFLAGS
+MODULE_ZLIB_CFLAGS
+MODULE__SCPROXY_FALSE
+MODULE__SCPROXY_TRUE
+MODULE__SCPROXY_LDFLAGS
+MODULE__SCPROXY_CFLAGS
+MODULE_OSSAUDIODEV_FALSE
+MODULE_OSSAUDIODEV_TRUE
+MODULE_OSSAUDIODEV_LDFLAGS
+MODULE_OSSAUDIODEV_CFLAGS
+MODULE_TERMIOS_FALSE
+MODULE_TERMIOS_TRUE
+MODULE_TERMIOS_LDFLAGS
+MODULE_TERMIOS_CFLAGS
+MODULE__GDBM_FALSE
+MODULE__GDBM_TRUE
+MODULE__GDBM_LDFLAGS
+MODULE__GDBM_CFLAGS
+MODULE__SHA3_FALSE
+MODULE__SHA3_TRUE
+MODULE__SHA3_LDFLAGS
+MODULE__SHA3_CFLAGS
+MODULE__BLAKE2_FALSE
+MODULE__BLAKE2_TRUE
+MODULE__BLAKE2_LDFLAGS
+MODULE__BLAKE2_CFLAGS
+MODULE__SHA1_FALSE
+MODULE__SHA1_TRUE
+MODULE__SHA1_LDFLAGS
+MODULE__SHA1_CFLAGS
+MODULE__MD5_FALSE
+MODULE__MD5_TRUE
+MODULE__MD5_LDFLAGS
+MODULE__MD5_CFLAGS
+MODULE__SHA512_FALSE
+MODULE__SHA512_TRUE
+MODULE__SHA512_LDFLAGS
+MODULE__SHA512_CFLAGS
+MODULE__SHA256_FALSE
+MODULE__SHA256_TRUE
+MODULE__SHA256_LDFLAGS
+MODULE__SHA256_CFLAGS
+MODULE__HASHLIB_FALSE
+MODULE__HASHLIB_TRUE
+MODULE__HASHLIB_LDFLAGS
+MODULE__HASHLIB_CFLAGS
+MODULE__SSL_FALSE
+MODULE__SSL_TRUE
+MODULE__SSL_LDFLAGS
+MODULE__SSL_CFLAGS
+MODULE__CRYPT_FALSE
+MODULE__CRYPT_TRUE
+MODULE__CRYPT_LDFLAGS
+MODULE__CRYPT_CFLAGS
+MODULE_READLINE_FALSE
+MODULE_READLINE_TRUE
+MODULE_READLINE_LDFLAGS
+MODULE_READLINE_CFLAGS
+MODULE__XXTESTFUZZ_FALSE
+MODULE__XXTESTFUZZ_TRUE
+MODULE__XXTESTFUZZ_LDFLAGS
+MODULE__XXTESTFUZZ_CFLAGS
+MODULE__TESTMULTIPHASE_FALSE
+MODULE__TESTMULTIPHASE_TRUE
+MODULE__TESTMULTIPHASE_LDFLAGS
+MODULE__TESTMULTIPHASE_CFLAGS
+MODULE__TESTIMPORTMULTIPLE_FALSE
+MODULE__TESTIMPORTMULTIPLE_TRUE
+MODULE__TESTIMPORTMULTIPLE_LDFLAGS
+MODULE__TESTIMPORTMULTIPLE_CFLAGS
+MODULE__TESTBUFFER_FALSE
+MODULE__TESTBUFFER_TRUE
+MODULE__TESTBUFFER_LDFLAGS
+MODULE__TESTBUFFER_CFLAGS
+MODULE__TESTINTERNALCAPI_FALSE
+MODULE__TESTINTERNALCAPI_TRUE
+MODULE__TESTINTERNALCAPI_LDFLAGS
+MODULE__TESTINTERNALCAPI_CFLAGS
+MODULE__TESTCAPI_FALSE
+MODULE__TESTCAPI_TRUE
+MODULE__TESTCAPI_LDFLAGS
+MODULE__TESTCAPI_CFLAGS
+MODULE__XXSUBINTERPRETERS_FALSE
+MODULE__XXSUBINTERPRETERS_TRUE
+MODULE__XXSUBINTERPRETERS_LDFLAGS
+MODULE__XXSUBINTERPRETERS_CFLAGS
+MODULE_SPWD_FALSE
+MODULE_SPWD_TRUE
+MODULE_SPWD_LDFLAGS
+MODULE_SPWD_CFLAGS
+MODULE_GRP_FALSE
+MODULE_GRP_TRUE
+MODULE_GRP_LDFLAGS
+MODULE_GRP_CFLAGS
 TEST_MODULES
 LIBRARY_DEPS
 STATIC_LIBPYTHON
@@ -8129,7 +8253,7 @@ $as_echo "#define STDC_HEADERS 1" >>confdefs.h
 
 
 # checks for header files
-for ac_header in asm/types.h crypt.h conio.h direct.h dlfcn.h errno.h \
+for ac_header in asm/types.h conio.h direct.h dlfcn.h errno.h \
 fcntl.h grp.h \
 ieeefp.h io.h langinfo.h libintl.h process.h pthread.h \
 sched.h shadow.h signal.h stropts.h termios.h \
@@ -8143,7 +8267,7 @@ sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
 libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
 linux/tipc.h linux/random.h spawn.h util.h alloca.h endian.h \
 sys/endian.h sys/sysmacros.h linux/memfd.h linux/wait.h sys/memfd.h \
-sys/mman.h sys/eventfd.h
+sys/mman.h sys/eventfd.h linux/soundcard.h sys/soundcard.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -10165,15 +10289,64 @@ _ACEOF
 fi
 	# Dynamic linking for HP-UX
 
-# checks for uuid.h location
-for ac_header in uuid/uuid.h uuid.h
+# check for libuuid and uuid/uuid.h from util-linux
+for ac_header in uuid/uuid.h
 do :
-  as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
-ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
-if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
+  ac_fn_c_check_header_mongrel "$LINENO" "uuid/uuid.h" "ac_cv_header_uuid_uuid_h" "$ac_includes_default"
+if test "x$ac_cv_header_uuid_uuid_h" = xyes; then :
   cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
+#define HAVE_UUID_UUID_H 1
 _ACEOF
+
+  save_LIBS=$LIBS
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time in -luuid" >&5
+$as_echo_n "checking for uuid_generate_time in -luuid... " >&6; }
+if ${ac_cv_lib_uuid_uuid_generate_time+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-luuid  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char uuid_generate_time ();
+int
+main ()
+{
+return uuid_generate_time ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_uuid_uuid_generate_time=yes
+else
+  ac_cv_lib_uuid_uuid_generate_time=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_uuid_uuid_generate_time" >&5
+$as_echo "$ac_cv_lib_uuid_uuid_generate_time" >&6; }
+if test "x$ac_cv_lib_uuid_uuid_generate_time" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBUUID 1
+_ACEOF
+
+  LIBS="-luuid $LIBS"
+
+fi
+
+  UUID_CFLAGS=
+  UUID_LDLAGS=-luuid
+  LIBS=$save_LIBS
 
 fi
 
@@ -10219,60 +10392,18 @@ $as_echo "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
 
 fi
 
-# check for libuuid from util-linux
-save_LIBS=$LIBS
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time in -luuid" >&5
-$as_echo_n "checking for uuid_generate_time in -luuid... " >&6; }
-if ${ac_cv_lib_uuid_uuid_generate_time+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-luuid  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char uuid_generate_time ();
-int
-main ()
-{
-return uuid_generate_time ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_uuid_uuid_generate_time=yes
-else
-  ac_cv_lib_uuid_uuid_generate_time=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_uuid_uuid_generate_time" >&5
-$as_echo "$ac_cv_lib_uuid_uuid_generate_time" >&6; }
-if test "x$ac_cv_lib_uuid_uuid_generate_time" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBUUID 1
-_ACEOF
-
-  LIBS="-luuid $LIBS"
-
-fi
-
-LIBS=$save_LIBS
-
 # AIX provides support for RFC4122 (uuid) in libc.a starting with AIX 6.1 (anno 2007)
 # FreeBSD and OpenBSD provides support in libc as well.
 # Little-endian FreeBSD, OpenBSD and NetBSD needs encoding into an octet
 # stream in big-endian byte-order
-for ac_func in uuid_create uuid_enc_be
+for ac_header in uuid.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "uuid.h" "ac_cv_header_uuid_h" "$ac_includes_default"
+if test "x$ac_cv_header_uuid_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_UUID_H 1
+_ACEOF
+ for ac_func in uuid_create uuid_enc_be
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -10282,6 +10413,11 @@ if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
 _ACEOF
 
 fi
+done
+
+
+fi
+
 done
 
 
@@ -11328,24 +11464,36 @@ $as_echo_n "checking for --with-dbmliborder... " >&6; }
 # Check whether --with-dbmliborder was given.
 if test "${with_dbmliborder+set}" = set; then :
   withval=$with_dbmliborder;
-if test x$with_dbmliborder = xyes
-then
-as_fn_error $? "proper usage is --with-dbmliborder=db1:db2:..." "$LINENO" 5
 else
-  as_save_IFS=$IFS
-  IFS=:
-  for db in $with_dbmliborder; do
-    if test x$db != xndbm && test x$db != xgdbm && test x$db != xbdb
-    then
-      as_fn_error $? "proper usage is --with-dbmliborder=db1:db2:..." "$LINENO" 5
-    fi
-  done
-  IFS=$as_save_IFS
-fi
+  with_dbmliborder=ndbm:gdbm:bdb
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_dbmliborder" >&5
-$as_echo "$with_dbmliborder" >&6; }
+
+as_save_IFS=$IFS
+IFS=:
+dbmlibs=""
+for db in $with_dbmliborder; do
+    case $db in #(
+  ndbm) :
+    dbmlibs="$dbmlibs ndbm" ;; #(
+  gdbm) :
+    dbmlibs="$dbmlibs gdbm_compat" ;; #(
+  bdb) :
+    dbmlibs="$dbmlibs db-5.3 db-5 db" ;; #(
+  *) :
+    dbmlibs="failed"; break
+     ;;
+esac
+done
+IFS=$as_save_IFS
+
+if test "$dbmlibs" = failed; then
+  as_fn_error $? "proper usage is --with-dbmliborder=db1:db2:..." "$LINENO" 5
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_dbmliborder (libs: $dbmlibs)" >&5
+$as_echo "$with_dbmliborder (libs: $dbmlibs)" >&6; }
+fi
+
 
 # Templates for things AC_DEFINEd more than once.
 # For a single AC_DEFINE, no template is needed.
@@ -12391,7 +12539,7 @@ for ac_func in alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  explicit_memset faccessat fchmod fchmodat fchown fchownat \
  fdwalk fexecve fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
  futimens futimes gai_strerror getentropy \
- getgrgid_r getgrnam_r \
+ getgrgid getgrgid_r getgrnam_r \
  getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
  getpriority getresuid getresgid getpwent getpwnam_r getpwuid_r getspnam getspent getsid getwd \
  if_nameindex \
@@ -13483,6 +13631,13 @@ fi
 done
 
 
+if test "x$ac_cv_lib_z_gzread" = xyes; then :
+
+  BINASCII_CFLAGS=-DUSE_ZLIB_CRC32
+  BINASCII_LDFLAGS=-lz
+
+fi
+
 for ac_header in bzlib.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "bzlib.h" "ac_cv_header_bzlib_h" "$ac_includes_default"
@@ -14051,68 +14206,16 @@ fi
 done
 
 
-# We search for both crypt and crypt_r as one or the other may be defined
-# This gets us our -lcrypt in LIBS when required on the target platform.
-# Save/restore LIBS to avoid linking libpython with libcrypt.
-LIBS_SAVE=$LIBS
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing crypt_r" >&5
-$as_echo_n "checking for library containing crypt_r... " >&6; }
-if ${ac_cv_search_crypt_r+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_func_search_save_LIBS=$LIBS
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char crypt_r ();
-int
-main ()
-{
-return crypt_r ();
-  ;
-  return 0;
-}
+for ac_header in crypt.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "crypt.h" "ac_cv_header_crypt_h" "$ac_includes_default"
+if test "x$ac_cv_header_crypt_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_CRYPT_H 1
 _ACEOF
-for ac_lib in '' crypt; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_crypt_r=$ac_res
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext
-  if ${ac_cv_search_crypt_r+:} false; then :
-  break
-fi
-done
-if ${ac_cv_search_crypt_r+:} false; then :
 
-else
-  ac_cv_search_crypt_r=no
-fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_crypt_r" >&5
-$as_echo "$ac_cv_search_crypt_r" >&6; }
-ac_res=$ac_cv_search_crypt_r
-if test "$ac_res" != no; then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-
-fi
-
-LIBS="$LIBS_SAVE"
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing crypt" >&5
+  LIBS_SAVE=$LIBS
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing crypt" >&5
 $as_echo_n "checking for library containing crypt... " >&6; }
 if ${ac_cv_search_crypt+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -14168,35 +14271,72 @@ if test "$ac_res" != no; then :
 
 fi
 
-
-ac_fn_c_check_func "$LINENO" "crypt_r" "ac_cv_func_crypt_r"
-if test "x$ac_cv_func_crypt_r" = xyes; then :
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+  LIBS="$LIBS_SAVE"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing crypt_r" >&5
+$as_echo_n "checking for library containing crypt_r... " >&6; }
+if ${ac_cv_search_crypt_r+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-#include <crypt.h>
-
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char crypt_r ();
 int
 main ()
 {
-
-struct crypt_data d;
-char *r = crypt_r("", "", &d);
-
+return crypt_r ();
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
+for ac_lib in '' crypt; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_crypt_r=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_crypt_r+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_crypt_r+:} false; then :
+
+else
+  ac_cv_search_crypt_r=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_crypt_r" >&5
+$as_echo "$ac_cv_search_crypt_r" >&6; }
+ac_res=$ac_cv_search_crypt_r
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
 
 $as_echo "#define HAVE_CRYPT_R 1" >>confdefs.h
 
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
 fi
 
-LIBS=$LIBS_SAVE
+  LIBS=$LIBS_SAVE
+
+fi
+
+done
+
 
 for ac_func in clock_gettime
 do :
@@ -18974,12 +19114,6 @@ $as_echo "$OPENSSL_RPATH" >&6; }
 
 
 # check if OpenSSL libraries work as expected
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL provides required APIs" >&5
-$as_echo_n "checking whether OpenSSL provides required APIs... " >&6; }
-if ${ac_cv_working_openssl+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
 save_LIBS="$LIBS"
 save_CFLAGS="$CFLAGS"
 save_LDFLAGS="$LDFLAGS"
@@ -18987,24 +19121,26 @@ LIBS="$LIBS $OPENSSL_LIBS"
 CFLAGS="$CFLAGS_NODIST $OPENSSL_INCLUDES"
 LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL provides required ssl module APIs" >&5
+$as_echo_n "checking whether OpenSSL provides required ssl module APIs... " >&6; }
+if ${ac_cv_working_openssl_ssl+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 #include <openssl/opensslv.h>
-#include <openssl/evp.h>
 #include <openssl/ssl.h>
-
 #if OPENSSL_VERSION_NUMBER < 0x10101000L
-#error "OpenSSL >= 1.1.1 is required"
+  #error "OpenSSL >= 1.1.1 is required"
 #endif
-
 static void keylog_cb(const SSL *ssl, const char *line) {}
 
 int
 main ()
 {
 
-/* SSL APIs */
 SSL_CTX *ctx = SSL_CTX_new(TLS_client_method());
 SSL_CTX_set_keylog_callback(ctx, keylog_cb);
 SSL *ssl = SSL_new(ctx);
@@ -19013,31 +19149,68 @@ X509_VERIFY_PARAM_set1_host(param, "python.org", 0);
 SSL_free(ssl);
 SSL_CTX_free(ctx);
 
-/* hashlib APIs */
-OBJ_nid2sn(NID_md5);
-OBJ_nid2sn(NID_sha1);
-OBJ_nid2sn(NID_sha3_512);
-OBJ_nid2sn(NID_blake2b512);
-EVP_PBE_scrypt(NULL, 0, NULL, 0, 2, 8, 1, 0, NULL, 0);
 
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_working_openssl=yes
+  ac_cv_working_openssl_ssl=yes
 else
-  ac_cv_working_openssl=no
+  ac_cv_working_openssl_ssl=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_working_openssl_ssl" >&5
+$as_echo "$ac_cv_working_openssl_ssl" >&6; }
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL provides required hashlib module APIs" >&5
+$as_echo_n "checking whether OpenSSL provides required hashlib module APIs... " >&6; }
+if ${ac_cv_working_openssl_hashlib+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <openssl/opensslv.h>
+#include <openssl/evp.h>
+#if OPENSSL_VERSION_NUMBER < 0x10101000L
+#error "OpenSSL >= 1.1.1 is required"
+#endif
+
+int
+main ()
+{
+
+OBJ_nid2sn(NID_md5);
+OBJ_nid2sn(NID_sha1);
+OBJ_nid2sn(NID_sha3_512);
+OBJ_nid2sn(NID_blake2b512);
+EVP_PBE_scrypt(NULL, 0, NULL, 0, 2, 8, 1, 0, NULL, 0);
+
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_working_openssl_hashlib=yes
+else
+  ac_cv_working_openssl_hashlib=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_working_openssl_hashlib" >&5
+$as_echo "$ac_cv_working_openssl_hashlib" >&6; }
+
 LIBS="$save_LIBS"
 CFLAGS="$save_CFLAGS"
 LDFLAGS="$save_LDFLAGS"
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_working_openssl" >&5
-$as_echo "$ac_cv_working_openssl" >&6; }
 
 # ssl module default cipher suite string
 
@@ -19091,32 +19264,50 @@ $as_echo_n "checking for --with-builtin-hashlib-hashes... " >&6; }
 # Check whether --with-builtin-hashlib-hashes was given.
 if test "${with_builtin_hashlib_hashes+set}" = set; then :
   withval=$with_builtin_hashlib_hashes;
-case "$withval" in
-    yes)
-        withval=$default_hashlib_hashes
-        ;;
-    no)
-        withval=""
-        ;;
+  case $with_builtin_hashlib_hashes in #(
+  yes) :
+    with_builtin_hashlib_hashes=$default_hashlib_hashes ;; #(
+  no) :
+    with_builtin_hashlib_hashes=""
+   ;; #(
+  *) :
+     ;;
 esac
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
-$as_echo "$withval" >&6; }
-cat >>confdefs.h <<_ACEOF
-#define PY_BUILTIN_HASHLIB_HASHES "$withval"
-_ACEOF
-
 
 else
+  with_builtin_hashlib_hashes=$default_hashlib_hashes
+fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $default_hashlib_hashes" >&5
-$as_echo "$default_hashlib_hashes" >&6; };
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_builtin_hashlib_hashes" >&5
+$as_echo "$with_builtin_hashlib_hashes" >&6; }
 cat >>confdefs.h <<_ACEOF
-#define PY_BUILTIN_HASHLIB_HASHES "$default_hashlib_hashes"
+#define PY_BUILTIN_HASHLIB_HASHES "$with_builtin_hashlib_hashes"
 _ACEOF
 
 
-fi
-
+as_save_IFS=$IFS
+IFS=,
+for builtin_hash in $with_builtin_hashlib_hashes; do
+    case $builtin_hash in #(
+  md5) :
+    with_builtin_md5=yes ;; #(
+  sha1) :
+    with_builtin_sha1=yes ;; #(
+  sha256) :
+    with_builtin_sha256=yes ;; #(
+  sha512) :
+    with_builtin_sha512=yes ;; #(
+  sha3) :
+    with_builtin_sha3=yes ;; #(
+  blake2) :
+    with_builtin_blake2=yes
+     ;; #(
+  *) :
+     ;;
+esac
+done
+IFS=$as_save_IFS
 
 # --with-experimental-isolated-subinterpreters
 
@@ -19194,6 +19385,1670 @@ else
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
+
+
+# Modules that are not available on some platforms
+case $ac_sys_system in #(
+  AIX) :
+    py_stdlib_not_available="_scproxy spwd" ;; #(
+  VxWorks*) :
+    py_stdlib_not_available="_scproxy _crypt termios grp" ;; #(
+  Darwin) :
+    py_stdlib_not_available="" ;; #(
+  *) :
+    py_stdlib_not_available="_scproxy"
+ ;;
+esac
+
+# Check for stdlib extension modules
+# PY_STDLIB_MOD([NAME], [TEST], [CFLAGS], [LDFLAGS])
+
+
+# reuses autoconf check values (ac_cv_*):
+# * ac_cv_func and ac_cv_header values are set to "yes" when function or header exists
+# * ac_cv_search values are set to "none required" or "-lsomelib" when function exists
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module grp" >&5
+$as_echo_n "checking for stdlib extension module grp... " >&6; }
+
+
+
+
+          if test "$ac_cv_func_getgrgid" = yes -o "$ac_cv_func_getgrgid_r" = yes; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        MODULE_GRP_CFLAGS=""
+
+    MODULE_GRP_LDFLAGS=""
+
+     if true; then
+  MODULE_GRP_TRUE=
+  MODULE_GRP_FALSE='#'
+else
+  MODULE_GRP_TRUE='#'
+  MODULE_GRP_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *grp*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; } ;;
+esac
+    MODULE_GRP_CFLAGS=""
+
+    MODULE_GRP_LDFLAGS=""
+
+     if false; then
+  MODULE_GRP_TRUE=
+  MODULE_GRP_FALSE='#'
+else
+  MODULE_GRP_TRUE='#'
+  MODULE_GRP_FALSE=
+fi
+
+
+fi
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module spwd" >&5
+$as_echo_n "checking for stdlib extension module spwd... " >&6; }
+
+
+
+
+          if test "$ac_cv_func_getspent" = yes; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        MODULE_SPWD_CFLAGS=""
+
+    MODULE_SPWD_LDFLAGS=""
+
+     if true; then
+  MODULE_SPWD_TRUE=
+  MODULE_SPWD_FALSE='#'
+else
+  MODULE_SPWD_TRUE='#'
+  MODULE_SPWD_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *spwd*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; } ;;
+esac
+    MODULE_SPWD_CFLAGS=""
+
+    MODULE_SPWD_LDFLAGS=""
+
+     if false; then
+  MODULE_SPWD_TRUE=
+  MODULE_SPWD_FALSE='#'
+else
+  MODULE_SPWD_TRUE='#'
+  MODULE_SPWD_FALSE=
+fi
+
+
+fi
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _xxsubinterpreters" >&5
+$as_echo_n "checking for stdlib extension module _xxsubinterpreters... " >&6; }
+
+
+
+
+          if test "$with_experimental_isolated_subinterpreters" = yes; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        MODULE__XXSUBINTERPRETERS_CFLAGS=""
+
+    MODULE__XXSUBINTERPRETERS_LDFLAGS=""
+
+     if true; then
+  MODULE__XXSUBINTERPRETERS_TRUE=
+  MODULE__XXSUBINTERPRETERS_FALSE='#'
+else
+  MODULE__XXSUBINTERPRETERS_TRUE='#'
+  MODULE__XXSUBINTERPRETERS_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *_xxsubinterpreters*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; } ;;
+esac
+    MODULE__XXSUBINTERPRETERS_CFLAGS=""
+
+    MODULE__XXSUBINTERPRETERS_LDFLAGS=""
+
+     if false; then
+  MODULE__XXSUBINTERPRETERS_TRUE=
+  MODULE__XXSUBINTERPRETERS_FALSE='#'
+else
+  MODULE__XXSUBINTERPRETERS_TRUE='#'
+  MODULE__XXSUBINTERPRETERS_FALSE=
+fi
+
+
+fi
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testcapi" >&5
+$as_echo_n "checking for stdlib extension module _testcapi... " >&6; }
+
+
+
+
+          if test "$TEST_MODULES" = yes; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        MODULE__TESTCAPI_CFLAGS=""
+
+    MODULE__TESTCAPI_LDFLAGS=""
+
+     if true; then
+  MODULE__TESTCAPI_TRUE=
+  MODULE__TESTCAPI_FALSE='#'
+else
+  MODULE__TESTCAPI_TRUE='#'
+  MODULE__TESTCAPI_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *_testcapi*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; } ;;
+esac
+    MODULE__TESTCAPI_CFLAGS=""
+
+    MODULE__TESTCAPI_LDFLAGS=""
+
+     if false; then
+  MODULE__TESTCAPI_TRUE=
+  MODULE__TESTCAPI_FALSE='#'
+else
+  MODULE__TESTCAPI_TRUE='#'
+  MODULE__TESTCAPI_FALSE=
+fi
+
+
+fi
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testinternalcapi" >&5
+$as_echo_n "checking for stdlib extension module _testinternalcapi... " >&6; }
+
+
+
+
+          if test "$TEST_MODULES" = yes; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        MODULE__TESTINTERNALCAPI_CFLAGS=""
+
+    MODULE__TESTINTERNALCAPI_LDFLAGS=""
+
+     if true; then
+  MODULE__TESTINTERNALCAPI_TRUE=
+  MODULE__TESTINTERNALCAPI_FALSE='#'
+else
+  MODULE__TESTINTERNALCAPI_TRUE='#'
+  MODULE__TESTINTERNALCAPI_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *_testinternalcapi*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; } ;;
+esac
+    MODULE__TESTINTERNALCAPI_CFLAGS=""
+
+    MODULE__TESTINTERNALCAPI_LDFLAGS=""
+
+     if false; then
+  MODULE__TESTINTERNALCAPI_TRUE=
+  MODULE__TESTINTERNALCAPI_FALSE='#'
+else
+  MODULE__TESTINTERNALCAPI_TRUE='#'
+  MODULE__TESTINTERNALCAPI_FALSE=
+fi
+
+
+fi
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testbuffer" >&5
+$as_echo_n "checking for stdlib extension module _testbuffer... " >&6; }
+
+
+
+
+          if test "$TEST_MODULES" = yes; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        MODULE__TESTBUFFER_CFLAGS=""
+
+    MODULE__TESTBUFFER_LDFLAGS=""
+
+     if true; then
+  MODULE__TESTBUFFER_TRUE=
+  MODULE__TESTBUFFER_FALSE='#'
+else
+  MODULE__TESTBUFFER_TRUE='#'
+  MODULE__TESTBUFFER_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *_testbuffer*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; } ;;
+esac
+    MODULE__TESTBUFFER_CFLAGS=""
+
+    MODULE__TESTBUFFER_LDFLAGS=""
+
+     if false; then
+  MODULE__TESTBUFFER_TRUE=
+  MODULE__TESTBUFFER_FALSE='#'
+else
+  MODULE__TESTBUFFER_TRUE='#'
+  MODULE__TESTBUFFER_FALSE=
+fi
+
+
+fi
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testimportmultiple" >&5
+$as_echo_n "checking for stdlib extension module _testimportmultiple... " >&6; }
+
+
+
+
+          if test "$TEST_MODULES" = yes; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        MODULE__TESTIMPORTMULTIPLE_CFLAGS=""
+
+    MODULE__TESTIMPORTMULTIPLE_LDFLAGS=""
+
+     if true; then
+  MODULE__TESTIMPORTMULTIPLE_TRUE=
+  MODULE__TESTIMPORTMULTIPLE_FALSE='#'
+else
+  MODULE__TESTIMPORTMULTIPLE_TRUE='#'
+  MODULE__TESTIMPORTMULTIPLE_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *_testimportmultiple*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; } ;;
+esac
+    MODULE__TESTIMPORTMULTIPLE_CFLAGS=""
+
+    MODULE__TESTIMPORTMULTIPLE_LDFLAGS=""
+
+     if false; then
+  MODULE__TESTIMPORTMULTIPLE_TRUE=
+  MODULE__TESTIMPORTMULTIPLE_FALSE='#'
+else
+  MODULE__TESTIMPORTMULTIPLE_TRUE='#'
+  MODULE__TESTIMPORTMULTIPLE_FALSE=
+fi
+
+
+fi
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testmultiphase" >&5
+$as_echo_n "checking for stdlib extension module _testmultiphase... " >&6; }
+
+
+
+
+          if test "$TEST_MODULES" = yes; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        MODULE__TESTMULTIPHASE_CFLAGS=""
+
+    MODULE__TESTMULTIPHASE_LDFLAGS=""
+
+     if true; then
+  MODULE__TESTMULTIPHASE_TRUE=
+  MODULE__TESTMULTIPHASE_FALSE='#'
+else
+  MODULE__TESTMULTIPHASE_TRUE='#'
+  MODULE__TESTMULTIPHASE_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *_testmultiphase*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; } ;;
+esac
+    MODULE__TESTMULTIPHASE_CFLAGS=""
+
+    MODULE__TESTMULTIPHASE_LDFLAGS=""
+
+     if false; then
+  MODULE__TESTMULTIPHASE_TRUE=
+  MODULE__TESTMULTIPHASE_FALSE='#'
+else
+  MODULE__TESTMULTIPHASE_TRUE='#'
+  MODULE__TESTMULTIPHASE_FALSE=
+fi
+
+
+fi
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _xxtestfuzz" >&5
+$as_echo_n "checking for stdlib extension module _xxtestfuzz... " >&6; }
+
+
+
+
+          if test "$TEST_MODULES" = yes; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        MODULE__XXTESTFUZZ_CFLAGS=""
+
+    MODULE__XXTESTFUZZ_LDFLAGS=""
+
+     if true; then
+  MODULE__XXTESTFUZZ_TRUE=
+  MODULE__XXTESTFUZZ_FALSE='#'
+else
+  MODULE__XXTESTFUZZ_TRUE='#'
+  MODULE__XXTESTFUZZ_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *_xxtestfuzz*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; } ;;
+esac
+    MODULE__XXTESTFUZZ_CFLAGS=""
+
+    MODULE__XXTESTFUZZ_LDFLAGS=""
+
+     if false; then
+  MODULE__XXTESTFUZZ_TRUE=
+  MODULE__XXTESTFUZZ_FALSE='#'
+else
+  MODULE__XXTESTFUZZ_TRUE='#'
+  MODULE__XXTESTFUZZ_FALSE=
+fi
+
+
+fi
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module readline" >&5
+$as_echo_n "checking for stdlib extension module readline... " >&6; }
+
+
+
+
+          if test "$py_cv_lib_readline" = yes; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        MODULE_READLINE_CFLAGS=""
+
+    MODULE_READLINE_LDFLAGS="$READLINE_LIBS"
+
+     if true; then
+  MODULE_READLINE_TRUE=
+  MODULE_READLINE_FALSE='#'
+else
+  MODULE_READLINE_TRUE='#'
+  MODULE_READLINE_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *readline*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; } ;;
+esac
+    MODULE_READLINE_CFLAGS=""
+
+    MODULE_READLINE_LDFLAGS=""
+
+     if false; then
+  MODULE_READLINE_TRUE=
+  MODULE_READLINE_FALSE='#'
+else
+  MODULE_READLINE_TRUE='#'
+  MODULE_READLINE_FALSE=
+fi
+
+
+fi
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _crypt" >&5
+$as_echo_n "checking for stdlib extension module _crypt... " >&6; }
+
+
+
+
+          if test "$ac_sys_system" != VxWorks -a \( "$ac_cv_search_crypt_r" != no -o "$ac_cv_search_crypt" != no \); then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        MODULE__CRYPT_CFLAGS=""
+
+    MODULE__CRYPT_LDFLAGS="-lcrypt"
+
+     if true; then
+  MODULE__CRYPT_TRUE=
+  MODULE__CRYPT_FALSE='#'
+else
+  MODULE__CRYPT_TRUE='#'
+  MODULE__CRYPT_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *_crypt*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; } ;;
+esac
+    MODULE__CRYPT_CFLAGS=""
+
+    MODULE__CRYPT_LDFLAGS=""
+
+     if false; then
+  MODULE__CRYPT_TRUE=
+  MODULE__CRYPT_FALSE='#'
+else
+  MODULE__CRYPT_TRUE='#'
+  MODULE__CRYPT_FALSE=
+fi
+
+
+fi
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _ssl" >&5
+$as_echo_n "checking for stdlib extension module _ssl... " >&6; }
+
+
+
+
+          if test "$ac_cv_working_openssl_ssl" = yes; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        MODULE__SSL_CFLAGS="$OPENSSL_INCLUDES"
+
+    MODULE__SSL_LDFLAGS="$OPENSSL_LIBS $OPENSSL_LDFLAGS"
+
+     if true; then
+  MODULE__SSL_TRUE=
+  MODULE__SSL_FALSE='#'
+else
+  MODULE__SSL_TRUE='#'
+  MODULE__SSL_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *_ssl*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; } ;;
+esac
+    MODULE__SSL_CFLAGS=""
+
+    MODULE__SSL_LDFLAGS=""
+
+     if false; then
+  MODULE__SSL_TRUE=
+  MODULE__SSL_FALSE='#'
+else
+  MODULE__SSL_TRUE='#'
+  MODULE__SSL_FALSE=
+fi
+
+
+fi
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _hashlib" >&5
+$as_echo_n "checking for stdlib extension module _hashlib... " >&6; }
+
+
+
+
+          if test "$ac_cv_working_openssl_ssl" = yes; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        MODULE__HASHLIB_CFLAGS="$OPENSSL_INCLUDES"
+
+    MODULE__HASHLIB_LDFLAGS="$OPENSSL_LIBS $OPENSSL_LDFLAGS"
+
+     if true; then
+  MODULE__HASHLIB_TRUE=
+  MODULE__HASHLIB_FALSE='#'
+else
+  MODULE__HASHLIB_TRUE='#'
+  MODULE__HASHLIB_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *_hashlib*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; } ;;
+esac
+    MODULE__HASHLIB_CFLAGS=""
+
+    MODULE__HASHLIB_LDFLAGS=""
+
+     if false; then
+  MODULE__HASHLIB_TRUE=
+  MODULE__HASHLIB_FALSE='#'
+else
+  MODULE__HASHLIB_TRUE='#'
+  MODULE__HASHLIB_FALSE=
+fi
+
+
+fi
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _sha256" >&5
+$as_echo_n "checking for stdlib extension module _sha256... " >&6; }
+
+
+
+
+          if test "$with_builtin_sha256" = yes; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        MODULE__SHA256_CFLAGS=""
+
+    MODULE__SHA256_LDFLAGS=""
+
+     if true; then
+  MODULE__SHA256_TRUE=
+  MODULE__SHA256_FALSE='#'
+else
+  MODULE__SHA256_TRUE='#'
+  MODULE__SHA256_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *_sha256*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; } ;;
+esac
+    MODULE__SHA256_CFLAGS=""
+
+    MODULE__SHA256_LDFLAGS=""
+
+     if false; then
+  MODULE__SHA256_TRUE=
+  MODULE__SHA256_FALSE='#'
+else
+  MODULE__SHA256_TRUE='#'
+  MODULE__SHA256_FALSE=
+fi
+
+
+fi
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _sha512" >&5
+$as_echo_n "checking for stdlib extension module _sha512... " >&6; }
+
+
+
+
+          if test "$with_builtin_sha512" = yes; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        MODULE__SHA512_CFLAGS=""
+
+    MODULE__SHA512_LDFLAGS=""
+
+     if true; then
+  MODULE__SHA512_TRUE=
+  MODULE__SHA512_FALSE='#'
+else
+  MODULE__SHA512_TRUE='#'
+  MODULE__SHA512_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *_sha512*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; } ;;
+esac
+    MODULE__SHA512_CFLAGS=""
+
+    MODULE__SHA512_LDFLAGS=""
+
+     if false; then
+  MODULE__SHA512_TRUE=
+  MODULE__SHA512_FALSE='#'
+else
+  MODULE__SHA512_TRUE='#'
+  MODULE__SHA512_FALSE=
+fi
+
+
+fi
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _md5" >&5
+$as_echo_n "checking for stdlib extension module _md5... " >&6; }
+
+
+
+
+          if test "$with_builtin_md5" = yes; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        MODULE__MD5_CFLAGS=""
+
+    MODULE__MD5_LDFLAGS=""
+
+     if true; then
+  MODULE__MD5_TRUE=
+  MODULE__MD5_FALSE='#'
+else
+  MODULE__MD5_TRUE='#'
+  MODULE__MD5_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *_md5*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; } ;;
+esac
+    MODULE__MD5_CFLAGS=""
+
+    MODULE__MD5_LDFLAGS=""
+
+     if false; then
+  MODULE__MD5_TRUE=
+  MODULE__MD5_FALSE='#'
+else
+  MODULE__MD5_TRUE='#'
+  MODULE__MD5_FALSE=
+fi
+
+
+fi
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _sha1" >&5
+$as_echo_n "checking for stdlib extension module _sha1... " >&6; }
+
+
+
+
+          if test "$with_builtin_sha1" = yes; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        MODULE__SHA1_CFLAGS=""
+
+    MODULE__SHA1_LDFLAGS=""
+
+     if true; then
+  MODULE__SHA1_TRUE=
+  MODULE__SHA1_FALSE='#'
+else
+  MODULE__SHA1_TRUE='#'
+  MODULE__SHA1_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *_sha1*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; } ;;
+esac
+    MODULE__SHA1_CFLAGS=""
+
+    MODULE__SHA1_LDFLAGS=""
+
+     if false; then
+  MODULE__SHA1_TRUE=
+  MODULE__SHA1_FALSE='#'
+else
+  MODULE__SHA1_TRUE='#'
+  MODULE__SHA1_FALSE=
+fi
+
+
+fi
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _blake2" >&5
+$as_echo_n "checking for stdlib extension module _blake2... " >&6; }
+
+
+
+
+          if test "$with_builtin_blake2" = yes; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        MODULE__BLAKE2_CFLAGS=""
+
+    MODULE__BLAKE2_LDFLAGS=""
+
+     if true; then
+  MODULE__BLAKE2_TRUE=
+  MODULE__BLAKE2_FALSE='#'
+else
+  MODULE__BLAKE2_TRUE='#'
+  MODULE__BLAKE2_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *_blake2*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; } ;;
+esac
+    MODULE__BLAKE2_CFLAGS=""
+
+    MODULE__BLAKE2_LDFLAGS=""
+
+     if false; then
+  MODULE__BLAKE2_TRUE=
+  MODULE__BLAKE2_FALSE='#'
+else
+  MODULE__BLAKE2_TRUE='#'
+  MODULE__BLAKE2_FALSE=
+fi
+
+
+fi
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _sha3" >&5
+$as_echo_n "checking for stdlib extension module _sha3... " >&6; }
+
+
+
+
+          if test "$with_builtin_sha3" = yes; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        MODULE__SHA3_CFLAGS=""
+
+    MODULE__SHA3_LDFLAGS=""
+
+     if true; then
+  MODULE__SHA3_TRUE=
+  MODULE__SHA3_FALSE='#'
+else
+  MODULE__SHA3_TRUE='#'
+  MODULE__SHA3_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *_sha3*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; } ;;
+esac
+    MODULE__SHA3_CFLAGS=""
+
+    MODULE__SHA3_LDFLAGS=""
+
+     if false; then
+  MODULE__SHA3_TRUE=
+  MODULE__SHA3_FALSE='#'
+else
+  MODULE__SHA3_TRUE='#'
+  MODULE__SHA3_FALSE=
+fi
+
+
+fi
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _gdbm" >&5
+$as_echo_n "checking for stdlib extension module _gdbm... " >&6; }
+
+
+
+
+          if test "$ac_cv_lib_gdbm_gdbm_open" = yes; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        MODULE__GDBM_CFLAGS="$GDBM_CFLAGS"
+
+    MODULE__GDBM_LDFLAGS="$GDBM_LDFLAGS"
+
+     if true; then
+  MODULE__GDBM_TRUE=
+  MODULE__GDBM_FALSE='#'
+else
+  MODULE__GDBM_TRUE='#'
+  MODULE__GDBM_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *_gdbm*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; } ;;
+esac
+    MODULE__GDBM_CFLAGS=""
+
+    MODULE__GDBM_LDFLAGS=""
+
+     if false; then
+  MODULE__GDBM_TRUE=
+  MODULE__GDBM_FALSE='#'
+else
+  MODULE__GDBM_TRUE='#'
+  MODULE__GDBM_FALSE=
+fi
+
+
+fi
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module termios" >&5
+$as_echo_n "checking for stdlib extension module termios... " >&6; }
+
+
+
+
+          if test "$ac_sys_system" != VxWorks; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        MODULE_TERMIOS_CFLAGS=""
+
+    MODULE_TERMIOS_LDFLAGS=""
+
+     if true; then
+  MODULE_TERMIOS_TRUE=
+  MODULE_TERMIOS_FALSE='#'
+else
+  MODULE_TERMIOS_TRUE='#'
+  MODULE_TERMIOS_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *termios*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; } ;;
+esac
+    MODULE_TERMIOS_CFLAGS=""
+
+    MODULE_TERMIOS_LDFLAGS=""
+
+     if false; then
+  MODULE_TERMIOS_TRUE=
+  MODULE_TERMIOS_FALSE='#'
+else
+  MODULE_TERMIOS_TRUE='#'
+  MODULE_TERMIOS_FALSE=
+fi
+
+
+fi
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module ossaudiodev" >&5
+$as_echo_n "checking for stdlib extension module ossaudiodev... " >&6; }
+
+
+
+
+          if test "$ac_cv_header_linux_soundcard_h" = yes -o "$ac_cv_header_sys_soundcard_h" = yes; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        MODULE_OSSAUDIODEV_CFLAGS=""
+
+    MODULE_OSSAUDIODEV_LDFLAGS=""
+
+     if true; then
+  MODULE_OSSAUDIODEV_TRUE=
+  MODULE_OSSAUDIODEV_FALSE='#'
+else
+  MODULE_OSSAUDIODEV_TRUE='#'
+  MODULE_OSSAUDIODEV_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *ossaudiodev*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; } ;;
+esac
+    MODULE_OSSAUDIODEV_CFLAGS=""
+
+    MODULE_OSSAUDIODEV_LDFLAGS=""
+
+     if false; then
+  MODULE_OSSAUDIODEV_TRUE=
+  MODULE_OSSAUDIODEV_FALSE='#'
+else
+  MODULE_OSSAUDIODEV_TRUE='#'
+  MODULE_OSSAUDIODEV_FALSE=
+fi
+
+
+fi
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _scproxy" >&5
+$as_echo_n "checking for stdlib extension module _scproxy... " >&6; }
+
+
+
+
+          if test "$ac_sys_system" = "Darwin"; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        MODULE__SCPROXY_CFLAGS=""
+
+    MODULE__SCPROXY_LDFLAGS="-framework SystemConfiguration -framework CoreFoundation"
+
+     if true; then
+  MODULE__SCPROXY_TRUE=
+  MODULE__SCPROXY_FALSE='#'
+else
+  MODULE__SCPROXY_TRUE='#'
+  MODULE__SCPROXY_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *_scproxy*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; } ;;
+esac
+    MODULE__SCPROXY_CFLAGS=""
+
+    MODULE__SCPROXY_LDFLAGS=""
+
+     if false; then
+  MODULE__SCPROXY_TRUE=
+  MODULE__SCPROXY_FALSE='#'
+else
+  MODULE__SCPROXY_TRUE='#'
+  MODULE__SCPROXY_FALSE=
+fi
+
+
+fi
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module zlib" >&5
+$as_echo_n "checking for stdlib extension module zlib... " >&6; }
+
+
+
+
+          if test "$ac_cv_header_zlib_h" = yes -a "$ac_cv_lib_z_gzread" = yes; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        MODULE_ZLIB_CFLAGS=""
+
+    MODULE_ZLIB_LDFLAGS="-lz"
+
+     if true; then
+  MODULE_ZLIB_TRUE=
+  MODULE_ZLIB_FALSE='#'
+else
+  MODULE_ZLIB_TRUE='#'
+  MODULE_ZLIB_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *zlib*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; } ;;
+esac
+    MODULE_ZLIB_CFLAGS=""
+
+    MODULE_ZLIB_LDFLAGS=""
+
+     if false; then
+  MODULE_ZLIB_TRUE=
+  MODULE_ZLIB_FALSE='#'
+else
+  MODULE_ZLIB_TRUE='#'
+  MODULE_ZLIB_FALSE=
+fi
+
+
+fi
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module binascii" >&5
+$as_echo_n "checking for stdlib extension module binascii... " >&6; }
+
+
+
+
+          if true; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        MODULE_BINASCII_CFLAGS="$BINASCII_CFLAGS"
+
+    MODULE_BINASCII_LDFLAGS="$BINASCII_LDFLAGS"
+
+     if true; then
+  MODULE_BINASCII_TRUE=
+  MODULE_BINASCII_FALSE='#'
+else
+  MODULE_BINASCII_TRUE='#'
+  MODULE_BINASCII_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *binascii*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; } ;;
+esac
+    MODULE_BINASCII_CFLAGS=""
+
+    MODULE_BINASCII_LDFLAGS=""
+
+     if false; then
+  MODULE_BINASCII_TRUE=
+  MODULE_BINASCII_FALSE='#'
+else
+  MODULE_BINASCII_TRUE='#'
+  MODULE_BINASCII_FALSE=
+fi
+
+
+fi
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _bz2" >&5
+$as_echo_n "checking for stdlib extension module _bz2... " >&6; }
+
+
+
+
+          if test "$ac_cv_header_bzlib_h" = yes -a "$ac_cv_lib_bz2_BZ2_bzCompress" = yes; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        MODULE__BZ2_CFLAGS=""
+
+    MODULE__BZ2_LDFLAGS="-lbz2"
+
+     if true; then
+  MODULE__BZ2_TRUE=
+  MODULE__BZ2_FALSE='#'
+else
+  MODULE__BZ2_TRUE='#'
+  MODULE__BZ2_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *_bz2*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; } ;;
+esac
+    MODULE__BZ2_CFLAGS=""
+
+    MODULE__BZ2_LDFLAGS=""
+
+     if false; then
+  MODULE__BZ2_TRUE=
+  MODULE__BZ2_FALSE='#'
+else
+  MODULE__BZ2_TRUE='#'
+  MODULE__BZ2_FALSE=
+fi
+
+
+fi
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _lzma" >&5
+$as_echo_n "checking for stdlib extension module _lzma... " >&6; }
+
+
+
+
+          if test "$ac_cv_header_lzma_h" = yes -a "$ac_cv_lib_lzma_lzma_easy_encoder" = yes; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        MODULE__LZMA_CFLAGS=""
+
+    MODULE__LZMA_LDFLAGS="-llzma"
+
+     if true; then
+  MODULE__LZMA_TRUE=
+  MODULE__LZMA_FALSE='#'
+else
+  MODULE__LZMA_TRUE='#'
+  MODULE__LZMA_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *_lzma*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; } ;;
+esac
+    MODULE__LZMA_CFLAGS=""
+
+    MODULE__LZMA_LDFLAGS=""
+
+     if false; then
+  MODULE__LZMA_TRUE=
+  MODULE__LZMA_FALSE='#'
+else
+  MODULE__LZMA_TRUE='#'
+  MODULE__LZMA_FALSE=
+fi
+
+
+fi
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _ctypes_test" >&5
+$as_echo_n "checking for stdlib extension module _ctypes_test... " >&6; }
+
+
+
+
+          if test "$TEST_MODULES" = yes; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        MODULE__CTYPES_TEST_CFLAGS=""
+
+    MODULE__CTYPES_TEST_LDFLAGS=""
+
+     if true; then
+  MODULE__CTYPES_TEST_TRUE=
+  MODULE__CTYPES_TEST_FALSE='#'
+else
+  MODULE__CTYPES_TEST_TRUE='#'
+  MODULE__CTYPES_TEST_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *_ctypes_test*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; } ;;
+esac
+    MODULE__CTYPES_TEST_CFLAGS=""
+
+    MODULE__CTYPES_TEST_LDFLAGS=""
+
+     if false; then
+  MODULE__CTYPES_TEST_TRUE=
+  MODULE__CTYPES_TEST_FALSE='#'
+else
+  MODULE__CTYPES_TEST_TRUE='#'
+  MODULE__CTYPES_TEST_FALSE=
+fi
+
+
+fi
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _posixshmem" >&5
+$as_echo_n "checking for stdlib extension module _posixshmem... " >&6; }
+
+
+
+
+          if true; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        MODULE__POSIXSHMEM_CFLAGS=""
+
+    MODULE__POSIXSHMEM_LDFLAGS="$ac_cv_search_shm_open"
+
+     if true; then
+  MODULE__POSIXSHMEM_TRUE=
+  MODULE__POSIXSHMEM_FALSE='#'
+else
+  MODULE__POSIXSHMEM_TRUE='#'
+  MODULE__POSIXSHMEM_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *_posixshmem*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; } ;;
+esac
+    MODULE__POSIXSHMEM_CFLAGS=""
+
+    MODULE__POSIXSHMEM_LDFLAGS=""
+
+     if false; then
+  MODULE__POSIXSHMEM_TRUE=
+  MODULE__POSIXSHMEM_FALSE='#'
+else
+  MODULE__POSIXSHMEM_TRUE='#'
+  MODULE__POSIXSHMEM_FALSE=
+fi
+
+
+fi
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _tkinter" >&5
+$as_echo_n "checking for stdlib extension module _tkinter... " >&6; }
+
+
+
+
+          if test -n "$TCLTK_LIBS"; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        MODULE__TKINTER_CFLAGS="-DWITH_APPINIT=1"
+
+    MODULE__TKINTER_LDFLAGS="$TCLTK_LIBS"
+
+     if true; then
+  MODULE__TKINTER_TRUE=
+  MODULE__TKINTER_FALSE='#'
+else
+  MODULE__TKINTER_TRUE='#'
+  MODULE__TKINTER_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *_tkinter*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; } ;;
+esac
+    MODULE__TKINTER_CFLAGS=""
+
+    MODULE__TKINTER_LDFLAGS=""
+
+     if false; then
+  MODULE__TKINTER_TRUE=
+  MODULE__TKINTER_FALSE='#'
+else
+  MODULE__TKINTER_TRUE='#'
+  MODULE__TKINTER_FALSE=
+fi
+
+
+fi
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _uuid" >&5
+$as_echo_n "checking for stdlib extension module _uuid... " >&6; }
+
+
+
+
+          if test "$ac_cv_lib_uuid_uuid_generate_time" = yes -o "$ac_cv_func_uuid_create" = yes; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        MODULE__UUID_CFLAGS="$UUID_CFLAGS"
+
+    MODULE__UUID_LDFLAGS="$UUID_LDLAGS"
+
+     if true; then
+  MODULE__UUID_TRUE=
+  MODULE__UUID_FALSE='#'
+else
+  MODULE__UUID_TRUE='#'
+  MODULE__UUID_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *_uuid*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; } ;;
+esac
+    MODULE__UUID_CFLAGS=""
+
+    MODULE__UUID_LDFLAGS=""
+
+     if false; then
+  MODULE__UUID_TRUE=
+  MODULE__UUID_FALSE='#'
+else
+  MODULE__UUID_TRUE='#'
+  MODULE__UUID_FALSE=
+fi
+
+
+fi
+
+
+
 
 
 
@@ -19312,6 +21167,254 @@ LTLIBOBJS=$ac_ltlibobjs
 
 
 
+if test -z "${MODULE_GRP_TRUE}" && test -z "${MODULE_GRP_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_GRP\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_GRP_TRUE}" && test -z "${MODULE_GRP_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_GRP\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_SPWD_TRUE}" && test -z "${MODULE_SPWD_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_SPWD\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_SPWD_TRUE}" && test -z "${MODULE_SPWD_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_SPWD\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__XXSUBINTERPRETERS_TRUE}" && test -z "${MODULE__XXSUBINTERPRETERS_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__XXSUBINTERPRETERS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__XXSUBINTERPRETERS_TRUE}" && test -z "${MODULE__XXSUBINTERPRETERS_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__XXSUBINTERPRETERS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__TESTCAPI_TRUE}" && test -z "${MODULE__TESTCAPI_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__TESTCAPI\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__TESTCAPI_TRUE}" && test -z "${MODULE__TESTCAPI_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__TESTCAPI\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__TESTINTERNALCAPI_TRUE}" && test -z "${MODULE__TESTINTERNALCAPI_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__TESTINTERNALCAPI\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__TESTINTERNALCAPI_TRUE}" && test -z "${MODULE__TESTINTERNALCAPI_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__TESTINTERNALCAPI\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__TESTBUFFER_TRUE}" && test -z "${MODULE__TESTBUFFER_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__TESTBUFFER\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__TESTBUFFER_TRUE}" && test -z "${MODULE__TESTBUFFER_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__TESTBUFFER\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__TESTIMPORTMULTIPLE_TRUE}" && test -z "${MODULE__TESTIMPORTMULTIPLE_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__TESTIMPORTMULTIPLE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__TESTIMPORTMULTIPLE_TRUE}" && test -z "${MODULE__TESTIMPORTMULTIPLE_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__TESTIMPORTMULTIPLE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__TESTMULTIPHASE_TRUE}" && test -z "${MODULE__TESTMULTIPHASE_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__TESTMULTIPHASE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__TESTMULTIPHASE_TRUE}" && test -z "${MODULE__TESTMULTIPHASE_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__TESTMULTIPHASE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__XXTESTFUZZ_TRUE}" && test -z "${MODULE__XXTESTFUZZ_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__XXTESTFUZZ\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__XXTESTFUZZ_TRUE}" && test -z "${MODULE__XXTESTFUZZ_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__XXTESTFUZZ\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_READLINE_TRUE}" && test -z "${MODULE_READLINE_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_READLINE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_READLINE_TRUE}" && test -z "${MODULE_READLINE_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_READLINE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__CRYPT_TRUE}" && test -z "${MODULE__CRYPT_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__CRYPT\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__CRYPT_TRUE}" && test -z "${MODULE__CRYPT_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__CRYPT\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__SSL_TRUE}" && test -z "${MODULE__SSL_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__SSL\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__SSL_TRUE}" && test -z "${MODULE__SSL_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__SSL\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__HASHLIB_TRUE}" && test -z "${MODULE__HASHLIB_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__HASHLIB\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__HASHLIB_TRUE}" && test -z "${MODULE__HASHLIB_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__HASHLIB\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__SHA256_TRUE}" && test -z "${MODULE__SHA256_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__SHA256\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__SHA256_TRUE}" && test -z "${MODULE__SHA256_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__SHA256\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__SHA512_TRUE}" && test -z "${MODULE__SHA512_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__SHA512\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__SHA512_TRUE}" && test -z "${MODULE__SHA512_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__SHA512\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__MD5_TRUE}" && test -z "${MODULE__MD5_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__MD5\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__MD5_TRUE}" && test -z "${MODULE__MD5_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__MD5\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__SHA1_TRUE}" && test -z "${MODULE__SHA1_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__SHA1\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__SHA1_TRUE}" && test -z "${MODULE__SHA1_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__SHA1\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__BLAKE2_TRUE}" && test -z "${MODULE__BLAKE2_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__BLAKE2\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__BLAKE2_TRUE}" && test -z "${MODULE__BLAKE2_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__BLAKE2\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__SHA3_TRUE}" && test -z "${MODULE__SHA3_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__SHA3\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__SHA3_TRUE}" && test -z "${MODULE__SHA3_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__SHA3\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__GDBM_TRUE}" && test -z "${MODULE__GDBM_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__GDBM\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__GDBM_TRUE}" && test -z "${MODULE__GDBM_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__GDBM\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_TERMIOS_TRUE}" && test -z "${MODULE_TERMIOS_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_TERMIOS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_TERMIOS_TRUE}" && test -z "${MODULE_TERMIOS_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_TERMIOS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_OSSAUDIODEV_TRUE}" && test -z "${MODULE_OSSAUDIODEV_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_OSSAUDIODEV\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_OSSAUDIODEV_TRUE}" && test -z "${MODULE_OSSAUDIODEV_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_OSSAUDIODEV\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__SCPROXY_TRUE}" && test -z "${MODULE__SCPROXY_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__SCPROXY\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__SCPROXY_TRUE}" && test -z "${MODULE__SCPROXY_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__SCPROXY\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_ZLIB_TRUE}" && test -z "${MODULE_ZLIB_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_ZLIB\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_ZLIB_TRUE}" && test -z "${MODULE_ZLIB_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_ZLIB\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_BINASCII_TRUE}" && test -z "${MODULE_BINASCII_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_BINASCII\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_BINASCII_TRUE}" && test -z "${MODULE_BINASCII_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_BINASCII\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__BZ2_TRUE}" && test -z "${MODULE__BZ2_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__BZ2\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__BZ2_TRUE}" && test -z "${MODULE__BZ2_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__BZ2\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__LZMA_TRUE}" && test -z "${MODULE__LZMA_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__LZMA\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__LZMA_TRUE}" && test -z "${MODULE__LZMA_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__LZMA\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__CTYPES_TEST_TRUE}" && test -z "${MODULE__CTYPES_TEST_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__CTYPES_TEST\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__CTYPES_TEST_TRUE}" && test -z "${MODULE__CTYPES_TEST_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__CTYPES_TEST\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__POSIXSHMEM_TRUE}" && test -z "${MODULE__POSIXSHMEM_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__POSIXSHMEM\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__POSIXSHMEM_TRUE}" && test -z "${MODULE__POSIXSHMEM_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__POSIXSHMEM\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__TKINTER_TRUE}" && test -z "${MODULE__TKINTER_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__TKINTER\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__TKINTER_TRUE}" && test -z "${MODULE__TKINTER_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__TKINTER\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__UUID_TRUE}" && test -z "${MODULE__UUID_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__UUID\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__UUID_TRUE}" && test -z "${MODULE__UUID_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__UUID\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 
 : "${CONFIG_STATUS=./config.status}"
 ac_write_fail=0
