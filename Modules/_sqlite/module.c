@@ -27,6 +27,7 @@
 #include "prepare_protocol.h"
 #include "microprotocols.h"
 #include "row.h"
+#include "core_objects.h"
 
 #if SQLITE_VERSION_NUMBER < 3007015
 #error "SQLite 3.7.15 or higher required"
@@ -183,10 +184,9 @@ pysqlite_register_converter_impl(PyObject *module, PyObject *orig_name,
 {
     PyObject* name = NULL;
     PyObject* retval = NULL;
-    _Py_IDENTIFIER(upper);
 
     /* convert the name to upper case */
-    name = _PyObject_CallMethodIdNoArgs(orig_name, &PyId_upper);
+    name = _PyObject_CallMethodNoArgs(orig_name, _Py_ID(upper));
     if (!name) {
         goto error;
     }

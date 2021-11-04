@@ -9,6 +9,7 @@
 
 #include "Python.h"
 #include "structmember.h"         // PyMemberDef
+#include "core_objects.h"
 
 #include <stdlib.h>               // free()
 #include <string.h>
@@ -430,7 +431,7 @@ parse_filter_chain_spec(_lzma_state *state, lzma_filter filters[], PyObject *fil
    Python-level filter specifiers (represented as dicts). */
 
 static int
-spec_add_field(PyObject *spec, _Py_Identifier *key, unsigned long long value)
+spec_add_field(PyObject *spec, PyObject *key, unsigned long long value)
 {
     int status;
     PyObject *value_object;
@@ -440,7 +441,7 @@ spec_add_field(PyObject *spec, _Py_Identifier *key, unsigned long long value)
         return -1;
     }
 
-    status = _PyDict_SetItemId(spec, key, value_object);
+    status = PyDict_SetItem(spec, key, value_object);
     Py_DECREF(value_object);
     return status;
 }
@@ -457,8 +458,7 @@ build_filter_spec(const lzma_filter *f)
 
 #define ADD_FIELD(SOURCE, FIELD) \
     do { \
-        _Py_IDENTIFIER(FIELD); \
-        if (spec_add_field(spec, &PyId_##FIELD, SOURCE->FIELD) == -1) \
+        if (spec_add_field(spec, _Py_ID(FIELD), SOURCE->FIELD) == -1) \
             goto error;\
     } while (0)
 

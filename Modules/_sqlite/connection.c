@@ -28,6 +28,7 @@
 #include "cursor.h"
 #include "prepare_protocol.h"
 #include "util.h"
+#include "core_objects.h"
 
 #if SQLITE_VERSION_NUMBER >= 3014000
 #define HAVE_TRACE_V2
@@ -68,8 +69,6 @@ module _sqlite3
 class _sqlite3.Connection "pysqlite_Connection *" "clinic_state()->ConnectionType"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=67369db2faf80891]*/
-
-_Py_IDENTIFIER(cursor);
 
 static const char * const begin_statements[] = {
     "BEGIN ",
@@ -757,7 +756,6 @@ final_callback(sqlite3_context *context)
 
     PyObject* function_result;
     PyObject** aggregate_instance;
-    _Py_IDENTIFIER(finalize);
     int ok;
     PyObject *exception, *value, *tb;
 
@@ -776,7 +774,7 @@ final_callback(sqlite3_context *context)
     /* Keep the exception (if any) of the last call to step() */
     PyErr_Fetch(&exception, &value, &tb);
 
-    function_result = _PyObject_CallMethodIdNoArgs(*aggregate_instance, &PyId_finalize);
+    function_result = PyObject_CallMethodNoArgs(*aggregate_instance, _Py_ID(finalize));
 
     Py_DECREF(*aggregate_instance);
 
@@ -1364,7 +1362,6 @@ pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* iso
     } else {
         const char * const *candidate;
         PyObject *uppercase_level;
-        _Py_IDENTIFIER(upper);
 
         if (!PyUnicode_Check(isolation_level)) {
             PyErr_Format(PyExc_TypeError,
@@ -1373,8 +1370,8 @@ pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* iso
             return -1;
         }
 
-        uppercase_level = _PyObject_CallMethodIdOneArg(
-                        (PyObject *)&PyUnicode_Type, &PyId_upper,
+        uppercase_level = PyObject_CallMethodOneArg(
+                        (PyObject *)&PyUnicode_Type, _Py_ID(upper),
                         isolation_level);
         if (!uppercase_level) {
             return -1;
@@ -1437,16 +1434,15 @@ pysqlite_connection_execute_impl(pysqlite_Connection *self, PyObject *sql,
                                  PyObject *parameters)
 /*[clinic end generated code: output=5be05ae01ee17ee4 input=fbd17c75c7140271]*/
 {
-    _Py_IDENTIFIER(execute);
     PyObject* cursor = 0;
     PyObject* result = 0;
 
-    cursor = _PyObject_CallMethodIdNoArgs((PyObject*)self, &PyId_cursor);
+    cursor = PyObject_CallMethodNoArgs((PyObject*)self, _Py_ID(cursor));
     if (!cursor) {
         goto error;
     }
 
-    result = _PyObject_CallMethodIdObjArgs(cursor, &PyId_execute, sql, parameters, NULL);
+    result = PyObject_CallMethodObjArgs(cursor, _Py_ID(execute), sql, parameters, NULL);
     if (!result) {
         Py_CLEAR(cursor);
     }
@@ -1472,17 +1468,16 @@ pysqlite_connection_executemany_impl(pysqlite_Connection *self,
                                      PyObject *sql, PyObject *parameters)
 /*[clinic end generated code: output=776cd2fd20bfe71f input=4feab80659ffc82b]*/
 {
-    _Py_IDENTIFIER(executemany);
     PyObject* cursor = 0;
     PyObject* result = 0;
 
-    cursor = _PyObject_CallMethodIdNoArgs((PyObject*)self, &PyId_cursor);
+    cursor = PyObject_CallMethodNoArgs((PyObject*)self, _Py_ID(cursor));
     if (!cursor) {
         goto error;
     }
 
-    result = _PyObject_CallMethodIdObjArgs(cursor, &PyId_executemany, sql,
-                                           parameters, NULL);
+    result = PyObject_CallMethodObjArgs(cursor, _Py_ID(executemany), sql,
+                                        parameters, NULL);
     if (!result) {
         Py_CLEAR(cursor);
     }
@@ -1507,16 +1502,15 @@ pysqlite_connection_executescript(pysqlite_Connection *self,
                                   PyObject *script_obj)
 /*[clinic end generated code: output=4c4f9d77aa0ae37d input=b27ae5c24ffb8b43]*/
 {
-    _Py_IDENTIFIER(executescript);
     PyObject* cursor = 0;
     PyObject* result = 0;
 
-    cursor = _PyObject_CallMethodIdNoArgs((PyObject*)self, &PyId_cursor);
+    cursor = PyObject_CallMethodNoArgs((PyObject*)self, _Py_ID(cursor));
     if (!cursor) {
         goto error;
     }
 
-    result = _PyObject_CallMethodIdObjArgs(cursor, &PyId_executescript,
+    result = PyObject_CallMethodObjArgs(cursor, _Py_ID(executescript),
                                            script_obj, NULL);
     if (!result) {
         Py_CLEAR(cursor);
@@ -1625,7 +1619,6 @@ static PyObject *
 pysqlite_connection_iterdump_impl(pysqlite_Connection *self)
 /*[clinic end generated code: output=586997aaf9808768 input=53bc907cb5eedb85]*/
 {
-    _Py_IDENTIFIER(_iterdump);
     PyObject* retval = NULL;
     PyObject* module = NULL;
     PyObject* module_dict;
@@ -1645,7 +1638,7 @@ pysqlite_connection_iterdump_impl(pysqlite_Connection *self)
         goto finally;
     }
 
-    pyfn_iterdump = _PyDict_GetItemIdWithError(module_dict, &PyId__iterdump);
+    pyfn_iterdump = PyDict_GetItemWithError(module_dict, _Py_ID(_iterdump));
     if (!pyfn_iterdump) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(self->OperationalError,

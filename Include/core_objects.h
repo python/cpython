@@ -14,6 +14,12 @@ typedef struct _ascii_1 {
 } _PyAsciiId_1;
 
 
+typedef struct _ascii_2 {
+    PyASCIIObject object;
+    char text[3];
+} _PyAsciiId_2;
+
+
 typedef struct _ascii_3 {
     PyASCIIObject object;
     char text[4];
@@ -316,12 +322,13 @@ typedef struct _py_id_strings {
     _PyAsciiId_6 id_decode;
     _PyAsciiId_7 id_default;
     _PyAsciiId_13 id_defaultaction;
+    _PyAsciiId_9 id_dict_size;
     _PyAsciiId_17 id_difference_update;
     _PyAsciiId_7 id_discard;
     _PyAsciiId_14 id_dispatch_table;
     _PyAsciiId_11 id_displayhook;
+    _PyAsciiId_4 id_dist;
     _PyAsciiId_7 id_doctype;
-    _PyAsciiId_3 id_dot;
     _PyAsciiId_6 id_enable;
     _PyAsciiId_8 id_encoding;
     _PyAsciiId_10 id_end_lineno;
@@ -356,6 +363,7 @@ typedef struct _py_id_strings {
     _PyAsciiId_10 id_get_source;
     _PyAsciiId_7 id_getattr;
     _PyAsciiId_14 id_getnextcabinet;
+    _PyAsciiId_2 id_id;
     _PyAsciiId_6 id_ignore;
     _PyAsciiId_9 id_importlib;
     _PyAsciiId_6 id_insert;
@@ -370,6 +378,8 @@ typedef struct _py_id_strings {
     _PyAsciiId_9 id_last_type;
     _PyAsciiId_10 id_last_value;
     _PyAsciiId_6 id_latin1;
+    _PyAsciiId_2 id_lc;
+    _PyAsciiId_2 id_lp;
     _PyAsciiId_7 id_library;
     _PyAsciiId_6 id_lineno;
     _PyAsciiId_6 id_little;
@@ -392,6 +402,7 @@ typedef struct _py_id_strings {
     _PyAsciiId_6 id_parent;
     _PyAsciiId_7 id_partial;
     _PyAsciiId_4 id_path;
+    _PyAsciiId_2 id_pb;
     _PyAsciiId_4 id_peek;
     _PyAsciiId_13 id_persistent_id;
     _PyAsciiId_15 id_persistent_load;
@@ -420,6 +431,7 @@ typedef struct _py_id_strings {
     _PyAsciiId_4 id_sort;
     _PyAsciiId_16 id_source_traceback;
     _PyAsciiId_7 id_special;
+    _PyAsciiId_12 id_start_offset;
     _PyAsciiId_6 id_status;
     _PyAsciiId_6 id_stderr;
     _PyAsciiId_5 id_stdin;

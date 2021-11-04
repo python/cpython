@@ -3162,6 +3162,26 @@ _PyIdStrings _Py_id_strings = {
         },
         .text = { 'd', 'e', 'f', 'a', 'u', 'l', 't', 'a', 'c', 't', 'i', 'o', 'n'}
     },
+    .id_dict_size = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 9,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'd', 'i', 'c', 't', '_', 's', 'i', 'z', 'e'}
+    },
     .id_difference_update = {
         .object = {
             .ob_base = {
@@ -3242,6 +3262,26 @@ _PyIdStrings _Py_id_strings = {
         },
         .text = { 'd', 'i', 's', 'p', 'l', 'a', 'y', 'h', 'o', 'o', 'k'}
     },
+    .id_dist = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 4,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'd', 'i', 's', 't'}
+    },
     .id_doctype = {
         .object = {
             .ob_base = {
@@ -3261,26 +3301,6 @@ _PyIdStrings _Py_id_strings = {
             .wstr = NULL,
         },
         .text = { 'd', 'o', 'c', 't', 'y', 'p', 'e'}
-    },
-    .id_dot = {
-        .object = {
-            .ob_base = {
-                _PyObject_EXTRA_INIT
-                1000,
-                &PyUnicode_Type,
-            },
-            .length = 3,
-            .hash = -1,
-            .state = {
-                .interned = SSTATE_NOT_INTERNED,
-                .kind = PyUnicode_1BYTE_KIND,
-                .compact = 1,
-                .ascii = 1,
-                .ready = 1,
-            },
-            .wstr = NULL,
-        },
-        .text = { 'd', 'o', 't'}
     },
     .id_enable = {
         .object = {
@@ -3962,6 +3982,26 @@ _PyIdStrings _Py_id_strings = {
         },
         .text = { 'g', 'e', 't', 'n', 'e', 'x', 't', 'c', 'a', 'b', 'i', 'n', 'e', 't'}
     },
+    .id_id = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 2,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'i', 'd'}
+    },
     .id_ignore = {
         .object = {
             .ob_base = {
@@ -4241,6 +4281,46 @@ _PyIdStrings _Py_id_strings = {
             .wstr = NULL,
         },
         .text = { 'l', 'a', 't', 'i', 'n', '1'}
+    },
+    .id_lc = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 2,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'l', 'c'}
+    },
+    .id_lp = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 2,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'l', 'p'}
     },
     .id_library = {
         .object = {
@@ -4681,6 +4761,26 @@ _PyIdStrings _Py_id_strings = {
             .wstr = NULL,
         },
         .text = { 'p', 'a', 't', 'h'}
+    },
+    .id_pb = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 2,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 'p', 'b'}
     },
     .id_peek = {
         .object = {
@@ -5241,6 +5341,26 @@ _PyIdStrings _Py_id_strings = {
             .wstr = NULL,
         },
         .text = { 's', 'p', 'e', 'c', 'i', 'a', 'l'}
+    },
+    .id_start_offset = {
+        .object = {
+            .ob_base = {
+                _PyObject_EXTRA_INIT
+                1000,
+                &PyUnicode_Type,
+            },
+            .length = 12,
+            .hash = -1,
+            .state = {
+                .interned = SSTATE_NOT_INTERNED,
+                .kind = PyUnicode_1BYTE_KIND,
+                .compact = 1,
+                .ascii = 1,
+                .ready = 1,
+            },
+            .wstr = NULL,
+        },
+        .text = { 's', 't', 'a', 'r', 't', '_', 'o', 'f', 'f', 's', 'e', 't'}
     },
     .id_status = {
         .object = {
@@ -6623,6 +6743,9 @@ void _Py_intern_identifiers(void)
     ref = (PyObject *)&_Py_id_strings.id_defaultaction;
     PyUnicode_InternInPlace(&ref);
     Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_dict_size;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
     ref = (PyObject *)&_Py_id_strings.id_difference_update;
     PyUnicode_InternInPlace(&ref);
     Py_DECREF(ref);
@@ -6635,10 +6758,10 @@ void _Py_intern_identifiers(void)
     ref = (PyObject *)&_Py_id_strings.id_displayhook;
     PyUnicode_InternInPlace(&ref);
     Py_DECREF(ref);
-    ref = (PyObject *)&_Py_id_strings.id_doctype;
+    ref = (PyObject *)&_Py_id_strings.id_dist;
     PyUnicode_InternInPlace(&ref);
     Py_DECREF(ref);
-    ref = (PyObject *)&_Py_id_strings.id_dot;
+    ref = (PyObject *)&_Py_id_strings.id_doctype;
     PyUnicode_InternInPlace(&ref);
     Py_DECREF(ref);
     ref = (PyObject *)&_Py_id_strings.id_enable;
@@ -6743,6 +6866,9 @@ void _Py_intern_identifiers(void)
     ref = (PyObject *)&_Py_id_strings.id_getnextcabinet;
     PyUnicode_InternInPlace(&ref);
     Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_id;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
     ref = (PyObject *)&_Py_id_strings.id_ignore;
     PyUnicode_InternInPlace(&ref);
     Py_DECREF(ref);
@@ -6783,6 +6909,12 @@ void _Py_intern_identifiers(void)
     PyUnicode_InternInPlace(&ref);
     Py_DECREF(ref);
     ref = (PyObject *)&_Py_id_strings.id_latin1;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_lc;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_lp;
     PyUnicode_InternInPlace(&ref);
     Py_DECREF(ref);
     ref = (PyObject *)&_Py_id_strings.id_library;
@@ -6849,6 +6981,9 @@ void _Py_intern_identifiers(void)
     PyUnicode_InternInPlace(&ref);
     Py_DECREF(ref);
     ref = (PyObject *)&_Py_id_strings.id_path;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_pb;
     PyUnicode_InternInPlace(&ref);
     Py_DECREF(ref);
     ref = (PyObject *)&_Py_id_strings.id_peek;
@@ -6933,6 +7068,9 @@ void _Py_intern_identifiers(void)
     PyUnicode_InternInPlace(&ref);
     Py_DECREF(ref);
     ref = (PyObject *)&_Py_id_strings.id_special;
+    PyUnicode_InternInPlace(&ref);
+    Py_DECREF(ref);
+    ref = (PyObject *)&_Py_id_strings.id_start_offset;
     PyUnicode_InternInPlace(&ref);
     Py_DECREF(ref);
     ref = (PyObject *)&_Py_id_strings.id_status;

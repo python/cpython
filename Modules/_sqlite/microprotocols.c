@@ -28,6 +28,7 @@
 #include "cursor.h"
 #include "microprotocols.h"
 #include "prepare_protocol.h"
+#include "core_objects.h"
 
 
 /* pysqlite_microprotocols_init - initialize the adapters dictionary */
@@ -74,8 +75,6 @@ PyObject *
 pysqlite_microprotocols_adapt(pysqlite_state *state, PyObject *obj,
                               PyObject *proto, PyObject *alt)
 {
-    _Py_IDENTIFIER(__adapt__);
-    _Py_IDENTIFIER(__conform__);
     PyObject *adapter, *key, *adapted;
 
     /* we don't check for exact type conformance as specified in PEP 246
@@ -100,7 +99,7 @@ pysqlite_microprotocols_adapt(pysqlite_state *state, PyObject *obj,
     }
 
     /* try to have the protocol adapt this object */
-    if (_PyObject_LookupAttrId(proto, &PyId___adapt__, &adapter) < 0) {
+    if (_PyObject_LookupAttr(proto, _Py_ID(__adapt__), &adapter) < 0) {
         return NULL;
     }
     if (adapter) {
@@ -119,7 +118,7 @@ pysqlite_microprotocols_adapt(pysqlite_state *state, PyObject *obj,
     }
 
     /* and finally try to have the object adapt itself */
-    if (_PyObject_LookupAttrId(obj, &PyId___conform__, &adapter) < 0) {
+    if (_PyObject_LookupAttr(obj, _Py_ID(__conform__), &adapter) < 0) {
         return NULL;
     }
     if (adapter) {

@@ -24,6 +24,7 @@
 #include "cursor.h"
 #include "module.h"
 #include "util.h"
+#include "core_objects.h"
 
 #define clinic_state() (pysqlite_get_state_by_type(Py_TYPE(self)))
 #include "clinic/cursor.c.h"
@@ -133,13 +134,12 @@ _pysqlite_get_converter(pysqlite_state *state, const char *keystr,
     PyObject *key;
     PyObject *upcase_key;
     PyObject *retval;
-    _Py_IDENTIFIER(upper);
 
     key = PyUnicode_FromStringAndSize(keystr, keylen);
     if (!key) {
         return NULL;
     }
-    upcase_key = _PyObject_CallMethodIdNoArgs(key, &PyId_upper);
+    upcase_key = PyObject_CallMethodNoArgs(key, _Py_ID(upper));
     Py_DECREF(key);
     if (!upcase_key) {
         return NULL;

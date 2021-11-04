@@ -157,10 +157,12 @@ cursor
 decode
 default
 defaultaction
+dict_size
 difference_update
 discard
 dispatch_table
 displayhook
+dist
 doctype
 enable
 encoding
@@ -196,6 +198,7 @@ get_loop
 get_source
 getattr
 getnextcabinet
+id
 ignore
 importlib
 insert
@@ -210,6 +213,8 @@ last_traceback
 last_type
 last_value
 latin1
+lc
+lp
 library
 lineno
 little
@@ -232,6 +237,7 @@ open
 parent
 partial
 path
+pb
 peek
 persistent_id
 persistent_load
@@ -260,6 +266,7 @@ setstate
 sort
 source_traceback
 special
+start_offset
 status
 stderr
 stdin
@@ -291,10 +298,8 @@ writable
 write
 zipimporter
 
-ATTR
 CANCELLED
 COLS
-FIELD
 FINISHED
 JSONDecodeError
 LINES

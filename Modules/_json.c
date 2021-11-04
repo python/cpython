@@ -11,6 +11,7 @@
 #include "Python.h"
 #include "structmember.h"         // PyMemberDef
 #include "pycore_accu.h"
+#include "core_objects.h"
 
 typedef struct {
     PyObject *PyScannerType;
@@ -322,8 +323,7 @@ raise_errmsg(const char *msg, PyObject *s, Py_ssize_t end)
         return;
     }
 
-    _Py_IDENTIFIER(JSONDecodeError);
-    PyObject *JSONDecodeError = _PyObject_GetAttrId(decoder, &PyId_JSONDecodeError);
+    PyObject *JSONDecodeError = PyObject_GetAttr(decoder, _Py_ID(JSONDecodeError));
     Py_DECREF(decoder);
     if (JSONDecodeError == NULL) {
         return;
