@@ -18,10 +18,9 @@
 --------------
 
 This module provides runtime support for type hints. The most fundamental
-support consists of the types :data:`Any`, :data:`Union`, :data:`Tuple`,
-:data:`Callable`, :class:`TypeVar`, and :class:`Generic`. For a full
-specification, please see :pep:`484`. For a simplified introduction to type
-hints, see :pep:`483`.
+support consists of the types :data:`Any`, :data:`Union`, :data:`Callable`,
+:class:`TypeVar`, and :class:`Generic`. For a full specification, please see
+:pep:`484`. For a simplified introduction to type hints, see :pep:`483`.
 
 
 The function below takes and returns a string and is annotated as follows::
