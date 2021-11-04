@@ -4,7 +4,6 @@
 
 // Include the manifest file that indicates we support all
 // current versions of Windows.
-#include <winuser.h>
 2 RT_MANIFEST "python.manifest"
 
 /////////////////////////////////////////////////////////////////////////////
