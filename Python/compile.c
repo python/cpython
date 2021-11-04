@@ -30,6 +30,7 @@
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_symtable.h"      // PySTEntryObject
+#include "core_objects.h"
 
 #define NEED_OPCODE_JUMP_TABLES
 #include "opcode.h"               // EXTENDED_ARG
@@ -662,17 +663,14 @@ compiler_enter_scope(struct compiler *c, identifier name,
     }
     if (u->u_ste->ste_needs_class_closure) {
         /* Cook up an implicit __class__ cell. */
-        _Py_IDENTIFIER(__class__);
-        PyObject *name;
         int res;
         assert(u->u_scope_type == COMPILER_SCOPE_CLASS);
         assert(PyDict_GET_SIZE(u->u_cellvars) == 0);
-        name = _PyUnicode_FromId(&PyId___class__);
         if (!name) {
             compiler_unit_free(u);
             return 0;
         }
-        res = PyDict_SetItem(u->u_cellvars, name, _PyLong_GetZero());
+        res = PyDict_SetItem(u->u_cellvars, _Py_ID(__class__), _PyLong_GetZero());
         if (res < 0) {
             compiler_unit_free(u);
             return 0;
@@ -1970,11 +1968,6 @@ compiler_body(struct compiler *c, asdl_stmt_seq *stmts)
     int i = 0;
     stmt_ty st;
     PyObject *docstring;
-    _Py_IDENTIFIER(__doc__);
-    PyObject *__doc__ = _PyUnicode_FromId(&PyId___doc__);  /* borrowed ref*/
-    if (__doc__ == NULL) {
-        return 0;
-    }
 
     /* Set current line number to the line number of first statement.
        This way line number for SETUP_ANNOTATIONS will always
@@ -1998,7 +1991,7 @@ compiler_body(struct compiler *c, asdl_stmt_seq *stmts)
             st = (stmt_ty)asdl_seq_GET(stmts, 0);
             assert(st->kind == Expr_kind);
             VISIT(c, expr, st->v.Expr.value);
-            if (!compiler_nameop(c, __doc__, Store))
+            if (!compiler_nameop(c, _Py_ID(__doc__), Store))
                 return 0;
         }
     }
@@ -2272,7 +2265,6 @@ compiler_visit_annotations(struct compiler *c, arguments_ty args,
 
        Return 0 on error, -1 if no annotations pushed, 1 if a annotations is pushed.
        */
-    _Py_IDENTIFIER(return);
     Py_ssize_t annotations_len = 0;
 
     if (!compiler_visit_argannotations(c, args->args, &annotations_len))
@@ -2289,12 +2281,7 @@ compiler_visit_annotations(struct compiler *c, arguments_ty args,
         !compiler_visit_argannotation(c, args->kwarg->arg,
                                      args->kwarg->annotation, &annotations_len))
         return 0;
-
-    identifier return_str = _PyUnicode_FromId(&PyId_return); /* borrowed ref */
-    if (return_str == NULL) {
-        return 0;
-    }
-    if (!compiler_visit_argannotation(c, return_str, returns, &annotations_len)) {
+    if (!compiler_visit_argannotation(c, _Py_ID(return), returns, &annotations_len)) {
         return 0;
     }
 
@@ -5626,12 +5613,6 @@ compiler_annassign(struct compiler *c, stmt_ty s)
 {
     expr_ty targ = s->v.AnnAssign.target;
     PyObject* mangled;
-    _Py_IDENTIFIER(__annotations__);
-    /* borrowed ref*/
-    PyObject *__annotations__ = _PyUnicode_FromId(&PyId___annotations__);
-    if (__annotations__ == NULL) {
-        return 0;
-    }
 
     assert(s->kind == AnnAssign_kind);
 
@@ -5654,7 +5635,7 @@ compiler_annassign(struct compiler *c, stmt_ty s)
             else {
                 VISIT(c, expr, s->v.AnnAssign.annotation);
             }
-            ADDOP_NAME(c, LOAD_NAME, __annotations__, names);
+            ADDOP_NAME(c, LOAD_NAME, _Py_ID(__annotations__), names);
             mangled = _Py_Mangle(c->u->u_private, targ->v.Name.id);
             ADDOP_LOAD_CONST_NEW(c, mangled);
             ADDOP(c, STORE_SUBSCR);

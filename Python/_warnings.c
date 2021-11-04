@@ -7,6 +7,7 @@
 #include "frameobject.h"          // PyFrame_GetBack()
 #include "pycore_frame.h"
 #include "clinic/_warnings.c.h"
+#include "core_objects.h"
 
 #define MODULE_NAME "_warnings"
 
@@ -14,18 +15,9 @@ PyDoc_STRVAR(warnings__doc__,
 MODULE_NAME " provides basic warning filtering support.\n"
 "It is a helper module to speed up interpreter start-up.");
 
-_Py_IDENTIFIER(stderr);
-#ifndef Py_DEBUG
-_Py_IDENTIFIER(default);
-_Py_IDENTIFIER(ignore);
-#endif
-
-
 /*************************************************************************/
 
 typedef struct _warnings_runtime_state WarningsState;
-
-_Py_IDENTIFIER(__name__);
 
 /* Given a module object, get its per-module state. */
 static WarningsState *
@@ -52,10 +44,9 @@ warnings_clear_state(WarningsState *st)
 
 #ifndef Py_DEBUG
 static PyObject *
-create_filter(PyObject *category, _Py_Identifier *id, const char *modname)
+create_filter(PyObject *category, PyObject *action_str, const char *modname)
 {
     PyObject *modname_obj = NULL;
-    PyObject *action_str = _PyUnicode_FromId(id);
     if (action_str == NULL) {
         return NULL;
     }
@@ -93,15 +84,15 @@ init_filters(void)
 
     size_t pos = 0;  /* Post-incremented in each use. */
     PyList_SET_ITEM(filters, pos++,
-                    create_filter(PyExc_DeprecationWarning, &PyId_default, "__main__"));
+                    create_filter(PyExc_DeprecationWarning, _Py_ID(default), "__main__"));
     PyList_SET_ITEM(filters, pos++,
-                    create_filter(PyExc_DeprecationWarning, &PyId_ignore, NULL));
+                    create_filter(PyExc_DeprecationWarning, _Py_ID(ignore), NULL));
     PyList_SET_ITEM(filters, pos++,
-                    create_filter(PyExc_PendingDeprecationWarning, &PyId_ignore, NULL));
+                    create_filter(PyExc_PendingDeprecationWarning, _Py_ID(ignore), NULL));
     PyList_SET_ITEM(filters, pos++,
-                    create_filter(PyExc_ImportWarning, &PyId_ignore, NULL));
+                    create_filter(PyExc_ImportWarning, _Py_ID(ignore), NULL));
     PyList_SET_ITEM(filters, pos++,
-                    create_filter(PyExc_ResourceWarning, &PyId_ignore, NULL));
+                    create_filter(PyExc_ResourceWarning, _Py_ID(ignore), NULL));
 
     for (size_t x = 0; x < pos; x++) {
         if (PyList_GET_ITEM(filters, x) == NULL) {
@@ -151,7 +142,6 @@ static int
 check_matched(PyObject *obj, PyObject *arg)
 {
     PyObject *result;
-    _Py_IDENTIFIER(match);
     int rc;
 
     /* A 'None' filter always matches */
@@ -168,7 +158,7 @@ check_matched(PyObject *obj, PyObject *arg)
     }
 
     /* Otherwise assume a regex filter and call its match() method */
-    result = _PyObject_CallMethodIdOneArg(obj, &PyId_match, arg);
+    result = PyObject_CallMethodOneArg(obj, _Py_ID(match), arg);
     if (result == NULL)
         return -1;
 
@@ -182,20 +172,14 @@ check_matched(PyObject *obj, PyObject *arg)
    A NULL return value can mean false or an error.
 */
 static PyObject *
-get_warnings_attr(_Py_Identifier *attr_id, int try_import)
+get_warnings_attr(PyObject *attr, int try_import)
 {
-    PyObject *warnings_str;
     PyObject *warnings_module, *obj;
-    _Py_IDENTIFIER(warnings);
 
-    warnings_str = _PyUnicode_FromId(&PyId_warnings);
-    if (warnings_str == NULL) {
-        return NULL;
-    }
 
     /* don't try to import after the start of the Python finallization */
     if (try_import && !_Py_IsFinalizing()) {
-        warnings_module = PyImport_Import(warnings_str);
+        warnings_module = PyImport_Import(_Py_ID(warnings));
         if (warnings_module == NULL) {
             /* Fallback to the C implementation if we cannot get
                the Python implementation */
@@ -213,12 +197,12 @@ get_warnings_attr(_Py_Identifier *attr_id, int try_import)
         if (!_PyInterpreterState_GET()->modules) {
             return NULL;
         }
-        warnings_module = PyImport_GetModule(warnings_str);
+        warnings_module = PyImport_GetModule(_Py_ID(warnings));
         if (warnings_module == NULL)
             return NULL;
     }
 
-    (void)_PyObject_LookupAttrId(warnings_module, attr_id, &obj);
+    (void)_PyObject_LookupAttr(warnings_module, attr, &obj);
     Py_DECREF(warnings_module);
     return obj;
 }
@@ -228,9 +212,8 @@ static PyObject *
 get_once_registry(WarningsState *st)
 {
     PyObject *registry;
-    _Py_IDENTIFIER(onceregistry);
 
-    registry = get_warnings_attr(&PyId_onceregistry, 0);
+    registry = get_warnings_attr(_Py_ID(onceregistry), 0);
     if (registry == NULL) {
         if (PyErr_Occurred())
             return NULL;
@@ -254,9 +237,8 @@ static PyObject *
 get_default_action(WarningsState *st)
 {
     PyObject *default_action;
-    _Py_IDENTIFIER(defaultaction);
 
-    default_action = get_warnings_attr(&PyId_defaultaction, 0);
+    default_action = get_warnings_attr(_Py_ID(defaultaction), 0);
     if (default_action == NULL) {
         if (PyErr_Occurred()) {
             return NULL;
@@ -285,13 +267,12 @@ get_filter(PyObject *category, PyObject *text, Py_ssize_t lineno,
     PyObject *action;
     Py_ssize_t i;
     PyObject *warnings_filters;
-    _Py_IDENTIFIER(filters);
     WarningsState *st = warnings_get_state();
     if (st == NULL) {
         return NULL;
     }
 
-    warnings_filters = get_warnings_attr(&PyId_filters, 0);
+    warnings_filters = get_warnings_attr(_Py_ID(filters), 0);
     if (warnings_filters == NULL) {
         if (PyErr_Occurred())
             return NULL;
@@ -383,7 +364,6 @@ static int
 already_warned(PyObject *registry, PyObject *key, int should_set)
 {
     PyObject *version_obj, *already_warned;
-    _Py_IDENTIFIER(version);
 
     if (key == NULL)
         return -1;
@@ -392,7 +372,7 @@ already_warned(PyObject *registry, PyObject *key, int should_set)
     if (st == NULL) {
         return -1;
     }
-    version_obj = _PyDict_GetItemIdWithError(registry, &PyId_version);
+    version_obj = PyDict_GetItemWithError(registry, _Py_ID(version));
     if (version_obj == NULL
         || !PyLong_CheckExact(version_obj)
         || PyLong_AsLong(version_obj) != st->filters_version)
@@ -404,7 +384,7 @@ already_warned(PyObject *registry, PyObject *key, int should_set)
         version_obj = PyLong_FromLong(st->filters_version);
         if (version_obj == NULL)
             return -1;
-        if (_PyDict_SetItemId(registry, &PyId_version, version_obj) < 0) {
+        if (PyDict_SetItem(registry, _Py_ID(version), version_obj) < 0) {
             Py_DECREF(version_obj);
             return -1;
         }
@@ -489,12 +469,12 @@ show_warning(PyObject *filename, int lineno, PyObject *text,
 
     PyOS_snprintf(lineno_str, sizeof(lineno_str), ":%d: ", lineno);
 
-    name = _PyObject_GetAttrId(category, &PyId___name__);
+    name = PyObject_GetAttr(category, _Py_ID(__name__));
     if (name == NULL) {
         goto error;
     }
 
-    f_stderr = _PySys_GetObjectId(&PyId_stderr);
+    f_stderr = PySys_GetObject("stderr");
     if (f_stderr == NULL) {
         fprintf(stderr, "lost sys.stderr\n");
         goto error;
@@ -558,13 +538,11 @@ call_show_warning(PyObject *category, PyObject *text, PyObject *message,
                   PyObject *sourceline, PyObject *source)
 {
     PyObject *show_fn, *msg, *res, *warnmsg_cls = NULL;
-    _Py_IDENTIFIER(_showwarnmsg);
-    _Py_IDENTIFIER(WarningMessage);
 
     /* If the source parameter is set, try to get the Python implementation.
        The Python implementation is able to log the traceback where the source
        was allocated, whereas the C implementation doesn't. */
-    show_fn = get_warnings_attr(&PyId__showwarnmsg, source != NULL);
+    show_fn = get_warnings_attr(_Py_ID(_showwarnmsg), source != NULL);
     if (show_fn == NULL) {
         if (PyErr_Occurred())
             return -1;
@@ -578,7 +556,7 @@ call_show_warning(PyObject *category, PyObject *text, PyObject *message,
         goto error;
     }
 
-    warnmsg_cls = get_warnings_attr(&PyId_WarningMessage, 0);
+    warnmsg_cls = get_warnings_attr(_Py_ID(WarningMessage), 0);
     if (warnmsg_cls == NULL) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_RuntimeError,
@@ -827,7 +805,6 @@ static int
 setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
               PyObject **module, PyObject **registry)
 {
-    _Py_IDENTIFIER(__warningregistry__);
     PyObject *globals;
 
     /* Setup globals, filename and lineno. */
@@ -866,7 +843,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     /* Setup registry. */
     assert(globals != NULL);
     assert(PyDict_Check(globals));
-    *registry = _PyDict_GetItemIdWithError(globals, &PyId___warningregistry__);
+    *registry = PyDict_GetItemWithError(globals, _Py_ID(__warningregistry__));
     if (*registry == NULL) {
         int rc;
 
@@ -877,7 +854,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
         if (*registry == NULL)
             goto handle_error;
 
-         rc = _PyDict_SetItemId(globals, &PyId___warningregistry__, *registry);
+         rc = PyDict_SetItem(globals, _Py_ID(__warningregistry__), *registry);
          if (rc < 0)
             goto handle_error;
     }
@@ -885,7 +862,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
         Py_INCREF(*registry);
 
     /* Setup module. */
-    *module = _PyDict_GetItemIdWithError(globals, &PyId___name__);
+    *module = PyDict_GetItemWithError(globals, _Py_ID(__name__));
     if (*module == Py_None || (*module != NULL && PyUnicode_Check(*module))) {
         Py_INCREF(*module);
     }
@@ -979,8 +956,6 @@ warnings_warn_impl(PyObject *module, PyObject *message, PyObject *category,
 static PyObject *
 get_source_line(PyObject *module_globals, int lineno)
 {
-    _Py_IDENTIFIER(get_source);
-    _Py_IDENTIFIER(__loader__);
     PyObject *loader;
     PyObject *module_name;
     PyObject *get_source;
@@ -989,12 +964,12 @@ get_source_line(PyObject *module_globals, int lineno)
     PyObject *source_line;
 
     /* Check/get the requisite pieces needed for the loader. */
-    loader = _PyDict_GetItemIdWithError(module_globals, &PyId___loader__);
+    loader = PyDict_GetItemWithError(module_globals, _Py_ID(__loader__));
     if (loader == NULL) {
         return NULL;
     }
     Py_INCREF(loader);
-    module_name = _PyDict_GetItemIdWithError(module_globals, &PyId___name__);
+    module_name = PyDict_GetItemWithError(module_globals, _Py_ID(__name__));
     if (!module_name) {
         Py_DECREF(loader);
         return NULL;
@@ -1002,7 +977,7 @@ get_source_line(PyObject *module_globals, int lineno)
     Py_INCREF(module_name);
 
     /* Make sure the loader implements the optional get_source() method. */
-    (void)_PyObject_LookupAttrId(loader, &PyId_get_source, &get_source);
+    (void)_PyObject_LookupAttr(loader, _Py_ID(get_source), &get_source);
     Py_DECREF(loader);
     if (!get_source) {
         Py_DECREF(module_name);
@@ -1309,9 +1284,8 @@ _PyErr_WarnUnawaitedCoroutine(PyObject *coro)
        Since this is called from __del__ context, it's careful to never raise
        an exception.
     */
-    _Py_IDENTIFIER(_warn_unawaited_coroutine);
     int warned = 0;
-    PyObject *fn = get_warnings_attr(&PyId__warn_unawaited_coroutine, 1);
+    PyObject *fn = get_warnings_attr(_Py_ID(_warn_unawaited_coroutine), 1);
     if (fn) {
         PyObject *res = PyObject_CallOneArg(fn, coro);
         Py_DECREF(fn);
