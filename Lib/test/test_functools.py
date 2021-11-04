@@ -1495,58 +1495,39 @@ class TestLRU:
             self.assertEqual(square.cache_info().hits, 4)
             self.assertEqual(square.cache_info().misses, 4)
 
-    def test_lru_with_container_types(self):
-        def identity(x):
-            return x
-
-        values = [(), (1, 2), (1, 2, 'a')]
-        for maxsize in (None, 128):
-            for current_value in values:
-                with self.subTest(current_value=current_value, maxsize=maxsize):
-                    cached = self.module.lru_cache(maxsize, typed=True)(identity)
-
-                    # some unrelated tuple:
-                    cached((1, 2, 3, 4, 5))  # miss
-                    cached((1, 2, 3, 4, 5))  # hit
-
-                    cached(current_value)  # miss
-                    res = cached(current_value)  # hit
-
-                    self.assertEqual(res, current_value)
-                    self.assertEqual(cached.cache_info().hits, 2)
-                    self.assertEqual(cached.cache_info().misses, 2)
-
     def test_lru_with_container_types_hash_collision(self):
-        # https://bugs.python.org/issue45701
-        def get_zeroth(x):
-            return x[0]
+        """Testing hash collisions in `lru_cache(typed=True)`.
 
-        values = [
+        Some different values in python have the same hash.
+        Like `0`, `False` and `0.0`.
+        When used in `tuple`, hash will still be the same:
+        `hash((1,)) == hash((True,))`
+
+        The thing is, `typed=True` won't help in this case.
+        The first tuple with hash collisions will be used.
+        Context: https://bugs.python.org/issue45701
+        """
+        values = {
             # All values inside each tuple have the same hash:
             # `hash(1) == hash(1.0) == hash(True)`
-            (0, 0.0, False),
-            (1, 1.0, True),
-        ]
-        for maxsize in (None, 128):
-            for hash_collision in values:
-                with self.subTest(maxsize=maxsize, values=values):
-                    cached = self.module.lru_cache(
-                        maxsize,
-                        typed=True,
-                    )(get_zeroth)
+            '(0,)': (0, 0.0, False),
+            '(1,)': (1, 1.0, True),
+        }
+        for expected, hash_collisions in values.items():
+            with self.subTest(values=values):
+                cached = self.module.lru_cache(typed=True)(repr)
 
-                    # All these calls will be cached, because hash is the same.
-                    self.assertEqual(type(hash_collision[0]), int)
-                    self.assertEqual(  # miss, cache created
-                        type(cached((hash_collision[0], 2))),
-                        int,
-                    )
+                # All these calls will be cached, because hash is the same.
+                self.assertEqual(  # miss, cache created
+                    cached((hash_collisions[0],)),
+                    expected,
+                )
 
-                    for value in hash_collision:  # 3 hits
-                        self.assertEqual(type(cached((value, 2))), int)
+                for value in hash_collisions:  # 3 hits
+                    self.assertEqual(cached((value,)), expected)
 
-                    self.assertEqual(cached.cache_info().hits, 3)
-                    self.assertEqual(cached.cache_info().misses, 1)
+                self.assertEqual(cached.cache_info().hits, 3)
+                self.assertEqual(cached.cache_info().misses, 1)
 
     def test_lru_with_keyword_args(self):
         @self.module.lru_cache()
