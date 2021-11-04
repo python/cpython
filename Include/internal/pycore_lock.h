@@ -32,9 +32,13 @@ extern "C" {
 //   PyMutex_Lock(&m);
 //   ...
 //   PyMutex_Unlock(&m);
-typedef struct _PyMutex {
-    uint8_t v;
-} PyMutex;
+
+// NOTE: In Py_NOGIL builds, struct _PyMutex is defined in Include/object.h
+#ifndef Py_NOGIL
+struct _PyMutex { uint8_t v; };
+#endif
+
+typedef struct _PyMutex PyMutex;
 
 #define _Py_UNLOCKED    0
 #define _Py_LOCKED      1
@@ -45,6 +49,13 @@ PyAPI_FUNC(void) _PyMutex_LockSlow(PyMutex *m);
 
 // (private) slow path for unlocking the mutex
 PyAPI_FUNC(void) _PyMutex_UnlockSlow(PyMutex *m);
+
+static inline int
+PyMutex_LockFast(uint8_t *lock_bits)
+{
+    uint8_t expected = _Py_UNLOCKED;
+    return _Py_atomic_compare_exchange_uint8(lock_bits, &expected, _Py_LOCKED);
+}
 
 // Locks the mutex.
 //
