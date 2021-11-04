@@ -2532,25 +2532,7 @@ class TestSingleDispatch(unittest.TestCase):
             def decorated_classmethod(cls, arg: int) -> str:
                 return str(arg)
 
-        try:
-            with WithoutSingleDispatch.cls_context_manager(3) as foo:
-                assert foo == '3', (
-                       "Classmethod contextmanager called from class not working"
-                    )
-            with WithoutSingleDispatch().cls_context_manager(3) as bar:
-                assert bar == '3', (
-                       "Classmethod contextmanager called from instance not working"
-                    )
-            assert WithoutSingleDispatch.decorated_classmethod(666) == '666', (
-                   "Wrapped classmethod called from class not working"
-                )
-            assert WithoutSingleDispatch().decorated_classmethod(666) == '666', (
-                   "Wrapped classmethod called from instance not working"
-                )
-        except AssertionError as e:
-            self.fail(f"There's a bug in this test: '{e}'")
-
-        class A:
+        class WithSingleDispatch:
             @functools.singledispatchmethod
             @classmethod
             @contextlib.contextmanager
@@ -2568,41 +2550,63 @@ class TestSingleDispatch(unittest.TestCase):
                 """My function docstring"""
                 return str(arg)
 
+        # These are sanity checks
+        # to test the test itself is working as expected
         with WithoutSingleDispatch.cls_context_manager(5) as foo:
             without_single_dispatch_foo = foo
 
-        with A.cls_context_manager(5) as foo:
+        with WithSingleDispatch.cls_context_manager(5) as foo:
             single_dispatch_foo = foo
 
         self.assertEqual(without_single_dispatch_foo, single_dispatch_foo)
         self.assertEqual(single_dispatch_foo, '5')
+        
+        self.assertEqual(
+            WithoutSingleDispatch.decorated_classmethod(5),
+            WithSingleDispatch.decorated_classmethod(5)
+        )
 
+        self.assertEqual(WithSingleDispatch.decorated_classmethod(5), '5')
+
+        # Behavioural checks now follow
         for method_name in ('cls_context_manager', 'decorated_classmethod'):
             with self.subTest(method=method_name):
                 self.assertEqual(
-                    getattr(A, method_name).__name__,
+                    getattr(WithSingleDispatch, method_name).__name__,
                     getattr(WithoutSingleDispatch, method_name).__name__
                 )
 
                 self.assertEqual(
-                    getattr(A(), method_name).__name__,
+                    getattr(WithSingleDispatch(), method_name).__name__,
                     getattr(WithoutSingleDispatch(), method_name).__name__
                 )
 
         for meth in (
-            A.cls_context_manager,
-            A().cls_context_manager,
-            A.decorated_classmethod,
-            A().decorated_classmethod
+            WithSingleDispatch.cls_context_manager,
+            WithSingleDispatch().cls_context_manager,
+            WithSingleDispatch.decorated_classmethod,
+            WithSingleDispatch().decorated_classmethod
         ):
             with self.subTest(meth=meth):
                 self.assertEqual(meth.__doc__, 'My function docstring')
                 self.assertEqual(meth.__annotations__['arg'], int)
 
-        self.assertEqual(A.cls_context_manager.__name__, 'cls_context_manager')
-        self.assertEqual(A().cls_context_manager.__name__, 'cls_context_manager')
-        self.assertEqual(A.decorated_classmethod.__name__, 'decorated_classmethod')
-        self.assertEqual(A().decorated_classmethod.__name__, 'decorated_classmethod')
+        self.assertEqual(
+            WithSingleDispatch.cls_context_manager.__name__,
+            'cls_context_manager'
+        )
+        self.assertEqual(
+            WithSingleDispatch().cls_context_manager.__name__,
+            'cls_context_manager'
+        )
+        self.assertEqual(
+            WithSingleDispatch.decorated_classmethod.__name__,
+            'decorated_classmethod'
+        )
+        self.assertEqual(
+            WithSingleDispatch().decorated_classmethod.__name__,
+            'decorated_classmethod'
+        )
 
     def test_invalid_registrations(self):
         msg_prefix = "Invalid first argument to `register()`: "
