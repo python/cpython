@@ -4,6 +4,7 @@
 #include "structmember.h"         // PyMemberDef
 #include "frameobject.h"
 #include "expat.h"
+#include "core_objects.h"
 
 #include "pyexpat.h"
 
@@ -822,11 +823,10 @@ pyexpat_xmlparser_ParseFile_impl(xmlparseobject *self, PyTypeObject *cls,
 {
     int rv = 1;
     PyObject *readmethod = NULL;
-    _Py_IDENTIFIER(read);
 
     pyexpat_state *state = PyType_GetModuleState(cls);
 
-    if (_PyObject_LookupAttrId(file, &PyId_read, &readmethod) < 0) {
+    if (_PyObject_LookupAttr(file, _Py_ID(read), &readmethod) < 0) {
         return NULL;
     }
     if (readmethod == NULL) {

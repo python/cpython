@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_namespace.h"     // _PyNamespace_New()
+#include "core_objects.h"
 
 #include <ctype.h>
 
@@ -886,13 +887,12 @@ static PyObject *
 time_strptime(PyObject *self, PyObject *args)
 {
     PyObject *module, *func, *result;
-    _Py_IDENTIFIER(_strptime_time);
 
     module = PyImport_ImportModuleNoBlock("_strptime");
     if (!module)
         return NULL;
 
-    func = _PyObject_GetAttrId(module, &PyId__strptime_time);
+    func = PyObject_GetAttr(module, _Py_ID(_strptime_time));
     Py_DECREF(module);
     if (!func) {
         return NULL;

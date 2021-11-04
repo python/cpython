@@ -1485,7 +1485,6 @@ array_array_fromfile_impl(arrayobject *self, PyObject *f, Py_ssize_t n)
     PyObject *b, *res;
     Py_ssize_t itemsize = self->ob_descr->itemsize;
     Py_ssize_t nbytes;
-    _Py_IDENTIFIER(read);
     int not_enough_bytes;
 
     if (n < 0) {
@@ -1498,7 +1497,7 @@ array_array_fromfile_impl(arrayobject *self, PyObject *f, Py_ssize_t n)
     }
     nbytes = n * itemsize;
 
-    b = _PyObject_CallMethodId(f, &PyId_read, "n", nbytes);
+    b = PyObject_CallMethod(f, "read", "n", nbytes);
     if (b == NULL)
         return NULL;
 
@@ -1553,14 +1552,13 @@ array_array_tofile(arrayobject *self, PyObject *f)
         char* ptr = self->ob_item + i*BLOCKSIZE;
         Py_ssize_t size = BLOCKSIZE;
         PyObject *bytes, *res;
-        _Py_IDENTIFIER(write);
 
         if (i*BLOCKSIZE + size > nbytes)
             size = nbytes - i*BLOCKSIZE;
         bytes = PyBytes_FromStringAndSize(ptr, size);
         if (bytes == NULL)
             return NULL;
-        res = _PyObject_CallMethodIdOneArg(f, &PyId_write, bytes);
+        res = PyObject_CallMethodOneArg(f, _Py_ID(write), bytes);
         Py_DECREF(bytes);
         if (res == NULL)
             return NULL;
@@ -2200,16 +2198,14 @@ array_array___reduce_ex__(arrayobject *self, PyObject *value)
     int mformat_code;
     static PyObject *array_reconstructor = NULL;
     long protocol;
-    _Py_IDENTIFIER(_array_reconstructor);
-    _Py_IDENTIFIER(__dict__);
 
     if (array_reconstructor == NULL) {
         PyObject *array_module = PyImport_ImportModule("array");
         if (array_module == NULL)
             return NULL;
-        array_reconstructor = _PyObject_GetAttrId(
+        array_reconstructor = PyObject_GetAttr(
             array_module,
-            &PyId__array_reconstructor);
+            _Py_ID(_array_reconstructor));
         Py_DECREF(array_module);
         if (array_reconstructor == NULL)
             return NULL;
@@ -2224,7 +2220,7 @@ array_array___reduce_ex__(arrayobject *self, PyObject *value)
     if (protocol == -1 && PyErr_Occurred())
         return NULL;
 
-    if (_PyObject_LookupAttrId((PyObject *)self, &PyId___dict__, &dict) < 0) {
+    if (_PyObject_LookupAttr((PyObject *)self, _Py_ID(__dict__), &dict) < 0) {
         return NULL;
     }
     if (dict == NULL) {

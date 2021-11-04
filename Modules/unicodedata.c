@@ -21,13 +21,9 @@
 #include "Python.h"
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 #include "structmember.h"         // PyMemberDef
+#include "core_objects.h"
 
 #include <stdbool.h>
-
-_Py_IDENTIFIER(NFC);
-_Py_IDENTIFIER(NFD);
-_Py_IDENTIFIER(NFKC);
-_Py_IDENTIFIER(NFKD);
 
 /*[clinic input]
 module unicodedata
@@ -889,17 +885,17 @@ unicodedata_UCD_is_normalized_impl(PyObject *self, PyObject *form,
     PyObject *cmp;
     int match = 0;
 
-    if (_PyUnicode_EqualToASCIIId(form, &PyId_NFC)) {
+    if (_PyUnicode_EQ(form, _Py_ID(NFC))) {
         nfc = true;
     }
-    else if (_PyUnicode_EqualToASCIIId(form, &PyId_NFKC)) {
+    else if (_PyUnicode_EQ(form, _Py_ID(NFKC))) {
         nfc = true;
         k = true;
     }
-    else if (_PyUnicode_EqualToASCIIId(form, &PyId_NFD)) {
+    else if (_PyUnicode_EQ(form, _Py_ID(NFD))) {
         /* matches default values for `nfc` and `k` */
     }
-    else if (_PyUnicode_EqualToASCIIId(form, &PyId_NFKD)) {
+    else if (_PyUnicode_EQ(form, _Py_ID(NFKD))) {
         k = true;
     }
     else {
@@ -952,7 +948,7 @@ unicodedata_UCD_normalize_impl(PyObject *self, PyObject *form,
         return input;
     }
 
-    if (_PyUnicode_EqualToASCIIId(form, &PyId_NFC)) {
+    if (_PyUnicode_EQ(form, _Py_ID(NFC))) {
         if (is_normalized_quickcheck(self, input,
                                      true,  false, true) == YES) {
             Py_INCREF(input);
@@ -960,7 +956,7 @@ unicodedata_UCD_normalize_impl(PyObject *self, PyObject *form,
         }
         return nfc_nfkc(self, input, 0);
     }
-    if (_PyUnicode_EqualToASCIIId(form, &PyId_NFKC)) {
+    if (_PyUnicode_EQ(form, _Py_ID(NFKC))) {
         if (is_normalized_quickcheck(self, input,
                                      true,  true,  true) == YES) {
             Py_INCREF(input);
@@ -968,7 +964,7 @@ unicodedata_UCD_normalize_impl(PyObject *self, PyObject *form,
         }
         return nfc_nfkc(self, input, 1);
     }
-    if (_PyUnicode_EqualToASCIIId(form, &PyId_NFD)) {
+    if (_PyUnicode_EQ(form, _Py_ID(NFD))) {
         if (is_normalized_quickcheck(self, input,
                                      false, false, true) == YES) {
             Py_INCREF(input);
@@ -976,7 +972,7 @@ unicodedata_UCD_normalize_impl(PyObject *self, PyObject *form,
         }
         return nfd_nfkd(self, input, 0);
     }
-    if (_PyUnicode_EqualToASCIIId(form, &PyId_NFKD)) {
+    if (_PyUnicode_EQ(form, _Py_ID(NFKD))) {
         if (is_normalized_quickcheck(self, input,
                                      false, true,  true) == YES) {
             Py_INCREF(input);

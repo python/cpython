@@ -1015,7 +1015,6 @@ itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n)
 {
     Py_ssize_t i;
     PyObject *it, *copyable, *copyfunc, *result;
-    _Py_IDENTIFIER(__copy__);
 
     if (n < 0) {
         PyErr_SetString(PyExc_ValueError, "n must be >= 0");
@@ -1032,7 +1031,7 @@ itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n)
         return NULL;
     }
 
-    if (_PyObject_LookupAttrId(it, &PyId___copy__, &copyfunc) < 0) {
+    if (_PyObject_LookupAttr(it, _Py_ID(__copy__), &copyfunc) < 0) {
         Py_DECREF(it);
         Py_DECREF(result);
         return NULL;
@@ -1047,7 +1046,7 @@ itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n)
             Py_DECREF(result);
             return NULL;
         }
-        copyfunc = _PyObject_GetAttrId(copyable, &PyId___copy__);
+        copyfunc = PyObject_GetAttr(copyable, _Py_ID(__copy__));
         if (copyfunc == NULL) {
             Py_DECREF(copyable);
             Py_DECREF(result);
@@ -1179,8 +1178,7 @@ cycle_reduce(cycleobject *lz, PyObject *Py_UNUSED(ignored))
         if (it == NULL)
             return NULL;
         if (lz->index != 0) {
-            _Py_IDENTIFIER(__setstate__);
-            PyObject *res = _PyObject_CallMethodId(it, &PyId___setstate__,
+            PyObject *res = PyObject_CallMethod(it, "__setstate__",
                                                    "n", lz->index);
             if (res == NULL) {
                 Py_DECREF(it);
@@ -4545,7 +4543,6 @@ static PyTypeObject ziplongest_type;
 static PyObject *
 zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    _Py_IDENTIFIER(fillvalue);
     ziplongestobject *lz;
     Py_ssize_t i;
     PyObject *ittuple;  /* tuple of iterators */
@@ -4556,7 +4553,7 @@ zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (kwds != NULL && PyDict_CheckExact(kwds) && PyDict_GET_SIZE(kwds) > 0) {
         fillvalue = NULL;
         if (PyDict_GET_SIZE(kwds) == 1) {
-            fillvalue = _PyDict_GetItemIdWithError(kwds, &PyId_fillvalue);
+            fillvalue = PyDict_GetItemWithError(kwds, _Py_ID(fillvalue));
         }
         if (fillvalue == NULL) {
             if (!PyErr_Occurred()) {

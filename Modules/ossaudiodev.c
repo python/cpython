@@ -20,6 +20,7 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "structmember.h"         // PyMemberDef
+#include "core_objects.h"
 
 #include <stdlib.h>               // getenv()
 #ifdef HAVE_FCNTL_H
@@ -536,9 +537,7 @@ oss_self(PyObject *self, PyObject *unused)
 static PyObject *
 oss_exit(PyObject *self, PyObject *unused)
 {
-    _Py_IDENTIFIER(close);
-
-    PyObject *ret = _PyObject_CallMethodIdNoArgs(self, &PyId_close);
+    PyObject *ret = _PyObject_CallMethodNoArgs(self, _Py_ID(close));
     if (!ret)
         return NULL;
     Py_DECREF(ret);

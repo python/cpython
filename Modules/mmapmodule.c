@@ -22,6 +22,7 @@
 #include <Python.h>
 #include "structmember.h"         // PyMemberDef
 #include <stddef.h>               // offsetof()
+#include "core_objects.h"
 
 #ifndef MS_WINDOWS
 #define UNIX
@@ -764,9 +765,7 @@ mmap__enter__method(mmap_object *self, PyObject *args)
 static PyObject *
 mmap__exit__method(PyObject *self, PyObject *args)
 {
-    _Py_IDENTIFIER(close);
-
-    return _PyObject_CallMethodIdNoArgs(self, &PyId_close);
+    return _PyObject_CallMethodNoArgs(self, _Py_ID(close));
 }
 
 static PyObject *
