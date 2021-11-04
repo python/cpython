@@ -57,7 +57,6 @@ module sys
 #include "clinic/sysmodule.c.h"
 
 _Py_IDENTIFIER(_);
-_Py_IDENTIFIER(__sizeof__);
 _Py_IDENTIFIER(_xoptions);
 _Py_IDENTIFIER(buffer);
 _Py_IDENTIFIER(builtins);

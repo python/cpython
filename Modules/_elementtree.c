@@ -15,6 +15,7 @@
 
 #include "Python.h"
 #include "structmember.h"         // PyMemberDef
+#include "core_objects.h"
 
 /* -------------------------------------------------------------------- */
 /* configuration */
@@ -1231,9 +1232,8 @@ _elementtree_Element_find_impl(ElementObject *self, PyObject *path,
     elementtreestate *st = ET_STATE_GLOBAL;
 
     if (checkpath(path) || namespaces != Py_None) {
-        _Py_IDENTIFIER(find);
-        return _PyObject_CallMethodIdObjArgs(
-            st->elementpath_obj, &PyId_find, self, path, namespaces, NULL
+        return PyObject_CallMethodObjArgs(
+            st->elementpath_obj, _Py_ID(find), self, path, namespaces, NULL
             );
     }
 
@@ -1272,12 +1272,11 @@ _elementtree_Element_findtext_impl(ElementObject *self, PyObject *path,
 /*[clinic end generated code: output=83b3ba4535d308d2 input=b53a85aa5aa2a916]*/
 {
     Py_ssize_t i;
-    _Py_IDENTIFIER(findtext);
     elementtreestate *st = ET_STATE_GLOBAL;
 
     if (checkpath(path) || namespaces != Py_None)
-        return _PyObject_CallMethodIdObjArgs(
-            st->elementpath_obj, &PyId_findtext,
+        return PyObject_CallMethodObjArgs(
+            st->elementpath_obj, _Py_ID(findtext),
             self, path, default_value, namespaces, NULL
             );
 
@@ -1329,9 +1328,8 @@ _elementtree_Element_findall_impl(ElementObject *self, PyObject *path,
     elementtreestate *st = ET_STATE_GLOBAL;
 
     if (checkpath(path) || namespaces != Py_None) {
-        _Py_IDENTIFIER(findall);
-        return _PyObject_CallMethodIdObjArgs(
-            st->elementpath_obj, &PyId_findall, self, path, namespaces, NULL
+        return PyObject_CallMethodObjArgs(
+            st->elementpath_obj, _Py_ID(findall), self, path, namespaces, NULL
             );
     }
 
@@ -1373,11 +1371,10 @@ _elementtree_Element_iterfind_impl(ElementObject *self, PyObject *path,
 /*[clinic end generated code: output=ecdd56d63b19d40f input=abb974e350fb65c7]*/
 {
     PyObject* tag = path;
-    _Py_IDENTIFIER(iterfind);
     elementtreestate *st = ET_STATE_GLOBAL;
 
-    return _PyObject_CallMethodIdObjArgs(
-        st->elementpath_obj, &PyId_iterfind, self, tag, namespaces, NULL);
+    return PyObject_CallMethodObjArgs(
+        st->elementpath_obj, _Py_ID(iterfind), self, tag, namespaces, NULL);
 }
 
 /*[clinic input]
@@ -2560,7 +2557,7 @@ _elementtree__set_factories_impl(PyObject *module, PyObject *comment_factory,
 
 static int
 treebuilder_extend_element_text_or_tail(PyObject *element, PyObject **data,
-                                        PyObject **dest, _Py_Identifier *name)
+                                        PyObject **dest, PyObject *name)
 {
     /* Fast paths for the "almost always" cases. */
     if (Element_CheckExact(element)) {
@@ -2584,7 +2581,7 @@ treebuilder_extend_element_text_or_tail(PyObject *element, PyObject **data,
     {
         int r;
         PyObject* joined;
-        PyObject* previous = _PyObject_GetAttrId(element, name);
+        PyObject* previous = PyObject_GetAttr(element, name);
         if (!previous)
             return -1;
         joined = list_join(*data);
@@ -2603,7 +2600,7 @@ treebuilder_extend_element_text_or_tail(PyObject *element, PyObject **data,
             Py_DECREF(previous);
         }
 
-        r = _PyObject_SetAttrId(element, name, joined);
+        r = PyObject_SetAttr(element, name, joined);
         Py_DECREF(joined);
         if (r < 0)
             return -1;
@@ -2621,31 +2618,28 @@ treebuilder_flush_data(TreeBuilderObject* self)
 
     if (!self->last_for_tail) {
         PyObject *element = self->last;
-        _Py_IDENTIFIER(text);
         return treebuilder_extend_element_text_or_tail(
                 element, &self->data,
-                &((ElementObject *) element)->text, &PyId_text);
+                &((ElementObject *) element)->text, _Py_ID(text));
     }
     else {
         PyObject *element = self->last_for_tail;
-        _Py_IDENTIFIER(tail);
         return treebuilder_extend_element_text_or_tail(
                 element, &self->data,
-                &((ElementObject *) element)->tail, &PyId_tail);
+                &((ElementObject *) element)->tail, _Py_ID(tail));
     }
 }
 
 static int
 treebuilder_add_subelement(PyObject *element, PyObject *child)
 {
-    _Py_IDENTIFIER(append);
     if (Element_CheckExact(element)) {
         ElementObject *elem = (ElementObject *) element;
         return element_add_subelement(elem, child);
     }
     else {
         PyObject *res;
-        res = _PyObject_CallMethodIdOneArg(element, &PyId_append, child);
+        res = PyObject_CallMethodOneArg(element, _Py_ID(append), child);
         if (res == NULL)
             return -1;
         Py_DECREF(res);
@@ -3501,7 +3495,6 @@ expat_start_doctype_handler(XMLParserObject *self,
                             const XML_Char *pubid,
                             int has_internal_subset)
 {
-    _Py_IDENTIFIER(doctype);
     PyObject *doctype_name_obj, *sysid_obj, *pubid_obj;
     PyObject *res;
 
@@ -3542,7 +3535,7 @@ expat_start_doctype_handler(XMLParserObject *self,
                                            sysid_obj, NULL);
         Py_XDECREF(res);
     }
-    else if (_PyObject_LookupAttrId((PyObject *)self, &PyId_doctype, &res) > 0) {
+    else if (_PyObject_LookupAttr((PyObject *)self, _Py_ID(doctype), &res) > 0) {
         (void)PyErr_WarnEx(PyExc_RuntimeWarning,
                 "The doctype() method of XMLParser is ignored.  "
                 "Define doctype() method on the TreeBuilder target.",

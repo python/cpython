@@ -6,6 +6,7 @@
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "structmember.h"         // PyMemberDef
+#include "core_objects.h"
 
 #define TP_DESCR_GET(t) ((t)->tp_descr_get)
 
@@ -123,13 +124,12 @@ method_reduce(PyMethodObject *im, PyObject *Py_UNUSED(ignored))
     PyObject *self = PyMethod_GET_SELF(im);
     PyObject *func = PyMethod_GET_FUNCTION(im);
     PyObject *funcname;
-    _Py_IDENTIFIER(getattr);
 
     funcname = _PyObject_GetAttrId(func, &PyId___name__);
     if (funcname == NULL) {
         return NULL;
     }
-    return Py_BuildValue("N(ON)", _PyEval_GetBuiltinId(&PyId_getattr),
+    return Py_BuildValue("N(ON)", _PyEval_GetBuiltin(_Py_ID(getattr)),
                          self, funcname);
 }
 

@@ -13,6 +13,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "structmember.h"         // PyMemberDef
 #include <stddef.h>               // offsetof()
+#include "core_objects.h"
 
 #ifdef STDC_HEADERS
 #include <stddef.h>
@@ -2952,8 +2953,7 @@ static PyObject *
 array_arrayiterator___reduce___impl(arrayiterobject *self)
 /*[clinic end generated code: output=7898a52e8e66e016 input=a062ea1e9951417a]*/
 {
-    _Py_IDENTIFIER(iter);
-    PyObject *func = _PyEval_GetBuiltinId(&PyId_iter);
+    PyObject *func = _PyEval_GetBuiltin(_Py_ID(iter));
     if (self->ao == NULL) {
         return Py_BuildValue("N(())", func);
     }

@@ -11,6 +11,7 @@
 #include <stdlib.h>               // free()
 #include <sys/stat.h>
 #include <sys/types.h>
+#include "core_objects.h"
 
 #if defined(WIN32) && !defined(__CYGWIN__)
 #include "gdbmerrno.h"
@@ -544,8 +545,7 @@ gdbm__enter__(PyObject *self, PyObject *args)
 static PyObject *
 gdbm__exit__(PyObject *self, PyObject *args)
 {
-    _Py_IDENTIFIER(close);
-    return _PyObject_CallMethodIdNoArgs(self, &PyId_close);
+    return PyObject_CallMethodNoArgs(self, _Py_ID(close));
 }
 
 static PyMethodDef gdbm_methods[] = {

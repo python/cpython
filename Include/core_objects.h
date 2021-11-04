@@ -321,6 +321,7 @@ typedef struct _py_id_strings {
     _PyAsciiId_14 id_dispatch_table;
     _PyAsciiId_11 id_displayhook;
     _PyAsciiId_7 id_doctype;
+    _PyAsciiId_3 id_dot;
     _PyAsciiId_6 id_enable;
     _PyAsciiId_8 id_encoding;
     _PyAsciiId_10 id_end_lineno;
@@ -332,6 +333,7 @@ typedef struct _py_id_strings {
     _PyAsciiId_11 id_executemany;
     _PyAsciiId_13 id_executescript;
     _PyAsciiId_6 id_extend;
+    _PyAsciiId_5 id_false;
     _PyAsciiId_8 id_filename;
     _PyAsciiId_6 id_fileno;
     _PyAsciiId_9 id_fillvalue;
@@ -382,6 +384,7 @@ typedef struct _py_id_strings {
     _PyAsciiId_17 id_n_sequence_fields;
     _PyAsciiId_16 id_n_unnamed_fields;
     _PyAsciiId_4 id_name;
+    _PyAsciiId_4 id_null;
     _PyAsciiId_3 id_obj;
     _PyAsciiId_6 id_offset;
     _PyAsciiId_12 id_onceregistry;
@@ -434,6 +437,7 @@ typedef struct _py_id_strings {
     _PyAsciiId_5 id_throw;
     _PyAsciiId_4 id_time;
     _PyAsciiId_9 id_timetuple;
+    _PyAsciiId_4 id_true;
     _PyAsciiId_6 id_tzname;
     _PyAsciiId_14 id_unraisablehook;
     _PyAsciiId_5 id_upper;

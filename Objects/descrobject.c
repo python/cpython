@@ -6,8 +6,7 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "structmember.h"         // PyMemberDef
-
-_Py_IDENTIFIER(getattr);
+#include "core_objects.h"
 
 /*[clinic input]
 class mappingproxy "mappingproxyobject *" "&PyDictProxy_Type"
@@ -608,7 +607,7 @@ descr_get_qualname(PyDescrObject *descr, void *Py_UNUSED(ignored))
 static PyObject *
 descr_reduce(PyDescrObject *descr, PyObject *Py_UNUSED(ignored))
 {
-    return Py_BuildValue("N(OO)", _PyEval_GetBuiltinId(&PyId_getattr),
+    return Py_BuildValue("N(OO)", _PyEval_GetBuiltin(_Py_ID(getattr)),
                          PyDescr_TYPE(descr), PyDescr_NAME(descr));
 }
 
@@ -1321,7 +1320,7 @@ wrapper_repr(wrapperobject *wp)
 static PyObject *
 wrapper_reduce(wrapperobject *wp, PyObject *Py_UNUSED(ignored))
 {
-    return Py_BuildValue("N(OO)", _PyEval_GetBuiltinId(&PyId_getattr),
+    return Py_BuildValue("N(OO)", _PyEval_GetBuiltin(_Py_ID(getattr)),
                          wp->self, PyDescr_NAME(wp->descr));
 }
 

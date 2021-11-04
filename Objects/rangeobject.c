@@ -5,6 +5,7 @@
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "structmember.h"         // PyMemberDef
+#include "core_objects.h"
 
 /* Support objects whose length is > PY_SSIZE_T_MAX.
 
@@ -20,8 +21,6 @@ typedef struct {
     PyObject *step;
     PyObject *length;
 } rangeobject;
-
-_Py_IDENTIFIER(iter);
 
 /* Helper function for validating step.  Always returns a new reference or
    NULL on error.
@@ -813,7 +812,7 @@ rangeiter_reduce(rangeiterobject *r, PyObject *Py_UNUSED(ignored))
     if (range == NULL)
         goto err;
     /* return the result */
-    return Py_BuildValue("N(N)l", _PyEval_GetBuiltinId(&PyId_iter),
+    return Py_BuildValue("N(N)l", _PyEval_GetBuiltin(_Py_ID(iter)),
                          range, r->index);
 err:
     Py_XDECREF(start);
@@ -967,7 +966,7 @@ longrangeiter_reduce(longrangeiterobject *r, PyObject *Py_UNUSED(ignored))
     }
 
     /* return the result */
-    return Py_BuildValue("N(N)O", _PyEval_GetBuiltinId(&PyId_iter),
+    return Py_BuildValue("N(N)O", _PyEval_GetBuiltin(_Py_ID(iter)),
                          range, r->index);
 }
 

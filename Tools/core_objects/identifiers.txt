@@ -173,6 +173,7 @@ execute
 executemany
 executescript
 extend
+false
 filename
 fileno
 fillvalue
@@ -223,6 +224,7 @@ n_fields
 n_sequence_fields
 n_unnamed_fields
 name
+null
 obj
 offset
 onceregistry
@@ -275,6 +277,7 @@ threading
 throw
 time
 timetuple
+true
 tzname
 unraisablehook
 upper

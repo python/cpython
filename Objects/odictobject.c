@@ -469,6 +469,7 @@ later:
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_dict.h"          // _Py_dict_lookup()
 #include <stddef.h>               // offsetof()
+#include "core_objects.h"
 
 #include "clinic/odictobject.c.h"
 
@@ -1807,7 +1808,6 @@ PyDoc_STRVAR(reduce_doc, "Return state information for pickling");
 static PyObject *
 odictiter_reduce(odictiterobject *di, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(iter);
     /* copy the iterator state */
     odictiterobject tmp = *di;
     Py_XINCREF(tmp.di_odict);
@@ -1820,7 +1820,7 @@ odictiter_reduce(odictiterobject *di, PyObject *Py_UNUSED(ignored))
     if (list == NULL) {
         return NULL;
     }
-    return Py_BuildValue("N(N)", _PyEval_GetBuiltinId(&PyId_iter), list);
+    return Py_BuildValue("N(N)", _PyEval_GetBuiltin(_Py_ID(iter)), list);
 }
 
 static PyMethodDef odictiter_methods[] = {
