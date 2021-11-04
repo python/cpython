@@ -938,12 +938,9 @@ class ExtensionTests(unittest.TestCase):
     def test_cursor_executescript_too_large_script(self):
         msg = "query string is too large"
         with memory_database() as cx, cx_limit(cx) as lim:
-            for sz in lim, lim+1:
-                with self.subTest(sz=sz):
-                    self.assertRaisesRegex(
-                        sqlite.DataError, msg, cx.executescript,
-                        "create table a(s);".ljust(sz)
-                    )
+            cx.executescript("select 'almost too large'".ljust(lim-1))
+            with self.assertRaisesRegex(sqlite.DataError, msg):
+                cx.executescript("select 'too large'".ljust(lim))
 
     def test_cursor_executescript_tx_control(self):
         con = sqlite.connect(":memory:")

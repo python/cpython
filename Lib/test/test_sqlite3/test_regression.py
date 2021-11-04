@@ -360,13 +360,15 @@ class RegressionTests(unittest.TestCase):
     def test_large_sql(self):
         msg = "query string is too large"
         with memory_database() as cx, cx_limit(cx) as lim:
-            for sz in lim, lim+1:
-                with self.subTest(sz=sz):
-                    sql = "select 1".ljust(sz)
-                    self.assertRaisesRegex(sqlite.DataError, msg, cx, sql)
-                    cu = cx.cursor()
-                    self.assertRaisesRegex(sqlite.DataError, msg,
-                                           cu.execute, sql)
+            cu = cx.cursor()
+
+            cx("select 1".ljust(lim-1))
+            # use a different SQL statement; don't reuse from the LRU cache
+            cu.execute("select 2".ljust(lim-1))
+
+            sql = "select 3".ljust(lim)
+            self.assertRaisesRegex(sqlite.DataError, msg, cx, sql)
+            self.assertRaisesRegex(sqlite.DataError, msg, cu.execute, sql)
 
     def test_commit_cursor_reset(self):
         """
