@@ -2228,9 +2228,9 @@ For example, the annotation ``list[int]`` might be used to signify a
    :ref:`Generic Alias Types<types-genericalias>`
       Documentation for objects representing parameterized generic classes
 
-   :class:`typing.Generic`
-      Inherit from :class:`typing.Generic` to implement generic classes that
-      can be parameterized at runtime and understood by static type-checkers.
+   :ref:`Generics`, :ref:`user-defined generics<user-defined-generics>` and :class:`typing.Generic`
+      Documentation on how to implement generic classes that can be
+      parameterized at runtime and understood by static type-checkers.
 
 A class can generally only be parameterized if it defines the special
 classmethod ``__class_getitem__()``.
