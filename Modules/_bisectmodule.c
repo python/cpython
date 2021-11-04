@@ -5,6 +5,7 @@ Converted to C by Dmitry Vasiliev (dima at hlabs.spb.ru).
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "core_objects.h"
 
 /*[clinic input]
 module _bisect
@@ -12,8 +13,6 @@ module _bisect
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=4d56a2b2033b462b]*/
 
 #include "clinic/_bisectmodule.c.h"
-
-_Py_IDENTIFIER(insert);
 
 static inline Py_ssize_t
 internal_bisect_right(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t hi,
@@ -131,7 +130,7 @@ _bisect_insort_right_impl(PyObject *module, PyObject *a, PyObject *x,
             return NULL;
     }
     else {
-        result = _PyObject_CallMethodId(a, &PyId_insert, "nO", index, x);
+        result = PyObject_CallMethod(a, "insert", "nO", index, x);
         if (result == NULL)
             return NULL;
         Py_DECREF(result);
@@ -257,7 +256,7 @@ _bisect_insort_left_impl(PyObject *module, PyObject *a, PyObject *x,
         if (PyList_Insert(a, index, x) < 0)
             return NULL;
     } else {
-        result = _PyObject_CallMethodId(a, &PyId_insert, "nO", index, x);
+        result = PyObject_CallMethod(a, "insert", "nO", index, x);
         if (result == NULL)
             return NULL;
         Py_DECREF(result);

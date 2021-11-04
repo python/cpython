@@ -13,6 +13,7 @@ module instead.
 #include "Python.h"
 #include "structmember.h"         // PyMemberDef
 #include <stdbool.h>
+#include "core_objects.h"
 
 #define NOT_SET ((Py_UCS4)-1)
 #define EOL ((Py_UCS4)-2)
@@ -1428,7 +1429,6 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
     PyObject * output_file, * dialect = NULL;
     _csvstate *module_state = get_csv_state(module);
     WriterObj * self = PyObject_GC_New(WriterObj, module_state->writer_type);
-    _Py_IDENTIFIER(write);
 
     if (!self)
         return NULL;
@@ -1447,7 +1447,7 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
         Py_DECREF(self);
         return NULL;
     }
-    if (_PyObject_LookupAttrId(output_file, &PyId_write, &self->write) < 0) {
+    if (_PyObject_LookupAttr(output_file, _Py_ID(write), &self->write) < 0) {
         Py_DECREF(self);
         return NULL;
     }
