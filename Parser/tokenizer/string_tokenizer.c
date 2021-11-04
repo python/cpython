@@ -102,6 +102,9 @@ decode_str(const char *input, int single, struct tok_state *tok, int preserve_cr
             return _PyTokenizer_error_ret(tok);
         str = PyBytes_AS_STRING(utf8);
     }
+    else if (!_PyTokenizer_ensure_utf8(str, tok, 1)) {
+        return _PyTokenizer_error_ret(tok);
+    }
     assert(tok->decoding_buffer == NULL);
     tok->decoding_buffer = utf8; /* CAUTION */
     return str;

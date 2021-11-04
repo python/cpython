@@ -1,0 +1,3 @@
+Support non-UTF-8 shebang and comments in Python source files if non-UTF-8
+encoding is specified. Detect decoding error in comments for default (UTF-8)
+encoding.

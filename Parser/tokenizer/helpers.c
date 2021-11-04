@@ -496,24 +496,27 @@ valid_utf8(const unsigned char* s)
 }
 
 int
-_PyTokenizer_ensure_utf8(char *line, struct tok_state *tok)
+_PyTokenizer_ensure_utf8(const char *line, struct tok_state *tok, int lineno)
 {
     int badchar = 0;
-    unsigned char *c;
+    const unsigned char *c;
     int length;
-    for (c = (unsigned char *)line; *c; c += length) {
+    for (c = (const unsigned char *)line; *c; c += length) {
         if (!(length = valid_utf8(c))) {
             badchar = *c;
             break;
+        }
+        if (*c == '\n') {
+            lineno++;
         }
     }
     if (badchar) {
         PyErr_Format(PyExc_SyntaxError,
                      "Non-UTF-8 code starting with '\\x%.2x' "
-                     "in file %U on line %i, "
+                     "in file %V on line %i, "
                      "but no encoding declared; "
                      "see https://peps.python.org/pep-0263/ for details",
-                     badchar, tok->filename, tok->lineno);
+                     badchar, tok->filename, "<string>", lineno);
         return 0;
     }
     return 1;

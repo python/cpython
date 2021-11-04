@@ -267,6 +267,17 @@ class AbstractSourceEncodingTest:
                b'print(ascii("\xc3\xa4"))\n')
         self.check_script_output(src, br"'\xc3\u20ac'")
 
+    def test_first_utf8_coding_line_error(self):
+        src = (b'#coding:ascii \xc3\xa4\n'
+               b'raise RuntimeError\n')
+        self.check_script_error(src, br"'ascii' codec can't decode byte")
+
+    def test_second_utf8_coding_line_error(self):
+        src = (b'#!/usr/bin/python\n'
+               b'#coding:ascii \xc3\xa4\n'
+               b'raise RuntimeError\n')
+        self.check_script_error(src, br"'ascii' codec can't decode byte")
+
     def test_utf8_bom(self):
         src = (b'\xef\xbb\xbfprint(ascii("\xc3\xa4"))\n')
         self.check_script_output(src, br"'\xe4'")
@@ -282,7 +293,57 @@ class AbstractSourceEncodingTest:
                b'print(ascii("\xc3\xa4"))\n')
         self.check_script_output(src, br"'\xe4'")
 
-    def test_utf8_non_utf8_comment_line_error(self):
+    def test_non_utf8_shebang(self):
+        src = (b'#!/home/\xa4/bin/python\n'
+               b'#coding:iso-8859-15\n'
+               b'print(ascii("\xc3\xa4"))\n')
+        self.check_script_output(src, br"'\xc3\u20ac'")
+
+    def test_utf8_shebang_error(self):
+        src = (b'#!/home/\xc3\xa4/bin/python\n'
+               b'#coding:ascii\n'
+               b'raise RuntimeError\n')
+        self.check_script_error(src, br"'ascii' codec can't decode byte")
+
+    def test_non_utf8_shebang_error(self):
+        src = (b'#!/home/\xa4/bin/python\n'
+               b'raise RuntimeError\n')
+        self.check_script_error(src, br"Non-UTF-8 code starting with .* on line 1")
+
+    def test_non_utf8_second_line_error(self):
+        src = (b'#\n'
+               b'#\xa4\n'
+               b'raise RuntimeError\n')
+        self.check_script_error(src,
+                br"Non-UTF-8 code starting with .* on line 2")
+
+    def test_non_utf8_third_line_error(self):
+        src = (b'#\n'
+               b'#\n'
+               b'#\xa4\n'
+               b'raise RuntimeError\n')
+        self.check_script_error(src,
+                br"Non-UTF-8 code starting with .* on line 3")
+
+    def test_utf8_bom_non_utf8_third_line_error(self):
+        src = (b'\xef\xbb\xbf#\n'
+               b'#\n'
+               b'#\xa4\n'
+               b'raise RuntimeError\n')
+        self.check_script_error(src,
+                br"Non-UTF-8 code starting with .* on line 3|"
+                br"'utf-8' codec can't decode byte")
+
+    def test_utf_8_non_utf8_third_line_error(self):
+        src = (b'#coding: utf-8\n'
+               b'#\n'
+               b'#\xa4\n'
+               b'raise RuntimeError\n')
+        self.check_script_error(src,
+                br"Non-UTF-8 code starting with .* on line 3|"
+                br"'utf-8' codec can't decode byte")
+
+    def test_utf8_non_utf8_third_line_error(self):
         src = (b'#coding: utf8\n'
                b'#\n'
                b'#\xa4\n'
