@@ -655,7 +655,7 @@ PyLocale_getfirstweekday(PyObject* self, PyObject* args)
     start = (week_1stday + first_weekday - 1) % 7;
 #endif
 #endif
-    if (0 <= start <= 6) {
+    if (0 <= start && start <= 6) {
         return PyLong_FromLong(start);
     } else {
         return NULL;
