@@ -901,6 +901,13 @@ class singledispatchmethod:
         self.dispatcher = singledispatch(func)
         self.func = func
 
+        # bpo-45678: special-casing for classmethod/staticmethod in Python <=3.9,
+        # as functools.update_wrapper doesn't work properly in singledispatchmethod.__get__
+        # if it is applied to an unbound classmethod/staticmethod
+        if isinstance(func, (staticmethod, classmethod)):
+            self._wrapped_func = func.__func__
+        else:
+            self._wrapped_func = func
     def register(self, cls, method=None):
         """generic_method.register(cls, func) -> func
 
@@ -921,7 +928,7 @@ class singledispatchmethod:
 
         _method.__isabstractmethod__ = self.__isabstractmethod__
         _method.register = self.register
-        update_wrapper(_method, self.func)
+        update_wrapper(_method, self._wrapped_func)
         return _method
 
     @property
