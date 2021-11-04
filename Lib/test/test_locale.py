@@ -591,7 +591,7 @@ class TestGetFirstWeekDay(BaseLocalizedTest):
     def test_getfirstweekday(self):
         if platform.libc_ver()[0] == 'glibc':
             self.assertEqual(locale.getfirstweekday(), 0)
-        if platform.system() == 'Windows':
+        elif platform.system() == 'Windows':
             self.assertEqual(locale.getfirstweekday(), 6)
         else:
             self.assertEqual(locale.getfirstweekday(), None)
