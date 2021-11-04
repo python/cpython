@@ -658,7 +658,7 @@ PyLocale_getfirstweekday(PyObject* self, PyObject* args)
     if (0 <= start && start <= 6) {
         return PyLong_FromLong(start);
     } else {
-        return NULL;
+        Py_RETURN_NONE;
     }
 }
 
