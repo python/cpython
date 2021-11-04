@@ -2216,7 +2216,7 @@ Emulating generic types
 -----------------------
 
 When using :term:`type annotations<annotation>`, it is often useful to
-*parameterize* a generic type using Python's square-brackets notation.
+*parameterize* a :term:`generic type` using Python's square-brackets notation.
 For example, the annotation ``list[int]`` might be used to signify a
 :class:`list` in which all the elements are of type :class:`int`.
 
