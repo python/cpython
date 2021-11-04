@@ -61,6 +61,15 @@ Lib/test/data/*
 !Lib/test/data/README
 /Makefile
 /Makefile.pre
+Mac/Makefile
+Mac/PythonLauncher/Info.plist
+Mac/PythonLauncher/Makefile
+Mac/PythonLauncher/Python Launcher
+Mac/PythonLauncher/Python Launcher.app/*
+Mac/Resources/app/Info.plist
+Mac/Resources/framework/Info.plist
+Mac/pythonw
+/*.framework/
 Misc/python.pc
 Misc/python-embed.pc
 Misc/python-config.sh
