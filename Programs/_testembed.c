@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>               // putenv()
 #include <wchar.h>
+#include "core_objects.h"
 
 /*********************************************************
  * Embedded interpreter tests that need a custom exe
@@ -1775,7 +1776,6 @@ static int test_unicode_id_init(void)
 {
     // bpo-42882: Test that _PyUnicode_FromId() works
     // when Python is initialized multiples times.
-    _Py_IDENTIFIER(test_unicode_id_init);
 
     // Initialize Python once without using the identifier
     _testembed_Py_Initialize();
@@ -1788,7 +1788,7 @@ static int test_unicode_id_init(void)
 
         PyObject *str1, *str2;
 
-        str1 = _PyUnicode_FromId(&PyId_test_unicode_id_init);
+        str1 = _Py_ID(test_unicode_id_init);
         assert(str1 != NULL);
         assert(Py_REFCNT(str1) == 1);
 

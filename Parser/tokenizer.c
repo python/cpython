@@ -15,6 +15,7 @@
 #include "bytesobject.h"
 #include "fileobject.h"
 #include "abstract.h"
+#include "core_objects.h"
 
 /* Alternate tab spacing */
 #define ALTTABSIZE 1
@@ -443,8 +444,6 @@ static int
 fp_setreadl(struct tok_state *tok, const char* enc)
 {
     PyObject *readline, *io, *stream;
-    _Py_IDENTIFIER(open);
-    _Py_IDENTIFIER(readline);
     int fd;
     long pos;
 
@@ -465,13 +464,13 @@ fp_setreadl(struct tok_state *tok, const char* enc)
     if (io == NULL)
         return 0;
 
-    stream = _PyObject_CallMethodId(io, &PyId_open, "isisOOO",
+    stream = PyObject_CallMethod(io, "open", "isisOOO",
                     fd, "r", -1, enc, Py_None, Py_None, Py_False);
     Py_DECREF(io);
     if (stream == NULL)
         return 0;
 
-    readline = _PyObject_GetAttrId(stream, &PyId_readline);
+    readline = PyObject_GetAttr(stream, _Py_ID(readline));
     Py_DECREF(stream);
     if (readline == NULL)
         return 0;
