@@ -2240,39 +2240,6 @@ classmethod ``__class_getitem__()``.
    Return an object representing the specialization of a generic class
    by type arguments found in *key*.
 
-``__getitem__`` *versus* ``__class_getitem__``
-
-   Usually, the :ref:`subscription <subscriptions>` of an object in Python
-   using the square-brackets notation will call the :meth:`~object.__getitem__`
-   instance method defined on the object's class.
-
-   For example, if we have a list ``food`` as follows::
-
-      food = ['spam', 'eggs', 'bacon']
-
-   Calling ``food[0]`` will return the same value as calling::
-
-      type(food).__getitem__(food, 0)
-
-   However, if a class defines the classmethod ``__class_getitem__()``, then
-   the subscription of that class may call the class's implementation of
-   ``__class_getitem__()`` rather than :meth:`~object.__getitem__`.
-   ``__class_getitem__()`` should return a
-   :ref:`GenericAlias<types-genericalias>` object if it is properly defined.
-
-   For example, because the :class:`list` class defines
-   ``__class_getitem__()``, calling ``list[str]`` is equivalent to calling::
-
-      list.__class_getitem__(str)
-
-   rather than::
-
-      type(list).__getitem__(list, str)
-
-.. note::
-   If :meth:`~object.__getitem__` is defined by a class's :term:`metaclass`, it
-   will take precedence over a ``__class_getitem__()`` classmethod
-   defined by the class. See :pep:`560` for more details.
 
 .. note::
    ``__class_getitem__()`` was introduced to implement runtime parameterization
@@ -2289,6 +2256,33 @@ classmethod ``__class_getitem__()``.
    of the standard library may not be understood by third-party type-checkers
    such as mypy. Using ``__class_getitem__()`` on any class for purposes other
    than type-hinting is discouraged.
+
+
+*__class_getitem__* versus *__getitem__*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Usually, the :ref:`subscription <subscriptions>` of an object in Python
+using the square-brackets notation will call the :meth:`~object.__getitem__`
+instance method defined on the object's class. However, if a class defines the
+classmethod ``__class_getitem__()``, then the subscription of that class may
+call the class's implementation of ``__class_getitem__()`` rather than
+:meth:`~object.__getitem__`. ``__class_getitem__()`` should return a
+:ref:`GenericAlias<types-genericalias>` object if it is properly defined.
+
+For example, because the :class:`list` class defines ``__class_getitem__()``,
+calling ``list[str]`` is equivalent to calling::
+
+   list.__class_getitem__(str)
+
+rather than::
+
+   type(list).__getitem__(list, str)
+
+.. note::
+   If :meth:`~object.__getitem__` is defined by a class's :term:`metaclass`, it
+   will take precedence over a ``__class_getitem__()`` classmethod defined by
+   the class. See :pep:`560` for more details.
+
 
 .. _callable-types:
 
@@ -2387,14 +2381,16 @@ through the object's keys; for sequences, it should iterate through the values.
 
 .. method:: object.__getitem__(self, key)
 
-   Called to implement evaluation of ``self[key]``. For sequence types, the
-   accepted keys should be integers and slice objects.  Note that the special
-   interpretation of negative indexes (if the class wishes to emulate a sequence
-   type) is up to the :meth:`__getitem__` method. If *key* is of an inappropriate
-   type, :exc:`TypeError` may be raised; if of a value outside the set of indexes
-   for the sequence (after any special interpretation of negative values),
-   :exc:`IndexError` should be raised. For mapping types, if *key* is missing (not
-   in the container), :exc:`KeyError` should be raised.
+   Called to implement evaluation of ``self[key]``, which is translated by the
+   interpreter to ``type(self).__getitem__(self, key)``. For :term:`sequence`
+   types, the accepted keys should be integers and slice objects.  Note that
+   the special interpretation of negative indexes (if the class wishes to
+   emulate a :term:`sequence` type) is up to the :meth:`__getitem__` method. If
+   *key* is of an inappropriate type, :exc:`TypeError` may be raised; if of a
+   value outside the set of indexes for the sequence (after any special
+   interpretation of negative values), :exc:`IndexError` should be raised. For
+   :term:`mapping` types, if *key* is missing (not in the container),
+   :exc:`KeyError` should be raised.
 
    .. note::
 
