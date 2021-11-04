@@ -1080,6 +1080,7 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(self.nb.select(), str(self.child2))
 
         self.nb.tab(self.child1, text='a', underline=0)
+        self.nb.tab(self.child2, text='e', underline=0)
         self.nb.enable_traversal()
         self.nb.focus_force()
         self.assertEqual(self.nb.identify(5, 5), focus_identify_as)
