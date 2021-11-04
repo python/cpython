@@ -6,6 +6,7 @@
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "structmember.h"         // PyMemberDef
+#include "core_objects.h"
 
 static uint32_t next_func_version = 1;
 
@@ -46,8 +47,7 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     Py_INCREF(doc);
 
     // __module__: Use globals['__name__'] if it exists, or NULL.
-    _Py_IDENTIFIER(__name__);
-    PyObject *module = _PyDict_GetItemIdWithError(globals, &PyId___name__);
+    PyObject *module = PyDict_GetItemWithError(globals, _Py_ID(__name__));
     PyObject *builtins = NULL;
     if (module == NULL && _PyErr_Occurred(tstate)) {
         goto error;
@@ -762,23 +762,14 @@ functools_copy_attr(PyObject *wrapper, PyObject *wrapped, PyObject *name)
 static int
 functools_wraps(PyObject *wrapper, PyObject *wrapped)
 {
-#define COPY_ATTR(ATTR) \
-    do { \
-        _Py_IDENTIFIER(ATTR); \
-        PyObject *attr = _PyUnicode_FromId(&PyId_ ## ATTR); \
-        if (attr == NULL) { \
-            return -1; \
-        } \
-        if (functools_copy_attr(wrapper, wrapped, attr) < 0) { \
-            return -1; \
-        } \
-    } while (0) \
-
-    COPY_ATTR(__module__);
-    COPY_ATTR(__name__);
-    COPY_ATTR(__qualname__);
-    COPY_ATTR(__doc__);
-    COPY_ATTR(__annotations__);
+    if (functools_copy_attr(wrapper, wrapped, _Py_ID(__module__)) < 0 ||
+        functools_copy_attr(wrapper, wrapped, _Py_ID(__name__)) < 0 ||
+        functools_copy_attr(wrapper, wrapped, _Py_ID(__qualname__)) < 0 ||
+        functools_copy_attr(wrapper, wrapped, _Py_ID(__doc__)) < 0 ||
+        functools_copy_attr(wrapper, wrapped, _Py_ID(__annotations__)) < 0)
+    {
+        return -1;
+    }
     return 0;
 
 #undef COPY_ATTR

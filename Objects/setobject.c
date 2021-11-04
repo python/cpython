@@ -1906,7 +1906,6 @@ static PyObject *
 set_reduce(PySetObject *so, PyObject *Py_UNUSED(ignored))
 {
     PyObject *keys=NULL, *args=NULL, *result=NULL, *dict=NULL;
-    _Py_IDENTIFIER(__dict__);
 
     keys = PySequence_List((PyObject *)so);
     if (keys == NULL)
@@ -1914,7 +1913,7 @@ set_reduce(PySetObject *so, PyObject *Py_UNUSED(ignored))
     args = PyTuple_Pack(1, keys);
     if (args == NULL)
         goto done;
-    if (_PyObject_LookupAttrId((PyObject *)so, &PyId___dict__, &dict) < 0) {
+    if (_PyObject_LookupAttr((PyObject *)so, _Py_ID(__dict__), &dict) < 0) {
         goto done;
     }
     if (dict == NULL) {

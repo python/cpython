@@ -11,6 +11,7 @@
 #include "pycore_object.h"
 #include "structmember.h"         // PyMemberDef
 #include "osdefs.h"               // SEP
+#include "core_objects.h"
 
 
 /* Compatibility aliases */
@@ -1231,16 +1232,14 @@ ImportError_getstate(PyImportErrorObject *self)
 {
     PyObject *dict = ((PyBaseExceptionObject *)self)->dict;
     if (self->name || self->path) {
-        _Py_IDENTIFIER(name);
-        _Py_IDENTIFIER(path);
         dict = dict ? PyDict_Copy(dict) : PyDict_New();
         if (dict == NULL)
             return NULL;
-        if (self->name && _PyDict_SetItemId(dict, &PyId_name, self->name) < 0) {
+        if (self->name && PyDict_SetItem(dict, _Py_ID(name), self->name) < 0) {
             Py_DECREF(dict);
             return NULL;
         }
-        if (self->path && _PyDict_SetItemId(dict, &PyId_path, self->path) < 0) {
+        if (self->path && PyDict_SetItem(dict, _Py_ID(path), self->path) < 0) {
             Py_DECREF(dict);
             return NULL;
         }

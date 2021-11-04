@@ -2333,9 +2333,8 @@ dict_update_arg(PyObject *self, PyObject *arg)
     if (PyDict_CheckExact(arg)) {
         return PyDict_Merge(self, arg, 1);
     }
-    _Py_IDENTIFIER(keys);
     PyObject *func;
-    if (_PyObject_LookupAttrId(arg, &PyId_keys, &func) < 0) {
+    if (_PyObject_LookupAttr(arg, _Py_ID(keys), &func) < 0) {
         return -1;
     }
     if (func != NULL) {
@@ -4363,9 +4362,8 @@ dictviews_sub(PyObject *self, PyObject *other)
         return NULL;
     }
 
-    _Py_IDENTIFIER(difference_update);
-    PyObject *tmp = _PyObject_CallMethodIdOneArg(
-            result, &PyId_difference_update, other);
+    PyObject *tmp = PyObject_CallMethodOneArg(
+            result, _Py_ID(difference_update), other);
     if (tmp == NULL) {
         Py_DECREF(result);
         return NULL;
@@ -4401,8 +4399,7 @@ _PyDictView_Intersect(PyObject* self, PyObject *other)
     /* if other is a set and self is smaller than other,
        reuse set intersection logic */
     if (PySet_CheckExact(other) && len_self <= PyObject_Size(other)) {
-        _Py_IDENTIFIER(intersection);
-        return _PyObject_CallMethodIdObjArgs(other, &PyId_intersection, self, NULL);
+        return PyObject_CallMethodObjArgs(other, _Py_ID(intersection), self, NULL);
     }
 
     /* if other is another dict view, and it is bigger than self,
@@ -4542,9 +4539,8 @@ dictitems_xor(PyObject *self, PyObject *other)
     }
     key = val1 = val2 = NULL;
 
-    _Py_IDENTIFIER(items);
-    PyObject *remaining_pairs = _PyObject_CallMethodIdNoArgs(temp_dict,
-                                                             &PyId_items);
+    PyObject *remaining_pairs = PyObject_CallMethodNoArgs(temp_dict,
+                                                          _Py_ID(items));
     if (remaining_pairs == NULL) {
         goto error;
     }
@@ -4576,9 +4572,8 @@ dictviews_xor(PyObject* self, PyObject *other)
         return NULL;
     }
 
-    _Py_IDENTIFIER(symmetric_difference_update);
-    PyObject *tmp = _PyObject_CallMethodIdOneArg(
-            result, &PyId_symmetric_difference_update, other);
+    PyObject *tmp = PyObject_CallMethodOneArg(
+            result, _Py_ID(symmetric_difference_update), other);
     if (tmp == NULL) {
         Py_DECREF(result);
         return NULL;
