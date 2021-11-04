@@ -712,7 +712,7 @@ unless the option was selected on installation.
 
 ::
 
-  py -0
+  py --list
 
 You should see the currently installed versions of Python.
 
