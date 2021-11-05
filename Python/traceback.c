@@ -17,6 +17,7 @@
 #include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()
 #include "structmember.h"         // PyMemberDef
 #include "osdefs.h"               // SEP
+#include "core_objects.h"
 #ifdef HAVE_FCNTL_H
 #  include <fcntl.h>
 #endif
@@ -30,11 +31,6 @@
 
 /* Function from Parser/tokenizer.c */
 extern char* _PyTokenizer_FindEncodingFilename(int, PyObject *);
-
-_Py_IDENTIFIER(TextIOWrapper);
-_Py_IDENTIFIER(close);
-_Py_IDENTIFIER(open);
-_Py_IDENTIFIER(path);
 
 /*[clinic input]
 class TracebackType "PyTracebackObject *" "&PyTraceback_Type"
@@ -332,7 +328,7 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
         tail++;
     taillen = strlen(tail);
 
-    syspath = _PySys_GetObjectId(&PyId_path);
+    syspath = PySys_GetObject("path");
     if (syspath == NULL || !PyList_Check(syspath))
         goto error;
     npath = PyList_Size(syspath);
@@ -363,7 +359,7 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
             namebuf[len++] = SEP;
         strcpy(namebuf+len, tail);
 
-        binary = _PyObject_CallMethodId(io, &PyId_open, "ss", namebuf, "rb");
+        binary = _PyObject_CallMethod(io, _Py_ID(open), "ss", namebuf, "rb");
         if (binary != NULL) {
             result = binary;
             goto finally;
@@ -412,7 +408,7 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent, i
     io = PyImport_ImportModuleNoBlock("io");
     if (io == NULL)
         return -1;
-    binary = _PyObject_CallMethodId(io, &PyId_open, "Os", filename, "rb");
+    binary = _PyObject_CallMethod(io, _Py_ID(open), "Os", filename, "rb");
 
     if (binary == NULL) {
         PyErr_Clear();
@@ -442,14 +438,14 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent, i
         PyMem_Free(found_encoding);
         return 0;
     }
-    fob = _PyObject_CallMethodId(io, &PyId_TextIOWrapper, "Os", binary, encoding);
+    fob = _PyObject_CallMethod(io, _Py_ID(TextIOWrapper), "Os", binary, encoding);
     Py_DECREF(io);
     PyMem_Free(found_encoding);
 
     if (fob == NULL) {
         PyErr_Clear();
 
-        res = _PyObject_CallMethodIdNoArgs(binary, &PyId_close);
+        res = PyObject_CallMethodNoArgs(binary, _Py_ID(close));
         Py_DECREF(binary);
         if (res)
             Py_DECREF(res);
@@ -469,7 +465,7 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent, i
             break;
         }
     }
-    res = _PyObject_CallMethodIdNoArgs(fob, &PyId_close);
+    res = PyObject_CallMethodNoArgs(fob, _Py_ID(close));
     if (res)
         Py_DECREF(res);
     else

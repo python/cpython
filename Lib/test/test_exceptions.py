@@ -209,7 +209,7 @@ class ExceptionTests(unittest.TestCase):
                     src = src.decode(encoding, 'replace')
                 line = src.split('\n')[lineno-1]
                 self.assertIn(line, cm.exception.text)
-    
+
     def test_error_offset_continuation_characters(self):
         check = self.check
         check('"\\\n"(1 for c in I,\\\n\\', 2, 2)
@@ -1506,7 +1506,6 @@ class ExceptionTests(unittest.TestCase):
         for i in range(1, 20):
             rc, out, err = script_helper.assert_python_failure("-c", code % i)
             self.assertIn(rc, (1, 120))
-            self.assertIn(b'MemoryError', err)
 
     def test_yield_in_nested_try_excepts(self):
         #Issue #25612

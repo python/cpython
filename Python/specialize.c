@@ -6,6 +6,7 @@
 #include "pycore_object.h"
 #include "opcode.h"
 #include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
+#include "core_objects.h"
 
 #include <stdlib.h> // rand()
 
@@ -496,8 +497,6 @@ specialize_module_load_attr(
 {
     PyModuleObject *m = (PyModuleObject *)owner;
     PyObject *value = NULL;
-    PyObject *getattr;
-    _Py_IDENTIFIER(__getattr__);
     assert(owner->ob_type->tp_inline_values_offset == 0);
     PyDictObject *dict = (PyDictObject *)m->md_dict;
     if (dict == NULL) {
@@ -508,13 +507,7 @@ specialize_module_load_attr(
         SPECIALIZATION_FAIL(opcode, SPEC_FAIL_NON_STRING_OR_SPLIT);
         return -1;
     }
-    getattr = _PyUnicode_FromId(&PyId___getattr__); /* borrowed */
-    if (getattr == NULL) {
-        SPECIALIZATION_FAIL(opcode, SPEC_FAIL_OVERRIDDEN);
-        PyErr_Clear();
-        return -1;
-    }
-    Py_ssize_t index = _PyDict_GetItemHint(dict, getattr, -1,  &value);
+    Py_ssize_t index = _PyDict_GetItemHint(dict, _Py_ID(getattr), -1,  &value);
     assert(index != DKIX_ERROR);
     if (index != DKIX_EMPTY) {
         SPECIALIZATION_FAIL(opcode, SPEC_FAIL_MODULE_ATTR_NOT_FOUND);
