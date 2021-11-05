@@ -1,0 +1,5 @@
+Fixed generation of documentation links in the output of ``help()`` for
+standard library module objects.  Links are now generated using a mapping
+between module names and documentation pages extracted from the
+documentation itself rather than a heuristic based on the module name
+alone, eliminating links to non-existent pages.
