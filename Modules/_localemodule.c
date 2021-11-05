@@ -635,8 +635,8 @@ PyLocale_getfirstweekday(PyObject* self, PyObject* args)
     char locale[1];
 
     if (!GetLocaleInfo(LOCALE_USER_DEFAULT,
-                      LOCALE_IFIRSTDAYOFWEEK,
-                      locale, sizeof(locale))) {
+                       LOCALE_IFIRSTDAYOFWEEK,
+                       locale, sizeof(locale))) {
         start = (locale[0] - '0') % 7;
     }
 #else
