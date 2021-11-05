@@ -1605,7 +1605,7 @@ class PyBuildExt(build_ext):
             if (
                 MACOS and
                 sqlite_incdir == os.path.join(MACOS_SDK_ROOT, "usr/include") and
-                sysconfig.get_config_var("PY_SQLITE_ENABLE_LOADABLE_EXTENSION")
+                sysconfig.get_config_var("PY_SQLITE_ENABLE_LOAD_EXTENSION")
             ):
                 raise DistutilsError("System version of SQLite does not support loadable extensions")
 

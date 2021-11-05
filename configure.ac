@@ -3203,8 +3203,8 @@ AC_ARG_ENABLE(loadable-sqlite-extensions,
 AC_MSG_RESULT($enable_loadable_sqlite_extensions)
 
 AS_VAR_IF([enable_loadable_sqlite_extensions], [yes], [
-  AC_DEFINE(PY_SQLITE_ENABLE_LOADABLE_EXTENSION, 1,
-  [Define to 1 to build sqlite module with loadable extensions.])
+  AC_DEFINE(PY_SQLITE_ENABLE_LOAD_EXTENSION, 1,
+  [Define to 1 to build the sqlite module with loadable extensions support.])
 ])
 
 # Check for --with-tcltk-includes=path and --with-tcltk-libs=path
