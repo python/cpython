@@ -1,2 +1,0 @@
-On Windows, change exit/quit message to suggest Ctrl-D, which works, instead
-of <Ctrl-Z Return>, which does not work in IDLE.

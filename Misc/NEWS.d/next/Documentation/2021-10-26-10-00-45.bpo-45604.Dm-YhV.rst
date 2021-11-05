@@ -1,1 +1,0 @@
-Add ``level`` argument to ``multiprocessing.log_to_stderr`` function docs.

@@ -1,0 +1,761 @@
+.. bpo: 30570
+.. date: 2021-10-19-01-04-08
+.. nonce: _G30Ms
+.. release date: 2021-11-05
+.. section: Core and Builtins
+
+Fixed a crash in ``issubclass()`` from infinite recursion when searching
+pathological ``__bases__`` tuples.
+
+..
+
+.. bpo: 45494
+.. date: 2021-10-16-17-27-48
+.. nonce: vMt1g4
+.. section: Core and Builtins
+
+Fix parser crash when reporting errors involving invalid continuation
+characters. Patch by Pablo Galindo.
+
+..
+
+.. bpo: 45385
+.. date: 2021-10-06-21-20-11
+.. nonce: CTUT8s
+.. section: Core and Builtins
+
+Fix reference leak from descr_check. Patch by Dong-hee Na.
+
+..
+
+.. bpo: 45167
+.. date: 2021-09-14-09-23-59
+.. nonce: CPSSoV
+.. section: Core and Builtins
+
+Fix deepcopying of :class:`types.GenericAlias` objects.
+
+..
+
+.. bpo: 44219
+.. date: 2021-09-09-10-32-33
+.. nonce: WiYyjz
+.. section: Core and Builtins
+
+Release the GIL while performing ``isatty`` system calls on arbitrary file
+descriptors. In particular, this affects :func:`os.isatty`,
+:func:`os.device_encoding` and :class:`io.TextIOWrapper`. By extension,
+:func:`io.open` in text mode is also affected. This change solves a deadlock
+in :func:`os.isatty`. Patch by Vincent Michel in :issue:`44219`.
+
+..
+
+.. bpo: 44959
+.. date: 2021-09-08-08-29-41
+.. nonce: OSwwPf
+.. section: Core and Builtins
+
+Added fallback to extension modules with '.sl' suffix on HP-UX
+
+..
+
+.. bpo: 44050
+.. date: 2021-09-08-00-30-09
+.. nonce: mFI15u
+.. section: Core and Builtins
+
+Extensions that indicate they use global state (by setting ``m_size`` to -1)
+can again be used in multiple interpreters. This reverts to behavior of
+Python 3.8.
+
+..
+
+.. bpo: 45121
+.. date: 2021-09-07-17-10-16
+.. nonce: iG-Hsf
+.. section: Core and Builtins
+
+Fix issue where ``Protocol.__init__`` raises ``RecursionError`` when it's
+called directly or via ``super()``. Patch provided by Yurii Karabas.
+
+..
+
+.. bpo: 45083
+.. date: 2021-09-01-23-55-49
+.. nonce: cLi9G3
+.. section: Core and Builtins
+
+When the interpreter renders an exception, its name now has a complete
+qualname. Previously only the class name was concatenated to the module
+name, which sometimes resulted in an incorrect full name being displayed.
+
+(This issue impacted only the C code exception rendering, the
+:mod:`traceback` module was using qualname already).
+
+..
+
+.. bpo: 45678
+.. date: 2021-11-03-17-28-43
+.. nonce: Zj_O8j
+.. section: Library
+
+Fix bug in Python 3.9 that meant ``functools.singledispatchmethod`` failed
+to properly wrap the attributes of the target method. Patch by Alex Waygood.
+
+..
+
+.. bpo: 45679
+.. date: 2021-10-30-21-11-37
+.. nonce: Dq8Cpu
+.. section: Library
+
+Fix caching of multi-value :data:`typing.Literal`. ``Literal[True, 2]`` is
+no longer equal to ``Literal[1, 2]``.
+
+..
+
+.. bpo: 45438
+.. date: 2021-10-27-10-05-39
+.. nonce: Xz5lGU
+.. section: Library
+
+Fix typing.Signature string representation for generic builtin types.
+
+..
+
+.. bpo: 45581
+.. date: 2021-10-22-21-57-02
+.. nonce: rlH6ay
+.. section: Library
+
+:meth:`sqlite3.connect` now correctly raises :exc:`MemoryError` if the
+underlying SQLite API signals memory error. Patch by Erlend E. Aasland.
+
+..
+
+.. bpo: 39679
+.. date: 2021-10-20-10-07-44
+.. nonce: nVYJJ3
+.. section: Library
+
+Fix bug in :class:`functools.singledispatchmethod` that caused it to fail
+when attempting to register a :func:`classmethod` or :func:`staticmethod`
+using type annotations. Patch contributed by Alex Waygood.
+
+..
+
+.. bpo: 45515
+.. date: 2021-10-18-14-52-48
+.. nonce: aXdvm_
+.. section: Library
+
+Add references to :mod:`zoneinfo` in the :mod:`datetime` documentation,
+mostly replacing outdated references to ``dateutil.tz``. Change by Paul
+Ganssle.
+
+..
+
+.. bpo: 45467
+.. date: 2021-10-14-13-31-19
+.. nonce: Q7Ma6A
+.. section: Library
+
+Fix incremental decoder and stream reader in the "raw-unicode-escape" codec.
+Previously they failed if the escape sequence was split.
+
+..
+
+.. bpo: 45461
+.. date: 2021-10-14-00-19-02
+.. nonce: 4LB_tJ
+.. section: Library
+
+Fix incremental decoder and stream reader in the "unicode-escape" codec.
+Previously they failed if the escape sequence was split.
+
+..
+
+.. bpo: 45239
+.. date: 2021-10-13-17-52-48
+.. nonce: 7li1_0
+.. section: Library
+
+Fixed :func:`email.utils.parsedate_tz` crashing with
+:exc:`UnboundLocalError` on certain invalid input instead of returning
+``None``. Patch by Ben Hoyt.
+
+..
+
+.. bpo: 44904
+.. date: 2021-10-09-18-42-27
+.. nonce: RlW5h8
+.. section: Library
+
+Fix bug in the :mod:`doctest` module that caused it to fail if a docstring
+included an example with a ``classmethod`` ``property``. Patch by Alex
+Waygood.
+
+..
+
+.. bpo: 45406
+.. date: 2021-10-08-19-24-48
+.. nonce: Qh_Mz4
+.. section: Library
+
+Make :func:`inspect.getmodule` catch ``FileNotFoundError`` raised by
+:'func:`inspect.getabsfile`, and return ``None`` to indicate that the module
+could not be determined.
+
+..
+
+.. bpo: 45262
+.. date: 2021-10-07-14-04-10
+.. nonce: HqF71Z
+.. section: Library
+
+Prevent use-after-free in asyncio. Make sure the cached running loop holder
+gets cleared on dealloc to prevent use-after-free in get_running_loop
+
+..
+
+.. bpo: 45386
+.. date: 2021-10-07-00-05-05
+.. nonce: q9ORpA
+.. section: Library
+
+Make :mod:`xmlrpc.client` more robust to C runtimes where the underlying C
+``strftime`` function results in a ``ValueError`` when testing for year
+formatting options.
+
+..
+
+.. bpo: 45371
+.. date: 2021-10-05-11-03-48
+.. nonce: NOwcDJ
+.. section: Library
+
+Fix clang rpath issue in :mod:`distutils`. The UnixCCompiler now uses
+correct clang option to add a runtime library directory (rpath) to a shared
+library.
+
+..
+
+.. bpo: 20028
+.. date: 2021-10-03-21-14-37
+.. nonce: zBA4RK
+.. section: Library
+
+Improve error message of :class:`csv.Dialect` when initializing. Patch by
+Vajrasky Kok and Dong-hee Na.
+
+..
+
+.. bpo: 45343
+.. date: 2021-10-01-23-07-02
+.. nonce: ixmctD
+.. section: Library
+
+Update bundled pip to 21.2.4 and setuptools to 58.1.0
+
+..
+
+.. bpo: 41710
+.. date: 2021-09-30-23-00-18
+.. nonce: svuloZ
+.. section: Library
+
+On Unix, if the ``sem_clockwait()`` function is available in the C library
+(glibc 2.30 and newer), the :meth:`threading.Lock.acquire` method now uses
+the monotonic clock (:data:`time.CLOCK_MONOTONIC`) for the timeout, rather
+than using the system clock (:data:`time.CLOCK_REALTIME`), to not be
+affected by system clock changes. Patch by Victor Stinner.
+
+..
+
+.. bpo: 45328
+.. date: 2021-09-30-08-22-44
+.. nonce: 8Z-Q0B
+.. section: Library
+
+Fixed :class:`http.client.HTTPConnection` to work properly in OSs that don't
+support the ``TCP_NODELAY`` socket option.
+
+..
+
+.. bpo: 1596321
+.. date: 2021-09-24-17-20-23
+.. nonce: 3nhPUk
+.. section: Library
+
+Fix the :func:`threading._shutdown` function when the :mod:`threading`
+module was imported first from a thread different than the main thread: no
+longer log an error at Python exit.
+
+..
+
+.. bpo: 45274
+.. date: 2021-09-23-22-17-26
+.. nonce: gPpa4E
+.. section: Library
+
+Fix a race condition in the :meth:`Thread.join() <threading.Thread.join>`
+method of the :mod:`threading` module. If the function is interrupted by a
+signal and the signal handler raises an exception, make sure that the thread
+remains in a consistent state to prevent a deadlock. Patch by Victor
+Stinner.
+
+..
+
+.. bpo: 45238
+.. date: 2021-09-18-16-56-33
+.. nonce: Hng_9V
+.. section: Library
+
+Fix :meth:`unittest.IsolatedAsyncioTestCase.debug`: it runs now asynchronous
+methods and callbacks.
+
+..
+
+.. bpo: 36674
+.. date: 2021-09-18-13-14-57
+.. nonce: a2k5Zb
+.. section: Library
+
+:meth:`unittest.TestCase.debug` raises now a :class:`unittest.SkipTest` if
+the class or the test method are decorated with the skipping decorator.
+
+..
+
+.. bpo: 45235
+.. date: 2021-09-17-16-55-37
+.. nonce: sXnmPA
+.. section: Library
+
+Fix an issue where argparse would not preserve values in a provided
+namespace when using a subparser with defaults.
+
+..
+
+.. bpo: 45234
+.. date: 2021-09-17-11-20-55
+.. nonce: qUcTVt
+.. section: Library
+
+Fixed a regression in :func:`~shutil.copyfile`, :func:`~shutil.copy`,
+:func:`~shutil.copy2` raising :exc:`FileNotFoundError` when source is a
+directory, which should raise :exc:`IsADirectoryError`
+
+..
+
+.. bpo: 45228
+.. date: 2021-09-17-09-59-33
+.. nonce: WV1dcT
+.. section: Library
+
+Fix stack buffer overflow in parsing J1939 network address.
+
+..
+
+.. bpo: 45192
+.. date: 2021-09-14-15-52-47
+.. nonce: DjA-BI
+.. section: Library
+
+Fix the ``tempfile._infer_return_type`` function so that the ``dir``
+argument of the :mod:`tempfile` functions accepts an object implementing the
+``os.PathLike`` protocol.
+
+Patch by Kyungmin Lee.
+
+..
+
+.. bpo: 45160
+.. date: 2021-09-11-14-47-05
+.. nonce: VzMXbW
+.. section: Library
+
+When tracing a tkinter variable used by a ttk OptionMenu, callbacks are no
+longer made twice.
+
+..
+
+.. bpo: 35474
+.. date: 2021-09-11-10-45-12
+.. nonce: tEY3SD
+.. section: Library
+
+Calling :func:`mimetypes.guess_all_extensions` with ``strict=False`` no
+longer affects the result of the following call with ``strict=True``. Also,
+mutating the returned list no longer affects the global state.
+
+..
+
+.. bpo: 45166
+.. date: 2021-09-10-21-35-53
+.. nonce: UHipXF
+.. section: Library
+
+:func:`typing.get_type_hints` now works with :data:`~typing.Final` wrapped
+in :class:`~typing.ForwardRef`.
+
+..
+
+.. bpo: 45097
+.. date: 2021-09-04-13-10-25
+.. nonce: 5J4IC-
+.. section: Library
+
+Remove deprecation warnings about the loop argument in :mod:`asyncio`
+incorrectly emitted in cases when the user does not pass the loop argument.
+
+..
+
+.. bpo: 45081
+.. date: 2021-09-02-12-42-25
+.. nonce: tOjJ1k
+.. section: Library
+
+Fix issue when dataclasses that inherit from ``typing.Protocol`` subclasses
+have wrong ``__init__``. Patch provided by Yurii Karabas.
+
+..
+
+.. bpo: 24444
+.. date: 2021-08-30-00-19-23
+.. nonce: Ki4bgz
+.. section: Library
+
+Fixed an error raised in :mod:`argparse` help display when help for an
+option is set to 1+ blank spaces or when *choices* arg is an empty
+container.
+
+..
+
+.. bpo: 45021
+.. date: 2021-08-28-13-00-12
+.. nonce: rReeaj
+.. section: Library
+
+Fix a potential deadlock at shutdown of forked children when using
+:mod:`concurrent.futures` module
+
+..
+
+.. bpo: 45030
+.. date: 2021-08-27-19-01-23
+.. nonce: tAmBbY
+.. section: Library
+
+Fix integer overflow in pickling and copying the range iterator.
+
+..
+
+.. bpo: 39039
+.. date: 2021-08-18-10-36-14
+.. nonce: A63LYh
+.. section: Library
+
+tarfile.open raises :exc:`~tarfile.ReadError` when a zlib error occurs
+during file extraction.
+
+..
+
+.. bpo: 44594
+.. date: 2021-07-12-10-32-48
+.. nonce: eEa5zi
+.. section: Library
+
+Fix an edge case of :class:`ExitStack` and :class:`AsyncExitStack` exception
+chaining.  They will now match ``with`` block behavior when ``__context__``
+is explicitly set to ``None`` when the exception is in flight.
+
+..
+
+.. bpo: 45726
+.. date: 2021-11-05-12-15-24
+.. nonce: GwRr7e
+.. section: Documentation
+
+Improve documentation for :func:`functools.singledispatch` and
+:class:`functools.singledispatchmethod`.
+
+..
+
+.. bpo: 45680
+.. date: 2021-11-03-14-51-03
+.. nonce: 9_NTFU
+.. section: Documentation
+
+Amend the docs on ``GenericAlias`` objects to clarify that non-container
+classes can also implement ``__class_getitem__``. Patch contributed by Alex
+Waygood.
+
+..
+
+.. bpo: 45655
+.. date: 2021-10-28-21-28-07
+.. nonce: aPYGaS
+.. section: Documentation
+
+Add a new "relevant PEPs" section to the top of the documentation for the
+``typing`` module. Patch by Alex Waygood.
+
+..
+
+.. bpo: 45604
+.. date: 2021-10-26-10-00-45
+.. nonce: Dm-YhV
+.. section: Documentation
+
+Add ``level`` argument to ``multiprocessing.log_to_stderr`` function docs.
+
+..
+
+.. bpo: 45464
+.. date: 2021-10-20-16-26-53
+.. nonce: mOISBs
+.. section: Documentation
+
+Mention in the documentation of :ref:`Built-in Exceptions
+<bltin-exceptions>` that inheriting from multiple exception types in a
+single subclass is not recommended due to possible memory layout
+incompatibility.
+
+..
+
+.. bpo: 45449
+.. date: 2021-10-19-01-41-40
+.. nonce: fjHZJc
+.. section: Documentation
+
+Add note about :pep:`585` in :mod:`collections.abc`.
+
+..
+
+.. bpo: 45516
+.. date: 2021-10-18-20-12-18
+.. nonce: EJh4K8
+.. section: Documentation
+
+Add protocol description to the :class:`importlib.abc.Traversable`
+documentation.
+
+..
+
+.. bpo: 20692
+.. date: 2021-10-13-00-42-54
+.. nonce: K5rGtP
+.. section: Documentation
+
+Add Programming FAQ entry explaining that int literal attribute access
+requires either a space after or parentheses around the literal.
+
+..
+
+.. bpo: 45216
+.. date: 2021-09-18-13-45-19
+.. nonce: o56nyt
+.. section: Documentation
+
+Remove extra documentation listing methods in ``difflib``. It was rendering
+twice in pydoc and was outdated in some places.
+
+..
+
+.. bpo: 45578
+.. date: 2021-10-30-19-00-25
+.. nonce: bvu6X2
+.. section: Tests
+
+Add tests for :func:`dis.distb`
+
+..
+
+.. bpo: 45577
+.. date: 2021-10-22-19-44-13
+.. nonce: dSaNvK
+.. section: Tests
+
+Add subtests for all ``pickle`` protocols in ``test_zoneinfo``.
+
+..
+
+.. bpo: 43592
+.. date: 2021-10-21-17-22-26
+.. nonce: kHRsra
+.. section: Tests
+
+:mod:`test.libregrtest` now raises the soft resource limit for the maximum
+number of file descriptors when the default is too low for our test suite as
+was often the case on macOS.
+
+..
+
+.. bpo: 40173
+.. date: 2021-09-30-16-54-39
+.. nonce: J_slCw
+.. section: Tests
+
+Fix :func:`test.support.import_helper.import_fresh_module`.
+
+..
+
+.. bpo: 45280
+.. date: 2021-09-25-11-05-31
+.. nonce: 3MA6lC
+.. section: Tests
+
+Add a test case for empty :class:`typing.NamedTuple`.
+
+..
+
+.. bpo: 45269
+.. date: 2021-09-24-10-41-49
+.. nonce: 8jKEr8
+.. section: Tests
+
+Cover case when invalid ``markers`` type is supplied to ``c_make_encoder``.
+
+..
+
+.. bpo: 45209
+.. date: 2021-09-15-23-32-39
+.. nonce: 55ntL5
+.. section: Tests
+
+Fix ``UserWarning: resource_tracker`` warning in
+``_test_multiprocessing._TestSharedMemory.test_shared_memory_cleaned_after_process_termination``
+
+..
+
+.. bpo: 45195
+.. date: 2021-09-14-13-16-18
+.. nonce: EyQR1G
+.. section: Tests
+
+Fix test_readline.test_nonascii(): sometimes, the newline character is not
+written at the end, so don't expect it in the output. Patch by Victor
+Stinner.
+
+..
+
+.. bpo: 45156
+.. date: 2021-09-13-00-28-17
+.. nonce: 8oomV3
+.. section: Tests
+
+Fixes infinite loop on :func:`unittest.mock.seal` of mocks created by
+:func:`~unittest.create_autospec`.
+
+..
+
+.. bpo: 45042
+.. date: 2021-08-30-11-54-14
+.. nonce: QMz3X8
+.. section: Tests
+
+Fixes that test classes decorated with
+``@hashlib_helper.requires_hashdigest`` were skipped all the time.
+
+..
+
+.. bpo: 43158
+.. date: 2021-11-01-12-51-46
+.. nonce: fghS6w
+.. section: Build
+
+``setup.py`` now uses values from configure script to build the ``_uuid``
+extension module. Configure now detects util-linux's ``libuuid``, too.
+
+..
+
+.. bpo: 45571
+.. date: 2021-10-22-15-28-29
+.. nonce: yY8NsJ
+.. section: Build
+
+``Modules/Setup`` now use ``PY_CFLAGS_NODIST`` instead of ``PY_CFLAGS`` to
+compile shared modules.
+
+..
+
+.. bpo: 45532
+.. date: 2021-10-20-16-07-39
+.. nonce: kyhvis
+.. section: Build
+
+Update :data:`sys.version` to use ``main`` as fallback information. Patch by
+Jeong YunWon.
+
+..
+
+.. bpo: 45405
+.. date: 2021-10-11-16-27-38
+.. nonce: iSfdW5
+.. section: Build
+
+Prevent ``internal configure error`` when running ``configure`` with recent
+versions of non-Apple clang.  Patch by David Bohman.
+
+..
+
+.. bpo: 45220
+.. date: 2021-09-16-18-00-43
+.. nonce: TgbkvW
+.. section: Build
+
+Avoid building with the Windows 11 SDK previews automatically. This may be
+overridden by setting the ``DefaultWindowsSDKVersion`` environment variable
+before building.
+
+..
+
+.. bpo: 45337
+.. date: 2021-09-30-23-17-27
+.. nonce: qg7U_h
+.. section: Windows
+
+venv now warns when the created environment may need to be accessed at a
+different path, due to redirections, links or junctions. It also now
+correctly installs or upgrades components when the alternate path is
+required.
+
+..
+
+.. bpo: 44828
+.. date: 2021-10-25-02-02-21
+.. nonce: XBdXlJ
+.. section: macOS
+
+Avoid tkinter file dialog failure on macOS 12 Monterey when using the Tk
+8.6.11 provided by python.org macOS installers. Patch by Marc Culler of the
+Tk project.
+
+..
+
+.. bpo: 45296
+.. date: 2021-09-27-01-21-59
+.. nonce: 9H8rdY
+.. section: IDLE
+
+On Windows, change exit/quit message to suggest Ctrl-D, which works, instead
+of <Ctrl-Z Return>, which does not work in IDLE.
+
+..
+
+.. bpo: 44687
+.. date: 2021-09-19-17-18-25
+.. nonce: 3fqDRC
+.. section: C API
+
+:meth:`BufferedReader.peek` no longer raises :exc:`ValueError` when the
+entire file has already been buffered.
+
+..
+
+.. bpo: 44751
+.. date: 2021-07-27-17-29-12
+.. nonce: 4qmbDG
+.. section: C API
+
+Remove ``crypt.h`` include from the public ``Python.h`` header.
