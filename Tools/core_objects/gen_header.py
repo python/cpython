@@ -15,7 +15,7 @@ def print_struct(length):
     print(f"""
 typedef struct _ascii_{length} {{
     PyASCIIObject object;
-    char text[{length+1}];
+    char text[{length}];
 }} _PyAsciiId_{length};
 """)
 
@@ -23,12 +23,13 @@ def main(idsfile="identifiers.txt"):
     print(HEADER)
     with open(idsfile) as fd:
         identifiers = [line.strip() for line in fd if line.strip()]
-    lens = { len(id) for id in identifiers }
+    lens = { (len(id)+4) & -4 for id in identifiers }
     for length in lens:
         print_struct(length)
     print("typedef struct _py_id_strings {")
     for name in identifiers:
-        print(f"    _PyAsciiId_{len(name)} id_{name};")
+        length = (len(name)+4) & -4
+        print(f"    _PyAsciiId_{length} id_{name};")
     print("} _PyIdStrings;")
     print()
     print("PyAPI_DATA(_PyIdStrings) _Py_id_strings;")

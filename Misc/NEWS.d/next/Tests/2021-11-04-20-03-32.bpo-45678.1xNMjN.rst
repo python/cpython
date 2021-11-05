@@ -1,0 +1,3 @@
+Add tests for scenarios in which :class:`functools.singledispatchmethod` is
+stacked on top of a method that has already been wrapped by two other
+decorators. Patch by Alex Waygood.

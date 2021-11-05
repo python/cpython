@@ -10159,6 +10159,75 @@ $as_echo "no" >&6; }
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
+save_LIBS=$LIBS
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing uuid_generate_time_safe" >&5
+$as_echo_n "checking for library containing uuid_generate_time_safe... " >&6; }
+if ${ac_cv_search_uuid_generate_time_safe+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char uuid_generate_time_safe ();
+int
+main ()
+{
+return uuid_generate_time_safe ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' uuid; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_uuid_generate_time_safe=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_uuid_generate_time_safe+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_uuid_generate_time_safe+:} false; then :
+
+else
+  ac_cv_search_uuid_generate_time_safe=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_uuid_generate_time_safe" >&5
+$as_echo "$ac_cv_search_uuid_generate_time_safe" >&6; }
+ac_res=$ac_cv_search_uuid_generate_time_safe
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
+
+$as_echo "#define HAVE_LIBUUID 1" >>confdefs.h
+,
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+
+LIBS=$save_LIBS
+
 # AIX provides support for RFC4122 (uuid) in libc.a starting with AIX 6.1 (anno 2007)
 # FreeBSD and OpenBSD provides support as well
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_create" >&5
