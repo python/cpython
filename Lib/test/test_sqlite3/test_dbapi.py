@@ -29,7 +29,6 @@ import unittest
 
 from test.support import (
     SHORT_TIMEOUT,
-    bigmemtest,
     check_disallow_instantiation,
     threading_helper,
 )
@@ -46,6 +45,22 @@ def managed_connect(*args, in_mem=False, **kwargs):
         cx.close()
         if not in_mem:
             unlink(TESTFN)
+
+
+# Helper for temporary memory databases
+def memory_database():
+    cx = sqlite.connect(":memory:")
+    return contextlib.closing(cx)
+
+
+# Temporarily limit a database connection parameter
+@contextlib.contextmanager
+def cx_limit(cx, category=sqlite.SQLITE_LIMIT_LENGTH, limit=128):
+    try:
+        _prev = cx.setlimit(category, limit)
+        yield limit
+    finally:
+        cx.setlimit(category, _prev)
 
 
 class ModuleTests(unittest.TestCase):
@@ -650,6 +665,15 @@ class CursorTests(unittest.TestCase):
         with self.assertRaises(ZeroDivisionError):
             self.cu.execute("select name from test where name=?", L())
 
+    def test_execute_too_many_params(self):
+        category = sqlite.SQLITE_LIMIT_VARIABLE_NUMBER
+        msg = "too many SQL variables"
+        with cx_limit(self.cx, category=category, limit=1):
+            self.cu.execute("select * from test where id=?", (1,))
+            with self.assertRaisesRegex(sqlite.OperationalError, msg):
+                self.cu.execute("select * from test where id!=? and id!=?",
+                                (1, 2))
+
     def test_execute_dict_mapping(self):
         self.cu.execute("insert into test(name) values ('foo')")
         self.cu.execute("select name from test where name=:name", {"name": "foo"})
@@ -1036,14 +1060,12 @@ class ExtensionTests(unittest.TestCase):
                 insert into a(s) values ('\ud8ff');
                 """)
 
-    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
-    @bigmemtest(size=2**31, memuse=3, dry_run=False)
-    def test_cursor_executescript_too_large_script(self, maxsize):
-        con = sqlite.connect(":memory:")
-        cur = con.cursor()
-        for size in 2**31-1, 2**31:
-            with self.assertRaises(sqlite.DataError):
-                cur.executescript("create table a(s);".ljust(size))
+    def test_cursor_executescript_too_large_script(self):
+        msg = "query string is too large"
+        with memory_database() as cx, cx_limit(cx) as lim:
+            cx.executescript("select 'almost too large'".ljust(lim-1))
+            with self.assertRaisesRegex(sqlite.DataError, msg):
+                cx.executescript("select 'too large'".ljust(lim))
 
     def test_cursor_executescript_tx_control(self):
         con = sqlite.connect(":memory:")
