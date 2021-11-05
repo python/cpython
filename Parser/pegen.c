@@ -79,7 +79,9 @@ _PyPegen_check_barry_as_flufl(Parser *p, Token* t) {
 
 int
 _PyPegen_check_legacy_stmt(Parser *p, expr_ty name) {
-    assert(name->kind == Name_kind);
+    if (name->kind != Name_kind) {
+        return 0;
+    }
     const char* candidates[2] = {"print", "exec"};
     for (int i=0; i<2; i++) {
         if (PyUnicode_CompareWithASCIIString(name->v.Name.id, candidates[i]) == 0) {

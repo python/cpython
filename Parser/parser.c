@@ -9717,6 +9717,7 @@ expressions_rule(Parser *p)
 
 // expression:
 //     | invalid_expression
+//     | invalid_legacy_expression
 //     | disjunction 'if' disjunction 'else' expression
 //     | disjunction
 //     | lambdef
@@ -9761,6 +9762,25 @@ expression_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s expression[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "invalid_expression"));
+    }
+    if (p->call_invalid_rules) { // invalid_legacy_expression
+        if (p->error_indicator) {
+            D(p->level--);
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_legacy_expression"));
+        void *invalid_legacy_expression_var;
+        if (
+            (invalid_legacy_expression_var = invalid_legacy_expression_rule(p))  // invalid_legacy_expression
+        )
+        {
+            D(fprintf(stderr, "%*c+ expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "invalid_legacy_expression"));
+            _res = invalid_legacy_expression_var;
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s expression[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "invalid_legacy_expression"));
     }
     { // disjunction 'if' disjunction 'else' expression
         if (p->error_indicator) {
@@ -18207,7 +18227,6 @@ invalid_legacy_expression_rule(Parser *p)
 }
 
 // invalid_expression:
-//     | invalid_legacy_expression
 //     | !(NAME STRING | SOFT_KEYWORD) disjunction expression_without_invalid
 //     | disjunction 'if' disjunction !('else' | ':')
 static void *
@@ -18220,25 +18239,6 @@ invalid_expression_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    if (p->call_invalid_rules) { // invalid_legacy_expression
-        if (p->error_indicator) {
-            D(p->level--);
-            return NULL;
-        }
-        D(fprintf(stderr, "%*c> invalid_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_legacy_expression"));
-        void *invalid_legacy_expression_var;
-        if (
-            (invalid_legacy_expression_var = invalid_legacy_expression_rule(p))  // invalid_legacy_expression
-        )
-        {
-            D(fprintf(stderr, "%*c+ invalid_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "invalid_legacy_expression"));
-            _res = invalid_legacy_expression_var;
-            goto done;
-        }
-        p->mark = _mark;
-        D(fprintf(stderr, "%*c%s invalid_expression[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "invalid_legacy_expression"));
-    }
     { // !(NAME STRING | SOFT_KEYWORD) disjunction expression_without_invalid
         if (p->error_indicator) {
             D(p->level--);
@@ -18256,7 +18256,7 @@ invalid_expression_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "!(NAME STRING | SOFT_KEYWORD) disjunction expression_without_invalid"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "invalid syntax. Perhaps you forgot a comma?" );
+            _res = _PyPegen_check_legacy_stmt ( p , a ) ? NULL : RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "invalid syntax. Perhaps you forgot a comma?" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
