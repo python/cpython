@@ -1,3 +1,0 @@
-Amend the docs on ``GenericAlias`` objects to clarify that non-container
-classes can also implement ``__class_getitem__``. Patch contributed by Alex
-Waygood.
