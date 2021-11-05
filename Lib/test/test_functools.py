@@ -1495,39 +1495,23 @@ class TestLRU:
             self.assertEqual(square.cache_info().hits, 4)
             self.assertEqual(square.cache_info().misses, 4)
 
-    def test_lru_with_container_types_hash_collision(self):
-        """Testing hash collisions in `lru_cache(typed=True)`.
+    def test_lru_cache_typed_is_not_recursive(self):
+        cached = self.module.lru_cache(typed=True)(repr)
 
-        Some different values in python have the same hash.
-        Like `0`, `False` and `0.0`.
-        When used in `tuple`, hash will still be the same:
-        `hash((1,)) == hash((True,))`
+        self.assertEqual(cached(1), '1')
+        self.assertEqual(cached(True), 'True')
+        self.assertEqual(cached(1.0), '1.0')
+        self.assertEqual(cached(0), '0')
+        self.assertEqual(cached(False), 'False')
+        self.assertEqual(cached(0.0), '0.0')
 
-        The thing is, `typed=True` won't help in this case.
-        The first tuple with hash collisions will be used.
-        Context: https://bugs.python.org/issue45701
-        """
-        values = {
-            # All values inside each tuple have the same hash:
-            # `hash(1) == hash(1.0) == hash(True)`
-            '(0,)': (0, 0.0, False),
-            '(1,)': (1, 1.0, True),
-        }
-        for expected, hash_collisions in values.items():
-            with self.subTest(values=values):
-                cached = self.module.lru_cache(typed=True)(repr)
+        self.assertEqual(cached((1,)), '(1,)')
+        self.assertEqual(cached((True,)), '(1,)')
+        self.assertEqual(cached((1.0,)), '(1,)')
 
-                # All these calls will be cached, because hash is the same.
-                self.assertEqual(  # miss, cache created
-                    cached((hash_collisions[0],)),
-                    expected,
-                )
-
-                for value in hash_collisions:  # 3 hits
-                    self.assertEqual(cached((value,)), expected)
-
-                self.assertEqual(cached.cache_info().hits, 3)
-                self.assertEqual(cached.cache_info().misses, 1)
+        self.assertEqual(cached((0,)), '(0,)')
+        self.assertEqual(cached((False,)), '(0,)')
+        self.assertEqual(cached((0.0,)), '(0,)')
 
     def test_lru_with_keyword_args(self):
         @self.module.lru_cache()
