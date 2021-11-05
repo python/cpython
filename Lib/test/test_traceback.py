@@ -987,6 +987,35 @@ class TracebackFormatTests(unittest.TestCase):
             self.assertIn('UnhashableException: ex2', tb[4])
             self.assertIn('UnhashableException: ex1', tb[12])
 
+    def deep_eg(self):
+        e = TypeError(1)
+        for i in range(2000):
+            e = ExceptionGroup('eg', [e])
+        return e
+
+    @cpython_only
+    def test_exception_group_deep_recursion_capi(self):
+        from _testcapi import exception_print
+        LIMIT = 75
+        eg = self.deep_eg()
+        with captured_output("stderr") as stderr_f:
+            with support.infinite_recursion(max_depth=LIMIT):
+                exception_print(eg)
+        output = stderr_f.getvalue()
+        self.assertIn('ExceptionGroup', output)
+        self.assertLessEqual(output.count('ExceptionGroup'), LIMIT)
+
+    def test_exception_group_deep_recursion_traceback(self):
+        LIMIT = 75
+        eg = self.deep_eg()
+        with captured_output("stderr") as stderr_f:
+            with support.infinite_recursion(max_depth=LIMIT):
+                traceback.print_exception(type(eg), eg, eg.__traceback__)
+        output = stderr_f.getvalue()
+        self.assertIn('ExceptionGroup', output)
+        self.assertLessEqual(output.count('ExceptionGroup'), LIMIT)
+
+
 cause_message = (
     "\nThe above exception was the direct cause "
     "of the following exception:\n\n")
@@ -998,7 +1027,6 @@ context_message = (
 boundaries = re.compile(
     '(%s|%s)' % (re.escape(cause_message), re.escape(context_message)))
 
-
 class BaseExceptionReportingTests:
 
     def get_exception(self, exception_or_callable):
@@ -1008,6 +1036,8 @@ class BaseExceptionReportingTests:
             exception_or_callable()
         except Exception as e:
             return e
+
+    callable_line = get_exception.__code__.co_firstlineno + 4
 
     def zero_div(self):
         1/0 # In zero_div
@@ -1232,6 +1262,298 @@ class BaseExceptionReportingTests:
         str_value = '<exception str() failed>'
         str_name = '.'.join([X.__module__, X.__qualname__])
         self.assertEqual(err, f"{str_name}: {str_value}\n")
+
+
+    # #### Exception Groups ####
+
+    def test_exception_group_basic(self):
+        def exc():
+            raise ExceptionGroup("eg", [ValueError(1), TypeError(2)])
+
+        expected = (
+             f'  + Exception Group Traceback (most recent call last):\n'
+             f'  |   File "{__file__}", line {self.callable_line}, in get_exception\n'
+             f'  |     exception_or_callable()\n'
+             f'  |     ^^^^^^^^^^^^^^^^^^^^^^^\n'
+             f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 1}, in exc\n'
+             f'  |     raise ExceptionGroup("eg", [ValueError(1), TypeError(2)])\n'
+             f'  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
+             f'  | ExceptionGroup: eg\n'
+             f'  +-+---------------- 1 ----------------\n'
+             f'    | ValueError: 1\n'
+             f'    +---------------- 2 ----------------\n'
+             f'    | TypeError: 2\n'
+             f'    +------------------------------------\n')
+
+        report = self.get_report(exc)
+        self.assertEqual(report, expected)
+
+    def test_exception_group_cause(self):
+        def exc():
+            EG = ExceptionGroup
+            try:
+                raise EG("eg1", [ValueError(1), TypeError(2)])
+            except Exception as e:
+                raise EG("eg2", [ValueError(3), TypeError(4)]) from e
+
+        expected = (f'  + Exception Group Traceback (most recent call last):\n'
+                    f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 3}, in exc\n'
+                    f'  |     raise EG("eg1", [ValueError(1), TypeError(2)])\n'
+                    f'  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
+                    f'  | ExceptionGroup: eg1\n'
+                    f'  +-+---------------- 1 ----------------\n'
+                    f'    | ValueError: 1\n'
+                    f'    +---------------- 2 ----------------\n'
+                    f'    | TypeError: 2\n'
+                    f'    +------------------------------------\n'
+                    f'\n'
+                    f'The above exception was the direct cause of the following exception:\n'
+                    f'\n'
+                    f'  + Exception Group Traceback (most recent call last):\n'
+                    f'  |   File "{__file__}", line {self.callable_line}, in get_exception\n'
+                    f'  |     exception_or_callable()\n'
+                    f'  |     ^^^^^^^^^^^^^^^^^^^^^^^\n'
+                    f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 5}, in exc\n'
+                    f'  |     raise EG("eg2", [ValueError(3), TypeError(4)]) from e\n'
+                    f'  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
+                    f'  | ExceptionGroup: eg2\n'
+                    f'  +-+---------------- 1 ----------------\n'
+                    f'    | ValueError: 3\n'
+                    f'    +---------------- 2 ----------------\n'
+                    f'    | TypeError: 4\n'
+                    f'    +------------------------------------\n')
+
+        report = self.get_report(exc)
+        self.assertEqual(report, expected)
+
+    def test_exception_group_context_with_context(self):
+        def exc():
+            EG = ExceptionGroup
+            try:
+                try:
+                    raise EG("eg1", [ValueError(1), TypeError(2)])
+                except:
+                    raise EG("eg2", [ValueError(3), TypeError(4)])
+            except:
+                raise ImportError(5)
+
+        expected = (
+             f'  + Exception Group Traceback (most recent call last):\n'
+             f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 4}, in exc\n'
+             f'  |     raise EG("eg1", [ValueError(1), TypeError(2)])\n'
+             f'  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
+             f'  | ExceptionGroup: eg1\n'
+             f'  +-+---------------- 1 ----------------\n'
+             f'    | ValueError: 1\n'
+             f'    +---------------- 2 ----------------\n'
+             f'    | TypeError: 2\n'
+             f'    +------------------------------------\n'
+             f'\n'
+             f'During handling of the above exception, another exception occurred:\n'
+             f'\n'
+             f'  + Exception Group Traceback (most recent call last):\n'
+             f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 6}, in exc\n'
+             f'  |     raise EG("eg2", [ValueError(3), TypeError(4)])\n'
+             f'  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
+             f'  | ExceptionGroup: eg2\n'
+             f'  +-+---------------- 1 ----------------\n'
+             f'    | ValueError: 3\n'
+             f'    +---------------- 2 ----------------\n'
+             f'    | TypeError: 4\n'
+             f'    +------------------------------------\n'
+             f'\n'
+             f'During handling of the above exception, another exception occurred:\n'
+             f'\n'
+             f'Traceback (most recent call last):\n'
+             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+             f'    exception_or_callable()\n'
+             f'    ^^^^^^^^^^^^^^^^^^^^^^^\n'
+             f'  File "{__file__}", line {exc.__code__.co_firstlineno + 8}, in exc\n'
+             f'    raise ImportError(5)\n'
+             f'    ^^^^^^^^^^^^^^^^^^^^\n'
+             f'ImportError: 5\n')
+
+        report = self.get_report(exc)
+        self.assertEqual(report, expected)
+
+    def test_exception_group_nested(self):
+        def exc():
+            EG = ExceptionGroup
+            VE = ValueError
+            TE = TypeError
+            try:
+                try:
+                    raise EG("nested", [TE(2), TE(3)])
+                except Exception as e:
+                    exc = e
+                raise EG("eg", [VE(1), exc, VE(4)])
+            except:
+                raise EG("top", [VE(5)])
+
+        expected = (f'  + Exception Group Traceback (most recent call last):\n'
+                    f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 9}, in exc\n'
+                    f'  |     raise EG("eg", [VE(1), exc, VE(4)])\n'
+                    f'  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
+                    f'  | ExceptionGroup: eg\n'
+                    f'  +-+---------------- 1 ----------------\n'
+                    f'    | ValueError: 1\n'
+                    f'    +---------------- 2 ----------------\n'
+                    f'    | Exception Group Traceback (most recent call last):\n'
+                    f'    |   File "{__file__}", line {exc.__code__.co_firstlineno + 6}, in exc\n'
+                    f'    |     raise EG("nested", [TE(2), TE(3)])\n'
+                    f'    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
+                    f'    | ExceptionGroup: nested\n'
+                    f'    +-+---------------- 1 ----------------\n'
+                    f'      | TypeError: 2\n'
+                    f'      +---------------- 2 ----------------\n'
+                    f'      | TypeError: 3\n'
+                    f'      +------------------------------------\n'
+                    f'    +---------------- 3 ----------------\n'
+                    f'    | ValueError: 4\n'
+                    f'    +------------------------------------\n'
+                    f'\n'
+                    f'During handling of the above exception, another exception occurred:\n'
+                    f'\n'
+                    f'  + Exception Group Traceback (most recent call last):\n'
+                    f'  |   File "{__file__}", line {self.callable_line}, in get_exception\n'
+                    f'  |     exception_or_callable()\n'
+                    f'  |     ^^^^^^^^^^^^^^^^^^^^^^^\n'
+                    f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 11}, in exc\n'
+                    f'  |     raise EG("top", [VE(5)])\n'
+                    f'  |     ^^^^^^^^^^^^^^^^^^^^^^^^\n'
+                    f'  | ExceptionGroup: top\n'
+                    f'  +-+---------------- 1 ----------------\n'
+                    f'    | ValueError: 5\n'
+                    f'    +------------------------------------\n')
+
+        report = self.get_report(exc)
+        self.assertEqual(report, expected)
+
+    def test_exception_group_width_limit(self):
+        excs = []
+        for i in range(1000):
+            excs.append(ValueError(i))
+        eg = ExceptionGroup('eg', excs)
+
+        expected = ('  | ExceptionGroup: eg\n'
+                    '  +-+---------------- 1 ----------------\n'
+                    '    | ValueError: 0\n'
+                    '    +---------------- 2 ----------------\n'
+                    '    | ValueError: 1\n'
+                    '    +---------------- 3 ----------------\n'
+                    '    | ValueError: 2\n'
+                    '    +---------------- 4 ----------------\n'
+                    '    | ValueError: 3\n'
+                    '    +---------------- 5 ----------------\n'
+                    '    | ValueError: 4\n'
+                    '    +---------------- 6 ----------------\n'
+                    '    | ValueError: 5\n'
+                    '    +---------------- 7 ----------------\n'
+                    '    | ValueError: 6\n'
+                    '    +---------------- 8 ----------------\n'
+                    '    | ValueError: 7\n'
+                    '    +---------------- 9 ----------------\n'
+                    '    | ValueError: 8\n'
+                    '    +---------------- 10 ----------------\n'
+                    '    | ValueError: 9\n'
+                    '    +---------------- 11 ----------------\n'
+                    '    | ValueError: 10\n'
+                    '    +---------------- 12 ----------------\n'
+                    '    | ValueError: 11\n'
+                    '    +---------------- 13 ----------------\n'
+                    '    | ValueError: 12\n'
+                    '    +---------------- 14 ----------------\n'
+                    '    | ValueError: 13\n'
+                    '    +---------------- 15 ----------------\n'
+                    '    | ValueError: 14\n'
+                    '    +---------------- ... ----------------\n'
+                    '    | and 985 more exceptions\n'
+                    '    +------------------------------------\n')
+
+        report = self.get_report(eg)
+        self.assertEqual(report, expected)
+
+    def test_exception_group_depth_limit(self):
+        exc = TypeError('bad type')
+        for i in range(1000):
+            exc = ExceptionGroup(
+                f'eg{i}',
+                [ValueError(i), exc, ValueError(-i)])
+
+        expected = ('  | ExceptionGroup: eg999\n'
+                    '  +-+---------------- 1 ----------------\n'
+                    '    | ValueError: 999\n'
+                    '    +---------------- 2 ----------------\n'
+                    '    | ExceptionGroup: eg998\n'
+                    '    +-+---------------- 1 ----------------\n'
+                    '      | ValueError: 998\n'
+                    '      +---------------- 2 ----------------\n'
+                    '      | ExceptionGroup: eg997\n'
+                    '      +-+---------------- 1 ----------------\n'
+                    '        | ValueError: 997\n'
+                    '        +---------------- 2 ----------------\n'
+                    '        | ExceptionGroup: eg996\n'
+                    '        +-+---------------- 1 ----------------\n'
+                    '          | ValueError: 996\n'
+                    '          +---------------- 2 ----------------\n'
+                    '          | ExceptionGroup: eg995\n'
+                    '          +-+---------------- 1 ----------------\n'
+                    '            | ValueError: 995\n'
+                    '            +---------------- 2 ----------------\n'
+                    '            | ExceptionGroup: eg994\n'
+                    '            +-+---------------- 1 ----------------\n'
+                    '              | ValueError: 994\n'
+                    '              +---------------- 2 ----------------\n'
+                    '              | ExceptionGroup: eg993\n'
+                    '              +-+---------------- 1 ----------------\n'
+                    '                | ValueError: 993\n'
+                    '                +---------------- 2 ----------------\n'
+                    '                | ExceptionGroup: eg992\n'
+                    '                +-+---------------- 1 ----------------\n'
+                    '                  | ValueError: 992\n'
+                    '                  +---------------- 2 ----------------\n'
+                    '                  | ExceptionGroup: eg991\n'
+                    '                  +-+---------------- 1 ----------------\n'
+                    '                    | ValueError: 991\n'
+                    '                    +---------------- 2 ----------------\n'
+                    '                    | ExceptionGroup: eg990\n'
+                    '                    +-+---------------- 1 ----------------\n'
+                    '                      | ValueError: 990\n'
+                    '                      +---------------- 2 ----------------\n'
+                    '                      | ... (max_group_depth is 10)\n'
+                    '                      +---------------- 3 ----------------\n'
+                    '                      | ValueError: -990\n'
+                    '                      +------------------------------------\n'
+                    '                    +---------------- 3 ----------------\n'
+                    '                    | ValueError: -991\n'
+                    '                    +------------------------------------\n'
+                    '                  +---------------- 3 ----------------\n'
+                    '                  | ValueError: -992\n'
+                    '                  +------------------------------------\n'
+                    '                +---------------- 3 ----------------\n'
+                    '                | ValueError: -993\n'
+                    '                +------------------------------------\n'
+                    '              +---------------- 3 ----------------\n'
+                    '              | ValueError: -994\n'
+                    '              +------------------------------------\n'
+                    '            +---------------- 3 ----------------\n'
+                    '            | ValueError: -995\n'
+                    '            +------------------------------------\n'
+                    '          +---------------- 3 ----------------\n'
+                    '          | ValueError: -996\n'
+                    '          +------------------------------------\n'
+                    '        +---------------- 3 ----------------\n'
+                    '        | ValueError: -997\n'
+                    '        +------------------------------------\n'
+                    '      +---------------- 3 ----------------\n'
+                    '      | ValueError: -998\n'
+                    '      +------------------------------------\n'
+                    '    +---------------- 3 ----------------\n'
+                    '    | ValueError: -999\n'
+                    '    +------------------------------------\n')
+
+        report = self.get_report(exc)
+        self.assertEqual(report, expected)
 
 
 class PyExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
@@ -1911,6 +2233,197 @@ class TestTracebackException(unittest.TestCase):
              '    x = 12',
              'ZeroDivisionError: division by zero',
              ''])
+
+
+class TestTracebackException_ExceptionGroups(unittest.TestCase):
+    def setUp(self):
+        super().setUp()
+        self.eg_info = self._get_exception_group()
+
+    def _get_exception_group(self):
+        def f():
+            1/0
+
+        def g(v):
+            raise ValueError(v)
+
+        self.lno_f = f.__code__.co_firstlineno
+        self.lno_g = g.__code__.co_firstlineno
+
+        try:
+            try:
+                try:
+                    f()
+                except Exception as e:
+                    exc1 = e
+                try:
+                    g(42)
+                except Exception as e:
+                    exc2 = e
+                raise ExceptionGroup("eg1", [exc1, exc2])
+            except ExceptionGroup as e:
+                exc3 = e
+            try:
+                g(24)
+            except Exception as e:
+                exc4 = e
+            raise ExceptionGroup("eg2", [exc3, exc4])
+        except ExceptionGroup:
+            return sys.exc_info()
+        self.fail('Exception Not Raised')
+
+    def test_exception_group_construction(self):
+        eg_info = self.eg_info
+        teg1 = traceback.TracebackException(*eg_info)
+        teg2 = traceback.TracebackException.from_exception(eg_info[1])
+        self.assertIsNot(teg1, teg2)
+        self.assertEqual(teg1, teg2)
+
+    def test_exception_group_format_exception_only(self):
+        teg = traceback.TracebackException(*self.eg_info)
+        formatted = ''.join(teg.format_exception_only()).split('\n')
+        expected = "ExceptionGroup: eg2\n".split('\n')
+
+        self.assertEqual(formatted, expected)
+
+    def test_exception_group_format(self):
+        teg = traceback.TracebackException(*self.eg_info)
+
+        formatted = ''.join(teg.format()).split('\n')
+        lno_f = self.lno_f
+        lno_g = self.lno_g
+
+        expected = [
+                    f'  + Exception Group Traceback (most recent call last):',
+                    f'  |   File "{__file__}", line {lno_g+23}, in _get_exception_group',
+                    f'  |     raise ExceptionGroup("eg2", [exc3, exc4])',
+                    f'  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^',
+                    f'  | ExceptionGroup: eg2',
+                    f'  +-+---------------- 1 ----------------',
+                    f'    | Exception Group Traceback (most recent call last):',
+                    f'    |   File "{__file__}", line {lno_g+16}, in _get_exception_group',
+                    f'    |     raise ExceptionGroup("eg1", [exc1, exc2])',
+                    f'    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^',
+                    f'    | ExceptionGroup: eg1',
+                    f'    +-+---------------- 1 ----------------',
+                    f'      | Traceback (most recent call last):',
+                    f'      |   File "{__file__}", line {lno_g+9}, in _get_exception_group',
+                    f'      |     f()',
+                    f'      |     ^^^',
+                    f'      |   File "{__file__}", line {lno_f+1}, in f',
+                    f'      |     1/0',
+                    f'      |     ~^~',
+                    f'      | ZeroDivisionError: division by zero',
+                    f'      +---------------- 2 ----------------',
+                    f'      | Traceback (most recent call last):',
+                    f'      |   File "{__file__}", line {lno_g+13}, in _get_exception_group',
+                    f'      |     g(42)',
+                    f'      |     ^^^^^',
+                    f'      |   File "{__file__}", line {lno_g+1}, in g',
+                    f'      |     raise ValueError(v)',
+                    f'      |     ^^^^^^^^^^^^^^^^^^^',
+                    f'      | ValueError: 42',
+                    f'      +------------------------------------',
+                    f'    +---------------- 2 ----------------',
+                    f'    | Traceback (most recent call last):',
+                    f'    |   File "{__file__}", line {lno_g+20}, in _get_exception_group',
+                    f'    |     g(24)',
+                    f'    |     ^^^^^',
+                    f'    |   File "{__file__}", line {lno_g+1}, in g',
+                    f'    |     raise ValueError(v)',
+                    f'    |     ^^^^^^^^^^^^^^^^^^^',
+                    f'    | ValueError: 24',
+                    f'    +------------------------------------',
+                    f'']
+
+        self.assertEqual(formatted, expected)
+
+    def test_max_group_width(self):
+        excs1 = []
+        excs2 = []
+        for i in range(3):
+            excs1.append(ValueError(i))
+        for i in range(10):
+            excs2.append(TypeError(i))
+
+        EG = ExceptionGroup
+        eg = EG('eg', [EG('eg1', excs1), EG('eg2', excs2)])
+
+        teg = traceback.TracebackException.from_exception(eg, max_group_width=2)
+        formatted = ''.join(teg.format()).split('\n')
+
+        expected = [
+                    f'  | ExceptionGroup: eg',
+                    f'  +-+---------------- 1 ----------------',
+                    f'    | ExceptionGroup: eg1',
+                    f'    +-+---------------- 1 ----------------',
+                    f'      | ValueError: 0',
+                    f'      +---------------- 2 ----------------',
+                    f'      | ValueError: 1',
+                    f'      +---------------- ... ----------------',
+                    f'      | and 1 more exception',
+                    f'      +------------------------------------',
+                    f'    +---------------- 2 ----------------',
+                    f'    | ExceptionGroup: eg2',
+                    f'    +-+---------------- 1 ----------------',
+                    f'      | TypeError: 0',
+                    f'      +---------------- 2 ----------------',
+                    f'      | TypeError: 1',
+                    f'      +---------------- ... ----------------',
+                    f'      | and 8 more exceptions',
+                    f'      +------------------------------------',
+                    f'']
+
+        self.assertEqual(formatted, expected)
+
+    def test_max_group_depth(self):
+        exc = TypeError('bad type')
+        for i in range(3):
+            exc = ExceptionGroup('exc', [ValueError(-i), exc, ValueError(i)])
+
+        teg = traceback.TracebackException.from_exception(exc, max_group_depth=2)
+        formatted = ''.join(teg.format()).split('\n')
+
+        expected = [
+                    f'  | ExceptionGroup: exc',
+                    f'  +-+---------------- 1 ----------------',
+                    f'    | ValueError: -2',
+                    f'    +---------------- 2 ----------------',
+                    f'    | ExceptionGroup: exc',
+                    f'    +-+---------------- 1 ----------------',
+                    f'      | ValueError: -1',
+                    f'      +---------------- 2 ----------------',
+                    f'      | ... (max_group_depth is 2)',
+                    f'      +---------------- 3 ----------------',
+                    f'      | ValueError: 1',
+                    f'      +------------------------------------',
+                    f'    +---------------- 3 ----------------',
+                    f'    | ValueError: 2',
+                    f'    +------------------------------------',
+                    f'']
+
+        self.assertEqual(formatted, expected)
+
+    def test_comparison(self):
+        try:
+            raise self.eg_info[1]
+        except ExceptionGroup:
+            exc_info = sys.exc_info()
+        for _ in range(5):
+            try:
+                raise exc_info[1]
+            except:
+                exc_info = sys.exc_info()
+        exc = traceback.TracebackException(*exc_info)
+        exc2 = traceback.TracebackException(*exc_info)
+        exc3 = traceback.TracebackException(*exc_info, limit=300)
+        ne = traceback.TracebackException(*exc_info, limit=3)
+        self.assertIsNot(exc, exc2)
+        self.assertEqual(exc, exc2)
+        self.assertEqual(exc, exc3)
+        self.assertNotEqual(exc, ne)
+        self.assertNotEqual(exc, object())
+        self.assertEqual(exc, ALWAYS_EQ)
 
 
 class MiscTest(unittest.TestCase):
