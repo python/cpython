@@ -1,2 +1,0 @@
-Improve the :exc:`SyntaxError` message when using ``True``, ``None`` or
-``False`` as keywords in a function call. Patch by Pablo Galindo.
