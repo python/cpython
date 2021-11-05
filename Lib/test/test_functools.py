@@ -1508,10 +1508,19 @@ class TestLRU:
         self.assertEqual(cached((1,)), '(1,)')
         self.assertEqual(cached((True,)), '(1,)')
         self.assertEqual(cached((1.0,)), '(1,)')
-
         self.assertEqual(cached((0,)), '(0,)')
         self.assertEqual(cached((False,)), '(0,)')
         self.assertEqual(cached((0.0,)), '(0,)')
+
+        class T(tuple):
+            pass
+
+        self.assertEqual(cached(T((1,))), '(1,)')
+        self.assertEqual(cached(T((True,))), '(1,)')
+        self.assertEqual(cached(T((1.0,))), '(1,)')
+        self.assertEqual(cached(T((0,))), '(0,)')
+        self.assertEqual(cached(T((False,))), '(0,)')
+        self.assertEqual(cached(T((0.0,))), '(0,)')
 
     def test_lru_with_keyword_args(self):
         @self.module.lru_cache()
