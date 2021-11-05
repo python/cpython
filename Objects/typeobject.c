@@ -1121,7 +1121,7 @@ type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     /* If the returned object is not an instance of type,
        it won't be initialized. */
-    if (!PyType_IsSubtype(Py_TYPE(obj), type))
+    if (!PyObject_TypeCheck(obj, type))
         return obj;
 
     type = Py_TYPE(obj);
