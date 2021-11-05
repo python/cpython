@@ -362,11 +362,11 @@ class RegressionTests(unittest.TestCase):
         with memory_database() as cx, cx_limit(cx) as lim:
             cu = cx.cursor()
 
-            cx("select 1".ljust(lim-1))
+            cx("select 1".ljust(lim))
             # use a different SQL statement; don't reuse from the LRU cache
-            cu.execute("select 2".ljust(lim-1))
+            cu.execute("select 2".ljust(lim))
 
-            sql = "select 3".ljust(lim)
+            sql = "select 3".ljust(lim+1)
             self.assertRaisesRegex(sqlite.DataError, msg, cx, sql)
             self.assertRaisesRegex(sqlite.DataError, msg, cu.execute, sql)
 
