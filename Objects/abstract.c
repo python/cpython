@@ -1716,43 +1716,58 @@ PyNumber_ToBase(PyObject *n, int base)
 }
 
 typedef struct {
-    const int slot;
-    const char name[3];
-    const int islot;
-    const char iname[4];
-} nb_info;
+    const uint16_t slot;
+    const uint16_t islot;
+} nb_slot_info;
 
-#define NB_INFO(name, slot) \
-    {NB_SLOT(nb_##slot), name, NB_SLOT(nb_inplace_##slot), name "="}
+#define NB_SLOT_INFO(slot) {NB_SLOT(nb_##slot), NB_SLOT(nb_inplace_##slot)}
 
-static nb_info nb_infos[] = {
-    [NB_AND] = NB_INFO("&", and),
-    [NB_FLOOR_DIVIDE] = NB_INFO("//", floor_divide),
-    [NB_LSHIFT] = NB_INFO("<<", lshift),
-    [NB_MATRIX_MULTIPLY] = NB_INFO("@", matrix_multiply),
-    [NB_OR] = NB_INFO("|", or),
-    [NB_RSHIFT] = NB_INFO(">>", rshift),
-    [NB_SUBTRACT] = NB_INFO("-", subtract),
-    [NB_TRUE_DIVIDE] = NB_INFO("/", true_divide),
-    [NB_XOR] = NB_INFO("^", xor),
+static const nb_slot_info nb_slot_infos[] = {
+    [NB_AND] = NB_SLOT_INFO(and),
+    [NB_FLOOR_DIVIDE] = NB_SLOT_INFO(floor_divide),
+    [NB_LSHIFT] = NB_SLOT_INFO(lshift),
+    [NB_MATRIX_MULTIPLY] = NB_SLOT_INFO(matrix_multiply),
+    [NB_OR] = NB_SLOT_INFO(or),
+    [NB_RSHIFT] = NB_SLOT_INFO(rshift),
+    [NB_SUBTRACT] = NB_SLOT_INFO(subtract),
+    [NB_TRUE_DIVIDE] = NB_SLOT_INFO(true_divide),
+    [NB_XOR] = NB_SLOT_INFO(xor),
 };
 
-#undef NB_INFO
+#undef NB_SLOT_INFO
+
+typedef struct {
+    const char name[3];
+    const char iname[4];
+} nb_name_info;
+
+#define NB_NAME_INFO(name) {name, name "="}
+
+static const nb_name_info nb_name_infos[] = {
+    [NB_AND] = NB_NAME_INFO("&"),
+    [NB_FLOOR_DIVIDE] = NB_NAME_INFO("//"),
+    [NB_LSHIFT] = NB_NAME_INFO("<<"),
+    [NB_MATRIX_MULTIPLY] = NB_NAME_INFO("@"),
+    [NB_OR] = NB_NAME_INFO("|"),
+    [NB_RSHIFT] = NB_NAME_INFO(">>"),
+    [NB_SUBTRACT] = NB_NAME_INFO("-"),
+    [NB_TRUE_DIVIDE] = NB_NAME_INFO("/"),
+    [NB_XOR] = NB_NAME_INFO("^"),
+};
+
+#undef NB_NAME_INFO
 
 PyObject *
 _PyNumber_Op(PyObject *o1, PyObject *o2, unsigned op)
 {
-    assert(op < sizeof(nb_infos) / sizeof(nb_info));
-    nb_info *ni = &nb_infos[op];
-    return binary_op(o1, o2, ni->slot, ni->name);
+    return binary_op(o1, o2, nb_slot_infos[op].slot, nb_name_infos[op].name);
 }
 
 PyObject *
 _PyNumber_InPlaceOp(PyObject *o1, PyObject *o2, unsigned op)
 {
-    assert(op < sizeof(nb_infos) / sizeof(nb_info));
-    nb_info *ni = &nb_infos[op];
-    return binary_iop(o1, o2, ni->islot, ni->slot, ni->iname);
+    return binary_iop(o1, o2, nb_slot_infos[op].islot, nb_slot_infos[op].slot,
+                      nb_name_infos[op].iname);
 }
 
 
