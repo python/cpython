@@ -28,7 +28,8 @@ import weakref
 import functools
 from test import support
 
-from .test_dbapi import managed_connect
+from .test_dbapi import memory_database, managed_connect, cx_limit
+
 
 class RegressionTests(unittest.TestCase):
     def setUp(self):
@@ -356,17 +357,18 @@ class RegressionTests(unittest.TestCase):
         self.assertRaises(UnicodeEncodeError, cur.execute, "select '\ud8ff'")
         self.assertRaises(UnicodeEncodeError, cur.execute, "select '\udcff'")
 
-    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
-    @support.bigmemtest(size=2**31, memuse=4, dry_run=False)
-    def test_large_sql(self, maxsize):
-        # Test two cases: size+1 > INT_MAX and size+1 <= INT_MAX.
-        for size in (2**31, 2**31-2):
-            con = sqlite.connect(":memory:")
-            sql = "select 1".ljust(size)
-            self.assertRaises(sqlite.DataError, con, sql)
-            cur = con.cursor()
-            self.assertRaises(sqlite.DataError, cur.execute, sql)
-            del sql
+    def test_large_sql(self):
+        msg = "query string is too large"
+        with memory_database() as cx, cx_limit(cx) as lim:
+            cu = cx.cursor()
+
+            cx("select 1".ljust(lim-1))
+            # use a different SQL statement; don't reuse from the LRU cache
+            cu.execute("select 2".ljust(lim-1))
+
+            sql = "select 3".ljust(lim)
+            self.assertRaisesRegex(sqlite.DataError, msg, cx, sql)
+            self.assertRaisesRegex(sqlite.DataError, msg, cu.execute, sql)
 
     def test_commit_cursor_reset(self):
         """
