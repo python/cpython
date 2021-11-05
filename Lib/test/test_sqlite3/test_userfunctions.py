@@ -228,7 +228,7 @@ class FunctionTests(unittest.TestCase):
         category = sqlite.SQLITE_LIMIT_FUNCTION_ARG
         msg = "too many arguments on function"
         with cx_limit(self.con, category=category, limit=1):
-            self.con.execute("select round(1.1)");
+            self.con.execute("select abs(-1)");
             with self.assertRaisesRegex(sqlite.OperationalError, msg):
                 self.con.execute("select max(1, 2)");
 
