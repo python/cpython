@@ -1,2 +1,2 @@
-Merge most ``BINARY_*`` and ``INPLACE_*`` instructions into unified
-:opcode:`BINARY_OP` and :opcode:`INPLACE_OP` implementations.
+Replace all numeric ``BINARY_*`` and ``INPLACE_*`` instructions with a single 
+:opcode:`BINARY_OP` implementation.

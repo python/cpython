@@ -68,12 +68,6 @@ def_op('UNARY_NOT', 12)
 
 def_op('UNARY_INVERT', 15)
 
-def_op('BINARY_POWER', 19)
-def_op('BINARY_MULTIPLY', 20)
-
-def_op('BINARY_MODULO', 22)
-def_op('BINARY_ADD', 23)
-
 def_op('BINARY_SUBSCR', 25)
 
 def_op('GET_LEN', 30)
@@ -91,15 +85,10 @@ def_op('GET_ANEXT', 51)
 def_op('BEFORE_ASYNC_WITH', 52)
 def_op('BEFORE_WITH', 53)
 def_op('END_ASYNC_FOR', 54)
-def_op('INPLACE_ADD', 55)
 
-def_op('INPLACE_MULTIPLY', 57)
-
-def_op('INPLACE_MODULO', 59)
 def_op('STORE_SUBSCR', 60)
 def_op('DELETE_SUBSCR', 61)
 
-def_op('INPLACE_POWER', 67)
 def_op('GET_ITER', 68)
 def_op('GET_YIELD_FROM_ITER', 69)
 def_op('PRINT_EXPR', 70)
@@ -153,7 +142,7 @@ def_op('RERAISE', 119)
 def_op('COPY', 120)
 jabs_op('JUMP_IF_NOT_EXC_MATCH', 121)
 def_op('BINARY_OP', 122)
-def_op('INPLACE_OP', 123)
+
 def_op('LOAD_FAST', 124)        # Local variable number
 haslocal.append(124)
 def_op('STORE_FAST', 125)       # Local variable number
@@ -206,26 +195,42 @@ def_op('CALL_METHOD_KW', 166)
 del def_op, name_op, jrel_op, jabs_op
 
 _nb_ops = [
+    ("NB_ADD", "+"),
     ("NB_AND", "&"),
     ("NB_FLOOR_DIVIDE", "//"),
     ("NB_LSHIFT", "<<"),
     ("NB_MATRIX_MULTIPLY", "@"),
+    ("NB_MULTIPLY", "*"),
+    ("NB_REMAINDER", "%"),
     ("NB_OR", "|"),
+    ("NB_POWER", "**"),
     ("NB_RSHIFT", ">>"),
     ("NB_SUBTRACT", "-"),
     ("NB_TRUE_DIVIDE", "/"),
     ("NB_XOR", "^"),
+    ("NB_INPLACE_ADD", "+="),
+    ("NB_INPLACE_AND", "&="),
+    ("NB_INPLACE_FLOOR_DIVIDE", "//="),
+    ("NB_INPLACE_LSHIFT", "<<="),
+    ("NB_INPLACE_MATRIX_MULTIPLY", "@="),
+    ("NB_INPLACE_MULTIPLY", "*="),
+    ("NB_INPLACE_REMAINDER", "%="),
+    ("NB_INPLACE_OR", "|="),
+    ("NB_INPLACE_POWER", "**="),
+    ("NB_INPLACE_RSHIFT", ">>="),
+    ("NB_INPLACE_SUBTRACT", "-="),
+    ("NB_INPLACE_TRUE_DIVIDE", "/="),
+    ("NB_INPLACE_XOR", "^="),
 ]
 
 _specialized_instructions = [
-    "BINARY_ADD_ADAPTIVE",
-    "BINARY_ADD_INT",
-    "BINARY_ADD_FLOAT",
-    "BINARY_ADD_UNICODE",
-    "BINARY_ADD_UNICODE_INPLACE_FAST",
-    "BINARY_MULTIPLY_ADAPTIVE",
-    "BINARY_MULTIPLY_INT",
-    "BINARY_MULTIPLY_FLOAT",
+    "BINARY_OP_ADAPTIVE",
+    "BINARY_OP_ADD_INT",
+    "BINARY_OP_ADD_FLOAT",
+    "BINARY_OP_ADD_UNICODE",
+    "BINARY_OP_INPLACE_ADD_UNICODE",
+    "BINARY_OP_MULTIPLY_INT",
+    "BINARY_OP_MULTIPLY_FLOAT",
     "BINARY_SUBSCR_ADAPTIVE",
     "BINARY_SUBSCR_LIST_INT",
     "BINARY_SUBSCR_TUPLE_INT",

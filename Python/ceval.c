@@ -1919,57 +1919,12 @@ check_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(BINARY_POWER) {
-            PyObject *exp = POP();
-            PyObject *base = TOP();
-            PyObject *res = PyNumber_Power(base, exp, Py_None);
-            Py_DECREF(base);
-            Py_DECREF(exp);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(BINARY_MULTIPLY) {
-            PREDICTED(BINARY_MULTIPLY);
-            STAT_INC(BINARY_MULTIPLY, unquickened);
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyNumber_Multiply(left, right);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            SET_TOP(res);
-            if (res == NULL) {
-                goto error;
-            }
-            DISPATCH();
-        }
-
-        TARGET(BINARY_MULTIPLY_ADAPTIVE) {
-            if (oparg == 0) {
-                PyObject *left = SECOND();
-                PyObject *right = TOP();
-                next_instr--;
-                if (_Py_Specialize_BinaryMultiply(left, right, next_instr) < 0) {
-                    goto error;
-                }
-                DISPATCH();
-            }
-            else {
-                STAT_INC(BINARY_MULTIPLY, deferred);
-                UPDATE_PREV_INSTR_OPARG(next_instr, oparg - 1);
-                STAT_DEC(BINARY_MULTIPLY, unquickened);
-                JUMP_TO_INSTRUCTION(BINARY_MULTIPLY);
-            }
-        }
-
-        TARGET(BINARY_MULTIPLY_INT) {
+        TARGET(BINARY_OP_MULTIPLY_INT) {
             PyObject *left = SECOND();
             PyObject *right = TOP();
-            DEOPT_IF(!PyLong_CheckExact(left), BINARY_MULTIPLY);
-            DEOPT_IF(!PyLong_CheckExact(right), BINARY_MULTIPLY);
-            STAT_INC(BINARY_MULTIPLY, hit);
+            DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
+            DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
+            STAT_INC(BINARY_OP, hit);
             PyObject *prod = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
             SET_SECOND(prod);
             Py_DECREF(right);
@@ -1981,12 +1936,12 @@ check_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(BINARY_MULTIPLY_FLOAT) {
+        TARGET(BINARY_OP_MULTIPLY_FLOAT) {
             PyObject *left = SECOND();
             PyObject *right = TOP();
-            DEOPT_IF(!PyFloat_CheckExact(left), BINARY_MULTIPLY);
-            DEOPT_IF(!PyFloat_CheckExact(right), BINARY_MULTIPLY);
-            STAT_INC(BINARY_MULTIPLY, hit);
+            DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
+            DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
+            STAT_INC(BINARY_OP, hit);
             double dprod = ((PyFloatObject *)left)->ob_fval *
                 ((PyFloatObject *)right)->ob_fval;
             PyObject *prod = PyFloat_FromDouble(dprod);
@@ -2000,69 +1955,12 @@ check_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(BINARY_MODULO) {
-            PyObject *divisor = POP();
-            PyObject *dividend = TOP();
-            PyObject *res;
-            // NOTE: This optimization keeps us from rolling modulation into
-            // BINARY_OP/INPLACE_OP. Once we start specializing those, we can
-            // get rid of BINARY_MODULO/INPLACE_MODULO and implement this trick
-            // as a specialized variant.
-            if (PyUnicode_CheckExact(dividend) && (
-                  !PyUnicode_Check(divisor) || PyUnicode_CheckExact(divisor))) {
-              // fast path; string formatting, but not if the RHS is a str subclass
-              // (see issue28598)
-              res = PyUnicode_Format(dividend, divisor);
-            } else {
-              res = PyNumber_Remainder(dividend, divisor);
-            }
-            Py_DECREF(divisor);
-            Py_DECREF(dividend);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(BINARY_ADD) {
-            PREDICTED(BINARY_ADD);
-            STAT_INC(BINARY_ADD, unquickened);
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *sum = PyNumber_Add(left, right);
-            SET_TOP(sum);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            if (sum == NULL) {
-                goto error;
-            }
-            DISPATCH();
-        }
-
-        TARGET(BINARY_ADD_ADAPTIVE) {
-            if (oparg == 0) {
-                PyObject *left = SECOND();
-                PyObject *right = TOP();
-                next_instr--;
-                if (_Py_Specialize_BinaryAdd(left, right, next_instr) < 0) {
-                    goto error;
-                }
-                DISPATCH();
-            }
-            else {
-                STAT_INC(BINARY_ADD, deferred);
-                UPDATE_PREV_INSTR_OPARG(next_instr, oparg - 1);
-                STAT_DEC(BINARY_ADD, unquickened);
-                JUMP_TO_INSTRUCTION(BINARY_ADD);
-            }
-        }
-
-        TARGET(BINARY_ADD_UNICODE) {
+        TARGET(BINARY_OP_ADD_UNICODE) {
             PyObject *left = SECOND();
             PyObject *right = TOP();
-            DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_ADD);
-            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_ADD);
-            STAT_INC(BINARY_ADD, hit);
+            DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
+            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
+            STAT_INC(BINARY_OP, hit);
             PyObject *res = PyUnicode_Concat(left, right);
             STACK_SHRINK(1);
             SET_TOP(res);
@@ -2074,12 +1972,12 @@ check_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(BINARY_ADD_UNICODE_INPLACE_FAST) {
+        TARGET(BINARY_OP_INPLACE_ADD_UNICODE) {
             PyObject *left = SECOND();
             PyObject *right = TOP();
-            DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_ADD);
-            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_ADD);
-            DEOPT_IF(Py_REFCNT(left) != 2, BINARY_ADD);
+            DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
+            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
+            DEOPT_IF(Py_REFCNT(left) != 2, BINARY_OP);
             int next_oparg = _Py_OPARG(*next_instr);
             assert(_Py_OPCODE(*next_instr) == STORE_FAST);
             /* In the common case, there are 2 references to the value
@@ -2089,8 +1987,8 @@ check_eval_breaker:
             * the refcnt to 1.
             */
             PyObject *var = GETLOCAL(next_oparg);
-            DEOPT_IF(var != left, BINARY_ADD);
-            STAT_INC(BINARY_ADD, hit);
+            DEOPT_IF(var != left, BINARY_OP);
+            STAT_INC(BINARY_OP, hit);
             GETLOCAL(next_oparg) = NULL;
             Py_DECREF(left);
             STACK_SHRINK(1);
@@ -2102,12 +2000,12 @@ check_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(BINARY_ADD_FLOAT) {
+        TARGET(BINARY_OP_ADD_FLOAT) {
             PyObject *left = SECOND();
             PyObject *right = TOP();
-            DEOPT_IF(!PyFloat_CheckExact(left), BINARY_ADD);
-            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_ADD);
-            STAT_INC(BINARY_ADD, hit);
+            DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
+            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
+            STAT_INC(BINARY_OP, hit);
             double dsum = ((PyFloatObject *)left)->ob_fval +
                 ((PyFloatObject *)right)->ob_fval;
             PyObject *sum = PyFloat_FromDouble(dsum);
@@ -2121,12 +2019,12 @@ check_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(BINARY_ADD_INT) {
+        TARGET(BINARY_OP_ADD_INT) {
             PyObject *left = SECOND();
             PyObject *right = TOP();
-            DEOPT_IF(!PyLong_CheckExact(left), BINARY_ADD);
-            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_ADD);
-            STAT_INC(BINARY_ADD, hit);
+            DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
+            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
+            STAT_INC(BINARY_OP, hit);
             PyObject *sum = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
             SET_SECOND(sum);
             Py_DECREF(right);
@@ -2257,61 +2155,6 @@ check_eval_breaker:
             if (err != 0)
                 goto error;
             PREDICT(JUMP_ABSOLUTE);
-            DISPATCH();
-        }
-
-        TARGET(INPLACE_POWER) {
-            PyObject *exp = POP();
-            PyObject *base = TOP();
-            PyObject *res = PyNumber_InPlacePower(base, exp, Py_None);
-            Py_DECREF(base);
-            Py_DECREF(exp);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(INPLACE_MULTIPLY) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyNumber_InPlaceMultiply(left, right);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(INPLACE_MODULO) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *mod = PyNumber_InPlaceRemainder(left, right);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            SET_TOP(mod);
-            if (mod == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(INPLACE_ADD) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *sum;
-            if (PyUnicode_CheckExact(left) && PyUnicode_CheckExact(right)) {
-                sum = unicode_concatenate(tstate, left, right, frame, next_instr);
-                /* unicode_concatenate consumed the ref to left */
-            }
-            else {
-                sum = PyNumber_InPlaceAdd(left, right);
-                Py_DECREF(left);
-            }
-            Py_DECREF(right);
-            SET_TOP(sum);
-            if (sum == NULL)
-                goto error;
             DISPATCH();
         }
 
@@ -4809,28 +4652,130 @@ check_eval_breaker:
         }
 
         TARGET(BINARY_OP) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = _PyNumber_Op(left, right, oparg);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            SET_TOP(res);
+            PREDICTED(BINARY_OP);
+            PyObject *rhs = POP();
+            PyObject *lhs = TOP();
+            PyObject *res;
+            switch (oparg) {
+                case NB_ADD:
+                    res = PyNumber_Add(lhs, rhs);
+                    break;
+                case NB_AND:
+                    res = PyNumber_And(lhs, rhs);
+                    break;
+                case NB_FLOOR_DIVIDE:
+                    res = PyNumber_FloorDivide(lhs, rhs);
+                    break;
+                case NB_LSHIFT:
+                    res = PyNumber_Lshift(lhs, rhs);
+                    break;
+                case NB_MATRIX_MULTIPLY:
+                    res = PyNumber_MatrixMultiply(lhs, rhs);
+                    break;
+                case NB_MULTIPLY:
+                    res = PyNumber_Multiply(lhs, rhs);
+                    break;
+                case NB_REMAINDER:
+                    if (PyUnicode_CheckExact(lhs) &&
+                        (!PyUnicode_Check(rhs) || PyUnicode_CheckExact(rhs)))
+                    {
+                        // bpo-28598: Fast path for string formatting (but not
+                        // if the RHS is a str subclass).
+                        res = PyUnicode_Format(lhs, rhs);
+                        break;
+                    }
+                    res = PyNumber_Remainder(lhs, rhs);
+                    break;
+                case NB_OR:
+                    res = PyNumber_Or(lhs, rhs);
+                    break;
+                case NB_POWER:
+                    res = PyNumber_Power(lhs, rhs, Py_None);
+                    break;
+                case NB_RSHIFT:
+                    res = PyNumber_Rshift(lhs, rhs);
+                    break;
+                case NB_SUBTRACT:
+                    res = PyNumber_Subtract(lhs, rhs);
+                    break;
+                case NB_TRUE_DIVIDE:
+                    res = PyNumber_TrueDivide(lhs, rhs);
+                    break;
+                case NB_XOR:
+                    res = PyNumber_Xor(lhs, rhs);
+                    break;
+                case NB_INPLACE_ADD:
+                    if (PyUnicode_CheckExact(lhs) && PyUnicode_CheckExact(rhs))
+                    {
+                        Py_INCREF(lhs);  // unicode_concatenate steals lhs!
+                        res = unicode_concatenate(tstate, lhs, rhs, frame,
+                                                  next_instr);
+                        break;
+                    }
+                    res = PyNumber_InPlaceAdd(lhs, rhs);
+                    break;
+                case NB_INPLACE_AND:
+                    res = PyNumber_InPlaceAnd(lhs, rhs);
+                    break;
+                case NB_INPLACE_FLOOR_DIVIDE:
+                    res = PyNumber_InPlaceFloorDivide(lhs, rhs);
+                    break;
+                case NB_INPLACE_LSHIFT:
+                    res = PyNumber_InPlaceLshift(lhs, rhs);
+                    break;
+                case NB_INPLACE_MATRIX_MULTIPLY:
+                    res = PyNumber_InPlaceMatrixMultiply(lhs, rhs);
+                    break;
+                case NB_INPLACE_MULTIPLY:
+                    res = PyNumber_InPlaceMultiply(lhs, rhs);
+                    break;
+                case NB_INPLACE_REMAINDER:
+                    res = PyNumber_InPlaceRemainder(lhs, rhs);
+                    break;
+                case NB_INPLACE_OR:
+                    res = PyNumber_InPlaceOr(lhs, rhs);
+                    break;
+                case NB_INPLACE_POWER:
+                    res = PyNumber_InPlacePower(lhs, rhs, Py_None);
+                    break;
+                case NB_INPLACE_RSHIFT:
+                    res = PyNumber_InPlaceRshift(lhs, rhs);
+                    break;
+                case NB_INPLACE_SUBTRACT:
+                    res = PyNumber_InPlaceSubtract(lhs, rhs);
+                    break;
+                case NB_INPLACE_TRUE_DIVIDE:
+                    res = PyNumber_InPlaceTrueDivide(lhs, rhs);
+                    break;
+                case NB_INPLACE_XOR:
+                    res = PyNumber_InPlaceXor(lhs, rhs);
+                    break;
+                default:
+                    Py_UNREACHABLE();
+            }
             if (res == NULL) {
                 goto error;
             }
+            Py_DECREF(lhs);
+            Py_DECREF(rhs);
+            SET_TOP(res);
             DISPATCH();
         }
 
-        TARGET(INPLACE_OP) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = _PyNumber_InPlaceOp(left, right, oparg);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            SET_TOP(res);
-            if (res == NULL) {
-                goto error;
+        TARGET(BINARY_OP_ADAPTIVE) {
+            assert(cframe.use_tracing == 0);
+            SpecializedCacheEntry *cache = GET_CACHE();
+            if (cache->adaptive.counter) {
+                cache->adaptive.counter--;
+                oparg = cache->adaptive.original_oparg;
+                STAT_INC(BINARY_OP, deferred);
+                STAT_DEC(BINARY_OP, unquickened);
+                JUMP_TO_INSTRUCTION(BINARY_OP);
             }
+            PyObject *lhs = SECOND();
+            PyObject *rhs = TOP();
+            next_instr--;
+            _Py_Specialize_BinaryOp(lhs, rhs, next_instr, cache);
             DISPATCH();
         }
 
@@ -4939,9 +4884,8 @@ MISS_WITH_CACHE(STORE_ATTR)
 MISS_WITH_CACHE(LOAD_GLOBAL)
 MISS_WITH_CACHE(LOAD_METHOD)
 MISS_WITH_CACHE(CALL_FUNCTION)
+MISS_WITH_CACHE(BINARY_OP)
 MISS_WITH_OPARG_COUNTER(BINARY_SUBSCR)
-MISS_WITH_OPARG_COUNTER(BINARY_ADD)
-MISS_WITH_OPARG_COUNTER(BINARY_MULTIPLY)
 
 binary_subscr_dict_error:
         {

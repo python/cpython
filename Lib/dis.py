@@ -32,9 +32,6 @@ LOAD_CONST = opmap['LOAD_CONST']
 BINARY_OP = opmap['BINARY_OP']
 BINARY_OPS = [name for _, name in _nb_ops]
 
-INPLACE_OP = opmap['INPLACE_OP']
-INPLACE_OPS = [f"{name}=" for _, name in _nb_ops]
-
 del _nb_ops
 
 def _try_compile(source, name):
@@ -457,8 +454,6 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
                                     if arg & (1<<i))
             elif op == BINARY_OP:
                 argrepr = BINARY_OPS[arg]
-            elif op == INPLACE_OP:
-                argrepr = INPLACE_OPS[arg]
         yield Instruction(opname[op], op,
                           arg, argval, argrepr,
                           offset, starts_line, is_jump_target, positions)

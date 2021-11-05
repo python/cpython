@@ -1021,25 +1021,13 @@ stack_effect(int opcode, int oparg, int jump)
         case MAP_ADD:
             return -2;
 
-        /* Binary operators */
-        case BINARY_POWER:
-        case BINARY_MULTIPLY:
-        case BINARY_MODULO:
-        case BINARY_ADD:
         case BINARY_SUBSCR:
-            return -1;
-
-        case INPLACE_ADD:
-        case INPLACE_MULTIPLY:
-        case INPLACE_MODULO:
             return -1;
         case STORE_SUBSCR:
             return -3;
         case DELETE_SUBSCR:
             return -2;
 
-        case INPLACE_POWER:
-            return -1;
         case GET_ITER:
             return 0;
 
@@ -1238,7 +1226,6 @@ stack_effect(int opcode, int oparg, int jump)
         case COPY:
             return 1;
         case BINARY_OP:
-        case INPLACE_OP:
             return -1;
         default:
             return PY_INVALID_STACK_EFFECT;
@@ -3687,54 +3674,50 @@ addop_binary(struct compiler *c, operator_ty binop, bool inplace)
     int oparg;
     switch (binop) {
         case Add:
-            // Addition interacts with sq_concat:
-            ADDOP(c, inplace ? INPLACE_ADD : BINARY_ADD);
-            return 1;
+            oparg = inplace ? NB_INPLACE_ADD : NB_ADD;
+            break;
         case Sub:
-            oparg = NB_SUBTRACT;
+            oparg = inplace ? NB_INPLACE_SUBTRACT : NB_SUBTRACT;
             break;
         case Mult:
-            // Multiplication interacts with sq_repeat:
-            ADDOP(c, inplace ? INPLACE_MULTIPLY : BINARY_MULTIPLY);
-            return 1;
+            oparg = inplace ? NB_INPLACE_MULTIPLY : NB_MULTIPLY;
+            break;
         case MatMult:
-            oparg = NB_MATRIX_MULTIPLY;
+            oparg = inplace ? NB_INPLACE_MATRIX_MULTIPLY : NB_MATRIX_MULTIPLY;
             break;
         case Div:
-            oparg = NB_TRUE_DIVIDE;
+            oparg = inplace ? NB_INPLACE_TRUE_DIVIDE : NB_TRUE_DIVIDE;
             break;
         case Mod:
-            // Modulation contains a fast path for strings:
-            ADDOP(c, inplace ? INPLACE_MODULO : BINARY_MODULO);
-            return 1;
+            oparg = inplace ? NB_INPLACE_REMAINDER : NB_REMAINDER;
+            break;
         case Pow:
-            // Exponentiation is technically ternary:
-            ADDOP(c, inplace ? INPLACE_POWER : BINARY_POWER);
-            return 1;
+            oparg = inplace ? NB_INPLACE_POWER : NB_POWER;
+            break;
         case LShift:
-            oparg = NB_LSHIFT;
+            oparg = inplace ? NB_INPLACE_LSHIFT : NB_LSHIFT;
             break;
         case RShift:
-            oparg = NB_RSHIFT;
+            oparg = inplace ? NB_INPLACE_RSHIFT : NB_RSHIFT;
             break;
         case BitOr:
-            oparg = NB_OR;
+            oparg = inplace ? NB_INPLACE_OR : NB_OR;
             break;
         case BitXor:
-            oparg = NB_XOR;
+            oparg = inplace ? NB_INPLACE_XOR : NB_XOR;
             break;
         case BitAnd:
-            oparg = NB_AND;
+            oparg = inplace ? NB_INPLACE_AND : NB_AND;
             break;
         case FloorDiv:
-            oparg = NB_FLOOR_DIVIDE;
+            oparg = inplace ? NB_INPLACE_FLOOR_DIVIDE : NB_FLOOR_DIVIDE;
             break;
         default:
             PyErr_Format(PyExc_SystemError, "%s op %d should not be possible",
                          inplace ? "inplace" : "binary", binop);
             return 0;
     }
-    ADDOP_I(c, inplace ? INPLACE_OP : BINARY_OP, oparg);
+    ADDOP_I(c, BINARY_OP, oparg);
     return 1;
 }
 
