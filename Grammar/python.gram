@@ -1062,6 +1062,8 @@ invalid_arguments:
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, asdl_seq_GET(b, b->size-1)->target, "Generator expression must be parenthesized") }
     | a=args ',' args { _PyPegen_arguments_parsing_error(p, a) }
 invalid_kwarg:
+    | a[Token*]=('True'|'False'|'None') b='=' {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot assign to %s", PyBytes_AS_STRING(a->bytes)) }
     | a=NAME b='=' expression for_if_clauses {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax. Maybe you meant '==' or ':=' instead of '='?")}
     | !(NAME '=') a=expression b='=' {
