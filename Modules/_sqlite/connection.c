@@ -107,15 +107,13 @@ new_statement_cache(pysqlite_Connection *self, int maxsize)
 }
 
 static const char *
-get_begin_statement(const char *level, Py_ssize_t sz)
+get_begin_statement(const char *level)
 {
     assert(level != NULL);
     for (int i = 0; begin_statements[i] != NULL; i++) {
         const char *candidate = begin_statements[i] + 6;
-        if (strlen(candidate) == (size_t)sz) {
-            if (sqlite3_stricmp(level, candidate) == 0) {
-                return begin_statements[i];
-            }
+        if (sqlite3_stricmp(level, candidate) == 0) {
+            return begin_statements[i];
         }
     }
     return NULL;
@@ -187,8 +185,7 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
     }
 
     if (isolation_level) {
-        size_t sz = strlen(isolation_level);
-        const char *stmt = get_begin_statement(isolation_level, sz);
+        const char *stmt = get_begin_statement(isolation_level);
         if (stmt == NULL) {
             return -1;
         }
@@ -1369,12 +1366,16 @@ pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* iso
         Py_DECREF(res);
     }
     else if (PyUnicode_Check(isolation_level)) {
-        Py_ssize_t sz;
-        const char *cstr_level = PyUnicode_AsUTF8AndSize(isolation_level, &sz);
+        Py_ssize_t len;
+        const char *cstr_level = PyUnicode_AsUTF8AndSize(isolation_level, &len);
         if (cstr_level == NULL) {
             return -1;
         }
-        const char *stmt = get_begin_statement(cstr_level, sz);
+        if (strlen(cstr_level) != (size_t)len) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            return -1;
+        }
+        const char *stmt = get_begin_statement(cstr_level);
         if (stmt == NULL) {
             PyErr_SetString(PyExc_ValueError,
                             "isolation_level string must be '', 'DEFERRED', "
