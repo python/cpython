@@ -397,6 +397,7 @@ Data Types
    Using :class:`auto` with :class:`StrEnum` results in values of the member name,
    lower-cased.
 
+.. versionadded:: 3.11
 
 .. class:: Flag
 
