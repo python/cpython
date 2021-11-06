@@ -965,8 +965,8 @@ formal parameters.  If there are N positional arguments, they are placed in the
 first N slots.  Next, for each keyword argument, the identifier is used to
 determine the corresponding slot (if the identifier is the same as the first
 formal parameter name, the first slot is used, and so on).  If the slot is
-already filled, a :exc:`TypeError` exception is raised. Otherwise, the value of
-the argument is placed in the slot, filling it (even if the expression is
+already filled, a :exc:`TypeError` exception is raised. Otherwise, the
+argument is placed in the slot, filling it (even if the expression is
 ``None``, it fills the slot).  When all arguments have been processed, the slots
 that are still unfilled are filled with the corresponding default value from the
 function definition.  (Default values are calculated, once, when the function is
@@ -1026,7 +1026,7 @@ keyword arguments (and any ``**expression`` arguments -- see below).  So::
    1 2
 
 It is unusual for both keyword arguments and the ``*expression`` syntax to be
-used in the same call, so in practice this confusion does not arise.
+used in the same call, so in practice this confusion does not often arise.
 
 .. index::
    single: **; in function calls
