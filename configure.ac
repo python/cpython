@@ -61,7 +61,7 @@ else
 fi
 
 AC_CONFIG_SRCDIR([Include/object.h])
-AC_CONFIG_HEADER(pyconfig.h)
+AC_CONFIG_HEADERS([pyconfig.h])
 
 AC_CANONICAL_HOST
 AC_SUBST(build)
@@ -132,10 +132,6 @@ VERSION=PYTHON_VERSION
 # Version number of Python's own shared library file.
 AC_SUBST(SOVERSION)
 SOVERSION=1.0
-
-# The later definition of _XOPEN_SOURCE disables certain features
-# on Linux, so we need _GNU_SOURCE to re-enable them (makedev, tm_zone).
-AC_DEFINE(_GNU_SOURCE, 1, [Define on Linux to activate all library features])
 
 # The later definition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
 # certain features on NetBSD, so we need _NETBSD_SOURCE to re-enable
@@ -664,6 +660,12 @@ AC_PROG_CC
 AC_PROG_CPP
 AC_PROG_GREP
 AC_PROG_SED
+AC_PROG_EGREP
+
+# checks for UNIX variants that set C preprocessor variables
+# may set _GNU_SOURCE, __EXTENSIONS__, _POSIX_PTHREAD_SEMANTICS,
+# _POSIX_SOURCE, _POSIX_1_SOURCE, and more
+AC_USE_SYSTEM_EXTENSIONS
 
 AC_SUBST(CXX)
 AC_SUBST(MAINCC)
@@ -905,10 +907,6 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
    AC_MSG_RESULT([no])])
 LDFLAGS="$save_LDFLAGS"
 AC_SUBST(NO_AS_NEEDED)
-
-
-# checks for UNIX variants that set C preprocessor variables
-AC_USE_SYSTEM_EXTENSIONS
 
 AC_MSG_CHECKING([for the Android API level])
 cat >> conftest.c <<EOF
@@ -2135,8 +2133,11 @@ dnl struct {char *name; int *addr; char *doc;} desc = spam(foo, "something");
 dnl ]], [[;]])],[cpp_type=ansi],[AC_DEFINE(HAVE_OLD_CPP) cpp_type=traditional])
 dnl AC_MSG_RESULT($cpp_type)
 
+dnl autoconf 2.71 deprecates STDC_HEADERS, keep for backwards compatibility
+dnl assume C99 compilers provide ANSI C headers
+AC_DEFINE(STDC_HEADERS, 1, [Define to 1 if you have the ANSI C header files.])
+
 # checks for header files
-AC_HEADER_STDC
 AC_CHECK_HEADERS(asm/types.h crypt.h conio.h direct.h dlfcn.h errno.h \
 fcntl.h grp.h \
 ieeefp.h io.h langinfo.h libintl.h process.h pthread.h \
@@ -2165,14 +2166,8 @@ CFLAGS=$SAVE_CFLAGS
 # On Darwin (OS X) net/if.h requires sys/socket.h to be imported first.
 AC_CHECK_HEADERS([net/if.h], [], [],
 [#include <stdio.h>
-#ifdef STDC_HEADERS
-# include <stdlib.h>
-# include <stddef.h>
-#else
-# ifdef HAVE_STDLIB_H
-#  include <stdlib.h>
-# endif
-#endif
+#include <stdlib.h>
+#include <stddef.h>
 #ifdef HAVE_SYS_SOCKET_H
 # include <sys/socket.h>
 #endif
@@ -3924,12 +3919,12 @@ AC_CHECK_FUNCS(setpgrp,
 # This gets us our -lcrypt in LIBS when required on the target platform.
 # Save/restore LIBS to avoid linking libpython with libcrypt.
 LIBS_SAVE=$LIBS
-AC_SEARCH_LIBS(crypt, crypt)
 AC_SEARCH_LIBS(crypt_r, crypt)
+LIBS="$LIBS_SAVE"
+AC_SEARCH_LIBS(crypt, crypt)
 
 AC_CHECK_FUNC(crypt_r,
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#define _GNU_SOURCE  /* Required for crypt_r()'s prototype in glibc. */
 #include <crypt.h>
 ]], [[
 struct crypt_data d;
@@ -4130,8 +4125,13 @@ fi
 
 AC_CHECK_FUNCS(getnameinfo)
 
+dnl autoconf 2.71 deprecates AC_HEADER_TIME, keep for backwards compatibility
+dnl TIME_WITH_SYS_TIME works on all supported systems that have sys/time.h
+AS_VAR_IF([ac_cv_header_sys_time_h], [yes], [
+  AC_DEFINE([TIME_WITH_SYS_TIME], 1, [Define to 1 if you can safely include both <sys/time.h> and <time.h>.])
+])
+
 # checks for structures
-AC_HEADER_TIME
 AC_STRUCT_TM
 AC_STRUCT_TIMEZONE
 AC_CHECK_MEMBERS([struct stat.st_rdev])
