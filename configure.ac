@@ -16,12 +16,12 @@ m4_ifdef(
     [AX_C_FLOAT_WORDS_BIGENDIAN],
     [],
     [AC_MSG_ERROR([Please install autoconf-archive package and re-run autoreconf])]
-)
+)dnl
 m4_ifdef(
     [PKG_PROG_PKG_CONFIG],
     [],
     [AC_MSG_ERROR([Please install pkgconf's m4 macro package and re-run autoreconf])]
-)
+)dnl
 
 AC_SUBST(BASECPPFLAGS)
 if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
