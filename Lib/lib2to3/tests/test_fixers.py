@@ -67,6 +67,34 @@ class FixerTestCase(support.TestCase):
         self.fail("Fixer run order (%s) is incorrect; %s should be last."\
                %(", ".join([x.__class__.__module__ for x in (pre+post)]), n))
 
+class Test_div(FixerTestCase):
+    fixer = "div"
+
+    def test_constant_1(self):
+        a = """x = 2 ** 9 / 5 / 7"""
+        b = """x = 2 ** 9 // 5 // 7"""
+        self.check(b, a)
+
+    def test_constant_2(self):
+        a = """x = 5.5 ** 0 / 22 / 12"""
+        b = """x = 5.5 ** 0 / 22 / 12"""
+        self.check(b, a)
+
+    def test_constant_3(self):
+        a = """x = 52 / 7.3"""
+        b = """x = 52 / 7.3"""
+        self.check(b, a)
+
+    def test_constant_4(self):
+        a = """x = -8 / 7"""
+        b = """x = -8 // 7"""
+        self.check(b, a)
+
+    def test_nonconstant(self):
+        a = """x = foo.bar / 2"""
+        b = """x = foo.bar / 2"""
+        self.check(b, a)
+
 class Test_ne(FixerTestCase):
     fixer = "ne"
 
