@@ -1,7 +1,7 @@
 """Fixer that turns / into //.
 
 First checks for left operand and right operand integerness. If the
-integerness is not determined (e.g. saw number 5.0) or unable to be
+integerness is not determined (e.g. saw a float) or unable to be
 determined (e.g. saw a trailer) the operation is left alone. Otherwise,
 the division operator is changed into a floor division operator.
 Examples:
