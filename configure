@@ -10913,12 +10913,19 @@ $as_echo_n "checking for --enable-loadable-sqlite-extensions... " >&6; }
 if test "${enable_loadable_sqlite_extensions+set}" = set; then :
   enableval=$enable_loadable_sqlite_extensions;
 else
-  enable_loadable_sqlite_extensions="no"
+  enable_loadable_sqlite_extensions=no
 fi
-
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_loadable_sqlite_extensions" >&5
 $as_echo "$enable_loadable_sqlite_extensions" >&6; }
+
+if test "x$enable_loadable_sqlite_extensions" = xyes; then :
+
+
+$as_echo "#define PY_SQLITE_ENABLE_LOAD_EXTENSION 1" >>confdefs.h
+
+
+fi
 
 # Check for --with-tcltk-includes=path and --with-tcltk-libs=path
 
