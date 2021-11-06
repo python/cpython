@@ -1,1 +1,1 @@
-Added new integer division fixer for :module:`lib2to3`.
+Added new integer division fixer for :library:`lib2to3`.
