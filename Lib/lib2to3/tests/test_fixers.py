@@ -90,9 +90,24 @@ class Test_div(FixerTestCase):
         b = """x = -8 // 7"""
         self.check(b, a)
 
-    def test_nonconstant(self):
+    def test_nonconstant_1(self):
         a = """x = foo.bar / 2"""
         b = """x = foo.bar / 2"""
+        self.check(b, a)
+
+    def test_nonconstant_2(self):
+        a = """x = a ** b / 5 / 3"""
+        b = """x = a ** b / 5 / 3"""
+        self.check(b, a)
+
+    def test_nonconstant_3(self):
+        a = """x = a / 3"""
+        b = """x = a / 3"""
+        self.check(b, a)
+
+    def test_nonconstant_4(self):
+        a = """x = 55 / a"""
+        b = """x = 55 / a"""
         self.check(b, a)
 
 class Test_ne(FixerTestCase):
