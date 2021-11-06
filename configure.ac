@@ -17,6 +17,11 @@ m4_ifdef(
     [],
     [AC_MSG_ERROR([Please install autoconf-archive package and re-run autoreconf])]
 )
+m4_ifdef(
+    [PKG_PROG_PKG_CONFIG],
+    [],
+    [AC_MSG_ERROR([Please install pkgconf's m4 macro package and re-run autoreconf])]
+)
 
 AC_SUBST(BASECPPFLAGS)
 if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
@@ -6113,6 +6118,11 @@ $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
 			Modules/Setup.local $srcdir/Modules/Setup
 mv config.c Modules
+
+if test -n "$PKG_CONFIG"; then
+  echo "" >&AS_MESSAGE_FD
+  echo "pkg-config is missing. Some dependencies may not be detected correctly." >&AS_MESSAGE_FD
+fi
 
 if test "$Py_OPT" = 'false' -a "$Py_DEBUG" != 'true'; then
     echo "" >&AS_MESSAGE_FD
