@@ -40,6 +40,9 @@ def contains_no_float(node):
             operand = children[1]
             return contains_no_float(operand)
         elif length == 3:
+            operation = children[1].value
+            if '/' in operation:
+                return len(operation) == 2
             left = children[0]
             right = children[2]
             return (contains_no_float(left)
@@ -55,13 +58,20 @@ class FixDiv(fixer_base.BaseFix):
     _accept_type = token.SLASH
 
     def match(self, node):
-        if node.value == '/':
-            left = node.prev_sibling
-            right = node.next_sibling
-            return (contains_no_float(left)
-                    and contains_no_float(right))
-        return False
+        return node.value == '/'
 
     def transform(self, node, results):
-        new = Leaf(token.DOUBLESLASH, "//", prefix=node.prefix)
-        return new
+        left = node.prev_sibling
+        right = node.next_sibling
+        while left.prev_sibling:
+            left = left.prev_sibling
+            if left == '//' and contains_no_float(right):
+                new = Leaf(token.DOUBLESLASH, "//", prefix=node.prefix)
+                return new
+            elif left == '/':
+                return node
+        if (contains_no_float(left)
+                and contains_no_float(right)):
+            new = Leaf(token.DOUBLESLASH, "//", prefix=node.prefix)
+            return new
+        return node
