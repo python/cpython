@@ -1602,9 +1602,11 @@ class PyBuildExt(build_ext):
 
             # Enable support for loadable extensions in the sqlite3 module
             # if --enable-loadable-sqlite-extensions configure option is used.
-            if '--enable-loadable-sqlite-extensions' not in sysconfig.get_config_var("CONFIG_ARGS"):
-                sqlite_defines.append(("SQLITE_OMIT_LOAD_EXTENSION", "1"))
-            elif MACOS and sqlite_incdir == os.path.join(MACOS_SDK_ROOT, "usr/include"):
+            if (
+                MACOS and
+                sqlite_incdir == os.path.join(MACOS_SDK_ROOT, "usr/include") and
+                sysconfig.get_config_var("PY_SQLITE_ENABLE_LOAD_EXTENSION")
+            ):
                 raise DistutilsError("System version of SQLite does not support loadable extensions")
 
             if MACOS:

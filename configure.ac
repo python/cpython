@@ -3199,9 +3199,13 @@ AC_ARG_ENABLE(loadable-sqlite-extensions,
               AS_HELP_STRING([--enable-loadable-sqlite-extensions],
                              [support loadable extensions in _sqlite module, see Doc/library/sqlite3.rst (default is no)]),
               [],
-              [enable_loadable_sqlite_extensions="no"])
-
+              [enable_loadable_sqlite_extensions=no])
 AC_MSG_RESULT($enable_loadable_sqlite_extensions)
+
+AS_VAR_IF([enable_loadable_sqlite_extensions], [yes], [
+  AC_DEFINE(PY_SQLITE_ENABLE_LOAD_EXTENSION, 1,
+  [Define to 1 to build the sqlite module with loadable extensions support.])
+])
 
 # Check for --with-tcltk-includes=path and --with-tcltk-libs=path
 AC_SUBST(TCLTK_INCLUDES)
