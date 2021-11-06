@@ -516,7 +516,7 @@ Glossary
       :term:`annotations <annotation>`.
 
       For more details, see :ref:`generic alias types<types-genericalias>`,
-      :pep:`483`, :pep:`484`, :pep:`585` and the :mod:`typing` module.
+      :pep:`483`, :pep:`484`, :pep:`585`, and the :mod:`typing` module.
 
    GIL
       See :term:`global interpreter lock`.
