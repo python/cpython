@@ -403,6 +403,11 @@ Decimal objects
       Underscores are allowed for grouping, as with integral and floating-point
       literals in code.
 
+   .. versionchanged:: 3.11
+      The underscore grouping option in the :ref:`formatting mini-language
+      <formatspec>` is now supported for :class:`Decimal` objects:
+      ``f"{Decimal(1234567):_}"`` gives ``'1_234_567'``.
+
    Decimal floating point objects share many properties with the other built-in
    numeric types such as :class:`float` and :class:`int`.  All of the usual math
    operations and special methods apply.  Likewise, decimal objects can be

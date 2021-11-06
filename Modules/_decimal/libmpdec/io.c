@@ -861,6 +861,12 @@ mpd_parse_fmt_str(mpd_spec_t *spec, const char *fmt, int caps)
         spec->grouping = "\003\003";
         cp++;
     }
+    else if (*cp == '_') {
+        spec->dot = ".";
+        spec->sep = "_";
+        spec->grouping = "\003\003";
+        cp++;
+    }
 
     /* fraction digits or significant digits */
     if (*cp == '.') {

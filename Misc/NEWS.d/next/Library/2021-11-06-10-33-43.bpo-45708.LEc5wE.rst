@@ -1,0 +1,3 @@
+Support underscores in :class:`~decimal.Decimal` object formatting: for
+example, ``f"{Decimal(1234567):_}"`` now gives ``'1_234_567'``. (Previously,
+this gave an "invalid format string" :exc:`ValueError`.)
