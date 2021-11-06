@@ -6119,7 +6119,7 @@ $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			Modules/Setup.local $srcdir/Modules/Setup
 mv config.c Modules
 
-if test -n "$PKG_CONFIG"; then
+if test -z "$PKG_CONFIG"; then
   echo "" >&AS_MESSAGE_FD
   echo "pkg-config is missing. Some dependencies may not be detected correctly." >&AS_MESSAGE_FD
 fi
