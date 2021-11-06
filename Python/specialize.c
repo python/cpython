@@ -1420,6 +1420,8 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                 goto success;
             }
             break;
+        default:
+            *instr = _Py_MAKECODEUNIT(BINARY_OP, adaptive->original_oparg);
     }
     SPECIALIZATION_FAIL(BINARY_OP, SPEC_FAIL_OTHER);
 failure:
