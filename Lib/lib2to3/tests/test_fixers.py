@@ -77,12 +77,12 @@ class Test_div(FixerTestCase):
 
     def test_constant_2(self):
         a = """x = 5.5 ** 0 / 22 / 12"""
-        b = """x = 5.5 ** 0 / 22 / 12"""
+        b = """x = 5.5 ** 0 // 22 // 12"""
         self.check(b, a)
 
     def test_constant_3(self):
         a = """x = 52 / 7.3"""
-        b = """x = 52 / 7.3"""
+        b = """x = 52 // 7.3"""
         self.check(b, a)
 
     def test_constant_4(self):
