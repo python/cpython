@@ -1395,6 +1395,9 @@
 /* Define to printf format modifier for Py_ssize_t */
 #undef PY_FORMAT_SIZE_T
 
+/* Define to 1 to build the sqlite module with loadable extensions support. */
+#undef PY_SQLITE_ENABLE_LOAD_EXTENSION
+
 /* Default cipher suites list for ssl module. 1: Python's preferred selection,
    2: leave OpenSSL defaults untouched, 0: custom string */
 #undef PY_SSL_DEFAULT_CIPHERS

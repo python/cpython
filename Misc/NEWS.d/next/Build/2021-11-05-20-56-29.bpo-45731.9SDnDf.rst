@@ -1,0 +1,1 @@
+``configure --enable-loadable-sqlite-extensions`` is now handled by new ``PY_SQLITE_ENABLE_LOAD_EXTENSION`` macro instead of logic in setup.py.
