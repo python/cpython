@@ -307,14 +307,14 @@ class OptionMenuTest(AbstractTkTest, unittest.TestCase):
         items = ('a', 'b', 'c')
         textvar = tkinter.StringVar(self.root)
         def cb_test(*args):
-            self.assertEqual(textvar.get(), items[1])
-            success.append(True)
+            success.append(textvar.get())
         optmenu = ttk.OptionMenu(self.root, textvar, "a", *items)
         optmenu.pack()
-        cb_name = textvar.trace("w", cb_test)
+        cb_name = textvar.trace_add("write", cb_test)
         optmenu['menu'].invoke(1)
-        self.assertEqual(success, [True])
-        textvar.trace_vdelete("w", cb_name)
+        self.assertEqual(success, ['b'])
+        self.assertEqual(textvar.get(), 'b')
+        textvar.trace_remove("write", cb_name)
         optmenu.destroy()
 
 
