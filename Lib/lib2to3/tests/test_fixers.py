@@ -73,42 +73,36 @@ class Test_div(FixerTestCase):
     def test_constant_1(self):
         a = """x = 2 ** 9 / 5 / 7"""
         b = """x = 2 ** 9 // 5 // 7"""
-        self.check(b, a)
+        self.check(a, b)
 
     def test_constant_2(self):
         a = """x = -8 / 7"""
         b = """x = -8 // 7"""
-        self.check(b, a)
+        self.check(a, b)
 
     def test_constant_3(self):
         a = """x = 5.5 ** 0 / 22 / 12"""
-        b = """x = 5.5 ** 0 / 22 / 12"""
-        self.check(b, a)
+        self.unchanged(a)
 
     def test_constant_4(self):
         a = """x = 52 / 7.3"""
-        b = """x = 52 / 7.3"""
-        self.check(b, a)
+        self.unchanged(a)
 
     def test_nonconstant_1(self):
         a = """x = foo.bar / 2"""
-        b = """x = foo.bar / 2"""
-        self.check(b, a)
+        self.unchanged(a)
 
     def test_nonconstant_2(self):
         a = """x = a ** b / 5 / 3"""
-        b = """x = a ** b / 5 / 3"""
-        self.check(b, a)
+        self.unchanged(a)
 
     def test_nonconstant_3(self):
         a = """x = a / 3"""
-        b = """x = a / 3"""
-        self.check(b, a)
+        self.unchanged(a)
 
     def test_nonconstant_4(self):
         a = """x = 55 / a"""
-        b = """x = 55 / a"""
-        self.check(b, a)
+        self.unchanged(a)
 
 class Test_ne(FixerTestCase):
     fixer = "ne"
