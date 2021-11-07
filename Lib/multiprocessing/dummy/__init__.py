@@ -17,10 +17,11 @@ __all__ = [
 # Imports
 #
 
-import threading
-import sys
-import weakref
 import array
+import sys
+import threading
+import weakref
+import warnings
 
 from .connection import Pipe
 from threading import Lock, RLock, Semaphore, BoundedSemaphore
@@ -119,7 +120,10 @@ def Manager():
 def shutdown():
     pass
 
-def Pool(processes=None, initializer=None, initargs=()):
+def Pool(processes=None, initializer=None, initargs=(), maxtasksperchild=None):
+    if maxtasksperchild is not None:
+        warnings.warn("maxtasksperchild makes no sense for a ThreadPool and is ignored")
+
     from ..pool import ThreadPool
     return ThreadPool(processes, initializer, initargs)
 
