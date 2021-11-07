@@ -2777,7 +2777,6 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-
 if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
     # If we're building out-of-tree, we need to make sure the following
     # resources get picked up before their $srcdir counterparts.
@@ -10159,8 +10158,57 @@ $as_echo "no" >&6; }
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
+# check for libuuid from util-linux
+save_LIBS=$LIBS
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time in -luuid" >&5
+$as_echo_n "checking for uuid_generate_time in -luuid... " >&6; }
+if ${ac_cv_lib_uuid_uuid_generate_time+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-luuid  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char uuid_generate_time ();
+int
+main ()
+{
+return uuid_generate_time ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_uuid_uuid_generate_time=yes
+else
+  ac_cv_lib_uuid_uuid_generate_time=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_uuid_uuid_generate_time" >&5
+$as_echo "$ac_cv_lib_uuid_uuid_generate_time" >&6; }
+if test "x$ac_cv_lib_uuid_uuid_generate_time" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBUUID 1
+_ACEOF
+
+  LIBS="-luuid $LIBS"
+
+fi
+
+LIBS=$save_LIBS
+
 # AIX provides support for RFC4122 (uuid) in libc.a starting with AIX 6.1 (anno 2007)
-# FreeBSD and OpenBSD provides support as well
+# FreeBSD and OpenBSD provides support in libc as well.
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_create" >&5
 $as_echo_n "checking for uuid_create... " >&6; }
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -10864,12 +10912,19 @@ $as_echo_n "checking for --enable-loadable-sqlite-extensions... " >&6; }
 if test "${enable_loadable_sqlite_extensions+set}" = set; then :
   enableval=$enable_loadable_sqlite_extensions;
 else
-  enable_loadable_sqlite_extensions="no"
+  enable_loadable_sqlite_extensions=no
 fi
-
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_loadable_sqlite_extensions" >&5
 $as_echo "$enable_loadable_sqlite_extensions" >&6; }
+
+if test "x$enable_loadable_sqlite_extensions" = xyes; then :
+
+
+$as_echo "#define PY_SQLITE_ENABLE_LOAD_EXTENSION 1" >>confdefs.h
+
+
+fi
 
 # Check for --with-tcltk-includes=path and --with-tcltk-libs=path
 
@@ -19517,6 +19572,11 @@ $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
 			Modules/Setup.local $srcdir/Modules/Setup
 mv config.c Modules
+
+if test -z "$PKG_CONFIG"; then
+  echo "" >&6
+  echo "pkg-config is missing. Some dependencies may not be detected correctly." >&6
+fi
 
 if test "$Py_OPT" = 'false' -a "$Py_DEBUG" != 'true'; then
     echo "" >&6

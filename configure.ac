@@ -16,7 +16,12 @@ m4_ifdef(
     [AX_C_FLOAT_WORDS_BIGENDIAN],
     [],
     [AC_MSG_ERROR([Please install autoconf-archive package and re-run autoreconf])]
-)
+)dnl
+m4_ifdef(
+    [PKG_PROG_PKG_CONFIG],
+    [],
+    [AC_MSG_ERROR([Please install pkgconf's m4 macro package and re-run autoreconf])]
+)dnl
 
 AC_SUBST(BASECPPFLAGS)
 if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
@@ -2945,8 +2950,13 @@ void *x = uuid_generate_time_safe
   [AC_MSG_RESULT(no)]
 )
 
+# check for libuuid from util-linux
+save_LIBS=$LIBS
+AC_CHECK_LIB([uuid], [uuid_generate_time])
+LIBS=$save_LIBS
+
 # AIX provides support for RFC4122 (uuid) in libc.a starting with AIX 6.1 (anno 2007)
-# FreeBSD and OpenBSD provides support as well
+# FreeBSD and OpenBSD provides support in libc as well.
 AC_MSG_CHECKING(for uuid_create)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <uuid.h>]], [[
 #ifndef uuid_create
@@ -3194,9 +3204,13 @@ AC_ARG_ENABLE(loadable-sqlite-extensions,
               AS_HELP_STRING([--enable-loadable-sqlite-extensions],
                              [support loadable extensions in _sqlite module, see Doc/library/sqlite3.rst (default is no)]),
               [],
-              [enable_loadable_sqlite_extensions="no"])
-
+              [enable_loadable_sqlite_extensions=no])
 AC_MSG_RESULT($enable_loadable_sqlite_extensions)
+
+AS_VAR_IF([enable_loadable_sqlite_extensions], [yes], [
+  AC_DEFINE(PY_SQLITE_ENABLE_LOAD_EXTENSION, 1,
+  [Define to 1 to build the sqlite module with loadable extensions support.])
+])
 
 # Check for --with-tcltk-includes=path and --with-tcltk-libs=path
 AC_SUBST(TCLTK_INCLUDES)
@@ -6104,6 +6118,11 @@ $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
 			Modules/Setup.local $srcdir/Modules/Setup
 mv config.c Modules
+
+if test -z "$PKG_CONFIG"; then
+  echo "" >&AS_MESSAGE_FD
+  echo "pkg-config is missing. Some dependencies may not be detected correctly." >&AS_MESSAGE_FD
+fi
 
 if test "$Py_OPT" = 'false' -a "$Py_DEBUG" != 'true'; then
     echo "" >&AS_MESSAGE_FD
