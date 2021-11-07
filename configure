@@ -2777,7 +2777,6 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-
 if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
     # If we're building out-of-tree, we need to make sure the following
     # resources get picked up before their $srcdir counterparts.
@@ -19573,6 +19572,11 @@ $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
 			Modules/Setup.local $srcdir/Modules/Setup
 mv config.c Modules
+
+if test -z "$PKG_CONFIG"; then
+  echo "" >&6
+  echo "pkg-config is missing. Some dependencies may not be detected correctly." >&6
+fi
 
 if test "$Py_OPT" = 'false' -a "$Py_DEBUG" != 'true'; then
     echo "" >&6
