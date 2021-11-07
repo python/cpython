@@ -43,9 +43,6 @@ def contains_no_float(node):
             operand = children[1]
             return contains_no_float(operand)
         elif length == 3:
-            operation = children[1].value
-            if '/' in operation:
-                return len(operation) == 2
             left = children[0]
             right = children[2]
             return (contains_no_float(left)
@@ -66,10 +63,8 @@ class FixDiv(fixer_base.BaseFix):
     def transform(self, node, results):
         left = node.prev_sibling
         right = node.next_sibling
-        print(left, file=sys.stderr)
         while left.prev_sibling:
             left = left.prev_sibling
-            print(left, file=sys.stderr)
             if left == '//' and contains_no_float(right):
                 new = Leaf(token.DOUBLESLASH, "//", prefix=node.prefix)
                 return new
