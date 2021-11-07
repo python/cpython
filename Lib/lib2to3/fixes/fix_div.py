@@ -24,6 +24,9 @@ into
 """
 # Author: Jeremiah Vivian
 
+# Debugging purposes
+import sys
+
 # Local imports
 from ..pytree import Node, Leaf
 from ..pgen2 import token
@@ -63,10 +66,10 @@ class FixDiv(fixer_base.BaseFix):
     def transform(self, node, results):
         left = node.prev_sibling
         right = node.next_sibling
-        print(left)
+        print(left, file=sys.stderr)
         while left.prev_sibling:
             left = left.prev_sibling
-            print(left)
+            print(left, file=sys.stderr)
             if left == '//' and contains_no_float(right):
                 new = Leaf(token.DOUBLESLASH, "//", prefix=node.prefix)
                 return new
