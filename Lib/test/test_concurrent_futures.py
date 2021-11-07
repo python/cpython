@@ -144,7 +144,7 @@ class ExecutorMixin:
     def _prime_executor(self):
         # Make sure that the executor is ready to do work before running the
         # tests. This should reduce the probability of timeouts in the tests.
-        futures = [self.executor.submit(time.sleep, 0.1)
+        futures = [self.executor.submit(time.sleep, "sleep", 0.1)
                    for _ in range(self.worker_count)]
         for f in futures:
             f.result()
@@ -300,7 +300,7 @@ class ExecutorShutdownTest:
         self.executor.shutdown()
         self.assertRaises(RuntimeError,
                           self.executor.submit,
-                          pow, 2, 5)
+                          pow, "after shutdown", 2, 5)
 
     def test_interpreter_shutdown(self):
         # Test the atexit hook for shutdown of worker threads and processes
@@ -316,7 +316,7 @@ class ExecutorShutdownTest:
                     from multiprocessing import get_context
                     context = get_context(context)
                     t = {executor_type}(5, mp_context=context)
-                t.submit(sleep_and_print, 1.0, "apple")
+                t.submit(sleep_and_print, "sleep and print", 1.0, "apple")
             """.format(executor_type=self.executor_type.__name__,
                        context=getattr(self, "ctx", "")))
         # Errors in atexit hooks don't change the process exit code, check
@@ -331,7 +331,7 @@ class ExecutorShutdownTest:
             @atexit.register
             def run_last():
                 try:
-                    t.submit(id, None)
+                    t.submit(id, "id", None)
                 except RuntimeError:
                     print("runtime-error")
                     raise
@@ -344,7 +344,7 @@ class ExecutorShutdownTest:
                     from multiprocessing import get_context
                     context = get_context(context)
                     t = {executor_type}(5, mp_context=context)
-                    t.submit(id, 42).result()
+                    t.submit(id, None, 42).result()
             """.format(executor_type=self.executor_type.__name__,
                        context=getattr(self, "ctx", "")))
         # Errors in atexit hooks don't change the process exit code, check
@@ -353,14 +353,14 @@ class ExecutorShutdownTest:
         self.assertEqual(out.strip(), b"runtime-error")
 
     def test_hang_issue12364(self):
-        fs = [self.executor.submit(time.sleep, 0.1) for _ in range(50)]
+        fs = [self.executor.submit(time.sleep, "sleep", 0.1) for _ in range(50)]
         self.executor.shutdown()
         for f in fs:
             f.result()
 
     def test_cancel_futures(self):
         executor = self.executor_type(max_workers=3)
-        fs = [executor.submit(time.sleep, .1) for _ in range(50)]
+        fs = [executor.submit(time.sleep, "sleep", .1) for _ in range(50)]
         executor.shutdown(cancel_futures=True)
         # We can't guarantee the exact number of cancellations, but we can
         # guarantee that *some* were cancelled. With setting max_workers to 3,
@@ -395,7 +395,7 @@ class ExecutorShutdownTest:
             from test.test_concurrent_futures import sleep_and_print
             if __name__ == "__main__":
                 t = {executor_type}(max_workers=3)
-                t.submit(sleep_and_print, 1.0, "apple")
+                t.submit(sleep_and_print, "sleep and print", 1.0, "apple")
                 t.shutdown(wait=False)
             """.format(executor_type=self.executor_type.__name__))
         self.assertFalse(err)
@@ -412,7 +412,7 @@ class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, BaseTestCase
 
         sem = threading.Semaphore(0)
         for i in range(3):
-            self.executor.submit(acquire_lock, sem)
+            self.executor.submit(acquire_lock, None, sem)
         self.assertEqual(len(self.executor._threads), 3)
         for i in range(3):
             sem.release()
@@ -490,7 +490,7 @@ class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, BaseTestCase
             from test.test_concurrent_futures import sleep_and_print
             if __name__ == "__main__":
                 t = ThreadPoolExecutor()
-                t.submit(sleep_and_print, .1, "apple")
+                t.submit(sleep_and_print, ."sleep and print", 1, "apple")
                 t.shutdown(wait=False, cancel_futures=True)
             """.format(executor_type=self.executor_type.__name__))
         # Errors in atexit hooks don't change the process exit code, check
@@ -510,7 +510,7 @@ class ProcessPoolShutdownTest(ExecutorShutdownTest):
         mp_context = get_context()
         sem = mp_context.Semaphore(0)
         for _ in range(3):
-            self.executor.submit(acquire_lock, sem)
+            self.executor.submit(acquire_lock, "lock", sem)
         self.assertEqual(len(self.executor._processes), 3)
         for _ in range(3):
             sem.release()
@@ -581,8 +581,8 @@ create_executor_tests(ProcessPoolShutdownTest,
 class WaitTests:
 
     def test_first_completed(self):
-        future1 = self.executor.submit(mul, 21, 2)
-        future2 = self.executor.submit(time.sleep, 1.5)
+        future1 = self.executor.submit(mul, "mul", 21, 2)
+        future2 = self.executor.submit(time.sleep, "sleep", 1.5)
 
         done, not_done = futures.wait(
                 [CANCELLED_FUTURE, future1, future2],
@@ -592,7 +592,7 @@ class WaitTests:
         self.assertEqual(set([CANCELLED_FUTURE, future2]), not_done)
 
     def test_first_completed_some_already_completed(self):
-        future1 = self.executor.submit(time.sleep, 1.5)
+        future1 = self.executor.submit(time.sleep, "sleep", 1.5)
 
         finished, pending = futures.wait(
                  [CANCELLED_AND_NOTIFIED_FUTURE, SUCCESSFUL_FUTURE, future1],
@@ -604,9 +604,9 @@ class WaitTests:
         self.assertEqual(set([future1]), pending)
 
     def test_first_exception(self):
-        future1 = self.executor.submit(mul, 2, 21)
-        future2 = self.executor.submit(sleep_and_raise, 1.5)
-        future3 = self.executor.submit(time.sleep, 3)
+        future1 = self.executor.submit(mul, "mul", 2, 21)
+        future2 = self.executor.submit(sleep_and_raise, "sleep and raise", 1.5)
+        future3 = self.executor.submit(time.sleep, "sleep", 3)
 
         finished, pending = futures.wait(
                 [future1, future2, future3],
@@ -616,8 +616,8 @@ class WaitTests:
         self.assertEqual(set([future3]), pending)
 
     def test_first_exception_some_already_complete(self):
-        future1 = self.executor.submit(divmod, 21, 0)
-        future2 = self.executor.submit(time.sleep, 1.5)
+        future1 = self.executor.submit(divmod, "div mod", 21, 0)
+        future2 = self.executor.submit(time.sleep, "sleep", 1.5)
 
         finished, pending = futures.wait(
                 [SUCCESSFUL_FUTURE,
@@ -632,7 +632,7 @@ class WaitTests:
         self.assertEqual(set([CANCELLED_FUTURE, future2]), pending)
 
     def test_first_exception_one_already_failed(self):
-        future1 = self.executor.submit(time.sleep, 2)
+        future1 = self.executor.submit(time.sleep, "sleep", 2)
 
         finished, pending = futures.wait(
                  [EXCEPTION_FUTURE, future1],
@@ -642,8 +642,8 @@ class WaitTests:
         self.assertEqual(set([future1]), pending)
 
     def test_all_completed(self):
-        future1 = self.executor.submit(divmod, 2, 0)
-        future2 = self.executor.submit(mul, 2, 21)
+        future1 = self.executor.submit(divmod, "divmod", 2, 0)
+        future2 = self.executor.submit(mul, "mul", 2, 21)
 
         finished, pending = futures.wait(
                 [SUCCESSFUL_FUTURE,
@@ -661,8 +661,8 @@ class WaitTests:
         self.assertEqual(set(), pending)
 
     def test_timeout(self):
-        future1 = self.executor.submit(mul, 6, 7)
-        future2 = self.executor.submit(time.sleep, 6)
+        future1 = self.executor.submit(mul, "mul", 6, 7)
+        future2 = self.executor.submit(time.sleep, "sleep", 6)
 
         finished, pending = futures.wait(
                 [CANCELLED_AND_NOTIFIED_FUTURE,
@@ -706,8 +706,8 @@ create_executor_tests(WaitTests,
 class AsCompletedTests:
     # TODO(brian@sweetapp.com): Should have a test with a non-zero timeout.
     def test_no_timeout(self):
-        future1 = self.executor.submit(mul, 2, 21)
-        future2 = self.executor.submit(mul, 7, 6)
+        future1 = self.executor.submit(mul, "mul", 2, 21)
+        future2 = self.executor.submit(mul, "mul", 7, 6)
 
         completed = set(futures.as_completed(
                 [CANCELLED_AND_NOTIFIED_FUTURE,
@@ -722,7 +722,7 @@ class AsCompletedTests:
                 completed)
 
     def test_zero_timeout(self):
-        future1 = self.executor.submit(time.sleep, 2)
+        future1 = self.executor.submit(time.sleep, "sleep", 2)
         completed_futures = set()
         try:
             for future in futures.as_completed(
@@ -744,7 +744,7 @@ class AsCompletedTests:
         # Issue 20367. Duplicate futures should not raise exceptions or give
         # duplicate responses.
         # Issue #31641: accept arbitrary iterables.
-        future1 = self.executor.submit(time.sleep, 2)
+        future1 = self.executor.submit(time.sleep, "sleep", 2)
         completed = [
             f for f in futures.as_completed(itertools.repeat(future1, 3))
         ]
@@ -792,13 +792,13 @@ class ExecutorTest:
     # Executor.shutdown() and context manager usage is tested by
     # ExecutorShutdownTest.
     def test_submit(self):
-        future = self.executor.submit(pow, 2, 8)
+        future = self.executor.submit(pow, "pow", 2, 8)
         self.assertEqual(256, future.result())
 
     def test_submit_keyword(self):
-        future = self.executor.submit(mul, 2, y=8)
+        future = self.executor.submit(mul, "mul", 2, y=8)
         self.assertEqual(16, future.result())
-        future = self.executor.submit(capture, 1, self=2, fn=3)
+        future = self.executor.submit(capture, "capture", 1, self=2, fn=3)
         self.assertEqual(future.result(), ((1,), {'self': 2, 'fn': 3}))
         with self.assertRaises(TypeError):
             self.executor.submit(fn=capture, arg=1)
@@ -897,7 +897,7 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
 
         sem = threading.Semaphore(0)
         for i in range(15 * executor._max_workers):
-            executor.submit(acquire_lock, sem)
+            executor.submit(acquire_lock, "sem", sem)
         self.assertEqual(len(executor._threads), executor._max_workers)
         for i in range(15 * executor._max_workers):
             sem.release()
@@ -905,9 +905,9 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
 
     def test_idle_thread_reuse(self):
         executor = self.executor_type()
-        executor.submit(mul, 21, 2).result()
-        executor.submit(mul, 6, 7).result()
-        executor.submit(mul, 3, 14).result()
+        executor.submit(mul, "mul", 21, 2).result()
+        executor.submit(mul, "mul", 6, 7).result()
+        executor.submit(mul, "mul", 3, 14).result()
         self.assertEqual(len(executor._threads), 1)
         executor.shutdown(wait=True)
 
@@ -916,10 +916,10 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
         # bpo-45021: _global_shutdown_lock should be reinitialized in the child
         # process, otherwise it will never exit
         def submit(pool):
-            pool.submit(submit, pool)
+            pool.submit(submit, "pool", pool)
 
         with futures.ThreadPoolExecutor(1) as pool:
-            pool.submit(submit, pool)
+            pool.submit(submit, "pool", pool)
 
             for _ in range(50):
                 with futures.ProcessPoolExecutor(1, mp_context=get_context('fork')) as workers:
@@ -937,14 +937,14 @@ class ProcessPoolExecutorTest(ExecutorTest):
     def test_killed_child(self):
         # When a child process is abruptly terminated, the whole pool gets
         # "broken".
-        futures = [self.executor.submit(time.sleep, 3)]
+        futures = [self.executor.submit(time.sleep, "sleep", 3)]
         # Get one of the processes, and terminate (kill) it
         p = next(iter(self.executor._processes.values()))
         p.terminate()
         for fut in futures:
             self.assertRaises(BrokenProcessPool, fut.result)
         # Submitting other jobs fails as well.
-        self.assertRaises(BrokenProcessPool, self.executor.submit, pow, 2, 8)
+        self.assertRaises(BrokenProcessPool, self.executor.submit, pow, "pow", 2, 8)
 
     def test_map_chunksize(self):
         def bad_map():
@@ -994,7 +994,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
         # is finished
         mgr = get_context(self.ctx).Manager()
         obj = EventfulGCObj(mgr)
-        future = self.executor.submit(id, obj)
+        future = self.executor.submit(id, "id", obj)
         future.result()
 
         self.assertTrue(obj.event.wait(timeout=1))
@@ -1023,18 +1023,18 @@ class ProcessPoolExecutorTest(ExecutorTest):
 
     def test_idle_process_reuse_one(self):
         executor = self.executor_type(4)
-        executor.submit(mul, 21, 2).result()
-        executor.submit(mul, 6, 7).result()
-        executor.submit(mul, 3, 14).result()
+        executor.submit(mul, "mul", 21, 2).result()
+        executor.submit(mul, "mul", 6, 7).result()
+        executor.submit(mul, "mul", 3, 14).result()
         self.assertEqual(len(executor._processes), 1)
         executor.shutdown()
 
     def test_idle_process_reuse_multiple(self):
         executor = self.executor_type(4)
-        executor.submit(mul, 12, 7).result()
-        executor.submit(mul, 33, 25)
-        executor.submit(mul, 25, 26).result()
-        executor.submit(mul, 18, 29)
+        executor.submit(mul, "mul", 12, 7).result()
+        executor.submit(mul, "mul", 33, 25)
+        executor.submit(mul, "mul", 25, 26).result()
+        executor.submit(mul, "mul", 18, 29)
         self.assertLessEqual(len(executor._processes), 2)
         executor.shutdown()
 
@@ -1140,7 +1140,7 @@ class ExecutorDeadlockTest:
 
         executor = self.executor_type(
             max_workers=2, mp_context=get_context(self.ctx))
-        res = executor.submit(func, *args)
+        res = executor.submit(func, None, *args)
 
         if ignore_stderr:
             cm = support.captured_stderr()
@@ -1237,12 +1237,12 @@ class ExecutorDeadlockTest:
             # Start the executor and get the executor_manager_thread to collect
             # the threads and avoid dangling thread that should be cleaned up
             # asynchronously.
-            executor.submit(id, 42).result()
+            executor.submit(id, "id", 42).result()
             executor_manager = executor._executor_manager_thread
 
             # Submit a task that fails at pickle and shutdown the executor
             # without waiting
-            f = executor.submit(id, ErrorAtPickle())
+            f = executor.submit(id, "ErrorAtPickle", ErrorAtPickle())
             executor.shutdown(wait=False)
             with self.assertRaises(PicklingError):
                 f.result()

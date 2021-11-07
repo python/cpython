@@ -161,7 +161,7 @@ class ThreadPoolExecutor(_base.Executor):
         self._initializer = initializer
         self._initargs = initargs
 
-    def submit(self, fn, name='', /, *args, **kwargs):
+    def submit(self, fn, name=None, /, *args, **kwargs):
         with self._shutdown_lock, _global_shutdown_lock:
             if self._broken:
                 raise BrokenThreadPool(self._broken)
