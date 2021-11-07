@@ -585,11 +585,11 @@ Escape sequences only recognized in string literals are:
 | ``\N{name}``    | Character named *name* in the   | \(4)  |
 |                 | Unicode database                |       |
 +-----------------+---------------------------------+-------+
-| ``\uxxxx``      | Character with 16-bit hex value | \(5)  |
-|                 | *xxxx*                          |       |
+| ``\uhhhh``      | Character with 16-bit hex value | \(5)  |
+|                 | *hhhh*                          |       |
 +-----------------+---------------------------------+-------+
-| ``\Uxxxxxxxx``  | Character with 32-bit hex value | \(6)  |
-|                 | *xxxxxxxx*                      |       |
+| ``\Uhhhhhhhh``  | Character with 32-bit hex value | \(6)  |
+|                 | *hhhhhhhh*                      |       |
 +-----------------+---------------------------------+-------+
 
 Notes:
