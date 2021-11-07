@@ -92,9 +92,7 @@ def main():
         with options.infile as infile:
             objs = tuple(_read(infile, options.json_lines))
 
-        outfile = _open_outfile(options.outfile, parser)
-
-        with outfile:
+        with _open_outfile(options.outfile, parser) as outfile:
             _write(outfile, objs, **dump_args)
 
     else:
