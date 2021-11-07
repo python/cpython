@@ -63,8 +63,10 @@ class FixDiv(fixer_base.BaseFix):
     def transform(self, node, results):
         left = node.prev_sibling
         right = node.next_sibling
+        print(left)
         while left.prev_sibling:
             left = left.prev_sibling
+            print(left)
             if left == '//' and contains_no_float(right):
                 new = Leaf(token.DOUBLESLASH, "//", prefix=node.prefix)
                 return new
