@@ -1,12 +1,29 @@
+import inspect
+import multiprocessing
 import unittest
-import test._test_multiprocessing
+from multiprocessing import dummy
 
-from test import support
 
-if support.PGO:
-    raise unittest.SkipTest("test is not helpful for PGO")
+class TestMultiprocessingDummy(unittest.TestCase):
+    def test_signatures(self):
+        """Check that the signatures in multiprocessing.dummy match these of multiprocessing."""
 
-test._test_multiprocessing.install_tests_in_module_dict(globals(), 'dummy')
+        common = set(dummy.__all__) & set(multiprocessing.__all__)
+
+        # Skip Locks (these have no parameters anyway)
+        common.remove("Lock")
+        common.remove("RLock")
+
+        for name in common:
+            print(name)
+
+            dummy_obj = getattr(dummy, name)
+            multiprocessing_obj = getattr(multiprocessing, name)
+
+            dummy_sig = inspect.signature(dummy_obj)
+            multiprocessing_sig = inspect.signature(multiprocessing_obj)
+
+            assert dummy_sig == multiprocessing_sig, f"{name}: {dummy_sig} != {multiprocessing_sig}"
 
 if __name__ == '__main__':
     unittest.main()
