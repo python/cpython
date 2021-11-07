@@ -1,0 +1,1 @@
+Introduce daemon parameter to multiprocessing.dummy.DummyProcess in order to match the API of multiprocessing.Process.
