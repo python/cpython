@@ -216,7 +216,7 @@ time timemodule.c
 #_bz2 _bz2module.c -lbz2
 #_ctypes _ctypes/_ctypes.c _ctypes/callbacks.c _ctypes/callproc.c _ctypes/stgdict.c _ctypes/cfield.c -ldl -lffi -DHAVE_FFI_PREP_CIF_VAR -DHAVE_FFI_PREP_CLOSURE_LOC -DHAVE_FFI_CLOSURE_ALLOC
 # The _dbm module supports NDBM, GDBM with compat module, and Berkeley DB.
-#_dbm _dbmmodule.c -lgdbm_compat -DHAVE_NDBM_H
+#_dbm _dbmmodule.c -lgdbm_compat -DUSE_GDBM_COMPAT
 #_gdbm _gdbmmodule.c -lgdbm
 #_lzma _lzmamodule.c -llzma
 #_sqlite3 _sqlite/connection.c _sqlite/cursor.c _sqlite/microprotocols.c _sqlite/module.c _sqlite/prepare_protocol.c _sqlite/row.c _sqlite/statement.c _sqlite/util.c -lsqlite3
