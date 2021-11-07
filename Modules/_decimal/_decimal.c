@@ -35,6 +35,7 @@
 #include "mpdecimal.h"
 
 #include <stdlib.h>
+#include <locale.h>
 
 #include "docstrings.h"
 
@@ -3208,6 +3209,240 @@ dict_get_item_string(PyObject *dict, const char *key, PyObject **valueobj, const
     return 0;
 }
 
+/* Mini-language format string parser.
+
+   This is a version of libmdpec's mpd_parse_fmt_str, adapted for CPython. It
+   currently differs from the libmpdec version in only one respect: it
+   supports the use of underscores for thousands separators. */
+
+/* Copy a single UTF-8 char to dest. See: The Unicode Standard, version 5.2,
+   chapter 3.9: Well-formed UTF-8 byte sequences. */
+static int
+_mpd_copy_utf8(char dest[5], const char *s)
+{
+    const unsigned char *cp = (const unsigned char *)s;
+    unsigned char lb, ub;
+    int count, i;
+
+
+    if (*cp == 0) {
+        /* empty string */
+        dest[0] = '\0';
+        return 0;
+    }
+    else if (*cp <= 0x7f) {
+        /* ascii */
+        dest[0] = *cp;
+        dest[1] = '\0';
+        return 1;
+    }
+    else if (0xc2 <= *cp && *cp <= 0xdf) {
+        lb = 0x80; ub = 0xbf;
+        count = 2;
+    }
+    else if (*cp == 0xe0) {
+        lb = 0xa0; ub = 0xbf;
+        count = 3;
+    }
+    else if (*cp <= 0xec) {
+        lb = 0x80; ub = 0xbf;
+        count = 3;
+    }
+    else if (*cp == 0xed) {
+        lb = 0x80; ub = 0x9f;
+        count = 3;
+    }
+    else if (*cp <= 0xef) {
+        lb = 0x80; ub = 0xbf;
+        count = 3;
+    }
+    else if (*cp == 0xf0) {
+        lb = 0x90; ub = 0xbf;
+        count = 4;
+    }
+    else if (*cp <= 0xf3) {
+        lb = 0x80; ub = 0xbf;
+        count = 4;
+    }
+    else if (*cp == 0xf4) {
+        lb = 0x80; ub = 0x8f;
+        count = 4;
+    }
+    else {
+        /* invalid */
+        goto error;
+    }
+
+    dest[0] = *cp++;
+    if (*cp < lb || ub < *cp) {
+        goto error;
+    }
+    dest[1] = *cp++;
+    for (i = 2; i < count; i++) {
+        if (*cp < 0x80 || 0xbf < *cp) {
+            goto error;
+        }
+        dest[i] = *cp++;
+    }
+    dest[i] = '\0';
+
+    return count;
+
+error:
+    dest[0] = '\0';
+    return -1;
+}
+
+#if SIZE_MAX == MPD_SIZE_MAX
+  #define mpd_strtossize _mpd_strtossize
+#else
+#include <errno.h>
+
+static inline mpd_ssize_t
+mpd_strtossize(const char *s, char **end, int base)
+{
+    int64_t retval;
+
+    errno = 0;
+    retval = _mpd_strtossize(s, end, base);
+    if (errno == 0 && (retval > MPD_SSIZE_MAX || retval < MPD_SSIZE_MIN)) {
+        errno = ERANGE;
+    }
+    if (errno == ERANGE) {
+        return (retval < 0) ? MPD_SSIZE_MIN : MPD_SSIZE_MAX;
+    }
+
+    return (mpd_ssize_t)retval;
+}
+#endif
+
+static int
+mpd_parse_fmt_str_ex(mpd_spec_t *spec, const char *fmt, int caps)
+{
+    char *cp = (char *)fmt;
+    int have_align = 0, n;
+
+    /* defaults */
+    spec->min_width = 0;
+    spec->prec = -1;
+    spec->type = caps ? 'G' : 'g';
+    spec->align = '>';
+    spec->sign = '-';
+    spec->dot = "";
+    spec->sep = "";
+    spec->grouping = "";
+
+
+    /* presume that the first character is a UTF-8 fill character */
+    if ((n = _mpd_copy_utf8(spec->fill, cp)) < 0) {
+        return 0;
+    }
+
+    /* alignment directive, prefixed by a fill character */
+    if (*cp && (*(cp+n) == '<' || *(cp+n) == '>' ||
+                *(cp+n) == '=' || *(cp+n) == '^')) {
+        cp += n;
+        spec->align = *cp++;
+        have_align = 1;
+    } /* alignment directive */
+    else {
+        /* default fill character */
+        spec->fill[0] = ' ';
+        spec->fill[1] = '\0';
+        if (*cp == '<' || *cp == '>' ||
+            *cp == '=' || *cp == '^') {
+            spec->align = *cp++;
+            have_align = 1;
+        }
+    }
+
+    /* sign formatting */
+    if (*cp == '+' || *cp == '-' || *cp == ' ') {
+        spec->sign = *cp++;
+    }
+
+    /* zero padding */
+    if (*cp == '0') {
+        /* zero padding implies alignment, which should not be
+         * specified twice. */
+        if (have_align) {
+            return 0;
+        }
+        spec->align = 'z';
+        spec->fill[0] = *cp++;
+        spec->fill[1] = '\0';
+    }
+
+    /* minimum width */
+    if (isdigit((unsigned char)*cp)) {
+        if (*cp == '0') {
+            return 0;
+        }
+        errno = 0;
+        spec->min_width = mpd_strtossize(cp, &cp, 10);
+        if (errno == ERANGE || errno == EINVAL) {
+            return 0;
+        }
+    }
+
+    /* thousands separator */
+    if (*cp == ',') {
+        spec->dot = ".";
+        spec->sep = ",";
+        spec->grouping = "\003\003";
+        cp++;
+    }
+    else if (*cp == '_') {
+        spec->dot = ".";
+        spec->sep = "_";
+        spec->grouping = "\003\003";
+        cp++;
+    }
+
+    /* fraction digits or significant digits */
+    if (*cp == '.') {
+        cp++;
+        if (!isdigit((unsigned char)*cp)) {
+            return 0;
+        }
+        errno = 0;
+        spec->prec = mpd_strtossize(cp, &cp, 10);
+        if (errno == ERANGE || errno == EINVAL) {
+            return 0;
+        }
+    }
+
+    /* type */
+    if (*cp == 'E' || *cp == 'e' || *cp == 'F' || *cp == 'f' ||
+        *cp == 'G' || *cp == 'g' || *cp == '%') {
+        spec->type = *cp++;
+    }
+    else if (*cp == 'N' || *cp == 'n') {
+        /* locale specific conversion */
+        struct lconv *lc;
+        /* separator has already been specified */
+        if (*spec->sep) {
+            return 0;
+        }
+        spec->type = *cp++;
+        spec->type = (spec->type == 'N') ? 'G' : 'g';
+        lc = localeconv();
+        spec->dot = lc->decimal_point;
+        spec->sep = lc->thousands_sep;
+        spec->grouping = lc->grouping;
+        if (mpd_validate_lconv(spec) < 0) {
+            return 0; /* GCOV_NOT_REACHED */
+        }
+    }
+
+    /* check correctness */
+    if (*cp != '\0') {
+        return 0;
+    }
+
+    return 1;
+}
+
 /* Formatted representation of a PyDecObject. */
 static PyObject *
 dec_format(PyObject *dec, PyObject *args)
@@ -3239,7 +3474,7 @@ dec_format(PyObject *dec, PyObject *args)
         }
         if (size > 0 && fmt[0] == '\0') {
             /* NUL fill character: must be replaced with a valid UTF-8 char
-               before calling mpd_parse_fmt_str(). */
+               before calling mpd_parse_fmt_str_ex(). */
             replace_fillchar = 1;
             fmt = dec_strdup(fmt, size);
             if (fmt == NULL) {
@@ -3254,7 +3489,7 @@ dec_format(PyObject *dec, PyObject *args)
         return NULL;
     }
 
-    if (!mpd_parse_fmt_str(&spec, fmt, CtxCaps(context))) {
+    if (!mpd_parse_fmt_str_ex(&spec, fmt, CtxCaps(context))) {
         PyErr_SetString(PyExc_ValueError,
             "invalid format string");
         goto finish;
@@ -3271,7 +3506,7 @@ dec_format(PyObject *dec, PyObject *args)
         /* Values for decimal_point, thousands_sep and grouping can
            be explicitly specified in the override dict. These values
            take precedence over the values obtained from localeconv()
-           in mpd_parse_fmt_str(). The feature is not documented and
+           in mpd_parse_fmt_str_ex(). The feature is not documented and
            is only used in test_decimal. */
         if (!PyDict_Check(override)) {
             PyErr_SetString(PyExc_TypeError,
