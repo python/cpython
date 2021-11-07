@@ -700,6 +700,17 @@ class OrderedDictTests:
         with self.assertRaises(ValueError):
             a |= "BAD"
 
+    @support.cpython_only
+    def test_ordered_dict_items_result_gc(self):
+        # bpo-42536: OrderedDict.items's tuple-reuse speed trick breaks the GC's
+        # assumptions about what can be untracked. Make sure we re-track result
+        # tuples whenever we reuse them.
+        it = iter(self.OrderedDict({None: []}).items())
+        gc.collect()
+        # That GC collection probably untracked the recycled internal result
+        # tuple, which is initialized to (None, None). Make sure it's re-tracked
+        # when it's mutated and returned from __next__:
+        self.assertTrue(gc.is_tracked(next(it)))
 
 class PurePythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
 

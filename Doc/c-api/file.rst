@@ -82,6 +82,8 @@ the :mod:`io` APIs instead.
 
    This function is safe to call before :c:func:`Py_Initialize`.
 
+   .. audit-event:: setopencodehook "" c.PyFile_SetOpenCodeHook
+
    .. versionadded:: 3.8
 
 

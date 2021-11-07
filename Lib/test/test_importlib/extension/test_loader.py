@@ -1,3 +1,4 @@
+from warnings import catch_warnings
 from .. import abc
 from .. import util
 
@@ -7,6 +8,7 @@ import os.path
 import sys
 import types
 import unittest
+import warnings
 import importlib.util
 import importlib
 from test.support.script_helper import assert_python_failure
@@ -20,14 +22,18 @@ class LoaderTests(abc.LoaderTests):
                                                          util.EXTENSIONS.file_path)
 
     def load_module(self, fullname):
-        return self.loader.load_module(fullname)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            return self.loader.load_module(fullname)
 
     def test_load_module_API(self):
         # Test the default argument for load_module().
-        self.loader.load_module()
-        self.loader.load_module(None)
-        with self.assertRaises(ImportError):
-            self.load_module('XXX')
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            self.loader.load_module()
+            self.loader.load_module(None)
+            with self.assertRaises(ImportError):
+                self.load_module('XXX')
 
     def test_equality(self):
         other = self.machinery.ExtensionFileLoader(util.EXTENSIONS.name,
@@ -94,6 +100,21 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
         self.loader = self.machinery.ExtensionFileLoader(
             self.name, self.spec.origin)
 
+    def load_module(self):
+        '''Load the module from the test extension'''
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            return self.loader.load_module(self.name)
+
+    def load_module_by_name(self, fullname):
+        '''Load a module from the test extension by name'''
+        origin = self.spec.origin
+        loader = self.machinery.ExtensionFileLoader(fullname, origin)
+        spec = importlib.util.spec_from_loader(fullname, loader)
+        module = importlib.util.module_from_spec(spec)
+        loader.exec_module(module)
+        return module
+
     # No extension module as __init__ available for testing.
     test_package = None
 
@@ -156,19 +177,6 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
         with self.subTest('PyState_RemoveModule'):
             with self.assertRaises(SystemError):
                 module.call_state_registration_func(2)
-
-    def load_module(self):
-        '''Load the module from the test extension'''
-        return self.loader.load_module(self.name)
-
-    def load_module_by_name(self, fullname):
-        '''Load a module from the test extension by name'''
-        origin = self.spec.origin
-        loader = self.machinery.ExtensionFileLoader(fullname, origin)
-        spec = importlib.util.spec_from_loader(fullname, loader)
-        module = importlib.util.module_from_spec(spec)
-        loader.exec_module(module)
-        return module
 
     def test_load_submodule(self):
         '''Test loading a simulated submodule'''

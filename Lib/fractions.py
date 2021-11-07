@@ -380,32 +380,139 @@ class Fraction(numbers.Rational):
 
         return forward, reverse
 
+    # Rational arithmetic algorithms: Knuth, TAOCP, Volume 2, 4.5.1.
+    #
+    # Assume input fractions a and b are normalized.
+    #
+    # 1) Consider addition/subtraction.
+    #
+    # Let g = gcd(da, db). Then
+    #
+    #              na   nb    na*db ± nb*da
+    #     a ± b == -- ± -- == ------------- ==
+    #              da   db        da*db
+    #
+    #              na*(db//g) ± nb*(da//g)    t
+    #           == ----------------------- == -
+    #                      (da*db)//g         d
+    #
+    # Now, if g > 1, we're working with smaller integers.
+    #
+    # Note, that t, (da//g) and (db//g) are pairwise coprime.
+    #
+    # Indeed, (da//g) and (db//g) share no common factors (they were
+    # removed) and da is coprime with na (since input fractions are
+    # normalized), hence (da//g) and na are coprime.  By symmetry,
+    # (db//g) and nb are coprime too.  Then,
+    #
+    #     gcd(t, da//g) == gcd(na*(db//g), da//g) == 1
+    #     gcd(t, db//g) == gcd(nb*(da//g), db//g) == 1
+    #
+    # Above allows us optimize reduction of the result to lowest
+    # terms.  Indeed,
+    #
+    #     g2 = gcd(t, d) == gcd(t, (da//g)*(db//g)*g) == gcd(t, g)
+    #
+    #                       t//g2                   t//g2
+    #     a ± b == ----------------------- == ----------------
+    #              (da//g)*(db//g)*(g//g2)    (da//g)*(db//g2)
+    #
+    # is a normalized fraction.  This is useful because the unnormalized
+    # denominator d could be much larger than g.
+    #
+    # We should special-case g == 1 (and g2 == 1), since 60.8% of
+    # randomly-chosen integers are coprime:
+    # https://en.wikipedia.org/wiki/Coprime_integers#Probability_of_coprimality
+    # Note, that g2 == 1 always for fractions, obtained from floats: here
+    # g is a power of 2 and the unnormalized numerator t is an odd integer.
+    #
+    # 2) Consider multiplication
+    #
+    # Let g1 = gcd(na, db) and g2 = gcd(nb, da), then
+    #
+    #            na*nb    na*nb    (na//g1)*(nb//g2)
+    #     a*b == ----- == ----- == -----------------
+    #            da*db    db*da    (db//g1)*(da//g2)
+    #
+    # Note, that after divisions we're multiplying smaller integers.
+    #
+    # Also, the resulting fraction is normalized, because each of
+    # two factors in the numerator is coprime to each of the two factors
+    # in the denominator.
+    #
+    # Indeed, pick (na//g1).  It's coprime with (da//g2), because input
+    # fractions are normalized.  It's also coprime with (db//g1), because
+    # common factors are removed by g1 == gcd(na, db).
+    #
+    # As for addition/subtraction, we should special-case g1 == 1
+    # and g2 == 1 for same reason.  That happens also for multiplying
+    # rationals, obtained from floats.
+
     def _add(a, b):
         """a + b"""
-        da, db = a.denominator, b.denominator
-        return Fraction(a.numerator * db + b.numerator * da,
-                        da * db)
+        na, da = a.numerator, a.denominator
+        nb, db = b.numerator, b.denominator
+        g = math.gcd(da, db)
+        if g == 1:
+            return Fraction(na * db + da * nb, da * db, _normalize=False)
+        s = da // g
+        t = na * (db // g) + nb * s
+        g2 = math.gcd(t, g)
+        if g2 == 1:
+            return Fraction(t, s * db, _normalize=False)
+        return Fraction(t // g2, s * (db // g2), _normalize=False)
 
     __add__, __radd__ = _operator_fallbacks(_add, operator.add)
 
     def _sub(a, b):
         """a - b"""
-        da, db = a.denominator, b.denominator
-        return Fraction(a.numerator * db - b.numerator * da,
-                        da * db)
+        na, da = a.numerator, a.denominator
+        nb, db = b.numerator, b.denominator
+        g = math.gcd(da, db)
+        if g == 1:
+            return Fraction(na * db - da * nb, da * db, _normalize=False)
+        s = da // g
+        t = na * (db // g) - nb * s
+        g2 = math.gcd(t, g)
+        if g2 == 1:
+            return Fraction(t, s * db, _normalize=False)
+        return Fraction(t // g2, s * (db // g2), _normalize=False)
 
     __sub__, __rsub__ = _operator_fallbacks(_sub, operator.sub)
 
     def _mul(a, b):
         """a * b"""
-        return Fraction(a.numerator * b.numerator, a.denominator * b.denominator)
+        na, da = a.numerator, a.denominator
+        nb, db = b.numerator, b.denominator
+        g1 = math.gcd(na, db)
+        if g1 > 1:
+            na //= g1
+            db //= g1
+        g2 = math.gcd(nb, da)
+        if g2 > 1:
+            nb //= g2
+            da //= g2
+        return Fraction(na * nb, db * da, _normalize=False)
 
     __mul__, __rmul__ = _operator_fallbacks(_mul, operator.mul)
 
     def _div(a, b):
         """a / b"""
-        return Fraction(a.numerator * b.denominator,
-                        a.denominator * b.numerator)
+        # Same as _mul(), with inversed b.
+        na, da = a.numerator, a.denominator
+        nb, db = b.numerator, b.denominator
+        g1 = math.gcd(na, nb)
+        if g1 > 1:
+            na //= g1
+            nb //= g1
+        g2 = math.gcd(db, da)
+        if g2 > 1:
+            da //= g2
+            db //= g2
+        n, d = na * db, nb * da
+        if d < 0:
+            n, d = -n, -d
+        return Fraction(n, d, _normalize=False)
 
     __truediv__, __rtruediv__ = _operator_fallbacks(_div, operator.truediv)
 

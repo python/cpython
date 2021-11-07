@@ -1,4 +1,6 @@
 #include "pegen.h"
+#include "pycore_compile.h"       // _PyAST_Compile()
+
 
 PyObject *
 _build_return_object(mod_ty module, int mode, PyObject *filename_ob, PyArena *arena)
@@ -6,7 +8,7 @@ _build_return_object(mod_ty module, int mode, PyObject *filename_ob, PyArena *ar
     PyObject *result = NULL;
 
     if (mode == 2) {
-        result = (PyObject *)PyAST_CompileObject(module, filename_ob, NULL, -1, arena);
+        result = (PyObject *)_PyAST_Compile(module, filename_ob, NULL, -1, arena);
     } else if (mode == 1) {
         result = PyAST_mod2obj(module);
     } else {
@@ -30,7 +32,7 @@ parse_file(PyObject *self, PyObject *args, PyObject *kwds)
         return PyErr_Format(PyExc_ValueError, "Bad mode, must be 0 <= mode <= 2");
     }
 
-    PyArena *arena = PyArena_New();
+    PyArena *arena = _PyArena_New();
     if (arena == NULL) {
         return NULL;
     }
@@ -42,8 +44,17 @@ parse_file(PyObject *self, PyObject *args, PyObject *kwds)
         goto error;
     }
 
+    FILE *fp = fopen(filename, "rb");
+    if (fp == NULL) {
+        PyErr_SetFromErrnoWithFilename(PyExc_OSError, filename);
+        goto error;
+    }
+
     PyCompilerFlags flags = _PyCompilerFlags_INIT;
-    mod_ty res = _PyPegen_run_parser_from_file(filename, Py_file_input, filename_ob, &flags, arena);
+    mod_ty res = _PyPegen_run_parser_from_file_pointer(
+                        fp, Py_file_input, filename_ob,
+                        NULL, NULL, NULL, &flags, NULL, arena);
+    fclose(fp);
     if (res == NULL) {
         goto error;
     }
@@ -52,7 +63,7 @@ parse_file(PyObject *self, PyObject *args, PyObject *kwds)
 
 error:
     Py_XDECREF(filename_ob);
-    PyArena_Free(arena);
+    _PyArena_Free(arena);
     return result;
 }
 
@@ -69,7 +80,7 @@ parse_string(PyObject *self, PyObject *args, PyObject *kwds)
         return PyErr_Format(PyExc_ValueError, "Bad mode, must be 0 <= mode <= 2");
     }
 
-    PyArena *arena = PyArena_New();
+    PyArena *arena = _PyArena_New();
     if (arena == NULL) {
         return NULL;
     }
@@ -91,7 +102,7 @@ parse_string(PyObject *self, PyObject *args, PyObject *kwds)
 
 error:
     Py_XDECREF(filename_ob);
-    PyArena_Free(arena);
+    _PyArena_Free(arena);
     return result;
 }
 

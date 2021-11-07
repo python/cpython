@@ -1,0 +1,1 @@
+The ``configure`` script now supports ``--with-openssl-rpath`` option.

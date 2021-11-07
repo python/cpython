@@ -6,6 +6,7 @@ import builtins
 import collections
 import decimal
 import fractions
+import gc
 import io
 import locale
 import os
@@ -1620,48 +1621,6 @@ class BuiltinTest(unittest.TestCase):
             self.assertEqual(self.iter_error(z1, ValueError), t)
             self.assertEqual(self.iter_error(z2, ValueError), t)
 
-    def test_zip_pickle_stability(self):
-        # Pickles of zip((1, 2, 3), (4, 5, 6)) dumped from 3.9:
-        pickles = [
-            b'citertools\nizip\np0\n(c__builtin__\niter\np1\n((I1\nI2\nI3\ntp2\ntp3\nRp4\nI0\nbg1\n((I4\nI5\nI6\ntp5\ntp6\nRp7\nI0\nbtp8\nRp9\n.',
-            b'citertools\nizip\nq\x00(c__builtin__\niter\nq\x01((K\x01K\x02K\x03tq\x02tq\x03Rq\x04K\x00bh\x01((K\x04K\x05K\x06tq\x05tq\x06Rq\x07K\x00btq\x08Rq\t.',
-            b'\x80\x02citertools\nizip\nq\x00c__builtin__\niter\nq\x01K\x01K\x02K\x03\x87q\x02\x85q\x03Rq\x04K\x00bh\x01K\x04K\x05K\x06\x87q\x05\x85q\x06Rq\x07K\x00b\x86q\x08Rq\t.',
-            b'\x80\x03cbuiltins\nzip\nq\x00cbuiltins\niter\nq\x01K\x01K\x02K\x03\x87q\x02\x85q\x03Rq\x04K\x00bh\x01K\x04K\x05K\x06\x87q\x05\x85q\x06Rq\x07K\x00b\x86q\x08Rq\t.',
-            b'\x80\x04\x95L\x00\x00\x00\x00\x00\x00\x00\x8c\x08builtins\x94\x8c\x03zip\x94\x93\x94\x8c\x08builtins\x94\x8c\x04iter\x94\x93\x94K\x01K\x02K\x03\x87\x94\x85\x94R\x94K\x00bh\x05K\x04K\x05K\x06\x87\x94\x85\x94R\x94K\x00b\x86\x94R\x94.',
-            b'\x80\x05\x95L\x00\x00\x00\x00\x00\x00\x00\x8c\x08builtins\x94\x8c\x03zip\x94\x93\x94\x8c\x08builtins\x94\x8c\x04iter\x94\x93\x94K\x01K\x02K\x03\x87\x94\x85\x94R\x94K\x00bh\x05K\x04K\x05K\x06\x87\x94\x85\x94R\x94K\x00b\x86\x94R\x94.',
-        ]
-        for protocol, dump in enumerate(pickles):
-            z1 = zip((1, 2, 3), (4, 5, 6))
-            z2 = zip((1, 2, 3), (4, 5, 6), strict=False)
-            z3 = pickle.loads(dump)
-            l3 = list(z3)
-            self.assertEqual(type(z3), zip)
-            self.assertEqual(pickle.dumps(z1, protocol), dump)
-            self.assertEqual(pickle.dumps(z2, protocol), dump)
-            self.assertEqual(list(z1), l3)
-            self.assertEqual(list(z2), l3)
-
-    def test_zip_pickle_strict_stability(self):
-        # Pickles of zip((1, 2, 3), (4, 5), strict=True) dumped from 3.10:
-        pickles = [
-            b'citertools\nizip\np0\n(c__builtin__\niter\np1\n((I1\nI2\nI3\ntp2\ntp3\nRp4\nI0\nbg1\n((I4\nI5\ntp5\ntp6\nRp7\nI0\nbtp8\nRp9\nI01\nb.',
-            b'citertools\nizip\nq\x00(c__builtin__\niter\nq\x01((K\x01K\x02K\x03tq\x02tq\x03Rq\x04K\x00bh\x01((K\x04K\x05tq\x05tq\x06Rq\x07K\x00btq\x08Rq\tI01\nb.',
-            b'\x80\x02citertools\nizip\nq\x00c__builtin__\niter\nq\x01K\x01K\x02K\x03\x87q\x02\x85q\x03Rq\x04K\x00bh\x01K\x04K\x05\x86q\x05\x85q\x06Rq\x07K\x00b\x86q\x08Rq\t\x88b.',
-            b'\x80\x03cbuiltins\nzip\nq\x00cbuiltins\niter\nq\x01K\x01K\x02K\x03\x87q\x02\x85q\x03Rq\x04K\x00bh\x01K\x04K\x05\x86q\x05\x85q\x06Rq\x07K\x00b\x86q\x08Rq\t\x88b.',
-            b'\x80\x04\x95L\x00\x00\x00\x00\x00\x00\x00\x8c\x08builtins\x94\x8c\x03zip\x94\x93\x94\x8c\x08builtins\x94\x8c\x04iter\x94\x93\x94K\x01K\x02K\x03\x87\x94\x85\x94R\x94K\x00bh\x05K\x04K\x05\x86\x94\x85\x94R\x94K\x00b\x86\x94R\x94\x88b.',
-            b'\x80\x05\x95L\x00\x00\x00\x00\x00\x00\x00\x8c\x08builtins\x94\x8c\x03zip\x94\x93\x94\x8c\x08builtins\x94\x8c\x04iter\x94\x93\x94K\x01K\x02K\x03\x87\x94\x85\x94R\x94K\x00bh\x05K\x04K\x05\x86\x94\x85\x94R\x94K\x00b\x86\x94R\x94\x88b.',
-        ]
-        a = (1, 2, 3)
-        b = (4, 5)
-        t = [(1, 4), (2, 5)]
-        for protocol, dump in enumerate(pickles):
-            z1 = zip(a, b, strict=True)
-            z2 = pickle.loads(dump)
-            self.assertEqual(pickle.dumps(z1, protocol), dump)
-            self.assertEqual(type(z2), zip)
-            self.assertEqual(self.iter_error(z1, ValueError), t)
-            self.assertEqual(self.iter_error(z2, ValueError), t)
-
     def test_zip_bad_iterable(self):
         exception = TypeError()
 
@@ -1755,6 +1714,18 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(l7, [(1, "A"), (0, "B")])
         l8 = self.iter_error(zip(Iter(3), "AB", strict=True), ValueError)
         self.assertEqual(l8, [(2, "A"), (1, "B")])
+
+    @support.cpython_only
+    def test_zip_result_gc(self):
+        # bpo-42536: zip's tuple-reuse speed trick breaks the GC's assumptions
+        # about what can be untracked. Make sure we re-track result tuples
+        # whenever we reuse them.
+        it = zip([[]])
+        gc.collect()
+        # That GC collection probably untracked the recycled internal result
+        # tuple, which is initialized to (None,). Make sure it's re-tracked when
+        # it's mutated and returned from __next__:
+        self.assertTrue(gc.is_tracked(next(it)))
 
     def test_format(self):
         # Test the basic machinery of the format() builtin.  Don't test

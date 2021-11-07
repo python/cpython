@@ -3039,10 +3039,11 @@ Invalid file name:
     ...         '-m', 'doctest', 'nosuchfile')
     >>> rc, out
     (1, b'')
+    >>> # The exact error message changes depending on the platform.
     >>> print(normalize(err))                    # doctest: +ELLIPSIS
     Traceback (most recent call last):
       ...
-    FileNotFoundError: [Errno ...] No such file or directory: 'nosuchfile'
+    FileNotFoundError: [Errno ...] ...nosuchfile...
 
 Invalid doctest option:
 

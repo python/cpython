@@ -207,7 +207,6 @@ multiprocessing_exec(PyObject *module)
             py_sem_value_max = PyLong_FromLong(SEM_VALUE_MAX);
 
         if (py_sem_value_max == NULL) {
-            Py_DECREF(py_sem_value_max);
             return -1;
         }
         if (PyDict_SetItemString(_PyMp_SemLockType.tp_dict, "SEM_VALUE_MAX",

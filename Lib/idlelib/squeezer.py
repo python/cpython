@@ -17,7 +17,7 @@ messages and their tracebacks.
 import re
 
 import tkinter as tk
-import tkinter.messagebox as tkMessageBox
+from tkinter import messagebox
 
 from idlelib.config import idleConf
 from idlelib.textview import view_text
@@ -147,7 +147,7 @@ class ExpandingButton(tk.Button):
         if self.is_dangerous is None:
             self.set_is_dangerous()
         if self.is_dangerous:
-            confirm = tkMessageBox.askokcancel(
+            confirm = messagebox.askokcancel(
                 title="Expand huge output?",
                 message="\n\n".join([
                     "The squeezed output is very long: %d lines, %d chars.",
@@ -155,7 +155,7 @@ class ExpandingButton(tk.Button):
                     "It is recommended to view or copy the output instead.",
                     "Really expand?"
                 ]) % (self.numoflines, len(self.s)),
-                default=tkMessageBox.CANCEL,
+                default=messagebox.CANCEL,
                 parent=self.text)
             if not confirm:
                 return "break"

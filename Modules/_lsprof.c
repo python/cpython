@@ -489,15 +489,15 @@ static PyStructSequence_Field profiler_subentry_fields[] = {
 
 static PyStructSequence_Desc profiler_entry_desc = {
     .name = "_lsprof.profiler_entry",
-    .doc = "",
     .fields = profiler_entry_fields,
+    .doc = NULL,
     .n_in_sequence = 6
 };
 
 static PyStructSequence_Desc profiler_subentry_desc = {
     .name = "_lsprof.profiler_subentry",
-    .doc = "",
     .fields = profiler_subentry_fields,
+    .doc = NULL,
     .n_in_sequence = 5
 };
 

@@ -72,6 +72,8 @@ The :mod:`gc` module provides the following functions:
    .. versionchanged:: 3.8
       New *generation* parameter.
 
+   .. audit-event:: gc.get_objects generation gc.get_objects
+
 .. function:: get_stats()
 
    Return a list of three per-generation dictionaries containing collection
@@ -135,10 +137,13 @@ The :mod:`gc` module provides the following functions:
    resulting referrers.  To get only currently live objects, call :func:`collect`
    before calling :func:`get_referrers`.
 
-   Care must be taken when using objects returned by :func:`get_referrers` because
-   some of them could still be under construction and hence in a temporarily
-   invalid state. Avoid using :func:`get_referrers` for any purpose other than
-   debugging.
+   .. warning::
+      Care must be taken when using objects returned by :func:`get_referrers` because
+      some of them could still be under construction and hence in a temporarily
+      invalid state. Avoid using :func:`get_referrers` for any purpose other than
+      debugging.
+
+   .. audit-event:: gc.get_referrers objs gc.get_referrers
 
 
 .. function:: get_referents(*objs)
@@ -151,6 +156,7 @@ The :mod:`gc` module provides the following functions:
    be involved in a cycle.  So, for example, if an integer is directly reachable
    from an argument, that integer object may or may not appear in the result list.
 
+   .. audit-event:: gc.get_referents objs gc.get_referents
 
 .. function:: is_tracked(obj)
 

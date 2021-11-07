@@ -1936,6 +1936,30 @@ class TestCase(unittest.TestCase):
                     self.assertEqual(new_sample.x, another_new_sample.x)
                     self.assertEqual(sample.y, another_new_sample.y)
 
+    def test_dataclasses_qualnames(self):
+        @dataclass(order=True, unsafe_hash=True, frozen=True)
+        class A:
+            x: int
+            y: int
+
+        self.assertEqual(A.__init__.__name__, "__init__")
+        for function in (
+            '__eq__',
+            '__lt__',
+            '__le__',
+            '__gt__',
+            '__ge__',
+            '__hash__',
+            '__init__',
+            '__repr__',
+            '__setattr__',
+            '__delattr__',
+        ):
+            self.assertEqual(getattr(A, function).__qualname__, f"TestCase.test_dataclasses_qualnames.<locals>.A.{function}")
+
+        with self.assertRaisesRegex(TypeError, r"A\.__init__\(\) missing"):
+            A()
+
 
 class TestFieldNoAnnotation(unittest.TestCase):
     def test_field_without_annotation(self):
@@ -3349,6 +3373,22 @@ class TestAbstract(unittest.TestCase):
         self.assertTrue(inspect.isabstract(Date))
         msg = 'class Date with abstract method foo'
         self.assertRaisesRegex(TypeError, msg, Date)
+
+
+class TestMatchArgs(unittest.TestCase):
+    def test_match_args(self):
+        @dataclass
+        class C:
+            a: int
+        self.assertEqual(C(42).__match_args__, ('a',))
+
+    def test_explicit_match_args(self):
+        ma = []
+        @dataclass
+        class C:
+            a: int
+            __match_args__ = ma
+        self.assertIs(C(42).__match_args__, ma)
 
 
 if __name__ == '__main__':

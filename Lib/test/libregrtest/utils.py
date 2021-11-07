@@ -84,3 +84,105 @@ def setup_unraisable_hook():
     global orig_unraisablehook
     orig_unraisablehook = sys.unraisablehook
     sys.unraisablehook = regrtest_unraisable_hook
+
+
+def clear_caches():
+    # Clear the warnings registry, so they can be displayed again
+    for mod in sys.modules.values():
+        if hasattr(mod, '__warningregistry__'):
+            del mod.__warningregistry__
+
+    # Flush standard output, so that buffered data is sent to the OS and
+    # associated Python objects are reclaimed.
+    for stream in (sys.stdout, sys.stderr, sys.__stdout__, sys.__stderr__):
+        if stream is not None:
+            stream.flush()
+
+    # Clear assorted module caches.
+    # Don't worry about resetting the cache if the module is not loaded
+    try:
+        distutils_dir_util = sys.modules['distutils.dir_util']
+    except KeyError:
+        pass
+    else:
+        distutils_dir_util._path_created.clear()
+
+    try:
+        re = sys.modules['re']
+    except KeyError:
+        pass
+    else:
+        re.purge()
+
+    try:
+        _strptime = sys.modules['_strptime']
+    except KeyError:
+        pass
+    else:
+        _strptime._regex_cache.clear()
+
+    try:
+        urllib_parse = sys.modules['urllib.parse']
+    except KeyError:
+        pass
+    else:
+        urllib_parse.clear_cache()
+
+    try:
+        urllib_request = sys.modules['urllib.request']
+    except KeyError:
+        pass
+    else:
+        urllib_request.urlcleanup()
+
+    try:
+        linecache = sys.modules['linecache']
+    except KeyError:
+        pass
+    else:
+        linecache.clearcache()
+
+    try:
+        mimetypes = sys.modules['mimetypes']
+    except KeyError:
+        pass
+    else:
+        mimetypes._default_mime_types()
+
+    try:
+        filecmp = sys.modules['filecmp']
+    except KeyError:
+        pass
+    else:
+        filecmp._cache.clear()
+
+    try:
+        struct = sys.modules['struct']
+    except KeyError:
+        pass
+    else:
+        struct._clearcache()
+
+    try:
+        doctest = sys.modules['doctest']
+    except KeyError:
+        pass
+    else:
+        doctest.master = None
+
+    try:
+        ctypes = sys.modules['ctypes']
+    except KeyError:
+        pass
+    else:
+        ctypes._reset_cache()
+
+    try:
+        typing = sys.modules['typing']
+    except KeyError:
+        pass
+    else:
+        for f in typing._cleanups:
+            f()
+
+    support.gc_collect()

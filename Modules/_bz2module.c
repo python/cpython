@@ -272,21 +272,6 @@ _bz2_BZ2Compressor_flush_impl(BZ2Compressor *self)
     return result;
 }
 
-/*[clinic input]
-_bz2.BZ2Compressor.__reduce__
-
-[clinic start generated code]*/
-
-static PyObject *
-_bz2_BZ2Compressor___reduce___impl(BZ2Compressor *self)
-/*[clinic end generated code: output=d13db66ae043e141 input=e09bccef0e6731b2]*/
-{
-    PyErr_Format(PyExc_TypeError,
-                 "cannot pickle %s object",
-                 Py_TYPE(self)->tp_name);
-    return NULL;
-}
-
 static void*
 BZ2_Malloc(void* ctx, int items, int size)
 {
@@ -399,7 +384,6 @@ BZ2Compressor_traverse(BZ2Compressor *self, visitproc visit, void *arg)
 static PyMethodDef BZ2Compressor_methods[] = {
     _BZ2_BZ2COMPRESSOR_COMPRESS_METHODDEF
     _BZ2_BZ2COMPRESSOR_FLUSH_METHODDEF
-    _BZ2_BZ2COMPRESSOR___REDUCE___METHODDEF
     {NULL}
 };
 
@@ -642,21 +626,6 @@ _bz2_BZ2Decompressor_decompress_impl(BZ2Decompressor *self, Py_buffer *data,
     return result;
 }
 
-/*[clinic input]
-_bz2.BZ2Decompressor.__reduce__
-
-[clinic start generated code]*/
-
-static PyObject *
-_bz2_BZ2Decompressor___reduce___impl(BZ2Decompressor *self)
-/*[clinic end generated code: output=f6a40650813f482e input=8db9175a609fdd43]*/
-{
-    PyErr_Format(PyExc_TypeError,
-                 "cannot pickle %s object",
-                 Py_TYPE(self)->tp_name);
-    return NULL;
-}
-
 /* Argument Clinic is not used since the Argument Clinic always want to
    check the type which would be wrong here */
 static int
@@ -746,7 +715,6 @@ BZ2Decompressor_traverse(BZ2Decompressor *self, visitproc visit, void *arg)
 
 static PyMethodDef BZ2Decompressor_methods[] = {
     _BZ2_BZ2DECOMPRESSOR_DECOMPRESS_METHODDEF
-    _BZ2_BZ2DECOMPRESSOR___REDUCE___METHODDEF
     {NULL}
 };
 

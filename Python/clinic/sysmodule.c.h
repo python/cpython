@@ -801,6 +801,26 @@ sys__current_frames(PyObject *module, PyObject *Py_UNUSED(ignored))
     return sys__current_frames_impl(module);
 }
 
+PyDoc_STRVAR(sys__current_exceptions__doc__,
+"_current_exceptions($module, /)\n"
+"--\n"
+"\n"
+"Return a dict mapping each thread\'s identifier to its current raised exception.\n"
+"\n"
+"This function should be used for specialized purposes only.");
+
+#define SYS__CURRENT_EXCEPTIONS_METHODDEF    \
+    {"_current_exceptions", (PyCFunction)sys__current_exceptions, METH_NOARGS, sys__current_exceptions__doc__},
+
+static PyObject *
+sys__current_exceptions_impl(PyObject *module);
+
+static PyObject *
+sys__current_exceptions(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys__current_exceptions_impl(module);
+}
+
 PyDoc_STRVAR(sys_call_tracing__doc__,
 "call_tracing($module, func, args, /)\n"
 "--\n"
@@ -918,6 +938,24 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(ANDROID_API_LEVEL) */
 
+PyDoc_STRVAR(sys__deactivate_opcache__doc__,
+"_deactivate_opcache($module, /)\n"
+"--\n"
+"\n"
+"Deactivate the opcode cache permanently");
+
+#define SYS__DEACTIVATE_OPCACHE_METHODDEF    \
+    {"_deactivate_opcache", (PyCFunction)sys__deactivate_opcache, METH_NOARGS, sys__deactivate_opcache__doc__},
+
+static PyObject *
+sys__deactivate_opcache_impl(PyObject *module);
+
+static PyObject *
+sys__deactivate_opcache(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys__deactivate_opcache_impl(module);
+}
+
 #ifndef SYS_GETWINDOWSVERSION_METHODDEF
     #define SYS_GETWINDOWSVERSION_METHODDEF
 #endif /* !defined(SYS_GETWINDOWSVERSION_METHODDEF) */
@@ -945,4 +983,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=87baa3357293ea65 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=68c62b9ca317a0c8 input=a9049054013a1b77]*/

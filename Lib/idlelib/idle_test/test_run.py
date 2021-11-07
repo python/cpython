@@ -1,16 +1,18 @@
 "Test run, coverage 49%."
 
 from idlelib import run
-import unittest
-from unittest import mock
-from idlelib.idle_test.mock_idle import Func
-from test.support import captured_output, captured_stderr
-
 import io
 import sys
+from test.support import captured_output, captured_stderr
+import unittest
+from unittest import mock
+import idlelib
+from idlelib.idle_test.mock_idle import Func
+
+idlelib.testing = True  # Use {} for executing test user code.
 
 
-class RunTest(unittest.TestCase):
+class PrintExceptionTest(unittest.TestCase):
 
     def test_print_exception_unhashable(self):
         class UnhashableException(Exception):
@@ -350,6 +352,39 @@ class HandleErrorTest(unittest.TestCase):
             self.assertIn('123', msg)
             self.assertIn('IndexError', msg)
             eq(func.called, 2)
+
+
+class ExecRuncodeTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.addClassCleanup(setattr,run,'print_exception',run.print_exception)
+        cls.prt = Func()  # Need reference.
+        run.print_exception = cls.prt
+        mockrpc = mock.Mock()
+        mockrpc.console.getvar = Func(result=False)
+        cls.ex = run.Executive(mockrpc)
+
+    @classmethod
+    def tearDownClass(cls):
+        assert sys.excepthook == sys.__excepthook__
+
+    def test_exceptions(self):
+        ex = self.ex
+        ex.runcode('1/0')
+        self.assertIs(ex.user_exc_info[0], ZeroDivisionError)
+
+        self.addCleanup(setattr, sys, 'excepthook', sys.__excepthook__)
+        sys.excepthook = lambda t, e, tb: run.print_exception(t)
+        ex.runcode('1/0')
+        self.assertIs(self.prt.args[0], ZeroDivisionError)
+
+        sys.excepthook = lambda: None
+        ex.runcode('1/0')
+        t, e, tb = ex.user_exc_info
+        self.assertIs(t, TypeError)
+        self.assertTrue(isinstance(e.__context__, ZeroDivisionError))
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

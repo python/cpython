@@ -56,14 +56,14 @@
     <ExternalsDir>$(EXTERNALS_DIR)</ExternalsDir>
     <ExternalsDir Condition="$(ExternalsDir) == ''">$([System.IO.Path]::GetFullPath(`$(PySourcePath)externals`))</ExternalsDir>
     <ExternalsDir Condition="!HasTrailingSlash($(ExternalsDir))">$(ExternalsDir)\</ExternalsDir>
-    <sqlite3Dir>$(ExternalsDir)sqlite-3.33.0.0\</sqlite3Dir>
+    <sqlite3Dir>$(ExternalsDir)sqlite-3.34.0.0\</sqlite3Dir>
     <bz2Dir>$(ExternalsDir)bzip2-1.0.6\</bz2Dir>
     <lzmaDir>$(ExternalsDir)xz-5.2.2\</lzmaDir>
     <libffiDir>$(ExternalsDir)libffi\</libffiDir>
     <libffiOutDir>$(ExternalsDir)libffi\$(ArchName)\</libffiOutDir>
     <libffiIncludeDir>$(libffiOutDir)include</libffiIncludeDir>
-    <opensslDir>$(ExternalsDir)openssl-1.1.1g\</opensslDir>
-    <opensslOutDir>$(ExternalsDir)openssl-bin-1.1.1g\$(ArchName)\</opensslOutDir>
+    <opensslDir>$(ExternalsDir)openssl-1.1.1i\</opensslDir>
+    <opensslOutDir>$(ExternalsDir)openssl-bin-1.1.1i\$(ArchName)\</opensslOutDir>
     <opensslIncludeDir>$(opensslOutDir)include</opensslIncludeDir>
     <nasmDir>$(ExternalsDir)\nasm-2.11.06\</nasmDir>
     <zlibDir>$(ExternalsDir)\zlib-1.2.11\</zlibDir>

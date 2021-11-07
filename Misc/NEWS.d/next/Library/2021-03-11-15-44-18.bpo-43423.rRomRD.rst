@@ -1,0 +1,2 @@
+:func:`subprocess.communicate` no longer raises an IndexError when there is an
+empty stdout or stderr IO buffer during a timeout on Windows.

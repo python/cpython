@@ -148,7 +148,7 @@ runtime.
 Public functions
 ----------------
 
-.. function:: compile_dir(dir, maxlevels=sys.getrecursionlimit(), ddir=None, force=False, rx=None, quiet=0, legacy=False, optimize=-1, workers=1, invalidation_mode=None, \*, stripdir=None, prependdir=None, limit_sl_dest=None, hardlink_dupes=False)
+.. function:: compile_dir(dir, maxlevels=sys.getrecursionlimit(), ddir=None, force=False, rx=None, quiet=0, legacy=False, optimize=-1, workers=1, invalidation_mode=None, *, stripdir=None, prependdir=None, limit_sl_dest=None, hardlink_dupes=False)
 
    Recursively descend the directory tree named by *dir*, compiling all :file:`.py`
    files along the way. Return a true value if all the files compiled successfully,
@@ -231,7 +231,7 @@ Public functions
       Added *stripdir*, *prependdir*, *limit_sl_dest* and *hardlink_dupes* arguments.
       Default value of *maxlevels* was changed from ``10`` to ``sys.getrecursionlimit()``
 
-.. function:: compile_file(fullname, ddir=None, force=False, rx=None, quiet=0, legacy=False, optimize=-1, invalidation_mode=None, \*, stripdir=None, prependdir=None, limit_sl_dest=None, hardlink_dupes=False)
+.. function:: compile_file(fullname, ddir=None, force=False, rx=None, quiet=0, legacy=False, optimize=-1, invalidation_mode=None, *, stripdir=None, prependdir=None, limit_sl_dest=None, hardlink_dupes=False)
 
    Compile the file with path *fullname*. Return a true value if the file
    compiled successfully, and a false value otherwise.

@@ -1,0 +1,8 @@
+Fixed long-standing bug of smtplib.SMTP where doing AUTH LOGIN with
+initial_response_ok=False will fail.
+
+The cause is that SMTP.auth_login _always_ returns a password if provided
+with a challenge string, thus non-compliant with the standard for AUTH
+LOGIN.
+
+Also fixes bug with the test for smtpd.

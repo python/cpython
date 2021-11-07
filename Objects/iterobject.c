@@ -157,7 +157,7 @@ PyTypeObject PySeqIter_Type = {
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
     0,                                          /* tp_doc */
     (traverseproc)iter_traverse,                /* tp_traverse */
     0,                                          /* tp_clear */
@@ -276,7 +276,7 @@ PyTypeObject PyCallIter_Type = {
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
     0,                                          /* tp_doc */
     (traverseproc)calliter_traverse,            /* tp_traverse */
     0,                                          /* tp_clear */
@@ -288,3 +288,95 @@ PyTypeObject PyCallIter_Type = {
 };
 
 
+/* -------------------------------------- */
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *wrapped;
+    PyObject *default_value;
+} anextawaitableobject;
+
+static void
+anextawaitable_dealloc(anextawaitableobject *obj)
+{
+    _PyObject_GC_UNTRACK(obj);
+    Py_XDECREF(obj->wrapped);
+    Py_XDECREF(obj->default_value);
+    PyObject_GC_Del(obj);
+}
+
+static int
+anextawaitable_traverse(anextawaitableobject *obj, visitproc visit, void *arg)
+{
+    Py_VISIT(obj->wrapped);
+    Py_VISIT(obj->default_value);
+    return 0;
+}
+
+static PyObject *
+anextawaitable_iternext(anextawaitableobject *obj)
+{
+    PyObject *result = PyIter_Next(obj->wrapped);
+    if (result != NULL) {
+        return result;
+    }
+    if (PyErr_ExceptionMatches(PyExc_StopAsyncIteration)) {
+        _PyGen_SetStopIterationValue(obj->default_value);
+    }
+    return NULL;
+}
+
+static PyAsyncMethods anextawaitable_as_async = {
+    PyObject_SelfIter,                          /* am_await */
+    0,                                          /* am_aiter */
+    0,                                          /* am_anext */
+    0,                                          /* am_send  */
+};
+
+PyTypeObject PyAnextAwaitable_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "anext_awaitable",                          /* tp_name */
+    sizeof(anextawaitableobject),               /* tp_basicsize */
+    0,                                          /* tp_itemsize */
+    /* methods */
+    (destructor)anextawaitable_dealloc,         /* tp_dealloc */
+    0,                                          /* tp_vectorcall_offset */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    &anextawaitable_as_async,                   /* tp_as_async */
+    0,                                          /* tp_repr */
+    0,                                          /* tp_as_number */
+    0,                                          /* tp_as_sequence */
+    0,                                          /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    0,                                          /* tp_str */
+    PyObject_GenericGetAttr,                    /* tp_getattro */
+    0,                                          /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
+    0,                                          /* tp_doc */
+    (traverseproc)anextawaitable_traverse,      /* tp_traverse */
+    0,                                          /* tp_clear */
+    0,                                          /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    PyObject_SelfIter,                          /* tp_iter */
+    (unaryfunc)anextawaitable_iternext,         /* tp_iternext */
+    0,                                          /* tp_methods */
+};
+
+PyObject *
+PyAnextAwaitable_New(PyObject *awaitable, PyObject *default_value)
+{
+    anextawaitableobject *anext = PyObject_GC_New(
+            anextawaitableobject, &PyAnextAwaitable_Type);
+    if (anext == NULL) {
+        return NULL;
+    }
+    Py_INCREF(awaitable);
+    anext->wrapped = awaitable;
+    Py_INCREF(default_value);
+    anext->default_value = default_value;
+    _PyObject_GC_TRACK(anext);
+    return (PyObject *)anext;
+}

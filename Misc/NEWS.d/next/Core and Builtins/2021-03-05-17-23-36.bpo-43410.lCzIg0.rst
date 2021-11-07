@@ -1,0 +1,2 @@
+Fix a bug that was causing the parser to crash when emiting syntax errors
+when reading input from stdin. Patch by Pablo Galindo

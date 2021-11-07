@@ -275,9 +275,9 @@ class FormatTest(unittest.TestCase):
         test_exc_common('% %s', 1, ValueError,
                         "unsupported format character '%' (0x25) at index 2")
         test_exc_common('%d', '1', TypeError,
-                        "%d format: a number is required, not str")
+                        "%d format: a real number is required, not str")
         test_exc_common('%d', b'1', TypeError,
-                        "%d format: a number is required, not bytes")
+                        "%d format: a real number is required, not bytes")
         test_exc_common('%x', '1', TypeError,
                         "%x format: an integer is required, not str")
         test_exc_common('%x', 3.14, TypeError,
@@ -428,13 +428,16 @@ class FormatTest(unittest.TestCase):
             localeconv = locale.localeconv()
             sep = localeconv['thousands_sep']
             point = localeconv['decimal_point']
+            grouping = localeconv['grouping']
 
             text = format(123456789, "n")
-            self.assertIn(sep, text)
+            if grouping:
+                self.assertIn(sep, text)
             self.assertEqual(text.replace(sep, ''), '123456789')
 
             text = format(1234.5, "n")
-            self.assertIn(sep, text)
+            if grouping:
+                self.assertIn(sep, text)
             self.assertIn(point, text)
             self.assertEqual(text.replace(sep, ''), '1234' + point + '5')
         finally:

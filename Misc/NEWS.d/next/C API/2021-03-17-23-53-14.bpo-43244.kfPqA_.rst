@@ -1,0 +1,16 @@
+Remove the ``symtable.h`` header file and the undocumented functions:
+
+* ``PyST_GetScope()``
+* ``PySymtable_Build()``
+* ``PySymtable_BuildObject()``
+* ``PySymtable_Free()``
+* ``Py_SymtableString()``
+* ``Py_SymtableStringObject()``
+
+The ``Py_SymtableString()`` function was part the stable ABI by mistake but it
+could not be used, because the ``symtable.h`` header file was excluded from the
+limited C API.
+
+The Python :mod:`symtable` module remains available and is unchanged.
+
+Patch by Victor Stinner.

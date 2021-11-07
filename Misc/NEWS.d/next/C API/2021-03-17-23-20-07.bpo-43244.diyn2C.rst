@@ -1,0 +1,3 @@
+Remove the ``PyAST_Validate()`` function. It is no longer possible to build a
+AST object (``mod_ty`` type) with the public C API. The function was already
+excluded from the limited C API (:pep:`384`). Patch by Victor Stinner.

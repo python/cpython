@@ -26,7 +26,7 @@ There are a few functions specific to Python functions.
 .. c:function:: int PyFunction_Check(PyObject *o)
 
    Return true if *o* is a function object (has type :c:data:`PyFunction_Type`).
-   The parameter must not be ``NULL``.
+   The parameter must not be ``NULL``.  This function always succeeds.
 
 
 .. c:function:: PyObject* PyFunction_New(PyObject *code, PyObject *globals)
@@ -61,9 +61,11 @@ There are a few functions specific to Python functions.
 
 .. c:function:: PyObject* PyFunction_GetModule(PyObject *op)
 
-   Return the *__module__* attribute of the function object *op*. This is normally
-   a string containing the module name, but can be set to any other object by
-   Python code.
+   Return a :term:`borrowed reference` to the *__module__* attribute of the
+   function object *op*. It can be *NULL*.
+
+   This is normally a string containing the module name, but can be set to any
+   other object by Python code.
 
 
 .. c:function:: PyObject* PyFunction_GetDefaults(PyObject *op)

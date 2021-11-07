@@ -393,7 +393,7 @@ class BaseTest:
         a.insert(0, self.outside)
         self.assertEqual(list(exhit), [])
         # The iterator index points past the 0th position so inserting
-        # an element in the beggining does not make it appear.
+        # an element in the beginning does not make it appear.
         self.assertEqual(list(empit), [])
         self.assertEqual(list(a), [self.outside] + list(self.example))
 

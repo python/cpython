@@ -19,11 +19,6 @@ preconfig_copy(PyPreConfig *config, const PyPreConfig *config2);
 
 /* --- File system encoding/errors -------------------------------- */
 
-/* The filesystem encoding is chosen by config_init_fs_encoding(),
-   see also initfsencoding().
-
-   Py_FileSystemDefaultEncoding and Py_FileSystemDefaultEncodeErrors
-   are encoded to UTF-8. */
 const char *Py_FileSystemDefaultEncoding = NULL;
 int Py_HasFileSystemDefaultEncoding = 0;
 const char *Py_FileSystemDefaultEncodeErrors = NULL;
@@ -44,7 +39,10 @@ _Py_ClearFileSystemEncoding(void)
 
 
 /* Set Py_FileSystemDefaultEncoding and Py_FileSystemDefaultEncodeErrors
-   global configuration variables. */
+   global configuration variables to PyConfig.filesystem_encoding and
+   PyConfig.filesystem_errors (encoded to UTF-8).
+
+   Function called by _PyUnicode_InitEncodings(). */
 int
 _Py_SetFileSystemEncoding(const char *encoding, const char *errors)
 {
@@ -171,6 +169,7 @@ _PyPreCmdline_SetConfig(const _PyPreCmdline *cmdline, PyConfig *config)
     COPY_ATTR(isolated);
     COPY_ATTR(use_environment);
     COPY_ATTR(dev_mode);
+    COPY_ATTR(warn_default_encoding);
     return _PyStatus_OK();
 
 #undef COPY_ATTR
@@ -259,9 +258,17 @@ _PyPreCmdline_Read(_PyPreCmdline *cmdline, const PyPreConfig *preconfig)
         cmdline->dev_mode = 0;
     }
 
+    // warn_default_encoding
+    if (_Py_get_xoption(&cmdline->xoptions, L"warn_default_encoding")
+            || _Py_GetEnv(cmdline->use_environment, "PYTHONWARNDEFAULTENCODING"))
+    {
+        cmdline->warn_default_encoding = 1;
+    }
+
     assert(cmdline->use_environment >= 0);
     assert(cmdline->isolated >= 0);
     assert(cmdline->dev_mode >= 0);
+    assert(cmdline->warn_default_encoding >= 0);
 
     return _PyStatus_OK();
 }

@@ -26,16 +26,25 @@ from http.client import HTTPException
 # Were we compiled --with-pydebug or with #define Py_DEBUG?
 COMPILED_WITH_PYDEBUG = hasattr(sys, 'gettotalrefcount')
 
-c_hashlib = import_fresh_module('hashlib', fresh=['_hashlib'])
-py_hashlib = import_fresh_module('hashlib', blocked=['_hashlib'])
-
+# default builtin hash module
+default_builtin_hashes = {'md5', 'sha1', 'sha256', 'sha512', 'sha3', 'blake2'}
+# --with-builtin-hashlib-hashes override
 builtin_hashes = sysconfig.get_config_var("PY_BUILTIN_HASHLIB_HASHES")
 if builtin_hashes is None:
-    builtin_hashes = {'md5', 'sha1', 'sha256', 'sha512', 'sha3', 'blake2'}
+    builtin_hashes = default_builtin_hashes
 else:
     builtin_hashes = {
         m.strip() for m in builtin_hashes.strip('"').lower().split(",")
     }
+
+# hashlib with and without OpenSSL backend for PBKDF2
+# only import builtin_hashlib when all builtin hashes are available.
+# Otherwise import prints noise on stderr
+openssl_hashlib = import_fresh_module('hashlib', fresh=['_hashlib'])
+if builtin_hashes == default_builtin_hashes:
+    builtin_hashlib = import_fresh_module('hashlib', blocked=['_hashlib'])
+else:
+    builtin_hashlib = None
 
 try:
     from _hashlib import HASH, HASHXOF, openssl_md_meth_names
@@ -1032,16 +1041,16 @@ class KDFTests(unittest.TestCase):
                 iterations=1, dklen=None)
             self.assertEqual(out, self.pbkdf2_results['sha1'][0][0])
 
+    @unittest.skipIf(builtin_hashlib is None, "test requires builtin_hashlib")
     def test_pbkdf2_hmac_py(self):
-        self._test_pbkdf2_hmac(py_hashlib.pbkdf2_hmac, builtin_hashes)
+        self._test_pbkdf2_hmac(builtin_hashlib.pbkdf2_hmac, builtin_hashes)
 
-    @unittest.skipUnless(hasattr(c_hashlib, 'pbkdf2_hmac'),
+    @unittest.skipUnless(hasattr(openssl_hashlib, 'pbkdf2_hmac'),
                      '   test requires OpenSSL > 1.0')
     def test_pbkdf2_hmac_c(self):
-        self._test_pbkdf2_hmac(c_hashlib.pbkdf2_hmac, openssl_md_meth_names)
+        self._test_pbkdf2_hmac(openssl_hashlib.pbkdf2_hmac, openssl_md_meth_names)
 
-
-    @unittest.skipUnless(hasattr(c_hashlib, 'scrypt'),
+    @unittest.skipUnless(hasattr(hashlib, 'scrypt'),
                      '   test requires OpenSSL > 1.1')
     def test_scrypt(self):
         for password, salt, n, r, p, expected in self.scrypt_test_vectors:

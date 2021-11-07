@@ -20,10 +20,6 @@ from .tasks import *
 from .threads import *
 from .transports import *
 
-# Exposed for _asynciomodule.c to implement now deprecated
-# Task.all_tasks() method.  This function will be removed in 3.9.
-from .tasks import _all_tasks_compat  # NoQA
-
 __all__ = (base_events.__all__ +
            coroutines.__all__ +
            events.__all__ +

@@ -108,7 +108,28 @@ PyDoc_STRVAR(array_array_extend__doc__,
 "Append items to the end of the array.");
 
 #define ARRAY_ARRAY_EXTEND_METHODDEF    \
-    {"extend", (PyCFunction)array_array_extend, METH_O, array_array_extend__doc__},
+    {"extend", (PyCFunction)(void(*)(void))array_array_extend, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, array_array_extend__doc__},
+
+static PyObject *
+array_array_extend_impl(arrayobject *self, PyTypeObject *cls, PyObject *bb);
+
+static PyObject *
+array_array_extend(arrayobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {"O:extend", _keywords, 0};
+    PyObject *bb;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &bb)) {
+        goto exit;
+    }
+    return_value = array_array_extend_impl(self, cls, bb);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(array_array_insert__doc__,
 "insert($self, i, v, /)\n"
@@ -514,4 +535,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=91c1cded65a1285f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a7f71a18b994c88f input=a9049054013a1b77]*/

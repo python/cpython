@@ -423,7 +423,7 @@ class HighPageTest(unittest.TestCase):
     def test_color(self):
         d = self.page
         d.on_new_color_set = Func()
-        # self.color is only set in get_color through ColorChooser.
+        # self.color is only set in get_color through colorchooser.
         d.color.set('green')
         self.assertEqual(d.on_new_color_set.called, 1)
         del d.on_new_color_set
@@ -540,8 +540,8 @@ class HighPageTest(unittest.TestCase):
     def test_get_color(self):
         eq = self.assertEqual
         d = self.page
-        orig_chooser = configdialog.tkColorChooser.askcolor
-        chooser = configdialog.tkColorChooser.askcolor = Func()
+        orig_chooser = configdialog.colorchooser.askcolor
+        chooser = configdialog.colorchooser.askcolor = Func()
         gntn = d.get_new_theme_name = Func()
 
         d.highlight_target.set('Editor Breakpoint')
@@ -582,7 +582,7 @@ class HighPageTest(unittest.TestCase):
         eq(d.color.get(), '#de0000')
 
         del d.get_new_theme_name
-        configdialog.tkColorChooser.askcolor = orig_chooser
+        configdialog.colorchooser.askcolor = orig_chooser
 
     def test_on_new_color_set(self):
         d = self.page

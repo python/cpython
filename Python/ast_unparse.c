@@ -1,7 +1,7 @@
-#include <float.h>   /* DBL_MAX_10_EXP */
-#include <stdbool.h>
 #include "Python.h"
-#include "Python-ast.h"
+#include "pycore_ast.h"           // expr_ty
+#include <float.h>                // DBL_MAX_10_EXP
+#include <stdbool.h>
 
 static PyObject *_str_open_br;
 static PyObject *_str_dbl_open_br;

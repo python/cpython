@@ -137,6 +137,9 @@ class InternalFunctionsTest(unittest.TestCase):
         result = ttk._format_mapdict(opts)
         self.assertEqual(result, ('-üñíćódè', 'á vãl'))
 
+        self.assertEqual(ttk._format_mapdict({'opt': [('value',)]}),
+                         ('-opt', '{} value'))
+
         # empty states
         valid = {'opt': [('', '', 'hi')]}
         self.assertEqual(ttk._format_mapdict(valid), ('-opt', '{ } hi'))
@@ -158,10 +161,6 @@ class InternalFunctionsTest(unittest.TestCase):
         # values must be iterable
         opts = {'a': None}
         self.assertRaises(TypeError, ttk._format_mapdict, opts)
-
-        # items in the value must have size >= 2
-        self.assertRaises(IndexError, ttk._format_mapdict,
-            {'a': [('invalid', )]})
 
 
     def test_format_elemcreate(self):

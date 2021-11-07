@@ -69,7 +69,7 @@ def capture_server(evt, buf, serv):
     try:
         serv.listen()
         conn, addr = serv.accept()
-    except socket.timeout:
+    except TimeoutError:
         pass
     else:
         n = 200

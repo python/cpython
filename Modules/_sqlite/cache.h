@@ -23,8 +23,7 @@
 
 #ifndef PYSQLITE_CACHE_H
 #define PYSQLITE_CACHE_H
-#define PY_SSIZE_T_CLEAN
-#include "Python.h"
+#include "module.h"
 
 /* The LRU cache is implemented as a combination of a doubly-linked with a
  * dictionary. The list items are of type 'Node' and the dictionary has the
@@ -62,11 +61,6 @@ typedef struct
 extern PyTypeObject *pysqlite_NodeType;
 extern PyTypeObject *pysqlite_CacheType;
 
-int pysqlite_node_init(pysqlite_Node* self, PyObject* args, PyObject* kwargs);
-void pysqlite_node_dealloc(pysqlite_Node* self);
-
-int pysqlite_cache_init(pysqlite_Cache* self, PyObject* args, PyObject* kwargs);
-void pysqlite_cache_dealloc(pysqlite_Cache* self);
 PyObject* pysqlite_cache_get(pysqlite_Cache* self, PyObject* args);
 
 int pysqlite_cache_setup_types(PyObject *module);

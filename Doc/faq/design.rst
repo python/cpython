@@ -259,9 +259,8 @@ Why isn't there a switch or case statement in Python?
 -----------------------------------------------------
 
 You can do this easily enough with a sequence of ``if... elif... elif... else``.
-There have been some proposals for switch statement syntax, but there is no
-consensus (yet) on whether and how to do range tests.  See :pep:`275` for
-complete details and the current status.
+For literal values, or constants within a namespace, you can also use a
+``match ... case`` statement.
 
 For cases where you need to choose from a very large number of possibilities,
 you can create a dictionary mapping case values to functions to call.  For
@@ -601,7 +600,15 @@ test cases at all.
 Why is there no goto?
 ---------------------
 
-You can use exceptions to provide a "structured goto" that even works across
+In the 1970s people realized that unrestricted goto could lead
+to messy "spaghetti" code that was hard to understand and revise.
+In a high-level language, it is also unneeded as long as there
+are ways to branch (in Python, with ``if`` statements and ``or``,
+``and``, and ``if-else`` expressions) and loop (with ``while``
+and ``for`` statements, possibly containing ``continue`` and ``break``).
+
+One can also use exceptions to provide a "structured goto"
+that works even across
 function calls.  Many feel that exceptions can conveniently emulate all
 reasonable uses of the "go" or "goto" constructs of C, Fortran, and other
 languages.  For example::

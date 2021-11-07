@@ -95,6 +95,8 @@ attributes:
 |           | __globals__       | global namespace in which |
 |           |                   | this function was defined |
 +-----------+-------------------+---------------------------+
+|           | __builtins__      | builtins namespace        |
++-----------+-------------------+---------------------------+
 |           | __annotations__   | mapping of parameters     |
 |           |                   | names to annotations;     |
 |           |                   | ``"return"`` key is       |
@@ -250,6 +252,10 @@ attributes:
 .. versionchanged:: 3.7
 
    Add ``cr_origin`` attribute to coroutines.
+
+.. versionchanged:: 3.10
+
+   Add ``__builtins__`` attribute to functions.
 
 .. function:: getmembers(object[, predicate])
 
@@ -556,7 +562,7 @@ The Signature object represents the call signature of a callable object and its
 return annotation.  To retrieve a Signature object, use the :func:`signature`
 function.
 
-.. function:: signature(callable, \*, follow_wrapped=True)
+.. function:: signature(callable, *, follow_wrapped=True, globalns=None, localns=None)
 
    Return a :class:`Signature` object for the given ``callable``::
 
@@ -581,6 +587,9 @@ function.
    Raises :exc:`ValueError` if no signature can be provided, and
    :exc:`TypeError` if that type of object is not supported.
 
+   ``globalns`` and ``localns`` are passed into
+   :func:`typing.get_type_hints` when resolving the annotations.
+
    A slash(/) in the signature of a function denotes that the parameters prior
    to it are positional-only. For more info, see
    :ref:`the FAQ entry on positional-only parameters <faq-positional-only-arguments>`.
@@ -590,14 +599,23 @@ function.
       ``callable`` specifically (``callable.__wrapped__`` will not be used to
       unwrap decorated callables.)
 
+   .. versionadded:: 3.10
+      ``globalns`` and ``localns`` parameters.
+
    .. note::
 
       Some callables may not be introspectable in certain implementations of
       Python.  For example, in CPython, some built-in functions defined in
       C provide no metadata about their arguments.
 
+   .. note::
 
-.. class:: Signature(parameters=None, \*, return_annotation=Signature.empty)
+      Will first try to resolve the annotations, but when it fails and
+      encounters with an error while that operation, the annotations will be
+      returned unchanged (as strings).
+
+
+.. class:: Signature(parameters=None, *, return_annotation=Signature.empty)
 
    A Signature object represents the call signature of a function and its return
    annotation.  For each parameter accepted by the function it stores a
@@ -668,11 +686,12 @@ function.
          >>> str(new_sig)
          "(a, b) -> 'new return anno'"
 
-   .. classmethod:: Signature.from_callable(obj, \*, follow_wrapped=True)
+   .. classmethod:: Signature.from_callable(obj, *, follow_wrapped=True, globalns=None, localns=None)
 
        Return a :class:`Signature` (or its subclass) object for a given callable
        ``obj``.  Pass ``follow_wrapped=False`` to get a signature of ``obj``
-       without unwrapping its ``__wrapped__`` chain.
+       without unwrapping its ``__wrapped__`` chain. ``globalns`` and
+       ``localns`` will be used as the namespaces when resolving annotations.
 
        This method simplifies subclassing of :class:`Signature`::
 
@@ -683,8 +702,11 @@ function.
 
        .. versionadded:: 3.5
 
+       .. versionadded:: 3.10
+          ``globalns`` and ``localns`` parameters.
 
-.. class:: Parameter(name, kind, \*, default=Parameter.empty, annotation=Parameter.empty)
+
+.. class:: Parameter(name, kind, *, default=Parameter.empty, annotation=Parameter.empty)
 
    Parameter objects are *immutable*.  Instead of modifying a Parameter object,
    you can use :meth:`Parameter.replace` to create a modified copy.

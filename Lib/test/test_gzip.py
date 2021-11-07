@@ -774,10 +774,10 @@ class TestCommandLine(unittest.TestCase):
         self.assertEqual(err, b'')
 
     def test_decompress_infile_outfile_error(self):
-        rc, out, err = assert_python_ok('-m', 'gzip', '-d', 'thisisatest.out')
-        self.assertIn(b"filename doesn't end in .gz:", out)
-        self.assertEqual(rc, 0)
-        self.assertEqual(err, b'')
+        rc, out, err = assert_python_failure('-m', 'gzip', '-d', 'thisisatest.out')
+        self.assertEqual(b"filename doesn't end in .gz: 'thisisatest.out'", err.strip())
+        self.assertEqual(rc, 1)
+        self.assertEqual(out, b'')
 
     @create_and_remove_directory(TEMPDIR)
     def test_compress_stdin_outfile(self):

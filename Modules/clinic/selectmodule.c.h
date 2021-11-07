@@ -933,11 +933,11 @@ select_kqueue(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
 
-    if ((type == _selectstate_global->kqueue_queue_Type) &&
+    if ((type == _selectstate_by_type(type)->kqueue_queue_Type) &&
         !_PyArg_NoPositional("kqueue", args)) {
         goto exit;
     }
-    if ((type == _selectstate_global->kqueue_queue_Type) &&
+    if ((type == _selectstate_by_type(type)->kqueue_queue_Type) &&
         !_PyArg_NoKeywords("kqueue", kwargs)) {
         goto exit;
     }
@@ -1179,4 +1179,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=162f4f4efa850416 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cd2062a787e13b35 input=a9049054013a1b77]*/

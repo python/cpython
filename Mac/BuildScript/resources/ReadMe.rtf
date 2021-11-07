@@ -3,7 +3,7 @@
 \f3\fmodern\fcharset0 CourierNewPSMT;}
 {\colortbl;\red255\green255\blue255;}
 {\*\expandedcolortbl;;}
-\margl1440\margr1440\vieww13380\viewh14600\viewkind0
+\margl1440\margr1440\vieww13380\viewh14580\viewkind0
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
 \f0\fs24 \cf0 This package will install Python $FULL_VERSION for macOS $MACOSX_DEPLOYMENT_TARGET for the following architecture(s): $ARCHITECTURES.\
@@ -56,7 +56,15 @@ Due to new security checks on macOS 10.15 Catalina, when launching IDLE macOS ma
 \f0\b0  button to proceed.\
 \
 
-\f1\b \ul Other changes\
+\f1\b \ul macOS 11.0 (Big Sur) and Apple Silicon Mac support [new in 3.10.0a3]\
+
+\f0\b0 \ulnone \
+As of 2020-11, macOS 11.0 (Big Sur) is the latest release of macOS and one of its major features is the support of new Apple Silicon Macs that are based on the ARM64 CPU architecture specification rather than the Intel 64 (x86_64) architecture used previously. There are other changes in Big Sur that affect Python operation regardless of CPU architecture.\
+\
+Beginning with 3.10.0a3, we provide a new "universal2" installer variant that provides universal binaries for both ARM64 and Intel 64 architectures and is also supported on all Macs that support macOS 10.9 or later.  Some of the advantages of the new installer variant: native ARM64 code on Apple Silicon Macs should run significantly faster than Rosetta2-emulated code; some operating system functions and options introduced in macOS releases since 10.9 are now exposed when available (primarily in the os module); the new installer variant includes Tcl/Tk 8.6.10 rather than 8.6.8.\
+
+\f1\b \ul \
+Other changes\
 
 \f0\b0 \ulnone \
 For other changes in this release, see the 

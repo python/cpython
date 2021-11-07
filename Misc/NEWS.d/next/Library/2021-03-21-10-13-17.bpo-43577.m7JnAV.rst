@@ -1,0 +1,1 @@
+Fix deadlock when using :class:`ssl.SSLContext` debug callback with :meth:`ssl.SSLContext.sni_callback`.

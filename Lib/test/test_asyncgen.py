@@ -372,6 +372,88 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         self.loop = None
         asyncio.set_event_loop_policy(None)
 
+    def test_async_gen_anext(self):
+        async def gen():
+            yield 1
+            yield 2
+        g = gen()
+        async def consume():
+            results = []
+            results.append(await anext(g))
+            results.append(await anext(g))
+            results.append(await anext(g, 'buckle my shoe'))
+            return results
+        res = self.loop.run_until_complete(consume())
+        self.assertEqual(res, [1, 2, 'buckle my shoe'])
+        with self.assertRaises(StopAsyncIteration):
+            self.loop.run_until_complete(consume())
+
+    def test_async_gen_aiter(self):
+        async def gen():
+            yield 1
+            yield 2
+        g = gen()
+        async def consume():
+            return [i async for i in aiter(g)]
+        res = self.loop.run_until_complete(consume())
+        self.assertEqual(res, [1, 2])
+
+    def test_async_gen_aiter_class(self):
+        results = []
+        class Gen:
+            async def __aiter__(self):
+                yield 1
+                yield 2
+        g = Gen()
+        async def consume():
+            ait = aiter(g)
+            while True:
+                try:
+                    results.append(await anext(ait))
+                except StopAsyncIteration:
+                    break
+        self.loop.run_until_complete(consume())
+        self.assertEqual(results, [1, 2])
+
+    def test_aiter_idempotent(self):
+        async def gen():
+            yield 1
+        applied_once = aiter(gen())
+        applied_twice = aiter(applied_once)
+        self.assertIs(applied_once, applied_twice)
+
+    def test_anext_bad_args(self):
+        async def gen():
+            yield 1
+        async def call_with_too_few_args():
+            await anext()
+        async def call_with_too_many_args():
+            await anext(gen(), 1, 3)
+        async def call_with_wrong_type_args():
+            await anext(1, gen())
+        with self.assertRaises(TypeError):
+            self.loop.run_until_complete(call_with_too_few_args())
+        with self.assertRaises(TypeError):
+            self.loop.run_until_complete(call_with_too_many_args())
+        with self.assertRaises(TypeError):
+            self.loop.run_until_complete(call_with_wrong_type_args())
+
+    def test_aiter_bad_args(self):
+        async def gen():
+            yield 1
+        async def call_with_too_few_args():
+            await aiter()
+        async def call_with_too_many_args():
+            await aiter(gen(), 1)
+        async def call_with_wrong_type_arg():
+            await aiter(1)
+        with self.assertRaises(TypeError):
+            self.loop.run_until_complete(call_with_too_few_args())
+        with self.assertRaises(TypeError):
+            self.loop.run_until_complete(call_with_too_many_args())
+        with self.assertRaises(TypeError):
+            self.loop.run_until_complete(call_with_wrong_type_arg())
+
     async def to_list(self, gen):
         res = []
         async for i in gen:

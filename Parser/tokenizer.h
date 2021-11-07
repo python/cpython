@@ -15,8 +15,8 @@ extern "C" {
 
 enum decoding_state {
     STATE_INIT,
-    STATE_RAW,
-    STATE_NORMAL        /* have a codec associated with input */
+    STATE_SEEK_CODING,
+    STATE_NORMAL
 };
 
 /* Tokenizer state */
@@ -26,6 +26,9 @@ struct tok_state {
     char *buf;          /* Input buffer, or NULL; malloc'ed if fp != NULL */
     char *cur;          /* Next character in buffer */
     char *inp;          /* End of data in buffer */
+    int fp_interactive; /* If the file descriptor is interactive */
+    char *interactive_src_start; /* The start of the source parsed so far in interactive mode */
+    char *interactive_src_end; /* The end of the source parsed so far in interactive mode */
     const char *end;    /* End of input buffer if buf != NULL */
     const char *start;  /* Start of current token if not NULL */
     int done;           /* E_OK normally, E_EOF at EOF, otherwise error code */
@@ -44,13 +47,13 @@ struct tok_state {
             /* Used to allow free continuations inside them */
     char parenstack[MAXLEVEL];
     int parenlinenostack[MAXLEVEL];
+    int parencolstack[MAXLEVEL];
     PyObject *filename;
     /* Stuff for checking on different tab sizes */
     int altindstack[MAXINDENT];         /* Stack of alternate indents */
     /* Stuff for PEP 0263 */
     enum decoding_state decoding_state;
     int decoding_erred;         /* whether erred in decoding  */
-    int read_coding_spec;       /* whether 'coding:...' has been read  */
     char *encoding;         /* Source encoding. */
     int cont_line;          /* whether we are in a continuation line. */
     const char* line_start;     /* pointer to start of current line */

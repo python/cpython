@@ -1,0 +1,2 @@
+Deprecate all module_repr() methods found in importlib as their use is being
+phased out by Python 3.12.

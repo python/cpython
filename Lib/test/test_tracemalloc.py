@@ -85,6 +85,25 @@ def traceback_filename(filename):
     return traceback_lineno(filename, 0)
 
 
+class TestTraceback(unittest.TestCase):
+    def test_repr(self):
+        def get_repr(*args) -> str:
+            return repr(tracemalloc.Traceback(*args))
+
+        self.assertEqual(get_repr(()), "<Traceback ()>")
+        self.assertEqual(get_repr((), 0), "<Traceback () total_nframe=0>")
+
+        frames = (("f1", 1), ("f2", 2))
+        exp_repr_frames = (
+            "(<Frame filename='f2' lineno=2>,"
+            " <Frame filename='f1' lineno=1>)"
+        )
+        self.assertEqual(get_repr(frames),
+                         f"<Traceback {exp_repr_frames}>")
+        self.assertEqual(get_repr(frames, 2),
+                         f"<Traceback {exp_repr_frames} total_nframe=2>")
+
+
 class TestTracemallocEnabled(unittest.TestCase):
     def setUp(self):
         if tracemalloc.is_tracing():
@@ -1065,6 +1084,7 @@ class TestCAPI(unittest.TestCase):
 
 def test_main():
     support.run_unittest(
+        TestTraceback,
         TestTracemallocEnabled,
         TestSnapshot,
         TestFilters,

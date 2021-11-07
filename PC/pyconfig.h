@@ -165,11 +165,11 @@ WIN32 is still required for the locale module.
 
 /* Define like size_t, omitting the "unsigned" */
 #ifdef MS_WIN64
-typedef __int64 ssize_t;
+typedef __int64 Py_ssize_t;
 #else
-typedef _W64 int ssize_t;
+typedef _W64 int Py_ssize_t;
 #endif
-#define HAVE_SSIZE_T 1
+#define HAVE_PY_SSIZE_T 1
 
 #if defined(MS_WIN32) && !defined(MS_WIN64)
 #if defined(_M_IX86)
@@ -193,7 +193,6 @@ typedef int pid_t;
 #define Py_IS_NAN _isnan
 #define Py_IS_INFINITY(X) (!_finite(X) && !_isnan(X))
 #define Py_IS_FINITE(X) _finite(X)
-#define copysign _copysign
 
 /* define some ANSI types that are not defined in earlier Win headers */
 #if _MSC_VER >= 1200

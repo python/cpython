@@ -84,12 +84,14 @@ def compile_dir(dir, maxlevels=None, ddir=None, force=False,
     if workers < 0:
         raise ValueError('workers must be greater or equal to 0')
     if workers != 1:
+        # Check if this is a system where ProcessPoolExecutor can function.
+        from concurrent.futures.process import _check_system_limits
         try:
-            # Only import when needed, as low resource platforms may
-            # fail to import it
-            from concurrent.futures import ProcessPoolExecutor
-        except ImportError:
+            _check_system_limits()
+        except NotImplementedError:
             workers = 1
+        else:
+            from concurrent.futures import ProcessPoolExecutor
     if maxlevels is None:
         maxlevels = sys.getrecursionlimit()
     files = _walk_dir(dir, quiet=quiet, maxlevels=maxlevels)

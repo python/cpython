@@ -273,6 +273,7 @@ class AST_Tests(unittest.TestCase):
                     self._assertTrueorder(child, first_pos)
             elif value is not None:
                 self._assertTrueorder(value, parent_pos)
+        self.assertEqual(ast_node._fields, ast_node.__match_args__)
 
     def test_AST_objects(self):
         x = ast.AST()
@@ -1010,6 +1011,18 @@ Module(
         self.assertEqual(ast.literal_eval("\t\t-1"), -1)
         self.assertEqual(ast.literal_eval(" \t -1"), -1)
         self.assertRaises(IndentationError, ast.literal_eval, "\n -1")
+
+    def test_literal_eval_malformed_lineno(self):
+        msg = r'malformed node or string on line 3:'
+        with self.assertRaisesRegex(ValueError, msg):
+            ast.literal_eval("{'a': 1,\n'b':2,\n'c':++3,\n'd':4}")
+
+        node = ast.UnaryOp(
+            ast.UAdd(), ast.UnaryOp(ast.UAdd(), ast.Constant(6)))
+        self.assertIsNone(getattr(node, 'lineno', None))
+        msg = r'malformed node or string:'
+        with self.assertRaisesRegex(ValueError, msg):
+            ast.literal_eval(node)
 
     def test_bad_integer(self):
         # issue13436: Bad error message with invalid numeric values

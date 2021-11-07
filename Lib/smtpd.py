@@ -163,7 +163,7 @@ class SMTPChannel(asynchat.async_chat):
             # a race condition  may occur if the other end is closing
             # before we can get the peername
             self.close()
-            if err.args[0] != errno.ENOTCONN:
+            if err.errno != errno.ENOTCONN:
                 raise
             return
         print('Peer:', repr(self.peer), file=DEBUGSTREAM)

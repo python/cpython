@@ -65,23 +65,6 @@ _lzma_LZMACompressor_flush(Compressor *self, PyObject *Py_UNUSED(ignored))
     return _lzma_LZMACompressor_flush_impl(self);
 }
 
-PyDoc_STRVAR(_lzma_LZMACompressor___reduce____doc__,
-"__reduce__($self, /)\n"
-"--\n"
-"\n");
-
-#define _LZMA_LZMACOMPRESSOR___REDUCE___METHODDEF    \
-    {"__reduce__", (PyCFunction)_lzma_LZMACompressor___reduce__, METH_NOARGS, _lzma_LZMACompressor___reduce____doc__},
-
-static PyObject *
-_lzma_LZMACompressor___reduce___impl(Compressor *self);
-
-static PyObject *
-_lzma_LZMACompressor___reduce__(Compressor *self, PyObject *Py_UNUSED(ignored))
-{
-    return _lzma_LZMACompressor___reduce___impl(self);
-}
-
 PyDoc_STRVAR(_lzma_LZMADecompressor_decompress__doc__,
 "decompress($self, /, data, max_length=-1)\n"
 "--\n"
@@ -228,23 +211,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_lzma_LZMADecompressor___reduce____doc__,
-"__reduce__($self, /)\n"
-"--\n"
-"\n");
-
-#define _LZMA_LZMADECOMPRESSOR___REDUCE___METHODDEF    \
-    {"__reduce__", (PyCFunction)_lzma_LZMADecompressor___reduce__, METH_NOARGS, _lzma_LZMADecompressor___reduce____doc__},
-
-static PyObject *
-_lzma_LZMADecompressor___reduce___impl(Decompressor *self);
-
-static PyObject *
-_lzma_LZMADecompressor___reduce__(Decompressor *self, PyObject *Py_UNUSED(ignored))
-{
-    return _lzma_LZMADecompressor___reduce___impl(self);
-}
-
 PyDoc_STRVAR(_lzma_is_check_supported__doc__,
 "is_check_supported($module, check_id, /)\n"
 "--\n"
@@ -320,4 +286,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=d89b6159e98544be input=a9049054013a1b77]*/
+/*[clinic end generated code: output=867b9e334053b679 input=a9049054013a1b77]*/

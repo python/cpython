@@ -825,24 +825,9 @@ Compressor_dealloc(Compressor *self)
     Py_DECREF(tp);
 }
 
-/*[clinic input]
-_lzma.LZMACompressor.__reduce__
-[clinic start generated code]*/
-
-static PyObject *
-_lzma_LZMACompressor___reduce___impl(Compressor *self)
-/*[clinic end generated code: output=b49a0538d1cad752 input=6be52aba16b513c1]*/
-{
-    PyErr_Format(PyExc_TypeError,
-                 "cannot pickle %s object",
-                 Py_TYPE(self)->tp_name);
-    return NULL;
-}
-
 static PyMethodDef Compressor_methods[] = {
     _LZMA_LZMACOMPRESSOR_COMPRESS_METHODDEF
     _LZMA_LZMACOMPRESSOR_FLUSH_METHODDEF
-    _LZMA_LZMACOMPRESSOR___REDUCE___METHODDEF
     {NULL}
 };
 
@@ -1309,23 +1294,8 @@ Decompressor_traverse(Decompressor *self, visitproc visit, void *arg)
     return 0;
 }
 
-/*[clinic input]
-_lzma.LZMADecompressor.__reduce__
-[clinic start generated code]*/
-
-static PyObject *
-_lzma_LZMADecompressor___reduce___impl(Decompressor *self)
-/*[clinic end generated code: output=2611fff0104a9c30 input=b9882e030aecd9a5]*/
-{
-    PyErr_Format(PyExc_TypeError,
-                 "cannot pickle %s object",
-                 Py_TYPE(self)->tp_name);
-    return NULL;
-}
-
 static PyMethodDef Decompressor_methods[] = {
     _LZMA_LZMADECOMPRESSOR_DECOMPRESS_METHODDEF
-    _LZMA_LZMADECOMPRESSOR___REDUCE___METHODDEF
     {NULL}
 };
 

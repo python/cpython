@@ -117,12 +117,12 @@ class _Hqxcoderengine:
         first = 0
         while first <= len(self.hqxdata) - self.linelen:
             last = first + self.linelen
-            self.ofp.write(self.hqxdata[first:last] + b'\n')
+            self.ofp.write(self.hqxdata[first:last] + b'\r')
             self.linelen = LINELEN
             first = last
         self.hqxdata = self.hqxdata[first:]
         if force:
-            self.ofp.write(self.hqxdata + b':\n')
+            self.ofp.write(self.hqxdata + b':\r')
 
     def close(self):
         if self.data:

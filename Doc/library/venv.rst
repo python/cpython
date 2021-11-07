@@ -404,7 +404,7 @@ subclass which installs setuptools and pip into a created virtual environment::
             :param context: The information for the virtual environment
                             creation request being processed.
             """
-            url = 'https://raw.github.com/pypa/pip/master/contrib/get-pip.py'
+            url = 'https://bootstrap.pypa.io/get-pip.py'
             self.install_script(context, 'pip', url)
 
     def main(args=None):

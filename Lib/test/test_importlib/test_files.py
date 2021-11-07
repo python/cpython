@@ -21,7 +21,7 @@ class FilesTests:
     @unittest.skipUnless(
         hasattr(typing, 'runtime_checkable'),
         "Only suitable when typing supports runtime_checkable",
-        )
+    )
     def test_traversable(self):
         assert isinstance(resources.files(self.data), Traversable)
 

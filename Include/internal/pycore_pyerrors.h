@@ -84,6 +84,8 @@ PyAPI_FUNC(PyObject *) _PyErr_FormatFromCauseTstate(
 
 PyAPI_FUNC(int) _PyErr_CheckSignalsTstate(PyThreadState *tstate);
 
+PyAPI_FUNC(void) _Py_DumpExtensionModules(int fd, PyInterpreterState *interp);
+
 #ifdef __cplusplus
 }
 #endif

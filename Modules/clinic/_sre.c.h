@@ -164,63 +164,28 @@ PyDoc_STRVAR(_sre_SRE_Pattern_match__doc__,
 "Matches zero or more characters at the beginning of the string.");
 
 #define _SRE_SRE_PATTERN_MATCH_METHODDEF    \
-    {"match", (PyCFunction)(void(*)(void))_sre_SRE_Pattern_match, METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_match__doc__},
+    {"match", (PyCFunction)(void(*)(void))_sre_SRE_Pattern_match, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_match__doc__},
 
 static PyObject *
-_sre_SRE_Pattern_match_impl(PatternObject *self, PyObject *string,
-                            Py_ssize_t pos, Py_ssize_t endpos);
+_sre_SRE_Pattern_match_impl(PatternObject *self, PyTypeObject *cls,
+                            PyObject *string, Py_ssize_t pos,
+                            Py_ssize_t endpos);
 
 static PyObject *
-_sre_SRE_Pattern_match(PatternObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_sre_SRE_Pattern_match(PatternObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", "pos", "endpos", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "match", 0};
-    PyObject *argsbuf[3];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    static _PyArg_Parser _parser = {"O|nn:match", _keywords, 0};
     PyObject *string;
     Py_ssize_t pos = 0;
     Py_ssize_t endpos = PY_SSIZE_T_MAX;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &string, &pos, &endpos)) {
         goto exit;
     }
-    string = args[0];
-    if (!noptargs) {
-        goto skip_optional_pos;
-    }
-    if (args[1]) {
-        {
-            Py_ssize_t ival = -1;
-            PyObject *iobj = _PyNumber_Index(args[1]);
-            if (iobj != NULL) {
-                ival = PyLong_AsSsize_t(iobj);
-                Py_DECREF(iobj);
-            }
-            if (ival == -1 && PyErr_Occurred()) {
-                goto exit;
-            }
-            pos = ival;
-        }
-        if (!--noptargs) {
-            goto skip_optional_pos;
-        }
-    }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[2]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        endpos = ival;
-    }
-skip_optional_pos:
-    return_value = _sre_SRE_Pattern_match_impl(self, string, pos, endpos);
+    return_value = _sre_SRE_Pattern_match_impl(self, cls, string, pos, endpos);
 
 exit:
     return return_value;
@@ -233,63 +198,28 @@ PyDoc_STRVAR(_sre_SRE_Pattern_fullmatch__doc__,
 "Matches against all of the string.");
 
 #define _SRE_SRE_PATTERN_FULLMATCH_METHODDEF    \
-    {"fullmatch", (PyCFunction)(void(*)(void))_sre_SRE_Pattern_fullmatch, METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_fullmatch__doc__},
+    {"fullmatch", (PyCFunction)(void(*)(void))_sre_SRE_Pattern_fullmatch, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_fullmatch__doc__},
 
 static PyObject *
-_sre_SRE_Pattern_fullmatch_impl(PatternObject *self, PyObject *string,
-                                Py_ssize_t pos, Py_ssize_t endpos);
+_sre_SRE_Pattern_fullmatch_impl(PatternObject *self, PyTypeObject *cls,
+                                PyObject *string, Py_ssize_t pos,
+                                Py_ssize_t endpos);
 
 static PyObject *
-_sre_SRE_Pattern_fullmatch(PatternObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_sre_SRE_Pattern_fullmatch(PatternObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", "pos", "endpos", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "fullmatch", 0};
-    PyObject *argsbuf[3];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    static _PyArg_Parser _parser = {"O|nn:fullmatch", _keywords, 0};
     PyObject *string;
     Py_ssize_t pos = 0;
     Py_ssize_t endpos = PY_SSIZE_T_MAX;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &string, &pos, &endpos)) {
         goto exit;
     }
-    string = args[0];
-    if (!noptargs) {
-        goto skip_optional_pos;
-    }
-    if (args[1]) {
-        {
-            Py_ssize_t ival = -1;
-            PyObject *iobj = _PyNumber_Index(args[1]);
-            if (iobj != NULL) {
-                ival = PyLong_AsSsize_t(iobj);
-                Py_DECREF(iobj);
-            }
-            if (ival == -1 && PyErr_Occurred()) {
-                goto exit;
-            }
-            pos = ival;
-        }
-        if (!--noptargs) {
-            goto skip_optional_pos;
-        }
-    }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[2]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        endpos = ival;
-    }
-skip_optional_pos:
-    return_value = _sre_SRE_Pattern_fullmatch_impl(self, string, pos, endpos);
+    return_value = _sre_SRE_Pattern_fullmatch_impl(self, cls, string, pos, endpos);
 
 exit:
     return return_value;
@@ -304,63 +234,28 @@ PyDoc_STRVAR(_sre_SRE_Pattern_search__doc__,
 "Return None if no position in the string matches.");
 
 #define _SRE_SRE_PATTERN_SEARCH_METHODDEF    \
-    {"search", (PyCFunction)(void(*)(void))_sre_SRE_Pattern_search, METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_search__doc__},
+    {"search", (PyCFunction)(void(*)(void))_sre_SRE_Pattern_search, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_search__doc__},
 
 static PyObject *
-_sre_SRE_Pattern_search_impl(PatternObject *self, PyObject *string,
-                             Py_ssize_t pos, Py_ssize_t endpos);
+_sre_SRE_Pattern_search_impl(PatternObject *self, PyTypeObject *cls,
+                             PyObject *string, Py_ssize_t pos,
+                             Py_ssize_t endpos);
 
 static PyObject *
-_sre_SRE_Pattern_search(PatternObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_sre_SRE_Pattern_search(PatternObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", "pos", "endpos", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "search", 0};
-    PyObject *argsbuf[3];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    static _PyArg_Parser _parser = {"O|nn:search", _keywords, 0};
     PyObject *string;
     Py_ssize_t pos = 0;
     Py_ssize_t endpos = PY_SSIZE_T_MAX;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &string, &pos, &endpos)) {
         goto exit;
     }
-    string = args[0];
-    if (!noptargs) {
-        goto skip_optional_pos;
-    }
-    if (args[1]) {
-        {
-            Py_ssize_t ival = -1;
-            PyObject *iobj = _PyNumber_Index(args[1]);
-            if (iobj != NULL) {
-                ival = PyLong_AsSsize_t(iobj);
-                Py_DECREF(iobj);
-            }
-            if (ival == -1 && PyErr_Occurred()) {
-                goto exit;
-            }
-            pos = ival;
-        }
-        if (!--noptargs) {
-            goto skip_optional_pos;
-        }
-    }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[2]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        endpos = ival;
-    }
-skip_optional_pos:
-    return_value = _sre_SRE_Pattern_search_impl(self, string, pos, endpos);
+    return_value = _sre_SRE_Pattern_search_impl(self, cls, string, pos, endpos);
 
 exit:
     return return_value;
@@ -444,63 +339,28 @@ PyDoc_STRVAR(_sre_SRE_Pattern_finditer__doc__,
 "For each match, the iterator returns a match object.");
 
 #define _SRE_SRE_PATTERN_FINDITER_METHODDEF    \
-    {"finditer", (PyCFunction)(void(*)(void))_sre_SRE_Pattern_finditer, METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_finditer__doc__},
+    {"finditer", (PyCFunction)(void(*)(void))_sre_SRE_Pattern_finditer, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_finditer__doc__},
 
 static PyObject *
-_sre_SRE_Pattern_finditer_impl(PatternObject *self, PyObject *string,
-                               Py_ssize_t pos, Py_ssize_t endpos);
+_sre_SRE_Pattern_finditer_impl(PatternObject *self, PyTypeObject *cls,
+                               PyObject *string, Py_ssize_t pos,
+                               Py_ssize_t endpos);
 
 static PyObject *
-_sre_SRE_Pattern_finditer(PatternObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_sre_SRE_Pattern_finditer(PatternObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", "pos", "endpos", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "finditer", 0};
-    PyObject *argsbuf[3];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    static _PyArg_Parser _parser = {"O|nn:finditer", _keywords, 0};
     PyObject *string;
     Py_ssize_t pos = 0;
     Py_ssize_t endpos = PY_SSIZE_T_MAX;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &string, &pos, &endpos)) {
         goto exit;
     }
-    string = args[0];
-    if (!noptargs) {
-        goto skip_optional_pos;
-    }
-    if (args[1]) {
-        {
-            Py_ssize_t ival = -1;
-            PyObject *iobj = _PyNumber_Index(args[1]);
-            if (iobj != NULL) {
-                ival = PyLong_AsSsize_t(iobj);
-                Py_DECREF(iobj);
-            }
-            if (ival == -1 && PyErr_Occurred()) {
-                goto exit;
-            }
-            pos = ival;
-        }
-        if (!--noptargs) {
-            goto skip_optional_pos;
-        }
-    }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[2]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        endpos = ival;
-    }
-skip_optional_pos:
-    return_value = _sre_SRE_Pattern_finditer_impl(self, string, pos, endpos);
+    return_value = _sre_SRE_Pattern_finditer_impl(self, cls, string, pos, endpos);
 
 exit:
     return return_value;
@@ -512,63 +372,28 @@ PyDoc_STRVAR(_sre_SRE_Pattern_scanner__doc__,
 "\n");
 
 #define _SRE_SRE_PATTERN_SCANNER_METHODDEF    \
-    {"scanner", (PyCFunction)(void(*)(void))_sre_SRE_Pattern_scanner, METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_scanner__doc__},
+    {"scanner", (PyCFunction)(void(*)(void))_sre_SRE_Pattern_scanner, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_scanner__doc__},
 
 static PyObject *
-_sre_SRE_Pattern_scanner_impl(PatternObject *self, PyObject *string,
-                              Py_ssize_t pos, Py_ssize_t endpos);
+_sre_SRE_Pattern_scanner_impl(PatternObject *self, PyTypeObject *cls,
+                              PyObject *string, Py_ssize_t pos,
+                              Py_ssize_t endpos);
 
 static PyObject *
-_sre_SRE_Pattern_scanner(PatternObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_sre_SRE_Pattern_scanner(PatternObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", "pos", "endpos", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "scanner", 0};
-    PyObject *argsbuf[3];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    static _PyArg_Parser _parser = {"O|nn:scanner", _keywords, 0};
     PyObject *string;
     Py_ssize_t pos = 0;
     Py_ssize_t endpos = PY_SSIZE_T_MAX;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &string, &pos, &endpos)) {
         goto exit;
     }
-    string = args[0];
-    if (!noptargs) {
-        goto skip_optional_pos;
-    }
-    if (args[1]) {
-        {
-            Py_ssize_t ival = -1;
-            PyObject *iobj = _PyNumber_Index(args[1]);
-            if (iobj != NULL) {
-                ival = PyLong_AsSsize_t(iobj);
-                Py_DECREF(iobj);
-            }
-            if (ival == -1 && PyErr_Occurred()) {
-                goto exit;
-            }
-            pos = ival;
-        }
-        if (!--noptargs) {
-            goto skip_optional_pos;
-        }
-    }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[2]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        endpos = ival;
-    }
-skip_optional_pos:
-    return_value = _sre_SRE_Pattern_scanner_impl(self, string, pos, endpos);
+    return_value = _sre_SRE_Pattern_scanner_impl(self, cls, string, pos, endpos);
 
 exit:
     return return_value;
@@ -632,47 +457,27 @@ PyDoc_STRVAR(_sre_SRE_Pattern_sub__doc__,
 "Return the string obtained by replacing the leftmost non-overlapping occurrences of pattern in string by the replacement repl.");
 
 #define _SRE_SRE_PATTERN_SUB_METHODDEF    \
-    {"sub", (PyCFunction)(void(*)(void))_sre_SRE_Pattern_sub, METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_sub__doc__},
+    {"sub", (PyCFunction)(void(*)(void))_sre_SRE_Pattern_sub, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_sub__doc__},
 
 static PyObject *
-_sre_SRE_Pattern_sub_impl(PatternObject *self, PyObject *repl,
-                          PyObject *string, Py_ssize_t count);
+_sre_SRE_Pattern_sub_impl(PatternObject *self, PyTypeObject *cls,
+                          PyObject *repl, PyObject *string, Py_ssize_t count);
 
 static PyObject *
-_sre_SRE_Pattern_sub(PatternObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_sre_SRE_Pattern_sub(PatternObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"repl", "string", "count", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "sub", 0};
-    PyObject *argsbuf[3];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
+    static _PyArg_Parser _parser = {"OO|n:sub", _keywords, 0};
     PyObject *repl;
     PyObject *string;
     Py_ssize_t count = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &repl, &string, &count)) {
         goto exit;
     }
-    repl = args[0];
-    string = args[1];
-    if (!noptargs) {
-        goto skip_optional_pos;
-    }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[2]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        count = ival;
-    }
-skip_optional_pos:
-    return_value = _sre_SRE_Pattern_sub_impl(self, repl, string, count);
+    return_value = _sre_SRE_Pattern_sub_impl(self, cls, repl, string, count);
 
 exit:
     return return_value;
@@ -685,47 +490,28 @@ PyDoc_STRVAR(_sre_SRE_Pattern_subn__doc__,
 "Return the tuple (new_string, number_of_subs_made) found by replacing the leftmost non-overlapping occurrences of pattern with the replacement repl.");
 
 #define _SRE_SRE_PATTERN_SUBN_METHODDEF    \
-    {"subn", (PyCFunction)(void(*)(void))_sre_SRE_Pattern_subn, METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_subn__doc__},
+    {"subn", (PyCFunction)(void(*)(void))_sre_SRE_Pattern_subn, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_subn__doc__},
 
 static PyObject *
-_sre_SRE_Pattern_subn_impl(PatternObject *self, PyObject *repl,
-                           PyObject *string, Py_ssize_t count);
+_sre_SRE_Pattern_subn_impl(PatternObject *self, PyTypeObject *cls,
+                           PyObject *repl, PyObject *string,
+                           Py_ssize_t count);
 
 static PyObject *
-_sre_SRE_Pattern_subn(PatternObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_sre_SRE_Pattern_subn(PatternObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"repl", "string", "count", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "subn", 0};
-    PyObject *argsbuf[3];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
+    static _PyArg_Parser _parser = {"OO|n:subn", _keywords, 0};
     PyObject *repl;
     PyObject *string;
     Py_ssize_t count = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &repl, &string, &count)) {
         goto exit;
     }
-    repl = args[0];
-    string = args[1];
-    if (!noptargs) {
-        goto skip_optional_pos;
-    }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[2]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        count = ival;
-    }
-skip_optional_pos:
-    return_value = _sre_SRE_Pattern_subn_impl(self, repl, string, count);
+    return_value = _sre_SRE_Pattern_subn_impl(self, cls, repl, string, count);
 
 exit:
     return return_value;
@@ -1075,15 +861,26 @@ PyDoc_STRVAR(_sre_SRE_Scanner_match__doc__,
 "\n");
 
 #define _SRE_SRE_SCANNER_MATCH_METHODDEF    \
-    {"match", (PyCFunction)_sre_SRE_Scanner_match, METH_NOARGS, _sre_SRE_Scanner_match__doc__},
+    {"match", (PyCFunction)(void(*)(void))_sre_SRE_Scanner_match, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Scanner_match__doc__},
 
 static PyObject *
-_sre_SRE_Scanner_match_impl(ScannerObject *self);
+_sre_SRE_Scanner_match_impl(ScannerObject *self, PyTypeObject *cls);
 
 static PyObject *
-_sre_SRE_Scanner_match(ScannerObject *self, PyObject *Py_UNUSED(ignored))
+_sre_SRE_Scanner_match(ScannerObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return _sre_SRE_Scanner_match_impl(self);
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = { NULL};
+    static _PyArg_Parser _parser = {":match", _keywords, 0};
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
+        )) {
+        goto exit;
+    }
+    return_value = _sre_SRE_Scanner_match_impl(self, cls);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(_sre_SRE_Scanner_search__doc__,
@@ -1092,14 +889,25 @@ PyDoc_STRVAR(_sre_SRE_Scanner_search__doc__,
 "\n");
 
 #define _SRE_SRE_SCANNER_SEARCH_METHODDEF    \
-    {"search", (PyCFunction)_sre_SRE_Scanner_search, METH_NOARGS, _sre_SRE_Scanner_search__doc__},
+    {"search", (PyCFunction)(void(*)(void))_sre_SRE_Scanner_search, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Scanner_search__doc__},
 
 static PyObject *
-_sre_SRE_Scanner_search_impl(ScannerObject *self);
+_sre_SRE_Scanner_search_impl(ScannerObject *self, PyTypeObject *cls);
 
 static PyObject *
-_sre_SRE_Scanner_search(ScannerObject *self, PyObject *Py_UNUSED(ignored))
+_sre_SRE_Scanner_search(ScannerObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return _sre_SRE_Scanner_search_impl(self);
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = { NULL};
+    static _PyArg_Parser _parser = {":search", _keywords, 0};
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
+        )) {
+        goto exit;
+    }
+    return_value = _sre_SRE_Scanner_search_impl(self, cls);
+
+exit:
+    return return_value;
 }
-/*[clinic end generated code: output=0e27915b1eb7c0e4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=518f7bb775c1184f input=a9049054013a1b77]*/

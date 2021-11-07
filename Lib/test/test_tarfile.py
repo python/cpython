@@ -1347,10 +1347,10 @@ class WriteTest(WriteTestBase, unittest.TestCase):
                 f.write('something\n')
             os.symlink(source_file, target_file)
             with tarfile.open(temparchive, 'w') as tar:
-                tar.add(source_file)
-                tar.add(target_file)
+                tar.add(source_file, arcname="source")
+                tar.add(target_file, arcname="symlink")
             # Let's extract it to the location which contains the symlink
-            with tarfile.open(temparchive) as tar:
+            with tarfile.open(temparchive, errorlevel=2) as tar:
                 # this should not raise OSError: [Errno 17] File exists
                 try:
                     tar.extractall(path=tempdir)

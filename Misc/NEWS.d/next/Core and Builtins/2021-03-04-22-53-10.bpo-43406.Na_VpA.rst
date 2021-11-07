@@ -1,0 +1,2 @@
+Fix a possible race condition where ``PyErr_CheckSignals`` tries to execute a
+non-Python signal handler.

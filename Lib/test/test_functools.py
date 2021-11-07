@@ -27,8 +27,7 @@ import functools
 
 py_functools = import_helper.import_fresh_module('functools',
                                                  blocked=['_functools'])
-c_functools = import_helper.import_fresh_module('functools',
-                                                fresh=['_functools'])
+c_functools = import_helper.import_fresh_module('functools')
 
 decimal = import_helper.import_fresh_module('decimal', fresh=['_decimal'])
 
