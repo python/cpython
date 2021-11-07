@@ -2316,7 +2316,7 @@ AC_CHECK_HEADERS(linux/can.h linux/can/bcm.h linux/can/j1939.h linux/can/raw.h,,
 
 # checks for typedefs
 AC_CACHE_CHECK([for clock_t in time.h], [ac_cv_clock_t_time_h], [
-AC_EGREP_HEADER([clock_t], [time.h], [ac_cv_clock_t_time_h=yes], [ac_cv_clock_t_time_h=no])
+  AC_EGREP_HEADER([clock_t], [time.h], [ac_cv_clock_t_time_h=yes], [ac_cv_clock_t_time_h=no])
 ])
 dnl checks for "no"
 AS_VAR_IF([ac_cv_clock_t_time_h], [no], [
@@ -2946,7 +2946,7 @@ void *x = uuid_generate_time_safe
 [ac_cv_lib_uuid_uuid_generate_time_safe=yes], [ac_cv_lib_uuid_uuid_generate_time_safe=no])
 ])
 AS_VAR_IF([ac_cv_lib_uuid_uuid_generate_time_safe], [yes], [
-  AC_DEFINE(HAVE_UUID_GENERATE_TIME_SAFE, 1, Define if uuid_generate_time_safe() exists.)
+  AC_DEFINE(HAVE_UUID_GENERATE_TIME_SAFE, 1, [Define if uuid_generate_time_safe() exists.])
 ])
 
 # check for libuuid from util-linux
@@ -3830,20 +3830,20 @@ PY_CHECK_FUNC([prlimit], [[
 
 PY_CHECK_FUNC([_dyld_shared_cache_contains_path], [#include <mach-o/dyld.h>], [HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH])
 
-PY_CHECK_FUNC([memfd_create], [[
+PY_CHECK_FUNC([memfd_create], [
 #ifdef HAVE_SYS_MMAN_H
 #include <sys/mman.h>
 #endif
 #ifdef HAVE_SYS_MEMFD_H
 #include <sys/memfd.h>
 #endif
-]])
+])
 
-PY_CHECK_FUNC([eventfd], [[
+PY_CHECK_FUNC([eventfd], [
 #ifdef HAVE_SYS_EVENTFD_H
 #include <sys/eventfd.h>
 #endif
-]])
+])
 
 # On some systems (eg. FreeBSD 5), we would find a definition of the
 # functions ctermid_r, setgroups in the library, but no prototype
@@ -3884,7 +3884,7 @@ AC_CACHE_CHECK([for broken unsetenv], [ac_cv_broken_unsetenv],
   )
 ])
 AS_VAR_IF([ac_cv_broken_unsetenv], [yes], [
-  AC_DEFINE(HAVE_BROKEN_UNSETENV, 1, Define if `unsetenv` does not return an int.)
+  AC_DEFINE(HAVE_BROKEN_UNSETENV, 1, [Define if 'unsetenv' does not return an int.])
 ])
 
 dnl check for true
@@ -3971,27 +3971,27 @@ esac
 
 PY_CHECK_FUNC([hstrerror], [#include <netdb.h>])
 
-PY_CHECK_FUNC([inet_aton], [[
+PY_CHECK_FUNC([inet_aton], [
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-]])
+])
 
-PY_CHECK_FUNC([inet_pton], [[
+PY_CHECK_FUNC([inet_pton], [
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-]])
+])
 
 # On some systems, setgroups is in unistd.h, on others, in grp.h
-PY_CHECK_FUNC([setgroups], [[
+PY_CHECK_FUNC([setgroups], [
 #include <unistd.h>
 #ifdef HAVE_GRP_H
 #include <grp.h>
 #endif
-]])
+])
 
 # check for openpty and forkpty
 
@@ -4341,10 +4341,10 @@ AS_VAR_IF([ac_cv_stdarg_prototypes], [yes], [
 
 
 # check for socketpair
-PY_CHECK_FUNC([socketpair], [[
+PY_CHECK_FUNC([socketpair], [
 #include <sys/types.h>
 #include <sys/socket.h>
-]])
+])
 
 # check if sockaddr has sa_len member
 AC_CACHE_CHECK([if sockaddr has sa_len member], [ac_cv_struct_sockaddr_sa_len], [
@@ -5269,11 +5269,11 @@ AC_DEFUN([PY_CHECK_CURSES_FUNC],
     [py_var],
     [AC_COMPILE_IFELSE(
       [AC_LANG_PROGRAM(
-        [#include <curses.h>], [[
+        [#include <curses.h>], [
         #ifndef $1
         void *x=$1
         #endif
-      ]])],
+      ])],
       [AS_VAR_SET([py_var], [yes])],
       [AS_VAR_SET([py_var], [no])])]
   )
