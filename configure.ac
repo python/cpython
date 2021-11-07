@@ -3819,14 +3819,14 @@ PY_CHECK_FUNC([fsync], [#include <unistd.h>])
 PY_CHECK_FUNC([fdatasync], [#include <unistd.h>])
 PY_CHECK_FUNC([epoll], [#include <sys/epoll.h>])
 PY_CHECK_FUNC([epoll_create1], [#include <sys/epoll.h>])
-PY_CHECK_FUNC([kqueue],[[
+PY_CHECK_FUNC([kqueue],[
 #include <sys/types.h>
 #include <sys/event.h>
-]])
-PY_CHECK_FUNC([prlimit], [[
+])
+PY_CHECK_FUNC([prlimit], [
 #include <sys/time.h>
 #include <sys/resource.h>
-]])
+])
 
 PY_CHECK_FUNC([_dyld_shared_cache_contains_path], [#include <mach-o/dyld.h>], [HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH])
 

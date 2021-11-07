@@ -118,7 +118,7 @@
 /* define to 1 if your sem_getvalue is broken. */
 #undef HAVE_BROKEN_SEM_GETVALUE
 
-/* Define if `unsetenv` does not return an int. */
+/* Define if 'unsetenv' does not return an int. */
 #undef HAVE_BROKEN_UNSETENV
 
 /* Has builtin __atomic_load_n() and __atomic_store_n() functions */
