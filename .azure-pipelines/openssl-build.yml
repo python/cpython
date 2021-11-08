@@ -6,6 +6,7 @@ variables:
 
   # MUST BE SET AT QUEUE TIME
   # SigningCertificate: ''
+  # SourcesRepo: 'https://github.com/python/cpython-source-deps'
 
 jobs:
 - job: Build_SSL
@@ -37,6 +38,9 @@ jobs:
     clean: all
 
   steps:
+    - checkout: $(SourcesRepo)@refs/tags/$(SourceTag)
+      fetchDepth: 1
+
     - template: ./find-tools.yml
 
     - powershell: |

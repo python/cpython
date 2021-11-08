@@ -21,13 +21,13 @@ jobs:
     clean: all
 
   steps:
-    - powershell: |
-        git clone $(SourcesRepo) -b tcl-core-$(SourceTag) --depth 1 "$(ExternalsDir)\tcl-core-$(SourceTag)"
-      displayName: 'Clone Tcl sources'
-
-    - powershell: |
-        git clone $(SourcesRepo) -b tk-$(SourceTag) --depth 1 "$(ExternalsDir)\tk-$(SourceTag)"
-      displayName: 'Clone Tcl sources'
+    - checkout: self
+    - checkout: $(SourcesRepo)@refs/tags/tcl-core-$(SourceTag)
+      path: "$(ExternalsDir)\tcl-core-$(SourceTag)"
+      fetchDepth: 1
+    - checkout: $(SourcesRepo)@refs/tags/tk-$(SourceTag)
+      path: "$(ExternalsDir)\tk-$(SourceTag)"
+      fetchDepth: 1
 
     - powershell: |
         del -Force -EA 0 msbuild.rsp
