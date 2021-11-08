@@ -1640,30 +1640,33 @@ AC_SUBST(LDFLAGS_NODIST)
 UNIVERSAL_ARCH_FLAGS=
 AC_SUBST(UNIVERSAL_ARCH_FLAGS)
 
+dnl PY_CHECK_CC_WARNING(ENABLE, WARNING)
+AC_DEFUN([PY_CHECK_CC_WARNING], [
+  AC_MSG_CHECKING([if we can $1 $CC $2 warning])
+  AS_VAR_PUSHDEF([py_var], [ac_cv_$1_]m4_normalize($2)[_warning])
+  AS_VAR_COPY([py_cc], [CC])
+  AS_VAR_SET([CC], ["$CC -W$2 -Werror"])
+  AC_CACHE_VAL(
+    [py_var],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[]], [[]])],
+      [AS_VAR_SET([py_var], [yes])],
+      [AS_VAR_SET([py_var], [no])],
+    )]
+  )
+  AS_VAR_COPY([CC], [py_cc])
+  AC_MSG_RESULT([$py_var])
+  AS_VAR_POPDEF([py_var])
+])
+
 # tweak BASECFLAGS based on compiler and platform
 case $GCC in
 yes)
     CFLAGS_NODIST="$CFLAGS_NODIST -std=c99"
 
-    AC_MSG_CHECKING(for -Wextra)
-     ac_save_cc="$CC"
-     CC="$CC -Wextra -Werror"
-     AC_CACHE_VAL(ac_cv_extra_warnings,
-       AC_COMPILE_IFELSE(
-         [
-           AC_LANG_PROGRAM([[]], [[]])
-         ],[
-           ac_cv_extra_warnings=yes
-         ],[
-           ac_cv_extra_warnings=no
-         ]))
-     CC="$ac_save_cc"
-    AC_MSG_RESULT($ac_cv_extra_warnings)
-
-    if test $ac_cv_extra_warnings = yes
-    then
-      CFLAGS_NODIST="$CFLAGS_NODIST -Wextra"
-    fi
+    PY_CHECK_CC_WARNING([enable], [extra])
+    AS_IF([test $ac_cv_enable_extra_warning = yes],
+          [CFLAGS_NODIST="$CFLAGS_NODIST -Wextra"])
 
     # Python doesn't violate C99 aliasing rules, but older versions of
     # GCC produce warnings for legal Python code.  Enable
@@ -1707,109 +1710,27 @@ yes)
     ac_cv_disable_unused_result_warning=no
     ;;
     *)
-    AC_MSG_CHECKING(if we can turn off $CC unused result warning)
-     ac_save_cc="$CC"
-     CC="$CC -Wunused-result -Werror"
-     save_CFLAGS="$CFLAGS"
-     AC_CACHE_VAL(ac_cv_disable_unused_result_warning,
-       AC_COMPILE_IFELSE(
-         [
-	   AC_LANG_PROGRAM([[]], [[]])
-	 ],[
-           ac_cv_disable_unused_result_warning=yes
-	 ],[
-           ac_cv_disable_unused_result_warning=no
-	 ]))
-     CFLAGS="$save_CFLAGS"
-     CC="$ac_save_cc"
-    AC_MSG_RESULT($ac_cv_disable_unused_result_warning)
+    PY_CHECK_CC_WARNING([disable], [unused-result])
     ;;
     esac
 
-    if test $ac_cv_disable_unused_result_warning = yes
-    then
-      BASECFLAGS="$BASECFLAGS -Wno-unused-result"
-      CFLAGS_NODIST="$CFLAGS_NODIST -Wno-unused-result"
-    fi
+    AS_IF([test $ac_cv_disable_unused_result_warning = yes],
+          [BASECFLAGS="$BASECFLAGS -Wno-unused-result"
+           CFLAGS_NODIST="$CFLAGS_NODIST -Wno-unused-result"])
 
-    AC_MSG_CHECKING(if we can turn off $CC unused parameter warning)
-     ac_save_cc="$CC"
-     CC="$CC -Wunused-parameter -Werror"
-     AC_CACHE_VAL(ac_cv_disable_unused_parameter_warning,
-       AC_COMPILE_IFELSE(
-         [
-           AC_LANG_PROGRAM([[]], [[]])
-         ],[
-           ac_cv_disable_unused_parameter_warning=yes
-         ],[
-           ac_cv_disable_unused_parameter_warning=no
-         ]))
-     CC="$ac_save_cc"
-    AC_MSG_RESULT($ac_cv_disable_unused_parameter_warning)
+    PY_CHECK_CC_WARNING([disable], [unused-parameter])
+    AS_IF([test $ac_cv_disable_unused_parameter_warning = yes],
+          [CFLAGS_NODIST="$CFLAGS_NODIST -Wno-unused-parameter"])
 
-    if test $ac_cv_disable_unused_parameter_warning = yes
-    then
-      CFLAGS_NODIST="$CFLAGS_NODIST -Wno-unused-parameter"
-    fi
+    PY_CHECK_CC_WARNING([disable], [missing-field-initializers])
+    AS_IF([test $ac_cv_disable_missing_field_initializers_warning = yes],
+          [CFLAGS_NODIST="$CFLAGS_NODIST -Wno-missing-field-initializers"])
 
-    AC_MSG_CHECKING(if we can turn off $CC missing field initializers warning)
-     ac_save_cc="$CC"
-     CC="$CC -Wmissing-field-initializers -Werror"
-     AC_CACHE_VAL(ac_cv_disable_missing_field_initializers,
-       AC_COMPILE_IFELSE(
-         [
-           AC_LANG_PROGRAM([[]], [[]])
-         ],[
-           ac_cv_disable_missing_field_initializers=yes
-         ],[
-           ac_cv_disable_missing_field_initializers=no
-         ]))
-     CC="$ac_save_cc"
-    AC_MSG_RESULT($ac_cv_disable_missing_field_initializers)
+    PY_CHECK_CC_WARNING([enable], [sign-compare])
+    AS_IF([test $ac_cv_enable_sign_compare_warning = yes],
+          [BASECFLAGS="$BASECFLAGS -Wsign-compare"])
 
-    if test $ac_cv_disable_missing_field_initializers = yes
-    then
-      CFLAGS_NODIST="$CFLAGS_NODIST -Wno-missing-field-initializers"
-    fi
-
-    AC_MSG_CHECKING(if we can turn on $CC mixed sign comparison warning)
-     ac_save_cc="$CC"
-     CC="$CC -Wsign-compare"
-     save_CFLAGS="$CFLAGS"
-     AC_CACHE_VAL(ac_cv_enable_sign_compare_warning,
-       AC_COMPILE_IFELSE(
-         [
-	   AC_LANG_PROGRAM([[]], [[]])
-	 ],[
-           ac_cv_enable_sign_compare_warning=yes
-	 ],[
-           ac_cv_enable_sign_compare_warning=no
-	 ]))
-     CFLAGS="$save_CFLAGS"
-     CC="$ac_save_cc"
-    AC_MSG_RESULT($ac_cv_enable_sign_compare_warning)
-
-    if test $ac_cv_enable_sign_compare_warning = yes
-    then
-      BASECFLAGS="$BASECFLAGS -Wsign-compare"
-    fi
-
-    AC_MSG_CHECKING(if we can turn on $CC unreachable code warning)
-     ac_save_cc="$CC"
-     CC="$CC -Wunreachable-code"
-     save_CFLAGS="$CFLAGS"
-     AC_CACHE_VAL(ac_cv_enable_unreachable_code_warning,
-       AC_COMPILE_IFELSE(
-         [
-	   AC_LANG_PROGRAM([[]], [[]])
-	 ],[
-           ac_cv_enable_unreachable_code_warning=yes
-	 ],[
-           ac_cv_enable_unreachable_code_warning=no
-	 ]))
-     CFLAGS="$save_CFLAGS"
-     CC="$ac_save_cc"
-
+    PY_CHECK_CC_WARNING([enable], [unreachable-code])
     # Don't enable unreachable code warning in debug mode, since it usually
     # results in non-standard code paths.
     # Issue #24324: Unfortunately, the unreachable code warning does not work
@@ -1825,27 +1746,10 @@ yes)
     else
       ac_cv_enable_unreachable_code_warning=no
     fi
-    AC_MSG_RESULT($ac_cv_enable_unreachable_code_warning)
 
-    AC_MSG_CHECKING(if we can turn on $CC strict-prototypes warning)
-     ac_save_cc="$CC"
-     CC="$CC -Werror -Wstrict-prototypes"
-     AC_CACHE_VAL(ac_cv_enable_enable_strict_prototypes_warning,
-       AC_COMPILE_IFELSE(
-         [
-       AC_LANG_PROGRAM([[]], [[]])
-     ],[
-       ac_cv_enable_strict_prototypes_warning=yes
-     ],[
-       ac_cv_enable_strict_prototypes_warning=no
-     ]))
-     CC="$ac_save_cc"
-    AC_MSG_RESULT($ac_cv_enable_strict_prototypes_warning)
-
-    if test $ac_cv_enable_strict_prototypes_warning = yes
-    then
-      CFLAGS_NODIST="$CFLAGS_NODIST -Wstrict-prototypes"
-    fi
+    PY_CHECK_CC_WARNING([enable], [strict-prototypes])
+    AS_IF([test $ac_cv_enable_strict_prototypes_warning = yes],
+          [CFLAGS_NODIST="$CFLAGS_NODIST -Wstrict-prototypes"])
 
     AC_MSG_CHECKING(if we can make implicit function declaration an error in $CC)
      ac_save_cc="$CC"
@@ -1862,10 +1766,8 @@ yes)
      CC="$ac_save_cc"
     AC_MSG_RESULT($ac_cv_enable_implicit_function_declaration_error)
 
-    if test $ac_cv_enable_implicit_function_declaration_error = yes
-    then
-      CFLAGS_NODIST="$CFLAGS_NODIST -Werror=implicit-function-declaration"
-    fi
+    AS_IF([test $ac_cv_enable_implicit_function_declaration_error = yes],
+          [CFLAGS_NODIST="$CFLAGS_NODIST -Werror=implicit-function-declaration"])
 
     AC_MSG_CHECKING(if we can use visibility in $CC)
      ac_save_cc="$CC"
@@ -1882,10 +1784,8 @@ yes)
      CC="$ac_save_cc"
     AC_MSG_RESULT($ac_cv_enable_visibility)
 
-    if test $ac_cv_enable_visibility = yes
-    then
-      CFLAGS_NODIST="$CFLAGS_NODIST -fvisibility=hidden"
-    fi
+    AS_IF([test $ac_cv_enable_visibility = yes],
+          [CFLAGS_NODIST="$CFLAGS_NODIST -fvisibility=hidden"])
 
     # if using gcc on alpha, use -mieee to get (near) full IEEE 754
     # support.  Without this, treatment of subnormals doesn't follow
