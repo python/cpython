@@ -1665,7 +1665,7 @@ yes)
     CFLAGS_NODIST="$CFLAGS_NODIST -std=c99"
 
     PY_CHECK_CC_WARNING([enable], [extra])
-    AS_IF([test $ac_cv_enable_extra_warning = yes],
+    AS_VAR_IF([ac_cv_enable_extra_warning], [yes],
           [CFLAGS_NODIST="$CFLAGS_NODIST -Wextra"])
 
     # Python doesn't violate C99 aliasing rules, but older versions of
