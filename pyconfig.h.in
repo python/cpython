@@ -118,7 +118,7 @@
 /* define to 1 if your sem_getvalue is broken. */
 #undef HAVE_BROKEN_SEM_GETVALUE
 
-/* Define if `unsetenv` does not return an int. */
+/* Define if 'unsetenv' does not return an int. */
 #undef HAVE_BROKEN_UNSETENV
 
 /* Has builtin __atomic_load_n() and __atomic_store_n() functions */
@@ -187,7 +187,7 @@
 /* Define if you have the 'immedok' function. */
 #undef HAVE_CURSES_IMMEDOK
 
-/* Define if you have the 'is_pad' function or macro. */
+/* Define if you have the 'is_pad' function. */
 #undef HAVE_CURSES_IS_PAD
 
 /* Define if you have the 'is_term_resized' function. */
@@ -290,7 +290,7 @@
 /* Define to 1 if you have the <endian.h> header file. */
 #undef HAVE_ENDIAN_H
 
-/* Define if you have the 'epoll' functions. */
+/* Define if you have the 'epoll' function. */
 #undef HAVE_EPOLL
 
 /* Define if you have the 'epoll_create1' function. */
@@ -559,7 +559,7 @@
 /* Define to 1 if you have the `killpg' function. */
 #undef HAVE_KILLPG
 
-/* Define if you have the 'kqueue' functions. */
+/* Define if you have the 'kqueue' function. */
 #undef HAVE_KQUEUE
 
 /* Define to 1 if you have the <langinfo.h> header file. */
@@ -779,7 +779,7 @@
 /* Define to 1 if you have the `preadv2' function. */
 #undef HAVE_PREADV2
 
-/* Define if you have the 'prlimit' functions. */
+/* Define if you have the 'prlimit' function. */
 #undef HAVE_PRLIMIT
 
 /* Define to 1 if you have the <process.h> header file. */
@@ -1287,10 +1287,10 @@
 /* Define to 1 if you have the <utime.h> header file. */
 #undef HAVE_UTIME_H
 
-/* Define if uuid_create() exists. */
+/* Define to 1 if you have the `uuid_create' function. */
 #undef HAVE_UUID_CREATE
 
-/* Define if uuid_enc_be() exists. */
+/* Define to 1 if you have the `uuid_enc_be' function. */
 #undef HAVE_UUID_ENC_BE
 
 /* Define if uuid_generate_time_safe() exists. */

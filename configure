@@ -8478,31 +8478,43 @@ done
 
 
 # checks for typedefs
-was_it_defined=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for clock_t in time.h" >&5
 $as_echo_n "checking for clock_t in time.h... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+if ${ac_cv_clock_t_time_h+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <time.h>
 
 _ACEOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
   $EGREP "clock_t" >/dev/null 2>&1; then :
-  was_it_defined=yes
+  ac_cv_clock_t_time_h=yes
 else
+  ac_cv_clock_t_time_h=no
+fi
+rm -f conftest*
+
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_clock_t_time_h" >&5
+$as_echo "$ac_cv_clock_t_time_h" >&6; }
+if test "x$ac_cv_clock_t_time_h" = xno; then :
 
 
 $as_echo "#define clock_t long" >>confdefs.h
 
 
 fi
-rm -f conftest*
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $was_it_defined" >&5
-$as_echo "$was_it_defined" >&6; }
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for makedev" >&5
 $as_echo_n "checking for makedev... " >&6; }
+if ${ac_cv_func_makedev+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -8525,23 +8537,32 @@ main ()
 
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_has_makedev=yes
+  ac_cv_func_makedev=yes
 else
-  ac_cv_has_makedev=no
+  ac_cv_func_makedev=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_has_makedev" >&5
-$as_echo "$ac_cv_has_makedev" >&6; }
-if test "$ac_cv_has_makedev" = "yes"; then
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_makedev" >&5
+$as_echo "$ac_cv_func_makedev" >&6; }
+
+if test "x$ac_cv_func_makedev" = xyes; then :
+
 
 $as_echo "#define HAVE_MAKEDEV 1" >>confdefs.h
+
 
 fi
 
 # byte swapping
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for le64toh" >&5
 $as_echo_n "checking for le64toh... " >&6; }
+if ${ac_cv_func_le64toh+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -8562,17 +8583,22 @@ main ()
 
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_has_le64toh=yes
+  ac_cv_func_le64toh=yes
 else
-  ac_cv_has_le64toh=no
+  ac_cv_func_le64toh=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_has_le64toh" >&5
-$as_echo "$ac_cv_has_le64toh" >&6; }
-if test "$ac_cv_has_le64toh" = "yes"; then
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_le64toh" >&5
+$as_echo "$ac_cv_func_le64toh" >&6; }
+
+if test "x$ac_cv_func_le64toh" = xyes; then :
+
 
 $as_echo "#define HAVE_HTOLE64 1" >>confdefs.h
+
 
 fi
 
@@ -9356,7 +9382,10 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pthread_t" >&5
 $as_echo_n "checking for pthread_t... " >&6; }
-have_pthread_t=no
+if ${ac_cv_have_pthread_t+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9371,12 +9400,17 @@ pthread_t x; x = *(pthread_t*)0;
 
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-  have_pthread_t=yes
+  ac_cv_have_pthread_t=yes
+else
+  ac_cv_have_pthread_t=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_pthread_t" >&5
-$as_echo "$have_pthread_t" >&6; }
-if test "$have_pthread_t" = yes ; then
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_have_pthread_t" >&5
+$as_echo "$ac_cv_have_pthread_t" >&6; }
+if test "x$ac_cv_have_pthread_t" = xyes; then :
+
   # The cast to long int works around a bug in the HP C Compiler
 # version HP92453-01 B.11.11.23709.GP, which incorrectly rejects
 # declarations like `int a3[[(sizeof (unsigned char)) >= 0]];'.
@@ -9413,6 +9447,7 @@ $as_echo "$ac_cv_sizeof_pthread_t" >&6; }
 cat >>confdefs.h <<_ACEOF
 #define SIZEOF_PTHREAD_T $ac_cv_sizeof_pthread_t
 _ACEOF
+
 
 
 fi
@@ -9455,6 +9490,10 @@ _ACEOF
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether pthread_key_t is compatible with int" >&5
 $as_echo_n "checking whether pthread_key_t is compatible with int... " >&6; }
+if ${ac_cv_pthread_key_t_is_arithmetic_type+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
 if test "$ac_cv_sizeof_pthread_key_t" -eq "$ac_cv_sizeof_int" ; then
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -9468,23 +9507,27 @@ pthread_key_t k; k * 1;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-  ac_pthread_key_t_is_arithmetic_type=yes
+  ac_cv_pthread_key_t_is_arithmetic_type=yes
 else
-  ac_pthread_key_t_is_arithmetic_type=no
+  ac_cv_pthread_key_t_is_arithmetic_type=no
 
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_pthread_key_t_is_arithmetic_type" >&5
-$as_echo "$ac_pthread_key_t_is_arithmetic_type" >&6; }
-  if test "$ac_pthread_key_t_is_arithmetic_type" = yes ; then
+else
+  ac_cv_pthread_key_t_is_arithmetic_type=no
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_pthread_key_t_is_arithmetic_type" >&5
+$as_echo "$ac_cv_pthread_key_t_is_arithmetic_type" >&6; }
+if test "x$ac_cv_pthread_key_t_is_arithmetic_type" = xyes; then :
+
 
 $as_echo "#define PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT 1" >>confdefs.h
 
-  fi
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+
 fi
+
 CC="$ac_save_cc"
 
 
@@ -10130,6 +10173,10 @@ done
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time_safe" >&5
 $as_echo_n "checking for uuid_generate_time_safe... " >&6; }
+if ${ac_cv_lib_uuid_uuid_generate_time_safe+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <uuid/uuid.h>
@@ -10146,17 +10193,22 @@ void *x = uuid_generate_time_safe
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_lib_uuid_uuid_generate_time_safe=yes
+else
+  ac_cv_lib_uuid_uuid_generate_time_safe=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_uuid_uuid_generate_time_safe" >&5
+$as_echo "$ac_cv_lib_uuid_uuid_generate_time_safe" >&6; }
+if test "x$ac_cv_lib_uuid_uuid_generate_time_safe" = xyes; then :
+
 
 $as_echo "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
 
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
 
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
 # check for libuuid from util-linux
 save_LIBS=$LIBS
@@ -10209,67 +10261,20 @@ LIBS=$save_LIBS
 
 # AIX provides support for RFC4122 (uuid) in libc.a starting with AIX 6.1 (anno 2007)
 # FreeBSD and OpenBSD provides support in libc as well.
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_create" >&5
-$as_echo_n "checking for uuid_create... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <uuid.h>
-int
-main ()
-{
-
-#ifndef uuid_create
-void *x = uuid_create
-#endif
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-$as_echo "#define HAVE_UUID_CREATE 1" >>confdefs.h
-
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
 # Little-endian FreeBSD, OpenBSD and NetBSD needs encoding into an octet
 # stream in big-endian byte-order
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_enc_be" >&5
-$as_echo_n "checking for uuid_enc_be... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <uuid.h>
-int
-main ()
-{
-
-#ifndef uuid_enc_be
-void *x = uuid_enc_be
-#endif
-
-  ;
-  return 0;
-}
+for ac_func in uuid_create uuid_enc_be
+do :
+  as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
+ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
+if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
+  cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-$as_echo "#define HAVE_UUID_ENC_BE 1" >>confdefs.h
-
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
 
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+done
+
 
 # 'Real Time' functions on Solaris
 # posix4 on Solaris 2.6
@@ -11680,8 +11685,13 @@ if test "$ipv6" = "yes" -a "$ipv6lib" != "none"; then
 	fi
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for CAN_RAW_FD_FRAMES" >&5
-$as_echo_n "checking for CAN_RAW_FD_FRAMES... " >&6; }
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking CAN_RAW_FD_FRAMES" >&5
+$as_echo_n "checking CAN_RAW_FD_FRAMES... " >&6; }
+if ${ac_cv_can_raw_fd_frames+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
  /* CAN_RAW_FD_FRAMES available check */
@@ -11695,23 +11705,29 @@ int can_raw_fd_frames = CAN_RAW_FD_FRAMES;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_can_raw_fd_frames=yes
+else
+  ac_cv_can_raw_fd_frames=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_can_raw_fd_frames" >&5
+$as_echo "$ac_cv_can_raw_fd_frames" >&6; }
+if test "x$ac_cv_can_raw_fd_frames" = xyes; then :
 
 
 $as_echo "#define HAVE_LINUX_CAN_RAW_FD_FRAMES 1" >>confdefs.h
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-else
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
 
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CAN_RAW_JOIN_FILTERS" >&5
 $as_echo_n "checking for CAN_RAW_JOIN_FILTERS... " >&6; }
+if ${ac_cv_can_raw_join_filters+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -11725,20 +11741,22 @@ int can_raw_join_filters = CAN_RAW_JOIN_FILTERS;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_can_raw_join_filters=yes
+else
+  ac_cv_can_raw_join_filters=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_can_raw_join_filters" >&5
+$as_echo "$ac_cv_can_raw_join_filters" >&6; }
+if test "x$ac_cv_can_raw_join_filters" = xyes; then :
 
 
 $as_echo "#define HAVE_LINUX_CAN_RAW_JOIN_FILTERS 1" >>confdefs.h
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-else
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
 
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
 # Check for --with-doc-strings
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-doc-strings" >&5
@@ -12085,11 +12103,18 @@ $as_echo "#define HAVE_DIRFD 1" >>confdefs.h
 fi
 
 
+
+
 # For some functions, having a definition is not sufficient, since
 # we want to take their address.
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for chroot" >&5
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for chroot" >&5
 $as_echo_n "checking for chroot... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+if ${ac_cv_func_chroot+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <unistd.h>
 int
@@ -12101,20 +12126,31 @@ void *x=chroot
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_chroot=yes
+else
+  ac_cv_func_chroot=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_chroot" >&5
+$as_echo "$ac_cv_func_chroot" >&6; }
+  if test "x$ac_cv_func_chroot" = xyes; then :
 
 $as_echo "#define HAVE_CHROOT 1" >>confdefs.h
 
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for link" >&5
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for link" >&5
 $as_echo_n "checking for link... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+if ${ac_cv_func_link+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <unistd.h>
 int
@@ -12126,20 +12162,31 @@ void *x=link
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_link=yes
+else
+  ac_cv_func_link=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_link" >&5
+$as_echo "$ac_cv_func_link" >&6; }
+  if test "x$ac_cv_func_link" = xyes; then :
 
 $as_echo "#define HAVE_LINK 1" >>confdefs.h
 
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for symlink" >&5
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for symlink" >&5
 $as_echo_n "checking for symlink... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+if ${ac_cv_func_symlink+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <unistd.h>
 int
@@ -12151,20 +12198,31 @@ void *x=symlink
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_symlink=yes
+else
+  ac_cv_func_symlink=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_symlink" >&5
+$as_echo "$ac_cv_func_symlink" >&6; }
+  if test "x$ac_cv_func_symlink" = xyes; then :
 
 $as_echo "#define HAVE_SYMLINK 1" >>confdefs.h
 
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for fchdir" >&5
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for fchdir" >&5
 $as_echo_n "checking for fchdir... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+if ${ac_cv_func_fchdir+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <unistd.h>
 int
@@ -12176,20 +12234,31 @@ void *x=fchdir
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_fchdir=yes
+else
+  ac_cv_func_fchdir=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_fchdir" >&5
+$as_echo "$ac_cv_func_fchdir" >&6; }
+  if test "x$ac_cv_func_fchdir" = xyes; then :
 
 $as_echo "#define HAVE_FCHDIR 1" >>confdefs.h
 
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for fsync" >&5
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for fsync" >&5
 $as_echo_n "checking for fsync... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+if ${ac_cv_func_fsync+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <unistd.h>
 int
@@ -12201,20 +12270,31 @@ void *x=fsync
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_fsync=yes
+else
+  ac_cv_func_fsync=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_fsync" >&5
+$as_echo "$ac_cv_func_fsync" >&6; }
+  if test "x$ac_cv_func_fsync" = xyes; then :
 
 $as_echo "#define HAVE_FSYNC 1" >>confdefs.h
 
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for fdatasync" >&5
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for fdatasync" >&5
 $as_echo_n "checking for fdatasync... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+if ${ac_cv_func_fdatasync+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <unistd.h>
 int
@@ -12226,45 +12306,67 @@ void *x=fdatasync
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_fdatasync=yes
+else
+  ac_cv_func_fdatasync=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_fdatasync" >&5
+$as_echo "$ac_cv_func_fdatasync" >&6; }
+  if test "x$ac_cv_func_fdatasync" = xyes; then :
 
 $as_echo "#define HAVE_FDATASYNC 1" >>confdefs.h
 
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for epoll" >&5
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for epoll" >&5
 $as_echo_n "checking for epoll... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+if ${ac_cv_func_epoll+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <sys/epoll.h>
 int
 main ()
 {
-void *x=epoll_create
+void *x=epoll
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_epoll=yes
+else
+  ac_cv_func_epoll=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_epoll" >&5
+$as_echo "$ac_cv_func_epoll" >&6; }
+  if test "x$ac_cv_func_epoll" = xyes; then :
 
 $as_echo "#define HAVE_EPOLL 1" >>confdefs.h
 
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for epoll_create1" >&5
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for epoll_create1" >&5
 $as_echo_n "checking for epoll_create1... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+if ${ac_cv_func_epoll_create1+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <sys/epoll.h>
 int
@@ -12276,20 +12378,31 @@ void *x=epoll_create1
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_epoll_create1=yes
+else
+  ac_cv_func_epoll_create1=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_epoll_create1" >&5
+$as_echo "$ac_cv_func_epoll_create1" >&6; }
+  if test "x$ac_cv_func_epoll_create1" = xyes; then :
 
 $as_echo "#define HAVE_EPOLL_CREATE1 1" >>confdefs.h
 
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for kqueue" >&5
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for kqueue" >&5
 $as_echo_n "checking for kqueue... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+if ${ac_cv_func_kqueue+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 #include <sys/types.h>
@@ -12298,26 +12411,37 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 int
 main ()
 {
-int x=kqueue()
+void *x=kqueue
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_kqueue=yes
+else
+  ac_cv_func_kqueue=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_kqueue" >&5
+$as_echo "$ac_cv_func_kqueue" >&6; }
+  if test "x$ac_cv_func_kqueue" = xyes; then :
 
 $as_echo "#define HAVE_KQUEUE 1" >>confdefs.h
 
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for prlimit" >&5
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for prlimit" >&5
 $as_echo_n "checking for prlimit... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+if ${ac_cv_func_prlimit+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 #include <sys/time.h>
@@ -12332,20 +12456,32 @@ void *x=prlimit
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_prlimit=yes
+else
+  ac_cv_func_prlimit=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_prlimit" >&5
+$as_echo "$ac_cv_func_prlimit" >&6; }
+  if test "x$ac_cv_func_prlimit" = xyes; then :
 
 $as_echo "#define HAVE_PRLIMIT 1" >>confdefs.h
 
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for _dyld_shared_cache_contains_path" >&5
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for _dyld_shared_cache_contains_path" >&5
 $as_echo_n "checking for _dyld_shared_cache_contains_path... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+if ${ac_cv_func__dyld_shared_cache_contains_path+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <mach-o/dyld.h>
 int
@@ -12357,21 +12493,32 @@ void *x=_dyld_shared_cache_contains_path
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-$as_echo "#define HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH 1" >>confdefs.h
-
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
+  ac_cv_func__dyld_shared_cache_contains_path=yes
 else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
+  ac_cv_func__dyld_shared_cache_contains_path=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for memfd_create" >&5
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func__dyld_shared_cache_contains_path" >&5
+$as_echo "$ac_cv_func__dyld_shared_cache_contains_path" >&6; }
+  if test "x$ac_cv_func__dyld_shared_cache_contains_path" = xyes; then :
+
+$as_echo "#define HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for memfd_create" >&5
 $as_echo_n "checking for memfd_create... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+if ${ac_cv_func_memfd_create+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 #ifdef HAVE_SYS_MMAN_H
@@ -12390,21 +12537,32 @@ void *x=memfd_create
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-$as_echo "#define HAVE_MEMFD_CREATE 1" >>confdefs.h
-
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
+  ac_cv_func_memfd_create=yes
 else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
+  ac_cv_func_memfd_create=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for eventfd" >&5
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_memfd_create" >&5
+$as_echo "$ac_cv_func_memfd_create" >&6; }
+  if test "x$ac_cv_func_memfd_create" = xyes; then :
+
+$as_echo "#define HAVE_MEMFD_CREATE 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for eventfd" >&5
 $as_echo_n "checking for eventfd... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+if ${ac_cv_func_eventfd+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 #ifdef HAVE_SYS_EVENTFD_H
@@ -12414,23 +12572,29 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 int
 main ()
 {
-int x = eventfd(0, EFD_CLOEXEC)
+void *x=eventfd
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_eventfd=yes
+else
+  ac_cv_func_eventfd=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_eventfd" >&5
+$as_echo "$ac_cv_func_eventfd" >&6; }
+  if test "x$ac_cv_func_eventfd" = xyes; then :
 
 $as_echo "#define HAVE_EVENTFD 1" >>confdefs.h
 
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+
+
 
 # On some systems (eg. FreeBSD 5), we would find a definition of the
 # functions ctermid_r, setgroups in the library, but no prototype
@@ -12438,33 +12602,42 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 # address to avoid compiler warnings and potential miscompilations
 # because of the missing prototypes.
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ctermid_r" >&5
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ctermid_r" >&5
 $as_echo_n "checking for ctermid_r... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+if ${ac_cv_func_ctermid_r+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
 #include <stdio.h>
-
 int
 main ()
 {
-void* p = ctermid_r
+void *x=ctermid_r
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_ctermid_r=yes
+else
+  ac_cv_func_ctermid_r=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_ctermid_r" >&5
+$as_echo "$ac_cv_func_ctermid_r" >&6; }
+  if test "x$ac_cv_func_ctermid_r" = xyes; then :
 
 $as_echo "#define HAVE_CTERMID_R 1" >>confdefs.h
 
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+
+
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for flock declaration" >&5
 $as_echo_n "checking for flock declaration... " >&6; }
@@ -12555,41 +12728,51 @@ done
 
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for getpagesize" >&5
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for getpagesize" >&5
 $as_echo_n "checking for getpagesize... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+if ${ac_cv_func_getpagesize+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
 #include <unistd.h>
-
 int
 main ()
 {
-void* p = getpagesize
+void *x=getpagesize
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-$as_echo "#define HAVE_GETPAGESIZE 1" >>confdefs.h
-
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
+  ac_cv_func_getpagesize=yes
 else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
+  ac_cv_func_getpagesize=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_getpagesize" >&5
+$as_echo "$ac_cv_func_getpagesize" >&6; }
+  if test "x$ac_cv_func_getpagesize" = xyes; then :
+
+$as_echo "#define HAVE_GETPAGESIZE 1" >>confdefs.h
+
+fi
+
+
+
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for broken unsetenv" >&5
 $as_echo_n "checking for broken unsetenv... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+if ${ac_cv_broken_unsetenv+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
 #include <stdlib.h>
-
 int
 main ()
 {
@@ -12599,17 +12782,23 @@ int res = unsetenv("DUMMY")
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+  ac_cv_broken_unsetenv=no
 else
-
-$as_echo "#define HAVE_BROKEN_UNSETENV 1" >>confdefs.h
-
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
+  ac_cv_broken_unsetenv=yes
 
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_broken_unsetenv" >&5
+$as_echo "$ac_cv_broken_unsetenv" >&6; }
+if test "x$ac_cv_broken_unsetenv" = xyes; then :
+
+
+$as_echo "#define HAVE_BROKEN_UNSETENV 1" >>confdefs.h
+
+
+fi
 
 for ac_prog in true
 do
@@ -12843,6 +13032,7 @@ $as_echo "#define HAVE_LCHFLAGS 1" >>confdefs.h
 
 fi
 
+# Check for compression libraries
 case $ac_sys_system/$ac_sys_release in
 Darwin/*)
 	_CUR_CFLAGS="${CFLAGS}"
@@ -12902,102 +13092,136 @@ Darwin/*)
 	;;
 esac
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for hstrerror" >&5
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for hstrerror" >&5
 $as_echo_n "checking for hstrerror... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+if ${ac_cv_func_hstrerror+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
 #include <netdb.h>
-
 int
 main ()
 {
-void* p = hstrerror; hstrerror(0)
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-
-$as_echo "#define HAVE_HSTRERROR 1" >>confdefs.h
-
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for inet_aton" >&5
-$as_echo_n "checking for inet_aton... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-
-int
-main ()
-{
-void* p = inet_aton;inet_aton(0,0)
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-
-$as_echo "#define HAVE_INET_ATON 1" >>confdefs.h
-
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for inet_pton" >&5
-$as_echo_n "checking for inet_pton... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-
-int
-main ()
-{
-void* p = inet_pton
+void *x=hstrerror
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-$as_echo "#define HAVE_INET_PTON 1" >>confdefs.h
-
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
+  ac_cv_func_hstrerror=yes
 else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
+  ac_cv_func_hstrerror=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_hstrerror" >&5
+$as_echo "$ac_cv_func_hstrerror" >&6; }
+  if test "x$ac_cv_func_hstrerror" = xyes; then :
+
+$as_echo "#define HAVE_HSTRERROR 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inet_aton" >&5
+$as_echo_n "checking for inet_aton... " >&6; }
+if ${ac_cv_func_inet_aton+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+int
+main ()
+{
+void *x=inet_aton
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_inet_aton=yes
+else
+  ac_cv_func_inet_aton=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_inet_aton" >&5
+$as_echo "$ac_cv_func_inet_aton" >&6; }
+  if test "x$ac_cv_func_inet_aton" = xyes; then :
+
+$as_echo "#define HAVE_INET_ATON 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inet_pton" >&5
+$as_echo_n "checking for inet_pton... " >&6; }
+if ${ac_cv_func_inet_pton+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+int
+main ()
+{
+void *x=inet_pton
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_inet_pton=yes
+else
+  ac_cv_func_inet_pton=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_inet_pton" >&5
+$as_echo "$ac_cv_func_inet_pton" >&6; }
+  if test "x$ac_cv_func_inet_pton" = xyes; then :
+
+$as_echo "#define HAVE_INET_PTON 1" >>confdefs.h
+
+fi
+
+
+
+
 # On some systems, setgroups is in unistd.h, on others, in grp.h
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for setgroups" >&5
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for setgroups" >&5
 $as_echo_n "checking for setgroups... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+if ${ac_cv_func_setgroups+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 #include <unistd.h>
@@ -13008,23 +13232,29 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 int
 main ()
 {
-void* p = setgroups
+void *x=setgroups
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_setgroups=yes
+else
+  ac_cv_func_setgroups=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_setgroups" >&5
+$as_echo "$ac_cv_func_setgroups" >&6; }
+  if test "x$ac_cv_func_setgroups" = xyes; then :
 
 $as_echo "#define HAVE_SETGROUPS 1" >>confdefs.h
 
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+
+
 
 # check for openpty and forkpty
 
@@ -13749,8 +13979,12 @@ fi
 done
 
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for major" >&5
-$as_echo_n "checking for major... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for major, minor, and makedev" >&5
+$as_echo_n "checking for major, minor, and makedev... " >&6; }
+if ${ac_cv_device_macros+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -13773,26 +14007,36 @@ main ()
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_device_macros=yes
+else
+  ac_cv_device_macros=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_device_macros" >&5
+$as_echo "$ac_cv_device_macros" >&6; }
+if test "x$ac_cv_device_macros" = xyes; then :
 
 
 $as_echo "#define HAVE_DEVICE_MACROS 1" >>confdefs.h
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-else
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
 
 fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
+
+
+$as_echo "#define SYS_SELECT_WITH_SYS_TIME 1" >>confdefs.h
+
 
 # On OSF/1 V5.1, getaddrinfo is available, but a define
 # for [no]getaddrinfo in netdb.h.
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for getaddrinfo" >&5
 $as_echo_n "checking for getaddrinfo... " >&6; }
+if ${ac_cv_func_getaddrinfo+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -13810,16 +14054,19 @@ getaddrinfo(NULL, NULL, NULL, NULL);
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  have_getaddrinfo=yes
+  ac_cv_func_getaddrinfo=yes
 else
-  have_getaddrinfo=no
+  ac_cv_func_getaddrinfo=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_getaddrinfo" >&5
-$as_echo "$have_getaddrinfo" >&6; }
-if test $have_getaddrinfo = yes
-then
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_getaddrinfo" >&5
+$as_echo "$ac_cv_func_getaddrinfo" >&6; }
+
+if test "x$ac_cv_func_getaddrinfo" = xyes; then :
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking getaddrinfo bug" >&5
 $as_echo_n "checking getaddrinfo bug... " >&6; }
   if ${ac_cv_buggy_getaddrinfo+:} false; then :
@@ -13937,12 +14184,14 @@ fi
 
 fi
 
+
+
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_buggy_getaddrinfo" >&5
 $as_echo "$ac_cv_buggy_getaddrinfo" >&6; }
 
-if test $have_getaddrinfo = no || test "$ac_cv_buggy_getaddrinfo" = yes
+if test "$ac_cv_func_getaddrinfo" = no -o "$ac_cv_buggy_getaddrinfo" = yes
 then
 	if test $ipv6 = yes
 	then
@@ -14240,36 +14489,6 @@ $as_echo "#define HAVE_ALTZONE 1" >>confdefs.h
 
 fi
 
-was_it_defined=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether sys/select.h and sys/time.h may both be included" >&5
-$as_echo_n "checking whether sys/select.h and sys/time.h may both be included... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <sys/types.h>
-#include <sys/select.h>
-#include <sys/time.h>
-
-int
-main ()
-{
-;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-
-$as_echo "#define SYS_SELECT_WITH_SYS_TIME 1" >>confdefs.h
-
-  was_it_defined=yes
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $was_it_defined" >&5
-$as_echo "$was_it_defined" >&6; }
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for addrinfo" >&5
 $as_echo_n "checking for addrinfo... " >&6; }
 if ${ac_cv_struct_addrinfo+:} false; then :
@@ -14488,9 +14707,12 @@ $as_echo "#define const /**/" >>confdefs.h
 fi
 
 
-works=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for working signed char" >&5
 $as_echo_n "checking for working signed char... " >&6; }
+if ${ac_cv_working_signed_char_c+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -14503,20 +14725,29 @@ signed char c;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-  works=yes
+  ac_cv_working_signed_char_c=yes
 else
+  ac_cv_working_signed_char_c=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_working_signed_char_c" >&5
+$as_echo "$ac_cv_working_signed_char_c" >&6; }
+if test "x$ac_cv_working_signed_char_c" = xno; then :
+
 
 $as_echo "#define signed /**/" >>confdefs.h
 
 
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $works" >&5
-$as_echo "$works" >&6; }
 
-have_prototypes=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for prototypes" >&5
 $as_echo_n "checking for prototypes... " >&6; }
+if ${ac_cv_function_prototypes+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 int foo(int x) { return 0; }
@@ -14529,18 +14760,30 @@ return foo(10);
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_function_prototypes=yes
+else
+  ac_cv_function_prototypes=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_function_prototypes" >&5
+$as_echo "$ac_cv_function_prototypes" >&6; }
+if test "x$ac_cv_function_prototypes" = xyes; then :
+
 
 $as_echo "#define HAVE_PROTOTYPES 1" >>confdefs.h
 
-   have_prototypes=yes
+
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_prototypes" >&5
-$as_echo "$have_prototypes" >&6; }
 
 works=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for variable length prototypes and stdarg.h" >&5
 $as_echo_n "checking for variable length prototypes and stdarg.h... " >&6; }
+if ${ac_cv_stdarg_prototypes+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -14563,21 +14806,33 @@ return foo(10, "", 3.14);
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_stdarg_prototypes=yes
+else
+  ac_cv_stdarg_prototypes=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_stdarg_prototypes" >&5
+$as_echo "$ac_cv_stdarg_prototypes" >&6; }
+if test "x$ac_cv_stdarg_prototypes" = xyes; then :
 
 
 $as_echo "#define HAVE_STDARG_PROTOTYPES 1" >>confdefs.h
 
-  works=yes
 
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $works" >&5
-$as_echo "$works" >&6; }
+
 
 # check for socketpair
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for socketpair" >&5
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for socketpair" >&5
 $as_echo_n "checking for socketpair... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+if ${ac_cv_func_socketpair+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 #include <sys/types.h>
@@ -14592,21 +14847,31 @@ void *x=socketpair
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_socketpair=yes
+else
+  ac_cv_func_socketpair=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_socketpair" >&5
+$as_echo "$ac_cv_func_socketpair" >&6; }
+  if test "x$ac_cv_func_socketpair" = xyes; then :
 
 $as_echo "#define HAVE_SOCKETPAIR 1" >>confdefs.h
 
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+
+
 
 # check if sockaddr has sa_len member
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking if sockaddr has sa_len member" >&5
 $as_echo_n "checking if sockaddr has sa_len member... " >&6; }
+if ${ac_cv_struct_sockaddr_sa_len+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <sys/types.h>
@@ -14621,17 +14886,22 @@ x.sa_len = 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
+  ac_cv_struct_sockaddr_sa_len=yes
+else
+  ac_cv_struct_sockaddr_sa_len=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_struct_sockaddr_sa_len" >&5
+$as_echo "$ac_cv_struct_sockaddr_sa_len" >&6; }
+if test "x$ac_cv_struct_sockaddr_sa_len" = xyes; then :
+
 
 $as_echo "#define HAVE_SOCKADDR_SA_LEN 1" >>confdefs.h
 
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
 
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
 # sigh -- gethostbyname_r is a mess; it can have 3, 5 or 6 arguments :-(
 
@@ -14898,8 +15168,13 @@ fi
 # * Check for gcc x64 inline assembler *
 # **************************************
 
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for x64 gcc inline assembler" >&5
 $as_echo_n "checking for x64 gcc inline assembler... " >&6; }
+if ${ac_cv_gcc_asm_for_x64+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -14914,18 +15189,22 @@ main ()
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  have_gcc_asm_for_x64=yes
+  ac_cv_gcc_asm_for_x64=yes
 else
-  have_gcc_asm_for_x64=no
+  ac_cv_gcc_asm_for_x64=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_gcc_asm_for_x64" >&5
-$as_echo "$have_gcc_asm_for_x64" >&6; }
-if test "$have_gcc_asm_for_x64" = yes
-then
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_gcc_asm_for_x64" >&5
+$as_echo "$ac_cv_gcc_asm_for_x64" >&6; }
+
+if test "x$ac_cv_gcc_asm_for_x64" = xyes; then :
+
 
 $as_echo "#define HAVE_GCC_ASM_FOR_X64 1" >>confdefs.h
+
 
 fi
 
@@ -15021,6 +15300,10 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether we can use gcc inline assembler to get and set x87 control word" >&5
 $as_echo_n "checking whether we can use gcc inline assembler to get and set x87 control word... " >&6; }
+if ${ac_cv_gcc_asm_for_x87+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -15037,23 +15320,30 @@ main ()
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  have_gcc_asm_for_x87=yes
+  ac_cv_gcc_asm_for_x87=yes
 else
-  have_gcc_asm_for_x87=no
+  ac_cv_gcc_asm_for_x87=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_gcc_asm_for_x87" >&5
-$as_echo "$have_gcc_asm_for_x87" >&6; }
-if test "$have_gcc_asm_for_x87" = yes
-then
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_gcc_asm_for_x87" >&5
+$as_echo "$ac_cv_gcc_asm_for_x87" >&6; }
+if test "x$ac_cv_gcc_asm_for_x87" = xyes; then :
+
 
 $as_echo "#define HAVE_GCC_ASM_FOR_X87 1" >>confdefs.h
+
 
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether we can use gcc inline assembler to get and set mc68881 fpcr" >&5
 $as_echo_n "checking whether we can use gcc inline assembler to get and set mc68881 fpcr... " >&6; }
+if ${ac_cv_gcc_asm_for_mc68881+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -15070,18 +15360,21 @@ main ()
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  have_gcc_asm_for_mc68881=yes
+  ac_cv_gcc_asm_for_mc68881=yes
 else
-  have_gcc_asm_for_mc68881=no
+  ac_cv_gcc_asm_for_mc68881=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_gcc_asm_for_mc68881" >&5
-$as_echo "$have_gcc_asm_for_mc68881" >&6; }
-if test "$have_gcc_asm_for_mc68881" = yes
-then
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_gcc_asm_for_mc68881" >&5
+$as_echo "$ac_cv_gcc_asm_for_mc68881" >&6; }
+if test "x$ac_cv_gcc_asm_for_mc68881" = xyes; then :
+
 
 $as_echo "#define HAVE_GCC_ASM_FOR_MC68881 1" >>confdefs.h
+
 
 fi
 
@@ -15092,6 +15385,10 @@ fi
 # 0 otherwise.  See http://bugs.python.org/issue2937 for more info.
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for x87-style double rounding" >&5
 $as_echo_n "checking for x87-style double rounding... " >&6; }
+if ${ac_cv_x87_double_rounding+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
 # $BASECFLAGS may affect the result
 ac_save_cc="$CC"
 CC="$CC $BASECFLAGS"
@@ -15131,12 +15428,16 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
 fi
 
 CC="$ac_save_cc"
+
+fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_x87_double_rounding" >&5
 $as_echo "$ac_cv_x87_double_rounding" >&6; }
-if test "$ac_cv_x87_double_rounding" = yes
-then
+
+if test "x$ac_cv_x87_double_rounding" = xyes; then :
+
 
 $as_echo "#define X87_DOUBLE_ROUNDING 1" >>confdefs.h
+
 
 fi
 
@@ -16732,324 +17033,448 @@ $as_echo "#define WINDOW_HAS_FLAGS 1" >>confdefs.h
 
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for is_pad" >&5
-$as_echo_n "checking for is_pad... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for curses function is_pad" >&5
+$as_echo_n "checking for curses function is_pad... " >&6; }
+if ${ac_cv_lib_curses_is_pad+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <curses.h>
 int
 main ()
 {
 
-#ifndef is_pad
-void *x=is_pad
-#endif
+        #ifndef is_pad
+        void *x=is_pad
+        #endif
 
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_lib_curses_is_pad=yes
+else
+  ac_cv_lib_curses_is_pad=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_is_pad" >&5
+$as_echo "$ac_cv_lib_curses_is_pad" >&6; }
+  if test "x$ac_cv_lib_curses_is_pad" = xyes; then :
 
 $as_echo "#define HAVE_CURSES_IS_PAD 1" >>confdefs.h
 
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for is_term_resized" >&5
-$as_echo_n "checking for is_term_resized... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for curses function is_term_resized" >&5
+$as_echo_n "checking for curses function is_term_resized... " >&6; }
+if ${ac_cv_lib_curses_is_term_resized+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <curses.h>
 int
 main ()
 {
-void *x=is_term_resized
+
+        #ifndef is_term_resized
+        void *x=is_term_resized
+        #endif
+
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_lib_curses_is_term_resized=yes
+else
+  ac_cv_lib_curses_is_term_resized=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_is_term_resized" >&5
+$as_echo "$ac_cv_lib_curses_is_term_resized" >&6; }
+  if test "x$ac_cv_lib_curses_is_term_resized" = xyes; then :
 
 $as_echo "#define HAVE_CURSES_IS_TERM_RESIZED 1" >>confdefs.h
 
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for resize_term" >&5
-$as_echo_n "checking for resize_term... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for curses function resize_term" >&5
+$as_echo_n "checking for curses function resize_term... " >&6; }
+if ${ac_cv_lib_curses_resize_term+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <curses.h>
 int
 main ()
 {
-void *x=resize_term
+
+        #ifndef resize_term
+        void *x=resize_term
+        #endif
+
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_lib_curses_resize_term=yes
+else
+  ac_cv_lib_curses_resize_term=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_resize_term" >&5
+$as_echo "$ac_cv_lib_curses_resize_term" >&6; }
+  if test "x$ac_cv_lib_curses_resize_term" = xyes; then :
 
 $as_echo "#define HAVE_CURSES_RESIZE_TERM 1" >>confdefs.h
 
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for resizeterm" >&5
-$as_echo_n "checking for resizeterm... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for curses function resizeterm" >&5
+$as_echo_n "checking for curses function resizeterm... " >&6; }
+if ${ac_cv_lib_curses_resizeterm+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <curses.h>
 int
 main ()
 {
-void *x=resizeterm
+
+        #ifndef resizeterm
+        void *x=resizeterm
+        #endif
+
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_lib_curses_resizeterm=yes
+else
+  ac_cv_lib_curses_resizeterm=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_resizeterm" >&5
+$as_echo "$ac_cv_lib_curses_resizeterm" >&6; }
+  if test "x$ac_cv_lib_curses_resizeterm" = xyes; then :
 
 $as_echo "#define HAVE_CURSES_RESIZETERM 1" >>confdefs.h
 
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for immedok" >&5
-$as_echo_n "checking for immedok... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for curses function immedok" >&5
+$as_echo_n "checking for curses function immedok... " >&6; }
+if ${ac_cv_lib_curses_immedok+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <curses.h>
 int
 main ()
 {
 
-#ifndef immedok
-void *x=immedok
-#endif
+        #ifndef immedok
+        void *x=immedok
+        #endif
 
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_lib_curses_immedok=yes
+else
+  ac_cv_lib_curses_immedok=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_immedok" >&5
+$as_echo "$ac_cv_lib_curses_immedok" >&6; }
+  if test "x$ac_cv_lib_curses_immedok" = xyes; then :
 
 $as_echo "#define HAVE_CURSES_IMMEDOK 1" >>confdefs.h
 
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for syncok" >&5
-$as_echo_n "checking for syncok... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for curses function syncok" >&5
+$as_echo_n "checking for curses function syncok... " >&6; }
+if ${ac_cv_lib_curses_syncok+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <curses.h>
 int
 main ()
 {
 
-#ifndef syncok
-void *x=syncok
-#endif
+        #ifndef syncok
+        void *x=syncok
+        #endif
 
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_lib_curses_syncok=yes
+else
+  ac_cv_lib_curses_syncok=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_syncok" >&5
+$as_echo "$ac_cv_lib_curses_syncok" >&6; }
+  if test "x$ac_cv_lib_curses_syncok" = xyes; then :
 
 $as_echo "#define HAVE_CURSES_SYNCOK 1" >>confdefs.h
 
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for wchgat" >&5
-$as_echo_n "checking for wchgat... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for curses function wchgat" >&5
+$as_echo_n "checking for curses function wchgat... " >&6; }
+if ${ac_cv_lib_curses_wchgat+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <curses.h>
 int
 main ()
 {
 
-#ifndef wchgat
-void *x=wchgat
-#endif
+        #ifndef wchgat
+        void *x=wchgat
+        #endif
 
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_lib_curses_wchgat=yes
+else
+  ac_cv_lib_curses_wchgat=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_wchgat" >&5
+$as_echo "$ac_cv_lib_curses_wchgat" >&6; }
+  if test "x$ac_cv_lib_curses_wchgat" = xyes; then :
 
 $as_echo "#define HAVE_CURSES_WCHGAT 1" >>confdefs.h
 
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for filter" >&5
-$as_echo_n "checking for filter... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for curses function filter" >&5
+$as_echo_n "checking for curses function filter... " >&6; }
+if ${ac_cv_lib_curses_filter+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <curses.h>
 int
 main ()
 {
 
-#ifndef filter
-void *x=filter
-#endif
+        #ifndef filter
+        void *x=filter
+        #endif
 
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_lib_curses_filter=yes
+else
+  ac_cv_lib_curses_filter=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_filter" >&5
+$as_echo "$ac_cv_lib_curses_filter" >&6; }
+  if test "x$ac_cv_lib_curses_filter" = xyes; then :
 
 $as_echo "#define HAVE_CURSES_FILTER 1" >>confdefs.h
 
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for has_key" >&5
-$as_echo_n "checking for has_key... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for curses function has_key" >&5
+$as_echo_n "checking for curses function has_key... " >&6; }
+if ${ac_cv_lib_curses_has_key+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <curses.h>
 int
 main ()
 {
 
-#ifndef has_key
-void *x=has_key
-#endif
+        #ifndef has_key
+        void *x=has_key
+        #endif
 
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_lib_curses_has_key=yes
+else
+  ac_cv_lib_curses_has_key=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_has_key" >&5
+$as_echo "$ac_cv_lib_curses_has_key" >&6; }
+  if test "x$ac_cv_lib_curses_has_key" = xyes; then :
 
 $as_echo "#define HAVE_CURSES_HAS_KEY 1" >>confdefs.h
 
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for typeahead" >&5
-$as_echo_n "checking for typeahead... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for curses function typeahead" >&5
+$as_echo_n "checking for curses function typeahead... " >&6; }
+if ${ac_cv_lib_curses_typeahead+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <curses.h>
 int
 main ()
 {
 
-#ifndef typeahead
-void *x=typeahead
-#endif
+        #ifndef typeahead
+        void *x=typeahead
+        #endif
 
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_lib_curses_typeahead=yes
+else
+  ac_cv_lib_curses_typeahead=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_typeahead" >&5
+$as_echo "$ac_cv_lib_curses_typeahead" >&6; }
+  if test "x$ac_cv_lib_curses_typeahead" = xyes; then :
 
 $as_echo "#define HAVE_CURSES_TYPEAHEAD 1" >>confdefs.h
 
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for use_env" >&5
-$as_echo_n "checking for use_env... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for curses function use_env" >&5
+$as_echo_n "checking for curses function use_env... " >&6; }
+if ${ac_cv_lib_curses_use_env+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <curses.h>
 int
 main ()
 {
 
-#ifndef use_env
-void *x=use_env
-#endif
+        #ifndef use_env
+        void *x=use_env
+        #endif
 
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_lib_curses_use_env=yes
+else
+  ac_cv_lib_curses_use_env=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_use_env" >&5
+$as_echo "$ac_cv_lib_curses_use_env" >&6; }
+  if test "x$ac_cv_lib_curses_use_env" = xyes; then :
 
 $as_echo "#define HAVE_CURSES_USE_ENV 1" >>confdefs.h
 
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-# last curses configure check
+
+
+
 CPPFLAGS=$ac_save_cppflags
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for device files" >&5
@@ -17373,6 +17798,10 @@ $as_echo "done" >&6; }
 # Availability of -O2:
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for -O2" >&5
 $as_echo_n "checking for -O2... " >&6; }
+if ${ac_cv_compile_o2+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
 saved_cflags="$CFLAGS"
 CFLAGS="-O2"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -17382,20 +17811,21 @@ int
 main ()
 {
 
-
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-  have_O2=yes
+  ac_cv_compile_o2=yes
 else
-  have_O2=no
+  ac_cv_compile_o2=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_O2" >&5
-$as_echo "$have_O2" >&6; }
 CFLAGS="$saved_cflags"
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_compile_o2" >&5
+$as_echo "$ac_cv_compile_o2" >&6; }
 
 # _FORTIFY_SOURCE wrappers for memmove and bcopy are incorrect:
 # http://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
@@ -17403,7 +17833,7 @@ CFLAGS="$saved_cflags"
 $as_echo_n "checking for glibc _FORTIFY_SOURCE/memmove bug... " >&6; }
 saved_cflags="$CFLAGS"
 CFLAGS="-O2 -D_FORTIFY_SOURCE=2"
-if test "$have_O2" = no; then
+if test "$ac_cv_compile_o2" = no; then
     CFLAGS=""
 fi
 if test "$cross_compiling" = yes; then :
@@ -17446,7 +17876,7 @@ $as_echo "#define HAVE_GLIBC_MEMMOVE_BUG 1" >>confdefs.h
 
 fi
 
-if test "$have_gcc_asm_for_x87" = yes; then
+if test "$ac_cv_gcc_asm_for_x87" = yes; then
     # Some versions of gcc miscompile inline asm:
     # http://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
     # http://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
@@ -17503,6 +17933,10 @@ fi
 # Check for stdatomic.h
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdatomic.h" >&5
 $as_echo_n "checking for stdatomic.h... " >&6; }
+if ${ac_cv_header_stdatomic_h+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -17520,25 +17954,32 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  have_stdatomic_h=yes
+  ac_cv_header_stdatomic_h=yes
 else
-  have_stdatomic_h=no
+  ac_cv_header_stdatomic_h=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_stdatomic_h" >&5
-$as_echo "$have_stdatomic_h" >&6; }
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_header_stdatomic_h" >&5
+$as_echo "$ac_cv_header_stdatomic_h" >&6; }
 
-if test "$have_stdatomic_h" = yes; then
+if test "x$ac_cv_header_stdatomic_h" = xyes; then :
+
 
 $as_echo "#define HAVE_STD_ATOMIC 1" >>confdefs.h
+
 
 fi
 
 # Check for GCC >= 4.7 and clang __atomic builtin functions
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for builtin __atomic_load_n and __atomic_store_n functions" >&5
 $as_echo_n "checking for builtin __atomic_load_n and __atomic_store_n functions... " >&6; }
+if ${ac_cv_builtin_atomic+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -17553,19 +17994,22 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  have_builtin_atomic=yes
+  ac_cv_builtin_atomic=yes
 else
-  have_builtin_atomic=no
+  ac_cv_builtin_atomic=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_builtin_atomic" >&5
-$as_echo "$have_builtin_atomic" >&6; }
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_builtin_atomic" >&5
+$as_echo "$ac_cv_builtin_atomic" >&6; }
 
-if test "$have_builtin_atomic" = yes; then
+if test "x$ac_cv_builtin_atomic" = xyes; then :
+
 
 $as_echo "#define HAVE_BUILTIN_ATOMIC 1" >>confdefs.h
+
 
 fi
 
@@ -17597,6 +18041,10 @@ $as_echo "$ENSUREPIP" >&6; }
 # check if the dirent structure of a d_type field and DT_UNKNOWN is defined
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking if the dirent structure of a d_type field" >&5
 $as_echo_n "checking if the dirent structure of a d_type field... " >&6; }
+if ${ac_cv_dirent_d_type+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -17611,24 +18059,32 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  have_dirent_d_type=yes
+  ac_cv_dirent_d_type=yes
 else
-  have_dirent_d_type=no
+  ac_cv_dirent_d_type=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_dirent_d_type" >&5
-$as_echo "$have_dirent_d_type" >&6; }
 
-if test "$have_dirent_d_type" = yes; then
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_dirent_d_type" >&5
+$as_echo "$ac_cv_dirent_d_type" >&6; }
+
+if test "x$ac_cv_dirent_d_type" = xyes; then :
+
 
 $as_echo "#define HAVE_DIRENT_D_TYPE 1" >>confdefs.h
+
 
 fi
 
 # check if the Linux getrandom() syscall is available
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for the Linux getrandom() syscall" >&5
 $as_echo_n "checking for the Linux getrandom() syscall... " >&6; }
+if ${ac_cv_getrandom_syscall+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -17649,18 +18105,22 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  have_getrandom_syscall=yes
+  ac_cv_getrandom_syscall=yes
 else
-  have_getrandom_syscall=no
+  ac_cv_getrandom_syscall=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_getrandom_syscall" >&5
-$as_echo "$have_getrandom_syscall" >&6; }
 
-if test "$have_getrandom_syscall" = yes; then
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_getrandom_syscall" >&5
+$as_echo "$ac_cv_getrandom_syscall" >&6; }
+
+if test "x$ac_cv_getrandom_syscall" = xyes; then :
+
 
 $as_echo "#define HAVE_GETRANDOM_SYSCALL 1" >>confdefs.h
+
 
 fi
 
@@ -17668,6 +18128,10 @@ fi
 # the test was written for the Solaris function of <sys/random.h>
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for the getrandom() function" >&5
 $as_echo_n "checking for the getrandom() function... " >&6; }
+if ${ac_cv_func_getrandom+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -17686,18 +18150,22 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  have_getrandom=yes
+  ac_cv_func_getrandom=yes
 else
-  have_getrandom=no
+  ac_cv_func_getrandom=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_getrandom" >&5
-$as_echo "$have_getrandom" >&6; }
 
-if test "$have_getrandom" = yes; then
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_getrandom" >&5
+$as_echo "$ac_cv_func_getrandom" >&6; }
+
+if test "x$ac_cv_func_getrandom" = xyes; then :
+
 
 $as_echo "#define HAVE_GETRANDOM 1" >>confdefs.h
+
 
 fi
 
@@ -18041,6 +18509,10 @@ $as_echo "$OPENSSL_RPATH" >&6; }
 # check if OpenSSL libraries work as expected
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL provides required APIs" >&5
 $as_echo_n "checking whether OpenSSL provides required APIs... " >&6; }
+if ${ac_cv_working_openssl+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
 save_LIBS="$LIBS"
 save_CFLAGS="$CFLAGS"
 save_LDFLAGS="$LDFLAGS"
@@ -18086,17 +18558,19 @@ EVP_PBE_scrypt(NULL, 0, NULL, 0, 2, 8, 1, 0, NULL, 0);
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
+  ac_cv_working_openssl=yes
 else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+  ac_cv_working_openssl=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS="$save_LIBS"
 CFLAGS="$save_CFLAGS"
 LDFLAGS="$save_LDFLAGS"
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_working_openssl" >&5
+$as_echo "$ac_cv_working_openssl" >&6; }
 
 # ssl module default cipher suite string
 

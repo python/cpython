@@ -1,0 +1,2 @@
+configure.ac now uses custom helper macros and ``AC_CACHE_CHECK`` to
+simplify and speed up configure runs.
