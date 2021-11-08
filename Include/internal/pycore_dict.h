@@ -22,6 +22,8 @@ typedef struct {
  */
 Py_ssize_t _Py_dict_lookup(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr);
 
+/* Steals key and value */
+int _PyDict_SetItem(PyObject *op, PyObject *key, PyObject *value);
 
 #define DKIX_EMPTY (-1)
 #define DKIX_DUMMY (-2)  /* Used internally */

@@ -2597,10 +2597,8 @@ check_eval_breaker:
             DEOPT_IF(!PyDict_CheckExact(dict), STORE_SUBSCR);
             STACK_SHRINK(3);
             STAT_INC(STORE_SUBSCR, hit);
-            int err = PyDict_SetItem(dict, sub, value);
+            int err = _PyDict_SetItem(dict, sub, value);
             Py_DECREF(dict);
-            Py_DECREF(sub);
-            Py_DECREF(value);
             if (err != 0) {
                 goto error;
             }
