@@ -7085,8 +7085,8 @@ yes)
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can add -Wextra" >&5
 $as_echo_n "checking if we can add -Wextra... " >&6; }
 
-  py_cc=$CC
-  CC="$CC -Wextra -Werror"
+  py_cflags=$CFLAGS
+  CFLAGS="$CFLAGS -Wextra -Werror"
   if ${ac_cv_enable_extra_warning+:} false; then :
   $as_echo_n "(cached) " >&6
 else
@@ -7110,7 +7110,7 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
 fi
 
-  CC=$py_cc
+  CFLAGS=$py_cflags
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_extra_warning" >&5
 $as_echo "$ac_cv_enable_extra_warning" >&6; }
 
@@ -7197,8 +7197,8 @@ fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can disable $CC unused-result warning" >&5
 $as_echo_n "checking if we can disable $CC unused-result warning... " >&6; }
 
-  py_cc=$CC
-  CC="$CC -Wunused-result -Werror"
+  py_cflags=$CFLAGS
+  CFLAGS="$CFLAGS -Wunused-result -Werror"
   if ${ac_cv_disable_unused_result_warning+:} false; then :
   $as_echo_n "(cached) " >&6
 else
@@ -7222,7 +7222,7 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
 fi
 
-  CC=$py_cc
+  CFLAGS=$py_cflags
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_disable_unused_result_warning" >&5
 $as_echo "$ac_cv_disable_unused_result_warning" >&6; }
 
@@ -7230,7 +7230,6 @@ $as_echo "$ac_cv_disable_unused_result_warning" >&6; }
   *) :
      ;;
 esac
-
     if test "x$ac_cv_disable_unused_result_warning" = xyes; then :
   BASECFLAGS="$BASECFLAGS -Wno-unused-result"
                CFLAGS_NODIST="$CFLAGS_NODIST -Wno-unused-result"
@@ -7240,8 +7239,8 @@ fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can disable $CC unused-parameter warning" >&5
 $as_echo_n "checking if we can disable $CC unused-parameter warning... " >&6; }
 
-  py_cc=$CC
-  CC="$CC -Wunused-parameter -Werror"
+  py_cflags=$CFLAGS
+  CFLAGS="$CFLAGS -Wunused-parameter -Werror"
   if ${ac_cv_disable_unused_parameter_warning+:} false; then :
   $as_echo_n "(cached) " >&6
 else
@@ -7265,7 +7264,7 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
 fi
 
-  CC=$py_cc
+  CFLAGS=$py_cflags
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_disable_unused_parameter_warning" >&5
 $as_echo "$ac_cv_disable_unused_parameter_warning" >&6; }
 
@@ -7278,8 +7277,8 @@ fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can disable $CC missing-field-initializers warning" >&5
 $as_echo_n "checking if we can disable $CC missing-field-initializers warning... " >&6; }
 
-  py_cc=$CC
-  CC="$CC -Wmissing-field-initializers -Werror"
+  py_cflags=$CFLAGS
+  CFLAGS="$CFLAGS -Wmissing-field-initializers -Werror"
   if ${ac_cv_disable_missing_field_initializers_warning+:} false; then :
   $as_echo_n "(cached) " >&6
 else
@@ -7303,7 +7302,7 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
 fi
 
-  CC=$py_cc
+  CFLAGS=$py_cflags
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_disable_missing_field_initializers_warning" >&5
 $as_echo "$ac_cv_disable_missing_field_initializers_warning" >&6; }
 
@@ -7316,8 +7315,8 @@ fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can enable $CC sign-compare warning" >&5
 $as_echo_n "checking if we can enable $CC sign-compare warning... " >&6; }
 
-  py_cc=$CC
-  CC="$CC -Wsign-compare -Werror"
+  py_cflags=$CFLAGS
+  CFLAGS="$CFLAGS -Wsign-compare -Werror"
   if ${ac_cv_enable_sign_compare_warning+:} false; then :
   $as_echo_n "(cached) " >&6
 else
@@ -7341,7 +7340,7 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
 fi
 
-  CC=$py_cc
+  CFLAGS=$py_cflags
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_sign_compare_warning" >&5
 $as_echo "$ac_cv_enable_sign_compare_warning" >&6; }
 
@@ -7354,8 +7353,8 @@ fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can enable $CC unreachable-code warning" >&5
 $as_echo_n "checking if we can enable $CC unreachable-code warning... " >&6; }
 
-  py_cc=$CC
-  CC="$CC -Wunreachable-code -Werror"
+  py_cflags=$CFLAGS
+  CFLAGS="$CFLAGS -Wunreachable-code -Werror"
   if ${ac_cv_enable_unreachable_code_warning+:} false; then :
   $as_echo_n "(cached) " >&6
 else
@@ -7379,7 +7378,7 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
 fi
 
-  CC=$py_cc
+  CFLAGS=$py_cflags
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_unreachable_code_warning" >&5
 $as_echo "$ac_cv_enable_unreachable_code_warning" >&6; }
 
@@ -7404,8 +7403,8 @@ $as_echo "$ac_cv_enable_unreachable_code_warning" >&6; }
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can enable $CC strict-prototypes warning" >&5
 $as_echo_n "checking if we can enable $CC strict-prototypes warning... " >&6; }
 
-  py_cc=$CC
-  CC="$CC -Wstrict-prototypes -Werror"
+  py_cflags=$CFLAGS
+  CFLAGS="$CFLAGS -Wstrict-prototypes -Werror"
   if ${ac_cv_enable_strict_prototypes_warning+:} false; then :
   $as_echo_n "(cached) " >&6
 else
@@ -7429,7 +7428,7 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
 fi
 
-  CC=$py_cc
+  CFLAGS=$py_cflags
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_strict_prototypes_warning" >&5
 $as_echo "$ac_cv_enable_strict_prototypes_warning" >&6; }
 
@@ -7474,7 +7473,7 @@ fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_implicit_function_declaration_error" >&5
 $as_echo "$ac_cv_enable_implicit_function_declaration_error" >&6; }
 
-    if test $ac_cv_enable_implicit_function_declaration_error = yes; then :
+    if test "x$ac_cv_enable_implicit_function_declaration_error" = xyes; then :
   CFLAGS_NODIST="$CFLAGS_NODIST -Werror=implicit-function-declaration"
 fi
 
@@ -7514,7 +7513,7 @@ fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_visibility" >&5
 $as_echo "$ac_cv_enable_visibility" >&6; }
 
-    if test $ac_cv_enable_visibility = yes; then :
+    if test "x$ac_cv_enable_visibility" = xyes; then :
   CFLAGS_NODIST="$CFLAGS_NODIST -fvisibility=hidden"
 fi
 

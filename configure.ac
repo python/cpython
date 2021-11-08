@@ -1644,8 +1644,8 @@ dnl PY_CHECK_CC_WARNING(ENABLE, WARNING, [MSG])
 AC_DEFUN([PY_CHECK_CC_WARNING], [
   AC_MSG_CHECKING(m4_ifblank([$3], [if we can $1 $CC $2 warning], [$3]))
   AS_VAR_PUSHDEF([py_var], [ac_cv_$1_]m4_normalize($2)[_warning])
-  AS_VAR_COPY([py_cc], [CC])
-  AS_VAR_SET([CC], ["$CC -W$2 -Werror"])
+  AS_VAR_COPY([py_cflags], [CFLAGS])
+  AS_VAR_SET([CFLAGS], ["$CFLAGS -W$2 -Werror"])
   AC_CACHE_VAL(
     [py_var],
     [AC_COMPILE_IFELSE(
@@ -1654,7 +1654,7 @@ AC_DEFUN([PY_CHECK_CC_WARNING], [
       [AS_VAR_SET([py_var], [no])],
     )]
   )
-  AS_VAR_COPY([CC], [py_cc])
+  AS_VAR_COPY([CFLAGS], [py_cflags])
   AC_MSG_RESULT([$py_var])
   AS_VAR_POPDEF([py_var])
 ])
@@ -1758,8 +1758,8 @@ yes)
      CC="$ac_save_cc"
     AC_MSG_RESULT($ac_cv_enable_implicit_function_declaration_error)
 
-    AS_IF([test $ac_cv_enable_implicit_function_declaration_error = yes],
-          [CFLAGS_NODIST="$CFLAGS_NODIST -Werror=implicit-function-declaration"])
+    AS_VAR_IF([ac_cv_enable_implicit_function_declaration_error], [yes],
+              [CFLAGS_NODIST="$CFLAGS_NODIST -Werror=implicit-function-declaration"])
 
     AC_MSG_CHECKING(if we can use visibility in $CC)
      ac_save_cc="$CC"
@@ -1776,8 +1776,8 @@ yes)
      CC="$ac_save_cc"
     AC_MSG_RESULT($ac_cv_enable_visibility)
 
-    AS_IF([test $ac_cv_enable_visibility = yes],
-          [CFLAGS_NODIST="$CFLAGS_NODIST -fvisibility=hidden"])
+    AS_VAR_IF([ac_cv_enable_visibility], [yes],
+              [CFLAGS_NODIST="$CFLAGS_NODIST -fvisibility=hidden"])
 
     # if using gcc on alpha, use -mieee to get (near) full IEEE 754
     # support.  Without this, treatment of subnormals doesn't follow
