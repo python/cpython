@@ -1706,7 +1706,6 @@ yes)
     AS_CASE([$CC],
             [*icc*], [ac_cv_disable_unused_result_warning=no]
             [PY_CHECK_CC_WARNING([disable], [unused-result])])
-
     AS_VAR_IF([ac_cv_disable_unused_result_warning], [yes],
               [BASECFLAGS="$BASECFLAGS -Wno-unused-result"
                CFLAGS_NODIST="$CFLAGS_NODIST -Wno-unused-result"])
