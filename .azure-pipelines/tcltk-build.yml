@@ -47,15 +47,15 @@ jobs:
       displayName: 'Generate msbuild.rsp'
 
     - powershell: |
-        msbuild PCbuild\tcl.vcxproj @msbuild.rsp /p:Platform=Win32 /p:tcltkDir="$(OutDir)\win32"
-        msbuild PCbuild\tk.vcxproj  @msbuild.rsp /p:Platform=Win32 /p:tcltkDir="$(OutDir)\win32"
-        msbuild PCbuild\tix.vcxproj @msbuild.rsp /p:Platform=Win32 /p:tcltkDir="$(OutDir)\win32"
+        & msbuild PCbuild\tcl.vcxproj @msbuild.rsp /p:Platform=Win32 /p:tcltkDir="$(OutDir)\win32"
+        & msbuild PCbuild\tk.vcxproj  @msbuild.rsp /p:Platform=Win32 /p:tcltkDir="$(OutDir)\win32"
+        & msbuild PCbuild\tix.vcxproj @msbuild.rsp /p:Platform=Win32 /p:tcltkDir="$(OutDir)\win32"
       displayName: 'Build for win32'
 
     - powershell: |
-        msbuild PCbuild\tcl.vcxproj @msbuild.rsp /p:Platform=x64 /p:tcltkDir="$(OutDir)\amd64"
-        msbuild PCbuild\tk.vcxproj  @msbuild.rsp /p:Platform=x64 /p:tcltkDir="$(OutDir)\amd64"
-        msbuild PCbuild\tix.vcxproj @msbuild.rsp /p:Platform=x64 /p:tcltkDir="$(OutDir)\amd64"
+        & msbuild PCbuild\tcl.vcxproj @msbuild.rsp /p:Platform=x64 /p:tcltkDir="$(OutDir)\amd64"
+        & msbuild PCbuild\tk.vcxproj  @msbuild.rsp /p:Platform=x64 /p:tcltkDir="$(OutDir)\amd64"
+        & msbuild PCbuild\tix.vcxproj @msbuild.rsp /p:Platform=x64 /p:tcltkDir="$(OutDir)\amd64"
       displayName: 'Build for amd64'
 
     - publish: '$(OutDir)'
