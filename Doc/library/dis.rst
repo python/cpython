@@ -420,7 +420,8 @@ the original TOS1.
 
 .. opcode:: BINARY_OP (op)
 
-   Implements the remaining binary operators (depending on the value of *op*).
+   Implements the binary and in-place operators (depending on the value of
+   *op*).
 
    .. versionadded:: 3.11
 

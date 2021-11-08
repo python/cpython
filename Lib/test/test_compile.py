@@ -1053,7 +1053,7 @@ class TestSourcePositions(unittest.TestCase):
         for instr, position in zip(dis.Bytecode(code), code.co_positions()):
             if instr.opname == opcode:
                 occurrence -= 1
-                if occurrence == 0:
+                if not occurrence:
                     self.assertEqual(position[0], line)
                     self.assertEqual(position[1], end_line)
                     self.assertEqual(position[2], column)
