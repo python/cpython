@@ -58,6 +58,7 @@ jobs:
 
 - job: Sign_LibFFI
   displayName: Sign LibFFI
+  dependsOn: Build_LibFFI
   pool:
     name: 'Windows Release'
 
