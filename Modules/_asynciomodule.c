@@ -1377,8 +1377,8 @@ _asyncio_Future__make_cancelled_error_impl(FutureObj *self)
         _PyErr_ClearExcState(exc_state);
     }
     else {
-        assert (exc_state->exc_type == NULL);
-        assert (exc_state->exc_traceback == NULL);
+        assert(exc_state->exc_type == NULL);
+        assert(exc_state->exc_traceback == NULL);
     }
 
     return exc;
