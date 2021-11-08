@@ -41,11 +41,11 @@ jobs:
   steps:
     - checkout: none
 
+    - template: ./find-tools.yml
+
     - powershell: |
         git clone $(SourcesRepo) -b $(SourceTag) --depth 1 .
       displayName: 'Check out OpenSSL sources'
-
-    - template: ./find-tools.yml
 
     - powershell: |
         $f = gi ms\uplink.c
