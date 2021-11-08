@@ -2286,7 +2286,7 @@ called::
 
    def subscribe(obj, x):
        """Return the result of the expression `obj[x]`"""
-       
+
        class_of_obj = type(obj)
 
        # If the class of `obj` defines `__getitem__()`,
