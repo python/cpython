@@ -42,12 +42,12 @@ jobs:
     # forcibly override the variables we set in it.
     - powershell: |
         del -Force -EA 0 msbuild.rsp
-        "/p:IntDir=$(IntDir)" >> msbuild.rsp
-        "/p:ExternalsDir=$(ExternalsDir)" >> msbuild.rsp
-        "/p:OutDir=$(OutDir)" >> msbuild.rsp
-        "/p:tclDir=$(ExternalsDir)\$(TclSourceTag)" >> msbuild.rsp
-        "/p:tkDir=$(ExternalsDir)\$(TkSourceTag)" >> msbuild.rsp
-        "/p:tixDir=$(ExternalsDir)\$(TixSourceTag)" >> msbuild.rsp
+        "/p:IntDir=$(IntDir)\" >> msbuild.rsp
+        "/p:ExternalsDir=$(ExternalsDir)\" >> msbuild.rsp
+        "/p:OutDir=$(OutDir)\" >> msbuild.rsp
+        "/p:tclDir=$(ExternalsDir)\$(TclSourceTag)\" >> msbuild.rsp
+        "/p:tkDir=$(ExternalsDir)\$(TkSourceTag)\" >> msbuild.rsp
+        "/p:tixDir=$(ExternalsDir)\$(TixSourceTag)\" >> msbuild.rsp
       displayName: 'Generate msbuild.rsp'
 
     - powershell: |
