@@ -1,0 +1,2 @@
+Add QUOTE_STRINGS and QUOTE_NOTNULL to the suite of csv module quoting
+styles.
