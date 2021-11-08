@@ -1,12 +1,18 @@
 name: OpenSSL_$(SourceTag)_$(Date:yyyyMMdd)$(Rev:.rr)
 
+resources:
+  repositories:
+  - repository: sources
+    type: github
+    name: python/cpython-source-deps
+
 variables:
   IntDir: '$(Build.BinariesDirectory)'
   OutDir: '$(Build.ArtifactStagingDirectory)'
 
   # MUST BE SET AT QUEUE TIME
   # SigningCertificate: ''
-  # SourcesRepo: 'https://github.com/python/cpython-source-deps'
+  # SourceTag: 'openssl-1.1.1k'
 
 jobs:
 - job: Build_SSL
@@ -38,7 +44,7 @@ jobs:
     clean: all
 
   steps:
-    - checkout: $(SourcesRepo)@refs/tags/$(SourceTag)
+    - checkout: sources@refs/tags/$(SourceTag)
       fetchDepth: 1
 
     - template: ./find-tools.yml

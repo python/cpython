@@ -1,5 +1,11 @@
 name: TclTk_$(SourceTag)_$(Date:yyyyMMdd)$(Rev:.rr)
 
+resources:
+  repositories:
+  - repository: sources
+    type: github
+    name: python/cpython-source-deps
+
 variables:
   IntDir: '$(Build.BinariesDirectory)\obj'
   ExternalsDir: '$(Build.BinariesDirectory)\externals'
@@ -22,10 +28,10 @@ jobs:
 
   steps:
     - checkout: self
-    - checkout: $(SourcesRepo)@refs/tags/tcl-core-$(SourceTag)
+    - checkout: sources@refs/tags/tcl-core-$(SourceTag)
       path: "$(ExternalsDir)\tcl-core-$(SourceTag)"
       fetchDepth: 1
-    - checkout: $(SourcesRepo)@refs/tags/tk-$(SourceTag)
+    - checkout: sources@refs/tags/tk-$(SourceTag)
       path: "$(ExternalsDir)\tk-$(SourceTag)"
       fetchDepth: 1
 
