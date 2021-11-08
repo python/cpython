@@ -1,3 +1,4 @@
+import array
 import contextlib
 import importlib.util
 import io
@@ -1717,6 +1718,14 @@ class OtherTests(unittest.TestCase):
         # the message on the output that regression will be noticed
         # quickly.
         self.assertRaises(OSError, zipfile.ZipFile, TESTFN)
+
+    def test_issue44439(self):
+        q = array.array('Q', [1, 2, 3, 4, 5])
+        LENGTH = len(q) * q.itemsize
+        with zipfile.ZipFile(io.BytesIO(), 'w') as zip:
+            with zip.open('data', 'w') as data:
+                self.assertEqual(data.write(q), LENGTH)
+                self.assertEqual(data._file_size, LENGTH)
 
     def test_empty_file_raises_BadZipFile(self):
         f = open(TESTFN, 'w', encoding='utf-8')
