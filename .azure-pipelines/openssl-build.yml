@@ -1,12 +1,5 @@
 name: OpenSSL_$(SourceTag)_$(Date:yyyyMMdd)$(Rev:.rr)
 
-resources:
-  repositories:
-  - repository: sources
-    type: github
-    endpoint: null
-    name: python/cpython-source-deps
-
 variables:
   IntDir: '$(Build.BinariesDirectory)'
   OutDir: '$(Build.ArtifactStagingDirectory)'
@@ -45,8 +38,11 @@ jobs:
     clean: all
 
   steps:
-    - checkout: sources@refs/tags/$(SourceTag)
-      fetchDepth: 1
+    - checkout: none
+
+    - powershell: |
+        git clone $(SourcesRepo) -b $(SourceTag) --depth 1 .
+      displayName: 'Check out OpenSSL sources'
 
     - template: ./find-tools.yml
 

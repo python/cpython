@@ -1,12 +1,5 @@
 name: TclTk_$(SourceTag)_$(Date:yyyyMMdd)$(Rev:.rr)
 
-resources:
-  repositories:
-  - repository: sources
-    type: github
-    endpoint: null
-    name: python/cpython-source-deps
-
 variables:
   IntDir: '$(Build.BinariesDirectory)\obj'
   ExternalsDir: '$(Build.BinariesDirectory)\externals'
@@ -28,13 +21,13 @@ jobs:
     clean: all
 
   steps:
-    - checkout: self
-    - checkout: sources@refs/tags/tcl-core-$(SourceTag)
-      path: "$(ExternalsDir)\tcl-core-$(SourceTag)"
-      fetchDepth: 1
-    - checkout: sources@refs/tags/tk-$(SourceTag)
-      path: "$(ExternalsDir)\tk-$(SourceTag)"
-      fetchDepth: 1
+    - powershell: |
+        git clone $(SourcesRepo) -b tcl-core-$(SourceTag) --depth 1 "$(ExternalsDir)\tcl-core-$(SourceTag)"
+      displayName: 'Check out Tcl sources'
+
+    - powershell: |
+        git clone $(SourcesRepo) -b tk-$(SourceTag) --depth 1 "$(ExternalsDir)\tk-$(SourceTag)"
+      displayName: 'Check out Tk sources'
 
     - powershell: |
         del -Force -EA 0 msbuild.rsp
