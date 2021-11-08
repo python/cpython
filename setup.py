@@ -426,12 +426,13 @@ class PyBuildExt(build_ext):
             # re-compile extensions if a header file has been changed
             ext.depends.extend(headers)
 
-    def remove_configured_extensions(self):
+    def handle_configured_extensions(self):
         # The sysconfig variables built by makesetup that list the already
         # built modules and the disabled modules as configured by the Setup
         # files.
-        sysconf_built = sysconfig.get_config_var('MODBUILT_NAMES').split()
-        sysconf_dis = sysconfig.get_config_var('MODDISABLED_NAMES').split()
+        sysconf_built = set(sysconfig.get_config_var('MODBUILT_NAMES').split())
+        sysconf_shared = set(sysconfig.get_config_var('MODSHARED_NAMES').split())
+        sysconf_dis = set(sysconfig.get_config_var('MODDISABLED_NAMES').split())
 
         mods_built = []
         mods_disabled = []
@@ -449,11 +450,15 @@ class PyBuildExt(build_ext):
                                mods_configured]
             # Remove the shared libraries built by a previous build.
             for ext in mods_configured:
+                # Don't remove shared extensions which have been built
+                # by Modules/Setup
+                if ext.name in sysconf_shared:
+                    continue
                 fullpath = self.get_ext_fullpath(ext.name)
-                if os.path.exists(fullpath):
+                if os.path.lexists(fullpath):
                     os.unlink(fullpath)
 
-        return (mods_built, mods_disabled)
+        return mods_built, mods_disabled
 
     def set_compiler_executables(self):
         # When you run "make CC=altcc" or something similar, you really want
@@ -478,7 +483,7 @@ class PyBuildExt(build_ext):
             self.remove_disabled()
 
         self.update_sources_depends()
-        mods_built, mods_disabled = self.remove_configured_extensions()
+        mods_built, mods_disabled = self.handle_configured_extensions()
         self.set_compiler_executables()
 
         if LIST_MODULE_NAMES:
@@ -1217,13 +1222,7 @@ class PyBuildExt(build_ext):
         self.add(Extension('_crypt', ['_cryptmodule.c'], libraries=libs))
 
     def detect_socket(self):
-        # socket(2)
-        kwargs = {'depends': ['socketmodule.h']}
-        if MACOS:
-            # Issue #35569: Expose RFC 3542 socket options.
-            kwargs['extra_compile_args'] = ['-D__APPLE_USE_RFC_3542']
-
-        self.add(Extension('_socket', ['socketmodule.c'], **kwargs))
+        self.add(Extension('_socket', ['socketmodule.c'], depends=['socketmodule.h']))
 
     def detect_dbm_gdbm(self):
         # Modules that provide persistent dictionary-like semantics.  You will
@@ -1597,9 +1596,11 @@ class PyBuildExt(build_ext):
 
             # Enable support for loadable extensions in the sqlite3 module
             # if --enable-loadable-sqlite-extensions configure option is used.
-            if '--enable-loadable-sqlite-extensions' not in sysconfig.get_config_var("CONFIG_ARGS"):
-                sqlite_defines.append(("SQLITE_OMIT_LOAD_EXTENSION", "1"))
-            elif MACOS and sqlite_incdir == os.path.join(MACOS_SDK_ROOT, "usr/include"):
+            if (
+                MACOS and
+                sqlite_incdir == os.path.join(MACOS_SDK_ROOT, "usr/include") and
+                sysconfig.get_config_var("PY_SQLITE_ENABLE_LOAD_EXTENSION")
+            ):
                 raise DistutilsError("System version of SQLite does not support loadable extensions")
 
             if MACOS:
@@ -1837,15 +1838,15 @@ class PyBuildExt(build_ext):
 
     def detect_uuid(self):
         # Build the _uuid module if possible
-        uuid_incs = find_file("uuid.h", self.inc_dirs, ["/usr/include/uuid"])
-        if uuid_incs is not None:
-            if self.compiler.find_library_file(self.lib_dirs, 'uuid'):
-                uuid_libs = ['uuid']
+        uuid_h = sysconfig.get_config_var("HAVE_UUID_H")
+        uuid_uuid_h = sysconfig.get_config_var("HAVE_UUID_UUID_H")
+        if uuid_h or uuid_uuid_h:
+            if sysconfig.get_config_var("HAVE_LIBUUID"):
+                uuid_libs = ["uuid"]
             else:
                 uuid_libs = []
             self.add(Extension('_uuid', ['_uuidmodule.c'],
-                               libraries=uuid_libs,
-                               include_dirs=uuid_incs))
+                               libraries=uuid_libs))
         else:
             self.missing.append('_uuid')
 

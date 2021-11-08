@@ -104,7 +104,6 @@ PY_CPPFLAGS=	$(BASECPPFLAGS) -I. -I$(srcdir)/Include $(CONFIGURE_CPPFLAGS) $(CPP
 PY_LDFLAGS=	$(CONFIGURE_LDFLAGS) $(LDFLAGS)
 PY_LDFLAGS_NODIST=$(CONFIGURE_LDFLAGS_NODIST) $(LDFLAGS_NODIST)
 NO_AS_NEEDED=	@NO_AS_NEEDED@
-SGI_ABI=	@SGI_ABI@
 CCSHARED=	@CCSHARED@
 # LINKFORSHARED are the flags passed to the $(CC) command that links
 # the python executable -- this is only needed for a few systems
@@ -705,8 +704,17 @@ $(DLLLIBRARY) libpython$(LDVERSION).dll.a: $(LIBRARY_OBJS)
 	fi
 
 
-oldsharedmods: $(SHAREDMODS)
-
+# create relative links from build/lib.platform/egg.so to Modules/egg.so
+# pybuilddir.txt is created too late. We cannot use it in Makefile
+# targets. ln --relative is not portable.
+oldsharedmods: $(SHAREDMODS) pybuilddir.txt
+	@target=`cat pybuilddir.txt`; \
+	$(MKDIR_P) $$target; \
+	for mod in X $(SHAREDMODS); do \
+		if test $$mod != X; then \
+			$(LN) -sf ../../$$mod $$target/`basename $$mod`; \
+		fi; \
+	done
 
 Makefile Modules/config.c: Makefile.pre \
 				$(srcdir)/Modules/config.c.in \
@@ -1553,7 +1561,6 @@ TESTSUBDIRS=	ctypes/test \
 		lib2to3/tests/data \
 		lib2to3/tests/data/fixers \
 		lib2to3/tests/data/fixers/myfixes \
-		sqlite3/test \
 		test test/audiodata \
 		test/capath test/cjkencodings \
 		test/data test/decimaltestdata \
