@@ -1733,7 +1733,7 @@ class HandlerTests(unittest.TestCase):
         handler = urllib.request.AbstractHTTPHandler()
         req = Request("http://dummy/")
         req.timeout = None
-        with self.assertRaises(http.client.BadStatusLine):
+        with self.assertRaises(urllib.error.URLError):
             handler.do_open(conn, req)
         self.assertTrue(conn.fakesock.closed, "Connection not closed")
 

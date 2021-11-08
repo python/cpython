@@ -1347,9 +1347,9 @@ class AbstractHTTPHandler(BaseHandler):
             try:
                 h.request(req.get_method(), req.selector, req.data, headers,
                           encode_chunked=req.has_header('Transfer-encoding'))
+                r = h.getresponse()
             except OSError as err: # timeout error
                 raise URLError(err)
-            r = h.getresponse()
         except:
             h.close()
             raise
