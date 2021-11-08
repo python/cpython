@@ -1703,14 +1703,9 @@ yes)
 
     # ICC doesn't recognize the option, but only emits a warning
     ## XXX does it emit an unused result warning and can it be disabled?
-    case "$CC" in
-    *icc*)
-    ac_cv_disable_unused_result_warning=no
-    ;;
-    *)
-    PY_CHECK_CC_WARNING([disable], [unused-result])
-    ;;
-    esac
+    AS_CASE([$CC],
+            [*icc*], [ac_cv_disable_unused_result_warning=no]
+            [PY_CHECK_CC_WARNING([disable], [unused-result])])
 
     AS_VAR_IF([ac_cv_disable_unused_result_warning], [yes],
               [BASECFLAGS="$BASECFLAGS -Wno-unused-result"

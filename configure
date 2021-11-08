@@ -7184,18 +7184,15 @@ fi
      CC="$ac_save_cc"
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_no_strict_aliasing" >&5
 $as_echo "$ac_cv_no_strict_aliasing" >&6; }
-    if test $ac_cv_no_strict_aliasing = yes
-    then
-      BASECFLAGS="$BASECFLAGS -fno-strict-aliasing"
-    fi
+    if test "x$ac_cv_no_strict_aliasing" = xyes; then :
+  BASECFLAGS="$BASECFLAGS -fno-strict-aliasing"
+fi
 
     # ICC doesn't recognize the option, but only emits a warning
     ## XXX does it emit an unused result warning and can it be disabled?
-    case "$CC" in
-    *icc*)
+    case $CC in #(
+  *icc*) :
     ac_cv_disable_unused_result_warning=no
-    ;;
-    *)
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can disable $CC unused-result warning" >&5
 $as_echo_n "checking if we can disable $CC unused-result warning... " >&6; }
@@ -7229,9 +7226,10 @@ fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_disable_unused_result_warning" >&5
 $as_echo "$ac_cv_disable_unused_result_warning" >&6; }
 
-
-    ;;
-    esac
+ ;; #(
+  *) :
+     ;;
+esac
 
     if test "x$ac_cv_disable_unused_result_warning" = xyes; then :
   BASECFLAGS="$BASECFLAGS -Wno-unused-result"
