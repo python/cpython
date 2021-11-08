@@ -5,7 +5,7 @@ variables:
   OutDir: '$(Build.ArtifactStagingDirectory)'
 
   # MUST BE SET AT QUEUE TIME
-  # SigningCertificate: ''
+  # SigningCertificate: 'Python Software Foundation'
   # SourcesRepo: 'https://github.com/python/cpython-source-deps'
   # SourceTag: 'openssl-1.1.1k'
 
@@ -13,8 +13,8 @@ jobs:
 - job: Build_SSL
   displayName: OpenSSL
   pool:
-    #name: 'Windows Release'
-    vmImage: windows-latest
+    name: 'Windows Release'
+    #vmImage: windows-latest
 
   strategy:
     matrix:
