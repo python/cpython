@@ -211,7 +211,7 @@ class ThreadPoolExecutor(_base.Executor):
             # Drain work queue and mark pending futures failed
             while True:
                 try:
-                    work_item = self._work_queue.get_nowait()
+                    work_item, name = self._work_queue.get_nowait()
                 except queue.Empty:
                     break
                 if work_item is not None:
