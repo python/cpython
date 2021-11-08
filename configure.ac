@@ -1666,7 +1666,7 @@ yes)
 
     PY_CHECK_CC_WARNING([enable], [extra])
     AS_VAR_IF([ac_cv_enable_extra_warning], [yes],
-          [CFLAGS_NODIST="$CFLAGS_NODIST -Wextra"])
+              [CFLAGS_NODIST="$CFLAGS_NODIST -Wextra"])
 
     # Python doesn't violate C99 aliasing rules, but older versions of
     # GCC produce warnings for legal Python code.  Enable
@@ -1714,21 +1714,21 @@ yes)
     ;;
     esac
 
-    AS_IF([test $ac_cv_disable_unused_result_warning = yes],
-          [BASECFLAGS="$BASECFLAGS -Wno-unused-result"
-           CFLAGS_NODIST="$CFLAGS_NODIST -Wno-unused-result"])
+    AS_VAR_IF([ac_cv_disable_unused_result_warning], [yes],
+              [BASECFLAGS="$BASECFLAGS -Wno-unused-result"
+               CFLAGS_NODIST="$CFLAGS_NODIST -Wno-unused-result"])
 
     PY_CHECK_CC_WARNING([disable], [unused-parameter])
-    AS_IF([test $ac_cv_disable_unused_parameter_warning = yes],
-          [CFLAGS_NODIST="$CFLAGS_NODIST -Wno-unused-parameter"])
+    AS_VAR_IF([ac_cv_disable_unused_parameter_warning], [yes],
+              [CFLAGS_NODIST="$CFLAGS_NODIST -Wno-unused-parameter"])
 
     PY_CHECK_CC_WARNING([disable], [missing-field-initializers])
-    AS_IF([test $ac_cv_disable_missing_field_initializers_warning = yes],
-          [CFLAGS_NODIST="$CFLAGS_NODIST -Wno-missing-field-initializers"])
+    AS_VAR_IF([ac_cv_disable_missing_field_initializers_warning], [yes],
+              [CFLAGS_NODIST="$CFLAGS_NODIST -Wno-missing-field-initializers"])
 
     PY_CHECK_CC_WARNING([enable], [sign-compare])
-    AS_IF([test $ac_cv_enable_sign_compare_warning = yes],
-          [BASECFLAGS="$BASECFLAGS -Wsign-compare"])
+    AS_VAR_IF([ac_cv_enable_sign_compare_warning], [yes],
+              [BASECFLAGS="$BASECFLAGS -Wsign-compare"])
 
     PY_CHECK_CC_WARNING([enable], [unreachable-code])
     # Don't enable unreachable code warning in debug mode, since it usually
@@ -1748,8 +1748,8 @@ yes)
     fi
 
     PY_CHECK_CC_WARNING([enable], [strict-prototypes])
-    AS_IF([test $ac_cv_enable_strict_prototypes_warning = yes],
-          [CFLAGS_NODIST="$CFLAGS_NODIST -Wstrict-prototypes"])
+    AS_VAR_IF([ac_cv_enable_strict_prototypes_warning], [yes],
+              [CFLAGS_NODIST="$CFLAGS_NODIST -Wstrict-prototypes"])
 
     AC_MSG_CHECKING(if we can make implicit function declaration an error in $CC)
      ac_save_cc="$CC"

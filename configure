@@ -7115,7 +7115,7 @@ fi
 $as_echo "$ac_cv_enable_extra_warning" >&6; }
 
 
-    if test $ac_cv_enable_extra_warning = yes; then :
+    if test "x$ac_cv_enable_extra_warning" = xyes; then :
   CFLAGS_NODIST="$CFLAGS_NODIST -Wextra"
 fi
 
@@ -7233,9 +7233,9 @@ $as_echo "$ac_cv_disable_unused_result_warning" >&6; }
     ;;
     esac
 
-    if test $ac_cv_disable_unused_result_warning = yes; then :
+    if test "x$ac_cv_disable_unused_result_warning" = xyes; then :
   BASECFLAGS="$BASECFLAGS -Wno-unused-result"
-           CFLAGS_NODIST="$CFLAGS_NODIST -Wno-unused-result"
+               CFLAGS_NODIST="$CFLAGS_NODIST -Wno-unused-result"
 fi
 
 
@@ -7272,7 +7272,7 @@ fi
 $as_echo "$ac_cv_disable_unused_parameter_warning" >&6; }
 
 
-    if test $ac_cv_disable_unused_parameter_warning = yes; then :
+    if test "x$ac_cv_disable_unused_parameter_warning" = xyes; then :
   CFLAGS_NODIST="$CFLAGS_NODIST -Wno-unused-parameter"
 fi
 
@@ -7310,7 +7310,7 @@ fi
 $as_echo "$ac_cv_disable_missing_field_initializers_warning" >&6; }
 
 
-    if test $ac_cv_disable_missing_field_initializers_warning = yes; then :
+    if test "x$ac_cv_disable_missing_field_initializers_warning" = xyes; then :
   CFLAGS_NODIST="$CFLAGS_NODIST -Wno-missing-field-initializers"
 fi
 
@@ -7348,7 +7348,7 @@ fi
 $as_echo "$ac_cv_enable_sign_compare_warning" >&6; }
 
 
-    if test $ac_cv_enable_sign_compare_warning = yes; then :
+    if test "x$ac_cv_enable_sign_compare_warning" = xyes; then :
   BASECFLAGS="$BASECFLAGS -Wsign-compare"
 fi
 
@@ -7436,7 +7436,7 @@ fi
 $as_echo "$ac_cv_enable_strict_prototypes_warning" >&6; }
 
 
-    if test $ac_cv_enable_strict_prototypes_warning = yes; then :
+    if test "x$ac_cv_enable_strict_prototypes_warning" = xyes; then :
   CFLAGS_NODIST="$CFLAGS_NODIST -Wstrict-prototypes"
 fi
 
