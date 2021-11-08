@@ -41,7 +41,6 @@ jobs:
     # This msbuild.rsp file will be picked up automatically by the build and will
     # forcibly override the variables we set in it.
     - powershell: |
-        cd PCbuild
         del -Force -EA 0 msbuild.rsp
         "/p:IntDir=$(IntDir)" >> msbuild.rsp
         "/p:ExternalsDir=$(ExternalsDir)" >> msbuild.rsp
@@ -52,15 +51,15 @@ jobs:
       displayName: 'Generate msbuild.rsp'
 
     - powershell: |
-        & "$(msbuild)" PCbuild\tcl.vcxproj /p:Platform=Win32 /p:tcltkDir="$(OutDir)\win32"
-        & "$(msbuild)" PCbuild\tk.vcxproj  /p:Platform=Win32 /p:tcltkDir="$(OutDir)\win32"
-        & "$(msbuild)" PCbuild\tix.vcxproj /p:Platform=Win32 /p:tcltkDir="$(OutDir)\win32"
+        & "$(msbuild)" PCbuild\tcl.vcxproj "@msbuild.rsp" /p:Platform=Win32 /p:tcltkDir="$(OutDir)\win32"
+        & "$(msbuild)" PCbuild\tk.vcxproj  "@msbuild.rsp" /p:Platform=Win32 /p:tcltkDir="$(OutDir)\win32"
+        & "$(msbuild)" PCbuild\tix.vcxproj "@msbuild.rsp" /p:Platform=Win32 /p:tcltkDir="$(OutDir)\win32"
       displayName: 'Build for win32'
 
     - powershell: |
-        & "$(msbuild)" PCbuild\tcl.vcxproj /p:Platform=x64 /p:tcltkDir="$(OutDir)\amd64"
-        & "$(msbuild)" PCbuild\tk.vcxproj  /p:Platform=x64 /p:tcltkDir="$(OutDir)\amd64"
-        & "$(msbuild)" PCbuild\tix.vcxproj /p:Platform=x64 /p:tcltkDir="$(OutDir)\amd64"
+        & "$(msbuild)" PCbuild\tcl.vcxproj "@msbuild.rsp" /p:Platform=x64 /p:tcltkDir="$(OutDir)\amd64"
+        & "$(msbuild)" PCbuild\tk.vcxproj  "@msbuild.rsp" /p:Platform=x64 /p:tcltkDir="$(OutDir)\amd64"
+        & "$(msbuild)" PCbuild\tix.vcxproj "@msbuild.rsp" /p:Platform=x64 /p:tcltkDir="$(OutDir)\amd64"
       displayName: 'Build for amd64'
 
     - publish: '$(OutDir)'
