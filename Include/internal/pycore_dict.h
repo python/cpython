@@ -22,9 +22,6 @@ typedef struct {
  */
 Py_ssize_t _Py_dict_lookup(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr);
 
-/* Used for specialization in ceval.c */
-int _PyDict_SetItem_StringWithKnownHash(PyDictObject *mp, PyObject *key, PyObject *value);
-int _PyDict_SetItem_General(PyDictObject *mp, PyObject *key, PyObject *value);
 
 #define DKIX_EMPTY (-1)
 #define DKIX_DUMMY (-2)  /* Used internally */

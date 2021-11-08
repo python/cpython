@@ -1216,25 +1216,9 @@ _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *ins
     }
     else if (container_type == &PyDict_Type) {
         PyDictKeysObject *dk = ((PyDictObject *)container)->ma_keys;
-        if (PyUnicode_CheckExact(sub)
-            && dk->dk_kind == DICT_KEYS_UNICODE
-            && ((PyASCIIObject *)sub)->hash != -1)
-        {
-            *instr = _Py_MAKECODEUNIT(STORE_SUBSCR_DICT_UNICODE,
-                                      initial_counter_value());
-            goto success;
-        }
-        else if (Py_TYPE(sub)->tp_hash != NULL
-                 && dk->dk_kind == DICT_KEYS_GENERAL)
-        {
-            *instr = _Py_MAKECODEUNIT(STORE_SUBSCR_DICT_GENERAL,
-                                      initial_counter_value());
-            goto success;
-        }
-        else {
-            SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_OTHER);
-            goto fail;
-        }
+        *instr = _Py_MAKECODEUNIT(STORE_SUBSCR_DICT,
+                                  initial_counter_value());
+         goto success;
     }
     else {
         SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_OTHER);
