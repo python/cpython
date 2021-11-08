@@ -9,6 +9,9 @@ variables:
   # MUST BE SET AT QUEUE TIME
   # SigningCertificate: ''
   # SourcesRepo: 'https://github.com/python/cpython-source-deps'
+  # TclSourceTag: 'tcl-core-8.6.12.0'
+  # TkSourceTag: 'tk-8.6.12.0'
+  # TixSourceTag: 'tix-8.4.3.6'
 
 jobs:
 - job: Build_TclTk
@@ -22,20 +25,25 @@ jobs:
 
   steps:
     - powershell: |
-        git clone $(SourcesRepo) -b tcl-core-$(SourceTag) --depth 1 "$(ExternalsDir)\tcl-core-$(SourceTag)"
+        git clone $(SourcesRepo) -b $(TclSourceTag) --depth 1 "$(ExternalsDir)\$(TclSourceTag)"
       displayName: 'Check out Tcl sources'
 
     - powershell: |
-        git clone $(SourcesRepo) -b tk-$(SourceTag) --depth 1 "$(ExternalsDir)\tk-$(SourceTag)"
+        git clone $(SourcesRepo) -b $(TkSourceTag) --depth 1 "$(ExternalsDir)\$(TkSourceTag)"
       displayName: 'Check out Tk sources'
+
+    - powershell: |
+        git clone $(SourcesRepo) -b $(TixSourceTag) --depth 1 "$(ExternalsDir)\$(TixSourceTag)"
+      displayName: 'Check out Tix sources'
 
     - powershell: |
         del -Force -EA 0 msbuild.rsp
         "/p:IntDir=$(IntDir)" >> msbuild.rsp
         "/p:ExternalsDir=$(ExternalsDir)" >> msbuild.rsp
         "/p:OutDir=$(OutDir)" >> msbuild.rsp
-        "/p:tclDir=$(ExternalsDir)\tcl-core-$(SourceTag)" >> msbuild.rsp
-        "/p:tkDir=$(ExternalsDir)\tk-$(SourceTag)" >> msbuild.rsp
+        "/p:tclDir=$(ExternalsDir)\$(TclSourceTag)" >> msbuild.rsp
+        "/p:tkDir=$(ExternalsDir)\$(TkSourceTag)" >> msbuild.rsp
+        "/p:tixDir=$(ExternalsDir)\$(TixSourceTag)" >> msbuild.rsp
       displayName: 'Generate msbuild.rsp'
 
     - powershell: |
@@ -52,3 +60,4 @@ jobs:
 
     - publish: '$(OutDir)'
       artifact: 'tcltk'
+      displayName: 'Publishing tcltk'

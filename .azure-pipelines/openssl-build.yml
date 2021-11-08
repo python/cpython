@@ -6,6 +6,7 @@ variables:
 
   # MUST BE SET AT QUEUE TIME
   # SigningCertificate: ''
+  # SourcesRepo: 'https://github.com/python/cpython-source-deps'
   # SourceTag: 'openssl-1.1.1k'
 
 jobs:
@@ -106,3 +107,4 @@ jobs:
 
     - publish: '$(OutDir)'
       artifact: '$(Platform)'
+      displayName: 'Publishing $(Platform)'
