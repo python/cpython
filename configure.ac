@@ -1698,10 +1698,8 @@ yes)
      CFLAGS="$save_CFLAGS"
      CC="$ac_save_cc"
     AC_MSG_RESULT($ac_cv_no_strict_aliasing)
-    if test $ac_cv_no_strict_aliasing = yes
-    then
-      BASECFLAGS="$BASECFLAGS -fno-strict-aliasing"
-    fi
+    AS_VAR_IF([ac_cv_no_strict_aliasing], [yes],
+              [BASECFLAGS="$BASECFLAGS -fno-strict-aliasing"])
 
     # ICC doesn't recognize the option, but only emits a warning
     ## XXX does it emit an unused result warning and can it be disabled?
