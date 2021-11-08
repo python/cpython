@@ -69,6 +69,10 @@ def main():
             if options.outfile is None:
                 out = sys.stdout
             else:
+                if (options.outfile.exists() and
+                    options.outfile.expanduser().samefile(infile.name)):
+                    # exhaust the generator before opening for writing
+                    objs = list(objs)
                 out = options.outfile.open('w', encoding='utf-8')
             with out as outfile:
                 for obj in objs:

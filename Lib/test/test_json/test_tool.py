@@ -146,6 +146,40 @@ class TestTool(unittest.TestCase):
         self.assertEqual(process.stdout, self.jsonlines_expect)
         self.assertEqual(process.stderr, '')
 
+    def test_writing_jsonlines_in_place(self):
+        infile = self._create_infile(data=self.jsonlines_raw)
+        rc, out, err = assert_python_ok('-m', 'json.tool', '--json-lines', infile, infile)
+        with open(infile, "r", encoding="utf-8") as fp:
+            self.assertEqual(fp.read(), self.jsonlines_expect)
+        self.assertEqual(rc, 0)
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
+
+    def test_jsonlines_from_a_stream(self):
+        stream_code = textwrap.dedent("""
+        # print a stream of JSON integers
+        i = 0
+        while True:
+            print(i)
+            i += 1
+        """)
+        stream = subprocess.Popen((sys.executable, '-u', '-c', stream_code),
+                                  stdout=subprocess.PIPE,
+                                  bufsize=0,
+                                  )
+        args = sys.executable, '-u', '-m', 'json.tool', '--json-lines'
+        with self.assertRaises(subprocess.TimeoutExpired) as timeout:
+            subprocess.run(args, stdin=stream.stdout,
+                           capture_output=True, timeout=1,
+                           bufsize=0)
+        stream.kill()
+        stream.stdout.read()
+        stream.stdout.close()
+        stream.wait()
+
+        self.assertIsNotNone(timeout.exception.stdout)
+        self.assertTrue(timeout.exception.stdout.startswith(b'0\n1\n2\n'))
+
     def test_help_flag(self):
         rc, out, err = assert_python_ok('-m', 'json.tool', '-h')
         self.assertEqual(rc, 0)
