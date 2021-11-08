@@ -4,6 +4,7 @@ resources:
   repositories:
   - repository: sources
     type: github
+    endpoint: ''
     name: python/cpython-source-deps
 
 variables:
