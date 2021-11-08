@@ -161,7 +161,7 @@ class ThreadPoolExecutor(_base.Executor):
         self._initializer = initializer
         self._initargs = initargs
 
-    def submit(self, fn, name=None, /, *args, **kwargs):
+    def submit_with_name(self, fn, name=None, /, *args, **kwargs):
         with self._shutdown_lock, _global_shutdown_lock:
             if self._broken:
                 raise BrokenThreadPool(self._broken)
@@ -178,7 +178,8 @@ class ThreadPoolExecutor(_base.Executor):
             self._work_queue.put((w, name))
             self._adjust_thread_count()
             return f
-    submit.__doc__ = _base.Executor.submit.__doc__
+
+    submit_with_name.__doc__ = _base.Executor.submit_with_name.__doc__
 
     def _adjust_thread_count(self):
         # if idle threads are available, don't spin new threads

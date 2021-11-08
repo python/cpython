@@ -558,8 +558,8 @@ class Future(object):
 class Executor(object):
     """This is an abstract base class for concrete asynchronous executors."""
 
-    def submit(self, fn, /, *args, **kwargs):
-        """Submits a callable to be executed with the given arguments.
+    def submit_with_name(self, fn, name=None, /, *args, **kwargs):
+        """Submits a callable to be executed with the given arguments and also with a name.
 
         Schedules the callable to be executed as fn(*args, **kwargs) and returns
         a Future instance representing the execution of the callable.
@@ -567,7 +567,16 @@ class Executor(object):
         Returns:
             A Future representing the given call.
         """
+
         raise NotImplementedError()
+
+    def submit(self, fn, /, *args, **kwargs):
+        """Submits a callable with default name
+
+        Returns:
+            A Future representing the given call.
+        """
+        return self.submit_with_name(fn, None, *args, **kwargs)
 
     def map(self, fn, *iterables, timeout=None, chunksize=1):
         """Returns an iterator equivalent to map(fn, iter).
