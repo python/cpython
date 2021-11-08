@@ -78,9 +78,9 @@ jobs:
             /fd sha256 `
             /tr http://timestamp.digicert.com/ /td sha256 `
             /d "LibFFI for Python" `
-            (gci unsigned/*.dll -r)
+            (gci "$(Pipeline.Workspace)\unsigned\*.dll" -r)
       displayName: 'Sign files'
 
-    - publish: 'unsigned'
+    - publish: '$(Pipeline.Workspace)\unsigned'
       artifact: 'libffi'
       displayName: 'Publish libffi'
