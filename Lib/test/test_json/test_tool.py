@@ -7,7 +7,7 @@ import subprocess
 
 from test import support
 from test.support import os_helper
-from test.support.script_helper import assert_python_ok
+from test.support.script_helper import assert_python_ok, killing
 
 
 class TestTool(unittest.TestCase):
@@ -168,14 +168,11 @@ class TestTool(unittest.TestCase):
                                   bufsize=0,
                                   )
         args = sys.executable, '-u', '-m', 'json.tool', '--json-lines'
-        with self.assertRaises(subprocess.TimeoutExpired) as timeout:
+        with killing(stream), \
+                self.assertRaises(subprocess.TimeoutExpired) as timeout:
             subprocess.run(args, stdin=stream.stdout,
                            capture_output=True, timeout=1,
                            bufsize=0)
-        stream.kill()
-        stream.stdout.read()
-        stream.stdout.close()
-        stream.wait()
 
         self.assertIsNotNone(timeout.exception.stdout)
         self.assertTrue(timeout.exception.stdout.startswith(b'0\n1\n2\n'))

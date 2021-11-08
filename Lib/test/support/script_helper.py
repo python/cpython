@@ -2,6 +2,7 @@
 #  e.g. test_cmd_line, test_cmd_line_script and test_runpy
 
 import collections
+import contextlib
 import importlib
 import sys
 import os
@@ -196,14 +197,26 @@ def spawn_python(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
 
 def kill_python(p):
     """Run the given Popen process until completion and return stdout."""
-    p.stdin.close()
-    data = p.stdout.read()
-    p.stdout.close()
+    if p.stdin:
+        p.stdin.close()
+    if p.stdout:
+        data = p.stdout.read()
+        p.stdout.close()
     # try to cleanup the child so we don't appear to leak when running
     # with regrtest -R.
     p.wait()
     subprocess._cleanup()
     return data
+
+
+@contextlib.contextmanager
+def killing(process):
+    """Context manager that kills and cleans up the given Popen on exit."""
+    try:
+        yield process
+    finally:
+        process.kill()
+        kill_python(process)
 
 
 def make_script(script_dir, script_basename, source, omit_suffix=False):
