@@ -1421,6 +1421,9 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
             }
             break;
         default:
+            // These operators don't have any available specializations. Rather
+            // than repeatedly attempting to specialize them, just convert them
+            // back to BINARY_OP (while still recording a failure, of course)!
             *instr = _Py_MAKECODEUNIT(BINARY_OP, adaptive->original_oparg);
     }
     SPECIALIZATION_FAIL(BINARY_OP, SPEC_FAIL_OTHER);
