@@ -1,0 +1,1 @@
+Fix bug where :mod:`dis` produced an incorrect oparg when ``EXTENDED_ARG`` is followed by an opcode that does not have an arg.
