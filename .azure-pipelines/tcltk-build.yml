@@ -1,4 +1,4 @@
-name: TclTk_$(SourceTag)_$(Date:yyyyMMdd)$(Rev:.rr)
+name: tcl$(TkSourceTag)_$(Date:yyyyMMdd)$(Rev:.rr)
 
 variables:
   IntDir: '$(Build.BinariesDirectory)\obj'
@@ -25,15 +25,15 @@ jobs:
 
   steps:
     - powershell: |
-        git clone $(SourcesRepo) -b $(TclSourceTag) --depth 1 "$(ExternalsDir)\$(TclSourceTag)"
+        git clone $(SourcesRepo) -b ref/tags/$(TclSourceTag) --depth 1 "$(ExternalsDir)\$(TclSourceTag)"
       displayName: 'Check out Tcl sources'
 
     - powershell: |
-        git clone $(SourcesRepo) -b $(TkSourceTag) --depth 1 "$(ExternalsDir)\$(TkSourceTag)"
+        git clone $(SourcesRepo) -b ref/tags/$(TkSourceTag) --depth 1 "$(ExternalsDir)\$(TkSourceTag)"
       displayName: 'Check out Tk sources'
 
     - powershell: |
-        git clone $(SourcesRepo) -b $(TixSourceTag) --depth 1 "$(ExternalsDir)\$(TixSourceTag)"
+        git clone $(SourcesRepo) -b ref/tags/$(TixSourceTag) --depth 1 "$(ExternalsDir)\$(TixSourceTag)"
       displayName: 'Check out Tix sources'
 
     - powershell: |
