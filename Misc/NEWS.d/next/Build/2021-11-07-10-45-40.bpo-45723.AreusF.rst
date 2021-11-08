@@ -1,0 +1,2 @@
+``configure.ac`` is now compatible with autoconf 2.71. Deprecated checks
+``STDC_HEADERS`` and ``AC_HEADER_TIME`` have been removed.
