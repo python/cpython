@@ -1640,9 +1640,9 @@ AC_SUBST(LDFLAGS_NODIST)
 UNIVERSAL_ARCH_FLAGS=
 AC_SUBST(UNIVERSAL_ARCH_FLAGS)
 
-dnl PY_CHECK_CC_WARNING(ENABLE, WARNING)
+dnl PY_CHECK_CC_WARNING(ENABLE, WARNING, [MSG])
 AC_DEFUN([PY_CHECK_CC_WARNING], [
-  AC_MSG_CHECKING([if we can $1 $CC $2 warning])
+  AC_MSG_CHECKING(m4_ifblank([$3], [if we can $1 $CC $2 warning], [$3]))
   AS_VAR_PUSHDEF([py_var], [ac_cv_$1_]m4_normalize($2)[_warning])
   AS_VAR_COPY([py_cc], [CC])
   AS_VAR_SET([CC], ["$CC -W$2 -Werror"])
@@ -1664,7 +1664,7 @@ case $GCC in
 yes)
     CFLAGS_NODIST="$CFLAGS_NODIST -std=c99"
 
-    PY_CHECK_CC_WARNING([enable], [extra])
+    PY_CHECK_CC_WARNING([enable], [extra], [if we can add -Wextra])
     AS_VAR_IF([ac_cv_enable_extra_warning], [yes],
               [CFLAGS_NODIST="$CFLAGS_NODIST -Wextra"])
 

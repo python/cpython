@@ -7082,8 +7082,8 @@ yes)
     CFLAGS_NODIST="$CFLAGS_NODIST -std=c99"
 
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can enable $CC extra warning" >&5
-$as_echo_n "checking if we can enable $CC extra warning... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can add -Wextra" >&5
+$as_echo_n "checking if we can add -Wextra... " >&6; }
 
   py_cc=$CC
   CC="$CC -Wextra -Werror"
