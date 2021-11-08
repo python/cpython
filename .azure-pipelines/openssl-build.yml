@@ -1,4 +1,4 @@
-name: OpenSSL_$(SourceTag)_$(Date:yyyyMMdd)$(Rev:.rr)
+name: $(SourceTag)_$(Date:yyyyMMdd)$(Rev:.rr)
 
 variables:
   IntDir: '$(Build.BinariesDirectory)'
