@@ -1,0 +1,54 @@
+name: TclTk_$(SourceTag)_$(Date:yyyyMMdd)$(Rev:.rr)
+
+variables:
+  IntDir: '$(Build.BinariesDirectory)\obj'
+  ExternalsDir: '$(Build.BinariesDirectory)\externals'
+  OutDir: '$(Build.ArtifactStagingDirectory)'
+  Configuration: 'Release'
+  
+  # MUST BE SET AT QUEUE TIME
+  # SigningCertificate: ''
+  # SourcesRepo: 'https://github.com/python/cpython-source-deps'
+
+jobs:
+- job: Build_TclTk
+  displayName: 'Tcl/Tk'
+  pool:
+    #name: 'Windows Release'
+    vmImage: windows-latest
+
+  workspace:
+    clean: all
+
+  steps:
+    - powershell: |
+        git clone $(SourcesRepo) -b tcl-core-$(SourceTag) --depth 1 "$(ExternalsDir)\tcl-core-$(SourceTag)"
+      displayName: 'Clone Tcl sources'
+
+    - powershell: |
+        git clone $(SourcesRepo) -b tk-$(SourceTag) --depth 1 "$(ExternalsDir)\tk-$(SourceTag)"
+      displayName: 'Clone Tcl sources'
+
+    - powershell: |
+        del -Force -EA 0 msbuild.rsp
+        "/p:IntDir=$(IntDir)" >> msbuild.rsp
+        "/p:ExternalsDir=$(ExternalsDir)" >> msbuild.rsp
+        "/p:OutDir=$(OutDir)" >> msbuild.rsp
+        "/p:tclDir=$(ExternalsDir)\tcl-core-$(SourceTag)" >> msbuild.rsp
+        "/p:tkDir=$(ExternalsDir)\tk-$(SourceTag)" >> msbuild.rsp
+      displayName: 'Generate msbuild.rsp'
+
+    - powershell: |
+        msbuild PCbuild\tcl.vcxproj @msbuild.rsp /p:Platform=Win32 /p:tcltkDir="$(OutDir)\win32"
+        msbuild PCbuild\tk.vcxproj  @msbuild.rsp /p:Platform=Win32 /p:tcltkDir="$(OutDir)\win32"
+        msbuild PCbuild\tix.vcxproj @msbuild.rsp /p:Platform=Win32 /p:tcltkDir="$(OutDir)\win32"
+      displayName: 'Build for win32'
+
+    - powershell: |
+        msbuild PCbuild\tcl.vcxproj @msbuild.rsp /p:Platform=x64 /p:tcltkDir="$(OutDir)\amd64"
+        msbuild PCbuild\tk.vcxproj  @msbuild.rsp /p:Platform=x64 /p:tcltkDir="$(OutDir)\amd64"
+        msbuild PCbuild\tix.vcxproj @msbuild.rsp /p:Platform=x64 /p:tcltkDir="$(OutDir)\amd64"
+      displayName: 'Build for amd64'
+
+    - publish: '$(OutDir)'
+      artifact: 'tcltk'
