@@ -267,8 +267,9 @@ class FrameSummary:
             object representations.
         :param line: If provided, use this instead of looking up the line in
             the linecache.
-        :param format_locals: If provided, use this instead of repr() to generate the
-            string representations.
+        :param format_locals: If provided, use this callable to transform
+            the supplied locals into a dictionary of string representations.
+            By default, repr() is applied to every value.
         """
         self.filename = filename
         self.lineno = lineno
@@ -387,8 +388,9 @@ class StackSummary(list):
             otherwise lookup is deferred until the frame is rendered.
         :param capture_locals: If True, the local variables from each frame will
             be captured as object representations into the FrameSummary.
-        :param format_locals: If provided, the local variables from each frame will
-            be formatted using this callable.
+        :param format_locals: If provided, this callable will be used to
+            transform the local variables in each frame into a dictionary
+            of string representations.
         """
         def extended_frame_gen():
             for f, lineno in frame_gen:

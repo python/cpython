@@ -332,7 +332,7 @@ capture data for later printing in a lightweight fashion.
       may not actually get formatted). If *capture_locals* is ``True`` the
       local variables in each :class:`FrameSummary` are captured as object
       representations. If *format_locals* is provided, it is called with four arguments
-      (filename, lineno, name, locals) to generate a dict of string representations
+      (filename, lineno, name, locals) to generate a :class:`dict` of string representations
       of the local variables in each frame.
 
       ..
@@ -530,6 +530,24 @@ The following example shows the different ways to print and format the stack::
    ['  File "<doctest>", line 10, in <module>\n    another_function()\n',
     '  File "<doctest>", line 3, in another_function\n    lumberstack()\n',
     '  File "<doctest>", line 8, in lumberstack\n    print(repr(traceback.format_stack()))\n']
+
+The following example shows how to use *format_locals* to change the
+formatting of local variables::
+
+   >>> import traceback
+   >>> from unittest.util import safe_repr
+   >>> def format_locals(filename, lineno, name, locals):
+   ...     return {k: safe_repr(v) for k,v in locals.items()}
+   ...
+   ... class A:
+   ...   def __repr__(self):
+   ...      raise ValueError("Unrepresentable")
+   ... try:
+   ...   a = A()
+   ...   1/0
+   ... except Exception as e:
+   ...   print(traceback.TracebackException.from_exception(
+   ...         e, limit=1, capture_locals=True, format_locals=format_locals))
 
 
 This last example demonstrates the final few formatting functions:
