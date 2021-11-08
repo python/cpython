@@ -616,22 +616,30 @@ Waiting Primitives
           async def foo():
               return 42
 
-          coro = foo()
-          done, pending = await asyncio.wait({coro})
+          async def main():
+              coro = foo()
+              done, pending = await asyncio.wait({coro})
 
-          if coro in done:
-              # This branch will never be run!
+              if coro in done:
+                  # This branch will never be run!
+                  print('yay!')
+
+          asyncio.run(main())
 
       Here is how the above snippet can be fixed::
 
           async def foo():
               return 42
 
-          task = asyncio.create_task(foo())
-          done, pending = await asyncio.wait({task})
+          async def main():
+              task = asyncio.create_task(foo())
+              done, pending = await asyncio.wait({task})
 
-          if task in done:
-              # Everything will work as expected now.
+              if task in done:
+                  # Everything will work as expected now.
+                  print('yay!')
+
+          asyncio.run(main())
 
    .. deprecated-removed:: 3.8 3.10
 
