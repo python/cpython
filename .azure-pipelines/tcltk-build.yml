@@ -41,6 +41,7 @@ jobs:
     # This msbuild.rsp file will be picked up automatically by the build and will
     # forcibly override the variables we set in it.
     - powershell: |
+        cd PCbuild
         del -Force -EA 0 msbuild.rsp
         "/p:IntDir=$(IntDir)" >> msbuild.rsp
         "/p:ExternalsDir=$(ExternalsDir)" >> msbuild.rsp
