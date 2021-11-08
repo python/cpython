@@ -1225,7 +1225,7 @@ pysqlite_connection_set_trace_callback_impl(pysqlite_Connection *self,
     Py_RETURN_NONE;
 }
 
-#ifndef SQLITE_OMIT_LOAD_EXTENSION
+#ifdef PY_SQLITE_ENABLE_LOAD_EXTENSION
 /*[clinic input]
 _sqlite3.Connection.enable_load_extension as pysqlite_connection_enable_load_extension
 

@@ -1,1 +1,1 @@
-It allows us to give the custom Name for the threads submitted in ThreadPool
+Add the ability to give custom names to threads created by :class:`concurrent.futures.ThreadPoolExecutor`. Patch by Tangellapalli Sai Hanuma Rahul.
