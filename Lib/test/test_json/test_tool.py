@@ -175,7 +175,10 @@ class TestTool(unittest.TestCase):
                            bufsize=0)
 
         self.assertIsNotNone(timeout.exception.stdout)
-        self.assertTrue(timeout.exception.stdout.startswith(b'0\n1\n2\n'))
+        self.assertEqual(
+            timeout.exception.stdout.splitlines()[:3],
+            [b'0', b'1', b'2']
+        )
 
     def test_help_flag(self):
         rc, out, err = assert_python_ok('-m', 'json.tool', '-h')
