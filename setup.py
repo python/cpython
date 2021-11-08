@@ -1222,13 +1222,7 @@ class PyBuildExt(build_ext):
         self.add(Extension('_crypt', ['_cryptmodule.c'], libraries=libs))
 
     def detect_socket(self):
-        # socket(2)
-        kwargs = {'depends': ['socketmodule.h']}
-        if MACOS:
-            # Issue #35569: Expose RFC 3542 socket options.
-            kwargs['extra_compile_args'] = ['-D__APPLE_USE_RFC_3542']
-
-        self.add(Extension('_socket', ['socketmodule.c'], **kwargs))
+        self.add(Extension('_socket', ['socketmodule.c'], depends=['socketmodule.h']))
 
     def detect_dbm_gdbm(self):
         # Modules that provide persistent dictionary-like semantics.  You will
