@@ -197,6 +197,7 @@ def spawn_python(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
 
 def kill_python(p):
     """Run the given Popen process until completion and return stdout."""
+    data = None
     if p.stdin:
         p.stdin.close()
     if p.stdout:
