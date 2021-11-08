@@ -1378,10 +1378,6 @@ Porting to Python 3.9
     becomes an alias to the :c:func:`PyObject_NewVar` macro. They no longer
     access directly the :c:member:`PyTypeObject.tp_basicsize` member.
 
-  * :c:func:`PyType_HasFeature` now always calls :c:func:`PyType_GetFlags`.
-    Previously, it accessed directly the :c:member:`PyTypeObject.tp_flags`
-    member when the limited C API was not used.
-
   * :c:func:`PyObject_GET_WEAKREFS_LISTPTR` macro was converted to a function:
     the macro accessed directly the :c:member:`PyTypeObject.tp_weaklistoffset`
     member.
