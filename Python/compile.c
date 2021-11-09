@@ -8251,6 +8251,7 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                 switch(target->i_opcode) {
                     case POP_JUMP_IF_FALSE:
                         if (inst->i_lineno == target->i_lineno) {
+                            assert(inst->i_target != target->i_target);
                             *inst = *target;
                             i--;
                         }
@@ -8267,6 +8268,7 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                     case JUMP_IF_TRUE_OR_POP:
                         assert (inst->i_target->b_iused == 1);
                         if (inst->i_lineno == target->i_lineno) {
+                            // It's okay if inst->i_target == target->i_target.
                             inst->i_opcode = POP_JUMP_IF_FALSE;
                             inst->i_target = inst->i_target->b_next;
                             --i;
@@ -8279,6 +8281,7 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                 switch(target->i_opcode) {
                     case POP_JUMP_IF_TRUE:
                         if (inst->i_lineno == target->i_lineno) {
+                            assert(inst->i_target != target->i_target);
                             *inst = *target;
                             i--;
                         }
@@ -8295,6 +8298,7 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                     case JUMP_IF_FALSE_OR_POP:
                         assert (inst->i_target->b_iused == 1);
                         if (inst->i_lineno == target->i_lineno) {
+                            // It's okay if inst->i_target == target->i_target.
                             inst->i_opcode = POP_JUMP_IF_TRUE;
                             inst->i_target = inst->i_target->b_next;
                             --i;
@@ -8307,7 +8311,9 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                 switch(target->i_opcode) {
                     case JUMP_ABSOLUTE:
                     case JUMP_FORWARD:
-                        if (inst->i_lineno == target->i_lineno) {
+                        if (inst->i_lineno == target->i_lineno && 
+                            inst->i_target != target->i_target)
+                        {
                             inst->i_target = target->i_target;
                             i--;
                         }
@@ -8319,7 +8325,9 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                 switch(target->i_opcode) {
                     case JUMP_ABSOLUTE:
                     case JUMP_FORWARD:
-                        if (inst->i_lineno == target->i_lineno) {
+                        if (inst->i_lineno == target->i_lineno && 
+                            inst->i_target != target->i_target)
+                        {
                             inst->i_target = target->i_target;
                             i--;
                         }
