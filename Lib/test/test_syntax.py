@@ -1282,7 +1282,7 @@ Non-matching 'elif'/'else' statements:
     ...     ...
     ...     else:
     Traceback (most recent call last):
-    SyntaxError: 'else' does not match a 'if'/'while'/'for' here. Maybe try unindenting?
+    SyntaxError: 'else' does not match a 'if'/'while'/'for'/'except' here. Maybe try unindenting?
 
     >>> elif m == n:
     Traceback (most recent call last):
@@ -1291,7 +1291,7 @@ Non-matching 'elif'/'else' statements:
 
     >>> else:
     Traceback (most recent call last):
-    SyntaxError: 'else' does not match a 'if'/'while'/'for' here
+    SyntaxError: 'else' does not match a 'if'/'while'/'for'/'except' here
 """
 
 import re
@@ -1602,13 +1602,13 @@ while 1:
                 "'elif' does not match a 'if' here. Maybe try unindenting?")
             self._check_error(
                 "if x == y:\n    ...\n    else:\n        ...",
-                "'else' does not match a 'if'/'while'/'for' here. Maybe try unindenting?")
+                "'else' does not match a 'if'/'while'/'for'/'except' here. Maybe try unindenting?")
             self._check_error(
                 "elif m == n:\n    ...",
                 "'elif' does not match a 'if' here")
             self._check_error(
                 "else:\n    ...",
-                "'else' does not match a 'if'/'while'/'for' here")
+                "'else' does not match a 'if'/'while'/'for'/'except' here")
 
 
 def load_tests(loader, tests, pattern):
