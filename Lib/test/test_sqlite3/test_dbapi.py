@@ -495,7 +495,7 @@ class ConnectionTests(unittest.TestCase):
             prev_limit = self.cx.setlimit(category, new_limit)
             self.assertEqual(saved_limit, prev_limit)
             self.assertEqual(self.cx.getlimit(category), new_limit)
-            msg = "string or blob too big"
+            msg = "query string is too large"
             self.assertRaisesRegex(sqlite.DataError, msg,
                                    self.cx.execute, "select 1 as '16'")
         finally:  # restore saved limit
