@@ -1737,7 +1737,9 @@ static const nb_slot_info nb_slot_infos[] = {
 #undef NB_SLOT_INFO
 
 typedef struct {
-    const char name[3];
+    // We only really need 3 characters for name, but we're using 4 here to
+    // avoid having an awkward 7-byte structure:
+    const char name[4];
     const char iname[4];
 } nb_name_info;
 
@@ -1760,12 +1762,14 @@ static const nb_name_info nb_name_infos[] = {
 PyObject *
 _PyNumber_Op(PyObject *o1, PyObject *o2, unsigned op)
 {
+    // TODO: Just convert binary_op to _PyNumber_Op!
     return binary_op(o1, o2, nb_slot_infos[op].slot, nb_name_infos[op].name);
 }
 
 PyObject *
 _PyNumber_InPlaceOp(PyObject *o1, PyObject *o2, unsigned op)
 {
+    // TODO: Just convert binary_iop to _PyNumber_InPlaceOp!
     return binary_iop(o1, o2, nb_slot_infos[op].islot, nb_slot_infos[op].slot,
                       nb_name_infos[op].iname);
 }
