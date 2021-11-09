@@ -610,6 +610,9 @@
 /* Define to 1 if you have the `sendfile' library (-lsendfile). */
 #undef HAVE_LIBSENDFILE
 
+/* Define if SQLite > 3.7.15 is found */
+#undef HAVE_LIBSQLITE3
+
 /* Define to 1 if you have the <libutil.h> header file. */
 #undef HAVE_LIBUTIL_H
 
@@ -1027,6 +1030,9 @@
 
 /* Define to 1 if you have the `splice' function. */
 #undef HAVE_SPLICE
+
+/* Define to 1 if you have the <sqlite3.h> header file. */
+#undef HAVE_SQLITE3_H
 
 /* Define if your compiler provides ssize_t */
 #undef HAVE_SSIZE_T

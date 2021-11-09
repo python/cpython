@@ -3068,12 +3068,32 @@ fi
 
 AC_MSG_RESULT($with_decimal_contextvar)
 
+dnl Check for SQLite library
+AC_CHECK_HEADERS([sqlite3.h], [
+  AS_VAR_COPY([save_LIBS], [LIBS])
+  AC_CHECK_LIB([sqlite3], [sqlite3_open_v2], [
+    AC_COMPILE_IFELSE([
+      AC_LANG_PROGRAM([
+        #include <sqlite3.h>
+        #if SQLITE_VERSION_NUMBER < 3007015
+        #  error "SQLite 3.7.15 or higher required"
+        #endif
+      ], [])
+    ], [AC_DEFINE([HAVE_LIBSQLITE3], [1], [Define if SQLite > 3.7.15 is found])])
+  ])
+  AC_CHECK_LIB([sqlite3], [sqlite3_load_extension],
+               [have_sqlite3_load_extension=yes],
+               [have_sqlite3_load_extension=no])
+  AS_VAR_COPY([LIBS], [save_LIBS])
+])
+
 # Check for support for loadable sqlite extensions
 AC_MSG_CHECKING(for --enable-loadable-sqlite-extensions)
 AC_ARG_ENABLE(loadable-sqlite-extensions,
               AS_HELP_STRING([--enable-loadable-sqlite-extensions],
                              [support loadable extensions in _sqlite module, see Doc/library/sqlite3.rst (default is no)]),
-              [],
+              [AS_VAR_IF([have_sqlite3_load_extension], [no],
+                         [AC_MSG_ERROR([Your version of SQLite does not support loadable extensions])])],
               [enable_loadable_sqlite_extensions=no])
 AC_MSG_RESULT($enable_loadable_sqlite_extensions)
 
