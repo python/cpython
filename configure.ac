@@ -377,10 +377,6 @@ AC_SUBST(FRAMEWORKINSTALLAPPSPREFIX)
 
 AC_DEFINE_UNQUOTED(_PYTHONFRAMEWORK, "${PYTHONFRAMEWORK}", [framework name])
 
-##AC_ARG_WITH(dyld,
-##            AS_HELP_STRING([--with-dyld],
-##                           [use (OpenStep|Rhapsody) dynamic linker]))
-##
 # Set name for machine-dependent library files
 AC_ARG_VAR([MACHDEP], [name for machine-dependent library files])
 AC_MSG_CHECKING(MACHDEP)
