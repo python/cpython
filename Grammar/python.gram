@@ -1225,13 +1225,13 @@ invalid_if_stmt:
     | 'if' named_expression NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | a='if' a=named_expression ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'if' statement on line %d", a->lineno) }
-    | 'if' named_expression ':' NEWLINE INDENT statements a='elif' {
+    | 'if' named_expression ':' NEWLINE INDENT (statements | simple_stmts) a='elif' {
         RAISE_SYNTAX_ERROR_STARTING_FROM(a, "'elif' does not match an 'if' here. Maybe try dedenting?") }
 invalid_elif_stmt:
     | 'elif' named_expression NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | a='elif' named_expression ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'elif' statement on line %d", a->lineno) }
-    | 'elif' named_expression ':' NEWLINE INDENT statements a='elif' {
+    | 'elif' named_expression ':' NEWLINE INDENT (statements | simple_stmts) a='elif' {
         RAISE_SYNTAX_ERROR_STARTING_FROM(a, "'elif' does not match an 'if' here. Maybe try dedenting?") }
 invalid_else_stmt:
     | a='else' ':' NEWLINE !INDENT {
