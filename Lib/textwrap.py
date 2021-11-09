@@ -199,6 +199,23 @@ class TextWrapper:
             else:
                 i += 1
 
+    def _find_width_index(self, text, width):
+        """_find_width_index(text : string, width: int)
+
+        Find at which index the text has the required width.
+        """
+        # In most cases text_len will just use the number of characters, so this heuristic prevents calculating width
+        # for each character
+        if self.text_len(text[:width]) == width:
+            # For character widths greater than one, width can be more than the number of characters
+            return min(width, len(text))
+        cur_text = ''
+        for i, c in enumerate(text):
+            cur_text += c
+            cur_width = self.text_len(cur_text)
+            if cur_width >= width:
+                return i+1
+
     def _handle_long_word(self, reversed_chunks, cur_line, cur_len, width):
         """_handle_long_word(chunks : [string],
                              cur_line : [string],
@@ -217,12 +234,12 @@ class TextWrapper:
         # If we're allowed to break long words, then do so: put as much
         # of the next chunk onto the current line as will fit.
         if self.break_long_words:
-            end = space_left
             chunk = reversed_chunks[-1]
+            end = self._find_width_index(chunk, space_left)
             if self.break_on_hyphens and self.text_len(chunk) > space_left:
                 # break after last hyphen, but only if there are
                 # non-hyphens before it
-                hyphen = chunk.rfind('-', 0, space_left)
+                hyphen = chunk.rfind('-', 0, end)
                 if hyphen > 0 and any(c != '-' for c in chunk[:hyphen]):
                     end = hyphen + 1
             cur_line.append(chunk[:end])

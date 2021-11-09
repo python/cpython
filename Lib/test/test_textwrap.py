@@ -1118,5 +1118,18 @@ class WideCharacterTestCase(BaseTestCase):
                            text_len=self.text_len)
 
 
+class ZeroWidthTestCase(BaseTestCase):
+    def text_len(self, text):
+        return sum(
+            0 if c == 'Q' else 1
+            for c in text
+        )
+
+    def test_zero_width_text_len(self):
+
+        text = "0QQ1234QQ56789"
+        self.check_wrap(text, 6, ["0QQ1234QQ5", "6789"], text_len=self.text_len)
+
+
 if __name__ == '__main__':
     unittest.main()
