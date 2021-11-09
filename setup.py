@@ -1634,10 +1634,6 @@ class PyBuildExt(build_ext):
 
     def detect_compress_exts(self):
         # Andrew Kuchling's zlib module.
-        have_zlib = (
-            find_file('zlib.h', self.inc_dirs, []) is not None and
-            self.compiler.find_library_file(self.lib_dirs, 'z')
-        )
         if have_zlib:
             self.add(Extension('zlib', ['zlibmodule.c'],
                                libraries=['z']))
