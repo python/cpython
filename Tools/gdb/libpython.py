@@ -1801,17 +1801,13 @@ class Frame(object):
             frame = PyFramePtr(frame)
             if not frame.is_optimized_out():
                 return frame
-            # gdb is unable to get the "frame" argument of PyEval_EvalFrameEx()
-            # because it was "optimized out". Try to get "frame" from the frame
-            # of the caller, _PyEval_Vector().
-            orig_frame = frame
-            caller = self._gdbframe.older()
-            if caller:
-                frame = caller.read_var('frame')
-                frame = PyFramePtr(frame)
-                if not frame.is_optimized_out():
-                    return frame
-            return orig_frame
+            cframe = self._gdbframe.read_var('cframe')
+            if cframe is None:
+                return None
+            frame = PyFramePtr(cframe["current_frame"].dereference())
+            if frame and not frame.is_optimized_out():
+                return frame
+            return None
         except ValueError:
             return None
 

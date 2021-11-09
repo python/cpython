@@ -242,16 +242,20 @@ sqlite3
   now raise :exc:`UnicodeEncodeError` instead of :exc:`sqlite3.ProgrammingError`.
   (Contributed by Erlend E. Aasland in :issue:`44688`.)
 
-* :mod:`sqlite3` exceptions now include the SQLite error code as
+* :mod:`sqlite3` exceptions now include the SQLite extended error code as
   :attr:`~sqlite3.Error.sqlite_errorcode` and the SQLite error name as
   :attr:`~sqlite3.Error.sqlite_errorname`.
   (Contributed by Aviv Palivoda, Daniel Shahaf, and Erlend E. Aasland in
-  :issue:`16379`.)
+  :issue:`16379` and :issue:`24139`.)
 
 * Add :meth:`~sqlite3.Connection.setlimit` and
   :meth:`~sqlite3.Connection.getlimit` to :class:`sqlite3.Connection` for
   setting and getting SQLite limits by connection basis.
   (Contributed by Erlend E. Aasland in :issue:`45243`.)
+
+* :mod:`sqlite3` now sets :attr:`sqlite3.threadsafety` based on the default
+  threading mode the underlying SQLite library has been compiled with.
+  (Contributed by Erlend E. Aasland in :issue:`45613`.)
 
 * Add :meth:`~sqlite3.Connection.serialize` and
   :meth:`~sqlite3.Connection.deserialize` to :class:`sqlite3.Connection` for
@@ -524,6 +528,9 @@ Build Changes
   (Contributed by Brett Cannon and Christian Heimes in :issue:`45548`,
   :issue:`45570`, :issue:`45571`, and :issue:`43974`.)
 
+* The build dependencies for :mod:`zlib`, :mod:`bz2`, and :mod:`lzma` are now
+  detected by :program:`configure`.
+  (Contributed by Christian Heimes in :issue:`45763`.)
 
 C API Changes
 =============
