@@ -1054,7 +1054,7 @@ func_type_comment[Token*]:
 # From here on, there are rules for invalid syntax with specialised error messages
 invalid_compound_stmt:
     | a='elif' named_expression { RAISE_SYNTAX_ERROR_STARTING_FROM(a, "'elif' does not match an 'if' here") }
-    | a='else' named_expression { RAISE_SYNTAX_ERROR_STARTING_FROM(a, "'else' does not match a 'for'/'while'/'if' here") }
+    | a='else' named_expression { RAISE_SYNTAX_ERROR_STARTING_FROM(a, "'else' does not match a 'if'/'while'/'for' here") }
 invalid_arguments:
     | a=args ',' '*' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "iterable argument unpacking follows keyword argument unpacking") }
     | a=expression b=for_if_clauses ',' [args | expression for_if_clauses] {
@@ -1240,9 +1240,13 @@ invalid_while_stmt:
     | 'while' named_expression NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | a='while' named_expression ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'while' statement on line %d", a->lineno) }
+    | 'while' named_expression ':' NEWLINE INDENT (statements | simple_stmts) a='else' {
+        RAISE_SYNTAX_ERROR_STARTING_FROM(a, "'else' does not match an 'if'/'while'/'for' here. Maybe try dedenting?") }
 invalid_for_stmt:
     | [ASYNC] a='for' star_targets 'in' star_expressions ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'for' statement on line %d", a->lineno) }
+    | 'for' named_expression ':' NEWLINE INDENT (statements | simple_stmts) a='else' {
+        RAISE_SYNTAX_ERROR_STARTING_FROM(a, "'else' does not match an 'if'/'while'/'for' here. Maybe try dedenting?") }
 invalid_def_raw:
     | [ASYNC] a='def' NAME '(' [params] ')' ['->' expression] ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after function definition on line %d", a->lineno) }
