@@ -5668,7 +5668,7 @@ if ${ac_cv_wl_no_as_needed+:} false; then :
 else
 
   save_LDFLAGS="$LDFLAGS"
-  LDFLAGS="$LDFLAGS -Wl,--no-as-needed"
+  as_fn_append LDFLAGS -Wl,--no-as-needed
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
