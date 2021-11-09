@@ -125,19 +125,9 @@ Return the current time in nanoseconds since the Epoch.");
 static int
 _PyTime_GetClockWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 {
-    static int initialized = 0;
-
-    if (!initialized) {
-        initialized = 1;
-
-        /* Make sure that _PyTime_MulDiv(ticks, SEC_TO_NS, CLOCKS_PER_SEC)
-           above cannot overflow */
-        if ((_PyTime_t)CLOCKS_PER_SEC > _PyTime_MAX / SEC_TO_NS) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "CLOCKS_PER_SEC is too large");
-            return -1;
-        }
-    }
+    // Make sure that _PyTime_MulDiv(ticks, SEC_TO_NS, CLOCKS_PER_SEC)
+    // below cannot overflow.
+    _Static_assert((_PyTime_t)CLOCKS_PER_SEC <= _PyTime_MAX / SEC_TO_NS, "CLOCKS_PER_SEC is too large");
 
     if (info) {
         info->implementation = "clock()";
