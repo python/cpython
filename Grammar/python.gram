@@ -128,6 +128,8 @@ simple_stmt[stmt_ty] (memo):
 compound_stmt[stmt_ty]:
     | &('def' | '@' | ASYNC) function_def
     | &'if' if_stmt
+    | &'elif' nomatch_elif
+    | &'else' nomatch_else
     | &('class' | '@') class_def
     | &('with' | ASYNC) with_stmt
     | &('for' | ASYNC) for_stmt
@@ -357,6 +359,11 @@ elif_stmt[stmt_ty]:
 else_block[asdl_stmt_seq*]:
     | invalid_else_stmt
     | 'else' &&':' b=block { b }
+
+nomatch_elif:
+    | a='elif' named_expression { RAISE_SYNTAX_ERROR_STARTING_FROM(a, "'elif' does not match an 'if' here") }
+nomatch_else:
+    | a='else' { RAISE_SYNTAX_ERROR_STARTING_FROM(a, "'else' does not match a 'if'/'while'/'for'/'except' here") }
 
 # While statement
 # ---------------
@@ -1126,8 +1133,6 @@ invalid_del_stmt:
         RAISE_SYNTAX_ERROR_INVALID_TARGET(DEL_TARGETS, a) }
 invalid_block:
     | NEWLINE !INDENT { RAISE_INDENTATION_ERROR("expected an indented block") }
-    | a='elif' named_expression { RAISE_SYNTAX_ERROR_STARTING_FROM(a, "'elif' does not match an 'if' here") }
-    | a='else' { RAISE_SYNTAX_ERROR_STARTING_FROM(a, "'else' does not match a 'if'/'while'/'for' here") }
 invalid_comprehension:
     | ('[' | '(' | '{') a=starred_expression for_if_clauses {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "iterable unpacking cannot be used in comprehension") }
