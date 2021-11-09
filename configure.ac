@@ -3171,7 +3171,7 @@ AC_CHECK_HEADERS([db.h], [
       #define DB_DBM_HSEARCH 1
       #include <db.h>
       #if DB_VERSION_MAJOR < 5
-        #error "db.h < 5.x is not supported."
+        #error "dh.h: DB_VERSION_MAJOR < 5 is not supported."
       #endif
       ], [DBM *dbm = dbm_open(NULL, 0, 0)])
     ], [ac_cv_have_libdb=yes], [ac_cv_have_libdb=no])
