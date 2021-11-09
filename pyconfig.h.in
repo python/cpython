@@ -124,6 +124,9 @@
 /* Has builtin __atomic_load_n() and __atomic_store_n() functions */
 #undef HAVE_BUILTIN_ATOMIC
 
+/* Define to 1 if you have the <bzlib.h> header file. */
+#undef HAVE_BZLIB_H
+
 /* Define to 1 if you have the 'chflags' function. */
 #undef HAVE_CHFLAGS
 
@@ -580,6 +583,9 @@
 /* Define to 1 if you have the `lchown' function. */
 #undef HAVE_LCHOWN
 
+/* Define to 1 if you have the `bz2' library (-lbz2). */
+#undef HAVE_LIBBZ2
+
 /* Define to 1 if you have the `dl' library (-ldl). */
 #undef HAVE_LIBDL
 
@@ -591,6 +597,9 @@
 
 /* Define to 1 if you have the <libintl.h> header file. */
 #undef HAVE_LIBINTL_H
+
+/* Define to 1 if you have the `lzma' library (-llzma). */
+#undef HAVE_LIBLZMA
 
 /* Define to build the readline module. */
 #undef HAVE_LIBREADLINE
@@ -606,6 +615,9 @@
 
 /* Define to 1 if you have the `uuid' library (-luuid). */
 #undef HAVE_LIBUUID
+
+/* Define to 1 if you have the `z' library (-lz). */
+#undef HAVE_LIBZ
 
 /* Define if you have the 'link' function. */
 #undef HAVE_LINK
@@ -669,6 +681,9 @@
 
 /* Define to 1 if you have the `lutimes' function. */
 #undef HAVE_LUTIMES
+
+/* Define to 1 if you have the <lzma.h> header file. */
+#undef HAVE_LZMA_H
 
 /* Define to 1 if you have the `madvise' function. */
 #undef HAVE_MADVISE
@@ -1341,6 +1356,9 @@
 
 /* Define if the zlib library has inflateCopy */
 #undef HAVE_ZLIB_COPY
+
+/* Define to 1 if you have the <zlib.h> header file. */
+#undef HAVE_ZLIB_H
 
 /* Define to 1 if you have the `_getpty' function. */
 #undef HAVE__GETPTY
