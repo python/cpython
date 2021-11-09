@@ -968,7 +968,7 @@ def linear_regression(x, y, /, *, proportional=False):
 
     >>> y = [3 * x[i] + noise[i] for i in range(5)]
     >>> linear_regression(x, y, proportional=True)  #doctest: +ELLIPSIS
-    LinearRegression(slope=3.0244754248461283, intercept=0.0)
+    LinearRegression(slope=3.02447542484..., intercept=0.0)
 
     """
     n = len(x)
