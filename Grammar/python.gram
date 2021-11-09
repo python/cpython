@@ -126,6 +126,7 @@ simple_stmt[stmt_ty] (memo):
     | &'nonlocal' nonlocal_stmt
 
 compound_stmt[stmt_ty]:
+    | invalid_compound_stmt
     | &('def' | '@' | ASYNC) function_def
     | &'if' if_stmt
     | &('class' | '@') class_def
@@ -1051,6 +1052,9 @@ func_type_comment[Token*]:
 # ========================= START OF INVALID RULES =======================
 
 # From here on, there are rules for invalid syntax with specialised error messages
+invalid_compound_stmt:
+    | a='elif' named_expression { RAISE_SYNTAX_ERROR_STARTING_FROM(a, "'elif' does not match an 'if' here") }
+    | a='else' named_expression { RAISE_SYNTAX_ERROR_STARTING_FROM(a, "'else' does not match a 'for'/'while'/'if' here") }
 invalid_arguments:
     | a=args ',' '*' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "iterable argument unpacking follows keyword argument unpacking") }
     | a=expression b=for_if_clauses ',' [args | expression for_if_clauses] {
@@ -1221,10 +1225,14 @@ invalid_if_stmt:
     | 'if' named_expression NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | a='if' a=named_expression ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'if' statement on line %d", a->lineno) }
+    | 'if' named_expression ':' NEWLINE INDENT statements a='elif' {
+        RAISE_SYNTAX_ERROR_STARTING_FROM(a, "'elif' does not match an 'if' here. Maybe try dedenting?") }
 invalid_elif_stmt:
     | 'elif' named_expression NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | a='elif' named_expression ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'elif' statement on line %d", a->lineno) }
+    | 'elif' named_expression ':' NEWLINE INDENT statements a='elif' {
+        RAISE_SYNTAX_ERROR_STARTING_FROM(a, "'elif' does not match an 'if' here. Maybe try dedenting?") }
 invalid_else_stmt:
     | a='else' ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'else' statement on line %d", a->lineno) }
