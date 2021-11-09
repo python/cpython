@@ -1597,18 +1597,26 @@ while 1:
         def test_syntax_error_non_matching_elif_else_statements(self):
             # Check bpo-45759: 'elif' statements that match no 'if' statement
             # or 'else' statements that match no 'if'/'while'/'for' statement
-            self._check_error(
-                "if a == b:\n    ...\n    elif a == c:\n        ...",
-                "'elif' does not match a 'if' here. Maybe try unindenting?")
-            self._check_error(
-                "if x == y:\n    ...\n    else:\n        ...",
-                "'else' does not match a 'if'/'while'/'for'/'except' here. Maybe try unindenting?")
+            # self._check_error(
+            #     "if a == b:\n    ...\n    elif a == c:\n        ...",
+            #     "'elif' does not match a 'if' here. Maybe try unindenting?")
+            # self._check_error(
+            #     "if x == y:\n    ...\n    else:\n        ...",
+            #     "'else' does not match a 'if'/'while'/'for'/'except' here. Maybe try unindenting?")
             self._check_error(
                 "elif m == n:\n    ...",
                 "'elif' does not match a 'if' here")
             self._check_error(
                 "else:\n    ...",
                 "'else' does not match a 'if'/'while'/'for'/'except' here")
+            try:
+                "if a == b:\n    ...\nelif a == c:\n    ...",
+            except SyntaxError:
+                self.fail("block raised an unexpected error")
+            try:
+                "if x == y:\n    ...\nelse:\n    ...",
+            except SyntaxError:
+                self.fail("block raised an unexpected error")
 
 
 def load_tests(loader, tests, pattern):
