@@ -3830,9 +3830,26 @@ if test "$ac_cv_have_lchflags" = yes ; then
   AC_DEFINE(HAVE_LCHFLAGS, 1, [Define to 1 if you have the 'lchflags' function.])
 fi
 
-# Check for compression libraries
-dnl Check if system zlib has *Copy() functions
-AC_CHECK_LIB(z, inflateCopy, AC_DEFINE(HAVE_ZLIB_COPY, 1, [Define if the zlib library has inflateCopy]))
+dnl Check for compression libraries
+AC_CHECK_HEADERS([zlib.h], [
+  save_LIBS="$LIBS"
+  AC_CHECK_LIB([z], [gzread])
+  LIBS="$save_LIBS"
+  AC_CHECK_LIB([z], [inflateCopy], [AC_DEFINE(HAVE_ZLIB_COPY, 1, [Define if the zlib library has inflateCopy])])
+  LIBS="$save_LIBS"
+])
+
+AC_CHECK_HEADERS([bzlib.h], [
+  save_LIBS="$LIBS"
+  AC_CHECK_LIB([bz2], [BZ2_bzCompress])
+  LIBS="$save_LIBS"
+])
+
+AC_CHECK_HEADERS([lzma.h], [
+  save_LIBS="$LIBS"
+  AC_CHECK_LIB([lzma], [lzma_easy_encoder])
+  LIBS="$save_LIBS"
+])
 
 PY_CHECK_FUNC([hstrerror], [#include <netdb.h>])
 

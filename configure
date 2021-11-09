@@ -12884,8 +12884,62 @@ $as_echo "#define HAVE_LCHFLAGS 1" >>confdefs.h
 
 fi
 
-# Check for compression libraries
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
+for ac_header in zlib.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
+if test "x$ac_cv_header_zlib_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_ZLIB_H 1
+_ACEOF
+
+  save_LIBS="$LIBS"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gzread in -lz" >&5
+$as_echo_n "checking for gzread in -lz... " >&6; }
+if ${ac_cv_lib_z_gzread+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lz  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char gzread ();
+int
+main ()
+{
+return gzread ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_z_gzread=yes
+else
+  ac_cv_lib_z_gzread=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_z_gzread" >&5
+$as_echo "$ac_cv_lib_z_gzread" >&6; }
+if test "x$ac_cv_lib_z_gzread" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBZ 1
+_ACEOF
+
+  LIBS="-lz $LIBS"
+
+fi
+
+  LIBS="$save_LIBS"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
 $as_echo_n "checking for inflateCopy in -lz... " >&6; }
 if ${ac_cv_lib_z_inflateCopy+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -12926,6 +12980,134 @@ if test "x$ac_cv_lib_z_inflateCopy" = xyes; then :
 $as_echo "#define HAVE_ZLIB_COPY 1" >>confdefs.h
 
 fi
+
+  LIBS="$save_LIBS"
+
+fi
+
+done
+
+
+for ac_header in bzlib.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "bzlib.h" "ac_cv_header_bzlib_h" "$ac_includes_default"
+if test "x$ac_cv_header_bzlib_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_BZLIB_H 1
+_ACEOF
+
+  save_LIBS="$LIBS"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BZ2_bzCompress in -lbz2" >&5
+$as_echo_n "checking for BZ2_bzCompress in -lbz2... " >&6; }
+if ${ac_cv_lib_bz2_BZ2_bzCompress+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lbz2  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char BZ2_bzCompress ();
+int
+main ()
+{
+return BZ2_bzCompress ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_bz2_BZ2_bzCompress=yes
+else
+  ac_cv_lib_bz2_BZ2_bzCompress=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_bz2_BZ2_bzCompress" >&5
+$as_echo "$ac_cv_lib_bz2_BZ2_bzCompress" >&6; }
+if test "x$ac_cv_lib_bz2_BZ2_bzCompress" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBBZ2 1
+_ACEOF
+
+  LIBS="-lbz2 $LIBS"
+
+fi
+
+  LIBS="$save_LIBS"
+
+fi
+
+done
+
+
+for ac_header in lzma.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "lzma.h" "ac_cv_header_lzma_h" "$ac_includes_default"
+if test "x$ac_cv_header_lzma_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LZMA_H 1
+_ACEOF
+
+  save_LIBS="$LIBS"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for lzma_easy_encoder in -llzma" >&5
+$as_echo_n "checking for lzma_easy_encoder in -llzma... " >&6; }
+if ${ac_cv_lib_lzma_lzma_easy_encoder+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-llzma  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char lzma_easy_encoder ();
+int
+main ()
+{
+return lzma_easy_encoder ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_lzma_lzma_easy_encoder=yes
+else
+  ac_cv_lib_lzma_lzma_easy_encoder=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_lzma_lzma_easy_encoder" >&5
+$as_echo "$ac_cv_lib_lzma_lzma_easy_encoder" >&6; }
+if test "x$ac_cv_lib_lzma_lzma_easy_encoder" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBLZMA 1
+_ACEOF
+
+  LIBS="-llzma $LIBS"
+
+fi
+
+  LIBS="$save_LIBS"
+
+fi
+
+done
 
 
 

@@ -1634,10 +1634,7 @@ class PyBuildExt(build_ext):
 
     def detect_compress_exts(self):
         # Andrew Kuchling's zlib module.
-        have_zlib = (
-            find_file('zlib.h', self.inc_dirs, []) is not None and
-            self.compiler.find_library_file(self.lib_dirs, 'z')
-        )
+        have_zlib = sysconfig.get_config_var("HAVE_LIBZ")
         if have_zlib:
             self.add(Extension('zlib', ['zlibmodule.c'],
                                 libraries=['z']))
@@ -1657,14 +1654,14 @@ class PyBuildExt(build_ext):
                            libraries=libraries))
 
         # Gustavo Niemeyer's bz2 module.
-        if (self.compiler.find_library_file(self.lib_dirs, 'bz2')):
+        if sysconfig.get_config_var("HAVE_LIBBZ2"):
             self.add(Extension('_bz2', ['_bz2module.c'],
                                libraries=['bz2']))
         else:
             self.missing.append('_bz2')
 
         # LZMA compression support.
-        if self.compiler.find_library_file(self.lib_dirs, 'lzma'):
+        if sysconfig.get_config_var("HAVE_LIBLZMA"):
             self.add(Extension('_lzma', ['_lzmamodule.c'],
                                libraries=['lzma']))
         else:
