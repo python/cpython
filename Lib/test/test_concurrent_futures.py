@@ -481,6 +481,34 @@ class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, BaseTestCase
             # no thread_name_prefix was supplied.
             self.assertRegex(t.name, r'ThreadPoolExecutor-\d+_[0-4]$')
             t.join()
+    
+    def test_thread_with_custom_name(self):
+        executor = futures.ThreadPoolExecutor(max_workers=5, thread_name_prefix="sample_this")
+        for s in range(6):
+            executor.submit_with_name(time.sleep, "::sample::" + str(s), 0.5)
+        threads = executor._threads
+        del executor
+        support.gc_collect()
+
+        for t in threads:
+            # since we use custom names for all threads we can expect, that
+            # it doesn't use thread_name_prefix
+            self.assertRegex(t.name, r"::sample::[0-5]")
+            t.join()
+    
+    def test_thread_with_prefix_or_custom_name(self):
+        executor = futures.ThreadPoolExecutor(max_workers=3, thread_name_prefix="sample")
+        test = lambda: threading.current_thread().name
+        regex = r"sample_[0-2]"
+
+        self.assertEqual(executor.submit_with_name(test, "sample").result(), "sample")
+        # since ThreadPool reuses threads, so it uses the prev. sample thread 
+        self.assertNotRegex(executor.submit(test).result(), regex)
+        executor.submit(time.sleep, 1)
+        # now it creates new thread since it's available, with the thread_name_prefix
+        self.assertRegex(executor.submit(test).result(), regex)
+
+        executor.shutdown() # avoid dangling threads
 
     def test_cancel_futures_wait_false(self):
         # Can only be reliably tested for TPE, since PPE often hangs with
@@ -925,14 +953,6 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
                 with futures.ProcessPoolExecutor(1, mp_context=get_context('fork')) as workers:
                     workers.submit(tuple)
 
-class ThreadPoolExecutorCustomNameTest(ThreadPoolMixin, BaseTestCase):
-    def return_name(self):
-        return threading.current_thread().name
-
-    def test_submit_with_name(self):
-        executor = self.executor_type
-        expected = "Sample"
-        self.assertEqual(executor.submit_with_name(self.return_name, expected).result(), expected)
 
 class ProcessPoolExecutorTest(ExecutorTest):
 
