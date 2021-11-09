@@ -2894,7 +2894,6 @@ int main()
 [ac_cv_aligned_required=yes],
 [ac_cv_aligned_required=yes])
 ])
-AC_MSG_RESULT($ac_cv_aligned_required)
 if test "$ac_cv_aligned_required" = yes ; then
   AC_DEFINE([HAVE_ALIGNED_REQUIRED], [1],
     [Define if aligned memory access is required])

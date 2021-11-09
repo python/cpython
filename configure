@@ -10321,8 +10321,6 @@ fi
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_aligned_required" >&5
 $as_echo "$ac_cv_aligned_required" >&6; }
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_aligned_required" >&5
-$as_echo "$ac_cv_aligned_required" >&6; }
 if test "$ac_cv_aligned_required" = yes ; then
 
 $as_echo "#define HAVE_ALIGNED_REQUIRED 1" >>confdefs.h
