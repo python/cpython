@@ -5738,7 +5738,6 @@ atheos*|Linux*/1*)
    exit 1;;
 esac
 
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-suffix" >&5
 $as_echo_n "checking for --with-suffix... " >&6; }
 
