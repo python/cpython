@@ -193,7 +193,7 @@ dis_bug_45757 = """\
           0 EXTENDED_ARG             1
           2 NOP
           4 EXTENDED_ARG             1
-          6 LOAD_CONST             297
+          6 LOAD_CONST             297 (297)
           8 RETURN_VALUE
 """
 
