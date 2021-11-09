@@ -1276,13 +1276,13 @@ Non-matching 'elif'/'else' statements:
     ...     ...
     ...     elif a == c:
     Traceback (most recent call last):
-    SyntaxError: 'elif' does not match a 'if' here. Maybe try unindenting?
+    SyntaxError: 'elif' does not match a 'if' here
 
     >>> if x == y:
     ...     ...
     ...     else:
     Traceback (most recent call last):
-    SyntaxError: 'else' does not match a 'if'/'while'/'for'/'except' here. Maybe try unindenting?
+    SyntaxError: 'else' does not match a 'if'/'while'/'for'/'except' here
 
     >>> elif m == n:
     Traceback (most recent call last):
