@@ -361,7 +361,7 @@ else_block[asdl_stmt_seq*]:
     | 'else' &&':' b=block { b }
 
 nomatch_elif:
-    | a='elif' named_expression { RAISE_SYNTAX_ERROR_STARTING_FROM(a, "'elif' does not match an 'if' here") }
+    | a='elif' named_expression { RAISE_SYNTAX_ERROR_STARTING_FROM(a, "'elif' does not match a 'if' here") }
 nomatch_else:
     | a='else' { RAISE_SYNTAX_ERROR_STARTING_FROM(a, "'else' does not match a 'if'/'while'/'for'/'except' here") }
 
