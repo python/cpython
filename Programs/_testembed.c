@@ -1733,7 +1733,13 @@ static int check_use_frozen_modules(const char *rawval)
     if (rawval == NULL) {
         wcscpy(optval, L"frozen_modules");
     }
-    else if (swprintf(optval, 100, L"frozen_modules=%s", rawval) < 0) {
+    else if (swprintf(optval, 100,
+#if defined(_MSC_VER)
+        L"frozen_modules=%S",
+#else
+        L"frozen_modules=%s",
+#endif
+        rawval) < 0) {
         error("rawval is too long");
         return -1;
     }

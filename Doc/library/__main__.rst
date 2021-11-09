@@ -231,7 +231,7 @@ students::
     print(f'Found student: {search_students(student_name)}')
 
 Note that ``from .student import search_students`` is an example of a relative
-import.  This import style must be used when referencing modules within a
+import.  This import style can be used when referencing modules within a
 package.  For more details, see :ref:`intra-package-references` in the
 :ref:`tut-modules` section of the tutorial.
 
