@@ -1118,16 +1118,6 @@ class PyBuildExt(build_ext):
                 if find_file('readline/rlconf.h', self.inc_dirs, []) is None:
                     do_readline = False
         if do_readline:
-            if MACOS and os_release < 9:
-                # In every directory on the search path search for a dynamic
-                # library and then a static library, instead of first looking
-                # for dynamic libraries on the entire path.
-                # This way a statically linked custom readline gets picked up
-                # before the (possibly broken) dynamic library in /usr/lib.
-                readline_extra_link_args = ('-Wl,-search_paths_first',)
-            else:
-                readline_extra_link_args = ()
-
             readline_libs = [readline_lib]
             if readline_termcap_library:
                 pass # Issue 7384: Already linked against curses or tinfo.
@@ -1139,7 +1129,6 @@ class PyBuildExt(build_ext):
                 readline_libs.append('termcap')
             self.add(Extension('readline', ['readline.c'],
                                library_dirs=['/usr/lib/termcap'],
-                               extra_link_args=readline_extra_link_args,
                                libraries=readline_libs))
         else:
             self.missing.append('readline')
@@ -1603,16 +1592,6 @@ class PyBuildExt(build_ext):
             ):
                 raise DistutilsError("System version of SQLite does not support loadable extensions")
 
-            if MACOS:
-                # In every directory on the search path search for a dynamic
-                # library and then a static library, instead of first looking
-                # for dynamic libraries on the entire path.
-                # This way a statically linked custom sqlite gets picked up
-                # before the dynamic library in /usr/lib.
-                sqlite_extra_link_args = ('-Wl,-search_paths_first',)
-            else:
-                sqlite_extra_link_args = ()
-
             include_dirs = ["Modules/_sqlite"]
             # Only include the directory where sqlite was found if it does
             # not already exist in set include directories, otherwise you
@@ -1626,7 +1605,6 @@ class PyBuildExt(build_ext):
                                define_macros=sqlite_defines,
                                include_dirs=include_dirs,
                                library_dirs=sqlite_libdir,
-                               extra_link_args=sqlite_extra_link_args,
                                libraries=["sqlite3",]))
         else:
             self.missing.append('_sqlite3')
@@ -1685,13 +1663,8 @@ class PyBuildExt(build_ext):
                         break
             if version >= version_req:
                 if (self.compiler.find_library_file(self.lib_dirs, 'z')):
-                    if MACOS:
-                        zlib_extra_link_args = ('-Wl,-search_paths_first',)
-                    else:
-                        zlib_extra_link_args = ()
                     self.add(Extension('zlib', ['zlibmodule.c'],
-                                       libraries=['z'],
-                                       extra_link_args=zlib_extra_link_args))
+                                       libraries=['z']))
                     have_zlib = True
                 else:
                     self.missing.append('zlib')
@@ -1706,24 +1679,16 @@ class PyBuildExt(build_ext):
         if have_zlib:
             extra_compile_args.append('-DUSE_ZLIB_CRC32')
             libraries = ['z']
-            extra_link_args = zlib_extra_link_args
         else:
             libraries = []
-            extra_link_args = []
         self.add(Extension('binascii', ['binascii.c'],
                            extra_compile_args=extra_compile_args,
-                           libraries=libraries,
-                           extra_link_args=extra_link_args))
+                           libraries=libraries))
 
         # Gustavo Niemeyer's bz2 module.
         if (self.compiler.find_library_file(self.lib_dirs, 'bz2')):
-            if MACOS:
-                bz2_extra_link_args = ('-Wl,-search_paths_first',)
-            else:
-                bz2_extra_link_args = ()
             self.add(Extension('_bz2', ['_bz2module.c'],
-                               libraries=['bz2'],
-                               extra_link_args=bz2_extra_link_args))
+                               libraries=['bz2']))
         else:
             self.missing.append('_bz2')
 

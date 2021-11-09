@@ -12886,15 +12886,6 @@ $as_echo "#define HAVE_LCHFLAGS 1" >>confdefs.h
 fi
 
 # Check for compression libraries
-case $ac_sys_system/$ac_sys_release in
-Darwin/*)
-	_CUR_CFLAGS="${CFLAGS}"
-	_CUR_LDFLAGS="${LDFLAGS}"
-	CFLAGS="${CFLAGS} -Wl,-search_paths_first"
-	LDFLAGS="${LDFLAGS} -Wl,-search_paths_first -L/usr/local/lib"
-	;;
-esac
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
 $as_echo_n "checking for inflateCopy in -lz... " >&6; }
 if ${ac_cv_lib_z_inflateCopy+:} false; then :
@@ -12937,13 +12928,6 @@ $as_echo "#define HAVE_ZLIB_COPY 1" >>confdefs.h
 
 fi
 
-
-case $ac_sys_system/$ac_sys_release in
-Darwin/*)
-	CFLAGS="${_CUR_CFLAGS}"
-	LDFLAGS="${_CUR_LDFLAGS}"
-	;;
-esac
 
 
 
