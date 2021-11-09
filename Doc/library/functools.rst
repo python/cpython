@@ -430,6 +430,17 @@ The :mod:`functools` module defines the following functions:
      ...     for i, elem in enumerate(arg):
      ...         print(i, elem)
 
+   .. note::
+      The :mod:`typing` module provides a number of aliases to
+      builtin classes, as well as classes found elsewhere in the standard
+      library. All have been deprecated since Python 3.9 (see :pep:`585`).
+      Annotating the first argument of a ``@singledispatch`` implementation
+      with one of these aliases is not supported, and will lead to a
+      :exc:`TypeError` being raised. Use :pep:`585`-style syntax instead:
+      ``list[int]`` rather than ``typing.List[int]``,
+      ``collections.abc.Iterable[str]`` rather than ``typing.Iterable[str]``,
+      etc.
+
    For code which doesn't use type annotations, the appropriate type
    argument can be passed explicitly to the decorator itself::
 
