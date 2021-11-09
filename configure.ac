@@ -3178,7 +3178,7 @@ AC_CHECK_HEADERS([db.h], [
     LIBS="$LIBS_SAVE"
   ])
   AS_VAR_IF([ac_cv_have_libdb], [yes], [
-    AC_DEFINE(HAVE_LIBDB, 1, [Define to 1 if you have the `db' library (-ldb).])
+    AC_DEFINE([HAVE_LIBDB], [1], [Define to 1 if you have the `db' library (-ldb).])
   ])
 ])
 
