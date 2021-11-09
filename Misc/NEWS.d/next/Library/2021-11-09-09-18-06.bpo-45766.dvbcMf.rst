@@ -1,0 +1,1 @@
+Added *proportional* optional to statistics.linear_regression().
