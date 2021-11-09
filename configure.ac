@@ -5652,7 +5652,8 @@ SRCDIRS="\
   Objects \
   Parser \
   Programs \
-  Python"
+  Python \
+  Python/deepfreeze"
 AC_MSG_CHECKING(for build directories)
 for dir in $SRCDIRS; do
     if test ! -d $dir; then

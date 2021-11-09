@@ -407,9 +407,6 @@ def main() -> None:
         source = f.read()
     modname = args.module or os.path.basename(args.file).removesuffix(".py")
     output = args.output or modname + ".c"
-    outdir = os.path.dirname(output)
-    if outdir:
-        os.makedirs(outdir, exist_ok=True)
     with open(output, "w", encoding="utf-8") as file:
         with report_time("generate"):
             generate(source, f"<frozen {modname}>", modname, file)
