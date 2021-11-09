@@ -1643,19 +1643,15 @@ AC_SUBST(UNIVERSAL_ARCH_FLAGS)
 
 dnl PY_CHECK_CC_WARNING(ENABLE, WARNING, [MSG])
 AC_DEFUN([PY_CHECK_CC_WARNING], [
-  AC_MSG_CHECKING(m4_ifblank([$3], [if we can $1 $CC $2 warning], [$3]))
   AS_VAR_PUSHDEF([py_var], [ac_cv_$1_]m4_normalize($2)[_warning])
-  AS_VAR_COPY([py_cflags], [CFLAGS])
-  AS_VAR_SET([CFLAGS], ["$CFLAGS -W$2 -Werror"])
-  AC_CACHE_VAL(
-    [py_var],
-    [AC_COMPILE_IFELSE(
-      [AC_LANG_PROGRAM([[]], [[]])],
-      [AS_VAR_SET([py_var], [yes])],
-      [AS_VAR_SET([py_var], [no])],
-    )]
-  )
-  AS_VAR_COPY([CFLAGS], [py_cflags])
+  AC_CACHE_CHECK(m4_ifblank([$3], [if we can $1 $CC $2 warning], [$3]), [py_var], [
+    AS_VAR_COPY([py_cflags], [CFLAGS])
+    AS_VAR_SET([CFLAGS], ["$CFLAGS -W$2 -Werror"])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+                      [AS_VAR_SET([py_var], [yes])],
+                      [AS_VAR_SET([py_var], [no])])
+    AS_VAR_COPY([CFLAGS], [py_cflags])
+  ])
   AC_MSG_RESULT([$py_var])
   AS_VAR_POPDEF([py_var])
 ])
