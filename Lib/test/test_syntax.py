@@ -1597,12 +1597,6 @@ while 1:
         def test_syntax_error_non_matching_elif_else_statements(self):
             # Check bpo-45759: 'elif' statements that match no 'if' statement
             # or 'else' statements that match no 'if'/'while'/'for' statement
-            # self._check_error(
-            #     "if a == b:\n    ...\n    elif a == c:\n        ...",
-            #     "'elif' does not match a 'if' here. Maybe try unindenting?")
-            # self._check_error(
-            #     "if x == y:\n    ...\n    else:\n        ...",
-            #     "'else' does not match a 'if'/'while'/'for'/'except' here. Maybe try unindenting?")
             self._check_error(
                 "elif m == n:\n    ...",
                 "'elif' does not match a 'if' here")
