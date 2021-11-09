@@ -531,24 +531,54 @@ The following example shows the different ways to print and format the stack::
     '  File "<doctest>", line 3, in another_function\n    lumberstack()\n',
     '  File "<doctest>", line 8, in lumberstack\n    print(repr(traceback.format_stack()))\n']
 
-The following example shows how to use *format_locals* to change the
-formatting of local variables::
+The following example shows how to use *format_locals* to filter and change the
+formatting of local variables.
 
-   >>> import traceback
-   >>> from unittest.util import safe_repr
-   >>> def format_locals(filename, lineno, name, locals):
-   ...     return {k: safe_repr(v) for k,v in locals.items()}
-   ...
-   ... class A:
-   ...   def __repr__(self):
-   ...      raise ValueError("Unrepresentable")
-   ... try:
-   ...   a = A()
-   ...   1/0
-   ... except Exception as e:
-   ...   print(traceback.TracebackException.from_exception(
-   ...         e, limit=1, capture_locals=True, format_locals=format_locals))
+.. testcode:: format_locals
 
+   import traceback
+   from unittest.util import safe_repr
+
+   def format_locals(filename, lineno, name, locals):
+      return {
+         k: safe_repr(v)  # Handle exceptions thrown by __repr__
+         for k, v in locals.items()
+         if not k.startswith("_")  # Hide private variables
+      }
+
+   class A:
+      def __repr__(self):
+         raise ValueError("Unrepresentable")
+
+   try:
+      a = A()
+      _pw = "supersecretpassword"
+      1 / 0
+   except Exception as e:
+      print(
+         "".join(
+               traceback.TracebackException.from_exception(
+                  e, limit=1, capture_locals=True, format_locals=format_locals
+               ).format()
+         )
+      )
+
+The output would look like this:
+
+.. testoutput:: format_locals
+   :options: +NORMALIZE_WHITESPACE
+   
+   Traceback (most recent call last):
+      File "...", line 18, in <module>
+      1 / 0
+      ~~^~~
+      A = <class 'A'>
+      a = <A object at 0x...>
+      e = ZeroDivisionError('division by zero')
+      format_locals = <function format_locals at 0x...>
+      safe_repr = <function safe_repr at 0x...>
+      traceback = <module 'traceback' from ...>
+   ZeroDivisionError: division by zero
 
 This last example demonstrates the final few formatting functions:
 
