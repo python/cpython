@@ -947,7 +947,6 @@ atheos*|Linux*/1*)
    exit 1;;
 esac
 
-AC_EXEEXT
 AC_MSG_CHECKING(for --with-suffix)
 AC_ARG_WITH(suffix,
             AS_HELP_STRING([--with-suffix=SUFFIX], [set executable suffix to SUFFIX (default is '.exe')]),
