@@ -3315,10 +3315,6 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-##AC_ARG_WITH(dyld,
-##            AS_HELP_STRING([--with-dyld],
-##                           [use (OpenStep|Rhapsody) dynamic linker]))
-##
 # Set name for machine-dependent library files
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking MACHDEP" >&5
