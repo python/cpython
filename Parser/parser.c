@@ -4179,8 +4179,8 @@ function_def_rule(Parser *p)
 
 // function_def_raw:
 //     | invalid_def_raw
-//     | 'def' NAME '(' params? ')' ['->' expression] &&':' func_type_comment? block
-//     | ASYNC 'def' NAME '(' params? ')' ['->' expression] &&':' func_type_comment? block
+//     | 'def' NAME &&'(' params? ')' ['->' expression] &&':' func_type_comment? block
+//     | ASYNC 'def' NAME &&'(' params? ')' ['->' expression] &&':' func_type_comment? block
 static stmt_ty
 function_def_raw_rule(Parser *p)
 {
@@ -4219,12 +4219,12 @@ function_def_raw_rule(Parser *p)
         D(fprintf(stderr, "%*c%s function_def_raw[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "invalid_def_raw"));
     }
-    { // 'def' NAME '(' params? ')' ['->' expression] &&':' func_type_comment? block
+    { // 'def' NAME &&'(' params? ')' ['->' expression] &&':' func_type_comment? block
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> function_def_raw[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'def' NAME '(' params? ')' ['->' expression] &&':' func_type_comment? block"));
+        D(fprintf(stderr, "%*c> function_def_raw[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'def' NAME &&'(' params? ')' ['->' expression] &&':' func_type_comment? block"));
         Token * _keyword;
         Token * _literal;
         Token * _literal_1;
@@ -4239,7 +4239,7 @@ function_def_raw_rule(Parser *p)
             &&
             (n = _PyPegen_name_token(p))  // NAME
             &&
-            (_literal = _PyPegen_expect_token(p, 7))  // token='('
+            (_literal = _PyPegen_expect_forced_token(p, 7))  // token='('
             &&
             (params = params_rule(p), !p->error_indicator)  // params?
             &&
@@ -4254,7 +4254,7 @@ function_def_raw_rule(Parser *p)
             (b = block_rule(p))  // block
         )
         {
-            D(fprintf(stderr, "%*c+ function_def_raw[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'def' NAME '(' params? ')' ['->' expression] &&':' func_type_comment? block"));
+            D(fprintf(stderr, "%*c+ function_def_raw[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'def' NAME &&'(' params? ')' ['->' expression] &&':' func_type_comment? block"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
                 D(p->level--);
@@ -4274,14 +4274,14 @@ function_def_raw_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s function_def_raw[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'def' NAME '(' params? ')' ['->' expression] &&':' func_type_comment? block"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'def' NAME &&'(' params? ')' ['->' expression] &&':' func_type_comment? block"));
     }
-    { // ASYNC 'def' NAME '(' params? ')' ['->' expression] &&':' func_type_comment? block
+    { // ASYNC 'def' NAME &&'(' params? ')' ['->' expression] &&':' func_type_comment? block
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> function_def_raw[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "ASYNC 'def' NAME '(' params? ')' ['->' expression] &&':' func_type_comment? block"));
+        D(fprintf(stderr, "%*c> function_def_raw[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "ASYNC 'def' NAME &&'(' params? ')' ['->' expression] &&':' func_type_comment? block"));
         Token * _keyword;
         Token * _literal;
         Token * _literal_1;
@@ -4299,7 +4299,7 @@ function_def_raw_rule(Parser *p)
             &&
             (n = _PyPegen_name_token(p))  // NAME
             &&
-            (_literal = _PyPegen_expect_token(p, 7))  // token='('
+            (_literal = _PyPegen_expect_forced_token(p, 7))  // token='('
             &&
             (params = params_rule(p), !p->error_indicator)  // params?
             &&
@@ -4314,7 +4314,7 @@ function_def_raw_rule(Parser *p)
             (b = block_rule(p))  // block
         )
         {
-            D(fprintf(stderr, "%*c+ function_def_raw[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "ASYNC 'def' NAME '(' params? ')' ['->' expression] &&':' func_type_comment? block"));
+            D(fprintf(stderr, "%*c+ function_def_raw[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "ASYNC 'def' NAME &&'(' params? ')' ['->' expression] &&':' func_type_comment? block"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
                 D(p->level--);
@@ -4334,7 +4334,7 @@ function_def_raw_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s function_def_raw[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "ASYNC 'def' NAME '(' params? ')' ['->' expression] &&':' func_type_comment? block"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "ASYNC 'def' NAME &&'(' params? ')' ['->' expression] &&':' func_type_comment? block"));
     }
     _res = NULL;
   done:
