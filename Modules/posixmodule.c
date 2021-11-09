@@ -878,7 +878,7 @@ fail:
 #endif /* MS_WINDOWS */
 
 
-#define _PyLong_FromDev PyLong_FromLongLong
+#define _PyLong_FromDev PyLong_FromUnsignedLongLong
 
 
 #if defined(HAVE_MKNOD) && defined(HAVE_MAKEDEV)
