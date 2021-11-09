@@ -1530,7 +1530,8 @@ _PyDict_LoadGlobal(PyDictObject *globals, PyDictObject *builtins, PyObject *key)
 }
 
 /* Steals key and value */
-int _PyDict_SetItem(PyObject *op, PyObject *key, PyObject *value)
+int
+_PyDict_SetItem(PyObject *op, PyObject *key, PyObject *value)
 {
     assert(op);
     assert(key);

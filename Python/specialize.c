@@ -1215,7 +1215,6 @@ _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *ins
         }
     }
     else if (container_type == &PyDict_Type) {
-        PyDictKeysObject *dk = ((PyDictObject *)container)->ma_keys;
         *instr = _Py_MAKECODEUNIT(STORE_SUBSCR_DICT,
                                   initial_counter_value());
          goto success;
