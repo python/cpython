@@ -1,1 +1,7 @@
-Improved error messages for ``elif``/``else`` statements statements not matching any ``if``/``while``/``for``/``except`` statements. Patch by Jeremiah Vivian.
+Improved error messages for ``elif``/``else`` statements statements not matching any ``if``/``while``/``for``/``except`` statements::
+
+    >>> else:
+      File "<stdin>", line 1
+        else:
+        ^^^^
+    SyntaxError: 'else' must match a valid statement here
