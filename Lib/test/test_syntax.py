@@ -1269,6 +1269,29 @@ Corner-cases that used to crash:
     ...     ...
     Traceback (most recent call last):
     SyntaxError: positional patterns follow keyword patterns
+
+Non-matching 'elif'/'else' statements:
+
+    >>> if a == b:
+    ...     ...
+    ...     elif a == c:
+    Traceback (most recent call last):
+    SyntaxError: 'elif' does not match a 'if' here. Maybe try unindenting?
+
+    >>> if x == y:
+    ...     ...
+    ...     else:
+    Traceback (most recent call last):
+    SyntaxError: 'else' does not match a 'if'/'while'/'for' here. Maybe try unindenting?
+
+    >>> elif m == n:
+    Traceback (most recent call last):
+    SyntaxError: 'elif' does not match a 'if' here
+    
+
+    >>> else:
+    Traceback (most recent call last):
+    SyntaxError: 'else' does not match a 'if'/'while'/'for' here
 """
 
 import re
@@ -1570,6 +1593,22 @@ while 1:
                      break
 """
         self._check_error(source, "too many statically nested blocks")
+
+        def test_syntax_error_non_matching_elif_else_statements(self):
+            # Check bpo-45759: 'elif' statements that match no 'if' statement
+            # or 'else' statements that match no 'if'/'while'/'for' statement
+            self._check_error(
+                "if a == b:\n    ...\n    elif a == c:\n        ...",
+                "'elif' does not match a 'if' here. Maybe try unindenting?")
+            self._check_error(
+                "if x == y:\n    ...\n    else:\n        ...",
+                "'else' does not match a 'if'/'while'/'for' here. Maybe try unindenting?")
+            self._check_error(
+                "elif m == n:\n    ...",
+                "'elif' does not match a 'if' here")
+            self._check_error(
+                "else:\n    ...",
+                "'else' does not match a 'if'/'while'/'for' here")
 
 
 def load_tests(loader, tests, pattern):
