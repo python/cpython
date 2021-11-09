@@ -179,6 +179,23 @@ dis_bug42562 = """\
           2 RETURN_VALUE
 """
 
+# Extended arg followed by NOP
+code_bug_45757 = bytes([
+        0x90, 0x01,  # EXTENDED_ARG 0x01
+        0x09, 0xFF,  # NOP 0xFF
+        0x90, 0x01,  # EXTENDED_ARG 0x01
+        0x64, 0x29,  # LOAD_CONST 0x29
+        0x53, 0x00,  # RETURN_VALUE 0x00
+    ])
+
+dis_bug_45757 = """\
+          0 EXTENDED_ARG             1
+          2 NOP
+          4 EXTENDED_ARG             1
+          6 LOAD_CONST             297
+          8 RETURN_VALUE
+"""
+
 _BIG_LINENO_FORMAT = """\
 %3d           0 LOAD_GLOBAL              0 (spam)
               2 POP_TOP
@@ -546,6 +563,10 @@ class DisTests(unittest.TestCase):
 
     def test_bug_42562(self):
         self.do_disassembly_test(bug42562, dis_bug42562)
+
+    def test_bug_45757(self):
+        # Extended arg followed by NOP
+        self.do_disassembly_test(code_bug_45757, dis_bug_45757)
 
     def test_big_linenos(self):
         def func(count):
@@ -1357,6 +1378,46 @@ class TestFinderMethods(unittest.TestCase):
                 code = compile(src, "<string>", "exec")
                 res = tuple(dis._find_store_names(code))
                 self.assertEqual(res, expected)
+
+
+class TestDisTraceback(unittest.TestCase):
+    def setUp(self) -> None:
+        try:  # We need to clean up existing tracebacks
+            del sys.last_traceback
+        except AttributeError:
+            pass
+        return super().setUp()
+
+    def get_disassembly(self, tb):
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            dis.distb(tb)
+        return output.getvalue()
+
+    def test_distb_empty(self):
+        with self.assertRaises(RuntimeError):
+            dis.distb()
+
+    def test_distb_last_traceback(self):
+        # We need to have an existing last traceback in `sys`:
+        tb = get_tb()
+        sys.last_traceback = tb
+
+        self.assertEqual(self.get_disassembly(None), dis_traceback)
+
+    def test_distb_explicit_arg(self):
+        tb = get_tb()
+
+        self.assertEqual(self.get_disassembly(tb), dis_traceback)
+
+
+class TestDisTracebackWithFile(TestDisTraceback):
+    # Run the `distb` tests again, using the file arg instead of print
+    def get_disassembly(self, tb):
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            dis.distb(tb, file=output)
+        return output.getvalue()
 
 
 if __name__ == "__main__":
