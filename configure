@@ -10999,6 +10999,7 @@ done
 
 
 # "gdbm-ndbm.h" and "gdbm/ndbm.h" are both normalized to "gdbm_ndbm_h"
+# unset ac_cv_header_gdbm_ndbm_h to prevent false positive cache hits.
 { ac_cv_header_gdbm_ndbm_h=; unset ac_cv_header_gdbm_ndbm_h;}
 if ${ac_cv_header_gdbm_slash_ndbm_h+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -11124,7 +11125,7 @@ else
       #define DB_DBM_HSEARCH 1
       #include <db.h>
       #if DB_VERSION_MAJOR < 5
-        #error "db.h < 5.x is not supported."
+        #error "dh.h: DB_VERSION_MAJOR < 5 is not supported."
       #endif
 
 int

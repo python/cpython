@@ -3132,6 +3132,7 @@ AC_CHECK_HEADERS([ndbm.h], [
 ])
 
 # "gdbm-ndbm.h" and "gdbm/ndbm.h" are both normalized to "gdbm_ndbm_h"
+# unset ac_cv_header_gdbm_ndbm_h to prevent false positive cache hits.
 AS_UNSET([ac_cv_header_gdbm_ndbm_h])
 AC_CACHE_VAL([ac_cv_header_gdbm_slash_ndbm_h], [
   AC_CHECK_HEADER(
