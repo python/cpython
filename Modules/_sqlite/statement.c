@@ -61,7 +61,7 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
 
     sqlite3 *db = connection->db;
     int max_length = sqlite3_limit(db, SQLITE_LIMIT_SQL_LENGTH, -1);
-    if (size >= max_length) {
+    if (size > max_length) {
         PyErr_SetString(connection->DataError,
                         "query string is too large");
         return NULL;
