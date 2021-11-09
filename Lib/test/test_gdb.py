@@ -823,6 +823,8 @@ Traceback \(most recent call first\):
     foo\(1, 2, 3\)
 ''')
 
+    @unittest.skipIf(python_is_optimized(),
+                     "Python was compiled with optimizations")
     def test_threads(self):
         'Verify that "py-bt" indicates threads that are waiting for the GIL'
         cmd = '''
