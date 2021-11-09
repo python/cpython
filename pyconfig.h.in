@@ -1031,9 +1031,6 @@
 /* Define to 1 if you have the `splice' function. */
 #undef HAVE_SPLICE
 
-/* Define to 1 if you have the <sqlite3.h> header file. */
-#undef HAVE_SQLITE3_H
-
 /* Define if your compiler provides ssize_t */
 #undef HAVE_SSIZE_T
 

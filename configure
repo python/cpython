@@ -10762,13 +10762,8 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_decimal_contextvar" >&5
 $as_echo "$with_decimal_contextvar" >&6; }
 
-for ac_header in sqlite3.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "sqlite3.h" "ac_cv_header_sqlite3_h" "$ac_includes_default"
+ac_fn_c_check_header_mongrel "$LINENO" "sqlite3.h" "ac_cv_header_sqlite3_h" "$ac_includes_default"
 if test "x$ac_cv_header_sqlite3_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_SQLITE3_H 1
-_ACEOF
 
   save_LIBS=$LIBS
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3_open_v2 in -lsqlite3" >&5
@@ -10882,7 +10877,6 @@ fi
 
 fi
 
-done
 
 
 # Check for support for loadable sqlite extensions

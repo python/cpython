@@ -3069,7 +3069,7 @@ fi
 AC_MSG_RESULT($with_decimal_contextvar)
 
 dnl Check for SQLite library
-AC_CHECK_HEADERS([sqlite3.h], [
+AC_CHECK_HEADER([sqlite3.h], [
   AS_VAR_COPY([save_LIBS], [LIBS])
   AC_CHECK_LIB([sqlite3], [sqlite3_open_v2], [
     AC_COMPILE_IFELSE([
