@@ -19667,7 +19667,7 @@ invalid_compound_stmt_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_compound_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'elif' named_expression"));
-            _res = RAISE_SYNTAX_ERROR_STARTING_FROM ( a , "'elif' does not match a 'if' here" );
+            _res = RAISE_SYNTAX_ERROR_STARTING_FROM ( a , "'elif' must match an if-statement here" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -19691,7 +19691,7 @@ invalid_compound_stmt_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_compound_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'else'"));
-            _res = RAISE_SYNTAX_ERROR_STARTING_FROM ( a , "'else' does not match a 'if'/'while'/'for'/'except' here" );
+            _res = RAISE_SYNTAX_ERROR_STARTING_FROM ( a , "'else' must match a valid statement here" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
