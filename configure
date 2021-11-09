@@ -7091,7 +7091,7 @@ if ${ac_cv_enable_extra_warning+:} false; then :
 else
 
     py_cflags=$CFLAGS
-    CFLAGS="$CFLAGS -Wextra -Werror"
+    as_fn_append CFLAGS "-Wextra -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -7202,7 +7202,7 @@ if ${ac_cv_disable_unused_result_warning+:} false; then :
 else
 
     py_cflags=$CFLAGS
-    CFLAGS="$CFLAGS -Wunused-result -Werror"
+    as_fn_append CFLAGS "-Wunused-result -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -7244,7 +7244,7 @@ if ${ac_cv_disable_unused_parameter_warning+:} false; then :
 else
 
     py_cflags=$CFLAGS
-    CFLAGS="$CFLAGS -Wunused-parameter -Werror"
+    as_fn_append CFLAGS "-Wunused-parameter -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -7282,7 +7282,7 @@ if ${ac_cv_disable_missing_field_initializers_warning+:} false; then :
 else
 
     py_cflags=$CFLAGS
-    CFLAGS="$CFLAGS -Wmissing-field-initializers -Werror"
+    as_fn_append CFLAGS "-Wmissing-field-initializers -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -7320,7 +7320,7 @@ if ${ac_cv_enable_sign_compare_warning+:} false; then :
 else
 
     py_cflags=$CFLAGS
-    CFLAGS="$CFLAGS -Wsign-compare -Werror"
+    as_fn_append CFLAGS "-Wsign-compare -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -7358,7 +7358,7 @@ if ${ac_cv_enable_unreachable_code_warning+:} false; then :
 else
 
     py_cflags=$CFLAGS
-    CFLAGS="$CFLAGS -Wunreachable-code -Werror"
+    as_fn_append CFLAGS "-Wunreachable-code -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -7408,7 +7408,7 @@ if ${ac_cv_enable_strict_prototypes_warning+:} false; then :
 else
 
     py_cflags=$CFLAGS
-    CFLAGS="$CFLAGS -Wstrict-prototypes -Werror"
+    as_fn_append CFLAGS "-Wstrict-prototypes -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
