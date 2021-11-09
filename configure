@@ -5663,9 +5663,13 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for -Wl,--no-as-needed" >&5
 $as_echo_n "checking for -Wl,--no-as-needed... " >&6; }
-save_LDFLAGS="$LDFLAGS"
-LDFLAGS="$LDFLAGS -Wl,--no-as-needed"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+if ${ac_cv_wl_no_as_needed+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+  save_LDFLAGS="$LDFLAGS"
+  LDFLAGS="$LDFLAGS -Wl,--no-as-needed"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 int
@@ -5678,16 +5682,19 @@ main ()
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
   NO_AS_NEEDED="-Wl,--no-as-needed"
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
+     ac_cv_wl_no_as_needed=yes
 else
   NO_AS_NEEDED=""
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+     ac_cv_wl_no_as_needed=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-LDFLAGS="$save_LDFLAGS"
+  LDFLAGS="$save_LDFLAGS"
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_wl_no_as_needed" >&5
+$as_echo "$ac_cv_wl_no_as_needed" >&6; }
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for the Android API level" >&5

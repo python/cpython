@@ -898,14 +898,17 @@ fi
 AC_SUBST(MULTIARCH_CPPFLAGS)
 
 AC_MSG_CHECKING([for -Wl,--no-as-needed])
-save_LDFLAGS="$LDFLAGS"
-LDFLAGS="$LDFLAGS -Wl,--no-as-needed"
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
-  [NO_AS_NEEDED="-Wl,--no-as-needed"
-   AC_MSG_RESULT([yes])],
-  [NO_AS_NEEDED=""
-   AC_MSG_RESULT([no])])
-LDFLAGS="$save_LDFLAGS"
+AC_CACHE_VAL([ac_cv_wl_no_as_needed], [
+  save_LDFLAGS="$LDFLAGS"
+  LDFLAGS="$LDFLAGS -Wl,--no-as-needed"
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+    [NO_AS_NEEDED="-Wl,--no-as-needed"
+     AS_VAR_SET([ac_cv_wl_no_as_needed], [yes])],
+    [NO_AS_NEEDED=""
+     AS_VAR_SET([ac_cv_wl_no_as_needed], [no])])
+  LDFLAGS="$save_LDFLAGS"
+])
+AC_MSG_RESULT([$ac_cv_wl_no_as_needed])
 AC_SUBST(NO_AS_NEEDED)
 
 AC_MSG_CHECKING([for the Android API level])
