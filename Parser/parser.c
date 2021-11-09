@@ -13,6 +13,7 @@ static KeywordToken *reserved_keywords[] = {
     (KeywordToken[]) {
         {"if", 636},
         {"as", 631},
+        
         {"in", 650},
         {"or", 575},
         {"is", 583},
@@ -5697,7 +5698,7 @@ nomatch_elif_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ nomatch_elif[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'elif' named_expression"));
-            _res = RAISE_SYNTAX_ERROR_STARTING_FROM ( a , "'elif' does not match an 'if' here" );
+            _res = RAISE_SYNTAX_ERROR_STARTING_FROM ( a , "'elif' does not match a 'if' here" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
