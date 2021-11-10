@@ -4745,12 +4745,12 @@ check_eval_breaker:
                 default:
                     Py_UNREACHABLE();
             }
-            if (res == NULL) {
-                goto error;
-            }
             Py_DECREF(lhs);
             Py_DECREF(rhs);
             SET_TOP(res);
+            if (res == NULL) {
+                goto error;
+            }
             DISPATCH();
         }
 
