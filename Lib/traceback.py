@@ -262,12 +262,18 @@ class FrameSummary:
             end_lineno=None, colno=None, end_colno=None, format_locals=None):
         """Construct a FrameSummary.
 
+        :param filename: The filename for the frame.
+        :param lineno: The line within filename for the frame that was
+            active when the frame was captured.
+        :param name: The name of the function or method that was executing
+            when the frame was captured.
         :param lookup_line: If True, `linecache` is consulted for the source
             code line. Otherwise, the line will be looked up when first needed.
         :param locals: If supplied the frame locals, which will be captured as
             object representations.
         :param line: If provided, use this instead of looking up the line in
             the linecache.
+        :param end_lineno: The end linenumber where the error occurred.
         :param format_locals: If provided, use this callable to transform
             the supplied locals into a dictionary of string representations.
             By default, repr() is applied to every value.
@@ -280,7 +286,7 @@ class FrameSummary:
             self.line
 
         if locals:
-            self.locals = format_locals(filename, lineno, name, locals) if format_locals is not None else {k: repr(v) for k, v in locals.items()}
+            self.locals = format_locals(locals) if format_locals is not None else {k: repr(v) for k, v in locals.items()}
         else:
             self.locals = None
 

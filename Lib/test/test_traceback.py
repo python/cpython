@@ -12,6 +12,7 @@ from test.support import (Error, captured_output, cpython_only, ALWAYS_EQ,
                           requires_debug_ranges, has_no_debug_ranges)
 from test.support.os_helper import TESTFN, unlink
 from test.support.script_helper import assert_python_ok, assert_python_failure
+from unittest.util import safe_repr
 
 import os
 import textwrap
@@ -1885,7 +1886,7 @@ class TestStack(unittest.TestCase):
             ], s.format())
 
     def test_format_locals_callback(self):
-        def _format_locals(filename, lineno, name, locals):
+        def _format_locals(locals):
             return {k: "<"+repr(v)+">" for k,v in locals.items() if not k.startswith("_")}
 
         def some_inner(k, v):
@@ -1989,14 +1990,8 @@ class TestTracebackException(unittest.TestCase):
     def test_from_exception_format_locals(self):
         # Check that format_locals works as expected.
 
-        def try_repr(o):
-            try:
-                return repr(o)
-            except:
-                return object.__repr__(o)
-
-        def format_locals(filename, lineno, name, locals):
-            return {k: try_repr(v) for k,v in locals.items()}
+        def format_locals(locals):
+            return {k: safe_repr(v) for k,v in locals.items()}
 
         class FailingInit:
             def __init__(self) -> None:

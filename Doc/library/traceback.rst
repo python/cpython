@@ -331,14 +331,9 @@ capture data for later printing in a lightweight fashion.
       creating the :class:`StackSummary` cheaper (which may be valuable if it
       may not actually get formatted). If *capture_locals* is ``True`` the
       local variables in each :class:`FrameSummary` are captured as object
-      representations. If *format_locals* is provided, it is called with four arguments
-      (filename, lineno, name, locals) to generate a :class:`dict` of string representations
-      of the local variables in each frame.
-
-      ..
-         This should be reworded. I'm not sure how callable parameters are usually documented in Python.
-         The signature is (filename, lineno, name, locals: dict[str, Any]) -> dict[str, str].
-         This should be somehow clear from the text above.
+      representations. If *format_locals* is provided, it is used to
+      generate a :class:`dict` of string representations for a frame's
+      local variables.
 
       .. versionchanged:: XXX
          Added the *format_locals* parameter.
@@ -539,7 +534,7 @@ formatting of local variables.
    import traceback
    from unittest.util import safe_repr
 
-   def format_locals(filename, lineno, name, locals):
+   def format_locals(locals):
       return {
          k: safe_repr(v)  # Handle exceptions thrown by __repr__
          for k, v in locals.items()
