@@ -3094,6 +3094,74 @@ else
   TCLTK_LIBS="$with_tcltk_libs"
 fi
 
+# check for _gdbmmodulec dependencies
+AC_CHECK_HEADERS([gdbm.h], [
+  LIBS_SAVE=$LIBS
+  AC_CHECK_LIB([gdbm], [gdbm_open])
+  LIBS=$LIBS_SAVE
+])
+
+# check for _dbmmodule.c dependencies
+AC_CHECK_HEADERS([ndbm.h], [
+  LIBS_SAVE="$LIBS"
+  AC_CHECK_LIB([ndbm], [dbm_open])
+  LIBS="$LIBS_SAVE"
+  AC_CHECK_LIB([gdbm_compat], [dbm_open])
+  LIBS="$LIBS_SAVE"
+])
+
+# "gdbm-ndbm.h" and "gdbm/ndbm.h" are both normalized to "gdbm_ndbm_h"
+# unset ac_cv_header_gdbm_ndbm_h to prevent false positive cache hits.
+AS_UNSET([ac_cv_header_gdbm_ndbm_h])
+AC_CACHE_VAL([ac_cv_header_gdbm_slash_ndbm_h], [
+  AC_CHECK_HEADER(
+    [gdbm/ndbm.h],
+    [ac_cv_header_gdbm_slash_ndbm_h=yes], [ac_cv_header_gdbm_slash_ndbm_h=no]
+  )
+])
+AS_VAR_IF([ac_cv_header_gdbm_slash_ndbm_h], [yes], [
+  AC_DEFINE([HAVE_GDBM_NDBM_H], [1], [Define to 1 if you have the <gdbm/ndbm.h> header file.])
+])
+
+AS_UNSET([ac_cv_header_gdbm_ndbm_h])
+AC_CACHE_VAL([ac_cv_header_gdbm_dash_ndbm_h], [
+  AC_CHECK_HEADER(
+    [gdbm-ndbm.h],
+    [ac_cv_header_gdbm_dash_ndbm_h=yes], [ac_cv_header_gdbm_dash_ndbm_h=no]
+  )
+])
+AS_VAR_IF([ac_cv_header_gdbm_dash_ndbm_h], [yes], [
+  AC_DEFINE([HAVE_GDBM_DASH_NDBM_H], [1], [Define to 1 if you have the <gdbm-ndbm.h> header file.])
+])
+AS_UNSET([ac_cv_header_gdbm_ndbm_h])
+
+if test "$ac_cv_header_gdbm_slash_ndbm_h" = yes -o "$ac_cv_header_gdbm_dash_ndbm_h" = yes; then
+  LIBS_SAVE="$LIBS"
+  AC_CHECK_LIB([gdbm_compat], [dbm_open])
+  LIBS="$LIBS_SAVE"
+fi
+
+# Check for libdb >= 5 with dbm_open()
+# db.h re-defines the name of the function
+AC_CHECK_HEADERS([db.h], [
+  AC_CACHE_CHECK([for libdb], [ac_cv_have_libdb], [
+    LIBS_SAVE="$LIBS"
+    LIBS="$LIBS -ldb"
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([
+      #define DB_DBM_HSEARCH 1
+      #include <db.h>
+      #if DB_VERSION_MAJOR < 5
+        #error "dh.h: DB_VERSION_MAJOR < 5 is not supported."
+      #endif
+      ], [DBM *dbm = dbm_open(NULL, 0, 0)])
+    ], [ac_cv_have_libdb=yes], [ac_cv_have_libdb=no])
+    LIBS="$LIBS_SAVE"
+  ])
+  AS_VAR_IF([ac_cv_have_libdb], [yes], [
+    AC_DEFINE([HAVE_LIBDB], [1], [Define to 1 if you have the `db' library (-ldb).])
+  ])
+])
+
 # Check for --with-dbmliborder
 AC_MSG_CHECKING(for --with-dbmliborder)
 AC_ARG_WITH(dbmliborder,
@@ -3103,12 +3171,15 @@ if test x$with_dbmliborder = xyes
 then
 AC_MSG_ERROR([proper usage is --with-dbmliborder=db1:db2:...])
 else
-  for db in `echo $with_dbmliborder | sed 's/:/ /g'`; do
+  as_save_IFS=$IFS
+  IFS=:
+  for db in $with_dbmliborder; do
     if test x$db != xndbm && test x$db != xgdbm && test x$db != xbdb
     then
       AC_MSG_ERROR([proper usage is --with-dbmliborder=db1:db2:...])
     fi
   done
+  IFS=$as_save_IFS
 fi])
 AC_MSG_RESULT($with_dbmliborder)
 
