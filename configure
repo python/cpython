@@ -5659,9 +5659,13 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for -Wl,--no-as-needed" >&5
 $as_echo_n "checking for -Wl,--no-as-needed... " >&6; }
-save_LDFLAGS="$LDFLAGS"
-LDFLAGS="$LDFLAGS -Wl,--no-as-needed"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+if ${ac_cv_wl_no_as_needed+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+  save_LDFLAGS="$LDFLAGS"
+  as_fn_append LDFLAGS -Wl,--no-as-needed
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 int
@@ -5674,16 +5678,18 @@ main ()
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
   NO_AS_NEEDED="-Wl,--no-as-needed"
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
+     ac_cv_wl_no_as_needed=yes
 else
   NO_AS_NEEDED=""
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+     ac_cv_wl_no_as_needed=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-LDFLAGS="$save_LDFLAGS"
+  LDFLAGS="$save_LDFLAGS"
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_wl_no_as_needed" >&5
+$as_echo "$ac_cv_wl_no_as_needed" >&6; }
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for the Android API level" >&5
@@ -7072,15 +7078,16 @@ yes)
     CFLAGS_NODIST="$CFLAGS_NODIST -std=c99"
 
 
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can add -Wextra" >&5
 $as_echo_n "checking if we can add -Wextra... " >&6; }
-
-  py_cflags=$CFLAGS
-  CFLAGS="$CFLAGS -Wextra -Werror"
-  if ${ac_cv_enable_extra_warning+:} false; then :
+if ${ac_cv_enable_extra_warning+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+    py_cflags=$CFLAGS
+    as_fn_append CFLAGS "-Wextra -Werror"
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 int
@@ -7097,11 +7104,10 @@ else
   ac_cv_enable_extra_warning=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+    CFLAGS=$py_cflags
 
 fi
-
-  CFLAGS=$py_cflags
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_extra_warning" >&5
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_extra_warning" >&5
 $as_echo "$ac_cv_enable_extra_warning" >&6; }
 
 
@@ -7113,12 +7119,12 @@ fi
     # GCC produce warnings for legal Python code.  Enable
     # -fno-strict-aliasing on versions of GCC that support but produce
     # warnings.  See Issue3326
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC accepts and needs -fno-strict-aliasing" >&5
-$as_echo_n "checking whether $CC accepts and needs -fno-strict-aliasing... " >&6; }
      ac_save_cc="$CC"
      CC="$CC -fno-strict-aliasing"
      save_CFLAGS="$CFLAGS"
-     if ${ac_cv_no_strict_aliasing+:} false; then :
+     { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC accepts and needs -fno-strict-aliasing" >&5
+$as_echo_n "checking whether $CC accepts and needs -fno-strict-aliasing... " >&6; }
+if ${ac_cv_no_strict_aliasing+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -7169,11 +7175,10 @@ else
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
-
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_no_strict_aliasing" >&5
+$as_echo "$ac_cv_no_strict_aliasing" >&6; }
      CFLAGS="$save_CFLAGS"
      CC="$ac_save_cc"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_no_strict_aliasing" >&5
-$as_echo "$ac_cv_no_strict_aliasing" >&6; }
     if test "x$ac_cv_no_strict_aliasing" = xyes; then :
   BASECFLAGS="$BASECFLAGS -fno-strict-aliasing"
 fi
@@ -7184,15 +7189,16 @@ fi
   *icc*) :
     ac_cv_disable_unused_result_warning=no
 
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can disable $CC unused-result warning" >&5
 $as_echo_n "checking if we can disable $CC unused-result warning... " >&6; }
-
-  py_cflags=$CFLAGS
-  CFLAGS="$CFLAGS -Wunused-result -Werror"
-  if ${ac_cv_disable_unused_result_warning+:} false; then :
+if ${ac_cv_disable_unused_result_warning+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+    py_cflags=$CFLAGS
+    as_fn_append CFLAGS "-Wunused-result -Werror"
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 int
@@ -7209,11 +7215,10 @@ else
   ac_cv_disable_unused_result_warning=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+    CFLAGS=$py_cflags
 
 fi
-
-  CFLAGS=$py_cflags
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_disable_unused_result_warning" >&5
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_disable_unused_result_warning" >&5
 $as_echo "$ac_cv_disable_unused_result_warning" >&6; }
 
  ;; #(
@@ -7226,15 +7231,16 @@ esac
 fi
 
 
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can disable $CC unused-parameter warning" >&5
 $as_echo_n "checking if we can disable $CC unused-parameter warning... " >&6; }
-
-  py_cflags=$CFLAGS
-  CFLAGS="$CFLAGS -Wunused-parameter -Werror"
-  if ${ac_cv_disable_unused_parameter_warning+:} false; then :
+if ${ac_cv_disable_unused_parameter_warning+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+    py_cflags=$CFLAGS
+    as_fn_append CFLAGS "-Wunused-parameter -Werror"
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 int
@@ -7251,11 +7257,10 @@ else
   ac_cv_disable_unused_parameter_warning=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+    CFLAGS=$py_cflags
 
 fi
-
-  CFLAGS=$py_cflags
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_disable_unused_parameter_warning" >&5
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_disable_unused_parameter_warning" >&5
 $as_echo "$ac_cv_disable_unused_parameter_warning" >&6; }
 
 
@@ -7264,15 +7269,16 @@ $as_echo "$ac_cv_disable_unused_parameter_warning" >&6; }
 fi
 
 
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can disable $CC missing-field-initializers warning" >&5
 $as_echo_n "checking if we can disable $CC missing-field-initializers warning... " >&6; }
-
-  py_cflags=$CFLAGS
-  CFLAGS="$CFLAGS -Wmissing-field-initializers -Werror"
-  if ${ac_cv_disable_missing_field_initializers_warning+:} false; then :
+if ${ac_cv_disable_missing_field_initializers_warning+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+    py_cflags=$CFLAGS
+    as_fn_append CFLAGS "-Wmissing-field-initializers -Werror"
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 int
@@ -7289,11 +7295,10 @@ else
   ac_cv_disable_missing_field_initializers_warning=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+    CFLAGS=$py_cflags
 
 fi
-
-  CFLAGS=$py_cflags
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_disable_missing_field_initializers_warning" >&5
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_disable_missing_field_initializers_warning" >&5
 $as_echo "$ac_cv_disable_missing_field_initializers_warning" >&6; }
 
 
@@ -7302,15 +7307,16 @@ $as_echo "$ac_cv_disable_missing_field_initializers_warning" >&6; }
 fi
 
 
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can enable $CC sign-compare warning" >&5
 $as_echo_n "checking if we can enable $CC sign-compare warning... " >&6; }
-
-  py_cflags=$CFLAGS
-  CFLAGS="$CFLAGS -Wsign-compare -Werror"
-  if ${ac_cv_enable_sign_compare_warning+:} false; then :
+if ${ac_cv_enable_sign_compare_warning+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+    py_cflags=$CFLAGS
+    as_fn_append CFLAGS "-Wsign-compare -Werror"
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 int
@@ -7327,11 +7333,10 @@ else
   ac_cv_enable_sign_compare_warning=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+    CFLAGS=$py_cflags
 
 fi
-
-  CFLAGS=$py_cflags
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_sign_compare_warning" >&5
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_sign_compare_warning" >&5
 $as_echo "$ac_cv_enable_sign_compare_warning" >&6; }
 
 
@@ -7340,15 +7345,16 @@ $as_echo "$ac_cv_enable_sign_compare_warning" >&6; }
 fi
 
 
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can enable $CC unreachable-code warning" >&5
 $as_echo_n "checking if we can enable $CC unreachable-code warning... " >&6; }
-
-  py_cflags=$CFLAGS
-  CFLAGS="$CFLAGS -Wunreachable-code -Werror"
-  if ${ac_cv_enable_unreachable_code_warning+:} false; then :
+if ${ac_cv_enable_unreachable_code_warning+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+    py_cflags=$CFLAGS
+    as_fn_append CFLAGS "-Wunreachable-code -Werror"
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 int
@@ -7365,11 +7371,10 @@ else
   ac_cv_enable_unreachable_code_warning=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+    CFLAGS=$py_cflags
 
 fi
-
-  CFLAGS=$py_cflags
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_unreachable_code_warning" >&5
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_unreachable_code_warning" >&5
 $as_echo "$ac_cv_enable_unreachable_code_warning" >&6; }
 
 
@@ -7390,15 +7395,16 @@ $as_echo "$ac_cv_enable_unreachable_code_warning" >&6; }
     fi
 
 
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can enable $CC strict-prototypes warning" >&5
 $as_echo_n "checking if we can enable $CC strict-prototypes warning... " >&6; }
-
-  py_cflags=$CFLAGS
-  CFLAGS="$CFLAGS -Wstrict-prototypes -Werror"
-  if ${ac_cv_enable_strict_prototypes_warning+:} false; then :
+if ${ac_cv_enable_strict_prototypes_warning+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+    py_cflags=$CFLAGS
+    as_fn_append CFLAGS "-Wstrict-prototypes -Werror"
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 int
@@ -7415,11 +7421,10 @@ else
   ac_cv_enable_strict_prototypes_warning=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+    CFLAGS=$py_cflags
 
 fi
-
-  CFLAGS=$py_cflags
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_strict_prototypes_warning" >&5
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_strict_prototypes_warning" >&5
 $as_echo "$ac_cv_enable_strict_prototypes_warning" >&6; }
 
 
@@ -7427,11 +7432,11 @@ $as_echo "$ac_cv_enable_strict_prototypes_warning" >&6; }
   CFLAGS_NODIST="$CFLAGS_NODIST -Wstrict-prototypes"
 fi
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can make implicit function declaration an error in $CC" >&5
-$as_echo_n "checking if we can make implicit function declaration an error in $CC... " >&6; }
      ac_save_cc="$CC"
      CC="$CC -Werror=implicit-function-declaration"
-     if ${ac_cv_enable_implicit_function_declaration_error+:} false; then :
+     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can make implicit function declaration an error in $CC" >&5
+$as_echo_n "checking if we can make implicit function declaration an error in $CC... " >&6; }
+if ${ac_cv_enable_implicit_function_declaration_error+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -7458,20 +7463,19 @@ else
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
-
-     CC="$ac_save_cc"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_implicit_function_declaration_error" >&5
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_implicit_function_declaration_error" >&5
 $as_echo "$ac_cv_enable_implicit_function_declaration_error" >&6; }
+     CC="$ac_save_cc"
 
     if test "x$ac_cv_enable_implicit_function_declaration_error" = xyes; then :
   CFLAGS_NODIST="$CFLAGS_NODIST -Werror=implicit-function-declaration"
 fi
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can use visibility in $CC" >&5
-$as_echo_n "checking if we can use visibility in $CC... " >&6; }
      ac_save_cc="$CC"
      CC="$CC -fvisibility=hidden"
-     if ${ac_cv_enable_visibility+:} false; then :
+     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can use visibility in $CC" >&5
+$as_echo_n "checking if we can use visibility in $CC... " >&6; }
+if ${ac_cv_enable_visibility+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -7498,10 +7502,9 @@ else
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
-
-     CC="$ac_save_cc"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_visibility" >&5
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_visibility" >&5
 $as_echo "$ac_cv_enable_visibility" >&6; }
+     CC="$ac_save_cc"
 
     if test "x$ac_cv_enable_visibility" = xyes; then :
   CFLAGS_NODIST="$CFLAGS_NODIST -fvisibility=hidden"
@@ -7764,7 +7767,6 @@ fi
 
 
 fi
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_pthread_is_default" >&5
 $as_echo "$ac_cv_pthread_is_default" >&6; }
 
@@ -7816,7 +7818,6 @@ fi
 
 CC="$ac_save_cc"
 fi
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_kpthread" >&5
 $as_echo "$ac_cv_kpthread" >&6; }
 fi
@@ -7866,7 +7867,6 @@ fi
 
 CC="$ac_save_cc"
 fi
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_kthread" >&5
 $as_echo "$ac_cv_kthread" >&6; }
 fi
@@ -7916,7 +7916,6 @@ fi
 
 CC="$ac_save_cc"
 fi
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_pthread" >&5
 $as_echo "$ac_cv_pthread" >&6; }
 fi
@@ -10315,7 +10314,6 @@ fi
 
 
 fi
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_aligned_required" >&5
 $as_echo "$ac_cv_aligned_required" >&6; }
 if test "$ac_cv_aligned_required" = yes ; then
@@ -11211,7 +11209,7 @@ $as_echo "#define HAVE_BROKEN_POSIX_SEMAPHORES 1" >>confdefs.h
 
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking if PTHREAD_SCOPE_SYSTEM is supported" >&5
 $as_echo_n "checking if PTHREAD_SCOPE_SYSTEM is supported... " >&6; }
-      if ${ac_cv_pthread_system_supported+:} false; then :
+if ${ac_cv_pthread_system_supported+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   if test "$cross_compiling" = yes; then :
@@ -11245,8 +11243,7 @@ fi
 
 
 fi
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_pthread_system_supported" >&5
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_pthread_system_supported" >&5
 $as_echo "$ac_cv_pthread_system_supported" >&6; }
       if test "$ac_cv_pthread_system_supported" = "yes"; then
 
@@ -14083,7 +14080,7 @@ if test "x$ac_cv_func_getaddrinfo" = xyes; then :
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking getaddrinfo bug" >&5
 $as_echo_n "checking getaddrinfo bug... " >&6; }
-  if ${ac_cv_buggy_getaddrinfo+:} false; then :
+if ${ac_cv_buggy_getaddrinfo+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   if test "$cross_compiling" = yes; then :
@@ -14197,13 +14194,11 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
 fi
 
 fi
-
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_buggy_getaddrinfo" >&5
+$as_echo "$ac_cv_buggy_getaddrinfo" >&6; }
 
 
 fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_buggy_getaddrinfo" >&5
-$as_echo "$ac_cv_buggy_getaddrinfo" >&6; }
 
 if test "$ac_cv_func_getaddrinfo" = no -o "$ac_cv_buggy_getaddrinfo" = yes
 then
@@ -14467,7 +14462,6 @@ fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
 fi
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_header_time_altzone" >&5
 $as_echo "$ac_cv_header_time_altzone" >&6; }
 if test $ac_cv_header_time_altzone = yes; then
@@ -14499,7 +14493,6 @@ else
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_struct_addrinfo" >&5
 $as_echo "$ac_cv_struct_addrinfo" >&6; }
 if test $ac_cv_struct_addrinfo = yes; then
@@ -14533,7 +14526,6 @@ else
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_struct_sockaddr_storage" >&5
 $as_echo "$ac_cv_struct_sockaddr_storage" >&6; }
 if test $ac_cv_struct_sockaddr_storage = yes; then
@@ -14568,7 +14560,6 @@ else
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_struct_sockaddr_alg" >&5
 $as_echo "$ac_cv_struct_sockaddr_alg" >&6; }
 if test $ac_cv_struct_sockaddr_alg = yes; then
@@ -15497,7 +15488,6 @@ fi
 
 
 fi
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_posix_semaphores_enabled" >&5
 $as_echo "$ac_cv_posix_semaphores_enabled" >&6; }
 if test $ac_cv_posix_semaphores_enabled = no
@@ -15552,7 +15542,6 @@ fi
 
 
 fi
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_broken_sem_getvalue" >&5
 $as_echo "$ac_cv_broken_sem_getvalue" >&6; }
 if test $ac_cv_broken_sem_getvalue = yes
@@ -15772,7 +15761,7 @@ then
   # check whether wchar_t is signed or not
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether wchar_t is signed" >&5
 $as_echo_n "checking whether wchar_t is signed... " >&6; }
-  if ${ac_cv_wchar_t_signed+:} false; then :
+if ${ac_cv_wchar_t_signed+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
@@ -15800,8 +15789,7 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
 fi
 
 fi
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_wchar_t_signed" >&5
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_wchar_t_signed" >&5
 $as_echo "$ac_cv_wchar_t_signed" >&6; }
 fi
 
@@ -16215,7 +16203,6 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
 fi
 
 fi
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_rshift_extends_sign" >&5
 $as_echo "$ac_cv_rshift_extends_sign" >&6; }
 if test "$ac_cv_rshift_extends_sign" = no
@@ -16256,7 +16243,6 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 fi
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_have_getc_unlocked" >&5
 $as_echo "$ac_cv_have_getc_unlocked" >&6; }
 if test "$ac_cv_have_getc_unlocked" = yes
@@ -16666,7 +16652,6 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
 fi
 
 fi
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_broken_nice" >&5
 $as_echo "$ac_cv_broken_nice" >&6; }
 if test "$ac_cv_broken_nice" = yes
@@ -16717,7 +16702,6 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
 fi
 
 fi
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_broken_poll" >&5
 $as_echo "$ac_cv_broken_poll" >&6; }
 if test "$ac_cv_broken_poll" = yes
@@ -16814,7 +16798,6 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
 fi
 
 fi
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_working_tzset" >&5
 $as_echo "$ac_cv_working_tzset" >&6; }
 if test "$ac_cv_working_tzset" = yes
@@ -16851,7 +16834,6 @@ else
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_stat_tv_nsec" >&5
 $as_echo "$ac_cv_stat_tv_nsec" >&6; }
 if test "$ac_cv_stat_tv_nsec" = yes
@@ -16888,7 +16870,6 @@ else
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_stat_tv_nsec2" >&5
 $as_echo "$ac_cv_stat_tv_nsec2" >&6; }
 if test "$ac_cv_stat_tv_nsec2" = yes
@@ -16964,7 +16945,6 @@ else
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_mvwdelch_is_expression" >&5
 $as_echo "$ac_cv_mvwdelch_is_expression" >&6; }
 
@@ -17008,7 +16988,6 @@ else
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_window_has_flags" >&5
 $as_echo "$ac_cv_window_has_flags" >&6; }
 
@@ -17653,7 +17632,6 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
 fi
 
 fi
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_broken_mbstowcs" >&5
 $as_echo "$ac_cv_broken_mbstowcs" >&6; }
 if test "$ac_cv_broken_mbstowcs" = yes
@@ -17730,7 +17708,6 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
 fi
 
 fi
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_computed_gotos" >&5
 $as_echo "$ac_cv_computed_gotos" >&6; }
 case "$ac_cv_computed_gotos" in yes*)
