@@ -1632,6 +1632,12 @@ while 1:
                 "'else' must match a valid statement here")
             self._check_noerror("if a == b:\n    ...\nelif a == c:\n    ...")
             self._check_noerror("if x == y:\n    ...\nelse:\n    ...")
+            self._check_error(
+                "else = 123",
+                "invalid syntax")
+            self._check_error(
+                "elif 55 = 123",
+                "invalid syntax")
 
 
 def load_tests(loader, tests, pattern):
