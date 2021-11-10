@@ -1,1 +1,1 @@
-Added *proportional* option to statistics.linear_regression().
+Added *proportional* option to :meth:`statistics.linear_regression`.
