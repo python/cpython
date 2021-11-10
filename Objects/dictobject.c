@@ -1055,7 +1055,7 @@ insert_into_dictkeys(PyDictKeysObject *keys, PyObject *name)
 Internal routine to insert a new item into the table.
 Used both by the internal resize routine and by the public insert routine.
 Returns -1 if an error occurred, or 0 on success.
-Steals key and value.
+Consumes key and value references.
 */
 static int
 insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value)
@@ -1137,7 +1137,7 @@ Fail:
 }
 
 // Same to insertdict but specialized for ma_keys = Py_EMPTY_KEYS.
-// Steals key and value.
+// Consumes key and value references.
 static int
 insert_to_emptydict(PyDictObject *mp, PyObject *key, Py_hash_t hash,
                     PyObject *value)
@@ -1529,9 +1529,9 @@ _PyDict_LoadGlobal(PyDictObject *globals, PyDictObject *builtins, PyObject *key)
     return value;
 }
 
-/* Steals key and value */
+/* Consumes references to key and value */
 int
-_PyDict_SetItem(PyObject *op, PyObject *key, PyObject *value)
+_PyDict_SetItem_Take2(PyObject *op, PyObject *key, PyObject *value)
 {
     assert(op);
     assert(key);
@@ -1573,7 +1573,7 @@ PyDict_SetItem(PyObject *op, PyObject *key, PyObject *value)
     assert(value);
     Py_INCREF(key);
     Py_INCREF(value);
-    return _PyDict_SetItem(op, key, value);
+    return _PyDict_SetItem_Take2(op, key, value);
 }
 
 int
