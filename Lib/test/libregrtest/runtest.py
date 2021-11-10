@@ -138,7 +138,7 @@ STDTESTS = [
 NOTTESTS = set()
 
 
-# used by --findleaks, store for gc.garbage
+# Storage of uncollectable objects
 FOUND_GARBAGE = []
 
 
@@ -279,7 +279,7 @@ def save_env(ns: Namespace, test_name: str):
 
 def _runtest_inner2(ns: Namespace, test_name: str) -> bool:
     # Load the test function, run the test function, handle huntrleaks
-    # and findleaks to detect leaks
+    # to detect leaks.
 
     abstest = get_abs_module(ns, test_name)
 

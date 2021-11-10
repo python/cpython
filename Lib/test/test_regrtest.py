@@ -1178,7 +1178,7 @@ class ArgsTestCase(BaseTestCase):
                                   no_test_ran=[testname])
 
     @support.cpython_only
-    def test_findleaks(self):
+    def test_uncollectable(self):
         code = textwrap.dedent(r"""
             import _testcapi
             import gc
@@ -1199,12 +1199,6 @@ class ArgsTestCase(BaseTestCase):
         testname = self.create_test(code=code)
 
         output = self.run_tests("--fail-env-changed", testname, exitcode=3)
-        self.check_executed_tests(output, [testname],
-                                  env_changed=[testname],
-                                  fail_env_changed=True)
-
-        # --findleaks is now basically an alias to --fail-env-changed
-        output = self.run_tests("--findleaks", testname, exitcode=3)
         self.check_executed_tests(output, [testname],
                                   env_changed=[testname],
                                   fail_env_changed=True)

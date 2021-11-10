@@ -46,7 +46,7 @@ class Regrtest:
     files beginning with test_ will be used.
 
     The other default arguments (verbose, quiet, exclude,
-    single, randomize, findleaks, use_resources, trace, coverdir,
+    single, randomize, use_resources, trace, coverdir,
     print_slow, and random_seed) allow programmers calling main()
     directly to set the values that would normally be set by flags
     on the command line.
