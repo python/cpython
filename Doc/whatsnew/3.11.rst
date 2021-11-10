@@ -528,6 +528,10 @@ Build Changes
   detected by :program:`configure`.
   (Contributed by Christian Heimes in :issue:`45763`.)
 
+* Build dependencies for :mod:`dbm` are now detected by :program:`configure`.
+  ``libdb`` 3.x and 4.x are no longer supported.
+  (Contributed by Christian Heimes in :issue:`45747`.)
+
 C API Changes
 =============
 
