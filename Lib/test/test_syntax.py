@@ -1280,6 +1280,25 @@ Corner-cases that used to crash:
     ...     ...
     Traceback (most recent call last):
     SyntaxError: positional patterns follow keyword patterns
+
+Non-matching 'elif'/'else' statements:
+    >>> if a == b:
+    ...     ...
+    ...     elif a == c:
+    Traceback (most recent call last):
+    SyntaxError: 'elif' must match an if-statement here
+    >>> if x == y:
+    ...     ...
+    ...     else:
+    Traceback (most recent call last):
+    SyntaxError: 'else' must match a valid statement here
+    >>> elif m == n:
+    Traceback (most recent call last):
+    SyntaxError: 'elif' must match an if-statement here
+    
+    >>> else:
+    Traceback (most recent call last):
+    SyntaxError: 'else' must match a valid statement here
 """
 
 import re
