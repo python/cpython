@@ -96,5 +96,32 @@ class ColorsysTest(unittest.TestCase):
             self.assertTripleEqual(yiq, colorsys.rgb_to_yiq(*rgb))
             self.assertTripleEqual(rgb, colorsys.yiq_to_rgb(*yiq))
 
+    def test_yuv_roundtrip(self):
+        for r in frange(0.0, 1.0, 0.2):
+            for g in frange(0.0, 1.0, 0.2):
+                for b in frange(0.0, 1.0, 0.2):
+                    rgb = (r, g, b)
+                    self.assertTripleEqual(
+                        rgb,
+                        colorsys.yuv_to_rgb(*colorsys.rgb_to_yuv(*rgb))
+                    )
+
+    def test_yuv_values(self):
+        values = [
+            # rgb, yuv
+            ((0.0, 0.0, 0.0), (0.0, 0.0, 0.0)), # black
+            ((0.0, 0.0, 1.0), (0.0722, 0.436, -0.05639192278384558)), # blue
+            ((0.0, 1.0, 0.0), (0.7152, -0.3360931235179995, -0.5586080772161544)), # green
+            ((0.0, 1.0, 1.0), (0.7874, 0.09990687648200047, -0.615)), # cyan
+            ((1.0, 0.0, 0.0), (0.2126, -0.0999068764820004, 0.615)), # red
+            ((1.0, 0.0, 1.0), (0.2848, 0.3360931235179996, 0.5586080772161544)), # purple
+            ((1.0, 1.0, 0.0), (0.9278, -0.43599999999999994, 0.05639192278384564)), # yellow
+            ((1.0, 1.0, 1.0), (1.0, 0, 0)), # white
+            ((0.5, 0.5, 0.5), (0.5, 0, 0)) # grey
+        ]
+        for (rgb, yuv) in values:
+            self.assertTripleEqual(yuv, colorsys.rgb_to_yuv(*rgb))
+            self.assertTripleEqual(rgb, colorsys.yuv_to_rgb(*yuv))
+
 if __name__ == "__main__":
     unittest.main()
