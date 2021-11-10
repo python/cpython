@@ -1318,7 +1318,7 @@ class SyntaxTestCase(unittest.TestCase):
         """Check that compiling code raises SyntaxError with errtext.
 
         errtext is a regular expression that must be present in the
-        test of the exception raised.  If subclass is specified it
+        test of the exception raised. If subclass is specified, it
         is the expected subclass of SyntaxError (e.g. IndentationError).
         """
         try:
@@ -1344,15 +1344,19 @@ class SyntaxTestCase(unittest.TestCase):
 
     def _check_noerror(self, code,
                        errtext="compile() raised unexpected SyntaxError",
-                       filename="<testcase>", mode="exec"):
+                       filename="<testcase>", mode="exec", subclass=None):
         """Check that compiling code does not raise a SyntaxError.
 
-        errtext is the message to display if there is a SyntaxError.
+        errtext is the message passed to self.fail if there is
+        a SyntaxError. If the subclass parameter is specified,
+        it is the subclass of SyntaxError (e.g. IndentationError)
+        that the raised error is checked against.
         """
         try:
             compile(code, filename, mode)
-        except SyntaxError:
-            self.fail(errtext)
+        except SyntaxError as err:
+            if (not subclass) or isinstance(err, subclass):
+                self.fail(errtext)
 
     def test_expression_with_assignment(self):
         self._check_error(
@@ -1617,8 +1621,9 @@ while 1:
         self._check_error(source, "too many statically nested blocks")
 
         def test_syntax_error_non_matching_elif_else_statements(self):
-            # Check bpo-45759: 'elif' statements that match no 'if' statement
-            # or 'else' statements that match no 'if'/'while'/'for'/'except' statement
+            # Check bpo-45759: 'elif' statements that doesn't match an
+            # if-statement or 'else' statements that doesn't match any
+            # valid else-able statement (e.g. 'while')
             self._check_error(
                 "elif m == n:\n    ...",
                 "'elif' must match an if-statement here")
