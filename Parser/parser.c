@@ -4239,7 +4239,7 @@ function_def_raw_rule(Parser *p)
             &&
             (n = _PyPegen_name_token(p))  // NAME
             &&
-            (_literal = _PyPegen_expect_forced_token(p, 7))  // token='('
+            (_literal = _PyPegen_expect_forced_token(p, 7, "("))  // forced_token='('
             &&
             (params = params_rule(p), !p->error_indicator)  // params?
             &&
@@ -4299,7 +4299,7 @@ function_def_raw_rule(Parser *p)
             &&
             (n = _PyPegen_name_token(p))  // NAME
             &&
-            (_literal = _PyPegen_expect_forced_token(p, 7))  // token='('
+            (_literal = _PyPegen_expect_forced_token(p, 7, "("))  // forced_token='('
             &&
             (params = params_rule(p), !p->error_indicator)  // params?
             &&
