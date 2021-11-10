@@ -139,6 +139,8 @@ from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum
 from operator import itemgetter, mul
 from collections import Counter, namedtuple
 
+_SQRT2 = sqrt(2.0)
+
 # === Exceptions ===
 
 class StatisticsError(ValueError):
@@ -1102,7 +1104,7 @@ class NormalDist:
         "Cumulative distribution function.  P(X <= x)"
         if not self._sigma:
             raise StatisticsError('cdf() not defined when sigma is zero')
-        return 0.5 * (1.0 + erf((x - self._mu) / (self._sigma * sqrt(2.0))))
+        return 0.5 * (1.0 + erf((x - self._mu) / (self._sigma * _SQRT2)))
 
     def inv_cdf(self, p):
         """Inverse cumulative distribution function.  x : P(X <= x) = p
@@ -1158,7 +1160,7 @@ class NormalDist:
         dv = Y_var - X_var
         dm = fabs(Y._mu - X._mu)
         if not dv:
-            return 1.0 - erf(dm / (2.0 * X._sigma * sqrt(2.0)))
+            return 1.0 - erf(dm / (2.0 * X._sigma * _SQRT2))
         a = X._mu * Y_var - Y._mu * X_var
         b = X._sigma * Y._sigma * sqrt(dm * dm + dv * log(Y_var / X_var))
         x1 = (a + b) / dv

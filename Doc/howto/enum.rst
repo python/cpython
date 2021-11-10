@@ -636,7 +636,7 @@ an incorrect member::
 Before :class:`StrEnum`, ``Directions.NORTH`` would have been the :class:`tuple`
 ``('north',)``.
 
-.. versionadded:: 3.10
+.. versionadded:: 3.11
 
 
 IntFlag
@@ -659,7 +659,7 @@ used.
     details.
 
 .. versionadded:: 3.6
-.. versionchanged:: 3.10
+.. versionchanged:: 3.11
 
 Sample :class:`IntFlag` class::
 
@@ -696,7 +696,7 @@ It is also possible to name the combinations::
     Named combinations are considered aliases.  Aliases do not show up during
     iteration, but can be returned from by-value lookups.
 
-.. versionchanged:: 3.10
+.. versionchanged:: 3.11
 
 Another important difference between :class:`IntFlag` and :class:`Enum` is that
 if no flags are set (the value is 0), its boolean evaluation is :data:`False`::
@@ -728,7 +728,7 @@ be combined with them (but may lose :class:`IntFlag` membership::
     >>> list(RW)
     [Perm.R, Perm.W]
 
-.. versionadded:: 3.10
+.. versionadded:: 3.11
 
 
 Flag
@@ -789,7 +789,7 @@ value::
     >>> list(purple)
     [Color.RED, Color.BLUE]
 
-.. versionadded:: 3.10
+.. versionadded:: 3.11
 
 .. note::
 
@@ -939,7 +939,7 @@ _Private__names
 :ref:`Private names <private-name-mangling>` are not converted to enum members,
 but remain normal attributes.
 
-.. versionchanged:: 3.10
+.. versionchanged:: 3.11
 
 
 ``Enum`` member type
@@ -962,7 +962,6 @@ it will raise a :exc:`DeprecationWarning`::
     <FieldTypes.size: 2>
 
 .. versionchanged:: 3.5
-.. versionchanged:: 3.10
 
 
 Creating members that are mixed with other data types

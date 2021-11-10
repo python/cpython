@@ -4,8 +4,8 @@
 
 #include "Python.h"
 #include "pycore_bitutils.h"      // _Py_popcount32()
-#include "pycore_interp.h"        // _PY_NSMALLPOSINTS
-#include "pycore_long.h"          // __PyLong_GetSmallInt_internal()
+#include "pycore_runtime.h"       // _PY_NSMALLPOSINTS
+#include "pycore_long.h"          // _Py_SmallInts
 #include "pycore_object.h"        // _PyObject_InitVar()
 #include "pycore_pystate.h"       // _Py_IsMainInterpreter()
 
@@ -19,9 +19,6 @@
 class int "PyObject *" "&PyLong_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=ec0275e3422a36e3]*/
-
-#define NSMALLNEGINTS           _PY_NSMALLNEGINTS
-#define NSMALLPOSINTS           _PY_NSMALLPOSINTS
 
 _Py_IDENTIFIER(little);
 _Py_IDENTIFIER(big);
@@ -37,8 +34,8 @@ medium_value(PyLongObject *x)
     return ((stwodigits)Py_SIZE(x)) * x->ob_digit[0];
 }
 
-#define IS_SMALL_INT(ival) (-NSMALLNEGINTS <= (ival) && (ival) < NSMALLPOSINTS)
-#define IS_SMALL_UINT(ival) ((ival) < NSMALLPOSINTS)
+#define IS_SMALL_INT(ival) (-_PY_NSMALLNEGINTS <= (ival) && (ival) < _PY_NSMALLPOSINTS)
+#define IS_SMALL_UINT(ival) ((ival) < _PY_NSMALLPOSINTS)
 
 static inline int is_medium_int(stwodigits x)
 {
@@ -51,7 +48,7 @@ static PyObject *
 get_small_int(sdigit ival)
 {
     assert(IS_SMALL_INT(ival));
-    PyObject *v = __PyLong_GetSmallInt_internal(ival);
+    PyObject *v = (PyObject *)&_PyRuntime.small_ints[_PY_NSMALLNEGINTS + ival];
     Py_INCREF(v);
     return v;
 }
@@ -5830,16 +5827,17 @@ PyLong_GetInfo(void)
 void
 _PyLong_Init(PyInterpreterState *interp)
 {
-    for (Py_ssize_t i=0; i < NSMALLNEGINTS + NSMALLPOSINTS; i++) {
-        sdigit ival = (sdigit)i - NSMALLNEGINTS;
-        int size = (ival < 0) ? -1 : ((ival == 0) ? 0 : 1);
-        interp->small_ints[i].ob_base.ob_base.ob_refcnt = 1;
-        interp->small_ints[i].ob_base.ob_base.ob_type = &PyLong_Type;
-        interp->small_ints[i].ob_base.ob_size = size;
-        interp->small_ints[i].ob_digit[0] = (digit)abs(ival);
+    if (_PyRuntime.small_ints[0].ob_base.ob_base.ob_refcnt == 0) {
+        for (Py_ssize_t i=0; i < _PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS; i++) {
+            sdigit ival = (sdigit)i - _PY_NSMALLNEGINTS;
+            int size = (ival < 0) ? -1 : ((ival == 0) ? 0 : 1);
+            _PyRuntime.small_ints[i].ob_base.ob_base.ob_refcnt = 1;
+            _PyRuntime.small_ints[i].ob_base.ob_base.ob_type = &PyLong_Type;
+            _PyRuntime.small_ints[i].ob_base.ob_size = size;
+            _PyRuntime.small_ints[i].ob_digit[0] = (digit)abs(ival);
+        }
     }
 }
-
 
 int
 _PyLong_InitTypes(void)
