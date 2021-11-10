@@ -19641,7 +19641,7 @@ invalid_import_from_targets_rule(Parser *p)
     return _res;
 }
 
-// invalid_compound_stmt: 'elif' named_expression | 'else'
+// invalid_compound_stmt: 'elif' named_expression ':' | 'else' ':'
 static void *
 invalid_compound_stmt_rule(Parser *p)
 {
@@ -19652,21 +19652,24 @@ invalid_compound_stmt_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    { // 'elif' named_expression
+    { // 'elif' named_expression ':'
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> invalid_compound_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'elif' named_expression"));
+        D(fprintf(stderr, "%*c> invalid_compound_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'elif' named_expression ':'"));
+        Token * _literal;
         Token * a;
         expr_ty named_expression_var;
         if (
             (a = _PyPegen_expect_token(p, 631))  // token='elif'
             &&
             (named_expression_var = named_expression_rule(p))  // named_expression
+            &&
+            (_literal = _PyPegen_expect_token(p, 11))  // token=':'
         )
         {
-            D(fprintf(stderr, "%*c+ invalid_compound_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'elif' named_expression"));
+            D(fprintf(stderr, "%*c+ invalid_compound_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'elif' named_expression ':'"));
             _res = RAISE_SYNTAX_ERROR_STARTING_FROM ( a , "'elif' must match an if-statement here" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
@@ -19677,20 +19680,23 @@ invalid_compound_stmt_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s invalid_compound_stmt[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'elif' named_expression"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'elif' named_expression ':'"));
     }
-    { // 'else'
+    { // 'else' ':'
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> invalid_compound_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'else'"));
+        D(fprintf(stderr, "%*c> invalid_compound_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'else' ':'"));
+        Token * _literal;
         Token * a;
         if (
             (a = _PyPegen_expect_token(p, 632))  // token='else'
+            &&
+            (_literal = _PyPegen_expect_token(p, 11))  // token=':'
         )
         {
-            D(fprintf(stderr, "%*c+ invalid_compound_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'else'"));
+            D(fprintf(stderr, "%*c+ invalid_compound_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'else' ':'"));
             _res = RAISE_SYNTAX_ERROR_STARTING_FROM ( a , "'else' must match a valid statement here" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
@@ -19701,7 +19707,7 @@ invalid_compound_stmt_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s invalid_compound_stmt[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'else'"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'else' ':'"));
     }
     _res = NULL;
   done:
