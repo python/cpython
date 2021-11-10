@@ -3165,9 +3165,20 @@ if test "$have_glibc_memmove_bug" = yes; then
     AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -U_FORTIFY_SOURCE"])
 fi
 
-dnl Check for SQLite library
+dnl Check for SQLite library. Use pkg-config if available.
+AC_SUBST([PY_SQLITE_CFLAGS])
+AC_SUBST([PY_SQLITE_LDFLAGS])
+if test ! -z "$PKG_CONFIG"; then
+  AS_VAR_APPEND([PY_SQLITE_CFLAGS], ["`"$PKG_CONFIG" sqlite3 --cflags-only-I 2>/dev/null`"])
+  AS_VAR_APPEND([PY_SQLITE_LDFLAGS], ["`"$PKG_CONFIG" sqlite3 --libs-only-L 2>/dev/null`"])
+fi
+
+AS_VAR_COPY([save_CFLAGS], [CFLAGS])
+AS_VAR_COPY([save_LDFLAGS], [LDFLAGS])
+AS_VAR_APPEND([CFLAGS], ["$PY_SQLITE_CFLAGS"])
+AS_VAR_APPEND([LDFLAGS], ["$PY_SQLITE_LDFLAGS"])
+
 AC_CHECK_HEADER([sqlite3.h], [
-  AS_VAR_COPY([save_LIBS], [LIBS])
   AC_CHECK_LIB([sqlite3], [sqlite3_open_v2], [
     AC_COMPILE_IFELSE([
       AC_LANG_PROGRAM([
@@ -3176,13 +3187,18 @@ AC_CHECK_HEADER([sqlite3.h], [
         #  error "SQLite 3.7.15 or higher required"
         #endif
       ], [])
-    ], [AC_DEFINE([HAVE_LIBSQLITE3], [1], [Define if SQLite > 3.7.15 is found])])
+    ], [
+      AC_DEFINE([HAVE_LIBSQLITE3], [1], [Define if SQLite > 3.7.15 is found])
+      AS_VAR_APPEND([PY_SQLITE_LDFLAGS], [" -lsqlite3"])
+    ])
   ])
   AC_CHECK_LIB([sqlite3], [sqlite3_load_extension],
                [have_sqlite3_load_extension=yes],
                [have_sqlite3_load_extension=no])
-  AS_VAR_COPY([LIBS], [save_LIBS])
 ])
+
+AS_VAR_COPY([CFLAGS], [save_CFLAGS])
+AS_VAR_COPY([LDFLAGS], [save_LDFLAGS])
 
 # Check for support for loadable sqlite extensions
 AC_MSG_CHECKING(for --enable-loadable-sqlite-extensions)

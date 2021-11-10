@@ -660,6 +660,8 @@ DFLAGS
 DTRACE
 TCLTK_LIBS
 TCLTK_INCLUDES
+PY_SQLITE_LDFLAGS
+PY_SQLITE_CFLAGS
 LIBMPDEC_INTERNAL
 LIBMPDEC_LDFLAGS
 LIBMPDEC_CFLAGS
@@ -10921,10 +10923,21 @@ if test "$have_glibc_memmove_bug" = yes; then
     as_fn_append LIBMPDEC_CFLAGS " -U_FORTIFY_SOURCE"
 fi
 
+
+
+if test ! -z "$PKG_CONFIG"; then
+  as_fn_append PY_SQLITE_CFLAGS "`"$PKG_CONFIG" sqlite3 --cflags-only-I 2>/dev/null`"
+  as_fn_append PY_SQLITE_LDFLAGS "`"$PKG_CONFIG" sqlite3 --libs-only-L 2>/dev/null`"
+fi
+
+save_CFLAGS=$CFLAGS
+save_LDFLAGS=$LDFLAGS
+as_fn_append CFLAGS "$PY_SQLITE_CFLAGS"
+as_fn_append LDFLAGS "$PY_SQLITE_LDFLAGS"
+
 ac_fn_c_check_header_mongrel "$LINENO" "sqlite3.h" "ac_cv_header_sqlite3_h" "$ac_includes_default"
 if test "x$ac_cv_header_sqlite3_h" = xyes; then :
 
-  save_LIBS=$LIBS
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3_open_v2 in -lsqlite3" >&5
 $as_echo_n "checking for sqlite3_open_v2 in -lsqlite3... " >&6; }
 if ${ac_cv_lib_sqlite3_sqlite3_open_v2+:} false; then :
@@ -10983,7 +10996,10 @@ main ()
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
 
+
 $as_echo "#define HAVE_LIBSQLITE3 1" >>confdefs.h
+
+      as_fn_append PY_SQLITE_LDFLAGS " -lsqlite3"
 
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
@@ -11032,11 +11048,13 @@ else
   have_sqlite3_load_extension=no
 fi
 
-  LIBS=$save_LIBS
 
 fi
 
 
+
+CFLAGS=$save_CFLAGS
+LDFLAGS=$save_LDFLAGS
 
 # Check for support for loadable sqlite extensions
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-loadable-sqlite-extensions" >&5

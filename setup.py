@@ -1359,7 +1359,13 @@ class PyBuildExt(build_ext):
             self.missing.append("_sqlite3")
             return
 
-        sqlite_srcs = [
+        cflags = parse_cflags(sysconfig.get_config_var("PY_SQLITE_CFLAGS"))
+        include_dirs, define_macros, undef_macros, extra_compile_args = cflags
+
+        ldflags = parse_ldflags(sysconfig.get_config_var("PY_SQLITE_LDFLAGS"))
+        library_dirs, libraries, extra_link_args = ldflags
+
+        sources = [
             "_sqlite/connection.c",
             "_sqlite/cursor.c",
             "_sqlite/microprotocols.c",
@@ -1369,9 +1375,16 @@ class PyBuildExt(build_ext):
             "_sqlite/statement.c",
             "_sqlite/util.c",
         ]
-        self.add(Extension("_sqlite3", sqlite_srcs,
-                           include_dirs=["Modules/_sqlite"],
-                           libraries=["sqlite3",]))
+        library_dirs.append("Modules/_sqlite")
+        self.add(Extension("_sqlite3",
+                           include_dirs=include_dirs,
+                           define_macros=define_macros,
+                           undef_macros=undef_macros,
+                           extra_compile_args=extra_compile_args,
+                           library_dirs=library_dirs,
+                           libraries=libraries,
+                           extra_link_args=extra_link_args,
+                           sources=sources))
 
     def detect_platform_specific_exts(self):
         # Unix-only modules
