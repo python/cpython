@@ -92,8 +92,6 @@ static PyObject * import_from(PyThreadState *, PyObject *, PyObject *);
 static int import_all_from(PyThreadState *, PyObject *, PyObject *);
 static void format_exc_check_arg(PyThreadState *, PyObject *, const char *, PyObject *);
 static void format_exc_unbound(PyThreadState *tstate, PyCodeObject *co, int oparg);
-static PyObject * unicode_concatenate(PyThreadState *, PyObject *, PyObject *,
-                                      InterpreterFrame *, const _Py_CODEUNIT *);
 static int check_args_iterable(PyThreadState *, PyObject *func, PyObject *vararg);
 static void format_kwargs_error(PyThreadState *, PyObject *func, PyObject *kwargs);
 static void format_awaitable_error(PyThreadState *, PyTypeObject *, int, int);
@@ -4706,13 +4704,6 @@ check_eval_breaker:
                     res = PyNumber_Xor(lhs, rhs);
                     break;
                 case NB_INPLACE_ADD:
-                    if (PyUnicode_CheckExact(lhs) && PyUnicode_CheckExact(rhs))
-                    {
-                        Py_INCREF(lhs);  // unicode_concatenate steals lhs!
-                        res = unicode_concatenate(tstate, lhs, rhs, frame,
-                                                  next_instr);
-                        break;
-                    }
                     res = PyNumber_InPlaceAdd(lhs, rhs);
                     break;
                 case NB_INPLACE_AND:
@@ -4766,18 +4757,20 @@ check_eval_breaker:
         TARGET(BINARY_OP_ADAPTIVE) {
             assert(cframe.use_tracing == 0);
             SpecializedCacheEntry *cache = GET_CACHE();
-            if (cache->adaptive.counter) {
+            if (cache->adaptive.counter == 0) {
+                PyObject *lhs = SECOND();
+                PyObject *rhs = TOP();
+                next_instr--;
+                _Py_Specialize_BinaryOp(lhs, rhs, next_instr, cache);
+                DISPATCH();
+            }
+            else {
+                STAT_INC(BINARY_OP, deferred);
                 cache->adaptive.counter--;
                 oparg = cache->adaptive.original_oparg;
-                STAT_INC(BINARY_OP, deferred);
                 STAT_DEC(BINARY_OP, unquickened);
                 JUMP_TO_INSTRUCTION(BINARY_OP);
             }
-            PyObject *lhs = SECOND();
-            PyObject *rhs = TOP();
-            next_instr--;
-            _Py_Specialize_BinaryOp(lhs, rhs, next_instr, cache);
-            DISPATCH();
         }
 
         TARGET(EXTENDED_ARG) {
@@ -6899,60 +6892,6 @@ format_awaitable_error(PyThreadState *tstate, PyTypeObject *type, int prevprevop
                           type->tp_name);
         }
     }
-}
-
-static PyObject *
-unicode_concatenate(PyThreadState *tstate, PyObject *v, PyObject *w,
-                    InterpreterFrame *frame, const _Py_CODEUNIT *next_instr)
-{
-    PyObject *res;
-    if (Py_REFCNT(v) == 2) {
-        /* In the common case, there are 2 references to the value
-         * stored in 'variable' when the += is performed: one on the
-         * value stack (in 'v') and one still stored in the
-         * 'variable'.  We try to delete the variable now to reduce
-         * the refcnt to 1.
-         */
-        int opcode, oparg;
-        NEXTOPARG();
-        next_instr++;
-        switch (opcode) {
-        case STORE_FAST:
-        {
-            if (GETLOCAL(oparg) == v)
-                SETLOCAL(oparg, NULL);
-            break;
-        }
-        case STORE_DEREF:
-        {
-            PyObject *c = _PyFrame_GetLocalsArray(frame)[oparg];
-            if (PyCell_GET(c) ==  v) {
-                PyCell_SET(c, NULL);
-                Py_DECREF(v);
-            }
-            break;
-        }
-        case STORE_NAME:
-        {
-            PyObject *names = frame->f_code->co_names;
-            PyObject *name = GETITEM(names, oparg);
-            PyObject *locals = frame->f_locals;
-            if (locals && PyDict_CheckExact(locals)) {
-                PyObject *w = PyDict_GetItemWithError(locals, name);
-                if ((w == v && PyDict_DelItem(locals, name) != 0) ||
-                    (w == NULL && _PyErr_Occurred(tstate)))
-                {
-                    Py_DECREF(v);
-                    return NULL;
-                }
-            }
-            break;
-        }
-        }
-    }
-    res = v;
-    PyUnicode_Append(&res, w);
-    return res;
 }
 
 #ifdef DYNAMIC_EXECUTION_PROFILE
