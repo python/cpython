@@ -1,2 +1,0 @@
-Add more test cases for `@functools.singledispatchmethod` when combined with
-`@classmethod` or `@staticmethod`.

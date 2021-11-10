@@ -523,6 +523,7 @@ def _unpack_opargs(code):
             extended_arg = (arg << 8) if op == EXTENDED_ARG else 0
         else:
             arg = None
+            extended_arg = 0
         yield (i, op, arg)
 
 def findlabels(code):

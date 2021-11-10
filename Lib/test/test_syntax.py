@@ -524,9 +524,15 @@ SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
 >>> f((x)=2)
 Traceback (most recent call last):
 SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
->>> f(True=2)
+>>> f(True=1)
 Traceback (most recent call last):
-SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
+SyntaxError: cannot assign to True
+>>> f(False=1)
+Traceback (most recent call last):
+SyntaxError: cannot assign to False
+>>> f(None=1)
+Traceback (most recent call last):
+SyntaxError: cannot assign to None
 >>> f(__debug__=1)
 Traceback (most recent call last):
 SyntaxError: cannot assign to __debug__
@@ -891,6 +897,17 @@ leading to spurious errors.
    ...    pass
    Traceback (most recent call last):
    SyntaxError: cannot assign to attribute here. Maybe you meant '==' instead of '='?
+
+
+Missing parens after function definition
+
+   >>> def f:
+   Traceback (most recent call last):
+   SyntaxError: expected '('
+
+   >>> async def f:
+   Traceback (most recent call last):
+   SyntaxError: expected '('
 
 Custom error messages for try blocks that are not followed by except/finally
 

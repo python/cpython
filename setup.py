@@ -1118,16 +1118,6 @@ class PyBuildExt(build_ext):
                 if find_file('readline/rlconf.h', self.inc_dirs, []) is None:
                     do_readline = False
         if do_readline:
-            if MACOS and os_release < 9:
-                # In every directory on the search path search for a dynamic
-                # library and then a static library, instead of first looking
-                # for dynamic libraries on the entire path.
-                # This way a statically linked custom readline gets picked up
-                # before the (possibly broken) dynamic library in /usr/lib.
-                readline_extra_link_args = ('-Wl,-search_paths_first',)
-            else:
-                readline_extra_link_args = ()
-
             readline_libs = [readline_lib]
             if readline_termcap_library:
                 pass # Issue 7384: Already linked against curses or tinfo.
@@ -1139,7 +1129,6 @@ class PyBuildExt(build_ext):
                 readline_libs.append('termcap')
             self.add(Extension('readline', ['readline.c'],
                                library_dirs=['/usr/lib/termcap'],
-                               extra_link_args=readline_extra_link_args,
                                libraries=readline_libs))
         else:
             self.missing.append('readline')
@@ -1222,13 +1211,7 @@ class PyBuildExt(build_ext):
         self.add(Extension('_crypt', ['_cryptmodule.c'], libraries=libs))
 
     def detect_socket(self):
-        # socket(2)
-        kwargs = {'depends': ['socketmodule.h']}
-        if MACOS:
-            # Issue #35569: Expose RFC 3542 socket options.
-            kwargs['extra_compile_args'] = ['-D__APPLE_USE_RFC_3542']
-
-        self.add(Extension('_socket', ['socketmodule.c'], **kwargs))
+        self.add(Extension('_socket', ['socketmodule.c'], depends=['socketmodule.h']))
 
     def detect_dbm_gdbm(self):
         # Modules that provide persistent dictionary-like semantics.  You will
@@ -1602,20 +1585,12 @@ class PyBuildExt(build_ext):
 
             # Enable support for loadable extensions in the sqlite3 module
             # if --enable-loadable-sqlite-extensions configure option is used.
-            if '--enable-loadable-sqlite-extensions' not in sysconfig.get_config_var("CONFIG_ARGS"):
-                sqlite_defines.append(("SQLITE_OMIT_LOAD_EXTENSION", "1"))
-            elif MACOS and sqlite_incdir == os.path.join(MACOS_SDK_ROOT, "usr/include"):
+            if (
+                MACOS and
+                sqlite_incdir == os.path.join(MACOS_SDK_ROOT, "usr/include") and
+                sysconfig.get_config_var("PY_SQLITE_ENABLE_LOAD_EXTENSION")
+            ):
                 raise DistutilsError("System version of SQLite does not support loadable extensions")
-
-            if MACOS:
-                # In every directory on the search path search for a dynamic
-                # library and then a static library, instead of first looking
-                # for dynamic libraries on the entire path.
-                # This way a statically linked custom sqlite gets picked up
-                # before the dynamic library in /usr/lib.
-                sqlite_extra_link_args = ('-Wl,-search_paths_first',)
-            else:
-                sqlite_extra_link_args = ()
 
             include_dirs = ["Modules/_sqlite"]
             # Only include the directory where sqlite was found if it does
@@ -1630,7 +1605,6 @@ class PyBuildExt(build_ext):
                                define_macros=sqlite_defines,
                                include_dirs=include_dirs,
                                library_dirs=sqlite_libdir,
-                               extra_link_args=sqlite_extra_link_args,
                                libraries=["sqlite3",]))
         else:
             self.missing.append('_sqlite3')
@@ -1659,80 +1633,35 @@ class PyBuildExt(build_ext):
                                    '-framework', 'CoreFoundation']))
 
     def detect_compress_exts(self):
-        # Andrew Kuchling's zlib module.  Note that some versions of zlib
-        # 1.1.3 have security problems.  See CERT Advisory CA-2002-07:
-        # http://www.cert.org/advisories/CA-2002-07.html
-        #
-        # zlib 1.1.4 is fixed, but at least one vendor (RedHat) has decided to
-        # patch its zlib 1.1.3 package instead of upgrading to 1.1.4.  For
-        # now, we still accept 1.1.3, because we think it's difficult to
-        # exploit this in Python, and we'd rather make it RedHat's problem
-        # than our problem <wink>.
-        #
-        # You can upgrade zlib to version 1.1.4 yourself by going to
-        # http://www.gzip.org/zlib/
-        zlib_inc = find_file('zlib.h', [], self.inc_dirs)
-        have_zlib = False
-        if zlib_inc is not None:
-            zlib_h = zlib_inc[0] + '/zlib.h'
-            version = '"0.0.0"'
-            version_req = '"1.1.3"'
-            if MACOS and is_macosx_sdk_path(zlib_h):
-                zlib_h = os.path.join(macosx_sdk_root(), zlib_h[1:])
-            with open(zlib_h) as fp:
-                while 1:
-                    line = fp.readline()
-                    if not line:
-                        break
-                    if line.startswith('#define ZLIB_VERSION'):
-                        version = line.split()[2]
-                        break
-            if version >= version_req:
-                if (self.compiler.find_library_file(self.lib_dirs, 'z')):
-                    if MACOS:
-                        zlib_extra_link_args = ('-Wl,-search_paths_first',)
-                    else:
-                        zlib_extra_link_args = ()
-                    self.add(Extension('zlib', ['zlibmodule.c'],
-                                       libraries=['z'],
-                                       extra_link_args=zlib_extra_link_args))
-                    have_zlib = True
-                else:
-                    self.missing.append('zlib')
-            else:
-                self.missing.append('zlib')
+        # Andrew Kuchling's zlib module.
+        have_zlib = sysconfig.get_config_var("HAVE_LIBZ")
+        if have_zlib:
+            self.add(Extension('zlib', ['zlibmodule.c'],
+                                libraries=['z']))
         else:
             self.missing.append('zlib')
 
         # Helper module for various ascii-encoders.  Uses zlib for an optimized
         # crc32 if we have it.  Otherwise binascii uses its own.
-        extra_compile_args = []
         if have_zlib:
-            extra_compile_args.append('-DUSE_ZLIB_CRC32')
+            define_macros = [('USE_ZLIB_CRC32', None)]
             libraries = ['z']
-            extra_link_args = zlib_extra_link_args
         else:
+            define_macros = None
             libraries = []
-            extra_link_args = []
         self.add(Extension('binascii', ['binascii.c'],
-                           extra_compile_args=extra_compile_args,
-                           libraries=libraries,
-                           extra_link_args=extra_link_args))
+                           define_macros=define_macros,
+                           libraries=libraries))
 
         # Gustavo Niemeyer's bz2 module.
-        if (self.compiler.find_library_file(self.lib_dirs, 'bz2')):
-            if MACOS:
-                bz2_extra_link_args = ('-Wl,-search_paths_first',)
-            else:
-                bz2_extra_link_args = ()
+        if sysconfig.get_config_var("HAVE_LIBBZ2"):
             self.add(Extension('_bz2', ['_bz2module.c'],
-                               libraries=['bz2'],
-                               extra_link_args=bz2_extra_link_args))
+                               libraries=['bz2']))
         else:
             self.missing.append('_bz2')
 
         # LZMA compression support.
-        if self.compiler.find_library_file(self.lib_dirs, 'lzma'):
+        if sysconfig.get_config_var("HAVE_LIBLZMA"):
             self.add(Extension('_lzma', ['_lzmamodule.c'],
                                libraries=['lzma']))
         else:
@@ -1842,15 +1771,15 @@ class PyBuildExt(build_ext):
 
     def detect_uuid(self):
         # Build the _uuid module if possible
-        uuid_incs = find_file("uuid.h", self.inc_dirs, ["/usr/include/uuid"])
-        if uuid_incs is not None:
-            if self.compiler.find_library_file(self.lib_dirs, 'uuid'):
-                uuid_libs = ['uuid']
+        uuid_h = sysconfig.get_config_var("HAVE_UUID_H")
+        uuid_uuid_h = sysconfig.get_config_var("HAVE_UUID_UUID_H")
+        if uuid_h or uuid_uuid_h:
+            if sysconfig.get_config_var("HAVE_LIBUUID"):
+                uuid_libs = ["uuid"]
             else:
                 uuid_libs = []
             self.add(Extension('_uuid', ['_uuidmodule.c'],
-                               libraries=uuid_libs,
-                               include_dirs=uuid_incs))
+                               libraries=uuid_libs))
         else:
             self.missing.append('_uuid')
 

@@ -31,6 +31,7 @@ import unittest.mock
 import sqlite3 as sqlite
 
 from test.support import bigmemtest
+from .test_dbapi import cx_limit
 
 
 def with_tracebacks(strings, traceback=True):
@@ -222,6 +223,14 @@ class FunctionTests(unittest.TestCase):
     def test_func_error_on_create(self):
         with self.assertRaises(sqlite.OperationalError):
             self.con.create_function("bla", -100, lambda x: 2*x)
+
+    def test_func_too_many_args(self):
+        category = sqlite.SQLITE_LIMIT_FUNCTION_ARG
+        msg = "too many arguments on function"
+        with cx_limit(self.con, category=category, limit=1):
+            self.con.execute("select abs(-1)");
+            with self.assertRaisesRegex(sqlite.OperationalError, msg):
+                self.con.execute("select max(1, 2)");
 
     def test_func_ref_count(self):
         def getfunc():
