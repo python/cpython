@@ -200,21 +200,23 @@ class TextWrapper:
                 i += 1
 
     def _find_width_index(self, text, width):
-        """_find_width_index(text : string, width: int)
+        """_find_length_index(text : string, width : int)
 
-        Find at which index the text has the required width.
+        Find at which index the text has the required width, since when using a
+        different text_len, this index will not be equal to the required width.
         """
-        # In most cases text_len will just use the number of characters, so this heuristic prevents calculating width
-        # for each character
+        # When using default len as self.text_len, the required index and width
+        # will be equal, this prevents calculation time.
         if self.text_len(text[:width]) == width:
-            # For character widths greater than one, width can be more than the number of characters
+            # For character widths greater than one, width can be more than the
+            # number of characters
             return min(width, len(text))
         cur_text = ''
         for i, c in enumerate(text):
             cur_text += c
             cur_width = self.text_len(cur_text)
-            if cur_width >= width:
-                return i+1
+            if cur_width > width:
+                return max(i, 1)
 
     def _handle_long_word(self, reversed_chunks, cur_line, cur_len, width):
         """_handle_long_word(chunks : [string],
