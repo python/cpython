@@ -30,13 +30,14 @@ from .test_userfunctions import with_tracebacks
 
 
 @contextlib.contextmanager
-def check_trace(self, cx, expected):
+def check_stmt_trace(self, cx, expected):
     try:
         traced = []
         cx.set_trace_callback(lambda stmt: traced.append(stmt))
         yield
     finally:
         self.assertEqual(traced, expected)
+        cx.set_trace_callback(None)
 
 
 class CollationTests(unittest.TestCase):
@@ -313,7 +314,7 @@ class TraceCallbackTests(unittest.TestCase):
             "insert into t values(2)",
             "COMMIT",
         ]
-        with memory_database() as cx, check_trace(self, cx, expected):
+        with memory_database() as cx, check_stmt_trace(self, cx, expected):
             with cx:
                 cx.execute("create table t(t)")
                 cx.executemany("insert into t values(?)", ((v,) for v in range(3)))
@@ -323,10 +324,23 @@ class TraceCallbackTests(unittest.TestCase):
         "Expanded SQL string exceeds the maximum string length"
     ], traceback=False)
     def test_trace_too_much_expanded_sql(self):
-        query = "select * from sqlite_schema where type=?"
-        with memory_database() as cx, cx_limit(cx) as lim:
-            with check_trace(self, cx, [query]):
-                cx.execute(query, ("a"*lim,))
+        # If the expanded string is too large, we'll fall back to the
+        # unexpanded SQL statement. The resulting string length is limited by
+        # SQLITE_LIMIT_LENGTH.
+        template = "select * from sqlite_schema where type="
+        category=sqlite.SQLITE_LIMIT_LENGTH
+        with memory_database() as cx, cx_limit(cx, category=category) as lim:
+            nextra = lim - (len(template) + 2) - 1
+            ok_param = "a" * nextra
+            bad_param = "a" * (nextra + 1)
+
+            unexpanded_query = template + "?"
+            with check_stmt_trace(self, cx, [unexpanded_query]):
+                cx.execute(unexpanded_query, (bad_param,))
+
+            expanded_query = f"{template}'{ok_param}'"
+            with check_stmt_trace(self, cx, [expanded_query]):
+                cx.execute(unexpanded_query, (ok_param,))
 
     @with_tracebacks(["ZeroDivisionError", "5/0"])
     def test_trace_bad_handler(self):
