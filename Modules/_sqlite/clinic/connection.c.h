@@ -384,7 +384,7 @@ exit:
     return return_value;
 }
 
-#if !defined(SQLITE_OMIT_LOAD_EXTENSION)
+#if defined(PY_SQLITE_ENABLE_LOAD_EXTENSION)
 
 PyDoc_STRVAR(pysqlite_connection_enable_load_extension__doc__,
 "enable_load_extension($self, enable, /)\n"
@@ -415,9 +415,9 @@ exit:
     return return_value;
 }
 
-#endif /* !defined(SQLITE_OMIT_LOAD_EXTENSION) */
+#endif /* defined(PY_SQLITE_ENABLE_LOAD_EXTENSION) */
 
-#if !defined(SQLITE_OMIT_LOAD_EXTENSION)
+#if defined(PY_SQLITE_ENABLE_LOAD_EXTENSION)
 
 PyDoc_STRVAR(pysqlite_connection_load_extension__doc__,
 "load_extension($self, name, /)\n"
@@ -457,7 +457,7 @@ exit:
     return return_value;
 }
 
-#endif /* !defined(SQLITE_OMIT_LOAD_EXTENSION) */
+#endif /* defined(PY_SQLITE_ENABLE_LOAD_EXTENSION) */
 
 PyDoc_STRVAR(pysqlite_connection_execute__doc__,
 "execute($self, sql, parameters=<unrepresentable>, /)\n"
@@ -851,4 +851,4 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-/*[clinic end generated code: output=5d88394bdfa4b4f0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=663b1e9e71128f19 input=a9049054013a1b77]*/

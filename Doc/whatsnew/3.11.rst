@@ -524,6 +524,9 @@ Build Changes
   (Contributed by Brett Cannon and Christian Heimes in :issue:`45548`,
   :issue:`45570`, :issue:`45571`, and :issue:`43974`.)
 
+* The build dependencies for :mod:`zlib`, :mod:`bz2`, and :mod:`lzma` are now
+  detected by :program:`configure`.
+  (Contributed by Christian Heimes in :issue:`45763`.)
 
 C API Changes
 =============

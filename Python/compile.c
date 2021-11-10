@@ -1127,7 +1127,7 @@ stack_effect(int opcode, int oparg, int jump)
         case CONTAINS_OP:
             return -1;
         case JUMP_IF_NOT_EXC_MATCH:
-            return -2;
+            return -1;
         case IMPORT_NAME:
             return -1;
         case IMPORT_FROM:
@@ -3222,16 +3222,15 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
    []                           POP_BLOCK
    []                           JUMP_FORWARD    L0
 
-   [tb, val, exc]       L1:     DUP                             )
-   [tb, val, exc, exc]          <evaluate E1>                   )
-   [tb, val, exc, exc, E1]      JUMP_IF_NOT_EXC_MATCH L2        ) only if E1
+   [tb, val, exc]       L1:     <evaluate E1>                   )
+   [tb, val, exc, E1]           JUMP_IF_NOT_EXC_MATCH L2        ) only if E1
    [tb, val, exc]               POP
    [tb, val]                    <assign to V1>  (or POP if no V1)
    [tb]                         POP
    []                           <code for S1>
                                 JUMP_FORWARD    L0
 
-   [tb, val, exc]       L2:     DUP
+   [tb, val, exc]       L2:     <evaluate E2>
    .............................etc.......................
 
    [tb, val, exc]       Ln+1:   RERAISE     # re-raise exception
@@ -3281,7 +3280,6 @@ compiler_try_except(struct compiler *c, stmt_ty s)
         if (except == NULL)
             return 0;
         if (handler->v.ExceptHandler.type) {
-            ADDOP(c, DUP_TOP);
             VISIT(c, expr, handler->v.ExceptHandler.type);
             ADDOP_JUMP(c, JUMP_IF_NOT_EXC_MATCH, except);
             NEXT_BLOCK(c);

@@ -1,2 +1,0 @@
-Improve documentation for :func:`functools.singledispatch` and
-:class:`functools.singledispatchmethod`.
