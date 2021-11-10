@@ -11,18 +11,24 @@ Inputs outside the valid range may cause exceptions or invalid outputs.
 
 Supported color systems:
 RGB: Red, Green, Blue components
-YIQ: Luminance, Chrominance (used by composite video signals)
+YIQ: Luminance, Chrominance (used by NTSC composite video signals)
+YUV: Luminance, Chrominance (used by PAL composite video signals)
 HLS: Hue, Luminance, Saturation
 HSV: Hue, Saturation, Value
 """
 
 # References:
-# http://en.wikipedia.org/wiki/YIQ
-# http://en.wikipedia.org/wiki/HLS_color_space
-# http://en.wikipedia.org/wiki/HSV_color_space
+# https://en.wikipedia.org/wiki/YIQ
+# https://en.wikipedia.org/wiki/YUV
+# https://en.wikipedia.org/wiki/HLS_color_space
+# https://en.wikipedia.org/wiki/HSV_color_space
 
-__all__ = ["rgb_to_yiq","yiq_to_rgb","rgb_to_hls","hls_to_rgb",
-           "rgb_to_hsv","hsv_to_rgb"]
+__all__ = [
+    "rgb_to_yiq", "yiq_to_rgb",
+    "rgb_to_yuv", "yuv_to_rgb",
+    "rgb_to_hls", "hls_to_rgb",
+    "rgb_to_hsv", "hsv_to_rgb"
+    ]
 
 # Some floating point constants
 
@@ -30,7 +36,7 @@ ONE_THIRD = 1.0/3.0
 ONE_SIXTH = 1.0/6.0
 TWO_THIRD = 2.0/3.0
 
-# YIQ: used by composite video signals (linear combinations of RGB)
+# YIQ: used by NTSC composite video signals (linear combinations of RGB)
 # Y: perceived grey level (0.0 == black, 1.0 == white)
 # I, Q: color components
 #
@@ -51,6 +57,39 @@ def yiq_to_rgb(y, i, q):
     r = y + 0.9468822170900693*i + 0.6235565819861433*q
     g = y - 0.27478764629897834*i - 0.6356910791873801*q
     b = y - 1.1085450346420322*i + 1.7090069284064666*q
+
+    if r < 0.0:
+        r = 0.0
+    if g < 0.0:
+        g = 0.0
+    if b < 0.0:
+        b = 0.0
+    if r > 1.0:
+        r = 1.0
+    if g > 1.0:
+        g = 1.0
+    if b > 1.0:
+        b = 1.0
+    return (r, g, b)
+
+
+# YUV: used by PAL composite video signals (linear combinations of RGB)
+# Y: perceived grey level (0.0 == black, 1.0 == white)
+# U, V: color components
+#
+# There are a great many versions of the constants used in these formulae.
+# The ones in this library use the ATSC BT.709 standard constants.
+
+def rgb_to_yuv(r, g, b):
+    y = 0.2126*r + 0.7152*g + 0.0722*b
+    u = -0.09991*r - 0.33609*g + 0.436*b
+    v = 0.615*r - 0.55861*g - 0.05639*b
+    return (y, u, v)
+
+def yuv_to_rgb(y, u, v):
+    r = y + 1.28033 * v
+    g = y - 0.21482*u - 0.38059*v
+    b = y + 2.12798 * u
 
     if r < 0.0:
         r = 0.0
