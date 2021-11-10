@@ -1,0 +1,4 @@
+Move the PyFunctionObject struct to an internal header.
+
+The meaning to the internal fields of the function was never defined and
+could result in subtle bugs if misused. This move makes that clearer.

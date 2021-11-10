@@ -12,6 +12,7 @@ extern "C" {
 struct pyruntimestate;
 struct _ceval_runtime_state;
 
+#include "pycore_function.h"      // PyFrameConstructor
 #include "pycore_interp.h"        // PyInterpreterState.eval_frame
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 

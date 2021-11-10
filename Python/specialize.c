@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "pycore_code.h"
+#include "pycore_function.h"
 #include "pycore_dict.h"
 #include "pycore_long.h"
 #include "pycore_moduleobject.h"

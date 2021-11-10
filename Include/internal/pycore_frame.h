@@ -4,6 +4,8 @@
 extern "C" {
 #endif
 
+#include "pycore_function.h"      // PyFrameConstructor
+
 /* These values are chosen so that the inline functions below all
  * compare f_state to zero.
  */

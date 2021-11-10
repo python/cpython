@@ -14,6 +14,7 @@
 #include "pycore_call.h"          // _PyObject_FastCallDictTstate()
 #include "pycore_ceval.h"         // _PyEval_SignalAsyncExc()
 #include "pycore_code.h"
+#include "pycore_function.h"
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
@@ -4625,7 +4626,8 @@ check_eval_breaker:
             }
             // Check if the call can be inlined or not
             if (Py_TYPE(function) == &PyFunction_Type && tstate->interp->eval_frame == NULL) {
-                int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(function))->co_flags;
+                PyFunctionObject *func = (PyFunctionObject *)function;
+                int code_flags = ((PyCodeObject*)func->func_code)->co_flags;
                 int is_generator = code_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);
                 if (!is_generator) {
                     PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : PyFunction_GET_GLOBALS(function);
