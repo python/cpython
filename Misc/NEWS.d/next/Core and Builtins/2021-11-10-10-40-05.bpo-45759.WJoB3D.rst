@@ -1,0 +1,13 @@
+Improved error messages for ``elif``/``else`` statements not matching any valid statements::
+
+    >>> elif a == b:
+      File "<stdin>", line 1
+        elif:
+        ^^^^
+    SyntaxError: 'elif' must match an if-statement here
+
+    >>> else:
+      File "<stdin>", line 1
+        else:
+        ^^^^
+    SyntaxError: 'else' must match a valid statement here
