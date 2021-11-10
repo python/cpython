@@ -155,6 +155,36 @@ define_xopen_source=yes
 AC_SUBST(CONFIG_ARGS)
 CONFIG_ARGS="$ac_configure_args"
 
+dnl Allow users to disable pkg-config or require pkg-config
+AC_ARG_WITH(
+  [pkg-config],
+  [AS_HELP_STRING([[--with-pkg-config=[yes|no|check]]],
+                  [use pkg-config to detect build options (default is check)])],
+  [],
+  [with_pkg_config=check]
+)
+AS_CASE([$with_pkg_config],
+  [yes|check], [
+    if test -z "$PKG_CONFIG"; then
+      dnl invalidate stale config.cache values
+      AS_UNSET([PKG_CONFIG])
+      AS_UNSET([ac_cv_path_ac_pt_PKG_CONFIG])
+      AS_UNSET([ac_cv_prog_ac_ct_PKG_CONFIG])
+    fi
+    PKG_PROG_PKG_CONFIG
+  ],
+  [no], [
+    PKG_CONFIG=''
+    dnl force AX_CHECK_OPENSSL to ignore pkg-config
+    ac_cv_path_ac_pt_PKG_CONFIG=''
+    ac_cv_prog_ac_ct_PKG_CONFIG=''
+  ],
+  [AC_MSG_ERROR([invalid argument --with-pkg-config=$with_pkg_config])]
+)
+if test "$with_pkg_config" = yes -a -z "$PKG_CONFIG"; then
+  AC_MSG_ERROR([pkg-config is required])]
+fi
+
 AC_MSG_CHECKING([for --enable-universalsdk])
 AC_ARG_ENABLE(universalsdk,
 	AS_HELP_STRING([--enable-universalsdk@<:@=SDKDIR@:>@],
@@ -2977,8 +3007,6 @@ AC_MSG_RESULT($withval)
 LIBS="$withval $LIBS"
 ],
 [AC_MSG_RESULT(no)])
-
-PKG_PROG_PKG_CONFIG
 
 # Check for use of the system expat library
 AC_MSG_CHECKING(for --with-system-expat)
