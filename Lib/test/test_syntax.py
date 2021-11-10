@@ -1295,7 +1295,7 @@ class SyntaxTestCase(unittest.TestCase):
                      lineno=None, offset=None, end_lineno=None, end_offset=None):
         """Check that compiling code raises SyntaxError with errtext.
 
-        errtest is a regular expression that must be present in the
+        errtext is a regular expression that must be present in the
         test of the exception raised.  If subclass is specified it
         is the expected subclass of SyntaxError (e.g. IndentationError).
         """
@@ -1319,6 +1319,18 @@ class SyntaxTestCase(unittest.TestCase):
 
         else:
             self.fail("compile() did not raise SyntaxError")
+
+    def _check_noerror(self, code,
+                       errtext="compile() raised unexpected SyntaxError",
+                       filename="<testcase>", mode="exec"):
+        """Check that compiling code does not raise a SyntaxError.
+
+        errtext is the message to display if there is a SyntaxError.
+        """
+        try:
+            compile(code, filename, mode)
+        except SyntaxError:
+            self.fail(errtext)
 
     def test_expression_with_assignment(self):
         self._check_error(
@@ -1581,6 +1593,18 @@ while 1:
                      break
 """
         self._check_error(source, "too many statically nested blocks")
+
+        def test_syntax_error_non_matching_elif_else_statements(self):
+            # Check bpo-45759: 'elif' statements that match no 'if' statement
+            # or 'else' statements that match no 'if'/'while'/'for'/'except' statement
+            self._check_error(
+                "elif m == n:\n    ...",
+                "'elif' must match an if-statement here")
+            self._check_error(
+                "else:\n    ...",
+                "'else' must match a valid statement here")
+            self._check_noerror("if a == b:\n    ...\nelif a == c:\n    ...")
+            self._check_noerror("if x == y:\n    ...\nelse:\n    ...")
 
 
 def load_tests(loader, tests, pattern):
