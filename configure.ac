@@ -158,7 +158,8 @@ CONFIG_ARGS="$ac_configure_args"
 dnl Allow users to disable pkg-config or require pkg-config
 AC_ARG_WITH(
   [pkg-config],
-  [AS_HELP_STRING([--with-pkg-config], [use pkg-config to detect build options (default is check)])],
+  [AS_HELP_STRING([[--with-pkg-config=[yes|no|check]]],
+                  [use pkg-config to detect build options (default is check)])],
   [],
   [with_pkg_config=check]
 )
