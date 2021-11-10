@@ -106,12 +106,23 @@ new_statement_cache(pysqlite_Connection *self, int maxsize)
     return res;
 }
 
+static inline const char *
+begin_stmt_to_isolation_level(const char *begin_stmt)
+{
+    assert(begin_stmt != NULL);
+
+    // All begin statements start with "BEGIN "; add strlen("BEGIN ") to get
+    // the isolation level.
+    return begin_stmt + 6;
+}
+
 static const char *
 get_begin_statement(const char *level)
 {
     assert(level != NULL);
     for (int i = 0; begin_statements[i] != NULL; i++) {
-        const char *candidate = begin_statements[i] + 6;
+        const char *stmt = begin_statements[i];
+        const char *candidate = begin_stmt_to_isolation_level(stmt);
         if (sqlite3_stricmp(level, candidate) == 0) {
             return begin_statements[i];
         }
@@ -1322,8 +1333,9 @@ static PyObject* pysqlite_connection_get_isolation_level(pysqlite_Connection* se
         return NULL;
     }
     if (self->begin_statement != NULL) {
-        // We return what's left of the statement after "BEGIN "
-        return PyUnicode_FromString(self->begin_statement + 6);
+        const char *stmt = self->begin_statement;
+        const char *iso_level = begin_stmt_to_isolation_level(stmt);
+        return PyUnicode_FromString(iso_level);
     }
     Py_RETURN_NONE;
 }
