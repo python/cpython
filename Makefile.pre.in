@@ -795,124 +795,124 @@ DEEPFREEZE_DEPS = \
 # BEGIN: deepfreeze modules
 
 Python/deepfreeze/importlib._bootstrap.c: $(srcdir)/Lib/importlib/_bootstrap.py $(DEEPFREEZE_DEPS)
-	@echo "Deepfreezing $@ from $<"
+	@echo "Deepfreezing Python/deepfreeze/importlib._bootstrap.c from Lib/importlib/_bootstrap.py"
 	@./$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
-		$< -m importlib._bootstrap -o $@
+		Lib/importlib/_bootstrap.py -m importlib._bootstrap -o Python/deepfreeze/importlib._bootstrap.c
 
 Python/deepfreeze/importlib._bootstrap_external.c: $(srcdir)/Lib/importlib/_bootstrap_external.py $(DEEPFREEZE_DEPS)
-	@echo "Deepfreezing $@ from $<"
+	@echo "Deepfreezing Python/deepfreeze/importlib._bootstrap_external.c from Lib/importlib/_bootstrap_external.py"
 	@./$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
-		$< -m importlib._bootstrap_external -o $@
+		Lib/importlib/_bootstrap_external.py -m importlib._bootstrap_external -o Python/deepfreeze/importlib._bootstrap_external.c
 
 Python/deepfreeze/zipimport.c: $(srcdir)/Lib/zipimport.py $(DEEPFREEZE_DEPS)
-	@echo "Deepfreezing $@ from $<"
+	@echo "Deepfreezing Python/deepfreeze/zipimport.c from Lib/zipimport.py"
 	@./$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
-		$< -m zipimport -o $@
+		Lib/zipimport.py -m zipimport -o Python/deepfreeze/zipimport.c
 
 Python/deepfreeze/abc.c: $(srcdir)/Lib/abc.py $(DEEPFREEZE_DEPS)
-	@echo "Deepfreezing $@ from $<"
+	@echo "Deepfreezing Python/deepfreeze/abc.c from Lib/abc.py"
 	@./$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
-		$< -m abc -o $@
+		Lib/abc.py -m abc -o Python/deepfreeze/abc.c
 
 Python/deepfreeze/codecs.c: $(srcdir)/Lib/codecs.py $(DEEPFREEZE_DEPS)
-	@echo "Deepfreezing $@ from $<"
+	@echo "Deepfreezing Python/deepfreeze/codecs.c from Lib/codecs.py"
 	@./$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
-		$< -m codecs -o $@
+		Lib/codecs.py -m codecs -o Python/deepfreeze/codecs.c
 
 Python/deepfreeze/io.c: $(srcdir)/Lib/io.py $(DEEPFREEZE_DEPS)
-	@echo "Deepfreezing $@ from $<"
+	@echo "Deepfreezing Python/deepfreeze/io.c from Lib/io.py"
 	@./$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
-		$< -m io -o $@
+		Lib/io.py -m io -o Python/deepfreeze/io.c
 
 Python/deepfreeze/_collections_abc.c: $(srcdir)/Lib/_collections_abc.py $(DEEPFREEZE_DEPS)
-	@echo "Deepfreezing $@ from $<"
+	@echo "Deepfreezing Python/deepfreeze/_collections_abc.c from Lib/_collections_abc.py"
 	@./$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
-		$< -m _collections_abc -o $@
+		Lib/_collections_abc.py -m _collections_abc -o Python/deepfreeze/_collections_abc.c
 
 Python/deepfreeze/_sitebuiltins.c: $(srcdir)/Lib/_sitebuiltins.py $(DEEPFREEZE_DEPS)
-	@echo "Deepfreezing $@ from $<"
+	@echo "Deepfreezing Python/deepfreeze/_sitebuiltins.c from Lib/_sitebuiltins.py"
 	@./$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
-		$< -m _sitebuiltins -o $@
+		Lib/_sitebuiltins.py -m _sitebuiltins -o Python/deepfreeze/_sitebuiltins.c
 
 Python/deepfreeze/genericpath.c: $(srcdir)/Lib/genericpath.py $(DEEPFREEZE_DEPS)
-	@echo "Deepfreezing $@ from $<"
+	@echo "Deepfreezing Python/deepfreeze/genericpath.c from Lib/genericpath.py"
 	@./$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
-		$< -m genericpath -o $@
+		Lib/genericpath.py -m genericpath -o Python/deepfreeze/genericpath.c
 
 Python/deepfreeze/ntpath.c: $(srcdir)/Lib/ntpath.py $(DEEPFREEZE_DEPS)
-	@echo "Deepfreezing $@ from $<"
+	@echo "Deepfreezing Python/deepfreeze/ntpath.c from Lib/ntpath.py"
 	@./$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
-		$< -m ntpath -o $@
+		Lib/ntpath.py -m ntpath -o Python/deepfreeze/ntpath.c
 
 Python/deepfreeze/posixpath.c: $(srcdir)/Lib/posixpath.py $(DEEPFREEZE_DEPS)
-	@echo "Deepfreezing $@ from $<"
+	@echo "Deepfreezing Python/deepfreeze/posixpath.c from Lib/posixpath.py"
 	@./$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
-		$< -m posixpath -o $@
+		Lib/posixpath.py -m posixpath -o Python/deepfreeze/posixpath.c
 
 Python/deepfreeze/os.c: $(srcdir)/Lib/os.py $(DEEPFREEZE_DEPS)
-	@echo "Deepfreezing $@ from $<"
+	@echo "Deepfreezing Python/deepfreeze/os.c from Lib/os.py"
 	@./$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
-		$< -m os -o $@
+		Lib/os.py -m os -o Python/deepfreeze/os.c
 
 Python/deepfreeze/site.c: $(srcdir)/Lib/site.py $(DEEPFREEZE_DEPS)
-	@echo "Deepfreezing $@ from $<"
+	@echo "Deepfreezing Python/deepfreeze/site.c from Lib/site.py"
 	@./$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
-		$< -m site -o $@
+		Lib/site.py -m site -o Python/deepfreeze/site.c
 
 Python/deepfreeze/stat.c: $(srcdir)/Lib/stat.py $(DEEPFREEZE_DEPS)
-	@echo "Deepfreezing $@ from $<"
+	@echo "Deepfreezing Python/deepfreeze/stat.c from Lib/stat.py"
 	@./$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
-		$< -m stat -o $@
+		Lib/stat.py -m stat -o Python/deepfreeze/stat.c
 
 Python/deepfreeze/__hello__.c: $(srcdir)/Lib/__hello__.py $(DEEPFREEZE_DEPS)
-	@echo "Deepfreezing $@ from $<"
+	@echo "Deepfreezing Python/deepfreeze/__hello__.c from Lib/__hello__.py"
 	@./$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
-		$< -m __hello__ -o $@
+		Lib/__hello__.py -m __hello__ -o Python/deepfreeze/__hello__.c
 
 Python/deepfreeze/__phello__.c: $(srcdir)/Lib/__phello__/__init__.py $(DEEPFREEZE_DEPS)
-	@echo "Deepfreezing $@ from $<"
+	@echo "Deepfreezing Python/deepfreeze/__phello__.c from Lib/__phello__/__init__.py"
 	@./$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
-		$< -m __phello__ -o $@
+		Lib/__phello__/__init__.py -m __phello__ -o Python/deepfreeze/__phello__.c
 
 Python/deepfreeze/__phello__.ham.c: $(srcdir)/Lib/__phello__/ham/__init__.py $(DEEPFREEZE_DEPS)
-	@echo "Deepfreezing $@ from $<"
+	@echo "Deepfreezing Python/deepfreeze/__phello__.ham.c from Lib/__phello__/ham/__init__.py"
 	@./$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
-		$< -m __phello__.ham -o $@
+		Lib/__phello__/ham/__init__.py -m __phello__.ham -o Python/deepfreeze/__phello__.ham.c
 
 Python/deepfreeze/__phello__.ham.eggs.c: $(srcdir)/Lib/__phello__/ham/eggs.py $(DEEPFREEZE_DEPS)
-	@echo "Deepfreezing $@ from $<"
+	@echo "Deepfreezing Python/deepfreeze/__phello__.ham.eggs.c from Lib/__phello__/ham/eggs.py"
 	@./$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
-		$< -m __phello__.ham.eggs -o $@
+		Lib/__phello__/ham/eggs.py -m __phello__.ham.eggs -o Python/deepfreeze/__phello__.ham.eggs.c
 
 Python/deepfreeze/__phello__.spam.c: $(srcdir)/Lib/__phello__/spam.py $(DEEPFREEZE_DEPS)
-	@echo "Deepfreezing $@ from $<"
+	@echo "Deepfreezing Python/deepfreeze/__phello__.spam.c from Lib/__phello__/spam.py"
 	@./$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
-		$< -m __phello__.spam -o $@
+		Lib/__phello__/spam.py -m __phello__.spam -o Python/deepfreeze/__phello__.spam.c
 
 Python/deepfreeze/frozen_only.c: $(srcdir)/Tools/freeze/flag.py $(DEEPFREEZE_DEPS)
-	@echo "Deepfreezing $@ from $<"
+	@echo "Deepfreezing Python/deepfreeze/frozen_only.c from Tools/freeze/flag.py"
 	@./$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
-		$< -m frozen_only -o $@
+		Tools/freeze/flag.py -m frozen_only -o Python/deepfreeze/frozen_only.c
 
 # END: deepfreeze modules
 
