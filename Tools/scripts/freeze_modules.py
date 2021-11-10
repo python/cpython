@@ -652,7 +652,7 @@ def regen_makefile(modules):
         deepfreezerules.append(f'\t@echo "Deepfreezing {cfile} from {_pyfile}"')
         deepfreezerules.append(f"\t@./$(BOOTSTRAP) \\")
         deepfreezerules.append(f"\t\t$(srcdir)/Tools/scripts/deepfreeze.py \\")
-        deepfreezerules.append(f"\t\t{_pyfile} -m {src.frozenid} -o {cfile}")
+        deepfreezerules.append(f"\t\t$(srcdir)/{_pyfile} -m {src.frozenid} -o {cfile}")
         deepfreezerules.append('')
 
     for src in _iter_sources(modules):
