@@ -3907,7 +3907,7 @@ check_eval_breaker:
                                            "inherit from BaseException is not "
                                            "allowed";
             PyObject *right = POP();
-            PyObject *left = POP();
+            PyObject *left = TOP();
             if (PyTuple_Check(right)) {
                 Py_ssize_t i, length;
                 length = PyTuple_GET_SIZE(right);
@@ -3916,7 +3916,6 @@ check_eval_breaker:
                     if (!PyExceptionClass_Check(exc)) {
                         _PyErr_SetString(tstate, PyExc_TypeError,
                                          cannot_catch_msg);
-                        Py_DECREF(left);
                         Py_DECREF(right);
                         goto error;
                     }
@@ -3926,13 +3925,11 @@ check_eval_breaker:
                 if (!PyExceptionClass_Check(right)) {
                     _PyErr_SetString(tstate, PyExc_TypeError,
                                      cannot_catch_msg);
-                    Py_DECREF(left);
                     Py_DECREF(right);
                     goto error;
                 }
             }
             int res = PyErr_GivenExceptionMatches(left, right);
-            Py_DECREF(left);
             Py_DECREF(right);
             if (res > 0) {
                 /* Exception matches -- Do nothing */;
