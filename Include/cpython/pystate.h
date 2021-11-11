@@ -79,7 +79,7 @@ struct _ts {
     struct _ts *next;
     PyInterpreterState *interp;
 
-    int recursion_spare;
+    int recursion_remaining;
     int recursion_headroom; /* Allow 50 more calls to handle any errors. */
 
     /* 'tracing' keeps track of the execution depth when tracing/profiling.

@@ -636,7 +636,7 @@ new_threadstate(PyInterpreterState *interp, int init)
 
     tstate->interp = interp;
 
-    tstate->recursion_spare = interp->ceval.recursion_limit;
+    tstate->recursion_remaining = interp->ceval.recursion_limit;
     tstate->recursion_headroom = 0;
     tstate->tracing = 0;
     tstate->root_cframe.use_tracing = 0;

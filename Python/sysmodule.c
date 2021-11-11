@@ -1196,11 +1196,11 @@ sys_setrecursionlimit_impl(PyObject *module, int new_limit)
        Reject too low new limit if the current recursion depth is higher than
        the new low-water mark. Otherwise it may not be possible anymore to
        reset the overflowed flag to 0. */
-    if (tstate->interp->ceval.recursion_limit - tstate->recursion_spare > new_limit) {
+    if (tstate->interp->ceval.recursion_limit - tstate->recursion_remaining > new_limit) {
         _PyErr_Format(tstate, PyExc_RecursionError,
                       "cannot set the recursion limit to %i at "
                       "the recursion depth %i: the limit is too low",
-                      new_limit, tstate->interp->ceval.recursion_limit - tstate->recursion_spare);
+                      new_limit, tstate->interp->ceval.recursion_limit - tstate->recursion_remaining);
         return NULL;
     }
 
