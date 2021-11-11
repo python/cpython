@@ -1,4 +1,4 @@
-"""Mock socket module used by the smtpd and smtplib tests.
+"""Mock socket module used by the smtplib tests.
 """
 
 # imported for _GLOBAL_DEFAULT_TIMEOUT
@@ -33,7 +33,7 @@ class MockFile:
 
 
 class MockSocket:
-    """Mock socket object used by smtpd and smtplib tests.
+    """Mock socket object used by smtplib tests.
     """
     def __init__(self, family=None):
         global _reply_data

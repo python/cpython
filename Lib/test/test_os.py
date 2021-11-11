@@ -30,17 +30,14 @@ import unittest
 import uuid
 import warnings
 from test import support
+from test.support import _asynchat as asynchat
+from test.support import _asyncore as asyncore
 from test.support import import_helper
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import threading_helper
 from test.support import warnings_helper
 from platform import win32_is_iot
-
-with warnings.catch_warnings():
-    warnings.simplefilter('ignore', DeprecationWarning)
-    import asynchat
-    import asyncore
 
 try:
     import resource

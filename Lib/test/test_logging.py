@@ -42,6 +42,8 @@ import sys
 import tempfile
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test import support
+from test.support import _asyncore as asyncore
+from test.support import _smtpd as smtpd
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import threading_helper
@@ -58,11 +60,6 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 from socketserver import (ThreadingUDPServer, DatagramRequestHandler,
                           ThreadingTCPServer, StreamRequestHandler)
-
-with warnings.catch_warnings():
-    warnings.simplefilter('ignore', DeprecationWarning)
-    import asyncore
-    import smtpd
 
 try:
     import win32evtlog, win32evtlogutil, pywintypes
