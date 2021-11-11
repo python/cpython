@@ -366,6 +366,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.11a1 3461 (JUMP_ABSOLUTE must jump backwards)
 #     Python 3.11a2 3462 (bpo-44511: remove COPY_DICT_WITHOUT_KEYS, change
 #                         MATCH_CLASS and MATCH_KEYS, and add COPY)
+#     Python 3.11a3 3463 (Merge numeric BINARY_*/INPLACE_* into BINARY_OP)
 
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
