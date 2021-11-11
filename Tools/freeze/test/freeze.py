@@ -151,6 +151,7 @@ def prepare(script=None, outdir=None):
     # Write the script to disk.
     if script:
         scriptfile = os.path.join(outdir, 'app.py')
+        print(f'creating the script to be frozen at {scriptfile}')
         with open(scriptfile, 'w') as outfile:
             outfile.write(script)
 
@@ -177,7 +178,7 @@ def prepare(script=None, outdir=None):
         raise UnsupportedError('make')
 
     # Build python.
-    print('building python...')
+    print(f'building python in {builddir}...')
     if os.path.exists(os.path.join(srcdir, 'Makefile')):
         # Out-of-tree builds require a clean srcdir.
         _run_quiet([MAKE, '-C', srcdir, 'clean'])
