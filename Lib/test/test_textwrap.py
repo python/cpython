@@ -1118,5 +1118,31 @@ class WideCharacterTestCase(BaseTestCase):
                            text_len=self.text_len)
 
 
+class CustomWidthTestCase(BaseTestCase):
+    def text_len(self, text):
+        lengths = {
+            'A': 4,
+            'B': 2,
+            'Q': 0,
+        }
+
+        return sum(
+            lengths[c] if c in lengths else 1
+            for c in text
+        )
+
+    def test_zero_width_text_len(self):
+        text = "0QQ1234QQ56789"
+        self.check_wrap(text, 6, ["0QQ1234QQ5", "6789"], text_len=self.text_len)
+
+    def test_char_longer_than_width(self):
+        text = "AA0123"
+        self.check_wrap(text, 3, ["A", "A", "012", "3"], text_len=self.text_len)
+
+    def test_next_char_overflow(self):
+        text = "BB0123"
+        self.check_wrap(text, 3, ["B", "B0", "123"], text_len=self.text_len)
+
+
 if __name__ == '__main__':
     unittest.main()
