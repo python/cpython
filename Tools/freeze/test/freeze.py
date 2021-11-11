@@ -92,7 +92,7 @@ def git_copy_repo(newroot, oldroot):
         _run_quiet([GIT, 'clone', oldroot, newroot])
 
     # Copy over any uncommited files.
-    text = _run_stdout([GIT, 'status', '-s'], oldroot)
+    text = _run_stdout([GIT, 'status', '--porcelain=1'], oldroot)
     for line in text.splitlines():
         _, _, relfile = line.strip().partition(' ')
         relfile = relfile.strip()
