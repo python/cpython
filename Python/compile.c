@@ -8101,9 +8101,6 @@ fold_rotations(struct instr *inst, int n)
     }
 }
 
-/* Maximum size of basic block that should be copied in optimizer */
-#define MAX_COPY_SIZE 4
-
 // Attempt to eliminate jumps to jumps by updating inst to jump to
 // target->i_target using the provided opcode. Return whether or not the
 // optimization was successful.
@@ -8123,6 +8120,9 @@ jump_thread(struct instr *inst, struct instr *target, int opcode)
     }
     return false;
 }
+
+/* Maximum size of basic block that should be copied in optimizer */
+#define MAX_COPY_SIZE 4
 
 /* Optimization */
 static int
