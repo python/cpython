@@ -1,3 +1,4 @@
+import sys
 import functools
 import unittest
 from test import support
@@ -146,7 +147,6 @@ class Callbacks(unittest.TestCase):
                 gc.collect()
         CFUNCTYPE(None)(lambda x=Nasty(): None)
 
-    @unittest.expectedFailure
     @need_symbol('WINFUNCTYPE')
     def test_i38748_stackCorruption(self):
         callback_funcType = WINFUNCTYPE(c_long, c_long, c_longlong)
@@ -158,6 +158,9 @@ class Callbacks(unittest.TestCase):
         dll = cdll[_ctypes_test.__file__]
         # With no fix for i38748, the next line will raise OSError and cause the test to fail.
         self.assertEqual(dll._test_i38748_runCallback(callback, 5, 10), 15)
+    # Mark the above test as an expected failure on 32 bit (x86)
+    if (sys.maxsize + 1) == 2**31: # 32 bit
+        test_i38748_stackCorruption = unittest.expectedFailure(test_i38748_stackCorruption)
 
 @need_symbol('WINFUNCTYPE')
 class StdcallCallbacks(Callbacks):
