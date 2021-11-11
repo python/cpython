@@ -21,6 +21,8 @@
  * objects.
  */
 
+#include <stdbool.h>
+
 #include "Python.h"
 #include "pycore_ast.h"           // _PyAST_GetDocString()
 #include "pycore_compile.h"       // _PyFuture_FromAST()
