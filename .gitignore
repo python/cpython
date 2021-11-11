@@ -59,6 +59,7 @@ Lib/distutils/command/*.pdb
 Lib/lib2to3/*.pickle
 Lib/test/data/*
 !Lib/test/data/README
+/_bootstrap_python
 /Makefile
 /Makefile.pre
 Mac/Makefile
@@ -115,6 +116,7 @@ Tools/unicode/data/
 /platform
 /profile-clean-stamp
 /profile-run-stamp
+/Python/deepfreeze/*.c
 /pybuilddir.txt
 /pyconfig.h
 /python-config
