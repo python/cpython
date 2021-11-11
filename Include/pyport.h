@@ -201,9 +201,10 @@ typedef Py_ssize_t Py_ssize_clean_t;
 #  define Py_LOCAL_INLINE(type) static inline type
 #endif
 
-/* Py_MEMCPY is kept for backwards compatibility,
- * see https://bugs.python.org/issue28126 */
-#define Py_MEMCPY memcpy
+// bpo-28126: Py_MEMCPY is kept for backwards compatibility,
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+#  define Py_MEMCPY memcpy
+#endif
 
 #ifdef HAVE_IEEEFP_H
 #include <ieeefp.h>  /* needed for 'finite' declaration on some platforms */
@@ -215,17 +216,10 @@ typedef Py_ssize_t Py_ssize_clean_t;
  * WRAPPER FOR <time.h> and/or <sys/time.h> *
  ********************************************/
 
-#ifdef TIME_WITH_SYS_TIME
-#include <sys/time.h>
-#include <time.h>
-#else /* !TIME_WITH_SYS_TIME */
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
-#else /* !HAVE_SYS_TIME_H */
+#endif
 #include <time.h>
-#endif /* !HAVE_SYS_TIME_H */
-#endif /* !TIME_WITH_SYS_TIME */
-
 
 /******************************
  * WRAPPER FOR <sys/select.h> *

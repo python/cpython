@@ -81,6 +81,45 @@ enum_new_impl(PyTypeObject *type, PyObject *iterable, PyObject *start)
     return (PyObject *)en;
 }
 
+// TODO: Use AC when bpo-43447 is supported
+static PyObject *
+enumerate_vectorcall(PyObject *type, PyObject *const *args,
+                     size_t nargsf, PyObject *kwnames)
+{
+    assert(PyType_Check(type));
+    PyTypeObject *tp = (PyTypeObject *)type;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    Py_ssize_t nkwargs = 0;
+    if (nargs == 0) {
+        PyErr_SetString(PyExc_TypeError,
+            "enumerate() missing required argument 'iterable'");
+        return NULL;
+    }
+    if (kwnames != NULL) {
+        nkwargs = PyTuple_GET_SIZE(kwnames);
+    }
+
+    if (nargs + nkwargs == 2) {
+        if (nkwargs == 1) {
+            PyObject *kw = PyTuple_GET_ITEM(kwnames, 0);
+            if (!_PyUnicode_EqualToASCIIString(kw, "start")) {
+                PyErr_Format(PyExc_TypeError,
+                    "'%S' is an invalid keyword argument for enumerate()", kw);
+                return NULL;
+            }
+        }
+        return enum_new_impl(tp, args[0], args[1]);
+    }
+
+    if (nargs == 1 && nkwargs == 0) {
+        return enum_new_impl(tp, args[0], NULL);
+    }
+
+    PyErr_Format(PyExc_TypeError,
+        "enumerate() takes at most 2 arguments (%d given)", nargs + nkwargs);
+    return NULL;
+}
+
 static void
 enum_dealloc(enumobject *en)
 {
@@ -261,6 +300,7 @@ PyTypeObject PyEnum_Type = {
     PyType_GenericAlloc,            /* tp_alloc */
     enum_new,                       /* tp_new */
     PyObject_GC_Del,                /* tp_free */
+    .tp_vectorcall = (vectorcallfunc)enumerate_vectorcall
 };
 
 /* Reversed Object ***************************************************************/

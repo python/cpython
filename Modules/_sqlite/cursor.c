@@ -25,7 +25,7 @@
 #include "module.h"
 #include "util.h"
 
-#define clinic_state() (pysqlite_get_state(NULL))
+#define clinic_state() (pysqlite_get_state_by_type(Py_TYPE(self)))
 #include "clinic/cursor.c.h"
 #undef clinic_state
 
@@ -729,8 +729,8 @@ pysqlite_cursor_executescript_impl(pysqlite_Cursor *self,
 
     size_t sql_len = strlen(sql_script);
     int max_length = sqlite3_limit(self->connection->db,
-                                   SQLITE_LIMIT_LENGTH, -1);
-    if (sql_len >= (unsigned)max_length) {
+                                   SQLITE_LIMIT_SQL_LENGTH, -1);
+    if (sql_len > (unsigned)max_length) {
         PyErr_SetString(self->connection->DataError,
                         "query string is too large");
         return NULL;
@@ -966,17 +966,16 @@ pysqlite_cursor_setoutputsize_impl(pysqlite_Cursor *self, PyObject *size,
 /*[clinic input]
 _sqlite3.Cursor.close as pysqlite_cursor_close
 
-    cls: defining_class
-
 Closes the cursor.
 [clinic start generated code]*/
 
 static PyObject *
-pysqlite_cursor_close_impl(pysqlite_Cursor *self, PyTypeObject *cls)
-/*[clinic end generated code: output=a08ab3d772f45438 input=28ba9b532ab46ba0]*/
+pysqlite_cursor_close_impl(pysqlite_Cursor *self)
+/*[clinic end generated code: output=b6055e4ec6fe63b6 input=08b36552dbb9a986]*/
 {
     if (!self->connection) {
-        pysqlite_state *state = pysqlite_get_state_by_cls(cls);
+        PyTypeObject *tp = Py_TYPE(self);
+        pysqlite_state *state = pysqlite_get_state_by_type(tp);
         PyErr_SetString(state->ProgrammingError,
                         "Base Cursor.__init__ not called.");
         return NULL;
