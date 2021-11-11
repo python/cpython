@@ -4687,14 +4687,6 @@ check_eval_breaker:
                     res = PyNumber_Multiply(lhs, rhs);
                     break;
                 case NB_REMAINDER:
-                    if (PyUnicode_CheckExact(lhs) &&
-                        (!PyUnicode_Check(rhs) || PyUnicode_CheckExact(rhs)))
-                    {
-                        // bpo-28598: Fast path for string formatting (but not
-                        // if the RHS is a str subclass).
-                        res = PyUnicode_Format(lhs, rhs);
-                        break;
-                    }
                     res = PyNumber_Remainder(lhs, rhs);
                     break;
                 case NB_OR:
@@ -4783,6 +4775,26 @@ check_eval_breaker:
                 STAT_DEC(BINARY_OP, unquickened);
                 JUMP_TO_INSTRUCTION(BINARY_OP);
             }
+        }
+
+        TARGET(BINARY_OP_REMAINDER_UNICODE) {
+            PyObject *lhs = SECOND();
+            PyObject *rhs = TOP();
+            DEOPT_IF(!PyUnicode_CheckExact(lhs), BINARY_OP);
+            DEOPT_IF(!PyUnicode_CheckExact(rhs) && PyUnicode_Check(rhs),
+                     BINARY_OP);
+            STAT_INC(BINARY_OP, hit);
+            // bpo-28598: Fast path for string formatting (but not if rhs is a
+            // str subclass).
+            PyObject *res = PyUnicode_Format(lhs, rhs);
+            if (res == NULL) {
+                goto error;
+            }
+            STACK_SHRINK(1);
+            Py_DECREF(lhs);
+            Py_DECREF(rhs);
+            SET_TOP(res);
+            DISPATCH();
         }
 
         TARGET(EXTENDED_ARG) {
