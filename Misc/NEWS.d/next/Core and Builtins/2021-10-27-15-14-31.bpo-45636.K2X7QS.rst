@@ -1,0 +1,2 @@
+Replace all numeric ``BINARY_*`` and ``INPLACE_*`` instructions with a single
+:opcode:`BINARY_OP` implementation.

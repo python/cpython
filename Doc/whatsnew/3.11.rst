@@ -315,6 +315,9 @@ Optimizations
 CPython bytecode changes
 ========================
 
+* Replaced all numeric ``BINARY_*`` and ``INPLACE_*`` instructions with a single
+  :opcode:`BINARY_OP` implementation.
+
 * Added a new :opcode:`CALL_METHOD_KW` opcode.  Calls a method in a similar
   fashion as :opcode:`CALL_METHOD`, but also supports keyword arguments.  Works
   in tandem with :opcode:`LOAD_METHOD`.
@@ -524,6 +527,13 @@ Build Changes
   (Contributed by Brett Cannon and Christian Heimes in :issue:`45548`,
   :issue:`45570`, :issue:`45571`, and :issue:`43974`.)
 
+* The build dependencies for :mod:`zlib`, :mod:`bz2`, and :mod:`lzma` are now
+  detected by :program:`configure`.
+  (Contributed by Christian Heimes in :issue:`45763`.)
+
+* Build dependencies for :mod:`dbm` are now detected by :program:`configure`.
+  ``libdb`` 3.x and 4.x are no longer supported.
+  (Contributed by Christian Heimes in :issue:`45747`.)
 
 C API Changes
 =============

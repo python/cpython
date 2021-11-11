@@ -124,6 +124,9 @@
 /* Has builtin __atomic_load_n() and __atomic_store_n() functions */
 #undef HAVE_BUILTIN_ATOMIC
 
+/* Define to 1 if you have the <bzlib.h> header file. */
+#undef HAVE_BZLIB_H
+
 /* Define to 1 if you have the 'chflags' function. */
 #undef HAVE_CHFLAGS
 
@@ -210,6 +213,9 @@
 
 /* Define if you have the 'wchgat' function. */
 #undef HAVE_CURSES_WCHGAT
+
+/* Define to 1 if you have the <db.h> header file. */
+#undef HAVE_DB_H
 
 /* Define to 1 if you have the declaration of `RTLD_DEEPBIND', and to 0 if you
    don't. */
@@ -417,6 +423,15 @@
 /* Define if your compiler provides __uint128_t */
 #undef HAVE_GCC_UINT128_T
 
+/* Define to 1 if you have the <gdbm-ndbm.h> header file. */
+#undef HAVE_GDBM_DASH_NDBM_H
+
+/* Define to 1 if you have the <gdbm.h> header file. */
+#undef HAVE_GDBM_H
+
+/* Define to 1 if you have the <gdbm/ndbm.h> header file. */
+#undef HAVE_GDBM_NDBM_H
+
 /* Define if you have the getaddrinfo function. */
 #undef HAVE_GETADDRINFO
 
@@ -580,17 +595,35 @@
 /* Define to 1 if you have the `lchown' function. */
 #undef HAVE_LCHOWN
 
+/* Define to 1 if you have the `bz2' library (-lbz2). */
+#undef HAVE_LIBBZ2
+
+/* Define to 1 if you have the `db' library (-ldb). */
+#undef HAVE_LIBDB
+
 /* Define to 1 if you have the `dl' library (-ldl). */
 #undef HAVE_LIBDL
 
 /* Define to 1 if you have the `dld' library (-ldld). */
 #undef HAVE_LIBDLD
 
+/* Define to 1 if you have the `gdbm' library (-lgdbm). */
+#undef HAVE_LIBGDBM
+
+/* Define to 1 if you have the `gdbm_compat' library (-lgdbm_compat). */
+#undef HAVE_LIBGDBM_COMPAT
+
 /* Define to 1 if you have the `ieee' library (-lieee). */
 #undef HAVE_LIBIEEE
 
 /* Define to 1 if you have the <libintl.h> header file. */
 #undef HAVE_LIBINTL_H
+
+/* Define to 1 if you have the `lzma' library (-llzma). */
+#undef HAVE_LIBLZMA
+
+/* Define to 1 if you have the `ndbm' library (-lndbm). */
+#undef HAVE_LIBNDBM
 
 /* Define to build the readline module. */
 #undef HAVE_LIBREADLINE
@@ -606,6 +639,9 @@
 
 /* Define to 1 if you have the `uuid' library (-luuid). */
 #undef HAVE_LIBUUID
+
+/* Define to 1 if you have the `z' library (-lz). */
+#undef HAVE_LIBZ
 
 /* Define if you have the 'link' function. */
 #undef HAVE_LINK
@@ -670,6 +706,9 @@
 /* Define to 1 if you have the `lutimes' function. */
 #undef HAVE_LUTIMES
 
+/* Define to 1 if you have the <lzma.h> header file. */
+#undef HAVE_LZMA_H
+
 /* Define to 1 if you have the `madvise' function. */
 #undef HAVE_MADVISE
 
@@ -717,6 +756,9 @@
 
 /* Define to 1 if you have the <ncurses.h> header file. */
 #undef HAVE_NCURSES_H
+
+/* Define to 1 if you have the <ndbm.h> header file. */
+#undef HAVE_NDBM_H
 
 /* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
 #undef HAVE_NDIR_H
@@ -1342,6 +1384,9 @@
 /* Define if the zlib library has inflateCopy */
 #undef HAVE_ZLIB_COPY
 
+/* Define to 1 if you have the <zlib.h> header file. */
+#undef HAVE_ZLIB_H
+
 /* Define to 1 if you have the `_getpty' function. */
 #undef HAVE__GETPTY
 
@@ -1588,9 +1633,6 @@
 
 /* This must be set to 64 on some systems to enable large file support. */
 #undef _FILE_OFFSET_BITS
-
-/* Define on Linux to activate all library features */
-#undef _GNU_SOURCE
 
 /* Define to include mbstate_t for mbrtowc */
 #undef _INCLUDE__STDC_A1_SOURCE
