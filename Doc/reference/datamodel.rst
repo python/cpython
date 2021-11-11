@@ -2289,13 +2289,13 @@ called::
 
        class_of_obj = type(obj)
 
-       # If the class of `obj` defines `__getitem__()`,
-       # call `type(obj).__getitem__()`
+       # If the class of obj defines __getitem__,
+       # call class_of_obj.__getitem__(obj, x)
        if hasattr(class_of_obj, '__getitem__'):
            return class_of_obj.__getitem__(obj, x)
 
-       # Else, if `obj` is a class and defines `__class_getitem__()`,
-       # call `obj.__class_getitem__()`
+       # Else, if obj is a class and defines __class_getitem__,
+       # call obj.__class_getitem__(x)
        elif isclass(obj) and hasattr(obj, '__class_getitem__'):
            return obj.__class_getitem__(x)
 
@@ -2312,15 +2312,15 @@ a class is known as that class's :term:`metaclass`, and most classes have the
 ``dict[str, float]`` and ``tuple[str, bytes]`` all result in
 :meth:`~object.__class_getitem__` being called::
 
-   >>> # `list` has `type` as its metaclass, like most classes:
+   >>> # list has class "type" as its metaclass, like most classes:
    >>> type(list)
    <class 'type'>
    >>> type(dict) == type(list) == type(tuple) == type(str) == type(bytes)
    True
-   >>> # `list[int]` calls `list.__class_getitem__()`
+   >>> # "list[int]" calls "list.__class_getitem__(int)"
    >>> list[int]
    list[int]
-   >>> # `list.__class_getitem__()` returns a `GenericAlias` object:
+   >>> # list.__class_getitem__ returns a GenericAlias object:
    >>> type(list[int])
    <class 'types.GenericAlias'>
 
@@ -2334,13 +2334,16 @@ behaviour. An example of this can be found in the :mod:`enum` module::
    ...     SPAM = 'spam'
    ...     BACON = 'bacon'
    ...
-   >>> # `Enum` classes have a custom metaclass
+   >>> # Enum classes have a custom metaclass:
    >>> type(Menu)
    <class 'enum.EnumMeta'>
-   >>> # `EnumMeta` defines `__getitem__()`,
-   >>> # so `__class_getitem__()` is not called:
+   >>> # EnumMeta defines __getitem__,
+   >>> # so __class_getitem__ is not called,
+   >>> # and the result is not a GenericAlias object:
    >>> Menu['SPAM']
    <Menu.SPAM: 'spam'>
+   >>> type(Menu['SPAM'])
+   <enum 'Menu'>
 
 
 .. seealso::
