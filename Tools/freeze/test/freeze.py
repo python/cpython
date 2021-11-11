@@ -108,8 +108,10 @@ def git_copy_repo(newroot, oldroot):
             else:
                 shutil.copy2(srcfile, dstfile)
         else:
-            # Only single files will show up here.
-            os.unlink(dstfile)
+            if isdir:
+                shutil.rmtree(dstfile)
+            else:
+                os.unlink(dstfile)
 
 
 def get_makefile_var(builddir, name):
