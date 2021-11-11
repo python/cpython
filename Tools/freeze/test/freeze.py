@@ -83,10 +83,10 @@ def git_copy_repo(newroot, oldroot):
         print(f'updating copied repo {newroot}...')
         if newroot == SRCDIR:
             raise Exception('this probably isn\'t what you wanted')
+        rev = _run_stdout([GIT, 'rev-parse', 'HEAD'], newroot)
         _run_quiet([GIT, 'clean', '-d', '-x', '--force'], newroot)
-        _run_quiet([GIT, 'reset'], newroot)
-        _run_quiet([GIT, 'checkout', '.'], newroot)
-        _run_quiet([GIT, 'pull', '-f', oldroot], newroot)
+        _run_quiet([GIT, 'fetch', oldroot], newroot)
+        _run_quiet([GIT, 'reset', '--hard', rev], newroot)
     else:
         print(f'copying repo into {newroot}...')
         _run_quiet([GIT, 'clone', oldroot, newroot])
