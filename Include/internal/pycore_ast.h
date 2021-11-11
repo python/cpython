@@ -293,6 +293,7 @@ struct _stmt {
             asdl_excepthandler_seq *handlers;
             asdl_stmt_seq *orelse;
             asdl_stmt_seq *finalbody;
+            int star;
         } Try;
 
         struct {
@@ -685,9 +686,9 @@ stmt_ty _PyAST_Match(expr_ty subject, asdl_match_case_seq * cases, int lineno,
 stmt_ty _PyAST_Raise(expr_ty exc, expr_ty cause, int lineno, int col_offset,
                      int end_lineno, int end_col_offset, PyArena *arena);
 stmt_ty _PyAST_Try(asdl_stmt_seq * body, asdl_excepthandler_seq * handlers,
-                   asdl_stmt_seq * orelse, asdl_stmt_seq * finalbody, int
-                   lineno, int col_offset, int end_lineno, int end_col_offset,
-                   PyArena *arena);
+                   asdl_stmt_seq * orelse, asdl_stmt_seq * finalbody, int star,
+                   int lineno, int col_offset, int end_lineno, int
+                   end_col_offset, PyArena *arena);
 stmt_ty _PyAST_Assert(expr_ty test, expr_ty msg, int lineno, int col_offset,
                       int end_lineno, int end_col_offset, PyArena *arena);
 stmt_ty _PyAST_Import(asdl_alias_seq * names, int lineno, int col_offset, int

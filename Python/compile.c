@@ -1094,6 +1094,8 @@ stack_effect(int opcode, int oparg, int jump)
             return -1;
         case JUMP_IF_NOT_EXC_MATCH:
             return -1;
+        case JUMP_IF_NOT_EG_MATCH:
+            return jump > 0 ? -1 : 2;
         case IMPORT_NAME:
             return -1;
         case IMPORT_FROM:
@@ -1131,6 +1133,8 @@ stack_effect(int opcode, int oparg, int jump)
              * if an exception be raised. */
             return jump ? -1 + 4 : 0;
 
+        case PREP_RERAISE_STAR:
+             return 1;
         case RERAISE:
             return -3;
         case PUSH_EXC_INFO:
@@ -3217,7 +3221,9 @@ static int
 compiler_try_except(struct compiler *c, stmt_ty s)
 {
     basicblock *body, *orelse, *except, *end, *cleanup;
+    basicblock *reraise_star = NULL; /* for except* */
     Py_ssize_t i, n;
+    int is_except_star = s->v.Try.star;
 
     body = compiler_new_block(c);
     except = compiler_new_block(c);
@@ -3226,6 +3232,13 @@ compiler_try_except(struct compiler *c, stmt_ty s)
     cleanup = compiler_new_block(c);
     if (body == NULL || except == NULL || orelse == NULL || end == NULL || cleanup == NULL)
         return 0;
+
+    if (is_except_star) {
+        reraise_star = compiler_new_block(c);
+        if (reraise_star == NULL)
+            return 0;
+    }
+
     ADDOP_JUMP(c, SETUP_FINALLY, except);
     compiler_use_next_block(c, body);
     if (!compiler_push_fblock(c, TRY_EXCEPT, body, NULL, NULL))
@@ -3248,17 +3261,47 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             s->v.Try.handlers, i);
         SET_LOC(c, handler);
         if (!handler->v.ExceptHandler.type && i < n-1) {
+            assert(!is_except_star);
             return compiler_error(c, "default 'except:' must be last");
         }
         except = compiler_new_block(c);
         if (except == NULL)
             return 0;
+        if (is_except_star) {
+            if (i == 0) {
+                /* Push the original EG into the stack */
+                /*
+                   [tb, val, exc]            DUP_TOP_TWO
+                   [tb, val, exc, val, exc]  POP_TOP
+                   [tb, val, exc, val]       ROT_FOUR
+                   [val, tb, val, exc]
+                */
+                ADDOP(c, DUP_TOP_TWO);
+                ADDOP(c, POP_TOP);
+                ADDOP(c, ROT_FOUR);
+
+                /* create empty list for exceptions raised/reraise in the except* blocks */
+                /*
+                   [val, tb, val, exc]       BUILD_LIST
+                   [val, tb, val, exc, []]   ROT_FOUR
+                   [val, [], tb, val, exc]
+                */
+                ADDOP_I(c, BUILD_LIST, 0);
+                ADDOP(c, ROT_FOUR);
+            }
+        }
         if (handler->v.ExceptHandler.type) {
             VISIT(c, expr, handler->v.ExceptHandler.type);
-            ADDOP_JUMP(c, JUMP_IF_NOT_EXC_MATCH, except);
+            if (!is_except_star) {
+                ADDOP_JUMP(c, JUMP_IF_NOT_EXC_MATCH, except);
+            }
+            else {
+                ADDOP_JUMP(c, JUMP_IF_NOT_EG_MATCH, except);
+            }
+
             NEXT_BLOCK(c);
         }
-        ADDOP(c, POP_TOP);
+        ADDOP(c, POP_TOP);  // exc_type
         if (handler->v.ExceptHandler.name) {
             basicblock *cleanup_end, *cleanup_body;
 
@@ -3269,7 +3312,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             }
 
             compiler_nameop(c, handler->v.ExceptHandler.name, Store);
-            ADDOP(c, POP_TOP);
+            ADDOP(c, POP_TOP);  // tb
 
             /*
               try:
@@ -3295,11 +3338,18 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             UNSET_LOC(c);
             ADDOP(c, POP_BLOCK);
             ADDOP(c, POP_BLOCK);
-            ADDOP(c, POP_EXCEPT);
+            if (!is_except_star) {
+                ADDOP(c, POP_EXCEPT);
+            }
             ADDOP_LOAD_CONST(c, Py_None);
             compiler_nameop(c, handler->v.ExceptHandler.name, Store);
             compiler_nameop(c, handler->v.ExceptHandler.name, Del);
-            ADDOP_JUMP(c, JUMP_FORWARD, end);
+            if (!is_except_star) {
+                ADDOP_JUMP(c, JUMP_FORWARD, end);
+            }
+            else {
+                ADDOP_JUMP(c, JUMP_ABSOLUTE, except);
+            }
 
             /* except: */
             compiler_use_next_block(c, cleanup_end);
@@ -3311,17 +3361,37 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             compiler_nameop(c, handler->v.ExceptHandler.name, Store);
             compiler_nameop(c, handler->v.ExceptHandler.name, Del);
 
-            ADDOP_I(c, RERAISE, 1);
+            if (!is_except_star) {
+                ADDOP_I(c, RERAISE, 1);
+            }
+            else {
+                /* add exception raised to the res list */
+                ADDOP(c, POP_TOP); // type
+                ADDOP_I(c, LIST_APPEND, 6); // exc
+                ADDOP(c, POP_TOP); // tb
+                ADDOP(c, POP_TOP); // lasti
+
+                ADDOP_JUMP(c, JUMP_ABSOLUTE, except);
+            }
         }
         else {
-            basicblock *cleanup_body;
+            basicblock *cleanup_end, *cleanup_body;
 
             cleanup_body = compiler_new_block(c);
             if (!cleanup_body)
                 return 0;
+            if (is_except_star) {
+                cleanup_end = compiler_new_block(c);
+                if (!cleanup_end)
+                    return 0;
+            }
 
-            ADDOP(c, POP_TOP);
-            ADDOP(c, POP_TOP);
+            ADDOP(c, POP_TOP);  // exc_val
+            ADDOP(c, POP_TOP);  // tb
+
+            if (is_except_star) {
+                ADDOP_JUMP(c, SETUP_CLEANUP, cleanup_end);
+            }
             compiler_use_next_block(c, cleanup_body);
             if (!compiler_push_fblock(c, HANDLER_CLEANUP, cleanup_body, NULL, NULL))
                 return 0;
@@ -3329,19 +3399,71 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             compiler_pop_fblock(c, HANDLER_CLEANUP, cleanup_body);
             UNSET_LOC(c);
             ADDOP(c, POP_BLOCK);
-            ADDOP(c, POP_EXCEPT);
-            ADDOP_JUMP(c, JUMP_FORWARD, end);
+            if (!is_except_star) {
+                ADDOP(c, POP_EXCEPT);
+                ADDOP_JUMP(c, JUMP_FORWARD, end);
+            }
+            else {
+                ADDOP(c, POP_BLOCK);
+                ADDOP_JUMP(c, JUMP_ABSOLUTE, except);
+            }
+
+            if (is_except_star) {
+                /* except: */
+                compiler_use_next_block(c, cleanup_end);
+                /* add exception raised to the res list */
+                ADDOP(c, POP_TOP); // type
+                ADDOP_I(c, LIST_APPEND, 6); // exc
+                ADDOP(c, POP_TOP); // tb
+                ADDOP(c, POP_TOP); // lasti
+
+                ADDOP_JUMP(c, JUMP_ABSOLUTE, except);
+            }
         }
+
         compiler_use_next_block(c, except);
+        if (is_except_star) {
+            if (i == n - 1) {
+                /* Add exc to the list (if not None it's the unhandled part of the EG) */
+                ADDOP(c, POP_TOP);
+                ADDOP_I(c, LIST_APPEND, 2);
+                ADDOP(c, POP_TOP);
+                ADDOP_JUMP(c, JUMP_FORWARD, reraise_star);
+            }
+        }
     }
     /* Mark as artificial */
     UNSET_LOC(c);
     compiler_pop_fblock(c, EXCEPTION_HANDLER, NULL);
-    ADDOP_I(c, RERAISE, 0);
+    if (!is_except_star) {
+        ADDOP_I(c, RERAISE, 0);
+    }
+    else {
+        basicblock *reraise;
+        reraise = compiler_new_block(c);
+        if (!reraise)
+            return 0;
+
+        compiler_use_next_block(c, reraise_star);
+        ADDOP(c, PREP_RERAISE_STAR);
+        ADDOP(c, DUP_TOP);
+        ADDOP_JUMP(c, POP_JUMP_IF_TRUE, reraise);
+        NEXT_BLOCK(c);
+
+        /* Nothing to reraise - pop it */
+        ADDOP(c, POP_TOP);
+        ADDOP(c, POP_TOP);
+        ADDOP(c, POP_TOP);
+        ADDOP(c, POP_EXCEPT);
+        ADDOP_JUMP(c, JUMP_FORWARD, end);
+        compiler_use_next_block(c, reraise);
+        ADDOP_I(c, RERAISE, 0);
+    }
     compiler_use_next_block(c, cleanup);
     ADDOP(c, POP_EXCEPT_AND_RERAISE);
     compiler_use_next_block(c, orelse);
     VISIT_SEQ(c, stmt, s->v.Try.orelse);
+    ADDOP_JUMP(c, JUMP_FORWARD, end);
     compiler_use_next_block(c, end);
     return 1;
 }
@@ -6656,9 +6778,11 @@ stackdepth(struct compiler *c)
         int depth = b->b_startdepth;
         assert(depth >= 0);
         basicblock *next = b->b_next;
+//fprintf(stderr, "  >> b->b_startdepth = %d\n", b->b_startdepth);
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
             int effect = stack_effect(instr->i_opcode, instr->i_oparg, 0);
+//fprintf(stderr, "[%d]  instr->i_opcode=%d, effect = %d\n", i, instr->i_opcode, effect);
             if (effect == PY_INVALID_STACK_EFFECT) {
                 PyErr_Format(PyExc_SystemError,
                              "compiler stack_effect(opcode=%d, arg=%i) failed",

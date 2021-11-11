@@ -741,6 +741,25 @@ error:
     return NULL;
 }
 
+PyObject *
+_PyExc_CreateExceptionGroup(
+    const char *msg_str, PyObject *excs)
+{
+    PyObject *msg = PyUnicode_FromString(msg_str);
+    if (!msg) {
+        return NULL;
+    }
+    PyObject *args = PyTuple_Pack(2, msg, excs);
+    Py_DECREF(msg);
+    if (!args) {
+        return NULL;
+    }
+    PyObject *result = PyObject_CallObject(
+        PyExc_BaseExceptionGroup, args);
+    Py_DECREF(args);
+    return result;
+}
+
 static int
 BaseExceptionGroup_init(PyBaseExceptionGroupObject *self,
     PyObject *args, PyObject *kwds)
@@ -864,26 +883,43 @@ typedef enum {
     EXCEPTION_GROUP_MATCH_BY_TYPE = 0,
     /* A PyFunction returning True for matching exceptions */
     EXCEPTION_GROUP_MATCH_BY_PREDICATE = 1,
-    /* An instance or container thereof, checked with equality
-     * This matcher type is only used internally by the
-     * interpreter, it is not exposed to python code */
+    /* A set of leaf exceptions to include in the result.
+     * This matcher type is used internally by the interpreter
+     * to construct reraised exceptions.
+     */
     EXCEPTION_GROUP_MATCH_INSTANCES = 2
 } _exceptiongroup_split_matcher_type;
 
 static int
 get_matcher_type(PyObject *value,
-                  _exceptiongroup_split_matcher_type *type)
+                 _exceptiongroup_split_matcher_type *type)
 {
-    /* the python API supports only BY_TYPE and BY_PREDICATE */
-    if (PyExceptionClass_Check(value) ||
-        PyTuple_CheckExact(value)) {
-        *type = EXCEPTION_GROUP_MATCH_BY_TYPE;
-        return 0;
+    if (!value) {
+        goto error;
     }
+
     if (PyFunction_Check(value)) {
         *type = EXCEPTION_GROUP_MATCH_BY_PREDICATE;
         return 0;
     }
+
+    if (PyExceptionClass_Check(value)) {
+        *type = EXCEPTION_GROUP_MATCH_BY_TYPE;
+        return 0;
+    }
+
+    if (PyTuple_CheckExact(value)) {
+        Py_ssize_t n = PyTuple_Size(value);
+        for (Py_ssize_t i=0; i<n; i++) {
+            if (!PyExceptionClass_Check(PyTuple_GET_ITEM(value, i))) {
+                goto error;
+            }
+        }
+        *type = EXCEPTION_GROUP_MATCH_BY_TYPE;
+        return 0;
+    }
+
+error:
     PyErr_SetString(
         PyExc_TypeError,
         "expected a function, exception type or tuple of exception types");
@@ -912,10 +948,15 @@ exceptiongroup_split_check_match(PyObject *exc,
         return is_true;
     }
     case EXCEPTION_GROUP_MATCH_INSTANCES: {
-        if (PySequence_Check(matcher_value)) {
-            return PySequence_Contains(matcher_value, exc);
+        assert(PySet_Check(matcher_value));
+        if (! _PyBaseExceptionGroup_Check(exc)) {
+            int include = PySet_Contains(matcher_value, exc);
+            if (include == -1) {
+                return -1;
+            }
+            return include;
         }
-        return matcher_value == exc;
+        return 0;
     }
     }
     return 0;
@@ -1093,6 +1134,88 @@ BaseExceptionGroup_subgroup(PyObject *self, PyObject *args)
 
     Py_XDECREF(split_result.match);
     assert(!split_result.rest);
+    return result;
+}
+
+static int
+collect_exception_group_leaves(PyObject* exc, PyObject *leaves)
+{
+    if (exc == Py_None) {
+        return 0;
+    }
+
+    assert(PyExceptionInstance_Check(exc));
+    assert(PySet_Check(leaves));
+
+    /* Add all leaf exceptions in exc to the leaves set */
+
+    if (!_PyBaseExceptionGroup_Check(exc)) {
+        if (PySet_Add(leaves, exc) == -1) {
+            return -1;
+        }
+        return 0;
+    }
+    PyBaseExceptionGroupObject *eg = _PyBaseExceptionGroupObject_cast(exc);
+    Py_ssize_t num_excs = PyTuple_Size(eg->excs);
+    if (num_excs < 0) {
+        return -1;
+    }
+    /* recursive calls */
+    for (Py_ssize_t i = 0; i < num_excs; i++) {
+        PyObject *e = PyTuple_GET_ITEM(eg->excs, i);
+        if (collect_exception_group_leaves(e, leaves) == -1) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+/* This function is used by the interpreter to construct reraised
+ * exception groups. It takes an exception group eg and a list
+ * of exception groups keep and returns the sub-exception group
+ * of eg which contains all leaf exceptions that are contained
+ * in any exception group in keep.
+ */
+PyObject *
+_PyExc_ExceptionGroupProjection(PyObject *eg, PyObject *keep)
+{
+    assert(_PyBaseExceptionGroup_Check(eg));
+    assert(PyList_CheckExact(keep));
+
+    Py_ssize_t n = PyList_Size(keep);
+    if (n == -1) {
+        return NULL;
+    }
+
+    PyObject *leaves = PySet_New(NULL);
+    if (!leaves) {
+        return NULL;
+    }
+
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *e = PyList_GET_ITEM(keep, i);
+        assert(e != NULL);
+        assert(_PyBaseExceptionGroup_Check(e));
+        if (collect_exception_group_leaves(e, leaves) == -1) {
+            Py_DECREF(leaves);
+            return NULL;
+        }
+    }
+
+    _exceptiongroup_split_result split_result;
+    bool construct_rest = false;
+    if (exceptiongroup_split_recursive(
+            eg, EXCEPTION_GROUP_MATCH_INSTANCES, leaves,
+            construct_rest, &split_result) == -1) {
+        Py_DECREF(leaves);
+        return NULL;
+    }
+    Py_DECREF(leaves);
+    PyObject *result = Py_NewRef(
+            split_result.match ? split_result.match : Py_None);
+
+    Py_XDECREF(split_result.match);
+    assert(split_result.rest == NULL);
     return result;
 }
 

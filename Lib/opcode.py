@@ -103,6 +103,7 @@ def_op('IMPORT_STAR', 84)
 def_op('SETUP_ANNOTATIONS', 85)
 def_op('YIELD_VALUE', 86)
 
+def_op('PREP_RERAISE_STAR', 88)
 def_op('POP_EXCEPT', 89)
 
 HAVE_ARGUMENT = 90              # Opcodes from here have an argument:
@@ -149,6 +150,8 @@ def_op('STORE_FAST', 125)       # Local variable number
 haslocal.append(125)
 def_op('DELETE_FAST', 126)      # Local variable number
 haslocal.append(126)
+
+jabs_op('JUMP_IF_NOT_EG_MATCH', 127)
 
 def_op('GEN_START', 129)        # Kind of generator/coroutine
 def_op('RAISE_VARARGS', 130)    # Number of raise arguments (1, 2, or 3)

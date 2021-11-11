@@ -206,6 +206,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
                 case POP_JUMP_IF_FALSE:
                 case POP_JUMP_IF_TRUE:
                 case JUMP_IF_NOT_EXC_MATCH:
+                case JUMP_IF_NOT_EG_MATCH:
                 {
                     int64_t target_stack;
                     int j = get_arg(code, i);

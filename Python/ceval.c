@@ -36,6 +36,7 @@
 #include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
 
 #include <ctype.h>
+#include <stdbool.h>
 
 #ifdef Py_DEBUG
 /* For debugging the interpreter: */
@@ -93,6 +94,8 @@ static int import_all_from(PyThreadState *, PyObject *, PyObject *);
 static void format_exc_check_arg(PyThreadState *, PyObject *, const char *, PyObject *);
 static void format_exc_unbound(PyThreadState *tstate, PyCodeObject *co, int oparg);
 static int check_args_iterable(PyThreadState *, PyObject *func, PyObject *vararg);
+static int check_except_type_valid(PyThreadState *tstate, PyObject* right);
+static int check_except_star_type_valid(PyThreadState *tstate, PyObject* right);
 static void format_kwargs_error(PyThreadState *, PyObject *func, PyObject *kwargs);
 static void format_awaitable_error(PyThreadState *, PyTypeObject *, int, int);
 static int get_exception_handler(PyCodeObject *, int, int*, int*, int*);
@@ -1063,6 +1066,11 @@ fail:
 
 
 static int do_raise(PyThreadState *tstate, PyObject *exc, PyObject *cause);
+static PyObject* do_reraise_star(PyObject *excs, PyObject *orig);
+static int exception_group_match(
+    PyObject *exc_type, PyObject* exc_value, PyObject *match_type,
+    PyObject **match, PyObject **rest);
+
 static int unpack_iterable(PyThreadState *, PyObject *, int, int, PyObject **);
 
 #ifdef Py_DEBUG
@@ -2497,6 +2505,7 @@ check_eval_breaker:
             type = exc_info->exc_type;
             value = exc_info->exc_value;
             traceback = exc_info->exc_traceback;
+
             exc_info->exc_type = POP();
             exc_info->exc_value = POP();
             exc_info->exc_traceback = POP();
@@ -2559,6 +2568,35 @@ check_eval_breaker:
             assert(PyExceptionClass_Check(exc));
             _PyErr_Restore(tstate, exc, val, tb);
             goto exception_unwind;
+        }
+
+        TARGET(PREP_RERAISE_STAR) {
+            PyObject *excs = POP();
+            assert(PyList_Check(excs));
+            PyObject *orig = POP();
+
+            PyObject *val = do_reraise_star(excs, orig);
+            Py_DECREF(excs);
+            Py_DECREF(orig);
+
+            if (val == NULL) {
+                goto error;
+            }
+
+            if (val != Py_None) {
+                PyObject *tb = PyException_GetTraceback(val);
+                PUSH(tb ? tb : Py_NewRef(Py_None));
+                PUSH(val);
+                PUSH(Py_NewRef(Py_TYPE(val)));
+            }
+            else {
+                // nothing to reraise
+                Py_DECREF(val);
+                PUSH(Py_NewRef(Py_None));
+                PUSH(Py_NewRef(Py_None));
+                PUSH(Py_NewRef(Py_None));
+            }
+            DISPATCH();
         }
 
         TARGET(END_ASYNC_FOR) {
@@ -3560,33 +3598,92 @@ check_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(JUMP_IF_NOT_EXC_MATCH) {
-            const char *cannot_catch_msg = "catching classes that do not "
-                                           "inherit from BaseException is not "
-                                           "allowed";
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            if (PyTuple_Check(right)) {
-                Py_ssize_t i, length;
-                length = PyTuple_GET_SIZE(right);
-                for (i = 0; i < length; i++) {
-                    PyObject *exc = PyTuple_GET_ITEM(right, i);
-                    if (!PyExceptionClass_Check(exc)) {
-                        _PyErr_SetString(tstate, PyExc_TypeError,
-                                         cannot_catch_msg);
-                        Py_DECREF(right);
-                        goto error;
-                    }
-                }
+        TARGET(JUMP_IF_NOT_EG_MATCH) {
+            PyObject *match_type = POP();
+            PyObject *exc_type = TOP();
+            PyObject *exc_value = SECOND();
+            if (!check_except_star_type_valid(tstate, match_type)) {
+                Py_DECREF(match_type);
+                goto error;
+            }
+
+            PyObject *match = NULL, *rest = NULL;
+            int res = exception_group_match(
+                exc_type, exc_value, match_type, &match, &rest);
+            Py_DECREF(match_type);
+            if (res == -1) {
+                goto error;
+            }
+
+            if (match == NULL || rest == NULL) {
+                Py_XDECREF(match);
+                Py_XDECREF(rest);
+                goto error;
+            }
+
+            if (match == Py_None) {
+                Py_XDECREF(match);
+                Py_XDECREF(rest);
+                /* no match - jump to target */
+                JUMPTO(oparg);
             }
             else {
-                if (!PyExceptionClass_Check(right)) {
-                    _PyErr_SetString(tstate, PyExc_TypeError,
-                                     cannot_catch_msg);
-                    Py_DECREF(right);
-                    goto error;
+
+                /* Total or partial match - update the stack from
+                 * [tb, val, exc]
+                 * to
+                 * [tb, rest, exc, tb, match, exc]
+                 * (rest can be Py_None)
+                 */
+
+
+                PyObject *type = TOP();
+                PyObject *val = SECOND();
+                PyObject *tb = THIRD();
+
+                if (rest != Py_None) {
+                    /* tb remains the same */
+                    SET_TOP(Py_NewRef(Py_TYPE(rest)));
+                    SET_SECOND(Py_NewRef(rest));
+                    SET_THIRD(Py_NewRef(tb));
                 }
+                else {
+                    SET_TOP(Py_NewRef(Py_None));
+                    SET_SECOND(Py_NewRef(Py_None));
+                    SET_THIRD(Py_NewRef(Py_None));
+                }
+                /* Push match */
+
+                PUSH(Py_NewRef(tb));
+                PUSH(Py_NewRef(match));
+                PUSH(Py_NewRef(Py_TYPE(match)));
+
+                // set exc_info to the current match
+                PyErr_SetExcInfo(
+                    Py_NewRef(Py_TYPE(match)),
+                    Py_NewRef(match),
+                    Py_NewRef(tb));
+
+                Py_DECREF(tb);
+                Py_DECREF(val);
+                Py_DECREF(type);
+
+                Py_DECREF(match);
+                Py_DECREF(rest);
             }
+
+            DISPATCH();
+        }
+
+        TARGET(JUMP_IF_NOT_EXC_MATCH) {
+            PyObject *right = POP();
+            PyObject *left = TOP();
+            if (!check_except_type_valid(tstate, right)) {
+                Py_DECREF(left);
+                Py_DECREF(right);
+                goto error;
+            }
+
             int res = PyErr_GivenExceptionMatches(left, right);
             Py_DECREF(right);
             if (res > 0) {
@@ -3703,7 +3800,7 @@ check_eval_breaker:
             }
             else if (err == 0)
                 ;
-            else
+            else 
                 goto error;
             DISPATCH();
         }
@@ -5926,6 +6023,207 @@ raise_error:
     return 0;
 }
 
+/* Logic for matching an exception in an except* clause (too
+   complicated for inlining).
+*/
+
+static int 
+exception_group_match(
+    PyObject *exc_type, PyObject* exc_value, PyObject *match_type,
+    PyObject **match, PyObject **rest)
+{
+    if (exc_type == Py_None) {
+        assert(exc_value == Py_None);
+        *match = Py_NewRef(Py_None);
+        *rest = Py_NewRef(Py_None);
+        return 0;
+    }
+    assert(PyExceptionClass_Check(exc_type));
+    assert(PyExceptionInstance_Check(exc_value));
+
+    int res = PyErr_GivenExceptionMatches(exc_type, match_type);
+    if (res == -1) {
+        return -1;
+    }
+    if (res > 0) {
+        /* Full match of exc itself */
+        bool is_eg = _PyBaseExceptionGroup_Check(exc_value);
+        if (is_eg) {
+            *match = Py_NewRef(exc_value);
+        }
+        else {
+            /* naked exception - wrap it */
+            PyObject *excs = PyTuple_Pack(1, exc_value);
+            if (excs == NULL) {
+                return -1;
+            }
+            PyObject *wrapped = _PyExc_CreateExceptionGroup("", excs);
+            Py_DECREF(excs);
+            if (wrapped == NULL) {
+                return -1;
+            }
+            *match = wrapped;
+        }
+        *rest = Py_NewRef(Py_None);
+        return 0;
+    }
+
+    /* exc_value does not match match_type.
+     * Check for partial match if it's an exception group.
+     */
+    if (_PyBaseExceptionGroup_Check(exc_value)) {
+        PyObject *pair = PyObject_CallMethod(
+            exc_value, "split", "(O)", match_type);
+        if (pair == NULL) {
+            return -1;
+        }
+        assert(PyTuple_CheckExact(pair));
+        assert(PyTuple_GET_SIZE(pair) == 2);
+        *match = Py_NewRef(PyTuple_GET_ITEM(pair, 0));
+        *rest = Py_NewRef(PyTuple_GET_ITEM(pair, 1));
+        Py_DECREF(pair);
+        return 0;
+    }
+    /* no match */
+    *match = Py_NewRef(Py_None);
+    *rest = Py_NewRef(Py_None);
+    return 0;
+}
+
+/* Logic for the final raise/reraise of a try-except* contruct
+   (too complicated for inlining).
+*/
+
+static bool
+is_same_exception_metadata(PyObject *exc1, PyObject *exc2)
+{
+    assert(PyExceptionInstance_Check(exc1));
+    assert(PyExceptionInstance_Check(exc2));
+
+    PyObject *tb1 = PyException_GetTraceback(exc1);
+    PyObject *ctx1 = PyException_GetContext(exc1);
+    PyObject *cause1 = PyException_GetCause(exc1);
+    PyObject *tb2 = PyException_GetTraceback(exc2);
+    PyObject *ctx2 = PyException_GetContext(exc2);
+    PyObject *cause2 = PyException_GetCause(exc2);
+
+    bool result = ((tb1 == tb2) &&
+                   (ctx1 == ctx2) &&
+                   (cause1 == cause2));
+
+    Py_XDECREF(tb1);
+    Py_XDECREF(ctx1);
+    Py_XDECREF(cause1);
+    Py_XDECREF(tb2);
+    Py_XDECREF(ctx2);
+    Py_XDECREF(cause2);
+    return result;
+}
+
+/*
+   excs: a list of exceptions to raise/reraise
+   orig: the original except that was caught
+
+   Calculates an exception group to raise. It contains
+   all exceptions in excs, where those that were reraised
+   have same nesting structure as in orig, and those that
+   were raised (if any) are added as siblings in a new EG.
+
+   Returns NULL and sets an exception on failure.
+*/
+static PyObject*
+do_reraise_star(PyObject *excs, PyObject *orig)
+{
+    assert(PyList_Check(excs));
+    assert(PyExceptionInstance_Check(orig));
+
+    Py_ssize_t numexcs = PyList_Size(excs);
+    if (numexcs == -1) {
+        return NULL;
+    }
+
+    if (numexcs == 0) {
+        return Py_NewRef(Py_None);
+    }
+
+    if (!_PyBaseExceptionGroup_Check(orig)) {
+        /* a naked exception was caught and wrapped. Only one except* clause
+         * could have executed,so there is at most one exception to raise.
+         */
+
+        /* TODO: when I finish the compiler work the None might not be there anymore. */
+        assert(numexcs == 1 || (numexcs == 2 && PyList_GET_ITEM(excs, 1) == Py_None));
+
+        PyObject *e = PyList_GET_ITEM(excs, 0);
+        assert(e != NULL);
+        return Py_NewRef(e);
+    }
+
+
+    PyObject *raised_list = PyList_New(0);
+    if (raised_list == NULL) {
+        return NULL;
+    }
+    PyObject* reraised_list = PyList_New(0);
+    if (reraised_list == NULL) {
+        Py_DECREF(raised_list);
+        return NULL;
+    }
+
+    /* Now we are holding refs to raised_list and reraised_list */
+
+    PyObject *result = NULL;
+
+    /* Split excs into raised and reraised by comparing metadata with orig */
+    for (Py_ssize_t i = 0; i < numexcs; i++) {
+        PyObject *e = PyList_GET_ITEM(excs, i);
+        assert(e != NULL);
+        if (e == Py_None) {
+            continue;
+        }
+        bool is_reraise = is_same_exception_metadata(e, orig);
+        PyObject *append_list = is_reraise ? reraised_list : raised_list;
+        if (PyList_Append(append_list, e) == -1) {
+            goto done;
+        }
+    }
+
+    PyObject *reraised_eg = _PyExc_ExceptionGroupProjection(orig, reraised_list);
+    if (reraised_eg == NULL) {
+        goto done;
+    }
+
+    if (reraised_eg != Py_None) {
+        assert(is_same_exception_metadata(reraised_eg, orig));
+    }
+
+    Py_ssize_t num_raised = PyList_GET_SIZE(raised_list);
+    if (num_raised == 0) {
+        result = reraised_eg;
+    } else if (num_raised > 0) {
+        int res = 0;
+        if (reraised_eg != Py_None) {
+            res = PyList_Append(raised_list, reraised_eg);
+        }
+        Py_DECREF(reraised_eg);
+        if (res == -1) {
+            goto done;
+        }
+        result = _PyExc_CreateExceptionGroup("", raised_list);
+        if (result == NULL) {
+            goto done;
+        }
+    } else {
+        Py_DECREF(reraised_eg);
+        goto done;
+    }
+
+done:
+    Py_XDECREF(raised_list);
+    Py_XDECREF(reraised_list);
+    return result;
+}
+
 /* Iterate v argcnt times and store the results on the stack (via decreasing
    sp).  Return 1 for success, 0 if error.
 
@@ -6817,6 +7115,71 @@ import_all_from(PyThreadState *tstate, PyObject *locals, PyObject *v)
     }
     Py_DECREF(all);
     return err;
+}
+
+#define CANNOT_CATCH_MSG "catching classes that do not inherit from "\
+                          "BaseException is not allowed"
+
+ #define CANNOT_EXCEPT_STAR_EG "catching ExceptionGroup with except* "\
+                               "is not allowed. Use except instead."
+
+ static int
+ check_except_type_valid(PyThreadState *tstate, PyObject* right) {
+     if (PyTuple_Check(right)) {
+         Py_ssize_t i, length;
+         length = PyTuple_GET_SIZE(right);
+         for (i = 0; i < length; i++) {
+             PyObject *exc = PyTuple_GET_ITEM(right, i);
+             if (!PyExceptionClass_Check(exc)) {
+                 _PyErr_SetString(tstate, PyExc_TypeError,
+                     CANNOT_CATCH_MSG);
+                 return 0;
+             }
+         }
+     }
+     else {
+         if (!PyExceptionClass_Check(right)) {
+             _PyErr_SetString(tstate, PyExc_TypeError,
+                 CANNOT_CATCH_MSG);
+             return 0;
+         }
+     }
+     return 1;
+ }
+
+static int
+check_except_star_type_valid(PyThreadState *tstate, PyObject* right) {
+    if (!check_except_type_valid(tstate, right)) {
+        return 0;
+    }
+    // reject except *ExceptionGroup
+    int res = 0;
+    if (PyTuple_Check(right)) {
+        Py_ssize_t i, length;
+        length = PyTuple_GET_SIZE(right);
+        for (i = 0; i < length; i++) {
+            PyObject *exc = PyTuple_GET_ITEM(right, i);
+            res = PyObject_IsSubclass(exc, PyExc_BaseExceptionGroup);
+            if (res == -1) {
+                return 0;
+            }
+            if (res == 1) {
+                break;
+            }
+        }
+    }
+    else {
+        res = PyObject_IsSubclass(right, PyExc_BaseExceptionGroup);
+        if (res == -1) {
+            return 0;
+        }
+    }
+    if (res == 1) {
+        _PyErr_SetString(tstate, PyExc_TypeError,
+            CANNOT_EXCEPT_STAR_EG);
+        return 0;
+    }
+    return 1;
 }
 
 static int

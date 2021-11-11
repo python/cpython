@@ -39,7 +39,7 @@ module Python
           | Match(expr subject, match_case* cases)
 
           | Raise(expr? exc, expr? cause)
-          | Try(stmt* body, excepthandler* handlers, stmt* orelse, stmt* finalbody)
+          | Try(stmt* body, excepthandler* handlers, stmt* orelse, stmt* finalbody, int star)
           | Assert(expr test, expr? msg)
 
           | Import(alias* names)
