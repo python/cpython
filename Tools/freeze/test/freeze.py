@@ -94,7 +94,8 @@ def git_copy_repo(newroot, oldroot):
     # Copy over any uncommited files.
     text = _run_stdout([GIT, 'status', '--porcelain=1'], oldroot)
     for line in text.splitlines():
-        _, _, relfile = line.strip().partition(' ')
+        _, _, loc = line.strip().partition(' ')
+        _, _, relfile = loc.rpartition(' -> ')
         relfile = relfile.strip()
         isdir = relfile.endswith(os.path.sep)
         relfile = relfile.rstrip(os.path.sep)
