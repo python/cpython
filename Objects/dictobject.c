@@ -1531,13 +1531,11 @@ _PyDict_LoadGlobal(PyDictObject *globals, PyDictObject *builtins, PyObject *key)
 
 /* Consumes references to key and value */
 int
-_PyDict_SetItem_Take2(PyObject *op, PyObject *key, PyObject *value)
+_PyDict_SetItem_Take2(PyDictObject *mp, PyObject *key, PyObject *value)
 {
-    assert(op);
     assert(key);
     assert(value);
-    assert(PyDict_Check(op));
-    PyDictObject *mp = (PyDictObject *)op;
+    assert(PyDict_Check(mp));
     Py_hash_t hash;
     if (!PyUnicode_CheckExact(key) ||
         (hash = ((PyASCIIObject *) key)->hash) == -1)
@@ -1573,7 +1571,7 @@ PyDict_SetItem(PyObject *op, PyObject *key, PyObject *value)
     assert(value);
     Py_INCREF(key);
     Py_INCREF(value);
-    return _PyDict_SetItem_Take2(op, key, value);
+    return _PyDict_SetItem_Take2((PyDictObject *)op, key, value);
 }
 
 int

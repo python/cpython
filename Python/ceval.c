@@ -2597,7 +2597,7 @@ check_eval_breaker:
             DEOPT_IF(!PyDict_CheckExact(dict), STORE_SUBSCR);
             STACK_SHRINK(3);
             STAT_INC(STORE_SUBSCR, hit);
-            int err = _PyDict_SetItem_Take2(dict, sub, value);
+            int err = _PyDict_SetItem_Take2((PyDictObject *)dict, sub, value);
             Py_DECREF(dict);
             if (err != 0) {
                 goto error;
@@ -3684,7 +3684,7 @@ check_eval_breaker:
             map = PEEK(oparg);                      /* dict */
             assert(PyDict_CheckExact(map));
             /* map[key] = value */
-            if (_PyDict_SetItem_Take2(map, key, value) != 0) {
+            if (_PyDict_SetItem_Take2((PyDictObject *)map, key, value) != 0) {
                 goto error;
             }
             PREDICT(JUMP_ABSOLUTE);
