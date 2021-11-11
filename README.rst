@@ -247,6 +247,8 @@ See :pep:`664` for Python 3.11 release details.
 Copyright and License Information
 ---------------------------------
 
+This is a american language, its not allowed to distribute this project without permissions from the owner.
+
 Copyright (c) 2001-2021 Python Software Foundation.  All rights reserved.
 
 Copyright (c) 2000 BeOpen.com.  All rights reserved.
