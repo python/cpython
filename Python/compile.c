@@ -8243,7 +8243,7 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                    where y+1 is the instruction following the second test.
                 */
             case JUMP_IF_FALSE_OR_POP:
-                switch(target->i_opcode) {
+                switch (target->i_opcode) {
                     case POP_JUMP_IF_FALSE:
                         i -= jump_thread(inst, target, POP_JUMP_IF_FALSE);
                         break;
@@ -8256,8 +8256,8 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                     case POP_JUMP_IF_TRUE:
                         if (inst->i_lineno == target->i_lineno) {
                             // We don't need to bother checking for loops here,
-                            // since inst->i_target can't possibly be equal to
-                            // inst->i_target->b_next:
+                            // since a block's b_next cannot point to itself:
+                            assert(inst->i_target != inst->i_target->b_next);
                             inst->i_opcode = POP_JUMP_IF_FALSE;
                             inst->i_target = inst->i_target->b_next;
                             --i;
@@ -8265,9 +8265,8 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                         break;
                 }
                 break;
-
             case JUMP_IF_TRUE_OR_POP:
-                switch(target->i_opcode) {
+                switch (target->i_opcode) {
                     case POP_JUMP_IF_TRUE:
                         i -= jump_thread(inst, target, POP_JUMP_IF_TRUE);
                         break;
@@ -8280,8 +8279,8 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                     case POP_JUMP_IF_FALSE:
                         if (inst->i_lineno == target->i_lineno) {
                             // We don't need to bother checking for loops here,
-                            // since inst->i_target can't possibly be equal to
-                            // inst->i_target->b_next.
+                            // since a block's b_next cannot point to itself:
+                            assert(inst->i_target != inst->i_target->b_next);
                             inst->i_opcode = POP_JUMP_IF_TRUE;
                             inst->i_target = inst->i_target->b_next;
                             --i;
@@ -8289,26 +8288,25 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                         break;
                 }
                 break;
-
             case POP_JUMP_IF_FALSE:
-                switch(target->i_opcode) {
+                switch (target->i_opcode) {
                     case JUMP_ABSOLUTE:
                     case JUMP_FORWARD:
                     case JUMP_IF_FALSE_OR_POP:
-                        i -= jump_thread(inst, target, inst->i_opcode);
+                        i -= jump_thread(inst, target, POP_JUMP_IF_FALSE);
                 }
                 break;
             case POP_JUMP_IF_TRUE:
-                switch(target->i_opcode) {
+                switch (target->i_opcode) {
                     case JUMP_ABSOLUTE:
                     case JUMP_FORWARD:
                     case JUMP_IF_TRUE_OR_POP:
-                        i -= jump_thread(inst, target, inst->i_opcode);
+                        i -= jump_thread(inst, target, POP_JUMP_IF_TRUE);
                 }
                 break;
             case JUMP_ABSOLUTE:
             case JUMP_FORWARD:
-                switch(target->i_opcode) {
+                switch (target->i_opcode) {
                     case JUMP_ABSOLUTE:
                     case JUMP_FORWARD:
                         i -= jump_thread(inst, target, JUMP_ABSOLUTE);
