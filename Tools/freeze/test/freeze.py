@@ -101,11 +101,15 @@ def git_copy_repo(newroot, oldroot):
         relfile = relfile.rstrip(os.path.sep)
         srcfile = os.path.join(oldroot, relfile)
         dstfile = os.path.join(newroot, relfile)
-        os.makedirs(os.path.dirname(dstfile), exist_ok=True)
-        if isdir:
-            shutil.copytree(srcfile, dstfile, dirs_exist_ok=True)
+        if os.path.exists(srcfile):
+            os.makedirs(os.path.dirname(dstfile), exist_ok=True)
+            if isdir:
+                shutil.copytree(srcfile, dstfile, dirs_exist_ok=True)
+            else:
+                shutil.copy2(srcfile, dstfile)
         else:
-            shutil.copy2(srcfile, dstfile)
+            # Only single files will show up here.
+            os.unlink(dstfile)
 
 
 def get_makefile_var(builddir, name):
