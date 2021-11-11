@@ -528,6 +528,7 @@ def regen_frozen(modules):
         header = relpath_for_posix_display(src.frozenfile, parentdir)
         headerlines.append(f'#include "{header}"')
 
+    externlines = []
     bootstraplines = []
     stdliblines = []
     testlines = []
@@ -547,17 +548,18 @@ def regen_frozen(modules):
                 lines.append(f'/* {mod.section} */')
             lastsection = mod.section
 
+        # Also add a extern declaration for the corresponding
+        # deepfreeze-generated function.
+        orig_name = mod.source.id
+        code_name = orig_name.replace(".", "_")
+        get_code_name = "_Py_get_%s_toplevel" % code_name
+        externlines.append("extern PyObject *%s(void);" % get_code_name)
+
         symbol = mod.symbol
         pkg = '-' if mod.ispkg else ''
-        line = ('{"%s", %s, %s(int)sizeof(%s)},'
-                ) % (mod.name, symbol, pkg, symbol)
-        # TODO: Consider not folding lines
-        if len(line) < 80:
-            lines.append(line)
-        else:
-            line1, _, line2 = line.rpartition(' ')
-            lines.append(line1)
-            lines.append(indent + line2)
+        line = ('{"%s", %s, %s(int)sizeof(%s), GET_CODE(%s)},'
+                ) % (mod.name, symbol, pkg, symbol, code_name)
+        lines.append(line)
 
         if mod.isalias:
             if not mod.orig:
@@ -586,6 +588,13 @@ def regen_frozen(modules):
             "/* Includes for frozen modules: */",
             "/* End includes */",
             headerlines,
+            FROZEN_FILE,
+        )
+        lines = replace_block(
+            lines,
+            "/* Start extern declarations */",
+            "/* End extern declarations */",
+            externlines,
             FROZEN_FILE,
         )
         lines = replace_block(
@@ -622,7 +631,30 @@ def regen_frozen(modules):
 def regen_makefile(modules):
     pyfiles = []
     frozenfiles = []
+    deepfreezefiles = []
     rules = ['']
+    deepfreezerules = ['']
+
+    # TODO: Merge the two loops
+    for src in _iter_sources(modules):
+        header = relpath_for_posix_display(src.frozenfile, ROOT_DIR)
+        relfile = header.replace('\\', '/')
+        _pyfile = relpath_for_posix_display(src.pyfile, ROOT_DIR)
+
+        # TODO: This is a bit hackish
+        xfile = relfile.replace("/frozen_modules/", "/deepfreeze/")
+        cfile = xfile[:-2] + ".c"
+        ofile = xfile[:-2] + ".o"
+        deepfreezefiles.append(f"\t\t{ofile} \\")
+
+        # Also add a deepfreeze rule.
+        deepfreezerules.append(f'{cfile}: $(srcdir)/{_pyfile} $(DEEPFREEZE_DEPS)')
+        deepfreezerules.append(f'\t@echo "Deepfreezing {cfile} from {_pyfile}"')
+        deepfreezerules.append(f"\t@./$(BOOTSTRAP) \\")
+        deepfreezerules.append(f"\t\t$(srcdir)/Tools/scripts/deepfreeze.py \\")
+        deepfreezerules.append(f"\t\t$(srcdir)/{_pyfile} -m {src.frozenid} -o {cfile}")
+        deepfreezerules.append('')
+
     for src in _iter_sources(modules):
         header = relpath_for_posix_display(src.frozenfile, ROOT_DIR)
         frozenfiles.append(f'\t\t{header} \\')
@@ -639,6 +671,7 @@ def regen_makefile(modules):
         ])
     pyfiles[-1] = pyfiles[-1].rstrip(" \\")
     frozenfiles[-1] = frozenfiles[-1].rstrip(" \\")
+    deepfreezefiles[-1] = deepfreezefiles[-1].rstrip(" \\")
 
     print(f'# Updating {os.path.relpath(MAKEFILE)}')
     with updating_file_with_tmpfile(MAKEFILE) as (infile, outfile):
@@ -659,9 +692,23 @@ def regen_makefile(modules):
         )
         lines = replace_block(
             lines,
+            "DEEPFREEZE_OBJS =",
+            "# End DEEPFREEZE_OBJS",
+            deepfreezefiles,
+            MAKEFILE,
+        )
+        lines = replace_block(
+            lines,
             "# BEGIN: freezing modules",
             "# END: freezing modules",
             rules,
+            MAKEFILE,
+        )
+        lines = replace_block(
+            lines,
+            "# BEGIN: deepfreeze modules",
+            "# END: deepfreeze modules",
+            deepfreezerules,
             MAKEFILE,
         )
         outfile.writelines(lines)
@@ -721,7 +768,6 @@ def freeze_module(modname, pyfile=None, destdir=MODULES_DIR):
 
 def _freeze_module(frozenid, pyfile, frozenfile, tmpsuffix):
     tmpfile = f'{frozenfile}.{int(time.time())}'
-    print(tmpfile)
 
     argv = [TOOL, frozenid, pyfile, tmpfile]
     print('#', '  '.join(os.path.relpath(a) for a in argv), flush=True)
