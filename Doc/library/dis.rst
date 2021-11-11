@@ -873,9 +873,12 @@ All of the following opcodes use their arguments.
 .. opcode:: JUMP_IF_NOT_EXC_MATCH (target)
 
    Tests whether the second value on the stack is an exception matching TOS,
-   and jumps if it is not. Pops two values from the stack.
+   and jumps if it is not. Pops one value from the stack.
 
    .. versionadded:: 3.9
+
+   .. versionchanged:: 3.11
+      This opcode no longer pops the active exception.
 
 
 .. opcode:: JUMP_IF_TRUE_OR_POP (target)
