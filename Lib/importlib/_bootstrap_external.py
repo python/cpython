@@ -366,7 +366,10 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.11a1 3461 (JUMP_ABSOLUTE must jump backwards)
 #     Python 3.11a2 3462 (bpo-44511: remove COPY_DICT_WITHOUT_KEYS, change
 #                         MATCH_CLASS and MATCH_KEYS, and add COPY)
-#     Python 3.11a3 3463 (Merge numeric BINARY_*/INPLACE_* into BINARY_OP)
+#     Python 3.11a3 3463 (bpo-45711: JUMP_IF_NOT_EXC_MATCH no longer pops the
+#                         active exception)
+#     Python 3.11a3 3464 (bpo-45636: Merge numeric BINARY_*/INPLACE_* into
+#                         BINARY_OP)
 
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
@@ -376,7 +379,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3463).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3464).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
