@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "pycore_ast.h"           // identifier, stmt_ty
 #include "pycore_compile.h"       // _Py_Mangle(), _PyFuture_FromAST()
+#include "pycore_interp.h"        // recursion limit
 #include "pycore_parser.h"        // _PyParser_ASTFromString()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntryObject
@@ -298,8 +299,9 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
         return NULL;
     }
     /* Be careful here to prevent overflow. */
-    starting_recursion_depth = (tstate->recursion_depth < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
-        tstate->recursion_depth * COMPILER_STACK_FRAME_SCALE : tstate->recursion_depth;
+    int recursion_depth = tstate->interp->ceval.recursion_limit - tstate->recursion_spare;
+    starting_recursion_depth = (recursion_depth < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
+        recursion_depth * COMPILER_STACK_FRAME_SCALE : recursion_depth;
     st->recursion_depth = starting_recursion_depth;
     st->recursion_limit = (recursion_limit < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
         recursion_limit * COMPILER_STACK_FRAME_SCALE : recursion_limit;

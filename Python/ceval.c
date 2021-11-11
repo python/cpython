@@ -787,8 +787,12 @@ Py_GetRecursionLimit(void)
 void
 Py_SetRecursionLimit(int new_limit)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    tstate->interp->ceval.recursion_limit = new_limit;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    int old_limit = interp->ceval.recursion_limit;
+    interp->ceval.recursion_limit = new_limit;
+    for (PyThreadState *p = interp->tstate_head; p != NULL; p = p->next) {
+        p->recursion_spare += new_limit - old_limit;
+    }
 }
 
 /* The function _Py_EnterRecursiveCall() only calls _Py_CheckRecursiveCall()
@@ -799,30 +803,27 @@ Py_SetRecursionLimit(int new_limit)
 int
 _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
 {
-    int recursion_limit = tstate->interp->ceval.recursion_limit;
-
 #ifdef USE_STACKCHECK
-    tstate->stackcheck_counter = 0;
     if (PyOS_CheckStack()) {
-        --tstate->recursion_depth;
+        ++tstate->recursion_spare;
         _PyErr_SetString(tstate, PyExc_MemoryError, "Stack overflow");
         return -1;
     }
 #endif
     if (tstate->recursion_headroom) {
-        if (tstate->recursion_depth > recursion_limit + 50) {
+        if (tstate->recursion_spare < -50) {
             /* Overflowing while handling an overflow. Give up. */
             Py_FatalError("Cannot recover from stack overflow.");
         }
     }
     else {
-        if (tstate->recursion_depth > recursion_limit) {
+        if (tstate->recursion_spare <= 0) {
             tstate->recursion_headroom++;
             _PyErr_Format(tstate, PyExc_RecursionError,
                         "maximum recursion depth exceeded%s",
                         where);
             tstate->recursion_headroom--;
-            --tstate->recursion_depth;
+            ++tstate->recursion_spare;
             return -1;
         }
     }
@@ -1567,7 +1568,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
 
 start_frame:
     if (_Py_EnterRecursiveCall(tstate, "")) {
-        tstate->recursion_depth++;
+        tstate->recursion_spare--;
         goto exit_eval_frame;
     }
 
@@ -5922,13 +5923,13 @@ fail:
 static int
 _PyEvalFrameClearAndPop(PyThreadState *tstate, InterpreterFrame * frame)
 {
-    ++tstate->recursion_depth;
+    --tstate->recursion_spare;
     assert(frame->frame_obj == NULL || frame->frame_obj->f_own_locals_memory == 0);
     if (_PyFrame_Clear(frame, 0)) {
-        --tstate->recursion_depth;
+        ++tstate->recursion_spare;
         return -1;
     }
-    --tstate->recursion_depth;
+    ++tstate->recursion_spare;
     _PyThreadState_PopFrame(tstate, frame);
     return 0;
 }

@@ -2,6 +2,7 @@
 #include "Python.h"
 #include "pycore_ast.h"           // _PyAST_GetDocString()
 #include "pycore_compile.h"       // _PyASTOptimizeState
+#include "pycore_interp.h"        // recursion limit
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_format.h"        // F_LJUST
 
@@ -1098,8 +1099,9 @@ _PyAST_Optimize(mod_ty mod, PyArena *arena, _PyASTOptimizeState *state)
         return 0;
     }
     /* Be careful here to prevent overflow. */
-    starting_recursion_depth = (tstate->recursion_depth < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
-        tstate->recursion_depth * COMPILER_STACK_FRAME_SCALE : tstate->recursion_depth;
+    int recursion_depth = tstate->interp->ceval.recursion_limit - tstate->recursion_spare;
+    starting_recursion_depth = (recursion_depth < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
+        recursion_depth * COMPILER_STACK_FRAME_SCALE : recursion_depth;
     state->recursion_depth = starting_recursion_depth;
     state->recursion_limit = (recursion_limit < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
         recursion_limit * COMPILER_STACK_FRAME_SCALE : recursion_limit;
