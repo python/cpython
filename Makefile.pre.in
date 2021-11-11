@@ -259,7 +259,9 @@ LIBOBJS=	@LIBOBJS@
 
 PYTHON=		python$(EXE)
 BUILDPYTHON=	python$(BUILDEXE)
+
 BOOTSTRAP= _bootstrap_python
+BOOTSTRAP_STAMP= $(BOOTSTRAP)-stamp
 
 PYTHON_FOR_REGEN?=@PYTHON_FOR_REGEN@
 UPDATE_FILE=$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/update_file.py
@@ -628,7 +630,7 @@ platform: $(BUILDPYTHON) pybuilddir.txt
 # problems by creating a dummy pybuilddir.txt just to allow interpreter
 # initialization to succeed.  It will be overwritten by generate-posix-vars
 # or removed in case of failure.
-pybuilddir.txt: $(BOOTSTRAP)
+pybuilddir.txt: $(BOOTSTRAP_STAMP)
 	@echo "none" > ./pybuilddir.txt
 	./$(BOOTSTRAP) -S -m sysconfig --generate-posix-vars ;\
 	if test $$? -ne 0 ; then \
@@ -781,6 +783,17 @@ $(BOOTSTRAP): $(LIBRARY_OBJS_OMIT_FROZEN) \
 		Programs/python.o \
 		$(LIBS) $(MODLIBS) $(SYSLIBS)
 
+# Use a stamp file to avoid recompiling the bootstrap interpreter and all
+# deepfrozen files whenever a core file is changed, see bpo-45696.
+# NOTE: $(.MAKE) is required for BSD make.
+$(BOOTSTRAP_STAMP):
+	@if test -n "$(MAKE)"; then \
+	    $(MAKE) $(BOOTSTRAP) || exit 2; \
+	else \
+		$(.MAKE) $(BOOTSTRAP) || exit 2; \
+	fi
+	@touch $@
+
 ############################################################################
 # Deepfreeze targets
 
@@ -788,7 +801,7 @@ $(BOOTSTRAP): $(LIBRARY_OBJS_OMIT_FROZEN) \
 regen-deepfreeze: $(DEEPFREEZE_OBJS)
 
 DEEPFREEZE_DEPS = \
-	$(BOOTSTRAP) \
+	$(BOOTSTRAP_STAMP) \
 	pybuilddir.txt \
 	$(srcdir)/Tools/scripts/deepfreeze.py
 
@@ -2195,7 +2208,7 @@ clean-retain-profile: pycremoval
 	find build -name '*.py[co]' -exec rm -f {} ';' || true
 	-rm -f pybuilddir.txt
 	-rm -f Lib/lib2to3/*Grammar*.pickle
-	-rm -f Programs/_testembed Programs/_freeze_module $(BOOTSTRAP)
+	-rm -f Programs/_testembed Programs/_freeze_module $(BOOTSTRAP) $(BOOTSTRAP_STAMP)
 	-rm -f Python/deepfreeze/*.[co]
 	-find build -type f -a ! -name '*.gc??' -exec rm -f {} ';'
 	-rm -f Include/pydtrace_probes.h
