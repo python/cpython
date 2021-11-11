@@ -334,5 +334,6 @@ class SampleCallbacksTestCase(unittest.TestCase):
                              "of ctypes callback function")
             self.assertIs(cm.unraisable.object, func)
 
+
 if __name__ == '__main__':
     unittest.main()
