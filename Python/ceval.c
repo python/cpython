@@ -1060,6 +1060,7 @@ fail:
 static int do_raise(PyThreadState *tstate, PyObject *exc, PyObject *cause);
 static int unpack_iterable(PyThreadState *, PyObject *, int, int, PyObject **);
 
+#ifdef Py_DEBUG
 static void
 _assert_exception_type_is_redundant(PyObject* type, PyObject* val)
 {
@@ -1071,6 +1072,11 @@ _assert_exception_type_is_redundant(PyObject* type, PyObject* val)
         assert(PyExceptionInstance_Class(val) == type);
     }
 }
+
+#define ASSERT_EXC_TYPE_IS_REDUNDANT(t, v) _assert_exception_type_is_redundant(t, v)
+#else
+#define ASSERT_EXC_TYPE_IS_REDUNDANT(t, v)
+#endif
 
 PyObject *
 PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
@@ -2858,7 +2864,7 @@ check_eval_breaker:
             exc_info->exc_type = POP();
             exc_info->exc_value = POP();
             exc_info->exc_traceback = POP();
-            _assert_exception_type_is_redundant(exc_info->exc_type, exc_info->exc_value);
+            ASSERT_EXC_TYPE_IS_REDUNDANT(exc_info->exc_type, exc_info->exc_value);
             Py_XDECREF(type);
             Py_XDECREF(value);
             Py_XDECREF(traceback);
@@ -2880,7 +2886,7 @@ check_eval_breaker:
             type = POP();
             value = POP();
             traceback = POP();
-            _assert_exception_type_is_redundant(type, value);
+            ASSERT_EXC_TYPE_IS_REDUNDANT(type, value);
             Py_DECREF(POP()); /* lasti */
             _PyErr_Restore(tstate, type, value, traceback);
             exc_info = tstate->exc_info;
@@ -2890,7 +2896,7 @@ check_eval_breaker:
             exc_info->exc_type = POP();
             exc_info->exc_value = POP();
             exc_info->exc_traceback = POP();
-            _assert_exception_type_is_redundant(exc_info->exc_type, exc_info->exc_value);
+            ASSERT_EXC_TYPE_IS_REDUNDANT(exc_info->exc_type, exc_info->exc_value);
             Py_XDECREF(type);
             Py_XDECREF(value);
             Py_XDECREF(traceback);
@@ -2913,7 +2919,7 @@ check_eval_breaker:
             PyObject *exc = POP();
             PyObject *val = POP();
             PyObject *tb = POP();
-            _assert_exception_type_is_redundant(exc, val);
+            ASSERT_EXC_TYPE_IS_REDUNDANT(exc, val);
             assert(PyExceptionClass_Check(exc));
             _PyErr_Restore(tstate, exc, val, tb);
             goto exception_unwind;
@@ -2923,7 +2929,7 @@ check_eval_breaker:
             PyObject *exc = POP();
             PyObject *val = POP();
             PyObject *tb = POP();
-            _assert_exception_type_is_redundant(exc, val);
+            ASSERT_EXC_TYPE_IS_REDUNDANT(exc, val);
             assert(PyExceptionClass_Check(exc));
             if (PyErr_GivenExceptionMatches(exc, PyExc_StopAsyncIteration)) {
                 Py_DECREF(exc);
@@ -4378,7 +4384,7 @@ check_eval_breaker:
             exc = TOP();
             val = SECOND();
             tb = THIRD();
-            _assert_exception_type_is_redundant(exc, val);
+            ASSERT_EXC_TYPE_IS_REDUNDANT(exc, val);
             assert(!Py_IsNone(exc));
             assert(!PyLong_Check(exc));
             assert(PyLong_Check(PEEK(7)));
@@ -4397,7 +4403,7 @@ check_eval_breaker:
             PyObject *type = TOP();
             PyObject *value = SECOND();
             PyObject *tb = THIRD();
-            _assert_exception_type_is_redundant(type, value);
+            ASSERT_EXC_TYPE_IS_REDUNDANT(type, value);
             _PyErr_StackItem *exc_info = tstate->exc_info;
             SET_THIRD(exc_info->exc_traceback);
             SET_SECOND(exc_info->exc_value);
@@ -5256,7 +5262,7 @@ exception_unwind:
         PUSH(tb);
         PUSH(val);
         PUSH(exc);
-        _assert_exception_type_is_redundant(exc, val);
+        ASSERT_EXC_TYPE_IS_REDUNDANT(exc, val);
         JUMPTO(handler);
         /* Resume normal execution */
         frame->f_state = FRAME_EXECUTING;
