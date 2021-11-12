@@ -8052,29 +8052,24 @@ fold_rotations(struct instr *inst, int n)
     }
 }
 
-
-static int
-eliminate_jump_to_jump(basicblock *bb, int opcode) {
-    assert (bb->b_iused > 0);
-    struct instr *inst = &bb->b_instr[bb->b_iused-1];
-    assert (is_jump(inst));
-    assert (inst->i_target->b_iused > 0);
-    struct instr *target = &inst->i_target->b_instr[0];
-    if (inst->i_target == target->i_target) {
-        /* Nothing to do */
-        return 0;
+// Attempt to eliminate jumps to jumps by updating inst to jump to
+// target->i_target using the provided opcode. Return whether or not the
+// optimization was successful.
+static bool
+jump_thread(struct instr *inst, struct instr *target, int opcode)
+{
+    assert(is_jump(inst));
+    assert(is_jump(target));
+    // bpo-45773: If inst->i_target == target->i_target, then nothing actually
+    // changes (and we fall into an infinite loop):
+    if (inst->i_lineno == target->i_lineno &&
+        inst->i_target != target->i_target)
+    {
+        inst->i_target = target->i_target;
+        inst->i_opcode = opcode;
+        return true;
     }
-    int lineno = target->i_lineno;
-    int end_lineno = target->i_end_lineno;
-    int col_offset = target->i_col_offset;
-    int end_col_offset = target->i_end_col_offset;
-    if (add_jump_to_block(bb, opcode, lineno, end_lineno, col_offset,
-                          end_col_offset, target->i_target) == 0) {
-        return -1;
-    }
-    assert (bb->b_iused >= 2);
-    bb->b_instr[bb->b_iused-2].i_opcode = NOP;
-    return 0;
+    return false;
 }
 
 /* Maximum size of basic block that should be copied in optimizer */
@@ -8199,25 +8194,21 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                    where y+1 is the instruction following the second test.
                 */
             case JUMP_IF_FALSE_OR_POP:
-                switch(target->i_opcode) {
+                switch (target->i_opcode) {
                     case POP_JUMP_IF_FALSE:
-                        if (inst->i_lineno == target->i_lineno) {
-                            *inst = *target;
-                            i--;
-                        }
+                        i -= jump_thread(inst, target, POP_JUMP_IF_FALSE);
                         break;
                     case JUMP_ABSOLUTE:
                     case JUMP_FORWARD:
                     case JUMP_IF_FALSE_OR_POP:
-                        if (inst->i_lineno == target->i_lineno &&
-                            inst->i_target != target->i_target) {
-                            inst->i_target = target->i_target;
-                            i--;
-                        }
+                        i -= jump_thread(inst, target, JUMP_IF_FALSE_OR_POP);
                         break;
                     case JUMP_IF_TRUE_OR_POP:
-                        assert (inst->i_target->b_iused == 1);
+                    case POP_JUMP_IF_TRUE:
                         if (inst->i_lineno == target->i_lineno) {
+                            // We don't need to bother checking for loops here,
+                            // since a block's b_next cannot point to itself:
+                            assert(inst->i_target != inst->i_target->b_next);
                             inst->i_opcode = POP_JUMP_IF_FALSE;
                             inst->i_target = inst->i_target->b_next;
                             --i;
@@ -8225,27 +8216,22 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                         break;
                 }
                 break;
-
             case JUMP_IF_TRUE_OR_POP:
-                switch(target->i_opcode) {
+                switch (target->i_opcode) {
                     case POP_JUMP_IF_TRUE:
-                        if (inst->i_lineno == target->i_lineno) {
-                            *inst = *target;
-                            i--;
-                        }
+                        i -= jump_thread(inst, target, POP_JUMP_IF_TRUE);
                         break;
                     case JUMP_ABSOLUTE:
                     case JUMP_FORWARD:
                     case JUMP_IF_TRUE_OR_POP:
-                        if (inst->i_lineno == target->i_lineno &&
-                            inst->i_target != target->i_target) {
-                            inst->i_target = target->i_target;
-                            i--;
-                        }
+                        i -= jump_thread(inst, target, JUMP_IF_TRUE_OR_POP);
                         break;
                     case JUMP_IF_FALSE_OR_POP:
-                        assert (inst->i_target->b_iused == 1);
+                    case POP_JUMP_IF_FALSE:
                         if (inst->i_lineno == target->i_lineno) {
+                            // We don't need to bother checking for loops here,
+                            // since a block's b_next cannot point to itself:
+                            assert(inst->i_target != inst->i_target->b_next);
                             inst->i_opcode = POP_JUMP_IF_TRUE;
                             inst->i_target = inst->i_target->b_next;
                             --i;
@@ -8253,54 +8239,33 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                         break;
                 }
                 break;
-
             case POP_JUMP_IF_FALSE:
-                switch(target->i_opcode) {
+                switch (target->i_opcode) {
                     case JUMP_ABSOLUTE:
                     case JUMP_FORWARD:
-                        if (inst->i_lineno == target->i_lineno) {
-                            inst->i_target = target->i_target;
-                            i--;
-                        }
-                        break;
+                    case JUMP_IF_FALSE_OR_POP:
+                        i -= jump_thread(inst, target, POP_JUMP_IF_FALSE);
                 }
                 break;
-
             case POP_JUMP_IF_TRUE:
-                switch(target->i_opcode) {
+                switch (target->i_opcode) {
                     case JUMP_ABSOLUTE:
                     case JUMP_FORWARD:
-                        if (inst->i_lineno == target->i_lineno) {
-                            inst->i_target = target->i_target;
-                            i--;
-                        }
-                        break;
+                    case JUMP_IF_TRUE_OR_POP:
+                        i -= jump_thread(inst, target, POP_JUMP_IF_TRUE);
                 }
                 break;
-
             case JUMP_ABSOLUTE:
             case JUMP_FORWARD:
-                assert (i == bb->b_iused-1);
-                switch(target->i_opcode) {
-                    case JUMP_FORWARD:
-                        if (eliminate_jump_to_jump(bb, inst->i_opcode)) {
-                            goto error;
-                        }
-                        break;
-
+                switch (target->i_opcode) {
                     case JUMP_ABSOLUTE:
-                        if (eliminate_jump_to_jump(bb, JUMP_ABSOLUTE)) {
-                            goto error;
-                        }
-                        break;
+                    case JUMP_FORWARD:
+                        i -= jump_thread(inst, target, JUMP_ABSOLUTE);
                 }
                 break;
             case FOR_ITER:
-                assert (i == bb->b_iused-1);
                 if (target->i_opcode == JUMP_FORWARD) {
-                    if (eliminate_jump_to_jump(bb, inst->i_opcode)) {
-                        goto error;
-                    }
+                    i -= jump_thread(inst, target, FOR_ITER);
                 }
                 break;
             case ROT_N:
