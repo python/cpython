@@ -623,130 +623,69 @@ ac_includes_default="\
 #endif"
 
 ac_subst_vars='LTLIBOBJS
+MODULE_BLOCK
 MODULE__UUID_FALSE
 MODULE__UUID_TRUE
-MODULE__UUID_LDFLAGS
-MODULE__UUID_CFLAGS
 MODULE__TKINTER_FALSE
 MODULE__TKINTER_TRUE
-MODULE__TKINTER_LDFLAGS
-MODULE__TKINTER_CFLAGS
 MODULE__POSIXSHMEM_FALSE
 MODULE__POSIXSHMEM_TRUE
-MODULE__POSIXSHMEM_LDFLAGS
-MODULE__POSIXSHMEM_CFLAGS
 MODULE__CTYPES_TEST_FALSE
 MODULE__CTYPES_TEST_TRUE
-MODULE__CTYPES_TEST_LDFLAGS
-MODULE__CTYPES_TEST_CFLAGS
 MODULE__LZMA_FALSE
 MODULE__LZMA_TRUE
-MODULE__LZMA_LDFLAGS
-MODULE__LZMA_CFLAGS
 MODULE__BZ2_FALSE
 MODULE__BZ2_TRUE
-MODULE__BZ2_LDFLAGS
-MODULE__BZ2_CFLAGS
 MODULE_BINASCII_FALSE
 MODULE_BINASCII_TRUE
-MODULE_BINASCII_LDFLAGS
-MODULE_BINASCII_CFLAGS
 MODULE_ZLIB_FALSE
 MODULE_ZLIB_TRUE
-MODULE_ZLIB_LDFLAGS
-MODULE_ZLIB_CFLAGS
 MODULE__SCPROXY_FALSE
 MODULE__SCPROXY_TRUE
-MODULE__SCPROXY_LDFLAGS
-MODULE__SCPROXY_CFLAGS
 MODULE_OSSAUDIODEV_FALSE
 MODULE_OSSAUDIODEV_TRUE
-MODULE_OSSAUDIODEV_LDFLAGS
-MODULE_OSSAUDIODEV_CFLAGS
 MODULE_TERMIOS_FALSE
 MODULE_TERMIOS_TRUE
-MODULE_TERMIOS_LDFLAGS
-MODULE_TERMIOS_CFLAGS
 MODULE__GDBM_FALSE
 MODULE__GDBM_TRUE
-MODULE__GDBM_LDFLAGS
-MODULE__GDBM_CFLAGS
 MODULE__SHA3_FALSE
 MODULE__SHA3_TRUE
-MODULE__SHA3_LDFLAGS
-MODULE__SHA3_CFLAGS
 MODULE__BLAKE2_FALSE
 MODULE__BLAKE2_TRUE
-MODULE__BLAKE2_LDFLAGS
-MODULE__BLAKE2_CFLAGS
 MODULE__SHA1_FALSE
 MODULE__SHA1_TRUE
-MODULE__SHA1_LDFLAGS
-MODULE__SHA1_CFLAGS
 MODULE__MD5_FALSE
 MODULE__MD5_TRUE
-MODULE__MD5_LDFLAGS
-MODULE__MD5_CFLAGS
 MODULE__SHA512_FALSE
 MODULE__SHA512_TRUE
-MODULE__SHA512_LDFLAGS
-MODULE__SHA512_CFLAGS
 MODULE__SHA256_FALSE
 MODULE__SHA256_TRUE
-MODULE__SHA256_LDFLAGS
-MODULE__SHA256_CFLAGS
 MODULE__HASHLIB_FALSE
 MODULE__HASHLIB_TRUE
-MODULE__HASHLIB_LDFLAGS
-MODULE__HASHLIB_CFLAGS
 MODULE__SSL_FALSE
 MODULE__SSL_TRUE
-MODULE__SSL_LDFLAGS
-MODULE__SSL_CFLAGS
 MODULE__CRYPT_FALSE
 MODULE__CRYPT_TRUE
-MODULE__CRYPT_LDFLAGS
-MODULE__CRYPT_CFLAGS
 MODULE_READLINE_FALSE
 MODULE_READLINE_TRUE
-MODULE_READLINE_LDFLAGS
-MODULE_READLINE_CFLAGS
 MODULE__XXTESTFUZZ_FALSE
 MODULE__XXTESTFUZZ_TRUE
-MODULE__XXTESTFUZZ_LDFLAGS
-MODULE__XXTESTFUZZ_CFLAGS
 MODULE__TESTMULTIPHASE_FALSE
 MODULE__TESTMULTIPHASE_TRUE
-MODULE__TESTMULTIPHASE_LDFLAGS
-MODULE__TESTMULTIPHASE_CFLAGS
 MODULE__TESTIMPORTMULTIPLE_FALSE
 MODULE__TESTIMPORTMULTIPLE_TRUE
-MODULE__TESTIMPORTMULTIPLE_LDFLAGS
-MODULE__TESTIMPORTMULTIPLE_CFLAGS
 MODULE__TESTBUFFER_FALSE
 MODULE__TESTBUFFER_TRUE
-MODULE__TESTBUFFER_LDFLAGS
-MODULE__TESTBUFFER_CFLAGS
 MODULE__TESTINTERNALCAPI_FALSE
 MODULE__TESTINTERNALCAPI_TRUE
-MODULE__TESTINTERNALCAPI_LDFLAGS
-MODULE__TESTINTERNALCAPI_CFLAGS
 MODULE__TESTCAPI_FALSE
 MODULE__TESTCAPI_TRUE
-MODULE__TESTCAPI_LDFLAGS
-MODULE__TESTCAPI_CFLAGS
 MODULE__XXSUBINTERPRETERS_FALSE
 MODULE__XXSUBINTERPRETERS_TRUE
-MODULE__XXSUBINTERPRETERS_LDFLAGS
-MODULE__XXSUBINTERPRETERS_CFLAGS
 MODULE_SPWD_FALSE
 MODULE_SPWD_TRUE
-MODULE_SPWD_LDFLAGS
-MODULE_SPWD_CFLAGS
 MODULE_GRP_FALSE
 MODULE_GRP_TRUE
-MODULE_GRP_LDFLAGS
-MODULE_GRP_CFLAGS
 TEST_MODULES
 LIBRARY_DEPS
 STATIC_LIBPYTHON
@@ -19394,11 +19333,17 @@ case $ac_sys_system in #(
   VxWorks*) :
     py_stdlib_not_available="_scproxy _crypt termios grp" ;; #(
   Darwin) :
-    py_stdlib_not_available="" ;; #(
+    py_stdlib_not_available="ossaudiodev spwd" ;; #(
   *) :
     py_stdlib_not_available="_scproxy"
  ;;
 esac
+
+MODULE_BLOCK=
+
+# _MODULE_BLOCK_ADD([VAR], [VALUE])
+# internal: adds $1=quote($2) to MODULE_BLOCK
+
 
 # Check for stdlib extension modules
 # PY_STDLIB_MOD([NAME], [TEST], [CFLAGS], [LDFLAGS])
@@ -19411,19 +19356,14 @@ esac
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module grp" >&5
 $as_echo_n "checking for stdlib extension module grp... " >&6; }
-
-
-
-
           if test "$ac_cv_func_getgrgid" = yes -o "$ac_cv_func_getgrgid_r" = yes; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-        MODULE_GRP_CFLAGS=""
-
-    MODULE_GRP_LDFLAGS=""
-
-     if true; then
+    as_fn_append MODULE_BLOCK "MODULE_GRP=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_GRP_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_GRP_LDFLAGS=$as_nl"
+         if true; then
   MODULE_GRP_TRUE=
   MODULE_GRP_FALSE='#'
 else
@@ -19440,13 +19380,11 @@ else
 $as_echo "n/a" >&6; } ;; #(
   *) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; } ;;
+$as_echo "no" >&6; }
+     ;;
 esac
-    MODULE_GRP_CFLAGS=""
-
-    MODULE_GRP_LDFLAGS=""
-
-     if false; then
+    as_fn_append MODULE_BLOCK "MODULE_GRP=0$as_nl"
+             if false; then
   MODULE_GRP_TRUE=
   MODULE_GRP_FALSE='#'
 else
@@ -19458,25 +19396,16 @@ fi
 fi
 
 
-
-
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module spwd" >&5
 $as_echo_n "checking for stdlib extension module spwd... " >&6; }
-
-
-
-
           if test "$ac_cv_func_getspent" = yes; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-        MODULE_SPWD_CFLAGS=""
-
-    MODULE_SPWD_LDFLAGS=""
-
-     if true; then
+    as_fn_append MODULE_BLOCK "MODULE_SPWD=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_SPWD_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_SPWD_LDFLAGS=$as_nl"
+         if true; then
   MODULE_SPWD_TRUE=
   MODULE_SPWD_FALSE='#'
 else
@@ -19493,13 +19422,11 @@ else
 $as_echo "n/a" >&6; } ;; #(
   *) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; } ;;
+$as_echo "no" >&6; }
+     ;;
 esac
-    MODULE_SPWD_CFLAGS=""
-
-    MODULE_SPWD_LDFLAGS=""
-
-     if false; then
+    as_fn_append MODULE_BLOCK "MODULE_SPWD=0$as_nl"
+             if false; then
   MODULE_SPWD_TRUE=
   MODULE_SPWD_FALSE='#'
 else
@@ -19511,25 +19438,16 @@ fi
 fi
 
 
-
-
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _xxsubinterpreters" >&5
 $as_echo_n "checking for stdlib extension module _xxsubinterpreters... " >&6; }
-
-
-
-
           if test "$with_experimental_isolated_subinterpreters" = yes; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-        MODULE__XXSUBINTERPRETERS_CFLAGS=""
-
-    MODULE__XXSUBINTERPRETERS_LDFLAGS=""
-
-     if true; then
+    as_fn_append MODULE_BLOCK "MODULE__XXSUBINTERPRETERS=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__XXSUBINTERPRETERS_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__XXSUBINTERPRETERS_LDFLAGS=$as_nl"
+         if true; then
   MODULE__XXSUBINTERPRETERS_TRUE=
   MODULE__XXSUBINTERPRETERS_FALSE='#'
 else
@@ -19546,13 +19464,11 @@ else
 $as_echo "n/a" >&6; } ;; #(
   *) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; } ;;
+$as_echo "no" >&6; }
+     ;;
 esac
-    MODULE__XXSUBINTERPRETERS_CFLAGS=""
-
-    MODULE__XXSUBINTERPRETERS_LDFLAGS=""
-
-     if false; then
+    as_fn_append MODULE_BLOCK "MODULE__XXSUBINTERPRETERS=0$as_nl"
+             if false; then
   MODULE__XXSUBINTERPRETERS_TRUE=
   MODULE__XXSUBINTERPRETERS_FALSE='#'
 else
@@ -19564,25 +19480,16 @@ fi
 fi
 
 
-
-
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testcapi" >&5
 $as_echo_n "checking for stdlib extension module _testcapi... " >&6; }
-
-
-
-
           if test "$TEST_MODULES" = yes; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-        MODULE__TESTCAPI_CFLAGS=""
-
-    MODULE__TESTCAPI_LDFLAGS=""
-
-     if true; then
+    as_fn_append MODULE_BLOCK "MODULE__TESTCAPI=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__TESTCAPI_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__TESTCAPI_LDFLAGS=$as_nl"
+         if true; then
   MODULE__TESTCAPI_TRUE=
   MODULE__TESTCAPI_FALSE='#'
 else
@@ -19599,13 +19506,11 @@ else
 $as_echo "n/a" >&6; } ;; #(
   *) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; } ;;
+$as_echo "no" >&6; }
+     ;;
 esac
-    MODULE__TESTCAPI_CFLAGS=""
-
-    MODULE__TESTCAPI_LDFLAGS=""
-
-     if false; then
+    as_fn_append MODULE_BLOCK "MODULE__TESTCAPI=0$as_nl"
+             if false; then
   MODULE__TESTCAPI_TRUE=
   MODULE__TESTCAPI_FALSE='#'
 else
@@ -19617,25 +19522,16 @@ fi
 fi
 
 
-
-
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testinternalcapi" >&5
 $as_echo_n "checking for stdlib extension module _testinternalcapi... " >&6; }
-
-
-
-
           if test "$TEST_MODULES" = yes; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-        MODULE__TESTINTERNALCAPI_CFLAGS=""
-
-    MODULE__TESTINTERNALCAPI_LDFLAGS=""
-
-     if true; then
+    as_fn_append MODULE_BLOCK "MODULE__TESTINTERNALCAPI=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__TESTINTERNALCAPI_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__TESTINTERNALCAPI_LDFLAGS=$as_nl"
+         if true; then
   MODULE__TESTINTERNALCAPI_TRUE=
   MODULE__TESTINTERNALCAPI_FALSE='#'
 else
@@ -19652,13 +19548,11 @@ else
 $as_echo "n/a" >&6; } ;; #(
   *) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; } ;;
+$as_echo "no" >&6; }
+     ;;
 esac
-    MODULE__TESTINTERNALCAPI_CFLAGS=""
-
-    MODULE__TESTINTERNALCAPI_LDFLAGS=""
-
-     if false; then
+    as_fn_append MODULE_BLOCK "MODULE__TESTINTERNALCAPI=0$as_nl"
+             if false; then
   MODULE__TESTINTERNALCAPI_TRUE=
   MODULE__TESTINTERNALCAPI_FALSE='#'
 else
@@ -19670,25 +19564,16 @@ fi
 fi
 
 
-
-
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testbuffer" >&5
 $as_echo_n "checking for stdlib extension module _testbuffer... " >&6; }
-
-
-
-
           if test "$TEST_MODULES" = yes; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-        MODULE__TESTBUFFER_CFLAGS=""
-
-    MODULE__TESTBUFFER_LDFLAGS=""
-
-     if true; then
+    as_fn_append MODULE_BLOCK "MODULE__TESTBUFFER=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__TESTBUFFER_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__TESTBUFFER_LDFLAGS=$as_nl"
+         if true; then
   MODULE__TESTBUFFER_TRUE=
   MODULE__TESTBUFFER_FALSE='#'
 else
@@ -19705,13 +19590,11 @@ else
 $as_echo "n/a" >&6; } ;; #(
   *) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; } ;;
+$as_echo "no" >&6; }
+     ;;
 esac
-    MODULE__TESTBUFFER_CFLAGS=""
-
-    MODULE__TESTBUFFER_LDFLAGS=""
-
-     if false; then
+    as_fn_append MODULE_BLOCK "MODULE__TESTBUFFER=0$as_nl"
+             if false; then
   MODULE__TESTBUFFER_TRUE=
   MODULE__TESTBUFFER_FALSE='#'
 else
@@ -19723,25 +19606,16 @@ fi
 fi
 
 
-
-
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testimportmultiple" >&5
 $as_echo_n "checking for stdlib extension module _testimportmultiple... " >&6; }
-
-
-
-
           if test "$TEST_MODULES" = yes; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-        MODULE__TESTIMPORTMULTIPLE_CFLAGS=""
-
-    MODULE__TESTIMPORTMULTIPLE_LDFLAGS=""
-
-     if true; then
+    as_fn_append MODULE_BLOCK "MODULE__TESTIMPORTMULTIPLE=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__TESTIMPORTMULTIPLE_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__TESTIMPORTMULTIPLE_LDFLAGS=$as_nl"
+         if true; then
   MODULE__TESTIMPORTMULTIPLE_TRUE=
   MODULE__TESTIMPORTMULTIPLE_FALSE='#'
 else
@@ -19758,13 +19632,11 @@ else
 $as_echo "n/a" >&6; } ;; #(
   *) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; } ;;
+$as_echo "no" >&6; }
+     ;;
 esac
-    MODULE__TESTIMPORTMULTIPLE_CFLAGS=""
-
-    MODULE__TESTIMPORTMULTIPLE_LDFLAGS=""
-
-     if false; then
+    as_fn_append MODULE_BLOCK "MODULE__TESTIMPORTMULTIPLE=0$as_nl"
+             if false; then
   MODULE__TESTIMPORTMULTIPLE_TRUE=
   MODULE__TESTIMPORTMULTIPLE_FALSE='#'
 else
@@ -19776,25 +19648,16 @@ fi
 fi
 
 
-
-
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testmultiphase" >&5
 $as_echo_n "checking for stdlib extension module _testmultiphase... " >&6; }
-
-
-
-
           if test "$TEST_MODULES" = yes; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-        MODULE__TESTMULTIPHASE_CFLAGS=""
-
-    MODULE__TESTMULTIPHASE_LDFLAGS=""
-
-     if true; then
+    as_fn_append MODULE_BLOCK "MODULE__TESTMULTIPHASE=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__TESTMULTIPHASE_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__TESTMULTIPHASE_LDFLAGS=$as_nl"
+         if true; then
   MODULE__TESTMULTIPHASE_TRUE=
   MODULE__TESTMULTIPHASE_FALSE='#'
 else
@@ -19811,13 +19674,11 @@ else
 $as_echo "n/a" >&6; } ;; #(
   *) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; } ;;
+$as_echo "no" >&6; }
+     ;;
 esac
-    MODULE__TESTMULTIPHASE_CFLAGS=""
-
-    MODULE__TESTMULTIPHASE_LDFLAGS=""
-
-     if false; then
+    as_fn_append MODULE_BLOCK "MODULE__TESTMULTIPHASE=0$as_nl"
+             if false; then
   MODULE__TESTMULTIPHASE_TRUE=
   MODULE__TESTMULTIPHASE_FALSE='#'
 else
@@ -19829,25 +19690,16 @@ fi
 fi
 
 
-
-
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _xxtestfuzz" >&5
 $as_echo_n "checking for stdlib extension module _xxtestfuzz... " >&6; }
-
-
-
-
           if test "$TEST_MODULES" = yes; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-        MODULE__XXTESTFUZZ_CFLAGS=""
-
-    MODULE__XXTESTFUZZ_LDFLAGS=""
-
-     if true; then
+    as_fn_append MODULE_BLOCK "MODULE__XXTESTFUZZ=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__XXTESTFUZZ_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__XXTESTFUZZ_LDFLAGS=$as_nl"
+         if true; then
   MODULE__XXTESTFUZZ_TRUE=
   MODULE__XXTESTFUZZ_FALSE='#'
 else
@@ -19864,13 +19716,11 @@ else
 $as_echo "n/a" >&6; } ;; #(
   *) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; } ;;
+$as_echo "no" >&6; }
+     ;;
 esac
-    MODULE__XXTESTFUZZ_CFLAGS=""
-
-    MODULE__XXTESTFUZZ_LDFLAGS=""
-
-     if false; then
+    as_fn_append MODULE_BLOCK "MODULE__XXTESTFUZZ=0$as_nl"
+             if false; then
   MODULE__XXTESTFUZZ_TRUE=
   MODULE__XXTESTFUZZ_FALSE='#'
 else
@@ -19882,25 +19732,16 @@ fi
 fi
 
 
-
-
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module readline" >&5
 $as_echo_n "checking for stdlib extension module readline... " >&6; }
-
-
-
-
           if test "$py_cv_lib_readline" = yes; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-        MODULE_READLINE_CFLAGS=""
-
-    MODULE_READLINE_LDFLAGS="$READLINE_LIBS"
-
-     if true; then
+    as_fn_append MODULE_BLOCK "MODULE_READLINE=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_READLINE_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_READLINE_LDFLAGS=$READLINE_LIBS$as_nl"
+         if true; then
   MODULE_READLINE_TRUE=
   MODULE_READLINE_FALSE='#'
 else
@@ -19917,13 +19758,11 @@ else
 $as_echo "n/a" >&6; } ;; #(
   *) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; } ;;
+$as_echo "no" >&6; }
+     ;;
 esac
-    MODULE_READLINE_CFLAGS=""
-
-    MODULE_READLINE_LDFLAGS=""
-
-     if false; then
+    as_fn_append MODULE_BLOCK "MODULE_READLINE=0$as_nl"
+             if false; then
   MODULE_READLINE_TRUE=
   MODULE_READLINE_FALSE='#'
 else
@@ -19935,25 +19774,16 @@ fi
 fi
 
 
-
-
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _crypt" >&5
 $as_echo_n "checking for stdlib extension module _crypt... " >&6; }
-
-
-
-
           if test "$ac_sys_system" != VxWorks -a \( "$ac_cv_search_crypt_r" != no -o "$ac_cv_search_crypt" != no \); then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-        MODULE__CRYPT_CFLAGS=""
-
-    MODULE__CRYPT_LDFLAGS="-lcrypt"
-
-     if true; then
+    as_fn_append MODULE_BLOCK "MODULE__CRYPT=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__CRYPT_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__CRYPT_LDFLAGS=-lcrypt$as_nl"
+         if true; then
   MODULE__CRYPT_TRUE=
   MODULE__CRYPT_FALSE='#'
 else
@@ -19970,13 +19800,11 @@ else
 $as_echo "n/a" >&6; } ;; #(
   *) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; } ;;
+$as_echo "no" >&6; }
+     ;;
 esac
-    MODULE__CRYPT_CFLAGS=""
-
-    MODULE__CRYPT_LDFLAGS=""
-
-     if false; then
+    as_fn_append MODULE_BLOCK "MODULE__CRYPT=0$as_nl"
+             if false; then
   MODULE__CRYPT_TRUE=
   MODULE__CRYPT_FALSE='#'
 else
@@ -19988,25 +19816,16 @@ fi
 fi
 
 
-
-
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _ssl" >&5
 $as_echo_n "checking for stdlib extension module _ssl... " >&6; }
-
-
-
-
           if test "$ac_cv_working_openssl_ssl" = yes; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-        MODULE__SSL_CFLAGS="$OPENSSL_INCLUDES"
-
-    MODULE__SSL_LDFLAGS="$OPENSSL_LIBS $OPENSSL_LDFLAGS"
-
-     if true; then
+    as_fn_append MODULE_BLOCK "MODULE__SSL=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SSL_CFLAGS=$OPENSSL_INCLUDES$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SSL_LDFLAGS=$OPENSSL_LIBS $OPENSSL_LDFLAGS$as_nl"
+         if true; then
   MODULE__SSL_TRUE=
   MODULE__SSL_FALSE='#'
 else
@@ -20023,13 +19842,11 @@ else
 $as_echo "n/a" >&6; } ;; #(
   *) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; } ;;
+$as_echo "no" >&6; }
+     ;;
 esac
-    MODULE__SSL_CFLAGS=""
-
-    MODULE__SSL_LDFLAGS=""
-
-     if false; then
+    as_fn_append MODULE_BLOCK "MODULE__SSL=0$as_nl"
+             if false; then
   MODULE__SSL_TRUE=
   MODULE__SSL_FALSE='#'
 else
@@ -20041,25 +19858,16 @@ fi
 fi
 
 
-
-
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _hashlib" >&5
 $as_echo_n "checking for stdlib extension module _hashlib... " >&6; }
-
-
-
-
           if test "$ac_cv_working_openssl_ssl" = yes; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-        MODULE__HASHLIB_CFLAGS="$OPENSSL_INCLUDES"
-
-    MODULE__HASHLIB_LDFLAGS="$OPENSSL_LIBS $OPENSSL_LDFLAGS"
-
-     if true; then
+    as_fn_append MODULE_BLOCK "MODULE__HASHLIB=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__HASHLIB_CFLAGS=$OPENSSL_INCLUDES$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__HASHLIB_LDFLAGS=$OPENSSL_LIBS $OPENSSL_LDFLAGS$as_nl"
+         if true; then
   MODULE__HASHLIB_TRUE=
   MODULE__HASHLIB_FALSE='#'
 else
@@ -20076,13 +19884,11 @@ else
 $as_echo "n/a" >&6; } ;; #(
   *) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; } ;;
+$as_echo "no" >&6; }
+     ;;
 esac
-    MODULE__HASHLIB_CFLAGS=""
-
-    MODULE__HASHLIB_LDFLAGS=""
-
-     if false; then
+    as_fn_append MODULE_BLOCK "MODULE__HASHLIB=0$as_nl"
+             if false; then
   MODULE__HASHLIB_TRUE=
   MODULE__HASHLIB_FALSE='#'
 else
@@ -20094,25 +19900,16 @@ fi
 fi
 
 
-
-
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _sha256" >&5
 $as_echo_n "checking for stdlib extension module _sha256... " >&6; }
-
-
-
-
           if test "$with_builtin_sha256" = yes; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-        MODULE__SHA256_CFLAGS=""
-
-    MODULE__SHA256_LDFLAGS=""
-
-     if true; then
+    as_fn_append MODULE_BLOCK "MODULE__SHA256=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA256_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA256_LDFLAGS=$as_nl"
+         if true; then
   MODULE__SHA256_TRUE=
   MODULE__SHA256_FALSE='#'
 else
@@ -20129,13 +19926,11 @@ else
 $as_echo "n/a" >&6; } ;; #(
   *) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; } ;;
+$as_echo "no" >&6; }
+     ;;
 esac
-    MODULE__SHA256_CFLAGS=""
-
-    MODULE__SHA256_LDFLAGS=""
-
-     if false; then
+    as_fn_append MODULE_BLOCK "MODULE__SHA256=0$as_nl"
+             if false; then
   MODULE__SHA256_TRUE=
   MODULE__SHA256_FALSE='#'
 else
@@ -20147,25 +19942,16 @@ fi
 fi
 
 
-
-
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _sha512" >&5
 $as_echo_n "checking for stdlib extension module _sha512... " >&6; }
-
-
-
-
           if test "$with_builtin_sha512" = yes; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-        MODULE__SHA512_CFLAGS=""
-
-    MODULE__SHA512_LDFLAGS=""
-
-     if true; then
+    as_fn_append MODULE_BLOCK "MODULE__SHA512=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA512_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA512_LDFLAGS=$as_nl"
+         if true; then
   MODULE__SHA512_TRUE=
   MODULE__SHA512_FALSE='#'
 else
@@ -20182,13 +19968,11 @@ else
 $as_echo "n/a" >&6; } ;; #(
   *) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; } ;;
+$as_echo "no" >&6; }
+     ;;
 esac
-    MODULE__SHA512_CFLAGS=""
-
-    MODULE__SHA512_LDFLAGS=""
-
-     if false; then
+    as_fn_append MODULE_BLOCK "MODULE__SHA512=0$as_nl"
+             if false; then
   MODULE__SHA512_TRUE=
   MODULE__SHA512_FALSE='#'
 else
@@ -20200,25 +19984,16 @@ fi
 fi
 
 
-
-
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _md5" >&5
 $as_echo_n "checking for stdlib extension module _md5... " >&6; }
-
-
-
-
           if test "$with_builtin_md5" = yes; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-        MODULE__MD5_CFLAGS=""
-
-    MODULE__MD5_LDFLAGS=""
-
-     if true; then
+    as_fn_append MODULE_BLOCK "MODULE__MD5=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__MD5_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__MD5_LDFLAGS=$as_nl"
+         if true; then
   MODULE__MD5_TRUE=
   MODULE__MD5_FALSE='#'
 else
@@ -20235,13 +20010,11 @@ else
 $as_echo "n/a" >&6; } ;; #(
   *) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; } ;;
+$as_echo "no" >&6; }
+     ;;
 esac
-    MODULE__MD5_CFLAGS=""
-
-    MODULE__MD5_LDFLAGS=""
-
-     if false; then
+    as_fn_append MODULE_BLOCK "MODULE__MD5=0$as_nl"
+             if false; then
   MODULE__MD5_TRUE=
   MODULE__MD5_FALSE='#'
 else
@@ -20253,25 +20026,16 @@ fi
 fi
 
 
-
-
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _sha1" >&5
 $as_echo_n "checking for stdlib extension module _sha1... " >&6; }
-
-
-
-
           if test "$with_builtin_sha1" = yes; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-        MODULE__SHA1_CFLAGS=""
-
-    MODULE__SHA1_LDFLAGS=""
-
-     if true; then
+    as_fn_append MODULE_BLOCK "MODULE__SHA1=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA1_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA1_LDFLAGS=$as_nl"
+         if true; then
   MODULE__SHA1_TRUE=
   MODULE__SHA1_FALSE='#'
 else
@@ -20288,13 +20052,11 @@ else
 $as_echo "n/a" >&6; } ;; #(
   *) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; } ;;
+$as_echo "no" >&6; }
+     ;;
 esac
-    MODULE__SHA1_CFLAGS=""
-
-    MODULE__SHA1_LDFLAGS=""
-
-     if false; then
+    as_fn_append MODULE_BLOCK "MODULE__SHA1=0$as_nl"
+             if false; then
   MODULE__SHA1_TRUE=
   MODULE__SHA1_FALSE='#'
 else
@@ -20306,25 +20068,16 @@ fi
 fi
 
 
-
-
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _blake2" >&5
 $as_echo_n "checking for stdlib extension module _blake2... " >&6; }
-
-
-
-
           if test "$with_builtin_blake2" = yes; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-        MODULE__BLAKE2_CFLAGS=""
-
-    MODULE__BLAKE2_LDFLAGS=""
-
-     if true; then
+    as_fn_append MODULE_BLOCK "MODULE__BLAKE2=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__BLAKE2_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__BLAKE2_LDFLAGS=$as_nl"
+         if true; then
   MODULE__BLAKE2_TRUE=
   MODULE__BLAKE2_FALSE='#'
 else
@@ -20341,13 +20094,11 @@ else
 $as_echo "n/a" >&6; } ;; #(
   *) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; } ;;
+$as_echo "no" >&6; }
+     ;;
 esac
-    MODULE__BLAKE2_CFLAGS=""
-
-    MODULE__BLAKE2_LDFLAGS=""
-
-     if false; then
+    as_fn_append MODULE_BLOCK "MODULE__BLAKE2=0$as_nl"
+             if false; then
   MODULE__BLAKE2_TRUE=
   MODULE__BLAKE2_FALSE='#'
 else
@@ -20359,25 +20110,16 @@ fi
 fi
 
 
-
-
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _sha3" >&5
 $as_echo_n "checking for stdlib extension module _sha3... " >&6; }
-
-
-
-
           if test "$with_builtin_sha3" = yes; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-        MODULE__SHA3_CFLAGS=""
-
-    MODULE__SHA3_LDFLAGS=""
-
-     if true; then
+    as_fn_append MODULE_BLOCK "MODULE__SHA3=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA3_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA3_LDFLAGS=$as_nl"
+         if true; then
   MODULE__SHA3_TRUE=
   MODULE__SHA3_FALSE='#'
 else
@@ -20394,13 +20136,11 @@ else
 $as_echo "n/a" >&6; } ;; #(
   *) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; } ;;
+$as_echo "no" >&6; }
+     ;;
 esac
-    MODULE__SHA3_CFLAGS=""
-
-    MODULE__SHA3_LDFLAGS=""
-
-     if false; then
+    as_fn_append MODULE_BLOCK "MODULE__SHA3=0$as_nl"
+             if false; then
   MODULE__SHA3_TRUE=
   MODULE__SHA3_FALSE='#'
 else
@@ -20412,25 +20152,16 @@ fi
 fi
 
 
-
-
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _gdbm" >&5
 $as_echo_n "checking for stdlib extension module _gdbm... " >&6; }
-
-
-
-
           if test "$ac_cv_lib_gdbm_gdbm_open" = yes; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-        MODULE__GDBM_CFLAGS="$GDBM_CFLAGS"
-
-    MODULE__GDBM_LDFLAGS="$GDBM_LDFLAGS"
-
-     if true; then
+    as_fn_append MODULE_BLOCK "MODULE__GDBM=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__GDBM_CFLAGS=$GDBM_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__GDBM_LDFLAGS=$GDBM_LDFLAGS$as_nl"
+         if true; then
   MODULE__GDBM_TRUE=
   MODULE__GDBM_FALSE='#'
 else
@@ -20447,13 +20178,11 @@ else
 $as_echo "n/a" >&6; } ;; #(
   *) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; } ;;
+$as_echo "no" >&6; }
+     ;;
 esac
-    MODULE__GDBM_CFLAGS=""
-
-    MODULE__GDBM_LDFLAGS=""
-
-     if false; then
+    as_fn_append MODULE_BLOCK "MODULE__GDBM=0$as_nl"
+             if false; then
   MODULE__GDBM_TRUE=
   MODULE__GDBM_FALSE='#'
 else
@@ -20465,25 +20194,16 @@ fi
 fi
 
 
-
-
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module termios" >&5
 $as_echo_n "checking for stdlib extension module termios... " >&6; }
-
-
-
-
           if test "$ac_sys_system" != VxWorks; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-        MODULE_TERMIOS_CFLAGS=""
-
-    MODULE_TERMIOS_LDFLAGS=""
-
-     if true; then
+    as_fn_append MODULE_BLOCK "MODULE_TERMIOS=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_TERMIOS_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_TERMIOS_LDFLAGS=$as_nl"
+         if true; then
   MODULE_TERMIOS_TRUE=
   MODULE_TERMIOS_FALSE='#'
 else
@@ -20500,13 +20220,11 @@ else
 $as_echo "n/a" >&6; } ;; #(
   *) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; } ;;
+$as_echo "no" >&6; }
+     ;;
 esac
-    MODULE_TERMIOS_CFLAGS=""
-
-    MODULE_TERMIOS_LDFLAGS=""
-
-     if false; then
+    as_fn_append MODULE_BLOCK "MODULE_TERMIOS=0$as_nl"
+             if false; then
   MODULE_TERMIOS_TRUE=
   MODULE_TERMIOS_FALSE='#'
 else
@@ -20518,25 +20236,16 @@ fi
 fi
 
 
-
-
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module ossaudiodev" >&5
 $as_echo_n "checking for stdlib extension module ossaudiodev... " >&6; }
-
-
-
-
           if test "$ac_cv_header_linux_soundcard_h" = yes -o "$ac_cv_header_sys_soundcard_h" = yes; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-        MODULE_OSSAUDIODEV_CFLAGS=""
-
-    MODULE_OSSAUDIODEV_LDFLAGS=""
-
-     if true; then
+    as_fn_append MODULE_BLOCK "MODULE_OSSAUDIODEV=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_OSSAUDIODEV_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_OSSAUDIODEV_LDFLAGS=$as_nl"
+         if true; then
   MODULE_OSSAUDIODEV_TRUE=
   MODULE_OSSAUDIODEV_FALSE='#'
 else
@@ -20553,13 +20262,11 @@ else
 $as_echo "n/a" >&6; } ;; #(
   *) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; } ;;
+$as_echo "no" >&6; }
+     ;;
 esac
-    MODULE_OSSAUDIODEV_CFLAGS=""
-
-    MODULE_OSSAUDIODEV_LDFLAGS=""
-
-     if false; then
+    as_fn_append MODULE_BLOCK "MODULE_OSSAUDIODEV=0$as_nl"
+             if false; then
   MODULE_OSSAUDIODEV_TRUE=
   MODULE_OSSAUDIODEV_FALSE='#'
 else
@@ -20571,25 +20278,16 @@ fi
 fi
 
 
-
-
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _scproxy" >&5
 $as_echo_n "checking for stdlib extension module _scproxy... " >&6; }
-
-
-
-
           if test "$ac_sys_system" = "Darwin"; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-        MODULE__SCPROXY_CFLAGS=""
-
-    MODULE__SCPROXY_LDFLAGS="-framework SystemConfiguration -framework CoreFoundation"
-
-     if true; then
+    as_fn_append MODULE_BLOCK "MODULE__SCPROXY=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SCPROXY_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SCPROXY_LDFLAGS=-framework SystemConfiguration -framework CoreFoundation$as_nl"
+         if true; then
   MODULE__SCPROXY_TRUE=
   MODULE__SCPROXY_FALSE='#'
 else
@@ -20606,13 +20304,11 @@ else
 $as_echo "n/a" >&6; } ;; #(
   *) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; } ;;
+$as_echo "no" >&6; }
+     ;;
 esac
-    MODULE__SCPROXY_CFLAGS=""
-
-    MODULE__SCPROXY_LDFLAGS=""
-
-     if false; then
+    as_fn_append MODULE_BLOCK "MODULE__SCPROXY=0$as_nl"
+             if false; then
   MODULE__SCPROXY_TRUE=
   MODULE__SCPROXY_FALSE='#'
 else
@@ -20624,25 +20320,16 @@ fi
 fi
 
 
-
-
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module zlib" >&5
 $as_echo_n "checking for stdlib extension module zlib... " >&6; }
-
-
-
-
           if test "$ac_cv_header_zlib_h" = yes -a "$ac_cv_lib_z_gzread" = yes; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-        MODULE_ZLIB_CFLAGS=""
-
-    MODULE_ZLIB_LDFLAGS="-lz"
-
-     if true; then
+    as_fn_append MODULE_BLOCK "MODULE_ZLIB=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_ZLIB_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_ZLIB_LDFLAGS=-lz$as_nl"
+         if true; then
   MODULE_ZLIB_TRUE=
   MODULE_ZLIB_FALSE='#'
 else
@@ -20659,13 +20346,11 @@ else
 $as_echo "n/a" >&6; } ;; #(
   *) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; } ;;
+$as_echo "no" >&6; }
+     ;;
 esac
-    MODULE_ZLIB_CFLAGS=""
-
-    MODULE_ZLIB_LDFLAGS=""
-
-     if false; then
+    as_fn_append MODULE_BLOCK "MODULE_ZLIB=0$as_nl"
+             if false; then
   MODULE_ZLIB_TRUE=
   MODULE_ZLIB_FALSE='#'
 else
@@ -20677,25 +20362,16 @@ fi
 fi
 
 
-
-
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module binascii" >&5
 $as_echo_n "checking for stdlib extension module binascii... " >&6; }
-
-
-
-
           if true; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-        MODULE_BINASCII_CFLAGS="$BINASCII_CFLAGS"
-
-    MODULE_BINASCII_LDFLAGS="$BINASCII_LDFLAGS"
-
-     if true; then
+    as_fn_append MODULE_BLOCK "MODULE_BINASCII=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_BINASCII_CFLAGS=$BINASCII_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_BINASCII_LDFLAGS=$BINASCII_LDFLAGS$as_nl"
+         if true; then
   MODULE_BINASCII_TRUE=
   MODULE_BINASCII_FALSE='#'
 else
@@ -20712,13 +20388,11 @@ else
 $as_echo "n/a" >&6; } ;; #(
   *) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; } ;;
+$as_echo "no" >&6; }
+     ;;
 esac
-    MODULE_BINASCII_CFLAGS=""
-
-    MODULE_BINASCII_LDFLAGS=""
-
-     if false; then
+    as_fn_append MODULE_BLOCK "MODULE_BINASCII=0$as_nl"
+             if false; then
   MODULE_BINASCII_TRUE=
   MODULE_BINASCII_FALSE='#'
 else
@@ -20730,25 +20404,16 @@ fi
 fi
 
 
-
-
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _bz2" >&5
 $as_echo_n "checking for stdlib extension module _bz2... " >&6; }
-
-
-
-
           if test "$ac_cv_header_bzlib_h" = yes -a "$ac_cv_lib_bz2_BZ2_bzCompress" = yes; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-        MODULE__BZ2_CFLAGS=""
-
-    MODULE__BZ2_LDFLAGS="-lbz2"
-
-     if true; then
+    as_fn_append MODULE_BLOCK "MODULE__BZ2=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__BZ2_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__BZ2_LDFLAGS=-lbz2$as_nl"
+         if true; then
   MODULE__BZ2_TRUE=
   MODULE__BZ2_FALSE='#'
 else
@@ -20765,13 +20430,11 @@ else
 $as_echo "n/a" >&6; } ;; #(
   *) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; } ;;
+$as_echo "no" >&6; }
+     ;;
 esac
-    MODULE__BZ2_CFLAGS=""
-
-    MODULE__BZ2_LDFLAGS=""
-
-     if false; then
+    as_fn_append MODULE_BLOCK "MODULE__BZ2=0$as_nl"
+             if false; then
   MODULE__BZ2_TRUE=
   MODULE__BZ2_FALSE='#'
 else
@@ -20783,25 +20446,16 @@ fi
 fi
 
 
-
-
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _lzma" >&5
 $as_echo_n "checking for stdlib extension module _lzma... " >&6; }
-
-
-
-
           if test "$ac_cv_header_lzma_h" = yes -a "$ac_cv_lib_lzma_lzma_easy_encoder" = yes; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-        MODULE__LZMA_CFLAGS=""
-
-    MODULE__LZMA_LDFLAGS="-llzma"
-
-     if true; then
+    as_fn_append MODULE_BLOCK "MODULE__LZMA=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__LZMA_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__LZMA_LDFLAGS=-llzma$as_nl"
+         if true; then
   MODULE__LZMA_TRUE=
   MODULE__LZMA_FALSE='#'
 else
@@ -20818,13 +20472,11 @@ else
 $as_echo "n/a" >&6; } ;; #(
   *) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; } ;;
+$as_echo "no" >&6; }
+     ;;
 esac
-    MODULE__LZMA_CFLAGS=""
-
-    MODULE__LZMA_LDFLAGS=""
-
-     if false; then
+    as_fn_append MODULE_BLOCK "MODULE__LZMA=0$as_nl"
+             if false; then
   MODULE__LZMA_TRUE=
   MODULE__LZMA_FALSE='#'
 else
@@ -20836,25 +20488,16 @@ fi
 fi
 
 
-
-
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _ctypes_test" >&5
 $as_echo_n "checking for stdlib extension module _ctypes_test... " >&6; }
-
-
-
-
           if test "$TEST_MODULES" = yes; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-        MODULE__CTYPES_TEST_CFLAGS=""
-
-    MODULE__CTYPES_TEST_LDFLAGS=""
-
-     if true; then
+    as_fn_append MODULE_BLOCK "MODULE__CTYPES_TEST=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__CTYPES_TEST_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__CTYPES_TEST_LDFLAGS=$as_nl"
+         if true; then
   MODULE__CTYPES_TEST_TRUE=
   MODULE__CTYPES_TEST_FALSE='#'
 else
@@ -20871,13 +20514,11 @@ else
 $as_echo "n/a" >&6; } ;; #(
   *) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; } ;;
+$as_echo "no" >&6; }
+     ;;
 esac
-    MODULE__CTYPES_TEST_CFLAGS=""
-
-    MODULE__CTYPES_TEST_LDFLAGS=""
-
-     if false; then
+    as_fn_append MODULE_BLOCK "MODULE__CTYPES_TEST=0$as_nl"
+             if false; then
   MODULE__CTYPES_TEST_TRUE=
   MODULE__CTYPES_TEST_FALSE='#'
 else
@@ -20889,25 +20530,16 @@ fi
 fi
 
 
-
-
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _posixshmem" >&5
 $as_echo_n "checking for stdlib extension module _posixshmem... " >&6; }
-
-
-
-
           if true; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-        MODULE__POSIXSHMEM_CFLAGS=""
-
-    MODULE__POSIXSHMEM_LDFLAGS="$ac_cv_search_shm_open"
-
-     if true; then
+    as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM_LDFLAGS=$ac_cv_search_shm_open$as_nl"
+         if true; then
   MODULE__POSIXSHMEM_TRUE=
   MODULE__POSIXSHMEM_FALSE='#'
 else
@@ -20924,13 +20556,11 @@ else
 $as_echo "n/a" >&6; } ;; #(
   *) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; } ;;
+$as_echo "no" >&6; }
+     ;;
 esac
-    MODULE__POSIXSHMEM_CFLAGS=""
-
-    MODULE__POSIXSHMEM_LDFLAGS=""
-
-     if false; then
+    as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM=0$as_nl"
+             if false; then
   MODULE__POSIXSHMEM_TRUE=
   MODULE__POSIXSHMEM_FALSE='#'
 else
@@ -20942,25 +20572,16 @@ fi
 fi
 
 
-
-
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _tkinter" >&5
 $as_echo_n "checking for stdlib extension module _tkinter... " >&6; }
-
-
-
-
           if test -n "$TCLTK_LIBS"; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-        MODULE__TKINTER_CFLAGS="-DWITH_APPINIT=1"
-
-    MODULE__TKINTER_LDFLAGS="$TCLTK_LIBS"
-
-     if true; then
+    as_fn_append MODULE_BLOCK "MODULE__TKINTER=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__TKINTER_CFLAGS=-DWITH_APPINIT=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__TKINTER_LDFLAGS=$TCLTK_LIBS$as_nl"
+         if true; then
   MODULE__TKINTER_TRUE=
   MODULE__TKINTER_FALSE='#'
 else
@@ -20977,13 +20598,11 @@ else
 $as_echo "n/a" >&6; } ;; #(
   *) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; } ;;
+$as_echo "no" >&6; }
+     ;;
 esac
-    MODULE__TKINTER_CFLAGS=""
-
-    MODULE__TKINTER_LDFLAGS=""
-
-     if false; then
+    as_fn_append MODULE_BLOCK "MODULE__TKINTER=0$as_nl"
+             if false; then
   MODULE__TKINTER_TRUE=
   MODULE__TKINTER_FALSE='#'
 else
@@ -20995,25 +20614,16 @@ fi
 fi
 
 
-
-
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _uuid" >&5
 $as_echo_n "checking for stdlib extension module _uuid... " >&6; }
-
-
-
-
           if test "$ac_cv_lib_uuid_uuid_generate_time" = yes -o "$ac_cv_func_uuid_create" = yes; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-        MODULE__UUID_CFLAGS="$UUID_CFLAGS"
-
-    MODULE__UUID_LDFLAGS="$UUID_LDLAGS"
-
-     if true; then
+    as_fn_append MODULE_BLOCK "MODULE__UUID=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__UUID_CFLAGS=$UUID_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__UUID_LDFLAGS=$UUID_LDLAGS$as_nl"
+         if true; then
   MODULE__UUID_TRUE=
   MODULE__UUID_FALSE='#'
 else
@@ -21030,13 +20640,11 @@ else
 $as_echo "n/a" >&6; } ;; #(
   *) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; } ;;
+$as_echo "no" >&6; }
+     ;;
 esac
-    MODULE__UUID_CFLAGS=""
-
-    MODULE__UUID_LDFLAGS=""
-
-     if false; then
+    as_fn_append MODULE_BLOCK "MODULE__UUID=0$as_nl"
+             if false; then
   MODULE__UUID_TRUE=
   MODULE__UUID_FALSE='#'
 else
@@ -21049,7 +20657,7 @@ fi
 
 
 
-
+# substitute multiline block, must come after last PY_STDLIB_MOD()
 
 
 # generate output files

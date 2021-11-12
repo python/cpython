@@ -5958,40 +5958,45 @@ AC_SUBST(TEST_MODULES)
 AS_CASE([$ac_sys_system],
   [AIX], [py_stdlib_not_available="_scproxy spwd"],
   [VxWorks*], [py_stdlib_not_available="_scproxy _crypt termios grp"],
-  [Darwin], [py_stdlib_not_available=""],
+  [Darwin], [py_stdlib_not_available="ossaudiodev spwd"],
   [py_stdlib_not_available="_scproxy"]
 )
+
+MODULE_BLOCK=
+
+# _MODULE_BLOCK_ADD([VAR], [VALUE])
+# internal: adds $1=quote($2) to MODULE_BLOCK
+AC_DEFUN([_MODULE_BLOCK_ADD], [AS_VAR_APPEND([MODULE_BLOCK], ["$1=_AS_QUOTE([$2])$as_nl"])])
 
 # Check for stdlib extension modules
 # PY_STDLIB_MOD([NAME], [TEST], [CFLAGS], [LDFLAGS])
 AC_DEFUN([PY_STDLIB_MOD], [
   AC_MSG_CHECKING([for stdlib extension module $1])
-  m4_pushdef([pymod], [PY_MODULE_]m4_toupper([$1]))
-  m4_pushdef([modcond], [MODULE_]m4_toupper([$1]))
-  m4_pushdef([modcflags], [MODULE_]m4_toupper([$1])[_CFLAGS])
-  m4_pushdef([modldflags], [MODULE_]m4_toupper([$1])[_LDFLAGS])
-  dnl echo
-  dnl echo "modcflags=@modldflags@"
-  dnl echo "modldflags=@modldflags@"
-  dnl echo
+  dnl m4_pushdef([pymod], [PY_MODULE_]m4_toupper([$1]))
+  m4_pushdef([modcond], [MODULE_]m4_toupper([$1]))dnl
+  m4_pushdef([modcflags], [MODULE_]m4_toupper([$1])[_CFLAGS])dnl
+  m4_pushdef([modldflags], [MODULE_]m4_toupper([$1])[_LDFLAGS])dnl
   AS_IF([$2], [
     AC_MSG_RESULT([yes])
+    _MODULE_BLOCK_ADD(modcond, [1])
+    _MODULE_BLOCK_ADD(modcflags, [$3])
+    _MODULE_BLOCK_ADD(modldflags, [$4])
     dnl AC_DEFINE([pymod], [1], [Define if stdlib module "$1" is supported and enabled.])
-    AC_SUBST(modcflags, ["$3"])
-    AC_SUBST(modldflags, ["$4"])
     AM_CONDITIONAL(modcond, [true])
   ], [
     AS_CASE([$py_stdlib_not_available],
       [*$1*], [AC_MSG_RESULT([n/a])],
-      [AC_MSG_RESULT([no])])
-    AC_SUBST(modcflags, [""])
-    AC_SUBST(modldflags, [""])
+      [AC_MSG_RESULT([no])]
+    )
+    _MODULE_BLOCK_ADD(modcond, [0])
+    dnl _MODULE_BLOCK_ADD(modcflags, [])
+    dnl _MODULE_BLOCK_ADD(modldflags, [])
     AM_CONDITIONAL(modcond, [false])
   ])
-  m4_popdef([pymod])
-  m4_popdef([modcond])
-  m4_popdef([modcflags])
-  m4_popdef([modldflags])
+  dnl m4_popdef([pymod])
+  m4_popdef([modcond])dnl
+  m4_popdef([modcflags])dnl
+  m4_popdef([modldflags])dnl
 ])
 
 # reuses autoconf check values (ac_cv_*):
@@ -6123,6 +6128,10 @@ PY_STDLIB_MOD([_uuid],
   [$UUID_CFLAGS], [$UUID_LDLAGS])
 dnl PY_STDLIB_MOD([xxlimited], [true])
 dnl PY_STDLIB_MOD([xxlimited_35], [true])
+
+
+# substitute multiline block, must come after last PY_STDLIB_MOD()
+AC_SUBST([MODULE_BLOCK])
 
 # generate output files
 AC_CONFIG_FILES(Makefile.pre Misc/python.pc Misc/python-embed.pc Misc/python-config.sh)
