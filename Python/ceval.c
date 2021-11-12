@@ -1475,6 +1475,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
     STAT_INC(LOAD_##attr_or_method, hit); \
     Py_INCREF(res);
 
+
 static int
 trace_function_entry(PyThreadState *tstate, InterpreterFrame *frame)
 {
@@ -1539,12 +1540,21 @@ make_coro(PyThreadState *tstate, PyFrameConstructor *con,
           PyObject *kwnames);
 
 static int
-skip_backwards_over_extended_args(PyCodeObject *code, int offset) {
+skip_backwards_over_extended_args(PyCodeObject *code, int offset)
+{
     _Py_CODEUNIT *instrs = (_Py_CODEUNIT *)PyBytes_AS_STRING(code->co_code);
     while (offset > 0 && _Py_OPCODE(instrs[offset-1]) == EXTENDED_ARG) {
         offset--;
     }
     return offset;
+}
+
+static InterpreterFrame *
+pop_frame(PyThreadState *tstate, InterpreterFrame *frame)
+{
+    InterpreterFrame *prev_frame = frame->previous;
+    _PyEvalFrameClearAndPop(tstate, frame);
+    return prev_frame;
 }
 
 PyObject* _Py_HOT_FUNCTION
@@ -1581,10 +1591,14 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
     frame->previous = prev_cframe->current_frame;
     cframe.current_frame = frame;
 
+    if (throwflag) { /* support for generator.throw() */
+        goto throw;
+    }
+
 start_frame:
     if (_Py_EnterRecursiveCall(tstate, "")) {
         tstate->recursion_depth++;
-        goto exit_unwind_notrace;
+        goto exit_unwind;
     }
 
     assert(tstate->cframe == &cframe);
@@ -1592,7 +1606,7 @@ start_frame:
 
     if (cframe.use_tracing) {
         if (trace_function_entry(tstate, frame)) {
-            goto exit_unwind_notrace;
+            goto exit_unwind;
         }
     }
 
@@ -1606,7 +1620,7 @@ start_frame:
         PyCodeObject_IncrementWarmup(co);
         if (PyCodeObject_IsWarmedUp(co)) {
             if (_Py_Quicken(co)) {
-                goto exit_unwind_notrace;
+                goto exit_unwind;
             }
         }
     }
@@ -1646,16 +1660,11 @@ resume_frame:
     {
         int r = _PyDict_ContainsId(GLOBALS(), &PyId___ltrace__);
         if (r < 0) {
-            goto exit_unwind_notrace;
+            goto exit_unwind;
         }
         lltrace = r;
     }
 #endif
-
-    if (throwflag) { /* support for generator.throw() */
-        throwflag = 0;
-        goto error;
-    }
 
 #ifdef Py_DEBUG
     /* _PyEval_EvalFrameDefault() must not be called with an exception set,
@@ -2392,6 +2401,7 @@ check_eval_breaker:
         }
 
         TARGET(YIELD_FROM) {
+            assert(frame->depth == 0);
             PyObject *v = POP();
             PyObject *receiver = TOP();
             PySendResult gen_status;
@@ -2444,6 +2454,7 @@ check_eval_breaker:
         }
 
         TARGET(YIELD_VALUE) {
+            assert(frame->depth == 0);
             retval = POP();
 
             if (co->co_flags & CO_ASYNC_GENERATOR) {
@@ -4974,6 +4985,12 @@ exception_unwind:
             assert(STACK_LEVEL() == 0);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             frame->f_state = FRAME_RAISED;
+            if (cframe.use_tracing) {
+                trace_function_exit(tstate, frame, NULL);
+            }
+            if (PyDTrace_FUNCTION_RETURN_ENABLED()) {
+                dtrace_function_return(frame);
+            }
             goto exit_unwind;
         }
 
@@ -5018,55 +5035,63 @@ exception_unwind:
     }
 
 exit_unwind:
-    assert(retval == NULL);
-    if (cframe.use_tracing) {
-        trace_function_exit(tstate, frame, NULL);
-    }
-    if (PyDTrace_FUNCTION_RETURN_ENABLED())
-        dtrace_function_return(frame);
-
-exit_unwind_notrace:
+    assert(_PyErr_Occurred(tstate));
     _Py_LeaveRecursiveCall(tstate);
     if (frame->depth) {
-        cframe.current_frame = frame->previous;
-        _PyEvalFrameClearAndPop(tstate, frame);
-        frame = cframe.current_frame;
-        throwflag = 1;
-        goto resume_frame;
+        frame = cframe.current_frame = pop_frame(tstate, frame);
+        goto update_locals_then_error;
     }
-
-    goto exit_eval_frame;
-
+     /* Restore previous cframe. */
+    tstate->cframe = cframe.previous;
+    tstate->cframe->use_tracing = cframe.use_tracing;
+    assert(tstate->cframe->current_frame == frame->previous);
+    return NULL;
 
 exit_return:
     assert(retval != NULL);
     if (cframe.use_tracing) {
         if (trace_function_exit(tstate, frame, retval)) {
             retval = NULL;
-            throwflag = 1;
+            goto exit_unwind;
         }
     }
     if (PyDTrace_FUNCTION_RETURN_ENABLED())
         dtrace_function_return(frame);
     _Py_LeaveRecursiveCall(tstate);
     if (frame->depth) {
-        cframe.current_frame = frame->previous;
-        _PyFrame_StackPush(cframe.current_frame, retval);
-        if (_PyEvalFrameClearAndPop(tstate, frame)) {
-            throwflag = 1;
-        }
-        frame = cframe.current_frame;
+        frame = cframe.current_frame = pop_frame(tstate, frame);
+        _PyFrame_StackPush(frame, retval);
         retval = NULL;
         goto resume_frame;
     }
-
-exit_eval_frame:
-
     /* Restore previous cframe. */
     tstate->cframe = cframe.previous;
     tstate->cframe->use_tracing = cframe.use_tracing;
     assert(tstate->cframe->current_frame == frame->previous);
-    return _Py_CheckFunctionResult(tstate, NULL, retval, __func__);
+    return retval;
+
+throw:
+    if (_Py_EnterRecursiveCall(tstate, "")) {
+        tstate->recursion_depth++;
+        goto exit_unwind;
+    }
+    if (cframe.use_tracing) {
+        if (trace_function_entry(tstate, frame)) {
+            goto exit_unwind;
+        }
+    }
+update_locals_then_error:
+    co = frame->f_code;
+    names = co->co_names;
+    consts = co->co_consts;
+    first_instr = co->co_firstinstr;
+    assert(frame->f_lasti >= -1);
+    next_instr = first_instr + frame->f_lasti + 1;
+    stack_pointer = _PyFrame_GetStackPointer(frame);
+    frame->stacktop = -1;
+    frame->f_state = FRAME_EXECUTING;
+    goto error;
+
 }
 
 static void
@@ -5699,10 +5724,7 @@ _PyEvalFrameClearAndPop(PyThreadState *tstate, InterpreterFrame * frame)
 {
     ++tstate->recursion_depth;
     assert(frame->frame_obj == NULL || frame->frame_obj->f_own_locals_memory == 0);
-    if (_PyFrame_Clear(frame, 0)) {
-        --tstate->recursion_depth;
-        return -1;
-    }
+    _PyFrame_Clear(frame, 0);
     --tstate->recursion_depth;
     _PyThreadState_PopFrame(tstate, frame);
     return 0;

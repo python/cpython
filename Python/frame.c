@@ -96,6 +96,7 @@ take_ownership(PyFrameObject *f, InterpreterFrame *frame)
     }
 }
 
+/* FIXME -- See bpo-45786 */
 int
 _PyFrame_Clear(InterpreterFrame * frame, int take)
 {
