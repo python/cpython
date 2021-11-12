@@ -1424,16 +1424,6 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                 goto success;
             }
             break;
-        case NB_REMAINDER:
-        case NB_INPLACE_REMAINDER:
-            if (PyUnicode_CheckExact(lhs) && 
-                (PyUnicode_CheckExact(rhs) || !PyUnicode_Check(rhs)))
-            {
-                *instr = _Py_MAKECODEUNIT(BINARY_OP_REMAINDER_UNICODE,
-                                          _Py_OPARG(*instr));
-                goto success;
-            }
-            break;
         default:
             // These operators don't have any available specializations. Rather
             // than repeatedly attempting to specialize them, just convert them

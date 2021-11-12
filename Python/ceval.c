@@ -4777,26 +4777,6 @@ check_eval_breaker:
             }
         }
 
-        TARGET(BINARY_OP_REMAINDER_UNICODE) {
-            PyObject *lhs = SECOND();
-            PyObject *rhs = TOP();
-            DEOPT_IF(!PyUnicode_CheckExact(lhs), BINARY_OP);
-            DEOPT_IF(!PyUnicode_CheckExact(rhs) && PyUnicode_Check(rhs),
-                     BINARY_OP);
-            STAT_INC(BINARY_OP, hit);
-            // bpo-28598: Fast path for string formatting (but not if rhs is a
-            // str subclass).
-            PyObject *res = PyUnicode_Format(lhs, rhs);
-            if (res == NULL) {
-                goto error;
-            }
-            STACK_SHRINK(1);
-            Py_DECREF(lhs);
-            Py_DECREF(rhs);
-            SET_TOP(res);
-            DISPATCH();
-        }
-
         TARGET(EXTENDED_ARG) {
             int oldoparg = oparg;
             NEXTOPARG();
