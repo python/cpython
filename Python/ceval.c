@@ -791,18 +791,22 @@ Py_SetRecursionLimit(int new_limit)
     int old_limit = interp->ceval.recursion_limit;
     interp->ceval.recursion_limit = new_limit;
     for (PyThreadState *p = interp->tstate_head; p != NULL; p = p->next) {
+        if (p->recursion_remaining <= INT_MIN/2) {
+            p->recursion_remaining = old_limit;
+        }
         p->recursion_remaining += new_limit - old_limit;
     }
 }
 
 /* The function _Py_EnterRecursiveCall() only calls _Py_CheckRecursiveCall()
-   if the recursion_depth reaches recursion_limit.
-   If USE_STACKCHECK, the macro decrements recursion_limit
-   to guarantee that _Py_CheckRecursiveCall() is regularly called.
-   Without USE_STACKCHECK, there is no need for this. */
+   if the recursion_depth reaches recursion_limit. */
 int
 _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
 {
+    if (tstate->recursion_remaining <= INT_MIN/2) {
+        tstate->recursion_remaining = tstate->interp->ceval.recursion_limit;
+        return 0;
+    }
 #ifdef USE_STACKCHECK
     if (PyOS_CheckStack()) {
         ++tstate->recursion_remaining;
