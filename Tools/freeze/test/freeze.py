@@ -11,7 +11,6 @@ TOOL_ROOT = os.path.dirname(TESTS_DIR)
 SRCDIR = os.path.dirname(os.path.dirname(TOOL_ROOT))
 
 MAKE = shutil.which('make')
-GIT = shutil.which('git')
 FREEZE = os.path.join(TOOL_ROOT, 'freeze.py')
 OUTDIR = os.path.join(TESTS_DIR, 'outdir')
 
@@ -85,45 +84,6 @@ def copy_source_tree(newroot, oldroot):
     _run_quiet([MAKE, 'clean'], newroot)
 
 
-def git_copy_repo(newroot, oldroot):
-    if not GIT:
-        raise UnsupportedError('git')
-
-    if os.path.exists(newroot):
-        print(f'updating copied repo {newroot}...')
-        if newroot == SRCDIR:
-            raise Exception('this probably isn\'t what you wanted')
-        rev = _run_stdout([GIT, 'rev-parse', 'HEAD'], newroot)
-        _run_quiet([GIT, 'clean', '-d', '-x', '--force'], newroot)
-        _run_quiet([GIT, 'fetch', oldroot], newroot)
-        _run_quiet([GIT, 'reset', '--hard', rev], newroot)
-    else:
-        print(f'copying repo into {newroot}...')
-        _run_quiet([GIT, 'clone', oldroot, newroot])
-
-    # Copy over any uncommited files.
-    text = _run_stdout([GIT, 'status', '--porcelain=1'], oldroot)
-    for line in text.splitlines():
-        _, _, loc = line.strip().partition(' ')
-        _, _, relfile = loc.rpartition(' -> ')
-        relfile = relfile.strip()
-        isdir = relfile.endswith(os.path.sep)
-        relfile = relfile.rstrip(os.path.sep)
-        srcfile = os.path.join(oldroot, relfile)
-        dstfile = os.path.join(newroot, relfile)
-        if os.path.exists(srcfile):
-            os.makedirs(os.path.dirname(dstfile), exist_ok=True)
-            if isdir:
-                shutil.copytree(srcfile, dstfile, dirs_exist_ok=True)
-            else:
-                shutil.copy2(srcfile, dstfile)
-        else:
-            if isdir:
-                shutil.rmtree(dstfile)
-            else:
-                os.unlink(dstfile)
-
-
 def get_makefile_var(builddir, name):
     regex = re.compile(rf'^{name} *=\s*(.*?)\s*$')
     filename = os.path.join(builddir, 'Makefile')
@@ -170,10 +130,7 @@ def prepare(script=None, outdir=None):
     # Make a copy of the repo to avoid affecting the current build
     # (e.g. changing PREFIX).
     srcdir = os.path.join(outdir, 'cpython')
-    if os.path.exists(os.path.join(SRCDIR, '.git')):
-        git_copy_repo(srcdir, SRCDIR)
-    else:
-        copy_source_tree(srcdir, SRCDIR)
+    copy_source_tree(srcdir, SRCDIR)
 
     # We use an out-of-tree build (instead of srcdir).
     builddir = os.path.join(outdir, 'python-build')
