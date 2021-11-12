@@ -157,7 +157,8 @@ def prepare(script=None, outdir=None):
         with open(scriptfile, 'w') as outfile:
             outfile.write(script)
 
-    # Make a copy of the repo to avoid affecting the current build.
+    # Make a copy of the repo to avoid affecting the current build
+    # (e.g. changing PREFIX).
     srcdir = os.path.join(outdir, 'cpython')
     git_copy_repo(srcdir, SRCDIR)
 
