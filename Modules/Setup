@@ -162,7 +162,7 @@ time timemodule.c
 #_heapq _heapqmodule.c
 #_json _json.c
 #_lsprof _lsprof.c rotatingtree.c
-#_multiprocessing -I$(srcdir)/Modules/_multiprocessing _multiprocessing/multiprocessing.c _multiprocessing/semaphore.c
+#_multiprocessing _multiprocessing/multiprocessing.c _multiprocessing/semaphore.c
 #_opcode _opcode.c
 #_pickle _pickle.c
 #_queue _queuemodule.c
@@ -205,7 +205,7 @@ time timemodule.c
 # Modules with some UNIX dependencies
 
 #_posixsubprocess _posixsubprocess.c
-#_posixshmem -I$(srcdir)/Modules/_multiprocessing _multiprocessing/posixshmem.c
+#_posixshmem _multiprocessing/posixshmem.c
 #fcntl fcntlmodule.c
 #grp grpmodule.c
 #ossaudiodev ossaudiodev.c
@@ -217,17 +217,17 @@ time timemodule.c
 # Modules with UNIX dependencies that require external libraries
 
 #_crypt _cryptmodule.c
-#nis nismodule.c -I/usr/include/tirpc -lnsl -ltirpc
+#nis nismodule.c
 
 # Modules that require external libraries.
 
 #_bz2 _bz2module.c
-#_ctypes _ctypes/_ctypes.c _ctypes/callbacks.c _ctypes/callproc.c _ctypes/stgdict.c _ctypes/cfield.c -ldl -lffi -DHAVE_FFI_PREP_CIF_VAR -DHAVE_FFI_PREP_CLOSURE_LOC -DHAVE_FFI_CLOSURE_ALLOC
+#_ctypes _ctypes/_ctypes.c _ctypes/callbacks.c _ctypes/callproc.c _ctypes/stgdict.c _ctypes/cfield.c
 # The _dbm module supports NDBM, GDBM with compat module, and Berkeley DB.
 #_dbm _dbmmodule.c -lgdbm_compat -DUSE_GDBM_COMPAT
 #_gdbm _gdbmmodule.c
 #_lzma _lzmamodule.c
-#_sqlite3 _sqlite/connection.c _sqlite/cursor.c _sqlite/microprotocols.c _sqlite/module.c _sqlite/prepare_protocol.c _sqlite/row.c _sqlite/statement.c _sqlite/util.c -lsqlite3
+#_sqlite3 _sqlite/connection.c _sqlite/cursor.c _sqlite/microprotocols.c _sqlite/module.c _sqlite/prepare_protocol.c _sqlite/row.c _sqlite/statement.c _sqlite/util.c
 #_uuid _uuidmodule.c
 #zlib  zlibmodule.c
 
@@ -291,11 +291,11 @@ time timemodule.c
 #	-lX11
 
 # Some system have -lcurses 
-#_curses -lncurses -lncursesw -ltermcap _cursesmodule.c
-#_curses_panel -lpanel -lncurses _curses_panel.c
+#_curses _cursesmodule.c
+#_curses_panel _curses_panel.c
 
 # macOS specific modules
-# _scproxy _scproxy.c -framework SystemConfiguration -framework CoreFoundation
+# _scproxy _scproxy.c
 
 # Examples
 

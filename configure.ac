@@ -5999,65 +5999,78 @@ AC_DEFUN([PY_STDLIB_MOD], [
   m4_popdef([modldflags])dnl
 ])
 
+# Define simple, always enabled stdlib extension module
+# PY_STDLIB_MOD_SIMPLE([NAME], [LDFLAGS])
+AC_DEFUN([PY_STDLIB_MOD_SIMPLE], [
+  m4_pushdef([modcond], [MODULE_]m4_toupper([$1]))dnl
+  _MODULE_BLOCK_ADD(modcond, [1])
+  AM_CONDITIONAL(modcond, [true])
+  m4_ifval([$2], [
+    _MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_LDFLAGS], [$2])
+  ])
+  m4_popdef([modcond])dnl
+])
+AU_ALIAS([PY_STDLIB_MOD_STATIC], [PY_STDLIB_MOD_SIMPLE])
+
 # reuses autoconf check values (ac_cv_*):
 # * ac_cv_func and ac_cv_header values are set to "yes" when function or header exists
 # * ac_cv_search values are set to "none required" or "-lsomelib" when function exists
 dnl Modules/Setup
-dnl PY_STDLIB_MOD([_collections], [true])
-dnl PY_STDLIB_MOD([_abc], [true])
-dnl PY_STDLIB_MOD([_codecs], [true])
-dnl PY_STDLIB_MOD([_functools], [true])
-dnl PY_STDLIB_MOD([_io], [true])
-dnl PY_STDLIB_MOD([_locale], [true])
-dnl PY_STDLIB_MOD([_operator], [true])
-dnl PY_STDLIB_MOD([_signal], [true])
-dnl PY_STDLIB_MOD([_sre], [true])
-dnl PY_STDLIB_MOD([_stat], [true])
-dnl PY_STDLIB_MOD([_symtable], [true])
-dnl PY_STDLIB_MOD([_thread], [true])
-dnl PY_STDLIB_MOD([_tracemalloc], [true])
-dnl PY_STDLIB_MOD([_weakref], [true])
-dnl PY_STDLIB_MOD([atexit], [true])
-dnl PY_STDLIB_MOD([errno], [true])
-dnl PY_STDLIB_MOD([faulthandler], [true])
-dnl PY_STDLIB_MOD([itertools], [true])
-dnl PY_STDLIB_MOD([posix], [true])
-dnl PY_STDLIB_MOD([pwd], [true])
-dnl PY_STDLIB_MOD([time], [true])
+PY_STDLIB_MOD_STATIC([_collections])
+PY_STDLIB_MOD_STATIC([_abc])
+PY_STDLIB_MOD_STATIC([_codecs])
+PY_STDLIB_MOD_STATIC([_functools])
+PY_STDLIB_MOD_STATIC([_io])
+PY_STDLIB_MOD_STATIC([_locale])
+PY_STDLIB_MOD_STATIC([_operator])
+PY_STDLIB_MOD_STATIC([_signal])
+PY_STDLIB_MOD_STATIC([_sre])
+PY_STDLIB_MOD_STATIC([_stat])
+PY_STDLIB_MOD_STATIC([_symtable])
+PY_STDLIB_MOD_STATIC([_thread])
+PY_STDLIB_MOD_STATIC([_tracemalloc])
+PY_STDLIB_MOD_STATIC([_weakref])
+PY_STDLIB_MOD_STATIC([atexit])
+PY_STDLIB_MOD_STATIC([errno])
+PY_STDLIB_MOD_STATIC([faulthandler])
+PY_STDLIB_MOD_STATIC([itertools])
+PY_STDLIB_MOD_STATIC([posix])
+PY_STDLIB_MOD_STATIC([pwd])
+PY_STDLIB_MOD_STATIC([time])
 
 dnl same order as setup.py
-dnl PY_STDLIB_MOD([_struct], [true])
-dnl PY_STDLIB_MOD([array], [true])
-dnl PY_STDLIB_MOD([_contextvars], [true])
-dnl PY_STDLIB_MOD([math], [true])
-dnl PY_STDLIB_MOD([cmath], [true])
-dnl PY_STDLIB_MOD([time], [true])
-dnl PY_STDLIB_MOD([_datetime], [true])
-dnl PY_STDLIB_MOD([_zoneinfo], [true])
-dnl PY_STDLIB_MOD([_random], [true])
-dnl PY_STDLIB_MOD([_bisect], [true])
-dnl PY_STDLIB_MOD([_heapq], [true])
-dnl PY_STDLIB_MOD([_pickle], [true])
-dnl PY_STDLIB_MOD([_json], [true])
-dnl PY_STDLIB_MOD([_lsprof], [true])
-dnl PY_STDLIB_MOD([unicodedata], [true])
-dnl PY_STDLIB_MOD([_opcode], [true])
-dnl PY_STDLIB_MOD([_asyncio], [true])
-dnl PY_STDLIB_MOD([_abc], [true])
-dnl PY_STDLIB_MOD([_queue], [true])
-dnl PY_STDLIB_MOD([_statistics], [true])
-dnl PY_STDLIB_MOD([_typing], [true])
-dnl PY_STDLIB_MOD([fcntl], [true])
-dnl PY_STDLIB_MOD([pwd], [true])
+PY_STDLIB_MOD_SIMPLE([_struct])
+PY_STDLIB_MOD_SIMPLE([array])
+PY_STDLIB_MOD_SIMPLE([_contextvars])
+PY_STDLIB_MOD_SIMPLE([math], [-lm])
+PY_STDLIB_MOD_SIMPLE([cmath], [-lm])
+PY_STDLIB_MOD_SIMPLE([time], [$TIMEMODULE_LIB])
+PY_STDLIB_MOD_SIMPLE([_datetime], [$TIMEMODULE_LIB])
+PY_STDLIB_MOD_SIMPLE([_zoneinfo])
+PY_STDLIB_MOD_SIMPLE([_random])
+PY_STDLIB_MOD_SIMPLE([_bisect])
+PY_STDLIB_MOD_SIMPLE([_heapq])
+PY_STDLIB_MOD_SIMPLE([_pickle])
+PY_STDLIB_MOD_SIMPLE([_json])
+PY_STDLIB_MOD_SIMPLE([_lsprof])
+PY_STDLIB_MOD_SIMPLE([unicodedata])
+PY_STDLIB_MOD_SIMPLE([_opcode])
+PY_STDLIB_MOD_SIMPLE([_asyncio])
+PY_STDLIB_MOD_SIMPLE([_abc])
+PY_STDLIB_MOD_SIMPLE([_queue])
+PY_STDLIB_MOD_SIMPLE([_statistics])
+PY_STDLIB_MOD_SIMPLE([_typing])
+PY_STDLIB_MOD_SIMPLE([fcntl])
+PY_STDLIB_MOD_SIMPLE([pwd])
 PY_STDLIB_MOD([grp], [test "$ac_cv_func_getgrgid" = yes -o "$ac_cv_func_getgrgid_r" = yes])
 PY_STDLIB_MOD([spwd], [test "$ac_cv_func_getspent" = yes])
-dnl PY_STDLIB_MOD([select], [true])
-dnl PY_STDLIB_MOD([mmap], [true])
-dnl PY_STDLIB_MOD([syslog], [true])
+PY_STDLIB_MOD_SIMPLE([select])
+PY_STDLIB_MOD_SIMPLE([mmap])
+PY_STDLIB_MOD_SIMPLE([syslog])
 PY_STDLIB_MOD([_xxsubinterpreters], [test "$with_experimental_isolated_subinterpreters" = yes])
-dnl PY_STDLIB_MOD([audioop], [true])
-dnl PY_STDLIB_MOD([_csv], [true])
-dnl PY_STDLIB_MOD([_posixsubprocess], [true])
+PY_STDLIB_MOD_SIMPLE([audioop])
+PY_STDLIB_MOD_SIMPLE([_csv])
+PY_STDLIB_MOD_SIMPLE([_posixsubprocess])
 PY_STDLIB_MOD([_testcapi], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testinternalcapi], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testbuffer], [test "$TEST_MODULES" = yes])
@@ -6065,13 +6078,14 @@ PY_STDLIB_MOD([_testimportmultiple], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testmultiphase], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_xxtestfuzz], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([readline], [test "$py_cv_lib_readline" = yes], [], [$READLINE_LIBS])
-dnl PY_STDLIB_MOD([_curses], [false])
-dnl PY_STDLIB_MOD([_curses_panel], [false])
+# TODO: detect curses
+PY_STDLIB_MOD([_curses], [true], [], [-lncurses -lncursesw -ltermcap])
+PY_STDLIB_MOD([_curses_panel], [true], [], [-lpanel -lncurses])
 PY_STDLIB_MOD([_crypt],
   [test "$ac_sys_system" != VxWorks -a \( "$ac_cv_search_crypt_r" != no -o "$ac_cv_search_crypt" != no \)],
   [], [-lcrypt])
-dnl PY_STDLIB_MOD([_socket], [true])
-dnl TODO: add OPENSSL_RPATH
+PY_STDLIB_MOD_SIMPLE([_socket])
+# TODO: add OPENSSL_RPATH
 PY_STDLIB_MOD([_ssl],
   [test "$ac_cv_working_openssl_ssl" = yes],
   [$OPENSSL_INCLUDES], [$OPENSSL_LIBS $OPENSSL_LDFLAGS])
@@ -6084,19 +6098,22 @@ PY_STDLIB_MOD([_md5], [test "$with_builtin_md5" = yes])
 PY_STDLIB_MOD([_sha1], [test "$with_builtin_sha1" = yes])
 PY_STDLIB_MOD([_blake2], [test "$with_builtin_blake2" = yes])
 PY_STDLIB_MOD([_sha3], [test "$with_builtin_sha3" = yes])
-dnl PY_STDLIB_MOD([_dbm], [false])
+# TODO: select dbm library
+PY_STDLIB_MOD([_dbm], [true], [-DUSE_GDBM_COMPAT], [-lgdbm_compat])
 PY_STDLIB_MOD([_gdbm],
   [test "$ac_cv_lib_gdbm_gdbm_open" = yes],
   [$GDBM_CFLAGS], [$GDBM_LDFLAGS])
-dnl PY_STDLIB_MOD([_sqlite3], [false])
+# TODO: detect sqlite
+PY_STDLIB_MOD([_sqlite3], [true], [], [-lsqlite3])
 PY_STDLIB_MOD([termios], [test "$ac_sys_system" != VxWorks])
-dnl PY_STDLIB_MOD([resource], [true])
+PY_STDLIB_MOD_SIMPLE([resource])
 PY_STDLIB_MOD([ossaudiodev],
   [test "$ac_cv_header_linux_soundcard_h" = yes -o "$ac_cv_header_sys_soundcard_h" = yes])
 PY_STDLIB_MOD([_scproxy],
   [test "$ac_sys_system" = "Darwin"],
   [], [-framework SystemConfiguration -framework CoreFoundation])
-dnl PY_STDLIB_MOD([nis], [false])
+# TODO: detect nsl and tirpc
+PY_STDLIB_MOD([nis], [true], [-I/usr/include/tirpc], [-lnsl -ltirpc])
 PY_STDLIB_MOD([zlib],
   [test "$ac_cv_header_zlib_h" = yes -a "$ac_cv_lib_z_gzread" = yes],
   [], [-lz])
@@ -6107,27 +6124,40 @@ PY_STDLIB_MOD([_bz2],
 PY_STDLIB_MOD([_lzma],
   [test "$ac_cv_header_lzma_h" = yes -a "$ac_cv_lib_lzma_lzma_easy_encoder" = yes],
   [], [-llzma])
-dnl PY_STDLIB_MOD([pyexpat], [true])
-dnl PY_STDLIB_MOD([_elementtree], [true])
-dnl PY_STDLIB_MOD([_multibytecodec], [true])
-dnl PY_STDLIB_MOD([_codecs_kr], [true])
-dnl PY_STDLIB_MOD([_codecs_jp], [true])
-dnl PY_STDLIB_MOD([_codecs_cn], [true])
-dnl PY_STDLIB_MOD([_codecs_tw], [true])
-dnl PY_STDLIB_MOD([_codecs_hk], [true])
-dnl PY_STDLIB_MOD([_codecs_iso2022], [true])
-dnl PY_STDLIB_MOD([_decimal], [true])
-dnl PY_STDLIB_MOD([_ctypes], [false])
+# TODO: handle external libexpat
+PY_STDLIB_MOD([pyexpat], [true], [], [-lm])
+PY_STDLIB_MOD([_elementtree], [true], [], [])
+PY_STDLIB_MOD_SIMPLE([_multibytecodec])
+PY_STDLIB_MOD_SIMPLE([_codecs_kr])
+PY_STDLIB_MOD_SIMPLE([_codecs_jp])
+PY_STDLIB_MOD_SIMPLE([_codecs_cn])
+PY_STDLIB_MOD_SIMPLE([_codecs_tw])
+PY_STDLIB_MOD_SIMPLE([_codecs_hk])
+PY_STDLIB_MOD_SIMPLE([_codecs_iso2022])
+# TODO: handle external libmpdec
+# UNIVERSAL: let mpdecimal.h detect settings
+PY_STDLIB_MOD([_decimal],
+  [true],
+  [-DUNIVERSAL -I\$(srcdir)/Modules/_decimal/libmpdec], [-lm])
+# TODO: handle ffi dependency
+PY_STDLIB_MOD([_ctypes],
+  [true],
+  [-DHAVE_FFI_PREP_CIF_VAR -DHAVE_FFI_PREP_CLOSURE_LOC -DHAVE_FFI_CLOSURE_ALLOC],
+  [-ldl -lffi])
 PY_STDLIB_MOD([_ctypes_test], [test "$TEST_MODULES" = yes])
-dnl PY_STDLIB_MOD([_multiprocessing], [true])
+PY_STDLIB_MOD([_multiprocessing],
+  [true],
+  [-I\$(srcdir)/Modules/_multiprocessing], [$ac_cv_search_shm_open])
 dnl shm_open() requires -lrt on some platforms
-PY_STDLIB_MOD([_posixshmem], [true], [], [$ac_cv_search_shm_open])
+PY_STDLIB_MOD([_posixshmem],
+  [test "$ac_cv_func_shm_open" = yes -a "ac_cv_func_shm_unlink" = yes],
+  [-I\$(srcdir)/Modules/_multiprocessing], [$ac_cv_search_shm_open])
 PY_STDLIB_MOD([_tkinter], [test -n "$TCLTK_LIBS"], [-DWITH_APPINIT=1], [$TCLTK_LIBS])
 PY_STDLIB_MOD([_uuid],
   [test "$ac_cv_lib_uuid_uuid_generate_time" = yes -o "$ac_cv_func_uuid_create" = yes],
   [$UUID_CFLAGS], [$UUID_LDLAGS])
-dnl PY_STDLIB_MOD([xxlimited], [true])
-dnl PY_STDLIB_MOD([xxlimited_35], [true])
+PY_STDLIB_MOD_SIMPLE([xxlimited])
+PY_STDLIB_MOD_SIMPLE([xxlimited_35])
 
 
 # substitute multiline block, must come after last PY_STDLIB_MOD()

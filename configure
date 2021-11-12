@@ -624,14 +624,42 @@ ac_includes_default="\
 
 ac_subst_vars='LTLIBOBJS
 MODULE_BLOCK
+MODULE_XXLIMITED_35_FALSE
+MODULE_XXLIMITED_35_TRUE
+MODULE_XXLIMITED_FALSE
+MODULE_XXLIMITED_TRUE
 MODULE__UUID_FALSE
 MODULE__UUID_TRUE
 MODULE__TKINTER_FALSE
 MODULE__TKINTER_TRUE
 MODULE__POSIXSHMEM_FALSE
 MODULE__POSIXSHMEM_TRUE
+MODULE__MULTIPROCESSING_FALSE
+MODULE__MULTIPROCESSING_TRUE
 MODULE__CTYPES_TEST_FALSE
 MODULE__CTYPES_TEST_TRUE
+MODULE__CTYPES_FALSE
+MODULE__CTYPES_TRUE
+MODULE__DECIMAL_FALSE
+MODULE__DECIMAL_TRUE
+MODULE__CODECS_ISO2022_FALSE
+MODULE__CODECS_ISO2022_TRUE
+MODULE__CODECS_HK_FALSE
+MODULE__CODECS_HK_TRUE
+MODULE__CODECS_TW_FALSE
+MODULE__CODECS_TW_TRUE
+MODULE__CODECS_CN_FALSE
+MODULE__CODECS_CN_TRUE
+MODULE__CODECS_JP_FALSE
+MODULE__CODECS_JP_TRUE
+MODULE__CODECS_KR_FALSE
+MODULE__CODECS_KR_TRUE
+MODULE__MULTIBYTECODEC_FALSE
+MODULE__MULTIBYTECODEC_TRUE
+MODULE__ELEMENTTREE_FALSE
+MODULE__ELEMENTTREE_TRUE
+MODULE_PYEXPAT_FALSE
+MODULE_PYEXPAT_TRUE
 MODULE__LZMA_FALSE
 MODULE__LZMA_TRUE
 MODULE__BZ2_FALSE
@@ -640,14 +668,22 @@ MODULE_BINASCII_FALSE
 MODULE_BINASCII_TRUE
 MODULE_ZLIB_FALSE
 MODULE_ZLIB_TRUE
+MODULE_NIS_FALSE
+MODULE_NIS_TRUE
 MODULE__SCPROXY_FALSE
 MODULE__SCPROXY_TRUE
 MODULE_OSSAUDIODEV_FALSE
 MODULE_OSSAUDIODEV_TRUE
+MODULE_RESOURCE_FALSE
+MODULE_RESOURCE_TRUE
 MODULE_TERMIOS_FALSE
 MODULE_TERMIOS_TRUE
+MODULE__SQLITE3_FALSE
+MODULE__SQLITE3_TRUE
 MODULE__GDBM_FALSE
 MODULE__GDBM_TRUE
+MODULE__DBM_FALSE
+MODULE__DBM_TRUE
 MODULE__SHA3_FALSE
 MODULE__SHA3_TRUE
 MODULE__BLAKE2_FALSE
@@ -664,8 +700,14 @@ MODULE__HASHLIB_FALSE
 MODULE__HASHLIB_TRUE
 MODULE__SSL_FALSE
 MODULE__SSL_TRUE
+MODULE__SOCKET_FALSE
+MODULE__SOCKET_TRUE
 MODULE__CRYPT_FALSE
 MODULE__CRYPT_TRUE
+MODULE__CURSES_PANEL_FALSE
+MODULE__CURSES_PANEL_TRUE
+MODULE__CURSES_FALSE
+MODULE__CURSES_TRUE
 MODULE_READLINE_FALSE
 MODULE_READLINE_TRUE
 MODULE__XXTESTFUZZ_FALSE
@@ -680,12 +722,106 @@ MODULE__TESTINTERNALCAPI_FALSE
 MODULE__TESTINTERNALCAPI_TRUE
 MODULE__TESTCAPI_FALSE
 MODULE__TESTCAPI_TRUE
+MODULE__POSIXSUBPROCESS_FALSE
+MODULE__POSIXSUBPROCESS_TRUE
+MODULE__CSV_FALSE
+MODULE__CSV_TRUE
+MODULE_AUDIOOP_FALSE
+MODULE_AUDIOOP_TRUE
 MODULE__XXSUBINTERPRETERS_FALSE
 MODULE__XXSUBINTERPRETERS_TRUE
+MODULE_SYSLOG_FALSE
+MODULE_SYSLOG_TRUE
+MODULE_MMAP_FALSE
+MODULE_MMAP_TRUE
+MODULE_SELECT_FALSE
+MODULE_SELECT_TRUE
 MODULE_SPWD_FALSE
 MODULE_SPWD_TRUE
 MODULE_GRP_FALSE
 MODULE_GRP_TRUE
+MODULE_FCNTL_FALSE
+MODULE_FCNTL_TRUE
+MODULE__TYPING_FALSE
+MODULE__TYPING_TRUE
+MODULE__STATISTICS_FALSE
+MODULE__STATISTICS_TRUE
+MODULE__QUEUE_FALSE
+MODULE__QUEUE_TRUE
+MODULE__ASYNCIO_FALSE
+MODULE__ASYNCIO_TRUE
+MODULE__OPCODE_FALSE
+MODULE__OPCODE_TRUE
+MODULE_UNICODEDATA_FALSE
+MODULE_UNICODEDATA_TRUE
+MODULE__LSPROF_FALSE
+MODULE__LSPROF_TRUE
+MODULE__JSON_FALSE
+MODULE__JSON_TRUE
+MODULE__PICKLE_FALSE
+MODULE__PICKLE_TRUE
+MODULE__HEAPQ_FALSE
+MODULE__HEAPQ_TRUE
+MODULE__BISECT_FALSE
+MODULE__BISECT_TRUE
+MODULE__RANDOM_FALSE
+MODULE__RANDOM_TRUE
+MODULE__ZONEINFO_FALSE
+MODULE__ZONEINFO_TRUE
+MODULE__DATETIME_FALSE
+MODULE__DATETIME_TRUE
+MODULE_CMATH_FALSE
+MODULE_CMATH_TRUE
+MODULE_MATH_FALSE
+MODULE_MATH_TRUE
+MODULE__CONTEXTVARS_FALSE
+MODULE__CONTEXTVARS_TRUE
+MODULE_ARRAY_FALSE
+MODULE_ARRAY_TRUE
+MODULE__STRUCT_FALSE
+MODULE__STRUCT_TRUE
+MODULE_TIME_FALSE
+MODULE_TIME_TRUE
+MODULE_PWD_FALSE
+MODULE_PWD_TRUE
+MODULE_POSIX_FALSE
+MODULE_POSIX_TRUE
+MODULE_ITERTOOLS_FALSE
+MODULE_ITERTOOLS_TRUE
+MODULE_FAULTHANDLER_FALSE
+MODULE_FAULTHANDLER_TRUE
+MODULE_ERRNO_FALSE
+MODULE_ERRNO_TRUE
+MODULE_ATEXIT_FALSE
+MODULE_ATEXIT_TRUE
+MODULE__WEAKREF_FALSE
+MODULE__WEAKREF_TRUE
+MODULE__TRACEMALLOC_FALSE
+MODULE__TRACEMALLOC_TRUE
+MODULE__THREAD_FALSE
+MODULE__THREAD_TRUE
+MODULE__SYMTABLE_FALSE
+MODULE__SYMTABLE_TRUE
+MODULE__STAT_FALSE
+MODULE__STAT_TRUE
+MODULE__SRE_FALSE
+MODULE__SRE_TRUE
+MODULE__SIGNAL_FALSE
+MODULE__SIGNAL_TRUE
+MODULE__OPERATOR_FALSE
+MODULE__OPERATOR_TRUE
+MODULE__LOCALE_FALSE
+MODULE__LOCALE_TRUE
+MODULE__IO_FALSE
+MODULE__IO_TRUE
+MODULE__FUNCTOOLS_FALSE
+MODULE__FUNCTOOLS_TRUE
+MODULE__CODECS_FALSE
+MODULE__CODECS_TRUE
+MODULE__ABC_FALSE
+MODULE__ABC_TRUE
+MODULE__COLLECTIONS_FALSE
+MODULE__COLLECTIONS_TRUE
 TEST_MODULES
 LIBRARY_DEPS
 STATIC_LIBPYTHON
@@ -19349,9 +19485,568 @@ MODULE_BLOCK=
 # PY_STDLIB_MOD([NAME], [TEST], [CFLAGS], [LDFLAGS])
 
 
+# Define simple, always enabled stdlib extension module
+# PY_STDLIB_MOD_SIMPLE([NAME], [LDFLAGS])
+
+# This is what autoupdate's m4 run will expand.  It fires
+# the warning (with _au_warn_XXX), outputs it into the
+# updated configure.ac (with AC_DIAGNOSE), and then outputs
+# the replacement expansion.
+
+
+# This is an auxiliary macro that is also run when
+# autoupdate runs m4.  It simply calls m4_warning, but
+# we need a wrapper so that each warning is emitted only
+# once.  We break the quoting in m4_warning's argument in
+# order to expand this macro's arguments, not AU_DEFUN's.
+
+
+# Finally, this is the expansion that is picked up by
+# autoconf.  It tells the user to run autoupdate, and
+# then outputs the replacement expansion.  We do not care
+# about autoupdate's warning because that contains
+# information on what to do *after* running autoupdate.
+
+
 # reuses autoconf check values (ac_cv_*):
 # * ac_cv_func and ac_cv_header values are set to "yes" when function or header exists
 # * ac_cv_search values are set to "none required" or "-lsomelib" when function exists
+
+    as_fn_append MODULE_BLOCK "MODULE__COLLECTIONS=1$as_nl"
+   if true; then
+  MODULE__COLLECTIONS_TRUE=
+  MODULE__COLLECTIONS_FALSE='#'
+else
+  MODULE__COLLECTIONS_TRUE='#'
+  MODULE__COLLECTIONS_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__ABC=1$as_nl"
+   if true; then
+  MODULE__ABC_TRUE=
+  MODULE__ABC_FALSE='#'
+else
+  MODULE__ABC_TRUE='#'
+  MODULE__ABC_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__CODECS=1$as_nl"
+   if true; then
+  MODULE__CODECS_TRUE=
+  MODULE__CODECS_FALSE='#'
+else
+  MODULE__CODECS_TRUE='#'
+  MODULE__CODECS_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__FUNCTOOLS=1$as_nl"
+   if true; then
+  MODULE__FUNCTOOLS_TRUE=
+  MODULE__FUNCTOOLS_FALSE='#'
+else
+  MODULE__FUNCTOOLS_TRUE='#'
+  MODULE__FUNCTOOLS_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__IO=1$as_nl"
+   if true; then
+  MODULE__IO_TRUE=
+  MODULE__IO_FALSE='#'
+else
+  MODULE__IO_TRUE='#'
+  MODULE__IO_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__LOCALE=1$as_nl"
+   if true; then
+  MODULE__LOCALE_TRUE=
+  MODULE__LOCALE_FALSE='#'
+else
+  MODULE__LOCALE_TRUE='#'
+  MODULE__LOCALE_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__OPERATOR=1$as_nl"
+   if true; then
+  MODULE__OPERATOR_TRUE=
+  MODULE__OPERATOR_FALSE='#'
+else
+  MODULE__OPERATOR_TRUE='#'
+  MODULE__OPERATOR_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__SIGNAL=1$as_nl"
+   if true; then
+  MODULE__SIGNAL_TRUE=
+  MODULE__SIGNAL_FALSE='#'
+else
+  MODULE__SIGNAL_TRUE='#'
+  MODULE__SIGNAL_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__SRE=1$as_nl"
+   if true; then
+  MODULE__SRE_TRUE=
+  MODULE__SRE_FALSE='#'
+else
+  MODULE__SRE_TRUE='#'
+  MODULE__SRE_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__STAT=1$as_nl"
+   if true; then
+  MODULE__STAT_TRUE=
+  MODULE__STAT_FALSE='#'
+else
+  MODULE__STAT_TRUE='#'
+  MODULE__STAT_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__SYMTABLE=1$as_nl"
+   if true; then
+  MODULE__SYMTABLE_TRUE=
+  MODULE__SYMTABLE_FALSE='#'
+else
+  MODULE__SYMTABLE_TRUE='#'
+  MODULE__SYMTABLE_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__THREAD=1$as_nl"
+   if true; then
+  MODULE__THREAD_TRUE=
+  MODULE__THREAD_FALSE='#'
+else
+  MODULE__THREAD_TRUE='#'
+  MODULE__THREAD_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__TRACEMALLOC=1$as_nl"
+   if true; then
+  MODULE__TRACEMALLOC_TRUE=
+  MODULE__TRACEMALLOC_FALSE='#'
+else
+  MODULE__TRACEMALLOC_TRUE='#'
+  MODULE__TRACEMALLOC_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__WEAKREF=1$as_nl"
+   if true; then
+  MODULE__WEAKREF_TRUE=
+  MODULE__WEAKREF_FALSE='#'
+else
+  MODULE__WEAKREF_TRUE='#'
+  MODULE__WEAKREF_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE_ATEXIT=1$as_nl"
+   if true; then
+  MODULE_ATEXIT_TRUE=
+  MODULE_ATEXIT_FALSE='#'
+else
+  MODULE_ATEXIT_TRUE='#'
+  MODULE_ATEXIT_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE_ERRNO=1$as_nl"
+   if true; then
+  MODULE_ERRNO_TRUE=
+  MODULE_ERRNO_FALSE='#'
+else
+  MODULE_ERRNO_TRUE='#'
+  MODULE_ERRNO_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE_FAULTHANDLER=1$as_nl"
+   if true; then
+  MODULE_FAULTHANDLER_TRUE=
+  MODULE_FAULTHANDLER_FALSE='#'
+else
+  MODULE_FAULTHANDLER_TRUE='#'
+  MODULE_FAULTHANDLER_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE_ITERTOOLS=1$as_nl"
+   if true; then
+  MODULE_ITERTOOLS_TRUE=
+  MODULE_ITERTOOLS_FALSE='#'
+else
+  MODULE_ITERTOOLS_TRUE='#'
+  MODULE_ITERTOOLS_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE_POSIX=1$as_nl"
+   if true; then
+  MODULE_POSIX_TRUE=
+  MODULE_POSIX_FALSE='#'
+else
+  MODULE_POSIX_TRUE='#'
+  MODULE_POSIX_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE_PWD=1$as_nl"
+   if true; then
+  MODULE_PWD_TRUE=
+  MODULE_PWD_FALSE='#'
+else
+  MODULE_PWD_TRUE='#'
+  MODULE_PWD_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE_TIME=1$as_nl"
+   if true; then
+  MODULE_TIME_TRUE=
+  MODULE_TIME_FALSE='#'
+else
+  MODULE_TIME_TRUE='#'
+  MODULE_TIME_FALSE=
+fi
+
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__STRUCT=1$as_nl"
+   if true; then
+  MODULE__STRUCT_TRUE=
+  MODULE__STRUCT_FALSE='#'
+else
+  MODULE__STRUCT_TRUE='#'
+  MODULE__STRUCT_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE_ARRAY=1$as_nl"
+   if true; then
+  MODULE_ARRAY_TRUE=
+  MODULE_ARRAY_FALSE='#'
+else
+  MODULE_ARRAY_TRUE='#'
+  MODULE_ARRAY_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__CONTEXTVARS=1$as_nl"
+   if true; then
+  MODULE__CONTEXTVARS_TRUE=
+  MODULE__CONTEXTVARS_FALSE='#'
+else
+  MODULE__CONTEXTVARS_TRUE='#'
+  MODULE__CONTEXTVARS_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE_MATH=1$as_nl"
+   if true; then
+  MODULE_MATH_TRUE=
+  MODULE_MATH_FALSE='#'
+else
+  MODULE_MATH_TRUE='#'
+  MODULE_MATH_FALSE=
+fi
+
+
+    as_fn_append MODULE_BLOCK "MODULE_MATH_LDFLAGS=-lm$as_nl"
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE_CMATH=1$as_nl"
+   if true; then
+  MODULE_CMATH_TRUE=
+  MODULE_CMATH_FALSE='#'
+else
+  MODULE_CMATH_TRUE='#'
+  MODULE_CMATH_FALSE=
+fi
+
+
+    as_fn_append MODULE_BLOCK "MODULE_CMATH_LDFLAGS=-lm$as_nl"
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE_TIME=1$as_nl"
+   if true; then
+  MODULE_TIME_TRUE=
+  MODULE_TIME_FALSE='#'
+else
+  MODULE_TIME_TRUE='#'
+  MODULE_TIME_FALSE=
+fi
+
+
+    as_fn_append MODULE_BLOCK "MODULE_TIME_LDFLAGS=$TIMEMODULE_LIB$as_nl"
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__DATETIME=1$as_nl"
+   if true; then
+  MODULE__DATETIME_TRUE=
+  MODULE__DATETIME_FALSE='#'
+else
+  MODULE__DATETIME_TRUE='#'
+  MODULE__DATETIME_FALSE=
+fi
+
+
+    as_fn_append MODULE_BLOCK "MODULE__DATETIME_LDFLAGS=$TIMEMODULE_LIB$as_nl"
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__ZONEINFO=1$as_nl"
+   if true; then
+  MODULE__ZONEINFO_TRUE=
+  MODULE__ZONEINFO_FALSE='#'
+else
+  MODULE__ZONEINFO_TRUE='#'
+  MODULE__ZONEINFO_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__RANDOM=1$as_nl"
+   if true; then
+  MODULE__RANDOM_TRUE=
+  MODULE__RANDOM_FALSE='#'
+else
+  MODULE__RANDOM_TRUE='#'
+  MODULE__RANDOM_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__BISECT=1$as_nl"
+   if true; then
+  MODULE__BISECT_TRUE=
+  MODULE__BISECT_FALSE='#'
+else
+  MODULE__BISECT_TRUE='#'
+  MODULE__BISECT_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__HEAPQ=1$as_nl"
+   if true; then
+  MODULE__HEAPQ_TRUE=
+  MODULE__HEAPQ_FALSE='#'
+else
+  MODULE__HEAPQ_TRUE='#'
+  MODULE__HEAPQ_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__PICKLE=1$as_nl"
+   if true; then
+  MODULE__PICKLE_TRUE=
+  MODULE__PICKLE_FALSE='#'
+else
+  MODULE__PICKLE_TRUE='#'
+  MODULE__PICKLE_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__JSON=1$as_nl"
+   if true; then
+  MODULE__JSON_TRUE=
+  MODULE__JSON_FALSE='#'
+else
+  MODULE__JSON_TRUE='#'
+  MODULE__JSON_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__LSPROF=1$as_nl"
+   if true; then
+  MODULE__LSPROF_TRUE=
+  MODULE__LSPROF_FALSE='#'
+else
+  MODULE__LSPROF_TRUE='#'
+  MODULE__LSPROF_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE_UNICODEDATA=1$as_nl"
+   if true; then
+  MODULE_UNICODEDATA_TRUE=
+  MODULE_UNICODEDATA_FALSE='#'
+else
+  MODULE_UNICODEDATA_TRUE='#'
+  MODULE_UNICODEDATA_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__OPCODE=1$as_nl"
+   if true; then
+  MODULE__OPCODE_TRUE=
+  MODULE__OPCODE_FALSE='#'
+else
+  MODULE__OPCODE_TRUE='#'
+  MODULE__OPCODE_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__ASYNCIO=1$as_nl"
+   if true; then
+  MODULE__ASYNCIO_TRUE=
+  MODULE__ASYNCIO_FALSE='#'
+else
+  MODULE__ASYNCIO_TRUE='#'
+  MODULE__ASYNCIO_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__ABC=1$as_nl"
+   if true; then
+  MODULE__ABC_TRUE=
+  MODULE__ABC_FALSE='#'
+else
+  MODULE__ABC_TRUE='#'
+  MODULE__ABC_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__QUEUE=1$as_nl"
+   if true; then
+  MODULE__QUEUE_TRUE=
+  MODULE__QUEUE_FALSE='#'
+else
+  MODULE__QUEUE_TRUE='#'
+  MODULE__QUEUE_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__STATISTICS=1$as_nl"
+   if true; then
+  MODULE__STATISTICS_TRUE=
+  MODULE__STATISTICS_FALSE='#'
+else
+  MODULE__STATISTICS_TRUE='#'
+  MODULE__STATISTICS_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__TYPING=1$as_nl"
+   if true; then
+  MODULE__TYPING_TRUE=
+  MODULE__TYPING_FALSE='#'
+else
+  MODULE__TYPING_TRUE='#'
+  MODULE__TYPING_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE_FCNTL=1$as_nl"
+   if true; then
+  MODULE_FCNTL_TRUE=
+  MODULE_FCNTL_FALSE='#'
+else
+  MODULE_FCNTL_TRUE='#'
+  MODULE_FCNTL_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE_PWD=1$as_nl"
+   if true; then
+  MODULE_PWD_TRUE=
+  MODULE_PWD_FALSE='#'
+else
+  MODULE_PWD_TRUE='#'
+  MODULE_PWD_FALSE=
+fi
+
+
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module grp" >&5
@@ -19438,6 +20133,42 @@ fi
 fi
 
 
+    as_fn_append MODULE_BLOCK "MODULE_SELECT=1$as_nl"
+   if true; then
+  MODULE_SELECT_TRUE=
+  MODULE_SELECT_FALSE='#'
+else
+  MODULE_SELECT_TRUE='#'
+  MODULE_SELECT_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE_MMAP=1$as_nl"
+   if true; then
+  MODULE_MMAP_TRUE=
+  MODULE_MMAP_FALSE='#'
+else
+  MODULE_MMAP_TRUE='#'
+  MODULE_MMAP_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE_SYSLOG=1$as_nl"
+   if true; then
+  MODULE_SYSLOG_TRUE=
+  MODULE_SYSLOG_FALSE='#'
+else
+  MODULE_SYSLOG_TRUE='#'
+  MODULE_SYSLOG_FALSE=
+fi
+
+
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _xxsubinterpreters" >&5
 $as_echo_n "checking for stdlib extension module _xxsubinterpreters... " >&6; }
           if test "$with_experimental_isolated_subinterpreters" = yes; then :
@@ -19478,6 +20209,42 @@ fi
 
 
 fi
+
+
+    as_fn_append MODULE_BLOCK "MODULE_AUDIOOP=1$as_nl"
+   if true; then
+  MODULE_AUDIOOP_TRUE=
+  MODULE_AUDIOOP_FALSE='#'
+else
+  MODULE_AUDIOOP_TRUE='#'
+  MODULE_AUDIOOP_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__CSV=1$as_nl"
+   if true; then
+  MODULE__CSV_TRUE=
+  MODULE__CSV_FALSE='#'
+else
+  MODULE__CSV_TRUE='#'
+  MODULE__CSV_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__POSIXSUBPROCESS=1$as_nl"
+   if true; then
+  MODULE__POSIXSUBPROCESS_TRUE=
+  MODULE__POSIXSUBPROCESS_FALSE='#'
+else
+  MODULE__POSIXSUBPROCESS_TRUE='#'
+  MODULE__POSIXSUBPROCESS_FALSE=
+fi
+
+
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testcapi" >&5
@@ -19773,6 +20540,91 @@ fi
 
 fi
 
+# TODO: detect curses
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _curses" >&5
+$as_echo_n "checking for stdlib extension module _curses... " >&6; }
+          if true; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+    as_fn_append MODULE_BLOCK "MODULE__CURSES=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__CURSES_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__CURSES_LDFLAGS=-lncurses -lncursesw -ltermcap$as_nl"
+         if true; then
+  MODULE__CURSES_TRUE=
+  MODULE__CURSES_FALSE='#'
+else
+  MODULE__CURSES_TRUE='#'
+  MODULE__CURSES_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *_curses*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+     ;;
+esac
+    as_fn_append MODULE_BLOCK "MODULE__CURSES=0$as_nl"
+             if false; then
+  MODULE__CURSES_TRUE=
+  MODULE__CURSES_FALSE='#'
+else
+  MODULE__CURSES_TRUE='#'
+  MODULE__CURSES_FALSE=
+fi
+
+
+fi
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _curses_panel" >&5
+$as_echo_n "checking for stdlib extension module _curses_panel... " >&6; }
+          if true; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+    as_fn_append MODULE_BLOCK "MODULE__CURSES_PANEL=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__CURSES_PANEL_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__CURSES_PANEL_LDFLAGS=-lpanel -lncurses$as_nl"
+         if true; then
+  MODULE__CURSES_PANEL_TRUE=
+  MODULE__CURSES_PANEL_FALSE='#'
+else
+  MODULE__CURSES_PANEL_TRUE='#'
+  MODULE__CURSES_PANEL_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *_curses_panel*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+     ;;
+esac
+    as_fn_append MODULE_BLOCK "MODULE__CURSES_PANEL=0$as_nl"
+             if false; then
+  MODULE__CURSES_PANEL_TRUE=
+  MODULE__CURSES_PANEL_FALSE='#'
+else
+  MODULE__CURSES_PANEL_TRUE='#'
+  MODULE__CURSES_PANEL_FALSE=
+fi
+
+
+fi
+
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _crypt" >&5
 $as_echo_n "checking for stdlib extension module _crypt... " >&6; }
@@ -19815,6 +20667,19 @@ fi
 
 fi
 
+
+    as_fn_append MODULE_BLOCK "MODULE__SOCKET=1$as_nl"
+   if true; then
+  MODULE__SOCKET_TRUE=
+  MODULE__SOCKET_FALSE='#'
+else
+  MODULE__SOCKET_TRUE='#'
+  MODULE__SOCKET_FALSE=
+fi
+
+
+
+# TODO: add OPENSSL_RPATH
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _ssl" >&5
 $as_echo_n "checking for stdlib extension module _ssl... " >&6; }
@@ -20151,6 +21016,49 @@ fi
 
 fi
 
+# TODO: select dbm library
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _dbm" >&5
+$as_echo_n "checking for stdlib extension module _dbm... " >&6; }
+          if true; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+    as_fn_append MODULE_BLOCK "MODULE__DBM=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__DBM_CFLAGS=-DUSE_GDBM_COMPAT$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__DBM_LDFLAGS=-lgdbm_compat$as_nl"
+         if true; then
+  MODULE__DBM_TRUE=
+  MODULE__DBM_FALSE='#'
+else
+  MODULE__DBM_TRUE='#'
+  MODULE__DBM_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *_dbm*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+     ;;
+esac
+    as_fn_append MODULE_BLOCK "MODULE__DBM=0$as_nl"
+             if false; then
+  MODULE__DBM_TRUE=
+  MODULE__DBM_FALSE='#'
+else
+  MODULE__DBM_TRUE='#'
+  MODULE__DBM_FALSE=
+fi
+
+
+fi
+
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _gdbm" >&5
 $as_echo_n "checking for stdlib extension module _gdbm... " >&6; }
@@ -20188,6 +21096,49 @@ esac
 else
   MODULE__GDBM_TRUE='#'
   MODULE__GDBM_FALSE=
+fi
+
+
+fi
+
+# TODO: detect sqlite
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _sqlite3" >&5
+$as_echo_n "checking for stdlib extension module _sqlite3... " >&6; }
+          if true; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+    as_fn_append MODULE_BLOCK "MODULE__SQLITE3=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SQLITE3_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SQLITE3_LDFLAGS=-lsqlite3$as_nl"
+         if true; then
+  MODULE__SQLITE3_TRUE=
+  MODULE__SQLITE3_FALSE='#'
+else
+  MODULE__SQLITE3_TRUE='#'
+  MODULE__SQLITE3_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *_sqlite3*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+     ;;
+esac
+    as_fn_append MODULE_BLOCK "MODULE__SQLITE3=0$as_nl"
+             if false; then
+  MODULE__SQLITE3_TRUE=
+  MODULE__SQLITE3_FALSE='#'
+else
+  MODULE__SQLITE3_TRUE='#'
+  MODULE__SQLITE3_FALSE=
 fi
 
 
@@ -20234,6 +21185,18 @@ fi
 
 
 fi
+
+
+    as_fn_append MODULE_BLOCK "MODULE_RESOURCE=1$as_nl"
+   if true; then
+  MODULE_RESOURCE_TRUE=
+  MODULE_RESOURCE_FALSE='#'
+else
+  MODULE_RESOURCE_TRUE='#'
+  MODULE_RESOURCE_FALSE=
+fi
+
+
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module ossaudiodev" >&5
@@ -20314,6 +21277,49 @@ esac
 else
   MODULE__SCPROXY_TRUE='#'
   MODULE__SCPROXY_FALSE=
+fi
+
+
+fi
+
+# TODO: detect nsl and tirpc
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module nis" >&5
+$as_echo_n "checking for stdlib extension module nis... " >&6; }
+          if true; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+    as_fn_append MODULE_BLOCK "MODULE_NIS=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_NIS_CFLAGS=-I/usr/include/tirpc$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_NIS_LDFLAGS=-lnsl -ltirpc$as_nl"
+         if true; then
+  MODULE_NIS_TRUE=
+  MODULE_NIS_FALSE='#'
+else
+  MODULE_NIS_TRUE='#'
+  MODULE_NIS_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *nis*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+     ;;
+esac
+    as_fn_append MODULE_BLOCK "MODULE_NIS=0$as_nl"
+             if false; then
+  MODULE_NIS_TRUE=
+  MODULE_NIS_FALSE='#'
+else
+  MODULE_NIS_TRUE='#'
+  MODULE_NIS_FALSE=
 fi
 
 
@@ -20487,6 +21493,262 @@ fi
 
 fi
 
+# TODO: handle external libexpat
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module pyexpat" >&5
+$as_echo_n "checking for stdlib extension module pyexpat... " >&6; }
+          if true; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+    as_fn_append MODULE_BLOCK "MODULE_PYEXPAT=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_PYEXPAT_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_PYEXPAT_LDFLAGS=-lm$as_nl"
+         if true; then
+  MODULE_PYEXPAT_TRUE=
+  MODULE_PYEXPAT_FALSE='#'
+else
+  MODULE_PYEXPAT_TRUE='#'
+  MODULE_PYEXPAT_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *pyexpat*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+     ;;
+esac
+    as_fn_append MODULE_BLOCK "MODULE_PYEXPAT=0$as_nl"
+             if false; then
+  MODULE_PYEXPAT_TRUE=
+  MODULE_PYEXPAT_FALSE='#'
+else
+  MODULE_PYEXPAT_TRUE='#'
+  MODULE_PYEXPAT_FALSE=
+fi
+
+
+fi
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _elementtree" >&5
+$as_echo_n "checking for stdlib extension module _elementtree... " >&6; }
+          if true; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+    as_fn_append MODULE_BLOCK "MODULE__ELEMENTTREE=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__ELEMENTTREE_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__ELEMENTTREE_LDFLAGS=$as_nl"
+         if true; then
+  MODULE__ELEMENTTREE_TRUE=
+  MODULE__ELEMENTTREE_FALSE='#'
+else
+  MODULE__ELEMENTTREE_TRUE='#'
+  MODULE__ELEMENTTREE_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *_elementtree*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+     ;;
+esac
+    as_fn_append MODULE_BLOCK "MODULE__ELEMENTTREE=0$as_nl"
+             if false; then
+  MODULE__ELEMENTTREE_TRUE=
+  MODULE__ELEMENTTREE_FALSE='#'
+else
+  MODULE__ELEMENTTREE_TRUE='#'
+  MODULE__ELEMENTTREE_FALSE=
+fi
+
+
+fi
+
+
+    as_fn_append MODULE_BLOCK "MODULE__MULTIBYTECODEC=1$as_nl"
+   if true; then
+  MODULE__MULTIBYTECODEC_TRUE=
+  MODULE__MULTIBYTECODEC_FALSE='#'
+else
+  MODULE__MULTIBYTECODEC_TRUE='#'
+  MODULE__MULTIBYTECODEC_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__CODECS_KR=1$as_nl"
+   if true; then
+  MODULE__CODECS_KR_TRUE=
+  MODULE__CODECS_KR_FALSE='#'
+else
+  MODULE__CODECS_KR_TRUE='#'
+  MODULE__CODECS_KR_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__CODECS_JP=1$as_nl"
+   if true; then
+  MODULE__CODECS_JP_TRUE=
+  MODULE__CODECS_JP_FALSE='#'
+else
+  MODULE__CODECS_JP_TRUE='#'
+  MODULE__CODECS_JP_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__CODECS_CN=1$as_nl"
+   if true; then
+  MODULE__CODECS_CN_TRUE=
+  MODULE__CODECS_CN_FALSE='#'
+else
+  MODULE__CODECS_CN_TRUE='#'
+  MODULE__CODECS_CN_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__CODECS_TW=1$as_nl"
+   if true; then
+  MODULE__CODECS_TW_TRUE=
+  MODULE__CODECS_TW_FALSE='#'
+else
+  MODULE__CODECS_TW_TRUE='#'
+  MODULE__CODECS_TW_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__CODECS_HK=1$as_nl"
+   if true; then
+  MODULE__CODECS_HK_TRUE=
+  MODULE__CODECS_HK_FALSE='#'
+else
+  MODULE__CODECS_HK_TRUE='#'
+  MODULE__CODECS_HK_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__CODECS_ISO2022=1$as_nl"
+   if true; then
+  MODULE__CODECS_ISO2022_TRUE=
+  MODULE__CODECS_ISO2022_FALSE='#'
+else
+  MODULE__CODECS_ISO2022_TRUE='#'
+  MODULE__CODECS_ISO2022_FALSE=
+fi
+
+
+
+# TODO: handle external libmpdec
+# UNIVERSAL: let mpdecimal.h detect settings
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _decimal" >&5
+$as_echo_n "checking for stdlib extension module _decimal... " >&6; }
+          if true; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+    as_fn_append MODULE_BLOCK "MODULE__DECIMAL=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__DECIMAL_CFLAGS=-DUNIVERSAL -I\$(srcdir)/Modules/_decimal/libmpdec$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__DECIMAL_LDFLAGS=-lm$as_nl"
+         if true; then
+  MODULE__DECIMAL_TRUE=
+  MODULE__DECIMAL_FALSE='#'
+else
+  MODULE__DECIMAL_TRUE='#'
+  MODULE__DECIMAL_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *_decimal*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+     ;;
+esac
+    as_fn_append MODULE_BLOCK "MODULE__DECIMAL=0$as_nl"
+             if false; then
+  MODULE__DECIMAL_TRUE=
+  MODULE__DECIMAL_FALSE='#'
+else
+  MODULE__DECIMAL_TRUE='#'
+  MODULE__DECIMAL_FALSE=
+fi
+
+
+fi
+
+# TODO: handle ffi dependency
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _ctypes" >&5
+$as_echo_n "checking for stdlib extension module _ctypes... " >&6; }
+          if true; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+    as_fn_append MODULE_BLOCK "MODULE__CTYPES=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__CTYPES_CFLAGS=-DHAVE_FFI_PREP_CIF_VAR -DHAVE_FFI_PREP_CLOSURE_LOC -DHAVE_FFI_CLOSURE_ALLOC$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__CTYPES_LDFLAGS=-ldl -lffi$as_nl"
+         if true; then
+  MODULE__CTYPES_TRUE=
+  MODULE__CTYPES_FALSE='#'
+else
+  MODULE__CTYPES_TRUE='#'
+  MODULE__CTYPES_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *_ctypes*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+     ;;
+esac
+    as_fn_append MODULE_BLOCK "MODULE__CTYPES=0$as_nl"
+             if false; then
+  MODULE__CTYPES_TRUE=
+  MODULE__CTYPES_FALSE='#'
+else
+  MODULE__CTYPES_TRUE='#'
+  MODULE__CTYPES_FALSE=
+fi
+
+
+fi
+
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _ctypes_test" >&5
 $as_echo_n "checking for stdlib extension module _ctypes_test... " >&6; }
@@ -20530,14 +21792,56 @@ fi
 fi
 
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _posixshmem" >&5
-$as_echo_n "checking for stdlib extension module _posixshmem... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _multiprocessing" >&5
+$as_echo_n "checking for stdlib extension module _multiprocessing... " >&6; }
           if true; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
+    as_fn_append MODULE_BLOCK "MODULE__MULTIPROCESSING=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__MULTIPROCESSING_CFLAGS=-I\$(srcdir)/Modules/_multiprocessing$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__MULTIPROCESSING_LDFLAGS=$ac_cv_search_shm_open$as_nl"
+         if true; then
+  MODULE__MULTIPROCESSING_TRUE=
+  MODULE__MULTIPROCESSING_FALSE='#'
+else
+  MODULE__MULTIPROCESSING_TRUE='#'
+  MODULE__MULTIPROCESSING_FALSE=
+fi
+
+
+else
+
+    case $py_stdlib_not_available in #(
+  *_multiprocessing*) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+$as_echo "n/a" >&6; } ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+     ;;
+esac
+    as_fn_append MODULE_BLOCK "MODULE__MULTIPROCESSING=0$as_nl"
+             if false; then
+  MODULE__MULTIPROCESSING_TRUE=
+  MODULE__MULTIPROCESSING_FALSE='#'
+else
+  MODULE__MULTIPROCESSING_TRUE='#'
+  MODULE__MULTIPROCESSING_FALSE=
+fi
+
+
+fi
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _posixshmem" >&5
+$as_echo_n "checking for stdlib extension module _posixshmem... " >&6; }
+          if test "$ac_cv_func_shm_open" = yes -a "ac_cv_func_shm_unlink" = yes; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
     as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM_CFLAGS=-I\$(srcdir)/Modules/_multiprocessing$as_nl"
     as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM_LDFLAGS=$ac_cv_search_shm_open$as_nl"
          if true; then
   MODULE__POSIXSHMEM_TRUE=
@@ -20654,6 +21958,30 @@ fi
 
 
 fi
+
+
+    as_fn_append MODULE_BLOCK "MODULE_XXLIMITED=1$as_nl"
+   if true; then
+  MODULE_XXLIMITED_TRUE=
+  MODULE_XXLIMITED_FALSE='#'
+else
+  MODULE_XXLIMITED_TRUE='#'
+  MODULE_XXLIMITED_FALSE=
+fi
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE_XXLIMITED_35=1$as_nl"
+   if true; then
+  MODULE_XXLIMITED_35_TRUE=
+  MODULE_XXLIMITED_35_FALSE='#'
+else
+  MODULE_XXLIMITED_35_TRUE='#'
+  MODULE_XXLIMITED_35_FALSE=
+fi
+
+
 
 
 
@@ -20775,6 +22103,182 @@ LTLIBOBJS=$ac_ltlibobjs
 
 
 
+if test -z "${MODULE__COLLECTIONS_TRUE}" && test -z "${MODULE__COLLECTIONS_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__COLLECTIONS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__ABC_TRUE}" && test -z "${MODULE__ABC_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__ABC\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__CODECS_TRUE}" && test -z "${MODULE__CODECS_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__CODECS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__FUNCTOOLS_TRUE}" && test -z "${MODULE__FUNCTOOLS_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__FUNCTOOLS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__IO_TRUE}" && test -z "${MODULE__IO_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__IO\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__LOCALE_TRUE}" && test -z "${MODULE__LOCALE_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__LOCALE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__OPERATOR_TRUE}" && test -z "${MODULE__OPERATOR_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__OPERATOR\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__SIGNAL_TRUE}" && test -z "${MODULE__SIGNAL_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__SIGNAL\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__SRE_TRUE}" && test -z "${MODULE__SRE_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__SRE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__STAT_TRUE}" && test -z "${MODULE__STAT_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__STAT\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__SYMTABLE_TRUE}" && test -z "${MODULE__SYMTABLE_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__SYMTABLE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__THREAD_TRUE}" && test -z "${MODULE__THREAD_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__THREAD\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__TRACEMALLOC_TRUE}" && test -z "${MODULE__TRACEMALLOC_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__TRACEMALLOC\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__WEAKREF_TRUE}" && test -z "${MODULE__WEAKREF_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__WEAKREF\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_ATEXIT_TRUE}" && test -z "${MODULE_ATEXIT_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_ATEXIT\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_ERRNO_TRUE}" && test -z "${MODULE_ERRNO_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_ERRNO\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_FAULTHANDLER_TRUE}" && test -z "${MODULE_FAULTHANDLER_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_FAULTHANDLER\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_ITERTOOLS_TRUE}" && test -z "${MODULE_ITERTOOLS_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_ITERTOOLS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_POSIX_TRUE}" && test -z "${MODULE_POSIX_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_POSIX\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_PWD_TRUE}" && test -z "${MODULE_PWD_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_PWD\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_TIME_TRUE}" && test -z "${MODULE_TIME_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_TIME\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__STRUCT_TRUE}" && test -z "${MODULE__STRUCT_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__STRUCT\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_ARRAY_TRUE}" && test -z "${MODULE_ARRAY_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_ARRAY\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__CONTEXTVARS_TRUE}" && test -z "${MODULE__CONTEXTVARS_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__CONTEXTVARS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_MATH_TRUE}" && test -z "${MODULE_MATH_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_MATH\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_CMATH_TRUE}" && test -z "${MODULE_CMATH_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_CMATH\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_TIME_TRUE}" && test -z "${MODULE_TIME_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_TIME\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__DATETIME_TRUE}" && test -z "${MODULE__DATETIME_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__DATETIME\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__ZONEINFO_TRUE}" && test -z "${MODULE__ZONEINFO_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__ZONEINFO\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__RANDOM_TRUE}" && test -z "${MODULE__RANDOM_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__RANDOM\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__BISECT_TRUE}" && test -z "${MODULE__BISECT_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__BISECT\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__HEAPQ_TRUE}" && test -z "${MODULE__HEAPQ_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__HEAPQ\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__PICKLE_TRUE}" && test -z "${MODULE__PICKLE_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__PICKLE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__JSON_TRUE}" && test -z "${MODULE__JSON_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__JSON\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__LSPROF_TRUE}" && test -z "${MODULE__LSPROF_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__LSPROF\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_UNICODEDATA_TRUE}" && test -z "${MODULE_UNICODEDATA_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_UNICODEDATA\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__OPCODE_TRUE}" && test -z "${MODULE__OPCODE_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__OPCODE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__ASYNCIO_TRUE}" && test -z "${MODULE__ASYNCIO_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__ASYNCIO\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__ABC_TRUE}" && test -z "${MODULE__ABC_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__ABC\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__QUEUE_TRUE}" && test -z "${MODULE__QUEUE_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__QUEUE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__STATISTICS_TRUE}" && test -z "${MODULE__STATISTICS_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__STATISTICS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__TYPING_TRUE}" && test -z "${MODULE__TYPING_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__TYPING\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_FCNTL_TRUE}" && test -z "${MODULE_FCNTL_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_FCNTL\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_PWD_TRUE}" && test -z "${MODULE_PWD_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_PWD\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${MODULE_GRP_TRUE}" && test -z "${MODULE_GRP_FALSE}"; then
   as_fn_error $? "conditional \"MODULE_GRP\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
@@ -20791,12 +22295,36 @@ if test -z "${MODULE_SPWD_TRUE}" && test -z "${MODULE_SPWD_FALSE}"; then
   as_fn_error $? "conditional \"MODULE_SPWD\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${MODULE_SELECT_TRUE}" && test -z "${MODULE_SELECT_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_SELECT\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_MMAP_TRUE}" && test -z "${MODULE_MMAP_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_MMAP\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_SYSLOG_TRUE}" && test -z "${MODULE_SYSLOG_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_SYSLOG\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${MODULE__XXSUBINTERPRETERS_TRUE}" && test -z "${MODULE__XXSUBINTERPRETERS_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__XXSUBINTERPRETERS\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__XXSUBINTERPRETERS_TRUE}" && test -z "${MODULE__XXSUBINTERPRETERS_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__XXSUBINTERPRETERS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_AUDIOOP_TRUE}" && test -z "${MODULE_AUDIOOP_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_AUDIOOP\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__CSV_TRUE}" && test -z "${MODULE__CSV_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__CSV\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__POSIXSUBPROCESS_TRUE}" && test -z "${MODULE__POSIXSUBPROCESS_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__POSIXSUBPROCESS\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__TESTCAPI_TRUE}" && test -z "${MODULE__TESTCAPI_FALSE}"; then
@@ -20855,12 +22383,32 @@ if test -z "${MODULE_READLINE_TRUE}" && test -z "${MODULE_READLINE_FALSE}"; then
   as_fn_error $? "conditional \"MODULE_READLINE\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${MODULE__CURSES_TRUE}" && test -z "${MODULE__CURSES_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__CURSES\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__CURSES_TRUE}" && test -z "${MODULE__CURSES_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__CURSES\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__CURSES_PANEL_TRUE}" && test -z "${MODULE__CURSES_PANEL_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__CURSES_PANEL\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__CURSES_PANEL_TRUE}" && test -z "${MODULE__CURSES_PANEL_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__CURSES_PANEL\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${MODULE__CRYPT_TRUE}" && test -z "${MODULE__CRYPT_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__CRYPT\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__CRYPT_TRUE}" && test -z "${MODULE__CRYPT_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__CRYPT\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__SOCKET_TRUE}" && test -z "${MODULE__SOCKET_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__SOCKET\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__SSL_TRUE}" && test -z "${MODULE__SSL_FALSE}"; then
@@ -20927,12 +22475,28 @@ if test -z "${MODULE__SHA3_TRUE}" && test -z "${MODULE__SHA3_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__SHA3\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${MODULE__DBM_TRUE}" && test -z "${MODULE__DBM_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__DBM\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__DBM_TRUE}" && test -z "${MODULE__DBM_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__DBM\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${MODULE__GDBM_TRUE}" && test -z "${MODULE__GDBM_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__GDBM\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__GDBM_TRUE}" && test -z "${MODULE__GDBM_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__GDBM\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__SQLITE3_TRUE}" && test -z "${MODULE__SQLITE3_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__SQLITE3\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__SQLITE3_TRUE}" && test -z "${MODULE__SQLITE3_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__SQLITE3\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_TERMIOS_TRUE}" && test -z "${MODULE_TERMIOS_FALSE}"; then
@@ -20941,6 +22505,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_TERMIOS_TRUE}" && test -z "${MODULE_TERMIOS_FALSE}"; then
   as_fn_error $? "conditional \"MODULE_TERMIOS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_RESOURCE_TRUE}" && test -z "${MODULE_RESOURCE_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_RESOURCE\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_OSSAUDIODEV_TRUE}" && test -z "${MODULE_OSSAUDIODEV_FALSE}"; then
@@ -20957,6 +22525,14 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__SCPROXY_TRUE}" && test -z "${MODULE__SCPROXY_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__SCPROXY\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_NIS_TRUE}" && test -z "${MODULE_NIS_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_NIS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_NIS_TRUE}" && test -z "${MODULE_NIS_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_NIS\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_ZLIB_TRUE}" && test -z "${MODULE_ZLIB_FALSE}"; then
@@ -20991,12 +22567,80 @@ if test -z "${MODULE__LZMA_TRUE}" && test -z "${MODULE__LZMA_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__LZMA\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${MODULE_PYEXPAT_TRUE}" && test -z "${MODULE_PYEXPAT_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_PYEXPAT\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_PYEXPAT_TRUE}" && test -z "${MODULE_PYEXPAT_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_PYEXPAT\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__ELEMENTTREE_TRUE}" && test -z "${MODULE__ELEMENTTREE_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__ELEMENTTREE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__ELEMENTTREE_TRUE}" && test -z "${MODULE__ELEMENTTREE_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__ELEMENTTREE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__MULTIBYTECODEC_TRUE}" && test -z "${MODULE__MULTIBYTECODEC_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__MULTIBYTECODEC\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__CODECS_KR_TRUE}" && test -z "${MODULE__CODECS_KR_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__CODECS_KR\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__CODECS_JP_TRUE}" && test -z "${MODULE__CODECS_JP_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__CODECS_JP\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__CODECS_CN_TRUE}" && test -z "${MODULE__CODECS_CN_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__CODECS_CN\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__CODECS_TW_TRUE}" && test -z "${MODULE__CODECS_TW_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__CODECS_TW\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__CODECS_HK_TRUE}" && test -z "${MODULE__CODECS_HK_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__CODECS_HK\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__CODECS_ISO2022_TRUE}" && test -z "${MODULE__CODECS_ISO2022_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__CODECS_ISO2022\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__DECIMAL_TRUE}" && test -z "${MODULE__DECIMAL_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__DECIMAL\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__DECIMAL_TRUE}" && test -z "${MODULE__DECIMAL_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__DECIMAL\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__CTYPES_TRUE}" && test -z "${MODULE__CTYPES_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__CTYPES\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__CTYPES_TRUE}" && test -z "${MODULE__CTYPES_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__CTYPES\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${MODULE__CTYPES_TEST_TRUE}" && test -z "${MODULE__CTYPES_TEST_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__CTYPES_TEST\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__CTYPES_TEST_TRUE}" && test -z "${MODULE__CTYPES_TEST_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__CTYPES_TEST\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__MULTIPROCESSING_TRUE}" && test -z "${MODULE__MULTIPROCESSING_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__MULTIPROCESSING\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__MULTIPROCESSING_TRUE}" && test -z "${MODULE__MULTIPROCESSING_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__MULTIPROCESSING\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__POSIXSHMEM_TRUE}" && test -z "${MODULE__POSIXSHMEM_FALSE}"; then
@@ -21021,6 +22665,14 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__UUID_TRUE}" && test -z "${MODULE__UUID_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__UUID\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_XXLIMITED_TRUE}" && test -z "${MODULE_XXLIMITED_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_XXLIMITED\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_XXLIMITED_35_TRUE}" && test -z "${MODULE_XXLIMITED_35_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_XXLIMITED_35\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 
