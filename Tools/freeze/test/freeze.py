@@ -75,6 +75,16 @@ def ensure_opt(args, name, value):
             args[pos] = f'{opt}={value}'
 
 
+def copy_source_tree(newroot, oldroot):
+    print(f'copying the source tree into {newroot}...')
+    if os.path.exists(newroot):
+        if newroot == SRCDIR:
+            raise Exception('this probably isn\'t what you wanted')
+        shutil.rmtree(newroot)
+    shutil.copytree(oldroot, newroot)
+    _run_quiet([MAKE, 'clean'], newroot)
+
+
 def git_copy_repo(newroot, oldroot):
     if not GIT:
         raise UnsupportedError('git')
@@ -160,7 +170,10 @@ def prepare(script=None, outdir=None):
     # Make a copy of the repo to avoid affecting the current build
     # (e.g. changing PREFIX).
     srcdir = os.path.join(outdir, 'cpython')
-    git_copy_repo(srcdir, SRCDIR)
+    if os.path.exists(os.path.join(SRCDIR, '.git')):
+        git_copy_repo(srcdir, SRCDIR)
+    else:
+        copy_source_tree(srcdir, SRCDIR)
 
     # We use an out-of-tree build (instead of srcdir).
     builddir = os.path.join(outdir, 'python-build')
