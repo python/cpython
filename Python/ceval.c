@@ -1475,6 +1475,13 @@ eval_frame_handle_pending(PyThreadState *tstate)
     STAT_INC(LOAD_##attr_or_method, hit); \
     Py_INCREF(res);
 
+#define TRACE_FUNCTION_EXIT() \
+    if (cframe.use_tracing) { \
+        if (trace_function_exit(tstate, frame, retval)) { \
+            retval = NULL; \
+            goto exit_unwind; \
+        } \
+    }
 
 static int
 trace_function_entry(PyThreadState *tstate, InterpreterFrame *frame)
@@ -2261,6 +2268,16 @@ check_eval_breaker:
             assert(EMPTY());
             frame->f_state = FRAME_RETURNED;
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            TRACE_FUNCTION_EXIT()
+            if (PyDTrace_FUNCTION_RETURN_ENABLED())
+                dtrace_function_return(frame);
+            _Py_LeaveRecursiveCall(tstate);
+            if (frame->depth) {
+                frame = cframe.current_frame = pop_frame(tstate, frame);
+                _PyFrame_StackPush(frame, retval);
+                retval = NULL;
+                goto resume_frame;
+            }
             goto exit_return;
         }
 
@@ -2450,6 +2467,10 @@ check_eval_breaker:
             frame->f_lasti -= 1;
             frame->f_state = FRAME_SUSPENDED;
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            TRACE_FUNCTION_EXIT()
+            if (PyDTrace_FUNCTION_RETURN_ENABLED())
+                dtrace_function_return(frame);
+            _Py_LeaveRecursiveCall(tstate);
             goto exit_return;
         }
 
@@ -2468,6 +2489,10 @@ check_eval_breaker:
             }
             frame->f_state = FRAME_SUSPENDED;
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            TRACE_FUNCTION_EXIT()
+            if (PyDTrace_FUNCTION_RETURN_ENABLED())
+                dtrace_function_return(frame);
+            _Py_LeaveRecursiveCall(tstate);
             goto exit_return;
         }
 
@@ -5049,21 +5074,6 @@ exit_unwind:
 
 exit_return:
     assert(retval != NULL);
-    if (cframe.use_tracing) {
-        if (trace_function_exit(tstate, frame, retval)) {
-            retval = NULL;
-            goto exit_unwind;
-        }
-    }
-    if (PyDTrace_FUNCTION_RETURN_ENABLED())
-        dtrace_function_return(frame);
-    _Py_LeaveRecursiveCall(tstate);
-    if (frame->depth) {
-        frame = cframe.current_frame = pop_frame(tstate, frame);
-        _PyFrame_StackPush(frame, retval);
-        retval = NULL;
-        goto resume_frame;
-    }
     /* Restore previous cframe. */
     tstate->cframe = cframe.previous;
     tstate->cframe->use_tracing = cframe.use_tracing;
