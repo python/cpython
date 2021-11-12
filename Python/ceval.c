@@ -1301,7 +1301,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
     }
 
 #define CHECK_EVAL_BREAKER() \
-    if (_Py_atomic_load_relaxed(eval_breaker)) { \
+    if (_Py_atomic_load_relaxed((_Py_atomic_int * const)cframe.eval_breaker)) { \
         goto check_eval_breaker; \
     }
 
@@ -1514,6 +1514,24 @@ trace_function_entry(PyThreadState *tstate, InterpreterFrame *frame)
     return 0;
 }
 
+static int
+trace_function_exit(PyThreadState *tstate, InterpreterFrame *frame, PyObject *retval)
+{
+    if (tstate->c_tracefunc) {
+        if (call_trace_protected(tstate->c_tracefunc, tstate->c_traceobj,
+                                    tstate, frame, PyTrace_RETURN, retval)) {
+            return -1;
+        }
+    }
+    if (tstate->c_profilefunc) {
+        if (call_trace_protected(tstate->c_profilefunc, tstate->c_profileobj,
+                                    tstate, frame, PyTrace_RETURN, retval)) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
 static PyObject *
 make_coro(PyThreadState *tstate, PyFrameConstructor *con,
           PyObject *locals,
@@ -1545,7 +1563,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
     int opcode;        /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
     PyObject *retval = NULL;            /* Return value */
-    _Py_atomic_int * const eval_breaker = &tstate->interp->ceval.eval_breaker;
 
     CFrame cframe;
 
@@ -1555,6 +1572,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
      */
     CFrame *prev_cframe = tstate->cframe;
     cframe.use_tracing = prev_cframe->use_tracing;
+    cframe.eval_breaker = prev_cframe->eval_breaker;
     cframe.previous = prev_cframe;
     tstate->cframe = &cframe;
 
@@ -1566,7 +1584,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
 start_frame:
     if (_Py_EnterRecursiveCall(tstate, "")) {
         tstate->recursion_depth++;
-        goto exit_eval_frame;
+        goto exit_unwind_notrace;
     }
 
     assert(tstate->cframe == &cframe);
@@ -1574,7 +1592,7 @@ start_frame:
 
     if (cframe.use_tracing) {
         if (trace_function_entry(tstate, frame)) {
-            goto exit_eval_frame;
+            goto exit_unwind_notrace;
         }
     }
 
@@ -1588,7 +1606,7 @@ start_frame:
         PyCodeObject_IncrementWarmup(co);
         if (PyCodeObject_IsWarmedUp(co)) {
             if (_Py_Quicken(co)) {
-                goto exit_eval_frame;
+                goto exit_unwind_notrace;
             }
         }
     }
@@ -1628,7 +1646,7 @@ resume_frame:
     {
         int r = _PyDict_ContainsId(GLOBALS(), &PyId___ltrace__);
         if (r < 0) {
-            goto exit_eval_frame;
+            goto exit_unwind_notrace;
         }
         lltrace = r;
     }
@@ -1660,7 +1678,7 @@ check_eval_breaker:
            async I/O handler); see Py_AddPendingCall() and
            Py_MakePendingCalls() above. */
 
-        if (_Py_atomic_load_relaxed(eval_breaker)) {
+        if (_Py_atomic_load_relaxed((_Py_atomic_int * const)cframe.eval_breaker)) {
             opcode = _Py_OPCODE(*next_instr);
             if (opcode != BEFORE_ASYNC_WITH &&
                 opcode != YIELD_FROM) {
@@ -2234,7 +2252,7 @@ check_eval_breaker:
             assert(EMPTY());
             frame->f_state = FRAME_RETURNED;
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            goto exiting;
+            goto exit_return;
         }
 
         TARGET(GET_AITER) {
@@ -2422,7 +2440,7 @@ check_eval_breaker:
             frame->f_lasti -= 1;
             frame->f_state = FRAME_SUSPENDED;
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            goto exiting;
+            goto exit_return;
         }
 
         TARGET(YIELD_VALUE) {
@@ -2439,7 +2457,7 @@ check_eval_breaker:
             }
             frame->f_state = FRAME_SUSPENDED;
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            goto exiting;
+            goto exit_return;
         }
 
         TARGET(GEN_START) {
@@ -4956,7 +4974,7 @@ exception_unwind:
             assert(STACK_LEVEL() == 0);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             frame->f_state = FRAME_RAISED;
-            goto exiting;
+            goto exit_unwind;
         }
 
         assert(STACK_LEVEL() >= level);
@@ -4999,42 +5017,50 @@ exception_unwind:
         DISPATCH_GOTO();
     }
 
-exiting:
+exit_unwind:
+    assert(retval == NULL);
     if (cframe.use_tracing) {
-        if (tstate->c_tracefunc) {
-            if (call_trace_protected(tstate->c_tracefunc, tstate->c_traceobj,
-                                     tstate, frame, PyTrace_RETURN, retval)) {
-                Py_CLEAR(retval);
-            }
-        }
-        if (tstate->c_profilefunc) {
-            if (call_trace_protected(tstate->c_profilefunc, tstate->c_profileobj,
-                                     tstate, frame, PyTrace_RETURN, retval)) {
-                Py_CLEAR(retval);
-            }
-        }
+        trace_function_exit(tstate, frame, NULL);
+    }
+    if (PyDTrace_FUNCTION_RETURN_ENABLED())
+        dtrace_function_return(frame);
+
+exit_unwind_notrace:
+    _Py_LeaveRecursiveCall(tstate);
+    if (frame->depth) {
+        cframe.current_frame = frame->previous;
+        _PyEvalFrameClearAndPop(tstate, frame);
+        frame = cframe.current_frame;
+        throwflag = 1;
+        goto resume_frame;
     }
 
-    /* pop frame */
-exit_eval_frame:
+    goto exit_eval_frame;
+
+
+exit_return:
+    assert(retval != NULL);
+    if (cframe.use_tracing) {
+        if (trace_function_exit(tstate, frame, retval)) {
+            retval = NULL;
+            throwflag = 1;
+        }
+    }
     if (PyDTrace_FUNCTION_RETURN_ENABLED())
         dtrace_function_return(frame);
     _Py_LeaveRecursiveCall(tstate);
-
     if (frame->depth) {
         cframe.current_frame = frame->previous;
         _PyFrame_StackPush(cframe.current_frame, retval);
         if (_PyEvalFrameClearAndPop(tstate, frame)) {
-            retval = NULL;
-        }
-        frame = cframe.current_frame;
-        if (retval == NULL) {
-            assert(_PyErr_Occurred(tstate));
             throwflag = 1;
         }
+        frame = cframe.current_frame;
         retval = NULL;
         goto resume_frame;
     }
+
+exit_eval_frame:
 
     /* Restore previous cframe. */
     tstate->cframe = cframe.previous;

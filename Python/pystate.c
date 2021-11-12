@@ -642,6 +642,7 @@ new_threadstate(PyInterpreterState *interp, int init)
     tstate->tracing = 0;
     tstate->root_cframe.use_tracing = 0;
     tstate->root_cframe.current_frame = NULL;
+    tstate->root_cframe.eval_breaker = &interp->ceval.eval_breaker;
     tstate->cframe = &tstate->root_cframe;
     tstate->gilstate_counter = 0;
     tstate->async_exc = NULL;
