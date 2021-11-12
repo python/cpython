@@ -332,6 +332,8 @@ CPython bytecode changes
 * Added :opcode:`COPY`, which pushes the *i*-th item to the top of the stack.
   The item is not removed from its original location.
 
+* :opcode:`JUMP_IF_NOT_EXC_MATCH` no longer pops the active exception.
+
 
 Deprecated
 ==========
