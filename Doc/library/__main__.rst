@@ -117,7 +117,7 @@ Idiomatic Usage
 
 Some modules contain code that is intended for script use only, like parsing
 command-line arguments or fetching data from standard input.  If a module
-like this is imported from a different module, for example to unit test
+like this was imported from a different module, for example to unit test
 it, the script code would unintentionally execute as well.
 
 This is where using the ``if __name__ == '__main__'`` code block comes in
