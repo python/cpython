@@ -7,6 +7,7 @@ import importlib.util
 import logging
 import os
 import re
+import shlex
 import sys
 import sysconfig
 import warnings
@@ -2016,117 +2017,27 @@ class PyBuildExt(build_ext):
 
     def detect_decimal(self):
         # Stefan Krah's _decimal module
-        extra_compile_args = []
-        undef_macros = []
-        if '--with-system-libmpdec' in sysconfig.get_config_var("CONFIG_ARGS"):
-            include_dirs = []
-            libraries = ['mpdec']
-            sources = ['_decimal/_decimal.c']
-            depends = ['_decimal/docstrings.h']
-        else:
-            include_dirs = [os.path.abspath(os.path.join(self.srcdir,
-                                                         'Modules',
-                                                         '_decimal',
-                                                         'libmpdec'))]
-            libraries = ['m']
-            sources = [
-              '_decimal/_decimal.c',
-              '_decimal/libmpdec/basearith.c',
-              '_decimal/libmpdec/constants.c',
-              '_decimal/libmpdec/context.c',
-              '_decimal/libmpdec/convolute.c',
-              '_decimal/libmpdec/crt.c',
-              '_decimal/libmpdec/difradix2.c',
-              '_decimal/libmpdec/fnt.c',
-              '_decimal/libmpdec/fourstep.c',
-              '_decimal/libmpdec/io.c',
-              '_decimal/libmpdec/mpalloc.c',
-              '_decimal/libmpdec/mpdecimal.c',
-              '_decimal/libmpdec/numbertheory.c',
-              '_decimal/libmpdec/sixstep.c',
-              '_decimal/libmpdec/transpose.c',
-              ]
-            depends = [
-              '_decimal/docstrings.h',
-              '_decimal/libmpdec/basearith.h',
-              '_decimal/libmpdec/bits.h',
-              '_decimal/libmpdec/constants.h',
-              '_decimal/libmpdec/convolute.h',
-              '_decimal/libmpdec/crt.h',
-              '_decimal/libmpdec/difradix2.h',
-              '_decimal/libmpdec/fnt.h',
-              '_decimal/libmpdec/fourstep.h',
-              '_decimal/libmpdec/io.h',
-              '_decimal/libmpdec/mpalloc.h',
-              '_decimal/libmpdec/mpdecimal.h',
-              '_decimal/libmpdec/numbertheory.h',
-              '_decimal/libmpdec/sixstep.h',
-              '_decimal/libmpdec/transpose.h',
-              '_decimal/libmpdec/typearith.h',
-              '_decimal/libmpdec/umodarith.h',
-              ]
-
-        config = {
-          'x64':     [('CONFIG_64','1'), ('ASM','1')],
-          'uint128': [('CONFIG_64','1'), ('ANSI','1'), ('HAVE_UINT128_T','1')],
-          'ansi64':  [('CONFIG_64','1'), ('ANSI','1')],
-          'ppro':    [('CONFIG_32','1'), ('PPRO','1'), ('ASM','1')],
-          'ansi32':  [('CONFIG_32','1'), ('ANSI','1')],
-          'ansi-legacy': [('CONFIG_32','1'), ('ANSI','1'),
-                          ('LEGACY_COMPILER','1')],
-          'universal':   [('UNIVERSAL','1')]
-        }
-
-        cc = sysconfig.get_config_var('CC')
-        sizeof_size_t = sysconfig.get_config_var('SIZEOF_SIZE_T')
-        machine = os.environ.get('PYTHON_DECIMAL_WITH_MACHINE')
-
-        if machine:
-            # Override automatic configuration to facilitate testing.
-            define_macros = config[machine]
-        elif MACOS:
-            # Universal here means: build with the same options Python
-            # was built with.
-            define_macros = config['universal']
-        elif sizeof_size_t == 8:
-            if sysconfig.get_config_var('HAVE_GCC_ASM_FOR_X64'):
-                define_macros = config['x64']
-            elif sysconfig.get_config_var('HAVE_GCC_UINT128_T'):
-                define_macros = config['uint128']
-            else:
-                define_macros = config['ansi64']
-        elif sizeof_size_t == 4:
-            ppro = sysconfig.get_config_var('HAVE_GCC_ASM_FOR_X87')
-            if ppro and ('gcc' in cc or 'clang' in cc) and \
-               not 'sunos' in HOST_PLATFORM:
-                # solaris: problems with register allocation.
-                # icc >= 11.0 works as well.
-                define_macros = config['ppro']
-                extra_compile_args.append('-Wno-unknown-pragmas')
-            else:
-                define_macros = config['ansi32']
-        else:
-            raise DistutilsError("_decimal: unsupported architecture")
-
-        # Workarounds for toolchain bugs:
-        if sysconfig.get_config_var('HAVE_IPA_PURE_CONST_BUG'):
-            # Some versions of gcc miscompile inline asm:
-            # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
-            # https://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
-            extra_compile_args.append('-fno-ipa-pure-const')
-        if sysconfig.get_config_var('HAVE_GLIBC_MEMMOVE_BUG'):
-            # _FORTIFY_SOURCE wrappers for memmove and bcopy are incorrect:
-            # https://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
-            undef_macros.append('_FORTIFY_SOURCE')
+        sources = ['_decimal/_decimal.c']
+        depends = ['_decimal/docstrings.h']
+        define_macros = []
+                
+        cflags = sysconfig.get_config_var("DECIMAL_CFLAGS")
+        extra_compile_args = shlex.split(cflags) if cflags else None
+        # ldflags includes either system libmpdec or full path to
+        # our static libmpdec.a.
+        ldflags = sysconfig.get_config_var("DECIMAL_LDFLAGS")
+        extra_link_args = shlex.split(ldflags) if ldflags else None
+        
+        libmpdec_a = sysconfig.get_config_var("LIBMPDEC_A")
+        if libmpdec_a:
+            depends.append(libmpdec_a)
 
         # Uncomment for extra functionality:
         #define_macros.append(('EXTRA_FUNCTIONALITY', 1))
         self.add(Extension('_decimal',
-                           include_dirs=include_dirs,
-                           libraries=libraries,
                            define_macros=define_macros,
-                           undef_macros=undef_macros,
                            extra_compile_args=extra_compile_args,
+                           extra_link_args=extra_link_args,
                            sources=sources,
                            depends=depends))
 
