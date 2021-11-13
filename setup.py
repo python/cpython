@@ -364,6 +364,57 @@ def find_module_file(module, dirlist):
     return os.path.join(dirs[0], module)
 
 
+def parse_cflags(flags):
+    """Parse a string with compiler flags (-I, -D, -U, extra)
+    
+    Distutils appends extra args to the compiler arguments. Some flags like
+    -I must appear earlier. Otherwise the pre-processor picks up files
+    from system inclue directories.
+    """
+    include_dirs = []
+    define_macros = []
+    undef_macros = []
+    extra_compile_args = []
+    if flags is not None:
+        # shlex.split(None) reads from stdin
+        for token in shlex.split(flags):
+            switch = token[0:2]
+            value = token[2:]
+            if switch == '-I':
+                include_dirs.append(value)
+            elif switch == '-D':
+                key, _, val = value.partition("=")
+                if not val:
+                    val = None
+                define_macros.append((key, val))
+            elif switch == '-U':
+                undef_macros.append(value)
+            else:
+                extra_compile_args.append(token)
+
+    return include_dirs, define_macros, undef_macros, extra_compile_args
+
+
+def parse_ldflags(flags):
+    """Parse a string with linker flags (-L, -l, extra)"""
+    library_dirs = []
+    libraries = []
+    extra_link_args = []
+    if flags is not None:
+        # shlex.split(None) reads from stdin
+        for token in shlex.split(flags):
+            switch = token[0:2]
+            value = token[2:]
+            if switch == '-L':
+                library_dirs.append(value)
+            elif switch == '-l':
+                libraries.append(value)
+            else:
+                extra_link_args.append(token)
+
+    return library_dirs, libraries, extra_link_args
+
+
 class PyBuildExt(build_ext):
 
     def __init__(self, dist):
@@ -1469,12 +1520,12 @@ class PyBuildExt(build_ext):
         #
         # More information on Expat can be found at www.libexpat.org.
         #
-        cflags = sysconfig.get_config_var("EXPAT_CFLAGS")
-        extra_compile_args = shlex.split(cflags) if cflags else None
+        cflags = parse_cflags(sysconfig.get_config_var("EXPAT_CFLAGS"))
+        include_dirs, define_macros, undef_macros, extra_compile_args = cflags
         # ldflags includes either system libexpat or full path to
         # our static libexpat.a.
-        ldflags = sysconfig.get_config_var("EXPAT_LDFLAGS")
-        extra_link_args = shlex.split(ldflags) if ldflags else None
+        ldflags = parse_ldflags(sysconfig.get_config_var("EXPAT_LDFLAGS"))
+        library_dirs, libraries, extra_link_args = ldflags
 
         expat_depends = []
         libexpat_a = sysconfig.get_config_var("LIBEXPAT_A")
@@ -1482,7 +1533,12 @@ class PyBuildExt(build_ext):
             expat_depends.append(libexpat_a)
 
         self.add(Extension('pyexpat',
+                           include_dirs=include_dirs,
+                           define_macros=define_macros,
+                           undef_macros=undef_macros,
                            extra_compile_args=extra_compile_args,
+                           library_dirs=library_dirs,
+                           libraries=libraries,
                            extra_link_args=extra_link_args,
                            sources=['pyexpat.c'],
                            depends=expat_depends))
@@ -1490,9 +1546,13 @@ class PyBuildExt(build_ext):
         # Fredrik Lundh's cElementTree module.  Note that this also
         # uses expat (via the CAPI hook in pyexpat).
         self.add(Extension('_elementtree',
-                            extra_compile_args=extra_compile_args,
-                            sources=['_elementtree.c'],
-                            depends=['pyexpat.c', *expat_depends]))
+                           include_dirs=include_dirs,
+                           define_macros=define_macros,
+                           undef_macros=undef_macros,
+                           extra_compile_args=extra_compile_args,
+                           # no EXPAT_LDFLAGS
+                           sources=['_elementtree.c'],
+                           depends=['pyexpat.c', *expat_depends]))
 
     def detect_multibytecodecs(self):
         # Hye-Shik Chang's CJKCodecs modules.
@@ -1990,15 +2050,14 @@ class PyBuildExt(build_ext):
         # Stefan Krah's _decimal module
         sources = ['_decimal/_decimal.c']
         depends = ['_decimal/docstrings.h']
-        define_macros = []
-                
-        cflags = sysconfig.get_config_var("DECIMAL_CFLAGS")
-        extra_compile_args = shlex.split(cflags) if cflags else None
+
+        cflags = parse_cflags(sysconfig.get_config_var("DECIMAL_CFLAGS"))
+        include_dirs, define_macros, undef_macros, extra_compile_args = cflags
         # ldflags includes either system libmpdec or full path to
         # our static libmpdec.a.
-        ldflags = sysconfig.get_config_var("DECIMAL_LDFLAGS")
-        extra_link_args = shlex.split(ldflags) if ldflags else None
-        
+        ldflags = parse_ldflags(sysconfig.get_config_var("DECIMAL_LDFLAGS"))
+        library_dirs, libraries, extra_link_args = ldflags
+
         libmpdec_a = sysconfig.get_config_var("LIBMPDEC_A")
         if libmpdec_a:
             depends.append(libmpdec_a)
@@ -2006,8 +2065,12 @@ class PyBuildExt(build_ext):
         # Uncomment for extra functionality:
         #define_macros.append(('EXTRA_FUNCTIONALITY', 1))
         self.add(Extension('_decimal',
+                           include_dirs=include_dirs,
                            define_macros=define_macros,
+                           undef_macros=undef_macros,
                            extra_compile_args=extra_compile_args,
+                           library_dirs=library_dirs,
+                           libraries=libraries,
                            extra_link_args=extra_link_args,
                            sources=sources,
                            depends=depends))
