@@ -3017,6 +3017,20 @@ AC_ARG_WITH(system_expat,
 
 AC_MSG_RESULT($with_system_expat)
 
+AS_VAR_IF([with_system_expat], [yes], [
+  LIBEXPAT_CFLAGS=""
+  LIBEXPAT_LDFLAGS="-lexpat"
+  LIBEXPAT_INTERNAL=
+], [
+  LIBEXPAT_CFLAGS="-I\$(srcdir)/Modules/expat"
+  LIBEXPAT_LDFLAGS="-lm \$(LIBEXPAT_A)"
+  LIBEXPAT_INTERNAL="\$(LIBEXPAT_A)"
+])
+
+AC_SUBST([LIBEXPAT_CFLAGS])
+AC_SUBST([LIBEXPAT_LDFLAGS])
+AC_SUBST([LIBEXPAT_INTERNAL])
+
 # Check for use of the system libffi library
 AC_MSG_CHECKING(for --with-system-ffi)
 AC_ARG_WITH(system_ffi,

@@ -1469,59 +1469,30 @@ class PyBuildExt(build_ext):
         #
         # More information on Expat can be found at www.libexpat.org.
         #
-        if '--with-system-expat' in sysconfig.get_config_var("CONFIG_ARGS"):
-            expat_inc = []
-            extra_compile_args = []
-            expat_lib = ['expat']
-            expat_sources = []
-            expat_depends = []
-        else:
-            expat_inc = [os.path.join(self.srcdir, 'Modules', 'expat')]
-            extra_compile_args = []
-            # bpo-44394: libexpat uses isnan() of math.h and needs linkage
-            # against the libm
-            expat_lib = ['m']
-            expat_sources = ['expat/xmlparse.c',
-                             'expat/xmlrole.c',
-                             'expat/xmltok.c']
-            expat_depends = ['expat/ascii.h',
-                             'expat/asciitab.h',
-                             'expat/expat.h',
-                             'expat/expat_config.h',
-                             'expat/expat_external.h',
-                             'expat/internal.h',
-                             'expat/latin1tab.h',
-                             'expat/utf8tab.h',
-                             'expat/xmlrole.h',
-                             'expat/xmltok.h',
-                             'expat/xmltok_impl.h'
-                             ]
+        cflags = sysconfig.get_config_var("EXPAT_CFLAGS")
+        extra_compile_args = shlex.split(cflags) if cflags else None
+        # ldflags includes either system libexpat or full path to
+        # our static libexpat.a.
+        ldflags = sysconfig.get_config_var("EXPAT_LDFLAGS")
+        extra_link_args = shlex.split(ldflags) if ldflags else None
 
-            cc = sysconfig.get_config_var('CC').split()[0]
-            ret = run_command(
-                      '"%s" -Werror -Wno-unreachable-code -E -xc /dev/null >/dev/null 2>&1' % cc)
-            if ret == 0:
-                extra_compile_args.append('-Wno-unreachable-code')
+        expat_depends = []
+        libexpat_a = sysconfig.get_config_var("LIBEXPAT_A")
+        if libexpat_a:
+            expat_depends.append(libexpat_a)
 
         self.add(Extension('pyexpat',
                            extra_compile_args=extra_compile_args,
-                           include_dirs=expat_inc,
-                           libraries=expat_lib,
-                           sources=['pyexpat.c'] + expat_sources,
+                           extra_link_args=extra_link_args,
+                           sources=['pyexpat.c'],
                            depends=expat_depends))
 
         # Fredrik Lundh's cElementTree module.  Note that this also
         # uses expat (via the CAPI hook in pyexpat).
-
-        if os.path.isfile(os.path.join(self.srcdir, 'Modules', '_elementtree.c')):
-            self.add(Extension('_elementtree',
-                               include_dirs=expat_inc,
-                               libraries=expat_lib,
-                               sources=['_elementtree.c'],
-                               depends=['pyexpat.c', *expat_sources,
-                                        *expat_depends]))
-        else:
-            self.missing.append('_elementtree')
+        self.add(Extension('_elementtree',
+                            extra_compile_args=extra_compile_args,
+                            sources=['_elementtree.c'],
+                            depends=['pyexpat.c', *expat_depends]))
 
     def detect_multibytecodecs(self):
         # Hye-Shik Chang's CJKCodecs modules.
