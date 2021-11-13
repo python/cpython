@@ -1,1 +1,1 @@
-``socket.socket`` is corrected to a class from a function.
+``socket.socket`` documentation is corrected to a class from a function.
