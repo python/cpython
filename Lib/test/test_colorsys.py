@@ -20,10 +20,12 @@ class ColorsysTest(unittest.TestCase):
             for g in frange(0.0, 1.0, 0.2):
                 for b in frange(0.0, 1.0, 0.2):
                     rgb = (r, g, b)
-                    self.assertTripleEqual(
-                        rgb,
-                        colorsys.hsv_to_rgb(*colorsys.rgb_to_hsv(*rgb))
-                    )
+
+                    with self.subTest(rgb=rgb):
+                        self.assertTripleEqual(
+                            rgb,
+                            colorsys.hsv_to_rgb(*colorsys.rgb_to_hsv(*rgb))
+                        )
 
     def test_hsv_values(self):
         values = [
@@ -38,6 +40,7 @@ class ColorsysTest(unittest.TestCase):
             ((1.0, 1.0, 1.0), (  0  , 0.0, 1.0)), # white
             ((0.5, 0.5, 0.5), (  0  , 0.0, 0.5)), # grey
         ]
+
         for (rgb, hsv) in values:
             self.assertTripleEqual(hsv, colorsys.rgb_to_hsv(*rgb))
             self.assertTripleEqual(rgb, colorsys.hsv_to_rgb(*hsv))
@@ -47,10 +50,12 @@ class ColorsysTest(unittest.TestCase):
             for g in frange(0.0, 1.0, 0.2):
                 for b in frange(0.0, 1.0, 0.2):
                     rgb = (r, g, b)
-                    self.assertTripleEqual(
-                        rgb,
-                        colorsys.hls_to_rgb(*colorsys.rgb_to_hls(*rgb))
-                    )
+
+                    with self.subTest(rgb=rgb):
+                        self.assertTripleEqual(
+                            rgb,
+                            colorsys.hls_to_rgb(*colorsys.rgb_to_hls(*rgb))
+                        )
 
     def test_hls_values(self):
         values = [
@@ -65,6 +70,7 @@ class ColorsysTest(unittest.TestCase):
             ((1.0, 1.0, 1.0), (  0  , 1.0, 0.0)), # white
             ((0.5, 0.5, 0.5), (  0  , 0.5, 0.0)), # grey
         ]
+
         for (rgb, hls) in values:
             self.assertTripleEqual(hls, colorsys.rgb_to_hls(*rgb))
             self.assertTripleEqual(rgb, colorsys.hls_to_rgb(*hls))
@@ -74,10 +80,12 @@ class ColorsysTest(unittest.TestCase):
             for g in frange(0.0, 1.0, 0.2):
                 for b in frange(0.0, 1.0, 0.2):
                     rgb = (r, g, b)
-                    self.assertTripleEqual(
-                        rgb,
-                        colorsys.yiq_to_rgb(*colorsys.rgb_to_yiq(*rgb))
-                    )
+
+                    with self.subTest(rgb=rgb):
+                        self.assertTripleEqual(
+                            rgb,
+                            colorsys.yiq_to_rgb(*colorsys.rgb_to_yiq(*rgb))
+                        )
 
     def test_yiq_values(self):
         values = [
@@ -92,6 +100,7 @@ class ColorsysTest(unittest.TestCase):
             ((1.0, 1.0, 1.0), (1.0, 0.0, 0.0)), # white
             ((0.5, 0.5, 0.5), (0.5, 0.0, 0.0)), # grey
         ]
+
         for (rgb, yiq) in values:
             self.assertTripleEqual(yiq, colorsys.rgb_to_yiq(*rgb))
             self.assertTripleEqual(rgb, colorsys.yiq_to_rgb(*yiq))
@@ -101,10 +110,12 @@ class ColorsysTest(unittest.TestCase):
             for g in frange(0.0, 1.0, 0.2):
                 for b in frange(0.0, 1.0, 0.2):
                     rgb = (r, g, b)
-                    self.assertTripleEqual(
-                        rgb,
-                        colorsys.yuv_to_rgb(*colorsys.rgb_to_yuv(*rgb))
-                    )
+
+                    with self.subTest(rgb=rgb):
+                        self.assertTripleEqual(
+                            rgb,
+                            colorsys.yuv_to_rgb(*colorsys.rgb_to_yuv(*rgb))
+                        )
 
     def test_yuv_values(self):
         values = [
@@ -119,6 +130,7 @@ class ColorsysTest(unittest.TestCase):
             ((1.0, 1.0, 1.0), (1.0, 0, 0)), # white
             ((0.5, 0.5, 0.5), (0.5, 0, 0)) # grey
         ]
+
         for (rgb, yuv) in values:
             self.assertTripleEqual(yuv, colorsys.rgb_to_yuv(*rgb))
             self.assertTripleEqual(rgb, colorsys.yuv_to_rgb(*yuv))

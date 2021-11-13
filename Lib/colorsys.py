@@ -36,6 +36,10 @@ ONE_THIRD = 1.0/3.0
 ONE_SIXTH = 1.0/6.0
 TWO_THIRD = 2.0/3.0
 
+# Clamping function to ensure we always return values in a valid range
+def _clamp(x, lower=0.0, upper=1.0):
+    return min(max(x, lower), upper)
+
 # YIQ: used by NTSC composite video signals (linear combinations of RGB)
 # Y: perceived grey level (0.0 == black, 1.0 == white)
 # I, Q: color components
@@ -44,9 +48,9 @@ TWO_THIRD = 2.0/3.0
 # The ones in this library uses constants from the FCC version of NTSC.
 
 def rgb_to_yiq(r, g, b):
-    y = 0.30*r + 0.59*g + 0.11*b
-    i = 0.74*(r-y) - 0.27*(b-y)
-    q = 0.48*(r-y) + 0.41*(b-y)
+    y = 0.30 * r + 0.59 * g + 0.11 * b
+    i = 0.74 * (r - y) - 0.27 * (b - y)
+    q = 0.48 * (r - y) + 0.41 * (b - y)
     return (y, i, q)
 
 def yiq_to_rgb(y, i, q):
@@ -54,23 +58,11 @@ def yiq_to_rgb(y, i, q):
     # b = y + (0.74*q - 0.48*i) / (0.74*0.41 + 0.27*0.48)
     # g = y - (0.30*(r-y) + 0.11*(b-y)) / 0.59
 
-    r = y + 0.9468822170900693*i + 0.6235565819861433*q
-    g = y - 0.27478764629897834*i - 0.6356910791873801*q
-    b = y - 1.1085450346420322*i + 1.7090069284064666*q
+    r = y + 0.9468822170900693 * i + 0.6235565819861433 * q
+    g = y - 0.27478764629897834 * i - 0.6356910791873801 * q
+    b = y - 1.1085450346420322 * i + 1.7090069284064666 * q
 
-    if r < 0.0:
-        r = 0.0
-    if g < 0.0:
-        g = 0.0
-    if b < 0.0:
-        b = 0.0
-    if r > 1.0:
-        r = 1.0
-    if g > 1.0:
-        g = 1.0
-    if b > 1.0:
-        b = 1.0
-    return (r, g, b)
+    return _clamp(r), _clamp(g), _clamp(b)
 
 
 # YUV: used by PAL composite video signals (linear combinations of RGB)
@@ -81,29 +73,17 @@ def yiq_to_rgb(y, i, q):
 # The ones in this library use the ATSC BT.709 standard constants.
 
 def rgb_to_yuv(r, g, b):
-    y = 0.2126*r + 0.7152*g + 0.0722*b
-    u = -0.0999068764820004*r - 0.3360931235179995*g + 0.436*b
-    v = 0.615*r - 0.5586080772161544*g - 0.05639192278384558*b
+    y = 0.2126 * r + 0.7152 * g + 0.0722 * b
+    u = -0.0999068764820004 * r - 0.3360931235179995 * g + 0.436 * b
+    v = 0.615 * r - 0.5586080772161544 * g - 0.05639192278384558 * b
     return (y, u, v)
 
 def yuv_to_rgb(y, u, v):
     r = y + 1.280325203252032 * v
-    g = y - 0.2148214139112945*u - 0.3805888397810153*v
+    g = y - 0.2148214139112945 * u - 0.3805888397810153 * v
     b = y + 2.127981651376147 * u
 
-    if r < 0.0:
-        r = 0.0
-    if g < 0.0:
-        g = 0.0
-    if b < 0.0:
-        b = 0.0
-    if r > 1.0:
-        r = 1.0
-    if g > 1.0:
-        g = 1.0
-    if b > 1.0:
-        b = 1.0
-    return (r, g, b)
+    return _clamp(r), _clamp(g), _clamp(b)
 
 
 # HLS: Hue, Luminance, Saturation

@@ -190,6 +190,14 @@ New Modules
 Improved Modules
 ================
 
+colorsys
+--------
+
+* Add :func:`colorsys.rgb_to_yuv` and :func:`colorsys.yuv_to_rgb` to handle
+  conversion in and out of the Rec. 709 color YUV color space.
+  (Contributed by Thomas Stolarski in :issue:`45775`.)
+
+
 fractions
 ---------
 
