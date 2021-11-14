@@ -664,6 +664,9 @@ LIBMPDEC_INTERNAL
 LIBMPDEC_LDFLAGS
 LIBMPDEC_CFLAGS
 LIBFFI_INCLUDEDIR
+LIBEXPAT_INTERNAL
+LIBEXPAT_LDFLAGS
+LIBEXPAT_CFLAGS
 TZPATH
 SHLIBS
 CFLAGSFORSHARED
@@ -10714,6 +10717,24 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_system_expat" >&5
 $as_echo "$with_system_expat" >&6; }
+
+if test "x$with_system_expat" = xyes; then :
+
+  LIBEXPAT_CFLAGS=""
+  LIBEXPAT_LDFLAGS="-lexpat"
+  LIBEXPAT_INTERNAL=
+
+else
+
+  LIBEXPAT_CFLAGS="-I\$(srcdir)/Modules/expat"
+  LIBEXPAT_LDFLAGS="-lm \$(LIBEXPAT_A)"
+  LIBEXPAT_INTERNAL="\$(LIBEXPAT_A)"
+
+fi
+
+
+
+
 
 # Check for use of the system libffi library
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-system-ffi" >&5
