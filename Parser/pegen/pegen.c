@@ -348,14 +348,7 @@ tokenizer_error(Parser *p)
             msg = "too many levels of indentation";
             break;
         case E_LINECONT: {
-            char* loc = strrchr(p->tok->buf, '\n');
-            const char* last_char = p->tok->cur - 1;
-            if (loc != NULL && loc != last_char) {
-                col_offset = p->tok->cur - loc - 1;
-                p->tok->buf = loc;
-            } else {
-                col_offset = last_char - p->tok->buf - 1;
-            }
+            col_offset = p->tok->cur - p->tok->buf - 1;
             msg = "unexpected character after line continuation character";
             break;
         }
@@ -363,7 +356,8 @@ tokenizer_error(Parser *p)
             msg = "unknown parsing error";
     }
 
-    RAISE_ERROR_KNOWN_LOCATION(p, errtype, p->tok->lineno, col_offset, msg);
+    RAISE_ERROR_KNOWN_LOCATION(p, errtype, p->tok->lineno,
+                               col_offset >= 0 ? col_offset : 0, msg);
     return -1;
 }
 
