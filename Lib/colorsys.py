@@ -36,9 +36,9 @@ ONE_THIRD = 1.0/3.0
 ONE_SIXTH = 1.0/6.0
 TWO_THIRD = 2.0/3.0
 
-# Clamping function to ensure we always return values in a valid range
-def _clamp(x, lower=0.0, upper=1.0):
-    return min(max(x, lower), upper)
+# Clamp a value in the range [0.0; 1.0]
+def _clamp(x):
+    return min(max(x, 0.0), 1.0)
 
 # YIQ: used by NTSC composite video signals (linear combinations of RGB)
 # Y: perceived grey level (0.0 == black, 1.0 == white)

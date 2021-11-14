@@ -1,1 +1,1 @@
-Added implementions of colorsys.rgb_to_yuv and colorsys.yuv_to_rgb using the ATSC BT.709 constants
+Added implementions of :func:`colorsys.rgb_to_yuv` and :func:`colorsys.yuv_to_rgb` using the ATSC BT.709 constants

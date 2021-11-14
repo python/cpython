@@ -30,24 +30,28 @@ The :mod:`colorsys` module defines the following functions:
 
 .. function:: rgb_to_yiq(r, g, b)
 
-   Convert the color from RGB coordinates to YIQ coordinates.
+   Convert the color from RGB coordinates to YIQ coordinates, using the
+   FCC NTSC constants.
 
 
 .. function:: yiq_to_rgb(y, i, q)
 
-   Convert the color from YIQ coordinates to RGB coordinates.
+   Convert the color from YIQ coordinates to RGB coordinates, using the
+   FCC NTSC constants.
 
 
 .. function:: rgb_to_yuv(r, g, b)
 
-   Convert the color from RGB coordinates to YUV coordinates.
+   Convert the color from RGB coordinates to YUV coordinates, using the
+   ATSC BT.709 constants.
 
    .. versionadded:: 3.11
 
 
 .. function:: yuv_to_rgb(y, i, q)
 
-   Convert the color from YUV coordinates to RGB coordinates.
+   Convert the color from YUV coordinates to RGB coordinates, using the
+   ATSC BT.709 constants.
 
    .. versionadded:: 3.11
 
