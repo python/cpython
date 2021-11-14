@@ -1,0 +1,2 @@
+Fully implement the :class:`io.BufferedIOBase` and :class:`io.TextIOBase`
+interfaces for :class:`tempfile.SpooledTemporaryFile`.
