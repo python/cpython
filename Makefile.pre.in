@@ -208,7 +208,7 @@ OPENSSL_LDFLAGS=@OPENSSL_LDFLAGS@
 OPENSSL_RPATH=@OPENSSL_RPATH@
 
 # Module compiler and linker flags
-# MODULE_EGG=1  # or "0" for disabled / unavailable module
+# MODULE_EGG=yes  # yes, missing, disabled, n/a
 # MODULE_EGG_CFLAGS=
 # MODULE_EGG_LDFLAGS=
 @MODULE_BLOCK@
@@ -289,6 +289,9 @@ COVERAGE_INFO=	$(abs_builddir)/coverage.info
 COVERAGE_REPORT=$(abs_builddir)/lcov-report
 COVERAGE_REPORT_OPTIONS=--no-branch-coverage --title "CPython lcov report"
 
+# Internal static libraries
+LIBMPDEC_A= Modules/_decimal/libmpdec/libmpdec.a
+LIBEXPAT_A= Modules/expat/libexpat.a
 
 # === Definitions added by makesetup ===
 
@@ -541,8 +544,6 @@ LIBMPDEC_HEADERS= \
 		$(srcdir)/Modules/_decimal/libmpdec/typearith.h \
 		$(srcdir)/Modules/_decimal/libmpdec/umodarith.h
 
-LIBMPDEC_A= Modules/_decimal/libmpdec/libmpdec.a
-
 ##########################################################################
 # pyexpat's expat library
 
@@ -567,8 +568,6 @@ LIBEXPAT_HEADERS= \
 		Modules/expat/xmlrole.h \
 		Modules/expat/xmltok.h \
 		Modules/expat/xmltok_impl.h
-
-LIBEXPAT_A= Modules/expat/libexpat.a
 
 #########################################################################
 # Rules

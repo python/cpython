@@ -19481,8 +19481,6 @@ MODULE_BLOCK=
 # internal: adds $1=quote($2) to MODULE_BLOCK
 
 
-# Check for stdlib extension modules
-# PY_STDLIB_MOD([NAME], [TEST], [CFLAGS], [LDFLAGS])
 
 
 # Define simple, always enabled stdlib extension module
@@ -19512,7 +19510,7 @@ MODULE_BLOCK=
 # * ac_cv_func and ac_cv_header values are set to "yes" when function or header exists
 # * ac_cv_search values are set to "none required" or "-lsomelib" when function exists
 
-    as_fn_append MODULE_BLOCK "MODULE__COLLECTIONS=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__COLLECTIONS=yes$as_nl"
    if true; then
   MODULE__COLLECTIONS_TRUE=
   MODULE__COLLECTIONS_FALSE='#'
@@ -19524,7 +19522,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__ABC=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__ABC=yes$as_nl"
    if true; then
   MODULE__ABC_TRUE=
   MODULE__ABC_FALSE='#'
@@ -19536,7 +19534,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__CODECS=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__CODECS=yes$as_nl"
    if true; then
   MODULE__CODECS_TRUE=
   MODULE__CODECS_FALSE='#'
@@ -19548,7 +19546,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__FUNCTOOLS=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__FUNCTOOLS=yes$as_nl"
    if true; then
   MODULE__FUNCTOOLS_TRUE=
   MODULE__FUNCTOOLS_FALSE='#'
@@ -19560,7 +19558,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__IO=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__IO=yes$as_nl"
    if true; then
   MODULE__IO_TRUE=
   MODULE__IO_FALSE='#'
@@ -19572,7 +19570,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__LOCALE=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__LOCALE=yes$as_nl"
    if true; then
   MODULE__LOCALE_TRUE=
   MODULE__LOCALE_FALSE='#'
@@ -19584,7 +19582,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__OPERATOR=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__OPERATOR=yes$as_nl"
    if true; then
   MODULE__OPERATOR_TRUE=
   MODULE__OPERATOR_FALSE='#'
@@ -19596,7 +19594,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__SIGNAL=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SIGNAL=yes$as_nl"
    if true; then
   MODULE__SIGNAL_TRUE=
   MODULE__SIGNAL_FALSE='#'
@@ -19608,7 +19606,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__SRE=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SRE=yes$as_nl"
    if true; then
   MODULE__SRE_TRUE=
   MODULE__SRE_FALSE='#'
@@ -19620,7 +19618,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__STAT=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__STAT=yes$as_nl"
    if true; then
   MODULE__STAT_TRUE=
   MODULE__STAT_FALSE='#'
@@ -19632,7 +19630,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__SYMTABLE=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SYMTABLE=yes$as_nl"
    if true; then
   MODULE__SYMTABLE_TRUE=
   MODULE__SYMTABLE_FALSE='#'
@@ -19644,7 +19642,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__THREAD=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__THREAD=yes$as_nl"
    if true; then
   MODULE__THREAD_TRUE=
   MODULE__THREAD_FALSE='#'
@@ -19656,7 +19654,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__TRACEMALLOC=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__TRACEMALLOC=yes$as_nl"
    if true; then
   MODULE__TRACEMALLOC_TRUE=
   MODULE__TRACEMALLOC_FALSE='#'
@@ -19668,7 +19666,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__WEAKREF=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__WEAKREF=yes$as_nl"
    if true; then
   MODULE__WEAKREF_TRUE=
   MODULE__WEAKREF_FALSE='#'
@@ -19680,7 +19678,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE_ATEXIT=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_ATEXIT=yes$as_nl"
    if true; then
   MODULE_ATEXIT_TRUE=
   MODULE_ATEXIT_FALSE='#'
@@ -19692,7 +19690,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE_ERRNO=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_ERRNO=yes$as_nl"
    if true; then
   MODULE_ERRNO_TRUE=
   MODULE_ERRNO_FALSE='#'
@@ -19704,7 +19702,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE_FAULTHANDLER=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_FAULTHANDLER=yes$as_nl"
    if true; then
   MODULE_FAULTHANDLER_TRUE=
   MODULE_FAULTHANDLER_FALSE='#'
@@ -19716,7 +19714,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE_ITERTOOLS=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_ITERTOOLS=yes$as_nl"
    if true; then
   MODULE_ITERTOOLS_TRUE=
   MODULE_ITERTOOLS_FALSE='#'
@@ -19728,7 +19726,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE_POSIX=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_POSIX=yes$as_nl"
    if true; then
   MODULE_POSIX_TRUE=
   MODULE_POSIX_FALSE='#'
@@ -19740,7 +19738,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE_PWD=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_PWD=yes$as_nl"
    if true; then
   MODULE_PWD_TRUE=
   MODULE_PWD_FALSE='#'
@@ -19752,7 +19750,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE_TIME=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_TIME=yes$as_nl"
    if true; then
   MODULE_TIME_TRUE=
   MODULE_TIME_FALSE='#'
@@ -19765,7 +19763,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__STRUCT=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__STRUCT=yes$as_nl"
    if true; then
   MODULE__STRUCT_TRUE=
   MODULE__STRUCT_FALSE='#'
@@ -19777,7 +19775,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE_ARRAY=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_ARRAY=yes$as_nl"
    if true; then
   MODULE_ARRAY_TRUE=
   MODULE_ARRAY_FALSE='#'
@@ -19789,7 +19787,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__CONTEXTVARS=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__CONTEXTVARS=yes$as_nl"
    if true; then
   MODULE__CONTEXTVARS_TRUE=
   MODULE__CONTEXTVARS_FALSE='#'
@@ -19801,7 +19799,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE_MATH=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_MATH=yes$as_nl"
    if true; then
   MODULE_MATH_TRUE=
   MODULE_MATH_FALSE='#'
@@ -19815,7 +19813,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE_CMATH=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_CMATH=yes$as_nl"
    if true; then
   MODULE_CMATH_TRUE=
   MODULE_CMATH_FALSE='#'
@@ -19829,7 +19827,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE_TIME=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_TIME=yes$as_nl"
    if true; then
   MODULE_TIME_TRUE=
   MODULE_TIME_FALSE='#'
@@ -19843,7 +19841,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__DATETIME=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__DATETIME=yes$as_nl"
    if true; then
   MODULE__DATETIME_TRUE=
   MODULE__DATETIME_FALSE='#'
@@ -19857,7 +19855,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__ZONEINFO=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__ZONEINFO=yes$as_nl"
    if true; then
   MODULE__ZONEINFO_TRUE=
   MODULE__ZONEINFO_FALSE='#'
@@ -19869,7 +19867,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__RANDOM=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__RANDOM=yes$as_nl"
    if true; then
   MODULE__RANDOM_TRUE=
   MODULE__RANDOM_FALSE='#'
@@ -19881,7 +19879,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__BISECT=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__BISECT=yes$as_nl"
    if true; then
   MODULE__BISECT_TRUE=
   MODULE__BISECT_FALSE='#'
@@ -19893,7 +19891,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__HEAPQ=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__HEAPQ=yes$as_nl"
    if true; then
   MODULE__HEAPQ_TRUE=
   MODULE__HEAPQ_FALSE='#'
@@ -19905,7 +19903,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__PICKLE=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__PICKLE=yes$as_nl"
    if true; then
   MODULE__PICKLE_TRUE=
   MODULE__PICKLE_FALSE='#'
@@ -19917,7 +19915,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__JSON=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__JSON=yes$as_nl"
    if true; then
   MODULE__JSON_TRUE=
   MODULE__JSON_FALSE='#'
@@ -19929,7 +19927,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__LSPROF=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__LSPROF=yes$as_nl"
    if true; then
   MODULE__LSPROF_TRUE=
   MODULE__LSPROF_FALSE='#'
@@ -19941,7 +19939,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE_UNICODEDATA=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_UNICODEDATA=yes$as_nl"
    if true; then
   MODULE_UNICODEDATA_TRUE=
   MODULE_UNICODEDATA_FALSE='#'
@@ -19953,7 +19951,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__OPCODE=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__OPCODE=yes$as_nl"
    if true; then
   MODULE__OPCODE_TRUE=
   MODULE__OPCODE_FALSE='#'
@@ -19965,7 +19963,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__ASYNCIO=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__ASYNCIO=yes$as_nl"
    if true; then
   MODULE__ASYNCIO_TRUE=
   MODULE__ASYNCIO_FALSE='#'
@@ -19977,7 +19975,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__ABC=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__ABC=yes$as_nl"
    if true; then
   MODULE__ABC_TRUE=
   MODULE__ABC_FALSE='#'
@@ -19989,7 +19987,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__QUEUE=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__QUEUE=yes$as_nl"
    if true; then
   MODULE__QUEUE_TRUE=
   MODULE__QUEUE_FALSE='#'
@@ -20001,7 +19999,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__STATISTICS=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__STATISTICS=yes$as_nl"
    if true; then
   MODULE__STATISTICS_TRUE=
   MODULE__STATISTICS_FALSE='#'
@@ -20013,7 +20011,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__TYPING=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__TYPING=yes$as_nl"
    if true; then
   MODULE__TYPING_TRUE=
   MODULE__TYPING_FALSE='#'
@@ -20025,7 +20023,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE_FCNTL=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_FCNTL=yes$as_nl"
    if true; then
   MODULE_FCNTL_TRUE=
   MODULE_FCNTL_FALSE='#'
@@ -20037,7 +20035,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE_PWD=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_PWD=yes$as_nl"
    if true; then
   MODULE_PWD_TRUE=
   MODULE_PWD_FALSE='#'
@@ -20051,35 +20049,38 @@ fi
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module grp" >&5
 $as_echo_n "checking for stdlib extension module grp... " >&6; }
-          if test "$ac_cv_func_getgrgid" = yes -o "$ac_cv_func_getgrgid_r" = yes; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE_GRP=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE_GRP_CFLAGS=$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE_GRP_LDFLAGS=$as_nl"
-         if true; then
-  MODULE_GRP_TRUE=
-  MODULE_GRP_FALSE='#'
-else
-  MODULE_GRP_TRUE='#'
-  MODULE_GRP_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *grp*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module_grp=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if true; then :
+  if test "$ac_cv_func_getgrgid" = yes -o "$ac_cv_func_getgrgid_r" = yes; then :
+  py_cv_module_grp=yes
+else
+  py_cv_module_grp=missing
+fi
+else
+  py_cv_module_grp=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE_GRP=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE_GRP=$py_cv_module_grp$as_nl"
+  if test "x$py_cv_module_grp" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE_GRP_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_GRP_LDFLAGS=$as_nl"
+     if true; then
+  MODULE_GRP_TRUE=
+  MODULE_GRP_FALSE='#'
+else
+  MODULE_GRP_TRUE='#'
+  MODULE_GRP_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE_GRP_TRUE=
   MODULE_GRP_FALSE='#'
 else
@@ -20089,39 +20090,44 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_grp" >&5
+$as_echo "$py_cv_module_grp" >&6; }
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module spwd" >&5
 $as_echo_n "checking for stdlib extension module spwd... " >&6; }
-          if test "$ac_cv_func_getspent" = yes; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE_SPWD=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE_SPWD_CFLAGS=$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE_SPWD_LDFLAGS=$as_nl"
-         if true; then
-  MODULE_SPWD_TRUE=
-  MODULE_SPWD_FALSE='#'
-else
-  MODULE_SPWD_TRUE='#'
-  MODULE_SPWD_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *spwd*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module_spwd=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if true; then :
+  if test "$ac_cv_func_getspent" = yes; then :
+  py_cv_module_spwd=yes
+else
+  py_cv_module_spwd=missing
+fi
+else
+  py_cv_module_spwd=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE_SPWD=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE_SPWD=$py_cv_module_spwd$as_nl"
+  if test "x$py_cv_module_spwd" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE_SPWD_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_SPWD_LDFLAGS=$as_nl"
+     if true; then
+  MODULE_SPWD_TRUE=
+  MODULE_SPWD_FALSE='#'
+else
+  MODULE_SPWD_TRUE='#'
+  MODULE_SPWD_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE_SPWD_TRUE=
   MODULE_SPWD_FALSE='#'
 else
@@ -20131,9 +20137,11 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_spwd" >&5
+$as_echo "$py_cv_module_spwd" >&6; }
 
 
-    as_fn_append MODULE_BLOCK "MODULE_SELECT=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_SELECT=yes$as_nl"
    if true; then
   MODULE_SELECT_TRUE=
   MODULE_SELECT_FALSE='#'
@@ -20145,7 +20153,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE_MMAP=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_MMAP=yes$as_nl"
    if true; then
   MODULE_MMAP_TRUE=
   MODULE_MMAP_FALSE='#'
@@ -20157,7 +20165,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE_SYSLOG=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_SYSLOG=yes$as_nl"
    if true; then
   MODULE_SYSLOG_TRUE=
   MODULE_SYSLOG_FALSE='#'
@@ -20171,35 +20179,38 @@ fi
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _xxsubinterpreters" >&5
 $as_echo_n "checking for stdlib extension module _xxsubinterpreters... " >&6; }
-          if test "$with_experimental_isolated_subinterpreters" = yes; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE__XXSUBINTERPRETERS=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__XXSUBINTERPRETERS_CFLAGS=$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__XXSUBINTERPRETERS_LDFLAGS=$as_nl"
-         if true; then
-  MODULE__XXSUBINTERPRETERS_TRUE=
-  MODULE__XXSUBINTERPRETERS_FALSE='#'
-else
-  MODULE__XXSUBINTERPRETERS_TRUE='#'
-  MODULE__XXSUBINTERPRETERS_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *_xxsubinterpreters*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module__xxsubinterpreters=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if test "$with_experimental_isolated_subinterpreters" = yes; then :
+  if true; then :
+  py_cv_module__xxsubinterpreters=yes
+else
+  py_cv_module__xxsubinterpreters=missing
+fi
+else
+  py_cv_module__xxsubinterpreters=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE__XXSUBINTERPRETERS=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE__XXSUBINTERPRETERS=$py_cv_module__xxsubinterpreters$as_nl"
+  if test "x$py_cv_module__xxsubinterpreters" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__XXSUBINTERPRETERS_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__XXSUBINTERPRETERS_LDFLAGS=$as_nl"
+     if true; then
+  MODULE__XXSUBINTERPRETERS_TRUE=
+  MODULE__XXSUBINTERPRETERS_FALSE='#'
+else
+  MODULE__XXSUBINTERPRETERS_TRUE='#'
+  MODULE__XXSUBINTERPRETERS_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE__XXSUBINTERPRETERS_TRUE=
   MODULE__XXSUBINTERPRETERS_FALSE='#'
 else
@@ -20209,9 +20220,11 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__xxsubinterpreters" >&5
+$as_echo "$py_cv_module__xxsubinterpreters" >&6; }
 
 
-    as_fn_append MODULE_BLOCK "MODULE_AUDIOOP=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_AUDIOOP=yes$as_nl"
    if true; then
   MODULE_AUDIOOP_TRUE=
   MODULE_AUDIOOP_FALSE='#'
@@ -20223,7 +20236,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__CSV=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__CSV=yes$as_nl"
    if true; then
   MODULE__CSV_TRUE=
   MODULE__CSV_FALSE='#'
@@ -20235,7 +20248,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__POSIXSUBPROCESS=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__POSIXSUBPROCESS=yes$as_nl"
    if true; then
   MODULE__POSIXSUBPROCESS_TRUE=
   MODULE__POSIXSUBPROCESS_FALSE='#'
@@ -20249,35 +20262,38 @@ fi
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testcapi" >&5
 $as_echo_n "checking for stdlib extension module _testcapi... " >&6; }
-          if test "$TEST_MODULES" = yes; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE__TESTCAPI=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__TESTCAPI_CFLAGS=$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__TESTCAPI_LDFLAGS=$as_nl"
-         if true; then
-  MODULE__TESTCAPI_TRUE=
-  MODULE__TESTCAPI_FALSE='#'
-else
-  MODULE__TESTCAPI_TRUE='#'
-  MODULE__TESTCAPI_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *_testcapi*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module__testcapi=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if test "$TEST_MODULES" = yes; then :
+  if true; then :
+  py_cv_module__testcapi=yes
+else
+  py_cv_module__testcapi=missing
+fi
+else
+  py_cv_module__testcapi=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE__TESTCAPI=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE__TESTCAPI=$py_cv_module__testcapi$as_nl"
+  if test "x$py_cv_module__testcapi" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__TESTCAPI_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__TESTCAPI_LDFLAGS=$as_nl"
+     if true; then
+  MODULE__TESTCAPI_TRUE=
+  MODULE__TESTCAPI_FALSE='#'
+else
+  MODULE__TESTCAPI_TRUE='#'
+  MODULE__TESTCAPI_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE__TESTCAPI_TRUE=
   MODULE__TESTCAPI_FALSE='#'
 else
@@ -20287,39 +20303,44 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__testcapi" >&5
+$as_echo "$py_cv_module__testcapi" >&6; }
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testinternalcapi" >&5
 $as_echo_n "checking for stdlib extension module _testinternalcapi... " >&6; }
-          if test "$TEST_MODULES" = yes; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE__TESTINTERNALCAPI=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__TESTINTERNALCAPI_CFLAGS=$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__TESTINTERNALCAPI_LDFLAGS=$as_nl"
-         if true; then
-  MODULE__TESTINTERNALCAPI_TRUE=
-  MODULE__TESTINTERNALCAPI_FALSE='#'
-else
-  MODULE__TESTINTERNALCAPI_TRUE='#'
-  MODULE__TESTINTERNALCAPI_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *_testinternalcapi*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module__testinternalcapi=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if test "$TEST_MODULES" = yes; then :
+  if true; then :
+  py_cv_module__testinternalcapi=yes
+else
+  py_cv_module__testinternalcapi=missing
+fi
+else
+  py_cv_module__testinternalcapi=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE__TESTINTERNALCAPI=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE__TESTINTERNALCAPI=$py_cv_module__testinternalcapi$as_nl"
+  if test "x$py_cv_module__testinternalcapi" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__TESTINTERNALCAPI_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__TESTINTERNALCAPI_LDFLAGS=$as_nl"
+     if true; then
+  MODULE__TESTINTERNALCAPI_TRUE=
+  MODULE__TESTINTERNALCAPI_FALSE='#'
+else
+  MODULE__TESTINTERNALCAPI_TRUE='#'
+  MODULE__TESTINTERNALCAPI_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE__TESTINTERNALCAPI_TRUE=
   MODULE__TESTINTERNALCAPI_FALSE='#'
 else
@@ -20329,39 +20350,44 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__testinternalcapi" >&5
+$as_echo "$py_cv_module__testinternalcapi" >&6; }
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testbuffer" >&5
 $as_echo_n "checking for stdlib extension module _testbuffer... " >&6; }
-          if test "$TEST_MODULES" = yes; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE__TESTBUFFER=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__TESTBUFFER_CFLAGS=$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__TESTBUFFER_LDFLAGS=$as_nl"
-         if true; then
-  MODULE__TESTBUFFER_TRUE=
-  MODULE__TESTBUFFER_FALSE='#'
-else
-  MODULE__TESTBUFFER_TRUE='#'
-  MODULE__TESTBUFFER_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *_testbuffer*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module__testbuffer=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if test "$TEST_MODULES" = yes; then :
+  if true; then :
+  py_cv_module__testbuffer=yes
+else
+  py_cv_module__testbuffer=missing
+fi
+else
+  py_cv_module__testbuffer=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE__TESTBUFFER=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE__TESTBUFFER=$py_cv_module__testbuffer$as_nl"
+  if test "x$py_cv_module__testbuffer" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__TESTBUFFER_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__TESTBUFFER_LDFLAGS=$as_nl"
+     if true; then
+  MODULE__TESTBUFFER_TRUE=
+  MODULE__TESTBUFFER_FALSE='#'
+else
+  MODULE__TESTBUFFER_TRUE='#'
+  MODULE__TESTBUFFER_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE__TESTBUFFER_TRUE=
   MODULE__TESTBUFFER_FALSE='#'
 else
@@ -20371,39 +20397,44 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__testbuffer" >&5
+$as_echo "$py_cv_module__testbuffer" >&6; }
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testimportmultiple" >&5
 $as_echo_n "checking for stdlib extension module _testimportmultiple... " >&6; }
-          if test "$TEST_MODULES" = yes; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE__TESTIMPORTMULTIPLE=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__TESTIMPORTMULTIPLE_CFLAGS=$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__TESTIMPORTMULTIPLE_LDFLAGS=$as_nl"
-         if true; then
-  MODULE__TESTIMPORTMULTIPLE_TRUE=
-  MODULE__TESTIMPORTMULTIPLE_FALSE='#'
-else
-  MODULE__TESTIMPORTMULTIPLE_TRUE='#'
-  MODULE__TESTIMPORTMULTIPLE_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *_testimportmultiple*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module__testimportmultiple=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if test "$TEST_MODULES" = yes; then :
+  if true; then :
+  py_cv_module__testimportmultiple=yes
+else
+  py_cv_module__testimportmultiple=missing
+fi
+else
+  py_cv_module__testimportmultiple=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE__TESTIMPORTMULTIPLE=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE__TESTIMPORTMULTIPLE=$py_cv_module__testimportmultiple$as_nl"
+  if test "x$py_cv_module__testimportmultiple" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__TESTIMPORTMULTIPLE_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__TESTIMPORTMULTIPLE_LDFLAGS=$as_nl"
+     if true; then
+  MODULE__TESTIMPORTMULTIPLE_TRUE=
+  MODULE__TESTIMPORTMULTIPLE_FALSE='#'
+else
+  MODULE__TESTIMPORTMULTIPLE_TRUE='#'
+  MODULE__TESTIMPORTMULTIPLE_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE__TESTIMPORTMULTIPLE_TRUE=
   MODULE__TESTIMPORTMULTIPLE_FALSE='#'
 else
@@ -20413,39 +20444,44 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__testimportmultiple" >&5
+$as_echo "$py_cv_module__testimportmultiple" >&6; }
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testmultiphase" >&5
 $as_echo_n "checking for stdlib extension module _testmultiphase... " >&6; }
-          if test "$TEST_MODULES" = yes; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE__TESTMULTIPHASE=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__TESTMULTIPHASE_CFLAGS=$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__TESTMULTIPHASE_LDFLAGS=$as_nl"
-         if true; then
-  MODULE__TESTMULTIPHASE_TRUE=
-  MODULE__TESTMULTIPHASE_FALSE='#'
-else
-  MODULE__TESTMULTIPHASE_TRUE='#'
-  MODULE__TESTMULTIPHASE_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *_testmultiphase*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module__testmultiphase=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if test "$TEST_MODULES" = yes; then :
+  if true; then :
+  py_cv_module__testmultiphase=yes
+else
+  py_cv_module__testmultiphase=missing
+fi
+else
+  py_cv_module__testmultiphase=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE__TESTMULTIPHASE=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE__TESTMULTIPHASE=$py_cv_module__testmultiphase$as_nl"
+  if test "x$py_cv_module__testmultiphase" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__TESTMULTIPHASE_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__TESTMULTIPHASE_LDFLAGS=$as_nl"
+     if true; then
+  MODULE__TESTMULTIPHASE_TRUE=
+  MODULE__TESTMULTIPHASE_FALSE='#'
+else
+  MODULE__TESTMULTIPHASE_TRUE='#'
+  MODULE__TESTMULTIPHASE_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE__TESTMULTIPHASE_TRUE=
   MODULE__TESTMULTIPHASE_FALSE='#'
 else
@@ -20455,39 +20491,44 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__testmultiphase" >&5
+$as_echo "$py_cv_module__testmultiphase" >&6; }
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _xxtestfuzz" >&5
 $as_echo_n "checking for stdlib extension module _xxtestfuzz... " >&6; }
-          if test "$TEST_MODULES" = yes; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE__XXTESTFUZZ=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__XXTESTFUZZ_CFLAGS=$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__XXTESTFUZZ_LDFLAGS=$as_nl"
-         if true; then
-  MODULE__XXTESTFUZZ_TRUE=
-  MODULE__XXTESTFUZZ_FALSE='#'
-else
-  MODULE__XXTESTFUZZ_TRUE='#'
-  MODULE__XXTESTFUZZ_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *_xxtestfuzz*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module__xxtestfuzz=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if test "$TEST_MODULES" = yes; then :
+  if true; then :
+  py_cv_module__xxtestfuzz=yes
+else
+  py_cv_module__xxtestfuzz=missing
+fi
+else
+  py_cv_module__xxtestfuzz=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE__XXTESTFUZZ=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE__XXTESTFUZZ=$py_cv_module__xxtestfuzz$as_nl"
+  if test "x$py_cv_module__xxtestfuzz" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__XXTESTFUZZ_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__XXTESTFUZZ_LDFLAGS=$as_nl"
+     if true; then
+  MODULE__XXTESTFUZZ_TRUE=
+  MODULE__XXTESTFUZZ_FALSE='#'
+else
+  MODULE__XXTESTFUZZ_TRUE='#'
+  MODULE__XXTESTFUZZ_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE__XXTESTFUZZ_TRUE=
   MODULE__XXTESTFUZZ_FALSE='#'
 else
@@ -20497,39 +20538,44 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__xxtestfuzz" >&5
+$as_echo "$py_cv_module__xxtestfuzz" >&6; }
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module readline" >&5
 $as_echo_n "checking for stdlib extension module readline... " >&6; }
-          if test "$py_cv_lib_readline" = yes; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE_READLINE=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE_READLINE_CFLAGS=$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE_READLINE_LDFLAGS=$READLINE_LIBS$as_nl"
-         if true; then
-  MODULE_READLINE_TRUE=
-  MODULE_READLINE_FALSE='#'
-else
-  MODULE_READLINE_TRUE='#'
-  MODULE_READLINE_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *readline*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module_readline=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if true; then :
+  if test "$py_cv_lib_readline" = yes; then :
+  py_cv_module_readline=yes
+else
+  py_cv_module_readline=missing
+fi
+else
+  py_cv_module_readline=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE_READLINE=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE_READLINE=$py_cv_module_readline$as_nl"
+  if test "x$py_cv_module_readline" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE_READLINE_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_READLINE_LDFLAGS=$READLINE_LIBS$as_nl"
+     if true; then
+  MODULE_READLINE_TRUE=
+  MODULE_READLINE_FALSE='#'
+else
+  MODULE_READLINE_TRUE='#'
+  MODULE_READLINE_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE_READLINE_TRUE=
   MODULE_READLINE_FALSE='#'
 else
@@ -20539,40 +20585,45 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_readline" >&5
+$as_echo "$py_cv_module_readline" >&6; }
 
 # TODO: detect curses
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _curses" >&5
 $as_echo_n "checking for stdlib extension module _curses... " >&6; }
-          if true; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE__CURSES=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__CURSES_CFLAGS=$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__CURSES_LDFLAGS=-lncurses -lncursesw -ltermcap$as_nl"
-         if true; then
-  MODULE__CURSES_TRUE=
-  MODULE__CURSES_FALSE='#'
-else
-  MODULE__CURSES_TRUE='#'
-  MODULE__CURSES_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *_curses*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module__curses=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if true; then :
+  if true; then :
+  py_cv_module__curses=yes
+else
+  py_cv_module__curses=missing
+fi
+else
+  py_cv_module__curses=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE__CURSES=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE__CURSES=$py_cv_module__curses$as_nl"
+  if test "x$py_cv_module__curses" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__CURSES_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__CURSES_LDFLAGS=-lncurses -lncursesw -ltermcap$as_nl"
+     if true; then
+  MODULE__CURSES_TRUE=
+  MODULE__CURSES_FALSE='#'
+else
+  MODULE__CURSES_TRUE='#'
+  MODULE__CURSES_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE__CURSES_TRUE=
   MODULE__CURSES_FALSE='#'
 else
@@ -20582,39 +20633,44 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__curses" >&5
+$as_echo "$py_cv_module__curses" >&6; }
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _curses_panel" >&5
 $as_echo_n "checking for stdlib extension module _curses_panel... " >&6; }
-          if true; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE__CURSES_PANEL=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__CURSES_PANEL_CFLAGS=$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__CURSES_PANEL_LDFLAGS=-lpanel -lncurses$as_nl"
-         if true; then
-  MODULE__CURSES_PANEL_TRUE=
-  MODULE__CURSES_PANEL_FALSE='#'
-else
-  MODULE__CURSES_PANEL_TRUE='#'
-  MODULE__CURSES_PANEL_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *_curses_panel*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module__curses_panel=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if true; then :
+  if true; then :
+  py_cv_module__curses_panel=yes
+else
+  py_cv_module__curses_panel=missing
+fi
+else
+  py_cv_module__curses_panel=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE__CURSES_PANEL=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE__CURSES_PANEL=$py_cv_module__curses_panel$as_nl"
+  if test "x$py_cv_module__curses_panel" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__CURSES_PANEL_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__CURSES_PANEL_LDFLAGS=-lpanel -lncurses$as_nl"
+     if true; then
+  MODULE__CURSES_PANEL_TRUE=
+  MODULE__CURSES_PANEL_FALSE='#'
+else
+  MODULE__CURSES_PANEL_TRUE='#'
+  MODULE__CURSES_PANEL_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE__CURSES_PANEL_TRUE=
   MODULE__CURSES_PANEL_FALSE='#'
 else
@@ -20624,39 +20680,44 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__curses_panel" >&5
+$as_echo "$py_cv_module__curses_panel" >&6; }
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _crypt" >&5
 $as_echo_n "checking for stdlib extension module _crypt... " >&6; }
-          if test "$ac_sys_system" != VxWorks -a \( "$ac_cv_search_crypt_r" != no -o "$ac_cv_search_crypt" != no \); then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE__CRYPT=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__CRYPT_CFLAGS=$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__CRYPT_LDFLAGS=-lcrypt$as_nl"
-         if true; then
-  MODULE__CRYPT_TRUE=
-  MODULE__CRYPT_FALSE='#'
-else
-  MODULE__CRYPT_TRUE='#'
-  MODULE__CRYPT_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *_crypt*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module__crypt=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if test "$ac_sys_system" != VxWorks; then :
+  if test "$ac_cv_search_crypt_r" != no -o "$ac_cv_search_crypt" != no; then :
+  py_cv_module__crypt=yes
+else
+  py_cv_module__crypt=missing
+fi
+else
+  py_cv_module__crypt=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE__CRYPT=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE__CRYPT=$py_cv_module__crypt$as_nl"
+  if test "x$py_cv_module__crypt" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__CRYPT_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__CRYPT_LDFLAGS=-lcrypt$as_nl"
+     if true; then
+  MODULE__CRYPT_TRUE=
+  MODULE__CRYPT_FALSE='#'
+else
+  MODULE__CRYPT_TRUE='#'
+  MODULE__CRYPT_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE__CRYPT_TRUE=
   MODULE__CRYPT_FALSE='#'
 else
@@ -20666,9 +20727,11 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__crypt" >&5
+$as_echo "$py_cv_module__crypt" >&6; }
 
 
-    as_fn_append MODULE_BLOCK "MODULE__SOCKET=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SOCKET=yes$as_nl"
    if true; then
   MODULE__SOCKET_TRUE=
   MODULE__SOCKET_FALSE='#'
@@ -20683,35 +20746,38 @@ fi
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _ssl" >&5
 $as_echo_n "checking for stdlib extension module _ssl... " >&6; }
-          if test "$ac_cv_working_openssl_ssl" = yes; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE__SSL=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__SSL_CFLAGS=$OPENSSL_INCLUDES$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__SSL_LDFLAGS=$OPENSSL_LIBS $OPENSSL_LDFLAGS$as_nl"
-         if true; then
-  MODULE__SSL_TRUE=
-  MODULE__SSL_FALSE='#'
-else
-  MODULE__SSL_TRUE='#'
-  MODULE__SSL_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *_ssl*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module__ssl=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if true; then :
+  if test "$ac_cv_working_openssl_ssl" = yes; then :
+  py_cv_module__ssl=yes
+else
+  py_cv_module__ssl=missing
+fi
+else
+  py_cv_module__ssl=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE__SSL=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE__SSL=$py_cv_module__ssl$as_nl"
+  if test "x$py_cv_module__ssl" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__SSL_CFLAGS=$OPENSSL_INCLUDES$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SSL_LDFLAGS=$OPENSSL_LIBS $OPENSSL_LDFLAGS$as_nl"
+     if true; then
+  MODULE__SSL_TRUE=
+  MODULE__SSL_FALSE='#'
+else
+  MODULE__SSL_TRUE='#'
+  MODULE__SSL_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE__SSL_TRUE=
   MODULE__SSL_FALSE='#'
 else
@@ -20721,39 +20787,44 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__ssl" >&5
+$as_echo "$py_cv_module__ssl" >&6; }
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _hashlib" >&5
 $as_echo_n "checking for stdlib extension module _hashlib... " >&6; }
-          if test "$ac_cv_working_openssl_ssl" = yes; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE__HASHLIB=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__HASHLIB_CFLAGS=$OPENSSL_INCLUDES$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__HASHLIB_LDFLAGS=$OPENSSL_LIBS $OPENSSL_LDFLAGS$as_nl"
-         if true; then
-  MODULE__HASHLIB_TRUE=
-  MODULE__HASHLIB_FALSE='#'
-else
-  MODULE__HASHLIB_TRUE='#'
-  MODULE__HASHLIB_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *_hashlib*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module__hashlib=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if true; then :
+  if test "$ac_cv_working_openssl_ssl" = yes; then :
+  py_cv_module__hashlib=yes
+else
+  py_cv_module__hashlib=missing
+fi
+else
+  py_cv_module__hashlib=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE__HASHLIB=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE__HASHLIB=$py_cv_module__hashlib$as_nl"
+  if test "x$py_cv_module__hashlib" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__HASHLIB_CFLAGS=$OPENSSL_INCLUDES$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__HASHLIB_LDFLAGS=$OPENSSL_LIBS $OPENSSL_LDFLAGS$as_nl"
+     if true; then
+  MODULE__HASHLIB_TRUE=
+  MODULE__HASHLIB_FALSE='#'
+else
+  MODULE__HASHLIB_TRUE='#'
+  MODULE__HASHLIB_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE__HASHLIB_TRUE=
   MODULE__HASHLIB_FALSE='#'
 else
@@ -20763,39 +20834,44 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__hashlib" >&5
+$as_echo "$py_cv_module__hashlib" >&6; }
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _sha256" >&5
 $as_echo_n "checking for stdlib extension module _sha256... " >&6; }
-          if test "$with_builtin_sha256" = yes; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE__SHA256=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__SHA256_CFLAGS=$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__SHA256_LDFLAGS=$as_nl"
-         if true; then
-  MODULE__SHA256_TRUE=
-  MODULE__SHA256_FALSE='#'
-else
-  MODULE__SHA256_TRUE='#'
-  MODULE__SHA256_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *_sha256*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module__sha256=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if test "$with_builtin_sha256" = yes; then :
+  if true; then :
+  py_cv_module__sha256=yes
+else
+  py_cv_module__sha256=missing
+fi
+else
+  py_cv_module__sha256=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE__SHA256=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE__SHA256=$py_cv_module__sha256$as_nl"
+  if test "x$py_cv_module__sha256" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__SHA256_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA256_LDFLAGS=$as_nl"
+     if true; then
+  MODULE__SHA256_TRUE=
+  MODULE__SHA256_FALSE='#'
+else
+  MODULE__SHA256_TRUE='#'
+  MODULE__SHA256_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE__SHA256_TRUE=
   MODULE__SHA256_FALSE='#'
 else
@@ -20805,39 +20881,44 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__sha256" >&5
+$as_echo "$py_cv_module__sha256" >&6; }
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _sha512" >&5
 $as_echo_n "checking for stdlib extension module _sha512... " >&6; }
-          if test "$with_builtin_sha512" = yes; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE__SHA512=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__SHA512_CFLAGS=$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__SHA512_LDFLAGS=$as_nl"
-         if true; then
-  MODULE__SHA512_TRUE=
-  MODULE__SHA512_FALSE='#'
-else
-  MODULE__SHA512_TRUE='#'
-  MODULE__SHA512_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *_sha512*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module__sha512=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if test "$with_builtin_sha512" = yes; then :
+  if true; then :
+  py_cv_module__sha512=yes
+else
+  py_cv_module__sha512=missing
+fi
+else
+  py_cv_module__sha512=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE__SHA512=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE__SHA512=$py_cv_module__sha512$as_nl"
+  if test "x$py_cv_module__sha512" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__SHA512_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA512_LDFLAGS=$as_nl"
+     if true; then
+  MODULE__SHA512_TRUE=
+  MODULE__SHA512_FALSE='#'
+else
+  MODULE__SHA512_TRUE='#'
+  MODULE__SHA512_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE__SHA512_TRUE=
   MODULE__SHA512_FALSE='#'
 else
@@ -20847,39 +20928,44 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__sha512" >&5
+$as_echo "$py_cv_module__sha512" >&6; }
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _md5" >&5
 $as_echo_n "checking for stdlib extension module _md5... " >&6; }
-          if test "$with_builtin_md5" = yes; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE__MD5=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__MD5_CFLAGS=$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__MD5_LDFLAGS=$as_nl"
-         if true; then
-  MODULE__MD5_TRUE=
-  MODULE__MD5_FALSE='#'
-else
-  MODULE__MD5_TRUE='#'
-  MODULE__MD5_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *_md5*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module__md5=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if test "$with_builtin_md5" = yes; then :
+  if true; then :
+  py_cv_module__md5=yes
+else
+  py_cv_module__md5=missing
+fi
+else
+  py_cv_module__md5=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE__MD5=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE__MD5=$py_cv_module__md5$as_nl"
+  if test "x$py_cv_module__md5" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__MD5_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__MD5_LDFLAGS=$as_nl"
+     if true; then
+  MODULE__MD5_TRUE=
+  MODULE__MD5_FALSE='#'
+else
+  MODULE__MD5_TRUE='#'
+  MODULE__MD5_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE__MD5_TRUE=
   MODULE__MD5_FALSE='#'
 else
@@ -20889,39 +20975,44 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__md5" >&5
+$as_echo "$py_cv_module__md5" >&6; }
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _sha1" >&5
 $as_echo_n "checking for stdlib extension module _sha1... " >&6; }
-          if test "$with_builtin_sha1" = yes; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE__SHA1=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__SHA1_CFLAGS=$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__SHA1_LDFLAGS=$as_nl"
-         if true; then
-  MODULE__SHA1_TRUE=
-  MODULE__SHA1_FALSE='#'
-else
-  MODULE__SHA1_TRUE='#'
-  MODULE__SHA1_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *_sha1*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module__sha1=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if test "$with_builtin_sha1" = yes; then :
+  if true; then :
+  py_cv_module__sha1=yes
+else
+  py_cv_module__sha1=missing
+fi
+else
+  py_cv_module__sha1=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE__SHA1=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE__SHA1=$py_cv_module__sha1$as_nl"
+  if test "x$py_cv_module__sha1" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__SHA1_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA1_LDFLAGS=$as_nl"
+     if true; then
+  MODULE__SHA1_TRUE=
+  MODULE__SHA1_FALSE='#'
+else
+  MODULE__SHA1_TRUE='#'
+  MODULE__SHA1_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE__SHA1_TRUE=
   MODULE__SHA1_FALSE='#'
 else
@@ -20931,39 +21022,44 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__sha1" >&5
+$as_echo "$py_cv_module__sha1" >&6; }
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _blake2" >&5
 $as_echo_n "checking for stdlib extension module _blake2... " >&6; }
-          if test "$with_builtin_blake2" = yes; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE__BLAKE2=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__BLAKE2_CFLAGS=$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__BLAKE2_LDFLAGS=$as_nl"
-         if true; then
-  MODULE__BLAKE2_TRUE=
-  MODULE__BLAKE2_FALSE='#'
-else
-  MODULE__BLAKE2_TRUE='#'
-  MODULE__BLAKE2_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *_blake2*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module__blake2=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if test "$with_builtin_blake2" = yes; then :
+  if true; then :
+  py_cv_module__blake2=yes
+else
+  py_cv_module__blake2=missing
+fi
+else
+  py_cv_module__blake2=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE__BLAKE2=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE__BLAKE2=$py_cv_module__blake2$as_nl"
+  if test "x$py_cv_module__blake2" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__BLAKE2_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__BLAKE2_LDFLAGS=$as_nl"
+     if true; then
+  MODULE__BLAKE2_TRUE=
+  MODULE__BLAKE2_FALSE='#'
+else
+  MODULE__BLAKE2_TRUE='#'
+  MODULE__BLAKE2_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE__BLAKE2_TRUE=
   MODULE__BLAKE2_FALSE='#'
 else
@@ -20973,39 +21069,44 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__blake2" >&5
+$as_echo "$py_cv_module__blake2" >&6; }
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _sha3" >&5
 $as_echo_n "checking for stdlib extension module _sha3... " >&6; }
-          if test "$with_builtin_sha3" = yes; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE__SHA3=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__SHA3_CFLAGS=$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__SHA3_LDFLAGS=$as_nl"
-         if true; then
-  MODULE__SHA3_TRUE=
-  MODULE__SHA3_FALSE='#'
-else
-  MODULE__SHA3_TRUE='#'
-  MODULE__SHA3_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *_sha3*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module__sha3=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if test "$with_builtin_sha3" = yes; then :
+  if true; then :
+  py_cv_module__sha3=yes
+else
+  py_cv_module__sha3=missing
+fi
+else
+  py_cv_module__sha3=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE__SHA3=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE__SHA3=$py_cv_module__sha3$as_nl"
+  if test "x$py_cv_module__sha3" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__SHA3_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA3_LDFLAGS=$as_nl"
+     if true; then
+  MODULE__SHA3_TRUE=
+  MODULE__SHA3_FALSE='#'
+else
+  MODULE__SHA3_TRUE='#'
+  MODULE__SHA3_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE__SHA3_TRUE=
   MODULE__SHA3_FALSE='#'
 else
@@ -21015,40 +21116,45 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__sha3" >&5
+$as_echo "$py_cv_module__sha3" >&6; }
 
 # TODO: select dbm library
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _dbm" >&5
 $as_echo_n "checking for stdlib extension module _dbm... " >&6; }
-          if true; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE__DBM=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__DBM_CFLAGS=-DUSE_GDBM_COMPAT$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__DBM_LDFLAGS=-lgdbm_compat$as_nl"
-         if true; then
-  MODULE__DBM_TRUE=
-  MODULE__DBM_FALSE='#'
-else
-  MODULE__DBM_TRUE='#'
-  MODULE__DBM_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *_dbm*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module__dbm=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if true; then :
+  if true; then :
+  py_cv_module__dbm=yes
+else
+  py_cv_module__dbm=missing
+fi
+else
+  py_cv_module__dbm=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE__DBM=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE__DBM=$py_cv_module__dbm$as_nl"
+  if test "x$py_cv_module__dbm" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__DBM_CFLAGS=-DUSE_GDBM_COMPAT$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__DBM_LDFLAGS=-lgdbm_compat$as_nl"
+     if true; then
+  MODULE__DBM_TRUE=
+  MODULE__DBM_FALSE='#'
+else
+  MODULE__DBM_TRUE='#'
+  MODULE__DBM_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE__DBM_TRUE=
   MODULE__DBM_FALSE='#'
 else
@@ -21058,39 +21164,44 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__dbm" >&5
+$as_echo "$py_cv_module__dbm" >&6; }
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _gdbm" >&5
 $as_echo_n "checking for stdlib extension module _gdbm... " >&6; }
-          if test "$ac_cv_lib_gdbm_gdbm_open" = yes; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE__GDBM=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__GDBM_CFLAGS=$GDBM_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__GDBM_LDFLAGS=$GDBM_LDFLAGS$as_nl"
-         if true; then
-  MODULE__GDBM_TRUE=
-  MODULE__GDBM_FALSE='#'
-else
-  MODULE__GDBM_TRUE='#'
-  MODULE__GDBM_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *_gdbm*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module__gdbm=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if true; then :
+  if test "$ac_cv_lib_gdbm_gdbm_open" = yes; then :
+  py_cv_module__gdbm=yes
+else
+  py_cv_module__gdbm=missing
+fi
+else
+  py_cv_module__gdbm=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE__GDBM=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE__GDBM=$py_cv_module__gdbm$as_nl"
+  if test "x$py_cv_module__gdbm" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__GDBM_CFLAGS=$GDBM_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__GDBM_LDFLAGS=$GDBM_LDFLAGS$as_nl"
+     if true; then
+  MODULE__GDBM_TRUE=
+  MODULE__GDBM_FALSE='#'
+else
+  MODULE__GDBM_TRUE='#'
+  MODULE__GDBM_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE__GDBM_TRUE=
   MODULE__GDBM_FALSE='#'
 else
@@ -21100,40 +21211,45 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__gdbm" >&5
+$as_echo "$py_cv_module__gdbm" >&6; }
 
 # TODO: detect sqlite
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _sqlite3" >&5
 $as_echo_n "checking for stdlib extension module _sqlite3... " >&6; }
-          if true; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE__SQLITE3=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__SQLITE3_CFLAGS=$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__SQLITE3_LDFLAGS=-lsqlite3$as_nl"
-         if true; then
-  MODULE__SQLITE3_TRUE=
-  MODULE__SQLITE3_FALSE='#'
-else
-  MODULE__SQLITE3_TRUE='#'
-  MODULE__SQLITE3_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *_sqlite3*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module__sqlite3=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if true; then :
+  if true; then :
+  py_cv_module__sqlite3=yes
+else
+  py_cv_module__sqlite3=missing
+fi
+else
+  py_cv_module__sqlite3=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE__SQLITE3=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE__SQLITE3=$py_cv_module__sqlite3$as_nl"
+  if test "x$py_cv_module__sqlite3" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__SQLITE3_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SQLITE3_LDFLAGS=-lsqlite3$as_nl"
+     if true; then
+  MODULE__SQLITE3_TRUE=
+  MODULE__SQLITE3_FALSE='#'
+else
+  MODULE__SQLITE3_TRUE='#'
+  MODULE__SQLITE3_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE__SQLITE3_TRUE=
   MODULE__SQLITE3_FALSE='#'
 else
@@ -21143,39 +21259,44 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__sqlite3" >&5
+$as_echo "$py_cv_module__sqlite3" >&6; }
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module termios" >&5
 $as_echo_n "checking for stdlib extension module termios... " >&6; }
-          if test "$ac_sys_system" != VxWorks; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE_TERMIOS=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE_TERMIOS_CFLAGS=$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE_TERMIOS_LDFLAGS=$as_nl"
-         if true; then
-  MODULE_TERMIOS_TRUE=
-  MODULE_TERMIOS_FALSE='#'
-else
-  MODULE_TERMIOS_TRUE='#'
-  MODULE_TERMIOS_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *termios*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module_termios=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if test "$ac_sys_system" != VxWorks; then :
+  if true; then :
+  py_cv_module_termios=yes
+else
+  py_cv_module_termios=missing
+fi
+else
+  py_cv_module_termios=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE_TERMIOS=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE_TERMIOS=$py_cv_module_termios$as_nl"
+  if test "x$py_cv_module_termios" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE_TERMIOS_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_TERMIOS_LDFLAGS=$as_nl"
+     if true; then
+  MODULE_TERMIOS_TRUE=
+  MODULE_TERMIOS_FALSE='#'
+else
+  MODULE_TERMIOS_TRUE='#'
+  MODULE_TERMIOS_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE_TERMIOS_TRUE=
   MODULE_TERMIOS_FALSE='#'
 else
@@ -21185,9 +21306,11 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_termios" >&5
+$as_echo "$py_cv_module_termios" >&6; }
 
 
-    as_fn_append MODULE_BLOCK "MODULE_RESOURCE=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_RESOURCE=yes$as_nl"
    if true; then
   MODULE_RESOURCE_TRUE=
   MODULE_RESOURCE_FALSE='#'
@@ -21201,35 +21324,38 @@ fi
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module ossaudiodev" >&5
 $as_echo_n "checking for stdlib extension module ossaudiodev... " >&6; }
-          if test "$ac_cv_header_linux_soundcard_h" = yes -o "$ac_cv_header_sys_soundcard_h" = yes; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE_OSSAUDIODEV=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE_OSSAUDIODEV_CFLAGS=$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE_OSSAUDIODEV_LDFLAGS=$as_nl"
-         if true; then
-  MODULE_OSSAUDIODEV_TRUE=
-  MODULE_OSSAUDIODEV_FALSE='#'
-else
-  MODULE_OSSAUDIODEV_TRUE='#'
-  MODULE_OSSAUDIODEV_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *ossaudiodev*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module_ossaudiodev=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if true; then :
+  if test "$ac_cv_header_linux_soundcard_h" = yes -o "$ac_cv_header_sys_soundcard_h" = yes; then :
+  py_cv_module_ossaudiodev=yes
+else
+  py_cv_module_ossaudiodev=missing
+fi
+else
+  py_cv_module_ossaudiodev=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE_OSSAUDIODEV=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE_OSSAUDIODEV=$py_cv_module_ossaudiodev$as_nl"
+  if test "x$py_cv_module_ossaudiodev" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE_OSSAUDIODEV_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_OSSAUDIODEV_LDFLAGS=$as_nl"
+     if true; then
+  MODULE_OSSAUDIODEV_TRUE=
+  MODULE_OSSAUDIODEV_FALSE='#'
+else
+  MODULE_OSSAUDIODEV_TRUE='#'
+  MODULE_OSSAUDIODEV_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE_OSSAUDIODEV_TRUE=
   MODULE_OSSAUDIODEV_FALSE='#'
 else
@@ -21239,39 +21365,44 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_ossaudiodev" >&5
+$as_echo "$py_cv_module_ossaudiodev" >&6; }
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _scproxy" >&5
 $as_echo_n "checking for stdlib extension module _scproxy... " >&6; }
-          if test "$ac_sys_system" = "Darwin"; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE__SCPROXY=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__SCPROXY_CFLAGS=$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__SCPROXY_LDFLAGS=-framework SystemConfiguration -framework CoreFoundation$as_nl"
-         if true; then
-  MODULE__SCPROXY_TRUE=
-  MODULE__SCPROXY_FALSE='#'
-else
-  MODULE__SCPROXY_TRUE='#'
-  MODULE__SCPROXY_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *_scproxy*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module__scproxy=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if test "$ac_sys_system" = "Darwin"; then :
+  if true; then :
+  py_cv_module__scproxy=yes
+else
+  py_cv_module__scproxy=missing
+fi
+else
+  py_cv_module__scproxy=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE__SCPROXY=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE__SCPROXY=$py_cv_module__scproxy$as_nl"
+  if test "x$py_cv_module__scproxy" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__SCPROXY_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SCPROXY_LDFLAGS=-framework SystemConfiguration -framework CoreFoundation$as_nl"
+     if true; then
+  MODULE__SCPROXY_TRUE=
+  MODULE__SCPROXY_FALSE='#'
+else
+  MODULE__SCPROXY_TRUE='#'
+  MODULE__SCPROXY_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE__SCPROXY_TRUE=
   MODULE__SCPROXY_FALSE='#'
 else
@@ -21281,40 +21412,45 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__scproxy" >&5
+$as_echo "$py_cv_module__scproxy" >&6; }
 
 # TODO: detect nsl and tirpc
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module nis" >&5
 $as_echo_n "checking for stdlib extension module nis... " >&6; }
-          if true; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE_NIS=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE_NIS_CFLAGS=-I/usr/include/tirpc$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE_NIS_LDFLAGS=-lnsl -ltirpc$as_nl"
-         if true; then
-  MODULE_NIS_TRUE=
-  MODULE_NIS_FALSE='#'
-else
-  MODULE_NIS_TRUE='#'
-  MODULE_NIS_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *nis*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module_nis=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if true; then :
+  if true; then :
+  py_cv_module_nis=yes
+else
+  py_cv_module_nis=missing
+fi
+else
+  py_cv_module_nis=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE_NIS=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE_NIS=$py_cv_module_nis$as_nl"
+  if test "x$py_cv_module_nis" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE_NIS_CFLAGS=-I/usr/include/tirpc$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_NIS_LDFLAGS=-lnsl -ltirpc$as_nl"
+     if true; then
+  MODULE_NIS_TRUE=
+  MODULE_NIS_FALSE='#'
+else
+  MODULE_NIS_TRUE='#'
+  MODULE_NIS_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE_NIS_TRUE=
   MODULE_NIS_FALSE='#'
 else
@@ -21324,39 +21460,44 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_nis" >&5
+$as_echo "$py_cv_module_nis" >&6; }
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module zlib" >&5
 $as_echo_n "checking for stdlib extension module zlib... " >&6; }
-          if test "$ac_cv_header_zlib_h" = yes -a "$ac_cv_lib_z_gzread" = yes; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE_ZLIB=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE_ZLIB_CFLAGS=$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE_ZLIB_LDFLAGS=-lz$as_nl"
-         if true; then
-  MODULE_ZLIB_TRUE=
-  MODULE_ZLIB_FALSE='#'
-else
-  MODULE_ZLIB_TRUE='#'
-  MODULE_ZLIB_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *zlib*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module_zlib=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if true; then :
+  if test "$ac_cv_header_zlib_h" = yes -a "$ac_cv_lib_z_gzread" = yes; then :
+  py_cv_module_zlib=yes
+else
+  py_cv_module_zlib=missing
+fi
+else
+  py_cv_module_zlib=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE_ZLIB=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE_ZLIB=$py_cv_module_zlib$as_nl"
+  if test "x$py_cv_module_zlib" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE_ZLIB_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_ZLIB_LDFLAGS=-lz$as_nl"
+     if true; then
+  MODULE_ZLIB_TRUE=
+  MODULE_ZLIB_FALSE='#'
+else
+  MODULE_ZLIB_TRUE='#'
+  MODULE_ZLIB_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE_ZLIB_TRUE=
   MODULE_ZLIB_FALSE='#'
 else
@@ -21366,39 +21507,44 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_zlib" >&5
+$as_echo "$py_cv_module_zlib" >&6; }
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module binascii" >&5
 $as_echo_n "checking for stdlib extension module binascii... " >&6; }
-          if true; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE_BINASCII=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE_BINASCII_CFLAGS=$BINASCII_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE_BINASCII_LDFLAGS=$BINASCII_LDFLAGS$as_nl"
-         if true; then
-  MODULE_BINASCII_TRUE=
-  MODULE_BINASCII_FALSE='#'
-else
-  MODULE_BINASCII_TRUE='#'
-  MODULE_BINASCII_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *binascii*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module_binascii=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if true; then :
+  if true; then :
+  py_cv_module_binascii=yes
+else
+  py_cv_module_binascii=missing
+fi
+else
+  py_cv_module_binascii=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE_BINASCII=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE_BINASCII=$py_cv_module_binascii$as_nl"
+  if test "x$py_cv_module_binascii" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE_BINASCII_CFLAGS=$BINASCII_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_BINASCII_LDFLAGS=$BINASCII_LDFLAGS$as_nl"
+     if true; then
+  MODULE_BINASCII_TRUE=
+  MODULE_BINASCII_FALSE='#'
+else
+  MODULE_BINASCII_TRUE='#'
+  MODULE_BINASCII_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE_BINASCII_TRUE=
   MODULE_BINASCII_FALSE='#'
 else
@@ -21408,39 +21554,44 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_binascii" >&5
+$as_echo "$py_cv_module_binascii" >&6; }
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _bz2" >&5
 $as_echo_n "checking for stdlib extension module _bz2... " >&6; }
-          if test "$ac_cv_header_bzlib_h" = yes -a "$ac_cv_lib_bz2_BZ2_bzCompress" = yes; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE__BZ2=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__BZ2_CFLAGS=$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__BZ2_LDFLAGS=-lbz2$as_nl"
-         if true; then
-  MODULE__BZ2_TRUE=
-  MODULE__BZ2_FALSE='#'
-else
-  MODULE__BZ2_TRUE='#'
-  MODULE__BZ2_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *_bz2*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module__bz2=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if true; then :
+  if test "$ac_cv_header_bzlib_h" = yes -a "$ac_cv_lib_bz2_BZ2_bzCompress" = yes; then :
+  py_cv_module__bz2=yes
+else
+  py_cv_module__bz2=missing
+fi
+else
+  py_cv_module__bz2=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE__BZ2=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE__BZ2=$py_cv_module__bz2$as_nl"
+  if test "x$py_cv_module__bz2" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__BZ2_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__BZ2_LDFLAGS=-lbz2$as_nl"
+     if true; then
+  MODULE__BZ2_TRUE=
+  MODULE__BZ2_FALSE='#'
+else
+  MODULE__BZ2_TRUE='#'
+  MODULE__BZ2_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE__BZ2_TRUE=
   MODULE__BZ2_FALSE='#'
 else
@@ -21450,39 +21601,44 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__bz2" >&5
+$as_echo "$py_cv_module__bz2" >&6; }
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _lzma" >&5
 $as_echo_n "checking for stdlib extension module _lzma... " >&6; }
-          if test "$ac_cv_header_lzma_h" = yes -a "$ac_cv_lib_lzma_lzma_easy_encoder" = yes; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE__LZMA=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__LZMA_CFLAGS=$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__LZMA_LDFLAGS=-llzma$as_nl"
-         if true; then
-  MODULE__LZMA_TRUE=
-  MODULE__LZMA_FALSE='#'
-else
-  MODULE__LZMA_TRUE='#'
-  MODULE__LZMA_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *_lzma*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module__lzma=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if true; then :
+  if test "$ac_cv_header_lzma_h" = yes -a "$ac_cv_lib_lzma_lzma_easy_encoder" = yes; then :
+  py_cv_module__lzma=yes
+else
+  py_cv_module__lzma=missing
+fi
+else
+  py_cv_module__lzma=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE__LZMA=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE__LZMA=$py_cv_module__lzma$as_nl"
+  if test "x$py_cv_module__lzma" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__LZMA_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__LZMA_LDFLAGS=-llzma$as_nl"
+     if true; then
+  MODULE__LZMA_TRUE=
+  MODULE__LZMA_FALSE='#'
+else
+  MODULE__LZMA_TRUE='#'
+  MODULE__LZMA_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE__LZMA_TRUE=
   MODULE__LZMA_FALSE='#'
 else
@@ -21492,40 +21648,44 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__lzma" >&5
+$as_echo "$py_cv_module__lzma" >&6; }
 
-# TODO: handle external libexpat
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module pyexpat" >&5
 $as_echo_n "checking for stdlib extension module pyexpat... " >&6; }
-          if true; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE_PYEXPAT=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE_PYEXPAT_CFLAGS=$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE_PYEXPAT_LDFLAGS=-lm$as_nl"
-         if true; then
-  MODULE_PYEXPAT_TRUE=
-  MODULE_PYEXPAT_FALSE='#'
-else
-  MODULE_PYEXPAT_TRUE='#'
-  MODULE_PYEXPAT_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *pyexpat*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module_pyexpat=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if true; then :
+  if true; then :
+  py_cv_module_pyexpat=yes
+else
+  py_cv_module_pyexpat=missing
+fi
+else
+  py_cv_module_pyexpat=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE_PYEXPAT=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE_PYEXPAT=$py_cv_module_pyexpat$as_nl"
+  if test "x$py_cv_module_pyexpat" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE_PYEXPAT_CFLAGS=$LIBEXPAT_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_PYEXPAT_LDFLAGS=$LIBEXPAT_LDFLAGS$as_nl"
+     if true; then
+  MODULE_PYEXPAT_TRUE=
+  MODULE_PYEXPAT_FALSE='#'
+else
+  MODULE_PYEXPAT_TRUE='#'
+  MODULE_PYEXPAT_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE_PYEXPAT_TRUE=
   MODULE_PYEXPAT_FALSE='#'
 else
@@ -21535,39 +21695,44 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_pyexpat" >&5
+$as_echo "$py_cv_module_pyexpat" >&6; }
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _elementtree" >&5
 $as_echo_n "checking for stdlib extension module _elementtree... " >&6; }
-          if true; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE__ELEMENTTREE=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__ELEMENTTREE_CFLAGS=$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__ELEMENTTREE_LDFLAGS=$as_nl"
-         if true; then
-  MODULE__ELEMENTTREE_TRUE=
-  MODULE__ELEMENTTREE_FALSE='#'
-else
-  MODULE__ELEMENTTREE_TRUE='#'
-  MODULE__ELEMENTTREE_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *_elementtree*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module__elementtree=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if true; then :
+  if true; then :
+  py_cv_module__elementtree=yes
+else
+  py_cv_module__elementtree=missing
+fi
+else
+  py_cv_module__elementtree=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE__ELEMENTTREE=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE__ELEMENTTREE=$py_cv_module__elementtree$as_nl"
+  if test "x$py_cv_module__elementtree" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__ELEMENTTREE_CFLAGS=$LIBEXPAT_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__ELEMENTTREE_LDFLAGS=$as_nl"
+     if true; then
+  MODULE__ELEMENTTREE_TRUE=
+  MODULE__ELEMENTTREE_FALSE='#'
+else
+  MODULE__ELEMENTTREE_TRUE='#'
+  MODULE__ELEMENTTREE_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE__ELEMENTTREE_TRUE=
   MODULE__ELEMENTTREE_FALSE='#'
 else
@@ -21577,9 +21742,11 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__elementtree" >&5
+$as_echo "$py_cv_module__elementtree" >&6; }
 
 
-    as_fn_append MODULE_BLOCK "MODULE__MULTIBYTECODEC=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__MULTIBYTECODEC=yes$as_nl"
    if true; then
   MODULE__MULTIBYTECODEC_TRUE=
   MODULE__MULTIBYTECODEC_FALSE='#'
@@ -21591,7 +21758,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__CODECS_KR=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__CODECS_KR=yes$as_nl"
    if true; then
   MODULE__CODECS_KR_TRUE=
   MODULE__CODECS_KR_FALSE='#'
@@ -21603,7 +21770,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__CODECS_JP=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__CODECS_JP=yes$as_nl"
    if true; then
   MODULE__CODECS_JP_TRUE=
   MODULE__CODECS_JP_FALSE='#'
@@ -21615,7 +21782,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__CODECS_CN=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__CODECS_CN=yes$as_nl"
    if true; then
   MODULE__CODECS_CN_TRUE=
   MODULE__CODECS_CN_FALSE='#'
@@ -21627,7 +21794,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__CODECS_TW=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__CODECS_TW=yes$as_nl"
    if true; then
   MODULE__CODECS_TW_TRUE=
   MODULE__CODECS_TW_FALSE='#'
@@ -21639,7 +21806,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__CODECS_HK=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__CODECS_HK=yes$as_nl"
    if true; then
   MODULE__CODECS_HK_TRUE=
   MODULE__CODECS_HK_FALSE='#'
@@ -21651,7 +21818,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE__CODECS_ISO2022=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__CODECS_ISO2022=yes$as_nl"
    if true; then
   MODULE__CODECS_ISO2022_TRUE=
   MODULE__CODECS_ISO2022_FALSE='#'
@@ -21667,35 +21834,38 @@ fi
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _decimal" >&5
 $as_echo_n "checking for stdlib extension module _decimal... " >&6; }
-          if true; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE__DECIMAL=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__DECIMAL_CFLAGS=-DUNIVERSAL -I\$(srcdir)/Modules/_decimal/libmpdec$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__DECIMAL_LDFLAGS=-lm$as_nl"
-         if true; then
-  MODULE__DECIMAL_TRUE=
-  MODULE__DECIMAL_FALSE='#'
-else
-  MODULE__DECIMAL_TRUE='#'
-  MODULE__DECIMAL_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *_decimal*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module__decimal=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if true; then :
+  if true; then :
+  py_cv_module__decimal=yes
+else
+  py_cv_module__decimal=missing
+fi
+else
+  py_cv_module__decimal=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE__DECIMAL=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE__DECIMAL=$py_cv_module__decimal$as_nl"
+  if test "x$py_cv_module__decimal" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__DECIMAL_CFLAGS=$LIBMPDEC_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__DECIMAL_LDFLAGS=$LIBMPDEC_LDFLAGS$as_nl"
+     if true; then
+  MODULE__DECIMAL_TRUE=
+  MODULE__DECIMAL_FALSE='#'
+else
+  MODULE__DECIMAL_TRUE='#'
+  MODULE__DECIMAL_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE__DECIMAL_TRUE=
   MODULE__DECIMAL_FALSE='#'
 else
@@ -21705,40 +21875,45 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__decimal" >&5
+$as_echo "$py_cv_module__decimal" >&6; }
 
 # TODO: handle ffi dependency
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _ctypes" >&5
 $as_echo_n "checking for stdlib extension module _ctypes... " >&6; }
-          if true; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE__CTYPES=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__CTYPES_CFLAGS=-DHAVE_FFI_PREP_CIF_VAR -DHAVE_FFI_PREP_CLOSURE_LOC -DHAVE_FFI_CLOSURE_ALLOC$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__CTYPES_LDFLAGS=-ldl -lffi$as_nl"
-         if true; then
-  MODULE__CTYPES_TRUE=
-  MODULE__CTYPES_FALSE='#'
-else
-  MODULE__CTYPES_TRUE='#'
-  MODULE__CTYPES_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *_ctypes*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module__ctypes=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if true; then :
+  if true; then :
+  py_cv_module__ctypes=yes
+else
+  py_cv_module__ctypes=missing
+fi
+else
+  py_cv_module__ctypes=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE__CTYPES=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE__CTYPES=$py_cv_module__ctypes$as_nl"
+  if test "x$py_cv_module__ctypes" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__CTYPES_CFLAGS=-DHAVE_FFI_PREP_CIF_VAR -DHAVE_FFI_PREP_CLOSURE_LOC -DHAVE_FFI_CLOSURE_ALLOC$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__CTYPES_LDFLAGS=-ldl -lffi$as_nl"
+     if true; then
+  MODULE__CTYPES_TRUE=
+  MODULE__CTYPES_FALSE='#'
+else
+  MODULE__CTYPES_TRUE='#'
+  MODULE__CTYPES_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE__CTYPES_TRUE=
   MODULE__CTYPES_FALSE='#'
 else
@@ -21748,39 +21923,44 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__ctypes" >&5
+$as_echo "$py_cv_module__ctypes" >&6; }
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _ctypes_test" >&5
 $as_echo_n "checking for stdlib extension module _ctypes_test... " >&6; }
-          if test "$TEST_MODULES" = yes; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE__CTYPES_TEST=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__CTYPES_TEST_CFLAGS=$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__CTYPES_TEST_LDFLAGS=$as_nl"
-         if true; then
-  MODULE__CTYPES_TEST_TRUE=
-  MODULE__CTYPES_TEST_FALSE='#'
-else
-  MODULE__CTYPES_TEST_TRUE='#'
-  MODULE__CTYPES_TEST_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *_ctypes_test*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module__ctypes_test=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if test "$TEST_MODULES" = yes; then :
+  if true; then :
+  py_cv_module__ctypes_test=yes
+else
+  py_cv_module__ctypes_test=missing
+fi
+else
+  py_cv_module__ctypes_test=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE__CTYPES_TEST=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE__CTYPES_TEST=$py_cv_module__ctypes_test$as_nl"
+  if test "x$py_cv_module__ctypes_test" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__CTYPES_TEST_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__CTYPES_TEST_LDFLAGS=$as_nl"
+     if true; then
+  MODULE__CTYPES_TEST_TRUE=
+  MODULE__CTYPES_TEST_FALSE='#'
+else
+  MODULE__CTYPES_TEST_TRUE='#'
+  MODULE__CTYPES_TEST_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE__CTYPES_TEST_TRUE=
   MODULE__CTYPES_TEST_FALSE='#'
 else
@@ -21790,39 +21970,44 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__ctypes_test" >&5
+$as_echo "$py_cv_module__ctypes_test" >&6; }
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _multiprocessing" >&5
 $as_echo_n "checking for stdlib extension module _multiprocessing... " >&6; }
-          if true; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE__MULTIPROCESSING=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__MULTIPROCESSING_CFLAGS=-I\$(srcdir)/Modules/_multiprocessing$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__MULTIPROCESSING_LDFLAGS=$ac_cv_search_shm_open$as_nl"
-         if true; then
-  MODULE__MULTIPROCESSING_TRUE=
-  MODULE__MULTIPROCESSING_FALSE='#'
-else
-  MODULE__MULTIPROCESSING_TRUE='#'
-  MODULE__MULTIPROCESSING_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *_multiprocessing*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module__multiprocessing=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if true; then :
+  if true; then :
+  py_cv_module__multiprocessing=yes
+else
+  py_cv_module__multiprocessing=missing
+fi
+else
+  py_cv_module__multiprocessing=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE__MULTIPROCESSING=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE__MULTIPROCESSING=$py_cv_module__multiprocessing$as_nl"
+  if test "x$py_cv_module__multiprocessing" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__MULTIPROCESSING_CFLAGS=-I\$(srcdir)/Modules/_multiprocessing$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__MULTIPROCESSING_LDFLAGS=$ac_cv_search_shm_open$as_nl"
+     if true; then
+  MODULE__MULTIPROCESSING_TRUE=
+  MODULE__MULTIPROCESSING_FALSE='#'
+else
+  MODULE__MULTIPROCESSING_TRUE='#'
+  MODULE__MULTIPROCESSING_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE__MULTIPROCESSING_TRUE=
   MODULE__MULTIPROCESSING_FALSE='#'
 else
@@ -21832,39 +22017,44 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__multiprocessing" >&5
+$as_echo "$py_cv_module__multiprocessing" >&6; }
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _posixshmem" >&5
 $as_echo_n "checking for stdlib extension module _posixshmem... " >&6; }
-          if test "$ac_cv_func_shm_open" = yes -a "ac_cv_func_shm_unlink" = yes; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM_CFLAGS=-I\$(srcdir)/Modules/_multiprocessing$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM_LDFLAGS=$ac_cv_search_shm_open$as_nl"
-         if true; then
-  MODULE__POSIXSHMEM_TRUE=
-  MODULE__POSIXSHMEM_FALSE='#'
-else
-  MODULE__POSIXSHMEM_TRUE='#'
-  MODULE__POSIXSHMEM_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *_posixshmem*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module__posixshmem=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if true; then :
+  if test "$ac_cv_func_shm_open" = yes -a "$ac_cv_func_shm_unlink" = yes; then :
+  py_cv_module__posixshmem=yes
+else
+  py_cv_module__posixshmem=missing
+fi
+else
+  py_cv_module__posixshmem=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM=$py_cv_module__posixshmem$as_nl"
+  if test "x$py_cv_module__posixshmem" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM_CFLAGS=-I\$(srcdir)/Modules/_multiprocessing$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM_LDFLAGS=$ac_cv_search_shm_open$as_nl"
+     if true; then
+  MODULE__POSIXSHMEM_TRUE=
+  MODULE__POSIXSHMEM_FALSE='#'
+else
+  MODULE__POSIXSHMEM_TRUE='#'
+  MODULE__POSIXSHMEM_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE__POSIXSHMEM_TRUE=
   MODULE__POSIXSHMEM_FALSE='#'
 else
@@ -21874,39 +22064,44 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__posixshmem" >&5
+$as_echo "$py_cv_module__posixshmem" >&6; }
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _tkinter" >&5
 $as_echo_n "checking for stdlib extension module _tkinter... " >&6; }
-          if test -n "$TCLTK_LIBS"; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE__TKINTER=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__TKINTER_CFLAGS=-DWITH_APPINIT=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__TKINTER_LDFLAGS=$TCLTK_LIBS$as_nl"
-         if true; then
-  MODULE__TKINTER_TRUE=
-  MODULE__TKINTER_FALSE='#'
-else
-  MODULE__TKINTER_TRUE='#'
-  MODULE__TKINTER_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *_tkinter*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module__tkinter=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if true; then :
+  if test -n "$TCLTK_LIBS"; then :
+  py_cv_module__tkinter=yes
+else
+  py_cv_module__tkinter=missing
+fi
+else
+  py_cv_module__tkinter=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE__TKINTER=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE__TKINTER=$py_cv_module__tkinter$as_nl"
+  if test "x$py_cv_module__tkinter" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__TKINTER_CFLAGS=-DWITH_APPINIT=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__TKINTER_LDFLAGS=$TCLTK_LIBS$as_nl"
+     if true; then
+  MODULE__TKINTER_TRUE=
+  MODULE__TKINTER_FALSE='#'
+else
+  MODULE__TKINTER_TRUE='#'
+  MODULE__TKINTER_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE__TKINTER_TRUE=
   MODULE__TKINTER_FALSE='#'
 else
@@ -21916,39 +22111,44 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__tkinter" >&5
+$as_echo "$py_cv_module__tkinter" >&6; }
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _uuid" >&5
 $as_echo_n "checking for stdlib extension module _uuid... " >&6; }
-          if test "$ac_cv_lib_uuid_uuid_generate_time" = yes -o "$ac_cv_func_uuid_create" = yes; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    as_fn_append MODULE_BLOCK "MODULE__UUID=1$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__UUID_CFLAGS=$UUID_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__UUID_LDFLAGS=$UUID_LDLAGS$as_nl"
-         if true; then
-  MODULE__UUID_TRUE=
-  MODULE__UUID_FALSE='#'
-else
-  MODULE__UUID_TRUE='#'
-  MODULE__UUID_FALSE=
-fi
-
-
-else
-
-    case $py_stdlib_not_available in #(
+      case $py_stdlib_not_available in #(
   *_uuid*) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-$as_echo "n/a" >&6; } ;; #(
+    py_cv_module__uuid=n/a ;; #(
   *) :
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    if true; then :
+  if test "$ac_cv_lib_uuid_uuid_generate_time" = yes -o "$ac_cv_func_uuid_create" = yes; then :
+  py_cv_module__uuid=yes
+else
+  py_cv_module__uuid=missing
+fi
+else
+  py_cv_module__uuid=disabled
+fi
      ;;
 esac
-    as_fn_append MODULE_BLOCK "MODULE__UUID=0$as_nl"
-             if false; then
+  as_fn_append MODULE_BLOCK "MODULE__UUID=$py_cv_module__uuid$as_nl"
+  if test "x$py_cv_module__uuid" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__UUID_CFLAGS=$UUID_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__UUID_LDFLAGS=$UUID_LDLAGS$as_nl"
+     if true; then
+  MODULE__UUID_TRUE=
+  MODULE__UUID_FALSE='#'
+else
+  MODULE__UUID_TRUE='#'
+  MODULE__UUID_FALSE=
+fi
+
+
+else
+
+     if false; then
   MODULE__UUID_TRUE=
   MODULE__UUID_FALSE='#'
 else
@@ -21958,9 +22158,11 @@ fi
 
 
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__uuid" >&5
+$as_echo "$py_cv_module__uuid" >&6; }
 
 
-    as_fn_append MODULE_BLOCK "MODULE_XXLIMITED=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_XXLIMITED=yes$as_nl"
    if true; then
   MODULE_XXLIMITED_TRUE=
   MODULE_XXLIMITED_FALSE='#'
@@ -21972,7 +22174,7 @@ fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE_XXLIMITED_35=1$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_XXLIMITED_35=yes$as_nl"
    if true; then
   MODULE_XXLIMITED_35_TRUE=
   MODULE_XXLIMITED_35_FALSE='#'
@@ -21980,7 +22182,6 @@ else
   MODULE_XXLIMITED_35_TRUE='#'
   MODULE_XXLIMITED_35_FALSE=
 fi
-
 
 
 
