@@ -107,6 +107,12 @@ def test_pickle_exception(assertion, exception, obj):
 class TestHelpers(unittest.TestCase):
     # _is_descriptor, _is_sunder, _is_dunder
 
+    sunder_names = '_bad_', '_good_', '_what_ho_'
+    dunder_names = '__mal__', '__bien__', '__que_que__'
+    private_names = '_MyEnum__private', '_MyEnum__still_private'
+    private_and_sunder_names = '_MyEnum__private_', '_MyEnum__also_private_'
+    random_names = 'okay', '_semi_private', '_weird__', '_MyEnum__'
+
     def test_is_descriptor(self):
         class foo:
             pass
@@ -116,20 +122,35 @@ class TestHelpers(unittest.TestCase):
             setattr(obj, attr, 1)
             self.assertTrue(enum._is_descriptor(obj))
 
-    def test_is_sunder(self):
+    def test_sunder(self):
+        for name in self.sunder_names + self.private_and_sunder_names:
+            self.assertTrue(enum._is_sunder(name), '%r is a not sunder name?' % name)
+        for name in self.dunder_names + self.private_names + self.random_names:
+            self.assertFalse(enum._is_sunder(name), '%r is a sunder name?' % name)
         for s in ('_a_', '_aa_'):
             self.assertTrue(enum._is_sunder(s))
-
         for s in ('a', 'a_', '_a', '__a', 'a__', '__a__', '_a__', '__a_', '_',
                 '__', '___', '____', '_____',):
             self.assertFalse(enum._is_sunder(s))
 
-    def test_is_dunder(self):
+    def test_dunder(self):
+        for name in self.dunder_names:
+            self.assertTrue(enum._is_dunder(name), '%r is a not dunder name?' % name)
+        for name in self.sunder_names + self.private_names + self.private_and_sunder_names + self.random_names:
+            self.assertFalse(enum._is_dunder(name), '%r is a dunder name?' % name)
         for s in ('__a__', '__aa__'):
             self.assertTrue(enum._is_dunder(s))
         for s in ('a', 'a_', '_a', '__a', 'a__', '_a_', '_a__', '__a_', '_',
                 '__', '___', '____', '_____',):
             self.assertFalse(enum._is_dunder(s))
+
+
+    def test_is_private(self):
+        for name in self.private_names + self.private_and_sunder_names:
+            self.assertTrue(enum._is_private('MyEnum', name), '%r is a not private name?')
+        for name in self.sunder_names + self.dunder_names + self.random_names:
+            self.assertFalse(enum._is_private('MyEnum', name), '%r is a private name?')
+
 
 # for subclassing tests
 
@@ -566,8 +587,11 @@ class TestEnum(unittest.TestCase):
             self.assertIn(e, Season)
             self.assertIs(type(e), Season)
             self.assertIsInstance(e, Season)
-            self.assertEqual(str(e), season)
-            self.assertEqual(repr(e), 'Season.{0}'.format(season))
+            self.assertEqual(str(e), 'Season.' + season)
+            self.assertEqual(
+                    repr(e),
+                    '<Season.{0}: {1}>'.format(season, i),
+                    )
 
     def test_value_name(self):
         Season = self.Season
@@ -810,7 +834,7 @@ class TestEnum(unittest.TestCase):
             two = 2.0
             def __format__(self, spec):
                 return 'Format!!'
-        self.assertEqual(str(EnumWithFormatOverride.one), 'one')
+        self.assertEqual(str(EnumWithFormatOverride.one), 'EnumWithFormatOverride.one')
         self.assertEqual('{}'.format(EnumWithFormatOverride.one), 'Format!!')
 
     def test_str_and_format_override_enum(self):
@@ -850,7 +874,7 @@ class TestEnum(unittest.TestCase):
             two = 2.0
             def __format__(self, spec):
                 return 'TestFloat success!'
-        self.assertEqual(str(TestFloat.one), 'one')
+        self.assertEqual(str(TestFloat.one), 'TestFloat.one')
         self.assertEqual('{}'.format(TestFloat.one), 'TestFloat success!')
 
     @unittest.skipIf(
@@ -966,15 +990,19 @@ class TestEnum(unittest.TestCase):
 
     def test_inherited_data_type(self):
         class HexInt(int):
+            __qualname__ = 'HexInt'
             def __repr__(self):
                 return hex(self)
         class MyEnum(HexInt, enum.Enum):
+            __qualname__ = 'MyEnum'
             A = 1
             B = 2
             C = 3
-            def __repr__(self):
-                return '<%s.%s: %r>' % (self.__class__.__name__, self._name_, self._value_)
         self.assertEqual(repr(MyEnum.A), '<MyEnum.A: 0x1>')
+        globals()['HexInt'] = HexInt
+        globals()['MyEnum'] = MyEnum
+        test_pickle_dump_load(self.assertIs, MyEnum.A)
+        test_pickle_dump_load(self.assertIs, MyEnum)
         #
         class SillyInt(HexInt):
             __qualname__ = 'SillyInt'
@@ -990,7 +1018,7 @@ class TestEnum(unittest.TestCase):
         test_pickle_dump_load(self.assertIs, MyOtherEnum.E)
         test_pickle_dump_load(self.assertIs, MyOtherEnum)
         #
-        # This did not work in 3.9, but does now with pickling by name
+        # This did not work in 3.10, but does now with pickling by name
         class UnBrokenInt(int):
             __qualname__ = 'UnBrokenInt'
             def __new__(cls, value):
@@ -2091,6 +2119,7 @@ class TestEnum(unittest.TestCase):
         class Test(Base):
             test = 1
         self.assertEqual(Test.test.test, 'dynamic')
+        self.assertEqual(Test.test.value, 1)
         class Base2(Enum):
             @enum.property
             def flash(self):
@@ -2098,6 +2127,7 @@ class TestEnum(unittest.TestCase):
         class Test(Base2):
             flash = 1
         self.assertEqual(Test.flash.flash, 'flashy dynamic')
+        self.assertEqual(Test.flash.value, 1)
 
     def test_no_duplicates(self):
         class UniqueEnum(Enum):
@@ -2363,9 +2393,9 @@ class TestEnum(unittest.TestCase):
         class_1_ref = weakref.ref(Class1())
         class_2_ref = weakref.ref(Class2())
         #
-        # The exception raised by Enum creates a reference loop and thus
-        # Class2 instances will stick around until the next garbage collection
-        # cycle, unlike Class1.
+        # The exception raised by Enum used to create a reference loop and thus
+        # Class2 instances would stick around until the next garbage collection
+        # cycle, unlike Class1.  Verify Class2 no longer does this.
         gc.collect()  # For PyPy or other GCs.
         self.assertIs(class_1_ref(), None)
         self.assertIs(class_2_ref(), None)
@@ -2396,7 +2426,7 @@ class TestEnum(unittest.TestCase):
         self.assertEqual(Color.GREEN.value, 2)
         self.assertEqual(Color.BLUE.value, 3)
         self.assertEqual(Color.MAX, 3)
-        self.assertEqual(str(Color.BLUE), 'BLUE')
+        self.assertEqual(str(Color.BLUE), 'Color.BLUE')
         class Color(MaxMixin, StrMixin, Enum):
             RED = auto()
             GREEN = auto()
@@ -2939,62 +2969,62 @@ class TestFlag(unittest.TestCase):
 
     def test_str(self):
         Perm = self.Perm
-        self.assertEqual(str(Perm.R), 'R')
-        self.assertEqual(str(Perm.W), 'W')
-        self.assertEqual(str(Perm.X), 'X')
-        self.assertEqual(str(Perm.R | Perm.W), 'R|W')
-        self.assertEqual(str(Perm.R | Perm.W | Perm.X), 'R|W|X')
+        self.assertEqual(str(Perm.R), 'Perm.R')
+        self.assertEqual(str(Perm.W), 'Perm.W')
+        self.assertEqual(str(Perm.X), 'Perm.X')
+        self.assertEqual(str(Perm.R | Perm.W), 'Perm.R|Perm.W')
+        self.assertEqual(str(Perm.R | Perm.W | Perm.X), 'Perm.R|Perm.W|Perm.X')
         self.assertEqual(str(Perm(0)), 'Perm(0)')
-        self.assertEqual(str(~Perm.R), 'W|X')
-        self.assertEqual(str(~Perm.W), 'R|X')
-        self.assertEqual(str(~Perm.X), 'R|W')
-        self.assertEqual(str(~(Perm.R | Perm.W)), 'X')
+        self.assertEqual(str(~Perm.R), 'Perm.W|Perm.X')
+        self.assertEqual(str(~Perm.W), 'Perm.R|Perm.X')
+        self.assertEqual(str(~Perm.X), 'Perm.R|Perm.W')
+        self.assertEqual(str(~(Perm.R | Perm.W)), 'Perm.X')
         self.assertEqual(str(~(Perm.R | Perm.W | Perm.X)), 'Perm(0)')
-        self.assertEqual(str(Perm(~0)), 'R|W|X')
+        self.assertEqual(str(Perm(~0)), 'Perm.R|Perm.W|Perm.X')
 
         Open = self.Open
-        self.assertEqual(str(Open.RO), 'RO')
-        self.assertEqual(str(Open.WO), 'WO')
-        self.assertEqual(str(Open.AC), 'AC')
-        self.assertEqual(str(Open.RO | Open.CE), 'CE')
-        self.assertEqual(str(Open.WO | Open.CE), 'WO|CE')
-        self.assertEqual(str(~Open.RO), 'WO|RW|CE')
-        self.assertEqual(str(~Open.WO), 'RW|CE')
-        self.assertEqual(str(~Open.AC), 'CE')
-        self.assertEqual(str(~(Open.RO | Open.CE)), 'AC')
-        self.assertEqual(str(~(Open.WO | Open.CE)), 'RW')
+        self.assertEqual(str(Open.RO), 'Open.RO')
+        self.assertEqual(str(Open.WO), 'Open.WO')
+        self.assertEqual(str(Open.AC), 'Open.AC')
+        self.assertEqual(str(Open.RO | Open.CE), 'Open.CE')
+        self.assertEqual(str(Open.WO | Open.CE), 'Open.WO|Open.CE')
+        self.assertEqual(str(~Open.RO), 'Open.WO|Open.RW|Open.CE')
+        self.assertEqual(str(~Open.WO), 'Open.RW|Open.CE')
+        self.assertEqual(str(~Open.AC), 'Open.CE')
+        self.assertEqual(str(~(Open.RO | Open.CE)), 'Open.AC')
+        self.assertEqual(str(~(Open.WO | Open.CE)), 'Open.RW')
 
     def test_repr(self):
         Perm = self.Perm
-        self.assertEqual(repr(Perm.R), 'Perm.R')
-        self.assertEqual(repr(Perm.W), 'Perm.W')
-        self.assertEqual(repr(Perm.X), 'Perm.X')
-        self.assertEqual(repr(Perm.R | Perm.W), 'Perm.R|Perm.W')
-        self.assertEqual(repr(Perm.R | Perm.W | Perm.X), 'Perm.R|Perm.W|Perm.X')
-        self.assertEqual(repr(Perm(0)), '0x0')
-        self.assertEqual(repr(~Perm.R), 'Perm.W|Perm.X')
-        self.assertEqual(repr(~Perm.W), 'Perm.R|Perm.X')
-        self.assertEqual(repr(~Perm.X), 'Perm.R|Perm.W')
-        self.assertEqual(repr(~(Perm.R | Perm.W)), 'Perm.X')
-        self.assertEqual(repr(~(Perm.R | Perm.W | Perm.X)), '0x0')
-        self.assertEqual(repr(Perm(~0)), 'Perm.R|Perm.W|Perm.X')
+        self.assertEqual(repr(Perm.R), '<Perm(4): R>')
+        self.assertEqual(repr(Perm.W), '<Perm(2): W>')
+        self.assertEqual(repr(Perm.X), '<Perm(1): X>')
+        self.assertEqual(repr(Perm.R | Perm.W), '<Perm(6): R|W>')
+        self.assertEqual(repr(Perm.R | Perm.W | Perm.X), '<Perm(7): R|W|X>')
+        self.assertEqual(repr(Perm(0)), '<Perm(0)>')
+        self.assertEqual(repr(~Perm.R), '<Perm(3): W|X>')
+        self.assertEqual(repr(~Perm.W), '<Perm(5): R|X>')
+        self.assertEqual(repr(~Perm.X), '<Perm(6): R|W>')
+        self.assertEqual(repr(~(Perm.R | Perm.W)), '<Perm(1): X>')
+        self.assertEqual(repr(~(Perm.R | Perm.W | Perm.X)), '<Perm(0)>')
+        self.assertEqual(repr(Perm(~0)), '<Perm(7): R|W|X>')
 
         Open = self.Open
-        self.assertEqual(repr(Open.RO), 'Open.RO')
-        self.assertEqual(repr(Open.WO), 'Open.WO')
-        self.assertEqual(repr(Open.AC), 'Open.AC')
-        self.assertEqual(repr(Open.RO | Open.CE), 'Open.CE')
-        self.assertEqual(repr(Open.WO | Open.CE), 'Open.WO|Open.CE')
-        self.assertEqual(repr(~Open.RO), 'Open.WO|Open.RW|Open.CE')
-        self.assertEqual(repr(~Open.WO), 'Open.RW|Open.CE')
-        self.assertEqual(repr(~Open.AC), 'Open.CE')
-        self.assertEqual(repr(~(Open.RO | Open.CE)), 'Open.AC')
-        self.assertEqual(repr(~(Open.WO | Open.CE)), 'Open.RW')
+        self.assertEqual(repr(Open.RO), 'Open(0): RO>')
+        self.assertEqual(repr(Open.WO), 'Open(1): WO>')
+        self.assertEqual(repr(Open.AC), 'Open(3): AC>')
+        self.assertEqual(repr(Open.RO | Open.CE), 'Open(524288): CE>')
+        self.assertEqual(repr(Open.WO | Open.CE), 'Open(524289): WO|CE>')
+        self.assertEqual(repr(~Open.RO), 'Open(524291): WO|RW|CE>')
+        self.assertEqual(repr(~Open.WO), 'Open(524290): RW|CE>')
+        self.assertEqual(repr(~Open.AC), 'Open(524288): CE>')
+        self.assertEqual(repr(~(Open.RO | Open.CE)), 'Open(3): AC>')
+        self.assertEqual(repr(~(Open.WO | Open.CE)), 'Open(2): RW>')
 
     def test_format(self):
         Perm = self.Perm
-        self.assertEqual(format(Perm.R, ''), 'R')
-        self.assertEqual(format(Perm.R | Perm.X, ''), 'R|X')
+        self.assertEqual(format(Perm.R, ''), 'Perm.R')
+        self.assertEqual(format(Perm.R | Perm.X, ''), 'Perm.R|Perm.X')
 
     def test_or(self):
         Perm = self.Perm
@@ -3332,7 +3362,7 @@ class TestFlag(unittest.TestCase):
         self.assertEqual(Color.GREEN.value, 2)
         self.assertEqual(Color.BLUE.value, 4)
         self.assertEqual(Color.ALL.value, 7)
-        self.assertEqual(str(Color.BLUE), 'BLUE')
+        self.assertEqual(str(Color.BLUE), 'Color.BLUE')
         class Color(AllMixin, StrMixin, Flag):
             RED = auto()
             GREEN = auto()
@@ -3488,68 +3518,68 @@ class TestIntFlag(unittest.TestCase):
 
     def test_str(self):
         Perm = self.Perm
-        self.assertEqual(str(Perm.R), 'R')
-        self.assertEqual(str(Perm.W), 'W')
-        self.assertEqual(str(Perm.X), 'X')
-        self.assertEqual(str(Perm.R | Perm.W), 'R|W')
-        self.assertEqual(str(Perm.R | Perm.W | Perm.X), 'R|W|X')
+        self.assertEqual(str(Perm.R), 'Perm.R')
+        self.assertEqual(str(Perm.W), 'Perm.W')
+        self.assertEqual(str(Perm.X), 'Perm.X')
+        self.assertEqual(str(Perm.R | Perm.W), 'Perm.R|Perm.W')
+        self.assertEqual(str(Perm.R | Perm.W | Perm.X), 'Perm.R|Perm.W|Perm.X')
         self.assertEqual(str(Perm.R | 8), '12')
         self.assertEqual(str(Perm(0)), 'Perm(0)')
         self.assertEqual(str(Perm(8)), '8')
-        self.assertEqual(str(~Perm.R), 'W|X')
-        self.assertEqual(str(~Perm.W), 'R|X')
-        self.assertEqual(str(~Perm.X), 'R|W')
-        self.assertEqual(str(~(Perm.R | Perm.W)), 'X')
+        self.assertEqual(str(~Perm.R), 'Perm.W|Perm.X')
+        self.assertEqual(str(~Perm.W), 'Perm.R|Perm.X')
+        self.assertEqual(str(~Perm.X), 'Perm.R|Perm.W')
+        self.assertEqual(str(~(Perm.R | Perm.W)), 'Perm.X')
         self.assertEqual(str(~(Perm.R | Perm.W | Perm.X)), 'Perm(0)')
         self.assertEqual(str(~(Perm.R | 8)), '-13')
-        self.assertEqual(str(Perm(~0)), 'R|W|X')
+        self.assertEqual(str(Perm(~0)), 'Perm.R|Perm.W|Perm.X')
         self.assertEqual(str(Perm(~8)), '-9')
 
         Open = self.Open
-        self.assertEqual(str(Open.RO), 'RO')
-        self.assertEqual(str(Open.WO), 'WO')
-        self.assertEqual(str(Open.AC), 'AC')
-        self.assertEqual(str(Open.RO | Open.CE), 'CE')
-        self.assertEqual(str(Open.WO | Open.CE), 'WO|CE')
+        self.assertEqual(str(Open.RO), 'Open.RO')
+        self.assertEqual(str(Open.WO), 'Open.WO')
+        self.assertEqual(str(Open.AC), 'Open.AC')
+        self.assertEqual(str(Open.RO | Open.CE), 'Open.CE')
+        self.assertEqual(str(Open.WO | Open.CE), 'Open.WO|Open.CE')
         self.assertEqual(str(Open(4)), '4')
-        self.assertEqual(str(~Open.RO), 'WO|RW|CE')
-        self.assertEqual(str(~Open.WO), 'RW|CE')
-        self.assertEqual(str(~Open.AC), 'CE')
-        self.assertEqual(str(~(Open.RO | Open.CE)), 'AC')
-        self.assertEqual(str(~(Open.WO | Open.CE)), 'RW')
+        self.assertEqual(str(~Open.RO), 'Open.WO|Open.RW|Open.CE')
+        self.assertEqual(str(~Open.WO), 'Open.RW|Open.CE')
+        self.assertEqual(str(~Open.AC), 'Open.CE')
+        self.assertEqual(str(~(Open.RO | Open.CE)), 'Open.AC')
+        self.assertEqual(str(~(Open.WO | Open.CE)), 'Open.RW')
         self.assertEqual(str(Open(~4)), '-5')
 
     def test_repr(self):
         Perm = self.Perm
-        self.assertEqual(repr(Perm.R), 'Perm.R')
-        self.assertEqual(repr(Perm.W), 'Perm.W')
-        self.assertEqual(repr(Perm.X), 'Perm.X')
-        self.assertEqual(repr(Perm.R | Perm.W), 'Perm.R|Perm.W')
-        self.assertEqual(repr(Perm.R | Perm.W | Perm.X), 'Perm.R|Perm.W|Perm.X')
+        self.assertEqual(repr(Perm.R), '<Perm(4): R>')
+        self.assertEqual(repr(Perm.W), '<Perm(2): W>')
+        self.assertEqual(repr(Perm.X), '<Perm(1): X>')
+        self.assertEqual(repr(Perm.R | Perm.W), '<Perm(6): R|W>')
+        self.assertEqual(repr(Perm.R | Perm.W | Perm.X), '<Perm(7): R|W|X>')
         self.assertEqual(repr(Perm.R | 8), '12')
-        self.assertEqual(repr(Perm(0)), '0x0')
+        self.assertEqual(repr(Perm(0)), '<Perm(0)>')
         self.assertEqual(repr(Perm(8)), '8')
-        self.assertEqual(repr(~Perm.R), 'Perm.W|Perm.X')
-        self.assertEqual(repr(~Perm.W), 'Perm.R|Perm.X')
-        self.assertEqual(repr(~Perm.X), 'Perm.R|Perm.W')
-        self.assertEqual(repr(~(Perm.R | Perm.W)), 'Perm.X')
-        self.assertEqual(repr(~(Perm.R | Perm.W | Perm.X)), '0x0')
+        self.assertEqual(repr(~Perm.R), '<Perm(3): W|X>')
+        self.assertEqual(repr(~Perm.W), '<Perm(5): R|X>')
+        self.assertEqual(repr(~Perm.X), '<Perm(6): R|W>')
+        self.assertEqual(repr(~(Perm.R | Perm.W)), '<Perm(1): X>')
+        self.assertEqual(repr(~(Perm.R | Perm.W | Perm.X)), '<Perm(0)>')
         self.assertEqual(repr(~(Perm.R | 8)), '-13')
-        self.assertEqual(repr(Perm(~0)), 'Perm.R|Perm.W|Perm.X')
+        self.assertEqual(repr(Perm(~0)), '<Perm(7): R|W|X')
         self.assertEqual(repr(Perm(~8)), '-9')
 
         Open = self.Open
-        self.assertEqual(repr(Open.RO), 'Open.RO')
-        self.assertEqual(repr(Open.WO), 'Open.WO')
-        self.assertEqual(repr(Open.AC), 'Open.AC')
-        self.assertEqual(repr(Open.RO | Open.CE), 'Open.CE')
-        self.assertEqual(repr(Open.WO | Open.CE), 'Open.WO|Open.CE')
+        self.assertEqual(repr(Open.RO), '<Open(0): RO>')
+        self.assertEqual(repr(Open.WO), '<Open(1): WO>')
+        self.assertEqual(repr(Open.AC), '<Open(3): AC>')
+        self.assertEqual(repr(Open.RO | Open.CE), '<Open(524288): CE>')
+        self.assertEqual(repr(Open.WO | Open.CE), '<Open(524289): WO|CE>')
         self.assertEqual(repr(Open(4)), '4')
-        self.assertEqual(repr(~Open.RO), 'Open.WO|Open.RW|Open.CE')
-        self.assertEqual(repr(~Open.WO), 'Open.RW|Open.CE')
-        self.assertEqual(repr(~Open.AC), 'Open.CE')
-        self.assertEqual(repr(~(Open.RO | Open.CE)), 'Open.AC')
-        self.assertEqual(repr(~(Open.WO | Open.CE)), 'Open.RW')
+        self.assertEqual(repr(~Open.RO), '<Open(...): WO|RW|CE>')
+        self.assertEqual(repr(~Open.WO), '<Open(...): RW|CE>')
+        self.assertEqual(repr(~Open.AC), '<Open(...): CE>')
+        self.assertEqual(repr(~(Open.RO | Open.CE)), '<Open(3): AC>')
+        self.assertEqual(repr(~(Open.WO | Open.CE)), '<Open(2): RW>')
         self.assertEqual(repr(Open(~4)), '-5')
 
     def test_global_repr_keep(self):
@@ -3942,7 +3972,7 @@ class TestIntFlag(unittest.TestCase):
         self.assertEqual(Color.GREEN.value, 2)
         self.assertEqual(Color.BLUE.value, 4)
         self.assertEqual(Color.ALL.value, 7)
-        self.assertEqual(str(Color.BLUE), 'BLUE')
+        self.assertEqual(str(Color.BLUE), 'Color.BLUE')
         class Color(AllMixin, StrMixin, IntFlag):
             RED = auto()
             GREEN = auto()
@@ -4247,11 +4277,11 @@ class Color(enum.Enum)
  |\x20\x20
  |  Data and other attributes defined here:
  |\x20\x20
- |  blue = Color.blue
+ |  blue = <Color.blue: 3>
  |\x20\x20
- |  green = Color.green
+ |  green = <Color.green: 2>
  |\x20\x20
- |  red = Color.red
+ |  red = <Color.red: 1>
  |\x20\x20
  |  ----------------------------------------------------------------------
  |  Data descriptors inherited from enum.Enum:
@@ -4284,11 +4314,11 @@ class Color(enum.Enum)
  |\x20\x20
  |  Data and other attributes defined here:
  |\x20\x20
- |  blue = Color.blue
+ |  blue = <Color.blue: 3>
  |\x20\x20
- |  green = Color.green
+ |  green = <Color.green: 2>
  |\x20\x20
- |  red = Color.red
+ |  red = <Color.red: 1>
  |\x20\x20
  |  ----------------------------------------------------------------------
  |  Data descriptors inherited from enum.Enum:
