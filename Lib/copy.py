@@ -39,8 +39,8 @@ Python's deep copy operation avoids these problems by:
     set of components copied
 
 This version does not copy types like module, class, function, method,
-nor stack trace, stack frame, nor file, socket, window, nor array, nor
-any similar types.
+nor stack trace, stack frame, nor file, socket, window, nor any
+similar types.
 
 Classes can use the same interfaces to control copying that they use
 to control pickling: they can define methods called __getinitargs__(),
