@@ -172,8 +172,8 @@ time timemodule.c
 #select selectmodule.c
 
 # XML
-#_elementtree -I$(srcdir)/Modules/expat _elementtree.c
-#pyexpat -I$(srcdir)/Modules/expat  expat/xmlparse.c expat/xmlrole.c expat/xmltok.c pyexpat.c
+#_elementtree _elementtree.c $(EXPAT_CFLAGS)
+#pyexpat pyexpat.c $(EXPAT_CFLAGS) $(EXPAT_LDFLAGS)
 
 # hashing builtins
 #_blake2 _blake2/blake2module.c _blake2/blake2b_impl.c _blake2/blake2s_impl.c

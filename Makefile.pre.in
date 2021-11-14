@@ -537,6 +537,33 @@ LIBMPDEC_HEADERS= \
 
 LIBMPDEC_A= Modules/_decimal/libmpdec/libmpdec.a
 
+##########################################################################
+# pyexpat's expat library
+
+LIBEXPAT_OBJS= \
+		Modules/expat/xmlparse.o \
+		Modules/expat/xmlrole.o \
+		Modules/expat/xmltok.o
+
+LIBEXPAT_HEADERS= \
+		Modules/expat/ascii.h \
+		Modules/expat/asciitab.h \
+		Modules/expat/expat.h \
+		Modules/expat/expat_config.h \
+		Modules/expat/expat_external.h \
+		Modules/expat/iasciitab.h \
+		Modules/expat/internal.h \
+		Modules/expat/latin1tab.h \
+		Modules/expat/nametab.h \
+		Modules/expat/pyexpatns.h \
+		Modules/expat/siphash.h \
+		Modules/expat/utf8tab.h \
+		Modules/expat/xmlrole.h \
+		Modules/expat/xmltok.h \
+		Modules/expat/xmltok_impl.h
+
+LIBEXPAT_A= Modules/expat/libexpat.a
+
 #########################################################################
 # Rules
 
@@ -688,7 +715,7 @@ $(srcdir)/Modules/_blake2/blake2s_impl.c: $(srcdir)/Modules/_blake2/blake2b_impl
 # -s, --silent or --quiet is always the first char.
 # Under BSD make, MAKEFLAGS might be " -s -v x=y".
 # Ignore macros passed by GNU make, passed after --
-sharedmods: $(BUILDPYTHON) pybuilddir.txt @LIBMPDEC_INTERNAL@
+sharedmods: $(BUILDPYTHON) pybuilddir.txt @LIBMPDEC_INTERNAL@ @LIBEXPAT_INTERNAL@
 	@case "`echo X $$MAKEFLAGS | sed 's/^X //;s/ -- .*//'`" in \
 	    *\ -s*|s*) quiet="-q";; \
 	    *) quiet="";; \
@@ -827,6 +854,27 @@ Modules/_decimal/libmpdec/transpose.o: $(srcdir)/Modules/_decimal/libmpdec/trans
 $(LIBMPDEC_A): $(LIBMPDEC_OBJS)
 	-rm -f $@
 	$(AR) $(ARFLAGS) $@ $(LIBMPDEC_OBJS)
+
+##########################################################################
+# Build static libexpat.a
+LIBEXPAT_CFLAGS=$(PY_STDMODULE_CFLAGS) $(CCSHARED) @LIBEXPAT_CFLAGS@
+
+# for setup.py
+EXPAT_CFLAGS=@LIBEXPAT_CFLAGS@
+EXPAT_LDFLAGS=@LIBEXPAT_LDFLAGS@
+
+Modules/expat/xmlparse.o: $(srcdir)/Modules/expat/xmlparse.c $(LIBEXPAT_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBEXPAT_CFLAGS) -o $@ $(srcdir)/Modules/expat/xmlparse.c
+
+Modules/expat/xmlrole.o: $(srcdir)/Modules/expat/xmlrole.c $(LIBEXPAT_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBEXPAT_CFLAGS) -o $@ $(srcdir)/Modules/expat/xmlrole.c
+
+Modules/expat/xmltok.o: $(srcdir)/Modules/expat/xmltok.c $(LIBEXPAT_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBEXPAT_CFLAGS) -o $@ $(srcdir)/Modules/expat/xmltok.c
+
+$(LIBEXPAT_A): $(LIBEXPAT_OBJS)
+	-rm -f $@
+	$(AR) $(ARFLAGS) $@ $(LIBEXPAT_OBJS)
 
 # create relative links from build/lib.platform/egg.so to Modules/egg.so
 # pybuilddir.txt is created too late. We cannot use it in Makefile
@@ -2407,12 +2455,12 @@ Python/thread.o: @THREADHEADERS@ $(srcdir)/Python/condvar.h
 
 MODULE_CMATH_DEPS=$(srcdir)/Modules/_math.h
 MODULE_MATH_DEPS=$(srcdir)/Modules/_math.h
-MODULE_PYEXPAT_DEPS=$(srcdir)/Modules/expat/ascii.h $(srcdir)/Modules/expat/asciitab.h $(srcdir)/Modules/expat/expat.h $(srcdir)/Modules/expat/expat_config.h $(srcdir)/Modules/expat/expat_external.h $(srcdir)/Modules/expat/internal.h $(srcdir)/Modules/expat/latin1tab.h $(srcdir)/Modules/expat/utf8tab.h $(srcdir)/Modules/expat/xmlrole.h $(srcdir)/Modules/expat/xmltok.h $(srcdir)/Modules/expat/xmltok_impl.h
+MODULE_PYEXPAT_DEPS=$(LIBEXPAT_HEADERS) @LIBEXPAT_INTERNAL@
 MODULE_UNICODEDATA_DEPS=$(srcdir)/Modules/unicodedata_db.h $(srcdir)/Modules/unicodename_db.h
 MODULE__BLAKE2_DEPS=$(srcdir)/Modules/_blake2/impl/blake2-config.h $(srcdir)/Modules/_blake2/impl/blake2-dispatch.c $(srcdir)/Modules/_blake2/impl/blake2-impl.h $(srcdir)/Modules/_blake2/impl/blake2-kat.h $(srcdir)/Modules/_blake2/impl/blake2.h $(srcdir)/Modules/_blake2/impl/blake2b-load-sse2.h $(srcdir)/Modules/_blake2/impl/blake2b-load-sse41.h $(srcdir)/Modules/_blake2/impl/blake2b-ref.c $(srcdir)/Modules/_blake2/impl/blake2b-round.h $(srcdir)/Modules/_blake2/impl/blake2b-test.c $(srcdir)/Modules/_blake2/impl/blake2b.c $(srcdir)/Modules/_blake2/impl/blake2bp-test.c $(srcdir)/Modules/_blake2/impl/blake2bp.c $(srcdir)/Modules/_blake2/impl/blake2s-load-sse2.h $(srcdir)/Modules/_blake2/impl/blake2s-load-sse41.h $(srcdir)/Modules/_blake2/impl/blake2s-load-xop.h $(srcdir)/Modules/_blake2/impl/blake2s-ref.c $(srcdir)/Modules/_blake2/impl/blake2s-round.h $(srcdir)/Modules/_blake2/impl/blake2s-test.c $(srcdir)/Modules/_blake2/impl/blake2s.c $(srcdir)/Modules/_blake2/impl/blake2sp-test.c $(srcdir)/Modules/_blake2/impl/blake2sp.c $(srcdir)/Modules/hashlib.h
 MODULE__CTYPES_DEPS=$(srcdir)/Modules/_ctypes/ctypes.h
 MODULE__DECIMAL_DEPS=$(srcdir)/Modules/_decimal/docstrings.h $(LIBMPDEC_HEADERS) @LIBMPDEC_INTERNAL@
-MODULE__ELEMENTTREE_DEPS=$(srcdir)/Modules/expat/ascii.h $(srcdir)/Modules/expat/asciitab.h $(srcdir)/Modules/expat/expat.h $(srcdir)/Modules/expat/expat_config.h $(srcdir)/Modules/expat/expat_external.h $(srcdir)/Modules/expat/internal.h $(srcdir)/Modules/expat/latin1tab.h $(srcdir)/Modules/expat/utf8tab.h $(srcdir)/Modules/expat/xmlparse.c $(srcdir)/Modules/expat/xmlrole.c $(srcdir)/Modules/expat/xmlrole.h $(srcdir)/Modules/expat/xmltok.c $(srcdir)/Modules/expat/xmltok.h $(srcdir)/Modules/expat/xmltok_impl.h $(srcdir)/Modules/pyexpat.c
+MODULE__ELEMENTTREE_DEPS=$(LIBEXPAT_HEADERS) @LIBEXPAT_INTERNAL@
 MODULE__HASHLIB_DEPS=$(srcdir)/Modules/hashlib.h
 MODULE__IO_DEPS=$(srcdir)/Modules/_io/_iomodule.h
 MODULE__MD5_DEPS=$(srcdir)/Modules/hashlib.h
