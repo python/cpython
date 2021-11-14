@@ -1970,7 +1970,6 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
         c = tok_nextc(tok);
         if (c != '\n') {
             tok->done = E_LINECONT;
-            tok->cur = tok->inp;
             return ERRORTOKEN;
         }
         c = tok_nextc(tok);
