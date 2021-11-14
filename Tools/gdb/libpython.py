@@ -1797,14 +1797,14 @@ class Frame(object):
 
     def get_pyop(self):
         try:
-            frame = self._gdbframe.read_var('frame')
-            frame = PyFramePtr(frame)
-            if not frame.is_optimized_out():
-                return frame
+            # frame = self._gdbframe.read_var('frame')
+            # frame = PyFramePtr(frame)
+            # if not frame.is_optimized_out():
+            #     return frame
             cframe = self._gdbframe.read_var('cframe')
             if cframe is None:
                 return None
-            frame = PyFramePtr(cframe["current_frame"].dereference())
+            frame = PyFramePtr(cframe["current_frame"])
             if frame and not frame.is_optimized_out():
                 return frame
             return None

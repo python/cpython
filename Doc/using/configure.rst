@@ -116,6 +116,17 @@ General Options
 
    .. versionadded:: 3.10
 
+.. cmdoption:: --with-pkg-config=[check|yes|no]
+
+   Whether configure should use :program:`pkg-config` to detect build
+   dependencies.
+
+   * ``check`` (default): :program:`pkg-config` is optional
+   * ``yes``: :program:`pkg-config` is mandatory
+   * ``no``: configure does not use :program:`pkg-config` even when present
+
+   .. versionadded:: 3.11
+
 
 Install Options
 ---------------
