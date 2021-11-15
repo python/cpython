@@ -5,7 +5,7 @@ preserve
 static int
 pysqlite_connection_init_impl(pysqlite_Connection *self,
                               const char *database, double timeout,
-                              int detect_types, PyObject *isolation_level,
+                              int detect_types, const char *isolation_level,
                               int check_same_thread, PyObject *factory,
                               int cached_statements, int uri);
 
@@ -22,7 +22,7 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
     const char *database = NULL;
     double timeout = 5.0;
     int detect_types = 0;
-    PyObject *isolation_level = NULL;
+    const char *isolation_level = "";
     int check_same_thread = 1;
     PyObject *factory = (PyObject*)clinic_state()->ConnectionType;
     int cached_statements = 128;
@@ -63,7 +63,24 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
         }
     }
     if (fastargs[3]) {
-        isolation_level = fastargs[3];
+        if (fastargs[3] == Py_None) {
+            isolation_level = NULL;
+        }
+        else if (PyUnicode_Check(fastargs[3])) {
+            Py_ssize_t isolation_level_length;
+            isolation_level = PyUnicode_AsUTF8AndSize(fastargs[3], &isolation_level_length);
+            if (isolation_level == NULL) {
+                goto exit;
+            }
+            if (strlen(isolation_level) != (size_t)isolation_level_length) {
+                PyErr_SetString(PyExc_ValueError, "embedded null character");
+                goto exit;
+            }
+        }
+        else {
+            _PyArg_BadArgument("Connection", "argument 'isolation_level'", "str or None", fastargs[3]);
+            goto exit;
+        }
         if (!--noptargs) {
             goto skip_optional_pos;
         }
@@ -834,4 +851,4 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-/*[clinic end generated code: output=d71bf16bef67878f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=663b1e9e71128f19 input=a9049054013a1b77]*/
