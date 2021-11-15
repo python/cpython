@@ -995,6 +995,7 @@ tok_underflow_file(struct tok_state *tok) {
     return tok->done == E_OK;
 }
 
+#if defined(Py_DEBUG)
 static void
 print_escape(FILE *f, const char *s, Py_ssize_t size)
 {
@@ -1021,6 +1022,7 @@ print_escape(FILE *f, const char *s, Py_ssize_t size)
     }
     putc('"', f);
 }
+#endif
 
 /* Get next char, updating state; error code goes into tok->done */
 
@@ -1045,9 +1047,9 @@ tok_nextc(struct tok_state *tok)
         }
 #if defined(Py_DEBUG)
         if (Py_DebugFlag) {
-            printf("line[%d] = ", tok->lineno);
-            print_escape(stdout, tok->cur, tok->inp - tok->cur);
-            printf("  tok->done = %d\n", tok->done);
+            fprintf(stderr, "line[%d] = ", tok->lineno);
+            print_escape(stderr, tok->cur, tok->inp - tok->cur);
+            fprintf(stderr, "  tok->done = %d\n", tok->done);
         }
 #endif
         if (!rc) {
@@ -1968,7 +1970,6 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
         c = tok_nextc(tok);
         if (c != '\n') {
             tok->done = E_LINECONT;
-            tok->cur = tok->inp;
             return ERRORTOKEN;
         }
         c = tok_nextc(tok);
@@ -2125,8 +2126,8 @@ _PyTokenizer_FindEncodingFilename(int fd, PyObject *filename)
 void
 tok_dump(int type, char *start, char *end)
 {
-    printf("%s", _PyParser_TokenNames[type]);
+    fprintf(stderr, "%s", _PyParser_TokenNames[type]);
     if (type == NAME || type == NUMBER || type == STRING || type == OP)
-        printf("(%.*s)", (int)(end - start), start);
+        fprintf(stderr, "(%.*s)", (int)(end - start), start);
 }
 #endif  // Py_DEBUG

@@ -1,3 +1,7 @@
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 // windows.h must be included before pycore internal headers
 #ifdef MS_WIN32

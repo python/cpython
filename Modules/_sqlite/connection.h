@@ -49,9 +49,6 @@ typedef struct
      * bitwise combination thereof makes sense */
     int detect_types;
 
-    /* None for autocommit, otherwise a PyUnicode with the isolation level */
-    PyObject* isolation_level;
-
     /* NULL for autocommit, otherwise a string with the BEGIN statement */
     const char* begin_statement;
 

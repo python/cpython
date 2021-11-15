@@ -242,11 +242,22 @@ sqlite3
   now raise :exc:`UnicodeEncodeError` instead of :exc:`sqlite3.ProgrammingError`.
   (Contributed by Erlend E. Aasland in :issue:`44688`.)
 
-* :mod:`sqlite3` exceptions now include the SQLite error code as
+* :mod:`sqlite3` exceptions now include the SQLite extended error code as
   :attr:`~sqlite3.Error.sqlite_errorcode` and the SQLite error name as
   :attr:`~sqlite3.Error.sqlite_errorname`.
   (Contributed by Aviv Palivoda, Daniel Shahaf, and Erlend E. Aasland in
-  :issue:`16379`.)
+  :issue:`16379` and :issue:`24139`.)
+
+
+* Add :meth:`~sqlite3.Connection.setlimit` and
+  :meth:`~sqlite3.Connection.getlimit` to :class:`sqlite3.Connection` for
+  setting and getting SQLite limits by connection basis.
+  (Contributed by Erlend E. Aasland in :issue:`45243`.)
+
+* :mod:`sqlite3` now sets :attr:`sqlite3.threadsafety` based on the default
+  threading mode the underlying SQLite library has been compiled with.
+  (Contributed by Erlend E. Aasland in :issue:`45613`.)
+
 
 threading
 ---------
@@ -304,9 +315,24 @@ Optimizations
 CPython bytecode changes
 ========================
 
+* Replaced all numeric ``BINARY_*`` and ``INPLACE_*`` instructions with a single
+  :opcode:`BINARY_OP` implementation.
+
 * Added a new :opcode:`CALL_METHOD_KW` opcode.  Calls a method in a similar
   fashion as :opcode:`CALL_METHOD`, but also supports keyword arguments.  Works
   in tandem with :opcode:`LOAD_METHOD`.
+
+* Removed ``COPY_DICT_WITHOUT_KEYS``.
+
+* :opcode:`MATCH_CLASS` and :opcode:`MATCH_KEYS` no longer push an additional
+  boolean value indicating whether the match succeeded or failed. Instead, they
+  indicate failure with :const:`None` (where a tuple of extracted values would
+  otherwise be).
+
+* Added :opcode:`COPY`, which pushes the *i*-th item to the top of the stack.
+  The item is not removed from its original location.
+
+* :opcode:`JUMP_IF_NOT_EXC_MATCH` no longer pops the active exception.
 
 
 Deprecated
@@ -470,6 +496,13 @@ Changes in the Python API
   the ``'utf-8'`` encoding.
   (Contributed by Srinivas Reddy Thatiparthy (శ్రీనివాస్  రెడ్డి తాటిపర్తి) in :issue:`41137`.)
 
+* When sorting using tuples as keys, the order of the result may differ
+  from earlier releases if the tuple elements don't define a total
+  ordering (see :ref:`expressions-value-comparisons` for
+  information on total ordering).  It's generally true that the result
+  of sorting simply isn't well-defined in the absence of a total ordering
+  on list elements.
+
 
 Build Changes
 =============
@@ -489,6 +522,20 @@ Build Changes
   option :option:`!--without-freelists` can be used to disable all freelists
   except empty tuple singleton.
   (Contributed by Christian Heimes in :issue:`45522`)
+
+* ``Modules/Setup`` and ``Modules/makesetup`` have been improved and tied up.
+  Extension modules can now be built through ``makesetup``. All except some
+  test modules can be linked statically into main binary or library.
+  (Contributed by Brett Cannon and Christian Heimes in :issue:`45548`,
+  :issue:`45570`, :issue:`45571`, and :issue:`43974`.)
+
+* The build dependencies for :mod:`zlib`, :mod:`bz2`, and :mod:`lzma` are now
+  detected by :program:`configure`.
+  (Contributed by Christian Heimes in :issue:`45763`.)
+
+* Build dependencies for :mod:`dbm` are now detected by :program:`configure`.
+  ``libdb`` 3.x and 4.x are no longer supported.
+  (Contributed by Christian Heimes in :issue:`45747`.)
 
 C API Changes
 =============

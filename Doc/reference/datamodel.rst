@@ -2577,8 +2577,8 @@ left undefined.
    return the value of the object truncated to an :class:`~numbers.Integral`
    (typically an :class:`int`).
 
-   If :meth:`__int__` is not defined then the built-in function :func:`int`
-   falls back to :meth:`__trunc__`.
+   The built-in function :func:`int` falls back to :meth:`__trunc__` if neither
+   :meth:`__int__` nor :meth:`__index__` is defined.
 
 
 .. _context-managers:

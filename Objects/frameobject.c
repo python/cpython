@@ -786,16 +786,15 @@ allocate_heap_frame(PyFrameConstructor *con, PyObject *locals)
 {
     PyCodeObject *code = (PyCodeObject *)con->fc_code;
     int size = code->co_nlocalsplus+code->co_stacksize + FRAME_SPECIALS_SIZE;
-    PyObject **localsarray = PyMem_Malloc(sizeof(PyObject *)*size);
-    if (localsarray == NULL) {
+    InterpreterFrame *frame = (InterpreterFrame *)PyMem_Malloc(sizeof(PyObject *)*size);
+    if (frame == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    for (Py_ssize_t i=0; i < code->co_nlocalsplus; i++) {
-        localsarray[i] = NULL;
-    }
-    InterpreterFrame *frame = (InterpreterFrame *)(localsarray + code->co_nlocalsplus);
     _PyFrame_InitializeSpecials(frame, con, locals, code->co_nlocalsplus);
+    for (Py_ssize_t i = 0; i < code->co_nlocalsplus; i++) {
+        frame->localsplus[i] = NULL;
+    }
     return frame;
 }
 

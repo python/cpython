@@ -6,6 +6,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
+#include <stdbool.h>
 #include "pycore_initconfig.h"
 #include "pycore_object.h"
 #include "structmember.h"         // PyMemberDef
@@ -540,7 +541,7 @@ StopIteration_clear(PyStopIterationObject *self)
 static void
 StopIteration_dealloc(PyStopIterationObject *self)
 {
-    _PyObject_GC_UNTRACK(self);
+    PyObject_GC_UnTrack(self);
     StopIteration_clear(self);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -628,6 +629,516 @@ static PyMemberDef SystemExit_members[] = {
 ComplexExtendsException(PyExc_BaseException, SystemExit, SystemExit,
                         0, 0, SystemExit_members, 0, 0,
                         "Request to exit from the interpreter.");
+
+/*
+ *    BaseExceptionGroup extends BaseException
+ *    ExceptionGroup extends BaseExceptionGroup and Exception
+ */
+
+
+static inline PyBaseExceptionGroupObject*
+_PyBaseExceptionGroupObject_cast(PyObject *exc)
+{
+    assert(_PyBaseExceptionGroup_Check(exc));
+    return (PyBaseExceptionGroupObject *)exc;
+}
+
+static PyObject *
+BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    struct _Py_exc_state *state = get_exc_state();
+    PyTypeObject *PyExc_ExceptionGroup =
+        (PyTypeObject*)state->PyExc_ExceptionGroup;
+
+    PyObject *message = NULL;
+    PyObject *exceptions = NULL;
+
+    if (!PyArg_ParseTuple(args, "UO", &message, &exceptions)) {
+        return NULL;
+    }
+
+    if (!PySequence_Check(exceptions)) {
+        PyErr_SetString(
+            PyExc_TypeError,
+            "second argument (exceptions) must be a sequence");
+        return NULL;
+    }
+
+    exceptions = PySequence_Tuple(exceptions);
+    if (!exceptions) {
+        return NULL;
+    }
+
+    /* We are now holding a ref to the exceptions tuple */
+
+    Py_ssize_t numexcs = PyTuple_GET_SIZE(exceptions);
+    if (numexcs == 0) {
+        PyErr_SetString(
+            PyExc_ValueError,
+            "second argument (exceptions) must be a non-empty sequence");
+        goto error;
+    }
+
+    bool nested_base_exceptions = false;
+    for (Py_ssize_t i = 0; i < numexcs; i++) {
+        PyObject *exc = PyTuple_GET_ITEM(exceptions, i);
+        if (!exc) {
+            goto error;
+        }
+        if (!PyExceptionInstance_Check(exc)) {
+            PyErr_Format(
+                PyExc_ValueError,
+                "Item %d of second argument (exceptions) is not an exception",
+                i);
+            goto error;
+        }
+        int is_nonbase_exception = PyObject_IsInstance(exc, PyExc_Exception);
+        if (is_nonbase_exception < 0) {
+            goto error;
+        }
+        else if (is_nonbase_exception == 0) {
+            nested_base_exceptions = true;
+        }
+    }
+
+    PyTypeObject *cls = type;
+    if (cls == PyExc_ExceptionGroup) {
+        if (nested_base_exceptions) {
+            PyErr_SetString(PyExc_TypeError,
+                "Cannot nest BaseExceptions in an ExceptionGroup");
+            goto error;
+        }
+    }
+    else if (cls == (PyTypeObject*)PyExc_BaseExceptionGroup) {
+        if (!nested_base_exceptions) {
+            /* All nested exceptions are Exception subclasses,
+             * wrap them in an ExceptionGroup
+             */
+            cls = PyExc_ExceptionGroup;
+        }
+    }
+    else {
+        /* Do nothing - we don't interfere with subclasses */
+    }
+
+    if (!cls) {
+        /* Don't crash during interpreter shutdown
+         * (PyExc_ExceptionGroup may have been cleared)
+         */
+        cls = (PyTypeObject*)PyExc_BaseExceptionGroup;
+    }
+    PyBaseExceptionGroupObject *self =
+        _PyBaseExceptionGroupObject_cast(BaseException_new(cls, args, kwds));
+    if (!self) {
+        goto error;
+    }
+
+    self->msg = Py_NewRef(message);
+    self->excs = exceptions;
+    return (PyObject*)self;
+error:
+    Py_DECREF(exceptions);
+    return NULL;
+}
+
+static int
+BaseExceptionGroup_init(PyBaseExceptionGroupObject *self,
+    PyObject *args, PyObject *kwds)
+{
+    if (!_PyArg_NoKeywords(Py_TYPE(self)->tp_name, kwds)) {
+        return -1;
+    }
+    if (BaseException_init((PyBaseExceptionObject *)self, args, kwds) == -1) {
+        return -1;
+    }
+    return 0;
+}
+
+static int
+BaseExceptionGroup_clear(PyBaseExceptionGroupObject *self)
+{
+    Py_CLEAR(self->msg);
+    Py_CLEAR(self->excs);
+    return BaseException_clear((PyBaseExceptionObject *)self);
+}
+
+static void
+BaseExceptionGroup_dealloc(PyBaseExceptionGroupObject *self)
+{
+    _PyObject_GC_UNTRACK(self);
+    BaseExceptionGroup_clear(self);
+    Py_TYPE(self)->tp_free((PyObject *)self);
+}
+
+static int
+BaseExceptionGroup_traverse(PyBaseExceptionGroupObject *self,
+     visitproc visit, void *arg)
+{
+    Py_VISIT(self->msg);
+    Py_VISIT(self->excs);
+    return BaseException_traverse((PyBaseExceptionObject *)self, visit, arg);
+}
+
+static PyObject *
+BaseExceptionGroup_str(PyBaseExceptionGroupObject *self)
+{
+    assert(self->msg);
+    assert(PyUnicode_Check(self->msg));
+    return Py_NewRef(self->msg);
+}
+
+static PyObject *
+BaseExceptionGroup_derive(PyObject *self_, PyObject *args)
+{
+    PyBaseExceptionGroupObject *self = _PyBaseExceptionGroupObject_cast(self_);
+    PyObject *excs = NULL;
+    if (!PyArg_ParseTuple(args, "O", &excs)) {
+        return NULL;
+    }
+    PyObject *init_args = PyTuple_Pack(2, self->msg, excs);
+    if (!init_args) {
+        return NULL;
+    }
+    PyObject *eg = PyObject_CallObject(
+        PyExc_BaseExceptionGroup, init_args);
+    Py_DECREF(init_args);
+    return eg;
+}
+
+static int
+exceptiongroup_subset(
+    PyBaseExceptionGroupObject *_orig, PyObject *excs, PyObject **result)
+{
+    /* Sets *result to an ExceptionGroup wrapping excs with metadata from
+     * _orig. If excs is empty, sets *result to NULL.
+     * Returns 0 on success and -1 on error.
+
+     * This function is used by split() to construct the match/rest parts,
+     * so excs is the matching or non-matching sub-sequence of orig->excs
+     * (this function does not verify that it is a subsequence).
+     */
+    PyObject *orig = (PyObject *)_orig;
+
+    *result = NULL;
+    Py_ssize_t num_excs = PySequence_Size(excs);
+    if (num_excs < 0) {
+        return -1;
+    }
+    else if (num_excs == 0) {
+        return 0;
+    }
+
+    PyObject *eg = PyObject_CallMethod(
+        orig, "derive", "(O)", excs);
+    if (!eg) {
+        return -1;
+    }
+
+    if (!_PyBaseExceptionGroup_Check(eg)) {
+        PyErr_SetString(PyExc_TypeError,
+            "derive must return an instance of BaseExceptionGroup");
+        goto error;
+    }
+
+    /* Now we hold a reference to the new eg */
+
+    PyObject *tb = PyException_GetTraceback(orig);
+    if (tb) {
+        int res = PyException_SetTraceback(eg, tb);
+        Py_DECREF(tb);
+        if (res == -1) {
+            goto error;
+        }
+    }
+    PyException_SetContext(eg, PyException_GetContext(orig));
+    PyException_SetCause(eg, PyException_GetCause(orig));
+    *result = eg;
+    return 0;
+error:
+    Py_DECREF(eg);
+    return -1;
+}
+
+typedef enum {
+    /* Exception type or tuple of thereof */
+    EXCEPTION_GROUP_MATCH_BY_TYPE = 0,
+    /* A PyFunction returning True for matching exceptions */
+    EXCEPTION_GROUP_MATCH_BY_PREDICATE = 1,
+    /* An instance or container thereof, checked with equality
+     * This matcher type is only used internally by the
+     * interpreter, it is not exposed to python code */
+    EXCEPTION_GROUP_MATCH_INSTANCES = 2
+} _exceptiongroup_split_matcher_type;
+
+static int
+get_matcher_type(PyObject *value,
+                  _exceptiongroup_split_matcher_type *type)
+{
+    /* the python API supports only BY_TYPE and BY_PREDICATE */
+    if (PyExceptionClass_Check(value) ||
+        PyTuple_CheckExact(value)) {
+        *type = EXCEPTION_GROUP_MATCH_BY_TYPE;
+        return 0;
+    }
+    if (PyFunction_Check(value)) {
+        *type = EXCEPTION_GROUP_MATCH_BY_PREDICATE;
+        return 0;
+    }
+    PyErr_SetString(
+        PyExc_TypeError,
+        "expected a function, exception type or tuple of exception types");
+    return -1;
+}
+
+static int
+exceptiongroup_split_check_match(PyObject *exc,
+                                 _exceptiongroup_split_matcher_type matcher_type,
+                                 PyObject *matcher_value)
+{
+    switch (matcher_type) {
+    case EXCEPTION_GROUP_MATCH_BY_TYPE: {
+        assert(PyExceptionClass_Check(matcher_value) ||
+               PyTuple_CheckExact(matcher_value));
+        return PyErr_GivenExceptionMatches(exc, matcher_value);
+    }
+    case EXCEPTION_GROUP_MATCH_BY_PREDICATE: {
+        assert(PyFunction_Check(matcher_value));
+        PyObject *exc_matches = PyObject_CallOneArg(matcher_value, exc);
+        if (exc_matches == NULL) {
+            return -1;
+        }
+        int is_true = PyObject_IsTrue(exc_matches);
+        Py_DECREF(exc_matches);
+        return is_true;
+    }
+    case EXCEPTION_GROUP_MATCH_INSTANCES: {
+        if (PySequence_Check(matcher_value)) {
+            return PySequence_Contains(matcher_value, exc);
+        }
+        return matcher_value == exc;
+    }
+    }
+    return 0;
+}
+
+typedef struct {
+    PyObject *match;
+    PyObject *rest;
+} _exceptiongroup_split_result;
+
+static int
+exceptiongroup_split_recursive(PyObject *exc,
+                               _exceptiongroup_split_matcher_type matcher_type,
+                               PyObject *matcher_value,
+                               bool construct_rest,
+                               _exceptiongroup_split_result *result)
+{
+    result->match = NULL;
+    result->rest = NULL;
+
+    int is_match = exceptiongroup_split_check_match(
+        exc, matcher_type, matcher_value);
+    if (is_match < 0) {
+        return -1;
+    }
+
+    if (is_match) {
+        /* Full match */
+        result->match = Py_NewRef(exc);
+        return 0;
+    }
+    else if (!_PyBaseExceptionGroup_Check(exc)) {
+        /* Leaf exception and no match */
+        if (construct_rest) {
+            result->rest = Py_NewRef(exc);
+        }
+        return 0;
+    }
+
+    /* Partial match */
+
+    PyBaseExceptionGroupObject *eg = _PyBaseExceptionGroupObject_cast(exc);
+    assert(PyTuple_CheckExact(eg->excs));
+    Py_ssize_t num_excs = PyTuple_Size(eg->excs);
+    if (num_excs < 0) {
+        return -1;
+    }
+    assert(num_excs > 0); /* checked in constructor, and excs is read-only */
+
+    int retval = -1;
+    PyObject *match_list = PyList_New(0);
+    if (!match_list) {
+        return -1;
+    }
+
+    PyObject *rest_list = NULL;
+    if (construct_rest) {
+        rest_list = PyList_New(0);
+        if (!rest_list) {
+            goto done;
+        }
+    }
+    /* recursive calls */
+    for (Py_ssize_t i = 0; i < num_excs; i++) {
+        PyObject *e = PyTuple_GET_ITEM(eg->excs, i);
+        _exceptiongroup_split_result rec_result;
+        if (Py_EnterRecursiveCall(" in exceptiongroup_split_recursive")) {
+            goto done;
+        }
+        if (exceptiongroup_split_recursive(
+                e, matcher_type, matcher_value,
+                construct_rest, &rec_result) == -1) {
+            assert(!rec_result.match);
+            assert(!rec_result.rest);
+            Py_LeaveRecursiveCall();
+            goto done;
+        }
+        Py_LeaveRecursiveCall();
+        if (rec_result.match) {
+            assert(PyList_CheckExact(match_list));
+            if (PyList_Append(match_list, rec_result.match) == -1) {
+                Py_DECREF(rec_result.match);
+                goto done;
+            }
+            Py_DECREF(rec_result.match);
+        }
+        if (rec_result.rest) {
+            assert(construct_rest);
+            assert(PyList_CheckExact(rest_list));
+            if (PyList_Append(rest_list, rec_result.rest) == -1) {
+                Py_DECREF(rec_result.rest);
+                goto done;
+            }
+            Py_DECREF(rec_result.rest);
+        }
+    }
+
+    /* construct result */
+    if (exceptiongroup_subset(eg, match_list, &result->match) == -1) {
+        goto done;
+    }
+
+    if (construct_rest) {
+        assert(PyList_CheckExact(rest_list));
+        if (exceptiongroup_subset(eg, rest_list, &result->rest) == -1) {
+            Py_CLEAR(result->match);
+            goto done;
+        }
+    }
+    retval = 0;
+done:
+    Py_DECREF(match_list);
+    Py_XDECREF(rest_list);
+    if (retval == -1) {
+        Py_CLEAR(result->match);
+        Py_CLEAR(result->rest);
+    }
+    return retval;
+}
+
+static PyObject *
+BaseExceptionGroup_split(PyObject *self, PyObject *args)
+{
+    PyObject *matcher_value = NULL;
+    if (!PyArg_UnpackTuple(args, "split", 1, 1, &matcher_value)) {
+        return NULL;
+    }
+
+    _exceptiongroup_split_matcher_type matcher_type;
+    if (get_matcher_type(matcher_value, &matcher_type) == -1) {
+        return NULL;
+    }
+
+    _exceptiongroup_split_result split_result;
+    bool construct_rest = true;
+    if (exceptiongroup_split_recursive(
+            self, matcher_type, matcher_value,
+            construct_rest, &split_result) == -1) {
+        return NULL;
+    }
+
+    PyObject *result = PyTuple_Pack(
+            2,
+            split_result.match ? split_result.match : Py_None,
+            split_result.rest ? split_result.rest : Py_None);
+
+    Py_XDECREF(split_result.match);
+    Py_XDECREF(split_result.rest);
+    return result;
+}
+
+static PyObject *
+BaseExceptionGroup_subgroup(PyObject *self, PyObject *args)
+{
+    PyObject *matcher_value = NULL;
+    if (!PyArg_UnpackTuple(args, "subgroup", 1, 1, &matcher_value)) {
+        return NULL;
+    }
+
+    _exceptiongroup_split_matcher_type matcher_type;
+    if (get_matcher_type(matcher_value, &matcher_type) == -1) {
+        return NULL;
+    }
+
+    _exceptiongroup_split_result split_result;
+    bool construct_rest = false;
+    if (exceptiongroup_split_recursive(
+            self, matcher_type, matcher_value,
+            construct_rest, &split_result) == -1) {
+        return NULL;
+    }
+
+    PyObject *result = Py_NewRef(
+            split_result.match ? split_result.match : Py_None);
+
+    Py_XDECREF(split_result.match);
+    assert(!split_result.rest);
+    return result;
+}
+
+static PyMemberDef BaseExceptionGroup_members[] = {
+    {"message", T_OBJECT, offsetof(PyBaseExceptionGroupObject, msg), READONLY,
+        PyDoc_STR("exception message")},
+    {"exceptions", T_OBJECT, offsetof(PyBaseExceptionGroupObject, excs), READONLY,
+        PyDoc_STR("nested exceptions")},
+    {NULL}  /* Sentinel */
+};
+
+static PyMethodDef BaseExceptionGroup_methods[] = {
+    {"__class_getitem__", (PyCFunction)Py_GenericAlias,
+      METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"derive", (PyCFunction)BaseExceptionGroup_derive, METH_VARARGS},
+    {"split", (PyCFunction)BaseExceptionGroup_split, METH_VARARGS},
+    {"subgroup", (PyCFunction)BaseExceptionGroup_subgroup, METH_VARARGS},
+    {NULL}
+};
+
+ComplexExtendsException(PyExc_BaseException, BaseExceptionGroup,
+    BaseExceptionGroup, BaseExceptionGroup_new /* new */,
+    BaseExceptionGroup_methods, BaseExceptionGroup_members,
+    0 /* getset */, BaseExceptionGroup_str,
+    "A combination of multiple unrelated exceptions.");
+
+/*
+ *    ExceptionGroup extends BaseExceptionGroup, Exception
+ */
+static PyObject*
+create_exception_group_class(void) {
+    struct _Py_exc_state *state = get_exc_state();
+
+    PyObject *bases = PyTuple_Pack(
+        2, PyExc_BaseExceptionGroup, PyExc_Exception);
+    if (bases == NULL) {
+        return NULL;
+    }
+
+    assert(!state->PyExc_ExceptionGroup);
+    state->PyExc_ExceptionGroup = PyErr_NewException(
+        "builtins.ExceptionGroup", bases, NULL);
+
+    Py_DECREF(bases);
+    return state->PyExc_ExceptionGroup;
+}
 
 /*
  *    KeyboardInterrupt extends BaseException
@@ -2671,6 +3182,7 @@ _PyExc_Init(PyInterpreterState *interp)
     } while (0)
 
     PRE_INIT(BaseException);
+    PRE_INIT(BaseExceptionGroup);
     PRE_INIT(Exception);
     PRE_INIT(TypeError);
     PRE_INIT(StopAsyncIteration);
@@ -2805,8 +3317,15 @@ _PyBuiltins_AddExceptions(PyObject *bltinmod)
         return _PyStatus_ERR("exceptions bootstrapping error.");
     }
 
+    PyObject *PyExc_ExceptionGroup = create_exception_group_class();
+    if (!PyExc_ExceptionGroup) {
+        return _PyStatus_ERR("exceptions bootstrapping error.");
+    }
+
     POST_INIT(BaseException);
     POST_INIT(Exception);
+    POST_INIT(BaseExceptionGroup);
+    POST_INIT(ExceptionGroup);
     POST_INIT(TypeError);
     POST_INIT(StopAsyncIteration);
     POST_INIT(StopIteration);
@@ -2883,6 +3402,13 @@ _PyBuiltins_AddExceptions(PyObject *bltinmod)
 
 #undef POST_INIT
 #undef INIT_ALIAS
+}
+
+void
+_PyExc_ClearExceptionGroupType(PyInterpreterState *interp)
+{
+    struct _Py_exc_state *state = &interp->exc_state;
+    Py_CLEAR(state->PyExc_ExceptionGroup);
 }
 
 void

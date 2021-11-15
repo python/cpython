@@ -117,6 +117,24 @@ Module functions and constants
 ------------------------------
 
 
+.. data:: apilevel
+
+   String constant stating the supported DB-API level. Required by the DB-API.
+   Hard-coded to ``"2.0"``.
+
+.. data:: paramstyle
+
+   String constant stating the type of parameter marker formatting expected by
+   the :mod:`sqlite3` module. Required by the DB-API. Hard-coded to
+   ``"qmark"``.
+
+   .. note::
+
+      The :mod:`sqlite3` module supports both ``qmark`` and ``numeric`` DB-API
+      parameter styles, because that is what the underlying SQLite library
+      supports. However, the DB-API does not allow multiple values for
+      the ``paramstyle`` attribute.
+
 .. data:: version
 
    The version number of this module, as a string. This is not the version of
@@ -138,6 +156,44 @@ Module functions and constants
 
    The version number of the run-time SQLite library, as a tuple of integers.
 
+
+.. data:: threadsafety
+
+   Integer constant required by the DB-API 2.0, stating the level of thread
+   safety the :mod:`sqlite3` module supports. This attribute is set based on
+   the default `threading mode <https://sqlite.org/threadsafe.html>`_ the
+   underlying SQLite library is compiled with. The SQLite threading modes are:
+
+     1. **Single-thread**: In this mode, all mutexes are disabled and SQLite is
+        unsafe to use in more than a single thread at once.
+     2. **Multi-thread**: In this mode, SQLite can be safely used by multiple
+        threads provided that no single database connection is used
+        simultaneously in two or more threads.
+     3. **Serialized**: In serialized mode, SQLite can be safely used by
+        multiple threads with no restriction.
+
+   The mappings from SQLite threading modes to DB-API 2.0 threadsafety levels
+   are as follows:
+
+   +------------------+-----------------+----------------------+-------------------------------+
+   | SQLite threading | `threadsafety`_ | `SQLITE_THREADSAFE`_ | DB-API 2.0 meaning            |
+   | mode             |                 |                      |                               |
+   +==================+=================+======================+===============================+
+   | single-thread    | 0               | 0                    | Threads may not share the     |
+   |                  |                 |                      | module                        |
+   +------------------+-----------------+----------------------+-------------------------------+
+   | multi-thread     | 1               | 2                    | Threads may share the module, |
+   |                  |                 |                      | but not connections           |
+   +------------------+-----------------+----------------------+-------------------------------+
+   | serialized       | 3               | 1                    | Threads may share the module, |
+   |                  |                 |                      | connections and cursors       |
+   +------------------+-----------------+----------------------+-------------------------------+
+
+   .. _threadsafety: https://www.python.org/dev/peps/pep-0249/#threadsafety
+   .. _SQLITE_THREADSAFE: https://sqlite.org/compile.html#threadsafe
+
+   .. versionchanged:: 3.11
+      Set *threadsafety* dynamically instead of hard-coding it to ``1``.
 
 .. data:: PARSE_DECLTYPES
 
@@ -624,6 +680,40 @@ Connection Objects
       .. versionadded:: 3.7
 
 
+   .. method:: getlimit(category, /)
+
+      Get a connection run-time limit. *category* is the limit category to be
+      queried.
+
+      Example, query the maximum length of an SQL statement::
+
+         import sqlite3
+         con = sqlite3.connect(":memory:")
+         lim = con.getlimit(sqlite3.SQLITE_LIMIT_SQL_LENGTH)
+         print(f"SQLITE_LIMIT_SQL_LENGTH={lim}")
+
+      .. versionadded:: 3.11
+
+
+   .. method:: setlimit(category, limit, /)
+
+      Set a connection run-time limit. *category* is the limit category to be
+      set. *limit* is the new limit. If the new limit is a negative number, the
+      limit is unchanged.
+
+      Attempts to increase a limit above its hard upper bound are silently
+      truncated to the hard upper bound. Regardless of whether or not the limit
+      was changed, the prior value of the limit is returned.
+
+      Example, limit the number of attached databases to 1::
+
+         import sqlite3
+         con = sqlite3.connect(":memory:")
+         con.setlimit(sqlite3.SQLITE_LIMIT_ATTACHED, 1)
+
+      .. versionadded:: 3.11
+
+
 .. _sqlite3-cursor-objects:
 
 Cursor Objects
@@ -709,6 +799,14 @@ Cursor Objects
 
       The cursor will be unusable from this point forward; a :exc:`ProgrammingError`
       exception will be raised if any operation is attempted with the cursor.
+
+   .. method:: setinputsizes(sizes)
+
+      Required by the DB-API. Is a no-op in :mod:`sqlite3`.
+
+   .. method:: setoutputsize(size [, column])
+
+      Required by the DB-API. Is a no-op in :mod:`sqlite3`.
 
    .. attribute:: rowcount
 
@@ -1049,6 +1147,12 @@ If a timestamp stored in SQLite has a fractional part longer than 6
 numbers, its value will be truncated to microsecond precision by the
 timestamp converter.
 
+.. note::
+
+   The default "timestamp" converter ignores UTC offsets in the database and
+   always returns a naive :class:`datetime.datetime` object. To preserve UTC
+   offsets in timestamps, either leave converters disabled, or register an
+   offset-aware converter with :func:`register_converter`.
 
 .. _sqlite3-controlling-transactions:
 

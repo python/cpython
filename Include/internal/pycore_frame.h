@@ -152,6 +152,21 @@ _PyFrame_LocalsToFast(InterpreterFrame *frame, int clear);
 InterpreterFrame *_PyThreadState_PushFrame(
     PyThreadState *tstate, PyFrameConstructor *con, PyObject *locals);
 
+extern InterpreterFrame *
+_PyThreadState_BumpFramePointerSlow(PyThreadState *tstate, size_t size);
+
+static inline InterpreterFrame *
+_PyThreadState_BumpFramePointer(PyThreadState *tstate, size_t size)
+{
+    PyObject **base = tstate->datastack_top;
+    PyObject **top = base + size;
+    if (top < tstate->datastack_limit) {
+        tstate->datastack_top = top;
+        return (InterpreterFrame *)base;
+    }
+    return _PyThreadState_BumpFramePointerSlow(tstate, size);
+}
+
 void _PyThreadState_PopFrame(PyThreadState *tstate, InterpreterFrame *frame);
 
 #ifdef __cplusplus

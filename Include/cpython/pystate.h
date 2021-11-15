@@ -46,6 +46,8 @@ typedef struct _cframe {
      * accessed outside of their lifetime.
      */
     int use_tracing;
+    /* Pointer to the currently executing frame (it can be NULL) */
+    struct _interpreter_frame *current_frame;
     struct _cframe *previous;
 } CFrame;
 
@@ -77,8 +79,6 @@ struct _ts {
     struct _ts *next;
     PyInterpreterState *interp;
 
-    /* Borrowed reference to the current frame (it can be NULL) */
-    struct _interpreter_frame *frame;
     int recursion_depth;
     int recursion_headroom; /* Allow 50 more calls to handle any errors. */
     int stackcheck_counter;
