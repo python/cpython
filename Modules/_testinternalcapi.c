@@ -38,7 +38,7 @@ get_recursion_depth(PyObject *self, PyObject *Py_UNUSED(args))
 
     /* subtract one to ignore the frame of the get_recursion_depth() call */
 
-    return PyLong_FromLong(tstate->interp->ceval.recursion_limit - tstate->recursion_remaining - 1);
+    return PyLong_FromLong(tstate->recursion_limit - tstate->recursion_remaining - 1);
 }
 
 

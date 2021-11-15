@@ -788,13 +788,11 @@ void
 Py_SetRecursionLimit(int new_limit)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    int old_limit = interp->ceval.recursion_limit;
     interp->ceval.recursion_limit = new_limit;
     for (PyThreadState *p = interp->tstate_head; p != NULL; p = p->next) {
-        if (p->recursion_remaining <= INT_MIN/2) {
-            p->recursion_remaining = old_limit;
-        }
-        p->recursion_remaining += new_limit - old_limit;
+        int depth = p->recursion_limit - p->recursion_remaining;
+        p->recursion_limit = new_limit;
+        p->recursion_remaining = new_limit - depth;
     }
 }
 
@@ -803,8 +801,12 @@ Py_SetRecursionLimit(int new_limit)
 int
 _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
 {
-    if (tstate->recursion_remaining <= INT_MIN/2) {
-        tstate->recursion_remaining = tstate->interp->ceval.recursion_limit;
+    /* Check against global limit first. */
+    int depth = tstate->recursion_limit - tstate->recursion_remaining;
+    if (depth < tstate->interp->ceval.recursion_limit) {
+        tstate->recursion_limit = tstate->interp->ceval.recursion_limit;
+        tstate->recursion_remaining = tstate->recursion_limit - depth;
+        assert(tstate->recursion_remaining > 0);
         return 0;
     }
 #ifdef USE_STACKCHECK
