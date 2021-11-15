@@ -4711,14 +4711,6 @@ check_eval_breaker:
                     res = PyNumber_Multiply(lhs, rhs);
                     break;
                 case NB_REMAINDER:
-                    if (PyUnicode_CheckExact(lhs) &&
-                        (!PyUnicode_Check(rhs) || PyUnicode_CheckExact(rhs)))
-                    {
-                        // bpo-28598: Fast path for string formatting (but not
-                        // if the RHS is a str subclass).
-                        res = PyUnicode_Format(lhs, rhs);
-                        break;
-                    }
                     res = PyNumber_Remainder(lhs, rhs);
                     break;
                 case NB_OR:
