@@ -638,8 +638,6 @@ MODULE__MULTIPROCESSING_FALSE
 MODULE__MULTIPROCESSING_TRUE
 MODULE__CTYPES_TEST_FALSE
 MODULE__CTYPES_TEST_TRUE
-MODULE__CTYPES_FALSE
-MODULE__CTYPES_TRUE
 MODULE__DECIMAL_FALSE
 MODULE__DECIMAL_TRUE
 MODULE__CODECS_ISO2022_FALSE
@@ -668,8 +666,6 @@ MODULE_BINASCII_FALSE
 MODULE_BINASCII_TRUE
 MODULE_ZLIB_FALSE
 MODULE_ZLIB_TRUE
-MODULE_NIS_FALSE
-MODULE_NIS_TRUE
 MODULE__SCPROXY_FALSE
 MODULE__SCPROXY_TRUE
 MODULE_OSSAUDIODEV_FALSE
@@ -678,12 +674,6 @@ MODULE_RESOURCE_FALSE
 MODULE_RESOURCE_TRUE
 MODULE_TERMIOS_FALSE
 MODULE_TERMIOS_TRUE
-MODULE__SQLITE3_FALSE
-MODULE__SQLITE3_TRUE
-MODULE__GDBM_FALSE
-MODULE__GDBM_TRUE
-MODULE__DBM_FALSE
-MODULE__DBM_TRUE
 MODULE__SHA3_FALSE
 MODULE__SHA3_TRUE
 MODULE__BLAKE2_FALSE
@@ -702,12 +692,6 @@ MODULE__SSL_FALSE
 MODULE__SSL_TRUE
 MODULE__SOCKET_FALSE
 MODULE__SOCKET_TRUE
-MODULE__CRYPT_FALSE
-MODULE__CRYPT_TRUE
-MODULE__CURSES_PANEL_FALSE
-MODULE__CURSES_PANEL_TRUE
-MODULE__CURSES_FALSE
-MODULE__CURSES_TRUE
 MODULE_READLINE_FALSE
 MODULE_READLINE_TRUE
 MODULE__XXTESTFUZZ_FALSE
@@ -19462,7 +19446,6 @@ $as_echo "no" >&6; }
 fi
 
 
-# Modules that are not available on some platforms
 case $ac_sys_system in #(
   AIX) :
     py_stdlib_not_available="_scproxy spwd" ;; #(
@@ -19470,6 +19453,10 @@ case $ac_sys_system in #(
     py_stdlib_not_available="_scproxy _crypt termios grp" ;; #(
   Darwin) :
     py_stdlib_not_available="ossaudiodev spwd" ;; #(
+  CYGWIN*) :
+    py_stdlib_not_available="_scproxy nis" ;; #(
+  QNX*) :
+    py_stdlib_not_available="_scproxy nis" ;; #(
   *) :
     py_stdlib_not_available="_scproxy"
  ;;
@@ -20589,147 +20576,13 @@ fi
 $as_echo "$py_cv_module_readline" >&6; }
 
 # TODO: detect curses
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _curses" >&5
-$as_echo_n "checking for stdlib extension module _curses... " >&6; }
-      case $py_stdlib_not_available in #(
-  *_curses*) :
-    py_cv_module__curses=n/a ;; #(
-  *) :
-    if true; then :
-  if true; then :
-  py_cv_module__curses=yes
-else
-  py_cv_module__curses=missing
-fi
-else
-  py_cv_module__curses=disabled
-fi
-     ;;
-esac
-  as_fn_append MODULE_BLOCK "MODULE__CURSES=$py_cv_module__curses$as_nl"
-  if test "x$py_cv_module__curses" = xyes; then :
-
-    as_fn_append MODULE_BLOCK "MODULE__CURSES_CFLAGS=$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__CURSES_LDFLAGS=-lncurses -lncursesw -ltermcap$as_nl"
-     if true; then
-  MODULE__CURSES_TRUE=
-  MODULE__CURSES_FALSE='#'
-else
-  MODULE__CURSES_TRUE='#'
-  MODULE__CURSES_FALSE=
-fi
-
-
-else
-
-     if false; then
-  MODULE__CURSES_TRUE=
-  MODULE__CURSES_FALSE='#'
-else
-  MODULE__CURSES_TRUE='#'
-  MODULE__CURSES_FALSE=
-fi
-
-
-fi
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__curses" >&5
-$as_echo "$py_cv_module__curses" >&6; }
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _curses_panel" >&5
-$as_echo_n "checking for stdlib extension module _curses_panel... " >&6; }
-      case $py_stdlib_not_available in #(
-  *_curses_panel*) :
-    py_cv_module__curses_panel=n/a ;; #(
-  *) :
-    if true; then :
-  if true; then :
-  py_cv_module__curses_panel=yes
-else
-  py_cv_module__curses_panel=missing
-fi
-else
-  py_cv_module__curses_panel=disabled
-fi
-     ;;
-esac
-  as_fn_append MODULE_BLOCK "MODULE__CURSES_PANEL=$py_cv_module__curses_panel$as_nl"
-  if test "x$py_cv_module__curses_panel" = xyes; then :
-
-    as_fn_append MODULE_BLOCK "MODULE__CURSES_PANEL_CFLAGS=$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__CURSES_PANEL_LDFLAGS=-lpanel -lncurses$as_nl"
-     if true; then
-  MODULE__CURSES_PANEL_TRUE=
-  MODULE__CURSES_PANEL_FALSE='#'
-else
-  MODULE__CURSES_PANEL_TRUE='#'
-  MODULE__CURSES_PANEL_FALSE=
-fi
-
-
-else
-
-     if false; then
-  MODULE__CURSES_PANEL_TRUE=
-  MODULE__CURSES_PANEL_FALSE='#'
-else
-  MODULE__CURSES_PANEL_TRUE='#'
-  MODULE__CURSES_PANEL_FALSE=
-fi
-
-
-fi
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__curses_panel" >&5
-$as_echo "$py_cv_module__curses_panel" >&6; }
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _crypt" >&5
-$as_echo_n "checking for stdlib extension module _crypt... " >&6; }
-      case $py_stdlib_not_available in #(
-  *_crypt*) :
-    py_cv_module__crypt=n/a ;; #(
-  *) :
-    if test "$ac_sys_system" != VxWorks; then :
-  if test "$ac_cv_search_crypt_r" != no -o "$ac_cv_search_crypt" != no; then :
-  py_cv_module__crypt=yes
-else
-  py_cv_module__crypt=missing
-fi
-else
-  py_cv_module__crypt=disabled
-fi
-     ;;
-esac
-  as_fn_append MODULE_BLOCK "MODULE__CRYPT=$py_cv_module__crypt$as_nl"
-  if test "x$py_cv_module__crypt" = xyes; then :
-
-    as_fn_append MODULE_BLOCK "MODULE__CRYPT_CFLAGS=$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__CRYPT_LDFLAGS=-lcrypt$as_nl"
-     if true; then
-  MODULE__CRYPT_TRUE=
-  MODULE__CRYPT_FALSE='#'
-else
-  MODULE__CRYPT_TRUE='#'
-  MODULE__CRYPT_FALSE=
-fi
-
-
-else
-
-     if false; then
-  MODULE__CRYPT_TRUE=
-  MODULE__CRYPT_FALSE='#'
-else
-  MODULE__CRYPT_TRUE='#'
-  MODULE__CRYPT_FALSE=
-fi
-
-
-fi
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__crypt" >&5
-$as_echo "$py_cv_module__crypt" >&6; }
-
+#PY_STDLIB_MOD([_curses], [true], [true], [], [-lncurses -lncursesw -ltermcap])
+#PY_STDLIB_MOD([_curses_panel], [true], [true], [], [-lpanel -lncurses])
+# TODO detect presence of libcrypt
+#PY_STDLIB_MOD([_crypt],
+#  [test "$ac_sys_system" != VxWorks],
+#  [test "$ac_cv_search_crypt_r" != no -o "$ac_cv_search_crypt" != no],
+#  [], [-lcrypt])
 
     as_fn_append MODULE_BLOCK "MODULE__SOCKET=yes$as_nl"
    if true; then
@@ -21120,148 +20973,14 @@ fi
 $as_echo "$py_cv_module__sha3" >&6; }
 
 # TODO: select dbm library
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _dbm" >&5
-$as_echo_n "checking for stdlib extension module _dbm... " >&6; }
-      case $py_stdlib_not_available in #(
-  *_dbm*) :
-    py_cv_module__dbm=n/a ;; #(
-  *) :
-    if true; then :
-  if true; then :
-  py_cv_module__dbm=yes
-else
-  py_cv_module__dbm=missing
-fi
-else
-  py_cv_module__dbm=disabled
-fi
-     ;;
-esac
-  as_fn_append MODULE_BLOCK "MODULE__DBM=$py_cv_module__dbm$as_nl"
-  if test "x$py_cv_module__dbm" = xyes; then :
-
-    as_fn_append MODULE_BLOCK "MODULE__DBM_CFLAGS=-DUSE_GDBM_COMPAT$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__DBM_LDFLAGS=-lgdbm_compat$as_nl"
-     if true; then
-  MODULE__DBM_TRUE=
-  MODULE__DBM_FALSE='#'
-else
-  MODULE__DBM_TRUE='#'
-  MODULE__DBM_FALSE=
-fi
-
-
-else
-
-     if false; then
-  MODULE__DBM_TRUE=
-  MODULE__DBM_FALSE='#'
-else
-  MODULE__DBM_TRUE='#'
-  MODULE__DBM_FALSE=
-fi
-
-
-fi
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__dbm" >&5
-$as_echo "$py_cv_module__dbm" >&6; }
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _gdbm" >&5
-$as_echo_n "checking for stdlib extension module _gdbm... " >&6; }
-      case $py_stdlib_not_available in #(
-  *_gdbm*) :
-    py_cv_module__gdbm=n/a ;; #(
-  *) :
-    if true; then :
-  if test "$ac_cv_lib_gdbm_gdbm_open" = yes; then :
-  py_cv_module__gdbm=yes
-else
-  py_cv_module__gdbm=missing
-fi
-else
-  py_cv_module__gdbm=disabled
-fi
-     ;;
-esac
-  as_fn_append MODULE_BLOCK "MODULE__GDBM=$py_cv_module__gdbm$as_nl"
-  if test "x$py_cv_module__gdbm" = xyes; then :
-
-    as_fn_append MODULE_BLOCK "MODULE__GDBM_CFLAGS=$GDBM_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__GDBM_LDFLAGS=$GDBM_LDFLAGS$as_nl"
-     if true; then
-  MODULE__GDBM_TRUE=
-  MODULE__GDBM_FALSE='#'
-else
-  MODULE__GDBM_TRUE='#'
-  MODULE__GDBM_FALSE=
-fi
-
-
-else
-
-     if false; then
-  MODULE__GDBM_TRUE=
-  MODULE__GDBM_FALSE='#'
-else
-  MODULE__GDBM_TRUE='#'
-  MODULE__GDBM_FALSE=
-fi
-
-
-fi
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__gdbm" >&5
-$as_echo "$py_cv_module__gdbm" >&6; }
-
+#PY_STDLIB_MOD([_dbm], [true], [true], [-DUSE_GDBM_COMPAT], [-lgdbm_compat])
+# TODO: only build gdbm when it is listed on libdbmorder
+#PY_STDLIB_MOD([_gdbm],
+#  [true],
+#  [test "$ac_cv_lib_gdbm_gdbm_open" = yes],
+#  [$GDBM_CFLAGS], [$GDBM_LDFLAGS])
 # TODO: detect sqlite
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _sqlite3" >&5
-$as_echo_n "checking for stdlib extension module _sqlite3... " >&6; }
-      case $py_stdlib_not_available in #(
-  *_sqlite3*) :
-    py_cv_module__sqlite3=n/a ;; #(
-  *) :
-    if true; then :
-  if true; then :
-  py_cv_module__sqlite3=yes
-else
-  py_cv_module__sqlite3=missing
-fi
-else
-  py_cv_module__sqlite3=disabled
-fi
-     ;;
-esac
-  as_fn_append MODULE_BLOCK "MODULE__SQLITE3=$py_cv_module__sqlite3$as_nl"
-  if test "x$py_cv_module__sqlite3" = xyes; then :
-
-    as_fn_append MODULE_BLOCK "MODULE__SQLITE3_CFLAGS=$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__SQLITE3_LDFLAGS=-lsqlite3$as_nl"
-     if true; then
-  MODULE__SQLITE3_TRUE=
-  MODULE__SQLITE3_FALSE='#'
-else
-  MODULE__SQLITE3_TRUE='#'
-  MODULE__SQLITE3_FALSE=
-fi
-
-
-else
-
-     if false; then
-  MODULE__SQLITE3_TRUE=
-  MODULE__SQLITE3_FALSE='#'
-else
-  MODULE__SQLITE3_TRUE='#'
-  MODULE__SQLITE3_FALSE=
-fi
-
-
-fi
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__sqlite3" >&5
-$as_echo "$py_cv_module__sqlite3" >&6; }
-
+#PY_STDLIB_MOD([_sqlite3], [true], [true], [], [-lsqlite3])
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module termios" >&5
 $as_echo_n "checking for stdlib extension module termios... " >&6; }
@@ -21416,53 +21135,7 @@ fi
 $as_echo "$py_cv_module__scproxy" >&6; }
 
 # TODO: detect nsl and tirpc
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module nis" >&5
-$as_echo_n "checking for stdlib extension module nis... " >&6; }
-      case $py_stdlib_not_available in #(
-  *nis*) :
-    py_cv_module_nis=n/a ;; #(
-  *) :
-    if true; then :
-  if true; then :
-  py_cv_module_nis=yes
-else
-  py_cv_module_nis=missing
-fi
-else
-  py_cv_module_nis=disabled
-fi
-     ;;
-esac
-  as_fn_append MODULE_BLOCK "MODULE_NIS=$py_cv_module_nis$as_nl"
-  if test "x$py_cv_module_nis" = xyes; then :
-
-    as_fn_append MODULE_BLOCK "MODULE_NIS_CFLAGS=-I/usr/include/tirpc$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE_NIS_LDFLAGS=-lnsl -ltirpc$as_nl"
-     if true; then
-  MODULE_NIS_TRUE=
-  MODULE_NIS_FALSE='#'
-else
-  MODULE_NIS_TRUE='#'
-  MODULE_NIS_FALSE=
-fi
-
-
-else
-
-     if false; then
-  MODULE_NIS_TRUE=
-  MODULE_NIS_FALSE='#'
-else
-  MODULE_NIS_TRUE='#'
-  MODULE_NIS_FALSE=
-fi
-
-
-fi
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_nis" >&5
-$as_echo "$py_cv_module_nis" >&6; }
-
+#PY_STDLIB_MOD([nis], [true], [true], [-I/usr/include/tirpc], [-lnsl -ltirpc])
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module zlib" >&5
 $as_echo_n "checking for stdlib extension module zlib... " >&6; }
@@ -21829,8 +21502,6 @@ fi
 
 
 
-# TODO: handle external libmpdec
-# UNIVERSAL: let mpdecimal.h detect settings
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _decimal" >&5
 $as_echo_n "checking for stdlib extension module _decimal... " >&6; }
@@ -21879,53 +21550,10 @@ fi
 $as_echo "$py_cv_module__decimal" >&6; }
 
 # TODO: handle ffi dependency
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _ctypes" >&5
-$as_echo_n "checking for stdlib extension module _ctypes... " >&6; }
-      case $py_stdlib_not_available in #(
-  *_ctypes*) :
-    py_cv_module__ctypes=n/a ;; #(
-  *) :
-    if true; then :
-  if true; then :
-  py_cv_module__ctypes=yes
-else
-  py_cv_module__ctypes=missing
-fi
-else
-  py_cv_module__ctypes=disabled
-fi
-     ;;
-esac
-  as_fn_append MODULE_BLOCK "MODULE__CTYPES=$py_cv_module__ctypes$as_nl"
-  if test "x$py_cv_module__ctypes" = xyes; then :
-
-    as_fn_append MODULE_BLOCK "MODULE__CTYPES_CFLAGS=-DHAVE_FFI_PREP_CIF_VAR -DHAVE_FFI_PREP_CLOSURE_LOC -DHAVE_FFI_CLOSURE_ALLOC$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__CTYPES_LDFLAGS=-ldl -lffi$as_nl"
-     if true; then
-  MODULE__CTYPES_TRUE=
-  MODULE__CTYPES_FALSE='#'
-else
-  MODULE__CTYPES_TRUE='#'
-  MODULE__CTYPES_FALSE=
-fi
-
-
-else
-
-     if false; then
-  MODULE__CTYPES_TRUE=
-  MODULE__CTYPES_FALSE='#'
-else
-  MODULE__CTYPES_TRUE='#'
-  MODULE__CTYPES_FALSE=
-fi
-
-
-fi
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__ctypes" >&5
-$as_echo "$py_cv_module__ctypes" >&6; }
-
+#PY_STDLIB_MOD([_ctypes],
+#  [true], [true],
+#  [-DHAVE_FFI_PREP_CIF_VAR -DHAVE_FFI_PREP_CLOSURE_LOC -DHAVE_FFI_CLOSURE_ALLOC],
+#  [-ldl -lffi])
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _ctypes_test" >&5
 $as_echo_n "checking for stdlib extension module _ctypes_test... " >&6; }
@@ -21948,7 +21576,7 @@ esac
   if test "x$py_cv_module__ctypes_test" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__CTYPES_TEST_CFLAGS=$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__CTYPES_TEST_LDFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__CTYPES_TEST_LDFLAGS=-lm$as_nl"
      if true; then
   MODULE__CTYPES_TEST_TRUE=
   MODULE__CTYPES_TEST_FALSE='#'
@@ -21973,6 +21601,7 @@ fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__ctypes_test" >&5
 $as_echo "$py_cv_module__ctypes_test" >&6; }
 
+# TODO: include _multiprocessing/semaphore.c conditional
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _multiprocessing" >&5
 $as_echo_n "checking for stdlib extension module _multiprocessing... " >&6; }
@@ -22584,30 +22213,6 @@ if test -z "${MODULE_READLINE_TRUE}" && test -z "${MODULE_READLINE_FALSE}"; then
   as_fn_error $? "conditional \"MODULE_READLINE\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${MODULE__CURSES_TRUE}" && test -z "${MODULE__CURSES_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE__CURSES\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${MODULE__CURSES_TRUE}" && test -z "${MODULE__CURSES_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE__CURSES\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${MODULE__CURSES_PANEL_TRUE}" && test -z "${MODULE__CURSES_PANEL_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE__CURSES_PANEL\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${MODULE__CURSES_PANEL_TRUE}" && test -z "${MODULE__CURSES_PANEL_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE__CURSES_PANEL\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${MODULE__CRYPT_TRUE}" && test -z "${MODULE__CRYPT_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE__CRYPT\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${MODULE__CRYPT_TRUE}" && test -z "${MODULE__CRYPT_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE__CRYPT\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
 if test -z "${MODULE__SOCKET_TRUE}" && test -z "${MODULE__SOCKET_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__SOCKET\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
@@ -22676,30 +22281,6 @@ if test -z "${MODULE__SHA3_TRUE}" && test -z "${MODULE__SHA3_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__SHA3\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${MODULE__DBM_TRUE}" && test -z "${MODULE__DBM_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE__DBM\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${MODULE__DBM_TRUE}" && test -z "${MODULE__DBM_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE__DBM\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${MODULE__GDBM_TRUE}" && test -z "${MODULE__GDBM_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE__GDBM\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${MODULE__GDBM_TRUE}" && test -z "${MODULE__GDBM_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE__GDBM\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${MODULE__SQLITE3_TRUE}" && test -z "${MODULE__SQLITE3_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE__SQLITE3\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${MODULE__SQLITE3_TRUE}" && test -z "${MODULE__SQLITE3_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE__SQLITE3\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
 if test -z "${MODULE_TERMIOS_TRUE}" && test -z "${MODULE_TERMIOS_FALSE}"; then
   as_fn_error $? "conditional \"MODULE_TERMIOS\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
@@ -22726,14 +22307,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__SCPROXY_TRUE}" && test -z "${MODULE__SCPROXY_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__SCPROXY\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${MODULE_NIS_TRUE}" && test -z "${MODULE_NIS_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE_NIS\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${MODULE_NIS_TRUE}" && test -z "${MODULE_NIS_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE_NIS\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_ZLIB_TRUE}" && test -z "${MODULE_ZLIB_FALSE}"; then
@@ -22818,14 +22391,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__DECIMAL_TRUE}" && test -z "${MODULE__DECIMAL_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__DECIMAL\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${MODULE__CTYPES_TRUE}" && test -z "${MODULE__CTYPES_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE__CTYPES\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${MODULE__CTYPES_TRUE}" && test -z "${MODULE__CTYPES_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE__CTYPES\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__CTYPES_TEST_TRUE}" && test -z "${MODULE__CTYPES_TEST_FALSE}"; then

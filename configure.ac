@@ -5954,11 +5954,15 @@ else
 fi
 AC_SUBST(TEST_MODULES)
 
-# Modules that are not available on some platforms
+dnl Modules that are not available on some platforms
+dnl AIX has shadow passwords, but access is not via getspent()
+dnl VxWorks does not provide crypt() function
 AS_CASE([$ac_sys_system],
   [AIX], [py_stdlib_not_available="_scproxy spwd"],
   [VxWorks*], [py_stdlib_not_available="_scproxy _crypt termios grp"],
   [Darwin], [py_stdlib_not_available="ossaudiodev spwd"],
+  [CYGWIN*], [py_stdlib_not_available="_scproxy nis"],
+  [QNX*], [py_stdlib_not_available="_scproxy nis"],
   [py_stdlib_not_available="_scproxy"]
 )
 
@@ -6077,12 +6081,13 @@ PY_STDLIB_MOD([_testmultiphase], [test "$TEST_MODULES" = yes], [true])
 PY_STDLIB_MOD([_xxtestfuzz], [test "$TEST_MODULES" = yes], [true])
 PY_STDLIB_MOD([readline], [true], [test "$py_cv_lib_readline" = yes], [], [$READLINE_LIBS])
 # TODO: detect curses
-PY_STDLIB_MOD([_curses], [true], [true], [], [-lncurses -lncursesw -ltermcap])
-PY_STDLIB_MOD([_curses_panel], [true], [true], [], [-lpanel -lncurses])
-PY_STDLIB_MOD([_crypt],
-  [test "$ac_sys_system" != VxWorks],
-  [test "$ac_cv_search_crypt_r" != no -o "$ac_cv_search_crypt" != no],
-  [], [-lcrypt])
+#PY_STDLIB_MOD([_curses], [true], [true], [], [-lncurses -lncursesw -ltermcap])
+#PY_STDLIB_MOD([_curses_panel], [true], [true], [], [-lpanel -lncurses])
+# TODO detect presence of libcrypt
+#PY_STDLIB_MOD([_crypt],
+#  [test "$ac_sys_system" != VxWorks],
+#  [test "$ac_cv_search_crypt_r" != no -o "$ac_cv_search_crypt" != no],
+#  [], [-lcrypt])
 PY_STDLIB_MOD_SIMPLE([_socket])
 # TODO: add OPENSSL_RPATH
 PY_STDLIB_MOD([_ssl],
@@ -6100,13 +6105,14 @@ PY_STDLIB_MOD([_sha1], [test "$with_builtin_sha1" = yes], [true])
 PY_STDLIB_MOD([_blake2], [test "$with_builtin_blake2" = yes], [true])
 PY_STDLIB_MOD([_sha3], [test "$with_builtin_sha3" = yes], [true])
 # TODO: select dbm library
-PY_STDLIB_MOD([_dbm], [true], [true], [-DUSE_GDBM_COMPAT], [-lgdbm_compat])
-PY_STDLIB_MOD([_gdbm],
-  [true],
-  [test "$ac_cv_lib_gdbm_gdbm_open" = yes],
-  [$GDBM_CFLAGS], [$GDBM_LDFLAGS])
+#PY_STDLIB_MOD([_dbm], [true], [true], [-DUSE_GDBM_COMPAT], [-lgdbm_compat])
+# TODO: only build gdbm when it is listed on libdbmorder
+#PY_STDLIB_MOD([_gdbm],
+#  [true],
+#  [test "$ac_cv_lib_gdbm_gdbm_open" = yes],
+#  [$GDBM_CFLAGS], [$GDBM_LDFLAGS])
 # TODO: detect sqlite
-PY_STDLIB_MOD([_sqlite3], [true], [true], [], [-lsqlite3])
+#PY_STDLIB_MOD([_sqlite3], [true], [true], [], [-lsqlite3])
 PY_STDLIB_MOD([termios], [test "$ac_sys_system" != VxWorks], [true])
 PY_STDLIB_MOD_SIMPLE([resource])
 PY_STDLIB_MOD([ossaudiodev],
@@ -6117,7 +6123,7 @@ PY_STDLIB_MOD([_scproxy],
   [true],
   [], [-framework SystemConfiguration -framework CoreFoundation])
 # TODO: detect nsl and tirpc
-PY_STDLIB_MOD([nis], [true], [true], [-I/usr/include/tirpc], [-lnsl -ltirpc])
+#PY_STDLIB_MOD([nis], [true], [true], [-I/usr/include/tirpc], [-lnsl -ltirpc])
 PY_STDLIB_MOD([zlib],
   [true],
   [test "$ac_cv_header_zlib_h" = yes -a "$ac_cv_lib_z_gzread" = yes],
@@ -6141,17 +6147,16 @@ PY_STDLIB_MOD_SIMPLE([_codecs_cn])
 PY_STDLIB_MOD_SIMPLE([_codecs_tw])
 PY_STDLIB_MOD_SIMPLE([_codecs_hk])
 PY_STDLIB_MOD_SIMPLE([_codecs_iso2022])
-# TODO: handle external libmpdec
-# UNIVERSAL: let mpdecimal.h detect settings
 PY_STDLIB_MOD([_decimal],
   [true], [true],
   [$LIBMPDEC_CFLAGS], [$LIBMPDEC_LDFLAGS])
 # TODO: handle ffi dependency
-PY_STDLIB_MOD([_ctypes],
-  [true], [true],
-  [-DHAVE_FFI_PREP_CIF_VAR -DHAVE_FFI_PREP_CLOSURE_LOC -DHAVE_FFI_CLOSURE_ALLOC],
-  [-ldl -lffi])
-PY_STDLIB_MOD([_ctypes_test], [test "$TEST_MODULES" = yes], [true])
+#PY_STDLIB_MOD([_ctypes],
+#  [true], [true],
+#  [-DHAVE_FFI_PREP_CIF_VAR -DHAVE_FFI_PREP_CLOSURE_LOC -DHAVE_FFI_CLOSURE_ALLOC],
+#  [-ldl -lffi])
+PY_STDLIB_MOD([_ctypes_test], [test "$TEST_MODULES" = yes], [true], [], [-lm])
+# TODO: include _multiprocessing/semaphore.c conditional
 PY_STDLIB_MOD([_multiprocessing],
   [true], [true],
   [-I\$(srcdir)/Modules/_multiprocessing], [$ac_cv_search_shm_open])
