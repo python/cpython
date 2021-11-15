@@ -1633,7 +1633,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
         }
         TRACE_FUNCTION_THROW_ENTRY();
         DTRACE_FUNCTION_ENTRY();
-        goto update_locals_then_error;
+        goto resume_with_error;
     }
 
     /* Local "register" variables.
@@ -5101,7 +5101,7 @@ exit_unwind:
     }
     frame = cframe.current_frame = pop_frame(tstate, frame);
 
-update_locals_then_error:
+resume_with_error:
     {
         PyCodeObject * co = frame->f_code;
         names = co->co_names;
