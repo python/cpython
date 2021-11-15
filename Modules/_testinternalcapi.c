@@ -14,10 +14,10 @@
 #include "Python.h"
 #include "pycore_atomic_funcs.h" // _Py_atomic_int_get()
 #include "pycore_bitutils.h"     // _Py_bswap32()
-#include "pycore_fileutils.h"    // _Py_normalize_path
+#include "pycore_fileutils.h"    // _Py_normpath
 #include "pycore_gc.h"           // PyGC_Head
 #include "pycore_hashtable.h"    // _Py_hashtable_new()
-#include "pycore_initconfig.h"   // _Py_GetConfigsAsDict()
+#include "pycore_initconfig.h"   // _Py_GetConfigsAsDict(), _PyConfig_InitPathConfig()
 #include "pycore_interp.h"       // _PyInterpreterState_GetConfigCopy()
 #include "pycore_pyerrors.h"     // _Py_UTF8_Edit_Cost()
 #include "pycore_pystate.h"      // _PyThreadState_GET()
@@ -377,15 +377,10 @@ normalize_path(PyObject *self, PyObject *filename)
         return NULL;
     }
 
-    wchar_t buf[MAXPATHLEN + 1];
-    int res = _Py_normalize_path(encoded, buf, Py_ARRAY_LENGTH(buf));
+    PyObject *result = PyUnicode_FromWideChar(_Py_normpath(encoded, size), -1);
     PyMem_Free(encoded);
-    if (res != 0) {
-        PyErr_SetString(PyExc_ValueError, "string too long");
-        return NULL;
-    }
 
-    return PyUnicode_FromWideChar(buf, -1);
+    return result;
 }
 
 

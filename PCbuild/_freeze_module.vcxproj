@@ -104,6 +104,7 @@
     <ClCompile Include="..\Modules\faulthandler.c" />
     <ClCompile Include="..\Modules\gcmodule.c" />
     <ClCompile Include="..\Modules\getbuildinfo.c" />
+    <ClCompile Include="..\Modules\getpath_noop.c" />
     <ClCompile Include="..\Modules\posixmodule.c" />
     <ClCompile Include="..\Modules\signalmodule.c" />
     <ClCompile Include="..\Modules\_tracemalloc.c" />
@@ -166,7 +167,6 @@
     <ClCompile Include="..\Parser\string_parser.c" />
     <ClCompile Include="..\Parser\token.c" />
     <ClCompile Include="..\Parser\tokenizer.c" />
-    <ClCompile Include="..\PC\getpathp.c" />
     <ClCompile Include="..\PC\invalid_parameter_handler.c" />
     <ClCompile Include="..\PC\msvcrtmodule.c" />
     <ClCompile Include="..\PC\winreg.c" />
@@ -244,6 +244,11 @@
       <ModName>zipimport</ModName>
       <IntFile>$(IntDir)zipimport.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\zipimport.h</OutFile>
+    </None>
+    <None Include="..\Modules\getpath.py">
+      <ModName>getpath</ModName>
+      <IntFile>$(IntDir)getpath.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\getpath.h</OutFile>
     </None>
     <None Include="..\Lib\abc.py">
       <ModName>abc</ModName>

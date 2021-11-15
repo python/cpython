@@ -158,7 +158,11 @@ write_code(FILE *outfile, PyObject *marshalled, const char *varname)
         }
         fprintf(outfile, "\n");
     }
-    fprintf(outfile, "};\n");
+    fprintf(outfile, "};\n\n");
+    fprintf(outfile, "const unsigned char *%s_ptr = %s;\n",
+        varname, varname);
+    fprintf(outfile, "const int %s_len = (int)sizeof(%s);\n",
+        varname, varname);
 }
 
 static int

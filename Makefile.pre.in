@@ -291,7 +291,6 @@ COVERAGE_REPORT_OPTIONS=--no-branch-coverage --title "CPython lcov report"
 # Modules
 MODULE_OBJS=	\
 		Modules/config.o \
-		Modules/getpath.o \
 		Modules/main.o \
 		Modules/gcmodule.o
 
@@ -454,6 +453,7 @@ DEEPFREEZE_OBJS = \
 		Python/deepfreeze/importlib._bootstrap.o \
 		Python/deepfreeze/importlib._bootstrap_external.o \
 		Python/deepfreeze/zipimport.o \
+		Python/deepfreeze/getpath.o \
 		Python/deepfreeze/abc.o \
 		Python/deepfreeze/codecs.o \
 		Python/deepfreeze/io.o \
@@ -486,6 +486,7 @@ LIBRARY_OBJS_OMIT_FROZEN=	\
 LIBRARY_OBJS=	\
 		$(LIBRARY_OBJS_OMIT_FROZEN) \
 		$(DEEPFREEZE_OBJS) \
+		Modules/getpath.o \
 		Python/frozen.o
 
 ##########################################################################
@@ -916,13 +917,15 @@ Programs/_testembed: Programs/_testembed.o $(LIBRARY_DEPS)
 BOOTSTRAP_HEADERS = \
 	Python/frozen_modules/importlib._bootstrap.h \
 	Python/frozen_modules/importlib._bootstrap_external.h \
+	Python/frozen_modules/getpath.h \
 	Python/frozen_modules/zipimport.h
 
 Python/bootstrap_frozen.o: Python/bootstrap_frozen.c Include/cpython/import.h $(BOOTSTRAP_HEADERS)
 
 $(BOOTSTRAP): $(LIBRARY_OBJS_OMIT_FROZEN) \
-		Python/bootstrap_frozen.o Programs/python.o
+		Modules/getpath.o Python/bootstrap_frozen.o Programs/python.o
 	$(LINKCC) $(PY_CORE_LDFLAGS) -o $@ $(LIBRARY_OBJS_OMIT_FROZEN) \
+		Modules/getpath.o \
 		Python/bootstrap_frozen.o \
 		Programs/python.o \
 		$(LIBS) $(MODLIBS) $(SYSLIBS)
@@ -957,6 +960,12 @@ Python/deepfreeze/zipimport.c: $(srcdir)/Lib/zipimport.py $(DEEPFREEZE_DEPS)
 	@./$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
 		$(srcdir)/Lib/zipimport.py -m zipimport -o Python/deepfreeze/zipimport.c
+
+Python/deepfreeze/getpath.c: $(srcdir)/Modules/getpath.py $(DEEPFREEZE_DEPS)
+	@echo "Deepfreezing Python/deepfreeze/getpath.c from Modules/getpath.py"
+	@./$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Modules/getpath.py -m getpath -o Python/deepfreeze/getpath.c
 
 Python/deepfreeze/abc.c: $(srcdir)/Lib/abc.py $(DEEPFREEZE_DEPS)
 	@echo "Deepfreezing Python/deepfreeze/abc.c from Lib/abc.py"
@@ -1070,6 +1079,7 @@ FROZEN_FILES_IN = \
 		Lib/importlib/_bootstrap.py \
 		Lib/importlib/_bootstrap_external.py \
 		Lib/zipimport.py \
+		Modules/getpath.py \
 		Lib/abc.py \
 		Lib/codecs.py \
 		Lib/io.py \
@@ -1092,6 +1102,7 @@ FROZEN_FILES_OUT = \
 		Python/frozen_modules/importlib._bootstrap.h \
 		Python/frozen_modules/importlib._bootstrap_external.h \
 		Python/frozen_modules/zipimport.h \
+		Python/frozen_modules/getpath.h \
 		Python/frozen_modules/abc.h \
 		Python/frozen_modules/codecs.h \
 		Python/frozen_modules/io.h \
@@ -1113,8 +1124,11 @@ FROZEN_FILES_OUT = \
 
 Programs/_freeze_module.o: Programs/_freeze_module.c Makefile
 
-Programs/_freeze_module: Programs/_freeze_module.o $(LIBRARY_OBJS_OMIT_FROZEN)
-	$(LINKCC) $(PY_CORE_LDFLAGS) -o $@ Programs/_freeze_module.o $(LIBRARY_OBJS_OMIT_FROZEN) $(LIBS) $(MODLIBS) $(SYSLIBS)
+Modules/getpath_noop.o: $(srcdir)/Modules/getpath_noop.c Makefile
+	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $(srcdir)/Modules/getpath_noop.c
+
+Programs/_freeze_module: Programs/_freeze_module.o $(LIBRARY_OBJS_OMIT_FROZEN) Modules/getpath_noop.o
+	$(LINKCC) $(PY_CORE_LDFLAGS) -o $@ Programs/_freeze_module.o $(LIBRARY_OBJS_OMIT_FROZEN) Modules/getpath_noop.o $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 # BEGIN: freezing modules
 
@@ -1126,6 +1140,9 @@ Python/frozen_modules/importlib._bootstrap_external.h: Programs/_freeze_module L
 
 Python/frozen_modules/zipimport.h: Programs/_freeze_module Lib/zipimport.py
 	Programs/_freeze_module zipimport $(srcdir)/Lib/zipimport.py $(srcdir)/Python/frozen_modules/zipimport.h
+
+Python/frozen_modules/getpath.h: Programs/_freeze_module Modules/getpath.py
+	Programs/_freeze_module getpath $(srcdir)/Modules/getpath.py $(srcdir)/Python/frozen_modules/getpath.h
 
 Python/frozen_modules/abc.h: Programs/_freeze_module Lib/abc.py
 	Programs/_freeze_module abc $(srcdir)/Lib/abc.py $(srcdir)/Python/frozen_modules/abc.h
@@ -1228,6 +1245,7 @@ Modules/getpath.o: $(srcdir)/Modules/getpath.c Makefile
 		-DEXEC_PREFIX='"$(exec_prefix)"' \
 		-DVERSION='"$(VERSION)"' \
 		-DVPATH='"$(VPATH)"' \
+		-DPLATLIBDIR='"$(PLATLIBDIR)"' \
 		-o $@ $(srcdir)/Modules/getpath.c
 
 Programs/python.o: $(srcdir)/Programs/python.c
@@ -1261,11 +1279,6 @@ Python/sysmodule.o: $(srcdir)/Python/sysmodule.c Makefile $(srcdir)/Include/pydt
 		-DABIFLAGS='"$(ABIFLAGS)"' \
 		$(MULTIARCH_CPPFLAGS) \
 		-o $@ $(srcdir)/Python/sysmodule.c
-
-Python/initconfig.o: $(srcdir)/Python/initconfig.c
-	$(CC) -c $(PY_CORE_CFLAGS) \
-		-DPLATLIBDIR='"$(PLATLIBDIR)"' \
-		-o $@ $(srcdir)/Python/initconfig.c
 
 $(IO_OBJS): $(IO_H)
 

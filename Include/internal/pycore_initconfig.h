@@ -152,7 +152,7 @@ PyAPI_FUNC(void) _PyConfig_InitCompatConfig(PyConfig *config);
 extern PyStatus _PyConfig_Copy(
     PyConfig *config,
     const PyConfig *config2);
-extern PyStatus _PyConfig_InitPathConfig(
+PyAPI_FUNC(PyStatus) _PyConfig_InitPathConfig(
     PyConfig *config,
     int compute_path_config);
 extern PyStatus _PyConfig_InitImportConfig(PyConfig *config);
@@ -165,6 +165,8 @@ extern PyStatus _PyConfig_SetPyArgv(
 
 PyAPI_FUNC(PyObject*) _PyConfig_AsDict(const PyConfig *config);
 PyAPI_FUNC(int) _PyConfig_FromDict(PyConfig *config, PyObject *dict);
+
+extern void _Py_DumpPathConfig(PyThreadState *tstate);
 
 
 /* --- Function used for testing ---------------------------------- */
