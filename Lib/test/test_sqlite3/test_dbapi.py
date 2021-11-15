@@ -519,8 +519,9 @@ class ConnectionTests(unittest.TestCase):
 
     def test_connection_init_good_isolation_levels(self):
         for level in "", "DEFERRED", "IMMEDIATE", "EXCLUSIVE", None:
-            with memory_database(isolation_level=level) as cx:
-                cx.execute("select 'ok'")
+            with self.subTest(level=level):
+                with memory_database(isolation_level=level) as cx:
+                    cx.execute("select 'ok'")
 
 
 class UninitialisedConnectionTests(unittest.TestCase):
