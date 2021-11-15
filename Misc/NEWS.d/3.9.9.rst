@@ -1,0 +1,78 @@
+.. bpo: 45738
+.. date: 2021-11-14-00-14-45
+.. nonce: e0cgKd
+.. release date: 2021-11-15
+.. section: Core and Builtins
+
+Fix computation of error location for invalid continuation characters in the
+parser. Patch by Pablo Galindo.
+
+..
+
+.. bpo: 45235
+.. date: 2021-11-11-13-03-17
+.. nonce: 8ZbkHa
+.. section: Library
+
+Reverted an argparse bugfix that caused regression in the handling of
+default arguments for subparsers.  This prevented leaf level arguments from
+taking precedence over root level arguments.
+
+..
+
+.. bpo: 45765
+.. date: 2021-11-09-09-04-19
+.. nonce: JVobxK
+.. section: Library
+
+In importlib.metadata, fix distribution discovery for an empty path.
+
+..
+
+.. bpo: 45644
+.. date: 2021-11-06-17-47-46
+.. nonce: ZMqHD_
+.. section: Library
+
+In-place JSON file formatting using ``python3 -m json.tool infile infile``
+now works correctly, previously it left the file empty.  Patch by Chris
+Wesseling.
+
+..
+
+.. bpo: 45772
+.. date: 2021-11-09-13-10-55
+.. nonce: EdrM3t
+.. section: Documentation
+
+``socket.socket`` documentation is corrected to a class from a function.
+
+..
+
+.. bpo: 45392
+.. date: 2021-11-06-10-54-17
+.. nonce: JZnVOz
+.. section: Documentation
+
+Update the docstring of the :class:`type` built-in to remove a redundant
+line and to mention keyword arguments for the constructor.
+
+..
+
+.. bpo: 45732
+.. date: 2021-11-08-21-53-11
+.. nonce: idl5kx
+.. section: Windows
+
+Updates bundled Tcl/Tk to 8.6.12.
+
+..
+
+.. bpo: 45720
+.. date: 2021-11-05-01-05-46
+.. nonce: 47Nc5I
+.. section: Windows
+
+Internal reference to :file:`shlwapi.dll` was dropped to help improve
+startup time. This DLL will no longer be loaded at the start of every Python
+process.
