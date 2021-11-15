@@ -4072,23 +4072,25 @@ AC_CHECK_FUNCS(setpgrp,
 )
 
 # We search for both crypt and crypt_r as one or the other may be defined
-# This gets us our -lcrypt in LIBS when required on the target platform.
-# Save/restore LIBS to avoid linking libpython with libcrypt.
+# Some platforms have crypt.h, others like FreeBSD have crypt*() in unistd.h
 LIBS_SAVE=$LIBS
-AC_SEARCH_LIBS(crypt_r, crypt)
+LIBCRYPT=
+AC_SEARCH_LIBS([crypt_r], [crypt], [
+  AC_DEFINE(HAVE_CRYPT_R, 1, [Define if you have the crypt_r() function.])
+  if test "$ac_cv_search_crypt_r" != "none required"; then
+    LIBCRYPT="$ac_cv_search_crypt_r"
+  fi
+])
 LIBS="$LIBS_SAVE"
-AC_SEARCH_LIBS(crypt, crypt)
+AC_SEARCH_LIBS([crypt], [crypt], [
+  if test "$ac_cv_search_crypt" != "none required"; then
+    LIBCRYPT="$ac_cv_search_crypt"
+  fi
+])
 
-AC_CHECK_FUNC(crypt_r,
-  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include <crypt.h>
-]], [[
-struct crypt_data d;
-char *r = crypt_r("", "", &d);
-]])],
-    [AC_DEFINE(HAVE_CRYPT_R, 1, [Define if you have the crypt_r() function.])],
-    [])
-)
+AC_MSG_CHECKING([for crypt(_r) linker argument])
+AC_MSG_RESULT([$LIBCRYPT])
+
 LIBS=$LIBS_SAVE
 
 AC_CHECK_FUNCS(clock_gettime, [], [

@@ -14052,9 +14052,9 @@ done
 
 
 # We search for both crypt and crypt_r as one or the other may be defined
-# This gets us our -lcrypt in LIBS when required on the target platform.
-# Save/restore LIBS to avoid linking libpython with libcrypt.
+# Some platforms have crypt.h, others like FreeBSD have crypt*() in unistd.h
 LIBS_SAVE=$LIBS
+LIBCRYPT=
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing crypt_r" >&5
 $as_echo_n "checking for library containing crypt_r... " >&6; }
 if ${ac_cv_search_crypt_r+:} false; then :
@@ -14108,6 +14108,13 @@ $as_echo "$ac_cv_search_crypt_r" >&6; }
 ac_res=$ac_cv_search_crypt_r
 if test "$ac_res" != no; then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
+
+$as_echo "#define HAVE_CRYPT_R 1" >>confdefs.h
+
+  if test "$ac_cv_search_crypt_r" != "none required"; then
+    LIBCRYPT="$ac_cv_search_crypt_r"
+  fi
 
 fi
 
@@ -14166,35 +14173,17 @@ ac_res=$ac_cv_search_crypt
 if test "$ac_res" != no; then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
 
-fi
-
-
-ac_fn_c_check_func "$LINENO" "crypt_r" "ac_cv_func_crypt_r"
-if test "x$ac_cv_func_crypt_r" = xyes; then :
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <crypt.h>
-
-int
-main ()
-{
-
-struct crypt_data d;
-char *r = crypt_r("", "", &d);
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-$as_echo "#define HAVE_CRYPT_R 1" >>confdefs.h
+  if test "$ac_cv_search_crypt" != "none required"; then
+    LIBCRYPT="$ac_cv_search_crypt"
+  fi
 
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
-fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for crypt(_r) linker argument" >&5
+$as_echo_n "checking for crypt(_r) linker argument... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $LIBCRYPT" >&5
+$as_echo "$LIBCRYPT" >&6; }
 
 LIBS=$LIBS_SAVE
 
