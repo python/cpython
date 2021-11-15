@@ -509,6 +509,20 @@ class ConnectionTests(unittest.TestCase):
         self.assertRaisesRegex(sqlite.ProgrammingError, msg,
                                self.cx.setlimit, cat, 0)
 
+    def test_connection_init_bad_isolation_level(self):
+        msg = (
+            "isolation_level string must be '', 'DEFERRED', 'IMMEDIATE', or "
+            "'EXCLUSIVE'"
+        )
+        with self.assertRaisesRegex(ValueError, msg):
+            memory_database(isolation_level="BOGUS")
+
+    def test_connection_init_good_isolation_levels(self):
+        for level in ("", "DEFERRED", "IMMEDIATE", "EXCLUSIVE", None):
+            with self.subTest(level=level):
+                with memory_database(isolation_level=level) as cx:
+                    cx.execute("select 'ok'")
+
     def test_connection_reinit(self):
         db = ":memory:"
         cx = sqlite.connect(db)
@@ -546,14 +560,6 @@ class ConnectionTests(unittest.TestCase):
                                    "Base Connection.__init__ not called",
                                    cx.executemany, "insert into t values(?)",
                                    ((v,) for v in range(3)))
-
-    def test_connection_init_bad_isolation_level(self):
-        msg = (
-            "isolation_level string must be '', 'DEFERRED', 'IMMEDIATE', or "
-            "'EXCLUSIVE'"
-        )
-        with self.assertRaisesRegex(ValueError, msg):
-            memory_database(isolation_level="BOGUS")
 
 
 class UninitialisedConnectionTests(unittest.TestCase):
