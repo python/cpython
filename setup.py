@@ -389,7 +389,12 @@ class PyBuildExt(build_ext):
             self.disabled_configure.append(ext.name)
         elif state == "missing":
             self.missing.append(ext.name)
-        # state in {"n/a", None}
+        elif state == "n/a":
+            # not available on current platform
+            pass
+        else:
+            # not migrated yet.
+            self.extensions.append(ext)
 
     def set_srcdir(self):
         self.srcdir = sysconfig.get_config_var('srcdir')
@@ -458,12 +463,11 @@ class PyBuildExt(build_ext):
         Reads MODULE_{name}_CFLAGS and _LDFLAGS
 
         Distutils appends extra args to the compiler arguments. Some flags like
-        -I must appear earlier. Otherwise the pre-processor picks up files
+        -I must appear earlier, otherwise the pre-processor picks up files
         from system inclue directories.
         """
         upper_name = ext.name.upper()
-
-        # Parse compiler flags (-I, -D, -U, extra)
+        # Parse compiler flags (-I, -D, -U, extra args)
         cflags = sysconfig.get_config_var(f"MODULE_{upper_name}_CFLAGS")
         if cflags:
             for token in shlex.split(cflags):
@@ -481,7 +485,7 @@ class PyBuildExt(build_ext):
                 else:
                     ext.extra_compile_args.append(token)
 
-        # Parse linker flags (-L, -l, extra)
+        # Parse linker flags (-L, -l, extra objects, extra args)
         ldflags = sysconfig.get_config_var(f"MODULE_{upper_name}_LDFLAGS")
         if ldflags:
             for token in shlex.split(ldflags):
@@ -491,6 +495,11 @@ class PyBuildExt(build_ext):
                     ext.library_dirs.append(value)
                 elif switch == '-l':
                     ext.libraries.append(value)
+                elif (
+                    not token.startswith('-') and
+                    token.endswith(('.a', '.o', '.so', '.sl', '.dylib'))
+                ):
+                    ext.extra_objects.append(token)
                 else:
                     ext.extra_link_args.append(token)
 
@@ -1047,16 +1056,9 @@ class PyBuildExt(build_ext):
         # pwd(3)
         self.add(Extension('pwd', ['pwdmodule.c']))
         # grp(3)
-        if not VXWORKS:
-            self.add(Extension('grp', ['grpmodule.c']))
+        self.add(Extension('grp', ['grpmodule.c']))
         # spwd, shadow passwords
-        if (self.config_h_vars.get('HAVE_GETSPNAM', False) or
-                self.config_h_vars.get('HAVE_GETSPENT', False)):
-            self.add(Extension('spwd', ['spwdmodule.c']))
-        # AIX has shadow passwords, but access is not via getspent(), etc.
-        # module support is not expected so it not 'missing'
-        elif not AIX:
-            self.missing.append('spwd')
+        self.add(Extension('spwd', ['spwdmodule.c']))
 
         # select(2); not on ancient System V
         self.add(Extension('select', ['selectmodule.c']))
@@ -1465,62 +1467,28 @@ class PyBuildExt(build_ext):
             self.missing.append('_sqlite3')
 
     def detect_platform_specific_exts(self):
-        # Unix-only modules
-        if not MS_WINDOWS:
-            if not VXWORKS:
-                # Steen Lumholt's termios module
-                self.add(Extension('termios', ['termios.c']))
-                # Jeremy Hylton's rlimit interface
-            self.add(Extension('resource', ['resource.c']))
-        else:
-            self.missing.extend(['resource', 'termios'])
-
-        # Platform-specific libraries
-        if HOST_PLATFORM.startswith(('linux', 'freebsd', 'gnukfreebsd')):
-            self.add(Extension('ossaudiodev', ['ossaudiodev.c']))
-        elif not AIX:
-            self.missing.append('ossaudiodev')
-
-        if MACOS:
-            self.add(Extension('_scproxy', ['_scproxy.c'],
-                               extra_link_args=[
-                                   '-framework', 'SystemConfiguration',
-                                   '-framework', 'CoreFoundation']))
+        # Steen Lumholt's termios module
+        self.add(Extension('termios', ['termios.c']))
+        # Jeremy Hylton's rlimit interface
+        self.add(Extension('resource', ['resource.c']))
+        # needs sys/soundcard.h
+        self.add(Extension('ossaudiodev', ['ossaudiodev.c']))
+        # macOS-only
+        self.add(Extension('_scproxy', ['_scproxy.c']))
 
     def detect_compress_exts(self):
         # Andrew Kuchling's zlib module.
-        have_zlib = sysconfig.get_config_var("HAVE_LIBZ")
-        if have_zlib:
-            self.add(Extension('zlib', ['zlibmodule.c'],
-                                libraries=['z']))
-        else:
-            self.missing.append('zlib')
+        self.add(Extension('zlib', ['zlibmodule.c']))
 
         # Helper module for various ascii-encoders.  Uses zlib for an optimized
         # crc32 if we have it.  Otherwise binascii uses its own.
-        if have_zlib:
-            define_macros = [('USE_ZLIB_CRC32', None)]
-            libraries = ['z']
-        else:
-            define_macros = None
-            libraries = []
-        self.add(Extension('binascii', ['binascii.c'],
-                           define_macros=define_macros,
-                           libraries=libraries))
+        self.add(Extension('binascii', ['binascii.c']))
 
         # Gustavo Niemeyer's bz2 module.
-        if sysconfig.get_config_var("HAVE_LIBBZ2"):
-            self.add(Extension('_bz2', ['_bz2module.c'],
-                               libraries=['bz2']))
-        else:
-            self.missing.append('_bz2')
+        self.add(Extension('_bz2', ['_bz2module.c']))
 
         # LZMA compression support.
-        if sysconfig.get_config_var("HAVE_LIBLZMA"):
-            self.add(Extension('_lzma', ['_lzmamodule.c'],
-                               libraries=['lzma']))
-        else:
-            self.missing.append('_lzma')
+        self.add(Extension('_lzma', ['_lzmamodule.c']))
 
     def detect_expat_elementtree(self):
         # Interface to the Expat XML parser
@@ -1534,20 +1502,13 @@ class PyBuildExt(build_ext):
         #
         # More information on Expat can be found at www.libexpat.org.
         #
-        expat_depends = []
-        libexpat_a = sysconfig.get_config_var("LIBEXPAT_A")
-        if libexpat_a:
-            expat_depends.append(libexpat_a)
-
         self.add(Extension('pyexpat',
-                           sources=['pyexpat.c'],
-                           depends=expat_depends))
+                           sources=['pyexpat.c']))
 
         # Fredrik Lundh's cElementTree module.  Note that this also
         # uses expat (via the CAPI hook in pyexpat).
         self.add(Extension('_elementtree',
-                           sources=['_elementtree.c'],
-                           depends=['pyexpat.c', *expat_depends]))
+                           sources=['_elementtree.c']))
 
     def detect_multibytecodecs(self):
         # Hye-Shik Chang's CJKCodecs modules.
@@ -1570,42 +1531,18 @@ class PyBuildExt(build_ext):
         self.add(Extension('_multiprocessing', multiprocessing_srcs,
                            include_dirs=["Modules/_multiprocessing"]))
 
-        if (not MS_WINDOWS and
-           sysconfig.get_config_var('HAVE_SHM_OPEN') and
-           sysconfig.get_config_var('HAVE_SHM_UNLINK')):
-            posixshmem_srcs = ['_multiprocessing/posixshmem.c']
-            libs = []
-            if sysconfig.get_config_var('SHM_NEEDS_LIBRT'):
-                # need to link with librt to get shm_open()
-                libs.append('rt')
-            self.add(Extension('_posixshmem', posixshmem_srcs,
-                               define_macros={},
-                               libraries=libs,
-                               include_dirs=["Modules/_multiprocessing"]))
-        else:
-            self.missing.append('_posixshmem')
+        self.add(Extension('_posixshmem', ['_multiprocessing/posixshmem.c']))
 
     def detect_uuid(self):
         # Build the _uuid module if possible
-        uuid_h = sysconfig.get_config_var("HAVE_UUID_H")
-        uuid_uuid_h = sysconfig.get_config_var("HAVE_UUID_UUID_H")
-        if uuid_h or uuid_uuid_h:
-            if sysconfig.get_config_var("HAVE_LIBUUID"):
-                uuid_libs = ["uuid"]
-            else:
-                uuid_libs = []
-            self.add(Extension('_uuid', ['_uuidmodule.c'],
-                               libraries=uuid_libs))
-        else:
-            self.missing.append('_uuid')
+        self.add(Extension('_uuid', ['_uuidmodule.c']))
 
     def detect_modules(self):
         self.configure_compiler()
         self.init_inc_lib_dirs()
 
         self.detect_simple_extensions()
-        if TEST_EXTENSIONS:
-            self.detect_test_extensions()
+        self.detect_test_extensions()
         self.detect_readline_curses()
         self.detect_crypt()
         self.detect_socket()
@@ -1984,11 +1921,8 @@ class PyBuildExt(build_ext):
                         libraries=[],
                         sources=sources)
         self.add(ext)
-        if TEST_EXTENSIONS:
-            # function my_sqrt() needs libm for sqrt()
-            self.add(Extension('_ctypes_test',
-                               sources=['_ctypes/_ctypes_test.c'],
-                               libraries=['m']))
+        self.add(Extension('_ctypes_test',
+                            sources=['_ctypes/_ctypes_test.c']))
 
         ffi_inc = sysconfig.get_config_var("LIBFFI_INCLUDEDIR")
         ffi_lib = None
@@ -2071,14 +2005,6 @@ class PyBuildExt(build_ext):
         openssl_rpath = config_vars.get('OPENSSL_RPATH')
         if not openssl_libs:
             # libssl and libcrypto not found
-            self.missing.extend(['_ssl', '_hashlib'])
-            return None, None
-
-        # Find OpenSSL includes
-        ssl_incs = find_file(
-            'openssl/ssl.h', self.inc_dirs, openssl_includes
-        )
-        if ssl_incs is None:
             self.missing.extend(['_ssl', '_hashlib'])
             return None, None
 
