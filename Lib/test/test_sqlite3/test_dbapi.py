@@ -48,8 +48,8 @@ def managed_connect(*args, in_mem=False, **kwargs):
 
 
 # Helper for temporary memory databases
-def memory_database():
-    cx = sqlite.connect(":memory:")
+def memory_database(*args, **kwargs):
+    cx = sqlite.connect(":memory:", *args, **kwargs)
     return contextlib.closing(cx)
 
 
@@ -508,6 +508,20 @@ class ConnectionTests(unittest.TestCase):
                                self.cx.getlimit, cat)
         self.assertRaisesRegex(sqlite.ProgrammingError, msg,
                                self.cx.setlimit, cat, 0)
+
+    def test_connection_init_bad_isolation_level(self):
+        msg = (
+            "isolation_level string must be '', 'DEFERRED', 'IMMEDIATE', or "
+            "'EXCLUSIVE'"
+        )
+        with self.assertRaisesRegex(ValueError, msg):
+            memory_database(isolation_level="BOGUS")
+
+    def test_connection_init_good_isolation_levels(self):
+        for level in ("", "DEFERRED", "IMMEDIATE", "EXCLUSIVE", None):
+            with self.subTest(level=level):
+                with memory_database(isolation_level=level) as cx:
+                    cx.execute("select 'ok'")
 
 
 class UninitialisedConnectionTests(unittest.TestCase):

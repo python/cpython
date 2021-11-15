@@ -127,6 +127,9 @@ get_begin_statement(const char *level)
             return begin_statements[i];
         }
     }
+    PyErr_SetString(PyExc_ValueError,
+                    "isolation_level string must be '', 'DEFERRED', "
+                    "'IMMEDIATE', or 'EXCLUSIVE'");
     return NULL;
 }
 
@@ -1389,9 +1392,6 @@ pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* iso
         }
         const char *stmt = get_begin_statement(cstr_level);
         if (stmt == NULL) {
-            PyErr_SetString(PyExc_ValueError,
-                            "isolation_level string must be '', 'DEFERRED', "
-                            "'IMMEDIATE', or 'EXCLUSIVE'");
             return -1;
         }
         self->begin_statement = stmt;
