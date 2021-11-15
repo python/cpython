@@ -1380,13 +1380,13 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                         SpecializedCacheEntry *cache)
 {
     _PyAdaptiveEntry *adaptive = &cache->adaptive;
-    if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
-        SPECIALIZATION_FAIL(BINARY_OP, SPEC_FAIL_DIFFERENT_TYPES);
-        goto failure;
-    }
     switch (adaptive->original_oparg) {
         case NB_ADD:
         case NB_INPLACE_ADD:
+            if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
+                SPECIALIZATION_FAIL(BINARY_OP, SPEC_FAIL_DIFFERENT_TYPES);
+                goto failure;
+            }
             if (PyUnicode_CheckExact(lhs)) {
                 if (_Py_OPCODE(instr[1]) == STORE_FAST && Py_REFCNT(lhs) == 2) {
                     *instr = _Py_MAKECODEUNIT(BINARY_OP_INPLACE_ADD_UNICODE,
@@ -1409,6 +1409,10 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
             break;
         case NB_MULTIPLY:
         case NB_INPLACE_MULTIPLY:
+            if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
+                SPECIALIZATION_FAIL(BINARY_OP, SPEC_FAIL_DIFFERENT_TYPES);
+                goto failure;
+            }
             if (PyLong_CheckExact(lhs)) {
                 *instr = _Py_MAKECODEUNIT(BINARY_OP_MULTIPLY_INT,
                                           _Py_OPARG(*instr));
