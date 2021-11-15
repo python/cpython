@@ -48,14 +48,14 @@ def managed_connect(*args, in_mem=False, **kwargs):
 
 
 # Helper for temporary memory databases
-def memory_database():
-    cx = sqlite.connect(":memory:")
+def memory_database(*args, **kwargs):
+    cx = sqlite.connect(":memory:", *args, **kwargs)
     return contextlib.closing(cx)
 
 
 # Temporarily limit a database connection parameter
 @contextlib.contextmanager
-def cx_limit(cx, category=sqlite.SQLITE_LIMIT_LENGTH, limit=128):
+def cx_limit(cx, category=sqlite.SQLITE_LIMIT_SQL_LENGTH, limit=128):
     try:
         _prev = cx.setlimit(category, limit)
         yield limit
@@ -495,7 +495,7 @@ class ConnectionTests(unittest.TestCase):
             prev_limit = self.cx.setlimit(category, new_limit)
             self.assertEqual(saved_limit, prev_limit)
             self.assertEqual(self.cx.getlimit(category), new_limit)
-            msg = "string or blob too big"
+            msg = "query string is too large"
             self.assertRaisesRegex(sqlite.DataError, msg,
                                    self.cx.execute, "select 1 as '16'")
         finally:  # restore saved limit
@@ -508,6 +508,20 @@ class ConnectionTests(unittest.TestCase):
                                self.cx.getlimit, cat)
         self.assertRaisesRegex(sqlite.ProgrammingError, msg,
                                self.cx.setlimit, cat, 0)
+
+    def test_connection_init_bad_isolation_level(self):
+        msg = (
+            "isolation_level string must be '', 'DEFERRED', 'IMMEDIATE', or "
+            "'EXCLUSIVE'"
+        )
+        with self.assertRaisesRegex(ValueError, msg):
+            memory_database(isolation_level="BOGUS")
+
+    def test_connection_init_good_isolation_levels(self):
+        for level in ("", "DEFERRED", "IMMEDIATE", "EXCLUSIVE", None):
+            with self.subTest(level=level):
+                with memory_database(isolation_level=level) as cx:
+                    cx.execute("select 'ok'")
 
 
 class UninitialisedConnectionTests(unittest.TestCase):
@@ -1063,9 +1077,9 @@ class ExtensionTests(unittest.TestCase):
     def test_cursor_executescript_too_large_script(self):
         msg = "query string is too large"
         with memory_database() as cx, cx_limit(cx) as lim:
-            cx.executescript("select 'almost too large'".ljust(lim-1))
+            cx.executescript("select 'almost too large'".ljust(lim))
             with self.assertRaisesRegex(sqlite.DataError, msg):
-                cx.executescript("select 'too large'".ljust(lim))
+                cx.executescript("select 'too large'".ljust(lim+1))
 
     def test_cursor_executescript_tx_control(self):
         con = sqlite.connect(":memory:")
