@@ -208,7 +208,7 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
     }
 
     // Create LRU statement cache; returns a new reference.
-    PyObject *statement_cache = new_statement_cache(self, cached_statements);
+    PyObject *statement_cache = new_statement_cache(self, state, cache_size);
     if (statement_cache == NULL) {
         return -1;
     }
