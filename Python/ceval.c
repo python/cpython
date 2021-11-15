@@ -1481,7 +1481,9 @@ eval_frame_handle_pending(PyThreadState *tstate)
             retval = NULL; \
             goto exit_unwind; \
         } \
-    } \
+    }
+
+#define DTRACE_FUNCTION_EXIT() \
     if (PyDTrace_FUNCTION_RETURN_ENABLED()) { \
         dtrace_function_return(frame); \
     }
@@ -1489,12 +1491,19 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define TRACE_FUNCTION_RETURN() TRACE_FUNCTION_EXIT()
 #define TRACE_FUNCTION_YIELD() TRACE_FUNCTION_EXIT()
 
+#define TRACE_FUNCTION_UNWIND()  \
+    if (cframe.use_tracing) { \
+        trace_function_exit(tstate, frame, NULL); \
+    }
+
 #define TRACE_FUNCTION_ENTRY() \
     if (cframe.use_tracing) { \
         if (trace_function_entry(tstate, frame)) { \
             goto exit_unwind; \
         } \
-    } \
+    }
+
+#define DTRACE_FUNCTION_ENTRY()  \
     if (PyDTrace_FUNCTION_ENTRY_ENABLED()) { \
         dtrace_function_entry(frame); \
     }
@@ -1631,6 +1640,7 @@ start_frame:
     assert(frame == cframe.current_frame);
 
     TRACE_FUNCTION_ENTRY();
+    DTRACE_FUNCTION_ENTRY();
 
     PyCodeObject *co = frame->f_code;
     /* Increment the warmup counter and quicken if warm enough
@@ -2281,6 +2291,7 @@ check_eval_breaker:
             frame->f_state = FRAME_RETURNED;
             _PyFrame_SetStackPointer(frame, stack_pointer);
             TRACE_FUNCTION_RETURN();
+            DTRACE_FUNCTION_EXIT();
             _Py_LeaveRecursiveCall(tstate);
             if (frame->depth) {
                 frame = cframe.current_frame = pop_frame(tstate, frame);
@@ -2288,7 +2299,11 @@ check_eval_breaker:
                 retval = NULL;
                 goto resume_frame;
             }
-            goto exit_return;
+            /* Restore previous cframe and return. */
+            tstate->cframe = cframe.previous;
+            tstate->cframe->use_tracing = cframe.use_tracing;
+            assert(tstate->cframe->current_frame == frame->previous);
+            return retval;
         }
 
         TARGET(GET_AITER) {
@@ -2478,8 +2493,13 @@ check_eval_breaker:
             frame->f_state = FRAME_SUSPENDED;
             _PyFrame_SetStackPointer(frame, stack_pointer);
             TRACE_FUNCTION_YIELD();
+            DTRACE_FUNCTION_EXIT();
             _Py_LeaveRecursiveCall(tstate);
-            goto exit_return;
+            /* Restore previous cframe and return. */
+            tstate->cframe = cframe.previous;
+            tstate->cframe->use_tracing = cframe.use_tracing;
+            assert(tstate->cframe->current_frame == frame->previous);
+            return retval;
         }
 
         TARGET(YIELD_VALUE) {
@@ -2498,8 +2518,13 @@ check_eval_breaker:
             frame->f_state = FRAME_SUSPENDED;
             _PyFrame_SetStackPointer(frame, stack_pointer);
             TRACE_FUNCTION_YIELD();
+            DTRACE_FUNCTION_EXIT();
             _Py_LeaveRecursiveCall(tstate);
-            goto exit_return;
+            /* Restore previous cframe and return. */
+            tstate->cframe = cframe.previous;
+            tstate->cframe->use_tracing = cframe.use_tracing;
+            assert(tstate->cframe->current_frame == frame->previous);
+            return retval;
         }
 
         TARGET(GEN_START) {
@@ -5016,12 +5041,8 @@ exception_unwind:
             assert(STACK_LEVEL() == 0);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             frame->f_state = FRAME_RAISED;
-            if (cframe.use_tracing) {
-                trace_function_exit(tstate, frame, NULL);
-            }
-            if (PyDTrace_FUNCTION_RETURN_ENABLED()) {
-                dtrace_function_return(frame);
-            }
+            TRACE_FUNCTION_UNWIND();
+            DTRACE_FUNCTION_EXIT();
             goto exit_unwind;
         }
 
@@ -5078,20 +5099,14 @@ exit_unwind:
     assert(tstate->cframe->current_frame == frame->previous);
     return NULL;
 
-exit_return:
-    assert(retval != NULL);
-    /* Restore previous cframe. */
-    tstate->cframe = cframe.previous;
-    tstate->cframe->use_tracing = cframe.use_tracing;
-    assert(tstate->cframe->current_frame == frame->previous);
-    return retval;
-
 throw:
     if (_Py_EnterRecursiveCall(tstate, "")) {
         tstate->recursion_depth++;
         goto exit_unwind;
     }
     TRACE_FUNCTION_THROW_ENTRY();
+    DTRACE_FUNCTION_ENTRY();
+
 update_locals_then_error:
     co = frame->f_code;
     names = co->co_names;
