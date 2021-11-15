@@ -5735,6 +5735,7 @@ AC_SEARCH_LIBS(shm_open, rt)
 if test "$ac_cv_search_shm_open" = "-lrt"; then
     AC_DEFINE(SHM_NEEDS_LIBRT, 1,
               [Define to 1 if you must link with -lrt for shm_open().])
+    SHM_OPEN_LIB="-lrt"
 fi
 AC_CHECK_HEADERS(sys/mman.h)
 # temporarily override ac_includes_default for AC_CHECK_FUNCS below
@@ -5963,6 +5964,7 @@ AS_CASE([$ac_sys_system],
   [Darwin], [py_stdlib_not_available="ossaudiodev spwd"],
   [CYGWIN*], [py_stdlib_not_available="_scproxy nis"],
   [QNX*], [py_stdlib_not_available="_scproxy nis"],
+  [FreeBSD*], [py_stdlib_not_available="_scproxy spwd"],
   [py_stdlib_not_available="_scproxy"]
 )
 
@@ -6159,12 +6161,13 @@ PY_STDLIB_MOD([_ctypes_test], [test "$TEST_MODULES" = yes], [true], [], [-lm])
 # TODO: include _multiprocessing/semaphore.c conditional
 PY_STDLIB_MOD([_multiprocessing],
   [true], [true],
-  [-I\$(srcdir)/Modules/_multiprocessing], [$ac_cv_search_shm_open])
+  [-I\$(srcdir)/Modules/_multiprocessing], [$SHM_OPEN_LIB])
 dnl shm_open() requires -lrt on some platforms
 PY_STDLIB_MOD([_posixshmem],
   [true],
   [test "$ac_cv_func_shm_open" = yes -a "$ac_cv_func_shm_unlink" = yes],
-  [-I\$(srcdir)/Modules/_multiprocessing], [$ac_cv_search_shm_open])
+  [-I\$(srcdir)/Modules/_multiprocessing], [$SHM_OPEN_LIB])
+dnl TODO: check for libX11 and libBLT
 PY_STDLIB_MOD([_tkinter],
   [true],
   [test -n "$TCLTK_LIBS"],
@@ -6173,14 +6176,17 @@ PY_STDLIB_MOD([_uuid],
   [true],
   [test "$ac_cv_lib_uuid_uuid_generate_time" = yes -o "$ac_cv_func_uuid_create" = yes],
   [$UUID_CFLAGS], [$UUID_LDLAGS])
-PY_STDLIB_MOD_SIMPLE([xxlimited])
-PY_STDLIB_MOD_SIMPLE([xxlimited_35])
+dnl PY_STDLIB_MOD_SIMPLE([xx])
+dnl The limited C API is not compatible with the Py_TRACE_REFS macro.
+PY_STDLIB_MOD([xxlimited], [test "$with_trace_refs" != "yes"], [true])
+PY_STDLIB_MOD([xxlimited_35], [test "$with_trace_refs" != "yes"], [true])
 
 # substitute multiline block, must come after last PY_STDLIB_MOD()
 AC_SUBST([MODULE_BLOCK])
 
 # generate output files
 AC_CONFIG_FILES(Makefile.pre Misc/python.pc Misc/python-embed.pc Misc/python-config.sh)
+AC_CONFIG_FILES([Modules/Setup.stdlib])
 AC_CONFIG_FILES([Modules/ld_so_aix], [chmod +x Modules/ld_so_aix])
 AC_OUTPUT
 

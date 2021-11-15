@@ -18899,6 +18899,7 @@ if test "$ac_cv_search_shm_open" = "-lrt"; then
 
 $as_echo "#define SHM_NEEDS_LIBRT 1" >>confdefs.h
 
+    SHM_OPEN_LIB="-lrt"
 fi
 for ac_header in sys/mman.h
 do :
@@ -21624,7 +21625,7 @@ esac
   if test "x$py_cv_module__multiprocessing" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__MULTIPROCESSING_CFLAGS=-I\$(srcdir)/Modules/_multiprocessing$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__MULTIPROCESSING_LDFLAGS=$ac_cv_search_shm_open$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__MULTIPROCESSING_LDFLAGS=$SHM_OPEN_LIB$as_nl"
      if true; then
   MODULE__MULTIPROCESSING_TRUE=
   MODULE__MULTIPROCESSING_FALSE='#'
@@ -21671,7 +21672,7 @@ esac
   if test "x$py_cv_module__posixshmem" = xyes; then :
 
     as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM_CFLAGS=-I\$(srcdir)/Modules/_multiprocessing$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM_LDFLAGS=$ac_cv_search_shm_open$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM_LDFLAGS=$SHM_OPEN_LIB$as_nl"
      if true; then
   MODULE__POSIXSHMEM_TRUE=
   MODULE__POSIXSHMEM_FALSE='#'
@@ -21791,8 +21792,29 @@ fi
 $as_echo "$py_cv_module__uuid" >&6; }
 
 
-    as_fn_append MODULE_BLOCK "MODULE_XXLIMITED=yes$as_nl"
-   if true; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module xxlimited" >&5
+$as_echo_n "checking for stdlib extension module xxlimited... " >&6; }
+      case $py_stdlib_not_available in #(
+  *xxlimited*) :
+    py_cv_module_xxlimited=n/a ;; #(
+  *) :
+    if test "$with_trace_refs" != "yes"; then :
+  if true; then :
+  py_cv_module_xxlimited=yes
+else
+  py_cv_module_xxlimited=missing
+fi
+else
+  py_cv_module_xxlimited=disabled
+fi
+     ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE_XXLIMITED=$py_cv_module_xxlimited$as_nl"
+  if test "x$py_cv_module_xxlimited" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE_XXLIMITED_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_XXLIMITED_LDFLAGS=$as_nl"
+     if true; then
   MODULE_XXLIMITED_TRUE=
   MODULE_XXLIMITED_FALSE='#'
 else
@@ -21801,10 +21823,45 @@ else
 fi
 
 
+else
+
+     if false; then
+  MODULE_XXLIMITED_TRUE=
+  MODULE_XXLIMITED_FALSE='#'
+else
+  MODULE_XXLIMITED_TRUE='#'
+  MODULE_XXLIMITED_FALSE=
+fi
 
 
-    as_fn_append MODULE_BLOCK "MODULE_XXLIMITED_35=yes$as_nl"
-   if true; then
+fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_xxlimited" >&5
+$as_echo "$py_cv_module_xxlimited" >&6; }
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module xxlimited_35" >&5
+$as_echo_n "checking for stdlib extension module xxlimited_35... " >&6; }
+      case $py_stdlib_not_available in #(
+  *xxlimited_35*) :
+    py_cv_module_xxlimited_35=n/a ;; #(
+  *) :
+    if test "$with_trace_refs" != "yes"; then :
+  if true; then :
+  py_cv_module_xxlimited_35=yes
+else
+  py_cv_module_xxlimited_35=missing
+fi
+else
+  py_cv_module_xxlimited_35=disabled
+fi
+     ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE_XXLIMITED_35=$py_cv_module_xxlimited_35$as_nl"
+  if test "x$py_cv_module_xxlimited_35" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE_XXLIMITED_35_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_XXLIMITED_35_LDFLAGS=$as_nl"
+     if true; then
   MODULE_XXLIMITED_35_TRUE=
   MODULE_XXLIMITED_35_FALSE='#'
 else
@@ -21813,6 +21870,20 @@ else
 fi
 
 
+else
+
+     if false; then
+  MODULE_XXLIMITED_35_TRUE=
+  MODULE_XXLIMITED_35_FALSE='#'
+else
+  MODULE_XXLIMITED_35_TRUE='#'
+  MODULE_XXLIMITED_35_FALSE=
+fi
+
+
+fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_xxlimited_35" >&5
+$as_echo "$py_cv_module_xxlimited_35" >&6; }
 
 
 # substitute multiline block, must come after last PY_STDLIB_MOD()
@@ -21820,6 +21891,8 @@ fi
 
 # generate output files
 ac_config_files="$ac_config_files Makefile.pre Misc/python.pc Misc/python-embed.pc Misc/python-config.sh"
+
+ac_config_files="$ac_config_files Modules/Setup.stdlib"
 
 ac_config_files="$ac_config_files Modules/ld_so_aix"
 
@@ -22437,6 +22510,14 @@ if test -z "${MODULE_XXLIMITED_TRUE}" && test -z "${MODULE_XXLIMITED_FALSE}"; th
   as_fn_error $? "conditional \"MODULE_XXLIMITED\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${MODULE_XXLIMITED_TRUE}" && test -z "${MODULE_XXLIMITED_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_XXLIMITED\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_XXLIMITED_35_TRUE}" && test -z "${MODULE_XXLIMITED_35_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_XXLIMITED_35\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${MODULE_XXLIMITED_35_TRUE}" && test -z "${MODULE_XXLIMITED_35_FALSE}"; then
   as_fn_error $? "conditional \"MODULE_XXLIMITED_35\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
@@ -23032,6 +23113,7 @@ do
     "Misc/python.pc") CONFIG_FILES="$CONFIG_FILES Misc/python.pc" ;;
     "Misc/python-embed.pc") CONFIG_FILES="$CONFIG_FILES Misc/python-embed.pc" ;;
     "Misc/python-config.sh") CONFIG_FILES="$CONFIG_FILES Misc/python-config.sh" ;;
+    "Modules/Setup.stdlib") CONFIG_FILES="$CONFIG_FILES Modules/Setup.stdlib" ;;
     "Modules/ld_so_aix") CONFIG_FILES="$CONFIG_FILES Modules/ld_so_aix" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;

@@ -1,0 +1,190 @@
+# -*- makefile -*-
+*shared*
+
+# Modules that should always be present (POSIX and Windows):
+
+@MODULE__ASYNCIO_TRUE@_asyncio _asynciomodule.c
+@MODULE__BISECT_TRUE@_bisect _bisectmodule.c
+@MODULE__CONTEXTVARS_TRUE@_contextvars _contextvarsmodule.c
+@MODULE__CSV_TRUE@_csv _csv.c
+# datetime needs -lrt for clock_gettime() on some platforms
+@MODULE__DATETIME_TRUE@_datetime _datetimemodule.c
+# _decimal needs libmpdec
+@MODULE__DECIMAL_TRUE@_decimal _decimal/_decimal.c
+@MODULE__HEAPQ_TRUE@_heapq _heapqmodule.c
+@MODULE__JSON_TRUE@_json _json.c
+@MODULE__LSPROF_TRUE@_lsprof _lsprof.c rotatingtree.c
+# -I$(srcdir)/Modules/_multiprocessing
+@MODULE__MULTIPROCESSING_TRUE@_multiprocessing _multiprocessing/multiprocessing.c _multiprocessing/semaphore.c
+@MODULE__OPCODE_TRUE@_opcode _opcode.c
+@MODULE__PICKLE_TRUE@_pickle _pickle.c
+@MODULE__QUEUE_TRUE@_queue _queuemodule.c
+@MODULE__RANDOM_TRUE@_random _randommodule.c
+@MODULE__SOCKET_TRUE@_socket socketmodule.c
+@MODULE__STATISTICS_TRUE@_statistics _statisticsmodule.c
+@MODULE__STRUCT_TRUE@_struct _struct.c
+@MODULE__TYPING_TRUE@_typing _typingmodule.c
+@MODULE__ZONEINFO_TRUE@_zoneinfo _zoneinfo.c
+@MODULE_ARRAY_TRUE@array arraymodule.c
+@MODULE_AUDIOOP_TRUE@audioop audioop.c
+@MODULE_BINASCII_TRUE@binascii binascii.c
+@MODULE_CMATH_TRUE@cmath cmathmodule.c
+@MODULE_MATH_TRUE@math mathmodule.c
+@MODULE_MMAP_TRUE@mmap mmapmodule.c
+@MODULE_SELECT_TRUE@select selectmodule.c
+
+# XML
+# pyexpat module uses libexpat
+@MODULE_PYEXPAT_TRUE@pyexpat pyexpat.c
+# _elementtree module must not be linked with libexpat. It uses libexpat via
+# CAPI hook in pyexpat
+@MODULE__ELEMENTTREE_TRUE@_elementtree _elementtree.c
+
+# hashing builtins, can be disabled with --with-builtin-hashlib-hashes
+@MODULE__BLAKE2_TRUE@_blake2 _blake2/blake2module.c _blake2/blake2b_impl.c _blake2/blake2s_impl.c
+@MODULE__MD5_TRUE@_md5 md5module.c
+@MODULE__SHA1_TRUE@_sha1 sha1module.c
+@MODULE__SHA256_TRUE@_sha256 sha256module.c
+@MODULE__SHA512_TRUE@_sha512 sha512module.c
+@MODULE__SHA3_TRUE@_sha3 _sha3/sha3module.c
+
+# text encodings and unicode
+@MODULE__CODECS_CN_TRUE@_codecs_cn cjkcodecs/_codecs_cn.c
+@MODULE__CODECS_HK_TRUE@_codecs_hk cjkcodecs/_codecs_hk.c
+@MODULE__CODECS_ISO2022_TRUE@_codecs_iso2022 cjkcodecs/_codecs_iso2022.c
+@MODULE__CODECS_JP_TRUE@_codecs_jp cjkcodecs/_codecs_jp.c
+@MODULE__CODECS_KR_TRUE@_codecs_kr cjkcodecs/_codecs_kr.c
+@MODULE__CODECS_TW_TRUE@_codecs_tw cjkcodecs/_codecs_tw.c
+@MODULE__MULTIBYTECODEC_TRUE@_multibytecodec cjkcodecs/multibytecodec.c
+@MODULE_UNICODEDATA_TRUE@unicodedata unicodedata.c
+
+# Modules with some UNIX dependencies
+
+@MODULE__POSIXSUBPROCESS_TRUE@_posixsubprocess _posixsubprocess.c
+# -I$(srcdir)/Modules/_multiprocessing -lrt
+@MODULE__POSIXSHMEM_TRUE@_posixshmem _multiprocessing/posixshmem.c
+# May need libbsd on AIX and BSD platforms
+@MODULE_FCNTL_TRUE@fcntl fcntlmodule.c
+# grp is not supported on VxWorks
+@MODULE_GRP_TRUE@grp grpmodule.c
+# needs sys/soundcard.h (Linux, FreeBSD)
+@MODULE_OSSAUDIODEV_TRUE@ossaudiodev ossaudiodev.c
+@MODULE_RESOURCE_TRUE@resource resource.c
+# needs getspnam(), not supported on AIX, macOS
+@MODULE_SPWD_TRUE@spwd spwdmodule.c
+@MODULE_SYSLOG_TRUE@syslog syslogmodule.c
+@MODULE_TERMIOS_TRUE@termios termios.c
+
+# Modules with UNIX dependencies that require external libraries
+
+# -lcrypt
+#@MODULE__CRYPT_TRUE@_crypt _cryptmodule.c
+# -I/usr/include/tirpc -lnsl -ltirpc
+#@MODULE_NIS_TRUE@nis nismodule.c -I/usr/include/tirpc -lnsl -ltirpc
+
+# Modules that require external libraries.
+
+# compression libraries
+# -lbz2
+@MODULE__BZ2_TRUE@_bz2 _bz2module.c
+# -llzma
+@MODULE__LZMA_TRUE@_lzma _lzmamodule.c
+# -lz
+@MODULE_ZLIB_TRUE@zlib  zlibmodule.c
+
+# _uuid module requires -luuid on Linux
+# BSD has uuid_create() in libc.
+@MODULE__UUID_TRUE@_uuid _uuidmodule.c
+
+#@MODULE__CTYPES_TRUE@_ctypes _ctypes/_ctypes.c _ctypes/callbacks.c _ctypes/callproc.c _ctypes/stgdict.c _ctypes/cfield.c -ldl -lffi -DHAVE_FFI_PREP_CIF_VAR -DHAVE_FFI_PREP_CLOSURE_LOC -DHAVE_FFI_CLOSURE_ALLOC
+# The _dbm module supports NDBM, GDBM with compat module, and Berkeley DB.
+#@MODULE__DBM_TRUE@_dbm _dbmmodule.c -lgdbm_compat -DUSE_GDBM_COMPAT
+#@MODULE__GDBM_TRUE@_gdbm _gdbmmodule.c -lgdbm
+#@MODULE__SQLITE3_TRUE@_sqlite3 _sqlite/connection.c _sqlite/cursor.c _sqlite/microprotocols.c _sqlite/module.c _sqlite/prepare_protocol.c _sqlite/row.c _sqlite/statement.c _sqlite/util.c -lsqlite3
+
+# Needs -lreadline -or -leditline.
+# The readline module also supports libeditline (-leditline).
+# Some systems may require -ltermcap or -ltermlib.
+@MODULE_READLINE_TRUE@readline readline.c
+
+# OpenSSL bindings
+# need libssl and libcrypto
+@MODULE__SSL_TRUE@_ssl _ssl.c
+@MODULE__HASHLIB_TRUE@_hashlib _hashopenssl.c
+
+# To statically link OpenSSL:
+# _ssl _ssl.c $(OPENSSL_INCLUDES) $(OPENSSL_LDFLAGS) \
+#     -l:libssl.a -Wl,--exclude-libs,libssl.a \
+#     -l:libcrypto.a -Wl,--exclude-libs,libcrypto.a
+# _hashlib _hashopenssl.c $(OPENSSL_INCLUDES) $(OPENSSL_LDFLAGS) \
+#     -l:libcrypto.a -Wl,--exclude-libs,libcrypto.a
+
+# The _tkinter module.
+#
+# The command for _tkinter is long and site specific.  Please
+# uncomment and/or edit those parts as indicated.  If you don't have a
+# specific extension (e.g. Tix or BLT), leave the corresponding line
+# commented out.  (Leave the trailing backslashes in!  If you
+# experience strange errors, you may want to join all uncommented
+# lines and remove the backslashes -- the backslash interpretation is
+# done by the shell's "read" command and it may not be implemented on
+# every system.
+
+# *** Always uncomment this (leave the leading underscore in!):
+@MODULE__TKINTER_TRUE@_tkinter _tkinter.c tkappinit.c -DWITH_APPINIT $(TCLTK_INCLUDES) $(TCLTK_LIBS) \
+# *** Uncomment and edit to reflect where your Tcl/Tk libraries are:
+#	-L/usr/local/lib \
+# *** Uncomment and edit to reflect where your Tcl/Tk headers are:
+#	-I/usr/local/include \
+# *** Uncomment and edit to reflect where your X11 header files are:
+#	-I/usr/X11R6/include \
+# *** Or uncomment this for Solaris:
+#	-I/usr/openwin/include \
+# *** Uncomment and edit for Tix extension only:
+#	-DWITH_TIX -ltix8.1.8.2 \
+# *** Uncomment and edit for BLT extension only:
+#	-DWITH_BLT -I/usr/local/blt/blt8.0-unoff/include -lBLT8.0 \
+# *** Uncomment and edit for PIL (TkImaging) extension only:
+#     (See http://www.pythonware.com/products/pil/ for more info)
+#	-DWITH_PIL -I../Extensions/Imaging/libImaging  tkImaging.c \
+# *** Uncomment and edit for TOGL extension only:
+#	-DWITH_TOGL togl.c \
+# *** Uncomment and edit to reflect where your X11 libraries are:
+#	-L/usr/X11R6/lib \
+# *** Or uncomment this for Solaris:
+#	-L/usr/openwin/lib \
+# *** Uncomment these for TOGL extension only:
+#	-lGL -lGLU -lXext -lXmu \
+# *** Uncomment for AIX:
+#	-lld \
+# *** Always uncomment this; X11 libraries to link with:
+#	-lX11
+
+# Some system have -lcurses
+#@MODULE__CURSES_TRUE@_curses -lncurses -lncursesw -ltermcap _cursesmodule.c
+#@MODULE__CURSES_PANEL_TRUE@_curses_panel -lpanel -lncurses _curses_panel.c
+
+# macOS specific modules
+# -framework SystemConfiguration -framework CoreFoundation
+@MODULE__SCPROXY_TRUE@_scproxy _scproxy.c
+
+# Examples
+
+#@MODULE_XX_TRUE@xx xxmodule.c
+@MODULE_XXLIMITED_TRUE@xxlimited xxlimited.c
+@MODULE_XXLIMITED_35_TRUE@xxlimited_35 xxlimited_35.c
+
+# Testing
+
+@MODULE__XXSUBINTERPRETERS_TRUE@_xxsubinterpreters _xxsubinterpretersmodule.c
+@MODULE__XXTESTFUZZ_TRUE@_xxtestfuzz _xxtestfuzz/_xxtestfuzz.c _xxtestfuzz/fuzzer.c
+@MODULE__TESTBUFFER_TRUE@_testbuffer _testbuffer.c
+@MODULE__TESTINTERNALCAPI_TRUE@_testinternalcapi _testinternalcapi.c
+
+# Some testing modules MUST be built as shared libraries.
+
+#*shared*
+@MODULE__CTYPES_TEST_TRUE@_ctypes_test _ctypes/_ctypes_test.c
+@MODULE__TESTCAPI_TRUE@_testcapi _testcapimodule.c
+@MODULE__TESTIMPORTMULTIPLE_TRUE@_testimportmultiple _testimportmultiple.c
+@MODULE__TESTMULTIPHASE_TRUE@_testmultiphase _testmultiphase.c
