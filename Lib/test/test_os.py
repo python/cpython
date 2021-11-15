@@ -4503,6 +4503,22 @@ class TimesTests(unittest.TestCase):
             self.assertEqual(times.elapsed, 0)
 
 
+@requires_os_func('fork')
+@requires_os_func('waitpid')
+class ForkTests(unittest.TestCase):
+    def test_fork(self):
+        # bpo-42540: ensure os.fork() with non-default allocator
+        code = """if 1:
+            import os
+            pid = os.fork()
+            if pid != 0:
+                _, exitcode = os.waitpid(pid, 0)
+                assert exitcode == 0
+        """
+        assert_python_ok("-c", code)
+        assert_python_ok("-c", code, PYTHONMALLOC="pymalloc_debug")
+
+
 # Only test if the C version is provided, otherwise TestPEP519 already tested
 # the pure Python implementation.
 if hasattr(os, "_fspath"):
