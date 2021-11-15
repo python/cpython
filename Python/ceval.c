@@ -1626,8 +1626,15 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
     frame->previous = prev_cframe->current_frame;
     cframe.current_frame = frame;
 
-    if (throwflag) { /* support for generator.throw() */
-        goto throw;
+    /* support for generator.throw() */
+    if (throwflag) {
+        if (_Py_EnterRecursiveCall(tstate, "")) {
+            tstate->recursion_depth++;
+            goto exit_unwind;
+        }
+        TRACE_FUNCTION_THROW_ENTRY();
+        DTRACE_FUNCTION_ENTRY();
+        goto update_locals_then_error;
     }
 
 start_frame:
@@ -5089,23 +5096,14 @@ exception_unwind:
 exit_unwind:
     assert(_PyErr_Occurred(tstate));
     _Py_LeaveRecursiveCall(tstate);
-    if (frame->depth) {
-        frame = cframe.current_frame = pop_frame(tstate, frame);
-        goto update_locals_then_error;
+    if (frame->depth == 0) {
+        /* Restore previous cframe and exit */
+        tstate->cframe = cframe.previous;
+        tstate->cframe->use_tracing = cframe.use_tracing;
+        assert(tstate->cframe->current_frame == frame->previous);
+        return NULL;
     }
-     /* Restore previous cframe. */
-    tstate->cframe = cframe.previous;
-    tstate->cframe->use_tracing = cframe.use_tracing;
-    assert(tstate->cframe->current_frame == frame->previous);
-    return NULL;
-
-throw:
-    if (_Py_EnterRecursiveCall(tstate, "")) {
-        tstate->recursion_depth++;
-        goto exit_unwind;
-    }
-    TRACE_FUNCTION_THROW_ENTRY();
-    DTRACE_FUNCTION_ENTRY();
+    frame = cframe.current_frame = pop_frame(tstate, frame);
 
 update_locals_then_error:
     co = frame->f_code;
