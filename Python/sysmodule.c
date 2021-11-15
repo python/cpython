@@ -1190,7 +1190,7 @@ sys_setrecursionlimit_impl(PyObject *module, int new_limit)
     /* Reject too low new limit if the current recursion depth is higher than
        the new low-water mark. */
     int depth = tstate->recursion_limit - tstate->recursion_remaining;
-    if (depth > new_limit) {
+    if (depth >= new_limit) {
         _PyErr_Format(tstate, PyExc_RecursionError,
                       "cannot set the recursion limit to %i at "
                       "the recursion depth %i: the limit is too low",
