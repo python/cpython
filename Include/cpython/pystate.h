@@ -48,7 +48,6 @@ typedef struct _cframe {
     int use_tracing;
     /* Pointer to the currently executing frame (it can be NULL) */
     struct _interpreter_frame *current_frame;
-    void *eval_breaker;
     struct _cframe *previous;
 } CFrame;
 

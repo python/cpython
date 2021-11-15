@@ -1301,7 +1301,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
     }
 
 #define CHECK_EVAL_BREAKER() \
-    if (_Py_atomic_load_relaxed((_Py_atomic_int * const)cframe.eval_breaker)) { \
+    if (_Py_atomic_load_relaxed(eval_breaker)) { \
         goto check_eval_breaker; \
     }
 
@@ -1608,6 +1608,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
     int opcode;        /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
     PyObject *retval = NULL;            /* Return value */
+    _Py_atomic_int * const eval_breaker = &tstate->interp->ceval.eval_breaker;
 
     CFrame cframe;
 
@@ -1617,7 +1618,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
      */
     CFrame *prev_cframe = tstate->cframe;
     cframe.use_tracing = prev_cframe->use_tracing;
-    cframe.eval_breaker = prev_cframe->eval_breaker;
     cframe.previous = prev_cframe;
     tstate->cframe = &cframe;
 
@@ -1650,7 +1650,7 @@ start_frame:
     DTRACE_FUNCTION_ENTRY();
 
     PyCodeObject *co = frame->f_code;
-    if (_Py_IncrementCountAndMaybeQuicken(co)) {
+    if (_Py_IncrementCountAndMaybeQuicken(co) < 0) {
         goto exit_unwind;
     }
 
@@ -1716,7 +1716,7 @@ check_eval_breaker:
            async I/O handler); see Py_AddPendingCall() and
            Py_MakePendingCalls() above. */
 
-        if (_Py_atomic_load_relaxed((_Py_atomic_int * const)cframe.eval_breaker)) {
+        if (_Py_atomic_load_relaxed(eval_breaker)) {
             opcode = _Py_OPCODE(*next_instr);
             if (opcode != BEFORE_ASYNC_WITH &&
                 opcode != YIELD_FROM) {
