@@ -4516,7 +4516,8 @@ class ForkTests(unittest.TestCase):
                 assert exitcode == 0
         """
         assert_python_ok("-c", code)
-        assert_python_ok("-c", code, PYTHONMALLOC="pymalloc_debug")
+        if support.with_pymalloc():
+            assert_python_ok("-c", code, PYTHONMALLOC="pymalloc_debug")
 
 
 # Only test if the C version is provided, otherwise TestPEP519 already tested
