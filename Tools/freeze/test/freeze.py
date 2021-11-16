@@ -81,7 +81,8 @@ def copy_source_tree(newroot, oldroot):
             raise Exception('this probably isn\'t what you wanted')
         shutil.rmtree(newroot)
     shutil.copytree(oldroot, newroot)
-    _run_quiet([MAKE, 'clean'], newroot)
+    if os.path.exists(os.path.join(newroot, 'Makefile')):
+        _run_quiet([MAKE, 'clean'], newroot)
 
 
 def get_makefile_var(builddir, name):
