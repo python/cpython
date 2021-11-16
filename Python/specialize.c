@@ -490,6 +490,7 @@ initial_counter_value(void) {
 #define SPEC_FAIL_PYCFUNCTION_NOARGS 16
 #define SPEC_FAIL_BAD_CALL_FLAGS 17
 #define SPEC_FAIL_CLASS 18
+#define SPEC_FAIL_PYTHON_CLASS 19
 
 /* COMPARE_OP */
 #define SPEC_FAIL_STRING_COMPARE 13
@@ -1289,6 +1290,23 @@ specialize_class_call(
     PyObject *callable, _Py_CODEUNIT *instr,
     int nargs, SpecializedCacheEntry *cache)
 {
+    assert(PyType_Check(callable));
+    PyTypeObject *tp = (PyTypeObject *)callable;
+    if (tp->tp_new == PyBaseObject_Type.tp_new) {
+        SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_PYTHON_CLASS);
+        return -1;
+    }
+    if (nargs == 1) {
+        if (tp == &PyType_Type) {
+            *instr = _Py_MAKECODEUNIT(CALL_FUNCTION_TYPE_1, _Py_OPARG(*instr));
+            return 0;
+        }
+        if ((tp->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) && tp->tp_vectorcall != NULL) {
+            cache->adaptive.version = tp->tp_version_tag;
+            *instr = _Py_MAKECODEUNIT(CALL_FUNCTION_BUILTIN_CLASS_1, _Py_OPARG(*instr));
+            return 0;
+        }
+    }
     SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_CLASS);
     return -1;
 }
