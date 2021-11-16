@@ -149,8 +149,7 @@ time timemodule.c
 #_contextvars _contextvarsmodule.c
 #_csv _csv.c
 #_datetime _datetimemodule.c
-# UNIVERSAL: let mpdecimal.h detect settings
-#_decimal -DUNIVERSAL -I$(srcdir)/Modules/_decimal/libmpdec _decimal/_decimal.c _decimal/libmpdec/basearith.c _decimal/libmpdec/constants.c _decimal/libmpdec/context.c _decimal/libmpdec/convolute.c _decimal/libmpdec/crt.c _decimal/libmpdec/difradix2.c _decimal/libmpdec/fnt.c _decimal/libmpdec/fourstep.c _decimal/libmpdec/io.c _decimal/libmpdec/mpalloc.c _decimal/libmpdec/mpdecimal.c _decimal/libmpdec/numbertheory.c _decimal/libmpdec/sixstep.c _decimal/libmpdec/transpose.c
+#_decimal _decimal/_decimal.c $(DECIMAL_CFLAGS) $(DECIMAL_LDFLAGS)
 #_heapq _heapqmodule.c
 #_json _json.c
 #_lsprof _lsprof.c rotatingtree.c
@@ -173,8 +172,8 @@ time timemodule.c
 #select selectmodule.c
 
 # XML
-#_elementtree -I$(srcdir)/Modules/expat _elementtree.c
-#pyexpat -I$(srcdir)/Modules/expat  expat/xmlparse.c expat/xmlrole.c expat/xmltok.c pyexpat.c
+#_elementtree _elementtree.c $(EXPAT_CFLAGS)
+#pyexpat pyexpat.c $(EXPAT_CFLAGS) $(EXPAT_LDFLAGS)
 
 # hashing builtins
 #_blake2 _blake2/blake2module.c _blake2/blake2b_impl.c _blake2/blake2s_impl.c

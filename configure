@@ -660,7 +660,13 @@ DFLAGS
 DTRACE
 TCLTK_LIBS
 TCLTK_INCLUDES
+LIBMPDEC_INTERNAL
+LIBMPDEC_LDFLAGS
+LIBMPDEC_CFLAGS
 LIBFFI_INCLUDEDIR
+LIBEXPAT_INTERNAL
+LIBEXPAT_LDFLAGS
+LIBEXPAT_CFLAGS
 TZPATH
 SHLIBS
 CFLAGSFORSHARED
@@ -1533,7 +1539,8 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-pkg-config       use pkg-config to detect build options (default is
+  --with-pkg-config=[yes|no|check]
+                          use pkg-config to detect build options (default is
                           check)
   --with-universal-archs=ARCH
                           specify the kind of macOS universal binary that
@@ -10711,6 +10718,24 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_system_expat" >&5
 $as_echo "$with_system_expat" >&6; }
 
+if test "x$with_system_expat" = xyes; then :
+
+  LIBEXPAT_CFLAGS=""
+  LIBEXPAT_LDFLAGS="-lexpat"
+  LIBEXPAT_INTERNAL=
+
+else
+
+  LIBEXPAT_CFLAGS="-I\$(srcdir)/Modules/expat"
+  LIBEXPAT_LDFLAGS="-lm \$(LIBEXPAT_A)"
+  LIBEXPAT_INTERNAL="\$(LIBEXPAT_A)"
+
+fi
+
+
+
+
+
 # Check for use of the system libffi library
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-system-ffi" >&5
 $as_echo_n "checking for --with-system-ffi... " >&6; }
@@ -10764,9 +10789,26 @@ else
   with_system_libmpdec="no"
 fi
 
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_system_libmpdec" >&5
 $as_echo "$with_system_libmpdec" >&6; }
+
+if test "x$with_system_libmpdec" = xyes; then :
+
+  LIBMPDEC_CFLAGS=""
+  LIBMPDEC_LDFLAGS="-lmpdec"
+  LIBMPDEC_INTERNAL=
+
+else
+
+  LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
+  LIBMPDEC_LDFLAGS="-lm \$(LIBMPDEC_A)"
+  LIBMPDEC_INTERNAL="\$(LIBMPDEC_A)"
+
+fi
+
+
+
+
 
 # Check whether _decimal should use a coroutine-local or thread-local context
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-decimal-contextvar" >&5
@@ -10789,6 +10831,95 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_decimal_contextvar" >&5
 $as_echo "$with_decimal_contextvar" >&6; }
+
+# Check for libmpdec machine flavor
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for decimal libmpdec machine" >&5
+$as_echo_n "checking for decimal libmpdec machine... " >&6; }
+case $ac_sys_system in #(
+  Darwin*) :
+    libmpdec_system=Darwin ;; #(
+  SunOS*) :
+    libmpdec_system=sunos ;; #(
+  *) :
+    libmpdec_system=other
+ ;;
+esac
+
+libmpdec_machine=unknown
+if test "$libmpdec_system" = Darwin; then
+    case $MACOSX_DEFAULT_ARCH in #(
+  i386) :
+    libmpdec_machine=ansi32 ;; #(
+  ppc) :
+    libmpdec_machine=ansi32 ;; #(
+  x86_64) :
+    libmpdec_machine=x64 ;; #(
+  ppc64) :
+    libmpdec_machine=ansi64 ;; #(
+  arm64) :
+    libmpdec_machine=ansi64 ;; #(
+  *) :
+    libmpdec_machine=universal
+     ;;
+esac
+elif test $ac_cv_sizeof_size_t -eq 8; then
+    if test "$ac_cv_gcc_asm_for_x64" = yes; then
+        libmpdec_machine=x64
+    elif test "$ac_cv_type___uint128_t" = yes; then
+        libmpdec_machine=uint128
+    else
+        libmpdec_machine=ansi64
+    fi
+elif test $ac_cv_sizeof_size_t -eq 4; then
+    if test "$ac_cv_gcc_asm_for_x87" = yes -a "$libmpdec_system" != sunos; then
+        case $CC in #(
+  *gcc*) :
+    libmpdec_machine=ppro ;; #(
+  *clang*) :
+    libmpdec_machine=ppro ;; #(
+  *) :
+    libmpdec_machine=ansi32
+         ;;
+esac
+    else
+        libmpdec_machine=ansi32
+    fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $libmpdec_machine" >&5
+$as_echo "$libmpdec_machine" >&6; }
+
+case $libmpdec_machine in #(
+  x64) :
+    as_fn_append LIBMPDEC_CFLAGS " -DCONFIG_64=1 -DASM=1" ;; #(
+  uint128) :
+    as_fn_append LIBMPDEC_CFLAGS " -DCONFIG_64=1 -DANSI=1 -DHAVE_UINT128_T=1" ;; #(
+  ansi64) :
+    as_fn_append LIBMPDEC_CFLAGS " -DCONFIG_64=1 -DANSI=1" ;; #(
+  ppro) :
+    as_fn_append LIBMPDEC_CFLAGS " -DCONFIG_32=1 -DANSI=1 -DASM=1 -Wno-unknown-pragmas" ;; #(
+  ansi32) :
+    as_fn_append LIBMPDEC_CFLAGS " -DCONFIG_32=1 -DANSI=1" ;; #(
+  ansi-legacy) :
+    as_fn_append LIBMPDEC_CFLAGS " -DCONFIG_32=1 -DANSI=1 -DLEGACY_COMPILER=1" ;; #(
+  universal) :
+    as_fn_append LIBMPDEC_CFLAGS " -DUNIVERSAL=1" ;; #(
+  *) :
+    as_fn_error $? "_decimal: unsupported architecture" "$LINENO" 5
+ ;;
+esac
+
+if test "$have_ipa_pure_const_bug" = yes; then
+    # Some versions of gcc miscompile inline asm:
+    # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
+    # https://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
+    as_fn_append LIBMPDEC_CFLAGS " -fno-ipa-pure-const"
+fi
+
+if test "$have_glibc_memmove_bug" = yes; then
+    # _FORTIFY_SOURCE wrappers for memmove and bcopy are incorrect:
+    # https://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
+    as_fn_append LIBMPDEC_CFLAGS " -U_FORTIFY_SOURCE"
+fi
 
 # Check for support for loadable sqlite extensions
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-loadable-sqlite-extensions" >&5

@@ -785,42 +785,49 @@ Py_GetRecursionLimit(void)
 void
 Py_SetRecursionLimit(int new_limit)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    tstate->interp->ceval.recursion_limit = new_limit;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    interp->ceval.recursion_limit = new_limit;
+    for (PyThreadState *p = interp->tstate_head; p != NULL; p = p->next) {
+        int depth = p->recursion_limit - p->recursion_remaining;
+        p->recursion_limit = new_limit;
+        p->recursion_remaining = new_limit - depth;
+    }
 }
 
 /* The function _Py_EnterRecursiveCall() only calls _Py_CheckRecursiveCall()
-   if the recursion_depth reaches recursion_limit.
-   If USE_STACKCHECK, the macro decrements recursion_limit
-   to guarantee that _Py_CheckRecursiveCall() is regularly called.
-   Without USE_STACKCHECK, there is no need for this. */
+   if the recursion_depth reaches recursion_limit. */
 int
 _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
 {
-    int recursion_limit = tstate->interp->ceval.recursion_limit;
-
+    /* Check against global limit first. */
+    int depth = tstate->recursion_limit - tstate->recursion_remaining;
+    if (depth < tstate->interp->ceval.recursion_limit) {
+        tstate->recursion_limit = tstate->interp->ceval.recursion_limit;
+        tstate->recursion_remaining = tstate->recursion_limit - depth;
+        assert(tstate->recursion_remaining > 0);
+        return 0;
+    }
 #ifdef USE_STACKCHECK
-    tstate->stackcheck_counter = 0;
     if (PyOS_CheckStack()) {
-        --tstate->recursion_depth;
+        ++tstate->recursion_remaining;
         _PyErr_SetString(tstate, PyExc_MemoryError, "Stack overflow");
         return -1;
     }
 #endif
     if (tstate->recursion_headroom) {
-        if (tstate->recursion_depth > recursion_limit + 50) {
+        if (tstate->recursion_remaining < -50) {
             /* Overflowing while handling an overflow. Give up. */
             Py_FatalError("Cannot recover from stack overflow.");
         }
     }
     else {
-        if (tstate->recursion_depth > recursion_limit) {
+        if (tstate->recursion_remaining <= 0) {
             tstate->recursion_headroom++;
             _PyErr_Format(tstate, PyExc_RecursionError,
                         "maximum recursion depth exceeded%s",
                         where);
             tstate->recursion_headroom--;
-            --tstate->recursion_depth;
+            ++tstate->recursion_remaining;
             return -1;
         }
     }
@@ -1058,6 +1065,23 @@ fail:
 static int do_raise(PyThreadState *tstate, PyObject *exc, PyObject *cause);
 static int unpack_iterable(PyThreadState *, PyObject *, int, int, PyObject **);
 
+#ifdef Py_DEBUG
+static void
+_assert_exception_type_is_redundant(PyObject* type, PyObject* val)
+{
+    if (type == NULL || type == Py_None) {
+        assert(val == NULL || val == Py_None);
+    }
+    else {
+        assert(PyExceptionInstance_Check(val));
+        assert(PyExceptionInstance_Class(val) == type);
+    }
+}
+
+#define ASSERT_EXC_TYPE_IS_REDUNDANT(t, v) _assert_exception_type_is_redundant(t, v)
+#else
+#define ASSERT_EXC_TYPE_IS_REDUNDANT(t, v)
+#endif
 
 PyObject *
 PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
@@ -1628,7 +1652,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
     /* support for generator.throw() */
     if (throwflag) {
         if (_Py_EnterRecursiveCall(tstate, "")) {
-            tstate->recursion_depth++;
+            tstate->recursion_remaining--;
             goto exit_unwind;
         }
         TRACE_FUNCTION_THROW_ENTRY();
@@ -1646,7 +1670,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
 
 start_frame:
     if (_Py_EnterRecursiveCall(tstate, "")) {
-        tstate->recursion_depth++;
+        tstate->recursion_remaining--;
         goto exit_unwind;
     }
 
@@ -2569,6 +2593,7 @@ check_eval_breaker:
             exc_info->exc_type = POP();
             exc_info->exc_value = POP();
             exc_info->exc_traceback = POP();
+            ASSERT_EXC_TYPE_IS_REDUNDANT(exc_info->exc_type, exc_info->exc_value);
             Py_XDECREF(type);
             Py_XDECREF(value);
             Py_XDECREF(traceback);
@@ -2590,6 +2615,7 @@ check_eval_breaker:
             type = POP();
             value = POP();
             traceback = POP();
+            ASSERT_EXC_TYPE_IS_REDUNDANT(type, value);
             Py_DECREF(POP()); /* lasti */
             _PyErr_Restore(tstate, type, value, traceback);
             exc_info = tstate->exc_info;
@@ -2599,6 +2625,7 @@ check_eval_breaker:
             exc_info->exc_type = POP();
             exc_info->exc_value = POP();
             exc_info->exc_traceback = POP();
+            ASSERT_EXC_TYPE_IS_REDUNDANT(exc_info->exc_type, exc_info->exc_value);
             Py_XDECREF(type);
             Py_XDECREF(value);
             Py_XDECREF(traceback);
@@ -2621,6 +2648,7 @@ check_eval_breaker:
             PyObject *exc = POP();
             PyObject *val = POP();
             PyObject *tb = POP();
+            ASSERT_EXC_TYPE_IS_REDUNDANT(exc, val);
             assert(PyExceptionClass_Check(exc));
             _PyErr_Restore(tstate, exc, val, tb);
             goto exception_unwind;
@@ -2630,6 +2658,7 @@ check_eval_breaker:
             PyObject *exc = POP();
             PyObject *val = POP();
             PyObject *tb = POP();
+            ASSERT_EXC_TYPE_IS_REDUNDANT(exc, val);
             assert(PyExceptionClass_Check(exc));
             if (PyErr_GivenExceptionMatches(exc, PyExc_StopAsyncIteration)) {
                 Py_DECREF(exc);
@@ -4080,6 +4109,7 @@ check_eval_breaker:
             exc = TOP();
             val = SECOND();
             tb = THIRD();
+            ASSERT_EXC_TYPE_IS_REDUNDANT(exc, val);
             assert(!Py_IsNone(exc));
             assert(!PyLong_Check(exc));
             assert(PyLong_Check(PEEK(7)));
@@ -4098,6 +4128,7 @@ check_eval_breaker:
             PyObject *type = TOP();
             PyObject *value = SECOND();
             PyObject *tb = THIRD();
+            ASSERT_EXC_TYPE_IS_REDUNDANT(type, value);
             _PyErr_StackItem *exc_info = tstate->exc_info;
             SET_THIRD(exc_info->exc_traceback);
             SET_SECOND(exc_info->exc_value);
@@ -4776,14 +4807,6 @@ check_eval_breaker:
                     res = PyNumber_Multiply(lhs, rhs);
                     break;
                 case NB_REMAINDER:
-                    if (PyUnicode_CheckExact(lhs) &&
-                        (!PyUnicode_Check(rhs) || PyUnicode_CheckExact(rhs)))
-                    {
-                        // bpo-28598: Fast path for string formatting (but not
-                        // if the RHS is a str subclass).
-                        res = PyUnicode_Format(lhs, rhs);
-                        break;
-                    }
                     res = PyNumber_Remainder(lhs, rhs);
                     break;
                 case NB_OR:
@@ -5080,6 +5103,7 @@ exception_unwind:
         PUSH(tb);
         PUSH(val);
         PUSH(exc);
+        ASSERT_EXC_TYPE_IS_REDUNDANT(exc, val);
         JUMPTO(handler);
         /* Resume normal execution */
         frame->f_state = FRAME_EXECUTING;
@@ -5745,10 +5769,10 @@ fail:
 static int
 _PyEvalFrameClearAndPop(PyThreadState *tstate, InterpreterFrame * frame)
 {
-    ++tstate->recursion_depth;
+    --tstate->recursion_remaining;
     assert(frame->frame_obj == NULL || frame->frame_obj->f_own_locals_memory == 0);
     _PyFrame_Clear(frame, 0);
-    --tstate->recursion_depth;
+    ++tstate->recursion_remaining;
     _PyThreadState_PopFrame(tstate, frame);
     return 0;
 }
