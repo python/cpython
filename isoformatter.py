@@ -1,7 +1,8 @@
 import re
 import itertools
+import functools
 
-from datetime import datetime, time, timedelta, timezone
+from datetime import date, datetime, time, timedelta, timezone
 
 # import hypothesis
 from test.support.hypothesis_helper import hypothesis
@@ -120,12 +121,21 @@ class IsoFormatter:
     def __repr__(self):
         return f'{self.__class__.__name__}(\'{self._format_str}\')'
 
-    def format(self, dt):
+    @functools.singledispatchmethod
+    def format(self, dt : datetime) -> str:
         """Apply the specified ISO8601 format to a datetime."""
         return (
             f'{format(dt, self._date_str)}{self._sep}'
             + f'{self._time_formatter(dt)}{self._tz_formatter(dt)}'
         )
+
+    @format.register
+    def _(self, dt: date) -> str:
+        return f'{format(dt, self._date_str)}'
+
+    @format.register
+    def _(self, dt: time) -> str:
+        return f'{self._time_formatter(dt)}
 
     def truncate(self, dt):
         """Truncate a datetime to the precision level of the format."""
