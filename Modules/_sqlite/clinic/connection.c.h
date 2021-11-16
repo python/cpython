@@ -7,7 +7,7 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
                               const char *database, double timeout,
                               int detect_types, const char *isolation_level,
                               int check_same_thread, PyObject *factory,
-                              int cached_statements, int uri);
+                              int cache_size, int uri);
 
 static int
 pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -25,7 +25,7 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
     const char *isolation_level = "";
     int check_same_thread = 1;
     PyObject *factory = (PyObject*)clinic_state()->ConnectionType;
-    int cached_statements = 128;
+    int cache_size = 128;
     int uri = 0;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 8, 0, argsbuf);
@@ -101,8 +101,8 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
         }
     }
     if (fastargs[6]) {
-        cached_statements = _PyLong_AsInt(fastargs[6]);
-        if (cached_statements == -1 && PyErr_Occurred()) {
+        cache_size = _PyLong_AsInt(fastargs[6]);
+        if (cache_size == -1 && PyErr_Occurred()) {
             goto exit;
         }
         if (!--noptargs) {
@@ -114,7 +114,7 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
         goto exit;
     }
 skip_optional_pos:
-    return_value = pysqlite_connection_init_impl((pysqlite_Connection *)self, database, timeout, detect_types, isolation_level, check_same_thread, factory, cached_statements, uri);
+    return_value = pysqlite_connection_init_impl((pysqlite_Connection *)self, database, timeout, detect_types, isolation_level, check_same_thread, factory, cache_size, uri);
 
 exit:
     /* Cleanup for database */
@@ -851,4 +851,4 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-/*[clinic end generated code: output=663b1e9e71128f19 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6f267f20e77f92d0 input=a9049054013a1b77]*/
