@@ -21,6 +21,7 @@
   <PropertyGroup Label="Globals">
     <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
     <Platform Condition="'$(Platform)' == ''">Win32</Platform>
+    <PlatformToolset Condition="'$(PlatformToolset)' == '' and ('$(MSBuildToolsVersion)' == '17.0' or '$(VisualStudioVersion)' == '17.0')">v143</PlatformToolset>
     <PlatformToolset Condition="'$(PlatformToolset)' == '' and ('$(MSBuildToolsVersion)' == '16.0' or '$(VisualStudioVersion)' == '16.0')">v142</PlatformToolset>
     <PlatformToolset Condition="'$(PlatformToolset)' == '' and ('$(MSBuildToolsVersion)' == '15.0' or '$(VisualStudioVersion)' == '15.0')">v141</PlatformToolset>
     <PlatformToolset Condition="'$(PlatformToolset)' == '' and '$(VCTargetsPath14)' != ''">v140</PlatformToolset>
@@ -50,7 +51,8 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>comctl32.lib;gdiplus.lib;msimg32.lib;shlwapi.lib;wininet.lib;dutil.lib;balutil.lib;version.lib;uxtheme.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories Condition="'$(PlatformToolset)' == 'v142'">$(WixInstallPath)sdk\vs2017\lib\x86</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories Condition="'$(PlatformToolset)' == 'v143'">$(WixInstallPath)sdk\vs2022\lib\x64</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories Condition="'$(PlatformToolset)' == 'v142'">$(WixInstallPath)sdk\vs2019\lib\x86</AdditionalLibraryDirectories>
       <AdditionalLibraryDirectories Condition="'$(PlatformToolset)' == 'v141'">$(WixInstallPath)sdk\vs2017\lib\x86</AdditionalLibraryDirectories>
       <AdditionalLibraryDirectories Condition="'$(PlatformToolset)' == 'v140'">$(WixInstallPath)sdk\vs2015\lib\x86</AdditionalLibraryDirectories>
       <AdditionalLibraryDirectories Condition="'$(PlatformToolset)' == 'v120'">$(WixInstallPath)sdk\vs2013\lib\x86</AdditionalLibraryDirectories>
