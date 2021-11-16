@@ -283,6 +283,10 @@ time
   a resolution of 1 millisecond (10\ :sup:`-3` seconds).
   (Contributed by Benjamin Szőke and Victor Stinner in :issue:`21302`.)
 
+* On Windows, :func:`time.sleep` now uses a waitable timer which supports high-resolution timers.
+  In Python 3.10, the best resolution was 1 ms, from Python 3.11 it's now smaller than 1 ms.
+  (Contributed by Dong-hee Na and Eryk Sun in :issue:`45429`.)
+
 unicodedata
 -----------
 
