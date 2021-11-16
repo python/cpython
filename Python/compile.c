@@ -8152,18 +8152,13 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                     case IS_OP:
                         cnt = get_const_value(inst->i_opcode, oparg, consts);
                         int jump_op = i+2 < bb->b_iused ? bb->b_instr[i+2].i_opcode : 0;
-                        if (Py_IsNone(cnt)) {
+                        if (Py_IsNone(cnt) && (jump_op == POP_JUMP_IF_FALSE || jump_op == POP_JUMP_IF_TRUE)) {
+                            Py_DECREF(cnt);
                             unsigned char nextarg = bb->b_instr[i+1].i_oparg;
-                            if ((nextarg == 0 && jump_op == POP_JUMP_IF_FALSE) || (nextarg == 1 && jump_op == POP_JUMP_IF_TRUE)) {
-                                inst->i_opcode = NOP;
-                                bb->b_instr[i+1].i_opcode = NOP;
-                                bb->b_instr[i+2].i_opcode = POP_JUMP_IF_NOT_NONE;
-                            }
-                            if ((nextarg == 0 && jump_op == POP_JUMP_IF_TRUE) || (nextarg == 1 && jump_op == POP_JUMP_IF_FALSE)) {
-                                inst->i_opcode = NOP;
-                                bb->b_instr[i+1].i_opcode = NOP;
-                                bb->b_instr[i+2].i_opcode = POP_JUMP_IF_NONE;
-                            }
+                            inst->i_opcode = NOP;
+                            bb->b_instr[i+1].i_opcode = NOP;
+                            bb->b_instr[i+2].i_opcode = nextarg ^ (jump_op == POP_JUMP_IF_FALSE) ?
+                                    POP_JUMP_IF_NOT_NONE : POP_JUMP_IF_NONE;
                         }
                         break;
                 }
@@ -8256,6 +8251,14 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                             --i;
                         }
                         break;
+                }
+                break;
+            case POP_JUMP_IF_NOT_NONE:
+            case POP_JUMP_IF_NONE:
+                switch (target->i_opcode) {
+                    case JUMP_ABSOLUTE:
+                    case JUMP_FORWARD:
+                        i -= jump_thread(inst, target, inst->i_opcode);
                 }
                 break;
             case POP_JUMP_IF_FALSE:
