@@ -1110,6 +1110,8 @@ stack_effect(int opcode, int oparg, int jump)
 
         case POP_JUMP_IF_FALSE:
         case POP_JUMP_IF_TRUE:
+        case POP_JUMP_IF_NONE:
+        case POP_JUMP_IF_NOT_NONE:
             return -1;
 
         case LOAD_GLOBAL:
@@ -8147,6 +8149,23 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                             bb->b_instr[i+1].i_opcode = NOP;
                         }
                         break;
+                    case IS_OP:
+                        cnt = get_const_value(inst->i_opcode, oparg, consts);
+                        int jump_op = i+2 < bb->b_iused ? bb->b_instr[i+2].i_opcode : 0;
+                        if (Py_IsNone(cnt)) {
+                            unsigned char nextarg = bb->b_instr[i+1].i_oparg;
+                            if ((nextarg == 0 && jump_op == POP_JUMP_IF_FALSE) || (nextarg == 1 && jump_op == POP_JUMP_IF_TRUE)) {
+                                inst->i_opcode = NOP;
+                                bb->b_instr[i+1].i_opcode = NOP;
+                                bb->b_instr[i+2].i_opcode = POP_JUMP_IF_NOT_NONE;
+                            }
+                            if ((nextarg == 0 && jump_op == POP_JUMP_IF_TRUE) || (nextarg == 1 && jump_op == POP_JUMP_IF_FALSE)) {
+                                inst->i_opcode = NOP;
+                                bb->b_instr[i+1].i_opcode = NOP;
+                                bb->b_instr[i+2].i_opcode = POP_JUMP_IF_NONE;
+                            }
+                        }
+                        break;
                 }
                 break;
             }
@@ -8395,6 +8414,8 @@ normalize_basic_block(basicblock *bb) {
             case JUMP_FORWARD:
                 bb->b_nofallthrough = 1;
                 /* fall through */
+            case POP_JUMP_IF_NOT_NONE:
+            case POP_JUMP_IF_NONE:
             case POP_JUMP_IF_FALSE:
             case POP_JUMP_IF_TRUE:
             case JUMP_IF_FALSE_OR_POP:
