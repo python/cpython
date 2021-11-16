@@ -92,8 +92,6 @@ static PyObject * import_from(PyThreadState *, PyObject *, PyObject *);
 static int import_all_from(PyThreadState *, PyObject *, PyObject *);
 static void format_exc_check_arg(PyThreadState *, PyObject *, const char *, PyObject *);
 static void format_exc_unbound(PyThreadState *tstate, PyCodeObject *co, int oparg);
-static PyObject * unicode_concatenate(PyThreadState *, PyObject *, PyObject *,
-                                      InterpreterFrame *, const _Py_CODEUNIT *);
 static int check_args_iterable(PyThreadState *, PyObject *func, PyObject *vararg);
 static void format_kwargs_error(PyThreadState *, PyObject *func, PyObject *kwargs);
 static void format_awaitable_error(PyThreadState *, PyTypeObject *, int, int);
@@ -787,47 +785,84 @@ Py_GetRecursionLimit(void)
 void
 Py_SetRecursionLimit(int new_limit)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    tstate->interp->ceval.recursion_limit = new_limit;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    interp->ceval.recursion_limit = new_limit;
+    for (PyThreadState *p = interp->tstate_head; p != NULL; p = p->next) {
+        int depth = p->recursion_limit - p->recursion_remaining;
+        p->recursion_limit = new_limit;
+        p->recursion_remaining = new_limit - depth;
+    }
 }
 
 /* The function _Py_EnterRecursiveCall() only calls _Py_CheckRecursiveCall()
-   if the recursion_depth reaches recursion_limit.
-   If USE_STACKCHECK, the macro decrements recursion_limit
-   to guarantee that _Py_CheckRecursiveCall() is regularly called.
-   Without USE_STACKCHECK, there is no need for this. */
+   if the recursion_depth reaches recursion_limit. */
 int
 _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
 {
-    int recursion_limit = tstate->interp->ceval.recursion_limit;
-
+    /* Check against global limit first. */
+    int depth = tstate->recursion_limit - tstate->recursion_remaining;
+    if (depth < tstate->interp->ceval.recursion_limit) {
+        tstate->recursion_limit = tstate->interp->ceval.recursion_limit;
+        tstate->recursion_remaining = tstate->recursion_limit - depth;
+        assert(tstate->recursion_remaining > 0);
+        return 0;
+    }
 #ifdef USE_STACKCHECK
-    tstate->stackcheck_counter = 0;
     if (PyOS_CheckStack()) {
-        --tstate->recursion_depth;
+        ++tstate->recursion_remaining;
         _PyErr_SetString(tstate, PyExc_MemoryError, "Stack overflow");
         return -1;
     }
 #endif
     if (tstate->recursion_headroom) {
-        if (tstate->recursion_depth > recursion_limit + 50) {
+        if (tstate->recursion_remaining < -50) {
             /* Overflowing while handling an overflow. Give up. */
             Py_FatalError("Cannot recover from stack overflow.");
         }
     }
     else {
-        if (tstate->recursion_depth > recursion_limit) {
+        if (tstate->recursion_remaining <= 0) {
             tstate->recursion_headroom++;
             _PyErr_Format(tstate, PyExc_RecursionError,
                         "maximum recursion depth exceeded%s",
                         where);
             tstate->recursion_headroom--;
-            --tstate->recursion_depth;
+            ++tstate->recursion_remaining;
             return -1;
         }
     }
     return 0;
 }
+
+
+static const binaryfunc binary_ops[] = {
+    [NB_ADD] = PyNumber_Add,
+    [NB_AND] = PyNumber_And,
+    [NB_FLOOR_DIVIDE] = PyNumber_FloorDivide,
+    [NB_LSHIFT] = PyNumber_Lshift,
+    [NB_MATRIX_MULTIPLY] = PyNumber_MatrixMultiply,
+    [NB_MULTIPLY] = PyNumber_Multiply,
+    [NB_REMAINDER] = PyNumber_Remainder,
+    [NB_OR] = PyNumber_Or,
+    [NB_POWER] = _PyNumber_PowerNoMod,
+    [NB_RSHIFT] = PyNumber_Rshift,
+    [NB_SUBTRACT] = PyNumber_Subtract,
+    [NB_TRUE_DIVIDE] = PyNumber_TrueDivide,
+    [NB_XOR] = PyNumber_Xor,
+    [NB_INPLACE_ADD] = PyNumber_InPlaceAdd,
+    [NB_INPLACE_AND] = PyNumber_InPlaceAnd,
+    [NB_INPLACE_FLOOR_DIVIDE] = PyNumber_InPlaceFloorDivide,
+    [NB_INPLACE_LSHIFT] = PyNumber_InPlaceLshift,
+    [NB_INPLACE_MATRIX_MULTIPLY] = PyNumber_InPlaceMatrixMultiply,
+    [NB_INPLACE_MULTIPLY] = PyNumber_InPlaceMultiply,
+    [NB_INPLACE_REMAINDER] = PyNumber_InPlaceRemainder,
+    [NB_INPLACE_OR] = PyNumber_InPlaceOr,
+    [NB_INPLACE_POWER] = _PyNumber_InPlacePowerNoMod,
+    [NB_INPLACE_RSHIFT] = PyNumber_InPlaceRshift,
+    [NB_INPLACE_SUBTRACT] = PyNumber_InPlaceSubtract,
+    [NB_INPLACE_TRUE_DIVIDE] = PyNumber_InPlaceTrueDivide,
+    [NB_INPLACE_XOR] = PyNumber_InPlaceXor,
+};
 
 
 // PEP 634: Structural Pattern Matching
@@ -1060,6 +1095,23 @@ fail:
 static int do_raise(PyThreadState *tstate, PyObject *exc, PyObject *cause);
 static int unpack_iterable(PyThreadState *, PyObject *, int, int, PyObject **);
 
+#ifdef Py_DEBUG
+static void
+_assert_exception_type_is_redundant(PyObject* type, PyObject* val)
+{
+    if (type == NULL || type == Py_None) {
+        assert(val == NULL || val == Py_None);
+    }
+    else {
+        assert(PyExceptionInstance_Check(val));
+        assert(PyExceptionInstance_Class(val) == type);
+    }
+}
+
+#define ASSERT_EXC_TYPE_IS_REDUNDANT(t, v) _assert_exception_type_is_redundant(t, v)
+#else
+#define ASSERT_EXC_TYPE_IS_REDUNDANT(t, v)
+#endif
 
 PyObject *
 PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
@@ -1567,7 +1619,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
 
 start_frame:
     if (_Py_EnterRecursiveCall(tstate, "")) {
-        tstate->recursion_depth++;
+        tstate->recursion_remaining--;
         goto exit_eval_frame;
     }
 
@@ -1921,57 +1973,12 @@ check_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(BINARY_POWER) {
-            PyObject *exp = POP();
-            PyObject *base = TOP();
-            PyObject *res = PyNumber_Power(base, exp, Py_None);
-            Py_DECREF(base);
-            Py_DECREF(exp);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(BINARY_MULTIPLY) {
-            PREDICTED(BINARY_MULTIPLY);
-            STAT_INC(BINARY_MULTIPLY, unquickened);
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyNumber_Multiply(left, right);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            SET_TOP(res);
-            if (res == NULL) {
-                goto error;
-            }
-            DISPATCH();
-        }
-
-        TARGET(BINARY_MULTIPLY_ADAPTIVE) {
-            if (oparg == 0) {
-                PyObject *left = SECOND();
-                PyObject *right = TOP();
-                next_instr--;
-                if (_Py_Specialize_BinaryMultiply(left, right, next_instr) < 0) {
-                    goto error;
-                }
-                DISPATCH();
-            }
-            else {
-                STAT_INC(BINARY_MULTIPLY, deferred);
-                UPDATE_PREV_INSTR_OPARG(next_instr, oparg - 1);
-                STAT_DEC(BINARY_MULTIPLY, unquickened);
-                JUMP_TO_INSTRUCTION(BINARY_MULTIPLY);
-            }
-        }
-
-        TARGET(BINARY_MULTIPLY_INT) {
+        TARGET(BINARY_OP_MULTIPLY_INT) {
             PyObject *left = SECOND();
             PyObject *right = TOP();
-            DEOPT_IF(!PyLong_CheckExact(left), BINARY_MULTIPLY);
-            DEOPT_IF(!PyLong_CheckExact(right), BINARY_MULTIPLY);
-            STAT_INC(BINARY_MULTIPLY, hit);
+            DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
+            DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
+            STAT_INC(BINARY_OP, hit);
             PyObject *prod = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
             SET_SECOND(prod);
             Py_DECREF(right);
@@ -1983,12 +1990,12 @@ check_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(BINARY_MULTIPLY_FLOAT) {
+        TARGET(BINARY_OP_MULTIPLY_FLOAT) {
             PyObject *left = SECOND();
             PyObject *right = TOP();
-            DEOPT_IF(!PyFloat_CheckExact(left), BINARY_MULTIPLY);
-            DEOPT_IF(!PyFloat_CheckExact(right), BINARY_MULTIPLY);
-            STAT_INC(BINARY_MULTIPLY, hit);
+            DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
+            DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
+            STAT_INC(BINARY_OP, hit);
             double dprod = ((PyFloatObject *)left)->ob_fval *
                 ((PyFloatObject *)right)->ob_fval;
             PyObject *prod = PyFloat_FromDouble(dprod);
@@ -2002,101 +2009,12 @@ check_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(BINARY_MATRIX_MULTIPLY) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyNumber_MatrixMultiply(left, right);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(BINARY_TRUE_DIVIDE) {
-            PyObject *divisor = POP();
-            PyObject *dividend = TOP();
-            PyObject *quotient = PyNumber_TrueDivide(dividend, divisor);
-            Py_DECREF(dividend);
-            Py_DECREF(divisor);
-            SET_TOP(quotient);
-            if (quotient == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(BINARY_FLOOR_DIVIDE) {
-            PyObject *divisor = POP();
-            PyObject *dividend = TOP();
-            PyObject *quotient = PyNumber_FloorDivide(dividend, divisor);
-            Py_DECREF(dividend);
-            Py_DECREF(divisor);
-            SET_TOP(quotient);
-            if (quotient == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(BINARY_MODULO) {
-            PyObject *divisor = POP();
-            PyObject *dividend = TOP();
-            PyObject *res;
-            if (PyUnicode_CheckExact(dividend) && (
-                  !PyUnicode_Check(divisor) || PyUnicode_CheckExact(divisor))) {
-              // fast path; string formatting, but not if the RHS is a str subclass
-              // (see issue28598)
-              res = PyUnicode_Format(dividend, divisor);
-            } else {
-              res = PyNumber_Remainder(dividend, divisor);
-            }
-            Py_DECREF(divisor);
-            Py_DECREF(dividend);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(BINARY_ADD) {
-            PREDICTED(BINARY_ADD);
-            STAT_INC(BINARY_ADD, unquickened);
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *sum = PyNumber_Add(left, right);
-            SET_TOP(sum);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            if (sum == NULL) {
-                goto error;
-            }
-            DISPATCH();
-        }
-
-        TARGET(BINARY_ADD_ADAPTIVE) {
-            if (oparg == 0) {
-                PyObject *left = SECOND();
-                PyObject *right = TOP();
-                next_instr--;
-                if (_Py_Specialize_BinaryAdd(left, right, next_instr) < 0) {
-                    goto error;
-                }
-                DISPATCH();
-            }
-            else {
-                STAT_INC(BINARY_ADD, deferred);
-                UPDATE_PREV_INSTR_OPARG(next_instr, oparg - 1);
-                STAT_DEC(BINARY_ADD, unquickened);
-                JUMP_TO_INSTRUCTION(BINARY_ADD);
-            }
-        }
-
-        TARGET(BINARY_ADD_UNICODE) {
+        TARGET(BINARY_OP_ADD_UNICODE) {
             PyObject *left = SECOND();
             PyObject *right = TOP();
-            DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_ADD);
-            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_ADD);
-            STAT_INC(BINARY_ADD, hit);
+            DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
+            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
+            STAT_INC(BINARY_OP, hit);
             PyObject *res = PyUnicode_Concat(left, right);
             STACK_SHRINK(1);
             SET_TOP(res);
@@ -2108,12 +2026,12 @@ check_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(BINARY_ADD_UNICODE_INPLACE_FAST) {
+        TARGET(BINARY_OP_INPLACE_ADD_UNICODE) {
             PyObject *left = SECOND();
             PyObject *right = TOP();
-            DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_ADD);
-            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_ADD);
-            DEOPT_IF(Py_REFCNT(left) != 2, BINARY_ADD);
+            DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
+            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
+            DEOPT_IF(Py_REFCNT(left) != 2, BINARY_OP);
             int next_oparg = _Py_OPARG(*next_instr);
             assert(_Py_OPCODE(*next_instr) == STORE_FAST);
             /* In the common case, there are 2 references to the value
@@ -2123,8 +2041,8 @@ check_eval_breaker:
             * the refcnt to 1.
             */
             PyObject *var = GETLOCAL(next_oparg);
-            DEOPT_IF(var != left, BINARY_ADD);
-            STAT_INC(BINARY_ADD, hit);
+            DEOPT_IF(var != left, BINARY_OP);
+            STAT_INC(BINARY_OP, hit);
             GETLOCAL(next_oparg) = NULL;
             Py_DECREF(left);
             STACK_SHRINK(1);
@@ -2136,12 +2054,12 @@ check_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(BINARY_ADD_FLOAT) {
+        TARGET(BINARY_OP_ADD_FLOAT) {
             PyObject *left = SECOND();
             PyObject *right = TOP();
-            DEOPT_IF(!PyFloat_CheckExact(left), BINARY_ADD);
-            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_ADD);
-            STAT_INC(BINARY_ADD, hit);
+            DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
+            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
+            STAT_INC(BINARY_OP, hit);
             double dsum = ((PyFloatObject *)left)->ob_fval +
                 ((PyFloatObject *)right)->ob_fval;
             PyObject *sum = PyFloat_FromDouble(dsum);
@@ -2155,12 +2073,12 @@ check_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(BINARY_ADD_INT) {
+        TARGET(BINARY_OP_ADD_INT) {
             PyObject *left = SECOND();
             PyObject *right = TOP();
-            DEOPT_IF(!PyLong_CheckExact(left), BINARY_ADD);
-            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_ADD);
-            STAT_INC(BINARY_ADD, hit);
+            DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
+            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
+            STAT_INC(BINARY_OP, hit);
             PyObject *sum = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
             SET_SECOND(sum);
             Py_DECREF(right);
@@ -2169,18 +2087,6 @@ check_eval_breaker:
             if (sum == NULL) {
                 goto error;
             }
-            DISPATCH();
-        }
-
-        TARGET(BINARY_SUBTRACT) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *diff = PyNumber_Subtract(left, right);
-            Py_DECREF(right);
-            Py_DECREF(left);
-            SET_TOP(diff);
-            if (diff == NULL)
-                goto error;
             DISPATCH();
         }
 
@@ -2282,66 +2188,6 @@ check_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(BINARY_LSHIFT) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyNumber_Lshift(left, right);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(BINARY_RSHIFT) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyNumber_Rshift(left, right);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(BINARY_AND) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyNumber_And(left, right);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(BINARY_XOR) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyNumber_Xor(left, right);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(BINARY_OR) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyNumber_Or(left, right);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
-            DISPATCH();
-        }
-
         TARGET(LIST_APPEND) {
             PyObject *v = POP();
             PyObject *list = PEEK(oparg);
@@ -2363,169 +2209,6 @@ check_eval_breaker:
             if (err != 0)
                 goto error;
             PREDICT(JUMP_ABSOLUTE);
-            DISPATCH();
-        }
-
-        TARGET(INPLACE_POWER) {
-            PyObject *exp = POP();
-            PyObject *base = TOP();
-            PyObject *res = PyNumber_InPlacePower(base, exp, Py_None);
-            Py_DECREF(base);
-            Py_DECREF(exp);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(INPLACE_MULTIPLY) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyNumber_InPlaceMultiply(left, right);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(INPLACE_MATRIX_MULTIPLY) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyNumber_InPlaceMatrixMultiply(left, right);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(INPLACE_TRUE_DIVIDE) {
-            PyObject *divisor = POP();
-            PyObject *dividend = TOP();
-            PyObject *quotient = PyNumber_InPlaceTrueDivide(dividend, divisor);
-            Py_DECREF(dividend);
-            Py_DECREF(divisor);
-            SET_TOP(quotient);
-            if (quotient == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(INPLACE_FLOOR_DIVIDE) {
-            PyObject *divisor = POP();
-            PyObject *dividend = TOP();
-            PyObject *quotient = PyNumber_InPlaceFloorDivide(dividend, divisor);
-            Py_DECREF(dividend);
-            Py_DECREF(divisor);
-            SET_TOP(quotient);
-            if (quotient == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(INPLACE_MODULO) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *mod = PyNumber_InPlaceRemainder(left, right);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            SET_TOP(mod);
-            if (mod == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(INPLACE_ADD) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *sum;
-            if (PyUnicode_CheckExact(left) && PyUnicode_CheckExact(right)) {
-                sum = unicode_concatenate(tstate, left, right, frame, next_instr);
-                /* unicode_concatenate consumed the ref to left */
-            }
-            else {
-                sum = PyNumber_InPlaceAdd(left, right);
-                Py_DECREF(left);
-            }
-            Py_DECREF(right);
-            SET_TOP(sum);
-            if (sum == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(INPLACE_SUBTRACT) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *diff = PyNumber_InPlaceSubtract(left, right);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            SET_TOP(diff);
-            if (diff == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(INPLACE_LSHIFT) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyNumber_InPlaceLshift(left, right);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(INPLACE_RSHIFT) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyNumber_InPlaceRshift(left, right);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(INPLACE_AND) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyNumber_InPlaceAnd(left, right);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(INPLACE_XOR) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyNumber_InPlaceXor(left, right);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(INPLACE_OR) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyNumber_InPlaceOr(left, right);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
             DISPATCH();
         }
 
@@ -2847,6 +2530,7 @@ check_eval_breaker:
             exc_info->exc_type = POP();
             exc_info->exc_value = POP();
             exc_info->exc_traceback = POP();
+            ASSERT_EXC_TYPE_IS_REDUNDANT(exc_info->exc_type, exc_info->exc_value);
             Py_XDECREF(type);
             Py_XDECREF(value);
             Py_XDECREF(traceback);
@@ -2868,6 +2552,7 @@ check_eval_breaker:
             type = POP();
             value = POP();
             traceback = POP();
+            ASSERT_EXC_TYPE_IS_REDUNDANT(type, value);
             Py_DECREF(POP()); /* lasti */
             _PyErr_Restore(tstate, type, value, traceback);
             exc_info = tstate->exc_info;
@@ -2877,6 +2562,7 @@ check_eval_breaker:
             exc_info->exc_type = POP();
             exc_info->exc_value = POP();
             exc_info->exc_traceback = POP();
+            ASSERT_EXC_TYPE_IS_REDUNDANT(exc_info->exc_type, exc_info->exc_value);
             Py_XDECREF(type);
             Py_XDECREF(value);
             Py_XDECREF(traceback);
@@ -2899,6 +2585,7 @@ check_eval_breaker:
             PyObject *exc = POP();
             PyObject *val = POP();
             PyObject *tb = POP();
+            ASSERT_EXC_TYPE_IS_REDUNDANT(exc, val);
             assert(PyExceptionClass_Check(exc));
             _PyErr_Restore(tstate, exc, val, tb);
             goto exception_unwind;
@@ -2908,6 +2595,7 @@ check_eval_breaker:
             PyObject *exc = POP();
             PyObject *val = POP();
             PyObject *tb = POP();
+            ASSERT_EXC_TYPE_IS_REDUNDANT(exc, val);
             assert(PyExceptionClass_Check(exc));
             if (PyErr_GivenExceptionMatches(exc, PyExc_StopAsyncIteration)) {
                 Py_DECREF(exc);
@@ -3907,7 +3595,7 @@ check_eval_breaker:
                                            "inherit from BaseException is not "
                                            "allowed";
             PyObject *right = POP();
-            PyObject *left = POP();
+            PyObject *left = TOP();
             if (PyTuple_Check(right)) {
                 Py_ssize_t i, length;
                 length = PyTuple_GET_SIZE(right);
@@ -3916,7 +3604,6 @@ check_eval_breaker:
                     if (!PyExceptionClass_Check(exc)) {
                         _PyErr_SetString(tstate, PyExc_TypeError,
                                          cannot_catch_msg);
-                        Py_DECREF(left);
                         Py_DECREF(right);
                         goto error;
                     }
@@ -3926,13 +3613,11 @@ check_eval_breaker:
                 if (!PyExceptionClass_Check(right)) {
                     _PyErr_SetString(tstate, PyExc_TypeError,
                                      cannot_catch_msg);
-                    Py_DECREF(left);
                     Py_DECREF(right);
                     goto error;
                 }
             }
             int res = PyErr_GivenExceptionMatches(left, right);
-            Py_DECREF(left);
             Py_DECREF(right);
             if (res > 0) {
                 /* Exception matches -- Do nothing */;
@@ -4365,6 +4050,7 @@ check_eval_breaker:
             exc = TOP();
             val = SECOND();
             tb = THIRD();
+            ASSERT_EXC_TYPE_IS_REDUNDANT(exc, val);
             assert(!Py_IsNone(exc));
             assert(!PyLong_Check(exc));
             assert(PyLong_Check(PEEK(7)));
@@ -4383,6 +4069,7 @@ check_eval_breaker:
             PyObject *type = TOP();
             PyObject *value = SECOND();
             PyObject *tb = THIRD();
+            ASSERT_EXC_TYPE_IS_REDUNDANT(type, value);
             _PyErr_StackItem *exc_info = tstate->exc_info;
             SET_THIRD(exc_info->exc_traceback);
             SET_SECOND(exc_info->exc_value);
@@ -5035,6 +4722,43 @@ check_eval_breaker:
             DISPATCH();
         }
 
+        TARGET(BINARY_OP) {
+            PREDICTED(BINARY_OP);
+            STAT_INC(BINARY_OP, unquickened);
+            PyObject *rhs = POP();
+            PyObject *lhs = TOP();
+            assert(0 <= oparg);
+            assert((unsigned)oparg < Py_ARRAY_LENGTH(binary_ops));
+            assert(binary_ops[oparg]);
+            PyObject *res = binary_ops[oparg](lhs, rhs);
+            Py_DECREF(lhs);
+            Py_DECREF(rhs);
+            SET_TOP(res);
+            if (res == NULL) {
+                goto error;
+            }
+            DISPATCH();
+        }
+
+        TARGET(BINARY_OP_ADAPTIVE) {
+            assert(cframe.use_tracing == 0);
+            SpecializedCacheEntry *cache = GET_CACHE();
+            if (cache->adaptive.counter == 0) {
+                PyObject *lhs = SECOND();
+                PyObject *rhs = TOP();
+                next_instr--;
+                _Py_Specialize_BinaryOp(lhs, rhs, next_instr, cache);
+                DISPATCH();
+            }
+            else {
+                STAT_INC(BINARY_OP, deferred);
+                cache->adaptive.counter--;
+                oparg = cache->adaptive.original_oparg;
+                STAT_DEC(BINARY_OP, unquickened);
+                JUMP_TO_INSTRUCTION(BINARY_OP);
+            }
+        }
+
         TARGET(EXTENDED_ARG) {
             int oldoparg = oparg;
             NEXTOPARG();
@@ -5140,9 +4864,8 @@ MISS_WITH_CACHE(STORE_ATTR)
 MISS_WITH_CACHE(LOAD_GLOBAL)
 MISS_WITH_CACHE(LOAD_METHOD)
 MISS_WITH_CACHE(CALL_FUNCTION)
+MISS_WITH_CACHE(BINARY_OP)
 MISS_WITH_OPARG_COUNTER(BINARY_SUBSCR)
-MISS_WITH_OPARG_COUNTER(BINARY_ADD)
-MISS_WITH_OPARG_COUNTER(BINARY_MULTIPLY)
 
 binary_subscr_dict_error:
         {
@@ -5241,6 +4964,7 @@ exception_unwind:
         PUSH(tb);
         PUSH(val);
         PUSH(exc);
+        ASSERT_EXC_TYPE_IS_REDUNDANT(exc, val);
         JUMPTO(handler);
         /* Resume normal execution */
         frame->f_state = FRAME_EXECUTING;
@@ -5922,13 +5646,13 @@ fail:
 static int
 _PyEvalFrameClearAndPop(PyThreadState *tstate, InterpreterFrame * frame)
 {
-    ++tstate->recursion_depth;
+    --tstate->recursion_remaining;
     assert(frame->frame_obj == NULL || frame->frame_obj->f_own_locals_memory == 0);
     if (_PyFrame_Clear(frame, 0)) {
-        --tstate->recursion_depth;
+        ++tstate->recursion_remaining;
         return -1;
     }
-    --tstate->recursion_depth;
+    ++tstate->recursion_remaining;
     _PyThreadState_PopFrame(tstate, frame);
     return 0;
 }
@@ -7174,60 +6898,6 @@ format_awaitable_error(PyThreadState *tstate, PyTypeObject *type, int prevprevop
                           type->tp_name);
         }
     }
-}
-
-static PyObject *
-unicode_concatenate(PyThreadState *tstate, PyObject *v, PyObject *w,
-                    InterpreterFrame *frame, const _Py_CODEUNIT *next_instr)
-{
-    PyObject *res;
-    if (Py_REFCNT(v) == 2) {
-        /* In the common case, there are 2 references to the value
-         * stored in 'variable' when the += is performed: one on the
-         * value stack (in 'v') and one still stored in the
-         * 'variable'.  We try to delete the variable now to reduce
-         * the refcnt to 1.
-         */
-        int opcode, oparg;
-        NEXTOPARG();
-        next_instr++;
-        switch (opcode) {
-        case STORE_FAST:
-        {
-            if (GETLOCAL(oparg) == v)
-                SETLOCAL(oparg, NULL);
-            break;
-        }
-        case STORE_DEREF:
-        {
-            PyObject *c = _PyFrame_GetLocalsArray(frame)[oparg];
-            if (PyCell_GET(c) ==  v) {
-                PyCell_SET(c, NULL);
-                Py_DECREF(v);
-            }
-            break;
-        }
-        case STORE_NAME:
-        {
-            PyObject *names = frame->f_code->co_names;
-            PyObject *name = GETITEM(names, oparg);
-            PyObject *locals = frame->f_locals;
-            if (locals && PyDict_CheckExact(locals)) {
-                PyObject *w = PyDict_GetItemWithError(locals, name);
-                if ((w == v && PyDict_DelItem(locals, name) != 0) ||
-                    (w == NULL && _PyErr_Occurred(tstate)))
-                {
-                    Py_DECREF(v);
-                    return NULL;
-                }
-            }
-            break;
-        }
-        }
-    }
-    res = v;
-    PyUnicode_Append(&res, w);
-    return res;
 }
 
 #ifdef DYNAMIC_EXECUTION_PROFILE

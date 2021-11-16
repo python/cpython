@@ -444,7 +444,10 @@ def requires_lzma(reason='requires lzma'):
     return unittest.skipUnless(lzma, reason)
 
 def has_no_debug_ranges():
-    import _testinternalcapi
+    try:
+        import _testinternalcapi
+    except ImportError:
+        raise unittest.SkipTest("_testinternalcapi required")
     config = _testinternalcapi.get_config()
     return bool(config['no_debug_ranges'])
 
@@ -692,7 +695,10 @@ _TPFLAGS_HAVE_GC = 1<<14
 _TPFLAGS_HEAPTYPE = 1<<9
 
 def check_sizeof(test, o, size):
-    import _testinternalcapi
+    try:
+        import _testinternalcapi
+    except ImportError:
+        raise unittest.SkipTest("_testinternalcapi required")
     result = sys.getsizeof(o)
     # add GC header size
     if ((type(o) == type) and (o.__flags__ & _TPFLAGS_HEAPTYPE) or\

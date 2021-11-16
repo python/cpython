@@ -67,20 +67,9 @@ def_op('UNARY_NEGATIVE', 11)
 def_op('UNARY_NOT', 12)
 
 def_op('UNARY_INVERT', 15)
-def_op('BINARY_MATRIX_MULTIPLY', 16)
-def_op('INPLACE_MATRIX_MULTIPLY', 17)
 
-def_op('BINARY_POWER', 19)
-def_op('BINARY_MULTIPLY', 20)
-
-def_op('BINARY_MODULO', 22)
-def_op('BINARY_ADD', 23)
-def_op('BINARY_SUBTRACT', 24)
 def_op('BINARY_SUBSCR', 25)
-def_op('BINARY_FLOOR_DIVIDE', 26)
-def_op('BINARY_TRUE_DIVIDE', 27)
-def_op('INPLACE_FLOOR_DIVIDE', 28)
-def_op('INPLACE_TRUE_DIVIDE', 29)
+
 def_op('GET_LEN', 30)
 def_op('MATCH_MAPPING', 31)
 def_op('MATCH_SEQUENCE', 32)
@@ -95,21 +84,11 @@ def_op('GET_AITER', 50)
 def_op('GET_ANEXT', 51)
 def_op('BEFORE_ASYNC_WITH', 52)
 def_op('BEFORE_WITH', 53)
-
 def_op('END_ASYNC_FOR', 54)
-def_op('INPLACE_ADD', 55)
-def_op('INPLACE_SUBTRACT', 56)
-def_op('INPLACE_MULTIPLY', 57)
 
-def_op('INPLACE_MODULO', 59)
 def_op('STORE_SUBSCR', 60)
 def_op('DELETE_SUBSCR', 61)
-def_op('BINARY_LSHIFT', 62)
-def_op('BINARY_RSHIFT', 63)
-def_op('BINARY_AND', 64)
-def_op('BINARY_XOR', 65)
-def_op('BINARY_OR', 66)
-def_op('INPLACE_POWER', 67)
+
 def_op('GET_ITER', 68)
 def_op('GET_YIELD_FROM_ITER', 69)
 def_op('PRINT_EXPR', 70)
@@ -117,11 +96,6 @@ def_op('LOAD_BUILD_CLASS', 71)
 def_op('YIELD_FROM', 72)
 def_op('GET_AWAITABLE', 73)
 def_op('LOAD_ASSERTION_ERROR', 74)
-def_op('INPLACE_LSHIFT', 75)
-def_op('INPLACE_RSHIFT', 76)
-def_op('INPLACE_AND', 77)
-def_op('INPLACE_XOR', 78)
-def_op('INPLACE_OR', 79)
 
 def_op('LIST_TO_TUPLE', 82)
 def_op('RETURN_VALUE', 83)
@@ -167,6 +141,7 @@ def_op('CONTAINS_OP', 118)
 def_op('RERAISE', 119)
 def_op('COPY', 120)
 jabs_op('JUMP_IF_NOT_EXC_MATCH', 121)
+def_op('BINARY_OP', 122)
 
 def_op('LOAD_FAST', 124)        # Local variable number
 haslocal.append(124)
@@ -219,15 +194,43 @@ def_op('CALL_METHOD_KW', 166)
 
 del def_op, name_op, jrel_op, jabs_op
 
+_nb_ops = [
+    ("NB_ADD", "+"),
+    ("NB_AND", "&"),
+    ("NB_FLOOR_DIVIDE", "//"),
+    ("NB_LSHIFT", "<<"),
+    ("NB_MATRIX_MULTIPLY", "@"),
+    ("NB_MULTIPLY", "*"),
+    ("NB_REMAINDER", "%"),
+    ("NB_OR", "|"),
+    ("NB_POWER", "**"),
+    ("NB_RSHIFT", ">>"),
+    ("NB_SUBTRACT", "-"),
+    ("NB_TRUE_DIVIDE", "/"),
+    ("NB_XOR", "^"),
+    ("NB_INPLACE_ADD", "+="),
+    ("NB_INPLACE_AND", "&="),
+    ("NB_INPLACE_FLOOR_DIVIDE", "//="),
+    ("NB_INPLACE_LSHIFT", "<<="),
+    ("NB_INPLACE_MATRIX_MULTIPLY", "@="),
+    ("NB_INPLACE_MULTIPLY", "*="),
+    ("NB_INPLACE_REMAINDER", "%="),
+    ("NB_INPLACE_OR", "|="),
+    ("NB_INPLACE_POWER", "**="),
+    ("NB_INPLACE_RSHIFT", ">>="),
+    ("NB_INPLACE_SUBTRACT", "-="),
+    ("NB_INPLACE_TRUE_DIVIDE", "/="),
+    ("NB_INPLACE_XOR", "^="),
+]
+
 _specialized_instructions = [
-    "BINARY_ADD_ADAPTIVE",
-    "BINARY_ADD_INT",
-    "BINARY_ADD_FLOAT",
-    "BINARY_ADD_UNICODE",
-    "BINARY_ADD_UNICODE_INPLACE_FAST",
-    "BINARY_MULTIPLY_ADAPTIVE",
-    "BINARY_MULTIPLY_INT",
-    "BINARY_MULTIPLY_FLOAT",
+    "BINARY_OP_ADAPTIVE",
+    "BINARY_OP_ADD_INT",
+    "BINARY_OP_ADD_FLOAT",
+    "BINARY_OP_ADD_UNICODE",
+    "BINARY_OP_INPLACE_ADD_UNICODE",
+    "BINARY_OP_MULTIPLY_INT",
+    "BINARY_OP_MULTIPLY_FLOAT",
     "BINARY_SUBSCR_ADAPTIVE",
     "BINARY_SUBSCR_LIST_INT",
     "BINARY_SUBSCR_TUPLE_INT",

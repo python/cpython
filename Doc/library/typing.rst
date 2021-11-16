@@ -18,10 +18,9 @@
 --------------
 
 This module provides runtime support for type hints. The most fundamental
-support consists of the types :data:`Any`, :data:`Union`, :data:`Tuple`,
-:data:`Callable`, :class:`TypeVar`, and :class:`Generic`. For a full
-specification, please see :pep:`484`. For a simplified introduction to type
-hints, see :pep:`483`.
+support consists of the types :data:`Any`, :data:`Union`, :data:`Callable`,
+:class:`TypeVar`, and :class:`Generic`. For a full specification, please see
+:pep:`484`. For a simplified introduction to type hints, see :pep:`483`.
 
 
 The function below takes and returns a string and is annotated as follows::
@@ -49,8 +48,8 @@ annotations. These include:
      *Introducing* :class:`Protocol` and the
      :func:`@runtime_checkable<runtime_checkable>` decorator
 * :pep:`585`: Type Hinting Generics In Standard Collections
-     *Introducing* the ability to use builtin collections and ABCs as
-     :term:`generic types<generic type>`
+     *Introducing* :class:`types.GenericAlias` and the ability to use standard
+     library classes as :ref:`generic types<types-genericalias>`
 * :pep:`586`: Literal Types
      *Introducing* :data:`Literal`
 * :pep:`589`: TypedDict: Type Hints for Dictionaries with a Fixed Set of Keys
@@ -291,8 +290,8 @@ A user-defined class can be defined as a generic class.
 single type parameter ``T`` . This also makes ``T`` valid as a type within the
 class body.
 
-The :class:`Generic` base class defines :meth:`__class_getitem__` so that
-``LoggedVar[t]`` is valid as a type::
+The :class:`Generic` base class defines :meth:`~object.__class_getitem__` so
+that ``LoggedVar[t]`` is valid as a type::
 
    from collections.abc import Iterable
 

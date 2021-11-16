@@ -184,6 +184,11 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			*.c++)		srcs="$srcs $arg";;
 			*.cxx)		srcs="$srcs $arg";;
 			*.cpp)		srcs="$srcs $arg";;
+			\$\(*_CFLAGS\))		cpps="$cpps $arg";;
+			\$\(*_INCLUDES\))	cpps="$cpps $arg";;
+			\$\(*_LIBS\))		libs="$libs $arg";;
+			\$\(*_LDFLAGS\))	libs="$libs $arg";;
+			\$\(*_RPATH\))		libs="$libs $arg";;
 			\$*)		libs="$libs $arg"
 					cpps="$cpps $arg";;
 			*.*)		echo 1>&2 "bad word $arg in $line"

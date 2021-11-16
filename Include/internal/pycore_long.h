@@ -11,28 +11,15 @@ extern "C" {
 #include "pycore_interp.h"        // PyInterpreterState.small_ints
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
-// Don't call this function but _PyLong_GetZero() and _PyLong_GetOne()
-static inline PyObject* __PyLong_GetSmallInt_internal(int value)
-{
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    assert(-_PY_NSMALLNEGINTS <= value && value < _PY_NSMALLPOSINTS);
-    size_t index = _PY_NSMALLNEGINTS + value;
-    PyObject *obj = (PyObject*)&interp->small_ints[index];
-    // _PyLong_GetZero(), _PyLong_GetOne() and get_small_int() must not be
-    // called before _PyLong_Init() nor after _PyLong_Fini().
-    assert(obj != NULL);
-    return obj;
-}
-
 // Return a borrowed reference to the zero singleton.
 // The function cannot return NULL.
 static inline PyObject* _PyLong_GetZero(void)
-{ return __PyLong_GetSmallInt_internal(0); }
+{ return (PyObject *)&_PyRuntime.small_ints[_PY_NSMALLNEGINTS]; }
 
 // Return a borrowed reference to the one singleton.
 // The function cannot return NULL.
 static inline PyObject* _PyLong_GetOne(void)
-{ return __PyLong_GetSmallInt_internal(1); }
+{ return (PyObject *)&_PyRuntime.small_ints[_PY_NSMALLNEGINTS+1]; }
 
 PyObject *_PyLong_Add(PyLongObject *left, PyLongObject *right);
 PyObject *_PyLong_Multiply(PyLongObject *left, PyLongObject *right);

@@ -58,10 +58,12 @@ class EmbeddingTestsMixin:
             ext = ("_d" if debug_build(sys.executable) else "") + ".exe"
             exename += ext
             exepath = builddir
+            expecteddir = support.REPO_ROOT
         else:
             exepath = os.path.join(builddir, 'Programs')
+            expecteddir = os.path.join(support.REPO_ROOT, 'Programs')
         self.test_exe = exe = os.path.join(exepath, exename)
-        if exepath != support.REPO_ROOT or not os.path.exists(exe):
+        if exepath != expecteddir or not os.path.exists(exe):
             self.skipTest("%r doesn't exist" % exe)
         # This is needed otherwise we get a fatal error:
         # "Py_Initialize: Unable to get the locale encoding
@@ -1494,6 +1496,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 class SetConfigTests(unittest.TestCase):
     def test_set_config(self):
         # bpo-42260: Test _PyInterpreterState_SetConfig()
+        import_helper.import_module('_testcapi')
         cmd = [sys.executable, '-I', '-m', 'test._test_embed_set_config']
         proc = subprocess.run(cmd,
                               stdout=subprocess.PIPE,
