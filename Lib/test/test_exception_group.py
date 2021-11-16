@@ -38,18 +38,18 @@ class BadConstructorArgs(unittest.TestCase):
             ExceptionGroup(None, [ValueError(12)])
 
     def test_bad_EG_construction__bad_excs_sequence(self):
-        MSG = 'second argument \(exceptions\) must be a sequence'
+        MSG = r'second argument \(exceptions\) must be a sequence'
         with self.assertRaisesRegex(TypeError, MSG):
             ExceptionGroup('errors not sequence', {ValueError(42)})
         with self.assertRaisesRegex(TypeError, MSG):
             ExceptionGroup("eg", None)
 
-        MSG = 'second argument \(exceptions\) must be a non-empty sequence'
+        MSG = r'second argument \(exceptions\) must be a non-empty sequence'
         with self.assertRaisesRegex(ValueError, MSG):
             ExceptionGroup("eg", [])
 
     def test_bad_EG_construction__nested_non_exceptions(self):
-        MSG = ('Item [0-9]+ of second argument \(exceptions\)'
+        MSG = (r'Item [0-9]+ of second argument \(exceptions\)'
               ' is not an exception')
         with self.assertRaisesRegex(ValueError, MSG):
             ExceptionGroup('expect instance, not type', [OSError]);
