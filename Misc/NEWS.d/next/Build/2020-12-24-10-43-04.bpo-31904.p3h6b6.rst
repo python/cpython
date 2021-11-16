@@ -1,0 +1,2 @@
+Add option ``--enable-pyc-build`` to the ``configure`` script to choose
+what type of .pyc files to compile at installing libraries.
