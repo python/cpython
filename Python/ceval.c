@@ -835,6 +835,36 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
 }
 
 
+static const binaryfunc binary_ops[] = {
+    [NB_ADD] = PyNumber_Add,
+    [NB_AND] = PyNumber_And,
+    [NB_FLOOR_DIVIDE] = PyNumber_FloorDivide,
+    [NB_LSHIFT] = PyNumber_Lshift,
+    [NB_MATRIX_MULTIPLY] = PyNumber_MatrixMultiply,
+    [NB_MULTIPLY] = PyNumber_Multiply,
+    [NB_REMAINDER] = PyNumber_Remainder,
+    [NB_OR] = PyNumber_Or,
+    [NB_POWER] = _PyNumber_PowerNoMod,
+    [NB_RSHIFT] = PyNumber_Rshift,
+    [NB_SUBTRACT] = PyNumber_Subtract,
+    [NB_TRUE_DIVIDE] = PyNumber_TrueDivide,
+    [NB_XOR] = PyNumber_Xor,
+    [NB_INPLACE_ADD] = PyNumber_InPlaceAdd,
+    [NB_INPLACE_AND] = PyNumber_InPlaceAnd,
+    [NB_INPLACE_FLOOR_DIVIDE] = PyNumber_InPlaceFloorDivide,
+    [NB_INPLACE_LSHIFT] = PyNumber_InPlaceLshift,
+    [NB_INPLACE_MATRIX_MULTIPLY] = PyNumber_InPlaceMatrixMultiply,
+    [NB_INPLACE_MULTIPLY] = PyNumber_InPlaceMultiply,
+    [NB_INPLACE_REMAINDER] = PyNumber_InPlaceRemainder,
+    [NB_INPLACE_OR] = PyNumber_InPlaceOr,
+    [NB_INPLACE_POWER] = _PyNumber_InPlacePowerNoMod,
+    [NB_INPLACE_RSHIFT] = PyNumber_InPlaceRshift,
+    [NB_INPLACE_SUBTRACT] = PyNumber_InPlaceSubtract,
+    [NB_INPLACE_TRUE_DIVIDE] = PyNumber_InPlaceTrueDivide,
+    [NB_INPLACE_XOR] = PyNumber_InPlaceXor,
+};
+
+
 // PEP 634: Structural Pattern Matching
 
 
@@ -4697,89 +4727,10 @@ check_eval_breaker:
             STAT_INC(BINARY_OP, unquickened);
             PyObject *rhs = POP();
             PyObject *lhs = TOP();
-            PyObject *res;
-            switch (oparg) {
-                case NB_ADD:
-                    res = PyNumber_Add(lhs, rhs);
-                    break;
-                case NB_AND:
-                    res = PyNumber_And(lhs, rhs);
-                    break;
-                case NB_FLOOR_DIVIDE:
-                    res = PyNumber_FloorDivide(lhs, rhs);
-                    break;
-                case NB_LSHIFT:
-                    res = PyNumber_Lshift(lhs, rhs);
-                    break;
-                case NB_MATRIX_MULTIPLY:
-                    res = PyNumber_MatrixMultiply(lhs, rhs);
-                    break;
-                case NB_MULTIPLY:
-                    res = PyNumber_Multiply(lhs, rhs);
-                    break;
-                case NB_REMAINDER:
-                    res = PyNumber_Remainder(lhs, rhs);
-                    break;
-                case NB_OR:
-                    res = PyNumber_Or(lhs, rhs);
-                    break;
-                case NB_POWER:
-                    res = PyNumber_Power(lhs, rhs, Py_None);
-                    break;
-                case NB_RSHIFT:
-                    res = PyNumber_Rshift(lhs, rhs);
-                    break;
-                case NB_SUBTRACT:
-                    res = PyNumber_Subtract(lhs, rhs);
-                    break;
-                case NB_TRUE_DIVIDE:
-                    res = PyNumber_TrueDivide(lhs, rhs);
-                    break;
-                case NB_XOR:
-                    res = PyNumber_Xor(lhs, rhs);
-                    break;
-                case NB_INPLACE_ADD:
-                    res = PyNumber_InPlaceAdd(lhs, rhs);
-                    break;
-                case NB_INPLACE_AND:
-                    res = PyNumber_InPlaceAnd(lhs, rhs);
-                    break;
-                case NB_INPLACE_FLOOR_DIVIDE:
-                    res = PyNumber_InPlaceFloorDivide(lhs, rhs);
-                    break;
-                case NB_INPLACE_LSHIFT:
-                    res = PyNumber_InPlaceLshift(lhs, rhs);
-                    break;
-                case NB_INPLACE_MATRIX_MULTIPLY:
-                    res = PyNumber_InPlaceMatrixMultiply(lhs, rhs);
-                    break;
-                case NB_INPLACE_MULTIPLY:
-                    res = PyNumber_InPlaceMultiply(lhs, rhs);
-                    break;
-                case NB_INPLACE_REMAINDER:
-                    res = PyNumber_InPlaceRemainder(lhs, rhs);
-                    break;
-                case NB_INPLACE_OR:
-                    res = PyNumber_InPlaceOr(lhs, rhs);
-                    break;
-                case NB_INPLACE_POWER:
-                    res = PyNumber_InPlacePower(lhs, rhs, Py_None);
-                    break;
-                case NB_INPLACE_RSHIFT:
-                    res = PyNumber_InPlaceRshift(lhs, rhs);
-                    break;
-                case NB_INPLACE_SUBTRACT:
-                    res = PyNumber_InPlaceSubtract(lhs, rhs);
-                    break;
-                case NB_INPLACE_TRUE_DIVIDE:
-                    res = PyNumber_InPlaceTrueDivide(lhs, rhs);
-                    break;
-                case NB_INPLACE_XOR:
-                    res = PyNumber_InPlaceXor(lhs, rhs);
-                    break;
-                default:
-                    Py_UNREACHABLE();
-            }
+            assert(0 <= oparg);
+            assert((unsigned)oparg < Py_ARRAY_LENGTH(binary_ops));
+            assert(binary_ops[oparg]);
+            PyObject *res = binary_ops[oparg](lhs, rhs);
             Py_DECREF(lhs);
             Py_DECREF(rhs);
             SET_TOP(res);
