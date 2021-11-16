@@ -79,9 +79,9 @@ struct _ts {
     struct _ts *next;
     PyInterpreterState *interp;
 
-    int recursion_depth;
+    int recursion_remaining;
+    int recursion_limit;
     int recursion_headroom; /* Allow 50 more calls to handle any errors. */
-    int stackcheck_counter;
 
     /* 'tracing' keeps track of the execution depth when tracing/profiling.
        This is to prevent the actual trace/profile code from being recorded in
