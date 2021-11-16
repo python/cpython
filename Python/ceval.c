@@ -4721,7 +4721,7 @@ check_eval_breaker:
             PyObject *rhs = POP();
             PyObject *lhs = TOP();
             assert(0 <= oparg);
-            assert(oparg < Py_ARRAY_LENGTH(binary_ops));
+            assert((unsigned)oparg < Py_ARRAY_LENGTH(binary_ops));
             assert(binary_ops[oparg]);
             PyObject *res = binary_ops[oparg](lhs, rhs);
             Py_DECREF(lhs);
