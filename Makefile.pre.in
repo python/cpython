@@ -496,6 +496,74 @@ LIBRARY_OBJS=	\
 DTRACE_DEPS = \
 	Python/ceval.o Python/import.o Python/sysmodule.o Modules/gcmodule.o
 
+##########################################################################
+# decimal's libmpdec
+
+LIBMPDEC_OBJS= \
+		Modules/_decimal/libmpdec/basearith.o \
+		Modules/_decimal/libmpdec/constants.o \
+		Modules/_decimal/libmpdec/context.o \
+		Modules/_decimal/libmpdec/convolute.o \
+		Modules/_decimal/libmpdec/crt.o \
+		Modules/_decimal/libmpdec/difradix2.o \
+		Modules/_decimal/libmpdec/fnt.o \
+		Modules/_decimal/libmpdec/fourstep.o \
+		Modules/_decimal/libmpdec/io.o \
+		Modules/_decimal/libmpdec/mpalloc.o \
+		Modules/_decimal/libmpdec/mpdecimal.o \
+		Modules/_decimal/libmpdec/numbertheory.o \
+		Modules/_decimal/libmpdec/sixstep.o \
+		Modules/_decimal/libmpdec/transpose.o
+		# _decimal does not use signaling API
+		# Modules/_decimal/libmpdec/mpsignal.o
+
+LIBMPDEC_HEADERS= \
+		$(srcdir)/Modules/_decimal/libmpdec/basearith.h \
+		$(srcdir)/Modules/_decimal/libmpdec/bits.h \
+		$(srcdir)/Modules/_decimal/libmpdec/constants.h \
+		$(srcdir)/Modules/_decimal/libmpdec/convolute.h \
+		$(srcdir)/Modules/_decimal/libmpdec/crt.h \
+		$(srcdir)/Modules/_decimal/libmpdec/difradix2.h \
+		$(srcdir)/Modules/_decimal/libmpdec/fnt.h \
+		$(srcdir)/Modules/_decimal/libmpdec/fourstep.h \
+		$(srcdir)/Modules/_decimal/libmpdec/io.h \
+		$(srcdir)/Modules/_decimal/libmpdec/mpalloc.h \
+		$(srcdir)/Modules/_decimal/libmpdec/mpdecimal.h \
+		$(srcdir)/Modules/_decimal/libmpdec/numbertheory.h \
+		$(srcdir)/Modules/_decimal/libmpdec/sixstep.h \
+		$(srcdir)/Modules/_decimal/libmpdec/transpose.h \
+		$(srcdir)/Modules/_decimal/libmpdec/typearith.h \
+		$(srcdir)/Modules/_decimal/libmpdec/umodarith.h
+
+LIBMPDEC_A= Modules/_decimal/libmpdec/libmpdec.a
+
+##########################################################################
+# pyexpat's expat library
+
+LIBEXPAT_OBJS= \
+		Modules/expat/xmlparse.o \
+		Modules/expat/xmlrole.o \
+		Modules/expat/xmltok.o
+
+LIBEXPAT_HEADERS= \
+		Modules/expat/ascii.h \
+		Modules/expat/asciitab.h \
+		Modules/expat/expat.h \
+		Modules/expat/expat_config.h \
+		Modules/expat/expat_external.h \
+		Modules/expat/iasciitab.h \
+		Modules/expat/internal.h \
+		Modules/expat/latin1tab.h \
+		Modules/expat/nametab.h \
+		Modules/expat/pyexpatns.h \
+		Modules/expat/siphash.h \
+		Modules/expat/utf8tab.h \
+		Modules/expat/xmlrole.h \
+		Modules/expat/xmltok.h \
+		Modules/expat/xmltok_impl.h
+
+LIBEXPAT_A= Modules/expat/libexpat.a
+
 #########################################################################
 # Rules
 
@@ -647,7 +715,7 @@ $(srcdir)/Modules/_blake2/blake2s_impl.c: $(srcdir)/Modules/_blake2/blake2b_impl
 # -s, --silent or --quiet is always the first char.
 # Under BSD make, MAKEFLAGS might be " -s -v x=y".
 # Ignore macros passed by GNU make, passed after --
-sharedmods: $(BUILDPYTHON) pybuilddir.txt
+sharedmods: $(BUILDPYTHON) pybuilddir.txt @LIBMPDEC_INTERNAL@ @LIBEXPAT_INTERNAL@
 	@case "`echo X $$MAKEFLAGS | sed 's/^X //;s/ -- .*//'`" in \
 	    *\ -s*|s*) quiet="-q";; \
 	    *) quiet="";; \
@@ -729,6 +797,84 @@ $(DLLLIBRARY) libpython$(LDVERSION).dll.a: $(LIBRARY_OBJS)
 	else true; \
 	fi
 
+##########################################################################
+# Build static libmpdec.a
+LIBMPDEC_CFLAGS=$(PY_STDMODULE_CFLAGS) $(CCSHARED) @LIBMPDEC_CFLAGS@
+
+# for setup.py
+DECIMAL_CFLAGS=@LIBMPDEC_CFLAGS@
+DECIMAL_LDFLAGS=@LIBMPDEC_LDFLAGS@
+
+# "%.o: %c" is not portable
+Modules/_decimal/libmpdec/basearith.o: $(srcdir)/Modules/_decimal/libmpdec/basearith.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/basearith.c
+
+Modules/_decimal/libmpdec/constants.o: $(srcdir)/Modules/_decimal/libmpdec/constants.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/constants.c
+
+Modules/_decimal/libmpdec/context.o: $(srcdir)/Modules/_decimal/libmpdec/context.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/context.c
+
+Modules/_decimal/libmpdec/convolute.o: $(srcdir)/Modules/_decimal/libmpdec/convolute.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/convolute.c
+
+Modules/_decimal/libmpdec/crt.o: $(srcdir)/Modules/_decimal/libmpdec/crt.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/crt.c
+
+Modules/_decimal/libmpdec/difradix2.o: $(srcdir)/Modules/_decimal/libmpdec/difradix2.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/difradix2.c
+
+Modules/_decimal/libmpdec/fnt.o: $(srcdir)/Modules/_decimal/libmpdec/fnt.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/fnt.c
+
+Modules/_decimal/libmpdec/fourstep.o: $(srcdir)/Modules/_decimal/libmpdec/fourstep.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/fourstep.c
+
+Modules/_decimal/libmpdec/io.o: $(srcdir)/Modules/_decimal/libmpdec/io.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/io.c
+
+Modules/_decimal/libmpdec/mpalloc.o: $(srcdir)/Modules/_decimal/libmpdec/mpalloc.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/mpalloc.c
+
+Modules/_decimal/libmpdec/mpdecimal.o: $(srcdir)/Modules/_decimal/libmpdec/mpdecimal.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/mpdecimal.c
+
+Modules/_decimal/libmpdec/mpsignal.o: $(srcdir)/Modules/_decimal/libmpdec/mpsignal.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/mpsignal.c
+
+Modules/_decimal/libmpdec/numbertheory.o: $(srcdir)/Modules/_decimal/libmpdec/numbertheory.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/numbertheory.c
+
+Modules/_decimal/libmpdec/sixstep.o: $(srcdir)/Modules/_decimal/libmpdec/sixstep.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/sixstep.c
+
+Modules/_decimal/libmpdec/transpose.o: $(srcdir)/Modules/_decimal/libmpdec/transpose.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/transpose.c
+
+$(LIBMPDEC_A): $(LIBMPDEC_OBJS)
+	-rm -f $@
+	$(AR) $(ARFLAGS) $@ $(LIBMPDEC_OBJS)
+
+##########################################################################
+# Build static libexpat.a
+LIBEXPAT_CFLAGS=$(PY_STDMODULE_CFLAGS) $(CCSHARED) @LIBEXPAT_CFLAGS@
+
+# for setup.py
+EXPAT_CFLAGS=@LIBEXPAT_CFLAGS@
+EXPAT_LDFLAGS=@LIBEXPAT_LDFLAGS@
+
+Modules/expat/xmlparse.o: $(srcdir)/Modules/expat/xmlparse.c $(LIBEXPAT_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBEXPAT_CFLAGS) -o $@ $(srcdir)/Modules/expat/xmlparse.c
+
+Modules/expat/xmlrole.o: $(srcdir)/Modules/expat/xmlrole.c $(LIBEXPAT_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBEXPAT_CFLAGS) -o $@ $(srcdir)/Modules/expat/xmlrole.c
+
+Modules/expat/xmltok.o: $(srcdir)/Modules/expat/xmltok.c $(LIBEXPAT_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBEXPAT_CFLAGS) -o $@ $(srcdir)/Modules/expat/xmltok.c
+
+$(LIBEXPAT_A): $(LIBEXPAT_OBJS)
+	-rm -f $@
+	$(AR) $(ARFLAGS) $@ $(LIBEXPAT_OBJS)
 
 # create relative links from build/lib.platform/egg.so to Modules/egg.so
 # pybuilddir.txt is created too late. We cannot use it in Makefile
@@ -2309,12 +2455,12 @@ Python/thread.o: @THREADHEADERS@ $(srcdir)/Python/condvar.h
 
 MODULE_CMATH_DEPS=$(srcdir)/Modules/_math.h
 MODULE_MATH_DEPS=$(srcdir)/Modules/_math.h
-MODULE_PYEXPAT_DEPS=$(srcdir)/Modules/expat/ascii.h $(srcdir)/Modules/expat/asciitab.h $(srcdir)/Modules/expat/expat.h $(srcdir)/Modules/expat/expat_config.h $(srcdir)/Modules/expat/expat_external.h $(srcdir)/Modules/expat/internal.h $(srcdir)/Modules/expat/latin1tab.h $(srcdir)/Modules/expat/utf8tab.h $(srcdir)/Modules/expat/xmlrole.h $(srcdir)/Modules/expat/xmltok.h $(srcdir)/Modules/expat/xmltok_impl.h
+MODULE_PYEXPAT_DEPS=$(LIBEXPAT_HEADERS) @LIBEXPAT_INTERNAL@
 MODULE_UNICODEDATA_DEPS=$(srcdir)/Modules/unicodedata_db.h $(srcdir)/Modules/unicodename_db.h
 MODULE__BLAKE2_DEPS=$(srcdir)/Modules/_blake2/impl/blake2-config.h $(srcdir)/Modules/_blake2/impl/blake2-dispatch.c $(srcdir)/Modules/_blake2/impl/blake2-impl.h $(srcdir)/Modules/_blake2/impl/blake2-kat.h $(srcdir)/Modules/_blake2/impl/blake2.h $(srcdir)/Modules/_blake2/impl/blake2b-load-sse2.h $(srcdir)/Modules/_blake2/impl/blake2b-load-sse41.h $(srcdir)/Modules/_blake2/impl/blake2b-ref.c $(srcdir)/Modules/_blake2/impl/blake2b-round.h $(srcdir)/Modules/_blake2/impl/blake2b-test.c $(srcdir)/Modules/_blake2/impl/blake2b.c $(srcdir)/Modules/_blake2/impl/blake2bp-test.c $(srcdir)/Modules/_blake2/impl/blake2bp.c $(srcdir)/Modules/_blake2/impl/blake2s-load-sse2.h $(srcdir)/Modules/_blake2/impl/blake2s-load-sse41.h $(srcdir)/Modules/_blake2/impl/blake2s-load-xop.h $(srcdir)/Modules/_blake2/impl/blake2s-ref.c $(srcdir)/Modules/_blake2/impl/blake2s-round.h $(srcdir)/Modules/_blake2/impl/blake2s-test.c $(srcdir)/Modules/_blake2/impl/blake2s.c $(srcdir)/Modules/_blake2/impl/blake2sp-test.c $(srcdir)/Modules/_blake2/impl/blake2sp.c $(srcdir)/Modules/hashlib.h
 MODULE__CTYPES_DEPS=$(srcdir)/Modules/_ctypes/ctypes.h
-MODULE__DECIMAL_DEPS=$(srcdir)/Modules/_decimal/docstrings.h $(srcdir)/Modules/_decimal/libmpdec/basearith.h $(srcdir)/Modules/_decimal/libmpdec/bits.h $(srcdir)/Modules/_decimal/libmpdec/constants.h $(srcdir)/Modules/_decimal/libmpdec/convolute.h $(srcdir)/Modules/_decimal/libmpdec/crt.h $(srcdir)/Modules/_decimal/libmpdec/difradix2.h $(srcdir)/Modules/_decimal/libmpdec/fnt.h $(srcdir)/Modules/_decimal/libmpdec/fourstep.h $(srcdir)/Modules/_decimal/libmpdec/io.h $(srcdir)/Modules/_decimal/libmpdec/mpalloc.h $(srcdir)/Modules/_decimal/libmpdec/mpdecimal.h $(srcdir)/Modules/_decimal/libmpdec/numbertheory.h $(srcdir)/Modules/_decimal/libmpdec/sixstep.h $(srcdir)/Modules/_decimal/libmpdec/transpose.h $(srcdir)/Modules/_decimal/libmpdec/typearith.h $(srcdir)/Modules/_decimal/libmpdec/umodarith.h
-MODULE__ELEMENTTREE_DEPS=$(srcdir)/Modules/expat/ascii.h $(srcdir)/Modules/expat/asciitab.h $(srcdir)/Modules/expat/expat.h $(srcdir)/Modules/expat/expat_config.h $(srcdir)/Modules/expat/expat_external.h $(srcdir)/Modules/expat/internal.h $(srcdir)/Modules/expat/latin1tab.h $(srcdir)/Modules/expat/utf8tab.h $(srcdir)/Modules/expat/xmlparse.c $(srcdir)/Modules/expat/xmlrole.c $(srcdir)/Modules/expat/xmlrole.h $(srcdir)/Modules/expat/xmltok.c $(srcdir)/Modules/expat/xmltok.h $(srcdir)/Modules/expat/xmltok_impl.h $(srcdir)/Modules/pyexpat.c
+MODULE__DECIMAL_DEPS=$(srcdir)/Modules/_decimal/docstrings.h $(LIBMPDEC_HEADERS) @LIBMPDEC_INTERNAL@
+MODULE__ELEMENTTREE_DEPS=$(srcdir)/Modules/pyexpat.c $(LIBEXPAT_HEADERS) @LIBEXPAT_INTERNAL@
 MODULE__HASHLIB_DEPS=$(srcdir)/Modules/hashlib.h
 MODULE__IO_DEPS=$(srcdir)/Modules/_io/_iomodule.h
 MODULE__MD5_DEPS=$(srcdir)/Modules/hashlib.h

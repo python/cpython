@@ -3017,6 +3017,20 @@ AC_ARG_WITH(system_expat,
 
 AC_MSG_RESULT($with_system_expat)
 
+AS_VAR_IF([with_system_expat], [yes], [
+  LIBEXPAT_CFLAGS=""
+  LIBEXPAT_LDFLAGS="-lexpat"
+  LIBEXPAT_INTERNAL=
+], [
+  LIBEXPAT_CFLAGS="-I\$(srcdir)/Modules/expat"
+  LIBEXPAT_LDFLAGS="-lm \$(LIBEXPAT_A)"
+  LIBEXPAT_INTERNAL="\$(LIBEXPAT_A)"
+])
+
+AC_SUBST([LIBEXPAT_CFLAGS])
+AC_SUBST([LIBEXPAT_LDFLAGS])
+AC_SUBST([LIBEXPAT_INTERNAL])
+
 # Check for use of the system libffi library
 AC_MSG_CHECKING(for --with-system-ffi)
 AC_ARG_WITH(system_ffi,
@@ -3057,8 +3071,21 @@ AC_ARG_WITH(system_libmpdec,
             AS_HELP_STRING([--with-system-libmpdec], [build _decimal module using an installed libmpdec library, see Doc/library/decimal.rst (default is no)]),
             [],
             [with_system_libmpdec="no"])
-
 AC_MSG_RESULT($with_system_libmpdec)
+
+AS_VAR_IF([with_system_libmpdec], [yes], [
+  LIBMPDEC_CFLAGS=""
+  LIBMPDEC_LDFLAGS="-lmpdec"
+  LIBMPDEC_INTERNAL=
+], [
+  LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
+  LIBMPDEC_LDFLAGS="-lm \$(LIBMPDEC_A)"
+  LIBMPDEC_INTERNAL="\$(LIBMPDEC_A)"
+])
+
+AC_SUBST([LIBMPDEC_CFLAGS])
+AC_SUBST([LIBMPDEC_LDFLAGS])
+AC_SUBST([LIBMPDEC_INTERNAL])
 
 # Check whether _decimal should use a coroutine-local or thread-local context
 AC_MSG_CHECKING(for --with-decimal-contextvar)
@@ -3074,6 +3101,69 @@ then
 fi
 
 AC_MSG_RESULT($with_decimal_contextvar)
+
+# Check for libmpdec machine flavor
+AC_MSG_CHECKING(for decimal libmpdec machine)
+AS_CASE([$ac_sys_system],
+  [Darwin*], [libmpdec_system=Darwin],
+  [SunOS*], [libmpdec_system=sunos],
+  [libmpdec_system=other]
+)
+
+libmpdec_machine=unknown
+if test "$libmpdec_system" = Darwin; then
+    AS_CASE([$MACOSX_DEFAULT_ARCH],
+      [i386],   [libmpdec_machine=ansi32],
+      [ppc],    [libmpdec_machine=ansi32],
+      [x86_64], [libmpdec_machine=x64],
+      [ppc64],  [libmpdec_machine=ansi64],
+      [arm64],  [libmpdec_machine=ansi64],
+      [libmpdec_machine=universal]
+    )
+elif test $ac_cv_sizeof_size_t -eq 8; then
+    if test "$ac_cv_gcc_asm_for_x64" = yes; then
+        libmpdec_machine=x64
+    elif test "$ac_cv_type___uint128_t" = yes; then
+        libmpdec_machine=uint128
+    else
+        libmpdec_machine=ansi64
+    fi
+elif test $ac_cv_sizeof_size_t -eq 4; then
+    if test "$ac_cv_gcc_asm_for_x87" = yes -a "$libmpdec_system" != sunos; then
+        AS_CASE([$CC],
+            [*gcc*],   [libmpdec_machine=ppro],
+            [*clang*], [libmpdec_machine=ppro],
+            [libmpdec_machine=ansi32]
+        )
+    else
+        libmpdec_machine=ansi32
+    fi
+fi
+AC_MSG_RESULT([$libmpdec_machine])
+
+AS_CASE([$libmpdec_machine],
+  [x64],         [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_64=1 -DASM=1"])],
+  [uint128],     [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_64=1 -DANSI=1 -DHAVE_UINT128_T=1"])],
+  [ansi64],      [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_64=1 -DANSI=1"])],
+  [ppro],        [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_32=1 -DANSI=1 -DASM=1 -Wno-unknown-pragmas"])],
+  [ansi32],      [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_32=1 -DANSI=1"])],
+  [ansi-legacy], [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_32=1 -DANSI=1 -DLEGACY_COMPILER=1"])],
+  [universal],   [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DUNIVERSAL=1"])],
+  [AC_MSG_ERROR([_decimal: unsupported architecture])]
+)
+
+if test "$have_ipa_pure_const_bug" = yes; then
+    # Some versions of gcc miscompile inline asm:
+    # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
+    # https://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
+    AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -fno-ipa-pure-const"])
+fi
+
+if test "$have_glibc_memmove_bug" = yes; then
+    # _FORTIFY_SOURCE wrappers for memmove and bcopy are incorrect:
+    # https://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
+    AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -U_FORTIFY_SOURCE"])
+fi
 
 # Check for support for loadable sqlite extensions
 AC_MSG_CHECKING(for --enable-loadable-sqlite-extensions)
