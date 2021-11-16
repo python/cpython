@@ -79,20 +79,21 @@ static const char * const begin_statements[] = {
     NULL
 };
 
-static int pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* isolation_level, void *Py_UNUSED(ignored));
 static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self);
 static void free_callback_context(callback_context *ctx);
 static void set_callback_context(callback_context **ctx_pp,
                                  callback_context *ctx);
+static void connection_close(pysqlite_Connection *self);
 
 static PyObject *
-new_statement_cache(pysqlite_Connection *self, int maxsize)
+new_statement_cache(pysqlite_Connection *self, pysqlite_state *state,
+                    int maxsize)
 {
     PyObject *args[] = { NULL, PyLong_FromLong(maxsize), };
     if (args[1] == NULL) {
         return NULL;
     }
-    PyObject *lru_cache = self->state->lru_cache;
+    PyObject *lru_cache = state->lru_cache;
     size_t nargsf = 1 | PY_VECTORCALL_ARGUMENTS_OFFSET;
     PyObject *inner = PyObject_Vectorcall(lru_cache, args + 1, nargsf, NULL);
     Py_DECREF(args[1]);
@@ -105,6 +106,33 @@ new_statement_cache(pysqlite_Connection *self, int maxsize)
     PyObject *res = PyObject_Vectorcall(inner, args + 1, nargsf, NULL);
     Py_DECREF(inner);
     return res;
+}
+
+static inline const char *
+begin_stmt_to_isolation_level(const char *begin_stmt)
+{
+    assert(begin_stmt != NULL);
+
+    // All begin statements start with "BEGIN "; add strlen("BEGIN ") to get
+    // the isolation level.
+    return begin_stmt + 6;
+}
+
+static const char *
+get_begin_statement(const char *level)
+{
+    assert(level != NULL);
+    for (int i = 0; begin_statements[i] != NULL; i++) {
+        const char *stmt = begin_statements[i];
+        const char *candidate = begin_stmt_to_isolation_level(stmt);
+        if (sqlite3_stricmp(level, candidate) == 0) {
+            return begin_statements[i];
+        }
+    }
+    PyErr_SetString(PyExc_ValueError,
+                    "isolation_level string must be '', 'DEFERRED', "
+                    "'IMMEDIATE', or 'EXCLUSIVE'");
+    return NULL;
 }
 
 /*[python input]
@@ -124,96 +152,94 @@ _sqlite3.Connection.__init__ as pysqlite_connection_init
     database: FSConverter
     timeout: double = 5.0
     detect_types: int = 0
-    isolation_level: object = NULL
+    isolation_level: str(accept={str, NoneType}) = ""
     check_same_thread: bool(accept={int}) = True
     factory: object(c_default='(PyObject*)clinic_state()->ConnectionType') = ConnectionType
-    cached_statements: int = 128
+    cached_statements as cache_size: int = 128
     uri: bool = False
 [clinic start generated code]*/
 
 static int
 pysqlite_connection_init_impl(pysqlite_Connection *self,
                               const char *database, double timeout,
-                              int detect_types, PyObject *isolation_level,
+                              int detect_types, const char *isolation_level,
                               int check_same_thread, PyObject *factory,
-                              int cached_statements, int uri)
-/*[clinic end generated code: output=bc39e55eb0b68783 input=f8d1f7efc0d84104]*/
+                              int cache_size, int uri)
+/*[clinic end generated code: output=7d640ae1d83abfd4 input=35e316f66d9f70fd]*/
 {
-    int rc;
-
     if (PySys_Audit("sqlite3.connect", "s", database) < 0) {
         return -1;
     }
 
-    pysqlite_state *state = pysqlite_get_state_by_type(Py_TYPE(self));
-    self->state = state;
+    if (self->initialized) {
+        PyTypeObject *tp = Py_TYPE(self);
+        tp->tp_clear((PyObject *)self);
+        connection_close(self);
+        self->initialized = 0;
+    }
 
-    self->begin_statement = NULL;
-
-    Py_CLEAR(self->statement_cache);
-    Py_CLEAR(self->cursors);
-
-    Py_INCREF(Py_None);
-    Py_XSETREF(self->row_factory, Py_None);
-
-    Py_INCREF(&PyUnicode_Type);
-    Py_XSETREF(self->text_factory, (PyObject*)&PyUnicode_Type);
-
+    // Create and configure SQLite database object.
+    sqlite3 *db;
+    int rc;
     Py_BEGIN_ALLOW_THREADS
-    rc = sqlite3_open_v2(database, &self->db,
+    rc = sqlite3_open_v2(database, &db,
                          SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE |
                          (uri ? SQLITE_OPEN_URI : 0), NULL);
+    if (rc == SQLITE_OK) {
+        (void)sqlite3_busy_timeout(db, (int)(timeout*1000));
+    }
     Py_END_ALLOW_THREADS
 
-    if (self->db == NULL && rc == SQLITE_NOMEM) {
+    if (db == NULL && rc == SQLITE_NOMEM) {
         PyErr_NoMemory();
         return -1;
     }
+
+    pysqlite_state *state = pysqlite_get_state_by_type(Py_TYPE(self));
     if (rc != SQLITE_OK) {
-        _pysqlite_seterror(state, self->db);
+        _pysqlite_seterror(state, db);
         return -1;
     }
 
-    if (!isolation_level) {
-        isolation_level = PyUnicode_FromString("");
-        if (!isolation_level) {
+    // Convert isolation level to begin statement.
+    const char *begin_statement = NULL;
+    if (isolation_level != NULL) {
+        begin_statement = get_begin_statement(isolation_level);
+        if (begin_statement == NULL) {
             return -1;
         }
-    } else {
-        Py_INCREF(isolation_level);
     }
-    Py_CLEAR(self->isolation_level);
-    if (pysqlite_connection_set_isolation_level(self, isolation_level, NULL) != 0) {
-        Py_DECREF(isolation_level);
-        return -1;
-    }
-    Py_DECREF(isolation_level);
 
-    self->statement_cache = new_statement_cache(self, cached_statements);
-    if (self->statement_cache == NULL) {
-        return -1;
-    }
-    if (PyErr_Occurred()) {
+    // Create LRU statement cache; returns a new reference.
+    PyObject *statement_cache = new_statement_cache(self, state, cache_size);
+    if (statement_cache == NULL) {
         return -1;
     }
 
-    self->created_cursors = 0;
-
-    /* Create list of weak references to cursors */
-    self->cursors = PyList_New(0);
-    if (self->cursors == NULL) {
+    // Create list of weak references to cursors.
+    PyObject *cursors = PyList_New(0);
+    if (cursors == NULL) {
+        Py_DECREF(statement_cache);
         return -1;
     }
 
+    // Init connection state members.
+    self->db = db;
+    self->state = state;
     self->detect_types = detect_types;
-    (void)sqlite3_busy_timeout(self->db, (int)(timeout*1000));
-    self->thread_ident = PyThread_get_thread_ident();
+    self->begin_statement = begin_statement;
     self->check_same_thread = check_same_thread;
+    self->thread_ident = PyThread_get_thread_ident();
+    self->statement_cache = statement_cache;
+    self->cursors = cursors;
+    self->created_cursors = 0;
+    self->row_factory = Py_NewRef(Py_None);
+    self->text_factory = Py_NewRef(&PyUnicode_Type);
+    self->trace_ctx = NULL;
+    self->progress_ctx = NULL;
+    self->authorizer_ctx = NULL;
 
-    set_callback_context(&self->trace_ctx, NULL);
-    set_callback_context(&self->progress_ctx, NULL);
-    set_callback_context(&self->authorizer_ctx, NULL);
-
+    // Borrowed refs
     self->Warning               = state->Warning;
     self->Error                 = state->Error;
     self->InterfaceError        = state->InterfaceError;
@@ -230,7 +256,6 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
     }
 
     self->initialized = 1;
-
     return 0;
 }
 
@@ -268,7 +293,6 @@ static int
 connection_traverse(pysqlite_Connection *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
-    Py_VISIT(self->isolation_level);
     Py_VISIT(self->statement_cache);
     Py_VISIT(self->cursors);
     Py_VISIT(self->row_factory);
@@ -292,7 +316,6 @@ clear_callback_context(callback_context *ctx)
 static int
 connection_clear(pysqlite_Connection *self)
 {
-    Py_CLEAR(self->isolation_level);
     Py_CLEAR(self->statement_cache);
     Py_CLEAR(self->cursors);
     Py_CLEAR(self->row_factory);
@@ -304,21 +327,27 @@ connection_clear(pysqlite_Connection *self)
 }
 
 static void
-connection_close(pysqlite_Connection *self)
-{
-    if (self->db) {
-        int rc = sqlite3_close_v2(self->db);
-        assert(rc == SQLITE_OK), (void)rc;
-        self->db = NULL;
-    }
-}
-
-static void
 free_callback_contexts(pysqlite_Connection *self)
 {
     set_callback_context(&self->trace_ctx, NULL);
     set_callback_context(&self->progress_ctx, NULL);
     set_callback_context(&self->authorizer_ctx, NULL);
+}
+
+static void
+connection_close(pysqlite_Connection *self)
+{
+    if (self->db) {
+        free_callback_contexts(self);
+
+        sqlite3 *db = self->db;
+        self->db = NULL;
+
+        Py_BEGIN_ALLOW_THREADS
+        int rc = sqlite3_close_v2(db);
+        assert(rc == SQLITE_OK), (void)rc;
+        Py_END_ALLOW_THREADS
+    }
 }
 
 static void
@@ -330,7 +359,6 @@ connection_dealloc(pysqlite_Connection *self)
 
     /* Clean up if user has not called .close() explicitly. */
     connection_close(self);
-    free_callback_contexts(self);
 
     tp->tp_free(self);
     Py_DECREF(tp);
@@ -1321,7 +1349,12 @@ static PyObject* pysqlite_connection_get_isolation_level(pysqlite_Connection* se
     if (!pysqlite_check_connection(self)) {
         return NULL;
     }
-    return Py_NewRef(self->isolation_level);
+    if (self->begin_statement != NULL) {
+        const char *stmt = self->begin_statement;
+        const char *iso_level = begin_stmt_to_isolation_level(stmt);
+        return PyUnicode_FromString(iso_level);
+    }
+    Py_RETURN_NONE;
 }
 
 static PyObject* pysqlite_connection_get_total_changes(pysqlite_Connection* self, void* unused)
@@ -1351,53 +1384,37 @@ pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* iso
         PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
         return -1;
     }
-    if (isolation_level == Py_None) {
-        /* We might get called during connection init, so we cannot use
-         * pysqlite_connection_commit() here. */
-        if (self->db && !sqlite3_get_autocommit(self->db)) {
-            int rc;
-            Py_BEGIN_ALLOW_THREADS
-            rc = sqlite3_exec(self->db, "COMMIT", NULL, NULL, NULL);
-            Py_END_ALLOW_THREADS
-            if (rc != SQLITE_OK) {
-                return _pysqlite_seterror(self->state, self->db);
-            }
-        }
-
+    if (Py_IsNone(isolation_level)) {
         self->begin_statement = NULL;
-    } else {
-        const char * const *candidate;
-        PyObject *uppercase_level;
-        _Py_IDENTIFIER(upper);
 
-        if (!PyUnicode_Check(isolation_level)) {
-            PyErr_Format(PyExc_TypeError,
-                         "isolation_level must be a string or None, not %.100s",
-                         Py_TYPE(isolation_level)->tp_name);
+        // Execute a COMMIT to re-enable autocommit mode
+        PyObject *res = pysqlite_connection_commit_impl(self);
+        if (res == NULL) {
             return -1;
         }
-
-        uppercase_level = _PyObject_CallMethodIdOneArg(
-                        (PyObject *)&PyUnicode_Type, &PyId_upper,
-                        isolation_level);
-        if (!uppercase_level) {
-            return -1;
-        }
-        for (candidate = begin_statements; *candidate; candidate++) {
-            if (_PyUnicode_EqualToASCIIString(uppercase_level, *candidate + 6))
-                break;
-        }
-        Py_DECREF(uppercase_level);
-        if (!*candidate) {
-            PyErr_SetString(PyExc_ValueError,
-                            "invalid value for isolation_level");
-            return -1;
-        }
-        self->begin_statement = *candidate;
+        Py_DECREF(res);
     }
-
-    Py_INCREF(isolation_level);
-    Py_XSETREF(self->isolation_level, isolation_level);
+    else if (PyUnicode_Check(isolation_level)) {
+        Py_ssize_t len;
+        const char *cstr_level = PyUnicode_AsUTF8AndSize(isolation_level, &len);
+        if (cstr_level == NULL) {
+            return -1;
+        }
+        if (strlen(cstr_level) != (size_t)len) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            return -1;
+        }
+        const char *stmt = get_begin_statement(cstr_level);
+        if (stmt == NULL) {
+            return -1;
+        }
+        self->begin_statement = stmt;
+    }
+    else {
+        PyErr_SetString(PyExc_TypeError,
+                        "isolation_level must be str or None");
+        return -1;
+    }
     return 0;
 }
 

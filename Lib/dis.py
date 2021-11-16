@@ -7,6 +7,7 @@ import io
 
 from opcode import *
 from opcode import __all__ as _opcodes_all
+from opcode import _nb_ops
 
 __all__ = ["code_info", "dis", "disassemble", "distb", "disco",
            "findlinestarts", "findlabels", "show_code",
@@ -27,6 +28,7 @@ MAKE_FUNCTION = opmap['MAKE_FUNCTION']
 MAKE_FUNCTION_FLAGS = ('defaults', 'kwdefaults', 'annotations', 'closure')
 
 LOAD_CONST = opmap['LOAD_CONST']
+BINARY_OP = opmap['BINARY_OP']
 
 def _try_compile(source, name):
     """Attempts to compile the given source, first as an expression and
@@ -446,6 +448,8 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
             elif op == MAKE_FUNCTION:
                 argrepr = ', '.join(s for i, s in enumerate(MAKE_FUNCTION_FLAGS)
                                     if arg & (1<<i))
+            elif op == BINARY_OP:
+                _, argrepr = _nb_ops[arg]
         yield Instruction(opname[op], op,
                           arg, argval, argrepr,
                           offset, starts_line, is_jump_target, positions)

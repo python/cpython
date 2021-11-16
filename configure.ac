@@ -155,6 +155,36 @@ define_xopen_source=yes
 AC_SUBST(CONFIG_ARGS)
 CONFIG_ARGS="$ac_configure_args"
 
+dnl Allow users to disable pkg-config or require pkg-config
+AC_ARG_WITH(
+  [pkg-config],
+  [AS_HELP_STRING([[--with-pkg-config=[yes|no|check]]],
+                  [use pkg-config to detect build options (default is check)])],
+  [],
+  [with_pkg_config=check]
+)
+AS_CASE([$with_pkg_config],
+  [yes|check], [
+    if test -z "$PKG_CONFIG"; then
+      dnl invalidate stale config.cache values
+      AS_UNSET([PKG_CONFIG])
+      AS_UNSET([ac_cv_path_ac_pt_PKG_CONFIG])
+      AS_UNSET([ac_cv_prog_ac_ct_PKG_CONFIG])
+    fi
+    PKG_PROG_PKG_CONFIG
+  ],
+  [no], [
+    PKG_CONFIG=''
+    dnl force AX_CHECK_OPENSSL to ignore pkg-config
+    ac_cv_path_ac_pt_PKG_CONFIG=''
+    ac_cv_prog_ac_ct_PKG_CONFIG=''
+  ],
+  [AC_MSG_ERROR([invalid argument --with-pkg-config=$with_pkg_config])]
+)
+if test "$with_pkg_config" = yes -a -z "$PKG_CONFIG"; then
+  AC_MSG_ERROR([pkg-config is required])]
+fi
+
 AC_MSG_CHECKING([for --enable-universalsdk])
 AC_ARG_ENABLE(universalsdk,
 	AS_HELP_STRING([--enable-universalsdk@<:@=SDKDIR@:>@],
@@ -2978,8 +3008,6 @@ LIBS="$withval $LIBS"
 ],
 [AC_MSG_RESULT(no)])
 
-PKG_PROG_PKG_CONFIG
-
 # Check for use of the system expat library
 AC_MSG_CHECKING(for --with-system-expat)
 AC_ARG_WITH(system_expat,
@@ -2988,6 +3016,20 @@ AC_ARG_WITH(system_expat,
             [with_system_expat="no"])
 
 AC_MSG_RESULT($with_system_expat)
+
+AS_VAR_IF([with_system_expat], [yes], [
+  LIBEXPAT_CFLAGS=""
+  LIBEXPAT_LDFLAGS="-lexpat"
+  LIBEXPAT_INTERNAL=
+], [
+  LIBEXPAT_CFLAGS="-I\$(srcdir)/Modules/expat"
+  LIBEXPAT_LDFLAGS="-lm \$(LIBEXPAT_A)"
+  LIBEXPAT_INTERNAL="\$(LIBEXPAT_A)"
+])
+
+AC_SUBST([LIBEXPAT_CFLAGS])
+AC_SUBST([LIBEXPAT_LDFLAGS])
+AC_SUBST([LIBEXPAT_INTERNAL])
 
 # Check for use of the system libffi library
 AC_MSG_CHECKING(for --with-system-ffi)
@@ -3029,8 +3071,21 @@ AC_ARG_WITH(system_libmpdec,
             AS_HELP_STRING([--with-system-libmpdec], [build _decimal module using an installed libmpdec library, see Doc/library/decimal.rst (default is no)]),
             [],
             [with_system_libmpdec="no"])
-
 AC_MSG_RESULT($with_system_libmpdec)
+
+AS_VAR_IF([with_system_libmpdec], [yes], [
+  LIBMPDEC_CFLAGS=""
+  LIBMPDEC_LDFLAGS="-lmpdec"
+  LIBMPDEC_INTERNAL=
+], [
+  LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
+  LIBMPDEC_LDFLAGS="-lm \$(LIBMPDEC_A)"
+  LIBMPDEC_INTERNAL="\$(LIBMPDEC_A)"
+])
+
+AC_SUBST([LIBMPDEC_CFLAGS])
+AC_SUBST([LIBMPDEC_LDFLAGS])
+AC_SUBST([LIBMPDEC_INTERNAL])
 
 # Check whether _decimal should use a coroutine-local or thread-local context
 AC_MSG_CHECKING(for --with-decimal-contextvar)
@@ -3046,6 +3101,69 @@ then
 fi
 
 AC_MSG_RESULT($with_decimal_contextvar)
+
+# Check for libmpdec machine flavor
+AC_MSG_CHECKING(for decimal libmpdec machine)
+AS_CASE([$ac_sys_system],
+  [Darwin*], [libmpdec_system=Darwin],
+  [SunOS*], [libmpdec_system=sunos],
+  [libmpdec_system=other]
+)
+
+libmpdec_machine=unknown
+if test "$libmpdec_system" = Darwin; then
+    AS_CASE([$MACOSX_DEFAULT_ARCH],
+      [i386],   [libmpdec_machine=ansi32],
+      [ppc],    [libmpdec_machine=ansi32],
+      [x86_64], [libmpdec_machine=x64],
+      [ppc64],  [libmpdec_machine=ansi64],
+      [arm64],  [libmpdec_machine=ansi64],
+      [libmpdec_machine=universal]
+    )
+elif test $ac_cv_sizeof_size_t -eq 8; then
+    if test "$ac_cv_gcc_asm_for_x64" = yes; then
+        libmpdec_machine=x64
+    elif test "$ac_cv_type___uint128_t" = yes; then
+        libmpdec_machine=uint128
+    else
+        libmpdec_machine=ansi64
+    fi
+elif test $ac_cv_sizeof_size_t -eq 4; then
+    if test "$ac_cv_gcc_asm_for_x87" = yes -a "$libmpdec_system" != sunos; then
+        AS_CASE([$CC],
+            [*gcc*],   [libmpdec_machine=ppro],
+            [*clang*], [libmpdec_machine=ppro],
+            [libmpdec_machine=ansi32]
+        )
+    else
+        libmpdec_machine=ansi32
+    fi
+fi
+AC_MSG_RESULT([$libmpdec_machine])
+
+AS_CASE([$libmpdec_machine],
+  [x64],         [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_64=1 -DASM=1"])],
+  [uint128],     [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_64=1 -DANSI=1 -DHAVE_UINT128_T=1"])],
+  [ansi64],      [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_64=1 -DANSI=1"])],
+  [ppro],        [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_32=1 -DANSI=1 -DASM=1 -Wno-unknown-pragmas"])],
+  [ansi32],      [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_32=1 -DANSI=1"])],
+  [ansi-legacy], [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_32=1 -DANSI=1 -DLEGACY_COMPILER=1"])],
+  [universal],   [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DUNIVERSAL=1"])],
+  [AC_MSG_ERROR([_decimal: unsupported architecture])]
+)
+
+if test "$have_ipa_pure_const_bug" = yes; then
+    # Some versions of gcc miscompile inline asm:
+    # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
+    # https://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
+    AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -fno-ipa-pure-const"])
+fi
+
+if test "$have_glibc_memmove_bug" = yes; then
+    # _FORTIFY_SOURCE wrappers for memmove and bcopy are incorrect:
+    # https://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
+    AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -U_FORTIFY_SOURCE"])
+fi
 
 # Check for support for loadable sqlite extensions
 AC_MSG_CHECKING(for --enable-loadable-sqlite-extensions)
@@ -3094,6 +3212,74 @@ else
   TCLTK_LIBS="$with_tcltk_libs"
 fi
 
+# check for _gdbmmodulec dependencies
+AC_CHECK_HEADERS([gdbm.h], [
+  LIBS_SAVE=$LIBS
+  AC_CHECK_LIB([gdbm], [gdbm_open])
+  LIBS=$LIBS_SAVE
+])
+
+# check for _dbmmodule.c dependencies
+AC_CHECK_HEADERS([ndbm.h], [
+  LIBS_SAVE="$LIBS"
+  AC_CHECK_LIB([ndbm], [dbm_open])
+  LIBS="$LIBS_SAVE"
+  AC_CHECK_LIB([gdbm_compat], [dbm_open])
+  LIBS="$LIBS_SAVE"
+])
+
+# "gdbm-ndbm.h" and "gdbm/ndbm.h" are both normalized to "gdbm_ndbm_h"
+# unset ac_cv_header_gdbm_ndbm_h to prevent false positive cache hits.
+AS_UNSET([ac_cv_header_gdbm_ndbm_h])
+AC_CACHE_VAL([ac_cv_header_gdbm_slash_ndbm_h], [
+  AC_CHECK_HEADER(
+    [gdbm/ndbm.h],
+    [ac_cv_header_gdbm_slash_ndbm_h=yes], [ac_cv_header_gdbm_slash_ndbm_h=no]
+  )
+])
+AS_VAR_IF([ac_cv_header_gdbm_slash_ndbm_h], [yes], [
+  AC_DEFINE([HAVE_GDBM_NDBM_H], [1], [Define to 1 if you have the <gdbm/ndbm.h> header file.])
+])
+
+AS_UNSET([ac_cv_header_gdbm_ndbm_h])
+AC_CACHE_VAL([ac_cv_header_gdbm_dash_ndbm_h], [
+  AC_CHECK_HEADER(
+    [gdbm-ndbm.h],
+    [ac_cv_header_gdbm_dash_ndbm_h=yes], [ac_cv_header_gdbm_dash_ndbm_h=no]
+  )
+])
+AS_VAR_IF([ac_cv_header_gdbm_dash_ndbm_h], [yes], [
+  AC_DEFINE([HAVE_GDBM_DASH_NDBM_H], [1], [Define to 1 if you have the <gdbm-ndbm.h> header file.])
+])
+AS_UNSET([ac_cv_header_gdbm_ndbm_h])
+
+if test "$ac_cv_header_gdbm_slash_ndbm_h" = yes -o "$ac_cv_header_gdbm_dash_ndbm_h" = yes; then
+  LIBS_SAVE="$LIBS"
+  AC_CHECK_LIB([gdbm_compat], [dbm_open])
+  LIBS="$LIBS_SAVE"
+fi
+
+# Check for libdb >= 5 with dbm_open()
+# db.h re-defines the name of the function
+AC_CHECK_HEADERS([db.h], [
+  AC_CACHE_CHECK([for libdb], [ac_cv_have_libdb], [
+    LIBS_SAVE="$LIBS"
+    LIBS="$LIBS -ldb"
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([
+      #define DB_DBM_HSEARCH 1
+      #include <db.h>
+      #if DB_VERSION_MAJOR < 5
+        #error "dh.h: DB_VERSION_MAJOR < 5 is not supported."
+      #endif
+      ], [DBM *dbm = dbm_open(NULL, 0, 0)])
+    ], [ac_cv_have_libdb=yes], [ac_cv_have_libdb=no])
+    LIBS="$LIBS_SAVE"
+  ])
+  AS_VAR_IF([ac_cv_have_libdb], [yes], [
+    AC_DEFINE([HAVE_LIBDB], [1], [Define to 1 if you have the `db' library (-ldb).])
+  ])
+])
+
 # Check for --with-dbmliborder
 AC_MSG_CHECKING(for --with-dbmliborder)
 AC_ARG_WITH(dbmliborder,
@@ -3103,12 +3289,15 @@ if test x$with_dbmliborder = xyes
 then
 AC_MSG_ERROR([proper usage is --with-dbmliborder=db1:db2:...])
 else
-  for db in `echo $with_dbmliborder | sed 's/:/ /g'`; do
+  as_save_IFS=$IFS
+  IFS=:
+  for db in $with_dbmliborder; do
     if test x$db != xndbm && test x$db != xgdbm && test x$db != xbdb
     then
       AC_MSG_ERROR([proper usage is --with-dbmliborder=db1:db2:...])
     fi
   done
+  IFS=$as_save_IFS
 fi])
 AC_MSG_RESULT($with_dbmliborder)
 
@@ -5313,7 +5502,8 @@ SRCDIRS="\
   Objects \
   Parser \
   Programs \
-  Python"
+  Python \
+  Python/deepfreeze"
 AC_MSG_CHECKING(for build directories)
 for dir in $SRCDIRS; do
     if test ! -d $dir; then

@@ -45,16 +45,8 @@ command will be accumulated (using your own 'collect_incoming_data'
 method) up to the terminator, and then control will be returned to
 you - by calling your self.found_terminator() method.
 """
-import asyncore
+from test.support import _asyncore as asyncore
 from collections import deque
-
-from warnings import warn
-warn(
-    'The asynchat module is deprecated. '
-    'The recommended replacement is asyncio',
-    DeprecationWarning,
-    stacklevel=2)
-
 
 
 class async_chat(asyncore.dispatcher):
