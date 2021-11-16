@@ -2449,7 +2449,7 @@ class TestAddSubparsers(TestCase):
 
         # return the main parser
         return parser
-    
+
     def _get_parser_with_shared_option(self):
         parser = ErrorRaisingArgumentParser(prog='PROG', description='main description')
         parser.add_argument('-f', '--foo', default='0')
