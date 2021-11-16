@@ -424,7 +424,7 @@ ABC hierarchy::
 
         - :attr:`__name__`
             The module's fully-qualified name.
-            It is ``'__main__'`` for a top-level module.
+            It is ``'__main__'`` for an executed module.
 
         - :attr:`__file__`
             The location the :term:`loader` used to load the module.
