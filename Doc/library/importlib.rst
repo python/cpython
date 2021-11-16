@@ -427,7 +427,7 @@ ABC hierarchy::
             It is ``'__main__'`` for a top-level module.
 
         - :attr:`__file__`
-            The location the :term:`loader` should use to load the module.
+            The location the :term:`loader` used to load the module.
             For example, for modules loaded from a .py file this is the filename.
             It is not set on all modules (e.g. built-in modules).
 
