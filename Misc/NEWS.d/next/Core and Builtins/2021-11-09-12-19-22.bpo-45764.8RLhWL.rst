@@ -1,0 +1,9 @@
+The parser now gives a better error message when leaving out the opening
+parenthesis ``(`` after a ``def``-statement::
+
+    >>> def f:
+      File "<stdin>", line 1
+        def f:
+             ^
+    SyntaxError: expected '('
+

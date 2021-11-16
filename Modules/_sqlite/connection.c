@@ -79,7 +79,6 @@ static const char * const begin_statements[] = {
     NULL
 };
 
-static int pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* isolation_level, void *Py_UNUSED(ignored));
 static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self);
 static void free_callback_context(callback_context *ctx);
 static void set_callback_context(callback_context **ctx_pp,
@@ -107,6 +106,33 @@ new_statement_cache(pysqlite_Connection *self, int maxsize)
     return res;
 }
 
+static inline const char *
+begin_stmt_to_isolation_level(const char *begin_stmt)
+{
+    assert(begin_stmt != NULL);
+
+    // All begin statements start with "BEGIN "; add strlen("BEGIN ") to get
+    // the isolation level.
+    return begin_stmt + 6;
+}
+
+static const char *
+get_begin_statement(const char *level)
+{
+    assert(level != NULL);
+    for (int i = 0; begin_statements[i] != NULL; i++) {
+        const char *stmt = begin_statements[i];
+        const char *candidate = begin_stmt_to_isolation_level(stmt);
+        if (sqlite3_stricmp(level, candidate) == 0) {
+            return begin_statements[i];
+        }
+    }
+    PyErr_SetString(PyExc_ValueError,
+                    "isolation_level string must be '', 'DEFERRED', "
+                    "'IMMEDIATE', or 'EXCLUSIVE'");
+    return NULL;
+}
+
 /*[python input]
 class FSConverter_converter(CConverter):
     type = "const char *"
@@ -124,7 +150,7 @@ _sqlite3.Connection.__init__ as pysqlite_connection_init
     database: FSConverter
     timeout: double = 5.0
     detect_types: int = 0
-    isolation_level: object = NULL
+    isolation_level: str(accept={str, NoneType}) = ""
     check_same_thread: bool(accept={int}) = True
     factory: object(c_default='(PyObject*)clinic_state()->ConnectionType') = ConnectionType
     cached_statements: int = 128
@@ -134,10 +160,10 @@ _sqlite3.Connection.__init__ as pysqlite_connection_init
 static int
 pysqlite_connection_init_impl(pysqlite_Connection *self,
                               const char *database, double timeout,
-                              int detect_types, PyObject *isolation_level,
+                              int detect_types, const char *isolation_level,
                               int check_same_thread, PyObject *factory,
                               int cached_statements, int uri)
-/*[clinic end generated code: output=bc39e55eb0b68783 input=f8d1f7efc0d84104]*/
+/*[clinic end generated code: output=d8c37afc46d318b0 input=adfb29ac461f9e61]*/
 {
     int rc;
 
@@ -147,8 +173,6 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
 
     pysqlite_state *state = pysqlite_get_state_by_type(Py_TYPE(self));
     self->state = state;
-
-    self->begin_statement = NULL;
 
     Py_CLEAR(self->statement_cache);
     Py_CLEAR(self->cursors);
@@ -174,20 +198,16 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
         return -1;
     }
 
-    if (!isolation_level) {
-        isolation_level = PyUnicode_FromString("");
-        if (!isolation_level) {
+    if (isolation_level) {
+        const char *stmt = get_begin_statement(isolation_level);
+        if (stmt == NULL) {
             return -1;
         }
-    } else {
-        Py_INCREF(isolation_level);
+        self->begin_statement = stmt;
     }
-    Py_CLEAR(self->isolation_level);
-    if (pysqlite_connection_set_isolation_level(self, isolation_level, NULL) != 0) {
-        Py_DECREF(isolation_level);
-        return -1;
+    else {
+        self->begin_statement = NULL;
     }
-    Py_DECREF(isolation_level);
 
     self->statement_cache = new_statement_cache(self, cached_statements);
     if (self->statement_cache == NULL) {
@@ -268,7 +288,6 @@ static int
 connection_traverse(pysqlite_Connection *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
-    Py_VISIT(self->isolation_level);
     Py_VISIT(self->statement_cache);
     Py_VISIT(self->cursors);
     Py_VISIT(self->row_factory);
@@ -292,7 +311,6 @@ clear_callback_context(callback_context *ctx)
 static int
 connection_clear(pysqlite_Connection *self)
 {
-    Py_CLEAR(self->isolation_level);
     Py_CLEAR(self->statement_cache);
     Py_CLEAR(self->cursors);
     Py_CLEAR(self->row_factory);
@@ -1225,7 +1243,7 @@ pysqlite_connection_set_trace_callback_impl(pysqlite_Connection *self,
     Py_RETURN_NONE;
 }
 
-#ifndef SQLITE_OMIT_LOAD_EXTENSION
+#ifdef PY_SQLITE_ENABLE_LOAD_EXTENSION
 /*[clinic input]
 _sqlite3.Connection.enable_load_extension as pysqlite_connection_enable_load_extension
 
@@ -1317,7 +1335,12 @@ static PyObject* pysqlite_connection_get_isolation_level(pysqlite_Connection* se
     if (!pysqlite_check_connection(self)) {
         return NULL;
     }
-    return Py_NewRef(self->isolation_level);
+    if (self->begin_statement != NULL) {
+        const char *stmt = self->begin_statement;
+        const char *iso_level = begin_stmt_to_isolation_level(stmt);
+        return PyUnicode_FromString(iso_level);
+    }
+    Py_RETURN_NONE;
 }
 
 static PyObject* pysqlite_connection_get_total_changes(pysqlite_Connection* self, void* unused)
@@ -1347,53 +1370,37 @@ pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* iso
         PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
         return -1;
     }
-    if (isolation_level == Py_None) {
-        /* We might get called during connection init, so we cannot use
-         * pysqlite_connection_commit() here. */
-        if (self->db && !sqlite3_get_autocommit(self->db)) {
-            int rc;
-            Py_BEGIN_ALLOW_THREADS
-            rc = sqlite3_exec(self->db, "COMMIT", NULL, NULL, NULL);
-            Py_END_ALLOW_THREADS
-            if (rc != SQLITE_OK) {
-                return _pysqlite_seterror(self->state, self->db);
-            }
-        }
-
+    if (Py_IsNone(isolation_level)) {
         self->begin_statement = NULL;
-    } else {
-        const char * const *candidate;
-        PyObject *uppercase_level;
-        _Py_IDENTIFIER(upper);
 
-        if (!PyUnicode_Check(isolation_level)) {
-            PyErr_Format(PyExc_TypeError,
-                         "isolation_level must be a string or None, not %.100s",
-                         Py_TYPE(isolation_level)->tp_name);
+        // Execute a COMMIT to re-enable autocommit mode
+        PyObject *res = pysqlite_connection_commit_impl(self);
+        if (res == NULL) {
             return -1;
         }
-
-        uppercase_level = _PyObject_CallMethodIdOneArg(
-                        (PyObject *)&PyUnicode_Type, &PyId_upper,
-                        isolation_level);
-        if (!uppercase_level) {
-            return -1;
-        }
-        for (candidate = begin_statements; *candidate; candidate++) {
-            if (_PyUnicode_EqualToASCIIString(uppercase_level, *candidate + 6))
-                break;
-        }
-        Py_DECREF(uppercase_level);
-        if (!*candidate) {
-            PyErr_SetString(PyExc_ValueError,
-                            "invalid value for isolation_level");
-            return -1;
-        }
-        self->begin_statement = *candidate;
+        Py_DECREF(res);
     }
-
-    Py_INCREF(isolation_level);
-    Py_XSETREF(self->isolation_level, isolation_level);
+    else if (PyUnicode_Check(isolation_level)) {
+        Py_ssize_t len;
+        const char *cstr_level = PyUnicode_AsUTF8AndSize(isolation_level, &len);
+        if (cstr_level == NULL) {
+            return -1;
+        }
+        if (strlen(cstr_level) != (size_t)len) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            return -1;
+        }
+        const char *stmt = get_begin_statement(cstr_level);
+        if (stmt == NULL) {
+            return -1;
+        }
+        self->begin_statement = stmt;
+    }
+    else {
+        PyErr_SetString(PyExc_TypeError,
+                        "isolation_level must be str or None");
+        return -1;
+    }
     return 0;
 }
 
@@ -1896,6 +1903,57 @@ pysqlite_connection_exit_impl(pysqlite_Connection *self, PyObject *exc_type,
     Py_RETURN_FALSE;
 }
 
+/*[clinic input]
+_sqlite3.Connection.setlimit as setlimit
+
+    category: int
+        The limit category to be set.
+    limit: int
+        The new limit. If the new limit is a negative number, the limit is
+        unchanged.
+    /
+
+Set connection run-time limits.
+
+Attempts to increase a limit above its hard upper bound are silently truncated
+to the hard upper bound. Regardless of whether or not the limit was changed,
+the prior value of the limit is returned.
+[clinic start generated code]*/
+
+static PyObject *
+setlimit_impl(pysqlite_Connection *self, int category, int limit)
+/*[clinic end generated code: output=0d208213f8d68ccd input=9bd469537e195635]*/
+{
+    if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
+        return NULL;
+    }
+
+    int old_limit = sqlite3_limit(self->db, category, limit);
+    if (old_limit < 0) {
+        PyErr_SetString(self->ProgrammingError, "'category' is out of bounds");
+        return NULL;
+    }
+    return PyLong_FromLong(old_limit);
+}
+
+/*[clinic input]
+_sqlite3.Connection.getlimit as getlimit
+
+    category: int
+        The limit category to be queried.
+    /
+
+Get connection run-time limits.
+[clinic start generated code]*/
+
+static PyObject *
+getlimit_impl(pysqlite_Connection *self, int category)
+/*[clinic end generated code: output=7c3f5d11f24cecb1 input=61e0849fb4fb058f]*/
+{
+    return setlimit_impl(self, category, -1);
+}
+
+
 static const char connection_doc[] =
 PyDoc_STR("SQLite database connection object.");
 
@@ -1927,6 +1985,8 @@ static PyMethodDef connection_methods[] = {
     PYSQLITE_CONNECTION_SET_AUTHORIZER_METHODDEF
     PYSQLITE_CONNECTION_SET_PROGRESS_HANDLER_METHODDEF
     PYSQLITE_CONNECTION_SET_TRACE_CALLBACK_METHODDEF
+    SETLIMIT_METHODDEF
+    GETLIMIT_METHODDEF
     {NULL, NULL}
 };
 

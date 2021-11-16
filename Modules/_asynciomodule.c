@@ -1371,10 +1371,15 @@ _asyncio_Future__make_cancelled_error_impl(FutureObj *self)
 {
     PyObject *exc = create_cancelled_error(self->fut_cancel_msg);
     _PyErr_StackItem *exc_state = &self->fut_cancelled_exc_state;
-    /* Transfer ownership of exc_value from exc_state to exc since we are
-       done with it. */
-    PyException_SetContext(exc, exc_state->exc_value);
-    exc_state->exc_value = NULL;
+
+    if (exc_state->exc_value) {
+        PyException_SetContext(exc, Py_NewRef(exc_state->exc_value));
+        _PyErr_ClearExcState(exc_state);
+    }
+    else {
+        assert(exc_state->exc_type == NULL);
+        assert(exc_state->exc_traceback == NULL);
+    }
 
     return exc;
 }

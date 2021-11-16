@@ -191,8 +191,8 @@ compute_range_length(PyObject *start, PyObject *stop, PyObject *step)
     PyObject *tmp1 = NULL, *tmp2 = NULL, *result;
                 /* holds sub-expression evaluations */
 
-    PyObject *zero = PY_ZERO();  // borrowed reference
-    PyObject *one = PY_ONE();  // borrowed reference
+    PyObject *zero = _PyLong_GetZero();  // borrowed reference
+    PyObject *one = _PyLong_GetOne();  // borrowed reference
 
     cmp_result = PyObject_RichCompareBool(step, zero, Py_GT);
     if (cmp_result == -1)
@@ -277,7 +277,7 @@ compute_item(rangeobject *r, PyObject *i)
 static PyObject *
 compute_range_item(rangeobject *r, PyObject *arg)
 {
-    PyObject *zero = PY_ZERO();  // borrowed reference
+    PyObject *zero = _PyLong_GetZero();  // borrowed reference
     int cmp_result;
     PyObject *i, *result;
 
@@ -382,7 +382,7 @@ fail:
 static int
 range_contains_long(rangeobject *r, PyObject *ob)
 {
-    PyObject *zero = PY_ZERO();  // borrowed reference
+    PyObject *zero = _PyLong_GetZero();  // borrowed reference
     int cmp1, cmp2, cmp3;
     PyObject *tmp1 = NULL;
     PyObject *tmp2 = NULL;
@@ -974,7 +974,7 @@ longrangeiter_reduce(longrangeiterobject *r, PyObject *Py_UNUSED(ignored))
 static PyObject *
 longrangeiter_setstate(longrangeiterobject *r, PyObject *state)
 {
-    PyObject *zero = PY_ZERO();  // borrowed reference
+    PyObject *zero = _PyLong_GetZero();  // borrowed reference
     int cmp;
 
     /* clip the value */
@@ -1130,7 +1130,7 @@ range_iter(PyObject *seq)
     it->start = r->start;
     it->step = r->step;
     it->len = r->length;
-    it->index = PY_ZERO();
+    it->index = _PyLong_GetZero();
     Py_INCREF(it->start);
     Py_INCREF(it->step);
     Py_INCREF(it->len);
@@ -1237,7 +1237,7 @@ long_range:
     if (!it->step)
         goto create_failure;
 
-    it->index = PY_ZERO();
+    it->index = _PyLong_GetZero();
     Py_INCREF(it->index);
     return (PyObject *)it;
 

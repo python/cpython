@@ -72,7 +72,7 @@ create_filter(PyObject *category, _Py_Identifier *id, const char *modname)
 
     /* This assumes the line number is zero for now. */
     PyObject *filter = PyTuple_Pack(5, action_str, Py_None,
-                                    category, modname_obj, PY_ZERO());
+                                    category, modname_obj, _PyLong_GetZero());
     Py_DECREF(modname_obj);
     return filter;
 }
@@ -470,7 +470,7 @@ update_registry(PyObject *registry, PyObject *text, PyObject *category,
     int rc;
 
     if (add_zero)
-        altkey = PyTuple_Pack(3, text, category, PY_ZERO());
+        altkey = PyTuple_Pack(3, text, category, _PyLong_GetZero());
     else
         altkey = PyTuple_Pack(2, text, category);
 

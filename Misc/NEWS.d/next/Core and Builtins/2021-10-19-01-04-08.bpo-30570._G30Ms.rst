@@ -1,1 +1,0 @@
-Fixed a crash in ``issubclass()`` from infinite recursion when searching pathological ``__bases__`` tuples.

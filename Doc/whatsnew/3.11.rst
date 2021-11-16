@@ -242,11 +242,22 @@ sqlite3
   now raise :exc:`UnicodeEncodeError` instead of :exc:`sqlite3.ProgrammingError`.
   (Contributed by Erlend E. Aasland in :issue:`44688`.)
 
-* :mod:`sqlite3` exceptions now include the SQLite error code as
+* :mod:`sqlite3` exceptions now include the SQLite extended error code as
   :attr:`~sqlite3.Error.sqlite_errorcode` and the SQLite error name as
   :attr:`~sqlite3.Error.sqlite_errorname`.
   (Contributed by Aviv Palivoda, Daniel Shahaf, and Erlend E. Aasland in
-  :issue:`16379`.)
+  :issue:`16379` and :issue:`24139`.)
+
+
+* Add :meth:`~sqlite3.Connection.setlimit` and
+  :meth:`~sqlite3.Connection.getlimit` to :class:`sqlite3.Connection` for
+  setting and getting SQLite limits by connection basis.
+  (Contributed by Erlend E. Aasland in :issue:`45243`.)
+
+* :mod:`sqlite3` now sets :attr:`sqlite3.threadsafety` based on the default
+  threading mode the underlying SQLite library has been compiled with.
+  (Contributed by Erlend E. Aasland in :issue:`45613`.)
+
 
 threading
 ---------
@@ -304,6 +315,9 @@ Optimizations
 CPython bytecode changes
 ========================
 
+* Replaced all numeric ``BINARY_*`` and ``INPLACE_*`` instructions with a single
+  :opcode:`BINARY_OP` implementation.
+
 * Added a new :opcode:`CALL_METHOD_KW` opcode.  Calls a method in a similar
   fashion as :opcode:`CALL_METHOD`, but also supports keyword arguments.  Works
   in tandem with :opcode:`LOAD_METHOD`.
@@ -317,6 +331,8 @@ CPython bytecode changes
 
 * Added :opcode:`COPY`, which pushes the *i*-th item to the top of the stack.
   The item is not removed from its original location.
+
+* :opcode:`JUMP_IF_NOT_EXC_MATCH` no longer pops the active exception.
 
 
 Deprecated
@@ -452,6 +468,15 @@ Removed
 
   (Contributed by Hugo van Kemenade in :issue:`45320`.)
 
+* Remove the ``asyncore`` and ``asynchat`` modules, deprecated in Python 3.6:
+  use the :mod:`asyncio` module instead.
+  (Contributed by Victor Stinner in :issue:`28533`.)
+
+* Remove the ``smtpd`` module, deprecated in Python 3.6: the `aiosmtpd
+  <https://aiosmtpd.readthedocs.io/>`__ module can be used instead, it is based
+  on asyncio.
+  (Contributed by Victor Stinner in :issue:`28533`.)
+
 
 Porting to Python 3.11
 ======================
@@ -513,6 +538,13 @@ Build Changes
   (Contributed by Brett Cannon and Christian Heimes in :issue:`45548`,
   :issue:`45570`, :issue:`45571`, and :issue:`43974`.)
 
+* The build dependencies for :mod:`zlib`, :mod:`bz2`, and :mod:`lzma` are now
+  detected by :program:`configure`.
+  (Contributed by Christian Heimes in :issue:`45763`.)
+
+* Build dependencies for :mod:`dbm` are now detected by :program:`configure`.
+  ``libdb`` 3.x and 4.x are no longer supported.
+  (Contributed by Christian Heimes in :issue:`45747`.)
 
 C API Changes
 =============

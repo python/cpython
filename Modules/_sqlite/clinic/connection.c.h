@@ -5,7 +5,7 @@ preserve
 static int
 pysqlite_connection_init_impl(pysqlite_Connection *self,
                               const char *database, double timeout,
-                              int detect_types, PyObject *isolation_level,
+                              int detect_types, const char *isolation_level,
                               int check_same_thread, PyObject *factory,
                               int cached_statements, int uri);
 
@@ -22,7 +22,7 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
     const char *database = NULL;
     double timeout = 5.0;
     int detect_types = 0;
-    PyObject *isolation_level = NULL;
+    const char *isolation_level = "";
     int check_same_thread = 1;
     PyObject *factory = (PyObject*)clinic_state()->ConnectionType;
     int cached_statements = 128;
@@ -63,7 +63,24 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
         }
     }
     if (fastargs[3]) {
-        isolation_level = fastargs[3];
+        if (fastargs[3] == Py_None) {
+            isolation_level = NULL;
+        }
+        else if (PyUnicode_Check(fastargs[3])) {
+            Py_ssize_t isolation_level_length;
+            isolation_level = PyUnicode_AsUTF8AndSize(fastargs[3], &isolation_level_length);
+            if (isolation_level == NULL) {
+                goto exit;
+            }
+            if (strlen(isolation_level) != (size_t)isolation_level_length) {
+                PyErr_SetString(PyExc_ValueError, "embedded null character");
+                goto exit;
+            }
+        }
+        else {
+            _PyArg_BadArgument("Connection", "argument 'isolation_level'", "str or None", fastargs[3]);
+            goto exit;
+        }
         if (!--noptargs) {
             goto skip_optional_pos;
         }
@@ -367,7 +384,7 @@ exit:
     return return_value;
 }
 
-#if !defined(SQLITE_OMIT_LOAD_EXTENSION)
+#if defined(PY_SQLITE_ENABLE_LOAD_EXTENSION)
 
 PyDoc_STRVAR(pysqlite_connection_enable_load_extension__doc__,
 "enable_load_extension($self, enable, /)\n"
@@ -398,9 +415,9 @@ exit:
     return return_value;
 }
 
-#endif /* !defined(SQLITE_OMIT_LOAD_EXTENSION) */
+#endif /* defined(PY_SQLITE_ENABLE_LOAD_EXTENSION) */
 
-#if !defined(SQLITE_OMIT_LOAD_EXTENSION)
+#if defined(PY_SQLITE_ENABLE_LOAD_EXTENSION)
 
 PyDoc_STRVAR(pysqlite_connection_load_extension__doc__,
 "load_extension($self, name, /)\n"
@@ -440,7 +457,7 @@ exit:
     return return_value;
 }
 
-#endif /* !defined(SQLITE_OMIT_LOAD_EXTENSION) */
+#endif /* defined(PY_SQLITE_ENABLE_LOAD_EXTENSION) */
 
 PyDoc_STRVAR(pysqlite_connection_execute__doc__,
 "execute($self, sql, parameters=<unrepresentable>, /)\n"
@@ -750,6 +767,83 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(setlimit__doc__,
+"setlimit($self, category, limit, /)\n"
+"--\n"
+"\n"
+"Set connection run-time limits.\n"
+"\n"
+"  category\n"
+"    The limit category to be set.\n"
+"  limit\n"
+"    The new limit. If the new limit is a negative number, the limit is\n"
+"    unchanged.\n"
+"\n"
+"Attempts to increase a limit above its hard upper bound are silently truncated\n"
+"to the hard upper bound. Regardless of whether or not the limit was changed,\n"
+"the prior value of the limit is returned.");
+
+#define SETLIMIT_METHODDEF    \
+    {"setlimit", (PyCFunction)(void(*)(void))setlimit, METH_FASTCALL, setlimit__doc__},
+
+static PyObject *
+setlimit_impl(pysqlite_Connection *self, int category, int limit);
+
+static PyObject *
+setlimit(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int category;
+    int limit;
+
+    if (!_PyArg_CheckPositional("setlimit", nargs, 2, 2)) {
+        goto exit;
+    }
+    category = _PyLong_AsInt(args[0]);
+    if (category == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    limit = _PyLong_AsInt(args[1]);
+    if (limit == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = setlimit_impl(self, category, limit);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(getlimit__doc__,
+"getlimit($self, category, /)\n"
+"--\n"
+"\n"
+"Get connection run-time limits.\n"
+"\n"
+"  category\n"
+"    The limit category to be queried.");
+
+#define GETLIMIT_METHODDEF    \
+    {"getlimit", (PyCFunction)getlimit, METH_O, getlimit__doc__},
+
+static PyObject *
+getlimit_impl(pysqlite_Connection *self, int category);
+
+static PyObject *
+getlimit(pysqlite_Connection *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int category;
+
+    category = _PyLong_AsInt(arg);
+    if (category == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = getlimit_impl(self, category);
+
+exit:
+    return return_value;
+}
+
 #ifndef PYSQLITE_CONNECTION_ENABLE_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_ENABLE_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_ENABLE_LOAD_EXTENSION_METHODDEF) */
@@ -757,4 +851,4 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-/*[clinic end generated code: output=7567e5d716309258 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=663b1e9e71128f19 input=a9049054013a1b77]*/

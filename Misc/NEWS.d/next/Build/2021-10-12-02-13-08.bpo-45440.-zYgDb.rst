@@ -1,4 +1,0 @@
-Building Python now requires a C99 ``<math.h>`` header file providing
-the following functions: ``copysign()``, ``hypot()``, ``isfinite()``,
-``isinf()``, ``isnan()``, ``round()``.
-Patch by Victor Stinner.

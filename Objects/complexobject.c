@@ -907,7 +907,7 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
     int ci_is_complex = 0;
 
     if (r == NULL) {
-        r = PY_ZERO();
+        r = _PyLong_GetZero();
     }
 
     /* Special-case for a single argument when type(arg) is complex. */

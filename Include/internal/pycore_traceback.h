@@ -87,6 +87,17 @@ PyAPI_FUNC(PyObject*) _PyTraceBack_FromFrame(
     PyObject *tb_next,
     PyFrameObject *frame);
 
+#define EXCEPTION_TB_HEADER "Traceback (most recent call last):\n"
+#define EXCEPTION_GROUP_TB_HEADER "Exception Group Traceback (most recent call last):\n"
+
+/* Write the traceback tb to file f. Prefix each line with
+   indent spaces followed by the margin (if it is not NULL). */
+PyAPI_FUNC(int) _PyTraceBack_Print_Indented(
+    PyObject *tb, int indent, const char* margin,
+    const char *header_margin, const char *header, PyObject *f);
+PyAPI_FUNC(int) _Py_WriteIndentedMargin(int, const char*, PyObject *);
+PyAPI_FUNC(int) _Py_WriteIndent(int, PyObject *);
+
 #ifdef __cplusplus
 }
 #endif

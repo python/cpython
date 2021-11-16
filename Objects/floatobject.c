@@ -1629,7 +1629,7 @@ float_new_impl(PyTypeObject *type, PyObject *x)
 {
     if (type != &PyFloat_Type) {
         if (x == NULL) {
-            x = PY_ZERO();
+            x = _PyLong_GetZero();
         }
         return float_subtype_new(type, x); /* Wimp out */
     }
