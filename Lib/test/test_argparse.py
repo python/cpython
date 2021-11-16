@@ -2164,17 +2164,6 @@ class TestActionUserDefined(ParserTestCase):
                 # check destination and option string
                 assert self.dest == 'spam', 'dest: %s' % self.dest
                 assert option_string == '-s', 'flag: %s' % option_string
-                # when option is before argument, badger=2, and when
-                # option is after argument, badger=<whatever was set>
-                expected_ns = NS(spam=0.25)
-                if value in [0.125, 0.625]:
-                    expected_ns.badger = 2
-                elif value in [2.0]:
-                    expected_ns.badger = 84
-                else:
-                    raise AssertionError('value: %s' % value)
-                assert expected_ns == namespace, ('expected %s, got %s' %
-                                                  (expected_ns, namespace))
             except AssertionError as e:
                 raise ArgumentParserError('opt_action failed: %s' % e)
             setattr(namespace, 'spam', value)
@@ -2187,19 +2176,6 @@ class TestActionUserDefined(ParserTestCase):
                                                option_string)
                 # check destination
                 assert self.dest == 'badger', 'dest: %s' % self.dest
-                # when argument is before option, spam=0.25, and when
-                # option is after argument, spam=<whatever was set>
-                expected_ns = NS(badger=2)
-                if value in [42, 84]:
-                    expected_ns.spam = 0.25
-                elif value in [1]:
-                    expected_ns.spam = 0.625
-                elif value in [2]:
-                    expected_ns.spam = 0.125
-                else:
-                    raise AssertionError('value: %s' % value)
-                assert expected_ns == namespace, ('expected %s, got %s' %
-                                                  (expected_ns, namespace))
             except AssertionError as e:
                 raise ArgumentParserError('arg_action failed: %s' % e)
             setattr(namespace, 'badger', value)
@@ -2472,6 +2448,16 @@ class TestAddSubparsers(TestCase):
         parser3.add_argument('u', nargs='...', help='u help')
 
         # return the main parser
+        return parser
+    
+    def _get_parser_with_shared_option(self):
+        parser = ErrorRaisingArgumentParser(prog='PROG', description='main description')
+        parser.add_argument('-f', '--foo', default='0')
+        subparsers = parser.add_subparsers()
+        parser1 = subparsers.add_parser('1')
+        parser1.add_argument('-f', '--foo', default='1')
+        parser2 = subparsers.add_parser('2')
+        parser2.add_argument('-f', '--foo', default='2')
         return parser
 
     def setUp(self):
@@ -2939,6 +2925,14 @@ class TestAddSubparsers(TestCase):
                 2                   2 help
                 3                   3 help
             """))
+
+    def test_subparsers_with_shared_option(self):
+        parser = self._get_parser_with_shared_option()
+        self.assertEqual(parser.parse_args([]), NS(foo='0'))
+        self.assertEqual(parser.parse_args(['1']), NS(foo='1'))
+        self.assertEqual(parser.parse_args(['2']), NS(foo='2'))
+        self.assertEqual(parser.parse_args(['-f', '10', '1', '-f', '42']), NS(foo='42'))
+        self.assertEqual(parser.parse_args(['1'], NS(foo='42')), NS(foo='42'))
 
 # ============
 # Groups tests

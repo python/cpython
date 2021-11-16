@@ -1095,7 +1095,8 @@ class _AppendAction(Action):
             deprecated=deprecated)
 
     def __call__(self, parser, namespace, values, option_string=None):
-        items = getattr(namespace, self.dest, None)
+        items = getattr(
+            namespace, self.dest, self.default if self.default != SUPPRESS else None)
         items = _copy_items(items)
         items.append(values)
         setattr(namespace, self.dest, items)
@@ -1124,7 +1125,8 @@ class _AppendConstAction(Action):
             deprecated=deprecated)
 
     def __call__(self, parser, namespace, values, option_string=None):
-        items = getattr(namespace, self.dest, None)
+        items = getattr(
+            namespace, self.dest, self.default if self.default != SUPPRESS else None)
         items = _copy_items(items)
         items.append(self.const)
         setattr(namespace, self.dest, items)
@@ -1311,12 +1313,7 @@ class _SubParsersAction(Action):
         # store any unrecognized options on the object, so that the top
         # level parser can decide what to do with them
 
-        # In case this subparser defines new defaults, we parse them
-        # in a new namespace object and then update the original
-        # namespace for the relevant parts.
-        subnamespace, arg_strings = subparser.parse_known_args(arg_strings, None)
-        for key, value in vars(subnamespace).items():
-            setattr(namespace, key, value)
+        _, arg_strings = parser.parse_known_args(arg_strings, namespace)
 
         if arg_strings:
             if not hasattr(namespace, _UNRECOGNIZED_ARGS_ATTR):
@@ -1325,7 +1322,8 @@ class _SubParsersAction(Action):
 
 class _ExtendAction(_AppendAction):
     def __call__(self, parser, namespace, values, option_string=None):
-        items = getattr(namespace, self.dest, None)
+        items = getattr(
+            namespace, self.dest, self.default if self.default != SUPPRESS else None)
         items = _copy_items(items)
         items.extend(values)
         setattr(namespace, self.dest, items)
@@ -2022,18 +2020,6 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         if namespace is None:
             namespace = Namespace()
 
-        # add any action defaults that aren't present
-        for action in self._actions:
-            if action.dest is not SUPPRESS:
-                if not hasattr(namespace, action.dest):
-                    if action.default is not SUPPRESS:
-                        setattr(namespace, action.dest, action.default)
-
-        # add any parser defaults that aren't present
-        for dest in self._defaults:
-            if not hasattr(namespace, dest):
-                setattr(namespace, dest, self._defaults[dest])
-
         # parse the arguments and exit if there are any errors
         if self.exit_on_error:
             try:
@@ -2042,6 +2028,11 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 self.error(str(err))
         else:
             namespace, args = self._parse_known_args(args, namespace, intermixed)
+
+        # add any parser defaults that aren't present
+        for dest in self._defaults:
+            if not hasattr(namespace, dest):
+                setattr(namespace, dest, self._defaults[dest])
 
         if hasattr(namespace, _UNRECOGNIZED_ARGS_ATTR):
             args.extend(getattr(namespace, _UNRECOGNIZED_ARGS_ATTR))
@@ -2322,16 +2313,16 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 if action.required:
                     required_actions.append(_get_action_name(action))
                 else:
-                    # Convert action default now instead of doing it before
-                    # parsing arguments to avoid calling convert functions
-                    # twice (which may fail) if the argument was given, but
-                    # only if it was defined already in the namespace
-                    if (action.default is not None and
-                        isinstance(action.default, str) and
-                        hasattr(namespace, action.dest) and
-                        action.default is getattr(namespace, action.dest)):
-                        setattr(namespace, action.dest,
-                                self._get_value(action, action.default))
+                    # Set the default value if the arg is not present after
+                    # all arguments are parsed. This ensures that default values
+                    # from subparsers override correctly
+                    if (action.dest != SUPPRESS and
+                        not hasattr(namespace, action.dest) and
+                        action.default != SUPPRESS):
+                        default_value = action.default
+                        if isinstance(default_value, str):
+                            default_value = self._get_value(action, action.default)
+                        setattr(namespace, action.dest, default_value)
 
         if required_actions:
             raise ArgumentError(None, _('the following arguments are required: %s') %
