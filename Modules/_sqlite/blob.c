@@ -523,7 +523,7 @@ blob_ass_subscript(pysqlite_Blob *self, PyObject *item, PyObject *value)
         return ass_subscript_slice(self, item, value);
     }
 
-    PyErr_SetString(PyExc_TypeError, "Blob indices must be integer");
+    PyErr_SetString(PyExc_TypeError, "Blob indices must be integers");
     return -1;
 }
 
