@@ -203,16 +203,15 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc)
     // Abort if we don't have a variable name or we have an invalid one
     // or if we don't have a traceback to work with
     if (name == NULL || !PyUnicode_CheckExact(name) ||
-        traceback == NULL || Py_IsNone((PyObject *)traceback)
+        traceback == NULL || !Py_IS_TYPE(traceback, &PyTraceBack_Type)
     ) {
         return NULL;
     }
 
     // Move to the traceback of the exception
     while (1) {
-        assert(Py_IS_TYPE(traceback, &PyTraceBack_Type));
         PyTracebackObject *next = traceback->tb_next;
-        if (next == NULL || Py_IsNone((PyObject *)traceback)) {
+        if (next == NULL || !Py_IS_TYPE(next, &PyTraceBack_Type)) {
             break;
         }
         else {
