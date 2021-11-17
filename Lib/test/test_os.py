@@ -4504,20 +4504,19 @@ class TimesTests(unittest.TestCase):
 
 
 @requires_os_func('fork')
-@requires_os_func('waitpid')
 class ForkTests(unittest.TestCase):
     def test_fork(self):
-        # bpo-42540: ensure os.fork() with non-default allocator
+        # bpo-42540: ensure os.fork() with non-default memory allocator does
+        # not crash on exit.
         code = """if 1:
             import os
+            from test import support
             pid = os.fork()
             if pid != 0:
-                _, exitcode = os.waitpid(pid, 0)
-                assert exitcode == 0
+                support.wait_process(pid, exitcode=0)
         """
         assert_python_ok("-c", code)
-        if support.with_pymalloc():
-            assert_python_ok("-c", code, PYTHONMALLOC="pymalloc_debug")
+        assert_python_ok("-c", code, PYTHONMALLOC="malloc_debug")
 
 
 # Only test if the C version is provided, otherwise TestPEP519 already tested
