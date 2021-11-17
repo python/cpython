@@ -139,10 +139,13 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
     int interp_mutex = _PyThread_at_fork_reinit(&runtime->interpreters.mutex);
-    int main_interp_id_mutex = _PyThread_at_fork_reinit(&runtime->interpreters.main->id_mutex);
     int xidregistry_mutex = _PyThread_at_fork_reinit(&runtime->xidregistry.mutex);
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    /* bpo-42540: id_mutex is freed by _PyInterpreterState_Delete, which does
+     * not force the default allocator. */
+    int main_interp_id_mutex = _PyThread_at_fork_reinit(&runtime->interpreters.main->id_mutex);
 
     if (interp_mutex < 0) {
         Py_FatalError("Can't initialize lock for runtime interpreters");
