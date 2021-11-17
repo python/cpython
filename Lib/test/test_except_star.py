@@ -32,6 +32,19 @@ class TestInvalidExceptStar(unittest.TestCase):
             except* (TypeError, ExceptionGroup):
                 pass
 
+    def test_except_star_invalid_exception_type(self):
+        with self.assertRaises(TypeError):
+            try:
+                raise ValueError
+            except* 42:
+                pass
+
+        with self.assertRaises(TypeError):
+            try:
+                raise ValueError
+            except* (ValueError, 42):
+                pass
+
 
 class ExceptStarTest(unittest.TestCase):
     def assertExceptionIsLike(self, exc, template):

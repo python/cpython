@@ -2591,9 +2591,8 @@ check_eval_breaker:
             }
             else {
                 // nothing to reraise
-                Py_DECREF(val);
                 PUSH(Py_NewRef(Py_None));
-                PUSH(Py_NewRef(Py_None));
+                PUSH(val);
                 PUSH(Py_NewRef(Py_None));
             }
             DISPATCH();
@@ -3616,13 +3615,13 @@ check_eval_breaker:
             }
 
             if (match == NULL || rest == NULL) {
-                Py_XDECREF(match);
-                Py_XDECREF(rest);
+                assert(match == NULL);
+                assert(rest == NULL);
                 goto error;
             }
 
             if (match == Py_None) {
-                Py_XDECREF(match);
+                Py_DECREF(match);
                 Py_XDECREF(rest);
                 /* no match - jump to target */
                 JUMPTO(oparg);
@@ -6137,10 +6136,7 @@ do_reraise_star(PyObject *excs, PyObject *orig)
     assert(PyList_Check(excs));
     assert(PyExceptionInstance_Check(orig));
 
-    Py_ssize_t numexcs = PyList_Size(excs);
-    if (numexcs == -1) {
-        return NULL;
-    }
+    Py_ssize_t numexcs = PyList_GET_SIZE(excs);
 
     if (numexcs == 0) {
         return Py_NewRef(Py_None);
@@ -6213,9 +6209,6 @@ do_reraise_star(PyObject *excs, PyObject *orig)
         if (result == NULL) {
             goto done;
         }
-    } else {
-        Py_DECREF(reraised_eg);
-        goto done;
     }
 
 done:
@@ -7120,35 +7113,37 @@ import_all_from(PyThreadState *tstate, PyObject *locals, PyObject *v)
 #define CANNOT_CATCH_MSG "catching classes that do not inherit from "\
                           "BaseException is not allowed"
 
- #define CANNOT_EXCEPT_STAR_EG "catching ExceptionGroup with except* "\
-                               "is not allowed. Use except instead."
-
- static int
- check_except_type_valid(PyThreadState *tstate, PyObject* right) {
-     if (PyTuple_Check(right)) {
-         Py_ssize_t i, length;
-         length = PyTuple_GET_SIZE(right);
-         for (i = 0; i < length; i++) {
-             PyObject *exc = PyTuple_GET_ITEM(right, i);
-             if (!PyExceptionClass_Check(exc)) {
-                 _PyErr_SetString(tstate, PyExc_TypeError,
-                     CANNOT_CATCH_MSG);
-                 return 0;
-             }
-         }
-     }
-     else {
-         if (!PyExceptionClass_Check(right)) {
-             _PyErr_SetString(tstate, PyExc_TypeError,
-                 CANNOT_CATCH_MSG);
-             return 0;
-         }
-     }
-     return 1;
- }
+#define CANNOT_EXCEPT_STAR_EG "catching ExceptionGroup with except* "\
+                          "is not allowed. Use except instead."
 
 static int
-check_except_star_type_valid(PyThreadState *tstate, PyObject* right) {
+check_except_type_valid(PyThreadState *tstate, PyObject* right)
+{
+    if (PyTuple_Check(right)) {
+        Py_ssize_t i, length;
+        length = PyTuple_GET_SIZE(right);
+        for (i = 0; i < length; i++) {
+            PyObject *exc = PyTuple_GET_ITEM(right, i);
+            if (!PyExceptionClass_Check(exc)) {
+                _PyErr_SetString(tstate, PyExc_TypeError,
+                    CANNOT_CATCH_MSG);
+                return 0;
+            }
+        }
+    }
+    else {
+        if (!PyExceptionClass_Check(right)) {
+            _PyErr_SetString(tstate, PyExc_TypeError,
+                CANNOT_CATCH_MSG);
+            return 0;
+        }
+    }
+    return 1;
+}
+
+static int
+check_except_star_type_valid(PyThreadState *tstate, PyObject* right)
+{
     if (!check_except_type_valid(tstate, right)) {
         return 0;
     }

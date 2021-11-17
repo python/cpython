@@ -894,9 +894,7 @@ static int
 get_matcher_type(PyObject *value,
                  _exceptiongroup_split_matcher_type *type)
 {
-    if (!value) {
-        goto error;
-    }
+    assert(value);
 
     if (PyFunction_Check(value)) {
         *type = EXCEPTION_GROUP_MATCH_BY_PREDICATE;
@@ -909,7 +907,7 @@ get_matcher_type(PyObject *value,
     }
 
     if (PyTuple_CheckExact(value)) {
-        Py_ssize_t n = PyTuple_Size(value);
+        Py_ssize_t n = PyTuple_GET_SIZE(value);
         for (Py_ssize_t i=0; i<n; i++) {
             if (!PyExceptionClass_Check(PyTuple_GET_ITEM(value, i))) {
                 goto error;
@@ -1156,10 +1154,7 @@ collect_exception_group_leaves(PyObject* exc, PyObject *leaves)
         return 0;
     }
     PyBaseExceptionGroupObject *eg = _PyBaseExceptionGroupObject_cast(exc);
-    Py_ssize_t num_excs = PyTuple_Size(eg->excs);
-    if (num_excs < 0) {
-        return -1;
-    }
+    Py_ssize_t num_excs = PyTuple_GET_SIZE(eg->excs);
     /* recursive calls */
     for (Py_ssize_t i = 0; i < num_excs; i++) {
         PyObject *e = PyTuple_GET_ITEM(eg->excs, i);
@@ -1182,16 +1177,12 @@ _PyExc_ExceptionGroupProjection(PyObject *eg, PyObject *keep)
     assert(_PyBaseExceptionGroup_Check(eg));
     assert(PyList_CheckExact(keep));
 
-    Py_ssize_t n = PyList_Size(keep);
-    if (n == -1) {
-        return NULL;
-    }
-
     PyObject *leaves = PySet_New(NULL);
     if (!leaves) {
         return NULL;
     }
 
+    Py_ssize_t n = PyList_GET_SIZE(keep);
     for (Py_ssize_t i = 0; i < n; i++) {
         PyObject *e = PyList_GET_ITEM(keep, i);
         assert(e != NULL);
@@ -1204,17 +1195,16 @@ _PyExc_ExceptionGroupProjection(PyObject *eg, PyObject *keep)
 
     _exceptiongroup_split_result split_result;
     bool construct_rest = false;
-    if (exceptiongroup_split_recursive(
-            eg, EXCEPTION_GROUP_MATCH_INSTANCES, leaves,
-            construct_rest, &split_result) == -1) {
-        Py_DECREF(leaves);
+    int err = exceptiongroup_split_recursive(
+                eg, EXCEPTION_GROUP_MATCH_INSTANCES, leaves,
+                construct_rest, &split_result);
+    Py_DECREF(leaves);
+    if (err == -1) {
         return NULL;
     }
-    Py_DECREF(leaves);
-    PyObject *result = Py_NewRef(
-            split_result.match ? split_result.match : Py_None);
 
-    Py_XDECREF(split_result.match);
+    PyObject *result = split_result.match ?
+        split_result.match : Py_NewRef(Py_None);
     assert(split_result.rest == NULL);
     return result;
 }
