@@ -1140,7 +1140,8 @@ binary_subscr_fail_kind(PyTypeObject *container_type, PyObject *sub)
 
 _Py_IDENTIFIER(__getitem__);
 
-int function_kind(PyCodeObject *code) {
+static int
+function_kind(PyCodeObject *code) {
     int flags = code->co_flags;
     if (flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
         return SPEC_FAIL_GENERATOR;
