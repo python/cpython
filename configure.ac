@@ -3169,8 +3169,8 @@ dnl Check for SQLite library. Use pkg-config if available.
 AC_SUBST([PY_SQLITE_CFLAGS])
 AC_SUBST([PY_SQLITE_LDFLAGS])
 if test ! -z "$PKG_CONFIG"; then
-  AS_VAR_APPEND([PY_SQLITE_CFLAGS], ["`"$PKG_CONFIG" sqlite3 --cflags-only-I 2>/dev/null`"])
-  AS_VAR_APPEND([PY_SQLITE_LDFLAGS], ["`"$PKG_CONFIG" sqlite3 --libs-only-L 2>/dev/null`"])
+  AS_VAR_APPEND([PY_SQLITE_CFLAGS], ["`"$PKG_CONFIG" sqlite3 --cflags 2>/dev/null`"])
+  AS_VAR_APPEND([PY_SQLITE_LDFLAGS], ["`"$PKG_CONFIG" sqlite3 --libs 2>/dev/null`"])
 fi
 
 AS_VAR_COPY([save_CFLAGS], [CFLAGS])

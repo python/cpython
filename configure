@@ -10926,8 +10926,8 @@ fi
 
 
 if test ! -z "$PKG_CONFIG"; then
-  as_fn_append PY_SQLITE_CFLAGS "`"$PKG_CONFIG" sqlite3 --cflags-only-I 2>/dev/null`"
-  as_fn_append PY_SQLITE_LDFLAGS "`"$PKG_CONFIG" sqlite3 --libs-only-L 2>/dev/null`"
+  as_fn_append PY_SQLITE_CFLAGS "`"$PKG_CONFIG" sqlite3 --cflags 2>/dev/null`"
+  as_fn_append PY_SQLITE_LDFLAGS "`"$PKG_CONFIG" sqlite3 --libs 2>/dev/null`"
 fi
 
 save_CFLAGS=$CFLAGS
