@@ -367,7 +367,7 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
     if (p->fill == 0) {
         va_list va;
         va_start(va, errmsg);
-        _PyPegen_raise_error_known_location(p, errtype, 0, 0, 0, -1, errmsg, va);
+        _PyPegen_raise_error_known_location(p, errtype, 0, 0, errmsg, va);
         va_end(va);
         return NULL;
     }
