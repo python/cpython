@@ -1,5 +1,7 @@
 import contextlib
 import importlib
+import importlib.abc
+import importlib.machinery
 import os
 import sys
 import unittest
@@ -341,6 +343,11 @@ class LoaderTests(NamespacePackageTest):
         import foo
         expected_path = os.path.join(self.root, 'portion1', 'foo')
         self.assertEqual(foo.__path__[0], expected_path)
+
+    def test_loader_abc(self):
+        import foo
+        self.assertTrue(isinstance(foo.__loader__, importlib.abc.Loader))
+        self.assertTrue(isinstance(foo.__loader__, importlib.machinery.NamespaceLoader))
 
 
 if __name__ == "__main__":

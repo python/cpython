@@ -350,21 +350,32 @@ tokenizer_error(Parser *p)
             errtype = PyExc_IndentationError;
             msg = "too many levels of indentation";
             break;
-        case E_LINECONT:
-            col_offset = strlen(strtok(p->tok->buf, "\n")) - 1;
+        case E_LINECONT: {
+            col_offset = p->tok->cur - p->tok->buf - 1;
             msg = "unexpected character after line continuation character";
             break;
+        }
         default:
             msg = "unknown parsing error";
     }
 
-    RAISE_ERROR_KNOWN_LOCATION(p, errtype, p->tok->lineno, col_offset, p->tok->lineno, -1, msg);
+    RAISE_ERROR_KNOWN_LOCATION(p, errtype, p->tok->lineno,
+                               col_offset >= 0 ? col_offset : 0,
+                               p->tok->lineno, -1, msg);
     return -1;
 }
 
 void *
 _PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
 {
+    if (p->fill == 0) {
+        va_list va;
+        va_start(va, errmsg);
+        _PyPegen_raise_error_known_location(p, errtype, 0, 0, 0, -1, errmsg, va);
+        va_end(va);
+        return NULL;
+    }
+
     Token *t = p->known_err_token != NULL ? p->known_err_token : p->tokens[p->fill - 1];
     Py_ssize_t col_offset;
     Py_ssize_t end_col_offset = -1;
@@ -489,7 +500,7 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
            does not physically exist */
         assert(p->tok->fp == NULL || p->tok->fp == stdin || p->tok->done == E_EOF || !uses_utf8_codec);
 
-        if (p->tok->lineno <= lineno) {
+        if (p->tok->lineno <= lineno && p->tok->inp > p->tok->buf) {
             Py_ssize_t size = p->tok->inp - p->tok->buf;
             error_line = PyUnicode_DecodeUTF8(p->tok->buf, size, "replace");
         }
@@ -729,7 +740,7 @@ _PyPegen_fill_token(Parser *p)
 {
     const char *start;
     const char *end;
-    int type = PyTokenizer_Get(p->tok, &start, &end);
+    int type = _PyTokenizer_Get(p->tok, &start, &end);
 
     // Record and skip '# type: ignore' comments
     while (type == TYPE_IGNORE) {
@@ -746,7 +757,7 @@ _PyPegen_fill_token(Parser *p)
             PyErr_NoMemory();
             return -1;
         }
-        type = PyTokenizer_Get(p->tok, &start, &end);
+        type = _PyTokenizer_Get(p->tok, &start, &end);
     }
 
     // If we have reached the end and we are in single input mode we need to insert a newline and reset the parsing
@@ -1306,7 +1317,7 @@ _PyPegen_check_tokenizer_errors(Parser *p) {
     for (;;) {
         const char *start;
         const char *end;
-        switch (PyTokenizer_Get(p->tok, &start, &end)) {
+        switch (_PyTokenizer_Get(p->tok, &start, &end)) {
             case ERRORTOKEN:
                 if (p->tok->level != 0) {
                     int error_lineno = p->tok->parenlinenostack[p->tok->level-1];
@@ -1342,13 +1353,16 @@ _PyPegen_run_parser(Parser *p)
 {
     void *res = _PyPegen_parse(p);
     if (res == NULL) {
+        if (PyErr_Occurred() && !PyErr_ExceptionMatches(PyExc_SyntaxError)) {
+            return NULL;
+        }
         Token *last_token = p->tokens[p->fill - 1];
         reset_parser_state(p);
         _PyPegen_parse(p);
         if (PyErr_Occurred()) {
             // Prioritize tokenizer errors to custom syntax errors raised
             // on the second phase only if the errors come from the parser.
-            if (p->tok->done != E_ERROR && PyErr_ExceptionMatches(PyExc_SyntaxError)) {
+            if (p->tok->done == E_DONE && PyErr_ExceptionMatches(PyExc_SyntaxError)) {
                 _PyPegen_check_tokenizer_errors(p);
             }
             return NULL;
@@ -1408,7 +1422,7 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
                              const char *enc, const char *ps1, const char *ps2,
                              PyCompilerFlags *flags, int *errcode, PyArena *arena)
 {
-    struct tok_state *tok = PyTokenizer_FromFile(fp, enc, ps1, ps2);
+    struct tok_state *tok = _PyTokenizer_FromFile(fp, enc, ps1, ps2);
     if (tok == NULL) {
         if (PyErr_Occurred()) {
             raise_tokenizer_init_error(filename_ob);
@@ -1438,7 +1452,7 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
     _PyPegen_Parser_Free(p);
 
 error:
-    PyTokenizer_Free(tok);
+    _PyTokenizer_Free(tok);
     return result;
 }
 
@@ -1449,10 +1463,10 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
     int exec_input = start_rule == Py_file_input;
 
     struct tok_state *tok;
-    if (flags == NULL || flags->cf_flags & PyCF_IGNORE_COOKIE) {
-        tok = PyTokenizer_FromUTF8(str, exec_input);
+    if (flags != NULL && flags->cf_flags & PyCF_IGNORE_COOKIE) {
+        tok = _PyTokenizer_FromUTF8(str, exec_input);
     } else {
-        tok = PyTokenizer_FromString(str, exec_input);
+        tok = _PyTokenizer_FromString(str, exec_input);
     }
     if (tok == NULL) {
         if (PyErr_Occurred()) {
@@ -1480,7 +1494,7 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
     _PyPegen_Parser_Free(p);
 
 error:
-    PyTokenizer_Free(tok);
+    _PyTokenizer_Free(tok);
     return result;
 }
 
@@ -2551,8 +2565,17 @@ void *_PyPegen_arguments_parsing_error(Parser *p, expr_ty e) {
     return RAISE_SYNTAX_ERROR(msg);
 }
 
+
+static inline expr_ty
+_PyPegen_get_last_comprehension_item(comprehension_ty comprehension) {
+    if (comprehension->ifs == NULL || asdl_seq_LEN(comprehension->ifs) == 0) {
+        return comprehension->iter;
+    }
+    return PyPegen_last_item(comprehension->ifs, expr_ty);
+}
+
 void *
-_PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args)
+_PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args, asdl_comprehension_seq *comprehensions)
 {
     /* The rule that calls this function is 'args for_if_clauses'.
        For the input f(L, x for x in y), L and x are in args and
@@ -2566,8 +2589,11 @@ _PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args)
         return NULL;
     }
 
-    return RAISE_SYNTAX_ERROR_STARTING_FROM(
+    comprehension_ty last_comprehension = PyPegen_last_item(comprehensions, comprehension_ty);
+
+    return RAISE_SYNTAX_ERROR_KNOWN_RANGE(
         (expr_ty) asdl_seq_GET(args->v.Call.args, len - 1),
+        _PyPegen_get_last_comprehension_item(last_comprehension),
         "Generator expression must be parenthesized"
     );
 }

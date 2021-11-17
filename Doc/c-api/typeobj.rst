@@ -668,6 +668,18 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    :c:func:`PyObject_GC_Del` if the instance was allocated using
    :c:func:`PyObject_GC_New` or :c:func:`PyObject_GC_NewVar`.
 
+   If the type supports garbage collection (has the :const:`Py_TPFLAGS_HAVE_GC`
+   flag bit set), the destructor should call :c:func:`PyObject_GC_UnTrack`
+   before clearing any member fields.
+
+   .. code-block:: c
+
+     static void foo_dealloc(foo_object *self) {
+         PyObject_GC_UnTrack(self);
+         Py_CLEAR(self->ref);
+         Py_TYPE(self)->tp_free((PyObject *)self);
+     }
+
    Finally, if the type is heap allocated (:const:`Py_TPFLAGS_HEAPTYPE`), the
    deallocator should decrement the reference count for its type object after
    calling the type deallocator. In order to avoid dangling pointers, the

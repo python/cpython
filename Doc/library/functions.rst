@@ -557,7 +557,7 @@ are always available.  They are listed here in alphabetical order.
    a suite of Python statements which is then executed (unless a syntax error
    occurs). [#]_ If it is a code object, it is simply executed.  In all cases,
    the code that's executed is expected to be valid as file input (see the
-   section "File input" in the Reference Manual). Be aware that the
+   section :ref:`file-input` in the Reference Manual). Be aware that the
    :keyword:`nonlocal`, :keyword:`yield`,  and :keyword:`return`
    statements may not be used outside of
    function definitions even within the context of code passed to the
@@ -1345,8 +1345,11 @@ are always available.  They are listed here in alphabetical order.
    coercion rules for binary arithmetic operators apply.  For :class:`int`
    operands, the result has the same type as the operands (after coercion)
    unless the second argument is negative; in that case, all arguments are
-   converted to float and a float result is delivered.  For example, ``10**2``
-   returns ``100``, but ``10**-2`` returns ``0.01``.
+   converted to float and a float result is delivered.  For example, ``pow(10, 2)``
+   returns ``100``, but ``pow(10, -2)`` returns ``0.01``.  For a negative base of
+   type :class:`int` or :class:`float` and a non-integral exponent, a complex
+   result is delivered.  For example, ``pow(-9, 0.5)`` returns a value close
+   to ``3j``.
 
    For :class:`int` operands *base* and *exp*, if *mod* is present, *mod* must
    also be of integer type and *mod* must be nonzero. If *mod* is present and
@@ -1591,6 +1594,15 @@ are always available.  They are listed here in alphabetical order.
    stable if it guarantees not to change the relative order of elements that
    compare equal --- this is helpful for sorting in multiple passes (for
    example, sort by department, then by salary grade).
+
+   The sort algorithm uses only ``<`` comparisons between items.  While
+   defining an :meth:`~object.__lt__` method will suffice for sorting,
+   :PEP:`8` recommends that all six :ref:`rich comparisons
+   <comparisons>` be implemented.  This will help avoid bugs when using
+   the same data with other ordering tools such as :func:`max` that rely
+   on a different underlying method.  Implementing all six comparisons
+   also helps avoid confusion for mixed type comparisons which can call
+   reflected the :meth:`~object.__gt__` method.
 
    For sorting examples and a brief sorting tutorial, see :ref:`sortinghowto`.
 

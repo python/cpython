@@ -61,6 +61,21 @@
     <None Include="..\Lib\__hello__.py">
       <Filter>Python Files</Filter>
     </None>
+    <None Include="..\Lib\__phello__\__init__.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\__phello__\ham\__init__.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\__phello__\ham\eggs.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\__phello__\spam.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Tools\freeze\flag.py">
+      <Filter>Python Files</Filter>
+    </None>
     <!-- END frozen modules -->
   </ItemGroup>
 </Project>

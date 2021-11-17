@@ -327,7 +327,7 @@ _RAISE_SYNTAX_ERROR_INVALID_TARGET(Parser *p, TARGETS_TYPE type, void *e)
 }
 
 void *_PyPegen_arguments_parsing_error(Parser *, expr_ty);
-void *_PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args);
+void *_PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args, asdl_comprehension_seq *comprehensions);
 
 
 // Generated function in parse.c - function definition in python.gram

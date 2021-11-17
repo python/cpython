@@ -351,8 +351,8 @@ class ImportTests(unittest.TestCase):
         self.assertEqual(_frozen_importlib.__spec__.origin, "frozen")
 
     def test_source_hash(self):
-        self.assertEqual(_imp.source_hash(42, b'hi'), b'\xc6\xe7Z\r\x03:}\xab')
-        self.assertEqual(_imp.source_hash(43, b'hi'), b'\x85\x9765\xf8\x9a\x8b9')
+        self.assertEqual(_imp.source_hash(42, b'hi'), b'\xfb\xd9G\x05\xaf$\x9b~')
+        self.assertEqual(_imp.source_hash(43, b'hi'), b'\xd0/\x87C\xccC\xff\xe2')
 
     def test_pyc_invalidation_mode_from_cmdline(self):
         cases = [

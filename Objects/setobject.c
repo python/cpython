@@ -16,7 +16,7 @@
    reduces the cost of hash collisions because consecutive memory accesses
    tend to be much cheaper than scattered probes.  After LINEAR_PROBES steps,
    we then use more of the upper bits from the hash value and apply a simple
-   linear congruential random number genearator.  This helps break-up long
+   linear congruential random number generator.  This helps break-up long
    chains of collisions.
 
    All arithmetic on hash should ignore overflow.
@@ -1409,7 +1409,7 @@ set_difference_update_internal(PySetObject *so, PyObject *other)
 
         /* Optimization:  When the other set is more than 8 times
            larger than the base set, replace the other set with
-           interesection of the two sets.
+           intersection of the two sets.
         */
         if ((PySet_GET_SIZE(other) >> 3) > PySet_GET_SIZE(so)) {
             other = set_intersection(so, other);

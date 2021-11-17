@@ -184,7 +184,7 @@ _PYTHON_BUILD = is_python_build(True)
 
 if _PYTHON_BUILD:
     for scheme in ('posix_prefix', 'posix_home'):
-        # On POSIX-y platofrms, Python will:
+        # On POSIX-y platforms, Python will:
         # - Build from .h files in 'headers' (which is only added to the
         #   scheme when building CPython)
         # - Install .h files to 'include'

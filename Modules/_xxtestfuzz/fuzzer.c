@@ -393,6 +393,51 @@ static int fuzz_csv_reader(const char* data, size_t size) {
     return 0;
 }
 
+#define MAX_AST_LITERAL_EVAL_TEST_SIZE 0x10000
+PyObject* ast_literal_eval_method = NULL;
+/* Called by LLVMFuzzerTestOneInput for initialization */
+static int init_ast_literal_eval(void) {
+    PyObject* ast_module = PyImport_ImportModule("ast");
+    if (ast_module == NULL) {
+        return 0;
+    }
+    ast_literal_eval_method = PyObject_GetAttrString(ast_module, "literal_eval");
+    return ast_literal_eval_method != NULL;
+}
+/* Fuzz ast.literal_eval(x) */
+static int fuzz_ast_literal_eval(const char* data, size_t size) {
+    if (size > MAX_AST_LITERAL_EVAL_TEST_SIZE) {
+        return 0;
+    }
+    /* Ignore non null-terminated strings since ast can't handle
+       embedded nulls */
+    if (memchr(data, '\0', size) == NULL) {
+        return 0;
+    }
+
+    PyObject* s = PyUnicode_FromString(data);
+    /* Ignore exceptions until we have a valid string */
+    if (s == NULL) {
+        PyErr_Clear();
+        return 0;
+    }
+
+    PyObject* literal = PyObject_CallOneArg(ast_literal_eval_method, s);
+    /* Ignore some common errors thrown by ast.literal_eval */
+    if (literal == NULL && (PyErr_ExceptionMatches(PyExc_ValueError) ||
+                            PyErr_ExceptionMatches(PyExc_TypeError) ||
+                            PyErr_ExceptionMatches(PyExc_SyntaxError) ||
+                            PyErr_ExceptionMatches(PyExc_MemoryError) ||
+                            PyErr_ExceptionMatches(PyExc_RecursionError))
+    ) {
+        PyErr_Clear();
+    }
+
+    Py_XDECREF(literal);
+    Py_DECREF(s);
+    return 0;
+}
+
 /* Run fuzzer and abort on failure. */
 static int _run_fuzz(const uint8_t *data, size_t size, int(*fuzzer)(const char* , size_t)) {
     int rv = fuzzer((const char*) data, size);
@@ -507,6 +552,17 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     }
 
     rv |= _run_fuzz(data, size, fuzz_csv_reader);
+#endif
+#if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_fuzz_ast_literal_eval)
+    static int AST_LITERAL_EVAL_INITIALIZED = 0;
+    if (!AST_LITERAL_EVAL_INITIALIZED && !init_ast_literal_eval()) {
+        PyErr_Print();
+        abort();
+    } else {
+        AST_LITERAL_EVAL_INITIALIZED = 1;
+    }
+
+    rv |= _run_fuzz(data, size, fuzz_ast_literal_eval);
 #endif
   return rv;
 }

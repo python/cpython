@@ -479,7 +479,7 @@ class AbstractEventLoop:
         # The reason to accept file-like object instead of just file descriptor
         # is: we need to own pipe and close it at transport finishing
         # Can got complicated errors if pass f.fileno(),
-        # close fd in pipe transport then close f and vise versa.
+        # close fd in pipe transport then close f and vice versa.
         raise NotImplementedError
 
     async def connect_write_pipe(self, protocol_factory, pipe):
@@ -492,7 +492,7 @@ class AbstractEventLoop:
         # The reason to accept file-like object instead of just file descriptor
         # is: we need to own pipe and close it at transport finishing
         # Can got complicated errors if pass f.fileno(),
-        # close fd in pipe transport then close f and vise versa.
+        # close fd in pipe transport then close f and vice versa.
         raise NotImplementedError
 
     async def subprocess_shell(self, protocol_factory, cmd, *,

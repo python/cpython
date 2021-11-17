@@ -1,0 +1,2 @@
+The build dependencies for :mod:`zlib`, :mod:`bz2`, and :mod:`lzma` are now
+detected by ``configure``.

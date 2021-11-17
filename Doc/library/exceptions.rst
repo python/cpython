@@ -34,6 +34,10 @@ class or one of its subclasses, and not from :exc:`BaseException`.  More
 information on defining exceptions is available in the Python Tutorial under
 :ref:`tut-userexceptions`.
 
+
+Exception context
+-----------------
+
 When raising (or re-raising) an exception in an :keyword:`except` or
 :keyword:`finally` clause
 :attr:`__context__` is automatically set to the last exception caught; if the
@@ -65,6 +69,25 @@ is :const:`None` and :attr:`__suppress_context__` is false.
 In either case, the exception itself is always shown after any chained
 exceptions so that the final line of the traceback always shows the last
 exception that was raised.
+
+
+Inheriting from built-in exceptions
+-----------------------------------
+
+User code can create subclasses that inherit from an exception type.
+It's recommended to only subclass one exception type at a time to avoid
+any possible conflicts between how the bases handle the ``args``
+attribute, as well as due to possible memory layout incompatibilities.
+
+.. impl-detail::
+
+   Most built-in exceptions are implemented in C for efficiency, see:
+   :source:`Objects/exceptions.c`.  Some have custom memory layouts
+   which makes it impossible to create a subclass that inherits from
+   multiple exception types. The memory layout of a type is an implementation
+   detail and might change between Python versions, leading to new
+   conflicts in the future.  Therefore, it's recommended to avoid
+   subclassing multiple exception types altogether.
 
 
 Base classes

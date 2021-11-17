@@ -27,6 +27,9 @@ on efficient attribute extraction for output formatting and manipulation.
    Module :mod:`time`
       Time access and conversions.
 
+   Module :mod:`zoneinfo`
+      Concrete time zones representing the IANA time zone database.
+
    Package `dateutil <https://dateutil.readthedocs.io/en/stable/>`_
       Third-party library with expanded time zone and parsing support.
 
@@ -2174,14 +2177,13 @@ only EST (fixed offset -5 hours), or only EDT (fixed offset -4 hours)).
 
 .. seealso::
 
-   `dateutil.tz <https://dateutil.readthedocs.io/en/stable/tz.html>`_
+    :mod:`zoneinfo`
       The :mod:`datetime` module has a basic :class:`timezone` class (for
       handling arbitrary fixed offsets from UTC) and its :attr:`timezone.utc`
       attribute (a UTC timezone instance).
 
-      *dateutil.tz* library brings the *IANA timezone database*
-      (also known as the Olson database) to Python, and its usage is
-      recommended.
+      ``zoneinfo`` brings the *IANA timezone database* (also known as the Olson
+      database) to Python, and its usage is recommended.
 
    `IANA timezone database <https://www.iana.org/time-zones>`_
       The Time Zone Database (often called tz, tzdata or zoneinfo) contains code

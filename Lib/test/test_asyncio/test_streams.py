@@ -711,7 +711,7 @@ class StreamTests(test_utils.TestCase):
         # See asyncio issue 168.  This test is derived from the example
         # subprocess_attach_read_pipe.py, but we configure the
         # StreamReader's limit so that twice it is less than the size
-        # of the data writter.  Also we must explicitly attach a child
+        # of the data writer.  Also we must explicitly attach a child
         # watcher to the event loop.
 
         code = """\

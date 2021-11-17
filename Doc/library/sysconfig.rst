@@ -74,7 +74,7 @@ places.
 
 Python currently supports seven schemes:
 
-- *posix_prefix*: scheme for POSIX platforms like Linux or Mac OS X.  This is
+- *posix_prefix*: scheme for POSIX platforms like Linux or macOS.  This is
   the default scheme used when Python or a component is installed.
 - *posix_home*: scheme for POSIX platforms used when a *home* option is used
   upon installation.  This scheme is used when a component is installed through
@@ -225,7 +225,7 @@ Other functions
    - win-amd64 (64bit Windows on AMD64, aka x86_64, Intel64, and EM64T)
    - win32 (all others - specifically, sys.platform is returned)
 
-   Mac OS X can return:
+   macOS can return:
 
    - macosx-10.6-ppc
    - macosx-10.4-ppc64

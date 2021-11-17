@@ -333,6 +333,7 @@ given type object has a specified feature.
 */
 
 #ifndef Py_LIMITED_API
+
 /* Set if instances of the type object are treated as sequences for pattern matching */
 #define Py_TPFLAGS_SEQUENCE (1 << 5)
 /* Set if instances of the type object are treated as mappings for pattern matching */
@@ -600,7 +601,7 @@ static inline PyObject* _Py_XNewRef(PyObject *obj)
 }
 
 // Py_NewRef() and Py_XNewRef() are exported as functions for the stable ABI.
-// Names overriden with macros by static inline functions for best
+// Names overridden with macros by static inline functions for best
 // performances.
 #define Py_NewRef(obj) _Py_NewRef(_PyObject_CAST(obj))
 #define Py_XNewRef(obj) _Py_XNewRef(_PyObject_CAST(obj))
@@ -723,7 +724,7 @@ times.
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_OBJECT_H
-#  include  "cpython/object.h"
+#  include "cpython/object.h"
 #  undef Py_CPYTHON_OBJECT_H
 #endif
 

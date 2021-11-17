@@ -5,13 +5,16 @@
 
 #include "Python.h"
 #include "pycore_dtoa.h"          // _Py_dg_dtoa()
+#include "pycore_floatobject.h"   // _PyFloat_FormatAdvancedWriter()
 #include "pycore_interp.h"        // _PyInterpreterState.float_state
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyObject_Init()
+#include "pycore_pymath.h"        // _Py_ADJUST_ERANGE1()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 #include <ctype.h>
 #include <float.h>
+#include <stdlib.h>               // strtol()
 
 /*[clinic input]
 class float "PyObject *" "&PyFloat_Type"
@@ -25,12 +28,14 @@ class float "PyObject *" "&PyFloat_Type"
 #endif
 
 
+#if PyFloat_MAXFREELIST > 0
 static struct _Py_float_state *
 get_float_state(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     return &interp->float_state;
 }
+#endif
 
 
 double
@@ -123,8 +128,10 @@ PyFloat_GetInfo(void)
 PyObject *
 PyFloat_FromDouble(double fval)
 {
+    PyFloatObject *op;
+#if PyFloat_MAXFREELIST > 0
     struct _Py_float_state *state = get_float_state();
-    PyFloatObject *op = state->free_list;
+    op = state->free_list;
     if (op != NULL) {
 #ifdef Py_DEBUG
         // PyFloat_FromDouble() must not be called after _PyFloat_Fini()
@@ -133,7 +140,9 @@ PyFloat_FromDouble(double fval)
         state->free_list = (PyFloatObject *) Py_TYPE(op);
         state->numfree--;
     }
-    else {
+    else
+#endif
+    {
         op = PyObject_Malloc(sizeof(PyFloatObject));
         if (!op) {
             return PyErr_NoMemory();
@@ -230,6 +239,7 @@ PyFloat_FromString(PyObject *v)
 static void
 float_dealloc(PyFloatObject *op)
 {
+#if PyFloat_MAXFREELIST > 0
     if (PyFloat_CheckExact(op)) {
         struct _Py_float_state *state = get_float_state();
 #ifdef Py_DEBUG
@@ -244,7 +254,9 @@ float_dealloc(PyFloatObject *op)
         Py_SET_TYPE(op, (PyTypeObject *)state->free_list);
         state->free_list = op;
     }
-    else {
+    else
+#endif
+    {
         Py_TYPE(op)->tp_free((PyObject *)op);
     }
 }
@@ -809,7 +821,7 @@ float_pow(PyObject *v, PyObject *w, PyObject *z)
      */
     errno = 0;
     ix = pow(iv, iw);
-    Py_ADJUST_ERANGE1(ix);
+    _Py_ADJUST_ERANGE1(ix);
     if (negate_result)
         ix = -ix;
 
@@ -2033,6 +2045,7 @@ _PyFloat_InitTypes(void)
 void
 _PyFloat_ClearFreeList(PyInterpreterState *interp)
 {
+#if PyFloat_MAXFREELIST > 0
     struct _Py_float_state *state = &interp->float_state;
     PyFloatObject *f = state->free_list;
     while (f != NULL) {
@@ -2042,13 +2055,14 @@ _PyFloat_ClearFreeList(PyInterpreterState *interp)
     }
     state->free_list = NULL;
     state->numfree = 0;
+#endif
 }
 
 void
 _PyFloat_Fini(PyInterpreterState *interp)
 {
     _PyFloat_ClearFreeList(interp);
-#ifdef Py_DEBUG
+#if defined(Py_DEBUG) && PyFloat_MAXFREELIST > 0
     struct _Py_float_state *state = &interp->float_state;
     state->numfree = -1;
 #endif
@@ -2058,10 +2072,12 @@ _PyFloat_Fini(PyInterpreterState *interp)
 void
 _PyFloat_DebugMallocStats(FILE *out)
 {
+#if PyFloat_MAXFREELIST > 0
     struct _Py_float_state *state = get_float_state();
     _PyDebugAllocatorStats(out,
                            "free PyFloatObject",
                            state->numfree, sizeof(PyFloatObject));
+#endif
 }
 
 
@@ -2350,7 +2366,7 @@ _PyFloat_Pack8(double x, unsigned char *p, int le)
             flo = 0;
             ++fhi;
             if (fhi >> 28) {
-                /* And it also progagated out of the next 28 bits. */
+                /* And it also propagated out of the next 28 bits. */
                 fhi = 0;
                 ++e;
                 if (e >= 2047)

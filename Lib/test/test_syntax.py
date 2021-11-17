@@ -524,9 +524,15 @@ SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
 >>> f((x)=2)
 Traceback (most recent call last):
 SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
->>> f(True=2)
+>>> f(True=1)
 Traceback (most recent call last):
-SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
+SyntaxError: cannot assign to True
+>>> f(False=1)
+Traceback (most recent call last):
+SyntaxError: cannot assign to False
+>>> f(None=1)
+Traceback (most recent call last):
+SyntaxError: cannot assign to None
 >>> f(__debug__=1)
 Traceback (most recent call last):
 SyntaxError: cannot assign to __debug__
@@ -891,6 +897,17 @@ leading to spurious errors.
    ...    pass
    Traceback (most recent call last):
    SyntaxError: cannot assign to attribute here. Maybe you meant '==' instead of '='?
+
+
+Missing parens after function definition
+
+   >>> def f:
+   Traceback (most recent call last):
+   SyntaxError: expected '('
+
+   >>> async def f:
+   Traceback (most recent call last):
+   SyntaxError: expected '('
 
 Custom error messages for try blocks that are not followed by except/finally
 
@@ -1274,7 +1291,8 @@ from test import support
 class SyntaxTestCase(unittest.TestCase):
 
     def _check_error(self, code, errtext,
-                     filename="<testcase>", mode="exec", subclass=None, lineno=None, offset=None):
+                     filename="<testcase>", mode="exec", subclass=None,
+                     lineno=None, offset=None, end_lineno=None, end_offset=None):
         """Check that compiling code raises SyntaxError with errtext.
 
         errtest is a regular expression that must be present in the
@@ -1294,6 +1312,11 @@ class SyntaxTestCase(unittest.TestCase):
                 self.assertEqual(err.lineno, lineno)
             if offset is not None:
                 self.assertEqual(err.offset, offset)
+            if end_lineno is not None:
+                self.assertEqual(err.end_lineno, end_lineno)
+            if end_offset is not None:
+                self.assertEqual(err.end_offset, end_offset)
+
         else:
             self.fail("compile() did not raise SyntaxError")
 
@@ -1434,6 +1457,11 @@ class SyntaxTestCase(unittest.TestCase):
                           "iterable argument unpacking follows "
                           "keyword argument unpacking")
 
+    def test_generator_in_function_call(self):
+        self._check_error("foo(x,    y for y in range(3) for z in range(2) if z    , p)",
+                          "Generator expression must be parenthesized",
+                          lineno=1, end_lineno=1, offset=11, end_offset=53)
+
     def test_empty_line_after_linecont(self):
         # See issue-40847
         s = r"""\
@@ -1477,7 +1505,13 @@ def func2():
     def test_invalid_line_continuation_error_position(self):
         self._check_error(r"a = 3 \ 4",
                           "unexpected character after line continuation character",
-                          lineno=1, offset=9)
+                          lineno=1, offset=8)
+        self._check_error('1,\\#\n2',
+                          "unexpected character after line continuation character",
+                          lineno=1, offset=4)
+        self._check_error('\nfgdfgf\n1,\\#\n2\n',
+                          "unexpected character after line continuation character",
+                          lineno=3, offset=4)
 
     def test_invalid_line_continuation_left_recursive(self):
         # Check bpo-42218: SyntaxErrors following left-recursive rules

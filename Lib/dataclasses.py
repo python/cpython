@@ -1387,7 +1387,7 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
         ns['__annotations__'] = annotations
 
     # We use `types.new_class()` instead of simply `type()` to allow dynamic creation
-    # of generic dataclassses.
+    # of generic dataclasses.
     cls = types.new_class(cls_name, bases, {}, exec_body_callback)
 
     # Apply the normal decorator.

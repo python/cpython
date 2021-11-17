@@ -10,35 +10,34 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "pycore_fileutils.h"
-#include "pycore_moduleobject.h"  // _PyModule_GetState()
+// Include <windows.h> before pycore internal headers. FSCTL_GET_REPARSE_POINT
+// is not exported by <windows.h> if the WIN32_LEAN_AND_MEAN macro is defined,
+// whereas pycore_condvar.h defines the WIN32_LEAN_AND_MEAN macro.
 #ifdef MS_WINDOWS
-   /* include <windows.h> early to avoid conflict with pycore_condvar.h:
-
-        #define WIN32_LEAN_AND_MEAN
-        #include <windows.h>
-
-      FSCTL_GET_REPARSE_POINT is not exported with WIN32_LEAN_AND_MEAN. */
 #  include <windows.h>
 #  include <pathcch.h>
-#endif
-
-#if !defined(EX_OK) && defined(EXIT_SUCCESS)
-#define EX_OK EXIT_SUCCESS
 #endif
 
 #ifdef __VXWORKS__
 #  include "pycore_bitutils.h"    // _Py_popcount32()
 #endif
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_fileutils.h"     // _Py_closerange()
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_ceval.h"         // _PyEval_ReInitThreads()
 #include "pycore_import.h"        // _PyImport_ReInitLock()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+
 #include "structmember.h"         // PyMemberDef
 #ifndef MS_WINDOWS
 #  include "posixmodule.h"
 #else
 #  include "winreparse.h"
+#endif
+
+#if !defined(EX_OK) && defined(EXIT_SUCCESS)
+#  define EX_OK EXIT_SUCCESS
 #endif
 
 /* On android API level 21, 'AT_EACCESS' is not declared although
@@ -47,7 +46,8 @@
 #  undef HAVE_FACCESSAT
 #endif
 
-#include <stdio.h>  /* needed for ctermid() */
+#include <stdio.h>                // ctermid()
+#include <stdlib.h>               // system()
 
 /*
  * A number of APIs are available on macOS from a certain macOS version.
@@ -561,7 +561,7 @@ run_at_forkers(PyObject *lst, int reverse)
             for (i = 0; i < PyList_GET_SIZE(cpy); i++) {
                 PyObject *func, *res;
                 func = PyList_GET_ITEM(cpy, i);
-                res = _PyObject_CallNoArg(func);
+                res = _PyObject_CallNoArgs(func);
                 if (res == NULL)
                     PyErr_WriteUnraisable(func);
                 else
@@ -1183,7 +1183,7 @@ path_converter(PyObject *o, void *p)
         if (NULL == func) {
             goto error_format;
         }
-        res = _PyObject_CallNoArg(func);
+        res = _PyObject_CallNoArgs(func);
         Py_DECREF(func);
         if (NULL == res) {
             goto error_exit;
@@ -14380,7 +14380,7 @@ PyOS_FSPath(PyObject *path)
                             _PyType_Name(Py_TYPE(path)));
     }
 
-    path_repr = _PyObject_CallNoArg(func);
+    path_repr = _PyObject_CallNoArgs(func);
     Py_DECREF(func);
     if (NULL == path_repr) {
         return NULL;

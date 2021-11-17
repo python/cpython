@@ -1558,7 +1558,7 @@ Basic customization
 
       This is intended to provide protection against a denial-of-service caused
       by carefully-chosen inputs that exploit the worst case performance of a
-      dict insertion, O(n^2) complexity.  See
+      dict insertion, O(n\ :sup:`2`) complexity.  See
       http://www.ocert.org/advisories/ocert-2011-003.html for details.
 
       Changing hash values affects the iteration order of sets.
@@ -2577,8 +2577,8 @@ left undefined.
    return the value of the object truncated to an :class:`~numbers.Integral`
    (typically an :class:`int`).
 
-   If :meth:`__int__` is not defined then the built-in function :func:`int`
-   falls back to :meth:`__trunc__`.
+   The built-in function :func:`int` falls back to :meth:`__trunc__` if neither
+   :meth:`__int__` nor :meth:`__index__` is defined.
 
 
 .. _context-managers:

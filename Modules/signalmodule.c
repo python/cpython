@@ -7,7 +7,8 @@
 #include "pycore_atomic.h"        // _Py_atomic_int
 #include "pycore_call.h"          // _PyObject_Call()
 #include "pycore_ceval.h"         // _PyEval_SignalReceived()
-#include "pycore_frame.h"
+#include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
+#include "pycore_frame.h"         // InterpreterFrame
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_pylifecycle.h"   // NSIG
@@ -1221,11 +1222,7 @@ signal_sigtimedwait_impl(PyObject *module, sigset_t sigset,
                          PyObject *timeout_obj)
 /*[clinic end generated code: output=59c8971e8ae18a64 input=87fd39237cf0b7ba]*/
 {
-    struct timespec ts;
-    siginfo_t si;
-    int res;
-    _PyTime_t timeout, deadline, monotonic;
-
+    _PyTime_t timeout;
     if (_PyTime_FromSecondsObject(&timeout,
                                   timeout_obj, _PyTime_ROUND_CEILING) < 0)
         return NULL;
@@ -1235,12 +1232,16 @@ signal_sigtimedwait_impl(PyObject *module, sigset_t sigset,
         return NULL;
     }
 
-    deadline = _PyTime_GetMonotonicClock() + timeout;
+    _PyTime_t deadline = _PyDeadline_Init(timeout);
+    siginfo_t si;
 
     do {
-        if (_PyTime_AsTimespec(timeout, &ts) < 0)
+        struct timespec ts;
+        if (_PyTime_AsTimespec(timeout, &ts) < 0) {
             return NULL;
+        }
 
+        int res;
         Py_BEGIN_ALLOW_THREADS
         res = sigtimedwait(&sigset, &si, &ts);
         Py_END_ALLOW_THREADS
@@ -1259,10 +1260,10 @@ signal_sigtimedwait_impl(PyObject *module, sigset_t sigset,
         if (PyErr_CheckSignals())
             return NULL;
 
-        monotonic = _PyTime_GetMonotonicClock();
-        timeout = deadline - monotonic;
-        if (timeout < 0)
+        timeout = _PyDeadline_Get(deadline);
+        if (timeout < 0) {
             break;
+        }
     } while (1);
 
     return fill_siginfo(&si);
@@ -1595,7 +1596,7 @@ signal_get_set_handlers(signal_state_t *state, PyObject *mod_dict)
         Py_XDECREF(old_func);
     }
 
-    // Instal Python SIGINT handler which raises KeyboardInterrupt
+    // Install Python SIGINT handler which raises KeyboardInterrupt
     PyObject* sigint_func = get_handler(SIGINT);
     if (sigint_func == state->default_handler) {
         PyObject *int_handler = PyMapping_GetItemString(mod_dict,
@@ -1787,7 +1788,7 @@ _PyErr_CheckSignalsTstate(PyThreadState *tstate)
      */
     _Py_atomic_store(&is_tripped, 0);
 
-    InterpreterFrame *frame = tstate->frame;
+    InterpreterFrame *frame = tstate->cframe->current_frame;
     signal_state_t *state = &signal_global_state;
     for (int i = 1; i < NSIG; i++) {
         if (!_Py_atomic_load_relaxed(&Handlers[i].tripped)) {

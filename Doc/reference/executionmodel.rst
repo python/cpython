@@ -119,14 +119,14 @@ is subtle.  Python lacks declarations and allows name binding operations to
 occur anywhere within a code block.  The local variables of a code block can be
 determined by scanning the entire text of the block for name binding operations.
 
-If the :keyword:`global` statement occurs within a block, all uses of the name
-specified in the statement refer to the binding of that name in the top-level
+If the :keyword:`global` statement occurs within a block, all uses of the names
+specified in the statement refer to the bindings of those names in the top-level
 namespace.  Names are resolved in the top-level namespace by searching the
 global namespace, i.e. the namespace of the module containing the code block,
 and the builtins namespace, the namespace of the module :mod:`builtins`.  The
-global namespace is searched first.  If the name is not found there, the
+global namespace is searched first.  If the names are not found there, the
 builtins namespace is searched.  The :keyword:`!global` statement must precede
-all uses of the name.
+all uses of the listed names.
 
 The :keyword:`global` statement has the same scope as a name binding operation
 in the same block.  If the nearest enclosing scope for a free variable contains

@@ -230,11 +230,11 @@ class Analyzed:
         return self
 
     def as_rowdata(self, columns=None):
-        # XXX finsih!
+        # XXX finish!
         return self.item.as_rowdata(columns)
 
     def render_rowdata(self, columns=None):
-        # XXX finsih!
+        # XXX finish!
         return self.item.render_rowdata(columns)
 
     def render(self, fmt='line', *, itemonly=False):
