@@ -915,6 +915,18 @@ _PyFrame_FastToLocalsWithError(InterpreterFrame *frame) {
     }
     co = frame->f_code;
     fast = _PyFrame_GetLocalsArray(frame);
+    if (frame->f_lasti < 0 && _Py_OPCODE(co->co_firstinstr[0]) == COPY_FREE_VARS) {
+        /* Free vars have not been initialized -- Do that */
+        PyCodeObject *co = frame->f_code;
+        PyObject *closure = frame->f_func->func_closure;
+        int offset = co->co_nlocals + co->co_nplaincellvars;
+        for (int i = 0; i < co->co_nfreevars; ++i) {
+            PyObject *o = PyTuple_GET_ITEM(closure, i);
+            Py_INCREF(o);
+            frame->localsplus[offset + i] = o;
+        }
+        frame->f_lasti = 0;
+    }
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
 
@@ -934,8 +946,7 @@ _PyFrame_FastToLocalsWithError(InterpreterFrame *frame) {
         PyObject *value = fast[i];
         if (frame->f_state != FRAME_CLEARED) {
             if (kind & CO_FAST_FREE) {
-                // The cell was set when the frame was created from
-                // the function's closure.
+                // The cell was set by COPY_FREE_VARS.
                 assert(value != NULL && PyCell_Check(value));
                 value = PyCell_GET(value);
             }

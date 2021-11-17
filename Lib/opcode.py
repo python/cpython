@@ -177,6 +177,7 @@ def_op('SET_ADD', 146)
 def_op('MAP_ADD', 147)
 def_op('LOAD_CLASSDEREF', 148)
 hasfree.append(148)
+def_op('COPY_FREE_VARS', 149)
 
 def_op('MATCH_CLASS', 152)
 

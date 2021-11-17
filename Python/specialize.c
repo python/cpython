@@ -475,7 +475,7 @@ initial_counter_value(void) {
 #define SPEC_FAIL_WRONG_NUMBER_ARGUMENTS 9
 #define SPEC_FAIL_CO_NOT_OPTIMIZED 10
 /* SPEC_FAIL_METHOD  defined as 11 above */
-#define SPEC_FAIL_FREE_VARS 12
+
 #define SPEC_FAIL_PYCFUNCTION 13
 #define SPEC_FAIL_PYCFUNCTION_WITH_KEYWORDS 14
 #define SPEC_FAIL_PYCFUNCTION_FAST_WITH_KEYWORDS 15
@@ -1207,10 +1207,6 @@ specialize_py_call(
     }
     if ((flags & CO_OPTIMIZED) == 0) {
         SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_CO_NOT_OPTIMIZED);
-        return -1;
-    }
-    if (code->co_nfreevars) {
-        SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_FREE_VARS);
         return -1;
     }
     int argcount = code->co_argcount;

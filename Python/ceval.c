@@ -3029,6 +3029,20 @@ check_eval_breaker:
             DISPATCH();
         }
 
+        TARGET(COPY_FREE_VARS) {
+            /* Copy closure variables to free variables */
+            PyCodeObject *co = frame->f_code;
+            PyObject *closure = frame->f_func->func_closure;
+            int offset = co->co_nlocals + co->co_nplaincellvars;
+            assert(oparg == co->co_nfreevars);
+            for (int i = 0; i < oparg; ++i) {
+                PyObject *o = PyTuple_GET_ITEM(closure, i);
+                Py_INCREF(o);
+                frame->localsplus[offset + i] = o;
+            }
+            DISPATCH();
+        }
+
         TARGET(BUILD_STRING) {
             PyObject *str;
             PyObject *empty = PyUnicode_New(0, 0);
@@ -5579,12 +5593,12 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
             goto fail_post_args;
         }
     }
-    /* Copy closure variables to free variables */
-    for (i = 0; i < co->co_nfreevars; ++i) {
-        PyObject *o = PyTuple_GET_ITEM(func->func_closure, i);
-        Py_INCREF(o);
-        localsplus[co->co_nlocals + co->co_nplaincellvars + i] = o;
-    }
+//     /* Copy closure variables to free variables */
+//     for (i = 0; i < co->co_nfreevars; ++i) {
+//         PyObject *o = PyTuple_GET_ITEM(func->func_closure, i);
+//         Py_INCREF(o);
+//         localsplus[co->co_nlocals + co->co_nplaincellvars + i] = o;
+//     }
     return 0;
 
 fail_pre_positional:
