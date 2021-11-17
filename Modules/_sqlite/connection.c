@@ -71,14 +71,6 @@ class _sqlite3.Connection "pysqlite_Connection *" "clinic_state()->ConnectionTyp
 
 _Py_IDENTIFIER(cursor);
 
-static const char * const begin_statements[] = {
-    "BEGIN ",
-    "BEGIN DEFERRED",
-    "BEGIN IMMEDIATE",
-    "BEGIN EXCLUSIVE",
-    NULL
-};
-
 static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self);
 static void free_callback_context(callback_context *ctx);
 static void set_callback_context(callback_context **ctx_pp,
@@ -108,25 +100,21 @@ new_statement_cache(pysqlite_Connection *self, pysqlite_state *state,
     return res;
 }
 
-static inline const char *
-begin_stmt_to_isolation_level(const char *begin_stmt)
-{
-    assert(begin_stmt != NULL);
-
-    // All begin statements start with "BEGIN "; add strlen("BEGIN ") to get
-    // the isolation level.
-    return begin_stmt + 6;
-}
-
 static const char *
-get_begin_statement(const char *level)
+get_isolation_level(const char *level)
 {
     assert(level != NULL);
-    for (int i = 0; begin_statements[i] != NULL; i++) {
-        const char *stmt = begin_statements[i];
-        const char *candidate = begin_stmt_to_isolation_level(stmt);
+    static const char *const allowed_levels[] = {
+        "",
+        "DEFERRED",
+        "IMMEDIATE",
+        "EXCLUSIVE",
+        NULL
+    };
+    for (int i = 0; allowed_levels[i] != NULL; i++) {
+        const char *candidate = allowed_levels[i];
         if (sqlite3_stricmp(level, candidate) == 0) {
-            return begin_statements[i];
+            return candidate;
         }
     }
     PyErr_SetString(PyExc_ValueError,
@@ -202,10 +190,10 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
     }
 
     // Convert isolation level to begin statement.
-    const char *begin_statement = NULL;
+    const char *level = NULL;
     if (isolation_level != NULL) {
-        begin_statement = get_begin_statement(isolation_level);
-        if (begin_statement == NULL) {
+        level = get_isolation_level(isolation_level);
+        if (level == NULL) {
             return -1;
         }
     }
@@ -227,7 +215,7 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
     self->db = db;
     self->state = state;
     self->detect_types = detect_types;
-    self->begin_statement = begin_statement;
+    self->isolation_level = level;
     self->check_same_thread = check_same_thread;
     self->thread_ident = PyThread_get_thread_ident();
     self->statement_cache = statement_cache;
@@ -1345,10 +1333,8 @@ static PyObject* pysqlite_connection_get_isolation_level(pysqlite_Connection* se
     if (!pysqlite_check_connection(self)) {
         return NULL;
     }
-    if (self->begin_statement != NULL) {
-        const char *stmt = self->begin_statement;
-        const char *iso_level = begin_stmt_to_isolation_level(stmt);
-        return PyUnicode_FromString(iso_level);
+    if (self->isolation_level != NULL) {
+        return PyUnicode_FromString(self->isolation_level);
     }
     Py_RETURN_NONE;
 }
@@ -1381,7 +1367,7 @@ pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* iso
         return -1;
     }
     if (Py_IsNone(isolation_level)) {
-        self->begin_statement = NULL;
+        self->isolation_level = NULL;
 
         // Execute a COMMIT to re-enable autocommit mode
         PyObject *res = pysqlite_connection_commit_impl(self);
@@ -1400,11 +1386,11 @@ pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* iso
             PyErr_SetString(PyExc_ValueError, "embedded null character");
             return -1;
         }
-        const char *stmt = get_begin_statement(cstr_level);
-        if (stmt == NULL) {
+        const char *level = get_isolation_level(cstr_level);
+        if (level == NULL) {
             return -1;
         }
-        self->begin_statement = stmt;
+        self->isolation_level = level;
     }
     else {
         PyErr_SetString(PyExc_TypeError,
