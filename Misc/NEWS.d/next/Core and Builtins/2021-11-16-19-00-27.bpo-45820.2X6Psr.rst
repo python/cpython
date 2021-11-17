@@ -1,0 +1,2 @@
+Fix a segfault when the parser fails without reading any input. Patch by
+Pablo Galindo
