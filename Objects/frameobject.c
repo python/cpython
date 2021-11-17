@@ -627,8 +627,7 @@ frame_dealloc(PyFrameObject *f)
         /* Don't clear code object until the end */
         co = frame->f_code;
         frame->f_code = NULL;
-        Py_CLEAR(frame->f_globals);
-        Py_CLEAR(frame->f_builtins);
+        Py_CLEAR(frame->f_func);
         Py_CLEAR(frame->f_locals);
         PyObject **locals = _PyFrame_GetLocalsArray(frame);
         for (int i = 0; i < frame->stacktop; i++) {

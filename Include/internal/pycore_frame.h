@@ -20,13 +20,13 @@ enum _framestate {
 typedef signed char PyFrameState;
 
 typedef struct _interpreter_frame {
-    PyObject *f_globals;
-    PyObject *f_builtins;
-    PyObject *f_locals;
-    PyCodeObject *f_code;
-    PyFrameObject *frame_obj;
-    /* Borrowed reference to a generator, or NULL */
-    PyObject *generator;
+    PyFunctionObject *f_func; /* Strong reference */
+    PyObject *f_globals; /* Borrowed reference */
+    PyObject *f_builtins; /* Borrowed reference */
+    PyObject *f_locals; /* Strong reference, may be NULL */
+    PyCodeObject *f_code; /* Strong reference */
+    PyFrameObject *frame_obj; /* Strong reference, may be NULL */
+    PyObject *generator; /* Borrowed reference, may be NULL */
     struct _interpreter_frame *previous;
     int f_lasti;       /* Last instruction if called */
     int stacktop;     /* Offset of TOS from localsplus  */
@@ -77,9 +77,11 @@ _PyFrame_InitializeSpecials(
     InterpreterFrame *frame, PyFunctionObject *func,
     PyObject *locals, int nlocalsplus)
 {
+    Py_INCREF(func);
+    frame->f_func = func;
     frame->f_code = (PyCodeObject *)Py_NewRef(func->func_code);
-    frame->f_builtins = Py_NewRef(func->func_builtins);
-    frame->f_globals = Py_NewRef(func->func_globals);
+    frame->f_builtins = func->func_builtins;
+    frame->f_globals = func->func_globals;
     frame->f_locals = Py_XNewRef(locals);
     frame->stacktop = nlocalsplus;
     frame->frame_obj = NULL;
