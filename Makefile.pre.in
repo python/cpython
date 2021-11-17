@@ -201,11 +201,25 @@ RUNSHARED=       @RUNSHARED@
 # ensurepip options
 ENSUREPIP=      @ENSUREPIP@
 
+# Internal static libraries
+LIBMPDEC_A= Modules/_decimal/libmpdec/libmpdec.a
+LIBEXPAT_A= Modules/expat/libexpat.a
+
 # OpenSSL options for setup.py so sysconfig can pick up AC_SUBST() vars.
 OPENSSL_INCLUDES=@OPENSSL_INCLUDES@
 OPENSSL_LIBS=@OPENSSL_LIBS@
 OPENSSL_LDFLAGS=@OPENSSL_LDFLAGS@
 OPENSSL_RPATH=@OPENSSL_RPATH@
+
+# Module compiler and linker flags
+#   yes: module is available
+#   missing: build dependency is missing
+#   disabled: module is disabled
+#   n/a: module is not available on the current platform
+# MODULE_EGG=yes  # yes, missing, disabled, n/a
+# MODULE_EGG_CFLAGS=
+# MODULE_EGG_LDFLAGS=
+@MODULE_BLOCK@
 
 # Default zoneinfo.TZPATH. Added here to expose it in sysconfig.get_config_var
 TZPATH=@TZPATH@
@@ -535,8 +549,6 @@ LIBMPDEC_HEADERS= \
 		$(srcdir)/Modules/_decimal/libmpdec/typearith.h \
 		$(srcdir)/Modules/_decimal/libmpdec/umodarith.h
 
-LIBMPDEC_A= Modules/_decimal/libmpdec/libmpdec.a
-
 ##########################################################################
 # pyexpat's expat library
 
@@ -561,8 +573,6 @@ LIBEXPAT_HEADERS= \
 		Modules/expat/xmlrole.h \
 		Modules/expat/xmltok.h \
 		Modules/expat/xmltok_impl.h
-
-LIBEXPAT_A= Modules/expat/libexpat.a
 
 #########################################################################
 # Rules
