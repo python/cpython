@@ -10926,8 +10926,10 @@ fi
 
 
 if test ! -z "$PKG_CONFIG"; then
-  as_fn_append PY_SQLITE_CFLAGS "`"$PKG_CONFIG" sqlite3 --cflags 2>/dev/null`"
-  as_fn_append PY_SQLITE_LDFLAGS "`"$PKG_CONFIG" sqlite3 --libs 2>/dev/null`"
+  as_fn_append PY_SQLITE_CFLAGS " `"$PKG_CONFIG" sqlite3 --cflags 2>/dev/null`"
+  as_fn_append PY_SQLITE_LDFLAGS " `"$PKG_CONFIG" sqlite3 --libs 2>/dev/null`"
+else
+  as_fn_append PY_SQLITE_LDFLAGS " -lsqlite3"
 fi
 
 save_CFLAGS=$CFLAGS
@@ -10999,7 +11001,6 @@ if ac_fn_c_try_compile "$LINENO"; then :
 
 $as_echo "#define HAVE_LIBSQLITE3 1" >>confdefs.h
 
-      as_fn_append PY_SQLITE_LDFLAGS " -lsqlite3"
 
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext

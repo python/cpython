@@ -3169,8 +3169,10 @@ dnl Check for SQLite library. Use pkg-config if available.
 AC_SUBST([PY_SQLITE_CFLAGS])
 AC_SUBST([PY_SQLITE_LDFLAGS])
 if test ! -z "$PKG_CONFIG"; then
-  AS_VAR_APPEND([PY_SQLITE_CFLAGS], ["`"$PKG_CONFIG" sqlite3 --cflags 2>/dev/null`"])
-  AS_VAR_APPEND([PY_SQLITE_LDFLAGS], ["`"$PKG_CONFIG" sqlite3 --libs 2>/dev/null`"])
+  AS_VAR_APPEND([PY_SQLITE_CFLAGS], [" `"$PKG_CONFIG" sqlite3 --cflags 2>/dev/null`"])
+  AS_VAR_APPEND([PY_SQLITE_LDFLAGS], [" `"$PKG_CONFIG" sqlite3 --libs 2>/dev/null`"])
+else
+  AS_VAR_APPEND([PY_SQLITE_LDFLAGS], [" -lsqlite3"])
 fi
 
 AS_VAR_COPY([save_CFLAGS], [CFLAGS])
@@ -3189,7 +3191,6 @@ AC_CHECK_HEADER([sqlite3.h], [
       ], [])
     ], [
       AC_DEFINE([HAVE_LIBSQLITE3], [1], [Define if SQLite > 3.7.15 is found])
-      AS_VAR_APPEND([PY_SQLITE_LDFLAGS], [" -lsqlite3"])
     ])
   ])
   AC_CHECK_LIB([sqlite3], [sqlite3_load_extension],
