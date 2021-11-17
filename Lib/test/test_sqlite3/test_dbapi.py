@@ -606,59 +606,55 @@ class UninitialisedConnectionTests(unittest.TestCase):
 @unittest.skipIf(sqlite.sqlite_version_info < (3, 36, 0),
                  "Requires SQLite 3.36.0 or higher")
 class SerializeTests(unittest.TestCase):
-    def setUp(self):
-        self.cx = sqlite.connect(":memory:")
-
-    def tearDown(self):
-        self.cx.close()
-
     def test_serialize_deserialize(self):
-        with self.cx:
-            self.cx.execute("create table t(t)")
-            data = self.cx.serialize()
-        self.assertEqual(len(data), 8192)
+        with memory_database() as cx:
+            with cx:
+                cx.execute("create table t(t)")
+            data = cx.serialize()
+            self.assertEqual(len(data), 8192)
 
-        # Remove test table, verify that it was removed
-        with self.cx:
-            self.cx.execute("drop table t")
-        try:
-            self.cx.execute("select t from t")
-        except sqlite.OperationalError:
-            pass
-        else:
-            self.fail()
+            # Remove test table, verify that it was removed.
+            with cx:
+                cx.execute("drop table t")
+            regex = "no such table"
+            with self.assertRaisesRegex(sqlite.OperationalError, regex):
+                cx.execute("select t from t")
 
-        # Load the serialized database, verify that the table is back again
-        self.cx.deserialize(data)
-        self.cx.execute("select t from t")
+            # Deserialize and verify that test table is restored.
+            cx.deserialize(data)
+            cx.execute("select t from t")
 
     def test_deserialize_wrong_args(self):
-        dataset = [
+        dataset = (
             (BufferError, memoryview(b"blob")[::2]),
             (TypeError, []),
             (TypeError, 1),
             (TypeError, None),
-        ]
+        )
         for exc, arg in dataset:
             with self.subTest(exc=exc, arg=arg):
-                self.assertRaises(exc, self.cx.deserialize, arg)
+                with memory_database() as cx:
+                    self.assertRaises(exc, cx.deserialize, arg)
 
     def test_deserialize_corrupt_database(self):
-        with self.assertRaises(sqlite.DatabaseError):
-            self.cx.deserialize(b"\0\1\3")
-            # SQLite does not generate an error until you try to query the
-            # deserialized database, so we query the ever present schema table.
-            self.cx.execute("select * from sqlite_schema")
+        with memory_database() as cx:
+            regex = "file is not a database"
+            with self.assertRaisesRegex(sqlite.DatabaseError, regex):
+                cx.deserialize(b"\0\1\3")
+                # SQLite does not generate an error until you try to query the
+                # deserialized database.
+                cx.execute("create table fail(f)")
 
     def test_fetch_across_deserialize(self):
-        with self.cx:
-            self.cx.execute("create table t(t)")
-        data = self.cx.serialize()
-        cu = self.cx.execute("select * from sqlite_schema")
-        self.cx.deserialize(data)
-        schema = [('table', 't', 't', 2, 'CREATE TABLE t(t)')]
-        with self.assertRaises(sqlite.InterfaceError):
-            cu.fetchall()
+        with memory_database() as cx:
+            with cx:
+                cx.execute("create table t(t)")
+            data = cx.serialize()
+            cu = cx.execute("select t from t")
+            cx.deserialize(data)
+            regex = "Cursor.*can no longer be fetched from"
+            with self.assertRaisesRegex(sqlite.InterfaceError, regex):
+                cu.fetchall()
 
 
 class OpenTests(unittest.TestCase):
