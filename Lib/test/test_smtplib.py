@@ -18,16 +18,12 @@ import threading
 
 import unittest
 from test import support, mock_socket
+from test.support import _asyncore as asyncore
+from test.support import _smtpd as smtpd
 from test.support import hashlib_helper
 from test.support import socket_helper
 from test.support import threading_helper
 from unittest.mock import Mock
-
-import warnings
-with warnings.catch_warnings():
-    warnings.simplefilter('ignore', DeprecationWarning)
-    import asyncore
-    import smtpd
 
 HOST = socket_helper.HOST
 
