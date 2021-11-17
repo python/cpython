@@ -61,12 +61,7 @@
 #include "frozen_modules/frozen_only.h"
 /* End includes */
 
-#ifdef MS_WINDOWS
-/* Deepfreeze isn't supported on Windows yet. */
-#define GET_CODE(name) NULL
-#else
 #define GET_CODE(name) _Py_get_##name##_toplevel
-#endif
 
 /* Start extern declarations */
 extern PyObject *_Py_get_importlib__bootstrap_toplevel(void);
@@ -108,7 +103,7 @@ static const struct _frozen bootstrap_modules[] = {
 static const struct _frozen stdlib_modules[] = {
     /* stdlib - startup, without site (python -S) */
     {"abc", _Py_M__abc, (int)sizeof(_Py_M__abc), GET_CODE(abc)},
-    {"codecs", _Py_M__codecs, (int)sizeof(_Py_M__codecs), GET_CODE(codecs)},
+    // {"codecs", _Py_M__codecs, (int)sizeof(_Py_M__codecs), GET_CODE(codecs)},
     {"io", _Py_M__io, (int)sizeof(_Py_M__io), GET_CODE(io)},
 
     /* stdlib - startup, with site */

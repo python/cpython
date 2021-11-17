@@ -75,7 +75,7 @@ FROZEN = [
         ]),
     ('stdlib - startup, without site (python -S)', [
         'abc',
-        'codecs',
+        # 'codecs',  # TODO: Windows name conflict with Python\codecs.c
         # For now we do not freeze the encodings, due # to the noise all
         # those extra modules add to the text printed during the build.
         # (See https://github.com/python/cpython/pull/28398#pullrequestreview-756856469.)
