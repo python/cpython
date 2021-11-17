@@ -2165,8 +2165,8 @@ check_eval_breaker:
             _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
             _PyObjectCache *cache1 = &caches[-1].obj;
             PyFunctionObject *getitem = (PyFunctionObject *)cache1->obj;
-            DEOPT_IF(getitem->func_version != cache0->index, BINARY_SUBSCR);
             DEOPT_IF(Py_TYPE(container)->tp_version_tag != cache0->version, BINARY_SUBSCR);
+            DEOPT_IF(getitem->func_version != cache0->index, BINARY_SUBSCR);
             PyCodeObject *code = (PyCodeObject *)getitem->func_code;
             size_t size = code->co_nlocalsplus + code->co_stacksize + FRAME_SPECIALS_SIZE;
             assert(code->co_argcount == 2);
