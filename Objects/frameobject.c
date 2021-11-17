@@ -5,6 +5,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetDict()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_code.h"          // CO_FAST_LOCAL, etc.
+#include "pycore_function.h"      // _PyFunctionFrom_Constructor()
 
 #include "frameobject.h"          // PyFrameObject
 #include "pycore_frame.h"
@@ -782,16 +783,16 @@ PyTypeObject PyFrame_Type = {
 _Py_IDENTIFIER(__builtins__);
 
 static InterpreterFrame *
-allocate_heap_frame(PyFrameConstructor *con, PyObject *locals)
+allocate_heap_frame(PyFunctionObject *func, PyObject *locals)
 {
-    PyCodeObject *code = (PyCodeObject *)con->fc_code;
+    PyCodeObject *code = (PyCodeObject *)func->func_code;
     int size = code->co_nlocalsplus+code->co_stacksize + FRAME_SPECIALS_SIZE;
     InterpreterFrame *frame = (InterpreterFrame *)PyMem_Malloc(sizeof(PyObject *)*size);
     if (frame == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    _PyFrame_InitializeSpecials(frame, con, locals, code->co_nlocalsplus);
+    _PyFrame_InitializeSpecials(frame, func, locals, code->co_nlocalsplus);
     for (Py_ssize_t i = 0; i < code->co_nlocalsplus; i++) {
         frame->localsplus[i] = NULL;
     }
@@ -872,7 +873,12 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
         .fc_kwdefaults = NULL,
         .fc_closure = NULL
     };
-    InterpreterFrame *frame = allocate_heap_frame(&desc, locals);
+    PyFunctionObject *func = _PyFunctionFrom_Constructor(&desc);
+    if (func == NULL) {
+        return NULL;
+    }
+    InterpreterFrame *frame = allocate_heap_frame(func, locals);
+    Py_DECREF(func);
     if (frame == NULL) {
         return NULL;
     }

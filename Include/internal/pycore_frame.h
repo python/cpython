@@ -70,16 +70,16 @@ static inline void _PyFrame_StackPush(InterpreterFrame *f, PyObject *value) {
 #define FRAME_SPECIALS_SIZE ((sizeof(InterpreterFrame)-1)/sizeof(PyObject *))
 
 InterpreterFrame *
-_PyInterpreterFrame_HeapAlloc(PyFrameConstructor *con, PyObject *locals);
+_PyInterpreterFrame_HeapAlloc(PyFunctionObject *func, PyObject *locals);
 
 static inline void
 _PyFrame_InitializeSpecials(
-    InterpreterFrame *frame, PyFrameConstructor *con,
+    InterpreterFrame *frame, PyFunctionObject *func,
     PyObject *locals, int nlocalsplus)
 {
-    frame->f_code = (PyCodeObject *)Py_NewRef(con->fc_code);
-    frame->f_builtins = Py_NewRef(con->fc_builtins);
-    frame->f_globals = Py_NewRef(con->fc_globals);
+    frame->f_code = (PyCodeObject *)Py_NewRef(func->func_code);
+    frame->f_builtins = Py_NewRef(func->func_builtins);
+    frame->f_globals = Py_NewRef(func->func_globals);
     frame->f_locals = Py_XNewRef(locals);
     frame->stacktop = nlocalsplus;
     frame->frame_obj = NULL;
@@ -150,7 +150,7 @@ void
 _PyFrame_LocalsToFast(InterpreterFrame *frame, int clear);
 
 InterpreterFrame *_PyThreadState_PushFrame(
-    PyThreadState *tstate, PyFrameConstructor *con, PyObject *locals);
+    PyThreadState *tstate, PyFunctionObject *func, PyObject *locals);
 
 extern InterpreterFrame *
 _PyThreadState_BumpFramePointerSlow(PyThreadState *tstate, size_t size);
