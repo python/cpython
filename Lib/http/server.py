@@ -1033,6 +1033,17 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
         head, tail = os.path.splitext(path)
         return tail.lower() in (".py", ".pyw")
 
+    def make_cmdline( self, scriptfile, query ):
+        cmdline = [scriptfile]
+        if self.is_python(scriptfile):
+            interp = sys.executable
+            if interp.lower().endswith("w.exe"):
+                # On Windows, use python.exe, not pythonw.exe
+                interp = interp[:-5] + interp[-4:]
+            cmdline = [interp, '-u'] + cmdline
+        if '=' not in query:
+            cmdline.append(query)
+
     def run_cgi(self):
         """Execute a CGI script."""
         dir, rest = self.cgi_info
@@ -1179,7 +1190,8 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
         else:
             # Non-Unix -- use subprocess
             import subprocess
-            cmdline = [scriptfile]
+            cmdline = self.make_cmdline( scriptfile, query )
+            self.log_message("command: %s", subprocess.list2cmdline(cmdline))
             if self.is_python(scriptfile):
                 interp = sys.executable
                 if interp.lower().endswith("w.exe"):
