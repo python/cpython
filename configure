@@ -19456,6 +19456,49 @@ MODULE_BLOCK=
 
 
 
+# This is what autoupdate's m4 run will expand.  It fires
+# the warning (with _au_warn_XXX), outputs it into the
+# updated configure.ac (with AC_DIAGNOSE), and then outputs
+# the replacement expansion.
+
+
+# This is an auxiliary macro that is also run when
+# autoupdate runs m4.  It simply calls m4_warning, but
+# we need a wrapper so that each warning is emitted only
+# once.  We break the quoting in m4_warning's argument in
+# order to expand this macro's arguments, not AU_DEFUN's.
+
+
+# Finally, this is the expansion that is picked up by
+# autoconf.  It tells the user to run autoupdate, and
+# then outputs the replacement expansion.  We do not care
+# about autoupdate's warning because that contains
+# information on what to do *after* running autoupdate.
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE_IO_CFLAGS=-I\$(srcdir)/Modules/_io$as_nl"
+
+
+    as_fn_append MODULE_BLOCK "MODULE_IO_LDFLAGS=$TIMEMODULE_LIB$as_nl"
+
+
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE_TIME_LDFLAGS=$TIMEMODULE_LIB$as_nl"
+
+
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__DATETIME_LDFLAGS=$TIMEMODULE_LIB$as_nl"
+
+
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module ossaudiodev" >&5
 $as_echo_n "checking for stdlib extension module ossaudiodev... " >&6; }
       case $py_stdlib_not_available in #(
@@ -21068,7 +21111,7 @@ fi
 echo "creating Makefile" >&6
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
-			Modules/Setup.local $srcdir/Modules/Setup
+			Modules/Setup.local $srcdir/Modules/Setup.core $srcdir/Modules/Setup
 mv config.c Modules
 
 if test -z "$PKG_CONFIG"; then
