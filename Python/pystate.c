@@ -204,31 +204,10 @@ _PyInterpreterState_Enable(_PyRuntimeState *runtime)
     return _PyStatus_OK();
 }
 
-PyInterpreterState *
-PyInterpreterState_New(void)
+static void
+init_interpreter(PyInterpreterState *interp, PyThread_type_lock pending_lock)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    /* tstate is NULL when Py_InitializeFromConfig() calls
-       PyInterpreterState_New() to create the main interpreter. */
-    if (_PySys_Audit(tstate, "cpython.PyInterpreterState_New", NULL) < 0) {
-        return NULL;
-    }
-
-    PyInterpreterState *interp = PyMem_RawCalloc(1, sizeof(PyInterpreterState));
-    if (interp == NULL) {
-        return NULL;
-    }
-
     interp->id_refcount = -1;
-
-    /* Don't get runtime from tstate since tstate can be NULL */
-    _PyRuntimeState *runtime = &_PyRuntime;
-    interp->runtime = runtime;
-
-    PyThread_type_lock pending_lock = PyThread_allocate_lock();
-    if (pending_lock == NULL) {
-        goto out_of_memory;
-    }
 
     _PyEval_InitState(&interp->ceval, pending_lock);
     _PyGC_InitState(&interp->gc);
@@ -244,15 +223,53 @@ PyInterpreterState_New(void)
 #endif
 #endif
 
+    interp->threads.next_unique_id = 0;
+
+    interp->audit_hooks = NULL;
+}
+
+PyInterpreterState *
+PyInterpreterState_New(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+
+    /* tstate is NULL when Py_InitializeFromConfig() calls
+       PyInterpreterState_New() to create the main interpreter. */
+    if (_PySys_Audit(tstate, "cpython.PyInterpreterState_New", NULL) < 0) {
+        return NULL;
+    }
+
+    PyThread_type_lock pending_lock = PyThread_allocate_lock();
+    if (pending_lock == NULL) {
+        if (tstate != NULL) {
+            _PyErr_NoMemory(tstate);
+        }
+        return NULL;
+    }
+
+    PyInterpreterState *interp = PyMem_RawCalloc(1, sizeof(PyInterpreterState));
+    if (interp == NULL) {
+        PyThread_free_lock(pending_lock);
+        return NULL;
+    }
+
+    /* Don't get runtime from tstate since tstate can be NULL */
+    _PyRuntimeState *runtime = &_PyRuntime;
+    interp->runtime = runtime;
+
+    init_interpreter(interp, pending_lock);
+
     struct pyinterpreters *interpreters = &runtime->interpreters;
 
     HEAD_LOCK(runtime);
     if (interpreters->next_id < 0) {
         /* overflow or Py_Initialize() not called! */
+        assert(interpreters->main != NULL);
         if (tstate != NULL) {
             _PyErr_SetString(tstate, PyExc_RuntimeError,
                              "failed to get an interpreter ID");
         }
+        PyThread_free_lock(pending_lock);
         PyMem_RawFree(interp);
         interp = NULL;
     }
@@ -267,27 +284,7 @@ PyInterpreterState_New(void)
     }
     HEAD_UNLOCK(runtime);
 
-    if (interp == NULL) {
-        PyThread_free_lock(pending_lock);
-        return NULL;
-    }
-
-    interp->threads.next_unique_id = 0;
-
-    interp->audit_hooks = NULL;
-
     return interp;
-
-out_of_memory:
-    if (tstate != NULL) {
-        _PyErr_NoMemory(tstate);
-    }
-
-    if (pending_lock != NULL) {
-        PyThread_free_lock(pending_lock);
-    }
-    PyMem_RawFree(interp);
-    return NULL;
 }
 
 
