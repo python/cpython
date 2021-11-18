@@ -1485,11 +1485,8 @@ class PyBuildExt(build_ext):
         else:
             self.missing.extend(['resource', 'termios'])
 
-        # Platform-specific libraries
-        if HOST_PLATFORM.startswith(('linux', 'freebsd', 'gnukfreebsd')):
-            self.add(Extension('ossaudiodev', ['ossaudiodev.c']))
-        elif not AIX:
-            self.missing.append('ossaudiodev')
+        # linux/soundcard.h or sys/soundcard.h
+        self.addext(Extension('ossaudiodev', ['ossaudiodev.c']))
 
         if MACOS:
             self.add(Extension('_scproxy', ['_scproxy.c'],
