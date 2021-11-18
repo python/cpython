@@ -623,6 +623,13 @@ ac_includes_default="\
 #endif"
 
 ac_subst_vars='LTLIBOBJS
+MODULE_BLOCK
+MODULE__DECIMAL_FALSE
+MODULE__DECIMAL_TRUE
+MODULE__ELEMENTTREE_FALSE
+MODULE__ELEMENTTREE_TRUE
+MODULE_PYEXPAT_FALSE
+MODULE_PYEXPAT_TRUE
 TEST_MODULES
 LIBRARY_DEPS
 STATIC_LIBPYTHON
@@ -19196,6 +19203,183 @@ $as_echo "no" >&6; }
 fi
 
 
+case $ac_sys_system in #(
+  AIX) :
+    py_stdlib_not_available="_scproxy spwd" ;; #(
+  VxWorks*) :
+    py_stdlib_not_available="_scproxy _crypt termios grp" ;; #(
+  Darwin) :
+    py_stdlib_not_available="ossaudiodev spwd" ;; #(
+  CYGWIN*) :
+    py_stdlib_not_available="_scproxy nis" ;; #(
+  QNX*) :
+    py_stdlib_not_available="_scproxy nis" ;; #(
+  FreeBSD*) :
+    py_stdlib_not_available="_scproxy spwd" ;; #(
+  *) :
+    py_stdlib_not_available="_scproxy"
+ ;;
+esac
+
+
+MODULE_BLOCK=
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module pyexpat" >&5
+$as_echo_n "checking for stdlib extension module pyexpat... " >&6; }
+      case $py_stdlib_not_available in #(
+  *pyexpat*) :
+    py_cv_module_pyexpat=n/a ;; #(
+  *) :
+
+      if true; then :
+  if true; then :
+  py_cv_module_pyexpat=yes
+else
+  py_cv_module_pyexpat=missing
+fi
+else
+  py_cv_module_pyexpat=disabled
+
+fi
+
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE_PYEXPAT=$py_cv_module_pyexpat$as_nl"
+  if test "x$py_cv_module_pyexpat" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE_PYEXPAT_CFLAGS=$LIBEXPAT_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_PYEXPAT_LDFLAGS=$LIBEXPAT_LDFLAGS$as_nl"
+     if true; then
+  MODULE_PYEXPAT_TRUE=
+  MODULE_PYEXPAT_FALSE='#'
+else
+  MODULE_PYEXPAT_TRUE='#'
+  MODULE_PYEXPAT_FALSE=
+fi
+
+
+else
+
+     if false; then
+  MODULE_PYEXPAT_TRUE=
+  MODULE_PYEXPAT_FALSE='#'
+else
+  MODULE_PYEXPAT_TRUE='#'
+  MODULE_PYEXPAT_FALSE=
+fi
+
+
+fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_pyexpat" >&5
+$as_echo "$py_cv_module_pyexpat" >&6; }
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _elementtree" >&5
+$as_echo_n "checking for stdlib extension module _elementtree... " >&6; }
+      case $py_stdlib_not_available in #(
+  *_elementtree*) :
+    py_cv_module__elementtree=n/a ;; #(
+  *) :
+
+      if true; then :
+  if true; then :
+  py_cv_module__elementtree=yes
+else
+  py_cv_module__elementtree=missing
+fi
+else
+  py_cv_module__elementtree=disabled
+
+fi
+
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE__ELEMENTTREE=$py_cv_module__elementtree$as_nl"
+  if test "x$py_cv_module__elementtree" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__ELEMENTTREE_CFLAGS=$LIBEXPAT_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__ELEMENTTREE_LDFLAGS=$as_nl"
+     if true; then
+  MODULE__ELEMENTTREE_TRUE=
+  MODULE__ELEMENTTREE_FALSE='#'
+else
+  MODULE__ELEMENTTREE_TRUE='#'
+  MODULE__ELEMENTTREE_FALSE=
+fi
+
+
+else
+
+     if false; then
+  MODULE__ELEMENTTREE_TRUE=
+  MODULE__ELEMENTTREE_FALSE='#'
+else
+  MODULE__ELEMENTTREE_TRUE='#'
+  MODULE__ELEMENTTREE_FALSE=
+fi
+
+
+fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__elementtree" >&5
+$as_echo "$py_cv_module__elementtree" >&6; }
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _decimal" >&5
+$as_echo_n "checking for stdlib extension module _decimal... " >&6; }
+      case $py_stdlib_not_available in #(
+  *_decimal*) :
+    py_cv_module__decimal=n/a ;; #(
+  *) :
+
+      if true; then :
+  if true; then :
+  py_cv_module__decimal=yes
+else
+  py_cv_module__decimal=missing
+fi
+else
+  py_cv_module__decimal=disabled
+
+fi
+
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE__DECIMAL=$py_cv_module__decimal$as_nl"
+  if test "x$py_cv_module__decimal" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__DECIMAL_CFLAGS=$LIBMPDEC_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__DECIMAL_LDFLAGS=$LIBMPDEC_LDFLAGS$as_nl"
+     if true; then
+  MODULE__DECIMAL_TRUE=
+  MODULE__DECIMAL_FALSE='#'
+else
+  MODULE__DECIMAL_TRUE='#'
+  MODULE__DECIMAL_FALSE=
+fi
+
+
+else
+
+     if false; then
+  MODULE__DECIMAL_TRUE=
+  MODULE__DECIMAL_FALSE='#'
+else
+  MODULE__DECIMAL_TRUE='#'
+  MODULE__DECIMAL_FALSE=
+fi
+
+
+fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__decimal" >&5
+$as_echo "$py_cv_module__decimal" >&6; }
+
+
+# substitute multiline block, must come after last PY_STDLIB_MOD()
+
 
 # generate output files
 ac_config_files="$ac_config_files Makefile.pre Misc/python.pc Misc/python-embed.pc Misc/python-config.sh"
@@ -19312,6 +19496,30 @@ LTLIBOBJS=$ac_ltlibobjs
 
 
 
+if test -z "${MODULE_PYEXPAT_TRUE}" && test -z "${MODULE_PYEXPAT_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_PYEXPAT\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_PYEXPAT_TRUE}" && test -z "${MODULE_PYEXPAT_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_PYEXPAT\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__ELEMENTTREE_TRUE}" && test -z "${MODULE__ELEMENTTREE_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__ELEMENTTREE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__ELEMENTTREE_TRUE}" && test -z "${MODULE__ELEMENTTREE_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__ELEMENTTREE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__DECIMAL_TRUE}" && test -z "${MODULE__DECIMAL_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__DECIMAL\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__DECIMAL_TRUE}" && test -z "${MODULE__DECIMAL_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__DECIMAL\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 
 : "${CONFIG_STATUS=./config.status}"
 ac_write_fail=0

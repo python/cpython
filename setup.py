@@ -364,57 +364,6 @@ def find_module_file(module, dirlist):
     return os.path.abspath(os.path.join(dirs[0], module))
 
 
-def parse_cflags(flags):
-    """Parse a string with compiler flags (-I, -D, -U, extra)
-    
-    Distutils appends extra args to the compiler arguments. Some flags like
-    -I must appear earlier. Otherwise the pre-processor picks up files
-    from system inclue directories.
-    """
-    include_dirs = []
-    define_macros = []
-    undef_macros = []
-    extra_compile_args = []
-    if flags is not None:
-        # shlex.split(None) reads from stdin
-        for token in shlex.split(flags):
-            switch = token[0:2]
-            value = token[2:]
-            if switch == '-I':
-                include_dirs.append(value)
-            elif switch == '-D':
-                key, _, val = value.partition("=")
-                if not val:
-                    val = None
-                define_macros.append((key, val))
-            elif switch == '-U':
-                undef_macros.append(value)
-            else:
-                extra_compile_args.append(token)
-
-    return include_dirs, define_macros, undef_macros, extra_compile_args
-
-
-def parse_ldflags(flags):
-    """Parse a string with linker flags (-L, -l, extra)"""
-    library_dirs = []
-    libraries = []
-    extra_link_args = []
-    if flags is not None:
-        # shlex.split(None) reads from stdin
-        for token in shlex.split(flags):
-            switch = token[0:2]
-            value = token[2:]
-            if switch == '-L':
-                library_dirs.append(value)
-            elif switch == '-l':
-                libraries.append(value)
-            else:
-                extra_link_args.append(token)
-
-    return library_dirs, libraries, extra_link_args
-
-
 class PyBuildExt(build_ext):
 
     def __init__(self, dist):
@@ -432,6 +381,74 @@ class PyBuildExt(build_ext):
 
     def add(self, ext):
         self.extensions.append(ext)
+
+    def addext(self, ext, *, update_flags=True):
+        """Add extension with Makefile MODULE_{name} support
+        """
+        if update_flags:
+            self.update_extension_flags(ext)
+
+        state = sysconfig.get_config_var(f"MODULE_{ext.name.upper()}")
+        if state == "yes":
+            self.extensions.append(ext)
+        elif state == "disabled":
+            self.disabled_configure.append(ext.name)
+        elif state == "missing":
+            self.missing.append(ext.name)
+        elif state == "n/a":
+            # not available on current platform
+            pass
+        else:
+            # not migrated to MODULE_{name} yet.
+            self.extensions.append(ext)
+
+    def update_extension_flags(self, ext):
+        """Update extension flags with module CFLAGS and LDFLAGS
+
+        Reads MODULE_{name}_CFLAGS and _LDFLAGS
+
+        Distutils appends extra args to the compiler arguments. Some flags like
+        -I must appear earlier, otherwise the pre-processor picks up files
+        from system inclue directories.
+        """
+        upper_name = ext.name.upper()
+        # Parse compiler flags (-I, -D, -U, extra args)
+        cflags = sysconfig.get_config_var(f"MODULE_{upper_name}_CFLAGS")
+        if cflags:
+            for token in shlex.split(cflags):
+                switch = token[0:2]
+                value = token[2:]
+                if switch == '-I':
+                    ext.include_dirs.append(value)
+                elif switch == '-D':
+                    key, _, val = value.partition("=")
+                    if not val:
+                        val = None
+                    ext.define_macros.append((key, val))
+                elif switch == '-U':
+                    ext.undef_macros.append(value)
+                else:
+                    ext.extra_compile_args.append(token)
+
+        # Parse linker flags (-L, -l, extra objects, extra args)
+        ldflags = sysconfig.get_config_var(f"MODULE_{upper_name}_LDFLAGS")
+        if ldflags:
+            for token in shlex.split(ldflags):
+                switch = token[0:2]
+                value = token[2:]
+                if switch == '-L':
+                    ext.library_dirs.append(value)
+                elif switch == '-l':
+                    ext.libraries.append(value)
+                elif (
+                    token[0] != '-' and
+                    token.endswith(('.a', '.o', '.so', '.sl', '.dylib'))
+                ):
+                    ext.extra_objects.append(token)
+                else:
+                    ext.extra_link_args.append(token)
+
+        return ext
 
     def set_srcdir(self):
         self.srcdir = sysconfig.get_config_var('srcdir')
@@ -1527,32 +1544,11 @@ class PyBuildExt(build_ext):
         #
         # More information on Expat can be found at www.libexpat.org.
         #
-        cflags = parse_cflags(sysconfig.get_config_var("EXPAT_CFLAGS"))
-        include_dirs, define_macros, undef_macros, extra_compile_args = cflags
-        # ldflags includes either system libexpat or full path to
-        # our static libexpat.a.
-        ldflags = parse_ldflags(sysconfig.get_config_var("EXPAT_LDFLAGS"))
-        library_dirs, libraries, extra_link_args = ldflags
-
-        self.add(Extension('pyexpat',
-                           include_dirs=include_dirs,
-                           define_macros=define_macros,
-                           undef_macros=undef_macros,
-                           extra_compile_args=extra_compile_args,
-                           library_dirs=library_dirs,
-                           libraries=libraries,
-                           extra_link_args=extra_link_args,
-                           sources=['pyexpat.c']))
+        self.addext(Extension('pyexpat', sources=['pyexpat.c']))
 
         # Fredrik Lundh's cElementTree module.  Note that this also
         # uses expat (via the CAPI hook in pyexpat).
-        self.add(Extension('_elementtree',
-                           include_dirs=include_dirs,
-                           define_macros=define_macros,
-                           undef_macros=undef_macros,
-                           extra_compile_args=extra_compile_args,
-                           # no EXPAT_LDFLAGS
-                           sources=['_elementtree.c']))
+        self.addext(Extension('_elementtree', sources=['_elementtree.c']))
 
     def detect_multibytecodecs(self):
         # Hye-Shik Chang's CJKCodecs modules.
@@ -2046,26 +2042,14 @@ class PyBuildExt(build_ext):
 
     def detect_decimal(self):
         # Stefan Krah's _decimal module
-        sources = ['_decimal/_decimal.c']
-
-        cflags = parse_cflags(sysconfig.get_config_var("DECIMAL_CFLAGS"))
-        include_dirs, define_macros, undef_macros, extra_compile_args = cflags
-        # ldflags includes either system libmpdec or full path to
-        # our static libmpdec.a.
-        ldflags = parse_ldflags(sysconfig.get_config_var("DECIMAL_LDFLAGS"))
-        library_dirs, libraries, extra_link_args = ldflags
-
-        # Uncomment for extra functionality:
-        #define_macros.append(('EXTRA_FUNCTIONALITY', 1))
-        self.add(Extension('_decimal',
-                           include_dirs=include_dirs,
-                           define_macros=define_macros,
-                           undef_macros=undef_macros,
-                           extra_compile_args=extra_compile_args,
-                           library_dirs=library_dirs,
-                           libraries=libraries,
-                           extra_link_args=extra_link_args,
-                           sources=sources))
+        self.addext(
+            Extension(
+                '_decimal',
+                ['_decimal/_decimal.c'],
+                # Uncomment for extra functionality:
+                # define_macros=[('EXTRA_FUNCTIONALITY', 1)]
+            )
+        )
 
     def detect_openssl_hashlib(self):
         # Detect SSL support for the socket module (via _ssl)
