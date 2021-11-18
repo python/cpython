@@ -1502,7 +1502,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define TRACE_FUNCTION_EXIT() \
     if (cframe.use_tracing) { \
         if (trace_function_exit(tstate, frame, retval)) { \
-            retval = NULL; \
+            Py_DECREF(retval); \
             goto exit_unwind; \
         } \
     }
