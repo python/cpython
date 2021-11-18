@@ -3166,22 +3166,22 @@ if test "$have_glibc_memmove_bug" = yes; then
 fi
 
 dnl Check for SQLite library. Use pkg-config if available.
-AC_SUBST([PY_SQLITE_CFLAGS])
-AC_SUBST([PY_SQLITE_LDFLAGS])
-if test ! -z "$PKG_CONFIG"; then
-  AS_VAR_APPEND([PY_SQLITE_CFLAGS], [" `"$PKG_CONFIG" sqlite3 --cflags 2>/dev/null`"])
-  AS_VAR_APPEND([PY_SQLITE_LDFLAGS], [" `"$PKG_CONFIG" sqlite3 --libs 2>/dev/null`"])
-else
-  AS_VAR_APPEND([PY_SQLITE_LDFLAGS], [" -lsqlite3"])
-fi
+PKG_CHECK_MODULES(
+  [LIBSQLITE3], [sqlite3 >= 3.7.15], [], [
+    LIBSQLITE3_LIBS="-lsqlite3"
+    LIBSQLITE3_CFLAGS=
+  ]
+)
+AS_VAR_APPEND([LIBSQLITE3_CFLAGS], [' -I$(srcdir)/Modules/_sqlite'])
 
 AS_VAR_COPY([save_CFLAGS], [CFLAGS])
 AS_VAR_COPY([save_LDFLAGS], [LDFLAGS])
-AS_VAR_APPEND([CFLAGS], ["$PY_SQLITE_CFLAGS"])
-AS_VAR_APPEND([LDFLAGS], ["$PY_SQLITE_LDFLAGS"])
+AS_VAR_COPY([CFLAGS], [LIBSQLITE3_CFLAGS])
+AS_VAR_COPY([LDFLAGS], [LIBSQLITE3_LIBS])
 
 AC_CHECK_HEADER([sqlite3.h], [
   AC_CHECK_LIB([sqlite3], [sqlite3_open_v2], [
+    have_sqlite3=yes
     AC_COMPILE_IFELSE([
       AC_LANG_PROGRAM([
         #include <sqlite3.h>
@@ -3189,13 +3189,9 @@ AC_CHECK_HEADER([sqlite3.h], [
         #  error "SQLite 3.7.15 or higher required"
         #endif
       ], [])
-    ], [
-      AC_DEFINE([HAVE_LIBSQLITE3], [1], [Define if SQLite > 3.7.15 is found])
-    ])
-  ])
-  AC_CHECK_LIB([sqlite3], [sqlite3_load_extension],
-               [have_sqlite3_load_extension=yes],
-               [have_sqlite3_load_extension=no])
+    ], [have_supported_sqlite3=yes], [have_supported_sqlite3=no])
+  ], [have_sqlite3=no])
+  AC_CHECK_LIB([sqlite3], [sqlite3_load_extension])
 ])
 
 AS_VAR_COPY([CFLAGS], [save_CFLAGS])
@@ -3212,7 +3208,7 @@ AC_ARG_ENABLE(loadable-sqlite-extensions,
 AC_MSG_RESULT($enable_loadable_sqlite_extensions)
 
 AS_VAR_IF([enable_loadable_sqlite_extensions], [yes], [
-  AC_DEFINE(PY_SQLITE_ENABLE_LOAD_EXTENSION, 1,
+  AC_DEFINE(LIBSQLITE3_ENABLE_LOAD_EXTENSION, 1,
   [Define to 1 to build the sqlite module with loadable extensions support.])
 ])
 
@@ -6036,6 +6032,10 @@ PY_STDLIB_MOD([pyexpat], [], [], [$LIBEXPAT_CFLAGS], [$LIBEXPAT_LDFLAGS])
 PY_STDLIB_MOD([_elementtree], [], [], [$LIBEXPAT_CFLAGS], [])
 
 PY_STDLIB_MOD([_decimal], [], [], [$LIBMPDEC_CFLAGS], [$LIBMPDEC_LDFLAGS])
+PY_STDLIB_MOD([_sqlite3],
+  [test "$have_sqlite3" = "yes"],
+  [test "$have_supported_sqlite3" = "yes"],
+  [$LIBSQLITE3_CFLAGS], [$LIBSQLITE3_LIBS])
 
 # substitute multiline block, must come after last PY_STDLIB_MOD()
 AC_SUBST([MODULE_BLOCK])

@@ -1371,17 +1371,6 @@ class PyBuildExt(build_ext):
             self.missing.append('_gdbm')
 
     def detect_sqlite(self):
-        have_sqlite3 = sysconfig.get_config_var("HAVE_LIBSQLITE3")
-        if not have_sqlite3:
-            self.missing.append("_sqlite3")
-            return
-
-        cflags = parse_cflags(sysconfig.get_config_var("PY_SQLITE_CFLAGS"))
-        include_dirs, define_macros, undef_macros, extra_compile_args = cflags
-
-        ldflags = parse_ldflags(sysconfig.get_config_var("PY_SQLITE_LDFLAGS"))
-        library_dirs, libraries, extra_link_args = ldflags
-
         sources = [
             "_sqlite/connection.c",
             "_sqlite/cursor.c",
@@ -1392,16 +1381,7 @@ class PyBuildExt(build_ext):
             "_sqlite/statement.c",
             "_sqlite/util.c",
         ]
-        library_dirs.append("Modules/_sqlite")
-        self.add(Extension("_sqlite3",
-                           include_dirs=include_dirs,
-                           define_macros=define_macros,
-                           undef_macros=undef_macros,
-                           extra_compile_args=extra_compile_args,
-                           library_dirs=library_dirs,
-                           libraries=libraries,
-                           extra_link_args=extra_link_args,
-                           sources=sources))
+        self.addext(Extension("_sqlite3", sources=sources))
 
     def detect_platform_specific_exts(self):
         # Unix-only modules
