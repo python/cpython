@@ -118,11 +118,14 @@
 /* define to 1 if your sem_getvalue is broken. */
 #undef HAVE_BROKEN_SEM_GETVALUE
 
-/* Define if `unsetenv` does not return an int. */
+/* Define if 'unsetenv' does not return an int. */
 #undef HAVE_BROKEN_UNSETENV
 
 /* Has builtin __atomic_load_n() and __atomic_store_n() functions */
 #undef HAVE_BUILTIN_ATOMIC
+
+/* Define to 1 if you have the <bzlib.h> header file. */
+#undef HAVE_BZLIB_H
 
 /* Define to 1 if you have the 'chflags' function. */
 #undef HAVE_CHFLAGS
@@ -187,7 +190,7 @@
 /* Define if you have the 'immedok' function. */
 #undef HAVE_CURSES_IMMEDOK
 
-/* Define if you have the 'is_pad' function or macro. */
+/* Define if you have the 'is_pad' function. */
 #undef HAVE_CURSES_IS_PAD
 
 /* Define if you have the 'is_term_resized' function. */
@@ -210,6 +213,9 @@
 
 /* Define if you have the 'wchgat' function. */
 #undef HAVE_CURSES_WCHGAT
+
+/* Define to 1 if you have the <db.h> header file. */
+#undef HAVE_DB_H
 
 /* Define to 1 if you have the declaration of `RTLD_DEEPBIND', and to 0 if you
    don't. */
@@ -290,7 +296,7 @@
 /* Define to 1 if you have the <endian.h> header file. */
 #undef HAVE_ENDIAN_H
 
-/* Define if you have the 'epoll' functions. */
+/* Define if you have the 'epoll' function. */
 #undef HAVE_EPOLL
 
 /* Define if you have the 'epoll_create1' function. */
@@ -416,6 +422,15 @@
 
 /* Define if your compiler provides __uint128_t */
 #undef HAVE_GCC_UINT128_T
+
+/* Define to 1 if you have the <gdbm-ndbm.h> header file. */
+#undef HAVE_GDBM_DASH_NDBM_H
+
+/* Define to 1 if you have the <gdbm.h> header file. */
+#undef HAVE_GDBM_H
+
+/* Define to 1 if you have the <gdbm/ndbm.h> header file. */
+#undef HAVE_GDBM_NDBM_H
 
 /* Define if you have the getaddrinfo function. */
 #undef HAVE_GETADDRINFO
@@ -559,7 +574,7 @@
 /* Define to 1 if you have the `killpg' function. */
 #undef HAVE_KILLPG
 
-/* Define if you have the 'kqueue' functions. */
+/* Define if you have the 'kqueue' function. */
 #undef HAVE_KQUEUE
 
 /* Define to 1 if you have the <langinfo.h> header file. */
@@ -580,17 +595,35 @@
 /* Define to 1 if you have the `lchown' function. */
 #undef HAVE_LCHOWN
 
+/* Define to 1 if you have the `bz2' library (-lbz2). */
+#undef HAVE_LIBBZ2
+
+/* Define to 1 if you have the `db' library (-ldb). */
+#undef HAVE_LIBDB
+
 /* Define to 1 if you have the `dl' library (-ldl). */
 #undef HAVE_LIBDL
 
 /* Define to 1 if you have the `dld' library (-ldld). */
 #undef HAVE_LIBDLD
 
+/* Define to 1 if you have the `gdbm' library (-lgdbm). */
+#undef HAVE_LIBGDBM
+
+/* Define to 1 if you have the `gdbm_compat' library (-lgdbm_compat). */
+#undef HAVE_LIBGDBM_COMPAT
+
 /* Define to 1 if you have the `ieee' library (-lieee). */
 #undef HAVE_LIBIEEE
 
 /* Define to 1 if you have the <libintl.h> header file. */
 #undef HAVE_LIBINTL_H
+
+/* Define to 1 if you have the `lzma' library (-llzma). */
+#undef HAVE_LIBLZMA
+
+/* Define to 1 if you have the `ndbm' library (-lndbm). */
+#undef HAVE_LIBNDBM
 
 /* Define to build the readline module. */
 #undef HAVE_LIBREADLINE
@@ -603,6 +636,12 @@
 
 /* Define to 1 if you have the <libutil.h> header file. */
 #undef HAVE_LIBUTIL_H
+
+/* Define to 1 if you have the `uuid' library (-luuid). */
+#undef HAVE_LIBUUID
+
+/* Define to 1 if you have the `z' library (-lz). */
+#undef HAVE_LIBZ
 
 /* Define if you have the 'link' function. */
 #undef HAVE_LINK
@@ -640,6 +679,9 @@
 /* Define to 1 if you have the <linux/random.h> header file. */
 #undef HAVE_LINUX_RANDOM_H
 
+/* Define to 1 if you have the <linux/soundcard.h> header file. */
+#undef HAVE_LINUX_SOUNDCARD_H
+
 /* Define to 1 if you have the <linux/tipc.h> header file. */
 #undef HAVE_LINUX_TIPC_H
 
@@ -666,6 +708,9 @@
 
 /* Define to 1 if you have the `lutimes' function. */
 #undef HAVE_LUTIMES
+
+/* Define to 1 if you have the <lzma.h> header file. */
+#undef HAVE_LZMA_H
 
 /* Define to 1 if you have the `madvise' function. */
 #undef HAVE_MADVISE
@@ -714,6 +759,9 @@
 
 /* Define to 1 if you have the <ncurses.h> header file. */
 #undef HAVE_NCURSES_H
+
+/* Define to 1 if you have the <ndbm.h> header file. */
+#undef HAVE_NDBM_H
 
 /* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
 #undef HAVE_NDIR_H
@@ -776,7 +824,7 @@
 /* Define to 1 if you have the `preadv2' function. */
 #undef HAVE_PREADV2
 
-/* Define if you have the 'prlimit' functions. */
+/* Define if you have the 'prlimit' function. */
 #undef HAVE_PRLIMIT
 
 /* Define to 1 if you have the <process.h> header file. */
@@ -1172,6 +1220,9 @@
 /* Define to 1 if you have the <sys/socket.h> header file. */
 #undef HAVE_SYS_SOCKET_H
 
+/* Define to 1 if you have the <sys/soundcard.h> header file. */
+#undef HAVE_SYS_SOUNDCARD_H
+
 /* Define to 1 if you have the <sys/statvfs.h> header file. */
 #undef HAVE_SYS_STATVFS_H
 
@@ -1284,10 +1335,10 @@
 /* Define to 1 if you have the <utime.h> header file. */
 #undef HAVE_UTIME_H
 
-/* Define if uuid_create() exists. */
+/* Define to 1 if you have the `uuid_create' function. */
 #undef HAVE_UUID_CREATE
 
-/* Define if uuid_enc_be() exists. */
+/* Define to 1 if you have the `uuid_enc_be' function. */
 #undef HAVE_UUID_ENC_BE
 
 /* Define if uuid_generate_time_safe() exists. */
@@ -1338,6 +1389,9 @@
 
 /* Define if the zlib library has inflateCopy */
 #undef HAVE_ZLIB_COPY
+
+/* Define to 1 if you have the <zlib.h> header file. */
+#undef HAVE_ZLIB_H
 
 /* Define to 1 if you have the `_getpty' function. */
 #undef HAVE__GETPTY
@@ -1391,6 +1445,9 @@
 
 /* Define to printf format modifier for Py_ssize_t */
 #undef PY_FORMAT_SIZE_T
+
+/* Define to 1 to build the sqlite module with loadable extensions support. */
+#undef PY_SQLITE_ENABLE_LOAD_EXTENSION
 
 /* Default cipher suites list for ssl module. 1: Python's preferred selection,
    2: leave OpenSSL defaults untouched, 0: custom string */
@@ -1582,9 +1639,6 @@
 
 /* This must be set to 64 on some systems to enable large file support. */
 #undef _FILE_OFFSET_BITS
-
-/* Define on Linux to activate all library features */
-#undef _GNU_SOURCE
 
 /* Define to include mbstate_t for mbrtowc */
 #undef _INCLUDE__STDC_A1_SOURCE

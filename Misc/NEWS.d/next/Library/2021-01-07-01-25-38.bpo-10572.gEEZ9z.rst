@@ -1,2 +1,0 @@
-Move :mod:`sqlite3` tests to ``/Lib/test/test_sqlite3``. Patch by Erlend E.
-Aasland.
