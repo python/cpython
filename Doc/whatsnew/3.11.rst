@@ -369,6 +369,11 @@ Deprecated
 
   (Contributed by Erlend E. Aasland in :issue:`5846`.)
 
+* The :meth:`turtle.RawTurtle.settiltangle` is deprecated since Python 3.1,
+  it now emits a deprecation warning and will be removed in Python 3.13. Use
+  :meth:`turtle.RawTurtle.tiltangle` instead (it was earlier incorrectly marked
+  as deprecated, its docstring is now corrected).
+  (Contributed by Hugo van Kemenade in :issue:`45837`.)
 
 Removed
 =======
