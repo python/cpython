@@ -112,6 +112,7 @@ _PyFrame_Clear(InterpreterFrame * frame, int take)
             }
             take_ownership(f, frame);
             Py_DECREF(f);
+            return;
         }
         Py_DECREF(f);
     }
