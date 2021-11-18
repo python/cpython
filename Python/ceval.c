@@ -747,24 +747,19 @@ _PyEval_InitRuntimeState(struct _ceval_runtime_state *ceval)
 #endif
 }
 
-int
-_PyEval_InitState(struct _ceval_state *ceval)
+void
+_PyEval_InitState(struct _ceval_state *ceval, PyThread_type_lock pending_lock)
 {
     ceval->recursion_limit = Py_DEFAULT_RECURSION_LIMIT;
 
     struct _pending_calls *pending = &ceval->pending;
     assert(pending->lock == NULL);
 
-    pending->lock = PyThread_allocate_lock();
-    if (pending->lock == NULL) {
-        return -1;
-    }
+    pending->lock = pending_lock;
 
 #ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
     _gil_initialize(&ceval->gil);
 #endif
-
-    return 0;
 }
 
 void
