@@ -1512,9 +1512,6 @@ eval_frame_handle_pending(PyThreadState *tstate)
         dtrace_function_return(frame); \
     }
 
-#define TRACE_FUNCTION_RETURN() TRACE_FUNCTION_EXIT()
-#define TRACE_FUNCTION_YIELD() TRACE_FUNCTION_EXIT()
-
 #define TRACE_FUNCTION_UNWIND()  \
     if (cframe.use_tracing) { \
         trace_function_exit(tstate, frame, NULL); \
@@ -1532,7 +1529,6 @@ eval_frame_handle_pending(PyThreadState *tstate)
         dtrace_function_entry(frame); \
     }
 
-#define TRACE_FUNCTION_THROW_ENTRY() TRACE_FUNCTION_ENTRY()
 
 
 static int
@@ -1655,7 +1651,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             tstate->recursion_remaining--;
             goto exit_unwind;
         }
-        TRACE_FUNCTION_THROW_ENTRY();
+        TRACE_FUNCTION_ENTRY();
         DTRACE_FUNCTION_ENTRY();
         goto resume_with_error;
     }
@@ -2322,7 +2318,7 @@ check_eval_breaker:
             assert(EMPTY());
             frame->f_state = FRAME_RETURNED;
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            TRACE_FUNCTION_RETURN();
+            TRACE_FUNCTION_EXIT();
             DTRACE_FUNCTION_EXIT();
             _Py_LeaveRecursiveCall(tstate);
             if (frame->depth) {
@@ -2524,7 +2520,7 @@ check_eval_breaker:
             frame->f_lasti -= 1;
             frame->f_state = FRAME_SUSPENDED;
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            TRACE_FUNCTION_YIELD();
+            TRACE_FUNCTION_EXIT();
             DTRACE_FUNCTION_EXIT();
             _Py_LeaveRecursiveCall(tstate);
             /* Restore previous cframe and return. */
@@ -2549,7 +2545,7 @@ check_eval_breaker:
             }
             frame->f_state = FRAME_SUSPENDED;
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            TRACE_FUNCTION_YIELD();
+            TRACE_FUNCTION_EXIT();
             DTRACE_FUNCTION_EXIT();
             _Py_LeaveRecursiveCall(tstate);
             /* Restore previous cframe and return. */
