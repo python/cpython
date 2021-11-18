@@ -399,6 +399,11 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\Modules\getpath.py">
+      <Filter>Python Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
     <!-- BEGIN frozen modules -->
     <None Include="..\Lib\importlib\_bootstrap.py">
       <Filter>Python Files</Filter>
@@ -407,9 +412,6 @@
       <Filter>Python Files</Filter>
     </None>
     <None Include="..\Lib\zipimport.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Modules\getpath.py">
       <Filter>Python Files</Filter>
     </None>
     <None Include="..\Lib\abc.py">
