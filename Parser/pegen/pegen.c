@@ -364,6 +364,14 @@ tokenizer_error(Parser *p)
 void *
 _PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
 {
+    if (p->fill == 0) {
+        va_list va;
+        va_start(va, errmsg);
+        _PyPegen_raise_error_known_location(p, errtype, 0, 0, errmsg, va);
+        va_end(va);
+        return NULL;
+    }
+
     Token *t = p->known_err_token != NULL ? p->known_err_token : p->tokens[p->fill - 1];
     Py_ssize_t col_offset;
     if (t->col_offset == -1) {
