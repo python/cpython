@@ -1163,7 +1163,8 @@ Control flow
                             value=Constant(value=Ellipsis))],
                     finalbody=[
                         Expr(
-                            value=Constant(value=Ellipsis))])],
+                            value=Constant(value=Ellipsis))],
+                    star=0)],
             type_ignores=[])
 
 
@@ -1197,7 +1198,8 @@ Control flow
                             body=[
                                 Pass()])],
                     orelse=[],
-                    finalbody=[])],
+                    finalbody=[],
+                    star=0)],
             type_ignores=[])
 
 
