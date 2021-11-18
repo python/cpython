@@ -638,11 +638,6 @@ static void
 init_threadstate(PyThreadState *tstate,
                  int recursion_limit, _PyStackChunk *datastack_chunk)
 {
-    if (tstate->initialized) {
-        return;
-    }
-    tstate->initialized = 1;
-
     tstate->recursion_limit = recursion_limit;
     tstate->recursion_remaining = recursion_limit;
     tstate->recursion_headroom = 0;
@@ -702,9 +697,16 @@ new_threadstate(PyInterpreterState *interp, int init)
 {
     _PyRuntimeState *runtime = interp->runtime;
 
-    PyThreadState *tstate = (PyThreadState *)PyMem_RawCalloc(1, sizeof(PyThreadState));
-    if (tstate == NULL) {
-        return NULL;
+    PyThreadState *tstate;
+    if (interp->threads._preallocated_used == 0) {
+        tstate = &interp->_preallocated.tstate;
+        interp->threads._preallocated_used++;
+    }
+    else {
+        tstate = (PyThreadState *)PyMem_RawMalloc(sizeof(PyThreadState));
+        if (tstate == NULL) {
+            return NULL;
+        }
     }
 
     _PyStackChunk *datastack_chunk = allocate_chunk(DATA_STACK_CHUNK_SIZE, NULL);
@@ -970,6 +972,14 @@ tstate_delete_common(PyThreadState *tstate,
 }
 
 static void
+free_threadstate(PyThreadState *tstate)
+{
+    if (tstate != &tstate->interp->_preallocated.tstate) {
+        PyMem_RawFree(tstate);
+    }
+}
+
+static void
 _PyThreadState_Delete(PyThreadState *tstate, int check_current)
 {
     struct _gilstate_runtime_state *gilstate = &tstate->interp->runtime->gilstate;
@@ -979,7 +989,7 @@ _PyThreadState_Delete(PyThreadState *tstate, int check_current)
         }
     }
     tstate_delete_common(tstate, gilstate);
-    PyMem_RawFree(tstate);
+    free_threadstate(tstate);
 }
 
 
@@ -998,7 +1008,7 @@ _PyThreadState_DeleteCurrent(PyThreadState *tstate)
     tstate_delete_common(tstate, gilstate);
     _PyRuntimeGILState_SetThreadState(gilstate, NULL);
     _PyEval_ReleaseLock(tstate);
-    PyMem_RawFree(tstate);
+    free_threadstate(tstate);
 }
 
 void
@@ -1047,7 +1057,7 @@ _PyThreadState_DeleteExcept(_PyRuntimeState *runtime, PyThreadState *tstate)
     for (p = list; p; p = next) {
         next = p->next;
         PyThreadState_Clear(p);
-        PyMem_RawFree(p);
+        free_threadstate(p);
     }
 }
 
