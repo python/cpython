@@ -152,7 +152,7 @@ PyAPI_FUNC(void) _PyConfig_InitCompatConfig(PyConfig *config);
 extern PyStatus _PyConfig_Copy(
     PyConfig *config,
     const PyConfig *config2);
-PyAPI_FUNC(PyStatus) _PyConfig_InitPathConfig(
+extern PyStatus _PyConfig_InitPathConfig(
     PyConfig *config,
     int compute_path_config);
 extern PyStatus _PyConfig_InitImportConfig(PyConfig *config);
