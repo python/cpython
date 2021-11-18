@@ -785,47 +785,84 @@ Py_GetRecursionLimit(void)
 void
 Py_SetRecursionLimit(int new_limit)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    tstate->interp->ceval.recursion_limit = new_limit;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    interp->ceval.recursion_limit = new_limit;
+    for (PyThreadState *p = interp->tstate_head; p != NULL; p = p->next) {
+        int depth = p->recursion_limit - p->recursion_remaining;
+        p->recursion_limit = new_limit;
+        p->recursion_remaining = new_limit - depth;
+    }
 }
 
 /* The function _Py_EnterRecursiveCall() only calls _Py_CheckRecursiveCall()
-   if the recursion_depth reaches recursion_limit.
-   If USE_STACKCHECK, the macro decrements recursion_limit
-   to guarantee that _Py_CheckRecursiveCall() is regularly called.
-   Without USE_STACKCHECK, there is no need for this. */
+   if the recursion_depth reaches recursion_limit. */
 int
 _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
 {
-    int recursion_limit = tstate->interp->ceval.recursion_limit;
-
+    /* Check against global limit first. */
+    int depth = tstate->recursion_limit - tstate->recursion_remaining;
+    if (depth < tstate->interp->ceval.recursion_limit) {
+        tstate->recursion_limit = tstate->interp->ceval.recursion_limit;
+        tstate->recursion_remaining = tstate->recursion_limit - depth;
+        assert(tstate->recursion_remaining > 0);
+        return 0;
+    }
 #ifdef USE_STACKCHECK
-    tstate->stackcheck_counter = 0;
     if (PyOS_CheckStack()) {
-        --tstate->recursion_depth;
+        ++tstate->recursion_remaining;
         _PyErr_SetString(tstate, PyExc_MemoryError, "Stack overflow");
         return -1;
     }
 #endif
     if (tstate->recursion_headroom) {
-        if (tstate->recursion_depth > recursion_limit + 50) {
+        if (tstate->recursion_remaining < -50) {
             /* Overflowing while handling an overflow. Give up. */
             Py_FatalError("Cannot recover from stack overflow.");
         }
     }
     else {
-        if (tstate->recursion_depth > recursion_limit) {
+        if (tstate->recursion_remaining <= 0) {
             tstate->recursion_headroom++;
             _PyErr_Format(tstate, PyExc_RecursionError,
                         "maximum recursion depth exceeded%s",
                         where);
             tstate->recursion_headroom--;
-            --tstate->recursion_depth;
+            ++tstate->recursion_remaining;
             return -1;
         }
     }
     return 0;
 }
+
+
+static const binaryfunc binary_ops[] = {
+    [NB_ADD] = PyNumber_Add,
+    [NB_AND] = PyNumber_And,
+    [NB_FLOOR_DIVIDE] = PyNumber_FloorDivide,
+    [NB_LSHIFT] = PyNumber_Lshift,
+    [NB_MATRIX_MULTIPLY] = PyNumber_MatrixMultiply,
+    [NB_MULTIPLY] = PyNumber_Multiply,
+    [NB_REMAINDER] = PyNumber_Remainder,
+    [NB_OR] = PyNumber_Or,
+    [NB_POWER] = _PyNumber_PowerNoMod,
+    [NB_RSHIFT] = PyNumber_Rshift,
+    [NB_SUBTRACT] = PyNumber_Subtract,
+    [NB_TRUE_DIVIDE] = PyNumber_TrueDivide,
+    [NB_XOR] = PyNumber_Xor,
+    [NB_INPLACE_ADD] = PyNumber_InPlaceAdd,
+    [NB_INPLACE_AND] = PyNumber_InPlaceAnd,
+    [NB_INPLACE_FLOOR_DIVIDE] = PyNumber_InPlaceFloorDivide,
+    [NB_INPLACE_LSHIFT] = PyNumber_InPlaceLshift,
+    [NB_INPLACE_MATRIX_MULTIPLY] = PyNumber_InPlaceMatrixMultiply,
+    [NB_INPLACE_MULTIPLY] = PyNumber_InPlaceMultiply,
+    [NB_INPLACE_REMAINDER] = PyNumber_InPlaceRemainder,
+    [NB_INPLACE_OR] = PyNumber_InPlaceOr,
+    [NB_INPLACE_POWER] = _PyNumber_InPlacePowerNoMod,
+    [NB_INPLACE_RSHIFT] = PyNumber_InPlaceRshift,
+    [NB_INPLACE_SUBTRACT] = PyNumber_InPlaceSubtract,
+    [NB_INPLACE_TRUE_DIVIDE] = PyNumber_InPlaceTrueDivide,
+    [NB_INPLACE_XOR] = PyNumber_InPlaceXor,
+};
 
 
 // PEP 634: Structural Pattern Matching
@@ -1582,7 +1619,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
 
 start_frame:
     if (_Py_EnterRecursiveCall(tstate, "")) {
-        tstate->recursion_depth++;
+        tstate->recursion_remaining--;
         goto exit_eval_frame;
     }
 
@@ -1967,6 +2004,41 @@ check_eval_breaker:
             Py_DECREF(left);
             STACK_SHRINK(1);
             if (prod == NULL) {
+                goto error;
+            }
+            DISPATCH();
+        }
+
+        TARGET(BINARY_OP_SUBTRACT_INT) {
+            PyObject *left = SECOND();
+            PyObject *right = TOP();
+            DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
+            DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
+            STAT_INC(BINARY_OP, hit);
+            PyObject *sub = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
+            SET_SECOND(sub);
+            Py_DECREF(right);
+            Py_DECREF(left);
+            STACK_SHRINK(1);
+            if (sub == NULL) {
+                goto error;
+            }
+            DISPATCH();
+        }
+
+        TARGET(BINARY_OP_SUBTRACT_FLOAT) {
+            PyObject *left = SECOND();
+            PyObject *right = TOP();
+            DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
+            DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
+            STAT_INC(BINARY_OP, hit);
+            double dsub = ((PyFloatObject *)left)->ob_fval - ((PyFloatObject *)right)->ob_fval;
+            PyObject *sub = PyFloat_FromDouble(dsub);
+            SET_SECOND(sub);
+            Py_DECREF(right);
+            Py_DECREF(left);
+            STACK_SHRINK(1);
+            if (sub == NULL) {
                 goto error;
             }
             DISPATCH();
@@ -4690,89 +4762,10 @@ check_eval_breaker:
             STAT_INC(BINARY_OP, unquickened);
             PyObject *rhs = POP();
             PyObject *lhs = TOP();
-            PyObject *res;
-            switch (oparg) {
-                case NB_ADD:
-                    res = PyNumber_Add(lhs, rhs);
-                    break;
-                case NB_AND:
-                    res = PyNumber_And(lhs, rhs);
-                    break;
-                case NB_FLOOR_DIVIDE:
-                    res = PyNumber_FloorDivide(lhs, rhs);
-                    break;
-                case NB_LSHIFT:
-                    res = PyNumber_Lshift(lhs, rhs);
-                    break;
-                case NB_MATRIX_MULTIPLY:
-                    res = PyNumber_MatrixMultiply(lhs, rhs);
-                    break;
-                case NB_MULTIPLY:
-                    res = PyNumber_Multiply(lhs, rhs);
-                    break;
-                case NB_REMAINDER:
-                    res = PyNumber_Remainder(lhs, rhs);
-                    break;
-                case NB_OR:
-                    res = PyNumber_Or(lhs, rhs);
-                    break;
-                case NB_POWER:
-                    res = PyNumber_Power(lhs, rhs, Py_None);
-                    break;
-                case NB_RSHIFT:
-                    res = PyNumber_Rshift(lhs, rhs);
-                    break;
-                case NB_SUBTRACT:
-                    res = PyNumber_Subtract(lhs, rhs);
-                    break;
-                case NB_TRUE_DIVIDE:
-                    res = PyNumber_TrueDivide(lhs, rhs);
-                    break;
-                case NB_XOR:
-                    res = PyNumber_Xor(lhs, rhs);
-                    break;
-                case NB_INPLACE_ADD:
-                    res = PyNumber_InPlaceAdd(lhs, rhs);
-                    break;
-                case NB_INPLACE_AND:
-                    res = PyNumber_InPlaceAnd(lhs, rhs);
-                    break;
-                case NB_INPLACE_FLOOR_DIVIDE:
-                    res = PyNumber_InPlaceFloorDivide(lhs, rhs);
-                    break;
-                case NB_INPLACE_LSHIFT:
-                    res = PyNumber_InPlaceLshift(lhs, rhs);
-                    break;
-                case NB_INPLACE_MATRIX_MULTIPLY:
-                    res = PyNumber_InPlaceMatrixMultiply(lhs, rhs);
-                    break;
-                case NB_INPLACE_MULTIPLY:
-                    res = PyNumber_InPlaceMultiply(lhs, rhs);
-                    break;
-                case NB_INPLACE_REMAINDER:
-                    res = PyNumber_InPlaceRemainder(lhs, rhs);
-                    break;
-                case NB_INPLACE_OR:
-                    res = PyNumber_InPlaceOr(lhs, rhs);
-                    break;
-                case NB_INPLACE_POWER:
-                    res = PyNumber_InPlacePower(lhs, rhs, Py_None);
-                    break;
-                case NB_INPLACE_RSHIFT:
-                    res = PyNumber_InPlaceRshift(lhs, rhs);
-                    break;
-                case NB_INPLACE_SUBTRACT:
-                    res = PyNumber_InPlaceSubtract(lhs, rhs);
-                    break;
-                case NB_INPLACE_TRUE_DIVIDE:
-                    res = PyNumber_InPlaceTrueDivide(lhs, rhs);
-                    break;
-                case NB_INPLACE_XOR:
-                    res = PyNumber_InPlaceXor(lhs, rhs);
-                    break;
-                default:
-                    Py_UNREACHABLE();
-            }
+            assert(0 <= oparg);
+            assert((unsigned)oparg < Py_ARRAY_LENGTH(binary_ops));
+            assert(binary_ops[oparg]);
+            PyObject *res = binary_ops[oparg](lhs, rhs);
             Py_DECREF(lhs);
             Py_DECREF(rhs);
             SET_TOP(res);
@@ -5688,13 +5681,13 @@ fail:
 static int
 _PyEvalFrameClearAndPop(PyThreadState *tstate, InterpreterFrame * frame)
 {
-    ++tstate->recursion_depth;
+    --tstate->recursion_remaining;
     assert(frame->frame_obj == NULL || frame->frame_obj->f_own_locals_memory == 0);
     if (_PyFrame_Clear(frame, 0)) {
-        --tstate->recursion_depth;
+        ++tstate->recursion_remaining;
         return -1;
     }
-    --tstate->recursion_depth;
+    ++tstate->recursion_remaining;
     _PyThreadState_PopFrame(tstate, frame);
     return 0;
 }
