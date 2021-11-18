@@ -836,6 +836,36 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
 }
 
 
+static const binaryfunc binary_ops[] = {
+    [NB_ADD] = PyNumber_Add,
+    [NB_AND] = PyNumber_And,
+    [NB_FLOOR_DIVIDE] = PyNumber_FloorDivide,
+    [NB_LSHIFT] = PyNumber_Lshift,
+    [NB_MATRIX_MULTIPLY] = PyNumber_MatrixMultiply,
+    [NB_MULTIPLY] = PyNumber_Multiply,
+    [NB_REMAINDER] = PyNumber_Remainder,
+    [NB_OR] = PyNumber_Or,
+    [NB_POWER] = _PyNumber_PowerNoMod,
+    [NB_RSHIFT] = PyNumber_Rshift,
+    [NB_SUBTRACT] = PyNumber_Subtract,
+    [NB_TRUE_DIVIDE] = PyNumber_TrueDivide,
+    [NB_XOR] = PyNumber_Xor,
+    [NB_INPLACE_ADD] = PyNumber_InPlaceAdd,
+    [NB_INPLACE_AND] = PyNumber_InPlaceAnd,
+    [NB_INPLACE_FLOOR_DIVIDE] = PyNumber_InPlaceFloorDivide,
+    [NB_INPLACE_LSHIFT] = PyNumber_InPlaceLshift,
+    [NB_INPLACE_MATRIX_MULTIPLY] = PyNumber_InPlaceMatrixMultiply,
+    [NB_INPLACE_MULTIPLY] = PyNumber_InPlaceMultiply,
+    [NB_INPLACE_REMAINDER] = PyNumber_InPlaceRemainder,
+    [NB_INPLACE_OR] = PyNumber_InPlaceOr,
+    [NB_INPLACE_POWER] = _PyNumber_InPlacePowerNoMod,
+    [NB_INPLACE_RSHIFT] = PyNumber_InPlaceRshift,
+    [NB_INPLACE_SUBTRACT] = PyNumber_InPlaceSubtract,
+    [NB_INPLACE_TRUE_DIVIDE] = PyNumber_InPlaceTrueDivide,
+    [NB_INPLACE_XOR] = PyNumber_InPlaceXor,
+};
+
+
 // PEP 634: Structural Pattern Matching
 
 
@@ -1986,6 +2016,41 @@ check_eval_breaker:
             DISPATCH();
         }
 
+        TARGET(BINARY_OP_SUBTRACT_INT) {
+            PyObject *left = SECOND();
+            PyObject *right = TOP();
+            DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
+            DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
+            STAT_INC(BINARY_OP, hit);
+            PyObject *sub = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
+            SET_SECOND(sub);
+            Py_DECREF(right);
+            Py_DECREF(left);
+            STACK_SHRINK(1);
+            if (sub == NULL) {
+                goto error;
+            }
+            DISPATCH();
+        }
+
+        TARGET(BINARY_OP_SUBTRACT_FLOAT) {
+            PyObject *left = SECOND();
+            PyObject *right = TOP();
+            DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
+            DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
+            STAT_INC(BINARY_OP, hit);
+            double dsub = ((PyFloatObject *)left)->ob_fval - ((PyFloatObject *)right)->ob_fval;
+            PyObject *sub = PyFloat_FromDouble(dsub);
+            SET_SECOND(sub);
+            Py_DECREF(right);
+            Py_DECREF(left);
+            STACK_SHRINK(1);
+            if (sub == NULL) {
+                goto error;
+            }
+            DISPATCH();
+        }
+
         TARGET(BINARY_OP_ADD_UNICODE) {
             PyObject *left = SECOND();
             PyObject *right = TOP();
@@ -2082,21 +2147,21 @@ check_eval_breaker:
         }
 
         TARGET(BINARY_SUBSCR_ADAPTIVE) {
-            if (oparg == 0) {
+            SpecializedCacheEntry *cache = GET_CACHE();
+            if (cache->adaptive.counter == 0) {
                 PyObject *sub = TOP();
                 PyObject *container = SECOND();
                 next_instr--;
-                if (_Py_Specialize_BinarySubscr(container, sub, next_instr) < 0) {
+                if (_Py_Specialize_BinarySubscr(container, sub, next_instr, cache) < 0) {
                     goto error;
                 }
                 DISPATCH();
             }
             else {
                 STAT_INC(BINARY_SUBSCR, deferred);
-                // oparg is the adaptive cache counter
-                UPDATE_PREV_INSTR_OPARG(next_instr, oparg - 1);
-                assert(_Py_OPCODE(next_instr[-1]) == BINARY_SUBSCR_ADAPTIVE);
-                assert(_Py_OPARG(next_instr[-1]) == oparg - 1);
+                cache->adaptive.counter--;
+                assert(cache->adaptive.original_oparg == 0);
+                /* No need to set oparg here; it isn't used by BINARY_SUBSCR */
                 STAT_DEC(BINARY_SUBSCR, unquickened);
                 JUMP_TO_INSTRUCTION(BINARY_SUBSCR);
             }
@@ -2163,6 +2228,37 @@ check_eval_breaker:
             SET_TOP(res);
             Py_DECREF(dict);
             DISPATCH();
+        }
+
+        TARGET(BINARY_SUBSCR_GETITEM) {
+            PyObject *sub = TOP();
+            PyObject *container = SECOND();
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            _PyObjectCache *cache1 = &caches[-1].obj;
+            PyFunctionObject *getitem = (PyFunctionObject *)cache1->obj;
+            DEOPT_IF(Py_TYPE(container)->tp_version_tag != cache0->version, BINARY_SUBSCR);
+            DEOPT_IF(getitem->func_version != cache0->index, BINARY_SUBSCR);
+            PyCodeObject *code = (PyCodeObject *)getitem->func_code;
+            size_t size = code->co_nlocalsplus + code->co_stacksize + FRAME_SPECIALS_SIZE;
+            assert(code->co_argcount == 2);
+            InterpreterFrame *new_frame = _PyThreadState_BumpFramePointer(tstate, size);
+            if (new_frame == NULL) {
+                goto error;
+            }
+            _PyFrame_InitializeSpecials(new_frame, getitem,
+                                        NULL, code->co_nlocalsplus);
+            STACK_SHRINK(2);
+            new_frame->localsplus[0] = container;
+            new_frame->localsplus[1] = sub;
+            for (int i = 2; i < code->co_nlocalsplus; i++) {
+                new_frame->localsplus[i] = NULL;
+            }
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            new_frame->previous = frame;
+            frame = cframe.current_frame = new_frame;
+            new_frame->depth = frame->depth + 1;
+            goto start_frame;
         }
 
         TARGET(LIST_APPEND) {
@@ -4718,89 +4814,10 @@ check_eval_breaker:
             STAT_INC(BINARY_OP, unquickened);
             PyObject *rhs = POP();
             PyObject *lhs = TOP();
-            PyObject *res;
-            switch (oparg) {
-                case NB_ADD:
-                    res = PyNumber_Add(lhs, rhs);
-                    break;
-                case NB_AND:
-                    res = PyNumber_And(lhs, rhs);
-                    break;
-                case NB_FLOOR_DIVIDE:
-                    res = PyNumber_FloorDivide(lhs, rhs);
-                    break;
-                case NB_LSHIFT:
-                    res = PyNumber_Lshift(lhs, rhs);
-                    break;
-                case NB_MATRIX_MULTIPLY:
-                    res = PyNumber_MatrixMultiply(lhs, rhs);
-                    break;
-                case NB_MULTIPLY:
-                    res = PyNumber_Multiply(lhs, rhs);
-                    break;
-                case NB_REMAINDER:
-                    res = PyNumber_Remainder(lhs, rhs);
-                    break;
-                case NB_OR:
-                    res = PyNumber_Or(lhs, rhs);
-                    break;
-                case NB_POWER:
-                    res = PyNumber_Power(lhs, rhs, Py_None);
-                    break;
-                case NB_RSHIFT:
-                    res = PyNumber_Rshift(lhs, rhs);
-                    break;
-                case NB_SUBTRACT:
-                    res = PyNumber_Subtract(lhs, rhs);
-                    break;
-                case NB_TRUE_DIVIDE:
-                    res = PyNumber_TrueDivide(lhs, rhs);
-                    break;
-                case NB_XOR:
-                    res = PyNumber_Xor(lhs, rhs);
-                    break;
-                case NB_INPLACE_ADD:
-                    res = PyNumber_InPlaceAdd(lhs, rhs);
-                    break;
-                case NB_INPLACE_AND:
-                    res = PyNumber_InPlaceAnd(lhs, rhs);
-                    break;
-                case NB_INPLACE_FLOOR_DIVIDE:
-                    res = PyNumber_InPlaceFloorDivide(lhs, rhs);
-                    break;
-                case NB_INPLACE_LSHIFT:
-                    res = PyNumber_InPlaceLshift(lhs, rhs);
-                    break;
-                case NB_INPLACE_MATRIX_MULTIPLY:
-                    res = PyNumber_InPlaceMatrixMultiply(lhs, rhs);
-                    break;
-                case NB_INPLACE_MULTIPLY:
-                    res = PyNumber_InPlaceMultiply(lhs, rhs);
-                    break;
-                case NB_INPLACE_REMAINDER:
-                    res = PyNumber_InPlaceRemainder(lhs, rhs);
-                    break;
-                case NB_INPLACE_OR:
-                    res = PyNumber_InPlaceOr(lhs, rhs);
-                    break;
-                case NB_INPLACE_POWER:
-                    res = PyNumber_InPlacePower(lhs, rhs, Py_None);
-                    break;
-                case NB_INPLACE_RSHIFT:
-                    res = PyNumber_InPlaceRshift(lhs, rhs);
-                    break;
-                case NB_INPLACE_SUBTRACT:
-                    res = PyNumber_InPlaceSubtract(lhs, rhs);
-                    break;
-                case NB_INPLACE_TRUE_DIVIDE:
-                    res = PyNumber_InPlaceTrueDivide(lhs, rhs);
-                    break;
-                case NB_INPLACE_XOR:
-                    res = PyNumber_InPlaceXor(lhs, rhs);
-                    break;
-                default:
-                    Py_UNREACHABLE();
-            }
+            assert(0 <= oparg);
+            assert((unsigned)oparg < Py_ARRAY_LENGTH(binary_ops));
+            assert(binary_ops[oparg]);
+            PyObject *res = binary_ops[oparg](lhs, rhs);
             Py_DECREF(lhs);
             Py_DECREF(rhs);
             SET_TOP(res);
@@ -4913,29 +4930,13 @@ opname ## _miss: \
         JUMP_TO_INSTRUCTION(opname); \
     }
 
-#define MISS_WITH_OPARG_COUNTER(opname) \
-opname ## _miss: \
-    { \
-        STAT_INC(opname, miss); \
-        uint8_t oparg = _Py_OPARG(next_instr[-1])-1; \
-        UPDATE_PREV_INSTR_OPARG(next_instr, oparg); \
-        assert(_Py_OPARG(next_instr[-1]) == oparg); \
-        if (oparg == 0) /* too many cache misses */ { \
-            oparg = ADAPTIVE_CACHE_BACKOFF; \
-            next_instr[-1] = _Py_MAKECODEUNIT(opname ## _ADAPTIVE, oparg); \
-            STAT_INC(opname, deopt); \
-        } \
-        STAT_DEC(opname, unquickened); \
-        JUMP_TO_INSTRUCTION(opname); \
-    }
-
 MISS_WITH_CACHE(LOAD_ATTR)
 MISS_WITH_CACHE(STORE_ATTR)
 MISS_WITH_CACHE(LOAD_GLOBAL)
 MISS_WITH_CACHE(LOAD_METHOD)
 MISS_WITH_CACHE(CALL_FUNCTION)
 MISS_WITH_CACHE(BINARY_OP)
-MISS_WITH_OPARG_COUNTER(BINARY_SUBSCR)
+MISS_WITH_CACHE(BINARY_SUBSCR)
 
 binary_subscr_dict_error:
         {

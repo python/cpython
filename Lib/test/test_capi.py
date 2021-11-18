@@ -1017,6 +1017,14 @@ class Test_ModuleStateAccess(unittest.TestCase):
                 with self.assertRaises(TypeError):
                     increment_count(1, 2, 3)
 
+    def test_Py_CompileString(self):
+        # Check that Py_CompileString respects the coding cookie
+        _compile = _testcapi.Py_CompileString
+        code = b"# -*- coding: latin1 -*-\nprint('\xc2\xa4')\n"
+        result = _compile(code)
+        expected = compile(code, "<string>", "exec")
+        self.assertEqual(result.co_consts, expected.co_consts)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -368,6 +368,14 @@ tokenizer_error(Parser *p)
 void *
 _PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
 {
+    if (p->fill == 0) {
+        va_list va;
+        va_start(va, errmsg);
+        _PyPegen_raise_error_known_location(p, errtype, 0, 0, 0, -1, errmsg, va);
+        va_end(va);
+        return NULL;
+    }
+
     Token *t = p->known_err_token != NULL ? p->known_err_token : p->tokens[p->fill - 1];
     Py_ssize_t col_offset;
     Py_ssize_t end_col_offset = -1;
@@ -1455,7 +1463,7 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
     int exec_input = start_rule == Py_file_input;
 
     struct tok_state *tok;
-    if (flags == NULL || flags->cf_flags & PyCF_IGNORE_COOKIE) {
+    if (flags != NULL && flags->cf_flags & PyCF_IGNORE_COOKIE) {
         tok = _PyTokenizer_FromUTF8(str, exec_input);
     } else {
         tok = _PyTokenizer_FromString(str, exec_input);

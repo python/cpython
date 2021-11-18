@@ -202,13 +202,21 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc)
     PyTracebackObject *traceback = (PyTracebackObject *) exc->traceback; // borrowed reference
     // Abort if we don't have a variable name or we have an invalid one
     // or if we don't have a traceback to work with
-    if (name == NULL || traceback == NULL || !PyUnicode_CheckExact(name)) {
+    if (name == NULL || !PyUnicode_CheckExact(name) ||
+        traceback == NULL || !Py_IS_TYPE(traceback, &PyTraceBack_Type)
+    ) {
         return NULL;
     }
 
     // Move to the traceback of the exception
-    while (traceback->tb_next != NULL) {
-        traceback = traceback->tb_next;
+    while (1) {
+        PyTracebackObject *next = traceback->tb_next;
+        if (next == NULL || !Py_IS_TYPE(next, &PyTraceBack_Type)) {
+            break;
+        }
+        else {
+            traceback = next;
+        }
     }
 
     PyFrameObject *frame = traceback->tb_frame;

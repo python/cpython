@@ -382,6 +382,19 @@ static PyTypeObject _HashInheritanceTester_Type = {
 };
 
 static PyObject*
+pycompilestring(PyObject* self, PyObject *obj) {
+    if (PyBytes_CheckExact(obj) == 0) {
+        PyErr_SetString(PyExc_ValueError, "Argument must be a bytes object");
+        return NULL;
+    }
+    const char *the_string = PyBytes_AsString(obj);
+    if (the_string == NULL) {
+        return NULL;
+    }
+    return Py_CompileString(the_string, "blech", Py_file_input);
+}
+
+static PyObject*
 test_lazy_hash_inheritance(PyObject* self, PyObject *Py_UNUSED(ignored))
 {
     PyTypeObject *type;
@@ -6070,6 +6083,7 @@ static PyMethodDef TestMethods[] = {
     {"return_null_without_error", return_null_without_error, METH_NOARGS},
     {"return_result_with_error", return_result_with_error, METH_NOARGS},
     {"getitem_with_error", getitem_with_error, METH_VARARGS},
+    {"Py_CompileString",     pycompilestring, METH_O},
     {"PyTime_FromSeconds", test_pytime_fromseconds,  METH_VARARGS},
     {"PyTime_FromSecondsObject", test_pytime_fromsecondsobject,  METH_VARARGS},
     {"PyTime_AsSecondsDouble", test_pytime_assecondsdouble, METH_VARARGS},
