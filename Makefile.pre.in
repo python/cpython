@@ -932,7 +932,6 @@ Programs/_testembed: Programs/_testembed.o $(LIBRARY_DEPS)
 # "Bootstrap Python" used to run deepfreeze.py
 
 BOOTSTRAP_HEADERS = \
-	Modules/getpath.h \
 	Python/frozen_modules/importlib._bootstrap.h \
 	Python/frozen_modules/importlib._bootstrap_external.h \
 	Python/frozen_modules/zipimport.h
