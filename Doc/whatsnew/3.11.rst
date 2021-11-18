@@ -269,6 +269,7 @@ threading
   by system clock changes.
   (Contributed by Victor Stinner in :issue:`41710`.)
 
+
 time
 ----
 
@@ -278,14 +279,13 @@ time
   of 1 microsecond (10\ :sup:`-6` seconds).
   (Contributed by Benjamin Szőke and Victor Stinner in :issue:`21302`.)
 
-* On Windows, :func:`time.sleep` now uses a waitable timer which has a
-  resolution of 100 nanoseconds (10\ :sup:`-7` seconds). Previously, it had
-  a resolution of 1 millisecond (10\ :sup:`-3` seconds).
-  (Contributed by Benjamin Szőke and Victor Stinner in :issue:`21302`.)
+* On Windows 8.1 and newer, :func:`time.sleep` now uses a waitable timer based
+  on `high-resolution timers
+  <https://docs.microsoft.com/en-us/windows-hardware/drivers/kernel/high-resolution-timers>`_
+  which has a resolution of 100 nanoseconds (10\ :sup:`-7` seconds). Previously,
+  it had a resolution of 1 millisecond (10\ :sup:`-3` seconds).
+  (Contributed by Benjamin Szőke, Dong-hee Na, Eryk Sun and Victor Stinner in :issue:`21302` and :issue:`45429`.)
 
-* On Windows, :func:`time.sleep` now uses a waitable timer which supports high-resolution timers.
-  In Python 3.10, the best resolution was 1 ms, from Python 3.11 it's now smaller than 1 ms.
-  (Contributed by Dong-hee Na and Eryk Sun in :issue:`45429`.)
 
 unicodedata
 -----------
