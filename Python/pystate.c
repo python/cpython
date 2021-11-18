@@ -634,19 +634,12 @@ allocate_chunk(int size_in_bytes, _PyStackChunk* previous)
     return res;
 }
 
-static PyThreadState *
-new_threadstate(PyInterpreterState *interp, int init)
+static void
+init_threadstate(PyThreadState *tstate,
+                 int recursion_limit, _PyStackChunk *datastack_chunk)
 {
-    _PyRuntimeState *runtime = interp->runtime;
-    PyThreadState *tstate = (PyThreadState *)PyMem_RawMalloc(sizeof(PyThreadState));
-    if (tstate == NULL) {
-        return NULL;
-    }
-
-    tstate->interp = interp;
-
-    tstate->recursion_limit = interp->ceval.recursion_limit;
-    tstate->recursion_remaining = interp->ceval.recursion_limit;
+    tstate->recursion_limit = recursion_limit;
+    tstate->recursion_remaining = recursion_limit;
     tstate->recursion_headroom = 0;
     tstate->tracing = 0;
     tstate->root_cframe.use_tracing = 0;
@@ -690,17 +683,33 @@ new_threadstate(PyInterpreterState *interp, int init)
 
     tstate->context = NULL;
     tstate->context_ver = 1;
-    tstate->datastack_chunk = allocate_chunk(DATA_STACK_CHUNK_SIZE, NULL);
-    if (tstate->datastack_chunk == NULL) {
-        PyMem_RawFree(tstate);
-        return NULL;
-    }
+    assert(datastack_chunk != NULL);
+    tstate->datastack_chunk = datastack_chunk;
     /* If top points to entry 0, then _PyThreadState_PopFrame will try to pop this chunk */
     tstate->datastack_top = &tstate->datastack_chunk->data[1];
     tstate->datastack_limit = (PyObject **)(((char *)tstate->datastack_chunk) + DATA_STACK_CHUNK_SIZE);
     /* Mark trace_info as uninitialized */
     tstate->trace_info.code = NULL;
+}
 
+static PyThreadState *
+new_threadstate(PyInterpreterState *interp, int init)
+{
+    _PyRuntimeState *runtime = interp->runtime;
+
+    PyThreadState *tstate = (PyThreadState *)PyMem_RawMalloc(sizeof(PyThreadState));
+    if (tstate == NULL) {
+        return NULL;
+    }
+
+    _PyStackChunk *datastack_chunk = allocate_chunk(DATA_STACK_CHUNK_SIZE, NULL);
+    if (datastack_chunk == NULL) {
+        PyMem_RawFree(tstate);
+        return NULL;
+    }
+
+    init_threadstate(tstate, interp->ceval.recursion_limit, datastack_chunk);
+    tstate->interp = interp;
     if (init) {
         _PyThreadState_Init(tstate);
     }
