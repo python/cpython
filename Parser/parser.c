@@ -509,6 +509,8 @@ static char *soft_keywords[] = {
 #define _tmp_213_type 1435
 #define _tmp_214_type 1436
 #define _tmp_215_type 1437
+#define _loop1_216_type 1438
+#define _loop1_217_type 1439
 
 static mod_ty file_rule(Parser *p);
 static mod_ty interactive_rule(Parser *p);
@@ -948,6 +950,8 @@ static void *_tmp_212_rule(Parser *p);
 static void *_tmp_213_rule(Parser *p);
 static void *_tmp_214_rule(Parser *p);
 static void *_tmp_215_rule(Parser *p);
+static asdl_seq *_loop1_216_rule(Parser *p);
+static asdl_seq *_loop1_217_rule(Parser *p);
 
 
 // file: statements? $
@@ -20002,7 +20006,7 @@ invalid_with_stmt_indent_rule(Parser *p)
 // invalid_try_stmt:
 //     | 'try' ':' NEWLINE !INDENT
 //     | 'try' ':' block !('except' | 'finally')
-//     | 'try' ':' block* ((except_block except_star_block) | (except_star_block except_block)) block*
+//     | 'try' ':' block* ((except_block+ except_star_block) | (except_star_block+ except_block)) block*
 static void *
 invalid_try_stmt_rule(Parser *p)
 {
@@ -20077,12 +20081,12 @@ invalid_try_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_try_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'try' ':' block !('except' | 'finally')"));
     }
-    { // 'try' ':' block* ((except_block except_star_block) | (except_star_block except_block)) block*
+    { // 'try' ':' block* ((except_block+ except_star_block) | (except_star_block+ except_block)) block*
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> invalid_try_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'try' ':' block* ((except_block except_star_block) | (except_star_block except_block)) block*"));
+        D(fprintf(stderr, "%*c> invalid_try_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'try' ':' block* ((except_block+ except_star_block) | (except_star_block+ except_block)) block*"));
         Token * _keyword;
         Token * _literal;
         asdl_seq * _loop0_174_var;
@@ -20095,12 +20099,12 @@ invalid_try_stmt_rule(Parser *p)
             &&
             (_loop0_174_var = _loop0_174_rule(p))  // block*
             &&
-            (_tmp_175_var = _tmp_175_rule(p))  // (except_block except_star_block) | (except_star_block except_block)
+            (_tmp_175_var = _tmp_175_rule(p))  // (except_block+ except_star_block) | (except_star_block+ except_block)
             &&
             (_loop0_176_var = _loop0_176_rule(p))  // block*
         )
         {
-            D(fprintf(stderr, "%*c+ invalid_try_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'try' ':' block* ((except_block except_star_block) | (except_star_block except_block)) block*"));
+            D(fprintf(stderr, "%*c+ invalid_try_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'try' ':' block* ((except_block+ except_star_block) | (except_star_block+ except_block)) block*"));
             _res = RAISE_SYNTAX_ERROR ( "cannot have both 'except' and 'except*' on the same 'try'" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
@@ -20111,7 +20115,7 @@ invalid_try_stmt_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s invalid_try_stmt[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'try' ':' block* ((except_block except_star_block) | (except_star_block except_block)) block*"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'try' ':' block* ((except_block+ except_star_block) | (except_star_block+ except_block)) block*"));
     }
     _res = NULL;
   done:
@@ -32091,7 +32095,7 @@ _loop0_174_rule(Parser *p)
     return _seq;
 }
 
-// _tmp_175: (except_block except_star_block) | (except_star_block except_block)
+// _tmp_175: (except_block+ except_star_block) | (except_star_block+ except_block)
 static void *
 _tmp_175_rule(Parser *p)
 {
@@ -32102,43 +32106,43 @@ _tmp_175_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    { // (except_block except_star_block)
+    { // (except_block+ except_star_block)
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> _tmp_175[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "(except_block except_star_block)"));
+        D(fprintf(stderr, "%*c> _tmp_175[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "(except_block+ except_star_block)"));
         void *_tmp_209_var;
         if (
-            (_tmp_209_var = _tmp_209_rule(p))  // except_block except_star_block
+            (_tmp_209_var = _tmp_209_rule(p))  // except_block+ except_star_block
         )
         {
-            D(fprintf(stderr, "%*c+ _tmp_175[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "(except_block except_star_block)"));
+            D(fprintf(stderr, "%*c+ _tmp_175[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "(except_block+ except_star_block)"));
             _res = _tmp_209_var;
             goto done;
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _tmp_175[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "(except_block except_star_block)"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "(except_block+ except_star_block)"));
     }
-    { // (except_star_block except_block)
+    { // (except_star_block+ except_block)
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> _tmp_175[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "(except_star_block except_block)"));
+        D(fprintf(stderr, "%*c> _tmp_175[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "(except_star_block+ except_block)"));
         void *_tmp_210_var;
         if (
-            (_tmp_210_var = _tmp_210_rule(p))  // except_star_block except_block
+            (_tmp_210_var = _tmp_210_rule(p))  // except_star_block+ except_block
         )
         {
-            D(fprintf(stderr, "%*c+ _tmp_175[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "(except_star_block except_block)"));
+            D(fprintf(stderr, "%*c+ _tmp_175[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "(except_star_block+ except_block)"));
             _res = _tmp_210_var;
             goto done;
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _tmp_175[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "(except_star_block except_block)"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "(except_star_block+ except_block)"));
     }
     _res = NULL;
   done:
@@ -33671,7 +33675,7 @@ _tmp_208_rule(Parser *p)
     return _res;
 }
 
-// _tmp_209: except_block except_star_block
+// _tmp_209: except_block+ except_star_block
 static void *
 _tmp_209_rule(Parser *p)
 {
@@ -33682,27 +33686,27 @@ _tmp_209_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    { // except_block except_star_block
+    { // except_block+ except_star_block
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> _tmp_209[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "except_block except_star_block"));
-        excepthandler_ty except_block_var;
+        D(fprintf(stderr, "%*c> _tmp_209[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "except_block+ except_star_block"));
+        asdl_seq * _loop1_216_var;
         excepthandler_ty except_star_block_var;
         if (
-            (except_block_var = except_block_rule(p))  // except_block
+            (_loop1_216_var = _loop1_216_rule(p))  // except_block+
             &&
             (except_star_block_var = except_star_block_rule(p))  // except_star_block
         )
         {
-            D(fprintf(stderr, "%*c+ _tmp_209[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "except_block except_star_block"));
-            _res = _PyPegen_dummy_name(p, except_block_var, except_star_block_var);
+            D(fprintf(stderr, "%*c+ _tmp_209[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "except_block+ except_star_block"));
+            _res = _PyPegen_dummy_name(p, _loop1_216_var, except_star_block_var);
             goto done;
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _tmp_209[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "except_block except_star_block"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "except_block+ except_star_block"));
     }
     _res = NULL;
   done:
@@ -33710,7 +33714,7 @@ _tmp_209_rule(Parser *p)
     return _res;
 }
 
-// _tmp_210: except_star_block except_block
+// _tmp_210: except_star_block+ except_block
 static void *
 _tmp_210_rule(Parser *p)
 {
@@ -33721,27 +33725,27 @@ _tmp_210_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    { // except_star_block except_block
+    { // except_star_block+ except_block
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> _tmp_210[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "except_star_block except_block"));
+        D(fprintf(stderr, "%*c> _tmp_210[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "except_star_block+ except_block"));
+        asdl_seq * _loop1_217_var;
         excepthandler_ty except_block_var;
-        excepthandler_ty except_star_block_var;
         if (
-            (except_star_block_var = except_star_block_rule(p))  // except_star_block
+            (_loop1_217_var = _loop1_217_rule(p))  // except_star_block+
             &&
             (except_block_var = except_block_rule(p))  // except_block
         )
         {
-            D(fprintf(stderr, "%*c+ _tmp_210[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "except_star_block except_block"));
-            _res = _PyPegen_dummy_name(p, except_star_block_var, except_block_var);
+            D(fprintf(stderr, "%*c+ _tmp_210[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "except_star_block+ except_block"));
+            _res = _PyPegen_dummy_name(p, _loop1_217_var, except_block_var);
             goto done;
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _tmp_210[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "except_star_block except_block"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "except_star_block+ except_block"));
     }
     _res = NULL;
   done:
@@ -33960,6 +33964,148 @@ _tmp_215_rule(Parser *p)
   done:
     D(p->level--);
     return _res;
+}
+
+// _loop1_216: except_block
+static asdl_seq *
+_loop1_216_rule(Parser *p)
+{
+    D(p->level++);
+    if (p->error_indicator) {
+        D(p->level--);
+        return NULL;
+    }
+    void *_res = NULL;
+    int _mark = p->mark;
+    int _start_mark = p->mark;
+    void **_children = PyMem_Malloc(sizeof(void *));
+    if (!_children) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+        D(p->level--);
+        return NULL;
+    }
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
+    { // except_block
+        if (p->error_indicator) {
+            D(p->level--);
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> _loop1_216[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "except_block"));
+        excepthandler_ty except_block_var;
+        while (
+            (except_block_var = except_block_rule(p))  // except_block
+        )
+        {
+            _res = except_block_var;
+            if (_n == _children_capacity) {
+                _children_capacity *= 2;
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
+                    D(p->level--);
+                    return NULL;
+                }
+                _children = _new_children;
+            }
+            _children[_n++] = _res;
+            _mark = p->mark;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s _loop1_216[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "except_block"));
+    }
+    if (_n == 0 || p->error_indicator) {
+        PyMem_Free(_children);
+        D(p->level--);
+        return NULL;
+    }
+    asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
+    if (!_seq) {
+        PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+        D(p->level--);
+        return NULL;
+    }
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
+    PyMem_Free(_children);
+    _PyPegen_insert_memo(p, _start_mark, _loop1_216_type, _seq);
+    D(p->level--);
+    return _seq;
+}
+
+// _loop1_217: except_star_block
+static asdl_seq *
+_loop1_217_rule(Parser *p)
+{
+    D(p->level++);
+    if (p->error_indicator) {
+        D(p->level--);
+        return NULL;
+    }
+    void *_res = NULL;
+    int _mark = p->mark;
+    int _start_mark = p->mark;
+    void **_children = PyMem_Malloc(sizeof(void *));
+    if (!_children) {
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+        D(p->level--);
+        return NULL;
+    }
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
+    { // except_star_block
+        if (p->error_indicator) {
+            D(p->level--);
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> _loop1_217[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "except_star_block"));
+        excepthandler_ty except_star_block_var;
+        while (
+            (except_star_block_var = except_star_block_rule(p))  // except_star_block
+        )
+        {
+            _res = except_star_block_var;
+            if (_n == _children_capacity) {
+                _children_capacity *= 2;
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
+                    D(p->level--);
+                    return NULL;
+                }
+                _children = _new_children;
+            }
+            _children[_n++] = _res;
+            _mark = p->mark;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s _loop1_217[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "except_star_block"));
+    }
+    if (_n == 0 || p->error_indicator) {
+        PyMem_Free(_children);
+        D(p->level--);
+        return NULL;
+    }
+    asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
+    if (!_seq) {
+        PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
+        D(p->level--);
+        return NULL;
+    }
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
+    PyMem_Free(_children);
+    _PyPegen_insert_memo(p, _start_mark, _loop1_217_type, _seq);
+    D(p->level--);
+    return _seq;
 }
 
 void *

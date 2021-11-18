@@ -937,6 +937,28 @@ Custom error message for try block mixing except and except*
    Traceback (most recent call last):
    SyntaxError: cannot have both 'except' and 'except*' on the same 'try'
 
+   >>> try:
+   ...    pass
+   ... except TypeError:
+   ...    pass
+   ... except TypeError:
+   ...    pass
+   ... except* ValueError:
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: cannot have both 'except' and 'except*' on the same 'try'
+
+   >>> try:
+   ...    pass
+   ... except* TypeError:
+   ...    pass
+   ... except* TypeError:
+   ...    pass
+   ... except ValueError:
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: cannot have both 'except' and 'except*' on the same 'try'
+
 Ensure that early = are not matched by the parser as invalid comparisons
    >>> f(2, 4, x=34); 1 $ 2
    Traceback (most recent call last):
