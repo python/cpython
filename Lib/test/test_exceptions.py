@@ -1885,6 +1885,37 @@ class NameErrorTests(unittest.TestCase):
 
         self.assertNotIn("something", err.getvalue())
 
+    def test_issue45826(self):
+        # regression test for bpo-45826
+        def f():
+            with self.assertRaisesRegex(NameError, 'aaa'):
+                aab
+
+        try:
+            f()
+        except self.failureException:
+            with support.captured_stderr() as err:
+                sys.__excepthook__(*sys.exc_info())
+
+        self.assertIn("aab", err.getvalue())
+
+    def test_issue45826_focused(self):
+        def f():
+            try:
+                nonsense
+            except BaseException as E:
+                E.with_traceback(None)
+                raise ZeroDivisionError()
+
+        try:
+            f()
+        except ZeroDivisionError:
+            with support.captured_stderr() as err:
+                sys.__excepthook__(*sys.exc_info())
+
+        self.assertIn("nonsense", err.getvalue())
+        self.assertIn("ZeroDivisionError", err.getvalue())
+
 
 class AttributeErrorTests(unittest.TestCase):
     def test_attributes(self):
