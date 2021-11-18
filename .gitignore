@@ -76,6 +76,7 @@ Misc/python-embed.pc
 Misc/python-config.sh
 Modules/Setup.config
 Modules/Setup.local
+Modules/Setup.stdlib
 Modules/config.c
 Modules/ld_so_aix
 Programs/_freeze_module
