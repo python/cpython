@@ -898,11 +898,19 @@ oldsharedmods: $(SHAREDMODS) pybuilddir.txt
 		fi; \
 	done
 
+Modules/Setup.local:
+	@# Create empty Setup.local when file was deleted by user
+	echo "# Edit this file for local setup changes" > $@
+
+Modules/Setup.stdlib: $(srcdir)/Modules/Setup.stdlib.in config.status
+	./config.status $@
+
 Makefile Modules/config.c: Makefile.pre \
 				$(srcdir)/Modules/config.c.in \
 				$(MAKESETUP) \
 				$(srcdir)/Modules/Setup \
-				Modules/Setup.local
+				Modules/Setup.local \
+				Modules/Setup.stdlib
 	$(SHELL) $(MAKESETUP) -c $(srcdir)/Modules/config.c.in \
 				-s Modules \
 				Modules/Setup.local \
