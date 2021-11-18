@@ -630,6 +630,8 @@ MODULE__ELEMENTTREE_FALSE
 MODULE__ELEMENTTREE_TRUE
 MODULE_PYEXPAT_FALSE
 MODULE_PYEXPAT_TRUE
+MODULE_OSSAUDIODEV_FALSE
+MODULE_OSSAUDIODEV_TRUE
 TEST_MODULES
 LIBRARY_DEPS
 STATIC_LIBPYTHON
@@ -8150,7 +8152,7 @@ sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
 libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
 linux/tipc.h linux/random.h spawn.h util.h alloca.h endian.h \
 sys/endian.h sys/sysmacros.h linux/memfd.h linux/wait.h sys/memfd.h \
-sys/mman.h sys/eventfd.h
+sys/mman.h sys/eventfd.h linux/soundcard.h sys/soundcard.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -19227,6 +19229,57 @@ MODULE_BLOCK=
 
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module ossaudiodev" >&5
+$as_echo_n "checking for stdlib extension module ossaudiodev... " >&6; }
+      case $py_stdlib_not_available in #(
+  *ossaudiodev*) :
+    py_cv_module_ossaudiodev=n/a ;; #(
+  *) :
+
+      if true; then :
+  if test "$ac_cv_header_linux_soundcard_h" = yes -o "$ac_cv_header_sys_soundcard_h" = yes; then :
+  py_cv_module_ossaudiodev=yes
+else
+  py_cv_module_ossaudiodev=missing
+fi
+else
+  py_cv_module_ossaudiodev=disabled
+
+fi
+
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE_OSSAUDIODEV=$py_cv_module_ossaudiodev$as_nl"
+  if test "x$py_cv_module_ossaudiodev" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE_OSSAUDIODEV_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_OSSAUDIODEV_LDFLAGS=$as_nl"
+     if true; then
+  MODULE_OSSAUDIODEV_TRUE=
+  MODULE_OSSAUDIODEV_FALSE='#'
+else
+  MODULE_OSSAUDIODEV_TRUE='#'
+  MODULE_OSSAUDIODEV_FALSE=
+fi
+
+
+else
+
+     if false; then
+  MODULE_OSSAUDIODEV_TRUE=
+  MODULE_OSSAUDIODEV_FALSE='#'
+else
+  MODULE_OSSAUDIODEV_TRUE='#'
+  MODULE_OSSAUDIODEV_FALSE=
+fi
+
+
+fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_ossaudiodev" >&5
+$as_echo "$py_cv_module_ossaudiodev" >&6; }
+
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module pyexpat" >&5
 $as_echo_n "checking for stdlib extension module pyexpat... " >&6; }
       case $py_stdlib_not_available in #(
@@ -19496,6 +19549,14 @@ LTLIBOBJS=$ac_ltlibobjs
 
 
 
+if test -z "${MODULE_OSSAUDIODEV_TRUE}" && test -z "${MODULE_OSSAUDIODEV_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_OSSAUDIODEV\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_OSSAUDIODEV_TRUE}" && test -z "${MODULE_OSSAUDIODEV_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_OSSAUDIODEV\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${MODULE_PYEXPAT_TRUE}" && test -z "${MODULE_PYEXPAT_FALSE}"; then
   as_fn_error $? "conditional \"MODULE_PYEXPAT\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
