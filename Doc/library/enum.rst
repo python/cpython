@@ -1152,7 +1152,7 @@ all-uppercase names for members)::
 
 .. note::
 
-   This behavior is deprecated and will be removed in 3.12.
+   This behavior is deprecated and will be removed in 3.11.
 
 .. versionchanged:: 3.5
 
