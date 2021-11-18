@@ -337,6 +337,8 @@
   </ImportGroup>
   <Target Name="_RebuildFrozen" AfterTargets="AfterBuild" Condition="$(Configuration) != 'PGUpdate'">
     <Exec Command='"$(TargetPath)" "%(None.ModName)" "%(None.FullPath)" "%(None.IntFile)"' />
+    <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\scripts\deepfreeze.py" "%(None.OutFile)" "-m" "%(None.ModName)" -o "$(PySourcePath)Python\deepfreeze\%(None.ModName).c"' />
+    <!-- TODO: Use a temp file for deepfreeze.py output and copy conditionally, like below -->
 
     <Copy SourceFiles="%(None.IntFile)"
           DestinationFiles="%(None.OutFile)"
