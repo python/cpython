@@ -1,2 +1,2 @@
-Specialize BINARY_SUBSCR for classes with a ``__getitem__`` method
+Specialize :opcode:`BINARY_SUBSCR` for classes with a ``__getitem__`` method
 implemented in Python

@@ -2089,7 +2089,7 @@ check_eval_breaker:
                 STAT_INC(BINARY_SUBSCR, deferred);
                 cache->adaptive.counter--;
                 assert(cache->adaptive.original_oparg == 0);
-                oparg = 0;
+                /* No need to set oparg here; it isn't used by BINARY_SUBSCR */
                 STAT_DEC(BINARY_SUBSCR, unquickened);
                 JUMP_TO_INSTRUCTION(BINARY_SUBSCR);
             }

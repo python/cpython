@@ -1140,12 +1140,13 @@ binary_subscr_fail_kind(PyTypeObject *container_type, PyObject *sub)
 
 _Py_IDENTIFIER(__getitem__);
 
+#define SIMPLE_FUNCTION 0
+
 static int
 function_kind(PyCodeObject *code) {
     int flags = code->co_flags;
     if (flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
         return SPEC_FAIL_GENERATOR;
-        return -1;
     }
     if ((flags & (CO_VARKEYWORDS | CO_VARARGS)) || code->co_kwonlyargcount) {
         return SPEC_FAIL_COMPLEX_PARAMETERS;
@@ -1156,7 +1157,7 @@ function_kind(PyCodeObject *code) {
     if (code->co_nfreevars) {
         return SPEC_FAIL_FREE_VARS;
     }
-    return 0;
+    return SIMPLE_FUNCTION;
 }
 
 int
@@ -1193,7 +1194,7 @@ _Py_Specialize_BinarySubscr(
         PyFunctionObject *func = (PyFunctionObject *)descriptor;
         PyCodeObject *code = (PyCodeObject *)func->func_code;
         int kind = function_kind(code);
-        if (kind) {
+        if (kind != SIMPLE_FUNCTION) {
             SPECIALIZATION_FAIL(BINARY_SUBSCR, kind);
             goto fail;
         }
@@ -1244,7 +1245,7 @@ specialize_py_call(
     _PyCallCache *cache1 = &cache[-1].call;
     PyCodeObject *code = (PyCodeObject *)func->func_code;
     int kind = function_kind(code);
-    if (kind) {
+    if (kind != SIMPLE_FUNCTION) {
         SPECIALIZATION_FAIL(CALL_FUNCTION, kind);
         return -1;
     }
