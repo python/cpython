@@ -659,7 +659,10 @@ class PyCodeObjectPtr(PyObjectPtr):
             addr += ord(addr_incr)
             if addr > addrq:
                 return lineno
-            lineno += ord(line_incr)
+            line_delta = ord(line_incr)
+            if line_delta >= 128:
+                line_delta -= 256
+            lineno += line_delta
         return lineno
 
 
