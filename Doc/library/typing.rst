@@ -256,6 +256,7 @@ called :class:`TypeVar`.
    def first(l: Sequence[T]) -> T:   # Generic function
        return l[0]
 
+.. _user-defined-generics:
 
 User-defined generic types
 ==========================
