@@ -1100,7 +1100,7 @@ static void
 _assert_exception_type_is_redundant(PyObject* type, PyObject* val)
 {
     if (type == NULL || type == Py_None) {
-        assert(val == NULL || val == Py_None);
+        assert(val == type);
     }
     else {
         assert(PyExceptionInstance_Check(val));
@@ -3661,7 +3661,10 @@ check_eval_breaker:
                                            "inherit from BaseException is not "
                                            "allowed";
             PyObject *right = POP();
-            PyObject *left = TOP();
+            ASSERT_EXC_TYPE_IS_REDUNDANT(TOP(), SECOND());
+            PyObject *left = SECOND();
+            assert(PyExceptionInstance_Check(left));
+
             if (PyTuple_Check(right)) {
                 Py_ssize_t i, length;
                 length = PyTuple_GET_SIZE(right);
@@ -4138,7 +4141,13 @@ check_eval_breaker:
             ASSERT_EXC_TYPE_IS_REDUNDANT(type, value);
             _PyErr_StackItem *exc_info = tstate->exc_info;
             SET_THIRD(exc_info->exc_traceback);
-            SET_SECOND(exc_info->exc_value);
+            if (exc_info->exc_value != NULL) {
+                SET_SECOND(exc_info->exc_value);
+            }
+            else {
+                Py_INCREF(Py_None);
+                SET_SECOND(Py_None);
+            }
             if (exc_info->exc_type != NULL) {
                 SET_TOP(exc_info->exc_type);
             }
@@ -5843,7 +5852,9 @@ do_raise(PyThreadState *tstate, PyObject *exc, PyObject *cause)
         type = exc_info->exc_type;
         value = exc_info->exc_value;
         tb = exc_info->exc_traceback;
-        if (Py_IsNone(type) || type == NULL) {
+        assert(((Py_IsNone(value) || value == NULL)) ==
+               ((Py_IsNone(type) || type == NULL)));
+        if (Py_IsNone(value) || value == NULL) {
             _PyErr_SetString(tstate, PyExc_RuntimeError,
                              "No active exception to reraise");
             return 0;

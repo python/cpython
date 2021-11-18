@@ -1341,11 +1341,7 @@ _PyThread_CurrentExceptions(void)
             if (id == NULL) {
                 goto fail;
             }
-            PyObject *exc_info = PyTuple_Pack(
-                3,
-                err_info->exc_type != NULL ? err_info->exc_type : Py_None,
-                err_info->exc_value != NULL ? err_info->exc_value : Py_None,
-                err_info->exc_traceback != NULL ? err_info->exc_traceback : Py_None);
+            PyObject *exc_info = _PyErr_StackItemToExcInfoTuple(err_info);
             if (exc_info == NULL) {
                 Py_DECREF(id);
                 goto fail;

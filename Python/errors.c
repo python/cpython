@@ -79,11 +79,15 @@ _PyErr_StackItem *
 _PyErr_GetTopmostException(PyThreadState *tstate)
 {
     _PyErr_StackItem *exc_info = tstate->exc_info;
-    while ((exc_info->exc_type == NULL || exc_info->exc_type == Py_None) &&
+    while ((exc_info->exc_value == NULL || exc_info->exc_value == Py_None) &&
            exc_info->previous_item != NULL)
     {
+        assert(exc_info->exc_type == NULL || exc_info->exc_type == Py_None);
         exc_info = exc_info->previous_item;
     }
+    assert(exc_info == NULL ||
+           exc_info->previous_item == NULL ||
+           (exc_info->exc_type != NULL && exc_info->exc_type != Py_None));
     return exc_info;
 }
 
@@ -471,9 +475,24 @@ _PyErr_GetExcInfo(PyThreadState *tstate,
                   PyObject **p_type, PyObject **p_value, PyObject **p_traceback)
 {
     _PyErr_StackItem *exc_info = _PyErr_GetTopmostException(tstate);
-    *p_type = exc_info->exc_type;
+
     *p_value = exc_info->exc_value;
     *p_traceback = exc_info->exc_traceback;
+
+    assert(*p_value == NULL ||
+           *p_value == Py_None ||
+           PyExceptionInstance_Check(*p_value));
+
+    *p_type = (*p_value != NULL && PyExceptionInstance_Check(*p_value)) ?
+              PyExceptionInstance_Class(*p_value) :
+              Py_None;
+
+    if (exc_info->exc_type == NULL || exc_info->exc_type == Py_None) {
+        assert(*p_type == Py_None);
+    }
+    else {
+        assert(*p_type == exc_info->exc_type);
+    }
 
     Py_XINCREF(*p_type);
     Py_XINCREF(*p_value);
@@ -506,6 +525,30 @@ PyErr_SetExcInfo(PyObject *p_type, PyObject *p_value, PyObject *p_traceback)
     Py_XDECREF(oldvalue);
     Py_XDECREF(oldtraceback);
 }
+
+
+PyObject*
+_PyErr_StackItemToExcInfoTuple(_PyErr_StackItem *err_info)
+{
+    PyObject *exc_value = err_info->exc_value;
+    if (exc_value == NULL) {
+        exc_value = Py_None;
+    }
+
+    assert(exc_value == Py_None || PyExceptionInstance_Check(exc_value));
+
+    PyObject *exc_type = PyExceptionInstance_Check(exc_value) ?
+               PyExceptionInstance_Class(err_info->exc_value) :
+               Py_None;
+
+    return Py_BuildValue(
+        "(OOO)",
+        exc_type,
+        exc_value,
+        err_info->exc_traceback != NULL ?
+            err_info->exc_traceback : Py_None);
+}
+
 
 /* Like PyErr_Restore(), but if an exception is already set,
    set the context associated with it.
@@ -567,7 +610,11 @@ _PyErr_ChainStackItem(_PyErr_StackItem *exc_info)
     } else {
         exc_info_given = 1;
     }
-    if (exc_info->exc_type == NULL || exc_info->exc_type == Py_None) {
+
+    assert( (exc_info->exc_type == NULL || exc_info->exc_type == Py_None) ==
+            (exc_info->exc_value == NULL || exc_info->exc_value == Py_None) );
+
+    if (exc_info->exc_value == NULL || exc_info->exc_value == Py_None) {
         return;
     }
 
@@ -586,7 +633,14 @@ _PyErr_ChainStackItem(_PyErr_StackItem *exc_info)
     exc2 = exc_info->exc_type;
     val2 = exc_info->exc_value;
     tb2 = exc_info->exc_traceback;
+    PyObject *exc2_before = exc2;
+    PyObject *val2_before = val2;
+    PyObject *tb2_before = tb2;
     _PyErr_NormalizeException(tstate, &exc2, &val2, &tb2);
+    /* exc_info should already be normalized */
+    assert(exc2 == exc2_before);
+    assert(val2 == val2_before);
+    assert(tb2 == tb2_before);
     if (tb2 != NULL) {
         PyException_SetTraceback(val2, tb2);
     }
