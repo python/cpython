@@ -10,6 +10,7 @@ extern "C" {
 
 #include "pycore_atomic.h"    /* _Py_atomic_address */
 #include "pycore_gil.h"       // struct _gil_runtime_state
+#include "pycore_interp.h"    // struct _is
 
 #define _PY_NSMALLPOSINTS           257
 #define _PY_NSMALLNEGINTS           5
@@ -133,6 +134,10 @@ typedef struct pyruntimestate {
     struct _Py_unicode_runtime_ids unicode_ids;
 
     // XXX Consolidate globals found via the check-c-globals script.
+
+    struct initial_values {
+        struct _is interpreters_main;
+    } _preallocated;
 } _PyRuntimeState;
 
 #define _PyRuntimeState_INIT \

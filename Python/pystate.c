@@ -247,24 +247,31 @@ PyInterpreterState_New(void)
         return NULL;
     }
 
-    PyInterpreterState *interp = PyMem_RawCalloc(1, sizeof(PyInterpreterState));
-    if (interp == NULL) {
-        PyThread_free_lock(pending_lock);
-        return NULL;
-    }
-
     /* Don't get runtime from tstate since tstate can be NULL */
     _PyRuntimeState *runtime = &_PyRuntime;
-    interp->runtime = runtime;
+    struct pyinterpreters *interpreters = &runtime->interpreters;
+
+    PyInterpreterState *interp;
+    if (interpreters->main == NULL) {
+        assert(interpreters->next_id == 0);
+        interp = &runtime->_preallocated.interpreters_main;
+    }
+    else {
+        interp = PyMem_RawCalloc(1, sizeof(PyInterpreterState));
+        if (interp == NULL) {
+            PyThread_free_lock(pending_lock);
+            return NULL;
+        }
+    }
 
     init_interpreter(interp, pending_lock);
-
-    struct pyinterpreters *interpreters = &runtime->interpreters;
+    interp->runtime = runtime;
 
     HEAD_LOCK(runtime);
     if (interpreters->next_id < 0) {
         /* overflow or Py_Initialize() not called! */
         assert(interpreters->main != NULL);
+        assert(interp != &runtime->_preallocated.interpreters_main);
         if (tstate != NULL) {
             _PyErr_SetString(tstate, PyExc_RuntimeError,
                              "failed to get an interpreter ID");
@@ -378,6 +385,15 @@ zapthreads(PyInterpreterState *interp, int check_current)
 }
 
 
+static void
+free_interpreter(PyInterpreterState *interp)
+{
+    if (interp != &interp->runtime->_preallocated.interpreters_main) {
+        PyMem_RawFree(interp);
+    }
+}
+
+
 void
 PyInterpreterState_Delete(PyInterpreterState *interp)
 {
@@ -416,7 +432,7 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
     if (interp->id_mutex != NULL) {
         PyThread_free_lock(interp->id_mutex);
     }
-    PyMem_RawFree(interp);
+    free_interpreter(interp);
 }
 
 
