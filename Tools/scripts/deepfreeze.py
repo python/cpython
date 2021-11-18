@@ -11,6 +11,8 @@ import time
 import types
 import typing
 
+import umarshal
+
 verbose = False
 
 
@@ -58,7 +60,8 @@ def get_localsplus_counts(code: types.CodeType,
             nplaincellvars += 1
         elif kind & CO_FAST_FREE:
             nfreevars += 1
-    assert nlocals == len(code.co_varnames) == code.co_nlocals
+    assert nlocals == len(code.co_varnames) == code.co_nlocals, \
+        (nlocals, len(code.co_varnames), code.co_nlocals)
     assert ncellvars == len(code.co_cellvars)
     assert nfreevars == len(code.co_freevars)
     assert len(names) == nlocals + nplaincellvars + nfreevars
@@ -329,7 +332,7 @@ class Printer:
             return self.cache[key]
         self.misses += 1
         match obj:
-            case types.CodeType() as code:
+            case types.CodeType() | umarshal.Code() as code:
                 val = self.generate_code(name, code)
             case tuple(t):
                 val = self.generate_tuple(name, t)
@@ -376,7 +379,6 @@ FROZEN_DATA_LINE = r"\s*(\d+,\s*)+\s*"
 
 
 def is_frozen_header(source: str) -> bool:
-    # TODO: What if _freeze_module.c has a different filename?
     return source.startswith(FROZEN_COMMENT)
 
 
@@ -388,8 +390,7 @@ def decode_frozen_data(source: str) -> types.CodeType:
         del lines[-1]
     values: tuple[int, ...] = ast.literal_eval("".join(lines))
     data = bytes(values)
-    # TODO: Write a marshal.unloads() implementation in pure Python
-    return marshal.loads(data)
+    return umarshal.loads(data)
 
 
 def generate(source: str, filename: str, modname: str, file: typing.TextIO) -> None:
