@@ -3247,9 +3247,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
         excepthandler_ty handler = (excepthandler_ty)asdl_seq_GET(
             s->v.Try.handlers, i);
         SET_LOC(c, handler);
-        if (!handler->v.ExceptHandler.type && i < n-1) {
-            return compiler_error(c, "default 'except:' must be last");
-        }
+        assert(handler->v.ExceptHandler.type || i >= n-1);
         except = compiler_new_block(c);
         if (except == NULL)
             return 0;

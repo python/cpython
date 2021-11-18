@@ -1039,6 +1039,49 @@ Specialized indentation errors:
    Traceback (most recent call last):
    IndentationError: expected an indented block after 'finally' statement on line 5
 
+   >>> try:
+   ...     something()
+   ... except:
+   ...     pass
+   ... except A:
+   ...     pass
+   ... else:
+   ...     pass
+   ... finally:
+   ...     pass
+   Traceback (most recent call last):
+   SyntaxError: default 'except:' must be last
+
+   >>> try:
+   ...     something()
+   ... except:
+   ...     pass
+   ... except:
+   ...     pass
+   ... else:
+   ...     pass
+   ... finally:
+   ...     pass
+   Traceback (most recent call last):
+   SyntaxError: default 'except:' must be last
+
+   >>> try:
+   ...     something()
+   ... except A:
+   ...     pass
+   ... except B:
+   ...     pass
+   ... except:
+   ...     pass
+   ... except C:
+   ...     pass
+   ... else:
+   ...     pass
+   ... finally:
+   ...     pass
+   Traceback (most recent call last):
+   SyntaxError: default 'except:' must be last
+
    >>> with A:
    ... pass
    Traceback (most recent call last):

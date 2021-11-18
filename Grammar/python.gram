@@ -402,7 +402,12 @@ with_item[withitem_ty]:
 try_stmt[stmt_ty]:
     | invalid_try_stmt
     | 'try' &&':' b=block f=finally_block { _PyAST_Try(b, NULL, NULL, f, EXTRA) }
-    | 'try' &&':' b=block ex[asdl_excepthandler_seq*]=except_block+ el=[else_block] f=[finally_block] { _PyAST_Try(b, ex, el, f, EXTRA) }
+    | 'try' &&':' b=block ex[asdl_excepthandler_seq*]=except_block+ d_ex[asdl_match_case_seq*]=[default_except_block] el=[else_block] f=[finally_block] {
+        _PyAST_Try(b, (d_ex) ? (asdl_excepthandler_seq*)_PyPegen_seq_append_to_end(p, (asdl_seq*)ex, d_ex) : ex, el, f, EXTRA)
+    }
+    | 'try' &&':' b=block d_ex[asdl_match_case_seq*]=default_except_block el=[else_block] f=[finally_block] {
+        _PyAST_Try(b, (asdl_excepthandler_seq*)_PyPegen_singleton_seq(p, d_ex), el, f, EXTRA)
+    }
 
 # Except statement
 # ----------------
@@ -411,8 +416,9 @@ except_block[excepthandler_ty]:
     | invalid_except_stmt_indent
     | 'except' e=expression t=['as' z=NAME { z }] ':' b=block {
         _PyAST_ExceptHandler(e, (t) ? ((expr_ty) t)->v.Name.id : NULL, b, EXTRA) }
-    | 'except' ':' b=block { _PyAST_ExceptHandler(NULL, NULL, b, EXTRA) }
     | invalid_except_stmt
+default_except_block[excepthandler_ty]:
+    | 'except' ':' b=block { _PyAST_ExceptHandler(NULL, NULL, b, EXTRA) }
 finally_block[asdl_stmt_seq*]:
     | invalid_finally_stmt
     | 'finally' &&':' a=block { a }
@@ -1187,6 +1193,9 @@ invalid_try_stmt:
     | a='try' ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'try' statement on line %d", a->lineno) }
     | 'try' ':' block !('except' | 'finally') { RAISE_SYNTAX_ERROR("expected 'except' or 'finally' block") }
+    | 'try' ':' block except_block* a=default_except_block (except_block|default_except_block)+ {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "default 'except:' must be last") }
+
 invalid_except_stmt:
     | 'except' a=expression ',' expressions ['as' NAME ] ':' {
         RAISE_SYNTAX_ERROR_STARTING_FROM(a, "multiple exception types must be parenthesized") }
