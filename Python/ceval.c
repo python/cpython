@@ -100,7 +100,7 @@ static InterpreterFrame *
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFrameConstructor *con,
                         PyObject *locals, PyObject* const* args,
                         size_t argcount, PyObject *kwnames);
-static int
+static void
 _PyEvalFrameClearAndPop(PyThreadState *tstate, InterpreterFrame * frame);
 
 #define NAME_ERROR_MSG \
@@ -5766,7 +5766,7 @@ fail:
     return NULL;
 }
 
-static int
+static void
 _PyEvalFrameClearAndPop(PyThreadState *tstate, InterpreterFrame * frame)
 {
     --tstate->recursion_remaining;
@@ -5774,7 +5774,6 @@ _PyEvalFrameClearAndPop(PyThreadState *tstate, InterpreterFrame * frame)
     _PyFrame_Clear(frame, 0);
     ++tstate->recursion_remaining;
     _PyThreadState_PopFrame(tstate, frame);
-    return 0;
 }
 
 PyObject *
@@ -5808,9 +5807,7 @@ _PyEval_Vector(PyThreadState *tstate, PyFrameConstructor *con,
     }
     PyObject *retval = _PyEval_EvalFrame(tstate, frame, 0);
     assert(_PyFrame_GetStackPointer(frame) == _PyFrame_Stackbase(frame));
-    if (_PyEvalFrameClearAndPop(tstate, frame)) {
-        retval = NULL;
-    }
+    _PyEvalFrameClearAndPop(tstate, frame);
     return retval;
 }
 

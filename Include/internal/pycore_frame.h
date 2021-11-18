@@ -137,7 +137,7 @@ _PyFrame_GetFrameObject(InterpreterFrame *frame)
  * take should  be set to 1 for heap allocated
  * frames like the ones in generators and coroutines.
  */
-int
+void
 _PyFrame_Clear(InterpreterFrame * frame, int take);
 
 int

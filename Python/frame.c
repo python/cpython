@@ -97,7 +97,7 @@ take_ownership(PyFrameObject *f, InterpreterFrame *frame)
 }
 
 /* FIXME -- See bpo-45786 */
-int
+void
 _PyFrame_Clear(InterpreterFrame * frame, int take)
 {
     if (frame->frame_obj) {
@@ -107,12 +107,11 @@ _PyFrame_Clear(InterpreterFrame * frame, int take)
             if (!take) {
                 frame = copy_frame_to_heap(frame);
                 if (frame == NULL) {
-                    return -1;
+                    return;
                 }
             }
             take_ownership(f, frame);
             Py_DECREF(f);
-            return 0;
         }
         Py_DECREF(f);
     }
@@ -124,5 +123,4 @@ _PyFrame_Clear(InterpreterFrame * frame, int take)
     if (take) {
         PyMem_Free(frame);
     }
-    return 0;
 }
