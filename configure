@@ -11168,7 +11168,7 @@ $as_echo "$enable_loadable_sqlite_extensions" >&6; }
 if test "x$enable_loadable_sqlite_extensions" = xyes; then :
 
 
-$as_echo "#define LIBSQLITE3_ENABLE_LOAD_EXTENSION 1" >>confdefs.h
+$as_echo "#define PY_SQLITE_ENABLE_LOAD_EXTENSION 1" >>confdefs.h
 
 
 fi

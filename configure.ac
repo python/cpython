@@ -3208,7 +3208,7 @@ AC_ARG_ENABLE(loadable-sqlite-extensions,
 AC_MSG_RESULT($enable_loadable_sqlite_extensions)
 
 AS_VAR_IF([enable_loadable_sqlite_extensions], [yes], [
-  AC_DEFINE(LIBSQLITE3_ENABLE_LOAD_EXTENSION, 1,
+  AC_DEFINE(PY_SQLITE_ENABLE_LOAD_EXTENSION, 1,
   [Define to 1 to build the sqlite module with loadable extensions support.])
 ])
 

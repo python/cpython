@@ -1399,9 +1399,6 @@
 /* Define to 1 if you have the `_getpty' function. */
 #undef HAVE__GETPTY
 
-/* Define to 1 to build the sqlite module with loadable extensions support. */
-#undef LIBSQLITE3_ENABLE_LOAD_EXTENSION
-
 /* Define to 1 if `major', `minor', and `makedev' are declared in <mkdev.h>.
    */
 #undef MAJOR_IN_MKDEV
@@ -1451,6 +1448,9 @@
 
 /* Define to printf format modifier for Py_ssize_t */
 #undef PY_FORMAT_SIZE_T
+
+/* Define to 1 to build the sqlite module with loadable extensions support. */
+#undef PY_SQLITE_ENABLE_LOAD_EXTENSION
 
 /* Default cipher suites list for ssl module. 1: Python's preferred selection,
    2: leave OpenSSL defaults untouched, 0: custom string */
