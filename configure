@@ -11156,7 +11156,8 @@ $as_echo_n "checking for --enable-loadable-sqlite-extensions... " >&6; }
 # Check whether --enable-loadable-sqlite-extensions was given.
 if test "${enable_loadable_sqlite_extensions+set}" = set; then :
   enableval=$enable_loadable_sqlite_extensions; if test "x$have_sqlite3_load_extension" = xno; then :
-  as_fn_error $? "Your version of SQLite does not support loadable extensions" "$LINENO" 5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Your version of SQLite does not support loadable extensions" >&5
+$as_echo "$as_me: WARNING: Your version of SQLite does not support loadable extensions" >&2;}
 fi
 else
   enable_loadable_sqlite_extensions=no
