@@ -74,8 +74,8 @@ extern int _Py_EncodeNonUnicodeWchar_InPlace(
     Py_ssize_t size);
 #endif
 
-extern PyAPI_FUNC(int) _Py_isabs(const wchar_t *path);
-extern PyAPI_FUNC(int) _Py_abspath(const wchar_t *path, wchar_t **abspath_p);
+extern int _Py_isabs(const wchar_t *path);
+extern int _Py_abspath(const wchar_t *path, wchar_t **abspath_p);
 extern wchar_t * _Py_join_relfile(const wchar_t *dirname,
                                   const wchar_t *relfile);
 extern int _Py_add_relfile(wchar_t *dirname,

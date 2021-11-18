@@ -55,7 +55,7 @@ class MockGetPathTests(unittest.TestCase):
             prefix=r"C:\CPython",
             exec_prefix=r"C:\CPython",
             build_prefix=r"C:\CPython",
-            _development_env=1,
+            _is_python_build=1,
             module_search_paths_set=1,
             module_search_paths=[
                 r"C:\CPython\PCbuild\amd64\python98.zip",
@@ -192,7 +192,7 @@ class MockGetPathTests(unittest.TestCase):
             prefix=r"C:\CPython",
             exec_prefix=r"C:\CPython",
             build_prefix=r"C:\CPython",
-            _development_env=1,
+            _is_python_build=1,
             module_search_paths_set=1,
             module_search_paths=[
                 r"C:\CPython\PCbuild\amd64\python98.zip",
@@ -250,7 +250,7 @@ class MockGetPathTests(unittest.TestCase):
             exec_prefix="/usr/local",
             base_executable="/home/cpython/python",
             build_prefix="/home/cpython",
-            _development_env=1,
+            _is_python_build=1,
             module_search_paths_set=1,
             module_search_paths=[
                 "/usr/local/lib/python98.zip",
@@ -342,7 +342,7 @@ class MockGetPathTests(unittest.TestCase):
             exec_prefix="/usr/local",
             base_executable="/linkfrom/python",
             build_prefix="/home/cpython",
-            _development_env=1,
+            _is_python_build=1,
             module_search_paths_set=1,
             module_search_paths=[
                 "/usr/local/lib/python98.zip",
@@ -448,7 +448,7 @@ class MockGetPathTests(unittest.TestCase):
             exec_prefix="/usr/local",
             base_executable="/linkfrom/python",
             build_prefix="/home/cpython",
-            _development_env=1,
+            _is_python_build=1,
             module_search_paths_set=1,
             module_search_paths=[
                 "/usr/local/lib/python98.zip",

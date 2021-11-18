@@ -42,7 +42,6 @@
 #include "frozen_modules/importlib._bootstrap.h"
 #include "frozen_modules/importlib._bootstrap_external.h"
 #include "frozen_modules/zipimport.h"
-#include "frozen_modules/getpath.h"
 #include "frozen_modules/abc.h"
 #include "frozen_modules/codecs.h"
 #include "frozen_modules/io.h"

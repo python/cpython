@@ -438,7 +438,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         '_init_main': 1,
         '_isolated_interpreter': 0,
         'use_frozen_modules': 1,
-        '_development_env': IGNORE_CONFIG,
+        '_is_python_build': IGNORE_CONFIG,
     }
     if MS_WINDOWS:
         CONFIG_COMPAT.update({

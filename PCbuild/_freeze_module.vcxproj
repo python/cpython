@@ -245,11 +245,6 @@
       <IntFile>$(IntDir)zipimport.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\zipimport.h</OutFile>
     </None>
-    <None Include="..\Modules\getpath.py">
-      <ModName>getpath</ModName>
-      <IntFile>$(IntDir)getpath.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\getpath.h</OutFile>
-    </None>
     <None Include="..\Lib\abc.py">
       <ModName>abc</ModName>
       <IntFile>$(IntDir)abc.g.h</IntFile>
@@ -336,6 +331,14 @@
       <OutFile>$(PySourcePath)Python\frozen_modules\frozen_only.h</OutFile>
     </None>
     <!-- END frozen modules -->
+  </ItemGroup>
+  <ItemGroup>
+    <!-- We manually freeze getpath.py rather than through freeze_modules -->
+    <None Include="..\Modules\getpath.py">
+      <ModName>getpath</ModName>
+      <IntFile>$(IntDir)getpath.g.h</IntFile>
+      <OutFile>$(PySourcePath)Modules\getpath.h</OutFile>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

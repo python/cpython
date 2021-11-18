@@ -55,8 +55,9 @@ FROZEN_FILE = os.path.join(ROOT_DIR, 'Python', 'frozen.c')
 MAKEFILE = os.path.join(ROOT_DIR, 'Makefile.pre.in')
 PCBUILD_PROJECT = os.path.join(ROOT_DIR, 'PCbuild', '_freeze_module.vcxproj')
 PCBUILD_FILTERS = os.path.join(ROOT_DIR, 'PCbuild', '_freeze_module.vcxproj.filters')
-GETPATH_PY = os.path.join(ROOT_DIR, 'Modules', 'getpath.py')
 
+
+OS_PATH = 'ntpath' if os.name == 'nt' else 'posixpath'
 
 # These are modules that get frozen.
 TESTS_SECTION = 'Test module'
@@ -71,9 +72,6 @@ FROZEN = [
         # This module is important because some Python builds rely
         # on a builtin zip file instead of a filesystem.
         'zipimport',
-        # This script is not importable, but we execute the
-        # bytecode early during initialisation.
-        f'!getpath : getpath = {GETPATH_PY}',
         ]),
     ('stdlib - startup, without site (python -S)', [
         'abc',
@@ -92,9 +90,7 @@ FROZEN = [
         'posixpath',
         # We must explicitly mark os.path as a frozen module
         # even though it will never be imported.
-        # We always point at posixpath so that this script
-        # generates the same output on all platforms.
-        f'posixpath : os.path',
+        f'{OS_PATH} : os.path',
         'os',
         'site',
         'stat',
@@ -174,7 +170,6 @@ def _parse_spec(spec, knownids=None, section=None):
       frozenid
       frozenid : modname
       frozenid : modname = pyfile
-      !frozenid : modname = pyfile
 
     "frozenid" and "modname" must be valid module names (dot-separated
     identifiers).  If "modname" is not provided then "frozenid" is used.
@@ -194,12 +189,6 @@ def _parse_spec(spec, knownids=None, section=None):
     have been provided and patterns in "modname" are not supported.
     Also, if "modname" has brackets then "frozenid" should not,
     and "pyfile" should have been provided..
-
-    A leading exclamation mark indicates that the module should be
-    frozen, but not made available in frozen modules. "pyfile" must
-    be provided in this case. To reference elsewhere in the codebase,
-    use `extern const unsigned char *_Py_M_<frozenid>_ptr;` and
-    `extern const int _Py_M_<frozenid>_len;`.
     """
     frozenid, _, remainder = spec.partition(':')
     modname, _, pyfile = remainder.partition('=')
@@ -219,13 +208,6 @@ def _parse_spec(spec, knownids=None, section=None):
         else:
             pyfile = _resolve_module(frozenid, ispkg=False)
         ispkg = True
-    elif frozenid.startswith('!'):
-        frozenid = frozenid[1:]
-        modname = ""
-        assert check_modname(frozenid), spec
-        assert not knownids or frozenid not in knownids, spec
-        assert not os.path.isdir(pyfile), spec
-        ispkg = False
     elif pyfile:
         assert check_modname(frozenid), spec
         assert not knownids or frozenid not in knownids, spec
@@ -554,8 +536,6 @@ def regen_frozen(modules):
     indent = '    '
     lastsection = None
     for mod in modules:
-        if not mod.name:
-            continue
         if mod.frozenid in BOOTSTRAP:
             lines = bootstraplines
         elif mod.section == TESTS_SECTION:

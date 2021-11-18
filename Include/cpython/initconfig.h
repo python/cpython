@@ -212,7 +212,7 @@ typedef struct PyConfig {
     int _isolated_interpreter;
 
     // If non-zero, we believe we're running from a source tree.
-    int _development_env;
+    int _is_python_build;
 } PyConfig;
 
 PyAPI_FUNC(void) PyConfig_InitPythonConfig(PyConfig *config);

@@ -627,7 +627,6 @@ config_check_consistency(const PyConfig *config)
     assert(config->parse_argv >= 0);
     assert(config->configure_c_stdio >= 0);
     assert(config->buffered_stdio >= 0);
-    //assert(config->program_name != NULL);
     assert(_PyWideStringList_CheckConsistency(&config->orig_argv));
     assert(_PyWideStringList_CheckConsistency(&config->argv));
     /* sys.argv must be non-empty: empty argv is replaced with [''] */
@@ -734,7 +733,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->legacy_windows_stdio = -1;
 #endif
     config->use_frozen_modules = -1;
-    config->_development_env = 0;
+    config->_is_python_build = 0;
 }
 
 
@@ -760,7 +759,6 @@ config_init_defaults(PyConfig *config)
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = 0;
 #endif
-    config->_development_env = 0;
 }
 
 
@@ -957,7 +955,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(_isolated_interpreter);
     COPY_ATTR(use_frozen_modules);
     COPY_WSTRLIST(orig_argv);
-    COPY_ATTR(_development_env);
+    COPY_ATTR(_is_python_build);
 
 #undef COPY_ATTR
 #undef COPY_WSTR_ATTR
@@ -1062,7 +1060,7 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM_INT(_isolated_interpreter);
     SET_ITEM_WSTRLIST(orig_argv);
     SET_ITEM_INT(use_frozen_modules);
-    SET_ITEM_INT(_development_env);
+    SET_ITEM_INT(_is_python_build);
 
     return dict;
 
@@ -1347,7 +1345,7 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
     GET_UINT(_init_main);
     GET_UINT(_isolated_interpreter);
     GET_UINT(use_frozen_modules);
-    GET_UINT(_development_env);
+    GET_UINT(_is_python_build);
 
 #undef CHECK_VALUE
 #undef GET_UINT
@@ -1974,7 +1972,7 @@ config_init_import(PyConfig *config, int compute_path_config)
     if (config->use_frozen_modules < 0) {
         const wchar_t *value = config_get_xoption_value(config, L"frozen_modules");
         if (value == NULL) {
-            config->use_frozen_modules = !config->_development_env;
+            config->use_frozen_modules = !config->_is_python_build;
         }
         else if (wcscmp(value, L"on") == 0) {
             config->use_frozen_modules = 1;
@@ -2987,7 +2985,7 @@ _Py_DumpPathConfig(PyThreadState *tstate)
     PySys_WriteStderr("  environment = %i\n", config->use_environment);
     PySys_WriteStderr("  user site = %i\n", config->user_site_directory);
     PySys_WriteStderr("  import site = %i\n", config->site_import);
-    PySys_WriteStderr("  development env = %i\n", config->_development_env);
+    PySys_WriteStderr("  is in build tree = %i\n", config->_is_python_build);
     DUMP_CONFIG("stdlib dir", stdlib_dir);
 #undef DUMP_CONFIG
 

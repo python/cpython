@@ -480,7 +480,7 @@ if not home_was_set and real_executable_dir and not py_setpath:
         # Do not warn, because 'exec_prefix' never equals 'build_prefix' on POSIX
         #elif not venv_prefix and exec_prefix != build_prefix:
         #    warn('Detected development environment but exec_prefix is already set')
-        config['_development_env'] = 1
+        config['_is_python_build'] = 1
 
 
 # ******************************************************************************

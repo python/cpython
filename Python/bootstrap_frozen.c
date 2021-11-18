@@ -10,7 +10,6 @@
 /* Includes for frozen modules: */
 #include "frozen_modules/importlib._bootstrap.h"
 #include "frozen_modules/importlib._bootstrap_external.h"
-#include "frozen_modules/getpath.h"
 #include "frozen_modules/zipimport.h"
 /* End includes */
 

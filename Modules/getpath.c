@@ -18,6 +18,9 @@
 #  include <mach-o/dyld.h>
 #endif
 
+/* Reference the precompiled getpath.py */
+#include "getpath.h"
+
 #if (!defined(PREFIX) || !defined(EXEC_PREFIX) \
         || !defined(VERSION) || !defined(VPATH) \
         || !defined(PLATLIBDIR))
@@ -47,11 +50,6 @@
 #define EXE_SUFFIX NULL
 #endif
 #endif
-
-
-/* Reference the precompiled getpath.py that is compiled into frozen.c */
-extern const unsigned char *_Py_M__getpath_ptr;
-extern const int _Py_M__getpath_len;
 
 
 /* HELPER FUNCTIONS for getpath.py */
@@ -822,7 +820,7 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
     Py_DECREF(configDict);
 
     PyObject *co = PyMarshal_ReadObjectFromString(
-        (const char*)_Py_M__getpath_ptr, _Py_M__getpath_len);
+        (const char*)_Py_M__getpath, sizeof(_Py_M__getpath));
     if (!co || !PyCode_Check(co)) {
         PyErr_Clear();
         Py_XDECREF(co);
