@@ -266,6 +266,7 @@ license,,:zooko,mailto:zooko@zooko.com
 reference/expressions,,:index,x[index:index]
 reference/lexical_analysis,,`,$       ?       `
 reference/lexical_analysis,,:fileencoding,# vim:fileencoding=<encoding-name>
+reference/datamodel,,`,    """Return the result of the expression `obj[x]`"""
 tutorial/datastructures,,:value,It is also possible to delete a key:value
 tutorial/datastructures,,:value,key:value pairs within the braces adds initial key:value pairs
 tutorial/stdlib2,,:config,"logging.warning('Warning:config file %s not found', 'server.conf')"
