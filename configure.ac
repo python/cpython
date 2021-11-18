@@ -5936,6 +5936,68 @@ else
 fi
 AC_SUBST(TEST_MODULES)
 
+dnl Modules that are not available on some platforms
+dnl AIX has shadow passwords, but access is not via getspent()
+dnl VxWorks does not provide crypt() function
+AS_CASE([$ac_sys_system],
+  [AIX], [py_stdlib_not_available="_scproxy spwd"],
+  [VxWorks*], [py_stdlib_not_available="_scproxy _crypt termios grp"],
+  [Darwin], [py_stdlib_not_available="ossaudiodev spwd"],
+  [CYGWIN*], [py_stdlib_not_available="_scproxy nis"],
+  [QNX*], [py_stdlib_not_available="_scproxy nis"],
+  [FreeBSD*], [py_stdlib_not_available="_scproxy spwd"],
+  [py_stdlib_not_available="_scproxy"]
+)
+
+dnl _MODULE_BLOCK_ADD([VAR], [VALUE])
+dnl internal: adds $1=quote($2) to MODULE_BLOCK
+AC_DEFUN([_MODULE_BLOCK_ADD], [AS_VAR_APPEND([MODULE_BLOCK], ["$1=_AS_QUOTE([$2])$as_nl"])])
+MODULE_BLOCK=
+
+dnl Check for stdlib extension modules
+dnl PY_STDLIB_MOD([NAME], [ENABLED-TEST], [SUPPORTED-TEST], [CFLAGS], [LDFLAGS])
+dnl sets MODULE_$NAME based on $py_stdlib_not_available, ENABLED-TEST,
+dnl and SUPPORTED_TEST. ENABLED-TEST and SUPPORTED-TEST default to true if
+dnl empty.
+dnl    n/a: $NAME in $py_stdlib_not_available (not available on platform)
+dnl    yes: enabled and supported
+dnl    missing: enabled and not supported
+dnl    disabled: not enabled
+dnl sets MODULE_$NAME_CFLAGS and MODULE_$NAME_LDFLAGS
+AC_DEFUN([PY_STDLIB_MOD], [
+  AC_MSG_CHECKING([for stdlib extension module $1])
+  m4_pushdef([modcond], [MODULE_]m4_toupper([$1]))dnl
+  m4_pushdef([modstate], [py_cv_module_$1])dnl
+  AS_CASE([$py_stdlib_not_available],
+    [*$1*], [modstate=n/a],
+    [
+      AS_IF(m4_ifblank([$2], [true], [$2]),
+        [AS_IF([m4_ifblank([$3], [true], [$3])], [modstate=yes], [modstate=missing])],
+        [modstate=disabled]
+      )
+    ]
+  )
+  _MODULE_BLOCK_ADD(modcond, [$modstate])
+  AS_VAR_IF([modstate], [yes], [
+    _MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_CFLAGS], [$4])
+    _MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_LDFLAGS], [$5])
+    AM_CONDITIONAL(modcond, [true])
+  ], [
+    AM_CONDITIONAL(modcond, [false])
+  ])
+  AC_MSG_RESULT([$modstate])
+  m4_popdef([modcond])dnl
+  m4_popdef([modstate])dnl
+])
+
+dnl _elementtree loads libexpat via CAPI hook in pyexpat
+PY_STDLIB_MOD([pyexpat], [], [], [$LIBEXPAT_CFLAGS], [$LIBEXPAT_LDFLAGS])
+PY_STDLIB_MOD([_elementtree], [], [], [$LIBEXPAT_CFLAGS], [])
+
+PY_STDLIB_MOD([_decimal], [], [], [$LIBMPDEC_CFLAGS], [$LIBMPDEC_LDFLAGS])
+
+# substitute multiline block, must come after last PY_STDLIB_MOD()
+AC_SUBST([MODULE_BLOCK])
 
 # generate output files
 AC_CONFIG_FILES(Makefile.pre Misc/python.pc Misc/python-embed.pc Misc/python-config.sh)
