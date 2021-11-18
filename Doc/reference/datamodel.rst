@@ -2216,7 +2216,7 @@ Emulating generic types
 -----------------------
 
 When using :term:`type annotations<annotation>`, it is often useful to
-*parameterize* a generic type using Python's square-brackets notation.
+*parameterize* a :term:`generic type` using Python's square-brackets notation.
 For example, the annotation ``list[int]`` might be used to signify a
 :class:`list` in which all the elements are of type :class:`int`.
 
@@ -2228,67 +2228,130 @@ For example, the annotation ``list[int]`` might be used to signify a
    :ref:`Generic Alias Types<types-genericalias>`
       Documentation for objects representing parameterized generic classes
 
-   :class:`typing.Generic`
-      Inherit from :class:`typing.Generic` to implement generic classes that
-      can be parameterized at runtime and understood by static type-checkers.
+   :ref:`Generics`, :ref:`user-defined generics<user-defined-generics>` and :class:`typing.Generic`
+      Documentation on how to implement generic classes that can be
+      parameterized at runtime and understood by static type-checkers.
 
-A class can generally only be parameterized if it defines the special
-classmethod ``__class_getitem__()``.
+A class can *generally* only be parameterized if it defines the special
+class method ``__class_getitem__()``.
 
 .. classmethod:: object.__class_getitem__(cls, key)
 
    Return an object representing the specialization of a generic class
    by type arguments found in *key*.
 
-``__getitem__`` *versus* ``__class_getitem__``
+   When defined on a class, ``__class_getitem__()`` is automatically a class
+   method. As such, there is no need for it to be decorated with
+   :func:`@classmethod<classmethod>` when it is defined.
 
-   Usually, the :ref:`subscription <subscriptions>` of an object in Python
-   using the square-brackets notation will call the :meth:`~object.__getitem__`
-   instance method defined on the object's class.
 
-   For example, if we have a list ``food`` as follows::
+The purpose of *__class_getitem__*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-      food = ['spam', 'eggs', 'bacon']
+The purpose of :meth:`~object.__class_getitem__` is to allow runtime
+parameterization of standard-library generic classes in order to more easily
+apply :term:`type hints<type hint>` to these classes.
 
-   Calling ``food[0]`` will return the same value as calling::
+To implement custom generic classes that can be parameterized at runtime and
+understood by static type-checkers, users should either inherit from a standard
+library class that already implements :meth:`~object.__class_getitem__`, or
+inherit from :class:`typing.Generic`, which has its own implementation of
+``__class_getitem__()``.
 
-      type(food).__getitem__(food, 0)
+Custom implementations of :meth:`~object.__class_getitem__` on classes defined
+outside of the standard library may not be understood by third-party
+type-checkers such as mypy. Using ``__class_getitem__()`` on any class for
+purposes other than type hinting is discouraged.
 
-   However, if a class defines the classmethod ``__class_getitem__()``, then
-   the subscription of that class may call the class's implementation of
-   ``__class_getitem__()`` rather than :meth:`~object.__getitem__`.
-   ``__class_getitem__()`` should return a
-   :ref:`GenericAlias<types-genericalias>` object if it is properly defined.
 
-   For example, because the :class:`list` class defines
-   ``__class_getitem__()``, calling ``list[str]`` is equivalent to calling::
+.. _classgetitem-versus-getitem:
 
-      list.__class_getitem__(str)
 
-   rather than::
+*__class_getitem__* versus *__getitem__*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-      type(list).__getitem__(list, str)
+Usually, the :ref:`subscription<subscriptions>` of an object using square
+brackets will call the :meth:`~object.__getitem__` instance method defined on
+the object's class. However, if the object being subscribed is itself a class,
+the class method :meth:`~object.__class_getitem__` may be called instead.
+``__class_getitem__()`` should return a :ref:`GenericAlias<types-genericalias>`
+object if it is properly defined.
 
-.. note::
-   If :meth:`~object.__getitem__` is defined by a class's :term:`metaclass`, it
-   will take precedence over a ``__class_getitem__()`` classmethod
-   defined by the class. See :pep:`560` for more details.
+Presented with the :term:`expression` ``obj[x]``, the Python interpreter
+follows something like the following process to decide whether
+:meth:`~object.__getitem__` or :meth:`~object.__class_getitem__` should be
+called::
 
-.. note::
-   ``__class_getitem__()`` was introduced to implement runtime parameterization
-   of standard-library generic classes in order to more easily apply
-   :term:`type-hints<type hint>` to these classes.
+   from inspect import isclass
 
-   To implement custom generic classes that can be parameterized at runtime and
-   understood by static type-checkers, users should either inherit from a
-   standard library class that already implements ``__class_getitem__()``, or
-   inherit from :class:`typing.Generic`, which has its own implementation of
-   ``__class_getitem__()``.
+   def subscribe(obj, x):
+       """Return the result of the expression `obj[x]`"""
 
-   Custom implementations of ``__class_getitem__()`` on classes defined outside
-   of the standard library may not be understood by third-party type-checkers
-   such as mypy. Using ``__class_getitem__()`` on any class for purposes other
-   than type-hinting is discouraged.
+       class_of_obj = type(obj)
+
+       # If the class of obj defines __getitem__,
+       # call class_of_obj.__getitem__(obj, x)
+       if hasattr(class_of_obj, '__getitem__'):
+           return class_of_obj.__getitem__(obj, x)
+
+       # Else, if obj is a class and defines __class_getitem__,
+       # call obj.__class_getitem__(x)
+       elif isclass(obj) and hasattr(obj, '__class_getitem__'):
+           return obj.__class_getitem__(x)
+
+       # Else, raise an exception
+       else:
+           raise TypeError(
+               f"'{class_of_obj.__name__}' object is not subscriptable"
+           )
+
+In Python, all classes are themselves instances of other classes. The class of
+a class is known as that class's :term:`metaclass`, and most classes have the
+:class:`type` class as their metaclass. :class:`type` does not define
+:meth:`~object.__getitem__`, meaning that expressions such as ``list[int]``,
+``dict[str, float]`` and ``tuple[str, bytes]`` all result in
+:meth:`~object.__class_getitem__` being called::
+
+   >>> # list has class "type" as its metaclass, like most classes:
+   >>> type(list)
+   <class 'type'>
+   >>> type(dict) == type(list) == type(tuple) == type(str) == type(bytes)
+   True
+   >>> # "list[int]" calls "list.__class_getitem__(int)"
+   >>> list[int]
+   list[int]
+   >>> # list.__class_getitem__ returns a GenericAlias object:
+   >>> type(list[int])
+   <class 'types.GenericAlias'>
+
+However, if a class has a custom metaclass that defines
+:meth:`~object.__getitem__`, subscribing the class may result in different
+behaviour. An example of this can be found in the :mod:`enum` module::
+
+   >>> from enum import Enum
+   >>> class Menu(Enum):
+   ...     """A breakfast menu"""
+   ...     SPAM = 'spam'
+   ...     BACON = 'bacon'
+   ...
+   >>> # Enum classes have a custom metaclass:
+   >>> type(Menu)
+   <class 'enum.EnumMeta'>
+   >>> # EnumMeta defines __getitem__,
+   >>> # so __class_getitem__ is not called,
+   >>> # and the result is not a GenericAlias object:
+   >>> Menu['SPAM']
+   <Menu.SPAM: 'spam'>
+   >>> type(Menu['SPAM'])
+   <enum 'Menu'>
+
+
+.. seealso::
+   :pep:`560` - Core Support for typing module and generic types
+      Introducing :meth:`~object.__class_getitem__`, and outlining when a
+      :ref:`subscription<subscriptions>` results in ``__class_getitem__()``
+      being called instead of :meth:`~object.__getitem__`
+
 
 .. _callable-types:
 
@@ -2387,25 +2450,27 @@ through the object's keys; for sequences, it should iterate through the values.
 
 .. method:: object.__getitem__(self, key)
 
-   Called to implement evaluation of ``self[key]``. For sequence types, the
-   accepted keys should be integers and slice objects.  Note that the special
-   interpretation of negative indexes (if the class wishes to emulate a sequence
-   type) is up to the :meth:`__getitem__` method. If *key* is of an inappropriate
-   type, :exc:`TypeError` may be raised; if of a value outside the set of indexes
-   for the sequence (after any special interpretation of negative values),
-   :exc:`IndexError` should be raised. For mapping types, if *key* is missing (not
-   in the container), :exc:`KeyError` should be raised.
+   Called to implement evaluation of ``self[key]``. For :term:`sequence` types,
+   the accepted keys should be integers and slice objects.  Note that the
+   special interpretation of negative indexes (if the class wishes to emulate a
+   :term:`sequence` type) is up to the :meth:`__getitem__` method. If *key* is
+   of an inappropriate type, :exc:`TypeError` may be raised; if of a value
+   outside the set of indexes for the sequence (after any special
+   interpretation of negative values), :exc:`IndexError` should be raised. For
+   :term:`mapping` types, if *key* is missing (not in the container),
+   :exc:`KeyError` should be raised.
 
    .. note::
 
-      :keyword:`for` loops expect that an :exc:`IndexError` will be raised for illegal
-      indexes to allow proper detection of the end of the sequence.
+      :keyword:`for` loops expect that an :exc:`IndexError` will be raised for
+      illegal indexes to allow proper detection of the end of the sequence.
 
    .. note::
 
       When :ref:`subscripting<subscriptions>` a *class*, the special
-      classmethod :meth:`~object.__class_getitem__` may be called instead of
-      ``__getitem__()``.
+      class method :meth:`~object.__class_getitem__` may be called instead of
+      ``__getitem__()``. See :ref:`classgetitem-versus-getitem` for more
+      details.
 
 
 .. method:: object.__setitem__(self, key, value)
