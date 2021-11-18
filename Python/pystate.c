@@ -638,6 +638,11 @@ static void
 init_threadstate(PyThreadState *tstate,
                  int recursion_limit, _PyStackChunk *datastack_chunk)
 {
+    if (tstate->initialized) {
+        return;
+    }
+    tstate->initialized = 1;
+
     tstate->recursion_limit = recursion_limit;
     tstate->recursion_remaining = recursion_limit;
     tstate->recursion_headroom = 0;
@@ -697,7 +702,7 @@ new_threadstate(PyInterpreterState *interp, int init)
 {
     _PyRuntimeState *runtime = interp->runtime;
 
-    PyThreadState *tstate = (PyThreadState *)PyMem_RawMalloc(sizeof(PyThreadState));
+    PyThreadState *tstate = (PyThreadState *)PyMem_RawCalloc(1, sizeof(PyThreadState));
     if (tstate == NULL) {
         return NULL;
     }
