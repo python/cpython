@@ -1,0 +1,1 @@
+Added fallback to extension modules with '.sl' suffix on HP-UX
