@@ -60,6 +60,7 @@ Example of usage::
    >>> sysconfig.get_config_vars('AR', 'CXX')
    ['ar', 'g++']
 
+.. _installation_paths:
 
 Installation paths
 ------------------
@@ -72,7 +73,7 @@ Every new component that is installed using :mod:`distutils` or a
 Distutils-based system will follow the same scheme to copy its file in the right
 places.
 
-Python currently supports seven schemes:
+Python currently supports six schemes:
 
 - *posix_prefix*: scheme for POSIX platforms like Linux or macOS.  This is
   the default scheme used when Python or a component is installed.
@@ -84,6 +85,7 @@ Python currently supports seven schemes:
   located under the user home directory.
 - *nt*: scheme for NT platforms like Windows.
 - *nt_user*: scheme for NT platforms, when the *user* option is used.
+- *osx_framework_user*: scheme for macOS, when the *user* option is used.
 
 Each scheme is itself composed of a series of paths and each path has a unique
 identifier.  Python currently uses eight paths:
