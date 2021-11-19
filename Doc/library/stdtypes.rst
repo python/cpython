@@ -4847,7 +4847,7 @@ which all the elements are of type :class:`bytes`.
 For a class which defines :meth:`~object.__class_getitem__` but is not a
 container, the argument(s) supplied to a subscription of the class will often
 indicate the return type(s) of one or more methods defined on an object. For
-example, :mod:`regular expressions<re>` can be used on the :class:`str` data
+example, :mod:`regular expressions<re>` can be used on both the :class:`str` data
 type and the :class:`bytes` data type:
 
 * If ``x = re.search('foo', 'foo')``, ``x`` will be a
