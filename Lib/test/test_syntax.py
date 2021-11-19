@@ -898,6 +898,17 @@ leading to spurious errors.
    Traceback (most recent call last):
    SyntaxError: cannot assign to attribute here. Maybe you meant '==' instead of '='?
 
+
+Missing parens after function definition
+
+   >>> def f:
+   Traceback (most recent call last):
+   SyntaxError: expected '('
+
+   >>> async def f:
+   Traceback (most recent call last):
+   SyntaxError: expected '('
+
 Custom error messages for try blocks that are not followed by except/finally
 
    >>> try:
@@ -1494,7 +1505,13 @@ def func2():
     def test_invalid_line_continuation_error_position(self):
         self._check_error(r"a = 3 \ 4",
                           "unexpected character after line continuation character",
-                          lineno=1, offset=9)
+                          lineno=1, offset=8)
+        self._check_error('1,\\#\n2',
+                          "unexpected character after line continuation character",
+                          lineno=1, offset=4)
+        self._check_error('\nfgdfgf\n1,\\#\n2\n',
+                          "unexpected character after line continuation character",
+                          lineno=3, offset=4)
 
     def test_invalid_line_continuation_left_recursive(self):
         # Check bpo-42218: SyntaxErrors following left-recursive rules

@@ -351,14 +351,7 @@ tokenizer_error(Parser *p)
             msg = "too many levels of indentation";
             break;
         case E_LINECONT: {
-            char* loc = strrchr(p->tok->buf, '\n');
-            const char* last_char = p->tok->cur - 1;
-            if (loc != NULL && loc != last_char) {
-                col_offset = p->tok->cur - loc - 1;
-                p->tok->buf = loc;
-            } else {
-                col_offset = last_char - p->tok->buf - 1;
-            }
+            col_offset = p->tok->cur - p->tok->buf - 1;
             msg = "unexpected character after line continuation character";
             break;
         }
@@ -366,13 +359,23 @@ tokenizer_error(Parser *p)
             msg = "unknown parsing error";
     }
 
-    RAISE_ERROR_KNOWN_LOCATION(p, errtype, p->tok->lineno, col_offset, p->tok->lineno, -1, msg);
+    RAISE_ERROR_KNOWN_LOCATION(p, errtype, p->tok->lineno,
+                               col_offset >= 0 ? col_offset : 0,
+                               p->tok->lineno, -1, msg);
     return -1;
 }
 
 void *
 _PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
 {
+    if (p->fill == 0) {
+        va_list va;
+        va_start(va, errmsg);
+        _PyPegen_raise_error_known_location(p, errtype, 0, 0, 0, -1, errmsg, va);
+        va_end(va);
+        return NULL;
+    }
+
     Token *t = p->known_err_token != NULL ? p->known_err_token : p->tokens[p->fill - 1];
     Py_ssize_t col_offset;
     Py_ssize_t end_col_offset = -1;
@@ -497,7 +500,7 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
            does not physically exist */
         assert(p->tok->fp == NULL || p->tok->fp == stdin || p->tok->done == E_EOF || !uses_utf8_codec);
 
-        if (p->tok->lineno <= lineno) {
+        if (p->tok->lineno <= lineno && p->tok->inp > p->tok->buf) {
             Py_ssize_t size = p->tok->inp - p->tok->buf;
             error_line = PyUnicode_DecodeUTF8(p->tok->buf, size, "replace");
         }
@@ -1460,7 +1463,7 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
     int exec_input = start_rule == Py_file_input;
 
     struct tok_state *tok;
-    if (flags == NULL || flags->cf_flags & PyCF_IGNORE_COOKIE) {
+    if (flags != NULL && flags->cf_flags & PyCF_IGNORE_COOKIE) {
         tok = _PyTokenizer_FromUTF8(str, exec_input);
     } else {
         tok = _PyTokenizer_FromString(str, exec_input);
