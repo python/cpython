@@ -1,0 +1,2 @@
+Update the docstring of the :class:`type` built-in to remove a redundant
+line and to mention keyword arguments for the constructor.

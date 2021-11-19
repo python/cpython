@@ -1,0 +1,2 @@
+On macOS, the build system no longer passes ``search_paths_first`` to the
+linker. The flag has been the default since Xcode 4 / macOS 10.6.

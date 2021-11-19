@@ -269,7 +269,7 @@ def library_recipes():
             tcl_checksum='82fd1637c0f7d4b76cb909f8abc373ec'
 
             tk_checksum='d63c3b91b86cd8b6fa54e83ef2c5153e'
-            tk_patches = [ ]
+            tk_patches = ['bpo-44828-filedialog-crash-monterey-8612rc1.patch']
 
 
         result.extend([
