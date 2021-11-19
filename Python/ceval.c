@@ -5594,12 +5594,6 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
             goto fail_post_args;
         }
     }
-//     /* Copy closure variables to free variables */
-//     for (i = 0; i < co->co_nfreevars; ++i) {
-//         PyObject *o = PyTuple_GET_ITEM(func->func_closure, i);
-//         Py_INCREF(o);
-//         localsplus[co->co_nlocals + co->co_nplaincellvars + i] = o;
-//     }
     return 0;
 
 fail_pre_positional:
