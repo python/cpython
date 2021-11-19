@@ -2162,7 +2162,7 @@ sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
 libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
 linux/tipc.h linux/random.h spawn.h util.h alloca.h endian.h \
 sys/endian.h sys/sysmacros.h linux/memfd.h linux/wait.h sys/memfd.h \
-sys/mman.h sys/eventfd.h)
+sys/mman.h sys/eventfd.h linux/soundcard.h sys/soundcard.h)
 AC_HEADER_DIRENT
 AC_HEADER_MAJOR
 
@@ -3165,12 +3165,52 @@ if test "$have_glibc_memmove_bug" = yes; then
     AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -U_FORTIFY_SOURCE"])
 fi
 
+dnl Check for SQLite library. Use pkg-config if available.
+PKG_CHECK_MODULES(
+  [LIBSQLITE3], [sqlite3 >= 3.7.15], [], [
+    LIBSQLITE3_LIBS="-lsqlite3"
+    LIBSQLITE3_CFLAGS=
+  ]
+)
+AS_VAR_APPEND([LIBSQLITE3_CFLAGS], [' -I$(srcdir)/Modules/_sqlite'])
+
+dnl bpo-45774/GH-29507: The CPP check in AC_CHECK_HEADER can fail on FreeBSD,
+dnl hence CPPFLAGS instead of CFLAGS. We still need to save CFLAGS, because it
+dnl is touched by AC_CHECK_HEADER.
+AS_VAR_COPY([save_CFLAGS], [CFLAGS])
+AS_VAR_COPY([save_CPPFLAGS], [CPPFLAGS])
+AS_VAR_COPY([save_LDFLAGS], [LDFLAGS])
+AS_VAR_COPY([save_LIBS], [LIBS])
+CPPFLAGS="$LIBSQLITE3_CFLAGS $CFLAGS"
+LDFLAGS="$LIBSQLITE3_LIBS $LDFLAGS"
+
+AC_CHECK_HEADER([sqlite3.h], [
+  AC_CHECK_LIB([sqlite3], [sqlite3_open_v2], [
+    have_sqlite3=yes
+    AC_COMPILE_IFELSE([
+      AC_LANG_PROGRAM([
+        #include <sqlite3.h>
+        #if SQLITE_VERSION_NUMBER < 3007015
+        #  error "SQLite 3.7.15 or higher required"
+        #endif
+      ], [])
+    ], [have_supported_sqlite3=yes], [have_supported_sqlite3=no])
+  ], [have_sqlite3=no])
+  AC_CHECK_LIB([sqlite3], [sqlite3_load_extension])
+])
+
+AS_VAR_COPY([CFLAGS], [save_CFLAGS])
+AS_VAR_COPY([CPPFLAGS], [save_CPPFLAGS])
+AS_VAR_COPY([LDFLAGS], [save_LDFLAGS])
+AS_VAR_COPY([LIBS], [save_LIBS])
+
 # Check for support for loadable sqlite extensions
 AC_MSG_CHECKING(for --enable-loadable-sqlite-extensions)
 AC_ARG_ENABLE(loadable-sqlite-extensions,
               AS_HELP_STRING([--enable-loadable-sqlite-extensions],
                              [support loadable extensions in _sqlite module, see Doc/library/sqlite3.rst (default is no)]),
-              [],
+              [AS_VAR_IF([have_sqlite3_load_extension], [no],
+                         [AC_MSG_WARN([Your version of SQLite does not support loadable extensions])])],
               [enable_loadable_sqlite_extensions=no])
 AC_MSG_RESULT($enable_loadable_sqlite_extensions)
 
@@ -5862,21 +5902,28 @@ AC_ARG_WITH(builtin-hashlib-hashes,
                            [builtin hash modules,
                             md5, sha1, sha256, sha512, sha3 (with shake), blake2]),
 [
-case "$withval" in
-    yes)
-        withval=$default_hashlib_hashes
-        ;;
-    no)
-        withval=""
-        ;;
-esac
-AC_MSG_RESULT($withval)
-AC_DEFINE_UNQUOTED(PY_BUILTIN_HASHLIB_HASHES, "$withval")
-],
-[
-AC_MSG_RESULT($default_hashlib_hashes);
-AC_DEFINE_UNQUOTED(PY_BUILTIN_HASHLIB_HASHES, "$default_hashlib_hashes")
-])
+  AS_CASE([$with_builtin_hashlib_hashes],
+    [yes], [with_builtin_hashlib_hashes=$default_hashlib_hashes],
+    [no], [with_builtin_hashlib_hashes=""]
+  )
+], [with_builtin_hashlib_hashes=$default_hashlib_hashes])
+
+AC_MSG_RESULT($with_builtin_hashlib_hashes)
+AC_DEFINE_UNQUOTED(PY_BUILTIN_HASHLIB_HASHES, "$with_builtin_hashlib_hashes")
+
+as_save_IFS=$IFS
+IFS=,
+for builtin_hash in $with_builtin_hashlib_hashes; do
+    AS_CASE($builtin_hash,
+      [md5], [with_builtin_md5=yes],
+      [sha1], [with_builtin_sha1=yes],
+      [sha256], [with_builtin_sha256=yes],
+      [sha512], [with_builtin_sha512=yes],
+      [sha3], [with_builtin_sha3=yes],
+      [blake2], [with_builtin_blake2=yes]
+    )
+done
+IFS=$as_save_IFS
 
 # --with-experimental-isolated-subinterpreters
 AH_TEMPLATE(EXPERIMENTAL_ISOLATED_SUBINTERPRETERS,
@@ -5936,9 +5983,111 @@ else
 fi
 AC_SUBST(TEST_MODULES)
 
+dnl Modules that are not available on some platforms
+dnl AIX has shadow passwords, but access is not via getspent()
+dnl VxWorks does not provide crypt() function
+AS_CASE([$ac_sys_system],
+  [AIX], [py_stdlib_not_available="_scproxy spwd"],
+  [VxWorks*], [py_stdlib_not_available="_scproxy _crypt termios grp"],
+  [Darwin], [py_stdlib_not_available="ossaudiodev spwd"],
+  [CYGWIN*], [py_stdlib_not_available="_scproxy nis"],
+  [QNX*], [py_stdlib_not_available="_scproxy nis"],
+  [FreeBSD*], [py_stdlib_not_available="_scproxy spwd"],
+  [py_stdlib_not_available="_scproxy"]
+)
+
+dnl _MODULE_BLOCK_ADD([VAR], [VALUE])
+dnl internal: adds $1=quote($2) to MODULE_BLOCK
+AC_DEFUN([_MODULE_BLOCK_ADD], [AS_VAR_APPEND([MODULE_BLOCK], ["$1=_AS_QUOTE([$2])$as_nl"])])
+MODULE_BLOCK=
+
+dnl Check for stdlib extension modules
+dnl PY_STDLIB_MOD([NAME], [ENABLED-TEST], [SUPPORTED-TEST], [CFLAGS], [LDFLAGS])
+dnl sets MODULE_$NAME based on $py_stdlib_not_available, ENABLED-TEST,
+dnl and SUPPORTED_TEST. ENABLED-TEST and SUPPORTED-TEST default to true if
+dnl empty.
+dnl    n/a: $NAME in $py_stdlib_not_available (not available on platform)
+dnl    yes: enabled and supported
+dnl    missing: enabled and not supported
+dnl    disabled: not enabled
+dnl sets MODULE_$NAME_CFLAGS and MODULE_$NAME_LDFLAGS
+AC_DEFUN([PY_STDLIB_MOD], [
+  AC_MSG_CHECKING([for stdlib extension module $1])
+  m4_pushdef([modcond], [MODULE_]m4_toupper([$1]))dnl
+  m4_pushdef([modstate], [py_cv_module_$1])dnl
+  AS_CASE([$py_stdlib_not_available],
+    [*$1*], [modstate=n/a],
+    [
+      AS_IF(m4_ifblank([$2], [true], [$2]),
+        [AS_IF([m4_ifblank([$3], [true], [$3])], [modstate=yes], [modstate=missing])],
+        [modstate=disabled]
+      )
+    ]
+  )
+  _MODULE_BLOCK_ADD(modcond, [$modstate])
+  AS_VAR_IF([modstate], [yes], [
+    _MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_CFLAGS], [$4])
+    _MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_LDFLAGS], [$5])
+    AM_CONDITIONAL(modcond, [true])
+  ], [
+    AM_CONDITIONAL(modcond, [false])
+  ])
+  AC_MSG_RESULT([$modstate])
+  m4_popdef([modcond])dnl
+  m4_popdef([modstate])dnl
+])
+
+dnl Define simple, always enabled stdlib extension module
+dnl PY_STDLIB_MOD_SIMPLE([NAME], [CFLAGS], [LDFLAGS])
+dnl cflags and ldflags are optional
+AC_DEFUN([PY_STDLIB_MOD_SIMPLE], [
+  m4_pushdef([modcond], [MODULE_]m4_toupper([$1]))dnl
+  AM_CONDITIONAL(modcond, [true])
+  m4_ifval([$2], [
+    _MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_CFLAGS], [$2])
+  ])
+  m4_ifval([$3], [
+    _MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_LDFLAGS], [$3])
+  ])
+  m4_popdef([modcond])dnl
+])
+
+dnl static modules in Modules/Setup.bootstrap
+PY_STDLIB_MOD_SIMPLE([_io], [-I\$(srcdir)/Modules/_io], [])
+PY_STDLIB_MOD_SIMPLE([time], [], [$TIMEMODULE_LIB])
+
+dnl always enabled extension modules
+PY_STDLIB_MOD_SIMPLE([_datetime], [], [$TIMEMODULE_LIB $LIBM])
+
+dnl platform specific extensions
+PY_STDLIB_MOD([ossaudiodev],
+  [], [test "$ac_cv_header_linux_soundcard_h" = yes -o "$ac_cv_header_sys_soundcard_h" = yes])
+
+dnl _elementtree loads libexpat via CAPI hook in pyexpat
+PY_STDLIB_MOD([pyexpat], [], [], [$LIBEXPAT_CFLAGS], [$LIBEXPAT_LDFLAGS])
+PY_STDLIB_MOD([_elementtree], [], [], [$LIBEXPAT_CFLAGS], [])
+
+dnl By default we always compile these even when OpenSSL is available
+dnl (issue #14693). The modules are small.
+PY_STDLIB_MOD([_md5], [test "$with_builtin_md5" = yes])
+PY_STDLIB_MOD([_sha1], [test "$with_builtin_sha1" = yes])
+PY_STDLIB_MOD([_sha256], [test "$with_builtin_sha256" = yes])
+PY_STDLIB_MOD([_sha512], [test "$with_builtin_sha512" = yes])
+PY_STDLIB_MOD([_sha3], [test "$with_builtin_sha3" = yes])
+PY_STDLIB_MOD([_blake2], [test "$with_builtin_blake2" = yes])
+
+PY_STDLIB_MOD([_decimal], [], [], [$LIBMPDEC_CFLAGS], [$LIBMPDEC_LDFLAGS])
+PY_STDLIB_MOD([_sqlite3],
+  [test "$have_sqlite3" = "yes"],
+  [test "$have_supported_sqlite3" = "yes"],
+  [$LIBSQLITE3_CFLAGS], [$LIBSQLITE3_LIBS])
+
+# substitute multiline block, must come after last PY_STDLIB_MOD()
+AC_SUBST([MODULE_BLOCK])
 
 # generate output files
 AC_CONFIG_FILES(Makefile.pre Misc/python.pc Misc/python-embed.pc Misc/python-config.sh)
+AC_CONFIG_FILES([Modules/Setup.stdlib])
 AC_CONFIG_FILES([Modules/ld_so_aix], [chmod +x Modules/ld_so_aix])
 AC_OUTPUT
 
@@ -5951,7 +6100,7 @@ fi
 echo "creating Makefile" >&AS_MESSAGE_FD
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
-			Modules/Setup.local $srcdir/Modules/Setup
+			Modules/Setup.local $srcdir/Modules/Setup.bootstrap $srcdir/Modules/Setup
 mv config.c Modules
 
 if test -z "$PKG_CONFIG"; then
