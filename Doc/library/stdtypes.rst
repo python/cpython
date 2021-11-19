@@ -4848,15 +4848,18 @@ For a class which defines :meth:`~object.__class_getitem__` but is not a
 container, the argument(s) supplied to a subscription of the class will often
 indicate the return type(s) of one or more methods defined on an object. For
 example, :mod:`regular expressions<re>` can be used on the :class:`str` data
-type and the :class:`bytes` data type. If ``x = re.search('foo', 'foo')``,
-``x`` will be a :ref:`re.Match <match-objects>` object where the return values
-of ``x.group(0)`` and ``x[0]`` will both be of type :class:`str`. We can
-represent this kind of object in type annotations with the ``GenericAlias``
-``re.Match[str]``. If ``y = re.search(b'bar', b'bar')``, however, ``y`` will
-also be an instance of ``re.Match``, but the return values of ``y.group(0)``
-and ``y[0]`` will both be of type :class:`bytes`. In type annotations, we would
-represent this subtype of :ref:`re.Match <match-objects>` with
-``re.Match[bytes]``.
+type and the :class:`bytes` data type:
+
+* If ``x = re.search('foo', 'foo')``, ``x`` will be a
+  :ref:`re.Match <match-objects>` object where the return values of
+  ``x.group(0)`` and ``x[0]`` will both be of type :class:`str`. We can
+  represent this kind of object in type annotations with the ``GenericAlias``
+  ``re.Match[str]``
+
+* If ``y = re.search(b'bar', b'bar')``, however, ``y`` will also be an instance
+  of ``re.Match``, but the return values of ``y.group(0)`` and ``y[0]`` will
+  both be of type :class:`bytes`. In type annotations, we would represent this
+  subtype of :ref:`re.Match <match-objects>` with ``re.Match[bytes]``.
 
 ``GenericAlias`` objects are instances of the class
 :class:`types.GenericAlias`, which can also be used to create ``GenericAlias``
@@ -5043,10 +5046,17 @@ All parameterized generics implement special read-only attributes.
 
 .. seealso::
 
-   * :pep:`585` -- "Type Hinting Generics In Standard Collections"
-   * :meth:`~object.__class_getitem__` -- Used to implement parameterized
-     generics.
-   * :ref:`generics` -- Generics in the :mod:`typing` module.
+   :pep:`484` - Type Hints
+      Introducing Python's framework for type annotations
+
+   :pep:`585` - "Type Hinting Generics In Standard Collections"
+      Introducing the ability to natively parameterize standard-library
+      classes, provided they implement the special class method
+      :meth:`~object.__class_getitem__`.
+
+   :ref:`Generics`, :ref:`user-defined generics<user-defined-generics>` and :class:`typing.Generic`
+      Documentation on how to implement generic classes that can be
+      parameterized at runtime and understood by static type-checkers.
 
 .. versionadded:: 3.9
 
