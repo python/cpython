@@ -4838,7 +4838,7 @@ by subscripting the :class:`list` class with the argument :class:`int`.
 A ``GenericAlias`` object acts as a proxy for a :term:`generic type`,
 implementing *parameterized generics*.
 
-For a container class which implements :meth:`~object.__class_getitem__`, the
+For a container class, the
 argument(s) supplied to a :ref:`subscription<subscriptions>` of the class may
 indicate the type(s) of the elements an object contains. For example,
 ``set[bytes]`` can be used in type annotations to signify a :class:`set` in
