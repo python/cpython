@@ -1658,11 +1658,32 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
 
     /* Local "register" variables.
      * These are cached values from the frame and code object.  */
+
     PyObject *names;
     PyObject *consts;
     _Py_CODEUNIT *first_instr;
     _Py_CODEUNIT *next_instr;
     PyObject **stack_pointer;
+
+/* Sets the above local variables from the frame */
+#define SET_LOCALS_FROM_FRAME() \
+    { \
+        PyCodeObject *co = frame->f_code; \
+        names = co->co_names; \
+        consts = co->co_consts; \
+        first_instr = co->co_firstinstr; \
+    } \
+    assert(frame->f_lasti >= -1); \
+    next_instr = first_instr + frame->f_lasti + 1; \
+    stack_pointer = _PyFrame_GetStackPointer(frame); \
+    /* Set stackdepth to -1. \
+        Update when returning or calling trace function. \
+        Having stackdepth <= 0 ensures that invalid \
+        values are not visible to the cycle GC. \
+        We choose -1 rather than 0 to assist debugging. \
+        */ \
+    frame->stacktop = -1;
+
 
 start_frame:
     if (_Py_EnterRecursiveCall(tstate, "")) {
@@ -1679,38 +1700,10 @@ start_frame:
     if (_Py_IncrementCountAndMaybeQuicken(frame->f_code) < 0) {
         goto exit_unwind;
     }
+    frame->f_state = FRAME_EXECUTING;
 
 resume_frame:
-    {
-        PyCodeObject *co = frame->f_code;
-        names = co->co_names;
-        consts = co->co_consts;
-        first_instr = co->co_firstinstr;
-    }
-    /*
-       frame->f_lasti refers to the index of the last instruction,
-       unless it's -1 in which case next_instr should be first_instr.
-
-       YIELD_FROM sets frame->f_lasti to itself, in order to repeatedly yield
-       multiple values.
-
-       When the PREDICT() macros are enabled, some opcode pairs follow in
-       direct succession. A successful prediction effectively links the two
-       codes together as if they were a single new opcode, but the value
-       of frame->f_lasti is correctly updated so potential inlined calls
-       or lookups of frame->f_lasti are aways correct when the macros are used.
-    */
-    assert(frame->f_lasti >= -1);
-    next_instr = first_instr + frame->f_lasti + 1;
-    stack_pointer = _PyFrame_GetStackPointer(frame);
-    /* Set stackdepth to -1.
-     * Update when returning or calling trace function.
-       Having stackdepth <= 0 ensures that invalid
-       values are not visible to the cycle GC.
-       We choose -1 rather than 0 to assist debugging.
-     */
-    frame->stacktop = -1;
-    frame->f_state = FRAME_EXECUTING;
+    SET_LOCALS_FROM_FRAME();
 
 #ifdef LLTRACE
     _Py_IDENTIFIER(__ltrace__);
@@ -5038,8 +5031,7 @@ error:
         }
 
         if (tstate->c_tracefunc != NULL) {
-            /* Make sure state is set to FRAME_EXECUTING for tracing */
-            assert(frame->f_state == FRAME_EXECUTING);
+            /* Make sure state is set to FRAME_UNWINDING for tracing */
             frame->f_state = FRAME_UNWINDING;
             call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj,
                            tstate, frame);
@@ -5122,17 +5114,7 @@ exit_unwind:
     frame = cframe.current_frame = pop_frame(tstate, frame);
 
 resume_with_error:
-    {
-        PyCodeObject * co = frame->f_code;
-        names = co->co_names;
-        consts = co->co_consts;
-        first_instr = co->co_firstinstr;
-    }
-    assert(frame->f_lasti >= -1);
-    next_instr = first_instr + frame->f_lasti + 1;
-    stack_pointer = _PyFrame_GetStackPointer(frame);
-    frame->stacktop = -1;
-    frame->f_state = FRAME_EXECUTING;
+    SET_LOCALS_FROM_FRAME();
     goto error;
 
 }
