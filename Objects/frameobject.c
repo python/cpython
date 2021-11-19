@@ -5,7 +5,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetDict()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_code.h"          // CO_FAST_LOCAL, etc.
-#include "pycore_function.h"      // _PyFunctionFrom_Constructor()
+#include "pycore_function.h"      // _PyFunction_FromConstructor()
 
 #include "frameobject.h"          // PyFrameObject
 #include "pycore_frame.h"
@@ -872,7 +872,7 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
         .fc_kwdefaults = NULL,
         .fc_closure = NULL
     };
-    PyFunctionObject *func = _PyFunctionFrom_Constructor(&desc);
+    PyFunctionObject *func = _PyFunction_FromConstructor(&desc);
     if (func == NULL) {
         return NULL;
     }

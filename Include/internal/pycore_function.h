@@ -5,7 +5,7 @@
 #include "Python.h"
 
 PyFunctionObject *
-_PyFunctionFrom_Constructor(PyFrameConstructor *constr);
+_PyFunction_FromConstructor(PyFrameConstructor *constr);
 
 
 #endif /* !Py_INTERNAL_FUNCTION_H */

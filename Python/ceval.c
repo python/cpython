@@ -1135,7 +1135,7 @@ PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
         .fc_kwdefaults = NULL,
         .fc_closure = NULL
     };
-    PyFunctionObject *func = _PyFunctionFrom_Constructor(&desc);
+    PyFunctionObject *func = _PyFunction_FromConstructor(&desc);
     if (func == NULL) {
         return NULL;
     }
@@ -5837,7 +5837,7 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
         .fc_kwdefaults = kwdefs,
         .fc_closure = closure
     };
-    PyFunctionObject *func = _PyFunctionFrom_Constructor(&constr);
+    PyFunctionObject *func = _PyFunction_FromConstructor(&constr);
     if (func == NULL) {
         return NULL;
     }

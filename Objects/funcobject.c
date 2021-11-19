@@ -10,7 +10,7 @@
 static uint32_t next_func_version = 1;
 
 PyFunctionObject *
-_PyFunctionFrom_Constructor(PyFrameConstructor *constr)
+_PyFunction_FromConstructor(PyFrameConstructor *constr)
 {
 
     PyFunctionObject *op = PyObject_GC_New(PyFunctionObject, &PyFunction_Type);
