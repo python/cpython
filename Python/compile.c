@@ -3254,7 +3254,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
     ADDOP_JUMP(c, SETUP_CLEANUP, cleanup);
     ADDOP(c, PUSH_EXC_INFO);
     /* Runtime will push a block here, so we need to account for that */
-    if (!compiler_push_fblock(c, EXCEPTION_HANDLER, NULL, NULL, NULL))
+    if (!compiler_push_fblock(c, EXCEPTION_HANDLER, NULL, NULL, "except handler"))
         return 0;
     for (i = 0; i < n; i++) {
         excepthandler_ty handler = (excepthandler_ty)asdl_seq_GET(
@@ -3302,7 +3302,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             NEXT_BLOCK(c);
         }
         ADDOP(c, POP_TOP);  // exc_type
-        if (handler->v.ExceptHandler.name) {
+        if (handler->v.ExceptHandler.name || is_except_star) {
             basicblock *cleanup_end, *cleanup_body;
 
             cleanup_end = compiler_new_block(c);
@@ -3311,7 +3311,12 @@ compiler_try_except(struct compiler *c, stmt_ty s)
                 return 0;
             }
 
-            compiler_nameop(c, handler->v.ExceptHandler.name, Store);
+            if (handler->v.ExceptHandler.name) {
+                compiler_nameop(c, handler->v.ExceptHandler.name, Store);
+            }
+            else {
+                ADDOP(c, POP_TOP);  // val
+            }
             ADDOP(c, POP_TOP);  // tb
 
             /*
@@ -3341,14 +3346,16 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             if (!is_except_star) {
                 ADDOP(c, POP_EXCEPT);
             }
-            ADDOP_LOAD_CONST(c, Py_None);
-            compiler_nameop(c, handler->v.ExceptHandler.name, Store);
-            compiler_nameop(c, handler->v.ExceptHandler.name, Del);
+            if(handler->v.ExceptHandler.name) {
+                ADDOP_LOAD_CONST(c, Py_None);
+                compiler_nameop(c, handler->v.ExceptHandler.name, Store);
+                compiler_nameop(c, handler->v.ExceptHandler.name, Del);
+            }
             if (!is_except_star) {
                 ADDOP_JUMP(c, JUMP_FORWARD, end);
             }
             else {
-                ADDOP_JUMP(c, JUMP_ABSOLUTE, except);
+                ADDOP_JUMP(c, JUMP_FORWARD, except);
             }
 
             /* except: */
@@ -3357,9 +3364,11 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             /* name = None; del name; # Mark as artificial */
             UNSET_LOC(c);
 
-            ADDOP_LOAD_CONST(c, Py_None);
-            compiler_nameop(c, handler->v.ExceptHandler.name, Store);
-            compiler_nameop(c, handler->v.ExceptHandler.name, Del);
+            if(handler->v.ExceptHandler.name) {
+                ADDOP_LOAD_CONST(c, Py_None);
+                compiler_nameop(c, handler->v.ExceptHandler.name, Store);
+                compiler_nameop(c, handler->v.ExceptHandler.name, Del);
+            }
 
             if (!is_except_star) {
                 ADDOP_I(c, RERAISE, 1);
@@ -3375,23 +3384,15 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             }
         }
         else {
-            basicblock *cleanup_end, *cleanup_body;
+            basicblock *cleanup_body;
 
             cleanup_body = compiler_new_block(c);
             if (!cleanup_body)
                 return 0;
-            if (is_except_star) {
-                cleanup_end = compiler_new_block(c);
-                if (!cleanup_end)
-                    return 0;
-            }
 
             ADDOP(c, POP_TOP);  // exc_val
             ADDOP(c, POP_TOP);  // tb
 
-            if (is_except_star) {
-                ADDOP_JUMP(c, SETUP_CLEANUP, cleanup_end);
-            }
             compiler_use_next_block(c, cleanup_body);
             if (!compiler_push_fblock(c, HANDLER_CLEANUP, cleanup_body, NULL, NULL))
                 return 0;
@@ -3399,26 +3400,8 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             compiler_pop_fblock(c, HANDLER_CLEANUP, cleanup_body);
             UNSET_LOC(c);
             ADDOP(c, POP_BLOCK);
-            if (!is_except_star) {
-                ADDOP(c, POP_EXCEPT);
-                ADDOP_JUMP(c, JUMP_FORWARD, end);
-            }
-            else {
-                ADDOP(c, POP_BLOCK);
-                ADDOP_JUMP(c, JUMP_ABSOLUTE, except);
-            }
-
-            if (is_except_star) {
-                /* except: */
-                compiler_use_next_block(c, cleanup_end);
-                /* add exception raised to the res list */
-                ADDOP(c, POP_TOP); // type
-                ADDOP_I(c, LIST_APPEND, 6); // exc
-                ADDOP(c, POP_TOP); // tb
-                ADDOP(c, POP_TOP); // lasti
-
-                ADDOP_JUMP(c, JUMP_ABSOLUTE, except);
-            }
+            ADDOP(c, POP_EXCEPT);
+            ADDOP_JUMP(c, JUMP_FORWARD, end);
         }
 
         compiler_use_next_block(c, except);
