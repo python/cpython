@@ -634,6 +634,12 @@ MODULE_PYEXPAT_FALSE
 MODULE_PYEXPAT_TRUE
 MODULE_OSSAUDIODEV_FALSE
 MODULE_OSSAUDIODEV_TRUE
+MODULE__DATETIME_FALSE
+MODULE__DATETIME_TRUE
+MODULE_TIME_FALSE
+MODULE_TIME_TRUE
+MODULE__IO_FALSE
+MODULE__IO_TRUE
 TEST_MODULES
 LIBRARY_DEPS
 STATIC_LIBPYTHON
@@ -19456,6 +19462,52 @@ MODULE_BLOCK=
 
 
 
+
+
+     if true; then
+  MODULE__IO_TRUE=
+  MODULE__IO_FALSE='#'
+else
+  MODULE__IO_TRUE='#'
+  MODULE__IO_FALSE=
+fi
+
+
+    as_fn_append MODULE_BLOCK "MODULE__IO_CFLAGS=-I\$(srcdir)/Modules/_io$as_nl"
+
+
+
+
+     if true; then
+  MODULE_TIME_TRUE=
+  MODULE_TIME_FALSE='#'
+else
+  MODULE_TIME_TRUE='#'
+  MODULE_TIME_FALSE=
+fi
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE_TIME_LDFLAGS=$TIMEMODULE_LIB$as_nl"
+
+
+
+
+     if true; then
+  MODULE__DATETIME_TRUE=
+  MODULE__DATETIME_FALSE='#'
+else
+  MODULE__DATETIME_TRUE='#'
+  MODULE__DATETIME_FALSE=
+fi
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__DATETIME_LDFLAGS=$TIMEMODULE_LIB $LIBM$as_nl"
+
+
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module ossaudiodev" >&5
 $as_echo_n "checking for stdlib extension module ossaudiodev... " >&6; }
       case $py_stdlib_not_available in #(
@@ -19828,6 +19880,18 @@ LTLIBOBJS=$ac_ltlibobjs
 
 
 
+if test -z "${MODULE__IO_TRUE}" && test -z "${MODULE__IO_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__IO\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_TIME_TRUE}" && test -z "${MODULE_TIME_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_TIME\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__DATETIME_TRUE}" && test -z "${MODULE__DATETIME_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__DATETIME\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${MODULE_OSSAUDIODEV_TRUE}" && test -z "${MODULE_OSSAUDIODEV_FALSE}"; then
   as_fn_error $? "conditional \"MODULE_OSSAUDIODEV\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
@@ -21068,7 +21132,7 @@ fi
 echo "creating Makefile" >&6
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
-			Modules/Setup.local $srcdir/Modules/Setup
+			Modules/Setup.local $srcdir/Modules/Setup.bootstrap $srcdir/Modules/Setup
 mv config.c Modules
 
 if test -z "$PKG_CONFIG"; then
