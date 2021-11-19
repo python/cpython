@@ -955,6 +955,31 @@ id(42)
         self.assertRegex(gdb_output,
                          r"<method-wrapper u?'__init__' of MyList object at ")
 
+    @unittest.skipIf(python_is_optimized(),
+                     "Python was compiled with optimizations")
+    def test_try_finally_lineno(self):
+        cmd = textwrap.dedent('''
+            def foo(x):
+                try:
+                    raise RuntimeError("error")
+                    return x
+                except:
+                    id("break point")
+                finally:
+                    x += 2
+                return x
+            r = foo(3)
+        ''')
+        gdb_output = self.get_stack_trace(cmd,
+                                          cmds_after_breakpoint=["py-bt"])
+        self.assertMultilineMatches(gdb_output,
+                                    r'''^.*
+Traceback \(most recent call first\):
+  <built-in method id of module object .*>
+  File "<string>", line 7, in foo
+  File "<string>", line 11, in <module>
+''')
+
 
 class PyPrintTests(DebuggerTests):
     @unittest.skipIf(python_is_optimized(),
