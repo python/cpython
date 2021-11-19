@@ -1006,13 +1006,10 @@ class PyBuildExt(build_ext):
         if lib:
             time_libs.append(lib)
 
-        # time operations and variables, always built by Modules/Setup.core
-        # self.add(Extension('time', ['timemodule.c'],
-        #                    libraries=time_libs))
+        # time module is built by Modules/Setup.bootstrap
         # libm is needed by delta_new() that uses round() and by accum() that
         # uses modf().
-        self.add(Extension('_datetime', ['_datetimemodule.c'],
-                           libraries=['m']))
+        self.addext(Extension('_datetime', ['_datetimemodule.c']))
         # zoneinfo module
         self.add(Extension('_zoneinfo', ['_zoneinfo.c']))
         # random number generator implemented in C
@@ -1034,8 +1031,7 @@ class PyBuildExt(build_ext):
         self.add(Extension('_opcode', ['_opcode.c']))
         # asyncio speedups
         self.add(Extension("_asyncio", ["_asynciomodule.c"]))
-        # _abc speedups, always built by Modules/Setup.core
-        # self.add(Extension("_abc", ["_abc.c"]))
+        # _abc module is built by Modules/Setup.bootstrap
         # _queue module
         self.add(Extension("_queue", ["_queuemodule.c"]))
         # _statistics module
@@ -1054,8 +1050,7 @@ class PyBuildExt(build_ext):
             libs = ['bsd']
         self.add(Extension('fcntl', ['fcntlmodule.c'],
                            libraries=libs))
-        # pwd(3), always built by Modules/Setup.core
-        # self.add(Extension('pwd', ['pwdmodule.c']))
+        # pwd module is built by Modules/Setup.bootstrap
         # grp(3)
         if not VXWORKS:
             self.add(Extension('grp', ['grpmodule.c']))

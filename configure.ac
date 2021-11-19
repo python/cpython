@@ -6035,8 +6035,7 @@ dnl PY_STDLIB_MOD_SIMPLE([NAME], [CFLAGS], [LDFLAGS])
 dnl cflags and ldflags are optional
 AC_DEFUN([PY_STDLIB_MOD_SIMPLE], [
   m4_pushdef([modcond], [MODULE_]m4_toupper([$1]))dnl
-  dnl _MODULE_BLOCK_ADD(modcond, [yes])
-  dnl AM_CONDITIONAL(modcond, [true])
+  AM_CONDITIONAL(modcond, [true])
   m4_ifval([$2], [
     _MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_CFLAGS], [$2])
   ])
@@ -6045,15 +6044,13 @@ AC_DEFUN([PY_STDLIB_MOD_SIMPLE], [
   ])
   m4_popdef([modcond])dnl
 ])
-dnl alias for static core modules (Modules/Setup.core)
-AU_ALIAS([PY_STDLIB_MOD_CORE], [PY_STDLIB_MOD_SIMPLE])
 
-dnl static modules in Modules/Setup.core
-PY_STDLIB_MOD_SIMPLE([io], [-I\$(srcdir)/Modules/_io], [$TIMEMODULE_LIB])
+dnl static modules in Modules/Setup.bootstrap
+PY_STDLIB_MOD_SIMPLE([_io], ['-I$(srcdir)/Modules/_io'], [])
+PY_STDLIB_MOD_SIMPLE([time], [], [$TIMEMODULE_LIB])
 
 dnl always enabled extension modules
-PY_STDLIB_MOD_SIMPLE([time], [], [$TIMEMODULE_LIB])
-PY_STDLIB_MOD_SIMPLE([_datetime], [], [$TIMEMODULE_LIB])
+PY_STDLIB_MOD_SIMPLE([_datetime], [], [$TIMEMODULE_LIB $LIBM])
 
 dnl platform specific extensions
 PY_STDLIB_MOD([ossaudiodev],
@@ -6087,7 +6084,7 @@ fi
 echo "creating Makefile" >&AS_MESSAGE_FD
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
-			Modules/Setup.local $srcdir/Modules/Setup.core $srcdir/Modules/Setup
+			Modules/Setup.local $srcdir/Modules/Setup.bootstrap $srcdir/Modules/Setup
 mv config.c Modules
 
 if test -z "$PKG_CONFIG"; then

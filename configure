@@ -634,6 +634,12 @@ MODULE_PYEXPAT_FALSE
 MODULE_PYEXPAT_TRUE
 MODULE_OSSAUDIODEV_FALSE
 MODULE_OSSAUDIODEV_TRUE
+MODULE__DATETIME_FALSE
+MODULE__DATETIME_TRUE
+MODULE_TIME_FALSE
+MODULE_TIME_TRUE
+MODULE__IO_FALSE
+MODULE__IO_TRUE
 TEST_MODULES
 LIBRARY_DEPS
 STATIC_LIBPYTHON
@@ -19456,35 +19462,29 @@ MODULE_BLOCK=
 
 
 
-# This is what autoupdate's m4 run will expand.  It fires
-# the warning (with _au_warn_XXX), outputs it into the
-# updated configure.ac (with AC_DIAGNOSE), and then outputs
-# the replacement expansion.
 
 
-# This is an auxiliary macro that is also run when
-# autoupdate runs m4.  It simply calls m4_warning, but
-# we need a wrapper so that each warning is emitted only
-# once.  We break the quoting in m4_warning's argument in
-# order to expand this macro's arguments, not AU_DEFUN's.
+     if true; then
+  MODULE__IO_TRUE=
+  MODULE__IO_FALSE='#'
+else
+  MODULE__IO_TRUE='#'
+  MODULE__IO_FALSE=
+fi
 
 
-# Finally, this is the expansion that is picked up by
-# autoconf.  It tells the user to run autoupdate, and
-# then outputs the replacement expansion.  We do not care
-# about autoupdate's warning because that contains
-# information on what to do *after* running autoupdate.
+    as_fn_append MODULE_BLOCK "MODULE__IO_CFLAGS='-I$(srcdir)/Modules/_io'$as_nl"
 
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE_IO_CFLAGS=-I\$(srcdir)/Modules/_io$as_nl"
-
-
-    as_fn_append MODULE_BLOCK "MODULE_IO_LDFLAGS=$TIMEMODULE_LIB$as_nl"
-
-
-
+     if true; then
+  MODULE_TIME_TRUE=
+  MODULE_TIME_FALSE='#'
+else
+  MODULE_TIME_TRUE='#'
+  MODULE_TIME_FALSE=
+fi
 
 
 
@@ -19493,8 +19493,17 @@ MODULE_BLOCK=
 
 
 
+     if true; then
+  MODULE__DATETIME_TRUE=
+  MODULE__DATETIME_FALSE='#'
+else
+  MODULE__DATETIME_TRUE='#'
+  MODULE__DATETIME_FALSE=
+fi
 
-    as_fn_append MODULE_BLOCK "MODULE__DATETIME_LDFLAGS=$TIMEMODULE_LIB$as_nl"
+
+
+    as_fn_append MODULE_BLOCK "MODULE__DATETIME_LDFLAGS=$TIMEMODULE_LIB $LIBM$as_nl"
 
 
 
@@ -19871,6 +19880,18 @@ LTLIBOBJS=$ac_ltlibobjs
 
 
 
+if test -z "${MODULE__IO_TRUE}" && test -z "${MODULE__IO_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__IO\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_TIME_TRUE}" && test -z "${MODULE_TIME_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_TIME\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__DATETIME_TRUE}" && test -z "${MODULE__DATETIME_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__DATETIME\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${MODULE_OSSAUDIODEV_TRUE}" && test -z "${MODULE_OSSAUDIODEV_FALSE}"; then
   as_fn_error $? "conditional \"MODULE_OSSAUDIODEV\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
@@ -21111,7 +21132,7 @@ fi
 echo "creating Makefile" >&6
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
-			Modules/Setup.local $srcdir/Modules/Setup.core $srcdir/Modules/Setup
+			Modules/Setup.local $srcdir/Modules/Setup.bootstrap $srcdir/Modules/Setup
 mv config.c Modules
 
 if test -z "$PKG_CONFIG"; then
