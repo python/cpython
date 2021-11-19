@@ -1,0 +1,1 @@
+Optimize :opcode:`LOAD_CONST` followed by :opcode:`COMPARE_OP` or :opcode:`IS_OP`. Patch by Jeremiah Vivian.
