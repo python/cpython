@@ -8079,6 +8079,15 @@ jump_thread(struct instr *inst, struct instr *target, int opcode)
 static int
 optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
 {
+/* Set i_opcode */
+#define SET_OPCODE(inst, o) \
+    (inst)->i_opcode = o;
+#define SET_OPCODE_BB(bb, i, o) \
+    (bb)->b_instr[i].i_opcode = o;
+/* Set i_target */
+#define SET_TARGET(inst, o) \
+    (inst)->i_target = o;
+
     assert(PyList_CheckExact(consts));
     struct instr nop;
     nop.i_opcode = NOP;
@@ -8090,7 +8099,7 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
         if (is_jump(inst)) {
             /* Skip over empty basic blocks. */
             while (inst->i_target->b_iused == 0) {
-                inst->i_target = inst->i_target->b_next;
+                SET_TARGET(inst, inst->i_target->b_next)
             }
             target = &inst->i_target->b_instr[0];
         }
@@ -8102,8 +8111,12 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
             case LOAD_CONST:
             {
                 PyObject* cnt;
+                PyObject* left;
+                PyObject* bool_check;
                 int is_true;
                 int jump_if_true;
+                int index;
+                struct instr *prev_inst;
                 switch(nextop) {
                     case POP_JUMP_IF_FALSE:
                     case POP_JUMP_IF_TRUE:
@@ -8116,14 +8129,14 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                         if (is_true == -1) {
                             goto error;
                         }
-                        inst->i_opcode = NOP;
+                        SET_OPCODE(inst, NOP)
                         jump_if_true = nextop == POP_JUMP_IF_TRUE;
                         if (is_true == jump_if_true) {
-                            bb->b_instr[i+1].i_opcode = JUMP_ABSOLUTE;
+                            SET_OPCODE_BB(bb, i+1, JUMP_ABSOLUTE)
                             bb->b_nofallthrough = 1;
                         }
                         else {
-                            bb->b_instr[i+1].i_opcode = NOP;
+                            SET_OPCODE_BB(bb, i+1, NOP)
                         }
                         break;
                     case JUMP_IF_FALSE_OR_POP:
@@ -8139,12 +8152,193 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                         }
                         jump_if_true = nextop == JUMP_IF_TRUE_OR_POP;
                         if (is_true == jump_if_true) {
-                            bb->b_instr[i+1].i_opcode = JUMP_ABSOLUTE;
+                            SET_OPCODE_BB(bb, i+1, JUMP_ABSOLUTE)
                             bb->b_nofallthrough = 1;
                         }
                         else {
-                            inst->i_opcode = NOP;
-                            bb->b_instr[i+1].i_opcode = NOP;
+                            SET_OPCODE(inst, NOP)
+                            SET_OPCODE_BB(bb, i+1, NOP)
+                        }
+                        break;
+                    case COMPARE_OP:
+                        if (i <= 0) {
+                            break;
+                        }
+                        prev_inst = &bb->b_instr[i-1];
+                        if (prev_inst->i_opcode == LOAD_CONST) {
+                            cnt = get_const_value(
+                                inst->i_opcode,
+                                oparg,
+                                consts
+                            );
+                            if (cnt == NULL) {
+                                goto error;
+                            }
+                            left = get_const_value(
+                                prev_inst->i_opcode,
+                                prev_inst->i_oparg,
+                                consts
+                            );
+                            if (left == NULL) {
+                                goto error;
+                            }
+                            is_true = PyObject_RichCompareBool(
+                                left,
+                                cnt,
+                                bb->b_instr[i+1].i_oparg
+                            );
+                            Py_DECREF(cnt);
+                            Py_DECREF(left);
+                            if (is_true == -1) {
+                                goto error;
+                            }
+                            bool_check = is_true ? Py_True : Py_False;
+                            SET_OPCODE(inst, NOP)
+                            SET_OPCODE_BB(bb, i+1, NOP)
+                            switch (bb->b_instr[i+2].i_opcode) {
+                                case POP_JUMP_IF_FALSE:
+                                    SET_OPCODE(prev_inst, NOP)
+                                    if (is_true) {
+                                        SET_OPCODE_BB(bb, i+2, NOP)
+                                    }
+                                    else {
+                                        SET_OPCODE_BB(bb, i+2, JUMP_ABSOLUTE)
+                                        bb->b_nofallthrough = 1;
+                                    }
+                                    continue;
+                                case POP_JUMP_IF_TRUE:
+                                    SET_OPCODE(prev_inst, NOP)
+                                    if (is_true) {
+                                        SET_OPCODE_BB(bb, i+2, JUMP_ABSOLUTE)
+                                        bb->b_nofallthrough = 1;
+                                    }
+                                    else {
+                                        SET_OPCODE_BB(bb, i+2, NOP)
+                                    }
+                                    continue;
+                                case JUMP_IF_TRUE_OR_POP:
+                                    if (is_true) {
+                                        SET_OPCODE_BB(bb, i+2, JUMP_ABSOLUTE)
+                                        bb->b_nofallthrough = 1;
+                                    }
+                                    else {
+                                        SET_OPCODE(prev_inst, NOP)
+                                        SET_OPCODE_BB(bb, i+2, NOP)
+                                        continue;
+                                    }
+                                    break;
+                                case JUMP_IF_FALSE_OR_POP:
+                                    if (is_true) {
+                                        SET_OPCODE(prev_inst, NOP)
+                                        SET_OPCODE_BB(bb, i+2, NOP)
+                                        continue;
+                                    }
+                                    else {
+                                        SET_OPCODE_BB(bb, i+2, JUMP_ABSOLUTE)
+                                        bb->b_nofallthrough = 1;
+                                    }
+                                    break;
+                            }
+                            for (index = 0;
+                                 index < PyList_GET_SIZE(consts);
+                                 index++)
+                            {
+                                cnt = PyList_GET_ITEM(consts, index);
+                                if (cnt == bool_check) {
+                                    break;
+                                }
+                            }
+                            if (index == PyList_GET_SIZE(consts)) {
+                                PyList_Append(consts, bool_check);
+                            }
+                            prev_inst->i_oparg = index;
+                        }
+                        break;
+                    case IS_OP:
+                        if (i <= 0) {
+                            break;
+                        }
+                        prev_inst = &bb->b_instr[i-1];
+                        if (prev_inst->i_opcode == LOAD_CONST) {
+                            cnt = get_const_value(
+                                inst->i_opcode,
+                                oparg,
+                                consts
+                            );
+                            if (cnt == NULL) {
+                                goto error;
+                            }
+                            left = get_const_value(
+                                prev_inst->i_opcode,
+                                prev_inst->i_oparg,
+                                consts
+                            );
+                            if (left == NULL) {
+                                goto error;
+                            }
+                            is_true = Py_Is(left, cnt);
+                            bool_check = is_true ? Py_True : Py_False;
+                            Py_DECREF(cnt);
+                            Py_DECREF(left);
+                            SET_OPCODE(inst, NOP)
+                            SET_OPCODE_BB(bb, i+1, NOP)
+                            switch (bb->b_instr[i+2].i_opcode) {
+                                case POP_JUMP_IF_FALSE:
+                                    SET_OPCODE(prev_inst, NOP)
+                                    if (is_true) {
+                                        SET_OPCODE_BB(bb, i+2, NOP)
+                                    }
+                                    else {
+                                        SET_OPCODE_BB(bb, i+2, JUMP_ABSOLUTE)
+                                        bb->b_nofallthrough = 1;
+                                    }
+                                    continue;
+                                case POP_JUMP_IF_TRUE:
+                                    SET_OPCODE(prev_inst, NOP)
+                                    if (is_true) {
+                                        SET_OPCODE_BB(bb, i+2, JUMP_ABSOLUTE)
+                                        bb->b_nofallthrough = 1;
+                                    }
+                                    else {
+                                        SET_OPCODE_BB(bb, i+2, NOP)
+                                    }
+                                    continue;
+                                case JUMP_IF_TRUE_OR_POP:
+                                    if (is_true) {
+                                        SET_OPCODE_BB(bb, i+2, JUMP_ABSOLUTE)
+                                        bb->b_nofallthrough = 1;
+                                    }
+                                    else {
+                                        SET_OPCODE(prev_inst, NOP)
+                                        SET_OPCODE_BB(bb, i+2, NOP)
+                                        continue;
+                                    }
+                                    break;
+                                case JUMP_IF_FALSE_OR_POP:
+                                    if (is_true) {
+                                        SET_OPCODE(prev_inst, NOP)
+                                        SET_OPCODE_BB(bb, i+2, NOP)
+                                        continue;
+                                    }
+                                    else {
+                                        SET_OPCODE_BB(bb, i+2, JUMP_ABSOLUTE)
+                                        bb->b_nofallthrough = 1;
+                                    }
+                                    break;
+                            }
+                            for (index = 0;
+                                 index < PyList_GET_SIZE(consts);
+                                 index++)
+                            {
+                                cnt = PyList_GET_ITEM(consts, index);
+                                if (cnt == bool_check) {
+                                    break;
+                                }
+                            }
+                            if (index == PyList_GET_SIZE(consts)) {
+                                PyList_Append(consts, bool_check);
+                            }
+                            prev_inst->i_oparg = index;
                         }
                         break;
                 }
@@ -8159,16 +8353,16 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                 if (nextop == UNPACK_SEQUENCE && oparg == bb->b_instr[i+1].i_oparg) {
                     switch(oparg) {
                         case 1:
-                            inst->i_opcode = NOP;
-                            bb->b_instr[i+1].i_opcode = NOP;
+                            SET_OPCODE(inst, NOP)
+                            SET_OPCODE_BB(bb, i+1, NOP)
                             break;
                         case 2:
-                            inst->i_opcode = ROT_TWO;
-                            bb->b_instr[i+1].i_opcode = NOP;
+                            SET_OPCODE(inst, ROT_TWO)
+                            SET_OPCODE_BB(bb, i+1, NOP)
                             break;
                         case 3:
-                            inst->i_opcode = ROT_THREE;
-                            bb->b_instr[i+1].i_opcode = ROT_TWO;
+                            SET_OPCODE(inst, ROT_THREE)
+                            SET_OPCODE_BB(bb, i+1, ROT_TWO)
                     }
                     break;
                 }
@@ -8209,8 +8403,8 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                             // We don't need to bother checking for loops here,
                             // since a block's b_next cannot point to itself:
                             assert(inst->i_target != inst->i_target->b_next);
-                            inst->i_opcode = POP_JUMP_IF_FALSE;
-                            inst->i_target = inst->i_target->b_next;
+                            SET_OPCODE(inst, POP_JUMP_IF_FALSE)
+                            SET_TARGET(inst, inst->i_target->b_next)
                             --i;
                         }
                         break;
@@ -8232,8 +8426,8 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                             // We don't need to bother checking for loops here,
                             // since a block's b_next cannot point to itself:
                             assert(inst->i_target != inst->i_target->b_next);
-                            inst->i_opcode = POP_JUMP_IF_TRUE;
-                            inst->i_target = inst->i_target->b_next;
+                            SET_OPCODE(inst, POP_JUMP_IF_TRUE)
+                            SET_TARGET(inst, inst->i_target->b_next)
                             --i;
                         }
                         break;
@@ -8272,16 +8466,16 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                 switch (oparg) {
                     case 0:
                     case 1:
-                        inst->i_opcode = NOP;
+                        SET_OPCODE(inst, NOP)
                         continue;
                     case 2:
-                        inst->i_opcode = ROT_TWO;
+                        SET_OPCODE(inst, ROT_TWO)
                         break;
                     case 3:
-                        inst->i_opcode = ROT_THREE;
+                        SET_OPCODE(inst, ROT_THREE)
                         break;
                     case 4:
-                        inst->i_opcode = ROT_FOUR;
+                        SET_OPCODE(inst, ROT_FOUR)
                         break;
                 }
                 if (i >= oparg - 1) {
@@ -8290,8 +8484,10 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                 break;
             case COPY:
                 if (oparg == 1) {
-                    inst->i_opcode = DUP_TOP;
+                    SET_OPCODE(inst, DUP_TOP)
                 }
+                break;
+            case RETURN_VALUE:
                 break;
             default:
                 /* All HAS_CONST opcodes should be handled with LOAD_CONST */
@@ -8301,6 +8497,9 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
     return 0;
 error:
     return -1;
+#undef SET_OPCODE
+#undef SET_OPCODE_BB
+#undef SET_TARGET
 }
 
 /* If this block ends with an unconditional jump to an exit block,
@@ -8401,7 +8600,8 @@ normalize_basic_block(basicblock *bb) {
             case JUMP_IF_TRUE_OR_POP:
             case FOR_ITER:
                 if (i != bb->b_iused-1) {
-                    PyErr_SetString(PyExc_SystemError, "malformed control flow graph.");
+                    PyErr_SetString(PyExc_SystemError,
+                                    "malformed control flow graph.");
                     return -1;
                 }
                 /* Skip over empty basic blocks. */
