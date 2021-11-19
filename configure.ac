@@ -5902,21 +5902,28 @@ AC_ARG_WITH(builtin-hashlib-hashes,
                            [builtin hash modules,
                             md5, sha1, sha256, sha512, sha3 (with shake), blake2]),
 [
-case "$withval" in
-    yes)
-        withval=$default_hashlib_hashes
-        ;;
-    no)
-        withval=""
-        ;;
-esac
-AC_MSG_RESULT($withval)
-AC_DEFINE_UNQUOTED(PY_BUILTIN_HASHLIB_HASHES, "$withval")
-],
-[
-AC_MSG_RESULT($default_hashlib_hashes);
-AC_DEFINE_UNQUOTED(PY_BUILTIN_HASHLIB_HASHES, "$default_hashlib_hashes")
-])
+  AS_CASE([$with_builtin_hashlib_hashes],
+    [yes], [with_builtin_hashlib_hashes=$default_hashlib_hashes],
+    [no], [with_builtin_hashlib_hashes=""]
+  )
+], [with_builtin_hashlib_hashes=$default_hashlib_hashes])
+
+AC_MSG_RESULT($with_builtin_hashlib_hashes)
+AC_DEFINE_UNQUOTED(PY_BUILTIN_HASHLIB_HASHES, "$with_builtin_hashlib_hashes")
+
+as_save_IFS=$IFS
+IFS=,
+for builtin_hash in $with_builtin_hashlib_hashes; do
+    AS_CASE($builtin_hash,
+      [md5], [with_builtin_md5=yes],
+      [sha1], [with_builtin_sha1=yes],
+      [sha256], [with_builtin_sha256=yes],
+      [sha512], [with_builtin_sha512=yes],
+      [sha3], [with_builtin_sha3=yes],
+      [blake2], [with_builtin_blake2=yes]
+    )
+done
+IFS=$as_save_IFS
 
 # --with-experimental-isolated-subinterpreters
 AH_TEMPLATE(EXPERIMENTAL_ISOLATED_SUBINTERPRETERS,
@@ -6059,6 +6066,15 @@ PY_STDLIB_MOD([ossaudiodev],
 dnl _elementtree loads libexpat via CAPI hook in pyexpat
 PY_STDLIB_MOD([pyexpat], [], [], [$LIBEXPAT_CFLAGS], [$LIBEXPAT_LDFLAGS])
 PY_STDLIB_MOD([_elementtree], [], [], [$LIBEXPAT_CFLAGS], [])
+
+dnl By default we always compile these even when OpenSSL is available
+dnl (issue #14693). The modules are small.
+PY_STDLIB_MOD([_md5], [test "$with_builtin_md5" = yes])
+PY_STDLIB_MOD([_sha1], [test "$with_builtin_sha1" = yes])
+PY_STDLIB_MOD([_sha256], [test "$with_builtin_sha256" = yes])
+PY_STDLIB_MOD([_sha512], [test "$with_builtin_sha512" = yes])
+PY_STDLIB_MOD([_sha3], [test "$with_builtin_sha3" = yes])
+PY_STDLIB_MOD([_blake2], [test "$with_builtin_blake2" = yes])
 
 PY_STDLIB_MOD([_decimal], [], [], [$LIBMPDEC_CFLAGS], [$LIBMPDEC_LDFLAGS])
 PY_STDLIB_MOD([_sqlite3],

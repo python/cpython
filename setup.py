@@ -2034,53 +2034,19 @@ class PyBuildExt(build_ext):
         # (issue #14693). It's harmless and the object code is tiny
         # (40-50 KiB per module, only loaded when actually used).  Modules can
         # be disabled via the --with-builtin-hashlib-hashes configure flag.
-        supported = {"md5", "sha1", "sha256", "sha512", "sha3", "blake2"}
 
-        configured = sysconfig.get_config_var("PY_BUILTIN_HASHLIB_HASHES")
-        configured = configured.strip('"').lower()
-        configured = {
-            m.strip() for m in configured.split(",")
-        }
-
-        self.disabled_configure.extend(
-            sorted(supported.difference(configured))
-        )
-
-        if "sha256" in configured:
-            self.add(Extension(
-                '_sha256', ['sha256module.c']
-            ))
-
-        if "sha512" in configured:
-            self.add(Extension(
-                '_sha512', ['sha512module.c'],
-            ))
-
-        if "md5" in configured:
-            self.add(Extension(
-                '_md5', ['md5module.c'],
-            ))
-
-        if "sha1" in configured:
-            self.add(Extension(
-                '_sha1', ['sha1module.c'],
-            ))
-
-        if "blake2" in configured:
-            self.add(Extension(
-                '_blake2',
-                [
-                    '_blake2/blake2module.c',
-                    '_blake2/blake2b_impl.c',
-                    '_blake2/blake2s_impl.c'
-                ]
-            ))
-
-        if "sha3" in configured:
-            self.add(Extension(
-                '_sha3',
-                ['_sha3/sha3module.c'],
-            ))
+        self.addext(Extension('_md5', ['md5module.c']))
+        self.addext(Extension('_sha1', ['sha1module.c']))
+        self.addext(Extension('_sha256', ['sha256module.c']))
+        self.addext(Extension('_sha512', ['sha512module.c']))
+        self.addext(Extension('_sha3', ['_sha3/sha3module.c']))
+        self.addext(Extension('_blake2',
+            [
+                '_blake2/blake2module.c',
+                '_blake2/blake2b_impl.c',
+                '_blake2/blake2s_impl.c'
+            ]
+        ))
 
     def detect_nis(self):
         if MS_WINDOWS or CYGWIN or HOST_PLATFORM == 'qnx6':
