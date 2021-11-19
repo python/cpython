@@ -2279,6 +2279,8 @@ check_eval_breaker:
         }
 
         TARGET(STORE_SUBSCR) {
+            PREDICTED(STORE_SUBSCR);
+            STAT_INC(STORE_SUBSCR, unquickened);
             PyObject *sub = TOP();
             PyObject *container = SECOND();
             PyObject *v = THIRD();
@@ -2291,6 +2293,64 @@ check_eval_breaker:
             Py_DECREF(sub);
             if (err != 0)
                 goto error;
+            DISPATCH();
+        }
+
+        TARGET(STORE_SUBSCR_ADAPTIVE) {
+            if (oparg == 0) {
+                PyObject *sub = TOP();
+                PyObject *container = SECOND();
+                next_instr--;
+                if (_Py_Specialize_StoreSubscr(container, sub, next_instr) < 0) {
+                    goto error;
+                }
+                DISPATCH();
+            }
+            else {
+                STAT_INC(STORE_SUBSCR, deferred);
+                // oparg is the adaptive cache counter
+                UPDATE_PREV_INSTR_OPARG(next_instr, oparg - 1);
+                STAT_DEC(STORE_SUBSCR, unquickened);
+                JUMP_TO_INSTRUCTION(STORE_SUBSCR);
+            }
+        }
+
+        TARGET(STORE_SUBSCR_LIST_INT) {
+            PyObject *sub = TOP();
+            PyObject *list = SECOND();
+            PyObject *value = THIRD();
+            DEOPT_IF(!PyLong_CheckExact(sub), STORE_SUBSCR);
+            DEOPT_IF(!PyList_CheckExact(list), STORE_SUBSCR);
+
+            // Ensure nonnegative, zero-or-one-digit ints.
+            DEOPT_IF(((size_t)Py_SIZE(sub)) > 1, STORE_SUBSCR);
+            Py_ssize_t index = ((PyLongObject*)sub)->ob_digit[0];
+            // Ensure index < len(list)
+            DEOPT_IF(index >= PyList_GET_SIZE(list), STORE_SUBSCR);
+            STAT_INC(STORE_SUBSCR, hit);
+
+            PyObject *old_value = PyList_GET_ITEM(list, index);
+            PyList_SET_ITEM(list, index, value);
+            STACK_SHRINK(3);
+            assert(old_value != NULL);
+            Py_DECREF(old_value);
+            Py_DECREF(sub);
+            Py_DECREF(list);
+            DISPATCH();
+        }
+
+        TARGET(STORE_SUBSCR_DICT) {
+            PyObject *sub = TOP();
+            PyObject *dict = SECOND();
+            PyObject *value = THIRD();
+            DEOPT_IF(!PyDict_CheckExact(dict), STORE_SUBSCR);
+            STACK_SHRINK(3);
+            STAT_INC(STORE_SUBSCR, hit);
+            int err = _PyDict_SetItem_Take2((PyDictObject *)dict, sub, value);
+            Py_DECREF(dict);
+            if (err != 0) {
+                goto error;
+            }
             DISPATCH();
         }
 
@@ -3374,15 +3434,13 @@ check_eval_breaker:
             PyObject *value = TOP();
             PyObject *key = SECOND();
             PyObject *map;
-            int err;
             STACK_SHRINK(2);
             map = PEEK(oparg);                      /* dict */
             assert(PyDict_CheckExact(map));
-            err = PyDict_SetItem(map, key, value);  /* map[key] = value */
-            Py_DECREF(value);
-            Py_DECREF(key);
-            if (err != 0)
+            /* map[key] = value */
+            if (_PyDict_SetItem_Take2((PyDictObject *)map, key, value) != 0) {
                 goto error;
+            }
             PREDICT(JUMP_ABSOLUTE);
             DISPATCH();
         }
@@ -4909,6 +4967,22 @@ opname ## _miss: \
         JUMP_TO_INSTRUCTION(opname); \
     }
 
+#define MISS_WITH_OPARG_COUNTER(opname) \
+opname ## _miss: \
+    { \
+        STAT_INC(opname, miss); \
+        uint8_t oparg = _Py_OPARG(next_instr[-1])-1; \
+        UPDATE_PREV_INSTR_OPARG(next_instr, oparg); \
+        assert(_Py_OPARG(next_instr[-1]) == oparg); \
+        if (oparg == 0) /* too many cache misses */ { \
+            oparg = ADAPTIVE_CACHE_BACKOFF; \
+            next_instr[-1] = _Py_MAKECODEUNIT(opname ## _ADAPTIVE, oparg); \
+            STAT_INC(opname, deopt); \
+        } \
+        STAT_DEC(opname, unquickened); \
+        JUMP_TO_INSTRUCTION(opname); \
+    }
+
 MISS_WITH_CACHE(LOAD_ATTR)
 MISS_WITH_CACHE(STORE_ATTR)
 MISS_WITH_CACHE(LOAD_GLOBAL)
@@ -4916,6 +4990,7 @@ MISS_WITH_CACHE(LOAD_METHOD)
 MISS_WITH_CACHE(CALL_FUNCTION)
 MISS_WITH_CACHE(BINARY_OP)
 MISS_WITH_CACHE(BINARY_SUBSCR)
+MISS_WITH_OPARG_COUNTER(STORE_SUBSCR)
 
 binary_subscr_dict_error:
         {

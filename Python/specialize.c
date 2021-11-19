@@ -125,6 +125,7 @@ _Py_GetSpecializationStats(void) {
     err += add_stat_dict(stats, LOAD_GLOBAL, "load_global");
     err += add_stat_dict(stats, LOAD_METHOD, "load_method");
     err += add_stat_dict(stats, BINARY_SUBSCR, "binary_subscr");
+    err += add_stat_dict(stats, STORE_SUBSCR, "store_subscr");
     err += add_stat_dict(stats, STORE_ATTR, "store_attr");
     err += add_stat_dict(stats, CALL_FUNCTION, "call_function");
     err += add_stat_dict(stats, BINARY_OP, "binary_op");
@@ -182,6 +183,7 @@ _Py_PrintSpecializationStats(void)
     print_stats(out, &_specialization_stats[LOAD_GLOBAL], "load_global");
     print_stats(out, &_specialization_stats[LOAD_METHOD], "load_method");
     print_stats(out, &_specialization_stats[BINARY_SUBSCR], "binary_subscr");
+    print_stats(out, &_specialization_stats[STORE_SUBSCR], "store_subscr");
     print_stats(out, &_specialization_stats[STORE_ATTR], "store_attr");
     print_stats(out, &_specialization_stats[CALL_FUNCTION], "call_function");
     print_stats(out, &_specialization_stats[BINARY_OP], "binary_op");
@@ -233,6 +235,7 @@ static uint8_t adaptive_opcodes[256] = {
     [LOAD_GLOBAL] = LOAD_GLOBAL_ADAPTIVE,
     [LOAD_METHOD] = LOAD_METHOD_ADAPTIVE,
     [BINARY_SUBSCR] = BINARY_SUBSCR_ADAPTIVE,
+    [STORE_SUBSCR] = STORE_SUBSCR_ADAPTIVE,
     [CALL_FUNCTION] = CALL_FUNCTION_ADAPTIVE,
     [STORE_ATTR] = STORE_ATTR_ADAPTIVE,
     [BINARY_OP] = BINARY_OP_ADAPTIVE,
@@ -244,6 +247,7 @@ static uint8_t cache_requirements[256] = {
     [LOAD_GLOBAL] = 2, /* _PyAdaptiveEntry and _PyLoadGlobalCache */
     [LOAD_METHOD] = 3, /* _PyAdaptiveEntry, _PyAttrCache and _PyObjectCache */
     [BINARY_SUBSCR] = 2, /* _PyAdaptiveEntry, _PyObjectCache */
+    [STORE_SUBSCR] = 0,
     [CALL_FUNCTION] = 2, /* _PyAdaptiveEntry and _PyObjectCache/_PyCallCache */
     [STORE_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
     [BINARY_OP] = 1,  // _PyAdaptiveEntry
@@ -1225,6 +1229,53 @@ success:
     STAT_INC(BINARY_SUBSCR, specialization_success);
     assert(!PyErr_Occurred());
     cache0->counter = initial_counter_value();
+    return 0;
+}
+
+int
+_Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *instr)
+{
+    PyTypeObject *container_type = Py_TYPE(container);
+    if (container_type == &PyList_Type) {
+        if (PyLong_CheckExact(sub)) {
+            if ((Py_SIZE(sub) == 0 || Py_SIZE(sub) == 1)
+                && ((PyLongObject *)sub)->ob_digit[0] < PyList_GET_SIZE(container))
+            {
+                *instr = _Py_MAKECODEUNIT(STORE_SUBSCR_LIST_INT,
+                                          initial_counter_value());
+                goto success;
+            }
+            else {
+                SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_OUT_OF_RANGE);
+                goto fail;
+            }
+        }
+        else if (PySlice_Check(sub)) {
+            SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_LIST_SLICE);
+            goto fail;
+        }
+        else {
+            SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_OTHER);
+            goto fail;
+        }
+    }
+    else if (container_type == &PyDict_Type) {
+        *instr = _Py_MAKECODEUNIT(STORE_SUBSCR_DICT,
+                                  initial_counter_value());
+         goto success;
+    }
+    else {
+        SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_OTHER);
+        goto fail;
+    }
+fail:
+    STAT_INC(STORE_SUBSCR, specialization_failure);
+    assert(!PyErr_Occurred());
+    *instr = _Py_MAKECODEUNIT(_Py_OPCODE(*instr), ADAPTIVE_CACHE_BACKOFF);
+    return 0;
+success:
+    STAT_INC(STORE_SUBSCR, specialization_success);
+    assert(!PyErr_Occurred());
     return 0;
 }
 
