@@ -633,14 +633,18 @@ _PyErr_ChainStackItem(_PyErr_StackItem *exc_info)
     exc2 = exc_info->exc_type;
     val2 = exc_info->exc_value;
     tb2 = exc_info->exc_traceback;
+#ifdef Py_DEBUG
     PyObject *exc2_before = exc2;
     PyObject *val2_before = val2;
     PyObject *tb2_before = tb2;
+#endif
     _PyErr_NormalizeException(tstate, &exc2, &val2, &tb2);
+#ifdef Py_DEBUG
     /* exc_info should already be normalized */
     assert(exc2 == exc2_before);
     assert(val2 == val2_before);
     assert(tb2 == tb2_before);
+#endif
     if (tb2 != NULL) {
         PyException_SetTraceback(val2, tb2);
     }
