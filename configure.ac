@@ -3165,12 +3165,52 @@ if test "$have_glibc_memmove_bug" = yes; then
     AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -U_FORTIFY_SOURCE"])
 fi
 
+dnl Check for SQLite library. Use pkg-config if available.
+PKG_CHECK_MODULES(
+  [LIBSQLITE3], [sqlite3 >= 3.7.15], [], [
+    LIBSQLITE3_LIBS="-lsqlite3"
+    LIBSQLITE3_CFLAGS=
+  ]
+)
+AS_VAR_APPEND([LIBSQLITE3_CFLAGS], [' -I$(srcdir)/Modules/_sqlite'])
+
+dnl bpo-45774/GH-29507: The CPP check in AC_CHECK_HEADER can fail on FreeBSD,
+dnl hence CPPFLAGS instead of CFLAGS. We still need to save CFLAGS, because it
+dnl is touched by AC_CHECK_HEADER.
+AS_VAR_COPY([save_CFLAGS], [CFLAGS])
+AS_VAR_COPY([save_CPPFLAGS], [CPPFLAGS])
+AS_VAR_COPY([save_LDFLAGS], [LDFLAGS])
+AS_VAR_COPY([save_LIBS], [LIBS])
+CPPFLAGS="$LIBSQLITE3_CFLAGS $CFLAGS"
+LDFLAGS="$LIBSQLITE3_LIBS $LDFLAGS"
+
+AC_CHECK_HEADER([sqlite3.h], [
+  AC_CHECK_LIB([sqlite3], [sqlite3_open_v2], [
+    have_sqlite3=yes
+    AC_COMPILE_IFELSE([
+      AC_LANG_PROGRAM([
+        #include <sqlite3.h>
+        #if SQLITE_VERSION_NUMBER < 3007015
+        #  error "SQLite 3.7.15 or higher required"
+        #endif
+      ], [])
+    ], [have_supported_sqlite3=yes], [have_supported_sqlite3=no])
+  ], [have_sqlite3=no])
+  AC_CHECK_LIB([sqlite3], [sqlite3_load_extension])
+])
+
+AS_VAR_COPY([CFLAGS], [save_CFLAGS])
+AS_VAR_COPY([CPPFLAGS], [save_CPPFLAGS])
+AS_VAR_COPY([LDFLAGS], [save_LDFLAGS])
+AS_VAR_COPY([LIBS], [save_LIBS])
+
 # Check for support for loadable sqlite extensions
 AC_MSG_CHECKING(for --enable-loadable-sqlite-extensions)
 AC_ARG_ENABLE(loadable-sqlite-extensions,
               AS_HELP_STRING([--enable-loadable-sqlite-extensions],
                              [support loadable extensions in _sqlite module, see Doc/library/sqlite3.rst (default is no)]),
-              [],
+              [AS_VAR_IF([have_sqlite3_load_extension], [no],
+                         [AC_MSG_WARN([Your version of SQLite does not support loadable extensions])])],
               [enable_loadable_sqlite_extensions=no])
 AC_MSG_RESULT($enable_loadable_sqlite_extensions)
 
@@ -5999,6 +6039,10 @@ PY_STDLIB_MOD([pyexpat], [], [], [$LIBEXPAT_CFLAGS], [$LIBEXPAT_LDFLAGS])
 PY_STDLIB_MOD([_elementtree], [], [], [$LIBEXPAT_CFLAGS], [])
 
 PY_STDLIB_MOD([_decimal], [], [], [$LIBMPDEC_CFLAGS], [$LIBMPDEC_LDFLAGS])
+PY_STDLIB_MOD([_sqlite3],
+  [test "$have_sqlite3" = "yes"],
+  [test "$have_supported_sqlite3" = "yes"],
+  [$LIBSQLITE3_CFLAGS], [$LIBSQLITE3_LIBS])
 
 # substitute multiline block, must come after last PY_STDLIB_MOD()
 AC_SUBST([MODULE_BLOCK])

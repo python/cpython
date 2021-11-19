@@ -53,3 +53,9 @@
 
 # Linux and FreeBSD, needs sys/soundcard.h or linux/soundcard.h
 @MODULE_OSSAUDIODEV_TRUE@ossaudiodev ossaudiodev.c
+
+
+############################################################################
+# Modules with third party dependencies
+#
+@MODULE__SQLITE3_TRUE@_sqlite3 _sqlite/connection.c _sqlite/cursor.c _sqlite/microprotocols.c _sqlite/module.c _sqlite/prepare_protocol.c _sqlite/row.c _sqlite/statement.c _sqlite/util.c
