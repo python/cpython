@@ -3175,9 +3175,12 @@ PKG_CHECK_MODULES(
 AS_VAR_APPEND([LIBSQLITE3_CFLAGS], [' -I$(srcdir)/Modules/_sqlite'])
 
 dnl bpo-45774/GH-29507: The CPP check in AC_CHECK_HEADER can fail on FreeBSD,
-dnl hence CPPFLAGS instead of CFLAGS.
+dnl hence CPPFLAGS instead of CFLAGS. We still need to save CFLAGS, because it
+dnl is touched by AC_CHECK_HEADER.
+AS_VAR_COPY([save_CFLAGS], [CFLAGS])
 AS_VAR_COPY([save_CPPFLAGS], [CPPFLAGS])
 AS_VAR_COPY([save_LDFLAGS], [LDFLAGS])
+AS_VAR_COPY([save_LIBS], [LIBS])
 CPPFLAGS="$LIBSQLITE3_CFLAGS $CFLAGS"
 LDFLAGS="$LIBSQLITE3_LIBS $LDFLAGS"
 
@@ -3196,8 +3199,10 @@ AC_CHECK_HEADER([sqlite3.h], [
   AC_CHECK_LIB([sqlite3], [sqlite3_load_extension])
 ])
 
+AS_VAR_COPY([CFLAGS], [save_CFLAGS])
 AS_VAR_COPY([CPPFLAGS], [save_CPPFLAGS])
 AS_VAR_COPY([LDFLAGS], [save_LDFLAGS])
+AS_VAR_COPY([LIBS], [save_LIBS])
 
 # Check for support for loadable sqlite extensions
 AC_MSG_CHECKING(for --enable-loadable-sqlite-extensions)

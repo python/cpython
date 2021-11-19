@@ -11021,8 +11021,10 @@ $as_echo "yes" >&6; }
 fi
 as_fn_append LIBSQLITE3_CFLAGS ' -I$(srcdir)/Modules/_sqlite'
 
+save_CFLAGS=$CFLAGS
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
 CPPFLAGS="$LIBSQLITE3_CFLAGS $CFLAGS"
 LDFLAGS="$LIBSQLITE3_LIBS $LDFLAGS"
 
@@ -11147,8 +11149,10 @@ fi
 
 
 
+CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
 
 # Check for support for loadable sqlite extensions
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-loadable-sqlite-extensions" >&5
