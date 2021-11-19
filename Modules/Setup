@@ -181,7 +181,6 @@ PYTHONPATH=$(COREPYTHONPATH)
 
 # Modules with some UNIX dependencies
 
-#_posixsubprocess _posixsubprocess.c
 #_posixshmem -I$(srcdir)/Modules/_multiprocessing _multiprocessing/posixshmem.c -lrt
 #fcntl fcntlmodule.c
 #grp grpmodule.c

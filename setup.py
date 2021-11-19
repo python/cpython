@@ -15,24 +15,6 @@ from glob import glob, escape
 import _osx_support
 
 
-try:
-    import subprocess
-    del subprocess
-    SUBPROCESS_BOOTSTRAP = False
-except ImportError:
-    # Bootstrap Python: distutils.spawn uses subprocess to build C extensions,
-    # subprocess requires C extensions built by setup.py like _posixsubprocess.
-    #
-    # Use _bootsubprocess which only uses the os module.
-    #
-    # It is dropped from sys.modules as soon as all C extension modules
-    # are built.
-    import _bootsubprocess
-    sys.modules['subprocess'] = _bootsubprocess
-    del _bootsubprocess
-    SUBPROCESS_BOOTSTRAP = True
-
-
 with warnings.catch_warnings():
     # bpo-41282 (PEP 632) deprecated distutils but setup.py still uses it
     warnings.filterwarnings(
@@ -575,11 +557,6 @@ class PyBuildExt(build_ext):
 
         build_ext.build_extensions(self)
 
-        if SUBPROCESS_BOOTSTRAP:
-            # Drop our custom subprocess module:
-            # use the newly built subprocess module
-            del sys.modules['subprocess']
-
         for ext in self.extensions:
             self.check_extension_import(ext)
 
@@ -1092,9 +1069,6 @@ class PyBuildExt(build_ext):
 
         # CSV files
         self.add(Extension('_csv', ['_csv.c']))
-
-        # POSIX subprocess module helper.
-        self.add(Extension('_posixsubprocess', ['_posixsubprocess.c']))
 
     def detect_test_extensions(self):
         # Python C API test module

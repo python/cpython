@@ -32,3 +32,5 @@ _symtable symtablemodule.c
 
 # for systems without $HOME env, used by site._getuserbase()
 pwd pwdmodule.c
+# for subprocess in setup.py
+_posixsubprocess _posixsubprocess.c
