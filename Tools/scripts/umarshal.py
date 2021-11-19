@@ -1,7 +1,6 @@
 # Implementat marshal.loads() in pure Python
 
 import ast
-import struct
 
 from typing import Any
 
@@ -146,6 +145,7 @@ class Reader:
 
     def r_float_bin(self) -> float:
         buf = self.r_string(8)
+        import struct  # Lazy import to avoid breaking UNIX build
         return struct.unpack("d", buf)[0]
 
     def r_float_str(self) -> float:
