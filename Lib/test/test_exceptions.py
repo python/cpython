@@ -233,6 +233,7 @@ class ExceptionTests(unittest.TestCase):
         check('[file for\n str(file) in []]', 2, 2)
         check("ages = {'Alice'=22, 'Bob'=23}", 1, 16)
         check('match ...:\n    case {**rest, "key": value}:\n        ...', 2, 19)
+        check("a b c d e f", 1, 1)
 
         # Errors thrown by compile.c
         check('class foo:return 1', 1, 11)
