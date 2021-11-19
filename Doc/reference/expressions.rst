@@ -824,9 +824,6 @@ return a :ref:`generic alias <types-genericalias>` object representing a
 *parameterized generic class*. The latter form of subscription is primarily
 useful for :term:`type hinting<type hint>`.
 
-**HERE I SHALL PUT A REFERENCE TO THE NEW SECTION ON ``__GETITEM__`` VERSUS
-``__CLASS_GETITEM__``, WHEN THAT PR IS MERGED.**
-
 .. productionlist:: python-grammar
    subscription: `primary` "[" `expression_list` "]"
 
@@ -834,6 +831,12 @@ The primary must evaluate to an object that supports subscription, such as a
 :class:`list` or a :class:`dictionary<dict>`. User-defined objects can support
 subscription by defining one or both of :meth:`~object.__getitem__` and
 :meth:`~object.__class_getitem__`.
+
+.. seealso::
+   :ref:`classgetitem-versus-getitem`
+      Documentation explaining when a subscription will lead to
+      :meth:`~object.__class_getitem__` being called over
+      :meth:`~object.__getitem__`
 
 Subscriptions calling *__getitem__*
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
