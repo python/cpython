@@ -6046,7 +6046,7 @@ AC_DEFUN([PY_STDLIB_MOD_SIMPLE], [
 ])
 
 dnl static modules in Modules/Setup.bootstrap
-PY_STDLIB_MOD_SIMPLE([_io], ['-I$(srcdir)/Modules/_io'], [])
+PY_STDLIB_MOD_SIMPLE([_io], [-I\$(srcdir)/Modules/_io], [])
 PY_STDLIB_MOD_SIMPLE([time], [], [$TIMEMODULE_LIB])
 
 dnl always enabled extension modules

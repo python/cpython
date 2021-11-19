@@ -19473,7 +19473,7 @@ else
 fi
 
 
-    as_fn_append MODULE_BLOCK "MODULE__IO_CFLAGS='-I$(srcdir)/Modules/_io'$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__IO_CFLAGS=-I\$(srcdir)/Modules/_io$as_nl"
 
 
 
