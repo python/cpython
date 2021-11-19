@@ -112,7 +112,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 
 # ---
 # Built-in modules required to get a functioning interpreter are listed in
-# Modules/Setup.core.
+# Modules/Setup.bootstrap.
 
 # ---
 # The rest of the modules listed in this file are all commented out by
