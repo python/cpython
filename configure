@@ -11021,10 +11021,10 @@ $as_echo "yes" >&6; }
 fi
 as_fn_append LIBSQLITE3_CFLAGS ' -I$(srcdir)/Modules/_sqlite'
 
-save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
-CFLAGS=$LIBSQLITE3_CFLAGS
-LDFLAGS=$LIBSQLITE3_LIBS
+CPPFLAGS="$LIBSQLITE3_CFLAGS $CFLAGS"
+LDFLAGS="$LIBSQLITE3_LIBS $LDFLAGS"
 
 ac_fn_c_check_header_mongrel "$LINENO" "sqlite3.h" "ac_cv_header_sqlite3_h" "$ac_includes_default"
 if test "x$ac_cv_header_sqlite3_h" = xyes; then :
@@ -11147,7 +11147,7 @@ fi
 
 
 
-CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 
 # Check for support for loadable sqlite extensions
