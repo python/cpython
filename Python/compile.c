@@ -1134,7 +1134,7 @@ stack_effect(int opcode, int oparg, int jump)
             return jump ? -1 + 4 : 0;
 
         case PREP_RERAISE_STAR:
-             return 1;
+             return 2;
         case RERAISE:
             return -3;
         case PUSH_EXC_INFO:
@@ -3342,8 +3342,8 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             /* name = None; del name; # Mark as artificial */
             UNSET_LOC(c);
             ADDOP(c, POP_BLOCK);
-            ADDOP(c, POP_BLOCK);
             if (!is_except_star) {
+                ADDOP(c, POP_BLOCK);
                 ADDOP(c, POP_EXCEPT);
             }
             if(handler->v.ExceptHandler.name) {
@@ -3437,10 +3437,13 @@ compiler_try_except(struct compiler *c, stmt_ty s)
         ADDOP(c, POP_TOP);
         ADDOP(c, POP_TOP);
         ADDOP(c, POP_TOP);
+        ADDOP(c, POP_TOP);
+        ADDOP(c, POP_BLOCK);
         ADDOP(c, POP_EXCEPT);
         ADDOP_JUMP(c, JUMP_FORWARD, end);
         compiler_use_next_block(c, reraise);
-        ADDOP_I(c, RERAISE, 0);
+        ADDOP(c, POP_BLOCK);
+        ADDOP(c, POP_EXCEPT_AND_RERAISE);
     }
     compiler_use_next_block(c, cleanup);
     ADDOP(c, POP_EXCEPT_AND_RERAISE);

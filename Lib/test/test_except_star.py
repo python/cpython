@@ -85,6 +85,7 @@ class ExceptStarTest(unittest.TestCase):
 
 class TestExceptStarSplitSemantics(ExceptStarTest):
     def doSplitTestNamed(self, exc, T, match_template, rest_template):
+        initial_exc_info = sys.exc_info()
         exc_info = match = rest = None
         try:
             try:
@@ -94,15 +95,17 @@ class TestExceptStarSplitSemantics(ExceptStarTest):
                 match = e
         except BaseException as e:
             rest = e
+
         if match_template:
             self.assertEqual(exc_info[1], match)
         else:
             self.assertIsNone(exc_info)
         self.assertExceptionIsLike(match, match_template)
         self.assertExceptionIsLike(rest, rest_template)
-        self.assertEqual(sys.exc_info(), (None, None, None))
+        self.assertEqual(sys.exc_info(), initial_exc_info)
 
     def doSplitTestUnnamed(self, exc, T, match_template, rest_template):
+        initial_exc_info = sys.exc_info()
         exc_info = match = rest = None
         try:
             try:
@@ -119,11 +122,27 @@ class TestExceptStarSplitSemantics(ExceptStarTest):
         if match_template:
             self.assertEqual(exc_info[0], type(match_template))
         self.assertExceptionIsLike(rest, rest_template)
-        self.assertEqual(sys.exc_info(), (None, None, None))
+        self.assertEqual(sys.exc_info(), initial_exc_info)
+
+    def doSplitTestInExceptHandler(self, exc, T, match_template, rest_template):
+        try:
+            raise ExceptionGroup('eg', [TypeError(1), ValueError(2)])
+        except Exception:
+            self.doSplitTestNamed(exc, T, match_template, rest_template)
+            self.doSplitTestUnnamed(exc, T, match_template, rest_template)
+
+    def doSplitTestInExceptStarHandler(self, exc, T, match_template, rest_template):
+        try:
+            raise ExceptionGroup('eg', [TypeError(1), ValueError(2)])
+        except* Exception:
+            self.doSplitTestNamed(exc, T, match_template, rest_template)
+            self.doSplitTestUnnamed(exc, T, match_template, rest_template)
 
     def doSplitTest(self, exc, T, match_template, rest_template):
         self.doSplitTestNamed(exc, T, match_template, rest_template)
         self.doSplitTestUnnamed(exc, T, match_template, rest_template)
+        self.doSplitTestInExceptHandler(exc, T, match_template, rest_template)
+        self.doSplitTestInExceptStarHandler(exc, T, match_template, rest_template)
 
     def test_no_match_single_type(self):
         self.doSplitTest(
@@ -809,6 +828,25 @@ class TestExceptStarExceptionGroupSubclass(ExceptStarTest):
         self.assertEqual(veg.code, 42)
         self.assertEqual(teg.code, 42)
         self.assertEqual(teg.exceptions[0].code, 101)
+
+
+class TestExceptStarCleanup(ExceptStarTest):
+    def test_exc_info_restored(self):
+        try:
+            try:
+                raise ValueError(42)
+            except:
+                try:
+                    raise TypeError(int)
+                except* Exception:
+                    pass
+                1/0
+        except Exception as e:
+            exc = e
+
+        self.assertExceptionIsLike(exc, ZeroDivisionError('division by zero'))
+        self.assertExceptionIsLike(exc.__context__, ValueError(42))
+        self.assertEqual(sys.exc_info(), (None, None, None))
 
 
 if __name__ == '__main__':

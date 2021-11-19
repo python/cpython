@@ -2583,6 +2583,11 @@ check_eval_breaker:
                 goto error;
             }
 
+            PyObject *lasti_unused = PyLong_FromLong(0);
+            if (lasti_unused == NULL) {
+                goto error;
+            }
+            PUSH(lasti_unused);
             if (val != Py_None) {
                 PyObject *tb = PyException_GetTraceback(val);
                 PUSH(tb ? tb : Py_NewRef(Py_None));
