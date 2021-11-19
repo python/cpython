@@ -11,7 +11,6 @@ import posixpath
 import platform
 import subprocess
 import sys
-import textwrap
 import time
 
 from update_file import updating_file_with_tmpfile, update_file_with_tmpfile
@@ -55,6 +54,7 @@ FROZEN_FILE = os.path.join(ROOT_DIR, 'Python', 'frozen.c')
 MAKEFILE = os.path.join(ROOT_DIR, 'Makefile.pre.in')
 PCBUILD_PROJECT = os.path.join(ROOT_DIR, 'PCbuild', '_freeze_module.vcxproj')
 PCBUILD_FILTERS = os.path.join(ROOT_DIR, 'PCbuild', '_freeze_module.vcxproj.filters')
+PCBUILD_PYTHONCORE = os.path.join(ROOT_DIR, 'PCbuild', 'pythoncore.vcxproj')
 
 
 OS_PATH = 'ntpath' if os.name == 'nt' else 'posixpath'
@@ -75,7 +75,7 @@ FROZEN = [
         ]),
     ('stdlib - startup, without site (python -S)', [
         'abc',
-        # 'codecs',  # TODO: Windows name conflict with Python\codecs.c
+        'codecs',
         # For now we do not freeze the encodings, due # to the noise all
         # those extra modules add to the text printed during the build.
         # (See https://github.com/python/cpython/pull/28398#pullrequestreview-756856469.)
@@ -717,10 +717,14 @@ def regen_makefile(modules):
 def regen_pcbuild(modules):
     projlines = []
     filterlines = []
+    corelines = []
     for src in _iter_sources(modules):
         pyfile = relpath_for_windows_display(src.pyfile, ROOT_DIR)
         header = relpath_for_windows_display(src.frozenfile, ROOT_DIR)
-        deepoutfile = f"Python/deepfreeze/{src.id}.c"
+        deepbase = src.id
+        if deepbase == "codecs":
+            deepbase = "codecs_"  # Annoying exception (duplicate file)
+        deepoutfile = f"Python\\deepfreeze\\{deepbase}.c"
         intfile = ntpath.splitext(ntpath.basename(header))[0] + '.g.h'
         projlines.append(f'    <None Include="..\\{pyfile}">')
         projlines.append(f'      <ModName>{src.frozenid}</ModName>')
@@ -732,6 +736,8 @@ def regen_pcbuild(modules):
         filterlines.append(f'    <None Include="..\\{pyfile}">')
         filterlines.append('      <Filter>Python Files</Filter>')
         filterlines.append('    </None>')
+
+        corelines.append(f'    <ClCompile Include="..\\{deepoutfile}" />')
 
     print(f'# Updating {os.path.relpath(PCBUILD_PROJECT)}')
     with updating_file_with_tmpfile(PCBUILD_PROJECT) as (infile, outfile):
@@ -752,6 +758,17 @@ def regen_pcbuild(modules):
             '<!-- BEGIN frozen modules -->',
             '<!-- END frozen modules -->',
             filterlines,
+            PCBUILD_FILTERS,
+        )
+        outfile.writelines(lines)
+    print(f'# Updating {os.path.relpath(PCBUILD_PYTHONCORE)}')
+    with updating_file_with_tmpfile(PCBUILD_PYTHONCORE) as (infile, outfile):
+        lines = infile.readlines()
+        lines = replace_block(
+            lines,
+            '<!-- BEGIN deepfreeze -->',
+            '<!-- END deepfreeze -->',
+            corelines,
             PCBUILD_FILTERS,
         )
         outfile.writelines(lines)

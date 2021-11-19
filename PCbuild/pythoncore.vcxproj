@@ -502,26 +502,26 @@
   </ItemGroup>
   <ItemGroup>
     <!-- BEGIN deepfreeze -->
-		<ClCompile Include="..\Python\deepfreeze\importlib._bootstrap.c" />
-		<ClCompile Include="..\Python\deepfreeze\importlib._bootstrap_external.c" />
-		<ClCompile Include="..\Python\deepfreeze\zipimport.c" />
-		<ClCompile Include="..\Python\deepfreeze\abc.c" />
-		<!-- <ClCompile Include="..\Python\deepfreeze\codecs.c" /> -->
-		<ClCompile Include="..\Python\deepfreeze\io.c" />
-		<ClCompile Include="..\Python\deepfreeze\_collections_abc.c" />
-		<ClCompile Include="..\Python\deepfreeze\_sitebuiltins.c" />
-		<ClCompile Include="..\Python\deepfreeze\genericpath.c" />
-		<ClCompile Include="..\Python\deepfreeze\ntpath.c" />
-		<ClCompile Include="..\Python\deepfreeze\posixpath.c" />
-		<ClCompile Include="..\Python\deepfreeze\os.c" />
-		<ClCompile Include="..\Python\deepfreeze\site.c" />
-		<ClCompile Include="..\Python\deepfreeze\stat.c" />
-		<ClCompile Include="..\Python\deepfreeze\__hello__.c" />
-		<ClCompile Include="..\Python\deepfreeze\__phello__.c" />
-		<ClCompile Include="..\Python\deepfreeze\__phello__.spam.c" />
-		<ClCompile Include="..\Python\deepfreeze\__phello__.ham.c" />
-		<ClCompile Include="..\Python\deepfreeze\__phello__.ham.eggs.c" />
-		<ClCompile Include="..\Python\deepfreeze\frozen_only.c" />
+    <ClCompile Include="..\Python\deepfreeze\importlib._bootstrap.c" />
+    <ClCompile Include="..\Python\deepfreeze\importlib._bootstrap_external.c" />
+    <ClCompile Include="..\Python\deepfreeze\zipimport.c" />
+    <ClCompile Include="..\Python\deepfreeze\abc.c" />
+    <ClCompile Include="..\Python\deepfreeze\codecs_.c" />
+    <ClCompile Include="..\Python\deepfreeze\io.c" />
+    <ClCompile Include="..\Python\deepfreeze\_collections_abc.c" />
+    <ClCompile Include="..\Python\deepfreeze\_sitebuiltins.c" />
+    <ClCompile Include="..\Python\deepfreeze\genericpath.c" />
+    <ClCompile Include="..\Python\deepfreeze\ntpath.c" />
+    <ClCompile Include="..\Python\deepfreeze\posixpath.c" />
+    <ClCompile Include="..\Python\deepfreeze\os.c" />
+    <ClCompile Include="..\Python\deepfreeze\site.c" />
+    <ClCompile Include="..\Python\deepfreeze\stat.c" />
+    <ClCompile Include="..\Python\deepfreeze\__hello__.c" />
+    <ClCompile Include="..\Python\deepfreeze\__phello__.c" />
+    <ClCompile Include="..\Python\deepfreeze\__phello__.ham.c" />
+    <ClCompile Include="..\Python\deepfreeze\__phello__.ham.eggs.c" />
+    <ClCompile Include="..\Python\deepfreeze\__phello__.spam.c" />
+    <ClCompile Include="..\Python\deepfreeze\frozen_only.c" />
     <!-- END deepfreeze -->
     </ItemGroup>
   <ItemGroup Condition="$(IncludeExternals)">
