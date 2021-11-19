@@ -5093,10 +5093,7 @@ exception_unwind:
         JUMPTO(handler);
         /* Resume normal execution */
         frame->f_state = FRAME_EXECUTING;
-        frame->f_lasti = handler;
-        NEXTOPARG();
-        PRE_DISPATCH_GOTO();
-        DISPATCH_GOTO();
+        DISPATCH();
     }
 
 exiting:
