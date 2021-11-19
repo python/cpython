@@ -112,7 +112,7 @@ static const struct _frozen stdlib_modules[] = {
     {"genericpath", _Py_M__genericpath, (int)sizeof(_Py_M__genericpath), GET_CODE(genericpath)},
     {"ntpath", _Py_M__ntpath, (int)sizeof(_Py_M__ntpath), GET_CODE(ntpath)},
     {"posixpath", _Py_M__posixpath, (int)sizeof(_Py_M__posixpath), GET_CODE(posixpath)},
-    {"os.path", _Py_M__ntpath, (int)sizeof(_Py_M__ntpath), GET_CODE(ntpath)},
+    {"os.path", _Py_M__posixpath, (int)sizeof(_Py_M__posixpath), GET_CODE(posixpath)},
     {"os", _Py_M__os, (int)sizeof(_Py_M__os), GET_CODE(os)},
     {"site", _Py_M__site, (int)sizeof(_Py_M__site), GET_CODE(site)},
     {"stat", _Py_M__stat, (int)sizeof(_Py_M__stat), GET_CODE(stat)},
@@ -139,7 +139,7 @@ const struct _frozen *_PyImport_FrozenTest = test_modules;
 static const struct _module_alias aliases[] = {
     {"_frozen_importlib", "importlib._bootstrap"},
     {"_frozen_importlib_external", "importlib._bootstrap_external"},
-    {"os.path", "ntpath"},
+    {"os.path", "posixpath"},
     {"__hello_alias__", "__hello__"},
     {"__phello_alias__", "__hello__"},
     {"__phello_alias__.spam", "__hello__"},
