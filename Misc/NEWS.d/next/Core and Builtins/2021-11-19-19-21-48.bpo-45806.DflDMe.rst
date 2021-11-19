@@ -1,0 +1,5 @@
+Re-introduced fix that allows recovery from stack overflow without crashing
+the interpreter.  The original fix as part of :issue:`42500` was reverted
+(see release notes for Python 3.9.4) since it introduced an ABI change in a
+bugfix release which is not allowed.  The new fix doesn't introduce any ABI
+changes.  Patch by Mark Shannon.
