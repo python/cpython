@@ -29,6 +29,9 @@
 ############################################################################
 # Modules that should always be present (POSIX and Windows):
 
+# needs libm and on some platforms librt
+@MODULE__DATETIME_TRUE@_datetime _datetimemodule.c
+
 # _decimal uses libmpdec
 # either static libmpdec.a from Modules/_decimal/libmpdec or libmpdec.so
 # with ./configure --with-system-libmpdec

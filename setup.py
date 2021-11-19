@@ -1006,13 +1006,9 @@ class PyBuildExt(build_ext):
         if lib:
             time_libs.append(lib)
 
-        # time operations and variables
-        self.add(Extension('time', ['timemodule.c'],
-                           libraries=time_libs))
         # libm is needed by delta_new() that uses round() and by accum() that
         # uses modf().
-        self.add(Extension('_datetime', ['_datetimemodule.c'],
-                           libraries=['m']))
+        self.addext(Extension('_datetime', ['_datetimemodule.c']))
         # zoneinfo module
         self.add(Extension('_zoneinfo', ['_zoneinfo.c']))
         # random number generator implemented in C
@@ -1034,8 +1030,6 @@ class PyBuildExt(build_ext):
         self.add(Extension('_opcode', ['_opcode.c']))
         # asyncio speedups
         self.add(Extension("_asyncio", ["_asynciomodule.c"]))
-        # _abc speedups
-        self.add(Extension("_abc", ["_abc.c"]))
         # _queue module
         self.add(Extension("_queue", ["_queuemodule.c"]))
         # _statistics module
@@ -1054,8 +1048,6 @@ class PyBuildExt(build_ext):
             libs = ['bsd']
         self.add(Extension('fcntl', ['fcntlmodule.c'],
                            libraries=libs))
-        # pwd(3)
-        self.add(Extension('pwd', ['pwdmodule.c']))
         # grp(3)
         if not VXWORKS:
             self.add(Extension('grp', ['grpmodule.c']))
@@ -1510,6 +1502,9 @@ class PyBuildExt(build_ext):
         self.configure_compiler()
         self.init_inc_lib_dirs()
 
+        # Some C extensions are built by entries in Modules/Setup.bootstrap.
+        # These are extensions are required to bootstrap the interpreter or
+        # build process.
         self.detect_simple_extensions()
         if TEST_EXTENSIONS:
             self.detect_test_extensions()
