@@ -1006,7 +1006,6 @@ class PyBuildExt(build_ext):
         if lib:
             time_libs.append(lib)
 
-        # time module is built by Modules/Setup.bootstrap
         # libm is needed by delta_new() that uses round() and by accum() that
         # uses modf().
         self.addext(Extension('_datetime', ['_datetimemodule.c']))
@@ -1031,7 +1030,6 @@ class PyBuildExt(build_ext):
         self.add(Extension('_opcode', ['_opcode.c']))
         # asyncio speedups
         self.add(Extension("_asyncio", ["_asynciomodule.c"]))
-        # _abc module is built by Modules/Setup.bootstrap
         # _queue module
         self.add(Extension("_queue", ["_queuemodule.c"]))
         # _statistics module
@@ -1050,7 +1048,6 @@ class PyBuildExt(build_ext):
             libs = ['bsd']
         self.add(Extension('fcntl', ['fcntlmodule.c'],
                            libraries=libs))
-        # pwd module is built by Modules/Setup.bootstrap
         # grp(3)
         if not VXWORKS:
             self.add(Extension('grp', ['grpmodule.c']))
@@ -1505,6 +1502,9 @@ class PyBuildExt(build_ext):
         self.configure_compiler()
         self.init_inc_lib_dirs()
 
+        # Some C extensions are built by entries in Modules/Setup.bootstrap.
+        # These are extensions are required to bootstrap the interpreter or
+        # build process.
         self.detect_simple_extensions()
         if TEST_EXTENSIONS:
             self.detect_test_extensions()
