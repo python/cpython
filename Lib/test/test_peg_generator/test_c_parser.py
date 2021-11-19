@@ -9,7 +9,7 @@ from pathlib import Path
 from test import test_tools
 from test import support
 from test.support import os_helper
-from test.support.script_helper import assert_python_ok
+from test.support.script_helper import assert_python_ok, run_python_until_end
 
 _py_cflags_nodist = sysconfig.get_config_var("PY_CFLAGS_NODIST")
 _pgo_flag = sysconfig.get_config_var("PGO_PROF_USE_FLAG")
@@ -483,3 +483,37 @@ class TestCParser(unittest.TestCase):
         self.assertIn("expected (':' | ';')", e.exception.args[0])
         """
         self.run_test(grammar_source, test_source)
+
+
+class TestCPythonParserEdgeCases(unittest.TestCase):
+    def setUp(self):
+        self.tmp_path = tempfile.mkdtemp()
+        change_cwd = os_helper.change_cwd(self.tmp_path)
+        change_cwd.__enter__()
+        self.addCleanup(change_cwd.__exit__, None, None, None)
+        self.addCleanup(shutil.rmtree, self.tmp_path)
+
+    def assert_python(
+        self, test_source, expected="", not_expected="", encoding="utf8"
+    ):
+        test_source = textwrap.dedent(test_source)
+        with tempfile.NamedTemporaryFile(dir=self.tmp_path, suffix=".py") as f:
+            f.write(test_source.encode(encoding))
+            f.flush()
+            result, _cmdline = run_python_until_end(f.name)
+            _rc, out_b, err_b = result
+            output = out_b.decode() + "\n" + err_b.decode()
+            if not_expected:
+                self.assertNotIn(not_expected, output)
+            if expected:
+                self.assertIn(expected, output)
+
+    def test_encoding_cookie(self):
+        self.assert_python(
+            """
+            # encoding: ascii
+            (
+            """,
+            expected="'(' was never closed",
+            not_expected="Fatal Python error: Aborted",
+        )
