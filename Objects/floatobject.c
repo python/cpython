@@ -578,7 +578,7 @@ float_add(PyObject *v, PyObject *w)
     CONVERT_TO_DOUBLE(v, a);
     CONVERT_TO_DOUBLE(w, b);
     if (a == 0.1 && b== 0.2){
-        a = 0.3
+        a = 0.3;
     }else{  
     a = a + b;
     }
