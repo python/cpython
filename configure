@@ -624,6 +624,8 @@ ac_includes_default="\
 
 ac_subst_vars='LTLIBOBJS
 MODULE_BLOCK
+MODULE__SQLITE3_FALSE
+MODULE__SQLITE3_TRUE
 MODULE__DECIMAL_FALSE
 MODULE__DECIMAL_TRUE
 MODULE__ELEMENTTREE_FALSE
@@ -669,6 +671,8 @@ DFLAGS
 DTRACE
 TCLTK_LIBS
 TCLTK_INCLUDES
+LIBSQLITE3_LIBS
+LIBSQLITE3_CFLAGS
 LIBMPDEC_INTERNAL
 LIBMPDEC_LDFLAGS
 LIBMPDEC_CFLAGS
@@ -895,7 +899,9 @@ LDFLAGS
 LIBS
 CPPFLAGS
 CPP
-PROFILE_TASK'
+PROFILE_TASK
+LIBSQLITE3_CFLAGS
+LIBSQLITE3_LIBS'
 
 
 # Initialize some variables set by options.
@@ -1669,6 +1675,10 @@ Some influential environment variables:
   CPP         C preprocessor
   PROFILE_TASK
               Python args for PGO generation task
+  LIBSQLITE3_CFLAGS
+              C compiler flags for LIBSQLITE3, overriding pkg-config
+  LIBSQLITE3_LIBS
+              linker flags for LIBSQLITE3, overriding pkg-config
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -10930,12 +10940,229 @@ if test "$have_glibc_memmove_bug" = yes; then
     as_fn_append LIBMPDEC_CFLAGS " -U_FORTIFY_SOURCE"
 fi
 
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIBSQLITE3" >&5
+$as_echo_n "checking for LIBSQLITE3... " >&6; }
+
+if test -n "$LIBSQLITE3_CFLAGS"; then
+    pkg_cv_LIBSQLITE3_CFLAGS="$LIBSQLITE3_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"sqlite3 >= 3.7.15\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "sqlite3 >= 3.7.15") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBSQLITE3_CFLAGS=`$PKG_CONFIG --cflags "sqlite3 >= 3.7.15" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$LIBSQLITE3_LIBS"; then
+    pkg_cv_LIBSQLITE3_LIBS="$LIBSQLITE3_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"sqlite3 >= 3.7.15\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "sqlite3 >= 3.7.15") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBSQLITE3_LIBS=`$PKG_CONFIG --libs "sqlite3 >= 3.7.15" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        LIBSQLITE3_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "sqlite3 >= 3.7.15" 2>&1`
+        else
+	        LIBSQLITE3_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "sqlite3 >= 3.7.15" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$LIBSQLITE3_PKG_ERRORS" >&5
+
+
+    LIBSQLITE3_LIBS="-lsqlite3"
+    LIBSQLITE3_CFLAGS=
+
+
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+    LIBSQLITE3_LIBS="-lsqlite3"
+    LIBSQLITE3_CFLAGS=
+
+
+else
+	LIBSQLITE3_CFLAGS=$pkg_cv_LIBSQLITE3_CFLAGS
+	LIBSQLITE3_LIBS=$pkg_cv_LIBSQLITE3_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+fi
+as_fn_append LIBSQLITE3_CFLAGS ' -I$(srcdir)/Modules/_sqlite'
+
+save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+CPPFLAGS="$LIBSQLITE3_CFLAGS $CFLAGS"
+LDFLAGS="$LIBSQLITE3_LIBS $LDFLAGS"
+
+ac_fn_c_check_header_mongrel "$LINENO" "sqlite3.h" "ac_cv_header_sqlite3_h" "$ac_includes_default"
+if test "x$ac_cv_header_sqlite3_h" = xyes; then :
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3_open_v2 in -lsqlite3" >&5
+$as_echo_n "checking for sqlite3_open_v2 in -lsqlite3... " >&6; }
+if ${ac_cv_lib_sqlite3_sqlite3_open_v2+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lsqlite3  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char sqlite3_open_v2 ();
+int
+main ()
+{
+return sqlite3_open_v2 ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_sqlite3_sqlite3_open_v2=yes
+else
+  ac_cv_lib_sqlite3_sqlite3_open_v2=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sqlite3_sqlite3_open_v2" >&5
+$as_echo "$ac_cv_lib_sqlite3_sqlite3_open_v2" >&6; }
+if test "x$ac_cv_lib_sqlite3_sqlite3_open_v2" = xyes; then :
+
+    have_sqlite3=yes
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+        #include <sqlite3.h>
+        #if SQLITE_VERSION_NUMBER < 3007015
+        #  error "SQLite 3.7.15 or higher required"
+        #endif
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  have_supported_sqlite3=yes
+else
+  have_supported_sqlite3=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+else
+  have_sqlite3=no
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3_load_extension in -lsqlite3" >&5
+$as_echo_n "checking for sqlite3_load_extension in -lsqlite3... " >&6; }
+if ${ac_cv_lib_sqlite3_sqlite3_load_extension+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lsqlite3  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char sqlite3_load_extension ();
+int
+main ()
+{
+return sqlite3_load_extension ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_sqlite3_sqlite3_load_extension=yes
+else
+  ac_cv_lib_sqlite3_sqlite3_load_extension=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sqlite3_sqlite3_load_extension" >&5
+$as_echo "$ac_cv_lib_sqlite3_sqlite3_load_extension" >&6; }
+if test "x$ac_cv_lib_sqlite3_sqlite3_load_extension" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBSQLITE3 1
+_ACEOF
+
+  LIBS="-lsqlite3 $LIBS"
+
+fi
+
+
+fi
+
+
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
 # Check for support for loadable sqlite extensions
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-loadable-sqlite-extensions" >&5
 $as_echo_n "checking for --enable-loadable-sqlite-extensions... " >&6; }
 # Check whether --enable-loadable-sqlite-extensions was given.
 if test "${enable_loadable_sqlite_extensions+set}" = set; then :
-  enableval=$enable_loadable_sqlite_extensions;
+  enableval=$enable_loadable_sqlite_extensions; if test "x$have_sqlite3_load_extension" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Your version of SQLite does not support loadable extensions" >&5
+$as_echo "$as_me: WARNING: Your version of SQLite does not support loadable extensions" >&2;}
+fi
 else
   enable_loadable_sqlite_extensions=no
 fi
@@ -19431,6 +19658,56 @@ fi
 $as_echo "$py_cv_module__decimal" >&6; }
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _sqlite3" >&5
+$as_echo_n "checking for stdlib extension module _sqlite3... " >&6; }
+      case $py_stdlib_not_available in #(
+  *_sqlite3*) :
+    py_cv_module__sqlite3=n/a ;; #(
+  *) :
+
+      if test "$have_sqlite3" = "yes"; then :
+  if test "$have_supported_sqlite3" = "yes"; then :
+  py_cv_module__sqlite3=yes
+else
+  py_cv_module__sqlite3=missing
+fi
+else
+  py_cv_module__sqlite3=disabled
+
+fi
+
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE__SQLITE3=$py_cv_module__sqlite3$as_nl"
+  if test "x$py_cv_module__sqlite3" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__SQLITE3_CFLAGS=$LIBSQLITE3_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SQLITE3_LDFLAGS=$LIBSQLITE3_LIBS$as_nl"
+     if true; then
+  MODULE__SQLITE3_TRUE=
+  MODULE__SQLITE3_FALSE='#'
+else
+  MODULE__SQLITE3_TRUE='#'
+  MODULE__SQLITE3_FALSE=
+fi
+
+
+else
+
+     if false; then
+  MODULE__SQLITE3_TRUE=
+  MODULE__SQLITE3_FALSE='#'
+else
+  MODULE__SQLITE3_TRUE='#'
+  MODULE__SQLITE3_FALSE=
+fi
+
+
+fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__sqlite3" >&5
+$as_echo "$py_cv_module__sqlite3" >&6; }
+
+
 # substitute multiline block, must come after last PY_STDLIB_MOD()
 
 
@@ -19581,6 +19858,14 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__DECIMAL_TRUE}" && test -z "${MODULE__DECIMAL_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__DECIMAL\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__SQLITE3_TRUE}" && test -z "${MODULE__SQLITE3_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__SQLITE3\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__SQLITE3_TRUE}" && test -z "${MODULE__SQLITE3_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__SQLITE3\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 
