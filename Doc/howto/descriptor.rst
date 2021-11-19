@@ -1344,7 +1344,7 @@ Using the non-data descriptor protocol, a pure Python version of
             if cls is None:
                 cls = type(obj)
             if hasattr(type(self.f), '__get__'):
-                return self.f.__get__(cls)
+                return self.f.__get__(cls, cls)
             return MethodType(self.f, cls)
 
 .. testcode::
