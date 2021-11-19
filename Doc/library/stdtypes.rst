@@ -4833,7 +4833,7 @@ by subscripting the :class:`list` class with the argument :class:`int`.
 .. note::
 
    It is generally only possible to subscript a class if the class implements
-   the special method :meth:`~object.__class_getitem__`
+   the special method :meth:`~object.__class_getitem__`.
 
 A ``GenericAlias`` object acts as a proxy for a :term:`generic type`,
 implementing *parameterized generics*.
