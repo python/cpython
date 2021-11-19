@@ -720,11 +720,13 @@ def regen_pcbuild(modules):
     for src in _iter_sources(modules):
         pyfile = relpath_for_windows_display(src.pyfile, ROOT_DIR)
         header = relpath_for_windows_display(src.frozenfile, ROOT_DIR)
+        deepoutfile = f"Python/deepfreeze/{src.id}.c"
         intfile = ntpath.splitext(ntpath.basename(header))[0] + '.g.h'
         projlines.append(f'    <None Include="..\\{pyfile}">')
         projlines.append(f'      <ModName>{src.frozenid}</ModName>')
         projlines.append(f'      <IntFile>$(IntDir){intfile}</IntFile>')
         projlines.append(f'      <OutFile>$(PySourcePath){header}</OutFile>')
+        projlines.append(f'      <DeepOutFile>$(PySourcePath){deepoutfile}</DeepOutFile>')
         projlines.append(f'    </None>')
 
         filterlines.append(f'    <None Include="..\\{pyfile}">')

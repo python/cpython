@@ -28,9 +28,6 @@
     <None Include="..\Lib\abc.py">
       <Filter>Python Files</Filter>
     </None>
-    <None Include="..\Lib\codecs.py">
-      <Filter>Python Files</Filter>
-    </None>
     <None Include="..\Lib\io.py">
       <Filter>Python Files</Filter>
     </None>
