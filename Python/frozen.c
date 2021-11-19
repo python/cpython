@@ -75,7 +75,7 @@ extern PyObject *_Py_get__sitebuiltins_toplevel(void);
 extern PyObject *_Py_get_genericpath_toplevel(void);
 extern PyObject *_Py_get_ntpath_toplevel(void);
 extern PyObject *_Py_get_posixpath_toplevel(void);
-extern PyObject *_Py_get_ntpath_toplevel(void);
+extern PyObject *_Py_get_posixpath_toplevel(void);
 extern PyObject *_Py_get_os_toplevel(void);
 extern PyObject *_Py_get_site_toplevel(void);
 extern PyObject *_Py_get_stat_toplevel(void);
