@@ -3196,7 +3196,9 @@ AC_CHECK_HEADER([sqlite3.h], [
       ], [])
     ], [have_supported_sqlite3=yes], [have_supported_sqlite3=no])
   ], [have_sqlite3=no])
-  AC_CHECK_LIB([sqlite3], [sqlite3_load_extension])
+  AC_CHECK_LIB([sqlite3], [sqlite3_load_extension],
+               [have_sqlite3_load_extension=yes],
+               [have_sqlite3_load_extension=no])
 ])
 
 AS_VAR_COPY([CFLAGS], [save_CFLAGS])
