@@ -3864,5 +3864,16 @@ class TestKeywordArgs(unittest.TestCase):
                 c: int = 1
                 d: int
 
+    def test_make_dataclass(self):
+        A = make_dataclass("A", ['a'], kw_only=True)
+        self.assertTrue(fields(A)[0].kw_only)
+
+        B = make_dataclass("B",
+                           ['a', ('b', int, field(kw_only=False))],
+                           kw_only=True)
+        self.assertTrue(fields(B)[0].kw_only)
+        self.assertFalse(fields(B)[1].kw_only)
+
+
 if __name__ == '__main__':
     unittest.main()
