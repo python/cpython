@@ -1566,6 +1566,9 @@ def func2():
         for paren in ")]}":
             self._check_error(paren + "1 + 2", f"unmatched '\\{paren}'")
 
+    def test_invisible_characters(self):
+        self._check_error('print\x17("Hello")', "invalid non-printable character")
+
     def test_match_call_does_not_raise_syntax_error(self):
         code = """
 def match(x):
