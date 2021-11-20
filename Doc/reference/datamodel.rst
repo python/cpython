@@ -881,15 +881,15 @@ Class instances
    section :ref:`descriptors` for another way in which attributes of a class
    retrieved via its instances may differ from the objects actually stored in
    the class's :attr:`~object.__dict__`.  If no class attribute is found, and the
-   object's class has a :meth:`~object.__getattr__` method, that is called to
-   satisfy the lookup.
+   object's class has a :meth:`~object.__getattr__` method, that is called to satisfy
+   the lookup.
 
    .. index:: triple: class instance; attribute; assignment
 
    Attribute assignments and deletions update the instance's dictionary, never a
    class's dictionary.  If the class has a :meth:`~object.__setattr__` or
-   :meth:`~object.__delattr__` method, this is called instead of updating the
-   instance dictionary directly.
+   :meth:`~object.__delattr__` method, this is called instead of updating the instance
+   dictionary directly.
 
    .. index::
       object: numeric
@@ -1233,7 +1233,7 @@ with special names. This is Python's approach to :dfn:`operator overloading`,
 allowing classes to define their own behavior with respect to language
 operators.  For instance, if a class defines a method named
 :meth:`~object.__getitem__`,
-and ``x`` is an instance of this class, then``x[i]`` is roughly equivalent
+and ``x`` is an instance of this class, then ``x[i]`` is roughly equivalent
 to ``type(x).__getitem__(x, i)``.  Except where mentioned, attempts to execute an
 operation raise an exception when no appropriate method is defined (typically
 :exc:`AttributeError` or :exc:`TypeError`).
