@@ -32,5 +32,14 @@ _symtable symtablemodule.c
 
 # for systems without $HOME env, used by site._getuserbase()
 pwd pwdmodule.c
-# for subprocess in setup.py
+
+# ---
+# Modules required by setup.py. These modules can be build as shared
+# extensions or as static modules.
+
+*shared*
+
+# setup.py indirectly uses subprocess and selector
+math mathmodule.c
 _posixsubprocess _posixsubprocess.c
+select selectmodule.c
