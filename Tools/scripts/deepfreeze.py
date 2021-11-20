@@ -280,14 +280,7 @@ class Printer:
                             self.write(item + ",")
         return f"& {name}._object.ob_base.ob_base"
 
-    def generate_int(self, name: str, i: int) -> str:
-        maxint = sys.maxsize
-        if maxint == 2**31 - 1:
-            digit = 2**15
-        elif maxint == 2**63 - 1:
-            digit = 2**30
-        else:
-            assert False, f"What int size is this system?!? {maxint=}"
+    def _generate_int_for_bits(self, name: str, i: int, digit: int) -> None:
         sign = -1 if i < 0 else 0 if i == 0 else +1
         i = abs(i)
         digits: list[int] = []
@@ -304,6 +297,20 @@ class Printer:
             if digits:
                 ds = ", ".join(map(str, digits))
                 self.write(f".ob_digit = {{ {ds} }},")
+
+    def generate_int(self, name: str, i: int) -> str:
+        if abs(i) < 2**15:
+            self._generate_int_for_bits(name, i, 2**15)
+        else:
+            connective = "if"
+            for bits_in_digit in 15, 30:
+                self.write(f"#{connective} PYLONG_BITS_IN_DIGIT == {bits_in_digit}")
+                self._generate_int_for_bits(name, i, 2**bits_in_digit)
+                connective = "elif"
+            self.write("#else")
+            self.write('#error "PYLONG_BITS_IN_DIGIT should be 15 or 30"')
+            self.write("#endif")
+            # If neither clause applies, it won't compile
         return f"& {name}.ob_base.ob_base"
 
     def generate_float(self, name: str, x: float) -> str:
