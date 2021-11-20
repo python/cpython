@@ -1322,6 +1322,7 @@ winreg_FlushKey_impl(PyObject *module, HKEY key)
 
 /*[clinic input]
 winreg.GetValue
+
     key: HKEY
         An already open key, or any one of the predefined HKEY_* constants.
     sub_key: Py_UNICODE(accept={str, NoneType})
@@ -1329,7 +1330,9 @@ winreg.GetValue
     name: Py_UNICODE(accept={str, NoneType})
         A string indicating the value to query.
     /
+
 Retrieves the type and data for the specified registry value.
+
 Behaves mostly like QueryValueEx(), but you needn't OpenKey() and CloseKey() if the key is any one of the predefined HKEY_* constants.
 The return value is a tuple of the value and the type_id.
 [clinic start generated code]*/
