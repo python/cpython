@@ -141,11 +141,11 @@ class _WorkItem(object):
         self.kwargs = kwargs
 
 class _ResultItem(object):
-    def __init__(self, work_id, exception=None, result=None, pid=None):
+    def __init__(self, work_id, exception=None, result=None, exit_pid=None):
         self.work_id = work_id
         self.exception = exception
         self.result = result
-        self.pid = pid
+        self.exit_pid = exit_pid
 
 class _CallItem(object):
     def __init__(self, work_id, fn, args, kwargs):
@@ -202,14 +202,16 @@ def _process_chunk(fn, chunk):
     return [fn(*args) for args in chunk]
 
 
-def _sendback_result(result_queue, work_id, result=None, exception=None, pid=None):
+def _sendback_result(result_queue, work_id, result=None, exception=None,
+                     exit_pid=None):
     """Safely send back the given result or exception"""
     try:
         result_queue.put(_ResultItem(work_id, result=result,
-                                     exception=exception, pid=pid))
+                                     exception=exception, exit_pid=exit_pid))
     except BaseException as e:
         exc = _ExceptionWithTraceback(e, e.__traceback__)
-        result_queue.put(_ResultItem(work_id, exception=exc, pid=pid))
+        result_queue.put(_ResultItem(work_id, exception=exc,
+                                     exit_pid=exit_pid))
 
 
 def _process_worker(call_queue, result_queue, initializer, initargs, max_tasks=None):
@@ -251,9 +253,11 @@ def _process_worker(call_queue, result_queue, initializer, initargs, max_tasks=N
             r = call_item.fn(*call_item.args, **call_item.kwargs)
         except BaseException as e:
             exc = _ExceptionWithTraceback(e, e.__traceback__)
-            _sendback_result(result_queue, call_item.work_id, exception=exc, pid=exit_pid)
+            _sendback_result(result_queue, call_item.work_id, exception=exc,
+                             exit_pid=exit_pid)
         else:
-            _sendback_result(result_queue, call_item.work_id, result=r, pid=exit_pid)
+            _sendback_result(result_queue, call_item.work_id, result=r,
+                             exit_pid=exit_pid)
             del r
 
         # Liberate the resource as soon as possible, to avoid holding onto
@@ -337,9 +341,9 @@ class _ExecutorManagerThread(threading.Thread):
             if result_item is not None:
                 self.process_result_item(result_item)
 
-                process_exited = result_item.pid is not None
+                process_exited = result_item.exit_pid is not None
                 if process_exited:
-                    p = self.processes.pop(result_item.pid)
+                    p = self.processes.pop(result_item.exit_pid)
                     p.join()
 
                 # Delete reference to result_item to avoid keeping references
@@ -348,7 +352,8 @@ class _ExecutorManagerThread(threading.Thread):
 
                 if executor := self.executor_reference():
                     if process_exited:
-                        executor._adjust_process_count()
+                        with self.shutdown_lock:
+                            executor._adjust_process_count()
                     else:
                         executor._idle_worker_semaphore.release()
                     del executor

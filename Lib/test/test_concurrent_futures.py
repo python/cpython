@@ -1041,15 +1041,24 @@ class ProcessPoolExecutorTest(ExecutorTest):
         executor = self.executor_type(1, max_tasks_per_child=3)
         f1 = executor.submit(os.getpid)
         original_pid = f1.result()
-
+        # The worker pid remains the same as the worker could be reused
         f2 = executor.submit(os.getpid)
         self.assertEqual(f2.result(), original_pid)
+        self.assertEqual(len(executor._processes), 1)
         f3 = executor.submit(os.getpid)
         self.assertEqual(f3.result(), original_pid)
+        # The worker reached end-of-life and is eventually reaped
+        t1 = time.monotonic()
+        while len(executor._processes) > 0:
+            self.assertLess(time.monotonic() - t1, 10.0)
+            time.sleep(0.1)
 
+        # A new worker is spawned, with a statistically different pid
         f4 = executor.submit(os.getpid)
         new_pid = f4.result()
         self.assertNotEqual(original_pid, new_pid)
+        self.assertEqual(len(executor._processes), 1)
+
         executor.shutdown()
 
     def test_max_tasks_early_shutdown(self):
