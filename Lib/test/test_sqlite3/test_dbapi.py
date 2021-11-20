@@ -603,8 +603,7 @@ class UninitialisedConnectionTests(unittest.TestCase):
                                        func)
 
 
-@unittest.skipIf(sqlite.sqlite_version_info < (3, 36, 0),
-                 "Requires SQLite 3.36.0 or higher")
+@unittest.skipUnless(hasattr(sqlite3.Connection, "serialize"))
 class SerializeTests(unittest.TestCase):
     def test_serialize_deserialize(self):
         with memory_database() as cx:
