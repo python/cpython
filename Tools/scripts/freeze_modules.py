@@ -721,15 +721,15 @@ def regen_pcbuild(modules):
     for src in _iter_sources(modules):
         pyfile = relpath_for_windows_display(src.pyfile, ROOT_DIR)
         header = relpath_for_windows_display(src.frozenfile, ROOT_DIR)
-        deepbase = src.id
-        if deepbase == "codecs":
-            deepbase = "codecs_"  # Annoying exception (duplicate file)
+        deepbase = "df." + src.id
         deepoutfile = f"Python\\deepfreeze\\{deepbase}.c"
         intfile = ntpath.splitext(ntpath.basename(header))[0] + '.g.h'
+        deepintfile = ntpath.splitext(ntpath.basename(header))[0] + '.g.c'
         projlines.append(f'    <None Include="..\\{pyfile}">')
         projlines.append(f'      <ModName>{src.frozenid}</ModName>')
         projlines.append(f'      <IntFile>$(IntDir){intfile}</IntFile>')
         projlines.append(f'      <OutFile>$(PySourcePath){header}</OutFile>')
+        projlines.append(f'      <DeepIntFile>$(IntDir){deepintfile}</DeepIntFile>')
         projlines.append(f'      <DeepOutFile>$(PySourcePath){deepoutfile}</DeepOutFile>')
         projlines.append(f'    </None>')
 
