@@ -648,13 +648,13 @@ Callable types
 
       A function or method which uses the :keyword:`yield` statement (see section
       :ref:`yield`) is called a :dfn:`generator function`.  Such a function, when
-      called, always returns an iterator object which can be used to execute the
-      body of the function:  calling the iterator's :meth:`iterator.__next__`
-      method will cause the function to execute until it provides a value
-      using the :keyword:`!yield` statement.  When the function executes a
-      :keyword:`return` statement or falls off the end, a :exc:`StopIteration`
-      exception is raised and the iterator will have reached the end of the set of
-      values to be returned.
+      called, always returns an :term:`iterator` object which can be used to
+      execute the body of the function:  calling the iterator's
+      :meth:`iterator.__next__` method will cause the function to execute until
+      it provides a value using the :keyword:`!yield` statement.  When the
+      function executes a :keyword:`return` statement or falls off the end, a
+      :exc:`StopIteration` exception is raised and the iterator will have
+      reached the end of the set of values to be returned.
 
    Coroutine functions
       .. index::
@@ -674,7 +674,7 @@ Callable types
       A function or method which is defined using :keyword:`async def` and
       which uses the :keyword:`yield` statement is called a
       :dfn:`asynchronous generator function`.  Such a function, when called,
-      returns an asynchronous iterator object which can be used in an
+      returns an :term:`asynchronous iterator` object which can be used in an
       :keyword:`async for` statement to execute the body of the function.
 
       Calling the asynchronous iterator's :meth:`aiterator.__anext__` method
@@ -2499,12 +2499,10 @@ through the object's keys; for sequences, it should iterate through the values.
 
 .. method:: object.__iter__(self)
 
-   This method is called when an iterator is required for a container. This method
-   should return a new iterator object that can iterate over all the objects in the
-   container.  For mappings, it should iterate over the keys of the container.
-
-   Iterator objects also need to implement this method; they are required to return
-   themselves.  For more information on iterator objects, see :ref:`typeiter`.
+   This method is called when an :term:`iterator` is required for a container.
+   This method should return a new iterator object that can iterate over all the
+   objects in the container.  For mappings, it should iterate over the keys of
+   the container.
 
 
 .. method:: object.__reversed__(self)

@@ -659,6 +659,11 @@ Glossary
 
       More information can be found in :ref:`typeiter`.
 
+      .. impl-detail::
+
+         CPython does not consistently apply the requirement that an iterator
+         define :meth:`__iter__`.
+
    key function
       A key function or collation function is a callable that returns a value
       used for sorting or ordering.  For example, :func:`locale.strxfrm` is
