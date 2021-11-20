@@ -2392,8 +2392,7 @@ usually are :term:`sequences<sequence>` (such as :class:`lists<list>` or
 but can represent other containers as well. The first set of methods is used
 either to emulate a sequence or to emulate a mapping; the difference is that for
 a sequence, the allowable keys should be the integers *k* for which ``0 <= k <
-N`` where *N* is the length of the
-sequence, or :class:`slice` objects, which define a
+N`` where *N* is the length of the sequence, or :class:`slice` objects, which define a
 range of items.  It is also recommended that mappings provide the methods
 :meth:`~dict.keys`, :meth:`~dict.values`, :meth:`~dict.items`,
 :meth:`~dict.get`, :meth:`~dict.clear`, :meth:`~dict.setdefault`,
