@@ -1,3 +1,2 @@
-Update the documentation to correctly reflect that iterators only need to
-define ``__next__`` and not ``__iter__``, ``__anext__`` and not
-``__aiter__`` for asynchronous iterators.
+Update the documentation to note that CPython does not consistently
+require iterators to define ``__iter__``.
