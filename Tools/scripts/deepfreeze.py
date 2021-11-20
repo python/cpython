@@ -3,10 +3,8 @@ import ast
 import builtins
 import collections
 import contextlib
-import marshal
 import os
 import re
-import sys
 import time
 import types
 import typing
