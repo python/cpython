@@ -2412,7 +2412,7 @@ multiplication (meaning repetition) by defining the methods
 :meth:`~object.__add__`, :meth:`~object.__radd__`, :meth:`~object.__iadd__`,
 :meth:`~object.__mul__`, :meth:`~object.__rmul__` and :meth:`~object.__imul__`
 described below; they should not define other numerical
-operators. It is recommended that both mappings and sequences implement the
+operators.  It is recommended that both mappings and sequences implement the
 :meth:`~object.__contains__` method to allow efficient use of the ``in``
 operator; for
 mappings, ``in`` should search the mapping's keys; for sequences, it should
