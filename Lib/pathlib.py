@@ -422,7 +422,8 @@ class _PreciseSelector(_Selector):
     def _select_from(self, parent_path, is_dir, exists, scandir):
         try:
             path = parent_path._make_child_relpath(self.name)
-            if (is_dir if self.dironly else exists)(path):
+            if ((self.dironly and is_dir(path)) or \
+                    (not self.dironly and exists(path, follow_symlinks=False))):
                 for p in self.successor._select_from(path, is_dir, exists, scandir):
                     yield p
         except PermissionError:
@@ -1280,12 +1281,12 @@ class Path(PurePath):
 
     # Convenience functions for querying the stat results
 
-    def exists(self):
+    def exists(self, follow_symlinks=True):
         """
         Whether this path exists.
         """
         try:
-            self.stat()
+            self.stat(follow_symlinks=follow_symlinks)
         except OSError as e:
             if not _ignore_error(e):
                 raise

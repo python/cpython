@@ -1529,6 +1529,7 @@ class _BasePathTest(object):
         self.assertIs(False, P('/xyzzy').exists())
         self.assertIs(False, P(BASE + '\udfff').exists())
         self.assertIs(False, P(BASE + '\x00').exists())
+        self.assertIs(False, (p / 'brokenLink').exists())
 
     def test_open_common(self):
         p = self.cls(BASE)
@@ -1631,6 +1632,8 @@ class _BasePathTest(object):
             _check(p.glob("*/fileB"), ['dirB/fileB'])
         else:
             _check(p.glob("*/fileB"), ['dirB/fileB', 'linkB/fileB'])
+        if os_helper.can_symlink():
+            _check(p.glob("brokenLink"), ['brokenLink'])
 
     def test_rglob_common(self):
         def _check(glob, expected):
