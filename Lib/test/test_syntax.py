@@ -909,6 +909,44 @@ Missing parens after function definition
    Traceback (most recent call last):
    SyntaxError: expected '('
 
+Parenthesized arguments in function definitions
+
+   >>> def f(x, (y, z), w):
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: Function parameters cannot be parenthesized
+
+   >>> def f((x, y, z, w)):
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: Function parameters cannot be parenthesized
+
+   >>> def f(x, (y, z, w)):
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: Function parameters cannot be parenthesized
+
+   >>> def f((x, y, z), w):
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: Function parameters cannot be parenthesized
+
+   >>> lambda x, (y, z), w: None
+   Traceback (most recent call last):
+   SyntaxError: Lambda expression parameters cannot be parenthesized
+
+   >>> lambda (x, y, z, w): None
+   Traceback (most recent call last):
+   SyntaxError: Lambda expression parameters cannot be parenthesized
+
+   >>> lambda x, (y, z, w): None
+   Traceback (most recent call last):
+   SyntaxError: Lambda expression parameters cannot be parenthesized
+
+   >>> lambda (x, y, z), w: None
+   Traceback (most recent call last):
+   SyntaxError: Lambda expression parameters cannot be parenthesized
+
 Custom error messages for try blocks that are not followed by except/finally
 
    >>> try:

@@ -1,0 +1,2 @@
+Improve the syntax error message for parenthesized arguments. Patch by Pablo
+Galindo.
