@@ -762,6 +762,8 @@ call fails (for example because the path doesn't exist).
    This method normally follows symlinks; to check if a symlink exists, add
    the argument ``follow_symlinks=False``.
 
+   ::
+
       >>> Path('.').exists()
       True
       >>> Path('setup.py').exists()

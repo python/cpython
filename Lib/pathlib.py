@@ -1284,6 +1284,10 @@ class Path(PurePath):
     def exists(self, follow_symlinks=True):
         """
         Whether this path exists.
+
+        If path is a symlink: with `follow_symlinks=True`, return True if path
+        pointed to by the symlink exists; with follow_symlinks=False, return
+        True if the symlink itself exists.
         """
         try:
             self.stat(follow_symlinks=follow_symlinks)
