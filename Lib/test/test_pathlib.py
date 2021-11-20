@@ -1530,6 +1530,7 @@ class _BasePathTest(object):
         self.assertIs(False, P(BASE + '\udfff').exists())
         self.assertIs(False, P(BASE + '\x00').exists())
         self.assertIs(False, (p / 'brokenLink').exists())
+        self.assertIs(True, (p / 'brokenLink').exists(follow_symlinks=False))
 
     def test_open_common(self):
         p = self.cls(BASE)
