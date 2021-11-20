@@ -11156,12 +11156,9 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sqlite3_sqlite3_load_extension" >&5
 $as_echo "$ac_cv_lib_sqlite3_sqlite3_load_extension" >&6; }
 if test "x$ac_cv_lib_sqlite3_sqlite3_load_extension" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBSQLITE3 1
-_ACEOF
-
-  LIBS="-lsqlite3 $LIBS"
-
+  have_sqlite3_load_extension=yes
+else
+  have_sqlite3_load_extension=no
 fi
 
 
