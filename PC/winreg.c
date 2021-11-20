@@ -1334,11 +1334,14 @@ winreg.GetValue
 Retrieves the type and data for the specified registry value.
 
 Behaves mostly like QueryValueEx(), but you needn't OpenKey() and CloseKey() if the key is any one of the predefined HKEY_* constants.
+
 The return value is a tuple of the value and the type_id.
 [clinic start generated code]*/
 
 static PyObject *
-winreg_GetValue_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key, const Py_UNICODE *name)
+winreg_GetValue_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
+                     const Py_UNICODE *name)
+/*[clinic end generated code: output=b8bb6c5c588205e1 input=c2e4b5b8f973c595]*/
 {
     long rc;
     BYTE *retBuf, *tmp;

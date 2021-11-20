@@ -681,6 +681,93 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(winreg_GetValue__doc__,
+"GetValue($module, key, sub_key, name, /)\n"
+"--\n"
+"\n"
+"Retrieves the type and data for the specified registry value.\n"
+"\n"
+"  key\n"
+"    An already open key, or any one of the predefined HKEY_* constants.\n"
+"  sub_key\n"
+"    A string that names the subkey with which the value is associated.\n"
+"  name\n"
+"    A string indicating the value to query.\n"
+"\n"
+"Behaves mostly like QueryValueEx(), but you needn\'t OpenKey() and CloseKey() if the key is any one of the predefined HKEY_* constants.\n"
+"\n"
+"The return value is a tuple of the value and the type_id.");
+
+#define WINREG_GETVALUE_METHODDEF    \
+    {"GetValue", (PyCFunction)(void(*)(void))winreg_GetValue, METH_FASTCALL, winreg_GetValue__doc__},
+
+static PyObject *
+winreg_GetValue_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
+                     const Py_UNICODE *name);
+
+static PyObject *
+winreg_GetValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    HKEY key;
+    const Py_UNICODE *sub_key;
+    const Py_UNICODE *name;
+
+    if (!_PyArg_CheckPositional("GetValue", nargs, 3, 3)) {
+        goto exit;
+    }
+    if (!clinic_HKEY_converter(args[0], &key)) {
+        goto exit;
+    }
+    if (args[1] == Py_None) {
+        sub_key = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        #if USE_UNICODE_WCHAR_CACHE
+        sub_key = _PyUnicode_AsUnicode(args[1]);
+        #else /* USE_UNICODE_WCHAR_CACHE */
+        sub_key = PyUnicode_AsWideCharString(args[1], NULL);
+        #endif /* USE_UNICODE_WCHAR_CACHE */
+        if (sub_key == NULL) {
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("GetValue", "argument 2", "str or None", args[1]);
+        goto exit;
+    }
+    if (args[2] == Py_None) {
+        name = NULL;
+    }
+    else if (PyUnicode_Check(args[2])) {
+        #if USE_UNICODE_WCHAR_CACHE
+        name = _PyUnicode_AsUnicode(args[2]);
+        #else /* USE_UNICODE_WCHAR_CACHE */
+        name = PyUnicode_AsWideCharString(args[2], NULL);
+        #endif /* USE_UNICODE_WCHAR_CACHE */
+        if (name == NULL) {
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("GetValue", "argument 3", "str or None", args[2]);
+        goto exit;
+    }
+    return_value = winreg_GetValue_impl(module, key, sub_key, name);
+
+exit:
+    /* Cleanup for sub_key */
+    #if !USE_UNICODE_WCHAR_CACHE
+    PyMem_Free((void *)sub_key);
+    #endif /* USE_UNICODE_WCHAR_CACHE */
+    /* Cleanup for name */
+    #if !USE_UNICODE_WCHAR_CACHE
+    PyMem_Free((void *)name);
+    #endif /* USE_UNICODE_WCHAR_CACHE */
+
+    return return_value;
+}
+
 PyDoc_STRVAR(winreg_LoadKey__doc__,
 "LoadKey($module, key, sub_key, file_name, /)\n"
 "--\n"
@@ -1346,4 +1433,4 @@ winreg_QueryReflectionKey(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=497a2e804821d5c9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f3652ae00e6ade3c input=a9049054013a1b77]*/
