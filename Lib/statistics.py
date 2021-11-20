@@ -609,9 +609,11 @@ def multimode(data):
     >>> multimode('')
     []
     """
-    counts = Counter(iter(data)).most_common()
-    maxcount, mode_items = next(groupby(counts, key=itemgetter(1)), (0, []))
-    return list(map(itemgetter(0), mode_items))
+    counts = Counter(iter(data))
+    if not counts:
+        return []
+    maxcount = max(counts.values())
+    return [value for value, count in counts.items() if count == maxcount]
 
 
 # Notes on methods for computing quantiles
