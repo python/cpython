@@ -1838,7 +1838,8 @@ descriptor; if it defines neither, it is a non-data descriptor.  Normally, data
 descriptors define both :meth:`__get__` and :meth:`__set__`, while non-data
 descriptors have just the :meth:`__get__` method.  Data descriptors with
 :meth:`__get__` and :meth:`__set__` (and/or :meth:`__delete__`) defined always override a redefinition in an
-instance dictionary.  In contrast, non-data descriptors can be overridden by instances.
+instance dictionary.  In contrast, non-data descriptors can be overridden by
+instances.
 
 Python methods (including those decorated with
 :func:`@staticmethod<staticmethod>` and :func:`@classmethod<classmethod>`) are
