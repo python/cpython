@@ -1047,13 +1047,9 @@ class ProcessPoolExecutorTest(ExecutorTest):
         self.assertEqual(len(executor._processes), 1)
         f3 = executor.submit(os.getpid)
         self.assertEqual(f3.result(), original_pid)
-        # The worker reached end-of-life and is eventually reaped
-        t1 = time.monotonic()
-        while len(executor._processes) > 0:
-            self.assertLess(time.monotonic() - t1, 10.0)
-            time.sleep(0.1)
 
-        # A new worker is spawned, with a statistically different pid
+        # A new worker is spawned, with a statistically different pid,
+        # while the previous was reaped.
         f4 = executor.submit(os.getpid)
         new_pid = f4.result()
         self.assertNotEqual(original_pid, new_pid)
