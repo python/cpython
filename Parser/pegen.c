@@ -382,8 +382,12 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
     Py_ssize_t col_offset;
     Py_ssize_t end_col_offset = -1;
     if (t->col_offset == -1) {
-        col_offset = Py_SAFE_DOWNCAST(p->tok->cur - p->tok->buf,
-                                      intptr_t, int);
+        if (p->tok->cur == p->tok->buf) {
+            col_offset = 0;
+        } else {
+            const char* start = p->tok->buf  ? p->tok->line_start : p->tok->buf;
+            col_offset = Py_SAFE_DOWNCAST(p->tok->cur - start, intptr_t, int);
+        }
     } else {
         col_offset = t->col_offset + 1;
     }
@@ -410,6 +414,7 @@ get_error_line(Parser *p, Py_ssize_t lineno)
     assert(p->tok->fp == NULL || p->tok->fp == stdin);
 
     char *cur_line = p->tok->fp_interactive ? p->tok->interactive_src_start : p->tok->str;
+    assert(cur_line != NULL);
 
     for (int i = 0; i < lineno - 1; i++) {
         cur_line = strchr(cur_line, '\n') + 1;
