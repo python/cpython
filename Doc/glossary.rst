@@ -129,9 +129,8 @@ Glossary
       :meth:`__aiter__` method.  Introduced by :pep:`492`.
 
    asynchronous iterator
-      An object that implements the :meth:`__anext__` method (and
-      implementing :meth:`__aiter__` is strongly encouraged).
-      ``__anext__`` must return an :term:`awaitable` object.
+      An object that implements the :meth:`__aiter__` and :meth:`__anext__`
+      methods.  ``__anext__`` must return an :term:`awaitable` object.
       :keyword:`async for` resolves the awaitables returned by an asynchronous
       iterator's :meth:`__anext__` method until it raises a
       :exc:`StopAsyncIteration` exception.  Introduced by :pep:`492`.
@@ -511,12 +510,13 @@ Glossary
       :func:`functools.singledispatch` decorator, and :pep:`443`.
 
    generic type
-      A :term:`type` that can be parameterized; typically a container like
-      :class:`list`. Used for :term:`type hints <type hint>` and
+      A :term:`type` that can be parameterized; typically a
+      :ref:`container class<sequence-types>` such as :class:`list` or
+      :class:`dict`. Used for :term:`type hints <type hint>` and
       :term:`annotations <annotation>`.
 
-      See :pep:`483` for more details, and :mod:`typing` or
-      :ref:`generic alias type <types-genericalias>` for its uses.
+      For more details, see :ref:`generic alias types<types-genericalias>`,
+      :pep:`483`, :pep:`484`, :pep:`585`, and the :mod:`typing` module.
 
    GIL
       See :term:`global interpreter lock`.
@@ -648,10 +648,10 @@ Glossary
       are available a :exc:`StopIteration` exception is raised instead.  At this
       point, the iterator object is exhausted and any further calls to its
       :meth:`__next__` method just raise :exc:`StopIteration` again.  Iterators
-      are strongly encouraged to have an :meth:`__iter__` method that returns
-      the iterator object itself so an iterator can be used in most places where
-      other iterables are accepted.  One notable exception is code which
-      attempts multiple iteration passes.  A container object (such as a
+      are required to have an :meth:`__iter__` method that returns the iterator
+      object itself so every iterator is also iterable and may be used in most
+      places where other iterables are accepted.  One notable exception is code
+      which attempts multiple iteration passes.  A container object (such as a
       :class:`list`) produces a fresh new iterator each time you pass it to the
       :func:`iter` function or use it in a :keyword:`for` loop.  Attempting this
       with an iterator will just return the same exhausted iterator object used

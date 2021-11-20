@@ -233,9 +233,9 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
 .. class:: Iterator
 
-   ABC for classes that provide the :meth:`~iterator.__next__` method.  The ABC
-   also provides an implementation of :meth:`~iterator.__iter__` for
-   convenience. See also the definition of :term:`iterator`.
+   ABC for classes that provide the :meth:`~iterator.__iter__` and
+   :meth:`~iterator.__next__` methods.  See also the definition of
+   :term:`iterator`.
 
 .. class:: Reversible
 
@@ -334,9 +334,8 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
 .. class:: AsyncIterator
 
-   ABC for classes that provide the ``__anext__`` method.  An implementation
-   of ``__aiter__`` is provided for convenience. See also the definition of
-   :term:`asynchronous iterator`.
+   ABC for classes that provide ``__aiter__`` and ``__anext__``
+   methods.  See also the definition of :term:`asynchronous iterator`.
 
    .. versionadded:: 3.5
 
