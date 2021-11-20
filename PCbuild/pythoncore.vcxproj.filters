@@ -1205,6 +1205,12 @@
     <ClCompile Include="..\Parser\pegen.c">
       <Filter>Parser</Filter>
     </ClCompile>
+    <ClCompile Include="..\Parser\pegen_errors.c">
+      <Filter>Parser</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Parser\action_helpers.c">
+      <Filter>Parser</Filter>
+    </ClCompile>
     <ClCompile Include="..\Parser\peg_api.c">
       <Filter>Parser</Filter>
     </ClCompile>
