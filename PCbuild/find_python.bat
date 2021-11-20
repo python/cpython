@@ -31,7 +31,7 @@
 @if "%_Py_EXTERNALS_DIR%"=="" (set _Py_EXTERNALS_DIR=%~dp0\..\externals)
 
 @rem If we have Python in externals, use that one
-@if exist "%_Py_EXTERNALS_DIR%\pythonx86\tools\python.exe" (set PYTHON="%_Py_EXTERNALS_DIR%\pythonx86\tools\python.exe") & (set _Py_Python_Source=found in externals directory) & goto :found
+@if exist "%_Py_EXTERNALS_DIR%\pythonx86\tools\python.exe" ("%_Py_EXTERNALS_DIR%\pythonx86\tools\python.exe" -Ec "import sys; assert sys.version_info[:2] >= (3, 10)" >nul 2>nul) && (set PYTHON="%_Py_EXTERNALS_DIR%\pythonx86\tools\python.exe") && (set _Py_Python_Source=found in externals directory) && goto :found || rmdir /Q /S "%_Py_EXTERNALS_DIR%\pythonx86"
 
 @rem If HOST_PYTHON is recent enough, use that
 @if NOT "%HOST_PYTHON%"=="" @%HOST_PYTHON% -Ec "import sys; assert sys.version_info[:2] >= (3, 10)" >nul 2>nul && (set PYTHON="%HOST_PYTHON%") && (set _Py_Python_Source=found as HOST_PYTHON) && goto :found
