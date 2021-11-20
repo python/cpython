@@ -1888,11 +1888,11 @@ Notes on using *__slots__*
 * Without a *__weakref__* variable for each instance, classes defining
   *__slots__* do not support :mod:`weak references<weakref>` to its instances.
   If weak reference
-  support is needed, then add ``'__weakref__'`` to the sequence of strings in
-  the *__slots__* declaration.
+  support is needed, then add ``'__weakref__'`` to the sequence of strings in the
+  *__slots__* declaration.
 
-* *__slots__* are implemented at the class level by creating
-  :ref:`descriptors<descriptors>` for each variable name.  As a result, class attributes
+* *__slots__* are implemented at the class level by creating :ref:`descriptors<descriptors>`
+  for each variable name.  As a result, class attributes
   cannot be used to set default values for instance variables defined by
   *__slots__*; otherwise, the class attribute would overwrite the descriptor
   assignment.
@@ -2388,33 +2388,35 @@ Emulating container types
 The following methods can be defined to implement container objects.  Containers
 usually are :term:`sequences<sequence>` (such as :class:`lists<list>` or
 :class:`tuples<tuple>`) or :term:`mappings<mapping>` (like
-:class:`dictionaries<dict>`), but can represent other containers as well. The
-first set of methods is used either to emulate a sequence or to emulate a
-mapping; the difference is that for a sequence, the allowable keys should be
-the integers *k* for which ``0 <= k < N`` where *N* is the length of the
-sequence, or :class:`slice` objects, which define a range of items. It is also
-recommended that mappings provide the methods :meth:`~dict.keys`,
-:meth:`~dict.values`, :meth:`~dict.items`, :meth:`~dict.get`,
-:meth:`~dict.clear`, :meth:`~dict.setdefault`, :meth:`~dict.pop`,
-:meth:`~dict.popitem`, :meth:`~dict.copy`, and :meth:`~dict.update` behaving
-similar to those for Python's standard :class:`dictionary<dict>` objects. The
-:mod:`collections.abc` module provides a
+:class:`dictionaries<dict>`),
+but can represent other containers as well. The first set of methods is used
+either to emulate a sequence or to emulate a mapping; the difference is that for
+a sequence, the allowable keys should be the integers *k* for which ``0 <= k <
+N`` where *N* is the length of the
+sequence, or :class:`slice` objects, which define a
+range of items. It is also recommended that mappings provide the methods
+:meth:`~dict.keys`, :meth:`~dict.values`, :meth:`~dict.items`,
+:meth:`~dict.get`, :meth:`~dict.clear`, :meth:`~dict.setdefault`,
+:meth:`~dict.pop`, :meth:`~dict.popitem`, :meth:`~dict.copy`, and
+:meth:`~dict.update` behaving similar to those for Python's standard
+:class:`dictionary<dict>` objects. The :mod:`collections.abc` module provides a
 :class:`~collections.abc.MutableMapping` :term:`abstract base class` to help
 create those methods from a base set of :meth:`~object.__getitem__`,
 :meth:`~object.__setitem__`, :meth:`~object.__delitem__`, and :meth:`keys`.
 Mutable sequences should provide methods :meth:`append`, :meth:`count`,
 :meth:`index`, :meth:`extend`, :meth:`insert`, :meth:`pop`, :meth:`remove`,
 :meth:`reverse` and :meth:`~list.sort`, like Python standard :class:`list`
-objects. Finally, sequence types should implement addition (meaning
-concatenation) and multiplication (meaning repetition) by defining the methods
+objects. Finally,
+sequence types should implement addition (meaning concatenation) and
+multiplication (meaning repetition) by defining the methods
 :meth:`~object.__add__`, :meth:`~object.__radd__`, :meth:`~object.__iadd__`,
 :meth:`~object.__mul__`, :meth:`~object.__rmul__` and :meth:`~object.__imul__`
-described below; they should not define other numerical operators. It is
-recommended that both mappings and sequences implement the
+described below; they should not define other numerical
+operators. It is recommended that both mappings and sequences implement the
 :meth:`~object.__contains__` method to allow efficient use of the ``in``
 operator; for
 mappings, ``in`` should search the mapping's keys; for sequences, it should
-search through the values. It is further recommended that both mappings and
+search through the values.  It is further recommended that both mappings and
 sequences implement the :meth:`~object.__iter__` method to allow efficient iteration
 through the container; for mappings, :meth:`__iter__` should iterate
 through the object's keys; for sequences, it should iterate through the values.
