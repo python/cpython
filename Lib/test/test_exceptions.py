@@ -2353,6 +2353,19 @@ class SyntaxErrorTests(unittest.TestCase):
         finally:
             unlink(TESTFN)
 
+        # Check backwards tokenizer errors
+        source = '# -*- coding: ascii -*-\n\n(\n'
+        try:
+            with open(TESTFN, 'w', encoding='ascii') as testfile:
+                testfile.write(source)
+            rc, out, err = script_helper.assert_python_failure('-Wd', '-X', 'utf8', TESTFN)
+            err = err.decode('utf-8').splitlines()
+
+            self.assertEqual(err[-3], '    (')
+            self.assertEqual(err[-2], '    ^')
+        finally:
+            unlink(TESTFN)
+
     def test_attributes_new_constructor(self):
         args = ("bad.py", 1, 2, "abcdefg", 1, 100)
         the_exception = SyntaxError("bad bad", args)
