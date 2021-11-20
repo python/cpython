@@ -267,8 +267,8 @@ PYTHONPATH=$(COREPYTHONPATH)
 #_curses -lncurses -lncursesw -ltermcap _cursesmodule.c
 #_curses_panel -lpanel -lncurses _curses_panel.c
 
-# macOS specific modules
-# _scproxy _scproxy.c -framework SystemConfiguration -framework CoreFoundation
+# macOS specific module, needs SystemConfiguration and CoreFoundation framework
+# _scproxy _scproxy.c
 
 # Examples
 
