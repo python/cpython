@@ -2394,7 +2394,7 @@ either to emulate a sequence or to emulate a mapping; the difference is that for
 a sequence, the allowable keys should be the integers *k* for which ``0 <= k <
 N`` where *N* is the length of the
 sequence, or :class:`slice` objects, which define a
-range of items. It is also recommended that mappings provide the methods
+range of items.  It is also recommended that mappings provide the methods
 :meth:`~dict.keys`, :meth:`~dict.values`, :meth:`~dict.items`,
 :meth:`~dict.get`, :meth:`~dict.clear`, :meth:`~dict.setdefault`,
 :meth:`~dict.pop`, :meth:`~dict.popitem`, :meth:`~dict.copy`, and
