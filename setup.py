@@ -1389,11 +1389,8 @@ class PyBuildExt(build_ext):
         # linux/soundcard.h or sys/soundcard.h
         self.addext(Extension('ossaudiodev', ['ossaudiodev.c']))
 
-        if MACOS:
-            self.add(Extension('_scproxy', ['_scproxy.c'],
-                               extra_link_args=[
-                                   '-framework', 'SystemConfiguration',
-                                   '-framework', 'CoreFoundation']))
+        # macOS-only, needs SystemConfiguration and CoreFoundation framework
+        self.addext(Extension('_scproxy', ['_scproxy.c']))
 
     def detect_compress_exts(self):
         # Andrew Kuchling's zlib module.
