@@ -1840,7 +1840,7 @@ pysqlite_connection_create_collation_impl(pysqlite_Connection *self,
     Py_RETURN_NONE;
 }
 
-#ifdef HAVE_SERIALIZE_API
+#ifdef PY_SQLITE_HAVE_SERIALIZE
 /*[clinic input]
 _sqlite3.Connection.serialize as serialize
 
@@ -1944,7 +1944,7 @@ deserialize_impl(pysqlite_Connection *self, Py_buffer *data,
 
     Py_RETURN_TRUE;
 }
-#endif
+#endif  // PY_SQLITE_HAVE_SERIALIZE
 
 
 /*[clinic input]

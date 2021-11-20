@@ -3197,6 +3197,9 @@ AC_CHECK_HEADER([sqlite3.h], [
     ], [have_supported_sqlite3=yes], [have_supported_sqlite3=no])
   ], [have_sqlite3=no])
   AC_CHECK_LIB([sqlite3], [sqlite3_load_extension])
+  AC_CHECK_LIB([sqlite3], [sqlite3_serialize],
+               [AC_DEFINE([PY_SQLITE_HAVE_SERIALIZE], [1],
+                          ["Define if SQLite was compiled with the serialize API"])])
 ])
 
 AS_VAR_COPY([CFLAGS], [save_CFLAGS])
