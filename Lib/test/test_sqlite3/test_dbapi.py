@@ -603,7 +603,7 @@ class UninitialisedConnectionTests(unittest.TestCase):
                                        func)
 
 
-@unittest.skipUnless(hasattr(sqlite3.Connection, "serialize"))
+@unittest.skipUnless(hasattr(sqlite.Connection, "serialize"))
 class SerializeTests(unittest.TestCase):
     def test_serialize_deserialize(self):
         with memory_database() as cx:
