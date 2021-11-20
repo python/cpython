@@ -697,7 +697,7 @@ exit:
     return return_value;
 }
 
-#if defined(HAVE_SERIALIZE_API)
+#if defined(PY_SQLITE_HAVE_SERIALIZE)
 
 PyDoc_STRVAR(serialize__doc__,
 "serialize($self, /, *, name=\'main\')\n"
@@ -756,9 +756,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_SERIALIZE_API) */
+#endif /* defined(PY_SQLITE_HAVE_SERIALIZE) */
 
-#if defined(HAVE_SERIALIZE_API)
+#if defined(PY_SQLITE_HAVE_SERIALIZE)
 
 PyDoc_STRVAR(deserialize__doc__,
 "deserialize($self, data, /, *, name=\'main\')\n"
@@ -845,7 +845,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_SERIALIZE_API) */
+#endif /* defined(PY_SQLITE_HAVE_SERIALIZE) */
 
 PyDoc_STRVAR(pysqlite_connection_enter__doc__,
 "__enter__($self, /)\n"
@@ -994,4 +994,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=f89f071412ba75f9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=aefa6b5036964d5a input=a9049054013a1b77]*/
