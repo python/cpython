@@ -92,7 +92,6 @@
 
 #include <windows.h>
 #include <pathcch.h>
-#include <shlwapi.h>
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -265,7 +264,8 @@ canonicalize(wchar_t *buffer, const wchar_t *path)
         return _PyStatus_NO_MEMORY();
     }
 
-    if (PathIsRelativeW(path)) {
+    const wchar_t *pathTail;
+    if (FAILED(PathCchSkipRoot(path, &pathTail)) || path == pathTail) {
         wchar_t buff[MAXPATHLEN + 1];
         if (!GetCurrentDirectoryW(MAXPATHLEN, buff)) {
             return _PyStatus_ERR("unable to find current working directory");

@@ -411,9 +411,10 @@ class _SpecialForm(_Final, _root=True):
 
 
 class _LiteralSpecialForm(_SpecialForm, _root=True):
-    @_tp_cache(typed=True)
     def __getitem__(self, parameters):
-        return self._getitem(self, parameters)
+        if not isinstance(parameters, tuple):
+            parameters = (parameters,)
+        return self._getitem(self, *parameters)
 
 
 @_SpecialForm
@@ -536,7 +537,8 @@ def Optional(self, parameters):
     return Union[arg, type(None)]
 
 @_LiteralSpecialForm
-def Literal(self, parameters):
+@_tp_cache(typed=True)
+def Literal(self, *parameters):
     """Special typing form to define literal types (a.k.a. value types).
 
     This form can be used to indicate to type checkers that the corresponding
@@ -559,9 +561,6 @@ def Literal(self, parameters):
     """
     # There is no '_type_check' call because arguments to Literal[...] are
     # values, not types.
-    if not isinstance(parameters, tuple):
-        parameters = (parameters,)
-
     parameters = _flatten_literal_params(parameters)
 
     try:

@@ -233,6 +233,7 @@ class ExceptionTests(unittest.TestCase):
         check('[file for\n str(file) in []]', 2, 2)
         check("ages = {'Alice'=22, 'Bob'=23}", 1, 16)
         check('match ...:\n    case {**rest, "key": value}:\n        ...', 2, 19)
+        check("a b c d e f", 1, 1)
 
         # Errors thrown by compile.c
         check('class foo:return 1', 1, 11)
@@ -1885,6 +1886,37 @@ class NameErrorTests(unittest.TestCase):
 
         self.assertNotIn("something", err.getvalue())
 
+    def test_issue45826(self):
+        # regression test for bpo-45826
+        def f():
+            with self.assertRaisesRegex(NameError, 'aaa'):
+                aab
+
+        try:
+            f()
+        except self.failureException:
+            with support.captured_stderr() as err:
+                sys.__excepthook__(*sys.exc_info())
+
+        self.assertIn("aab", err.getvalue())
+
+    def test_issue45826_focused(self):
+        def f():
+            try:
+                nonsense
+            except BaseException as E:
+                E.with_traceback(None)
+                raise ZeroDivisionError()
+
+        try:
+            f()
+        except ZeroDivisionError:
+            with support.captured_stderr() as err:
+                sys.__excepthook__(*sys.exc_info())
+
+        self.assertIn("nonsense", err.getvalue())
+        self.assertIn("ZeroDivisionError", err.getvalue())
+
 
 class AttributeErrorTests(unittest.TestCase):
     def test_attributes(self):
@@ -2318,6 +2350,19 @@ class SyntaxErrorTests(unittest.TestCase):
 
             self.assertEqual(err[-3], '    "┬ó┬ó┬ó┬ó┬ó┬ó" + f(4, x for x in range(1))')
             self.assertEqual(err[-2], '                          ^^^^^^^^^^^^^^^^^^^')
+        finally:
+            unlink(TESTFN)
+
+        # Check backwards tokenizer errors
+        source = '# -*- coding: ascii -*-\n\n(\n'
+        try:
+            with open(TESTFN, 'w', encoding='ascii') as testfile:
+                testfile.write(source)
+            rc, out, err = script_helper.assert_python_failure('-Wd', '-X', 'utf8', TESTFN)
+            err = err.decode('utf-8').splitlines()
+
+            self.assertEqual(err[-3], '    (')
+            self.assertEqual(err[-2], '    ^')
         finally:
             unlink(TESTFN)
 

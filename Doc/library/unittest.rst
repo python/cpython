@@ -227,7 +227,7 @@ Command-line options
 
    Only run test methods and classes that match the pattern or substring.
    This option may be used multiple times, in which case all test cases that
-   match of the given patterns are included.
+   match any of the given patterns are included.
 
    Patterns that contain a wildcard character (``*``) are matched against the
    test name using :meth:`fnmatch.fnmatchcase`; otherwise simple case-sensitive

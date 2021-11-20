@@ -1152,6 +1152,12 @@ PyNumber_Power(PyObject *v, PyObject *w, PyObject *z)
     return ternary_op(v, w, z, NB_SLOT(nb_power), "** or pow()");
 }
 
+PyObject *
+_PyNumber_PowerNoMod(PyObject *lhs, PyObject *rhs)
+{
+    return PyNumber_Power(lhs, rhs, Py_None);
+}
+
 /* Binary in-place operators */
 
 /* The in-place operators are defined to fall back to the 'normal',
@@ -1329,6 +1335,12 @@ PyNumber_InPlacePower(PyObject *v, PyObject *w, PyObject *z)
 {
     return ternary_iop(v, w, z, NB_SLOT(nb_inplace_power),
                                 NB_SLOT(nb_power), "**=");
+}
+
+PyObject *
+_PyNumber_InPlacePowerNoMod(PyObject *lhs, PyObject *rhs)
+{
+    return PyNumber_InPlacePower(lhs, rhs, Py_None);
 }
 
 

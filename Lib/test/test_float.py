@@ -8,6 +8,7 @@ import time
 import unittest
 
 from test import support
+from test.support import import_helper
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
 from math import isinf, isnan, copysign, ldexp
@@ -714,7 +715,7 @@ class IEEEFormatTestCase(unittest.TestCase):
 
     @support.requires_IEEE_754
     def test_serialized_float_rounding(self):
-        from _testcapi import FLT_MAX
+        FLT_MAX = import_helper.import_module('_testcapi').FLT_MAX
         self.assertEqual(struct.pack("<f", 3.40282356e38), struct.pack("<f", FLT_MAX))
         self.assertEqual(struct.pack("<f", -3.40282356e38), struct.pack("<f", -FLT_MAX))
 

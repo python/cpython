@@ -1,0 +1,2 @@
+Restore behavior from 3.10 when tracing an exception raised within a with
+statement.

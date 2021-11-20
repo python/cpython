@@ -16,7 +16,12 @@ m4_ifdef(
     [AX_C_FLOAT_WORDS_BIGENDIAN],
     [],
     [AC_MSG_ERROR([Please install autoconf-archive package and re-run autoreconf])]
-)
+)dnl
+m4_ifdef(
+    [PKG_PROG_PKG_CONFIG],
+    [],
+    [AC_MSG_ERROR([Please install pkgconf's m4 macro package and re-run autoreconf])]
+)dnl
 
 AC_SUBST(BASECPPFLAGS)
 if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
@@ -56,7 +61,7 @@ else
 fi
 
 AC_CONFIG_SRCDIR([Include/object.h])
-AC_CONFIG_HEADER(pyconfig.h)
+AC_CONFIG_HEADERS([pyconfig.h])
 
 AC_CANONICAL_HOST
 AC_SUBST(build)
@@ -128,10 +133,6 @@ VERSION=PYTHON_VERSION
 AC_SUBST(SOVERSION)
 SOVERSION=1.0
 
-# The later definition of _XOPEN_SOURCE disables certain features
-# on Linux, so we need _GNU_SOURCE to re-enable them (makedev, tm_zone).
-AC_DEFINE(_GNU_SOURCE, 1, [Define on Linux to activate all library features])
-
 # The later definition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
 # certain features on NetBSD, so we need _NETBSD_SOURCE to re-enable
 # them.
@@ -153,6 +154,36 @@ define_xopen_source=yes
 # Arguments passed to configure.
 AC_SUBST(CONFIG_ARGS)
 CONFIG_ARGS="$ac_configure_args"
+
+dnl Allow users to disable pkg-config or require pkg-config
+AC_ARG_WITH(
+  [pkg-config],
+  [AS_HELP_STRING([[--with-pkg-config=[yes|no|check]]],
+                  [use pkg-config to detect build options (default is check)])],
+  [],
+  [with_pkg_config=check]
+)
+AS_CASE([$with_pkg_config],
+  [yes|check], [
+    if test -z "$PKG_CONFIG"; then
+      dnl invalidate stale config.cache values
+      AS_UNSET([PKG_CONFIG])
+      AS_UNSET([ac_cv_path_ac_pt_PKG_CONFIG])
+      AS_UNSET([ac_cv_prog_ac_ct_PKG_CONFIG])
+    fi
+    PKG_PROG_PKG_CONFIG
+  ],
+  [no], [
+    PKG_CONFIG=''
+    dnl force AX_CHECK_OPENSSL to ignore pkg-config
+    ac_cv_path_ac_pt_PKG_CONFIG=''
+    ac_cv_prog_ac_ct_PKG_CONFIG=''
+  ],
+  [AC_MSG_ERROR([invalid argument --with-pkg-config=$with_pkg_config])]
+)
+if test "$with_pkg_config" = yes -a -z "$PKG_CONFIG"; then
+  AC_MSG_ERROR([pkg-config is required])]
+fi
 
 AC_MSG_CHECKING([for --enable-universalsdk])
 AC_ARG_ENABLE(universalsdk,
@@ -376,10 +407,6 @@ AC_SUBST(FRAMEWORKINSTALLAPPSPREFIX)
 
 AC_DEFINE_UNQUOTED(_PYTHONFRAMEWORK, "${PYTHONFRAMEWORK}", [framework name])
 
-##AC_ARG_WITH(dyld,
-##            AS_HELP_STRING([--with-dyld],
-##                           [use (OpenStep|Rhapsody) dynamic linker]))
-##
 # Set name for machine-dependent library files
 AC_ARG_VAR([MACHDEP], [name for machine-dependent library files])
 AC_MSG_CHECKING(MACHDEP)
@@ -659,6 +686,12 @@ AC_PROG_CC
 AC_PROG_CPP
 AC_PROG_GREP
 AC_PROG_SED
+AC_PROG_EGREP
+
+# checks for UNIX variants that set C preprocessor variables
+# may set _GNU_SOURCE, __EXTENSIONS__, _POSIX_PTHREAD_SEMANTICS,
+# _POSIX_SOURCE, _POSIX_1_SOURCE, and more
+AC_USE_SYSTEM_EXTENSIONS
 
 AC_SUBST(CXX)
 AC_SUBST(MAINCC)
@@ -890,20 +923,17 @@ if test x$MULTIARCH != x; then
 fi
 AC_SUBST(MULTIARCH_CPPFLAGS)
 
-AC_MSG_CHECKING([for -Wl,--no-as-needed])
-save_LDFLAGS="$LDFLAGS"
-LDFLAGS="$LDFLAGS -Wl,--no-as-needed"
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
-  [NO_AS_NEEDED="-Wl,--no-as-needed"
-   AC_MSG_RESULT([yes])],
-  [NO_AS_NEEDED=""
-   AC_MSG_RESULT([no])])
-LDFLAGS="$save_LDFLAGS"
+AC_CACHE_CHECK([for -Wl,--no-as-needed], [ac_cv_wl_no_as_needed], [
+  save_LDFLAGS="$LDFLAGS"
+  AS_VAR_APPEND([LDFLAGS], [-Wl,--no-as-needed])
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+    [NO_AS_NEEDED="-Wl,--no-as-needed"
+     ac_cv_wl_no_as_needed=yes],
+    [NO_AS_NEEDED=""
+     ac_cv_wl_no_as_needed=no])
+  LDFLAGS="$save_LDFLAGS"
+])
 AC_SUBST(NO_AS_NEEDED)
-
-
-# checks for UNIX variants that set C preprocessor variables
-AC_USE_SYSTEM_EXTENSIONS
 
 AC_MSG_CHECKING([for the Android API level])
 cat >> conftest.c <<EOF
@@ -944,7 +974,6 @@ atheos*|Linux*/1*)
    exit 1;;
 esac
 
-AC_EXEEXT
 AC_MSG_CHECKING(for --with-suffix)
 AC_ARG_WITH(suffix,
             AS_HELP_STRING([--with-suffix=SUFFIX], [set executable suffix to SUFFIX (default is '.exe')]),
@@ -1635,40 +1664,38 @@ AC_SUBST(LDFLAGS_NODIST)
 UNIVERSAL_ARCH_FLAGS=
 AC_SUBST(UNIVERSAL_ARCH_FLAGS)
 
+dnl PY_CHECK_CC_WARNING(ENABLE, WARNING, [MSG])
+AC_DEFUN([PY_CHECK_CC_WARNING], [
+  AS_VAR_PUSHDEF([py_var], [ac_cv_$1_]m4_normalize($2)[_warning])
+  AC_CACHE_CHECK(m4_ifblank([$3], [if we can $1 $CC $2 warning], [$3]), [py_var], [
+    AS_VAR_COPY([py_cflags], [CFLAGS])
+    AS_VAR_APPEND([CFLAGS], ["-W$2 -Werror"])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+                      [AS_VAR_SET([py_var], [yes])],
+                      [AS_VAR_SET([py_var], [no])])
+    AS_VAR_COPY([CFLAGS], [py_cflags])
+  ])
+  AS_VAR_POPDEF([py_var])
+])
+
 # tweak BASECFLAGS based on compiler and platform
 case $GCC in
 yes)
     CFLAGS_NODIST="$CFLAGS_NODIST -std=c99"
 
-    AC_MSG_CHECKING(for -Wextra)
-     ac_save_cc="$CC"
-     CC="$CC -Wextra -Werror"
-     AC_CACHE_VAL(ac_cv_extra_warnings,
-       AC_COMPILE_IFELSE(
-         [
-           AC_LANG_PROGRAM([[]], [[]])
-         ],[
-           ac_cv_extra_warnings=yes
-         ],[
-           ac_cv_extra_warnings=no
-         ]))
-     CC="$ac_save_cc"
-    AC_MSG_RESULT($ac_cv_extra_warnings)
-
-    if test $ac_cv_extra_warnings = yes
-    then
-      CFLAGS_NODIST="$CFLAGS_NODIST -Wextra"
-    fi
+    PY_CHECK_CC_WARNING([enable], [extra], [if we can add -Wextra])
+    AS_VAR_IF([ac_cv_enable_extra_warning], [yes],
+              [CFLAGS_NODIST="$CFLAGS_NODIST -Wextra"])
 
     # Python doesn't violate C99 aliasing rules, but older versions of
     # GCC produce warnings for legal Python code.  Enable
     # -fno-strict-aliasing on versions of GCC that support but produce
     # warnings.  See Issue3326
-    AC_MSG_CHECKING(whether $CC accepts and needs -fno-strict-aliasing)
      ac_save_cc="$CC"
      CC="$CC -fno-strict-aliasing"
      save_CFLAGS="$CFLAGS"
-     AC_CACHE_VAL(ac_cv_no_strict_aliasing,
+     AC_CACHE_CHECK([whether $CC accepts and needs -fno-strict-aliasing],
+                    [ac_cv_no_strict_aliasing],
        AC_COMPILE_IFELSE(
          [
 	   AC_LANG_PROGRAM([[]], [[]])
@@ -1689,122 +1716,31 @@ yes)
 	 ]))
      CFLAGS="$save_CFLAGS"
      CC="$ac_save_cc"
-    AC_MSG_RESULT($ac_cv_no_strict_aliasing)
-    if test $ac_cv_no_strict_aliasing = yes
-    then
-      BASECFLAGS="$BASECFLAGS -fno-strict-aliasing"
-    fi
+    AS_VAR_IF([ac_cv_no_strict_aliasing], [yes],
+              [BASECFLAGS="$BASECFLAGS -fno-strict-aliasing"])
 
     # ICC doesn't recognize the option, but only emits a warning
     ## XXX does it emit an unused result warning and can it be disabled?
-    case "$CC" in
-    *icc*)
-    ac_cv_disable_unused_result_warning=no
-    ;;
-    *)
-    AC_MSG_CHECKING(if we can turn off $CC unused result warning)
-     ac_save_cc="$CC"
-     CC="$CC -Wunused-result -Werror"
-     save_CFLAGS="$CFLAGS"
-     AC_CACHE_VAL(ac_cv_disable_unused_result_warning,
-       AC_COMPILE_IFELSE(
-         [
-	   AC_LANG_PROGRAM([[]], [[]])
-	 ],[
-           ac_cv_disable_unused_result_warning=yes
-	 ],[
-           ac_cv_disable_unused_result_warning=no
-	 ]))
-     CFLAGS="$save_CFLAGS"
-     CC="$ac_save_cc"
-    AC_MSG_RESULT($ac_cv_disable_unused_result_warning)
-    ;;
-    esac
+    AS_CASE([$CC],
+            [*icc*], [ac_cv_disable_unused_result_warning=no]
+            [PY_CHECK_CC_WARNING([disable], [unused-result])])
+    AS_VAR_IF([ac_cv_disable_unused_result_warning], [yes],
+              [BASECFLAGS="$BASECFLAGS -Wno-unused-result"
+               CFLAGS_NODIST="$CFLAGS_NODIST -Wno-unused-result"])
 
-    if test $ac_cv_disable_unused_result_warning = yes
-    then
-      BASECFLAGS="$BASECFLAGS -Wno-unused-result"
-      CFLAGS_NODIST="$CFLAGS_NODIST -Wno-unused-result"
-    fi
+    PY_CHECK_CC_WARNING([disable], [unused-parameter])
+    AS_VAR_IF([ac_cv_disable_unused_parameter_warning], [yes],
+              [CFLAGS_NODIST="$CFLAGS_NODIST -Wno-unused-parameter"])
 
-    AC_MSG_CHECKING(if we can turn off $CC unused parameter warning)
-     ac_save_cc="$CC"
-     CC="$CC -Wunused-parameter -Werror"
-     AC_CACHE_VAL(ac_cv_disable_unused_parameter_warning,
-       AC_COMPILE_IFELSE(
-         [
-           AC_LANG_PROGRAM([[]], [[]])
-         ],[
-           ac_cv_disable_unused_parameter_warning=yes
-         ],[
-           ac_cv_disable_unused_parameter_warning=no
-         ]))
-     CC="$ac_save_cc"
-    AC_MSG_RESULT($ac_cv_disable_unused_parameter_warning)
+    PY_CHECK_CC_WARNING([disable], [missing-field-initializers])
+    AS_VAR_IF([ac_cv_disable_missing_field_initializers_warning], [yes],
+              [CFLAGS_NODIST="$CFLAGS_NODIST -Wno-missing-field-initializers"])
 
-    if test $ac_cv_disable_unused_parameter_warning = yes
-    then
-      CFLAGS_NODIST="$CFLAGS_NODIST -Wno-unused-parameter"
-    fi
+    PY_CHECK_CC_WARNING([enable], [sign-compare])
+    AS_VAR_IF([ac_cv_enable_sign_compare_warning], [yes],
+              [BASECFLAGS="$BASECFLAGS -Wsign-compare"])
 
-    AC_MSG_CHECKING(if we can turn off $CC missing field initializers warning)
-     ac_save_cc="$CC"
-     CC="$CC -Wmissing-field-initializers -Werror"
-     AC_CACHE_VAL(ac_cv_disable_missing_field_initializers,
-       AC_COMPILE_IFELSE(
-         [
-           AC_LANG_PROGRAM([[]], [[]])
-         ],[
-           ac_cv_disable_missing_field_initializers=yes
-         ],[
-           ac_cv_disable_missing_field_initializers=no
-         ]))
-     CC="$ac_save_cc"
-    AC_MSG_RESULT($ac_cv_disable_missing_field_initializers)
-
-    if test $ac_cv_disable_missing_field_initializers = yes
-    then
-      CFLAGS_NODIST="$CFLAGS_NODIST -Wno-missing-field-initializers"
-    fi
-
-    AC_MSG_CHECKING(if we can turn on $CC mixed sign comparison warning)
-     ac_save_cc="$CC"
-     CC="$CC -Wsign-compare"
-     save_CFLAGS="$CFLAGS"
-     AC_CACHE_VAL(ac_cv_enable_sign_compare_warning,
-       AC_COMPILE_IFELSE(
-         [
-	   AC_LANG_PROGRAM([[]], [[]])
-	 ],[
-           ac_cv_enable_sign_compare_warning=yes
-	 ],[
-           ac_cv_enable_sign_compare_warning=no
-	 ]))
-     CFLAGS="$save_CFLAGS"
-     CC="$ac_save_cc"
-    AC_MSG_RESULT($ac_cv_enable_sign_compare_warning)
-
-    if test $ac_cv_enable_sign_compare_warning = yes
-    then
-      BASECFLAGS="$BASECFLAGS -Wsign-compare"
-    fi
-
-    AC_MSG_CHECKING(if we can turn on $CC unreachable code warning)
-     ac_save_cc="$CC"
-     CC="$CC -Wunreachable-code"
-     save_CFLAGS="$CFLAGS"
-     AC_CACHE_VAL(ac_cv_enable_unreachable_code_warning,
-       AC_COMPILE_IFELSE(
-         [
-	   AC_LANG_PROGRAM([[]], [[]])
-	 ],[
-           ac_cv_enable_unreachable_code_warning=yes
-	 ],[
-           ac_cv_enable_unreachable_code_warning=no
-	 ]))
-     CFLAGS="$save_CFLAGS"
-     CC="$ac_save_cc"
-
+    PY_CHECK_CC_WARNING([enable], [unreachable-code])
     # Don't enable unreachable code warning in debug mode, since it usually
     # results in non-standard code paths.
     # Issue #24324: Unfortunately, the unreachable code warning does not work
@@ -1820,32 +1756,15 @@ yes)
     else
       ac_cv_enable_unreachable_code_warning=no
     fi
-    AC_MSG_RESULT($ac_cv_enable_unreachable_code_warning)
 
-    AC_MSG_CHECKING(if we can turn on $CC strict-prototypes warning)
-     ac_save_cc="$CC"
-     CC="$CC -Werror -Wstrict-prototypes"
-     AC_CACHE_VAL(ac_cv_enable_enable_strict_prototypes_warning,
-       AC_COMPILE_IFELSE(
-         [
-       AC_LANG_PROGRAM([[]], [[]])
-     ],[
-       ac_cv_enable_strict_prototypes_warning=yes
-     ],[
-       ac_cv_enable_strict_prototypes_warning=no
-     ]))
-     CC="$ac_save_cc"
-    AC_MSG_RESULT($ac_cv_enable_strict_prototypes_warning)
+    PY_CHECK_CC_WARNING([enable], [strict-prototypes])
+    AS_VAR_IF([ac_cv_enable_strict_prototypes_warning], [yes],
+              [CFLAGS_NODIST="$CFLAGS_NODIST -Wstrict-prototypes"])
 
-    if test $ac_cv_enable_strict_prototypes_warning = yes
-    then
-      CFLAGS_NODIST="$CFLAGS_NODIST -Wstrict-prototypes"
-    fi
-
-    AC_MSG_CHECKING(if we can make implicit function declaration an error in $CC)
      ac_save_cc="$CC"
      CC="$CC -Werror=implicit-function-declaration"
-     AC_CACHE_VAL(ac_cv_enable_implicit_function_declaration_error,
+     AC_CACHE_CHECK([if we can make implicit function declaration an error in $CC],
+                    [ac_cv_enable_implicit_function_declaration_error],
        AC_COMPILE_IFELSE(
          [
 	   AC_LANG_PROGRAM([[]], [[]])
@@ -1855,17 +1774,13 @@ yes)
            ac_cv_enable_implicit_function_declaration_error=no
 	 ]))
      CC="$ac_save_cc"
-    AC_MSG_RESULT($ac_cv_enable_implicit_function_declaration_error)
 
-    if test $ac_cv_enable_implicit_function_declaration_error = yes
-    then
-      CFLAGS_NODIST="$CFLAGS_NODIST -Werror=implicit-function-declaration"
-    fi
+    AS_VAR_IF([ac_cv_enable_implicit_function_declaration_error], [yes],
+              [CFLAGS_NODIST="$CFLAGS_NODIST -Werror=implicit-function-declaration"])
 
-    AC_MSG_CHECKING(if we can use visibility in $CC)
      ac_save_cc="$CC"
      CC="$CC -fvisibility=hidden"
-     AC_CACHE_VAL(ac_cv_enable_visibility,
+     AC_CACHE_CHECK([if we can use visibility in $CC], [ac_cv_enable_visibility],
        AC_COMPILE_IFELSE(
          [
 	   AC_LANG_PROGRAM([[]], [[]])
@@ -1875,12 +1790,9 @@ yes)
            ac_cv_enable_visibility=no
 	 ]))
      CC="$ac_save_cc"
-    AC_MSG_RESULT($ac_cv_enable_visibility)
 
-    if test $ac_cv_enable_visibility = yes
-    then
-      CFLAGS_NODIST="$CFLAGS_NODIST -fvisibility=hidden"
-    fi
+    AS_VAR_IF([ac_cv_enable_visibility], [yes],
+              [CFLAGS_NODIST="$CFLAGS_NODIST -fvisibility=hidden"])
 
     # if using gcc on alpha, use -mieee to get (near) full IEEE 754
     # support.  Without this, treatment of subnormals doesn't follow
@@ -2077,8 +1989,8 @@ fi
 # complain if unaccepted options are passed (e.g. gcc on Mac OS X).
 # So we have to see first whether pthreads are available without
 # options before we can check whether -Kpthread improves anything.
-AC_MSG_CHECKING(whether pthreads are available without options)
-AC_CACHE_VAL(ac_cv_pthread_is_default,
+AC_CACHE_CHECK([whether pthreads are available without options],
+               [ac_cv_pthread_is_default],
 [AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <stdio.h>
 #include <pthread.h>
@@ -2098,7 +2010,6 @@ int main(){
   ac_cv_pthread=no
 ],[ac_cv_pthread_is_default=no],[ac_cv_pthread_is_default=no])
 ])
-AC_MSG_RESULT($ac_cv_pthread_is_default)
 
 
 if test $ac_cv_pthread_is_default = yes
@@ -2110,8 +2021,7 @@ else
 # Some compilers won't report that they do not support -Kpthread,
 # so we need to run a program to see whether it really made the
 # function available.
-AC_MSG_CHECKING(whether $CC accepts -Kpthread)
-AC_CACHE_VAL(ac_cv_kpthread,
+AC_CACHE_CHECK([whether $CC accepts -Kpthread], [ac_cv_kpthread],
 [ac_save_cc="$CC"
 CC="$CC -Kpthread"
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
@@ -2129,7 +2039,6 @@ int main(){
 }
 ]])],[ac_cv_kpthread=yes],[ac_cv_kpthread=no],[ac_cv_kpthread=no])
 CC="$ac_save_cc"])
-AC_MSG_RESULT($ac_cv_kpthread)
 fi
 
 if test $ac_cv_kpthread = no -a $ac_cv_pthread_is_default = no
@@ -2139,8 +2048,7 @@ then
 # Some compilers won't report that they do not support -Kthread,
 # so we need to run a program to see whether it really made the
 # function available.
-AC_MSG_CHECKING(whether $CC accepts -Kthread)
-AC_CACHE_VAL(ac_cv_kthread,
+AC_CACHE_CHECK([whether $CC accepts -Kthread], [ac_cv_kthread],
 [ac_save_cc="$CC"
 CC="$CC -Kthread"
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
@@ -2158,7 +2066,6 @@ int main(){
 }
 ]])],[ac_cv_kthread=yes],[ac_cv_kthread=no],[ac_cv_kthread=no])
 CC="$ac_save_cc"])
-AC_MSG_RESULT($ac_cv_kthread)
 fi
 
 if test $ac_cv_kthread = no -a $ac_cv_pthread_is_default = no
@@ -2168,8 +2075,7 @@ then
 # Some compilers won't report that they do not support -pthread,
 # so we need to run a program to see whether it really made the
 # function available.
-AC_MSG_CHECKING(whether $CC accepts -pthread)
-AC_CACHE_VAL(ac_cv_pthread,
+AC_CACHE_CHECK([whether $CC accepts -pthread], [ac_cv_pthread],
 [ac_save_cc="$CC"
 CC="$CC -pthread"
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
@@ -2187,7 +2093,6 @@ int main(){
 }
 ]])],[ac_cv_pthread=yes],[ac_cv_pthread=no],[ac_cv_pthread=no])
 CC="$ac_save_cc"])
-AC_MSG_RESULT($ac_cv_pthread)
 fi
 
 # If we have set a CC compiler flag for thread support then
@@ -2238,8 +2143,11 @@ dnl struct {char *name; int *addr; char *doc;} desc = spam(foo, "something");
 dnl ]], [[;]])],[cpp_type=ansi],[AC_DEFINE(HAVE_OLD_CPP) cpp_type=traditional])
 dnl AC_MSG_RESULT($cpp_type)
 
+dnl autoconf 2.71 deprecates STDC_HEADERS, keep for backwards compatibility
+dnl assume C99 compilers provide ANSI C headers
+AC_DEFINE(STDC_HEADERS, 1, [Define to 1 if you have the ANSI C header files.])
+
 # checks for header files
-AC_HEADER_STDC
 AC_CHECK_HEADERS(asm/types.h crypt.h conio.h direct.h dlfcn.h errno.h \
 fcntl.h grp.h \
 ieeefp.h io.h langinfo.h libintl.h process.h pthread.h \
@@ -2254,7 +2162,7 @@ sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
 libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
 linux/tipc.h linux/random.h spawn.h util.h alloca.h endian.h \
 sys/endian.h sys/sysmacros.h linux/memfd.h linux/wait.h sys/memfd.h \
-sys/mman.h sys/eventfd.h)
+sys/mman.h sys/eventfd.h linux/soundcard.h sys/soundcard.h)
 AC_HEADER_DIRENT
 AC_HEADER_MAJOR
 
@@ -2268,14 +2176,8 @@ CFLAGS=$SAVE_CFLAGS
 # On Darwin (OS X) net/if.h requires sys/socket.h to be imported first.
 AC_CHECK_HEADERS([net/if.h], [], [],
 [#include <stdio.h>
-#ifdef STDC_HEADERS
-# include <stdlib.h>
-# include <stddef.h>
-#else
-# ifdef HAVE_STDLIB_H
-#  include <stdlib.h>
-# endif
-#endif
+#include <stdlib.h>
+#include <stddef.h>
 #ifdef HAVE_SYS_SOCKET_H
 # include <sys/socket.h>
 #endif
@@ -2315,14 +2217,15 @@ AC_CHECK_HEADERS(linux/can.h linux/can/bcm.h linux/can/j1939.h linux/can/raw.h,,
 ])
 
 # checks for typedefs
-was_it_defined=no
-AC_MSG_CHECKING(for clock_t in time.h)
-AC_EGREP_HEADER(clock_t, time.h, was_it_defined=yes, [
-    AC_DEFINE(clock_t, long, [Define to 'long' if <time.h> doesn't define.])
+AC_CACHE_CHECK([for clock_t in time.h], [ac_cv_clock_t_time_h], [
+  AC_EGREP_HEADER([clock_t], [time.h], [ac_cv_clock_t_time_h=yes], [ac_cv_clock_t_time_h=no])
 ])
-AC_MSG_RESULT($was_it_defined)
+dnl checks for "no"
+AS_VAR_IF([ac_cv_clock_t_time_h], [no], [
+  AC_DEFINE(clock_t, long, [Define to 'long' if <time.h> doesn't define.])
+])
 
-AC_MSG_CHECKING(for makedev)
+AC_CACHE_CHECK([for makedev], [ac_cv_func_makedev], [
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #if defined(MAJOR_IN_MKDEV)
 #include <sys/mkdev.h>
@@ -2333,14 +2236,15 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #endif
 ]], [[
   makedev(0, 0) ]])
-],[ac_cv_has_makedev=yes],[ac_cv_has_makedev=no])
-AC_MSG_RESULT($ac_cv_has_makedev)
-if test "$ac_cv_has_makedev" = "yes"; then
+],[ac_cv_func_makedev=yes],[ac_cv_func_makedev=no])
+])
+
+AS_VAR_IF([ac_cv_func_makedev], [yes], [
     AC_DEFINE(HAVE_MAKEDEV, 1, [Define this if you have the makedev macro.])
-fi
+])
 
 # byte swapping
-AC_MSG_CHECKING(for le64toh)
+AC_CACHE_CHECK([for le64toh], [ac_cv_func_le64toh], [
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #ifdef HAVE_ENDIAN_H
 #include <endian.h>
@@ -2349,11 +2253,12 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #endif
 ]], [[
    le64toh(1) ]])
-],[ac_cv_has_le64toh=yes],[ac_cv_has_le64toh=no])
-AC_MSG_RESULT($ac_cv_has_le64toh)
-if test "$ac_cv_has_le64toh" = "yes"; then
+],[ac_cv_func_le64toh=yes],[ac_cv_func_le64toh=no])
+])
+
+AS_VAR_IF([ac_cv_func_le64toh], [yes], [
     AC_DEFINE(HAVE_HTOLE64, 1, [Define this if you have le64toh()])
-fi
+])
 
 use_lfs=yes
 # Don't use largefile support for GNU/Hurd
@@ -2455,38 +2360,38 @@ elif test "$ac_cv_pthread" = "yes"
 then CC="$CC -pthread"
 fi
 
-AC_MSG_CHECKING(for pthread_t)
-have_pthread_t=no
+AC_CACHE_CHECK([for pthread_t], [ac_cv_have_pthread_t], [
 AC_COMPILE_IFELSE([
   AC_LANG_PROGRAM([[#include <pthread.h>]], [[pthread_t x; x = *(pthread_t*)0;]])
-],[have_pthread_t=yes],[])
-AC_MSG_RESULT($have_pthread_t)
-if test "$have_pthread_t" = yes ; then
+], [ac_cv_have_pthread_t=yes], [ac_cv_have_pthread_t=no])
+])
+AS_VAR_IF([ac_cv_have_pthread_t], [yes], [
   AC_CHECK_SIZEOF(pthread_t, [], [
 #ifdef HAVE_PTHREAD_H
 #include <pthread.h>
 #endif
   ])
-fi
+])
 
 # Issue #25658: POSIX hasn't defined that pthread_key_t is compatible with int.
 # This checking will be unnecessary after removing deprecated TLS API.
 AC_CHECK_SIZEOF(pthread_key_t, [], [[#include <pthread.h>]])
-AC_MSG_CHECKING(whether pthread_key_t is compatible with int)
+AC_CACHE_CHECK([whether pthread_key_t is compatible with int], [ac_cv_pthread_key_t_is_arithmetic_type], [
 if test "$ac_cv_sizeof_pthread_key_t" -eq "$ac_cv_sizeof_int" ; then
   AC_COMPILE_IFELSE(
     [AC_LANG_PROGRAM([[#include <pthread.h>]], [[pthread_key_t k; k * 1;]])],
-    [ac_pthread_key_t_is_arithmetic_type=yes],
-    [ac_pthread_key_t_is_arithmetic_type=no]
+    [ac_cv_pthread_key_t_is_arithmetic_type=yes],
+    [ac_cv_pthread_key_t_is_arithmetic_type=no]
   )
-  AC_MSG_RESULT($ac_pthread_key_t_is_arithmetic_type)
-  if test "$ac_pthread_key_t_is_arithmetic_type" = yes ; then
+else
+  ac_cv_pthread_key_t_is_arithmetic_type=no
+fi
+])
+AS_VAR_IF([ac_cv_pthread_key_t_is_arithmetic_type], [yes], [
     AC_DEFINE(PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT, 1,
               [Define if pthread_key_t is compatible with int.])
-  fi
-else
-  AC_MSG_RESULT(no)
-fi
+])
+
 CC="$ac_save_cc"
 
 AC_SUBST(OTHER_LIBTOOL_OPT)
@@ -2934,42 +2839,28 @@ AC_CHECK_LIB(dld, shl_load)	# Dynamic linking for HP-UX
 # checks for uuid.h location
 AC_CHECK_HEADERS([uuid/uuid.h uuid.h])
 
-AC_MSG_CHECKING(for uuid_generate_time_safe)
+AC_CACHE_CHECK([for uuid_generate_time_safe], [ac_cv_lib_uuid_uuid_generate_time_safe], [
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <uuid/uuid.h>]], [[
 #ifndef uuid_generate_time_safe
 void *x = uuid_generate_time_safe
 #endif
 ]])],
-  [AC_DEFINE(HAVE_UUID_GENERATE_TIME_SAFE, 1, Define if uuid_generate_time_safe() exists.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)]
-)
+[ac_cv_lib_uuid_uuid_generate_time_safe=yes], [ac_cv_lib_uuid_uuid_generate_time_safe=no])
+])
+AS_VAR_IF([ac_cv_lib_uuid_uuid_generate_time_safe], [yes], [
+  AC_DEFINE(HAVE_UUID_GENERATE_TIME_SAFE, 1, [Define if uuid_generate_time_safe() exists.])
+])
+
+# check for libuuid from util-linux
+save_LIBS=$LIBS
+AC_CHECK_LIB([uuid], [uuid_generate_time])
+LIBS=$save_LIBS
 
 # AIX provides support for RFC4122 (uuid) in libc.a starting with AIX 6.1 (anno 2007)
-# FreeBSD and OpenBSD provides support as well
-AC_MSG_CHECKING(for uuid_create)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <uuid.h>]], [[
-#ifndef uuid_create
-void *x = uuid_create
-#endif
-]])],
-  [AC_DEFINE(HAVE_UUID_CREATE, 1, Define if uuid_create() exists.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)]
-)
-
+# FreeBSD and OpenBSD provides support in libc as well.
 # Little-endian FreeBSD, OpenBSD and NetBSD needs encoding into an octet
 # stream in big-endian byte-order
-AC_MSG_CHECKING(for uuid_enc_be)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <uuid.h>]], [[
-#ifndef uuid_enc_be
-void *x = uuid_enc_be
-#endif
-]])],
-  [AC_DEFINE(HAVE_UUID_ENC_BE, 1, Define if uuid_enc_be() exists.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)]
-)
+AC_CHECK_FUNCS([uuid_create uuid_enc_be])
 
 # 'Real Time' functions on Solaris
 # posix4 on Solaris 2.6
@@ -3010,8 +2901,7 @@ dnl The AIX_BUILDDATE is obtained from the kernel fileset - bos.mp64
 esac
 
 # check for systems that require aligned memory access
-AC_MSG_CHECKING(aligned memory access is required)
-AC_CACHE_VAL(ac_cv_aligned_required,
+AC_CACHE_CHECK([aligned memory access is required], [ac_cv_aligned_required],
 [AC_RUN_IFELSE([AC_LANG_SOURCE([[
 int main()
 {
@@ -3029,7 +2919,6 @@ int main()
 [ac_cv_aligned_required=yes],
 [ac_cv_aligned_required=yes])
 ])
-AC_MSG_RESULT($ac_cv_aligned_required)
 if test "$ac_cv_aligned_required" = yes ; then
   AC_DEFINE([HAVE_ALIGNED_REQUIRED], [1],
     [Define if aligned memory access is required])
@@ -3119,8 +3008,6 @@ LIBS="$withval $LIBS"
 ],
 [AC_MSG_RESULT(no)])
 
-PKG_PROG_PKG_CONFIG
-
 # Check for use of the system expat library
 AC_MSG_CHECKING(for --with-system-expat)
 AC_ARG_WITH(system_expat,
@@ -3129,6 +3016,20 @@ AC_ARG_WITH(system_expat,
             [with_system_expat="no"])
 
 AC_MSG_RESULT($with_system_expat)
+
+AS_VAR_IF([with_system_expat], [yes], [
+  LIBEXPAT_CFLAGS=""
+  LIBEXPAT_LDFLAGS="-lexpat"
+  LIBEXPAT_INTERNAL=
+], [
+  LIBEXPAT_CFLAGS="-I\$(srcdir)/Modules/expat"
+  LIBEXPAT_LDFLAGS="-lm \$(LIBEXPAT_A)"
+  LIBEXPAT_INTERNAL="\$(LIBEXPAT_A)"
+])
+
+AC_SUBST([LIBEXPAT_CFLAGS])
+AC_SUBST([LIBEXPAT_LDFLAGS])
+AC_SUBST([LIBEXPAT_INTERNAL])
 
 # Check for use of the system libffi library
 AC_MSG_CHECKING(for --with-system-ffi)
@@ -3170,8 +3071,21 @@ AC_ARG_WITH(system_libmpdec,
             AS_HELP_STRING([--with-system-libmpdec], [build _decimal module using an installed libmpdec library, see Doc/library/decimal.rst (default is no)]),
             [],
             [with_system_libmpdec="no"])
-
 AC_MSG_RESULT($with_system_libmpdec)
+
+AS_VAR_IF([with_system_libmpdec], [yes], [
+  LIBMPDEC_CFLAGS=""
+  LIBMPDEC_LDFLAGS="-lmpdec"
+  LIBMPDEC_INTERNAL=
+], [
+  LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
+  LIBMPDEC_LDFLAGS="-lm \$(LIBMPDEC_A)"
+  LIBMPDEC_INTERNAL="\$(LIBMPDEC_A)"
+])
+
+AC_SUBST([LIBMPDEC_CFLAGS])
+AC_SUBST([LIBMPDEC_LDFLAGS])
+AC_SUBST([LIBMPDEC_INTERNAL])
 
 # Check whether _decimal should use a coroutine-local or thread-local context
 AC_MSG_CHECKING(for --with-decimal-contextvar)
@@ -3188,15 +3102,124 @@ fi
 
 AC_MSG_RESULT($with_decimal_contextvar)
 
+# Check for libmpdec machine flavor
+AC_MSG_CHECKING(for decimal libmpdec machine)
+AS_CASE([$ac_sys_system],
+  [Darwin*], [libmpdec_system=Darwin],
+  [SunOS*], [libmpdec_system=sunos],
+  [libmpdec_system=other]
+)
+
+libmpdec_machine=unknown
+if test "$libmpdec_system" = Darwin; then
+    AS_CASE([$MACOSX_DEFAULT_ARCH],
+      [i386],   [libmpdec_machine=ansi32],
+      [ppc],    [libmpdec_machine=ansi32],
+      [x86_64], [libmpdec_machine=x64],
+      [ppc64],  [libmpdec_machine=ansi64],
+      [arm64],  [libmpdec_machine=ansi64],
+      [libmpdec_machine=universal]
+    )
+elif test $ac_cv_sizeof_size_t -eq 8; then
+    if test "$ac_cv_gcc_asm_for_x64" = yes; then
+        libmpdec_machine=x64
+    elif test "$ac_cv_type___uint128_t" = yes; then
+        libmpdec_machine=uint128
+    else
+        libmpdec_machine=ansi64
+    fi
+elif test $ac_cv_sizeof_size_t -eq 4; then
+    if test "$ac_cv_gcc_asm_for_x87" = yes -a "$libmpdec_system" != sunos; then
+        AS_CASE([$CC],
+            [*gcc*],   [libmpdec_machine=ppro],
+            [*clang*], [libmpdec_machine=ppro],
+            [libmpdec_machine=ansi32]
+        )
+    else
+        libmpdec_machine=ansi32
+    fi
+fi
+AC_MSG_RESULT([$libmpdec_machine])
+
+AS_CASE([$libmpdec_machine],
+  [x64],         [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_64=1 -DASM=1"])],
+  [uint128],     [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_64=1 -DANSI=1 -DHAVE_UINT128_T=1"])],
+  [ansi64],      [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_64=1 -DANSI=1"])],
+  [ppro],        [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_32=1 -DANSI=1 -DASM=1 -Wno-unknown-pragmas"])],
+  [ansi32],      [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_32=1 -DANSI=1"])],
+  [ansi-legacy], [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_32=1 -DANSI=1 -DLEGACY_COMPILER=1"])],
+  [universal],   [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DUNIVERSAL=1"])],
+  [AC_MSG_ERROR([_decimal: unsupported architecture])]
+)
+
+if test "$have_ipa_pure_const_bug" = yes; then
+    # Some versions of gcc miscompile inline asm:
+    # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
+    # https://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
+    AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -fno-ipa-pure-const"])
+fi
+
+if test "$have_glibc_memmove_bug" = yes; then
+    # _FORTIFY_SOURCE wrappers for memmove and bcopy are incorrect:
+    # https://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
+    AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -U_FORTIFY_SOURCE"])
+fi
+
+dnl Check for SQLite library. Use pkg-config if available.
+PKG_CHECK_MODULES(
+  [LIBSQLITE3], [sqlite3 >= 3.7.15], [], [
+    LIBSQLITE3_LIBS="-lsqlite3"
+    LIBSQLITE3_CFLAGS=
+  ]
+)
+AS_VAR_APPEND([LIBSQLITE3_CFLAGS], [' -I$(srcdir)/Modules/_sqlite'])
+
+dnl bpo-45774/GH-29507: The CPP check in AC_CHECK_HEADER can fail on FreeBSD,
+dnl hence CPPFLAGS instead of CFLAGS. We still need to save CFLAGS, because it
+dnl is touched by AC_CHECK_HEADER.
+AS_VAR_COPY([save_CFLAGS], [CFLAGS])
+AS_VAR_COPY([save_CPPFLAGS], [CPPFLAGS])
+AS_VAR_COPY([save_LDFLAGS], [LDFLAGS])
+AS_VAR_COPY([save_LIBS], [LIBS])
+CPPFLAGS="$LIBSQLITE3_CFLAGS $CFLAGS"
+LDFLAGS="$LIBSQLITE3_LIBS $LDFLAGS"
+
+AC_CHECK_HEADER([sqlite3.h], [
+  AC_CHECK_LIB([sqlite3], [sqlite3_open_v2], [
+    have_sqlite3=yes
+    AC_COMPILE_IFELSE([
+      AC_LANG_PROGRAM([
+        #include <sqlite3.h>
+        #if SQLITE_VERSION_NUMBER < 3007015
+        #  error "SQLite 3.7.15 or higher required"
+        #endif
+      ], [])
+    ], [have_supported_sqlite3=yes], [have_supported_sqlite3=no])
+  ], [have_sqlite3=no])
+  AC_CHECK_LIB([sqlite3], [sqlite3_load_extension],
+               [have_sqlite3_load_extension=yes],
+               [have_sqlite3_load_extension=no])
+])
+
+AS_VAR_COPY([CFLAGS], [save_CFLAGS])
+AS_VAR_COPY([CPPFLAGS], [save_CPPFLAGS])
+AS_VAR_COPY([LDFLAGS], [save_LDFLAGS])
+AS_VAR_COPY([LIBS], [save_LIBS])
+
 # Check for support for loadable sqlite extensions
 AC_MSG_CHECKING(for --enable-loadable-sqlite-extensions)
 AC_ARG_ENABLE(loadable-sqlite-extensions,
               AS_HELP_STRING([--enable-loadable-sqlite-extensions],
                              [support loadable extensions in _sqlite module, see Doc/library/sqlite3.rst (default is no)]),
-              [],
-              [enable_loadable_sqlite_extensions="no"])
-
+              [AS_VAR_IF([have_sqlite3_load_extension], [no],
+                         [AC_MSG_WARN([Your version of SQLite does not support loadable extensions])])],
+              [enable_loadable_sqlite_extensions=no])
 AC_MSG_RESULT($enable_loadable_sqlite_extensions)
+
+AS_VAR_IF([enable_loadable_sqlite_extensions], [yes], [
+  AC_DEFINE(PY_SQLITE_ENABLE_LOAD_EXTENSION, 1,
+  [Define to 1 to build the sqlite module with loadable extensions support.])
+])
 
 # Check for --with-tcltk-includes=path and --with-tcltk-libs=path
 AC_SUBST(TCLTK_INCLUDES)
@@ -3231,6 +3254,74 @@ else
   TCLTK_LIBS="$with_tcltk_libs"
 fi
 
+# check for _gdbmmodulec dependencies
+AC_CHECK_HEADERS([gdbm.h], [
+  LIBS_SAVE=$LIBS
+  AC_CHECK_LIB([gdbm], [gdbm_open])
+  LIBS=$LIBS_SAVE
+])
+
+# check for _dbmmodule.c dependencies
+AC_CHECK_HEADERS([ndbm.h], [
+  LIBS_SAVE="$LIBS"
+  AC_CHECK_LIB([ndbm], [dbm_open])
+  LIBS="$LIBS_SAVE"
+  AC_CHECK_LIB([gdbm_compat], [dbm_open])
+  LIBS="$LIBS_SAVE"
+])
+
+# "gdbm-ndbm.h" and "gdbm/ndbm.h" are both normalized to "gdbm_ndbm_h"
+# unset ac_cv_header_gdbm_ndbm_h to prevent false positive cache hits.
+AS_UNSET([ac_cv_header_gdbm_ndbm_h])
+AC_CACHE_VAL([ac_cv_header_gdbm_slash_ndbm_h], [
+  AC_CHECK_HEADER(
+    [gdbm/ndbm.h],
+    [ac_cv_header_gdbm_slash_ndbm_h=yes], [ac_cv_header_gdbm_slash_ndbm_h=no]
+  )
+])
+AS_VAR_IF([ac_cv_header_gdbm_slash_ndbm_h], [yes], [
+  AC_DEFINE([HAVE_GDBM_NDBM_H], [1], [Define to 1 if you have the <gdbm/ndbm.h> header file.])
+])
+
+AS_UNSET([ac_cv_header_gdbm_ndbm_h])
+AC_CACHE_VAL([ac_cv_header_gdbm_dash_ndbm_h], [
+  AC_CHECK_HEADER(
+    [gdbm-ndbm.h],
+    [ac_cv_header_gdbm_dash_ndbm_h=yes], [ac_cv_header_gdbm_dash_ndbm_h=no]
+  )
+])
+AS_VAR_IF([ac_cv_header_gdbm_dash_ndbm_h], [yes], [
+  AC_DEFINE([HAVE_GDBM_DASH_NDBM_H], [1], [Define to 1 if you have the <gdbm-ndbm.h> header file.])
+])
+AS_UNSET([ac_cv_header_gdbm_ndbm_h])
+
+if test "$ac_cv_header_gdbm_slash_ndbm_h" = yes -o "$ac_cv_header_gdbm_dash_ndbm_h" = yes; then
+  LIBS_SAVE="$LIBS"
+  AC_CHECK_LIB([gdbm_compat], [dbm_open])
+  LIBS="$LIBS_SAVE"
+fi
+
+# Check for libdb >= 5 with dbm_open()
+# db.h re-defines the name of the function
+AC_CHECK_HEADERS([db.h], [
+  AC_CACHE_CHECK([for libdb], [ac_cv_have_libdb], [
+    LIBS_SAVE="$LIBS"
+    LIBS="$LIBS -ldb"
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([
+      #define DB_DBM_HSEARCH 1
+      #include <db.h>
+      #if DB_VERSION_MAJOR < 5
+        #error "dh.h: DB_VERSION_MAJOR < 5 is not supported."
+      #endif
+      ], [DBM *dbm = dbm_open(NULL, 0, 0)])
+    ], [ac_cv_have_libdb=yes], [ac_cv_have_libdb=no])
+    LIBS="$LIBS_SAVE"
+  ])
+  AS_VAR_IF([ac_cv_have_libdb], [yes], [
+    AC_DEFINE([HAVE_LIBDB], [1], [Define to 1 if you have the `db' library (-ldb).])
+  ])
+])
+
 # Check for --with-dbmliborder
 AC_MSG_CHECKING(for --with-dbmliborder)
 AC_ARG_WITH(dbmliborder,
@@ -3240,12 +3331,15 @@ if test x$with_dbmliborder = xyes
 then
 AC_MSG_ERROR([proper usage is --with-dbmliborder=db1:db2:...])
 else
-  for db in `echo $with_dbmliborder | sed 's/:/ /g'`; do
+  as_save_IFS=$IFS
+  IFS=:
+  for db in $with_dbmliborder; do
     if test x$db != xndbm && test x$db != xgdbm && test x$db != xbdb
     then
       AC_MSG_ERROR([proper usage is --with-dbmliborder=db1:db2:...])
     fi
   done
+  IFS=$as_save_IFS
 fi])
 AC_MSG_RESULT($with_dbmliborder)
 
@@ -3367,8 +3461,7 @@ if test "$posix_threads" = "yes"; then
 		       ;;
       esac
 
-      AC_MSG_CHECKING(if PTHREAD_SCOPE_SYSTEM is supported)
-      AC_CACHE_VAL(ac_cv_pthread_system_supported,
+      AC_CACHE_CHECK([if PTHREAD_SCOPE_SYSTEM is supported], [ac_cv_pthread_system_supported],
       [AC_RUN_IFELSE([AC_LANG_SOURCE([[
       #include <stdio.h>
       #include <pthread.h>
@@ -3387,7 +3480,6 @@ if test "$posix_threads" = "yes"; then
       [ac_cv_pthread_system_supported=no],
       [ac_cv_pthread_system_supported=no])
       ])
-      AC_MSG_RESULT($ac_cv_pthread_system_supported)
       if test "$ac_cv_pthread_system_supported" = "yes"; then
         AC_DEFINE(PTHREAD_SYSTEM_SCHED_SUPPORTED, 1, [Defined if PTHREAD_SCOPE_SYSTEM supported.])
       fi
@@ -3565,24 +3657,27 @@ if test "$ipv6" = "yes" -a "$ipv6lib" != "none"; then
 	fi
 fi
 
-AC_MSG_CHECKING(for CAN_RAW_FD_FRAMES)
+
+AC_CACHE_CHECK([CAN_RAW_FD_FRAMES], [ac_cv_can_raw_fd_frames], [
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ /* CAN_RAW_FD_FRAMES available check */
 #include <linux/can/raw.h>]],
-[[int can_raw_fd_frames = CAN_RAW_FD_FRAMES;]])],[
-  AC_DEFINE(HAVE_LINUX_CAN_RAW_FD_FRAMES, 1, [Define if compiling using Linux 3.6 or later.])
-  AC_MSG_RESULT(yes)
-],[
-  AC_MSG_RESULT(no)
+[[int can_raw_fd_frames = CAN_RAW_FD_FRAMES;]])],
+[ac_cv_can_raw_fd_frames=yes],
+[ac_cv_can_raw_fd_frames=no])
+])
+AS_VAR_IF([ac_cv_can_raw_fd_frames], [yes], [
+    AC_DEFINE(HAVE_LINUX_CAN_RAW_FD_FRAMES, 1, [Define if compiling using Linux 3.6 or later.])
 ])
 
-AC_MSG_CHECKING(for CAN_RAW_JOIN_FILTERS)
+AC_CACHE_CHECK([for CAN_RAW_JOIN_FILTERS], [ac_cv_can_raw_join_filters], [
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <linux/can/raw.h>]],
-[[int can_raw_join_filters = CAN_RAW_JOIN_FILTERS;]])],[
-  AC_DEFINE(HAVE_LINUX_CAN_RAW_JOIN_FILTERS, 1, [Define if compiling using Linux 4.1 or later.])
-  AC_MSG_RESULT(yes)
-],[
-  AC_MSG_RESULT(no)
+[[int can_raw_join_filters = CAN_RAW_JOIN_FILTERS;]])],
+[ac_cv_can_raw_join_filters=yes],
+[ac_cv_can_raw_join_filters=no])
+])
+AS_VAR_IF([ac_cv_can_raw_join_filters], [yes], [
+    AC_DEFINE(HAVE_LINUX_CAN_RAW_JOIN_FILTERS, 1, [Define if compiling using Linux 4.1 or later.])
 ])
 
 # Check for --with-doc-strings
@@ -3793,104 +3888,60 @@ AC_CHECK_DECL(dirfd,
       [#include <sys/types.h>
        #include <dirent.h>])
 
-# For some functions, having a definition is not sufficient, since
-# we want to take their address.
-AC_MSG_CHECKING(for chroot)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <unistd.h>]], [[void *x=chroot]])],
-  [AC_DEFINE(HAVE_CHROOT, 1, Define if you have the 'chroot' function.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)
-])
-AC_MSG_CHECKING(for link)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <unistd.h>]], [[void *x=link]])],
-  [AC_DEFINE(HAVE_LINK, 1, Define if you have the 'link' function.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)
-])
-AC_MSG_CHECKING(for symlink)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <unistd.h>]], [[void *x=symlink]])],
-  [AC_DEFINE(HAVE_SYMLINK, 1, Define if you have the 'symlink' function.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)
-])
-AC_MSG_CHECKING(for fchdir)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <unistd.h>]], [[void *x=fchdir]])],
-  [AC_DEFINE(HAVE_FCHDIR, 1, Define if you have the 'fchdir' function.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)
-])
-AC_MSG_CHECKING(for fsync)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <unistd.h>]], [[void *x=fsync]])],
-  [AC_DEFINE(HAVE_FSYNC, 1, Define if you have the 'fsync' function.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)
-])
-AC_MSG_CHECKING(for fdatasync)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <unistd.h>]], [[void *x=fdatasync]])],
-  [AC_DEFINE(HAVE_FDATASYNC, 1, Define if you have the 'fdatasync' function.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)
-])
-AC_MSG_CHECKING(for epoll)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/epoll.h>]], [[void *x=epoll_create]])],
-  [AC_DEFINE(HAVE_EPOLL, 1, Define if you have the 'epoll' functions.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)
-])
-AC_MSG_CHECKING(for epoll_create1)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/epoll.h>]], [[void *x=epoll_create1]])],
-  [AC_DEFINE(HAVE_EPOLL_CREATE1, 1, Define if you have the 'epoll_create1' function.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)
-])
-AC_MSG_CHECKING(for kqueue)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include <sys/types.h>
-#include <sys/event.h>
-    ]], [[int x=kqueue()]])],
-  [AC_DEFINE(HAVE_KQUEUE, 1, Define if you have the 'kqueue' functions.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)
-])
-AC_MSG_CHECKING(for prlimit)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include <sys/time.h>
-#include <sys/resource.h>
-    ]], [[void *x=prlimit]])],
-  [AC_DEFINE(HAVE_PRLIMIT, 1, Define if you have the 'prlimit' functions.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)
-])
-AC_MSG_CHECKING(for _dyld_shared_cache_contains_path)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <mach-o/dyld.h>]], [[void *x=_dyld_shared_cache_contains_path]])],
-  [AC_DEFINE(HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH, 1, Define if you have the '_dyld_shared_cache_contains_path' function.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)
+dnl PY_CHECK_FUNC(FUNCTION, [INCLUDES], [AC_DEFINE-VAR])
+AC_DEFUN([PY_CHECK_FUNC],
+[ AS_VAR_PUSHDEF([py_var], [ac_cv_func_$1])
+  AS_VAR_PUSHDEF([py_define], m4_ifblank([$3], [[HAVE_]m4_toupper($1)], [$3]))
+  AC_CACHE_CHECK(
+    [for $1],
+    [py_var],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([$2], [void *x=$1])],
+      [AS_VAR_SET([py_var], [yes])],
+      [AS_VAR_SET([py_var], [no])])]
+  )
+  AS_VAR_IF(
+    [py_var],
+    [yes],
+    [AC_DEFINE([py_define], [1], [Define if you have the '$1' function.])])
+  AS_VAR_POPDEF([py_var])
+  AS_VAR_POPDEF([py_define])
 ])
 
-AC_MSG_CHECKING(for memfd_create)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+# For some functions, having a definition is not sufficient, since
+# we want to take their address.
+PY_CHECK_FUNC([chroot], [#include <unistd.h>])
+PY_CHECK_FUNC([link], [#include <unistd.h>])
+PY_CHECK_FUNC([symlink], [#include <unistd.h>])
+PY_CHECK_FUNC([fchdir], [#include <unistd.h>])
+PY_CHECK_FUNC([fsync], [#include <unistd.h>])
+PY_CHECK_FUNC([fdatasync], [#include <unistd.h>])
+PY_CHECK_FUNC([epoll], [#include <sys/epoll.h>])
+PY_CHECK_FUNC([epoll_create1], [#include <sys/epoll.h>])
+PY_CHECK_FUNC([kqueue],[
+#include <sys/types.h>
+#include <sys/event.h>
+])
+PY_CHECK_FUNC([prlimit], [
+#include <sys/time.h>
+#include <sys/resource.h>
+])
+
+PY_CHECK_FUNC([_dyld_shared_cache_contains_path], [#include <mach-o/dyld.h>], [HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH])
+
+PY_CHECK_FUNC([memfd_create], [
 #ifdef HAVE_SYS_MMAN_H
 #include <sys/mman.h>
 #endif
 #ifdef HAVE_SYS_MEMFD_H
 #include <sys/memfd.h>
 #endif
-]], [[void *x=memfd_create]])],
-  [AC_DEFINE(HAVE_MEMFD_CREATE, 1, Define if you have the 'memfd_create' function.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)
 ])
 
-AC_MSG_CHECKING(for eventfd)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+PY_CHECK_FUNC([eventfd], [
 #ifdef HAVE_SYS_EVENTFD_H
 #include <sys/eventfd.h>
 #endif
-]], [[int x = eventfd(0, EFD_CLOEXEC)]])],
-  [AC_DEFINE(HAVE_EVENTFD, 1, Define if you have the 'eventfd' function.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)
 ])
 
 # On some systems (eg. FreeBSD 5), we would find a definition of the
@@ -3899,14 +3950,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 # address to avoid compiler warnings and potential miscompilations
 # because of the missing prototypes.
 
-AC_MSG_CHECKING(for ctermid_r)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include <stdio.h>
-]], [[void* p = ctermid_r]])],
-  [AC_DEFINE(HAVE_CTERMID_R, 1, Define if you have the 'ctermid_r' function.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)
-])
+PY_CHECK_FUNC([ctermid_r], [#include <stdio.h>])
 
 AC_CACHE_CHECK([for flock declaration], [ac_cv_flock_decl],
   [AC_COMPILE_IFELSE(
@@ -3927,22 +3971,19 @@ if test "x${ac_cv_flock_decl}" = xyes; then
   )
 fi
 
-AC_MSG_CHECKING(for getpagesize)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include <unistd.h>
-]], [[void* p = getpagesize]])],
-  [AC_DEFINE(HAVE_GETPAGESIZE, 1, Define if you have the 'getpagesize' function.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)
-])
+PY_CHECK_FUNC([getpagesize], [#include <unistd.h>])
 
-AC_MSG_CHECKING(for broken unsetenv)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include <stdlib.h>
-]], [[int res = unsetenv("DUMMY")]])],
-  [AC_MSG_RESULT(no)],
-  [AC_DEFINE(HAVE_BROKEN_UNSETENV, 1, Define if `unsetenv` does not return an int.)
-   AC_MSG_RESULT(yes)
+AC_CACHE_CHECK([for broken unsetenv], [ac_cv_broken_unsetenv],
+  [AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM(
+      [#include <stdlib.h>],
+      [int res = unsetenv("DUMMY")])],
+    [ac_cv_broken_unsetenv=no],
+    [ac_cv_broken_unsetenv=yes]
+  )
+])
+AS_VAR_IF([ac_cv_broken_unsetenv], [yes], [
+  AC_DEFINE(HAVE_BROKEN_UNSETENV, 1, [Define if 'unsetenv' does not return an int.])
 ])
 
 dnl check for true
@@ -3997,79 +4038,49 @@ if test "$ac_cv_have_lchflags" = yes ; then
   AC_DEFINE(HAVE_LCHFLAGS, 1, [Define to 1 if you have the 'lchflags' function.])
 fi
 
-dnl Check if system zlib has *Copy() functions
-dnl
-dnl On MacOSX the linker will search for dylibs on the entire linker path
-dnl before searching for static libraries. setup.py adds -Wl,-search_paths_first
-dnl to revert to a more traditional unix behaviour and make it possible to
-dnl override the system libz with a local static library of libz. Temporarily
-dnl add that flag to our CFLAGS as well to ensure that we check the version
-dnl of libz that will be used by setup.py.
-dnl The -L/usr/local/lib is needed as wel to get the same compilation
-dnl environment as setup.py (and leaving it out can cause configure to use the
-dnl wrong version of the library)
-case $ac_sys_system/$ac_sys_release in
-Darwin/*)
-	_CUR_CFLAGS="${CFLAGS}"
-	_CUR_LDFLAGS="${LDFLAGS}"
-	CFLAGS="${CFLAGS} -Wl,-search_paths_first"
-	LDFLAGS="${LDFLAGS} -Wl,-search_paths_first -L/usr/local/lib"
-	;;
-esac
-
-AC_CHECK_LIB(z, inflateCopy, AC_DEFINE(HAVE_ZLIB_COPY, 1, [Define if the zlib library has inflateCopy]))
-
-case $ac_sys_system/$ac_sys_release in
-Darwin/*)
-	CFLAGS="${_CUR_CFLAGS}"
-	LDFLAGS="${_CUR_LDFLAGS}"
-	;;
-esac
-
-AC_MSG_CHECKING(for hstrerror)
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-#include <netdb.h>
-]], [[void* p = hstrerror; hstrerror(0)]])],
-  [AC_DEFINE(HAVE_HSTRERROR, 1, Define if you have the 'hstrerror' function.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)
+dnl Check for compression libraries
+AC_CHECK_HEADERS([zlib.h], [
+  save_LIBS="$LIBS"
+  AC_CHECK_LIB([z], [gzread])
+  LIBS="$save_LIBS"
+  AC_CHECK_LIB([z], [inflateCopy], [AC_DEFINE(HAVE_ZLIB_COPY, 1, [Define if the zlib library has inflateCopy])])
+  LIBS="$save_LIBS"
 ])
 
-AC_MSG_CHECKING(for inet_aton)
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+AC_CHECK_HEADERS([bzlib.h], [
+  save_LIBS="$LIBS"
+  AC_CHECK_LIB([bz2], [BZ2_bzCompress])
+  LIBS="$save_LIBS"
+])
+
+AC_CHECK_HEADERS([lzma.h], [
+  save_LIBS="$LIBS"
+  AC_CHECK_LIB([lzma], [lzma_easy_encoder])
+  LIBS="$save_LIBS"
+])
+
+PY_CHECK_FUNC([hstrerror], [#include <netdb.h>])
+
+PY_CHECK_FUNC([inet_aton], [
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-]], [[void* p = inet_aton;inet_aton(0,0)]])],
-  [AC_DEFINE(HAVE_INET_ATON, 1, Define if you have the 'inet_aton' function.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)
 ])
 
-AC_MSG_CHECKING(for inet_pton)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+PY_CHECK_FUNC([inet_pton], [
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-]], [[void* p = inet_pton]])],
-  [AC_DEFINE(HAVE_INET_PTON, 1, Define if you have the 'inet_pton' function.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)
 ])
 
 # On some systems, setgroups is in unistd.h, on others, in grp.h
-AC_MSG_CHECKING(for setgroups)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+PY_CHECK_FUNC([setgroups], [
 #include <unistd.h>
 #ifdef HAVE_GRP_H
 #include <grp.h>
 #endif
-]], [[void* p = setgroups]])],
-  [AC_DEFINE(HAVE_SETGROUPS, 1, Define if you have the 'setgroups' function.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)
 ])
 
 # check for openpty and forkpty
@@ -4106,12 +4117,12 @@ AC_CHECK_FUNCS(setpgrp,
 # This gets us our -lcrypt in LIBS when required on the target platform.
 # Save/restore LIBS to avoid linking libpython with libcrypt.
 LIBS_SAVE=$LIBS
-AC_SEARCH_LIBS(crypt, crypt)
 AC_SEARCH_LIBS(crypt_r, crypt)
+LIBS="$LIBS_SAVE"
+AC_SEARCH_LIBS(crypt, crypt)
 
 AC_CHECK_FUNC(crypt_r,
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#define _GNU_SOURCE  /* Required for crypt_r()'s prototype in glibc. */
 #include <crypt.h>
 ]], [[
 struct crypt_data d;
@@ -4155,7 +4166,7 @@ AC_CHECK_FUNCS(nanosleep, [], [
     ])
 ])
 
-AC_MSG_CHECKING(for major, minor, and makedev)
+AC_CACHE_CHECK([for major, minor, and makedev], [ac_cv_device_macros], [
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #if defined(MAJOR_IN_MKDEV)
 #include <sys/mkdev.h>
@@ -4166,30 +4177,33 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #endif
 ]], [[
   makedev(major(0),minor(0));
-]])],[
+]])],[ac_cv_device_macros=yes], [ac_cv_device_macros=no])
+])
+AS_VAR_IF([ac_cv_device_macros], [yes], [
   AC_DEFINE(HAVE_DEVICE_MACROS, 1,
 	    [Define to 1 if you have the device macros.])
-  AC_MSG_RESULT(yes)
-],[
-  AC_MSG_RESULT(no)
 ])
+
+dnl no longer used, now always defined for backwards compatibility
+AC_DEFINE(SYS_SELECT_WITH_SYS_TIME, 1,
+  [Define if  you can safely include both <sys/select.h> and <sys/time.h>
+   (which you can't on SCO ODT 3.0).])
 
 # On OSF/1 V5.1, getaddrinfo is available, but a define
 # for [no]getaddrinfo in netdb.h.
-AC_MSG_CHECKING(for getaddrinfo)
+AC_CACHE_CHECK([for getaddrinfo], [ac_cv_func_getaddrinfo], [
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <stdio.h>
 ]], [[getaddrinfo(NULL, NULL, NULL, NULL);]])],
-[have_getaddrinfo=yes],
-[have_getaddrinfo=no])
-AC_MSG_RESULT($have_getaddrinfo)
-if test $have_getaddrinfo = yes
-then
-  AC_MSG_CHECKING(getaddrinfo bug)
-  AC_CACHE_VAL(ac_cv_buggy_getaddrinfo,
+[ac_cv_func_getaddrinfo=yes],
+[ac_cv_func_getaddrinfo=no])
+])
+
+AS_VAR_IF([ac_cv_func_getaddrinfo], [yes], [
+  AC_CACHE_CHECK([getaddrinfo bug], [ac_cv_buggy_getaddrinfo],
   AC_RUN_IFELSE([AC_LANG_SOURCE([[[
 #include <stdio.h>
 #include <sys/types.h>
@@ -4288,11 +4302,11 @@ if test "${enable_ipv6+set}" = set; then
 else
   ac_cv_buggy_getaddrinfo=yes
 fi]))
-fi
 
-AC_MSG_RESULT($ac_cv_buggy_getaddrinfo)
+dnl if ac_cv_func_getaddrinfo
+])
 
-if test $have_getaddrinfo = no || test "$ac_cv_buggy_getaddrinfo" = yes
+if test "$ac_cv_func_getaddrinfo" = no -o "$ac_cv_buggy_getaddrinfo" = yes
 then
 	if test $ipv6 = yes
 	then
@@ -4306,8 +4320,13 @@ fi
 
 AC_CHECK_FUNCS(getnameinfo)
 
+dnl autoconf 2.71 deprecates AC_HEADER_TIME, keep for backwards compatibility
+dnl TIME_WITH_SYS_TIME works on all supported systems that have sys/time.h
+AS_VAR_IF([ac_cv_header_sys_time_h], [yes], [
+  AC_DEFINE([TIME_WITH_SYS_TIME], 1, [Define to 1 if you can safely include both <sys/time.h> and <time.h>.])
+])
+
 # checks for structures
-AC_HEADER_TIME
 AC_STRUCT_TM
 AC_STRUCT_TIMEZONE
 AC_CHECK_MEMBERS([struct stat.st_rdev])
@@ -4323,62 +4342,40 @@ AC_CHECK_MEMBERS([struct passwd.pw_gecos, struct passwd.pw_passwd], [], [], [[
 # Issue #21085: In Cygwin, siginfo_t does not have si_band field.
 AC_CHECK_MEMBERS([siginfo_t.si_band], [], [], [[#include <signal.h>]])
 
-AC_MSG_CHECKING(for time.h that defines altzone)
-AC_CACHE_VAL(ac_cv_header_time_altzone,[
+AC_CACHE_CHECK([for time.h that defines altzone], [ac_cv_header_time_altzone], [
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <time.h>]], [[return altzone;]])],
     [ac_cv_header_time_altzone=yes],
     [ac_cv_header_time_altzone=no])
   ])
-AC_MSG_RESULT($ac_cv_header_time_altzone)
 if test $ac_cv_header_time_altzone = yes; then
   AC_DEFINE(HAVE_ALTZONE, 1, [Define this if your time.h defines altzone.])
 fi
 
-was_it_defined=no
-AC_MSG_CHECKING(whether sys/select.h and sys/time.h may both be included)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include <sys/types.h>
-#include <sys/select.h>
-#include <sys/time.h>
-]], [[;]])],[
-  AC_DEFINE(SYS_SELECT_WITH_SYS_TIME, 1,
-  [Define if  you can safely include both <sys/select.h> and <sys/time.h>
-   (which you can't on SCO ODT 3.0).])
-  was_it_defined=yes
-],[])
-AC_MSG_RESULT($was_it_defined)
-
-AC_MSG_CHECKING(for addrinfo)
-AC_CACHE_VAL(ac_cv_struct_addrinfo,
+AC_CACHE_CHECK([for addrinfo], [ac_cv_struct_addrinfo],
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <netdb.h>]], [[struct addrinfo a]])],
   [ac_cv_struct_addrinfo=yes],
   [ac_cv_struct_addrinfo=no]))
-AC_MSG_RESULT($ac_cv_struct_addrinfo)
 if test $ac_cv_struct_addrinfo = yes; then
 	AC_DEFINE(HAVE_ADDRINFO, 1, [struct addrinfo (netdb.h)])
 fi
 
-AC_MSG_CHECKING(for sockaddr_storage)
-AC_CACHE_VAL(ac_cv_struct_sockaddr_storage,
+AC_CACHE_CHECK([for sockaddr_storage], [ac_cv_struct_sockaddr_storage],
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #		include <sys/types.h>
 #		include <sys/socket.h>]], [[struct sockaddr_storage s]])],
   [ac_cv_struct_sockaddr_storage=yes],
   [ac_cv_struct_sockaddr_storage=no]))
-AC_MSG_RESULT($ac_cv_struct_sockaddr_storage)
 if test $ac_cv_struct_sockaddr_storage = yes; then
 	AC_DEFINE(HAVE_SOCKADDR_STORAGE, 1, [struct sockaddr_storage (sys/socket.h)])
 fi
 
-AC_MSG_CHECKING(for sockaddr_alg)
-AC_CACHE_VAL(ac_cv_struct_sockaddr_alg,
+AC_CACHE_CHECK([for sockaddr_alg], [ac_cv_struct_sockaddr_alg],
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #		include <sys/types.h>
 #		include <sys/socket.h>
 #		include <linux/if_alg.h>]], [[struct sockaddr_alg s]])],
   [ac_cv_struct_sockaddr_alg=yes],
   [ac_cv_struct_sockaddr_alg=no]))
-AC_MSG_RESULT($ac_cv_struct_sockaddr_alg)
 if test $ac_cv_struct_sockaddr_alg = yes; then
 	AC_DEFINE(HAVE_SOCKADDR_ALG, 1, [struct sockaddr_alg (linux/if_alg.h)])
 fi
@@ -4388,26 +4385,25 @@ fi
 AC_C_CHAR_UNSIGNED
 AC_C_CONST
 
-works=no
-AC_MSG_CHECKING(for working signed char)
+AC_CACHE_CHECK([for working signed char], [ac_cv_working_signed_char_c], [
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[signed char c;]])],
-  [works=yes],
-  [AC_DEFINE(signed, , [Define to empty if the keyword does not work.])]
-)
-AC_MSG_RESULT($works)
+  [ac_cv_working_signed_char_c=yes], [ac_cv_working_signed_char_c=no])
+])
+AS_VAR_IF([ac_cv_working_signed_char_c], [no], [
+  AC_DEFINE(signed, , [Define to empty if the keyword does not work.])
+])
 
-have_prototypes=no
-AC_MSG_CHECKING(for prototypes)
+AC_CACHE_CHECK([for prototypes], [ac_cv_function_prototypes], [
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[int foo(int x) { return 0; }]], [[return foo(10);]])],
-  [AC_DEFINE(HAVE_PROTOTYPES, 1,
+  [ac_cv_function_prototypes=yes], [ac_cv_function_prototypes=no])
+])
+AS_VAR_IF([ac_cv_function_prototypes], [yes], [
+  AC_DEFINE(HAVE_PROTOTYPES, 1,
      [Define if your compiler supports function prototype])
-   have_prototypes=yes],
-  []
-)
-AC_MSG_RESULT($have_prototypes)
+])
 
 works=no
-AC_MSG_CHECKING(for variable length prototypes and stdarg.h)
+AC_CACHE_CHECK([for variable length prototypes and stdarg.h], [ac_cv_stdarg_prototypes], [
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <stdarg.h>
 int foo(int x, ...) {
@@ -4418,34 +4414,32 @@ int foo(int x, ...) {
 	va_arg(va, double);
 	return 0;
 }
-]], [[return foo(10, "", 3.14);]])],[
+]], [[return foo(10, "", 3.14);]])],
+  [ac_cv_stdarg_prototypes=yes], [ac_cv_stdarg_prototypes=no])
+])
+AS_VAR_IF([ac_cv_stdarg_prototypes], [yes], [
   AC_DEFINE(HAVE_STDARG_PROTOTYPES, 1,
    [Define if your compiler supports variable length function prototypes
    (e.g. void fprintf(FILE *, char *, ...);) *and* <stdarg.h>])
-  works=yes
-],[])
-AC_MSG_RESULT($works)
+])
+
 
 # check for socketpair
-AC_MSG_CHECKING(for socketpair)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+PY_CHECK_FUNC([socketpair], [
 #include <sys/types.h>
 #include <sys/socket.h>
-]], [[void *x=socketpair]])],
-  [AC_DEFINE(HAVE_SOCKETPAIR, 1, [Define if you have the 'socketpair' function.])
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)]
-)
+])
 
 # check if sockaddr has sa_len member
-AC_MSG_CHECKING(if sockaddr has sa_len member)
+AC_CACHE_CHECK([if sockaddr has sa_len member], [ac_cv_struct_sockaddr_sa_len], [
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
 #include <sys/socket.h>]], [[struct sockaddr x;
 x.sa_len = 0;]])],
-  [AC_MSG_RESULT(yes)
-   AC_DEFINE(HAVE_SOCKADDR_SA_LEN, 1, [Define if sockaddr has sa_len member])],
-  [AC_MSG_RESULT(no)]
-)
+  [ac_cv_struct_sockaddr_sa_len=yes], [ac_cv_struct_sockaddr_sa_len=no])
+])
+AS_VAR_IF([ac_cv_struct_sockaddr_sa_len], [yes], [
+   AC_DEFINE(HAVE_SOCKADDR_SA_LEN, 1, [Define if sockaddr has sa_len member])
+])
 
 # sigh -- gethostbyname_r is a mess; it can have 3, 5 or 6 arguments :-(
 AH_TEMPLATE(HAVE_GETHOSTBYNAME_R,
@@ -4571,16 +4565,17 @@ fi],
 # * Check for gcc x64 inline assembler *
 # **************************************
 
-AC_MSG_CHECKING(for x64 gcc inline assembler)
-AC_LINK_IFELSE(   [AC_LANG_PROGRAM([[]], [[
+
+AC_CACHE_CHECK([for x64 gcc inline assembler], [ac_cv_gcc_asm_for_x64], [
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[
   __asm__ __volatile__ ("movq %rcx, %rax");
-]])],[have_gcc_asm_for_x64=yes],[have_gcc_asm_for_x64=no])
-AC_MSG_RESULT($have_gcc_asm_for_x64)
-if test "$have_gcc_asm_for_x64" = yes
-then
+]])],[ac_cv_gcc_asm_for_x64=yes],[ac_cv_gcc_asm_for_x64=no])
+])
+
+AS_VAR_IF([ac_cv_gcc_asm_for_x64], [yes], [
     AC_DEFINE(HAVE_GCC_ASM_FOR_X64, 1,
     [Define if we can use x64 gcc inline assembler])
-fi
+])
 
 # **************************************************
 # * Check for various properties of floating point *
@@ -4619,38 +4614,36 @@ fi
 # This inline assembler syntax may also work for suncc and icc,
 # so we try it on all platforms.
 
-AC_MSG_CHECKING(whether we can use gcc inline assembler to get and set x87 control word)
+AC_CACHE_CHECK([whether we can use gcc inline assembler to get and set x87 control word], [ac_cv_gcc_asm_for_x87], [
 AC_LINK_IFELSE(   [AC_LANG_PROGRAM([[]], [[
   unsigned short cw;
   __asm__ __volatile__ ("fnstcw %0" : "=m" (cw));
   __asm__ __volatile__ ("fldcw %0" : : "m" (cw));
-]])],[have_gcc_asm_for_x87=yes],[have_gcc_asm_for_x87=no])
-AC_MSG_RESULT($have_gcc_asm_for_x87)
-if test "$have_gcc_asm_for_x87" = yes
-then
+]])],[ac_cv_gcc_asm_for_x87=yes],[ac_cv_gcc_asm_for_x87=no])
+])
+AS_VAR_IF([ac_cv_gcc_asm_for_x87], [yes], [
     AC_DEFINE(HAVE_GCC_ASM_FOR_X87, 1,
     [Define if we can use gcc inline assembler to get and set x87 control word])
-fi
+])
 
-AC_MSG_CHECKING(whether we can use gcc inline assembler to get and set mc68881 fpcr)
+AC_CACHE_CHECK([whether we can use gcc inline assembler to get and set mc68881 fpcr], [ac_cv_gcc_asm_for_mc68881], [
 AC_LINK_IFELSE(   [AC_LANG_PROGRAM([[]], [[
   unsigned int fpcr;
   __asm__ __volatile__ ("fmove.l %%fpcr,%0" : "=g" (fpcr));
   __asm__ __volatile__ ("fmove.l %0,%%fpcr" : : "g" (fpcr));
-]])],[have_gcc_asm_for_mc68881=yes],[have_gcc_asm_for_mc68881=no])
-AC_MSG_RESULT($have_gcc_asm_for_mc68881)
-if test "$have_gcc_asm_for_mc68881" = yes
-then
+]])],[ac_cv_gcc_asm_for_mc68881=yes],[ac_cv_gcc_asm_for_mc68881=no])
+])
+AS_VAR_IF([ac_cv_gcc_asm_for_mc68881], [yes], [
     AC_DEFINE(HAVE_GCC_ASM_FOR_MC68881, 1,
     [Define if we can use gcc inline assembler to get and set mc68881 fpcr])
-fi
+])
 
 # Detect whether system arithmetic is subject to x87-style double
 # rounding issues.  The result of this test has little meaning on non
 # IEEE 754 platforms.  On IEEE 754, test should return 1 if rounding
 # mode is round-to-nearest and double rounding issues are present, and
 # 0 otherwise.  See http://bugs.python.org/issue2937 for more info.
-AC_MSG_CHECKING(for x87-style double rounding)
+AC_CACHE_CHECK([for x87-style double rounding], [ac_cv_x87_double_rounding], [
 # $BASECFLAGS may affect the result
 ac_save_cc="$CC"
 CC="$CC $BASECFLAGS"
@@ -4678,12 +4671,12 @@ int main() {
 [ac_cv_x87_double_rounding=yes],
 [ac_cv_x87_double_rounding=no])
 CC="$ac_save_cc"
-AC_MSG_RESULT($ac_cv_x87_double_rounding)
-if test "$ac_cv_x87_double_rounding" = yes
-then
+])
+
+AS_VAR_IF([ac_cv_x87_double_rounding], [yes], [
   AC_DEFINE(X87_DOUBLE_ROUNDING, 1,
   [Define if arithmetic is subject to x87-style double rounding issue])
-fi
+])
 
 # ************************************
 # * Check for mathematical functions *
@@ -4704,8 +4697,7 @@ LIBS=$LIBS_SAVE
 # the kernel module that provides POSIX semaphores
 # isn't loaded by default, so an attempt to call
 # sem_open results in a 'Signal 12' error.
-AC_MSG_CHECKING(whether POSIX semaphores are enabled)
-AC_CACHE_VAL(ac_cv_posix_semaphores_enabled,
+AC_CACHE_CHECK([whether POSIX semaphores are enabled], [ac_cv_posix_semaphores_enabled],
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <unistd.h>
 #include <fcntl.h>
@@ -4728,7 +4720,6 @@ int main(void) {
 [ac_cv_posix_semaphores_enabled=no],
 [ac_cv_posix_semaphores_enabled=yes])
 )
-AC_MSG_RESULT($ac_cv_posix_semaphores_enabled)
 if test $ac_cv_posix_semaphores_enabled = no
 then
   AC_DEFINE(POSIX_SEMAPHORES_NOT_ENABLED, 1,
@@ -4736,8 +4727,7 @@ then
 fi
 
 # Multiprocessing check for broken sem_getvalue
-AC_MSG_CHECKING(for broken sem_getvalue)
-AC_CACHE_VAL(ac_cv_broken_sem_getvalue,
+AC_CACHE_CHECK([for broken sem_getvalue], [ac_cv_broken_sem_getvalue],
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <unistd.h>
 #include <fcntl.h>
@@ -4764,7 +4754,6 @@ int main(void){
 [ac_cv_broken_sem_getvalue=yes],
 [ac_cv_broken_sem_getvalue=yes])
 )
-AC_MSG_RESULT($ac_cv_broken_sem_getvalue)
 if test $ac_cv_broken_sem_getvalue = yes
 then
   AC_DEFINE(HAVE_BROKEN_SEM_GETVALUE, 1,
@@ -4823,8 +4812,7 @@ AC_MSG_RESULT($have_ucs4_tcl)
 if test "$wchar_h" = yes
 then
   # check whether wchar_t is signed or not
-  AC_MSG_CHECKING(whether wchar_t is signed)
-  AC_CACHE_VAL(ac_cv_wchar_t_signed, [
+  AC_CACHE_CHECK([whether wchar_t is signed], [ac_cv_wchar_t_signed], [
   AC_RUN_IFELSE([AC_LANG_SOURCE([[
   #include <wchar.h>
   int main()
@@ -4836,7 +4824,6 @@ then
   [ac_cv_wchar_t_signed=yes],
   [ac_cv_wchar_t_signed=no],
   [ac_cv_wchar_t_signed=yes])])
-  AC_MSG_RESULT($ac_cv_wchar_t_signed)
 fi
 
 AC_MSG_CHECKING(whether wchar_t is usable)
@@ -4974,8 +4961,7 @@ fi],
 
 # Check whether right shifting a negative integer extends the sign bit
 # or fills with zeros (like the Cray J90, according to Tim Peters).
-AC_MSG_CHECKING(whether right shift extends the sign bit)
-AC_CACHE_VAL(ac_cv_rshift_extends_sign, [
+AC_CACHE_CHECK([whether right shift extends the sign bit], [ac_cv_rshift_extends_sign], [
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 int main()
 {
@@ -4985,7 +4971,6 @@ int main()
 [ac_cv_rshift_extends_sign=yes],
 [ac_cv_rshift_extends_sign=no],
 [ac_cv_rshift_extends_sign=yes])])
-AC_MSG_RESULT($ac_cv_rshift_extends_sign)
 if test "$ac_cv_rshift_extends_sign" = no
 then
   AC_DEFINE(SIGNED_RIGHT_SHIFT_ZERO_FILLS, 1,
@@ -4994,15 +4979,13 @@ then
 fi
 
 # check for getc_unlocked and related locking functions
-AC_MSG_CHECKING(for getc_unlocked() and friends)
-AC_CACHE_VAL(ac_cv_have_getc_unlocked, [
+AC_CACHE_CHECK([for getc_unlocked() and friends], [ac_cv_have_getc_unlocked], [
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdio.h>]], [[
 	FILE *f = fopen("/dev/null", "r");
 	flockfile(f);
 	getc_unlocked(f);
 	funlockfile(f);
 ]])],[ac_cv_have_getc_unlocked=yes],[ac_cv_have_getc_unlocked=no])])
-AC_MSG_RESULT($ac_cv_have_getc_unlocked)
 if test "$ac_cv_have_getc_unlocked" = yes
 then
   AC_DEFINE(HAVE_GETC_UNLOCKED, 1,
@@ -5131,8 +5114,7 @@ fi
 # End of readline checks: restore LIBS
 LIBS=$LIBS_no_readline
 
-AC_MSG_CHECKING(for broken nice())
-AC_CACHE_VAL(ac_cv_broken_nice, [
+AC_CACHE_CHECK([for broken nice()], [ac_cv_broken_nice], [
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <stdlib.h>
 #include <unistd.h>
@@ -5147,15 +5129,13 @@ int main()
 [ac_cv_broken_nice=yes],
 [ac_cv_broken_nice=no],
 [ac_cv_broken_nice=no])])
-AC_MSG_RESULT($ac_cv_broken_nice)
 if test "$ac_cv_broken_nice" = yes
 then
   AC_DEFINE(HAVE_BROKEN_NICE, 1,
   [Define if nice() returns success/failure instead of the new priority.])
 fi
 
-AC_MSG_CHECKING(for broken poll())
-AC_CACHE_VAL(ac_cv_broken_poll,
+AC_CACHE_CHECK([for broken poll()], [ac_cv_broken_poll],
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <poll.h>
 #include <unistd.h>
@@ -5179,7 +5159,6 @@ int main()
 [ac_cv_broken_poll=yes],
 [ac_cv_broken_poll=no],
 [ac_cv_broken_poll=no]))
-AC_MSG_RESULT($ac_cv_broken_poll)
 if test "$ac_cv_broken_poll" = yes
 then
   AC_DEFINE(HAVE_BROKEN_POLL, 1,
@@ -5187,8 +5166,7 @@ then
 fi
 
 # check tzset(3) exists and works like we expect it to
-AC_MSG_CHECKING(for working tzset())
-AC_CACHE_VAL(ac_cv_working_tzset, [
+AC_CACHE_CHECK([for working tzset()], [ac_cv_working_tzset], [
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <stdlib.h>
 #include <time.h>
@@ -5256,7 +5234,6 @@ int main()
 [ac_cv_working_tzset=yes],
 [ac_cv_working_tzset=no],
 [ac_cv_working_tzset=no])])
-AC_MSG_RESULT($ac_cv_working_tzset)
 if test "$ac_cv_working_tzset" = yes
 then
   AC_DEFINE(HAVE_WORKING_TZSET, 1,
@@ -5264,15 +5241,13 @@ then
 fi
 
 # Look for subsecond timestamps in struct stat
-AC_MSG_CHECKING(for tv_nsec in struct stat)
-AC_CACHE_VAL(ac_cv_stat_tv_nsec,
+AC_CACHE_CHECK([for tv_nsec in struct stat], [ac_cv_stat_tv_nsec],
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/stat.h>]], [[
 struct stat st;
 st.st_mtim.tv_nsec = 1;
 ]])],
 [ac_cv_stat_tv_nsec=yes],
 [ac_cv_stat_tv_nsec=no]))
-AC_MSG_RESULT($ac_cv_stat_tv_nsec)
 if test "$ac_cv_stat_tv_nsec" = yes
 then
   AC_DEFINE(HAVE_STAT_TV_NSEC, 1,
@@ -5280,15 +5255,13 @@ then
 fi
 
 # Look for BSD style subsecond timestamps in struct stat
-AC_MSG_CHECKING(for tv_nsec2 in struct stat)
-AC_CACHE_VAL(ac_cv_stat_tv_nsec2,
+AC_CACHE_CHECK([for tv_nsec2 in struct stat], [ac_cv_stat_tv_nsec2],
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/stat.h>]], [[
 struct stat st;
 st.st_mtimespec.tv_nsec = 1;
 ]])],
 [ac_cv_stat_tv_nsec2=yes],
 [ac_cv_stat_tv_nsec2=no]))
-AC_MSG_RESULT($ac_cv_stat_tv_nsec2)
 if test "$ac_cv_stat_tv_nsec2" = yes
 then
   AC_DEFINE(HAVE_STAT_TV_NSEC2, 1,
@@ -5311,15 +5284,13 @@ AC_CHECK_HEADERS(term.h,,,[
 ])
 
 # On HP/UX 11.0, mvwdelch is a block with a return statement
-AC_MSG_CHECKING(whether mvwdelch is an expression)
-AC_CACHE_VAL(ac_cv_mvwdelch_is_expression,
+AC_CACHE_CHECK([whether mvwdelch is an expression], [ac_cv_mvwdelch_is_expression],
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
   int rtn;
   rtn = mvwdelch(0,0,0);
 ]])],
 [ac_cv_mvwdelch_is_expression=yes],
 [ac_cv_mvwdelch_is_expression=no]))
-AC_MSG_RESULT($ac_cv_mvwdelch_is_expression)
 
 if test "$ac_cv_mvwdelch_is_expression" = yes
 then
@@ -5331,8 +5302,7 @@ fi
 # structs since version 5.7.  If the macro is defined as zero before including
 # [n]curses.h, ncurses will expose fields of the structs regardless of the
 # configuration.
-AC_MSG_CHECKING(whether WINDOW has _flags)
-AC_CACHE_VAL(ac_cv_window_has_flags,
+AC_CACHE_CHECK([whether WINDOW has _flags], [ac_cv_window_has_flags],
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
   #define NCURSES_OPAQUE 0
   #include <curses.h>
@@ -5342,7 +5312,6 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 ]])],
 [ac_cv_window_has_flags=yes],
 [ac_cv_window_has_flags=no]))
-AC_MSG_RESULT($ac_cv_window_has_flags)
 
 
 if test "$ac_cv_window_has_flags" = yes
@@ -5351,115 +5320,42 @@ then
   [Define if WINDOW in curses.h offers a field _flags.])
 fi
 
-AC_MSG_CHECKING(for is_pad)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
-#ifndef is_pad
-void *x=is_pad
-#endif
-]])],
-  [AC_DEFINE(HAVE_CURSES_IS_PAD, 1, Define if you have the 'is_pad' function or macro.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)]
-)
+dnl PY_CHECK_CURSES_FUNC(FUNCTION)
+AC_DEFUN([PY_CHECK_CURSES_FUNC],
+[ AS_VAR_PUSHDEF([py_var], [ac_cv_lib_curses_$1])
+  AS_VAR_PUSHDEF([py_define], [HAVE_CURSES_]m4_toupper($1))
+  AC_CACHE_CHECK(
+    [for curses function $1],
+    [py_var],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM(
+        [#include <curses.h>], [
+        #ifndef $1
+        void *x=$1
+        #endif
+      ])],
+      [AS_VAR_SET([py_var], [yes])],
+      [AS_VAR_SET([py_var], [no])])]
+  )
+  AS_VAR_IF(
+    [py_var],
+    [yes],
+    [AC_DEFINE([py_define], [1], [Define if you have the '$1' function.])])
+  AS_VAR_POPDEF([py_var])
+  AS_VAR_POPDEF([py_define])
+])
 
-AC_MSG_CHECKING(for is_term_resized)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[void *x=is_term_resized]])],
-  [AC_DEFINE(HAVE_CURSES_IS_TERM_RESIZED, 1, Define if you have the 'is_term_resized' function.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)]
-)
-
-AC_MSG_CHECKING(for resize_term)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[void *x=resize_term]])],
-  [AC_DEFINE(HAVE_CURSES_RESIZE_TERM, 1, Define if you have the 'resize_term' function.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)]
-)
-
-AC_MSG_CHECKING(for resizeterm)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[void *x=resizeterm]])],
-  [AC_DEFINE(HAVE_CURSES_RESIZETERM, 1, Define if you have the 'resizeterm' function.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)]
-)
-
-AC_MSG_CHECKING(for immedok)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
-#ifndef immedok
-void *x=immedok
-#endif
-]])],
-  [AC_DEFINE(HAVE_CURSES_IMMEDOK, 1, Define if you have the 'immedok' function.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)]
-)
-
-AC_MSG_CHECKING(for syncok)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
-#ifndef syncok
-void *x=syncok
-#endif
-]])],
-  [AC_DEFINE(HAVE_CURSES_SYNCOK, 1, Define if you have the 'syncok' function.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)]
-)
-
-AC_MSG_CHECKING(for wchgat)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
-#ifndef wchgat
-void *x=wchgat
-#endif
-]])],
-  [AC_DEFINE(HAVE_CURSES_WCHGAT, 1, Define if you have the 'wchgat' function.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)]
-)
-
-AC_MSG_CHECKING(for filter)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
-#ifndef filter
-void *x=filter
-#endif
-]])],
-  [AC_DEFINE(HAVE_CURSES_FILTER, 1, Define if you have the 'filter' function.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)]
-)
-
-AC_MSG_CHECKING(for has_key)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
-#ifndef has_key
-void *x=has_key
-#endif
-]])],
-  [AC_DEFINE(HAVE_CURSES_HAS_KEY, 1, Define if you have the 'has_key' function.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)]
-)
-
-AC_MSG_CHECKING(for typeahead)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
-#ifndef typeahead
-void *x=typeahead
-#endif
-]])],
-  [AC_DEFINE(HAVE_CURSES_TYPEAHEAD, 1, Define if you have the 'typeahead' function.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)]
-)
-
-AC_MSG_CHECKING(for use_env)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[
-#ifndef use_env
-void *x=use_env
-#endif
-]])],
-  [AC_DEFINE(HAVE_CURSES_USE_ENV, 1, Define if you have the 'use_env' function.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)]
-)
-# last curses configure check
+PY_CHECK_CURSES_FUNC([is_pad])
+PY_CHECK_CURSES_FUNC([is_term_resized])
+PY_CHECK_CURSES_FUNC([resize_term])
+PY_CHECK_CURSES_FUNC([resizeterm])
+PY_CHECK_CURSES_FUNC([immedok])
+PY_CHECK_CURSES_FUNC([syncok])
+PY_CHECK_CURSES_FUNC([wchgat])
+PY_CHECK_CURSES_FUNC([filter])
+PY_CHECK_CURSES_FUNC([has_key])
+PY_CHECK_CURSES_FUNC([typeahead])
+PY_CHECK_CURSES_FUNC([use_env])
 CPPFLAGS=$ac_save_cppflags
 
 AC_MSG_NOTICE([checking for device files])
@@ -5551,8 +5447,7 @@ AC_CHECK_TYPE(socklen_t,,
 #endif
 ])
 
-AC_MSG_CHECKING(for broken mbstowcs)
-AC_CACHE_VAL(ac_cv_broken_mbstowcs,
+AC_CACHE_CHECK([for broken mbstowcs], [ac_cv_broken_mbstowcs],
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <stdio.h>
 #include<stdlib.h>
@@ -5566,7 +5461,6 @@ int main() {
 [ac_cv_broken_mbstowcs=no],
 [ac_cv_broken_mbstowcs=yes],
 [ac_cv_broken_mbstowcs=no]))
-AC_MSG_RESULT($ac_cv_broken_mbstowcs)
 if test "$ac_cv_broken_mbstowcs" = yes
 then
   AC_DEFINE(HAVE_BROKEN_MBSTOWCS, 1,
@@ -5595,8 +5489,7 @@ fi
 ],
 [AC_MSG_RESULT(no value specified)])
 
-AC_MSG_CHECKING(whether $CC supports computed gotos)
-AC_CACHE_VAL(ac_cv_computed_gotos,
+AC_CACHE_CHECK([whether $CC supports computed gotos], [ac_cv_computed_gotos],
 AC_RUN_IFELSE([AC_LANG_SOURCE([[[
 int main(int argc, char **argv)
 {
@@ -5616,7 +5509,6 @@ LABEL2:
  else
    ac_cv_computed_gotos=no
  fi]))
-AC_MSG_RESULT($ac_cv_computed_gotos)
 case "$ac_cv_computed_gotos" in yes*)
   AC_DEFINE(HAVE_COMPUTED_GOTOS, 1,
   [Define if the C compiler supports computed gotos.])
@@ -5652,7 +5544,8 @@ SRCDIRS="\
   Objects \
   Parser \
   Programs \
-  Python"
+  Python \
+  Python/deepfreeze"
 AC_MSG_CHECKING(for build directories)
 for dir in $SRCDIRS; do
     if test ! -d $dir; then
@@ -5662,20 +5555,19 @@ done
 AC_MSG_RESULT(done)
 
 # Availability of -O2:
-AC_MSG_CHECKING(for -O2)
+AC_CACHE_CHECK([for -O2], [ac_cv_compile_o2], [
 saved_cflags="$CFLAGS"
 CFLAGS="-O2"
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
-]])],[have_O2=yes],[have_O2=no])
-AC_MSG_RESULT($have_O2)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [])], [ac_cv_compile_o2=yes], [ac_cv_compile_o2=no])
 CFLAGS="$saved_cflags"
+])
 
 # _FORTIFY_SOURCE wrappers for memmove and bcopy are incorrect:
 # http://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
 AC_MSG_CHECKING(for glibc _FORTIFY_SOURCE/memmove bug)
 saved_cflags="$CFLAGS"
 CFLAGS="-O2 -D_FORTIFY_SOURCE=2"
-if test "$have_O2" = no; then
+if test "$ac_cv_compile_o2" = no; then
     CFLAGS=""
 fi
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
@@ -5705,7 +5597,7 @@ if test "$have_glibc_memmove_bug" = yes; then
      for memmove and bcopy.])
 fi
 
-if test "$have_gcc_asm_for_x87" = yes; then
+if test "$ac_cv_gcc_asm_for_x87" = yes; then
     # Some versions of gcc miscompile inline asm:
     # http://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
     # http://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
@@ -5745,7 +5637,7 @@ if test "$have_gcc_asm_for_x87" = yes; then
 fi
 
 # Check for stdatomic.h
-AC_MSG_CHECKING(for stdatomic.h)
+AC_CACHE_CHECK([for stdatomic.h], [ac_cv_header_stdatomic_h], [
 AC_LINK_IFELSE(
 [
   AC_LANG_SOURCE([[
@@ -5759,17 +5651,16 @@ AC_LINK_IFELSE(
       return 0;
     }
   ]])
-],[have_stdatomic_h=yes],[have_stdatomic_h=no])
+],[ac_cv_header_stdatomic_h=yes],[ac_cv_header_stdatomic_h=no])
+])
 
-AC_MSG_RESULT($have_stdatomic_h)
-
-if test "$have_stdatomic_h" = yes; then
+AS_VAR_IF([ac_cv_header_stdatomic_h], [yes], [
     AC_DEFINE(HAVE_STD_ATOMIC, 1,
               [Has stdatomic.h with atomic_int and atomic_uintptr_t])
-fi
+])
 
 # Check for GCC >= 4.7 and clang __atomic builtin functions
-AC_MSG_CHECKING(for builtin __atomic_load_n and __atomic_store_n functions)
+AC_CACHE_CHECK([for builtin __atomic_load_n and __atomic_store_n functions], [ac_cv_builtin_atomic], [
 AC_LINK_IFELSE(
 [
   AC_LANG_SOURCE([[
@@ -5780,13 +5671,12 @@ AC_LINK_IFELSE(
       return 0;
     }
   ]])
-],[have_builtin_atomic=yes],[have_builtin_atomic=no])
+],[ac_cv_builtin_atomic=yes],[ac_cv_builtin_atomic=no])
+])
 
-AC_MSG_RESULT($have_builtin_atomic)
-
-if test "$have_builtin_atomic" = yes; then
+AS_VAR_IF([ac_cv_builtin_atomic], [yes], [
     AC_DEFINE(HAVE_BUILTIN_ATOMIC, 1, [Has builtin __atomic_load_n() and __atomic_store_n() functions])
-fi
+])
 
 # ensurepip option
 AC_MSG_CHECKING(for ensurepip)
@@ -5804,7 +5694,7 @@ AC_MSG_RESULT($ENSUREPIP)
 AC_SUBST(ENSUREPIP)
 
 # check if the dirent structure of a d_type field and DT_UNKNOWN is defined
-AC_MSG_CHECKING(if the dirent structure of a d_type field)
+AC_CACHE_CHECK([if the dirent structure of a d_type field], [ac_cv_dirent_d_type], [
 AC_LINK_IFELSE(
 [
   AC_LANG_SOURCE([[
@@ -5815,16 +5705,16 @@ AC_LINK_IFELSE(
       return entry.d_type == DT_UNKNOWN;
     }
   ]])
-],[have_dirent_d_type=yes],[have_dirent_d_type=no])
-AC_MSG_RESULT($have_dirent_d_type)
+],[ac_cv_dirent_d_type=yes],[ac_cv_dirent_d_type=no])
+])
 
-if test "$have_dirent_d_type" = yes; then
+AS_VAR_IF([ac_cv_dirent_d_type], [yes], [
     AC_DEFINE(HAVE_DIRENT_D_TYPE, 1,
               [Define to 1 if the dirent structure has a d_type field])
-fi
+])
 
 # check if the Linux getrandom() syscall is available
-AC_MSG_CHECKING(for the Linux getrandom() syscall)
+AC_CACHE_CHECK([for the Linux getrandom() syscall], [ac_cv_getrandom_syscall], [
 AC_LINK_IFELSE(
 [
   AC_LANG_SOURCE([[
@@ -5841,17 +5731,17 @@ AC_LINK_IFELSE(
         return 0;
     }
   ]])
-],[have_getrandom_syscall=yes],[have_getrandom_syscall=no])
-AC_MSG_RESULT($have_getrandom_syscall)
+],[ac_cv_getrandom_syscall=yes],[ac_cv_getrandom_syscall=no])
+])
 
-if test "$have_getrandom_syscall" = yes; then
+AS_VAR_IF([ac_cv_getrandom_syscall], [yes], [
     AC_DEFINE(HAVE_GETRANDOM_SYSCALL, 1,
               [Define to 1 if the Linux getrandom() syscall is available])
-fi
+])
 
 # check if the getrandom() function is available
 # the test was written for the Solaris function of <sys/random.h>
-AC_MSG_CHECKING(for the getrandom() function)
+AC_CACHE_CHECK([for the getrandom() function], [ac_cv_func_getrandom], [
 AC_LINK_IFELSE(
 [
   AC_LANG_SOURCE([[
@@ -5866,13 +5756,13 @@ AC_LINK_IFELSE(
         return 0;
     }
   ]])
-],[have_getrandom=yes],[have_getrandom=no])
-AC_MSG_RESULT($have_getrandom)
+],[ac_cv_func_getrandom=yes],[ac_cv_func_getrandom=no])
+])
 
-if test "$have_getrandom" = yes; then
+AS_VAR_IF([ac_cv_func_getrandom], [yes], [
     AC_DEFINE(HAVE_GETRANDOM, 1,
               [Define to 1 if the getrandom() function is available])
-fi
+])
 
 # checks for POSIX shared memory, used by Modules/_multiprocessing/posixshmem.c
 # shm_* may only be available if linking against librt
@@ -5926,7 +5816,7 @@ AC_MSG_RESULT($OPENSSL_RPATH)
 AC_SUBST([OPENSSL_RPATH])
 
 # check if OpenSSL libraries work as expected
-AC_MSG_CHECKING(whether OpenSSL provides required APIs)
+AC_CACHE_CHECK([whether OpenSSL provides required APIs], [ac_cv_working_openssl], [
 save_LIBS="$LIBS"
 save_CFLAGS="$CFLAGS"
 save_LDFLAGS="$LDFLAGS"
@@ -5961,11 +5851,12 @@ OBJ_nid2sn(NID_sha3_512);
 OBJ_nid2sn(NID_blake2b512);
 EVP_PBE_scrypt(NULL, 0, NULL, 0, 2, 8, 1, 0, NULL, 0);
 ]])],
-  [AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)])
+  [ac_cv_working_openssl=yes],
+  [ac_cv_working_openssl=no])
 LIBS="$save_LIBS"
 CFLAGS="$save_CFLAGS"
 LDFLAGS="$save_LDFLAGS"
+])
 
 # ssl module default cipher suite string
 AH_TEMPLATE(PY_SSL_DEFAULT_CIPHERS,
@@ -6013,21 +5904,28 @@ AC_ARG_WITH(builtin-hashlib-hashes,
                            [builtin hash modules,
                             md5, sha1, sha256, sha512, sha3 (with shake), blake2]),
 [
-case "$withval" in
-    yes)
-        withval=$default_hashlib_hashes
-        ;;
-    no)
-        withval=""
-        ;;
-esac
-AC_MSG_RESULT($withval)
-AC_DEFINE_UNQUOTED(PY_BUILTIN_HASHLIB_HASHES, "$withval")
-],
-[
-AC_MSG_RESULT($default_hashlib_hashes);
-AC_DEFINE_UNQUOTED(PY_BUILTIN_HASHLIB_HASHES, "$default_hashlib_hashes")
-])
+  AS_CASE([$with_builtin_hashlib_hashes],
+    [yes], [with_builtin_hashlib_hashes=$default_hashlib_hashes],
+    [no], [with_builtin_hashlib_hashes=""]
+  )
+], [with_builtin_hashlib_hashes=$default_hashlib_hashes])
+
+AC_MSG_RESULT($with_builtin_hashlib_hashes)
+AC_DEFINE_UNQUOTED(PY_BUILTIN_HASHLIB_HASHES, "$with_builtin_hashlib_hashes")
+
+as_save_IFS=$IFS
+IFS=,
+for builtin_hash in $with_builtin_hashlib_hashes; do
+    AS_CASE($builtin_hash,
+      [md5], [with_builtin_md5=yes],
+      [sha1], [with_builtin_sha1=yes],
+      [sha256], [with_builtin_sha256=yes],
+      [sha512], [with_builtin_sha512=yes],
+      [sha3], [with_builtin_sha3=yes],
+      [blake2], [with_builtin_blake2=yes]
+    )
+done
+IFS=$as_save_IFS
 
 # --with-experimental-isolated-subinterpreters
 AH_TEMPLATE(EXPERIMENTAL_ISOLATED_SUBINTERPRETERS,
@@ -6087,9 +5985,114 @@ else
 fi
 AC_SUBST(TEST_MODULES)
 
+dnl Modules that are not available on some platforms
+dnl AIX has shadow passwords, but access is not via getspent()
+dnl VxWorks does not provide crypt() function
+AS_CASE([$ac_sys_system],
+  [AIX], [py_stdlib_not_available="_scproxy spwd"],
+  [VxWorks*], [py_stdlib_not_available="_scproxy _crypt termios grp"],
+  [Darwin], [py_stdlib_not_available="ossaudiodev spwd"],
+  [CYGWIN*], [py_stdlib_not_available="_scproxy nis"],
+  [QNX*], [py_stdlib_not_available="_scproxy nis"],
+  [FreeBSD*], [py_stdlib_not_available="_scproxy spwd"],
+  [py_stdlib_not_available="_scproxy"]
+)
+
+dnl _MODULE_BLOCK_ADD([VAR], [VALUE])
+dnl internal: adds $1=quote($2) to MODULE_BLOCK
+AC_DEFUN([_MODULE_BLOCK_ADD], [AS_VAR_APPEND([MODULE_BLOCK], ["$1=_AS_QUOTE([$2])$as_nl"])])
+MODULE_BLOCK=
+
+dnl Check for stdlib extension modules
+dnl PY_STDLIB_MOD([NAME], [ENABLED-TEST], [SUPPORTED-TEST], [CFLAGS], [LDFLAGS])
+dnl sets MODULE_$NAME based on $py_stdlib_not_available, ENABLED-TEST,
+dnl and SUPPORTED_TEST. ENABLED-TEST and SUPPORTED-TEST default to true if
+dnl empty.
+dnl    n/a: $NAME in $py_stdlib_not_available (not available on platform)
+dnl    yes: enabled and supported
+dnl    missing: enabled and not supported
+dnl    disabled: not enabled
+dnl sets MODULE_$NAME_CFLAGS and MODULE_$NAME_LDFLAGS
+AC_DEFUN([PY_STDLIB_MOD], [
+  AC_MSG_CHECKING([for stdlib extension module $1])
+  m4_pushdef([modcond], [MODULE_]m4_toupper([$1]))dnl
+  m4_pushdef([modstate], [py_cv_module_$1])dnl
+  AS_CASE([$py_stdlib_not_available],
+    [*$1*], [modstate=n/a],
+    [
+      AS_IF(m4_ifblank([$2], [true], [$2]),
+        [AS_IF([m4_ifblank([$3], [true], [$3])], [modstate=yes], [modstate=missing])],
+        [modstate=disabled]
+      )
+    ]
+  )
+  _MODULE_BLOCK_ADD(modcond, [$modstate])
+  AS_VAR_IF([modstate], [yes], [
+    _MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_CFLAGS], [$4])
+    _MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_LDFLAGS], [$5])
+    AM_CONDITIONAL(modcond, [true])
+  ], [
+    AM_CONDITIONAL(modcond, [false])
+  ])
+  AC_MSG_RESULT([$modstate])
+  m4_popdef([modcond])dnl
+  m4_popdef([modstate])dnl
+])
+
+dnl Define simple, always enabled stdlib extension module
+dnl PY_STDLIB_MOD_SIMPLE([NAME], [CFLAGS], [LDFLAGS])
+dnl cflags and ldflags are optional
+AC_DEFUN([PY_STDLIB_MOD_SIMPLE], [
+  m4_pushdef([modcond], [MODULE_]m4_toupper([$1]))dnl
+  AM_CONDITIONAL(modcond, [true])
+  m4_ifval([$2], [
+    _MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_CFLAGS], [$2])
+  ])
+  m4_ifval([$3], [
+    _MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_LDFLAGS], [$3])
+  ])
+  m4_popdef([modcond])dnl
+])
+
+dnl static modules in Modules/Setup.bootstrap
+PY_STDLIB_MOD_SIMPLE([_io], [-I\$(srcdir)/Modules/_io], [])
+PY_STDLIB_MOD_SIMPLE([time], [], [$TIMEMODULE_LIB])
+
+dnl always enabled extension modules
+PY_STDLIB_MOD_SIMPLE([_datetime], [], [$TIMEMODULE_LIB $LIBM])
+
+dnl platform specific extensions
+PY_STDLIB_MOD([ossaudiodev],
+  [], [test "$ac_cv_header_linux_soundcard_h" = yes -o "$ac_cv_header_sys_soundcard_h" = yes])
+PY_STDLIB_MOD([_scproxy],
+  [test "$ac_sys_system" = "Darwin"], [],
+  [], [-framework SystemConfiguration -framework CoreFoundation])
+
+dnl _elementtree loads libexpat via CAPI hook in pyexpat
+PY_STDLIB_MOD([pyexpat], [], [], [$LIBEXPAT_CFLAGS], [$LIBEXPAT_LDFLAGS])
+PY_STDLIB_MOD([_elementtree], [], [], [$LIBEXPAT_CFLAGS], [])
+
+dnl By default we always compile these even when OpenSSL is available
+dnl (issue #14693). The modules are small.
+PY_STDLIB_MOD([_md5], [test "$with_builtin_md5" = yes])
+PY_STDLIB_MOD([_sha1], [test "$with_builtin_sha1" = yes])
+PY_STDLIB_MOD([_sha256], [test "$with_builtin_sha256" = yes])
+PY_STDLIB_MOD([_sha512], [test "$with_builtin_sha512" = yes])
+PY_STDLIB_MOD([_sha3], [test "$with_builtin_sha3" = yes])
+PY_STDLIB_MOD([_blake2], [test "$with_builtin_blake2" = yes])
+
+PY_STDLIB_MOD([_decimal], [], [], [$LIBMPDEC_CFLAGS], [$LIBMPDEC_LDFLAGS])
+PY_STDLIB_MOD([_sqlite3],
+  [test "$have_sqlite3" = "yes"],
+  [test "$have_supported_sqlite3" = "yes"],
+  [$LIBSQLITE3_CFLAGS], [$LIBSQLITE3_LIBS])
+
+# substitute multiline block, must come after last PY_STDLIB_MOD()
+AC_SUBST([MODULE_BLOCK])
 
 # generate output files
 AC_CONFIG_FILES(Makefile.pre Misc/python.pc Misc/python-embed.pc Misc/python-config.sh)
+AC_CONFIG_FILES([Modules/Setup.stdlib])
 AC_CONFIG_FILES([Modules/ld_so_aix], [chmod +x Modules/ld_so_aix])
 AC_OUTPUT
 
@@ -6102,8 +6105,13 @@ fi
 echo "creating Makefile" >&AS_MESSAGE_FD
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
-			Modules/Setup.local $srcdir/Modules/Setup
+			Modules/Setup.local $srcdir/Modules/Setup.bootstrap $srcdir/Modules/Setup
 mv config.c Modules
+
+if test -z "$PKG_CONFIG"; then
+  echo "" >&AS_MESSAGE_FD
+  echo "pkg-config is missing. Some dependencies may not be detected correctly." >&AS_MESSAGE_FD
+fi
 
 if test "$Py_OPT" = 'false' -a "$Py_DEBUG" != 'true'; then
     echo "" >&AS_MESSAGE_FD

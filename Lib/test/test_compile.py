@@ -1048,15 +1048,17 @@ class TestSourcePositions(unittest.TestCase):
         return code, ast_tree
 
     def assertOpcodeSourcePositionIs(self, code, opcode,
-            line, end_line, column, end_column):
+            line, end_line, column, end_column, occurrence=1):
 
         for instr, position in zip(dis.Bytecode(code), code.co_positions()):
             if instr.opname == opcode:
-                self.assertEqual(position[0], line)
-                self.assertEqual(position[1], end_line)
-                self.assertEqual(position[2], column)
-                self.assertEqual(position[3], end_column)
-                return
+                occurrence -= 1
+                if not occurrence:
+                    self.assertEqual(position[0], line)
+                    self.assertEqual(position[1], end_line)
+                    self.assertEqual(position[2], column)
+                    self.assertEqual(position[3], end_column)
+                    return
 
         self.fail(f"Opcode {opcode} not found in code")
 
@@ -1077,12 +1079,12 @@ class TestSourcePositions(unittest.TestCase):
 
         compiled_code, _ = self.check_positions_against_ast(snippet)
 
-        self.assertOpcodeSourcePositionIs(compiled_code, 'INPLACE_SUBTRACT',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
             line=10_000 + 2, end_line=10_000 + 2,
-            column=2, end_column=8)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'INPLACE_ADD',
+            column=2, end_column=8, occurrence=1)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
             line=10_000 + 4, end_line=10_000 + 4,
-            column=2, end_column=9)
+            column=2, end_column=9, occurrence=2)
 
     def test_multiline_expression(self):
         snippet = """\
@@ -1110,14 +1112,14 @@ f(
         compiled_code, _ = self.check_positions_against_ast(snippet)
         self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_SUBSCR',
             line=1, end_line=1, column=13, end_column=21)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_MULTIPLY',
-            line=1, end_line=1, column=9, end_column=21)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_ADD',
-            line=1, end_line=1, column=9, end_column=26)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_MATRIX_MULTIPLY',
-            line=1, end_line=1, column=4, end_column=27)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_SUBTRACT',
-            line=1, end_line=1, column=0, end_column=27)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
+            line=1, end_line=1, column=9, end_column=21, occurrence=1)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
+            line=1, end_line=1, column=9, end_column=26, occurrence=2)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
+            line=1, end_line=1, column=4, end_column=27, occurrence=3)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
+            line=1, end_line=1, column=0, end_column=27, occurrence=4)
 
 
 class TestExpressionStackSize(unittest.TestCase):
