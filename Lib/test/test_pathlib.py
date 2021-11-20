@@ -1525,12 +1525,12 @@ class _BasePathTest(object):
             self.assertIs(True, (p / 'linkB').exists())
             self.assertIs(True, (p / 'linkB' / 'fileB').exists())
             self.assertIs(False, (p / 'linkA' / 'bah').exists())
+            self.assertIs(False, (p / 'brokenLink').exists())
+            self.assertIs(True, (p / 'brokenLink').exists(follow_symlinks=False))
         self.assertIs(False, (p / 'foo').exists())
         self.assertIs(False, P('/xyzzy').exists())
         self.assertIs(False, P(BASE + '\udfff').exists())
         self.assertIs(False, P(BASE + '\x00').exists())
-        self.assertIs(False, (p / 'brokenLink').exists())
-        self.assertIs(True, (p / 'brokenLink').exists(follow_symlinks=False))
 
     def test_open_common(self):
         p = self.cls(BASE)
