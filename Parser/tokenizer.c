@@ -2045,6 +2045,12 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
         break;
     }
 
+    if (!Py_UNICODE_ISPRINTABLE(c)) {
+        char hex[9];
+        (void)PyOS_snprintf(hex, sizeof(hex), "%04X", c);
+        return syntaxerror(tok, "invalid non-printable character U+%s", hex);
+    }
+
     /* Punctuation character */
     *p_start = tok->start;
     *p_end = tok->cur;
