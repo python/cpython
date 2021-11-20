@@ -3196,7 +3196,9 @@ AC_CHECK_HEADER([sqlite3.h], [
       ], [])
     ], [have_supported_sqlite3=yes], [have_supported_sqlite3=no])
   ], [have_sqlite3=no])
-  AC_CHECK_LIB([sqlite3], [sqlite3_load_extension])
+  AC_CHECK_LIB([sqlite3], [sqlite3_load_extension],
+               [have_sqlite3_load_extension=yes],
+               [have_sqlite3_load_extension=no])
   AC_CHECK_LIB([sqlite3], [sqlite3_serialize],
                [AC_DEFINE([PY_SQLITE_HAVE_SERIALIZE], [1],
                           ["Define if SQLite was compiled with the serialize API"])])
@@ -6029,12 +6031,10 @@ AC_DEFUN([PY_STDLIB_MOD], [
   )
   _MODULE_BLOCK_ADD(modcond, [$modstate])
   AS_VAR_IF([modstate], [yes], [
-    _MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_CFLAGS], [$4])
-    _MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_LDFLAGS], [$5])
-    AM_CONDITIONAL(modcond, [true])
-  ], [
-    AM_CONDITIONAL(modcond, [false])
+    m4_ifblank([$4], [], [_MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_CFLAGS], [$4])])
+    m4_ifblank([$5], [], [_MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_LDFLAGS], [$5])])
   ])
+  AM_CONDITIONAL(modcond, [test "$modstate" = yes])
   AC_MSG_RESULT([$modstate])
   m4_popdef([modcond])dnl
   m4_popdef([modstate])dnl
@@ -6087,6 +6087,15 @@ PY_STDLIB_MOD([_sqlite3],
   [test "$have_sqlite3" = "yes"],
   [test "$have_supported_sqlite3" = "yes"],
   [$LIBSQLITE3_CFLAGS], [$LIBSQLITE3_LIBS])
+
+dnl test modules
+PY_STDLIB_MOD([_testcapi], [test "$TEST_MODULES" = yes])
+PY_STDLIB_MOD([_testinternalcapi], [test "$TEST_MODULES" = yes])
+PY_STDLIB_MOD([_testbuffer], [test "$TEST_MODULES" = yes])
+PY_STDLIB_MOD([_testimportmultiple], [test "$TEST_MODULES" = yes])
+PY_STDLIB_MOD([_testmultiphase], [test "$TEST_MODULES" = yes])
+PY_STDLIB_MOD([_xxtestfuzz], [test "$TEST_MODULES" = yes])
+PY_STDLIB_MOD([_ctypes_test], [test "$TEST_MODULES" = yes], [], [], [-lm])
 
 # substitute multiline block, must come after last PY_STDLIB_MOD()
 AC_SUBST([MODULE_BLOCK])

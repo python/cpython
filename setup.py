@@ -55,9 +55,6 @@ with warnings.catch_warnings():
     from distutils.spawn import find_executable
 
 
-# Compile extensions used to test Python?
-TEST_EXTENSIONS = (sysconfig.get_config_var('TEST_MODULES') == 'yes')
-
 # This global variable is used to hold the list of modules to be disabled.
 DISABLED_MODULE_LIST = []
 
@@ -1098,24 +1095,25 @@ class PyBuildExt(build_ext):
 
     def detect_test_extensions(self):
         # Python C API test module
-        self.add(Extension('_testcapi', ['_testcapimodule.c']))
+        self.addext(Extension('_testcapi', ['_testcapimodule.c']))
 
         # Python Internal C API test module
-        self.add(Extension('_testinternalcapi', ['_testinternalcapi.c']))
+        self.addext(Extension('_testinternalcapi', ['_testinternalcapi.c']))
 
         # Python PEP-3118 (buffer protocol) test module
-        self.add(Extension('_testbuffer', ['_testbuffer.c']))
+        self.addext(Extension('_testbuffer', ['_testbuffer.c']))
 
         # Test loading multiple modules from one compiled file (https://bugs.python.org/issue16421)
-        self.add(Extension('_testimportmultiple', ['_testimportmultiple.c']))
+        self.addext(Extension('_testimportmultiple', ['_testimportmultiple.c']))
 
         # Test multi-phase extension module init (PEP 489)
-        self.add(Extension('_testmultiphase', ['_testmultiphase.c']))
+        self.addext(Extension('_testmultiphase', ['_testmultiphase.c']))
 
         # Fuzz tests.
-        self.add(Extension('_xxtestfuzz',
-                           ['_xxtestfuzz/_xxtestfuzz.c',
-                            '_xxtestfuzz/fuzzer.c']))
+        self.addext(Extension(
+            '_xxtestfuzz',
+            ['_xxtestfuzz/_xxtestfuzz.c', '_xxtestfuzz/fuzzer.c']
+        ))
 
     def detect_readline_curses(self):
         # readline
@@ -1503,8 +1501,7 @@ class PyBuildExt(build_ext):
         # These are extensions are required to bootstrap the interpreter or
         # build process.
         self.detect_simple_extensions()
-        if TEST_EXTENSIONS:
-            self.detect_test_extensions()
+        self.detect_test_extensions()
         self.detect_readline_curses()
         self.detect_crypt()
         self.detect_socket()
@@ -1883,11 +1880,8 @@ class PyBuildExt(build_ext):
                         libraries=[],
                         sources=sources)
         self.add(ext)
-        if TEST_EXTENSIONS:
-            # function my_sqrt() needs libm for sqrt()
-            self.add(Extension('_ctypes_test',
-                               sources=['_ctypes/_ctypes_test.c'],
-                               libraries=['m']))
+        # function my_sqrt() needs libm for sqrt()
+        self.addext(Extension('_ctypes_test', ['_ctypes/_ctypes_test.c']))
 
         ffi_inc = sysconfig.get_config_var("LIBFFI_INCLUDEDIR")
         ffi_lib = None
