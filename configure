@@ -658,10 +658,20 @@ MODULE__ELEMENTTREE_FALSE
 MODULE__ELEMENTTREE_TRUE
 MODULE_PYEXPAT_FALSE
 MODULE_PYEXPAT_TRUE
+MODULE_TERMIOS_FALSE
+MODULE_TERMIOS_TRUE
+MODULE_SYSLOG_FALSE
+MODULE_SYSLOG_TRUE
+MODULE_SPWD_FALSE
+MODULE_SPWD_TRUE
 MODULE__SCPROXY_FALSE
 MODULE__SCPROXY_TRUE
+MODULE_RESOURCE_FALSE
+MODULE_RESOURCE_TRUE
 MODULE_OSSAUDIODEV_FALSE
 MODULE_OSSAUDIODEV_TRUE
+MODULE_GRP_FALSE
+MODULE_GRP_TRUE
 MODULE__DATETIME_FALSE
 MODULE__DATETIME_TRUE
 MODULE_TIME_FALSE
@@ -8196,7 +8206,7 @@ sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
 libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
 linux/tipc.h linux/random.h spawn.h util.h alloca.h endian.h \
 sys/endian.h sys/sysmacros.h linux/memfd.h linux/wait.h sys/memfd.h \
-sys/mman.h sys/eventfd.h linux/soundcard.h sys/soundcard.h
+sys/mman.h sys/eventfd.h linux/soundcard.h sys/soundcard.h syslog.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -12658,7 +12668,7 @@ for ac_func in alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  explicit_memset faccessat fchmod fchmodat fchown fchownat \
  fdwalk fexecve fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
  futimens futimes gai_strerror getentropy \
- getgrgid_r getgrnam_r \
+ getgrgid getgrgid_r getgrnam_r \
  getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
  getpriority getresuid getresgid getpwent getpwnam_r getpwuid_r getspnam getspent getsid getwd \
  if_nameindex \
@@ -19551,6 +19561,45 @@ fi
 
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module grp" >&5
+$as_echo_n "checking for stdlib extension module grp... " >&6; }
+      case $py_stdlib_not_available in #(
+  *grp*) :
+    py_cv_module_grp=n/a ;; #(
+  *) :
+
+      if true; then :
+  if test "$ac_cv_func_getgrgid" = yes -o "$ac_cv_func_getgrgid_r" = yes; then :
+  py_cv_module_grp=yes
+else
+  py_cv_module_grp=missing
+fi
+else
+  py_cv_module_grp=disabled
+
+fi
+
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE_GRP=$py_cv_module_grp$as_nl"
+  if test "x$py_cv_module_grp" = xyes; then :
+
+
+
+
+fi
+   if test "$py_cv_module_grp" = yes; then
+  MODULE_GRP_TRUE=
+  MODULE_GRP_FALSE='#'
+else
+  MODULE_GRP_TRUE='#'
+  MODULE_GRP_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_grp" >&5
+$as_echo "$py_cv_module_grp" >&6; }
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module ossaudiodev" >&5
 $as_echo_n "checking for stdlib extension module ossaudiodev... " >&6; }
       case $py_stdlib_not_available in #(
@@ -19590,6 +19639,45 @@ fi
 $as_echo "$py_cv_module_ossaudiodev" >&6; }
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module resource" >&5
+$as_echo_n "checking for stdlib extension module resource... " >&6; }
+      case $py_stdlib_not_available in #(
+  *resource*) :
+    py_cv_module_resource=n/a ;; #(
+  *) :
+
+      if true; then :
+  if test "$ac_cv_header_sys_resource_h" = yes; then :
+  py_cv_module_resource=yes
+else
+  py_cv_module_resource=missing
+fi
+else
+  py_cv_module_resource=disabled
+
+fi
+
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE_RESOURCE=$py_cv_module_resource$as_nl"
+  if test "x$py_cv_module_resource" = xyes; then :
+
+
+
+
+fi
+   if test "$py_cv_module_resource" = yes; then
+  MODULE_RESOURCE_TRUE=
+  MODULE_RESOURCE_FALSE='#'
+else
+  MODULE_RESOURCE_TRUE='#'
+  MODULE_RESOURCE_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_resource" >&5
+$as_echo "$py_cv_module_resource" >&6; }
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _scproxy" >&5
 $as_echo_n "checking for stdlib extension module _scproxy... " >&6; }
       case $py_stdlib_not_available in #(
@@ -19627,6 +19715,123 @@ fi
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__scproxy" >&5
 $as_echo "$py_cv_module__scproxy" >&6; }
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module spwd" >&5
+$as_echo_n "checking for stdlib extension module spwd... " >&6; }
+      case $py_stdlib_not_available in #(
+  *spwd*) :
+    py_cv_module_spwd=n/a ;; #(
+  *) :
+
+      if true; then :
+  if test "$ac_cv_func_getspent" = yes -o "$ac_cv_func_getspnam" = yes; then :
+  py_cv_module_spwd=yes
+else
+  py_cv_module_spwd=missing
+fi
+else
+  py_cv_module_spwd=disabled
+
+fi
+
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE_SPWD=$py_cv_module_spwd$as_nl"
+  if test "x$py_cv_module_spwd" = xyes; then :
+
+
+
+
+fi
+   if test "$py_cv_module_spwd" = yes; then
+  MODULE_SPWD_TRUE=
+  MODULE_SPWD_FALSE='#'
+else
+  MODULE_SPWD_TRUE='#'
+  MODULE_SPWD_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_spwd" >&5
+$as_echo "$py_cv_module_spwd" >&6; }
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module syslog" >&5
+$as_echo_n "checking for stdlib extension module syslog... " >&6; }
+      case $py_stdlib_not_available in #(
+  *syslog*) :
+    py_cv_module_syslog=n/a ;; #(
+  *) :
+
+      if true; then :
+  if test "$ac_cv_header_syslog_h" = yes; then :
+  py_cv_module_syslog=yes
+else
+  py_cv_module_syslog=missing
+fi
+else
+  py_cv_module_syslog=disabled
+
+fi
+
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE_SYSLOG=$py_cv_module_syslog$as_nl"
+  if test "x$py_cv_module_syslog" = xyes; then :
+
+
+
+
+fi
+   if test "$py_cv_module_syslog" = yes; then
+  MODULE_SYSLOG_TRUE=
+  MODULE_SYSLOG_FALSE='#'
+else
+  MODULE_SYSLOG_TRUE='#'
+  MODULE_SYSLOG_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_syslog" >&5
+$as_echo "$py_cv_module_syslog" >&6; }
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module termios" >&5
+$as_echo_n "checking for stdlib extension module termios... " >&6; }
+      case $py_stdlib_not_available in #(
+  *termios*) :
+    py_cv_module_termios=n/a ;; #(
+  *) :
+
+      if true; then :
+  if test "$ac_cv_header_termios_h" = yes; then :
+  py_cv_module_termios=yes
+else
+  py_cv_module_termios=missing
+fi
+else
+  py_cv_module_termios=disabled
+
+fi
+
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE_TERMIOS=$py_cv_module_termios$as_nl"
+  if test "x$py_cv_module_termios" = xyes; then :
+
+
+
+
+fi
+   if test "$py_cv_module_termios" = yes; then
+  MODULE_TERMIOS_TRUE=
+  MODULE_TERMIOS_FALSE='#'
+else
+  MODULE_TERMIOS_TRUE='#'
+  MODULE_TERMIOS_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_termios" >&5
+$as_echo "$py_cv_module_termios" >&6; }
 
 
 
@@ -20428,12 +20633,32 @@ if test -z "${MODULE__DATETIME_TRUE}" && test -z "${MODULE__DATETIME_FALSE}"; th
   as_fn_error $? "conditional \"MODULE__DATETIME\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${MODULE_GRP_TRUE}" && test -z "${MODULE_GRP_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_GRP\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${MODULE_OSSAUDIODEV_TRUE}" && test -z "${MODULE_OSSAUDIODEV_FALSE}"; then
   as_fn_error $? "conditional \"MODULE_OSSAUDIODEV\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${MODULE_RESOURCE_TRUE}" && test -z "${MODULE_RESOURCE_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_RESOURCE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${MODULE__SCPROXY_TRUE}" && test -z "${MODULE__SCPROXY_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__SCPROXY\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_SPWD_TRUE}" && test -z "${MODULE_SPWD_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_SPWD\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_SYSLOG_TRUE}" && test -z "${MODULE_SYSLOG_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_SYSLOG\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_TERMIOS_TRUE}" && test -z "${MODULE_TERMIOS_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_TERMIOS\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_PYEXPAT_TRUE}" && test -z "${MODULE_PYEXPAT_FALSE}"; then
