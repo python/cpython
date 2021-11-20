@@ -52,6 +52,7 @@ PyDoc_STRVAR(module_doc,
 "ExpandEnvironmentStrings() - Expand the env strings in a REG_EXPAND_SZ\n"
 "                             string.\n"
 "FlushKey() - Writes all the attributes of the specified key to the registry.\n"
+"GetValue() - Retrieves the type and data for the specified registry value.\n"
 "LoadKey() - Creates a subkey under HKEY_USER or HKEY_LOCAL_MACHINE and\n"
 "            stores registration information from a specified file into that\n"
 "            subkey.\n"
@@ -1319,6 +1320,72 @@ winreg_FlushKey_impl(PyObject *module, HKEY key)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+winreg.GetValue
+    key: HKEY
+        An already open key, or any one of the predefined HKEY_* constants.
+    sub_key: Py_UNICODE(accept={str, NoneType})
+        A string that names the subkey with which the value is associated.
+    name: Py_UNICODE(accept={str, NoneType})
+        A string indicating the value to query.
+    /
+Retrieves the type and data for the specified registry value.
+Behaves mostly like QueryValueEx(), but you needn't OpenKey() and CloseKey() if the key is any one of the predefined HKEY_* constants.
+The return value is a tuple of the value and the type_id.
+[clinic start generated code]*/
+
+static PyObject *
+winreg_GetValue_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key, const Py_UNICODE *name)
+{
+    long rc;
+    BYTE *retBuf, *tmp;
+    DWORD bufSize = 0, retSize;
+    DWORD typ;
+    PyObject *obData;
+    PyObject *result;
+
+    if (PySys_Audit("winreg.GetValue", "nuu",
+                    (Py_ssize_t)key, sub_key, name) < 0) {
+        return NULL;
+    }
+
+    rc = RegGetValueW(key, sub_key, name, 0xffff, NULL, NULL, &bufSize);
+    if (rc == ERROR_MORE_DATA)
+        bufSize = 256;
+    else if (rc != ERROR_SUCCESS)
+        return PyErr_SetFromWindowsErrWithFunction(rc, "RegGetValue");
+    retBuf = (BYTE *)PyMem_Malloc(bufSize);
+    if (retBuf == NULL)
+        return PyErr_NoMemory();
+
+    while (1) {
+        retSize = bufSize;
+        /* 0xffff represents RRF_RT_ANY */
+        rc = RegGetValueW(key, sub_key, name, 0xffff, &typ, (BYTE *)retBuf, &retSize);
+        if (rc != ERROR_MORE_DATA)
+            break;
+
+        bufSize *= 2;
+        tmp = (char *) PyMem_Realloc(retBuf, bufSize);
+        if (tmp == NULL) {
+            PyMem_Free(retBuf);
+            return PyErr_NoMemory();
+        }
+       retBuf = tmp;
+    }
+
+    if (rc != ERROR_SUCCESS) {
+        PyMem_Free(retBuf);
+        return PyErr_SetFromWindowsErrWithFunction(rc, "RegGetValue");
+    }
+    obData = Reg2Py(retBuf, bufSize, typ);
+    PyMem_Free(retBuf);
+    if (obData == NULL)
+        return NULL;
+    result = Py_BuildValue("Oi", obData, typ);
+    Py_DECREF(obData);
+    return result;
+}
 
 /*[clinic input]
 winreg.LoadKey
@@ -1988,6 +2055,7 @@ static struct PyMethodDef winreg_methods[] = {
     WINREG_ENUMVALUE_METHODDEF
     WINREG_EXPANDENVIRONMENTSTRINGS_METHODDEF
     WINREG_FLUSHKEY_METHODDEF
+    WINREG_GETVALUE_METHODDEF
     WINREG_LOADKEY_METHODDEF
     WINREG_OPENKEY_METHODDEF
     WINREG_OPENKEYEX_METHODDEF
