@@ -28,7 +28,7 @@ _WINERROR_INVALID_NAME = 123  # fix for bpo-35306
 _WINERROR_CANT_RESOLVE_FILENAME = 1921  # broken symlink pointing to itself
 
 # EBADF - guard against macOS `stat` throwing EBADF
-_IGNORED_ERROS = (ENOENT, ENOTDIR, EBADF, ELOOP)
+_IGNORED_ERRORS = (ENOENT, ENOTDIR, EBADF, ELOOP)
 
 _IGNORED_WINERRORS = (
     _WINERROR_NOT_READY,
@@ -36,7 +36,7 @@ _IGNORED_WINERRORS = (
     _WINERROR_CANT_RESOLVE_FILENAME)
 
 def _ignore_error(exception):
-    return (getattr(exception, 'errno', None) in _IGNORED_ERROS or
+    return (getattr(exception, 'errno', None) in _IGNORED_ERRORS or
             getattr(exception, 'winerror', None) in _IGNORED_WINERRORS)
 
 
