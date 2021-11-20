@@ -644,6 +644,8 @@ MODULE__ELEMENTTREE_FALSE
 MODULE__ELEMENTTREE_TRUE
 MODULE_PYEXPAT_FALSE
 MODULE_PYEXPAT_TRUE
+MODULE__SCPROXY_FALSE
+MODULE__SCPROXY_TRUE
 MODULE_OSSAUDIODEV_FALSE
 MODULE_OSSAUDIODEV_TRUE
 MODULE__DATETIME_FALSE
@@ -19588,6 +19590,56 @@ fi
 $as_echo "$py_cv_module_ossaudiodev" >&6; }
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _scproxy" >&5
+$as_echo_n "checking for stdlib extension module _scproxy... " >&6; }
+      case $py_stdlib_not_available in #(
+  *_scproxy*) :
+    py_cv_module__scproxy=n/a ;; #(
+  *) :
+
+      if test "$ac_sys_system" = "Darwin"; then :
+  if true; then :
+  py_cv_module__scproxy=yes
+else
+  py_cv_module__scproxy=missing
+fi
+else
+  py_cv_module__scproxy=disabled
+
+fi
+
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE__SCPROXY=$py_cv_module__scproxy$as_nl"
+  if test "x$py_cv_module__scproxy" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__SCPROXY_CFLAGS=$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SCPROXY_LDFLAGS=-framework SystemConfiguration -framework CoreFoundation$as_nl"
+     if true; then
+  MODULE__SCPROXY_TRUE=
+  MODULE__SCPROXY_FALSE='#'
+else
+  MODULE__SCPROXY_TRUE='#'
+  MODULE__SCPROXY_FALSE=
+fi
+
+
+else
+
+     if false; then
+  MODULE__SCPROXY_TRUE=
+  MODULE__SCPROXY_FALSE='#'
+else
+  MODULE__SCPROXY_TRUE='#'
+  MODULE__SCPROXY_FALSE=
+fi
+
+
+fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__scproxy" >&5
+$as_echo "$py_cv_module__scproxy" >&6; }
+
+
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module pyexpat" >&5
 $as_echo_n "checking for stdlib extension module pyexpat... " >&6; }
@@ -20229,6 +20281,14 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_OSSAUDIODEV_TRUE}" && test -z "${MODULE_OSSAUDIODEV_FALSE}"; then
   as_fn_error $? "conditional \"MODULE_OSSAUDIODEV\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__SCPROXY_TRUE}" && test -z "${MODULE__SCPROXY_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__SCPROXY\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__SCPROXY_TRUE}" && test -z "${MODULE__SCPROXY_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__SCPROXY\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_PYEXPAT_TRUE}" && test -z "${MODULE_PYEXPAT_FALSE}"; then
