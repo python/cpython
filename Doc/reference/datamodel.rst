@@ -678,12 +678,13 @@ Callable types
       :keyword:`async for` statement to execute the body of the function.
 
       Calling the asynchronous iterator's
-      :meth:`aiterator.__anext__<object.__anext__>` method will return an
-      :term:`awaitable` which when awaited will execute until it provides a
-      value using the :keyword:`yield` expression.  When the function executes
-      an empty :keyword:`return` statement or falls off the end, a
-      :exc:`StopAsyncIteration` exception is raised and the asynchronous
-      iterator will have reached the end of the set of values to be yielded.
+      :meth:`aiterator.__anext__<object.__anext__>` method
+      will return an :term:`awaitable` which when awaited
+      will execute until it provides a value using the :keyword:`yield`
+      expression.  When the function executes an empty :keyword:`return`
+      statement or falls off the end, a :exc:`StopAsyncIteration` exception
+      is raised and the asynchronous iterator will have reached the end of
+      the set of values to be yielded.
 
    Built-in functions
       .. index::
@@ -715,9 +716,9 @@ Callable types
    Classes
       Classes are callable.  These objects normally act as factories for new
       instances of themselves, but variations are possible for class types that
-      override :meth:`~object.__new__`.  The arguments of the call are passed
-      to :meth:`__new__` and, in the typical case, to :meth:`~object.__init__`
-      to initialize the new instance.
+      override :meth:`~object.__new__`.  The arguments of the call are passed to
+      :meth:`__new__` and, in the typical case, to :meth:`~object.__init__` to
+      initialize the new instance.
 
    Class Instances
       Instances of arbitrary classes can be made callable by defining a
@@ -1177,8 +1178,8 @@ Internal types
       .. index:: builtin: slice
 
       Slice objects are used to represent slices for
-      :meth:`~object.__getitem__` methods.  They are also created by the
-      built-in :func:`slice` function.
+      :meth:`~object.__getitem__`
+      methods.  They are also created by the built-in :func:`slice` function.
 
       .. index::
          single: start (slice object attribute)
@@ -1231,11 +1232,11 @@ A class can implement certain operations that are invoked by special syntax
 with special names. This is Python's approach to :dfn:`operator overloading`,
 allowing classes to define their own behavior with respect to language
 operators.  For instance, if a class defines a method named
-:meth:`~object.__getitem__`, and ``x`` is an instance of this class, then
-``x[i]`` is roughly equivalent to ``type(x).__getitem__(x, i)``.  Except where
-mentioned, attempts to execute an operation raise an exception when no
-appropriate method is defined (typically :exc:`AttributeError` or
-:exc:`TypeError`).
+:meth:`~object.__getitem__`,
+and ``x`` is an instance of this class, then``x[i]`` is roughly equivalent
+to ``type(x).__getitem__(x, i)``.  Except where mentioned, attempts to execute an
+operation raise an exception when no appropriate method is defined (typically
+:exc:`AttributeError` or :exc:`TypeError`).
 
 Setting a special method to ``None`` indicates that the corresponding
 operation is not available.  For example, if a class sets
@@ -1792,8 +1793,8 @@ Invoking Descriptors
 In general, a descriptor is an object attribute with "binding behavior", one
 whose attribute access has been overridden by methods in the descriptor
 protocol:  :meth:`~object.__get__`, :meth:`~object.__set__`, and
-:meth:`~object.__delete__`. If any of those methods are defined for an object,
-it is said to be a descriptor.
+:meth:`~object.__delete__`. If any of
+those methods are defined for an object, it is said to be a descriptor.
 
 The default behavior for attribute access is to get, set, or delete the
 attribute from an object's dictionary. For instance, ``a.x`` has a lookup chain
@@ -1829,16 +1830,15 @@ Super Binding
 For instance bindings, the precedence of descriptor invocation depends on
 which descriptor methods are defined.  A descriptor can define any combination
 of :meth:`~object.__get__`, :meth:`~object.__set__` and
-:meth:`~object.__delete__`.  If it does not define :meth:`__get__`, then
-accessing the attribute will return the descriptor object itself unless there
-is a value in the object's instance dictionary.  If the descriptor defines
-:meth:`__set__` and/or :meth:`__delete__`, it is a data descriptor; if it
-defines neither, it is a non-data descriptor.  Normally, data descriptors
-define both :meth:`__get__` and :meth:`__set__`, while non-data descriptors
-have just the :meth:`__get__` method.  Data descriptors with :meth:`__get__`
-and :meth:`__set__` (and/or :meth:`__delete__`) defined always override a
-redefinition in an instance dictionary.  In contrast, non-data descriptors can
-be overridden by instances.
+:meth:`~object.__delete__`.  If it does not
+define :meth:`__get__`, then accessing the attribute will return the descriptor
+object itself unless there is a value in the object's instance dictionary.  If
+the descriptor defines :meth:`__set__` and/or :meth:`__delete__`, it is a data
+descriptor; if it defines neither, it is a non-data descriptor.  Normally, data
+descriptors define both :meth:`__get__` and :meth:`__set__`, while non-data
+descriptors have just the :meth:`__get__` method.  Data descriptors with
+:meth:`__get__` and :meth:`__set__` (and/or :meth:`__delete__`) defined always override a redefinition in an
+instance dictionary.  In contrast, non-data descriptors can be overridden by instances.
 
 Python methods (including those decorated with
 :func:`@staticmethod<staticmethod>` and :func:`@classmethod<classmethod>`) are
@@ -1867,37 +1867,40 @@ Attribute lookup speed can be significantly improved as well.
    This class variable can be assigned a string, iterable, or sequence of
    strings with variable names used by instances.  *__slots__* reserves space
    for the declared variables and prevents the automatic creation of
-   :attr:`~object.__dict__` and *__weakref__* for each instance.
+   :attr:`~object.__dict__`
+   and *__weakref__* for each instance.
 
 
 Notes on using *__slots__*
 """"""""""""""""""""""""""
 
 * When inheriting from a class without *__slots__*, the
-  :attr:`~object.__dict__` and *__weakref__* attribute of the instances will
-  always be accessible.
+  :attr:`~object.__dict__` and
+  *__weakref__* attribute of the instances will always be accessible.
 
 * Without a :attr:`~object.__dict__` variable, instances cannot be assigned new
-  variables not listed in the *__slots__* definition.  Attempts to assign to an
-  unlisted variable name raises :exc:`AttributeError`. If dynamic assignment of
-  new variables is desired, then add ``'__dict__'`` to the sequence of strings
-  in the *__slots__* declaration.
+  variables not
+  listed in the *__slots__* definition.  Attempts to assign to an unlisted
+  variable name raises :exc:`AttributeError`. If dynamic assignment of new
+  variables is desired, then add ``'__dict__'`` to the sequence of strings in
+  the *__slots__* declaration.
 
 * Without a *__weakref__* variable for each instance, classes defining
   *__slots__* do not support :mod:`weak references<weakref>` to its instances.
-  If weak reference support is needed, then add ``'__weakref__'`` to the
-  sequence of strings in the *__slots__* declaration.
+  If weak reference
+  support is needed, then add ``'__weakref__'`` to the sequence of strings in
+  the *__slots__* declaration.
 
 * *__slots__* are implemented at the class level by creating
-  :ref:`descriptors<descriptors>` for each variable name.  As a result, class
-  attributes cannot be used to set default values for instance variables
-  defined by *__slots__*; otherwise, the class attribute would overwrite the
-  descriptor assignment.
+  :ref:`descriptors<descriptors>` for each variable name.  As a result, class attributes
+  cannot be used to set default values for instance variables defined by
+  *__slots__*; otherwise, the class attribute would overwrite the descriptor
+  assignment.
 
 * The action of a *__slots__* declaration is not limited to the class
   where it is defined.  *__slots__* declared in parents are available in
-  child classes. However, child subclasses will get a :attr:`~object.__dict__`
-  and *__weakref__* unless they also define *__slots__* (which should only
+  child classes. However, child subclasses will get a :attr:`~object.__dict__` and
+  *__weakref__* unless they also define *__slots__* (which should only
   contain names of any *additional* slots).
 
 * If a class defines a slot also defined in a base class, the instance variable
@@ -1916,21 +1919,23 @@ Notes on using *__slots__*
   same *__slots__*.
 
 * :ref:`Multiple inheritance<tut-multiple>` with multiple slotted parent
-  classes can be used, but only one parent is allowed to have attributes
-  created by slots (the other bases must have empty slot layouts) - violations
-  raise :exc:`TypeError`.
+  classes can be used,
+  but only one parent is allowed to have attributes created by slots
+  (the other bases must have empty slot layouts) - violations raise
+  :exc:`TypeError`.
 
 * If an :term:`iterator` is used for *__slots__* then a :term:`descriptor` is
-  created for each of the iterator's values. However, the *__slots__* attribute
-  will be an empty iterator.
+  created for each
+  of the iterator's values. However, the *__slots__* attribute will be an empty
+  iterator.
 
 .. _class-customization:
 
 Customizing class creation
 --------------------------
 
-Whenever a class inherits from another class, :meth:`~object.__init_subclass__`
-is called on that class. This way, it is possible to write classes which
+Whenever a class inherits from another class, :meth:`~object.__init_subclass__` is
+called on that class. This way, it is possible to write classes which
 change the behavior of subclasses. This is closely related to class
 decorators, but where class decorators only affect the specific class they're
 applied to, ``__init_subclass__`` solely applies to future subclasses of the
@@ -2083,9 +2088,9 @@ is prepared. If the metaclass has a ``__prepare__`` attribute, it is called
 as ``namespace = metaclass.__prepare__(name, bases, **kwds)`` (where the
 additional keyword arguments, if any, come from the class definition). The
 ``__prepare__`` method should be implemented as a
-:func:`classmethod<classmethod>`. The namespace returned by ``__prepare__`` is
-passed in to ``__new__``, but when the final class object is created the
-namespace is copied into a new ``dict``.
+:func:`classmethod<classmethod>`. The
+namespace returned by ``__prepare__`` is passed in to ``__new__``, but when
+the final class object is created the namespace is copied into a new ``dict``.
 
 If the metaclass has no ``__prepare__`` attribute, then the class namespace
 is initialised as an empty ordered mapping.
@@ -2407,12 +2412,12 @@ concatenation) and multiplication (meaning repetition) by defining the methods
 described below; they should not define other numerical operators. It is
 recommended that both mappings and sequences implement the
 :meth:`~object.__contains__` method to allow efficient use of the ``in``
-operator; for mappings, ``in`` should search the mapping's keys; for sequences,
-it should search through the values. It is further recommended that both
-mappings and sequences implement the :meth:`~object.__iter__` method to allow
-efficient iteration through the container; for mappings, :meth:`__iter__`
-should iterate through the object's keys; for sequences, it should iterate
-through the values.
+operator; for
+mappings, ``in`` should search the mapping's keys; for sequences, it should
+search through the values. It is further recommended that both mappings and
+sequences implement the :meth:`~object.__iter__` method to allow efficient iteration
+through the container; for mappings, :meth:`__iter__` should iterate
+through the object's keys; for sequences, it should iterate through the values.
 
 .. method:: object.__len__(self)
 
@@ -2826,9 +2831,10 @@ exception::
 
 The rationale behind this behaviour lies with a number of special methods such
 as :meth:`~object.__hash__` and :meth:`~object.__repr__` that are implemented
-by all objects, including type objects. If the implicit lookup of these methods
-used the conventional lookup process, they would fail when invoked on the type
-object itself::
+by all objects,
+including type objects. If the implicit lookup of these methods used the
+conventional lookup process, they would fail when invoked on the type object
+itself::
 
    >>> 1 .__hash__() == hash(1)
    True
@@ -2889,9 +2895,9 @@ Coroutines
 Awaitable Objects
 -----------------
 
-An :term:`awaitable` object generally implements an :meth:`~object.__await__`
-method. :term:`Coroutine objects <coroutine>` returned from
-:keyword:`async def` functions are awaitable.
+An :term:`awaitable` object generally implements an :meth:`~object.__await__` method.
+:term:`Coroutine objects <coroutine>` returned from :keyword:`async def` functions
+are awaitable.
 
 .. note::
 
@@ -2916,8 +2922,8 @@ Coroutine Objects
 -----------------
 
 :term:`Coroutine objects <coroutine>` are :term:`awaitable` objects.
-A coroutine's execution can be controlled by calling :meth:`~object.__await__`
-and iterating over the result.  When the coroutine has finished executing and
+A coroutine's execution can be controlled by calling :meth:`~object.__await__` and
+iterating over the result.  When the coroutine has finished executing and
 returns, the iterator raises :exc:`StopIteration`, and the exception's
 :attr:`~StopIteration.value` attribute holds the return value.  If the
 coroutine raises an exception, it is propagated by the iterator.  Coroutines
@@ -2935,8 +2941,8 @@ generators, coroutines do not directly support iteration.
 
    Starts or resumes execution of the coroutine.  If *value* is ``None``,
    this is equivalent to advancing the iterator returned by
-   :meth:`~object.__await__`.  If *value* is not ``None``, this method
-   delegates to the :meth:`~generator.send` method of the iterator that caused
+   :meth:`~object.__await__`.  If *value* is not ``None``, this method delegates
+   to the :meth:`~generator.send` method of the iterator that caused
    the coroutine to suspend.  The result (return value,
    :exc:`StopIteration`, or other exception) is the same as when
    iterating over the :meth:`__await__` return value, described above.
@@ -3051,8 +3057,9 @@ An example of an asynchronous context manager class::
 
 .. [#] The :meth:`~object.__hash__`, :meth:`~object.__iter__`,
    :meth:`~object.__reversed__`, and :meth:`~object.__contains__` methods have
-   special handling for this; others will still raise a :exc:`TypeError`, but
-   may do so by relying on the behavior that ``None`` is not callable.
+   special handling for this; others
+   will still raise a :exc:`TypeError`, but may do so by relying on
+   the behavior that ``None`` is not callable.
 
 .. [#] "Does not support" here means that the class has no such method, or
    the method returns ``NotImplemented``.  Do not set the method to
@@ -3062,4 +3069,5 @@ An example of an asynchronous context manager class::
 
 .. [#] For operands of the same type, it is assumed that if the non-reflected
    method -- such as :meth:`~object.__add__` -- fails then the overall
-   operation is not supported, which is why the reflected method is not called.
+   operation is not
+   supported, which is why the reflected method is not called.
