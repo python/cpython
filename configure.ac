@@ -6074,6 +6074,14 @@ PY_STDLIB_MOD([termios], [], [test "$ac_cv_header_termios_h" = yes])
 dnl _elementtree loads libexpat via CAPI hook in pyexpat
 PY_STDLIB_MOD([pyexpat], [], [], [$LIBEXPAT_CFLAGS], [$LIBEXPAT_LDFLAGS])
 PY_STDLIB_MOD([_elementtree], [], [], [$LIBEXPAT_CFLAGS], [])
+PY_STDLIB_MOD_SIMPLE([_codecs_cn])
+PY_STDLIB_MOD_SIMPLE([_codecs_hk])
+PY_STDLIB_MOD_SIMPLE([_codecs_iso2022])
+PY_STDLIB_MOD_SIMPLE([_codecs_jp])
+PY_STDLIB_MOD_SIMPLE([_codecs_kr])
+PY_STDLIB_MOD_SIMPLE([_codecs_tw])
+PY_STDLIB_MOD_SIMPLE([_multibytecodec])
+PY_STDLIB_MOD_SIMPLE([unicodedata])
 
 dnl By default we always compile these even when OpenSSL is available
 dnl (issue #14693). The modules are small.

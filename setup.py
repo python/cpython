@@ -1022,7 +1022,7 @@ class PyBuildExt(build_ext):
         # profiler (_lsprof is for cProfile.py)
         self.add(Extension('_lsprof', ['_lsprof.c', 'rotatingtree.c']))
         # static Unicode character database
-        self.add(Extension('unicodedata', ['unicodedata.c']))
+        self.addext(Extension('unicodedata', ['unicodedata.c']))
         # _opcode module
         self.add(Extension('_opcode', ['_opcode.c']))
         # asyncio speedups
@@ -1432,11 +1432,12 @@ class PyBuildExt(build_ext):
 
     def detect_multibytecodecs(self):
         # Hye-Shik Chang's CJKCodecs modules.
-        self.add(Extension('_multibytecodec',
-                           ['cjkcodecs/multibytecodec.c']))
+        self.addext(Extension('_multibytecodec',
+                              ['cjkcodecs/multibytecodec.c']))
         for loc in ('kr', 'jp', 'cn', 'tw', 'hk', 'iso2022'):
-            self.add(Extension('_codecs_%s' % loc,
-                               ['cjkcodecs/_codecs_%s.c' % loc]))
+            self.addext(Extension(
+                f'_codecs_{loc}', [f'cjkcodecs/_codecs_{loc}.c']
+            ))
 
     def detect_multiprocessing(self):
         # Richard Oudkerk's multiprocessing module
