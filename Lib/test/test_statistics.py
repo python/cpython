@@ -2527,6 +2527,12 @@ class TestLinearRegression(unittest.TestCase):
             self.assertAlmostEqual(intercept, true_intercept)
             self.assertAlmostEqual(slope, true_slope)
 
+    def test_proportional(self):
+        x = [10, 20, 30, 40]
+        y = [180, 398, 610, 799]
+        slope, intercept = statistics.linear_regression(x, y, proportional=True)
+        self.assertAlmostEqual(slope, 20 + 1/150)
+        self.assertEqual(intercept, 0.0)
 
 class TestNormalDist:
 
