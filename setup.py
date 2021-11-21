@@ -1046,16 +1046,8 @@ class PyBuildExt(build_ext):
         self.add(Extension('fcntl', ['fcntlmodule.c'],
                            libraries=libs))
         # grp(3)
-        if not VXWORKS:
-            self.add(Extension('grp', ['grpmodule.c']))
-        # spwd, shadow passwords
-        if (self.config_h_vars.get('HAVE_GETSPNAM', False) or
-                self.config_h_vars.get('HAVE_GETSPENT', False)):
-            self.add(Extension('spwd', ['spwdmodule.c']))
-        # AIX has shadow passwords, but access is not via getspent(), etc.
-        # module support is not expected so it not 'missing'
-        elif not AIX:
-            self.missing.append('spwd')
+        self.addext(Extension('grp', ['grpmodule.c']))
+        self.addext(Extension('spwd', ['spwdmodule.c']))
 
         # select(2); not on ancient System V
         self.add(Extension('select', ['selectmodule.c']))
@@ -1065,7 +1057,7 @@ class PyBuildExt(build_ext):
 
         # Lance Ellinghaus's syslog module
         # syslog daemon interface
-        self.add(Extension('syslog', ['syslogmodule.c']))
+        self.addext(Extension('syslog', ['syslogmodule.c']))
 
         # Python interface to subinterpreter C-API.
         self.add(Extension('_xxsubinterpreters', ['_xxsubinterpretersmodule.c']))
@@ -1375,15 +1367,10 @@ class PyBuildExt(build_ext):
 
     def detect_platform_specific_exts(self):
         # Unix-only modules
-        if not MS_WINDOWS:
-            if not VXWORKS:
-                # Steen Lumholt's termios module
-                self.add(Extension('termios', ['termios.c']))
-                # Jeremy Hylton's rlimit interface
-            self.add(Extension('resource', ['resource.c']))
-        else:
-            self.missing.extend(['resource', 'termios'])
-
+        # Steen Lumholt's termios module
+        self.addext(Extension('termios', ['termios.c']))
+        # Jeremy Hylton's rlimit interface
+        self.addext(Extension('resource', ['resource.c']))
         # linux/soundcard.h or sys/soundcard.h
         self.addext(Extension('ossaudiodev', ['ossaudiodev.c']))
 
