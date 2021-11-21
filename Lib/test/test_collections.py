@@ -676,14 +676,17 @@ class TestNamedTuple(unittest.TestCase):
         self.assertRaises(AttributeError, Point.x.__set__, p, 33)
         self.assertRaises(AttributeError, Point.x.__delete__, p)
 
-        class NewPoint(tuple):
-            x = pickle.loads(pickle.dumps(Point.x))
-            y = pickle.loads(pickle.dumps(Point.y))
+        # if there is no _itemgetter eg on PyPy, the rest doesn't make sense,
+        # because property isn't pickable
+        if type(Point.x) is not property:
+            class NewPoint(tuple):
+                x = pickle.loads(pickle.dumps(Point.x))
+                y = pickle.loads(pickle.dumps(Point.y))
 
-        np = NewPoint([1, 2])
+            np = NewPoint([1, 2])
 
-        self.assertEqual(np.x, 1)
-        self.assertEqual(np.y, 2)
+            self.assertEqual(np.x, 1)
+            self.assertEqual(np.y, 2)
 
     def test_new_builtins_issue_43102(self):
         obj = namedtuple('C', ())
