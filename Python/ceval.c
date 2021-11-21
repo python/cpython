@@ -2739,10 +2739,7 @@ check_eval_breaker:
                 goto error;
             }
 
-            PyObject *lasti_unused = PyLong_FromLong(0);
-            if (lasti_unused == NULL) {
-                goto error;
-            }
+            PyObject *lasti_unused = Py_NewRef(_PyLong_GetZero());
             PUSH(lasti_unused);
             if (val != Py_None) {
                 PyObject *tb = PyException_GetTraceback(val);
