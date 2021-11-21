@@ -61,8 +61,14 @@
 # Modules with some UNIX dependencies
 #
 
-# Linux and FreeBSD, needs sys/soundcard.h or linux/soundcard.h
+@MODULE_GRP_TRUE@grp grpmodule.c
+# needs sys/soundcard.h or linux/soundcard.h (Linux, FreeBSD)
 @MODULE_OSSAUDIODEV_TRUE@ossaudiodev ossaudiodev.c
+@MODULE_RESOURCE_TRUE@resource resource.c
+# AIX has shadow passwords, but does not provide getspent API
+@MODULE_SPWD_TRUE@spwd spwdmodule.c
+@MODULE_SYSLOG_TRUE@syslog syslogmodule.c
+@MODULE_TERMIOS_TRUE@termios termios.c
 
 
 ############################################################################
