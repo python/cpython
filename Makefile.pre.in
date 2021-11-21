@@ -331,6 +331,8 @@ LIBFFI_INCLUDEDIR=	@LIBFFI_INCLUDEDIR@
 
 PEGEN_OBJS=		\
 		Parser/pegen.o \
+		Parser/pegen_errors.o \
+		Parser/action_helpers.o \
 		Parser/parser.o \
 		Parser/string_parser.o \
 		Parser/peg_api.o
