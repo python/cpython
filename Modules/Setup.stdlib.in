@@ -56,6 +56,14 @@
 # _elementtree libexpat via CAPI hook in pyexpat.
 @MODULE__ELEMENTTREE_TRUE@_elementtree _elementtree.c
 
+@MODULE__CODECS_CN_TRUE@_codecs_cn cjkcodecs/_codecs_cn.c
+@MODULE__CODECS_HK_TRUE@_codecs_hk cjkcodecs/_codecs_hk.c
+@MODULE__CODECS_ISO2022_TRUE@_codecs_iso2022 cjkcodecs/_codecs_iso2022.c
+@MODULE__CODECS_JP_TRUE@_codecs_jp cjkcodecs/_codecs_jp.c
+@MODULE__CODECS_KR_TRUE@_codecs_kr cjkcodecs/_codecs_kr.c
+@MODULE__CODECS_TW_TRUE@_codecs_tw cjkcodecs/_codecs_tw.c
+@MODULE__MULTIBYTECODEC_TRUE@_multibytecodec cjkcodecs/multibytecodec.c
+@MODULE_UNICODEDATA_TRUE@unicodedata unicodedata.c
 
 ############################################################################
 # Modules with some UNIX dependencies

@@ -654,6 +654,22 @@ MODULE__SHA1_FALSE
 MODULE__SHA1_TRUE
 MODULE__MD5_FALSE
 MODULE__MD5_TRUE
+MODULE_UNICODEDATA_FALSE
+MODULE_UNICODEDATA_TRUE
+MODULE__MULTIBYTECODEC_FALSE
+MODULE__MULTIBYTECODEC_TRUE
+MODULE__CODECS_TW_FALSE
+MODULE__CODECS_TW_TRUE
+MODULE__CODECS_KR_FALSE
+MODULE__CODECS_KR_TRUE
+MODULE__CODECS_JP_FALSE
+MODULE__CODECS_JP_TRUE
+MODULE__CODECS_ISO2022_FALSE
+MODULE__CODECS_ISO2022_TRUE
+MODULE__CODECS_HK_FALSE
+MODULE__CODECS_HK_TRUE
+MODULE__CODECS_CN_FALSE
+MODULE__CODECS_CN_TRUE
 MODULE__ELEMENTTREE_FALSE
 MODULE__ELEMENTTREE_TRUE
 MODULE_PYEXPAT_FALSE
@@ -19913,6 +19929,102 @@ fi
 $as_echo "$py_cv_module__elementtree" >&6; }
 
 
+     if true; then
+  MODULE__CODECS_CN_TRUE=
+  MODULE__CODECS_CN_FALSE='#'
+else
+  MODULE__CODECS_CN_TRUE='#'
+  MODULE__CODECS_CN_FALSE=
+fi
+
+
+
+
+
+     if true; then
+  MODULE__CODECS_HK_TRUE=
+  MODULE__CODECS_HK_FALSE='#'
+else
+  MODULE__CODECS_HK_TRUE='#'
+  MODULE__CODECS_HK_FALSE=
+fi
+
+
+
+
+
+     if true; then
+  MODULE__CODECS_ISO2022_TRUE=
+  MODULE__CODECS_ISO2022_FALSE='#'
+else
+  MODULE__CODECS_ISO2022_TRUE='#'
+  MODULE__CODECS_ISO2022_FALSE=
+fi
+
+
+
+
+
+     if true; then
+  MODULE__CODECS_JP_TRUE=
+  MODULE__CODECS_JP_FALSE='#'
+else
+  MODULE__CODECS_JP_TRUE='#'
+  MODULE__CODECS_JP_FALSE=
+fi
+
+
+
+
+
+     if true; then
+  MODULE__CODECS_KR_TRUE=
+  MODULE__CODECS_KR_FALSE='#'
+else
+  MODULE__CODECS_KR_TRUE='#'
+  MODULE__CODECS_KR_FALSE=
+fi
+
+
+
+
+
+     if true; then
+  MODULE__CODECS_TW_TRUE=
+  MODULE__CODECS_TW_FALSE='#'
+else
+  MODULE__CODECS_TW_TRUE='#'
+  MODULE__CODECS_TW_FALSE=
+fi
+
+
+
+
+
+     if true; then
+  MODULE__MULTIBYTECODEC_TRUE=
+  MODULE__MULTIBYTECODEC_FALSE='#'
+else
+  MODULE__MULTIBYTECODEC_TRUE='#'
+  MODULE__MULTIBYTECODEC_FALSE=
+fi
+
+
+
+
+
+     if true; then
+  MODULE_UNICODEDATA_TRUE=
+  MODULE_UNICODEDATA_FALSE='#'
+else
+  MODULE_UNICODEDATA_TRUE='#'
+  MODULE_UNICODEDATA_FALSE=
+fi
+
+
+
+
+
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _md5" >&5
 $as_echo_n "checking for stdlib extension module _md5... " >&6; }
@@ -20667,6 +20779,38 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__ELEMENTTREE_TRUE}" && test -z "${MODULE__ELEMENTTREE_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__ELEMENTTREE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__CODECS_CN_TRUE}" && test -z "${MODULE__CODECS_CN_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__CODECS_CN\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__CODECS_HK_TRUE}" && test -z "${MODULE__CODECS_HK_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__CODECS_HK\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__CODECS_ISO2022_TRUE}" && test -z "${MODULE__CODECS_ISO2022_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__CODECS_ISO2022\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__CODECS_JP_TRUE}" && test -z "${MODULE__CODECS_JP_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__CODECS_JP\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__CODECS_KR_TRUE}" && test -z "${MODULE__CODECS_KR_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__CODECS_KR\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__CODECS_TW_TRUE}" && test -z "${MODULE__CODECS_TW_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__CODECS_TW\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__MULTIBYTECODEC_TRUE}" && test -z "${MODULE__MULTIBYTECODEC_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__MULTIBYTECODEC\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_UNICODEDATA_TRUE}" && test -z "${MODULE_UNICODEDATA_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_UNICODEDATA\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__MD5_TRUE}" && test -z "${MODULE__MD5_FALSE}"; then
