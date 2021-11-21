@@ -55,9 +55,6 @@ with warnings.catch_warnings():
     from distutils.spawn import find_executable
 
 
-# Compile extensions used to test Python?
-TEST_EXTENSIONS = (sysconfig.get_config_var('TEST_MODULES') == 'yes')
-
 # This global variable is used to hold the list of modules to be disabled.
 DISABLED_MODULE_LIST = []
 
@@ -361,58 +358,7 @@ def find_module_file(module, dirlist):
         return module
     if len(dirs) > 1:
         log.info(f"WARNING: multiple copies of {module} found")
-    return os.path.join(dirs[0], module)
-
-
-def parse_cflags(flags):
-    """Parse a string with compiler flags (-I, -D, -U, extra)
-    
-    Distutils appends extra args to the compiler arguments. Some flags like
-    -I must appear earlier. Otherwise the pre-processor picks up files
-    from system inclue directories.
-    """
-    include_dirs = []
-    define_macros = []
-    undef_macros = []
-    extra_compile_args = []
-    if flags is not None:
-        # shlex.split(None) reads from stdin
-        for token in shlex.split(flags):
-            switch = token[0:2]
-            value = token[2:]
-            if switch == '-I':
-                include_dirs.append(value)
-            elif switch == '-D':
-                key, _, val = value.partition("=")
-                if not val:
-                    val = None
-                define_macros.append((key, val))
-            elif switch == '-U':
-                undef_macros.append(value)
-            else:
-                extra_compile_args.append(token)
-
-    return include_dirs, define_macros, undef_macros, extra_compile_args
-
-
-def parse_ldflags(flags):
-    """Parse a string with linker flags (-L, -l, extra)"""
-    library_dirs = []
-    libraries = []
-    extra_link_args = []
-    if flags is not None:
-        # shlex.split(None) reads from stdin
-        for token in shlex.split(flags):
-            switch = token[0:2]
-            value = token[2:]
-            if switch == '-L':
-                library_dirs.append(value)
-            elif switch == '-l':
-                libraries.append(value)
-            else:
-                extra_link_args.append(token)
-
-    return library_dirs, libraries, extra_link_args
+    return os.path.abspath(os.path.join(dirs[0], module))
 
 
 class PyBuildExt(build_ext):
@@ -432,6 +378,74 @@ class PyBuildExt(build_ext):
 
     def add(self, ext):
         self.extensions.append(ext)
+
+    def addext(self, ext, *, update_flags=True):
+        """Add extension with Makefile MODULE_{name} support
+        """
+        if update_flags:
+            self.update_extension_flags(ext)
+
+        state = sysconfig.get_config_var(f"MODULE_{ext.name.upper()}")
+        if state == "yes":
+            self.extensions.append(ext)
+        elif state == "disabled":
+            self.disabled_configure.append(ext.name)
+        elif state == "missing":
+            self.missing.append(ext.name)
+        elif state == "n/a":
+            # not available on current platform
+            pass
+        else:
+            # not migrated to MODULE_{name} yet.
+            self.extensions.append(ext)
+
+    def update_extension_flags(self, ext):
+        """Update extension flags with module CFLAGS and LDFLAGS
+
+        Reads MODULE_{name}_CFLAGS and _LDFLAGS
+
+        Distutils appends extra args to the compiler arguments. Some flags like
+        -I must appear earlier, otherwise the pre-processor picks up files
+        from system inclue directories.
+        """
+        upper_name = ext.name.upper()
+        # Parse compiler flags (-I, -D, -U, extra args)
+        cflags = sysconfig.get_config_var(f"MODULE_{upper_name}_CFLAGS")
+        if cflags:
+            for token in shlex.split(cflags):
+                switch = token[0:2]
+                value = token[2:]
+                if switch == '-I':
+                    ext.include_dirs.append(value)
+                elif switch == '-D':
+                    key, _, val = value.partition("=")
+                    if not val:
+                        val = None
+                    ext.define_macros.append((key, val))
+                elif switch == '-U':
+                    ext.undef_macros.append(value)
+                else:
+                    ext.extra_compile_args.append(token)
+
+        # Parse linker flags (-L, -l, extra objects, extra args)
+        ldflags = sysconfig.get_config_var(f"MODULE_{upper_name}_LDFLAGS")
+        if ldflags:
+            for token in shlex.split(ldflags):
+                switch = token[0:2]
+                value = token[2:]
+                if switch == '-L':
+                    ext.library_dirs.append(value)
+                elif switch == '-l':
+                    ext.libraries.append(value)
+                elif (
+                    token[0] != '-' and
+                    token.endswith(('.a', '.o', '.so', '.sl', '.dylib'))
+                ):
+                    ext.extra_objects.append(token)
+                else:
+                    ext.extra_link_args.append(token)
+
+        return ext
 
     def set_srcdir(self):
         self.srcdir = sysconfig.get_config_var('srcdir')
@@ -454,7 +468,13 @@ class PyBuildExt(build_ext):
     def update_sources_depends(self):
         # Fix up the autodetected modules, prefixing all the source files
         # with Modules/.
-        moddirlist = [os.path.join(self.srcdir, 'Modules')]
+        # Add dependencies from MODULE_{name}_DEPS variable
+        moddirlist = [
+            # files in Modules/ directory
+            os.path.join(self.srcdir, 'Modules'),
+            # files relative to build base, e.g. libmpdec.a, libexpat.a
+            os.getcwd()
+        ]
 
         # Fix up the paths for scripts, too
         self.distribution.scripts = [os.path.join(self.srcdir, filename)
@@ -470,11 +490,16 @@ class PyBuildExt(build_ext):
         for ext in self.extensions:
             ext.sources = [ find_module_file(filename, moddirlist)
                             for filename in ext.sources ]
-            if ext.depends is not None:
-                ext.depends = [find_module_file(filename, moddirlist)
-                               for filename in ext.depends]
-            else:
-                ext.depends = []
+            # Update dependencies from Makefile
+            makedeps = sysconfig.get_config_var(f"MODULE_{ext.name.upper()}_DEPS")
+            if makedeps:
+                # remove backslashes from line break continuations
+                ext.depends.extend(
+                    dep for dep in makedeps.split() if dep != "\\"
+                )
+            ext.depends = [
+                find_module_file(filename, moddirlist) for filename in ext.depends
+            ]
             # re-compile extensions if a header file has been changed
             ext.depends.extend(headers)
 
@@ -966,12 +991,10 @@ class PyBuildExt(build_ext):
 
         # math library functions, e.g. sin()
         self.add(Extension('math',  ['mathmodule.c'],
-                           depends=['_math.h'],
                            libraries=['m']))
 
         # complex math library functions
         self.add(Extension('cmath', ['cmathmodule.c'],
-                           depends=['_math.h'],
                            libraries=['m']))
 
         # time libraries: librt may be needed for clock_gettime()
@@ -980,13 +1003,9 @@ class PyBuildExt(build_ext):
         if lib:
             time_libs.append(lib)
 
-        # time operations and variables
-        self.add(Extension('time', ['timemodule.c'],
-                           libraries=time_libs))
         # libm is needed by delta_new() that uses round() and by accum() that
         # uses modf().
-        self.add(Extension('_datetime', ['_datetimemodule.c'],
-                           libraries=['m']))
+        self.addext(Extension('_datetime', ['_datetimemodule.c']))
         # zoneinfo module
         self.add(Extension('_zoneinfo', ['_zoneinfo.c']))
         # random number generator implemented in C
@@ -1003,14 +1022,11 @@ class PyBuildExt(build_ext):
         # profiler (_lsprof is for cProfile.py)
         self.add(Extension('_lsprof', ['_lsprof.c', 'rotatingtree.c']))
         # static Unicode character database
-        self.add(Extension('unicodedata', ['unicodedata.c'],
-                           depends=['unicodedata_db.h', 'unicodename_db.h']))
+        self.addext(Extension('unicodedata', ['unicodedata.c']))
         # _opcode module
         self.add(Extension('_opcode', ['_opcode.c']))
         # asyncio speedups
         self.add(Extension("_asyncio", ["_asynciomodule.c"]))
-        # _abc speedups
-        self.add(Extension("_abc", ["_abc.c"]))
         # _queue module
         self.add(Extension("_queue", ["_queuemodule.c"]))
         # _statistics module
@@ -1029,19 +1045,9 @@ class PyBuildExt(build_ext):
             libs = ['bsd']
         self.add(Extension('fcntl', ['fcntlmodule.c'],
                            libraries=libs))
-        # pwd(3)
-        self.add(Extension('pwd', ['pwdmodule.c']))
         # grp(3)
-        if not VXWORKS:
-            self.add(Extension('grp', ['grpmodule.c']))
-        # spwd, shadow passwords
-        if (self.config_h_vars.get('HAVE_GETSPNAM', False) or
-                self.config_h_vars.get('HAVE_GETSPENT', False)):
-            self.add(Extension('spwd', ['spwdmodule.c']))
-        # AIX has shadow passwords, but access is not via getspent(), etc.
-        # module support is not expected so it not 'missing'
-        elif not AIX:
-            self.missing.append('spwd')
+        self.addext(Extension('grp', ['grpmodule.c']))
+        self.addext(Extension('spwd', ['spwdmodule.c']))
 
         # select(2); not on ancient System V
         self.add(Extension('select', ['selectmodule.c']))
@@ -1051,7 +1057,7 @@ class PyBuildExt(build_ext):
 
         # Lance Ellinghaus's syslog module
         # syslog daemon interface
-        self.add(Extension('syslog', ['syslogmodule.c']))
+        self.addext(Extension('syslog', ['syslogmodule.c']))
 
         # Python interface to subinterpreter C-API.
         self.add(Extension('_xxsubinterpreters', ['_xxsubinterpretersmodule.c']))
@@ -1081,25 +1087,25 @@ class PyBuildExt(build_ext):
 
     def detect_test_extensions(self):
         # Python C API test module
-        self.add(Extension('_testcapi', ['_testcapimodule.c'],
-                           depends=['testcapi_long.h']))
+        self.addext(Extension('_testcapi', ['_testcapimodule.c']))
 
         # Python Internal C API test module
-        self.add(Extension('_testinternalcapi', ['_testinternalcapi.c']))
+        self.addext(Extension('_testinternalcapi', ['_testinternalcapi.c']))
 
         # Python PEP-3118 (buffer protocol) test module
-        self.add(Extension('_testbuffer', ['_testbuffer.c']))
+        self.addext(Extension('_testbuffer', ['_testbuffer.c']))
 
         # Test loading multiple modules from one compiled file (https://bugs.python.org/issue16421)
-        self.add(Extension('_testimportmultiple', ['_testimportmultiple.c']))
+        self.addext(Extension('_testimportmultiple', ['_testimportmultiple.c']))
 
         # Test multi-phase extension module init (PEP 489)
-        self.add(Extension('_testmultiphase', ['_testmultiphase.c']))
+        self.addext(Extension('_testmultiphase', ['_testmultiphase.c']))
 
         # Fuzz tests.
-        self.add(Extension('_xxtestfuzz',
-                           ['_xxtestfuzz/_xxtestfuzz.c',
-                            '_xxtestfuzz/fuzzer.c']))
+        self.addext(Extension(
+            '_xxtestfuzz',
+            ['_xxtestfuzz/_xxtestfuzz.c', '_xxtestfuzz/fuzzer.c']
+        ))
 
     def detect_readline_curses(self):
         # readline
@@ -1263,7 +1269,7 @@ class PyBuildExt(build_ext):
         self.add(Extension('_crypt', ['_cryptmodule.c'], libraries=libs))
 
     def detect_socket(self):
-        self.add(Extension('_socket', ['socketmodule.c'], depends=['socketmodule.h']))
+        self.add(Extension('_socket', ['socketmodule.c']))
 
     def detect_dbm_gdbm(self):
         # Modules that provide persistent dictionary-like semantics.  You will
@@ -1347,131 +1353,29 @@ class PyBuildExt(build_ext):
             self.missing.append('_gdbm')
 
     def detect_sqlite(self):
-        # The sqlite interface
-        sqlite_setup_debug = False   # verbose debug prints from this script?
-
-        # We hunt for #define SQLITE_VERSION "n.n.n"
-        sqlite_incdir = sqlite_libdir = None
-        sqlite_inc_paths = [ '/usr/include',
-                             '/usr/include/sqlite',
-                             '/usr/include/sqlite3',
-                             '/usr/local/include',
-                             '/usr/local/include/sqlite',
-                             '/usr/local/include/sqlite3',
-                             ]
-        if CROSS_COMPILING:
-            sqlite_inc_paths = []
-        MIN_SQLITE_VERSION_NUMBER = (3, 7, 15)  # Issue 40810
-        MIN_SQLITE_VERSION = ".".join([str(x)
-                                    for x in MIN_SQLITE_VERSION_NUMBER])
-
-        # Scan the default include directories before the SQLite specific
-        # ones. This allows one to override the copy of sqlite on OSX,
-        # where /usr/include contains an old version of sqlite.
-        if MACOS:
-            sysroot = macosx_sdk_root()
-
-        for d_ in self.inc_dirs + sqlite_inc_paths:
-            d = d_
-            if MACOS and is_macosx_sdk_path(d):
-                d = os.path.join(sysroot, d[1:])
-
-            f = os.path.join(d, "sqlite3.h")
-            if os.path.exists(f):
-                if sqlite_setup_debug: print("sqlite: found %s"%f)
-                with open(f) as file:
-                    incf = file.read()
-                m = re.search(
-                    r'\s*.*#\s*.*define\s.*SQLITE_VERSION\W*"([\d\.]*)"', incf)
-                if m:
-                    sqlite_version = m.group(1)
-                    sqlite_version_tuple = tuple([int(x)
-                                        for x in sqlite_version.split(".")])
-                    if sqlite_version_tuple >= MIN_SQLITE_VERSION_NUMBER:
-                        # we win!
-                        if sqlite_setup_debug:
-                            print("%s/sqlite3.h: version %s"%(d, sqlite_version))
-                        sqlite_incdir = d
-                        break
-                    else:
-                        if sqlite_setup_debug:
-                            print("%s: version %s is too old, need >= %s"%(d,
-                                        sqlite_version, MIN_SQLITE_VERSION))
-                elif sqlite_setup_debug:
-                    print("sqlite: %s had no SQLITE_VERSION"%(f,))
-
-        if sqlite_incdir:
-            sqlite_dirs_to_check = [
-                os.path.join(sqlite_incdir, '..', 'lib64'),
-                os.path.join(sqlite_incdir, '..', 'lib'),
-                os.path.join(sqlite_incdir, '..', '..', 'lib64'),
-                os.path.join(sqlite_incdir, '..', '..', 'lib'),
-            ]
-            sqlite_libfile = self.compiler.find_library_file(
-                                sqlite_dirs_to_check + self.lib_dirs, 'sqlite3')
-            if sqlite_libfile:
-                sqlite_libdir = [os.path.abspath(os.path.dirname(sqlite_libfile))]
-
-        if sqlite_incdir and sqlite_libdir:
-            sqlite_srcs = [
-                '_sqlite/connection.c',
-                '_sqlite/cursor.c',
-                '_sqlite/microprotocols.c',
-                '_sqlite/module.c',
-                '_sqlite/prepare_protocol.c',
-                '_sqlite/row.c',
-                '_sqlite/statement.c',
-                '_sqlite/util.c', ]
-            sqlite_defines = []
-
-            # Enable support for loadable extensions in the sqlite3 module
-            # if --enable-loadable-sqlite-extensions configure option is used.
-            if (
-                MACOS and
-                sqlite_incdir == os.path.join(MACOS_SDK_ROOT, "usr/include") and
-                sysconfig.get_config_var("PY_SQLITE_ENABLE_LOAD_EXTENSION")
-            ):
-                raise DistutilsError("System version of SQLite does not support loadable extensions")
-
-            include_dirs = ["Modules/_sqlite"]
-            # Only include the directory where sqlite was found if it does
-            # not already exist in set include directories, otherwise you
-            # can end up with a bad search path order.
-            if sqlite_incdir not in self.compiler.include_dirs:
-                include_dirs.append(sqlite_incdir)
-            # avoid a runtime library path for a system library dir
-            if sqlite_libdir and sqlite_libdir[0] in self.lib_dirs:
-                sqlite_libdir = None
-            self.add(Extension('_sqlite3', sqlite_srcs,
-                               define_macros=sqlite_defines,
-                               include_dirs=include_dirs,
-                               library_dirs=sqlite_libdir,
-                               libraries=["sqlite3",]))
-        else:
-            self.missing.append('_sqlite3')
+        sources = [
+            "_sqlite/connection.c",
+            "_sqlite/cursor.c",
+            "_sqlite/microprotocols.c",
+            "_sqlite/module.c",
+            "_sqlite/prepare_protocol.c",
+            "_sqlite/row.c",
+            "_sqlite/statement.c",
+            "_sqlite/util.c",
+        ]
+        self.addext(Extension("_sqlite3", sources=sources))
 
     def detect_platform_specific_exts(self):
         # Unix-only modules
-        if not MS_WINDOWS:
-            if not VXWORKS:
-                # Steen Lumholt's termios module
-                self.add(Extension('termios', ['termios.c']))
-                # Jeremy Hylton's rlimit interface
-            self.add(Extension('resource', ['resource.c']))
-        else:
-            self.missing.extend(['resource', 'termios'])
+        # Steen Lumholt's termios module
+        self.addext(Extension('termios', ['termios.c']))
+        # Jeremy Hylton's rlimit interface
+        self.addext(Extension('resource', ['resource.c']))
+        # linux/soundcard.h or sys/soundcard.h
+        self.addext(Extension('ossaudiodev', ['ossaudiodev.c']))
 
-        # Platform-specific libraries
-        if HOST_PLATFORM.startswith(('linux', 'freebsd', 'gnukfreebsd')):
-            self.add(Extension('ossaudiodev', ['ossaudiodev.c']))
-        elif not AIX:
-            self.missing.append('ossaudiodev')
-
-        if MACOS:
-            self.add(Extension('_scproxy', ['_scproxy.c'],
-                               extra_link_args=[
-                                   '-framework', 'SystemConfiguration',
-                                   '-framework', 'CoreFoundation']))
+        # macOS-only, needs SystemConfiguration and CoreFoundation framework
+        self.addext(Extension('_scproxy', ['_scproxy.c']))
 
     def detect_compress_exts(self):
         # Andrew Kuchling's zlib module.
@@ -1520,47 +1424,20 @@ class PyBuildExt(build_ext):
         #
         # More information on Expat can be found at www.libexpat.org.
         #
-        cflags = parse_cflags(sysconfig.get_config_var("EXPAT_CFLAGS"))
-        include_dirs, define_macros, undef_macros, extra_compile_args = cflags
-        # ldflags includes either system libexpat or full path to
-        # our static libexpat.a.
-        ldflags = parse_ldflags(sysconfig.get_config_var("EXPAT_LDFLAGS"))
-        library_dirs, libraries, extra_link_args = ldflags
-
-        expat_depends = []
-        libexpat_a = sysconfig.get_config_var("LIBEXPAT_A")
-        if libexpat_a:
-            expat_depends.append(libexpat_a)
-
-        self.add(Extension('pyexpat',
-                           include_dirs=include_dirs,
-                           define_macros=define_macros,
-                           undef_macros=undef_macros,
-                           extra_compile_args=extra_compile_args,
-                           library_dirs=library_dirs,
-                           libraries=libraries,
-                           extra_link_args=extra_link_args,
-                           sources=['pyexpat.c'],
-                           depends=expat_depends))
+        self.addext(Extension('pyexpat', sources=['pyexpat.c']))
 
         # Fredrik Lundh's cElementTree module.  Note that this also
         # uses expat (via the CAPI hook in pyexpat).
-        self.add(Extension('_elementtree',
-                           include_dirs=include_dirs,
-                           define_macros=define_macros,
-                           undef_macros=undef_macros,
-                           extra_compile_args=extra_compile_args,
-                           # no EXPAT_LDFLAGS
-                           sources=['_elementtree.c'],
-                           depends=['pyexpat.c', *expat_depends]))
+        self.addext(Extension('_elementtree', sources=['_elementtree.c']))
 
     def detect_multibytecodecs(self):
         # Hye-Shik Chang's CJKCodecs modules.
-        self.add(Extension('_multibytecodec',
-                           ['cjkcodecs/multibytecodec.c']))
+        self.addext(Extension('_multibytecodec',
+                              ['cjkcodecs/multibytecodec.c']))
         for loc in ('kr', 'jp', 'cn', 'tw', 'hk', 'iso2022'):
-            self.add(Extension('_codecs_%s' % loc,
-                               ['cjkcodecs/_codecs_%s.c' % loc]))
+            self.addext(Extension(
+                f'_codecs_{loc}', [f'cjkcodecs/_codecs_{loc}.c']
+            ))
 
     def detect_multiprocessing(self):
         # Richard Oudkerk's multiprocessing module
@@ -1608,9 +1485,11 @@ class PyBuildExt(build_ext):
         self.configure_compiler()
         self.init_inc_lib_dirs()
 
+        # Some C extensions are built by entries in Modules/Setup.bootstrap.
+        # These are extensions are required to bootstrap the interpreter or
+        # build process.
         self.detect_simple_extensions()
-        if TEST_EXTENSIONS:
-            self.detect_test_extensions()
+        self.detect_test_extensions()
         self.detect_readline_curses()
         self.detect_crypt()
         self.detect_socket()
@@ -1961,7 +1840,6 @@ class PyBuildExt(build_ext):
                    '_ctypes/callproc.c',
                    '_ctypes/stgdict.c',
                    '_ctypes/cfield.c']
-        depends = ['_ctypes/ctypes.h']
 
         if MACOS:
             sources.append('_ctypes/malloc_closure.c')
@@ -1988,14 +1866,10 @@ class PyBuildExt(build_ext):
                         extra_compile_args=extra_compile_args,
                         extra_link_args=extra_link_args,
                         libraries=[],
-                        sources=sources,
-                        depends=depends)
+                        sources=sources)
         self.add(ext)
-        if TEST_EXTENSIONS:
-            # function my_sqrt() needs libm for sqrt()
-            self.add(Extension('_ctypes_test',
-                               sources=['_ctypes/_ctypes_test.c'],
-                               libraries=['m']))
+        # function my_sqrt() needs libm for sqrt()
+        self.addext(Extension('_ctypes_test', ['_ctypes/_ctypes_test.c']))
 
         ffi_inc = sysconfig.get_config_var("LIBFFI_INCLUDEDIR")
         ffi_lib = None
@@ -2048,32 +1922,14 @@ class PyBuildExt(build_ext):
 
     def detect_decimal(self):
         # Stefan Krah's _decimal module
-        sources = ['_decimal/_decimal.c']
-        depends = ['_decimal/docstrings.h']
-
-        cflags = parse_cflags(sysconfig.get_config_var("DECIMAL_CFLAGS"))
-        include_dirs, define_macros, undef_macros, extra_compile_args = cflags
-        # ldflags includes either system libmpdec or full path to
-        # our static libmpdec.a.
-        ldflags = parse_ldflags(sysconfig.get_config_var("DECIMAL_LDFLAGS"))
-        library_dirs, libraries, extra_link_args = ldflags
-
-        libmpdec_a = sysconfig.get_config_var("LIBMPDEC_A")
-        if libmpdec_a:
-            depends.append(libmpdec_a)
-
-        # Uncomment for extra functionality:
-        #define_macros.append(('EXTRA_FUNCTIONALITY', 1))
-        self.add(Extension('_decimal',
-                           include_dirs=include_dirs,
-                           define_macros=define_macros,
-                           undef_macros=undef_macros,
-                           extra_compile_args=extra_compile_args,
-                           library_dirs=library_dirs,
-                           libraries=libraries,
-                           extra_link_args=extra_link_args,
-                           sources=sources,
-                           depends=depends))
+        self.addext(
+            Extension(
+                '_decimal',
+                ['_decimal/_decimal.c'],
+                # Uncomment for extra functionality:
+                # define_macros=[('EXTRA_FUNCTIONALITY', 1)]
+            )
+        )
 
     def detect_openssl_hashlib(self):
         # Detect SSL support for the socket module (via _ssl)
@@ -2141,16 +1997,6 @@ class PyBuildExt(build_ext):
             Extension(
                 '_ssl',
                 ['_ssl.c'],
-                depends=[
-                    'socketmodule.h',
-                    '_ssl.h',
-                    '_ssl_data_111.h',
-                    '_ssl_data_300.h',
-                    '_ssl_data.h',
-                    '_ssl/debughelpers.c',
-                    '_ssl/misc.c',
-                    '_ssl/cert.c',
-                ],
                 **openssl_extension_kwargs
             )
         )
@@ -2158,7 +2004,6 @@ class PyBuildExt(build_ext):
             Extension(
                 '_hashlib',
                 ['_hashopenssl.c'],
-                depends=['hashlib.h'],
                 **openssl_extension_kwargs,
             )
         )
@@ -2168,67 +2013,19 @@ class PyBuildExt(build_ext):
         # (issue #14693). It's harmless and the object code is tiny
         # (40-50 KiB per module, only loaded when actually used).  Modules can
         # be disabled via the --with-builtin-hashlib-hashes configure flag.
-        supported = {"md5", "sha1", "sha256", "sha512", "sha3", "blake2"}
 
-        configured = sysconfig.get_config_var("PY_BUILTIN_HASHLIB_HASHES")
-        configured = configured.strip('"').lower()
-        configured = {
-            m.strip() for m in configured.split(",")
-        }
-
-        self.disabled_configure.extend(
-            sorted(supported.difference(configured))
-        )
-
-        if "sha256" in configured:
-            self.add(Extension(
-                '_sha256', ['sha256module.c'],
-                depends=['hashlib.h'],
-            ))
-
-        if "sha512" in configured:
-            self.add(Extension(
-                '_sha512', ['sha512module.c'],
-                depends=['hashlib.h'],
-            ))
-
-        if "md5" in configured:
-            self.add(Extension(
-                '_md5', ['md5module.c'],
-                depends=['hashlib.h'],
-            ))
-
-        if "sha1" in configured:
-            self.add(Extension(
-                '_sha1', ['sha1module.c'],
-                depends=['hashlib.h'],
-            ))
-
-        if "blake2" in configured:
-            blake2_deps = glob(
-                os.path.join(escape(self.srcdir), 'Modules/_blake2/impl/*')
-            )
-            blake2_deps.append('hashlib.h')
-            self.add(Extension(
-                '_blake2',
-                [
-                    '_blake2/blake2module.c',
-                    '_blake2/blake2b_impl.c',
-                    '_blake2/blake2s_impl.c'
-                ],
-                depends=blake2_deps,
-            ))
-
-        if "sha3" in configured:
-            sha3_deps = glob(
-                os.path.join(escape(self.srcdir), 'Modules/_sha3/kcp/*')
-            )
-            sha3_deps.append('hashlib.h')
-            self.add(Extension(
-                '_sha3',
-                ['_sha3/sha3module.c'],
-                depends=sha3_deps,
-            ))
+        self.addext(Extension('_md5', ['md5module.c']))
+        self.addext(Extension('_sha1', ['sha1module.c']))
+        self.addext(Extension('_sha256', ['sha256module.c']))
+        self.addext(Extension('_sha512', ['sha512module.c']))
+        self.addext(Extension('_sha3', ['_sha3/sha3module.c']))
+        self.addext(Extension('_blake2',
+            [
+                '_blake2/blake2module.c',
+                '_blake2/blake2b_impl.c',
+                '_blake2/blake2s_impl.c'
+            ]
+        ))
 
     def detect_nis(self):
         if MS_WINDOWS or CYGWIN or HOST_PLATFORM == 'qnx6':

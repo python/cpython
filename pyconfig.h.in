@@ -441,6 +441,9 @@
 /* Define to 1 if you have the `getentropy' function. */
 #undef HAVE_GETENTROPY
 
+/* Define to 1 if you have the `getgrgid' function. */
+#undef HAVE_GETGRGID
+
 /* Define to 1 if you have the `getgrgid_r' function. */
 #undef HAVE_GETGRGID_R
 
@@ -678,6 +681,9 @@
 
 /* Define to 1 if you have the <linux/random.h> header file. */
 #undef HAVE_LINUX_RANDOM_H
+
+/* Define to 1 if you have the <linux/soundcard.h> header file. */
+#undef HAVE_LINUX_SOUNDCARD_H
 
 /* Define to 1 if you have the <linux/tipc.h> header file. */
 #undef HAVE_LINUX_TIPC_H
@@ -1140,6 +1146,9 @@
 /* Define to 1 if you have the <sysexits.h> header file. */
 #undef HAVE_SYSEXITS_H
 
+/* Define to 1 if you have the <syslog.h> header file. */
+#undef HAVE_SYSLOG_H
+
 /* Define to 1 if you have the <sys/audioio.h> header file. */
 #undef HAVE_SYS_AUDIOIO_H
 
@@ -1216,6 +1225,9 @@
 
 /* Define to 1 if you have the <sys/socket.h> header file. */
 #undef HAVE_SYS_SOCKET_H
+
+/* Define to 1 if you have the <sys/soundcard.h> header file. */
+#undef HAVE_SYS_SOUNDCARD_H
 
 /* Define to 1 if you have the <sys/statvfs.h> header file. */
 #undef HAVE_SYS_STATVFS_H
