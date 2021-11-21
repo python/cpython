@@ -55,9 +55,6 @@ with warnings.catch_warnings():
     from distutils.spawn import find_executable
 
 
-# Compile extensions used to test Python?
-TEST_EXTENSIONS = (sysconfig.get_config_var('TEST_MODULES') == 'yes')
-
 # This global variable is used to hold the list of modules to be disabled.
 DISABLED_MODULE_LIST = []
 
@@ -1006,13 +1003,9 @@ class PyBuildExt(build_ext):
         if lib:
             time_libs.append(lib)
 
-        # time operations and variables
-        self.add(Extension('time', ['timemodule.c'],
-                           libraries=time_libs))
         # libm is needed by delta_new() that uses round() and by accum() that
         # uses modf().
-        self.add(Extension('_datetime', ['_datetimemodule.c'],
-                           libraries=['m']))
+        self.addext(Extension('_datetime', ['_datetimemodule.c']))
         # zoneinfo module
         self.add(Extension('_zoneinfo', ['_zoneinfo.c']))
         # random number generator implemented in C
@@ -1029,13 +1022,11 @@ class PyBuildExt(build_ext):
         # profiler (_lsprof is for cProfile.py)
         self.add(Extension('_lsprof', ['_lsprof.c', 'rotatingtree.c']))
         # static Unicode character database
-        self.add(Extension('unicodedata', ['unicodedata.c']))
+        self.addext(Extension('unicodedata', ['unicodedata.c']))
         # _opcode module
         self.add(Extension('_opcode', ['_opcode.c']))
         # asyncio speedups
         self.add(Extension("_asyncio", ["_asynciomodule.c"]))
-        # _abc speedups
-        self.add(Extension("_abc", ["_abc.c"]))
         # _queue module
         self.add(Extension("_queue", ["_queuemodule.c"]))
         # _statistics module
@@ -1054,19 +1045,9 @@ class PyBuildExt(build_ext):
             libs = ['bsd']
         self.add(Extension('fcntl', ['fcntlmodule.c'],
                            libraries=libs))
-        # pwd(3)
-        self.add(Extension('pwd', ['pwdmodule.c']))
         # grp(3)
-        if not VXWORKS:
-            self.add(Extension('grp', ['grpmodule.c']))
-        # spwd, shadow passwords
-        if (self.config_h_vars.get('HAVE_GETSPNAM', False) or
-                self.config_h_vars.get('HAVE_GETSPENT', False)):
-            self.add(Extension('spwd', ['spwdmodule.c']))
-        # AIX has shadow passwords, but access is not via getspent(), etc.
-        # module support is not expected so it not 'missing'
-        elif not AIX:
-            self.missing.append('spwd')
+        self.addext(Extension('grp', ['grpmodule.c']))
+        self.addext(Extension('spwd', ['spwdmodule.c']))
 
         # select(2); not on ancient System V
         self.add(Extension('select', ['selectmodule.c']))
@@ -1076,7 +1057,7 @@ class PyBuildExt(build_ext):
 
         # Lance Ellinghaus's syslog module
         # syslog daemon interface
-        self.add(Extension('syslog', ['syslogmodule.c']))
+        self.addext(Extension('syslog', ['syslogmodule.c']))
 
         # Python interface to subinterpreter C-API.
         self.add(Extension('_xxsubinterpreters', ['_xxsubinterpretersmodule.c']))
@@ -1106,24 +1087,25 @@ class PyBuildExt(build_ext):
 
     def detect_test_extensions(self):
         # Python C API test module
-        self.add(Extension('_testcapi', ['_testcapimodule.c']))
+        self.addext(Extension('_testcapi', ['_testcapimodule.c']))
 
         # Python Internal C API test module
-        self.add(Extension('_testinternalcapi', ['_testinternalcapi.c']))
+        self.addext(Extension('_testinternalcapi', ['_testinternalcapi.c']))
 
         # Python PEP-3118 (buffer protocol) test module
-        self.add(Extension('_testbuffer', ['_testbuffer.c']))
+        self.addext(Extension('_testbuffer', ['_testbuffer.c']))
 
         # Test loading multiple modules from one compiled file (https://bugs.python.org/issue16421)
-        self.add(Extension('_testimportmultiple', ['_testimportmultiple.c']))
+        self.addext(Extension('_testimportmultiple', ['_testimportmultiple.c']))
 
         # Test multi-phase extension module init (PEP 489)
-        self.add(Extension('_testmultiphase', ['_testmultiphase.c']))
+        self.addext(Extension('_testmultiphase', ['_testmultiphase.c']))
 
         # Fuzz tests.
-        self.add(Extension('_xxtestfuzz',
-                           ['_xxtestfuzz/_xxtestfuzz.c',
-                            '_xxtestfuzz/fuzzer.c']))
+        self.addext(Extension(
+            '_xxtestfuzz',
+            ['_xxtestfuzz/_xxtestfuzz.c', '_xxtestfuzz/fuzzer.c']
+        ))
 
     def detect_readline_curses(self):
         # readline
@@ -1385,23 +1367,15 @@ class PyBuildExt(build_ext):
 
     def detect_platform_specific_exts(self):
         # Unix-only modules
-        if not MS_WINDOWS:
-            if not VXWORKS:
-                # Steen Lumholt's termios module
-                self.add(Extension('termios', ['termios.c']))
-                # Jeremy Hylton's rlimit interface
-            self.add(Extension('resource', ['resource.c']))
-        else:
-            self.missing.extend(['resource', 'termios'])
-
+        # Steen Lumholt's termios module
+        self.addext(Extension('termios', ['termios.c']))
+        # Jeremy Hylton's rlimit interface
+        self.addext(Extension('resource', ['resource.c']))
         # linux/soundcard.h or sys/soundcard.h
         self.addext(Extension('ossaudiodev', ['ossaudiodev.c']))
 
-        if MACOS:
-            self.add(Extension('_scproxy', ['_scproxy.c'],
-                               extra_link_args=[
-                                   '-framework', 'SystemConfiguration',
-                                   '-framework', 'CoreFoundation']))
+        # macOS-only, needs SystemConfiguration and CoreFoundation framework
+        self.addext(Extension('_scproxy', ['_scproxy.c']))
 
     def detect_compress_exts(self):
         # Andrew Kuchling's zlib module.
@@ -1458,11 +1432,12 @@ class PyBuildExt(build_ext):
 
     def detect_multibytecodecs(self):
         # Hye-Shik Chang's CJKCodecs modules.
-        self.add(Extension('_multibytecodec',
-                           ['cjkcodecs/multibytecodec.c']))
+        self.addext(Extension('_multibytecodec',
+                              ['cjkcodecs/multibytecodec.c']))
         for loc in ('kr', 'jp', 'cn', 'tw', 'hk', 'iso2022'):
-            self.add(Extension('_codecs_%s' % loc,
-                               ['cjkcodecs/_codecs_%s.c' % loc]))
+            self.addext(Extension(
+                f'_codecs_{loc}', [f'cjkcodecs/_codecs_{loc}.c']
+            ))
 
     def detect_multiprocessing(self):
         # Richard Oudkerk's multiprocessing module
@@ -1510,9 +1485,11 @@ class PyBuildExt(build_ext):
         self.configure_compiler()
         self.init_inc_lib_dirs()
 
+        # Some C extensions are built by entries in Modules/Setup.bootstrap.
+        # These are extensions are required to bootstrap the interpreter or
+        # build process.
         self.detect_simple_extensions()
-        if TEST_EXTENSIONS:
-            self.detect_test_extensions()
+        self.detect_test_extensions()
         self.detect_readline_curses()
         self.detect_crypt()
         self.detect_socket()
@@ -1891,11 +1868,8 @@ class PyBuildExt(build_ext):
                         libraries=[],
                         sources=sources)
         self.add(ext)
-        if TEST_EXTENSIONS:
-            # function my_sqrt() needs libm for sqrt()
-            self.add(Extension('_ctypes_test',
-                               sources=['_ctypes/_ctypes_test.c'],
-                               libraries=['m']))
+        # function my_sqrt() needs libm for sqrt()
+        self.addext(Extension('_ctypes_test', ['_ctypes/_ctypes_test.c']))
 
         ffi_inc = sysconfig.get_config_var("LIBFFI_INCLUDEDIR")
         ffi_lib = None
@@ -2039,53 +2013,19 @@ class PyBuildExt(build_ext):
         # (issue #14693). It's harmless and the object code is tiny
         # (40-50 KiB per module, only loaded when actually used).  Modules can
         # be disabled via the --with-builtin-hashlib-hashes configure flag.
-        supported = {"md5", "sha1", "sha256", "sha512", "sha3", "blake2"}
 
-        configured = sysconfig.get_config_var("PY_BUILTIN_HASHLIB_HASHES")
-        configured = configured.strip('"').lower()
-        configured = {
-            m.strip() for m in configured.split(",")
-        }
-
-        self.disabled_configure.extend(
-            sorted(supported.difference(configured))
-        )
-
-        if "sha256" in configured:
-            self.add(Extension(
-                '_sha256', ['sha256module.c']
-            ))
-
-        if "sha512" in configured:
-            self.add(Extension(
-                '_sha512', ['sha512module.c'],
-            ))
-
-        if "md5" in configured:
-            self.add(Extension(
-                '_md5', ['md5module.c'],
-            ))
-
-        if "sha1" in configured:
-            self.add(Extension(
-                '_sha1', ['sha1module.c'],
-            ))
-
-        if "blake2" in configured:
-            self.add(Extension(
-                '_blake2',
-                [
-                    '_blake2/blake2module.c',
-                    '_blake2/blake2b_impl.c',
-                    '_blake2/blake2s_impl.c'
-                ]
-            ))
-
-        if "sha3" in configured:
-            self.add(Extension(
-                '_sha3',
-                ['_sha3/sha3module.c'],
-            ))
+        self.addext(Extension('_md5', ['md5module.c']))
+        self.addext(Extension('_sha1', ['sha1module.c']))
+        self.addext(Extension('_sha256', ['sha256module.c']))
+        self.addext(Extension('_sha512', ['sha512module.c']))
+        self.addext(Extension('_sha3', ['_sha3/sha3module.c']))
+        self.addext(Extension('_blake2',
+            [
+                '_blake2/blake2module.c',
+                '_blake2/blake2b_impl.c',
+                '_blake2/blake2s_impl.c'
+            ]
+        ))
 
     def detect_nis(self):
         if MS_WINDOWS or CYGWIN or HOST_PLATFORM == 'qnx6':

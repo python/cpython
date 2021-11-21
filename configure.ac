@@ -2188,7 +2188,7 @@ sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
 libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
 linux/tipc.h linux/random.h spawn.h util.h alloca.h endian.h \
 sys/endian.h sys/sysmacros.h linux/memfd.h linux/wait.h sys/memfd.h \
-sys/mman.h sys/eventfd.h linux/soundcard.h sys/soundcard.h)
+sys/mman.h sys/eventfd.h linux/soundcard.h sys/soundcard.h syslog.h)
 AC_HEADER_DIRENT
 AC_HEADER_MAJOR
 
@@ -3218,7 +3218,9 @@ dnl hence CPPFLAGS instead of CFLAGS.
         ], [])
       ], [have_supported_sqlite3=yes], [have_supported_sqlite3=no])
     ], [have_sqlite3=no])
-    AC_CHECK_LIB([sqlite3], [sqlite3_load_extension])
+    AC_CHECK_LIB([sqlite3], [sqlite3_load_extension],
+                 [have_sqlite3_load_extension=yes],
+                 [have_sqlite3_load_extension=no])
   ])
 )
 
@@ -3870,7 +3872,7 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  explicit_memset faccessat fchmod fchmodat fchown fchownat \
  fdwalk fexecve fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
  futimens futimes gai_strerror getentropy \
- getgrgid_r getgrnam_r \
+ getgrgid getgrgid_r getgrnam_r \
  getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
  getpriority getresuid getresgid getpwent getpwnam_r getpwuid_r getspnam getspent getsid getwd \
  if_nameindex \
@@ -5920,21 +5922,28 @@ AC_ARG_WITH(builtin-hashlib-hashes,
                            [builtin hash modules,
                             md5, sha1, sha256, sha512, sha3 (with shake), blake2]),
 [
-case "$withval" in
-    yes)
-        withval=$default_hashlib_hashes
-        ;;
-    no)
-        withval=""
-        ;;
-esac
-AC_MSG_RESULT($withval)
-AC_DEFINE_UNQUOTED(PY_BUILTIN_HASHLIB_HASHES, "$withval")
-],
-[
-AC_MSG_RESULT($default_hashlib_hashes);
-AC_DEFINE_UNQUOTED(PY_BUILTIN_HASHLIB_HASHES, "$default_hashlib_hashes")
-])
+  AS_CASE([$with_builtin_hashlib_hashes],
+    [yes], [with_builtin_hashlib_hashes=$default_hashlib_hashes],
+    [no], [with_builtin_hashlib_hashes=""]
+  )
+], [with_builtin_hashlib_hashes=$default_hashlib_hashes])
+
+AC_MSG_RESULT($with_builtin_hashlib_hashes)
+AC_DEFINE_UNQUOTED(PY_BUILTIN_HASHLIB_HASHES, "$with_builtin_hashlib_hashes")
+
+as_save_IFS=$IFS
+IFS=,
+for builtin_hash in $with_builtin_hashlib_hashes; do
+    AS_CASE($builtin_hash,
+      [md5], [with_builtin_md5=yes],
+      [sha1], [with_builtin_sha1=yes],
+      [sha256], [with_builtin_sha256=yes],
+      [sha512], [with_builtin_sha512=yes],
+      [sha3], [with_builtin_sha3=yes],
+      [blake2], [with_builtin_blake2=yes]
+    )
+done
+IFS=$as_save_IFS
 
 # --with-experimental-isolated-subinterpreters
 AH_TEMPLATE(EXPERIMENTAL_ISOLATED_SUBINTERPRETERS,
@@ -6037,30 +6046,84 @@ AC_DEFUN([PY_STDLIB_MOD], [
   )
   _MODULE_BLOCK_ADD(modcond, [$modstate])
   AS_VAR_IF([modstate], [yes], [
-    _MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_CFLAGS], [$4])
-    _MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_LDFLAGS], [$5])
-    AM_CONDITIONAL(modcond, [true])
-  ], [
-    AM_CONDITIONAL(modcond, [false])
+    m4_ifblank([$4], [], [_MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_CFLAGS], [$4])])
+    m4_ifblank([$5], [], [_MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_LDFLAGS], [$5])])
   ])
+  AM_CONDITIONAL(modcond, [test "$modstate" = yes])
   AC_MSG_RESULT([$modstate])
   m4_popdef([modcond])dnl
   m4_popdef([modstate])dnl
 ])
 
+dnl Define simple, always enabled stdlib extension module
+dnl PY_STDLIB_MOD_SIMPLE([NAME], [CFLAGS], [LDFLAGS])
+dnl cflags and ldflags are optional
+AC_DEFUN([PY_STDLIB_MOD_SIMPLE], [
+  m4_pushdef([modcond], [MODULE_]m4_toupper([$1]))dnl
+  AM_CONDITIONAL(modcond, [true])
+  m4_ifval([$2], [
+    _MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_CFLAGS], [$2])
+  ])
+  m4_ifval([$3], [
+    _MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_LDFLAGS], [$3])
+  ])
+  m4_popdef([modcond])dnl
+])
+
+dnl static modules in Modules/Setup.bootstrap
+PY_STDLIB_MOD_SIMPLE([_io], [-I\$(srcdir)/Modules/_io], [])
+PY_STDLIB_MOD_SIMPLE([time], [], [$TIMEMODULE_LIB])
+
+dnl always enabled extension modules
+PY_STDLIB_MOD_SIMPLE([_datetime], [], [$TIMEMODULE_LIB $LIBM])
+
 dnl platform specific extensions
+PY_STDLIB_MOD([grp], [], [test "$ac_cv_func_getgrgid" = yes -o "$ac_cv_func_getgrgid_r" = yes])
 PY_STDLIB_MOD([ossaudiodev],
   [], [test "$ac_cv_header_linux_soundcard_h" = yes -o "$ac_cv_header_sys_soundcard_h" = yes])
+PY_STDLIB_MOD([resource], [], [test "$ac_cv_header_sys_resource_h" = yes])
+PY_STDLIB_MOD([_scproxy],
+  [test "$ac_sys_system" = "Darwin"], [],
+  [], [-framework SystemConfiguration -framework CoreFoundation])
+PY_STDLIB_MOD([spwd], [], [test "$ac_cv_func_getspent" = yes -o "$ac_cv_func_getspnam" = yes])
+PY_STDLIB_MOD([syslog], [], [test "$ac_cv_header_syslog_h" = yes])
+PY_STDLIB_MOD([termios], [], [test "$ac_cv_header_termios_h" = yes])
 
 dnl _elementtree loads libexpat via CAPI hook in pyexpat
 PY_STDLIB_MOD([pyexpat], [], [], [$LIBEXPAT_CFLAGS], [$LIBEXPAT_LDFLAGS])
 PY_STDLIB_MOD([_elementtree], [], [], [$LIBEXPAT_CFLAGS], [])
+PY_STDLIB_MOD_SIMPLE([_codecs_cn])
+PY_STDLIB_MOD_SIMPLE([_codecs_hk])
+PY_STDLIB_MOD_SIMPLE([_codecs_iso2022])
+PY_STDLIB_MOD_SIMPLE([_codecs_jp])
+PY_STDLIB_MOD_SIMPLE([_codecs_kr])
+PY_STDLIB_MOD_SIMPLE([_codecs_tw])
+PY_STDLIB_MOD_SIMPLE([_multibytecodec])
+PY_STDLIB_MOD_SIMPLE([unicodedata])
+
+dnl By default we always compile these even when OpenSSL is available
+dnl (issue #14693). The modules are small.
+PY_STDLIB_MOD([_md5], [test "$with_builtin_md5" = yes])
+PY_STDLIB_MOD([_sha1], [test "$with_builtin_sha1" = yes])
+PY_STDLIB_MOD([_sha256], [test "$with_builtin_sha256" = yes])
+PY_STDLIB_MOD([_sha512], [test "$with_builtin_sha512" = yes])
+PY_STDLIB_MOD([_sha3], [test "$with_builtin_sha3" = yes])
+PY_STDLIB_MOD([_blake2], [test "$with_builtin_blake2" = yes])
 
 PY_STDLIB_MOD([_decimal], [], [], [$LIBMPDEC_CFLAGS], [$LIBMPDEC_LDFLAGS])
 PY_STDLIB_MOD([_sqlite3],
   [test "$have_sqlite3" = "yes"],
   [test "$have_supported_sqlite3" = "yes"],
   [$LIBSQLITE3_CFLAGS], [$LIBSQLITE3_LIBS])
+
+dnl test modules
+PY_STDLIB_MOD([_testcapi], [test "$TEST_MODULES" = yes])
+PY_STDLIB_MOD([_testinternalcapi], [test "$TEST_MODULES" = yes])
+PY_STDLIB_MOD([_testbuffer], [test "$TEST_MODULES" = yes])
+PY_STDLIB_MOD([_testimportmultiple], [test "$TEST_MODULES" = yes])
+PY_STDLIB_MOD([_testmultiphase], [test "$TEST_MODULES" = yes])
+PY_STDLIB_MOD([_xxtestfuzz], [test "$TEST_MODULES" = yes])
+PY_STDLIB_MOD([_ctypes_test], [test "$TEST_MODULES" = yes], [], [], [-lm])
 
 # substitute multiline block, must come after last PY_STDLIB_MOD()
 AC_SUBST([MODULE_BLOCK])
@@ -6080,7 +6143,7 @@ fi
 echo "creating Makefile" >&AS_MESSAGE_FD
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
-			Modules/Setup.local $srcdir/Modules/Setup
+			Modules/Setup.local $srcdir/Modules/Setup.bootstrap $srcdir/Modules/Setup
 mv config.c Modules
 
 if test -z "$PKG_CONFIG"; then
