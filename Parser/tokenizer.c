@@ -87,7 +87,7 @@ tok_new(void)
     tok->async_def_indent = 0;
     tok->async_def_nl = 0;
     tok->interactive_underflow = IUNDERFLOW_NORMAL;
-
+    tok->str = NULL;
     return tok;
 }
 
