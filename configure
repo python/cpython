@@ -688,26 +688,38 @@ MODULE_OSSAUDIODEV_FALSE
 MODULE_OSSAUDIODEV_TRUE
 MODULE_GRP_FALSE
 MODULE_GRP_TRUE
-MODULE__ZONEINFO_FALSE
-MODULE__ZONEINFO_TRUE
-MODULE__RANDOM_FALSE
-MODULE__RANDOM_TRUE
-MODULE__PICKLE_FALSE
-MODULE__PICKLE_TRUE
+MODULE__DATETIME_FALSE
+MODULE__DATETIME_TRUE
 MODULE_MATH_FALSE
 MODULE_MATH_TRUE
+MODULE_CMATH_FALSE
+MODULE_CMATH_TRUE
+MODULE__STATISTICS_FALSE
+MODULE__STATISTICS_TRUE
+MODULE__ZONEINFO_FALSE
+MODULE__ZONEINFO_TRUE
+MODULE__TYPING_FALSE
+MODULE__TYPING_TRUE
+MODULE__RANDOM_FALSE
+MODULE__RANDOM_TRUE
+MODULE__QUEUE_FALSE
+MODULE__QUEUE_TRUE
+MODULE__PICKLE_FALSE
+MODULE__PICKLE_TRUE
+MODULE__OPCODE_FALSE
+MODULE__OPCODE_TRUE
+MODULE__LSPROF_FALSE
+MODULE__LSPROF_TRUE
 MODULE__JSON_FALSE
 MODULE__JSON_TRUE
 MODULE__HEAPQ_FALSE
 MODULE__HEAPQ_TRUE
-MODULE__DATETIME_FALSE
-MODULE__DATETIME_TRUE
 MODULE__CONTEXTVARS_FALSE
 MODULE__CONTEXTVARS_TRUE
-MODULE_CMATH_FALSE
-MODULE_CMATH_TRUE
 MODULE__BISECT_FALSE
 MODULE__BISECT_TRUE
+MODULE__ASYNCIO_FALSE
+MODULE__ASYNCIO_TRUE
 MODULE_ARRAY_FALSE
 MODULE_ARRAY_TRUE
 MODULE_TIME_FALSE
@@ -19599,6 +19611,18 @@ fi
 
 
      if true; then
+  MODULE__ASYNCIO_TRUE=
+  MODULE__ASYNCIO_FALSE='#'
+else
+  MODULE__ASYNCIO_TRUE='#'
+  MODULE__ASYNCIO_FALSE=
+fi
+
+
+
+
+
+     if true; then
   MODULE__BISECT_TRUE=
   MODULE__BISECT_FALSE='#'
 else
@@ -19611,20 +19635,6 @@ fi
 
 
      if true; then
-  MODULE_CMATH_TRUE=
-  MODULE_CMATH_FALSE='#'
-else
-  MODULE_CMATH_TRUE='#'
-  MODULE_CMATH_FALSE=
-fi
-
-
-
-    as_fn_append MODULE_BLOCK "MODULE_CMATH_LDFLAGS=$LIBM$as_nl"
-
-
-
-     if true; then
   MODULE__CONTEXTVARS_TRUE=
   MODULE__CONTEXTVARS_FALSE='#'
 else
@@ -19633,20 +19643,6 @@ else
 fi
 
 
-
-
-
-     if true; then
-  MODULE__DATETIME_TRUE=
-  MODULE__DATETIME_FALSE='#'
-else
-  MODULE__DATETIME_TRUE='#'
-  MODULE__DATETIME_FALSE=
-fi
-
-
-
-    as_fn_append MODULE_BLOCK "MODULE__DATETIME_LDFLAGS=$TIMEMODULE_LIB $LIBM$as_nl"
 
 
 
@@ -19675,16 +19671,26 @@ fi
 
 
      if true; then
-  MODULE_MATH_TRUE=
-  MODULE_MATH_FALSE='#'
+  MODULE__LSPROF_TRUE=
+  MODULE__LSPROF_FALSE='#'
 else
-  MODULE_MATH_TRUE='#'
-  MODULE_MATH_FALSE=
+  MODULE__LSPROF_TRUE='#'
+  MODULE__LSPROF_FALSE=
 fi
 
 
 
-    as_fn_append MODULE_BLOCK "MODULE_MATH_LDFLAGS=$LIBM$as_nl"
+
+
+     if true; then
+  MODULE__OPCODE_TRUE=
+  MODULE__OPCODE_FALSE='#'
+else
+  MODULE__OPCODE_TRUE='#'
+  MODULE__OPCODE_FALSE=
+fi
+
+
 
 
 
@@ -19694,6 +19700,18 @@ fi
 else
   MODULE__PICKLE_TRUE='#'
   MODULE__PICKLE_FALSE=
+fi
+
+
+
+
+
+     if true; then
+  MODULE__QUEUE_TRUE=
+  MODULE__QUEUE_FALSE='#'
+else
+  MODULE__QUEUE_TRUE='#'
+  MODULE__QUEUE_FALSE=
 fi
 
 
@@ -19713,6 +19731,18 @@ fi
 
 
      if true; then
+  MODULE__TYPING_TRUE=
+  MODULE__TYPING_FALSE='#'
+else
+  MODULE__TYPING_TRUE='#'
+  MODULE__TYPING_FALSE=
+fi
+
+
+
+
+
+     if true; then
   MODULE__ZONEINFO_TRUE=
   MODULE__ZONEINFO_FALSE='#'
 else
@@ -19721,6 +19751,64 @@ else
 fi
 
 
+
+
+
+
+     if true; then
+  MODULE__STATISTICS_TRUE=
+  MODULE__STATISTICS_FALSE='#'
+else
+  MODULE__STATISTICS_TRUE='#'
+  MODULE__STATISTICS_FALSE=
+fi
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__STATISTICS_LDFLAGS=$LIBM$as_nl"
+
+
+
+     if true; then
+  MODULE_CMATH_TRUE=
+  MODULE_CMATH_FALSE='#'
+else
+  MODULE_CMATH_TRUE='#'
+  MODULE_CMATH_FALSE=
+fi
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE_CMATH_LDFLAGS=$LIBM$as_nl"
+
+
+
+     if true; then
+  MODULE_MATH_TRUE=
+  MODULE_MATH_FALSE='#'
+else
+  MODULE_MATH_TRUE='#'
+  MODULE_MATH_FALSE=
+fi
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE_MATH_LDFLAGS=$LIBM$as_nl"
+
+
+
+
+     if true; then
+  MODULE__DATETIME_TRUE=
+  MODULE__DATETIME_FALSE='#'
+else
+  MODULE__DATETIME_TRUE='#'
+  MODULE__DATETIME_FALSE=
+fi
+
+
+
+    as_fn_append MODULE_BLOCK "MODULE__DATETIME_LDFLAGS=$TIMEMODULE_LIB $LIBM$as_nl"
 
 
 
@@ -20893,20 +20981,16 @@ if test -z "${MODULE_ARRAY_TRUE}" && test -z "${MODULE_ARRAY_FALSE}"; then
   as_fn_error $? "conditional \"MODULE_ARRAY\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${MODULE__ASYNCIO_TRUE}" && test -z "${MODULE__ASYNCIO_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__ASYNCIO\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${MODULE__BISECT_TRUE}" && test -z "${MODULE__BISECT_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__BISECT\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${MODULE_CMATH_TRUE}" && test -z "${MODULE_CMATH_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE_CMATH\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
 if test -z "${MODULE__CONTEXTVARS_TRUE}" && test -z "${MODULE__CONTEXTVARS_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__CONTEXTVARS\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${MODULE__DATETIME_TRUE}" && test -z "${MODULE__DATETIME_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE__DATETIME\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__HEAPQ_TRUE}" && test -z "${MODULE__HEAPQ_FALSE}"; then
@@ -20917,20 +21001,48 @@ if test -z "${MODULE__JSON_TRUE}" && test -z "${MODULE__JSON_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__JSON\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${MODULE_MATH_TRUE}" && test -z "${MODULE_MATH_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE_MATH\" was never defined.
+if test -z "${MODULE__LSPROF_TRUE}" && test -z "${MODULE__LSPROF_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__LSPROF\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__OPCODE_TRUE}" && test -z "${MODULE__OPCODE_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__OPCODE\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__PICKLE_TRUE}" && test -z "${MODULE__PICKLE_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__PICKLE\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${MODULE__QUEUE_TRUE}" && test -z "${MODULE__QUEUE_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__QUEUE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${MODULE__RANDOM_TRUE}" && test -z "${MODULE__RANDOM_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__RANDOM\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${MODULE__TYPING_TRUE}" && test -z "${MODULE__TYPING_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__TYPING\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${MODULE__ZONEINFO_TRUE}" && test -z "${MODULE__ZONEINFO_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__ZONEINFO\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__STATISTICS_TRUE}" && test -z "${MODULE__STATISTICS_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__STATISTICS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_CMATH_TRUE}" && test -z "${MODULE_CMATH_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_CMATH\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_MATH_TRUE}" && test -z "${MODULE_MATH_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_MATH\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__DATETIME_TRUE}" && test -z "${MODULE__DATETIME_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__DATETIME\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_GRP_TRUE}" && test -z "${MODULE_GRP_FALSE}"; then
