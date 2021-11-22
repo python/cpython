@@ -1355,7 +1355,8 @@ winreg_GetValue_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
         return NULL;
     }
 
-    rc = RegGetValueW(key, sub_key, name, 0xffff, NULL, NULL, &bufSize);
+#define RRF_RT_ANY 0xffff
+    rc = RegGetValueW(key, sub_key, name, RRF_RT_ANY, NULL, NULL, &bufSize);
     if (rc == ERROR_MORE_DATA)
         bufSize = 256;
     else if (rc != ERROR_SUCCESS)
@@ -1366,8 +1367,7 @@ winreg_GetValue_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
 
     while (1) {
         retSize = bufSize;
-        /* 0xffff represents RRF_RT_ANY */
-        rc = RegGetValueW(key, sub_key, name, 0xffff, &typ, (BYTE *)retBuf, &retSize);
+        rc = RegGetValueW(key, sub_key, name, RRF_RT_ANY, &typ, (BYTE *)retBuf, &retSize);
         if (rc != ERROR_MORE_DATA)
             break;
 
@@ -1391,6 +1391,7 @@ winreg_GetValue_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
     result = Py_BuildValue("Oi", obData, typ);
     Py_DECREF(obData);
     return result;
+#undef RRF_RT_ANY
 }
 
 /*[clinic input]
