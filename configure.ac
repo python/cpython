@@ -6136,7 +6136,6 @@ PY_STDLIB_MOD_SIMPLE([_queue])
 PY_STDLIB_MOD_SIMPLE([_random])
 PY_STDLIB_MOD_SIMPLE([select])
 PY_STDLIB_MOD_SIMPLE([_typing])
-PY_STDLIB_MOD_SIMPLE([_xxsubinterpreters])
 PY_STDLIB_MOD_SIMPLE([_zoneinfo])
 
 dnl needs libm
@@ -6214,6 +6213,12 @@ PY_STDLIB_MOD([_testimportmultiple], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testmultiphase], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_xxtestfuzz], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_ctypes_test], [test "$TEST_MODULES" = yes], [], [], [-lm])
+
+dnl Template modules.
+PY_STDLIB_MOD_SIMPLE([_xxsubinterpreters])
+dnl The limited C API is not compatible with the Py_TRACE_REFS macro.
+PY_STDLIB_MOD([xxlimited], [test "$Py_TRACE_REFS" = no])
+PY_STDLIB_MOD([xxlimited_35], [test "$Py_TRACE_REFS" = no])
 
 # substitute multiline block, must come after last PY_STDLIB_MOD()
 AC_SUBST([MODULE_BLOCK])
