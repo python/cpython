@@ -132,6 +132,7 @@ struct ast_state {
     PyObject *Sub_singleton;
     PyObject *Sub_type;
     PyObject *Subscript_type;
+    PyObject *TryStar_type;
     PyObject *Try_type;
     PyObject *Tuple_type;
     PyObject *TypeIgnore_type;
@@ -229,7 +230,6 @@ struct ast_state {
     PyObject *right;
     PyObject *simple;
     PyObject *slice;
-    PyObject *star;
     PyObject *step;
     PyObject *stmt_type;
     PyObject *subject;

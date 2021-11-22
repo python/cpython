@@ -86,6 +86,8 @@ exec_tests = [
     "try:\n  pass\nexcept Exception:\n  pass",
     # TryFinally
     "try:\n  pass\nfinally:\n  pass",
+    # TryStarExcept
+    "try:\n  pass\nexcept* Exception:\n  pass",
     # Assert
     "assert v",
     # Import
@@ -1292,22 +1294,22 @@ class ASTValidatorTests(unittest.TestCase):
 
     def test_try(self):
         p = ast.Pass()
-        t = ast.Try([], [], [], [p], 0)
+        t = ast.Try([], [], [], [p])
         self.stmt(t, "empty body on Try")
-        t = ast.Try([ast.Expr(ast.Name("x", ast.Store()))], [], [], [p], 0)
+        t = ast.Try([ast.Expr(ast.Name("x", ast.Store()))], [], [], [p])
         self.stmt(t, "must have Load context")
-        t = ast.Try([p], [], [], [], 0)
+        t = ast.Try([p], [], [], [])
         self.stmt(t, "Try has neither except handlers nor finalbody")
-        t = ast.Try([p], [], [p], [p], 0)
+        t = ast.Try([p], [], [p], [p])
         self.stmt(t, "Try has orelse but no except handlers")
-        t = ast.Try([p], [ast.ExceptHandler(None, "x", [])], [], [], 0)
+        t = ast.Try([p], [ast.ExceptHandler(None, "x", [])], [], [])
         self.stmt(t, "empty body on ExceptHandler")
         e = [ast.ExceptHandler(ast.Name("x", ast.Store()), "y", [p])]
-        self.stmt(ast.Try([p], e, [], [], 0), "must have Load context")
+        self.stmt(ast.Try([p], e, [], []), "must have Load context")
         e = [ast.ExceptHandler(None, "x", [p])]
-        t = ast.Try([p], e, [ast.Expr(ast.Name("x", ast.Store()))], [p], 0)
+        t = ast.Try([p], e, [ast.Expr(ast.Name("x", ast.Store()))], [p])
         self.stmt(t, "must have Load context")
-        t = ast.Try([p], e, [p], [ast.Expr(ast.Name("x", ast.Store()))], 0)
+        t = ast.Try([p], e, [p], [ast.Expr(ast.Name("x", ast.Store()))])
         self.stmt(t, "must have Load context")
 
     def test_assert(self):
@@ -2314,8 +2316,9 @@ exec_results = [
 ('Module', [('With', (1, 0, 1, 17), [('withitem', ('Name', (1, 5, 1, 6), 'x', ('Load',)), ('Name', (1, 10, 1, 11), 'y', ('Store',)))], [('Pass', (1, 13, 1, 17))], None)], []),
 ('Module', [('With', (1, 0, 1, 25), [('withitem', ('Name', (1, 5, 1, 6), 'x', ('Load',)), ('Name', (1, 10, 1, 11), 'y', ('Store',))), ('withitem', ('Name', (1, 13, 1, 14), 'z', ('Load',)), ('Name', (1, 18, 1, 19), 'q', ('Store',)))], [('Pass', (1, 21, 1, 25))], None)], []),
 ('Module', [('Raise', (1, 0, 1, 25), ('Call', (1, 6, 1, 25), ('Name', (1, 6, 1, 15), 'Exception', ('Load',)), [('Constant', (1, 16, 1, 24), 'string', None)], []), None)], []),
-('Module', [('Try', (1, 0, 4, 6), [('Pass', (2, 2, 2, 6))], [('ExceptHandler', (3, 0, 4, 6), ('Name', (3, 7, 3, 16), 'Exception', ('Load',)), None, [('Pass', (4, 2, 4, 6))])], [], [], 0)], []),
-('Module', [('Try', (1, 0, 4, 6), [('Pass', (2, 2, 2, 6))], [], [], [('Pass', (4, 2, 4, 6))], 0)], []),
+('Module', [('Try', (1, 0, 4, 6), [('Pass', (2, 2, 2, 6))], [('ExceptHandler', (3, 0, 4, 6), ('Name', (3, 7, 3, 16), 'Exception', ('Load',)), None, [('Pass', (4, 2, 4, 6))])], [], [])], []),
+('Module', [('Try', (1, 0, 4, 6), [('Pass', (2, 2, 2, 6))], [], [], [('Pass', (4, 2, 4, 6))])], []),
+('Module', [('TryStar', (1, 0, 4, 6), [('Pass', (2, 2, 2, 6))], [('ExceptHandler', (3, 0, 4, 6), ('Name', (3, 8, 3, 17), 'Exception', ('Load',)), None, [('Pass', (4, 2, 4, 6))])], [], [])], []),
 ('Module', [('Assert', (1, 0, 1, 8), ('Name', (1, 7, 1, 8), 'v', ('Load',)), None)], []),
 ('Module', [('Import', (1, 0, 1, 10), [('alias', (1, 7, 1, 10), 'sys', None)])], []),
 ('Module', [('ImportFrom', (1, 0, 1, 17), 'sys', [('alias', (1, 16, 1, 17), 'v', None)], 0)], []),
