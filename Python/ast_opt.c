@@ -585,11 +585,12 @@ fold_iter(expr_ty arg, PyArena *arena, _PyASTOptimizeState *state)
 {
     PyObject *newval;
     if (arg->kind == List_kind) {
-        /* First change a list into tuple. */
+        /* First change a list into tuple.
+           We don't need a check here, because make_const_tuple
+           returns NULL and make_const returns 1 if its second
+           argument is NULL.
+        */
         asdl_expr_seq *elts = arg->v.List.elts;
-        if (has_starred(elts)) {
-            return 1;
-        }
         expr_context_ty ctx = arg->v.List.ctx;
         arg->kind = Tuple_kind;
         arg->v.Tuple.elts = elts;
@@ -610,24 +611,578 @@ fold_iter(expr_ty arg, PyArena *arena, _PyASTOptimizeState *state)
 }
 
 static int
+recursive_namedexpr_check(expr_ty arg)
+{
+    asdl_expr_seq *elts;
+    Py_ssize_t i;
+    int res;
+
+    switch (arg->kind) {
+        case NamedExpr_kind:
+            return 1;
+        case List_kind:
+            elts = arg->v.List.elts;
+            goto iterable;
+        case Set_kind:
+            elts = arg->v.Set.elts;
+            goto iterable;
+        case Dict_kind:
+            elts = arg->v.Dict.keys;
+            for (i = 0; i < asdl_seq_LEN(elts); i++) {
+                res = recursive_namedexpr_check(
+                    (expr_ty)asdl_seq_GET(elts, i)
+                );
+                if (res) {
+                    return res;
+                }
+            }
+            elts = arg->v.Dict.values;
+            goto iterable;
+        case Tuple_kind:
+            elts = arg->v.Tuple.elts;
+  iterable:
+            for (i = 0; i < asdl_seq_LEN(elts); i++) {
+                res = recursive_namedexpr_check(
+                    (expr_ty)asdl_seq_GET(elts, i)
+                );
+                if (res) {
+                    return res;
+                }
+            }
+            break;
+    }
+    return 0;
+}
+
+/* Recursive node equality check:
+    -1 = error
+    0 = no match
+    1 = match
+    2 = cancel
+*/
+static int
+node_equal(expr_ty left, expr_ty right)
+{
+    asdl_expr_seq *left_elts, *right_elts;
+    asdl_expr_seq *left_keys, *right_keys;
+    asdl_expr_seq *left_values, *right_values;
+    PyObject *left_obj, *right_obj;
+    expr_ty left_value, right_value;
+    expr_ty left_key, right_key;
+    Py_ssize_t i;
+    int res;
+
+    if (left->kind != NamedExpr_kind ||
+        right->kind != NamedExpr_kind ||
+        left->kind != right->kind)
+    {
+        return 0;
+    }
+    switch (left->kind) {
+        case Constant_kind:
+            left_obj = left->v.Constant.value;
+            right_obj = right->v.Constant.value;
+            return PyObject_RichCompareBool(
+                left_obj, right_obj, Py_EQ
+            );
+        case NamedExpr_kind:
+            return 2;
+        case Slice_kind:
+            left_value = left->v.Slice.lower;
+            right_value = right->v.Slice.lower;
+            if (left_value != right_value) {
+                res = node_equal(left_value, right_value);
+                if (res < 1 || res == 2) {
+                    return res;
+                }
+            }
+            left_value = left->v.Slice.upper;
+            right_value = right->v.Slice.upper;
+            if (left_value != right_value) {
+                res = node_equal(left_value, right_value);
+                if (res < 1 || res == 2) {
+                    return res;
+                }
+            }
+            left_value = left->v.Slice.step;
+            right_value = right->v.Slice.step;
+            if (left_value != right_value) {
+                res = node_equal(left_value, right_value);
+                if (res < 1 || res == 2) {
+                    return res;
+                }
+            }
+            return 1;
+        case Set_kind:
+            left_elts = left->v.Set.elts;
+            right_elts = right->v.Set.elts;
+            if (asdl_seq_LEN(left_elts) != asdl_seq_LEN(right_elts)) {
+                return 0;
+            }
+            for (i = 0; i < asdl_seq_LEN(left_elts); i++) {
+                left_value = (expr_ty)asdl_seq_GET(left_elts, i);
+                right_value = (expr_ty)asdl_seq_GET(right_elts, i);
+                res = node_equal(left_value, right_value);
+                if (res < 1 || res == 2) {
+                    return res;
+                }
+            }
+            return 1;
+        case Dict_kind:
+            left_keys = left->v.Dict.keys;
+            left_values = left->v.Dict.values;
+            right_keys = right->v.Dict.keys;
+            right_values = right->v.Dict.values;
+            if (asdl_seq_LEN(left_keys) != asdl_seq_LEN(right_keys)) {
+                return 0;
+            }
+            for (i = 0; i < asdl_seq_LEN(left_keys); i++) {
+                left_key = (expr_ty)asdl_seq_GET(left_keys, i);
+                left_value = (expr_ty)asdl_seq_GET(left_values, i);
+                right_key = (expr_ty)asdl_seq_GET(right_keys, i);
+                right_value = (expr_ty)asdl_seq_GET(right_values, i);
+                res = node_equal(left_key, right_key);
+                if (res < 1 || res == 2) {
+                    return res;
+                }
+                res = node_equal(left_value, right_value);
+                if (res < 1 || res == 2) {
+                    return res;
+                }
+            }
+            return 1;
+        case Name_kind:
+            if (left->v.Name.ctx != right->v.Name.ctx) {
+                return 0;
+            }
+            left_obj = left->v.Name.id;
+            right_obj = right->v.Name.id;
+            res = PyUnicode_Compare(left_obj, right_obj);
+            if (PyErr_Occurred()) {
+                PyErr_Clear();
+                return -1;
+            }
+            return res == 0;
+        case Tuple_kind:
+            if (left->v.Tuple.ctx != right->v.Tuple.ctx) {
+                return 0;
+            }
+            left_elts = left->v.Tuple.elts;
+            right_elts = right->v.Tuple.elts;
+            if (asdl_seq_LEN(left_elts) != asdl_seq_LEN(right_elts)) {
+                return 0;
+            }
+            for (i = 0; i < asdl_seq_LEN(left_elts); i++) {
+                left_value = (expr_ty)asdl_seq_GET(left_elts, i);
+                right_value = (expr_ty)asdl_seq_GET(right_elts, i);
+                res = node_equal(left_value, right_value);
+                if (res < 1 || res == 2) {
+                    return res;
+                }
+            }
+            return 1;
+        case List_kind:
+            if (left->v.List.ctx != right->v.List.ctx) {
+                return 0;
+            }
+            left_elts = left->v.List.elts;
+            right_elts = right->v.List.elts;
+            if (asdl_seq_LEN(left_elts) != asdl_seq_LEN(right_elts)) {
+                return 0;
+            }
+            for (i = 0; i < asdl_seq_LEN(left_elts); i++) {
+                left_value = (expr_ty)asdl_seq_GET(left_elts, i);
+                right_value = (expr_ty)asdl_seq_GET(right_elts, i);
+                res = node_equal(left_value, right_value);
+                if (res < 1 || res == 2 || res == 2) {
+                    return res;
+                }
+            }
+            return 1;
+        default:
+            return left == right;
+    }
+}
+
+/* Check if left is contained in right.
+    left can be one of 5 kinds:
+        Constant
+        Name
+        Tuple
+        List
+        Set
+   Uses the same mechanics as fold_iter at the start.
+*/
+static int
+contains(expr_ty left, expr_ty right, int op,
+              PyArena *arena, _PyASTOptimizeState *state)
+{
+    PyObject *value, *left_value = NULL;
+    asdl_expr_seq *elts;
+    Py_ssize_t i;
+    int matches = 0, all_consts = 1;
+    /* object_type contains this information:
+        right is a constant with a tuple: object_type = 1
+        right is a constant with a string: object_type = 2
+        else: object_type = 0
+    */
+    int object_type = 0;
+
+    switch (right->kind) {
+        case List_kind:
+            elts = right->v.List.elts;
+            break;
+        case Set_kind:
+            elts = right->v.Set.elts;
+            break;
+        case Tuple_kind:
+            elts = right->v.Tuple.elts;
+            break;
+        case Dict_kind:
+            elts = right->v.Dict.keys;
+            break;
+        case Constant_kind:
+            value = right->v.Constant.value;
+            if (PyTuple_Check(value)) {
+                switch (left->kind) {
+                    case List_kind:
+                        left_value = make_const_tuple(left->v.List.elts);
+                        if (left_value == NULL) {
+                            return 2;
+                        }
+                        left_value = PySequence_List(left_value);
+                        if (PyErr_Occurred()) {
+                            PyErr_Clear();
+                        }
+                        if (left_value == NULL) {
+                            return 2;
+                        }
+                        matches = PySequence_Contains(value, left_value);
+                        if (PyErr_Occurred()) {
+                            PyErr_Clear();
+                        }
+                        return matches;
+                    case Set_kind:
+                        left_value = make_const_tuple(left->v.Set.elts);
+                        if (left_value == NULL) {
+                            return 2;
+                        }
+                        left_value = PySet_New(left_value);
+                        if (PyErr_Occurred()) {
+                            PyErr_Clear();
+                        }
+                        if (left_value == NULL) {
+                            return 2;
+                        }
+                        matches = PySequence_Contains(value, left_value);
+                        if (PyErr_Occurred()) {
+                            PyErr_Clear();
+                        }
+                        return matches;
+                    case Tuple_kind:
+                        left_value = make_const_tuple(left->v.Tuple.elts);
+                        if (left_value == NULL) {
+                            return 2;
+                        }
+                        matches = PySequence_Contains(value, left_value);
+                        if (PyErr_Occurred()) {
+                            PyErr_Clear();
+                        }
+                        return matches;
+                    case Constant_kind:
+                        left_value = left->v.Constant.value;
+                        matches = PySequence_Contains(value, left_value);
+                        if (PyErr_Occurred()) {
+                            PyErr_Clear();
+                        }
+                        return matches;
+                    default:
+                        return 2;
+                }
+            }
+            else if (PyUnicode_Check(value)) {
+                if (left->kind == Constant_kind) {
+                    left_value = left->v.Constant.value;
+                    matches = PySequence_Contains(value, left_value);
+                    if (PyErr_Occurred()) {
+                        PyErr_Clear();
+                    }
+                    return matches;
+                }
+                return 2;
+            }
+            break;
+        default:
+            return 2;
+    }
+    switch (left->kind) {
+        case List_kind:
+        case Set_kind:
+        case Dict_kind:
+            if (right->kind == Set_kind || right->kind == Dict_kind) {
+                return 2;
+            }
+        case Constant_kind:
+            for (i = 0; i < asdl_seq_LEN(elts); i++) {
+                expr_ty e = (expr_ty)asdl_seq_GET(elts, i);
+                if (recursive_namedexpr_check(e)) {
+                    return 2;
+                }
+                if (e->kind == Constant_kind && !matches) {
+                    matches = node_equal(left, e);
+                    if (matches == -1 || matches == 2) {
+                        return matches;
+                    }
+                }
+                else {
+                    if (all_consts) {
+                        all_consts = 0;
+                    }
+                }
+            }
+            if (all_consts == 0) {
+                return 0;
+            }
+            break;
+        case Name_kind:
+        case Slice_kind:
+        case Tuple_kind:
+            for (i = 0; i < asdl_seq_LEN(elts); i++) {
+                expr_ty e = (expr_ty)asdl_seq_GET(elts, i);
+                if (recursive_namedexpr_check(e)) {
+                    return 2;
+                }
+                if (!matches) {
+                    matches = node_equal(left, e);
+                    if (matches == -1 || matches == 2) {
+                        return matches;
+                    }
+                }
+            }
+            break;
+    }
+    return matches ? matches : 2;
+}
+
+static int
 fold_compare(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 {
-    asdl_int_seq *ops;
-    asdl_expr_seq *args;
-    Py_ssize_t i;
+    asdl_int_seq *cut_ops;
+    asdl_expr_seq *result, *cut_args;
+    expr_ty left, right, node_copy, bool_const;
+    expr_ty *args;
+    Py_ssize_t i, j, real_index = 0, unchanged = 0;
+    Py_ssize_t ops_length, args_size, ops_size;
+    int res, op, has_unchanged;
+    int *ops;
 
-    ops = node->v.Compare.ops;
-    args = node->v.Compare.comparators;
-    /* TODO: optimize cases with literal arguments. */
-    /* Change literal list or set in 'in' or 'not in' into
-       tuple or frozenset respectively. */
-    i = asdl_seq_LEN(ops) - 1;
-    int op = asdl_seq_GET(ops, i);
-    if (op == In || op == NotIn) {
-        if (!fold_iter((expr_ty)asdl_seq_GET(args, i), arena, state)) {
+    ops = node->v.Compare.ops->typed_elements;
+    args = node->v.Compare.comparators->typed_elements;
+    ops_length = asdl_seq_LEN(node->v.Compare.ops);
+    args_size = ops_size = ops_length;
+    result = _Py_asdl_expr_seq_new(ops_length, arena);
+    for (i = 0; i < ops_length; i++) {
+        right = args[0];
+        if (i != 0) {
+            if (args_size != ops_length) {
+                op = ops[0];
+                left = args[-1];
+            }
+            else {
+                op = ops[i];
+                left = args[i];
+            }
+        }
+        else {
+            left = node->v.Compare.left;
+            op = ops[0];
+        }
+        switch (op) {
+        case In:
+        case NotIn:
+            res = contains(left, right, op == NotIn, arena, state);
+            if (res == -1) {
+                return 0;
+            }
+            if (res == 2) {
+                unchanged++;
+                result->size--;
+                continue;
+            }
+            break;
+        case Is:
+        case IsNot:
+            if (left->kind == Constant_kind && right->kind == Constant_kind) {
+                res = Py_Is(left->v.Constant.value, right->v.Constant.value);
+            }
+            else if (left->kind == Name_kind && right->kind == Name_kind) {
+                res = PyUnicode_Compare(left->v.Name.id, right->v.Name.id);
+                if (PyErr_Occurred()) {
+                    PyErr_Clear();
+                }
+                else {
+                    if (op == IsNot && res == 0) {
+                        Py_INCREF(Py_False);
+                        make_const(node, Py_False, arena);
+                        return 1;
+                    }
+                    res = (res == 0);
+                    if (res == 0) {
+                        unchanged++;
+                        result->size--;
+                        continue;
+                    }
+                }
+            }
+            else {
+                unchanged++;
+                result->size--;
+                continue;
+            }
+            break;
+        case Eq:
+            if (left->kind != Constant_kind || right->kind != Constant_kind) {
+                unchanged++;
+                result->size--;
+                continue;
+            }
+            res = PyObject_RichCompareBool(
+                left->v.Constant.value,
+                right->v.Constant.value,
+                Py_EQ
+            );
+            break;
+        case NotEq:
+            if (left->kind != Constant_kind || right->kind != Constant_kind) {
+                unchanged++;
+                result->size--;
+                continue;
+            }
+            res = PyObject_RichCompareBool(
+                left->v.Constant.value,
+                right->v.Constant.value,
+                Py_NE
+            );
+            break;
+        case Lt:
+            if (left->kind != Constant_kind || right->kind != Constant_kind) {
+                unchanged++;
+                result->size--;
+                continue;
+            }
+            res = PyObject_RichCompareBool(
+                left->v.Constant.value,
+                right->v.Constant.value,
+                Py_LT
+            );
+            break;
+        case Gt:
+            if (left->kind != Constant_kind || right->kind != Constant_kind) {
+                unchanged++;
+                result->size--;
+                continue;
+            }
+            res = PyObject_RichCompareBool(
+                left->v.Constant.value,
+                right->v.Constant.value,
+                Py_GT
+            );
+            break;
+        case LtE:
+            if (left->kind != Constant_kind || right->kind != Constant_kind) {
+                unchanged++;
+                result->size--;
+                continue;
+            }
+            res = PyObject_RichCompareBool(
+                left->v.Constant.value,
+                right->v.Constant.value,
+                Py_LE
+            );
+            break;
+        case GtE:
+            if (left->kind != Constant_kind || right->kind != Constant_kind) {
+                unchanged++;
+                result->size--;
+                continue;
+            }
+            res = PyObject_RichCompareBool(
+                left->v.Constant.value,
+                right->v.Constant.value,
+                Py_GE
+            );
+            break;
+        }
+        if (res == -1) {
             return 0;
         }
+        else if (res == 0) {
+            Py_INCREF(Py_False);
+            return make_const(node, Py_False, arena);
+        }
+        else {
+            if (unchanged != 0) {
+                cut_args = _Py_asdl_expr_seq_new(unchanged, arena);
+                cut_ops = _Py_asdl_int_seq_new(unchanged, arena);
+                if (args_size == ops_length) {
+                    asdl_seq_SET(cut_args, 0, node->v.Compare.left);
+                    asdl_seq_SET(cut_ops, 0, ops[0]);
+                    for (j = 1; j < unchanged; j++) {
+                        asdl_seq_SET(
+                            cut_args,
+                            j,
+                            args[j-1]
+                        );
+                        asdl_seq_SET(cut_ops, j, ops[j]);
+                    }
+                }
+                else {
+                    for (j = 0; j < unchanged; j++) {
+                        asdl_seq_SET(
+                            cut_args,
+                            j,
+                            args[j-1]
+                        );
+                        asdl_seq_SET(cut_ops, j, ops[i]);
+                    }
+                }
+                node_copy = _PyAST_Compare(
+                    left, cut_ops,
+                    cut_args, node->lineno,
+                    node->col_offset, node->end_lineno,
+                    node->end_col_offset, arena
+                );
+                asdl_seq_SET(result, real_index, node_copy);
+                result->size++;
+                real_index++;
+                has_unchanged = 1;
+            }
+            unchanged++;
+            args += unchanged;
+            args_size -= unchanged;
+            ops += unchanged;
+            ops_size -= unchanged;
+            bool_const = _PyAST_Constant(
+                Py_True, NULL,
+                right->lineno, right->col_offset,
+                node->end_lineno, node->end_col_offset,
+                arena
+            );
+            asdl_seq_SET(result, real_index, bool_const);
+            real_index++;
+            unchanged = 0;
+        }
     }
+    if (real_index == 0) {
+        return 1;
+    }
+    if (result->size == ops_length && has_unchanged == 0) {
+        Py_INCREF(Py_True);
+        return make_const(node, Py_True, arena);
+    }
+    node->kind = BoolOp_kind;
+    node->v.BoolOp.op = And;
+    node->v.BoolOp.values = result;
     return 1;
 }
 
