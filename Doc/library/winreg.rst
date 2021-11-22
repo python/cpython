@@ -813,6 +813,8 @@ For more information, see `RegGetValueW function
 
    You cannot specify RRF_SUBKEY_WOW6464KEY in combination with RRF_SUBKEY_WOW6432KEY.
 
+   Only takes effects starting from Windows 10.
+
 .. data:: RRF_SUBKEY_WOW6432KEY
 
 
