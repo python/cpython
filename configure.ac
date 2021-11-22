@@ -3191,6 +3191,28 @@ if test "$have_glibc_memmove_bug" = yes; then
     AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -U_FORTIFY_SOURCE"])
 fi
 
+
+dnl check for NIS / libnsl dependencies
+dnl libnsl dependencies include tirpc includes and lib
+PKG_CHECK_MODULES([LIBNSL], [libnsl], [have_nis=yes], [
+  LIBNSL_CFLAGS=
+  WITH_SAVE_ENV([
+    AC_SEARCH_LIBS([yp_match], [nsl], [have_nis=yes], [have_nis=no])
+  ])
+  AS_CASE([$ac_cv_search_yp_match],
+    [no], [LIBNSL_LIBS=],
+    ["none required"], [LIBNSL_LIBS=],
+    [LIBNSL_LIBS=$ac_cv_search_yp_match]
+  )
+])
+
+AS_VAR_IF([have_nis], [yes], [
+  WITH_SAVE_ENV([
+    CPPFLAGS="$LIBNSL_CFLAGS $CFLAGS"
+    AC_CHECK_HEADERS([rpc/rpc.h])
+  ])
+])
+
 dnl Check for SQLite library. Use pkg-config if available.
 PKG_CHECK_MODULES(
   [LIBSQLITE3], [sqlite3 >= 3.7.15], [], [
@@ -6166,6 +6188,9 @@ PY_STDLIB_MOD([_sha3], [test "$with_builtin_sha3" = yes])
 PY_STDLIB_MOD([_blake2], [test "$with_builtin_blake2" = yes])
 
 PY_STDLIB_MOD([_decimal], [], [], [$LIBMPDEC_CFLAGS], [$LIBMPDEC_LDFLAGS])
+PY_STDLIB_MOD([nis],
+  [], [test "$have_nis" = yes -a "$ac_cv_header_rpc_rpc_h" = yes],
+  [$LIBNSL_CFLAGS], [$LIBNSL_LIBS])
 PY_STDLIB_MOD([_sqlite3],
   [test "$have_sqlite3" = "yes"],
   [test "$have_supported_sqlite3" = "yes"],

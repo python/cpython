@@ -648,6 +648,8 @@ MODULE_ZLIB_FALSE
 MODULE_ZLIB_TRUE
 MODULE__SQLITE3_FALSE
 MODULE__SQLITE3_TRUE
+MODULE_NIS_FALSE
+MODULE_NIS_TRUE
 MODULE__DECIMAL_FALSE
 MODULE__DECIMAL_TRUE
 MODULE__BLAKE2_FALSE
@@ -787,6 +789,8 @@ TCLTK_LIBS
 TCLTK_INCLUDES
 LIBSQLITE3_LIBS
 LIBSQLITE3_CFLAGS
+LIBNSL_LIBS
+LIBNSL_CFLAGS
 LIBMPDEC_INTERNAL
 LIBMPDEC_LDFLAGS
 LIBMPDEC_CFLAGS
@@ -1014,6 +1018,8 @@ LIBS
 CPPFLAGS
 CPP
 PROFILE_TASK
+LIBNSL_CFLAGS
+LIBNSL_LIBS
 LIBSQLITE3_CFLAGS
 LIBSQLITE3_LIBS
 ZLIB_CFLAGS
@@ -1795,6 +1801,9 @@ Some influential environment variables:
   CPP         C preprocessor
   PROFILE_TASK
               Python args for PGO generation task
+  LIBNSL_CFLAGS
+              C compiler flags for LIBNSL, overriding pkg-config
+  LIBNSL_LIBS linker flags for LIBNSL, overriding pkg-config
   LIBSQLITE3_CFLAGS
               C compiler flags for LIBSQLITE3, overriding pkg-config
   LIBSQLITE3_LIBS
@@ -11068,6 +11077,274 @@ if test "$have_glibc_memmove_bug" = yes; then
     # _FORTIFY_SOURCE wrappers for memmove and bcopy are incorrect:
     # https://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
     as_fn_append LIBMPDEC_CFLAGS " -U_FORTIFY_SOURCE"
+fi
+
+
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIBNSL" >&5
+$as_echo_n "checking for LIBNSL... " >&6; }
+
+if test -n "$LIBNSL_CFLAGS"; then
+    pkg_cv_LIBNSL_CFLAGS="$LIBNSL_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libnsl\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libnsl") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBNSL_CFLAGS=`$PKG_CONFIG --cflags "libnsl" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$LIBNSL_LIBS"; then
+    pkg_cv_LIBNSL_LIBS="$LIBNSL_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libnsl\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libnsl") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBNSL_LIBS=`$PKG_CONFIG --libs "libnsl" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        LIBNSL_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libnsl" 2>&1`
+        else
+	        LIBNSL_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libnsl" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$LIBNSL_PKG_ERRORS" >&5
+
+
+  LIBNSL_CFLAGS=
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing yp_match" >&5
+$as_echo_n "checking for library containing yp_match... " >&6; }
+if ${ac_cv_search_yp_match+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char yp_match ();
+int
+main ()
+{
+return yp_match ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' nsl; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_yp_match=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_yp_match+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_yp_match+:} false; then :
+
+else
+  ac_cv_search_yp_match=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_yp_match" >&5
+$as_echo "$ac_cv_search_yp_match" >&6; }
+ac_res=$ac_cv_search_yp_match
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  have_nis=yes
+else
+  have_nis=no
+fi
+
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+  case $ac_cv_search_yp_match in #(
+  no) :
+    LIBNSL_LIBS= ;; #(
+  "none required") :
+    LIBNSL_LIBS= ;; #(
+  *) :
+    LIBNSL_LIBS=$ac_cv_search_yp_match
+   ;;
+esac
+
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+  LIBNSL_CFLAGS=
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing yp_match" >&5
+$as_echo_n "checking for library containing yp_match... " >&6; }
+if ${ac_cv_search_yp_match+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char yp_match ();
+int
+main ()
+{
+return yp_match ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' nsl; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_yp_match=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_yp_match+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_yp_match+:} false; then :
+
+else
+  ac_cv_search_yp_match=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_yp_match" >&5
+$as_echo "$ac_cv_search_yp_match" >&6; }
+ac_res=$ac_cv_search_yp_match
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  have_nis=yes
+else
+  have_nis=no
+fi
+
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+  case $ac_cv_search_yp_match in #(
+  no) :
+    LIBNSL_LIBS= ;; #(
+  "none required") :
+    LIBNSL_LIBS= ;; #(
+  *) :
+    LIBNSL_LIBS=$ac_cv_search_yp_match
+   ;;
+esac
+
+else
+	LIBNSL_CFLAGS=$pkg_cv_LIBNSL_CFLAGS
+	LIBNSL_LIBS=$pkg_cv_LIBNSL_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	have_nis=yes
+fi
+
+if test "x$have_nis" = xyes; then :
+
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    CPPFLAGS="$LIBNSL_CFLAGS $CFLAGS"
+    for ac_header in rpc/rpc.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "rpc/rpc.h" "ac_cv_header_rpc_rpc_h" "$ac_includes_default"
+if test "x$ac_cv_header_rpc_rpc_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_RPC_RPC_H 1
+_ACEOF
+
+fi
+
+done
+
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+
 fi
 
 
@@ -21068,6 +21345,42 @@ fi
 $as_echo "$py_cv_module__decimal" >&6; }
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module nis" >&5
+$as_echo_n "checking for stdlib extension module nis... " >&6; }
+      case $py_stdlib_not_available in #(
+  *nis*) :
+    py_cv_module_nis=n/a ;; #(
+  *) :
+    if true; then :
+  if test "$have_nis" = yes -a "$ac_cv_header_rpc_rpc_h" = yes; then :
+  py_cv_module_nis=yes
+else
+  py_cv_module_nis=missing
+fi
+else
+  py_cv_module_nis=disabled
+fi
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE_NIS=$py_cv_module_nis$as_nl"
+  if test "x$py_cv_module_nis" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE_NIS_CFLAGS=$LIBNSL_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_NIS_LDFLAGS=$LIBNSL_LIBS$as_nl"
+
+fi
+   if test "$py_cv_module_nis" = yes; then
+  MODULE_NIS_TRUE=
+  MODULE_NIS_FALSE='#'
+else
+  MODULE_NIS_TRUE='#'
+  MODULE_NIS_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_nis" >&5
+$as_echo "$py_cv_module_nis" >&6; }
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _sqlite3" >&5
 $as_echo_n "checking for stdlib extension module _sqlite3... " >&6; }
       case $py_stdlib_not_available in #(
@@ -21785,6 +22098,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__DECIMAL_TRUE}" && test -z "${MODULE__DECIMAL_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__DECIMAL\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_NIS_TRUE}" && test -z "${MODULE_NIS_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_NIS\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__SQLITE3_TRUE}" && test -z "${MODULE__SQLITE3_FALSE}"; then
