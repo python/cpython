@@ -6037,12 +6037,9 @@ AC_DEFUN([PY_STDLIB_MOD], [
   m4_pushdef([modstate], [py_cv_module_$1])dnl
   AS_CASE([$py_stdlib_not_available],
     [*$1*], [modstate=n/a],
-    [
-      AS_IF(m4_ifblank([$2], [true], [$2]),
+    [AS_IF(m4_ifblank([$2], [true], [$2]),
         [AS_IF([m4_ifblank([$3], [true], [$3])], [modstate=yes], [modstate=missing])],
-        [modstate=disabled]
-      )
-    ]
+        [modstate=disabled])]
   )
   _MODULE_BLOCK_ADD(modcond, [$modstate])
   AS_VAR_IF([modstate], [yes], [
@@ -6060,13 +6057,14 @@ dnl PY_STDLIB_MOD_SIMPLE([NAME], [CFLAGS], [LDFLAGS])
 dnl cflags and ldflags are optional
 AC_DEFUN([PY_STDLIB_MOD_SIMPLE], [
   m4_pushdef([modcond], [MODULE_]m4_toupper([$1]))dnl
-  AM_CONDITIONAL(modcond, [true])
+  AM_CONDITIONAL(modcond, [true])dnl
+  _MODULE_BLOCK_ADD(modcond, [yes])dnl
   m4_ifval([$2], [
     _MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_CFLAGS], [$2])
-  ])
+  ])dnl
   m4_ifval([$3], [
     _MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_LDFLAGS], [$3])
-  ])
+  ])dnl
   m4_popdef([modcond])dnl
 ])
 
