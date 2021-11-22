@@ -4056,9 +4056,9 @@ fi
 dnl Check for compression libraries
 AH_TEMPLATE([HAVE_ZLIB_COPY], [Define if the zlib library has inflateCopy])
 
-PKG_CHECK_MODULES([ZLIB], [zlib > 1.2.0], [
+PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
   have_zlib=yes
-  dnl zlib > 1.2.0 (2003) has inflateCopy
+  dnl zlib 1.2.0 (2003) added inflateCopy
   AC_DEFINE([HAVE_ZLIB_COPY], [1])
 ], [
   AC_CHECK_HEADERS([zlib.h], [
