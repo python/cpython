@@ -39,13 +39,13 @@
 @MODULE__PICKLE_TRUE@_pickle _pickle.c
 @MODULE__QUEUE_TRUE@_queue _queuemodule.c
 @MODULE__RANDOM_TRUE@_random _randommodule.c
-@MODULE__STATISTICS_TRUE@_statistics _statisticsmodule.c
 @MODULE__TYPING_TRUE@_typing _typingmodule.c
 @MODULE__ZONEINFO_TRUE@_zoneinfo _zoneinfo.c
 
 # needs libm
 @MODULE_MATH_TRUE@math mathmodule.c
 @MODULE_CMATH_TRUE@cmath cmathmodule.c
+@MODULE__STATISTICS_TRUE@_statistics _statisticsmodule.c
 
 # needs libm and on some platforms librt
 @MODULE__DATETIME_TRUE@_datetime _datetimemodule.c
