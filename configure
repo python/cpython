@@ -19576,11 +19576,8 @@ else
   MODULE__IO_TRUE='#'
   MODULE__IO_FALSE=
 fi
-
-
+  as_fn_append MODULE_BLOCK "MODULE__IO=yes$as_nl"
     as_fn_append MODULE_BLOCK "MODULE__IO_CFLAGS=-I\$(srcdir)/Modules/_io$as_nl"
-
-
 
 
      if true; then
@@ -19590,11 +19587,8 @@ else
   MODULE_TIME_TRUE='#'
   MODULE_TIME_FALSE=
 fi
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE_TIME=yes$as_nl"
     as_fn_append MODULE_BLOCK "MODULE_TIME_LDFLAGS=$TIMEMODULE_LIB$as_nl"
-
 
 
 
@@ -19605,10 +19599,7 @@ else
   MODULE_ARRAY_TRUE='#'
   MODULE_ARRAY_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE_ARRAY=yes$as_nl"
 
      if true; then
   MODULE__ASYNCIO_TRUE=
@@ -19617,10 +19608,7 @@ else
   MODULE__ASYNCIO_TRUE='#'
   MODULE__ASYNCIO_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__ASYNCIO=yes$as_nl"
 
      if true; then
   MODULE__BISECT_TRUE=
@@ -19629,10 +19617,7 @@ else
   MODULE__BISECT_TRUE='#'
   MODULE__BISECT_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__BISECT=yes$as_nl"
 
      if true; then
   MODULE__CONTEXTVARS_TRUE=
@@ -19641,10 +19626,7 @@ else
   MODULE__CONTEXTVARS_TRUE='#'
   MODULE__CONTEXTVARS_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__CONTEXTVARS=yes$as_nl"
 
      if true; then
   MODULE__HEAPQ_TRUE=
@@ -19653,10 +19635,7 @@ else
   MODULE__HEAPQ_TRUE='#'
   MODULE__HEAPQ_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__HEAPQ=yes$as_nl"
 
      if true; then
   MODULE__JSON_TRUE=
@@ -19665,10 +19644,7 @@ else
   MODULE__JSON_TRUE='#'
   MODULE__JSON_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__JSON=yes$as_nl"
 
      if true; then
   MODULE__LSPROF_TRUE=
@@ -19677,10 +19653,7 @@ else
   MODULE__LSPROF_TRUE='#'
   MODULE__LSPROF_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__LSPROF=yes$as_nl"
 
      if true; then
   MODULE__OPCODE_TRUE=
@@ -19689,10 +19662,7 @@ else
   MODULE__OPCODE_TRUE='#'
   MODULE__OPCODE_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__OPCODE=yes$as_nl"
 
      if true; then
   MODULE__PICKLE_TRUE=
@@ -19701,10 +19671,7 @@ else
   MODULE__PICKLE_TRUE='#'
   MODULE__PICKLE_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__PICKLE=yes$as_nl"
 
      if true; then
   MODULE__QUEUE_TRUE=
@@ -19713,10 +19680,7 @@ else
   MODULE__QUEUE_TRUE='#'
   MODULE__QUEUE_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__QUEUE=yes$as_nl"
 
      if true; then
   MODULE__RANDOM_TRUE=
@@ -19725,10 +19689,7 @@ else
   MODULE__RANDOM_TRUE='#'
   MODULE__RANDOM_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__RANDOM=yes$as_nl"
 
      if true; then
   MODULE__TYPING_TRUE=
@@ -19737,10 +19698,7 @@ else
   MODULE__TYPING_TRUE='#'
   MODULE__TYPING_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__TYPING=yes$as_nl"
 
      if true; then
   MODULE__ZONEINFO_TRUE=
@@ -19749,10 +19707,7 @@ else
   MODULE__ZONEINFO_TRUE='#'
   MODULE__ZONEINFO_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__ZONEINFO=yes$as_nl"
 
 
      if true; then
@@ -19762,11 +19717,8 @@ else
   MODULE__STATISTICS_TRUE='#'
   MODULE__STATISTICS_FALSE=
 fi
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__STATISTICS=yes$as_nl"
     as_fn_append MODULE_BLOCK "MODULE__STATISTICS_LDFLAGS=$LIBM$as_nl"
-
 
 
      if true; then
@@ -19776,11 +19728,8 @@ else
   MODULE_CMATH_TRUE='#'
   MODULE_CMATH_FALSE=
 fi
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE_CMATH=yes$as_nl"
     as_fn_append MODULE_BLOCK "MODULE_CMATH_LDFLAGS=$LIBM$as_nl"
-
 
 
      if true; then
@@ -19790,11 +19739,8 @@ else
   MODULE_MATH_TRUE='#'
   MODULE_MATH_FALSE=
 fi
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE_MATH=yes$as_nl"
     as_fn_append MODULE_BLOCK "MODULE_MATH_LDFLAGS=$LIBM$as_nl"
-
 
 
 
@@ -19805,11 +19751,8 @@ else
   MODULE__DATETIME_TRUE='#'
   MODULE__DATETIME_FALSE=
 fi
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__DATETIME=yes$as_nl"
     as_fn_append MODULE_BLOCK "MODULE__DATETIME_LDFLAGS=$TIMEMODULE_LIB $LIBM$as_nl"
-
 
 
 
@@ -19819,8 +19762,7 @@ $as_echo_n "checking for stdlib extension module grp... " >&6; }
   *grp*) :
     py_cv_module_grp=n/a ;; #(
   *) :
-
-      if true; then :
+    if true; then :
   if test "$ac_cv_func_getgrgid" = yes -o "$ac_cv_func_getgrgid_r" = yes; then :
   py_cv_module_grp=yes
 else
@@ -19828,9 +19770,7 @@ else
 fi
 else
   py_cv_module_grp=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE_GRP=$py_cv_module_grp$as_nl"
@@ -19858,8 +19798,7 @@ $as_echo_n "checking for stdlib extension module ossaudiodev... " >&6; }
   *ossaudiodev*) :
     py_cv_module_ossaudiodev=n/a ;; #(
   *) :
-
-      if true; then :
+    if true; then :
   if test "$ac_cv_header_linux_soundcard_h" = yes -o "$ac_cv_header_sys_soundcard_h" = yes; then :
   py_cv_module_ossaudiodev=yes
 else
@@ -19867,9 +19806,7 @@ else
 fi
 else
   py_cv_module_ossaudiodev=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE_OSSAUDIODEV=$py_cv_module_ossaudiodev$as_nl"
@@ -19897,8 +19834,7 @@ $as_echo_n "checking for stdlib extension module resource... " >&6; }
   *resource*) :
     py_cv_module_resource=n/a ;; #(
   *) :
-
-      if true; then :
+    if true; then :
   if test "$ac_cv_header_sys_resource_h" = yes; then :
   py_cv_module_resource=yes
 else
@@ -19906,9 +19842,7 @@ else
 fi
 else
   py_cv_module_resource=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE_RESOURCE=$py_cv_module_resource$as_nl"
@@ -19936,8 +19870,7 @@ $as_echo_n "checking for stdlib extension module _scproxy... " >&6; }
   *_scproxy*) :
     py_cv_module__scproxy=n/a ;; #(
   *) :
-
-      if test "$ac_sys_system" = "Darwin"; then :
+    if test "$ac_sys_system" = "Darwin"; then :
   if true; then :
   py_cv_module__scproxy=yes
 else
@@ -19945,9 +19878,7 @@ else
 fi
 else
   py_cv_module__scproxy=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE__SCPROXY=$py_cv_module__scproxy$as_nl"
@@ -19975,8 +19906,7 @@ $as_echo_n "checking for stdlib extension module spwd... " >&6; }
   *spwd*) :
     py_cv_module_spwd=n/a ;; #(
   *) :
-
-      if true; then :
+    if true; then :
   if test "$ac_cv_func_getspent" = yes -o "$ac_cv_func_getspnam" = yes; then :
   py_cv_module_spwd=yes
 else
@@ -19984,9 +19914,7 @@ else
 fi
 else
   py_cv_module_spwd=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE_SPWD=$py_cv_module_spwd$as_nl"
@@ -20014,8 +19942,7 @@ $as_echo_n "checking for stdlib extension module syslog... " >&6; }
   *syslog*) :
     py_cv_module_syslog=n/a ;; #(
   *) :
-
-      if true; then :
+    if true; then :
   if test "$ac_cv_header_syslog_h" = yes; then :
   py_cv_module_syslog=yes
 else
@@ -20023,9 +19950,7 @@ else
 fi
 else
   py_cv_module_syslog=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE_SYSLOG=$py_cv_module_syslog$as_nl"
@@ -20053,8 +19978,7 @@ $as_echo_n "checking for stdlib extension module termios... " >&6; }
   *termios*) :
     py_cv_module_termios=n/a ;; #(
   *) :
-
-      if true; then :
+    if true; then :
   if test "$ac_cv_header_termios_h" = yes; then :
   py_cv_module_termios=yes
 else
@@ -20062,9 +19986,7 @@ else
 fi
 else
   py_cv_module_termios=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE_TERMIOS=$py_cv_module_termios$as_nl"
@@ -20093,8 +20015,7 @@ $as_echo_n "checking for stdlib extension module pyexpat... " >&6; }
   *pyexpat*) :
     py_cv_module_pyexpat=n/a ;; #(
   *) :
-
-      if true; then :
+    if true; then :
   if true; then :
   py_cv_module_pyexpat=yes
 else
@@ -20102,9 +20023,7 @@ else
 fi
 else
   py_cv_module_pyexpat=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE_PYEXPAT=$py_cv_module_pyexpat$as_nl"
@@ -20132,8 +20051,7 @@ $as_echo_n "checking for stdlib extension module _elementtree... " >&6; }
   *_elementtree*) :
     py_cv_module__elementtree=n/a ;; #(
   *) :
-
-      if true; then :
+    if true; then :
   if true; then :
   py_cv_module__elementtree=yes
 else
@@ -20141,9 +20059,7 @@ else
 fi
 else
   py_cv_module__elementtree=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE__ELEMENTTREE=$py_cv_module__elementtree$as_nl"
@@ -20172,10 +20088,7 @@ else
   MODULE__CODECS_CN_TRUE='#'
   MODULE__CODECS_CN_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_CN=yes$as_nl"
 
      if true; then
   MODULE__CODECS_HK_TRUE=
@@ -20184,10 +20097,7 @@ else
   MODULE__CODECS_HK_TRUE='#'
   MODULE__CODECS_HK_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_HK=yes$as_nl"
 
      if true; then
   MODULE__CODECS_ISO2022_TRUE=
@@ -20196,10 +20106,7 @@ else
   MODULE__CODECS_ISO2022_TRUE='#'
   MODULE__CODECS_ISO2022_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_ISO2022=yes$as_nl"
 
      if true; then
   MODULE__CODECS_JP_TRUE=
@@ -20208,10 +20115,7 @@ else
   MODULE__CODECS_JP_TRUE='#'
   MODULE__CODECS_JP_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_JP=yes$as_nl"
 
      if true; then
   MODULE__CODECS_KR_TRUE=
@@ -20220,10 +20124,7 @@ else
   MODULE__CODECS_KR_TRUE='#'
   MODULE__CODECS_KR_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_KR=yes$as_nl"
 
      if true; then
   MODULE__CODECS_TW_TRUE=
@@ -20232,10 +20133,7 @@ else
   MODULE__CODECS_TW_TRUE='#'
   MODULE__CODECS_TW_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_TW=yes$as_nl"
 
      if true; then
   MODULE__MULTIBYTECODEC_TRUE=
@@ -20244,10 +20142,7 @@ else
   MODULE__MULTIBYTECODEC_TRUE='#'
   MODULE__MULTIBYTECODEC_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__MULTIBYTECODEC=yes$as_nl"
 
      if true; then
   MODULE_UNICODEDATA_TRUE=
@@ -20256,10 +20151,7 @@ else
   MODULE_UNICODEDATA_TRUE='#'
   MODULE_UNICODEDATA_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE_UNICODEDATA=yes$as_nl"
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _md5" >&5
@@ -20268,8 +20160,7 @@ $as_echo_n "checking for stdlib extension module _md5... " >&6; }
   *_md5*) :
     py_cv_module__md5=n/a ;; #(
   *) :
-
-      if test "$with_builtin_md5" = yes; then :
+    if test "$with_builtin_md5" = yes; then :
   if true; then :
   py_cv_module__md5=yes
 else
@@ -20277,9 +20168,7 @@ else
 fi
 else
   py_cv_module__md5=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE__MD5=$py_cv_module__md5$as_nl"
@@ -20307,8 +20196,7 @@ $as_echo_n "checking for stdlib extension module _sha1... " >&6; }
   *_sha1*) :
     py_cv_module__sha1=n/a ;; #(
   *) :
-
-      if test "$with_builtin_sha1" = yes; then :
+    if test "$with_builtin_sha1" = yes; then :
   if true; then :
   py_cv_module__sha1=yes
 else
@@ -20316,9 +20204,7 @@ else
 fi
 else
   py_cv_module__sha1=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE__SHA1=$py_cv_module__sha1$as_nl"
@@ -20346,8 +20232,7 @@ $as_echo_n "checking for stdlib extension module _sha256... " >&6; }
   *_sha256*) :
     py_cv_module__sha256=n/a ;; #(
   *) :
-
-      if test "$with_builtin_sha256" = yes; then :
+    if test "$with_builtin_sha256" = yes; then :
   if true; then :
   py_cv_module__sha256=yes
 else
@@ -20355,9 +20240,7 @@ else
 fi
 else
   py_cv_module__sha256=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE__SHA256=$py_cv_module__sha256$as_nl"
@@ -20385,8 +20268,7 @@ $as_echo_n "checking for stdlib extension module _sha512... " >&6; }
   *_sha512*) :
     py_cv_module__sha512=n/a ;; #(
   *) :
-
-      if test "$with_builtin_sha512" = yes; then :
+    if test "$with_builtin_sha512" = yes; then :
   if true; then :
   py_cv_module__sha512=yes
 else
@@ -20394,9 +20276,7 @@ else
 fi
 else
   py_cv_module__sha512=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE__SHA512=$py_cv_module__sha512$as_nl"
@@ -20424,8 +20304,7 @@ $as_echo_n "checking for stdlib extension module _sha3... " >&6; }
   *_sha3*) :
     py_cv_module__sha3=n/a ;; #(
   *) :
-
-      if test "$with_builtin_sha3" = yes; then :
+    if test "$with_builtin_sha3" = yes; then :
   if true; then :
   py_cv_module__sha3=yes
 else
@@ -20433,9 +20312,7 @@ else
 fi
 else
   py_cv_module__sha3=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE__SHA3=$py_cv_module__sha3$as_nl"
@@ -20463,8 +20340,7 @@ $as_echo_n "checking for stdlib extension module _blake2... " >&6; }
   *_blake2*) :
     py_cv_module__blake2=n/a ;; #(
   *) :
-
-      if test "$with_builtin_blake2" = yes; then :
+    if test "$with_builtin_blake2" = yes; then :
   if true; then :
   py_cv_module__blake2=yes
 else
@@ -20472,9 +20348,7 @@ else
 fi
 else
   py_cv_module__blake2=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE__BLAKE2=$py_cv_module__blake2$as_nl"
@@ -20503,8 +20377,7 @@ $as_echo_n "checking for stdlib extension module _decimal... " >&6; }
   *_decimal*) :
     py_cv_module__decimal=n/a ;; #(
   *) :
-
-      if true; then :
+    if true; then :
   if true; then :
   py_cv_module__decimal=yes
 else
@@ -20512,9 +20385,7 @@ else
 fi
 else
   py_cv_module__decimal=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE__DECIMAL=$py_cv_module__decimal$as_nl"
@@ -20542,8 +20413,7 @@ $as_echo_n "checking for stdlib extension module _sqlite3... " >&6; }
   *_sqlite3*) :
     py_cv_module__sqlite3=n/a ;; #(
   *) :
-
-      if test "$have_sqlite3" = "yes"; then :
+    if test "$have_sqlite3" = "yes"; then :
   if test "$have_supported_sqlite3" = "yes"; then :
   py_cv_module__sqlite3=yes
 else
@@ -20551,9 +20421,7 @@ else
 fi
 else
   py_cv_module__sqlite3=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE__SQLITE3=$py_cv_module__sqlite3$as_nl"
@@ -20582,8 +20450,7 @@ $as_echo_n "checking for stdlib extension module _testcapi... " >&6; }
   *_testcapi*) :
     py_cv_module__testcapi=n/a ;; #(
   *) :
-
-      if test "$TEST_MODULES" = yes; then :
+    if test "$TEST_MODULES" = yes; then :
   if true; then :
   py_cv_module__testcapi=yes
 else
@@ -20591,9 +20458,7 @@ else
 fi
 else
   py_cv_module__testcapi=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE__TESTCAPI=$py_cv_module__testcapi$as_nl"
@@ -20621,8 +20486,7 @@ $as_echo_n "checking for stdlib extension module _testinternalcapi... " >&6; }
   *_testinternalcapi*) :
     py_cv_module__testinternalcapi=n/a ;; #(
   *) :
-
-      if test "$TEST_MODULES" = yes; then :
+    if test "$TEST_MODULES" = yes; then :
   if true; then :
   py_cv_module__testinternalcapi=yes
 else
@@ -20630,9 +20494,7 @@ else
 fi
 else
   py_cv_module__testinternalcapi=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE__TESTINTERNALCAPI=$py_cv_module__testinternalcapi$as_nl"
@@ -20660,8 +20522,7 @@ $as_echo_n "checking for stdlib extension module _testbuffer... " >&6; }
   *_testbuffer*) :
     py_cv_module__testbuffer=n/a ;; #(
   *) :
-
-      if test "$TEST_MODULES" = yes; then :
+    if test "$TEST_MODULES" = yes; then :
   if true; then :
   py_cv_module__testbuffer=yes
 else
@@ -20669,9 +20530,7 @@ else
 fi
 else
   py_cv_module__testbuffer=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE__TESTBUFFER=$py_cv_module__testbuffer$as_nl"
@@ -20699,8 +20558,7 @@ $as_echo_n "checking for stdlib extension module _testimportmultiple... " >&6; }
   *_testimportmultiple*) :
     py_cv_module__testimportmultiple=n/a ;; #(
   *) :
-
-      if test "$TEST_MODULES" = yes; then :
+    if test "$TEST_MODULES" = yes; then :
   if true; then :
   py_cv_module__testimportmultiple=yes
 else
@@ -20708,9 +20566,7 @@ else
 fi
 else
   py_cv_module__testimportmultiple=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE__TESTIMPORTMULTIPLE=$py_cv_module__testimportmultiple$as_nl"
@@ -20738,8 +20594,7 @@ $as_echo_n "checking for stdlib extension module _testmultiphase... " >&6; }
   *_testmultiphase*) :
     py_cv_module__testmultiphase=n/a ;; #(
   *) :
-
-      if test "$TEST_MODULES" = yes; then :
+    if test "$TEST_MODULES" = yes; then :
   if true; then :
   py_cv_module__testmultiphase=yes
 else
@@ -20747,9 +20602,7 @@ else
 fi
 else
   py_cv_module__testmultiphase=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE__TESTMULTIPHASE=$py_cv_module__testmultiphase$as_nl"
@@ -20777,8 +20630,7 @@ $as_echo_n "checking for stdlib extension module _xxtestfuzz... " >&6; }
   *_xxtestfuzz*) :
     py_cv_module__xxtestfuzz=n/a ;; #(
   *) :
-
-      if test "$TEST_MODULES" = yes; then :
+    if test "$TEST_MODULES" = yes; then :
   if true; then :
   py_cv_module__xxtestfuzz=yes
 else
@@ -20786,9 +20638,7 @@ else
 fi
 else
   py_cv_module__xxtestfuzz=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE__XXTESTFUZZ=$py_cv_module__xxtestfuzz$as_nl"
@@ -20816,8 +20666,7 @@ $as_echo_n "checking for stdlib extension module _ctypes_test... " >&6; }
   *_ctypes_test*) :
     py_cv_module__ctypes_test=n/a ;; #(
   *) :
-
-      if test "$TEST_MODULES" = yes; then :
+    if test "$TEST_MODULES" = yes; then :
   if true; then :
   py_cv_module__ctypes_test=yes
 else
@@ -20825,9 +20674,7 @@ else
 fi
 else
   py_cv_module__ctypes_test=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE__CTYPES_TEST=$py_cv_module__ctypes_test$as_nl"
