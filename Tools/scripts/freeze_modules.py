@@ -25,30 +25,6 @@ STDLIB_DIR = os.path.join(ROOT_DIR, 'Lib')
 # need to be updated.
 MODULES_DIR = os.path.join(ROOT_DIR, 'Python', 'frozen_modules')
 
-if sys.platform != "win32":
-    TOOL = os.path.join(ROOT_DIR, 'Programs', '_freeze_module')
-    if not os.path.isfile(TOOL):
-        # When building out of the source tree, get the tool from directory
-        # of the Python executable
-        TOOL = os.path.dirname(sys.executable)
-        TOOL = os.path.join(TOOL, 'Programs', '_freeze_module')
-        TOOL = os.path.abspath(TOOL)
-        if not os.path.isfile(TOOL):
-            sys.exit("ERROR: missing _freeze_module")
-else:
-    def find_tool():
-        archs = ['amd64', 'win32']
-        if platform.machine() == "ARM64":
-             archs.append('arm64')
-        for arch in archs:
-            for exe in ['_freeze_module.exe', '_freeze_module_d.exe']:
-                tool = os.path.join(ROOT_DIR, 'PCbuild', arch, exe)
-                if os.path.isfile(tool):
-                    return tool
-        sys.exit("ERROR: missing _freeze_module.exe; you need to run PCbuild/build.bat")
-    TOOL = find_tool()
-    del find_tool
-
 MANIFEST = os.path.join(MODULES_DIR, 'MANIFEST')
 FROZEN_FILE = os.path.join(ROOT_DIR, 'Python', 'frozen.c')
 MAKEFILE = os.path.join(ROOT_DIR, 'Makefile.pre.in')
@@ -648,11 +624,11 @@ def regen_makefile(modules):
         deepfreezefiles.append(f"\t\t{ofile} \\")
 
         # Also add a deepfreeze rule.
-        deepfreezerules.append(f'{cfile}: $(srcdir)/{_pyfile} $(DEEPFREEZE_DEPS)')
-        deepfreezerules.append(f'\t@echo "Deepfreezing {cfile} from {_pyfile}"')
-        deepfreezerules.append(f"\t@./$(BOOTSTRAP) \\")
-        deepfreezerules.append(f"\t\t$(srcdir)/Tools/scripts/deepfreeze.py \\")
-        deepfreezerules.append(f"\t\t$(srcdir)/{_pyfile} -m {src.frozenid} -o {cfile}")
+        deepfreezerules.append(f'{cfile}: $(srcdir)/{header} $(DEEPFREEZE_DEPS)')
+        deepfreezerules.append(
+            f"\t$(PYTHON_FOR_REGEN) "
+            f"$(srcdir)/Tools/scripts/deepfreeze.py "
+            f"$(srcdir)/{header} -m {src.frozenid} -o {cfile}")
         deepfreezerules.append('')
 
     for src in _iter_sources(modules):
@@ -775,32 +751,6 @@ def regen_pcbuild(modules):
 
 
 #######################################
-# freezing modules
-
-def freeze_module(modname, pyfile=None, destdir=MODULES_DIR):
-    """Generate the frozen module .h file for the given module."""
-    tmpsuffix = f'.{int(time.time())}'
-    for modname, pyfile, ispkg in resolve_modules(modname, pyfile):
-        frozenfile = resolve_frozen_file(modname, destdir)
-        _freeze_module(modname, pyfile, frozenfile, tmpsuffix)
-
-
-def _freeze_module(frozenid, pyfile, frozenfile, tmpsuffix):
-    tmpfile = f'{frozenfile}.{int(time.time())}'
-
-    argv = [TOOL, frozenid, pyfile, tmpfile]
-    print('#', '  '.join(os.path.relpath(a) for a in argv), flush=True)
-    try:
-        subprocess.run(argv, check=True)
-    except (FileNotFoundError, subprocess.CalledProcessError):
-        if not os.path.exists(TOOL):
-            sys.exit(f'ERROR: missing {TOOL}; you need to run "make regen-frozen"')
-        raise  # re-raise
-
-    update_file_with_tmpfile(frozenfile, tmpfile, create=True)
-
-
-#######################################
 # the script
 
 def main():
@@ -810,11 +760,6 @@ def main():
     # Regen build-related files.
     regen_makefile(modules)
     regen_pcbuild(modules)
-
-    # Freeze the target modules.
-    tmpsuffix = f'.{int(time.time())}'
-    for src in _iter_sources(modules):
-        _freeze_module(src.frozenid, src.pyfile, src.frozenfile, tmpsuffix)
 
     # Regen files dependent of frozen file details.
     regen_frozen(modules)
