@@ -1477,13 +1477,11 @@ class PyBuildExt(build_ext):
             self.missing.append('_tkinter')
         self.detect_uuid()
 
-##         # Uncomment these lines if you want to play with xxmodule.c
-##         self.add(Extension('xx', ['xxmodule.c']))
+        # Uncomment the next line if you want to play with xxmodule.c
+#        self.add(Extension('xx', ['xxmodule.c']))
 
-        # The limited C API is not compatible with the Py_TRACE_REFS macro.
-        if not sysconfig.get_config_var('Py_TRACE_REFS'):
-            self.add(Extension('xxlimited', ['xxlimited.c']))
-            self.add(Extension('xxlimited_35', ['xxlimited_35.c']))
+        self.addext(Extension('xxlimited', ['xxlimited.c']))
+        self.addext(Extension('xxlimited_35', ['xxlimited_35.c']))
 
     def detect_tkinter_fromenv(self):
         # Build _tkinter using the Tcl/Tk locations specified by

@@ -624,6 +624,10 @@ ac_includes_default="\
 
 ac_subst_vars='LTLIBOBJS
 MODULE_BLOCK
+MODULE_XXLIMITED_35_FALSE
+MODULE_XXLIMITED_35_TRUE
+MODULE_XXLIMITED_FALSE
+MODULE_XXLIMITED_TRUE
 MODULE__CTYPES_TEST_FALSE
 MODULE__CTYPES_TEST_TRUE
 MODULE__XXTESTFUZZ_FALSE
@@ -21838,6 +21842,79 @@ fi
 $as_echo "$py_cv_module__ctypes_test" >&6; }
 
 
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module xxlimited" >&5
+$as_echo_n "checking for stdlib extension module xxlimited... " >&6; }
+      case $py_stdlib_not_available in #(
+  *xxlimited*) :
+    py_cv_module_xxlimited=n/a ;; #(
+  *) :
+    if test "$Py_TRACE_REFS" = no; then :
+  if true; then :
+  py_cv_module_xxlimited=yes
+else
+  py_cv_module_xxlimited=missing
+fi
+else
+  py_cv_module_xxlimited=disabled
+fi
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE_XXLIMITED=$py_cv_module_xxlimited$as_nl"
+  if test "x$py_cv_module_xxlimited" = xyes; then :
+
+
+
+
+fi
+   if test "$py_cv_module_xxlimited" = yes; then
+  MODULE_XXLIMITED_TRUE=
+  MODULE_XXLIMITED_FALSE='#'
+else
+  MODULE_XXLIMITED_TRUE='#'
+  MODULE_XXLIMITED_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_xxlimited" >&5
+$as_echo "$py_cv_module_xxlimited" >&6; }
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module xxlimited_35" >&5
+$as_echo_n "checking for stdlib extension module xxlimited_35... " >&6; }
+      case $py_stdlib_not_available in #(
+  *xxlimited_35*) :
+    py_cv_module_xxlimited_35=n/a ;; #(
+  *) :
+    if test "$Py_TRACE_REFS" = no; then :
+  if true; then :
+  py_cv_module_xxlimited_35=yes
+else
+  py_cv_module_xxlimited_35=missing
+fi
+else
+  py_cv_module_xxlimited_35=disabled
+fi
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE_XXLIMITED_35=$py_cv_module_xxlimited_35$as_nl"
+  if test "x$py_cv_module_xxlimited_35" = xyes; then :
+
+
+
+
+fi
+   if test "$py_cv_module_xxlimited_35" = yes; then
+  MODULE_XXLIMITED_35_TRUE=
+  MODULE_XXLIMITED_35_FALSE='#'
+else
+  MODULE_XXLIMITED_35_TRUE='#'
+  MODULE_XXLIMITED_35_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_xxlimited_35" >&5
+$as_echo "$py_cv_module_xxlimited_35" >&6; }
+
+
 # substitute multiline block, must come after last PY_STDLIB_MOD()
 
 
@@ -22212,6 +22289,14 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__CTYPES_TEST_TRUE}" && test -z "${MODULE__CTYPES_TEST_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__CTYPES_TEST\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_XXLIMITED_TRUE}" && test -z "${MODULE_XXLIMITED_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_XXLIMITED\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_XXLIMITED_35_TRUE}" && test -z "${MODULE_XXLIMITED_35_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_XXLIMITED_35\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 
