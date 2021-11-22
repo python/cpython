@@ -99,6 +99,9 @@ take_ownership(PyFrameObject *f, InterpreterFrame *frame)
 int
 _PyFrame_Clear(InterpreterFrame * frame, int take)
 {
+    /* It is the responsibility of the owning generator/coroutine
+     * to have cleared the generator pointer */
+    assert(frame->generator == NULL);
     if (frame->frame_obj) {
         PyFrameObject *f = frame->frame_obj;
         frame->frame_obj = NULL;

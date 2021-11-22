@@ -3981,14 +3981,11 @@ AC_CACHE_CHECK([for flock declaration], [ac_cv_flock_decl],
     [ac_cv_flock_decl=no]
   )
 ])
-if test "x${ac_cv_flock_decl}" = xyes; then
-  AC_CHECK_FUNCS(flock,,
-    AC_CHECK_LIB(bsd,flock,
-      [AC_DEFINE(HAVE_FLOCK)
-       AC_DEFINE(FLOCK_NEEDS_LIBBSD, 1, Define if flock needs to be linked with bsd library.)
-    ])
-  )
-fi
+dnl Linking with libbsd may be necessary on AIX for flock function.
+AS_VAR_IF([ac_cv_flock_decl], [yes],
+  AC_CHECK_FUNCS([flock])
+  AC_CHECK_LIB([bsd], [flock], [FCNTL_LIBS="-lbsd"])
+)
 
 PY_CHECK_FUNC([getpagesize], [#include <unistd.h>])
 
@@ -4058,24 +4055,55 @@ if test "$ac_cv_have_lchflags" = yes ; then
 fi
 
 dnl Check for compression libraries
-AC_CHECK_HEADERS([zlib.h], [
-  SAVE_VAR([LIBS])
-  AC_CHECK_LIB([z], [gzread])
-  RESTORE_VAR([LIBS])
-  AC_CHECK_LIB([z], [inflateCopy], [AC_DEFINE(HAVE_ZLIB_COPY, 1, [Define if the zlib library has inflateCopy])])
-  RESTORE_VAR([LIBS])
+AH_TEMPLATE([HAVE_ZLIB_COPY], [Define if the zlib library has inflateCopy])
+
+PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
+  have_zlib=yes
+  dnl zlib 1.2.0 (2003) added inflateCopy
+  AC_DEFINE([HAVE_ZLIB_COPY], [1])
+], [
+  AC_CHECK_HEADERS([zlib.h], [
+    WITH_SAVE_ENV([
+      AC_CHECK_LIB([z], [gzread], [
+        have_zlib=yes
+        ZLIB_CFLAGS=
+        ZLIB_LIBS=-lz
+        AC_CHECK_LIB([z], [inflateCopy], [AC_DEFINE([HAVE_ZLIB_COPY], [1])])
+      ], [
+        have_zlib=no
+      ])
+    ])
+  ], [have_zlib=no])
 ])
 
-AC_CHECK_HEADERS([bzlib.h], [
-  SAVE_VAR([LIBS])
-  AC_CHECK_LIB([bz2], [BZ2_bzCompress])
-  RESTORE_VAR([LIBS])
+dnl binascii can use zlib for optimized crc32.
+AS_VAR_IF([have_zlib], [yes], [
+  BINASCII_CFLAGS="-DUSE_ZLIB_CRC32 $ZLIB_CFLAGS"
+  BINASCII_LIBS="$ZLIB_LIBS"
 ])
 
-AC_CHECK_HEADERS([lzma.h], [
-  SAVE_VAR([LIBS])
-  AC_CHECK_LIB([lzma], [lzma_easy_encoder])
-  RESTORE_VAR([LIBS])
+PKG_CHECK_MODULES([BZIP2], [bzip2], [have_bzip2=yes], [
+  AC_CHECK_HEADERS([bzlib.h], [
+    WITH_SAVE_ENV([
+      AC_CHECK_LIB([bz2], [BZ2_bzCompress], [
+        have_bzip2=yes
+        BZIP2_CFLAGS=
+        BZIP2_LIBS=-lbz2
+      ], [have_bzip2=no])
+    ])
+  ], [have_bzip2=no])
+])
+
+PKG_CHECK_MODULES([LIBLZMA], [liblzma], [have_liblzma=yes], [
+  AC_CHECK_HEADERS([lzma.h], [
+    WITH_SAVE_ENV([
+      AC_CHECK_LIB([lzma], [lzma_easy_encoder], [
+        have_liblzma=yes
+        LIBLZMA_CFLAGS=
+        LIBLZMA_LIBS=-llzma
+      ], [have_liblzma=no])
+    ])
+  ], [have_liblzma=no])
 ])
 
 PY_CHECK_FUNC([hstrerror], [#include <netdb.h>])
@@ -6081,7 +6109,9 @@ PY_STDLIB_MOD_SIMPLE([_opcode])
 PY_STDLIB_MOD_SIMPLE([_pickle])
 PY_STDLIB_MOD_SIMPLE([_queue])
 PY_STDLIB_MOD_SIMPLE([_random])
+PY_STDLIB_MOD_SIMPLE([select])
 PY_STDLIB_MOD_SIMPLE([_typing])
+PY_STDLIB_MOD_SIMPLE([_xxsubinterpreters])
 PY_STDLIB_MOD_SIMPLE([_zoneinfo])
 
 dnl needs libm
@@ -6091,6 +6121,13 @@ PY_STDLIB_MOD_SIMPLE([math], [], [$LIBM])
 
 dnl needs libm and on some platforms librt
 PY_STDLIB_MOD_SIMPLE([_datetime], [], [$TIMEMODULE_LIB $LIBM])
+
+dnl modules with some unix dependencies
+PY_STDLIB_MOD([fcntl],
+  [], [test "$ac_cv_header_sys_ioctl_h" = "yes" -a "$ac_cv_header_fcntl_h" = "yes"],
+  [], [$FCNTL_LIBS])
+PY_STDLIB_MOD([mmap],
+  [], [test "$ac_cv_header_sys_mman_h" = "yes" -a "$ac_cv_header_sys_stat_h" = "yes"])
 
 dnl platform specific extensions
 PY_STDLIB_MOD([grp], [], [test "$ac_cv_func_getgrgid" = yes -o "$ac_cv_func_getgrgid_r" = yes])
@@ -6130,6 +6167,16 @@ PY_STDLIB_MOD([_sqlite3],
   [test "$have_sqlite3" = "yes"],
   [test "$have_supported_sqlite3" = "yes"],
   [$LIBSQLITE3_CFLAGS], [$LIBSQLITE3_LIBS])
+
+dnl compression libs
+PY_STDLIB_MOD([zlib], [], [test "$have_zlib" = yes],
+  [$ZLIB_CFLAGS], [$ZLIB_LIBS])
+dnl binascii can use zlib for optimized crc32.
+PY_STDLIB_MOD_SIMPLE([binascii], [$BINASCII_CFLAGS], [$BINASCII_LIBS])
+PY_STDLIB_MOD([_bz2], [], [test "$have_bzip2" = yes],
+  [$BZIP2_CFLAGS], [$BZIP2_LIBS])
+PY_STDLIB_MOD([_lzma], [], [test "$have_liblzma" = yes],
+  [$LIBLZMA_CFLAGS], [$LIBLZMA_LIBS])
 
 dnl test modules
 PY_STDLIB_MOD([_testcapi], [test "$TEST_MODULES" = yes])
