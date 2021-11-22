@@ -93,6 +93,7 @@ static int import_all_from(PyThreadState *, PyObject *, PyObject *);
 static void format_exc_check_arg(PyThreadState *, PyObject *, const char *, PyObject *);
 static void format_exc_unbound(PyThreadState *tstate, PyCodeObject *co, int oparg);
 static int check_args_iterable(PyThreadState *, PyObject *func, PyObject *vararg);
+static int check_except_type_valid(PyThreadState *tstate, PyObject* right);
 static void format_kwargs_error(PyThreadState *, PyObject *func, PyObject *kwargs);
 static void format_awaitable_error(PyThreadState *, PyTypeObject *, int, int);
 static int get_exception_handler(PyCodeObject *, int, int*, int*, int*);
@@ -3715,31 +3716,11 @@ check_eval_breaker:
         }
 
         TARGET(JUMP_IF_NOT_EXC_MATCH) {
-            const char *cannot_catch_msg = "catching classes that do not "
-                                           "inherit from BaseException is not "
-                                           "allowed";
             PyObject *right = POP();
             PyObject *left = TOP();
-            if (PyTuple_Check(right)) {
-                Py_ssize_t i, length;
-                length = PyTuple_GET_SIZE(right);
-                for (i = 0; i < length; i++) {
-                    PyObject *exc = PyTuple_GET_ITEM(right, i);
-                    if (!PyExceptionClass_Check(exc)) {
-                        _PyErr_SetString(tstate, PyExc_TypeError,
-                                         cannot_catch_msg);
-                        Py_DECREF(right);
-                        goto error;
-                    }
-                }
-            }
-            else {
-                if (!PyExceptionClass_Check(right)) {
-                    _PyErr_SetString(tstate, PyExc_TypeError,
-                                     cannot_catch_msg);
-                    Py_DECREF(right);
-                    goto error;
-                }
+            if (check_except_type_valid(tstate, right) < 0) {
+                 Py_DECREF(right);
+                 goto error;
             }
             int res = PyErr_GivenExceptionMatches(left, right);
             Py_DECREF(right);
@@ -6890,6 +6871,35 @@ import_all_from(PyThreadState *tstate, PyObject *locals, PyObject *v)
     }
     Py_DECREF(all);
     return err;
+}
+
+
+#define CANNOT_CATCH_MSG "catching classes that do not inherit from "\
+                         "BaseException is not allowed"
+
+static int
+check_except_type_valid(PyThreadState *tstate, PyObject* right)
+{
+    if (PyTuple_Check(right)) {
+        Py_ssize_t i, length;
+        length = PyTuple_GET_SIZE(right);
+        for (i = 0; i < length; i++) {
+            PyObject *exc = PyTuple_GET_ITEM(right, i);
+            if (!PyExceptionClass_Check(exc)) {
+                _PyErr_SetString(tstate, PyExc_TypeError,
+                    CANNOT_CATCH_MSG);
+                return -1;
+            }
+        }
+    }
+    else {
+        if (!PyExceptionClass_Check(right)) {
+            _PyErr_SetString(tstate, PyExc_TypeError,
+                CANNOT_CATCH_MSG);
+            return -1;
+        }
+    }
+    return 0;
 }
 
 static int
