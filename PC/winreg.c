@@ -1353,8 +1353,8 @@ winreg_GetValue_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
     PyObject *obData;
     PyObject *result;
 
-    if (PySys_Audit("winreg.GetValue", "nuu",
-                    (Py_ssize_t)key, sub_key, name) < 0) {
+    if (PySys_Audit("winreg.GetValue", "nuuI",
+                    (Py_ssize_t)key, sub_key, name, flags) < 0) {
         return NULL;
     }
 

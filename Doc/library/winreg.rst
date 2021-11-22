@@ -278,7 +278,7 @@ This module offers the following functions:
       isn't.
 
 
-.. function:: GetValue(key, sub_key, value_name)
+.. function:: GetValue(key, sub_key, value_name, flags=RRF_RT_ANY)
 
    Retrieves the type and data for a specified value name associated with
    an open registry key.
@@ -291,9 +291,19 @@ This module offers the following functions:
 
    *value_name* is a string indicating the value to query.
 
-   The result is a tuple of 2 items, the same as :meth:`QueryValueEx`
+   *flags* restrict the data type of value to be queried.
+   It can be one of the ``RRF_RT_*`` constants, optionally combined ``RRF_NOEXPAND``
+   or one of the ``RRF_SUBKEY_*`` with ``|``.
+   For more info, see :ref:`RRF_* constants <rrf-constants>`.
 
-   .. audit-event:: winreg.GetValue key,sub_key,value_name winreg.GetValue
+   The result is a tuple of 2 items, similar to :meth:`QueryValueEx`
+
+   .. note::
+
+      This function automatically expands environment variables in ``REG_EXPAND_SZ`` strings
+      and returns the type as ``REG_SZ``. You can disable it with :const:`RRF_NOEXPAND`.
+
+   .. audit-event:: winreg.GetValue key,sub_key,value_name,flags winreg.GetValue
 
    .. versionadded:: 3.11
 
@@ -755,6 +765,45 @@ For more information, see `Registry Value Types
 .. data:: REG_SZ
 
    A null-terminated string.
+
+
+.. _rrf-constants:
+
+RRF_* Constants
+++++++++++++++++
+
+Used by :func:`GetValue`.
+
+For more information, see `RegGetValueW function
+<https://docs.microsoft.com/windows/win32/api/winreg/nf-winreg-reggetvaluew>`__.
+
+.. versionadded:: 3.11
+
+.. data:: RRF_RT_ANY
+
+.. data:: RRF_RT_DWORD
+
+.. data:: RRF_RT_QWORD
+
+.. data:: RRF_RT_REG_BINARY
+
+.. data:: RRF_RT_REG_DWORD
+
+.. data:: RRF_RT_REG_EXPAND_SZ
+
+.. data:: RRF_RT_REG_MULTI_SZ
+
+.. data:: RRF_RT_REG_NONE
+
+.. data:: RRF_RT_REG_QWORD
+
+.. data:: RRF_RT_REG_SZ
+
+.. data:: RRF_NOEXPAND
+
+.. data:: RRF_SUBKEY_WOW6464KEY
+
+.. data:: RRF_SUBKEY_WOW6432KEY
 
 
 .. _handle-object:
