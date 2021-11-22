@@ -6081,7 +6081,9 @@ PY_STDLIB_MOD_SIMPLE([_opcode])
 PY_STDLIB_MOD_SIMPLE([_pickle])
 PY_STDLIB_MOD_SIMPLE([_queue])
 PY_STDLIB_MOD_SIMPLE([_random])
+PY_STDLIB_MOD_SIMPLE([select])
 PY_STDLIB_MOD_SIMPLE([_typing])
+PY_STDLIB_MOD_SIMPLE([_xxsubinterpreters])
 PY_STDLIB_MOD_SIMPLE([_zoneinfo])
 
 dnl needs libm
@@ -6092,10 +6094,12 @@ PY_STDLIB_MOD_SIMPLE([math], [], [$LIBM])
 dnl needs libm and on some platforms librt
 PY_STDLIB_MOD_SIMPLE([_datetime], [], [$TIMEMODULE_LIB $LIBM])
 
-dnl needs libbsd on some platforms
+dnl modules with some unix dependencies
 PY_STDLIB_MOD([fcntl],
   [], [test "$ac_cv_header_sys_ioctl_h" = "yes" -a "$ac_cv_header_fcntl_h" = "yes"],
   [], [$FCNTL_LIBS])
+PY_STDLIB_MOD([mmap],
+  [], [test "$ac_cv_header_sys_mman_h" = "yes" -a "$ac_cv_header_sys_stat_h" = "yes"])
 
 dnl platform specific extensions
 PY_STDLIB_MOD([grp], [], [test "$ac_cv_func_getgrgid" = yes -o "$ac_cv_func_getgrgid_r" = yes])

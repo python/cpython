@@ -1036,17 +1036,17 @@ class PyBuildExt(build_ext):
         self.addext(Extension('spwd', ['spwdmodule.c']))
 
         # select(2); not on ancient System V
-        self.add(Extension('select', ['selectmodule.c']))
+        self.addext(Extension('select', ['selectmodule.c']))
 
         # Memory-mapped files (also works on Win32).
-        self.add(Extension('mmap', ['mmapmodule.c']))
+        self.addext(Extension('mmap', ['mmapmodule.c']))
 
         # Lance Ellinghaus's syslog module
         # syslog daemon interface
         self.addext(Extension('syslog', ['syslogmodule.c']))
 
         # Python interface to subinterpreter C-API.
-        self.add(Extension('_xxsubinterpreters', ['_xxsubinterpretersmodule.c']))
+        self.addext(Extension('_xxsubinterpreters', ['_xxsubinterpretersmodule.c']))
 
         #
         # Here ends the simple stuff.  From here on, modules need certain
