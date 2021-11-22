@@ -397,6 +397,10 @@ class PyBuildExt(build_ext):
             pass
         else:
             # not migrated to MODULE_{name} yet.
+            self.announce(
+                f'WARNING: Makefile is missing module variable for "{ext.name}"',
+                level=2
+            )
             self.extensions.append(ext)
 
     def update_extension_flags(self, ext):
@@ -994,12 +998,6 @@ class PyBuildExt(build_ext):
 
         # complex math library functions
         self.addext(Extension('cmath', ['cmathmodule.c']))
-
-        # time libraries: librt may be needed for clock_gettime()
-        time_libs = []
-        lib = sysconfig.get_config_var('TIMEMODULE_LIB')
-        if lib:
-            time_libs.append(lib)
 
         # libm is needed by delta_new() that uses round() and by accum() that
         # uses modf().
