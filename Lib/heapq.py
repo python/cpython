@@ -42,26 +42,25 @@ property of a heap is that a[0] is always its smallest element.
 The strange invariant above is meant to be an efficient memory
 representation for a tournament.  The numbers below are `k', not a[k]:
 
-                                   0
-
-                  1                                 2
-
-          3               4                5               6
+    15 16   17 18   19 20   21 22   23 24   25 26   27 28   29 30
 
       7       8       9       10      11      12      13      14
 
-    15 16   17 18   19 20   21 22   23 24   25 26   27 28   29 30
+          3               4                5               6
 
+                  1                                 2
 
-In the tree above, each cell `k' is topping `2*k+1' and `2*k+2'.  In
-a usual binary tournament we see in sports, each cell is the winner
-over the two cells it tops, and we can trace the winner down the tree
+                                   0
+
+In the tree above, each cell `k' is below `2*k+1' and `2*k+2'.  In a
+usual binary tournament we see in sports, each cell is the winner over
+the two cells it is under, and we can trace the winner down the tree
 to see all opponents s/he had.  However, in many computer applications
 of such tournaments, we do not need to trace the history of a winner.
 To be more memory efficient, when a winner is promoted, we try to
-replace it by something else at a lower level, and the rule becomes
-that a cell and the two cells it tops contain three different items,
-but the top cell "wins" over the two topped cells.
+replace it by something else at a higher level, and the rule becomes
+that a cell and the two cells it is under contain three different
+items, but the bottom cell "wins" over the two cells on top.
 
 If this heap invariant is protected at all time, index 0 is clearly
 the overall winner.  The simplest algorithmic way to remove it and
