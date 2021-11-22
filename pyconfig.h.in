@@ -595,9 +595,6 @@
 /* Define to 1 if you have the `lchown' function. */
 #undef HAVE_LCHOWN
 
-/* Define to 1 if you have the `bz2' library (-lbz2). */
-#undef HAVE_LIBBZ2
-
 /* Define to 1 if you have the `db' library (-ldb). */
 #undef HAVE_LIBDB
 
@@ -619,9 +616,6 @@
 /* Define to 1 if you have the <libintl.h> header file. */
 #undef HAVE_LIBINTL_H
 
-/* Define to 1 if you have the `lzma' library (-llzma). */
-#undef HAVE_LIBLZMA
-
 /* Define to 1 if you have the `ndbm' library (-lndbm). */
 #undef HAVE_LIBNDBM
 
@@ -639,9 +633,6 @@
 
 /* Define to 1 if you have the `uuid' library (-luuid). */
 #undef HAVE_LIBUUID
-
-/* Define to 1 if you have the `z' library (-lz). */
-#undef HAVE_LIBZ
 
 /* Define if you have the 'link' function. */
 #undef HAVE_LINK
