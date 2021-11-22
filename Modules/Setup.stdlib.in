@@ -113,6 +113,7 @@
 @MODULE_NIS_TRUE@nis nismodule.c
 # needs sys/soundcard.h or linux/soundcard.h (Linux, FreeBSD)
 @MODULE_OSSAUDIODEV_TRUE@ossaudiodev ossaudiodev.c
+@MODULE__POSIXSHMEM_TRUE@_posixshmem _multiprocessing/posixshmem.c
 @MODULE__POSIXSUBPROCESS_TRUE@_posixsubprocess _posixsubprocess.c
 @MODULE_RESOURCE_TRUE@resource resource.c
 @MODULE_SELECT_TRUE@select selectmodule.c

@@ -1397,20 +1397,7 @@ class PyBuildExt(build_ext):
         self.add(Extension('_multiprocessing', multiprocessing_srcs,
                            include_dirs=["Modules/_multiprocessing"]))
 
-        if (not MS_WINDOWS and
-           sysconfig.get_config_var('HAVE_SHM_OPEN') and
-           sysconfig.get_config_var('HAVE_SHM_UNLINK')):
-            posixshmem_srcs = ['_multiprocessing/posixshmem.c']
-            libs = []
-            if sysconfig.get_config_var('SHM_NEEDS_LIBRT'):
-                # need to link with librt to get shm_open()
-                libs.append('rt')
-            self.add(Extension('_posixshmem', posixshmem_srcs,
-                               define_macros={},
-                               libraries=libs,
-                               include_dirs=["Modules/_multiprocessing"]))
-        else:
-            self.missing.append('_posixshmem')
+        self.addext(Extension('_posixshmem', ['_multiprocessing/posixshmem.c']))
 
     def detect_uuid(self):
         # Build the _uuid module if possible
