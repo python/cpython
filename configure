@@ -688,6 +688,8 @@ MODULE_OSSAUDIODEV_FALSE
 MODULE_OSSAUDIODEV_TRUE
 MODULE_GRP_FALSE
 MODULE_GRP_TRUE
+MODULE_FCNTL_FALSE
+MODULE_FCNTL_TRUE
 MODULE__DATETIME_FALSE
 MODULE__DATETIME_TRUE
 MODULE_MATH_FALSE
@@ -13343,7 +13345,7 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_flock_decl" >&5
 $as_echo "$ac_cv_flock_decl" >&6; }
-if test "x${ac_cv_flock_decl}" = xyes; then
+if test "x$ac_cv_flock_decl" = xyes; then :
   for ac_func in flock
 do :
   ac_fn_c_check_func "$LINENO" "flock" "ac_cv_func_flock"
@@ -13352,7 +13354,9 @@ if test "x$ac_cv_func_flock" = xyes; then :
 #define HAVE_FLOCK 1
 _ACEOF
 
-else
+fi
+done
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for flock in -lbsd" >&5
 $as_echo_n "checking for flock in -lbsd... " >&6; }
 if ${ac_cv_lib_bsd_flock+:} false; then :
@@ -13390,17 +13394,9 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_bsd_flock" >&5
 $as_echo "$ac_cv_lib_bsd_flock" >&6; }
 if test "x$ac_cv_lib_bsd_flock" = xyes; then :
-  $as_echo "#define HAVE_FLOCK 1" >>confdefs.h
-
-
-$as_echo "#define FLOCK_NEEDS_LIBBSD 1" >>confdefs.h
-
-
+  FCNTL_LIBS="-lbsd"
 fi
 
-
-fi
-done
 
 fi
 
@@ -19756,6 +19752,43 @@ fi
 
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module fcntl" >&5
+$as_echo_n "checking for stdlib extension module fcntl... " >&6; }
+      case $py_stdlib_not_available in #(
+  *fcntl*) :
+    py_cv_module_fcntl=n/a ;; #(
+  *) :
+    if true; then :
+  if test "$ac_cv_header_sys_ioctl_h" = "yes" -a "$ac_cv_header_fcntl_h" = "yes"; then :
+  py_cv_module_fcntl=yes
+else
+  py_cv_module_fcntl=missing
+fi
+else
+  py_cv_module_fcntl=disabled
+fi
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE_FCNTL=$py_cv_module_fcntl$as_nl"
+  if test "x$py_cv_module_fcntl" = xyes; then :
+
+
+    as_fn_append MODULE_BLOCK "MODULE_FCNTL_LDFLAGS=$FCNTL_LIBS$as_nl"
+
+fi
+   if test "$py_cv_module_fcntl" = yes; then
+  MODULE_FCNTL_TRUE=
+  MODULE_FCNTL_FALSE='#'
+else
+  MODULE_FCNTL_TRUE='#'
+  MODULE_FCNTL_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_fcntl" >&5
+$as_echo "$py_cv_module_fcntl" >&6; }
+
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module grp" >&5
 $as_echo_n "checking for stdlib extension module grp... " >&6; }
       case $py_stdlib_not_available in #(
@@ -20890,6 +20923,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__DATETIME_TRUE}" && test -z "${MODULE__DATETIME_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__DATETIME\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_FCNTL_TRUE}" && test -z "${MODULE_FCNTL_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_FCNTL\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_GRP_TRUE}" && test -z "${MODULE_GRP_FALSE}"; then

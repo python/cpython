@@ -87,6 +87,7 @@
 # Modules with some UNIX dependencies
 #
 
+@MODULE_FCNTL_TRUE@fcntl fcntlmodule.c
 @MODULE_GRP_TRUE@grp grpmodule.c
 # needs sys/soundcard.h or linux/soundcard.h (Linux, FreeBSD)
 @MODULE_OSSAUDIODEV_TRUE@ossaudiodev ossaudiodev.c
