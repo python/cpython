@@ -984,18 +984,16 @@ class PyBuildExt(build_ext):
         #
 
         # array objects
-        self.add(Extension('array', ['arraymodule.c']))
+        self.addext(Extension('array', ['arraymodule.c']))
 
         # Context Variables
-        self.add(Extension('_contextvars', ['_contextvarsmodule.c']))
+        self.addext(Extension('_contextvars', ['_contextvarsmodule.c']))
 
         # math library functions, e.g. sin()
-        self.add(Extension('math',  ['mathmodule.c'],
-                           libraries=['m']))
+        self.addext(Extension('math',  ['mathmodule.c']))
 
         # complex math library functions
-        self.add(Extension('cmath', ['cmathmodule.c'],
-                           libraries=['m']))
+        self.addext(Extension('cmath', ['cmathmodule.c']))
 
         # time libraries: librt may be needed for clock_gettime()
         time_libs = []
