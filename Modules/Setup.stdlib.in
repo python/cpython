@@ -32,6 +32,7 @@
 @MODULE__ASYNCIO_TRUE@_asyncio _asynciomodule.c
 @MODULE__BISECT_TRUE@_bisect _bisectmodule.c
 @MODULE__CONTEXTVARS_TRUE@_contextvars _contextvarsmodule.c
+@MODULE__CSV_TRUE@_csv _csv.c
 @MODULE__HEAPQ_TRUE@_heapq _heapqmodule.c
 @MODULE__JSON_TRUE@_json _json.c
 @MODULE__LSPROF_TRUE@_lsprof _lsprof.c rotatingtree.c
@@ -44,6 +45,7 @@
 @MODULE__ZONEINFO_TRUE@_zoneinfo _zoneinfo.c
 
 # needs libm
+@MODULE_AUDIOOP_TRUE@audioop audioop.c
 @MODULE_MATH_TRUE@math mathmodule.c
 @MODULE_CMATH_TRUE@cmath cmathmodule.c
 @MODULE__STATISTICS_TRUE@_statistics _statisticsmodule.c
@@ -103,6 +105,7 @@
 @MODULE_NIS_TRUE@nis nismodule.c
 # needs sys/soundcard.h or linux/soundcard.h (Linux, FreeBSD)
 @MODULE_OSSAUDIODEV_TRUE@ossaudiodev ossaudiodev.c
+@MODULE__POSIXSUBPROCESS_TRUE@_posixsubprocess _posixsubprocess.c
 @MODULE_RESOURCE_TRUE@resource resource.c
 @MODULE_SELECT_TRUE@select selectmodule.c
 # AIX has shadow passwords, but does not provide getspent API
