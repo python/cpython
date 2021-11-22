@@ -3828,10 +3828,11 @@ then
 	then
 		found_gcc=
 		found_clang=
-		as_save_IFS=$IFS; IFS=:
+		save_IFS=$IFS
+                IFS=:
 		for as_dir in $PATH
 		do
-			IFS=$as_save_IFS
+			IFS=$save_IFS
 			if test -x "${as_dir}/gcc"; then
 				if test -z "${found_gcc}"; then
 					found_gcc="${as_dir}/gcc"
@@ -3843,7 +3844,7 @@ then
 				fi
 			fi
 		done
-		IFS=$as_save_IFS
+		IFS=$save_IFS
 
 		if test -n "$found_gcc" -a -n "$found_clang"
 		then
@@ -5937,7 +5938,7 @@ if ${ac_cv_wl_no_as_needed+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-  save_LDFLAGS="$LDFLAGS"
+  save_LDFLAGS=$LDFLAGS
   as_fn_append LDFLAGS -Wl,--no-as-needed
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -5959,7 +5960,7 @@ else
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-  LDFLAGS="$save_LDFLAGS"
+  LDFLAGS=$save_LDFLAGS
 
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_wl_no_as_needed" >&5
@@ -6186,7 +6187,7 @@ if test "${enable_profiling+set}" = set; then :
 fi
 
 if test "x$enable_profiling" = xyes; then
-  ac_save_cc="$CC"
+  save_CC=$CC
   CC="$CC -pg"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -6199,7 +6200,7 @@ else
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-  CC="$ac_save_cc"
+  CC=$save_CC
 else
   enable_profiling=no
 fi
@@ -7393,9 +7394,13 @@ fi
     # GCC produce warnings for legal Python code.  Enable
     # -fno-strict-aliasing on versions of GCC that support but produce
     # warnings.  See Issue3326
-     ac_save_cc="$CC"
+     save_CC=$CC
      CC="$CC -fno-strict-aliasing"
-     save_CFLAGS="$CFLAGS"
+     save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
      { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC accepts and needs -fno-strict-aliasing" >&5
 $as_echo_n "checking whether $CC accepts and needs -fno-strict-aliasing... " >&6; }
 if ${ac_cv_no_strict_aliasing+:} false; then :
@@ -7416,7 +7421,7 @@ main ()
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
 
-	   CC="$ac_save_cc -fstrict-aliasing"
+	   CC="$save_CC -fstrict-aliasing"
            CFLAGS="$CFLAGS -Werror -Wstrict-aliasing"
            cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -7451,8 +7456,12 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_no_strict_aliasing" >&5
 $as_echo "$ac_cv_no_strict_aliasing" >&6; }
-     CFLAGS="$save_CFLAGS"
-     CC="$ac_save_cc"
+     CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+     CC=$save_CC
     if test "x$ac_cv_no_strict_aliasing" = xyes; then :
   BASECFLAGS="$BASECFLAGS -fno-strict-aliasing"
 fi
@@ -7706,7 +7715,7 @@ $as_echo "$ac_cv_enable_strict_prototypes_warning" >&6; }
   CFLAGS_NODIST="$CFLAGS_NODIST -Wstrict-prototypes"
 fi
 
-     ac_save_cc="$CC"
+     save_CC=$CC
      CC="$CC -Werror=implicit-function-declaration"
      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can make implicit function declaration an error in $CC" >&5
 $as_echo_n "checking if we can make implicit function declaration an error in $CC... " >&6; }
@@ -7739,13 +7748,13 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_implicit_function_declaration_error" >&5
 $as_echo "$ac_cv_enable_implicit_function_declaration_error" >&6; }
-     CC="$ac_save_cc"
+     CC=$save_CC
 
     if test "x$ac_cv_enable_implicit_function_declaration_error" = xyes; then :
   CFLAGS_NODIST="$CFLAGS_NODIST -Werror=implicit-function-declaration"
 fi
 
-     ac_save_cc="$CC"
+     save_CC=$CC
      CC="$CC -fvisibility=hidden"
      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can use visibility in $CC" >&5
 $as_echo_n "checking if we can use visibility in $CC... " >&6; }
@@ -7778,7 +7787,7 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_visibility" >&5
 $as_echo "$ac_cv_enable_visibility" >&6; }
-     CC="$ac_save_cc"
+     CC=$save_CC
 
     if test "x$ac_cv_enable_visibility" = xyes; then :
   CFLAGS_NODIST="$CFLAGS_NODIST -fvisibility=hidden"
@@ -8059,7 +8068,7 @@ $as_echo_n "checking whether $CC accepts -Kpthread... " >&6; }
 if ${ac_cv_kpthread+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_save_cc="$CC"
+  save_CC=$CC
 CC="$CC -Kpthread"
 if test "$cross_compiling" = yes; then :
   ac_cv_kpthread=no
@@ -8090,7 +8099,7 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 
-CC="$ac_save_cc"
+CC=$save_CC
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_kpthread" >&5
 $as_echo "$ac_cv_kpthread" >&6; }
@@ -8108,7 +8117,7 @@ $as_echo_n "checking whether $CC accepts -Kthread... " >&6; }
 if ${ac_cv_kthread+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_save_cc="$CC"
+  save_CC=$CC
 CC="$CC -Kthread"
 if test "$cross_compiling" = yes; then :
   ac_cv_kthread=no
@@ -8139,7 +8148,7 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 
-CC="$ac_save_cc"
+CC=$save_CC
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_kthread" >&5
 $as_echo "$ac_cv_kthread" >&6; }
@@ -8157,7 +8166,7 @@ $as_echo_n "checking whether $CC accepts -pthread... " >&6; }
 if ${ac_cv_pthread+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_save_cc="$CC"
+  save_CC=$CC
 CC="$CC -pthread"
 if test "$cross_compiling" = yes; then :
   ac_cv_pthread=no
@@ -8188,7 +8197,7 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 
-CC="$ac_save_cc"
+CC=$save_CC
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_pthread" >&5
 $as_echo "$ac_cv_pthread" >&6; }
@@ -8201,7 +8210,7 @@ if test ! -z "$CXX"
 then
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CXX also accepts flags for thread support" >&5
 $as_echo_n "checking whether $CXX also accepts flags for thread support... " >&6; }
-ac_save_cxx="$CXX"
+save_CXX=$CXX
 
 if test "$ac_cv_kpthread" = "yes"
 then
@@ -8233,7 +8242,7 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_cxx_thread" >&5
 $as_echo "$ac_cv_cxx_thread" >&6; }
 fi
-CXX="$ac_save_cxx"
+CXX=$save_CXX
 
 
 
@@ -8479,7 +8488,7 @@ fi
 
 # bluetooth/bluetooth.h has been known to not compile with -std=c99.
 # http://permalink.gmane.org/gmane.linux.bluez.kernel/22294
-SAVE_CFLAGS=$CFLAGS
+save_CFLAGS=$CFLAGS
 CFLAGS="-std=c99 $CFLAGS"
 for ac_header in bluetooth/bluetooth.h
 do :
@@ -8493,7 +8502,7 @@ fi
 
 done
 
-CFLAGS=$SAVE_CFLAGS
+CFLAGS=$save_CFLAGS
 
 # On Darwin (OS X) net/if.h requires sys/socket.h to be imported first.
 for ac_header in net/if.h
@@ -9492,7 +9501,7 @@ _ACEOF
 
 
 # if have pthread_t then define SIZEOF_PTHREAD_T
-ac_save_cc="$CC"
+save_CC=$CC
 if test "$ac_cv_kpthread" = "yes"
 then CC="$CC -Kpthread"
 elif test "$ac_cv_kthread" = "yes"
@@ -9649,7 +9658,7 @@ $as_echo "#define PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT 1" >>confdefs.h
 
 fi
 
-CC="$ac_save_cc"
+CC=$save_CC
 
 
 case $ac_sys_system/$ac_sys_release in
@@ -11661,7 +11670,7 @@ if test x$with_dbmliborder = xyes
 then
 as_fn_error $? "proper usage is --with-dbmliborder=db1:db2:..." "$LINENO" 5
 else
-  as_save_IFS=$IFS
+  save_IFS=$IFS
   IFS=:
   for db in $with_dbmliborder; do
     if test x$db != xndbm && test x$db != xgdbm && test x$db != xbdb
@@ -11669,7 +11678,7 @@ else
       as_fn_error $? "proper usage is --with-dbmliborder=db1:db2:..." "$LINENO" 5
     fi
   done
-  IFS=$as_save_IFS
+  IFS=$save_IFS
 fi
 fi
 
@@ -13716,7 +13725,7 @@ if test "x$ac_cv_header_zlib_h" = xyes; then :
 #define HAVE_ZLIB_H 1
 _ACEOF
 
-  save_LIBS="$LIBS"
+  save_LIBS=$LIBS
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gzread in -lz" >&5
 $as_echo_n "checking for gzread in -lz... " >&6; }
 if ${ac_cv_lib_z_gzread+:} false; then :
@@ -13762,7 +13771,7 @@ _ACEOF
 
 fi
 
-  LIBS="$save_LIBS"
+  LIBS=$save_LIBS
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
 $as_echo_n "checking for inflateCopy in -lz... " >&6; }
 if ${ac_cv_lib_z_inflateCopy+:} false; then :
@@ -13805,7 +13814,7 @@ $as_echo "#define HAVE_ZLIB_COPY 1" >>confdefs.h
 
 fi
 
-  LIBS="$save_LIBS"
+  LIBS=$save_LIBS
 
 fi
 
@@ -13820,7 +13829,7 @@ if test "x$ac_cv_header_bzlib_h" = xyes; then :
 #define HAVE_BZLIB_H 1
 _ACEOF
 
-  save_LIBS="$LIBS"
+  save_LIBS=$LIBS
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BZ2_bzCompress in -lbz2" >&5
 $as_echo_n "checking for BZ2_bzCompress in -lbz2... " >&6; }
 if ${ac_cv_lib_bz2_BZ2_bzCompress+:} false; then :
@@ -13866,7 +13875,7 @@ _ACEOF
 
 fi
 
-  LIBS="$save_LIBS"
+  LIBS=$save_LIBS
 
 fi
 
@@ -13881,7 +13890,7 @@ if test "x$ac_cv_header_lzma_h" = xyes; then :
 #define HAVE_LZMA_H 1
 _ACEOF
 
-  save_LIBS="$LIBS"
+  save_LIBS=$LIBS
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for lzma_easy_encoder in -llzma" >&5
 $as_echo_n "checking for lzma_easy_encoder in -llzma... " >&6; }
 if ${ac_cv_lib_lzma_lzma_easy_encoder+:} false; then :
@@ -13927,7 +13936,7 @@ _ACEOF
 
 fi
 
-  LIBS="$save_LIBS"
+  LIBS=$save_LIBS
 
 fi
 
@@ -16199,7 +16208,7 @@ if ${ac_cv_x87_double_rounding+:} false; then :
 else
 
 # $BASECFLAGS may affect the result
-ac_save_cc="$CC"
+save_CC=$CC
 CC="$CC $BASECFLAGS"
 if test "$cross_compiling" = yes; then :
   ac_cv_x87_double_rounding=no
@@ -16236,7 +16245,7 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 
-CC="$ac_save_cc"
+CC=$save_CC
 
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_x87_double_rounding" >&5
@@ -17711,7 +17720,7 @@ $as_echo "#define HAVE_STAT_TV_NSEC2 1" >>confdefs.h
 fi
 
 # first curses header check
-ac_save_cppflags="$CPPFLAGS"
+save_CPPFLAGS=$CPPFLAGS
 if test "$cross_compiling" = no; then
   CPPFLAGS="$CPPFLAGS -I/usr/include/ncursesw"
 fi
@@ -18272,7 +18281,7 @@ fi
 
 
 
-CPPFLAGS=$ac_save_cppflags
+CPPFLAGS=$save_CPPFLAGS
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for device files" >&5
 $as_echo "$as_me: checking for device files" >&6;}
@@ -18967,8 +18976,8 @@ fi
 
 # checks for POSIX shared memory, used by Modules/_multiprocessing/posixshmem.c
 # shm_* may only be available if linking against librt
-save_LIBS="$LIBS"
-save_includes_default="$ac_includes_default"
+save_LIBS=$LIBS
+save_ac_includes_default=$ac_includes_default
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing shm_open" >&5
 $as_echo_n "checking for library containing shm_open... " >&6; }
 if ${ac_cv_search_shm_open+:} false; then :
@@ -19064,8 +19073,8 @@ fi
 done
 
 # we don't want to link with librt always, restore LIBS
-LIBS="$save_LIBS"
-ac_includes_default="$save_includes_default"
+LIBS=$save_LIBS
+ac_includes_default=$save_ac_includes_default
 
 # Check for usable OpenSSL
 
@@ -19309,9 +19318,11 @@ if ${ac_cv_working_openssl+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-save_LIBS="$LIBS"
-save_CFLAGS="$CFLAGS"
-save_LDFLAGS="$LDFLAGS"
+save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
 LIBS="$LIBS $OPENSSL_LIBS"
 CFLAGS="$CFLAGS_NODIST $OPENSSL_INCLUDES"
 LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
@@ -19360,9 +19371,11 @@ else
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-LIBS="$save_LIBS"
-CFLAGS="$save_CFLAGS"
-LDFLAGS="$save_LDFLAGS"
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
 
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_working_openssl" >&5
@@ -19442,7 +19455,7 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-as_save_IFS=$IFS
+save_IFS=$IFS
 IFS=,
 for builtin_hash in $with_builtin_hashlib_hashes; do
     case $builtin_hash in #(
@@ -19463,7 +19476,7 @@ for builtin_hash in $with_builtin_hashlib_hashes; do
      ;;
 esac
 done
-IFS=$as_save_IFS
+IFS=$save_IFS
 
 # --with-experimental-isolated-subinterpreters
 

@@ -24,24 +24,24 @@ m4_ifdef(
 )dnl
 
 dnl Helpers for saving and restoring environment variables:
-dnl - _SAVE_VAR([VAR])         Helper for SAVE_ENV; stores VAR as save_VAR
-dnl - _RESTORE_VAR([VAR])      Helper for RESTORE_ENV; restores VAR from save_VAR
+dnl - SAVE_VAR([VAR])          Helper for SAVE_ENV; stores VAR as save_VAR
+dnl - RESTORE_VAR([VAR])       Helper for RESTORE_ENV; restores VAR from save_VAR
 dnl - SAVE_ENV                 Saves CFLAGS, LDFLAGS, LIBS, and CPPFLAGS
 dnl - RESTORE_ENV              Restores CFLAGS, LDFLAGS, LIBS, and CPPFLAGS
 dnl - WITH_SAVE_ENV([SCRIPT])  Runs SCRIPT wrapped with SAVE_ENV/RESTORE_ENV
-AC_DEFUN([_SAVE_VAR], [AS_VAR_COPY([save_][$1], [$1])])dnl
-AC_DEFUN([_RESTORE_VAR], [AS_VAR_COPY([$1], [save_][$1])])dnl
+AC_DEFUN([SAVE_VAR], [AS_VAR_COPY([save_][$1], [$1])])dnl
+AC_DEFUN([RESTORE_VAR], [AS_VAR_COPY([$1], [save_][$1])])dnl
 AC_DEFUN([SAVE_ENV],
-[_SAVE_VAR([CFLAGS])]
-[_SAVE_VAR([CPPFLAGS])]
-[_SAVE_VAR([LDFLAGS])]
-[_SAVE_VAR([LIBS])]
+[SAVE_VAR([CFLAGS])]
+[SAVE_VAR([CPPFLAGS])]
+[SAVE_VAR([LDFLAGS])]
+[SAVE_VAR([LIBS])]
 )dnl
 AC_DEFUN([RESTORE_ENV],
-[_RESTORE_VAR([CFLAGS])]
-[_RESTORE_VAR([CPPFLAGS])]
-[_RESTORE_VAR([LDFLAGS])]
-[_RESTORE_VAR([LIBS])]
+[RESTORE_VAR([CFLAGS])]
+[RESTORE_VAR([CPPFLAGS])]
+[RESTORE_VAR([LDFLAGS])]
+[RESTORE_VAR([LIBS])]
 )dnl
 AC_DEFUN([WITH_SAVE_ENV],
 [SAVE_ENV]
@@ -661,10 +661,11 @@ then
 	then
 		found_gcc=
 		found_clang=
-		as_save_IFS=$IFS; IFS=:
+		SAVE_VAR([IFS])
+                IFS=:
 		for as_dir in $PATH
 		do
-			IFS=$as_save_IFS
+			RESTORE_VAR([IFS])
 			if test -x "${as_dir}/gcc"; then
 				if test -z "${found_gcc}"; then
 					found_gcc="${as_dir}/gcc"
@@ -676,7 +677,7 @@ then
 				fi
 			fi
 		done
-		IFS=$as_save_IFS
+		RESTORE_VAR([IFS])
 
 		if test -n "$found_gcc" -a -n "$found_clang"
 		then
@@ -950,14 +951,14 @@ fi
 AC_SUBST(MULTIARCH_CPPFLAGS)
 
 AC_CACHE_CHECK([for -Wl,--no-as-needed], [ac_cv_wl_no_as_needed], [
-  save_LDFLAGS="$LDFLAGS"
+  SAVE_VAR([LDFLAGS])
   AS_VAR_APPEND([LDFLAGS], [-Wl,--no-as-needed])
   AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
     [NO_AS_NEEDED="-Wl,--no-as-needed"
      ac_cv_wl_no_as_needed=yes],
     [NO_AS_NEEDED=""
      ac_cv_wl_no_as_needed=no])
-  LDFLAGS="$save_LDFLAGS"
+  RESTORE_VAR([LDFLAGS])
 ])
 AC_SUBST(NO_AS_NEEDED)
 
@@ -1147,12 +1148,12 @@ AC_MSG_CHECKING(for --enable-profiling)
 AC_ARG_ENABLE(profiling,
               AS_HELP_STRING([--enable-profiling], [enable C-level code profiling with gprof (default is no)]))
 if test "x$enable_profiling" = xyes; then
-  ac_save_cc="$CC"
+  SAVE_VAR([CC])
   CC="$CC -pg"
   AC_LINK_IFELSE([AC_LANG_SOURCE([[int main() { return 0; }]])],
     [],
     [enable_profiling=no])
-  CC="$ac_save_cc"
+  RESTORE_VAR([CC])
 else
   enable_profiling=no
 fi
@@ -1717,16 +1718,16 @@ yes)
     # GCC produce warnings for legal Python code.  Enable
     # -fno-strict-aliasing on versions of GCC that support but produce
     # warnings.  See Issue3326
-     ac_save_cc="$CC"
+     SAVE_VAR([CC])
      CC="$CC -fno-strict-aliasing"
-     save_CFLAGS="$CFLAGS"
+     SAVE_ENV
      AC_CACHE_CHECK([whether $CC accepts and needs -fno-strict-aliasing],
                     [ac_cv_no_strict_aliasing],
        AC_COMPILE_IFELSE(
          [
 	   AC_LANG_PROGRAM([[]], [[]])
 	 ],[
-	   CC="$ac_save_cc -fstrict-aliasing"
+	   CC="$save_CC -fstrict-aliasing"
            CFLAGS="$CFLAGS -Werror -Wstrict-aliasing"
            AC_COMPILE_IFELSE(
 	     [
@@ -1740,8 +1741,8 @@ yes)
 	 ],[
 	   ac_cv_no_strict_aliasing=no
 	 ]))
-     CFLAGS="$save_CFLAGS"
-     CC="$ac_save_cc"
+     RESTORE_ENV
+     RESTORE_VAR([CC])
     AS_VAR_IF([ac_cv_no_strict_aliasing], [yes],
               [BASECFLAGS="$BASECFLAGS -fno-strict-aliasing"])
 
@@ -1787,7 +1788,7 @@ yes)
     AS_VAR_IF([ac_cv_enable_strict_prototypes_warning], [yes],
               [CFLAGS_NODIST="$CFLAGS_NODIST -Wstrict-prototypes"])
 
-     ac_save_cc="$CC"
+     SAVE_VAR([CC])
      CC="$CC -Werror=implicit-function-declaration"
      AC_CACHE_CHECK([if we can make implicit function declaration an error in $CC],
                     [ac_cv_enable_implicit_function_declaration_error],
@@ -1799,12 +1800,12 @@ yes)
 	 ],[
            ac_cv_enable_implicit_function_declaration_error=no
 	 ]))
-     CC="$ac_save_cc"
+     RESTORE_VAR([CC])
 
     AS_VAR_IF([ac_cv_enable_implicit_function_declaration_error], [yes],
               [CFLAGS_NODIST="$CFLAGS_NODIST -Werror=implicit-function-declaration"])
 
-     ac_save_cc="$CC"
+     SAVE_VAR([CC])
      CC="$CC -fvisibility=hidden"
      AC_CACHE_CHECK([if we can use visibility in $CC], [ac_cv_enable_visibility],
        AC_COMPILE_IFELSE(
@@ -1815,7 +1816,7 @@ yes)
 	 ],[
            ac_cv_enable_visibility=no
 	 ]))
-     CC="$ac_save_cc"
+     RESTORE_VAR([CC])
 
     AS_VAR_IF([ac_cv_enable_visibility], [yes],
               [CFLAGS_NODIST="$CFLAGS_NODIST -fvisibility=hidden"])
@@ -2048,7 +2049,7 @@ else
 # so we need to run a program to see whether it really made the
 # function available.
 AC_CACHE_CHECK([whether $CC accepts -Kpthread], [ac_cv_kpthread],
-[ac_save_cc="$CC"
+[SAVE_VAR([CC])
 CC="$CC -Kpthread"
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <stdio.h>
@@ -2064,7 +2065,7 @@ int main(){
   return 0;
 }
 ]])],[ac_cv_kpthread=yes],[ac_cv_kpthread=no],[ac_cv_kpthread=no])
-CC="$ac_save_cc"])
+RESTORE_VAR([CC])])
 fi
 
 if test $ac_cv_kpthread = no -a $ac_cv_pthread_is_default = no
@@ -2075,7 +2076,7 @@ then
 # so we need to run a program to see whether it really made the
 # function available.
 AC_CACHE_CHECK([whether $CC accepts -Kthread], [ac_cv_kthread],
-[ac_save_cc="$CC"
+[SAVE_VAR([CC])
 CC="$CC -Kthread"
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <stdio.h>
@@ -2091,7 +2092,7 @@ int main(){
   return 0;
 }
 ]])],[ac_cv_kthread=yes],[ac_cv_kthread=no],[ac_cv_kthread=no])
-CC="$ac_save_cc"])
+RESTORE_VAR([CC])])
 fi
 
 if test $ac_cv_kthread = no -a $ac_cv_pthread_is_default = no
@@ -2102,7 +2103,7 @@ then
 # so we need to run a program to see whether it really made the
 # function available.
 AC_CACHE_CHECK([whether $CC accepts -pthread], [ac_cv_pthread],
-[ac_save_cc="$CC"
+[SAVE_VAR([CC])
 CC="$CC -pthread"
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <stdio.h>
@@ -2118,7 +2119,7 @@ int main(){
   return 0;
 }
 ]])],[ac_cv_pthread=yes],[ac_cv_pthread=no],[ac_cv_pthread=no])
-CC="$ac_save_cc"])
+RESTORE_VAR([CC])])
 fi
 
 # If we have set a CC compiler flag for thread support then
@@ -2127,7 +2128,7 @@ ac_cv_cxx_thread=no
 if test ! -z "$CXX"
 then
 AC_MSG_CHECKING(whether $CXX also accepts flags for thread support)
-ac_save_cxx="$CXX"
+SAVE_VAR([CXX])
 
 if test "$ac_cv_kpthread" = "yes"
 then
@@ -2158,7 +2159,7 @@ then
 fi
 AC_MSG_RESULT($ac_cv_cxx_thread)
 fi
-CXX="$ac_save_cxx"
+RESTORE_VAR([CXX])
 
 dnl # check for ANSI or K&R ("traditional") preprocessor
 dnl AC_MSG_CHECKING(for C preprocessor type)
@@ -2194,10 +2195,10 @@ AC_HEADER_MAJOR
 
 # bluetooth/bluetooth.h has been known to not compile with -std=c99.
 # http://permalink.gmane.org/gmane.linux.bluez.kernel/22294
-SAVE_CFLAGS=$CFLAGS
+SAVE_VAR([CFLAGS])
 CFLAGS="-std=c99 $CFLAGS"
 AC_CHECK_HEADERS(bluetooth/bluetooth.h)
-CFLAGS=$SAVE_CFLAGS
+RESTORE_VAR([CFLAGS])
 
 # On Darwin (OS X) net/if.h requires sys/socket.h to be imported first.
 AC_CHECK_HEADERS([net/if.h], [], [],
@@ -2377,7 +2378,7 @@ AC_CHECK_SIZEOF(time_t, [], [
 ])
 
 # if have pthread_t then define SIZEOF_PTHREAD_T
-ac_save_cc="$CC"
+SAVE_VAR([CC])
 if test "$ac_cv_kpthread" = "yes"
 then CC="$CC -Kpthread"
 elif test "$ac_cv_kthread" = "yes"
@@ -2418,7 +2419,7 @@ AS_VAR_IF([ac_cv_pthread_key_t_is_arithmetic_type], [yes], [
               [Define if pthread_key_t is compatible with int.])
 ])
 
-CC="$ac_save_cc"
+RESTORE_VAR([CC])
 
 AC_SUBST(OTHER_LIBTOOL_OPT)
 case $ac_sys_system/$ac_sys_release in
@@ -2878,9 +2879,9 @@ AS_VAR_IF([ac_cv_lib_uuid_uuid_generate_time_safe], [yes], [
 ])
 
 # check for libuuid from util-linux
-save_LIBS=$LIBS
+SAVE_VAR([LIBS])
 AC_CHECK_LIB([uuid], [uuid_generate_time])
-LIBS=$save_LIBS
+RESTORE_VAR([LIBS])
 
 # AIX provides support for RFC4122 (uuid) in libc.a starting with AIX 6.1 (anno 2007)
 # FreeBSD and OpenBSD provides support in libc as well.
@@ -3349,7 +3350,7 @@ if test x$with_dbmliborder = xyes
 then
 AC_MSG_ERROR([proper usage is --with-dbmliborder=db1:db2:...])
 else
-  as_save_IFS=$IFS
+  SAVE_VAR([IFS])
   IFS=:
   for db in $with_dbmliborder; do
     if test x$db != xndbm && test x$db != xgdbm && test x$db != xbdb
@@ -3357,7 +3358,7 @@ else
       AC_MSG_ERROR([proper usage is --with-dbmliborder=db1:db2:...])
     fi
   done
-  IFS=$as_save_IFS
+  RESTORE_VAR([IFS])
 fi])
 AC_MSG_RESULT($with_dbmliborder)
 
@@ -4058,23 +4059,23 @@ fi
 
 dnl Check for compression libraries
 AC_CHECK_HEADERS([zlib.h], [
-  save_LIBS="$LIBS"
+  SAVE_VAR([LIBS])
   AC_CHECK_LIB([z], [gzread])
-  LIBS="$save_LIBS"
+  RESTORE_VAR([LIBS])
   AC_CHECK_LIB([z], [inflateCopy], [AC_DEFINE(HAVE_ZLIB_COPY, 1, [Define if the zlib library has inflateCopy])])
-  LIBS="$save_LIBS"
+  RESTORE_VAR([LIBS])
 ])
 
 AC_CHECK_HEADERS([bzlib.h], [
-  save_LIBS="$LIBS"
+  SAVE_VAR([LIBS])
   AC_CHECK_LIB([bz2], [BZ2_bzCompress])
-  LIBS="$save_LIBS"
+  RESTORE_VAR([LIBS])
 ])
 
 AC_CHECK_HEADERS([lzma.h], [
-  save_LIBS="$LIBS"
+  SAVE_VAR([LIBS])
   AC_CHECK_LIB([lzma], [lzma_easy_encoder])
-  LIBS="$save_LIBS"
+  RESTORE_VAR([LIBS])
 ])
 
 PY_CHECK_FUNC([hstrerror], [#include <netdb.h>])
@@ -4663,7 +4664,7 @@ AS_VAR_IF([ac_cv_gcc_asm_for_mc68881], [yes], [
 # 0 otherwise.  See http://bugs.python.org/issue2937 for more info.
 AC_CACHE_CHECK([for x87-style double rounding], [ac_cv_x87_double_rounding], [
 # $BASECFLAGS may affect the result
-ac_save_cc="$CC"
+SAVE_VAR([CC])
 CC="$CC $BASECFLAGS"
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <stdlib.h>
@@ -4688,7 +4689,7 @@ int main() {
 [ac_cv_x87_double_rounding=no],
 [ac_cv_x87_double_rounding=yes],
 [ac_cv_x87_double_rounding=no])
-CC="$ac_save_cc"
+RESTORE_VAR([CC])
 ])
 
 AS_VAR_IF([ac_cv_x87_double_rounding], [yes], [
@@ -5287,7 +5288,7 @@ then
 fi
 
 # first curses header check
-ac_save_cppflags="$CPPFLAGS"
+SAVE_VAR([CPPFLAGS])
 if test "$cross_compiling" = no; then
   CPPFLAGS="$CPPFLAGS -I/usr/include/ncursesw"
 fi
@@ -5374,7 +5375,7 @@ PY_CHECK_CURSES_FUNC([filter])
 PY_CHECK_CURSES_FUNC([has_key])
 PY_CHECK_CURSES_FUNC([typeahead])
 PY_CHECK_CURSES_FUNC([use_env])
-CPPFLAGS=$ac_save_cppflags
+RESTORE_VAR([CPPFLAGS])
 
 AC_MSG_NOTICE([checking for device files])
 
@@ -5784,8 +5785,8 @@ AS_VAR_IF([ac_cv_func_getrandom], [yes], [
 
 # checks for POSIX shared memory, used by Modules/_multiprocessing/posixshmem.c
 # shm_* may only be available if linking against librt
-save_LIBS="$LIBS"
-save_includes_default="$ac_includes_default"
+SAVE_VAR([LIBS])
+SAVE_VAR([ac_includes_default])
 AC_SEARCH_LIBS(shm_open, rt)
 if test "$ac_cv_search_shm_open" = "-lrt"; then
     AC_DEFINE(SHM_NEEDS_LIBRT, 1,
@@ -5803,8 +5804,8 @@ ${ac_includes_default}
 "
 AC_CHECK_FUNCS([shm_open shm_unlink])
 # we don't want to link with librt always, restore LIBS
-LIBS="$save_LIBS"
-ac_includes_default="$save_includes_default"
+RESTORE_VAR([LIBS])
+RESTORE_VAR([ac_includes_default])
 
 # Check for usable OpenSSL
 AX_CHECK_OPENSSL([have_openssl=yes],[have_openssl=no])
@@ -5835,9 +5836,7 @@ AC_SUBST([OPENSSL_RPATH])
 
 # check if OpenSSL libraries work as expected
 AC_CACHE_CHECK([whether OpenSSL provides required APIs], [ac_cv_working_openssl], [
-save_LIBS="$LIBS"
-save_CFLAGS="$CFLAGS"
-save_LDFLAGS="$LDFLAGS"
+SAVE_ENV
 LIBS="$LIBS $OPENSSL_LIBS"
 CFLAGS="$CFLAGS_NODIST $OPENSSL_INCLUDES"
 LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
@@ -5871,9 +5870,7 @@ EVP_PBE_scrypt(NULL, 0, NULL, 0, 2, 8, 1, 0, NULL, 0);
 ]])],
   [ac_cv_working_openssl=yes],
   [ac_cv_working_openssl=no])
-LIBS="$save_LIBS"
-CFLAGS="$save_CFLAGS"
-LDFLAGS="$save_LDFLAGS"
+RESTORE_ENV
 ])
 
 # ssl module default cipher suite string
@@ -5931,7 +5928,7 @@ AC_ARG_WITH(builtin-hashlib-hashes,
 AC_MSG_RESULT($with_builtin_hashlib_hashes)
 AC_DEFINE_UNQUOTED(PY_BUILTIN_HASHLIB_HASHES, "$with_builtin_hashlib_hashes")
 
-as_save_IFS=$IFS
+SAVE_VAR([IFS])
 IFS=,
 for builtin_hash in $with_builtin_hashlib_hashes; do
     AS_CASE($builtin_hash,
@@ -5943,7 +5940,7 @@ for builtin_hash in $with_builtin_hashlib_hashes; do
       [blake2], [with_builtin_blake2=yes]
     )
 done
-IFS=$as_save_IFS
+RESTORE_VAR([IFS])
 
 # --with-experimental-isolated-subinterpreters
 AH_TEMPLATE(EXPERIMENTAL_ISOLATED_SUBINTERPRETERS,
