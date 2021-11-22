@@ -51,9 +51,6 @@
    significant word first */
 #undef FLOAT_WORDS_BIGENDIAN
 
-/* Define if flock needs to be linked with bsd library. */
-#undef FLOCK_NEEDS_LIBBSD
-
 /* Define if getpgrp() must be called as getpgrp(0). */
 #undef GETPGRP_HAVE_ARG
 
@@ -598,9 +595,6 @@
 /* Define to 1 if you have the `lchown' function. */
 #undef HAVE_LCHOWN
 
-/* Define to 1 if you have the `bz2' library (-lbz2). */
-#undef HAVE_LIBBZ2
-
 /* Define to 1 if you have the `db' library (-ldb). */
 #undef HAVE_LIBDB
 
@@ -622,9 +616,6 @@
 /* Define to 1 if you have the <libintl.h> header file. */
 #undef HAVE_LIBINTL_H
 
-/* Define to 1 if you have the `lzma' library (-llzma). */
-#undef HAVE_LIBLZMA
-
 /* Define to 1 if you have the `ndbm' library (-lndbm). */
 #undef HAVE_LIBNDBM
 
@@ -642,9 +633,6 @@
 
 /* Define to 1 if you have the `uuid' library (-luuid). */
 #undef HAVE_LIBUUID
-
-/* Define to 1 if you have the `z' library (-lz). */
-#undef HAVE_LIBZ
 
 /* Define if you have the 'link' function. */
 #undef HAVE_LINK
@@ -907,6 +895,9 @@
 
 /* Define if you have readline 4.0 */
 #undef HAVE_RL_RESIZE_TERMINAL
+
+/* Define to 1 if you have the <rpc/rpc.h> header file. */
+#undef HAVE_RPC_RPC_H
 
 /* Define to 1 if you have the `rtpSpawn' function. */
 #undef HAVE_RTPSPAWN

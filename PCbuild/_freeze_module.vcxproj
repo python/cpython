@@ -236,101 +236,141 @@
       <ModName>importlib._bootstrap</ModName>
       <IntFile>$(IntDir)importlib._bootstrap.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\importlib._bootstrap.h</OutFile>
+      <DeepIntFile>$(IntDir)importlib._bootstrap.g.c</DeepIntFile>
+      <DeepOutFile>$(PySourcePath)Python\deepfreeze\df.importlib._bootstrap.c</DeepOutFile>
     </None>
     <None Include="..\Lib\importlib\_bootstrap_external.py">
       <ModName>importlib._bootstrap_external</ModName>
       <IntFile>$(IntDir)importlib._bootstrap_external.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\importlib._bootstrap_external.h</OutFile>
+      <DeepIntFile>$(IntDir)importlib._bootstrap_external.g.c</DeepIntFile>
+      <DeepOutFile>$(PySourcePath)Python\deepfreeze\df.importlib._bootstrap_external.c</DeepOutFile>
     </None>
     <None Include="..\Lib\zipimport.py">
       <ModName>zipimport</ModName>
       <IntFile>$(IntDir)zipimport.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\zipimport.h</OutFile>
+      <DeepIntFile>$(IntDir)zipimport.g.c</DeepIntFile>
+      <DeepOutFile>$(PySourcePath)Python\deepfreeze\df.zipimport.c</DeepOutFile>
     </None>
     <None Include="..\Lib\abc.py">
       <ModName>abc</ModName>
       <IntFile>$(IntDir)abc.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\abc.h</OutFile>
+      <DeepIntFile>$(IntDir)abc.g.c</DeepIntFile>
+      <DeepOutFile>$(PySourcePath)Python\deepfreeze\df.abc.c</DeepOutFile>
     </None>
     <None Include="..\Lib\codecs.py">
       <ModName>codecs</ModName>
       <IntFile>$(IntDir)codecs.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\codecs.h</OutFile>
+      <DeepIntFile>$(IntDir)codecs.g.c</DeepIntFile>
+      <DeepOutFile>$(PySourcePath)Python\deepfreeze\df.codecs.c</DeepOutFile>
     </None>
     <None Include="..\Lib\io.py">
       <ModName>io</ModName>
       <IntFile>$(IntDir)io.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\io.h</OutFile>
+      <DeepIntFile>$(IntDir)io.g.c</DeepIntFile>
+      <DeepOutFile>$(PySourcePath)Python\deepfreeze\df.io.c</DeepOutFile>
     </None>
     <None Include="..\Lib\_collections_abc.py">
       <ModName>_collections_abc</ModName>
       <IntFile>$(IntDir)_collections_abc.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\_collections_abc.h</OutFile>
+      <DeepIntFile>$(IntDir)_collections_abc.g.c</DeepIntFile>
+      <DeepOutFile>$(PySourcePath)Python\deepfreeze\df._collections_abc.c</DeepOutFile>
     </None>
     <None Include="..\Lib\_sitebuiltins.py">
       <ModName>_sitebuiltins</ModName>
       <IntFile>$(IntDir)_sitebuiltins.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\_sitebuiltins.h</OutFile>
+      <DeepIntFile>$(IntDir)_sitebuiltins.g.c</DeepIntFile>
+      <DeepOutFile>$(PySourcePath)Python\deepfreeze\df._sitebuiltins.c</DeepOutFile>
     </None>
     <None Include="..\Lib\genericpath.py">
       <ModName>genericpath</ModName>
       <IntFile>$(IntDir)genericpath.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\genericpath.h</OutFile>
+      <DeepIntFile>$(IntDir)genericpath.g.c</DeepIntFile>
+      <DeepOutFile>$(PySourcePath)Python\deepfreeze\df.genericpath.c</DeepOutFile>
     </None>
     <None Include="..\Lib\ntpath.py">
       <ModName>ntpath</ModName>
       <IntFile>$(IntDir)ntpath.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\ntpath.h</OutFile>
+      <DeepIntFile>$(IntDir)ntpath.g.c</DeepIntFile>
+      <DeepOutFile>$(PySourcePath)Python\deepfreeze\df.ntpath.c</DeepOutFile>
     </None>
     <None Include="..\Lib\posixpath.py">
       <ModName>posixpath</ModName>
       <IntFile>$(IntDir)posixpath.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\posixpath.h</OutFile>
+      <DeepIntFile>$(IntDir)posixpath.g.c</DeepIntFile>
+      <DeepOutFile>$(PySourcePath)Python\deepfreeze\df.posixpath.c</DeepOutFile>
     </None>
     <None Include="..\Lib\os.py">
       <ModName>os</ModName>
       <IntFile>$(IntDir)os.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\os.h</OutFile>
+      <DeepIntFile>$(IntDir)os.g.c</DeepIntFile>
+      <DeepOutFile>$(PySourcePath)Python\deepfreeze\df.os.c</DeepOutFile>
     </None>
     <None Include="..\Lib\site.py">
       <ModName>site</ModName>
       <IntFile>$(IntDir)site.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\site.h</OutFile>
+      <DeepIntFile>$(IntDir)site.g.c</DeepIntFile>
+      <DeepOutFile>$(PySourcePath)Python\deepfreeze\df.site.c</DeepOutFile>
     </None>
     <None Include="..\Lib\stat.py">
       <ModName>stat</ModName>
       <IntFile>$(IntDir)stat.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\stat.h</OutFile>
+      <DeepIntFile>$(IntDir)stat.g.c</DeepIntFile>
+      <DeepOutFile>$(PySourcePath)Python\deepfreeze\df.stat.c</DeepOutFile>
     </None>
     <None Include="..\Lib\__hello__.py">
       <ModName>__hello__</ModName>
       <IntFile>$(IntDir)__hello__.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\__hello__.h</OutFile>
+      <DeepIntFile>$(IntDir)__hello__.g.c</DeepIntFile>
+      <DeepOutFile>$(PySourcePath)Python\deepfreeze\df.__hello__.c</DeepOutFile>
     </None>
     <None Include="..\Lib\__phello__\__init__.py">
       <ModName>__phello__</ModName>
       <IntFile>$(IntDir)__phello__.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\__phello__.h</OutFile>
+      <DeepIntFile>$(IntDir)__phello__.g.c</DeepIntFile>
+      <DeepOutFile>$(PySourcePath)Python\deepfreeze\df.__phello__.c</DeepOutFile>
     </None>
     <None Include="..\Lib\__phello__\ham\__init__.py">
       <ModName>__phello__.ham</ModName>
       <IntFile>$(IntDir)__phello__.ham.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\__phello__.ham.h</OutFile>
+      <DeepIntFile>$(IntDir)__phello__.ham.g.c</DeepIntFile>
+      <DeepOutFile>$(PySourcePath)Python\deepfreeze\df.__phello__.ham.c</DeepOutFile>
     </None>
     <None Include="..\Lib\__phello__\ham\eggs.py">
       <ModName>__phello__.ham.eggs</ModName>
       <IntFile>$(IntDir)__phello__.ham.eggs.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\__phello__.ham.eggs.h</OutFile>
+      <DeepIntFile>$(IntDir)__phello__.ham.eggs.g.c</DeepIntFile>
+      <DeepOutFile>$(PySourcePath)Python\deepfreeze\df.__phello__.ham.eggs.c</DeepOutFile>
     </None>
     <None Include="..\Lib\__phello__\spam.py">
       <ModName>__phello__.spam</ModName>
       <IntFile>$(IntDir)__phello__.spam.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\__phello__.spam.h</OutFile>
+      <DeepIntFile>$(IntDir)__phello__.spam.g.c</DeepIntFile>
+      <DeepOutFile>$(PySourcePath)Python\deepfreeze\df.__phello__.spam.c</DeepOutFile>
     </None>
     <None Include="..\Tools\freeze\flag.py">
       <ModName>frozen_only</ModName>
       <IntFile>$(IntDir)frozen_only.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\frozen_only.h</OutFile>
+      <DeepIntFile>$(IntDir)frozen_only.g.c</DeepIntFile>
+      <DeepOutFile>$(PySourcePath)Python\deepfreeze\df.frozen_only.c</DeepOutFile>
     </None>
     <!-- END frozen modules -->
   </ItemGroup>
@@ -338,16 +378,28 @@
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
   <Target Name="_RebuildFrozen" AfterTargets="AfterBuild" Condition="$(Configuration) != 'PGUpdate'">
-    <Exec Command='"$(TargetPath)" "%(None.ModName)" "%(None.FullPath)" "%(None.IntFile)"' />
+    <Exec Command='"$(TargetPath)" "%(None.ModName)" "%(None.FullPath)" "%(None.DeepIntFile)"' />
 
-    <Copy SourceFiles="%(None.IntFile)"
+    <Copy SourceFiles="%(None.DeepIntFile)"
           DestinationFiles="%(None.OutFile)"
-          Condition="!Exists(%(None.OutFile)) or (Exists(%(None.IntFile)) and '$([System.IO.File]::ReadAllText(%(None.OutFile)).Replace(`&#x0D;&#x0A;`, `&#x0A;`))' != '$([System.IO.File]::ReadAllText(%(None.IntFile)).Replace(`&#x0D;&#x0A;`, `&#x0A;`))')">
+          Condition="!Exists(%(None.OutFile)) or (Exists(%(None.DeepIntFile)) and '$([System.IO.File]::ReadAllText(%(None.OutFile)).Replace(`&#x0D;&#x0A;`, `&#x0A;`))' != '$([System.IO.File]::ReadAllText(%(None.DeepIntFile)).Replace(`&#x0D;&#x0A;`, `&#x0A;`))')">
       <Output TaskParameter="CopiedFiles" ItemName="_Updated" />
     </Copy>
 
     <Message Text="Updated files: @(_Updated->'%(Filename)%(Extension)',', ')"
              Condition="'@(_Updated)' != ''" Importance="high" />
+  </Target>
+  <Target Name="_RebuildDeepFrozen" AfterTargets="_RebuildFrozen" Condition="$(Configuration) != 'PGUpdate'">
+    <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\scripts\deepfreeze.py" "%(None.OutFile)" "-m" "%(None.ModName)" -o "%(None.IntFile)"' />
+
+    <Copy SourceFiles="%(None.IntFile)"
+          DestinationFiles="%(None.DeepOutFile)"
+          Condition="!Exists(%(None.DeepOutFile)) or (Exists(%(None.IntFile)) and '$([System.IO.File]::ReadAllText(%(None.DeepOutFile)).Replace(`&#x0D;&#x0A;`, `&#x0A;`))' != '$([System.IO.File]::ReadAllText(%(None.IntFile)).Replace(`&#x0D;&#x0A;`, `&#x0A;`))')">
+      <Output TaskParameter="CopiedFiles" ItemName="_DeepUpdated" />
+    </Copy>
+
+    <Message Text="Updated files: @(_DeepUpdated->'%(Filename)%(Extension)',', ')"
+             Condition="'@(_DeepUpdated)' != ''" Importance="high" />
   </Target>
   <Target Name="_CleanFrozen" BeforeTargets="CoreClean" Condition="$(Configuration) != 'PGUpdate'">
     <ItemGroup>

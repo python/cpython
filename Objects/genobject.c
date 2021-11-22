@@ -134,6 +134,7 @@ gen_dealloc(PyGenObject *gen)
     InterpreterFrame *frame = gen->gi_xframe;
     if (frame != NULL) {
         gen->gi_xframe = NULL;
+        frame->generator = NULL;
         frame->previous = NULL;
         _PyFrame_Clear(frame, 1);
     }

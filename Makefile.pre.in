@@ -1709,10 +1709,10 @@ quicktest:	@DEF_MAKE_RULE@ platform
 # SSL tests
 .PHONY: multisslcompile multissltest
 multisslcompile: build_all
-	$(RUNSHARED) ./$(BUILDPYTHON) Tools/ssl/multissltests.py --steps=modules
+	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/ssl/multissltests.py --steps=modules
 
 multissltest: build_all
-	$(RUNSHARED) ./$(BUILDPYTHON) Tools/ssl/multissltests.py
+	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/ssl/multissltests.py
 
 install: @FRAMEWORKINSTALLFIRST@ commoninstall bininstall maninstall @FRAMEWORKINSTALLLAST@
 	if test "x$(ENSUREPIP)" != "xno"  ; then \

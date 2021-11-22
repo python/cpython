@@ -3757,7 +3757,7 @@ check_eval_breaker:
             PyObject *match_type = POP();
             PyObject *exc_type = TOP();
             PyObject *exc_value = SECOND();
-            if (!check_except_star_type_valid(tstate, match_type)) {
+            if (check_except_star_type_valid(tstate, match_type) < 0) {
                 Py_DECREF(match_type);
                 goto error;
             }
@@ -3833,9 +3833,9 @@ check_eval_breaker:
         TARGET(JUMP_IF_NOT_EXC_MATCH) {
             PyObject *right = POP();
             PyObject *left = TOP();
-            if (!check_except_type_valid(tstate, right)) {
-                Py_DECREF(right);
-                goto error;
+            if (check_except_type_valid(tstate, right) < 0) {
+                 Py_DECREF(right);
+                 goto error;
             }
 
             int res = PyErr_GivenExceptionMatches(left, right);
@@ -3954,7 +3954,7 @@ check_eval_breaker:
             }
             else if (err == 0)
                 ;
-            else 
+            else
                 goto error;
             DISPATCH();
         }
@@ -6100,7 +6100,7 @@ raise_error:
    complicated for inlining).
 */
 
-static int 
+static int
 exception_group_match(
     PyObject *exc_type, PyObject* exc_value, PyObject *match_type,
     PyObject **match, PyObject **rest)
@@ -7185,7 +7185,7 @@ import_all_from(PyThreadState *tstate, PyObject *locals, PyObject *v)
 }
 
 #define CANNOT_CATCH_MSG "catching classes that do not inherit from "\
-                          "BaseException is not allowed"
+                         "BaseException is not allowed"
 
 #define CANNOT_EXCEPT_STAR_EG "catching ExceptionGroup with except* "\
                           "is not allowed. Use except instead."
@@ -7201,7 +7201,7 @@ check_except_type_valid(PyThreadState *tstate, PyObject* right)
             if (!PyExceptionClass_Check(exc)) {
                 _PyErr_SetString(tstate, PyExc_TypeError,
                     CANNOT_CATCH_MSG);
-                return 0;
+                return -1;
             }
         }
     }
@@ -7209,17 +7209,17 @@ check_except_type_valid(PyThreadState *tstate, PyObject* right)
         if (!PyExceptionClass_Check(right)) {
             _PyErr_SetString(tstate, PyExc_TypeError,
                 CANNOT_CATCH_MSG);
-            return 0;
+            return -1;
         }
     }
-    return 1;
+    return 0;
 }
 
 static int
 check_except_star_type_valid(PyThreadState *tstate, PyObject* right)
 {
-    if (!check_except_type_valid(tstate, right)) {
-        return 0;
+    if (check_except_type_valid(tstate, right) < 0) {
+        return -1;
     }
     // reject except *ExceptionGroup
     int res = 0;
@@ -7230,7 +7230,7 @@ check_except_star_type_valid(PyThreadState *tstate, PyObject* right)
             PyObject *exc = PyTuple_GET_ITEM(right, i);
             res = PyObject_IsSubclass(exc, PyExc_BaseExceptionGroup);
             if (res == -1) {
-                return 0;
+                return -1;
             }
             if (res == 1) {
                 break;
@@ -7240,15 +7240,15 @@ check_except_star_type_valid(PyThreadState *tstate, PyObject* right)
     else {
         res = PyObject_IsSubclass(right, PyExc_BaseExceptionGroup);
         if (res == -1) {
-            return 0;
+            return -1;
         }
     }
     if (res == 1) {
         _PyErr_SetString(tstate, PyExc_TypeError,
             CANNOT_EXCEPT_STAR_EG);
-        return 0;
+            return -1;
     }
-    return 1;
+    return 0;
 }
 
 static int
