@@ -688,6 +688,8 @@ MODULE_OSSAUDIODEV_FALSE
 MODULE_OSSAUDIODEV_TRUE
 MODULE_GRP_FALSE
 MODULE_GRP_TRUE
+MODULE_MMAP_FALSE
+MODULE_MMAP_TRUE
 MODULE_FCNTL_FALSE
 MODULE_FCNTL_TRUE
 MODULE__DATETIME_FALSE
@@ -700,8 +702,12 @@ MODULE__STATISTICS_FALSE
 MODULE__STATISTICS_TRUE
 MODULE__ZONEINFO_FALSE
 MODULE__ZONEINFO_TRUE
+MODULE__XXSUBINTERPRETERS_FALSE
+MODULE__XXSUBINTERPRETERS_TRUE
 MODULE__TYPING_FALSE
 MODULE__TYPING_TRUE
+MODULE_SELECT_FALSE
+MODULE_SELECT_TRUE
 MODULE__RANDOM_FALSE
 MODULE__RANDOM_TRUE
 MODULE__QUEUE_FALSE
@@ -19688,6 +19694,15 @@ fi
   as_fn_append MODULE_BLOCK "MODULE__RANDOM=yes$as_nl"
 
      if true; then
+  MODULE_SELECT_TRUE=
+  MODULE_SELECT_FALSE='#'
+else
+  MODULE_SELECT_TRUE='#'
+  MODULE_SELECT_FALSE=
+fi
+  as_fn_append MODULE_BLOCK "MODULE_SELECT=yes$as_nl"
+
+     if true; then
   MODULE__TYPING_TRUE=
   MODULE__TYPING_FALSE='#'
 else
@@ -19695,6 +19710,15 @@ else
   MODULE__TYPING_FALSE=
 fi
   as_fn_append MODULE_BLOCK "MODULE__TYPING=yes$as_nl"
+
+     if true; then
+  MODULE__XXSUBINTERPRETERS_TRUE=
+  MODULE__XXSUBINTERPRETERS_FALSE='#'
+else
+  MODULE__XXSUBINTERPRETERS_TRUE='#'
+  MODULE__XXSUBINTERPRETERS_FALSE=
+fi
+  as_fn_append MODULE_BLOCK "MODULE__XXSUBINTERPRETERS=yes$as_nl"
 
      if true; then
   MODULE__ZONEINFO_TRUE=
@@ -19786,6 +19810,42 @@ fi
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_fcntl" >&5
 $as_echo "$py_cv_module_fcntl" >&6; }
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module mmap" >&5
+$as_echo_n "checking for stdlib extension module mmap... " >&6; }
+      case $py_stdlib_not_available in #(
+  *mmap*) :
+    py_cv_module_mmap=n/a ;; #(
+  *) :
+    if true; then :
+  if test "$ac_cv_header_sys_mman_h" = "yes" -a "$ac_cv_header_sys_stat_h" = "yes"; then :
+  py_cv_module_mmap=yes
+else
+  py_cv_module_mmap=missing
+fi
+else
+  py_cv_module_mmap=disabled
+fi
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE_MMAP=$py_cv_module_mmap$as_nl"
+  if test "x$py_cv_module_mmap" = xyes; then :
+
+
+
+
+fi
+   if test "$py_cv_module_mmap" = yes; then
+  MODULE_MMAP_TRUE=
+  MODULE_MMAP_FALSE='#'
+else
+  MODULE_MMAP_TRUE='#'
+  MODULE_MMAP_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_mmap" >&5
+$as_echo "$py_cv_module_mmap" >&6; }
 
 
 
@@ -20901,8 +20961,16 @@ if test -z "${MODULE__RANDOM_TRUE}" && test -z "${MODULE__RANDOM_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__RANDOM\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${MODULE_SELECT_TRUE}" && test -z "${MODULE_SELECT_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_SELECT\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${MODULE__TYPING_TRUE}" && test -z "${MODULE__TYPING_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__TYPING\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__XXSUBINTERPRETERS_TRUE}" && test -z "${MODULE__XXSUBINTERPRETERS_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__XXSUBINTERPRETERS\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__ZONEINFO_TRUE}" && test -z "${MODULE__ZONEINFO_FALSE}"; then
@@ -20927,6 +20995,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_FCNTL_TRUE}" && test -z "${MODULE_FCNTL_FALSE}"; then
   as_fn_error $? "conditional \"MODULE_FCNTL\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_MMAP_TRUE}" && test -z "${MODULE_MMAP_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_MMAP\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_GRP_TRUE}" && test -z "${MODULE_GRP_FALSE}"; then
