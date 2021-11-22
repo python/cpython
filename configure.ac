@@ -2188,7 +2188,7 @@ sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
 libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
 linux/tipc.h linux/random.h spawn.h util.h alloca.h endian.h \
 sys/endian.h sys/sysmacros.h linux/memfd.h linux/wait.h sys/memfd.h \
-sys/mman.h sys/eventfd.h linux/soundcard.h sys/soundcard.h syslog.h netinet/in.h)
+sys/mman.h sys/eventfd.h linux/soundcard.h sys/soundcard.h syslog.h)
 AC_HEADER_DIRENT
 AC_HEADER_MAJOR
 
