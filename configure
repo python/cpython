@@ -19817,7 +19817,7 @@ $as_echo_n "checking for stdlib extension module fcntl... " >&6; }
   *) :
 
       if true; then :
-  if test "$ac_cv_header_sys_ioctl_h" = "yes"                             -a "$ac_cv_header_fcntl_h"     = "yes"; then :
+  if test "$ac_cv_header_sys_ioctl_h" = "yes" -a "$ac_cv_header_fcntl_h" = "yes"; then :
   py_cv_module_fcntl=yes
 else
   py_cv_module_fcntl=missing
