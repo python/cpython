@@ -295,7 +295,7 @@ This module offers the following functions:
 
    .. audit-event:: winreg.GetValue key,sub_key,value_name winreg.GetValue
 
-   .. versionadded:: 3.6
+   .. versionadded:: 3.11
 
 
 .. function:: LoadKey(key, sub_key, file_name)
