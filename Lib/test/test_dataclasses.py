@@ -2891,6 +2891,17 @@ class TestSlots(unittest.TestCase):
         self.assertEqual(obj.a, 'a')
         self.assertEqual(obj.b, 'b')
 
+    def test_slots_with_default_factory_no_init(self):
+        # Originally reported in bpo-44649.
+        @dataclass(slots=True)
+        class A:
+            a: str
+            b: str = field(default_factory=lambda:'b', init=False)
+
+        obj = A("a")
+        self.assertEqual(obj.a, 'a')
+        self.assertEqual(obj.b, 'b')
+
 class TestDescriptors(unittest.TestCase):
     def test_set_name(self):
         # See bpo-33141.
