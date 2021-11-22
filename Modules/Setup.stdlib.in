@@ -28,6 +28,12 @@
 
 ############################################################################
 # Modules that should always be present (POSIX and Windows):
+@MODULE_ARRAY_TRUE@array arraymodule.c
+@MODULE__CONTEXTVARS_TRUE@_contextvars _contextvarsmodule.c
+
+# needs libm
+@MODULE_MATH_TRUE@math mathmodule.c
+@MODULE_CMATH_TRUE@cmath cmathmodule.c
 
 # needs libm and on some platforms librt
 @MODULE__DATETIME_TRUE@_datetime _datetimemodule.c
