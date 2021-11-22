@@ -628,8 +628,6 @@ MODULE_XXLIMITED_35_FALSE
 MODULE_XXLIMITED_35_TRUE
 MODULE_XXLIMITED_FALSE
 MODULE_XXLIMITED_TRUE
-MODULE__XXSUBINTERPRETERS_FALSE
-MODULE__XXSUBINTERPRETERS_TRUE
 MODULE__CTYPES_TEST_FALSE
 MODULE__CTYPES_TEST_TRUE
 MODULE__XXTESTFUZZ_FALSE
@@ -718,6 +716,8 @@ MODULE__STATISTICS_FALSE
 MODULE__STATISTICS_TRUE
 MODULE__ZONEINFO_FALSE
 MODULE__ZONEINFO_TRUE
+MODULE__XXSUBINTERPRETERS_FALSE
+MODULE__XXSUBINTERPRETERS_TRUE
 MODULE__TYPING_FALSE
 MODULE__TYPING_TRUE
 MODULE_SELECT_FALSE
@@ -20561,6 +20561,15 @@ fi
   as_fn_append MODULE_BLOCK "MODULE__TYPING=yes$as_nl"
 
      if true; then
+  MODULE__XXSUBINTERPRETERS_TRUE=
+  MODULE__XXSUBINTERPRETERS_FALSE='#'
+else
+  MODULE__XXSUBINTERPRETERS_TRUE='#'
+  MODULE__XXSUBINTERPRETERS_FALSE=
+fi
+  as_fn_append MODULE_BLOCK "MODULE__XXSUBINTERPRETERS=yes$as_nl"
+
+     if true; then
   MODULE__ZONEINFO_TRUE=
   MODULE__ZONEINFO_FALSE='#'
 else
@@ -21788,15 +21797,6 @@ $as_echo "$py_cv_module__ctypes_test" >&6; }
 
 
 
-     if true; then
-  MODULE__XXSUBINTERPRETERS_TRUE=
-  MODULE__XXSUBINTERPRETERS_FALSE='#'
-else
-  MODULE__XXSUBINTERPRETERS_TRUE='#'
-  MODULE__XXSUBINTERPRETERS_FALSE=
-fi
-  as_fn_append MODULE_BLOCK "MODULE__XXSUBINTERPRETERS=yes$as_nl"
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module xxlimited" >&5
 $as_echo_n "checking for stdlib extension module xxlimited... " >&6; }
       case $py_stdlib_not_available in #(
@@ -22049,6 +22049,10 @@ if test -z "${MODULE__TYPING_TRUE}" && test -z "${MODULE__TYPING_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__TYPING\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${MODULE__XXSUBINTERPRETERS_TRUE}" && test -z "${MODULE__XXSUBINTERPRETERS_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__XXSUBINTERPRETERS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${MODULE__ZONEINFO_TRUE}" && test -z "${MODULE__ZONEINFO_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__ZONEINFO\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
@@ -22223,10 +22227,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__CTYPES_TEST_TRUE}" && test -z "${MODULE__CTYPES_TEST_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__CTYPES_TEST\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${MODULE__XXSUBINTERPRETERS_TRUE}" && test -z "${MODULE__XXSUBINTERPRETERS_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE__XXSUBINTERPRETERS\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_XXLIMITED_TRUE}" && test -z "${MODULE_XXLIMITED_FALSE}"; then

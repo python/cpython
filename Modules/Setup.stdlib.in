@@ -40,6 +40,7 @@
 @MODULE__QUEUE_TRUE@_queue _queuemodule.c
 @MODULE__RANDOM_TRUE@_random _randommodule.c
 @MODULE__TYPING_TRUE@_typing _typingmodule.c
+@MODULE__XXSUBINTERPRETERS_TRUE@_xxsubinterpreters _xxsubinterpretersmodule.c
 @MODULE__ZONEINFO_TRUE@_zoneinfo _zoneinfo.c
 
 # needs libm
@@ -131,16 +132,13 @@
 @MODULE__TESTINTERNALCAPI_TRUE@_testinternalcapi _testinternalcapi.c
 
 
-############################################################################
-# Template modules
-
-@MODULE__XXSUBINTERPRETERS_TRUE@_xxsubinterpreters _xxsubinterpretersmodule.c
-@MODULE_XXLIMITED_TRUE@xxlimited xxlimited.c
-@MODULE_XXLIMITED_35_TRUE@xxlimited_35 xxlimited_35.c
-
 # Some testing modules MUST be built as shared libraries.
 *shared*
 @MODULE__TESTCAPI_TRUE@_testcapi _testcapimodule.c
 @MODULE__TESTIMPORTMULTIPLE_TRUE@_testimportmultiple _testimportmultiple.c
 @MODULE__TESTMULTIPHASE_TRUE@_testmultiphase _testmultiphase.c
 @MODULE__CTYPES_TEST_TRUE@_ctypes_test _ctypes/_ctypes_test.c
+
+# Limited API template modules; must be built as shared modules.
+@MODULE_XXLIMITED_TRUE@xxlimited xxlimited.c
+@MODULE_XXLIMITED_35_TRUE@xxlimited_35 xxlimited_35.c
