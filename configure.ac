@@ -3196,7 +3196,9 @@ dnl check for NIS / libnsl dependencies
 dnl libnsl dependencies include tirpc includes and lib
 PKG_CHECK_MODULES([LIBNSL], [libnsl], [have_nis=yes], [
   LIBNSL_CFLAGS=
-  AC_SEARCH_LIBS([yp_match], [nsl], [have_nis=yes], [have_nis=no])
+  WITH_SAVE_ENV([
+    AC_SEARCH_LIBS([yp_match], [nsl], [have_nis=yes], [have_nis=no])
+  ])
   AS_CASE([$ac_cv_search_yp_match],
     [no], [LIBNSL_LIBS=],
     ["none required"], [LIBNSL_LIBS=],

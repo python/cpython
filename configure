@@ -11141,7 +11141,13 @@ fi
 
 
   LIBNSL_CFLAGS=
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing yp_match" >&5
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing yp_match" >&5
 $as_echo_n "checking for library containing yp_match... " >&6; }
 if ${ac_cv_search_yp_match+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -11198,6 +11204,13 @@ if test "$ac_res" != no; then :
 else
   have_nis=no
 fi
+
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
 
   case $ac_cv_search_yp_match in #(
   no) :
@@ -11214,7 +11227,13 @@ elif test $pkg_failed = untried; then
 $as_echo "no" >&6; }
 
   LIBNSL_CFLAGS=
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing yp_match" >&5
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing yp_match" >&5
 $as_echo_n "checking for library containing yp_match... " >&6; }
 if ${ac_cv_search_yp_match+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -11271,6 +11290,13 @@ if test "$ac_res" != no; then :
 else
   have_nis=no
 fi
+
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
 
   case $ac_cv_search_yp_match in #(
   no) :
