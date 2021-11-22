@@ -745,26 +745,27 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
             raise ValueError('Max number of fields exceeded')
 
     r = []
-    for name_value in qs.split(separator):
-        if not name_value and not strict_parsing:
-            continue
-        nv = name_value.split('=', 1)
-        if len(nv) != 2:
-            if strict_parsing:
-                raise ValueError("bad query field: %r" % (name_value,))
-            # Handle case of a control-name with no equal sign
-            if keep_blank_values:
-                nv.append('')
-            else:
+    if qs:
+        for name_value in qs.split(separator):
+            if not name_value and not strict_parsing:
                 continue
-        if len(nv[1]) or keep_blank_values:
-            name = nv[0].replace('+', ' ')
-            name = unquote(name, encoding=encoding, errors=errors)
-            name = _coerce_result(name)
-            value = nv[1].replace('+', ' ')
-            value = unquote(value, encoding=encoding, errors=errors)
-            value = _coerce_result(value)
-            r.append((name, value))
+            nv = name_value.split('=', 1)
+            if len(nv) != 2:
+                if strict_parsing:
+                    raise ValueError("bad query field: %r" % (name_value,))
+                # Handle case of a control-name with no equal sign
+                if keep_blank_values:
+                    nv.append('')
+                else:
+                    continue
+            if len(nv[1]) or keep_blank_values:
+                name = nv[0].replace('+', ' ')
+                name = unquote(name, encoding=encoding, errors=errors)
+                name = _coerce_result(name)
+                value = nv[1].replace('+', ' ')
+                value = unquote(value, encoding=encoding, errors=errors)
+                value = _coerce_result(value)
+                r.append((name, value))
     return r
 
 def unquote_plus(string, encoding='utf-8', errors='replace'):
