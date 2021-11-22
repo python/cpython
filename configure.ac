@@ -23,6 +23,32 @@ m4_ifdef(
     [AC_MSG_ERROR([Please install pkgconf's m4 macro package and re-run autoreconf])]
 )dnl
 
+dnl Helpers for saving and restoring environment variables:
+dnl - _SAVE_VAR([VAR])         Helper for SAVE_ENV; stores VAR as save_VAR
+dnl - _RESTORE_VAR([VAR])      Helper for RESTORE_ENV; restores VAR from save_VAR
+dnl - SAVE_ENV                 Saves CFLAGS, LDFLAGS, LIBS, and CPPFLAGS
+dnl - RESTORE_ENV              Restores CFLAGS, LDFLAGS, LIBS, and CPPFLAGS
+dnl - WITH_SAVE_ENV([SCRIPT])  Runs SCRIPT wrapped with SAVE_ENV/RESTORE_ENV
+AC_DEFUN([_SAVE_VAR], [AS_VAR_COPY([save_][$1], [$1])])dnl
+AC_DEFUN([_RESTORE_VAR], [AS_VAR_COPY([$1], [save_][$1])])dnl
+AC_DEFUN([SAVE_ENV],
+[_SAVE_VAR([CFLAGS])]
+[_SAVE_VAR([CPPFLAGS])]
+[_SAVE_VAR([LDFLAGS])]
+[_SAVE_VAR([LIBS])]
+)dnl
+AC_DEFUN([RESTORE_ENV],
+[_RESTORE_VAR([CFLAGS])]
+[_RESTORE_VAR([CPPFLAGS])]
+[_RESTORE_VAR([LDFLAGS])]
+[_RESTORE_VAR([LIBS])]
+)dnl
+AC_DEFUN([WITH_SAVE_ENV],
+[SAVE_ENV]
+[$1]
+[RESTORE_ENV]
+)dnl
+
 AC_SUBST(BASECPPFLAGS)
 if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
     # If we're building out-of-tree, we need to make sure the following
@@ -2162,7 +2188,7 @@ sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
 libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
 linux/tipc.h linux/random.h spawn.h util.h alloca.h endian.h \
 sys/endian.h sys/sysmacros.h linux/memfd.h linux/wait.h sys/memfd.h \
-sys/mman.h sys/eventfd.h linux/soundcard.h sys/soundcard.h)
+sys/mman.h sys/eventfd.h linux/soundcard.h sys/soundcard.h syslog.h)
 AC_HEADER_DIRENT
 AC_HEADER_MAJOR
 
@@ -3165,12 +3191,68 @@ if test "$have_glibc_memmove_bug" = yes; then
     AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -U_FORTIFY_SOURCE"])
 fi
 
+
+dnl check for NIS / libnsl dependencies
+dnl libnsl dependencies include tirpc includes and lib
+PKG_CHECK_MODULES([LIBNSL], [libnsl], [have_nis=yes], [
+  LIBNSL_CFLAGS=
+  WITH_SAVE_ENV([
+    AC_SEARCH_LIBS([yp_match], [nsl], [have_nis=yes], [have_nis=no])
+  ])
+  AS_CASE([$ac_cv_search_yp_match],
+    [no], [LIBNSL_LIBS=],
+    ["none required"], [LIBNSL_LIBS=],
+    [LIBNSL_LIBS=$ac_cv_search_yp_match]
+  )
+])
+
+AS_VAR_IF([have_nis], [yes], [
+  WITH_SAVE_ENV([
+    CPPFLAGS="$LIBNSL_CFLAGS $CFLAGS"
+    AC_CHECK_HEADERS([rpc/rpc.h])
+  ])
+])
+
+dnl Check for SQLite library. Use pkg-config if available.
+PKG_CHECK_MODULES(
+  [LIBSQLITE3], [sqlite3 >= 3.7.15], [], [
+    LIBSQLITE3_LIBS="-lsqlite3"
+    LIBSQLITE3_CFLAGS=
+  ]
+)
+AS_VAR_APPEND([LIBSQLITE3_CFLAGS], [' -I$(srcdir)/Modules/_sqlite'])
+
+WITH_SAVE_ENV(
+dnl bpo-45774/GH-29507: The CPP check in AC_CHECK_HEADER can fail on FreeBSD,
+dnl hence CPPFLAGS instead of CFLAGS.
+  CPPFLAGS="$LIBSQLITE3_CFLAGS $CFLAGS"
+  LDFLAGS="$LIBSQLITE3_LIBS $LDFLAGS"
+
+  AC_CHECK_HEADER([sqlite3.h], [
+    AC_CHECK_LIB([sqlite3], [sqlite3_open_v2], [
+      have_sqlite3=yes
+      AC_COMPILE_IFELSE([
+        AC_LANG_PROGRAM([
+          #include <sqlite3.h>
+          #if SQLITE_VERSION_NUMBER < 3007015
+          #  error "SQLite 3.7.15 or higher required"
+          #endif
+        ], [])
+      ], [have_supported_sqlite3=yes], [have_supported_sqlite3=no])
+    ], [have_sqlite3=no])
+    AC_CHECK_LIB([sqlite3], [sqlite3_load_extension],
+                 [have_sqlite3_load_extension=yes],
+                 [have_sqlite3_load_extension=no])
+  ])
+)
+
 # Check for support for loadable sqlite extensions
 AC_MSG_CHECKING(for --enable-loadable-sqlite-extensions)
 AC_ARG_ENABLE(loadable-sqlite-extensions,
               AS_HELP_STRING([--enable-loadable-sqlite-extensions],
                              [support loadable extensions in _sqlite module, see Doc/library/sqlite3.rst (default is no)]),
-              [],
+              [AS_VAR_IF([have_sqlite3_load_extension], [no],
+                         [AC_MSG_WARN([Your version of SQLite does not support loadable extensions])])],
               [enable_loadable_sqlite_extensions=no])
 AC_MSG_RESULT($enable_loadable_sqlite_extensions)
 
@@ -3812,7 +3894,7 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  explicit_memset faccessat fchmod fchmodat fchown fchownat \
  fdwalk fexecve fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
  futimens futimes gai_strerror getentropy \
- getgrgid_r getgrnam_r \
+ getgrgid getgrgid_r getgrnam_r \
  getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
  getpriority getresuid getresgid getpwent getpwnam_r getpwuid_r getspnam getspent getsid getwd \
  if_nameindex \
@@ -3920,14 +4002,11 @@ AC_CACHE_CHECK([for flock declaration], [ac_cv_flock_decl],
     [ac_cv_flock_decl=no]
   )
 ])
-if test "x${ac_cv_flock_decl}" = xyes; then
-  AC_CHECK_FUNCS(flock,,
-    AC_CHECK_LIB(bsd,flock,
-      [AC_DEFINE(HAVE_FLOCK)
-       AC_DEFINE(FLOCK_NEEDS_LIBBSD, 1, Define if flock needs to be linked with bsd library.)
-    ])
-  )
-fi
+dnl Linking with libbsd may be necessary on AIX for flock function.
+AS_VAR_IF([ac_cv_flock_decl], [yes],
+  AC_CHECK_FUNCS([flock])
+  AC_CHECK_LIB([bsd], [flock], [FCNTL_LIBS="-lbsd"])
+)
 
 PY_CHECK_FUNC([getpagesize], [#include <unistd.h>])
 
@@ -3997,24 +4076,55 @@ if test "$ac_cv_have_lchflags" = yes ; then
 fi
 
 dnl Check for compression libraries
-AC_CHECK_HEADERS([zlib.h], [
-  save_LIBS="$LIBS"
-  AC_CHECK_LIB([z], [gzread])
-  LIBS="$save_LIBS"
-  AC_CHECK_LIB([z], [inflateCopy], [AC_DEFINE(HAVE_ZLIB_COPY, 1, [Define if the zlib library has inflateCopy])])
-  LIBS="$save_LIBS"
+AH_TEMPLATE([HAVE_ZLIB_COPY], [Define if the zlib library has inflateCopy])
+
+PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
+  have_zlib=yes
+  dnl zlib 1.2.0 (2003) added inflateCopy
+  AC_DEFINE([HAVE_ZLIB_COPY], [1])
+], [
+  AC_CHECK_HEADERS([zlib.h], [
+    WITH_SAVE_ENV([
+      AC_CHECK_LIB([z], [gzread], [
+        have_zlib=yes
+        ZLIB_CFLAGS=
+        ZLIB_LIBS=-lz
+        AC_CHECK_LIB([z], [inflateCopy], [AC_DEFINE([HAVE_ZLIB_COPY], [1])])
+      ], [
+        have_zlib=no
+      ])
+    ])
+  ], [have_zlib=no])
 ])
 
-AC_CHECK_HEADERS([bzlib.h], [
-  save_LIBS="$LIBS"
-  AC_CHECK_LIB([bz2], [BZ2_bzCompress])
-  LIBS="$save_LIBS"
+dnl binascii can use zlib for optimized crc32.
+AS_VAR_IF([have_zlib], [yes], [
+  BINASCII_CFLAGS="-DUSE_ZLIB_CRC32 $ZLIB_CFLAGS"
+  BINASCII_LIBS="$ZLIB_LIBS"
 ])
 
-AC_CHECK_HEADERS([lzma.h], [
-  save_LIBS="$LIBS"
-  AC_CHECK_LIB([lzma], [lzma_easy_encoder])
-  LIBS="$save_LIBS"
+PKG_CHECK_MODULES([BZIP2], [bzip2], [have_bzip2=yes], [
+  AC_CHECK_HEADERS([bzlib.h], [
+    WITH_SAVE_ENV([
+      AC_CHECK_LIB([bz2], [BZ2_bzCompress], [
+        have_bzip2=yes
+        BZIP2_CFLAGS=
+        BZIP2_LIBS=-lbz2
+      ], [have_bzip2=no])
+    ])
+  ], [have_bzip2=no])
+])
+
+PKG_CHECK_MODULES([LIBLZMA], [liblzma], [have_liblzma=yes], [
+  AC_CHECK_HEADERS([lzma.h], [
+    WITH_SAVE_ENV([
+      AC_CHECK_LIB([lzma], [lzma_easy_encoder], [
+        have_liblzma=yes
+        LIBLZMA_CFLAGS=
+        LIBLZMA_LIBS=-llzma
+      ], [have_liblzma=no])
+    ])
+  ], [have_liblzma=no])
 ])
 
 PY_CHECK_FUNC([hstrerror], [#include <netdb.h>])
@@ -5862,21 +5972,28 @@ AC_ARG_WITH(builtin-hashlib-hashes,
                            [builtin hash modules,
                             md5, sha1, sha256, sha512, sha3 (with shake), blake2]),
 [
-case "$withval" in
-    yes)
-        withval=$default_hashlib_hashes
-        ;;
-    no)
-        withval=""
-        ;;
-esac
-AC_MSG_RESULT($withval)
-AC_DEFINE_UNQUOTED(PY_BUILTIN_HASHLIB_HASHES, "$withval")
-],
-[
-AC_MSG_RESULT($default_hashlib_hashes);
-AC_DEFINE_UNQUOTED(PY_BUILTIN_HASHLIB_HASHES, "$default_hashlib_hashes")
-])
+  AS_CASE([$with_builtin_hashlib_hashes],
+    [yes], [with_builtin_hashlib_hashes=$default_hashlib_hashes],
+    [no], [with_builtin_hashlib_hashes=""]
+  )
+], [with_builtin_hashlib_hashes=$default_hashlib_hashes])
+
+AC_MSG_RESULT($with_builtin_hashlib_hashes)
+AC_DEFINE_UNQUOTED(PY_BUILTIN_HASHLIB_HASHES, "$with_builtin_hashlib_hashes")
+
+as_save_IFS=$IFS
+IFS=,
+for builtin_hash in $with_builtin_hashlib_hashes; do
+    AS_CASE($builtin_hash,
+      [md5], [with_builtin_md5=yes],
+      [sha1], [with_builtin_sha1=yes],
+      [sha256], [with_builtin_sha256=yes],
+      [sha512], [with_builtin_sha512=yes],
+      [sha3], [with_builtin_sha3=yes],
+      [blake2], [with_builtin_blake2=yes]
+    )
+done
+IFS=$as_save_IFS
 
 # --with-experimental-isolated-subinterpreters
 AH_TEMPLATE(EXPERIMENTAL_ISOLATED_SUBINTERPRETERS,
@@ -5970,35 +6087,142 @@ AC_DEFUN([PY_STDLIB_MOD], [
   m4_pushdef([modstate], [py_cv_module_$1])dnl
   AS_CASE([$py_stdlib_not_available],
     [*$1*], [modstate=n/a],
-    [
-      AS_IF(m4_ifblank([$2], [true], [$2]),
+    [AS_IF(m4_ifblank([$2], [true], [$2]),
         [AS_IF([m4_ifblank([$3], [true], [$3])], [modstate=yes], [modstate=missing])],
-        [modstate=disabled]
-      )
-    ]
+        [modstate=disabled])]
   )
   _MODULE_BLOCK_ADD(modcond, [$modstate])
   AS_VAR_IF([modstate], [yes], [
-    _MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_CFLAGS], [$4])
-    _MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_LDFLAGS], [$5])
-    AM_CONDITIONAL(modcond, [true])
-  ], [
-    AM_CONDITIONAL(modcond, [false])
+    m4_ifblank([$4], [], [_MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_CFLAGS], [$4])])
+    m4_ifblank([$5], [], [_MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_LDFLAGS], [$5])])
   ])
+  AM_CONDITIONAL(modcond, [test "$modstate" = yes])
   AC_MSG_RESULT([$modstate])
   m4_popdef([modcond])dnl
   m4_popdef([modstate])dnl
 ])
 
+dnl Define simple, always enabled stdlib extension module
+dnl PY_STDLIB_MOD_SIMPLE([NAME], [CFLAGS], [LDFLAGS])
+dnl cflags and ldflags are optional
+AC_DEFUN([PY_STDLIB_MOD_SIMPLE], [
+  m4_pushdef([modcond], [MODULE_]m4_toupper([$1]))dnl
+  AM_CONDITIONAL(modcond, [true])dnl
+  _MODULE_BLOCK_ADD(modcond, [yes])dnl
+  m4_ifval([$2], [
+    _MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_CFLAGS], [$2])
+  ])dnl
+  m4_ifval([$3], [
+    _MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_LDFLAGS], [$3])
+  ])dnl
+  m4_popdef([modcond])dnl
+])
+
+dnl static modules in Modules/Setup.bootstrap
+PY_STDLIB_MOD_SIMPLE([_io], [-I\$(srcdir)/Modules/_io], [])
+PY_STDLIB_MOD_SIMPLE([time], [], [$TIMEMODULE_LIB])
+
+dnl always enabled extension modules
+PY_STDLIB_MOD_SIMPLE([array])
+PY_STDLIB_MOD_SIMPLE([_asyncio])
+PY_STDLIB_MOD_SIMPLE([_bisect])
+PY_STDLIB_MOD_SIMPLE([_contextvars])
+PY_STDLIB_MOD_SIMPLE([_csv])
+PY_STDLIB_MOD_SIMPLE([_heapq])
+PY_STDLIB_MOD_SIMPLE([_json])
+PY_STDLIB_MOD_SIMPLE([_lsprof])
+PY_STDLIB_MOD_SIMPLE([_opcode])
+PY_STDLIB_MOD_SIMPLE([_pickle])
+PY_STDLIB_MOD_SIMPLE([_posixsubprocess])
+PY_STDLIB_MOD_SIMPLE([_queue])
+PY_STDLIB_MOD_SIMPLE([_random])
+PY_STDLIB_MOD_SIMPLE([select])
+PY_STDLIB_MOD_SIMPLE([_struct])
+PY_STDLIB_MOD_SIMPLE([_typing])
+PY_STDLIB_MOD_SIMPLE([_xxsubinterpreters])
+PY_STDLIB_MOD_SIMPLE([_zoneinfo])
+
+dnl needs libm
+PY_STDLIB_MOD_SIMPLE([audioop], [], [$LIBM])
+PY_STDLIB_MOD_SIMPLE([_statistics], [], [$LIBM])
+PY_STDLIB_MOD_SIMPLE([cmath], [], [$LIBM])
+PY_STDLIB_MOD_SIMPLE([math], [], [$LIBM])
+
+dnl needs libm and on some platforms librt
+PY_STDLIB_MOD_SIMPLE([_datetime], [], [$TIMEMODULE_LIB $LIBM])
+
+dnl modules with some unix dependencies
+PY_STDLIB_MOD([fcntl],
+  [], [test "$ac_cv_header_sys_ioctl_h" = "yes" -a "$ac_cv_header_fcntl_h" = "yes"],
+  [], [$FCNTL_LIBS])
+PY_STDLIB_MOD([mmap],
+  [], [test "$ac_cv_header_sys_mman_h" = "yes" -a "$ac_cv_header_sys_stat_h" = "yes"])
+
 dnl platform specific extensions
+PY_STDLIB_MOD([grp], [], [test "$ac_cv_func_getgrgid" = yes -o "$ac_cv_func_getgrgid_r" = yes])
 PY_STDLIB_MOD([ossaudiodev],
   [], [test "$ac_cv_header_linux_soundcard_h" = yes -o "$ac_cv_header_sys_soundcard_h" = yes])
+PY_STDLIB_MOD([resource], [], [test "$ac_cv_header_sys_resource_h" = yes])
+PY_STDLIB_MOD([_scproxy],
+  [test "$ac_sys_system" = "Darwin"], [],
+  [], [-framework SystemConfiguration -framework CoreFoundation])
+PY_STDLIB_MOD([spwd], [], [test "$ac_cv_func_getspent" = yes -o "$ac_cv_func_getspnam" = yes])
+PY_STDLIB_MOD([syslog], [], [test "$ac_cv_header_syslog_h" = yes])
+PY_STDLIB_MOD([termios], [], [test "$ac_cv_header_termios_h" = yes])
 
 dnl _elementtree loads libexpat via CAPI hook in pyexpat
 PY_STDLIB_MOD([pyexpat], [], [], [$LIBEXPAT_CFLAGS], [$LIBEXPAT_LDFLAGS])
 PY_STDLIB_MOD([_elementtree], [], [], [$LIBEXPAT_CFLAGS], [])
+PY_STDLIB_MOD_SIMPLE([_codecs_cn])
+PY_STDLIB_MOD_SIMPLE([_codecs_hk])
+PY_STDLIB_MOD_SIMPLE([_codecs_iso2022])
+PY_STDLIB_MOD_SIMPLE([_codecs_jp])
+PY_STDLIB_MOD_SIMPLE([_codecs_kr])
+PY_STDLIB_MOD_SIMPLE([_codecs_tw])
+PY_STDLIB_MOD_SIMPLE([_multibytecodec])
+PY_STDLIB_MOD_SIMPLE([unicodedata])
+
+dnl By default we always compile these even when OpenSSL is available
+dnl (issue #14693). The modules are small.
+PY_STDLIB_MOD([_md5], [test "$with_builtin_md5" = yes])
+PY_STDLIB_MOD([_sha1], [test "$with_builtin_sha1" = yes])
+PY_STDLIB_MOD([_sha256], [test "$with_builtin_sha256" = yes])
+PY_STDLIB_MOD([_sha512], [test "$with_builtin_sha512" = yes])
+PY_STDLIB_MOD([_sha3], [test "$with_builtin_sha3" = yes])
+PY_STDLIB_MOD([_blake2], [test "$with_builtin_blake2" = yes])
 
 PY_STDLIB_MOD([_decimal], [], [], [$LIBMPDEC_CFLAGS], [$LIBMPDEC_LDFLAGS])
+PY_STDLIB_MOD([nis],
+  [], [test "$have_nis" = yes -a "$ac_cv_header_rpc_rpc_h" = yes],
+  [$LIBNSL_CFLAGS], [$LIBNSL_LIBS])
+PY_STDLIB_MOD([_sqlite3],
+  [test "$have_sqlite3" = "yes"],
+  [test "$have_supported_sqlite3" = "yes"],
+  [$LIBSQLITE3_CFLAGS], [$LIBSQLITE3_LIBS])
+
+dnl compression libs
+PY_STDLIB_MOD([zlib], [], [test "$have_zlib" = yes],
+  [$ZLIB_CFLAGS], [$ZLIB_LIBS])
+dnl binascii can use zlib for optimized crc32.
+PY_STDLIB_MOD_SIMPLE([binascii], [$BINASCII_CFLAGS], [$BINASCII_LIBS])
+PY_STDLIB_MOD([_bz2], [], [test "$have_bzip2" = yes],
+  [$BZIP2_CFLAGS], [$BZIP2_LIBS])
+PY_STDLIB_MOD([_lzma], [], [test "$have_liblzma" = yes],
+  [$LIBLZMA_CFLAGS], [$LIBLZMA_LIBS])
+
+dnl test modules
+PY_STDLIB_MOD([_testcapi], [test "$TEST_MODULES" = yes])
+PY_STDLIB_MOD([_testinternalcapi], [test "$TEST_MODULES" = yes])
+PY_STDLIB_MOD([_testbuffer], [test "$TEST_MODULES" = yes])
+PY_STDLIB_MOD([_testimportmultiple], [test "$TEST_MODULES" = yes])
+PY_STDLIB_MOD([_testmultiphase], [test "$TEST_MODULES" = yes])
+PY_STDLIB_MOD([_xxtestfuzz], [test "$TEST_MODULES" = yes])
+PY_STDLIB_MOD([_ctypes_test], [test "$TEST_MODULES" = yes], [], [], [-lm])
+
+dnl Limited API template modules.
+dnl The limited C API is not compatible with the Py_TRACE_REFS macro.
+PY_STDLIB_MOD([xxlimited], [test "$Py_TRACE_REFS" = no])
+PY_STDLIB_MOD([xxlimited_35], [test "$Py_TRACE_REFS" = no])
 
 # substitute multiline block, must come after last PY_STDLIB_MOD()
 AC_SUBST([MODULE_BLOCK])
@@ -6018,7 +6242,7 @@ fi
 echo "creating Makefile" >&AS_MESSAGE_FD
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
-			Modules/Setup.local $srcdir/Modules/Setup
+			Modules/Setup.local $srcdir/Modules/Setup.bootstrap $srcdir/Modules/Setup
 mv config.c Modules
 
 if test -z "$PKG_CONFIG"; then

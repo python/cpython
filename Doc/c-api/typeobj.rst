@@ -1521,9 +1521,9 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: getiterfunc PyTypeObject.tp_iter
 
-   An optional pointer to a function that returns an iterator for the object.  Its
-   presence normally signals that the instances of this type are iterable (although
-   sequences may be iterable without this function).
+   An optional pointer to a function that returns an :term:`iterator` for the
+   object.  Its presence normally signals that the instances of this type are
+   :term:`iterable` (although sequences may be iterable without this function).
 
    This function has the same signature as :c:func:`PyObject_GetIter`::
 
@@ -1536,8 +1536,8 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: iternextfunc PyTypeObject.tp_iternext
 
-   An optional pointer to a function that returns the next item in an iterator.
-   The signature is::
+   An optional pointer to a function that returns the next item in an
+   :term:`iterator`. The signature is::
 
       PyObject *tp_iternext(PyObject *self);
 
@@ -2429,8 +2429,8 @@ Async Object Structures
 
       PyObject *am_await(PyObject *self);
 
-   The returned object must be an iterator, i.e. :c:func:`PyIter_Check` must
-   return ``1`` for it.
+   The returned object must be an :term:`iterator`, i.e. :c:func:`PyIter_Check`
+   must return ``1`` for it.
 
    This slot may be set to ``NULL`` if an object is not an :term:`awaitable`.
 
