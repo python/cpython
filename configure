@@ -2866,6 +2866,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+
 if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
     # If we're building out-of-tree, we need to make sure the following
     # resources get picked up before their $srcdir counterparts.
@@ -11085,13 +11086,14 @@ save_CFLAGS=$CFLAGS
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
-CPPFLAGS="$LIBSQLITE3_CFLAGS $CFLAGS"
-LDFLAGS="$LIBSQLITE3_LIBS $LDFLAGS"
 
-ac_fn_c_check_header_mongrel "$LINENO" "sqlite3.h" "ac_cv_header_sqlite3_h" "$ac_includes_default"
+  CPPFLAGS="$LIBSQLITE3_CFLAGS $CFLAGS"
+  LDFLAGS="$LIBSQLITE3_LIBS $LDFLAGS"
+
+  ac_fn_c_check_header_mongrel "$LINENO" "sqlite3.h" "ac_cv_header_sqlite3_h" "$ac_includes_default"
 if test "x$ac_cv_header_sqlite3_h" = xyes; then :
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3_open_v2 in -lsqlite3" >&5
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3_open_v2 in -lsqlite3" >&5
 $as_echo_n "checking for sqlite3_open_v2 in -lsqlite3... " >&6; }
 if ${ac_cv_lib_sqlite3_sqlite3_open_v2+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -11129,15 +11131,15 @@ fi
 $as_echo "$ac_cv_lib_sqlite3_sqlite3_open_v2" >&6; }
 if test "x$ac_cv_lib_sqlite3_sqlite3_open_v2" = xyes; then :
 
-    have_sqlite3=yes
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+      have_sqlite3=yes
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 
-        #include <sqlite3.h>
-        #if SQLITE_VERSION_NUMBER < 3007015
-        #  error "SQLite 3.7.15 or higher required"
-        #endif
+          #include <sqlite3.h>
+          #if SQLITE_VERSION_NUMBER < 3007015
+          #  error "SQLite 3.7.15 or higher required"
+          #endif
 
 int
 main ()
@@ -11159,7 +11161,7 @@ else
   have_sqlite3=no
 fi
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3_load_extension in -lsqlite3" >&5
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3_load_extension in -lsqlite3" >&5
 $as_echo_n "checking for sqlite3_load_extension in -lsqlite3... " >&6; }
 if ${ac_cv_lib_sqlite3_sqlite3_load_extension+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -11210,6 +11212,8 @@ CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
+
+
 
 # Check for support for loadable sqlite extensions
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-loadable-sqlite-extensions" >&5
