@@ -278,6 +278,26 @@ This module offers the following functions:
       isn't.
 
 
+.. function:: GetValue(key, sub_key, value_name)
+
+   Retrieves the type and data for a specified value name associated with
+   an open registry key.
+
+   *key* is an already open key, or one of the predefined
+   :ref:`HKEY_* constants <hkey-constants>`.
+
+   *sub_key* is a string that holds the name of the subkey with which the value is
+   associated.  If this parameter is ``None`` or empty, the value will be read from *key*.
+
+   *value_name* is a string indicating the value to query.
+
+   The result is a tuple of 2 items, the same as :meth:`QueryValueEx`
+
+   .. audit-event:: winreg.GetValue key,sub_key,value_name winreg.GetValue
+
+   .. versionadded:: 3.6
+
+
 .. function:: LoadKey(key, sub_key, file_name)
 
    Creates a subkey under the specified key and stores registration information
