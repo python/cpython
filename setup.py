@@ -1023,6 +1023,7 @@ class PyBuildExt(build_ext):
 
         self.addext(Extension("_queue", ["_queuemodule.c"]))
         self.addext(Extension("_statistics", ["_statisticsmodule.c"]))
+        self.addext(Extension("_struct", ["_struct.c"]))
         self.addext(Extension("_typing", ["_typingmodule.c"]))
 
         # Modules with some UNIX dependencies -- on by default:
@@ -1446,6 +1447,9 @@ class PyBuildExt(build_ext):
             self.missing.append('_uuid')
 
     def detect_modules(self):
+        # remove dummy extension
+        self.extensions = []
+
         self.configure_compiler()
         self.init_inc_lib_dirs()
 
@@ -2100,9 +2104,9 @@ def main():
                       'build_scripts': PyBuildScripts,
                       'install': PyBuildInstall,
                       'install_lib': PyBuildInstallLib},
-          # The struct module is defined here, because build_ext won't be
+          # A dummy module is defined here, because build_ext won't be
           # called unless there's at least one extension module defined.
-          ext_modules=[Extension('_struct', ['_struct.c'])],
+          ext_modules=[Extension('_dummy', ['_dummy.c'])],
 
           # If you change the scripts installed here, you also need to
           # check the PyBuildScripts command above, and change the links

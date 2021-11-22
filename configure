@@ -718,6 +718,8 @@ MODULE__XXSUBINTERPRETERS_FALSE
 MODULE__XXSUBINTERPRETERS_TRUE
 MODULE__TYPING_FALSE
 MODULE__TYPING_TRUE
+MODULE__STRUCT_FALSE
+MODULE__STRUCT_TRUE
 MODULE_SELECT_FALSE
 MODULE_SELECT_TRUE
 MODULE__RANDOM_FALSE
@@ -20572,6 +20574,15 @@ fi
   as_fn_append MODULE_BLOCK "MODULE_SELECT=yes$as_nl"
 
      if true; then
+  MODULE__STRUCT_TRUE=
+  MODULE__STRUCT_FALSE='#'
+else
+  MODULE__STRUCT_TRUE='#'
+  MODULE__STRUCT_FALSE=
+fi
+  as_fn_append MODULE_BLOCK "MODULE__STRUCT=yes$as_nl"
+
+     if true; then
   MODULE__TYPING_TRUE=
   MODULE__TYPING_FALSE='#'
 else
@@ -22009,6 +22020,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_SELECT_TRUE}" && test -z "${MODULE_SELECT_FALSE}"; then
   as_fn_error $? "conditional \"MODULE_SELECT\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__STRUCT_TRUE}" && test -z "${MODULE__STRUCT_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__STRUCT\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__TYPING_TRUE}" && test -z "${MODULE__TYPING_FALSE}"; then
