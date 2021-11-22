@@ -6137,6 +6137,7 @@ PY_STDLIB_MOD_SIMPLE([_posixsubprocess])
 PY_STDLIB_MOD_SIMPLE([_queue])
 PY_STDLIB_MOD_SIMPLE([_random])
 PY_STDLIB_MOD_SIMPLE([select])
+PY_STDLIB_MOD_SIMPLE([_socket])
 PY_STDLIB_MOD_SIMPLE([_struct])
 PY_STDLIB_MOD_SIMPLE([_typing])
 PY_STDLIB_MOD_SIMPLE([_xxsubinterpreters])
@@ -6157,10 +6158,6 @@ PY_STDLIB_MOD([fcntl],
   [], [$FCNTL_LIBS])
 PY_STDLIB_MOD([mmap],
   [], [test "$ac_cv_header_sys_mman_h" = "yes" -a "$ac_cv_header_sys_stat_h" = "yes"])
-PY_STDLIB_MOD([_socket],
-  [], m4_flatten([test "$ac_cv_header_sys_socket_h" = "yes"
-                    -a "$ac_cv_header_sys_types_h" = "yes"
-                    -a "$ac_cv_header_netinet_in_h" = "yes"]))
 
 dnl platform specific extensions
 PY_STDLIB_MOD([grp], [], [test "$ac_cv_func_getgrgid" = yes -o "$ac_cv_func_getgrgid_r" = yes])
