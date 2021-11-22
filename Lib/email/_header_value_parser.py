@@ -2841,7 +2841,14 @@ def _refold_parse_tree(parse_tree, *, policy):
                 continue
         if not hasattr(part, 'encode'):
             # It's not a terminal, try folding the subparts.
-            newparts = list(part)
+            if part.token_type == 'bare-quoted-string':
+                newparts = [
+                    ValueTerminal('"', 'DQUOTE'),
+                    *list(part),
+                    ValueTerminal('"', 'DQUOTE'),
+                ]
+            else:
+                newparts = list(part)
             if not part.as_ew_allowed:
                 wrap_as_ew_blocked += 1
                 newparts.append(end_ew_not_allowed)
