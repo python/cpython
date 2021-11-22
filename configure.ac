@@ -3980,14 +3980,11 @@ AC_CACHE_CHECK([for flock declaration], [ac_cv_flock_decl],
     [ac_cv_flock_decl=no]
   )
 ])
-if test "x${ac_cv_flock_decl}" = xyes; then
-  AC_CHECK_FUNCS(flock,,
-    AC_CHECK_LIB(bsd,flock,
-      [AC_DEFINE(HAVE_FLOCK)
-       AC_DEFINE(FLOCK_NEEDS_LIBBSD, 1, Define if flock needs to be linked with bsd library.)
-    ])
-  )
-fi
+dnl Linking with libbsd may be necessary on AIX for flock function.
+AS_VAR_IF([ac_cv_flock_decl], [yes],
+  AC_CHECK_FUNCS([flock])
+  AC_CHECK_LIB([bsd], [flock], [FCNTL_LIBS="-lbsd"])
+)
 
 PY_CHECK_FUNC([getpagesize], [#include <unistd.h>])
 
@@ -6094,6 +6091,11 @@ PY_STDLIB_MOD_SIMPLE([math], [], [$LIBM])
 
 dnl needs libm and on some platforms librt
 PY_STDLIB_MOD_SIMPLE([_datetime], [], [$TIMEMODULE_LIB $LIBM])
+
+dnl needs libbsd on some platforms
+PY_STDLIB_MOD([fcntl],
+  [], [test "$ac_cv_header_sys_ioctl_h" = "yes" -a "$ac_cv_header_fcntl_h" = "yes"],
+  [], [$FCNTL_LIBS])
 
 dnl platform specific extensions
 PY_STDLIB_MOD([grp], [], [test "$ac_cv_func_getgrgid" = yes -o "$ac_cv_func_getgrgid_r" = yes])
