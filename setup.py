@@ -1019,8 +1019,10 @@ class PyBuildExt(build_ext):
         # static Unicode character database
         self.addext(Extension('unicodedata', ['unicodedata.c']))
         self.addext(Extension('_opcode', ['_opcode.c']))
+
         # asyncio speedups
         self.addext(Extension("_asyncio", ["_asynciomodule.c"]))
+
         self.addext(Extension("_queue", ["_queuemodule.c"]))
         self.addext(Extension("_statistics", ["_statisticsmodule.c"]))
         self.addext(Extension("_typing", ["_typingmodule.c"]))
