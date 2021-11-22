@@ -1034,6 +1034,8 @@ class PyBuildExt(build_ext):
         self.addext(Extension('fcntl', ['fcntlmodule.c']))
         # grp(3)
         self.addext(Extension('grp', ['grpmodule.c']))
+
+        self.addext(Extension('_socket', ['socketmodule.c']))
         self.addext(Extension('spwd', ['spwdmodule.c']))
 
         # select(2); not on ancient System V
@@ -1254,9 +1256,6 @@ class PyBuildExt(build_ext):
 
         self.add(Extension('_crypt', ['_cryptmodule.c'], libraries=libs))
 
-    def detect_socket(self):
-        self.add(Extension('_socket', ['socketmodule.c']))
-
     def detect_dbm_gdbm(self):
         # Modules that provide persistent dictionary-like semantics.  You will
         # probably want to arrange for at least one of them to be available on
@@ -1460,7 +1459,6 @@ class PyBuildExt(build_ext):
         self.detect_test_extensions()
         self.detect_readline_curses()
         self.detect_crypt()
-        self.detect_socket()
         self.detect_openssl_hashlib()
         self.detect_hash_builtins()
         self.detect_dbm_gdbm()
