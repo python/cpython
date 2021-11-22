@@ -29,17 +29,23 @@
 ############################################################################
 # Modules that should always be present (POSIX and Windows):
 @MODULE_ARRAY_TRUE@array arraymodule.c
+@MODULE__ASYNCIO_TRUE@_asyncio _asynciomodule.c
 @MODULE__BISECT_TRUE@_bisect _bisectmodule.c
 @MODULE__CONTEXTVARS_TRUE@_contextvars _contextvarsmodule.c
 @MODULE__HEAPQ_TRUE@_heapq _heapqmodule.c
 @MODULE__JSON_TRUE@_json _json.c
+@MODULE__LSPROF_TRUE@_lsprof _lsprof.c rotatingtree.c
+@MODULE__OPCODE_TRUE@_opcode _opcode.c
 @MODULE__PICKLE_TRUE@_pickle _pickle.c
+@MODULE__QUEUE_TRUE@_queue _queuemodule.c
 @MODULE__RANDOM_TRUE@_random _randommodule.c
+@MODULE__TYPING_TRUE@_typing _typingmodule.c
 @MODULE__ZONEINFO_TRUE@_zoneinfo _zoneinfo.c
 
 # needs libm
 @MODULE_MATH_TRUE@math mathmodule.c
 @MODULE_CMATH_TRUE@cmath cmathmodule.c
+@MODULE__STATISTICS_TRUE@_statistics _statisticsmodule.c
 
 # needs libm and on some platforms librt
 @MODULE__DATETIME_TRUE@_datetime _datetimemodule.c
