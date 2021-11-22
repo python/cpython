@@ -710,6 +710,8 @@ MODULE_CMATH_FALSE
 MODULE_CMATH_TRUE
 MODULE__STATISTICS_FALSE
 MODULE__STATISTICS_TRUE
+MODULE_AUDIOOP_FALSE
+MODULE_AUDIOOP_TRUE
 MODULE__ZONEINFO_FALSE
 MODULE__ZONEINFO_TRUE
 MODULE__XXSUBINTERPRETERS_FALSE
@@ -722,6 +724,8 @@ MODULE__RANDOM_FALSE
 MODULE__RANDOM_TRUE
 MODULE__QUEUE_FALSE
 MODULE__QUEUE_TRUE
+MODULE__POSIXSUBPROCESS_FALSE
+MODULE__POSIXSUBPROCESS_TRUE
 MODULE__PICKLE_FALSE
 MODULE__PICKLE_TRUE
 MODULE__OPCODE_FALSE
@@ -732,6 +736,8 @@ MODULE__JSON_FALSE
 MODULE__JSON_TRUE
 MODULE__HEAPQ_FALSE
 MODULE__HEAPQ_TRUE
+MODULE__CSV_FALSE
+MODULE__CSV_TRUE
 MODULE__CONTEXTVARS_FALSE
 MODULE__CONTEXTVARS_TRUE
 MODULE__BISECT_FALSE
@@ -20476,6 +20482,15 @@ fi
   as_fn_append MODULE_BLOCK "MODULE__CONTEXTVARS=yes$as_nl"
 
      if true; then
+  MODULE__CSV_TRUE=
+  MODULE__CSV_FALSE='#'
+else
+  MODULE__CSV_TRUE='#'
+  MODULE__CSV_FALSE=
+fi
+  as_fn_append MODULE_BLOCK "MODULE__CSV=yes$as_nl"
+
+     if true; then
   MODULE__HEAPQ_TRUE=
   MODULE__HEAPQ_FALSE='#'
 else
@@ -20519,6 +20534,15 @@ else
   MODULE__PICKLE_FALSE=
 fi
   as_fn_append MODULE_BLOCK "MODULE__PICKLE=yes$as_nl"
+
+     if true; then
+  MODULE__POSIXSUBPROCESS_TRUE=
+  MODULE__POSIXSUBPROCESS_FALSE='#'
+else
+  MODULE__POSIXSUBPROCESS_TRUE='#'
+  MODULE__POSIXSUBPROCESS_FALSE=
+fi
+  as_fn_append MODULE_BLOCK "MODULE__POSIXSUBPROCESS=yes$as_nl"
 
      if true; then
   MODULE__QUEUE_TRUE=
@@ -20573,6 +20597,17 @@ else
   MODULE__ZONEINFO_FALSE=
 fi
   as_fn_append MODULE_BLOCK "MODULE__ZONEINFO=yes$as_nl"
+
+
+     if true; then
+  MODULE_AUDIOOP_TRUE=
+  MODULE_AUDIOOP_FALSE='#'
+else
+  MODULE_AUDIOOP_TRUE='#'
+  MODULE_AUDIOOP_FALSE=
+fi
+  as_fn_append MODULE_BLOCK "MODULE_AUDIOOP=yes$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_AUDIOOP_LDFLAGS=$LIBM$as_nl"
 
 
      if true; then
@@ -21936,6 +21971,10 @@ if test -z "${MODULE__CONTEXTVARS_TRUE}" && test -z "${MODULE__CONTEXTVARS_FALSE
   as_fn_error $? "conditional \"MODULE__CONTEXTVARS\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${MODULE__CSV_TRUE}" && test -z "${MODULE__CSV_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__CSV\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${MODULE__HEAPQ_TRUE}" && test -z "${MODULE__HEAPQ_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__HEAPQ\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
@@ -21954,6 +21993,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__PICKLE_TRUE}" && test -z "${MODULE__PICKLE_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__PICKLE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__POSIXSUBPROCESS_TRUE}" && test -z "${MODULE__POSIXSUBPROCESS_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__POSIXSUBPROCESS\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__QUEUE_TRUE}" && test -z "${MODULE__QUEUE_FALSE}"; then
@@ -21978,6 +22021,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__ZONEINFO_TRUE}" && test -z "${MODULE__ZONEINFO_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__ZONEINFO\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_AUDIOOP_TRUE}" && test -z "${MODULE_AUDIOOP_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_AUDIOOP\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__STATISTICS_TRUE}" && test -z "${MODULE__STATISTICS_FALSE}"; then

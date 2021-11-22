@@ -1062,14 +1062,13 @@ class PyBuildExt(build_ext):
         # 64-bit platforms.
         #
         # audioop needs libm for floor() in multiple functions.
-        self.add(Extension('audioop', ['audioop.c'],
-                           libraries=['m']))
+        self.addext(Extension('audioop', ['audioop.c']))
 
         # CSV files
-        self.add(Extension('_csv', ['_csv.c']))
+        self.addext(Extension('_csv', ['_csv.c']))
 
         # POSIX subprocess module helper.
-        self.add(Extension('_posixsubprocess', ['_posixsubprocess.c']))
+        self.addext(Extension('_posixsubprocess', ['_posixsubprocess.c']))
 
     def detect_test_extensions(self):
         # Python C API test module
