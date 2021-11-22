@@ -1,5 +1,6 @@
 import sys
 import unittest
+import textwrap
 
 class TestInvalidExceptStar(unittest.TestCase):
     def test_mixed_except_and_except_star_is_syntax_error(self):
@@ -44,6 +45,128 @@ class TestInvalidExceptStar(unittest.TestCase):
                 raise ValueError
             except* (ValueError, 42):
                 pass
+
+
+class TestBreakContinueReturnInExceptStarBlock(unittest.TestCase):
+    MSG = (r"'break', 'continue' and 'return'"
+           r" cannot appear in an except\* block")
+
+    def check_invalid(self, src):
+        with self.assertRaisesRegex(SyntaxError, self.MSG):
+            compile(textwrap.dedent(src), "<string>", "exec")
+
+    def test_break_in_except_star(self):
+        self.check_invalid(
+            """
+            try:
+                raise ValueError
+            except* Exception as e:
+                break
+            """)
+
+        self.check_invalid(
+            """
+            for i in range(5):
+                try:
+                    pass
+                except* Exception as e:
+                    if i == 2:
+                        break
+            """)
+
+        self.check_invalid(
+            """
+            for i in range(5):
+                try:
+                    pass
+                except* Exception as e:
+                    if i == 2:
+                        break
+                finally:
+                    return 0
+            """)
+
+
+    def test_continue_in_except_star_block_invalid(self):
+        self.check_invalid(
+            """
+            for i in range(5):
+                try:
+                    raise ValueError
+                except* Exception as e:
+                    continue
+            """)
+
+        self.check_invalid(
+            """
+            for i in range(5):
+                try:
+                    pass
+                except* Exception as e:
+                    if i == 2:
+                        continue
+            """)
+
+        self.check_invalid(
+            """
+            for i in range(5):
+                try:
+                    pass
+                except* Exception as e:
+                    if i == 2:
+                        continue
+                finally:
+                    return 0
+            """)
+
+    def test_return_in_except_star_block_invalid(self):
+        self.check_invalid(
+            """
+            def f():
+                try:
+                    raise ValueError
+                except* Exception as e:
+                    return 42
+            """)
+
+        self.check_invalid(
+            """
+            def f():
+                try:
+                    pass
+                except* Exception as e:
+                    return 42
+                finally:
+                    finished = True
+            """)
+
+    def test_break_continue_in_except_star_block_valid(self):
+        try:
+            raise ValueError(42)
+        except* Exception as e:
+            count = 0
+            for i in range(5):
+                if i == 0:
+                    continue
+                if i == 4:
+                    break
+                count += 1
+
+            self.assertEqual(count, 3)
+            self.assertEqual(i, 4)
+            exc = e
+        self.assertIsInstance(exc, ExceptionGroup)
+
+    def test_return_in_except_star_block_valid(self):
+        try:
+            raise ValueError(42)
+        except* Exception as e:
+            def f(x):
+                return 2*x
+            r = f(3)
+            exc = e
+        self.assertEqual(r, 6)
+        self.assertIsInstance(exc, ExceptionGroup)
 
 
 class ExceptStarTest(unittest.TestCase):

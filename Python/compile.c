@@ -175,7 +175,7 @@ compiler IR.
 
 enum fblocktype { WHILE_LOOP, FOR_LOOP, TRY_EXCEPT, FINALLY_TRY, FINALLY_END,
                   WITH, ASYNC_WITH, HANDLER_CLEANUP, POP_VALUE, EXCEPTION_HANDLER,
-                  ASYNC_COMPREHENSION_GENERATOR };
+                  EXCEPTION_GROUP_HANDLER, ASYNC_COMPREHENSION_GENERATOR };
 
 struct fblockinfo {
     enum fblocktype fb_type;
@@ -323,6 +323,7 @@ static int compiler_call_helper(struct compiler *c, int n,
                                 asdl_expr_seq *args,
                                 asdl_keyword_seq *keywords);
 static int compiler_try_except(struct compiler *, stmt_ty);
+static int compiler_try_star_except(struct compiler *, stmt_ty);
 static int compiler_set_qualname(struct compiler *);
 
 static int compiler_sync_comprehension_generator(
@@ -1831,6 +1832,7 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
     switch (info->fb_type) {
         case WHILE_LOOP:
         case EXCEPTION_HANDLER:
+        case EXCEPTION_GROUP_HANDLER:
         case ASYNC_COMPREHENSION_GENERATOR:
             return 1;
 
@@ -1934,6 +1936,10 @@ compiler_unwind_fblock_stack(struct compiler *c, int preserve_tos, struct fblock
         return 1;
     }
     struct fblockinfo *top = &c->u->u_fblock[c->u->u_nfblocks-1];
+    if (top->fb_type == EXCEPTION_GROUP_HANDLER) {
+        return compiler_error(
+            c, "'break', 'continue' and 'return' cannot appear in an except* block");
+    }
     if (loop != NULL && (top->fb_type == WHILE_LOOP || top->fb_type == FOR_LOOP)) {
         *loop = top;
         return 1;
@@ -3218,7 +3224,7 @@ compiler_try_star_finally(struct compiler *c, stmt_ty s)
     if (!compiler_push_fblock(c, FINALLY_TRY, body, end, s->v.TryStar.finalbody))
         return 0;
     if (s->v.TryStar.handlers && asdl_seq_LEN(s->v.TryStar.handlers)) {
-        if (!compiler_try_except(c, s))
+        if (!compiler_try_star_except(c, s))
             return 0;
     }
     else {
@@ -3443,7 +3449,7 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
     ADDOP_JUMP(c, SETUP_CLEANUP, cleanup);
     ADDOP(c, PUSH_EXC_INFO);
     /* Runtime will push a block here, so we need to account for that */
-    if (!compiler_push_fblock(c, EXCEPTION_HANDLER, NULL, NULL, "except handler"))
+    if (!compiler_push_fblock(c, EXCEPTION_GROUP_HANDLER, NULL, NULL, "except handler"))
         return 0;
     for (i = 0; i < n; i++) {
         excepthandler_ty handler = (excepthandler_ty)asdl_seq_GET(
@@ -3555,7 +3561,7 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
     }
     /* Mark as artificial */
     UNSET_LOC(c);
-    compiler_pop_fblock(c, EXCEPTION_HANDLER, NULL);
+    compiler_pop_fblock(c, EXCEPTION_GROUP_HANDLER, NULL);
     basicblock *reraise;
     reraise = compiler_new_block(c);
     if (!reraise)
