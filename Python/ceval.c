@@ -3834,7 +3834,6 @@ check_eval_breaker:
             PyObject *right = POP();
             PyObject *left = TOP();
             if (!check_except_type_valid(tstate, right)) {
-                Py_DECREF(left);
                 Py_DECREF(right);
                 goto error;
             }
