@@ -1365,38 +1365,17 @@ class PyBuildExt(build_ext):
 
     def detect_compress_exts(self):
         # Andrew Kuchling's zlib module.
-        have_zlib = sysconfig.get_config_var("HAVE_LIBZ")
-        if have_zlib:
-            self.add(Extension('zlib', ['zlibmodule.c'],
-                                libraries=['z']))
-        else:
-            self.missing.append('zlib')
+        self.addext(Extension('zlib', ['zlibmodule.c']))
 
         # Helper module for various ascii-encoders.  Uses zlib for an optimized
         # crc32 if we have it.  Otherwise binascii uses its own.
-        if have_zlib:
-            define_macros = [('USE_ZLIB_CRC32', None)]
-            libraries = ['z']
-        else:
-            define_macros = None
-            libraries = []
-        self.add(Extension('binascii', ['binascii.c'],
-                           define_macros=define_macros,
-                           libraries=libraries))
+        self.addext(Extension('binascii', ['binascii.c']))
 
         # Gustavo Niemeyer's bz2 module.
-        if sysconfig.get_config_var("HAVE_LIBBZ2"):
-            self.add(Extension('_bz2', ['_bz2module.c'],
-                               libraries=['bz2']))
-        else:
-            self.missing.append('_bz2')
+        self.addext(Extension('_bz2', ['_bz2module.c']))
 
         # LZMA compression support.
-        if sysconfig.get_config_var("HAVE_LIBLZMA"):
-            self.add(Extension('_lzma', ['_lzmamodule.c'],
-                               libraries=['lzma']))
-        else:
-            self.missing.append('_lzma')
+        self.addext(Extension('_lzma', ['_lzmamodule.c']))
 
     def detect_expat_elementtree(self):
         # Interface to the Expat XML parser
