@@ -38,7 +38,6 @@
 @MODULE__LSPROF_TRUE@_lsprof _lsprof.c rotatingtree.c
 @MODULE__OPCODE_TRUE@_opcode _opcode.c
 @MODULE__PICKLE_TRUE@_pickle _pickle.c
-@MODULE__POSIXSUBPROCESS_TRUE@_posixsubprocess _posixsubprocess.c
 @MODULE__QUEUE_TRUE@_queue _queuemodule.c
 @MODULE__RANDOM_TRUE@_random _randommodule.c
 @MODULE__TYPING_TRUE@_typing _typingmodule.c
@@ -103,6 +102,7 @@
 @MODULE_MMAP_TRUE@mmap mmapmodule.c
 # needs sys/soundcard.h or linux/soundcard.h (Linux, FreeBSD)
 @MODULE_OSSAUDIODEV_TRUE@ossaudiodev ossaudiodev.c
+@MODULE__POSIXSUBPROCESS_TRUE@_posixsubprocess _posixsubprocess.c
 @MODULE_RESOURCE_TRUE@resource resource.c
 @MODULE_SELECT_TRUE@select selectmodule.c
 # AIX has shadow passwords, but does not provide getspent API
