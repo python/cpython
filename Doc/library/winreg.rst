@@ -781,15 +781,15 @@ For more information, see `RegGetValueW function
 
 .. data:: RRF_RT_ANY
 
-   No type restriction. 
+   No type restriction.
 
 .. data:: RRF_RT_DWORD
 
-   Restrict type to 32-bit RRF_RT_REG_BINARY | RRF_RT_REG_DWORD. 
+   Restrict type to 32-bit RRF_RT_REG_BINARY | RRF_RT_REG_DWORD.
 
 .. data:: RRF_RT_QWORD
 
-   Restrict type to 64-bit RRF_RT_REG_BINARY | RRF_RT_REG_DWORD. 
+   Restrict type to 64-bit RRF_RT_REG_BINARY | RRF_RT_REG_DWORD.
 
 .. data:: RRF_RT_REG_BINARY
 
@@ -807,7 +807,7 @@ For more information, see `RegGetValueW function
 
 .. data:: RRF_NOEXPAND
 
-   Do not automatically expand environment strings if the value is of type REG_EXPAND_SZ. 
+   Do not automatically expand environment strings if the value is of type REG_EXPAND_SZ.
 
 .. data:: RRF_SUBKEY_WOW6464KEY
 
