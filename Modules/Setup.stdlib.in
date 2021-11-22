@@ -28,6 +28,18 @@
 
 ############################################################################
 # Modules that should always be present (POSIX and Windows):
+@MODULE_ARRAY_TRUE@array arraymodule.c
+@MODULE__BISECT_TRUE@_bisect _bisectmodule.c
+@MODULE__CONTEXTVARS_TRUE@_contextvars _contextvarsmodule.c
+@MODULE__HEAPQ_TRUE@_heapq _heapqmodule.c
+@MODULE__JSON_TRUE@_json _json.c
+@MODULE__PICKLE_TRUE@_pickle _pickle.c
+@MODULE__RANDOM_TRUE@_random _randommodule.c
+@MODULE__ZONEINFO_TRUE@_zoneinfo _zoneinfo.c
+
+# needs libm
+@MODULE_MATH_TRUE@math mathmodule.c
+@MODULE_CMATH_TRUE@cmath cmathmodule.c
 
 # needs libm and on some platforms librt
 @MODULE__DATETIME_TRUE@_datetime _datetimemodule.c
@@ -56,13 +68,27 @@
 # _elementtree libexpat via CAPI hook in pyexpat.
 @MODULE__ELEMENTTREE_TRUE@_elementtree _elementtree.c
 
+@MODULE__CODECS_CN_TRUE@_codecs_cn cjkcodecs/_codecs_cn.c
+@MODULE__CODECS_HK_TRUE@_codecs_hk cjkcodecs/_codecs_hk.c
+@MODULE__CODECS_ISO2022_TRUE@_codecs_iso2022 cjkcodecs/_codecs_iso2022.c
+@MODULE__CODECS_JP_TRUE@_codecs_jp cjkcodecs/_codecs_jp.c
+@MODULE__CODECS_KR_TRUE@_codecs_kr cjkcodecs/_codecs_kr.c
+@MODULE__CODECS_TW_TRUE@_codecs_tw cjkcodecs/_codecs_tw.c
+@MODULE__MULTIBYTECODEC_TRUE@_multibytecodec cjkcodecs/multibytecodec.c
+@MODULE_UNICODEDATA_TRUE@unicodedata unicodedata.c
 
 ############################################################################
 # Modules with some UNIX dependencies
 #
 
-# Linux and FreeBSD, needs sys/soundcard.h or linux/soundcard.h
+@MODULE_GRP_TRUE@grp grpmodule.c
+# needs sys/soundcard.h or linux/soundcard.h (Linux, FreeBSD)
 @MODULE_OSSAUDIODEV_TRUE@ossaudiodev ossaudiodev.c
+@MODULE_RESOURCE_TRUE@resource resource.c
+# AIX has shadow passwords, but does not provide getspent API
+@MODULE_SPWD_TRUE@spwd spwdmodule.c
+@MODULE_SYSLOG_TRUE@syslog syslogmodule.c
+@MODULE_TERMIOS_TRUE@termios termios.c
 
 
 ############################################################################

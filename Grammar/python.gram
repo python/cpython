@@ -1140,12 +1140,16 @@ invalid_dict_comprehension:
 invalid_parameters:
     | param_no_default* invalid_parameters_helper a=param_no_default {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "non-default argument follows default argument") }
+    | param_no_default* a='(' param_no_default+ ','? b=')' {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "Function parameters cannot be parenthesized") }
 invalid_parameters_helper: # This is only there to avoid type errors
     | a=slash_with_default { _PyPegen_singleton_seq(p, a) }
     | param_with_default+
 invalid_lambda_parameters:
     | lambda_param_no_default* invalid_lambda_parameters_helper a=lambda_param_no_default {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "non-default argument follows default argument") }
+    | lambda_param_no_default* a='(' ','.lambda_param+ ','? b=')' {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "Lambda expression parameters cannot be parenthesized") }
 invalid_lambda_parameters_helper:
     | a=lambda_slash_with_default { _PyPegen_singleton_seq(p, a) }
     | lambda_param_with_default+

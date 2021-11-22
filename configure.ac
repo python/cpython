@@ -23,6 +23,32 @@ m4_ifdef(
     [AC_MSG_ERROR([Please install pkgconf's m4 macro package and re-run autoreconf])]
 )dnl
 
+dnl Helpers for saving and restoring environment variables:
+dnl - _SAVE_VAR([VAR])         Helper for SAVE_ENV; stores VAR as save_VAR
+dnl - _RESTORE_VAR([VAR])      Helper for RESTORE_ENV; restores VAR from save_VAR
+dnl - SAVE_ENV                 Saves CFLAGS, LDFLAGS, LIBS, and CPPFLAGS
+dnl - RESTORE_ENV              Restores CFLAGS, LDFLAGS, LIBS, and CPPFLAGS
+dnl - WITH_SAVE_ENV([SCRIPT])  Runs SCRIPT wrapped with SAVE_ENV/RESTORE_ENV
+AC_DEFUN([_SAVE_VAR], [AS_VAR_COPY([save_][$1], [$1])])dnl
+AC_DEFUN([_RESTORE_VAR], [AS_VAR_COPY([$1], [save_][$1])])dnl
+AC_DEFUN([SAVE_ENV],
+[_SAVE_VAR([CFLAGS])]
+[_SAVE_VAR([CPPFLAGS])]
+[_SAVE_VAR([LDFLAGS])]
+[_SAVE_VAR([LIBS])]
+)dnl
+AC_DEFUN([RESTORE_ENV],
+[_RESTORE_VAR([CFLAGS])]
+[_RESTORE_VAR([CPPFLAGS])]
+[_RESTORE_VAR([LDFLAGS])]
+[_RESTORE_VAR([LIBS])]
+)dnl
+AC_DEFUN([WITH_SAVE_ENV],
+[SAVE_ENV]
+[$1]
+[RESTORE_ENV]
+)dnl
+
 AC_SUBST(BASECPPFLAGS)
 if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
     # If we're building out-of-tree, we need to make sure the following
@@ -2162,7 +2188,7 @@ sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
 libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
 linux/tipc.h linux/random.h spawn.h util.h alloca.h endian.h \
 sys/endian.h sys/sysmacros.h linux/memfd.h linux/wait.h sys/memfd.h \
-sys/mman.h sys/eventfd.h linux/soundcard.h sys/soundcard.h)
+sys/mman.h sys/eventfd.h linux/soundcard.h sys/soundcard.h syslog.h)
 AC_HEADER_DIRENT
 AC_HEADER_MAJOR
 
@@ -3174,40 +3200,34 @@ PKG_CHECK_MODULES(
 )
 AS_VAR_APPEND([LIBSQLITE3_CFLAGS], [' -I$(srcdir)/Modules/_sqlite'])
 
+WITH_SAVE_ENV(
 dnl bpo-45774/GH-29507: The CPP check in AC_CHECK_HEADER can fail on FreeBSD,
-dnl hence CPPFLAGS instead of CFLAGS. We still need to save CFLAGS, because it
-dnl is touched by AC_CHECK_HEADER.
-AS_VAR_COPY([save_CFLAGS], [CFLAGS])
-AS_VAR_COPY([save_CPPFLAGS], [CPPFLAGS])
-AS_VAR_COPY([save_LDFLAGS], [LDFLAGS])
-AS_VAR_COPY([save_LIBS], [LIBS])
-CPPFLAGS="$LIBSQLITE3_CFLAGS $CFLAGS"
-LDFLAGS="$LIBSQLITE3_LIBS $LDFLAGS"
+dnl hence CPPFLAGS instead of CFLAGS.
+  CPPFLAGS="$LIBSQLITE3_CFLAGS $CFLAGS"
+  LDFLAGS="$LIBSQLITE3_LIBS $LDFLAGS"
 
-AC_CHECK_HEADER([sqlite3.h], [
-  AC_CHECK_LIB([sqlite3], [sqlite3_open_v2], [
-    have_sqlite3=yes
-    AC_COMPILE_IFELSE([
-      AC_LANG_PROGRAM([
-        #include <sqlite3.h>
-        #if SQLITE_VERSION_NUMBER < 3007015
-        #  error "SQLite 3.7.15 or higher required"
-        #endif
-      ], [])
-    ], [have_supported_sqlite3=yes], [have_supported_sqlite3=no])
-  ], [have_sqlite3=no])
-  AC_CHECK_LIB([sqlite3], [sqlite3_load_extension],
-               [have_sqlite3_load_extension=yes],
-               [have_sqlite3_load_extension=no])
-  AC_CHECK_LIB([sqlite3], [sqlite3_serialize],
-               [AC_DEFINE([PY_SQLITE_HAVE_SERIALIZE], [1],
-                          ["Define if SQLite was compiled with the serialize API"])])
-])
-
-AS_VAR_COPY([CFLAGS], [save_CFLAGS])
-AS_VAR_COPY([CPPFLAGS], [save_CPPFLAGS])
-AS_VAR_COPY([LDFLAGS], [save_LDFLAGS])
-AS_VAR_COPY([LIBS], [save_LIBS])
+  AC_CHECK_HEADER([sqlite3.h], [
+    AC_CHECK_LIB([sqlite3], [sqlite3_open_v2], [
+      have_sqlite3=yes
+      AC_COMPILE_IFELSE([
+        AC_LANG_PROGRAM([
+          #include <sqlite3.h>
+          #if SQLITE_VERSION_NUMBER < 3007015
+          #  error "SQLite 3.7.15 or higher required"
+          #endif
+        ], [])
+      ], [have_supported_sqlite3=yes], [have_supported_sqlite3=no])
+    ], [have_sqlite3=no])
+    AC_CHECK_LIB([sqlite3], [sqlite3_load_extension],
+                 [have_sqlite3_load_extension=yes],
+                 [have_sqlite3_load_extension=no])
+    AC_CHECK_LIB([sqlite3], [sqlite3_serialize], [
+      AC_DEFINE(
+        [PY_SQLITE_HAVE_SERIALIZE], [1],
+        ["Define if SQLite was compiled with the serialize API"])
+    ])
+  ])
+)
 
 # Check for support for loadable sqlite extensions
 AC_MSG_CHECKING(for --enable-loadable-sqlite-extensions)
@@ -3857,7 +3877,7 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  explicit_memset faccessat fchmod fchmodat fchown fchownat \
  fdwalk fexecve fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
  futimens futimes gai_strerror getentropy \
- getgrgid_r getgrnam_r \
+ getgrgid getgrgid_r getgrnam_r \
  getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
  getpriority getresuid getresgid getpwent getpwnam_r getpwuid_r getspnam getspent getsid getwd \
  if_nameindex \
@@ -6060,18 +6080,41 @@ PY_STDLIB_MOD_SIMPLE([_io], [-I\$(srcdir)/Modules/_io], [])
 PY_STDLIB_MOD_SIMPLE([time], [], [$TIMEMODULE_LIB])
 
 dnl always enabled extension modules
+PY_STDLIB_MOD_SIMPLE([array])
+PY_STDLIB_MOD_SIMPLE([_bisect])
+PY_STDLIB_MOD_SIMPLE([cmath], [], [$LIBM])
+PY_STDLIB_MOD_SIMPLE([_contextvars])
 PY_STDLIB_MOD_SIMPLE([_datetime], [], [$TIMEMODULE_LIB $LIBM])
+PY_STDLIB_MOD_SIMPLE([_heapq])
+PY_STDLIB_MOD_SIMPLE([_json])
+PY_STDLIB_MOD_SIMPLE([math], [], [$LIBM])
+PY_STDLIB_MOD_SIMPLE([_pickle])
+PY_STDLIB_MOD_SIMPLE([_random])
+PY_STDLIB_MOD_SIMPLE([_zoneinfo])
 
 dnl platform specific extensions
+PY_STDLIB_MOD([grp], [], [test "$ac_cv_func_getgrgid" = yes -o "$ac_cv_func_getgrgid_r" = yes])
 PY_STDLIB_MOD([ossaudiodev],
   [], [test "$ac_cv_header_linux_soundcard_h" = yes -o "$ac_cv_header_sys_soundcard_h" = yes])
+PY_STDLIB_MOD([resource], [], [test "$ac_cv_header_sys_resource_h" = yes])
 PY_STDLIB_MOD([_scproxy],
   [test "$ac_sys_system" = "Darwin"], [],
   [], [-framework SystemConfiguration -framework CoreFoundation])
+PY_STDLIB_MOD([spwd], [], [test "$ac_cv_func_getspent" = yes -o "$ac_cv_func_getspnam" = yes])
+PY_STDLIB_MOD([syslog], [], [test "$ac_cv_header_syslog_h" = yes])
+PY_STDLIB_MOD([termios], [], [test "$ac_cv_header_termios_h" = yes])
 
 dnl _elementtree loads libexpat via CAPI hook in pyexpat
 PY_STDLIB_MOD([pyexpat], [], [], [$LIBEXPAT_CFLAGS], [$LIBEXPAT_LDFLAGS])
 PY_STDLIB_MOD([_elementtree], [], [], [$LIBEXPAT_CFLAGS], [])
+PY_STDLIB_MOD_SIMPLE([_codecs_cn])
+PY_STDLIB_MOD_SIMPLE([_codecs_hk])
+PY_STDLIB_MOD_SIMPLE([_codecs_iso2022])
+PY_STDLIB_MOD_SIMPLE([_codecs_jp])
+PY_STDLIB_MOD_SIMPLE([_codecs_kr])
+PY_STDLIB_MOD_SIMPLE([_codecs_tw])
+PY_STDLIB_MOD_SIMPLE([_multibytecodec])
+PY_STDLIB_MOD_SIMPLE([unicodedata])
 
 dnl By default we always compile these even when OpenSSL is available
 dnl (issue #14693). The modules are small.

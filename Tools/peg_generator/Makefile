@@ -22,7 +22,7 @@ data/xxl.py:
 
 build: peg_extension/parse.c
 
-peg_extension/parse.c: $(GRAMMAR) $(TOKENS) pegen/*.py peg_extension/peg_extension.c ../../Parser/pegen.c ../../Parser/string_parser.c ../../Parser/*.h pegen/grammar_parser.py
+peg_extension/parse.c: $(GRAMMAR) $(TOKENS) pegen/*.py peg_extension/peg_extension.c ../../Parser/pegen.c ../../Parser/pegen_errors.c ../../Parser/string_parser.c ../../Parser/action_helpers.c ../../Parser/*.h pegen/grammar_parser.py
 	$(PYTHON) -m pegen -q c $(GRAMMAR) $(TOKENS) -o peg_extension/parse.c --compile-extension
 
 clean:

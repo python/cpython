@@ -984,18 +984,16 @@ class PyBuildExt(build_ext):
         #
 
         # array objects
-        self.add(Extension('array', ['arraymodule.c']))
+        self.addext(Extension('array', ['arraymodule.c']))
 
         # Context Variables
-        self.add(Extension('_contextvars', ['_contextvarsmodule.c']))
+        self.addext(Extension('_contextvars', ['_contextvarsmodule.c']))
 
         # math library functions, e.g. sin()
-        self.add(Extension('math',  ['mathmodule.c'],
-                           libraries=['m']))
+        self.addext(Extension('math',  ['mathmodule.c']))
 
         # complex math library functions
-        self.add(Extension('cmath', ['cmathmodule.c'],
-                           libraries=['m']))
+        self.addext(Extension('cmath', ['cmathmodule.c']))
 
         # time libraries: librt may be needed for clock_gettime()
         time_libs = []
@@ -1006,23 +1004,20 @@ class PyBuildExt(build_ext):
         # libm is needed by delta_new() that uses round() and by accum() that
         # uses modf().
         self.addext(Extension('_datetime', ['_datetimemodule.c']))
-        # zoneinfo module
-        self.add(Extension('_zoneinfo', ['_zoneinfo.c']))
+        self.addext(Extension('_zoneinfo', ['_zoneinfo.c']))
         # random number generator implemented in C
-        self.add(Extension("_random", ["_randommodule.c"]))
-        # bisect
-        self.add(Extension("_bisect", ["_bisectmodule.c"]))
-        # heapq
-        self.add(Extension("_heapq", ["_heapqmodule.c"]))
+        self.addext(Extension("_random", ["_randommodule.c"]))
+        self.addext(Extension("_bisect", ["_bisectmodule.c"]))
+        self.addext(Extension("_heapq", ["_heapqmodule.c"]))
         # C-optimized pickle replacement
-        self.add(Extension("_pickle", ["_pickle.c"]))
+        self.addext(Extension("_pickle", ["_pickle.c"]))
         # _json speedups
-        self.add(Extension("_json", ["_json.c"]))
+        self.addext(Extension("_json", ["_json.c"]))
 
         # profiler (_lsprof is for cProfile.py)
         self.add(Extension('_lsprof', ['_lsprof.c', 'rotatingtree.c']))
         # static Unicode character database
-        self.add(Extension('unicodedata', ['unicodedata.c']))
+        self.addext(Extension('unicodedata', ['unicodedata.c']))
         # _opcode module
         self.add(Extension('_opcode', ['_opcode.c']))
         # asyncio speedups
@@ -1046,16 +1041,8 @@ class PyBuildExt(build_ext):
         self.add(Extension('fcntl', ['fcntlmodule.c'],
                            libraries=libs))
         # grp(3)
-        if not VXWORKS:
-            self.add(Extension('grp', ['grpmodule.c']))
-        # spwd, shadow passwords
-        if (self.config_h_vars.get('HAVE_GETSPNAM', False) or
-                self.config_h_vars.get('HAVE_GETSPENT', False)):
-            self.add(Extension('spwd', ['spwdmodule.c']))
-        # AIX has shadow passwords, but access is not via getspent(), etc.
-        # module support is not expected so it not 'missing'
-        elif not AIX:
-            self.missing.append('spwd')
+        self.addext(Extension('grp', ['grpmodule.c']))
+        self.addext(Extension('spwd', ['spwdmodule.c']))
 
         # select(2); not on ancient System V
         self.add(Extension('select', ['selectmodule.c']))
@@ -1065,7 +1052,7 @@ class PyBuildExt(build_ext):
 
         # Lance Ellinghaus's syslog module
         # syslog daemon interface
-        self.add(Extension('syslog', ['syslogmodule.c']))
+        self.addext(Extension('syslog', ['syslogmodule.c']))
 
         # Python interface to subinterpreter C-API.
         self.add(Extension('_xxsubinterpreters', ['_xxsubinterpretersmodule.c']))
@@ -1375,15 +1362,10 @@ class PyBuildExt(build_ext):
 
     def detect_platform_specific_exts(self):
         # Unix-only modules
-        if not MS_WINDOWS:
-            if not VXWORKS:
-                # Steen Lumholt's termios module
-                self.add(Extension('termios', ['termios.c']))
-                # Jeremy Hylton's rlimit interface
-            self.add(Extension('resource', ['resource.c']))
-        else:
-            self.missing.extend(['resource', 'termios'])
-
+        # Steen Lumholt's termios module
+        self.addext(Extension('termios', ['termios.c']))
+        # Jeremy Hylton's rlimit interface
+        self.addext(Extension('resource', ['resource.c']))
         # linux/soundcard.h or sys/soundcard.h
         self.addext(Extension('ossaudiodev', ['ossaudiodev.c']))
 
@@ -1445,11 +1427,12 @@ class PyBuildExt(build_ext):
 
     def detect_multibytecodecs(self):
         # Hye-Shik Chang's CJKCodecs modules.
-        self.add(Extension('_multibytecodec',
-                           ['cjkcodecs/multibytecodec.c']))
+        self.addext(Extension('_multibytecodec',
+                              ['cjkcodecs/multibytecodec.c']))
         for loc in ('kr', 'jp', 'cn', 'tw', 'hk', 'iso2022'):
-            self.add(Extension('_codecs_%s' % loc,
-                               ['cjkcodecs/_codecs_%s.c' % loc]))
+            self.addext(Extension(
+                f'_codecs_{loc}', [f'cjkcodecs/_codecs_{loc}.c']
+            ))
 
     def detect_multiprocessing(self):
         # Richard Oudkerk's multiprocessing module
