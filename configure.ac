@@ -6221,8 +6221,8 @@ PY_STDLIB_MOD([_ctypes_test], [test "$TEST_MODULES" = yes], [], [], [-lm])
 
 dnl Limited API template modules.
 dnl The limited C API is not compatible with the Py_TRACE_REFS macro.
-PY_STDLIB_MOD([xxlimited], [test "$Py_TRACE_REFS" = no])
-PY_STDLIB_MOD([xxlimited_35], [test "$Py_TRACE_REFS" = no])
+PY_STDLIB_MOD([xxlimited], [test "$with_trace_refs" = "no"])
+PY_STDLIB_MOD([xxlimited_35], [test "$with_trace_refs" = "no"])
 
 # substitute multiline block, must come after last PY_STDLIB_MOD()
 AC_SUBST([MODULE_BLOCK])
