@@ -682,7 +682,7 @@ exit:
 }
 
 PyDoc_STRVAR(winreg_GetValue__doc__,
-"GetValue($module, key, sub_key, name, /)\n"
+"GetValue($module, key, sub_key, name, flags=winreg.RRF_RT_ANY, /)\n"
 "--\n"
 "\n"
 "Retrieves the type and data for the specified registry value.\n"
@@ -693,8 +693,11 @@ PyDoc_STRVAR(winreg_GetValue__doc__,
 "    A string that names the subkey with which the value is associated.\n"
 "  name\n"
 "    A string indicating the value to query.\n"
+"  flags\n"
+"    Restrict the data type of value to be queried.\n"
 "\n"
-"Behaves mostly like QueryValueEx(), but you needn\'t OpenKey() and CloseKey() if the key is any one of the predefined HKEY_* constants.\n"
+"Behaves mostly like QueryValueEx(), but you needn\'t OpenKey() and CloseKey()\n"
+"if the key is any one of the predefined HKEY_* constants.\n"
 "\n"
 "The return value is a tuple of the value and the type_id.");
 
@@ -703,7 +706,7 @@ PyDoc_STRVAR(winreg_GetValue__doc__,
 
 static PyObject *
 winreg_GetValue_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
-                     const Py_UNICODE *name);
+                     const Py_UNICODE *name, int flags);
 
 static PyObject *
 winreg_GetValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -712,8 +715,9 @@ winreg_GetValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     HKEY key;
     const Py_UNICODE *sub_key;
     const Py_UNICODE *name;
+    int flags = RRF_RT_ANY;
 
-    if (!_PyArg_CheckPositional("GetValue", nargs, 3, 3)) {
+    if (!_PyArg_CheckPositional("GetValue", nargs, 3, 4)) {
         goto exit;
     }
     if (!clinic_HKEY_converter(args[0], &key)) {
@@ -753,7 +757,15 @@ winreg_GetValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("GetValue", "argument 3", "str or None", args[2]);
         goto exit;
     }
-    return_value = winreg_GetValue_impl(module, key, sub_key, name);
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    flags = _PyLong_AsInt(args[3]);
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
+    return_value = winreg_GetValue_impl(module, key, sub_key, name, flags);
 
 exit:
     /* Cleanup for sub_key */
@@ -1433,4 +1445,4 @@ winreg_QueryReflectionKey(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f3652ae00e6ade3c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3452c4acd2653a18 input=a9049054013a1b77]*/

@@ -1329,19 +1329,22 @@ winreg.GetValue
         A string that names the subkey with which the value is associated.
     name: Py_UNICODE(accept={str, NoneType})
         A string indicating the value to query.
+    flags: int(c_default='RRF_RT_ANY') = winreg.RRF_RT_ANY
+        Restrict the data type of value to be queried.
     /
 
 Retrieves the type and data for the specified registry value.
 
-Behaves mostly like QueryValueEx(), but you needn't OpenKey() and CloseKey() if the key is any one of the predefined HKEY_* constants.
+Behaves mostly like QueryValueEx(), but you needn't OpenKey() and CloseKey()
+if the key is any one of the predefined HKEY_* constants.
 
 The return value is a tuple of the value and the type_id.
 [clinic start generated code]*/
 
 static PyObject *
 winreg_GetValue_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
-                     const Py_UNICODE *name)
-/*[clinic end generated code: output=b8bb6c5c588205e1 input=c2e4b5b8f973c595]*/
+                     const Py_UNICODE *name, int flags)
+/*[clinic end generated code: output=e1fb82a79347f49e input=f5d2a23e3d4f4207]*/
 {
     long rc;
     BYTE *retBuf, *tmp;
@@ -1355,7 +1358,7 @@ winreg_GetValue_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
         return NULL;
     }
 
-    rc = RegGetValueW(key, sub_key, name, RRF_RT_ANY, NULL, NULL, &bufSize);
+    rc = RegGetValueW(key, sub_key, name, flags, NULL, NULL, &bufSize);
     if (rc == ERROR_MORE_DATA)
         bufSize = 256;
     else if (rc != ERROR_SUCCESS)
@@ -1366,7 +1369,7 @@ winreg_GetValue_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
 
     while (1) {
         retSize = bufSize;
-        rc = RegGetValueW(key, sub_key, name, RRF_RT_ANY, &typ, (BYTE *)retBuf, &retSize);
+        rc = RegGetValueW(key, sub_key, name, flags, &typ, (BYTE *)retBuf, &retSize);
         if (rc != ERROR_MORE_DATA)
             break;
 
