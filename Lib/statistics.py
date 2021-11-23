@@ -840,7 +840,13 @@ def stdev(data, xbar=None):
     # Fixme: Despite the exact sum of squared deviations, some inaccuracy
     # remain because there are two rounding steps.  The first occurs in
     # the _convert() step for variance(), the second occurs in math.sqrt().
-    var = variance(data, xbar)
+    if iter(data) is data:
+        data = list(data)
+    n = len(data)
+    if n < 2:
+        raise StatisticsError('stdev requires at least two data points')
+    T, ss = _ss(data, xbar)
+    var = _convert(ss / (n - 1), T)
     try:
         return var.sqrt()
     except AttributeError:
@@ -859,7 +865,13 @@ def pstdev(data, mu=None):
     # Fixme: Despite the exact sum of squared deviations, some inaccuracy
     # remain because there are two rounding steps.  The first occurs in
     # the _convert() step for pvariance(), the second occurs in math.sqrt().
-    var = pvariance(data, mu)
+    if iter(data) is data:
+        data = list(data)
+    n = len(data)
+    if n < 1:
+        raise StatisticsError('pstdev requires at least one data point')
+    T, ss = _ss(data, mu)
+    var = _convert(ss / n, T)
     try:
         return var.sqrt()
     except AttributeError:
