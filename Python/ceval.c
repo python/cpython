@@ -3760,6 +3760,30 @@ check_eval_breaker:
             DISPATCH();
         }
 
+        TARGET(COMPARE_OP_STR) {
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            PyObject *right = TOP();
+            PyObject *left = SECOND();
+            DEOPT_IF(!PyUnicode_CheckExact(left), COMPARE_OP);
+            DEOPT_IF(!PyUnicode_CheckExact(right), COMPARE_OP);
+            DEOPT_IF(!PyUnicode_IS_READY(left), COMPARE_OP);
+            DEOPT_IF(!PyUnicode_IS_READY(right), COMPARE_OP);
+            STAT_INC(COMPARE_OP, hit);
+            assert(cache0->original_oparg == Py_EQ || cache0->original_oparg == Py_NE);
+            int cmp = Py_Is(left, right) || _PyUnicode_EQ(left, right);
+            cmp ^= (cache0->original_oparg == Py_NE);
+            PyObject *res = PyBool_FromLong(cmp);
+            assert(!PyErr_Occurred());
+            SET_SECOND(res);
+            STACK_SHRINK(1);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            PREDICT(POP_JUMP_IF_FALSE);
+            PREDICT(POP_JUMP_IF_TRUE);
+            DISPATCH();
+        }
+
         TARGET(IS_OP) {
             PyObject *right = POP();
             PyObject *left = TOP();

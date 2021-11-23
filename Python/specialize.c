@@ -144,6 +144,11 @@ _Py_GetSpecializationStats(void) {
 static void
 print_stats(FILE *out, SpecializationStats *stats, const char *name)
 {
+    long total = (stats->specialization_failure + stats->specialization_success
+                  + stats->hit + stats->deferred + stats->miss
+                  + stats->deopt + stats->unquickened);
+    double ratio = (double)stats->hit / (double)(total) * 100.0;
+    fprintf(out, "    Hit percentage: %.2f%%\n", ratio);
     PRINT_STAT(name, specialization_success);
     PRINT_STAT(name, specialization_failure);
     PRINT_STAT(name, hit);
@@ -491,6 +496,9 @@ initial_counter_value(void) {
 #define SPEC_FAIL_BAD_CALL_FLAGS 17
 #define SPEC_FAIL_CLASS 18
 
+/* COMPARE_OP */
+#define SPEC_FAIL_STRING_COMPARE 13
+#define SPEC_FAIL_STRING_UNREADY 14
 
 static int
 specialize_module_load_attr(
@@ -1544,7 +1552,6 @@ success:
     adaptive->counter = initial_counter_value();
 }
 
-
 void
 _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
                          _Py_CODEUNIT *instr, SpecializedCacheEntry *cache)
@@ -1561,6 +1568,21 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
     else if (PyLong_CheckExact(lhs)) {
         *instr = _Py_MAKECODEUNIT(COMPARE_OP_INT, _Py_OPARG(*instr));
         goto success;
+    }
+    else if (PyUnicode_CheckExact(lhs)) {
+        int op = adaptive->original_oparg;
+        if (op != Py_EQ && op != Py_NE) {
+            SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_STRING_COMPARE);
+            goto failure;
+        }
+        else if (!PyUnicode_IS_READY(lhs) || !PyUnicode_IS_READY(rhs)) {
+            SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_STRING_UNREADY);
+            goto failure;
+        }
+        else {
+            *instr = _Py_MAKECODEUNIT(COMPARE_OP_STR, _Py_OPARG(*instr));
+            goto success;
+        }
     }
     else {
         SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_OTHER);
