@@ -41,9 +41,8 @@ _PyFrame_MakeAndSetFrameObject(InterpreterFrame *frame)
     return f;
 }
 
-
-static InterpreterFrame *
-copy_frame_to_heap(InterpreterFrame *frame)
+InterpreterFrame *
+_PyFrame_Copy(InterpreterFrame *frame)
 {
     assert(frame->stacktop >= frame->f_code->co_nlocalsplus);
     Py_ssize_t size = ((char*)&frame->localsplus[frame->stacktop]) - (char *)frame;

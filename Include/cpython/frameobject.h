@@ -12,7 +12,9 @@ struct _frame {
     int f_lineno;               /* Current line number. Only valid if non-zero */
     char f_trace_lines;         /* Emit per-line trace events? */
     char f_trace_opcodes;       /* Emit per-opcode trace events? */
-    char f_own_locals_memory;   /* This frame owns the memory for the locals */
+    char f_owns_frame;          /* This frame owns the frame */
+    /* The frame date, if this frame object owns the frame */
+    PyObject *_f_frame_data[1];
 };
 
 /* Standard object interface */

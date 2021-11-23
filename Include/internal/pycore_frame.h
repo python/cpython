@@ -69,8 +69,7 @@ static inline void _PyFrame_StackPush(InterpreterFrame *f, PyObject *value) {
 
 #define FRAME_SPECIALS_SIZE ((sizeof(InterpreterFrame)-1)/sizeof(PyObject *))
 
-InterpreterFrame *
-_PyInterpreterFrame_HeapAlloc(PyFrameConstructor *con, PyObject *locals);
+InterpreterFrame *_PyFrame_Copy(InterpreterFrame *frame);
 
 static inline void
 _PyFrame_InitializeSpecials(

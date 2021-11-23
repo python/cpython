@@ -620,9 +620,10 @@ frame_dealloc(PyFrameObject *f)
     PyCodeObject *co = NULL;
 
     /* Kill all local variables including specials, if we own them */
-    if (f->f_own_locals_memory) {
-        f->f_own_locals_memory = 0;
-        InterpreterFrame *frame = f->f_frame;
+    if (f->f_owns_frame) {
+        f->f_owns_frame = 0;
+        assert(f->f_frame == (InterpreterFrame *)f->_f_frame_data);
+        InterpreterFrame *frame = (InterpreterFrame *)f->_f_frame_data;
         /* Don't clear code object until the end */
         co = frame->f_code;
         frame->f_code = NULL;
@@ -633,7 +634,6 @@ frame_dealloc(PyFrameObject *f)
         for (int i = 0; i < frame->stacktop; i++) {
             Py_CLEAR(locals[i]);
         }
-        PyMem_Free(frame);
     }
     Py_CLEAR(f->f_back);
     Py_CLEAR(f->f_trace);
@@ -663,7 +663,7 @@ frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
 {
     Py_VISIT(f->f_back);
     Py_VISIT(f->f_trace);
-    if (f->f_own_locals_memory == 0) {
+    if (f->f_owns_frame == 0) {
         return 0;
     }
     assert(f->f_frame->frame_obj == NULL);
@@ -716,7 +716,7 @@ frame_sizeof(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t res;
     res = sizeof(PyFrameObject);
-    if (f->f_own_locals_memory) {
+    if (f->f_owns_frame) {
         PyCodeObject *code = f->f_frame->f_code;
         res += (code->co_nlocalsplus+code->co_stacksize) * sizeof(PyObject *);
     }

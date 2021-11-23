@@ -38,7 +38,7 @@ gen_traverse(PyGenObject *gen, visitproc visit, void *arg)
     Py_VISIT(gen->gi_qualname);
     InterpreterFrame *frame = gen->gi_xframe;
     if (frame != NULL) {
-        assert(frame->frame_obj == NULL || frame->frame_obj->f_own_locals_memory == 0);
+        assert(frame->frame_obj == NULL || frame->frame_obj->f_owns_frame == 0);
         int err = _PyFrame_Traverse(frame, visit, arg);
         if (err) {
             return err;
@@ -929,10 +929,15 @@ gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
 
     /* Take ownership of the frame */
     assert(f->f_frame->frame_obj == NULL);
-    assert(f->f_own_locals_memory);
-    gen->gi_xframe = f->f_frame;
+    assert(f->f_owns_frame);
+    gen->gi_xframe = _PyFrame_Copy((InterpreterFrame *)f->_f_frame_data);
+    if (gen->gi_xframe == NULL) {
+        Py_DECREF(f);
+        Py_DECREF(gen);
+        return NULL;
+    }
     gen->gi_xframe->frame_obj = f;
-    f->f_own_locals_memory = 0;
+    f->f_owns_frame = 0;
     gen->gi_xframe->generator = (PyObject *) gen;
     assert(PyObject_GC_IsTracked((PyObject *)f));
 
