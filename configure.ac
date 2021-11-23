@@ -3303,11 +3303,19 @@ else
   TCLTK_LIBS="$with_tcltk_libs"
 fi
 
-# check for _gdbmmodulec dependencies
-AC_CHECK_HEADERS([gdbm.h], [
-  LIBS_SAVE=$LIBS
-  AC_CHECK_LIB([gdbm], [gdbm_open])
-  LIBS=$LIBS_SAVE
+dnl check for _gdbmmodule dependencies
+dnl NOTE: gdbm does not provide a pkgconf file.
+AC_ARG_VAR([GDBM_CFLAGS], [C compiler flags for gdbm])
+AC_ARG_VAR([GDBM_LIBS], [additional linker flags for gdbm])
+WITH_SAVE_ENV([
+  CPPFLAGS="$GDBM_CFLAGS $CFLAGS"
+  LDFLAGS="$GDBM_LIBS $LDFLAGS"
+  AC_CHECK_HEADERS([gdbm.h], [
+    AC_CHECK_LIB([gdbm], [gdbm_open], [
+      have_gdbm=yes
+      GDBM_LIBS="$GDBM_LIBS -lgdbm"
+    ], [have_gdbm=no])
+  ], [have_gdbm=no])
 ])
 
 # check for _dbmmodule.c dependencies
@@ -3375,21 +3383,23 @@ AC_CHECK_HEADERS([db.h], [
 AC_MSG_CHECKING(for --with-dbmliborder)
 AC_ARG_WITH(dbmliborder,
             AS_HELP_STRING([--with-dbmliborder=db1:db2:...], [override order to check db backends for dbm; a valid value is a colon separated string with the backend names `ndbm', `gdbm' and `bdb'.]),
-[
-if test x$with_dbmliborder = xyes
-then
-AC_MSG_ERROR([proper usage is --with-dbmliborder=db1:db2:...])
-else
-  as_save_IFS=$IFS
-  IFS=:
-  for db in $with_dbmliborder; do
-    if test x$db != xndbm && test x$db != xgdbm && test x$db != xbdb
-    then
-      AC_MSG_ERROR([proper usage is --with-dbmliborder=db1:db2:...])
-    fi
-  done
-  IFS=$as_save_IFS
-fi])
+[], [with_dbmliborder=ndbm:gdbm:bdb])
+
+have_gdbm_dbmliborder=no
+as_save_IFS=$IFS
+IFS=:
+for db in $with_dbmliborder; do
+    AS_CASE([$db],
+      [ndbm], [],
+      [gdbm], [have_gdbm_dbmliborder=yes],
+      [bdb], [],
+      [with_dbmliborder=error]
+    )
+done
+IFS=$as_save_IFS
+AS_VAR_IF([with_dbmliborder], [error], [
+  AC_MSG_ERROR([proper usage is --with-dbmliborder=db1:db2:... (ndbm:gdbm:bdb)])
+])
 AC_MSG_RESULT($with_dbmliborder)
 
 # Templates for things AC_DEFINEd more than once.
@@ -6279,6 +6289,9 @@ PY_STDLIB_MOD([_crypt],
   [], [test "$ac_cv_crypt_crypt" = yes],
   [$LIBCRYPT_CFLAGS], [$LIBCRYPT_LIBS])
 PY_STDLIB_MOD([_decimal], [], [], [$LIBMPDEC_CFLAGS], [$LIBMPDEC_LDFLAGS])
+PY_STDLIB_MOD([_gdbm],
+  [test "$have_gdbm_dbmliborder" = yes], [test "$have_gdbm" = yes],
+  [$GDBM_CFLAGS], [$GDBM_LIBS])
 PY_STDLIB_MOD([nis],
   [], [test "$have_nis" = yes -a "$ac_cv_header_rpc_rpc_h" = yes],
   [$LIBNSL_CFLAGS], [$LIBNSL_LIBS])
