@@ -3,7 +3,6 @@
 #include "Python.h"
 
 #include "pycore_ceval.h"         // _PyEval_FiniGIL()
-#include "pycore_context.h"       // _PyContext_Init()
 #include "pycore_fileutils.h"     // _Py_ResetForceASCII()
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
@@ -14,7 +13,6 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
-#include "pycore_typeobject.h"    // _PyType_Init()
 
 #include <locale.h>               // setlocale()
 #include <stdlib.h>               // getenv()
@@ -104,12 +102,25 @@ _PyRuntime_Initialize(void)
     }
     runtime_initialized = 1;
 
-    return _PyRuntimeState_Init(&_PyRuntime);
+    PyStatus status;
+
+    status = _PyRuntimeState_Init(&_PyRuntime);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = _Py_RuntimeTypesStateInit(&_PyRuntime);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    return _PyStatus_OK();
 }
 
 void
 _PyRuntime_Finalize(void)
 {
+    _Py_RuntimeTypesStateFini(&_PyRuntime);
     _PyRuntimeState_Fini(&_PyRuntime);
     runtime_initialized = 0;
 }
@@ -656,93 +667,6 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
 
 
 static PyStatus
-pycore_init_singletons(PyInterpreterState *interp)
-{
-    PyStatus status;
-
-    _PyLong_Init(interp);
-
-    if (_Py_IsMainInterpreter(interp)) {
-        _PyFloat_Init();
-    }
-
-    status = _PyBytes_Init(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    status = _PyUnicode_Init(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    status = _PyTuple_Init(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    return _PyStatus_OK();
-}
-
-
-static PyStatus
-pycore_init_types(PyInterpreterState *interp)
-{
-    PyStatus status;
-
-    status = _PyType_Init(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    int is_main_interp = _Py_IsMainInterpreter(interp);
-    if (is_main_interp) {
-        if (_PyStructSequence_Init() < 0) {
-            return _PyStatus_ERR("can't initialize structseq");
-        }
-
-        status = _PyTypes_Init();
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-
-        if (_PyLong_InitTypes() < 0) {
-            return _PyStatus_ERR("can't init int type");
-        }
-
-        status = _PyUnicode_InitTypes();
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-    }
-
-    if (is_main_interp) {
-        if (_PyFloat_InitTypes() < 0) {
-            return _PyStatus_ERR("can't init float");
-        }
-    }
-
-    status = _PyExc_Init(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    status = _PyErr_InitTypes();
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    if (is_main_interp) {
-        if (!_PyContext_Init()) {
-            return _PyStatus_ERR("can't init context");
-        }
-    }
-
-    return _PyStatus_OK();
-}
-
-
-static PyStatus
 pycore_init_builtins(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
@@ -798,10 +722,7 @@ pycore_interp_init(PyThreadState *tstate)
     PyStatus status;
     PyObject *sysmod = NULL;
 
-    // Create singletons before the first PyType_Ready() call, since
-    // PyType_Ready() uses singletons like the Unicode empty string (tp_doc)
-    // and the empty tuple singletons (tp_bases).
-    status = pycore_init_singletons(interp);
+    status = _Py_CoreObjectsInit(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -812,7 +733,7 @@ pycore_interp_init(PyThreadState *tstate)
         return status;
     }
 
-    status = pycore_init_types(interp);
+    status = _Py_GlobalObjectsInit(interp);
     if (_PyStatus_EXCEPTION(status)) {
         goto done;
     }
@@ -1637,31 +1558,6 @@ flush_std_files(void)
 
 
 static void
-finalize_interp_types(PyInterpreterState *interp)
-{
-    _PyExc_Fini(interp);
-    _PyFrame_Fini(interp);
-    _PyAsyncGen_Fini(interp);
-    _PyContext_Fini(interp);
-    _PyType_Fini(interp);
-    // Call _PyUnicode_ClearInterned() before _PyDict_Fini() since it uses
-    // a dict internally.
-    _PyUnicode_ClearInterned(interp);
-
-    _PyDict_Fini(interp);
-    _PyList_Fini(interp);
-    _PyTuple_Fini(interp);
-
-    _PySlice_Fini(interp);
-
-    _PyBytes_Fini(interp);
-    _PyUnicode_Fini(interp);
-    _PyFloat_Fini(interp);
-    _PyLong_Fini(interp);
-}
-
-
-static void
 finalize_interp_clear(PyThreadState *tstate)
 {
     int is_main_interp = _Py_IsMainInterpreter(tstate->interp);
@@ -1684,7 +1580,8 @@ finalize_interp_clear(PyThreadState *tstate)
         _Py_ClearFileSystemEncoding();
     }
 
-    finalize_interp_types(tstate->interp);
+    _Py_GlobalObjectsFini(tstate->interp);
+    _Py_CoreObjectsFini(tstate->interp);
 }
 
 

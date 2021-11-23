@@ -899,6 +899,9 @@
     <ClCompile Include="..\Objects\genobject.c">
       <Filter>Objects</Filter>
     </ClCompile>
+    <ClCompile Include="..\Objects\global_objects.c">
+      <Filter>Objects</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\iterobject.c">
       <Filter>Objects</Filter>
     </ClCompile>

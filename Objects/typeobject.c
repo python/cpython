@@ -299,7 +299,7 @@ _PyType_Init(PyInterpreterState *interp)
     PyStatus status;
 
     if (_Py_IsMainInterpreter(interp)) {
-        status = init_slotdefs(interp);
+        status = init_slotdefs();
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
