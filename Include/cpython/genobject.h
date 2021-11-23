@@ -14,7 +14,6 @@ extern "C" {
 #define _PyGenObject_HEAD(prefix)                                           \
     PyObject_HEAD                                                           \
     /* Note: gi_frame can be NULL if the generator is "finished" */         \
-    struct _interpreter_frame *prefix##_xframe;                             \
     /* The code object backing the generator */                             \
     PyCodeObject *prefix##_code;                                            \
     /* List of weak reference. */                                           \
@@ -27,7 +26,10 @@ extern "C" {
     PyObject *prefix##_origin_or_finalizer;                                 \
     char prefix##_hooks_inited;                                             \
     char prefix##_closed;                                                   \
-    char prefix##_running_async;
+    char prefix##_running_async;                                            \
+    /* The frame */                                                         \
+    char prefix##_frame_valid;                                              \
+    PyObject *prefix##_iframe[1];
 
 typedef struct {
     /* The gi_ prefix is intended to remind of generator-iterator. */
