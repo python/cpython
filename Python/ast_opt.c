@@ -575,7 +575,7 @@ fold_subscr(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 }
 
 /* Change literal list or set of constants into constant
-   tuple or frozenset respectively.  Change literal list of
+   tuple or frozenset respectively. Change literal list of
    non-constants into tuple.
    Used for right operand of "in" and "not in" tests and for iterable
    in "for" loop and comprehensions.
@@ -610,6 +610,16 @@ fold_iter(expr_ty arg, PyArena *arena, _PyASTOptimizeState *state)
     return make_const(arg, newval, arena);
 }
 
+/* Fold all constant comparisons and contains by pointer
+   logic and PyObject_RichCompareBool (PySequence_Contains for
+   "in" or "not in"). Short circuit all remaining values
+   if the comparison returns 0 (False).
+   If there are constant comparisons, set node to a "and" chain
+   containing all the non-constant comparisons.
+   If there are no non-constant comparisons or no non-constant
+   comparisons are found before a constant comparison returns False,
+   set a boolean instead.
+*/
 static int
 fold_compare(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 {
@@ -624,9 +634,11 @@ fold_compare(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 
     ops = node->v.Compare.ops->typed_elements;
     args = node->v.Compare.comparators->typed_elements;
+    assert(args != NULL && ops != NULL);
     ops_length = asdl_seq_LEN(node->v.Compare.ops);
     args_size = ops_size = ops_length;
     result = _Py_asdl_expr_seq_new(ops_length, arena);
+    /* Iterate over each comparison. */
     for (i = 0; i < ops_length; i++) {
         right = args[0];
         op = (ops_size == ops_length) ? ops[i] : ops[0];
@@ -635,6 +647,14 @@ fold_compare(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
         }
         else {
             left = node->v.Compare.left;
+        }
+        /* If possible and the operator is "in" or "not in",
+           convert lists or sets to constant tuples or frozensets.
+        */
+        if (op == In || op == NotIn) {
+            if (!fold_iter(right, arena, state)) {
+                return 0;
+            }
         }
         if (left->kind != Constant_kind || right->kind != Constant_kind) {
             unchanged++;
@@ -699,11 +719,17 @@ fold_compare(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
             );
             break;
         }
-        fprintf(stderr, "%d:%zd\n", res, unchanged);
         if (res == -1) {
             return 0;
         }
         else if (res == 0) {
+            /* Short circuit. If there is a non-constant
+               value, make False a part of the "and" chain
+               and break out of the loop, disregarding all the
+               other comparisons after.
+               If all values before are constants, set node to
+               False and return.
+            */
             if (has_unchanged) {
                 bool_const = _PyAST_Constant(
                     Py_False, NULL,
@@ -721,6 +747,7 @@ fold_compare(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
             }
         }
         else {
+            /* Handle non-constant values. */
             if (unchanged != 0) {
                 cut_args = _Py_asdl_expr_seq_new(unchanged, arena);
                 cut_ops = _Py_asdl_int_seq_new(unchanged, arena);
@@ -753,16 +780,18 @@ fold_compare(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
             args_size -= unchanged;
             ops += unchanged;
             ops_size -= unchanged;
-            real_index++;
             unchanged = 0;
         }
     }
-    if (real_index == 0) {
-        return 1;
-    }
     if (!has_unchanged) {
+        /* All comparisons are constants and no
+           short-circuiting happened, so set node to True.
+        */
         Py_INCREF(Py_True);
         return make_const(node, Py_True, arena);
+    }
+    if (real_index == 0) {
+        return 1;
     }
     result->size = real_index;
     node->kind = BoolOp_kind;
