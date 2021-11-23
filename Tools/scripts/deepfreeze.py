@@ -5,18 +5,37 @@ import collections
 import contextlib
 import os
 import re
+import sys
 import time
 import types
+import unicodedata
 from typing import Dict, FrozenSet, Tuple, TextIO
 
 import umarshal
 
 verbose = False
 
+# See Objects/unicodectype.c:_PyUnicode_IsPrintable
+NON_PRINTABLE = {"Cc", "Cf", "Cs", "Co", "Cn", "Zl", "Zp", "Zs"}
+
+
+def isprintable(b: bytes) -> bool:
+    if sys.version_info > (3, 7):
+        return b.isascii() and b.decode("ascii").isprintable()
+    else:
+        try:
+            s = b.decode("ascii")
+        except UnicodeDecodeError:
+            return False
+        for c in s:
+            if unicodedata.category(c) in NON_PRINTABLE:
+                return False
+        return True
+
 
 def make_string_literal(b: bytes) -> str:
     res = ['"']
-    if b.isascii() and b.decode("ascii").isprintable():
+    if isprintable(b):
         res.append(b.decode("ascii").replace("\\", "\\\\").replace("\"", "\\\""))
     else:
         for i in b:
