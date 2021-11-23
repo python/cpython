@@ -1241,20 +1241,7 @@ class PyBuildExt(build_ext):
             self.missing.append('_curses_panel')
 
     def detect_crypt(self):
-        # crypt module.
-        if VXWORKS:
-            # bpo-31904: crypt() function is not provided by VxWorks.
-            # DES_crypt() OpenSSL provides is too weak to implement
-            # the encryption.
-            self.missing.append('_crypt')
-            return
-
-        if self.compiler.find_library_file(self.lib_dirs, 'crypt'):
-            libs = ['crypt']
-        else:
-            libs = []
-
-        self.add(Extension('_crypt', ['_cryptmodule.c'], libraries=libs))
+         self.addext(Extension('_crypt', ['_cryptmodule.c']))
 
     def detect_dbm_gdbm(self):
         # Modules that provide persistent dictionary-like semantics.  You will

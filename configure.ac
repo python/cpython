@@ -4190,25 +4190,46 @@ AC_CHECK_FUNCS(setpgrp,
     [])
 )
 
-# We search for both crypt and crypt_r as one or the other may be defined
-# This gets us our -lcrypt in LIBS when required on the target platform.
-# Save/restore LIBS to avoid linking libpython with libcrypt.
-LIBS_SAVE=$LIBS
-AC_SEARCH_LIBS(crypt_r, crypt)
-LIBS="$LIBS_SAVE"
-AC_SEARCH_LIBS(crypt, crypt)
+dnl We search for both crypt and crypt_r as one or the other may be defined
+dnl libxcrypt provides <crypt.h> and libcrypt with crypt_r() since
+dnl at least 3.1.1 from 2015.
+dnl FreeBSD defines crypt_r() in <unistd.h>
+AH_TEMPLATE([HAVE_CRYPT_R], [Define if you have the crypt_r() function.])
 
-AC_CHECK_FUNC(crypt_r,
-  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include <crypt.h>
-]], [[
-struct crypt_data d;
-char *r = crypt_r("", "", &d);
-]])],
-    [AC_DEFINE(HAVE_CRYPT_R, 1, [Define if you have the crypt_r() function.])],
-    [])
-)
-LIBS=$LIBS_SAVE
+PKG_CHECK_MODULES([LIBCRYPT], [libxcrypt >= 3.1.1], [
+  AC_DEFINE([HAVE_CRYPT_R], [1])
+], [
+  WITH_SAVE_ENV([
+    AC_SEARCH_LIBS([crypt_r], [crypt], [
+      AC_DEFINE([HAVE_CRYPT_R], [1])
+      if test "$ac_cv_search_crypt_r" = "none required"; then
+        LIBCRYPT_LIBS=
+      else
+        LIBCRYPT_LIBS="$ac_cv_search_crypt_r"
+      fi
+    ])
+  ])
+])
+
+WITH_SAVE_ENV([
+  CPPFLAGS="$LIBCRYPT_CFLAGS $CFLAGS"
+  LDFLAGS="$LIBCRYPT_LIBS $LDFLAGS"
+  AC_CACHE_CHECK([for crypt or crypt_r], [ac_cv_crypt_crypt], [
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([
+        #ifdef HAVE_CRYPT_H
+          #include <crypt.h>
+        #endif
+        #include <unistd.h>
+      ], [
+        #ifdef HAVE_CRYPT_R
+          void *x = crypt_r;
+        #else
+          void *x = crypt;
+        #endif
+      ])
+    ], [ac_cv_crypt_crypt=yes], [ac_cv_crypt_crypt=no])
+  ])
+])
 
 AC_CHECK_FUNCS(clock_gettime, [], [
     AC_CHECK_LIB(rt, clock_gettime, [
@@ -6202,6 +6223,9 @@ PY_STDLIB_MOD([_sha512], [test "$with_builtin_sha512" = yes])
 PY_STDLIB_MOD([_sha3], [test "$with_builtin_sha3" = yes])
 PY_STDLIB_MOD([_blake2], [test "$with_builtin_blake2" = yes])
 
+PY_STDLIB_MOD([_crypt],
+  [], [test "$ac_cv_crypt_crypt" = yes],
+  [$LIBCRYPT_CFLAGS], [$LIBCRYPT_LIBS])
 PY_STDLIB_MOD([_decimal], [], [], [$LIBMPDEC_CFLAGS], [$LIBMPDEC_LDFLAGS])
 PY_STDLIB_MOD([nis],
   [], [test "$have_nis" = yes -a "$ac_cv_header_rpc_rpc_h" = yes],
