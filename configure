@@ -20032,6 +20032,7 @@ fi
 
 # checks for POSIX shared memory, used by Modules/_multiprocessing/posixshmem.c
 # shm_* may only be available if linking against librt
+POSIXSHMEM_CFLAGS='-I$(srcdir)/Modules/_multiprocessing'
 save_CFLAGS=$CFLAGS
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
@@ -21092,7 +21093,7 @@ esac
   as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM=$py_cv_module__posixshmem$as_nl"
   if test "x$py_cv_module__posixshmem" = xyes; then :
 
-
+    as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM_CFLAGS=$POSIXSHMEM_CFLAGS$as_nl"
     as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM_LDFLAGS=$POSIXSHMEM_LIBS$as_nl"
 
 fi
