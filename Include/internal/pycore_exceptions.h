@@ -13,7 +13,13 @@ extern "C" {
  * lifecycle
  **************************************/
 
-extern PyStatus _PyExc_Init(PyInterpreterState *interp);
+extern PyStatus _PyExc_InitCoreObjects(PyInterpreterState *interp);
+extern PyStatus _PyExc_InitCoreTypes(PyInterpreterState *interp);
+extern void _PyExc_FiniCoreObjects(PyInterpreterState *interp);
+
+extern PyStatus _PyExc_InitTypes(PyInterpreterState *interp);
+extern PyStatus _PyExc_InitTypeStateLast(PyInterpreterState *interp);
+extern void _PyExc_FiniObjects(PyInterpreterState *interp);
 
 
 /**************************************

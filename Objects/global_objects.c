@@ -73,6 +73,13 @@ init_core_state(PyInterpreterState *interp)
 static PyStatus
 init_core_types(PyInterpreterState *interp)
 {
+    PyStatus status;
+
+    status = _PyExc_InitCoreTypes(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     return _PyStatus_OK();
 }
 
@@ -101,6 +108,11 @@ init_core_objects(PyInterpreterState *interp)
         return status;
     }
 
+    status = _PyExc_InitCoreObjects(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     return _PyStatus_OK();
 }
 
@@ -114,7 +126,8 @@ _PyInterpreterState_CoreObjectsInit(PyInterpreterState *interp)
         return status;
     }
 
-    /* Initializing these cannot rely on any of the core objects. */
+    /* Initializing these cannot rely on any of the core objects,
+       hence PyType_Ready() is not available yet. */
     status = init_core_types(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -140,6 +153,7 @@ _PyInterpreterState_CoreObjectsFini(PyInterpreterState *interp)
     _PyTuple_Fini(interp);
     _PyBytes_Fini(interp);
     _PyUnicode_Fini(interp);
+    _PyExc_FiniCoreObjects(interp);
 }
 
 
@@ -148,9 +162,12 @@ _PyInterpreterState_CoreObjectsFini(PyInterpreterState *interp)
  **************************************/
 
 static PyStatus
-init_state(PyInterpreterState *interp)
+init_state_first(PyInterpreterState *interp)
 {
     PyStatus status;
+
+    /* Type state init goes here if it does not rely on ready types,
+       and relies only on core objects (at most). */
 
     status = _PyStructSequence_Init(interp);
     if (_PyStatus_EXCEPTION(status)) {
@@ -169,6 +186,8 @@ init_types(PyInterpreterState *interp)
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
+
+    /* At this point PyType_Ready() may be called. */
 
     // XXX Init per-interpreter.
 #define INIT_TYPE(TYPE) \
@@ -287,7 +306,7 @@ init_types(PyInterpreterState *interp)
         return status;
     }
 
-    status = _PyExc_Init(interp);
+    status = _PyExc_InitTypes(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -316,12 +335,28 @@ init_objects(PyInterpreterState *interp)
     return _PyStatus_OK();
 }
 
+static PyStatus
+init_state_last(PyInterpreterState *interp)
+{
+    PyStatus status;
+
+    /* Type state init goes here if relies on ready types
+       or any non-core object. */
+
+    status = _PyExc_InitTypeStateLast(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    return _PyStatus_OK();
+}
+
 PyStatus
 _PyInterpreterState_ObjectsInit(PyInterpreterState *interp)
 {
     PyStatus status;
 
-    status = init_state(interp);
+    status = init_state_first(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -336,13 +371,18 @@ _PyInterpreterState_ObjectsInit(PyInterpreterState *interp)
         return status;
     }
 
+    status = init_state_last(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     return _PyStatus_OK();
 }
 
 void
 _PyInterpreterState_ObjectsFini(PyInterpreterState *interp)
 {
-    _PyExc_Fini(interp);
+    _PyExc_FiniObjects(interp);
     _PyFrame_Fini(interp);
     _PyAsyncGen_Fini(interp);
     _PyContext_Fini(interp);

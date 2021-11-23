@@ -71,8 +71,6 @@ extern PyStatus _PyAtExit_Init(PyInterpreterState *interp);
 extern int _PySignal_Init(int install_signal_handlers);
 extern void _PySignal_Fini(void);
 
-extern void _PyExc_ClearExceptionGroupType(PyInterpreterState *interp);
-extern void _PyExc_Fini(PyInterpreterState *interp);
 extern void _PyImport_Fini(void);
 extern void _PyImport_Fini2(void);
 extern void _PyGC_Fini(PyInterpreterState *interp);
