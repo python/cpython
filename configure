@@ -19441,6 +19441,7 @@ SRCDIRS="\
   Parser \
   Programs \
   Python \
+  Python/frozen_modules \
   Python/deepfreeze"
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for build directories" >&5
 $as_echo_n "checking for build directories... " >&6; }
