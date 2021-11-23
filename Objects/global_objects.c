@@ -175,13 +175,13 @@ init_types(PyInterpreterState *interp)
         return _PyStatus_ERR("Can't initialize " #TYPE " type"); \
     }
 
-    // Base types
+    // Base types:
     INIT_TYPE(PyBaseObject_Type);
     INIT_TYPE(PyType_Type);
     assert(PyBaseObject_Type.tp_base == NULL);
     assert(PyType_Type.tp_base == &PyBaseObject_Type);
 
-    // All other static types
+    // All other static types (in alphabetical order):
     INIT_TYPE(PyAsyncGen_Type);
     INIT_TYPE(PyBool_Type);
     INIT_TYPE(PyByteArrayIter_Type);
@@ -265,10 +265,10 @@ init_types(PyInterpreterState *interp)
     INIT_TYPE(_PyNamespace_Type);
     INIT_TYPE(_PyNone_Type);
     INIT_TYPE(_PyNotImplemented_Type);
+    INIT_TYPE(_PyUnion_Type);
     INIT_TYPE(_PyWeakref_CallableProxyType);
     INIT_TYPE(_PyWeakref_ProxyType);
     INIT_TYPE(_PyWeakref_RefType);
-    INIT_TYPE(_PyUnion_Type);
 #undef INIT_TYPE
 
     status = _PyLong_InitTypes(interp);
