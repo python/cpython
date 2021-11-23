@@ -188,7 +188,6 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     }
 
     assert(_PyFrame_IsRunnable(frame));
-    assert(frame->f_lasti >= 0 || ((unsigned char *)PyBytes_AS_STRING(gen->gi_code->co_code))[0] == GEN_START);
     /* Push arg onto the frame's value stack */
     result = arg ? arg : Py_None;
     Py_INCREF(result);
@@ -841,7 +840,7 @@ PyTypeObject PyGen_Type = {
 };
 
 static PyObject *
-make_gen(PyTypeObject *type, PyFrameConstructor *con, InterpreterFrame *frame)
+make_gen(PyTypeObject *type, PyFunctionObject *func, InterpreterFrame *frame)
 {
     PyGenObject *gen = PyObject_GC_New(PyGenObject, type);
     if (gen == NULL) {
@@ -858,13 +857,13 @@ make_gen(PyTypeObject *type, PyFrameConstructor *con, InterpreterFrame *frame)
     gen->gi_exc_state.exc_value = NULL;
     gen->gi_exc_state.exc_traceback = NULL;
     gen->gi_exc_state.previous_item = NULL;
-    if (con->fc_name != NULL)
-        gen->gi_name = con->fc_name;
+    if (func->func_name != NULL)
+        gen->gi_name = func->func_name;
     else
         gen->gi_name = gen->gi_code->co_name;
     Py_INCREF(gen->gi_name);
-    if (con->fc_qualname != NULL)
-        gen->gi_qualname = con->fc_qualname;
+    if (func->func_qualname != NULL)
+        gen->gi_qualname = func->func_qualname;
     else
         gen->gi_qualname = gen->gi_name;
     Py_INCREF(gen->gi_qualname);
@@ -876,17 +875,17 @@ static PyObject *
 compute_cr_origin(int origin_depth);
 
 PyObject *
-_Py_MakeCoro(PyFrameConstructor *con, InterpreterFrame *frame)
+_Py_MakeCoro(PyFunctionObject *func, InterpreterFrame *frame)
 {
-    int coro_flags = ((PyCodeObject *)con->fc_code)->co_flags &
+    int coro_flags = ((PyCodeObject *)func->func_code)->co_flags &
         (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);
     assert(coro_flags);
     if (coro_flags == CO_GENERATOR) {
-        return make_gen(&PyGen_Type, con, frame);
+        return make_gen(&PyGen_Type, func, frame);
     }
     if (coro_flags == CO_ASYNC_GENERATOR) {
         PyAsyncGenObject *o;
-        o = (PyAsyncGenObject *)make_gen(&PyAsyncGen_Type, con, frame);
+        o = (PyAsyncGenObject *)make_gen(&PyAsyncGen_Type, func, frame);
         if (o == NULL) {
             return NULL;
         }
@@ -897,7 +896,7 @@ _Py_MakeCoro(PyFrameConstructor *con, InterpreterFrame *frame)
         return (PyObject*)o;
     }
     assert (coro_flags == CO_COROUTINE);
-    PyObject *coro = make_gen(&PyCoro_Type, con, frame);
+    PyObject *coro = make_gen(&PyCoro_Type, func, frame);
     if (!coro) {
         return NULL;
     }
