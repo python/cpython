@@ -13,6 +13,7 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
+#include "pycore_global_objects.h"  // __PyRuntimeState_TypesInit()
 
 #include <locale.h>               // setlocale()
 #include <stdlib.h>               // getenv()

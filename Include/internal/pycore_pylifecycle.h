@@ -48,20 +48,6 @@ PyAPI_FUNC(void) _Py_ClearStandardStreamEncoding(void);
 PyAPI_FUNC(int) _Py_IsLocaleCoercionTarget(const char *ctype_loc);
 
 
-/* types and objects */
-
-extern PyStatus _PyRuntimeState_TypesInit(_PyRuntimeState *runtime);
-extern void _PyRuntimeState_TypesFini(_PyRuntimeState *runtime);
-
-extern PyStatus _PyInterpreterState_CoreObjectsInit(PyInterpreterState *interp);
-extern void _PyInterpreterState_CoreObjectsFini(PyInterpreterState *interp);
-
-extern PyStatus _PyInterpreterState_ObjectsInit(PyInterpreterState *interp);
-extern void _PyInterpreterState_ObjectsFini(PyInterpreterState *interp);
-
-extern PyStatus _PyExc_Init(PyInterpreterState *interp);
-
-
 /* Various one-time initializers */
 
 extern PyStatus _PyFaulthandler_Init(int enable);

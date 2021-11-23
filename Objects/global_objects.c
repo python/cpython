@@ -1,6 +1,7 @@
 
 #include "Python.h"
 
+#include "pycore_global_objects.h"  // PyStatus
 #include "pycore_initconfig.h"    // PyStatus
 #include "pycore_pylifecycle.h"   // _Py_InitCoreObjects()
 #include "pycore_runtime.h"       // _PyRuntimeState
@@ -25,6 +26,7 @@
 #include "frameobject.h"          // PyFrame_Type
 #include "pycore_pyerrors.h"      // _PyErr_InitTypes()
 #include "pycore_interpreteridobject.h"  // _PyInterpreterID_Type
+
 
 /**************************************
  * runtime-global type-related state
