@@ -3086,7 +3086,7 @@ error:
 
 
 PyStatus
-_PyBytes_Init(PyInterpreterState *interp)
+_PyBytes_InitCoreObjects(PyInterpreterState *interp)
 {
     struct _Py_bytes_state *state = &interp->bytes;
     if (bytes_create_empty_string_singleton(state) < 0) {

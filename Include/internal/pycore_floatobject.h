@@ -8,6 +8,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_runtime.h"     // _PyRuntimeState
+#include "pycore_initconfig.h"  // PyStatus
+
 /* _PyFloat_{Pack,Unpack}{4,8}
  *
  * The struct and pickle (at least) modules need an efficient platform-
@@ -68,6 +71,12 @@ PyAPI_FUNC(int) _PyFloat_FormatAdvancedWriter(
     PyObject *format_spec,
     Py_ssize_t start,
     Py_ssize_t end);
+
+
+extern PyStatus _PyFloat_InitRuntimeState(_PyRuntimeState *runtime);
+extern PyStatus _PyFloat_InitTypes(PyInterpreterState *interp);
+extern void _PyFloat_Fini(PyInterpreterState *interp);
+
 
 #ifdef __cplusplus
 }

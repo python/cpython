@@ -14,6 +14,9 @@ extern "C" {
 #define _PyList_ITEMS(op) (_PyList_CAST(op)->ob_item)
 
 
+extern void _PyList_Fini(PyInterpreterState *interp);
+
+
 #ifdef __cplusplus
 }
 #endif

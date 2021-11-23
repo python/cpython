@@ -1980,8 +1980,8 @@ PyTypeObject PyFloat_Type = {
     .tp_vectorcall = (vectorcallfunc)float_vectorcall,
 };
 
-void
-_PyFloat_Init(void)
+PyStatus
+_PyFloat_InitRuntimeState(_PyRuntimeState *runtime)
 {
     /* We attempt to determine if this machine is using IEEE
        floating point formats by peering at the bits of some
@@ -2028,18 +2028,26 @@ _PyFloat_Init(void)
 
     double_format = detected_double_format;
     float_format = detected_float_format;
+
+    return _PyStatus_OK();
 }
 
-int
-_PyFloat_InitTypes(void)
+PyStatus
+_PyFloat_InitTypes(PyInterpreterState *interp)
 {
+    // XXX Init per-interpreter.
+    if (!_Py_IsMainInterpreter(interp)) {
+        return _PyStatus_OK();
+    }
+
     /* Init float info */
     if (FloatInfoType.tp_name == NULL) {
         if (PyStructSequence_InitType2(&FloatInfoType, &floatinfo_desc) < 0) {
-            return -1;
+            return _PyStatus_ERR("can't init float");
         }
     }
-    return 0;
+
+    return _PyStatus_OK();
 }
 
 void

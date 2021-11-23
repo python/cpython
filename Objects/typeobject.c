@@ -296,13 +296,16 @@ PyType_ClearCache(void)
 PyStatus
 _PyType_Init(PyInterpreterState *interp)
 {
+    // XXX Init per-interpreter.
+    if (!_Py_IsMainInterpreter(interp)) {
+        return _PyStatus_OK();
+    }
+
     PyStatus status;
 
-    if (_Py_IsMainInterpreter(interp)) {
-        status = init_slotdefs();
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
+    status = init_slotdefs();
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
 
     return _PyStatus_OK();

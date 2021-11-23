@@ -3162,6 +3162,7 @@ _PyExc_Init(PyInterpreterState *interp)
 {
     struct _Py_exc_state *state = &interp->exc_state;
 
+    // XXX Init per-interpreter.
 #define PRE_INIT(TYPE) \
     if (!(_PyExc_ ## TYPE.tp_flags & Py_TPFLAGS_READY)) { \
         if (PyType_Ready(&_PyExc_ ## TYPE) < 0) { \
@@ -3169,17 +3170,6 @@ _PyExc_Init(PyInterpreterState *interp)
         } \
         Py_INCREF(PyExc_ ## TYPE); \
     }
-
-#define ADD_ERRNO(TYPE, CODE) \
-    do { \
-        PyObject *_code = PyLong_FromLong(CODE); \
-        assert(_PyObject_RealIsSubclass(PyExc_ ## TYPE, PyExc_OSError)); \
-        if (!_code || PyDict_SetItem(state->errnomap, _code, PyExc_ ## TYPE)) { \
-            Py_XDECREF(_code); \
-            return _PyStatus_ERR("errmap insertion problem."); \
-        } \
-        Py_DECREF(_code); \
-    } while (0)
 
     PRE_INIT(BaseException);
     PRE_INIT(BaseExceptionGroup);
@@ -3250,7 +3240,9 @@ _PyExc_Init(PyInterpreterState *interp)
     PRE_INIT(PermissionError);
     PRE_INIT(ProcessLookupError);
     PRE_INIT(TimeoutError);
+#undef PRE_INIT
 
+    // XXX Init per-interpreter.
     if (preallocate_memerrors() < 0) {
         return _PyStatus_NO_MEMORY();
     }
@@ -3261,6 +3253,17 @@ _PyExc_Init(PyInterpreterState *interp)
     if (!state->errnomap) {
         return _PyStatus_NO_MEMORY();
     }
+
+#define ADD_ERRNO(TYPE, CODE) \
+    do { \
+        PyObject *_code = PyLong_FromLong(CODE); \
+        assert(_PyObject_RealIsSubclass(PyExc_ ## TYPE, PyExc_OSError)); \
+        if (!_code || PyDict_SetItem(state->errnomap, _code, PyExc_ ## TYPE)) { \
+            Py_XDECREF(_code); \
+            return _PyStatus_ERR("errmap insertion problem."); \
+        } \
+        Py_DECREF(_code); \
+    } while (0)
 
     ADD_ERRNO(BlockingIOError, EAGAIN);
     ADD_ERRNO(BlockingIOError, EALREADY);
@@ -3283,11 +3286,9 @@ _PyExc_Init(PyInterpreterState *interp)
     ADD_ERRNO(PermissionError, EPERM);
     ADD_ERRNO(ProcessLookupError, ESRCH);
     ADD_ERRNO(TimeoutError, ETIMEDOUT);
+#undef ADD_ERRNO
 
     return _PyStatus_OK();
-
-#undef PRE_INIT
-#undef ADD_ERRNO
 }
 
 

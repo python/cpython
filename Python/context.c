@@ -6,6 +6,7 @@
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "structmember.h"         // PyMemberDef
 
 
@@ -1317,15 +1318,15 @@ _PyContext_Fini(PyInterpreterState *interp)
     struct _Py_context_state *state = &interp->context;
     state->numfree = -1;
 #endif
-    _PyHamt_Fini();
 }
 
 
-int
-_PyContext_Init(void)
+PyStatus
+_PyContext_InitTypes(PyInterpreterState *interp)
 {
-    if (!_PyHamt_Init()) {
-        return 0;
+    // XXX Init per-interpreter.
+    if (!_Py_IsMainInterpreter(interp)) {
+        return _PyStatus_OK();
     }
 
     if ((PyType_Ready(&PyContext_Type) < 0) ||
@@ -1333,7 +1334,7 @@ _PyContext_Init(void)
         (PyType_Ready(&PyContextToken_Type) < 0) ||
         (PyType_Ready(&PyContextTokenMissing_Type) < 0))
     {
-        return 0;
+        return _PyStatus_ERR("can't init context");
     }
 
     PyObject *missing = get_token_missing();
@@ -1341,9 +1342,9 @@ _PyContext_Init(void)
         PyContextToken_Type.tp_dict, "MISSING", missing))
     {
         Py_DECREF(missing);
-        return 0;
+        return _PyStatus_ERR("can't init context");
     }
     Py_DECREF(missing);
 
-    return 1;
+    return _PyStatus_OK();
 }

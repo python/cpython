@@ -11,6 +11,11 @@ extern "C" {
 #include "pycore_interp.h"        // PyInterpreterState.small_ints
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
+
+extern PyStatus _PyLong_InitCoreObjects(PyInterpreterState *interp);
+extern PyStatus _PyLong_InitTypes(PyInterpreterState *interp);
+
+
 // Return a borrowed reference to the zero singleton.
 // The function cannot return NULL.
 static inline PyObject* _PyLong_GetZero(void)

@@ -9,6 +9,9 @@ extern "C" {
 #endif
 
 
+extern PyStatus _PyStructSequence_Init(PyInterpreterState *interp);
+
+
 PyAPI_FUNC(int) _PyStructSequence_InitType(
     PyTypeObject *type,
     PyStructSequence_Desc *desc,

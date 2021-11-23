@@ -48,57 +48,18 @@ PyAPI_FUNC(void) _Py_ClearStandardStreamEncoding(void);
 PyAPI_FUNC(int) _Py_IsLocaleCoercionTarget(const char *ctype_loc);
 
 
-/* runtime-global type-related state */
+/* types and objects */
 
 extern PyStatus _Py_RuntimeTypesStateInit(_PyRuntimeState *runtime);
 extern void _Py_RuntimeTypesStateFini(_PyRuntimeState *runtime);
 
-
-/* core types and objects */
-
 extern PyStatus _Py_CoreObjectsInit(PyInterpreterState *interp);
 extern void _Py_CoreObjectsFini(PyInterpreterState *interp);
-
-extern void _PyLong_Init(PyInterpreterState *interp);
-extern int _PyLong_InitTypes(void);
-extern void _PyLong_Fini(PyInterpreterState *interp);
-
-extern PyStatus _PyUnicode_Init(PyInterpreterState *interp);
-extern PyStatus _PyUnicode_InitTypes(void);
-extern void _PyUnicode_Fini(PyInterpreterState *interp);
-extern void _PyUnicode_ClearInterned(PyInterpreterState *interp);
-
-extern PyStatus _PyBytes_Init(PyInterpreterState *interp);
-extern void _PyBytes_Fini(PyInterpreterState *interp);
-
-extern PyStatus _PyTuple_Init(PyInterpreterState *interp);
-extern void _PyTuple_Fini(PyInterpreterState *interp);
-
-extern void _PyDict_Fini(PyInterpreterState *interp);
-
-extern void _PyList_Fini(PyInterpreterState *interp);
-
-
-/* global types and objects */
 
 extern PyStatus _Py_GlobalObjectsInit(PyInterpreterState *interp);
 extern void _Py_GlobalObjectsFini(PyInterpreterState *interp);
 
-extern int _PyStructSequence_Init(void);
-
-extern PyStatus _PyTypes_Init(void);
-
-extern PyStatus _PyErr_InitTypes(void);
-
-extern void _PyFloat_Init(void);
-extern int _PyFloat_InitTypes(void);
-extern void _PyFloat_Fini(PyInterpreterState *interp);
-
-extern void _PyFrame_Fini(PyInterpreterState *interp);
-
-extern void _PySlice_Fini(PyInterpreterState *interp);
-
-extern void _PyAsyncGen_Fini(PyInterpreterState *interp);
+extern PyStatus _PyExc_Init(PyInterpreterState *interp);
 
 
 /* Various one-time initializers */
@@ -112,7 +73,6 @@ extern PyStatus _PySys_Create(
 extern PyStatus _PySys_ReadPreinitWarnOptions(PyWideStringList *options);
 extern PyStatus _PySys_ReadPreinitXOptions(PyConfig *config);
 extern int _PySys_UpdateConfig(PyThreadState *tstate);
-extern PyStatus _PyExc_Init(PyInterpreterState *interp);
 extern PyStatus _PyBuiltins_AddExceptions(PyObject * bltinmod);
 extern PyStatus _Py_HashRandomization_Init(const PyConfig *);
 extern PyStatus _PyImportZip_Init(PyThreadState *tstate);

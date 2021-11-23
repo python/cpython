@@ -1066,7 +1066,7 @@ _PyTuple_ClearFreeList(PyInterpreterState *interp)
 
 
 PyStatus
-_PyTuple_Init(PyInterpreterState *interp)
+_PyTuple_InitCoreObjects(PyInterpreterState *interp)
 {
     struct _Py_tuple_state *state = &interp->tuple;
     if (tuple_create_empty_tuple_singleton(state) < 0) {

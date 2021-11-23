@@ -8,6 +8,7 @@
 #include "pycore_long.h"          // _Py_SmallInts
 #include "pycore_object.h"        // _PyObject_InitVar()
 #include "pycore_pystate.h"       // _Py_IsMainInterpreter()
+#include "pycore_initconfig.h"    // _PyStatus_OK()
 
 #include <ctype.h>
 #include <float.h>
@@ -5824,8 +5825,8 @@ PyLong_GetInfo(void)
     return int_info;
 }
 
-void
-_PyLong_Init(PyInterpreterState *interp)
+PyStatus
+_PyLong_InitCoreObjects(PyInterpreterState *interp)
 {
     if (_PyRuntime.small_ints[0].ob_base.ob_base.ob_refcnt == 0) {
         for (Py_ssize_t i=0; i < _PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS; i++) {
@@ -5837,22 +5838,22 @@ _PyLong_Init(PyInterpreterState *interp)
             _PyRuntime.small_ints[i].ob_digit[0] = (digit)abs(ival);
         }
     }
+    return _PyStatus_OK();
 }
 
-int
-_PyLong_InitTypes(void)
+PyStatus
+_PyLong_InitTypes(PyInterpreterState *interp)
 {
+    // XXX Init per-interpreter.
+    if (!_Py_IsMainInterpreter(interp)) {
+        return _PyStatus_OK();
+    }
+
     /* initialize int_info */
     if (Int_InfoType.tp_name == NULL) {
         if (PyStructSequence_InitType2(&Int_InfoType, &int_info_desc) < 0) {
-            return -1;
+            return _PyStatus_ERR("can't init int type");
         }
     }
-    return 0;
-}
-
-void
-_PyLong_Fini(PyInterpreterState *interp)
-{
-    (void)interp;
+    return _PyStatus_OK();
 }
