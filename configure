@@ -21849,7 +21849,7 @@ $as_echo_n "checking for stdlib extension module xxlimited... " >&6; }
   *xxlimited*) :
     py_cv_module_xxlimited=n/a ;; #(
   *) :
-    if test "$Py_TRACE_REFS" = no; then :
+    if test "$with_trace_refs" = "no"; then :
   if true; then :
   py_cv_module_xxlimited=yes
 else
@@ -21885,7 +21885,7 @@ $as_echo_n "checking for stdlib extension module xxlimited_35... " >&6; }
   *xxlimited_35*) :
     py_cv_module_xxlimited_35=n/a ;; #(
   *) :
-    if test "$Py_TRACE_REFS" = no; then :
+    if test "$with_trace_refs" = "no"; then :
   if true; then :
   py_cv_module_xxlimited_35=yes
 else
