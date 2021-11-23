@@ -13,7 +13,7 @@ struct _frame {
     char f_trace_lines;         /* Emit per-line trace events? */
     char f_trace_opcodes;       /* Emit per-opcode trace events? */
     char f_owns_frame;          /* This frame owns the frame */
-    /* The frame date, if this frame object owns the frame */
+    /* The frame data, if this frame object owns the frame */
     PyObject *_f_frame_data[1];
 };
 
