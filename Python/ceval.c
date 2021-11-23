@@ -3670,6 +3670,8 @@ check_eval_breaker:
         }
 
         TARGET(COMPARE_OP) {
+            PREDICTED(COMPARE_OP);
+            STAT_INC(COMPARE_OP, unquickened);
             assert(oparg <= Py_GE);
             PyObject *right = POP();
             PyObject *left = TOP();
@@ -3679,6 +3681,80 @@ check_eval_breaker:
             Py_DECREF(right);
             if (res == NULL)
                 goto error;
+            PREDICT(POP_JUMP_IF_FALSE);
+            PREDICT(POP_JUMP_IF_TRUE);
+            DISPATCH();
+        }
+
+        TARGET(COMPARE_OP_ADAPTIVE) {
+            assert(cframe.use_tracing == 0);
+            SpecializedCacheEntry *cache = GET_CACHE();
+            if (cache->adaptive.counter == 0) {
+                PyObject *right = TOP();
+                PyObject *left = SECOND();
+                next_instr--;
+                _Py_Specialize_CompareOp(left, right, next_instr, cache);
+                DISPATCH();
+            }
+            else {
+                STAT_INC(COMPARE_OP, deferred);
+                cache->adaptive.counter--;
+                oparg = cache->adaptive.original_oparg;
+                STAT_DEC(COMPARE_OP, unquickened);
+                JUMP_TO_INSTRUCTION(COMPARE_OP);
+            }
+        }
+
+        TARGET(COMPARE_OP_FLOAT) {
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            PyObject *right = TOP();
+            PyObject *left = SECOND();
+            DEOPT_IF(!PyFloat_CheckExact(left), COMPARE_OP);
+            DEOPT_IF(!PyFloat_CheckExact(right), COMPARE_OP);
+            STAT_INC(COMPARE_OP, hit);
+            double dleft = PyFloat_AS_DOUBLE(left);
+            double dright = PyFloat_AS_DOUBLE(right);
+            int cmp;
+            switch (cache0->original_oparg) {
+                case Py_LT: cmp = (dleft < dright); break;
+                case Py_LE: cmp = (dleft <= dright); break;
+                case Py_EQ: cmp = (dleft == dright); break;
+                case Py_NE: cmp = (dleft != dright); break;
+                case Py_GT: cmp = (dleft > dright); break;
+                case Py_GE: cmp = (dleft >= dright); break;
+                default: Py_UNREACHABLE();
+            }
+            // This cannot fail
+            PyObject *res = PyBool_FromLong(cmp);
+            assert(!PyErr_Occurred());
+            SET_SECOND(res);
+            STACK_SHRINK(1);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            PREDICT(POP_JUMP_IF_FALSE);
+            PREDICT(POP_JUMP_IF_TRUE);
+            DISPATCH();
+        }
+
+        TARGET(COMPARE_OP_INT) {
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            PyObject *right = TOP();
+            PyObject *left = SECOND();
+            DEOPT_IF(!PyLong_CheckExact(left), COMPARE_OP);
+            DEOPT_IF(!PyLong_CheckExact(right), COMPARE_OP);
+            STAT_INC(COMPARE_OP, hit);
+            // This cannot fail.
+            PyObject *res = _PyLong_RichCompare(
+                (PyLongObject *)left, (PyLongObject *)right,
+                cache0->original_oparg);
+            assert(res != NULL);
+            assert(!PyErr_Occurred());
+            SET_SECOND(res);
+            STACK_SHRINK(1);
+            Py_DECREF(left);
+            Py_DECREF(right);
             PREDICT(POP_JUMP_IF_FALSE);
             PREDICT(POP_JUMP_IF_TRUE);
             DISPATCH();
@@ -4970,6 +5046,7 @@ MISS_WITH_CACHE(LOAD_GLOBAL)
 MISS_WITH_CACHE(LOAD_METHOD)
 MISS_WITH_CACHE(CALL_FUNCTION)
 MISS_WITH_CACHE(BINARY_OP)
+MISS_WITH_CACHE(COMPARE_OP)
 MISS_WITH_CACHE(BINARY_SUBSCR)
 MISS_WITH_OPARG_COUNTER(STORE_SUBSCR)
 

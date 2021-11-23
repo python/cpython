@@ -272,6 +272,7 @@ int _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT 
 int _Py_Specialize_CallFunction(PyObject *callable, _Py_CODEUNIT *instr, int nargs, SpecializedCacheEntry *cache, PyObject *builtins);
 void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                              SpecializedCacheEntry *cache);
+void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache);
 
 #define PRINT_SPECIALIZATION_STATS 0
 #define PRINT_SPECIALIZATION_STATS_DETAILED 0

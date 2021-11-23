@@ -129,6 +129,7 @@ _Py_GetSpecializationStats(void) {
     err += add_stat_dict(stats, STORE_ATTR, "store_attr");
     err += add_stat_dict(stats, CALL_FUNCTION, "call_function");
     err += add_stat_dict(stats, BINARY_OP, "binary_op");
+    err += add_stat_dict(stats, COMPARE_OP, "compare_op");
     if (err < 0) {
         Py_DECREF(stats);
         return NULL;
@@ -187,6 +188,7 @@ _Py_PrintSpecializationStats(void)
     print_stats(out, &_specialization_stats[STORE_ATTR], "store_attr");
     print_stats(out, &_specialization_stats[CALL_FUNCTION], "call_function");
     print_stats(out, &_specialization_stats[BINARY_OP], "binary_op");
+    print_stats(out, &_specialization_stats[COMPARE_OP], "compare_op");
     if (out != stderr) {
         fclose(out);
     }
@@ -239,6 +241,7 @@ static uint8_t adaptive_opcodes[256] = {
     [CALL_FUNCTION] = CALL_FUNCTION_ADAPTIVE,
     [STORE_ATTR] = STORE_ATTR_ADAPTIVE,
     [BINARY_OP] = BINARY_OP_ADAPTIVE,
+    [COMPARE_OP] = COMPARE_OP_ADAPTIVE,
 };
 
 /* The number of cache entries required for a "family" of instructions. */
@@ -251,6 +254,7 @@ static uint8_t cache_requirements[256] = {
     [CALL_FUNCTION] = 2, /* _PyAdaptiveEntry and _PyObjectCache/_PyCallCache */
     [STORE_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
     [BINARY_OP] = 1,  // _PyAdaptiveEntry
+    [COMPARE_OP] = 1, // _PyAdaptiveEntry
 };
 
 /* Return the oparg for the cache_offset and instruction index.
@@ -1537,5 +1541,36 @@ failure:
     return;
 success:
     STAT_INC(BINARY_OP, specialization_success);
+    adaptive->counter = initial_counter_value();
+}
+
+
+void
+_Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
+                         _Py_CODEUNIT *instr, SpecializedCacheEntry *cache)
+{
+    _PyAdaptiveEntry *adaptive = &cache->adaptive;
+    if (Py_TYPE(lhs) != Py_TYPE(rhs)) {
+        SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_DIFFERENT_TYPES);
+        goto failure;
+    }
+    else if (PyFloat_CheckExact(lhs)) {
+        *instr = _Py_MAKECODEUNIT(COMPARE_OP_FLOAT, _Py_OPARG(*instr));
+        goto success;
+    }
+    else if (PyLong_CheckExact(lhs)) {
+        *instr = _Py_MAKECODEUNIT(COMPARE_OP_INT, _Py_OPARG(*instr));
+        goto success;
+    }
+    else {
+        SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_OTHER);
+        goto failure;
+    }
+failure:
+    STAT_INC(COMPARE_OP, specialization_failure);
+    cache_backoff(adaptive);
+    return;
+success:
+    STAT_INC(COMPARE_OP, specialization_success);
     adaptive->counter = initial_counter_value();
 }
