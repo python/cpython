@@ -69,13 +69,13 @@ typedef struct {
     /* Flag is set to 1 when hooks set up by sys.set_asyncgen_hooks
        were called on the generator, to avoid calling them more
        than once. */
-    int ag_hooks_inited;
+    char ag_hooks_inited;
 
     /* Flag is set to 1 when aclose() is called for the first time, or
        when a StopAsyncIteration exception is raised. */
-    int ag_closed;
+    char ag_closed;
 
-    int ag_running_async;
+    char ag_running_async;
 } PyAsyncGenObject;
 
 PyAPI_DATA(PyTypeObject) PyAsyncGen_Type;
