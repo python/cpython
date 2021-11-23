@@ -642,6 +642,10 @@ MODULE__TESTINTERNALCAPI_FALSE
 MODULE__TESTINTERNALCAPI_TRUE
 MODULE__TESTCAPI_FALSE
 MODULE__TESTCAPI_TRUE
+MODULE__HASHLIB_FALSE
+MODULE__HASHLIB_TRUE
+MODULE__SSL_FALSE
+MODULE__SSL_TRUE
 MODULE__LZMA_FALSE
 MODULE__LZMA_TRUE
 MODULE__BZ2_FALSE
@@ -20297,6 +20301,16 @@ rm -f core conftest.err conftest.$ac_objext \
 
 
 # rpath to libssl and libcrypto
+if test "x$GNULD" = xyes; then :
+
+  rpath_arg="-Wl,--enable-new-dtags,-rpath="
+
+else
+
+  rpath_arg="-Wl,-rpath="
+
+fi
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-openssl-rpath" >&5
 $as_echo_n "checking for --with-openssl-rpath... " >&6; }
 
@@ -20310,12 +20324,26 @@ fi
 
 case $with_openssl_rpath in #(
   auto|yes) :
-    OPENSSL_RPATH=auto ;; #(
+
+      OPENSSL_RPATH=auto
+            for arg in "$OPENSSL_LDFLAGS"; do
+        case $arg in #(
+  -L*) :
+    OPENSSL_LDFLAGS_RPATH="$OPENSSL_LDFLAGS_RPATH ${rpath_arg}$(echo $arg | cut -c3-)"
+         ;; #(
+  *) :
+     ;;
+esac
+      done
+     ;; #(
   no) :
     OPENSSL_RPATH= ;; #(
   *) :
     if test -d "$with_openssl_rpath"; then :
-  OPENSSL_RPATH="$with_openssl_rpath"
+
+          OPENSSL_RPATH="$with_openssl_rpath"
+          OPENSSL_LDFLAGS_RPATH="${rpath_arg}$with_openssl_rpath"
+
 else
   as_fn_error $? "--with-openssl-rpath \"$with_openssl_rpath\" is not a directory" "$LINENO" 5
 fi
@@ -20326,71 +20354,163 @@ esac
 $as_echo "$OPENSSL_RPATH" >&6; }
 
 
+# This static linking is NOT OFFICIALLY SUPPORTED and not advertised.
+# Requires static OpenSSL build with position-independent code. Some features
+# like DSO engines or external OSSL providers don't work. Only tested with GCC
+# and clang on X86_64.
+if test "x$PY_UNSUPPORTED_OPENSSL_BUILD" = xstatic; then :
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for unsupported static openssl build" >&5
+$as_echo_n "checking for unsupported static openssl build... " >&6; }
+  new_OPENSSL_LIBS=
+  for arg in $OPENSSL_LIBS; do
+    case $arg in #(
+  -l*) :
+
+        libname=$(echo $arg | cut -c3-)
+        new_OPENSSL_LIBS="$new_OPENSSL_LIBS -l:lib${libname}.a -Wl,--exclude-libs,lib${libname}.a"
+       ;; #(
+  *) :
+    new_OPENSSL_LIBS="$new_OPENSSL_LIBS $arg"
+     ;;
+esac
+  done
+    OPENSSL_LIBS="$new_OPENSSL_LIBS $ZLIB_LIBS"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $OPENSSL_LIBS" >&5
+$as_echo "$OPENSSL_LIBS" >&6; }
+
+fi
+
+LIBCRYPTO_LIBS=
+for arg in $OPENSSL_LIBS; do
+  case $arg in #(
+  -l*ssl*|-Wl*ssl*) :
+     ;; #(
+  *) :
+    LIBCRYPTO_LIBS="$LIBCRYPTO_LIBS $arg"
+   ;;
+esac
+done
+
 # check if OpenSSL libraries work as expected
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL provides required APIs" >&5
-$as_echo_n "checking whether OpenSSL provides required APIs... " >&6; }
-if ${ac_cv_working_openssl+:} false; then :
+save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+  LIBS="$LIBS $OPENSSL_LIBS"
+  CFLAGS="$CFLAGS $OPENSSL_INCLUDES"
+  LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH"
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL provides required ssl module APIs" >&5
+$as_echo_n "checking whether OpenSSL provides required ssl module APIs... " >&6; }
+if ${ac_cv_working_openssl_ssl+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-save_LIBS="$LIBS"
-save_CFLAGS="$CFLAGS"
-save_LDFLAGS="$LDFLAGS"
-LIBS="$LIBS $OPENSSL_LIBS"
-CFLAGS="$CFLAGS_NODIST $OPENSSL_INCLUDES"
-LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
-
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-#include <openssl/opensslv.h>
-#include <openssl/evp.h>
-#include <openssl/ssl.h>
-
-#if OPENSSL_VERSION_NUMBER < 0x10101000L
-#error "OpenSSL >= 1.1.1 is required"
-#endif
-
-static void keylog_cb(const SSL *ssl, const char *line) {}
+      #include <openssl/opensslv.h>
+      #include <openssl/ssl.h>
+      #if OPENSSL_VERSION_NUMBER < 0x10101000L
+        #error "OpenSSL >= 1.1.1 is required"
+      #endif
+      static void keylog_cb(const SSL *ssl, const char *line) {}
 
 int
 main ()
 {
 
-/* SSL APIs */
-SSL_CTX *ctx = SSL_CTX_new(TLS_client_method());
-SSL_CTX_set_keylog_callback(ctx, keylog_cb);
-SSL *ssl = SSL_new(ctx);
-X509_VERIFY_PARAM *param = SSL_get0_param(ssl);
-X509_VERIFY_PARAM_set1_host(param, "python.org", 0);
-SSL_free(ssl);
-SSL_CTX_free(ctx);
-
-/* hashlib APIs */
-OBJ_nid2sn(NID_md5);
-OBJ_nid2sn(NID_sha1);
-OBJ_nid2sn(NID_sha3_512);
-OBJ_nid2sn(NID_blake2b512);
-EVP_PBE_scrypt(NULL, 0, NULL, 0, 2, 8, 1, 0, NULL, 0);
+      SSL_CTX *ctx = SSL_CTX_new(TLS_client_method());
+      SSL_CTX_set_keylog_callback(ctx, keylog_cb);
+      SSL *ssl = SSL_new(ctx);
+      X509_VERIFY_PARAM *param = SSL_get0_param(ssl);
+      X509_VERIFY_PARAM_set1_host(param, "python.org", 0);
+      SSL_free(ssl);
+      SSL_CTX_free(ctx);
 
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_working_openssl=yes
+  ac_cv_working_openssl_ssl=yes
 else
-  ac_cv_working_openssl=no
+  ac_cv_working_openssl_ssl=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-LIBS="$save_LIBS"
-CFLAGS="$save_CFLAGS"
-LDFLAGS="$save_LDFLAGS"
 
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_working_openssl" >&5
-$as_echo "$ac_cv_working_openssl" >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_working_openssl_ssl" >&5
+$as_echo "$ac_cv_working_openssl_ssl" >&6; }
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+
+save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+  LIBS="$LIBS $LIBCRYPTO_LIBS"
+  CFLAGS="$CFLAGS $OPENSSL_INCLUDES"
+  LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH"
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL provides required hashlib module APIs" >&5
+$as_echo_n "checking whether OpenSSL provides required hashlib module APIs... " >&6; }
+if ${ac_cv_working_openssl_hashlib+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+      #include <openssl/opensslv.h>
+      #include <openssl/evp.h>
+      #if OPENSSL_VERSION_NUMBER < 0x10101000L
+        #error "OpenSSL >= 1.1.1 is required"
+      #endif
+
+int
+main ()
+{
+
+      OBJ_nid2sn(NID_md5);
+      OBJ_nid2sn(NID_sha1);
+      OBJ_nid2sn(NID_sha3_512);
+      OBJ_nid2sn(NID_blake2b512);
+      EVP_PBE_scrypt(NULL, 0, NULL, 0, 2, 8, 1, 0, NULL, 0);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_working_openssl_hashlib=yes
+else
+  ac_cv_working_openssl_hashlib=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_working_openssl_hashlib" >&5
+$as_echo "$ac_cv_working_openssl_hashlib" >&6; }
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
 
 # ssl module default cipher suite string
 
@@ -21800,6 +21920,79 @@ $as_echo "$py_cv_module__lzma" >&6; }
 
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _ssl" >&5
+$as_echo_n "checking for stdlib extension module _ssl... " >&6; }
+      case $py_stdlib_not_available in #(
+  *_ssl*) :
+    py_cv_module__ssl=n/a ;; #(
+  *) :
+    if true; then :
+  if test "$ac_cv_working_openssl_ssl" = yes; then :
+  py_cv_module__ssl=yes
+else
+  py_cv_module__ssl=missing
+fi
+else
+  py_cv_module__ssl=disabled
+fi
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE__SSL=$py_cv_module__ssl$as_nl"
+  if test "x$py_cv_module__ssl" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__SSL_CFLAGS=$OPENSSL_INCLUDES$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SSL_LDFLAGS=$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $OPENSSL_LIBS$as_nl"
+
+fi
+   if test "$py_cv_module__ssl" = yes; then
+  MODULE__SSL_TRUE=
+  MODULE__SSL_FALSE='#'
+else
+  MODULE__SSL_TRUE='#'
+  MODULE__SSL_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__ssl" >&5
+$as_echo "$py_cv_module__ssl" >&6; }
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _hashlib" >&5
+$as_echo_n "checking for stdlib extension module _hashlib... " >&6; }
+      case $py_stdlib_not_available in #(
+  *_hashlib*) :
+    py_cv_module__hashlib=n/a ;; #(
+  *) :
+    if true; then :
+  if test "$ac_cv_working_openssl_hashlib" = yes; then :
+  py_cv_module__hashlib=yes
+else
+  py_cv_module__hashlib=missing
+fi
+else
+  py_cv_module__hashlib=disabled
+fi
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE__HASHLIB=$py_cv_module__hashlib$as_nl"
+  if test "x$py_cv_module__hashlib" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__HASHLIB_CFLAGS=$OPENSSL_INCLUDES$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__HASHLIB_LDFLAGS=$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS$as_nl"
+
+fi
+   if test "$py_cv_module__hashlib" = yes; then
+  MODULE__HASHLIB_TRUE=
+  MODULE__HASHLIB_FALSE='#'
+else
+  MODULE__HASHLIB_TRUE='#'
+  MODULE__HASHLIB_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__hashlib" >&5
+$as_echo "$py_cv_module__hashlib" >&6; }
+
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testcapi" >&5
 $as_echo_n "checking for stdlib extension module _testcapi... " >&6; }
       case $py_stdlib_not_available in #(
@@ -22479,6 +22672,14 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__LZMA_TRUE}" && test -z "${MODULE__LZMA_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__LZMA\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__SSL_TRUE}" && test -z "${MODULE__SSL_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__SSL\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__HASHLIB_TRUE}" && test -z "${MODULE__HASHLIB_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__HASHLIB\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__TESTCAPI_TRUE}" && test -z "${MODULE__TESTCAPI_FALSE}"; then
