@@ -50,14 +50,14 @@ PyAPI_FUNC(int) _Py_IsLocaleCoercionTarget(const char *ctype_loc);
 
 /* types and objects */
 
-extern PyStatus _Py_RuntimeTypesStateInit(_PyRuntimeState *runtime);
-extern void _Py_RuntimeTypesStateFini(_PyRuntimeState *runtime);
+extern PyStatus _PyRuntimeState_TypesInit(_PyRuntimeState *runtime);
+extern void _PyRuntimeState_TypesFini(_PyRuntimeState *runtime);
 
-extern PyStatus _Py_CoreObjectsInit(PyInterpreterState *interp);
-extern void _Py_CoreObjectsFini(PyInterpreterState *interp);
+extern PyStatus _PyInterpreterState_CoreObjectsInit(PyInterpreterState *interp);
+extern void _PyInterpreterState_CoreObjectsFini(PyInterpreterState *interp);
 
-extern PyStatus _Py_GlobalObjectsInit(PyInterpreterState *interp);
-extern void _Py_GlobalObjectsFini(PyInterpreterState *interp);
+extern PyStatus _PyInterpreterState_ObjectsInit(PyInterpreterState *interp);
+extern void _PyInterpreterState_ObjectsFini(PyInterpreterState *interp);
 
 extern PyStatus _PyExc_Init(PyInterpreterState *interp);
 

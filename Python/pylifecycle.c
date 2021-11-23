@@ -109,7 +109,7 @@ _PyRuntime_Initialize(void)
         return status;
     }
 
-    status = _Py_RuntimeTypesStateInit(&_PyRuntime);
+    status = _PyRuntimeState_TypesInit(&_PyRuntime);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -120,7 +120,7 @@ _PyRuntime_Initialize(void)
 void
 _PyRuntime_Finalize(void)
 {
-    _Py_RuntimeTypesStateFini(&_PyRuntime);
+    _PyRuntimeState_TypesFini(&_PyRuntime);
     _PyRuntimeState_Fini(&_PyRuntime);
     runtime_initialized = 0;
 }
@@ -722,7 +722,7 @@ pycore_interp_init(PyThreadState *tstate)
     PyStatus status;
     PyObject *sysmod = NULL;
 
-    status = _Py_CoreObjectsInit(interp);
+    status = _PyInterpreterState_CoreObjectsInit(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -733,7 +733,7 @@ pycore_interp_init(PyThreadState *tstate)
         return status;
     }
 
-    status = _Py_GlobalObjectsInit(interp);
+    status = _PyInterpreterState_ObjectsInit(interp);
     if (_PyStatus_EXCEPTION(status)) {
         goto done;
     }
@@ -1580,8 +1580,8 @@ finalize_interp_clear(PyThreadState *tstate)
         _Py_ClearFileSystemEncoding();
     }
 
-    _Py_GlobalObjectsFini(tstate->interp);
-    _Py_CoreObjectsFini(tstate->interp);
+    _PyInterpreterState_ObjectsFini(tstate->interp);
+    _PyInterpreterState_CoreObjectsFini(tstate->interp);
 }
 
 

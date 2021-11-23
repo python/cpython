@@ -31,7 +31,7 @@
  **************************************/
 
 PyStatus
-_Py_RuntimeTypesStateInit(_PyRuntimeState *runtime)
+_PyRuntimeState_TypesInit(_PyRuntimeState *runtime)
 {
     PyStatus status;
 
@@ -49,7 +49,7 @@ _Py_RuntimeTypesStateInit(_PyRuntimeState *runtime)
 }
 
 void
-_Py_RuntimeTypesStateFini(_PyRuntimeState *runtime)
+_PyRuntimeState_TypesFini(_PyRuntimeState *runtime)
 {
     // ...
 }
@@ -102,7 +102,7 @@ init_core_objects(PyInterpreterState *interp)
 }
 
 PyStatus
-_Py_CoreObjectsInit(PyInterpreterState *interp)
+_PyInterpreterState_CoreObjectsInit(PyInterpreterState *interp)
 {
     PyStatus status;
 
@@ -126,7 +126,7 @@ _Py_CoreObjectsInit(PyInterpreterState *interp)
 }
 
 void
-_Py_CoreObjectsFini(PyInterpreterState *interp)
+_PyInterpreterState_CoreObjectsFini(PyInterpreterState *interp)
 {
     // Call _PyUnicode_ClearInterned() before _PyDict_Fini() since it uses
     // a dict internally.
@@ -314,7 +314,7 @@ init_objects(PyInterpreterState *interp)
 }
 
 PyStatus
-_Py_GlobalObjectsInit(PyInterpreterState *interp)
+_PyInterpreterState_ObjectsInit(PyInterpreterState *interp)
 {
     PyStatus status;
 
@@ -337,7 +337,7 @@ _Py_GlobalObjectsInit(PyInterpreterState *interp)
 }
 
 void
-_Py_GlobalObjectsFini(PyInterpreterState *interp)
+_PyInterpreterState_ObjectsFini(PyInterpreterState *interp)
 {
     _PyExc_Fini(interp);
     _PyFrame_Fini(interp);
