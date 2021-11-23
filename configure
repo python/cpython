@@ -624,6 +624,10 @@ ac_includes_default="\
 
 ac_subst_vars='LTLIBOBJS
 MODULE_BLOCK
+MODULE_XXLIMITED_35_FALSE
+MODULE_XXLIMITED_35_TRUE
+MODULE_XXLIMITED_FALSE
+MODULE_XXLIMITED_TRUE
 MODULE__CTYPES_TEST_FALSE
 MODULE__CTYPES_TEST_TRUE
 MODULE__XXTESTFUZZ_FALSE
@@ -638,8 +642,18 @@ MODULE__TESTINTERNALCAPI_FALSE
 MODULE__TESTINTERNALCAPI_TRUE
 MODULE__TESTCAPI_FALSE
 MODULE__TESTCAPI_TRUE
+MODULE__LZMA_FALSE
+MODULE__LZMA_TRUE
+MODULE__BZ2_FALSE
+MODULE__BZ2_TRUE
+MODULE_BINASCII_FALSE
+MODULE_BINASCII_TRUE
+MODULE_ZLIB_FALSE
+MODULE_ZLIB_TRUE
 MODULE__SQLITE3_FALSE
 MODULE__SQLITE3_TRUE
+MODULE_NIS_FALSE
+MODULE_NIS_TRUE
 MODULE__DECIMAL_FALSE
 MODULE__DECIMAL_TRUE
 MODULE__BLAKE2_FALSE
@@ -688,6 +702,10 @@ MODULE_OSSAUDIODEV_FALSE
 MODULE_OSSAUDIODEV_TRUE
 MODULE_GRP_FALSE
 MODULE_GRP_TRUE
+MODULE_MMAP_FALSE
+MODULE_MMAP_TRUE
+MODULE_FCNTL_FALSE
+MODULE_FCNTL_TRUE
 MODULE__DATETIME_FALSE
 MODULE__DATETIME_TRUE
 MODULE_MATH_FALSE
@@ -696,14 +714,26 @@ MODULE_CMATH_FALSE
 MODULE_CMATH_TRUE
 MODULE__STATISTICS_FALSE
 MODULE__STATISTICS_TRUE
+MODULE_AUDIOOP_FALSE
+MODULE_AUDIOOP_TRUE
 MODULE__ZONEINFO_FALSE
 MODULE__ZONEINFO_TRUE
+MODULE__XXSUBINTERPRETERS_FALSE
+MODULE__XXSUBINTERPRETERS_TRUE
 MODULE__TYPING_FALSE
 MODULE__TYPING_TRUE
+MODULE__STRUCT_FALSE
+MODULE__STRUCT_TRUE
+MODULE__SOCKET_FALSE
+MODULE__SOCKET_TRUE
+MODULE_SELECT_FALSE
+MODULE_SELECT_TRUE
 MODULE__RANDOM_FALSE
 MODULE__RANDOM_TRUE
 MODULE__QUEUE_FALSE
 MODULE__QUEUE_TRUE
+MODULE__POSIXSUBPROCESS_FALSE
+MODULE__POSIXSUBPROCESS_TRUE
 MODULE__PICKLE_FALSE
 MODULE__PICKLE_TRUE
 MODULE__OPCODE_FALSE
@@ -714,6 +744,8 @@ MODULE__JSON_FALSE
 MODULE__JSON_TRUE
 MODULE__HEAPQ_FALSE
 MODULE__HEAPQ_TRUE
+MODULE__CSV_FALSE
+MODULE__CSV_TRUE
 MODULE__CONTEXTVARS_FALSE
 MODULE__CONTEXTVARS_TRUE
 MODULE__BISECT_FALSE
@@ -753,6 +785,12 @@ HAVE_GETHOSTBYNAME_R_3_ARG
 HAVE_GETHOSTBYNAME_R_5_ARG
 HAVE_GETHOSTBYNAME_R_6_ARG
 LIBOBJS
+LIBLZMA_LIBS
+LIBLZMA_CFLAGS
+BZIP2_LIBS
+BZIP2_CFLAGS
+ZLIB_LIBS
+ZLIB_CFLAGS
 TRUE
 MACHDEP_OBJS
 DYNLOADFILE
@@ -765,6 +803,8 @@ TCLTK_LIBS
 TCLTK_INCLUDES
 LIBSQLITE3_LIBS
 LIBSQLITE3_CFLAGS
+LIBNSL_LIBS
+LIBNSL_CFLAGS
 LIBMPDEC_INTERNAL
 LIBMPDEC_LDFLAGS
 LIBMPDEC_CFLAGS
@@ -992,8 +1032,16 @@ LIBS
 CPPFLAGS
 CPP
 PROFILE_TASK
+LIBNSL_CFLAGS
+LIBNSL_LIBS
 LIBSQLITE3_CFLAGS
-LIBSQLITE3_LIBS'
+LIBSQLITE3_LIBS
+ZLIB_CFLAGS
+ZLIB_LIBS
+BZIP2_CFLAGS
+BZIP2_LIBS
+LIBLZMA_CFLAGS
+LIBLZMA_LIBS'
 
 
 # Initialize some variables set by options.
@@ -1767,10 +1815,22 @@ Some influential environment variables:
   CPP         C preprocessor
   PROFILE_TASK
               Python args for PGO generation task
+  LIBNSL_CFLAGS
+              C compiler flags for LIBNSL, overriding pkg-config
+  LIBNSL_LIBS linker flags for LIBNSL, overriding pkg-config
   LIBSQLITE3_CFLAGS
               C compiler flags for LIBSQLITE3, overriding pkg-config
   LIBSQLITE3_LIBS
               linker flags for LIBSQLITE3, overriding pkg-config
+  ZLIB_CFLAGS C compiler flags for ZLIB, overriding pkg-config
+  ZLIB_LIBS   linker flags for ZLIB, overriding pkg-config
+  BZIP2_CFLAGS
+              C compiler flags for BZIP2, overriding pkg-config
+  BZIP2_LIBS  linker flags for BZIP2, overriding pkg-config
+  LIBLZMA_CFLAGS
+              C compiler flags for LIBLZMA, overriding pkg-config
+  LIBLZMA_LIBS
+              linker flags for LIBLZMA, overriding pkg-config
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -11034,6 +11094,274 @@ if test "$have_glibc_memmove_bug" = yes; then
 fi
 
 
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIBNSL" >&5
+$as_echo_n "checking for LIBNSL... " >&6; }
+
+if test -n "$LIBNSL_CFLAGS"; then
+    pkg_cv_LIBNSL_CFLAGS="$LIBNSL_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libnsl\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libnsl") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBNSL_CFLAGS=`$PKG_CONFIG --cflags "libnsl" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$LIBNSL_LIBS"; then
+    pkg_cv_LIBNSL_LIBS="$LIBNSL_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libnsl\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libnsl") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBNSL_LIBS=`$PKG_CONFIG --libs "libnsl" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        LIBNSL_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libnsl" 2>&1`
+        else
+	        LIBNSL_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libnsl" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$LIBNSL_PKG_ERRORS" >&5
+
+
+  LIBNSL_CFLAGS=
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing yp_match" >&5
+$as_echo_n "checking for library containing yp_match... " >&6; }
+if ${ac_cv_search_yp_match+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char yp_match ();
+int
+main ()
+{
+return yp_match ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' nsl; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_yp_match=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_yp_match+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_yp_match+:} false; then :
+
+else
+  ac_cv_search_yp_match=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_yp_match" >&5
+$as_echo "$ac_cv_search_yp_match" >&6; }
+ac_res=$ac_cv_search_yp_match
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  have_nis=yes
+else
+  have_nis=no
+fi
+
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+  case $ac_cv_search_yp_match in #(
+  no) :
+    LIBNSL_LIBS= ;; #(
+  "none required") :
+    LIBNSL_LIBS= ;; #(
+  *) :
+    LIBNSL_LIBS=$ac_cv_search_yp_match
+   ;;
+esac
+
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+  LIBNSL_CFLAGS=
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing yp_match" >&5
+$as_echo_n "checking for library containing yp_match... " >&6; }
+if ${ac_cv_search_yp_match+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char yp_match ();
+int
+main ()
+{
+return yp_match ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' nsl; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_yp_match=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_yp_match+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_yp_match+:} false; then :
+
+else
+  ac_cv_search_yp_match=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_yp_match" >&5
+$as_echo "$ac_cv_search_yp_match" >&6; }
+ac_res=$ac_cv_search_yp_match
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  have_nis=yes
+else
+  have_nis=no
+fi
+
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+  case $ac_cv_search_yp_match in #(
+  no) :
+    LIBNSL_LIBS= ;; #(
+  "none required") :
+    LIBNSL_LIBS= ;; #(
+  *) :
+    LIBNSL_LIBS=$ac_cv_search_yp_match
+   ;;
+esac
+
+else
+	LIBNSL_CFLAGS=$pkg_cv_LIBNSL_CFLAGS
+	LIBNSL_LIBS=$pkg_cv_LIBNSL_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	have_nis=yes
+fi
+
+if test "x$have_nis" = xyes; then :
+
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    CPPFLAGS="$LIBNSL_CFLAGS $CFLAGS"
+    for ac_header in rpc/rpc.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "rpc/rpc.h" "ac_cv_header_rpc_rpc_h" "$ac_includes_default"
+if test "x$ac_cv_header_rpc_rpc_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_RPC_RPC_H 1
+_ACEOF
+
+fi
+
+done
+
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+
+fi
+
+
 pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIBSQLITE3" >&5
 $as_echo_n "checking for LIBSQLITE3... " >&6; }
@@ -13343,7 +13671,7 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_flock_decl" >&5
 $as_echo "$ac_cv_flock_decl" >&6; }
-if test "x${ac_cv_flock_decl}" = xyes; then
+if test "x$ac_cv_flock_decl" = xyes; then :
   for ac_func in flock
 do :
   ac_fn_c_check_func "$LINENO" "flock" "ac_cv_func_flock"
@@ -13352,7 +13680,9 @@ if test "x$ac_cv_func_flock" = xyes; then :
 #define HAVE_FLOCK 1
 _ACEOF
 
-else
+fi
+done
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for flock in -lbsd" >&5
 $as_echo_n "checking for flock in -lbsd... " >&6; }
 if ${ac_cv_lib_bsd_flock+:} false; then :
@@ -13390,17 +13720,9 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_bsd_flock" >&5
 $as_echo "$ac_cv_lib_bsd_flock" >&6; }
 if test "x$ac_cv_lib_bsd_flock" = xyes; then :
-  $as_echo "#define HAVE_FLOCK 1" >>confdefs.h
-
-
-$as_echo "#define FLOCK_NEEDS_LIBBSD 1" >>confdefs.h
-
-
+  FCNTL_LIBS="-lbsd"
 fi
 
-
-fi
-done
 
 fi
 
@@ -13708,7 +14030,69 @@ $as_echo "#define HAVE_LCHFLAGS 1" >>confdefs.h
 
 fi
 
-for ac_header in zlib.h
+
+
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ZLIB" >&5
+$as_echo_n "checking for ZLIB... " >&6; }
+
+if test -n "$ZLIB_CFLAGS"; then
+    pkg_cv_ZLIB_CFLAGS="$ZLIB_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"zlib >= 1.2.0\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "zlib >= 1.2.0") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_ZLIB_CFLAGS=`$PKG_CONFIG --cflags "zlib >= 1.2.0" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$ZLIB_LIBS"; then
+    pkg_cv_ZLIB_LIBS="$ZLIB_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"zlib >= 1.2.0\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "zlib >= 1.2.0") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_ZLIB_LIBS=`$PKG_CONFIG --libs "zlib >= 1.2.0" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        ZLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "zlib >= 1.2.0" 2>&1`
+        else
+	        ZLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "zlib >= 1.2.0" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$ZLIB_PKG_ERRORS" >&5
+
+
+  for ac_header in zlib.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
 if test "x$ac_cv_header_zlib_h" = xyes; then :
@@ -13716,8 +14100,13 @@ if test "x$ac_cv_header_zlib_h" = xyes; then :
 #define HAVE_ZLIB_H 1
 _ACEOF
 
-  save_LIBS="$LIBS"
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gzread in -lz" >&5
+    save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gzread in -lz" >&5
 $as_echo_n "checking for gzread in -lz... " >&6; }
 if ${ac_cv_lib_z_gzread+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -13754,16 +14143,11 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_z_gzread" >&5
 $as_echo "$ac_cv_lib_z_gzread" >&6; }
 if test "x$ac_cv_lib_z_gzread" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBZ 1
-_ACEOF
 
-  LIBS="-lz $LIBS"
-
-fi
-
-  LIBS="$save_LIBS"
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
+        have_zlib=yes
+        ZLIB_CFLAGS=
+        ZLIB_LIBS=-lz
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
 $as_echo_n "checking for inflateCopy in -lz... " >&6; }
 if ${ac_cv_lib_z_inflateCopy+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -13800,19 +14184,234 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_z_inflateCopy" >&5
 $as_echo "$ac_cv_lib_z_inflateCopy" >&6; }
 if test "x$ac_cv_lib_z_inflateCopy" = xyes; then :
-
-$as_echo "#define HAVE_ZLIB_COPY 1" >>confdefs.h
+  $as_echo "#define HAVE_ZLIB_COPY 1" >>confdefs.h
 
 fi
 
-  LIBS="$save_LIBS"
 
+else
+
+        have_zlib=no
+
+fi
+
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+
+else
+  have_zlib=no
 fi
 
 done
 
 
-for ac_header in bzlib.h
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+  for ac_header in zlib.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
+if test "x$ac_cv_header_zlib_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_ZLIB_H 1
+_ACEOF
+
+    save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gzread in -lz" >&5
+$as_echo_n "checking for gzread in -lz... " >&6; }
+if ${ac_cv_lib_z_gzread+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lz  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char gzread ();
+int
+main ()
+{
+return gzread ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_z_gzread=yes
+else
+  ac_cv_lib_z_gzread=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_z_gzread" >&5
+$as_echo "$ac_cv_lib_z_gzread" >&6; }
+if test "x$ac_cv_lib_z_gzread" = xyes; then :
+
+        have_zlib=yes
+        ZLIB_CFLAGS=
+        ZLIB_LIBS=-lz
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
+$as_echo_n "checking for inflateCopy in -lz... " >&6; }
+if ${ac_cv_lib_z_inflateCopy+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lz  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char inflateCopy ();
+int
+main ()
+{
+return inflateCopy ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_z_inflateCopy=yes
+else
+  ac_cv_lib_z_inflateCopy=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_z_inflateCopy" >&5
+$as_echo "$ac_cv_lib_z_inflateCopy" >&6; }
+if test "x$ac_cv_lib_z_inflateCopy" = xyes; then :
+  $as_echo "#define HAVE_ZLIB_COPY 1" >>confdefs.h
+
+fi
+
+
+else
+
+        have_zlib=no
+
+fi
+
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+
+else
+  have_zlib=no
+fi
+
+done
+
+
+else
+	ZLIB_CFLAGS=$pkg_cv_ZLIB_CFLAGS
+	ZLIB_LIBS=$pkg_cv_ZLIB_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+  have_zlib=yes
+    $as_echo "#define HAVE_ZLIB_COPY 1" >>confdefs.h
+
+
+fi
+
+if test "x$have_zlib" = xyes; then :
+
+  BINASCII_CFLAGS="-DUSE_ZLIB_CRC32 $ZLIB_CFLAGS"
+  BINASCII_LIBS="$ZLIB_LIBS"
+
+fi
+
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for BZIP2" >&5
+$as_echo_n "checking for BZIP2... " >&6; }
+
+if test -n "$BZIP2_CFLAGS"; then
+    pkg_cv_BZIP2_CFLAGS="$BZIP2_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"bzip2\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "bzip2") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_BZIP2_CFLAGS=`$PKG_CONFIG --cflags "bzip2" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$BZIP2_LIBS"; then
+    pkg_cv_BZIP2_LIBS="$BZIP2_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"bzip2\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "bzip2") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_BZIP2_LIBS=`$PKG_CONFIG --libs "bzip2" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        BZIP2_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "bzip2" 2>&1`
+        else
+	        BZIP2_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "bzip2" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$BZIP2_PKG_ERRORS" >&5
+
+
+  for ac_header in bzlib.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "bzlib.h" "ac_cv_header_bzlib_h" "$ac_includes_default"
 if test "x$ac_cv_header_bzlib_h" = xyes; then :
@@ -13820,8 +14419,13 @@ if test "x$ac_cv_header_bzlib_h" = xyes; then :
 #define HAVE_BZLIB_H 1
 _ACEOF
 
-  save_LIBS="$LIBS"
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BZ2_bzCompress in -lbz2" >&5
+    save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BZ2_bzCompress in -lbz2" >&5
 $as_echo_n "checking for BZ2_bzCompress in -lbz2... " >&6; }
 if ${ac_cv_lib_bz2_BZ2_bzCompress+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -13858,22 +14462,178 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_bz2_BZ2_bzCompress" >&5
 $as_echo "$ac_cv_lib_bz2_BZ2_bzCompress" >&6; }
 if test "x$ac_cv_lib_bz2_BZ2_bzCompress" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBBZ2 1
-_ACEOF
 
-  LIBS="-lbz2 $LIBS"
+        have_bzip2=yes
+        BZIP2_CFLAGS=
+        BZIP2_LIBS=-lbz2
 
+else
+  have_bzip2=no
 fi
 
-  LIBS="$save_LIBS"
 
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+
+else
+  have_bzip2=no
 fi
 
 done
 
 
-for ac_header in lzma.h
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+  for ac_header in bzlib.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "bzlib.h" "ac_cv_header_bzlib_h" "$ac_includes_default"
+if test "x$ac_cv_header_bzlib_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_BZLIB_H 1
+_ACEOF
+
+    save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BZ2_bzCompress in -lbz2" >&5
+$as_echo_n "checking for BZ2_bzCompress in -lbz2... " >&6; }
+if ${ac_cv_lib_bz2_BZ2_bzCompress+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lbz2  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char BZ2_bzCompress ();
+int
+main ()
+{
+return BZ2_bzCompress ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_bz2_BZ2_bzCompress=yes
+else
+  ac_cv_lib_bz2_BZ2_bzCompress=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_bz2_BZ2_bzCompress" >&5
+$as_echo "$ac_cv_lib_bz2_BZ2_bzCompress" >&6; }
+if test "x$ac_cv_lib_bz2_BZ2_bzCompress" = xyes; then :
+
+        have_bzip2=yes
+        BZIP2_CFLAGS=
+        BZIP2_LIBS=-lbz2
+
+else
+  have_bzip2=no
+fi
+
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+
+else
+  have_bzip2=no
+fi
+
+done
+
+
+else
+	BZIP2_CFLAGS=$pkg_cv_BZIP2_CFLAGS
+	BZIP2_LIBS=$pkg_cv_BZIP2_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	have_bzip2=yes
+fi
+
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIBLZMA" >&5
+$as_echo_n "checking for LIBLZMA... " >&6; }
+
+if test -n "$LIBLZMA_CFLAGS"; then
+    pkg_cv_LIBLZMA_CFLAGS="$LIBLZMA_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"liblzma\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "liblzma") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBLZMA_CFLAGS=`$PKG_CONFIG --cflags "liblzma" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$LIBLZMA_LIBS"; then
+    pkg_cv_LIBLZMA_LIBS="$LIBLZMA_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"liblzma\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "liblzma") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBLZMA_LIBS=`$PKG_CONFIG --libs "liblzma" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        LIBLZMA_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "liblzma" 2>&1`
+        else
+	        LIBLZMA_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "liblzma" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$LIBLZMA_PKG_ERRORS" >&5
+
+
+  for ac_header in lzma.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "lzma.h" "ac_cv_header_lzma_h" "$ac_includes_default"
 if test "x$ac_cv_header_lzma_h" = xyes; then :
@@ -13881,8 +14641,13 @@ if test "x$ac_cv_header_lzma_h" = xyes; then :
 #define HAVE_LZMA_H 1
 _ACEOF
 
-  save_LIBS="$LIBS"
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for lzma_easy_encoder in -llzma" >&5
+    save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for lzma_easy_encoder in -llzma" >&5
 $as_echo_n "checking for lzma_easy_encoder in -llzma... " >&6; }
 if ${ac_cv_lib_lzma_lzma_easy_encoder+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -13919,20 +14684,116 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_lzma_lzma_easy_encoder" >&5
 $as_echo "$ac_cv_lib_lzma_lzma_easy_encoder" >&6; }
 if test "x$ac_cv_lib_lzma_lzma_easy_encoder" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBLZMA 1
-_ACEOF
 
-  LIBS="-llzma $LIBS"
+        have_liblzma=yes
+        LIBLZMA_CFLAGS=
+        LIBLZMA_LIBS=-llzma
 
+else
+  have_liblzma=no
 fi
 
-  LIBS="$save_LIBS"
 
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+
+else
+  have_liblzma=no
 fi
 
 done
 
+
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+  for ac_header in lzma.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "lzma.h" "ac_cv_header_lzma_h" "$ac_includes_default"
+if test "x$ac_cv_header_lzma_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LZMA_H 1
+_ACEOF
+
+    save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for lzma_easy_encoder in -llzma" >&5
+$as_echo_n "checking for lzma_easy_encoder in -llzma... " >&6; }
+if ${ac_cv_lib_lzma_lzma_easy_encoder+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-llzma  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char lzma_easy_encoder ();
+int
+main ()
+{
+return lzma_easy_encoder ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_lzma_lzma_easy_encoder=yes
+else
+  ac_cv_lib_lzma_lzma_easy_encoder=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_lzma_lzma_easy_encoder" >&5
+$as_echo "$ac_cv_lib_lzma_lzma_easy_encoder" >&6; }
+if test "x$ac_cv_lib_lzma_lzma_easy_encoder" = xyes; then :
+
+        have_liblzma=yes
+        LIBLZMA_CFLAGS=
+        LIBLZMA_LIBS=-llzma
+
+else
+  have_liblzma=no
+fi
+
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+
+else
+  have_liblzma=no
+fi
+
+done
+
+
+else
+	LIBLZMA_CFLAGS=$pkg_cv_LIBLZMA_CFLAGS
+	LIBLZMA_LIBS=$pkg_cv_LIBLZMA_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	have_liblzma=yes
+fi
 
 
 
@@ -19576,11 +20437,8 @@ else
   MODULE__IO_TRUE='#'
   MODULE__IO_FALSE=
 fi
-
-
+  as_fn_append MODULE_BLOCK "MODULE__IO=yes$as_nl"
     as_fn_append MODULE_BLOCK "MODULE__IO_CFLAGS=-I\$(srcdir)/Modules/_io$as_nl"
-
-
 
 
      if true; then
@@ -19590,11 +20448,8 @@ else
   MODULE_TIME_TRUE='#'
   MODULE_TIME_FALSE=
 fi
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE_TIME=yes$as_nl"
     as_fn_append MODULE_BLOCK "MODULE_TIME_LDFLAGS=$TIMEMODULE_LIB$as_nl"
-
 
 
 
@@ -19605,10 +20460,7 @@ else
   MODULE_ARRAY_TRUE='#'
   MODULE_ARRAY_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE_ARRAY=yes$as_nl"
 
      if true; then
   MODULE__ASYNCIO_TRUE=
@@ -19617,10 +20469,7 @@ else
   MODULE__ASYNCIO_TRUE='#'
   MODULE__ASYNCIO_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__ASYNCIO=yes$as_nl"
 
      if true; then
   MODULE__BISECT_TRUE=
@@ -19629,10 +20478,7 @@ else
   MODULE__BISECT_TRUE='#'
   MODULE__BISECT_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__BISECT=yes$as_nl"
 
      if true; then
   MODULE__CONTEXTVARS_TRUE=
@@ -19641,10 +20487,16 @@ else
   MODULE__CONTEXTVARS_TRUE='#'
   MODULE__CONTEXTVARS_FALSE=
 fi
+  as_fn_append MODULE_BLOCK "MODULE__CONTEXTVARS=yes$as_nl"
 
-
-
-
+     if true; then
+  MODULE__CSV_TRUE=
+  MODULE__CSV_FALSE='#'
+else
+  MODULE__CSV_TRUE='#'
+  MODULE__CSV_FALSE=
+fi
+  as_fn_append MODULE_BLOCK "MODULE__CSV=yes$as_nl"
 
      if true; then
   MODULE__HEAPQ_TRUE=
@@ -19653,10 +20505,7 @@ else
   MODULE__HEAPQ_TRUE='#'
   MODULE__HEAPQ_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__HEAPQ=yes$as_nl"
 
      if true; then
   MODULE__JSON_TRUE=
@@ -19665,10 +20514,7 @@ else
   MODULE__JSON_TRUE='#'
   MODULE__JSON_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__JSON=yes$as_nl"
 
      if true; then
   MODULE__LSPROF_TRUE=
@@ -19677,10 +20523,7 @@ else
   MODULE__LSPROF_TRUE='#'
   MODULE__LSPROF_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__LSPROF=yes$as_nl"
 
      if true; then
   MODULE__OPCODE_TRUE=
@@ -19689,10 +20532,7 @@ else
   MODULE__OPCODE_TRUE='#'
   MODULE__OPCODE_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__OPCODE=yes$as_nl"
 
      if true; then
   MODULE__PICKLE_TRUE=
@@ -19701,10 +20541,16 @@ else
   MODULE__PICKLE_TRUE='#'
   MODULE__PICKLE_FALSE=
 fi
+  as_fn_append MODULE_BLOCK "MODULE__PICKLE=yes$as_nl"
 
-
-
-
+     if true; then
+  MODULE__POSIXSUBPROCESS_TRUE=
+  MODULE__POSIXSUBPROCESS_FALSE='#'
+else
+  MODULE__POSIXSUBPROCESS_TRUE='#'
+  MODULE__POSIXSUBPROCESS_FALSE=
+fi
+  as_fn_append MODULE_BLOCK "MODULE__POSIXSUBPROCESS=yes$as_nl"
 
      if true; then
   MODULE__QUEUE_TRUE=
@@ -19713,10 +20559,7 @@ else
   MODULE__QUEUE_TRUE='#'
   MODULE__QUEUE_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__QUEUE=yes$as_nl"
 
      if true; then
   MODULE__RANDOM_TRUE=
@@ -19725,10 +20568,34 @@ else
   MODULE__RANDOM_TRUE='#'
   MODULE__RANDOM_FALSE=
 fi
+  as_fn_append MODULE_BLOCK "MODULE__RANDOM=yes$as_nl"
 
+     if true; then
+  MODULE_SELECT_TRUE=
+  MODULE_SELECT_FALSE='#'
+else
+  MODULE_SELECT_TRUE='#'
+  MODULE_SELECT_FALSE=
+fi
+  as_fn_append MODULE_BLOCK "MODULE_SELECT=yes$as_nl"
 
+     if true; then
+  MODULE__SOCKET_TRUE=
+  MODULE__SOCKET_FALSE='#'
+else
+  MODULE__SOCKET_TRUE='#'
+  MODULE__SOCKET_FALSE=
+fi
+  as_fn_append MODULE_BLOCK "MODULE__SOCKET=yes$as_nl"
 
-
+     if true; then
+  MODULE__STRUCT_TRUE=
+  MODULE__STRUCT_FALSE='#'
+else
+  MODULE__STRUCT_TRUE='#'
+  MODULE__STRUCT_FALSE=
+fi
+  as_fn_append MODULE_BLOCK "MODULE__STRUCT=yes$as_nl"
 
      if true; then
   MODULE__TYPING_TRUE=
@@ -19737,10 +20604,16 @@ else
   MODULE__TYPING_TRUE='#'
   MODULE__TYPING_FALSE=
 fi
+  as_fn_append MODULE_BLOCK "MODULE__TYPING=yes$as_nl"
 
-
-
-
+     if true; then
+  MODULE__XXSUBINTERPRETERS_TRUE=
+  MODULE__XXSUBINTERPRETERS_FALSE='#'
+else
+  MODULE__XXSUBINTERPRETERS_TRUE='#'
+  MODULE__XXSUBINTERPRETERS_FALSE=
+fi
+  as_fn_append MODULE_BLOCK "MODULE__XXSUBINTERPRETERS=yes$as_nl"
 
      if true; then
   MODULE__ZONEINFO_TRUE=
@@ -19749,10 +20622,18 @@ else
   MODULE__ZONEINFO_TRUE='#'
   MODULE__ZONEINFO_FALSE=
 fi
+  as_fn_append MODULE_BLOCK "MODULE__ZONEINFO=yes$as_nl"
 
 
-
-
+     if true; then
+  MODULE_AUDIOOP_TRUE=
+  MODULE_AUDIOOP_FALSE='#'
+else
+  MODULE_AUDIOOP_TRUE='#'
+  MODULE_AUDIOOP_FALSE=
+fi
+  as_fn_append MODULE_BLOCK "MODULE_AUDIOOP=yes$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_AUDIOOP_LDFLAGS=$LIBM$as_nl"
 
 
      if true; then
@@ -19762,11 +20643,8 @@ else
   MODULE__STATISTICS_TRUE='#'
   MODULE__STATISTICS_FALSE=
 fi
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__STATISTICS=yes$as_nl"
     as_fn_append MODULE_BLOCK "MODULE__STATISTICS_LDFLAGS=$LIBM$as_nl"
-
 
 
      if true; then
@@ -19776,11 +20654,8 @@ else
   MODULE_CMATH_TRUE='#'
   MODULE_CMATH_FALSE=
 fi
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE_CMATH=yes$as_nl"
     as_fn_append MODULE_BLOCK "MODULE_CMATH_LDFLAGS=$LIBM$as_nl"
-
 
 
      if true; then
@@ -19790,11 +20665,8 @@ else
   MODULE_MATH_TRUE='#'
   MODULE_MATH_FALSE=
 fi
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE_MATH=yes$as_nl"
     as_fn_append MODULE_BLOCK "MODULE_MATH_LDFLAGS=$LIBM$as_nl"
-
 
 
 
@@ -19805,11 +20677,81 @@ else
   MODULE__DATETIME_TRUE='#'
   MODULE__DATETIME_FALSE=
 fi
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__DATETIME=yes$as_nl"
     as_fn_append MODULE_BLOCK "MODULE__DATETIME_LDFLAGS=$TIMEMODULE_LIB $LIBM$as_nl"
 
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module fcntl" >&5
+$as_echo_n "checking for stdlib extension module fcntl... " >&6; }
+      case $py_stdlib_not_available in #(
+  *fcntl*) :
+    py_cv_module_fcntl=n/a ;; #(
+  *) :
+    if true; then :
+  if test "$ac_cv_header_sys_ioctl_h" = "yes" -a "$ac_cv_header_fcntl_h" = "yes"; then :
+  py_cv_module_fcntl=yes
+else
+  py_cv_module_fcntl=missing
+fi
+else
+  py_cv_module_fcntl=disabled
+fi
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE_FCNTL=$py_cv_module_fcntl$as_nl"
+  if test "x$py_cv_module_fcntl" = xyes; then :
+
+
+    as_fn_append MODULE_BLOCK "MODULE_FCNTL_LDFLAGS=$FCNTL_LIBS$as_nl"
+
+fi
+   if test "$py_cv_module_fcntl" = yes; then
+  MODULE_FCNTL_TRUE=
+  MODULE_FCNTL_FALSE='#'
+else
+  MODULE_FCNTL_TRUE='#'
+  MODULE_FCNTL_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_fcntl" >&5
+$as_echo "$py_cv_module_fcntl" >&6; }
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module mmap" >&5
+$as_echo_n "checking for stdlib extension module mmap... " >&6; }
+      case $py_stdlib_not_available in #(
+  *mmap*) :
+    py_cv_module_mmap=n/a ;; #(
+  *) :
+    if true; then :
+  if test "$ac_cv_header_sys_mman_h" = "yes" -a "$ac_cv_header_sys_stat_h" = "yes"; then :
+  py_cv_module_mmap=yes
+else
+  py_cv_module_mmap=missing
+fi
+else
+  py_cv_module_mmap=disabled
+fi
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE_MMAP=$py_cv_module_mmap$as_nl"
+  if test "x$py_cv_module_mmap" = xyes; then :
+
+
+
+
+fi
+   if test "$py_cv_module_mmap" = yes; then
+  MODULE_MMAP_TRUE=
+  MODULE_MMAP_FALSE='#'
+else
+  MODULE_MMAP_TRUE='#'
+  MODULE_MMAP_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_mmap" >&5
+$as_echo "$py_cv_module_mmap" >&6; }
 
 
 
@@ -19819,8 +20761,7 @@ $as_echo_n "checking for stdlib extension module grp... " >&6; }
   *grp*) :
     py_cv_module_grp=n/a ;; #(
   *) :
-
-      if true; then :
+    if true; then :
   if test "$ac_cv_func_getgrgid" = yes -o "$ac_cv_func_getgrgid_r" = yes; then :
   py_cv_module_grp=yes
 else
@@ -19828,9 +20769,7 @@ else
 fi
 else
   py_cv_module_grp=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE_GRP=$py_cv_module_grp$as_nl"
@@ -19858,8 +20797,7 @@ $as_echo_n "checking for stdlib extension module ossaudiodev... " >&6; }
   *ossaudiodev*) :
     py_cv_module_ossaudiodev=n/a ;; #(
   *) :
-
-      if true; then :
+    if true; then :
   if test "$ac_cv_header_linux_soundcard_h" = yes -o "$ac_cv_header_sys_soundcard_h" = yes; then :
   py_cv_module_ossaudiodev=yes
 else
@@ -19867,9 +20805,7 @@ else
 fi
 else
   py_cv_module_ossaudiodev=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE_OSSAUDIODEV=$py_cv_module_ossaudiodev$as_nl"
@@ -19897,8 +20833,7 @@ $as_echo_n "checking for stdlib extension module resource... " >&6; }
   *resource*) :
     py_cv_module_resource=n/a ;; #(
   *) :
-
-      if true; then :
+    if true; then :
   if test "$ac_cv_header_sys_resource_h" = yes; then :
   py_cv_module_resource=yes
 else
@@ -19906,9 +20841,7 @@ else
 fi
 else
   py_cv_module_resource=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE_RESOURCE=$py_cv_module_resource$as_nl"
@@ -19936,8 +20869,7 @@ $as_echo_n "checking for stdlib extension module _scproxy... " >&6; }
   *_scproxy*) :
     py_cv_module__scproxy=n/a ;; #(
   *) :
-
-      if test "$ac_sys_system" = "Darwin"; then :
+    if test "$ac_sys_system" = "Darwin"; then :
   if true; then :
   py_cv_module__scproxy=yes
 else
@@ -19945,9 +20877,7 @@ else
 fi
 else
   py_cv_module__scproxy=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE__SCPROXY=$py_cv_module__scproxy$as_nl"
@@ -19975,8 +20905,7 @@ $as_echo_n "checking for stdlib extension module spwd... " >&6; }
   *spwd*) :
     py_cv_module_spwd=n/a ;; #(
   *) :
-
-      if true; then :
+    if true; then :
   if test "$ac_cv_func_getspent" = yes -o "$ac_cv_func_getspnam" = yes; then :
   py_cv_module_spwd=yes
 else
@@ -19984,9 +20913,7 @@ else
 fi
 else
   py_cv_module_spwd=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE_SPWD=$py_cv_module_spwd$as_nl"
@@ -20014,8 +20941,7 @@ $as_echo_n "checking for stdlib extension module syslog... " >&6; }
   *syslog*) :
     py_cv_module_syslog=n/a ;; #(
   *) :
-
-      if true; then :
+    if true; then :
   if test "$ac_cv_header_syslog_h" = yes; then :
   py_cv_module_syslog=yes
 else
@@ -20023,9 +20949,7 @@ else
 fi
 else
   py_cv_module_syslog=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE_SYSLOG=$py_cv_module_syslog$as_nl"
@@ -20053,8 +20977,7 @@ $as_echo_n "checking for stdlib extension module termios... " >&6; }
   *termios*) :
     py_cv_module_termios=n/a ;; #(
   *) :
-
-      if true; then :
+    if true; then :
   if test "$ac_cv_header_termios_h" = yes; then :
   py_cv_module_termios=yes
 else
@@ -20062,9 +20985,7 @@ else
 fi
 else
   py_cv_module_termios=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE_TERMIOS=$py_cv_module_termios$as_nl"
@@ -20093,8 +21014,7 @@ $as_echo_n "checking for stdlib extension module pyexpat... " >&6; }
   *pyexpat*) :
     py_cv_module_pyexpat=n/a ;; #(
   *) :
-
-      if true; then :
+    if true; then :
   if true; then :
   py_cv_module_pyexpat=yes
 else
@@ -20102,9 +21022,7 @@ else
 fi
 else
   py_cv_module_pyexpat=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE_PYEXPAT=$py_cv_module_pyexpat$as_nl"
@@ -20132,8 +21050,7 @@ $as_echo_n "checking for stdlib extension module _elementtree... " >&6; }
   *_elementtree*) :
     py_cv_module__elementtree=n/a ;; #(
   *) :
-
-      if true; then :
+    if true; then :
   if true; then :
   py_cv_module__elementtree=yes
 else
@@ -20141,9 +21058,7 @@ else
 fi
 else
   py_cv_module__elementtree=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE__ELEMENTTREE=$py_cv_module__elementtree$as_nl"
@@ -20172,10 +21087,7 @@ else
   MODULE__CODECS_CN_TRUE='#'
   MODULE__CODECS_CN_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_CN=yes$as_nl"
 
      if true; then
   MODULE__CODECS_HK_TRUE=
@@ -20184,10 +21096,7 @@ else
   MODULE__CODECS_HK_TRUE='#'
   MODULE__CODECS_HK_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_HK=yes$as_nl"
 
      if true; then
   MODULE__CODECS_ISO2022_TRUE=
@@ -20196,10 +21105,7 @@ else
   MODULE__CODECS_ISO2022_TRUE='#'
   MODULE__CODECS_ISO2022_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_ISO2022=yes$as_nl"
 
      if true; then
   MODULE__CODECS_JP_TRUE=
@@ -20208,10 +21114,7 @@ else
   MODULE__CODECS_JP_TRUE='#'
   MODULE__CODECS_JP_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_JP=yes$as_nl"
 
      if true; then
   MODULE__CODECS_KR_TRUE=
@@ -20220,10 +21123,7 @@ else
   MODULE__CODECS_KR_TRUE='#'
   MODULE__CODECS_KR_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_KR=yes$as_nl"
 
      if true; then
   MODULE__CODECS_TW_TRUE=
@@ -20232,10 +21132,7 @@ else
   MODULE__CODECS_TW_TRUE='#'
   MODULE__CODECS_TW_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_TW=yes$as_nl"
 
      if true; then
   MODULE__MULTIBYTECODEC_TRUE=
@@ -20244,10 +21141,7 @@ else
   MODULE__MULTIBYTECODEC_TRUE='#'
   MODULE__MULTIBYTECODEC_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE__MULTIBYTECODEC=yes$as_nl"
 
      if true; then
   MODULE_UNICODEDATA_TRUE=
@@ -20256,10 +21150,7 @@ else
   MODULE_UNICODEDATA_TRUE='#'
   MODULE_UNICODEDATA_FALSE=
 fi
-
-
-
-
+  as_fn_append MODULE_BLOCK "MODULE_UNICODEDATA=yes$as_nl"
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _md5" >&5
@@ -20268,8 +21159,7 @@ $as_echo_n "checking for stdlib extension module _md5... " >&6; }
   *_md5*) :
     py_cv_module__md5=n/a ;; #(
   *) :
-
-      if test "$with_builtin_md5" = yes; then :
+    if test "$with_builtin_md5" = yes; then :
   if true; then :
   py_cv_module__md5=yes
 else
@@ -20277,9 +21167,7 @@ else
 fi
 else
   py_cv_module__md5=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE__MD5=$py_cv_module__md5$as_nl"
@@ -20307,8 +21195,7 @@ $as_echo_n "checking for stdlib extension module _sha1... " >&6; }
   *_sha1*) :
     py_cv_module__sha1=n/a ;; #(
   *) :
-
-      if test "$with_builtin_sha1" = yes; then :
+    if test "$with_builtin_sha1" = yes; then :
   if true; then :
   py_cv_module__sha1=yes
 else
@@ -20316,9 +21203,7 @@ else
 fi
 else
   py_cv_module__sha1=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE__SHA1=$py_cv_module__sha1$as_nl"
@@ -20346,8 +21231,7 @@ $as_echo_n "checking for stdlib extension module _sha256... " >&6; }
   *_sha256*) :
     py_cv_module__sha256=n/a ;; #(
   *) :
-
-      if test "$with_builtin_sha256" = yes; then :
+    if test "$with_builtin_sha256" = yes; then :
   if true; then :
   py_cv_module__sha256=yes
 else
@@ -20355,9 +21239,7 @@ else
 fi
 else
   py_cv_module__sha256=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE__SHA256=$py_cv_module__sha256$as_nl"
@@ -20385,8 +21267,7 @@ $as_echo_n "checking for stdlib extension module _sha512... " >&6; }
   *_sha512*) :
     py_cv_module__sha512=n/a ;; #(
   *) :
-
-      if test "$with_builtin_sha512" = yes; then :
+    if test "$with_builtin_sha512" = yes; then :
   if true; then :
   py_cv_module__sha512=yes
 else
@@ -20394,9 +21275,7 @@ else
 fi
 else
   py_cv_module__sha512=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE__SHA512=$py_cv_module__sha512$as_nl"
@@ -20424,8 +21303,7 @@ $as_echo_n "checking for stdlib extension module _sha3... " >&6; }
   *_sha3*) :
     py_cv_module__sha3=n/a ;; #(
   *) :
-
-      if test "$with_builtin_sha3" = yes; then :
+    if test "$with_builtin_sha3" = yes; then :
   if true; then :
   py_cv_module__sha3=yes
 else
@@ -20433,9 +21311,7 @@ else
 fi
 else
   py_cv_module__sha3=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE__SHA3=$py_cv_module__sha3$as_nl"
@@ -20463,8 +21339,7 @@ $as_echo_n "checking for stdlib extension module _blake2... " >&6; }
   *_blake2*) :
     py_cv_module__blake2=n/a ;; #(
   *) :
-
-      if test "$with_builtin_blake2" = yes; then :
+    if test "$with_builtin_blake2" = yes; then :
   if true; then :
   py_cv_module__blake2=yes
 else
@@ -20472,9 +21347,7 @@ else
 fi
 else
   py_cv_module__blake2=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE__BLAKE2=$py_cv_module__blake2$as_nl"
@@ -20503,8 +21376,7 @@ $as_echo_n "checking for stdlib extension module _decimal... " >&6; }
   *_decimal*) :
     py_cv_module__decimal=n/a ;; #(
   *) :
-
-      if true; then :
+    if true; then :
   if true; then :
   py_cv_module__decimal=yes
 else
@@ -20512,9 +21384,7 @@ else
 fi
 else
   py_cv_module__decimal=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE__DECIMAL=$py_cv_module__decimal$as_nl"
@@ -20536,14 +21406,49 @@ fi
 $as_echo "$py_cv_module__decimal" >&6; }
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module nis" >&5
+$as_echo_n "checking for stdlib extension module nis... " >&6; }
+      case $py_stdlib_not_available in #(
+  *nis*) :
+    py_cv_module_nis=n/a ;; #(
+  *) :
+    if true; then :
+  if test "$have_nis" = yes -a "$ac_cv_header_rpc_rpc_h" = yes; then :
+  py_cv_module_nis=yes
+else
+  py_cv_module_nis=missing
+fi
+else
+  py_cv_module_nis=disabled
+fi
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE_NIS=$py_cv_module_nis$as_nl"
+  if test "x$py_cv_module_nis" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE_NIS_CFLAGS=$LIBNSL_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_NIS_LDFLAGS=$LIBNSL_LIBS$as_nl"
+
+fi
+   if test "$py_cv_module_nis" = yes; then
+  MODULE_NIS_TRUE=
+  MODULE_NIS_FALSE='#'
+else
+  MODULE_NIS_TRUE='#'
+  MODULE_NIS_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_nis" >&5
+$as_echo "$py_cv_module_nis" >&6; }
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _sqlite3" >&5
 $as_echo_n "checking for stdlib extension module _sqlite3... " >&6; }
       case $py_stdlib_not_available in #(
   *_sqlite3*) :
     py_cv_module__sqlite3=n/a ;; #(
   *) :
-
-      if test "$have_sqlite3" = "yes"; then :
+    if test "$have_sqlite3" = "yes"; then :
   if test "$have_supported_sqlite3" = "yes"; then :
   py_cv_module__sqlite3=yes
 else
@@ -20551,9 +21456,7 @@ else
 fi
 else
   py_cv_module__sqlite3=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE__SQLITE3=$py_cv_module__sqlite3$as_nl"
@@ -20576,14 +21479,135 @@ $as_echo "$py_cv_module__sqlite3" >&6; }
 
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module zlib" >&5
+$as_echo_n "checking for stdlib extension module zlib... " >&6; }
+      case $py_stdlib_not_available in #(
+  *zlib*) :
+    py_cv_module_zlib=n/a ;; #(
+  *) :
+    if true; then :
+  if test "$have_zlib" = yes; then :
+  py_cv_module_zlib=yes
+else
+  py_cv_module_zlib=missing
+fi
+else
+  py_cv_module_zlib=disabled
+fi
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE_ZLIB=$py_cv_module_zlib$as_nl"
+  if test "x$py_cv_module_zlib" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE_ZLIB_CFLAGS=$ZLIB_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_ZLIB_LDFLAGS=$ZLIB_LIBS$as_nl"
+
+fi
+   if test "$py_cv_module_zlib" = yes; then
+  MODULE_ZLIB_TRUE=
+  MODULE_ZLIB_FALSE='#'
+else
+  MODULE_ZLIB_TRUE='#'
+  MODULE_ZLIB_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_zlib" >&5
+$as_echo "$py_cv_module_zlib" >&6; }
+
+
+     if true; then
+  MODULE_BINASCII_TRUE=
+  MODULE_BINASCII_FALSE='#'
+else
+  MODULE_BINASCII_TRUE='#'
+  MODULE_BINASCII_FALSE=
+fi
+  as_fn_append MODULE_BLOCK "MODULE_BINASCII=yes$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_BINASCII_CFLAGS=$BINASCII_CFLAGS$as_nl"
+
+    as_fn_append MODULE_BLOCK "MODULE_BINASCII_LDFLAGS=$BINASCII_LIBS$as_nl"
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _bz2" >&5
+$as_echo_n "checking for stdlib extension module _bz2... " >&6; }
+      case $py_stdlib_not_available in #(
+  *_bz2*) :
+    py_cv_module__bz2=n/a ;; #(
+  *) :
+    if true; then :
+  if test "$have_bzip2" = yes; then :
+  py_cv_module__bz2=yes
+else
+  py_cv_module__bz2=missing
+fi
+else
+  py_cv_module__bz2=disabled
+fi
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE__BZ2=$py_cv_module__bz2$as_nl"
+  if test "x$py_cv_module__bz2" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__BZ2_CFLAGS=$BZIP2_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__BZ2_LDFLAGS=$BZIP2_LIBS$as_nl"
+
+fi
+   if test "$py_cv_module__bz2" = yes; then
+  MODULE__BZ2_TRUE=
+  MODULE__BZ2_FALSE='#'
+else
+  MODULE__BZ2_TRUE='#'
+  MODULE__BZ2_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__bz2" >&5
+$as_echo "$py_cv_module__bz2" >&6; }
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _lzma" >&5
+$as_echo_n "checking for stdlib extension module _lzma... " >&6; }
+      case $py_stdlib_not_available in #(
+  *_lzma*) :
+    py_cv_module__lzma=n/a ;; #(
+  *) :
+    if true; then :
+  if test "$have_liblzma" = yes; then :
+  py_cv_module__lzma=yes
+else
+  py_cv_module__lzma=missing
+fi
+else
+  py_cv_module__lzma=disabled
+fi
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE__LZMA=$py_cv_module__lzma$as_nl"
+  if test "x$py_cv_module__lzma" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__LZMA_CFLAGS=$LIBLZMA_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__LZMA_LDFLAGS=$LIBLZMA_LIBS$as_nl"
+
+fi
+   if test "$py_cv_module__lzma" = yes; then
+  MODULE__LZMA_TRUE=
+  MODULE__LZMA_FALSE='#'
+else
+  MODULE__LZMA_TRUE='#'
+  MODULE__LZMA_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__lzma" >&5
+$as_echo "$py_cv_module__lzma" >&6; }
+
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testcapi" >&5
 $as_echo_n "checking for stdlib extension module _testcapi... " >&6; }
       case $py_stdlib_not_available in #(
   *_testcapi*) :
     py_cv_module__testcapi=n/a ;; #(
   *) :
-
-      if test "$TEST_MODULES" = yes; then :
+    if test "$TEST_MODULES" = yes; then :
   if true; then :
   py_cv_module__testcapi=yes
 else
@@ -20591,9 +21615,7 @@ else
 fi
 else
   py_cv_module__testcapi=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE__TESTCAPI=$py_cv_module__testcapi$as_nl"
@@ -20621,8 +21643,7 @@ $as_echo_n "checking for stdlib extension module _testinternalcapi... " >&6; }
   *_testinternalcapi*) :
     py_cv_module__testinternalcapi=n/a ;; #(
   *) :
-
-      if test "$TEST_MODULES" = yes; then :
+    if test "$TEST_MODULES" = yes; then :
   if true; then :
   py_cv_module__testinternalcapi=yes
 else
@@ -20630,9 +21651,7 @@ else
 fi
 else
   py_cv_module__testinternalcapi=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE__TESTINTERNALCAPI=$py_cv_module__testinternalcapi$as_nl"
@@ -20660,8 +21679,7 @@ $as_echo_n "checking for stdlib extension module _testbuffer... " >&6; }
   *_testbuffer*) :
     py_cv_module__testbuffer=n/a ;; #(
   *) :
-
-      if test "$TEST_MODULES" = yes; then :
+    if test "$TEST_MODULES" = yes; then :
   if true; then :
   py_cv_module__testbuffer=yes
 else
@@ -20669,9 +21687,7 @@ else
 fi
 else
   py_cv_module__testbuffer=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE__TESTBUFFER=$py_cv_module__testbuffer$as_nl"
@@ -20699,8 +21715,7 @@ $as_echo_n "checking for stdlib extension module _testimportmultiple... " >&6; }
   *_testimportmultiple*) :
     py_cv_module__testimportmultiple=n/a ;; #(
   *) :
-
-      if test "$TEST_MODULES" = yes; then :
+    if test "$TEST_MODULES" = yes; then :
   if true; then :
   py_cv_module__testimportmultiple=yes
 else
@@ -20708,9 +21723,7 @@ else
 fi
 else
   py_cv_module__testimportmultiple=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE__TESTIMPORTMULTIPLE=$py_cv_module__testimportmultiple$as_nl"
@@ -20738,8 +21751,7 @@ $as_echo_n "checking for stdlib extension module _testmultiphase... " >&6; }
   *_testmultiphase*) :
     py_cv_module__testmultiphase=n/a ;; #(
   *) :
-
-      if test "$TEST_MODULES" = yes; then :
+    if test "$TEST_MODULES" = yes; then :
   if true; then :
   py_cv_module__testmultiphase=yes
 else
@@ -20747,9 +21759,7 @@ else
 fi
 else
   py_cv_module__testmultiphase=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE__TESTMULTIPHASE=$py_cv_module__testmultiphase$as_nl"
@@ -20777,8 +21787,7 @@ $as_echo_n "checking for stdlib extension module _xxtestfuzz... " >&6; }
   *_xxtestfuzz*) :
     py_cv_module__xxtestfuzz=n/a ;; #(
   *) :
-
-      if test "$TEST_MODULES" = yes; then :
+    if test "$TEST_MODULES" = yes; then :
   if true; then :
   py_cv_module__xxtestfuzz=yes
 else
@@ -20786,9 +21795,7 @@ else
 fi
 else
   py_cv_module__xxtestfuzz=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE__XXTESTFUZZ=$py_cv_module__xxtestfuzz$as_nl"
@@ -20816,8 +21823,7 @@ $as_echo_n "checking for stdlib extension module _ctypes_test... " >&6; }
   *_ctypes_test*) :
     py_cv_module__ctypes_test=n/a ;; #(
   *) :
-
-      if test "$TEST_MODULES" = yes; then :
+    if test "$TEST_MODULES" = yes; then :
   if true; then :
   py_cv_module__ctypes_test=yes
 else
@@ -20825,9 +21831,7 @@ else
 fi
 else
   py_cv_module__ctypes_test=disabled
-
 fi
-
    ;;
 esac
   as_fn_append MODULE_BLOCK "MODULE__CTYPES_TEST=$py_cv_module__ctypes_test$as_nl"
@@ -20847,6 +21851,79 @@ fi
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__ctypes_test" >&5
 $as_echo "$py_cv_module__ctypes_test" >&6; }
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module xxlimited" >&5
+$as_echo_n "checking for stdlib extension module xxlimited... " >&6; }
+      case $py_stdlib_not_available in #(
+  *xxlimited*) :
+    py_cv_module_xxlimited=n/a ;; #(
+  *) :
+    if test "$with_trace_refs" = "no"; then :
+  if true; then :
+  py_cv_module_xxlimited=yes
+else
+  py_cv_module_xxlimited=missing
+fi
+else
+  py_cv_module_xxlimited=disabled
+fi
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE_XXLIMITED=$py_cv_module_xxlimited$as_nl"
+  if test "x$py_cv_module_xxlimited" = xyes; then :
+
+
+
+
+fi
+   if test "$py_cv_module_xxlimited" = yes; then
+  MODULE_XXLIMITED_TRUE=
+  MODULE_XXLIMITED_FALSE='#'
+else
+  MODULE_XXLIMITED_TRUE='#'
+  MODULE_XXLIMITED_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_xxlimited" >&5
+$as_echo "$py_cv_module_xxlimited" >&6; }
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module xxlimited_35" >&5
+$as_echo_n "checking for stdlib extension module xxlimited_35... " >&6; }
+      case $py_stdlib_not_available in #(
+  *xxlimited_35*) :
+    py_cv_module_xxlimited_35=n/a ;; #(
+  *) :
+    if test "$with_trace_refs" = "no"; then :
+  if true; then :
+  py_cv_module_xxlimited_35=yes
+else
+  py_cv_module_xxlimited_35=missing
+fi
+else
+  py_cv_module_xxlimited_35=disabled
+fi
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE_XXLIMITED_35=$py_cv_module_xxlimited_35$as_nl"
+  if test "x$py_cv_module_xxlimited_35" = xyes; then :
+
+
+
+
+fi
+   if test "$py_cv_module_xxlimited_35" = yes; then
+  MODULE_XXLIMITED_35_TRUE=
+  MODULE_XXLIMITED_35_FALSE='#'
+else
+  MODULE_XXLIMITED_35_TRUE='#'
+  MODULE_XXLIMITED_35_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_xxlimited_35" >&5
+$as_echo "$py_cv_module_xxlimited_35" >&6; }
 
 
 # substitute multiline block, must come after last PY_STDLIB_MOD()
@@ -20993,6 +22070,10 @@ if test -z "${MODULE__CONTEXTVARS_TRUE}" && test -z "${MODULE__CONTEXTVARS_FALSE
   as_fn_error $? "conditional \"MODULE__CONTEXTVARS\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${MODULE__CSV_TRUE}" && test -z "${MODULE__CSV_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__CSV\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${MODULE__HEAPQ_TRUE}" && test -z "${MODULE__HEAPQ_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__HEAPQ\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
@@ -21013,6 +22094,10 @@ if test -z "${MODULE__PICKLE_TRUE}" && test -z "${MODULE__PICKLE_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__PICKLE\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${MODULE__POSIXSUBPROCESS_TRUE}" && test -z "${MODULE__POSIXSUBPROCESS_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__POSIXSUBPROCESS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${MODULE__QUEUE_TRUE}" && test -z "${MODULE__QUEUE_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__QUEUE\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
@@ -21021,12 +22106,32 @@ if test -z "${MODULE__RANDOM_TRUE}" && test -z "${MODULE__RANDOM_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__RANDOM\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${MODULE_SELECT_TRUE}" && test -z "${MODULE_SELECT_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_SELECT\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__SOCKET_TRUE}" && test -z "${MODULE__SOCKET_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__SOCKET\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__STRUCT_TRUE}" && test -z "${MODULE__STRUCT_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__STRUCT\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${MODULE__TYPING_TRUE}" && test -z "${MODULE__TYPING_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__TYPING\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${MODULE__XXSUBINTERPRETERS_TRUE}" && test -z "${MODULE__XXSUBINTERPRETERS_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__XXSUBINTERPRETERS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${MODULE__ZONEINFO_TRUE}" && test -z "${MODULE__ZONEINFO_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__ZONEINFO\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_AUDIOOP_TRUE}" && test -z "${MODULE_AUDIOOP_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_AUDIOOP\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__STATISTICS_TRUE}" && test -z "${MODULE__STATISTICS_FALSE}"; then
@@ -21043,6 +22148,14 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__DATETIME_TRUE}" && test -z "${MODULE__DATETIME_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__DATETIME\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_FCNTL_TRUE}" && test -z "${MODULE_FCNTL_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_FCNTL\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_MMAP_TRUE}" && test -z "${MODULE_MMAP_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_MMAP\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_GRP_TRUE}" && test -z "${MODULE_GRP_FALSE}"; then
@@ -21141,8 +22254,28 @@ if test -z "${MODULE__DECIMAL_TRUE}" && test -z "${MODULE__DECIMAL_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__DECIMAL\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${MODULE_NIS_TRUE}" && test -z "${MODULE_NIS_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_NIS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${MODULE__SQLITE3_TRUE}" && test -z "${MODULE__SQLITE3_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__SQLITE3\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_ZLIB_TRUE}" && test -z "${MODULE_ZLIB_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_ZLIB\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_BINASCII_TRUE}" && test -z "${MODULE_BINASCII_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_BINASCII\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__BZ2_TRUE}" && test -z "${MODULE__BZ2_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__BZ2\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__LZMA_TRUE}" && test -z "${MODULE__LZMA_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__LZMA\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__TESTCAPI_TRUE}" && test -z "${MODULE__TESTCAPI_FALSE}"; then
@@ -21171,6 +22304,14 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__CTYPES_TEST_TRUE}" && test -z "${MODULE__CTYPES_TEST_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__CTYPES_TEST\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_XXLIMITED_TRUE}" && test -z "${MODULE_XXLIMITED_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_XXLIMITED\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_XXLIMITED_35_TRUE}" && test -z "${MODULE_XXLIMITED_35_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_XXLIMITED_35\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 

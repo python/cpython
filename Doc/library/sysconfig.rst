@@ -96,8 +96,10 @@ identifier.  Python currently uses eight paths:
   platform-specific.
 - *platlib*: directory for site-specific, platform-specific files.
 - *purelib*: directory for site-specific, non-platform-specific files.
-- *include*: directory for non-platform-specific header files.
-- *platinclude*: directory for platform-specific header files.
+- *include*: directory for non-platform-specific header files for
+  the Python C-API.
+- *platinclude*: directory for platform-specific header files for
+  the Python C-API.
 - *scripts*: directory for script files.
 - *data*: directory for data files.
 

@@ -479,7 +479,7 @@ initial_counter_value(void) {
 #define SPEC_FAIL_WRONG_NUMBER_ARGUMENTS 9
 #define SPEC_FAIL_CO_NOT_OPTIMIZED 10
 /* SPEC_FAIL_METHOD  defined as 11 above */
-#define SPEC_FAIL_FREE_VARS 12
+
 #define SPEC_FAIL_PYCFUNCTION 13
 #define SPEC_FAIL_PYCFUNCTION_WITH_KEYWORDS 14
 #define SPEC_FAIL_PYCFUNCTION_FAST_WITH_KEYWORDS 15
@@ -1157,9 +1157,6 @@ function_kind(PyCodeObject *code) {
     }
     if ((flags & CO_OPTIMIZED) == 0) {
         return SPEC_FAIL_CO_NOT_OPTIMIZED;
-    }
-    if (code->co_nfreevars) {
-        return SPEC_FAIL_FREE_VARS;
     }
     return SIMPLE_FUNCTION;
 }

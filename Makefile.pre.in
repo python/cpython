@@ -1605,6 +1605,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_fileutils.h \
 		$(srcdir)/Include/internal/pycore_floatobject.h \
 		$(srcdir)/Include/internal/pycore_format.h \
+		$(srcdir)/Include/internal/pycore_function.h \
 		$(srcdir)/Include/internal/pycore_getopt.h \
 		$(srcdir)/Include/internal/pycore_gil.h \
 		$(srcdir)/Include/internal/pycore_hamt.h \
@@ -2420,7 +2421,7 @@ distclean: clobber
 
 # Check that all symbols exported by libpython start with "Py" or "_Py"
 smelly: @DEF_MAKE_RULE@
-	$(RUNSHARED) ./$(BUILDPYTHON) Tools/scripts/smelly.py
+	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/smelly.py
 
 # Find files with funny names
 funny:
