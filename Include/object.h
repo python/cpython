@@ -127,31 +127,11 @@ PyAPI_FUNC(int) Py_Is(PyObject *x, PyObject *y);
 #define Py_Is(x, y) ((x) == (y))
 
 
-static inline Py_ssize_t _Py_REFCNT(const PyObject *ob) {
-    return ob->ob_refcnt;
-}
-#define Py_REFCNT(ob) _Py_REFCNT(_PyObject_CAST_CONST(ob))
+#define Py_REFCNT(ob)           (((PyObject*)(ob))->ob_refcnt)
+#define Py_TYPE(ob)             (((PyObject*)(ob))->ob_type)
+#define Py_SIZE(ob)             (((PyVarObject*)(ob))->ob_size)
 
-
-// bpo-39573: The Py_SET_TYPE() function must be used to set an object type.
-static inline PyTypeObject* _Py_TYPE(const PyObject *ob) {
-    return ob->ob_type;
-}
-#define Py_TYPE(ob) _Py_TYPE(_PyObject_CAST_CONST(ob))
-
-// bpo-39573: The Py_SET_SIZE() function must be used to set an object size.
-static inline Py_ssize_t _Py_SIZE(const PyVarObject *ob) {
-    return ob->ob_size;
-}
-#define Py_SIZE(ob) _Py_SIZE(_PyVarObject_CAST_CONST(ob))
-
-
-static inline int _Py_IS_TYPE(const PyObject *ob, const PyTypeObject *type) {
-    // bpo-44378: Don't use Py_TYPE() since Py_TYPE() requires a non-const
-    // object.
-    return ob->ob_type == type;
-}
-#define Py_IS_TYPE(ob, type) _Py_IS_TYPE(_PyObject_CAST_CONST(ob), type)
+#define Py_IS_TYPE(ob, type) (((PyObject*)(ob))->ob_type == (type))
 
 
 static inline void _Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
@@ -253,10 +233,8 @@ PyAPI_FUNC(PyObject *) PyType_GetQualName(PyTypeObject *);
 /* Generic type check */
 PyAPI_FUNC(int) PyType_IsSubtype(PyTypeObject *, PyTypeObject *);
 
-static inline int _PyObject_TypeCheck(PyObject *ob, PyTypeObject *type) {
-    return Py_IS_TYPE(ob, type) || PyType_IsSubtype(Py_TYPE(ob), type);
-}
-#define PyObject_TypeCheck(ob, type) _PyObject_TypeCheck(_PyObject_CAST(ob), type)
+#define PyObject_TypeCheck(ob, tp) \
+    (Py_TYPE(ob) == (tp) || PyType_IsSubtype(Py_TYPE(ob), (tp)))
 
 PyAPI_DATA(PyTypeObject) PyType_Type; /* built-in 'type' */
 PyAPI_DATA(PyTypeObject) PyBaseObject_Type; /* built-in 'object' */
@@ -469,54 +447,39 @@ PyAPI_FUNC(void) Py_DecRef(PyObject *);
 PyAPI_FUNC(void) _Py_IncRef(PyObject *);
 PyAPI_FUNC(void) _Py_DecRef(PyObject *);
 
-static inline void _Py_INCREF(PyObject *op)
-{
-#if defined(Py_REF_DEBUG) && defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000
-    // Stable ABI for Python 3.10 built in debug mode.
-    _Py_IncRef(op);
-#else
-    // Non-limited C API and limited C API for Python 3.9 and older access
-    // directly PyObject.ob_refcnt.
 #ifdef Py_REF_DEBUG
-    _Py_RefTotal++;
-#endif
-    op->ob_refcnt++;
-#endif
+#define _Py_INC_REFTOTAL        _Py_RefTotal++
+#define _Py_DEC_REFTOTAL        _Py_RefTotal--
+#define _Py_REF_DEBUG_COMMA     ,
+#define _Py_CHECK_REFCNT(OP)                                    \
+{       if (((PyObject*)OP)->ob_refcnt < 0)                             \
+                _Py_NegativeRefcount(__FILE__, __LINE__,        \
+                                     (PyObject *)(OP));         \
 }
-#define Py_INCREF(op) _Py_INCREF(_PyObject_CAST(op))
+/* Py_REF_DEBUG also controls the display of refcounts and memory block
+ * allocations at the interactive prompt and at interpreter shutdown
+ */
+PyAPI_FUNC(void) _PyDebug_PrintTotalRefs(void);
+#else
+#define _Py_INC_REFTOTAL
+#define _Py_DEC_REFTOTAL
+#define _Py_REF_DEBUG_COMMA
+#define _Py_CHECK_REFCNT(OP)    /* a semicolon */;
+#endif /* Py_REF_DEBUG */
 
-static inline void _Py_DECREF(
-#if defined(Py_REF_DEBUG) && !(defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000)
-    const char *filename, int lineno,
-#endif
-    PyObject *op)
-{
-#if defined(Py_REF_DEBUG) && defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000
-    // Stable ABI for Python 3.10 built in debug mode.
-    _Py_DecRef(op);
-#else
-    // Non-limited C API and limited C API for Python 3.9 and older access
-    // directly PyObject.ob_refcnt.
-#ifdef Py_REF_DEBUG
-    _Py_RefTotal--;
-#endif
-    if (--op->ob_refcnt != 0) {
-#ifdef Py_REF_DEBUG
-        if (op->ob_refcnt < 0) {
-            _Py_NegativeRefcount(filename, lineno, op);
-        }
-#endif
-    }
-    else {
-        _Py_Dealloc(op);
-    }
-#endif
-}
-#if defined(Py_REF_DEBUG) && !(defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000)
-#  define Py_DECREF(op) _Py_DECREF(__FILE__, __LINE__, _PyObject_CAST(op))
-#else
-#  define Py_DECREF(op) _Py_DECREF(_PyObject_CAST(op))
-#endif
+#define Py_INCREF(op) (                         \
+    _Py_INC_REFTOTAL  _Py_REF_DEBUG_COMMA       \
+    ((PyObject *)(op))->ob_refcnt++)
+
+#define Py_DECREF(op)                                   \
+    do {                                                \
+        PyObject *_py_decref_tmp = (PyObject *)(op);    \
+        if (_Py_DEC_REFTOTAL  _Py_REF_DEBUG_COMMA       \
+        --(_py_decref_tmp)->ob_refcnt != 0)             \
+            _Py_CHECK_REFCNT(_py_decref_tmp)            \
+        else                                            \
+            _Py_Dealloc(_py_decref_tmp);                \
+    } while (0)
 
 
 /* Safely decref `op` and set `op` to NULL, especially useful in tp_clear
@@ -562,24 +525,19 @@ static inline void _Py_DECREF(
         }                                       \
     } while (0)
 
-/* Function to use in case the object pointer can be NULL: */
-static inline void _Py_XINCREF(PyObject *op)
-{
-    if (op != NULL) {
-        Py_INCREF(op);
-    }
-}
+#define Py_XINCREF(op)                                \
+    do {                                              \
+        PyObject *_py_xincref_tmp = (PyObject *)(op); \
+        if (_py_xincref_tmp != NULL)                  \
+            Py_INCREF(_py_xincref_tmp);               \
+    } while (0)
 
-#define Py_XINCREF(op) _Py_XINCREF(_PyObject_CAST(op))
-
-static inline void _Py_XDECREF(PyObject *op)
-{
-    if (op != NULL) {
-        Py_DECREF(op);
-    }
-}
-
-#define Py_XDECREF(op) _Py_XDECREF(_PyObject_CAST(op))
+#define Py_XDECREF(op)                                \
+    do {                                              \
+        PyObject *_py_xdecref_tmp = (PyObject *)(op); \
+        if (_py_xdecref_tmp != NULL)                  \
+            Py_DECREF(_py_xdecref_tmp);               \
+    } while (0)
 
 // Create a new strong reference to an object:
 // increment the reference count of the object and return the object.
@@ -588,24 +546,14 @@ PyAPI_FUNC(PyObject*) Py_NewRef(PyObject *obj);
 // Similar to Py_NewRef(), but the object can be NULL.
 PyAPI_FUNC(PyObject*) Py_XNewRef(PyObject *obj);
 
-static inline PyObject* _Py_NewRef(PyObject *obj)
-{
-    Py_INCREF(obj);
-    return obj;
-}
+#define Py_NewRef(obj) (Py_INCREF(obj), (PyObject *)(obj))
 
 static inline PyObject* _Py_XNewRef(PyObject *obj)
 {
     Py_XINCREF(obj);
     return obj;
 }
-
-// Py_NewRef() and Py_XNewRef() are exported as functions for the stable ABI.
-// Names overridden with macros by static inline functions for best
-// performances.
-#define Py_NewRef(obj) _Py_NewRef(_PyObject_CAST(obj))
 #define Py_XNewRef(obj) _Py_XNewRef(_PyObject_CAST(obj))
-
 
 /*
 _Py_NoneStruct is an object of undefined type which can be used in contexts
@@ -729,30 +677,15 @@ times.
 #endif
 
 
-static inline int
-PyType_HasFeature(PyTypeObject *type, unsigned long feature)
-{
-    unsigned long flags;
 #ifdef Py_LIMITED_API
-    // PyTypeObject is opaque in the limited C API
-    flags = PyType_GetFlags(type);
+#  define PyType_HasFeature(t,f)  ((PyType_GetFlags(t) & (f)) != 0)
 #else
-    flags = type->tp_flags;
+#  define PyType_HasFeature(t,f)  (((t)->tp_flags & (f)) != 0)
 #endif
-    return ((flags & feature) != 0);
-}
 
 #define PyType_FastSubclass(type, flag) PyType_HasFeature(type, flag)
-
-static inline int _PyType_Check(PyObject *op) {
-    return PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_TYPE_SUBCLASS);
-}
-#define PyType_Check(op) _PyType_Check(_PyObject_CAST(op))
-
-static inline int _PyType_CheckExact(PyObject *op) {
-    return Py_IS_TYPE(op, &PyType_Type);
-}
-#define PyType_CheckExact(op) _PyType_CheckExact(_PyObject_CAST(op))
+#define PyType_Check(op) PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_TYPE_SUBCLASS)
+#define PyType_CheckExact(op) Py_IS_TYPE((op), &PyType_Type)
 
 #ifdef __cplusplus
 }

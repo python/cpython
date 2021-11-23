@@ -2336,13 +2336,15 @@ PyObject_GET_WEAKREFS_LISTPTR(PyObject *op)
 PyObject*
 Py_NewRef(PyObject *obj)
 {
-    return _Py_NewRef(obj);
+    Py_INCREF(obj);
+    return obj;
 }
 
 PyObject*
 Py_XNewRef(PyObject *obj)
 {
-    return _Py_XNewRef(obj);
+    Py_XINCREF(obj);
+    return obj;
 }
 
 #undef Py_Is
