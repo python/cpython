@@ -291,10 +291,11 @@ This module offers the following functions:
 
    *value_name* is a string indicating the value to query.
 
-   *flags* restrict the data type of value to be queried.
-   It can be one of the ``RRF_RT_*`` constants, optionally combined ``RRF_NOEXPAND``
-   or one of the ``RRF_SUBKEY_*`` with ``|``.
-   For more info, see :ref:`RRF_* constants <rrf-constants>`.
+   *flags* is an integer that restricts the allowed data type of the value
+   to be queried. It must include the bitwise OR of one or more of the
+   ``RRF_RT_*`` data types. It may also include ``RRF_NOEXPAND`` or one of
+   the ``RRF_SUBKEY_*`` constants. The default is ``RRF_RT_ANY``. For more
+   information, see :ref:`RRF_* constants <rrf-constants>`.
 
    The result is a tuple of 2 items, similar to :meth:`QueryValueEx`
 
