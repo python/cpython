@@ -1308,7 +1308,7 @@ _PyContext_ClearFreeList(PyInterpreterState *interp)
 
 
 void
-_PyContext_Fini(PyInterpreterState *interp)
+_PyContext_FiniObjects(PyInterpreterState *interp)
 {
     if (_Py_IsMainInterpreter(interp)) {
         Py_CLEAR(_token_missing);

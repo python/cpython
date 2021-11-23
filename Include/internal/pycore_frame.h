@@ -170,7 +170,7 @@ _PyThreadState_BumpFramePointer(PyThreadState *tstate, size_t size)
 void _PyThreadState_PopFrame(PyThreadState *tstate, InterpreterFrame *frame);
 
 
-extern void _PyFrame_Fini(PyInterpreterState *interp);
+extern void _PyFrame_FiniObjects(PyInterpreterState *interp);
 
 
 #ifdef __cplusplus

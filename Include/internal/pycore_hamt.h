@@ -111,6 +111,6 @@ PyObject * _PyHamt_NewIterValues(PyHamtObject *o);
 PyObject * _PyHamt_NewIterItems(PyHamtObject *o);
 
 PyStatus _PyHamt_InitTypes(PyInterpreterState *interp);
-void _PyHamt_Fini(PyInterpreterState *interp);
+void _PyHamt_FiniObjects(PyInterpreterState *interp);
 
 #endif /* !Py_INTERNAL_HAMT_H */

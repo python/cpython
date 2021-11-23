@@ -268,7 +268,7 @@ _PyDict_ClearFreeList(PyInterpreterState *interp)
 
 
 void
-_PyDict_Fini(PyInterpreterState *interp)
+_PyDict_FiniCoreObjects(PyInterpreterState *interp)
 {
     _PyDict_ClearFreeList(interp);
 #if defined(Py_DEBUG) && PyDict_MAXFREELIST > 0

@@ -2067,7 +2067,7 @@ _PyFloat_ClearFreeList(PyInterpreterState *interp)
 }
 
 void
-_PyFloat_Fini(PyInterpreterState *interp)
+_PyFloat_FiniObjects(PyInterpreterState *interp)
 {
     _PyFloat_ClearFreeList(interp);
 #if defined(Py_DEBUG) && PyFloat_MAXFREELIST > 0

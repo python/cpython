@@ -16,7 +16,7 @@ extern PyObject *_PyTuple_FromArray(PyObject *const *, Py_ssize_t);
 extern PyObject *_PyTuple_FromArraySteal(PyObject *const *, Py_ssize_t);
 
 extern PyStatus _PyTuple_InitCoreObjects(PyInterpreterState *interp);
-extern void _PyTuple_Fini(PyInterpreterState *interp);
+extern void _PyTuple_FiniCoreObjects(PyInterpreterState *interp);
 
 #ifdef __cplusplus
 }

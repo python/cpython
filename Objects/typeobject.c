@@ -294,7 +294,7 @@ PyType_ClearCache(void)
 
 
 PyStatus
-_PyType_Init(PyInterpreterState *interp)
+_PyType_InitState(PyInterpreterState *interp)
 {
     // XXX Init per-interpreter.
     if (!_Py_IsMainInterpreter(interp)) {
@@ -312,7 +312,7 @@ _PyType_Init(PyInterpreterState *interp)
 }
 
 void
-_PyType_Fini(PyInterpreterState *interp)
+_PyType_FiniState(PyInterpreterState *interp)
 {
     struct type_cache *cache = &interp->type_cache;
     type_cache_clear(cache, NULL);

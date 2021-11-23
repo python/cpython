@@ -1617,7 +1617,7 @@ _PyAsyncGen_ClearFreeLists(PyInterpreterState *interp)
 }
 
 void
-_PyAsyncGen_Fini(PyInterpreterState *interp)
+_PyAsyncGen_FiniObjects(PyInterpreterState *interp)
 {
     _PyAsyncGen_ClearFreeLists(interp);
 #if defined(Py_DEBUG) && _PyAsyncGen_MAXFREELIST > 0

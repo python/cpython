@@ -16062,16 +16062,12 @@ unicode_is_finalizing(void)
 
 
 void
-_PyUnicode_Fini(PyInterpreterState *interp)
+_PyUnicode_FiniCoreObjects(PyInterpreterState *interp)
 {
     struct _Py_unicode_state *state = &interp->unicode;
 
     // _PyUnicode_ClearInterned() must be called before
     assert(state->interned == NULL);
-
-    _PyUnicode_FiniEncodings(&state->fs_codec);
-
-    unicode_clear_identifiers(state);
 
     for (Py_ssize_t i = 0; i < 256; i++) {
         Py_CLEAR(state->latin1[i]);
@@ -16079,6 +16075,27 @@ _PyUnicode_Fini(PyInterpreterState *interp)
     Py_CLEAR(state->empty_string);
 }
 
+void
+_PyUnicode_FiniObjects(PyInterpreterState *interp)
+{
+    struct _Py_unicode_state *state = &interp->unicode;
+
+    // _PyUnicode_ClearInterned() must be called before
+    assert(state->interned == NULL);
+
+    unicode_clear_identifiers(state);
+}
+
+void
+_PyUnicode_FiniState(PyInterpreterState *interp)
+{
+    struct _Py_unicode_state *state = &interp->unicode;
+
+    // _PyUnicode_ClearInterned() must be called before
+    assert(state->interned == NULL);
+
+    _PyUnicode_FiniEncodings(&state->fs_codec);
+}
 
 /* A _string module, to export formatter_parser and formatter_field_name_split
    to the string.Formatter class implemented in Python. */

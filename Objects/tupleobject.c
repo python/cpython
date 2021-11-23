@@ -1077,7 +1077,7 @@ _PyTuple_InitCoreObjects(PyInterpreterState *interp)
 
 
 void
-_PyTuple_Fini(PyInterpreterState *interp)
+_PyTuple_FiniCoreObjects(PyInterpreterState *interp)
 {
 #if PyTuple_MAXSAVESIZE > 0
     struct _Py_tuple_state *state = &interp->tuple;

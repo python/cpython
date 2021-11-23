@@ -1088,7 +1088,7 @@ _PyFrame_ClearFreeList(PyInterpreterState *interp)
 }
 
 void
-_PyFrame_Fini(PyInterpreterState *interp)
+_PyFrame_FiniObjects(PyInterpreterState *interp)
 {
     _PyFrame_ClearFreeList(interp);
 #if defined(Py_DEBUG) && PyFrame_MAXFREELIST > 0

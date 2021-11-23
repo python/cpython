@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 extern PyStatus _PyBytes_InitCoreObjects(PyInterpreterState *interp);
-extern void _PyBytes_Fini(PyInterpreterState *interp);
+extern void _PyBytes_FiniCoreObjects(PyInterpreterState *interp);
 
 
 #ifdef __cplusplus

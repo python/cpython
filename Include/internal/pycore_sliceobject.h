@@ -8,7 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-extern void _PySlice_Fini(PyInterpreterState *interp);
+extern void _PySlice_FiniObjects(PyInterpreterState *interp);
 
 
 #ifdef __cplusplus

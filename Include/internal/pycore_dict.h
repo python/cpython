@@ -103,7 +103,7 @@ extern uint64_t _pydict_global_version;
 
 PyObject *_PyObject_MakeDictFromInstanceAttributes(PyObject *obj, PyDictValues *values);
 
-extern void _PyDict_Fini(PyInterpreterState *interp);
+extern void _PyDict_FiniCoreObjects(PyInterpreterState *interp);
 
 #ifdef __cplusplus
 }

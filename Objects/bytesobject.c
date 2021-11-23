@@ -3097,7 +3097,7 @@ _PyBytes_InitCoreObjects(PyInterpreterState *interp)
 
 
 void
-_PyBytes_Fini(PyInterpreterState *interp)
+_PyBytes_FiniCoreObjects(PyInterpreterState *interp)
 {
     struct _Py_bytes_state* state = &interp->bytes;
     for (int i = 0; i < UCHAR_MAX + 1; i++) {

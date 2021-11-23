@@ -8,8 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-extern PyStatus _PyType_Init(PyInterpreterState *interp);
-extern void _PyType_Fini(PyInterpreterState *interp);
+extern PyStatus _PyType_InitState(PyInterpreterState *interp);
+extern void _PyType_FiniState(PyInterpreterState *interp);
 
 #ifdef __cplusplus
 }

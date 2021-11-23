@@ -115,7 +115,7 @@ _PyList_ClearFreeList(PyInterpreterState *interp)
 }
 
 void
-_PyList_Fini(PyInterpreterState *interp)
+_PyList_FiniCoreObjects(PyInterpreterState *interp)
 {
     _PyList_ClearFreeList(interp);
 #if defined(Py_DEBUG) && PyList_MAXFREELIST > 0

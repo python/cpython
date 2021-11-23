@@ -148,11 +148,11 @@ _PyInterpreterState_CoreObjectsFini(PyInterpreterState *interp)
     // a dict internally.
     _PyUnicode_ClearInterned(interp);
 
-    _PyDict_Fini(interp);
-    _PyList_Fini(interp);
-    _PyTuple_Fini(interp);
-    _PyBytes_Fini(interp);
-    _PyUnicode_Fini(interp);
+    _PyDict_FiniCoreObjects(interp);
+    _PyList_FiniCoreObjects(interp);
+    _PyTuple_FiniCoreObjects(interp);
+    _PyBytes_FiniCoreObjects(interp);
+    _PyUnicode_FiniCoreObjects(interp);
     _PyExc_FiniCoreObjects(interp);
 }
 
@@ -169,6 +169,11 @@ init_state_first(PyInterpreterState *interp)
     /* Type state init goes here if it does not rely on ready types,
        and relies only on core objects (at most). */
 
+    status = _PyType_InitState(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     status = _PyStructSequence_Init(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -181,11 +186,6 @@ static PyStatus
 init_types(PyInterpreterState *interp)
 {
     PyStatus status;
-
-    status = _PyType_Init(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
 
     /* At this point PyType_Ready() may be called. */
 
@@ -383,11 +383,18 @@ void
 _PyInterpreterState_ObjectsFini(PyInterpreterState *interp)
 {
     _PyExc_FiniObjects(interp);
-    _PyFrame_Fini(interp);
-    _PyAsyncGen_Fini(interp);
-    _PyContext_Fini(interp);
-    _PyHamt_Fini(interp);
-    _PyType_Fini(interp);
-    _PySlice_Fini(interp);
-    _PyFloat_Fini(interp);
+    _PyFrame_FiniObjects(interp);
+    _PyAsyncGen_FiniObjects(interp);
+    _PyContext_FiniObjects(interp);
+    _PyHamt_FiniObjects(interp);
+    _PyType_FiniState(interp);
+    _PySlice_FiniObjects(interp);
+    _PyFloat_FiniObjects(interp);
+
+    // Call _PyUnicode_ClearInterned() before _PyDict_Fini() since it uses
+    // a dict internally.
+    _PyUnicode_ClearInterned(interp);
+
+    _PyUnicode_FiniObjects(interp);
+    _PyUnicode_FiniState(interp);
 }

@@ -2976,7 +2976,7 @@ _PyHamt_InitTypes(PyInterpreterState *interp)
 }
 
 void
-_PyHamt_Fini(PyInterpreterState *interp)
+_PyHamt_FiniObjects(PyInterpreterState *interp)
 {
     // XXX Init per-interpreter.
     if (!_Py_IsMainInterpreter(interp)) {

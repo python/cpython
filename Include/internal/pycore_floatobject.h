@@ -75,7 +75,7 @@ PyAPI_FUNC(int) _PyFloat_FormatAdvancedWriter(
 
 extern PyStatus _PyFloat_InitRuntimeState(_PyRuntimeState *runtime);
 extern PyStatus _PyFloat_InitTypes(PyInterpreterState *interp);
-extern void _PyFloat_Fini(PyInterpreterState *interp);
+extern void _PyFloat_FiniObjects(PyInterpreterState *interp);
 
 
 #ifdef __cplusplus
