@@ -136,7 +136,8 @@ gen_dealloc(PyGenObject *gen)
         gen->gi_xframe = NULL;
         frame->generator = NULL;
         frame->previous = NULL;
-        _PyFrame_Clear(frame, 1);
+        _PyFrame_Clear(frame);
+        PyMem_Free(frame);
     }
     if (((PyCodeObject *)gen->gi_code)->co_flags & CO_COROUTINE) {
         Py_CLEAR(((PyCoroObject *)gen)->cr_origin);
@@ -254,7 +255,8 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
 
     frame->generator = NULL;
     gen->gi_xframe = NULL;
-    _PyFrame_Clear(frame, 1);
+    _PyFrame_Clear(frame);
+    PyMem_Free(frame);
     *presult = result;
     return result ? PYGEN_RETURN : PYGEN_ERROR;
 }
@@ -845,7 +847,8 @@ make_gen(PyTypeObject *type, PyFunctionObject *func, InterpreterFrame *frame)
     PyGenObject *gen = PyObject_GC_New(PyGenObject, type);
     if (gen == NULL) {
         assert(frame->frame_obj == NULL);
-        _PyFrame_Clear(frame, 1);
+        _PyFrame_Clear(frame);
+        PyMem_Free(frame);
         return NULL;
     }
     gen->gi_xframe = frame;

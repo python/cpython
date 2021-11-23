@@ -715,11 +715,9 @@ static PyObject *
 frame_sizeof(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t res;
-    res = sizeof(PyFrameObject);
-    if (f->f_owns_frame) {
-        PyCodeObject *code = f->f_frame->f_code;
-        res += (code->co_nlocalsplus+code->co_stacksize) * sizeof(PyObject *);
-    }
+    res = offsetof(PyFrameObject, _f_frame_data) + offsetof(InterpreterFrame, localsplus);
+    PyCodeObject *code = f->f_frame->f_code;
+    res += (code->co_nlocalsplus+code->co_stacksize) * sizeof(PyObject *);
     return PyLong_FromSsize_t(res);
 }
 
@@ -747,7 +745,8 @@ static PyMethodDef frame_methods[] = {
 PyTypeObject PyFrame_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "frame",
-    sizeof(PyFrameObject),
+    offsetof(PyFrameObject, _f_frame_data) +
+    offsetof(InterpreterFrame, localsplus),
     sizeof(PyObject *),
     (destructor)frame_dealloc,                  /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
@@ -781,67 +780,21 @@ PyTypeObject PyFrame_Type = {
 
 _Py_IDENTIFIER(__builtins__);
 
-static InterpreterFrame *
-allocate_heap_frame(PyFunctionObject *func, PyObject *locals)
+static void
+init_frame(InterpreterFrame *frame, PyFunctionObject *func, PyObject *locals)
 {
     PyCodeObject *code = (PyCodeObject *)func->func_code;
-    int size = code->co_nlocalsplus+code->co_stacksize + FRAME_SPECIALS_SIZE;
-    InterpreterFrame *frame = (InterpreterFrame *)PyMem_Malloc(sizeof(PyObject *)*size);
-    if (frame == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
     _PyFrame_InitializeSpecials(frame, func, locals, code->co_nlocalsplus);
     for (Py_ssize_t i = 0; i < code->co_nlocalsplus; i++) {
         frame->localsplus[i] = NULL;
     }
-    return frame;
 }
 
-static inline PyFrameObject*
-frame_alloc(InterpreterFrame *frame, int owns)
+PyFrameObject*
+_PyFrame_New_NoTrack(PyCodeObject *code)
 {
-    PyFrameObject *f;
-#if PyFrame_MAXFREELIST > 0
-    struct _Py_frame_state *state = get_frame_state();
-    if (state->free_list == NULL)
-#endif
-    {
-        f = PyObject_GC_New(PyFrameObject, &PyFrame_Type);
-        if (f == NULL) {
-            if (owns) {
-                Py_XDECREF(frame->f_code);
-                Py_XDECREF(frame->f_builtins);
-                Py_XDECREF(frame->f_globals);
-                Py_XDECREF(frame->f_locals);
-                PyMem_Free(frame);
-            }
-            return NULL;
-        }
-    }
-#if PyFrame_MAXFREELIST > 0
-    else
-    {
-#ifdef Py_DEBUG
-        // frame_alloc() must not be called after _PyFrame_Fini()
-        assert(state->numfree != -1);
-#endif
-        assert(state->numfree > 0);
-        --state->numfree;
-        f = state->free_list;
-        state->free_list = state->free_list->f_back;
-        _Py_NewReference((PyObject *)f);
-    }
-#endif
-    f->f_frame = frame;
-    f->f_own_locals_memory = owns;
-    return f;
-}
-
-PyFrameObject* _Py_HOT_FUNCTION
-_PyFrame_New_NoTrack(InterpreterFrame *frame, int owns)
-{
-    PyFrameObject *f = frame_alloc(frame, owns);
+    int slots = code->co_nlocalsplus + code->co_stacksize;
+    PyFrameObject *f = PyObject_GC_NewVar(PyFrameObject, &PyFrame_Type, slots);
     if (f == NULL) {
         return NULL;
     }
@@ -876,15 +829,16 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
     if (func == NULL) {
         return NULL;
     }
-    InterpreterFrame *frame = allocate_heap_frame(func, locals);
-    Py_DECREF(func);
-    if (frame == NULL) {
+    PyFrameObject *f = _PyFrame_New_NoTrack(code);
+    if (f == NULL) {
+        Py_DECREF(func);
         return NULL;
     }
-    PyFrameObject *f = _PyFrame_New_NoTrack(frame, 1);
-    if (f) {
-        _PyObject_GC_TRACK(f);
-    }
+    f->f_frame = (InterpreterFrame *)f->_f_frame_data;
+    f->f_owns_frame = 1;
+    init_frame((InterpreterFrame *)f->_f_frame_data, func, locals);
+    Py_DECREF(func);
+    _PyObject_GC_TRACK(f);
     return f;
 }
 
