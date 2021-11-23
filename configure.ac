@@ -96,8 +96,17 @@ AC_SUBST(host)
 # pybuilddir.txt will be created by --generate-posix-vars in the Makefile
 rm -f pybuilddir.txt
 
-AC_CHECK_PROGS(PYTHON_FOR_REGEN, python$PACKAGE_VERSION python3 python, python3)
+AC_CHECK_PROGS([PYTHON_FOR_REGEN],
+  [python$PACKAGE_VERSION python3.10 python3.9 python3.8 python3.7 python3.6 python3 python],
+  [python3])
 AC_SUBST(PYTHON_FOR_REGEN)
+
+AC_MSG_CHECKING([Python for regen version])
+if command -v $PYTHON_FOR_REGEN >/dev/null 2>&1; then
+  AC_MSG_RESULT([$($PYTHON_FOR_REGEN -V 2>/dev/null)])
+else
+  AC_MSG_RESULT([missing])
+fi
 
 if test "$cross_compiling" = yes; then
     AC_MSG_CHECKING([for python interpreter for cross build])
