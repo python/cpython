@@ -282,7 +282,7 @@ This module offers the following functions:
 
    Retrieves the type and data for a specified value name associated with
    an open registry key.
-   
+
    Behaves mostly like :meth:`QueryValueEx()`,
    but you needn't :meth:`OpenKey()` and :meth:`CloseKey()`
    if the key is any one of the predefined :ref:`HKEY_* constants <hkey-constants>`.
