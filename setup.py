@@ -1883,81 +1883,8 @@ class PyBuildExt(build_ext):
         )
 
     def detect_openssl_hashlib(self):
-        # Detect SSL support for the socket module (via _ssl)
-        config_vars = sysconfig.get_config_vars()
-
-        def split_var(name, sep):
-            # poor man's shlex, the re module is not available yet.
-            value = config_vars.get(name)
-            if not value:
-                return ()
-            # This trick works because ax_check_openssl uses --libs-only-L,
-            # --libs-only-l, and --cflags-only-I.
-            value = ' ' + value
-            sep = ' ' + sep
-            return [v.strip() for v in value.split(sep) if v.strip()]
-
-        openssl_includes = split_var('OPENSSL_INCLUDES', '-I')
-        openssl_libdirs = split_var('OPENSSL_LDFLAGS', '-L')
-        openssl_libs = split_var('OPENSSL_LIBS', '-l')
-        openssl_rpath = config_vars.get('OPENSSL_RPATH')
-        if not openssl_libs:
-            # libssl and libcrypto not found
-            self.missing.extend(['_ssl', '_hashlib'])
-            return None, None
-
-        # Find OpenSSL includes
-        ssl_incs = find_file(
-            'openssl/ssl.h', self.inc_dirs, openssl_includes
-        )
-        if ssl_incs is None:
-            self.missing.extend(['_ssl', '_hashlib'])
-            return None, None
-
-        if openssl_rpath == 'auto':
-            runtime_library_dirs = openssl_libdirs[:]
-        elif not openssl_rpath:
-            runtime_library_dirs = []
-        else:
-            runtime_library_dirs = [openssl_rpath]
-
-        openssl_extension_kwargs = dict(
-            include_dirs=openssl_includes,
-            library_dirs=openssl_libdirs,
-            libraries=openssl_libs,
-            runtime_library_dirs=runtime_library_dirs,
-        )
-
-        # This static linking is NOT OFFICIALLY SUPPORTED.
-        # Requires static OpenSSL build with position-independent code. Some
-        # features like DSO engines or external OSSL providers don't work.
-        # Only tested on GCC and clang on X86_64.
-        if os.environ.get("PY_UNSUPPORTED_OPENSSL_BUILD") == "static":
-            extra_linker_args = []
-            for lib in openssl_extension_kwargs["libraries"]:
-                # link statically
-                extra_linker_args.append(f"-l:lib{lib}.a")
-                # don't export symbols
-                extra_linker_args.append(f"-Wl,--exclude-libs,lib{lib}.a")
-            openssl_extension_kwargs["extra_link_args"] = extra_linker_args
-            # don't link OpenSSL shared libraries.
-            # include libz for OpenSSL build flavors with compression support
-            openssl_extension_kwargs["libraries"] = ["z"]
-
-        self.add(
-            Extension(
-                '_ssl',
-                ['_ssl.c'],
-                **openssl_extension_kwargs
-            )
-        )
-        self.add(
-            Extension(
-                '_hashlib',
-                ['_hashopenssl.c'],
-                **openssl_extension_kwargs,
-            )
-        )
+        self.addext(Extension('_ssl', ['_ssl.c']))
+        self.addext(Extension('_hashlib', ['_hashopenssl.c']))
 
     def detect_hash_builtins(self):
         # By default we always compile these even when OpenSSL is available
