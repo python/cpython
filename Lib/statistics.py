@@ -850,20 +850,17 @@ def stdev(data, xbar=None):
     1.0810874155219827
 
     """
-    # Fixme: Despite the exact sum of squared deviations, some inaccuracy
-    # remain because there are two rounding steps.  The first occurs in
-    # the _convert() step for variance(), the second occurs in math.sqrt().
     if iter(data) is data:
         data = list(data)
     n = len(data)
     if n < 2:
         raise StatisticsError('stdev requires at least two data points')
     T, ss = _ss(data, xbar)
-    var = _convert(ss / (n - 1), T)
-    try:
+    mss = ss / (n - 1)
+    if hasattr(T, 'sqrt'):
+        var = _convert(mss, T)
         return var.sqrt()
-    except AttributeError:
-        return math.sqrt(var)
+    return _sqrt_frac(mss.numerator, mss.denominator)
 
 
 def pstdev(data, mu=None):
@@ -875,20 +872,17 @@ def pstdev(data, mu=None):
     0.986893273527251
 
     """
-    # Fixme: Despite the exact sum of squared deviations, some inaccuracy
-    # remain because there are two rounding steps.  The first occurs in
-    # the _convert() step for pvariance(), the second occurs in math.sqrt().
     if iter(data) is data:
         data = list(data)
     n = len(data)
     if n < 1:
         raise StatisticsError('pstdev requires at least one data point')
     T, ss = _ss(data, mu)
-    var = _convert(ss / n, T)
-    try:
+    mss = ss / n
+    if hasattr(T, 'sqrt'):
+        var = _convert(mss, T)
         return var.sqrt()
-    except AttributeError:
-        return math.sqrt(var)
+    return _sqrt_frac(mss.numerator, mss.denominator)
 
 
 # === Statistics for relations between two inputs ===
