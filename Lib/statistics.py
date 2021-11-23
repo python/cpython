@@ -304,6 +304,19 @@ def _fail_neg(values, errmsg='negative value'):
             raise StatisticsError(errmsg)
         yield x
 
+def _isqrt_frac_rto(n, m):
+    'Square root of n/m, rounded to the nearest integer using round-to-odd.'
+    a = math.isqrt(n*m) // m
+    return a | (a*a*m != n)
+
+def _sqrt_frac(n, m):
+    'Square root of n/m as a float, correctly rounded.'
+    q = (n.bit_length() - m.bit_length() - 109) // 2
+    if q >= 0:
+        return float(_isqrt_frac_rto(n, m << 2 * q) << q)
+    else:
+        return _isqrt_frac_rto(n << -2 * q, m) / (1 << -q)
+
 
 # === Measures of central tendency (averages) ===
 
