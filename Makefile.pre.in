@@ -6,7 +6,7 @@
 # This means that if you edit Makefile, your changes get lost the next
 # time you run the configure script.  Ideally, you can do:
 #
-#	./configure
+#	./configure 
 #	make
 #	make test
 #	make install
