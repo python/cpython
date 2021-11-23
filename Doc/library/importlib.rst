@@ -145,6 +145,10 @@ Functions
 
    .. versionadded:: 3.3
 
+   .. versionchanged:: 3.10
+      Namespace packages created/installed in a different :data:`sys.path`
+      location after the same namespace was already imported are noticed.
+
 .. function:: reload(module)
 
    Reload a previously imported *module*.  The argument must be a module object,
