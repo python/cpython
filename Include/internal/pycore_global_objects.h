@@ -24,8 +24,6 @@ extern void _PyInterpreterState_CoreObjectsFini(PyInterpreterState *interp);
 extern PyStatus _PyInterpreterState_ObjectsInit(PyInterpreterState *interp);
 extern void _PyInterpreterState_ObjectsFini(PyInterpreterState *interp);
 
-extern PyStatus _PyExc_Init(PyInterpreterState *interp);
-
 
 #ifdef __cplusplus
 }

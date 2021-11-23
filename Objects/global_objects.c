@@ -7,6 +7,7 @@
 #include "pycore_runtime.h"       // _PyRuntimeState
 #include "pycore_pystate.h"       // _Py_IsMainInterpreter()
 #include "pycore_typeobject.h"    // _PyType_Init()
+#include "pycore_exceptions.h"    // _PyExc_Init()
 #include "pycore_long.h"          // _PyLong_InitCoreObjects()
 #include "pycore_bytesobject.h"   // _PyBytes_InitCoreObjects()
 #include "pycore_unicodeobject.h" // _PyUnicode_InitCoreObjects()
