@@ -5,8 +5,10 @@ import collections
 import contextlib
 import os
 import re
+import sys
 import time
 import types
+import unicodedata
 from typing import Dict, FrozenSet, Tuple, TextIO
 
 import umarshal
@@ -14,9 +16,13 @@ import umarshal
 verbose = False
 
 
+def isprintable(b: bytes) -> bool:
+    return all(0x20 <= c < 0x7f for c in b)
+
+
 def make_string_literal(b: bytes) -> str:
     res = ['"']
-    if b.isascii() and b.decode("ascii").isprintable():
+    if isprintable(b):
         res.append(b.decode("ascii").replace("\\", "\\\\").replace("\"", "\\\""))
     else:
         for i in b:
