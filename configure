@@ -658,6 +658,8 @@ MODULE__SQLITE3_FALSE
 MODULE__SQLITE3_TRUE
 MODULE_NIS_FALSE
 MODULE_NIS_TRUE
+MODULE__GDBM_FALSE
+MODULE__GDBM_TRUE
 MODULE__DECIMAL_FALSE
 MODULE__DECIMAL_TRUE
 MODULE__CRYPT_FALSE
@@ -807,6 +809,8 @@ DTRACE_OBJS
 DTRACE_HEADERS
 DFLAGS
 DTRACE
+GDBM_LIBS
+GDBM_CFLAGS
 TCLTK_LIBS
 TCLTK_INCLUDES
 LIBSQLITE3_LIBS
@@ -1044,6 +1048,8 @@ LIBNSL_CFLAGS
 LIBNSL_LIBS
 LIBSQLITE3_CFLAGS
 LIBSQLITE3_LIBS
+GDBM_CFLAGS
+GDBM_LIBS
 ZLIB_CFLAGS
 ZLIB_LIBS
 BZIP2_CFLAGS
@@ -1832,6 +1838,8 @@ Some influential environment variables:
               C compiler flags for LIBSQLITE3, overriding pkg-config
   LIBSQLITE3_LIBS
               linker flags for LIBSQLITE3, overriding pkg-config
+  GDBM_CFLAGS C compiler flags for gdbm
+  GDBM_LIBS   additional linker flags for gdbm
   ZLIB_CFLAGS C compiler flags for ZLIB, overriding pkg-config
   ZLIB_LIBS   linker flags for ZLIB, overriding pkg-config
   BZIP2_CFLAGS
@@ -11668,8 +11676,17 @@ else
   TCLTK_LIBS="$with_tcltk_libs"
 fi
 
-# check for _gdbmmodulec dependencies
-for ac_header in gdbm.h
+
+
+save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+  CPPFLAGS="$GDBM_CFLAGS $CFLAGS"
+  LDFLAGS="$GDBM_LIBS $LDFLAGS"
+  for ac_header in gdbm.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "gdbm.h" "ac_cv_header_gdbm_h" "$ac_includes_default"
 if test "x$ac_cv_header_gdbm_h" = xyes; then :
@@ -11677,8 +11694,7 @@ if test "x$ac_cv_header_gdbm_h" = xyes; then :
 #define HAVE_GDBM_H 1
 _ACEOF
 
-  LIBS_SAVE=$LIBS
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gdbm_open in -lgdbm" >&5
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gdbm_open in -lgdbm" >&5
 $as_echo_n "checking for gdbm_open in -lgdbm... " >&6; }
 if ${ac_cv_lib_gdbm_gdbm_open+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -11715,19 +11731,27 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_gdbm_gdbm_open" >&5
 $as_echo "$ac_cv_lib_gdbm_gdbm_open" >&6; }
 if test "x$ac_cv_lib_gdbm_gdbm_open" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBGDBM 1
-_ACEOF
 
-  LIBS="-lgdbm $LIBS"
+      have_gdbm=yes
+      GDBM_LIBS="$GDBM_LIBS -lgdbm"
 
+else
+  have_gdbm=no
 fi
 
-  LIBS=$LIBS_SAVE
 
+else
+  have_gdbm=no
 fi
 
 done
+
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
 
 
 # check for _dbmmodule.c dependencies
@@ -12009,22 +12033,33 @@ $as_echo_n "checking for --with-dbmliborder... " >&6; }
 # Check whether --with-dbmliborder was given.
 if test "${with_dbmliborder+set}" = set; then :
   withval=$with_dbmliborder;
-if test x$with_dbmliborder = xyes
-then
-as_fn_error $? "proper usage is --with-dbmliborder=db1:db2:..." "$LINENO" 5
 else
-  as_save_IFS=$IFS
-  IFS=:
-  for db in $with_dbmliborder; do
-    if test x$db != xndbm && test x$db != xgdbm && test x$db != xbdb
-    then
-      as_fn_error $? "proper usage is --with-dbmliborder=db1:db2:..." "$LINENO" 5
-    fi
-  done
-  IFS=$as_save_IFS
-fi
+  with_dbmliborder=ndbm:gdbm:bdb
 fi
 
+
+have_gdbm_dbmliborder=no
+as_save_IFS=$IFS
+IFS=:
+for db in $with_dbmliborder; do
+    case $db in #(
+  ndbm) :
+     ;; #(
+  gdbm) :
+    have_gdbm_dbmliborder=yes ;; #(
+  bdb) :
+     ;; #(
+  *) :
+    with_dbmliborder=error
+     ;;
+esac
+done
+IFS=$as_save_IFS
+if test "x$with_dbmliborder" = xerror; then :
+
+  as_fn_error $? "proper usage is --with-dbmliborder=db1:db2:... (ndbm:gdbm:bdb)" "$LINENO" 5
+
+fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_dbmliborder" >&5
 $as_echo "$with_dbmliborder" >&6; }
 
@@ -21725,6 +21760,42 @@ fi
 $as_echo "$py_cv_module__decimal" >&6; }
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _gdbm" >&5
+$as_echo_n "checking for stdlib extension module _gdbm... " >&6; }
+      case $py_stdlib_not_available in #(
+  *_gdbm*) :
+    py_cv_module__gdbm=n/a ;; #(
+  *) :
+    if test "$have_gdbm_dbmliborder" = yes; then :
+  if test "$have_gdbm" = yes; then :
+  py_cv_module__gdbm=yes
+else
+  py_cv_module__gdbm=missing
+fi
+else
+  py_cv_module__gdbm=disabled
+fi
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE__GDBM=$py_cv_module__gdbm$as_nl"
+  if test "x$py_cv_module__gdbm" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__GDBM_CFLAGS=$GDBM_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__GDBM_LDFLAGS=$GDBM_LIBS$as_nl"
+
+fi
+   if test "$py_cv_module__gdbm" = yes; then
+  MODULE__GDBM_TRUE=
+  MODULE__GDBM_FALSE='#'
+else
+  MODULE__GDBM_TRUE='#'
+  MODULE__GDBM_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__gdbm" >&5
+$as_echo "$py_cv_module__gdbm" >&6; }
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module nis" >&5
 $as_echo_n "checking for stdlib extension module nis... " >&6; }
       case $py_stdlib_not_available in #(
@@ -22648,6 +22719,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__DECIMAL_TRUE}" && test -z "${MODULE__DECIMAL_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__DECIMAL\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__GDBM_TRUE}" && test -z "${MODULE__GDBM_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__GDBM\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_NIS_TRUE}" && test -z "${MODULE_NIS_FALSE}"; then

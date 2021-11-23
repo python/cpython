@@ -604,9 +604,6 @@
 /* Define to 1 if you have the `dld' library (-ldld). */
 #undef HAVE_LIBDLD
 
-/* Define to 1 if you have the `gdbm' library (-lgdbm). */
-#undef HAVE_LIBGDBM
-
 /* Define to 1 if you have the `gdbm_compat' library (-lgdbm_compat). */
 #undef HAVE_LIBGDBM_COMPAT
 

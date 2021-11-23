@@ -1256,11 +1256,9 @@ class PyBuildExt(build_ext):
 
         # libdb, gdbm and ndbm headers and libraries
         have_ndbm_h = sysconfig.get_config_var("HAVE_NDBM_H")
-        have_gdbm_h = sysconfig.get_config_var("HAVE_GDBM_H")
         have_gdbm_ndbm_h = sysconfig.get_config_var("HAVE_GDBM_NDBM_H")
         have_gdbm_dash_ndbm_h = sysconfig.get_config_var("HAVE_GDBM_DASH_NDBM_H")
         have_libndbm = sysconfig.get_config_var("HAVE_LIBNDBM")
-        have_libgdbm = sysconfig.get_config_var("HAVE_LIBGDBM")
         have_libgdbm_compat = sysconfig.get_config_var("HAVE_LIBGDBM_COMPAT")
         have_libdb = sysconfig.get_config_var("HAVE_LIBDB")
 
@@ -1318,11 +1316,7 @@ class PyBuildExt(build_ext):
                 self.missing.append('_dbm')
 
         # Anthony Baxter's gdbm module.  GNU dbm(3) will require -lgdbm:
-        if 'gdbm' in dbm_order and have_libgdbm:
-            self.add(Extension('_gdbm', ['_gdbmmodule.c'],
-                               libraries=['gdbm']))
-        else:
-            self.missing.append('_gdbm')
+        self.addext(Extension('_gdbm', ['_gdbmmodule.c']))
 
     def detect_sqlite(self):
         sources = [
