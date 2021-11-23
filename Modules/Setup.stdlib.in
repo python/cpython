@@ -98,6 +98,8 @@
 # Modules with some UNIX dependencies
 #
 
+# needs -lcrypt on some systems
+@MODULE__CRYPT_TRUE@_crypt _cryptmodule.c
 @MODULE_FCNTL_TRUE@fcntl fcntlmodule.c
 @MODULE_GRP_TRUE@grp grpmodule.c
 @MODULE_MMAP_TRUE@mmap mmapmodule.c
