@@ -23,7 +23,11 @@ extern "C" {
     PyObject *prefix##_name;                                                \
     /* Qualified name of the generator. */                                  \
     PyObject *prefix##_qualname;                                            \
-    _PyErr_StackItem prefix##_exc_state;
+    _PyErr_StackItem prefix##_exc_state;                                    \
+    PyObject *prefix##_origin_or_finalizer;                                 \
+    char prefix##_hooks_inited;                                             \
+    char prefix##_closed;                                                   \
+    char prefix##_running_async;
 
 typedef struct {
     /* The gi_ prefix is intended to remind of generator-iterator. */
@@ -48,7 +52,6 @@ PyAPI_FUNC(void) _PyGen_Finalize(PyObject *self);
 
 typedef struct {
     _PyGenObject_HEAD(cr)
-    PyObject *cr_origin;
 } PyCoroObject;
 
 PyAPI_DATA(PyTypeObject) PyCoro_Type;
@@ -64,18 +67,6 @@ PyAPI_FUNC(PyObject *) PyCoro_New(PyFrameObject *,
 
 typedef struct {
     _PyGenObject_HEAD(ag)
-    PyObject *ag_finalizer;
-
-    /* Flag is set to 1 when hooks set up by sys.set_asyncgen_hooks
-       were called on the generator, to avoid calling them more
-       than once. */
-    char ag_hooks_inited;
-
-    /* Flag is set to 1 when aclose() is called for the first time, or
-       when a StopAsyncIteration exception is raised. */
-    char ag_closed;
-
-    char ag_running_async;
 } PyAsyncGenObject;
 
 PyAPI_DATA(PyTypeObject) PyAsyncGen_Type;

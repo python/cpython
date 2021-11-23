@@ -63,7 +63,7 @@ _PyGen_Finalize(PyObject *self)
 
     if (PyAsyncGen_CheckExact(self)) {
         PyAsyncGenObject *agen = (PyAsyncGenObject*)self;
-        PyObject *finalizer = agen->ag_finalizer;
+        PyObject *finalizer = agen->ag_origin_or_finalizer;
         if (finalizer && !agen->ag_closed) {
             /* Save the current exception, if any. */
             PyErr_Fetch(&error_type, &error_value, &error_traceback);
@@ -129,7 +129,7 @@ gen_dealloc(PyGenObject *gen)
         /* We have to handle this case for asynchronous generators
            right here, because this code has to be between UNTRACK
            and GC_Del. */
-        Py_CLEAR(((PyAsyncGenObject*)gen)->ag_finalizer);
+        Py_CLEAR(((PyAsyncGenObject*)gen)->ag_origin_or_finalizer);
     }
     InterpreterFrame *frame = gen->gi_xframe;
     if (frame != NULL) {
@@ -140,7 +140,7 @@ gen_dealloc(PyGenObject *gen)
         PyMem_Free(frame);
     }
     if (((PyCodeObject *)gen->gi_code)->co_flags & CO_COROUTINE) {
-        Py_CLEAR(((PyCoroObject *)gen)->cr_origin);
+        Py_CLEAR(((PyCoroObject *)gen)->cr_origin_or_finalizer);
     }
     Py_CLEAR(gen->gi_code);
     Py_CLEAR(gen->gi_name);
@@ -892,7 +892,7 @@ _Py_MakeCoro(PyFunctionObject *func, InterpreterFrame *frame)
         if (o == NULL) {
             return NULL;
         }
-        o->ag_finalizer = NULL;
+        o->ag_origin_or_finalizer = NULL;
         o->ag_closed = 0;
         o->ag_hooks_inited = 0;
         o->ag_running_async = 0;
@@ -907,10 +907,10 @@ _Py_MakeCoro(PyFunctionObject *func, InterpreterFrame *frame)
     int origin_depth = tstate->coroutine_origin_tracking_depth;
 
     if (origin_depth == 0) {
-        ((PyCoroObject *)coro)->cr_origin = NULL;
+        ((PyCoroObject *)coro)->cr_origin_or_finalizer = NULL;
     } else {
         PyObject *cr_origin = compute_cr_origin(origin_depth);
-        ((PyCoroObject *)coro)->cr_origin = cr_origin;
+        ((PyCoroObject *)coro)->cr_origin_or_finalizer = cr_origin;
         if (!cr_origin) {
             Py_DECREF(coro);
             return NULL;
@@ -1104,7 +1104,7 @@ static PyGetSetDef coro_getsetlist[] = {
 
 static PyMemberDef coro_memberlist[] = {
     {"cr_code",      T_OBJECT, offsetof(PyCoroObject, cr_code),     READONLY|PY_AUDIT_READ},
-    {"cr_origin",    T_OBJECT, offsetof(PyCoroObject, cr_origin),   READONLY},
+    {"cr_origin",    T_OBJECT, offsetof(PyCoroObject, cr_origin_or_finalizer),   READONLY},
     {NULL}      /* Sentinel */
 };
 
@@ -1318,10 +1318,10 @@ PyCoro_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
     int origin_depth = tstate->coroutine_origin_tracking_depth;
 
     if (origin_depth == 0) {
-        ((PyCoroObject *)coro)->cr_origin = NULL;
+        ((PyCoroObject *)coro)->cr_origin_or_finalizer = NULL;
     } else {
         PyObject *cr_origin = compute_cr_origin(origin_depth);
-        ((PyCoroObject *)coro)->cr_origin = cr_origin;
+        ((PyCoroObject *)coro)->cr_origin_or_finalizer = cr_origin;
         if (!cr_origin) {
             Py_DECREF(coro);
             return NULL;
@@ -1382,7 +1382,7 @@ typedef struct _PyAsyncGenWrappedValue {
 static int
 async_gen_traverse(PyAsyncGenObject *gen, visitproc visit, void *arg)
 {
-    Py_VISIT(gen->ag_finalizer);
+    Py_VISIT(gen->ag_origin_or_finalizer);
     return gen_traverse((PyGenObject*)gen, visit, arg);
 }
 
@@ -1413,7 +1413,7 @@ async_gen_init_hooks(PyAsyncGenObject *o)
     finalizer = tstate->async_gen_finalizer;
     if (finalizer) {
         Py_INCREF(finalizer);
-        o->ag_finalizer = finalizer;
+        o->ag_origin_or_finalizer = finalizer;
     }
 
     firstiter = tstate->async_gen_firstiter;
@@ -1594,7 +1594,7 @@ PyAsyncGen_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
     if (o == NULL) {
         return NULL;
     }
-    o->ag_finalizer = NULL;
+    o->ag_origin_or_finalizer = NULL;
     o->ag_closed = 0;
     o->ag_hooks_inited = 0;
     o->ag_running_async = 0;
