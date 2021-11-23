@@ -87,7 +87,7 @@ def analyze_character_width(s: str) -> Tuple[int, bool]:
     return kind, ascii
 
 
-def removesuffix(base, suffix):
+def removesuffix(base: str, suffix: str) -> str:
     if base.endswith(suffix):
         return base[:len(base) - len(suffix)]
     return base
