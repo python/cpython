@@ -584,11 +584,11 @@ def regen_makefile(modules):
         deepfreezefiles.append(f"\t\t{ofile} \\")
 
         # Also add a deepfreeze rule.
-        deepfreezerules.append(f'{cfile}: $(srcdir)/{header} $(DEEPFREEZE_DEPS)')
+        deepfreezerules.append(f'{cfile}: {header} $(DEEPFREEZE_DEPS)')
         deepfreezerules.append(
             f"\t$(PYTHON_FOR_REGEN) "
             f"$(srcdir)/Tools/scripts/deepfreeze.py "
-            f"$(srcdir)/{header} -m {src.frozenid} -o {cfile}")
+            f"{header} -m {src.frozenid} -o {cfile}")
         deepfreezerules.append('')
 
     for src in _iter_sources(modules):
@@ -599,7 +599,7 @@ def regen_makefile(modules):
         pyfiles.append(f'\t\t{pyfile} \\')
 
         freeze = (f'Programs/_freeze_module {src.frozenid} '
-                  f'$(srcdir)/{pyfile} $(srcdir)/{header}')
+                  f'$(srcdir)/{pyfile} {header}')
         rules.extend([
             f'{header}: Programs/_freeze_module {pyfile}',
             f'\t{freeze}',

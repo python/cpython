@@ -5613,6 +5613,7 @@ SRCDIRS="\
   Parser \
   Programs \
   Python \
+  Python/frozen_modules \
   Python/deepfreeze"
 AC_MSG_CHECKING(for build directories)
 for dir in $SRCDIRS; do
