@@ -66,6 +66,11 @@
 @MODULE__LZMA_TRUE@_lzma _lzmamodule.c
 @MODULE_ZLIB_TRUE@zlib zlibmodule.c
 
+# dbm/gdbm
+# dbm needs either libndbm, libgdbm_compat, or libdb 5.x
+# gdbm module needs -lgdbm
+@MODULE__GDBM_TRUE@_gdbm _gdbmmodule.c
+
 # hashing builtins, can be disabled with --without-builtin-hashlib-hashes
 @MODULE__MD5_TRUE@_md5 md5module.c
 @MODULE__SHA1_TRUE@_sha1 sha1module.c
