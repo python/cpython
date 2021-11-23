@@ -35,10 +35,10 @@ _PyFrame_MakeAndSetFrameObject(InterpreterFrame *frame)
         Py_XDECREF(error_traceback);
     }
     else {
-        PyErr_Restore(error_type, error_value, error_traceback);
         f->f_owns_frame = 0;
         f->f_frame = frame;
         frame->frame_obj = f;
+        PyErr_Restore(error_type, error_value, error_traceback);
     }
     return f;
 }

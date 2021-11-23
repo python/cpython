@@ -610,7 +610,7 @@ static PyGetSetDef frame_getsetlist[] = {
     f_back              next item on free list, or NULL
 */
 
-static void _Py_HOT_FUNCTION
+static void
 frame_dealloc(PyFrameObject *f)
 {
     if (_PyObject_GC_IS_TRACKED(f)) {
@@ -637,23 +637,7 @@ frame_dealloc(PyFrameObject *f)
     }
     Py_CLEAR(f->f_back);
     Py_CLEAR(f->f_trace);
-#if PyFrame_MAXFREELIST > 0
-    struct _Py_frame_state *state = get_frame_state();
-#ifdef Py_DEBUG
-    // frame_dealloc() must not be called after _PyFrame_Fini()
-    assert(state->numfree != -1);
-#endif
-    if (state->numfree < PyFrame_MAXFREELIST) {
-        ++state->numfree;
-        f->f_back = state->free_list;
-        state->free_list = f;
-    }
-    else
-#endif
-    {
-        PyObject_GC_Del(f);
-    }
-
+    PyObject_GC_Del(f);
     Py_XDECREF(co);
     Py_TRASHCAN_END;
 }
@@ -834,9 +818,9 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
         Py_DECREF(func);
         return NULL;
     }
+    init_frame((InterpreterFrame *)f->_f_frame_data, func, locals);
     f->f_frame = (InterpreterFrame *)f->_f_frame_data;
     f->f_owns_frame = 1;
-    init_frame((InterpreterFrame *)f->_f_frame_data, func, locals);
     Py_DECREF(func);
     _PyObject_GC_TRACK(f);
     return f;
@@ -1041,42 +1025,15 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
     _PyFrame_LocalsToFast(f->f_frame, clear);
 }
 
-/* Clear out the free list */
-void
-_PyFrame_ClearFreeList(PyInterpreterState *interp)
-{
-#if PyFrame_MAXFREELIST > 0
-    struct _Py_frame_state *state = &interp->frame;
-    while (state->free_list != NULL) {
-        PyFrameObject *f = state->free_list;
-        state->free_list = state->free_list->f_back;
-        PyObject_GC_Del(f);
-        --state->numfree;
-    }
-    assert(state->numfree == 0);
-#endif
-}
-
 void
 _PyFrame_Fini(PyInterpreterState *interp)
 {
-    _PyFrame_ClearFreeList(interp);
-#if defined(Py_DEBUG) && PyFrame_MAXFREELIST > 0
-    struct _Py_frame_state *state = &interp->frame;
-    state->numfree = -1;
-#endif
 }
 
 /* Print summary info about the state of the optimized allocator */
 void
 _PyFrame_DebugMallocStats(FILE *out)
 {
-#if PyFrame_MAXFREELIST > 0
-    struct _Py_frame_state *state = get_frame_state();
-    _PyDebugAllocatorStats(out,
-                           "free PyFrameObject",
-                           state->numfree, sizeof(PyFrameObject));
-#endif
 }
 
 
