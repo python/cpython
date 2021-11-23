@@ -2,7 +2,7 @@
 
 import ast
 
-from typing import Any
+from typing import Any, Tuple
 
 
 class Type:
@@ -55,10 +55,10 @@ class Code:
     def __repr__(self) -> str:
         return f"Code(**{self.__dict__})"
 
-    co_localsplusnames: tuple[str]
-    co_localspluskinds: tuple[int]
+    co_localsplusnames: Tuple[str]
+    co_localspluskinds: Tuple[int]
 
-    def get_localsplus_names(self, select_kind: int) -> tuple[str, ...]:
+    def get_localsplus_names(self, select_kind: int) -> Tuple[str, ...]:
         varnames: list[str] = []
         for name, kind in zip(self.co_localsplusnames,
                               self.co_localspluskinds):
@@ -67,15 +67,15 @@ class Code:
         return tuple(varnames)
 
     @property
-    def co_varnames(self) -> tuple[str, ...]:
+    def co_varnames(self) -> Tuple[str, ...]:
         return self.get_localsplus_names(CO_FAST_LOCAL)
 
     @property
-    def co_cellvars(self) -> tuple[str, ...]:
+    def co_cellvars(self) -> Tuple[str, ...]:
         return self.get_localsplus_names(CO_FAST_CELL)
 
     @property
-    def co_freevars(self) -> tuple[str, ...]:
+    def co_freevars(self) -> Tuple[str, ...]:
         return self.get_localsplus_names(CO_FAST_FREE)
 
     @property
@@ -190,118 +190,117 @@ class Reader:
                 obj = self.r_ref(obj, flag)
             return obj
 
-        match type:
-            case Type.NULL:
-                return NULL
-            case Type.NONE:
-                return None
-            case Type.ELLIPSIS:
-                return Ellipsis
-            case Type.FALSE:
-                return False
-            case Type.TRUE:
-                return True
-            case Type.INT:
-                return R_REF(self.r_long())
-            case Type.INT64:
-                return R_REF(self.r_long64())
-            case Type.LONG:
-                return R_REF(self.r_PyLong())
-            case Type.FLOAT:
-                return R_REF(self.r_float_str())
-            case Type.BINARY_FLOAT:
-                return R_REF(self.r_float_bin())
-            case Type.COMPLEX:
-                return R_REF(complex(self.r_float_str(),
-                                     self.r_float_str()))
-            case Type.BINARY_COMPLEX:
-                return R_REF(complex(self.r_float_bin(),
-                                     self.r_float_bin()))
-            case Type.STRING:
-                n = self.r_long()
-                return R_REF(self.r_string(n))
-            case Type.ASCII_INTERNED | Type.ASCII:
-                n = self.r_long()
-                return R_REF(self.r_string(n).decode("ascii"))
-            case Type.SHORT_ASCII_INTERNED | Type.SHORT_ASCII:
-                n = self.r_byte()
-                return R_REF(self.r_string(n).decode("ascii"))
-            case Type.INTERNED | Type.UNICODE:
-                n = self.r_long()
-                return R_REF(self.r_string(n).decode("utf8", "surrogatepass"))
-            case Type.SMALL_TUPLE:
-                n = self.r_byte()
-                idx = self.r_ref_reserve(flag)
-                retval: Any = tuple(self.r_object() for _ in range(n))
-                self.r_ref_insert(retval, idx, flag)
-                return retval
-            case Type.TUPLE:
-                n = self.r_long()
-                idx = self.r_ref_reserve(flag)
-                retval = tuple(self.r_object() for _ in range(n))
-                self.r_ref_insert(retval, idx, flag)
-                return retval
-            case Type.LIST:
-                n = self.r_long()
-                retval = R_REF([])
-                for _ in range(n):
-                    retval.append(self.r_object())
-                return retval
-            case Type.DICT:
-                retval = R_REF({})
-                while True:
-                    key = self.r_object()
-                    if key == NULL:
-                        break
-                    val = self.r_object()
-                    retval[key] = val
-                return retval
-            case Type.SET:
-                n = self.r_long()
-                retval = R_REF(set())
-                for _ in range(n):
-                    v = self.r_object()
-                    retval.add(v)
-                return retval
-            case Type.FROZENSET:
-                n = self.r_long()
-                s: set[Any] = set()
-                idx = self.r_ref_reserve(flag)
-                for _ in range(n):
-                    v = self.r_object()
-                    s.add(v)
-                retval = frozenset(s)
-                self.r_ref_insert(retval, idx, flag)
-                return retval
-            case Type.CODE:
-                retval = R_REF(Code())
-                retval.co_argcount = self.r_long()
-                retval.co_posonlyargcount = self.r_long()
-                retval.co_kwonlyargcount = self.r_long()
-                retval.co_stacksize = self.r_long()
-                retval.co_flags = self.r_long()
-                retval.co_code = self.r_object()
-                retval.co_consts = self.r_object()
-                retval.co_names = self.r_object()
-                retval.co_localsplusnames = self.r_object()
-                retval.co_localspluskinds = self.r_object()
-                retval.co_filename = self.r_object()
-                retval.co_name = self.r_object()
-                retval.co_qualname = self.r_object()
-                retval.co_firstlineno = self.r_long()
-                retval.co_linetable = self.r_object()
-                retval.co_endlinetable = self.r_object()
-                retval.co_columntable = self.r_object()
-                retval.co_exceptiontable = self.r_object()
-                return retval
-            case Type.REF:
-                n = self.r_long()
-                retval = self.refs[n]
-                assert retval is not None
-                return retval
-            case _:
-                breakpoint()
-                raise AssertionError(f"Unknown type {type} {chr(type)!r}")
+        if type == Type.NULL:
+            return NULL
+        elif type == Type.NONE:
+            return None
+        elif type == Type.ELLIPSIS:
+            return Ellipsis
+        elif type == Type.FALSE:
+            return False
+        elif type == Type.TRUE:
+            return True
+        elif type == Type.INT:
+            return R_REF(self.r_long())
+        elif type == Type.INT64:
+            return R_REF(self.r_long64())
+        elif type == Type.LONG:
+            return R_REF(self.r_PyLong())
+        elif type == Type.FLOAT:
+            return R_REF(self.r_float_str())
+        elif type == Type.BINARY_FLOAT:
+            return R_REF(self.r_float_bin())
+        elif type == Type.COMPLEX:
+            return R_REF(complex(self.r_float_str(),
+                                    self.r_float_str()))
+        elif type == Type.BINARY_COMPLEX:
+            return R_REF(complex(self.r_float_bin(),
+                                    self.r_float_bin()))
+        elif type == Type.STRING:
+            n = self.r_long()
+            return R_REF(self.r_string(n))
+        elif type == Type.ASCII_INTERNED or type == Type.ASCII:
+            n = self.r_long()
+            return R_REF(self.r_string(n).decode("ascii"))
+        elif type == Type.SHORT_ASCII_INTERNED or type == Type.SHORT_ASCII:
+            n = self.r_byte()
+            return R_REF(self.r_string(n).decode("ascii"))
+        elif type == Type.INTERNED or type == Type.UNICODE:
+            n = self.r_long()
+            return R_REF(self.r_string(n).decode("utf8", "surrogatepass"))
+        elif type == Type.SMALL_TUPLE:
+            n = self.r_byte()
+            idx = self.r_ref_reserve(flag)
+            retval: Any = tuple(self.r_object() for _ in range(n))
+            self.r_ref_insert(retval, idx, flag)
+            return retval
+        elif type == Type.TUPLE:
+            n = self.r_long()
+            idx = self.r_ref_reserve(flag)
+            retval = tuple(self.r_object() for _ in range(n))
+            self.r_ref_insert(retval, idx, flag)
+            return retval
+        elif type == Type.LIST:
+            n = self.r_long()
+            retval = R_REF([])
+            for _ in range(n):
+                retval.append(self.r_object())
+            return retval
+        elif type == Type.DICT:
+            retval = R_REF({})
+            while True:
+                key = self.r_object()
+                if key == NULL:
+                    break
+                val = self.r_object()
+                retval[key] = val
+            return retval
+        elif type == Type.SET:
+            n = self.r_long()
+            retval = R_REF(set())
+            for _ in range(n):
+                v = self.r_object()
+                retval.add(v)
+            return retval
+        elif type == Type.FROZENSET:
+            n = self.r_long()
+            s: set[Any] = set()
+            idx = self.r_ref_reserve(flag)
+            for _ in range(n):
+                v = self.r_object()
+                s.add(v)
+            retval = frozenset(s)
+            self.r_ref_insert(retval, idx, flag)
+            return retval
+        elif type == Type.CODE:
+            retval = R_REF(Code())
+            retval.co_argcount = self.r_long()
+            retval.co_posonlyargcount = self.r_long()
+            retval.co_kwonlyargcount = self.r_long()
+            retval.co_stacksize = self.r_long()
+            retval.co_flags = self.r_long()
+            retval.co_code = self.r_object()
+            retval.co_consts = self.r_object()
+            retval.co_names = self.r_object()
+            retval.co_localsplusnames = self.r_object()
+            retval.co_localspluskinds = self.r_object()
+            retval.co_filename = self.r_object()
+            retval.co_name = self.r_object()
+            retval.co_qualname = self.r_object()
+            retval.co_firstlineno = self.r_long()
+            retval.co_linetable = self.r_object()
+            retval.co_endlinetable = self.r_object()
+            retval.co_columntable = self.r_object()
+            retval.co_exceptiontable = self.r_object()
+            return retval
+        elif type == Type.REF:
+            n = self.r_long()
+            retval = self.refs[n]
+            assert retval is not None
+            return retval
+        else:
+            breakpoint()
+            raise AssertionError(f"Unknown type {type} {chr(type)!r}")
 
 
 def loads(data: bytes) -> Any:
