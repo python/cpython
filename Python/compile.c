@@ -6912,11 +6912,9 @@ stackdepth(struct compiler *c)
         int depth = b->b_startdepth;
         assert(depth >= 0);
         basicblock *next = b->b_next;
-//fprintf(stderr, "  >> b->b_startdepth = %d\n", b->b_startdepth);
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
             int effect = stack_effect(instr->i_opcode, instr->i_oparg, 0);
-//fprintf(stderr, "[%d]  instr->i_opcode=%d, effect = %d\n", i, instr->i_opcode, effect);
             if (effect == PY_INVALID_STACK_EFFECT) {
                 PyErr_Format(PyExc_SystemError,
                              "compiler stack_effect(opcode=%d, arg=%i) failed",
