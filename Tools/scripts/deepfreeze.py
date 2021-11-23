@@ -15,22 +15,23 @@ import umarshal
 
 verbose = False
 
-# See Objects/unicodectype.c:_PyUnicode_IsPrintable
+# See Objects/unicodectype.c:_PyUnicode_IsPrintable()
 NON_PRINTABLE = {"Cc", "Cf", "Cs", "Co", "Cn", "Zl", "Zp", "Zs"}
 
 
 def isprintable(b: bytes) -> bool:
-    if sys.version_info > (3, 7):
-        return b.isascii() and b.decode("ascii").isprintable()
-    else:
-        try:
-            s = b.decode("ascii")
-        except UnicodeDecodeError:
+    """isascii() and isprintable() for Python 3.6
+
+    return b.isascii() and b.decode("ascii").isprintable()
+    """
+    try:
+        s = b.decode("ascii")
+    except UnicodeDecodeError:
+        return False
+    for c in s:
+        if unicodedata.category(c) in NON_PRINTABLE:
             return False
-        for c in s:
-            if unicodedata.category(c) in NON_PRINTABLE:
-                return False
-        return True
+    return True
 
 
 def make_string_literal(b: bytes) -> str:
