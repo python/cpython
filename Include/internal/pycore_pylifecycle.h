@@ -52,14 +52,12 @@ PyAPI_FUNC(int) _Py_IsLocaleCoercionTarget(const char *ctype_loc);
 
 extern PyStatus _PyFaulthandler_Init(int enable);
 extern int _PyTraceMalloc_Init(int enable);
-extern PyObject * _PyBuiltin_Init(PyInterpreterState *interp);
 extern PyStatus _PySys_Create(
     PyThreadState *tstate,
     PyObject **sysmod_p);
 extern PyStatus _PySys_ReadPreinitWarnOptions(PyWideStringList *options);
 extern PyStatus _PySys_ReadPreinitXOptions(PyConfig *config);
 extern int _PySys_UpdateConfig(PyThreadState *tstate);
-extern PyStatus _PyBuiltins_AddExceptions(PyObject * bltinmod);
 extern PyStatus _Py_HashRandomization_Init(const PyConfig *);
 extern PyStatus _PyImportZip_Init(PyThreadState *tstate);
 extern PyStatus _PyGC_Init(PyInterpreterState *interp);

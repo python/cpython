@@ -13,7 +13,8 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
-#include "pycore_global_objects.h"  // __PyRuntimeState_TypesInit()
+#include "pycore_global_objects.h"  // _PyRuntimeState_TypesInit()
+#include "pycore_bltinmodule.h"   // _PyBuiltin_Init()
 
 #include <locale.h>               // setlocale()
 #include <stdlib.h>               // getenv()
@@ -688,7 +689,7 @@ pycore_init_builtins(PyThreadState *tstate)
     Py_INCREF(builtins_dict);
     interp->builtins = builtins_dict;
 
-    PyStatus status = _PyBuiltins_AddExceptions(bimod);
+    PyStatus status = _PyBuiltins_AddExceptions(bimod, interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }

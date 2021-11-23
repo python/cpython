@@ -182,6 +182,7 @@
     <ClInclude Include="..\Include\internal\pycore_atomic.h" />
     <ClInclude Include="..\Include\internal\pycore_atomic_funcs.h" />
     <ClInclude Include="..\Include\internal\pycore_bitutils.h" />
+    <ClInclude Include="..\Include\internal\pycore_bltinmodule.h" />
     <ClInclude Include="..\Include\internal\pycore_bytes_methods.h" />
     <ClInclude Include="..\Include\internal\pycore_bytesobject.h" />
     <ClInclude Include="..\Include\internal\pycore_call.h" />

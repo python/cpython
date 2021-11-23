@@ -3360,114 +3360,6 @@ _PyExc_InitTypeStateLast(PyInterpreterState *interp)
     return _PyStatus_OK();
 }
 
-/* Add exception types to the builtins module */
-PyStatus
-_PyBuiltins_AddExceptions(PyObject *bltinmod)
-{
-    PyObject *bdict = PyModule_GetDict(bltinmod);
-    if (bdict == NULL) {
-        return _PyStatus_ERR("exceptions bootstrapping error.");
-    }
-
-    struct _Py_exc_state *state = get_exc_state();
-    PyObject *PyExc_ExceptionGroup = state->PyExc_ExceptionGroup;
-    assert(PyExc_ExceptionGroup != NULL);
-
-#define SETBUILTIN(TYPE) \
-    if (PyDict_SetItemString(bdict, # TYPE, PyExc_ ## TYPE)) { \
-        return _PyStatus_ERR("Module dictionary insertion problem."); \
-    }
-
-    SETBUILTIN(ArithmeticError);
-    SETBUILTIN(AssertionError);
-    SETBUILTIN(AttributeError);
-    SETBUILTIN(BaseException);
-    SETBUILTIN(BaseExceptionGroup);
-    SETBUILTIN(BlockingIOError);
-    SETBUILTIN(BrokenPipeError);
-    SETBUILTIN(BufferError);
-    SETBUILTIN(ChildProcessError);
-    SETBUILTIN(ConnectionAbortedError);
-    SETBUILTIN(ConnectionError);
-    SETBUILTIN(ConnectionRefusedError);
-    SETBUILTIN(ConnectionResetError);
-    SETBUILTIN(EOFError);
-    SETBUILTIN(Exception);
-    SETBUILTIN(ExceptionGroup);
-    SETBUILTIN(FileExistsError);
-    SETBUILTIN(FileNotFoundError);
-    SETBUILTIN(FloatingPointError);
-    SETBUILTIN(GeneratorExit);
-    SETBUILTIN(ImportError);
-    SETBUILTIN(IndentationError);
-    SETBUILTIN(IndexError);
-    SETBUILTIN(InterruptedError);
-    SETBUILTIN(IsADirectoryError);
-    SETBUILTIN(KeyError);
-    SETBUILTIN(KeyboardInterrupt);
-    SETBUILTIN(LookupError);
-    SETBUILTIN(MemoryError);
-    SETBUILTIN(ModuleNotFoundError);
-    SETBUILTIN(NameError);
-    SETBUILTIN(NotADirectoryError);
-    SETBUILTIN(NotImplementedError);
-    SETBUILTIN(OSError);
-    SETBUILTIN(OverflowError);
-    SETBUILTIN(PermissionError);
-    SETBUILTIN(ProcessLookupError);
-    SETBUILTIN(RecursionError);
-    SETBUILTIN(ReferenceError);
-    SETBUILTIN(RuntimeError);
-    SETBUILTIN(StopAsyncIteration);
-    SETBUILTIN(StopIteration);
-    SETBUILTIN(SyntaxError);
-    SETBUILTIN(SystemError);
-    SETBUILTIN(SystemExit);
-    SETBUILTIN(TabError);
-    SETBUILTIN(TimeoutError);
-    SETBUILTIN(TypeError);
-    SETBUILTIN(UnboundLocalError);
-    SETBUILTIN(UnicodeDecodeError);
-    SETBUILTIN(UnicodeEncodeError);
-    SETBUILTIN(UnicodeError);
-    SETBUILTIN(UnicodeTranslateError);
-    SETBUILTIN(ValueError);
-    SETBUILTIN(ZeroDivisionError);
-
-    SETBUILTIN(BytesWarning);
-    SETBUILTIN(DeprecationWarning);
-    SETBUILTIN(EncodingWarning);
-    SETBUILTIN(FutureWarning);
-    SETBUILTIN(ImportWarning);
-    SETBUILTIN(PendingDeprecationWarning);
-    SETBUILTIN(ResourceWarning);
-    SETBUILTIN(RuntimeWarning);
-    SETBUILTIN(SyntaxWarning);
-    SETBUILTIN(UnicodeWarning);
-    SETBUILTIN(UserWarning);
-    SETBUILTIN(Warning);
-#undef SETBUILTIN
-
-#define INIT_ALIAS(NAME, TYPE) \
-    do { \
-        Py_INCREF(PyExc_ ## TYPE); \
-        Py_XDECREF(PyExc_ ## NAME); \
-        PyExc_ ## NAME = PyExc_ ## TYPE; \
-        if (PyDict_SetItemString(bdict, # NAME, PyExc_ ## NAME)) { \
-            return _PyStatus_ERR("Module dictionary insertion problem."); \
-        } \
-    } while (0)
-
-    INIT_ALIAS(EnvironmentError, OSError);
-    INIT_ALIAS(IOError, OSError);
-#ifdef MS_WINDOWS
-    INIT_ALIAS(WindowsError, OSError);
-#endif
-#undef INIT_ALIAS
-
-    return _PyStatus_OK();
-}
-
 void
 _PyExc_FiniCoreObjects(PyInterpreterState *interp)
 {
@@ -3475,7 +3367,6 @@ _PyExc_FiniCoreObjects(PyInterpreterState *interp)
     free_preallocated_memerrors(state);
     Py_CLEAR(state->errnomap);
 }
-
 
 void
 _PyExc_FiniObjects(PyInterpreterState *interp)
