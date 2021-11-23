@@ -1390,6 +1390,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             sock=None,
             backlog=100,
             ssl=None,
+            reuse_address=None,
             reuse_port=None,
             ssl_handshake_timeout=None,
             start_serving=True):
@@ -1420,6 +1421,8 @@ class BaseEventLoop(events.AbstractEventLoop):
                 raise ValueError(
                     'host/port and sock can not be specified at the same time')
 
+            if reuse_address is None:
+                reuse_address = os.name == "posix" and sys.platform != "cygwin"
             sockets = []
             if host == '':
                 hosts = [None]
@@ -1449,6 +1452,9 @@ class BaseEventLoop(events.AbstractEventLoop):
                                            af, socktype, proto, exc_info=True)
                         continue
                     sockets.append(sock)
+                    if reuse_address:
+                        sock.setsockopt(
+                            socket.SOL_SOCKET, socket.SO_REUSEADDR, True)
                     if reuse_port:
                         _set_reuseport(sock)
                     # Disable IPv4/IPv6 dual stack support (enabled by
