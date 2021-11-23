@@ -73,7 +73,6 @@ extern int _PyFloat_InitTypes(void);
 extern PyStatus _Py_HashRandomization_Init(const PyConfig *);
 
 extern PyStatus _PyTypes_Init(void);
-extern PyStatus _PyTypes_InitSlotDefs(void);
 extern PyStatus _PyImportZip_Init(PyThreadState *tstate);
 extern PyStatus _PyGC_Init(PyInterpreterState *interp);
 extern PyStatus _PyAtExit_Init(PyInterpreterState *interp);
@@ -98,7 +97,6 @@ extern void _PyExc_Fini(PyInterpreterState *interp);
 extern void _PyImport_Fini(void);
 extern void _PyImport_Fini2(void);
 extern void _PyGC_Fini(PyInterpreterState *interp);
-extern void _PyType_Fini(PyInterpreterState *interp);
 extern void _Py_HashRandomization_Fini(void);
 extern void _PyUnicode_Fini(PyInterpreterState *interp);
 extern void _PyUnicode_ClearInterned(PyInterpreterState *interp);

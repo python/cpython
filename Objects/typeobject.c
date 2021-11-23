@@ -80,8 +80,8 @@ _Py_IDENTIFIER(mro);
 static PyObject *
 slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 
-static void
-clear_slotdefs(void);
+static PyStatus init_slotdefs(void);
+static void clear_slotdefs(void);
 
 static PyObject *
 lookup_maybe_method(PyObject *self, _Py_Identifier *attrid, int *unbound);
@@ -293,11 +293,27 @@ PyType_ClearCache(void)
 }
 
 
+PyStatus
+_PyType_Init(PyInterpreterState *interp)
+{
+    PyStatus status;
+
+    if (_Py_IsMainInterpreter(interp)) {
+        status = init_slotdefs(interp);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+
+    return _PyStatus_OK();
+}
+
 void
 _PyType_Fini(PyInterpreterState *interp)
 {
     struct type_cache *cache = &interp->type_cache;
     type_cache_clear(cache, NULL);
+
     if (_Py_IsMainInterpreter(interp)) {
         clear_slotdefs();
     }
@@ -8420,8 +8436,8 @@ update_slots_callback(PyTypeObject *type, void *data)
 static int slotdefs_initialized = 0;
 /* Initialize the slotdefs table by adding interned string objects for the
    names. */
-PyStatus
-_PyTypes_InitSlotDefs(void)
+static PyStatus
+init_slotdefs(void)
 {
     if (slotdefs_initialized) {
         return _PyStatus_OK();

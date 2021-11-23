@@ -1848,11 +1848,6 @@ PyObject _Py_NotImplementedStruct = {
 PyStatus
 _PyTypes_Init(void)
 {
-    PyStatus status = _PyTypes_InitSlotDefs();
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
 #define INIT_TYPE(TYPE) \
     do { \
         if (PyType_Ready(&(TYPE)) < 0) { \

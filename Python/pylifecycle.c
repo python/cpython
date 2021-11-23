@@ -14,6 +14,7 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
+#include "pycore_typeobject.h"    // _PyType_Init()
 
 #include <locale.h>               // setlocale()
 #include <stdlib.h>               // getenv()
@@ -688,8 +689,13 @@ static PyStatus
 pycore_init_types(PyInterpreterState *interp)
 {
     PyStatus status;
-    int is_main_interp = _Py_IsMainInterpreter(interp);
 
+    status = _PyType_Init(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    int is_main_interp = _Py_IsMainInterpreter(interp);
     if (is_main_interp) {
         if (_PyStructSequence_Init() < 0) {
             return _PyStatus_ERR("can't initialize structseq");
