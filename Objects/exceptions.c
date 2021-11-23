@@ -384,7 +384,7 @@ static struct PyMemberDef BaseException_members[] = {
 };
 
 
-static PyTypeObject _PyExc_BaseException = {
+PyTypeObject _PyExc_BaseException = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "BaseException", /*tp_name*/
     sizeof(PyBaseExceptionObject), /*tp_basicsize*/
@@ -434,7 +434,7 @@ PyObject *PyExc_BaseException = (PyObject *)&_PyExc_BaseException;
  * include it and not look strange.
  */
 #define SimpleExtendsException(EXCBASE, EXCNAME, EXCDOC) \
-static PyTypeObject _PyExc_ ## EXCNAME = { \
+PyTypeObject _PyExc_ ## EXCNAME = { \
     PyVarObject_HEAD_INIT(NULL, 0) \
     # EXCNAME, \
     sizeof(PyBaseExceptionObject), \
@@ -449,7 +449,7 @@ static PyTypeObject _PyExc_ ## EXCNAME = { \
 PyObject *PyExc_ ## EXCNAME = (PyObject *)&_PyExc_ ## EXCNAME
 
 #define MiddlingExtendsException(EXCBASE, EXCNAME, EXCSTORE, EXCDOC) \
-static PyTypeObject _PyExc_ ## EXCNAME = { \
+PyTypeObject _PyExc_ ## EXCNAME = { \
     PyVarObject_HEAD_INIT(NULL, 0) \
     # EXCNAME, \
     sizeof(Py ## EXCSTORE ## Object), \
@@ -466,7 +466,7 @@ PyObject *PyExc_ ## EXCNAME = (PyObject *)&_PyExc_ ## EXCNAME
 #define ComplexExtendsException(EXCBASE, EXCNAME, EXCSTORE, EXCNEW, \
                                 EXCMETHODS, EXCMEMBERS, EXCGETSET, \
                                 EXCSTR, EXCDOC) \
-static PyTypeObject _PyExc_ ## EXCNAME = { \
+PyTypeObject _PyExc_ ## EXCNAME = { \
     PyVarObject_HEAD_INIT(NULL, 0) \
     # EXCNAME, \
     sizeof(Py ## EXCSTORE ## Object), 0, \
@@ -2616,7 +2616,7 @@ done:
     return result;
 }
 
-static PyTypeObject _PyExc_UnicodeEncodeError = {
+PyTypeObject _PyExc_UnicodeEncodeError = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "UnicodeEncodeError",
     sizeof(PyUnicodeErrorObject), 0,
@@ -2723,7 +2723,7 @@ done:
     return result;
 }
 
-static PyTypeObject _PyExc_UnicodeDecodeError = {
+PyTypeObject _PyExc_UnicodeDecodeError = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "UnicodeDecodeError",
     sizeof(PyUnicodeErrorObject), 0,
@@ -2820,7 +2820,7 @@ done:
     return result;
 }
 
-static PyTypeObject _PyExc_UnicodeTranslateError = {
+PyTypeObject _PyExc_UnicodeTranslateError = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "UnicodeTranslateError",
     sizeof(PyUnicodeErrorObject), 0,
@@ -2989,7 +2989,7 @@ free_preallocated_memerrors(struct _Py_exc_state *state)
 }
 
 
-static PyTypeObject _PyExc_MemoryError = {
+PyTypeObject _PyExc_MemoryError = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "MemoryError",
     sizeof(PyBaseExceptionObject),
