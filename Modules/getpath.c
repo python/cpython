@@ -254,6 +254,7 @@ getpath_joinpath(PyObject *Py_UNUSED(self), PyObject *args)
     wchar_t **parts = (wchar_t **)PyMem_Malloc(n * sizeof(wchar_t *));
     memset(parts, 0, n * sizeof(wchar_t *));
     Py_ssize_t cchFinal = 0;
+    Py_ssize_t first = 0;
 
     for (Py_ssize_t i = 0; i < n; ++i) {
         PyObject *s = PyTuple_GET_ITEM(args, i);
@@ -265,6 +266,9 @@ getpath_joinpath(PyObject *Py_UNUSED(self), PyObject *args)
             if (!parts[i]) {
                 cchFinal = -1;
                 break;
+            }
+            if (_Py_isabs(parts[i])) {
+                first = i;
             }
         } else {
             PyErr_SetString(PyExc_TypeError, "all arguments to joinpath() must be str or None");
@@ -293,13 +297,15 @@ getpath_joinpath(PyObject *Py_UNUSED(self), PyObject *args)
         if (!parts[i]) {
             continue;
         }
-        if (final && !final[0]) {
-            /* final is definitely long enough to fit any individual part */
-            wcscpy(final, parts[i]);
-        } else if (final && _Py_add_relfile(final, parts[i], cchFinal) < 0) {
-            /* if we fail, keep iterating to free memory, but stop adding parts */
-            PyMem_Free(final);
-            final = NULL;
+        if (i >= first) {
+            if (final && !final[0]) {
+                /* final is definitely long enough to fit any individual part */
+                wcscpy(final, parts[i]);
+            } else if (final && _Py_add_relfile(final, parts[i], cchFinal) < 0) {
+                /* if we fail, keep iterating to free memory, but stop adding parts */
+                PyMem_Free(final);
+                final = NULL;
+            }
         }
         PyMem_Free(parts[i]);
     }
