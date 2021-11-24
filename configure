@@ -15805,7 +15805,7 @@ save_LIBS=$LIBS
 
 
   CPPFLAGS="$LIBCRYPT_CFLAGS $CFLAGS"
-  LDFLAGS="$LIBCRYPT_LIBS $LDFLAGS"
+  LIBS="$LIBCRYPT_LIBS $LIBS"
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for crypt or crypt_r" >&5
 $as_echo_n "checking for crypt or crypt_r... " >&6; }
 if ${ac_cv_crypt_crypt+:} false; then :
