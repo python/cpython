@@ -177,6 +177,7 @@ def_op('SET_ADD', 146)
 def_op('MAP_ADD', 147)
 def_op('LOAD_CLASSDEREF', 148)
 hasfree.append(148)
+def_op('COPY_FREE_VARS', 149)
 
 def_op('MATCH_CLASS', 152)
 
@@ -238,6 +239,9 @@ _specialized_instructions = [
     "BINARY_SUBSCR_LIST_INT",
     "BINARY_SUBSCR_TUPLE_INT",
     "BINARY_SUBSCR_DICT",
+    "STORE_SUBSCR_ADAPTIVE",
+    "STORE_SUBSCR_LIST_INT",
+    "STORE_SUBSCR_DICT",
     "CALL_FUNCTION_ADAPTIVE",
     "CALL_FUNCTION_BUILTIN_O",
     "CALL_FUNCTION_BUILTIN_FAST",
