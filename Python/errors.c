@@ -538,7 +538,7 @@ _PyErr_StackItemToExcInfoTuple(_PyErr_StackItem *err_info)
     assert(exc_value == Py_None || PyExceptionInstance_Check(exc_value));
 
     PyObject *exc_type = PyExceptionInstance_Check(exc_value) ?
-               PyExceptionInstance_Class(err_info->exc_value) :
+               PyExceptionInstance_Class(exc_value) :
                Py_None;
 
     return Py_BuildValue(
