@@ -2871,31 +2871,51 @@ AC_CHECK_LIB(sendfile, sendfile)
 AC_CHECK_LIB(dl, dlopen)	# Dynamic linking for SunOS/Solaris and SYSV
 AC_CHECK_LIB(dld, shl_load)	# Dynamic linking for HP-UX
 
-# checks for uuid.h location
-AC_CHECK_HEADERS([uuid/uuid.h uuid.h])
 
-AC_CACHE_CHECK([for uuid_generate_time_safe], [ac_cv_lib_uuid_uuid_generate_time_safe], [
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <uuid/uuid.h>]], [[
-#ifndef uuid_generate_time_safe
-void *x = uuid_generate_time_safe
-#endif
-]])],
-[ac_cv_lib_uuid_uuid_generate_time_safe=yes], [ac_cv_lib_uuid_uuid_generate_time_safe=no])
+dnl check for uuid dependencies
+AH_TEMPLATE([HAVE_UUID_H], [Define to 1 if you have the <uuid.h> header file.])
+AH_TEMPLATE([HAVE_UUID_UUID_H], [Define to 1 if you have the <uuid/uuid.h> header file.])
+AH_TEMPLATE([HAVE_UUID_GENERATE_TIME_SAFE], [Define if uuid_generate_time_safe() exists.])
+have_uuid=missing
+
+dnl AIX provides support for RFC4122 (uuid) in libc.a starting with AIX 6.1
+dnl (anno 2007). FreeBSD and OpenBSD provides support in libc as well.
+dnl Little-endian FreeBSD, OpenBSD and NetBSD needs encoding into an octet
+dnl stream in big-endian byte-order
+AC_CHECK_HEADERS([uuid.h], [
+  AC_CHECK_FUNCS([uuid_create uuid_enc_be], [
+    have_uuid=yes
+    LIBUUID_CFLAGS=
+    LIBUUID_LIBS=
+  ])
 ])
-AS_VAR_IF([ac_cv_lib_uuid_uuid_generate_time_safe], [yes], [
-  AC_DEFINE(HAVE_UUID_GENERATE_TIME_SAFE, 1, [Define if uuid_generate_time_safe() exists.])
+
+AS_VAR_IF([have_uuid], [missing], [
+  PKG_CHECK_MODULES(
+    [LIBUUID], [uuid >= 2.20], [
+      dnl linux-util's libuuid has uuid_generate_time_safe() since v2.20 (2011)
+      dnl and provides <uuid.h>.
+      have_uuid=yes
+      AC_DEFINE([HAVE_UUID_H], [1])
+      AC_DEFINE([HAVE_UUID_GENERATE_TIME_SAFE], [1])
+    ], [
+      LIBUUID_LIBS="-luuid"
+      LIBUUID_CFLAGS=
+      have_uuid=no
+      AC_CHECK_HEADERS([uuid/uuid.h], [
+        WITH_SAVE_ENV(
+          [AC_CHECK_LIB([uuid], [uuid_generate_time], [have_uuid=yes])
+        ])
+        WITH_SAVE_ENV([
+          AC_CHECK_LIB([uuid], [uuid_generate_time_safe], [
+            have_uuid=yes
+            AC_DEFINE([HAVE_UUID_GENERATE_TIME_SAFE], [1])
+          ])
+        ])
+      ])
+    ]
+  )
 ])
-
-# check for libuuid from util-linux
-save_LIBS=$LIBS
-AC_CHECK_LIB([uuid], [uuid_generate_time])
-LIBS=$save_LIBS
-
-# AIX provides support for RFC4122 (uuid) in libc.a starting with AIX 6.1 (anno 2007)
-# FreeBSD and OpenBSD provides support in libc as well.
-# Little-endian FreeBSD, OpenBSD and NetBSD needs encoding into an octet
-# stream in big-endian byte-order
-AC_CHECK_FUNCS([uuid_create uuid_enc_be])
 
 # 'Real Time' functions on Solaris
 # posix4 on Solaris 2.6
@@ -6299,6 +6319,9 @@ PY_STDLIB_MOD([_sqlite3],
   [test "$have_sqlite3" = "yes"],
   [test "$have_supported_sqlite3" = "yes"],
   [$LIBSQLITE3_CFLAGS], [$LIBSQLITE3_LIBS])
+PY_STDLIB_MOD([_uuid],
+  [], [test "$have_uuid" = "yes"],
+  [$LIBUUID_CFLAGS], [$LIBUUID_LIBS])
 
 dnl compression libs
 PY_STDLIB_MOD([zlib], [], [test "$have_zlib" = yes],
