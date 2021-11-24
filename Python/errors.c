@@ -79,14 +79,15 @@ _PyErr_StackItem *
 _PyErr_GetTopmostException(PyThreadState *tstate)
 {
     _PyErr_StackItem *exc_info = tstate->exc_info;
+    assert(exc_info);
+
     while ((exc_info->exc_value == NULL || exc_info->exc_value == Py_None) &&
            exc_info->previous_item != NULL)
     {
         assert(exc_info->exc_type == NULL || exc_info->exc_type == Py_None);
         exc_info = exc_info->previous_item;
     }
-    assert(exc_info == NULL ||
-           exc_info->previous_item == NULL ||
+    assert(exc_info->previous_item == NULL ||
            (exc_info->exc_type != NULL && exc_info->exc_type != Py_None));
     return exc_info;
 }
@@ -479,19 +480,14 @@ _PyErr_GetExcInfo(PyThreadState *tstate,
     *p_value = exc_info->exc_value;
     *p_traceback = exc_info->exc_traceback;
 
-    assert(*p_value == NULL ||
-           *p_value == Py_None ||
-           PyExceptionInstance_Check(*p_value));
-
-    *p_type = (*p_value != NULL && PyExceptionInstance_Check(*p_value)) ?
-              PyExceptionInstance_Class(*p_value) :
-              Py_None;
-
-    if (exc_info->exc_type == NULL || exc_info->exc_type == Py_None) {
-        assert(*p_type == Py_None);
+    if (*p_value == NULL || *p_value == Py_None) {
+        assert(exc_info->exc_type == NULL || exc_info->exc_type == Py_None);
+        *p_type = Py_None;
     }
     else {
-        assert(*p_type == exc_info->exc_type);
+        assert(PyExceptionInstance_Check(*p_value));
+        assert(exc_info->exc_type == PyExceptionInstance_Class(*p_value));
+        *p_type = PyExceptionInstance_Class(*p_value);
     }
 
     Py_XINCREF(*p_type);
