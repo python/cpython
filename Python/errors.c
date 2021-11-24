@@ -552,36 +552,36 @@ _PyErr_StackItemToExcInfoTuple(_PyErr_StackItem *err_info)
    The caller is responsible for ensuring that this call won't create
    any cycles in the exception context chain. */
 void
-_PyErr_ChainExceptions(PyObject *exc, PyObject *val, PyObject *tb)
+_PyErr_ChainExceptions(PyObject *typ, PyObject *val, PyObject *tb)
 {
-    if (exc == NULL)
+    if (typ == NULL)
         return;
 
     PyThreadState *tstate = _PyThreadState_GET();
 
-    if (!PyExceptionClass_Check(exc)) {
+    if (!PyExceptionClass_Check(typ)) {
         _PyErr_Format(tstate, PyExc_SystemError,
                       "_PyErr_ChainExceptions: "
                       "exception %R is not a BaseException subclass",
-                      exc);
+                      typ);
         return;
     }
 
     if (_PyErr_Occurred(tstate)) {
         PyObject *typ2, *val2, *tb2;
         _PyErr_Fetch(tstate, &typ2, &val2, &tb2);
-        _PyErr_NormalizeException(tstate, &exc, &val, &tb);
+        _PyErr_NormalizeException(tstate, &typ, &val, &tb);
         if (tb != NULL) {
             PyException_SetTraceback(val, tb);
             Py_DECREF(tb);
         }
-        Py_DECREF(exc);
+        Py_DECREF(typ);
         _PyErr_NormalizeException(tstate, &typ2, &val2, &tb2);
         PyException_SetContext(val2, val);
         _PyErr_Restore(tstate, typ2, val2, tb2);
     }
     else {
-        _PyErr_Restore(tstate, exc, val, tb);
+        _PyErr_Restore(tstate, typ, val, tb);
     }
 }
 
@@ -622,8 +622,8 @@ _PyErr_ChainStackItem(_PyErr_StackItem *exc_info)
         tstate->exc_info = exc_info;
     }
 
-    PyObject *exc, *val, *tb;
-    _PyErr_Fetch(tstate, &exc, &val, &tb);
+    PyObject *typ, *val, *tb;
+    _PyErr_Fetch(tstate, &typ, &val, &tb);
 
     PyObject *typ2, *val2, *tb2;
     typ2 = exc_info->exc_type;
@@ -646,8 +646,8 @@ _PyErr_ChainStackItem(_PyErr_StackItem *exc_info)
     }
 
     /* _PyErr_SetObject sets the context from PyThreadState. */
-    _PyErr_SetObject(tstate, exc, val);
-    Py_DECREF(exc);  // since _PyErr_Occurred was true
+    _PyErr_SetObject(tstate, typ, val);
+    Py_DECREF(typ);  // since _PyErr_Occurred was true
     Py_XDECREF(val);
     Py_XDECREF(tb);
 
