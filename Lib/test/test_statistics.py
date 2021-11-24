@@ -2161,6 +2161,33 @@ class TestPStdev(VarianceStdevMixin, NumericTestCase):
         self.assertEqual(self.func(data), 2.5)
         self.assertEqual(self.func(data, mu=0.5), 6.5)
 
+class TestSqrtHelper(unittest.TestCase):
+
+    def test_sqrt_frac(self):
+        # This helper function aspires to produce more accurate square roots
+        # of fractional inputs that can be had with math.sqrt() alone.
+        # For a inputs spanning large ranges, we test that
+        # 1) the result is close to math.sqrt()
+        # 2) the result is at least as good as the two adjacent float values
+
+        randrange = random.randrange
+        sqrt_frac = statistics._sqrt_frac
+
+        for i in range(10_000):
+            numerator: int = randrange(10 ** randrange(30))
+            denonimator: int = randrange(10 ** randrange(30)) + 1
+            with self.subTest(numerator=numerator, denonimator=denonimator):
+                x: Fraction = Fraction(numerator, denonimator)
+
+                root: float = sqrt_frac(numerator, denonimator)
+                self.assertTrue(math.isclose(root, math.sqrt(numerator / denonimator)))
+
+                r_up: float = math.nextafter(root, math.inf)
+                self.assertLessEqual(abs(Fraction(root)**2 - x), abs(Fraction(r_up)**2 - x))
+
+                r_down: float = math.nextafter(root, -math.inf)
+                self.assertLessEqual(abs(Fraction(root)**2 - x), abs(Fraction(r_down)**2 - x))
+
 class TestStdev(VarianceStdevMixin, NumericTestCase):
     # Tests for sample standard deviation.
     def setUp(self):
