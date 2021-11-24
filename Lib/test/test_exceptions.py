@@ -226,14 +226,14 @@ class ExceptionTests(unittest.TestCase):
         check(b'Python = "\xcf\xb3\xf2\xee\xed" +', 1, 18)
         check('x = "a', 1, 5)
         check('lambda x: x = 2', 1, 1)
-        check('f{a + b + c}', 1, 1)
+        check('f{a + b + c}', 1, 2)
         check('[file for str(file) in []\n])', 1, 11)
         check('a = « hello » « world »', 1, 5)
         check('[\nfile\nfor str(file)\nin\n[]\n]', 3, 5)
         check('[file for\n str(file) in []]', 2, 2)
         check("ages = {'Alice'=22, 'Bob'=23}", 1, 16)
         check('match ...:\n    case {**rest, "key": value}:\n        ...', 2, 19)
-        check("a b c d e f", 1, 1)
+        check("[a b c d e f]", 1, 2)
 
         # Errors thrown by compile.c
         check('class foo:return 1', 1, 11)
