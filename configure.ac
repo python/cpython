@@ -5875,27 +5875,24 @@ AS_VAR_IF([ac_cv_func_getrandom], [yes], [
 
 # checks for POSIX shared memory, used by Modules/_multiprocessing/posixshmem.c
 # shm_* may only be available if linking against librt
-save_LIBS="$LIBS"
-save_includes_default="$ac_includes_default"
-AC_SEARCH_LIBS(shm_open, rt)
-if test "$ac_cv_search_shm_open" = "-lrt"; then
-    AC_DEFINE(SHM_NEEDS_LIBRT, 1,
-              [Define to 1 if you must link with -lrt for shm_open().])
-fi
-AC_CHECK_HEADERS(sys/mman.h)
-# temporarily override ac_includes_default for AC_CHECK_FUNCS below
-ac_includes_default="\
-${ac_includes_default}
-#ifndef __cplusplus
-#  ifdef HAVE_SYS_MMAN_H
-#    include <sys/mman.h>
-#  endif
-#endif
-"
-AC_CHECK_FUNCS([shm_open shm_unlink])
-# we don't want to link with librt always, restore LIBS
-LIBS="$save_LIBS"
-ac_includes_default="$save_includes_default"
+POSIXSHMEM_CFLAGS='-I$(srcdir)/Modules/_multiprocessing'
+WITH_SAVE_ENV([
+  AC_SEARCH_LIBS([shm_open], [rt])
+  AS_VAR_IF([ac_cv_search_shm_open], [-lrt], [POSIXSHMEM_LIBS="-lrt"])
+
+  dnl Temporarily override ac_includes_default for AC_CHECK_FUNCS below.
+  _SAVE_VAR([ac_includes_default])
+  ac_includes_default="\
+  ${ac_includes_default}
+  #ifndef __cplusplus
+  #  ifdef HAVE_SYS_MMAN_H
+  #    include <sys/mman.h>
+  #  endif
+  #endif
+  "
+  AC_CHECK_FUNCS([shm_open shm_unlink], [have_posix_shmem=yes], [have_posix_shmem=no])
+  _RESTORE_VAR([ac_includes_default])
+])
 
 # Check for usable OpenSSL
 AX_CHECK_OPENSSL([have_openssl=yes],[have_openssl=no])
@@ -6251,6 +6248,9 @@ PY_STDLIB_MOD([fcntl],
   [], [$FCNTL_LIBS])
 PY_STDLIB_MOD([mmap],
   [], [test "$ac_cv_header_sys_mman_h" = "yes" -a "$ac_cv_header_sys_stat_h" = "yes"])
+PY_STDLIB_MOD([_posixshmem],
+  [], [test "$have_posix_shmem" = "yes"],
+  [$POSIXSHMEM_CFLAGS], [$POSIXSHMEM_LIBS])
 
 dnl platform specific extensions
 PY_STDLIB_MOD([grp], [], [test "$ac_cv_func_getgrgid" = yes -o "$ac_cv_func_getgrgid_r" = yes])

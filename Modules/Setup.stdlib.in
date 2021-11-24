@@ -122,6 +122,9 @@
 @MODULE_SYSLOG_TRUE@syslog syslogmodule.c
 @MODULE_TERMIOS_TRUE@termios termios.c
 
+# multiprocessing
+@MODULE__POSIXSHMEM_TRUE@_posixshmem _multiprocessing/posixshmem.c
+
 
 ############################################################################
 # Modules with third party dependencies
