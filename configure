@@ -710,6 +710,8 @@ MODULE_OSSAUDIODEV_FALSE
 MODULE_OSSAUDIODEV_TRUE
 MODULE_GRP_FALSE
 MODULE_GRP_TRUE
+MODULE__POSIXSHMEM_FALSE
+MODULE__POSIXSHMEM_TRUE
 MODULE_MMAP_FALSE
 MODULE_MMAP_TRUE
 MODULE_FCNTL_FALSE
@@ -20030,9 +20032,14 @@ fi
 
 # checks for POSIX shared memory, used by Modules/_multiprocessing/posixshmem.c
 # shm_* may only be available if linking against librt
-save_LIBS="$LIBS"
-save_includes_default="$ac_includes_default"
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing shm_open" >&5
+POSIXSHMEM_CFLAGS='-I$(srcdir)/Modules/_multiprocessing'
+save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing shm_open" >&5
 $as_echo_n "checking for library containing shm_open... " >&6; }
 if ${ac_cv_search_shm_open+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -20088,33 +20095,20 @@ if test "$ac_res" != no; then :
 
 fi
 
-if test "$ac_cv_search_shm_open" = "-lrt"; then
-
-$as_echo "#define SHM_NEEDS_LIBRT 1" >>confdefs.h
-
-fi
-for ac_header in sys/mman.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "sys/mman.h" "ac_cv_header_sys_mman_h" "$ac_includes_default"
-if test "x$ac_cv_header_sys_mman_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_SYS_MMAN_H 1
-_ACEOF
-
+  if test "x$ac_cv_search_shm_open" = x-lrt; then :
+  POSIXSHMEM_LIBS="-lrt"
 fi
 
-done
-
-# temporarily override ac_includes_default for AC_CHECK_FUNCS below
-ac_includes_default="\
-${ac_includes_default}
-#ifndef __cplusplus
-#  ifdef HAVE_SYS_MMAN_H
-#    include <sys/mman.h>
-#  endif
-#endif
-"
-for ac_func in shm_open shm_unlink
+    save_ac_includes_default=$ac_includes_default
+  ac_includes_default="\
+  ${ac_includes_default}
+  #ifndef __cplusplus
+  #  ifdef HAVE_SYS_MMAN_H
+  #    include <sys/mman.h>
+  #  endif
+  #endif
+  "
+  for ac_func in shm_open shm_unlink
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -20122,13 +20116,20 @@ if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
 #define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
 _ACEOF
-
+ have_posix_shmem=yes
+else
+  have_posix_shmem=no
 fi
 done
 
-# we don't want to link with librt always, restore LIBS
-LIBS="$save_LIBS"
-ac_includes_default="$save_includes_default"
+  ac_includes_default=$save_ac_includes_default
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
 
 # Check for usable OpenSSL
 
@@ -21070,6 +21071,42 @@ fi
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_mmap" >&5
 $as_echo "$py_cv_module_mmap" >&6; }
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _posixshmem" >&5
+$as_echo_n "checking for stdlib extension module _posixshmem... " >&6; }
+      case $py_stdlib_not_available in #(
+  *_posixshmem*) :
+    py_cv_module__posixshmem=n/a ;; #(
+  *) :
+    if true; then :
+  if test "$have_posix_shmem" = "yes"; then :
+  py_cv_module__posixshmem=yes
+else
+  py_cv_module__posixshmem=missing
+fi
+else
+  py_cv_module__posixshmem=disabled
+fi
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM=$py_cv_module__posixshmem$as_nl"
+  if test "x$py_cv_module__posixshmem" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM_CFLAGS=$POSIXSHMEM_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM_LDFLAGS=$POSIXSHMEM_LIBS$as_nl"
+
+fi
+   if test "$py_cv_module__posixshmem" = yes; then
+  MODULE__POSIXSHMEM_TRUE=
+  MODULE__POSIXSHMEM_FALSE='#'
+else
+  MODULE__POSIXSHMEM_TRUE='#'
+  MODULE__POSIXSHMEM_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__posixshmem" >&5
+$as_echo "$py_cv_module__posixshmem" >&6; }
 
 
 
@@ -22619,6 +22656,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_MMAP_TRUE}" && test -z "${MODULE_MMAP_FALSE}"; then
   as_fn_error $? "conditional \"MODULE_MMAP\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__POSIXSHMEM_TRUE}" && test -z "${MODULE__POSIXSHMEM_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__POSIXSHMEM\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_GRP_TRUE}" && test -z "${MODULE_GRP_FALSE}"; then
