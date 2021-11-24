@@ -654,6 +654,8 @@ MODULE_BINASCII_FALSE
 MODULE_BINASCII_TRUE
 MODULE_ZLIB_FALSE
 MODULE_ZLIB_TRUE
+MODULE__UUID_FALSE
+MODULE__UUID_TRUE
 MODULE__SQLITE3_FALSE
 MODULE__SQLITE3_TRUE
 MODULE_NIS_FALSE
@@ -827,6 +829,8 @@ LIBEXPAT_INTERNAL
 LIBEXPAT_LDFLAGS
 LIBEXPAT_CFLAGS
 TZPATH
+LIBUUID_LIBS
+LIBUUID_CFLAGS
 SHLIBS
 CFLAGSFORSHARED
 LINKFORSHARED
@@ -1046,6 +1050,8 @@ LIBS
 CPPFLAGS
 CPP
 PROFILE_TASK
+LIBUUID_CFLAGS
+LIBUUID_LIBS
 LIBNSL_CFLAGS
 LIBNSL_LIBS
 LIBSQLITE3_CFLAGS
@@ -1833,6 +1839,10 @@ Some influential environment variables:
   CPP         C preprocessor
   PROFILE_TASK
               Python args for PGO generation task
+  LIBUUID_CFLAGS
+              C compiler flags for LIBUUID, overriding pkg-config
+  LIBUUID_LIBS
+              linker flags for LIBUUID, overriding pkg-config
   LIBNSL_CFLAGS
               C compiler flags for LIBNSL, overriding pkg-config
   LIBNSL_LIBS linker flags for LIBNSL, overriding pkg-config
@@ -10371,62 +10381,121 @@ _ACEOF
 fi
 	# Dynamic linking for HP-UX
 
-# checks for uuid.h location
-for ac_header in uuid/uuid.h uuid.h
+
+have_uuid=missing
+
+for ac_header in uuid.h
 do :
-  as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
-ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
-if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
+  ac_fn_c_check_header_mongrel "$LINENO" "uuid.h" "ac_cv_header_uuid_h" "$ac_includes_default"
+if test "x$ac_cv_header_uuid_h" = xyes; then :
   cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
+#define HAVE_UUID_H 1
 _ACEOF
+
+  for ac_func in uuid_create uuid_enc_be
+do :
+  as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
+ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
+if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
+  cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
+_ACEOF
+
+    have_uuid=yes
+    LIBUUID_CFLAGS=
+    LIBUUID_LIBS=
+
+fi
+done
+
 
 fi
 
 done
 
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time_safe" >&5
-$as_echo_n "checking for uuid_generate_time_safe... " >&6; }
-if ${ac_cv_lib_uuid_uuid_generate_time_safe+:} false; then :
-  $as_echo_n "(cached) " >&6
+
+
+
+
+if test "x$have_uuid" = xmissing; then :
+
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIBUUID" >&5
+$as_echo_n "checking for LIBUUID... " >&6; }
+
+if test -n "$LIBUUID_CFLAGS"; then
+    pkg_cv_LIBUUID_CFLAGS="$LIBUUID_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"uuid >= 2.20\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "uuid >= 2.20") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBUUID_CFLAGS=`$PKG_CONFIG --cflags "uuid >= 2.20" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
 else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$LIBUUID_LIBS"; then
+    pkg_cv_LIBUUID_LIBS="$LIBUUID_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"uuid >= 2.20\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "uuid >= 2.20") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBUUID_LIBS=`$PKG_CONFIG --libs "uuid >= 2.20" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
 
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <uuid/uuid.h>
-int
-main ()
-{
 
-#ifndef uuid_generate_time_safe
-void *x = uuid_generate_time_safe
-#endif
 
-  ;
-  return 0;
-}
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        LIBUUID_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "uuid >= 2.20" 2>&1`
+        else
+	        LIBUUID_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "uuid >= 2.20" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$LIBUUID_PKG_ERRORS" >&5
+
+
+      LIBUUID_LIBS="-luuid"
+      LIBUUID_CFLAGS=
+      have_uuid=no
+      for ac_header in uuid/uuid.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "uuid/uuid.h" "ac_cv_header_uuid_uuid_h" "$ac_includes_default"
+if test "x$ac_cv_header_uuid_uuid_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_UUID_UUID_H 1
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ac_cv_lib_uuid_uuid_generate_time_safe=yes
-else
-  ac_cv_lib_uuid_uuid_generate_time_safe=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_uuid_uuid_generate_time_safe" >&5
-$as_echo "$ac_cv_lib_uuid_uuid_generate_time_safe" >&6; }
-if test "x$ac_cv_lib_uuid_uuid_generate_time_safe" = xyes; then :
-
-
-$as_echo "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
-
-
-fi
-
-# check for libuuid from util-linux
+        save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time in -luuid" >&5
 $as_echo_n "checking for uuid_generate_time in -luuid... " >&6; }
 if ${ac_cv_lib_uuid_uuid_generate_time+:} false; then :
@@ -10464,32 +10533,226 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_uuid_uuid_generate_time" >&5
 $as_echo "$ac_cv_lib_uuid_uuid_generate_time" >&6; }
 if test "x$ac_cv_lib_uuid_uuid_generate_time" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBUUID 1
-_ACEOF
-
-  LIBS="-luuid $LIBS"
-
+  have_uuid=yes
 fi
 
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
 
-# AIX provides support for RFC4122 (uuid) in libc.a starting with AIX 6.1 (anno 2007)
-# FreeBSD and OpenBSD provides support in libc as well.
-# Little-endian FreeBSD, OpenBSD and NetBSD needs encoding into an octet
-# stream in big-endian byte-order
-for ac_func in uuid_create uuid_enc_be
-do :
-  as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
-ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
-if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
-  cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
+
+        save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time_safe in -luuid" >&5
+$as_echo_n "checking for uuid_generate_time_safe in -luuid... " >&6; }
+if ${ac_cv_lib_uuid_uuid_generate_time_safe+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-luuid  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char uuid_generate_time_safe ();
+int
+main ()
+{
+return uuid_generate_time_safe ();
+  ;
+  return 0;
+}
 _ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_uuid_uuid_generate_time_safe=yes
+else
+  ac_cv_lib_uuid_uuid_generate_time_safe=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_uuid_uuid_generate_time_safe" >&5
+$as_echo "$ac_cv_lib_uuid_uuid_generate_time_safe" >&6; }
+if test "x$ac_cv_lib_uuid_uuid_generate_time_safe" = xyes; then :
+
+            have_uuid=yes
+            $as_echo "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
+
 
 fi
+
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+
+fi
+
 done
 
+
+
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+      LIBUUID_LIBS="-luuid"
+      LIBUUID_CFLAGS=
+      have_uuid=no
+      for ac_header in uuid/uuid.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "uuid/uuid.h" "ac_cv_header_uuid_uuid_h" "$ac_includes_default"
+if test "x$ac_cv_header_uuid_uuid_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_UUID_UUID_H 1
+_ACEOF
+
+        save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time in -luuid" >&5
+$as_echo_n "checking for uuid_generate_time in -luuid... " >&6; }
+if ${ac_cv_lib_uuid_uuid_generate_time+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-luuid  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char uuid_generate_time ();
+int
+main ()
+{
+return uuid_generate_time ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_uuid_uuid_generate_time=yes
+else
+  ac_cv_lib_uuid_uuid_generate_time=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_uuid_uuid_generate_time" >&5
+$as_echo "$ac_cv_lib_uuid_uuid_generate_time" >&6; }
+if test "x$ac_cv_lib_uuid_uuid_generate_time" = xyes; then :
+  have_uuid=yes
+fi
+
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+        save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time_safe in -luuid" >&5
+$as_echo_n "checking for uuid_generate_time_safe in -luuid... " >&6; }
+if ${ac_cv_lib_uuid_uuid_generate_time_safe+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-luuid  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char uuid_generate_time_safe ();
+int
+main ()
+{
+return uuid_generate_time_safe ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_uuid_uuid_generate_time_safe=yes
+else
+  ac_cv_lib_uuid_uuid_generate_time_safe=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_uuid_uuid_generate_time_safe" >&5
+$as_echo "$ac_cv_lib_uuid_uuid_generate_time_safe" >&6; }
+if test "x$ac_cv_lib_uuid_uuid_generate_time_safe" = xyes; then :
+
+            have_uuid=yes
+            $as_echo "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
+
+
+fi
+
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+
+fi
+
+done
+
+
+
+else
+	LIBUUID_CFLAGS=$pkg_cv_LIBUUID_CFLAGS
+	LIBUUID_LIBS=$pkg_cv_LIBUUID_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+                  have_uuid=yes
+      $as_echo "#define HAVE_UUID_H 1" >>confdefs.h
+
+      $as_echo "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
+
+
+fi
+
+fi
 
 # 'Real Time' functions on Solaris
 # posix4 on Solaris 2.6
@@ -21905,6 +22168,42 @@ fi
 $as_echo "$py_cv_module__sqlite3" >&6; }
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _uuid" >&5
+$as_echo_n "checking for stdlib extension module _uuid... " >&6; }
+      case $py_stdlib_not_available in #(
+  *_uuid*) :
+    py_cv_module__uuid=n/a ;; #(
+  *) :
+    if true; then :
+  if test "$have_uuid" = "yes"; then :
+  py_cv_module__uuid=yes
+else
+  py_cv_module__uuid=missing
+fi
+else
+  py_cv_module__uuid=disabled
+fi
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE__UUID=$py_cv_module__uuid$as_nl"
+  if test "x$py_cv_module__uuid" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__UUID_CFLAGS=$LIBUUID_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__UUID_LDFLAGS=$LIBUUID_LIBS$as_nl"
+
+fi
+   if test "$py_cv_module__uuid" = yes; then
+  MODULE__UUID_TRUE=
+  MODULE__UUID_FALSE='#'
+else
+  MODULE__UUID_TRUE='#'
+  MODULE__UUID_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__uuid" >&5
+$as_echo "$py_cv_module__uuid" >&6; }
+
+
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module zlib" >&5
 $as_echo_n "checking for stdlib extension module zlib... " >&6; }
@@ -22772,6 +23071,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__SQLITE3_TRUE}" && test -z "${MODULE__SQLITE3_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__SQLITE3\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__UUID_TRUE}" && test -z "${MODULE__UUID_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__UUID\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_ZLIB_TRUE}" && test -z "${MODULE_ZLIB_FALSE}"; then
