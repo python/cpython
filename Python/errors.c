@@ -568,17 +568,17 @@ _PyErr_ChainExceptions(PyObject *exc, PyObject *val, PyObject *tb)
     }
 
     if (_PyErr_Occurred(tstate)) {
-        PyObject *exc2, *val2, *tb2;
-        _PyErr_Fetch(tstate, &exc2, &val2, &tb2);
+        PyObject *typ2, *val2, *tb2;
+        _PyErr_Fetch(tstate, &typ2, &val2, &tb2);
         _PyErr_NormalizeException(tstate, &exc, &val, &tb);
         if (tb != NULL) {
             PyException_SetTraceback(val, tb);
             Py_DECREF(tb);
         }
         Py_DECREF(exc);
-        _PyErr_NormalizeException(tstate, &exc2, &val2, &tb2);
+        _PyErr_NormalizeException(tstate, &typ2, &val2, &tb2);
         PyException_SetContext(val2, val);
-        _PyErr_Restore(tstate, exc2, val2, tb2);
+        _PyErr_Restore(tstate, typ2, val2, tb2);
     }
     else {
         _PyErr_Restore(tstate, exc, val, tb);
@@ -625,19 +625,19 @@ _PyErr_ChainStackItem(_PyErr_StackItem *exc_info)
     PyObject *exc, *val, *tb;
     _PyErr_Fetch(tstate, &exc, &val, &tb);
 
-    PyObject *exc2, *val2, *tb2;
-    exc2 = exc_info->exc_type;
+    PyObject *typ2, *val2, *tb2;
+    typ2 = exc_info->exc_type;
     val2 = exc_info->exc_value;
     tb2 = exc_info->exc_traceback;
 #ifdef Py_DEBUG
-    PyObject *exc2_before = exc2;
+    PyObject *typ2_before = typ2;
     PyObject *val2_before = val2;
     PyObject *tb2_before = tb2;
 #endif
-    _PyErr_NormalizeException(tstate, &exc2, &val2, &tb2);
+    _PyErr_NormalizeException(tstate, &typ2, &val2, &tb2);
 #ifdef Py_DEBUG
     /* exc_info should already be normalized */
-    assert(exc2 == exc2_before);
+    assert(typ2 == typ2_before);
     assert(val2 == val2_before);
     assert(tb2 == tb2_before);
 #endif
