@@ -1,0 +1,1 @@
+Added repr for ``multiprocessing.Event``, patch by Kumar Aditya.
