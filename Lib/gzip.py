@@ -421,7 +421,7 @@ def _read_gzip_header(fp):
     Returns last mtime if header was present or None otherwise.
     '''
     magic = fp.read(2)
-    if magic == b'':
+    if not magic:
         return None
 
     if magic != b'\037\213':
@@ -432,7 +432,7 @@ def _read_gzip_header(fp):
         raise BadGzipFile('Unknown compression method')
 
     # FHCRC will be checked often. So save the result of the check.
-    fhcrc = flag & FHCRC
+    fhcrc = bool(flag & FHCRC)
     # Only create and append to a list of header parts when FHCRC is set.
     # In the most common use cases FHCRC is not set. So we optimize for those
     # cases.
