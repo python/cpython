@@ -726,5 +726,5 @@ def main():
 if __name__ == '__main__':
     argv = sys.argv[1:]
     if argv:
-        sys.exit('ERROR: got unexpected args {argv}')
+        sys.exit(f'ERROR: got unexpected args {argv}')
     main()
