@@ -2164,22 +2164,21 @@ class TestPStdev(VarianceStdevMixin, NumericTestCase):
 class TestSqrtHelper(unittest.TestCase):
 
     def test_sqrt_frac(self):
-        # This helper function aspires to produce more accurate square roots
-        # of fractional inputs that can be had with math.sqrt() alone.
+        # This helper function aspires to produce correctly rounded square roots of
+        # fractional inputs, more accurate than can be had with math.sqrt() alone.
         # For a inputs spanning large ranges, we test that
         # 1) the result is close to math.sqrt()
         # 2) the result is at least as good as the two adjacent float values
 
         randrange = random.randrange
-        sqrt_frac = statistics._sqrt_frac
 
-        for i in range(10_000):
-            numerator: int = randrange(10 ** randrange(30))
-            denonimator: int = randrange(10 ** randrange(30)) + 1
+        for i in range(50_000):
+            numerator: int = randrange(10 ** randrange(40))
+            denonimator: int = randrange(10 ** randrange(40)) + 1
             with self.subTest(numerator=numerator, denonimator=denonimator):
                 x: Fraction = Fraction(numerator, denonimator)
 
-                root: float = sqrt_frac(numerator, denonimator)
+                root: float = statistics._sqrt_frac(numerator, denonimator)
                 self.assertTrue(math.isclose(root, math.sqrt(numerator / denonimator)))
 
                 r_up: float = math.nextafter(root, math.inf)
