@@ -692,6 +692,8 @@ initialize_token(Parser *p, Token *token, const char *start, const char *end, in
         return -1;
     }
 
+    token->level = p->tok->level;
+
     const char *line_start = token_type == STRING ? p->tok->multi_line_start : p->tok->line_start;
     int lineno = token_type == STRING ? p->tok->first_lineno : p->tok->lineno;
     int end_lineno = p->tok->lineno;
@@ -1357,7 +1359,7 @@ _PyPegen_run_parser(Parser *p)
         if (p->fill == 0) {
             RAISE_SYNTAX_ERROR("error at start before reading any input");
         }
-        else if (p->tok->done == E_EOF) {
+        else if (last_token->type == ERRORTOKEN && p->tok->done == E_EOF) {
             if (p->tok->level) {
                 raise_unclosed_parentheses_error(p);
             } else {
