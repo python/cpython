@@ -353,6 +353,10 @@ class Event(object):
                 return True
             return False
 
+    def __repr__(self) -> str:
+        cls = self.__class__
+        set_status = 'set' if self.is_set() else 'unset'
+        return f"<{cls.__module__}.{cls.__name__} at {id(self):#x} {set_status}>"
 #
 # Barrier
 #

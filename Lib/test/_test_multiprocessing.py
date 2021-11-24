@@ -1645,7 +1645,20 @@ class _TestEvent(BaseTestCase):
         self.assertEqual(wait(), True)
         p.join()
 
-#
+    def test_repr(self) -> None:
+        event = self.Event()
+        if self.TYPE in ('processes',  'threads'):
+            self.assertRegex(repr(event), r"<(\w+\.)+Event at .* unset>")
+            event.set()
+            self.assertRegex(repr(event), r"<(\w+\.)+Event at .* set>")
+            event.clear()
+            self.assertRegex(repr(event), r"<(\w+\.)+Event at .* unset>")
+        elif self.TYPE == 'manager':
+            self.assertRegex(repr(event), r"<EventProxy object, typeid 'Event' at .*")
+            event.set()
+            self.assertRegex(repr(event), r"<EventProxy object, typeid 'Event' at .*")
+
+
 # Tests for Barrier - adapted from tests in test/lock_tests.py
 #
 
