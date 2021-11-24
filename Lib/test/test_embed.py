@@ -1380,8 +1380,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 config['use_frozen_modules'] = 1
             else:
                 # getpath doesn't determine the stdlib dir in this case.
-                config['stdlib_dir'] = STDLIB_INSTALL
-                config['use_frozen_modules'] = 1 if STDLIB_INSTALL else -1
+                config['stdlib_dir'] = self.IGNORE_CONFIG
+                config['use_frozen_modules'] = -1
 
             env = self.copy_paths_by_env(config)
             self.check_all_configs("test_init_compat_config", config,
