@@ -598,10 +598,10 @@ def regen_makefile(modules):
         pyfile = relpath_for_posix_display(src.pyfile, ROOT_DIR)
         pyfiles.append(f'\t\t{pyfile} \\')
 
-        freeze = (f'Programs/_freeze_module {src.frozenid} '
+        freeze = (f'$(FREEZE_MODULE) {src.frozenid} '
                   f'$(srcdir)/{pyfile} {header}')
         rules.extend([
-            f'{header}: Programs/_freeze_module {pyfile}',
+            f'{header}: $(FREEZE_MODULE) {pyfile}',
             f'\t{freeze}',
             '',
         ])
