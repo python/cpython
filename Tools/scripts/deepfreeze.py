@@ -417,7 +417,7 @@ def generate(source: str, filename: str, modname: str, file: TextIO) -> None:
     printer = Printer(file)
     printer.generate("toplevel", code)
     printer.write("")
-    with printer.block("static void do_patchups()"):
+    with printer.block("static void do_patchups(void)"):
         for p in printer.patchups:
             printer.write(p)
     here = os.path.dirname(__file__)
