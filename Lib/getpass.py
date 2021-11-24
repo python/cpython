@@ -155,8 +155,8 @@ def getuser():
     """Get the username from the environment or password database.
 
     First try various environment variables, then the password
-    database.  This works on Windows as long as USERNAME is set.
-
+    database.  This works on Windows as long as USERNAME is set;
+    if not, it raises OSError.
     """
 
     for name in ('LOGNAME', 'USER', 'LNAME', 'USERNAME'):
@@ -164,9 +164,12 @@ def getuser():
         if user:
             return user
 
-    # If this fails, the exception will "explain" why
-    import pwd
-    return pwd.getpwuid(os.getuid())[0]
+    try:
+        import pwd
+        return pwd.getpwuid(os.getuid())[0]
+    except (ImportError, KeyError) as e:
+        raise OSError('No username set in the environment') from e
+
 
 # Bind the name getpass to the appropriate function
 try:
