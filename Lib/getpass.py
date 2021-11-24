@@ -155,8 +155,13 @@ def getuser():
     """Get the username from the environment or password database.
 
     First try various environment variables, then the password
-    database.  This works on Windows as long as USERNAME is set;
-    if not, it raises OSError.
+    database.  This works on Windows as long as USERNAME is set.
+    Any failure to find a username raises OSError.
+
+    .. versionchanged:: 3.11
+        Failure to find a username raises :exc:`OSError` instead of
+        :exc:`ImportError` on non-Unix platforms or :exc:`KeyError`
+        on Unix platforms if the password database is empty.
     """
 
     for name in ('LOGNAME', 'USER', 'LNAME', 'USERNAME'):
