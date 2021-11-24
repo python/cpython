@@ -6221,7 +6221,6 @@ do_reraise_star(PyObject *excs, PyObject *orig)
          * could have executed,so there is at most one exception to raise.
          */
 
-        /* TODO: when I finish the compiler work the None might not be there anymore. */
         assert(numexcs == 1 || (numexcs == 2 && PyList_GET_ITEM(excs, 1) == Py_None));
 
         PyObject *e = PyList_GET_ITEM(excs, 0);
