@@ -1379,8 +1379,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 config['stdlib_dir'] = os.path.join(pyvenv_home, 'Lib')
                 config['use_frozen_modules'] = 1
             else:
-                # getpath doesn't determine the stdlib dir in this case.
-                config['stdlib_dir'] = None
+                # cannot reliably assume stdlib_dir here because it
+                # depends too much on our build. But it ought to be found
+                config['stdlib_dir'] = self.IGNORE_CONFIG
                 config['use_frozen_modules'] = 1
 
             env = self.copy_paths_by_env(config)
