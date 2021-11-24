@@ -1,0 +1,3 @@
+:func:`getpass.getuser` now raises :exc:`OSError` for all failures rather
+than :exc:`ImportError` on systems lacking the :mod:`pwd` module or
+:exc:`KeyError` if the password database is empty.
