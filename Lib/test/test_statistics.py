@@ -2175,7 +2175,7 @@ class TestStdev(VarianceStdevMixin, NumericTestCase):
         # Test that stdev is, in fact, the square root of variance.
         data = [random.uniform(-2, 9) for _ in range(1000)]
         expected = math.sqrt(statistics.variance(data))
-        self.assertEqual(self.func(data), expected)
+        self.assertAlmostEqual(self.func(data), expected)
 
     def test_center_not_at_mean(self):
         data = (1.0, 2.0)
