@@ -1248,7 +1248,7 @@ INPLACE_BINOP(PyNumber_InPlaceAnd, nb_inplace_and, nb_and, "&=")
 INPLACE_BINOP(PyNumber_InPlaceLshift, nb_inplace_lshift, nb_lshift, "<<=")
 INPLACE_BINOP(PyNumber_InPlaceRshift, nb_inplace_rshift, nb_rshift, ">>=")
 INPLACE_BINOP(PyNumber_InPlaceSubtract, nb_inplace_subtract, nb_subtract, "-=")
-INPLACE_BINOP(PyNumber_InMatrixMultiply, nb_inplace_matrix_multiply, nb_matrix_multiply, "@=")
+INPLACE_BINOP(PyNumber_InPlaceMatrixMultiply, nb_inplace_matrix_multiply, nb_matrix_multiply, "@=")
 
 PyObject *
 PyNumber_InPlaceFloorDivide(PyObject *v, PyObject *w)
@@ -1314,13 +1314,6 @@ PyNumber_InPlaceMultiply(PyObject *v, PyObject *w)
         result = binop_type_error(v, w, "*=");
     }
     return result;
-}
-
-PyObject *
-PyNumber_InPlaceMatrixMultiply(PyObject *v, PyObject *w)
-{
-    return binary_iop(v, w, NB_SLOT(nb_inplace_matrix_multiply),
-                      NB_SLOT(nb_matrix_multiply), "@=");
 }
 
 PyObject *
