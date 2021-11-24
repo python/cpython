@@ -431,48 +431,58 @@ def _read_gzip_header(fp):
     if method != 8:
         raise BadGzipFile('Unknown compression method')
 
-    # FHCRC will be checked often. So save the result of the check.
-    fhcrc = bool(flag & FHCRC)
-    # Only create and append to a list of header parts when FHCRC is set.
-    # In the most common use cases FHCRC is not set. So we optimize for those
-    # cases.
-    if fhcrc:
-        header_parts = [magic, base_header]
+    # No flags. No need for further parsing. These headers are returned by
+    # gzip.compress or zlib.compress(..., wbits=31)
+    if not flag:
+        return last_mtime
+    # Most gzip files will have only FNAME set. For example: produced by gzip
+    # command line application or python's GzipFile.
+    if flag == FNAME:
+        while True:
+            s = fp.read(1)
+            if not s:
+                raise EOFError("Compressed file ended before the "
+                               "end-of-stream marker was reached")
+            if s == b'\000':
+                break
+        return last_mtime
+
+    # Processing for more complex flags.
+
+    # Save header parts for FHCRC checking
+    header_parts = [magic, base_header]
 
     if flag & FEXTRA:
-        # Read the extra field, if present, save the fields if FHCRC is set.
+        # Read the extra field, if present, save the fields for FHCRC checking.
         extra_len_bytes = _read_exact(fp, 2)
         extra_len, = struct.unpack("<H", extra_len_bytes)
         extra = _read_exact(fp, extra_len)
-        if fhcrc:
-            header_parts.extend([extra_len_bytes, extra])
+        header_parts.extend([extra_len_bytes, extra])
 
     if flag & FNAME:
-        # Read a null-terminated string containing the filename. Save it
-        # if FHCRC is set.
+        # Read a null-terminated string containing the filename, save the name
+        # for FHCRC checking.
         while True:
             s = fp.read(1)
             if not s:
                 raise EOFError("Compressed file ended before the "
                                "end-of-stream marker was reached")
-            if fhcrc:
-                header_parts.append(s)
+            header_parts.append(s)
             if s == b'\000':
                 break
     if flag & FCOMMENT:
-        # Read a null-terminated string containing the filename. Save it
-        # if FHCRC is set.
+        # Read a null-terminated string containing the comment, save the
+        # comment for FHCRC checking.
         while True:
             s = fp.read(1)
             if not s:
                 raise EOFError("Compressed file ended before the "
                                "end-of-stream marker was reached")
-            if fhcrc:
-                header_parts.append(s)
+            header_parts.append(s)
             if s == b'\000':
                 break
 
-    if fhcrc:
+    if flag & FHCRC:
         # Read the 16-bit header CRC and check it against the header.
         header_crc, = struct.unpack("<H", _read_exact(fp, 2))
         header = b"".join(header_parts)
