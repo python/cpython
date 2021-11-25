@@ -25,6 +25,7 @@ class AddressValueError(ValueError):
 class NetmaskValueError(ValueError):
     """A Value Error related to the netmask."""
 
+
 def ip_address(address) -> Union["IPv4Address", "IPv6Address"]:
     """Take an IP string/int and return an object of the correct type.
 
