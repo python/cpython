@@ -15,7 +15,7 @@ import random
 import sys
 import unittest
 from test import support
-from test.support import import_helper
+from test.support import import_helper, requires_IEEE_754
 
 from decimal import Decimal
 from fractions import Fraction
@@ -2163,6 +2163,7 @@ class TestPStdev(VarianceStdevMixin, NumericTestCase):
 
 class TestSqrtHelper(unittest.TestCase):
 
+    @requires_IEEE_754
     def test_sqrt_frac(self):
 
         def is_root_correctly_rounded(x: Fraction, root: float) -> bool:
@@ -2188,6 +2189,16 @@ class TestSqrtHelper(unittest.TestCase):
                 x: Fraction = Fraction(numerator, denonimator)
                 root: float = statistics._sqrt_frac(numerator, denonimator)
                 self.assertTrue(is_root_correctly_rounded(x, root))
+
+        # Verify that corner cases and error handling match math.sqrt()
+        self.assertEqual(statistics._sqrt_frac(0, 1), 0.0)
+        with self.assertRaises(ValueError):
+            statistics._sqrt_frac(-1, 1)
+        with self.assertRaises(ValueError):
+            statistics._sqrt_frac(1, -1)
+
+        # The result is well defined if both inputs are negative
+        self.assertAlmostEqual(statistics._sqrt_frac(-2, -1), math.sqrt(2.0))
 
 
 class TestStdev(VarianceStdevMixin, NumericTestCase):

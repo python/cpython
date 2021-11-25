@@ -311,6 +311,7 @@ def _isqrt_frac_rto(n: int, m: int) -> float:
 
 def _sqrt_frac(n: int, m: int) -> float:
     'Square root of n/m as a float, correctly rounded.'
+    # The constant 109 is:  3 + 2 * sys.float_info.mant_dig
     q: int = (n.bit_length() - m.bit_length() - 109) // 2
     if q >= 0:
         return float(_isqrt_frac_rto(n, m << 2 * q) << q)
