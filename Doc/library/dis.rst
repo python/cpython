@@ -885,7 +885,7 @@ All of the following opcodes use their arguments.
 
 .. opcode:: JUMP_IF_NOT_EG_MATCH (target)
 
-   Performs exception matching for except*. Applies ``split(TOS)`` on
+   Performs exception matching for ``except*``. Applies ``split(TOS)`` on
    the exception group representing TOS1. Jumps if no match is found.
 
    Pops one item from the stack. If a match was found, pops the 3 items representing
