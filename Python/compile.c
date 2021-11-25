@@ -3415,6 +3415,60 @@ compiler_try_except(struct compiler *c, stmt_ty s)
     return 1;
 }
 
+/*
+   Code generated for "try: S except* E1 as V1: S1 except* E2 as V2: S2 ...":
+   (The contents of the value stack is shown in [], with the top
+   at the right; 'tb' is trace-back info, 'val' the exception instance,
+   and 'typ' the exception's type.)
+
+   Value stack                             Label         Instruction     Argument
+   []                                                   SETUP_FINALLY         L1
+   []                                                   <code for S>
+   []                                                   POP_BLOCK
+   []                                                   JUMP_FORWARD          L0
+
+   [tb, val, typ, orig, typ]                 L1:        DUP_TOP_TWO               )  save a copy of the
+   [tb, val, typ, orig]                                 POP_TOP                   )  original raised exception
+   [orig, tb, val, typ]                                 ROT_FOUR                  )
+
+   [orig, tb, val, typ, res]                            BUILD_LIST                )  list for raised/reraised
+   [orig, res, tb, val, typ]                            ROT_FOUR                  )  exceptions ("result")
+
+   [orig, res, tb, val, typ]                            <evaluate E1>             )
+   [orig, res, tb, val, typ, E1]                        JUMP_IF_NOT_EXC_MATCH L2  ) only if E1
+
+   [orig, res, tb, rest, typ, tb, match, typ]           POP
+   [orig, res, tb, rest, typ, tb, match]                <assign to V1>  (or POP if no V1)
+   [orig, res, tb, rest, typ, tb]                       POP
+
+   [orig, res, tb, rest, typ]                           SETUP_FINALLY         R1
+   [orig, res, tb, rest, typ]                           <code for S1>
+   [orig, res, tb, rest, typ]                           JUMP_FORWARD          L2
+
+   [orig, res, tb, rest, typ, i, tb, v, t]   R1:        POP           ) exception raised in except* body
+   [orig, res, tb, rest, typ, i, tb, v]                 LIST_APPEND 6 ) add it to res
+   [orig, res, tb, rest, typ, i, tb]                    POP
+   [orig, res, tb, rest, typ, i]                        POP
+
+   [orig, res, tb, rest, typ]                L2:        <evaluate E2>
+   .............................etc.......................
+
+   [orig, res, tb, rest, typ]                Ln+1:       POP           ) add unhandled exception
+   [orig, res, tb, rest]                                 LIST_APPEND 2 ) to res (could be None)
+   [orig, res, tb]                                       POP
+
+   [orig, res]                                           PREP_RERAISE_STAR
+   [i, tb, val, typ]                                     POP_JUMP_IF_TRUE      RER
+   [i, tb, val, typ]                                     POP
+   [i, tb, val]                                          POP
+   [i, tb]                                               POP
+   [i]                                                   POP
+   []                                                    JUMP_FORWARD          L0
+
+   [i, tb, val, typ]                        RER:         POP_EXCEPT_AND_RERAISE
+
+   []                                       L0:     <next statement>
+*/
 static int
 compiler_try_star_except(struct compiler *c, stmt_ty s)
 {
