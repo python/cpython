@@ -1647,12 +1647,12 @@ class _TestEvent(BaseTestCase):
 
     def test_repr(self) -> None:
         event = self.Event()
-        if self.TYPE in ('processes',  'threads'):
-            self.assertRegex(repr(event), r"<(\w+\.)+Event at .* unset>")
+        if self.TYPE == 'processes':
+            self.assertRegex(repr(event), r"<Event at .* unset>")
             event.set()
-            self.assertRegex(repr(event), r"<(\w+\.)+Event at .* set>")
+            self.assertRegex(repr(event), r"<Event at .* set>")
             event.clear()
-            self.assertRegex(repr(event), r"<(\w+\.)+Event at .* unset>")
+            self.assertRegex(repr(event), r"<Event at .* unset>")
         elif self.TYPE == 'manager':
             self.assertRegex(repr(event), r"<EventProxy object, typeid 'Event' at .*")
             event.set()
