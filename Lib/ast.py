@@ -970,8 +970,8 @@ class _Unparser(NodeVisitor):
                 self.traverse(node.finalbody)
 
     def visit_Try(self, node):
+        prev_in_try_star = self._in_try_star
         try:
-            prev_in_try_star = self._in_try_star
             self._in_try_star = False
             self.do_visit_try(node)
         finally:
