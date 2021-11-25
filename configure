@@ -770,6 +770,7 @@ MODULE_TIME_FALSE
 MODULE_TIME_TRUE
 MODULE__IO_FALSE
 MODULE__IO_TRUE
+MODULE_BUILDTYPE
 TEST_MODULES
 LIBRARY_DEPS
 STATIC_LIBPYTHON
@@ -21011,6 +21012,15 @@ case $ac_sys_system in #(
     py_stdlib_not_available="_scproxy"
  ;;
 esac
+
+case $host_cpu in #(
+  wasm32|wasm64) :
+    MODULE_BUILDTYPE=static ;; #(
+  *) :
+    MODULE_BUILDTYPE=${MODULE_BUILDTYPE:-shared}
+ ;;
+esac
+
 
 
 MODULE_BLOCK=

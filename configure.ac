@@ -6185,6 +6185,13 @@ AS_CASE([$ac_sys_system],
   [py_stdlib_not_available="_scproxy"]
 )
 
+dnl Default value for Modules/Setup.stdlib build type
+AS_CASE([$host_cpu],
+  [wasm32|wasm64], [MODULE_BUILDTYPE=static],
+  [MODULE_BUILDTYPE=${MODULE_BUILDTYPE:-shared}]
+)
+AC_SUBST([MODULE_BUILDTYPE])
+
 dnl _MODULE_BLOCK_ADD([VAR], [VALUE])
 dnl internal: adds $1=quote($2) to MODULE_BLOCK
 AC_DEFUN([_MODULE_BLOCK_ADD], [AS_VAR_APPEND([MODULE_BLOCK], ["$1=_AS_QUOTE([$2])$as_nl"])])
