@@ -469,8 +469,7 @@ then
 	    ac_sys_system=Emscripten
 	    ;;
 	*-*-wasi)
-	    dnl wasm32-wasi, wasm32-unknown-wasi
-	    ac_sys_system=wasi
+	    ac_sys_system=WASI
 	    ;;
 	*)
 		# for now, limit cross builds to known configurations
