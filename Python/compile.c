@@ -3427,10 +3427,9 @@ compiler_try_except(struct compiler *c, stmt_ty s)
    []                                                   POP_BLOCK
    []                                                   JUMP_FORWARD          L0
 
-   [tb, val, typ, orig, typ]                 L1:        DUP_TOP_TWO               )  save a copy of the
-   [tb, val, typ, orig]                                 POP_TOP                   )  original raised exception
-   [orig, tb, val, typ]                                 ROT_FOUR                  )
-
+   [tb, val, typ]                            L1:        DUP_TOP_TWO               )  save a copy of the
+   [tb, val, typ, orig, typ]                            POP_TOP                   )  original raised exception
+   [tb, val, typ, orig]                                 ROT_FOUR                  )
    [orig, tb, val, typ, res]                            BUILD_LIST                )  list for raised/reraised
    [orig, res, tb, val, typ]                            ROT_FOUR                  )  exceptions ("result")
 
