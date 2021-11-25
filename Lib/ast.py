@@ -978,8 +978,8 @@ class _Unparser(NodeVisitor):
             self._in_try_star = prev_in_try_star
 
     def visit_TryStar(self, node):
+        prev_in_try_star = self._in_try_star
         try:
-            prev_in_try_star = self._in_try_star
             self._in_try_star = True
             self.do_visit_try(node)
         finally:
