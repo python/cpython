@@ -2197,6 +2197,10 @@ class TestSqrtHelper(unittest.TestCase):
         with self.assertRaises(ValueError):
             statistics._sqrt_frac(1, -1)
 
+        # Error handling for zero denominator matches that for Fraction(1, 0)
+        with self.assertRaises(ZeroDivisionError):
+            statistics._sqrt_frac(1, 0)
+
         # The result is well defined if both inputs are negative
         self.assertAlmostEqual(statistics._sqrt_frac(-2, -1), math.sqrt(2.0))
 
