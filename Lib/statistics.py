@@ -306,7 +306,7 @@ def _fail_neg(values, errmsg='negative value'):
 
 def _isqrt_frac_rto(n: int, m: int) -> float:
     'Square root of n/m, rounded to the nearest integer using round-to-odd.'
-    a = math.isqrt(n*m) // m
+    a = math.isqrt(n // m)
     return a | (a*a*m != n)
 
 def _sqrt_frac(n: int, m: int) -> float:
