@@ -3430,8 +3430,8 @@ compiler_try_except(struct compiler *c, stmt_ty s)
    [tb, val, typ]                            L1:        DUP_TOP_TWO               )  save a copy of the
    [tb, val, typ, orig, typ]                            POP_TOP                   )  original raised exception
    [tb, val, typ, orig]                                 ROT_FOUR                  )
-   [orig, tb, val, typ, res]                            BUILD_LIST                )  list for raised/reraised
-   [orig, res, tb, val, typ]                            ROT_FOUR                  )  exceptions ("result")
+   [orig, tb, val, typ]                                 BUILD_LIST                )  list for raised/reraised
+   [orig, tb, val, typ, res]                            ROT_FOUR                  )  exceptions ("result")
 
    [orig, res, tb, val, typ]                            <evaluate E1>             )
    [orig, res, tb, val, typ, E1]                        JUMP_IF_NOT_EXC_MATCH L2  ) only if E1
