@@ -12,6 +12,7 @@ __version__ = '1.0'
 
 
 import functools
+from typing import Union
 
 IPV4LENGTH = 32
 IPV6LENGTH = 128
@@ -24,8 +25,7 @@ class AddressValueError(ValueError):
 class NetmaskValueError(ValueError):
     """A Value Error related to the netmask."""
 
-
-def ip_address(address):
+def ip_address(address) -> Union["IPv4Address", "IPv6Address"]:
     """Take an IP string/int and return an object of the correct type.
 
     Args:
@@ -55,7 +55,7 @@ def ip_address(address):
                      address)
 
 
-def ip_network(address, strict=True):
+def ip_network(address, strict=True) -> Union["IPv4Network", "IPv6Network"]:
     """Take an IP string/int and return an object of the correct type.
 
     Args:
@@ -85,7 +85,7 @@ def ip_network(address, strict=True):
                      address)
 
 
-def ip_interface(address):
+def ip_interface(address) -> Union["IPv4Interface", "IPv6Interface"]:
     """Take an IP string/int and return an object of the correct type.
 
     Args:
