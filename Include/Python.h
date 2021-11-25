@@ -106,6 +106,7 @@
 #include "sliceobject.h"
 #include "cellobject.h"
 #include "iterobject.h"
+#include "cpython/initconfig.h"
 #include "genobject.h"
 #include "descrobject.h"
 #include "genericaliasobject.h"
@@ -118,8 +119,6 @@
 
 #include "codecs.h"
 #include "pyerrors.h"
-
-#include "cpython/initconfig.h"
 #include "pythread.h"
 #include "pystate.h"
 #include "context.h"
