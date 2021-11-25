@@ -187,7 +187,7 @@ if os_name == 'posix' or os_name == 'darwin':
 
 elif os_name == 'nt':
     BUILDDIR_TXT = 'pybuilddir.txt'
-    BUILD_LANDMARK = 'Modules/Setup.local'
+    BUILD_LANDMARK = r'..\..\Modules\Setup.local'
     DEFAULT_PROGRAM_NAME = f'python'
     STDLIB_SUBDIR = 'Lib'
     STDLIB_LANDMARKS = [f'{STDLIB_SUBDIR}\\os.py', f'{STDLIB_SUBDIR}\\os.pyc']
@@ -450,7 +450,7 @@ if not home_was_set and real_executable_dir and not py_setpath:
         )
         build_prefix = joinpath(real_executable_dir, VPATH)
     except FileNotFoundError:
-        if isfile(joinpath(real_executable_dir, VPATH, BUILD_LANDMARK)):
+        if isfile(joinpath(real_executable_dir, BUILD_LANDMARK)):
             build_prefix = joinpath(real_executable_dir, VPATH)
             if os_name == 'nt':
                 # QUIRK: Windows builds need platstdlib_dir to be the executable
