@@ -2164,11 +2164,20 @@ class TestPStdev(VarianceStdevMixin, NumericTestCase):
 class TestSqrtHelper(unittest.TestCase):
 
     def test_sqrt_frac(self):
-        # This helper function aspires to produce correctly rounded square roots of
-        # fractional inputs, more accurate than can be had with math.sqrt() alone.
-        # For a inputs spanning large ranges, we test that
-        # 1) the result is close to math.sqrt()
-        # 2) the result is at least as good as the two adjacent float values
+
+        def is_root_correctly_rounded(x: Fraction, root: float) -> bool:
+            if not x:
+                return root == 0.0
+
+            r_up: float = math.nextafter(root, math.inf)
+            r_down: float = math.nextafter(root, -math.inf)
+            assert r_down < root < r_up
+
+            frac_root: Fraction = Fraction(root)
+            half_way_up: Fraction = (frac_root + Fraction(r_up)) / 2
+            half_way_down: Fraction = (frac_root + Fraction(r_down)) / 2
+
+            return half_way_down ** 2 <= x <= half_way_up ** 2
 
         randrange = random.randrange
 
@@ -2177,15 +2186,9 @@ class TestSqrtHelper(unittest.TestCase):
             denonimator: int = randrange(10 ** randrange(40)) + 1
             with self.subTest(numerator=numerator, denonimator=denonimator):
                 x: Fraction = Fraction(numerator, denonimator)
-
                 root: float = statistics._sqrt_frac(numerator, denonimator)
-                self.assertTrue(math.isclose(root, math.sqrt(numerator / denonimator)))
+                self.assertTrue(is_root_correctly_rounded(x, root))
 
-                r_up: float = math.nextafter(root, math.inf)
-                self.assertLessEqual(abs(Fraction(root)**2 - x), abs(Fraction(r_up)**2 - x))
-
-                r_down: float = math.nextafter(root, -math.inf)
-                self.assertLessEqual(abs(Fraction(root)**2 - x), abs(Fraction(r_down)**2 - x))
 
 class TestStdev(VarianceStdevMixin, NumericTestCase):
     # Tests for sample standard deviation.
