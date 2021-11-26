@@ -319,7 +319,7 @@ def _sqrt_frac(n: int, m: int) -> float:
     # See algorithm sketch at: https://bugs.python.org/msg406911
     q: int = (n.bit_length() - m.bit_length() - _sqrt_shift) // 2
     if q >= 0:
-        return float(_isqrt_frac_rto(n, m << 2 * q) << q)
+        return (_isqrt_frac_rto(n, m << 2 * q) << q) / 1
     else:
         return _isqrt_frac_rto(n << -2 * q, m) / (1 << -q)
 
