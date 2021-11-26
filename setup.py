@@ -1388,10 +1388,13 @@ class PyBuildExt(build_ext):
 
     def detect_multiprocessing(self):
         # Richard Oudkerk's multiprocessing module
-        self.addext(Extension('_multiprocessing', [
-            '_multiprocessing/multiprocessing.c',
-            '_multiprocessing/semaphore.c',
-        ]))
+        multiprocessing_srcs = ['_multiprocessing/multiprocessing.c']
+        if (
+            sysconfig.get_config_var('HAVE_SEM_OPEN') and not
+            sysconfig.get_config_var('POSIX_SEMAPHORES_NOT_ENABLED')
+        ):
+            multiprocessing_srcs.append('_multiprocessing/semaphore.c')
+        self.addext(Extension('_multiprocessing', multiprocessing_srcs))
         self.addext(Extension('_posixshmem', ['_multiprocessing/posixshmem.c']))
 
     def detect_uuid(self):
