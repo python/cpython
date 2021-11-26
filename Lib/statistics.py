@@ -316,12 +316,15 @@ _sqrt_shift: int = 2 * sys.float_info.mant_dig + 3
 
 def _sqrt_frac(n: int, m: int) -> float:
     """Square root of n/m as a float, correctly rounded."""
-    # See algorithm sketch at: https://bugs.python.org/msg406911
-    q: int = (n.bit_length() - m.bit_length() - _sqrt_shift) // 2
+    # See principle and proof sketch at: https://bugs.python.org/msg407078
+    q = (n.bit_length() - m.bit_length() - _sqrt_shift) // 2
     if q >= 0:
-        return (_isqrt_frac_rto(n, m << 2 * q) << q) / 1
+        numerator = _isqrt_frac_rto(n, m << 2 * q) << q
+        denominator = 1
     else:
-        return _isqrt_frac_rto(n << -2 * q, m) / (1 << -q)
+        numerator = _isqrt_frac_rto(n << -2 * q, m)
+        denominator = 1 << -q
+    return numerator / denominator   # Convert to float
 
 
 # === Measures of central tendency (averages) ===
