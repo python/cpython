@@ -3937,31 +3937,32 @@ else
 fi
 
 # checks for library functions
-AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
- clock confstr close_range copy_file_range ctermid dup3 execv explicit_bzero \
- explicit_memset faccessat fchmod fchmodat fchown fchownat \
- fdwalk fexecve fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
- futimens futimes gai_strerror getentropy \
- getgrgid getgrgid_r getgrnam_r \
- getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
- getpriority getresuid getresgid getpwent getpwnam_r getpwuid_r getspnam getspent getsid getwd \
- if_nameindex \
- initgroups kill killpg lchown lockf linkat lstat lutimes mmap \
- memrchr mbrtowc mkdirat mkfifo \
- madvise mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
- posix_fallocate posix_fadvise posix_spawn posix_spawnp pread preadv preadv2 \
- pthread_condattr_setclock pthread_init pthread_kill pwrite pwritev pwritev2 \
- readlink readlinkat readv realpath renameat \
- sem_open sem_timedwait sem_clockwait sem_getvalue sem_unlink sendfile setegid seteuid \
- setgid sethostname \
- setlocale setregid setreuid setresuid setresgid setsid setpgid setpgrp setpriority setuid setvbuf \
- sched_get_priority_max sched_setaffinity sched_setscheduler sched_setparam \
- sched_rr_get_interval shutdown \
- sigaction sigaltstack sigfillset siginterrupt sigpending sigrelse \
- sigtimedwait sigwait sigwaitinfo snprintf splice strftime strlcpy strsignal symlinkat sync \
- sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
- truncate uname unlinkat utimensat utimes vfork waitid waitpid wait3 wait4 \
- wcscoll wcsftime wcsxfrm wmemcmp writev _getpty rtpSpawn)
+AC_CHECK_FUNCS([ \
+  accept4 alarm bind_textdomain_codeset chown clock close_range confstr \
+  copy_file_range ctermid dup3 execv explicit_bzero explicit_memset \
+  faccessat fchmod fchmodat fchown fchownat fdopendir fdwalk fexecve \
+  fork fork1 fpathconf fstatat ftime ftruncate futimens futimes futimesat \
+  gai_strerror getegid getentropy geteuid getgid getgrgid getgrgid_r \
+  getgrnam_r getgrouplist getgroups getitimer getloadavg getlogin \
+  getpeername getpgid getpid getppid getpriority _getpty \
+  getpwent getpwnam_r getpwuid_r getresgid getresuid getsid getspent \
+  getspnam getuid getwd if_nameindex initgroups kill killpg lchown linkat \
+  lockf lstat lutimes madvise mbrtowc memrchr mkdirat mkfifo mkfifoat \
+  mknod mknodat mktime mmap mremap nice openat opendir pathconf pause pipe \
+  pipe2 plock poll posix_fadvise posix_fallocate posix_spawn posix_spawnp \
+  pread preadv preadv2 pthread_condattr_setclock pthread_init pthread_kill \
+  pwrite pwritev pwritev2 readlink readlinkat readv realpath renameat \
+  rtpSpawn sched_get_priority_max sched_rr_get_interval sched_setaffinity \
+  sched_setparam sched_setscheduler sem_clockwait sem_getvalue sem_open \
+  sem_timedwait sem_unlink sendfile setegid seteuid setgid sethostname \
+  setitimer setlocale setpgid setpgrp setpriority setregid setresgid \
+  setresuid setreuid setsid setuid setvbuf shutdown sigaction sigaltstack \
+  sigfillset siginterrupt sigpending sigrelse sigtimedwait sigwait \
+  sigwaitinfo snprintf splice strftime strlcpy strsignal symlinkat sync \
+  sysconf system tcgetpgrp tcsetpgrp tempnam timegm times tmpfile \
+  tmpnam tmpnam_r truncate ttyname uname unlinkat utimensat utimes vfork \
+  wait wait3 wait4 waitid waitpid wcscoll wcsftime wcsxfrm wmemcmp writev \
+])
 
 # Force lchmod off for Linux. Linux disallows changing the mode of symbolic
 # links. Some libc implementations have a stub lchmod implementation that always
