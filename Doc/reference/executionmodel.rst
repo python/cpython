@@ -62,7 +62,7 @@ The following constructs bind names:
 * class definitions,
 * function definitions,
 * assignment expressions,
-* :token:`targets <python-grammar:target>` that are identifiers if occurring in
+* :ref:`targets <assignment>` that are identifiers if occurring in
   an assignment:
 
   + :keyword:`for` loop header,
