@@ -2199,9 +2199,9 @@ class TestSqrtHelpers(unittest.TestCase):
 
         randrange = random.randrange
 
-        for i in range(50_000):
-            numerator: int = randrange(10 ** randrange(40))
-            denonimator: int = randrange(10 ** randrange(40)) + 1
+        for i in range(60_000):
+            numerator: int = randrange(10 ** randrange(50))
+            denonimator: int = randrange(10 ** randrange(50)) + 1
             with self.subTest(numerator=numerator, denonimator=denonimator):
                 x: Fraction = Fraction(numerator, denonimator)
                 root: float = statistics._sqrt_frac(numerator, denonimator)
