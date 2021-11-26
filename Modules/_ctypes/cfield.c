@@ -1594,44 +1594,4 @@ typedef struct { char c; wchar_t *x; } s_wchar_p;
 #endif
 */
 
-typedef struct { char c; long long x; } s_long_long;
-#define LONG_LONG_ALIGN (sizeof(s_long_long) - sizeof(long long))
-
-/* from ffi.h:
-typedef struct _ffi_type
-{
-    size_t size;
-    unsigned short alignment;
-    unsigned short type;
-    struct _ffi_type **elements;
-} ffi_type;
-*/
-
-/* align and size are bogus for void, but they must not be zero */
-ffi_type ffi_type_void = { 1, 1, FFI_TYPE_VOID };
-
-ffi_type ffi_type_uint8 = { 1, 1, FFI_TYPE_UINT8 };
-ffi_type ffi_type_sint8 = { 1, 1, FFI_TYPE_SINT8 };
-
-ffi_type ffi_type_uint16 = { 2, 2, FFI_TYPE_UINT16 };
-ffi_type ffi_type_sint16 = { 2, 2, FFI_TYPE_SINT16 };
-
-ffi_type ffi_type_uint32 = { 4, INT_ALIGN, FFI_TYPE_UINT32 };
-ffi_type ffi_type_sint32 = { 4, INT_ALIGN, FFI_TYPE_SINT32 };
-
-ffi_type ffi_type_uint64 = { 8, LONG_LONG_ALIGN, FFI_TYPE_UINT64 };
-ffi_type ffi_type_sint64 = { 8, LONG_LONG_ALIGN, FFI_TYPE_SINT64 };
-
-ffi_type ffi_type_float = { sizeof(float), FLOAT_ALIGN, FFI_TYPE_FLOAT };
-ffi_type ffi_type_double = { sizeof(double), DOUBLE_ALIGN, FFI_TYPE_DOUBLE };
-
-#ifdef ffi_type_longdouble
-#undef ffi_type_longdouble
-#endif
-  /* This is already defined on OSX */
-ffi_type ffi_type_longdouble = { sizeof(long double), LONGDOUBLE_ALIGN,
-                                 FFI_TYPE_LONGDOUBLE };
-
-ffi_type ffi_type_pointer = { sizeof(void *), VOID_P_ALIGN, FFI_TYPE_POINTER };
-
 /*---------------- EOF ----------------*/
