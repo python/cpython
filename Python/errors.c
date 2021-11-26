@@ -522,7 +522,7 @@ PyErr_GetExcInfo(PyObject **p_type, PyObject **p_value, PyObject **p_traceback)
 }
 
 void
-PyErr_SetExcInfo(PyObject *p_type, PyObject *p_value, PyObject *p_traceback)
+PyErr_SetExcInfo(PyObject *type, PyObject *value, PyObject *traceback)
 {
     PyObject *oldtype, *oldvalue, *oldtraceback;
     PyThreadState *tstate = _PyThreadState_GET();
@@ -532,15 +532,15 @@ PyErr_SetExcInfo(PyObject *p_type, PyObject *p_value, PyObject *p_traceback)
     oldtraceback = tstate->exc_info->exc_traceback;
 
 
-    tstate->exc_info->exc_type = get_exc_type(p_value);
+    tstate->exc_info->exc_type = get_exc_type(value);
     Py_XINCREF(tstate->exc_info->exc_type);
-    tstate->exc_info->exc_value = p_value;
-    tstate->exc_info->exc_traceback = get_exc_traceback(p_value);
+    tstate->exc_info->exc_value = value;
+    tstate->exc_info->exc_traceback = get_exc_traceback(value);
     Py_XINCREF(tstate->exc_info->exc_traceback);
 
     /* These args are no longer used, but we still need to steal a ref */
-    Py_XDECREF(p_type);
-    Py_XDECREF(p_traceback);
+    Py_XDECREF(type);
+    Py_XDECREF(traceback);
 
     Py_XDECREF(oldtype);
     Py_XDECREF(oldvalue);
