@@ -2165,7 +2165,7 @@ class TestPStdev(VarianceStdevMixin, NumericTestCase):
 class TestSqrtHelpers(unittest.TestCase):
 
     def test_isqrt_frac_rto(self):
-        for n, m in itertools.product(range(100), range(1, 100)):
+        for n, m in itertools.product(range(100), range(1, 1000)):
             r = statistics._isqrt_frac_rto(n, m)
             self.assertIsInstance(r, int)
             if r*r*m == n:
