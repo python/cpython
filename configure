@@ -18244,36 +18244,6 @@ _ACEOF
 
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for UCS-4 tcl" >&5
-$as_echo_n "checking for UCS-4 tcl... " >&6; }
-have_ucs4_tcl=no
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <tcl.h>
-#if TCL_UTF_MAX != 6
-# error "NOT UCS4_TCL"
-#endif
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-
-$as_echo "#define HAVE_UCS4_TCL 1" >>confdefs.h
-
-  have_ucs4_tcl=yes
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_ucs4_tcl" >&5
-$as_echo "$have_ucs4_tcl" >&6; }
-
 # check whether wchar_t is signed or not
 if test "$wchar_h" = yes
 then
