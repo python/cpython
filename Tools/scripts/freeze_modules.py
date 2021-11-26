@@ -109,16 +109,16 @@ else:
 #######################################
 # specs
 
-def parse_frozen_specs(sectionalspecs=FROZEN, destdir=None):
+def parse_frozen_specs():
     seen = {}
-    for section, specs in sectionalspecs:
+    for section, specs in FROZEN:
         parsed = _parse_specs(specs, section, seen)
         for item in parsed:
             frozenid, pyfile, modname, ispkg, section = item
             try:
                 source = seen[frozenid]
             except KeyError:
-                source = FrozenSource.from_id(frozenid, pyfile, destdir)
+                source = FrozenSource.from_id(frozenid, pyfile)
                 seen[frozenid] = source
             else:
                 assert not pyfile or pyfile == source.pyfile, item
@@ -226,11 +226,11 @@ def _parse_spec(spec, knownids=None, section=None):
 class FrozenSource(namedtuple('FrozenSource', 'id pyfile frozenfile deepfreezefile')):
 
     @classmethod
-    def from_id(cls, frozenid, pyfile=None, destdir=FROZEN_MODULES_DIR):
+    def from_id(cls, frozenid, pyfile=None):
         if not pyfile:
             pyfile = os.path.join(STDLIB_DIR, *frozenid.split('.')) + '.py'
             #assert os.path.exists(pyfile), (frozenid, pyfile)
-        frozenfile = resolve_frozen_file(frozenid, destdir)
+        frozenfile = resolve_frozen_file(frozenid, FROZEN_MODULES_DIR)
         deepfreezefile = resolve_frozen_file(frozenid, DEEPFROZEN_MODULES_DIR)
         return cls(frozenid, pyfile, frozenfile, deepfreezefile)
 
@@ -260,7 +260,7 @@ class FrozenSource(namedtuple('FrozenSource', 'id pyfile frozenfile deepfreezefi
             return os.path.basename(self.pyfile) == '__init__.py'
 
 
-def resolve_frozen_file(frozenid, destdir=FROZEN_MODULES_DIR):
+def resolve_frozen_file(frozenid, destdir):
     """Return the filename corresponding to the given frozen ID.
 
     For stdlib modules the ID will always be the full name
@@ -703,7 +703,7 @@ def regen_pcbuild(modules):
 
 def main():
     # Expand the raw specs, preserving order.
-    modules = list(parse_frozen_specs(destdir=FROZEN_MODULES_DIR))
+    modules = list(parse_frozen_specs())
 
     # Regen build-related files.
     regen_makefile(modules)
