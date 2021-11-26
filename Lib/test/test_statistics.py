@@ -9,6 +9,7 @@ import collections.abc
 import copy
 import decimal
 import doctest
+import itertools
 import math
 import pickle
 import random
@@ -2161,7 +2162,15 @@ class TestPStdev(VarianceStdevMixin, NumericTestCase):
         self.assertEqual(self.func(data), 2.5)
         self.assertEqual(self.func(data, mu=0.5), 6.5)
 
-class TestSqrtHelper(unittest.TestCase):
+class TestSqrtHelpers(unittest.TestCase):
+
+    def test_isqrt_frac_rto(self):
+        # For all fractions n/m, the root should be an odd number
+        # or an exact root.
+        for n, m in itertools.product(range(100), range(1, 100)):
+            r = statistics._isqrt_frac_rto(n, m)
+            self.assertIsInstance(r, int)
+            self.assertTrue(r&1 or r*r*m == n, (n, m))
 
     @requires_IEEE_754
     def test_sqrt_frac(self):
@@ -2170,14 +2179,18 @@ class TestSqrtHelper(unittest.TestCase):
             if not x:
                 return root == 0.0
 
+            # Extract adjacent representable floats
             r_up: float = math.nextafter(root, math.inf)
             r_down: float = math.nextafter(root, -math.inf)
             assert r_down < root < r_up
 
+            # Convert to fractions for exact arithmetic
             frac_root: Fraction = Fraction(root)
             half_way_up: Fraction = (frac_root + Fraction(r_up)) / 2
             half_way_down: Fraction = (frac_root + Fraction(r_down)) / 2
 
+            # Check a closed interval.
+            # Does not test for a midpoint rounding rule.
             return half_way_down ** 2 <= x <= half_way_up ** 2
 
         randrange = random.randrange
