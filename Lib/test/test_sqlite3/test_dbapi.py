@@ -514,14 +514,35 @@ class ConnectionTests(unittest.TestCase):
             "isolation_level string must be '', 'DEFERRED', 'IMMEDIATE', or "
             "'EXCLUSIVE'"
         )
-        with self.assertRaisesRegex(ValueError, msg):
-            memory_database(isolation_level="BOGUS")
+        levels = (
+            "BOGUS",
+            " ",
+            "DEFERRE",
+            "IMMEDIAT",
+            "EXCLUSIV",
+            "DEFERREDS",
+            "IMMEDIATES",
+            "EXCLUSIVES",
+        )
+        for level in levels:
+            with self.subTest(level=level):
+                with self.assertRaisesRegex(ValueError, msg):
+                    memory_database(isolation_level=level)
+                with memory_database() as cx:
+                    with self.assertRaisesRegex(ValueError, msg):
+                        cx.isolation_level = level
+                    # Check that the default level is not changed
+                    self.assertEqual(cx.isolation_level, "")
 
     def test_connection_init_good_isolation_levels(self):
         for level in ("", "DEFERRED", "IMMEDIATE", "EXCLUSIVE", None):
             with self.subTest(level=level):
                 with memory_database(isolation_level=level) as cx:
-                    cx.execute("select 'ok'")
+                    self.assertEqual(cx.isolation_level, level)
+                with memory_database() as cx:
+                    self.assertEqual(cx.isolation_level, "")
+                    cx.isolation_level = level
+                    self.assertEqual(cx.isolation_level, level)
 
     def test_connection_reinit(self):
         db = ":memory:"

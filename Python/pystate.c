@@ -148,11 +148,14 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
     int reinit_interp = _PyThread_at_fork_reinit(&runtime->interpreters.mutex);
-    int reinit_main_id = _PyThread_at_fork_reinit(&runtime->interpreters.main->id_mutex);
     int reinit_xidregistry = _PyThread_at_fork_reinit(&runtime->xidregistry.mutex);
     int reinit_unicode_ids = _PyThread_at_fork_reinit(&runtime->unicode_ids.lock);
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    /* bpo-42540: id_mutex is freed by _PyInterpreterState_Delete, which does
+     * not force the default allocator. */
+    int reinit_main_id = _PyThread_at_fork_reinit(&runtime->interpreters.main->id_mutex);
 
     if (reinit_interp < 0
         || reinit_main_id < 0
@@ -2084,9 +2087,9 @@ _PyThreadState_BumpFramePointerSlow(PyThreadState *tstate, size_t size)
 
 
 InterpreterFrame *
-_PyThreadState_PushFrame(PyThreadState *tstate, PyFrameConstructor *con, PyObject *locals)
+_PyThreadState_PushFrame(PyThreadState *tstate, PyFunctionObject *func, PyObject *locals)
 {
-    PyCodeObject *code = (PyCodeObject *)con->fc_code;
+    PyCodeObject *code = (PyCodeObject *)func->func_code;
     int nlocalsplus = code->co_nlocalsplus;
     size_t size = nlocalsplus + code->co_stacksize +
         FRAME_SPECIALS_SIZE;
@@ -2094,7 +2097,7 @@ _PyThreadState_PushFrame(PyThreadState *tstate, PyFrameConstructor *con, PyObjec
     if (frame == NULL) {
         return NULL;
     }
-    _PyFrame_InitializeSpecials(frame, con, locals, nlocalsplus);
+    _PyFrame_InitializeSpecials(frame, func, locals, nlocalsplus);
     for (int i=0; i < nlocalsplus; i++) {
         frame->localsplus[i] = NULL;
     }

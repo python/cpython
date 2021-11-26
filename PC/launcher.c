@@ -542,8 +542,17 @@ find_python_by_version(wchar_t const * wanted_ver)
     }
     for (i = 0; i < num_installed_pythons; i++, ip++) {
         n = wcslen(ip->version);
-        if (n > wlen)
+        /*
+         * If wlen is greater than 1, we're probably trying to find a specific
+         * version and thus want an exact match: 3.1 != 3.10.  Otherwise, we
+         * just want a prefix match.
+         */
+        if ((wlen > 1) && (n != wlen)) {
+            continue;
+        }
+        if (n > wlen) {
             n = wlen;
+        }
         if ((wcsncmp(ip->version, wanted_ver, n) == 0) &&
             /* bits == 0 => don't care */
             ((bits == 0) || (ip->bits == bits))) {

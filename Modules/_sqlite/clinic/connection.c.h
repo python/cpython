@@ -63,22 +63,7 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
         }
     }
     if (fastargs[3]) {
-        if (fastargs[3] == Py_None) {
-            isolation_level = NULL;
-        }
-        else if (PyUnicode_Check(fastargs[3])) {
-            Py_ssize_t isolation_level_length;
-            isolation_level = PyUnicode_AsUTF8AndSize(fastargs[3], &isolation_level_length);
-            if (isolation_level == NULL) {
-                goto exit;
-            }
-            if (strlen(isolation_level) != (size_t)isolation_level_length) {
-                PyErr_SetString(PyExc_ValueError, "embedded null character");
-                goto exit;
-            }
-        }
-        else {
-            _PyArg_BadArgument("Connection", "argument 'isolation_level'", "str or None", fastargs[3]);
+        if (!isolation_level_converter(fastargs[3], &isolation_level)) {
             goto exit;
         }
         if (!--noptargs) {
@@ -851,4 +836,4 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-/*[clinic end generated code: output=6f267f20e77f92d0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c2faf6563397091b input=a9049054013a1b77]*/

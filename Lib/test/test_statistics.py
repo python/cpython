@@ -1900,10 +1900,13 @@ class TestMode(NumericTestCase, AverageMixin, UnivariateTypeMixin):
 
     def test_counter_data(self):
         # Test that a Counter is treated like any other iterable.
-        data = collections.Counter([1, 1, 1, 2])
-        # Since the keys of the counter are treated as data points, not the
-        # counts, this should return the first mode encountered, 1
-        self.assertEqual(self.func(data), 1)
+        # We're making sure mode() first calls iter() on its input.
+        # The concern is that a Counter of a Counter returns the original
+        # unchanged rather than counting its keys.
+        c = collections.Counter(a=1, b=2)
+        # If iter() is called, mode(c) loops over the keys, ['a', 'b'],
+        # all the counts will be 1, and the first encountered mode is 'a'.
+        self.assertEqual(self.func(c), 'a')
 
 
 class TestMultiMode(unittest.TestCase):
@@ -2524,6 +2527,12 @@ class TestLinearRegression(unittest.TestCase):
             self.assertAlmostEqual(intercept, true_intercept)
             self.assertAlmostEqual(slope, true_slope)
 
+    def test_proportional(self):
+        x = [10, 20, 30, 40]
+        y = [180, 398, 610, 799]
+        slope, intercept = statistics.linear_regression(x, y, proportional=True)
+        self.assertAlmostEqual(slope, 20 + 1/150)
+        self.assertEqual(intercept, 0.0)
 
 class TestNormalDist:
 

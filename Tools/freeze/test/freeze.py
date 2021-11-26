@@ -11,7 +11,6 @@ TOOL_ROOT = os.path.dirname(TESTS_DIR)
 SRCDIR = os.path.dirname(os.path.dirname(TOOL_ROOT))
 
 MAKE = shutil.which('make')
-GIT = shutil.which('git')
 FREEZE = os.path.join(TOOL_ROOT, 'freeze.py')
 OUTDIR = os.path.join(TESTS_DIR, 'outdir')
 
@@ -75,36 +74,15 @@ def ensure_opt(args, name, value):
             args[pos] = f'{opt}={value}'
 
 
-def git_copy_repo(newroot, oldroot):
-    if not GIT:
-        raise UnsupportedError('git')
-
+def copy_source_tree(newroot, oldroot):
+    print(f'copying the source tree into {newroot}...')
     if os.path.exists(newroot):
-        print(f'updating copied repo {newroot}...')
         if newroot == SRCDIR:
             raise Exception('this probably isn\'t what you wanted')
-        _run_quiet([GIT, 'clean', '-d', '-f'], newroot)
-        _run_quiet([GIT, 'reset'], newroot)
-        _run_quiet([GIT, 'checkout', '.'], newroot)
-        _run_quiet([GIT, 'pull', '-f', oldroot], newroot)
-    else:
-        print(f'copying repo into {newroot}...')
-        _run_quiet([GIT, 'clone', oldroot, newroot])
-
-    # Copy over any uncommited files.
-    text = _run_stdout([GIT, 'status', '-s'], oldroot)
-    for line in text.splitlines():
-        _, _, relfile = line.strip().partition(' ')
-        relfile = relfile.strip()
-        isdir = relfile.endswith(os.path.sep)
-        relfile = relfile.rstrip(os.path.sep)
-        srcfile = os.path.join(oldroot, relfile)
-        dstfile = os.path.join(newroot, relfile)
-        os.makedirs(os.path.dirname(dstfile), exist_ok=True)
-        if isdir:
-            shutil.copytree(srcfile, dstfile, dirs_exist_ok=True)
-        else:
-            shutil.copy2(srcfile, dstfile)
+        shutil.rmtree(newroot)
+    shutil.copytree(oldroot, newroot)
+    if os.path.exists(os.path.join(newroot, 'Makefile')):
+        _run_quiet([MAKE, 'clean'], newroot)
 
 
 def get_makefile_var(builddir, name):
@@ -146,12 +124,14 @@ def prepare(script=None, outdir=None):
     # Write the script to disk.
     if script:
         scriptfile = os.path.join(outdir, 'app.py')
+        print(f'creating the script to be frozen at {scriptfile}')
         with open(scriptfile, 'w') as outfile:
             outfile.write(script)
 
-    # Make a copy of the repo to avoid affecting the current build.
+    # Make a copy of the repo to avoid affecting the current build
+    # (e.g. changing PREFIX).
     srcdir = os.path.join(outdir, 'cpython')
-    git_copy_repo(srcdir, SRCDIR)
+    copy_source_tree(srcdir, SRCDIR)
 
     # We use an out-of-tree build (instead of srcdir).
     builddir = os.path.join(outdir, 'python-build')
@@ -172,7 +152,7 @@ def prepare(script=None, outdir=None):
         raise UnsupportedError('make')
 
     # Build python.
-    print('building python...')
+    print(f'building python in {builddir}...')
     if os.path.exists(os.path.join(srcdir, 'Makefile')):
         # Out-of-tree builds require a clean srcdir.
         _run_quiet([MAKE, '-C', srcdir, 'clean'])

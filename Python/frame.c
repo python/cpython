@@ -8,9 +8,8 @@ int
 _PyFrame_Traverse(InterpreterFrame *frame, visitproc visit, void *arg)
 {
     Py_VISIT(frame->frame_obj);
-    Py_VISIT(frame->f_globals);
-    Py_VISIT(frame->f_builtins);
     Py_VISIT(frame->f_locals);
+    Py_VISIT(frame->f_func);
     Py_VISIT(frame->f_code);
    /* locals */
     PyObject **locals = _PyFrame_GetLocalsArray(frame);
@@ -62,8 +61,7 @@ clear_specials(InterpreterFrame *frame)
     frame->generator = NULL;
     Py_XDECREF(frame->frame_obj);
     Py_XDECREF(frame->f_locals);
-    Py_DECREF(frame->f_globals);
-    Py_DECREF(frame->f_builtins);
+    Py_DECREF(frame->f_func);
     Py_DECREF(frame->f_code);
 }
 
@@ -99,6 +97,9 @@ take_ownership(PyFrameObject *f, InterpreterFrame *frame)
 int
 _PyFrame_Clear(InterpreterFrame * frame, int take)
 {
+    /* It is the responsibility of the owning generator/coroutine
+     * to have cleared the generator pointer */
+    assert(frame->generator == NULL);
     if (frame->frame_obj) {
         PyFrameObject *f = frame->frame_obj;
         frame->frame_obj = NULL;
