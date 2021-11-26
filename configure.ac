@@ -3961,7 +3961,8 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  sigtimedwait sigwait sigwaitinfo snprintf splice strftime strlcpy strsignal symlinkat sync \
  sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
  truncate uname unlinkat utimensat utimes vfork waitid waitpid wait3 wait4 \
- wcscoll wcsftime wcsxfrm wmemcmp writev _getpty rtpSpawn)
+ wcscoll wcsftime wcsxfrm wmemcmp writev _getpty rtpSpawn \
+ fork1 getegid geteuid getgid getppid getuid opendir pipe system wait ttyname)
 
 # Force lchmod off for Linux. Linux disallows changing the mode of symbolic
 # links. Some libc implementations have a stub lchmod implementation that always
