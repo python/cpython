@@ -10,6 +10,7 @@
 *.so.*
 *.dylib
 *.dll
+*.wasm
 *.orig
 *.pyc
 *.pyd
