@@ -587,7 +587,10 @@ build_all:	check-clean-src $(BUILDPYTHON) oldsharedmods sharedmods gdbhooks \
 
 # Check that the source is clean when building out of source.
 check-clean-src:
-	@if test -n "$(VPATH)" -a -f "$(srcdir)/Programs/python.o"; then \
+	@if test -n "$(VPATH)" -a \( \
+	    -f "$(srcdir)/Programs/python.o" \
+	    -o -f "$(srcdir)\Python/frozen_modules/importlib._bootstrap.h" \
+	\); then \
 		echo "Error: The source directory ($(srcdir)) is not clean" ; \
 		echo "Building Python out of the source tree (in $(abs_builddir)) requires a clean source tree ($(abs_srcdir))" ; \
 		echo "Try to run: make -C \"$(srcdir)\" clean" ; \
@@ -2293,6 +2296,8 @@ clean-retain-profile: pycremoval
 	-rm -f Lib/lib2to3/*Grammar*.pickle
 	-rm -f Programs/_testembed Programs/_freeze_module
 	-rm -f Python/deepfreeze/*.[co]
+	-rm -f Python/frozen_modules/*.h
+	-rm -f Python/frozen_modules/MANIFEST
 	-find build -type f -a ! -name '*.gc??' -exec rm -f {} ';'
 	-rm -f Include/pydtrace_probes.h
 	-rm -f profile-gen-stamp
@@ -2330,8 +2335,6 @@ distclean: clobber
 		Modules/Setup.stdlib Modules/ld_so_aix Modules/python.exp Misc/python.pc \
 		Misc/python-embed.pc Misc/python-config.sh
 	-rm -f python*-gdb.py
-	-rm -f Python/frozen_modules/*.h
-	-rm -f Python/frozen_modules/MANIFEST
 	# Issue #28258: set LC_ALL to avoid issues with Estonian locale.
 	# Expansion is performed here by shell (spawned by make) itself before
 	# arguments are passed to find. So LC_ALL=C must be set as a separate
