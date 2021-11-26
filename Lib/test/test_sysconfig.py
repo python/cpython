@@ -387,10 +387,13 @@ class TestSysConfig(unittest.TestCase):
         if re.match('(i[3-6]86|x86_64)$', machine):
             if ctypes.sizeof(ctypes.c_char_p()) == 4:
                 self.assertTrue(suffix.endswith('i386-linux-gnu.so') or
-                                suffix.endswith('x86_64-linux-gnux32.so'),
+                                suffix.endswith('x86_64-linux-gnux32.so') or
+                                suffix.endswith('i386-linux-musl.so'),
                                 suffix)
             else: # 8 byte pointer size
-                self.assertTrue(suffix.endswith('x86_64-linux-gnu.so'), suffix)
+                self.assertTrue(suffix.endswith('x86_64-linux-gnu.so') or
+                                suffix.endswith('x86_64-linux-musl.so'),
+                                suffix)
 
     @unittest.skipUnless(sys.platform == 'darwin', 'OS X-specific test')
     def test_osx_ext_suffix(self):
