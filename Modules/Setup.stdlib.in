@@ -22,8 +22,8 @@
 
 
 # Build modules statically or as shared extensions
-*shared*
-# *static*
+# *shared* / *static*
+*@MODULE_BUILDTYPE@*
 
 
 ############################################################################
