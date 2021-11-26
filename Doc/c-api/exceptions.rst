@@ -493,10 +493,10 @@ Querying the error indicator
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.11
-      The ``type`` and ``traceback`` arguments are no longer used, the
-      interpreter now derives them the exception instance (the ``value``
-      argument). The function still steals references of all three
-      arguments.
+      The ``type`` and ``traceback`` arguments are no longer used and
+      can be NULL. The interpreter now derives them from the exception
+      instance (the ``value`` argument). The function still steals
+      references of all three arguments.
 
 
 Signal Handling
