@@ -333,7 +333,7 @@ Module functions and constants
    will get tracebacks from callbacks on :data:`sys.stderr`. Use :const:`False`
    to disable the feature again.
 
-   Register an :meth:`unraisable exception handler <sys.unraisablehook>` for an
+   Register an :func:`unraisable hook handler <sys.unraisablehook>` for an
    improved debug experience::
 
       >>> import sqlite3
