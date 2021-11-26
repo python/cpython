@@ -474,7 +474,7 @@ static PyObject*
 get_exc_type(PyObject *exc_value)  /* returns a borrowed ref */
 {
     if (exc_value == NULL || exc_value == Py_None) {
-        return exc_value;
+        return Py_None;
     }
     else {
         assert(PyExceptionInstance_Check(exc_value));
