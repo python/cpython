@@ -453,7 +453,7 @@ def get_appxmanifest(ns):
             ["pip", "pip{}".format(VER_MAJOR), "pip{}".format(VER_DOT)],
             PIP_VE_DATA,
             "console",
-            ("python.wheel", [".whl"], 'install "%1" %*', "Python Wheel"),
+            ("python.wheel", [".whl"], 'install "%1"', "Python Wheel"),
         )
 
     if ns.include_idle and ns.include_launchers:
