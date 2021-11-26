@@ -596,7 +596,7 @@ to each other::
     >>> Shape.CIRCLE == Request.POST
     True
 
-However, they still can't be compared to standard :class:`Enum` enumerations::
+However, they still compare not equal to standard :class:`Enum` enumerations::
 
     >>> class Shape(IntEnum):
     ...     CIRCLE = 1
