@@ -2165,12 +2165,16 @@ class TestPStdev(VarianceStdevMixin, NumericTestCase):
 class TestSqrtHelpers(unittest.TestCase):
 
     def test_isqrt_frac_rto(self):
-        # For all fractions n/m, the root should be an odd number
-        # or an exact root.
         for n, m in itertools.product(range(100), range(1, 100)):
             r = statistics._isqrt_frac_rto(n, m)
             self.assertIsInstance(r, int)
-            self.assertTrue(r&1 or r*r*m == n, (n, m))
+            if r*r*m == n:
+                # Root is exact
+                continue
+            # Inexact, so the root should be odd
+            self.assertEqual(r&1, 1)
+            # Verify correct rounding
+            self.assertTrue(m * (r - 1)**2 < n < m * (r + 1)**2)
 
     @requires_IEEE_754
     def test_sqrt_frac(self):
