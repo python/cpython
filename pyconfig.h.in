@@ -992,6 +992,9 @@
 /* Define to 1 if you have the `shm_unlink' function. */
 #undef HAVE_SHM_UNLINK
 
+/* Define to 1 if you have the `shutdown' function. */
+#undef HAVE_SHUTDOWN
+
 /* Define to 1 if you have the `sigaction' function. */
 #undef HAVE_SIGACTION
 
