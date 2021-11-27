@@ -78,7 +78,7 @@ Number-theoretic and representation functions
 .. function:: floor(x)
 
    Return the floor of *x*, the largest integer less than or equal to *x*.  If
-   *x* is not a float, delegates to :meth:`x.__ceil__ <object.__floor__>`, which
+   *x* is not a float, delegates to :meth:`x.__floor__ <object.__floor__>`, which
    should return an :class:`~numbers.Integral` value.
 
 
@@ -300,10 +300,9 @@ Number-theoretic and representation functions
 
    Given a :class:`~numbers.Real` value *x*, return *x* with the fractional part
    removed, leaving the integer part.  This rounds toward 0: ``trunc()`` is
-   equivalent to :func:`floor` for positive *x*, and equivalent to :func:`ceil` for
-   negative *x*. If *x* is not a float, delegates to
-   :meth:`x.__trunc__ <object.__trunc__>`, which should return an
-   :class:`~numbers.Integral` value.
+   equivalent to :func:`floor` for positive *x*, and equivalent to :func:`ceil`
+   for negative *x*. If *x* is not a float, delegates to :meth:`x.__trunc__
+   <object.__trunc__>`, which should return an :class:`~numbers.Integral` value.
 
 .. function:: ulp(x)
 
