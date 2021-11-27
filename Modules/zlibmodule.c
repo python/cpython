@@ -1134,10 +1134,12 @@ zlib_Decompress_flush_impl(compobject *self, Py_ssize_t length)
         return NULL;
     }
 
-    if (PyObject_GetBuffer(self->unconsumed_tail, &data, PyBUF_SIMPLE) == -1)
-        return NULL;
-
     ENTER_ZLIB(self);
+
+    if (PyObject_GetBuffer(self->unconsumed_tail, &data, PyBUF_SIMPLE) == -1) {
+        LEAVE_ZLIB(self);
+        return NULL;
+    }
 
     self->zst.next_in = data.buf;
     ibuflen = data.len;
