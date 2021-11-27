@@ -1,0 +1,1 @@
+Optimize literal comparisons and contains. Patch by Jeremiah Vivian.
