@@ -654,6 +654,8 @@ MODULE_BINASCII_FALSE
 MODULE_BINASCII_TRUE
 MODULE_ZLIB_FALSE
 MODULE_ZLIB_TRUE
+MODULE__TKINTER_FALSE
+MODULE__TKINTER_TRUE
 MODULE__UUID_FALSE
 MODULE__UUID_TRUE
 MODULE__SQLITE3_FALSE
@@ -818,7 +820,7 @@ DTRACE
 GDBM_LIBS
 GDBM_CFLAGS
 TCLTK_LIBS
-TCLTK_INCLUDES
+TCLTK_CFLAGS
 LIBSQLITE3_LIBS
 LIBSQLITE3_CFLAGS
 LIBNSL_LIBS
@@ -1028,8 +1030,6 @@ with_system_ffi
 with_system_libmpdec
 with_decimal_contextvar
 enable_loadable_sqlite_extensions
-with_tcltk_includes
-with_tcltk_libs
 with_dbmliborder
 enable_ipv6
 with_doc_strings
@@ -1073,6 +1073,8 @@ LIBNSL_CFLAGS
 LIBNSL_LIBS
 LIBSQLITE3_CFLAGS
 LIBSQLITE3_LIBS
+TCLTK_CFLAGS
+TCLTK_LIBS
 GDBM_CFLAGS
 GDBM_LIBS
 ZLIB_CFLAGS
@@ -1795,10 +1797,6 @@ Optional Packages:
   --with-decimal-contextvar
                           build _decimal module using a coroutine-local rather
                           than a thread-local context (default is yes)
-  --with-tcltk-includes='-I...'
-                          override search for Tcl and Tk include files
-  --with-tcltk-libs='-L...'
-                          override search for Tcl and Tk libs
   --with-dbmliborder=db1:db2:...
                           override order to check db backends for dbm; a valid
                           value is a colon separated string with the backend
@@ -1874,6 +1872,9 @@ Some influential environment variables:
               C compiler flags for LIBSQLITE3, overriding pkg-config
   LIBSQLITE3_LIBS
               linker flags for LIBSQLITE3, overriding pkg-config
+  TCLTK_CFLAGS
+              C compiler flags for TCLTK, overriding pkg-config
+  TCLTK_LIBS  linker flags for TCLTK, overriding pkg-config
   GDBM_CFLAGS C compiler flags for gdbm
   GDBM_LIBS   additional linker flags for gdbm
   ZLIB_CFLAGS C compiler flags for ZLIB, overriding pkg-config
@@ -12275,50 +12276,157 @@ $as_echo "#define PY_SQLITE_ENABLE_LOAD_EXTENSION 1" >>confdefs.h
 
 fi
 
-# Check for --with-tcltk-includes=path and --with-tcltk-libs=path
+for _QUERY in \
+  "tcl >= 8.4.2 tk >= 8.4.2" \
+  "tcl8.6 tk8.6" \
+  "tcl86 tk86" \
+  "tcl8.5 tk8.5" \
+  "tcl85 tk85" \
+  "tcl8.4 >= 8.4.2 tk8.4 >= 8.4.2" \
+  "tcl84 >= 8.4.2 tk84 >= 8.4.2" \
+; do
 
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for TCLTK" >&5
+$as_echo_n "checking for TCLTK... " >&6; }
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-tcltk-includes" >&5
-$as_echo_n "checking for --with-tcltk-includes... " >&6; }
-
-# Check whether --with-tcltk-includes was given.
-if test "${with_tcltk_includes+set}" = set; then :
-  withval=$with_tcltk_includes;
+if test -n "$TCLTK_CFLAGS"; then
+    pkg_cv_TCLTK_CFLAGS="$TCLTK_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"\$_QUERY\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "$_QUERY") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_TCLTK_CFLAGS=`$PKG_CONFIG --cflags "$_QUERY" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
 else
-  with_tcltk_includes="default"
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$TCLTK_LIBS"; then
+    pkg_cv_TCLTK_LIBS="$TCLTK_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"\$_QUERY\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "$_QUERY") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_TCLTK_LIBS=`$PKG_CONFIG --libs "$_QUERY" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_tcltk_includes" >&5
-$as_echo "$with_tcltk_includes" >&6; }
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-tcltk-libs" >&5
-$as_echo_n "checking for --with-tcltk-libs... " >&6; }
 
-# Check whether --with-tcltk-libs was given.
-if test "${with_tcltk_libs+set}" = set; then :
-  withval=$with_tcltk_libs;
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
 else
-  with_tcltk_libs="default"
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        TCLTK_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "$_QUERY" 2>&1`
+        else
+	        TCLTK_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "$_QUERY" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$TCLTK_PKG_ERRORS" >&5
+
+	found_tcltk=no
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	found_tcltk=no
+else
+	TCLTK_CFLAGS=$pkg_cv_TCLTK_CFLAGS
+	TCLTK_LIBS=$pkg_cv_TCLTK_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	break
+fi
+done
+
+if test "x$found_tcltk" = xno; then :
+
+  TCLTK_CFLAGS=${TCLTK_CFLAGS-""}
+  TCLTK_LIBS=${TCLTK_LIBS-""}
+
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_tcltk_libs" >&5
-$as_echo "$with_tcltk_libs" >&6; }
-if test "x$with_tcltk_includes" = xdefault || test "x$with_tcltk_libs" = xdefault
-then
-  if test "x$with_tcltk_includes" != "x$with_tcltk_libs"
-  then
-    as_fn_error $? "use both --with-tcltk-includes='...' and --with-tcltk-libs='...' or neither" "$LINENO" 5
-  fi
-  if test -n "$PKG_CONFIG" && "$PKG_CONFIG" --exists tcl tk; then
-    TCLTK_INCLUDES="`"$PKG_CONFIG" tcl tk --cflags-only-I 2>/dev/null`"
-    TCLTK_LIBS="`"$PKG_CONFIG" tcl tk --libs 2>/dev/null`"
-  else
-    TCLTK_INCLUDES=""
-    TCLTK_LIBS=""
-  fi
+save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+  CPPFLAGS="$TCLTK_CFLAGS $CFLAGS"
+  LDFLAGS="$TCLTK_LIBS $LDFLAGS"
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+      #include <tcl.h>
+      #include <tk.h>
+      #if defined(TK_HEX_VERSION)
+      #  if TK_HEX_VERSION < 0x08040200
+      #    error "Tk older than 8.4.2 not supported"
+      #  endif
+      #endif
+      #if (TCL_MAJOR_VERSION < 8) || \
+          ((TCL_MAJOR_VERSION == 8) && (TCL_MINOR_VERSION < 4)) || \
+          ((TCL_MAJOR_VERSION == 8) && (TCL_MINOR_VERSION == 4) && (TCL_RELEASE_SERIAL < 2))
+      #  error "Tcl older than 8.4.2 not supported"
+      #endif
+      #if (TK_MAJOR_VERSION < 8) || \
+          ((TK_MAJOR_VERSION == 8) && (TK_MINOR_VERSION < 4)) || \
+          ((TK_MAJOR_VERSION == 8) && (TK_MINOR_VERSION == 4) && (TK_RELEASE_SERIAL < 2))
+      #  error "Tk older than 8.4.2 not supported"
+      #endif
+
+int
+main ()
+{
+
+      void *x1 = Tcl_Init;
+      void *x2 = Tk_Init;
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+    have_tcltk=yes
+                as_fn_append TCLTK_CFLAGS " -Wno-strict-prototypes -DWITH_APPINIT=1"
+
 else
-  TCLTK_INCLUDES="$with_tcltk_includes"
-  TCLTK_LIBS="$with_tcltk_libs"
+
+    have_tcltk=no
+
 fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
 
 
 
@@ -23097,6 +23205,42 @@ fi
 $as_echo "$py_cv_module__uuid" >&6; }
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _tkinter" >&5
+$as_echo_n "checking for stdlib extension module _tkinter... " >&6; }
+      case $py_stdlib_not_available in #(
+  *_tkinter*) :
+    py_cv_module__tkinter=n/a ;; #(
+  *) :
+    if true; then :
+  if test "$have_tcltk" = "yes"; then :
+  py_cv_module__tkinter=yes
+else
+  py_cv_module__tkinter=missing
+fi
+else
+  py_cv_module__tkinter=disabled
+fi
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE__TKINTER=$py_cv_module__tkinter$as_nl"
+  if test "x$py_cv_module__tkinter" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__TKINTER_CFLAGS=$TCLTK_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__TKINTER_LDFLAGS=$TCLTK_LIBS$as_nl"
+
+fi
+   if test "$py_cv_module__tkinter" = yes; then
+  MODULE__TKINTER_TRUE=
+  MODULE__TKINTER_FALSE='#'
+else
+  MODULE__TKINTER_TRUE='#'
+  MODULE__TKINTER_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__tkinter" >&5
+$as_echo "$py_cv_module__tkinter" >&6; }
+
+
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module zlib" >&5
 $as_echo_n "checking for stdlib extension module zlib... " >&6; }
@@ -23983,6 +24127,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__UUID_TRUE}" && test -z "${MODULE__UUID_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__UUID\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__TKINTER_TRUE}" && test -z "${MODULE__TKINTER_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__TKINTER\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_ZLIB_TRUE}" && test -z "${MODULE_ZLIB_FALSE}"; then

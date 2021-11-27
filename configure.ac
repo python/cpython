@@ -3499,38 +3499,63 @@ AS_VAR_IF([enable_loadable_sqlite_extensions], [yes], [
   [Define to 1 to build the sqlite module with loadable extensions support.])
 ])
 
-# Check for --with-tcltk-includes=path and --with-tcltk-libs=path
-AC_SUBST(TCLTK_INCLUDES)
-AC_SUBST(TCLTK_LIBS)
-AC_MSG_CHECKING(for --with-tcltk-includes)
-AC_ARG_WITH(tcltk-includes,
-            AS_HELP_STRING([--with-tcltk-includes='-I...'], [override search for Tcl and Tk include files]),
-            [],
-            [with_tcltk_includes="default"])
-AC_MSG_RESULT($with_tcltk_includes)
-AC_MSG_CHECKING(for --with-tcltk-libs)
-AC_ARG_WITH(tcltk-libs,
-            AS_HELP_STRING([--with-tcltk-libs='-L...'], [override search for Tcl and Tk libs]),
-            [],
-            [with_tcltk_libs="default"])
-AC_MSG_RESULT($with_tcltk_libs)
-if test "x$with_tcltk_includes" = xdefault || test "x$with_tcltk_libs" = xdefault
-then
-  if test "x$with_tcltk_includes" != "x$with_tcltk_libs"
-  then
-    AC_MSG_ERROR([use both --with-tcltk-includes='...' and --with-tcltk-libs='...' or neither])
-  fi
-  if test -n "$PKG_CONFIG" && "$PKG_CONFIG" --exists tcl tk; then
-    TCLTK_INCLUDES="`"$PKG_CONFIG" tcl tk --cflags-only-I 2>/dev/null`"
-    TCLTK_LIBS="`"$PKG_CONFIG" tcl tk --libs 2>/dev/null`"
-  else
-    TCLTK_INCLUDES=""
-    TCLTK_LIBS=""
-  fi
-else
-  TCLTK_INCLUDES="$with_tcltk_includes"
-  TCLTK_LIBS="$with_tcltk_libs"
-fi
+dnl
+dnl Detect Tcl/Tk. Use pkg-config if available.
+dnl
+for _QUERY in \
+  "tcl >= 8.4.2 tk >= 8.4.2" \
+  "tcl8.6 tk8.6" \
+  "tcl86 tk86" \
+  "tcl8.5 tk8.5" \
+  "tcl85 tk85" \
+  "tcl8.4 >= 8.4.2 tk8.4 >= 8.4.2" \
+  "tcl84 >= 8.4.2 tk84 >= 8.4.2" \
+; do
+  PKG_CHECK_MODULES([TCLTK], [$_QUERY], [break], [found_tcltk=no])
+done
+
+AS_VAR_IF([found_tcltk], [no], [
+  TCLTK_CFLAGS=${TCLTK_CFLAGS-""}
+  TCLTK_LIBS=${TCLTK_LIBS-""}
+])
+
+WITH_SAVE_ENV([
+  CPPFLAGS="$TCLTK_CFLAGS $CFLAGS"
+  LDFLAGS="$TCLTK_LIBS $LDFLAGS"
+
+  AC_LINK_IFELSE([
+    AC_LANG_PROGRAM([
+      #include <tcl.h>
+      #include <tk.h>
+      #if defined(TK_HEX_VERSION)
+      #  if TK_HEX_VERSION < 0x08040200
+      #    error "Tk older than 8.4.2 not supported"
+      #  endif
+      #endif
+      #if (TCL_MAJOR_VERSION < 8) || \
+          ((TCL_MAJOR_VERSION == 8) && (TCL_MINOR_VERSION < 4)) || \
+          ((TCL_MAJOR_VERSION == 8) && (TCL_MINOR_VERSION == 4) && (TCL_RELEASE_SERIAL < 2))
+      #  error "Tcl older than 8.4.2 not supported"
+      #endif
+      #if (TK_MAJOR_VERSION < 8) || \
+          ((TK_MAJOR_VERSION == 8) && (TK_MINOR_VERSION < 4)) || \
+          ((TK_MAJOR_VERSION == 8) && (TK_MINOR_VERSION == 4) && (TK_RELEASE_SERIAL < 2))
+      #  error "Tk older than 8.4.2 not supported"
+      #endif
+    ], [
+      void *x1 = Tcl_Init;
+      void *x2 = Tk_Init;
+    ])
+  ], [
+    have_tcltk=yes
+    dnl The X11/xlib.h file bundled in the Tk sources can cause function
+    dnl prototype warnings from the compiler. Since we cannot easily fix
+    dnl that, suppress the warnings here instead.
+    AS_VAR_APPEND([TCLTK_CFLAGS], [" -Wno-strict-prototypes -DWITH_APPINIT=1"])
+  ], [
+    have_tcltk=no
+  ])
+])
 
 dnl check for _gdbmmodule dependencies
 dnl NOTE: gdbm does not provide a pkgconf file.
@@ -6596,6 +6621,8 @@ dnl PY_STDLIB_MOD([_tkinter], [], [], [], [])
 PY_STDLIB_MOD([_uuid],
   [], [test "$have_uuid" = "yes"],
   [$LIBUUID_CFLAGS], [$LIBUUID_LIBS])
+PY_STDLIB_MOD([_tkinter], [],
+  [test "$have_tcltk" = "yes"], [$TCLTK_CFLAGS], [$TCLTK_LIBS])
 
 dnl compression libs
 PY_STDLIB_MOD([zlib], [], [test "$have_zlib" = yes],
