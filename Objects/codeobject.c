@@ -1254,8 +1254,8 @@ code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
     PyObject *ourfreevars = NULL;
     PyObject *ourcellvars = NULL;
 
-    if (PySys_Audit("code.__new__", "OOOOiiiiii",
-                    code, filename, name, qualname, argcount, posonlyargcount,
+    if (PySys_Audit("code.__new__", "OOOiiiiii",
+                    code, filename, name, argcount, posonlyargcount,
                     kwonlyargcount, nlocals, stacksize, flags) < 0) {
         goto cleanup;
     }
@@ -1638,8 +1638,8 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
 
 #undef CHECK_INT_ARG
 
-    if (PySys_Audit("code.__new__", "OOOOiiiiii",
-                    co_code, co_filename, co_name, co_qualname, co_argcount,
+    if (PySys_Audit("code.__new__", "OOOiiiiii",
+                    co_code, co_filename, co_name, co_argcount,
                     co_posonlyargcount, co_kwonlyargcount, co_nlocals,
                     co_stacksize, co_flags) < 0) {
         return NULL;
