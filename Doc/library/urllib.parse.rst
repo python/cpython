@@ -49,16 +49,26 @@ or on combining URL components into a URL string.
    present.  For example:
 
       >>> from urllib.parse import urlparse
-      >>> o = urlparse('http://www.cwi.nl:80/%7Eguido/Python.html')
+      >>> urlparse("scheme://netloc/path;parameters?query#fragment")
+      ParseResult(scheme='scheme', netloc='netloc', path='/path;parameters', params='',
+                  query='query', fragment='fragment')
+      >>> o = urlparse("http://docs.python.org:80/3/library/urllib.parse.html?"
+      ...              "highlight=params#url-parsing")
       >>> o   # doctest: +NORMALIZE_WHITESPACE
-      ParseResult(scheme='http', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
-                  params='', query='', fragment='')
+      ParseResult(scheme='http', netloc='docs.python.org:80',
+                  path='/3/library/urllib.parse.html', params='',
+                  query='highlight=params', fragment='url-parsing')
       >>> o.scheme
       'http'
+      >>> o.netloc
+      'docs.python.org:80'
+      >>> o.hostname
+      'docs.python.org'
       >>> o.port
       80
-      >>> o.geturl()
-      'http://www.cwi.nl:80/%7Eguido/Python.html'
+      >>> o.geturl()   # doctest: +NORMALIZE_WHITESPACE
+      'http://docs.python.org:80/3/library/urllib.parse.html?highlight=params#
+       url-parsing'
 
    Following the syntax specifications in :rfc:`1808`, urlparse recognizes
    a netloc only if it is properly introduced by '//'.  Otherwise the
@@ -92,31 +102,30 @@ or on combining URL components into a URL string.
    The return value is a :term:`named tuple`, which means that its items can
    be accessed by index or as named attributes, which are:
 
-   +------------------+-------+--------------------------+----------------------+
-   | Attribute        | Index | Value                    | Value if not present |
-   +==================+=======+==========================+======================+
-   | :attr:`scheme`   | 0     | URL scheme specifier     | *scheme* parameter   |
-   +------------------+-------+--------------------------+----------------------+
-   | :attr:`netloc`   | 1     | Network location part    | empty string         |
-   +------------------+-------+--------------------------+----------------------+
-   | :attr:`path`     | 2     | Hierarchical path        | empty string         |
-   +------------------+-------+--------------------------+----------------------+
-   | :attr:`params`   | 3     | Parameters for last path | empty string         |
-   |                  |       | element                  |                      |
-   +------------------+-------+--------------------------+----------------------+
-   | :attr:`query`    | 4     | Query component          | empty string         |
-   +------------------+-------+--------------------------+----------------------+
-   | :attr:`fragment` | 5     | Fragment identifier      | empty string         |
-   +------------------+-------+--------------------------+----------------------+
-   | :attr:`username` |       | User name                | :const:`None`        |
-   +------------------+-------+--------------------------+----------------------+
-   | :attr:`password` |       | Password                 | :const:`None`        |
-   +------------------+-------+--------------------------+----------------------+
-   | :attr:`hostname` |       | Host name (lower case)   | :const:`None`        |
-   +------------------+-------+--------------------------+----------------------+
-   | :attr:`port`     |       | Port number as integer,  | :const:`None`        |
-   |                  |       | if present               |                      |
-   +------------------+-------+--------------------------+----------------------+
+   +------------------+-------+-------------------------+------------------------+
+   | Attribute        | Index | Value                   | Value if not present   |
+   +==================+=======+=========================+========================+
+   | :attr:`scheme`   | 0     | URL scheme specifier    | *scheme* parameter     |
+   +------------------+-------+-------------------------+------------------------+
+   | :attr:`netloc`   | 1     | Network location part   | empty string           |
+   +------------------+-------+-------------------------+------------------------+
+   | :attr:`path`     | 2     | Hierarchical path       | empty string           |
+   +------------------+-------+-------------------------+------------------------+
+   | :attr:`params`   | 3     | No longer used          | always an empty string |
+   +------------------+-------+-------------------------+------------------------+
+   | :attr:`query`    | 4     | Query component         | empty string           |
+   +------------------+-------+-------------------------+------------------------+
+   | :attr:`fragment` | 5     | Fragment identifier     | empty string           |
+   +------------------+-------+-------------------------+------------------------+
+   | :attr:`username` |       | User name               | :const:`None`          |
+   +------------------+-------+-------------------------+------------------------+
+   | :attr:`password` |       | Password                | :const:`None`          |
+   +------------------+-------+-------------------------+------------------------+
+   | :attr:`hostname` |       | Host name (lower case)  | :const:`None`          |
+   +------------------+-------+-------------------------+------------------------+
+   | :attr:`port`     |       | Port number as integer, | :const:`None`          |
+   |                  |       | if present              |                        |
+   +------------------+-------+-------------------------+------------------------+
 
    Reading the :attr:`port` attribute will raise a :exc:`ValueError` if
    an invalid port is specified in the URL.  See section
