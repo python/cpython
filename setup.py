@@ -84,6 +84,9 @@ CYGWIN = (HOST_PLATFORM == 'cygwin')
 MACOS = (HOST_PLATFORM == 'darwin')
 AIX = (HOST_PLATFORM.startswith('aix'))
 VXWORKS = ('vxworks' in HOST_PLATFORM)
+CC = os.environ.get("CC")
+if not CC:
+    CC = sysconfig.get_config_var("CC")
 
 
 SUMMARY = """
@@ -397,6 +400,10 @@ class PyBuildExt(build_ext):
             pass
         else:
             # not migrated to MODULE_{name} yet.
+            self.announce(
+                f'WARNING: Makefile is missing module variable for "{ext.name}"',
+                level=2
+            )
             self.extensions.append(ext)
 
     def update_extension_flags(self, ext):
@@ -552,6 +559,9 @@ class PyBuildExt(build_ext):
 
     def build_extensions(self):
         self.set_srcdir()
+        self.set_compiler_executables()
+        self.configure_compiler()
+        self.init_inc_lib_dirs()
 
         # Detect which modules should be compiled
         self.detect_modules()
@@ -561,7 +571,6 @@ class PyBuildExt(build_ext):
 
         self.update_sources_depends()
         mods_built, mods_disabled = self.handle_configured_extensions()
-        self.set_compiler_executables()
 
         if LIST_MODULE_NAMES:
             for ext in self.extensions:
@@ -747,12 +756,11 @@ class PyBuildExt(build_ext):
     def add_multiarch_paths(self):
         # Debian/Ubuntu multiarch support.
         # https://wiki.ubuntu.com/MultiarchSpec
-        cc = sysconfig.get_config_var('CC')
         tmpfile = os.path.join(self.build_temp, 'multiarch')
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
         ret = run_command(
-            '%s -print-multiarch > %s 2> /dev/null' % (cc, tmpfile))
+            '%s -print-multiarch > %s 2> /dev/null' % (CC, tmpfile))
         multiarch_path_component = ''
         try:
             if ret == 0:
@@ -814,11 +822,10 @@ class PyBuildExt(build_ext):
                 d = os.path.normpath(d)
                 add_dir_to_list(self.compiler.library_dirs, d)
 
-        cc = sysconfig.get_config_var('CC')
         tmpfile = os.path.join(self.build_temp, 'wrccpaths')
         os.makedirs(self.build_temp, exist_ok=True)
         try:
-            ret = run_command('%s --print-search-dirs >%s' % (cc, tmpfile))
+            ret = run_command('%s --print-search-dirs >%s' % (CC, tmpfile))
             if ret:
                 return
             with open(tmpfile) as fp:
@@ -836,11 +843,10 @@ class PyBuildExt(build_ext):
                 pass
 
     def add_cross_compiling_paths(self):
-        cc = sysconfig.get_config_var('CC')
         tmpfile = os.path.join(self.build_temp, 'ccpaths')
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
-        ret = run_command('%s -E -v - </dev/null 2>%s 1>/dev/null' % (cc, tmpfile))
+        ret = run_command('%s -E -v - </dev/null 2>%s 1>/dev/null' % (CC, tmpfile))
         is_gcc = False
         is_clang = False
         in_incdirs = False
@@ -984,83 +990,68 @@ class PyBuildExt(build_ext):
         #
 
         # array objects
-        self.add(Extension('array', ['arraymodule.c']))
+        self.addext(Extension('array', ['arraymodule.c']))
 
         # Context Variables
-        self.add(Extension('_contextvars', ['_contextvarsmodule.c']))
+        self.addext(Extension('_contextvars', ['_contextvarsmodule.c']))
 
         # math library functions, e.g. sin()
-        self.add(Extension('math',  ['mathmodule.c'],
-                           libraries=['m']))
+        self.addext(Extension('math',  ['mathmodule.c']))
 
         # complex math library functions
-        self.add(Extension('cmath', ['cmathmodule.c'],
-                           libraries=['m']))
-
-        # time libraries: librt may be needed for clock_gettime()
-        time_libs = []
-        lib = sysconfig.get_config_var('TIMEMODULE_LIB')
-        if lib:
-            time_libs.append(lib)
+        self.addext(Extension('cmath', ['cmathmodule.c']))
 
         # libm is needed by delta_new() that uses round() and by accum() that
         # uses modf().
         self.addext(Extension('_datetime', ['_datetimemodule.c']))
-        # zoneinfo module
-        self.add(Extension('_zoneinfo', ['_zoneinfo.c']))
+        self.addext(Extension('_zoneinfo', ['_zoneinfo.c']))
         # random number generator implemented in C
-        self.add(Extension("_random", ["_randommodule.c"]))
-        # bisect
-        self.add(Extension("_bisect", ["_bisectmodule.c"]))
-        # heapq
-        self.add(Extension("_heapq", ["_heapqmodule.c"]))
+        self.addext(Extension("_random", ["_randommodule.c"]))
+        self.addext(Extension("_bisect", ["_bisectmodule.c"]))
+        self.addext(Extension("_heapq", ["_heapqmodule.c"]))
         # C-optimized pickle replacement
-        self.add(Extension("_pickle", ["_pickle.c"]))
+        self.addext(Extension("_pickle", ["_pickle.c"]))
         # _json speedups
-        self.add(Extension("_json", ["_json.c"]))
+        self.addext(Extension("_json", ["_json.c"]))
 
         # profiler (_lsprof is for cProfile.py)
-        self.add(Extension('_lsprof', ['_lsprof.c', 'rotatingtree.c']))
+        self.addext(Extension('_lsprof', ['_lsprof.c', 'rotatingtree.c']))
         # static Unicode character database
         self.addext(Extension('unicodedata', ['unicodedata.c']))
-        # _opcode module
-        self.add(Extension('_opcode', ['_opcode.c']))
+        self.addext(Extension('_opcode', ['_opcode.c']))
+
         # asyncio speedups
-        self.add(Extension("_asyncio", ["_asynciomodule.c"]))
-        # _queue module
-        self.add(Extension("_queue", ["_queuemodule.c"]))
-        # _statistics module
-        self.add(Extension("_statistics", ["_statisticsmodule.c"]))
-        # _typing module
-        self.add(Extension("_typing", ["_typingmodule.c"]))
+        self.addext(Extension("_asyncio", ["_asynciomodule.c"]))
+
+        self.addext(Extension("_queue", ["_queuemodule.c"]))
+        self.addext(Extension("_statistics", ["_statisticsmodule.c"]))
+        self.addext(Extension("_struct", ["_struct.c"]))
+        self.addext(Extension("_typing", ["_typingmodule.c"]))
 
         # Modules with some UNIX dependencies -- on by default:
         # (If you have a really backward UNIX, select and socket may not be
         # supported...)
 
         # fcntl(2) and ioctl(2)
-        libs = []
-        if (self.config_h_vars.get('FLOCK_NEEDS_LIBBSD', False)):
-            # May be necessary on AIX for flock function
-            libs = ['bsd']
-        self.add(Extension('fcntl', ['fcntlmodule.c'],
-                           libraries=libs))
+        self.addext(Extension('fcntl', ['fcntlmodule.c']))
         # grp(3)
         self.addext(Extension('grp', ['grpmodule.c']))
+
+        self.addext(Extension('_socket', ['socketmodule.c']))
         self.addext(Extension('spwd', ['spwdmodule.c']))
 
         # select(2); not on ancient System V
-        self.add(Extension('select', ['selectmodule.c']))
+        self.addext(Extension('select', ['selectmodule.c']))
 
         # Memory-mapped files (also works on Win32).
-        self.add(Extension('mmap', ['mmapmodule.c']))
+        self.addext(Extension('mmap', ['mmapmodule.c']))
 
         # Lance Ellinghaus's syslog module
         # syslog daemon interface
         self.addext(Extension('syslog', ['syslogmodule.c']))
 
         # Python interface to subinterpreter C-API.
-        self.add(Extension('_xxsubinterpreters', ['_xxsubinterpretersmodule.c']))
+        self.addext(Extension('_xxsubinterpreters', ['_xxsubinterpretersmodule.c']))
 
         #
         # Here ends the simple stuff.  From here on, modules need certain
@@ -1076,14 +1067,13 @@ class PyBuildExt(build_ext):
         # 64-bit platforms.
         #
         # audioop needs libm for floor() in multiple functions.
-        self.add(Extension('audioop', ['audioop.c'],
-                           libraries=['m']))
+        self.addext(Extension('audioop', ['audioop.c']))
 
         # CSV files
-        self.add(Extension('_csv', ['_csv.c']))
+        self.addext(Extension('_csv', ['_csv.c']))
 
         # POSIX subprocess module helper.
-        self.add(Extension('_posixsubprocess', ['_posixsubprocess.c']))
+        self.addext(Extension('_posixsubprocess', ['_posixsubprocess.c']))
 
     def detect_test_extensions(self):
         # Python C API test module
@@ -1253,23 +1243,7 @@ class PyBuildExt(build_ext):
             self.missing.append('_curses_panel')
 
     def detect_crypt(self):
-        # crypt module.
-        if VXWORKS:
-            # bpo-31904: crypt() function is not provided by VxWorks.
-            # DES_crypt() OpenSSL provides is too weak to implement
-            # the encryption.
-            self.missing.append('_crypt')
-            return
-
-        if self.compiler.find_library_file(self.lib_dirs, 'crypt'):
-            libs = ['crypt']
-        else:
-            libs = []
-
-        self.add(Extension('_crypt', ['_cryptmodule.c'], libraries=libs))
-
-    def detect_socket(self):
-        self.add(Extension('_socket', ['socketmodule.c']))
+         self.addext(Extension('_crypt', ['_cryptmodule.c']))
 
     def detect_dbm_gdbm(self):
         # Modules that provide persistent dictionary-like semantics.  You will
@@ -1284,11 +1258,9 @@ class PyBuildExt(build_ext):
 
         # libdb, gdbm and ndbm headers and libraries
         have_ndbm_h = sysconfig.get_config_var("HAVE_NDBM_H")
-        have_gdbm_h = sysconfig.get_config_var("HAVE_GDBM_H")
         have_gdbm_ndbm_h = sysconfig.get_config_var("HAVE_GDBM_NDBM_H")
         have_gdbm_dash_ndbm_h = sysconfig.get_config_var("HAVE_GDBM_DASH_NDBM_H")
         have_libndbm = sysconfig.get_config_var("HAVE_LIBNDBM")
-        have_libgdbm = sysconfig.get_config_var("HAVE_LIBGDBM")
         have_libgdbm_compat = sysconfig.get_config_var("HAVE_LIBGDBM_COMPAT")
         have_libdb = sysconfig.get_config_var("HAVE_LIBDB")
 
@@ -1346,11 +1318,7 @@ class PyBuildExt(build_ext):
                 self.missing.append('_dbm')
 
         # Anthony Baxter's gdbm module.  GNU dbm(3) will require -lgdbm:
-        if 'gdbm' in dbm_order and have_libgdbm:
-            self.add(Extension('_gdbm', ['_gdbmmodule.c'],
-                               libraries=['gdbm']))
-        else:
-            self.missing.append('_gdbm')
+        self.addext(Extension('_gdbm', ['_gdbmmodule.c']))
 
     def detect_sqlite(self):
         sources = [
@@ -1379,38 +1347,17 @@ class PyBuildExt(build_ext):
 
     def detect_compress_exts(self):
         # Andrew Kuchling's zlib module.
-        have_zlib = sysconfig.get_config_var("HAVE_LIBZ")
-        if have_zlib:
-            self.add(Extension('zlib', ['zlibmodule.c'],
-                                libraries=['z']))
-        else:
-            self.missing.append('zlib')
+        self.addext(Extension('zlib', ['zlibmodule.c']))
 
         # Helper module for various ascii-encoders.  Uses zlib for an optimized
         # crc32 if we have it.  Otherwise binascii uses its own.
-        if have_zlib:
-            define_macros = [('USE_ZLIB_CRC32', None)]
-            libraries = ['z']
-        else:
-            define_macros = None
-            libraries = []
-        self.add(Extension('binascii', ['binascii.c'],
-                           define_macros=define_macros,
-                           libraries=libraries))
+        self.addext(Extension('binascii', ['binascii.c']))
 
         # Gustavo Niemeyer's bz2 module.
-        if sysconfig.get_config_var("HAVE_LIBBZ2"):
-            self.add(Extension('_bz2', ['_bz2module.c'],
-                               libraries=['bz2']))
-        else:
-            self.missing.append('_bz2')
+        self.addext(Extension('_bz2', ['_bz2module.c']))
 
         # LZMA compression support.
-        if sysconfig.get_config_var("HAVE_LIBLZMA"):
-            self.add(Extension('_lzma', ['_lzmamodule.c'],
-                               libraries=['lzma']))
-        else:
-            self.missing.append('_lzma')
+        self.addext(Extension('_lzma', ['_lzmamodule.c']))
 
     def detect_expat_elementtree(self):
         # Interface to the Expat XML parser
@@ -1452,38 +1399,15 @@ class PyBuildExt(build_ext):
         self.add(Extension('_multiprocessing', multiprocessing_srcs,
                            include_dirs=["Modules/_multiprocessing"]))
 
-        if (not MS_WINDOWS and
-           sysconfig.get_config_var('HAVE_SHM_OPEN') and
-           sysconfig.get_config_var('HAVE_SHM_UNLINK')):
-            posixshmem_srcs = ['_multiprocessing/posixshmem.c']
-            libs = []
-            if sysconfig.get_config_var('SHM_NEEDS_LIBRT'):
-                # need to link with librt to get shm_open()
-                libs.append('rt')
-            self.add(Extension('_posixshmem', posixshmem_srcs,
-                               define_macros={},
-                               libraries=libs,
-                               include_dirs=["Modules/_multiprocessing"]))
-        else:
-            self.missing.append('_posixshmem')
+        self.addext(Extension('_posixshmem', ['_multiprocessing/posixshmem.c']))
 
     def detect_uuid(self):
         # Build the _uuid module if possible
-        uuid_h = sysconfig.get_config_var("HAVE_UUID_H")
-        uuid_uuid_h = sysconfig.get_config_var("HAVE_UUID_UUID_H")
-        if uuid_h or uuid_uuid_h:
-            if sysconfig.get_config_var("HAVE_LIBUUID"):
-                uuid_libs = ["uuid"]
-            else:
-                uuid_libs = []
-            self.add(Extension('_uuid', ['_uuidmodule.c'],
-                               libraries=uuid_libs))
-        else:
-            self.missing.append('_uuid')
+        self.addext(Extension('_uuid', ['_uuidmodule.c']))
 
     def detect_modules(self):
-        self.configure_compiler()
-        self.init_inc_lib_dirs()
+        # remove dummy extension
+        self.extensions = []
 
         # Some C extensions are built by entries in Modules/Setup.bootstrap.
         # These are extensions are required to bootstrap the interpreter or
@@ -1492,7 +1416,6 @@ class PyBuildExt(build_ext):
         self.detect_test_extensions()
         self.detect_readline_curses()
         self.detect_crypt()
-        self.detect_socket()
         self.detect_openssl_hashlib()
         self.detect_hash_builtins()
         self.detect_dbm_gdbm()
@@ -1509,13 +1432,11 @@ class PyBuildExt(build_ext):
             self.missing.append('_tkinter')
         self.detect_uuid()
 
-##         # Uncomment these lines if you want to play with xxmodule.c
-##         self.add(Extension('xx', ['xxmodule.c']))
+        # Uncomment the next line if you want to play with xxmodule.c
+#        self.add(Extension('xx', ['xxmodule.c']))
 
-        # The limited C API is not compatible with the Py_TRACE_REFS macro.
-        if not sysconfig.get_config_var('Py_TRACE_REFS'):
-            self.add(Extension('xxlimited', ['xxlimited.c']))
-            self.add(Extension('xxlimited_35', ['xxlimited_35.c']))
+        self.addext(Extension('xxlimited', ['xxlimited.c']))
+        self.addext(Extension('xxlimited_35', ['xxlimited_35.c']))
 
     def detect_tkinter_fromenv(self):
         # Build _tkinter using the Tcl/Tk locations specified by
@@ -1932,81 +1853,8 @@ class PyBuildExt(build_ext):
         )
 
     def detect_openssl_hashlib(self):
-        # Detect SSL support for the socket module (via _ssl)
-        config_vars = sysconfig.get_config_vars()
-
-        def split_var(name, sep):
-            # poor man's shlex, the re module is not available yet.
-            value = config_vars.get(name)
-            if not value:
-                return ()
-            # This trick works because ax_check_openssl uses --libs-only-L,
-            # --libs-only-l, and --cflags-only-I.
-            value = ' ' + value
-            sep = ' ' + sep
-            return [v.strip() for v in value.split(sep) if v.strip()]
-
-        openssl_includes = split_var('OPENSSL_INCLUDES', '-I')
-        openssl_libdirs = split_var('OPENSSL_LDFLAGS', '-L')
-        openssl_libs = split_var('OPENSSL_LIBS', '-l')
-        openssl_rpath = config_vars.get('OPENSSL_RPATH')
-        if not openssl_libs:
-            # libssl and libcrypto not found
-            self.missing.extend(['_ssl', '_hashlib'])
-            return None, None
-
-        # Find OpenSSL includes
-        ssl_incs = find_file(
-            'openssl/ssl.h', self.inc_dirs, openssl_includes
-        )
-        if ssl_incs is None:
-            self.missing.extend(['_ssl', '_hashlib'])
-            return None, None
-
-        if openssl_rpath == 'auto':
-            runtime_library_dirs = openssl_libdirs[:]
-        elif not openssl_rpath:
-            runtime_library_dirs = []
-        else:
-            runtime_library_dirs = [openssl_rpath]
-
-        openssl_extension_kwargs = dict(
-            include_dirs=openssl_includes,
-            library_dirs=openssl_libdirs,
-            libraries=openssl_libs,
-            runtime_library_dirs=runtime_library_dirs,
-        )
-
-        # This static linking is NOT OFFICIALLY SUPPORTED.
-        # Requires static OpenSSL build with position-independent code. Some
-        # features like DSO engines or external OSSL providers don't work.
-        # Only tested on GCC and clang on X86_64.
-        if os.environ.get("PY_UNSUPPORTED_OPENSSL_BUILD") == "static":
-            extra_linker_args = []
-            for lib in openssl_extension_kwargs["libraries"]:
-                # link statically
-                extra_linker_args.append(f"-l:lib{lib}.a")
-                # don't export symbols
-                extra_linker_args.append(f"-Wl,--exclude-libs,lib{lib}.a")
-            openssl_extension_kwargs["extra_link_args"] = extra_linker_args
-            # don't link OpenSSL shared libraries.
-            # include libz for OpenSSL build flavors with compression support
-            openssl_extension_kwargs["libraries"] = ["z"]
-
-        self.add(
-            Extension(
-                '_ssl',
-                ['_ssl.c'],
-                **openssl_extension_kwargs
-            )
-        )
-        self.add(
-            Extension(
-                '_hashlib',
-                ['_hashopenssl.c'],
-                **openssl_extension_kwargs,
-            )
-        )
+        self.addext(Extension('_ssl', ['_ssl.c']))
+        self.addext(Extension('_hashlib', ['_hashopenssl.c']))
 
     def detect_hash_builtins(self):
         # By default we always compile these even when OpenSSL is available
@@ -2028,49 +1876,7 @@ class PyBuildExt(build_ext):
         ))
 
     def detect_nis(self):
-        if MS_WINDOWS or CYGWIN or HOST_PLATFORM == 'qnx6':
-            self.missing.append('nis')
-            return
-
-        libs = []
-        library_dirs = []
-        includes_dirs = []
-
-        # bpo-32521: glibc has deprecated Sun RPC for some time. Fedora 28
-        # moved headers and libraries to libtirpc and libnsl. The headers
-        # are in tircp and nsl sub directories.
-        rpcsvc_inc = find_file(
-            'rpcsvc/yp_prot.h', self.inc_dirs,
-            [os.path.join(inc_dir, 'nsl') for inc_dir in self.inc_dirs]
-        )
-        rpc_inc = find_file(
-            'rpc/rpc.h', self.inc_dirs,
-            [os.path.join(inc_dir, 'tirpc') for inc_dir in self.inc_dirs]
-        )
-        if rpcsvc_inc is None or rpc_inc is None:
-            # not found
-            self.missing.append('nis')
-            return
-        includes_dirs.extend(rpcsvc_inc)
-        includes_dirs.extend(rpc_inc)
-
-        if self.compiler.find_library_file(self.lib_dirs, 'nsl'):
-            libs.append('nsl')
-        else:
-            # libnsl-devel: check for libnsl in nsl/ subdirectory
-            nsl_dirs = [os.path.join(lib_dir, 'nsl') for lib_dir in self.lib_dirs]
-            libnsl = self.compiler.find_library_file(nsl_dirs, 'nsl')
-            if libnsl is not None:
-                library_dirs.append(os.path.dirname(libnsl))
-                libs.append('nsl')
-
-        if self.compiler.find_library_file(self.lib_dirs, 'tirpc'):
-            libs.append('tirpc')
-
-        self.add(Extension('nis', ['nismodule.c'],
-                           libraries=libs,
-                           library_dirs=library_dirs,
-                           include_dirs=includes_dirs))
+        self.addext(Extension('nis', ['nismodule.c']))
 
 
 class PyBuildInstall(install):
@@ -2178,9 +1984,9 @@ def main():
                       'build_scripts': PyBuildScripts,
                       'install': PyBuildInstall,
                       'install_lib': PyBuildInstallLib},
-          # The struct module is defined here, because build_ext won't be
+          # A dummy module is defined here, because build_ext won't be
           # called unless there's at least one extension module defined.
-          ext_modules=[Extension('_struct', ['_struct.c'])],
+          ext_modules=[Extension('_dummy', ['_dummy.c'])],
 
           # If you change the scripts installed here, you also need to
           # check the PyBuildScripts command above, and change the links

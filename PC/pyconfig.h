@@ -517,6 +517,9 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* Define if you have siginterrupt.  */
 /* #undef HAVE_SIGINTERRUPT */
 
+/* Define to 1 if you have the `shutdown' function. */
+#define HAVE_SHUTDOWN 1
+
 /* Define if you have symlink.  */
 /* #undef HAVE_SYMLINK */
 
