@@ -9605,8 +9605,44 @@ if test "${with_memory_sanitizer+set}" = set; then :
   withval=$with_memory_sanitizer;
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
 $as_echo "$withval" >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fsanitize=memory" >&5
+$as_echo_n "checking whether C compiler accepts -fsanitize=memory... " >&6; }
+if ${ax_cv_check_cflags___fsanitize_memory+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -fsanitize=memory"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ax_cv_check_cflags___fsanitize_memory=yes
+else
+  ax_cv_check_cflags___fsanitize_memory=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___fsanitize_memory" >&5
+$as_echo "$ax_cv_check_cflags___fsanitize_memory" >&6; }
+if test "x$ax_cv_check_cflags___fsanitize_memory" = xyes; then :
+
 BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
+
+else
+  as_fn_error $? "The selected compiler doesn't support memory sanitizer" "$LINENO" 5
+fi
+
 # MSan works by controlling memory allocation, our own malloc interferes.
 with_pymalloc="no"
 
@@ -10120,13 +10156,15 @@ $as_echo "no" >&6; }
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
+# check for libuuid from util-linux
 save_LIBS=$LIBS
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing uuid_generate_time_safe" >&5
-$as_echo_n "checking for library containing uuid_generate_time_safe... " >&6; }
-if ${ac_cv_search_uuid_generate_time_safe+:} false; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time in -luuid" >&5
+$as_echo_n "checking for uuid_generate_time in -luuid... " >&6; }
+if ${ac_cv_lib_uuid_uuid_generate_time+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_func_search_save_LIBS=$LIBS
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-luuid  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -10136,61 +10174,39 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 #ifdef __cplusplus
 extern "C"
 #endif
-char uuid_generate_time_safe ();
+char uuid_generate_time ();
 int
 main ()
 {
-return uuid_generate_time_safe ();
+return uuid_generate_time ();
   ;
   return 0;
 }
 _ACEOF
-for ac_lib in '' uuid; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_uuid_generate_time_safe=$ac_res
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_uuid_uuid_generate_time=yes
+else
+  ac_cv_lib_uuid_uuid_generate_time=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext
-  if ${ac_cv_search_uuid_generate_time_safe+:} false; then :
-  break
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
 fi
-done
-if ${ac_cv_search_uuid_generate_time_safe+:} false; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_uuid_uuid_generate_time" >&5
+$as_echo "$ac_cv_lib_uuid_uuid_generate_time" >&6; }
+if test "x$ac_cv_lib_uuid_uuid_generate_time" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBUUID 1
+_ACEOF
 
-else
-  ac_cv_search_uuid_generate_time_safe=no
-fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_uuid_generate_time_safe" >&5
-$as_echo "$ac_cv_search_uuid_generate_time_safe" >&6; }
-ac_res=$ac_cv_search_uuid_generate_time_safe
-if test "$ac_res" != no; then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-
-
-$as_echo "#define HAVE_LIBUUID 1" >>confdefs.h
-,
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+  LIBS="-luuid $LIBS"
 
 fi
 
 LIBS=$save_LIBS
 
 # AIX provides support for RFC4122 (uuid) in libc.a starting with AIX 6.1 (anno 2007)
-# FreeBSD and OpenBSD provides support as well
+# FreeBSD and OpenBSD provides support in libc as well.
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_create" >&5
 $as_echo_n "checking for uuid_create... " >&6; }
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
