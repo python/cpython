@@ -32,8 +32,8 @@ Number-theoretic and representation functions
 .. function:: ceil(x)
 
    Return the ceiling of *x*, the smallest integer greater than or equal to *x*.
-   If *x* is not a float, delegates to ``x.__ceil__()``, which should return an
-   :class:`~numbers.Integral` value.
+   If *x* is not a float, delegates to :meth:`x.__ceil__ <object.__ceil__>`,
+   which should return an :class:`~numbers.Integral` value.
 
 
 .. function:: comb(n, k)
@@ -77,9 +77,9 @@ Number-theoretic and representation functions
 
 .. function:: floor(x)
 
-   Return the floor of *x*, the largest integer less than or equal to *x*.
-   If *x* is not a float, delegates to ``x.__floor__()``, which should return an
-   :class:`~numbers.Integral` value.
+   Return the floor of *x*, the largest integer less than or equal to *x*.  If
+   *x* is not a float, delegates to :meth:`x.__ceil__ <object.__floor__>`, which
+   should return an :class:`~numbers.Integral` value.
 
 
 .. function:: fmod(x, y)
