@@ -663,6 +663,8 @@ def getnode():
 
 
 _last_timestamp = None
+_last_v6_timestamp = None
+_last_v7_timestamp = None
 
 def uuid1(node=None, clock_seq=None):
     """Generate a UUID from a host ID, sequence number, and the current time.
@@ -726,16 +728,16 @@ def uuid6(clock_seq=None):
     If 'clock_seq' is given, it is used as the sequence number;
     otherwise a random 14-bit sequence number is chosen."""
 
-    global _last_timestamp
+    global _last_v6_timestamp
     import random
     import time
     nanoseconds = time.time_ns()
     # 0x01b21dd213814000 is the number of 100-ns intervals between the
     # UUID epoch 1582-10-15 00:00:00 and the Unix epoch 1970-01-01 00:00:00.
     timestamp = nanoseconds // 100 + 0x01b21dd213814000
-    if _last_timestamp is not None and timestamp <= _last_timestamp:
-        timestamp = _last_timestamp + 1
-    _last_timestamp = timestamp
+    if _last_v6_timestamp is not None and timestamp <= _last_v6_timestamp:
+        timestamp = _last_v6_timestamp + 1
+    _last_v6_timestamp = timestamp
     if clock_seq is None:
         clock_seq = random.SystemRandom().getrandbits(14) # instead of stable storage
     node = random.SystemRandom().getrandbits(48)
@@ -756,14 +758,19 @@ def uuid7():
     parsing the UUIDv7 value does not need to know which precision was
     used during encoding in order to function correctly."""
 
+    global _last_v7_timestamp
     import random
     import time
     nanoseconds = time.time_ns()
+    if _last_v7_timestamp is not None and nanoseconds <= _last_v7_timestamp:
+        nanoseconds = _last_v7_timestamp + 1
+    _last_v7_timestamp = nanoseconds
     timestamp_s = nanoseconds // 10**9
     timestamp_ns = nanoseconds - 10**9 * timestamp_s
     subsec_a = timestamp_ns >> 18
     subsec_b = (timestamp_ns >> 6) & 0x0fff
-    subsec_seq_node = random.SystemRandom().getrandbits(62)
+    subsec_seq_node = (timestamp_ns & 0x3f) << 56
+    subsec_seq_node += random.SystemRandom().getrandbits(56)
     uuid_int = (timestamp_s & 0xffffffff) << 92
     uuid_int += subsec_a << 80
     uuid_int += subsec_b << 64
