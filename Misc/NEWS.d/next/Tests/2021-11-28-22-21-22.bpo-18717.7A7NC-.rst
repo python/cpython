@@ -1,1 +1,1 @@
-Add new Test for :class:`urllib.urlcleanup`.
+Add new Test for :class:`urllib.request.urlcleanup`.
