@@ -120,7 +120,7 @@ The module defines the following items:
    .. method:: peek(n)
 
       Read *n* uncompressed bytes without advancing the file position.
-      Read on the compressed stream is done to satisfythe call. The
+      Read on the compressed stream is done to satisfy the call. The
       number of bytes returned may be more or less than requested.
 
       .. note:: While calling :meth:`peek` does not change the file position of
