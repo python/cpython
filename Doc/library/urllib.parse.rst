@@ -69,9 +69,8 @@ or on combining URL components into a URL string.
       'docs.python.org'
       >>> o.port
       80
-      >>> o.geturl()
-      ('http://docs.python.org:80/3/library/urllib.parse.html?highlight=params#'
-       'url-parsing')
+      >>> o._replace(fragment="").geturl()
+      'http://docs.python.org:80/3/library/urllib.parse.html?highlight=params'
 
    Following the syntax specifications in :rfc:`1808`, urlparse recognizes
    a netloc only if it is properly introduced by '//'.  Otherwise the
