@@ -48,13 +48,16 @@ or on combining URL components into a URL string.
    result, except for a leading slash in the *path* component, which is retained if
    present.  For example:
 
+   .. doctest::
+      :options: +NORMALIZE_WHITESPACE
+
       >>> from urllib.parse import urlparse
       >>> urlparse("scheme://netloc/path;parameters?query#fragment")
       ParseResult(scheme='scheme', netloc='netloc', path='/path;parameters', params='',
                   query='query', fragment='fragment')
       >>> o = urlparse("http://docs.python.org:80/3/library/urllib.parse.html?"
       ...              "highlight=params#url-parsing")
-      >>> o   # doctest: +NORMALIZE_WHITESPACE
+      >>> o
       ParseResult(scheme='http', netloc='docs.python.org:80',
                   path='/3/library/urllib.parse.html', params='',
                   query='highlight=params', fragment='url-parsing')
@@ -66,7 +69,7 @@ or on combining URL components into a URL string.
       'docs.python.org'
       >>> o.port
       80
-      >>> o.geturl()   # doctest: +NORMALIZE_WHITESPACE
+      >>> o.geturl()
       'http://docs.python.org:80/3/library/urllib.parse.html?highlight=params#
        url-parsing'
 
