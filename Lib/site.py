@@ -433,7 +433,7 @@ def setcopyright():
 def sethelper():
     builtins.help = _sitebuiltins._Helper()
 
-def _register_readline():
+def enablerlcompleter():
     """If the readline module can be imported, the hook will set the Tab key
     as completion key and register ~/.python_history as history file.
     This can be overridden in the sitecustomize or usercustomize module,
@@ -510,7 +510,7 @@ def _set_interactive_hook():
         - Register an excepthook to detect pip usage in the REPL.
     """
     def interactivehook():
-        _register_readline()
+        enablerlcompleter()
         _register_detect_pip_usage_in_repl()
 
     sys.__interactivehook__ = interactivehook
