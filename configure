@@ -712,8 +712,6 @@ MODULE_OSSAUDIODEV_FALSE
 MODULE_OSSAUDIODEV_TRUE
 MODULE_GRP_FALSE
 MODULE_GRP_TRUE
-MODULE__POSIXSHMEM_FALSE
-MODULE__POSIXSHMEM_TRUE
 MODULE_MMAP_FALSE
 MODULE_MMAP_TRUE
 MODULE_FCNTL_FALSE
@@ -728,6 +726,10 @@ MODULE__STATISTICS_FALSE
 MODULE__STATISTICS_TRUE
 MODULE_AUDIOOP_FALSE
 MODULE_AUDIOOP_TRUE
+MODULE__POSIXSHMEM_FALSE
+MODULE__POSIXSHMEM_TRUE
+MODULE__MULTIPROCESSING_FALSE
+MODULE__MULTIPROCESSING_TRUE
 MODULE__ZONEINFO_FALSE
 MODULE__ZONEINFO_TRUE
 MODULE__XXSUBINTERPRETERS_FALSE
@@ -17647,11 +17649,6 @@ done
 
 LIBS=$LIBS_SAVE
 
-# For multiprocessing module, check that sem_open
-# actually works.  For FreeBSD versions <= 7.2,
-# the kernel module that provides POSIX semaphores
-# isn't loaded by default, so an attempt to call
-# sem_open results in a 'Signal 12' error.
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether POSIX semaphores are enabled" >&5
 $as_echo_n "checking whether POSIX semaphores are enabled... " >&6; }
 if ${ac_cv_posix_semaphores_enabled+:} false; then :
@@ -17663,22 +17660,24 @@ else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-#include <unistd.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <semaphore.h>
-#include <sys/stat.h>
 
-int main(void) {
-  sem_t *a = sem_open("/autoconf", O_CREAT, S_IRUSR|S_IWUSR, 0);
-  if (a == SEM_FAILED) {
-    perror("sem_open");
-    return 1;
-  }
-  sem_close(a);
-  sem_unlink("/autoconf");
-  return 0;
-}
+      #include <unistd.h>
+      #include <fcntl.h>
+      #include <stdio.h>
+      #include <semaphore.h>
+      #include <sys/stat.h>
+
+      int main(void) {
+        sem_t *a = sem_open("/autoconf", O_CREAT, S_IRUSR|S_IWUSR, 0);
+        if (a == SEM_FAILED) {
+          perror("sem_open");
+          return 1;
+        }
+        sem_close(a);
+        sem_unlink("/autoconf");
+        return 0;
+      }
+
 
 _ACEOF
 if ac_fn_c_try_run "$LINENO"; then :
@@ -17694,14 +17693,14 @@ fi
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_posix_semaphores_enabled" >&5
 $as_echo "$ac_cv_posix_semaphores_enabled" >&6; }
-if test $ac_cv_posix_semaphores_enabled = no
-then
+if test "x$ac_cv_posix_semaphores_enabled" = xno; then :
+
 
 $as_echo "#define POSIX_SEMAPHORES_NOT_ENABLED 1" >>confdefs.h
 
+
 fi
 
-# Multiprocessing check for broken sem_getvalue
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for broken sem_getvalue" >&5
 $as_echo_n "checking for broken sem_getvalue... " >&6; }
 if ${ac_cv_broken_sem_getvalue+:} false; then :
@@ -17713,26 +17712,28 @@ else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-#include <unistd.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <semaphore.h>
-#include <sys/stat.h>
 
-int main(void){
-  sem_t *a = sem_open("/autocftw", O_CREAT, S_IRUSR|S_IWUSR, 0);
-  int count;
-  int res;
-  if(a==SEM_FAILED){
-    perror("sem_open");
-    return 1;
+      #include <unistd.h>
+      #include <fcntl.h>
+      #include <stdio.h>
+      #include <semaphore.h>
+      #include <sys/stat.h>
 
-  }
-  res = sem_getvalue(a, &count);
-  sem_close(a);
-  sem_unlink("/autocftw");
-  return res==-1 ? 1 : 0;
-}
+      int main(void){
+        sem_t *a = sem_open("/autocftw", O_CREAT, S_IRUSR|S_IWUSR, 0);
+        int count;
+        int res;
+        if(a==SEM_FAILED){
+          perror("sem_open");
+          return 1;
+
+        }
+        res = sem_getvalue(a, &count);
+        sem_close(a);
+        sem_unlink("/autocftw");
+        return res==-1 ? 1 : 0;
+      }
+
 
 _ACEOF
 if ac_fn_c_try_run "$LINENO"; then :
@@ -17748,10 +17749,11 @@ fi
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_broken_sem_getvalue" >&5
 $as_echo "$ac_cv_broken_sem_getvalue" >&6; }
-if test $ac_cv_broken_sem_getvalue = yes
-then
+if test "x$ac_cv_broken_sem_getvalue" = xyes; then :
+
 
 $as_echo "#define HAVE_BROKEN_SEM_GETVALUE 1" >>confdefs.h
+
 
 fi
 
@@ -21263,6 +21265,54 @@ fi
 
 
      if true; then
+  MODULE__MULTIPROCESSING_TRUE=
+  MODULE__MULTIPROCESSING_FALSE='#'
+else
+  MODULE__MULTIPROCESSING_TRUE='#'
+  MODULE__MULTIPROCESSING_FALSE=
+fi
+  as_fn_append MODULE_BLOCK "MODULE__MULTIPROCESSING=yes$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__MULTIPROCESSING_CFLAGS=-I\$(srcdir)/Modules/_multiprocessing$as_nl"
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _posixshmem" >&5
+$as_echo_n "checking for stdlib extension module _posixshmem... " >&6; }
+      case $py_stdlib_not_available in #(
+  *_posixshmem*) :
+    py_cv_module__posixshmem=n/a ;; #(
+  *) :
+    if true; then :
+  if test "$have_posix_shmem" = "yes"; then :
+  py_cv_module__posixshmem=yes
+else
+  py_cv_module__posixshmem=missing
+fi
+else
+  py_cv_module__posixshmem=disabled
+fi
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM=$py_cv_module__posixshmem$as_nl"
+  if test "x$py_cv_module__posixshmem" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM_CFLAGS=$POSIXSHMEM_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM_LDFLAGS=$POSIXSHMEM_LIBS$as_nl"
+
+fi
+   if test "$py_cv_module__posixshmem" = yes; then
+  MODULE__POSIXSHMEM_TRUE=
+  MODULE__POSIXSHMEM_FALSE='#'
+else
+  MODULE__POSIXSHMEM_TRUE='#'
+  MODULE__POSIXSHMEM_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__posixshmem" >&5
+$as_echo "$py_cv_module__posixshmem" >&6; }
+
+
+
+     if true; then
   MODULE_AUDIOOP_TRUE=
   MODULE_AUDIOOP_FALSE='#'
 else
@@ -21389,42 +21439,6 @@ fi
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_mmap" >&5
 $as_echo "$py_cv_module_mmap" >&6; }
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _posixshmem" >&5
-$as_echo_n "checking for stdlib extension module _posixshmem... " >&6; }
-      case $py_stdlib_not_available in #(
-  *_posixshmem*) :
-    py_cv_module__posixshmem=n/a ;; #(
-  *) :
-    if true; then :
-  if test "$have_posix_shmem" = "yes"; then :
-  py_cv_module__posixshmem=yes
-else
-  py_cv_module__posixshmem=missing
-fi
-else
-  py_cv_module__posixshmem=disabled
-fi
-   ;;
-esac
-  as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM=$py_cv_module__posixshmem$as_nl"
-  if test "x$py_cv_module__posixshmem" = xyes; then :
-
-    as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM_CFLAGS=$POSIXSHMEM_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM_LDFLAGS=$POSIXSHMEM_LIBS$as_nl"
-
-fi
-   if test "$py_cv_module__posixshmem" = yes; then
-  MODULE__POSIXSHMEM_TRUE=
-  MODULE__POSIXSHMEM_FALSE='#'
-else
-  MODULE__POSIXSHMEM_TRUE='#'
-  MODULE__POSIXSHMEM_FALSE=
-fi
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__posixshmem" >&5
-$as_echo "$py_cv_module__posixshmem" >&6; }
 
 
 
@@ -22984,6 +22998,14 @@ if test -z "${MODULE__ZONEINFO_TRUE}" && test -z "${MODULE__ZONEINFO_FALSE}"; th
   as_fn_error $? "conditional \"MODULE__ZONEINFO\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${MODULE__MULTIPROCESSING_TRUE}" && test -z "${MODULE__MULTIPROCESSING_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__MULTIPROCESSING\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__POSIXSHMEM_TRUE}" && test -z "${MODULE__POSIXSHMEM_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__POSIXSHMEM\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${MODULE_AUDIOOP_TRUE}" && test -z "${MODULE_AUDIOOP_FALSE}"; then
   as_fn_error $? "conditional \"MODULE_AUDIOOP\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
@@ -23010,10 +23032,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_MMAP_TRUE}" && test -z "${MODULE_MMAP_FALSE}"; then
   as_fn_error $? "conditional \"MODULE_MMAP\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${MODULE__POSIXSHMEM_TRUE}" && test -z "${MODULE__POSIXSHMEM_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE__POSIXSHMEM\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_GRP_TRUE}" && test -z "${MODULE_GRP_FALSE}"; then
