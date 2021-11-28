@@ -2956,35 +2956,24 @@ long_compare(PyLongObject *a, PyLongObject *b)
     return sign;
 }
 
-PyObject *
-_PyLong_RichCompare(PyLongObject *left, PyLongObject *right, int op)
+Py_ssize_t
+_PyLong_RichCompare(PyLongObject *left, PyLongObject *right)
 {
-    Py_ssize_t diff;
     if (left == right) {
-        diff = 0;
+        return 0;
     }
     else {
-        diff = long_compare(left, right);
+        return long_compare(left, right);
     }
-    int cmp;
-    switch (op) {
-        case Py_LT: cmp = (diff < 0); break;
-        case Py_LE: cmp = (diff <= 0); break;
-        case Py_EQ: cmp = (diff == 0); break;
-        case Py_NE: cmp = (diff != 0); break;
-        case Py_GT: cmp = (diff > 0); break;
-        case Py_GE: cmp = (diff >= 0); break;
-        default: Py_UNREACHABLE();
-    }
-    return PyBool_FromLong(cmp);
 }
 
 static PyObject *
 long_richcompare(PyObject *self, PyObject *other, int op)
 {
     CHECK_BINOP(self, other);
-    return _PyLong_RichCompare((PyLongObject *)self,
-                               (PyLongObject *)other, op);
+    Py_ssize_t result = _PyLong_RichCompare((PyLongObject *)self,
+                                            (PyLongObject *)other);
+    Py_RETURN_RICHCOMPARE(result, 0, op);
 }
 
 static Py_hash_t

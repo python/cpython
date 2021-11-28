@@ -42,6 +42,10 @@ typedef struct {
     uint16_t defaults_len;
 } _PyCallCache;
 
+typedef struct {
+    int mask;
+} _PyCompareCache;
+
 /* Add specialized versions of entries to this union.
  *
  * Do not break the invariant: sizeof(SpecializedCacheEntry) == 8
@@ -59,6 +63,7 @@ typedef union {
     _PyLoadGlobalCache load_global;
     _PyObjectCache obj;
     _PyCallCache call;
+    _PyCompareCache compare;
 } SpecializedCacheEntry;
 
 #define INSTRUCTIONS_PER_ENTRY (sizeof(SpecializedCacheEntry)/sizeof(_Py_CODEUNIT))

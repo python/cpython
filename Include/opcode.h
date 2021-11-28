@@ -121,9 +121,9 @@ extern "C" {
 #define BINARY_OP_SUBTRACT_INT           19
 #define BINARY_OP_SUBTRACT_FLOAT         20
 #define COMPARE_OP_ADAPTIVE              21
-#define COMPARE_OP_FLOAT                 22
-#define COMPARE_OP_INT                   23
-#define COMPARE_OP_STR                   24
+#define COMPARE_OP_FLOAT_JUMP            22
+#define COMPARE_OP_INT_JUMP              23
+#define COMPARE_OP_STR_JUMP              24
 #define BINARY_SUBSCR_ADAPTIVE           26
 #define BINARY_SUBSCR_GETITEM            27
 #define BINARY_SUBSCR_LIST_INT           28

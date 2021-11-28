@@ -144,11 +144,6 @@ _Py_GetSpecializationStats(void) {
 static void
 print_stats(FILE *out, SpecializationStats *stats, const char *name)
 {
-    long total = (stats->specialization_failure + stats->specialization_success
-                  + stats->hit + stats->deferred + stats->miss
-                  + stats->deopt + stats->unquickened);
-    double ratio = (double)stats->hit / (double)(total) * 100.0;
-    fprintf(out, "    Hit percentage: %.2f%%\n", ratio);
     PRINT_STAT(name, specialization_success);
     PRINT_STAT(name, specialization_failure);
     PRINT_STAT(name, hit);
@@ -259,7 +254,7 @@ static uint8_t cache_requirements[256] = {
     [CALL_FUNCTION] = 2, /* _PyAdaptiveEntry and _PyObjectCache/_PyCallCache */
     [STORE_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
     [BINARY_OP] = 1,  // _PyAdaptiveEntry
-    [COMPARE_OP] = 1, // _PyAdaptiveEntry
+    [COMPARE_OP] = 2, /* _PyAdaptiveEntry and _PyCompareCache */
 };
 
 /* Return the oparg for the cache_offset and instruction index.
@@ -499,6 +494,7 @@ initial_counter_value(void) {
 /* COMPARE_OP */
 #define SPEC_FAIL_STRING_COMPARE 13
 #define SPEC_FAIL_STRING_UNREADY 14
+#define SPEC_FAIL_NOT_FOLLOWED_BY_COND_JUMP 15
 
 static int
 specialize_module_load_attr(
@@ -1552,25 +1548,50 @@ success:
     adaptive->counter = initial_counter_value();
 }
 
+static int compare_masks[] = {
+    // 1-bit: jump if less than
+    // 2-bit: jump if equal
+    // 4-bit: jump if greater
+    [Py_LT] = 1 | 0 | 0,
+    [Py_LE] = 1 | 2 | 0,
+    [Py_EQ] = 0 | 2 | 0,
+    [Py_NE] = 1 | 0 | 4,
+    [Py_GT] = 0 | 0 | 4,
+    [Py_GE] = 0 | 2 | 4,
+};
+
 void
 _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
                          _Py_CODEUNIT *instr, SpecializedCacheEntry *cache)
 {
     _PyAdaptiveEntry *adaptive = &cache->adaptive;
+    _PyCompareCache *cache1 = &cache[-1].compare;
+    int op = adaptive->original_oparg;
+    int next_opcode = _Py_OPCODE(instr[1]);
+    if (next_opcode != POP_JUMP_IF_FALSE && next_opcode != POP_JUMP_IF_TRUE) {
+        SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_NOT_FOLLOWED_BY_COND_JUMP);
+        goto failure;
+    }
+    assert(op <= Py_GE);
+    int mask = compare_masks[op];
+    if (next_opcode == POP_JUMP_IF_FALSE) {
+        mask = (1 | 2 | 4) & ~mask;
+    }
     if (Py_TYPE(lhs) != Py_TYPE(rhs)) {
         SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_DIFFERENT_TYPES);
         goto failure;
     }
-    else if (PyFloat_CheckExact(lhs)) {
-        *instr = _Py_MAKECODEUNIT(COMPARE_OP_FLOAT, _Py_OPARG(*instr));
+    if (PyFloat_CheckExact(lhs)) {
+        *instr = _Py_MAKECODEUNIT(COMPARE_OP_FLOAT_JUMP, _Py_OPARG(*instr));
+        cache1->mask = mask;
         goto success;
     }
-    else if (PyLong_CheckExact(lhs)) {
-        *instr = _Py_MAKECODEUNIT(COMPARE_OP_INT, _Py_OPARG(*instr));
+    if (PyLong_CheckExact(lhs)) {
+        *instr = _Py_MAKECODEUNIT(COMPARE_OP_INT_JUMP, _Py_OPARG(*instr));
+        cache1->mask = mask;
         goto success;
     }
-    else if (PyUnicode_CheckExact(lhs)) {
-        int op = adaptive->original_oparg;
+    if (PyUnicode_CheckExact(lhs)) {
         if (op != Py_EQ && op != Py_NE) {
             SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_STRING_COMPARE);
             goto failure;
@@ -1580,14 +1601,12 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
             goto failure;
         }
         else {
-            *instr = _Py_MAKECODEUNIT(COMPARE_OP_STR, _Py_OPARG(*instr));
+            *instr = _Py_MAKECODEUNIT(COMPARE_OP_STR_JUMP, _Py_OPARG(*instr));
+            cache1->mask = (mask & 2) == 0;
             goto success;
         }
     }
-    else {
-        SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_OTHER);
-        goto failure;
-    }
+    SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_OTHER);
 failure:
     STAT_INC(COMPARE_OP, specialization_failure);
     cache_backoff(adaptive);

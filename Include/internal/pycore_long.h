@@ -24,7 +24,7 @@ static inline PyObject* _PyLong_GetOne(void)
 PyObject *_PyLong_Add(PyLongObject *left, PyLongObject *right);
 PyObject *_PyLong_Multiply(PyLongObject *left, PyLongObject *right);
 PyObject *_PyLong_Subtract(PyLongObject *left, PyLongObject *right);
-PyObject *_PyLong_RichCompare(PyLongObject *left, PyLongObject *right, int op);
+Py_ssize_t _PyLong_RichCompare(PyLongObject *left, PyLongObject *right);
 
 /* Used by Python/mystrtoul.c, _PyBytes_FromHex(),
    _PyBytes_DecodeEscape(), etc. */
