@@ -2140,19 +2140,19 @@ is_valid_fd(int fd)
    EBADF. FreeBSD has similar issue (bpo-32849).
 
    Only use dup() on platforms where dup() is enough to detect invalid FD in
-   corner cases: on Linux and Windows (bpo-32849). */
-#if defined(__linux__) || defined(MS_WINDOWS)
+   corner cases: on Linux and Windows (bpo-32849).
+*/
     if (fd < 0) {
         return 0;
     }
-#ifdef F_GETFD
-     _Py_BEGIN_SUPPRESS_IPH
-    int res = fcntl(fd, F_GETFD);
+#if defined(F_GETFD) && (defined(__linux__) || defined(__APPLE__) || defined(MS_WINDOWS))
+    int res;
+    _Py_BEGIN_SUPPRESS_IPH
+    res = fcntl(fd, F_GETFD);
     _Py_END_SUPPRESS_IPH
     return res >= 0;
-#else
+#elif defined(__linux__) || defined(MS_WINDOWS)
     int fd2;
-
     _Py_BEGIN_SUPPRESS_IPH
     fd2 = dup(fd);
     if (fd2 >= 0) {
@@ -2161,7 +2161,6 @@ is_valid_fd(int fd)
     _Py_END_SUPPRESS_IPH
 
     return (fd2 >= 0);
-#endif /* F_GETFD */
 #else
     struct stat st;
     return (fstat(fd, &st) == 0);
