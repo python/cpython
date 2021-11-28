@@ -11,7 +11,6 @@ from _csv import Error, __version__, writer, reader, register_dialect, \
                  __doc__
 from _csv import Dialect as _Dialect
 
-from collections import OrderedDict
 from io import StringIO
 
 __all__ = ["QUOTE_MINIMAL", "QUOTE_ALL", "QUOTE_NONNUMERIC", "QUOTE_NONE",
@@ -117,7 +116,7 @@ class DictReader:
         # values
         while row == []:
             row = next(self.reader)
-        d = OrderedDict(zip(self.fieldnames, row))
+        d = dict(zip(self.fieldnames, row))
         lf = len(self.fieldnames)
         lr = len(row)
         if lf < lr:
@@ -141,7 +140,7 @@ class DictWriter:
 
     def writeheader(self):
         header = dict(zip(self.fieldnames, self.fieldnames))
-        self.writerow(header)
+        return self.writerow(header)
 
     def _dict_to_list(self, rowdict):
         if self.extrasaction == "raise":
@@ -410,14 +409,10 @@ class Sniffer:
                 continue # skip rows that have irregular number of columns
 
             for col in list(columnTypes.keys()):
-
-                for thisType in [int, float, complex]:
-                    try:
-                        thisType(row[col])
-                        break
-                    except (ValueError, OverflowError):
-                        pass
-                else:
+                thisType = complex
+                try:
+                    thisType(row[col])
+                except (ValueError, OverflowError):
                     # fallback to length of string
                     thisType = len(row[col])
 

@@ -15,9 +15,6 @@ PyAPI_FUNC(PyObject *) PyFile_GetLine(PyObject *, int);
 PyAPI_FUNC(int) PyFile_WriteObject(PyObject *, PyObject *, int);
 PyAPI_FUNC(int) PyFile_WriteString(const char *, PyObject *);
 PyAPI_FUNC(int) PyObject_AsFileDescriptor(PyObject *);
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(char *) Py_UniversalNewlineFgets(char *, int, FILE*, PyObject *);
-#endif
 
 /* The default encoding used by the platform file system APIs
    If non-NULL, this is different than the default encoding for strings
@@ -32,21 +29,18 @@ PyAPI_DATA(int) Py_HasFileSystemDefaultEncoding;
 PyAPI_DATA(int) Py_UTF8Mode;
 #endif
 
-/* Internal API
-
-   The std printer acts as a preliminary sys.stderr until the new io
-   infrastructure is in place. */
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject *) PyFile_NewStdPrinter(int);
-PyAPI_DATA(PyTypeObject) PyStdPrinter_Type;
-#endif /* Py_LIMITED_API */
-
 /* A routine to check if a file descriptor can be select()-ed. */
 #ifdef _MSC_VER
     /* On Windows, any socket fd can be select()-ed, no matter how high */
     #define _PyIsSelectable_fd(FD) (1)
 #else
     #define _PyIsSelectable_fd(FD) ((unsigned int)(FD) < (unsigned int)FD_SETSIZE)
+#endif
+
+#ifndef Py_LIMITED_API
+#  define Py_CPYTHON_FILEOBJECT_H
+#  include "cpython/fileobject.h"
+#  undef Py_CPYTHON_FILEOBJECT_H
 #endif
 
 #ifdef __cplusplus

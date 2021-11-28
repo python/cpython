@@ -1,4 +1,4 @@
-""" Test script for the unicodedata module.
+""" Tests for the unicodedata module.
 
     Written by Marc-Andre Lemburg (mal@lemburg.com).
 
@@ -6,25 +6,24 @@
 
 """
 
-import sys
-import unittest
 import hashlib
-from test.support import script_helper
+from http.client import HTTPException
+import sys
+import unicodedata
+import unittest
+from test.support import (open_urlresource, requires_resource, script_helper,
+                          cpython_only, check_disallow_instantiation)
 
-encoding = 'utf-8'
-errors = 'surrogatepass'
-
-
-### Run tests
 
 class UnicodeMethodsTest(unittest.TestCase):
 
     # update this, if the database changes
-    expectedchecksum = '97a41f208c53d5e08c77c1175187e95386b82b6f'
+    expectedchecksum = '4739770dd4d0e5f1b1677accfc3552ed3c8ef326'
 
+    @requires_resource('cpu')
     def test_method_checksum(self):
         h = hashlib.sha1()
-        for i in range(0x10000):
+        for i in range(sys.maxunicode + 1):
             char = chr(i)
             data = [
                 # Predicates (single char)
@@ -61,31 +60,25 @@ class UnicodeMethodsTest(unittest.TestCase):
                 (char + 'ABC').title(),
 
                 ]
-            h.update(''.join(data).encode(encoding, errors))
+            h.update(''.join(data).encode('utf-8', 'surrogatepass'))
         result = h.hexdigest()
         self.assertEqual(result, self.expectedchecksum)
 
 class UnicodeDatabaseTest(unittest.TestCase):
-
-    def setUp(self):
-        # In case unicodedata is not available, this will raise an ImportError,
-        # but the other test cases will still be run
-        import unicodedata
-        self.db = unicodedata
-
-    def tearDown(self):
-        del self.db
+    db = unicodedata
 
 class UnicodeFunctionsTest(UnicodeDatabaseTest):
 
     # Update this if the database changes. Make sure to do a full rebuild
     # (e.g. 'make distclean && make') to get the correct checksum.
-    expectedchecksum = '4f73278b19c2ec3099724c132f0b90a1d25c19e4'
+    expectedchecksum = '98d602e1f69d5c5bb8a5910c40bbbad4e18e8370'
+
+    @requires_resource('cpu')
     def test_function_checksum(self):
         data = []
         h = hashlib.sha1()
 
-        for i in range(0x10000):
+        for i in range(sys.maxunicode + 1):
             char = chr(i)
             data = [
                 # Properties
@@ -183,15 +176,8 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertRaises(TypeError, self.db.combining)
         self.assertRaises(TypeError, self.db.combining, 'xx')
 
-    def test_normalize(self):
-        self.assertRaises(TypeError, self.db.normalize)
-        self.assertRaises(ValueError, self.db.normalize, 'unknown', 'xx')
-        self.assertEqual(self.db.normalize('NFKC', ''), '')
-        # The rest can be found in test_normalization.py
-        # which requires an external file.
-
     def test_pr29(self):
-        # http://www.unicode.org/review/pr-29.html
+        # https://www.unicode.org/review/pr-29.html
         # See issues #1054943 and #10254.
         composed = ("\u0b47\u0300\u0b3e", "\u1100\u0300\u1161",
                     'Li\u030dt-s\u1e73\u0301',
@@ -220,7 +206,6 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(self.db.normalize('NFC', u11a7_str_a), u11a7_str_b)
         self.assertEqual(self.db.normalize('NFC', u11c3_str_a), u11c3_str_b)
 
-
     def test_east_asian_width(self):
         eaw = self.db.east_asian_width
         self.assertRaises(TypeError, eaw, b'a')
@@ -240,6 +225,11 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(self.db.east_asian_width('\u231a'), 'W')
 
 class UnicodeMiscTest(UnicodeDatabaseTest):
+
+    @cpython_only
+    def test_disallow_instantiation(self):
+        # Ensure that the type disallows instantiation (bpo-43916)
+        check_disallow_instantiation(self, unicodedata.UCD)
 
     def test_failed_import_during_compiling(self):
         # Issue 4367
@@ -324,6 +314,104 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
             else:
                 self.assertEqual(len(lines), 1,
                                  r"\u%.4x should not be a linebreak" % i)
+
+class NormalizationTest(unittest.TestCase):
+    @staticmethod
+    def check_version(testfile):
+        hdr = testfile.readline()
+        return unicodedata.unidata_version in hdr
+
+    @staticmethod
+    def unistr(data):
+        data = [int(x, 16) for x in data.split(" ")]
+        return "".join([chr(x) for x in data])
+
+    @requires_resource('network')
+    def test_normalization(self):
+        TESTDATAFILE = "NormalizationTest.txt"
+        TESTDATAURL = f"http://www.pythontest.net/unicode/{unicodedata.unidata_version}/{TESTDATAFILE}"
+
+        # Hit the exception early
+        try:
+            testdata = open_urlresource(TESTDATAURL, encoding="utf-8",
+                                        check=self.check_version)
+        except PermissionError:
+            self.skipTest(f"Permission error when downloading {TESTDATAURL} "
+                          f"into the test data directory")
+        except (OSError, HTTPException):
+            self.fail(f"Could not retrieve {TESTDATAURL}")
+
+        with testdata:
+            self.run_normalization_tests(testdata)
+
+    def run_normalization_tests(self, testdata):
+        part = None
+        part1_data = {}
+
+        def NFC(str):
+            return unicodedata.normalize("NFC", str)
+
+        def NFKC(str):
+            return unicodedata.normalize("NFKC", str)
+
+        def NFD(str):
+            return unicodedata.normalize("NFD", str)
+
+        def NFKD(str):
+            return unicodedata.normalize("NFKD", str)
+
+        for line in testdata:
+            if '#' in line:
+                line = line.split('#')[0]
+            line = line.strip()
+            if not line:
+                continue
+            if line.startswith("@Part"):
+                part = line.split()[0]
+                continue
+            c1,c2,c3,c4,c5 = [self.unistr(x) for x in line.split(';')[:-1]]
+
+            # Perform tests
+            self.assertTrue(c2 ==  NFC(c1) ==  NFC(c2) ==  NFC(c3), line)
+            self.assertTrue(c4 ==  NFC(c4) ==  NFC(c5), line)
+            self.assertTrue(c3 ==  NFD(c1) ==  NFD(c2) ==  NFD(c3), line)
+            self.assertTrue(c5 ==  NFD(c4) ==  NFD(c5), line)
+            self.assertTrue(c4 == NFKC(c1) == NFKC(c2) == \
+                            NFKC(c3) == NFKC(c4) == NFKC(c5),
+                            line)
+            self.assertTrue(c5 == NFKD(c1) == NFKD(c2) == \
+                            NFKD(c3) == NFKD(c4) == NFKD(c5),
+                            line)
+
+            self.assertTrue(unicodedata.is_normalized("NFC", c2))
+            self.assertTrue(unicodedata.is_normalized("NFC", c4))
+
+            self.assertTrue(unicodedata.is_normalized("NFD", c3))
+            self.assertTrue(unicodedata.is_normalized("NFD", c5))
+
+            self.assertTrue(unicodedata.is_normalized("NFKC", c4))
+            self.assertTrue(unicodedata.is_normalized("NFKD", c5))
+
+            # Record part 1 data
+            if part == "@Part1":
+                part1_data[c1] = 1
+
+        # Perform tests for all other data
+        for c in range(sys.maxunicode+1):
+            X = chr(c)
+            if X in part1_data:
+                continue
+            self.assertTrue(X == NFC(X) == NFD(X) == NFKC(X) == NFKD(X), c)
+
+    def test_edge_cases(self):
+        self.assertRaises(TypeError, unicodedata.normalize)
+        self.assertRaises(ValueError, unicodedata.normalize, 'unknown', 'xx')
+        self.assertEqual(unicodedata.normalize('NFKC', ''), '')
+
+    def test_bug_834676(self):
+        # Check for bug 834676
+        unicodedata.normalize('NFC', '\ud55c\uae00')
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,3 +1,0 @@
-The ssl module function ssl.wrap_socket() has been de-emphasized
-and deprecated in favor of the more secure and efficient
-SSLContext.wrap_socket() method.

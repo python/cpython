@@ -188,8 +188,6 @@ class TestCommandLineArgs(unittest.TestCase):
         program = self.program
         for arg, attr in (('buffer', 'buffer'), ('failfast', 'failfast'),
                       ('catch', 'catchbreak')):
-            if attr == 'catch' and not hasInstallHandler:
-                continue
 
             setattr(program, attr, None)
             program.parseArgs([None])
@@ -428,14 +426,14 @@ class TestCommandLineArgs(unittest.TestCase):
             return stderr.decode()
 
         t = '_test_warnings'
-        self.assertIn('Ran 7 tests', run_unittest([t]))
-        self.assertIn('Ran 7 tests', run_unittest(['-k', 'TestWarnings', t]))
-        self.assertIn('Ran 7 tests', run_unittest(['discover', '-p', '*_test*', '-k', 'TestWarnings']))
-        self.assertIn('Ran 2 tests', run_unittest(['-k', 'f', t]))
-        self.assertIn('Ran 7 tests', run_unittest(['-k', 't', t]))
-        self.assertIn('Ran 3 tests', run_unittest(['-k', '*t', t]))
-        self.assertIn('Ran 7 tests', run_unittest(['-k', '*test_warnings.*Warning*', t]))
-        self.assertIn('Ran 1 test', run_unittest(['-k', '*test_warnings.*warning*', t]))
+        self.assertIn('Ran 5 tests', run_unittest([t]))
+        self.assertIn('Ran 5 tests', run_unittest(['-k', 'TestWarnings', t]))
+        self.assertIn('Ran 5 tests', run_unittest(['discover', '-p', '*_test*', '-k', 'TestWarnings']))
+        self.assertIn('Ran 1 test ', run_unittest(['-k', 'f', t]))
+        self.assertIn('Ran 5 tests', run_unittest(['-k', 't', t]))
+        self.assertIn('Ran 2 tests', run_unittest(['-k', '*t', t]))
+        self.assertIn('Ran 5 tests', run_unittest(['-k', '*test_warnings.*Warning*', t]))
+        self.assertIn('Ran 1 test ', run_unittest(['-k', '*test_warnings.*warning*', t]))
 
 
 if __name__ == '__main__':

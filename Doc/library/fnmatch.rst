@@ -16,6 +16,13 @@ This module provides support for Unix shell-style wildcards, which are *not* the
 same as regular expressions (which are documented in the :mod:`re` module).  The
 special characters used in shell-style wildcards are:
 
+.. index::
+   single: * (asterisk); in glob-style wildcards
+   single: ? (question mark); in glob-style wildcards
+   single: [] (square brackets); in glob-style wildcards
+   single: ! (exclamation); in glob-style wildcards
+   single: - (minus); in glob-style wildcards
+
 +------------+------------------------------------+
 | Pattern    | Meaning                            |
 +============+====================================+
@@ -35,10 +42,13 @@ For example, ``'[?]'`` matches the character ``'?'``.
 
 Note that the filename separator (``'/'`` on Unix) is *not* special to this
 module.  See module :mod:`glob` for pathname expansion (:mod:`glob` uses
-:func:`fnmatch` to match pathname segments).  Similarly, filenames starting with
+:func:`.filter` to match pathname segments).  Similarly, filenames starting with
 a period are not special for this module, and are matched by the ``*`` and ``?``
 patterns.
 
+Also note that :func:`functools.lru_cache` with the *maxsize* of 32768 is used to
+cache the compiled regex patterns in the following functions: :func:`fnmatch`,
+:func:`fnmatchcase`, :func:`filter`.
 
 .. function:: fnmatch(filename, pattern)
 
@@ -68,7 +78,7 @@ patterns.
 
 .. function:: filter(names, pattern)
 
-   Return the subset of the list of *names* that match *pattern*. It is the same as
+   Construct a list from those elements of the iterable *names* that match *pattern*. It is the same as
    ``[n for n in names if fnmatch(n, pattern)]``, but implemented more efficiently.
 
 

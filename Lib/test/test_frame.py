@@ -1,4 +1,5 @@
 import re
+import sys
 import types
 import unittest
 import weakref
@@ -44,13 +45,26 @@ class ClearTest(unittest.TestCase):
         # The reference was released by .clear()
         self.assertIs(None, wr())
 
+    def test_clear_does_not_clear_specials(self):
+        class C:
+            pass
+        c = C()
+        exc = self.outer(c=c)
+        del c
+        f = exc.__traceback__.tb_frame
+        f.clear()
+        self.assertIsNot(f.f_code, None)
+        self.assertIsNot(f.f_locals, None)
+        self.assertIsNot(f.f_builtins, None)
+        self.assertIsNot(f.f_globals, None)
+
     def test_clear_generator(self):
         endly = False
         def g():
             nonlocal endly
             try:
                 yield
-                inner()
+                self.inner()
             finally:
                 endly = True
         gen = g()
@@ -94,6 +108,26 @@ class ClearTest(unittest.TestCase):
         f.clear()
         self.assertTrue(endly)
 
+    def test_lineno_with_tracing(self):
+        def record_line():
+            f = sys._getframe(1)
+            lines.append(f.f_lineno-f.f_code.co_firstlineno)
+
+        def test(trace):
+            record_line()
+            if trace:
+                sys._getframe(0).f_trace = True
+            record_line()
+            record_line()
+
+        expected_lines = [1, 4, 5]
+        lines = []
+        test(False)
+        self.assertEqual(lines, expected_lines)
+        lines = []
+        test(True)
+        self.assertEqual(lines, expected_lines)
+
     @support.cpython_only
     def test_clear_refcycles(self):
         # .clear() doesn't leave any refcycle behind
@@ -109,10 +143,7 @@ class ClearTest(unittest.TestCase):
             self.assertIs(None, wr())
 
 
-class FrameLocalsTest(unittest.TestCase):
-    """
-    Tests for the .f_locals attribute.
-    """
+class FrameAttrsTest(unittest.TestCase):
 
     def make_frames(self):
         def outer():
@@ -158,6 +189,11 @@ class FrameLocalsTest(unittest.TestCase):
         inner.clear()
         self.assertEqual(outer.f_locals, {})
         self.assertEqual(inner.f_locals, {})
+
+    def test_f_lineno_del_segfault(self):
+        f, _, _ = self.make_frames()
+        with self.assertRaises(AttributeError):
+            del f.f_lineno
 
 
 class ReprTest(unittest.TestCase):

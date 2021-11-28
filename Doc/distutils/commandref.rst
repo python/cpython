@@ -4,6 +4,8 @@
 Command Reference
 *****************
 
+.. include:: ./_setuptools_disclaimer.rst
+
 .. % \section{Building modules: the \protect\command{build} command family}
 .. % \label{build-cmds}
 .. % \subsubsection{\protect\command{build}}
@@ -99,6 +101,5 @@ anything except backslash or colon.
 .. % \subsection{\protect\command{bdist}}
 .. % \subsection{\protect\command{bdist\_dumb}}
 .. % \subsection{\protect\command{bdist\_rpm}}
-.. % \subsection{\protect\command{bdist\_wininst}}
 
 

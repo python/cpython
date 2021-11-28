@@ -2,6 +2,7 @@ import os
 import sys
 import unittest
 import test.support as test_support
+from test.support import os_helper
 from tkinter import Tcl, TclError
 
 test_support.requires('gui')
@@ -24,7 +25,7 @@ class TkLoadTest(unittest.TestCase):
             # XXX Maybe on tk older than 8.4.13 it would be possible,
             # see tkinter.h.
             return
-        with test_support.EnvironmentVarGuard() as env:
+        with os_helper.EnvironmentVarGuard() as env:
             if 'DISPLAY' in os.environ:
                 del env['DISPLAY']
                 # on some platforms, deleting environment variables
@@ -40,7 +41,6 @@ class TkLoadTest(unittest.TestCase):
             self.assertRaises(TclError, tcl.winfo_geometry)
             self.assertRaises(TclError, tcl.loadtk)
 
-tests_gui = (TkLoadTest, )
 
 if __name__ == "__main__":
-    test_support.run_unittest(*tests_gui)
+    unittest.main()

@@ -1,5 +1,6 @@
 import unittest
 from test import support
+from test.support import import_helper
 import binascii
 import copy
 import pickle
@@ -7,7 +8,8 @@ import random
 import sys
 from test.support import bigmemtest, _1G, _4G
 
-zlib = support.import_module('zlib')
+
+zlib = import_helper.import_module('zlib')
 
 requires_Compress_copy = unittest.skipUnless(
         hasattr(zlib.compressobj(), "copy"),
@@ -127,6 +129,12 @@ class ExceptionTestCase(unittest.TestCase):
         with self.assertRaisesRegex(OverflowError, 'int too large'):
             zlib.decompressobj().flush(sys.maxsize + 1)
 
+    @support.cpython_only
+    def test_disallow_instantiation(self):
+        # Ensure that the type disallows instantiation (bpo-43916)
+        support.check_disallow_instantiation(self, type(zlib.compressobj()))
+        support.check_disallow_instantiation(self, type(zlib.decompressobj()))
+
 
 class BaseCompressTestCase(object):
     def check_big_compress_buffer(self, size, compress_func):
@@ -134,8 +142,7 @@ class BaseCompressTestCase(object):
         # Generate 10 MiB worth of random, and expand it by repeating it.
         # The assumption is that zlib's memory is not big enough to exploit
         # such spread out redundancy.
-        data = b''.join([random.getrandbits(8 * _1M).to_bytes(_1M, 'little')
-                        for i in range(10)])
+        data = random.randbytes(_1M * 10)
         data = data * (size // len(data) + 1)
         try:
             compress_func(data)
@@ -436,18 +443,29 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         # Test flush() with the various options, using all the
         # different levels in order to provide more variations.
         sync_opt = ['Z_NO_FLUSH', 'Z_SYNC_FLUSH', 'Z_FULL_FLUSH',
-                    'Z_PARTIAL_FLUSH', 'Z_BLOCK']
+                    'Z_PARTIAL_FLUSH']
+
+        ver = tuple(int(v) for v in zlib.ZLIB_RUNTIME_VERSION.split('.'))
+        # Z_BLOCK has a known failure prior to 1.2.5.3
+        if ver >= (1, 2, 5, 3):
+            sync_opt.append('Z_BLOCK')
+
         sync_opt = [getattr(zlib, opt) for opt in sync_opt
                     if hasattr(zlib, opt)]
         data = HAMLET_SCENE * 8
 
         for sync in sync_opt:
             for level in range(10):
-                obj = zlib.compressobj( level )
-                a = obj.compress( data[:3000] )
-                b = obj.flush( sync )
-                c = obj.compress( data[3000:] )
-                d = obj.flush()
+                try:
+                    obj = zlib.compressobj( level )
+                    a = obj.compress( data[:3000] )
+                    b = obj.flush( sync )
+                    c = obj.compress( data[3000:] )
+                    d = obj.flush()
+                except:
+                    print("Error for flush mode={}, level={}"
+                          .format(sync, level))
+                    raise
                 self.assertEqual(zlib.decompress(b''.join([a,b,c,d])),
                                  data, ("Decompress failed: flush "
                                         "mode=%i, level=%i") % (sync, level))
@@ -477,7 +495,7 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
                 # others might simply have a single RNG
                 gen = random
         gen.seed(1)
-        data = genblock(1, 17 * 1024, generator=gen)
+        data = gen.randbytes(17 * 1024)
 
         # compress, sync-flush, and decompress
         first = co.compress(data)
@@ -813,20 +831,13 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         dco = zlib.decompressobj(32 + 15)
         self.assertEqual(dco.decompress(gzip), HAMLET_SCENE)
 
-
-def genblock(seed, length, step=1024, generator=random):
-    """length-byte stream of random data from a seed (in step-byte blocks)."""
-    if seed is not None:
-        generator.seed(seed)
-    randint = generator.randint
-    if length < step or step < 2:
-        step = length
-    blocks = bytes()
-    for i in range(0, length, step):
-        blocks += bytes(randint(0, 255) for x in range(step))
-    return blocks
-
-
+        for wbits in (-15, 15, 31):
+            with self.subTest(wbits=wbits):
+                expected = HAMLET_SCENE
+                actual = zlib.decompress(
+                    zlib.compress(HAMLET_SCENE, wbits=wbits), wbits=wbits
+                )
+                self.assertEqual(expected, actual)
 
 def choose_lines(source, number, seed=None, generator=random):
     """Return a list of number lines randomly chosen from the source"""
@@ -834,7 +845,6 @@ def choose_lines(source, number, seed=None, generator=random):
         generator.seed(seed)
     sources = source.split('\n')
     return [generator.choice(sources) for n in range(number)]
-
 
 
 HAMLET_SCENE = b"""
@@ -903,7 +913,7 @@ LAERTES
 
 
 class CustomInt:
-    def __int__(self):
+    def __index__(self):
         return 100
 
 

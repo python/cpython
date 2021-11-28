@@ -99,15 +99,16 @@ active; it will never call dnd_commit().
 
 """
 
-
 import tkinter
+
+__all__ = ["dnd_start", "DndHandler"]
 
 
 # The factory function
 
 def dnd_start(source, event):
     h = DndHandler(source, event)
-    if h.root:
+    if h.root is not None:
         return h
     else:
         return None
@@ -142,7 +143,7 @@ class DndHandler:
     def __del__(self):
         root = self.root
         self.root = None
-        if root:
+        if root is not None:
             try:
                 del root.__dnd
             except AttributeError:
@@ -153,25 +154,25 @@ class DndHandler:
         target_widget = self.initial_widget.winfo_containing(x, y)
         source = self.source
         new_target = None
-        while target_widget:
+        while target_widget is not None:
             try:
                 attr = target_widget.dnd_accept
             except AttributeError:
                 pass
             else:
                 new_target = attr(source, event)
-                if new_target:
+                if new_target is not None:
                     break
             target_widget = target_widget.master
         old_target = self.target
         if old_target is new_target:
-            if old_target:
+            if old_target is not None:
                 old_target.dnd_motion(source, event)
         else:
-            if old_target:
+            if old_target is not None:
                 self.target = None
                 old_target.dnd_leave(source, event)
-            if new_target:
+            if new_target is not None:
                 new_target.dnd_enter(source, event)
                 self.target = new_target
 
@@ -192,14 +193,13 @@ class DndHandler:
             self.initial_widget.unbind("<Motion>")
             widget['cursor'] = self.save_cursor
             self.target = self.source = self.initial_widget = self.root = None
-            if target:
+            if target is not None:
                 if commit:
                     target.dnd_commit(source, event)
                 else:
                     target.dnd_leave(source, event)
         finally:
             source.dnd_end(target, event)
-
 
 
 # ----------------------------------------------------------------------
@@ -215,9 +215,9 @@ class Icon:
         if canvas is self.canvas:
             self.canvas.coords(self.id, x, y)
             return
-        if self.canvas:
+        if self.canvas is not None:
             self.detach()
-        if not canvas:
+        if canvas is None:
             return
         label = tkinter.Label(canvas, text=self.name,
                               borderwidth=2, relief="raised")
@@ -229,7 +229,7 @@ class Icon:
 
     def detach(self):
         canvas = self.canvas
-        if not canvas:
+        if canvas is None:
             return
         id = self.id
         label = self.label
@@ -265,6 +265,7 @@ class Icon:
     def dnd_end(self, target, event):
         pass
 
+
 class Tester:
 
     def __init__(self, root):
@@ -299,6 +300,7 @@ class Tester:
         x, y = source.where(self.canvas, event)
         source.attach(self.canvas, x, y)
 
+
 def test():
     root = tkinter.Tk()
     root.geometry("+1+1")
@@ -316,6 +318,7 @@ def test():
     i2.attach(t2.canvas)
     i3.attach(t3.canvas)
     root.mainloop()
+
 
 if __name__ == '__main__':
     test()

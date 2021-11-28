@@ -40,12 +40,12 @@ class TestRlcompleter(unittest.TestCase):
 
         # test with a customized namespace
         self.assertEqual(self.completer.global_matches('CompleteM'),
-                         ['CompleteMe('])
+                         ['CompleteMe()'])
         self.assertEqual(self.completer.global_matches('eg'),
                          ['egg('])
         # XXX: see issue5256
         self.assertEqual(self.completer.global_matches('CompleteM'),
-                         ['CompleteMe('])
+                         ['CompleteMe()'])
 
     def test_attr_matches(self):
         # test with builtins namespace
@@ -64,7 +64,7 @@ class TestRlcompleter(unittest.TestCase):
                          ['CompleteMe.spam'])
         self.assertEqual(self.completer.attr_matches('Completeme.egg'), [])
         self.assertEqual(self.completer.attr_matches('CompleteMe.'),
-                         ['CompleteMe.mro(', 'CompleteMe.spam'])
+                         ['CompleteMe.mro()', 'CompleteMe.spam'])
         self.assertEqual(self.completer.attr_matches('CompleteMe._'),
                          ['CompleteMe._ham'])
         matches = self.completer.attr_matches('CompleteMe.__')
@@ -81,17 +81,41 @@ class TestRlcompleter(unittest.TestCase):
                               if x.startswith('s')])
 
     def test_excessive_getattr(self):
-        # Ensure getattr() is invoked no more than once per attribute
+        """Ensure getattr() is invoked no more than once per attribute"""
+
+        # note the special case for @property methods below; that is why
+        # we use __dir__ and __getattr__ in class Foo to create a "magic"
+        # class attribute 'bar'. This forces `getattr` to call __getattr__
+        # (which is doesn't necessarily do).
         class Foo:
             calls = 0
-            @property
-            def bar(self):
-                self.calls += 1
-                return None
+            bar = ''
+            def __getattribute__(self, name):
+                if name == 'bar':
+                    self.calls += 1
+                    return None
+                return super().__getattribute__(name)
+
         f = Foo()
         completer = rlcompleter.Completer(dict(f=f))
         self.assertEqual(completer.complete('f.b', 0), 'f.bar')
         self.assertEqual(f.calls, 1)
+
+    def test_property_method_not_called(self):
+        class Foo:
+            _bar = 0
+            property_called = False
+
+            @property
+            def bar(self):
+                self.property_called = True
+                return self._bar
+
+        f = Foo()
+        completer = rlcompleter.Completer(dict(f=f))
+        self.assertEqual(completer.complete('f.b', 0), 'f.bar')
+        self.assertFalse(f.property_called)
+
 
     def test_uncreated_attr(self):
         # Attributes like properties and slots should be completed even when
@@ -134,7 +158,7 @@ class TestRlcompleter(unittest.TestCase):
         # No opening bracket "(" because we overrode the built-in class
         self.assertEqual(completer.complete('memoryview', 0), 'memoryview')
         self.assertIsNone(completer.complete('memoryview', 1))
-        self.assertEqual(completer.complete('Ellipsis', 0), 'Ellipsis(')
+        self.assertEqual(completer.complete('Ellipsis', 0), 'Ellipsis()')
         self.assertIsNone(completer.complete('Ellipsis', 1))
 
 if __name__ == '__main__':

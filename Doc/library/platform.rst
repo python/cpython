@@ -42,7 +42,7 @@ Cross Platform
 
    .. note::
 
-      On Mac OS X (and perhaps other platforms), executable files may be
+      On macOS (and perhaps other platforms), executable files may be
       universal files containing multiple architectures.
 
       To get at the "64-bitness" of the current interpreter, it is more
@@ -78,6 +78,11 @@ Cross Platform
 
    Setting *terse* to true causes the function to return only the absolute minimum
    information needed to identify the platform.
+
+   .. versionchanged:: 3.8
+      On macOS, the function now uses :func:`mac_ver`, if it returns a
+      non-empty release string, to get the macOS version rather than the darwin
+      version.
 
 
 .. function:: processor()
@@ -140,8 +145,8 @@ Cross Platform
 
 .. function:: system()
 
-   Returns the system/OS name, e.g. ``'Linux'``, ``'Windows'``, or ``'Java'``. An
-   empty string is returned if the value cannot be determined.
+   Returns the system/OS name, such as ``'Linux'``, ``'Darwin'``, ``'Java'``,
+   ``'Windows'``. An empty string is returned if the value cannot be determined.
 
 
 .. function:: system_alias(system, release, version)
@@ -204,35 +209,29 @@ Windows Platform
    which means the OS version uses debugging code, i.e. code that checks arguments,
    ranges, etc.
 
-   .. note::
+.. function:: win32_edition()
 
-      This function works best with Mark Hammond's
-      :mod:`win32all` package installed, but also on Python 2.3 and
-      later (support for this was added in Python 2.6). It obviously
-      only runs on Win32 compatible platforms.
+   Returns a string representing the current Windows edition.  Possible
+   values include but are not limited to ``'Enterprise'``, ``'IoTUAP'``,
+   ``'ServerStandard'``, and ``'nanoserver'``.
 
+   .. versionadded:: 3.8
 
-Win95/98 specific
-^^^^^^^^^^^^^^^^^
+.. function:: win32_is_iot()
 
-.. function:: popen(cmd, mode='r', bufsize=-1)
+   Return ``True`` if the Windows edition returned by :func:`win32_edition`
+   is recognized as an IoT edition.
 
-   Portable :func:`popen` interface.  Find a working popen implementation
-   preferring :func:`win32pipe.popen`.  On Windows NT, :func:`win32pipe.popen`
-   should work; on Windows 9x it hangs due to bugs in the MS C library.
-
-   .. deprecated:: 3.3
-      This function is obsolete.  Use the :mod:`subprocess` module.  Check
-      especially the :ref:`subprocess-replacements` section.
+   .. versionadded:: 3.8
 
 
-Mac OS Platform
----------------
+macOS Platform
+--------------
 
 
 .. function:: mac_ver(release='', versioninfo=('','',''), machine='')
 
-   Get Mac OS version information and return it as tuple ``(release, versioninfo,
+   Get macOS version information and return it as tuple ``(release, versioninfo,
    machine)`` with *versioninfo* being a tuple ``(version, dev_stage,
    non_release_version)``.
 
@@ -255,3 +254,40 @@ Unix Platforms
 
    The file is read and scanned in chunks of *chunksize* bytes.
 
+
+Linux Platforms
+---------------
+
+.. function:: freedesktop_os_release()
+
+   Get operating system identification from ``os-release`` file and return
+   it as a dict. The ``os-release`` file is a `freedesktop.org standard
+   <https://www.freedesktop.org/software/systemd/man/os-release.html>`_ and
+   is available in most Linux distributions. A noticeable exception is
+   Android and Android-based distributions.
+
+   Raises :exc:`OSError` or subclass when neither ``/etc/os-release`` nor
+   ``/usr/lib/os-release`` can be read.
+
+   On success, the function returns a dictionary where keys and values are
+   strings. Values have their special characters like ``"`` and ``$``
+   unquoted. The fields ``NAME``, ``ID``, and ``PRETTY_NAME`` are always
+   defined according to the standard. All other fields are optional. Vendors
+   may include additional fields.
+
+   Note that fields like ``NAME``, ``VERSION``, and ``VARIANT`` are strings
+   suitable for presentation to users. Programs should use fields like
+   ``ID``, ``ID_LIKE``, ``VERSION_ID``, or ``VARIANT_ID`` to identify
+   Linux distributions.
+
+   Example::
+
+      def get_like_distro():
+          info = platform.freedesktop_os_release()
+          ids = [info["ID"]]
+          if "ID_LIKE" in info:
+              # ids are space separated and ordered by precedence
+              ids.extend(info["ID_LIKE"].split())
+          return ids
+
+   .. versionadded:: 3.10

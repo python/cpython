@@ -699,6 +699,9 @@ class LongTest(unittest.TestCase):
         self.assertRaisesRegex(ValueError, 'Cannot specify both', format, 3, '_,d')
         self.assertRaisesRegex(ValueError, 'Cannot specify both', format, 3, ',_d')
 
+        self.assertRaisesRegex(ValueError, "Cannot specify ',' with 's'", format, 3, ',s')
+        self.assertRaisesRegex(ValueError, "Cannot specify '_' with 's'", format, 3, '_s')
+
         # ensure that only int and float type specifiers work
         for format_spec in ([chr(x) for x in range(ord('a'), ord('z')+1)] +
                             [chr(x) for x in range(ord('A'), ord('Z')+1)]):
@@ -953,6 +956,14 @@ class LongTest(unittest.TestCase):
         self.assertEqual(huge >> (sys.maxsize + 1), (1 << 499) + 5)
         self.assertEqual(huge >> (sys.maxsize + 1000), 0)
 
+    @support.cpython_only
+    def test_small_ints_in_huge_calculation(self):
+        a = 2 ** 100
+        b = -a + 1
+        c = a + 1
+        self.assertIs(a + b, 1)
+        self.assertIs(c - a, 1)
+
     def test_small_ints(self):
         for i in range(-5, 257):
             self.assertIs(i, i + 0)
@@ -1004,6 +1015,17 @@ class LongTest(unittest.TestCase):
             self.assertEqual((-a).bit_length(), i+1)
             self.assertEqual((a+1).bit_length(), i+1)
             self.assertEqual((-a-1).bit_length(), i+1)
+
+    def test_bit_count(self):
+        for a in range(-1000, 1000):
+            self.assertEqual(a.bit_count(), bin(a).count("1"))
+
+        for exp in [10, 17, 63, 64, 65, 1009, 70234, 1234567]:
+            a = 2**exp
+            self.assertEqual(a.bit_count(), 1)
+            self.assertEqual((a - 1).bit_count(), exp)
+            self.assertEqual((a ^ 63).bit_count(), 7)
+            self.assertEqual(((a - 1) ^ 510).bit_count(), exp - 8)
 
     def test_round(self):
         # check round-half-even algorithm. For round to nearest ten;
@@ -1081,6 +1103,13 @@ class LongTest(unittest.TestCase):
 
     def test_to_bytes(self):
         def check(tests, byteorder, signed=False):
+            def equivalent_python(n, length, byteorder, signed=False):
+                if byteorder == 'little':
+                    order = range(length)
+                elif byteorder == 'big':
+                    order = reversed(range(length))
+                return bytes((n >> i*8) & 0xff for i in order)
+
             for test, expected in tests.items():
                 try:
                     self.assertEqual(
@@ -1088,8 +1117,29 @@ class LongTest(unittest.TestCase):
                         expected)
                 except Exception as err:
                     raise AssertionError(
-                        "failed to convert {0} with byteorder={1} and signed={2}"
+                        "failed to convert {} with byteorder={} and signed={}"
                         .format(test, byteorder, signed)) from err
+
+                # Test for all default arguments.
+                if len(expected) == 1 and byteorder == 'big' and not signed:
+                    try:
+                        self.assertEqual(test.to_bytes(), expected)
+                    except Exception as err:
+                        raise AssertionError(
+                            "failed to convert {} with default arguments"
+                            .format(test)) from err
+
+                try:
+                    self.assertEqual(
+                        equivalent_python(
+                            test, len(expected), byteorder, signed=signed),
+                        expected
+                    )
+                except Exception as err:
+                    raise AssertionError(
+                        "Code equivalent from docs is not equivalent for "
+                        "conversion of {0} with byteorder byteorder={1} and "
+                        "signed={2}".format(test, byteorder, signed)) from err
 
         # Convert integers to signed big-endian byte arrays.
         tests1 = {
@@ -1180,6 +1230,18 @@ class LongTest(unittest.TestCase):
 
     def test_from_bytes(self):
         def check(tests, byteorder, signed=False):
+            def equivalent_python(byte_array, byteorder, signed=False):
+                if byteorder == 'little':
+                    little_ordered = list(byte_array)
+                elif byteorder == 'big':
+                    little_ordered = list(reversed(byte_array))
+
+                n = sum(b << i*8 for i, b in enumerate(little_ordered))
+                if signed and little_ordered and (little_ordered[-1] & 0x80):
+                    n -= 1 << 8*len(little_ordered)
+
+                return n
+
             for test, expected in tests.items():
                 try:
                     self.assertEqual(
@@ -1187,7 +1249,29 @@ class LongTest(unittest.TestCase):
                         expected)
                 except Exception as err:
                     raise AssertionError(
-                        "failed to convert {0} with byteorder={1!r} and signed={2}"
+                        "failed to convert {} with byteorder={!r} and signed={}"
+                        .format(test, byteorder, signed)) from err
+
+                # Test for all default arguments.
+                if byteorder == 'big' and not signed:
+                    try:
+                        self.assertEqual(
+                            int.from_bytes(test),
+                            expected)
+                    except Exception as err:
+                        raise AssertionError(
+                            "failed to convert {} with default arguments"
+                            .format(test)) from err
+
+                try:
+                    self.assertEqual(
+                        equivalent_python(test, byteorder, signed=signed),
+                        expected
+                    )
+                except Exception as err:
+                    raise AssertionError(
+                        "Code equivalent from docs is not equivalent for "
+                        "conversion of {0} with byteorder={1!r} and signed={2}"
                         .format(test, byteorder, signed)) from err
 
         # Convert signed big-endian byte arrays to integers.
@@ -1348,6 +1432,16 @@ class LongTest(unittest.TestCase):
             for shift in (0, 2):
                 self.assertEqual(type(value << shift), int)
                 self.assertEqual(type(value >> shift), int)
+
+    def test_as_integer_ratio(self):
+        class myint(int):
+            pass
+        tests = [10, 0, -10, 1, sys.maxsize + 1, True, False, myint(42)]
+        for value in tests:
+            numerator, denominator = value.as_integer_ratio()
+            self.assertEqual((numerator, denominator), (int(value), 1))
+            self.assertEqual(type(numerator), int)
+            self.assertEqual(type(denominator), int)
 
 
 if __name__ == "__main__":

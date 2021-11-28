@@ -13,10 +13,10 @@
 #include <fcntl.h>
 
  /* The full definition is in iomodule. We reproduce
- enough here to get the handle, which is all we want. */
+ enough here to get the fd, which is all we want. */
 typedef struct {
     PyObject_HEAD
-    HANDLE handle;
+    int fd;
 } winconsoleio;
 
 
@@ -55,20 +55,22 @@ _testconsole_write_input_impl(PyObject *module, PyObject *file,
     const wchar_t *p = (const wchar_t *)PyBytes_AS_STRING(s);
     DWORD size = (DWORD)PyBytes_GET_SIZE(s) / sizeof(wchar_t);
 
-    rec = (INPUT_RECORD*)PyMem_Malloc(sizeof(INPUT_RECORD) * size);
+    rec = (INPUT_RECORD*)PyMem_Calloc(size, sizeof(INPUT_RECORD));
     if (!rec)
         goto error;
-    memset(rec, 0, sizeof(INPUT_RECORD) * size);
 
     INPUT_RECORD *prec = rec;
     for (DWORD i = 0; i < size; ++i, ++p, ++prec) {
         prec->EventType = KEY_EVENT;
         prec->Event.KeyEvent.bKeyDown = TRUE;
-        prec->Event.KeyEvent.wRepeatCount = 10;
+        prec->Event.KeyEvent.wRepeatCount = 1;
         prec->Event.KeyEvent.uChar.UnicodeChar = *p;
     }
 
-    HANDLE hInput = ((winconsoleio*)file)->handle;
+    HANDLE hInput = _Py_get_osfhandle(((winconsoleio*)file)->fd);
+    if (hInput == INVALID_HANDLE_VALUE)
+        goto error;
+
     DWORD total = 0;
     while (total < size) {
         DWORD wrote;

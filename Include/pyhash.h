@@ -7,8 +7,10 @@ extern "C" {
 
 /* Helpers for hash functions */
 #ifndef Py_LIMITED_API
-PyAPI_FUNC(Py_hash_t) _Py_HashDouble(double);
-PyAPI_FUNC(Py_hash_t) _Py_HashPointer(void*);
+PyAPI_FUNC(Py_hash_t) _Py_HashDouble(PyObject *, double);
+PyAPI_FUNC(Py_hash_t) _Py_HashPointer(const void*);
+// Similar to _Py_HashPointer(), but don't replace -1 with -2
+PyAPI_FUNC(Py_hash_t) _Py_HashPointerRaw(const void*);
 PyAPI_FUNC(Py_hash_t) _Py_HashBytes(const void*, Py_ssize_t);
 #endif
 
@@ -27,7 +29,6 @@ PyAPI_FUNC(Py_hash_t) _Py_HashBytes(const void*, Py_ssize_t);
 
 #define _PyHASH_MODULUS (((size_t)1 << _PyHASH_BITS) - 1)
 #define _PyHASH_INF 314159
-#define _PyHASH_NAN 0
 #define _PyHASH_IMAG _PyHASH_MULTIPLIER
 
 
@@ -75,7 +76,6 @@ typedef union {
     } expat;
 } _Py_HashSecret_t;
 PyAPI_DATA(_Py_HashSecret_t) _Py_HashSecret;
-#endif
 
 #ifdef Py_DEBUG
 PyAPI_DATA(int) _Py_HashSecret_Initialized;
@@ -83,7 +83,6 @@ PyAPI_DATA(int) _Py_HashSecret_Initialized;
 
 
 /* hash function definition */
-#ifndef Py_LIMITED_API
 typedef struct {
     Py_hash_t (*const hash)(const void *, Py_ssize_t);
     const char *name;
@@ -115,11 +114,10 @@ PyAPI_FUNC(PyHash_FuncDef*) PyHash_GetFuncDef(void);
 
 /* hash algorithm selection
  *
- * The values for Py_HASH_SIPHASH24 and Py_HASH_FNV are hard-coded in the
+ * The values for Py_HASH_* are hard-coded in the
  * configure script.
  *
- * - FNV is available on all platforms and architectures.
- * - SIPHASH24 only works on plaforms that don't require aligned memory for integers.
+ * - FNV and SIPHASH* are available on all platforms and architectures.
  * - With EXTERNAL embedders can provide an alternative implementation with::
  *
  *     PyHash_FuncDef PyHash_Func = {...};
@@ -129,10 +127,11 @@ PyAPI_FUNC(PyHash_FuncDef*) PyHash_GetFuncDef(void);
 #define Py_HASH_EXTERNAL 0
 #define Py_HASH_SIPHASH24 1
 #define Py_HASH_FNV 2
+#define Py_HASH_SIPHASH13 3
 
 #ifndef Py_HASH_ALGORITHM
 #  ifndef HAVE_ALIGNED_REQUIRED
-#    define Py_HASH_ALGORITHM Py_HASH_SIPHASH24
+#    define Py_HASH_ALGORITHM Py_HASH_SIPHASH13
 #  else
 #    define Py_HASH_ALGORITHM Py_HASH_FNV
 #  endif /* uint64_t && uint32_t && aligned */
