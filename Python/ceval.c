@@ -3709,7 +3709,6 @@ check_eval_breaker:
             assert(cframe.use_tracing == 0);
             // Combined: COMPARE_OP (float ? float) + POP_JUMP_IF_(true/false)
             SpecializedCacheEntry *caches = GET_CACHE();
-            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
             int mask = caches[-1].compare.mask;
             PyObject *right = TOP();
             PyObject *left = SECOND();
@@ -3742,7 +3741,6 @@ check_eval_breaker:
             assert(cframe.use_tracing == 0);
             // Combined: COMPARE_OP (int ? int) + POP_JUMP_IF_(true/false)
             SpecializedCacheEntry *caches = GET_CACHE();
-            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
             int mask = caches[-1].compare.mask;
             PyObject *right = TOP();
             PyObject *left = SECOND();
@@ -3774,7 +3772,6 @@ check_eval_breaker:
             assert(cframe.use_tracing == 0);
             // Combined: COMPARE_OP (str == str or str != str) + POP_JUMP_IF_(true/false)
             SpecializedCacheEntry *caches = GET_CACHE();
-            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
             int mask = caches[-1].compare.mask;
             PyObject *right = TOP();
             PyObject *left = SECOND();
@@ -3783,7 +3780,8 @@ check_eval_breaker:
             DEOPT_IF(!PyUnicode_IS_READY(left), COMPARE_OP);
             DEOPT_IF(!PyUnicode_IS_READY(right), COMPARE_OP);
             STAT_INC(COMPARE_OP, hit);
-            assert(cache0->original_oparg == Py_EQ || cache0->original_oparg == Py_NE);
+            assert(caches[0].adaptive.original_oparg == Py_EQ ||
+                   caches[0].adaptive.original_oparg == Py_NE);
             NEXTOPARG();
             assert(opcode == POP_JUMP_IF_TRUE || opcode == POP_JUMP_IF_FALSE);
             int cmp = Py_Is(left, right) || _PyUnicode_EQ(left, right);
