@@ -120,9 +120,8 @@ The module defines the following items:
    .. method:: peek(n)
 
       Read *n* uncompressed bytes without advancing the file position.
-      At most one single read on the compressed stream is done to satisfy
-      the call.  The number of bytes returned may be more or less than
-      requested.
+      Read on the compressed stream is done to satisfythe call. The
+      number of bytes returned may be more or less than requested.
 
       .. note:: While calling :meth:`peek` does not change the file position of
          the :class:`GzipFile`, it may change the position of the underlying
