@@ -269,6 +269,7 @@ threading
   by system clock changes.
   (Contributed by Victor Stinner in :issue:`41710`.)
 
+
 time
 ----
 
@@ -278,10 +279,13 @@ time
   of 1 microsecond (10\ :sup:`-6` seconds).
   (Contributed by Benjamin Szőke and Victor Stinner in :issue:`21302`.)
 
-* On Windows, :func:`time.sleep` now uses a waitable timer which has a
-  resolution of 100 nanoseconds (10\ :sup:`-7` seconds). Previously, it had
-  a resolution of 1 millisecond (10\ :sup:`-3` seconds).
-  (Contributed by Benjamin Szőke and Victor Stinner in :issue:`21302`.)
+* On Windows 8.1 and newer, :func:`time.sleep` now uses a waitable timer based
+  on `high-resolution timers
+  <https://docs.microsoft.com/en-us/windows-hardware/drivers/kernel/high-resolution-timers>`_
+  which has a resolution of 100 nanoseconds (10\ :sup:`-7` seconds). Previously,
+  it had a resolution of 1 millisecond (10\ :sup:`-3` seconds).
+  (Contributed by Benjamin Szőke, Dong-hee Na, Eryk Sun and Victor Stinner in :issue:`21302` and :issue:`45429`.)
+
 
 unicodedata
 -----------
@@ -365,6 +369,11 @@ Deprecated
 
   (Contributed by Erlend E. Aasland in :issue:`5846`.)
 
+* The :meth:`turtle.RawTurtle.settiltangle` is deprecated since Python 3.1,
+  it now emits a deprecation warning and will be removed in Python 3.13. Use
+  :meth:`turtle.RawTurtle.tiltangle` instead (it was earlier incorrectly marked
+  as deprecated, its docstring is now corrected).
+  (Contributed by Hugo van Kemenade in :issue:`45837`.)
 
 Removed
 =======
@@ -467,6 +476,15 @@ Removed
     instead.
 
   (Contributed by Hugo van Kemenade in :issue:`45320`.)
+
+* Remove the ``asyncore`` and ``asynchat`` modules, deprecated in Python 3.6:
+  use the :mod:`asyncio` module instead.
+  (Contributed by Victor Stinner in :issue:`28533`.)
+
+* Remove the ``smtpd`` module, deprecated in Python 3.6: the `aiosmtpd
+  <https://aiosmtpd.readthedocs.io/>`__ module can be used instead, it is based
+  on asyncio.
+  (Contributed by Victor Stinner in :issue:`28533`.)
 
 
 Porting to Python 3.11

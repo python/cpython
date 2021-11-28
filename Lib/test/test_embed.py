@@ -35,6 +35,13 @@ INIT_LOOPS = 16
 MAX_HASH_SEED = 4294967295
 
 
+# If we are running from a build dir, but the stdlib has been installed,
+# some tests need to expect different results.
+STDLIB_INSTALL = os.path.join(sys.prefix, sys.platlibdir,
+    f'python{sys.version_info.major}.{sys.version_info.minor}')
+if not os.path.isfile(os.path.join(STDLIB_INSTALL, 'os.py')):
+    STDLIB_INSTALL = None
+
 def debug_build(program):
     program = os.path.basename(program)
     name = os.path.splitext(program)[0]
@@ -1307,10 +1314,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 'base_executable': executable,
                 'executable': executable,
                 'module_search_paths': module_search_paths,
-                # The current getpath.c doesn't determine the stdlib dir
-                # in this case.
-                'stdlib_dir': None,
-                'use_frozen_modules': -1,
+                'stdlib_dir': STDLIB_INSTALL,
+                'use_frozen_modules': 1 if STDLIB_INSTALL else -1,
             }
             env = self.copy_paths_by_env(config)
             self.check_all_configs("test_init_compat_config", config,
@@ -1381,8 +1386,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             else:
                 # The current getpath.c doesn't determine the stdlib dir
                 # in this case.
-                config['stdlib_dir'] = None
-                config['use_frozen_modules'] = -1
+                config['stdlib_dir'] = STDLIB_INSTALL
+                config['use_frozen_modules'] = 1 if STDLIB_INSTALL else -1
 
             env = self.copy_paths_by_env(config)
             self.check_all_configs("test_init_compat_config", config,
