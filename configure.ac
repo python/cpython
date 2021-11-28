@@ -4832,73 +4832,79 @@ AC_CHECK_FUNCS(
 )
 LIBS=$LIBS_SAVE
 
-# For multiprocessing module, check that sem_open
-# actually works.  For FreeBSD versions <= 7.2,
-# the kernel module that provides POSIX semaphores
-# isn't loaded by default, so an attempt to call
-# sem_open results in a 'Signal 12' error.
+dnl For multiprocessing module, check that sem_open
+dnl actually works.  For FreeBSD versions <= 7.2,
+dnl the kernel module that provides POSIX semaphores
+dnl isn't loaded by default, so an attempt to call
+dnl sem_open results in a 'Signal 12' error.
 AC_CACHE_CHECK([whether POSIX semaphores are enabled], [ac_cv_posix_semaphores_enabled],
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <unistd.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <semaphore.h>
-#include <sys/stat.h>
+  AC_RUN_IFELSE([
+    AC_LANG_SOURCE([
+      #include <unistd.h>
+      #include <fcntl.h>
+      #include <stdio.h>
+      #include <semaphore.h>
+      #include <sys/stat.h>
 
-int main(void) {
-  sem_t *a = sem_open("/autoconf", O_CREAT, S_IRUSR|S_IWUSR, 0);
-  if (a == SEM_FAILED) {
-    perror("sem_open");
-    return 1;
-  }
-  sem_close(a);
-  sem_unlink("/autoconf");
-  return 0;
-}
-]])],
-[ac_cv_posix_semaphores_enabled=yes],
-[ac_cv_posix_semaphores_enabled=no],
-[ac_cv_posix_semaphores_enabled=yes])
+      int main(void) {
+        sem_t *a = sem_open("/autoconf", O_CREAT, S_IRUSR|S_IWUSR, 0);
+        if (a == SEM_FAILED) {
+          perror("sem_open");
+          return 1;
+        }
+        sem_close(a);
+        sem_unlink("/autoconf");
+        return 0;
+      }
+    ])
+  ],
+  [ac_cv_posix_semaphores_enabled=yes],
+  [ac_cv_posix_semaphores_enabled=no],
+  [ac_cv_posix_semaphores_enabled=yes])
 )
-if test $ac_cv_posix_semaphores_enabled = no
-then
-  AC_DEFINE(POSIX_SEMAPHORES_NOT_ENABLED, 1,
-            [Define if POSIX semaphores aren't enabled on your system])
-fi
+AS_VAR_IF([ac_cv_posix_semaphores_enabled], [no], [
+  AC_DEFINE(
+    [POSIX_SEMAPHORES_NOT_ENABLED], [1],
+    [Define if POSIX semaphores aren't enabled on your system]
+  )
+])
 
-# Multiprocessing check for broken sem_getvalue
+dnl Multiprocessing check for broken sem_getvalue
 AC_CACHE_CHECK([for broken sem_getvalue], [ac_cv_broken_sem_getvalue],
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <unistd.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <semaphore.h>
-#include <sys/stat.h>
+  AC_RUN_IFELSE([
+    AC_LANG_SOURCE([
+      #include <unistd.h>
+      #include <fcntl.h>
+      #include <stdio.h>
+      #include <semaphore.h>
+      #include <sys/stat.h>
 
-int main(void){
-  sem_t *a = sem_open("/autocftw", O_CREAT, S_IRUSR|S_IWUSR, 0);
-  int count;
-  int res;
-  if(a==SEM_FAILED){
-    perror("sem_open");
-    return 1;
+      int main(void){
+        sem_t *a = sem_open("/autocftw", O_CREAT, S_IRUSR|S_IWUSR, 0);
+        int count;
+        int res;
+        if(a==SEM_FAILED){
+          perror("sem_open");
+          return 1;
 
-  }
-  res = sem_getvalue(a, &count);
-  sem_close(a);
-  sem_unlink("/autocftw");
-  return res==-1 ? 1 : 0;
-}
-]])],
-[ac_cv_broken_sem_getvalue=no],
-[ac_cv_broken_sem_getvalue=yes],
-[ac_cv_broken_sem_getvalue=yes])
+        }
+        res = sem_getvalue(a, &count);
+        sem_close(a);
+        sem_unlink("/autocftw");
+        return res==-1 ? 1 : 0;
+      }
+    ])
+  ],
+  [ac_cv_broken_sem_getvalue=no],
+  [ac_cv_broken_sem_getvalue=yes],
+  [ac_cv_broken_sem_getvalue=yes])
 )
-if test $ac_cv_broken_sem_getvalue = yes
-then
-  AC_DEFINE(HAVE_BROKEN_SEM_GETVALUE, 1,
-  [define to 1 if your sem_getvalue is broken.])
-fi
+AS_VAR_IF([ac_cv_broken_sem_getvalue], [yes], [
+  AC_DEFINE(
+    [HAVE_BROKEN_SEM_GETVALUE], [1],
+    [define to 1 if your sem_getvalue is broken.]
+  )
+])
 
 AC_CHECK_DECLS([RTLD_LAZY, RTLD_NOW, RTLD_GLOBAL, RTLD_LOCAL, RTLD_NODELETE, RTLD_NOLOAD, RTLD_DEEPBIND, RTLD_MEMBER], [], [], [[#include <dlfcn.h>]])
 
@@ -6272,6 +6278,12 @@ PY_STDLIB_MOD_SIMPLE([_typing])
 PY_STDLIB_MOD_SIMPLE([_xxsubinterpreters])
 PY_STDLIB_MOD_SIMPLE([_zoneinfo])
 
+dnl multiprocessing modules
+PY_STDLIB_MOD_SIMPLE([_multiprocessing], [-I\$(srcdir)/Modules/_multiprocessing])
+PY_STDLIB_MOD([_posixshmem],
+  [], [test "$have_posix_shmem" = "yes"],
+  [$POSIXSHMEM_CFLAGS], [$POSIXSHMEM_LIBS])
+
 dnl needs libm
 PY_STDLIB_MOD_SIMPLE([audioop], [], [$LIBM])
 PY_STDLIB_MOD_SIMPLE([_statistics], [], [$LIBM])
@@ -6287,9 +6299,6 @@ PY_STDLIB_MOD([fcntl],
   [], [$FCNTL_LIBS])
 PY_STDLIB_MOD([mmap],
   [], [test "$ac_cv_header_sys_mman_h" = "yes" -a "$ac_cv_header_sys_stat_h" = "yes"])
-PY_STDLIB_MOD([_posixshmem],
-  [], [test "$have_posix_shmem" = "yes"],
-  [$POSIXSHMEM_CFLAGS], [$POSIXSHMEM_LIBS])
 
 dnl platform specific extensions
 PY_STDLIB_MOD([grp], [], [test "$ac_cv_func_getgrgid" = yes -o "$ac_cv_func_getgrgid_r" = yes])
