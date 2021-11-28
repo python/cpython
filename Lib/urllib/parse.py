@@ -740,7 +740,7 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
     # is less than max_num_fields. This prevents a memory exhaustion DOS
     # attack via post bodies with many fields.
     if max_num_fields is not None:
-        num_fields = 1 + qs.count(separator)
+        num_fields = 1 + qs.count(separator) if qs else 0
         if max_num_fields < num_fields:
             raise ValueError('Max number of fields exceeded')
 
