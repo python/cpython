@@ -1,0 +1,1 @@
+Update the documentation for the function:: globals
