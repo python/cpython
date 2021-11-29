@@ -336,9 +336,7 @@ def _deci_sqrt(n: int, m: int) -> Decimal:
     # Method:   Check the result, moving up or down a step if needed.
     if not n:
         return 0.0
-
     f_square = Fraction(n, m)
-
     d_mid = (Decimal(n) / Decimal(m)).sqrt()
     f_mid = Fraction(*d_mid.as_integer_ratio())
 
