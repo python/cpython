@@ -53,7 +53,11 @@ General Options
    Set the Python executable suffix to *SUFFIX*.
 
    The default suffix is ``.exe`` on Windows and macOS (``python.exe``
-   executable), and an empty string on other platforms (``python`` executable).
+   executable), ``.wasm`` on Emscripten (``python.wasm`` executable), and
+   an empty string on other platforms (``python`` executable).
+
+   .. versionchanged:: 3.11
+      The default suffix on Emscripten platform is ``.wasm``.
 
 .. cmdoption:: --with-tzpath=<list of absolute paths separated by pathsep>
 

@@ -1018,16 +1018,22 @@ atheos*|Linux*/1*)
    exit 1;;
 esac
 
-AC_MSG_CHECKING(for --with-suffix)
-AC_ARG_WITH(suffix,
-            AS_HELP_STRING([--with-suffix=SUFFIX], [set executable suffix to SUFFIX (default is '.exe')]),
+AC_MSG_CHECKING([for --with-suffix])
+AC_ARG_WITH([suffix],
+            [AS_HELP_STRING([--with-suffix=SUFFIX], [set executable suffix to SUFFIX (default is empty, yes is mapped to '.exe')])],
 [
-	case $withval in
-	no)	EXEEXT=;;
-	yes)	EXEEXT=.exe;;
-	*)	EXEEXT=$withval;;
-	esac])
-AC_MSG_RESULT($EXEEXT)
+	AS_CASE([$with_suffix],
+    [no], [EXEEXT=],
+    [yes], [EXEEXT=.exe],
+    [EXEEXT=$with_suffix]
+  )
+], [
+  AS_CASE([$ac_sys_system],
+    [Emscripten], [EXEEXT=.wasm],
+    [EXEEXT=]
+  )
+])
+AC_MSG_RESULT([$EXEEXT])
 
 # Test whether we're running on a non-case-sensitive system, in which
 # case we give a warning if no ext is given
