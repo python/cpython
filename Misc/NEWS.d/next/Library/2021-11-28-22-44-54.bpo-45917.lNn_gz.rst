@@ -1,1 +1,0 @@
-Added a function that returns 2 raised to a given number :func:`math.exp2`
