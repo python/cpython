@@ -6205,6 +6205,7 @@ AS_CASE([$ac_sys_system],
       _posixsubprocess
       _scproxy
       _xxsubinterpreters
+      fcntl
       grp
       nis
       ossaudiodev
@@ -6260,20 +6261,25 @@ AC_DEFUN([PY_STDLIB_MOD], [
   m4_popdef([modstate])dnl
 ])
 
-dnl Define simple, always enabled stdlib extension module
+dnl Define simple stdlib extension module
+dnl Always enable unless the module is listed in py_stdlib_not_available 
 dnl PY_STDLIB_MOD_SIMPLE([NAME], [CFLAGS], [LDFLAGS])
 dnl cflags and ldflags are optional
 AC_DEFUN([PY_STDLIB_MOD_SIMPLE], [
   m4_pushdef([modcond], [MODULE_]m4_toupper([$1]))dnl
-  AM_CONDITIONAL(modcond, [true])dnl
-  _MODULE_BLOCK_ADD(modcond, [yes])dnl
-  m4_ifval([$2], [
-    _MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_CFLAGS], [$2])
-  ])dnl
-  m4_ifval([$3], [
-    _MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_LDFLAGS], [$3])
-  ])dnl
+  m4_pushdef([modstate], [py_cv_module_$1])dnl
+  AS_CASE([$py_stdlib_not_available],
+    [*$1*], [modstate=n/a],
+    [modstate=yes]
+  )
+  AM_CONDITIONAL(modcond, [test "$modstate" = yes])
+  _MODULE_BLOCK_ADD(modcond, [$modstate])
+  AS_VAR_IF([modstate], [yes], [
+    m4_ifblank([$2], [], [_MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_CFLAGS], [$2])])
+    m4_ifblank([$3], [], [_MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_LDFLAGS], [$3])])
+  ])
   m4_popdef([modcond])dnl
+  m4_popdef([modstate])dnl
 ])
 
 dnl static modules in Modules/Setup.bootstrap
@@ -6301,7 +6307,9 @@ PY_STDLIB_MOD_SIMPLE([_xxsubinterpreters])
 PY_STDLIB_MOD_SIMPLE([_zoneinfo])
 
 dnl multiprocessing modules
-PY_STDLIB_MOD_SIMPLE([_multiprocessing], [-I\$(srcdir)/Modules/_multiprocessing])
+PY_STDLIB_MOD([_multiprocessing],
+  [], [test "$ac_cv_func_sem_unlink" = "yes"],
+  [-I\$(srcdir)/Modules/_multiprocessing])
 PY_STDLIB_MOD([_posixshmem],
   [], [test "$have_posix_shmem" = "yes"],
   [$POSIXSHMEM_CFLAGS], [$POSIXSHMEM_LIBS])
