@@ -506,6 +506,7 @@ class MathTests(unittest.TestCase):
         self.ftest('exp2(-1)', math.exp2(-1), 0.5)
         self.ftest('exp2(0)', math.exp2(0), 1)
         self.ftest('exp2(1)', math.exp2(1), 2)
+        self.ftest('exp2(2.3)', math.exp2(2.3), 4.924577653379665)
         self.assertEqual(math.exp2(INF), INF)
         self.assertEqual(math.exp2(NINF), 0.)
         self.assertTrue(math.isnan(math.exp2(NAN)))
