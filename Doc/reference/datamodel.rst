@@ -1919,7 +1919,7 @@ Notes on using *__slots__*
 * :attr:`~instance.__class__` assignment works only if both classes have the
   same *__slots__*.
 
-* :ref:`Multiple inheritance<tut-multiple>` with multiple slotted parent
+* :ref:`Multiple inheritance <tut-multiple>` with multiple slotted parent
   classes can be used,
   but only one parent is allowed to have attributes created by slots
   (the other bases must have empty slot layouts) - violations raise
