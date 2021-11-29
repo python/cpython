@@ -305,14 +305,17 @@ def _fail_neg(values, errmsg='negative value'):
             raise StatisticsError(errmsg)
         yield x
 
+
 def _isqrt_frac_rto(n: int, m: int) -> float:
     """Square root of n/m, rounded to the nearest integer using round-to-odd."""
     # Reference: https://www.lri.fr/~melquion/doc/05-imacs17_1-expose.pdf
     a = math.isqrt(n // m)
     return a | (a*a*m != n)
 
+
 # For 53 bit precision floats, the _sqrt_frac() shift is 109.
 _sqrt_shift: int = 2 * sys.float_info.mant_dig + 3
+
 
 def _sqrt_frac(n: int, m: int) -> float:
     """Square root of n/m as a float, correctly rounded."""
@@ -325,6 +328,31 @@ def _sqrt_frac(n: int, m: int) -> float:
         numerator = _isqrt_frac_rto(n << -2 * q, m)
         denominator = 1 << -q
     return numerator / denominator   # Convert to float
+
+
+def _deci_sqrt(n: int, m: int) -> Decimal:
+    """Square root of n/m as a float, correctly rounded."""
+    # Premise:  For decimal, computing sqrt(m / n) can be off by 1 ulp.
+    # Method:   Check the result, moving up or down a step if needed.
+    if not n:
+        return 0.0
+
+    f_square = Fraction(n, m)
+
+    d_mid = (Decimal(n) / Decimal(m)).sqrt()
+    f_mid = Fraction(*d_mid.as_integer_ratio())
+
+    d_plus = d_mid.next_plus()
+    f_plus = Fraction(*d_plus.as_integer_ratio())
+    if f_square > ((f_mid + f_plus) / 2) ** 2:
+        return d_plus
+
+    d_minus = d_mid.next_minus()
+    f_minus = Fraction(*d_minus.as_integer_ratio())
+    if f_square < ((f_mid + f_minus) / 2) ** 2:
+        return d_minus
+
+    return d_mid
 
 
 # === Measures of central tendency (averages) ===
@@ -888,9 +916,8 @@ def pstdev(data, mu=None):
         raise StatisticsError('pstdev requires at least one data point')
     T, ss = _ss(data, mu)
     mss = ss / n
-    if hasattr(T, 'sqrt'):
-        var = _convert(mss, T)
-        return var.sqrt()
+    if issubclass(T, Decimal):
+        return _deci_sqrt(mss.numerator, mss.denominator)
     return _sqrt_frac(mss.numerator, mss.denominator)
 
 

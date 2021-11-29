@@ -2219,7 +2219,42 @@ class TestSqrtHelpers(unittest.TestCase):
             statistics._sqrt_frac(1, 0)
 
         # The result is well defined if both inputs are negative
-        self.assertAlmostEqual(statistics._sqrt_frac(-2, -1), math.sqrt(2.0))
+        self.assertEqual(statistics._sqrt_frac(-2, -1), statistics._sqrt_frac(2, 1))
+
+    def test_deci_sqrt(self):
+        root: Decimal
+        numerator: int
+        denominator: int
+
+        for root, numerator, denominator in [
+            (Decimal('0.4481904599041192673635338663'), 200874688349065940678243576378, 1000000000000000000000000000000),  # No adj
+            (Decimal('0.7924949131383786609961759598'), 628048187350206338833590574929, 1000000000000000000000000000000),  # Adj up
+            (Decimal('0.8500554152289934068192208727'), 722594208960136395984391238251, 1000000000000000000000000000000),  # Adj down
+        ]:
+            with decimal.localcontext(decimal.DefaultContext):
+                self.assertEqual(statistics._deci_sqrt(numerator, denominator), root)
+
+            # Confirm expected root with a quad precision decimal computation
+            with decimal.localcontext(decimal.DefaultContext) as ctx:
+                ctx.prec *= 4
+                high_prec_root = (Decimal(numerator) / Decimal(denominator)).sqrt()
+            with decimal.localcontext(decimal.DefaultContext):
+                target_root = +high_prec_root
+            self.assertEqual(root, target_root)
+
+        # Verify that corner cases and error handling match Decimal.sqrt()
+        self.assertEqual(statistics._deci_sqrt(0, 1), 0.0)
+        with self.assertRaises(decimal.InvalidOperation):
+            statistics._deci_sqrt(-1, 1)
+        with self.assertRaises(decimal.InvalidOperation):
+            statistics._deci_sqrt(1, -1)
+
+        # Error handling for zero denominator matches that for Fraction(1, 0)
+        with self.assertRaises(ZeroDivisionError):
+            statistics._deci_sqrt(1, 0)
+
+        # The result is well defined if both inputs are negative
+        self.assertEqual(statistics._deci_sqrt(-2, -1), statistics._deci_sqrt(2, 1))
 
 
 class TestStdev(VarianceStdevMixin, NumericTestCase):
