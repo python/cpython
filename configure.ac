@@ -6191,6 +6191,26 @@ AS_CASE([$ac_sys_system],
   [CYGWIN*], [py_stdlib_not_available="_scproxy nis"],
   [QNX*], [py_stdlib_not_available="_scproxy nis"],
   [FreeBSD*], [py_stdlib_not_available="_scproxy spwd"],
+  [Emscripten], [
+    py_stdlib_not_available="m4_normalize([
+      _curses
+      _curses_panel
+      _dbm
+      _gdbm
+      _multiprocessing
+      _posixshmem
+      _posixsubprocess
+      _scproxy
+      _xxsubinterpreters
+      grp
+      nis
+      ossaudiodev
+      resource
+      spwd
+      syslog
+      termios
+    ])"
+  ],
   [py_stdlib_not_available="_scproxy"]
 )
 
