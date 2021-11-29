@@ -1,2 +1,2 @@
-Expanded ``dataclasses.astuple()`` docs, warning about deepcopy being applied
-and providing a workaround.
+Expanded :func:`~dataclasses.astuple` and :func:`~dataclasses.asdict` docs,
+warning about deepcopy being applied and providing a workaround.
