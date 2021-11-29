@@ -24,7 +24,6 @@
     <Compile Include="antigravity.py" />
     <Compile Include="argparse.py" />
     <Compile Include="ast.py" />
-    <Compile Include="asynchat.py" />
     <Compile Include="asyncio\base_events.py" />
     <Compile Include="asyncio\base_futures.py" />
     <Compile Include="asyncio\base_subprocess.py" />
@@ -50,7 +49,6 @@
     <Compile Include="asyncio\windows_events.py" />
     <Compile Include="asyncio\windows_utils.py" />
     <Compile Include="asyncio\__init__.py" />
-    <Compile Include="asyncore.py" />
     <Compile Include="base64.py" />
     <Compile Include="bdb.py" />
     <Compile Include="bisect.py" />
@@ -722,7 +720,6 @@
     <Compile Include="shutil.py" />
     <Compile Include="signal.py" />
     <Compile Include="site.py" />
-    <Compile Include="smtpd.py" />
     <Compile Include="smtplib.py" />
     <Compile Include="sndhdr.py" />
     <Compile Include="socket.py" />
@@ -860,7 +857,6 @@
     <Compile Include="test\test_asdl_parser.py" />
     <Compile Include="test\test_ast.py" />
     <Compile Include="test\test_asyncgen.py" />
-    <Compile Include="test\test_asynchat.py" />
     <Compile Include="test\test_asyncio\echo.py" />
     <Compile Include="test\test_asyncio\echo2.py" />
     <Compile Include="test\test_asyncio\echo3.py" />
@@ -882,7 +878,6 @@
     <Compile Include="test\test_asyncio\test_windows_utils.py" />
     <Compile Include="test\test_asyncio\__init__.py" />
     <Compile Include="test\test_asyncio\__main__.py" />
-    <Compile Include="test\test_asyncore.py" />
     <Compile Include="test\test_atexit.py" />
     <Compile Include="test\test_audioop.py" />
     <Compile Include="test\test_augassign.py" />
@@ -1263,7 +1258,6 @@
     <Compile Include="test\test_signal.py" />
     <Compile Include="test\test_site.py" />
     <Compile Include="test\test_slice.py" />
-    <Compile Include="test\test_smtpd.py" />
     <Compile Include="test\test_smtplib.py" />
     <Compile Include="test\test_smtpnet.py" />
     <Compile Include="test\test_sndhdr.py" />

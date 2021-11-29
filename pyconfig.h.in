@@ -51,9 +51,6 @@
    significant word first */
 #undef FLOAT_WORDS_BIGENDIAN
 
-/* Define if flock needs to be linked with bsd library. */
-#undef FLOCK_NEEDS_LIBBSD
-
 /* Define if getpgrp() must be called as getpgrp(0). */
 #undef GETPGRP_HAVE_ARG
 
@@ -214,6 +211,9 @@
 /* Define if you have the 'wchgat' function. */
 #undef HAVE_CURSES_WCHGAT
 
+/* Define to 1 if you have the <db.h> header file. */
+#undef HAVE_DB_H
+
 /* Define to 1 if you have the declaration of `RTLD_DEEPBIND', and to 0 if you
    don't. */
 #undef HAVE_DECL_RTLD_DEEPBIND
@@ -362,6 +362,9 @@
 /* Define to 1 if you have the `fork' function. */
 #undef HAVE_FORK
 
+/* Define to 1 if you have the `fork1' function. */
+#undef HAVE_FORK1
+
 /* Define to 1 if you have the `forkpty' function. */
 #undef HAVE_FORKPTY
 
@@ -420,14 +423,35 @@
 /* Define if your compiler provides __uint128_t */
 #undef HAVE_GCC_UINT128_T
 
+/* Define to 1 if you have the <gdbm-ndbm.h> header file. */
+#undef HAVE_GDBM_DASH_NDBM_H
+
+/* Define to 1 if you have the <gdbm.h> header file. */
+#undef HAVE_GDBM_H
+
+/* Define to 1 if you have the <gdbm/ndbm.h> header file. */
+#undef HAVE_GDBM_NDBM_H
+
 /* Define if you have the getaddrinfo function. */
 #undef HAVE_GETADDRINFO
 
 /* Define this if you have flockfile(), getc_unlocked(), and funlockfile() */
 #undef HAVE_GETC_UNLOCKED
 
+/* Define to 1 if you have the `getegid' function. */
+#undef HAVE_GETEGID
+
 /* Define to 1 if you have the `getentropy' function. */
 #undef HAVE_GETENTROPY
+
+/* Define to 1 if you have the `geteuid' function. */
+#undef HAVE_GETEUID
+
+/* Define to 1 if you have the `getgid' function. */
+#undef HAVE_GETGID
+
+/* Define to 1 if you have the `getgrgid' function. */
+#undef HAVE_GETGRGID
 
 /* Define to 1 if you have the `getgrgid_r' function. */
 #undef HAVE_GETGRGID_R
@@ -483,6 +507,9 @@
 /* Define to 1 if you have the `getpid' function. */
 #undef HAVE_GETPID
 
+/* Define to 1 if you have the `getppid' function. */
+#undef HAVE_GETPPID
+
 /* Define to 1 if you have the `getpriority' function. */
 #undef HAVE_GETPRIORITY
 
@@ -515,6 +542,9 @@
 
 /* Define to 1 if you have the `getspnam' function. */
 #undef HAVE_GETSPNAM
+
+/* Define to 1 if you have the `getuid' function. */
+#undef HAVE_GETUID
 
 /* Define to 1 if you have the `getwd' function. */
 #undef HAVE_GETWD
@@ -583,8 +613,8 @@
 /* Define to 1 if you have the `lchown' function. */
 #undef HAVE_LCHOWN
 
-/* Define to 1 if you have the `bz2' library (-lbz2). */
-#undef HAVE_LIBBZ2
+/* Define to 1 if you have the `db' library (-ldb). */
+#undef HAVE_LIBDB
 
 /* Define to 1 if you have the `dl' library (-ldl). */
 #undef HAVE_LIBDL
@@ -592,14 +622,17 @@
 /* Define to 1 if you have the `dld' library (-ldld). */
 #undef HAVE_LIBDLD
 
+/* Define to 1 if you have the `gdbm_compat' library (-lgdbm_compat). */
+#undef HAVE_LIBGDBM_COMPAT
+
 /* Define to 1 if you have the `ieee' library (-lieee). */
 #undef HAVE_LIBIEEE
 
 /* Define to 1 if you have the <libintl.h> header file. */
 #undef HAVE_LIBINTL_H
 
-/* Define to 1 if you have the `lzma' library (-llzma). */
-#undef HAVE_LIBLZMA
+/* Define to 1 if you have the `ndbm' library (-lndbm). */
+#undef HAVE_LIBNDBM
 
 /* Define to build the readline module. */
 #undef HAVE_LIBREADLINE
@@ -612,12 +645,6 @@
 
 /* Define to 1 if you have the <libutil.h> header file. */
 #undef HAVE_LIBUTIL_H
-
-/* Define to 1 if you have the `uuid' library (-luuid). */
-#undef HAVE_LIBUUID
-
-/* Define to 1 if you have the `z' library (-lz). */
-#undef HAVE_LIBZ
 
 /* Define if you have the 'link' function. */
 #undef HAVE_LINK
@@ -654,6 +681,9 @@
 
 /* Define to 1 if you have the <linux/random.h> header file. */
 #undef HAVE_LINUX_RANDOM_H
+
+/* Define to 1 if you have the <linux/soundcard.h> header file. */
+#undef HAVE_LINUX_SOUNDCARD_H
 
 /* Define to 1 if you have the <linux/tipc.h> header file. */
 #undef HAVE_LINUX_TIPC_H
@@ -733,8 +763,14 @@
 /* Define to 1 if you have the <ncurses.h> header file. */
 #undef HAVE_NCURSES_H
 
+/* Define to 1 if you have the <ndbm.h> header file. */
+#undef HAVE_NDBM_H
+
 /* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
 #undef HAVE_NDIR_H
+
+/* Define to 1 if you have the <netinet/in.h> header file. */
+#undef HAVE_NETINET_IN_H
 
 /* Define to 1 if you have the <netpacket/packet.h> header file. */
 #undef HAVE_NETPACKET_PACKET_H
@@ -752,6 +788,9 @@
 /* Define to 1 if you have the `openat' function. */
 #undef HAVE_OPENAT
 
+/* Define to 1 if you have the `opendir' function. */
+#undef HAVE_OPENDIR
+
 /* Define to 1 if you have the `openpty' function. */
 #undef HAVE_OPENPTY
 
@@ -760,6 +799,9 @@
 
 /* Define to 1 if you have the `pause' function. */
 #undef HAVE_PAUSE
+
+/* Define to 1 if you have the `pipe' function. */
+#undef HAVE_PIPE
 
 /* Define to 1 if you have the `pipe2' function. */
 #undef HAVE_PIPE2
@@ -875,6 +917,9 @@
 /* Define if you have readline 4.0 */
 #undef HAVE_RL_RESIZE_TERMINAL
 
+/* Define to 1 if you have the <rpc/rpc.h> header file. */
+#undef HAVE_RPC_RPC_H
+
 /* Define to 1 if you have the `rtpSpawn' function. */
 #undef HAVE_RTPSPAWN
 
@@ -973,6 +1018,9 @@
 
 /* Define to 1 if you have the `shm_unlink' function. */
 #undef HAVE_SHM_UNLINK
+
+/* Define to 1 if you have the `shutdown' function. */
+#undef HAVE_SHUTDOWN
 
 /* Define to 1 if you have the `sigaction' function. */
 #undef HAVE_SIGACTION
@@ -1113,6 +1161,12 @@
 /* Define to 1 if you have the <sysexits.h> header file. */
 #undef HAVE_SYSEXITS_H
 
+/* Define to 1 if you have the <syslog.h> header file. */
+#undef HAVE_SYSLOG_H
+
+/* Define to 1 if you have the `system' function. */
+#undef HAVE_SYSTEM
+
 /* Define to 1 if you have the <sys/audioio.h> header file. */
 #undef HAVE_SYS_AUDIOIO_H
 
@@ -1189,6 +1243,9 @@
 
 /* Define to 1 if you have the <sys/socket.h> header file. */
 #undef HAVE_SYS_SOCKET_H
+
+/* Define to 1 if you have the <sys/soundcard.h> header file. */
+#undef HAVE_SYS_SOUNDCARD_H
 
 /* Define to 1 if you have the <sys/statvfs.h> header file. */
 #undef HAVE_SYS_STATVFS_H
@@ -1269,6 +1326,9 @@
 /* Define to 1 if you have the `truncate' function. */
 #undef HAVE_TRUNCATE
 
+/* Define to 1 if you have the `ttyname' function. */
+#undef HAVE_TTYNAME
+
 /* Define to 1 if you don't have `tm_zone' but do have the external array
    `tzname'. */
 #undef HAVE_TZNAME
@@ -1319,6 +1379,9 @@
 
 /* Define to 1 if you have the `vfork' function. */
 #undef HAVE_VFORK
+
+/* Define to 1 if you have the `wait' function. */
+#undef HAVE_WAIT
 
 /* Define to 1 if you have the `wait3' function. */
 #undef HAVE_WAIT3
@@ -1441,9 +1504,6 @@
 
 /* Define if setpgrp() must be called as setpgrp(0, 0). */
 #undef SETPGRP_HAVE_ARG
-
-/* Define to 1 if you must link with -lrt for shm_open(). */
-#undef SHM_NEEDS_LIBRT
 
 /* Define if i>>j for signed int i does not extend the sign bit when i < 0 */
 #undef SIGNED_RIGHT_SHIFT_ZERO_FILLS

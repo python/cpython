@@ -130,6 +130,7 @@ __all__ = [
 import math
 import numbers
 import random
+import sys
 
 from fractions import Fraction
 from decimal import Decimal
@@ -303,6 +304,27 @@ def _fail_neg(values, errmsg='negative value'):
         if x < 0:
             raise StatisticsError(errmsg)
         yield x
+
+def _isqrt_frac_rto(n: int, m: int) -> float:
+    """Square root of n/m, rounded to the nearest integer using round-to-odd."""
+    # Reference: https://www.lri.fr/~melquion/doc/05-imacs17_1-expose.pdf
+    a = math.isqrt(n // m)
+    return a | (a*a*m != n)
+
+# For 53 bit precision floats, the _sqrt_frac() shift is 109.
+_sqrt_shift: int = 2 * sys.float_info.mant_dig + 3
+
+def _sqrt_frac(n: int, m: int) -> float:
+    """Square root of n/m as a float, correctly rounded."""
+    # See principle and proof sketch at: https://bugs.python.org/msg407078
+    q = (n.bit_length() - m.bit_length() - _sqrt_shift) // 2
+    if q >= 0:
+        numerator = _isqrt_frac_rto(n, m << 2 * q) << q
+        denominator = 1
+    else:
+        numerator = _isqrt_frac_rto(n << -2 * q, m)
+        denominator = 1 << -q
+    return numerator / denominator   # Convert to float
 
 
 # === Measures of central tendency (averages) ===
@@ -609,9 +631,11 @@ def multimode(data):
     >>> multimode('')
     []
     """
-    counts = Counter(iter(data)).most_common()
-    maxcount, mode_items = next(groupby(counts, key=itemgetter(1)), (0, []))
-    return list(map(itemgetter(0), mode_items))
+    counts = Counter(iter(data))
+    if not counts:
+        return []
+    maxcount = max(counts.values())
+    return [value for value, count in counts.items() if count == maxcount]
 
 
 # Notes on methods for computing quantiles
@@ -835,14 +859,17 @@ def stdev(data, xbar=None):
     1.0810874155219827
 
     """
-    # Fixme: Despite the exact sum of squared deviations, some inaccuracy
-    # remain because there are two rounding steps.  The first occurs in
-    # the _convert() step for variance(), the second occurs in math.sqrt().
-    var = variance(data, xbar)
-    try:
+    if iter(data) is data:
+        data = list(data)
+    n = len(data)
+    if n < 2:
+        raise StatisticsError('stdev requires at least two data points')
+    T, ss = _ss(data, xbar)
+    mss = ss / (n - 1)
+    if hasattr(T, 'sqrt'):
+        var = _convert(mss, T)
         return var.sqrt()
-    except AttributeError:
-        return math.sqrt(var)
+    return _sqrt_frac(mss.numerator, mss.denominator)
 
 
 def pstdev(data, mu=None):
@@ -854,14 +881,17 @@ def pstdev(data, mu=None):
     0.986893273527251
 
     """
-    # Fixme: Despite the exact sum of squared deviations, some inaccuracy
-    # remain because there are two rounding steps.  The first occurs in
-    # the _convert() step for pvariance(), the second occurs in math.sqrt().
-    var = pvariance(data, mu)
-    try:
+    if iter(data) is data:
+        data = list(data)
+    n = len(data)
+    if n < 1:
+        raise StatisticsError('pstdev requires at least one data point')
+    T, ss = _ss(data, mu)
+    mss = ss / n
+    if hasattr(T, 'sqrt'):
+        var = _convert(mss, T)
         return var.sqrt()
-    except AttributeError:
-        return math.sqrt(var)
+    return _sqrt_frac(mss.numerator, mss.denominator)
 
 
 # === Statistics for relations between two inputs ===
@@ -935,13 +965,13 @@ def correlation(x, y, /):
 LinearRegression = namedtuple('LinearRegression', ('slope', 'intercept'))
 
 
-def linear_regression(x, y, /):
+def linear_regression(x, y, /, *, proportional=False):
     """Slope and intercept for simple linear regression.
 
     Return the slope and intercept of simple linear regression
     parameters estimated using ordinary least squares. Simple linear
     regression describes relationship between an independent variable
-    *x* and a dependent variable *y* in terms of linear function:
+    *x* and a dependent variable *y* in terms of a linear function:
 
         y = slope * x + intercept + noise
 
@@ -959,21 +989,38 @@ def linear_regression(x, y, /):
     >>> linear_regression(x, y)  #doctest: +ELLIPSIS
     LinearRegression(slope=3.09078914170..., intercept=1.75684970486...)
 
+    If *proportional* is true, the independent variable *x* and the
+    dependent variable *y* are assumed to be directly proportional.
+    The data is fit to a line passing through the origin.
+
+    Since the *intercept* will always be 0.0, the underlying linear
+    function simplifies to:
+
+        y = slope * x + noise
+
+    >>> y = [3 * x[i] + noise[i] for i in range(5)]
+    >>> linear_regression(x, y, proportional=True)  #doctest: +ELLIPSIS
+    LinearRegression(slope=3.02447542484..., intercept=0.0)
+
     """
     n = len(x)
     if len(y) != n:
         raise StatisticsError('linear regression requires that both inputs have same number of data points')
     if n < 2:
         raise StatisticsError('linear regression requires at least two data points')
-    xbar = fsum(x) / n
-    ybar = fsum(y) / n
-    sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
-    sxx = fsum((d := xi - xbar) * d for xi in x)
+    if proportional:
+        sxy = fsum(xi * yi for xi, yi in zip(x, y))
+        sxx = fsum(xi * xi for xi in x)
+    else:
+        xbar = fsum(x) / n
+        ybar = fsum(y) / n
+        sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
+        sxx = fsum((d := xi - xbar) * d for xi in x)
     try:
         slope = sxy / sxx   # equivalent to:  covariance(x, y) / variance(x)
     except ZeroDivisionError:
         raise StatisticsError('x is constant')
-    intercept = ybar - slope * xbar
+    intercept = 0.0 if proportional else ybar - slope * xbar
     return LinearRegression(slope=slope, intercept=intercept)
 
 
