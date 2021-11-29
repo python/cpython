@@ -340,8 +340,9 @@ def _float_sqrt_of_frac(n: int, m: int) -> float:
 
 
 def _decimal_sqrt_of_frac(n: int, m: int) -> Decimal:
-    """Square root of n/m as a float, correctly rounded."""
-    # Premise:  For decimal, computing (n/m).sqrt() can be off by 1 ulp.
+    """Square root of n/m as a Decimal, correctly rounded."""
+    # Premise:  For decimal, computing (n/m).sqrt() can be off
+    #           by 1 ulp from the correctly rounded result.
     # Method:   Check the result, moving up or down a step if needed.
     if n <= 0:
         if not n:
