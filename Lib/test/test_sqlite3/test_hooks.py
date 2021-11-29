@@ -319,10 +319,10 @@ class TraceCallbackTests(unittest.TestCase):
                 cx.execute("create table t(t)")
                 cx.executemany("insert into t values(?)", ((v,) for v in range(3)))
 
-    @with_tracebacks([
-        "DataError",
-        "Expanded SQL string exceeds the maximum string length"
-    ], traceback=False)
+    @with_tracebacks(
+        sqlite.DataError,
+        regex="Expanded SQL string exceeds the maximum string length"
+    )
     def test_trace_too_much_expanded_sql(self):
         # If the expanded string is too large, we'll fall back to the
         # unexpanded SQL statement. The resulting string length is limited by
@@ -342,7 +342,7 @@ class TraceCallbackTests(unittest.TestCase):
             with check_stmt_trace(self, cx, [expanded_query]):
                 cx.execute(unexpanded_query, (ok_param,))
 
-    @with_tracebacks(["ZeroDivisionError", "5/0"])
+    @with_tracebacks(ZeroDivisionError, regex="division by zero")
     def test_trace_bad_handler(self):
         with memory_database() as cx:
             cx.set_trace_callback(lambda stmt: 5/0)
