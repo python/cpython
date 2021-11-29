@@ -349,7 +349,7 @@ Module contents
    Converts the dataclass ``instance`` to a tuple (by using the
    factory function ``tuple_factory``).  Each dataclass is converted
    to a tuple of its field values.  dataclasses, dicts, lists, and
-   tuples are recursed into. Other objects are copied with 
+   tuples are recursed into. Other objects are copied with
    :func:`copy.deepcopy`.
 
    Continuing from the previous example::
