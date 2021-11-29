@@ -745,6 +745,11 @@ Connection Objects
       *name* is the database to be serialized, and defaults to the main
       database.
 
+      .. note::
+
+         This method is only available if the underlying SQLite library has the
+         serialize API.
+
       .. versionadded:: 3.11
 
 
@@ -755,6 +760,11 @@ Connection Objects
       serialization contained in *data*.  Deserialization will fail with
       ``SQLITE_BUSY`` if the database is currently in a read transaction or is
       involved in a backup operation.
+
+      .. note::
+
+         This method is only available if the underlying SQLite library has the
+         serialize API.
 
       .. versionadded:: 3.11
 
