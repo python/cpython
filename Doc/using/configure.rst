@@ -513,6 +513,56 @@ See ``Mac/README.rst``.
    :option:`--enable-framework` is set (default: ``Python``).
 
 
+Cross Compiling Options
+-----------------------
+
+Cross compiling, also known as cross building, can be used to build Python
+for another CPU architecture or platform. Cross compiling requires a Python
+interpreter and the :program:`_freeze_module` binary from another build. The
+version of the build Python and :program:`_freeze_module` command must be
+the same as the cross compiled host Python.
+
+.. cmdoption:: --build=BUILD
+
+   configure for building on BUILD, usually guessed by :program:`config.guess`.
+
+.. cmdoption:: --host=HOST
+
+   cross-compile to build programs to run on HOST (target platform)
+
+.. cmdoption:: --with-freeze-module=Programs/_freeze_module
+
+   path to ``_freeze_module`` binary for cross compiling.
+
+   .. versionadded:: 3.11
+
+.. cmdoption:: --with-build-python=python3.xx
+
+   path to build ``python`` binary for cross compiling
+
+   .. versionadded:: 3.11
+
+.. cmdoption:: CONFIG_SITE=file
+
+   An environment variable that points to a file with configure overrides.
+
+   Example *config.site* file::
+
+      # config.site-aarch64
+      ac_cv_buggy_getaddrinfo=no
+      ac_cv_file__dev_ptmx=yes
+      ac_cv_file__dev_ptc=no
+
+
+Cross compiling example::
+
+   CONFIG_SITE=config.site-aarch64 ../configure \
+       --build=x86_64-pc-linux-gnu \
+       --host=aarch64-unknown-linux-gnu \
+       --with-freeze-module=../x86_64/Programs/_freeze_module \
+       --with-build-python=../x86_64/python
+
+
 Python Build System
 ===================
 
