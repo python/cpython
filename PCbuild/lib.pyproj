@@ -24,7 +24,6 @@
     <Compile Include="antigravity.py" />
     <Compile Include="argparse.py" />
     <Compile Include="ast.py" />
-    <Compile Include="asynchat.py" />
     <Compile Include="asyncio\base_events.py" />
     <Compile Include="asyncio\base_futures.py" />
     <Compile Include="asyncio\base_subprocess.py" />
@@ -50,10 +49,8 @@
     <Compile Include="asyncio\windows_events.py" />
     <Compile Include="asyncio\windows_utils.py" />
     <Compile Include="asyncio\__init__.py" />
-    <Compile Include="asyncore.py" />
     <Compile Include="base64.py" />
     <Compile Include="bdb.py" />
-    <Compile Include="binhex.py" />
     <Compile Include="bisect.py" />
     <Compile Include="bz2.py" />
     <Compile Include="calendar.py" />
@@ -160,7 +157,6 @@
     <Compile Include="distutils\cmd.py" />
     <Compile Include="distutils\command\bdist.py" />
     <Compile Include="distutils\command\bdist_dumb.py" />
-    <Compile Include="distutils\command\bdist_msi.py" />
     <Compile Include="distutils\command\bdist_rpm.py" />
     <Compile Include="distutils\command\build.py" />
     <Compile Include="distutils\command\build_clib.py" />
@@ -201,7 +197,6 @@
     <Compile Include="distutils\tests\test_archive_util.py" />
     <Compile Include="distutils\tests\test_bdist.py" />
     <Compile Include="distutils\tests\test_bdist_dumb.py" />
-    <Compile Include="distutils\tests\test_bdist_msi.py" />
     <Compile Include="distutils\tests\test_bdist_rpm.py" />
     <Compile Include="distutils\tests\test_build.py" />
     <Compile Include="distutils\tests\test_build_clib.py" />
@@ -725,7 +720,6 @@
     <Compile Include="shutil.py" />
     <Compile Include="signal.py" />
     <Compile Include="site.py" />
-    <Compile Include="smtpd.py" />
     <Compile Include="smtplib.py" />
     <Compile Include="sndhdr.py" />
     <Compile Include="socket.py" />
@@ -863,7 +857,6 @@
     <Compile Include="test\test_asdl_parser.py" />
     <Compile Include="test\test_ast.py" />
     <Compile Include="test\test_asyncgen.py" />
-    <Compile Include="test\test_asynchat.py" />
     <Compile Include="test\test_asyncio\echo.py" />
     <Compile Include="test\test_asyncio\echo2.py" />
     <Compile Include="test\test_asyncio\echo3.py" />
@@ -885,7 +878,6 @@
     <Compile Include="test\test_asyncio\test_windows_utils.py" />
     <Compile Include="test\test_asyncio\__init__.py" />
     <Compile Include="test\test_asyncio\__main__.py" />
-    <Compile Include="test\test_asyncore.py" />
     <Compile Include="test\test_atexit.py" />
     <Compile Include="test\test_audioop.py" />
     <Compile Include="test\test_augassign.py" />
@@ -894,7 +886,6 @@
     <Compile Include="test\test_bigaddrspace.py" />
     <Compile Include="test\test_bigmem.py" />
     <Compile Include="test\test_binascii.py" />
-    <Compile Include="test\test_binhex.py" />
     <Compile Include="test\test_binop.py" />
     <Compile Include="test\test_bisect.py" />
     <Compile Include="test\test_bool.py" />
@@ -1183,7 +1174,6 @@
     <Compile Include="test\test_mmap.py" />
     <Compile Include="test\test_module.py" />
     <Compile Include="test\test_modulefinder.py" />
-    <Compile Include="test\test_msilib.py" />
     <Compile Include="test\test_multibytecodec.py" />
     <Compile Include="test\test_multiprocessing_fork.py" />
     <Compile Include="test\test_multiprocessing_forkserver.py" />
@@ -1268,7 +1258,6 @@
     <Compile Include="test\test_signal.py" />
     <Compile Include="test\test_site.py" />
     <Compile Include="test\test_slice.py" />
-    <Compile Include="test\test_smtpd.py" />
     <Compile Include="test\test_smtplib.py" />
     <Compile Include="test\test_smtpnet.py" />
     <Compile Include="test\test_sndhdr.py" />
@@ -1277,7 +1266,17 @@
     <Compile Include="test\test_sort.py" />
     <Compile Include="test\test_source_encoding.py" />
     <Compile Include="test\test_spwd.py" />
-    <Compile Include="test\test_sqlite.py" />
+    <Compile Include="test\test_sqlite3" />
+    <Compile Include="test\test_sqlite3\__init__.py" />
+    <Compile Include="test\test_sqlite3\test_backup.py" />
+    <Compile Include="test\test_sqlite3\test_dbapi.py" />
+    <Compile Include="test\test_sqlite3\test_dump.py" />
+    <Compile Include="test\test_sqlite3\test_factory.py" />
+    <Compile Include="test\test_sqlite3\test_hooks.py" />
+    <Compile Include="test\test_sqlite3\test_regression.py" />
+    <Compile Include="test\test_sqlite3\test_transactions.py" />
+    <Compile Include="test\test_sqlite3\test_types.py" />
+    <Compile Include="test\test_sqlite3\test_userfunctions.py" />
     <Compile Include="test\test_ssl.py" />
     <Compile Include="test\test_startfile.py" />
     <Compile Include="test\test_stat.py" />
@@ -1429,7 +1428,6 @@
     <Compile Include="tkinter\messagebox.py" />
     <Compile Include="tkinter\scrolledtext.py" />
     <Compile Include="tkinter\simpledialog.py" />
-    <Compile Include="tkinter\test\runtktests.py" />
     <Compile Include="tkinter\test\support.py" />
     <Compile Include="tkinter\test\test_tkinter\test_font.py" />
     <Compile Include="tkinter\test\test_tkinter\test_geometry_managers.py" />
@@ -1441,7 +1439,6 @@
     <Compile Include="tkinter\test\test_tkinter\test_widgets.py" />
     <Compile Include="tkinter\test\test_tkinter\__init__.py" />
     <Compile Include="tkinter\test\test_ttk\test_extensions.py" />
-    <Compile Include="tkinter\test\test_ttk\test_functions.py" />
     <Compile Include="tkinter\test\test_ttk\test_style.py" />
     <Compile Include="tkinter\test\test_ttk\test_widgets.py" />
     <Compile Include="tkinter\test\test_ttk\__init__.py" />

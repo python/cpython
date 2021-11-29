@@ -8,8 +8,7 @@
 # Licensed to PSF under a Contributor Agreement.
 #
 
-__all__ = [ 'BaseManager', 'SyncManager', 'BaseProxy', 'Token',
-            'SharedMemoryManager' ]
+__all__ = [ 'BaseManager', 'SyncManager', 'BaseProxy', 'Token' ]
 
 #
 # Imports
@@ -35,9 +34,11 @@ from . import util
 from . import get_context
 try:
     from . import shared_memory
-    HAS_SHMEM = True
 except ImportError:
     HAS_SHMEM = False
+else:
+    HAS_SHMEM = True
+    __all__.append('SharedMemoryManager')
 
 #
 # Register some things for pickling

@@ -1,5 +1,10 @@
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 #include <stddef.h>               // offsetof()
 
 
@@ -225,7 +230,7 @@ get_running_loop(PyObject **loop)
 {
     PyObject *rl;
 
-    PyThreadState *ts = PyThreadState_Get();
+    PyThreadState *ts = _PyThreadState_GET();
     uint64_t ts_id = PyThreadState_GetID(ts);
     if (ts_id == cached_running_holder_tsid && cached_running_holder != NULL) {
         // Fast path, check the cache.
@@ -287,7 +292,7 @@ set_running_loop(PyObject *loop)
 {
     PyObject *ts_dict = NULL;
 
-    PyThreadState *tstate = PyThreadState_Get();
+    PyThreadState *tstate = _PyThreadState_GET();
     if (tstate != NULL) {
         ts_dict = _PyThreadState_GetDict(tstate);  // borrowed
     }
@@ -1366,10 +1371,15 @@ _asyncio_Future__make_cancelled_error_impl(FutureObj *self)
 {
     PyObject *exc = create_cancelled_error(self->fut_cancel_msg);
     _PyErr_StackItem *exc_state = &self->fut_cancelled_exc_state;
-    /* Transfer ownership of exc_value from exc_state to exc since we are
-       done with it. */
-    PyException_SetContext(exc, exc_state->exc_value);
-    exc_state->exc_value = NULL;
+
+    if (exc_state->exc_value) {
+        PyException_SetContext(exc, Py_NewRef(exc_state->exc_value));
+        _PyErr_ClearExcState(exc_state);
+    }
+    else {
+        assert(exc_state->exc_type == NULL);
+        assert(exc_state->exc_traceback == NULL);
+    }
 
     return exc;
 }
@@ -3239,6 +3249,9 @@ new_running_loop_holder(PyObject *loop)
 static void
 PyRunningLoopHolder_tp_dealloc(PyRunningLoopHolder *rl)
 {
+    if (cached_running_holder == (PyObject *)rl) {
+        cached_running_holder = NULL;
+    }
     Py_CLEAR(rl->rl_loop);
     PyObject_Free(rl);
 }

@@ -240,7 +240,7 @@ _bisect_insort_left_impl(PyObject *module, PyObject *a, PyObject *x,
 {
     PyObject *result, *key_x;
     Py_ssize_t index;
-    
+
     if (key == Py_None) {
         index = internal_bisect_left(a, x, lo, hi, key);
     } else {

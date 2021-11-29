@@ -235,11 +235,18 @@ class _proto_member:
         enum_member._sort_order_ = len(enum_class._member_names_)
         # If another member with the same value was already defined, the
         # new member becomes an alias to the existing one.
-        for name, canonical_member in enum_class._member_map_.items():
-            if canonical_member._value_ == enum_member._value_:
-                enum_member = canonical_member
-                break
-        else:
+        try:
+            try:
+                # try to do a fast lookup to avoid the quadratic loop
+                enum_member = enum_class._value2member_map_[value]
+            except TypeError:
+                for name, canonical_member in enum_class._member_map_.items():
+                    if canonical_member._value_ == value:
+                        enum_member = canonical_member
+                        break
+                else:
+                    raise KeyError
+        except KeyError:
             # this could still be an alias if the value is multi-bit and the
             # class is a flag class
             if (
@@ -301,7 +308,7 @@ class _EnumDict(dict):
     """
     def __init__(self):
         super().__init__()
-        self._member_names = []
+        self._member_names = {} # use a dict to keep insertion order
         self._last_values = []
         self._ignore = []
         self._auto_called = False
@@ -365,7 +372,7 @@ class _EnumDict(dict):
                             )
                     self._auto_called = True
                 value = value.value
-            self._member_names.append(key)
+            self._member_names[key] = None
             self._last_values.append(value)
         super().__setitem__(key, value)
 
@@ -1390,17 +1397,28 @@ def _power_of_two(value):
     return value == 2 ** _high_bit(value)
 
 def global_enum_repr(self):
-    return '%s.%s' % (self.__class__.__module__, self._name_)
+    """
+    use module.enum_name instead of class.enum_name
+
+    the module is the last module in case of a multi-module name
+    """
+    module = self.__class__.__module__.split('.')[-1]
+    return '%s.%s' % (module, self._name_)
 
 def global_flag_repr(self):
-    module = self.__class__.__module__
+    """
+    use module.flag_name instead of class.flag_name
+
+    the module is the last module in case of a multi-module name
+    """
+    module = self.__class__.__module__.split('.')[-1]
     cls_name = self.__class__.__name__
     if self._name_ is None:
-        return "%x" % (module, cls_name, self._value_)
+        return "%s.%s(0x%x)" % (module, cls_name, self._value_)
     if _is_single_bit(self):
         return '%s.%s' % (module, self._name_)
     if self._boundary_ is not FlagBoundary.KEEP:
-        return module + module.join(self.name.split('|'))
+        return '|'.join(['%s.%s' % (module, name) for name in self.name.split('|')])
     else:
         name = []
         for n in self._name_.split('|'):

@@ -591,7 +591,7 @@ class _pthFileTests(unittest.TestCase):
         return sys_path
 
     def test_underpth_nosite_file(self):
-        libpath = os.path.dirname(os.path.dirname(encodings.__file__))
+        libpath = test.support.STDLIB_DIR
         exe_prefix = os.path.dirname(sys.executable)
         pth_lines = [
             'fake-path-name',
@@ -619,7 +619,7 @@ class _pthFileTests(unittest.TestCase):
         )
 
     def test_underpth_file(self):
-        libpath = os.path.dirname(os.path.dirname(encodings.__file__))
+        libpath = test.support.STDLIB_DIR
         exe_prefix = os.path.dirname(sys.executable)
         exe_file = self._create_underpth_exe([
             'fake-path-name',
@@ -644,7 +644,7 @@ class _pthFileTests(unittest.TestCase):
 
 
     def test_underpth_dll_file(self):
-        libpath = os.path.dirname(os.path.dirname(encodings.__file__))
+        libpath = test.support.STDLIB_DIR
         exe_prefix = os.path.dirname(sys.executable)
         exe_file = self._create_underpth_exe([
             'fake-path-name',

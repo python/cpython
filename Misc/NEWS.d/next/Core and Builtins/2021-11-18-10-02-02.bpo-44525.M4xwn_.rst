@@ -1,0 +1,3 @@
+Adds new :opcode:`COPY_FREE_VARS` opcode, to make copying of free variables
+from function to frame explicit. Helps optimization of calls to Python
+function.

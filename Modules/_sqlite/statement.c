@@ -56,15 +56,12 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     Py_ssize_t size;
     const char *sql_cstr = PyUnicode_AsUTF8AndSize(sql, &size);
     if (sql_cstr == NULL) {
-        PyErr_Format(connection->Warning,
-                     "SQL is of wrong type ('%s'). Must be string.",
-                     Py_TYPE(sql)->tp_name);
         return NULL;
     }
 
     sqlite3 *db = connection->db;
-    int max_length = sqlite3_limit(db, SQLITE_LIMIT_LENGTH, -1);
-    if (size >= max_length) {
+    int max_length = sqlite3_limit(db, SQLITE_LIMIT_SQL_LENGTH, -1);
+    if (size > max_length) {
         PyErr_SetString(connection->DataError,
                         "query string is too large");
         return NULL;
@@ -121,7 +118,6 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     self->st = stmt;
     self->in_use = 0;
     self->is_dml = is_dml;
-    self->in_weakreflist = NULL;
 
     PyObject_GC_Track(self);
     return self;
@@ -364,23 +360,6 @@ pysqlite_statement_bind_parameters(pysqlite_state *state,
     }
 }
 
-int pysqlite_statement_finalize(pysqlite_Statement* self)
-{
-    int rc;
-
-    rc = SQLITE_OK;
-    if (self->st) {
-        Py_BEGIN_ALLOW_THREADS
-        rc = sqlite3_finalize(self->st);
-        Py_END_ALLOW_THREADS
-        self->st = NULL;
-    }
-
-    self->in_use = 0;
-
-    return rc;
-}
-
 int pysqlite_statement_reset(pysqlite_Statement* self)
 {
     int rc;
@@ -410,9 +389,6 @@ stmt_dealloc(pysqlite_Statement *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    if (self->in_weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject*)self);
-    }
     if (self->st) {
         Py_BEGIN_ALLOW_THREADS
         sqlite3_finalize(self->st);
@@ -500,12 +476,7 @@ static int pysqlite_check_remaining_sql(const char* tail)
     return 0;
 }
 
-static PyMemberDef stmt_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(pysqlite_Statement, in_weakreflist), READONLY},
-    {NULL},
-};
 static PyType_Slot stmt_slots[] = {
-    {Py_tp_members, stmt_members},
     {Py_tp_dealloc, stmt_dealloc},
     {Py_tp_traverse, stmt_traverse},
     {0, NULL},

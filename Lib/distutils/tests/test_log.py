@@ -40,7 +40,7 @@ class TestLog(unittest.TestCase):
                         'Fαtal\t\\xc8rr\\u014dr')
 
 def test_suite():
-    return unittest.makeSuite(TestLog)
+    return unittest.TestLoader().loadTestsFromTestCase(TestLog)
 
 if __name__ == "__main__":
     run_unittest(test_suite())

@@ -714,6 +714,8 @@ class LiteralTests(BaseTestCase):
         self.assertNotEqual(Literal[True], Literal[1])
         self.assertNotEqual(Literal[1], Literal[2])
         self.assertNotEqual(Literal[1, True], Literal[1])
+        self.assertNotEqual(Literal[1, True], Literal[1, 1])
+        self.assertNotEqual(Literal[1, 2], Literal[True, 2])
         self.assertEqual(Literal[1], Literal[1])
         self.assertEqual(Literal[1, 2], Literal[2, 1])
         self.assertEqual(Literal[1, 2, 3], Literal[1, 2, 3, 3])
@@ -1533,21 +1535,21 @@ class ProtocolTests(BaseTestCase):
 
     def test_supports_complex(self):
 
-        # Note: complex itself doesn't have __complex__.
         class C:
             def __complex__(self):
                 return 0j
 
+        self.assertIsSubclass(complex, typing.SupportsComplex)
         self.assertIsSubclass(C, typing.SupportsComplex)
         self.assertNotIsSubclass(str, typing.SupportsComplex)
 
     def test_supports_bytes(self):
 
-        # Note: bytes itself doesn't have __bytes__.
         class B:
             def __bytes__(self):
                 return b''
 
+        self.assertIsSubclass(bytes, typing.SupportsBytes)
         self.assertIsSubclass(B, typing.SupportsBytes)
         self.assertNotIsSubclass(str, typing.SupportsBytes)
 
@@ -1609,6 +1611,16 @@ class ProtocolTests(BaseTestCase):
 
         with self.assertRaisesRegex(TypeError, "@runtime_checkable"):
             isinstance(1, P)
+
+    def test_super_call_init(self):
+        class P(Protocol):
+            x: int
+
+        class Foo(P):
+            def __init__(self):
+                super().__init__()
+
+        Foo()  # Previously triggered RecursionError
 
 
 class GenericTests(BaseTestCase):
@@ -2424,6 +2436,22 @@ class GenericTests(BaseTestCase):
         self.assertEqual(c.from_b, 'b')
         self.assertEqual(c.from_c, 'c')
 
+    def test_subclass_special_form(self):
+        for obj in (
+            ClassVar[int],
+            Final[int],
+            Union[int, float],
+            Optional[int],
+            Literal[1, 2],
+            Concatenate[int, ParamSpec("P")],
+            TypeGuard[int],
+        ):
+            with self.subTest(msg=obj):
+                with self.assertRaisesRegex(
+                        TypeError, f'^{re.escape(f"Cannot subclass {obj!r}")}$'
+                ):
+                    class Foo(obj):
+                        pass
 
 class ClassVarTests(BaseTestCase):
 
@@ -2877,6 +2905,12 @@ class ForwardRefTests(BaseTestCase):
         self.assertNotEqual(gth(Loop, globals())['attr'], Final[int])
         self.assertNotEqual(gth(Loop, globals())['attr'], Final)
 
+    def test_or(self):
+        X = ForwardRef('X')
+        # __or__/__ror__ itself
+        self.assertEqual(X | "x", Union[X, "x"])
+        self.assertEqual("x" | X, Union["x", X])
+
 
 class OverloadTests(BaseTestCase):
 
@@ -2949,7 +2983,7 @@ else:
 
 # Definitions needed for features introduced in Python 3.6
 
-from test import ann_module, ann_module2, ann_module3
+from test import ann_module, ann_module2, ann_module3, ann_module5, ann_module6
 from typing import AsyncContextManager
 
 class A:
@@ -3249,6 +3283,22 @@ class GetTypeHintTests(BaseTestCase):
         BadType.__module__ = BadBase.__module__ = 'bad'
         self.assertNotIn('bad', sys.modules)
         self.assertEqual(get_type_hints(BadType), {'foo': tuple, 'bar': list})
+
+    def test_forward_ref_and_final(self):
+        # https://bugs.python.org/issue45166
+        hints = get_type_hints(ann_module5)
+        self.assertEqual(hints, {'name': Final[str]})
+
+        hints = get_type_hints(ann_module5.MyClass)
+        self.assertEqual(hints, {'value': Final})
+
+    def test_top_level_class_var(self):
+        # https://bugs.python.org/issue45166
+        with self.assertRaisesRegex(
+            TypeError,
+            r'typing.ClassVar\[int\] is not valid as type argument',
+        ):
+            get_type_hints(ann_module6)
 
 
 class GetUtilitiesTestCase(TestCase):
@@ -4073,6 +4123,19 @@ class NamedTupleTests(BaseTestCase):
         self.assertEqual(a.typename, 'foo')
         self.assertEqual(a.fields, [('bar', tuple)])
 
+    def test_empty_namedtuple(self):
+        NT = NamedTuple('NT')
+
+        class CNT(NamedTuple):
+            pass  # empty body
+
+        for struct in [NT, CNT]:
+            with self.subTest(struct=struct):
+                self.assertEqual(struct._fields, ())
+                self.assertEqual(struct._field_defaults, {})
+                self.assertEqual(struct.__annotations__, {})
+                self.assertIsInstance(struct(), struct)
+
     def test_namedtuple_errors(self):
         with self.assertRaises(TypeError):
             NamedTuple.__new__()
@@ -4552,6 +4615,11 @@ class AnnotatedTests(BaseTestCase):
         X = List[Annotated[T, 5]]
         self.assertEqual(X[int], List[Annotated[int, 5]])
 
+    def test_annotated_mro(self):
+        class X(Annotated[int, (1, 10)]): ...
+        self.assertEqual(X.__mro__, (X, int, object),
+                         "Annotated should be transparent.")
+
 
 class TypeAliasTests(BaseTestCase):
     def test_canonical_usage_with_variable_annotation(self):
@@ -4791,66 +4859,186 @@ class TypeGuardTests(BaseTestCase):
             issubclass(int, TypeGuard)
 
 
-class SpecialAttrsTests(BaseTestCase):
-    def test_special_attrs(self):
-        cls_to_check = (
-            # ABC classes
-            typing.AbstractSet,
-            typing.AsyncContextManager,
-            typing.AsyncGenerator,
-            typing.AsyncIterable,
-            typing.AsyncIterator,
-            typing.Awaitable,
-            typing.ByteString,
-            typing.Callable,
-            typing.ChainMap,
-            typing.Collection,
-            typing.Container,
-            typing.ContextManager,
-            typing.Coroutine,
-            typing.Counter,
-            typing.DefaultDict,
-            typing.Deque,
-            typing.Dict,
-            typing.FrozenSet,
-            typing.Generator,
-            typing.Hashable,
-            typing.ItemsView,
-            typing.Iterable,
-            typing.Iterator,
-            typing.KeysView,
-            typing.List,
-            typing.Mapping,
-            typing.MappingView,
-            typing.MutableMapping,
-            typing.MutableSequence,
-            typing.MutableSet,
-            typing.OrderedDict,
-            typing.Reversible,
-            typing.Sequence,
-            typing.Set,
-            typing.Sized,
-            typing.Tuple,
-            typing.Type,
-            typing.ValuesView,
-            # Special Forms
-            typing.Any,
-            typing.NoReturn,
-            typing.ClassVar,
-            typing.Final,
-            typing.Union,
-            typing.Optional,
-            typing.Literal,
-            typing.TypeAlias,
-            typing.Concatenate,
-            typing.TypeGuard,
-        )
+SpecialAttrsP = typing.ParamSpec('SpecialAttrsP')
+SpecialAttrsT = typing.TypeVar('SpecialAttrsT', int, float, complex)
 
-        for cls in cls_to_check:
+
+class SpecialAttrsTests(BaseTestCase):
+
+    def test_special_attrs(self):
+        cls_to_check = {
+            # ABC classes
+            typing.AbstractSet: 'AbstractSet',
+            typing.AsyncContextManager: 'AsyncContextManager',
+            typing.AsyncGenerator: 'AsyncGenerator',
+            typing.AsyncIterable: 'AsyncIterable',
+            typing.AsyncIterator: 'AsyncIterator',
+            typing.Awaitable: 'Awaitable',
+            typing.ByteString: 'ByteString',
+            typing.Callable: 'Callable',
+            typing.ChainMap: 'ChainMap',
+            typing.Collection: 'Collection',
+            typing.Container: 'Container',
+            typing.ContextManager: 'ContextManager',
+            typing.Coroutine: 'Coroutine',
+            typing.Counter: 'Counter',
+            typing.DefaultDict: 'DefaultDict',
+            typing.Deque: 'Deque',
+            typing.Dict: 'Dict',
+            typing.FrozenSet: 'FrozenSet',
+            typing.Generator: 'Generator',
+            typing.Hashable: 'Hashable',
+            typing.ItemsView: 'ItemsView',
+            typing.Iterable: 'Iterable',
+            typing.Iterator: 'Iterator',
+            typing.KeysView: 'KeysView',
+            typing.List: 'List',
+            typing.Mapping: 'Mapping',
+            typing.MappingView: 'MappingView',
+            typing.MutableMapping: 'MutableMapping',
+            typing.MutableSequence: 'MutableSequence',
+            typing.MutableSet: 'MutableSet',
+            typing.OrderedDict: 'OrderedDict',
+            typing.Reversible: 'Reversible',
+            typing.Sequence: 'Sequence',
+            typing.Set: 'Set',
+            typing.Sized: 'Sized',
+            typing.Tuple: 'Tuple',
+            typing.Type: 'Type',
+            typing.ValuesView: 'ValuesView',
+            # Subscribed ABC classes
+            typing.AbstractSet[Any]: 'AbstractSet',
+            typing.AsyncContextManager[Any]: 'AsyncContextManager',
+            typing.AsyncGenerator[Any, Any]: 'AsyncGenerator',
+            typing.AsyncIterable[Any]: 'AsyncIterable',
+            typing.AsyncIterator[Any]: 'AsyncIterator',
+            typing.Awaitable[Any]: 'Awaitable',
+            typing.Callable[[], Any]: 'Callable',
+            typing.Callable[..., Any]: 'Callable',
+            typing.ChainMap[Any, Any]: 'ChainMap',
+            typing.Collection[Any]: 'Collection',
+            typing.Container[Any]: 'Container',
+            typing.ContextManager[Any]: 'ContextManager',
+            typing.Coroutine[Any, Any, Any]: 'Coroutine',
+            typing.Counter[Any]: 'Counter',
+            typing.DefaultDict[Any, Any]: 'DefaultDict',
+            typing.Deque[Any]: 'Deque',
+            typing.Dict[Any, Any]: 'Dict',
+            typing.FrozenSet[Any]: 'FrozenSet',
+            typing.Generator[Any, Any, Any]: 'Generator',
+            typing.ItemsView[Any, Any]: 'ItemsView',
+            typing.Iterable[Any]: 'Iterable',
+            typing.Iterator[Any]: 'Iterator',
+            typing.KeysView[Any]: 'KeysView',
+            typing.List[Any]: 'List',
+            typing.Mapping[Any, Any]: 'Mapping',
+            typing.MappingView[Any]: 'MappingView',
+            typing.MutableMapping[Any, Any]: 'MutableMapping',
+            typing.MutableSequence[Any]: 'MutableSequence',
+            typing.MutableSet[Any]: 'MutableSet',
+            typing.OrderedDict[Any, Any]: 'OrderedDict',
+            typing.Reversible[Any]: 'Reversible',
+            typing.Sequence[Any]: 'Sequence',
+            typing.Set[Any]: 'Set',
+            typing.Tuple[Any]: 'Tuple',
+            typing.Tuple[Any, ...]: 'Tuple',
+            typing.Type[Any]: 'Type',
+            typing.ValuesView[Any]: 'ValuesView',
+            # Special Forms
+            typing.Annotated: 'Annotated',
+            typing.Any: 'Any',
+            typing.ClassVar: 'ClassVar',
+            typing.Concatenate: 'Concatenate',
+            typing.Final: 'Final',
+            typing.ForwardRef: 'ForwardRef',
+            typing.Literal: 'Literal',
+            typing.NewType: 'NewType',
+            typing.NoReturn: 'NoReturn',
+            typing.Optional: 'Optional',
+            typing.TypeAlias: 'TypeAlias',
+            typing.TypeGuard: 'TypeGuard',
+            typing.TypeVar: 'TypeVar',
+            typing.Union: 'Union',
+            # Subscribed special forms
+            typing.Annotated[Any, "Annotation"]: 'Annotated',
+            typing.ClassVar[Any]: 'ClassVar',
+            typing.Concatenate[Any, SpecialAttrsP]: 'Concatenate',
+            typing.Final[Any]: 'Final',
+            typing.Literal[Any]: 'Literal',
+            typing.Literal[1, 2]: 'Literal',
+            typing.Literal[True, 2]: 'Literal',
+            typing.Optional[Any]: 'Optional',
+            typing.TypeGuard[Any]: 'TypeGuard',
+            typing.Union[Any]: 'Any',
+            typing.Union[int, float]: 'Union',
+            # Incompatible special forms (tested in test_special_attrs2)
+            # - typing.ForwardRef('set[Any]')
+            # - typing.NewType('TypeName', Any)
+            # - typing.ParamSpec('SpecialAttrsP')
+            # - typing.TypeVar('T')
+        }
+
+        for cls, name in cls_to_check.items():
             with self.subTest(cls=cls):
-                self.assertEqual(cls.__name__, cls._name)
-                self.assertEqual(cls.__qualname__, cls._name)
-                self.assertEqual(cls.__module__, 'typing')
+                self.assertEqual(cls.__name__, name, str(cls))
+                self.assertEqual(cls.__qualname__, name, str(cls))
+                self.assertEqual(cls.__module__, 'typing', str(cls))
+                for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                    s = pickle.dumps(cls, proto)
+                    loaded = pickle.loads(s)
+                    self.assertIs(cls, loaded)
+
+    TypeName = typing.NewType('SpecialAttrsTests.TypeName', Any)
+
+    def test_special_attrs2(self):
+        # Forward refs provide a different introspection API. __name__ and
+        # __qualname__ make little sense for forward refs as they can store
+        # complex typing expressions.
+        fr = typing.ForwardRef('set[Any]')
+        self.assertFalse(hasattr(fr, '__name__'))
+        self.assertFalse(hasattr(fr, '__qualname__'))
+        self.assertEqual(fr.__module__, 'typing')
+        # Forward refs are currently unpicklable.
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.assertRaises(TypeError) as exc:
+                pickle.dumps(fr, proto)
+
+        self.assertEqual(SpecialAttrsTests.TypeName.__name__, 'TypeName')
+        self.assertEqual(
+            SpecialAttrsTests.TypeName.__qualname__,
+            'SpecialAttrsTests.TypeName',
+        )
+        self.assertEqual(
+            SpecialAttrsTests.TypeName.__module__,
+            'test.test_typing',
+        )
+        # NewTypes are picklable assuming correct qualname information.
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            s = pickle.dumps(SpecialAttrsTests.TypeName, proto)
+            loaded = pickle.loads(s)
+            self.assertIs(SpecialAttrsTests.TypeName, loaded)
+
+        # Type variables don't support non-global instantiation per PEP 484
+        # restriction that "The argument to TypeVar() must be a string equal
+        # to the variable name to which it is assigned".  Thus, providing
+        # __qualname__ is unnecessary.
+        self.assertEqual(SpecialAttrsT.__name__, 'SpecialAttrsT')
+        self.assertFalse(hasattr(SpecialAttrsT, '__qualname__'))
+        self.assertEqual(SpecialAttrsT.__module__, 'test.test_typing')
+        # Module-level type variables are picklable.
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            s = pickle.dumps(SpecialAttrsT, proto)
+            loaded = pickle.loads(s)
+            self.assertIs(SpecialAttrsT, loaded)
+
+        self.assertEqual(SpecialAttrsP.__name__, 'SpecialAttrsP')
+        self.assertFalse(hasattr(SpecialAttrsP, '__qualname__'))
+        self.assertEqual(SpecialAttrsP.__module__, 'test.test_typing')
+        # Module-level ParamSpecs are picklable.
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            s = pickle.dumps(SpecialAttrsP, proto)
+            loaded = pickle.loads(s)
+            self.assertIs(SpecialAttrsP, loaded)
 
 class AllTests(BaseTestCase):
     """Tests for __all__."""

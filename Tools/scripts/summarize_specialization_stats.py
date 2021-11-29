@@ -23,6 +23,18 @@ def print_stats(name, family_stats):
             print(f"{key:>12}:{family_stats[key]:>12} {100*family_stats[key]/total:0.1f}%")
     for key in ("specialization_success",  "specialization_failure"):
         print(f"  {key}:{family_stats[key]:>12}")
+    total_failures = family_stats["specialization_failure"]
+    failure_kinds = [ 0 ] * 20
+    for key in family_stats:
+        if not key.startswith("specialization_failure_kind"):
+            continue
+        _, index = key[:-1].split("[")
+        index =  int(index)
+        failure_kinds[index] = family_stats[key]
+    for index, value in enumerate(failure_kinds):
+        if not value:
+            continue
+        print(f"    kind {index:>2}: {value:>8} {100*value/total_failures:0.1f}%")
 
 def main():
     stats = collections.defaultdict(collections.Counter)

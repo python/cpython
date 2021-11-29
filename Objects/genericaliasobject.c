@@ -418,6 +418,8 @@ static const char* const attr_exceptions[] = {
     "__mro_entries__",
     "__reduce_ex__",  // needed so we don't look up object.__reduce_ex__
     "__reduce__",
+    "__copy__",
+    "__deepcopy__",
     NULL,
 };
 
@@ -576,7 +578,7 @@ static PyGetSetDef ga_properties[] = {
 };
 
 /* A helper function to create GenericAlias' args tuple and set its attributes.
- * Returns 1 on success, 0 on failure. 
+ * Returns 1 on success, 0 on failure.
  */
 static inline int
 setup_ga(gaobject *alias, PyObject *origin, PyObject *args) {

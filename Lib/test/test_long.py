@@ -1103,6 +1103,13 @@ class LongTest(unittest.TestCase):
 
     def test_to_bytes(self):
         def check(tests, byteorder, signed=False):
+            def equivalent_python(n, length, byteorder, signed=False):
+                if byteorder == 'little':
+                    order = range(length)
+                elif byteorder == 'big':
+                    order = reversed(range(length))
+                return bytes((n >> i*8) & 0xff for i in order)
+
             for test, expected in tests.items():
                 try:
                     self.assertEqual(
@@ -1110,8 +1117,29 @@ class LongTest(unittest.TestCase):
                         expected)
                 except Exception as err:
                     raise AssertionError(
-                        "failed to convert {0} with byteorder={1} and signed={2}"
+                        "failed to convert {} with byteorder={} and signed={}"
                         .format(test, byteorder, signed)) from err
+
+                # Test for all default arguments.
+                if len(expected) == 1 and byteorder == 'big' and not signed:
+                    try:
+                        self.assertEqual(test.to_bytes(), expected)
+                    except Exception as err:
+                        raise AssertionError(
+                            "failed to convert {} with default arguments"
+                            .format(test)) from err
+
+                try:
+                    self.assertEqual(
+                        equivalent_python(
+                            test, len(expected), byteorder, signed=signed),
+                        expected
+                    )
+                except Exception as err:
+                    raise AssertionError(
+                        "Code equivalent from docs is not equivalent for "
+                        "conversion of {0} with byteorder byteorder={1} and "
+                        "signed={2}".format(test, byteorder, signed)) from err
 
         # Convert integers to signed big-endian byte arrays.
         tests1 = {
@@ -1202,6 +1230,18 @@ class LongTest(unittest.TestCase):
 
     def test_from_bytes(self):
         def check(tests, byteorder, signed=False):
+            def equivalent_python(byte_array, byteorder, signed=False):
+                if byteorder == 'little':
+                    little_ordered = list(byte_array)
+                elif byteorder == 'big':
+                    little_ordered = list(reversed(byte_array))
+
+                n = sum(b << i*8 for i, b in enumerate(little_ordered))
+                if signed and little_ordered and (little_ordered[-1] & 0x80):
+                    n -= 1 << 8*len(little_ordered)
+
+                return n
+
             for test, expected in tests.items():
                 try:
                     self.assertEqual(
@@ -1209,7 +1249,29 @@ class LongTest(unittest.TestCase):
                         expected)
                 except Exception as err:
                     raise AssertionError(
-                        "failed to convert {0} with byteorder={1!r} and signed={2}"
+                        "failed to convert {} with byteorder={!r} and signed={}"
+                        .format(test, byteorder, signed)) from err
+
+                # Test for all default arguments.
+                if byteorder == 'big' and not signed:
+                    try:
+                        self.assertEqual(
+                            int.from_bytes(test),
+                            expected)
+                    except Exception as err:
+                        raise AssertionError(
+                            "failed to convert {} with default arguments"
+                            .format(test)) from err
+
+                try:
+                    self.assertEqual(
+                        equivalent_python(test, byteorder, signed=signed),
+                        expected
+                    )
+                except Exception as err:
+                    raise AssertionError(
+                        "Code equivalent from docs is not equivalent for "
+                        "conversion of {0} with byteorder={1!r} and signed={2}"
                         .format(test, byteorder, signed)) from err
 
         # Convert signed big-endian byte arrays to integers.

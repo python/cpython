@@ -3,10 +3,12 @@
 #include "pycore_runtime.h"       // _PyRuntime
 #include "osdefs.h"               // SEP
 #include <locale.h>
+#include <stdlib.h>               // mbstowcs()
 
 #ifdef MS_WINDOWS
 #  include <malloc.h>
 #  include <windows.h>
+#  include <pathcch.h>            // PathCchCombineEx
 extern int winerror_to_errno(int);
 #endif
 
@@ -67,9 +69,11 @@ PyObject *
 _Py_device_encoding(int fd)
 {
     int valid;
+    Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
     valid = isatty(fd);
     _Py_END_SUPPRESS_IPH
+    Py_END_ALLOW_THREADS
     if (!valid)
         Py_RETURN_NONE;
 
@@ -218,7 +222,7 @@ check_force_ascii(void)
         ch = (unsigned char)0xA7;
         res = _Py_mbstowcs(&wch, (char*)&ch, 1);
         if (res != DECODE_ERROR && wch == L'\xA7') {
-            /* On HP-UX withe C locale or the POSIX locale,
+            /* On HP-UX with C locale or the POSIX locale,
                nl_langinfo(CODESET) announces "roman8", whereas mbstowcs() uses
                Latin1 encoding in practice. Force ASCII in this case.
 
@@ -1203,6 +1207,31 @@ _Py_fstat(int fd, struct _Py_stat_struct *status)
     return 0;
 }
 
+/* Like _Py_stat() but with a raw filename. */
+int
+_Py_wstat(const wchar_t* path, struct stat *buf)
+{
+    int err;
+#ifdef MS_WINDOWS
+    struct _stat wstatbuf;
+    err = _wstat(path, &wstatbuf);
+    if (!err) {
+        buf->st_mode = wstatbuf.st_mode;
+    }
+#else
+    char *fname;
+    fname = _Py_EncodeLocaleRaw(path, NULL);
+    if (fname == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+    err = stat(fname, buf);
+    PyMem_RawFree(fname);
+#endif
+    return err;
+}
+
+
 /* Call _wstat() on Windows, or encode the path to the filesystem encoding and
    call stat() otherwise. Only fill st_mode attribute on Windows.
 
@@ -1214,7 +1243,6 @@ _Py_stat(PyObject *path, struct stat *statbuf)
 {
 #ifdef MS_WINDOWS
     int err;
-    struct _stat wstatbuf;
 
 #if USE_UNICODE_WCHAR_CACHE
     const wchar_t *wpath = _PyUnicode_AsUnicode(path);
@@ -1224,9 +1252,7 @@ _Py_stat(PyObject *path, struct stat *statbuf)
     if (wpath == NULL)
         return -2;
 
-    err = _wstat(wpath, &wstatbuf);
-    if (!err)
-        statbuf->st_mode = wstatbuf.st_mode;
+    err = _Py_wstat(wpath, statbuf);
 #if !USE_UNICODE_WCHAR_CACHE
     PyMem_Free(wpath);
 #endif /* USE_UNICODE_WCHAR_CACHE */
@@ -1374,10 +1400,11 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
             return 0;
         }
 
-#ifdef __linux__
+#ifdef O_PATH
         if (errno == EBADF) {
-            // On Linux, ioctl(FIOCLEX) will fail with EBADF for O_PATH file descriptors
-            // Fall through to the fcntl() path
+            // bpo-44849: On Linux and FreeBSD, ioctl(FIOCLEX) fails with EBADF
+            // on O_PATH file descriptors. Fall through to the fcntl()
+            // implementation.
         }
         else
 #endif
@@ -1775,12 +1802,22 @@ _Py_write_impl(int fd, const void *buf, size_t count, int gil_held)
 
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef MS_WINDOWS
-    if (count > 32767 && isatty(fd)) {
+    if (count > 32767) {
         /* Issue #11395: the Windows console returns an error (12: not
            enough space error) on writing into stdout if stdout mode is
            binary and the length is greater than 66,000 bytes (or less,
            depending on heap usage). */
-        count = 32767;
+        if (gil_held) {
+            Py_BEGIN_ALLOW_THREADS
+            if (isatty(fd)) {
+                count = 32767;
+            }
+            Py_END_ALLOW_THREADS
+        } else {
+            if (isatty(fd)) {
+                count = 32767;
+            }
+        }
     }
 #endif
     if (count > _PY_WRITE_MAX) {
@@ -2056,6 +2093,186 @@ _Py_abspath(const wchar_t *path, wchar_t **abspath_p)
     *abspath = 0;
     return 0;
 #endif
+}
+
+
+// The caller must ensure "buffer" is big enough.
+static int
+join_relfile(wchar_t *buffer, size_t bufsize,
+             const wchar_t *dirname, const wchar_t *relfile)
+{
+#ifdef MS_WINDOWS
+    if (FAILED(PathCchCombineEx(buffer, bufsize, dirname, relfile, 0))) {
+        return -1;
+    }
+#else
+    assert(!_Py_isabs(relfile));
+    size_t dirlen = wcslen(dirname);
+    size_t rellen = wcslen(relfile);
+    size_t maxlen = bufsize - 1;
+    if (maxlen > MAXPATHLEN || dirlen >= maxlen || rellen >= maxlen - dirlen) {
+        return -1;
+    }
+    if (dirlen == 0) {
+        // We do not add a leading separator.
+        wcscpy(buffer, relfile);
+    }
+    else {
+        if (dirname != buffer) {
+            wcscpy(buffer, dirname);
+        }
+        size_t relstart = dirlen;
+        if (dirlen > 1 && dirname[dirlen - 1] != SEP) {
+            buffer[dirlen] = SEP;
+            relstart += 1;
+        }
+        wcscpy(&buffer[relstart], relfile);
+    }
+#endif
+    return 0;
+}
+
+/* Join the two paths together, like os.path.join().  Return NULL
+   if memory could not be allocated.  The caller is responsible
+   for calling PyMem_RawFree() on the result. */
+wchar_t *
+_Py_join_relfile(const wchar_t *dirname, const wchar_t *relfile)
+{
+    assert(dirname != NULL && relfile != NULL);
+#ifndef MS_WINDOWS
+    assert(!_Py_isabs(relfile));
+#endif
+    size_t maxlen = wcslen(dirname) + 1 + wcslen(relfile);
+    size_t bufsize = maxlen + 1;
+    wchar_t *filename = PyMem_RawMalloc(bufsize * sizeof(wchar_t));
+    if (filename == NULL) {
+        return NULL;
+    }
+    assert(wcslen(dirname) < MAXPATHLEN);
+    assert(wcslen(relfile) < MAXPATHLEN - wcslen(dirname));
+    join_relfile(filename, bufsize, dirname, relfile);
+    return filename;
+}
+
+/* Join the two paths together, like os.path.join().
+     dirname: the target buffer with the dirname already in place,
+              including trailing NUL
+     relfile: this must be a relative path
+     bufsize: total allocated size of the buffer
+   Return -1 if anything is wrong with the path lengths. */
+int
+_Py_add_relfile(wchar_t *dirname, const wchar_t *relfile, size_t bufsize)
+{
+    assert(dirname != NULL && relfile != NULL);
+    assert(bufsize > 0);
+    return join_relfile(dirname, bufsize, dirname, relfile);
+}
+
+
+size_t
+_Py_find_basename(const wchar_t *filename)
+{
+    for (size_t i = wcslen(filename); i > 0; --i) {
+        if (filename[i] == SEP) {
+            return i + 1;
+        }
+    }
+    return 0;
+}
+
+
+/* Remove navigation elements such as "." and "..".
+
+   This is mostly a C implementation of posixpath.normpath().
+   Return 0 on success.  Return -1 if "orig" is too big for the buffer. */
+int
+_Py_normalize_path(const wchar_t *path, wchar_t *buf, const size_t buf_len)
+{
+    assert(path && *path != L'\0');
+    assert(*path == SEP);  // an absolute path
+    if (wcslen(path) + 1 >= buf_len) {
+        return -1;
+    }
+
+    int dots = -1;
+    int check_leading = 1;
+    const wchar_t *buf_start = buf;
+    wchar_t *buf_next = buf;
+    // The resulting filename will never be longer than path.
+    for (const wchar_t *remainder = path; *remainder != L'\0'; remainder++) {
+        wchar_t c = *remainder;
+        buf_next[0] = c;
+        buf_next++;
+        if (c == SEP) {
+            assert(dots <= 2);
+            if (dots == 2) {
+                // Turn "/x/y/../z" into "/x/z".
+                buf_next -= 4;  // "/../"
+                assert(*buf_next == SEP);
+                // We cap it off at the root, so "/../spam" becomes "/spam".
+                if (buf_next == buf_start) {
+                    buf_next++;
+                }
+                else {
+                    // Move to the previous SEP in the buffer.
+                    while (*(buf_next - 1) != SEP) {
+                        assert(buf_next != buf_start);
+                        buf_next--;
+                    }
+                }
+            }
+            else if (dots == 1) {
+                // Turn "/./" into "/".
+                buf_next -= 2;  // "./"
+                assert(*(buf_next - 1) == SEP);
+            }
+            else if (dots == 0) {
+                // Turn "//" into "/".
+                buf_next--;
+                assert(*(buf_next - 1) == SEP);
+                if (check_leading) {
+                    if (buf_next - 1 == buf && *(remainder + 1) != SEP) {
+                        // Leave a leading "//" alone, unless "///...".
+                        buf_next++;
+                        buf_start++;
+                    }
+                    check_leading = 0;
+                }
+            }
+            dots = 0;
+        }
+        else {
+            check_leading = 0;
+            if (dots >= 0) {
+                if (c == L'.' && dots < 2) {
+                    dots++;
+                }
+                else {
+                    dots = -1;
+                }
+            }
+        }
+    }
+    if (dots >= 0) {
+        // Strip any trailing dots and trailing slash.
+        buf_next -= dots + 1;  // "/" or "/." or "/.."
+        assert(*buf_next == SEP);
+        if (buf_next == buf_start) {
+            // Leave the leading slash for root.
+            buf_next++;
+        }
+        else {
+            if (dots == 2) {
+                // Move to the previous SEP in the buffer.
+                do {
+                    assert(buf_next != buf_start);
+                    buf_next--;
+                } while (*(buf_next) != SEP);
+            }
+        }
+    }
+    *buf_next = L'\0';
+    return 0;
 }
 
 

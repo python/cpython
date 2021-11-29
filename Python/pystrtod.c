@@ -2,6 +2,7 @@
 
 #include <Python.h>
 #include "pycore_dtoa.h"
+#include "pycore_pymath.h"        // _Py_SET_53BIT_PRECISION_START
 #include <locale.h>
 
 /* Case-insensitive string match used for nan and inf detection; t should be

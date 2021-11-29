@@ -177,7 +177,7 @@ _PyType_PreHeaderSize(PyTypeObject *tp)
 
 void _PyObject_GC_Link(PyObject *op);
 
-// Usage: assert(_Py_CheckSlotResult(obj, "__getitem__", result != NULL)));
+// Usage: assert(_Py_CheckSlotResult(obj, "__getitem__", result != NULL));
 extern int _Py_CheckSlotResult(
     PyObject *obj,
     const char *slot_name,
@@ -190,6 +190,16 @@ extern int _Py_CheckSlotResult(
 extern PyObject* _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems);
 
 extern int _PyObject_InitializeDict(PyObject *obj);
+extern int _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
+                                          PyObject *name, PyObject *value);
+PyObject * _PyObject_GetInstanceAttribute(PyObject *obj, PyDictValues *values,
+                                        PyObject *name);
+PyDictValues ** _PyObject_ValuesPointer(PyObject *);
+PyObject ** _PyObject_DictPointer(PyObject *);
+int _PyObject_VisitInstanceAttributes(PyObject *self, visitproc visit, void *arg);
+void _PyObject_ClearInstanceAttributes(PyObject *self);
+void _PyObject_FreeInstanceAttributes(PyObject *self);
+int _PyObject_IsInstanceDictEmpty(PyObject *);
 
 #ifdef __cplusplus
 }

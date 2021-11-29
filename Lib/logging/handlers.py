@@ -187,14 +187,17 @@ class RotatingFileHandler(BaseRotatingHandler):
         Basically, see if the supplied record would cause the file to exceed
         the size limit we have.
         """
+        # See bpo-45401: Never rollover anything other than regular files
+        if os.path.exists(self.baseFilename) and not os.path.isfile(self.baseFilename):
+            return False
         if self.stream is None:                 # delay was set...
             self.stream = self._open()
         if self.maxBytes > 0:                   # are we rolling over?
             msg = "%s\n" % self.format(record)
             self.stream.seek(0, 2)  #due to non-posix-compliant Windows feature
             if self.stream.tell() + len(msg) >= self.maxBytes:
-                return 1
-        return 0
+                return True
+        return False
 
 class TimedRotatingFileHandler(BaseRotatingHandler):
     """
@@ -345,10 +348,13 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         record is not used, as we are just comparing times, but it is needed so
         the method signatures are the same
         """
+        # See bpo-45401: Never rollover anything other than regular files
+        if os.path.exists(self.baseFilename) and not os.path.isfile(self.baseFilename):
+            return False
         t = int(time.time())
         if t >= self.rolloverAt:
-            return 1
-        return 0
+            return True
+        return False
 
     def getFilesToDelete(self):
         """
@@ -365,8 +371,13 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         for fileName in fileNames:
             if fileName[:plen] == prefix:
                 suffix = fileName[plen:]
-                if self.extMatch.match(suffix):
-                    result.append(os.path.join(dirName, fileName))
+                # See bpo-45628: The date/time suffix could be anywhere in the
+                # filename
+                parts = suffix.split('.')
+                for part in parts:
+                    if self.extMatch.match(part):
+                        result.append(os.path.join(dirName, fileName))
+                        break
         if len(result) < self.backupCount:
             result = []
         else:
@@ -835,6 +846,36 @@ class SysLogHandler(logging.Handler):
         self.address = address
         self.facility = facility
         self.socktype = socktype
+        self.socket = None
+        self.createSocket()
+
+    def _connect_unixsocket(self, address):
+        use_socktype = self.socktype
+        if use_socktype is None:
+            use_socktype = socket.SOCK_DGRAM
+        self.socket = socket.socket(socket.AF_UNIX, use_socktype)
+        try:
+            self.socket.connect(address)
+            # it worked, so set self.socktype to the used type
+            self.socktype = use_socktype
+        except OSError:
+            self.socket.close()
+            if self.socktype is not None:
+                # user didn't specify falling back, so fail
+                raise
+            use_socktype = socket.SOCK_STREAM
+            self.socket = socket.socket(socket.AF_UNIX, use_socktype)
+            try:
+                self.socket.connect(address)
+                # it worked, so set self.socktype to the used type
+                self.socktype = use_socktype
+            except OSError:
+                self.socket.close()
+                raise
+
+    def createSocket(self):
+        address = self.address
+        socktype = self.socktype
 
         if isinstance(address, str):
             self.unixsocket = True
@@ -871,30 +912,6 @@ class SysLogHandler(logging.Handler):
             self.socket = sock
             self.socktype = socktype
 
-    def _connect_unixsocket(self, address):
-        use_socktype = self.socktype
-        if use_socktype is None:
-            use_socktype = socket.SOCK_DGRAM
-        self.socket = socket.socket(socket.AF_UNIX, use_socktype)
-        try:
-            self.socket.connect(address)
-            # it worked, so set self.socktype to the used type
-            self.socktype = use_socktype
-        except OSError:
-            self.socket.close()
-            if self.socktype is not None:
-                # user didn't specify falling back, so fail
-                raise
-            use_socktype = socket.SOCK_STREAM
-            self.socket = socket.socket(socket.AF_UNIX, use_socktype)
-            try:
-                self.socket.connect(address)
-                # it worked, so set self.socktype to the used type
-                self.socktype = use_socktype
-            except OSError:
-                self.socket.close()
-                raise
-
     def encodePriority(self, facility, priority):
         """
         Encode the facility and priority. You can pass in strings or
@@ -914,7 +931,10 @@ class SysLogHandler(logging.Handler):
         """
         self.acquire()
         try:
-            self.socket.close()
+            sock = self.socket
+            if sock:
+                self.socket = None
+                sock.close()
             logging.Handler.close(self)
         finally:
             self.release()
@@ -954,6 +974,10 @@ class SysLogHandler(logging.Handler):
             # Message is a string. Convert to bytes as required by RFC 5424
             msg = msg.encode('utf-8')
             msg = prio + msg
+
+            if not self.socket:
+                self.createSocket()
+
             if self.unixsocket:
                 try:
                     self.socket.send(msg)
