@@ -1,0 +1,4 @@
+When installed through the Microsoft Store and set as the default app for
+:file:`*.py` files, command line arguments will now be passed to Python when
+invoking a script without explicitly launching Python (that is, ``script.py
+args`` rather than ``python script.py args``).

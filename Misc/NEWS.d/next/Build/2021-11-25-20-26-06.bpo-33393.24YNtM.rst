@@ -1,0 +1,3 @@
+Update ``config.guess`` to 2021-06-03 and ``config.sub`` to 2021-08-14.
+``Makefile`` now has an ``update-config`` target to make updating more
+convenient.

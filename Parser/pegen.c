@@ -170,6 +170,8 @@ initialize_token(Parser *p, Token *token, const char *start, const char *end, in
         return -1;
     }
 
+    token->level = p->tok->level;
+
     const char *line_start = token_type == STRING ? p->tok->multi_line_start : p->tok->line_start;
     int lineno = token_type == STRING ? p->tok->first_lineno : p->tok->lineno;
     int end_lineno = p->tok->lineno;

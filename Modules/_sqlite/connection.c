@@ -691,7 +691,7 @@ print_or_clear_traceback(callback_context *ctx)
     assert(ctx != NULL);
     assert(ctx->state != NULL);
     if (ctx->state->enable_callback_tracebacks) {
-        PyErr_Print();
+        PyErr_WriteUnraisable(ctx->callable);
     }
     else {
         PyErr_Clear();
