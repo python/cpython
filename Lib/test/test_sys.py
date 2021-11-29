@@ -1320,9 +1320,10 @@ class SizeofTest(unittest.TestCase):
         # sys.floatinfo
         check(sys.float_info, vsize('') + self.P * len(sys.float_info))
         # frame
-        import inspect
-        x = inspect.currentframe()
-        check(x, size('3Pi3c'))
+        def func():
+            return sys._getframe()
+        x = func()
+        check(x, size('3Pi3c8P2iciP'))
         # function
         def func(): pass
         check(func, size('14Pi'))

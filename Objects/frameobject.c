@@ -610,7 +610,7 @@ static PyGetSetDef frame_getsetlist[] = {
     f_back              next item on free list, or NULL
 */
 
-static void _Py_HOT_FUNCTION
+static void
 frame_dealloc(PyFrameObject *f)
 {
     if (_PyObject_GC_IS_TRACKED(f)) {
@@ -621,9 +621,10 @@ frame_dealloc(PyFrameObject *f)
     PyCodeObject *co = NULL;
 
     /* Kill all local variables including specials, if we own them */
-    if (f->f_own_locals_memory) {
-        f->f_own_locals_memory = 0;
-        InterpreterFrame *frame = f->f_frame;
+    if (f->f_owns_frame) {
+        f->f_owns_frame = 0;
+        assert(f->f_frame == (InterpreterFrame *)f->_f_frame_data);
+        InterpreterFrame *frame = (InterpreterFrame *)f->_f_frame_data;
         /* Don't clear code object until the end */
         co = frame->f_code;
         frame->f_code = NULL;
@@ -633,27 +634,10 @@ frame_dealloc(PyFrameObject *f)
         for (int i = 0; i < frame->stacktop; i++) {
             Py_CLEAR(locals[i]);
         }
-        PyMem_Free(frame);
     }
     Py_CLEAR(f->f_back);
     Py_CLEAR(f->f_trace);
-#if PyFrame_MAXFREELIST > 0
-    struct _Py_frame_state *state = get_frame_state();
-#ifdef Py_DEBUG
-    // frame_dealloc() must not be called after _PyFrame_Fini()
-    assert(state->numfree != -1);
-#endif
-    if (state->numfree < PyFrame_MAXFREELIST) {
-        ++state->numfree;
-        f->f_back = state->free_list;
-        state->free_list = f;
-    }
-    else
-#endif
-    {
-        PyObject_GC_Del(f);
-    }
-
+    PyObject_GC_Del(f);
     Py_XDECREF(co);
     Py_TRASHCAN_END;
 }
@@ -663,7 +647,7 @@ frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
 {
     Py_VISIT(f->f_back);
     Py_VISIT(f->f_trace);
-    if (f->f_own_locals_memory == 0) {
+    if (f->f_owns_frame == 0) {
         return 0;
     }
     assert(f->f_frame->frame_obj == NULL);
@@ -715,11 +699,9 @@ static PyObject *
 frame_sizeof(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t res;
-    res = sizeof(PyFrameObject);
-    if (f->f_own_locals_memory) {
-        PyCodeObject *code = f->f_frame->f_code;
-        res += (code->co_nlocalsplus+code->co_stacksize) * sizeof(PyObject *);
-    }
+    res = offsetof(PyFrameObject, _f_frame_data) + offsetof(InterpreterFrame, localsplus);
+    PyCodeObject *code = f->f_frame->f_code;
+    res += (code->co_nlocalsplus+code->co_stacksize) * sizeof(PyObject *);
     return PyLong_FromSsize_t(res);
 }
 
@@ -747,7 +729,8 @@ static PyMethodDef frame_methods[] = {
 PyTypeObject PyFrame_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "frame",
-    sizeof(PyFrameObject),
+    offsetof(PyFrameObject, _f_frame_data) +
+    offsetof(InterpreterFrame, localsplus),
     sizeof(PyObject *),
     (destructor)frame_dealloc,                  /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
@@ -781,67 +764,21 @@ PyTypeObject PyFrame_Type = {
 
 _Py_IDENTIFIER(__builtins__);
 
-static InterpreterFrame *
-allocate_heap_frame(PyFunctionObject *func, PyObject *locals)
+static void
+init_frame(InterpreterFrame *frame, PyFunctionObject *func, PyObject *locals)
 {
     PyCodeObject *code = (PyCodeObject *)func->func_code;
-    int size = code->co_nlocalsplus+code->co_stacksize + FRAME_SPECIALS_SIZE;
-    InterpreterFrame *frame = (InterpreterFrame *)PyMem_Malloc(sizeof(PyObject *)*size);
-    if (frame == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
     _PyFrame_InitializeSpecials(frame, func, locals, code->co_nlocalsplus);
     for (Py_ssize_t i = 0; i < code->co_nlocalsplus; i++) {
         frame->localsplus[i] = NULL;
     }
-    return frame;
 }
 
-static inline PyFrameObject*
-frame_alloc(InterpreterFrame *frame, int owns)
+PyFrameObject*
+_PyFrame_New_NoTrack(PyCodeObject *code)
 {
-    PyFrameObject *f;
-#if PyFrame_MAXFREELIST > 0
-    struct _Py_frame_state *state = get_frame_state();
-    if (state->free_list == NULL)
-#endif
-    {
-        f = PyObject_GC_New(PyFrameObject, &PyFrame_Type);
-        if (f == NULL) {
-            if (owns) {
-                Py_XDECREF(frame->f_code);
-                Py_XDECREF(frame->f_builtins);
-                Py_XDECREF(frame->f_globals);
-                Py_XDECREF(frame->f_locals);
-                PyMem_Free(frame);
-            }
-            return NULL;
-        }
-    }
-#if PyFrame_MAXFREELIST > 0
-    else
-    {
-#ifdef Py_DEBUG
-        // frame_alloc() must not be called after _PyFrame_Fini()
-        assert(state->numfree != -1);
-#endif
-        assert(state->numfree > 0);
-        --state->numfree;
-        f = state->free_list;
-        state->free_list = state->free_list->f_back;
-        _Py_NewReference((PyObject *)f);
-    }
-#endif
-    f->f_frame = frame;
-    f->f_own_locals_memory = owns;
-    return f;
-}
-
-PyFrameObject* _Py_HOT_FUNCTION
-_PyFrame_New_NoTrack(InterpreterFrame *frame, int owns)
-{
-    PyFrameObject *f = frame_alloc(frame, owns);
+    int slots = code->co_nlocalsplus + code->co_stacksize;
+    PyFrameObject *f = PyObject_GC_NewVar(PyFrameObject, &PyFrame_Type, slots);
     if (f == NULL) {
         return NULL;
     }
@@ -876,15 +813,16 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
     if (func == NULL) {
         return NULL;
     }
-    InterpreterFrame *frame = allocate_heap_frame(func, locals);
-    Py_DECREF(func);
-    if (frame == NULL) {
+    PyFrameObject *f = _PyFrame_New_NoTrack(code);
+    if (f == NULL) {
+        Py_DECREF(func);
         return NULL;
     }
-    PyFrameObject *f = _PyFrame_New_NoTrack(frame, 1);
-    if (f) {
-        _PyObject_GC_TRACK(f);
-    }
+    init_frame((InterpreterFrame *)f->_f_frame_data, func, locals);
+    f->f_frame = (InterpreterFrame *)f->_f_frame_data;
+    f->f_owns_frame = 1;
+    Py_DECREF(func);
+    _PyObject_GC_TRACK(f);
     return f;
 }
 
@@ -1087,42 +1025,15 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
     _PyFrame_LocalsToFast(f->f_frame, clear);
 }
 
-/* Clear out the free list */
-void
-_PyFrame_ClearFreeList(PyInterpreterState *interp)
-{
-#if PyFrame_MAXFREELIST > 0
-    struct _Py_frame_state *state = &interp->frame;
-    while (state->free_list != NULL) {
-        PyFrameObject *f = state->free_list;
-        state->free_list = state->free_list->f_back;
-        PyObject_GC_Del(f);
-        --state->numfree;
-    }
-    assert(state->numfree == 0);
-#endif
-}
-
 void
 _PyFrame_Fini(PyInterpreterState *interp)
 {
-    _PyFrame_ClearFreeList(interp);
-#if defined(Py_DEBUG) && PyFrame_MAXFREELIST > 0
-    struct _Py_frame_state *state = &interp->frame;
-    state->numfree = -1;
-#endif
 }
 
 /* Print summary info about the state of the optimized allocator */
 void
 _PyFrame_DebugMallocStats(FILE *out)
 {
-#if PyFrame_MAXFREELIST > 0
-    struct _Py_frame_state *state = get_frame_state();
-    _PyDebugAllocatorStats(out,
-                           "free PyFrameObject",
-                           state->numfree, sizeof(PyFrameObject));
-#endif
 }
 
 

@@ -69,8 +69,7 @@ static inline void _PyFrame_StackPush(InterpreterFrame *f, PyObject *value) {
 
 #define FRAME_SPECIALS_SIZE ((sizeof(InterpreterFrame)-1)/sizeof(PyObject *))
 
-InterpreterFrame *
-_PyInterpreterFrame_HeapAlloc(PyFunctionObject *func, PyObject *locals);
+InterpreterFrame *_PyFrame_Copy(InterpreterFrame *frame);
 
 static inline void
 _PyFrame_InitializeSpecials(
@@ -139,8 +138,8 @@ _PyFrame_GetFrameObject(InterpreterFrame *frame)
  * take should  be set to 1 for heap allocated
  * frames like the ones in generators and coroutines.
  */
-int
-_PyFrame_Clear(InterpreterFrame * frame, int take);
+void
+_PyFrame_Clear(InterpreterFrame * frame);
 
 int
 _PyFrame_Traverse(InterpreterFrame *frame, visitproc visit, void *arg);
