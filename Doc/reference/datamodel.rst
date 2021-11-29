@@ -1842,7 +1842,7 @@ instance dictionary.  In contrast, non-data descriptors can be overridden by
 instances.
 
 Python methods (including those decorated with
-:func:`@staticmethod<staticmethod>` and :func:`@classmethod<classmethod>`) are
+:func:`@staticmethod <staticmethod>` and :func:`@classmethod <classmethod>`) are
 implemented as non-data descriptors.  Accordingly, instances can redefine and
 override methods.  This allows individual instances to acquire behaviors that
 differ from other instances of the same class.
@@ -1892,7 +1892,7 @@ Notes on using *__slots__*
   support is needed, then add ``'__weakref__'`` to the sequence of strings in the
   *__slots__* declaration.
 
-* *__slots__* are implemented at the class level by creating :ref:`descriptors<descriptors>`
+* *__slots__* are implemented at the class level by creating :ref:`descriptors <descriptors>`
   for each variable name.  As a result, class attributes
   cannot be used to set default values for instance variables defined by
   *__slots__*; otherwise, the class attribute would overwrite the descriptor
@@ -2089,7 +2089,7 @@ is prepared. If the metaclass has a ``__prepare__`` attribute, it is called
 as ``namespace = metaclass.__prepare__(name, bases, **kwds)`` (where the
 additional keyword arguments, if any, come from the class definition). The
 ``__prepare__`` method should be implemented as a
-:func:`classmethod<classmethod>`. The
+:func:`classmethod <classmethod>`. The
 namespace returned by ``__prepare__`` is passed in to ``__new__``, but when
 the final class object is created the namespace is copied into a new ``dict``.
 
@@ -2389,23 +2389,22 @@ Emulating container types
 The following methods can be defined to implement container objects.  Containers
 usually are :term:`sequences <sequence>` (such as :class:`lists <list>` or
 :class:`tuples <tuple>`) or :term:`mappings <mapping>` (like
-:class:`dictionaries<dict>`),
+:class:`dictionaries <dict>`),
 but can represent other containers as well.  The first set of methods is used
 either to emulate a sequence or to emulate a mapping; the difference is that for
 a sequence, the allowable keys should be the integers *k* for which ``0 <= k <
 N`` where *N* is the length of the sequence, or :class:`slice` objects, which define a
 range of items.  It is also recommended that mappings provide the methods
-:meth:`~dict.keys`, :meth:`~dict.values`, :meth:`~dict.items`,
-:meth:`~dict.get`, :meth:`~dict.clear`, :meth:`~dict.setdefault`,
-:meth:`~dict.pop`, :meth:`~dict.popitem`, :meth:`~dict.copy`, and
-:meth:`~dict.update` behaving similar to those for Python's standard
-:class:`dictionary<dict>` objects. The :mod:`collections.abc` module provides a
-:class:`~collections.abc.MutableMapping` :term:`abstract base class` to help
-create those methods from a base set of :meth:`~object.__getitem__`,
-:meth:`~object.__setitem__`, :meth:`~object.__delitem__`, and :meth:`keys`.
+:meth:`keys`, :meth:`values`, :meth:`items`, :meth:`get`, :meth:`clear`, 
+:meth:`setdefault`, :meth:`pop`, :meth:`popitem`, :meth:`!copy`, and
+:meth:`update` behaving similar to those for Python's standard :class:`dictionary<dict>`
+objects. The :mod:`collections.abc` module provides a
+:class:`~collections.abc.MutableMapping`
+:term:`abstract base class` to help create those methods from a base set of 
+:meth:`~object.__getitem__`, :meth:`~object.__setitem__`, :meth:`~object.__delitem__`, and :meth:`keys`.
 Mutable sequences should provide methods :meth:`append`, :meth:`count`,
 :meth:`index`, :meth:`extend`, :meth:`insert`, :meth:`pop`, :meth:`remove`,
-:meth:`reverse` and :meth:`~list.sort`, like Python standard :class:`list`
+:meth:`reverse` and :meth:`sort`, like Python standard :class:`list`
 objects. Finally,
 sequence types should implement addition (meaning concatenation) and
 multiplication (meaning repetition) by defining the methods
