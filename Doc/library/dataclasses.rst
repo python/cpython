@@ -328,7 +328,7 @@ Module contents
    lists, and tuples are recursed into.  Other objects are copied with
    :func:`copy.deepcopy`.
 
-   Example of using :func:`~asdict` on nested dataclasses::
+   Example of using :func:`asdict` on nested dataclasses::
 
      @dataclass
      class Point:
@@ -349,7 +349,7 @@ Module contents
 
      dict((field.name, getattr(instance, field.name)) for field in fields(instance))
 
-   :func:`~asdict` raises :exc:`TypeError` if ``instance`` is not a dataclass
+   :func:`asdict` raises :exc:`TypeError` if ``instance`` is not a dataclass
    instance.
 
 .. function:: astuple(instance, *, tuple_factory=tuple)
@@ -369,7 +369,7 @@ Module contents
 
      tuple(getattr(instance, field.name) for field in dataclasses.fields(instance))
 
-   :func:`~astuple` raises :exc:`TypeError` if ``instance`` is not a dataclass
+   :func:`astuple` raises :exc:`TypeError` if ``instance`` is not a dataclass
    instance.
 
 .. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False)
