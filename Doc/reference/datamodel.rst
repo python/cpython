@@ -2387,7 +2387,7 @@ Emulating container types
 -------------------------
 
 The following methods can be defined to implement container objects.  Containers
-usually are :term:`sequences<sequence>` (such as :class:`lists<list>` or
+usually are :term:`sequences <sequence>` (such as :class:`lists <list>` or
 :class:`tuples<tuple>`) or :term:`mappings<mapping>` (like
 :class:`dictionaries<dict>`),
 but can represent other containers as well.  The first set of methods is used
