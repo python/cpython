@@ -4893,7 +4893,7 @@ The builtin functions :func:`isinstance` and :func:`issubclass` do not accept
 
 The Python runtime does not enforce :term:`type annotations <annotation>`.
 This extends to generic types and their type parameters. When creating
-a container object from a ``GenericAlias``, the elements in the container are not checked 
+a container object from a ``GenericAlias``, the elements in the container are not checked
 against their type. For example, the following code is discouraged, but will
 run without errors::
 
@@ -4920,7 +4920,7 @@ Calling :func:`repr` or :func:`str` on a generic shows the parameterized type::
    >>> str(list[int])
    'list[int]'
 
-The :meth:`~object.__getitem__` method of generic containers will raise an exception to disallow 
+The :meth:`~object.__getitem__` method of generic containers will raise an exception to disallow
 mistakes like ``dict[str][str]``::
 
    >>> dict[str][str]
