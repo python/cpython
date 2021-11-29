@@ -336,7 +336,7 @@ def _decimal_sqrt_of_frac(n: int, m: int) -> Decimal:
     # Method:   Check the result, moving up or down a step if needed.
     if n <= 0:
         if not n:
-            return 0.0
+            return Decimal('0.0')
         n, m = -n, -m
 
     root = (Decimal(n) / Decimal(m)).sqrt()
