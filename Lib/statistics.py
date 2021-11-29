@@ -306,7 +306,7 @@ def _fail_neg(values, errmsg='negative value'):
         yield x
 
 
-def _isqrt_frac_rto(n: int, m: int) -> int:
+def _integer_sqrt_of_frac_rto(n: int, m: int) -> int:
     """Square root of n/m, rounded to the nearest integer using round-to-odd."""
     # Reference: https://www.lri.fr/~melquion/doc/05-imacs17_1-expose.pdf
     a = math.isqrt(n // m)
@@ -322,10 +322,10 @@ def _float_sqrt_of_frac(n: int, m: int) -> float:
     # See principle and proof sketch at: https://bugs.python.org/msg407078
     q = (n.bit_length() - m.bit_length() - _sqrt_shift) // 2
     if q >= 0:
-        numerator = _isqrt_frac_rto(n, m << 2 * q) << q
+        numerator = _integer_sqrt_of_frac_rto(n, m << 2 * q) << q
         denominator = 1
     else:
-        numerator = _isqrt_frac_rto(n << -2 * q, m)
+        numerator = _integer_sqrt_of_frac_rto(n << -2 * q, m)
         denominator = 1 << -q
     return numerator / denominator   # Convert to float
 
@@ -345,13 +345,13 @@ def _decimal_sqrt_of_frac(n: int, m: int) -> Decimal:
     plus = root.next_plus()
     np, dp = plus.as_integer_ratio()
     # test: n / m > ((root + plus) / 2) ** 2
-    if 4 * dr**2 * dp**2 * n > m * (dr*np + dp*nr)**2:
+    if 4 * n * (dr*dp)**2 > m * (dr*np + dp*nr)**2:
         return plus
 
     minus = root.next_minus()
     nm, dm = minus.as_integer_ratio()
     # test: n / m < ((root + minus) / 2) ** 2
-    if 4 * dr**2 * dm**2 * n < m * (dr*nm + dm*nr)**2:
+    if 4 * n * (dr*dm)**2 < m * (dr*nm + dm*nr)**2:
         return minus
 
     return root
