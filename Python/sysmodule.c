@@ -785,12 +785,7 @@ sys_exc_info_impl(PyObject *module)
 /*[clinic end generated code: output=3afd0940cf3a4d30 input=b5c5bf077788a3e5]*/
 {
     _PyErr_StackItem *err_info = _PyErr_GetTopmostException(_PyThreadState_GET());
-    return Py_BuildValue(
-        "(OOO)",
-        err_info->exc_type != NULL ? err_info->exc_type : Py_None,
-        err_info->exc_value != NULL ? err_info->exc_value : Py_None,
-        err_info->exc_traceback != NULL ?
-            err_info->exc_traceback : Py_None);
+    return _PyErr_StackItemToExcInfoTuple(err_info);
 }
 
 

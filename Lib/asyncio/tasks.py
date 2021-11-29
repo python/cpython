@@ -415,11 +415,9 @@ async def wait_for(fut, timeout):
 
         await _cancel_and_wait(fut, loop=loop)
         try:
-            fut.result()
+            return fut.result()
         except exceptions.CancelledError as exc:
             raise exceptions.TimeoutError() from exc
-        else:
-            raise exceptions.TimeoutError()
 
     waiter = loop.create_future()
     timeout_handle = loop.call_later(timeout, _release_waiter, waiter)
@@ -455,11 +453,9 @@ async def wait_for(fut, timeout):
             # exception, we should re-raise it
             # See https://bugs.python.org/issue40607
             try:
-                fut.result()
+                return fut.result()
             except exceptions.CancelledError as exc:
                 raise exceptions.TimeoutError() from exc
-            else:
-                raise exceptions.TimeoutError()
     finally:
         timeout_handle.cancel()
 
