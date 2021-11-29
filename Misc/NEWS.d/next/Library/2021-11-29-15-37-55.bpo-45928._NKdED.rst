@@ -1,0 +1,2 @@
+Set up file stream for redirecting logs by adding a parameter in `set_debug`.
+The stderr is used by default.
