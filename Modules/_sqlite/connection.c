@@ -1128,6 +1128,7 @@ trace_callback(void *ctx, const char *sql)
         PyErr_SetString(state->DataError,
                         "Expanded SQL string exceeds the maximum string "
                         "length");
+        print_or_clear_traceback((callback_context *)ctx);
 
         // Fall back to unexpanded sql
         py_statement = PyUnicode_FromString((const char *)sql);
@@ -1140,22 +1141,16 @@ trace_callback(void *ctx, const char *sql)
     py_statement = PyUnicode_FromString(sql);
 #endif
     if (py_statement) {
-        PyObject *exc, *val, *tb;
-        PyErr_Fetch(&exc, &val, &tb);
-
         PyObject *callable = ((callback_context *)ctx)->callable;
         PyObject *ret = PyObject_CallOneArg(callable, py_statement);
         Py_DECREF(py_statement);
         Py_XDECREF(ret);
-
-        _PyErr_ChainExceptions(exc, val, tb);
-    }
-
-    if (PyErr_Occurred()) {
-        print_or_clear_traceback((callback_context *)ctx);
     }
 
 exit:
+    if (PyErr_Occurred()) {
+        print_or_clear_traceback((callback_context *)ctx);
+    }
     PyGILState_Release(gilstate);
 #ifdef HAVE_TRACE_V2
     return 0;
