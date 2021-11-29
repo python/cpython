@@ -712,6 +712,8 @@ MODULE_OSSAUDIODEV_FALSE
 MODULE_OSSAUDIODEV_TRUE
 MODULE_GRP_FALSE
 MODULE_GRP_TRUE
+MODULE__SOCKET_FALSE
+MODULE__SOCKET_TRUE
 MODULE_MMAP_FALSE
 MODULE_MMAP_TRUE
 MODULE_FCNTL_FALSE
@@ -738,8 +740,6 @@ MODULE__TYPING_FALSE
 MODULE__TYPING_TRUE
 MODULE__STRUCT_FALSE
 MODULE__STRUCT_TRUE
-MODULE__SOCKET_FALSE
-MODULE__SOCKET_TRUE
 MODULE_SELECT_FALSE
 MODULE_SELECT_TRUE
 MODULE__RANDOM_FALSE
@@ -8371,7 +8371,7 @@ sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
 libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
 linux/tipc.h linux/random.h spawn.h util.h alloca.h endian.h \
 sys/endian.h sys/sysmacros.h linux/memfd.h linux/wait.h sys/memfd.h \
-sys/mman.h sys/eventfd.h linux/soundcard.h sys/soundcard.h syslog.h
+sys/mman.h sys/eventfd.h linux/soundcard.h sys/soundcard.h syslog.h netinet/in.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -21223,15 +21223,6 @@ fi
   as_fn_append MODULE_BLOCK "MODULE_SELECT=yes$as_nl"
 
      if true; then
-  MODULE__SOCKET_TRUE=
-  MODULE__SOCKET_FALSE='#'
-else
-  MODULE__SOCKET_TRUE='#'
-  MODULE__SOCKET_FALSE=
-fi
-  as_fn_append MODULE_BLOCK "MODULE__SOCKET=yes$as_nl"
-
-     if true; then
   MODULE__STRUCT_TRUE=
   MODULE__STRUCT_FALSE='#'
 else
@@ -21443,6 +21434,42 @@ fi
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_mmap" >&5
 $as_echo "$py_cv_module_mmap" >&6; }
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _socket" >&5
+$as_echo_n "checking for stdlib extension module _socket... " >&6; }
+      case $py_stdlib_not_available in #(
+  *_socket*) :
+    py_cv_module__socket=n/a ;; #(
+  *) :
+    if true; then :
+  if test "$ac_cv_header_sys_socket_h" = "yes"                     -a "$ac_cv_header_sys_types_h" = "yes"                     -a "$ac_cv_header_netinet_in_h" = "yes"; then :
+  py_cv_module__socket=yes
+else
+  py_cv_module__socket=missing
+fi
+else
+  py_cv_module__socket=disabled
+fi
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE__SOCKET=$py_cv_module__socket$as_nl"
+  if test "x$py_cv_module__socket" = xyes; then :
+
+
+
+
+fi
+   if test "$py_cv_module__socket" = yes; then
+  MODULE__SOCKET_TRUE=
+  MODULE__SOCKET_FALSE='#'
+else
+  MODULE__SOCKET_TRUE='#'
+  MODULE__SOCKET_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__socket" >&5
+$as_echo "$py_cv_module__socket" >&6; }
 
 
 
@@ -22982,10 +23009,6 @@ if test -z "${MODULE_SELECT_TRUE}" && test -z "${MODULE_SELECT_FALSE}"; then
   as_fn_error $? "conditional \"MODULE_SELECT\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${MODULE__SOCKET_TRUE}" && test -z "${MODULE__SOCKET_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE__SOCKET\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
 if test -z "${MODULE__STRUCT_TRUE}" && test -z "${MODULE__STRUCT_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__STRUCT\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
@@ -23036,6 +23059,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_MMAP_TRUE}" && test -z "${MODULE_MMAP_FALSE}"; then
   as_fn_error $? "conditional \"MODULE_MMAP\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__SOCKET_TRUE}" && test -z "${MODULE__SOCKET_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__SOCKET\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_GRP_TRUE}" && test -z "${MODULE_GRP_FALSE}"; then
