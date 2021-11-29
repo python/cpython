@@ -355,6 +355,11 @@ Power and logarithmic functions
    of natural logarithms.  This is usually more accurate than ``math.e ** x``
    or ``pow(math.e, x)``.
 
+.. function:: exp2(x)
+
+   Return *2* raised to the power *x*.
+
+   .. versionadded:: 3.11
 
 .. function:: expm1(x)
 

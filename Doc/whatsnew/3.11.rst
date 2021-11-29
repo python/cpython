@@ -203,6 +203,8 @@ fractions
 
 math
 ----
+* Add :func:`math.exp2`: return 2 raised to the power of x.
+  (Contributed by Gideon Mitchell in :issue:`45917`.)
 
 * Add :func:`math.cbrt`: return the cube root of x.
   (Contributed by Ajith Ramachandran in :issue:`44357`.)
