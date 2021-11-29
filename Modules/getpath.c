@@ -775,6 +775,14 @@ library_to_dict(PyObject *dict, const char *key)
 }
 
 
+PyObject *
+_Py_GetGetPathCodeObject()
+{
+    return PyMarshal_ReadObjectFromString(
+        (const char*)_Py_M__getpath, sizeof(_Py_M__getpath));
+}
+
+
 /* Perform the actual path calculation.
 
    When compute_path_config is 0, this only reads any initialised path
@@ -825,8 +833,7 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
     /* reference now held by dict */
     Py_DECREF(configDict);
 
-    PyObject *co = PyMarshal_ReadObjectFromString(
-        (const char*)_Py_M__getpath, sizeof(_Py_M__getpath));
+    PyObject *co = _Py_GetGetPathCodeObject();
     if (!co || !PyCode_Check(co)) {
         PyErr_Clear();
         Py_XDECREF(co);

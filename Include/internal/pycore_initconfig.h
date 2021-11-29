@@ -168,6 +168,8 @@ PyAPI_FUNC(int) _PyConfig_FromDict(PyConfig *config, PyObject *dict);
 
 extern void _Py_DumpPathConfig(PyThreadState *tstate);
 
+PyAPI_FUNC(PyObject*) _Py_GetGetPathCodeObject();
+
 
 /* --- Function used for testing ---------------------------------- */
 

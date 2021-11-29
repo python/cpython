@@ -384,6 +384,11 @@ normalize_path(PyObject *self, PyObject *filename)
     return result;
 }
 
+static PyObject *
+get_getpath_codeobject(PyObject *self, PyObject *Py_UNUSED(args)) {
+    return _Py_GetGetPathCodeObject();
+}
+
 
 static PyMethodDef TestMethods[] = {
     {"get_configs", get_configs, METH_NOARGS},
@@ -397,6 +402,7 @@ static PyMethodDef TestMethods[] = {
     {"test_atomic_funcs", test_atomic_funcs, METH_NOARGS},
     {"test_edit_cost", test_edit_cost, METH_NOARGS},
     {"normalize_path", normalize_path, METH_O, NULL},
+    {"get_getpath_codeobject", get_getpath_codeobject, METH_NOARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
 

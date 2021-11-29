@@ -7,8 +7,13 @@ import unittest
 
 from test.support import verbose
 
-# TODO: Better way to locate this file
-SOURCE = (pathlib.Path(__file__).absolute().parent.parent.parent / "Modules/getpath.py").read_bytes()
+try:
+    # If we are in a source tree, use the original source file for tests
+    SOURCE = (pathlib.Path(__file__).absolute().parent.parent.parent / "Modules/getpath.py").read_bytes()
+except FileNotFoundError:
+    # Try from _testcapimodule instead
+    from _testinternalcapi import get_getpath_codeobject
+    SOURCE = get_getpath_codeobject()
 
 
 class MockGetPathTests(unittest.TestCase):
