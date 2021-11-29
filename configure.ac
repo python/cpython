@@ -2192,21 +2192,18 @@ dnl assume C99 compilers provide ANSI C headers
 AC_DEFINE(STDC_HEADERS, 1, [Define to 1 if you have the ANSI C header files.])
 
 # checks for header files
-AC_CHECK_HEADERS(asm/types.h crypt.h conio.h direct.h dlfcn.h errno.h \
-fcntl.h grp.h \
-ieeefp.h io.h langinfo.h libintl.h process.h pthread.h \
-sched.h shadow.h signal.h stropts.h termios.h \
-utime.h \
-poll.h sys/devpoll.h sys/epoll.h sys/poll.h \
-sys/audioio.h sys/xattr.h sys/bsdtty.h sys/event.h sys/file.h sys/ioctl.h \
-sys/kern_control.h sys/loadavg.h sys/lock.h sys/mkdev.h sys/modem.h \
-sys/param.h sys/random.h sys/select.h sys/sendfile.h sys/socket.h sys/statvfs.h \
-sys/stat.h sys/syscall.h sys/sys_domain.h sys/termio.h sys/time.h \
-sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
-libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
-linux/tipc.h linux/random.h spawn.h util.h alloca.h endian.h \
-sys/endian.h sys/sysmacros.h linux/memfd.h linux/wait.h sys/memfd.h \
-sys/mman.h sys/eventfd.h linux/soundcard.h sys/soundcard.h syslog.h netinet/in.h)
+AC_CHECK_HEADERS([ \
+  alloca.h asm/types.h bluetooth.h conio.h crypt.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
+  ieeefp.h io.h langinfo.h libintl.h libutil.h linux/memfd.h linux/random.h linux/soundcard.h \
+  linux/tipc.h linux/wait.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
+  sched.h shadow.h signal.h spawn.h stropts.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
+  sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
+  sys/loadavg.h sys/lock.h sys/memfd.h sys/mkdev.h sys/mman.h sys/modem.h sys/param.h sys/poll.h \
+  sys/random.h sys/resource.h sys/select.h sys/sendfile.h sys/socket.h sys/soundcard.h sys/stat.h \
+  sys/statvfs.h sys/sys_domain.h sys/syscall.h sys/sysmacros.h sys/termio.h sys/time.h sys/times.h \
+  sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h sys/xattr.h sysexits.h syslog.h \
+  termios.h util.h utime.h \
+])
 AC_HEADER_DIRENT
 AC_HEADER_MAJOR
 
