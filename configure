@@ -21062,7 +21062,7 @@ case $ac_sys_system in #(
     py_stdlib_not_available="_scproxy spwd" ;; #(
   Emscripten) :
 
-    py_stdlib_not_available="_curses _curses_panel _dbm _gdbm _multiprocessing _posixshmem _posixsubprocess _scproxy _xxsubinterpreters grp nis ossaudiodev resource spwd syslog termios"
+    py_stdlib_not_available="_curses _curses_panel _dbm _gdbm _multiprocessing _posixshmem _posixsubprocess _scproxy _xxsubinterpreters fcntl grp nis ossaudiodev resource spwd syslog termios"
    ;; #(
   *) :
     py_stdlib_not_available="_scproxy"
@@ -21086,201 +21086,522 @@ MODULE_BLOCK=
 
 
 
-     if true; then
+      case $py_stdlib_not_available in #(
+  *_io*) :
+    py_cv_module__io=n/a ;; #(
+  *) :
+    py_cv_module__io=yes
+   ;;
+esac
+   if test "$py_cv_module__io" = yes; then
   MODULE__IO_TRUE=
   MODULE__IO_FALSE='#'
 else
   MODULE__IO_TRUE='#'
   MODULE__IO_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__IO=yes$as_nl"
+
+  as_fn_append MODULE_BLOCK "MODULE__IO=$py_cv_module__io$as_nl"
+  if test "x$py_cv_module__io" = xyes; then :
+
     as_fn_append MODULE_BLOCK "MODULE__IO_CFLAGS=-I\$(srcdir)/Modules/_io$as_nl"
 
 
-     if true; then
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *time*) :
+    py_cv_module_time=n/a ;; #(
+  *) :
+    py_cv_module_time=yes
+   ;;
+esac
+   if test "$py_cv_module_time" = yes; then
   MODULE_TIME_TRUE=
   MODULE_TIME_FALSE='#'
 else
   MODULE_TIME_TRUE='#'
   MODULE_TIME_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE_TIME=yes$as_nl"
+
+  as_fn_append MODULE_BLOCK "MODULE_TIME=$py_cv_module_time$as_nl"
+  if test "x$py_cv_module_time" = xyes; then :
+
+
     as_fn_append MODULE_BLOCK "MODULE_TIME_LDFLAGS=$TIMEMODULE_LIB$as_nl"
 
+fi
 
 
-     if true; then
+
+      case $py_stdlib_not_available in #(
+  *array*) :
+    py_cv_module_array=n/a ;; #(
+  *) :
+    py_cv_module_array=yes
+   ;;
+esac
+   if test "$py_cv_module_array" = yes; then
   MODULE_ARRAY_TRUE=
   MODULE_ARRAY_FALSE='#'
 else
   MODULE_ARRAY_TRUE='#'
   MODULE_ARRAY_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE_ARRAY=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE_ARRAY=$py_cv_module_array$as_nl"
+  if test "x$py_cv_module_array" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_asyncio*) :
+    py_cv_module__asyncio=n/a ;; #(
+  *) :
+    py_cv_module__asyncio=yes
+   ;;
+esac
+   if test "$py_cv_module__asyncio" = yes; then
   MODULE__ASYNCIO_TRUE=
   MODULE__ASYNCIO_FALSE='#'
 else
   MODULE__ASYNCIO_TRUE='#'
   MODULE__ASYNCIO_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__ASYNCIO=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__ASYNCIO=$py_cv_module__asyncio$as_nl"
+  if test "x$py_cv_module__asyncio" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_bisect*) :
+    py_cv_module__bisect=n/a ;; #(
+  *) :
+    py_cv_module__bisect=yes
+   ;;
+esac
+   if test "$py_cv_module__bisect" = yes; then
   MODULE__BISECT_TRUE=
   MODULE__BISECT_FALSE='#'
 else
   MODULE__BISECT_TRUE='#'
   MODULE__BISECT_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__BISECT=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__BISECT=$py_cv_module__bisect$as_nl"
+  if test "x$py_cv_module__bisect" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_contextvars*) :
+    py_cv_module__contextvars=n/a ;; #(
+  *) :
+    py_cv_module__contextvars=yes
+   ;;
+esac
+   if test "$py_cv_module__contextvars" = yes; then
   MODULE__CONTEXTVARS_TRUE=
   MODULE__CONTEXTVARS_FALSE='#'
 else
   MODULE__CONTEXTVARS_TRUE='#'
   MODULE__CONTEXTVARS_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__CONTEXTVARS=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__CONTEXTVARS=$py_cv_module__contextvars$as_nl"
+  if test "x$py_cv_module__contextvars" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_csv*) :
+    py_cv_module__csv=n/a ;; #(
+  *) :
+    py_cv_module__csv=yes
+   ;;
+esac
+   if test "$py_cv_module__csv" = yes; then
   MODULE__CSV_TRUE=
   MODULE__CSV_FALSE='#'
 else
   MODULE__CSV_TRUE='#'
   MODULE__CSV_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__CSV=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__CSV=$py_cv_module__csv$as_nl"
+  if test "x$py_cv_module__csv" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_heapq*) :
+    py_cv_module__heapq=n/a ;; #(
+  *) :
+    py_cv_module__heapq=yes
+   ;;
+esac
+   if test "$py_cv_module__heapq" = yes; then
   MODULE__HEAPQ_TRUE=
   MODULE__HEAPQ_FALSE='#'
 else
   MODULE__HEAPQ_TRUE='#'
   MODULE__HEAPQ_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__HEAPQ=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__HEAPQ=$py_cv_module__heapq$as_nl"
+  if test "x$py_cv_module__heapq" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_json*) :
+    py_cv_module__json=n/a ;; #(
+  *) :
+    py_cv_module__json=yes
+   ;;
+esac
+   if test "$py_cv_module__json" = yes; then
   MODULE__JSON_TRUE=
   MODULE__JSON_FALSE='#'
 else
   MODULE__JSON_TRUE='#'
   MODULE__JSON_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__JSON=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__JSON=$py_cv_module__json$as_nl"
+  if test "x$py_cv_module__json" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_lsprof*) :
+    py_cv_module__lsprof=n/a ;; #(
+  *) :
+    py_cv_module__lsprof=yes
+   ;;
+esac
+   if test "$py_cv_module__lsprof" = yes; then
   MODULE__LSPROF_TRUE=
   MODULE__LSPROF_FALSE='#'
 else
   MODULE__LSPROF_TRUE='#'
   MODULE__LSPROF_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__LSPROF=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__LSPROF=$py_cv_module__lsprof$as_nl"
+  if test "x$py_cv_module__lsprof" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_opcode*) :
+    py_cv_module__opcode=n/a ;; #(
+  *) :
+    py_cv_module__opcode=yes
+   ;;
+esac
+   if test "$py_cv_module__opcode" = yes; then
   MODULE__OPCODE_TRUE=
   MODULE__OPCODE_FALSE='#'
 else
   MODULE__OPCODE_TRUE='#'
   MODULE__OPCODE_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__OPCODE=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__OPCODE=$py_cv_module__opcode$as_nl"
+  if test "x$py_cv_module__opcode" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_pickle*) :
+    py_cv_module__pickle=n/a ;; #(
+  *) :
+    py_cv_module__pickle=yes
+   ;;
+esac
+   if test "$py_cv_module__pickle" = yes; then
   MODULE__PICKLE_TRUE=
   MODULE__PICKLE_FALSE='#'
 else
   MODULE__PICKLE_TRUE='#'
   MODULE__PICKLE_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__PICKLE=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__PICKLE=$py_cv_module__pickle$as_nl"
+  if test "x$py_cv_module__pickle" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_posixsubprocess*) :
+    py_cv_module__posixsubprocess=n/a ;; #(
+  *) :
+    py_cv_module__posixsubprocess=yes
+   ;;
+esac
+   if test "$py_cv_module__posixsubprocess" = yes; then
   MODULE__POSIXSUBPROCESS_TRUE=
   MODULE__POSIXSUBPROCESS_FALSE='#'
 else
   MODULE__POSIXSUBPROCESS_TRUE='#'
   MODULE__POSIXSUBPROCESS_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__POSIXSUBPROCESS=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__POSIXSUBPROCESS=$py_cv_module__posixsubprocess$as_nl"
+  if test "x$py_cv_module__posixsubprocess" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_queue*) :
+    py_cv_module__queue=n/a ;; #(
+  *) :
+    py_cv_module__queue=yes
+   ;;
+esac
+   if test "$py_cv_module__queue" = yes; then
   MODULE__QUEUE_TRUE=
   MODULE__QUEUE_FALSE='#'
 else
   MODULE__QUEUE_TRUE='#'
   MODULE__QUEUE_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__QUEUE=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__QUEUE=$py_cv_module__queue$as_nl"
+  if test "x$py_cv_module__queue" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_random*) :
+    py_cv_module__random=n/a ;; #(
+  *) :
+    py_cv_module__random=yes
+   ;;
+esac
+   if test "$py_cv_module__random" = yes; then
   MODULE__RANDOM_TRUE=
   MODULE__RANDOM_FALSE='#'
 else
   MODULE__RANDOM_TRUE='#'
   MODULE__RANDOM_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__RANDOM=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__RANDOM=$py_cv_module__random$as_nl"
+  if test "x$py_cv_module__random" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *select*) :
+    py_cv_module_select=n/a ;; #(
+  *) :
+    py_cv_module_select=yes
+   ;;
+esac
+   if test "$py_cv_module_select" = yes; then
   MODULE_SELECT_TRUE=
   MODULE_SELECT_FALSE='#'
 else
   MODULE_SELECT_TRUE='#'
   MODULE_SELECT_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE_SELECT=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE_SELECT=$py_cv_module_select$as_nl"
+  if test "x$py_cv_module_select" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_struct*) :
+    py_cv_module__struct=n/a ;; #(
+  *) :
+    py_cv_module__struct=yes
+   ;;
+esac
+   if test "$py_cv_module__struct" = yes; then
   MODULE__STRUCT_TRUE=
   MODULE__STRUCT_FALSE='#'
 else
   MODULE__STRUCT_TRUE='#'
   MODULE__STRUCT_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__STRUCT=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__STRUCT=$py_cv_module__struct$as_nl"
+  if test "x$py_cv_module__struct" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_typing*) :
+    py_cv_module__typing=n/a ;; #(
+  *) :
+    py_cv_module__typing=yes
+   ;;
+esac
+   if test "$py_cv_module__typing" = yes; then
   MODULE__TYPING_TRUE=
   MODULE__TYPING_FALSE='#'
 else
   MODULE__TYPING_TRUE='#'
   MODULE__TYPING_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__TYPING=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__TYPING=$py_cv_module__typing$as_nl"
+  if test "x$py_cv_module__typing" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_xxsubinterpreters*) :
+    py_cv_module__xxsubinterpreters=n/a ;; #(
+  *) :
+    py_cv_module__xxsubinterpreters=yes
+   ;;
+esac
+   if test "$py_cv_module__xxsubinterpreters" = yes; then
   MODULE__XXSUBINTERPRETERS_TRUE=
   MODULE__XXSUBINTERPRETERS_FALSE='#'
 else
   MODULE__XXSUBINTERPRETERS_TRUE='#'
   MODULE__XXSUBINTERPRETERS_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__XXSUBINTERPRETERS=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__XXSUBINTERPRETERS=$py_cv_module__xxsubinterpreters$as_nl"
+  if test "x$py_cv_module__xxsubinterpreters" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_zoneinfo*) :
+    py_cv_module__zoneinfo=n/a ;; #(
+  *) :
+    py_cv_module__zoneinfo=yes
+   ;;
+esac
+   if test "$py_cv_module__zoneinfo" = yes; then
   MODULE__ZONEINFO_TRUE=
   MODULE__ZONEINFO_FALSE='#'
 else
   MODULE__ZONEINFO_TRUE='#'
   MODULE__ZONEINFO_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__ZONEINFO=yes$as_nl"
+
+  as_fn_append MODULE_BLOCK "MODULE__ZONEINFO=$py_cv_module__zoneinfo$as_nl"
+  if test "x$py_cv_module__zoneinfo" = xyes; then :
 
 
-     if true; then
+
+
+fi
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _multiprocessing" >&5
+$as_echo_n "checking for stdlib extension module _multiprocessing... " >&6; }
+      case $py_stdlib_not_available in #(
+  *_multiprocessing*) :
+    py_cv_module__multiprocessing=n/a ;; #(
+  *) :
+    if true; then :
+  if test "$ac_cv_func_sem_unlink" = "yes"; then :
+  py_cv_module__multiprocessing=yes
+else
+  py_cv_module__multiprocessing=missing
+fi
+else
+  py_cv_module__multiprocessing=disabled
+fi
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE__MULTIPROCESSING=$py_cv_module__multiprocessing$as_nl"
+  if test "x$py_cv_module__multiprocessing" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__MULTIPROCESSING_CFLAGS=-I\$(srcdir)/Modules/_multiprocessing$as_nl"
+
+
+fi
+   if test "$py_cv_module__multiprocessing" = yes; then
   MODULE__MULTIPROCESSING_TRUE=
   MODULE__MULTIPROCESSING_FALSE='#'
 else
   MODULE__MULTIPROCESSING_TRUE='#'
   MODULE__MULTIPROCESSING_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__MULTIPROCESSING=yes$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__MULTIPROCESSING_CFLAGS=-I\$(srcdir)/Modules/_multiprocessing$as_nl"
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__multiprocessing" >&5
+$as_echo "$py_cv_module__multiprocessing" >&6; }
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _posixshmem" >&5
@@ -21320,60 +21641,125 @@ $as_echo "$py_cv_module__posixshmem" >&6; }
 
 
 
-     if true; then
+      case $py_stdlib_not_available in #(
+  *audioop*) :
+    py_cv_module_audioop=n/a ;; #(
+  *) :
+    py_cv_module_audioop=yes
+   ;;
+esac
+   if test "$py_cv_module_audioop" = yes; then
   MODULE_AUDIOOP_TRUE=
   MODULE_AUDIOOP_FALSE='#'
 else
   MODULE_AUDIOOP_TRUE='#'
   MODULE_AUDIOOP_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE_AUDIOOP=yes$as_nl"
+
+  as_fn_append MODULE_BLOCK "MODULE_AUDIOOP=$py_cv_module_audioop$as_nl"
+  if test "x$py_cv_module_audioop" = xyes; then :
+
+
     as_fn_append MODULE_BLOCK "MODULE_AUDIOOP_LDFLAGS=$LIBM$as_nl"
 
+fi
 
-     if true; then
+
+      case $py_stdlib_not_available in #(
+  *_statistics*) :
+    py_cv_module__statistics=n/a ;; #(
+  *) :
+    py_cv_module__statistics=yes
+   ;;
+esac
+   if test "$py_cv_module__statistics" = yes; then
   MODULE__STATISTICS_TRUE=
   MODULE__STATISTICS_FALSE='#'
 else
   MODULE__STATISTICS_TRUE='#'
   MODULE__STATISTICS_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__STATISTICS=yes$as_nl"
+
+  as_fn_append MODULE_BLOCK "MODULE__STATISTICS=$py_cv_module__statistics$as_nl"
+  if test "x$py_cv_module__statistics" = xyes; then :
+
+
     as_fn_append MODULE_BLOCK "MODULE__STATISTICS_LDFLAGS=$LIBM$as_nl"
 
+fi
 
-     if true; then
+
+      case $py_stdlib_not_available in #(
+  *cmath*) :
+    py_cv_module_cmath=n/a ;; #(
+  *) :
+    py_cv_module_cmath=yes
+   ;;
+esac
+   if test "$py_cv_module_cmath" = yes; then
   MODULE_CMATH_TRUE=
   MODULE_CMATH_FALSE='#'
 else
   MODULE_CMATH_TRUE='#'
   MODULE_CMATH_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE_CMATH=yes$as_nl"
+
+  as_fn_append MODULE_BLOCK "MODULE_CMATH=$py_cv_module_cmath$as_nl"
+  if test "x$py_cv_module_cmath" = xyes; then :
+
+
     as_fn_append MODULE_BLOCK "MODULE_CMATH_LDFLAGS=$LIBM$as_nl"
 
+fi
 
-     if true; then
+
+      case $py_stdlib_not_available in #(
+  *math*) :
+    py_cv_module_math=n/a ;; #(
+  *) :
+    py_cv_module_math=yes
+   ;;
+esac
+   if test "$py_cv_module_math" = yes; then
   MODULE_MATH_TRUE=
   MODULE_MATH_FALSE='#'
 else
   MODULE_MATH_TRUE='#'
   MODULE_MATH_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE_MATH=yes$as_nl"
+
+  as_fn_append MODULE_BLOCK "MODULE_MATH=$py_cv_module_math$as_nl"
+  if test "x$py_cv_module_math" = xyes; then :
+
+
     as_fn_append MODULE_BLOCK "MODULE_MATH_LDFLAGS=$LIBM$as_nl"
 
+fi
 
 
-     if true; then
+
+      case $py_stdlib_not_available in #(
+  *_datetime*) :
+    py_cv_module__datetime=n/a ;; #(
+  *) :
+    py_cv_module__datetime=yes
+   ;;
+esac
+   if test "$py_cv_module__datetime" = yes; then
   MODULE__DATETIME_TRUE=
   MODULE__DATETIME_FALSE='#'
 else
   MODULE__DATETIME_TRUE='#'
   MODULE__DATETIME_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__DATETIME=yes$as_nl"
+
+  as_fn_append MODULE_BLOCK "MODULE__DATETIME=$py_cv_module__datetime$as_nl"
+  if test "x$py_cv_module__datetime" = xyes; then :
+
+
     as_fn_append MODULE_BLOCK "MODULE__DATETIME_LDFLAGS=$TIMEMODULE_LIB $LIBM$as_nl"
+
+fi
 
 
 
@@ -21811,77 +22197,197 @@ fi
 $as_echo "$py_cv_module__elementtree" >&6; }
 
 
-     if true; then
+      case $py_stdlib_not_available in #(
+  *_codecs_cn*) :
+    py_cv_module__codecs_cn=n/a ;; #(
+  *) :
+    py_cv_module__codecs_cn=yes
+   ;;
+esac
+   if test "$py_cv_module__codecs_cn" = yes; then
   MODULE__CODECS_CN_TRUE=
   MODULE__CODECS_CN_FALSE='#'
 else
   MODULE__CODECS_CN_TRUE='#'
   MODULE__CODECS_CN_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__CODECS_CN=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_CN=$py_cv_module__codecs_cn$as_nl"
+  if test "x$py_cv_module__codecs_cn" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_codecs_hk*) :
+    py_cv_module__codecs_hk=n/a ;; #(
+  *) :
+    py_cv_module__codecs_hk=yes
+   ;;
+esac
+   if test "$py_cv_module__codecs_hk" = yes; then
   MODULE__CODECS_HK_TRUE=
   MODULE__CODECS_HK_FALSE='#'
 else
   MODULE__CODECS_HK_TRUE='#'
   MODULE__CODECS_HK_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__CODECS_HK=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_HK=$py_cv_module__codecs_hk$as_nl"
+  if test "x$py_cv_module__codecs_hk" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_codecs_iso2022*) :
+    py_cv_module__codecs_iso2022=n/a ;; #(
+  *) :
+    py_cv_module__codecs_iso2022=yes
+   ;;
+esac
+   if test "$py_cv_module__codecs_iso2022" = yes; then
   MODULE__CODECS_ISO2022_TRUE=
   MODULE__CODECS_ISO2022_FALSE='#'
 else
   MODULE__CODECS_ISO2022_TRUE='#'
   MODULE__CODECS_ISO2022_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__CODECS_ISO2022=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_ISO2022=$py_cv_module__codecs_iso2022$as_nl"
+  if test "x$py_cv_module__codecs_iso2022" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_codecs_jp*) :
+    py_cv_module__codecs_jp=n/a ;; #(
+  *) :
+    py_cv_module__codecs_jp=yes
+   ;;
+esac
+   if test "$py_cv_module__codecs_jp" = yes; then
   MODULE__CODECS_JP_TRUE=
   MODULE__CODECS_JP_FALSE='#'
 else
   MODULE__CODECS_JP_TRUE='#'
   MODULE__CODECS_JP_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__CODECS_JP=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_JP=$py_cv_module__codecs_jp$as_nl"
+  if test "x$py_cv_module__codecs_jp" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_codecs_kr*) :
+    py_cv_module__codecs_kr=n/a ;; #(
+  *) :
+    py_cv_module__codecs_kr=yes
+   ;;
+esac
+   if test "$py_cv_module__codecs_kr" = yes; then
   MODULE__CODECS_KR_TRUE=
   MODULE__CODECS_KR_FALSE='#'
 else
   MODULE__CODECS_KR_TRUE='#'
   MODULE__CODECS_KR_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__CODECS_KR=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_KR=$py_cv_module__codecs_kr$as_nl"
+  if test "x$py_cv_module__codecs_kr" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_codecs_tw*) :
+    py_cv_module__codecs_tw=n/a ;; #(
+  *) :
+    py_cv_module__codecs_tw=yes
+   ;;
+esac
+   if test "$py_cv_module__codecs_tw" = yes; then
   MODULE__CODECS_TW_TRUE=
   MODULE__CODECS_TW_FALSE='#'
 else
   MODULE__CODECS_TW_TRUE='#'
   MODULE__CODECS_TW_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__CODECS_TW=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_TW=$py_cv_module__codecs_tw$as_nl"
+  if test "x$py_cv_module__codecs_tw" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_multibytecodec*) :
+    py_cv_module__multibytecodec=n/a ;; #(
+  *) :
+    py_cv_module__multibytecodec=yes
+   ;;
+esac
+   if test "$py_cv_module__multibytecodec" = yes; then
   MODULE__MULTIBYTECODEC_TRUE=
   MODULE__MULTIBYTECODEC_FALSE='#'
 else
   MODULE__MULTIBYTECODEC_TRUE='#'
   MODULE__MULTIBYTECODEC_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__MULTIBYTECODEC=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__MULTIBYTECODEC=$py_cv_module__multibytecodec$as_nl"
+  if test "x$py_cv_module__multibytecodec" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *unicodedata*) :
+    py_cv_module_unicodedata=n/a ;; #(
+  *) :
+    py_cv_module_unicodedata=yes
+   ;;
+esac
+   if test "$py_cv_module_unicodedata" = yes; then
   MODULE_UNICODEDATA_TRUE=
   MODULE_UNICODEDATA_FALSE='#'
 else
   MODULE_UNICODEDATA_TRUE='#'
   MODULE_UNICODEDATA_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE_UNICODEDATA=yes$as_nl"
+
+  as_fn_append MODULE_BLOCK "MODULE_UNICODEDATA=$py_cv_module_unicodedata$as_nl"
+  if test "x$py_cv_module_unicodedata" = xyes; then :
+
+
+
+
+fi
+
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _md5" >&5
@@ -22354,17 +22860,28 @@ fi
 $as_echo "$py_cv_module_zlib" >&6; }
 
 
-     if true; then
+      case $py_stdlib_not_available in #(
+  *binascii*) :
+    py_cv_module_binascii=n/a ;; #(
+  *) :
+    py_cv_module_binascii=yes
+   ;;
+esac
+   if test "$py_cv_module_binascii" = yes; then
   MODULE_BINASCII_TRUE=
   MODULE_BINASCII_FALSE='#'
 else
   MODULE_BINASCII_TRUE='#'
   MODULE_BINASCII_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE_BINASCII=yes$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE_BINASCII_CFLAGS=$BINASCII_CFLAGS$as_nl"
 
+  as_fn_append MODULE_BLOCK "MODULE_BINASCII=$py_cv_module_binascii$as_nl"
+  if test "x$py_cv_module_binascii" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE_BINASCII_CFLAGS=$BINASCII_CFLAGS$as_nl"
     as_fn_append MODULE_BLOCK "MODULE_BINASCII_LDFLAGS=$BINASCII_LIBS$as_nl"
+
+fi
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _bz2" >&5
