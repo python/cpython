@@ -102,7 +102,7 @@ rm -f pybuilddir.txt
 
 dnl cross-compiling needs a freeze_module binary for build platform
 AC_ARG_WITH(
-  [freeze_module],
+  [freeze-module],
   [AS_HELP_STRING([--with-freeze-module=Programs/_freeze_module],
                   [path to _freeze_module binary for cross compiling (default: self-hosted Programs/_freeze_module binary)])],
   [
