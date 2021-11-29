@@ -203,6 +203,8 @@ fractions
 
 math
 ----
+* Add :func:`math.exp2`: return 2 raised to the power of x.
+  (Contributed by Gideon Mitchell in :issue:`45917`.)
 
 * Add :func:`math.cbrt`: return the cube root of x.
   (Contributed by Ajith Ramachandran in :issue:`44357`.)
@@ -248,7 +250,6 @@ sqlite3
   (Contributed by Aviv Palivoda, Daniel Shahaf, and Erlend E. Aasland in
   :issue:`16379` and :issue:`24139`.)
 
-
 * Add :meth:`~sqlite3.Connection.setlimit` and
   :meth:`~sqlite3.Connection.getlimit` to :class:`sqlite3.Connection` for
   setting and getting SQLite limits by connection basis.
@@ -257,6 +258,12 @@ sqlite3
 * :mod:`sqlite3` now sets :attr:`sqlite3.threadsafety` based on the default
   threading mode the underlying SQLite library has been compiled with.
   (Contributed by Erlend E. Aasland in :issue:`45613`.)
+
+* :mod:`sqlite3` C callbacks now use unraisable exceptions if callback
+  tracebacks are enabled. Users can now register an
+  :func:`unraisable hook handler <sys.unraisablehook>` to improve their debug
+  experience.
+  (Contributed by Erlend E. Aasland in :issue:`45828`.)
 
 
 threading

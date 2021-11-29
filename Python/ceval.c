@@ -1102,7 +1102,7 @@ static void
 _assert_exception_type_is_redundant(PyObject* type, PyObject* val)
 {
     if (type == NULL || type == Py_None) {
-        assert(val == NULL || val == Py_None);
+        assert(val == type);
     }
     else {
         assert(PyExceptionInstance_Check(val));
@@ -3738,7 +3738,9 @@ check_eval_breaker:
 
         TARGET(JUMP_IF_NOT_EXC_MATCH) {
             PyObject *right = POP();
-            PyObject *left = TOP();
+            ASSERT_EXC_TYPE_IS_REDUNDANT(TOP(), SECOND());
+            PyObject *left = SECOND();
+            assert(PyExceptionInstance_Check(left));
             if (check_except_type_valid(tstate, right) < 0) {
                  Py_DECREF(right);
                  goto error;
@@ -4198,7 +4200,13 @@ check_eval_breaker:
             ASSERT_EXC_TYPE_IS_REDUNDANT(type, value);
             _PyErr_StackItem *exc_info = tstate->exc_info;
             SET_THIRD(exc_info->exc_traceback);
-            SET_SECOND(exc_info->exc_value);
+            if (exc_info->exc_value != NULL) {
+                SET_SECOND(exc_info->exc_value);
+            }
+            else {
+                Py_INCREF(Py_None);
+                SET_SECOND(Py_None);
+            }
             if (exc_info->exc_type != NULL) {
                 SET_TOP(exc_info->exc_type);
             }
@@ -5686,7 +5694,8 @@ make_coro_frame(PyThreadState *tstate,
     }
     assert(frame->frame_obj == NULL);
     if (initialize_locals(tstate, func, frame->localsplus, args, argcount, kwnames)) {
-        _PyFrame_Clear(frame, 1);
+        _PyFrame_Clear(frame);
+        PyMem_Free(frame);
         return NULL;
     }
     return frame;
@@ -5742,7 +5751,7 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
         localsarray[i] = NULL;
     }
     if (initialize_locals(tstate, func, localsarray, args, argcount, kwnames)) {
-        _PyFrame_Clear(frame, 0);
+        _PyFrame_Clear(frame);
         return NULL;
     }
     return frame;
@@ -5765,11 +5774,8 @@ static int
 _PyEvalFrameClearAndPop(PyThreadState *tstate, InterpreterFrame * frame)
 {
     --tstate->recursion_remaining;
-    assert(frame->frame_obj == NULL || frame->frame_obj->f_own_locals_memory == 0);
-    if (_PyFrame_Clear(frame, 0)) {
-        ++tstate->recursion_remaining;
-        return -1;
-    }
+    assert(frame->frame_obj == NULL || frame->frame_obj->f_owns_frame == 0);
+    _PyFrame_Clear(frame);
     ++tstate->recursion_remaining;
     _PyThreadState_PopFrame(tstate, frame);
     return 0;
@@ -5916,7 +5922,9 @@ do_raise(PyThreadState *tstate, PyObject *exc, PyObject *cause)
         type = exc_info->exc_type;
         value = exc_info->exc_value;
         tb = exc_info->exc_traceback;
-        if (Py_IsNone(type) || type == NULL) {
+        assert(((Py_IsNone(value) || value == NULL)) ==
+               ((Py_IsNone(type) || type == NULL)));
+        if (Py_IsNone(value) || value == NULL) {
             _PyErr_SetString(tstate, PyExc_RuntimeError,
                              "No active exception to reraise");
             return 0;

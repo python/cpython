@@ -22,8 +22,8 @@
 
 
 # Build modules statically or as shared extensions
-*shared*
-# *static*
+# *shared* / *static*
+*@MODULE_BUILDTYPE@*
 
 
 ############################################################################
@@ -124,6 +124,7 @@
 
 # multiprocessing
 @MODULE__POSIXSHMEM_TRUE@_posixshmem _multiprocessing/posixshmem.c
+@MODULE__MULTIPROCESSING_TRUE@_multiprocessing _multiprocessing/multiprocessing.c _multiprocessing/semaphore.c
 
 
 ############################################################################

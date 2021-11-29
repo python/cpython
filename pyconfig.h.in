@@ -362,6 +362,9 @@
 /* Define to 1 if you have the `fork' function. */
 #undef HAVE_FORK
 
+/* Define to 1 if you have the `fork1' function. */
+#undef HAVE_FORK1
+
 /* Define to 1 if you have the `forkpty' function. */
 #undef HAVE_FORKPTY
 
@@ -435,8 +438,17 @@
 /* Define this if you have flockfile(), getc_unlocked(), and funlockfile() */
 #undef HAVE_GETC_UNLOCKED
 
+/* Define to 1 if you have the `getegid' function. */
+#undef HAVE_GETEGID
+
 /* Define to 1 if you have the `getentropy' function. */
 #undef HAVE_GETENTROPY
+
+/* Define to 1 if you have the `geteuid' function. */
+#undef HAVE_GETEUID
+
+/* Define to 1 if you have the `getgid' function. */
+#undef HAVE_GETGID
 
 /* Define to 1 if you have the `getgrgid' function. */
 #undef HAVE_GETGRGID
@@ -495,6 +507,9 @@
 /* Define to 1 if you have the `getpid' function. */
 #undef HAVE_GETPID
 
+/* Define to 1 if you have the `getppid' function. */
+#undef HAVE_GETPPID
+
 /* Define to 1 if you have the `getpriority' function. */
 #undef HAVE_GETPRIORITY
 
@@ -527,6 +542,9 @@
 
 /* Define to 1 if you have the `getspnam' function. */
 #undef HAVE_GETSPNAM
+
+/* Define to 1 if you have the `getuid' function. */
+#undef HAVE_GETUID
 
 /* Define to 1 if you have the `getwd' function. */
 #undef HAVE_GETWD
@@ -751,6 +769,9 @@
 /* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
 #undef HAVE_NDIR_H
 
+/* Define to 1 if you have the <netinet/in.h> header file. */
+#undef HAVE_NETINET_IN_H
+
 /* Define to 1 if you have the <netpacket/packet.h> header file. */
 #undef HAVE_NETPACKET_PACKET_H
 
@@ -767,6 +788,9 @@
 /* Define to 1 if you have the `openat' function. */
 #undef HAVE_OPENAT
 
+/* Define to 1 if you have the `opendir' function. */
+#undef HAVE_OPENDIR
+
 /* Define to 1 if you have the `openpty' function. */
 #undef HAVE_OPENPTY
 
@@ -775,6 +799,9 @@
 
 /* Define to 1 if you have the `pause' function. */
 #undef HAVE_PAUSE
+
+/* Define to 1 if you have the `pipe' function. */
+#undef HAVE_PIPE
 
 /* Define to 1 if you have the `pipe2' function. */
 #undef HAVE_PIPE2
@@ -992,6 +1019,9 @@
 /* Define to 1 if you have the `shm_unlink' function. */
 #undef HAVE_SHM_UNLINK
 
+/* Define to 1 if you have the `shutdown' function. */
+#undef HAVE_SHUTDOWN
+
 /* Define to 1 if you have the `sigaction' function. */
 #undef HAVE_SIGACTION
 
@@ -1133,6 +1163,9 @@
 
 /* Define to 1 if you have the <syslog.h> header file. */
 #undef HAVE_SYSLOG_H
+
+/* Define to 1 if you have the `system' function. */
+#undef HAVE_SYSTEM
 
 /* Define to 1 if you have the <sys/audioio.h> header file. */
 #undef HAVE_SYS_AUDIOIO_H
@@ -1293,6 +1326,9 @@
 /* Define to 1 if you have the `truncate' function. */
 #undef HAVE_TRUNCATE
 
+/* Define to 1 if you have the `ttyname' function. */
+#undef HAVE_TTYNAME
+
 /* Define to 1 if you don't have `tm_zone' but do have the external array
    `tzname'. */
 #undef HAVE_TZNAME
@@ -1343,6 +1379,9 @@
 
 /* Define to 1 if you have the `vfork' function. */
 #undef HAVE_VFORK
+
+/* Define to 1 if you have the `wait' function. */
+#undef HAVE_WAIT
 
 /* Define to 1 if you have the `wait3' function. */
 #undef HAVE_WAIT3
