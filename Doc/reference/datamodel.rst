@@ -2395,12 +2395,12 @@ either to emulate a sequence or to emulate a mapping; the difference is that for
 a sequence, the allowable keys should be the integers *k* for which ``0 <= k <
 N`` where *N* is the length of the sequence, or :class:`slice` objects, which define a
 range of items.  It is also recommended that mappings provide the methods
-:meth:`keys`, :meth:`values`, :meth:`items`, :meth:`get`, :meth:`clear`, 
+:meth:`keys`, :meth:`values`, :meth:`items`, :meth:`get`, :meth:`clear`,
 :meth:`setdefault`, :meth:`pop`, :meth:`popitem`, :meth:`!copy`, and
 :meth:`update` behaving similar to those for Python's standard :class:`dictionary<dict>`
 objects. The :mod:`collections.abc` module provides a
 :class:`~collections.abc.MutableMapping`
-:term:`abstract base class` to help create those methods from a base set of 
+:term:`abstract base class` to help create those methods from a base set of
 :meth:`~object.__getitem__`, :meth:`~object.__setitem__`, :meth:`~object.__delitem__`, and :meth:`keys`.
 Mutable sequences should provide methods :meth:`append`, :meth:`count`,
 :meth:`index`, :meth:`extend`, :meth:`insert`, :meth:`pop`, :meth:`remove`,
