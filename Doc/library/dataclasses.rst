@@ -324,7 +324,10 @@ Module contents
    Converts the dataclass ``instance`` to a dict (by using the
    factory function ``dict_factory``).  Each dataclass is converted
    to a dict of its fields, as ``name: value`` pairs.  dataclasses, dicts,
-   lists, and tuples are recursed into.  For example::
+   lists, and tuples are recursed into.  Other objects are copied with
+   :func:`copy.deepcopy`.
+
+   Example of using :func:`asdict` on nested dataclasses::
 
      @dataclass
      class Point:
@@ -341,21 +344,32 @@ Module contents
      c = C([Point(0, 0), Point(10, 4)])
      assert asdict(c) == {'mylist': [{'x': 0, 'y': 0}, {'x': 10, 'y': 4}]}
 
-   Raises :exc:`TypeError` if ``instance`` is not a dataclass instance.
+   To create a shallow copy, the following workaround may be used::
+
+     dict((field.name, getattr(instance, field.name)) for field in fields(instance))
+
+   :func:`asdict` raises :exc:`TypeError` if ``instance`` is not a dataclass
+   instance.
 
 .. function:: astuple(instance, *, tuple_factory=tuple)
 
    Converts the dataclass ``instance`` to a tuple (by using the
    factory function ``tuple_factory``).  Each dataclass is converted
    to a tuple of its field values.  dataclasses, dicts, lists, and
-   tuples are recursed into.
+   tuples are recursed into. Other objects are copied with
+   :func:`copy.deepcopy`.
 
    Continuing from the previous example::
 
      assert astuple(p) == (10, 20)
      assert astuple(c) == ([(0, 0), (10, 4)],)
 
-   Raises :exc:`TypeError` if ``instance`` is not a dataclass instance.
+   To create a shallow copy, the following workaround may be used::
+
+     tuple(getattr(instance, field.name) for field in dataclasses.fields(instance))
+
+   :func:`astuple` raises :exc:`TypeError` if ``instance`` is not a dataclass
+   instance.
 
 .. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False)
 
