@@ -133,7 +133,7 @@ AC_ARG_WITH(
     AC_MSG_CHECKING([for --with-build-python])
     AS_VAR_IF([cross_compiling], [no], AC_MSG_ERROR([--with-build-python only applies to cross compiling]))
     if test "$with_build_python" = yes -o "$with_build_python" = no; then
-      AC_MSG_ERROR([invalid -with-build-python option: expect path, not "$with_build_python"])
+      AC_MSG_ERROR([invalid -with-build-python option: expected path, not "$with_build_python"])
     fi
     if ! $(command -v "$with_build_python" >/dev/null 2>&1); then
       AC_MSG_ERROR([invalid or missing build Python binary "$with_build_python"])
