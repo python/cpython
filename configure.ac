@@ -136,7 +136,7 @@ AC_ARG_WITH(
       AC_MSG_ERROR([invalid -with-build-python option: expected path, not "$with_build_python"])
     fi
     if ! $(command -v "$with_build_python" >/dev/null 2>&1); then
-      AC_MSG_ERROR([invalid or missing build Python binary "$with_build_python"])
+      AC_MSG_ERROR([invalid or missing build python binary "$with_build_python"])
     fi
     build_python_ver=$($with_build_python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
     if test "$build_python_ver" != "$PACKAGE_VERSION"; then
