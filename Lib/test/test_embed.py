@@ -65,7 +65,8 @@ class EmbeddingTestsMixin:
         if MS_WINDOWS:
             ext = ("_d" if debug_build(sys.executable) else "") + ".exe"
             exename += ext
-            exepath = expecteddir = builddir
+            exepath = builddir
+            expecteddir = os.path.join(support.REPO_ROOT, builddir)
         else:
             exepath = os.path.join(builddir, 'Programs')
             expecteddir = os.path.join(support.REPO_ROOT, 'Programs')
