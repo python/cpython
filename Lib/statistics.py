@@ -137,7 +137,7 @@ from decimal import Decimal
 from itertools import groupby, repeat
 from bisect import bisect_left, bisect_right
 from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum
-from operator import itemgetter, mul
+from operator import mul
 from collections import Counter, namedtuple
 
 _SQRT2 = sqrt(2.0)
