@@ -104,7 +104,7 @@ dnl cross-compiling needs a freeze_module binary for build platform
 AC_ARG_WITH(
   [freeze-module],
   [AS_HELP_STRING([--with-freeze-module=Programs/_freeze_module],
-                  [path to _freeze_module binary for cross compiling (default: self-hosted Programs/_freeze_module binary)])],
+                  [path to _freeze_module binary for cross compiling])],
   [
     AC_MSG_CHECKING([for --with-freeze-module])
     AS_VAR_IF([cross_compiling], [no], AC_MSG_ERROR([--with-freeze-module only applies to cross compiling]))
@@ -127,14 +127,15 @@ AC_SUBST([FREEZE_MODULE])
 
 AC_ARG_WITH(
   [build-python],
-  [AS_HELP_STRING([--with-build-python],
-                  [path to build python binary for cross compiling (default: self-hosted ./python binary)])],
+  [AS_HELP_STRING([--with-build-python=python]PYTHON_VERSION,
+                  [path to build python binary for cross compiling (default: python]PYTHON_VERSION[)])],
   [
     AC_MSG_CHECKING([for --with-build-python])
+
     AS_VAR_IF([cross_compiling], [no], AC_MSG_ERROR([--with-build-python only applies to cross compiling]))
-    if test "$with_build_python" = yes -o "$with_build_python" = no; then
-      AC_MSG_ERROR([invalid -with-build-python option: expected path, not "$with_build_python"])
-    fi
+    AS_VAR_IF([with_build_python], [yes], [with_build_python=python$PACKAGE_VERSION])
+    AS_VAR_IF([with_build_python], [no], [AC_MSG_ERROR([invalid --with-build-python option: expected path, not "no"])])
+
     if ! $(command -v "$with_build_python" >/dev/null 2>&1); then
       AC_MSG_ERROR([invalid or missing build python binary "$with_build_python"])
     fi
