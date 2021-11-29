@@ -356,9 +356,9 @@ Module contents
 
      assert astuple(p) == (10, 20)
      assert astuple(c) == ([(0, 0), (10, 4)],)
-     
+
    To create a shallow copy, the following workaround may be used::
-   
+
      tuple(getattr(instance, field.name) for field in dataclasses.fields(instance))
 
    Raises :exc:`TypeError` if ``instance`` is not a dataclass instance.
