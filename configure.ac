@@ -1254,8 +1254,14 @@ else # shared is disabled
   PY_ENABLE_SHARED=0
   case $ac_sys_system in
     CYGWIN*)
-          BLDLIBRARY='$(LIBRARY)'
-          LDLIBRARY='libpython$(LDVERSION).dll.a'
+      BLDLIBRARY='$(LIBRARY)'
+      LDLIBRARY='libpython$(LDVERSION).dll.a'
+          ;;
+    Linux*|GNU*|NetBSD*|FreeBSD*|DragonFly*|OpenBSD*|VxWorks*)
+	  BLDLIBRARY='-Wl,--whole-archive $(LDLIBRARY) -Wl,--no-whole-archive'
+          ;;
+    Darwin*)
+	  BLDLIBRARY='-Wl,-all_load $(LDLIBRARY) -Wl,-noall_load'
           ;;
   esac
 fi
