@@ -678,7 +678,7 @@ Callable types
       :keyword:`async for` statement to execute the body of the function.
 
       Calling the asynchronous iterator's
-      :meth:`aiterator.__anext__<object.__anext__>` method
+      :meth:`aiterator.__anext__ <object.__anext__>` method
       will return an :term:`awaitable` which when awaited
       will execute until it provides a value using the :keyword:`yield`
       expression.  When the function executes an empty :keyword:`return`
