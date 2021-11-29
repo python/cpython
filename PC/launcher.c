@@ -344,7 +344,7 @@ _locate_pythons_for_key(HKEY root, LPCWSTR subkey, REGSAM flags, int bits,
                     }
                     else if (attrs & FILE_ATTRIBUTE_DIRECTORY) {
                         debug(L"locate_pythons_for_key: '%ls' is a directory\n",
-                              ip->executable, attrs);
+                              ip->executable);
                     }
                     else if (find_existing_python(ip->executable)) {
                         debug(L"locate_pythons_for_key: %ls: already found\n",
