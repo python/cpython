@@ -345,13 +345,13 @@ def _decimal_sqrt_of_frac(n: int, m: int) -> Decimal:
     plus = root.next_plus()
     np, dp = plus.as_integer_ratio()
     # test: n / m > ((root + plus) / 2) ** 2
-    if 4*dr**2*dp**2*n > m*(dr*np + dp*nr)**2:
+    if 4 * dr**2 * dp**2 * n > m * (dr*np + dp*nr)**2:
         return plus
 
     minus = root.next_minus()
     nm, dm = minus.as_integer_ratio()
     # test: n / m < ((root + minus) / 2) ** 2
-    if 4*dr**2*dm**2*n < m*(dr*nm + dm*nr)**2:
+    if 4 * dr**2 * dm**2 * n < m * (dr*nm + dm*nr)**2:
         return minus
 
     return root
