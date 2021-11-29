@@ -313,11 +313,11 @@ def _isqrt_frac_rto(n: int, m: int) -> float:
     return a | (a*a*m != n)
 
 
-# For 53 bit precision floats, the _sqrt_frac() shift is 109.
+# For 53 bit precision floats, the _float_sqrt_of_frac() shift is 109.
 _sqrt_shift: int = 2 * sys.float_info.mant_dig + 3
 
 
-def _sqrt_frac(n: int, m: int) -> float:
+def _float_sqrt_of_frac(n: int, m: int) -> float:
     """Square root of n/m as a float, correctly rounded."""
     # See principle and proof sketch at: https://bugs.python.org/msg407078
     q = (n.bit_length() - m.bit_length() - _sqrt_shift) // 2
@@ -330,7 +330,7 @@ def _sqrt_frac(n: int, m: int) -> float:
     return numerator / denominator   # Convert to float
 
 
-def _deci_sqrt(n: int, m: int) -> Decimal:
+def _decimal_sqrt_of_frac(n: int, m: int) -> Decimal:
     """Square root of n/m as a float, correctly rounded."""
     # Premise:  For decimal, computing sqrt(m / n) can be off by 1 ulp.
     # Method:   Check the result, moving up or down a step if needed.
@@ -895,7 +895,7 @@ def stdev(data, xbar=None):
     if hasattr(T, 'sqrt'):
         var = _convert(mss, T)
         return var.sqrt()
-    return _sqrt_frac(mss.numerator, mss.denominator)
+    return _float_sqrt_of_frac(mss.numerator, mss.denominator)
 
 
 def pstdev(data, mu=None):
@@ -915,8 +915,8 @@ def pstdev(data, mu=None):
     T, ss = _ss(data, mu)
     mss = ss / n
     if issubclass(T, Decimal):
-        return _deci_sqrt(mss.numerator, mss.denominator)
-    return _sqrt_frac(mss.numerator, mss.denominator)
+        return _decimal_sqrt_of_frac(mss.numerator, mss.denominator)
+    return _float_sqrt_of_frac(mss.numerator, mss.denominator)
 
 
 # === Statistics for relations between two inputs ===
