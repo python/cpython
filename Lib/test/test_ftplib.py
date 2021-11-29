@@ -10,6 +10,7 @@ import errno
 import os
 import threading
 import time
+import unittest
 try:
     import ssl
 except ImportError:
@@ -17,16 +18,12 @@ except ImportError:
 
 from unittest import TestCase, skipUnless
 from test import support
-from test.support import threading_helper
+from test.support import _asynchat as asynchat
+from test.support import _asyncore as asyncore
 from test.support import socket_helper
+from test.support import threading_helper
 from test.support import warnings_helper
 from test.support.socket_helper import HOST, HOSTv6
-
-import warnings
-with warnings.catch_warnings():
-    warnings.simplefilter('ignore', DeprecationWarning)
-    import asyncore
-    import asynchat
 
 
 TIMEOUT = support.LOOPBACK_TIMEOUT
@@ -1144,18 +1141,10 @@ class MiscTestCase(TestCase):
         support.check__all__(self, ftplib, not_exported=not_exported)
 
 
-def test_main():
-    tests = [TestFTPClass, TestTimeouts,
-             TestIPv6Environment,
-             TestTLS_FTPClassMixin, TestTLS_FTPClass,
-             MiscTestCase]
-
+def setUpModule():
     thread_info = threading_helper.threading_setup()
-    try:
-        support.run_unittest(*tests)
-    finally:
-        threading_helper.threading_cleanup(*thread_info)
+    unittest.addModuleCleanup(threading_helper.threading_cleanup, *thread_info)
 
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

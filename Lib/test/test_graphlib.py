@@ -13,13 +13,19 @@ class TestTopologicalSort(unittest.TestCase):
                 nodes = ts.get_ready()
                 for node in nodes:
                     ts.done(node)
-                yield nodes
+                yield tuple(sorted(nodes))
 
         ts = graphlib.TopologicalSorter(graph)
         self.assertEqual(list(static_order_with_groups(ts)), list(expected))
 
         ts = graphlib.TopologicalSorter(graph)
-        self.assertEqual(list(ts.static_order()), list(chain(*expected)))
+        # need to be a bit careful comparing the result of ts.static_order and
+        # expected, because the order within a group is dependent on set
+        # iteration order
+        it = iter(ts.static_order())
+        for group in expected:
+            tsgroup = {next(it) for element in group}
+            self.assertEqual(set(group), tsgroup)
 
     def _assert_cycle(self, graph, cycle):
         ts = graphlib.TopologicalSorter()
@@ -36,7 +42,7 @@ class TestTopologicalSort(unittest.TestCase):
     def test_simple_cases(self):
         self._test_graph(
             {2: {11}, 9: {11, 8}, 10: {11, 3}, 11: {7, 5}, 8: {7, 3}},
-            [(3, 5, 7), (11, 8), (2, 10, 9)],
+            [(3, 5, 7), (8, 11), (2, 9, 10)],
         )
 
         self._test_graph({1: {}}, [(1,)])
@@ -80,7 +86,7 @@ class TestTopologicalSort(unittest.TestCase):
 
     def test_the_node_multiple_times(self):
         # Test same node multiple times in dependencies
-        self._test_graph({1: {2}, 3: {4}, 0: [2, 4, 4, 4, 4, 4]}, [(2, 4), (1, 3, 0)])
+        self._test_graph({1: {2}, 3: {4}, 0: [2, 4, 4, 4, 4, 4]}, [(2, 4), (0, 1, 3)])
 
         # Test adding the same dependency multiple times
         ts = graphlib.TopologicalSorter()
@@ -242,3 +248,6 @@ class TestTopologicalSort(unittest.TestCase):
         self.assertNotEqual(run1, "")
         self.assertNotEqual(run2, "")
         self.assertEqual(run1, run2)
+
+if __name__ == "__main__":
+    unittest.main()

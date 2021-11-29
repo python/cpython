@@ -1010,15 +1010,16 @@ class BaseTaskTests:
 
     def test_wait_for_cancellation_race_condition(self):
         async def inner():
-            await asyncio.wait_for(asyncio.sleep(1), timeout=2)
+            with contextlib.suppress(asyncio.CancelledError):
+                await asyncio.sleep(1)
             return 1
 
         async def main():
-            result = await asyncio.wait_for(inner(), timeout=1)
+            result = await asyncio.wait_for(inner(), timeout=.01)
             assert result == 1
 
         asyncio.run(main())
-        
+
     def test_wait_for_does_not_suppress_cancellation(self):
         async def inner():
             return
@@ -1034,7 +1035,7 @@ class BaseTaskTests:
             task.cancel()
             with self.assertRaises(asyncio.CancelledError):
                 await task
-                
+
         asyncio.run(main())
 
     def test_wait_for_waits_for_task_cancellation(self):
@@ -3264,7 +3265,7 @@ class RunCoroutineThreadsafeTests(test_utils.TestCase):
             self.assertTrue(task.done())
 
     def test_run_coroutine_threadsafe_task_cancelled(self):
-        """Test coroutine submission from a tread to an event loop
+        """Test coroutine submission from a thread to an event loop
         when the task is cancelled."""
         callback = lambda: self.target(cancel=True)
         future = self.loop.run_in_executor(None, callback)
@@ -3272,7 +3273,7 @@ class RunCoroutineThreadsafeTests(test_utils.TestCase):
             self.loop.run_until_complete(future)
 
     def test_run_coroutine_threadsafe_task_factory_exception(self):
-        """Test coroutine submission from a tread to an event loop
+        """Test coroutine submission from a thread to an event loop
         when the task factory raise an exception."""
 
         def task_factory(loop, coro):

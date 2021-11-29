@@ -4,10 +4,9 @@ import os
 import pathlib
 import sys
 import textwrap
-import tokenize
 import token
-
-from typing import Any, cast, Dict, IO, Type, Final
+import tokenize
+from typing import IO, Any, Dict, Final, Type, cast
 
 from pegen.build import compile_c_extension
 from pegen.c_generator import CParserGenerator

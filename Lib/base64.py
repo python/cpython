@@ -182,7 +182,7 @@ def _b32encode(alphabet, s):
     from_bytes = int.from_bytes
     b32tab2 = _b32tab2[alphabet]
     for i in range(0, len(s), 5):
-        c = from_bytes(s[i: i + 5], 'big')
+        c = from_bytes(s[i: i + 5])              # big endian
         encoded += (b32tab2[c >> 30] +           # bits 1 - 10
                     b32tab2[(c >> 20) & 0x3ff] + # bits 11 - 20
                     b32tab2[(c >> 10) & 0x3ff] + # bits 21 - 30
@@ -234,13 +234,13 @@ def _b32decode(alphabet, s, casefold=False, map01=None):
                 acc = (acc << 5) + b32rev[c]
         except KeyError:
             raise binascii.Error('Non-base32 digit found') from None
-        decoded += acc.to_bytes(5, 'big')
+        decoded += acc.to_bytes(5)  # big endian
     # Process the last, partial quanta
     if l % 8 or padchars not in {0, 1, 3, 4, 6}:
         raise binascii.Error('Incorrect padding')
     if padchars and decoded:
         acc <<= 5 * padchars
-        last = acc.to_bytes(5, 'big')
+        last = acc.to_bytes(5)  # big endian
         leftover = (43 - 5 * padchars) // 8  # 1: 4, 3: 3, 4: 2, 6: 1
         decoded[-5:] = last[:leftover]
     return bytes(decoded)
@@ -567,15 +567,17 @@ def decodebytes(s):
 def main():
     """Small main program"""
     import sys, getopt
+    usage = """usage: %s [-h|-d|-e|-u|-t] [file|-]
+        -h: print this help message and exit
+        -d, -u: decode
+        -e: encode (default)
+        -t: encode and decode string 'Aladdin:open sesame'"""%sys.argv[0]
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'deut')
+        opts, args = getopt.getopt(sys.argv[1:], 'hdeut')
     except getopt.error as msg:
         sys.stdout = sys.stderr
         print(msg)
-        print("""usage: %s [-d|-e|-u|-t] [file|-]
-        -d, -u: decode
-        -e: encode (default)
-        -t: encode and decode string 'Aladdin:open sesame'"""%sys.argv[0])
+        print(usage)
         sys.exit(2)
     func = encode
     for o, a in opts:
@@ -583,6 +585,7 @@ def main():
         if o == '-d': func = decode
         if o == '-u': func = decode
         if o == '-t': test(); return
+        if o == '-h': print(usage); return
     if args and args[0] != '-':
         with open(args[0], 'rb') as f:
             func(f, sys.stdout.buffer)

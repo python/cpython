@@ -375,8 +375,14 @@ class RangeTest(unittest.TestCase):
 
     def test_iterator_pickling(self):
         testcases = [(13,), (0, 11), (-22, 10), (20, 3, -1), (13, 21, 3),
-                     (-2, 2, 2), (2**31-3, 2**31-1), (2**33, 2**33+2),
-                     (2**63-3, 2**63-1), (2**65, 2**65+2)]
+                     (-2, 2, 2)]
+        for M in 2**31, 2**63:
+            testcases += [
+                (M-3, M-1), (4*M, 4*M+2),
+                (M-2, M-1, 2), (-M+1, -M, -2),
+                (1, 2, M-1), (-1, -2, -M),
+                (1, M-1, M-1), (-1, -M, -M),
+            ]
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             for t in testcases:
                 with self.subTest(proto=proto, t=t):

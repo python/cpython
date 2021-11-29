@@ -1075,6 +1075,14 @@ Module(
         with self.assertRaisesRegex(ValueError, msg):
             ast.literal_eval(node)
 
+    def test_literal_eval_syntax_errors(self):
+        msg = "unexpected character after line continuation character"
+        with self.assertRaisesRegex(SyntaxError, msg):
+            ast.literal_eval(r'''
+                \
+                (\
+            \ ''')
+
     def test_bad_integer(self):
         # issue13436: Bad error message with invalid numeric values
         body = [ast.ImportFrom(module='time',

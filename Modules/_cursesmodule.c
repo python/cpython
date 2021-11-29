@@ -100,6 +100,10 @@ static const char PyCursesVersion[] = "2.2";
 
 /* Includes */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
@@ -135,11 +139,11 @@ typedef chtype attr_t;           /* No attr_t type is available */
 #define STRICT_SYSV_CURSES
 #endif
 
-#if NCURSES_EXT_COLORS+0 && NCURSES_EXT_FUNCS+0
+#if NCURSES_EXT_FUNCS+0 >= 20170401 && NCURSES_EXT_COLORS+0 >= 20170401
 #define _NCURSES_EXTENDED_COLOR_FUNCS   1
 #else
 #define _NCURSES_EXTENDED_COLOR_FUNCS   0
-#endif  /* defined(NCURSES_EXT_COLORS) && defined(NCURSES_EXT_FUNCS)  */
+#endif
 
 #if _NCURSES_EXTENDED_COLOR_FUNCS
 #define _CURSES_COLOR_VAL_TYPE          int

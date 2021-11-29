@@ -10,7 +10,9 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
 #include "osdefs.h"               // DELIM
+
 #include <locale.h>               // setlocale()
+#include <stdlib.h>               // getenv()
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
 #  ifdef HAVE_IO_H
 #    include <io.h>
@@ -98,8 +100,10 @@ static const char usage_3[] = "\
          -X no_debug_ranges: disable the inclusion of the tables mapping extra location \n\
             information (end line, start column offset and end column offset) to every \n\
             instruction in code objects. This is useful when smaller code objects and pyc \n\
-            files are desired as well as supressing the extra visual location indicators \n\
+            files are desired as well as suppressing the extra visual location indicators \n\
             when the interpreter displays tracebacks.\n\
+         -X frozen_modules=[on|off]: whether or not frozen modules should be used.\n\
+            The default is \"on\" (or \"off\" if you are running a local build).\n\
 \n\
 --check-hash-based-pycs always|default|never:\n\
     control how Python invalidates hash-based .pyc files\n\
@@ -140,7 +144,7 @@ static const char usage_6[] =
 "PYTHONNODEBUGRANGES: If this variable is set, it disables the inclusion of the \n"
 "   tables mapping extra location information (end line, start column offset \n"
 "   and end column offset) to every instruction in code objects. This is useful \n"
-"   when smaller cothe de objects and pyc files are desired as well as supressing the \n"
+"   when smaller cothe de objects and pyc files are desired as well as suppressing the \n"
 "   extra visual location indicators when the interpreter displays tracebacks.\n";
 
 #if defined(MS_WINDOWS)
@@ -247,6 +251,14 @@ fail:
 #undef SET_ITEM_STR
 }
 
+char*
+Py_GETENV(const char *name)
+{
+    if (Py_IgnoreEnvironmentFlag) {
+        return NULL;
+    }
+    return getenv(name);
+}
 
 /* --- PyStatus ----------------------------------------------- */
 
@@ -585,11 +597,6 @@ Py_GetArgcArgv(int *argc, wchar_t ***argv)
 
 /* --- PyConfig ---------------------------------------------- */
 
-#define DECODE_LOCALE_ERR(NAME, LEN) \
-    (((LEN) == -2) \
-     ? _PyStatus_ERR("cannot decode " NAME) \
-     : _PyStatus_NO_MEMORY())
-
 #define MAX_HASH_SEED 4294967295UL
 
 
@@ -672,6 +679,7 @@ PyConfig_Clear(PyConfig *config)
     _PyWideStringList_Clear(&config->xoptions);
     _PyWideStringList_Clear(&config->module_search_paths);
     config->module_search_paths_set = 0;
+    CLEAR(config->stdlib_dir);
 
     CLEAR(config->executable);
     CLEAR(config->base_executable);
@@ -731,6 +739,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = -1;
 #endif
+    config->use_frozen_modules = -1;
 }
 
 
@@ -912,6 +921,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_WSTRLIST(xoptions);
     COPY_WSTRLIST(module_search_paths);
     COPY_ATTR(module_search_paths_set);
+    COPY_WSTR_ATTR(stdlib_dir);
 
     COPY_WSTR_ATTR(executable);
     COPY_WSTR_ATTR(base_executable);
@@ -949,6 +959,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(pathconfig_warnings);
     COPY_ATTR(_init_main);
     COPY_ATTR(_isolated_interpreter);
+    COPY_ATTR(use_frozen_modules);
     COPY_WSTRLIST(orig_argv);
 
 #undef COPY_ATTR
@@ -1017,6 +1028,7 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM_WSTR(home);
     SET_ITEM_INT(module_search_paths_set);
     SET_ITEM_WSTRLIST(module_search_paths);
+    SET_ITEM_WSTR(stdlib_dir);
     SET_ITEM_WSTR(executable);
     SET_ITEM_WSTR(base_executable);
     SET_ITEM_WSTR(prefix);
@@ -1052,6 +1064,7 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM_INT(_init_main);
     SET_ITEM_INT(_isolated_interpreter);
     SET_ITEM_WSTRLIST(orig_argv);
+    SET_ITEM_INT(use_frozen_modules);
 
     return dict;
 
@@ -1319,6 +1332,7 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
     // Path configuration output
     GET_UINT(module_search_paths_set);
     GET_WSTRLIST(module_search_paths);
+    GET_WSTR_OPT(stdlib_dir);
     GET_WSTR_OPT(executable);
     GET_WSTR_OPT(base_executable);
     GET_WSTR_OPT(prefix);
@@ -1334,6 +1348,7 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
     GET_UINT(_install_importlib);
     GET_UINT(_init_main);
     GET_UINT(_isolated_interpreter);
+    GET_UINT(use_frozen_modules);
 
 #undef CHECK_VALUE
 #undef GET_UINT
@@ -1588,6 +1603,17 @@ static const wchar_t*
 config_get_xoption(const PyConfig *config, wchar_t *name)
 {
     return _Py_get_xoption(&config->xoptions, name);
+}
+
+static const wchar_t*
+config_get_xoption_value(const PyConfig *config, wchar_t *name)
+{
+    const wchar_t *xoption = config_get_xoption(config, name);
+    if (xoption == NULL) {
+        return NULL;
+    }
+    const wchar_t *sep = wcschr(xoption, L'=');
+    return sep ? sep + 1 : L"";
 }
 
 
@@ -2065,6 +2091,132 @@ config_init_fs_encoding(PyConfig *config, const PyPreConfig *preconfig)
 }
 
 
+/* Determine if the current build is a "development" build (e.g. running
+   out of the source tree) or not.
+
+   A return value of -1 indicates that we do not know.
+  */
+static int
+is_dev_env(PyConfig *config)
+{
+    // This should only ever get called early in runtime initialization,
+    // before the global path config is written.  Otherwise we would
+    // use Py_GetProgramFullPath() and _Py_GetStdlibDir().
+    assert(config != NULL);
+
+    const wchar_t *executable = config->executable;
+    const wchar_t *stdlib = config->stdlib_dir;
+    if (executable == NULL || *executable == L'\0' ||
+            stdlib == NULL || *stdlib == L'\0') {
+        // _PyPathConfig_Calculate() hasn't run yet.
+        return -1;
+    }
+    size_t len = _Py_find_basename(executable);
+    if (wcscmp(executable + len, L"python") != 0 &&
+            wcscmp(executable + len, L"python.exe") != 0) {
+        return 0;
+    }
+    /* If dirname() is the same for both then it is a dev build. */
+    if (len != _Py_find_basename(stdlib)) {
+        return 0;
+    }
+    // We do not bother normalizing the two filenames first since
+    // for config_init_import() is does the right thing as-is.
+    if (wcsncmp(stdlib, executable, len) != 0) {
+        return 0;
+    }
+    return 1;
+}
+
+
+static PyStatus
+config_init_import(PyConfig *config, int compute_path_config)
+{
+    PyStatus status;
+
+    status = _PyConfig_InitPathConfig(config, compute_path_config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    /* -X frozen_modules=[on|off] */
+    if (config->use_frozen_modules < 0) {
+        const wchar_t *value = config_get_xoption_value(config, L"frozen_modules");
+        if (value == NULL) {
+            int isdev = is_dev_env(config);
+            if (isdev >= 0) {
+                config->use_frozen_modules = !isdev;
+            }
+        }
+        else if (wcscmp(value, L"on") == 0) {
+            config->use_frozen_modules = 1;
+        }
+        else if (wcscmp(value, L"off") == 0) {
+            config->use_frozen_modules = 0;
+        }
+        else if (wcslen(value) == 0) {
+            // "-X frozen_modules" and "-X frozen_modules=" both imply "on".
+            config->use_frozen_modules = 1;
+        }
+        else {
+            return PyStatus_Error("bad value for option -X frozen_modules "
+                                  "(expected \"on\" or \"off\")");
+        }
+    }
+
+    return _PyStatus_OK();
+}
+
+PyStatus
+_PyConfig_InitImportConfig(PyConfig *config)
+{
+    return config_init_import(config, 1);
+}
+
+// List of known xoptions to validate against the provided ones. Note that all
+// options are listed, even if they are only available if a specific macro is
+// set, like -X showrefcount which requires a debug build. In this case unknown
+// options are silently ignored.
+const wchar_t* known_xoptions[] = {
+    L"faulthandler",
+    L"showrefcount",
+    L"tracemalloc",
+    L"importtime",
+    L"dev",
+    L"utf8",
+    L"pycache_prefix",
+    L"warn_default_encoding",
+    L"no_debug_ranges",
+    L"frozen_modules",
+    NULL,
+};
+
+static const wchar_t*
+_Py_check_xoptions(const PyWideStringList *xoptions, const wchar_t **names)
+{
+    for (Py_ssize_t i=0; i < xoptions->length; i++) {
+        const wchar_t *option = xoptions->items[i];
+        size_t len;
+        wchar_t *sep = wcschr(option, L'=');
+        if (sep != NULL) {
+            len = (sep - option);
+        }
+        else {
+            len = wcslen(option);
+        }
+        int found = 0;
+        for (const wchar_t** name = names; *name != NULL; name++) {
+            if (wcsncmp(option, *name, len) == 0 && (*name)[len] == L'\0') {
+                found = 1;
+            }
+        }
+        if (found == 0) {
+            return option;
+        }
+    }
+    return NULL;
+}
+
 static PyStatus
 config_read(PyConfig *config, int compute_path_config)
 {
@@ -2079,6 +2231,11 @@ config_read(PyConfig *config, int compute_path_config)
     }
 
     /* -X options */
+    const wchar_t* option = _Py_check_xoptions(&config->xoptions, known_xoptions);
+    if (option != NULL) {
+        return PyStatus_Error("Unknown value for option -X");
+    }
+
     if (config_get_xoption(config, L"showrefcount")) {
         config->show_ref_count = 1;
     }
@@ -2111,7 +2268,7 @@ config_read(PyConfig *config, int compute_path_config)
     }
 
     if (config->_install_importlib) {
-        status = _PyConfig_InitPathConfig(config, compute_path_config);
+        status = config_init_import(config, compute_path_config);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
@@ -2492,7 +2649,7 @@ warnoptions_append(PyConfig *config, PyWideStringList *options,
 {
     /* config_init_warnoptions() add existing config warnoptions at the end:
        ensure that the new option is not already present in this list to
-       prevent change the options order whne config_init_warnoptions() is
+       prevent change the options order when config_init_warnoptions() is
        called twice. */
     if (_PyWideStringList_Find(&config->warnoptions, option)) {
         /* Already present: do nothing */
@@ -3041,6 +3198,7 @@ _Py_DumpPathConfig(PyThreadState *tstate)
     PySys_WriteStderr("  environment = %i\n", config->use_environment);
     PySys_WriteStderr("  user site = %i\n", config->user_site_directory);
     PySys_WriteStderr("  import site = %i\n", config->site_import);
+    DUMP_CONFIG("stdlib dir", stdlib_dir);
 #undef DUMP_CONFIG
 
 #define DUMP_SYS(NAME) \

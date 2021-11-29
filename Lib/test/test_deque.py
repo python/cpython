@@ -1,4 +1,5 @@
 from collections import deque
+import doctest
 import unittest
 from test import support, seq_tests
 import gc
@@ -1033,31 +1034,10 @@ h
 
 __test__ = {'libreftest' : libreftest}
 
-def test_main(verbose=None):
-    import sys
-    test_classes = (
-        TestBasic,
-        TestVariousIteratorArgs,
-        TestSubclass,
-        TestSubclassWithKwargs,
-        TestSequence,
-    )
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite())
+    return tests
 
-    support.run_unittest(*test_classes)
-
-    # verify reference counting
-    if verbose and hasattr(sys, "gettotalrefcount"):
-        import gc
-        counts = [None] * 5
-        for i in range(len(counts)):
-            support.run_unittest(*test_classes)
-            gc.collect()
-            counts[i] = sys.gettotalrefcount()
-        print(counts)
-
-    # doctests
-    from test import test_deque
-    support.run_doctest(test_deque, verbose)
 
 if __name__ == "__main__":
-    test_main(verbose=True)
+    unittest.main()

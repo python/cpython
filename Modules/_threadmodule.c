@@ -84,13 +84,12 @@ lock_dealloc(lockobject *self)
 static PyLockStatus
 acquire_timed(PyThread_type_lock lock, _PyTime_t timeout)
 {
-    PyLockStatus r;
     _PyTime_t endtime = 0;
-
     if (timeout > 0) {
-        endtime = _PyTime_GetMonotonicClock() + timeout;
+        endtime = _PyDeadline_Init(timeout);
     }
 
+    PyLockStatus r;
     do {
         _PyTime_t microseconds;
         microseconds = _PyTime_AsMicroseconds(timeout, _PyTime_ROUND_CEILING);
@@ -114,7 +113,7 @@ acquire_timed(PyThread_type_lock lock, _PyTime_t timeout)
             /* If we're using a timeout, recompute the timeout after processing
              * signals, since those can take time.  */
             if (timeout > 0) {
-                timeout = endtime - _PyTime_GetMonotonicClock();
+                timeout = _PyDeadline_Get(endtime);
 
                 /* Check for negative values, since those mean block forever.
                  */
@@ -164,7 +163,7 @@ lock_acquire_parse_args(PyObject *args, PyObject *kwds,
         _PyTime_t microseconds;
 
         microseconds = _PyTime_AsMicroseconds(*timeout, _PyTime_ROUND_TIMEOUT);
-        if (microseconds >= PY_TIMEOUT_MAX) {
+        if (microseconds > PY_TIMEOUT_MAX) {
             PyErr_SetString(PyExc_OverflowError,
                             "timeout value is too large");
             return -1;
@@ -1220,7 +1219,7 @@ where the corresponding signal handler will be executed.\n\
 If *signum* is omitted, SIGINT is assumed.\n\
 A subthread can use this function to interrupt the main thread.\n\
 \n\
-Note: the default signal hander for SIGINT raises ``KeyboardInterrupt``."
+Note: the default signal handler for SIGINT raises ``KeyboardInterrupt``."
 );
 
 static lockobject *newlockobject(PyObject *module);
@@ -1320,7 +1319,7 @@ static PyObject *
 thread__set_sentinel(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     PyObject *wr;
-    PyThreadState *tstate = PyThreadState_Get();
+    PyThreadState *tstate = _PyThreadState_GET();
     lockobject *lock;
 
     if (tstate->on_delete_data != NULL) {

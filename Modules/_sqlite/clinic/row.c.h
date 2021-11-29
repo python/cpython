@@ -13,7 +13,8 @@ pysqlite_row_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     pysqlite_Cursor *cursor;
     PyObject *data;
 
-    if ((type == clinic_state()->RowType) &&
+    if ((type == clinic_state()->RowType ||
+         type->tp_init == clinic_state()->RowType->tp_init) &&
         !_PyArg_NoKeywords("Row", kwargs)) {
         goto exit;
     }
@@ -53,4 +54,4 @@ pysqlite_row_keys(pysqlite_Row *self, PyObject *Py_UNUSED(ignored))
 {
     return pysqlite_row_keys_impl(self);
 }
-/*[clinic end generated code: output=0382771b4fc85f36 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9d54919dbb4ba5f1 input=a9049054013a1b77]*/

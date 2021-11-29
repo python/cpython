@@ -101,7 +101,7 @@ if _HAS_USER_BASE:
             'stdlib': '{userbase}/{platlibdir}/python{py_version_short}',
             'platstdlib': '{userbase}/{platlibdir}/python{py_version_short}',
             'purelib': '{userbase}/lib/python{py_version_short}/site-packages',
-            'platlib': '{userbase}/{platlibdir}/python{py_version_short}/site-packages',
+            'platlib': '{userbase}/lib/python{py_version_short}/site-packages',
             'include': '{userbase}/include/python{py_version_short}',
             'scripts': '{userbase}/bin',
             'data': '{userbase}',
@@ -184,7 +184,7 @@ _PYTHON_BUILD = is_python_build(True)
 
 if _PYTHON_BUILD:
     for scheme in ('posix_prefix', 'posix_home'):
-        # On POSIX-y platofrms, Python will:
+        # On POSIX-y platforms, Python will:
         # - Build from .h files in 'headers' (which is only added to the
         #   scheme when building CPython)
         # - Install .h files to 'include'

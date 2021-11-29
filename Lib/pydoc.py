@@ -542,7 +542,7 @@ class HTMLRepr(Repr):
             # needed to make any special characters, so show a raw string.
             return 'r' + testrepr[0] + self.escape(test) + testrepr[0]
         return re.sub(r'((\\[\\abfnrtv\'"]|\\[0-9]..|\\x..|\\u....)+)',
-                      r'<font color="#c040c0">\1</font>',
+                      r'<span class="repr">\1</span>',
                       self.escape(testrepr))
 
     repr_str = repr_string
@@ -567,49 +567,48 @@ class HTMLDoc(Doc):
     def page(self, title, contents):
         """Format an HTML page."""
         return '''\
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
-<html><head><title>Python: %s</title>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-</head><body bgcolor="#f0f0f8">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Python: %s</title>
+</head><body>
 %s
 </body></html>''' % (title, contents)
 
-    def heading(self, title, fgcol, bgcol, extras=''):
+    def heading(self, title, extras=''):
         """Format a page heading."""
         return '''
-<table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="heading">
-<tr bgcolor="%s">
-<td valign=bottom>&nbsp;<br>
-<font color="%s" face="helvetica, arial">&nbsp;<br>%s</font></td
-><td align=right valign=bottom
-><font color="%s" face="helvetica, arial">%s</font></td></tr></table>
-    ''' % (bgcol, fgcol, title, fgcol, extras or '&nbsp;')
+<table class="heading">
+<tr class="heading-text decor">
+<td class="title">&nbsp;<br>%s</td>
+<td class="extra">%s</td></tr></table>
+    ''' % (title, extras or '&nbsp;')
 
-    def section(self, title, fgcol, bgcol, contents, width=6,
+    def section(self, title, cls, contents, width=6,
                 prelude='', marginalia=None, gap='&nbsp;'):
         """Format a section with a heading."""
         if marginalia is None:
-            marginalia = '<tt>' + '&nbsp;' * width + '</tt>'
+            marginalia = '<span class="code">' + '&nbsp;' * width + '</span>'
         result = '''<p>
-<table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
-<tr bgcolor="%s">
-<td colspan=3 valign=bottom>&nbsp;<br>
-<font color="%s" face="helvetica, arial">%s</font></td></tr>
-    ''' % (bgcol, fgcol, title)
+<table class="section">
+<tr class="decor %s-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br>%s</td></tr>
+    ''' % (cls, title)
         if prelude:
             result = result + '''
-<tr bgcolor="%s"><td rowspan=2>%s</td>
-<td colspan=2>%s</td></tr>
-<tr><td>%s</td>''' % (bgcol, marginalia, prelude, gap)
+<tr><td class="decor %s-decor" rowspan=2>%s</td>
+<td class="decor %s-decor" colspan=2>%s</td></tr>
+<tr><td>%s</td>''' % (cls, marginalia, cls, prelude, gap)
         else:
             result = result + '''
-<tr><td bgcolor="%s">%s</td><td>%s</td>''' % (bgcol, marginalia, gap)
+<tr><td class="decor %s-decor">%s</td><td>%s</td>''' % (cls, marginalia, gap)
 
-        return result + '\n<td width="100%%">%s</td></tr></table>' % contents
+        return result + '\n<td class="singlecolumn">%s</td></tr></table>' % contents
 
     def bigsection(self, title, *args):
         """Format a section with a big heading."""
-        title = '<big><strong>%s</strong></big>' % title
+        title = '<strong class="bigsection">%s</strong>' % title
         return self.section(title, *args)
 
     def preformat(self, text):
@@ -618,19 +617,19 @@ class HTMLDoc(Doc):
         return replace(text, '\n\n', '\n \n', '\n\n', '\n \n',
                              ' ', '&nbsp;', '\n', '<br>\n')
 
-    def multicolumn(self, list, format, cols=4):
+    def multicolumn(self, list, format):
         """Format a list of items into a multi-column list."""
         result = ''
-        rows = (len(list)+cols-1)//cols
-        for col in range(cols):
-            result = result + '<td width="%d%%" valign=top>' % (100//cols)
+        rows = (len(list) + 3) // 4
+        for col in range(4):
+            result = result + '<td class="multicolumn">'
             for i in range(rows*col, rows*col+rows):
                 if i < len(list):
                     result = result + format(list[i]) + '<br>\n'
             result = result + '</td>'
-        return '<table width="100%%" summary="list"><tr>%s</tr></table>' % result
+        return '<table><tr>%s</tr></table>' % result
 
-    def grey(self, text): return '<font color="#909090">%s</font>' % text
+    def grey(self, text): return '<span class="grey">%s</span>' % text
 
     def namelink(self, name, *dicts):
         """Make a link for an identifier, given name-to-URL mappings."""
@@ -719,14 +718,14 @@ class HTMLDoc(Doc):
         for entry in tree:
             if type(entry) is type(()):
                 c, bases = entry
-                result = result + '<dt><font face="helvetica, arial">'
+                result = result + '<dt class="heading-text">'
                 result = result + self.classlink(c, modname)
                 if bases and bases != (parent,):
                     parents = []
                     for base in bases:
                         parents.append(self.classlink(base, modname))
                     result = result + '(' + ', '.join(parents) + ')'
-                result = result + '\n</font></dt>'
+                result = result + '\n</dt>'
             elif type(entry) is type([]):
                 result = result + '<dd>\n%s</dd>\n' % self.formattree(
                     entry, modname, c)
@@ -743,10 +742,10 @@ class HTMLDoc(Doc):
         links = []
         for i in range(len(parts)-1):
             links.append(
-                '<a href="%s.html"><font color="#ffffff">%s</font></a>' %
+                '<a href="%s.html" class="white">%s</a>' %
                 ('.'.join(parts[:i+1]), parts[i]))
         linkedname = '.'.join(links + parts[-1:])
-        head = '<big><big><strong>%s</strong></big></big>' % linkedname
+        head = '<strong class="title">%s</strong>' % linkedname
         try:
             path = inspect.getabsfile(object)
             url = urllib.parse.quote(path)
@@ -768,9 +767,7 @@ class HTMLDoc(Doc):
             docloc = '<br><a href="%(docloc)s">Module Reference</a>' % locals()
         else:
             docloc = ''
-        result = self.heading(
-            head, '#ffffff', '#7799ee',
-            '<a href=".">index</a><br>' + filelink + docloc)
+        result = self.heading(head, '<a href=".">index</a><br>' + filelink + docloc)
 
         modules = inspect.getmembers(object, inspect.ismodule)
 
@@ -805,7 +802,7 @@ class HTMLDoc(Doc):
                 data.append((key, value))
 
         doc = self.markup(getdoc(object), self.preformat, fdict, cdict)
-        doc = doc and '<tt>%s</tt>' % doc
+        doc = doc and '<span class="code">%s</span>' % doc
         result = result + '<p>%s</p>\n' % doc
 
         if hasattr(object, '__path__'):
@@ -815,12 +812,12 @@ class HTMLDoc(Doc):
             modpkgs.sort()
             contents = self.multicolumn(modpkgs, self.modpkglink)
             result = result + self.bigsection(
-                'Package Contents', '#ffffff', '#aa55cc', contents)
+                'Package Contents', 'pkg-content', contents)
         elif modules:
             contents = self.multicolumn(
                 modules, lambda t: self.modulelink(t[1]))
             result = result + self.bigsection(
-                'Modules', '#ffffff', '#aa55cc', contents)
+                'Modules', 'pkg-content', contents)
 
         if classes:
             classlist = [value for (key, value) in classes]
@@ -829,27 +826,25 @@ class HTMLDoc(Doc):
             for key, value in classes:
                 contents.append(self.document(value, key, name, fdict, cdict))
             result = result + self.bigsection(
-                'Classes', '#ffffff', '#ee77aa', ' '.join(contents))
+                'Classes', 'index', ' '.join(contents))
         if funcs:
             contents = []
             for key, value in funcs:
                 contents.append(self.document(value, key, name, fdict, cdict))
             result = result + self.bigsection(
-                'Functions', '#ffffff', '#eeaa77', ' '.join(contents))
+                'Functions', 'functions', ' '.join(contents))
         if data:
             contents = []
             for key, value in data:
                 contents.append(self.document(value, key))
             result = result + self.bigsection(
-                'Data', '#ffffff', '#55aa55', '<br>\n'.join(contents))
+                'Data', 'data', '<br>\n'.join(contents))
         if hasattr(object, '__author__'):
             contents = self.markup(str(object.__author__), self.preformat)
-            result = result + self.bigsection(
-                'Author', '#ffffff', '#7799ee', contents)
+            result = result + self.bigsection('Author', 'author', contents)
         if hasattr(object, '__credits__'):
             contents = self.markup(str(object.__credits__), self.preformat)
-            result = result + self.bigsection(
-                'Credits', '#ffffff', '#7799ee', contents)
+            result = result + self.bigsection('Credits', 'credits', contents)
 
         return result
 
@@ -923,7 +918,7 @@ class HTMLDoc(Doc):
                     else:
                         doc = self.markup(getdoc(value), self.preformat,
                                           funcs, classes, mdict)
-                        doc = '<dd><tt>%s</tt>' % doc
+                        doc = '<dd><span class="code">%s</span>' % doc
                         push('<dl><dt>%s%s</dl>\n' % (base, doc))
                     push('\n')
             return attrs
@@ -1011,9 +1006,9 @@ class HTMLDoc(Doc):
         if decl:
             doc = decl + (doc or '')
         doc = self.markup(doc, self.preformat, funcs, classes, mdict)
-        doc = doc and '<tt>%s<br>&nbsp;</tt>' % doc
+        doc = doc and '<span class="code">%s<br>&nbsp;</span>' % doc
 
-        return self.section(title, '#000000', '#ffc8d8', contents, 3, doc)
+        return self.section(title, 'title', contents, 3, doc)
 
     def formatvalue(self, object):
         """Format an argument default value as text."""
@@ -1074,14 +1069,14 @@ class HTMLDoc(Doc):
             argspec = '(...)'
 
         decl = asyncqualifier + title + self.escape(argspec) + (note and
-               self.grey('<font face="helvetica, arial">%s</font>' % note))
+               self.grey('<span class="heading-text">%s</span>' % note))
 
         if skipdocs:
             return '<dl><dt>%s</dt></dl>\n' % decl
         else:
             doc = self.markup(
                 getdoc(object), self.preformat, funcs, classes, methods)
-            doc = doc and '<dd><tt>%s</tt></dd>' % doc
+            doc = doc and '<dd><span class="code">%s</span></dd>' % doc
             return '<dl><dt>%s</dt>%s</dl>\n' % (decl, doc)
 
     def docdata(self, object, name=None, mod=None, cl=None):
@@ -1093,7 +1088,7 @@ class HTMLDoc(Doc):
             push('<dl><dt><strong>%s</strong></dt>\n' % name)
         doc = self.markup(getdoc(object), self.preformat)
         if doc:
-            push('<dd><tt>%s</tt></dd>\n' % doc)
+            push('<dd><span class="code">%s</span></dd>\n' % doc)
         push('</dl>\n')
 
         return ''.join(results)
@@ -1118,7 +1113,7 @@ class HTMLDoc(Doc):
 
         modpkgs.sort()
         contents = self.multicolumn(modpkgs, self.modpkglink)
-        return self.bigsection(dir, '#ffffff', '#ee77aa', contents)
+        return self.bigsection(dir, 'index', contents)
 
 # -------------------------------------------- text documentation generator
 
@@ -2446,10 +2441,12 @@ def _url_handler(url, content_type="text/html"):
                 '<link rel="stylesheet" type="text/css" href="%s">' %
                 css_path)
             return '''\
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
-<html><head><title>Pydoc: %s</title>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-%s</head><body bgcolor="#f0f0f8">%s<div style="clear:both;padding-top:.5em;">%s</div>
+<!DOCTYPE>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Pydoc: %s</title>
+%s</head><body>%s<div style="clear:both;padding-top:.5em;">%s</div>
 </body></html>''' % (title, css_link, html_navbar(), contents)
 
 
@@ -2489,22 +2486,21 @@ def _url_handler(url, content_type="text/html"):
             return '<a href="%s.html">%s</a>' % (name, name)
 
         heading = html.heading(
-            '<big><big><strong>Index of Modules</strong></big></big>',
-            '#ffffff', '#7799ee')
+            '<strong class="title">Index of Modules</strong>'
+        )
         names = [name for name in sys.builtin_module_names
                  if name != '__main__']
         contents = html.multicolumn(names, bltinlink)
         contents = [heading, '<p>' + html.bigsection(
-            'Built-in Modules', '#ffffff', '#ee77aa', contents)]
+            'Built-in Modules', 'index', contents)]
 
         seen = {}
         for dir in sys.path:
             contents.append(html.index(dir, seen))
 
         contents.append(
-            '<p align=right><font color="#909090" face="helvetica,'
-            'arial"><strong>pydoc</strong> by Ka-Ping Yee'
-            '&lt;ping@lfw.org&gt;</font>')
+            '<p align=right class="heading-text grey"><strong>pydoc</strong> by Ka-Ping Yee'
+            '&lt;ping@lfw.org&gt;</p>')
         return 'Index of Modules', ''.join(contents)
 
     def html_search(key):
@@ -2529,12 +2525,12 @@ def _url_handler(url, content_type="text/html"):
 
         results = []
         heading = html.heading(
-            '<big><big><strong>Search Results</strong></big></big>',
-            '#ffffff', '#7799ee')
+            '<strong class="title">Search Results</strong>',
+        )
         for name, desc in search_result:
             results.append(bltinlink(name) + desc)
         contents = heading + html.bigsection(
-            'key = %s' % key, '#ffffff', '#ee77aa', '<br>'.join(results))
+            'key = %s' % key, 'index', '<br>'.join(results))
         return 'Search Results', contents
 
     def html_topics():
@@ -2544,20 +2540,20 @@ def _url_handler(url, content_type="text/html"):
             return '<a href="topic?key=%s">%s</a>' % (name, name)
 
         heading = html.heading(
-            '<big><big><strong>INDEX</strong></big></big>',
-            '#ffffff', '#7799ee')
+            '<strong class="title">INDEX</strong>',
+        )
         names = sorted(Helper.topics.keys())
 
         contents = html.multicolumn(names, bltinlink)
         contents = heading + html.bigsection(
-            'Topics', '#ffffff', '#ee77aa', contents)
+            'Topics', 'index', contents)
         return 'Topics', contents
 
     def html_keywords():
         """Index of keywords."""
         heading = html.heading(
-            '<big><big><strong>INDEX</strong></big></big>',
-            '#ffffff', '#7799ee')
+            '<strong class="title">INDEX</strong>',
+        )
         names = sorted(Helper.keywords.keys())
 
         def bltinlink(name):
@@ -2565,7 +2561,7 @@ def _url_handler(url, content_type="text/html"):
 
         contents = html.multicolumn(names, bltinlink)
         contents = heading + html.bigsection(
-            'Keywords', '#ffffff', '#ee77aa', contents)
+            'Keywords', 'index', contents)
         return 'Keywords', contents
 
     def html_topicpage(topic):
@@ -2578,10 +2574,10 @@ def _url_handler(url, content_type="text/html"):
         else:
             title = 'TOPIC'
         heading = html.heading(
-            '<big><big><strong>%s</strong></big></big>' % title,
-            '#ffffff', '#7799ee')
+            '<strong class="title">%s</strong>' % title,
+        )
         contents = '<pre>%s</pre>' % html.markup(contents)
-        contents = html.bigsection(topic , '#ffffff','#ee77aa', contents)
+        contents = html.bigsection(topic , 'index', contents)
         if xrefs:
             xrefs = sorted(xrefs.split())
 
@@ -2589,8 +2585,7 @@ def _url_handler(url, content_type="text/html"):
                 return '<a href="topic?key=%s">%s</a>' % (name, name)
 
             xrefs = html.multicolumn(xrefs, bltinlink)
-            xrefs = html.section('Related help topics: ',
-                                 '#ffffff', '#ee77aa', xrefs)
+            xrefs = html.section('Related help topics: ', 'index', xrefs)
         return ('%s %s' % (title, topic),
                 ''.join((heading, contents, xrefs)))
 
@@ -2604,12 +2599,11 @@ def _url_handler(url, content_type="text/html"):
 
     def html_error(url, exc):
         heading = html.heading(
-            '<big><big><strong>Error</strong></big></big>',
-            '#ffffff', '#7799ee')
+            '<strong class="title">Error</strong>',
+        )
         contents = '<br>'.join(html.escape(line) for line in
                                format_exception_only(type(exc), exc))
-        contents = heading + html.bigsection(url, '#ffffff', '#bb0000',
-                                             contents)
+        contents = heading + html.bigsection(url, 'error', contents)
         return "Error - %s" % url, contents
 
     def get_html_page(url):

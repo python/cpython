@@ -672,7 +672,7 @@ def resolve_name(name):
     ValueError - if `name` isn't in a recognised format
     ImportError - if an import failed when it shouldn't have
     AttributeError - if a failure occurred when traversing the object hierarchy
-                     within the imported package to get to the desired object)
+                     within the imported package to get to the desired object.
     """
     global _NAME_PATTERN
     if _NAME_PATTERN is None:

@@ -426,9 +426,14 @@ class TestSupport(unittest.TestCase):
                              extra=extra,
                              not_exported=not_exported)
 
-        extra = {'TextTestResult', 'installHandler'}
+        extra = {
+            'TextTestResult',
+            'findTestCases',
+            'getTestCaseNames',
+            'installHandler',
+            'makeSuite',
+        }
         not_exported = {'load_tests', "TestProgram", "BaseTestSuite"}
-
         support.check__all__(self,
                              unittest,
                              ("unittest.result", "unittest.case",
@@ -464,12 +469,8 @@ class TestSupport(unittest.TestCase):
                 if time.monotonic() > deadline:
                     self.fail("timeout")
 
-                old_stderr = sys.__stderr__
-                try:
-                    sys.__stderr__ = stderr
+                with support.swap_attr(support.print_warning, 'orig_stderr', stderr):
                     support.reap_children()
-                finally:
-                    sys.__stderr__ = old_stderr
 
                 # Use environment_altered to check if reap_children() found
                 # the child process
@@ -669,14 +670,8 @@ class TestSupport(unittest.TestCase):
 
     def check_print_warning(self, msg, expected):
         stderr = io.StringIO()
-
-        old_stderr = sys.__stderr__
-        try:
-            sys.__stderr__ = stderr
+        with support.swap_attr(support.print_warning, 'orig_stderr', stderr):
             support.print_warning(msg)
-        finally:
-            sys.__stderr__ = old_stderr
-
         self.assertEqual(stderr.getvalue(), expected)
 
     def test_print_warning(self):
@@ -709,9 +704,5 @@ class TestSupport(unittest.TestCase):
     # SuppressCrashReport
 
 
-def test_main():
-    tests = [TestSupport]
-    support.run_unittest(*tests)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
