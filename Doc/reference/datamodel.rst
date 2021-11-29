@@ -1887,7 +1887,7 @@ Notes on using *__slots__*
   the *__slots__* declaration.
 
 * Without a *__weakref__* variable for each instance, classes defining
-  *__slots__* do not support :mod:`weak references<weakref>` to its instances.
+  *__slots__* do not support :mod:`weak references <weakref>` to its instances.
   If weak reference
   support is needed, then add ``'__weakref__'`` to the sequence of strings in the
   *__slots__* declaration.
