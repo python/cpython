@@ -209,7 +209,7 @@ class ExceptionTests(unittest.TestCase):
                     src = src.decode(encoding, 'replace')
                 line = src.split('\n')[lineno-1]
                 self.assertIn(line, cm.exception.text)
-    
+
     def test_error_offset_continuation_characters(self):
         check = self.check
         check('"\\\n"(1 for c in I,\\\n\\', 2, 2)
@@ -1342,9 +1342,7 @@ class ExceptionTests(unittest.TestCase):
         """
         with SuppressCrashReport():
             rc, out, err = script_helper.assert_python_failure("-c", code)
-            self.assertIn(b'Fatal Python error: _PyErr_NormalizeException: '
-                          b'Cannot recover from MemoryErrors while '
-                          b'normalizing exceptions.', err)
+            self.assertIn(b'MemoryError', err)
 
     @cpython_only
     def test_MemoryError(self):
