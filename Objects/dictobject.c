@@ -4961,7 +4961,7 @@ static int
 init_inline_values(PyObject *obj, PyTypeObject *tp)
 {
     assert(tp->tp_flags & Py_TPFLAGS_HEAPTYPE);
-    assert(tp->tp_dictoffset > 0);
+    // assert(type->tp_dictoffset > 0);  -- TO DO Update this assert.
     assert(tp->tp_inline_values_offset > 0);
     PyDictKeysObject *keys = CACHED_KEYS(tp);
     assert(keys != NULL);
@@ -5057,7 +5057,8 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
             return -1;
         }
         *((PyDictValues **)((char *)obj + tp->tp_inline_values_offset)) = NULL;
-        *((PyObject **) ((char *)obj + tp->tp_dictoffset)) = dict;
+        assert(_PyObject_DictPointer(obj) == ((PyObject **)obj)-3);
+        ((PyObject **)obj)[-3] = dict;
         return PyDict_SetItem(dict, name, value);
     }
     PyObject *old_value = values->values[ix];
