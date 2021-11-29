@@ -337,20 +337,21 @@ def _decimal_sqrt_of_frac(n: int, m: int) -> Decimal:
     if not n:
         return 0.0
     f_square = Fraction(n, m)
-    d_mid = (Decimal(n) / Decimal(m)).sqrt()
-    f_mid = Fraction(*d_mid.as_integer_ratio())
 
-    d_plus = d_mid.next_plus()
+    d_start = (Decimal(n) / Decimal(m)).sqrt()
+    f_start = Fraction(*d_start.as_integer_ratio())
+
+    d_plus = d_start.next_plus()
     f_plus = Fraction(*d_plus.as_integer_ratio())
-    if f_square > ((f_mid + f_plus) / 2) ** 2:
+    if f_square > ((f_start + f_plus) / 2) ** 2:
         return d_plus
 
-    d_minus = d_mid.next_minus()
+    d_minus = d_start.next_minus()
     f_minus = Fraction(*d_minus.as_integer_ratio())
-    if f_square < ((f_mid + f_minus) / 2) ** 2:
+    if f_square < ((f_start + f_minus) / 2) ** 2:
         return d_minus
 
-    return d_mid
+    return d_start
 
 
 # === Measures of central tendency (averages) ===
