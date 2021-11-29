@@ -135,6 +135,31 @@ get_gc_state(void)
     return &interp->gc;
 }
 
+_Py_IDENTIFIER(stderr);
+_Py_IDENTIFIER(write);
+
+static void
+gc_log(GCState *state, const char *format, ...)
+{
+    PyObject *file = state->file;
+    if (file == NULL) {
+        return;
+    }
+    va_list va;
+    va_start(va, format);
+    PyObject *format_str = PyUnicode_FromFormatV(format, va);
+    va_end(va);
+    if (format_str == NULL) {
+        return;
+    }
+    PyObject *result = _PyObject_CallMethodIdOneArg(file, &PyId_write, format_str);
+    if (result == NULL) {
+        return;
+    }
+    Py_DECREF(result);
+}
+
+
 
 void
 _PyGC_InitState(GCState *gcstate)
@@ -157,6 +182,8 @@ _PyGC_InitState(GCState *gcstate)
            (uintptr_t)&gcstate->permanent_generation.head}, 0, 0
     };
     gcstate->permanent_generation = permanent_generation;
+
+    gcstate->file = NULL;
 }
 
 
@@ -1060,7 +1087,7 @@ show_stats_each_generations(GCState *gcstate)
                              gc_list_size(GEN_HEAD(gcstate, i)));
     }
 
-    PySys_FormatStderr(
+    gc_log(gcstate,
         "gc: objects in each generation:%s\n"
         "gc: objects in permanent generation: %zd\n",
         buf, gc_list_size(&gcstate->permanent_generation.head));
@@ -1209,7 +1236,7 @@ gc_collect_main(PyThreadState *tstate, int generation,
 #endif
 
     if (gcstate->debug & DEBUG_STATS) {
-        PySys_WriteStderr("gc: collecting generation %d...\n", generation);
+        gc_log(gcstate, "gc: collecting generation %d...\n", generation);
         show_stats_each_generations(gcstate);
         t1 = _PyTime_GetPerfCounter();
     }
@@ -1308,7 +1335,7 @@ gc_collect_main(PyThreadState *tstate, int generation,
     }
     if (gcstate->debug & DEBUG_STATS) {
         double d = _PyTime_AsSecondsDouble(_PyTime_GetPerfCounter() - t1);
-        PySys_WriteStderr(
+        gc_log(gcstate,
             "gc: done, %zd unreachable, %zd uncollectable, %.4fs elapsed\n",
             n+m, n, d);
     }
@@ -1565,6 +1592,8 @@ gc.set_debug
             found.
           DEBUG_SAVEALL - Save objects to gc.garbage rather than freeing them.
           DEBUG_LEAK - Debug leaking programs (everything but STATS).
+    file: object = None
+        A file stream for redirecting GC logs. The stderr is used by default.
     /
 
 Set the garbage collection debugging flags.
@@ -1573,11 +1602,12 @@ Debugging information is written to sys.stderr.
 [clinic start generated code]*/
 
 static PyObject *
-gc_set_debug_impl(PyObject *module, int flags)
-/*[clinic end generated code: output=7c8366575486b228 input=5e5ce15e84fbed15]*/
+gc_set_debug_impl(PyObject *module, int flags, PyObject *file)
+/*[clinic end generated code: output=6cd39552337bef38 input=4414f1db8dfb6e56]*/
 {
     GCState *gcstate = get_gc_state();
     gcstate->debug = flags;
+    gcstate->file = Py_IsNone(file) ? _PySys_GetObjectId(&PyId_stderr) : file;
     Py_RETURN_NONE;
 }
 

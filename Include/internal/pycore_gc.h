@@ -159,6 +159,9 @@ struct _gc_runtime_state {
        collections, and are awaiting to undergo a full collection for
        the first time. */
     Py_ssize_t long_lived_pending;
+
+    /* A file stream for redirecting GC logs */
+    PyObject *file;
 };
 
 extern void _PyGC_InitState(struct _gc_runtime_state *);

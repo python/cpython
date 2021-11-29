@@ -118,7 +118,7 @@ exit:
 }
 
 PyDoc_STRVAR(gc_set_debug__doc__,
-"set_debug($module, flags, /)\n"
+"set_debug($module, flags, file=None, /)\n"
 "--\n"
 "\n"
 "Set the garbage collection debugging flags.\n"
@@ -131,26 +131,37 @@ PyDoc_STRVAR(gc_set_debug__doc__,
 "        found.\n"
 "      DEBUG_SAVEALL - Save objects to gc.garbage rather than freeing them.\n"
 "      DEBUG_LEAK - Debug leaking programs (everything but STATS).\n"
+"  file\n"
+"    A file stream for redirecting GC logs. The stderr is used by default.\n"
 "\n"
 "Debugging information is written to sys.stderr.");
 
 #define GC_SET_DEBUG_METHODDEF    \
-    {"set_debug", (PyCFunction)gc_set_debug, METH_O, gc_set_debug__doc__},
+    {"set_debug", (PyCFunction)(void(*)(void))gc_set_debug, METH_FASTCALL, gc_set_debug__doc__},
 
 static PyObject *
-gc_set_debug_impl(PyObject *module, int flags);
+gc_set_debug_impl(PyObject *module, int flags, PyObject *file);
 
 static PyObject *
-gc_set_debug(PyObject *module, PyObject *arg)
+gc_set_debug(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int flags;
+    PyObject *file = Py_None;
 
-    flags = _PyLong_AsInt(arg);
+    if (!_PyArg_CheckPositional("set_debug", nargs, 1, 2)) {
+        goto exit;
+    }
+    flags = _PyLong_AsInt(args[0]);
     if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = gc_set_debug_impl(module, flags);
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    file = args[1];
+skip_optional:
+    return_value = gc_set_debug_impl(module, flags, file);
 
 exit:
     return return_value;
@@ -372,4 +383,4 @@ gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=61e15f3a549f3ab5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=de67582fdaa8f5c8 input=a9049054013a1b77]*/
