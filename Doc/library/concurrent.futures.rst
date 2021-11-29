@@ -231,7 +231,7 @@ that :class:`ProcessPoolExecutor` will not work in the interactive interpreter.
 Calling :class:`Executor` or :class:`Future` methods from a callable submitted
 to a :class:`ProcessPoolExecutor` will result in deadlock.
 
-.. class:: ProcessPoolExecutor(max_workers=None, mp_context=None, initializer=None, initargs=())
+.. class:: ProcessPoolExecutor(max_workers=None, mp_context=None, initializer=None, initargs=(), max_tasks_per_child=None)
 
    An :class:`Executor` subclass that executes calls asynchronously using a pool
    of at most *max_workers* processes.  If *max_workers* is ``None`` or not
@@ -252,6 +252,11 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
    pending jobs will raise a :exc:`~concurrent.futures.process.BrokenProcessPool`,
    as well as any attempt to submit more jobs to the pool.
 
+   *max_tasks_per_child* is an optional argument that specifies the maximum
+   number of tasks a single process can execute before it will exit and be
+   replaced with a fresh worker process. The default *max_tasks_per_child* is
+   ``None`` which means worker processes will live as long as the pool.
+
    .. versionchanged:: 3.3
       When one of the worker processes terminates abruptly, a
       :exc:`BrokenProcessPool` error is now raised.  Previously, behaviour
@@ -263,6 +268,10 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
       start_method for worker processes created by the pool.
 
       Added the *initializer* and *initargs* arguments.
+
+   .. versionchanged:: 3.11
+      The *max_tasks_per_child* argument was added to allow users to
+      control the lifetime of workers in the pool.
 
 
 .. _processpoolexecutor-example:

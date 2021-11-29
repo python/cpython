@@ -1254,6 +1254,17 @@ class BaseExceptionReportingTests:
                 exp = "%s: %s\n" % (str_name, str_value)
                 self.assertEqual(exp, err)
 
+    def test_exception_modulename_not_unicode(self):
+        class X(Exception):
+            def __str__(self):
+                return "I am X"
+
+        X.__module__ = 42
+
+        err = self.get_report(X())
+        exp = f'<unknown>.{X.__qualname__}: I am X\n'
+        self.assertEqual(exp, err)
+
     def test_exception_bad__str__(self):
         class X(Exception):
             def __str__(self):

@@ -61,12 +61,7 @@
 #include "frozen_modules/frozen_only.h"
 /* End includes */
 
-#ifdef MS_WINDOWS
-/* Deepfreeze isn't supported on Windows yet. */
-#define GET_CODE(name) NULL
-#else
 #define GET_CODE(name) _Py_get_##name##_toplevel
-#endif
 
 /* Start extern declarations */
 extern PyObject *_Py_get_importlib__bootstrap_toplevel(void);
