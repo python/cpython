@@ -541,6 +541,17 @@ alternative there, as well as adapting the above script to use your alternative
 serialization.
 
 
+Running a logging socket listener in production
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To run a logging listener in production, you may need to use a process-management tool
+such as `Supervisor <http://supervisord.org/>`_. `Here
+<https://gist.github.com/vsajip/4b227eeec43817465ca835ca66f75e2b>`_ is a Gist which
+provides the bare-bones files to run the above functionality using Supervisor: you
+will need to change the `/path/to/` parts in the Gist to reflect the actual paths you
+want to use.
+
+
 .. _context-info:
 
 Adding contextual information to your logging output
@@ -981,6 +992,17 @@ to this (remembering to first import :mod:`concurrent.futures`)::
     with concurrent.futures.ProcessPoolExecutor(max_workers=10) as executor:
         for i in range(10):
             executor.submit(worker_process, queue, worker_configurer)
+
+Deploying Web applications using Gunicorn and uWSGI
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When deploying Web applications using `Gunicorn <https://gunicorn.org/>`_ or `uWSGI
+<https://uwsgi-docs.readthedocs.io/en/latest/>`_ (or similar), multiple worker
+processes are created to handle client requests. In such environments, avoid creating
+file-based handlers directly in your web application. Instead, use a
+:class:`SocketHandler` to log from the web application to a listener in a separate
+process. This can be set up using a process management tool such as Supervisor - see
+`Running a logging socket listener in production`_ for more details.
 
 
 Using file rotation
