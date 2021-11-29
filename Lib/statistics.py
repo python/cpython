@@ -130,6 +130,7 @@ __all__ = [
 import math
 import numbers
 import random
+import sys
 
 from fractions import Fraction
 from decimal import Decimal
@@ -303,6 +304,27 @@ def _fail_neg(values, errmsg='negative value'):
         if x < 0:
             raise StatisticsError(errmsg)
         yield x
+
+def _isqrt_frac_rto(n: int, m: int) -> float:
+    """Square root of n/m, rounded to the nearest integer using round-to-odd."""
+    # Reference: https://www.lri.fr/~melquion/doc/05-imacs17_1-expose.pdf
+    a = math.isqrt(n // m)
+    return a | (a*a*m != n)
+
+# For 53 bit precision floats, the _sqrt_frac() shift is 109.
+_sqrt_shift: int = 2 * sys.float_info.mant_dig + 3
+
+def _sqrt_frac(n: int, m: int) -> float:
+    """Square root of n/m as a float, correctly rounded."""
+    # See principle and proof sketch at: https://bugs.python.org/msg407078
+    q = (n.bit_length() - m.bit_length() - _sqrt_shift) // 2
+    if q >= 0:
+        numerator = _isqrt_frac_rto(n, m << 2 * q) << q
+        denominator = 1
+    else:
+        numerator = _isqrt_frac_rto(n << -2 * q, m)
+        denominator = 1 << -q
+    return numerator / denominator   # Convert to float
 
 
 # === Measures of central tendency (averages) ===
@@ -837,14 +859,17 @@ def stdev(data, xbar=None):
     1.0810874155219827
 
     """
-    # Fixme: Despite the exact sum of squared deviations, some inaccuracy
-    # remain because there are two rounding steps.  The first occurs in
-    # the _convert() step for variance(), the second occurs in math.sqrt().
-    var = variance(data, xbar)
-    try:
+    if iter(data) is data:
+        data = list(data)
+    n = len(data)
+    if n < 2:
+        raise StatisticsError('stdev requires at least two data points')
+    T, ss = _ss(data, xbar)
+    mss = ss / (n - 1)
+    if hasattr(T, 'sqrt'):
+        var = _convert(mss, T)
         return var.sqrt()
-    except AttributeError:
-        return math.sqrt(var)
+    return _sqrt_frac(mss.numerator, mss.denominator)
 
 
 def pstdev(data, mu=None):
@@ -856,14 +881,17 @@ def pstdev(data, mu=None):
     0.986893273527251
 
     """
-    # Fixme: Despite the exact sum of squared deviations, some inaccuracy
-    # remain because there are two rounding steps.  The first occurs in
-    # the _convert() step for pvariance(), the second occurs in math.sqrt().
-    var = pvariance(data, mu)
-    try:
+    if iter(data) is data:
+        data = list(data)
+    n = len(data)
+    if n < 1:
+        raise StatisticsError('pstdev requires at least one data point')
+    T, ss = _ss(data, mu)
+    mss = ss / n
+    if hasattr(T, 'sqrt'):
+        var = _convert(mss, T)
         return var.sqrt()
-    except AttributeError:
-        return math.sqrt(var)
+    return _sqrt_frac(mss.numerator, mss.denominator)
 
 
 # === Statistics for relations between two inputs ===

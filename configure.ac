@@ -465,6 +465,12 @@ then
 	*-*-vxworks*)
 	    ac_sys_system=VxWorks
 	    ;;
+	*-*-emscripten)
+	    ac_sys_system=Emscripten
+	    ;;
+	*-*-wasi)
+	    ac_sys_system=WASI
+	    ;;
 	*)
 		# for now, limit cross builds to known configurations
 		MACHDEP="unknown"
@@ -512,6 +518,9 @@ if test "$cross_compiling" = yes; then
 		_host_cpu=
 		;;
 	*-*-vxworks*)
+		_host_cpu=$host_cpu
+		;;
+	wasm32-*-* | wasm64-*-*)
 		_host_cpu=$host_cpu
 		;;
 	*)
@@ -2556,8 +2565,10 @@ AC_ARG_WITH(memory_sanitizer,
                            [enable MemorySanitizer allocation error detector, 'msan' (default is no)]),
 [
 AC_MSG_RESULT($withval)
+AX_CHECK_COMPILE_FLAG([-fsanitize=memory],[
 BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
+],[AC_MSG_ERROR([The selected compiler doesn't support memory sanitizer])])
 # MSan works by controlling memory allocation, our own malloc interferes.
 with_pymalloc="no"
 ],
@@ -3928,31 +3939,32 @@ else
 fi
 
 # checks for library functions
-AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
- clock confstr close_range copy_file_range ctermid dup3 execv explicit_bzero \
- explicit_memset faccessat fchmod fchmodat fchown fchownat \
- fdwalk fexecve fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
- futimens futimes gai_strerror getentropy \
- getgrgid getgrgid_r getgrnam_r \
- getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
- getpriority getresuid getresgid getpwent getpwnam_r getpwuid_r getspnam getspent getsid getwd \
- if_nameindex \
- initgroups kill killpg lchown lockf linkat lstat lutimes mmap \
- memrchr mbrtowc mkdirat mkfifo \
- madvise mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
- posix_fallocate posix_fadvise posix_spawn posix_spawnp pread preadv preadv2 \
- pthread_condattr_setclock pthread_init pthread_kill pwrite pwritev pwritev2 \
- readlink readlinkat readv realpath renameat \
- sem_open sem_timedwait sem_clockwait sem_getvalue sem_unlink sendfile setegid seteuid \
- setgid sethostname \
- setlocale setregid setreuid setresuid setresgid setsid setpgid setpgrp setpriority setuid setvbuf \
- sched_get_priority_max sched_setaffinity sched_setscheduler sched_setparam \
- sched_rr_get_interval \
- sigaction sigaltstack sigfillset siginterrupt sigpending sigrelse \
- sigtimedwait sigwait sigwaitinfo snprintf splice strftime strlcpy strsignal symlinkat sync \
- sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
- truncate uname unlinkat utimensat utimes vfork waitid waitpid wait3 wait4 \
- wcscoll wcsftime wcsxfrm wmemcmp writev _getpty rtpSpawn)
+AC_CHECK_FUNCS([ \
+  accept4 alarm bind_textdomain_codeset chown clock close_range confstr \
+  copy_file_range ctermid dup3 execv explicit_bzero explicit_memset \
+  faccessat fchmod fchmodat fchown fchownat fdopendir fdwalk fexecve \
+  fork fork1 fpathconf fstatat ftime ftruncate futimens futimes futimesat \
+  gai_strerror getegid getentropy geteuid getgid getgrgid getgrgid_r \
+  getgrnam_r getgrouplist getgroups getitimer getloadavg getlogin \
+  getpeername getpgid getpid getppid getpriority _getpty \
+  getpwent getpwnam_r getpwuid_r getresgid getresuid getsid getspent \
+  getspnam getuid getwd if_nameindex initgroups kill killpg lchown linkat \
+  lockf lstat lutimes madvise mbrtowc memrchr mkdirat mkfifo mkfifoat \
+  mknod mknodat mktime mmap mremap nice openat opendir pathconf pause pipe \
+  pipe2 plock poll posix_fadvise posix_fallocate posix_spawn posix_spawnp \
+  pread preadv preadv2 pthread_condattr_setclock pthread_init pthread_kill \
+  pwrite pwritev pwritev2 readlink readlinkat readv realpath renameat \
+  rtpSpawn sched_get_priority_max sched_rr_get_interval sched_setaffinity \
+  sched_setparam sched_setscheduler sem_clockwait sem_getvalue sem_open \
+  sem_timedwait sem_unlink sendfile setegid seteuid setgid sethostname \
+  setitimer setlocale setpgid setpgrp setpriority setregid setresgid \
+  setresuid setreuid setsid setuid setvbuf shutdown sigaction sigaltstack \
+  sigfillset siginterrupt sigpending sigrelse sigtimedwait sigwait \
+  sigwaitinfo snprintf splice strftime strlcpy strsignal symlinkat sync \
+  sysconf system tcgetpgrp tcsetpgrp tempnam timegm times tmpfile \
+  tmpnam tmpnam_r truncate ttyname uname unlinkat utimensat utimes vfork \
+  wait wait3 wait4 waitid waitpid wcscoll wcsftime wcsxfrm wmemcmp writev \
+])
 
 # Force lchmod off for Linux. Linux disallows changing the mode of symbolic
 # links. Some libc implementations have a stub lchmod implementation that always
@@ -4820,73 +4832,79 @@ AC_CHECK_FUNCS(
 )
 LIBS=$LIBS_SAVE
 
-# For multiprocessing module, check that sem_open
-# actually works.  For FreeBSD versions <= 7.2,
-# the kernel module that provides POSIX semaphores
-# isn't loaded by default, so an attempt to call
-# sem_open results in a 'Signal 12' error.
+dnl For multiprocessing module, check that sem_open
+dnl actually works.  For FreeBSD versions <= 7.2,
+dnl the kernel module that provides POSIX semaphores
+dnl isn't loaded by default, so an attempt to call
+dnl sem_open results in a 'Signal 12' error.
 AC_CACHE_CHECK([whether POSIX semaphores are enabled], [ac_cv_posix_semaphores_enabled],
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <unistd.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <semaphore.h>
-#include <sys/stat.h>
+  AC_RUN_IFELSE([
+    AC_LANG_SOURCE([
+      #include <unistd.h>
+      #include <fcntl.h>
+      #include <stdio.h>
+      #include <semaphore.h>
+      #include <sys/stat.h>
 
-int main(void) {
-  sem_t *a = sem_open("/autoconf", O_CREAT, S_IRUSR|S_IWUSR, 0);
-  if (a == SEM_FAILED) {
-    perror("sem_open");
-    return 1;
-  }
-  sem_close(a);
-  sem_unlink("/autoconf");
-  return 0;
-}
-]])],
-[ac_cv_posix_semaphores_enabled=yes],
-[ac_cv_posix_semaphores_enabled=no],
-[ac_cv_posix_semaphores_enabled=yes])
+      int main(void) {
+        sem_t *a = sem_open("/autoconf", O_CREAT, S_IRUSR|S_IWUSR, 0);
+        if (a == SEM_FAILED) {
+          perror("sem_open");
+          return 1;
+        }
+        sem_close(a);
+        sem_unlink("/autoconf");
+        return 0;
+      }
+    ])
+  ],
+  [ac_cv_posix_semaphores_enabled=yes],
+  [ac_cv_posix_semaphores_enabled=no],
+  [ac_cv_posix_semaphores_enabled=yes])
 )
-if test $ac_cv_posix_semaphores_enabled = no
-then
-  AC_DEFINE(POSIX_SEMAPHORES_NOT_ENABLED, 1,
-            [Define if POSIX semaphores aren't enabled on your system])
-fi
+AS_VAR_IF([ac_cv_posix_semaphores_enabled], [no], [
+  AC_DEFINE(
+    [POSIX_SEMAPHORES_NOT_ENABLED], [1],
+    [Define if POSIX semaphores aren't enabled on your system]
+  )
+])
 
-# Multiprocessing check for broken sem_getvalue
+dnl Multiprocessing check for broken sem_getvalue
 AC_CACHE_CHECK([for broken sem_getvalue], [ac_cv_broken_sem_getvalue],
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <unistd.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <semaphore.h>
-#include <sys/stat.h>
+  AC_RUN_IFELSE([
+    AC_LANG_SOURCE([
+      #include <unistd.h>
+      #include <fcntl.h>
+      #include <stdio.h>
+      #include <semaphore.h>
+      #include <sys/stat.h>
 
-int main(void){
-  sem_t *a = sem_open("/autocftw", O_CREAT, S_IRUSR|S_IWUSR, 0);
-  int count;
-  int res;
-  if(a==SEM_FAILED){
-    perror("sem_open");
-    return 1;
+      int main(void){
+        sem_t *a = sem_open("/autocftw", O_CREAT, S_IRUSR|S_IWUSR, 0);
+        int count;
+        int res;
+        if(a==SEM_FAILED){
+          perror("sem_open");
+          return 1;
 
-  }
-  res = sem_getvalue(a, &count);
-  sem_close(a);
-  sem_unlink("/autocftw");
-  return res==-1 ? 1 : 0;
-}
-]])],
-[ac_cv_broken_sem_getvalue=no],
-[ac_cv_broken_sem_getvalue=yes],
-[ac_cv_broken_sem_getvalue=yes])
+        }
+        res = sem_getvalue(a, &count);
+        sem_close(a);
+        sem_unlink("/autocftw");
+        return res==-1 ? 1 : 0;
+      }
+    ])
+  ],
+  [ac_cv_broken_sem_getvalue=no],
+  [ac_cv_broken_sem_getvalue=yes],
+  [ac_cv_broken_sem_getvalue=yes])
 )
-if test $ac_cv_broken_sem_getvalue = yes
-then
-  AC_DEFINE(HAVE_BROKEN_SEM_GETVALUE, 1,
-  [define to 1 if your sem_getvalue is broken.])
-fi
+AS_VAR_IF([ac_cv_broken_sem_getvalue], [yes], [
+  AC_DEFINE(
+    [HAVE_BROKEN_SEM_GETVALUE], [1],
+    [define to 1 if your sem_getvalue is broken.]
+  )
+])
 
 AC_CHECK_DECLS([RTLD_LAZY, RTLD_NOW, RTLD_GLOBAL, RTLD_LOCAL, RTLD_NODELETE, RTLD_NOLOAD, RTLD_DEEPBIND, RTLD_MEMBER], [], [], [[#include <dlfcn.h>]])
 
@@ -6176,6 +6194,13 @@ AS_CASE([$ac_sys_system],
   [py_stdlib_not_available="_scproxy"]
 )
 
+dnl Default value for Modules/Setup.stdlib build type
+AS_CASE([$host_cpu],
+  [wasm32|wasm64], [MODULE_BUILDTYPE=static],
+  [MODULE_BUILDTYPE=${MODULE_BUILDTYPE:-shared}]
+)
+AC_SUBST([MODULE_BUILDTYPE])
+
 dnl _MODULE_BLOCK_ADD([VAR], [VALUE])
 dnl internal: adds $1=quote($2) to MODULE_BLOCK
 AC_DEFUN([_MODULE_BLOCK_ADD], [AS_VAR_APPEND([MODULE_BLOCK], ["$1=_AS_QUOTE([$2])$as_nl"])])
@@ -6252,6 +6277,12 @@ PY_STDLIB_MOD_SIMPLE([_typing])
 PY_STDLIB_MOD_SIMPLE([_xxsubinterpreters])
 PY_STDLIB_MOD_SIMPLE([_zoneinfo])
 
+dnl multiprocessing modules
+PY_STDLIB_MOD_SIMPLE([_multiprocessing], [-I\$(srcdir)/Modules/_multiprocessing])
+PY_STDLIB_MOD([_posixshmem],
+  [], [test "$have_posix_shmem" = "yes"],
+  [$POSIXSHMEM_CFLAGS], [$POSIXSHMEM_LIBS])
+
 dnl needs libm
 PY_STDLIB_MOD_SIMPLE([audioop], [], [$LIBM])
 PY_STDLIB_MOD_SIMPLE([_statistics], [], [$LIBM])
@@ -6267,9 +6298,6 @@ PY_STDLIB_MOD([fcntl],
   [], [$FCNTL_LIBS])
 PY_STDLIB_MOD([mmap],
   [], [test "$ac_cv_header_sys_mman_h" = "yes" -a "$ac_cv_header_sys_stat_h" = "yes"])
-PY_STDLIB_MOD([_posixshmem],
-  [], [test "$have_posix_shmem" = "yes"],
-  [$POSIXSHMEM_CFLAGS], [$POSIXSHMEM_LIBS])
 PY_STDLIB_MOD([_socket],
   [], m4_flatten([test "$ac_cv_header_sys_socket_h" = "yes"
                     -a "$ac_cv_header_sys_types_h" = "yes"

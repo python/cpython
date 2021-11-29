@@ -714,8 +714,6 @@ MODULE_GRP_FALSE
 MODULE_GRP_TRUE
 MODULE__SOCKET_FALSE
 MODULE__SOCKET_TRUE
-MODULE__POSIXSHMEM_FALSE
-MODULE__POSIXSHMEM_TRUE
 MODULE_MMAP_FALSE
 MODULE_MMAP_TRUE
 MODULE_FCNTL_FALSE
@@ -730,6 +728,10 @@ MODULE__STATISTICS_FALSE
 MODULE__STATISTICS_TRUE
 MODULE_AUDIOOP_FALSE
 MODULE_AUDIOOP_TRUE
+MODULE__POSIXSHMEM_FALSE
+MODULE__POSIXSHMEM_TRUE
+MODULE__MULTIPROCESSING_FALSE
+MODULE__MULTIPROCESSING_TRUE
 MODULE__ZONEINFO_FALSE
 MODULE__ZONEINFO_TRUE
 MODULE__XXSUBINTERPRETERS_FALSE
@@ -770,6 +772,7 @@ MODULE_TIME_FALSE
 MODULE_TIME_TRUE
 MODULE__IO_FALSE
 MODULE__IO_TRUE
+MODULE_BUILDTYPE
 TEST_MODULES
 LIBRARY_DEPS
 STATIC_LIBPYTHON
@@ -3717,6 +3720,12 @@ then
 	*-*-vxworks*)
 	    ac_sys_system=VxWorks
 	    ;;
+	*-*-emscripten)
+	    ac_sys_system=Emscripten
+	    ;;
+	*-*-wasi)
+	    ac_sys_system=WASI
+	    ;;
 	*)
 		# for now, limit cross builds to known configurations
 		MACHDEP="unknown"
@@ -3765,6 +3774,9 @@ if test "$cross_compiling" = yes; then
 		_host_cpu=
 		;;
 	*-*-vxworks*)
+		_host_cpu=$host_cpu
+		;;
+	wasm32-*-* | wasm64-*-*)
 		_host_cpu=$host_cpu
 		;;
 	*)
@@ -9910,8 +9922,44 @@ if test "${with_memory_sanitizer+set}" = set; then :
   withval=$with_memory_sanitizer;
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
 $as_echo "$withval" >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fsanitize=memory" >&5
+$as_echo_n "checking whether C compiler accepts -fsanitize=memory... " >&6; }
+if ${ax_cv_check_cflags___fsanitize_memory+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -fsanitize=memory"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ax_cv_check_cflags___fsanitize_memory=yes
+else
+  ax_cv_check_cflags___fsanitize_memory=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___fsanitize_memory" >&5
+$as_echo "$ax_cv_check_cflags___fsanitize_memory" >&6; }
+if test "x$ax_cv_check_cflags___fsanitize_memory" = xyes; then :
+
 BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
+
+else
+  as_fn_error $? "The selected compiler doesn't support memory sanitizer" "$LINENO" 5
+fi
+
 # MSan works by controlling memory allocation, our own malloc interferes.
 with_pymalloc="no"
 
@@ -13366,31 +13414,32 @@ $as_echo "$MACHDEP_OBJS" >&6; }
 fi
 
 # checks for library functions
-for ac_func in alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
- clock confstr close_range copy_file_range ctermid dup3 execv explicit_bzero \
- explicit_memset faccessat fchmod fchmodat fchown fchownat \
- fdwalk fexecve fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
- futimens futimes gai_strerror getentropy \
- getgrgid getgrgid_r getgrnam_r \
- getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
- getpriority getresuid getresgid getpwent getpwnam_r getpwuid_r getspnam getspent getsid getwd \
- if_nameindex \
- initgroups kill killpg lchown lockf linkat lstat lutimes mmap \
- memrchr mbrtowc mkdirat mkfifo \
- madvise mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
- posix_fallocate posix_fadvise posix_spawn posix_spawnp pread preadv preadv2 \
- pthread_condattr_setclock pthread_init pthread_kill pwrite pwritev pwritev2 \
- readlink readlinkat readv realpath renameat \
- sem_open sem_timedwait sem_clockwait sem_getvalue sem_unlink sendfile setegid seteuid \
- setgid sethostname \
- setlocale setregid setreuid setresuid setresgid setsid setpgid setpgrp setpriority setuid setvbuf \
- sched_get_priority_max sched_setaffinity sched_setscheduler sched_setparam \
- sched_rr_get_interval \
- sigaction sigaltstack sigfillset siginterrupt sigpending sigrelse \
- sigtimedwait sigwait sigwaitinfo snprintf splice strftime strlcpy strsignal symlinkat sync \
- sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
- truncate uname unlinkat utimensat utimes vfork waitid waitpid wait3 wait4 \
- wcscoll wcsftime wcsxfrm wmemcmp writev _getpty rtpSpawn
+for ac_func in  \
+  accept4 alarm bind_textdomain_codeset chown clock close_range confstr \
+  copy_file_range ctermid dup3 execv explicit_bzero explicit_memset \
+  faccessat fchmod fchmodat fchown fchownat fdopendir fdwalk fexecve \
+  fork fork1 fpathconf fstatat ftime ftruncate futimens futimes futimesat \
+  gai_strerror getegid getentropy geteuid getgid getgrgid getgrgid_r \
+  getgrnam_r getgrouplist getgroups getitimer getloadavg getlogin \
+  getpeername getpgid getpid getppid getpriority _getpty \
+  getpwent getpwnam_r getpwuid_r getresgid getresuid getsid getspent \
+  getspnam getuid getwd if_nameindex initgroups kill killpg lchown linkat \
+  lockf lstat lutimes madvise mbrtowc memrchr mkdirat mkfifo mkfifoat \
+  mknod mknodat mktime mmap mremap nice openat opendir pathconf pause pipe \
+  pipe2 plock poll posix_fadvise posix_fallocate posix_spawn posix_spawnp \
+  pread preadv preadv2 pthread_condattr_setclock pthread_init pthread_kill \
+  pwrite pwritev pwritev2 readlink readlinkat readv realpath renameat \
+  rtpSpawn sched_get_priority_max sched_rr_get_interval sched_setaffinity \
+  sched_setparam sched_setscheduler sem_clockwait sem_getvalue sem_open \
+  sem_timedwait sem_unlink sendfile setegid seteuid setgid sethostname \
+  setitimer setlocale setpgid setpgrp setpriority setregid setresgid \
+  setresuid setreuid setsid setuid setvbuf shutdown sigaction sigaltstack \
+  sigfillset siginterrupt sigpending sigrelse sigtimedwait sigwait \
+  sigwaitinfo snprintf splice strftime strlcpy strsignal symlinkat sync \
+  sysconf system tcgetpgrp tcsetpgrp tempnam timegm times tmpfile \
+  tmpnam tmpnam_r truncate ttyname uname unlinkat utimensat utimes vfork \
+  wait wait3 wait4 waitid waitpid wcscoll wcsftime wcsxfrm wmemcmp writev \
+
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -17600,11 +17649,6 @@ done
 
 LIBS=$LIBS_SAVE
 
-# For multiprocessing module, check that sem_open
-# actually works.  For FreeBSD versions <= 7.2,
-# the kernel module that provides POSIX semaphores
-# isn't loaded by default, so an attempt to call
-# sem_open results in a 'Signal 12' error.
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether POSIX semaphores are enabled" >&5
 $as_echo_n "checking whether POSIX semaphores are enabled... " >&6; }
 if ${ac_cv_posix_semaphores_enabled+:} false; then :
@@ -17616,22 +17660,24 @@ else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-#include <unistd.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <semaphore.h>
-#include <sys/stat.h>
 
-int main(void) {
-  sem_t *a = sem_open("/autoconf", O_CREAT, S_IRUSR|S_IWUSR, 0);
-  if (a == SEM_FAILED) {
-    perror("sem_open");
-    return 1;
-  }
-  sem_close(a);
-  sem_unlink("/autoconf");
-  return 0;
-}
+      #include <unistd.h>
+      #include <fcntl.h>
+      #include <stdio.h>
+      #include <semaphore.h>
+      #include <sys/stat.h>
+
+      int main(void) {
+        sem_t *a = sem_open("/autoconf", O_CREAT, S_IRUSR|S_IWUSR, 0);
+        if (a == SEM_FAILED) {
+          perror("sem_open");
+          return 1;
+        }
+        sem_close(a);
+        sem_unlink("/autoconf");
+        return 0;
+      }
+
 
 _ACEOF
 if ac_fn_c_try_run "$LINENO"; then :
@@ -17647,14 +17693,14 @@ fi
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_posix_semaphores_enabled" >&5
 $as_echo "$ac_cv_posix_semaphores_enabled" >&6; }
-if test $ac_cv_posix_semaphores_enabled = no
-then
+if test "x$ac_cv_posix_semaphores_enabled" = xno; then :
+
 
 $as_echo "#define POSIX_SEMAPHORES_NOT_ENABLED 1" >>confdefs.h
 
+
 fi
 
-# Multiprocessing check for broken sem_getvalue
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for broken sem_getvalue" >&5
 $as_echo_n "checking for broken sem_getvalue... " >&6; }
 if ${ac_cv_broken_sem_getvalue+:} false; then :
@@ -17666,26 +17712,28 @@ else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-#include <unistd.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <semaphore.h>
-#include <sys/stat.h>
 
-int main(void){
-  sem_t *a = sem_open("/autocftw", O_CREAT, S_IRUSR|S_IWUSR, 0);
-  int count;
-  int res;
-  if(a==SEM_FAILED){
-    perror("sem_open");
-    return 1;
+      #include <unistd.h>
+      #include <fcntl.h>
+      #include <stdio.h>
+      #include <semaphore.h>
+      #include <sys/stat.h>
 
-  }
-  res = sem_getvalue(a, &count);
-  sem_close(a);
-  sem_unlink("/autocftw");
-  return res==-1 ? 1 : 0;
-}
+      int main(void){
+        sem_t *a = sem_open("/autocftw", O_CREAT, S_IRUSR|S_IWUSR, 0);
+        int count;
+        int res;
+        if(a==SEM_FAILED){
+          perror("sem_open");
+          return 1;
+
+        }
+        res = sem_getvalue(a, &count);
+        sem_close(a);
+        sem_unlink("/autocftw");
+        return res==-1 ? 1 : 0;
+      }
+
 
 _ACEOF
 if ac_fn_c_try_run "$LINENO"; then :
@@ -17701,10 +17749,11 @@ fi
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_broken_sem_getvalue" >&5
 $as_echo "$ac_cv_broken_sem_getvalue" >&6; }
-if test $ac_cv_broken_sem_getvalue = yes
-then
+if test "x$ac_cv_broken_sem_getvalue" = xyes; then :
+
 
 $as_echo "#define HAVE_BROKEN_SEM_GETVALUE 1" >>confdefs.h
+
 
 fi
 
@@ -21003,6 +21052,15 @@ case $ac_sys_system in #(
  ;;
 esac
 
+case $host_cpu in #(
+  wasm32|wasm64) :
+    MODULE_BUILDTYPE=static ;; #(
+  *) :
+    MODULE_BUILDTYPE=${MODULE_BUILDTYPE:-shared}
+ ;;
+esac
+
+
 
 MODULE_BLOCK=
 
@@ -21198,6 +21256,54 @@ fi
 
 
      if true; then
+  MODULE__MULTIPROCESSING_TRUE=
+  MODULE__MULTIPROCESSING_FALSE='#'
+else
+  MODULE__MULTIPROCESSING_TRUE='#'
+  MODULE__MULTIPROCESSING_FALSE=
+fi
+  as_fn_append MODULE_BLOCK "MODULE__MULTIPROCESSING=yes$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__MULTIPROCESSING_CFLAGS=-I\$(srcdir)/Modules/_multiprocessing$as_nl"
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _posixshmem" >&5
+$as_echo_n "checking for stdlib extension module _posixshmem... " >&6; }
+      case $py_stdlib_not_available in #(
+  *_posixshmem*) :
+    py_cv_module__posixshmem=n/a ;; #(
+  *) :
+    if true; then :
+  if test "$have_posix_shmem" = "yes"; then :
+  py_cv_module__posixshmem=yes
+else
+  py_cv_module__posixshmem=missing
+fi
+else
+  py_cv_module__posixshmem=disabled
+fi
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM=$py_cv_module__posixshmem$as_nl"
+  if test "x$py_cv_module__posixshmem" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM_CFLAGS=$POSIXSHMEM_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM_LDFLAGS=$POSIXSHMEM_LIBS$as_nl"
+
+fi
+   if test "$py_cv_module__posixshmem" = yes; then
+  MODULE__POSIXSHMEM_TRUE=
+  MODULE__POSIXSHMEM_FALSE='#'
+else
+  MODULE__POSIXSHMEM_TRUE='#'
+  MODULE__POSIXSHMEM_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__posixshmem" >&5
+$as_echo "$py_cv_module__posixshmem" >&6; }
+
+
+
+     if true; then
   MODULE_AUDIOOP_TRUE=
   MODULE_AUDIOOP_FALSE='#'
 else
@@ -21324,42 +21430,6 @@ fi
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_mmap" >&5
 $as_echo "$py_cv_module_mmap" >&6; }
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _posixshmem" >&5
-$as_echo_n "checking for stdlib extension module _posixshmem... " >&6; }
-      case $py_stdlib_not_available in #(
-  *_posixshmem*) :
-    py_cv_module__posixshmem=n/a ;; #(
-  *) :
-    if true; then :
-  if test "$have_posix_shmem" = "yes"; then :
-  py_cv_module__posixshmem=yes
-else
-  py_cv_module__posixshmem=missing
-fi
-else
-  py_cv_module__posixshmem=disabled
-fi
-   ;;
-esac
-  as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM=$py_cv_module__posixshmem$as_nl"
-  if test "x$py_cv_module__posixshmem" = xyes; then :
-
-    as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM_CFLAGS=$POSIXSHMEM_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM_LDFLAGS=$POSIXSHMEM_LIBS$as_nl"
-
-fi
-   if test "$py_cv_module__posixshmem" = yes; then
-  MODULE__POSIXSHMEM_TRUE=
-  MODULE__POSIXSHMEM_FALSE='#'
-else
-  MODULE__POSIXSHMEM_TRUE='#'
-  MODULE__POSIXSHMEM_FALSE=
-fi
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__posixshmem" >&5
-$as_echo "$py_cv_module__posixshmem" >&6; }
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _socket" >&5
@@ -22951,6 +23021,14 @@ if test -z "${MODULE__ZONEINFO_TRUE}" && test -z "${MODULE__ZONEINFO_FALSE}"; th
   as_fn_error $? "conditional \"MODULE__ZONEINFO\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${MODULE__MULTIPROCESSING_TRUE}" && test -z "${MODULE__MULTIPROCESSING_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__MULTIPROCESSING\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__POSIXSHMEM_TRUE}" && test -z "${MODULE__POSIXSHMEM_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__POSIXSHMEM\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${MODULE_AUDIOOP_TRUE}" && test -z "${MODULE_AUDIOOP_FALSE}"; then
   as_fn_error $? "conditional \"MODULE_AUDIOOP\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
@@ -22977,10 +23055,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_MMAP_TRUE}" && test -z "${MODULE_MMAP_FALSE}"; then
   as_fn_error $? "conditional \"MODULE_MMAP\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${MODULE__POSIXSHMEM_TRUE}" && test -z "${MODULE__POSIXSHMEM_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE__POSIXSHMEM\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__SOCKET_TRUE}" && test -z "${MODULE__SOCKET_FALSE}"; then
