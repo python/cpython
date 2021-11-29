@@ -4868,8 +4868,9 @@ objects directly.
 .. describe:: T[X, Y, ...]
 
    Creates a ``GenericAlias`` representing a type ``T`` parameterized by types
-   *X*, *Y*, and more depending on the ``T`` used. For example, a function
-   expecting a :class:`list` containing :class:`float` elements::
+   *X*, *Y*, and more depending on the ``T`` used.
+   For example, a function expecting a :class:`list` containing
+   :class:`float` elements::
 
       def average(values: list[float]) -> float:
           return sum(values) / len(values)
@@ -4892,9 +4893,9 @@ The builtin functions :func:`isinstance` and :func:`issubclass` do not accept
 
 The Python runtime does not enforce :term:`type annotations <annotation>`.
 This extends to generic types and their type parameters. When creating
-a container object from a ``GenericAlias``, the elements in the container are
-not checked against their type. For example, the following code is discouraged,
-but will run without errors::
+a container object from a ``GenericAlias``, the elements in the container are not checked 
+against their type. For example, the following code is discouraged, but will
+run without errors::
 
    >>> t = list[str]
    >>> t([1, 2, 3])
@@ -4919,8 +4920,8 @@ Calling :func:`repr` or :func:`str` on a generic shows the parameterized type::
    >>> str(list[int])
    'list[int]'
 
-The :meth:`~object.__getitem__` method of generic containers will raise an
-exception to disallow mistakes like ``dict[str][str]``::
+The :meth:`~object.__getitem__` method of generic containers will raise an exception to disallow 
+mistakes like ``dict[str][str]``::
 
    >>> dict[str][str]
    Traceback (most recent call last):
@@ -5040,8 +5041,8 @@ All parameterized generics implement special read-only attributes.
 
 
    .. note::
-      A ``GenericAlias`` object with :class:`typing.ParamSpec` parameters may
-      not have correct ``__parameters__`` after substitution because
+      A ``GenericAlias`` object with :class:`typing.ParamSpec` parameters may not
+      have correct ``__parameters__`` after substitution because
       :class:`typing.ParamSpec` is intended primarily for static type checking.
 
 .. seealso::
