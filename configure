@@ -931,8 +931,9 @@ PKG_CONFIG
 CONFIG_ARGS
 SOVERSION
 VERSION
-PYTHON_FOR_BUILD
 PYTHON_FOR_REGEN
+PYTHON_FOR_BUILD
+FREEZE_MODULE
 host_os
 host_vendor
 host_cpu
@@ -988,6 +989,8 @@ SHELL'
 ac_subst_files=''
 ac_user_opts='
 enable_option_checking
+with_freeze_module
+with_build_python
 with_pkg_config
 enable_universalsdk
 with_universal_archs
@@ -1721,6 +1724,11 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-freeze-module=Programs/_freeze_module
+                          path to _freeze_module binary for cross compiling
+  --with-build-python=python3.11
+                          path to build python binary for cross compiling
+                          (default: python3.11)
   --with-pkg-config=[yes|no|check]
                           use pkg-config to detect build options (default is
                           check)
@@ -3177,8 +3185,87 @@ case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
 
 
 
+if test "x$cross_compiling" = xmaybe; then :
+  as_fn_error $? "Cross compiling required --host=HOST-TUPLE and --build=ARCH" "$LINENO" 5
+
+fi
+
 # pybuilddir.txt will be created by --generate-posix-vars in the Makefile
 rm -f pybuilddir.txt
+
+
+# Check whether --with-freeze-module was given.
+if test "${with_freeze_module+set}" = set; then :
+  withval=$with_freeze_module;
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-freeze-module" >&5
+$as_echo_n "checking for --with-freeze-module... " >&6; }
+    if test "x$cross_compiling" = xno; then :
+  as_fn_error $? "--with-freeze-module only applies to cross compiling" "$LINENO" 5
+fi
+    if test "$with_freeze_module" = yes -o "$with_freeze_module" = no; then
+      as_fn_error $? "invalid --with-freeze-module option: expected path, not \"$with_freeze_module\"" "$LINENO" 5
+    fi
+    if ! $(command -v "$with_freeze_module" >/dev/null 2>&1); then
+      as_fn_error $? "invalid or missing freeze module binary \"$with_freeze_module\"" "$LINENO" 5
+    fi
+    FREEZE_MODULE="$with_freeze_module"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FREEZE_MODULE" >&5
+$as_echo "$FREEZE_MODULE" >&6; }
+
+else
+
+    if test "x$cross_compiling" = xyes; then :
+  as_fn_error $? "Cross compiling requires --with-freeze-module" "$LINENO" 5
+
+fi
+    FREEZE_MODULE=Programs/_freeze_module
+
+
+fi
+
+
+
+
+# Check whether --with-build-python was given.
+if test "${with_build_python+set}" = set; then :
+  withval=$with_build_python;
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-build-python" >&5
+$as_echo_n "checking for --with-build-python... " >&6; }
+
+    if test "x$cross_compiling" = xno; then :
+  as_fn_error $? "--with-build-python only applies to cross compiling" "$LINENO" 5
+fi
+    if test "x$with_build_python" = xyes; then :
+  with_build_python=python$PACKAGE_VERSION
+fi
+    if test "x$with_build_python" = xno; then :
+  as_fn_error $? "invalid --with-build-python option: expected path, not \"no\"" "$LINENO" 5
+fi
+
+    if ! $(command -v "$with_build_python" >/dev/null 2>&1); then
+      as_fn_error $? "invalid or missing build python binary \"$with_build_python\"" "$LINENO" 5
+    fi
+    build_python_ver=$($with_build_python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+    if test "$build_python_ver" != "$PACKAGE_VERSION"; then
+      as_fn_error $? "\"$with_build_python\" has incompatible version $build_python_ver (expected: $PACKAGE_VERSION)" "$LINENO" 5
+    fi
+        ac_cv_prog_PYTHON_FOR_REGEN=$with_build_python
+    PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`:)$(srcdir)/Lib _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH) '$with_build_python
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_build_python" >&5
+$as_echo "$with_build_python" >&6; }
+
+else
+
+    if test "x$cross_compiling" = xyes; then :
+  as_fn_error $? "Cross compiling requires --with-build-python" "$LINENO" 5
+
+fi
+    PYTHON_FOR_BUILD='./$(BUILDPYTHON) -E'
+
+
+fi
+
+
 
 for ac_prog in python$PACKAGE_VERSION python3.10 python3.9 python3.8 python3.7 python3.6 python3 python
 do
@@ -3234,31 +3321,6 @@ else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: missing" >&5
 $as_echo "missing" >&6; }
 fi
-
-if test "$cross_compiling" = yes; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for python interpreter for cross build" >&5
-$as_echo_n "checking for python interpreter for cross build... " >&6; }
-    if test -z "$PYTHON_FOR_BUILD"; then
-        for interp in python$PACKAGE_VERSION python3 python; do
-	    which $interp >/dev/null 2>&1 || continue
-	    if $interp -c "import sys;sys.exit(not '.'.join(str(n) for n in sys.version_info[:2]) == '$PACKAGE_VERSION')"; then
-	        break
-	    fi
-            interp=
-	done
-        if test x$interp = x; then
-	    as_fn_error $? "python$PACKAGE_VERSION interpreter not found" "$LINENO" 5
-	fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $interp" >&5
-$as_echo "$interp" >&6; }
-	PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`:)$(srcdir)/Lib _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH) '$interp
-    fi
-elif test "$cross_compiling" = maybe; then
-    as_fn_error $? "Cross compiling required --host=HOST-TUPLE and --build=ARCH" "$LINENO" 5
-else
-    PYTHON_FOR_BUILD='./$(BUILDPYTHON) -E'
-fi
-
 
 
 if test "$prefix" != "/"; then

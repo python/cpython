@@ -93,8 +93,68 @@ AC_CANONICAL_HOST
 AC_SUBST(build)
 AC_SUBST(host)
 
+AS_VAR_IF([cross_compiling], [maybe],
+ [AC_MSG_ERROR([Cross compiling required --host=HOST-TUPLE and --build=ARCH])]
+)
+
 # pybuilddir.txt will be created by --generate-posix-vars in the Makefile
 rm -f pybuilddir.txt
+
+dnl cross-compiling needs a freeze_module binary for build platform
+AC_ARG_WITH(
+  [freeze-module],
+  [AS_HELP_STRING([--with-freeze-module=Programs/_freeze_module],
+                  [path to _freeze_module binary for cross compiling])],
+  [
+    AC_MSG_CHECKING([for --with-freeze-module])
+    AS_VAR_IF([cross_compiling], [no], AC_MSG_ERROR([--with-freeze-module only applies to cross compiling]))
+    if test "$with_freeze_module" = yes -o "$with_freeze_module" = no; then
+      AC_MSG_ERROR([invalid --with-freeze-module option: expected path, not "$with_freeze_module"])
+    fi
+    if ! $(command -v "$with_freeze_module" >/dev/null 2>&1); then
+      AC_MSG_ERROR([invalid or missing freeze module binary "$with_freeze_module"])
+    fi
+    FREEZE_MODULE="$with_freeze_module"
+    AC_MSG_RESULT([$FREEZE_MODULE])
+  ], [
+    AS_VAR_IF([cross_compiling], [yes],
+      [AC_MSG_ERROR([Cross compiling requires --with-freeze-module])]
+    )
+    FREEZE_MODULE=Programs/_freeze_module
+  ]
+)
+AC_SUBST([FREEZE_MODULE])
+
+AC_ARG_WITH(
+  [build-python],
+  [AS_HELP_STRING([--with-build-python=python]PYTHON_VERSION,
+                  [path to build python binary for cross compiling (default: python]PYTHON_VERSION[)])],
+  [
+    AC_MSG_CHECKING([for --with-build-python])
+
+    AS_VAR_IF([cross_compiling], [no], AC_MSG_ERROR([--with-build-python only applies to cross compiling]))
+    AS_VAR_IF([with_build_python], [yes], [with_build_python=python$PACKAGE_VERSION])
+    AS_VAR_IF([with_build_python], [no], [AC_MSG_ERROR([invalid --with-build-python option: expected path, not "no"])])
+
+    if ! $(command -v "$with_build_python" >/dev/null 2>&1); then
+      AC_MSG_ERROR([invalid or missing build python binary "$with_build_python"])
+    fi
+    build_python_ver=$($with_build_python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+    if test "$build_python_ver" != "$PACKAGE_VERSION"; then
+      AC_MSG_ERROR(["$with_build_python" has incompatible version $build_python_ver (expected: $PACKAGE_VERSION)])
+    fi
+    dnl use build Python for regeneration, too
+    ac_cv_prog_PYTHON_FOR_REGEN=$with_build_python
+    PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`:)$(srcdir)/Lib _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH) '$with_build_python
+    AC_MSG_RESULT([$with_build_python])
+  ], [
+    AS_VAR_IF([cross_compiling], [yes],
+      [AC_MSG_ERROR([Cross compiling requires --with-build-python])]
+    )
+    PYTHON_FOR_BUILD='./$(BUILDPYTHON) -E'
+  ]
+)
+AC_SUBST([PYTHON_FOR_BUILD])
 
 AC_CHECK_PROGS([PYTHON_FOR_REGEN],
   [python$PACKAGE_VERSION python3.10 python3.9 python3.8 python3.7 python3.6 python3 python],
@@ -107,29 +167,6 @@ if command -v $PYTHON_FOR_REGEN >/dev/null 2>&1; then
 else
   AC_MSG_RESULT([missing])
 fi
-
-if test "$cross_compiling" = yes; then
-    AC_MSG_CHECKING([for python interpreter for cross build])
-    if test -z "$PYTHON_FOR_BUILD"; then
-        for interp in python$PACKAGE_VERSION python3 python; do
-	    which $interp >/dev/null 2>&1 || continue
-	    if $interp -c "import sys;sys.exit(not '.'.join(str(n) for n in sys.version_info@<:@:2@:>@) == '$PACKAGE_VERSION')"; then
-	        break
-	    fi
-            interp=
-	done
-        if test x$interp = x; then
-	    AC_MSG_ERROR([python$PACKAGE_VERSION interpreter not found])
-	fi
-        AC_MSG_RESULT($interp)
-	PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`:)$(srcdir)/Lib _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH) '$interp
-    fi
-elif test "$cross_compiling" = maybe; then
-    AC_MSG_ERROR([Cross compiling required --host=HOST-TUPLE and --build=ARCH])
-else
-    PYTHON_FOR_BUILD='./$(BUILDPYTHON) -E'
-fi
-AC_SUBST(PYTHON_FOR_BUILD)
 
 dnl Ensure that if prefix is specified, it does not end in a slash. If
 dnl it does, we get path names containing '//' which is both ugly and
