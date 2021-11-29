@@ -109,7 +109,7 @@ AC_ARG_WITH(
     AC_MSG_CHECKING([for --with-freeze-module])
     AS_VAR_IF([cross_compiling], [no], AC_MSG_ERROR([--with-freeze-module only applies to cross compiling]))
     if test "$with_freeze_module" = yes -o "$with_freeze_module" = no; then
-      AC_MSG_ERROR([invalid --with-freeze-module option: expect path, not "$with_freeze_module"])
+      AC_MSG_ERROR([invalid --with-freeze-module option: expected path, not "$with_freeze_module"])
     fi
     if ! $(command -v "$with_freeze_module" >/dev/null 2>&1); then
       AC_MSG_ERROR([invalid or missing freeze module binary "$with_freeze_module"])
