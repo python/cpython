@@ -181,6 +181,12 @@ Other CPython Implementation Changes
   hash-based pyc files now use ``siphash13``, too.
   (Contributed by Inada Naoki in :issue:`29410`.)
 
+* When an active exception is re-raised by a :keyword:`raise` statement with no parameters,
+  the traceback attached to this exception is now always ``sys.exc_info()[1].__traceback__``.
+  This means that changes made to the traceback in the current :keyword:`except` clause are
+  reflected in the re-raised exception.
+  (Contributed by Irit Katriel in :issue:`45711`.)
+
 New Modules
 ===========
 
