@@ -334,24 +334,27 @@ def _decimal_sqrt_of_frac(n: int, m: int) -> Decimal:
     """Square root of n/m as a float, correctly rounded."""
     # Premise:  For decimal, computing (n/m).sqrt() can be off by 1 ulp.
     # Method:   Check the result, moving up or down a step if needed.
-    if not n:
-        return 0.0
-    f_square = Fraction(n, m)
+    if n <= 0:
+        if not n:
+            return 0.0
+        n, m = -n, -m
 
-    d_start = (Decimal(n) / Decimal(m)).sqrt()
-    f_start = Fraction(*d_start.as_integer_ratio())
+    root = (Decimal(n) / Decimal(m)).sqrt()
+    nr, dr = root.as_integer_ratio()
 
-    d_plus = d_start.next_plus()
-    f_plus = Fraction(*d_plus.as_integer_ratio())
-    if f_square > ((f_start + f_plus) / 2) ** 2:
-        return d_plus
+    plus = root.next_plus()
+    np, dp = plus.as_integer_ratio()
+    # test: n / m > ((root + plus) / 2) ** 2
+    if 4*dr**2*dp**2*n > m*(dr*np + dp*nr)**2:
+        return plus
 
-    d_minus = d_start.next_minus()
-    f_minus = Fraction(*d_minus.as_integer_ratio())
-    if f_square < ((f_start + f_minus) / 2) ** 2:
-        return d_minus
+    minus = root.next_minus()
+    nm, dm = minus.as_integer_ratio()
+    # test: n / m < ((root + minus) / 2) ** 2
+    if 4*dr**2*dm**2*n < m*(dr*nm + dm*nr)**2:
+        return minus
 
-    return d_start
+    return root
 
 
 # === Measures of central tendency (averages) ===
