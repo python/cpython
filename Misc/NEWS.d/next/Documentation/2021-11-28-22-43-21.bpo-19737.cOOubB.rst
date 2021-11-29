@@ -1,1 +1,1 @@
-Update the documentation for the function:: globals
+Update the documentation for the :func:`globals` function.
