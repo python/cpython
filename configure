@@ -1738,7 +1738,8 @@ Optional Packages:
   --with-cxx-main[=COMPILER]
                           compile main() and link Python executable with C++
                           compiler specified in COMPILER (default is $CXX)
-  --with-suffix=SUFFIX    set executable suffix to SUFFIX (default is '.exe')
+  --with-suffix=SUFFIX    set executable suffix to SUFFIX (default is empty,
+                          yes is mapped to '.exe')
   --with-pydebug          build with Py_DEBUG defined (default is no)
   --with-trace-refs       enable tracing references for debugging purpose
                           (default is no)
@@ -6136,11 +6137,26 @@ $as_echo_n "checking for --with-suffix... " >&6; }
 # Check whether --with-suffix was given.
 if test "${with_suffix+set}" = set; then :
   withval=$with_suffix;
-	case $withval in
-	no)	EXEEXT=;;
-	yes)	EXEEXT=.exe;;
-	*)	EXEEXT=$withval;;
-	esac
+	case $with_suffix in #(
+  no) :
+    EXEEXT= ;; #(
+  yes) :
+    EXEEXT=.exe ;; #(
+  *) :
+    EXEEXT=$with_suffix
+   ;;
+esac
+
+else
+
+  case $ac_sys_system in #(
+  Emscripten) :
+    EXEEXT=.wasm ;; #(
+  *) :
+    EXEEXT=
+   ;;
+esac
+
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $EXEEXT" >&5
