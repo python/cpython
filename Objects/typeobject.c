@@ -2979,15 +2979,20 @@ type_new_descriptors(const type_new_ctx *ctx, PyTypeObject *type)
         }
     }
 
-    if (ctx->add_dict) {
-        type->tp_flags |= Py_TPFLAGS_MANAGED_DICT;
-        type->tp_dictoffset = -(long)sizeof(PyObject *)*3;
+    if (ctx->add_dict && ctx->base->tp_itemsize) {
+        type->tp_dictoffset = -(long)sizeof(PyObject *);
+        slotoffset += sizeof(PyObject *);
     }
 
     if (ctx->add_weak) {
         assert(!ctx->base->tp_itemsize);
         type->tp_weaklistoffset = slotoffset;
         slotoffset += sizeof(PyObject *);
+    }
+
+    if (ctx->add_dict && ctx->base->tp_itemsize == 0) {
+        type->tp_flags |= Py_TPFLAGS_MANAGED_DICT;
+        type->tp_dictoffset = -slotoffset - sizeof(PyObject *)*3;
     }
 
     type->tp_basicsize = slotoffset;
@@ -3580,10 +3585,6 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
             goto fail;
     }
     if (dictoffset) {
-        if (dictoffset < 0) {
-            PyErr_SetString(PyExc_TypeError, "Negative __dictoffset__");
-            goto fail;
-        }
         type->tp_dictoffset = dictoffset;
         if (PyDict_DelItemString((PyObject *)type->tp_dict, "__dictoffset__") < 0)
             goto fail;

@@ -1073,8 +1073,23 @@ _PyObject_GetDictPtr(PyObject *obj)
     PyTypeObject *tp = Py_TYPE(obj);
 
     dictoffset = tp->tp_dictoffset;
+    if (tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
+        return &((PyObject **)obj)[-3];
+    }
     if (dictoffset == 0) {
         return NULL;
+    }
+    if (dictoffset < 0) {
+        Py_ssize_t tsize = Py_SIZE(obj);
+        if (tsize < 0) {
+            tsize = -tsize;
+        }
+        size_t size = _PyObject_VAR_SIZE(tp, tsize);
+        _PyObject_ASSERT(obj, size <= PY_SSIZE_T_MAX);
+
+        dictoffset += (Py_ssize_t)size;
+        _PyObject_ASSERT(obj, dictoffset > 0);
+        _PyObject_ASSERT(obj, dictoffset % SIZEOF_VOID_P == 0);
     }
     assert(dictoffset > 0 || dictoffset == -3*((Py_ssize_t)sizeof(PyObject *)));
     return (PyObject **) ((char *)obj + dictoffset);
@@ -1206,8 +1221,6 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
     PyObject *descr = NULL;
     PyObject *res = NULL;
     descrgetfunc f;
-    Py_ssize_t dictoffset;
-    PyObject **dictptr;
 
     if (!PyUnicode_Check(name)){
         PyErr_Format(PyExc_TypeError,
@@ -1239,12 +1252,14 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
     }
 
     if (dict == NULL) {
-        /* Inline _PyObject_GetDictPtr */
-        dictoffset = tp->tp_dictoffset;
-        if (dictoffset != 0) {
-            assert(dictoffset > 0 || dictoffset == -3*((Py_ssize_t)sizeof(PyObject *)));
-            dictptr = (PyObject **) ((char *)obj + dictoffset);
-            dict = *dictptr;
+        if (tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
+            dict = ((PyObject **)obj)[-3];
+        }
+        else {
+            PyObject **dictptr = _PyObject_GetDictPtr(obj);
+            if (dictptr != NULL) {
+                dict = *dictptr;
+            }
         }
     }
     if (dict != NULL) {

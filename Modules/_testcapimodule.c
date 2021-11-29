@@ -7290,6 +7290,12 @@ PyInit__testcapi(void)
     }
     PyModule_AddObject(m, "HeapCTypeWithDict", HeapCTypeWithDict);
 
+    PyObject *HeapCTypeWithNegativeDict = PyType_FromSpec(&HeapCTypeWithNegativeDict_spec);
+    if (HeapCTypeWithNegativeDict == NULL) {
+        return NULL;
+    }
+    PyModule_AddObject(m, "HeapCTypeWithNegativeDict", HeapCTypeWithNegativeDict);
+
     PyObject *HeapCTypeWithWeakref = PyType_FromSpec(&HeapCTypeWithWeakref_spec);
     if (HeapCTypeWithWeakref == NULL) {
         return NULL;

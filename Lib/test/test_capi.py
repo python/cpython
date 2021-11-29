@@ -508,8 +508,14 @@ class CAPITest(unittest.TestCase):
         self.assertEqual({}, inst.__dict__)
 
     def test_heaptype_with_negative_dict(self):
-        with self.assertRaises(TypeError):
-            _testcapi.negative_dictoffset()
+        inst = _testcapi.HeapCTypeWithNegativeDict()
+        inst.foo = 42
+        self.assertEqual(inst.foo, 42)
+        self.assertEqual(inst.dictobj, inst.__dict__)
+        self.assertEqual(inst.dictobj, {"foo": 42})
+
+        inst = _testcapi.HeapCTypeWithNegativeDict()
+        self.assertEqual({}, inst.__dict__)
 
     def test_heaptype_with_weakref(self):
         inst = _testcapi.HeapCTypeWithWeakref()
