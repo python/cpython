@@ -135,35 +135,40 @@ Python/**/*.c	Py_BUILD_CORE	1
 Parser/**/*.c	Py_BUILD_CORE	1
 Objects/**/*.c	Py_BUILD_CORE	1
 
-Modules/faulthandler.c	Py_BUILD_CORE	1
-Modules/_functoolsmodule.c	Py_BUILD_CORE	1
-Modules/gcmodule.c	Py_BUILD_CORE	1
-Modules/getpath.c	Py_BUILD_CORE	1
-Modules/_io/*.c	Py_BUILD_CORE	1
-Modules/itertoolsmodule.c	Py_BUILD_CORE	1
-Modules/_localemodule.c	Py_BUILD_CORE	1
-Modules/main.c	Py_BUILD_CORE	1
-Modules/posixmodule.c	Py_BUILD_CORE	1
-Modules/signalmodule.c	Py_BUILD_CORE	1
-Modules/_threadmodule.c	Py_BUILD_CORE	1
-Modules/_tracemalloc.c	Py_BUILD_CORE	1
 Modules/_asynciomodule.c	Py_BUILD_CORE	1
-Modules/mathmodule.c	Py_BUILD_CORE	1
-Modules/cmathmodule.c	Py_BUILD_CORE	1
-Modules/_weakref.c	Py_BUILD_CORE	1
-Modules/sha256module.c	Py_BUILD_CORE	1
-Modules/sha512module.c	Py_BUILD_CORE	1
-Modules/_datetimemodule.c	Py_BUILD_CORE	1
+Modules/_collectionsmodule.c	Py_BUILD_CORE	1
+Modules/_ctypes/_ctypes.c	Py_BUILD_CORE	1
 Modules/_ctypes/cfield.c	Py_BUILD_CORE	1
+Modules/_cursesmodule.c	Py_BUILD_CORE	1
+Modules/_datetimemodule.c	Py_BUILD_CORE	1
+Modules/_functoolsmodule.c	Py_BUILD_CORE	1
 Modules/_heapqmodule.c	Py_BUILD_CORE	1
+Modules/_io/*.c	Py_BUILD_CORE	1
+Modules/_localemodule.c	Py_BUILD_CORE	1
+Modules/_operator.c	Py_BUILD_CORE	1
 Modules/_posixsubprocess.c	Py_BUILD_CORE	1
 Modules/_sre.c	Py_BUILD_CORE	1
-Modules/_collectionsmodule.c	Py_BUILD_CORE	1
+Modules/_threadmodule.c	Py_BUILD_CORE	1
+Modules/_tracemalloc.c	Py_BUILD_CORE	1
+Modules/_weakref.c	Py_BUILD_CORE	1
 Modules/_zoneinfo.c	Py_BUILD_CORE	1
+Modules/atexitmodule.c	Py_BUILD_CORE	1
+Modules/cmathmodule.c	Py_BUILD_CORE	1
+Modules/faulthandler.c	Py_BUILD_CORE	1
+Modules/gcmodule.c	Py_BUILD_CORE	1
+Modules/getpath.c	Py_BUILD_CORE	1
+Modules/itertoolsmodule.c	Py_BUILD_CORE	1
+Modules/main.c	Py_BUILD_CORE	1
+Modules/mathmodule.c	Py_BUILD_CORE	1
+Modules/posixmodule.c	Py_BUILD_CORE	1
+Modules/sha256module.c	Py_BUILD_CORE	1
+Modules/sha512module.c	Py_BUILD_CORE	1
+Modules/signalmodule.c	Py_BUILD_CORE	1
+Modules/symtablemodule.c	Py_BUILD_CORE	1
+Modules/timemodule.c	Py_BUILD_CORE	1
 Modules/unicodedata.c	Py_BUILD_CORE	1
-Modules/_cursesmodule.c	Py_BUILD_CORE	1
-Modules/_ctypes/_ctypes.c	Py_BUILD_CORE	1
 Objects/stringlib/codecs.h	Py_BUILD_CORE	1
+Objects/stringlib/unicode_format.h	Py_BUILD_CORE	1
 Python/ceval_gil.h	Py_BUILD_CORE	1
 Python/condvar.h	Py_BUILD_CORE	1
 
@@ -282,6 +287,7 @@ MAX_SIZES = {
     _abs('Modules/termios.c'): (10_000, 800),
     _abs('Modules/_testcapimodule.c'): (20_000, 400),
     _abs('Modules/expat/expat.h'): (10_000, 400),
+    _abs('Objects/stringlib/unicode_format.h'): (10_000, 400),
     _abs('Objects/typeobject.c'): (20_000, 200),
 }
 
