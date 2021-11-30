@@ -626,10 +626,6 @@ specialize_dict_access(
     assert(kind == NON_OVERRIDING || kind == NON_DESCRIPTOR || kind == ABSENT ||
         kind == BUILTIN_CLASSMETHOD || kind == PYTHON_CLASSMETHOD);
     // No descriptor, or non overriding.
-    if (type->tp_dictoffset < 0) {
-        SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_RANGE);
-        return 0;
-    }
     if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
         // Virtual dictionary
         PyDictKeysObject *keys = ((PyHeapTypeObject *)type)->ht_cached_keys;
@@ -643,6 +639,10 @@ specialize_dict_access(
         cache1->tp_version = type->tp_version_tag;
         cache0->index = (uint16_t)index;
         *instr = _Py_MAKECODEUNIT(values_op, _Py_OPARG(*instr));
+        return 0;
+    }
+    if (type->tp_dictoffset < 0) {
+        SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_RANGE);
         return 0;
     }
     if (type->tp_dictoffset > 0) {
