@@ -249,12 +249,25 @@ def _exact_ratio(x):
     x is expected to be an int, Fraction, Decimal or float.
     """
 
-    # XXX We should revisit whether accumulating exact ratios is the
-    # right way to go. The default decimal context supports a huge range
-    # of exponents.  When expanded with as_integer_ratio(), numbers like
+    # XXX We should revisit whether using fractions to accumulate exact
+    # ratios is the right way to go.
+
+    # The integer ratios for binary floats can have numerators or
+    # denominators with over 300 decimal digits.  The problem is more
+    # acute with decimal floats where the the default decimal context
+    # supports a huge range of exponents from Emin=-999999 to
+    # Emax=999999.  When expanded with as_integer_ratio(), numbers like
     # Decimal('3.14E+5000') and Decimal('3.14E-5000') have large
-    # numerators or denominators that will slow computation.  This
-    # doesn't seem to have been problem in practice, but it is a
+    # numerators or denominators that will slow computation.
+
+    # When the integer ratios are accumulated as fractions, the size
+    # grows to cover the full range from the smallest magnitude to the
+    # largest.  For example, Fraction(3.14E+300) + Fraction(3.14E-300),
+    # has a 616 digit numerator.  Likewise,
+    # Fraction(Decimal('3.14E+5000')) + Fraction(Decimal('3.14E-5000'))
+    # has 10,003 digit numerator.
+
+    # This doesn't seem to have been problem in practice, but it is a
     # potential pitfall.
 
     try:
