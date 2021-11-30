@@ -391,7 +391,7 @@ pycompilestring(PyObject* self, PyObject *obj) {
     if (the_string == NULL) {
         return NULL;
     }
-    return Py_CompileString(the_string, "blech", Py_file_input);
+    return Py_CompileString(the_string, "<string>", Py_file_input);
 }
 
 static PyObject*

@@ -209,7 +209,7 @@ class ExceptionTests(unittest.TestCase):
                     src = src.decode(encoding, 'replace')
                 line = src.split('\n')[lineno-1]
                 self.assertIn(line, cm.exception.text)
-    
+
     def test_error_offset_continuation_characters(self):
         check = self.check
         check('"\\\n"(1 for c in I,\\\n\\', 2, 2)
@@ -226,14 +226,14 @@ class ExceptionTests(unittest.TestCase):
         check(b'Python = "\xcf\xb3\xf2\xee\xed" +', 1, 18)
         check('x = "a', 1, 5)
         check('lambda x: x = 2', 1, 1)
-        check('f{a + b + c}', 1, 1)
+        check('f{a + b + c}', 1, 2)
         check('[file for str(file) in []\n])', 1, 11)
         check('a = « hello » « world »', 1, 5)
         check('[\nfile\nfor str(file)\nin\n[]\n]', 3, 5)
         check('[file for\n str(file) in []]', 2, 2)
         check("ages = {'Alice'=22, 'Bob'=23}", 1, 16)
         check('match ...:\n    case {**rest, "key": value}:\n        ...', 2, 19)
-        check("a b c d e f", 1, 1)
+        check("[a b c d e f]", 1, 2)
 
         # Errors thrown by compile.c
         check('class foo:return 1', 1, 11)
@@ -1344,9 +1344,7 @@ class ExceptionTests(unittest.TestCase):
         """
         with SuppressCrashReport():
             rc, out, err = script_helper.assert_python_failure("-c", code)
-            self.assertIn(b'Fatal Python error: _PyErr_NormalizeException: '
-                          b'Cannot recover from MemoryErrors while '
-                          b'normalizing exceptions.', err)
+            self.assertIn(b'MemoryError', err)
 
     @cpython_only
     def test_MemoryError(self):

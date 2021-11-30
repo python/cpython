@@ -618,7 +618,6 @@ fold_compare(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 
     ops = node->v.Compare.ops;
     args = node->v.Compare.comparators;
-    /* TODO: optimize cases with literal arguments. */
     /* Change literal list or set in 'in' or 'not in' into
        tuple or frozenset respectively. */
     i = asdl_seq_LEN(ops) - 1;

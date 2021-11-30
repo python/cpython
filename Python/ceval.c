@@ -14,6 +14,7 @@
 #include "pycore_call.h"          // _PyObject_FastCallDictTstate()
 #include "pycore_ceval.h"         // _PyEval_SignalAsyncExc()
 #include "pycore_code.h"
+#include "pycore_function.h"
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
@@ -100,7 +101,7 @@ static void format_kwargs_error(PyThreadState *, PyObject *func, PyObject *kwarg
 static void format_awaitable_error(PyThreadState *, PyTypeObject *, int, int);
 static int get_exception_handler(PyCodeObject *, int, int*, int*, int*);
 static InterpreterFrame *
-_PyEvalFramePushAndInit(PyThreadState *tstate, PyFrameConstructor *con,
+_PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
                         PyObject *locals, PyObject* const* args,
                         size_t argcount, PyObject *kwnames);
 static int
@@ -1108,7 +1109,7 @@ static void
 _assert_exception_type_is_redundant(PyObject* type, PyObject* val)
 {
     if (type == NULL || type == Py_None) {
-        assert(val == NULL || val == Py_None);
+        assert(val == type);
     }
     else {
         assert(PyExceptionInstance_Check(val));
@@ -1142,7 +1143,13 @@ PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
         .fc_kwdefaults = NULL,
         .fc_closure = NULL
     };
-    return _PyEval_Vector(tstate, &desc, locals, NULL, 0, NULL);
+    PyFunctionObject *func = _PyFunction_FromConstructor(&desc);
+    if (func == NULL) {
+        return NULL;
+    }
+    PyObject *res = _PyEval_Vector(tstate, func, locals, NULL, 0, NULL);
+    Py_DECREF(func);
+    return res;
 }
 
 
@@ -1577,7 +1584,7 @@ trace_function_entry(PyThreadState *tstate, InterpreterFrame *frame)
 }
 
 static PyObject *
-make_coro(PyThreadState *tstate, PyFrameConstructor *con,
+make_coro(PyThreadState *tstate, PyFunctionObject *func,
           PyObject *locals,
           PyObject* const* args, size_t argcount,
           PyObject *kwnames);
@@ -2247,7 +2254,7 @@ check_eval_breaker:
             if (new_frame == NULL) {
                 goto error;
             }
-            _PyFrame_InitializeSpecials(new_frame, PyFunction_AS_FRAME_CONSTRUCTOR(getitem),
+            _PyFrame_InitializeSpecials(new_frame, getitem,
                                         NULL, code->co_nlocalsplus);
             STACK_SHRINK(2);
             new_frame->localsplus[0] = container;
@@ -3217,6 +3224,20 @@ check_eval_breaker:
             DISPATCH();
         }
 
+        TARGET(COPY_FREE_VARS) {
+            /* Copy closure variables to free variables */
+            PyCodeObject *co = frame->f_code;
+            PyObject *closure = frame->f_func->func_closure;
+            int offset = co->co_nlocals + co->co_nplaincellvars;
+            assert(oparg == co->co_nfreevars);
+            for (int i = 0; i < oparg; ++i) {
+                PyObject *o = PyTuple_GET_ITEM(closure, i);
+                Py_INCREF(o);
+                frame->localsplus[offset + i] = o;
+            }
+            DISPATCH();
+        }
+
         TARGET(BUILD_STRING) {
             PyObject *str;
             PyObject *empty = PyUnicode_New(0, 0);
@@ -3832,7 +3853,9 @@ check_eval_breaker:
 
         TARGET(JUMP_IF_NOT_EXC_MATCH) {
             PyObject *right = POP();
-            PyObject *left = TOP();
+            ASSERT_EXC_TYPE_IS_REDUNDANT(TOP(), SECOND());
+            PyObject *left = SECOND();
+            assert(PyExceptionInstance_Check(left));
             if (check_except_type_valid(tstate, right) < 0) {
                  Py_DECREF(right);
                  goto error;
@@ -4293,7 +4316,13 @@ check_eval_breaker:
             ASSERT_EXC_TYPE_IS_REDUNDANT(type, value);
             _PyErr_StackItem *exc_info = tstate->exc_info;
             SET_THIRD(exc_info->exc_traceback);
-            SET_SECOND(exc_info->exc_value);
+            if (exc_info->exc_value != NULL) {
+                SET_SECOND(exc_info->exc_value);
+            }
+            else {
+                Py_INCREF(Py_None);
+                SET_SECOND(Py_None);
+            }
             if (exc_info->exc_type != NULL) {
                 SET_TOP(exc_info->exc_type);
             }
@@ -4539,9 +4568,9 @@ check_eval_breaker:
                     PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : PyFunction_GET_GLOBALS(function);
                     STACK_SHRINK(oparg);
                     InterpreterFrame *new_frame = _PyEvalFramePushAndInit(
-                        tstate, PyFunction_AS_FRAME_CONSTRUCTOR(function), locals,
-                                                                stack_pointer,
-                                                                nargs, kwnames);
+                        tstate, (PyFunctionObject *)function, locals,
+                        stack_pointer, nargs, kwnames
+                    );
                     STACK_SHRINK(postcall_shrink);
                     // The frame has stolen all the arguments from the stack,
                     // so there is no need to clean them up.
@@ -4622,7 +4651,7 @@ check_eval_breaker:
             if (new_frame == NULL) {
                 goto error;
             }
-            _PyFrame_InitializeSpecials(new_frame, PyFunction_AS_FRAME_CONSTRUCTOR(func),
+            _PyFrame_InitializeSpecials(new_frame, func,
                                         NULL, code->co_nlocalsplus);
             STACK_SHRINK(argcount);
             for (int i = 0; i < argcount; i++) {
@@ -5542,11 +5571,11 @@ get_exception_handler(PyCodeObject *code, int index, int *level, int *handler, i
 }
 
 static int
-initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
+initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
     PyObject **localsplus, PyObject *const *args,
     Py_ssize_t argcount, PyObject *kwnames)
 {
-    PyCodeObject *co = (PyCodeObject*)con->fc_code;
+    PyCodeObject *co = (PyCodeObject*)func->func_code;
     const Py_ssize_t total_args = co->co_argcount + co->co_kwonlyargcount;
 
     /* Create a dictionary for keyword parameters (**kwags) */
@@ -5611,7 +5640,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
             if (keyword == NULL || !PyUnicode_Check(keyword)) {
                 _PyErr_Format(tstate, PyExc_TypeError,
                             "%U() keywords must be strings",
-                          con->fc_qualname);
+                          func->func_qualname);
                 goto kw_fail;
             }
 
@@ -5643,14 +5672,14 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
                 if (co->co_posonlyargcount
                     && positional_only_passed_as_keyword(tstate, co,
                                                         kwcount, kwnames,
-                                                     con->fc_qualname))
+                                                        func->func_qualname))
                 {
                     goto kw_fail;
                 }
 
                 _PyErr_Format(tstate, PyExc_TypeError,
                             "%U() got an unexpected keyword argument '%S'",
-                          con->fc_qualname, keyword);
+                          func->func_qualname, keyword);
                 goto kw_fail;
             }
 
@@ -5671,7 +5700,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
             if (localsplus[j] != NULL) {
                 _PyErr_Format(tstate, PyExc_TypeError,
                             "%U() got multiple values for argument '%S'",
-                          con->fc_qualname, keyword);
+                          func->func_qualname, keyword);
                 goto kw_fail;
             }
             localsplus[j] = value;
@@ -5680,14 +5709,14 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
 
     /* Check the number of positional arguments */
     if ((argcount > co->co_argcount) && !(co->co_flags & CO_VARARGS)) {
-        too_many_positional(tstate, co, argcount, con->fc_defaults, localsplus,
-                            con->fc_qualname);
+        too_many_positional(tstate, co, argcount, func->func_defaults, localsplus,
+                            func->func_qualname);
         goto fail_post_args;
     }
 
     /* Add missing positional arguments (copy default values from defs) */
     if (argcount < co->co_argcount) {
-        Py_ssize_t defcount = con->fc_defaults == NULL ? 0 : PyTuple_GET_SIZE(con->fc_defaults);
+        Py_ssize_t defcount = func->func_defaults == NULL ? 0 : PyTuple_GET_SIZE(func->func_defaults);
         Py_ssize_t m = co->co_argcount - defcount;
         Py_ssize_t missing = 0;
         for (i = argcount; i < m; i++) {
@@ -5697,7 +5726,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
         }
         if (missing) {
             missing_arguments(tstate, co, missing, defcount, localsplus,
-                              con->fc_qualname);
+                              func->func_qualname);
             goto fail_post_args;
         }
         if (n > m)
@@ -5705,7 +5734,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
         else
             i = 0;
         if (defcount) {
-            PyObject **defs = &PyTuple_GET_ITEM(con->fc_defaults, 0);
+            PyObject **defs = &PyTuple_GET_ITEM(func->func_defaults, 0);
             for (; i < defcount; i++) {
                 if (localsplus[m+i] == NULL) {
                     PyObject *def = defs[i];
@@ -5723,8 +5752,8 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
             if (localsplus[i] != NULL)
                 continue;
             PyObject *varname = PyTuple_GET_ITEM(co->co_localsplusnames, i);
-            if (con->fc_kwdefaults != NULL) {
-                PyObject *def = PyDict_GetItemWithError(con->fc_kwdefaults, varname);
+            if (func->func_kwdefaults != NULL) {
+                PyObject *def = PyDict_GetItemWithError(func->func_kwdefaults, varname);
                 if (def) {
                     Py_INCREF(def);
                     localsplus[i] = def;
@@ -5738,15 +5767,9 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
         }
         if (missing) {
             missing_arguments(tstate, co, missing, -1, localsplus,
-                              con->fc_qualname);
+                              func->func_qualname);
             goto fail_post_args;
         }
-    }
-    /* Copy closure variables to free variables */
-    for (i = 0; i < co->co_nfreevars; ++i) {
-        PyObject *o = PyTuple_GET_ITEM(con->fc_closure, i);
-        Py_INCREF(o);
-        localsplus[co->co_nlocals + co->co_nplaincellvars + i] = o;
     }
     return 0;
 
@@ -5769,25 +5792,26 @@ fail_post_args:
 
 static InterpreterFrame *
 make_coro_frame(PyThreadState *tstate,
-           PyFrameConstructor *con, PyObject *locals,
+           PyFunctionObject *func, PyObject *locals,
            PyObject *const *args, Py_ssize_t argcount,
            PyObject *kwnames)
 {
     assert(is_tstate_valid(tstate));
-    assert(con->fc_defaults == NULL || PyTuple_CheckExact(con->fc_defaults));
-    PyCodeObject *code = (PyCodeObject *)con->fc_code;
+    assert(func->func_defaults == NULL || PyTuple_CheckExact(func->func_defaults));
+    PyCodeObject *code = (PyCodeObject *)func->func_code;
     int size = code->co_nlocalsplus+code->co_stacksize + FRAME_SPECIALS_SIZE;
     InterpreterFrame *frame = (InterpreterFrame *)PyMem_Malloc(sizeof(PyObject *)*size);
     if (frame == NULL) {
         goto fail_no_memory;
     }
-    _PyFrame_InitializeSpecials(frame, con, locals, code->co_nlocalsplus);
+    _PyFrame_InitializeSpecials(frame, func, locals, code->co_nlocalsplus);
     for (int i = 0; i < code->co_nlocalsplus; i++) {
         frame->localsplus[i] = NULL;
     }
     assert(frame->frame_obj == NULL);
-    if (initialize_locals(tstate, con, frame->localsplus, args, argcount, kwnames)) {
-        _PyFrame_Clear(frame, 1);
+    if (initialize_locals(tstate, func, frame->localsplus, args, argcount, kwnames)) {
+        _PyFrame_Clear(frame);
+        PyMem_Free(frame);
         return NULL;
     }
     return frame;
@@ -5808,17 +5832,17 @@ fail_no_memory:
 
 /* Consumes all the references to the args */
 static PyObject *
-make_coro(PyThreadState *tstate, PyFrameConstructor *con,
+make_coro(PyThreadState *tstate, PyFunctionObject *func,
           PyObject *locals,
           PyObject* const* args, size_t argcount,
           PyObject *kwnames)
 {
-    assert (((PyCodeObject *)con->fc_code)->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR));
-    InterpreterFrame *frame = make_coro_frame(tstate, con, locals, args, argcount, kwnames);
+    assert (((PyCodeObject *)func->func_code)->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR));
+    InterpreterFrame *frame = make_coro_frame(tstate, func, locals, args, argcount, kwnames);
     if (frame == NULL) {
         return NULL;
     }
-    PyObject *gen = _Py_MakeCoro(con, frame);
+    PyObject *gen = _Py_MakeCoro(func, frame);
     if (gen == NULL) {
         return NULL;
     }
@@ -5827,23 +5851,23 @@ make_coro(PyThreadState *tstate, PyFrameConstructor *con,
 
 /* Consumes all the references to the args */
 static InterpreterFrame *
-_PyEvalFramePushAndInit(PyThreadState *tstate, PyFrameConstructor *con,
+_PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
                         PyObject *locals, PyObject* const* args,
                         size_t argcount, PyObject *kwnames)
 {
-    PyCodeObject * code = (PyCodeObject *)con->fc_code;
+    PyCodeObject * code = (PyCodeObject *)func->func_code;
     size_t size = code->co_nlocalsplus + code->co_stacksize + FRAME_SPECIALS_SIZE;
     InterpreterFrame *frame = _PyThreadState_BumpFramePointer(tstate, size);
     if (frame == NULL) {
         goto fail;
     }
-    _PyFrame_InitializeSpecials(frame, con, locals, code->co_nlocalsplus);
+    _PyFrame_InitializeSpecials(frame, func, locals, code->co_nlocalsplus);
     PyObject **localsarray = &frame->localsplus[0];
     for (int i = 0; i < code->co_nlocalsplus; i++) {
         localsarray[i] = NULL;
     }
-    if (initialize_locals(tstate, con, localsarray, args, argcount, kwnames)) {
-        _PyFrame_Clear(frame, 0);
+    if (initialize_locals(tstate, func, localsarray, args, argcount, kwnames)) {
+        _PyFrame_Clear(frame);
         return NULL;
     }
     return frame;
@@ -5866,23 +5890,20 @@ static int
 _PyEvalFrameClearAndPop(PyThreadState *tstate, InterpreterFrame * frame)
 {
     --tstate->recursion_remaining;
-    assert(frame->frame_obj == NULL || frame->frame_obj->f_own_locals_memory == 0);
-    if (_PyFrame_Clear(frame, 0)) {
-        ++tstate->recursion_remaining;
-        return -1;
-    }
+    assert(frame->frame_obj == NULL || frame->frame_obj->f_owns_frame == 0);
+    _PyFrame_Clear(frame);
     ++tstate->recursion_remaining;
     _PyThreadState_PopFrame(tstate, frame);
     return 0;
 }
 
 PyObject *
-_PyEval_Vector(PyThreadState *tstate, PyFrameConstructor *con,
+_PyEval_Vector(PyThreadState *tstate, PyFunctionObject *func,
                PyObject *locals,
                PyObject* const* args, size_t argcount,
                PyObject *kwnames)
 {
-    PyCodeObject *code = (PyCodeObject *)con->fc_code;
+    PyCodeObject *code = (PyCodeObject *)func->func_code;
     /* _PyEvalFramePushAndInit and make_coro consume
      * all the references to their arguments
      */
@@ -5898,10 +5919,10 @@ _PyEval_Vector(PyThreadState *tstate, PyFrameConstructor *con,
     int is_coro = code->co_flags &
         (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);
     if (is_coro) {
-        return make_coro(tstate, con, locals, args, argcount, kwnames);
+        return make_coro(tstate, func, locals, args, argcount, kwnames);
     }
     InterpreterFrame *frame = _PyEvalFramePushAndInit(
-        tstate, con, locals, args, argcount, kwnames);
+        tstate, func, locals, args, argcount, kwnames);
     if (frame == NULL) {
         return NULL;
     }
@@ -5985,9 +6006,14 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
         .fc_kwdefaults = kwdefs,
         .fc_closure = closure
     };
-    res = _PyEval_Vector(tstate, &constr, locals,
+    PyFunctionObject *func = _PyFunction_FromConstructor(&constr);
+    if (func == NULL) {
+        return NULL;
+    }
+    res = _PyEval_Vector(tstate, func, locals,
                          allargs, argcount,
                          kwnames);
+    Py_DECREF(func);
     if (kwcount) {
         Py_DECREF(kwnames);
         PyMem_Free(newargs);
@@ -6012,7 +6038,9 @@ do_raise(PyThreadState *tstate, PyObject *exc, PyObject *cause)
         type = exc_info->exc_type;
         value = exc_info->exc_value;
         tb = exc_info->exc_traceback;
-        if (Py_IsNone(type) || type == NULL) {
+        assert(((Py_IsNone(value) || value == NULL)) ==
+               ((Py_IsNone(type) || type == NULL)));
+        if (Py_IsNone(value) || value == NULL) {
             _PyErr_SetString(tstate, PyExc_RuntimeError,
                              "No active exception to reraise");
             return 0;

@@ -370,8 +370,8 @@ _code_type = type(_write_atomic.__code__)
 #                         active exception)
 #     Python 3.11a3 3464 (bpo-45636: Merge numeric BINARY_*/INPLACE_* into
 #                         BINARY_OP)
-#     Python 3.11a3 3465 (bpo-45292: PEP-654 except*)
-
+#     Python 3.11a3 3465 (Add COPY_FREE_VARS opcode)
+#     Python 3.11a3 3466 (bpo-45292: PEP-654 except*)
 
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
@@ -381,7 +381,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3465).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3466).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
@@ -1232,10 +1232,15 @@ class _NamespacePath:
     using path_finder.  For top-level modules, the parent module's path
     is sys.path."""
 
+    # When invalidate_caches() is called, this epoch is incremented
+    # https://bugs.python.org/issue45703
+    _epoch = 0
+
     def __init__(self, name, path, path_finder):
         self._name = name
         self._path = path
         self._last_parent_path = tuple(self._get_parent_path())
+        self._last_epoch = self._epoch
         self._path_finder = path_finder
 
     def _find_parent_path_names(self):
@@ -1255,7 +1260,7 @@ class _NamespacePath:
     def _recalculate(self):
         # If the parent's path has changed, recalculate _path
         parent_path = tuple(self._get_parent_path()) # Make a copy
-        if parent_path != self._last_parent_path:
+        if parent_path != self._last_parent_path or self._epoch != self._last_epoch:
             spec = self._path_finder(self._name, parent_path)
             # Note that no changes are made if a loader is returned, but we
             #  do remember the new parent path
@@ -1263,6 +1268,7 @@ class _NamespacePath:
                 if spec.submodule_search_locations:
                     self._path = spec.submodule_search_locations
             self._last_parent_path = parent_path     # Save the copy
+            self._last_epoch = self._epoch
         return self._path
 
     def __iter__(self):
@@ -1356,6 +1362,9 @@ class PathFinder:
                 del sys.path_importer_cache[name]
             elif hasattr(finder, 'invalidate_caches'):
                 finder.invalidate_caches()
+        # Also invalidate the caches of _NamespacePaths
+        # https://bugs.python.org/issue45703
+        _NamespacePath._epoch += 1
 
     @staticmethod
     def _path_hooks(path):

@@ -52,7 +52,7 @@ _PyEval_EvalFrame(PyThreadState *tstate, struct _interpreter_frame *frame, int t
 
 extern PyObject *
 _PyEval_Vector(PyThreadState *tstate,
-            PyFrameConstructor *desc, PyObject *locals,
+            PyFunctionObject *func, PyObject *locals,
             PyObject* const* args, size_t argcount,
             PyObject *kwnames);
 
@@ -113,7 +113,7 @@ static inline void _Py_LeaveRecursiveCall_inline(void)  {
 
 struct _interpreter_frame *_PyEval_GetFrame(void);
 
-PyObject *_Py_MakeCoro(PyFrameConstructor *, struct _interpreter_frame *);
+PyObject *_Py_MakeCoro(PyFunctionObject *func, struct _interpreter_frame *);
 
 #ifdef __cplusplus
 }
