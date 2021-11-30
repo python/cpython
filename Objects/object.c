@@ -1106,8 +1106,11 @@ _PyObject_GetDictPtr(PyObject *obj)
     if (*dict_ptr != NULL) {
         return dict_ptr;
     }
+    if ((Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
+        return dict_ptr;
+    }
     PyDictValues **values_ptr = _PyObject_ValuesPointer(obj);
-    if (values_ptr == NULL || *values_ptr == NULL) {
+    if (*values_ptr == NULL) {
         return dict_ptr;
     }
     PyObject *dict = _PyObject_MakeDictFromInstanceAttributes(obj, *values_ptr);
@@ -1188,10 +1191,10 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
             }
         }
     }
-    PyDictValues **values_ptr = _PyObject_ValuesPointer(obj);
-    if (values_ptr && *values_ptr) {
+    PyDictValues *values;
+    if ((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) && (values = ((PyDictValues **)obj)[-4])) {
         assert(*_PyObject_DictPointer(obj) == NULL);
-        PyObject *attr = _PyObject_GetInstanceAttribute(obj, *values_ptr, name);
+        PyObject *attr = _PyObject_GetInstanceAttribute(obj, values, name);
         if (attr != NULL) {
             *method = attr;
             Py_XDECREF(descr);
@@ -1243,17 +1246,6 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     return 0;
 }
 
-PyDictValues **
-_PyObject_ValuesPointer(PyObject *obj)
-{
-    PyTypeObject *tp = Py_TYPE(obj);
-    Py_ssize_t offset = tp->tp_inline_values_offset;
-    if (offset == 0) {
-        return NULL;
-    }
-    return (PyDictValues **) ((char *)obj + offset);
-}
-
 /* Generic GetAttr functions - put these in your tp_[gs]etattro slot. */
 
 PyObject *
@@ -1301,8 +1293,8 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
         }
     }
     if (dict == NULL) {
-        PyDictValues **values_ptr = _PyObject_ValuesPointer(obj);
-        if (values_ptr && *values_ptr) {
+        if ((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) && ((PyDictValues **)obj)[-4]) {
+            PyDictValues **values_ptr = _PyObject_ValuesPointer(obj);
             if (PyUnicode_CheckExact(name)) {
                 assert(*_PyObject_DictPointer(obj) == NULL);
                 res = _PyObject_GetInstanceAttribute(obj, *values_ptr, name);
@@ -1414,9 +1406,8 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
     }
 
     if (dict == NULL) {
-        PyDictValues **values_ptr = _PyObject_ValuesPointer(obj);
-        if (values_ptr && *values_ptr) {
-            res = _PyObject_StoreInstanceAttribute(obj, *values_ptr, name, value);
+        if ((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) && ((PyDictValues **)obj)[-4]) {
+            res = _PyObject_StoreInstanceAttribute(obj, ((PyDictValues **)obj)[-4], name, value);
         }
         else {
             PyObject **dictptr = _PyObject_DictPointer(obj);
@@ -1467,7 +1458,7 @@ PyObject_GenericSetDict(PyObject *obj, PyObject *value, void *context)
     PyObject **dictptr = _PyObject_GetDictPtr(obj);
     if (dictptr == NULL) {
         PyDictValues** values_ptr = _PyObject_ValuesPointer(obj);
-        if (values_ptr != NULL && *values_ptr != NULL) {
+        if ((Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT) && *values_ptr != NULL) {
             /* Was unable to convert to dict */
             PyErr_NoMemory();
         }

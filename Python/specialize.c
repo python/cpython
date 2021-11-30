@@ -498,7 +498,7 @@ specialize_module_load_attr(
     PyObject *value = NULL;
     PyObject *getattr;
     _Py_IDENTIFIER(__getattr__);
-    assert(owner->ob_type->tp_inline_values_offset == 0);
+    assert((owner->ob_type->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0);
     PyDictObject *dict = (PyDictObject *)m->md_dict;
     if (dict == NULL) {
         SPECIALIZATION_FAIL(opcode, SPEC_FAIL_NO_DICT);
@@ -630,43 +630,40 @@ specialize_dict_access(
         SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_RANGE);
         return 0;
     }
+    if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
+        // Virtual dictionary
+        PyDictKeysObject *keys = ((PyHeapTypeObject *)type)->ht_cached_keys;
+        assert(PyUnicode_CheckExact(name));
+        Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
+        assert (index != DKIX_ERROR);
+        if (index != (uint16_t)index) {
+            SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_RANGE);
+            return 0;
+        }
+        cache1->tp_version = type->tp_version_tag;
+        cache0->index = (uint16_t)index;
+        *instr = _Py_MAKECODEUNIT(values_op, _Py_OPARG(*instr));
+        return 0;
+    }
     if (type->tp_dictoffset > 0) {
         PyObject **dictptr = (PyObject **) ((char *)owner + type->tp_dictoffset);
         PyDictObject *dict = (PyDictObject *)*dictptr;
-        if (type->tp_inline_values_offset && dict == NULL) {
-            // Virtual dictionary
-            PyDictKeysObject *keys = ((PyHeapTypeObject *)type)->ht_cached_keys;
-            assert(type->tp_inline_values_offset > 0);
-            assert(PyUnicode_CheckExact(name));
-            Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
-            assert (index != DKIX_ERROR);
-            if (index != (uint16_t)index) {
-                SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_RANGE);
-                return 0;
-            }
-            cache1->tp_version = type->tp_version_tag;
-            cache0->index = (uint16_t)index;
-            *instr = _Py_MAKECODEUNIT(values_op, _Py_OPARG(*instr));
+        if (dict == NULL || !PyDict_CheckExact(dict)) {
+            SPECIALIZATION_FAIL(base_op, SPEC_FAIL_NO_DICT);
             return 0;
         }
-        else {
-            if (dict == NULL || !PyDict_CheckExact(dict)) {
-                SPECIALIZATION_FAIL(base_op, SPEC_FAIL_NO_DICT);
-                return 0;
-            }
-            // We found an instance with a __dict__.
-            PyObject *value = NULL;
-            Py_ssize_t hint =
-                _PyDict_GetItemHint(dict, name, -1, &value);
-            if (hint != (uint32_t)hint) {
-                SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_RANGE);
-                return 0;
-            }
-            cache1->dk_version_or_hint = (uint32_t)hint;
-            cache1->tp_version = type->tp_version_tag;
-            *instr = _Py_MAKECODEUNIT(hint_op, _Py_OPARG(*instr));
-            return 1;
+        // We found an instance with a __dict__.
+        PyObject *value = NULL;
+        Py_ssize_t hint =
+            _PyDict_GetItemHint(dict, name, -1, &value);
+        if (hint != (uint32_t)hint) {
+            SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_RANGE);
+            return 0;
         }
+        cache1->dk_version_or_hint = (uint32_t)hint;
+        cache1->tp_version = type->tp_version_tag;
+        *instr = _Py_MAKECODEUNIT(hint_op, _Py_OPARG(*instr));
+        return 1;
     }
     assert(type->tp_dictoffset == 0);
     /* No attribute in instance dictionary */
@@ -972,7 +969,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         SPECIALIZATION_FAIL(LOAD_METHOD, load_method_fail_kind(kind));
         goto fail;
     }
-    if (owner_cls->tp_inline_values_offset) {
+    if (owner_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
         PyObject **owner_dictptr = _PyObject_DictPointer(owner);
         assert(owner_dictptr);
         if (*owner_dictptr) {

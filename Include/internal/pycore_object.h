@@ -172,7 +172,7 @@ static inline size_t
 _PyType_PreHeaderSize(PyTypeObject *tp)
 {
     return _PyType_IS_GC(tp) * sizeof(PyGC_Head) +
-        _PyType_HasFeature(tp, Py_TPFLAGS_MANAGED_DICT) * sizeof(PyObject *);
+        _PyType_HasFeature(tp, Py_TPFLAGS_MANAGED_DICT) * 2 * sizeof(PyObject *);
 }
 
 void _PyObject_GC_Link(PyObject *op);
@@ -194,7 +194,15 @@ extern int _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
                                           PyObject *name, PyObject *value);
 PyObject * _PyObject_GetInstanceAttribute(PyObject *obj, PyDictValues *values,
                                         PyObject *name);
-PyDictValues ** _PyObject_ValuesPointer(PyObject *);
+
+
+
+static inline PyDictValues **_PyObject_ValuesPointer(PyObject *obj)
+{
+    assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+    return ((PyDictValues **)obj)-4;
+}
+
 PyObject ** _PyObject_DictPointer(PyObject *);
 int _PyObject_VisitInstanceAttributes(PyObject *self, visitproc visit, void *arg);
 void _PyObject_ClearInstanceAttributes(PyObject *self);
