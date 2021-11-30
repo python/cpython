@@ -1022,7 +1022,7 @@ print_exception(struct exception_print_context *ctx, PyObject *value)
             {
                 Py_XDECREF(modulename);
                 PyErr_Clear();
-                err = PyFile_WriteString("<unknown>", f);
+                err = PyFile_WriteString("<unknown>.", f);
             }
             else {
                 if (!_PyUnicode_EqualToASCIIId(modulename, &PyId_builtins) &&
