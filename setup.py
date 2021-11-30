@@ -919,7 +919,9 @@ class PyBuildExt(build_ext):
         # only change this for cross builds for 3.3, issues on Mageia
         if CROSS_COMPILING:
             self.add_cross_compiling_paths()
-        self.add_multiarch_paths()
+        # Only include multiarch if not targeting the web
+        if not sysconfig.get_config_var('HOST_GNU_TYPE').startswith('wasm'):
+            self.add_multiarch_paths()
         self.add_ldflags_cppflags()
 
     def init_inc_lib_dirs(self):
@@ -1243,7 +1245,7 @@ class PyBuildExt(build_ext):
             self.missing.append('_curses_panel')
 
     def detect_crypt(self):
-         self.addext(Extension('_crypt', ['_cryptmodule.c']))
+        self.addext(Extension('_crypt', ['_cryptmodule.c']))
 
     def detect_dbm_gdbm(self):
         # Modules that provide persistent dictionary-like semantics.  You will
