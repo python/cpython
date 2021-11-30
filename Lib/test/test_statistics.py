@@ -2237,7 +2237,9 @@ class TestSqrtHelpers(unittest.TestCase):
             # Confirm expected root with a quad precision decimal computation
             with decimal.localcontext(decimal.DefaultContext) as ctx:
                 ctx.prec *= 4
-                high_prec_root = (Decimal(numerator) / Decimal(denominator)).sqrt()
+                high_prec_ratio = Decimal(numerator) / Decimal(denominator)
+                ctx.rounding = decimal.ROUND_05UP
+                high_prec_root = high_prec_ratio.sqrt()
             with decimal.localcontext(decimal.DefaultContext):
                 target_root = +high_prec_root
             self.assertEqual(root, target_root)
