@@ -771,7 +771,7 @@ def uuid7():
     subsec_b = (timestamp_ns >> 6) & 0x0fff
     subsec_seq_node = (timestamp_ns & 0x3f) << 56
     subsec_seq_node += random.SystemRandom().getrandbits(56)
-    uuid_int = (timestamp_s & 0xffffffff) << 92
+    uuid_int = (timestamp_s & 0x0fffffffff) << 92
     uuid_int += subsec_a << 80
     uuid_int += subsec_b << 64
     uuid_int += subsec_seq_node
