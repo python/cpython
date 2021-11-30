@@ -776,7 +776,7 @@ library_to_dict(PyObject *dict, const char *key)
 
 
 PyObject *
-_Py_GetGetPathCodeObject()
+_Py_Get_Getpath_CodeObject()
 {
     return PyMarshal_ReadObjectFromString(
         (const char*)_Py_M__getpath, sizeof(_Py_M__getpath));
@@ -833,7 +833,7 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
     /* reference now held by dict */
     Py_DECREF(configDict);
 
-    PyObject *co = _Py_GetGetPathCodeObject();
+    PyObject *co = _Py_Get_Getpath_CodeObject();
     if (!co || !PyCode_Check(co)) {
         PyErr_Clear();
         Py_XDECREF(co);
@@ -903,6 +903,7 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
         _PyErr_WriteUnraisableMsg("error evaluating path", NULL);
         return PyStatus_Error("error evaluating path");
     }
+    Py_DECREF(r);
 
 #if 0
     PyObject *it = PyObject_GetIter(configDict);

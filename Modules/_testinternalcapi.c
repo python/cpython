@@ -395,7 +395,7 @@ normalize_path(PyObject *self, PyObject *filename)
 
 static PyObject *
 get_getpath_codeobject(PyObject *self, PyObject *Py_UNUSED(args)) {
-    return _Py_GetGetPathCodeObject();
+    return _Py_Get_Getpath_CodeObject();
 }
 
 
