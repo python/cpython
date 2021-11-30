@@ -90,6 +90,9 @@ CONFIGURE_CFLAGS_NODIST=@CFLAGS_NODIST@
 # Use it when a linker flag should _not_ be part of the distutils LDFLAGS
 # once Python is installed (bpo-35257)
 CONFIGURE_LDFLAGS_NODIST=@LDFLAGS_NODIST@
+# LDFLAGS_NOLTO is an extra flag to disable lto. It is used to speed up building
+# of _bootstrap_python and _freeze_module tools, which don't need LTO.
+CONFIGURE_LDFLAGS_NOLTO=@LDFLAGS_NOLTO@
 CONFIGURE_CPPFLAGS=	@CPPFLAGS@
 CONFIGURE_LDFLAGS=	@LDFLAGS@
 # Avoid assigning CFLAGS, LDFLAGS, etc. so users can use them on the
@@ -103,6 +106,7 @@ PY_CFLAGS_NODIST=$(CONFIGURE_CFLAGS_NODIST) $(CFLAGS_NODIST) -I$(srcdir)/Include
 PY_CPPFLAGS=	$(BASECPPFLAGS) -I. -I$(srcdir)/Include $(CONFIGURE_CPPFLAGS) $(CPPFLAGS)
 PY_LDFLAGS=	$(CONFIGURE_LDFLAGS) $(LDFLAGS)
 PY_LDFLAGS_NODIST=$(CONFIGURE_LDFLAGS_NODIST) $(LDFLAGS_NODIST)
+PY_LDFLAGS_NOLTO=$(PY_LDFLAGS) $(CONFIGURE_LDFLAGS_NOLTO) $(LDFLAGS_NODIST)
 NO_AS_NEEDED=	@NO_AS_NEEDED@
 CCSHARED=	@CCSHARED@
 # LINKFORSHARED are the flags passed to the $(CC) command that links
@@ -279,6 +283,9 @@ BUILDPYTHON=	python$(BUILDEXE)
 PYTHON_FOR_REGEN?=@PYTHON_FOR_REGEN@
 UPDATE_FILE=$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/update_file.py
 PYTHON_FOR_BUILD=@PYTHON_FOR_BUILD@
+# Standard builds use _bootstrap_python for freezing, cross compiling
+# uses build Python, which must have the same version and bytecode,
+PYTHON_FOR_FREEZE?=@PYTHON_FOR_FREEZE@
 _PYTHON_HOST_PLATFORM=@_PYTHON_HOST_PLATFORM@
 BUILD_GNU_TYPE=	@build@
 HOST_GNU_TYPE=	@host@
@@ -939,74 +946,87 @@ Programs/_testembed: Programs/_testembed.o $(LIBRARY_DEPS)
 	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/_testembed.o $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 ############################################################################
+# "Bootstrap Python" used to run deepfreeze.py
+
+BOOTSTRAP_HEADERS = \
+	Python/frozen_modules/importlib._bootstrap.h \
+	Python/frozen_modules/importlib._bootstrap_external.h
+
+Programs/_bootstrap_python.o: Programs/_bootstrap_python.c $(BOOTSTRAP_HEADERS) $(PYTHON_HEADERS)
+
+_bootstrap_python: $(LIBRARY_OBJS_OMIT_FROZEN) Programs/_bootstrap_python.o Modules/getpath.o Modules/Setup.local
+	$(LINKCC) $(PY_LDFLAGS_NOLTO) -o $@ $(LIBRARY_OBJS_OMIT_FROZEN) \
+		Programs/_bootstrap_python.o Modules/getpath.o $(LIBS) $(MODLIBS) $(SYSLIBS)
+
+############################################################################
 # Deepfreeze targets
 
 .PHONY: regen-deepfreeze
 regen-deepfreeze: $(DEEPFREEZE_OBJS)
 
-DEEPFREEZE_DEPS=$(srcdir)/Tools/scripts/deepfreeze.py
+DEEPFREEZE_DEPS=$(srcdir)/Tools/scripts/deepfreeze.py _bootstrap_python
 
 # BEGIN: deepfreeze modules
 
 Python/deepfreeze/importlib._bootstrap.c: Python/frozen_modules/importlib._bootstrap.h $(DEEPFREEZE_DEPS)
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/importlib._bootstrap.h -m importlib._bootstrap -o Python/deepfreeze/importlib._bootstrap.c
+	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/importlib._bootstrap.h -m importlib._bootstrap -o Python/deepfreeze/importlib._bootstrap.c
 
 Python/deepfreeze/importlib._bootstrap_external.c: Python/frozen_modules/importlib._bootstrap_external.h $(DEEPFREEZE_DEPS)
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/importlib._bootstrap_external.h -m importlib._bootstrap_external -o Python/deepfreeze/importlib._bootstrap_external.c
+	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/importlib._bootstrap_external.h -m importlib._bootstrap_external -o Python/deepfreeze/importlib._bootstrap_external.c
 
 Python/deepfreeze/zipimport.c: Python/frozen_modules/zipimport.h $(DEEPFREEZE_DEPS)
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/zipimport.h -m zipimport -o Python/deepfreeze/zipimport.c
+	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/zipimport.h -m zipimport -o Python/deepfreeze/zipimport.c
 
 Python/deepfreeze/abc.c: Python/frozen_modules/abc.h $(DEEPFREEZE_DEPS)
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/abc.h -m abc -o Python/deepfreeze/abc.c
+	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/abc.h -m abc -o Python/deepfreeze/abc.c
 
 Python/deepfreeze/codecs.c: Python/frozen_modules/codecs.h $(DEEPFREEZE_DEPS)
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/codecs.h -m codecs -o Python/deepfreeze/codecs.c
+	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/codecs.h -m codecs -o Python/deepfreeze/codecs.c
 
 Python/deepfreeze/io.c: Python/frozen_modules/io.h $(DEEPFREEZE_DEPS)
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/io.h -m io -o Python/deepfreeze/io.c
+	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/io.h -m io -o Python/deepfreeze/io.c
 
 Python/deepfreeze/_collections_abc.c: Python/frozen_modules/_collections_abc.h $(DEEPFREEZE_DEPS)
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/_collections_abc.h -m _collections_abc -o Python/deepfreeze/_collections_abc.c
+	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/_collections_abc.h -m _collections_abc -o Python/deepfreeze/_collections_abc.c
 
 Python/deepfreeze/_sitebuiltins.c: Python/frozen_modules/_sitebuiltins.h $(DEEPFREEZE_DEPS)
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/_sitebuiltins.h -m _sitebuiltins -o Python/deepfreeze/_sitebuiltins.c
+	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/_sitebuiltins.h -m _sitebuiltins -o Python/deepfreeze/_sitebuiltins.c
 
 Python/deepfreeze/genericpath.c: Python/frozen_modules/genericpath.h $(DEEPFREEZE_DEPS)
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/genericpath.h -m genericpath -o Python/deepfreeze/genericpath.c
+	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/genericpath.h -m genericpath -o Python/deepfreeze/genericpath.c
 
 Python/deepfreeze/ntpath.c: Python/frozen_modules/ntpath.h $(DEEPFREEZE_DEPS)
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/ntpath.h -m ntpath -o Python/deepfreeze/ntpath.c
+	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/ntpath.h -m ntpath -o Python/deepfreeze/ntpath.c
 
 Python/deepfreeze/posixpath.c: Python/frozen_modules/posixpath.h $(DEEPFREEZE_DEPS)
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/posixpath.h -m posixpath -o Python/deepfreeze/posixpath.c
+	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/posixpath.h -m posixpath -o Python/deepfreeze/posixpath.c
 
 Python/deepfreeze/os.c: Python/frozen_modules/os.h $(DEEPFREEZE_DEPS)
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/os.h -m os -o Python/deepfreeze/os.c
+	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/os.h -m os -o Python/deepfreeze/os.c
 
 Python/deepfreeze/site.c: Python/frozen_modules/site.h $(DEEPFREEZE_DEPS)
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/site.h -m site -o Python/deepfreeze/site.c
+	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/site.h -m site -o Python/deepfreeze/site.c
 
 Python/deepfreeze/stat.c: Python/frozen_modules/stat.h $(DEEPFREEZE_DEPS)
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/stat.h -m stat -o Python/deepfreeze/stat.c
+	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/stat.h -m stat -o Python/deepfreeze/stat.c
 
 Python/deepfreeze/__hello__.c: Python/frozen_modules/__hello__.h $(DEEPFREEZE_DEPS)
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/__hello__.h -m __hello__ -o Python/deepfreeze/__hello__.c
+	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/__hello__.h -m __hello__ -o Python/deepfreeze/__hello__.c
 
 Python/deepfreeze/__phello__.c: Python/frozen_modules/__phello__.h $(DEEPFREEZE_DEPS)
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/__phello__.h -m __phello__ -o Python/deepfreeze/__phello__.c
+	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/__phello__.h -m __phello__ -o Python/deepfreeze/__phello__.c
 
 Python/deepfreeze/__phello__.ham.c: Python/frozen_modules/__phello__.ham.h $(DEEPFREEZE_DEPS)
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/__phello__.ham.h -m __phello__.ham -o Python/deepfreeze/__phello__.ham.c
+	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/__phello__.ham.h -m __phello__.ham -o Python/deepfreeze/__phello__.ham.c
 
 Python/deepfreeze/__phello__.ham.eggs.c: Python/frozen_modules/__phello__.ham.eggs.h $(DEEPFREEZE_DEPS)
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/__phello__.ham.eggs.h -m __phello__.ham.eggs -o Python/deepfreeze/__phello__.ham.eggs.c
+	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/__phello__.ham.eggs.h -m __phello__.ham.eggs -o Python/deepfreeze/__phello__.ham.eggs.c
 
 Python/deepfreeze/__phello__.spam.c: Python/frozen_modules/__phello__.spam.h $(DEEPFREEZE_DEPS)
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/__phello__.spam.h -m __phello__.spam -o Python/deepfreeze/__phello__.spam.c
+	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/__phello__.spam.h -m __phello__.spam -o Python/deepfreeze/__phello__.spam.c
 
 Python/deepfreeze/frozen_only.c: Python/frozen_modules/frozen_only.h $(DEEPFREEZE_DEPS)
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/frozen_only.h -m frozen_only -o Python/deepfreeze/frozen_only.c
+	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/frozen_only.h -m frozen_only -o Python/deepfreeze/frozen_only.c
 
 # END: deepfreeze modules
 
@@ -2295,6 +2315,7 @@ clean-retain-profile: pycremoval
 	find build -name '*.py[co]' -exec rm -f {} ';' || true
 	-rm -f pybuilddir.txt
 	-rm -f Lib/lib2to3/*Grammar*.pickle
+	-rm -f _bootstrap_python
 	-rm -f Programs/_testembed Programs/_freeze_module
 	-rm -f Python/deepfreeze/*.[co]
 	-rm -f Python/frozen_modules/*.h
