@@ -5918,20 +5918,17 @@ do_raise(PyThreadState *tstate, PyObject *exc, PyObject *cause)
     if (exc == NULL) {
         /* Reraise */
         _PyErr_StackItem *exc_info = _PyErr_GetTopmostException(tstate);
-        PyObject *tb;
-        type = exc_info->exc_type;
         value = exc_info->exc_value;
-        tb = exc_info->exc_traceback;
-        assert(((Py_IsNone(value) || value == NULL)) ==
-               ((Py_IsNone(type) || type == NULL)));
         if (Py_IsNone(value) || value == NULL) {
             _PyErr_SetString(tstate, PyExc_RuntimeError,
                              "No active exception to reraise");
             return 0;
         }
+        assert(PyExceptionInstance_Check(value));
+        type = PyExceptionInstance_Class(value);
         Py_XINCREF(type);
         Py_XINCREF(value);
-        Py_XINCREF(tb);
+        PyObject *tb = PyException_GetTraceback(value); /* new ref */
         _PyErr_Restore(tstate, type, value, tb);
         return 1;
     }
