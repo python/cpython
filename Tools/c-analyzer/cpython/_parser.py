@@ -73,15 +73,15 @@ Python/thread_pthread.h
 # only huge constants (safe but parsing is slow)
 Modules/_blake2/impl/blake2-kat.h
 Modules/_ssl_data.h
+Modules/_ssl_data_300.h
+Modules/_ssl_data_111.h
 Modules/cjkcodecs/mappings_*.h
 Modules/unicodedata_db.h
 Modules/unicodename_db.h
 Objects/unicodetype_db.h
 
 # generated
-Python/importlib.h
-Python/importlib_external.h
-Python/importlib_zipimport.h
+Python/frozen_modules/*.h
 Python/opcode_targets.h
 Python/stdlib_module_names.h
 
