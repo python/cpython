@@ -59,26 +59,31 @@ Modules/_scproxy.c                # SystemConfiguration/SystemConfiguration.h
 
 # Windows
 Modules/_winapi.c               # windows.h
+Modules/expat/winconfig.h
 Modules/overlapped.c            # winsock.h
 Python/dynload_win.c            # windows.h
-Modules/expat/winconfig.h
 Python/thread_nt.h
 
 # other OS-dependent
+Python/dynload_aix.c            # sys/ldr.h
 Python/dynload_dl.c             # dl.h
 Python/dynload_hpux.c           # dl.h
-Python/dynload_aix.c            # sys/ldr.h
 Python/thread_pthread.h
 
 # only huge constants (safe but parsing is slow)
+Modules/_blake2/impl/blake2-kat.h
 Modules/_ssl_data.h
+Modules/cjkcodecs/mappings_*.h
 Modules/unicodedata_db.h
 Modules/unicodename_db.h
-Modules/cjkcodecs/mappings_*.h
 Objects/unicodetype_db.h
+
+# generated
 Python/importlib.h
 Python/importlib_external.h
 Python/importlib_zipimport.h
+Python/opcode_targets.h
+Python/stdlib_module_names.h
 
 # @end=conf@
 ''')
@@ -270,6 +275,14 @@ SAME = [
 ]
 
 MAX_SIZES = {
+    _abs('Include/**/*.h'): (5_000, 500),
+    _abs('Modules/_ctypes/ctypes.h'): (5_000, 500),
+    _abs('Modules/_datetimemodule.c'): (20_000, 300),
+    _abs('Modules/posixmodule.c'): (20_000, 500),
+    _abs('Modules/termios.c'): (10_000, 800),
+    _abs('Modules/_testcapimodule.c'): (20_000, 400),
+    _abs('Modules/expat/expat.h'): (10_000, 400),
+    _abs('Objects/typeobject.c'): (20_000, 200),
 }
 
 
