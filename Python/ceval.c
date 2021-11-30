@@ -4300,7 +4300,6 @@ check_eval_breaker:
             _PyObjectCache *cache2 = &caches[-2].obj;
 
             DEOPT_IF(self_cls->tp_version_tag != cache1->tp_version, LOAD_METHOD);
-            assert(self_cls->tp_dictoffset > 0);
             assert(self_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictObject *dict = ((PyDictObject **)self)[-3];
             DEOPT_IF(dict != NULL, LOAD_METHOD);

@@ -936,12 +936,6 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         }
         goto success;
     }
-    // Technically this is fine for bound method calls, but it's uncommon and
-    // slightly slower at runtime to get dict.
-    if (owner_cls->tp_dictoffset < 0) {
-        SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_OUT_OF_RANGE);
-        goto fail;
-    }
 
     PyObject *descr = NULL;
     DesciptorClassification kind = 0;
@@ -952,8 +946,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         goto fail;
     }
     if (owner_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        PyObject **owner_dictptr = _PyObject_DictPointer(owner);
-        assert(owner_dictptr);
+        PyObject **owner_dictptr = _PyObject_ManagedDictPointer(owner);
         if (*owner_dictptr) {
             SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_IS_ATTR);
             goto fail;
