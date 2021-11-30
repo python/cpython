@@ -1322,6 +1322,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             self.check_all_configs("test_init_compat_config", config,
                                    api=API_COMPAT, env=env,
                                    ignore_stderr=False, cwd=tmpdir)
+
     def test_init_pyvenv_cfg(self):
         # Test path configuration with pyvenv.cfg configuration file
 

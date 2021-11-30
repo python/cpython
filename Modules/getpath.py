@@ -550,24 +550,15 @@ else:
 
     # Detect exec_prefix by searching from executable for the platstdlib_dir
     if PLATSTDLIB_LANDMARK and not exec_prefix:
-        if isdir(joinpath(prefix, PLATSTDLIB_LANDMARK)):
-            # Fast path for when exec_prefix == prefix
-            exec_prefix = prefix
-        else:
-            if executable_dir:
-                new_exec_prefix = search_up(executable_dir, PLATSTDLIB_LANDMARK, test=isdir)
-            else:
-                new_exec_prefix = None
-            if not new_exec_prefix:
-                if EXEC_PREFIX:
-                    exec_prefix = EXEC_PREFIX
-                    if not isdir(joinpath(exec_prefix, PLATSTDLIB_LANDMARK)):
-                        warn('Could not find platform dependent libraries <exec_prefix>')
-                else:
+        if executable_dir:
+            exec_prefix = search_up(executable_dir, PLATSTDLIB_LANDMARK, test=isdir)
+        if not exec_prefix:
+            if EXEC_PREFIX:
+                exec_prefix = EXEC_PREFIX
+                if not isdir(joinpath(exec_prefix, PLATSTDLIB_LANDMARK)):
                     warn('Could not find platform dependent libraries <exec_prefix>')
             else:
-                exec_prefix = new_exec_prefix
-
+                warn('Could not find platform dependent libraries <exec_prefix>')
 
     # Fallback: assume exec_prefix == prefix
     if not exec_prefix:

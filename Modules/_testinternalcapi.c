@@ -273,6 +273,14 @@ error:
 }
 
 
+static PyObject *
+test_reset_path_config(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(arg))
+{
+    _PyPathConfig_ClearGlobal();
+    Py_RETURN_NONE;
+}
+
+
 static PyObject*
 test_atomic_funcs(PyObject *self, PyObject *Py_UNUSED(args))
 {
@@ -399,6 +407,7 @@ static PyMethodDef TestMethods[] = {
     {"test_hashtable", test_hashtable, METH_NOARGS},
     {"get_config", test_get_config, METH_NOARGS},
     {"set_config", test_set_config, METH_O},
+    {"reset_path_config", test_reset_path_config, METH_NOARGS},
     {"test_atomic_funcs", test_atomic_funcs, METH_NOARGS},
     {"test_edit_cost", test_edit_cost, METH_NOARGS},
     {"normalize_path", normalize_path, METH_O, NULL},
