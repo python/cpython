@@ -2323,7 +2323,7 @@ class TimerTests(unittest.TestCase):
         self.assertIsNone(h._args)
 
         # when cannot be None
-        self.assertRaises(AssertionError,
+        self.assertRaises(ValueError,
                           asyncio.TimerHandle, None, callback, args,
                           self.loop)
 
@@ -2592,7 +2592,7 @@ class PolicyTests(unittest.TestCase):
         policy = asyncio.DefaultEventLoopPolicy()
         old_loop = policy.get_event_loop()
 
-        self.assertRaises(AssertionError, policy.set_event_loop, object())
+        self.assertRaises(TypeError, policy.set_event_loop, object())
 
         loop = policy.new_event_loop()
         policy.set_event_loop(loop)
@@ -2608,7 +2608,7 @@ class PolicyTests(unittest.TestCase):
 
     def test_set_event_loop_policy(self):
         self.assertRaises(
-            AssertionError, asyncio.set_event_loop_policy, object())
+            TypeError, asyncio.set_event_loop_policy, object())
 
         old_policy = asyncio.get_event_loop_policy()
 
