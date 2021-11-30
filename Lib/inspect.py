@@ -442,8 +442,6 @@ def isabstract(object):
     return False
 
 def _getmembers(object, predicate, getter):
-    """Return all members of an object as (name, value) pairs sorted by name.
-    Optionally, only return members that satisfy a given predicate."""
     if isclass(object):
         mro = (object,) + getmro(object)
     else:
