@@ -447,6 +447,7 @@ initial_counter_value(void) {
 #define SPEC_FAIL_NON_OBJECT_SLOT 14
 #define SPEC_FAIL_READ_ONLY 15
 #define SPEC_FAIL_AUDITED_SLOT 16
+#define SPEC_FAIL_NOT_MANAGED_DICT 17
 
 /* Methods */
 
@@ -626,7 +627,13 @@ specialize_dict_access(
     assert(kind == NON_OVERRIDING || kind == NON_DESCRIPTOR || kind == ABSENT ||
         kind == BUILTIN_CLASSMETHOD || kind == PYTHON_CLASSMETHOD);
     // No descriptor, or non overriding.
-    if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
+    if ((type->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
+        SPECIALIZATION_FAIL(base_op, SPEC_FAIL_NOT_MANAGED_DICT);
+        return 0;
+    }
+    PyObject **dictptr = _PyObject_ManagedDictPointer(owner);
+    PyDictObject *dict = (PyDictObject *)*dictptr;
+    if (dict == NULL) {
         // Virtual dictionary
         PyDictKeysObject *keys = ((PyHeapTypeObject *)type)->ht_cached_keys;
         assert(PyUnicode_CheckExact(name));
@@ -639,16 +646,9 @@ specialize_dict_access(
         cache1->tp_version = type->tp_version_tag;
         cache0->index = (uint16_t)index;
         *instr = _Py_MAKECODEUNIT(values_op, _Py_OPARG(*instr));
-        return 0;
     }
-    if (type->tp_dictoffset < 0) {
-        SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_RANGE);
-        return 0;
-    }
-    if (type->tp_dictoffset > 0) {
-        PyObject **dictptr = (PyObject **) ((char *)owner + type->tp_dictoffset);
-        PyDictObject *dict = (PyDictObject *)*dictptr;
-        if (dict == NULL || !PyDict_CheckExact(dict)) {
+    else {
+        if (!PyDict_CheckExact(dict)) {
             SPECIALIZATION_FAIL(base_op, SPEC_FAIL_NO_DICT);
             return 0;
         }
@@ -663,26 +663,8 @@ specialize_dict_access(
         cache1->dk_version_or_hint = (uint32_t)hint;
         cache1->tp_version = type->tp_version_tag;
         *instr = _Py_MAKECODEUNIT(hint_op, _Py_OPARG(*instr));
-        return 1;
     }
-    assert(type->tp_dictoffset == 0);
-    /* No attribute in instance dictionary */
-    switch(kind) {
-        case NON_OVERRIDING:
-        case BUILTIN_CLASSMETHOD:
-        case PYTHON_CLASSMETHOD:
-            SPECIALIZATION_FAIL(base_op, SPEC_FAIL_NON_OVERRIDING_DESCRIPTOR);
-            return 0;
-        case NON_DESCRIPTOR:
-            /* To do -- Optimize this case */
-            SPECIALIZATION_FAIL(base_op, SPEC_FAIL_NOT_DESCRIPTOR);
-            return 0;
-        case ABSENT:
-            SPECIALIZATION_FAIL(base_op, SPEC_FAIL_EXPECTED_ERROR);
-            return 0;
-        default:
-            Py_UNREACHABLE();
-    }
+    return 1;
 }
 
 int
