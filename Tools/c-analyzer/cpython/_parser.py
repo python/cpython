@@ -14,6 +14,10 @@ from . import REPO_ROOT
 GLOB_ALL = '**/*'
 
 
+def _abs(relfile):
+    return os.path.join(REPO_ROOT, relfile)
+
+
 def clean_lines(text):
     """Clear out comments, blank lines, and leading/trailing whitespace."""
     lines = (line.strip() for line in text.splitlines())
@@ -22,7 +26,7 @@ def clean_lines(text):
              if line and not line.startswith('#'))
     glob_all = f'{GLOB_ALL} '
     lines = (re.sub(r'^[*] ', glob_all, line) for line in lines)
-    lines = (os.path.join(REPO_ROOT, line) for line in lines)
+    lines = (_abs(line) for line in lines)
     return list(lines)
 
 
@@ -244,6 +248,7 @@ Modules/_dbmmodule.c	HAVE_GDBM_DASH_NDBM_H	1
 Modules/sre_lib.h	LOCAL(type)	static inline type
 Modules/sre_lib.h	SRE(F)	sre_ucs2_##F
 Objects/stringlib/codecs.h	STRINGLIB_IS_UNICODE	1
+Include/internal/pycore_bitutils.h	_Py__has_builtin(B)	0
 
 # @end=tsv@
 ''')[1:]
@@ -263,6 +268,9 @@ Objects/stringlib/codecs.h	STRINGLIB_IS_UNICODE	1
 SAME = [
     './Include/cpython/',
 ]
+
+MAX_SIZES = {
+}
 
 
 def get_preprocessor(*,
@@ -298,6 +306,7 @@ def parse_file(filename, *,
         filename,
         match_kind=match_kind,
         get_file_preprocessor=get_file_preprocessor,
+        file_maxsizes=MAX_SIZES,
     )
 
 
@@ -317,5 +326,6 @@ def parse_files(filenames=None, *,
         filenames,
         match_kind=match_kind,
         get_file_preprocessor=get_file_preprocessor,
+        file_maxsizes=MAX_SIZES,
         **file_kwargs
     )
