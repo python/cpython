@@ -1,0 +1,3 @@
+Fix issue when on certain conditions ``asyncio.wait_for()`` may allow a
+coroutine to complete successfully, but fail to return the result,
+potentially causing memory leaks or other issues.

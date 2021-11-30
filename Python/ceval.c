@@ -5694,7 +5694,8 @@ make_coro_frame(PyThreadState *tstate,
     }
     assert(frame->frame_obj == NULL);
     if (initialize_locals(tstate, func, frame->localsplus, args, argcount, kwnames)) {
-        _PyFrame_Clear(frame, 1);
+        _PyFrame_Clear(frame);
+        PyMem_Free(frame);
         return NULL;
     }
     return frame;
@@ -5750,7 +5751,7 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
         localsarray[i] = NULL;
     }
     if (initialize_locals(tstate, func, localsarray, args, argcount, kwnames)) {
-        _PyFrame_Clear(frame, 0);
+        _PyFrame_Clear(frame);
         return NULL;
     }
     return frame;
@@ -5773,11 +5774,8 @@ static int
 _PyEvalFrameClearAndPop(PyThreadState *tstate, InterpreterFrame * frame)
 {
     --tstate->recursion_remaining;
-    assert(frame->frame_obj == NULL || frame->frame_obj->f_own_locals_memory == 0);
-    if (_PyFrame_Clear(frame, 0)) {
-        ++tstate->recursion_remaining;
-        return -1;
-    }
+    assert(frame->frame_obj == NULL || frame->frame_obj->f_owns_frame == 0);
+    _PyFrame_Clear(frame);
     ++tstate->recursion_remaining;
     _PyThreadState_PopFrame(tstate, frame);
     return 0;

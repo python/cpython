@@ -93,8 +93,68 @@ AC_CANONICAL_HOST
 AC_SUBST(build)
 AC_SUBST(host)
 
+AS_VAR_IF([cross_compiling], [maybe],
+ [AC_MSG_ERROR([Cross compiling required --host=HOST-TUPLE and --build=ARCH])]
+)
+
 # pybuilddir.txt will be created by --generate-posix-vars in the Makefile
 rm -f pybuilddir.txt
+
+dnl cross-compiling needs a freeze_module binary for build platform
+AC_ARG_WITH(
+  [freeze-module],
+  [AS_HELP_STRING([--with-freeze-module=Programs/_freeze_module],
+                  [path to _freeze_module binary for cross compiling])],
+  [
+    AC_MSG_CHECKING([for --with-freeze-module])
+    AS_VAR_IF([cross_compiling], [no], AC_MSG_ERROR([--with-freeze-module only applies to cross compiling]))
+    if test "$with_freeze_module" = yes -o "$with_freeze_module" = no; then
+      AC_MSG_ERROR([invalid --with-freeze-module option: expected path, not "$with_freeze_module"])
+    fi
+    if ! $(command -v "$with_freeze_module" >/dev/null 2>&1); then
+      AC_MSG_ERROR([invalid or missing freeze module binary "$with_freeze_module"])
+    fi
+    FREEZE_MODULE="$with_freeze_module"
+    AC_MSG_RESULT([$FREEZE_MODULE])
+  ], [
+    AS_VAR_IF([cross_compiling], [yes],
+      [AC_MSG_ERROR([Cross compiling requires --with-freeze-module])]
+    )
+    FREEZE_MODULE=Programs/_freeze_module
+  ]
+)
+AC_SUBST([FREEZE_MODULE])
+
+AC_ARG_WITH(
+  [build-python],
+  [AS_HELP_STRING([--with-build-python=python]PYTHON_VERSION,
+                  [path to build python binary for cross compiling (default: python]PYTHON_VERSION[)])],
+  [
+    AC_MSG_CHECKING([for --with-build-python])
+
+    AS_VAR_IF([cross_compiling], [no], AC_MSG_ERROR([--with-build-python only applies to cross compiling]))
+    AS_VAR_IF([with_build_python], [yes], [with_build_python=python$PACKAGE_VERSION])
+    AS_VAR_IF([with_build_python], [no], [AC_MSG_ERROR([invalid --with-build-python option: expected path, not "no"])])
+
+    if ! $(command -v "$with_build_python" >/dev/null 2>&1); then
+      AC_MSG_ERROR([invalid or missing build python binary "$with_build_python"])
+    fi
+    build_python_ver=$($with_build_python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+    if test "$build_python_ver" != "$PACKAGE_VERSION"; then
+      AC_MSG_ERROR(["$with_build_python" has incompatible version $build_python_ver (expected: $PACKAGE_VERSION)])
+    fi
+    dnl use build Python for regeneration, too
+    ac_cv_prog_PYTHON_FOR_REGEN=$with_build_python
+    PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`:)$(srcdir)/Lib _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH) '$with_build_python
+    AC_MSG_RESULT([$with_build_python])
+  ], [
+    AS_VAR_IF([cross_compiling], [yes],
+      [AC_MSG_ERROR([Cross compiling requires --with-build-python])]
+    )
+    PYTHON_FOR_BUILD='./$(BUILDPYTHON) -E'
+  ]
+)
+AC_SUBST([PYTHON_FOR_BUILD])
 
 AC_CHECK_PROGS([PYTHON_FOR_REGEN],
   [python$PACKAGE_VERSION python3.10 python3.9 python3.8 python3.7 python3.6 python3 python],
@@ -107,29 +167,6 @@ if command -v $PYTHON_FOR_REGEN >/dev/null 2>&1; then
 else
   AC_MSG_RESULT([missing])
 fi
-
-if test "$cross_compiling" = yes; then
-    AC_MSG_CHECKING([for python interpreter for cross build])
-    if test -z "$PYTHON_FOR_BUILD"; then
-        for interp in python$PACKAGE_VERSION python3 python; do
-	    which $interp >/dev/null 2>&1 || continue
-	    if $interp -c "import sys;sys.exit(not '.'.join(str(n) for n in sys.version_info@<:@:2@:>@) == '$PACKAGE_VERSION')"; then
-	        break
-	    fi
-            interp=
-	done
-        if test x$interp = x; then
-	    AC_MSG_ERROR([python$PACKAGE_VERSION interpreter not found])
-	fi
-        AC_MSG_RESULT($interp)
-	PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`:)$(srcdir)/Lib _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH) '$interp
-    fi
-elif test "$cross_compiling" = maybe; then
-    AC_MSG_ERROR([Cross compiling required --host=HOST-TUPLE and --build=ARCH])
-else
-    PYTHON_FOR_BUILD='./$(BUILDPYTHON) -E'
-fi
-AC_SUBST(PYTHON_FOR_BUILD)
 
 dnl Ensure that if prefix is specified, it does not end in a slash. If
 dnl it does, we get path names containing '//' which is both ugly and
@@ -465,6 +502,12 @@ then
 	*-*-vxworks*)
 	    ac_sys_system=VxWorks
 	    ;;
+	*-*-emscripten)
+	    ac_sys_system=Emscripten
+	    ;;
+	*-*-wasi)
+	    ac_sys_system=WASI
+	    ;;
 	*)
 		# for now, limit cross builds to known configurations
 		MACHDEP="unknown"
@@ -512,6 +555,9 @@ if test "$cross_compiling" = yes; then
 		_host_cpu=
 		;;
 	*-*-vxworks*)
+		_host_cpu=$host_cpu
+		;;
+	wasm32-*-* | wasm64-*-*)
 		_host_cpu=$host_cpu
 		;;
 	*)
@@ -1009,16 +1055,22 @@ atheos*|Linux*/1*)
    exit 1;;
 esac
 
-AC_MSG_CHECKING(for --with-suffix)
-AC_ARG_WITH(suffix,
-            AS_HELP_STRING([--with-suffix=SUFFIX], [set executable suffix to SUFFIX (default is '.exe')]),
+AC_MSG_CHECKING([for --with-suffix])
+AC_ARG_WITH([suffix],
+            [AS_HELP_STRING([--with-suffix=SUFFIX], [set executable suffix to SUFFIX (default is empty, yes is mapped to '.exe')])],
 [
-	case $withval in
-	no)	EXEEXT=;;
-	yes)	EXEEXT=.exe;;
-	*)	EXEEXT=$withval;;
-	esac])
-AC_MSG_RESULT($EXEEXT)
+	AS_CASE([$with_suffix],
+    [no], [EXEEXT=],
+    [yes], [EXEEXT=.exe],
+    [EXEEXT=$with_suffix]
+  )
+], [
+  AS_CASE([$ac_sys_system],
+    [Emscripten], [EXEEXT=.wasm],
+    [EXEEXT=]
+  )
+])
+AC_MSG_RESULT([$EXEEXT])
 
 # Test whether we're running on a non-case-sensitive system, in which
 # case we give a warning if no ext is given
@@ -2183,21 +2235,18 @@ dnl assume C99 compilers provide ANSI C headers
 AC_DEFINE(STDC_HEADERS, 1, [Define to 1 if you have the ANSI C header files.])
 
 # checks for header files
-AC_CHECK_HEADERS(asm/types.h crypt.h conio.h direct.h dlfcn.h errno.h \
-fcntl.h grp.h \
-ieeefp.h io.h langinfo.h libintl.h process.h pthread.h \
-sched.h shadow.h signal.h stropts.h termios.h \
-utime.h \
-poll.h sys/devpoll.h sys/epoll.h sys/poll.h \
-sys/audioio.h sys/xattr.h sys/bsdtty.h sys/event.h sys/file.h sys/ioctl.h \
-sys/kern_control.h sys/loadavg.h sys/lock.h sys/mkdev.h sys/modem.h \
-sys/param.h sys/random.h sys/select.h sys/sendfile.h sys/socket.h sys/statvfs.h \
-sys/stat.h sys/syscall.h sys/sys_domain.h sys/termio.h sys/time.h \
-sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
-libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
-linux/tipc.h linux/random.h spawn.h util.h alloca.h endian.h \
-sys/endian.h sys/sysmacros.h linux/memfd.h linux/wait.h sys/memfd.h \
-sys/mman.h sys/eventfd.h linux/soundcard.h sys/soundcard.h syslog.h)
+AC_CHECK_HEADERS([ \
+  alloca.h asm/types.h bluetooth.h conio.h crypt.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
+  ieeefp.h io.h langinfo.h libintl.h libutil.h linux/memfd.h linux/random.h linux/soundcard.h \
+  linux/tipc.h linux/wait.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
+  sched.h shadow.h signal.h spawn.h stropts.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
+  sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
+  sys/loadavg.h sys/lock.h sys/memfd.h sys/mkdev.h sys/mman.h sys/modem.h sys/param.h sys/poll.h \
+  sys/random.h sys/resource.h sys/select.h sys/sendfile.h sys/socket.h sys/soundcard.h sys/stat.h \
+  sys/statvfs.h sys/sys_domain.h sys/syscall.h sys/sysmacros.h sys/termio.h sys/time.h sys/times.h \
+  sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h sys/xattr.h sysexits.h syslog.h \
+  termios.h util.h utime.h \
+])
 AC_HEADER_DIRENT
 AC_HEADER_MAJOR
 
@@ -2556,8 +2605,10 @@ AC_ARG_WITH(memory_sanitizer,
                            [enable MemorySanitizer allocation error detector, 'msan' (default is no)]),
 [
 AC_MSG_RESULT($withval)
+AX_CHECK_COMPILE_FLAG([-fsanitize=memory],[
 BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
+],[AC_MSG_ERROR([The selected compiler doesn't support memory sanitizer])])
 # MSan works by controlling memory allocation, our own malloc interferes.
 with_pymalloc="no"
 ],
@@ -3928,31 +3979,32 @@ else
 fi
 
 # checks for library functions
-AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
- clock confstr close_range copy_file_range ctermid dup3 execv explicit_bzero \
- explicit_memset faccessat fchmod fchmodat fchown fchownat \
- fdwalk fexecve fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
- futimens futimes gai_strerror getentropy \
- getgrgid getgrgid_r getgrnam_r \
- getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
- getpriority getresuid getresgid getpwent getpwnam_r getpwuid_r getspnam getspent getsid getwd \
- if_nameindex \
- initgroups kill killpg lchown lockf linkat lstat lutimes mmap \
- memrchr mbrtowc mkdirat mkfifo \
- madvise mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
- posix_fallocate posix_fadvise posix_spawn posix_spawnp pread preadv preadv2 \
- pthread_condattr_setclock pthread_init pthread_kill pwrite pwritev pwritev2 \
- readlink readlinkat readv realpath renameat \
- sem_open sem_timedwait sem_clockwait sem_getvalue sem_unlink sendfile setegid seteuid \
- setgid sethostname \
- setlocale setregid setreuid setresuid setresgid setsid setpgid setpgrp setpriority setuid setvbuf \
- sched_get_priority_max sched_setaffinity sched_setscheduler sched_setparam \
- sched_rr_get_interval \
- sigaction sigaltstack sigfillset siginterrupt sigpending sigrelse \
- sigtimedwait sigwait sigwaitinfo snprintf splice strftime strlcpy strsignal symlinkat sync \
- sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
- truncate uname unlinkat utimensat utimes vfork waitid waitpid wait3 wait4 \
- wcscoll wcsftime wcsxfrm wmemcmp writev _getpty rtpSpawn)
+AC_CHECK_FUNCS([ \
+  accept4 alarm bind_textdomain_codeset chown clock close_range confstr \
+  copy_file_range ctermid dup3 execv explicit_bzero explicit_memset \
+  faccessat fchmod fchmodat fchown fchownat fdopendir fdwalk fexecve \
+  fork fork1 fpathconf fstatat ftime ftruncate futimens futimes futimesat \
+  gai_strerror getegid getentropy geteuid getgid getgrgid getgrgid_r \
+  getgrnam_r getgrouplist getgroups getitimer getloadavg getlogin \
+  getpeername getpgid getpid getppid getpriority _getpty \
+  getpwent getpwnam_r getpwuid_r getresgid getresuid getsid getspent \
+  getspnam getuid getwd if_nameindex initgroups kill killpg lchown linkat \
+  lockf lstat lutimes madvise mbrtowc memrchr mkdirat mkfifo mkfifoat \
+  mknod mknodat mktime mmap mremap nice openat opendir pathconf pause pipe \
+  pipe2 plock poll posix_fadvise posix_fallocate posix_spawn posix_spawnp \
+  pread preadv preadv2 pthread_condattr_setclock pthread_init pthread_kill \
+  pwrite pwritev pwritev2 readlink readlinkat readv realpath renameat \
+  rtpSpawn sched_get_priority_max sched_rr_get_interval sched_setaffinity \
+  sched_setparam sched_setscheduler sem_clockwait sem_getvalue sem_open \
+  sem_timedwait sem_unlink sendfile setegid seteuid setgid sethostname \
+  setitimer setlocale setpgid setpgrp setpriority setregid setresgid \
+  setresuid setreuid setsid setuid setvbuf shutdown sigaction sigaltstack \
+  sigfillset siginterrupt sigpending sigrelse sigtimedwait sigwait \
+  sigwaitinfo snprintf splice strftime strlcpy strsignal symlinkat sync \
+  sysconf system tcgetpgrp tcsetpgrp tempnam timegm times tmpfile \
+  tmpnam tmpnam_r truncate ttyname uname unlinkat utimensat utimes vfork \
+  wait wait3 wait4 waitid waitpid wcscoll wcsftime wcsxfrm wmemcmp writev \
+])
 
 # Force lchmod off for Linux. Linux disallows changing the mode of symbolic
 # links. Some libc implementations have a stub lchmod implementation that always
@@ -4820,73 +4872,79 @@ AC_CHECK_FUNCS(
 )
 LIBS=$LIBS_SAVE
 
-# For multiprocessing module, check that sem_open
-# actually works.  For FreeBSD versions <= 7.2,
-# the kernel module that provides POSIX semaphores
-# isn't loaded by default, so an attempt to call
-# sem_open results in a 'Signal 12' error.
+dnl For multiprocessing module, check that sem_open
+dnl actually works.  For FreeBSD versions <= 7.2,
+dnl the kernel module that provides POSIX semaphores
+dnl isn't loaded by default, so an attempt to call
+dnl sem_open results in a 'Signal 12' error.
 AC_CACHE_CHECK([whether POSIX semaphores are enabled], [ac_cv_posix_semaphores_enabled],
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <unistd.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <semaphore.h>
-#include <sys/stat.h>
+  AC_RUN_IFELSE([
+    AC_LANG_SOURCE([
+      #include <unistd.h>
+      #include <fcntl.h>
+      #include <stdio.h>
+      #include <semaphore.h>
+      #include <sys/stat.h>
 
-int main(void) {
-  sem_t *a = sem_open("/autoconf", O_CREAT, S_IRUSR|S_IWUSR, 0);
-  if (a == SEM_FAILED) {
-    perror("sem_open");
-    return 1;
-  }
-  sem_close(a);
-  sem_unlink("/autoconf");
-  return 0;
-}
-]])],
-[ac_cv_posix_semaphores_enabled=yes],
-[ac_cv_posix_semaphores_enabled=no],
-[ac_cv_posix_semaphores_enabled=yes])
+      int main(void) {
+        sem_t *a = sem_open("/autoconf", O_CREAT, S_IRUSR|S_IWUSR, 0);
+        if (a == SEM_FAILED) {
+          perror("sem_open");
+          return 1;
+        }
+        sem_close(a);
+        sem_unlink("/autoconf");
+        return 0;
+      }
+    ])
+  ],
+  [ac_cv_posix_semaphores_enabled=yes],
+  [ac_cv_posix_semaphores_enabled=no],
+  [ac_cv_posix_semaphores_enabled=yes])
 )
-if test $ac_cv_posix_semaphores_enabled = no
-then
-  AC_DEFINE(POSIX_SEMAPHORES_NOT_ENABLED, 1,
-            [Define if POSIX semaphores aren't enabled on your system])
-fi
+AS_VAR_IF([ac_cv_posix_semaphores_enabled], [no], [
+  AC_DEFINE(
+    [POSIX_SEMAPHORES_NOT_ENABLED], [1],
+    [Define if POSIX semaphores aren't enabled on your system]
+  )
+])
 
-# Multiprocessing check for broken sem_getvalue
+dnl Multiprocessing check for broken sem_getvalue
 AC_CACHE_CHECK([for broken sem_getvalue], [ac_cv_broken_sem_getvalue],
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <unistd.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <semaphore.h>
-#include <sys/stat.h>
+  AC_RUN_IFELSE([
+    AC_LANG_SOURCE([
+      #include <unistd.h>
+      #include <fcntl.h>
+      #include <stdio.h>
+      #include <semaphore.h>
+      #include <sys/stat.h>
 
-int main(void){
-  sem_t *a = sem_open("/autocftw", O_CREAT, S_IRUSR|S_IWUSR, 0);
-  int count;
-  int res;
-  if(a==SEM_FAILED){
-    perror("sem_open");
-    return 1;
+      int main(void){
+        sem_t *a = sem_open("/autocftw", O_CREAT, S_IRUSR|S_IWUSR, 0);
+        int count;
+        int res;
+        if(a==SEM_FAILED){
+          perror("sem_open");
+          return 1;
 
-  }
-  res = sem_getvalue(a, &count);
-  sem_close(a);
-  sem_unlink("/autocftw");
-  return res==-1 ? 1 : 0;
-}
-]])],
-[ac_cv_broken_sem_getvalue=no],
-[ac_cv_broken_sem_getvalue=yes],
-[ac_cv_broken_sem_getvalue=yes])
+        }
+        res = sem_getvalue(a, &count);
+        sem_close(a);
+        sem_unlink("/autocftw");
+        return res==-1 ? 1 : 0;
+      }
+    ])
+  ],
+  [ac_cv_broken_sem_getvalue=no],
+  [ac_cv_broken_sem_getvalue=yes],
+  [ac_cv_broken_sem_getvalue=yes])
 )
-if test $ac_cv_broken_sem_getvalue = yes
-then
-  AC_DEFINE(HAVE_BROKEN_SEM_GETVALUE, 1,
-  [define to 1 if your sem_getvalue is broken.])
-fi
+AS_VAR_IF([ac_cv_broken_sem_getvalue], [yes], [
+  AC_DEFINE(
+    [HAVE_BROKEN_SEM_GETVALUE], [1],
+    [define to 1 if your sem_getvalue is broken.]
+  )
+])
 
 AC_CHECK_DECLS([RTLD_LAZY, RTLD_NOW, RTLD_GLOBAL, RTLD_LOCAL, RTLD_NODELETE, RTLD_NOLOAD, RTLD_DEEPBIND, RTLD_MEMBER], [], [], [[#include <dlfcn.h>]])
 
@@ -6173,8 +6231,36 @@ AS_CASE([$ac_sys_system],
   [CYGWIN*], [py_stdlib_not_available="_scproxy nis"],
   [QNX*], [py_stdlib_not_available="_scproxy nis"],
   [FreeBSD*], [py_stdlib_not_available="_scproxy spwd"],
+  [Emscripten], [
+    py_stdlib_not_available="m4_normalize([
+      _curses
+      _curses_panel
+      _dbm
+      _gdbm
+      _multiprocessing
+      _posixshmem
+      _posixsubprocess
+      _scproxy
+      _xxsubinterpreters
+      fcntl
+      grp
+      nis
+      ossaudiodev
+      resource
+      spwd
+      syslog
+      termios
+    ])"
+  ],
   [py_stdlib_not_available="_scproxy"]
 )
+
+dnl Default value for Modules/Setup.stdlib build type
+AS_CASE([$host_cpu],
+  [wasm32|wasm64], [MODULE_BUILDTYPE=static],
+  [MODULE_BUILDTYPE=${MODULE_BUILDTYPE:-shared}]
+)
+AC_SUBST([MODULE_BUILDTYPE])
 
 dnl _MODULE_BLOCK_ADD([VAR], [VALUE])
 dnl internal: adds $1=quote($2) to MODULE_BLOCK
@@ -6212,20 +6298,25 @@ AC_DEFUN([PY_STDLIB_MOD], [
   m4_popdef([modstate])dnl
 ])
 
-dnl Define simple, always enabled stdlib extension module
+dnl Define simple stdlib extension module
+dnl Always enable unless the module is listed in py_stdlib_not_available 
 dnl PY_STDLIB_MOD_SIMPLE([NAME], [CFLAGS], [LDFLAGS])
 dnl cflags and ldflags are optional
 AC_DEFUN([PY_STDLIB_MOD_SIMPLE], [
   m4_pushdef([modcond], [MODULE_]m4_toupper([$1]))dnl
-  AM_CONDITIONAL(modcond, [true])dnl
-  _MODULE_BLOCK_ADD(modcond, [yes])dnl
-  m4_ifval([$2], [
-    _MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_CFLAGS], [$2])
-  ])dnl
-  m4_ifval([$3], [
-    _MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_LDFLAGS], [$3])
-  ])dnl
+  m4_pushdef([modstate], [py_cv_module_$1])dnl
+  AS_CASE([$py_stdlib_not_available],
+    [*$1*], [modstate=n/a],
+    [modstate=yes]
+  )
+  AM_CONDITIONAL(modcond, [test "$modstate" = yes])
+  _MODULE_BLOCK_ADD(modcond, [$modstate])
+  AS_VAR_IF([modstate], [yes], [
+    m4_ifblank([$2], [], [_MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_CFLAGS], [$2])])
+    m4_ifblank([$3], [], [_MODULE_BLOCK_ADD([MODULE_]m4_toupper([$1])[_LDFLAGS], [$3])])
+  ])
   m4_popdef([modcond])dnl
+  m4_popdef([modstate])dnl
 ])
 
 dnl static modules in Modules/Setup.bootstrap
@@ -6247,11 +6338,18 @@ PY_STDLIB_MOD_SIMPLE([_posixsubprocess])
 PY_STDLIB_MOD_SIMPLE([_queue])
 PY_STDLIB_MOD_SIMPLE([_random])
 PY_STDLIB_MOD_SIMPLE([select])
-PY_STDLIB_MOD_SIMPLE([_socket])
 PY_STDLIB_MOD_SIMPLE([_struct])
 PY_STDLIB_MOD_SIMPLE([_typing])
 PY_STDLIB_MOD_SIMPLE([_xxsubinterpreters])
 PY_STDLIB_MOD_SIMPLE([_zoneinfo])
+
+dnl multiprocessing modules
+PY_STDLIB_MOD([_multiprocessing],
+  [], [test "$ac_cv_func_sem_unlink" = "yes"],
+  [-I\$(srcdir)/Modules/_multiprocessing])
+PY_STDLIB_MOD([_posixshmem],
+  [], [test "$have_posix_shmem" = "yes"],
+  [$POSIXSHMEM_CFLAGS], [$POSIXSHMEM_LIBS])
 
 dnl needs libm
 PY_STDLIB_MOD_SIMPLE([audioop], [], [$LIBM])
@@ -6268,9 +6366,10 @@ PY_STDLIB_MOD([fcntl],
   [], [$FCNTL_LIBS])
 PY_STDLIB_MOD([mmap],
   [], [test "$ac_cv_header_sys_mman_h" = "yes" -a "$ac_cv_header_sys_stat_h" = "yes"])
-PY_STDLIB_MOD([_posixshmem],
-  [], [test "$have_posix_shmem" = "yes"],
-  [$POSIXSHMEM_CFLAGS], [$POSIXSHMEM_LIBS])
+PY_STDLIB_MOD([_socket],
+  [], m4_flatten([test "$ac_cv_header_sys_socket_h" = "yes"
+                    -a "$ac_cv_header_sys_types_h" = "yes"
+                    -a "$ac_cv_header_netinet_in_h" = "yes"]))
 
 dnl platform specific extensions
 PY_STDLIB_MOD([grp], [], [test "$ac_cv_func_getgrgid" = yes -o "$ac_cv_func_getgrgid_r" = yes])
