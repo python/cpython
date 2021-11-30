@@ -203,6 +203,12 @@ static inline PyDictValues **_PyObject_ValuesPointer(PyObject *obj)
     return ((PyDictValues **)obj)-4;
 }
 
+static inline PyObject **_PyObject_ManagedDictPointer(PyObject *obj)
+{
+    assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+    return ((PyObject **)obj)-3;
+}
+
 PyObject ** _PyObject_DictPointer(PyObject *);
 int _PyObject_VisitInstanceAttributes(PyObject *self, visitproc visit, void *arg);
 void _PyObject_ClearInstanceAttributes(PyObject *self);

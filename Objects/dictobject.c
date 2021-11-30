@@ -5103,6 +5103,7 @@ _PyObject_IsInstanceDictEmpty(PyObject *obj)
     if (tp->tp_dictoffset == 0) {
         return 1;
     }
+    PyObject **dictptr;
     if (tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
         PyDictValues *values = *_PyObject_ValuesPointer(obj);
         if (values) {
@@ -5114,8 +5115,11 @@ _PyObject_IsInstanceDictEmpty(PyObject *obj)
             }
             return 1;
         }
+        dictptr = _PyObject_ManagedDictPointer(obj);
     }
-    PyObject **dictptr = _PyObject_DictPointer(obj);
+    else {
+       dictptr = _PyObject_DictPointer(obj);
+    }
     PyObject *dict = *dictptr;
     if (dict == NULL) {
         return 1;
@@ -5174,31 +5178,44 @@ _PyObject_FreeInstanceAttributes(PyObject *self)
 PyObject *
 PyObject_GenericGetDict(PyObject *obj, void *context)
 {
-    PyObject **dictptr = _PyObject_DictPointer(obj);
-    if (dictptr == NULL) {
-        PyErr_SetString(PyExc_AttributeError,
-                        "This object has no __dict__");
-        return NULL;
-    }
-    PyObject *dict = *dictptr;
-    if (dict == NULL) {
-        PyTypeObject *tp = Py_TYPE(obj);
-        PyDictValues **values_ptr = ((PyDictValues **)obj)-4;
-        if ((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) && *values_ptr) {
+    PyObject *dict;
+    PyTypeObject *tp = Py_TYPE(obj);
+    if (_PyType_HasFeature(tp, Py_TPFLAGS_MANAGED_DICT)) {
+        PyDictValues **values_ptr = _PyObject_ValuesPointer(obj);
+        PyObject **dictptr = _PyObject_ManagedDictPointer(obj);
+        if (*values_ptr) {
+            assert(*dictptr == NULL);
             *dictptr = dict = make_dict_from_instance_attributes(CACHED_KEYS(tp), *values_ptr);
             if (dict != NULL) {
                 *values_ptr = NULL;
             }
         }
-        else if (_PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE) && CACHED_KEYS(tp)) {
-            dictkeys_incref(CACHED_KEYS(tp));
-            *dictptr = dict = new_dict_with_shared_keys(CACHED_KEYS(tp));
-        }
-        else {
+        else if (*dictptr == NULL) {
             *dictptr = dict = PyDict_New();
         }
+        else {
+            dict = *dictptr;
+        }
     }
-    assert(dict || PyErr_Occurred());
+    else {
+        PyObject **dictptr = _PyObject_DictPointer(obj);
+        if (dictptr == NULL) {
+            PyErr_SetString(PyExc_AttributeError,
+                            "This object has no __dict__");
+            return NULL;
+        }
+        dict = *dictptr;
+        if (dict == NULL) {
+            PyTypeObject *tp = Py_TYPE(obj);
+            if (_PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE) && CACHED_KEYS(tp)) {
+                dictkeys_incref(CACHED_KEYS(tp));
+                *dictptr = dict = new_dict_with_shared_keys(CACHED_KEYS(tp));
+            }
+            else {
+                *dictptr = dict = PyDict_New();
+            }
+        }
+    }
     Py_XINCREF(dict);
     return dict;
 }

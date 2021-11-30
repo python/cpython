@@ -1448,9 +1448,17 @@ subtype_dealloc(PyObject *self)
 
     /* If we added a dict, DECREF it, or free inline values. */
     if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        _PyObject_FreeInstanceAttributes(self);
+        PyObject **dictptr = _PyObject_ManagedDictPointer(self);
+        if (*dictptr != NULL) {
+            assert(*_PyObject_ValuesPointer(self) == NULL);
+            Py_DECREF(*dictptr);
+            *dictptr = NULL;
+        }
+        else {
+            _PyObject_FreeInstanceAttributes(self);
+        }
     }
-    if (type->tp_dictoffset && !base->tp_dictoffset) {
+    else if (type->tp_dictoffset && !base->tp_dictoffset) {
         PyObject **dictptr = _PyObject_DictPointer(self);
         if (dictptr != NULL) {
             PyObject *dict = *dictptr;
@@ -3194,7 +3202,6 @@ type_new_impl(type_new_ctx *ctx)
     fixup_slot_dispatchers(type);
 
     if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        // assert(type->tp_dictoffset > 0);  -- TO DO Update this assert.
         PyHeapTypeObject *et = (PyHeapTypeObject*)type;
         et->ht_cached_keys = _PyDict_NewKeysForClass();
     }
