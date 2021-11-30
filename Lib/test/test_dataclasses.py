@@ -500,6 +500,29 @@ class TestCase(unittest.TestCase):
         self.assertNotEqual(C(3), C(4, 10))
         self.assertNotEqual(C(3, 10), C(4, 10))
 
+    def test_no_unhashable_default(self):
+        # See bpo-44674.
+        class Unhashable:
+            __hash__ = None
+
+        class Hashable:
+            def __hash__(self):
+                return 0
+
+        with self.assertRaisesRegex(ValueError,
+                                    f'mutable default .* for field '
+                                    'a is not allowed'):
+            @dataclass
+            class A:
+                a: dict = {}
+
+        with self.assertRaisesRegex(ValueError,
+                                    f'mutable default .* for field '
+                                    'a is not allowed'):
+            @dataclass
+            class A:
+                a: Any = Unhashable()
+
     def test_hash_field_rules(self):
         # Test all 6 cases of:
         #  hash=True/False/None
