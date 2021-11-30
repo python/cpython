@@ -358,6 +358,31 @@ class MockGetPathTests(unittest.TestCase):
         actual = getpath(ns, expected)
         self.assertEqual(expected, actual)
 
+    def test_custom_platlibdir_posix(self):
+        "Test an install with custom platlibdir on *nix"
+        ns = MockPosixNamespace(
+            PREFIX="/usr",
+            argv0="/linkfrom/python",
+            PLATLIBDIR="lib64",
+        )
+        ns.add_known_xfile("/usr/bin/python")
+        ns.add_known_file("/usr/lib64/python9.8/os.py")
+        ns.add_known_dir("/usr/lib64/python9.8/lib-dynload")
+        expected = dict(
+            executable="/linkfrom/python",
+            base_executable="/linkfrom/python",
+            prefix="/usr",
+            exec_prefix="/usr",
+            module_search_paths_set=1,
+            module_search_paths=[
+                "/usr/lib64/python98.zip",
+                "/usr/lib64/python9.8",
+                "/usr/lib64/python9.8/lib-dynload",
+            ],
+        )
+        actual = getpath(ns, expected)
+        self.assertEqual(expected, actual)
+
     def test_venv_macos(self):
         """Test a venv layout on macOS.
 
