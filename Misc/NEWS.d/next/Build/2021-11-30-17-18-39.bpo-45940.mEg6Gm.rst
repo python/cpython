@@ -1,0 +1,1 @@
+Multiarch flags are not used on WASM targets.
