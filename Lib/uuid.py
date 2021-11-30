@@ -765,8 +765,7 @@ def uuid7():
     if _last_v7_timestamp is not None and nanoseconds <= _last_v7_timestamp:
         nanoseconds = _last_v7_timestamp + 1
     _last_v7_timestamp = nanoseconds
-    timestamp_s = nanoseconds // 10**9
-    timestamp_ns = nanoseconds - 10**9 * timestamp_s
+    timestamp_s, timestamp_ns = divmod(nanoseconds, 10 ** 9)
     subsec_a = timestamp_ns >> 18
     subsec_b = (timestamp_ns >> 6) & 0x0fff
     subsec_seq_node = (timestamp_ns & 0x3f) << 56
