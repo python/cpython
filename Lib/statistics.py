@@ -335,14 +335,15 @@ def _integer_sqrt_of_frac_rto(n: int, m: int) -> int:
     return a | (a*a*m != n)
 
 
-# For 53 bit precision floats, the _float_sqrt_of_frac() shift is 109.
-_sqrt_shift: int = 2 * sys.float_info.mant_dig + 3
+# For 53 bit precision floats, the bit width used in
+# _float_sqrt_of_frac() is 109.
+_sqrt_bit_width: int = 2 * sys.float_info.mant_dig + 3
 
 
 def _float_sqrt_of_frac(n: int, m: int) -> float:
     """Square root of n/m as a float, correctly rounded."""
     # See principle and proof sketch at: https://bugs.python.org/msg407078
-    q = (n.bit_length() - m.bit_length() - _sqrt_shift) // 2
+    q = (n.bit_length() - m.bit_length() - _sqrt_bit_width) // 2
     if q >= 0:
         numerator = _integer_sqrt_of_frac_rto(n, m << 2 * q) << q
         denominator = 1
