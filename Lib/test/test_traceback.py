@@ -1599,7 +1599,7 @@ class BaseExceptionReportingTests:
                               '>> an important exception.\n'
                               '>> empty lines work too\n'
                               '\n'
-                              '(that was an empty line)\n')
+                              '(that was an empty line)')
                 raise
 
         expected = (f'  + Exception Group Traceback (most recent call last):\n'
