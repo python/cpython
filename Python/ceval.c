@@ -103,7 +103,7 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
                         PyObject *locals, PyObject* const* args,
                         size_t argcount, PyObject *kwnames);
 static void
-_PyEvalFrameClearAndPop(PyThreadState *tstate, InterpreterFrame * frame);
+_PyEvalFrameClearAndPop(PyThreadState *tstate, InterpreterFrame *frame);
 
 #define NAME_ERROR_MSG \
     "name '%.200s' is not defined"
@@ -1552,6 +1552,8 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 #define TRACE_FUNCTION_UNWIND()  \
     if (cframe.use_tracing) { \
+        /* Since we are already unwinding, \
+         * we dont't care if this raises */ \
         trace_function_exit(tstate, frame, NULL); \
     }
 
@@ -2487,6 +2489,7 @@ check_eval_breaker:
             tstate->cframe = cframe.previous;
             tstate->cframe->use_tracing = cframe.use_tracing;
             assert(tstate->cframe->current_frame == frame->previous);
+            assert(!_PyErr_Occurred(tstate));
             return retval;
         }
 
@@ -2684,6 +2687,7 @@ check_eval_breaker:
             tstate->cframe = cframe.previous;
             tstate->cframe->use_tracing = cframe.use_tracing;
             assert(tstate->cframe->current_frame == frame->previous);
+            assert(!_PyErr_Occurred(tstate));
             return retval;
         }
 
@@ -2709,6 +2713,7 @@ check_eval_breaker:
             tstate->cframe = cframe.previous;
             tstate->cframe->use_tracing = cframe.use_tracing;
             assert(tstate->cframe->current_frame == frame->previous);
+            assert(!_PyErr_Occurred(tstate));
             return retval;
         }
 
@@ -4005,6 +4010,7 @@ check_eval_breaker:
                 if (err < 0) {
                     goto error;
                 }
+                /* Update first_instr and next_instr to point to newly quickened code */
                 int nexti = INSTR_OFFSET();
                 first_instr = frame->f_code->co_firstinstr;
                 next_instr = first_instr + nexti;
@@ -5825,10 +5831,10 @@ fail:
 static void
 _PyEvalFrameClearAndPop(PyThreadState *tstate, InterpreterFrame * frame)
 {
-    --tstate->recursion_remaining;
+    tstate->recursion_remaining--;
     assert(frame->frame_obj == NULL || frame->frame_obj->f_owns_frame == 0);
     _PyFrame_Clear(frame);
-    ++tstate->recursion_remaining;
+    tstate->recursion_remaining++;
     _PyThreadState_PopFrame(tstate, frame);
 }
 
