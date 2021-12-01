@@ -2397,7 +2397,7 @@ N`` where *N* is the length of the sequence, or :class:`slice` objects, which de
 range of items.  It is also recommended that mappings provide the methods
 :meth:`keys`, :meth:`values`, :meth:`items`, :meth:`get`, :meth:`clear`,
 :meth:`setdefault`, :meth:`pop`, :meth:`popitem`, :meth:`!copy`, and
-:meth:`update` behaving similar to those for Python's standard :class:`dictionary<dict>`
+:meth:`update` behaving similar to those for Python's standard :class:`dictionary <dict>`
 objects.  The :mod:`collections.abc` module provides a
 :class:`~collections.abc.MutableMapping`
 :term:`abstract base class` to help create those methods from a base set of
