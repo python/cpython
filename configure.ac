@@ -5873,7 +5873,7 @@ AC_ARG_WITH(ensurepip,
     [],
     [
       AS_CASE([$ac_sys_system],
-        [Emscripten], [$with_ensurepip=no],
+        [Emscripten], [with_ensurepip=no],
         [with_ensurepip=upgrade]
       )
     ])
