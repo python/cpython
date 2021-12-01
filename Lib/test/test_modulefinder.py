@@ -199,6 +199,21 @@ a/module.py
                                 from . import bar
 """]
 
+non_recursive_import_test_1 = [
+    "a",
+    ["a", "b"],
+    [],
+    [],
+    """\
+a.py
+                                import b
+b.py
+                                import c
+c.py
+                                import sys
+"""]
+
+
 relative_import_test_4 = [
     "a.module",
     ["a", "a.module"],
@@ -319,12 +334,13 @@ def create_package(source):
             ofi.close()
 
 class ModuleFinderTest(unittest.TestCase):
-    def _do_test(self, info, report=False, debug=0, replace_paths=[], modulefinder_class=modulefinder.ModuleFinder):
+    def _do_test(self, info, report=False, debug=0, replace_paths=[], modulefinder_class=modulefinder.ModuleFinder,
+                    **kwargs):
         import_this, modules, missing, maybe_missing, source = info
         create_package(source)
         try:
             mf = modulefinder_class(path=TEST_PATH, debug=debug,
-                                           replace_paths=replace_paths)
+                                           replace_paths=replace_paths, **kwargs)
             mf.import_hook(import_this)
             if report:
                 mf.report()
@@ -432,6 +448,9 @@ b.py
                 return super().load_module(fqname, fp, pathname, file_info)
 
         self._do_test(absolute_import_test, modulefinder_class=CheckLoadModuleApi)
+
+    def test_non_recursive_1(self):
+        self._do_test(non_recursive_import_test_1, recurse=False, debug=10)    
 
 if __name__ == "__main__":
     unittest.main()

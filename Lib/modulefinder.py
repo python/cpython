@@ -89,7 +89,7 @@ def _find_module(name, path=None):
 
 class Module:
 
-    def __init__(self, name, file=None, path=None):
+    def __init__(self, name, file=None, path=None, recurse=True):
         self.__name__ = name
         self.__file__ = file
         self.__path__ = path
@@ -113,17 +113,19 @@ class Module:
 
 class ModuleFinder:
 
-    def __init__(self, path=None, debug=0, excludes=None, replace_paths=None):
+    def __init__(self, path=None, debug=0, excludes=None, replace_paths=None, recurse=1):
         if path is None:
             path = sys.path
         self.path = path
         self.modules = {}
         self.badmodules = {}
         self.debug = debug
+        self.recurse = 0
         self.indent = 0
         self.excludes = excludes if excludes is not None else []
         self.replace_paths = replace_paths if replace_paths is not None else []
         self.processed_paths = []   # Used in debugging only
+        self.recurse = recurse
 
     def msg(self, level, str, *args):
         if level <= self.debug:
@@ -439,10 +441,11 @@ class ModuleFinder:
                 # We don't expect anything else from the generator.
                 raise RuntimeError(what)
 
-        for c in co.co_consts:
-            if isinstance(c, type(co)):
-                self.scan_code(c, m)
-
+        if self.recurse:
+            for c in co.co_consts:
+                if isinstance(c, type(co)):
+                    self.scan_code(c, m)
+                    
     def load_package(self, fqname, pathname):
         self.msgin(2, "load_package", fqname, pathname)
         newname = replacePackageMap.get(fqname)
