@@ -1224,6 +1224,19 @@ class BaseExceptionReportingTests:
                 exp = "\n".join(expected)
                 self.assertEqual(exp, err)
 
+    def test_exception_with_note(self):
+        e = ValueError(42)
+        vanilla = self.get_report(e)
+
+        e.__note__ = 'My Note'
+        self.assertEqual(self.get_report(e), vanilla + 'My Note\n')
+
+        e.__note__ = 'Your Note'
+        self.assertEqual(self.get_report(e), vanilla + 'Your Note\n')
+
+        e.__note__ = None
+        self.assertEqual(self.get_report(e), vanilla)
+
     def test_exception_qualname(self):
         class A:
             class B:

@@ -1083,6 +1083,25 @@ print_exception(struct exception_print_context *ctx, PyObject *value)
         PyErr_Clear();
     }
     err += PyFile_WriteString("\n", f);
+
+    if (err == 0 && PyExceptionInstance_Check(value)) {
+        _Py_IDENTIFIER(__note__);
+
+        PyObject *note = _PyObject_GetAttrId(value, &PyId___note__);
+        if (note == NULL) {
+            err = -1;
+        }
+        if (err == 0 && PyUnicode_Check(note)) {
+            err = write_indented_margin(ctx, f);
+            if (err == 0) {
+                err = PyFile_WriteObject(note, f, Py_PRINT_RAW);
+            }
+            if (err == 0) {
+                err = PyFile_WriteString("\n", f);
+            }
+        }
+        Py_XDECREF(note);
+    }
     Py_XDECREF(tb);
     Py_DECREF(value);
     /* If an error happened here, don't show it.
