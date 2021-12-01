@@ -4979,7 +4979,7 @@ init_inline_values(PyObject *obj, PyTypeObject *tp)
     for (int i = 0; i < size; i++) {
         values->values[i] = NULL;
     }
-    ((PyDictValues **)obj)[-4] = values;
+    *_PyObject_ValuesPointer(obj) = values;
     return 0;
 }
 
@@ -5056,9 +5056,8 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
         if (dict == NULL) {
             return -1;
         }
-        ((PyDictValues **)obj)[-4] = NULL;
-        assert(_PyObject_DictPointer(obj) == ((PyObject **)obj)-3);
-        ((PyObject **)obj)[-3] = dict;
+        *_PyObject_ValuesPointer(obj) = NULL;
+        *_PyObject_ManagedDictPointer(obj) = dict;
         return PyDict_SetItem(dict, name, value);
     }
     PyObject *old_value = values->values[ix];

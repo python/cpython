@@ -1185,7 +1185,9 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
         }
     }
     PyDictValues *values;
-    if ((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) && (values = ((PyDictValues **)obj)[-4])) {
+    if ((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) &&
+        (values = *_PyObject_ValuesPointer(obj)))
+    {
         assert(*_PyObject_DictPointer(obj) == NULL);
         PyObject *attr = _PyObject_GetInstanceAttribute(obj, values, name);
         if (attr != NULL) {
@@ -1286,7 +1288,9 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
         }
     }
     if (dict == NULL) {
-        if ((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) && ((PyDictValues **)obj)[-4]) {
+        if ((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) &&
+            *_PyObject_ValuesPointer(obj))
+        {
             PyDictValues **values_ptr = _PyObject_ValuesPointer(obj);
             if (PyUnicode_CheckExact(name)) {
                 assert(*_PyObject_DictPointer(obj) == NULL);

@@ -3601,7 +3601,7 @@ check_eval_breaker:
             DEOPT_IF(tp->tp_version_tag != cache1->tp_version, LOAD_ATTR);
             assert(tp->tp_dictoffset < 0);
             assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictValues *values = ((PyDictValues **)owner)[-4];
+            PyDictValues *values = *_PyObject_ValuesPointer(owner);
             DEOPT_IF(values == NULL, LOAD_ATTR);
             res = values->values[cache0->index];
             DEOPT_IF(res == NULL, LOAD_ATTR);
@@ -4385,7 +4385,7 @@ check_eval_breaker:
 
             DEOPT_IF(self_cls->tp_version_tag != cache1->tp_version, LOAD_METHOD);
             assert(self_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictObject *dict = ((PyDictObject **)self)[-3];
+            PyDictObject *dict = *(PyDictObject**)_PyObject_ManagedDictPointer(self);
             DEOPT_IF(dict != NULL, LOAD_METHOD);
             DEOPT_IF(((PyHeapTypeObject *)self_cls)->ht_cached_keys->dk_version != cache1->dk_version_or_hint, LOAD_METHOD);
             STAT_INC(LOAD_METHOD, hit);
