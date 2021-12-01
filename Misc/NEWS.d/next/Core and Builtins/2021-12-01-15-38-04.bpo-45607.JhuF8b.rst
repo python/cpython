@@ -1,0 +1,1 @@
+Add a ``__note__`` field to :exc:`BaseException` which can be set to a string, and if exists it is included in the traceback of the exception.
