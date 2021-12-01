@@ -309,6 +309,21 @@ def _subx(pattern, template):
         return sre_parse.expand_template(template, match)
     return filter
 
+# From https://docs.python.org/3/library/re.html#simulating-scanf
+
+def chars(n):
+    return compile(f".{{n}}")
+
+
+char = compile(".")
+int = compile(r"[-+]?\d+")
+float = compile(r"[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?")
+hexfloat = compile(r"[-+]?(0[xX][\dA-Fa-f]+|0[0-7]*|\d+)")
+octal = compile("[-+]?[0-7]+")
+whitespace = compile(r"\S+")
+unsigned = compile(r"\d+")
+hex = compile(r"[-+]?(0[xX])?[\dA-Fa-f]+")
+
 # register myself for pickling
 
 import copyreg
