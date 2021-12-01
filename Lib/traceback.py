@@ -808,6 +808,8 @@ class TracebackException:
         stype = self.exc_type.__qualname__
         smod = self.exc_type.__module__
         if smod not in ("__main__", "builtins"):
+            if not isinstance(smod, str):
+                smod = "<unknown>"
             stype = smod + '.' + stype
 
         if not issubclass(self.exc_type, SyntaxError):

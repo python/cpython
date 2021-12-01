@@ -909,6 +909,44 @@ Missing parens after function definition
    Traceback (most recent call last):
    SyntaxError: expected '('
 
+Parenthesized arguments in function definitions
+
+   >>> def f(x, (y, z), w):
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: Function parameters cannot be parenthesized
+
+   >>> def f((x, y, z, w)):
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: Function parameters cannot be parenthesized
+
+   >>> def f(x, (y, z, w)):
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: Function parameters cannot be parenthesized
+
+   >>> def f((x, y, z), w):
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: Function parameters cannot be parenthesized
+
+   >>> lambda x, (y, z), w: None
+   Traceback (most recent call last):
+   SyntaxError: Lambda expression parameters cannot be parenthesized
+
+   >>> lambda (x, y, z, w): None
+   Traceback (most recent call last):
+   SyntaxError: Lambda expression parameters cannot be parenthesized
+
+   >>> lambda x, (y, z, w): None
+   Traceback (most recent call last):
+   SyntaxError: Lambda expression parameters cannot be parenthesized
+
+   >>> lambda (x, y, z), w: None
+   Traceback (most recent call last):
+   SyntaxError: Lambda expression parameters cannot be parenthesized
+
 Custom error messages for try blocks that are not followed by except/finally
 
    >>> try:
@@ -1505,7 +1543,13 @@ def func2():
     def test_invalid_line_continuation_error_position(self):
         self._check_error(r"a = 3 \ 4",
                           "unexpected character after line continuation character",
-                          lineno=1, offset=9)
+                          lineno=1, offset=8)
+        self._check_error('1,\\#\n2',
+                          "unexpected character after line continuation character",
+                          lineno=1, offset=4)
+        self._check_error('\nfgdfgf\n1,\\#\n2\n',
+                          "unexpected character after line continuation character",
+                          lineno=3, offset=4)
 
     def test_invalid_line_continuation_left_recursive(self):
         # Check bpo-42218: SyntaxErrors following left-recursive rules
@@ -1521,6 +1565,9 @@ def func2():
 
         for paren in ")]}":
             self._check_error(paren + "1 + 2", f"unmatched '\\{paren}'")
+
+    def test_invisible_characters(self):
+        self._check_error('print\x17("Hello")', "invalid non-printable character")
 
     def test_match_call_does_not_raise_syntax_error(self):
         code = """

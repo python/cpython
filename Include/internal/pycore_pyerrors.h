@@ -28,6 +28,8 @@ static inline void _PyErr_ClearExcState(_PyErr_StackItem *exc_state)
     Py_XDECREF(tb);
 }
 
+PyAPI_FUNC(PyObject*) _PyErr_StackItemToExcInfoTuple(
+    _PyErr_StackItem *err_info);
 
 PyAPI_FUNC(void) _PyErr_Fetch(
     PyThreadState *tstate,
