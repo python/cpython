@@ -1,8 +1,8 @@
 import sys
+import builtins as bltns
 from types import MappingProxyType, DynamicClassAttribute
 from operator import or_ as _or_
 from functools import reduce
-from builtins import property as _bltin_property, bin as _bltin_bin
 
 
 __all__ = [
@@ -116,9 +116,9 @@ def bin(num, max_bits=None):
 
     ceiling = 2 ** (num).bit_length()
     if num >= 0:
-        s = _bltin_bin(num + ceiling).replace('1', '0', 1)
+        s = bltns.bin(num + ceiling).replace('1', '0', 1)
     else:
-        s = _bltin_bin(~num ^ (ceiling - 1) + ceiling)
+        s = bltns.bin(~num ^ (ceiling - 1) + ceiling)
     sign = s[:3]
     digits = s[3:]
     if max_bits is not None:
@@ -149,22 +149,12 @@ class property(DynamicClassAttribute):
                 return ownerclass._member_map_[self.name]
             except KeyError:
                 raise AttributeError(
-                        '%s: no class attribute %r' % (ownerclass.__name__, self.name)
+                        '%r has no attribute %r' % (ownerclass, self.name)
                         )
         else:
             if self.fget is None:
-                # check for member
-                if self.name in ownerclass._member_map_:
-                    import warnings
-                    warnings.warn(
-                            "accessing one member from another is not supported, "
-                            " and will be disabled in 3.12",
-                            DeprecationWarning,
-                            stacklevel=2,
-                            )
-                    return ownerclass._member_map_[self.name]
                 raise AttributeError(
-                        '%s: no instance attribute %r' % (ownerclass.__name__, self.name)
+                        '%r member has no attribute %r' % (ownerclass, self.name)
                         )
             else:
                 return self.fget(instance)
@@ -172,7 +162,7 @@ class property(DynamicClassAttribute):
     def __set__(self, instance, value):
         if self.fset is None:
             raise AttributeError(
-                    "%s: cannot set instance attribute %r" % (self.clsname, self.name)
+                    "<enum %r> cannot set attribute %r" % (self.clsname, self.name)
                     )
         else:
             return self.fset(instance, value)
@@ -180,7 +170,7 @@ class property(DynamicClassAttribute):
     def __delete__(self, instance):
         if self.fdel is None:
             raise AttributeError(
-                    "%s: cannot delete instance attribute %r" % (self.clsname, self.name)
+                    "<enum %r> cannot delete attribute %r" % (self.clsname, self.name)
                     )
         else:
             return self.fdel(instance)
@@ -358,13 +348,13 @@ class _EnumDict(dict):
                 key = '_order_'
         elif key in self._member_names:
             # descriptor overwriting an enum?
-            raise TypeError('%r already defined as: %r' % (key, self[key]))
+            raise TypeError('%r already defined as %r' % (key, self[key]))
         elif key in self._ignore:
             pass
         elif not _is_descriptor(value):
             if key in self:
                 # enum overwriting a descriptor?
-                raise TypeError('%r already defined as: %r' % (key, self[key]))
+                raise TypeError('%r already defined as %r' % (key, self[key]))
             if isinstance(value, auto):
                 if value.value == _auto_null:
                     value.value = self._generate_next_value(
@@ -427,8 +417,8 @@ class EnumType(type):
         # check for illegal enum names (any others?)
         invalid_names = set(member_names) & {'mro', ''}
         if invalid_names:
-            raise ValueError('Invalid enum member name: {0}'.format(
-                ','.join(invalid_names)))
+            raise ValueError('invalid enum member name(s) '.format(
+                ','.join(repr(n) for n in invalid_names)))
         #
         # adjust the sunders
         _order_ = classdict.pop('_order_', None)
@@ -485,7 +475,8 @@ class EnumType(type):
         # things break (such as pickle)
         # however, if the method is defined in the Enum itself, don't replace
         # it
-        for name in ('__repr__', '__str__', '__format__', '__reduce_ex__'):
+        # for name in ('__repr__', '__str__', '__format__', '__reduce_ex__'):
+        for name in ('__repr__', '__reduce_ex__'):
             if name in classdict:
                 continue
             class_method = getattr(enum_class, name)
@@ -563,7 +554,7 @@ class EnumType(type):
             # _order_ step 4: verify that _order_ and _member_names_ match
             if _order_ != enum_class._member_names_:
                 raise TypeError(
-                        'member order does not match _order_:\n%r\n%r'
+                        'member order does not match _order_:\n  %r\n  %r'
                         % (enum_class._member_names_, _order_)
                         )
         #
@@ -631,7 +622,7 @@ class EnumType(type):
         # nicer error message when someone tries to delete an attribute
         # (see issue19025).
         if attr in cls._member_map_:
-            raise AttributeError("%s: cannot delete Enum member %r." % (cls.__name__, attr))
+            raise AttributeError("%r cannot delete member %r." % (cls.__name__, attr))
         super().__delattr__(attr)
 
     def __dir__(self):
@@ -714,7 +705,7 @@ class EnumType(type):
     def __len__(cls):
         return len(cls._member_names_)
 
-    @_bltin_property
+    @bltns.property
     def __members__(cls):
         """
         Returns a mapping of member name->value.
@@ -746,7 +737,7 @@ class EnumType(type):
         """
         member_map = cls.__dict__.get('_member_map_', {})
         if name in member_map:
-            raise AttributeError('Cannot reassign member %r.' % (name, ))
+            raise AttributeError('cannot reassign member %r' % (name, ))
         super().__setattr__(name, value)
 
     def _create_(cls, class_name, names, *, module=None, qualname=None, type=None, start=1, boundary=None):
@@ -838,14 +829,14 @@ class EnumType(type):
         module_globals[name] = cls
         return cls
 
-    @staticmethod
-    def _check_for_existing_members(class_name, bases):
+    @classmethod
+    def _check_for_existing_members(mcls, class_name, bases):
         for chain in bases:
             for base in chain.__mro__:
                 if issubclass(base, Enum) and base._member_names_:
                     raise TypeError(
-                            "%s: cannot extend enumeration %r"
-                            % (class_name, base.__name__)
+                            "<enum %r> cannot extend %r"
+                            % (class_name, base)
                             )
 
     @classmethod
@@ -859,30 +850,7 @@ class EnumType(type):
         if not bases:
             return object, Enum
 
-        def _find_data_type(bases):
-            data_types = set()
-            for chain in bases:
-                candidate = None
-                for base in chain.__mro__:
-                    if base is object:
-                        continue
-                    elif issubclass(base, Enum):
-                        if base._member_type_ is not object:
-                            data_types.add(base._member_type_)
-                            break
-                    elif '__new__' in base.__dict__:
-                        if issubclass(base, Enum):
-                            continue
-                        data_types.add(candidate or base)
-                        break
-                    else:
-                        candidate = candidate or base
-            if len(data_types) > 1:
-                raise TypeError('%r: too many data types: %r' % (class_name, data_types))
-            elif data_types:
-                return data_types.pop()
-            else:
-                return None
+        mcls._check_for_existing_members(class_name, bases)
 
         # ensure final parent class is an Enum derivative, find any concrete
         # data type, and check that Enum has no members
@@ -894,8 +862,34 @@ class EnumType(type):
         member_type = _find_data_type(bases) or object
         return member_type, first_enum
 
-    @staticmethod
-    def _find_new_(classdict, member_type, first_enum):
+    @classmethod
+    def _find_data_type(mcls, class_name, bases):
+        data_types = set()
+        for chain in bases:
+            candidate = None
+            for base in chain.__mro__:
+                if base is object:
+                    continue
+                elif issubclass(base, Enum):
+                    if base._member_type_ is not object:
+                        data_types.add(base._member_type_)
+                        break
+                elif '__new__' in base.__dict__:
+                    if issubclass(base, Enum):
+                        continue
+                    data_types.add(candidate or base)
+                    break
+                else:
+                    candidate = candidate or base
+        if len(data_types) > 1:
+            raise TypeError('too many data types for %r:  %r' % (class_name, data_types))
+        elif data_types:
+            return data_types.pop()
+        else:
+            return None
+
+    @classmethod
+    def _find_new_(mcls, classdict, member_type, first_enum):
         """
         Returns the __new__ to be used for creating the enum members.
 
@@ -1021,10 +1015,10 @@ class Enum(metaclass=EnumType):
         return None
 
     def __repr__(self):
-        return "%s.%s" % ( self.__class__.__name__, self._name_)
+        return "<%s.%s: %r>" % (self.__class__.__name__, self._name_, self._value_)
 
     def __str__(self):
-        return "%s" % (self._name_, )
+        return "%s.%s" % (self.__class__.__name__, self._name_, )
 
     def __dir__(self):
         """
@@ -1035,33 +1029,36 @@ class Enum(metaclass=EnumType):
         filtered_self_dict = (name for name in self.__dict__ if not name.startswith('_'))
         return sorted({'name', 'value', *dir(cls), *filtered_self_dict} - to_exclude)
 
+    # def __format__(self, format_spec):
+    #     """
+    #     Returns format using actual value type unless __str__ has been overridden.
+    #     """
+    #     # mixed-in Enums should use the mixed-in type's __format__, otherwise
+    #     # we can get strange results with the Enum name showing up instead of
+    #     # the value
+    #     #
+    #     # pure Enum branch, or branch with __str__ explicitly overridden
+    #     str_overridden = type(self).__str__ not in (Enum.__str__, IntEnum.__str__, Flag.__str__)
+    #     if self._member_type_ is object or str_overridden:
+    #         cls = str
+    #         val = str(self)
+    #     # mix-in branch
+    #     else:
+    #         if not format_spec or format_spec in ('{}','{:}'):
+    #             import warnings
+    #             warnings.warn(
+    #                     "in 3.12 format() will use the enum member, not the enum member's value;\n"
+    #                     "use a format specifier, such as :d for an integer-based Enum, to maintain "
+    #                     "the current display",
+    #                     DeprecationWarning,
+    #                     stacklevel=2,
+    #                     )
+    #         cls = self._member_type_
+    #         val = self._value_
+    #     return cls.__format__(val, format_spec)
+
     def __format__(self, format_spec):
-        """
-        Returns format using actual value type unless __str__ has been overridden.
-        """
-        # mixed-in Enums should use the mixed-in type's __format__, otherwise
-        # we can get strange results with the Enum name showing up instead of
-        # the value
-        #
-        # pure Enum branch, or branch with __str__ explicitly overridden
-        str_overridden = type(self).__str__ not in (Enum.__str__, IntEnum.__str__, Flag.__str__)
-        if self._member_type_ is object or str_overridden:
-            cls = str
-            val = str(self)
-        # mix-in branch
-        else:
-            if not format_spec or format_spec in ('{}','{:}'):
-                import warnings
-                warnings.warn(
-                        "in 3.12 format() will use the enum member, not the enum member's value;\n"
-                        "use a format specifier, such as :d for an integer-based Enum, to maintain "
-                        "the current display",
-                        DeprecationWarning,
-                        stacklevel=2,
-                        )
-            cls = self._member_type_
-            val = self._value_
-        return cls.__format__(val, format_spec)
+        return str.__format__(str(self), format_spec)
 
     def __hash__(self):
         return hash(self._name_)
@@ -1093,21 +1090,21 @@ class IntEnum(int, Enum):
     Enum where members are also (and must be) ints
     """
 
-    def __str__(self):
-        return "%s" % (self._name_, )
+    # def __str__(self):
+    #     return "%s" % (self._name_, )
 
-    def __format__(self, format_spec):
-        """
-        Returns format using actual value unless __str__ has been overridden.
-        """
-        str_overridden = type(self).__str__ != IntEnum.__str__
-        if str_overridden:
-            cls = str
-            val = str(self)
-        else:
-            cls = self._member_type_
-            val = self._value_
-        return cls.__format__(val, format_spec)
+    # def __format__(self, format_spec):
+    #     """
+    #     Returns format using actual value unless __str__ has been overridden.
+    #     """
+    #     str_overridden = type(self).__str__ != IntEnum.__str__
+    #     if str_overridden:
+    #         cls = str
+    #         val = str(self)
+    #     else:
+    #         cls = self._member_type_
+    #         val = self._value_
+    #     return cls.__format__(val, format_spec)
 
 
 class StrEnum(str, Enum):
@@ -1117,7 +1114,7 @@ class StrEnum(str, Enum):
 
     def __new__(cls, *values):
         if len(values) > 3:
-            raise TypeError('too many arguments for str(): %r' % (values, ))
+            raise TypeError('too many arguments for str():  %r' % (values, ))
         if len(values) == 1:
             # it must be a string
             if not isinstance(values[0], str):
@@ -1184,7 +1181,7 @@ class Flag(Enum, boundary=STRICT):
         try:
             high_bit = _high_bit(last_value)
         except Exception:
-            raise TypeError('Invalid Flag value: %r' % last_value) from None
+            raise TypeError('invalid flag value %r' % last_value) from None
         return 2 ** (high_bit+1)
 
     @classmethod
@@ -1232,8 +1229,8 @@ class Flag(Enum, boundary=STRICT):
             if cls._boundary_ is STRICT:
                 max_bits = max(value.bit_length(), flag_mask.bit_length())
                 raise ValueError(
-                        "%s: invalid value: %r\n    given %s\n  allowed %s" % (
-                            cls.__name__, value, bin(value, max_bits), bin(flag_mask, max_bits),
+                        "%r invalid value %r\n    given %s\n  allowed %s" % (
+                            cls, value, bin(value, max_bits), bin(flag_mask, max_bits),
                             ))
             elif cls._boundary_ is CONFORM:
                 value = value & flag_mask
@@ -1247,7 +1244,7 @@ class Flag(Enum, boundary=STRICT):
                             )
             else:
                 raise ValueError(
-                        'unknown flag boundary: %r' % (cls._boundary_, )
+                        '%r unknown flag boundary %r' % (cls, cls._boundary_, )
                         )
         if value < 0:
             neg_value = value
@@ -1274,7 +1271,7 @@ class Flag(Enum, boundary=STRICT):
                 m._name_ for m in cls._iter_member_(member_value)
                 ])
             if unknown:
-                pseudo_member._name_ += '|0x%x' % unknown
+                pseudo_member._name_ += '|%r' % unknown
         else:
             pseudo_member._name_ = None
         # use setdefault in case another thread already created a composite
@@ -1292,10 +1289,8 @@ class Flag(Enum, boundary=STRICT):
         """
         if not isinstance(other, self.__class__):
             raise TypeError(
-                "unsupported operand type(s) for 'in': '%s' and '%s'" % (
+                "unsupported operand type(s) for 'in': %r and %r" % (
                     type(other).__qualname__, self.__class__.__qualname__))
-        if other._value_ == 0 or self._value_ == 0:
-            return False
         return other._value_ & self._value_ == other._value_
 
     def __iter__(self):
@@ -1310,26 +1305,38 @@ class Flag(Enum, boundary=STRICT):
     def __repr__(self):
         cls_name = self.__class__.__name__
         if self._name_ is None:
-            return "0x%x" % (self._value_, )
-        if _is_single_bit(self._value_):
-            return '%s.%s' % (cls_name, self._name_)
-        if self._boundary_ is not FlagBoundary.KEEP:
-            return '%s.' % cls_name + ('|%s.' % cls_name).join(self.name.split('|'))
+            return "<%s: %r>" % (cls_name, self._value_)
         else:
-            name = []
-            for n in self._name_.split('|'):
-                if n.startswith('0'):
-                    name.append(n)
-                else:
-                    name.append('%s.%s' % (cls_name, n))
-            return '|'.join(name)
+            return "<%s.%s: %r>" % (cls_name, self._name_, self._value_)
+        # if _is_single_bit(self._value_):
+        #     return '%s.%s' % (cls_name, self._name_)
+        # if self._boundary_ is not FlagBoundary.KEEP:
+        #     return '%s.' % cls_name + ('|%s.' % cls_name).join(self.name.split('|'))
+        # else:
+        #     name = []
+        #     for n in self._name_.split('|'):
+        #         if n.startswith('0'):
+        #             name.append(n)
+        #         else:
+        #             name.append('%s.%s' % (cls_name, n))
+        #     return '|'.join(name)
 
     def __str__(self):
-        cls = self.__class__
+        cls_name = self.__class__.__name__
         if self._name_ is None:
-            return '%s(%x)' % (cls.__name__, self._value_)
+            return '%s(%r)' % (cls_name, self._value_)
         else:
-            return self._name_
+            return "%s.%s" % (cls_name, self._name_)
+        # elif _is_single_bit(self._value_) or self._boundary_ is not FlagBoundary.KEEP:
+        #     return '|'.join(['%s.%s' % (cls_name, name) for name in self._name_.split('|')])
+        # else:
+        #     name = []
+        #     for n in self._name_.split('|'):
+        #         if n[0].isdigit():
+        #             name.append(n)
+        #         else:
+        #             name.append('%s.%s' % (cls_name, n))
+        #     return '|'.join(name)
 
     def __bool__(self):
         return bool(self._value_)
@@ -1367,15 +1374,15 @@ class IntFlag(int, Flag, boundary=EJECT):
     Support for integer-based Flags
     """
 
-    def __format__(self, format_spec):
-        """
-        Returns format using actual value unless __str__ has been overridden.
-        """
-        str_overridden = type(self).__str__ != Flag.__str__
-        value = self
-        if not str_overridden:
-            value = self._value_
-        return int.__format__(value, format_spec)
+    # def __format__(self, format_spec):
+    #     """
+    #     Returns format using actual value unless __str__ has been overridden.
+    #     """
+    #     str_overridden = type(self).__str__ != Flag.__str__
+    #     value = self
+    #     if not str_overridden:
+    #         value = self._value_
+    #     return int.__format__(value, format_spec)
 
     def __or__(self, other):
         if isinstance(other, self.__class__):
@@ -1429,7 +1436,7 @@ def unique(enumeration):
     if duplicates:
         alias_details = ', '.join(
                 ["%s -> %s" % (alias, name) for (alias, name) in duplicates])
-        raise ValueError('duplicate values found in %r: %s' %
+        raise ValueError('duplicate values found in %r:  %s' %
                 (enumeration, alias_details))
     return enumeration
 
@@ -1456,7 +1463,7 @@ def global_flag_repr(self):
     module = self.__class__.__module__.split('.')[-1]
     cls_name = self.__class__.__name__
     if self._name_ is None:
-        return "%s.%s(0x%x)" % (module, cls_name, self._value_)
+        return "%s.%s(%r)" % (module, cls_name, self._value_)
     if _is_single_bit(self):
         return '%s.%s' % (module, self._name_)
     if self._boundary_ is not FlagBoundary.KEEP:
@@ -1464,7 +1471,7 @@ def global_flag_repr(self):
     else:
         name = []
         for n in self._name_.split('|'):
-            if n.startswith('0'):
+            if n[0].isdigit():
                 name.append(n)
             else:
                 name.append('%s.%s' % (module, n))
@@ -1542,7 +1549,8 @@ def _simple_enum(etype=Enum, *, boundary=None, use_args=None):
         # however, if the method is defined in the Enum itself, don't replace
         # it
         enum_class = type(cls_name, (etype, ), body, boundary=boundary, _simple=True)
-        for name in ('__repr__', '__str__', '__format__', '__reduce_ex__'):
+        # for name in ('__repr__', '__str__', '__format__', '__reduce_ex__'):
+        for name in ('__repr__', '__reduce_ex__'):
             if name in body:
                 continue
             class_method = getattr(enum_class, name)
@@ -1673,7 +1681,7 @@ class verify:
                 if duplicates:
                     alias_details = ', '.join(
                             ["%s -> %s" % (alias, name) for (alias, name) in duplicates])
-                    raise ValueError('aliases found in %r: %s' %
+                    raise ValueError('aliases found in %r:  %s' %
                             (enumeration, alias_details))
             elif check is CONTINUOUS:
                 values = set(e.value for e in enumeration)
@@ -1825,7 +1833,8 @@ def _test_simple_enum(checked_enum, simple_enum):
                         name, '\n      '.join(failed_member),
                         ))
         for method in (
-                '__str__', '__repr__', '__reduce_ex__', '__format__',
+                # '__str__', '__repr__', '__reduce_ex__', '__format__',
+                '__repr__', '__reduce_ex__',
                 '__getnewargs_ex__', '__getnewargs__', '__reduce_ex__', '__reduce__'
             ):
             if method in simple_keys and method in checked_keys:

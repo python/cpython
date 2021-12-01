@@ -110,12 +110,7 @@ Module Contents
       :class:`StrEnum` defaults to the lower-cased version of the member name,
       while other Enums default to 1 and increase from there.
 
-   :func:`global_enum`
-
-      :class:`Enum` class decorator to apply the appropriate global `__repr__`,
-      and export its members into the global name space.
-
-   :func:`.property`
+   :func:`enum_property`
 
       Allows :class:`Enum` members to have attributes without conflicting with
       other members' names.
@@ -131,7 +126,7 @@ Module Contents
 
 
 .. versionadded:: 3.6  ``Flag``, ``IntFlag``, ``auto``
-.. versionadded:: 3.11  ``StrEnum``, ``EnumCheck``, ``FlagBoundary``
+.. versionadded:: 3.11  ``StrEnum``, ``EnumCheck``, ``FlagBoundary``, ``enum_property``
 
 ---------------
 
@@ -173,21 +168,21 @@ Data Types
       Returns the Enum member in *cls* matching *name*, or raises an :exc:`AttributeError`::
 
         >>> Color.GREEN
-        Color.GREEN
+        <Color.GREEN: 2>
 
    .. method:: EnumType.__getitem__(cls, name)
 
       Returns the Enum member in *cls* matching *name*, or raises a :exc:`KeyError`::
 
         >>> Color['BLUE']
-        Color.BLUE
+        <Color.BLUE: 3>
 
    .. method:: EnumType.__iter__(cls)
 
       Returns each member in *cls* in definition order::
 
         >>> list(Color)
-        [Color.RED, Color.GREEN, Color.BLUE]
+        [<Color.RED: 1>, <Color.GREEN: 2>, <Color.BLUE: 3>]
 
    .. method:: EnumType.__len__(cls)
 
@@ -201,7 +196,7 @@ Data Types
       Returns each member in *cls* in reverse definition order::
 
         >>> list(reversed(Color))
-        [Color.BLUE, Color.GREEN, Color.RED]
+        [<Color.BLUE: 3>, <Color.GREEN: 2>, <Color.RED: 1>]
 
 
 .. class:: Enum
@@ -232,7 +227,7 @@ Data Types
    .. attribute:: Enum._ignore_
 
       ``_ignore_`` is only used during creation and is removed from the
-      enumeration once that is complete.
+      enumeration once creation is complete.
 
       ``_ignore_`` is a list of names that will not become members, and whose
       names will also be removed from the completed enumeration.  See
@@ -317,37 +312,36 @@ Data Types
          >>> Build.DEBUG.value
          'debug'
          >>> Build('deBUG')
-         Build.DEBUG
+         <Build.DEBUG: 'debug'>
 
    .. method:: Enum.__repr__(self)
 
       Returns the string used for *repr()* calls.  By default, returns the
-      *Enum* name and the member name, but can be overridden::
+      *Enum* name, member name, and value, but can be overridden::
 
-         >>> class OldStyle(Enum):
-         ...     RETRO = auto()
-         ...     OLD_SCHOOl = auto()
-         ...     YESTERYEAR = auto()
+         >>> class OtherStyle(Enum):
+         ...     ALTERNATE = auto()
+         ...     OTHER = auto()
+         ...     SOMETHING_ELSE = auto()
          ...     def __repr__(self):
          ...         cls_name = self.__class__.__name__
-         ...         return f'<{cls_name}.{self.name}: {self.value}>'
-         >>> OldStyle.RETRO
-         <OldStyle.RETRO: 1>
+         ...         return f'{cls_name}.{self.name}'
+         >>> OtherStyle.ALTERNATE
+         OtherStyle.ALTERNATE
 
    .. method:: Enum.__str__(self)
 
       Returns the string used for *str()* calls.  By default, returns the
-      member name, but can be overridden::
+      *Enum* name and member name, but can be overridden::
 
-         >>> class OldStyle(Enum):
-         ...     RETRO = auto()
-         ...     OLD_SCHOOl = auto()
-         ...     YESTERYEAR = auto()
+         >>> class OtherStyle(Enum):
+         ...     ALTERNATE = auto()
+         ...     OTHER = auto()
+         ...     SOMETHING_ELSE = auto()
          ...     def __str__(self):
-         ...         cls_name = self.__class__.__name__
-         ...         return f'{cls_name}.{self.name}'
-         >>> OldStyle.RETRO
-         OldStyle.RETRO
+         ...         return f'{self.name}'
+         >>> str(OtherStyle.ALTERNATE)
+         'ALTERNATE'
 
 .. note::
 
@@ -367,7 +361,7 @@ Data Types
       ...     TWO = 2
       ...     THREE = 3
       >>> Numbers.THREE
-      Numbers.THREE
+      <Numbers.THREE: 3>
       >>> Numbers.ONE + Numbers.TWO
       3
       >>> Numbers.THREE + 5
@@ -392,11 +386,12 @@ Data Types
              instead of ``isinstance(str, unknown)``), and in those locations you
              will need to use ``str(StrEnum.member)``.
 
-
 .. note::
 
-   Using :class:`auto` with :class:`StrEnum` results in values of the member name,
-   lower-cased.
+   Using :class:`auto` with :class:`StrEnum` results in the lower-cased member
+   name as the value.
+
+.. versionadded:: 3.11
 
 .. versionadded:: 3.11
 
@@ -431,9 +426,9 @@ Data Types
       Returns all contained members::
 
          >>> list(Color.RED)
-         [Color.RED]
+         [<Color.RED: 1>]
          >>> list(purple)
-         [Color.RED, Color.BLUE]
+         [<Color.RED: 1>, <Color.BLUE: 4>]
 
    .. method:: __len__(self):
 
@@ -461,36 +456,36 @@ Data Types
       Returns current flag binary or'ed with other::
 
          >>> Color.RED | Color.GREEN
-         Color.RED|Color.GREEN
+         <Color.RED|GREEN: 3>
 
    .. method:: __and__(self, other)
 
       Returns current flag binary and'ed with other::
 
          >>> purple & white
-         Color.RED|Color.BLUE
+         <Color.RED|BLUE: 5>
          >>> purple & Color.GREEN
-         0x0
+         <Color: 0>
 
    .. method:: __xor__(self, other)
 
       Returns current flag binary xor'ed with other::
 
          >>> purple ^ white
-         Color.GREEN
+         <Color.GREEN: 2>
          >>> purple ^ Color.GREEN
-         Color.RED|Color.GREEN|Color.BLUE
+         <Color.RED|GREEN|BLUE: 7>
 
    .. method:: __invert__(self):
 
       Returns all the flags in *type(self)* that are not in self::
 
          >>> ~white
-         0x0
+         <Color: 0>
          >>> ~purple
-         Color.GREEN
+         <Color.GREEN: 2>
          >>> ~Color.RED
-         Color.GREEN|Color.BLUE
+         <Color.GREEN|BLUE: 6>
 
 .. note::
 
@@ -509,9 +504,9 @@ Data Types
       ...     GREEN = auto()
       ...     BLUE = auto()
       >>> Color.RED & 2
-      0x0
+      <Color: 0>
       >>> Color.RED | 2
-      Color.RED|Color.GREEN
+      <Color.RED|GREEN: 3>
 
    If any integer operation is performed with an *IntFlag* member, the result is
    not an *IntFlag*::
@@ -532,7 +527,7 @@ Data Types
 .. class:: EnumCheck
 
    *EnumCheck* contains the options used by the :func:`verify` decorator to ensure
-   various constraints; failed constraints result in a :exc:`TypeError`.
+   various constraints; failed constraints result in a :exc:`ValueError`.
 
    .. attribute:: UNIQUE
 
@@ -547,7 +542,7 @@ Data Types
          ...     CRIMSON = 1
          Traceback (most recent call last):
          ...
-         ValueError: aliases found in <enum 'Color'>: CRIMSON -> RED
+         ValueError: aliases found in <enum 'Color'>:  CRIMSON -> RED
 
 
    .. attribute:: CONTINUOUS
@@ -606,7 +601,7 @@ Data Types
          >>> StrictFlag(2**2 + 2**4)
          Traceback (most recent call last):
          ...
-         ValueError: StrictFlag: invalid value: 20
+         ValueError: <flag 'StrictFlag'> invalid value 20
              given 0b0 10100
            allowed 0b0 00111
 
@@ -621,7 +616,7 @@ Data Types
          ...     GREEN = auto()
          ...     BLUE = auto()
          >>> ConformFlag(2**2 + 2**4)
-         ConformFlag.BLUE
+         <ConformFlag.BLUE: 4>
 
    .. attribute:: EJECT
 
@@ -647,7 +642,7 @@ Data Types
          ...     GREEN = auto()
          ...     BLUE = auto()
          >>> KeepFlag(2**2 + 2**4)
-         KeepFlag.BLUE|0x10
+         <KeepFlag.BLUE|16: 20>
 
 .. versionadded:: 3.11
 
@@ -668,22 +663,13 @@ Utilities and Decorators
    ``_generate_next_value_`` can be overridden to customize the values used by
    *auto*.
 
-.. decorator:: global_enum
-
-   A :keyword:`class` decorator specifically for enumerations.  It replaces the
-   :meth:`__repr__` method with one that shows *module_name*.*member_name*.  It
-   also injects the members, and their aliases, into the global namespace they
-   were defined in.
-
-.. versionadded:: 3.11
-
-.. decorator:: property
+.. decorator:: enum_property
 
    A decorator similar to the built-in *property*, but specifically for
    enumerations.  It allows member attributes to have the same names as members
    themselves.
 
-   .. note:: the *property* and the member must be defined in separate classes;
+   .. note:: the *enum_property* and the member must be defined in separate classes;
              for example, the *value* and *name* attributes are defined in the
              *Enum* class, and *Enum* subclasses can define members with the
              names ``value`` and ``name``.
@@ -706,7 +692,7 @@ Utilities and Decorators
       ...
       Traceback (most recent call last):
       ...
-      ValueError: duplicate values found in <enum 'Mistake'>: FOUR -> THREE
+      ValueError: duplicate values found in <enum 'Mistake'>:  FOUR -> THREE
 
 .. decorator:: verify
 
@@ -726,10 +712,10 @@ Notes
     These three enum types are designed to be drop-in replacements for existing
     integer- and string-based values; as such, they have extra limitations:
 
-    - ``format()`` will use the value of the enum member, unless ``__str__``
-      has been overridden
+    - ``__str__`` uses the value and not the name of the enum member
 
-    - ``StrEnum.__str__`` uses the value and not the name of the enum member
+    - ``__format__``, because it uses ``__str__``, will also use the value of
+      the enum member instead of its name
 
     If you do not need/want those limitations, you can create your own base
     class by mixing in the ``int`` or ``str`` type yourself::
