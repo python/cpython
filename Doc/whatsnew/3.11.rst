@@ -181,6 +181,12 @@ Other CPython Implementation Changes
   hash-based pyc files now use ``siphash13``, too.
   (Contributed by Inada Naoki in :issue:`29410`.)
 
+* When an active exception is re-raised by a :keyword:`raise` statement with no parameters,
+  the traceback attached to this exception is now always ``sys.exc_info()[1].__traceback__``.
+  This means that changes made to the traceback in the current :keyword:`except` clause are
+  reflected in the re-raised exception.
+  (Contributed by Irit Katriel in :issue:`45711`.)
+
 New Modules
 ===========
 
@@ -264,6 +270,16 @@ sqlite3
   :func:`unraisable hook handler <sys.unraisablehook>` to improve their debug
   experience.
   (Contributed by Erlend E. Aasland in :issue:`45828`.)
+
+
+sys
+---
+
+* :func:`sys.exc_info` now derives the ``type`` and ``traceback`` fields
+  from the ``value`` (the exception instance), so when an exception is
+  modified while it is being handled, the changes are reflected in
+  the results of subsequent calls to :func:`exc_info`.
+  (Contributed by Irit Katriel in :issue:`45711`.)
 
 
 threading
@@ -578,6 +594,17 @@ New Features
   :c:func:`PyThreadState_LeaveTracing` functions to the limited C API to
   suspend and resume tracing and profiling.
   (Contributed by Victor Stinner in :issue:`43760`.)
+
+* :c:func:`PyErr_SetExcInfo()` no longer uses the ``type`` and ``traceback``
+  arguments, the interpreter now derives those values from the exception
+  instance (the ``value`` argument). The function still steals references
+  of all three arguments.
+  (Contributed by Irit Katriel in :issue:`45711`.)
+
+* :c:func:`PyErr_GetExcInfo()` now derives the ``type`` and ``traceback``
+  fields of the result from the exception instance (the ``value`` field).
+  (Contributed by Irit Katriel in :issue:`45711`.)
+
 
 Porting to Python 3.11
 ----------------------

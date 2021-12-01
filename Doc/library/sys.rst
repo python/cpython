@@ -396,9 +396,14 @@ always available.
    ``(type, value, traceback)``.  Their meaning is: *type* gets the type of the
    exception being handled (a subclass of :exc:`BaseException`); *value* gets
    the exception instance (an instance of the exception type); *traceback* gets
-   a :ref:`traceback object <traceback-objects>` which encapsulates the call
-   stack at the point where the exception originally occurred.
+   a :ref:`traceback object <traceback-objects>` which typically encapsulates
+   the call stack at the point where the exception last occurred.
 
+   .. versionchanged:: 3.11
+      The ``type`` and ``traceback`` fields are now derived from the ``value``
+      (the exception instance), so when an exception is modified while it is
+      being handled, the changes are reflected in the results of subsequent
+      calls to :func:`exc_info`.
 
 .. data:: exec_prefix
 
