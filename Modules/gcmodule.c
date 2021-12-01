@@ -2254,46 +2254,30 @@ _PyObject_GC_Link(PyObject *op)
     }
 }
 
-
-
-PyObject *
-_PyObject_GC_Malloc(size_t basicsize)
+static PyObject *
+gc_alloc(size_t basicsize, size_t presize)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    GCState *gcstate = &tstate->interp->gc;
-    if (basicsize > PY_SSIZE_T_MAX - sizeof(PyGC_Head)) {
+    if (basicsize > PY_SSIZE_T_MAX - presize) {
         return _PyErr_NoMemory(tstate);
     }
-    size_t size = sizeof(PyGC_Head) + basicsize;
-
-    PyGC_Head *g = (PyGC_Head *)PyObject_Malloc(size);
-    if (g == NULL) {
+    size_t size = presize + basicsize;
+    char *mem = PyObject_Malloc(size);
+    if (mem == NULL) {
         return _PyErr_NoMemory(tstate);
     }
-    assert(((uintptr_t)g & sizeof(uintptr_t)) == 0);  // g must be correctly aligned
-
-    g->_gc_next = 0;
-    g->_gc_prev = 0;
-    gcstate->generations[0].count++; /* number of allocated GC objects */
-    if (gcstate->generations[0].count > gcstate->generations[0].threshold &&
-        gcstate->enabled &&
-        gcstate->generations[0].threshold &&
-        !gcstate->collecting &&
-        !_PyErr_Occurred(tstate))
-    {
-        gcstate->collecting = 1;
-        gc_collect_generations(tstate);
-        gcstate->collecting = 0;
-    }
-    PyObject *op = FROM_GC(g);
+    ((PyObject **)mem)[0] = NULL;
+    ((PyObject **)mem)[1] = NULL;
+    PyObject *op = (PyObject *)(mem + presize);
+    _PyObject_GC_Link(op);
     return op;
 }
-
 
 PyObject *
 _PyObject_GC_New(PyTypeObject *tp)
 {
-    PyObject *op = _PyObject_GC_Malloc(_PyObject_SIZE(tp));
+    size_t presize = _PyType_PreHeaderSize(tp);
+    PyObject *op = gc_alloc(_PyObject_SIZE(tp), presize);
     if (op == NULL) {
         return NULL;
     }
@@ -2311,8 +2295,9 @@ _PyObject_GC_NewVar(PyTypeObject *tp, Py_ssize_t nitems)
         PyErr_BadInternalCall();
         return NULL;
     }
+    size_t presize = _PyType_PreHeaderSize(tp);
     size = _PyObject_VAR_SIZE(tp, nitems);
-    op = (PyVarObject *) _PyObject_GC_Malloc(size);
+    op = (PyVarObject *)gc_alloc(size, presize);
     if (op == NULL) {
         return NULL;
     }
