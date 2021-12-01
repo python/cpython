@@ -209,7 +209,7 @@ fractions
 
 inspect
 -------
-* Add :func:`inspect.getmembers_static` , it return all members without
+* Add :func:`inspect.getmembers_static`: return all members without
   triggering dynamic lookup via the descriptor protocol. (Contributed by
   Weipeng Hong in :issue:`30533`.)
 
