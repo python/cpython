@@ -1,0 +1,1 @@
+Emscripten platform now uses ``.wasm`` suffix by default.

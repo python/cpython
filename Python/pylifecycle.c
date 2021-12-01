@@ -30,6 +30,10 @@
 #  include <langinfo.h>           // nl_langinfo(CODESET)
 #endif
 
+#ifdef HAVE_FCNTL_H
+#  include <fcntl.h>              // F_GETFD
+#endif
+
 #ifdef MS_WINDOWS
 #  undef BYTE
 #  include "windows.h"
@@ -2129,18 +2133,26 @@ is_valid_fd(int fd)
    startup. Problem: dup() doesn't check if the file descriptor is valid on
    some platforms.
 
+   fcntl(fd, F_GETFD) is even faster, because it only checks the process table.
+
    bpo-30225: On macOS Tiger, when stdout is redirected to a pipe and the other
    side of the pipe is closed, dup(1) succeed, whereas fstat(1, &st) fails with
    EBADF. FreeBSD has similar issue (bpo-32849).
 
    Only use dup() on platforms where dup() is enough to detect invalid FD in
-   corner cases: on Linux and Windows (bpo-32849). */
-#if defined(__linux__) || defined(MS_WINDOWS)
+   corner cases: on Linux and Windows (bpo-32849).
+*/
     if (fd < 0) {
         return 0;
     }
+#if defined(F_GETFD) && (defined(__linux__) || defined(__APPLE__) || defined(MS_WINDOWS))
+    int res;
+    _Py_BEGIN_SUPPRESS_IPH
+    res = fcntl(fd, F_GETFD);
+    _Py_END_SUPPRESS_IPH
+    return res >= 0;
+#elif defined(__linux__) || defined(MS_WINDOWS)
     int fd2;
-
     _Py_BEGIN_SUPPRESS_IPH
     fd2 = dup(fd);
     if (fd2 >= 0) {

@@ -400,7 +400,7 @@ class _ExecutorManagerThread(threading.Thread):
         assert not self.thread_wakeup._closed
         wakeup_reader = self.thread_wakeup._reader
         readers = [result_reader, wakeup_reader]
-        worker_sentinels = [p.sentinel for p in self.processes.values()]
+        worker_sentinels = [p.sentinel for p in list(self.processes.values())]
         ready = mp.connection.wait(readers + worker_sentinels)
 
         cause = None
