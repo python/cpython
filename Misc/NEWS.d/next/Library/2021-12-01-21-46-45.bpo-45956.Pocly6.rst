@@ -1,0 +1,1 @@
+Add officially suggested regular expressions for scanf equivalents from https://docs.python.org/3/library/re.html#simulating-scanf to re module
