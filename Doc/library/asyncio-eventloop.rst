@@ -1243,9 +1243,10 @@ async/await code consider using the high-level
 
 .. note::
 
-   The default asyncio event loop on **Windows** does not support
-   subprocesses. See :ref:`Subprocess Support on Windows
-   <asyncio-windows-subprocess>` for details.
+   On Windows, the default event loop :class:`ProactorEventLoop` supports
+   subprocesses, whereas :class:`SelectorEventLoop` does not. See
+   :ref:`Subprocess Support on Windows <asyncio-windows-subprocess>` for
+   details.
 
 .. coroutinemethod:: loop.subprocess_exec(protocol_factory, *args, \
                       stdin=subprocess.PIPE, stdout=subprocess.PIPE, \
