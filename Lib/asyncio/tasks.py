@@ -433,7 +433,7 @@ async def wait_for(fut, timeout):
         try:
             await waiter
         except exceptions.CancelledError as e:
-            if fut.done() and _SENTINEL in e.args:
+            if fut.done() and e.args == (_SENTINEL,):
                 return fut.result()
             else:
                 fut.remove_done_callback(cb)
