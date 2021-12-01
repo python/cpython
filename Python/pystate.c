@@ -207,6 +207,8 @@ _PyInterpreterState_Enable(_PyRuntimeState *runtime)
 static void
 init_interpreter(PyInterpreterState *interp, PyThread_type_lock pending_lock)
 {
+    // interp should be zeroed out already, e.g. PyMem_RawCalloc() or memset().
+
     interp->id_refcount = -1;
 
     _PyEval_InitState(&interp->ceval, pending_lock);
