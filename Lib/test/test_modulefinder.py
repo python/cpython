@@ -201,7 +201,7 @@ a/module.py
 
 non_recursive_import_test_1 = [
     "a",
-    ["a", "b"],
+    ["a", "b", "c", "sys"],
     [],
     [],
     """\
@@ -450,7 +450,7 @@ b.py
         self._do_test(absolute_import_test, modulefinder_class=CheckLoadModuleApi)
 
     def test_non_recursive_1(self):
-        self._do_test(non_recursive_import_test_1, recurse=False, debug=10)    
+        self._do_test(non_recursive_import_test_1, recurse=False, debug=0)    
 
 if __name__ == "__main__":
     unittest.main()
