@@ -11,6 +11,7 @@ __all__ = (
 
 import concurrent.futures
 import contextvars
+import enum
 import functools
 import inspect
 import itertools
