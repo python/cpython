@@ -1450,8 +1450,9 @@ PyObject_GenericSetDict(PyObject *obj, PyObject *value, void *context)
 {
     PyObject **dictptr = _PyObject_GetDictPtr(obj);
     if (dictptr == NULL) {
-        PyDictValues** values_ptr = _PyObject_ValuesPointer(obj);
-        if ((Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT) && *values_ptr != NULL) {
+        if (_PyType_HasFeature(Py_TYPE(obj), Py_TPFLAGS_MANAGED_DICT) &&
+            *_PyObject_ValuesPointer(obj) != NULL)
+        {
             /* Was unable to convert to dict */
             PyErr_NoMemory();
         }
