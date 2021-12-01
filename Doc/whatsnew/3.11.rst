@@ -207,6 +207,13 @@ fractions
   (Contributed by Mark Dickinson in :issue:`44547`.)
 
 
+inspect
+-------
+* Add :func:`inspect.getmembers_static`: return all members without
+  triggering dynamic lookup via the descriptor protocol. (Contributed by
+  Weipeng Hong in :issue:`30533`.)
+
+
 math
 ----
 * Add :func:`math.exp2`: return 2 raised to the power of x.
