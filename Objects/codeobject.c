@@ -381,7 +381,7 @@ _PyCode_New(struct _PyCodeConstructor *con)
 
     // Discard the endlinetable and columntable if we are opted out of debug
     // ranges.
-    if (_Py_GetConfig()->no_debug_ranges) {
+    if (!_Py_GetConfig()->code_debug_ranges) {
         con->endlinetable = Py_None;
         con->columntable = Py_None;
     }

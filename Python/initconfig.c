@@ -614,7 +614,7 @@ config_check_consistency(const PyConfig *config)
     assert(config->faulthandler >= 0);
     assert(config->tracemalloc >= 0);
     assert(config->import_time >= 0);
-    assert(config->no_debug_ranges >= 0);
+    assert(config->code_debug_ranges >= 0);
     assert(config->show_ref_count >= 0);
     assert(config->dump_refs >= 0);
     assert(config->malloc_stats >= 0);
@@ -740,6 +740,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->legacy_windows_stdio = -1;
 #endif
     config->use_frozen_modules = -1;
+    config->code_debug_ranges = 1;
 }
 
 
@@ -904,7 +905,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(faulthandler);
     COPY_ATTR(tracemalloc);
     COPY_ATTR(import_time);
-    COPY_ATTR(no_debug_ranges);
+    COPY_ATTR(code_debug_ranges);
     COPY_ATTR(show_ref_count);
     COPY_ATTR(dump_refs);
     COPY_ATTR(dump_refs_file);
@@ -1012,7 +1013,7 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM_INT(faulthandler);
     SET_ITEM_INT(tracemalloc);
     SET_ITEM_INT(import_time);
-    SET_ITEM_INT(no_debug_ranges);
+    SET_ITEM_INT(code_debug_ranges);
     SET_ITEM_INT(show_ref_count);
     SET_ITEM_INT(dump_refs);
     SET_ITEM_INT(malloc_stats);
@@ -1291,7 +1292,7 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
     GET_UINT(faulthandler);
     GET_UINT(tracemalloc);
     GET_UINT(import_time);
-    GET_UINT(no_debug_ranges);
+    GET_UINT(code_debug_ranges);
     GET_UINT(show_ref_count);
     GET_UINT(dump_refs);
     GET_UINT(malloc_stats);
@@ -1853,7 +1854,7 @@ config_read_complex_options(PyConfig *config)
 
     if (config_get_env(config, "PYTHONNODEBUGRANGES")
        || config_get_xoption(config, L"no_debug_ranges")) {
-        config->no_debug_ranges = 1;
+        config->code_debug_ranges = 0;
     }
 
     PyStatus status;
