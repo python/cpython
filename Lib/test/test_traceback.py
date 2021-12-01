@@ -1231,6 +1231,9 @@ class BaseExceptionReportingTests:
         e.__note__ = 'My Note'
         self.assertEqual(self.get_report(e), vanilla + 'My Note\n')
 
+        e.__note__ = ''
+        self.assertEqual(self.get_report(e), vanilla + '\n')
+
         e.__note__ = 'Your Note'
         self.assertEqual(self.get_report(e), vanilla + 'Your Note\n')
 
@@ -1591,7 +1594,12 @@ class BaseExceptionReportingTests:
                         excs.append(e)
                 raise ExceptionGroup("nested", excs)
             except ExceptionGroup as e:
-                e.__note__ = 'A lot of problems'
+                e.__note__ = ('>> Multi line note\n'
+                              '>> Because I am such\n'
+                              '>> an important exception.\n'
+                              '>> empty lines work too\n'
+                              '\n'
+                              '(that was an empty line)\n')
                 raise
 
         expected = (f'  + Exception Group Traceback (most recent call last):\n'
@@ -1602,7 +1610,12 @@ class BaseExceptionReportingTests:
                     f'  |     raise ExceptionGroup("nested", excs)\n'
                     f'  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
                     f'  | ExceptionGroup: nested\n'
-                    f'  | A lot of problems\n'
+                    f'  | >> Multi line note\n'
+                    f'  | >> Because I am such\n'
+                    f'  | >> an important exception.\n'
+                    f'  | >> empty lines work too\n'
+                    f'  | \n'
+                    f'  | (that was an empty line)\n'
                     f'  +-+---------------- 1 ----------------\n'
                     f'    | Traceback (most recent call last):\n'
                     f'    |   File "{__file__}", line {exc.__code__.co_firstlineno + 5}, in exc\n'

@@ -1092,13 +1092,29 @@ print_exception(struct exception_print_context *ctx, PyObject *value)
             err = -1;
         }
         if (err == 0 && PyUnicode_Check(note)) {
-            err = write_indented_margin(ctx, f);
-            if (err == 0) {
-                err = PyFile_WriteObject(note, f, Py_PRINT_RAW);
+            _Py_static_string(PyId_newline, "\n");
+            PyObject *lines = PyUnicode_Split(
+                note, _PyUnicode_FromId(&PyId_newline), -1);
+            if (lines == NULL) {
+                err = -1;
             }
-            if (err == 0) {
-                err = PyFile_WriteString("\n", f);
+            else {
+                Py_ssize_t n = PyList_GET_SIZE(lines);
+                for (Py_ssize_t i = 0; i < n; i++) {
+                    if (err == 0) {
+                        PyObject *line = PyList_GET_ITEM(lines, i);
+                        assert(PyUnicode_Check(line));
+                        err = write_indented_margin(ctx, f);
+                        if (err == 0) {
+                            err = PyFile_WriteObject(line, f, Py_PRINT_RAW);
+                        }
+                        if (err == 0) {
+                            err = PyFile_WriteString("\n", f);
+                        }
+                    }
+                }
             }
+            Py_DECREF(lines);
         }
         Py_XDECREF(note);
     }
