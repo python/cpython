@@ -129,8 +129,8 @@ The following exceptions are used mostly as base classes for other exceptions.
 
    .. attribute:: __note__
 
-      A mutable field which is None by default and can be set to a string.
-      If it is not None, it is included in the traceback. This field can
+      A mutable field which is ``None`` by default and can be set to a string.
+      If it is not ``None``, it is included in the traceback. This field can
       be used to enrich exceptions after they have been caught.
 
    .. versionadded:: 3.11
