@@ -1579,6 +1579,49 @@ class BaseExceptionReportingTests:
         report = self.get_report(exc)
         self.assertEqual(report, expected)
 
+    def test_exception_group_with_notes(self):
+        def exc():
+            try:
+                excs = []
+                for msg in ['bad value', 'terrible value']:
+                    try:
+                        raise ValueError(msg)
+                    except ValueError as e:
+                        e.__note__ = f'the {msg}'
+                        excs.append(e)
+                raise ExceptionGroup("nested", excs)
+            except ExceptionGroup as e:
+                e.__note__ = 'A lot of problems'
+                raise
+
+        expected = (f'  + Exception Group Traceback (most recent call last):\n'
+                    f'  |   File "{__file__}", line {self.callable_line}, in get_exception\n'
+                    f'  |     exception_or_callable()\n'
+                    f'  |     ^^^^^^^^^^^^^^^^^^^^^^^\n'
+                    f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 9}, in exc\n'
+                    f'  |     raise ExceptionGroup("nested", excs)\n'
+                    f'  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
+                    f'  | ExceptionGroup: nested\n'
+                    f'  | A lot of problems\n'
+                    f'  +-+---------------- 1 ----------------\n'
+                    f'    | Traceback (most recent call last):\n'
+                    f'    |   File "{__file__}", line {exc.__code__.co_firstlineno + 5}, in exc\n'
+                    f'    |     raise ValueError(msg)\n'
+                    f'    |     ^^^^^^^^^^^^^^^^^^^^^\n'
+                    f'    | ValueError: bad value\n'
+                    f'    | the bad value\n'
+                    f'    +---------------- 2 ----------------\n'
+                    f'    | Traceback (most recent call last):\n'
+                    f'    |   File "{__file__}", line {exc.__code__.co_firstlineno + 5}, in exc\n'
+                    f'    |     raise ValueError(msg)\n'
+                    f'    |     ^^^^^^^^^^^^^^^^^^^^^\n'
+                    f'    | ValueError: terrible value\n'
+                    f'    | the terrible value\n'
+                    f'    +------------------------------------\n')
+
+        report = self.get_report(exc)
+        self.assertEqual(report, expected)
+
 
 class PyExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
     #
