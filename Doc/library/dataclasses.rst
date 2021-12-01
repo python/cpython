@@ -713,8 +713,8 @@ Mutable default values
    for Data Classes to detect this condition.  Instead, the
    :func:`dataclass` decorator will raise a :exc:`TypeError` if it
    detects an unhashable default parameter.  The assumption is that if
-   an parameter is unhashable, it is mutable.  This is a partial
-   solution, but it does protect against many common errors.
+   a value is unhashable, it is mutable.  This is a partial solution,
+   but it does protect against many common errors.
 
    Using default factory functions is a way to create new instances of
    mutable types as default values for fields::
