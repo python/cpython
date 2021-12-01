@@ -920,9 +920,8 @@ def stdev(data, xbar=None):
         raise StatisticsError('stdev requires at least two data points')
     T, ss = _ss(data, xbar)
     mss = ss / (n - 1)
-    if hasattr(T, 'sqrt'):
-        var = _convert(mss, T)
-        return var.sqrt()
+    if issubclass(T, Decimal):
+        return _decimal_sqrt_of_frac(mss.numerator, mss.denominator)
     return _float_sqrt_of_frac(mss.numerator, mss.denominator)
 
 
