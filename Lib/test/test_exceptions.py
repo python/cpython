@@ -516,6 +516,19 @@ class ExceptionTests(unittest.TestCase):
                                              'pickled "%r", attribute "%s' %
                                              (e, checkArgName))
 
+    def test_note(self):
+        for e in [BaseException(1), Exception(2), ValueError(3)]:
+            with self.subTest(e=e):
+                self.assertIsNone(e.__note__)
+                e.__note__ = "My Note"
+                self.assertEqual(e.__note__, "My Note")
+
+                with self.assertRaises(TypeError):
+                    e.__note__ = 42
+
+                e.__note__ = None
+                self.assertIsNone(e.__note__)
+
     def testWithTraceback(self):
         try:
             raise IndexError(4)
