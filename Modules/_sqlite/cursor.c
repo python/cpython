@@ -430,12 +430,18 @@ static int check_cursor(pysqlite_Cursor* cur)
 static int
 begin_transaction(pysqlite_Connection *self)
 {
+    assert(self->isolation_level != NULL);
     int rc;
 
     Py_BEGIN_ALLOW_THREADS
     sqlite3_stmt *statement;
-    rc = sqlite3_prepare_v2(self->db, self->begin_statement, -1, &statement,
-                            NULL);
+    char begin_stmt[16] = "BEGIN ";
+#ifdef Py_DEBUG
+    size_t len = strlen(self->isolation_level);
+    assert(len <= 9);
+#endif
+    (void)strcat(begin_stmt, self->isolation_level);
+    rc = sqlite3_prepare_v2(self->db, begin_stmt, -1, &statement, NULL);
     if (rc == SQLITE_OK) {
         (void)sqlite3_step(statement);
         rc = sqlite3_finalize(statement);
@@ -555,7 +561,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
 
     /* We start a transaction implicitly before a DML statement.
        SELECT is the only exception. See #9924. */
-    if (self->connection->begin_statement
+    if (self->connection->isolation_level
         && self->statement->is_dml
         && sqlite3_get_autocommit(self->connection->db))
     {

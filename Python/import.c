@@ -1087,7 +1087,7 @@ use_frozen(void)
 }
 
 static PyObject *
-list_frozen_module_names()
+list_frozen_module_names(void)
 {
     PyObject *names = PyList_New(0);
     if (names == NULL) {

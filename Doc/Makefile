@@ -117,6 +117,10 @@ suspicious:
 	     "or in build/$(BUILDER)/suspicious.csv.  If all issues are false" \
 	     "positives, append that file to tools/susp-ignored.csv."; \
 	false; }
+	@echo "⚠ make suspicious is deprecated and will be removed soon."
+	@echo "⚠ Use:"
+	@echo "⚠     make check"
+	@echo "⚠ instead."
 
 coverage: BUILDER = coverage
 coverage: build

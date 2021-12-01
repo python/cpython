@@ -1797,10 +1797,10 @@ class Frame(object):
 
     def get_pyop(self):
         try:
-            # frame = self._gdbframe.read_var('frame')
-            # frame = PyFramePtr(frame)
-            # if not frame.is_optimized_out():
-            #     return frame
+            frame = self._gdbframe.read_var('frame')
+            frame = PyFramePtr(frame)
+            if not frame.is_optimized_out():
+                return frame
             cframe = self._gdbframe.read_var('cframe')
             if cframe is None:
                 return None
@@ -1865,6 +1865,7 @@ class Frame(object):
                         break
                 else:
                     sys.stdout.write('#%i (unable to read python frame information)\n' % self.get_index())
+                    break
                 interp_frame = interp_frame.previous()
         else:
             info = self.is_other_python_frame()
@@ -1887,6 +1888,7 @@ class Frame(object):
                         break
                 else:
                     sys.stdout.write('  (unable to read python frame information)\n')
+                    break
                 interp_frame = interp_frame.previous()
         else:
             info = self.is_other_python_frame()

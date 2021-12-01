@@ -9,6 +9,39 @@
 
 static uint32_t next_func_version = 1;
 
+PyFunctionObject *
+_PyFunction_FromConstructor(PyFrameConstructor *constr)
+{
+
+    PyFunctionObject *op = PyObject_GC_New(PyFunctionObject, &PyFunction_Type);
+    if (op == NULL) {
+        return NULL;
+    }
+    Py_INCREF(constr->fc_globals);
+    op->func_globals = constr->fc_globals;
+    Py_INCREF(constr->fc_builtins);
+    op->func_builtins = constr->fc_builtins;
+    Py_INCREF(constr->fc_name);
+    op->func_name = constr->fc_name;
+    Py_INCREF(constr->fc_qualname);
+    op->func_qualname = constr->fc_qualname;
+    Py_INCREF(constr->fc_code);
+    op->func_code = constr->fc_code;
+    op->func_defaults = NULL;
+    op->func_kwdefaults = NULL;
+    op->func_closure = NULL;
+    Py_INCREF(Py_None);
+    op->func_doc = Py_None;
+    op->func_dict = NULL;
+    op->func_weakreflist = NULL;
+    op->func_module = NULL;
+    op->func_annotations = NULL;
+    op->vectorcall = _PyFunction_Vectorcall;
+    op->func_version = 0;
+    _PyObject_GC_TRACK(op);
+    return op;
+}
+
 PyObject *
 PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname)
 {
