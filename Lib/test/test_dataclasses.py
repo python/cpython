@@ -505,23 +505,26 @@ class TestCase(unittest.TestCase):
         class Unhashable:
             __hash__ = None
 
-        class Hashable:
-            def __hash__(self):
-                return 0
-
-        with self.assertRaisesRegex(ValueError,
-                                    f'mutable default .* for field '
-                                    'a is not allowed'):
+        unhashable_re = 'mutable default .* for field a is not allowed'
+        with self.assertRaisesRegex(ValueError, unhashable_re):
             @dataclass
             class A:
                 a: dict = {}
 
-        with self.assertRaisesRegex(ValueError,
-                                    f'mutable default .* for field '
-                                    'a is not allowed'):
+        with self.assertRaisesRegex(ValueError, unhashable_re):
             @dataclass
             class A:
                 a: Any = Unhashable()
+
+        # Make sure that the machinery looking for hashability is using the
+        # class's __hash__, not the instance's __hash__.
+        with self.assertRaisesRegex(ValueError, unhashable_re):
+            unhashable = Unhashable()
+            # This shouldn't make the variable hashable.
+            unhashable.__hash__ = lambda: 0
+            @dataclass
+            class A:
+                a: Any = unhashable
 
     def test_hash_field_rules(self):
         # Test all 6 cases of:
