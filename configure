@@ -20271,7 +20271,7 @@ else
 
       case $ac_sys_system in #(
   Emscripten) :
-    $with_ensurepip=no ;; #(
+    with_ensurepip=no ;; #(
   *) :
     with_ensurepip=upgrade
        ;;
