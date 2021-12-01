@@ -1,4 +1,7 @@
-# For up-to-date results, run: ./python Tools/c-analyzer/c-analyzer.py analyze
+# For up-to-date results, run:
+#   ./python Tools/c-analyzer/c-analyzer.py check --format summary
+# or
+#   ./python Tools/c-analyzer/c-analyzer.py analyze
 
 
 #######################################
