@@ -263,7 +263,7 @@ PyInterpreterState_New(void)
     _PyRuntimeState *runtime = &_PyRuntime;
     struct pyinterpreters *interpreters = &runtime->interpreters;
 
-    /* We completely serialize creating of multiple interpreters, since
+    /* We completely serialize creation of multiple interpreters, since
        it simplifies things here and blocking concurrent calls isn't a problem.
 
        Regardless, we must fully block subinterpreter creation until
@@ -301,6 +301,7 @@ PyInterpreterState_New(void)
     interp->runtime = runtime;
     init_interpreter(interp, pending_lock);
 
+    // Add the interpreter to the runtime state.
     interpreters->next_id += 1;
     interpreters->head = interp;
 
@@ -674,6 +675,20 @@ static void
 init_threadstate(PyThreadState *tstate,
                  int recursion_limit, _PyStackChunk *datastack_chunk)
 {
+    /* When this returns, tstate will be fully initialized
+       (the low level state, at least).
+       Some fields are expected to be initialized already when this is called.
+       All other fields not initialized here are expected to be zeroed out,
+       e.g. by PyMem_RawCalloc() or memset(). */
+    assert(tstate->id > 0);
+    assert(tstate->interp != NULL);
+    assert(tstate->prev = NULL);
+    // It was just added to the interpreter.
+    assert(tstate->interp->threads.head == tstate);
+    assert((tstate->next != NULL && tstate->id != 1) ||
+           (tstate->next == NULL && tstate->id == 1));
+    assert(tstate->next == NULL && tstate->next->prev == tstate);
+
     tstate->thread_id = PyThread_get_thread_ident();
 #ifdef PY_HAVE_THREAD_NATIVE_ID
     tstate->native_thread_id = PyThread_get_thread_native_id();
@@ -694,62 +709,84 @@ init_threadstate(PyThreadState *tstate,
     tstate->datastack_limit = (PyObject **)(((char *)tstate->datastack_chunk) + DATA_STACK_CHUNK_SIZE);
 }
 
-static PyThreadState *
-new_threadstate(PyInterpreterState *interp, int init)
+static inline void
+activate_threadstate(PyThreadState *tstate)
 {
-    _PyRuntimeState *runtime = interp->runtime;
+    _PyGILState_NoteThreadState(&tstate->interp->runtime->gilstate, tstate);
+}
 
+static PyThreadState *
+new_threadstate(PyInterpreterState *interp)
+{
     PyThreadState *tstate;
-    if (interp->threads._preallocated_used == 0) {
-        tstate = &interp->_preallocated.tstate;
-        interp->threads._preallocated_used++;
-    }
-    else {
-        tstate = PyMem_RawCalloc(1, sizeof(PyThreadState));
-        if (tstate == NULL) {
-            return NULL;
-        }
-    }
+    _PyRuntimeState *runtime = interp->runtime;
 
     _PyStackChunk *datastack_chunk = allocate_chunk(DATA_STACK_CHUNK_SIZE, NULL);
     if (datastack_chunk == NULL) {
-        PyMem_RawFree(tstate);
         return NULL;
     }
 
-    init_threadstate(tstate, interp->ceval.recursion_limit, datastack_chunk);
-    tstate->interp = interp;
-    if (init) {
-        _PyThreadState_Init(tstate);
-    }
-
+    /* We serialize concurrent creation to protect global state. */
     HEAD_LOCK(runtime);
-    tstate->id = ++interp->threads.next_unique_id;
-    tstate->next = interp->threads.head;
-    if (tstate->next)
-        tstate->next->prev = tstate;
-    interp->threads.head = tstate;
-    HEAD_UNLOCK(runtime);
 
+    if (interp->threads._preallocated_used == 0) {
+        assert(interp->threads.next_unique_id == 0);
+        assert(interp->threads.head == NULL);
+
+        tstate = &interp->_preallocated.tstate;
+        tstate->id = 1;
+
+        interp->threads._preallocated_used += 1;
+        interp->threads.next_unique_id = 2;
+    }
+    else {
+        assert(interp->threads.next_unique_id > 0);
+        // Every valid interprter must have at least one thread state.
+        assert(interp->threads.head != NULL);
+        assert(interp->threads.head->prev == NULL);
+
+        tstate = PyMem_RawCalloc(1, sizeof(PyThreadState));
+        if (tstate == NULL) {
+            goto error;
+        }
+        tstate->id = interp->threads.next_unique_id;
+        tstate->next = interp->threads.head;
+        tstate->next->prev = tstate;
+
+        interp->threads.next_unique_id += 1;
+    }
+    interp->threads.head = tstate;
+
+    tstate->interp = interp;
+    init_threadstate(tstate, interp->ceval.recursion_limit, datastack_chunk);
+
+    HEAD_UNLOCK(runtime);
     return tstate;
+
+error:
+    HEAD_UNLOCK(runtime);
+    _PyObject_VirtualFree(datastack_chunk, datastack_chunk->size);
+    return NULL;
 }
 
 PyThreadState *
 PyThreadState_New(PyInterpreterState *interp)
 {
-    return new_threadstate(interp, 1);
+    PyThreadState *tstate = new_threadstate(interp);
+    activate_threadstate(tstate);
+    return tstate;
 }
 
 PyThreadState *
 _PyThreadState_Prealloc(PyInterpreterState *interp)
 {
-    return new_threadstate(interp, 0);
+    return new_threadstate(interp);
 }
 
 void
 _PyThreadState_Init(PyThreadState *tstate)
 {
-    _PyGILState_NoteThreadState(&tstate->interp->runtime->gilstate, tstate);
+    activate_threadstate(tstate);
 }
 
 PyObject*
