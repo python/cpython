@@ -1,1 +1,4 @@
-Add a ``__note__`` field to :exc:`BaseException` which can be set to a string, and if exists it is included in the traceback of the exception.
+The ``__note__`` field was added to :exc:`BaseException`. It is ``None``
+by default but can be set to a string which is added to the exception's
+traceback.
+

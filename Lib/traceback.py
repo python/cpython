@@ -819,7 +819,7 @@ class TracebackException:
         else:
             yield from self._format_syntax_error(stype)
         if self.__note__ is not None:
-            yield from [l + '\n' for l in self.__note__.split("\n")]
+            yield from [l + '\n' for l in self.__note__.split('\n')]
 
     def _format_syntax_error(self, stype):
         """Format SyntaxError exceptions (internal helper)."""
