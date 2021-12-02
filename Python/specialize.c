@@ -493,9 +493,8 @@ initial_counter_value(void) {
 
 /* COMPARE_OP */
 #define SPEC_FAIL_STRING_COMPARE 13
-#define SPEC_FAIL_STRING_UNREADY 14
-#define SPEC_FAIL_NOT_FOLLOWED_BY_COND_JUMP 15
-#define SPEC_FAIL_BIG_INT 16
+#define SPEC_FAIL_NOT_FOLLOWED_BY_COND_JUMP 14
+#define SPEC_FAIL_BIG_INT 15
 
 static int
 specialize_module_load_attr(
@@ -1602,10 +1601,6 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
     if (PyUnicode_CheckExact(lhs)) {
         if (op != Py_EQ && op != Py_NE) {
             SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_STRING_COMPARE);
-            goto failure;
-        }
-        else if (!PyUnicode_IS_READY(lhs) || !PyUnicode_IS_READY(rhs)) {
-            SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_STRING_UNREADY);
             goto failure;
         }
         else {
