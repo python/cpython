@@ -237,8 +237,7 @@ BaseException_set_note(PyBaseExceptionObject *self, PyObject *note, void *Py_UNU
         return -1;
     }
     else if (note != Py_None && !PyUnicode_Check(note)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "__note__ must be an str or None");
+        PyErr_SetString(PyExc_TypeError, "__note__ must be an str or None");
         return -1;
     }
 
