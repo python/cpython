@@ -225,8 +225,7 @@ BaseException_get_note(PyBaseExceptionObject *self, void *Py_UNUSED(ignored))
     if (self->note == NULL) {
         Py_RETURN_NONE;
     }
-    Py_INCREF(self->note);
-    return self->note;
+    return Py_NewRef(self->note);
 }
 
 static int
