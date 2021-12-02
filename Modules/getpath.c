@@ -155,6 +155,7 @@ getpath_hassuffix(PyObject *Py_UNUSED(self), PyObject *args)
             Py_INCREF(r);
             PyMem_Free((void *)suffix);
         }
+        PyMem_Free((void *)path);
     }
     return r;
 }
