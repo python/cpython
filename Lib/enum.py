@@ -643,6 +643,7 @@ class EnumType(type):
         is_from_this_module = lambda cls: any(cls is thing for thing in this_module)
         first_enum_base = next(cls for cls in mro if is_from_this_module(cls))
         enum_dict = Enum.__dict__
+        sentinel = object()
         # special-case __new__
         ignored = {'__new__', *filter(_is_sunder, enum_dict)}
         add_to_ignored = ignored.add
@@ -679,7 +680,7 @@ class EnumType(type):
                 elif attr_name not in enum_dunders:
                     add_to_dir(attr_name)
                 # Is an "enum dunder", and is defined by a class from enum.py? Ignore it.
-                elif getattr(self, attr_name) is getattr(first_enum_base, attr_name, object()):
+                elif getattr(self, attr_name) is getattr(first_enum_base, attr_name, sentinel):
                     add_to_ignored(attr_name)
                 # Is an "enum dunder", and is either user-defined or defined by a mixin class?
                 # Add it to dir() output.
