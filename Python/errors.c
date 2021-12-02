@@ -636,6 +636,10 @@ _PyErr_ChainStackItem(_PyErr_StackItem *exc_info)
         return;
     }
 
+    if (exc_info->exc_traceback) {
+        PyException_SetTraceback(exc_info->exc_value, exc_info->exc_traceback);
+    }
+
     _PyErr_StackItem *saved_exc_info;
     if (exc_info_given) {
         /* Temporarily set the thread state's exc_info since this is what
