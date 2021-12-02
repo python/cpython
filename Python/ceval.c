@@ -3779,20 +3779,21 @@ check_eval_breaker:
             PyObject *left = SECOND();
             DEOPT_IF(!PyUnicode_CheckExact(left), COMPARE_OP);
             DEOPT_IF(!PyUnicode_CheckExact(right), COMPARE_OP);
-            DEOPT_IF(!PyUnicode_IS_READY(left), COMPARE_OP);
-            DEOPT_IF(!PyUnicode_IS_READY(right), COMPARE_OP);
             STAT_INC(COMPARE_OP, hit);
+            int res = _PyUnicode_Equal(left, right);
+            if (res < 0) {
+                goto error;
+            }
             assert(caches[0].adaptive.original_oparg == Py_EQ ||
                    caches[0].adaptive.original_oparg == Py_NE);
             NEXTOPARG();
             assert(opcode == POP_JUMP_IF_TRUE || opcode == POP_JUMP_IF_FALSE);
-            int cmp = Py_Is(left, right) || _PyUnicode_EQ(left, right);
             STACK_SHRINK(2);
             Py_DECREF(left);
             Py_DECREF(right);
-            assert(cmp == 0 || cmp == 1);
+            assert(res == 0 || res == 1);
             assert(invert == 0 || invert == 1);
-            int jump = cmp ^ invert;
+            int jump = res ^ invert;
             if (!jump) {
                 next_instr++;
                 NOTRACE_DISPATCH();
