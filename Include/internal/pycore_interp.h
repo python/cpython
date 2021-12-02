@@ -19,6 +19,7 @@ extern "C" {
 #include "pycore_genobject.h"     // struct _Py_async_gen_state
 #include "pycore_gil.h"           // struct _gil_runtime_state
 #include "pycore_gc.h"            // struct _gc_runtime_state
+#include "pycore_global_strings.h"  // struct _Py_global_strings
 #include "pycore_list.h"          // struct _Py_list_state
 #include "pycore_tuple.h"         // struct _Py_tuple_state
 #include "pycore_typeobject.h"    // struct type_cache
@@ -176,6 +177,8 @@ struct _is {
 
     struct ast_state ast;
     struct type_cache type_cache;
+
+    struct _Py_global_strings strings;
 
     /* The following fields are here to avoid allocation during init.
        The data is exposed through PyInterpreterState pointer fields.
