@@ -585,6 +585,11 @@ Build Changes
   ``libdb`` 3.x and 4.x are no longer supported.
   (Contributed by Christian Heimes in :issue:`45747`.)
 
+* CPython now has experimental support for cross compiling to WebAssembly
+  platform ``wasm32-emscripten``. The effort is inspired by previous work
+  like Pyodide.
+  (Contributed by Christian Heimes and Ethan Smith in :issue:`40280`.)
+
 C API Changes
 =============
 
