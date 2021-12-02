@@ -143,7 +143,7 @@ typedef struct PyConfig {
     int faulthandler;
     int tracemalloc;
     int import_time;
-    int no_debug_ranges;
+    int code_debug_ranges;
     int show_ref_count;
     int dump_refs;
     wchar_t *dump_refs_file;

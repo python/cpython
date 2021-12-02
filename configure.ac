@@ -5871,7 +5871,12 @@ AC_ARG_WITH(ensurepip,
     [AS_HELP_STRING([--with-ensurepip@<:@=install|upgrade|no@:>@],
         ["install" or "upgrade" using bundled pip (default is upgrade)])],
     [],
-    [with_ensurepip=upgrade])
+    [
+      AS_CASE([$ac_sys_system],
+        [Emscripten], [with_ensurepip=no],
+        [with_ensurepip=upgrade]
+      )
+    ])
 AS_CASE($with_ensurepip,
     [yes|upgrade],[ENSUREPIP=upgrade],
     [install],[ENSUREPIP=install],

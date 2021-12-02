@@ -20268,7 +20268,15 @@ $as_echo_n "checking for ensurepip... " >&6; }
 if test "${with_ensurepip+set}" = set; then :
   withval=$with_ensurepip;
 else
-  with_ensurepip=upgrade
+
+      case $ac_sys_system in #(
+  Emscripten) :
+    with_ensurepip=no ;; #(
+  *) :
+    with_ensurepip=upgrade
+       ;;
+esac
+
 fi
 
 case $with_ensurepip in #(
