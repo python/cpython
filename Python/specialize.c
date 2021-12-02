@@ -254,7 +254,7 @@ static uint8_t cache_requirements[256] = {
     [CALL_FUNCTION] = 2, /* _PyAdaptiveEntry and _PyObjectCache/_PyCallCache */
     [STORE_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
     [BINARY_OP] = 1,  // _PyAdaptiveEntry
-    [COMPARE_OP] = 2, /* _PyAdaptiveEntry and _PyCompareCache */
+    [COMPARE_OP] = 1, /* _PyAdaptiveEntry */
 };
 
 /* Return the oparg for the cache_offset and instruction index.
@@ -1566,7 +1566,6 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
                          _Py_CODEUNIT *instr, SpecializedCacheEntry *cache)
 {
     _PyAdaptiveEntry *adaptive = &cache->adaptive;
-    _PyCompareCache *cache1 = &cache[-1].compare;
     int op = adaptive->original_oparg;
     int next_opcode = _Py_OPCODE(instr[1]);
     if (next_opcode != POP_JUMP_IF_FALSE && next_opcode != POP_JUMP_IF_TRUE) {
@@ -1576,9 +1575,9 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
         goto failure;
     }
     assert(op <= Py_GE);
-    int mask = compare_masks[op];
+    int when_to_jump_mask = compare_masks[op];
     if (next_opcode == POP_JUMP_IF_FALSE) {
-        mask = (1 | 2 | 4) & ~mask;
+        when_to_jump_mask = (1 | 2 | 4) & ~when_to_jump_mask;
     }
     if (Py_TYPE(lhs) != Py_TYPE(rhs)) {
         SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_DIFFERENT_TYPES);
@@ -1586,13 +1585,13 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
     }
     if (PyFloat_CheckExact(lhs)) {
         *instr = _Py_MAKECODEUNIT(COMPARE_OP_FLOAT_JUMP, _Py_OPARG(*instr));
-        cache1->mask = mask;
+        adaptive->index = when_to_jump_mask;
         goto success;
     }
     if (PyLong_CheckExact(lhs)) {
         if (Py_ABS(Py_SIZE(lhs)) <= 1 && Py_ABS(Py_SIZE(rhs)) <= 1) {
             *instr = _Py_MAKECODEUNIT(COMPARE_OP_INT_JUMP, _Py_OPARG(*instr));
-            cache1->mask = mask;
+            adaptive->index = when_to_jump_mask;
             goto success;
         }
         else {
@@ -1611,7 +1610,7 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
         }
         else {
             *instr = _Py_MAKECODEUNIT(COMPARE_OP_STR_JUMP, _Py_OPARG(*instr));
-            cache1->mask = (mask & 2) == 0;
+            adaptive->index = (when_to_jump_mask & 2) == 0;
             goto success;
         }
     }

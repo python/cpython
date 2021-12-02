@@ -3709,7 +3709,7 @@ check_eval_breaker:
             assert(cframe.use_tracing == 0);
             // Combined: COMPARE_OP (float ? float) + POP_JUMP_IF_(true/false)
             SpecializedCacheEntry *caches = GET_CACHE();
-            int mask = caches[-1].compare.mask;
+            int when_to_jump_mask = caches[0].adaptive.index;
             PyObject *right = TOP();
             PyObject *left = SECOND();
             DEOPT_IF(!PyFloat_CheckExact(left), COMPARE_OP);
@@ -3725,7 +3725,7 @@ check_eval_breaker:
             Py_DECREF(left);
             Py_DECREF(right);
             assert(opcode == POP_JUMP_IF_TRUE || opcode == POP_JUMP_IF_FALSE);
-            int jump = (1 << (sign + 1)) & mask;
+            int jump = (1 << (sign + 1)) & when_to_jump_mask;
             if (!jump) {
                 next_instr++;
                 NOTRACE_DISPATCH();
@@ -3741,7 +3741,7 @@ check_eval_breaker:
             assert(cframe.use_tracing == 0);
             // Combined: COMPARE_OP (int ? int) + POP_JUMP_IF_(true/false)
             SpecializedCacheEntry *caches = GET_CACHE();
-            int mask = caches[-1].compare.mask;
+            int when_to_jump_mask = caches[0].adaptive.index;
             PyObject *right = TOP();
             PyObject *left = SECOND();
             DEOPT_IF(!PyLong_CheckExact(left), COMPARE_OP);
@@ -3758,7 +3758,7 @@ check_eval_breaker:
             Py_DECREF(left);
             Py_DECREF(right);
             assert(opcode == POP_JUMP_IF_TRUE || opcode == POP_JUMP_IF_FALSE);
-            int jump = (1 << (sign + 1)) & mask;
+            int jump = (1 << (sign + 1)) & when_to_jump_mask;
             if (!jump) {
                 next_instr++;
                 NOTRACE_DISPATCH();
@@ -3774,7 +3774,7 @@ check_eval_breaker:
             assert(cframe.use_tracing == 0);
             // Combined: COMPARE_OP (str == str or str != str) + POP_JUMP_IF_(true/false)
             SpecializedCacheEntry *caches = GET_CACHE();
-            int mask = caches[-1].compare.mask;
+            int invert = caches[0].adaptive.index;
             PyObject *right = TOP();
             PyObject *left = SECOND();
             DEOPT_IF(!PyUnicode_CheckExact(left), COMPARE_OP);
@@ -3791,8 +3791,8 @@ check_eval_breaker:
             Py_DECREF(left);
             Py_DECREF(right);
             assert(cmp == 0 || cmp == 1);
-            assert(mask == 0 || mask == 1);
-            int jump = cmp ^ mask;
+            assert(invert == 0 || invert == 1);
+            int jump = cmp ^ invert;
             if (!jump) {
                 next_instr++;
                 NOTRACE_DISPATCH();
