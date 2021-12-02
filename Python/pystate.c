@@ -412,7 +412,10 @@ zapthreads(PyInterpreterState *interp, int check_current)
 static void
 free_interpreter(PyInterpreterState *interp)
 {
-    if (interp != &interp->runtime->_preallocated.interpreters_main) {
+    if (interp == &interp->runtime->_preallocated.interpreters_main) {
+        memset(interp, 0, sizeof(PyInterpreterState));
+    }
+    else {
         PyMem_RawFree(interp);
     }
 }
@@ -1012,7 +1015,10 @@ tstate_delete_common(PyThreadState *tstate,
 static void
 free_threadstate(PyThreadState *tstate)
 {
-    if (tstate != &tstate->interp->_preallocated.tstate) {
+    if (tstate == &tstate->interp->_preallocated.tstate) {
+        memset(tstate, 0, sizeof(PyThreadState));
+    }
+    else {
         PyMem_RawFree(tstate);
     }
 }
