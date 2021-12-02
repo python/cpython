@@ -153,6 +153,7 @@ getpath_hassuffix(PyObject *Py_UNUSED(self), PyObject *args)
                 r = Py_True;
             }
             Py_INCREF(r);
+            PyMem_Free((void *)suffix);
         }
     }
     return r;
@@ -297,11 +298,11 @@ getpath_joinpath(PyObject *Py_UNUSED(self), PyObject *args)
         if (!parts[i]) {
             continue;
         }
-        if (i >= first) {
-            if (final && !final[0]) {
+        if (i >= first && final) {
+            if (!final[0]) {
                 /* final is definitely long enough to fit any individual part */
                 wcscpy(final, parts[i]);
-            } else if (final && _Py_add_relfile(final, parts[i], cchFinal) < 0) {
+            } else if (_Py_add_relfile(final, parts[i], cchFinal) < 0) {
                 /* if we fail, keep iterating to free memory, but stop adding parts */
                 PyMem_Free(final);
                 final = NULL;
@@ -334,12 +335,11 @@ getpath_readlines(PyObject *Py_UNUSED(self), PyObject *args)
         return NULL;
     }
     FILE *fp = _Py_wfopen(path, L"rb");
+    PyMem_Free((void *)path);
     if (!fp) {
         PyErr_SetFromErrno(PyExc_OSError);
-        PyMem_Free((void *)path);
         return NULL;
     }
-    PyMem_Free((void *)path);
 
     r = PyList_New(0);
     if (!r) {
