@@ -1,0 +1,1 @@
+Emscripten now builds with assertions enabled in debug builds.
