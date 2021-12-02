@@ -134,13 +134,13 @@ PyAPI_FUNC(void) _PyThreadState_DeleteExcept(
     PyThreadState *tstate);
 
 static inline void
-_PyThreadState_DisableTracing(PyThreadState *tstate)
+_PyThreadState_PauseTracing(PyThreadState *tstate)
 {
     tstate->cframe->use_tracing = 0;
 }
 
 static inline void
-_PyThreadState_ResetTracing(PyThreadState *tstate)
+_PyThreadState_ResumeTracing(PyThreadState *tstate)
 {
     int use_tracing = (tstate->c_tracefunc != NULL
                        || tstate->c_profilefunc != NULL);

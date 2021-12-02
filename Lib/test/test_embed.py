@@ -35,6 +35,13 @@ INIT_LOOPS = 16
 MAX_HASH_SEED = 4294967295
 
 
+# If we are running from a build dir, but the stdlib has been installed,
+# some tests need to expect different results.
+STDLIB_INSTALL = os.path.join(sys.prefix, sys.platlibdir,
+    f'python{sys.version_info.major}.{sys.version_info.minor}')
+if not os.path.isfile(os.path.join(STDLIB_INSTALL, 'os.py')):
+    STDLIB_INSTALL = None
+
 def debug_build(program):
     program = os.path.basename(program)
     name = os.path.splitext(program)[0]
@@ -58,10 +65,12 @@ class EmbeddingTestsMixin:
             ext = ("_d" if debug_build(sys.executable) else "") + ".exe"
             exename += ext
             exepath = builddir
+            expecteddir = os.path.join(support.REPO_ROOT, builddir)
         else:
             exepath = os.path.join(builddir, 'Programs')
+            expecteddir = os.path.join(support.REPO_ROOT, 'Programs')
         self.test_exe = exe = os.path.join(exepath, exename)
-        if not os.path.exists(exe):
+        if exepath != expecteddir or not os.path.exists(exe):
             self.skipTest("%r doesn't exist" % exe)
         # This is needed otherwise we get a fatal error:
         # "Py_Initialize: Unable to get the locale encoding
@@ -377,7 +386,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'faulthandler': 0,
         'tracemalloc': 0,
         'import_time': 0,
-        'no_debug_ranges': 0,
+        'code_debug_ranges': 1,
         'show_ref_count': 0,
         'dump_refs': 0,
         'malloc_stats': 0,
@@ -809,7 +818,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'hash_seed': 123,
             'tracemalloc': 2,
             'import_time': 1,
-            'no_debug_ranges': 1,
+            'code_debug_ranges': 0,
             'show_ref_count': 1,
             'malloc_stats': 1,
 
@@ -869,7 +878,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'hash_seed': 42,
             'tracemalloc': 2,
             'import_time': 1,
-            'no_debug_ranges': 1,
+            'code_debug_ranges': 0,
             'malloc_stats': 1,
             'inspect': 1,
             'optimization_level': 2,
@@ -899,7 +908,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'hash_seed': 42,
             'tracemalloc': 2,
             'import_time': 1,
-            'no_debug_ranges': 1,
+            'code_debug_ranges': 0,
             'malloc_stats': 1,
             'inspect': 1,
             'optimization_level': 2,
@@ -1305,10 +1314,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 'base_executable': executable,
                 'executable': executable,
                 'module_search_paths': module_search_paths,
-                # The current getpath.c doesn't determine the stdlib dir
-                # in this case.
-                'stdlib_dir': None,
-                'use_frozen_modules': -1,
+                'stdlib_dir': STDLIB_INSTALL,
+                'use_frozen_modules': 1 if STDLIB_INSTALL else -1,
             }
             env = self.copy_paths_by_env(config)
             self.check_all_configs("test_init_compat_config", config,
@@ -1379,8 +1386,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             else:
                 # The current getpath.c doesn't determine the stdlib dir
                 # in this case.
-                config['stdlib_dir'] = None
-                config['use_frozen_modules'] = -1
+                config['stdlib_dir'] = STDLIB_INSTALL
+                config['use_frozen_modules'] = 1 if STDLIB_INSTALL else -1
 
             env = self.copy_paths_by_env(config)
             self.check_all_configs("test_init_compat_config", config,
@@ -1466,10 +1473,35 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.run_embedded_interpreter("test_get_argc_argv")
         # ignore output
 
+    def test_init_use_frozen_modules(self):
+        tests = {
+            ('=on', 1),
+            ('=off', 0),
+            ('=', 1),
+            ('', 1),
+        }
+        for raw, expected in tests:
+            optval = f'frozen_modules{raw}'
+            config = {
+                'parse_argv': 2,
+                'argv': ['-c'],
+                'orig_argv': ['./argv0', '-X', optval, '-c', 'pass'],
+                'program_name': './argv0',
+                'run_command': 'pass\n',
+                'use_environment': 1,
+                'xoptions': [optval],
+                'use_frozen_modules': expected,
+            }
+            env = {'TESTFROZEN': raw[1:]} if raw else None
+            with self.subTest(repr(raw)):
+                self.check_all_configs("test_init_use_frozen_modules", config,
+                                       api=API_PYTHON, env=env)
+
 
 class SetConfigTests(unittest.TestCase):
     def test_set_config(self):
         # bpo-42260: Test _PyInterpreterState_SetConfig()
+        import_helper.import_module('_testcapi')
         cmd = [sys.executable, '-I', '-m', 'test._test_embed_set_config']
         proc = subprocess.run(cmd,
                               stdout=subprocess.PIPE,

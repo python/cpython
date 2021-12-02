@@ -463,6 +463,9 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* Use Python's own small-block memory-allocator. */
 #define WITH_PYMALLOC 1
 
+/* Define if you want to compile in object freelists optimization */
+#define WITH_FREELISTS 1
+
 /* Define if you have clock.  */
 /* #define HAVE_CLOCK */
 
@@ -513,6 +516,9 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 
 /* Define if you have siginterrupt.  */
 /* #undef HAVE_SIGINTERRUPT */
+
+/* Define to 1 if you have the `shutdown' function. */
+#define HAVE_SHUTDOWN 1
 
 /* Define if you have symlink.  */
 /* #undef HAVE_SYMLINK */

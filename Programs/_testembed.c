@@ -8,6 +8,7 @@
 #include <Python.h>
 #include "pycore_initconfig.h"    // _PyConfig_InitCompatConfig()
 #include "pycore_runtime.h"       // _PyRuntime
+#include "pycore_import.h"        // _PyImport_FrozenBootstrap
 #include <Python.h>
 #include <inttypes.h>
 #include <stdio.h>
@@ -530,7 +531,7 @@ static int test_init_from_config(void)
     config.import_time = 1;
 
     putenv("PYTHONNODEBUGRANGES=0");
-    config.no_debug_ranges = 1;
+    config.code_debug_ranges = 0;
 
     config.show_ref_count = 1;
     /* FIXME: test dump_refs: bpo-34223 */
@@ -1726,6 +1727,50 @@ static int test_get_argc_argv(void)
 }
 
 
+static int check_use_frozen_modules(const char *rawval)
+{
+    wchar_t optval[100];
+    if (rawval == NULL) {
+        wcscpy(optval, L"frozen_modules");
+    }
+    else if (swprintf(optval, 100,
+#if defined(_MSC_VER)
+        L"frozen_modules=%S",
+#else
+        L"frozen_modules=%s",
+#endif
+        rawval) < 0) {
+        error("rawval is too long");
+        return -1;
+    }
+
+    PyConfig config;
+    PyConfig_InitPythonConfig(&config);
+
+    config.parse_argv = 1;
+
+    wchar_t* argv[] = {
+        L"./argv0",
+        L"-X",
+        optval,
+        L"-c",
+        L"pass",
+    };
+    config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
+    init_from_config_clear(&config);
+
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+static int test_init_use_frozen_modules(void)
+{
+    const char *envvar = getenv("TESTFROZEN");
+    return check_use_frozen_modules(envvar);
+}
+
+
 static int test_unicode_id_init(void)
 {
     // bpo-42882: Test that _PyUnicode_FromId() works
@@ -1766,30 +1811,10 @@ static int test_unicode_id_init(void)
 
 static int test_frozenmain(void)
 {
-    // Get "_frozen_importlib" and "_frozen_importlib_external"
-    // from PyImport_FrozenModules
-    const struct _frozen *importlib = NULL, *importlib_external = NULL;
-    for (const struct _frozen *mod = PyImport_FrozenModules; mod->name != NULL; mod++) {
-        if (strcmp(mod->name, "_frozen_importlib") == 0) {
-            importlib = mod;
-        }
-        else if (strcmp(mod->name, "_frozen_importlib_external") == 0) {
-            importlib_external = mod;
-        }
-    }
-    if (importlib == NULL || importlib_external == NULL) {
-        error("cannot find frozen importlib and importlib_external");
-        return 1;
-    }
-
     static struct _frozen frozen_modules[4] = {
-        {0, 0, 0},  // importlib
-        {0, 0, 0},  // importlib_external
         {"__main__", M_test_frozenmain, sizeof(M_test_frozenmain)},
         {0, 0, 0}   // sentinel
     };
-    frozen_modules[0] = *importlib;
-    frozen_modules[1] = *importlib_external;
 
     char* argv[] = {
         "./argv0",
@@ -1808,7 +1833,12 @@ static int test_frozenmain(void)
 static int list_frozen(void)
 {
     const struct _frozen *p;
-    for (p = PyImport_FrozenModules; ; p++) {
+    for (p = _PyImport_FrozenBootstrap; ; p++) {
+        if (p->name == NULL)
+            break;
+        printf("%s\n", p->name);
+    }
+    for (p = _PyImport_FrozenStdlib; ; p++) {
         if (p->name == NULL)
             break;
         printf("%s\n", p->name);
@@ -1912,6 +1942,7 @@ static struct TestCase TestCases[] = {
     {"test_run_main", test_run_main},
     {"test_run_main_loop", test_run_main_loop},
     {"test_get_argc_argv", test_get_argc_argv},
+    {"test_init_use_frozen_modules", test_init_use_frozen_modules},
 
     // Audit
     {"test_open_code_hook", test_open_code_hook},

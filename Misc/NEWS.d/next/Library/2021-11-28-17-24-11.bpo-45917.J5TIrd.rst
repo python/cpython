@@ -1,0 +1,1 @@
+Added :func:`math.exp2`:, which returns 2 raised to the power of x.

@@ -80,6 +80,9 @@ extern int _Py_add_relfile(wchar_t *dirname,
                            const wchar_t *relfile,
                            size_t bufsize);
 extern size_t _Py_find_basename(const wchar_t *filename);
+PyAPI_FUNC(int) _Py_normalize_path(const wchar_t *path,
+                                   wchar_t *buf, const size_t buf_len);
+
 
 // Macros to protect CRT calls against instant termination when passed an
 // invalid parameter (bpo-23524). IPH stands for Invalid Parameter Handler.

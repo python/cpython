@@ -382,6 +382,19 @@ static PyTypeObject _HashInheritanceTester_Type = {
 };
 
 static PyObject*
+pycompilestring(PyObject* self, PyObject *obj) {
+    if (PyBytes_CheckExact(obj) == 0) {
+        PyErr_SetString(PyExc_ValueError, "Argument must be a bytes object");
+        return NULL;
+    }
+    const char *the_string = PyBytes_AsString(obj);
+    if (the_string == NULL) {
+        return NULL;
+    }
+    return Py_CompileString(the_string, "<string>", Py_file_input);
+}
+
+static PyObject*
 test_lazy_hash_inheritance(PyObject* self, PyObject *Py_UNUSED(ignored))
 {
     PyTypeObject *type;
@@ -1160,6 +1173,126 @@ test_get_type_name(PyObject *self, PyObject *Py_UNUSED(ignored))
   done:
     Py_DECREF(HeapTypeNameType);
     Py_RETURN_NONE;
+}
+
+
+static PyObject *
+simple_str(PyObject *self) {
+    return PyUnicode_FromString("<test>");
+}
+
+
+static PyObject *
+test_type_from_ephemeral_spec(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    // Test that a heap type can be created from a spec that's later deleted
+    // (along with all its contents).
+    // All necessary data must be copied and held by the class
+    PyType_Spec *spec = NULL;
+    char *name = NULL;
+    char *doc = NULL;
+    PyType_Slot *slots = NULL;
+    PyObject *class = NULL;
+    PyObject *instance = NULL;
+    PyObject *obj = NULL;
+    PyObject *result = NULL;
+
+    /* create a spec (and all its contents) on the heap */
+
+    const char NAME[] = "testcapi._Test";
+    const char DOC[] = "a test class";
+
+    spec = PyMem_New(PyType_Spec, 1);
+    if (spec == NULL) {
+        PyErr_NoMemory();
+        goto finally;
+    }
+    name = PyMem_New(char, sizeof(NAME));
+    if (name == NULL) {
+        PyErr_NoMemory();
+        goto finally;
+    }
+    memcpy(name, NAME, sizeof(NAME));
+
+    doc = PyMem_New(char, sizeof(DOC));
+    if (name == NULL) {
+        PyErr_NoMemory();
+        goto finally;
+    }
+    memcpy(doc, DOC, sizeof(DOC));
+
+    spec->name = name;
+    spec->basicsize = sizeof(PyObject);
+    spec->itemsize = 0;
+    spec->flags = Py_TPFLAGS_DEFAULT;
+    slots = PyMem_New(PyType_Slot, 3);
+    if (slots == NULL) {
+        PyErr_NoMemory();
+        goto finally;
+    }
+    slots[0].slot = Py_tp_str;
+    slots[0].pfunc = simple_str;
+    slots[1].slot = Py_tp_doc;
+    slots[1].pfunc = doc;
+    slots[2].slot = 0;
+    slots[2].pfunc = NULL;
+    spec->slots = slots;
+
+    /* create the class */
+
+    class = PyType_FromSpec(spec);
+    if (class == NULL) {
+        goto finally;
+    }
+
+    /* deallocate the spec (and all contents) */
+
+    // (Explicitly ovewrite memory before freeing,
+    // so bugs show themselves even without the debug allocator's help.)
+    memset(spec, 0xdd, sizeof(PyType_Spec));
+    PyMem_Del(spec);
+    spec = NULL;
+    memset(name, 0xdd, sizeof(NAME));
+    PyMem_Del(name);
+    name = NULL;
+    memset(doc, 0xdd, sizeof(DOC));
+    PyMem_Del(doc);
+    doc = NULL;
+    memset(slots, 0xdd, 3 * sizeof(PyType_Slot));
+    PyMem_Del(slots);
+    slots = NULL;
+
+    /* check that everything works */
+
+    PyTypeObject *class_tp = (PyTypeObject *)class;
+    PyHeapTypeObject *class_ht = (PyHeapTypeObject *)class;
+    assert(strcmp(class_tp->tp_name, "testcapi._Test") == 0);
+    assert(strcmp(PyUnicode_AsUTF8(class_ht->ht_name), "_Test") == 0);
+    assert(strcmp(PyUnicode_AsUTF8(class_ht->ht_qualname), "_Test") == 0);
+    assert(strcmp(class_tp->tp_doc, "a test class") == 0);
+
+    // call and check __str__
+    instance = PyObject_CallNoArgs(class);
+    if (instance == NULL) {
+        goto finally;
+    }
+    obj = PyObject_Str(instance);
+    if (obj == NULL) {
+        goto finally;
+    }
+    assert(strcmp(PyUnicode_AsUTF8(obj), "<test>") == 0);
+    Py_CLEAR(obj);
+
+    result = Py_NewRef(Py_None);
+  finally:
+    PyMem_Del(spec);
+    PyMem_Del(name);
+    PyMem_Del(doc);
+    PyMem_Del(slots);
+    Py_XDECREF(class);
+    Py_XDECREF(instance);
+    Py_XDECREF(obj);
+    return result;
 }
 
 
@@ -5804,6 +5937,7 @@ static PyMethodDef TestMethods[] = {
     {"test_get_statictype_slots", test_get_statictype_slots,     METH_NOARGS},
     {"test_get_type_name",        test_get_type_name,            METH_NOARGS},
     {"test_get_type_qualname",   test_get_type_qualname,       METH_NOARGS},
+    {"test_type_from_ephemeral_spec", test_type_from_ephemeral_spec, METH_NOARGS},
     {"get_kwargs", (PyCFunction)(void(*)(void))get_kwargs,
       METH_VARARGS|METH_KEYWORDS},
     {"getargs_tuple",           getargs_tuple,                   METH_VARARGS},
@@ -5949,6 +6083,7 @@ static PyMethodDef TestMethods[] = {
     {"return_null_without_error", return_null_without_error, METH_NOARGS},
     {"return_result_with_error", return_result_with_error, METH_NOARGS},
     {"getitem_with_error", getitem_with_error, METH_VARARGS},
+    {"Py_CompileString",     pycompilestring, METH_O},
     {"PyTime_FromSeconds", test_pytime_fromseconds,  METH_VARARGS},
     {"PyTime_FromSecondsObject", test_pytime_fromsecondsobject,  METH_VARARGS},
     {"PyTime_AsSecondsDouble", test_pytime_assecondsdouble, METH_VARARGS},

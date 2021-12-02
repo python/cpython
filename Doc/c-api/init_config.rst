@@ -596,13 +596,16 @@ PyConfig
 
       .. versionadded:: 3.10
 
-   .. c:member:: int no_debug_ranges
+   .. c:member:: int code_debug_ranges
 
-      If equals to ``1``, disables the inclusion of the end line and column
+      If equals to ``0``, disables the inclusion of the end line and column
       mappings in code objects. Also disables traceback printing carets to
       specific error locations.
 
-      Default: ``0``.
+      Set to ``0`` by the :envvar:`PYTHONNODEBUGRANGES` environment variable
+      and by the :option:`-X no_debug_ranges <-X>` command line option.
+
+      Default: ``1``.
 
       .. versionadded:: 3.11
 

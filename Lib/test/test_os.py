@@ -30,17 +30,14 @@ import unittest
 import uuid
 import warnings
 from test import support
+from test.support import _asynchat as asynchat
+from test.support import _asyncore as asyncore
 from test.support import import_helper
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import threading_helper
 from test.support import warnings_helper
 from platform import win32_is_iot
-
-with warnings.catch_warnings():
-    warnings.simplefilter('ignore', DeprecationWarning)
-    import asynchat
-    import asyncore
 
 try:
     import resource
@@ -4501,6 +4498,22 @@ class TimesTests(unittest.TestCase):
             self.assertEqual(times.children_user, 0)
             self.assertEqual(times.children_system, 0)
             self.assertEqual(times.elapsed, 0)
+
+
+@requires_os_func('fork')
+class ForkTests(unittest.TestCase):
+    def test_fork(self):
+        # bpo-42540: ensure os.fork() with non-default memory allocator does
+        # not crash on exit.
+        code = """if 1:
+            import os
+            from test import support
+            pid = os.fork()
+            if pid != 0:
+                support.wait_process(pid, exitcode=0)
+        """
+        assert_python_ok("-c", code)
+        assert_python_ok("-c", code, PYTHONMALLOC="malloc_debug")
 
 
 # Only test if the C version is provided, otherwise TestPEP519 already tested

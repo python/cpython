@@ -17,6 +17,12 @@ typedef struct {
 typedef struct {
     PyException_HEAD
     PyObject *msg;
+    PyObject *excs;
+} PyBaseExceptionGroupObject;
+
+typedef struct {
+    PyException_HEAD
+    PyObject *msg;
     PyObject *filename;
     PyObject *lineno;
     PyObject *offset;
@@ -142,6 +148,11 @@ PyAPI_FUNC(void) PyErr_RangedSyntaxLocationObject(
 PyAPI_FUNC(PyObject *) PyErr_ProgramTextObject(
     PyObject *filename,
     int lineno);
+
+PyAPI_FUNC(PyObject *) _PyErr_ProgramDecodedTextObject(
+    PyObject *filename,
+    int lineno,
+    const char* encoding);
 
 PyAPI_FUNC(PyObject *) _PyUnicodeTranslateError_Create(
     PyObject *object,
