@@ -233,6 +233,7 @@ init_interpreter(PyInterpreterState *interp, PyThread_type_lock pending_lock)
 PyInterpreterState *
 PyInterpreterState_New(void)
 {
+    PyInterpreterState *interp;
     PyThreadState *tstate = _PyThreadState_GET();
 
     /* tstate is NULL when Py_InitializeFromConfig() calls
@@ -249,51 +250,62 @@ PyInterpreterState_New(void)
         return NULL;
     }
 
-    /* Don't get runtime from tstate since tstate can be NULL */
+    /* Don't get runtime from tstate since tstate can be NULL. */
     _PyRuntimeState *runtime = &_PyRuntime;
     struct pyinterpreters *interpreters = &runtime->interpreters;
 
-    PyInterpreterState *interp;
+    /* We completely serialize creating of multiple interpreters, since
+       it simplifies things here and blocking concurrent calls isn't a problem.
+
+       Regardless, we must fully block subinterpreter creation until
+       after the main interpreter is created. */
+    HEAD_LOCK(runtime);
+
     if (interpreters->main == NULL) {
+        // We are creating the main interpreter.
         assert(interpreters->next_id == 0);
+        assert(interpreters->head == NULL);
+
         interp = &runtime->_preallocated.interpreters_main;
+        assert(intrp->id == 0);
+        assert(intrp->next == NULL);
+        interpreters->main = interp;
     }
     else {
         interp = PyMem_RawCalloc(1, sizeof(PyInterpreterState));
         if (interp == NULL) {
             PyThread_free_lock(pending_lock);
-            return NULL;
+            goto error;
         }
-    }
 
-    init_interpreter(interp, pending_lock);
-    interp->runtime = runtime;
-
-    HEAD_LOCK(runtime);
-    if (interpreters->next_id < 0) {
-        /* overflow or Py_Initialize() not called! */
-        assert(interpreters->main != NULL);
-        assert(interp != &runtime->_preallocated.interpreters_main);
-        if (tstate != NULL) {
-            _PyErr_SetString(tstate, PyExc_RuntimeError,
-                             "failed to get an interpreter ID");
+        if (interpreters->next_id < 0) {
+            /* overflow or Py_Initialize() not called yet! */
+            if (tstate != NULL) {
+                _PyErr_SetString(tstate, PyExc_RuntimeError,
+                                 "failed to get an interpreter ID");
+            }
+            goto error;
         }
-        PyThread_free_lock(pending_lock);
-        PyMem_RawFree(interp);
-        interp = NULL;
-    }
-    else {
         interp->id = interpreters->next_id;
-        interpreters->next_id += 1;
         interp->next = interpreters->head;
-        if (interpreters->main == NULL) {
-            interpreters->main = interp;
-        }
-        interpreters->head = interp;
     }
+    interp->runtime = runtime;
+    init_interpreter(interp, pending_lock);
+
+    interpreters->next_id += 1;
+    interpreters->head = interp;
+
+    HEAD_UNLOCK(runtime);
+    return interp;
+
+error:
     HEAD_UNLOCK(runtime);
 
-    return interp;
+    PyThread_free_lock(pending_lock);
+    if (interp != NULL) {
+        PyMem_RawFree(interp);
+    }
+    return NULL;
 }
 
 
