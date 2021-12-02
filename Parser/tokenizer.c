@@ -443,8 +443,6 @@ static int
 fp_setreadl(struct tok_state *tok, const char* enc)
 {
     PyObject *readline, *io, *stream;
-    _Py_IDENTIFIER(open);
-    _Py_IDENTIFIER(readline);
     int fd;
     long pos;
 
@@ -461,26 +459,38 @@ fp_setreadl(struct tok_state *tok, const char* enc)
         return 0;
     }
 
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *str_open = _Py_GET_GLOBAL_IDENTIFIER(open);
+    PyObject *str_readline = _Py_GET_GLOBAL_IDENTIFIER(readline);
+
     io = PyImport_ImportModule("io");
-    if (io == NULL)
+    if (io == NULL) {
         return 0;
-
-    stream = _PyObject_CallMethodId(io, &PyId_open, "isisOOO",
-                    fd, "r", -1, enc, Py_None, Py_None, Py_False);
+    }
+    PyObject *open = PyObject_GetAttr(io, str_open);
     Py_DECREF(io);
-    if (stream == NULL)
+    if (open == NULL) {
         return 0;
+    }
+    stream = _PyObject_CallMethod(tstate, open, "isisOOO",
+                    fd, "r", -1, enc, Py_None, Py_None, Py_False);
+    Py_DECREF(open);
+    if (stream == NULL) {
+        return 0;
+    }
 
-    readline = _PyObject_GetAttrId(stream, &PyId_readline);
+    readline = PyObject_GetAttr(stream, str_readline);
     Py_DECREF(stream);
-    if (readline == NULL)
+    if (readline == NULL) {
         return 0;
+    }
     Py_XSETREF(tok->decoding_readline, readline);
 
     if (pos > 0) {
         PyObject *bufobj = _PyObject_CallNoArgs(readline);
-        if (bufobj == NULL)
+        if (bufobj == NULL) {
             return 0;
+        }
         Py_DECREF(bufobj);
     }
 
