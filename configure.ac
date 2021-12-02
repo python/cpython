@@ -1734,6 +1734,12 @@ then
 	case $ac_sys_system in
 	    SCO_SV*) OPT="$OPT -m486 -DSCO5"
 	    ;;
+      Emscripten)
+        if test "$Py_DEBUG" = 'true' ; then
+          # Compile with assertions in debug mode
+          OPT="$OPT -s ASSERTIONS=1"
+        fi
+      ;;
         esac
 	;;
 
