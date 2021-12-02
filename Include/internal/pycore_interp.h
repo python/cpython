@@ -329,9 +329,18 @@ struct _is {
     struct type_cache type_cache;
 
     struct {
+        int initialized;
         PyThreadState tstate;
     } _preallocated;
 };
+
+#define _PyInterpreterState_INIT \
+    { \
+        ._preallocated = { \
+            .initialized = 1, \
+            .tstate = _PyThreadState_INIT, \
+        }, \
+    }
 
 extern void _PyInterpreterState_ClearModules(PyInterpreterState *interp);
 extern void _PyInterpreterState_Clear(PyThreadState *tstate);

@@ -135,13 +135,17 @@ typedef struct pyruntimestate {
 
     // XXX Consolidate globals found via the check-c-globals script.
 
-    struct initial_values {
+    struct {
         struct _is interpreters_main;
     } _preallocated;
 } _PyRuntimeState;
 
 #define _PyRuntimeState_INIT \
-    {.preinitialized = 0, .core_initialized = 0, .initialized = 0}
+    { \
+        ._preallocated = { \
+            .interpreters_main = _PyInterpreterState_INIT, \
+        }, \
+    }
 /* Note: _PyRuntimeState_INIT sets other fields to 0/NULL */
 
 

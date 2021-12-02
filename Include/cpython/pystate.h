@@ -170,7 +170,17 @@ struct _ts {
     PyObject **datastack_limit;
     /* XXX signal handlers should also be here */
 
+    struct {
+        int initialized;
+    } _preallocated;
 };
+
+#define _PyThreadState_INIT \
+    { \
+        ._preallocated = { \
+            .initialized = 1, \
+        }, \
+    }
 
 // Alias for backward compatibility with Python 3.8
 #define _PyInterpreterState_Get PyInterpreterState_Get

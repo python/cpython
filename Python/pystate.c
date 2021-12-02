@@ -205,6 +205,18 @@ _PyInterpreterState_Enable(_PyRuntimeState *runtime)
 }
 
 static void
+init_interpreter_from_other(PyInterpreterState *interp,
+                             PyInterpreterState *other)
+{
+    assert(other != NULL);
+    assert(other != interp);
+
+    /* Initialize interp->_preallocated. */
+    // interp->_preallocated.tstate is initialized in new_threadstate().
+    interp->_preallocated.initialized = 1;
+}
+
+static void
 init_interpreter(PyInterpreterState *interp, PyThread_type_lock pending_lock)
 {
     /* When this returns, interp will be fully initialized
@@ -237,6 +249,10 @@ init_interpreter(PyInterpreterState *interp, PyThread_type_lock pending_lock)
     interp->threads.next_unique_id = 0;
 
     interp->audit_hooks = NULL;
+
+    // If needed, we could initialize _preallocated manually, instead
+    // of expecting it to be pre-initialized.
+    assert(interp->_preallocated.initialized);
 }
 
 PyInterpreterState *
@@ -297,6 +313,7 @@ PyInterpreterState_New(void)
         }
         interp->id = interpreters->next_id;
         interp->next = interpreters->head;
+        init_interpreter_from_other(interp, interpreters->main);
     }
     interp->runtime = runtime;
     init_interpreter(interp, pending_lock);
@@ -675,6 +692,16 @@ allocate_chunk(int size_in_bytes, _PyStackChunk* previous)
 }
 
 static void
+init_threadstate_from_other(PyThreadState *tstate, PyThreadState *other)
+{
+    assert(other != NULL);
+    assert(other != tstate);
+
+    /* Initialize tstate->_preallocated. */
+    tstate->_preallocated.initialized = 1;
+}
+
+static void
 init_threadstate(PyThreadState *tstate,
                  int recursion_limit, _PyStackChunk *datastack_chunk)
 {
@@ -710,6 +737,10 @@ init_threadstate(PyThreadState *tstate,
     /* If top points to entry 0, then _PyThreadState_PopFrame will try to pop this chunk */
     tstate->datastack_top = &tstate->datastack_chunk->data[1];
     tstate->datastack_limit = (PyObject **)(((char *)tstate->datastack_chunk) + DATA_STACK_CHUNK_SIZE);
+
+    // If needed, we could initialize _preallocated manually, instead
+    // of expecting it to be pre-initialized.
+    assert(tstate->_preallocated.initialized);
 }
 
 static inline void
@@ -755,6 +786,7 @@ new_threadstate(PyInterpreterState *interp)
         tstate->id = interp->threads.next_unique_id;
         tstate->next = interp->threads.head;
         tstate->next->prev = tstate;
+        init_threadstate_from_other(tstate, &interp->_preallocated.tstate);
 
         interp->threads.next_unique_id += 1;
     }
