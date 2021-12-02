@@ -236,8 +236,8 @@ BaseException_set_note(PyBaseExceptionObject *self, PyObject *note,
         PyErr_SetString(PyExc_TypeError, "__note__ may not be deleted");
         return -1;
     }
-    else if (note != Py_None && !PyUnicode_Check(note)) {
-        PyErr_SetString(PyExc_TypeError, "__note__ must be an str or None");
+    else if (note != Py_None && !PyUnicode_CheckExact(note)) {
+        PyErr_SetString(PyExc_TypeError, "__note__ must be a string or None");
         return -1;
     }
 
