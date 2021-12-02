@@ -1,1 +1,1 @@
-Introduce daemon parameter to multiprocessing.dummy.DummyProcess in order to match the API of multiprocessing.Process.
+Add missing parameters to multiprocessing.dummy.DummyProcess and multiprocessing.dummy.Pool in order to match the API of multiprocessing.
