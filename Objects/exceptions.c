@@ -229,7 +229,8 @@ BaseException_get_note(PyBaseExceptionObject *self, void *Py_UNUSED(ignored))
 }
 
 static int
-BaseException_set_note(PyBaseExceptionObject *self, PyObject *note, void *Py_UNUSED(ignored))
+BaseException_set_note(PyBaseExceptionObject *self, PyObject *note,
+                       void *Py_UNUSED(ignored))
 {
     if (note == NULL) {
         PyErr_SetString(PyExc_TypeError, "__note__ may not be deleted");
