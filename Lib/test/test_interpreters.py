@@ -385,14 +385,13 @@ class TestInterpreterClose(TestBase):
 class TestInterpreterRun(TestBase):
 
     def test_success(self):
-        _interpreters.create()
-        #interp = interpreters.create()
-        #script, file = _captured_script('print("it worked!", end="")')
-        #with file:
-            #interp.run(script)
-            #out = file.read()
+        interp = interpreters.create()
+        script, file = _captured_script('print("it worked!", end="")')
+        with file:
+            interp.run(script)
+            out = file.read()
 
-        #self.assertEqual(out, 'it worked!')
+        self.assertEqual(out, 'it worked!')
 
     def test_in_thread(self):
         interp = interpreters.create()
