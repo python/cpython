@@ -752,7 +752,7 @@ class _Processor:
         try:
             import subprocess
         except ImportError:
-            return
+            return None
         try:
             return subprocess.check_output(
                 ['uname', '-p'],
