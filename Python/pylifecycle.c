@@ -2145,7 +2145,11 @@ is_valid_fd(int fd)
     if (fd < 0) {
         return 0;
     }
-#if defined(F_GETFD) && (defined(__linux__) || defined(__APPLE__) || defined(MS_WINDOWS))
+#if defined(F_GETFD) && ( \
+        defined(__linux__) || \
+        defined(__APPLE__) || \
+        defined(MS_WINDOWS) || \
+        defined(__wasm__))
     int res;
     _Py_BEGIN_SUPPRESS_IPH
     res = fcntl(fd, F_GETFD);
