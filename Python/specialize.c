@@ -495,6 +495,7 @@ initial_counter_value(void) {
 #define SPEC_FAIL_STRING_COMPARE 13
 #define SPEC_FAIL_STRING_UNREADY 14
 #define SPEC_FAIL_NOT_FOLLOWED_BY_COND_JUMP 15
+#define SPEC_FAIL_BIG_INT 16
 
 static int
 specialize_module_load_attr(
@@ -1589,9 +1590,15 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
         goto success;
     }
     if (PyLong_CheckExact(lhs)) {
-        *instr = _Py_MAKECODEUNIT(COMPARE_OP_INT_JUMP, _Py_OPARG(*instr));
-        cache1->mask = mask;
-        goto success;
+        if (Py_ABS(Py_SIZE(lhs)) <= 1 && Py_ABS(Py_SIZE(rhs)) <= 1) {
+            *instr = _Py_MAKECODEUNIT(COMPARE_OP_INT_JUMP, _Py_OPARG(*instr));
+            cache1->mask = mask;
+            goto success;
+        }
+        else {
+            SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_BIG_INT);
+            goto failure;
+        }
     }
     if (PyUnicode_CheckExact(lhs)) {
         if (op != Py_EQ && op != Py_NE) {

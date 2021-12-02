@@ -3716,6 +3716,7 @@ check_eval_breaker:
             DEOPT_IF(!PyFloat_CheckExact(right), COMPARE_OP);
             double dleft = PyFloat_AS_DOUBLE(left);
             double dright = PyFloat_AS_DOUBLE(right);
+            int sign = (dleft > dright) - (dleft < dright);
             DEOPT_IF(isnan(dleft), COMPARE_OP);
             DEOPT_IF(isnan(dright), COMPARE_OP);
             STAT_INC(COMPARE_OP, hit);
@@ -3724,7 +3725,6 @@ check_eval_breaker:
             Py_DECREF(left);
             Py_DECREF(right);
             assert(opcode == POP_JUMP_IF_TRUE || opcode == POP_JUMP_IF_FALSE);
-            int sign = (dleft > dright) - (dleft < dright);
             int jump = (1 << (sign + 1)) & mask;
             if (!jump) {
                 next_instr++;
@@ -3746,16 +3746,18 @@ check_eval_breaker:
             PyObject *left = SECOND();
             DEOPT_IF(!PyLong_CheckExact(left), COMPARE_OP);
             DEOPT_IF(!PyLong_CheckExact(right), COMPARE_OP);
+            DEOPT_IF((size_t)(Py_SIZE(left) + 1) > 2, COMPARE_OP);
+            DEOPT_IF((size_t)(Py_SIZE(right) + 1) > 2, COMPARE_OP);
             STAT_INC(COMPARE_OP, hit);
-            // This cannot fail.
-            Py_ssize_t cmp = _PyLong_RichCompare((PyLongObject *)left,
-                                                 (PyLongObject *)right);
+            assert(Py_ABS(Py_SIZE(left)) <= 1 && Py_ABS(Py_SIZE(right)) <= 1);
+            Py_ssize_t ileft = Py_SIZE(left) * ((PyLongObject *)left)->ob_digit[0];
+            Py_ssize_t iright = Py_SIZE(right) * ((PyLongObject *)right)->ob_digit[0];
+            int sign = (ileft > iright) - (ileft < iright);
             NEXTOPARG();
             STACK_SHRINK(2);
             Py_DECREF(left);
             Py_DECREF(right);
             assert(opcode == POP_JUMP_IF_TRUE || opcode == POP_JUMP_IF_FALSE);
-            int sign = (cmp > 0) - (cmp < 0);
             int jump = (1 << (sign + 1)) & mask;
             if (!jump) {
                 next_instr++;

@@ -2956,23 +2956,15 @@ long_compare(PyLongObject *a, PyLongObject *b)
     return sign;
 }
 
-Py_ssize_t
-_PyLong_RichCompare(PyLongObject *left, PyLongObject *right)
-{
-    if (left == right) {
-        return 0;
-    }
-    else {
-        return long_compare(left, right);
-    }
-}
-
 static PyObject *
 long_richcompare(PyObject *self, PyObject *other, int op)
 {
+    Py_ssize_t result;
     CHECK_BINOP(self, other);
-    Py_ssize_t result = _PyLong_RichCompare((PyLongObject *)self,
-                                            (PyLongObject *)other);
+    if (self == other)
+        result = 0;
+    else
+        result = long_compare((PyLongObject*)self, (PyLongObject*)other);
     Py_RETURN_RICHCOMPARE(result, 0, op);
 }
 
