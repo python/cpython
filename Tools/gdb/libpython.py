@@ -508,7 +508,6 @@ class HeapTypeObjectPtr(PyObjectPtr):
                         tsize = -tsize
                     size = _PyObject_VAR_SIZE(typeobj, tsize)
                     dictoffset += size
-                    assert dictoffset > 0
                     assert dictoffset % _sizeof_void_p() == 0
 
                 dictptr = self._gdbval.cast(_type_char_ptr()) + dictoffset
