@@ -1,0 +1,4 @@
+Fix bug in dataclasses where a frozen dataclass with slots would raise
+``TypeError`` rather than ``AttributeError`` if a user attempted to
+set/delete an attribute that was not specified in ``__slots__``. Patch by
+Alex Waygood.

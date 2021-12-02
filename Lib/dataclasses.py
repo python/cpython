@@ -606,14 +606,18 @@ def _frozen_get_del_attr(cls, fields, globals):
         fields_str = '()'
     return (_create_fn('__setattr__',
                       ('self', 'name', 'value'),
-                      (f'if type(self) is cls or name in {fields_str}:',
+                      (f'if "__slots__" in cls.__dict__ and name not in cls.__slots__:',
+                        ' pass',
+                       f'elif type(self) is cls or name in {fields_str}:',
                         ' raise FrozenInstanceError(f"cannot assign to field {name!r}")',
                        f'super(cls, self).__setattr__(name, value)'),
                        locals=locals,
                        globals=globals),
             _create_fn('__delattr__',
                       ('self', 'name'),
-                      (f'if type(self) is cls or name in {fields_str}:',
+                      (f'if "__slots__" in cls.__dict__ and name not in cls.__slots__:',
+                        ' pass',
+                       f'elif type(self) is cls or name in {fields_str}:',
                         ' raise FrozenInstanceError(f"cannot delete field {name!r}")',
                        f'super(cls, self).__delattr__(name)'),
                        locals=locals,
@@ -1072,12 +1076,6 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                                 f'in class {cls.__name__}. Consider using '
                                 'functools.total_ordering')
 
-    if frozen:
-        for fn in _frozen_get_del_attr(cls, field_list, globals):
-            if _set_new_attribute(cls, fn.__name__, fn):
-                raise TypeError(f'Cannot overwrite attribute {fn.__name__} '
-                                f'in class {cls.__name__}')
-
     # Decide if/how we're going to create a hash function.
     hash_action = _hash_action[bool(unsafe_hash),
                                bool(eq),
@@ -1100,6 +1098,14 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
 
     if slots:
         cls = _add_slots(cls, frozen)
+
+    # Frozen __setattr__/__delattr__ must be added after __slots__
+    # bpo-45897
+    if frozen:
+        for fn in _frozen_get_del_attr(cls, field_list, globals):
+            if _set_new_attribute(cls, fn.__name__, fn):
+                raise TypeError(f'Cannot overwrite attribute {fn.__name__} '
+                                f'in class {cls.__name__}')
 
     abc.update_abstractmethods(cls)
 

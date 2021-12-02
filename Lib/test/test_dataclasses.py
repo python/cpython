@@ -2902,6 +2902,45 @@ class TestSlots(unittest.TestCase):
         self.assertEqual(obj.a, 'a')
         self.assertEqual(obj.b, 'b')
 
+    def test_frozen_slots_raises_correct_error(self):
+        # bpo-45897
+        @dataclass(slots=True, frozen=True)
+        class Point:
+            x: int
+            y: int
+
+        p = Point(1, 2)
+        self.assertEqual(p.x, 1)
+        self.assertEqual(p.y, 2)
+        with self.assertRaises(FrozenInstanceError):
+            p.x = 2
+        try:
+            p.z = 5
+        except FrozenInstanceError as exc:
+            raise TypeError(
+                'FrozenInstanceError unexpectedly raised instead of AttributeError'
+            ) from exc
+        except AttributeError:
+            pass
+        else:
+            self.fail('AttributeError expected, but no error was raised')
+
+        @dataclass(frozen=True)
+        class DataclassSubclassOfPointWithNoSlots(Point): pass
+
+        d = DataclassSubclassOfPointWithNoSlots(1, 2)
+        with self.assertRaises(FrozenInstanceError):
+            d.x = 2
+        with self.assertRaises(FrozenInstanceError):
+            d.z = 5
+
+        class NonDataclassSubclassOfPointWithNoSlots(Point): pass
+
+        n = NonDataclassSubclassOfPointWithNoSlots(1, 2)
+        with self.assertRaises(FrozenInstanceError):
+            n.x = 2
+        n.z = 5
+
 class TestDescriptors(unittest.TestCase):
     def test_set_name(self):
         # See bpo-33141.
