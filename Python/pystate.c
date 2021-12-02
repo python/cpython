@@ -207,7 +207,16 @@ _PyInterpreterState_Enable(_PyRuntimeState *runtime)
 static void
 init_interpreter(PyInterpreterState *interp, PyThread_type_lock pending_lock)
 {
-    // interp should be zeroed out already, e.g. PyMem_RawCalloc() or memset().
+    /* When this returns, interp will be fully initialized
+       (the low level state, at least).
+       Some fields are expected to be initialized already when this is called.
+       All other fields not initialized here are expected to be zeroed out,
+       e.g. by PyMem_RawCalloc() or memset(). */
+    assert(interp->runtime != NULL);
+    assert(interp->id > 0 ||
+            (interp->runtime->interpreters.main == interp && interp->id == 0));
+    assert(interp->next != NULL ||
+            (interp->runtime->interpreters.main == interp));
 
     interp->id_refcount = -1;
 
