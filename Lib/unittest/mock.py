@@ -494,6 +494,10 @@ class NonCallableMock(Base):
         _spec_asyncs = []
 
         for attr in dir(spec):
+            if isinstance(inspect.getattr_static(spec, attr, None), property):
+                # We don't want to execute `@property` decorators with `getattr`.
+                # It might affect user's code in unknown way.
+                continue
             if iscoroutinefunction(getattr(spec, attr, None)):
                 _spec_asyncs.append(attr)
 

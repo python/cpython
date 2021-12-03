@@ -1,0 +1,2 @@
+We no longer execute ``@property`` descriptors while creating autospecs in
+``mock.py``. This was not safe and could affect user's code in unknown way.

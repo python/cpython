@@ -896,6 +896,36 @@ class MockTest(unittest.TestCase):
         self.assertRaises(AttributeError, set_attr)
 
 
+    def test_class_with_property(self):
+        class X:
+            @property
+            def some(self):
+                raise ValueError('Should not be raised')
+
+        mock = Mock(spec=X)
+        self.assertIsInstance(mock, X)
+
+        mock = Mock(spec=X())
+        self.assertIsInstance(mock, X)
+
+
+    def test_class_with_settable_property(self):
+        class X:
+            @property
+            def some(self):
+                raise ValueError('Should not be raised')
+
+            @some.setter
+            def some(self, value):
+                raise TypeError('Should not be raised')
+
+        mock = Mock(spec=X)
+        self.assertIsInstance(mock, X)
+
+        mock = Mock(spec=X())
+        self.assertIsInstance(mock, X)
+
+
     def test_copy(self):
         current = sys.getrecursionlimit()
         self.addCleanup(sys.setrecursionlimit, current)
