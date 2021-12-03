@@ -213,6 +213,8 @@ init_interpreter_from_other(PyInterpreterState *interp,
 {
     assert(other != NULL);
     assert(other != interp);
+    assert(other->_preallocated.initialized);
+    assert(!interp->_preallocated.initialized);
 
     /* Initialize interp->_preallocated. */
     // interp->_preallocated.tstate is initialized in new_threadstate().
@@ -699,6 +701,8 @@ init_threadstate_from_other(PyThreadState *tstate, PyThreadState *other)
 {
     assert(other != NULL);
     assert(other != tstate);
+    assert(other->_preallocated.initialized);
+    assert(!tstate->_preallocated.initialized);
 
     /* Initialize tstate->_preallocated. */
     tstate->_preallocated.initialized = 1;
