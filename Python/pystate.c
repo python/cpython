@@ -715,12 +715,12 @@ init_threadstate(PyThreadState *tstate,
        e.g. by PyMem_RawCalloc() or memset(). */
     assert(tstate->id > 0);
     assert(tstate->interp != NULL);
-    assert(tstate->prev = NULL);
+    assert(tstate->prev == NULL);
     // It was just added to the interpreter.
     assert(tstate->interp->threads.head == tstate);
     assert((tstate->next != NULL && tstate->id != 1) ||
            (tstate->next == NULL && tstate->id == 1));
-    assert(tstate->next == NULL && tstate->next->prev == tstate);
+    assert(tstate->next == NULL || tstate->next->prev == tstate);
 
     tstate->thread_id = PyThread_get_thread_ident();
 #ifdef PY_HAVE_THREAD_NATIVE_ID
