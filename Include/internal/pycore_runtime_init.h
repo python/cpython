@@ -1098,6 +1098,7 @@ extern "C" {
                 INIT_ID(copy), \
                 INIT_ID(copyreg), \
                 INIT_ID(decode), \
+                INIT_ID(default), \
                 INIT_ID(defaultaction), \
                 INIT_ID(difference_update), \
                 INIT_ID(displayhook), \
@@ -1118,6 +1119,7 @@ extern "C" {
                 INIT_ID(getattr), \
                 INIT_ID(getpreferredencoding), \
                 INIT_ID(getstate), \
+                INIT_ID(ignore), \
                 INIT_ID(imp), \
                 INIT_ID(importlib), \
                 INIT_ID(inf), \
