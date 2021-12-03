@@ -110,6 +110,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\Modules\getpath.c">
+      <PreprocessorDefinitions>
+        PREFIX=NULL;
+        EXEC_PREFIX=NULL;
+        VERSION=NULL;
+        VPATH="..\\..";
+        PYDEBUGEXT="$(PyDebugExt)";
+        PLATLIBDIR="DLLs";
+        %(PreprocessorDefinitions)
+      </PreprocessorDefinitions>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
     <ClInclude Include="..\Include\Python.h" />
     <ClInclude Include="..\Include\abstract.h" />
     <ClInclude Include="..\Include\boolobject.h" />
@@ -349,6 +362,7 @@
     <ClCompile Include="..\Modules\errnomodule.c" />
     <ClCompile Include="..\Modules\faulthandler.c" />
     <ClCompile Include="..\Modules\gcmodule.c" />
+    <ClCompile Include="..\Modules\getbuildinfo.c" />
     <ClCompile Include="..\Modules\itertoolsmodule.c" />
     <ClCompile Include="..\Modules\main.c" />
     <ClCompile Include="..\Modules\mathmodule.c" />
@@ -442,7 +456,6 @@
     <ClCompile Include="..\PC\invalid_parameter_handler.c" />
     <ClCompile Include="..\PC\winreg.c" />
     <ClCompile Include="..\PC\config.c" />
-    <ClCompile Include="..\PC\getpathp.c" />
     <ClCompile Include="..\PC\msvcrtmodule.c" />
     <ClCompile Include="..\Python\pyhash.c" />
     <ClCompile Include="..\Python\_warnings.c" />
@@ -570,7 +583,7 @@
     </PropertyGroup>
     <Message Text="Building $(GitTag):$(GitVersion) $(GitBranch)" Importance="high" />
     <ItemGroup>
-      <ClCompile Include="..\Modules\getbuildinfo.c">
+      <ClCompile Condition="$(Filename) == 'getbuildinfo'">
         <PreprocessorDefinitions>GITVERSION="$(GitVersion)";GITTAG="$(GitTag)";GITBRANCH="$(GitBranch)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       </ClCompile>
     </ItemGroup>
@@ -589,5 +602,9 @@
   </Target>
   <Target Name="_CleanVCRuntime" AfterTargets="Clean">
     <Delete Files="@(VCRuntimeDLL->'$(OutDir)%(Filename)%(Extension)')" />
+  </Target>
+
+  <Target Name="_DeletePyBuildDirTxt" BeforeTargets="PrepareForBuild">
+    <Delete Files="$(OutDir)pybuilddir.txt" />
   </Target>
 </Project>
