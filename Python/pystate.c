@@ -134,6 +134,8 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
 
 #undef FREE_LOCK
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    memset(runtime, 0, sizeof(_PyRuntimeState));
 }
 
 #ifdef HAVE_FORK
