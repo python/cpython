@@ -173,7 +173,9 @@ getpath_isdir(PyObject *Py_UNUSED(self), PyObject *args)
     path = PyUnicode_AsWideCharString(pathobj, NULL);
     if (path) {
 #ifdef MS_WINDOWS
-        r = (GetFileAttributesW(path) & FILE_ATTRIBUTE_DIRECTORY) ? Py_True : Py_False;
+        DWORD attr = GetFileAttributesW(path);
+        r = (attr != INVALID_FILE_ATTRIBUTES) &&
+            (attr & FILE_ATTRIBUTE_DIRECTORY) ? Py_True : Py_False;
 #else
         struct stat st;
         r = (_Py_wstat(path, &st) == 0) && S_ISDIR(st.st_mode) ? Py_True : Py_False;
@@ -197,7 +199,9 @@ getpath_isfile(PyObject *Py_UNUSED(self), PyObject *args)
     path = PyUnicode_AsWideCharString(pathobj, NULL);
     if (path) {
 #ifdef MS_WINDOWS
-        r = !(GetFileAttributesW(path) & FILE_ATTRIBUTE_DIRECTORY) ? Py_True : Py_False;
+        DWORD attr = GetFileAttributesW(path);
+        r = (attr != INVALID_FILE_ATTRIBUTES) &&
+            !(attr & FILE_ATTRIBUTE_DIRECTORY) ? Py_True : Py_False;
 #else
         struct stat st;
         r = (_Py_wstat(path, &st) == 0) && S_ISREG(st.st_mode) ? Py_True : Py_False;
@@ -223,7 +227,9 @@ getpath_isxfile(PyObject *Py_UNUSED(self), PyObject *args)
     if (path) {
 #ifdef MS_WINDOWS
         const wchar_t *ext;
-        r = (GetFileAttributesW(path) & FILE_ATTRIBUTE_DIRECTORY) &&
+        DWORD attr = GetFileAttributesW(path);
+        r = (attr != INVALID_FILE_ATTRIBUTES) &&
+            !(attr & FILE_ATTRIBUTE_DIRECTORY) &&
             SUCCEEDED(PathCchFindExtension(path, cchPath, &ext)) &&
             (CompareStringOrdinal(ext, -1, L".exe", -1, 1 /* ignore case */) == CSTR_EQUAL)
             ? Py_True : Py_False;
