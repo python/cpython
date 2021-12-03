@@ -207,6 +207,8 @@ _PyInterpreterState_Enable(_PyRuntimeState *runtime)
     return _PyStatus_OK();
 }
 
+static void init_threadstate_static_data(PyThreadState *, PyThreadState *);
+
 static void
 init_interpreter_static_data(PyInterpreterState *interp,
                              PyInterpreterState *other)
@@ -221,7 +223,8 @@ init_interpreter_static_data(PyInterpreterState *interp,
     // then we only want that data.
 
     /* Initialize interp->_preallocated. */
-    // interp->_preallocated.tstate is initialized in new_threadstate().
+    init_threadstate_static_data(&interp->_preallocated.tstate,
+                                 &other->_preallocated.tstate);
     interp->_preallocated.initialized = 1;
 }
 
