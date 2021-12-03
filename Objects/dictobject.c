@@ -1467,6 +1467,14 @@ PyDict_GetItemWithError(PyObject *op, PyObject *key)
 }
 
 PyObject *
+_PyDict_GetItemWithError(PyObject *dp, PyObject *kv)
+{
+    Py_hash_t hash = ((PyASCIIObject *) kv)->hash;
+    assert (hash != -1);  /* interned strings have their hash value initialised */
+    return _PyDict_GetItem_KnownHash(dp, kv, hash);
+}
+
+PyObject *
 _PyDict_GetItemIdWithError(PyObject *dp, struct _Py_Identifier *key)
 {
     PyObject *kv;
