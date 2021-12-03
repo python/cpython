@@ -379,7 +379,7 @@
     <GetPath Include="..\Modules\getpath.py">
       <ModName>getpath</ModName>
       <IntFile>$(IntDir)getpath.g.h</IntFile>
-      <OutFile>$(PySourcePath)Modules\getpath.h</OutFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\getpath.h</OutFile>
     </GetPath>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
