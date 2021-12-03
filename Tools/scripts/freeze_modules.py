@@ -589,7 +589,7 @@ def regen_makefile(modules):
         ])
         deepfreezerules.append(f'{cfile}: {frozen_header} $(DEEPFREEZE_DEPS)')
         deepfreezerules.append(
-            f"\t$(PYTHON_FOR_REGEN) "
+            f"\t$(PYTHON_FOR_FREEZE) "
             f"$(srcdir)/Tools/scripts/deepfreeze.py "
             f"{frozen_header} -m {src.frozenid} -o {cfile}")
         deepfreezerules.append('')
