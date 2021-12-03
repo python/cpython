@@ -3778,6 +3778,8 @@ check_eval_breaker:
         }
 
         TARGET(COMPARE_OP) {
+            PREDICTED(COMPARE_OP);
+            STAT_INC(COMPARE_OP, unquickened);
             assert(oparg <= Py_GE);
             PyObject *right = POP();
             PyObject *left = TOP();
@@ -3790,6 +3792,125 @@ check_eval_breaker:
             PREDICT(POP_JUMP_IF_FALSE);
             PREDICT(POP_JUMP_IF_TRUE);
             DISPATCH();
+        }
+
+        TARGET(COMPARE_OP_ADAPTIVE) {
+            assert(cframe.use_tracing == 0);
+            SpecializedCacheEntry *cache = GET_CACHE();
+            if (cache->adaptive.counter == 0) {
+                PyObject *right = TOP();
+                PyObject *left = SECOND();
+                next_instr--;
+                _Py_Specialize_CompareOp(left, right, next_instr, cache);
+                DISPATCH();
+            }
+            else {
+                STAT_INC(COMPARE_OP, deferred);
+                cache->adaptive.counter--;
+                oparg = cache->adaptive.original_oparg;
+                STAT_DEC(COMPARE_OP, unquickened);
+                JUMP_TO_INSTRUCTION(COMPARE_OP);
+            }
+        }
+
+        TARGET(COMPARE_OP_FLOAT_JUMP) {
+            assert(cframe.use_tracing == 0);
+            // Combined: COMPARE_OP (float ? float) + POP_JUMP_IF_(true/false)
+            SpecializedCacheEntry *caches = GET_CACHE();
+            int when_to_jump_mask = caches[0].adaptive.index;
+            PyObject *right = TOP();
+            PyObject *left = SECOND();
+            DEOPT_IF(!PyFloat_CheckExact(left), COMPARE_OP);
+            DEOPT_IF(!PyFloat_CheckExact(right), COMPARE_OP);
+            double dleft = PyFloat_AS_DOUBLE(left);
+            double dright = PyFloat_AS_DOUBLE(right);
+            int sign = (dleft > dright) - (dleft < dright);
+            DEOPT_IF(isnan(dleft), COMPARE_OP);
+            DEOPT_IF(isnan(dright), COMPARE_OP);
+            STAT_INC(COMPARE_OP, hit);
+            NEXTOPARG();
+            STACK_SHRINK(2);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            assert(opcode == POP_JUMP_IF_TRUE || opcode == POP_JUMP_IF_FALSE);
+            int jump = (1 << (sign + 1)) & when_to_jump_mask;
+            if (!jump) {
+                next_instr++;
+                NOTRACE_DISPATCH();
+            }
+            else {
+                JUMPTO(oparg);
+                CHECK_EVAL_BREAKER();
+                NOTRACE_DISPATCH();
+            }
+        }
+
+        TARGET(COMPARE_OP_INT_JUMP) {
+            assert(cframe.use_tracing == 0);
+            // Combined: COMPARE_OP (int ? int) + POP_JUMP_IF_(true/false)
+            SpecializedCacheEntry *caches = GET_CACHE();
+            int when_to_jump_mask = caches[0].adaptive.index;
+            PyObject *right = TOP();
+            PyObject *left = SECOND();
+            DEOPT_IF(!PyLong_CheckExact(left), COMPARE_OP);
+            DEOPT_IF(!PyLong_CheckExact(right), COMPARE_OP);
+            DEOPT_IF((size_t)(Py_SIZE(left) + 1) > 2, COMPARE_OP);
+            DEOPT_IF((size_t)(Py_SIZE(right) + 1) > 2, COMPARE_OP);
+            STAT_INC(COMPARE_OP, hit);
+            assert(Py_ABS(Py_SIZE(left)) <= 1 && Py_ABS(Py_SIZE(right)) <= 1);
+            Py_ssize_t ileft = Py_SIZE(left) * ((PyLongObject *)left)->ob_digit[0];
+            Py_ssize_t iright = Py_SIZE(right) * ((PyLongObject *)right)->ob_digit[0];
+            int sign = (ileft > iright) - (ileft < iright);
+            NEXTOPARG();
+            STACK_SHRINK(2);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            assert(opcode == POP_JUMP_IF_TRUE || opcode == POP_JUMP_IF_FALSE);
+            int jump = (1 << (sign + 1)) & when_to_jump_mask;
+            if (!jump) {
+                next_instr++;
+                NOTRACE_DISPATCH();
+            }
+            else {
+                JUMPTO(oparg);
+                CHECK_EVAL_BREAKER();
+                NOTRACE_DISPATCH();
+            }
+        }
+
+        TARGET(COMPARE_OP_STR_JUMP) {
+            assert(cframe.use_tracing == 0);
+            // Combined: COMPARE_OP (str == str or str != str) + POP_JUMP_IF_(true/false)
+            SpecializedCacheEntry *caches = GET_CACHE();
+            int invert = caches[0].adaptive.index;
+            PyObject *right = TOP();
+            PyObject *left = SECOND();
+            DEOPT_IF(!PyUnicode_CheckExact(left), COMPARE_OP);
+            DEOPT_IF(!PyUnicode_CheckExact(right), COMPARE_OP);
+            STAT_INC(COMPARE_OP, hit);
+            int res = _PyUnicode_Equal(left, right);
+            if (res < 0) {
+                goto error;
+            }
+            assert(caches[0].adaptive.original_oparg == Py_EQ ||
+                   caches[0].adaptive.original_oparg == Py_NE);
+            NEXTOPARG();
+            assert(opcode == POP_JUMP_IF_TRUE || opcode == POP_JUMP_IF_FALSE);
+            STACK_SHRINK(2);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            assert(res == 0 || res == 1);
+            assert(invert == 0 || invert == 1);
+            int jump = res ^ invert;
+            if (!jump) {
+                next_instr++;
+                NOTRACE_DISPATCH();
+            }
+            else {
+                JUMPTO(oparg);
+                CHECK_EVAL_BREAKER();
+                NOTRACE_DISPATCH();
+            }
         }
 
         TARGET(IS_OP) {
@@ -5083,6 +5204,7 @@ MISS_WITH_CACHE(LOAD_GLOBAL)
 MISS_WITH_CACHE(LOAD_METHOD)
 MISS_WITH_CACHE(CALL_FUNCTION)
 MISS_WITH_CACHE(BINARY_OP)
+MISS_WITH_CACHE(COMPARE_OP)
 MISS_WITH_CACHE(BINARY_SUBSCR)
 MISS_WITH_OPARG_COUNTER(STORE_SUBSCR)
 
