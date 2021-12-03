@@ -190,7 +190,7 @@ static inline void
 _PyThreadState_reset(PyThreadState *tstate)
 {
     /* Make it match _PyThreadState_INIT. */
-    memset(tstate, 0, (ssize_t)(&tstate->_preallocated) - (ssize_t)tstate);
+    memset(tstate, 0, (int)((Py_uintptr_t)(&tstate->_preallocated) - (Py_uintptr_t)tstate));
 }
 #endif
 

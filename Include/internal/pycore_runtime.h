@@ -156,8 +156,7 @@ static inline void
 _PyRuntimeState_reset(_PyRuntimeState *runtime)
 {
     /* Make it match _PyRuntimeState_INIT. */
-    memset(runtime, 0, sizeof(_PyRuntimeState) - sizeof(runtime->_preallocated));
-    memset(runtime, 0, (ssize_t)(&runtime->_preallocated) - (ssize_t)runtime);
+    memset(runtime, 0, (int)((Py_uintptr_t)(&runtime->_preallocated) - (Py_uintptr_t)runtime));
 }
 
 

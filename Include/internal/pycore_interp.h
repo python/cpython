@@ -348,7 +348,7 @@ static inline void
 _PyInterpreterState_reset(PyInterpreterState *interp)
 {
     /* Make it match _PyInterpreterState_INIT. */
-    memset(interp, 0, (ssize_t)(&interp->_preallocated) - (ssize_t)interp);
+    memset(interp, 0, (int)((Py_uintptr_t)(&interp->_preallocated) - (Py_uintptr_t)interp));
 }
 
 extern void _PyInterpreterState_ClearModules(PyInterpreterState *interp);
