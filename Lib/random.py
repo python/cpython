@@ -237,11 +237,9 @@ class Random(_random.Random):
 
         if not n:
             return 0
-        getrandbits = self.getrandbits
         k = n.bit_length()  # don't use (n-1) here because n can be 1
-        r = getrandbits(k)  # 0 <= r < 2**k
-        while r >= n:
-            r = getrandbits(k)
+        while (r := self.getrandbits(k)) >= n:  # 0 <= r < 2**k
+            pass
         return r
 
     def _randbelow_without_getrandbits(self, n, maxsize=1<<BPF):
@@ -250,19 +248,17 @@ class Random(_random.Random):
         The implementation does not use getrandbits, but only random.
         """
 
-        random = self.random
         if n >= maxsize:
             _warn("Underlying random() generator does not supply \n"
                 "enough bits to choose from a population range this large.\n"
                 "To remove the range limitation, add a getrandbits() method.")
-            return _floor(random() * n)
+            return _floor(self.random() * n)
         if n == 0:
             return 0
         rem = maxsize % n
         limit = (maxsize - rem) / maxsize   # int(limit * maxsize) % n == 0
-        r = random()
-        while r >= limit:
-            r = random()
+        while (r := self.random()) >= limit:
+            pass
         return _floor(r * maxsize) % n
 
     _randbelow = _randbelow_with_getrandbits
