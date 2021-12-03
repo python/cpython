@@ -292,8 +292,8 @@ PyInterpreterState_New(void)
         assert(interpreters->head == NULL);
 
         interp = &runtime->_preallocated.interpreters_main;
-        assert(intrp->id == 0);
-        assert(intrp->next == NULL);
+        assert(interp->id == 0);
+        assert(interp->next == NULL);
         interpreters->main = interp;
     }
     else {
