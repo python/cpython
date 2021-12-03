@@ -330,6 +330,34 @@
       <DeepIntFile>$(IntDir)stat.g.c</DeepIntFile>
       <DeepOutFile>$(PySourcePath)Python\deepfreeze\df.stat.c</DeepOutFile>
     </None>
+    <None Include="..\Lib\types.py">
+      <ModName>types</ModName>
+      <IntFile>$(IntDir)types.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\types.h</OutFile>
+      <DeepIntFile>$(IntDir)types.g.c</DeepIntFile>
+      <DeepOutFile>$(PySourcePath)Python\deepfreeze\df.types.c</DeepOutFile>
+    </None>
+    <None Include="..\Lib\importlib\util.py">
+      <ModName>importlib.util</ModName>
+      <IntFile>$(IntDir)importlib.util.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\importlib.util.h</OutFile>
+      <DeepIntFile>$(IntDir)importlib.util.g.c</DeepIntFile>
+      <DeepOutFile>$(PySourcePath)Python\deepfreeze\df.importlib.util.c</DeepOutFile>
+    </None>
+    <None Include="..\Lib\importlib\machinery.py">
+      <ModName>importlib.machinery</ModName>
+      <IntFile>$(IntDir)importlib.machinery.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\importlib.machinery.h</OutFile>
+      <DeepIntFile>$(IntDir)importlib.machinery.g.c</DeepIntFile>
+      <DeepOutFile>$(PySourcePath)Python\deepfreeze\df.importlib.machinery.c</DeepOutFile>
+    </None>
+    <None Include="..\Lib\runpy.py">
+      <ModName>runpy</ModName>
+      <IntFile>$(IntDir)runpy.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\runpy.h</OutFile>
+      <DeepIntFile>$(IntDir)runpy.g.c</DeepIntFile>
+      <DeepOutFile>$(PySourcePath)Python\deepfreeze\df.runpy.c</DeepOutFile>
+    </None>
     <None Include="..\Lib\__hello__.py">
       <ModName>__hello__</ModName>
       <IntFile>$(IntDir)__hello__.g.h</IntFile>
