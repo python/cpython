@@ -772,6 +772,10 @@ new_threadstate(PyInterpreterState *interp)
 
         tstate = &interp->_preallocated.tstate;
         tstate->id = 1;
+        if (!tstate->_preallocated.initialized) {
+            PyInterpreterState *main_interp = _PyInterpreterState_Main();
+            init_threadstate_from_other(tstate, &main_interp->_preallocated.tstate);
+        }
 
         interp->threads._preallocated_used += 1;
         interp->threads.next_unique_id = 2;
