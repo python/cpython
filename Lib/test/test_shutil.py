@@ -1610,6 +1610,12 @@ class TestArchives(BaseTest, unittest.TestCase):
         self.assertRaises(shutil.ReadError, unpack_archive, converter(TESTFN))
         self.assertRaises(ValueError, unpack_archive, converter(TESTFN), format='xxx')
 
+    def x(self):
+        tmpdir2 = self.mkdtemp()
+        with self.assertWarnsRegex(RuntimeWarning, '2 skipped'):
+            unpack_archive(pathlib.Path('Lib/test/testzip.zip'), pathlib.Path(tmpdir2))
+        self.assertEqual(rlistdir(tmpdir2), ['test'])
+
     def test_unpack_archive_tar(self):
         self.check_unpack_archive('tar')
 
