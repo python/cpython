@@ -143,8 +143,9 @@ AC_ARG_WITH(
     if test "$build_python_ver" != "$PACKAGE_VERSION"; then
       AC_MSG_ERROR(["$with_build_python" has incompatible version $build_python_ver (expected: $PACKAGE_VERSION)])
     fi
-    dnl use build Python for regeneration, too
+    dnl Build Python interpreter is used for regeneration and freezing.
     ac_cv_prog_PYTHON_FOR_REGEN=$with_build_python
+    PYTHON_FOR_FREEZE="$with_build_python"
     PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`:)$(srcdir)/Lib _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH) '$with_build_python
     AC_MSG_RESULT([$with_build_python])
   ], [
@@ -152,9 +153,14 @@ AC_ARG_WITH(
       [AC_MSG_ERROR([Cross compiling requires --with-build-python])]
     )
     PYTHON_FOR_BUILD='./$(BUILDPYTHON) -E'
+    PYTHON_FOR_FREEZE="./_bootstrap_python"
   ]
 )
 AC_SUBST([PYTHON_FOR_BUILD])
+
+AC_MSG_CHECKING([for Python interpreter freezing])
+AC_MSG_RESULT([$PYTHON_FOR_FREEZE])
+AC_SUBST([PYTHON_FOR_FREEZE])
 
 AC_CHECK_PROGS([PYTHON_FOR_REGEN],
   [python$PACKAGE_VERSION python3.10 python3.9 python3.8 python3.7 python3.6 python3 python],
@@ -162,7 +168,7 @@ AC_CHECK_PROGS([PYTHON_FOR_REGEN],
 AC_SUBST(PYTHON_FOR_REGEN)
 
 AC_MSG_CHECKING([Python for regen version])
-if command -v $PYTHON_FOR_REGEN >/dev/null 2>&1; then
+if command -v "$PYTHON_FOR_REGEN" >/dev/null 2>&1; then
   AC_MSG_RESULT([$($PYTHON_FOR_REGEN -V 2>/dev/null)])
 else
   AC_MSG_RESULT([missing])
@@ -1510,6 +1516,8 @@ esac
 if test "$Py_LTO" = 'true' ; then
   case $CC in
     *clang*)
+      dnl flag to disable lto during linking
+      LDFLAGS_NOLTO="-fno-lto"
       AC_SUBST(LLVM_AR)
       AC_PATH_TOOL(LLVM_AR, llvm-ar, '', ${llvm_path})
       AC_SUBST(LLVM_AR_FOUND)
@@ -1565,6 +1573,8 @@ if test "$Py_LTO" = 'true' ; then
       then
         AC_MSG_ERROR([thin lto is not supported under gcc compiler.])
       fi
+      dnl flag to disable lto during linking
+      LDFLAGS_NOLTO="-fno-lto"
       case $ac_sys_system in
         Darwin*)
           LTOFLAGS="-flto -Wl,-export_dynamic"
@@ -1746,6 +1756,7 @@ fi
 AC_SUBST(BASECFLAGS)
 AC_SUBST(CFLAGS_NODIST)
 AC_SUBST(LDFLAGS_NODIST)
+AC_SUBST(LDFLAGS_NOLTO)
 
 # The -arch flags for universal builds on macOS
 UNIVERSAL_ARCH_FLAGS=
