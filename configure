@@ -845,6 +845,7 @@ SHLIB_SUFFIX
 LIBTOOL_CRUFT
 OTHER_LIBTOOL_OPT
 UNIVERSAL_ARCH_FLAGS
+LDFLAGS_NOLTO
 LDFLAGS_NODIST
 CFLAGS_NODIST
 BASECFLAGS
@@ -932,6 +933,7 @@ CONFIG_ARGS
 SOVERSION
 VERSION
 PYTHON_FOR_REGEN
+PYTHON_FOR_FREEZE
 PYTHON_FOR_BUILD
 FREEZE_MODULE
 host_os
@@ -3250,6 +3252,7 @@ fi
       as_fn_error $? "\"$with_build_python\" has incompatible version $build_python_ver (expected: $PACKAGE_VERSION)" "$LINENO" 5
     fi
         ac_cv_prog_PYTHON_FOR_REGEN=$with_build_python
+    PYTHON_FOR_FREEZE="$with_build_python"
     PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`:)$(srcdir)/Lib _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH) '$with_build_python
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_build_python" >&5
 $as_echo "$with_build_python" >&6; }
@@ -3261,10 +3264,17 @@ else
 
 fi
     PYTHON_FOR_BUILD='./$(BUILDPYTHON) -E'
+    PYTHON_FOR_FREEZE="./_bootstrap_python"
 
 
 fi
 
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for Python interpreter freezing" >&5
+$as_echo_n "checking for Python interpreter freezing... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $PYTHON_FOR_FREEZE" >&5
+$as_echo "$PYTHON_FOR_FREEZE" >&6; }
 
 
 for ac_prog in python$PACKAGE_VERSION python3.10 python3.9 python3.8 python3.7 python3.6 python3 python
@@ -3314,7 +3324,7 @@ test -n "$PYTHON_FOR_REGEN" || PYTHON_FOR_REGEN="python3"
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking Python for regen version" >&5
 $as_echo_n "checking Python for regen version... " >&6; }
-if command -v $PYTHON_FOR_REGEN >/dev/null 2>&1; then
+if command -v "$PYTHON_FOR_REGEN" >/dev/null 2>&1; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $($PYTHON_FOR_REGEN -V 2>/dev/null)" >&5
 $as_echo "$($PYTHON_FOR_REGEN -V 2>/dev/null)" >&6; }
 else
@@ -7101,6 +7111,7 @@ fi
 if test "$Py_LTO" = 'true' ; then
   case $CC in
     *clang*)
+            LDFLAGS_NOLTO="-fno-lto"
 
       if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}llvm-ar", so it can be a program name with args.
@@ -7254,6 +7265,7 @@ $as_echo "$as_me: llvm-ar found via xcrun: ${LLVM_AR}" >&6;}
       then
         as_fn_error $? "thin lto is not supported under gcc compiler." "$LINENO" 5
       fi
+            LDFLAGS_NOLTO="-fno-lto"
       case $ac_sys_system in
         Darwin*)
           LTOFLAGS="-flto -Wl,-export_dynamic"
@@ -7529,6 +7541,7 @@ then
 	;;
     esac
 fi
+
 
 
 
