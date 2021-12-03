@@ -1818,10 +1818,10 @@ Class Binding
    ``A.__dict__['x'].__get__(None, A)``.
 
 Super Binding
-   If ``a`` is an instance of :class:`super`, then the binding ``super(B, obj).m()``
-   searches ``obj.__class__.__mro__`` for the base class ``A``
-   immediately following ``B`` and then invokes the descriptor with the call:
-   ``A.__dict__['m'].__get__(obj, obj.__class__)``.
+   A dotted lookup such as ``super(A, obj).m`` searches
+   ``obj.__class__.__mro__`` for a base class ``B`` following ``A`` and
+   then returns ``B.__dict__['m'].__get__(obj, A)``.  If not a
+   descriptor, ``m`` is returned unchanged.
 
 For instance bindings, the precedence of descriptor invocation depends on
 which descriptor methods are defined.  A descriptor can define any combination
