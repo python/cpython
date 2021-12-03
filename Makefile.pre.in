@@ -1062,10 +1062,9 @@ FROZEN_FILES_OUT = \
 Programs/_freeze_module.o: Programs/_freeze_module.c Makefile
 
 Modules/getpath_noop.o: $(srcdir)/Modules/getpath_noop.c Makefile
-	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $(srcdir)/Modules/getpath_noop.c
 
-Programs/_freeze_module: Programs/_freeze_module.o $(LIBRARY_OBJS_OMIT_FROZEN) Modules/getpath_noop.o
-	$(LINKCC) $(PY_CORE_LDFLAGS) -o $@ Programs/_freeze_module.o $(LIBRARY_OBJS_OMIT_FROZEN) Modules/getpath_noop.o $(LIBS) $(MODLIBS) $(SYSLIBS)
+Programs/_freeze_module: Programs/_freeze_module.o Modules/getpath_noop.o $(LIBRARY_OBJS_OMIT_FROZEN)
+	$(LINKCC) $(PY_CORE_LDFLAGS) -o $@ Programs/_freeze_module.o Modules/getpath_noop.o $(LIBRARY_OBJS_OMIT_FROZEN) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 # BEGIN: freezing modules
 
@@ -1131,11 +1130,11 @@ Python/frozen_modules/frozen_only.h: $(FREEZE_MODULE) Tools/freeze/flag.py
 
 # END: freezing modules
 
-Tools/scripts/freeze_modules.py: $(FREEZE_MODULE)
-
 # We manually freeze getpath.py rather than through freeze_modules
-Modules/getpath.h: Programs/_freeze_module Modules/getpath.py
-	Programs/_freeze_module getpath $(srcdir)/Modules/getpath.py $(srcdir)/Modules/getpath.h
+Python/frozen_modules/getpath.h: $(FREEZE_MODULE) Modules/getpath.py
+	$(FREEZE_MODULE) getpath $(srcdir)/Modules/getpath.py Python/frozen_modules/getpath.h
+
+Tools/scripts/freeze_modules.py: $(FREEZE_MODULE)
 
 .PHONY: regen-frozen
 regen-frozen: Tools/scripts/freeze_modules.py $(FROZEN_FILES_IN)
@@ -1177,7 +1176,7 @@ Modules/getbuildinfo.o: $(PARSER_OBJS) \
 	      -DGITBRANCH="\"`LC_ALL=C $(GITBRANCH)`\"" \
 	      -o $@ $(srcdir)/Modules/getbuildinfo.c
 
-Modules/getpath.o: $(srcdir)/Modules/getpath.c Modules/getpath.h Makefile
+Modules/getpath.o: $(srcdir)/Modules/getpath.c Python/frozen_modules/getpath.h Makefile $(PYTHON_HEADERS)
 	$(CC) -c $(PY_CORE_CFLAGS) -DPYTHONPATH='"$(PYTHONPATH)"' \
 		-DPREFIX='"$(prefix)"' \
 		-DEXEC_PREFIX='"$(exec_prefix)"' \
