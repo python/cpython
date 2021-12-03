@@ -67,6 +67,22 @@ _Py_IDENTIFIER(stderr);
 _Py_IDENTIFIER(warnoptions);
 _Py_IDENTIFIER(write);
 
+PyObject *
+_PySys_GetAttr(PyThreadState *tstate, PyObject *name)
+{
+    PyObject *sd = tstate->interp->sysdict;
+    if (sd == NULL) {
+        return NULL;
+    }
+    PyObject *exc_type, *exc_value, *exc_tb;
+    _PyErr_Fetch(tstate, &exc_type, &exc_value, &exc_tb);
+    /* XXX Suppress a new exception if it was raised and restore
+     * the old one. */
+    PyObject *value = _PyDict_GetItemWithError(sd, name);
+    _PyErr_Restore(tstate, exc_type, exc_value, exc_tb);
+    return value;
+}
+
 static PyObject *
 sys_get_object_id(PyThreadState *tstate, _Py_Identifier *key)
 {
