@@ -262,6 +262,7 @@ struct _is {
     int requires_idref;
     PyThread_type_lock id_mutex;
 
+    int _initialized;  // low-level
     int finalizing;
 
     struct _ceval_state ceval;

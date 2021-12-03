@@ -99,6 +99,8 @@ _PyRuntimeState_Init_impl(_PyRuntimeState *runtime)
     }
     runtime->unicode_ids.next_index = unicode_next_index;
 
+    runtime->_initialized = 1;
+
     return _PyStatus_OK();
 }
 
@@ -267,6 +269,8 @@ init_interpreter(PyInterpreterState *interp, PyThread_type_lock pending_lock)
     // If needed, we could initialize _preallocated manually, instead
     // of expecting it to be pre-initialized.
     assert(interp->_preallocated.initialized);
+
+    interp->_initialized = 1;
 }
 
 PyInterpreterState *
@@ -761,6 +765,8 @@ init_threadstate(PyThreadState *tstate,
     // If needed, we could initialize _preallocated manually, instead
     // of expecting it to be pre-initialized.
     assert(tstate->_preallocated.initialized);
+
+    tstate->_initialized = 1;
 }
 
 static inline void

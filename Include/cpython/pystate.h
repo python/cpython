@@ -77,6 +77,8 @@ struct _ts {
     struct _ts *next;
     PyInterpreterState *interp;
 
+    int _initialized;  // low-level
+
     int recursion_remaining;
     int recursion_limit;
     int recursion_headroom; /* Allow 50 more calls to handle any errors. */

@@ -68,6 +68,9 @@ struct _Py_unicode_runtime_ids {
 /* Full Python runtime state */
 
 typedef struct pyruntimestate {
+    /* Is the struct data low-level initialized? */
+    int _initialized;
+
     /* Is running Py_PreInitialize()? */
     int preinitializing;
 
