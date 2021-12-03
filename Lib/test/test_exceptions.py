@@ -525,6 +525,14 @@ class ExceptionTests(unittest.TestCase):
 
                 with self.assertRaises(TypeError):
                     e.__note__ = 42
+                self.assertEqual(e.__note__, "My Note")
+
+                e.__note__ = "Your Note"
+                self.assertEqual(e.__note__, "Your Note")
+
+                with self.assertRaises(TypeError):
+                    del e.__note__
+                self.assertEqual(e.__note__, "Your Note")
 
                 e.__note__ = None
                 self.assertIsNone(e.__note__)
