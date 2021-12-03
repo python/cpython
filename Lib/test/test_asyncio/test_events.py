@@ -2322,10 +2322,6 @@ class TimerTests(unittest.TestCase):
         self.assertIsNone(h._callback)
         self.assertIsNone(h._args)
 
-        # when cannot be None
-        self.assertRaises(ValueError,
-                          asyncio.TimerHandle, None, callback, args,
-                          self.loop)
 
     def test_timer_repr(self):
         self.loop.get_debug.return_value = False

@@ -101,8 +101,6 @@ class TimerHandle(Handle):
     __slots__ = ['_scheduled', '_when']
 
     def __init__(self, when, callback, args, loop, context=None):
-        if when is None:
-            raise ValueError("when cannot be None")
         super().__init__(callback, args, loop, context)
         if self._source_traceback:
             del self._source_traceback[-1]
