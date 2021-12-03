@@ -175,12 +175,14 @@ struct _ts {
     } _preallocated;
 };
 
+#ifdef Py_BUILD_CORE
 #define _PyThreadState_INIT \
     { \
         ._preallocated = { \
             .initialized = 1, \
         }, \
     }
+#endif
 
 // Alias for backward compatibility with Python 3.8
 #define _PyInterpreterState_Get PyInterpreterState_Get
