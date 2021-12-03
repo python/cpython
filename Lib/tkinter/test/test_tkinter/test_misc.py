@@ -3,7 +3,7 @@ import unittest
 import tkinter
 import enum
 from test import support
-from tkinter.test.support import AbstractTkTest, AbstractDefaultRootTest
+from tkinter.test.support import AbstractTkTest, AbstractDefaultRootTest, get_tk_patchlevel
 
 support.requires('gui')
 
@@ -208,7 +208,9 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(rgb('red'), (65535, 0, 0))
         self.assertEqual(rgb('dark slate blue'), (18504, 15677, 35723))
         # #RGB - extends each 4-bit hex value to be 16-bit.
-        self.assertEqual(rgb('#F0F'), (0xFFFF, 0x0000, 0xFFFF))
+        self.assertEqual(rgb('#F0F'), (0xFFFF, 0x0000, 0xFFFF)
+                                      if get_tk_patchlevel() >= (8, 5, 12)
+                                      else (0xF0F0, 0x0000, 0xF0F0))
         # #RRGGBB - extends each 8-bit hex value to be 16-bit.
         self.assertEqual(rgb('#4a3c8c'), (0x4a4a, 0x3c3c, 0x8c8c))
         # #RRRRGGGGBBBB

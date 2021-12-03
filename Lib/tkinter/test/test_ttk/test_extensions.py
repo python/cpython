@@ -3,7 +3,7 @@ import unittest
 import tkinter
 from tkinter import ttk
 from test.support import requires, gc_collect
-from tkinter.test.support import AbstractTkTest, AbstractDefaultRootTest
+from tkinter.test.support import AbstractTkTest, AbstractDefaultRootTest, get_tk_patchlevel
 
 requires('gui')
 
@@ -57,8 +57,9 @@ class LabeledScaleTest(AbstractTkTest, unittest.TestCase):
 
         # variable initialization/passing
         passed_expected = (('0', 0), (0, 0), (10, 10),
-            (-1, -1), (sys.maxsize + 1, sys.maxsize + 1),
-            (2.5, 2), ('2.5', 2))
+            (-1, -1), (2.5, 2), ('2.5', 2))
+        if get_tk_patchlevel() >= (8, 5, 8):
+            passed_expected += ((sys.maxsize + 1, sys.maxsize + 1),)
         for pair in passed_expected:
             x = ttk.LabeledScale(self.root, from_=pair[0])
             self.assertEqual(x.value, pair[1])

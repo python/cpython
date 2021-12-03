@@ -205,6 +205,9 @@ class AbstractWidgetTest(AbstractTkTest):
     def test_keys(self):
         widget = self.create()
         keys = widget.keys()
+        if get_tk_patchlevel() < (8, 5, 11) and keys.count('takefocus') > 1:
+            # Tk bug: "takefocus" occurred twice in keys
+            keys.remove('takefocus')
         self.assertEqual(sorted(keys), sorted(widget.configure()))
         for k in keys:
             widget[k]

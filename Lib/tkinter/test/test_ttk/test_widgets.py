@@ -5,7 +5,8 @@ from test.support import requires, gc_collect
 import sys
 
 from test.test_ttk_textonly import MockTclObj
-from tkinter.test.support import (AbstractTkTest, tcl_version, get_tk_patchlevel,
+from tkinter.test.support import (AbstractTkTest,
+                                  tcl_version, get_tk_patchlevel, requires_tcl,
                                   simulate_mouse_click, AbstractDefaultRootTest)
 from tkinter.test.widget_tests import (add_standard_options, noconv,
     AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests,
@@ -203,6 +204,12 @@ class LabelTest(AbstractLabelTest, unittest.TestCase):
         self.checkParam(widget, 'font',
                         '-Adobe-Helvetica-Medium-R-Normal--*-120-*-*-*-*-*-*')
 
+    if get_tk_patchlevel() < (8, 5, 11):
+        # different results on Tk < 8.5.11
+        @unittest.expectedFailure
+        def test_configure_borderwidth(self):
+            super().test_configure_borderwidth()
+
 
 @add_standard_options(StandardTtkOptionsTests)
 class ButtonTest(AbstractLabelTest, unittest.TestCase):
@@ -335,6 +342,7 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
         self.assertRaises(tkinter.TclError, self.entry.identify, 5, None)
         self.assertRaises(tkinter.TclError, self.entry.identify, 5, '')
 
+    @requires_tcl(8, 5, 10)
     def test_validation_options(self):
         success = []
         test_invalid = lambda: success.append(True)
@@ -379,6 +387,7 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(validation, [False, True])
         self.assertEqual(self.entry.get(), 'a')
 
+    @requires_tcl(8, 5, 10)
     def test_revalidation(self):
         def validate(content):
             for letter in content:
@@ -1099,6 +1108,7 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(self.nb.select(), str(self.child2))
 
 
+@requires_tcl(8, 5, 9)
 @add_standard_options(IntegerSizeTests, StandardTtkOptionsTests)
 class SpinboxTest(EntryTest, unittest.TestCase):
     OPTIONS = (
@@ -1800,6 +1810,7 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
             'blue')
         self.assertIsInstance(self.tv.tag_configure('test'), dict)
 
+    @requires_tcl(8, 5, 9)
     def test_tag_has(self):
         item1 = self.tv.insert('', 'end', text='Item 1', tags=['tag1'])
         item2 = self.tv.insert('', 'end', text='Item 2', tags=['tag2'])

@@ -601,8 +601,7 @@ class TclTest(unittest.TestCase):
         ]
         tk_patchlevel = get_tk_patchlevel()
         if tcl_version >= (8, 5):
-            if not self.wantobjects or tk_patchlevel < (8, 5, 5):
-                # Before 8.5.5 dicts were converted to lists through string
+            if not self.wantobjects:
                 expected = ('12', '\u20ac', '\xe2\x82\xac', '3.4')
             else:
                 expected = (12, '\u20ac', b'\xe2\x82\xac', (3.4,))
@@ -645,8 +644,7 @@ class TclTest(unittest.TestCase):
         if tcl_version >= (8, 5):
             arg = tcl.call('dict', 'create',
                            '-a', (1, 2, 3), '-something', 'foo', 'status', ())
-            if not self.wantobjects or get_tk_patchlevel() < (8, 5, 5):
-                # Before 8.5.5 dicts were converted to lists through string
+            if not self.wantobjects:
                 expected = {'a': '1 2 3', 'something': 'foo', 'status': ''}
             else:
                 expected = {'a': (1, 2, 3), 'something': 'foo', 'status': ''}
