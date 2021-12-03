@@ -1,0 +1,3 @@
+The Ubuntu test runner now configures and compiles CPython out of tree. The
+source directory is a read-only bind mount to ensure that the build cannot
+create or modify any files in the source tree.
