@@ -46,6 +46,7 @@ BaseException_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     /* the dict is created on the fly in PyObject_GenericSetAttr */
     self->dict = NULL;
+    self->note = NULL;
     self->traceback = self->cause = self->context = NULL;
     self->suppress_context = 0;
 
@@ -81,6 +82,7 @@ BaseException_clear(PyBaseExceptionObject *self)
 {
     Py_CLEAR(self->dict);
     Py_CLEAR(self->args);
+    Py_CLEAR(self->note);
     Py_CLEAR(self->traceback);
     Py_CLEAR(self->cause);
     Py_CLEAR(self->context);
@@ -105,6 +107,7 @@ BaseException_traverse(PyBaseExceptionObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(self->dict);
     Py_VISIT(self->args);
+    Py_VISIT(self->note);
     Py_VISIT(self->traceback);
     Py_VISIT(self->cause);
     Py_VISIT(self->context);
@@ -217,6 +220,33 @@ BaseException_set_args(PyBaseExceptionObject *self, PyObject *val, void *Py_UNUS
 }
 
 static PyObject *
+BaseException_get_note(PyBaseExceptionObject *self, void *Py_UNUSED(ignored))
+{
+    if (self->note == NULL) {
+        Py_RETURN_NONE;
+    }
+    return Py_NewRef(self->note);
+}
+
+static int
+BaseException_set_note(PyBaseExceptionObject *self, PyObject *note,
+                       void *Py_UNUSED(ignored))
+{
+    if (note == NULL) {
+        PyErr_SetString(PyExc_TypeError, "__note__ may not be deleted");
+        return -1;
+    }
+    else if (note != Py_None && !PyUnicode_CheckExact(note)) {
+        PyErr_SetString(PyExc_TypeError, "__note__ must be a string or None");
+        return -1;
+    }
+
+    Py_INCREF(note);
+    Py_XSETREF(self->note, note);
+    return 0;
+}
+
+static PyObject *
 BaseException_get_tb(PyBaseExceptionObject *self, void *Py_UNUSED(ignored))
 {
     if (self->traceback == NULL) {
@@ -306,6 +336,7 @@ BaseException_set_cause(PyObject *self, PyObject *arg, void *Py_UNUSED(ignored))
 static PyGetSetDef BaseException_getset[] = {
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
     {"args", (getter)BaseException_get_args, (setter)BaseException_set_args},
+    {"__note__", (getter)BaseException_get_note, (setter)BaseException_set_note},
     {"__traceback__", (getter)BaseException_get_tb, (setter)BaseException_set_tb},
     {"__context__", BaseException_get_context,
      BaseException_set_context, PyDoc_STR("exception context")},
