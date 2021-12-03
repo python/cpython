@@ -208,13 +208,17 @@ _PyInterpreterState_Enable(_PyRuntimeState *runtime)
 }
 
 static void
-init_interpreter_from_other(PyInterpreterState *interp,
+init_interpreter_static_data(PyInterpreterState *interp,
                              PyInterpreterState *other)
 {
     assert(other != NULL);
     assert(other != interp);
     assert(other->_preallocated.initialized);
     assert(!interp->_preallocated.initialized);
+
+    // We only want to copy static data that every interpreter has in common.
+    // Hence, if "other" was statically initialized
+    // then we only want that data.
 
     /* Initialize interp->_preallocated. */
     // interp->_preallocated.tstate is initialized in new_threadstate().
@@ -318,7 +322,7 @@ PyInterpreterState_New(void)
         }
         interp->id = interpreters->next_id;
         interp->next = interpreters->head;
-        init_interpreter_from_other(interp, interpreters->main);
+        init_interpreter_static_data(interp, interpreters->main);
     }
     interp->runtime = runtime;
     init_interpreter(interp, pending_lock);
@@ -697,12 +701,16 @@ allocate_chunk(int size_in_bytes, _PyStackChunk* previous)
 }
 
 static void
-init_threadstate_from_other(PyThreadState *tstate, PyThreadState *other)
+init_threadstate_static_data(PyThreadState *tstate, PyThreadState *other)
 {
     assert(other != NULL);
     assert(other != tstate);
     assert(other->_preallocated.initialized);
     assert(!tstate->_preallocated.initialized);
+
+    // We only want to copy static data that every thread state has in common.
+    // Hence, if "other" was statically initialized
+    // then we only want that data.
 
     /* Initialize tstate->_preallocated. */
     tstate->_preallocated.initialized = 1;
@@ -776,10 +784,6 @@ new_threadstate(PyInterpreterState *interp)
 
         tstate = &interp->_preallocated.tstate;
         tstate->id = 1;
-        if (!tstate->_preallocated.initialized) {
-            PyInterpreterState *main_interp = _PyInterpreterState_Main();
-            init_threadstate_from_other(tstate, &main_interp->_preallocated.tstate);
-        }
 
         interp->threads._preallocated_used += 1;
         interp->threads.next_unique_id = 2;
@@ -797,7 +801,7 @@ new_threadstate(PyInterpreterState *interp)
         tstate->id = interp->threads.next_unique_id;
         tstate->next = interp->threads.head;
         tstate->next->prev = tstate;
-        init_threadstate_from_other(tstate, &interp->_preallocated.tstate);
+        init_threadstate_static_data(tstate, &interp->_preallocated.tstate);
 
         interp->threads.next_unique_id += 1;
     }
