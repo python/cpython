@@ -74,7 +74,6 @@ Mac/pythonw
 Misc/python.pc
 Misc/python-embed.pc
 Misc/python-config.sh
-Modules/getpath.h
 Modules/Setup.config
 Modules/Setup.local
 Modules/Setup.stdlib
