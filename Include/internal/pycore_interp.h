@@ -329,6 +329,7 @@ struct _is {
     struct ast_state ast;
     struct type_cache type_cache;
 
+    // This must be last.
     struct {
         int initialized;
         PyThreadState tstate;
@@ -342,6 +343,13 @@ struct _is {
             .tstate = _PyThreadState_INIT, \
         }, \
     }
+
+static inline void
+_PyInterpreterState_reset(PyInterpreterState *interp)
+{
+    /* Make it match _PyInterpreterState_INIT. */
+    memset(interp, 0, (ssize_t)(&interp->_preallocated) - (ssize_t)interp);
+}
 
 extern void _PyInterpreterState_ClearModules(PyInterpreterState *interp);
 extern void _PyInterpreterState_Clear(PyThreadState *tstate);

@@ -172,6 +172,7 @@ struct _ts {
     PyObject **datastack_limit;
     /* XXX signal handlers should also be here */
 
+    // This must be last.
     struct {
         int initialized;
     } _preallocated;
@@ -184,6 +185,13 @@ struct _ts {
             .initialized = 1, \
         }, \
     }
+
+static inline void
+_PyThreadState_reset(PyThreadState *tstate)
+{
+    /* Make it match _PyThreadState_INIT. */
+    memset(tstate, 0, (ssize_t)(&tstate->_preallocated) - (ssize_t)tstate);
+}
 #endif
 
 // Alias for backward compatibility with Python 3.8

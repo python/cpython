@@ -138,6 +138,7 @@ typedef struct pyruntimestate {
 
     // XXX Consolidate globals found via the check-c-globals script.
 
+    // This must be last.
     struct {
         struct _is interpreters_main;
     } _preallocated;
@@ -150,6 +151,14 @@ typedef struct pyruntimestate {
         }, \
     }
 /* Note: _PyRuntimeState_INIT sets other fields to 0/NULL */
+
+static inline void
+_PyRuntimeState_reset(_PyRuntimeState *runtime)
+{
+    /* Make it match _PyRuntimeState_INIT. */
+    memset(runtime, 0, sizeof(_PyRuntimeState) - sizeof(runtime->_preallocated));
+    memset(runtime, 0, (ssize_t)(&runtime->_preallocated) - (ssize_t)runtime);
+}
 
 
 PyAPI_DATA(_PyRuntimeState) _PyRuntime;
