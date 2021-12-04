@@ -1613,7 +1613,8 @@ class TestArchives(BaseTest, unittest.TestCase):
     def test_unpack_archive_zip_warn_skipped(self):
         tmpdir2 = self.mkdtemp()
         with self.assertWarnsRegex(UserWarning, '1 file\(s\) skipped'):
-            unpack_archive(pathlib.Path('Lib/test/testzip.zip'), pathlib.Path(tmpdir2))
+            fn = support.findfile("testzip.zip")
+            unpack_archive(pathlib.Path(fn), pathlib.Path(tmpdir2))
         self.assertEqual(rlistdir(tmpdir2), ['test'])
 
     def test_unpack_archive_tar(self):
