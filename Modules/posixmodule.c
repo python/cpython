@@ -1159,7 +1159,7 @@ path_converter(PyObject *o, void *p)
         /* Inline PyOS_FSPath() for better error messages. */
         PyObject *func, *res;
 
-        func = _PyObject_LookupSpecial(o, &PyId___fspath__);
+        func = _PyObject_LookupSpecialId(o, &PyId___fspath__);
         if (NULL == func) {
             goto error_format;
         }
@@ -14437,7 +14437,7 @@ PyOS_FSPath(PyObject *path)
         return path;
     }
 
-    func = _PyObject_LookupSpecial(path, &PyId___fspath__);
+    func = _PyObject_LookupSpecialId(path, &PyId___fspath__);
     if (NULL == func) {
         return PyErr_Format(PyExc_TypeError,
                             "expected str, bytes or os.PathLike object, "

@@ -1216,7 +1216,7 @@ math_ceil(PyObject *module, PyObject *number)
     _Py_IDENTIFIER(__ceil__);
 
     if (!PyFloat_CheckExact(number)) {
-        PyObject *method = _PyObject_LookupSpecial(number, &PyId___ceil__);
+        PyObject *method = _PyObject_LookupSpecialId(number, &PyId___ceil__);
         if (method != NULL) {
             PyObject *result = _PyObject_CallNoArgs(method);
             Py_DECREF(method);
@@ -1288,7 +1288,7 @@ math_floor(PyObject *module, PyObject *number)
     }
     else
     {
-        PyObject *method = _PyObject_LookupSpecial(number, &PyId___floor__);
+        PyObject *method = _PyObject_LookupSpecialId(number, &PyId___floor__);
         if (method != NULL) {
             PyObject *result = _PyObject_CallNoArgs(method);
             Py_DECREF(method);
@@ -2166,7 +2166,7 @@ math_trunc(PyObject *module, PyObject *x)
             return NULL;
     }
 
-    trunc = _PyObject_LookupSpecial(x, &PyId___trunc__);
+    trunc = _PyObject_LookupSpecialId(x, &PyId___trunc__);
     if (trunc == NULL) {
         if (!PyErr_Occurred())
             PyErr_Format(PyExc_TypeError,

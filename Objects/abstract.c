@@ -107,7 +107,7 @@ PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
             return res;
         }
     }
-    hint = _PyObject_LookupSpecial(o, &PyId___length_hint__);
+    hint = _PyObject_LookupSpecialId(o, &PyId___length_hint__);
     if (hint == NULL) {
         if (PyErr_Occurred()) {
             return -1;
@@ -797,7 +797,7 @@ PyObject_Format(PyObject *obj, PyObject *format_spec)
     }
 
     /* Find the (unbound!) __format__ method */
-    meth = _PyObject_LookupSpecial(obj, &PyId___format__);
+    meth = _PyObject_LookupSpecialId(obj, &PyId___format__);
     if (meth == NULL) {
         PyThreadState *tstate = _PyThreadState_GET();
         if (!_PyErr_Occurred(tstate)) {
@@ -1562,7 +1562,7 @@ PyNumber_Long(PyObject *o)
     if (m && m->nb_index) {
         return PyNumber_Index(o);
     }
-    trunc_func = _PyObject_LookupSpecial(o, &PyId___trunc__);
+    trunc_func = _PyObject_LookupSpecialId(o, &PyId___trunc__);
     if (trunc_func) {
         result = _PyObject_CallNoArgs(trunc_func);
         Py_DECREF(trunc_func);
@@ -2651,7 +2651,7 @@ object_recursive_isinstance(PyThreadState *tstate, PyObject *inst, PyObject *cls
         return r;
     }
 
-    PyObject *checker = _PyObject_LookupSpecial(cls, &PyId___instancecheck__);
+    PyObject *checker = _PyObject_LookupSpecialId(cls, &PyId___instancecheck__);
     if (checker != NULL) {
         if (_Py_EnterRecursiveCall(tstate, " in __instancecheck__")) {
             Py_DECREF(checker);
@@ -2739,7 +2739,7 @@ object_issubclass(PyThreadState *tstate, PyObject *derived, PyObject *cls)
         return r;
     }
 
-    checker = _PyObject_LookupSpecial(cls, &PyId___subclasscheck__);
+    checker = _PyObject_LookupSpecialId(cls, &PyId___subclasscheck__);
     if (checker != NULL) {
         int ok = -1;
         if (_Py_EnterRecursiveCall(tstate, " in __subclasscheck__")) {

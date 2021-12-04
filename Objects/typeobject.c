@@ -1604,7 +1604,7 @@ PyType_IsSubtype(PyTypeObject *a, PyTypeObject *b)
 */
 
 PyObject *
-_PyObject_LookupSpecial(PyObject *self, _Py_Identifier *attrid)
+_PyObject_LookupSpecialId(PyObject *self, _Py_Identifier *attrid)
 {
     PyObject *res;
 
@@ -5155,7 +5155,7 @@ _PyObject_GetNewArguments(PyObject *obj, PyObject **args, PyObject **kwargs)
 
     /* We first attempt to fetch the arguments for __new__ by calling
        __getnewargs_ex__ on the object. */
-    getnewargs_ex = _PyObject_LookupSpecial(obj, &PyId___getnewargs_ex__);
+    getnewargs_ex = _PyObject_LookupSpecialId(obj, &PyId___getnewargs_ex__);
     if (getnewargs_ex != NULL) {
         PyObject *newargs = _PyObject_CallNoArgs(getnewargs_ex);
         Py_DECREF(getnewargs_ex);
@@ -5208,7 +5208,7 @@ _PyObject_GetNewArguments(PyObject *obj, PyObject **args, PyObject **kwargs)
 
     /* The object does not have __getnewargs_ex__ so we fallback on using
        __getnewargs__ instead. */
-    getnewargs = _PyObject_LookupSpecial(obj, &PyId___getnewargs__);
+    getnewargs = _PyObject_LookupSpecialId(obj, &PyId___getnewargs__);
     if (getnewargs != NULL) {
         *args = _PyObject_CallNoArgs(getnewargs);
         Py_DECREF(getnewargs);
@@ -8613,7 +8613,7 @@ type_new_set_names(PyTypeObject *type)
     Py_ssize_t i = 0;
     PyObject *key, *value;
     while (PyDict_Next(names_to_set, &i, &key, &value)) {
-        PyObject *set_name = _PyObject_LookupSpecial(value, &PyId___set_name__);
+        PyObject *set_name = _PyObject_LookupSpecialId(value, &PyId___set_name__);
         if (set_name == NULL) {
             if (PyErr_Occurred()) {
                 goto error;

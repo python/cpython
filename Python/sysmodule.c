@@ -1692,7 +1692,7 @@ _PySys_GetSizeOf(PyObject *o)
         return (size_t)-1;
     }
 
-    method = _PyObject_LookupSpecial(o, &PyId___sizeof__);
+    method = _PyObject_LookupSpecialId(o, &PyId___sizeof__);
     if (method == NULL) {
         if (!_PyErr_Occurred(tstate)) {
             _PyErr_Format(tstate, PyExc_TypeError,
