@@ -238,8 +238,9 @@ class Random(_random.Random):
         if not n:
             return 0
         k = n.bit_length()  # don't use (n-1) here because n can be 1
-        while (r := self.getrandbits(k)) >= n:  # 0 <= r < 2**k
-            pass
+        r = self.getrandbits(k)  # 0 <= r < 2**k
+        while r >= n:
+            r = self.getrandbits(k)
         return r
 
     def _randbelow_without_getrandbits(self, n, maxsize=1<<BPF):
@@ -257,8 +258,9 @@ class Random(_random.Random):
             return 0
         rem = maxsize % n
         limit = (maxsize - rem) / maxsize   # int(limit * maxsize) % n == 0
-        while (r := self.random()) >= limit:
-            pass
+        r = self.random()
+        while r >= limit:
+            r = self.random()
         return _floor(r * maxsize) % n
 
     _randbelow = _randbelow_with_getrandbits
