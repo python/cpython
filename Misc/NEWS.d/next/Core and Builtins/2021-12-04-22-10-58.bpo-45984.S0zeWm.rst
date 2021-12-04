@@ -1,0 +1,1 @@
+Error messages are now given for invalid string prefixes and potential attribute accesses. Patch by Jeremiah Vivian.
