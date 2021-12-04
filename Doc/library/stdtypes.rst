@@ -4856,7 +4856,7 @@ type and the :class:`bytes` data type:
   represent this kind of object in type annotations with the ``GenericAlias``
   ``re.Match[str]``
 
-* If ``y = re.search(b'bar', b'bar')``, however, ``y`` will also be an instance
+* If ``y = re.search(b'bar', b'bar')``, (note the `b` for :class:`bytes`), ``y`` will also be an instance
   of ``re.Match``, but the return values of ``y.group(0)`` and ``y[0]`` will
   both be of type :class:`bytes`. In type annotations, we would represent this
   subtype of :ref:`re.Match <match-objects>` with ``re.Match[bytes]``.
