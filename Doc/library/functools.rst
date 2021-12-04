@@ -436,8 +436,8 @@ The :mod:`functools` module defines the following functions:
       library. All have been deprecated since Python 3.9 (see :pep:`585`).
       Annotating the first argument of a ``@singledispatch`` implementation
       with one of these aliases is not supported, and will lead to a
-      :exc:`TypeError` being raised. Use :pep:`585`-style syntax instead:
-      ``list[int]`` rather than ``typing.List[int]``,
+      :exc:`TypeError` being raised in Python 3.7 and above. Use
+      :pep:`585`-style syntax instead: ``list`` rather than ``typing.List``,
       ``collections.abc.Iterable[str]`` rather than ``typing.Iterable[str]``,
       etc.
 
