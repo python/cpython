@@ -3218,7 +3218,7 @@ if test "$with_system_ffi" = yes -a "$have_libffi" = yes; then
       [Define to 1 if you have the ffi_prep_closure_loc function in <ffi.h> header file.])
     ])
 
-    AC_CACHE_CHECK([for fffi_closure_alloc in ffi.h], [ac_cv_ffi_closure_alloc], [
+    AC_CACHE_CHECK([for ffi_closure_alloc in ffi.h], [ac_cv_ffi_closure_alloc], [
       AC_EGREP_HEADER([ffi_closure_alloc], [ffi.h], [ac_cv_ffi_closure_alloc=yes], [ac_cv_ffi_closure_alloc=no])
     ])
     AS_VAR_IF([ac_cv_ffi_closure_alloc], [yes], [
