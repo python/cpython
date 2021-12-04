@@ -1015,16 +1015,16 @@ Python/deepfreeze/stat.c: Python/frozen_modules/stat.h $(DEEPFREEZE_DEPS)
 	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/stat.h -m stat -o Python/deepfreeze/stat.c
 
 Python/deepfreeze/types.c: Python/frozen_modules/types.h $(DEEPFREEZE_DEPS)
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/types.h -m types -o Python/deepfreeze/types.c
+	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/types.h -m types -o Python/deepfreeze/types.c
 
 Python/deepfreeze/importlib.util.c: Python/frozen_modules/importlib.util.h $(DEEPFREEZE_DEPS)
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/importlib.util.h -m importlib.util -o Python/deepfreeze/importlib.util.c
+	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/importlib.util.h -m importlib.util -o Python/deepfreeze/importlib.util.c
 
 Python/deepfreeze/importlib.machinery.c: Python/frozen_modules/importlib.machinery.h $(DEEPFREEZE_DEPS)
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/importlib.machinery.h -m importlib.machinery -o Python/deepfreeze/importlib.machinery.c
+	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/importlib.machinery.h -m importlib.machinery -o Python/deepfreeze/importlib.machinery.c
 
 Python/deepfreeze/runpy.c: Python/frozen_modules/runpy.h $(DEEPFREEZE_DEPS)
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/runpy.h -m runpy -o Python/deepfreeze/runpy.c
+	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/runpy.h -m runpy -o Python/deepfreeze/runpy.c
 
 Python/deepfreeze/__hello__.c: Python/frozen_modules/__hello__.h $(DEEPFREEZE_DEPS)
 	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/__hello__.h -m __hello__ -o Python/deepfreeze/__hello__.c
