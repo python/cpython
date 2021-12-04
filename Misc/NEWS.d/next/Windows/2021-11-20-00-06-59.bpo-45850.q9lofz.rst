@@ -1,0 +1,2 @@
+Implement changes to build with deep-frozen modules on Windows.
+Note that we now require Python 3.10 as the "bootstrap" or "host" Python.

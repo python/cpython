@@ -1182,7 +1182,7 @@ Feature parity with ``importlib_metadata`` 4.6
 (`history <https://importlib-metadata.readthedocs.io/en/latest/history.html>`_).
 
 :ref:`importlib.metadata entry points <entry-points>`
-now provides a nicer experience
+now provide a nicer experience
 for selecting entry points by group and name through a new
 :class:`importlib.metadata.EntryPoints` class. See the Compatibility
 Note in the docs for more info on the deprecation and usage.
