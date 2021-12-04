@@ -6480,17 +6480,22 @@ PY_STDLIB_MOD([_crypt],
 PY_STDLIB_MOD([_ctypes],
   [], [test "$have_libffi" = yes],
   [$LIBFFI_CFLAGS], [$LIBFFI_LIBS])
+dnl PY_STDLIB_MOD([_curses], [], [], [], [])
+dnl PY_STDLIB_MOD([_curses_panel], [], [], [], [])
 PY_STDLIB_MOD([_decimal], [], [], [$LIBMPDEC_CFLAGS], [$LIBMPDEC_LDFLAGS])
+dnl PY_STDLIB_MOD([_dbm], [], [], [], [])
 PY_STDLIB_MOD([_gdbm],
   [test "$have_gdbm_dbmliborder" = yes], [test "$have_gdbm" = yes],
   [$GDBM_CFLAGS], [$GDBM_LIBS])
 PY_STDLIB_MOD([nis],
   [], [test "$have_nis" = yes -a "$ac_cv_header_rpc_rpc_h" = yes],
   [$LIBNSL_CFLAGS], [$LIBNSL_LIBS])
+dnl PY_STDLIB_MOD([readline], [], [], [], [])
 PY_STDLIB_MOD([_sqlite3],
   [test "$have_sqlite3" = "yes"],
   [test "$have_supported_sqlite3" = "yes"],
   [$LIBSQLITE3_CFLAGS], [$LIBSQLITE3_LIBS])
+dnl PY_STDLIB_MOD([_tkinter], [], [], [], [])
 PY_STDLIB_MOD([_uuid],
   [], [test "$have_uuid" = "yes"],
   [$LIBUUID_CFLAGS], [$LIBUUID_LIBS])
