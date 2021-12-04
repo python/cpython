@@ -657,6 +657,10 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    registered for that extension.  In case none is found,
    a :exc:`ValueError` is raised.
 
+   Note that with *zip* format, absolute paths and paths containing a ``..``
+   component, are not extracted. If you need such paths extracted, consider
+   using :func:`ZipFile.extractall`.
+
    .. audit-event:: shutil.unpack_archive filename,extract_dir,format shutil.unpack_archive
 
    .. versionchanged:: 3.7
