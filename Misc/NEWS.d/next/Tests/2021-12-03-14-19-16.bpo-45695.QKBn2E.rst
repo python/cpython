@@ -1,0 +1,1 @@
+Out-of-tree builds with a read-only source directory are now tested by CI.

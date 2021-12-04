@@ -1073,7 +1073,7 @@ _buffered_readline(buffered *self, Py_ssize_t limit)
 {
     PyObject *res = NULL;
     PyObject *chunks = NULL;
-    Py_ssize_t n, written = 0;
+    Py_ssize_t n;
     const char *start, *s, *end;
 
     CHECK_CLOSED(self, "readline of closed file")
@@ -1115,7 +1115,6 @@ _buffered_readline(buffered *self, Py_ssize_t limit)
             goto end;
         }
         Py_CLEAR(res);
-        written += n;
         self->pos += n;
         if (limit >= 0)
             limit -= n;
@@ -1160,7 +1159,6 @@ _buffered_readline(buffered *self, Py_ssize_t limit)
             goto end;
         }
         Py_CLEAR(res);
-        written += n;
         if (limit >= 0)
             limit -= n;
     }
@@ -1861,7 +1859,6 @@ _bufferedwriter_raw_write(buffered *self, char *start, Py_ssize_t len)
 static PyObject *
 _bufferedwriter_flush_unlocked(buffered *self)
 {
-    Py_ssize_t written = 0;
     Py_off_t n, rewind;
 
     if (!VALID_WRITE_BUFFER(self) || self->write_pos == self->write_end)
@@ -1890,7 +1887,6 @@ _bufferedwriter_flush_unlocked(buffered *self)
         }
         self->write_pos += n;
         self->raw_pos = self->write_pos;
-        written += Py_SAFE_DOWNCAST(n, Py_off_t, Py_ssize_t);
         /* Partial writes can return successfully when interrupted by a
            signal (see write(2)).  We must run signal handlers before
            blocking another time, possibly indefinitely. */

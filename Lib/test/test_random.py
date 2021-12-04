@@ -491,8 +491,10 @@ class SystemRandom_TestBasicOps(TestBasicOps, unittest.TestCase):
 
         # Zero step
         raises_value_error(0, 42, 0)
+        raises_type_error(0, 42, 0.0)
+        raises_type_error(0, 0, 0.0)
 
-        # Non-integer start/stop/step
+        # Non-integer stop
         raises_type_error(3.14159)
         raises_type_error(3.0)
         raises_type_error(Fraction(3, 1))
@@ -501,33 +503,22 @@ class SystemRandom_TestBasicOps(TestBasicOps, unittest.TestCase):
         raises_type_error(0, 2.0)
         raises_type_error(0, Fraction(2, 1))
         raises_type_error(0, '2')
+        raises_type_error(0, 2.71827, 2)
+
+        # Non-integer start
+        raises_type_error(2.71827, 5)
+        raises_type_error(2.0, 5)
+        raises_type_error(Fraction(2, 1), 5)
+        raises_type_error('2', 5)
+        raises_type_error(2.71827, 5, 2)
 
         # Non-integer step
-        raises_type_error(0, 42, 1.0)
-        raises_type_error(0, 0, 1.0)
         raises_type_error(0, 42, 3.14159)
         raises_type_error(0, 42, 3.0)
         raises_type_error(0, 42, Fraction(3, 1))
         raises_type_error(0, 42, '3')
         raises_type_error(0, 42, 1.0)
         raises_type_error(0, 0, 1.0)
-
-    def test_randrange_argument_handling(self):
-        randrange = self.gen.randrange
-        with self.assertRaises(TypeError):
-            randrange(10.0, 20, 2)
-        with self.assertRaises(TypeError):
-            randrange(10, 20.0, 2)
-        with self.assertRaises(TypeError):
-            randrange(10, 20, 1.0)
-        with self.assertRaises(TypeError):
-            randrange(10, 20, 2.0)
-        with self.assertRaises(TypeError):
-            randrange(10.5)
-        with self.assertRaises(TypeError):
-            randrange(10, 20.5)
-        with self.assertRaises(TypeError):
-            randrange(10, 20, 1.5)
 
     def test_randrange_step(self):
         # bpo-42772: When stop is None, the step argument was being ignored.

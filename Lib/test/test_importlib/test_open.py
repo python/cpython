@@ -7,38 +7,47 @@ from .resources import util
 
 class CommonBinaryTests(util.CommonTests, unittest.TestCase):
     def execute(self, package, path):
-        with resources.open_binary(package, path):
-            pass
+        with util.suppress_known_deprecation():
+            with resources.open_binary(package, path):
+                pass
 
 
 class CommonTextTests(util.CommonTests, unittest.TestCase):
     def execute(self, package, path):
-        with resources.open_text(package, path):
-            pass
+        with util.suppress_known_deprecation():
+            with resources.open_text(package, path):
+                pass
 
 
 class OpenTests:
     def test_open_binary(self):
-        with resources.open_binary(self.data, 'binary.file') as fp:
-            result = fp.read()
-            self.assertEqual(result, b'\x00\x01\x02\x03')
+        with util.suppress_known_deprecation():
+            with resources.open_binary(self.data, 'binary.file') as fp:
+                result = fp.read()
+                self.assertEqual(result, b'\x00\x01\x02\x03')
 
     def test_open_text_default_encoding(self):
-        with resources.open_text(self.data, 'utf-8.file') as fp:
-            result = fp.read()
+        with util.suppress_known_deprecation():
+            with resources.open_text(self.data, 'utf-8.file') as fp:
+                result = fp.read()
             self.assertEqual(result, 'Hello, UTF-8 world!\n')
 
     def test_open_text_given_encoding(self):
-        with resources.open_text(self.data, 'utf-16.file', 'utf-16', 'strict') as fp:
-            result = fp.read()
+        with util.suppress_known_deprecation():
+            with resources.open_text(
+                self.data, 'utf-16.file', 'utf-16', 'strict'
+            ) as fp:
+                result = fp.read()
         self.assertEqual(result, 'Hello, UTF-16 world!\n')
 
     def test_open_text_with_errors(self):
         # Raises UnicodeError without the 'errors' argument.
-        with resources.open_text(self.data, 'utf-16.file', 'utf-8', 'strict') as fp:
-            self.assertRaises(UnicodeError, fp.read)
-        with resources.open_text(self.data, 'utf-16.file', 'utf-8', 'ignore') as fp:
-            result = fp.read()
+        with util.suppress_known_deprecation():
+            with resources.open_text(self.data, 'utf-16.file', 'utf-8', 'strict') as fp:
+                self.assertRaises(UnicodeError, fp.read)
+        with util.suppress_known_deprecation():
+            with resources.open_text(self.data, 'utf-16.file', 'utf-8', 'ignore') as fp:
+                result = fp.read()
         self.assertEqual(
             result,
             'H\x00e\x00l\x00l\x00o\x00,\x00 '
@@ -47,14 +56,16 @@ class OpenTests:
         )
 
     def test_open_binary_FileNotFoundError(self):
-        self.assertRaises(
-            FileNotFoundError, resources.open_binary, self.data, 'does-not-exist'
-        )
+        with util.suppress_known_deprecation():
+            self.assertRaises(
+                FileNotFoundError, resources.open_binary, self.data, 'does-not-exist'
+            )
 
     def test_open_text_FileNotFoundError(self):
-        self.assertRaises(
-            FileNotFoundError, resources.open_text, self.data, 'does-not-exist'
-        )
+        with util.suppress_known_deprecation():
+            self.assertRaises(
+                FileNotFoundError, resources.open_text, self.data, 'does-not-exist'
+            )
 
 
 class OpenDiskTests(OpenTests, unittest.TestCase):

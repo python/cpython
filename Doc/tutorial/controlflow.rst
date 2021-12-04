@@ -378,7 +378,7 @@ Several other key features of this statement:
 - Mapping patterns: ``{"bandwidth": b, "latency": l}`` captures the
   ``"bandwidth"`` and ``"latency"`` values from a dictionary.  Unlike sequence
   patterns, extra keys are ignored.  An unpacking like ``**rest`` is also
-  supported.  (But ``**_`` would be redundant, so it not allowed.)
+  supported.  (But ``**_`` would be redundant, so it is not allowed.)
 
 - Subpatterns may be captured using the ``as`` keyword::
 
