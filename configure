@@ -664,6 +664,8 @@ MODULE__GDBM_FALSE
 MODULE__GDBM_TRUE
 MODULE__DECIMAL_FALSE
 MODULE__DECIMAL_TRUE
+MODULE__CTYPES_FALSE
+MODULE__CTYPES_TRUE
 MODULE__CRYPT_FALSE
 MODULE__CRYPT_TRUE
 MODULE__BLAKE2_FALSE
@@ -828,6 +830,8 @@ LIBMPDEC_INTERNAL
 LIBMPDEC_LDFLAGS
 LIBMPDEC_CFLAGS
 LIBFFI_INCLUDEDIR
+LIBFFI_LIBS
+LIBFFI_CFLAGS
 LIBEXPAT_INTERNAL
 LIBEXPAT_LDFLAGS
 LIBEXPAT_CFLAGS
@@ -845,6 +849,7 @@ SHLIB_SUFFIX
 LIBTOOL_CRUFT
 OTHER_LIBTOOL_OPT
 UNIVERSAL_ARCH_FLAGS
+LDFLAGS_NOLTO
 LDFLAGS_NODIST
 CFLAGS_NODIST
 BASECFLAGS
@@ -932,6 +937,7 @@ CONFIG_ARGS
 SOVERSION
 VERSION
 PYTHON_FOR_REGEN
+PYTHON_FOR_FREEZE
 PYTHON_FOR_BUILD
 FREEZE_MODULE
 host_os
@@ -1058,6 +1064,8 @@ CPP
 PROFILE_TASK
 LIBUUID_CFLAGS
 LIBUUID_LIBS
+LIBFFI_CFLAGS
+LIBFFI_LIBS
 LIBNSL_CFLAGS
 LIBNSL_LIBS
 LIBSQLITE3_CFLAGS
@@ -1855,6 +1863,9 @@ Some influential environment variables:
               C compiler flags for LIBUUID, overriding pkg-config
   LIBUUID_LIBS
               linker flags for LIBUUID, overriding pkg-config
+  LIBFFI_CFLAGS
+              C compiler flags for LIBFFI, overriding pkg-config
+  LIBFFI_LIBS linker flags for LIBFFI, overriding pkg-config
   LIBNSL_CFLAGS
               C compiler flags for LIBNSL, overriding pkg-config
   LIBNSL_LIBS linker flags for LIBNSL, overriding pkg-config
@@ -3250,6 +3261,7 @@ fi
       as_fn_error $? "\"$with_build_python\" has incompatible version $build_python_ver (expected: $PACKAGE_VERSION)" "$LINENO" 5
     fi
         ac_cv_prog_PYTHON_FOR_REGEN=$with_build_python
+    PYTHON_FOR_FREEZE="$with_build_python"
     PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`:)$(srcdir)/Lib _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH) '$with_build_python
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_build_python" >&5
 $as_echo "$with_build_python" >&6; }
@@ -3261,10 +3273,17 @@ else
 
 fi
     PYTHON_FOR_BUILD='./$(BUILDPYTHON) -E'
+    PYTHON_FOR_FREEZE="./_bootstrap_python"
 
 
 fi
 
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for Python interpreter freezing" >&5
+$as_echo_n "checking for Python interpreter freezing... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $PYTHON_FOR_FREEZE" >&5
+$as_echo "$PYTHON_FOR_FREEZE" >&6; }
 
 
 for ac_prog in python$PACKAGE_VERSION python3.10 python3.9 python3.8 python3.7 python3.6 python3 python
@@ -3314,7 +3333,7 @@ test -n "$PYTHON_FOR_REGEN" || PYTHON_FOR_REGEN="python3"
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking Python for regen version" >&5
 $as_echo_n "checking Python for regen version... " >&6; }
-if command -v $PYTHON_FOR_REGEN >/dev/null 2>&1; then
+if command -v "$PYTHON_FOR_REGEN" >/dev/null 2>&1; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $($PYTHON_FOR_REGEN -V 2>/dev/null)" >&5
 $as_echo "$($PYTHON_FOR_REGEN -V 2>/dev/null)" >&6; }
 else
@@ -7101,6 +7120,7 @@ fi
 if test "$Py_LTO" = 'true' ; then
   case $CC in
     *clang*)
+            LDFLAGS_NOLTO="-fno-lto"
 
       if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}llvm-ar", so it can be a program name with args.
@@ -7254,6 +7274,7 @@ $as_echo "$as_me: llvm-ar found via xcrun: ${LLVM_AR}" >&6;}
       then
         as_fn_error $? "thin lto is not supported under gcc compiler." "$LINENO" 5
       fi
+            LDFLAGS_NOLTO="-fno-lto"
       case $ac_sys_system in
         Darwin*)
           LTOFLAGS="-flto -Wl,-export_dynamic"
@@ -7529,6 +7550,7 @@ then
 	;;
     esac
 fi
+
 
 
 
@@ -11361,6 +11383,335 @@ $as_echo "$as_me: WARNING: --with(out)-system-ffi is ignored on this platform" >
     fi
     with_system_ffi="yes"
 fi
+
+have_libffi=missing
+if test "x$with_system_ffi" = xyes; then :
+
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIBFFI" >&5
+$as_echo_n "checking for LIBFFI... " >&6; }
+
+if test -n "$LIBFFI_CFLAGS"; then
+    pkg_cv_LIBFFI_CFLAGS="$LIBFFI_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libffi\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libffi") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBFFI_CFLAGS=`$PKG_CONFIG --cflags "libffi" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$LIBFFI_LIBS"; then
+    pkg_cv_LIBFFI_LIBS="$LIBFFI_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libffi\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libffi") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBFFI_LIBS=`$PKG_CONFIG --libs "libffi" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        LIBFFI_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libffi" 2>&1`
+        else
+	        LIBFFI_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libffi" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$LIBFFI_PKG_ERRORS" >&5
+
+
+    ac_fn_c_check_header_mongrel "$LINENO" "ffi.h" "ac_cv_header_ffi_h" "$ac_includes_default"
+if test "x$ac_cv_header_ffi_h" = xyes; then :
+
+      save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ffi_call in -lffi" >&5
+$as_echo_n "checking for ffi_call in -lffi... " >&6; }
+if ${ac_cv_lib_ffi_ffi_call+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lffi  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char ffi_call ();
+int
+main ()
+{
+return ffi_call ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_ffi_ffi_call=yes
+else
+  ac_cv_lib_ffi_ffi_call=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ffi_ffi_call" >&5
+$as_echo "$ac_cv_lib_ffi_ffi_call" >&6; }
+if test "x$ac_cv_lib_ffi_ffi_call" = xyes; then :
+  have_libffi=yes
+else
+  have_libffi=no
+fi
+
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+
+fi
+
+
+
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+    ac_fn_c_check_header_mongrel "$LINENO" "ffi.h" "ac_cv_header_ffi_h" "$ac_includes_default"
+if test "x$ac_cv_header_ffi_h" = xyes; then :
+
+      save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ffi_call in -lffi" >&5
+$as_echo_n "checking for ffi_call in -lffi... " >&6; }
+if ${ac_cv_lib_ffi_ffi_call+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lffi  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char ffi_call ();
+int
+main ()
+{
+return ffi_call ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_ffi_ffi_call=yes
+else
+  ac_cv_lib_ffi_ffi_call=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ffi_ffi_call" >&5
+$as_echo "$ac_cv_lib_ffi_ffi_call" >&6; }
+if test "x$ac_cv_lib_ffi_ffi_call" = xyes; then :
+  have_libffi=yes
+else
+  have_libffi=no
+fi
+
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+
+fi
+
+
+
+else
+	LIBFFI_CFLAGS=$pkg_cv_LIBFFI_CFLAGS
+	LIBFFI_LIBS=$pkg_cv_LIBFFI_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	have_libffi=yes
+fi
+
+else
+
+    have_libffi=yes
+  LIBFFI_CFLAGS="-I\$(srcdir)/Modules/_ctypes/darwin -DUSING_MALLOC_CLOSURE_DOT_C=1 -DMACOSX"
+  LIBFFI_LIBS=
+
+fi
+
+case $LIBS in #(
+  *-ldl*) :
+    LIBFFI_LIBS="$LIBFFI_LIBS -ldl"
+ ;; #(
+  *) :
+     ;;
+esac
+
+if test "$with_system_ffi" = yes -a "$have_libffi" = yes; then
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    CFLAGS="$LIBFFI_CFLAGS $CFLAGS"
+    LIBS="$LIBFFI_LIBS $LIBS"
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ffi_prep_cif_var in ffi.h" >&5
+$as_echo_n "checking for ffi_prep_cif_var in ffi.h... " >&6; }
+if ${ac_cv_ffi_prep_cif_var+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <ffi.h>
+
+_ACEOF
+if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
+  $EGREP "ffi_prep_cif_var" >/dev/null 2>&1; then :
+  ac_cv_ffi_prep_cif_var=yes
+else
+  ac_cv_ffi_prep_cif_var=no
+fi
+rm -f conftest*
+
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_ffi_prep_cif_var" >&5
+$as_echo "$ac_cv_ffi_prep_cif_var" >&6; }
+    if test "x$ac_cv_ffi_prep_cif_var" = xyes; then :
+
+
+$as_echo "#define HAVE_FFI_PREP_CIF_VAR 1" >>confdefs.h
+
+
+fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ffi_prep_closure_loc in ffi.h" >&5
+$as_echo_n "checking for ffi_prep_closure_loc in ffi.h... " >&6; }
+if ${ac_cv_ffi_prep_closure_loc+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <ffi.h>
+
+_ACEOF
+if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
+  $EGREP "ffi_prep_closure_loc" >/dev/null 2>&1; then :
+  ac_cv_ffi_prep_closure_loc=yes
+else
+  ac_cv_ffi_prep_closure_loc=no
+fi
+rm -f conftest*
+
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_ffi_prep_closure_loc" >&5
+$as_echo "$ac_cv_ffi_prep_closure_loc" >&6; }
+    if test "x$ac_cv_ffi_prep_closure_loc" = xyes; then :
+
+
+$as_echo "#define HAVE_FFI_PREP_CLOSURE_LOC 1" >>confdefs.h
+
+
+fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ffi_closure_alloc in ffi.h" >&5
+$as_echo_n "checking for ffi_closure_alloc in ffi.h... " >&6; }
+if ${ac_cv_ffi_closure_alloc+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <ffi.h>
+
+_ACEOF
+if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
+  $EGREP "ffi_closure_alloc" >/dev/null 2>&1; then :
+  ac_cv_ffi_closure_alloc=yes
+else
+  ac_cv_ffi_closure_alloc=no
+fi
+rm -f conftest*
+
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_ffi_closure_alloc" >&5
+$as_echo "$ac_cv_ffi_closure_alloc" >&6; }
+    if test "x$ac_cv_ffi_closure_alloc" = xyes; then :
+
+
+$as_echo "#define HAVE_FFI_CLOSURE_ALLOC 1" >>confdefs.h
+
+
+fi
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+fi
+
 
 if test "$with_system_ffi" = "yes" && test -n "$PKG_CONFIG"; then
     LIBFFI_INCLUDEDIR="`"$PKG_CONFIG" libffi --cflags-only-I 2>/dev/null | sed -e 's/^-I//;s/ *$//'`"
@@ -22713,6 +23064,42 @@ fi
 $as_echo "$py_cv_module__crypt" >&6; }
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _ctypes" >&5
+$as_echo_n "checking for stdlib extension module _ctypes... " >&6; }
+      case $py_stdlib_not_available in #(
+  *_ctypes*) :
+    py_cv_module__ctypes=n/a ;; #(
+  *) :
+    if true; then :
+  if test "$have_libffi" = yes; then :
+  py_cv_module__ctypes=yes
+else
+  py_cv_module__ctypes=missing
+fi
+else
+  py_cv_module__ctypes=disabled
+fi
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE__CTYPES=$py_cv_module__ctypes$as_nl"
+  if test "x$py_cv_module__ctypes" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__CTYPES_CFLAGS=$LIBFFI_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__CTYPES_LDFLAGS=$LIBFFI_LIBS$as_nl"
+
+fi
+   if test "$py_cv_module__ctypes" = yes; then
+  MODULE__CTYPES_TRUE=
+  MODULE__CTYPES_FALSE='#'
+else
+  MODULE__CTYPES_TRUE='#'
+  MODULE__CTYPES_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__ctypes" >&5
+$as_echo "$py_cv_module__ctypes" >&6; }
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _decimal" >&5
 $as_echo_n "checking for stdlib extension module _decimal... " >&6; }
       case $py_stdlib_not_available in #(
@@ -23323,7 +23710,7 @@ $as_echo_n "checking for stdlib extension module _ctypes_test... " >&6; }
     py_cv_module__ctypes_test=n/a ;; #(
   *) :
     if test "$TEST_MODULES" = yes; then :
-  if true; then :
+  if test "$have_libffi" = yes; then :
   py_cv_module__ctypes_test=yes
 else
   py_cv_module__ctypes_test=missing
@@ -23337,7 +23724,7 @@ esac
   if test "x$py_cv_module__ctypes_test" = xyes; then :
 
 
-    as_fn_append MODULE_BLOCK "MODULE__CTYPES_TEST_LDFLAGS=-lm$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__CTYPES_TEST_LDFLAGS=$LIBM$as_nl"
 
 fi
    if test "$py_cv_module__ctypes_test" = yes; then
@@ -23759,6 +24146,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__CRYPT_TRUE}" && test -z "${MODULE__CRYPT_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__CRYPT\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__CTYPES_TRUE}" && test -z "${MODULE__CTYPES_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__CTYPES\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__DECIMAL_TRUE}" && test -z "${MODULE__DECIMAL_FALSE}"; then
