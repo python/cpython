@@ -600,12 +600,6 @@ class PyBuildExt(build_ext):
             raise RuntimeError("Failed to build some stdlib modules")
 
     def build_extension(self, ext):
-
-        if ext.name == '_ctypes':
-            if not self.configure_ctypes(ext):
-                self.failed.append(ext.name)
-                return
-
         try:
             build_ext.build_extension(self, ext)
         except (CCompilerError, DistutilsError) as why:
@@ -1370,10 +1364,26 @@ class PyBuildExt(build_ext):
     def detect_tkinter(self):
         self.addext(Extension('_tkinter', ['_tkinter.c', 'tkappinit.c']))
 
-    def configure_ctypes(self, ext):
-        return True
-
     def detect_ctypes(self):
+        ext = Extension(
+            '_ctypes',
+            [
+                '_ctypes/_ctypes.c',
+                '_ctypes/callbacks.c',
+                '_ctypes/callproc.c',
+                '_ctypes/stgdict.c',
+                '_ctypes/cfield.c',
+            ]
+        )
+        if MACOS:
+            self._build_ctypes_macos(ext)
+        else:
+            self.use_system_libffi = True
+            self.addext(ext)
+
+        self.addext(Extension('_ctypes_test', ['_ctypes/_ctypes_test.c']))
+
+    def _build_ctypes_macos(self, ext):
         # Thomas Heller's _ctypes module
 
         if (not sysconfig.get_config_var("LIBFFI_INCLUDEDIR") and MACOS):
@@ -1381,20 +1391,11 @@ class PyBuildExt(build_ext):
         else:
             self.use_system_libffi = '--with-system-ffi' in sysconfig.get_config_var("CONFIG_ARGS")
 
-        include_dirs = []
-        extra_compile_args = []
-        extra_link_args = []
-        sources = ['_ctypes/_ctypes.c',
-                   '_ctypes/callbacks.c',
-                   '_ctypes/callproc.c',
-                   '_ctypes/stgdict.c',
-                   '_ctypes/cfield.c']
-
         if MACOS:
-            sources.append('_ctypes/malloc_closure.c')
-            extra_compile_args.append('-DUSING_MALLOC_CLOSURE_DOT_C=1')
-            extra_compile_args.append('-DMACOSX')
-            include_dirs.append('_ctypes/darwin')
+            ext.sources.append('_ctypes/malloc_closure.c')
+            ext.extra_compile_args.append('-DUSING_MALLOC_CLOSURE_DOT_C=1')
+            ext.extra_compile_args.append('-DMACOSX')
+            ext.include_dirs.append('_ctypes/darwin')
 
         elif HOST_PLATFORM == 'sunos5':
             # XXX This shouldn't be necessary; it appears that some
@@ -1405,17 +1406,12 @@ class PyBuildExt(build_ext):
             # this option. If you want to compile ctypes with the Sun
             # compiler, please research a proper solution, instead of
             # finding some -z option for the Sun compiler.
-            extra_link_args.append('-mimpure-text')
+            ext.extra_link_args.append('-mimpure-text')
 
-        ext = Extension('_ctypes',
-                        include_dirs=include_dirs,
-                        extra_compile_args=extra_compile_args,
-                        extra_link_args=extra_link_args,
-                        libraries=[],
-                        sources=sources)
+        elif HOST_PLATFORM.startswith('hp-ux'):
+            ext.extra_link_args.append('-fPIC')
+
         self.add(ext)
-        # function my_sqrt() needs libm for sqrt()
-        self.addext(Extension('_ctypes_test', ['_ctypes/_ctypes_test.c']))
 
         ffi_inc = sysconfig.get_config_var("LIBFFI_INCLUDEDIR")
         ffi_lib = None

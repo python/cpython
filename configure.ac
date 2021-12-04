@@ -3564,6 +3564,60 @@ else
     with_system_ffi="yes"
 fi
 
+dnl detect libffi
+have_libffi=missing
+AS_VAR_IF([with_system_ffi], [yes], [
+  PKG_CHECK_MODULES([LIBFFI], [libffi], [have_libffi=yes], [
+    AC_CHECK_HEADER([ffi.h], [
+      WITH_SAVE_ENV([
+        AC_CHECK_LIB([ffi], [ffi_call], [have_libffi=yes], [have_libffi=no])
+      ])
+    ])
+  ])
+], [
+  dnl private ffi copy
+  have_libffi=yes
+  LIBFFI_CFLAGS="-I\$(srcdir)/Modules/_ctypes/darwin -DUSING_MALLOC_CLOSURE_DOT_C=1 -DMACOSX"
+  LIBFFI_LIBS=
+])
+
+dnl _ctypes needs -ldl for dlopen
+AS_CASE([$LIBS],
+  [*-ldl*], [LIBFFI_LIBS="$LIBFFI_LIBS -ldl"]
+)
+
+if test "$with_system_ffi" = yes -a "$have_libffi" = yes; then
+  WITH_SAVE_ENV([
+    CFLAGS="$LIBFFI_CFLAGS $CFLAGS"
+    LIBS="$LIBFFI_LIBS $LIBS"
+
+    AC_CACHE_CHECK([for ffi_prep_cif_var in ffi.h], [ac_cv_ffi_prep_cif_var], [
+      AC_EGREP_HEADER([ffi_prep_cif_var], [ffi.h], [ac_cv_ffi_prep_cif_var=yes], [ac_cv_ffi_prep_cif_var=no])
+    ])
+    AS_VAR_IF([ac_cv_ffi_prep_cif_var], [yes], [
+      AC_DEFINE([HAVE_FFI_PREP_CIF_VAR], [1],
+      [Define to 1 if you have the ffi_prep_cif_var function in <ffi.h> header file.])
+    ])
+
+    AC_CACHE_CHECK([for ffi_prep_closure_loc in ffi.h], [ac_cv_ffi_prep_closure_loc], [
+      AC_EGREP_HEADER([ffi_prep_closure_loc], [ffi.h], [ac_cv_ffi_prep_closure_loc=yes], [ac_cv_ffi_prep_closure_loc=no])
+    ])
+    AS_VAR_IF([ac_cv_ffi_prep_closure_loc], [yes], [
+      AC_DEFINE([HAVE_FFI_PREP_CLOSURE_LOC], [1],
+      [Define to 1 if you have the ffi_prep_closure_loc function in <ffi.h> header file.])
+    ])
+
+    AC_CACHE_CHECK([for ffi_closure_alloc in ffi.h], [ac_cv_ffi_closure_alloc], [
+      AC_EGREP_HEADER([ffi_closure_alloc], [ffi.h], [ac_cv_ffi_closure_alloc=yes], [ac_cv_ffi_closure_alloc=no])
+    ])
+    AS_VAR_IF([ac_cv_ffi_closure_alloc], [yes], [
+      AC_DEFINE([HAVE_FFI_CLOSURE_ALLOC], [1],
+      [Define to 1 if you have the ffi_closure_alloc function in <ffi.h> header file.])
+    ])
+  ])
+fi
+
+
 if test "$with_system_ffi" = "yes" && test -n "$PKG_CONFIG"; then
     LIBFFI_INCLUDEDIR="`"$PKG_CONFIG" libffi --cflags-only-I 2>/dev/null | sed -e 's/^-I//;s/ *$//'`"
 else
@@ -6868,7 +6922,9 @@ PY_STDLIB_MOD([_blake2],
 PY_STDLIB_MOD([_crypt],
   [], [test "$ac_cv_crypt_crypt" = yes],
   [$LIBCRYPT_CFLAGS], [$LIBCRYPT_LIBS])
-dnl PY_STDLIB_MOD([_ctypes], [], [], [], [])
+PY_STDLIB_MOD([_ctypes],
+  [], [test "$have_libffi" = yes],
+  [$LIBFFI_CFLAGS], [$LIBFFI_LIBS])
 dnl PY_STDLIB_MOD([_curses], [], [], [], [])
 dnl PY_STDLIB_MOD([_curses_panel], [], [], [], [])
 PY_STDLIB_MOD([_decimal], [], [], [$LIBMPDEC_CFLAGS], [$LIBMPDEC_LDFLAGS])
@@ -6914,7 +6970,9 @@ PY_STDLIB_MOD([_testbuffer], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testimportmultiple], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
 PY_STDLIB_MOD([_testmultiphase], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
 PY_STDLIB_MOD([_xxtestfuzz], [test "$TEST_MODULES" = yes])
-PY_STDLIB_MOD([_ctypes_test], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes], [], [-lm])
+PY_STDLIB_MOD([_ctypes_test],
+  [test "$TEST_MODULES" = yes], [test "$have_libffi" = yes -a "$ac_cv_func_dlopen" = yes],
+  [], [$LIBM])
 
 dnl Limited API template modules.
 dnl The limited C API is not compatible with the Py_TRACE_REFS macro.
