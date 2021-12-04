@@ -179,13 +179,28 @@ jobs:
         echo "PATH=/usr/lib/ccache:$PATH" >> $GITHUB_ENV
     - name: Configure ccache action
       uses: hendrikmuhs/ccache-action@v1
-    - name: Configure CPython
-      run: ./configure --with-pydebug --with-openssl=$OPENSSL_DIR
-    - name: Build CPython
+    - name: Setup directory envs for out-of-tree builds
+      run: |
+        echo "CPYTHON_RO_SRCDIR=$(realpath -m ${GITHUB_WORKSPACE}/../cpython-ro-srcdir)" >> $GITHUB_ENV
+        echo "CPYTHON_BUILDDIR=$(realpath -m ${GITHUB_WORKSPACE}/../cpython-builddir)" >> $GITHUB_ENV
+    - name: Create directories for read-only out-of-tree builds
+      run: mkdir -p $CPYTHON_RO_SRCDIR $CPYTHON_BUILDDIR
+    - name: Bind mount sources read-only
+      run: sudo mount --bind -o ro $GITHUB_WORKSPACE $CPYTHON_RO_SRCDIR
+    - name: Configure CPython out-of-tree
+      working-directory: ${{ env.CPYTHON_BUILDDIR }}
+      run: ../cpython-ro-srcdir/configure --with-pydebug --with-openssl=$OPENSSL_DIR
+    - name: Build CPython out-of-tree
+      working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: make -j4
     - name: Display build info
+      working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: make pythoninfo
+    - name: Remount sources writable for tests
+      # some tests write to srcdir, lack of pyc files slows down testing
+      run: sudo mount $CPYTHON_RO_SRCDIR -oremount,rw
     - name: Tests
+      working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu"
 
   build_ubuntu_ssltests:
