@@ -583,13 +583,12 @@ Build Changes
   (Contributed by Brett Cannon and Christian Heimes in :issue:`45548`,
   :issue:`45570`, :issue:`45571`, and :issue:`43974`.)
 
-* The build dependencies for :mod:`zlib`, :mod:`bz2`, and :mod:`lzma` are now
-  detected by :program:`configure`.
-  (Contributed by Christian Heimes in :issue:`45763`.)
-
-* Build dependencies for :mod:`dbm` are now detected by :program:`configure`.
-  ``libdb`` 3.x and 4.x are no longer supported.
-  (Contributed by Christian Heimes in :issue:`45747`.)
+* Build dependencies, compiler flags, and linker flags for most stdlib
+  extension modules are now detected by :program:`configure`. libffi, libnsl,
+  libsqlite3, zlib, bzip2, liblzma, libcrypt, and uuid flags are detected by
+  ``pkg-config`` (when available).
+  (Contributed by Christian Heimes and Erlend Egeberg Aasland in
+  :issue:`bpo-45847`, :issue:`45747`, and :issue:`45763`.)
 
 * CPython now has experimental support for cross compiling to WebAssembly
   platform ``wasm32-emscripten``. The effort is inspired by previous work
