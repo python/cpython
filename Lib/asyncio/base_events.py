@@ -718,7 +718,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         Absolute time corresponds to the event loop's time() method.
         """
         if when is None:
-            raise ValueError("when cannot be None")
+            raise TypeError("when cannot be None")
         self._check_closed()
         if self._debug:
             self._check_thread()

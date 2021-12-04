@@ -286,7 +286,7 @@ class BaseEventLoopTests(test_utils.TestCase):
         # tolerate a difference of +800 ms because some Python buildbots
         # are really slow
         self.assertLessEqual(dt, 0.9, dt)
-        with self.assertRaises(ValueError, msg="when cannot be None"):
+        with self.assertRaises(TypeError, msg="when cannot be None"):
             self.loop.call_at(None, cb)
 
     def check_thread(self, loop, debug):
