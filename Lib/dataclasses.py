@@ -811,10 +811,9 @@ def _get_field(cls, a_name, a_type, default_kw_only):
     # For real fields, disallow mutable defaults.  Use unhashable as a proxy
     # indicator for mutability.  Read the __hash__ attribute from the class,
     # not the instance.
-    if f._field_type is _FIELD:
-        if f.default.__class__.__hash__ is None:
-            raise ValueError(f'mutable default {type(f.default)} for field '
-                             f'{f.name} is not allowed: use default_factory')
+    if f._field_type is _FIELD and f.default.__class__.__hash__ is None:
+        raise ValueError(f'mutable default {type(f.default)} for field '
+                         f'{f.name} is not allowed: use default_factory')
 
     return f
 
