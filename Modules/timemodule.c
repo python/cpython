@@ -408,6 +408,13 @@ static PyStructSequence_Desc struct_time_type_desc = {
 static int initialized;
 static PyTypeObject StructTimeType;
 
+#if defined(MS_WINDOWS)
+#ifndef CREATE_WAITABLE_TIMER_HIGH_RESOLUTION
+  #define CREATE_WAITABLE_TIMER_HIGH_RESOLUTION 0x00000002
+#endif
+
+static DWORD timer_flags = (DWORD)-1;
+#endif
 
 static PyObject *
 tmtotuple(struct tm *p
@@ -2017,6 +2024,23 @@ time_exec(PyObject *module)
         utc_string = tm.tm_zone;
 #endif
 
+#if defined(MS_WINDOWS)
+    if (timer_flags == (DWORD)-1) {
+        DWORD test_flags = CREATE_WAITABLE_TIMER_HIGH_RESOLUTION;
+        HANDLE timer = CreateWaitableTimerExW(NULL, NULL, test_flags,
+                                              TIMER_ALL_ACCESS);
+        if (timer == NULL) {
+            // CREATE_WAITABLE_TIMER_HIGH_RESOLUTION is not supported.
+            timer_flags = 0;
+        }
+        else {
+            // CREATE_WAITABLE_TIMER_HIGH_RESOLUTION is supported.
+            timer_flags = CREATE_WAITABLE_TIMER_HIGH_RESOLUTION;
+            CloseHandle(timer);
+        }
+    }
+#endif
+
     return 0;
 }
 
@@ -2150,20 +2174,18 @@ pysleep(_PyTime_t timeout)
     // SetWaitableTimer(): a negative due time indicates relative time
     relative_timeout.QuadPart = -timeout_100ns;
 
-    HANDLE timer = CreateWaitableTimerW(NULL, FALSE, NULL);
+    HANDLE timer = CreateWaitableTimerExW(NULL, NULL, timer_flags,
+                                          TIMER_ALL_ACCESS);
     if (timer == NULL) {
         PyErr_SetFromWindowsErr(0);
         return -1;
     }
 
-    if (!SetWaitableTimer(timer, &relative_timeout,
-                          // period: the timer is signaled once
-                          0,
-                          // no completion routine
-                          NULL, NULL,
-                          // Don't restore a system in suspended power
-                          // conservation mode when the timer is signaled.
-                          FALSE))
+    if (!SetWaitableTimerEx(timer, &relative_timeout,
+                            0, // no period; the timer is signaled once
+                            NULL, NULL, // no completion routine
+                            NULL,  // no wake context; do not resume from suspend
+                            0)) // no tolerable delay for timer coalescing
     {
         PyErr_SetFromWindowsErr(0);
         goto error;

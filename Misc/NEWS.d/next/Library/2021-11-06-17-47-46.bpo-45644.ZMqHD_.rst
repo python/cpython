@@ -1,0 +1,3 @@
+In-place JSON file formatting using ``python3 -m json.tool infile infile``
+now works correctly, previously it left the file empty.  Patch by Chris
+Wesseling.

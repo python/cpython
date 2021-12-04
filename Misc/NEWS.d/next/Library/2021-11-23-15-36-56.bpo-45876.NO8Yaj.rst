@@ -1,0 +1,2 @@
+Improve the accuracy of stdev() and pstdev() in the statistics module.  When
+the inputs are floats or fractions, the output is a correctly rounded float

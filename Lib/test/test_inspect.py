@@ -493,6 +493,15 @@ class TestRetrievingSourceCode(GetSourceBase):
         # Check filename override
         self.assertEqual(inspect.getmodule(None, modfile), mod)
 
+    def test_getmodule_file_not_found(self):
+        # See bpo-45406
+        def _getabsfile(obj, _filename):
+            raise FileNotFoundError('bad file')
+        with unittest.mock.patch('inspect.getabsfile', _getabsfile):
+            f = inspect.currentframe()
+            self.assertIsNone(inspect.getmodule(f))
+            inspect.getouterframes(f)  # smoke test
+
     def test_getframeinfo_get_first_line(self):
         frame_info = inspect.getframeinfo(self.fodderModule.fr, 50)
         self.assertEqual(frame_info.code_context[0], "# line 1\n")
@@ -1205,6 +1214,23 @@ class TestClassesAndFunctions(unittest.TestCase):
                 return 'spam'
         self.assertIn(('eggs', 'scrambled'), inspect.getmembers(A))
         self.assertIn(('eggs', 'spam'), inspect.getmembers(A()))
+
+    def test_getmembers_static(self):
+        class A:
+            @property
+            def name(self):
+                raise NotImplementedError
+            @types.DynamicClassAttribute
+            def eggs(self):
+                raise NotImplementedError
+
+        a = A()
+        instance_members = inspect.getmembers_static(a)
+        class_members = inspect.getmembers_static(A)
+        self.assertIn(('name', inspect.getattr_static(a, 'name')), instance_members)
+        self.assertIn(('eggs', inspect.getattr_static(a, 'eggs')), instance_members)
+        self.assertIn(('name', inspect.getattr_static(A, 'name')), class_members)
+        self.assertIn(('eggs', inspect.getattr_static(A, 'eggs')), class_members)
 
     def test_getmembers_with_buggy_dir(self):
         class M(type):
