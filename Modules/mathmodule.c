@@ -3230,25 +3230,16 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
 static PyObject *
 perm_comb_small(unsigned long long n, unsigned long long k, int iscomb)
 {
+    /* long long is at least 64 bit */
     static const unsigned long long fast_comb_limits[] = {
-#if SIZEOF_LONG_LONG >= 8
         0, ULLONG_MAX, 4294967296ULL, 3329022, 102570, 13467, 3612, 1449,  // 0-7
         746, 453, 308, 227, 178, 147, 125, 110,  // 8-15
         99, 90, 84, 79, 75, 72, 69, 68,  // 16-23
         66, 65, 64, 63, 63, 62, 62, 62,  // 24-31
-#elif SIZEOF_LONG_LONG >= 4
-        0, ULLONG_MAX, 65536, 2049, 402, 161, 92, 63,  // 0-7
-        49, 42, 37, 34, 33, 31, 31, 30,  // 8-15
-#endif
     };
     static const unsigned long long fast_perm_limits[] = {
-#if SIZEOF_LONG_LONG >= 8
         0, ULLONG_MAX, 4294967296ULL, 2642246, 65537, 7133, 1627, 568,  // 0-7
         259, 142, 88, 61, 45, 36, 30,  // 8-14
-#elif SIZEOF_LONG_LONG >= 4
-        0, ULLONG_MAX, 65536, 1626, 257, 86, 42, 26,  // 0-7
-        19,  // 8
-#endif
     };
 
     if (k == 0) {
