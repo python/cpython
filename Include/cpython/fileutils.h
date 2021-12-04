@@ -135,12 +135,6 @@ PyAPI_FUNC(wchar_t*) _Py_wrealpath(
     size_t resolved_path_len);
 #endif
 
-#ifndef MS_WINDOWS
-PyAPI_FUNC(int) _Py_isabs(const wchar_t *path);
-#endif
-
-PyAPI_FUNC(int) _Py_abspath(const wchar_t *path, wchar_t **abspath_p);
-
 PyAPI_FUNC(wchar_t*) _Py_wgetcwd(
     wchar_t *buf,
     /* Number of characters of 'buf' buffer
