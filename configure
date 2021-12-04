@@ -11673,8 +11673,8 @@ $as_echo "#define HAVE_FFI_PREP_CLOSURE_LOC 1" >>confdefs.h
 
 fi
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for fffi_closure_alloc in ffi.h" >&5
-$as_echo_n "checking for fffi_closure_alloc in ffi.h... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ffi_closure_alloc in ffi.h" >&5
+$as_echo_n "checking for ffi_closure_alloc in ffi.h... " >&6; }
 if ${ac_cv_ffi_closure_alloc+:} false; then :
   $as_echo_n "(cached) " >&6
 else
