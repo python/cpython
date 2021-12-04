@@ -2000,13 +2000,28 @@ _Py_wrealpath(const wchar_t *path,
 #endif
 
 
-#ifndef MS_WINDOWS
 int
 _Py_isabs(const wchar_t *path)
 {
+#ifdef MS_WINDOWS
+    const wchar_t *tail;
+    HRESULT hr = PathCchSkipRoot(path, &tail);
+    if (FAILED(hr) || path == tail) {
+        return 0;
+    }
+    if (tail == &path[1] && (path[0] == SEP || path[0] == ALTSEP)) {
+        // Exclude paths with leading SEP
+        return 0;
+    }
+    if (tail == &path[2] && path[1] == L':') {
+        // Exclude drive-relative paths (e.g. C:filename.ext)
+        return 0;
+    }
+    return 1;
+#else
     return (path[0] == SEP);
-}
 #endif
+}
 
 
 /* Get an absolute path.
@@ -2017,6 +2032,22 @@ _Py_isabs(const wchar_t *path)
 int
 _Py_abspath(const wchar_t *path, wchar_t **abspath_p)
 {
+    if (path[0] == '\0' || !wcscmp(path, L".")) {
+        wchar_t cwd[MAXPATHLEN + 1];
+        cwd[Py_ARRAY_LENGTH(cwd) - 1] = 0;
+        if (!_Py_wgetcwd(cwd, Py_ARRAY_LENGTH(cwd) - 1)) {
+            /* unable to get the current directory */
+            return -1;
+        }
+        *abspath_p = _PyMem_RawWcsdup(cwd);
+        return 0;
+    }
+
+    if (_Py_isabs(path)) {
+        *abspath_p = _PyMem_RawWcsdup(path);
+        return 0;
+    }
+
 #ifdef MS_WINDOWS
     wchar_t woutbuf[MAX_PATH], *woutbufp = woutbuf;
     DWORD result;
@@ -2028,7 +2059,7 @@ _Py_abspath(const wchar_t *path, wchar_t **abspath_p)
         return -1;
     }
 
-    if (result > Py_ARRAY_LENGTH(woutbuf)) {
+    if (result >= Py_ARRAY_LENGTH(woutbuf)) {
         if ((size_t)result <= (size_t)PY_SSIZE_T_MAX / sizeof(wchar_t)) {
             woutbufp = PyMem_RawMalloc((size_t)result * sizeof(wchar_t));
         }
@@ -2055,11 +2086,6 @@ _Py_abspath(const wchar_t *path, wchar_t **abspath_p)
     *abspath_p = _PyMem_RawWcsdup(woutbufp);
     return 0;
 #else
-    if (_Py_isabs(path)) {
-        *abspath_p = _PyMem_RawWcsdup(path);
-        return 0;
-    }
-
     wchar_t cwd[MAXPATHLEN + 1];
     cwd[Py_ARRAY_LENGTH(cwd) - 1] = 0;
     if (!_Py_wgetcwd(cwd, Py_ARRAY_LENGTH(cwd) - 1)) {
@@ -2102,7 +2128,8 @@ join_relfile(wchar_t *buffer, size_t bufsize,
              const wchar_t *dirname, const wchar_t *relfile)
 {
 #ifdef MS_WINDOWS
-    if (FAILED(PathCchCombineEx(buffer, bufsize, dirname, relfile, 0))) {
+    if (FAILED(PathCchCombineEx(buffer, bufsize, dirname, relfile, 
+        PATHCCH_ALLOW_LONG_PATHS | PATHCCH_FORCE_ENABLE_LONG_NAME_PROCESS))) {
         return -1;
     }
 #else
@@ -2180,99 +2207,125 @@ _Py_find_basename(const wchar_t *filename)
     return 0;
 }
 
-
-/* Remove navigation elements such as "." and "..".
-
-   This is mostly a C implementation of posixpath.normpath().
-   Return 0 on success.  Return -1 if "orig" is too big for the buffer. */
-int
-_Py_normalize_path(const wchar_t *path, wchar_t *buf, const size_t buf_len)
+/* In-place path normalisation. Returns the start of the normalized
+   path, which will be within the original buffer. Guaranteed to not
+   make the path longer, and will not fail. 'size' is the length of
+   the path, if known. If -1, the first null character will be assumed
+   to be the end of the path. */
+wchar_t *
+_Py_normpath(wchar_t *path, Py_ssize_t size)
 {
-    assert(path && *path != L'\0');
-    assert(*path == SEP);  // an absolute path
-    if (wcslen(path) + 1 >= buf_len) {
-        return -1;
+    if (!path[0] || size == 0) {
+        return path;
     }
+    wchar_t lastC = L'\0';
+    wchar_t *p1 = path;
+    wchar_t *pEnd = size >= 0 ? &path[size] : NULL;
+    wchar_t *p2 = path;
+    wchar_t *minP2 = path;
 
-    int dots = -1;
-    int check_leading = 1;
-    const wchar_t *buf_start = buf;
-    wchar_t *buf_next = buf;
-    // The resulting filename will never be longer than path.
-    for (const wchar_t *remainder = path; *remainder != L'\0'; remainder++) {
-        wchar_t c = *remainder;
-        buf_next[0] = c;
-        buf_next++;
-        if (c == SEP) {
-            assert(dots <= 2);
-            if (dots == 2) {
-                // Turn "/x/y/../z" into "/x/z".
-                buf_next -= 4;  // "/../"
-                assert(*buf_next == SEP);
-                // We cap it off at the root, so "/../spam" becomes "/spam".
-                if (buf_next == buf_start) {
-                    buf_next++;
-                }
-                else {
-                    // Move to the previous SEP in the buffer.
-                    while (*(buf_next - 1) != SEP) {
-                        assert(buf_next != buf_start);
-                        buf_next--;
-                    }
-                }
-            }
-            else if (dots == 1) {
-                // Turn "/./" into "/".
-                buf_next -= 2;  // "./"
-                assert(*(buf_next - 1) == SEP);
-            }
-            else if (dots == 0) {
-                // Turn "//" into "/".
-                buf_next--;
-                assert(*(buf_next - 1) == SEP);
-                if (check_leading) {
-                    if (buf_next - 1 == buf && *(remainder + 1) != SEP) {
-                        // Leave a leading "//" alone, unless "///...".
-                        buf_next++;
-                        buf_start++;
-                    }
-                    check_leading = 0;
-                }
-            }
-            dots = 0;
+#define IS_END(x) (pEnd ? (x) == pEnd : !*(x))
+#ifdef ALTSEP
+#define IS_SEP(x) (*(x) == SEP || *(x) == ALTSEP)
+#else
+#define IS_SEP(x) (*(x) == SEP)
+#endif
+#define SEP_OR_END(x) (IS_SEP(x) || IS_END(x))
+
+    // Skip leading '.\'
+    if (p1[0] == L'.' && IS_SEP(&p1[1])) {
+        path = &path[2];
+        while (IS_SEP(path) && !IS_END(path)) {
+            path++;
         }
-        else {
-            check_leading = 0;
-            if (dots >= 0) {
-                if (c == L'.' && dots < 2) {
-                    dots++;
-                }
-                else {
-                    dots = -1;
-                }
+        p1 = p2 = minP2 = path;
+        lastC = SEP;
+    }
+#ifdef MS_WINDOWS
+    // Skip past drive segment and update minP2
+    else if (p1[0] && p1[1] == L':') {
+        *p2++ = *p1++;
+        *p2++ = *p1++;
+        minP2 = p2;
+        lastC = L':';
+    }
+    // Skip past all \\-prefixed paths, including \\?\, \\.\,
+    // and network paths, including the first segment.
+    else if (IS_SEP(&p1[0]) && IS_SEP(&p1[1])) {
+        int sepCount = 2;
+        *p2++ = SEP;
+        *p2++ = SEP;
+        p1 += 2;
+        for (; !IS_END(p1) && sepCount; ++p1) {
+            if (IS_SEP(p1)) {
+                --sepCount;
+                *p2++ = lastC = SEP;
+            } else {
+                *p2++ = lastC = *p1;
             }
+        }
+        minP2 = p2;
+    }
+#else
+    // Skip past two leading SEPs
+    else if (IS_SEP(&p1[0]) && IS_SEP(&p1[1]) && !IS_SEP(&p1[2])) {
+        *p2++ = *p1++;
+        *p2++ = *p1++;
+        minP2 = p2;
+        lastC = SEP;
+    }
+#endif /* MS_WINDOWS */
+
+    /* if pEnd is specified, check that. Else, check for null terminator */
+    for (; !IS_END(p1); ++p1) {
+        wchar_t c = *p1;
+#ifdef ALTSEP
+        if (c == ALTSEP) {
+            c = SEP;
+        }
+#endif
+        if (lastC == SEP) {
+            if (c == L'.') {
+                int sep_at_1 = SEP_OR_END(&p1[1]);
+                int sep_at_2 = !sep_at_1 && SEP_OR_END(&p1[2]);
+                if (sep_at_2 && p1[1] == L'.') {
+                    wchar_t *p3 = p2;
+                    while (p3 != minP2 && *--p3 == SEP) { }
+                    while (p3 != minP2 && *(p3 - 1) != SEP) { --p3; }
+                    if (p3[0] == L'.' && p3[1] == L'.' && IS_SEP(&p3[2])) {
+                        // Previous segment is also ../, so append instead
+                        *p2++ = L'.';
+                        *p2++ = L'.';
+                        lastC = L'.';
+                    } else if (p3[0] == SEP) {
+                        // Absolute path, so absorb segment
+                        p2 = p3 + 1;
+                    } else {
+                        p2 = p3;
+                    }
+                    p1 += 1;
+                } else if (sep_at_1) {
+                } else {
+                    *p2++ = lastC = c;
+                }
+            } else if (c == SEP) {
+            } else {
+                *p2++ = lastC = c;
+            }
+        } else {
+            *p2++ = lastC = c;
+        } 
+    }
+    *p2 = L'\0';
+    if (p2 != minP2) {
+        while (--p2 != minP2 && *p2 == SEP) {
+            *p2 = L'\0';
         }
     }
-    if (dots >= 0) {
-        // Strip any trailing dots and trailing slash.
-        buf_next -= dots + 1;  // "/" or "/." or "/.."
-        assert(*buf_next == SEP);
-        if (buf_next == buf_start) {
-            // Leave the leading slash for root.
-            buf_next++;
-        }
-        else {
-            if (dots == 2) {
-                // Move to the previous SEP in the buffer.
-                do {
-                    assert(buf_next != buf_start);
-                    buf_next--;
-                } while (*(buf_next) != SEP);
-            }
-        }
-    }
-    *buf_next = L'\0';
-    return 0;
+#undef SEP_OR_END
+#undef IS_SEP
+#undef IS_END
+    return path;
 }
 
 

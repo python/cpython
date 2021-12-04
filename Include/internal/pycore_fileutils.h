@@ -74,14 +74,15 @@ extern int _Py_EncodeNonUnicodeWchar_InPlace(
     Py_ssize_t size);
 #endif
 
+extern int _Py_isabs(const wchar_t *path);
+extern int _Py_abspath(const wchar_t *path, wchar_t **abspath_p);
 extern wchar_t * _Py_join_relfile(const wchar_t *dirname,
                                   const wchar_t *relfile);
 extern int _Py_add_relfile(wchar_t *dirname,
                            const wchar_t *relfile,
                            size_t bufsize);
 extern size_t _Py_find_basename(const wchar_t *filename);
-PyAPI_FUNC(int) _Py_normalize_path(const wchar_t *path,
-                                   wchar_t *buf, const size_t buf_len);
+PyAPI_FUNC(wchar_t *) _Py_normpath(wchar_t *path, Py_ssize_t size);
 
 
 // Macros to protect CRT calls against instant termination when passed an

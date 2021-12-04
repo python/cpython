@@ -1,0 +1,2 @@
+Remove the ``asyncore`` and ``asynchat`` modules, deprecated in Python 3.6:
+use the :mod:`asyncio` module instead. Patch by Victor Stinner.

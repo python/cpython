@@ -1,0 +1,1 @@
+Make :mod:`asyncio` normalize exceptions as soon as they are captured with :c:func:`PyErr_Fetch`, and before they are stored as an exc_info triplet. This brings :mod:`asyncio` in line with the rest of the codebase, where an exc_info triplet is always normalized.
