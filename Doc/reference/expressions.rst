@@ -852,14 +852,14 @@ via :meth:`~object.__getitem__`:
   :class:`int` or a :class:`slice` (as discussed in the following section).
 
 The formal syntax makes no special provision for negative indices in
-:term:`sequences<sequence>`. However, built-in sequences all provide a
-:meth:`~object.__getitem__` method that interprets negative indices by adding
-the length of the sequence to the index so that, for example, ``x[-1]`` selects
-the last item of ``x``. The resulting value must be a nonnegative integer less
-than the number of items in the sequence, and the subscription selects the item
-whose index is that value (counting from zero). Since the support for negative
-indices and slicing occurs in the object's :meth:`__getitem__` method,
-subclasses overriding this method will need to explicitly add that support.
+:term:`sequences<sequence>`. However, built-in sequences all provide a :meth:`~object.__getitem__`
+method that interprets negative indices by adding the length of the sequence
+to the index so that, for example, ``x[-1]`` selects the last item of ``x``. The
+resulting value must be a nonnegative integer less than the number of items in
+the sequence, and the subscription selects the item whose index is that value
+(counting from zero). Since the support for negative indices and slicing
+occurs in the object's :meth:`__getitem__` method, subclasses overriding
+this method will need to explicitly add that support.
 
 .. index::
    single: character
