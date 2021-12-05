@@ -209,7 +209,7 @@ class ExceptionTests(unittest.TestCase):
                     src = src.decode(encoding, 'replace')
                 line = src.split('\n')[lineno-1]
                 self.assertIn(line, cm.exception.text)
-    
+
     def test_error_offset_continuation_characters(self):
         check = self.check
         check('"\\\n"(1 for c in I,\\\n\\', 2, 2)
@@ -515,6 +515,27 @@ class ExceptionTests(unittest.TestCase):
                             self.assertEqual(got, want,
                                              'pickled "%r", attribute "%s' %
                                              (e, checkArgName))
+
+    def test_note(self):
+        for e in [BaseException(1), Exception(2), ValueError(3)]:
+            with self.subTest(e=e):
+                self.assertIsNone(e.__note__)
+                e.__note__ = "My Note"
+                self.assertEqual(e.__note__, "My Note")
+
+                with self.assertRaises(TypeError):
+                    e.__note__ = 42
+                self.assertEqual(e.__note__, "My Note")
+
+                e.__note__ = "Your Note"
+                self.assertEqual(e.__note__, "Your Note")
+
+                with self.assertRaises(TypeError):
+                    del e.__note__
+                self.assertEqual(e.__note__, "Your Note")
+
+                e.__note__ = None
+                self.assertIsNone(e.__note__)
 
     def testWithTraceback(self):
         try:
@@ -1342,9 +1363,7 @@ class ExceptionTests(unittest.TestCase):
         """
         with SuppressCrashReport():
             rc, out, err = script_helper.assert_python_failure("-c", code)
-            self.assertIn(b'Fatal Python error: _PyErr_NormalizeException: '
-                          b'Cannot recover from MemoryErrors while '
-                          b'normalizing exceptions.', err)
+            self.assertIn(b'MemoryError', err)
 
     @cpython_only
     def test_MemoryError(self):

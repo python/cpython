@@ -1,0 +1,2 @@
+Add :func:`inspect.getmembers_static` , it return all members without
+triggering dynamic lookup via the descriptor protocol. Patch by Weipeng Hong.

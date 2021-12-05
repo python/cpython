@@ -127,6 +127,14 @@ The following exceptions are used mostly as base classes for other exceptions.
              tb = sys.exc_info()[2]
              raise OtherException(...).with_traceback(tb)
 
+   .. attribute:: __note__
+
+      A mutable field which is :const:`None` by default and can be set to a string.
+      If it is not :const:`None`, it is included in the traceback. This field can
+      be used to enrich exceptions after they have been caught.
+
+   .. versionadded:: 3.11
+
 
 .. exception:: Exception
 

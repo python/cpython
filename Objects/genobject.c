@@ -38,7 +38,7 @@ gen_traverse(PyGenObject *gen, visitproc visit, void *arg)
     Py_VISIT(gen->gi_qualname);
     InterpreterFrame *frame = gen->gi_xframe;
     if (frame != NULL) {
-        assert(frame->frame_obj == NULL || frame->frame_obj->f_own_locals_memory == 0);
+        assert(frame->frame_obj == NULL || frame->frame_obj->f_owns_frame == 0);
         int err = _PyFrame_Traverse(frame, visit, arg);
         if (err) {
             return err;
@@ -136,7 +136,8 @@ gen_dealloc(PyGenObject *gen)
         gen->gi_xframe = NULL;
         frame->generator = NULL;
         frame->previous = NULL;
-        _PyFrame_Clear(frame, 1);
+        _PyFrame_Clear(frame);
+        PyMem_Free(frame);
     }
     if (((PyCodeObject *)gen->gi_code)->co_flags & CO_COROUTINE) {
         Py_CLEAR(((PyCoroObject *)gen)->cr_origin);
@@ -254,7 +255,8 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
 
     frame->generator = NULL;
     gen->gi_xframe = NULL;
-    _PyFrame_Clear(frame, 1);
+    _PyFrame_Clear(frame);
+    PyMem_Free(frame);
     *presult = result;
     return result ? PYGEN_RETURN : PYGEN_ERROR;
 }
@@ -845,7 +847,8 @@ make_gen(PyTypeObject *type, PyFunctionObject *func, InterpreterFrame *frame)
     PyGenObject *gen = PyObject_GC_New(PyGenObject, type);
     if (gen == NULL) {
         assert(frame->frame_obj == NULL);
-        _PyFrame_Clear(frame, 1);
+        _PyFrame_Clear(frame);
+        PyMem_Free(frame);
         return NULL;
     }
     gen->gi_xframe = frame;
@@ -929,10 +932,15 @@ gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
 
     /* Take ownership of the frame */
     assert(f->f_frame->frame_obj == NULL);
-    assert(f->f_own_locals_memory);
-    gen->gi_xframe = f->f_frame;
+    assert(f->f_owns_frame);
+    gen->gi_xframe = _PyFrame_Copy((InterpreterFrame *)f->_f_frame_data);
+    if (gen->gi_xframe == NULL) {
+        Py_DECREF(f);
+        Py_DECREF(gen);
+        return NULL;
+    }
     gen->gi_xframe->frame_obj = f;
-    f->f_own_locals_memory = 0;
+    f->f_owns_frame = 0;
     gen->gi_xframe->generator = (PyObject *) gen;
     assert(PyObject_GC_IsTracked((PyObject *)f));
 

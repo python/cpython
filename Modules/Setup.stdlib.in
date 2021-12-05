@@ -68,8 +68,12 @@
 
 # dbm/gdbm
 # dbm needs either libndbm, libgdbm_compat, or libdb 5.x
+#@MODULE__DBM_TRUE@_dbm _dbmmodule.c
 # gdbm module needs -lgdbm
 @MODULE__GDBM_TRUE@_gdbm _gdbmmodule.c
+
+# needs -lreadline or -leditline, sometimes termcap, termlib, or tinfo
+#@MODULE_READLINE_TRUE@readline readline.c
 
 # hashing builtins, can be disabled with --without-builtin-hashlib-hashes
 @MODULE__MD5_TRUE@_md5 md5module.c
@@ -130,12 +134,24 @@
 ############################################################################
 # Modules with third party dependencies
 #
+
+# needs -lffi and -ldl
+@MODULE__CTYPES_TRUE@_ctypes _ctypes/_ctypes.c _ctypes/callbacks.c _ctypes/callproc.c _ctypes/stgdict.c _ctypes/cfield.c
+
+# needs -lncurses, -lncursesw or -lcurses, sometimes -ltermcap
+#@MODULE__CURSES_TRUE@_curses _cursesmodule.c
+# needs -lncurses and -lpanel
+#@MODULE__CURSES_PANEL_TRUE@_curses_panel _curses_panel.c
+
 @MODULE__SQLITE3_TRUE@_sqlite3 _sqlite/connection.c _sqlite/cursor.c _sqlite/microprotocols.c _sqlite/module.c _sqlite/prepare_protocol.c _sqlite/row.c _sqlite/statement.c _sqlite/util.c
 
 # needs -lssl and -lcrypt
 @MODULE__SSL_TRUE@_ssl _ssl.c
 # needs -lcrypt
 @MODULE__HASHLIB_TRUE@_hashlib _hashopenssl.c
+
+# needs -ltk, -ltcl, and sometimes -lX11
+#@MODULE__TKINTER_TRUE@_tkinter _tkinter.c tkappinit.c
 
 # Linux: -luuid, BSD/AIX: libc's uuid_create()
 @MODULE__UUID_TRUE@_uuid _uuidmodule.c
