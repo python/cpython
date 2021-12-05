@@ -1404,21 +1404,26 @@ def _get_protocol_attrs(cls):
                 attrs.add(attr)
     return attrs
 
-_classvar_prefixes = ("typing.ClassVar[", "t.ClassVar[", "ClassVar[")
+_CLASSVAR_PREFIXES = ("typing.ClassVar", "t.ClassVar", "ClassVar")
 
-def _is_callable_or_classvar_members_only(cls):
+def _is_callable_or_classvar_members_only(cls, instance=None, verify_classvar_values=False):
     attr_names = _get_protocol_attrs(cls)
     annotations = getattr(cls, '__annotations__', {})
     # PEP 544 prohibits using issubclass() with protocols that have non-method members.
+    # bpo-44975: Relaxing that restriction to allow for runtime-checkable
+    # protocols with class variables since those should be available at class
+    # definition time.
     for attr_name in attr_names:
         attr = getattr(cls, attr_name, None)
+        # Method-like.
         if callable(attr):
             continue
         annotation = annotations.get(attr_name)
+        # ClassVar member
         if getattr(annotation, '__origin__', None) is ClassVar:
             continue
-        # String annotations (forward references).
-        if isinstance(annotation, str) and annotation.startswith(_classvar_prefixes):
+        # ClassVar string annotations (forward references).
+        if isinstance(annotation, str) and annotation.startswith(_CLASSVAR_PREFIXES):
             continue
         return False
     return True

@@ -1631,8 +1631,13 @@ class ProtocolTests(BaseTestCase):
 
         class D:
             x = 1
+
+        class E:
+            x = 2
+
         self.assertNotIsSubclass(C, P)
         self.assertIsSubclass(D, P)
+        self.assertIsSubclass(E, P)
 
         # String annotations (forward references).
         @runtime_checkable
@@ -1645,6 +1650,7 @@ class ProtocolTests(BaseTestCase):
             x = 1
             y = 2
             z = 3
+
         self.assertNotIsSubclass(C, P)
         self.assertIsSubclass(D, P)
 
