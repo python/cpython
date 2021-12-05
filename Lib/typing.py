@@ -1406,7 +1406,10 @@ def _get_protocol_attrs(cls):
 
 _CLASSVAR_PREFIXES = ("typing.ClassVar", "t.ClassVar", "ClassVar")
 
-def _is_callable_or_classvar_members_only(cls, instance=None, verify_classvar_values=False):
+def _is_callable_or_classvar_members_only(cls, instance):
+    """Returns a 2-tuple signalling two things:
+    (Valid protocol?, If not valid protocol, was it due to ClassVar value mismatch?)
+    """
     attr_names = _get_protocol_attrs(cls)
     annotations = getattr(cls, '__annotations__', {})
     # PEP 544 prohibits using issubclass() with protocols that have non-method members.
@@ -1421,12 +1424,23 @@ def _is_callable_or_classvar_members_only(cls, instance=None, verify_classvar_va
         annotation = annotations.get(attr_name)
         # ClassVar member
         if getattr(annotation, '__origin__', None) is ClassVar:
+            instance_attr = getattr(instance, attr_name, None)
+            # If we couldn't find anything, don't bother checking value types.
+            if (instance_attr is not None
+                and attr is not None
+                and type(instance_attr) != type(attr)):
+                return False, True
             continue
         # ClassVar string annotations (forward references).
         if isinstance(annotation, str) and annotation.startswith(_CLASSVAR_PREFIXES):
+            instance_attr = getattr(instance, attr_name, None)
+            if (instance_attr is not None
+                and attr is not None
+                and type(instance_attr) != type(attr)):
+                return False, True
             continue
-        return False
-    return True
+        return False, False
+    return True, False
 
 
 def _no_init_or_replace_init(self, *args, **kwargs):
@@ -1496,10 +1510,9 @@ class _ProtocolMeta(ABCMeta):
         ):
             raise TypeError("Instance and class checks can only be used with"
                             " @runtime_checkable protocols")
-
         if ((not getattr(cls, '_is_protocol', False) or
-             _is_callable_or_classvar_members_only(cls)) and
-                issubclass(instance.__class__, cls)):
+             _is_callable_or_classvar_members_only(cls, instance)[0]) and
+            issubclass(instance.__class__, cls)):
             return True
         if cls._is_protocol:
             if all(hasattr(instance, attr) and
@@ -1563,8 +1576,9 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
                     return NotImplemented
                 raise TypeError("Instance and class checks can only be used with"
                                 " @runtime_checkable protocols")
-            if not _is_callable_or_classvar_members_only(cls):
-                if _allow_reckless_class_checks():
+            ok_members, classvar_mismatch = _is_callable_or_classvar_members_only(cls, other)
+            if not ok_members:
+                if _allow_reckless_class_checks() or classvar_mismatch:
                     return NotImplemented
                 raise TypeError("Protocol members must be methods or data"
                                 " attributes annotated with ClassVar to support"

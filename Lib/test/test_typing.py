@@ -1635,18 +1635,26 @@ class ProtocolTests(BaseTestCase):
         class E:
             x = 2
 
+        class F:
+            x = 'foo'
+
         self.assertNotIsSubclass(C, P)
         self.assertIsSubclass(D, P)
         self.assertIsSubclass(E, P)
+        self.assertNotIsSubclass(F, P)
 
         # String annotations (forward references).
         @runtime_checkable
         class P(Protocol):
+            # Special case, bare ClassVar, our checks should
+            # just skip these.
+            w: "ClassVar"
             x: "ClassVar[int]" = 1
             y: "typing.ClassVar[int]" = 2
             z: "t.ClassVar[int]" = 3
 
         class D:
+            w = 0
             x = 1
             y = 2
             z = 3
