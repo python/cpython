@@ -392,13 +392,11 @@ _Py_WriteIndent(int indent, PyObject *f)
             buf[indent] = '\0';
         }
         if (PyFile_WriteString(buf, f) < 0) {
-            goto error;
+            return -1;
         }
         indent -= 10;
     }
     return 0;
-error:
-    return -1;
 }
 
 /* Writes indent spaces, followed by the margin if it is not `\0`.
@@ -751,15 +749,13 @@ print_error_location_carets(PyObject *f, int offset, Py_ssize_t start_offset, Py
             str = primary;
         }
         if (PyFile_WriteString(str, f) < 0) {
-            goto error;
+            return -1;
         }
     }
     if (PyFile_WriteString("\n", f) < 0) {
-        goto error;
+        return -1;
     }
     return 0;
-error:
-    return -1;
 }
 
 static int
@@ -988,7 +984,7 @@ _PyTraceBack_Print_Indented(PyObject *v, int indent, const char *margin,
     }
     if (!PyTraceBack_Check(v)) {
         PyErr_BadInternalCall();
-        goto error;
+        return -1;
     }
     limitv = PySys_GetObject("tracebacklimit");
     if (limitv && PyLong_Check(limitv)) {
@@ -1002,20 +998,18 @@ _PyTraceBack_Print_Indented(PyObject *v, int indent, const char *margin,
         }
     }
     if (_Py_WriteIndentedMargin(indent, header_margin, f) < 0) {
-        goto error;
+        return -1;
     }
 
     if (PyFile_WriteString(header, f) < 0) {
-        goto error;
+        return -1;
     }
 
     if (tb_printinternal((PyTracebackObject *)v, f, limit, indent, margin) < 0) {
-        goto error;
+        return -1;
     }
 
     return 0;
-error:
-    return -1;
 }
 
 int
