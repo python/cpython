@@ -4823,8 +4823,8 @@ Generic Alias Type
    pair: Generic; Alias
 
 ``GenericAlias`` objects are generally created by
-:ref:`subscripting<subscriptions>` a class. They are most often used with
-:ref:`container classes<sequence-types>`, such as :class:`list` or
+:ref:`subscripting <subscriptions>` a class. They are most often used with
+:ref:`container classes <sequence-types>`, such as :class:`list` or
 :class:`dict`. For example, ``list[int]`` is a ``GenericAlias`` object created
 by subscripting the :class:`list` class with the argument :class:`int`.
 ``GenericAlias`` objects are intended primarily for use with
@@ -4839,7 +4839,7 @@ A ``GenericAlias`` object acts as a proxy for a :term:`generic type`,
 implementing *parameterized generics*.
 
 For a container class, the
-argument(s) supplied to a :ref:`subscription<subscriptions>` of the class may
+argument(s) supplied to a :ref:`subscription <subscriptions>` of the class may
 indicate the type(s) of the elements an object contains. For example,
 ``set[bytes]`` can be used in type annotations to signify a :class:`set` in
 which all the elements are of type :class:`bytes`.
@@ -4847,7 +4847,7 @@ which all the elements are of type :class:`bytes`.
 For a class which defines :meth:`~object.__class_getitem__` but is not a
 container, the argument(s) supplied to a subscription of the class will often
 indicate the return type(s) of one or more methods defined on an object. For
-example, :mod:`regular expressions<re>` can be used on both the :class:`str` data
+example, :mod:`regular expressions <re>` can be used on both the :class:`str` data
 type and the :class:`bytes` data type:
 
 * If ``x = re.search('foo', 'foo')``, ``x`` will be a
@@ -5055,7 +5055,7 @@ All parameterized generics implement special read-only attributes.
       classes, provided they implement the special class method
       :meth:`~object.__class_getitem__`.
 
-   :ref:`Generics`, :ref:`user-defined generics<user-defined-generics>` and :class:`typing.Generic`
+   :ref:`Generics`, :ref:`user-defined generics <user-defined-generics>` and :class:`typing.Generic`
       Documentation on how to implement generic classes that can be
       parameterized at runtime and understood by static type-checkers.
 
