@@ -16,6 +16,7 @@
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
 
 #include <locale.h>               // setlocale()
+#include <stdlib.h>               // getenv()
 
 #if defined(__APPLE__)
 #include <mach-o/loader.h>
@@ -27,6 +28,10 @@
 
 #ifdef HAVE_LANGINFO_H
 #  include <langinfo.h>           // nl_langinfo(CODESET)
+#endif
+
+#ifdef HAVE_FCNTL_H
+#  include <fcntl.h>              // F_GETFD
 #endif
 
 #ifdef MS_WINDOWS
@@ -454,7 +459,7 @@ interpreter_update_config(PyThreadState *tstate, int only_update_path_config)
     }
 
     if (_Py_IsMainInterpreter(tstate->interp)) {
-        PyStatus status = _PyConfig_WritePathConfig(config);
+        PyStatus status = _PyPathConfig_UpdateGlobal(config);
         if (_PyStatus_EXCEPTION(status)) {
             _PyErr_SetFromPyStatus(status);
             return -1;
@@ -472,7 +477,7 @@ interpreter_update_config(PyThreadState *tstate, int only_update_path_config)
 int
 _PyInterpreterState_SetConfig(const PyConfig *src_config)
 {
-    PyThreadState *tstate = PyThreadState_Get();
+    PyThreadState *tstate = _PyThreadState_GET();
     int res = -1;
 
     PyConfig config;
@@ -483,7 +488,7 @@ _PyInterpreterState_SetConfig(const PyConfig *src_config)
         goto done;
     }
 
-    status = PyConfig_Read(&config);
+    status = _PyConfig_Read(&config, 1);
     if (_PyStatus_EXCEPTION(status)) {
         _PyErr_SetFromPyStatus(status);
         goto done;
@@ -544,7 +549,7 @@ pyinit_core_reconfigure(_PyRuntimeState *runtime,
     config = _PyInterpreterState_GetConfig(interp);
 
     if (config->_install_importlib) {
-        status = _PyConfig_WritePathConfig(config);
+        status = _PyPathConfig_UpdateGlobal(config);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
@@ -658,9 +663,7 @@ pycore_init_singletons(PyInterpreterState *interp)
 {
     PyStatus status;
 
-    if (_PyLong_Init(interp) < 0) {
-        return _PyStatus_ERR("can't init longs");
-    }
+    _PyLong_Init(interp);
 
     if (_Py_IsMainInterpreter(interp)) {
         _PyFloat_Init();
@@ -1078,8 +1081,8 @@ init_interp_main(PyThreadState *tstate)
         return _PyStatus_OK();
     }
 
-    // Compute the path configuration
-    status = _PyConfig_InitPathConfig(&interp->config, 1);
+    // Initialize the import-related configuration.
+    status = _PyConfig_InitImportConfig(&interp->config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1661,6 +1664,8 @@ finalize_interp_clear(PyThreadState *tstate)
 {
     int is_main_interp = _Py_IsMainInterpreter(tstate->interp);
 
+    _PyExc_ClearExceptionGroupType(tstate->interp);
+
     /* Clear interpreter state and all thread states */
     _PyInterpreterState_Clear(tstate);
 
@@ -2028,7 +2033,7 @@ Py_EndInterpreter(PyThreadState *tstate)
     if (tstate != _PyThreadState_GET()) {
         Py_FatalError("thread is not current");
     }
-    if (tstate->frame != NULL) {
+    if (tstate->cframe->current_frame != NULL) {
         Py_FatalError("thread still has a frame");
     }
     interp->finalizing = 1;
@@ -2128,18 +2133,30 @@ is_valid_fd(int fd)
    startup. Problem: dup() doesn't check if the file descriptor is valid on
    some platforms.
 
+   fcntl(fd, F_GETFD) is even faster, because it only checks the process table.
+
    bpo-30225: On macOS Tiger, when stdout is redirected to a pipe and the other
    side of the pipe is closed, dup(1) succeed, whereas fstat(1, &st) fails with
    EBADF. FreeBSD has similar issue (bpo-32849).
 
    Only use dup() on platforms where dup() is enough to detect invalid FD in
-   corner cases: on Linux and Windows (bpo-32849). */
-#if defined(__linux__) || defined(MS_WINDOWS)
+   corner cases: on Linux and Windows (bpo-32849).
+*/
     if (fd < 0) {
         return 0;
     }
+#if defined(F_GETFD) && ( \
+        defined(__linux__) || \
+        defined(__APPLE__) || \
+        defined(MS_WINDOWS) || \
+        defined(__wasm__))
+    int res;
+    _Py_BEGIN_SUPPRESS_IPH
+    res = fcntl(fd, F_GETFD);
+    _Py_END_SUPPRESS_IPH
+    return res >= 0;
+#elif defined(__linux__) || defined(MS_WINDOWS)
     int fd2;
-
     _Py_BEGIN_SUPPRESS_IPH
     fd2 = dup(fd);
     if (fd2 >= 0) {
@@ -2802,6 +2819,16 @@ _Py_FatalErrorFormat(const char *func, const char *format, ...)
     fflush(stream);
 
     fatal_error(fd, 0, NULL, NULL, -1);
+}
+
+
+void _Py_NO_RETURN
+_Py_FatalRefcountErrorFunc(const char *func, const char *msg)
+{
+    _Py_FatalErrorFormat(func,
+                         "%s: bug likely caused by a refcount error "
+                         "in a C extension",
+                         msg);
 }
 
 

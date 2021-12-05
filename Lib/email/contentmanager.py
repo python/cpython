@@ -144,7 +144,7 @@ def _encode_text(string, charset, cte, policy):
     linesep = policy.linesep.encode('ascii')
     def embedded_body(lines): return linesep.join(lines) + linesep
     def normal_body(lines): return b'\n'.join(lines) + b'\n'
-    if cte==None:
+    if cte is None:
         # Use heuristics to decide on the "best" encoding.
         if max((len(x) for x in lines), default=0) <= policy.max_line_length:
             try:

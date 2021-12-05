@@ -714,6 +714,8 @@ class LiteralTests(BaseTestCase):
         self.assertNotEqual(Literal[True], Literal[1])
         self.assertNotEqual(Literal[1], Literal[2])
         self.assertNotEqual(Literal[1, True], Literal[1])
+        self.assertNotEqual(Literal[1, True], Literal[1, 1])
+        self.assertNotEqual(Literal[1, 2], Literal[True, 2])
         self.assertEqual(Literal[1], Literal[1])
         self.assertEqual(Literal[1, 2], Literal[2, 1])
         self.assertEqual(Literal[1, 2, 3], Literal[1, 2, 3, 3])
@@ -1533,21 +1535,21 @@ class ProtocolTests(BaseTestCase):
 
     def test_supports_complex(self):
 
-        # Note: complex itself doesn't have __complex__.
         class C:
             def __complex__(self):
                 return 0j
 
+        self.assertIsSubclass(complex, typing.SupportsComplex)
         self.assertIsSubclass(C, typing.SupportsComplex)
         self.assertNotIsSubclass(str, typing.SupportsComplex)
 
     def test_supports_bytes(self):
 
-        # Note: bytes itself doesn't have __bytes__.
         class B:
             def __bytes__(self):
                 return b''
 
+        self.assertIsSubclass(bytes, typing.SupportsBytes)
         self.assertIsSubclass(B, typing.SupportsBytes)
         self.assertNotIsSubclass(str, typing.SupportsBytes)
 
@@ -1609,6 +1611,16 @@ class ProtocolTests(BaseTestCase):
 
         with self.assertRaisesRegex(TypeError, "@runtime_checkable"):
             isinstance(1, P)
+
+    def test_super_call_init(self):
+        class P(Protocol):
+            x: int
+
+        class Foo(P):
+            def __init__(self):
+                super().__init__()
+
+        Foo()  # Previously triggered RecursionError
 
     def test_runtime_issubclass_with_classvar_data_members(self):
         @runtime_checkable
@@ -2928,6 +2940,12 @@ class ForwardRefTests(BaseTestCase):
         self.assertNotEqual(gth(Loop, globals())['attr'], Final[int])
         self.assertNotEqual(gth(Loop, globals())['attr'], Final)
 
+    def test_or(self):
+        X = ForwardRef('X')
+        # __or__/__ror__ itself
+        self.assertEqual(X | "x", Union[X, "x"])
+        self.assertEqual("x" | X, Union["x", X])
+
 
 class OverloadTests(BaseTestCase):
 
@@ -3000,7 +3018,7 @@ else:
 
 # Definitions needed for features introduced in Python 3.6
 
-from test import ann_module, ann_module2, ann_module3
+from test import ann_module, ann_module2, ann_module3, ann_module5, ann_module6
 from typing import AsyncContextManager
 
 class A:
@@ -3300,6 +3318,22 @@ class GetTypeHintTests(BaseTestCase):
         BadType.__module__ = BadBase.__module__ = 'bad'
         self.assertNotIn('bad', sys.modules)
         self.assertEqual(get_type_hints(BadType), {'foo': tuple, 'bar': list})
+
+    def test_forward_ref_and_final(self):
+        # https://bugs.python.org/issue45166
+        hints = get_type_hints(ann_module5)
+        self.assertEqual(hints, {'name': Final[str]})
+
+        hints = get_type_hints(ann_module5.MyClass)
+        self.assertEqual(hints, {'value': Final})
+
+    def test_top_level_class_var(self):
+        # https://bugs.python.org/issue45166
+        with self.assertRaisesRegex(
+            TypeError,
+            r'typing.ClassVar\[int\] is not valid as type argument',
+        ):
+            get_type_hints(ann_module6)
 
 
 class GetUtilitiesTestCase(TestCase):
@@ -4124,6 +4158,19 @@ class NamedTupleTests(BaseTestCase):
         self.assertEqual(a.typename, 'foo')
         self.assertEqual(a.fields, [('bar', tuple)])
 
+    def test_empty_namedtuple(self):
+        NT = NamedTuple('NT')
+
+        class CNT(NamedTuple):
+            pass  # empty body
+
+        for struct in [NT, CNT]:
+            with self.subTest(struct=struct):
+                self.assertEqual(struct._fields, ())
+                self.assertEqual(struct._field_defaults, {})
+                self.assertEqual(struct.__annotations__, {})
+                self.assertIsInstance(struct(), struct)
+
     def test_namedtuple_errors(self):
         with self.assertRaises(TypeError):
             NamedTuple.__new__()
@@ -4603,6 +4650,11 @@ class AnnotatedTests(BaseTestCase):
         X = List[Annotated[T, 5]]
         self.assertEqual(X[int], List[Annotated[int, 5]])
 
+    def test_annotated_mro(self):
+        class X(Annotated[int, (1, 10)]): ...
+        self.assertEqual(X.__mro__, (X, int, object),
+                         "Annotated should be transparent.")
+
 
 class TypeAliasTests(BaseTestCase):
     def test_canonical_usage_with_variable_annotation(self):
@@ -4948,6 +5000,8 @@ class SpecialAttrsTests(BaseTestCase):
             typing.Concatenate[Any, SpecialAttrsP]: 'Concatenate',
             typing.Final[Any]: 'Final',
             typing.Literal[Any]: 'Literal',
+            typing.Literal[1, 2]: 'Literal',
+            typing.Literal[True, 2]: 'Literal',
             typing.Optional[Any]: 'Optional',
             typing.TypeGuard[Any]: 'TypeGuard',
             typing.Union[Any]: 'Any',

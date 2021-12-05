@@ -7,6 +7,7 @@ import struct
 import sys
 
 from test import support
+from test.support import import_helper
 from test.support.script_helper import assert_python_ok
 
 ISBIGENDIAN = sys.byteorder == "big"
@@ -677,6 +678,24 @@ class StructTest(unittest.TestCase):
             with self.assertRaisesRegex(struct.error,
                                         'embedded null character'):
                 struct.calcsize(s)
+
+    @support.cpython_only
+    def test_issue45034_unsigned(self):
+        _testcapi = import_helper.import_module('_testcapi')
+        error_msg = f'ushort format requires 0 <= number <= {_testcapi.USHRT_MAX}'
+        with self.assertRaisesRegex(struct.error, error_msg):
+            struct.pack('H', 70000)  # too large
+        with self.assertRaisesRegex(struct.error, error_msg):
+            struct.pack('H', -1)  # too small
+
+    @support.cpython_only
+    def test_issue45034_signed(self):
+        _testcapi = import_helper.import_module('_testcapi')
+        error_msg = f'short format requires {_testcapi.SHRT_MIN} <= number <= {_testcapi.SHRT_MAX}'
+        with self.assertRaisesRegex(struct.error, error_msg):
+            struct.pack('h', 70000)  # too large
+        with self.assertRaisesRegex(struct.error, error_msg):
+            struct.pack('h', -70000)  # too small
 
 
 class UnpackIteratorTest(unittest.TestCase):

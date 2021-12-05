@@ -741,8 +741,9 @@ class TestNtpath(NtpathTestCase):
             # (or any other volume root). The drive-relative
             # locations below cannot then refer to mount points
             #
-            drive, path = ntpath.splitdrive(sys.executable)
-            with os_helper.change_cwd(ntpath.dirname(sys.executable)):
+            test_cwd = os.getenv("SystemRoot")
+            drive, path = ntpath.splitdrive(test_cwd)
+            with os_helper.change_cwd(test_cwd):
                 self.assertFalse(ntpath.ismount(drive.lower()))
                 self.assertFalse(ntpath.ismount(drive.upper()))
 

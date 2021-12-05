@@ -70,7 +70,7 @@ def isabs(s):
         if s.replace('/', '\\').startswith('\\\\?\\'):
             return True
     s = splitdrive(s)[1]
-    return len(s) > 0 and s[0] in _get_bothseps(s)
+    return len(s) > 0 and s[0] and s[0] in _get_bothseps(s)
 
 
 # Join two (or more) paths.
@@ -268,11 +268,13 @@ def ismount(path):
     root, rest = splitdrive(path)
     if root and root[0] in seps:
         return (not rest) or (rest in seps)
-    if rest in seps:
+    if rest and rest in seps:
         return True
 
     if _getvolumepathname:
-        return path.rstrip(seps) == _getvolumepathname(path).rstrip(seps)
+        x = path.rstrip(seps)
+        y =_getvolumepathname(path).rstrip(seps)
+        return x.casefold() == y.casefold()
     else:
         return False
 
@@ -459,56 +461,68 @@ def expandvars(path):
 # Normalize a path, e.g. A//B, A/./B and A/foo/../B all become A\B.
 # Previously, this function also truncated pathnames to 8+3 format,
 # but as this module is called "ntpath", that's obviously wrong!
+try:
+    from nt import _path_normpath
 
-def normpath(path):
-    """Normalize path, eliminating double slashes, etc."""
-    path = os.fspath(path)
-    if isinstance(path, bytes):
-        sep = b'\\'
-        altsep = b'/'
-        curdir = b'.'
-        pardir = b'..'
-        special_prefixes = (b'\\\\.\\', b'\\\\?\\')
-    else:
-        sep = '\\'
-        altsep = '/'
-        curdir = '.'
-        pardir = '..'
-        special_prefixes = ('\\\\.\\', '\\\\?\\')
-    if path.startswith(special_prefixes):
-        # in the case of paths with these prefixes:
-        # \\.\ -> device names
-        # \\?\ -> literal paths
-        # do not do any normalization, but return the path
-        # unchanged apart from the call to os.fspath()
-        return path
-    path = path.replace(altsep, sep)
-    prefix, path = splitdrive(path)
+except ImportError:
+    def normpath(path):
+        """Normalize path, eliminating double slashes, etc."""
+        path = os.fspath(path)
+        if isinstance(path, bytes):
+            sep = b'\\'
+            altsep = b'/'
+            curdir = b'.'
+            pardir = b'..'
+            special_prefixes = (b'\\\\.\\', b'\\\\?\\')
+        else:
+            sep = '\\'
+            altsep = '/'
+            curdir = '.'
+            pardir = '..'
+            special_prefixes = ('\\\\.\\', '\\\\?\\')
+        if path.startswith(special_prefixes):
+            # in the case of paths with these prefixes:
+            # \\.\ -> device names
+            # \\?\ -> literal paths
+            # do not do any normalization, but return the path
+            # unchanged apart from the call to os.fspath()
+            return path
+        path = path.replace(altsep, sep)
+        prefix, path = splitdrive(path)
 
-    # collapse initial backslashes
-    if path.startswith(sep):
-        prefix += sep
-        path = path.lstrip(sep)
+        # collapse initial backslashes
+        if path.startswith(sep):
+            prefix += sep
+            path = path.lstrip(sep)
 
-    comps = path.split(sep)
-    i = 0
-    while i < len(comps):
-        if not comps[i] or comps[i] == curdir:
-            del comps[i]
-        elif comps[i] == pardir:
-            if i > 0 and comps[i-1] != pardir:
-                del comps[i-1:i+1]
-                i -= 1
-            elif i == 0 and prefix.endswith(sep):
+        comps = path.split(sep)
+        i = 0
+        while i < len(comps):
+            if not comps[i] or comps[i] == curdir:
                 del comps[i]
+            elif comps[i] == pardir:
+                if i > 0 and comps[i-1] != pardir:
+                    del comps[i-1:i+1]
+                    i -= 1
+                elif i == 0 and prefix.endswith(sep):
+                    del comps[i]
+                else:
+                    i += 1
             else:
                 i += 1
-        else:
-            i += 1
-    # If the path is now empty, substitute '.'
-    if not prefix and not comps:
-        comps.append(curdir)
-    return prefix + sep.join(comps)
+        # If the path is now empty, substitute '.'
+        if not prefix and not comps:
+            comps.append(curdir)
+        return prefix + sep.join(comps)
+
+else:
+    def normpath(path):
+        """Normalize path, eliminating double slashes, etc."""
+        path = os.fspath(path)
+        if isinstance(path, bytes):
+            return os.fsencode(_path_normpath(os.fsdecode(path))) or b"."
+        return _path_normpath(path) or "."
+
 
 def _abspath_fallback(path):
     """Return the absolute version of a path as a fallback function in case

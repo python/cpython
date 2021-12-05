@@ -99,6 +99,13 @@ SHORT_TIMEOUT = 30.0
 # option.
 LONG_TIMEOUT = 5 * 60.0
 
+# TEST_HOME_DIR refers to the top level directory of the "test" package
+# that contains Python's regression test suite
+TEST_SUPPORT_DIR = os.path.dirname(os.path.abspath(__file__))
+TEST_HOME_DIR = os.path.dirname(TEST_SUPPORT_DIR)
+STDLIB_DIR = os.path.dirname(TEST_HOME_DIR)
+REPO_ROOT = os.path.dirname(STDLIB_DIR)
+
 
 class Error(Exception):
     """Base class for regression test exceptions."""
@@ -148,9 +155,7 @@ def load_package_tests(pkg_dir, loader, standard_tests, pattern):
     """
     if pattern is None:
         pattern = "test*"
-    top_dir = os.path.dirname(              # Lib
-                  os.path.dirname(              # test
-                      os.path.dirname(__file__)))   # support
+    top_dir = STDLIB_DIR
     package_tests = loader.discover(start_dir=pkg_dir,
                                     top_level_dir=top_dir,
                                     pattern=pattern)
@@ -367,6 +372,17 @@ def requires_mac_ver(*min_version):
     return decorator
 
 
+def skip_if_buildbot(reason=None):
+    """Decorator raising SkipTest if running on a buildbot."""
+    if not reason:
+        reason = 'not suitable for buildbots'
+    if sys.platform == 'win32':
+        isbuildbot = os.environ.get('USERNAME') == 'Buildbot'
+    else:
+        isbuildbot = os.environ.get('USER') == 'buildbot'
+    return unittest.skipIf(isbuildbot, reason)
+
+
 def system_must_validate_cert(f):
     """Skip the test on TLS certificate validation failures."""
     @functools.wraps(f)
@@ -390,8 +406,8 @@ PIPE_MAX_SIZE = 4 * 1024 * 1024 + 1
 # A constant likely larger than the underlying OS socket buffer size, to make
 # writes blocking.
 # The socket buffer sizes can usually be tuned system-wide (e.g. through sysctl
-# on Linux), or on a per-socket basis (SO_SNDBUF/SO_RCVBUF). See issue #18643
-# for a discussion of this number).
+# on Linux), or on a per-socket basis (SO_SNDBUF/SO_RCVBUF).  See issue #18643
+# for a discussion of this number.
 SOCK_MAX_SIZE = 16 * 1024 * 1024 + 1
 
 # decorator for skipping tests on non-IEEE 754 platforms
@@ -428,9 +444,12 @@ def requires_lzma(reason='requires lzma'):
     return unittest.skipUnless(lzma, reason)
 
 def has_no_debug_ranges():
-    import _testinternalcapi
+    try:
+        import _testinternalcapi
+    except ImportError:
+        raise unittest.SkipTest("_testinternalcapi required")
     config = _testinternalcapi.get_config()
-    return bool(config['no_debug_ranges'])
+    return not bool(config['code_debug_ranges'])
 
 def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
     return unittest.skipIf(has_no_debug_ranges(), reason)
@@ -458,11 +477,6 @@ PGO = False
 # Set by libregrtest/main.py if we are running the extended (time consuming)
 # PGO task.  If this is True, PGO is also True.
 PGO_EXTENDED = False
-
-# TEST_HOME_DIR refers to the top level directory of the "test" package
-# that contains Python's regression test suite
-TEST_SUPPORT_DIR = os.path.dirname(os.path.abspath(__file__))
-TEST_HOME_DIR = os.path.dirname(TEST_SUPPORT_DIR)
 
 # TEST_DATA_DIR is used as a target download location for remote resources
 TEST_DATA_DIR = os.path.join(TEST_HOME_DIR, "data")
@@ -681,7 +695,10 @@ _TPFLAGS_HAVE_GC = 1<<14
 _TPFLAGS_HEAPTYPE = 1<<9
 
 def check_sizeof(test, o, size):
-    import _testinternalcapi
+    try:
+        import _testinternalcapi
+    except ImportError:
+        raise unittest.SkipTest("_testinternalcapi required")
     result = sys.getsizeof(o)
     # add GC header size
     if ((type(o) == type) and (o.__flags__ & _TPFLAGS_HEAPTYPE) or\
@@ -695,9 +712,8 @@ def check_sizeof(test, o, size):
 # Decorator for running a function in a different locale, correctly resetting
 # it afterwards.
 
+@contextlib.contextmanager
 def run_with_locale(catstr, *locales):
-    def decorator(func):
-        def inner(*args, **kwds):
             try:
                 import locale
                 category = getattr(locale, catstr)
@@ -716,16 +732,11 @@ def run_with_locale(catstr, *locales):
                     except:
                         pass
 
-            # now run the function, resetting the locale on exceptions
             try:
-                return func(*args, **kwds)
+                yield
             finally:
                 if locale and orig_locale:
                     locale.setlocale(category, orig_locale)
-        inner.__name__ = func.__name__
-        inner.__doc__ = func.__doc__
-        return inner
-    return decorator
 
 #=======================================================================
 # Decorator for running a function in a specific timezone, correctly
@@ -1108,17 +1119,18 @@ def _compile_match_function(patterns):
 def run_unittest(*classes):
     """Run tests from unittest.TestCase-derived classes."""
     valid_types = (unittest.TestSuite, unittest.TestCase)
+    loader = unittest.TestLoader()
     suite = unittest.TestSuite()
     for cls in classes:
         if isinstance(cls, str):
             if cls in sys.modules:
-                suite.addTest(unittest.findTestCases(sys.modules[cls]))
+                suite.addTest(loader.loadTestsFromModule(sys.modules[cls]))
             else:
                 raise ValueError("str arguments must be keys in sys.modules")
         elif isinstance(cls, valid_types):
             suite.addTest(cls)
         else:
-            suite.addTest(unittest.makeSuite(cls))
+            suite.addTest(loader.loadTestsFromTestCase(cls))
     _filter_suite(suite, match_test)
     _run_suite(suite)
 
@@ -1172,11 +1184,24 @@ def run_doctest(module, verbosity=None, optionflags=0):
 #=======================================================================
 # Support for saving and restoring the imported modules.
 
+def flush_std_streams():
+    if sys.stdout is not None:
+        sys.stdout.flush()
+    if sys.stderr is not None:
+        sys.stderr.flush()
+
+
 def print_warning(msg):
-    # bpo-39983: Print into sys.__stderr__ to display the warning even
-    # when sys.stderr is captured temporarily by a test
+    # bpo-45410: Explicitly flush stdout to keep logs in order
+    flush_std_streams()
+    stream = print_warning.orig_stderr
     for line in msg.splitlines():
-        print(f"Warning -- {line}", file=sys.__stderr__, flush=True)
+        print(f"Warning -- {line}", file=stream)
+    stream.flush()
+
+# bpo-39983: Store the original sys.stderr at Python startup to be able to
+# log warnings even if sys.stderr is captured temporarily by a test.
+print_warning.orig_stderr = sys.stderr
 
 
 # Flag used by saved_test_environment of test.libregrtest.save_env,
@@ -1389,7 +1414,7 @@ class PythonSymlink:
             self._env = {k.upper(): os.getenv(k) for k in os.environ}
             self._env["PYTHONHOME"] = os.path.dirname(self.real)
             if sysconfig.is_python_build(True):
-                self._env["PYTHONPATH"] = os.path.dirname(os.__file__)
+                self._env["PYTHONPATH"] = STDLIB_DIR
 
     def __enter__(self):
         os.symlink(self.real, self.link)

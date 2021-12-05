@@ -9,17 +9,14 @@ import os
 import errno
 import threading
 
+import unittest
 from unittest import TestCase, skipUnless
 from test import support as test_support
+from test.support import _asynchat as asynchat
+from test.support import _asyncore as asyncore
 from test.support import hashlib_helper
 from test.support import socket_helper
 from test.support import threading_helper
-
-import warnings
-with warnings.catch_warnings():
-    warnings.simplefilter('ignore', DeprecationWarning)
-    import asynchat
-    import asyncore
 
 HOST = socket_helper.HOST
 PORT = 0
@@ -538,15 +535,10 @@ class TestTimeouts(TestCase):
             poplib.POP3(HOST, self.port, timeout=0)
 
 
-def test_main():
-    tests = [TestPOP3Class, TestTimeouts,
-             TestPOP3_SSLClass, TestPOP3_TLSClass]
+def setUpModule():
     thread_info = threading_helper.threading_setup()
-    try:
-        test_support.run_unittest(*tests)
-    finally:
-        threading_helper.threading_cleanup(*thread_info)
+    unittest.addModuleCleanup(threading_helper.threading_cleanup, *thread_info)
 
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

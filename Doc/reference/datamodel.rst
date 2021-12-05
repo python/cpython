@@ -648,13 +648,13 @@ Callable types
 
       A function or method which uses the :keyword:`yield` statement (see section
       :ref:`yield`) is called a :dfn:`generator function`.  Such a function, when
-      called, always returns an iterator object which can be used to execute the
-      body of the function:  calling the iterator's :meth:`iterator.__next__`
-      method will cause the function to execute until it provides a value
-      using the :keyword:`!yield` statement.  When the function executes a
-      :keyword:`return` statement or falls off the end, a :exc:`StopIteration`
-      exception is raised and the iterator will have reached the end of the set of
-      values to be returned.
+      called, always returns an :term:`iterator` object which can be used to
+      execute the body of the function:  calling the iterator's
+      :meth:`iterator.__next__` method will cause the function to execute until
+      it provides a value using the :keyword:`!yield` statement.  When the
+      function executes a :keyword:`return` statement or falls off the end, a
+      :exc:`StopIteration` exception is raised and the iterator will have
+      reached the end of the set of values to be returned.
 
    Coroutine functions
       .. index::
@@ -674,7 +674,7 @@ Callable types
       A function or method which is defined using :keyword:`async def` and
       which uses the :keyword:`yield` statement is called a
       :dfn:`asynchronous generator function`.  Such a function, when called,
-      returns an asynchronous iterator object which can be used in an
+      returns an :term:`asynchronous iterator` object which can be used in an
       :keyword:`async for` statement to execute the body of the function.
 
       Calling the asynchronous iterator's :meth:`aiterator.__anext__` method
@@ -1271,7 +1271,7 @@ Basic customization
    as necessary before returning it.
 
    If :meth:`__new__` is invoked during object construction and it returns an
-   instance or subclass of *cls*, then the new instance’s :meth:`__init__` method
+   instance of *cls*, then the new instance’s :meth:`__init__` method
    will be invoked like ``__init__(self[, ...])``, where *self* is the new instance
    and the remaining arguments are the same as were passed to the object constructor.
 
@@ -1558,7 +1558,7 @@ Basic customization
 
       This is intended to provide protection against a denial-of-service caused
       by carefully-chosen inputs that exploit the worst case performance of a
-      dict insertion, O(n^2) complexity.  See
+      dict insertion, O(n\ :sup:`2`) complexity.  See
       http://www.ocert.org/advisories/ocert-2011-003.html for details.
 
       Changing hash values affects the iteration order of sets.
@@ -1774,28 +1774,6 @@ class' :attr:`~object.__dict__`.
    Called to delete the attribute on an instance *instance* of the owner class.
 
 
-.. method:: object.__set_name__(self, owner, name)
-
-   Called at the time the owning class *owner* is created. The
-   descriptor has been assigned to *name*.
-
-   .. note::
-
-      :meth:`__set_name__` is only called implicitly as part of the
-      :class:`type` constructor, so it will need to be called explicitly with
-      the appropriate parameters when a descriptor is added to a class after
-      initial creation::
-
-         class A:
-            pass
-         descr = custom_descriptor()
-         A.attr = descr
-         descr.__set_name__(A, 'attr')
-
-      See :ref:`class-object-creation` for more details.
-
-   .. versionadded:: 3.6
-
 The attribute :attr:`__objclass__` is interpreted by the :mod:`inspect` module
 as specifying the class where this object was defined (setting this
 appropriately can assist in runtime introspection of dynamic class attributes).
@@ -1840,10 +1818,38 @@ Class Binding
    ``A.__dict__['x'].__get__(None, A)``.
 
 Super Binding
-   If ``a`` is an instance of :class:`super`, then the binding ``super(B, obj).m()``
-   searches ``obj.__class__.__mro__`` for the base class ``A``
-   immediately preceding ``B`` and then invokes the descriptor with the call:
-   ``A.__dict__['m'].__get__(obj, obj.__class__)``.
+   A dotted lookup such as ``super(A, a).x`` searches
+   ``obj.__class__.__mro__`` for a base class ``B`` following ``A`` and then
+   returns ``B.__dict__['x'].__get__(a, A)``.  If not a descriptor, ``x`` is
+   returned unchanged.
+
+.. testcode::
+    :hide:
+
+    class Desc:
+        def __get__(*args):
+            return args
+
+    class B:
+
+        x = Desc()
+
+    class A(B):
+
+        x = 999
+
+        def m(self):
+            'Demonstrate these two calls are equivalent'
+            result1 = super(A, a).x
+            result2 = B.__dict__['x'].__get__(a, A)
+            return result1 == result2
+
+.. doctest::
+    :hide:
+
+    >>> a = A()
+    >>> a.m()
+    True
 
 For instance bindings, the precedence of descriptor invocation depends on
 which descriptor methods are defined.  A descriptor can define any combination
@@ -1980,6 +1986,33 @@ class defining the method.
       machinery, and is never passed to ``__init_subclass__`` implementations.
       The actual metaclass (rather than the explicit hint) can be accessed as
       ``type(cls)``.
+
+   .. versionadded:: 3.6
+
+
+When a class is created, :meth:`type.__new__` scans the class variables
+and makes callbacks to those with a :meth:`__set_name__` hook.
+
+.. method:: object.__set_name__(self, owner, name)
+
+   Automatically called at the time the owning class *owner* is
+   created. The object has been assigned to *name* in that class::
+
+       class A:
+           x = C()  # Automatically calls: x.__set_name__(A, 'x')
+
+   If the class variable is assigned after the class is created,
+   :meth:`__set_name__` will not be called automatically.
+   If needed, :meth:`__set_name__` can be called directly::
+
+       class A:
+          pass
+
+       c = C()
+       A.x = c                  # The hook is not called
+       c.__set_name__(A, 'x')   # Manually invoke the hook
+
+   See :ref:`class-object-creation` for more details.
 
    .. versionadded:: 3.6
 
@@ -2133,15 +2166,15 @@ current call is identified based on the first argument passed to the method.
    Failing to do so will result in a :exc:`RuntimeError` in Python 3.8.
 
 When using the default metaclass :class:`type`, or any metaclass that ultimately
-calls ``type.__new__``, the following additional customisation steps are
+calls ``type.__new__``, the following additional customization steps are
 invoked after creating the class object:
 
-* first, ``type.__new__`` collects all of the descriptors in the class
-  namespace that define a :meth:`~object.__set_name__` method;
-* second, all of these ``__set_name__`` methods are called with the class
-  being defined and the assigned name of that particular descriptor;
-* finally, the :meth:`~object.__init_subclass__` hook is called on the
-  immediate parent of the new class in its method resolution order.
+1) The ``type.__new__`` method collects all of the attributes in the class
+   namespace that define a :meth:`~object.__set_name__` method;
+2) Those ``__set_name__`` methods are called with the class
+   being defined and the assigned name of that particular attribute;
+3) The :meth:`~object.__init_subclass__` hook is called on the
+   immediate parent of the new class in its method resolution order.
 
 After the class object is created, it is passed to the class decorators
 included in the class definition (if any) and the resulting object is bound
@@ -2210,22 +2243,142 @@ case the instance is itself a class.
 Emulating generic types
 -----------------------
 
-One can implement the generic class syntax as specified by :pep:`484`
-(for example ``List[int]``) by defining a special method:
+When using :term:`type annotations<annotation>`, it is often useful to
+*parameterize* a :term:`generic type` using Python's square-brackets notation.
+For example, the annotation ``list[int]`` might be used to signify a
+:class:`list` in which all the elements are of type :class:`int`.
+
+.. seealso::
+
+   :pep:`484` - Type Hints
+      Introducing Python's framework for type annotations
+
+   :ref:`Generic Alias Types<types-genericalias>`
+      Documentation for objects representing parameterized generic classes
+
+   :ref:`Generics`, :ref:`user-defined generics<user-defined-generics>` and :class:`typing.Generic`
+      Documentation on how to implement generic classes that can be
+      parameterized at runtime and understood by static type-checkers.
+
+A class can *generally* only be parameterized if it defines the special
+class method ``__class_getitem__()``.
 
 .. classmethod:: object.__class_getitem__(cls, key)
 
    Return an object representing the specialization of a generic class
    by type arguments found in *key*.
 
-This method is looked up on the class object itself, and when defined in
-the class body, this method is implicitly a class method.  Note, this
-mechanism is primarily reserved for use with static type hints, other usage
-is discouraged.
+   When defined on a class, ``__class_getitem__()`` is automatically a class
+   method. As such, there is no need for it to be decorated with
+   :func:`@classmethod<classmethod>` when it is defined.
+
+
+The purpose of *__class_getitem__*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The purpose of :meth:`~object.__class_getitem__` is to allow runtime
+parameterization of standard-library generic classes in order to more easily
+apply :term:`type hints<type hint>` to these classes.
+
+To implement custom generic classes that can be parameterized at runtime and
+understood by static type-checkers, users should either inherit from a standard
+library class that already implements :meth:`~object.__class_getitem__`, or
+inherit from :class:`typing.Generic`, which has its own implementation of
+``__class_getitem__()``.
+
+Custom implementations of :meth:`~object.__class_getitem__` on classes defined
+outside of the standard library may not be understood by third-party
+type-checkers such as mypy. Using ``__class_getitem__()`` on any class for
+purposes other than type hinting is discouraged.
+
+
+.. _classgetitem-versus-getitem:
+
+
+*__class_getitem__* versus *__getitem__*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Usually, the :ref:`subscription<subscriptions>` of an object using square
+brackets will call the :meth:`~object.__getitem__` instance method defined on
+the object's class. However, if the object being subscribed is itself a class,
+the class method :meth:`~object.__class_getitem__` may be called instead.
+``__class_getitem__()`` should return a :ref:`GenericAlias<types-genericalias>`
+object if it is properly defined.
+
+Presented with the :term:`expression` ``obj[x]``, the Python interpreter
+follows something like the following process to decide whether
+:meth:`~object.__getitem__` or :meth:`~object.__class_getitem__` should be
+called::
+
+   from inspect import isclass
+
+   def subscribe(obj, x):
+       """Return the result of the expression `obj[x]`"""
+
+       class_of_obj = type(obj)
+
+       # If the class of obj defines __getitem__,
+       # call class_of_obj.__getitem__(obj, x)
+       if hasattr(class_of_obj, '__getitem__'):
+           return class_of_obj.__getitem__(obj, x)
+
+       # Else, if obj is a class and defines __class_getitem__,
+       # call obj.__class_getitem__(x)
+       elif isclass(obj) and hasattr(obj, '__class_getitem__'):
+           return obj.__class_getitem__(x)
+
+       # Else, raise an exception
+       else:
+           raise TypeError(
+               f"'{class_of_obj.__name__}' object is not subscriptable"
+           )
+
+In Python, all classes are themselves instances of other classes. The class of
+a class is known as that class's :term:`metaclass`, and most classes have the
+:class:`type` class as their metaclass. :class:`type` does not define
+:meth:`~object.__getitem__`, meaning that expressions such as ``list[int]``,
+``dict[str, float]`` and ``tuple[str, bytes]`` all result in
+:meth:`~object.__class_getitem__` being called::
+
+   >>> # list has class "type" as its metaclass, like most classes:
+   >>> type(list)
+   <class 'type'>
+   >>> type(dict) == type(list) == type(tuple) == type(str) == type(bytes)
+   True
+   >>> # "list[int]" calls "list.__class_getitem__(int)"
+   >>> list[int]
+   list[int]
+   >>> # list.__class_getitem__ returns a GenericAlias object:
+   >>> type(list[int])
+   <class 'types.GenericAlias'>
+
+However, if a class has a custom metaclass that defines
+:meth:`~object.__getitem__`, subscribing the class may result in different
+behaviour. An example of this can be found in the :mod:`enum` module::
+
+   >>> from enum import Enum
+   >>> class Menu(Enum):
+   ...     """A breakfast menu"""
+   ...     SPAM = 'spam'
+   ...     BACON = 'bacon'
+   ...
+   >>> # Enum classes have a custom metaclass:
+   >>> type(Menu)
+   <class 'enum.EnumMeta'>
+   >>> # EnumMeta defines __getitem__,
+   >>> # so __class_getitem__ is not called,
+   >>> # and the result is not a GenericAlias object:
+   >>> Menu['SPAM']
+   <Menu.SPAM: 'spam'>
+   >>> type(Menu['SPAM'])
+   <enum 'Menu'>
+
 
 .. seealso::
-
-   :pep:`560` - Core support for typing module and generic types
+   :pep:`560` - Core Support for typing module and generic types
+      Introducing :meth:`~object.__class_getitem__`, and outlining when a
+      :ref:`subscription<subscriptions>` results in ``__class_getitem__()``
+      being called instead of :meth:`~object.__getitem__`
 
 
 .. _callable-types:
@@ -2325,19 +2478,27 @@ through the object's keys; for sequences, it should iterate through the values.
 
 .. method:: object.__getitem__(self, key)
 
-   Called to implement evaluation of ``self[key]``. For sequence types, the
-   accepted keys should be integers and slice objects.  Note that the special
-   interpretation of negative indexes (if the class wishes to emulate a sequence
-   type) is up to the :meth:`__getitem__` method. If *key* is of an inappropriate
-   type, :exc:`TypeError` may be raised; if of a value outside the set of indexes
-   for the sequence (after any special interpretation of negative values),
-   :exc:`IndexError` should be raised. For mapping types, if *key* is missing (not
-   in the container), :exc:`KeyError` should be raised.
+   Called to implement evaluation of ``self[key]``. For :term:`sequence` types,
+   the accepted keys should be integers and slice objects.  Note that the
+   special interpretation of negative indexes (if the class wishes to emulate a
+   :term:`sequence` type) is up to the :meth:`__getitem__` method. If *key* is
+   of an inappropriate type, :exc:`TypeError` may be raised; if of a value
+   outside the set of indexes for the sequence (after any special
+   interpretation of negative values), :exc:`IndexError` should be raised. For
+   :term:`mapping` types, if *key* is missing (not in the container),
+   :exc:`KeyError` should be raised.
 
    .. note::
 
-      :keyword:`for` loops expect that an :exc:`IndexError` will be raised for illegal
-      indexes to allow proper detection of the end of the sequence.
+      :keyword:`for` loops expect that an :exc:`IndexError` will be raised for
+      illegal indexes to allow proper detection of the end of the sequence.
+
+   .. note::
+
+      When :ref:`subscripting<subscriptions>` a *class*, the special
+      class method :meth:`~object.__class_getitem__` may be called instead of
+      ``__getitem__()``. See :ref:`classgetitem-versus-getitem` for more
+      details.
 
 
 .. method:: object.__setitem__(self, key, value)
@@ -2366,12 +2527,10 @@ through the object's keys; for sequences, it should iterate through the values.
 
 .. method:: object.__iter__(self)
 
-   This method is called when an iterator is required for a container. This method
-   should return a new iterator object that can iterate over all the objects in the
-   container.  For mappings, it should iterate over the keys of the container.
-
-   Iterator objects also need to implement this method; they are required to return
-   themselves.  For more information on iterator objects, see :ref:`typeiter`.
+   This method is called when an :term:`iterator` is required for a container.
+   This method should return a new iterator object that can iterate over all the
+   objects in the container.  For mappings, it should iterate over the keys of
+   the container.
 
 
 .. method:: object.__reversed__(self)
@@ -2572,8 +2731,8 @@ left undefined.
    return the value of the object truncated to an :class:`~numbers.Integral`
    (typically an :class:`int`).
 
-   If :meth:`__int__` is not defined then the built-in function :func:`int`
-   falls back to :meth:`__trunc__`.
+   The built-in function :func:`int` falls back to :meth:`__trunc__` if neither
+   :meth:`__int__` nor :meth:`__index__` is defined.
 
 
 .. _context-managers:

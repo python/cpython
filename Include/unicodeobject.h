@@ -1,7 +1,7 @@
 #ifndef Py_UNICODEOBJECT_H
 #define Py_UNICODEOBJECT_H
 
-#include <stdarg.h>
+#include <stdarg.h>               // va_list
 
 /*
 
@@ -1043,7 +1043,7 @@ PyAPI_FUNC(int) PyUnicode_IsIdentifier(PyObject *s);
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_UNICODEOBJECT_H
-#  include  "cpython/unicodeobject.h"
+#  include "cpython/unicodeobject.h"
 #  undef Py_CPYTHON_UNICODEOBJECT_H
 #endif
 
