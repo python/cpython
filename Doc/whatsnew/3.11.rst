@@ -351,6 +351,11 @@ Optimizations
 * Pure ASCII strings are now normalized in constant time by :func:`unicodedata.normalize`.
   (Contributed by Dong-hee Na in :issue:`44987`.)
 
+* :mod:`math` functions :func:`~math.comb` and :func:`~math.perm` are now up
+  to 10 times or more faster for large arguments (the speed up is larger for
+  larger *k*).
+  (Contributed by Serhiy Storchaka in :issue:`37295`.)
+
 
 CPython bytecode changes
 ========================
