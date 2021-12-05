@@ -1295,18 +1295,14 @@ if test $enable_shared = "yes"; then
   esac
 else # shared is disabled
   PY_ENABLE_SHARED=0
-  case $ac_sys_system in
-    CYGWIN*)
-      BLDLIBRARY='$(LIBRARY)'
-      LDLIBRARY='libpython$(LDVERSION).dll.a'
-          ;;
-    Linux*|GNU*|NetBSD*|FreeBSD*|DragonFly*|OpenBSD*|VxWorks*)
-	  BLDLIBRARY='-Wl,--whole-archive $(LDLIBRARY) -Wl,--no-whole-archive'
-          ;;
-    Darwin*)
-	  BLDLIBRARY='-Wl,-all_load $(LDLIBRARY)'
-          ;;
-  esac
+  AS_CASE([$ac_sys_system],
+    [CYGWIN*],
+    [BLDLIBRARY='$(LIBRARY)'
+    LDLIBRARY='libpython$(LDVERSION).dll.a'],
+    [Linux*|GNU*|NetBSD*|FreeBSD*|DragonFly*|OpenBSD*|VxWorks*],
+    [BLDLIBRARY='-Wl,--whole-archive $(LDLIBRARY) -Wl,--no-whole-archive'],
+    [Darwin*],
+    [BLDLIBRARY='-Wl,-all_load $(LDLIBRARY)'])
 fi
 
 if test "$cross_compiling" = yes; then
