@@ -255,6 +255,8 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.assertIsInstance(h, asyncio.TimerHandle)
         self.assertIn(h, self.loop._scheduled)
         self.assertNotIn(h, self.loop._ready)
+        with self.assertRaises(TypeError, msg="delay must not be None"):
+            self.loop.call_later(None, cb)
 
     def test_call_later_negative_delays(self):
         calls = []
