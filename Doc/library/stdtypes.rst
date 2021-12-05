@@ -4826,7 +4826,7 @@ Generic Alias Type
 :ref:`subscripting <subscriptions>` a class. They are most often used with
 :ref:`container classes <sequence-types>`, such as :class:`list` or
 :class:`dict`. For example, ``list[int]`` is a ``GenericAlias`` object created
-by subscripting the :class:`list` class with the argument :class:`int`.
+by subscripting the ``list`` class with the argument :class:`int`.
 ``GenericAlias`` objects are intended primarily for use with
 :term:`type annotations <annotation>`.
 
@@ -4859,7 +4859,7 @@ type and the :class:`bytes` data type:
 * If ``y = re.search(b'bar', b'bar')``, (note the ``b`` for :class:`bytes`), ``y`` will also be an instance
   of ``re.Match``, but the return values of ``y.group(0)`` and ``y[0]`` will
   both be of type :class:`bytes`. In type annotations, we would represent this
-  variety of :ref:`re.Match <match-objects>` with ``re.Match[bytes]``.
+  variety of :ref:`re.Match <match-objects>` objects with ``re.Match[bytes]``.
 
 ``GenericAlias`` objects are instances of the class
 :class:`types.GenericAlias`, which can also be used to create ``GenericAlias``
