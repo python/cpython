@@ -229,7 +229,7 @@ class InitVar:
         self.type = type
 
     def __repr__(self):
-        if isinstance(self.type, type):
+        if isinstance(self.type, type) and not isinstance(self.type, GenericAlias):
             type_name = self.type.__name__
         else:
             # typing objects, e.g. List[int]
