@@ -783,7 +783,7 @@ library_to_dict(PyObject *dict, const char *key)
 
 
 PyObject *
-_Py_Get_Getpath_CodeObject()
+_Py_Get_Getpath_CodeObject(void)
 {
     return PyMarshal_ReadObjectFromString(
         (const char*)_Py_M__getpath, sizeof(_Py_M__getpath));
