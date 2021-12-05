@@ -66,9 +66,6 @@ WIN32 is still required for the locale module.
 
 #define MS_WIN32 /* only support win32 and greater. */
 #define MS_WINDOWS
-#ifndef PYTHONPATH
-#       define PYTHONPATH L".\\DLLs;.\\lib"
-#endif
 #define NT_THREADS
 #define WITH_THREAD
 #ifndef NETSCAPE_PI
@@ -670,7 +667,5 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 
 /* Define if libssl has X509_VERIFY_PARAM_set1_host and related function */
 #define HAVE_X509_VERIFY_PARAM_SET1_HOST 1
-
-#define PLATLIBDIR "lib"
 
 #endif /* !Py_CONFIG_H */

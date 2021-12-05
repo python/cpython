@@ -104,6 +104,7 @@
     <ClCompile Include="..\Modules\faulthandler.c" />
     <ClCompile Include="..\Modules\gcmodule.c" />
     <ClCompile Include="..\Modules\getbuildinfo.c" />
+    <ClCompile Include="..\Modules\getpath_noop.c" />
     <ClCompile Include="..\Modules\posixmodule.c" />
     <ClCompile Include="..\Modules\signalmodule.c" />
     <ClCompile Include="..\Modules\_tracemalloc.c" />
@@ -168,7 +169,6 @@
     <ClCompile Include="..\Parser\string_parser.c" />
     <ClCompile Include="..\Parser\token.c" />
     <ClCompile Include="..\Parser\tokenizer.c" />
-    <ClCompile Include="..\PC\getpathp.c" />
     <ClCompile Include="..\PC\invalid_parameter_handler.c" />
     <ClCompile Include="..\PC\msvcrtmodule.c" />
     <ClCompile Include="..\PC\winreg.c" />
@@ -374,9 +374,29 @@
     </None>
     <!-- END frozen modules -->
   </ItemGroup>
+  <ItemGroup>
+    <!-- We manually freeze getpath.py rather than through freeze_modules -->
+    <GetPath Include="..\Modules\getpath.py">
+      <ModName>getpath</ModName>
+      <IntFile>$(IntDir)getpath.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\getpath.h</OutFile>
+    </GetPath>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+  <Target Name="_RebuildGetPath" AfterTargets="_RebuildFrozen" Condition="$(Configuration) != 'PGUpdate'">
+    <Exec Command='"$(TargetPath)" "%(GetPath.ModName)" "%(GetPath.FullPath)" "%(GetPath.IntFile)"' />
+
+    <Copy SourceFiles="%(GetPath.IntFile)"
+          DestinationFiles="%(GetPath.OutFile)"
+          Condition="!Exists(%(GetPath.OutFile)) or (Exists(%(GetPath.IntFile)) and '$([System.IO.File]::ReadAllText(%(GetPath.OutFile)).Replace(`&#x0D;&#x0A;`, `&#x0A;`))' != '$([System.IO.File]::ReadAllText(%(GetPath.IntFile)).Replace(`&#x0D;&#x0A;`, `&#x0A;`))')">
+      <Output TaskParameter="CopiedFiles" ItemName="_UpdatedGetPath" />
+    </Copy>
+
+    <Message Text="Updated files: @(_UpdatedGetPath->'%(Filename)%(Extension)',', ')"
+             Condition="'@(_UpdatedGetPath)' != ''" Importance="high" />
+  </Target>
   <Target Name="_RebuildFrozen" AfterTargets="AfterBuild" Condition="$(Configuration) != 'PGUpdate'">
     <Exec Command='"$(TargetPath)" "%(None.ModName)" "%(None.FullPath)" "%(None.DeepIntFile)"' />
 
