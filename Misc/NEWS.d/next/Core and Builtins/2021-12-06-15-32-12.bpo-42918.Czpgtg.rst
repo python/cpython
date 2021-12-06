@@ -1,0 +1,1 @@
+Improve build-in :func:`compile` in mode 'single'.  Patch by Weipeng Hong.
