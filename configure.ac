@@ -2952,17 +2952,6 @@ AC_CHECK_HEADERS([uuid.h], [
   ])
 ])
 
-dnl macOS has uuid/uuid.h but uuid_generate_time is in libc
-AS_VAR_IF([have_uuid], [missing], [
-  AC_CHECK_HEADERS([uuid/uuid.h], [
-    AC_CHECK_FUNC([uuid_generate_time], [
-      have_uuid=yes
-      LIBUUID_CFLAGS=
-      LIBUUID_LIBS=
-    ])
-  ])
-])
-
 AS_VAR_IF([have_uuid], [missing], [
   PKG_CHECK_MODULES(
     [LIBUUID], [uuid >= 2.20], [
@@ -2988,6 +2977,17 @@ AS_VAR_IF([have_uuid], [missing], [
       ])
     ]
   )
+])
+
+dnl macOS has uuid/uuid.h but uuid_generate_time is in libc
+AS_VAR_IF([have_uuid], [missing], [
+  AC_CHECK_HEADERS([uuid/uuid.h], [
+    AC_CHECK_FUNC([uuid_generate_time], [
+      have_uuid=yes
+      LIBUUID_CFLAGS=
+      LIBUUID_LIBS=
+    ])
+  ])
 ])
 
 # 'Real Time' functions on Solaris
