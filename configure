@@ -10623,7 +10623,6 @@ fi
 
       LIBUUID_LIBS="-luuid"
       LIBUUID_CFLAGS=
-      have_uuid=no
       for ac_header in uuid/uuid.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "uuid/uuid.h" "ac_cv_header_uuid_uuid_h" "$ac_includes_default"
@@ -10754,7 +10753,6 @@ $as_echo "no" >&6; }
 
       LIBUUID_LIBS="-luuid"
       LIBUUID_CFLAGS=
-      have_uuid=no
       for ac_header in uuid/uuid.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "uuid/uuid.h" "ac_cv_header_uuid_uuid_h" "$ac_includes_default"
@@ -10920,6 +10918,10 @@ fi
 done
 
 
+fi
+
+if test "x$have_uuid" = xmissing; then :
+  have_uuid=no
 fi
 
 # 'Real Time' functions on Solaris

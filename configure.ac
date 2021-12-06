@@ -2963,7 +2963,6 @@ AS_VAR_IF([have_uuid], [missing], [
     ], [
       LIBUUID_LIBS="-luuid"
       LIBUUID_CFLAGS=
-      have_uuid=no
       AC_CHECK_HEADERS([uuid/uuid.h], [
         WITH_SAVE_ENV(
           [AC_CHECK_LIB([uuid], [uuid_generate_time], [have_uuid=yes])
@@ -2989,6 +2988,8 @@ AS_VAR_IF([have_uuid], [missing], [
     ])
   ])
 ])
+
+AS_VAR_IF([have_uuid], [missing], [have_uuid=no])
 
 # 'Real Time' functions on Solaris
 # posix4 on Solaris 2.6
