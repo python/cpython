@@ -155,6 +155,24 @@ jobs:
     - name: Tests
       run: make buildbottest TESTOPTS="-j4 -uall,-cpu"
 
+  build_macos_framework:
+    name: 'macOS framework'
+    runs-on: macos-latest
+    needs: check_source
+    if: needs.check_source.outputs.run_tests == 'true'
+    steps:
+    - uses: actions/checkout@v2
+    - name: Prepare homebrew environment variables
+      run: |
+        echo "LDFLAGS=-L$(brew --prefix tcl-tk)/lib" >> $GITHUB_ENV
+        echo "PKG_CONFIG_PATH=$(brew --prefix openssl@1.1)/lib/pkgconfig:$(brew --prefix tcl-tk)/lib/pkgconfig" >> $GITHUB_ENV
+    - name: Configure CPython
+      run: ./configure --with-pydebug --enable-framework=yes
+    - name: Build CPython
+      run: make -j4
+    - name: Display build info
+      run: make pythoninfo
+
   build_ubuntu:
     name: 'Ubuntu'
     runs-on: ubuntu-20.04
