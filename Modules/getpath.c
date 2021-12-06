@@ -754,7 +754,8 @@ library_to_dict(PyObject *dict, const char *key)
     if (PyWin_DLLhModule) {
         return winmodule_to_dict(dict, key, PyWin_DLLhModule);
     }
-#elif defined(WITH_NEXT_FRAMEWORK)
+#elif defined(WITH_NEXT_FRAMEWORK) && !defined(PY_BOOTSTRAP_PYTHON)
+    // _bootstrap_python does not use framework and crashes
     static const char modPath[MAXPATHLEN + 1];
     static int modPathInitialized = -1;
     if (modPathInitialized < 0) {
