@@ -1,6 +1,8 @@
+import functools
 import os
 import pathlib
 import types
+import warnings
 
 from typing import Union, Iterable, ContextManager, BinaryIO, TextIO
 
@@ -10,16 +12,34 @@ Package = Union[types.ModuleType, str]
 Resource = Union[str, os.PathLike]
 
 
+def deprecated(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        warnings.warn(
+            f"{func.__name__} is deprecated. Use files() instead. "
+            "Refer to https://importlib-resources.readthedocs.io"
+            "/en/latest/using.html#migrating-from-legacy for migration advice.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
+@deprecated
 def open_binary(package: Package, resource: Resource) -> BinaryIO:
     """Return a file-like object opened for binary reading of the resource."""
     return (_common.files(package) / _common.normalize_path(resource)).open('rb')
 
 
+@deprecated
 def read_binary(package: Package, resource: Resource) -> bytes:
     """Return the binary contents of the resource."""
     return (_common.files(package) / _common.normalize_path(resource)).read_bytes()
 
 
+@deprecated
 def open_text(
     package: Package,
     resource: Resource,
@@ -32,6 +52,7 @@ def open_text(
     )
 
 
+@deprecated
 def read_text(
     package: Package,
     resource: Resource,
@@ -47,6 +68,7 @@ def read_text(
         return fp.read()
 
 
+@deprecated
 def contents(package: Package) -> Iterable[str]:
     """Return an iterable of entries in `package`.
 
@@ -57,6 +79,7 @@ def contents(package: Package) -> Iterable[str]:
     return [path.name for path in _common.files(package).iterdir()]
 
 
+@deprecated
 def is_resource(package: Package, name: str) -> bool:
     """True if `name` is a resource inside `package`.
 
@@ -69,6 +92,7 @@ def is_resource(package: Package, name: str) -> bool:
     )
 
 
+@deprecated
 def path(
     package: Package,
     resource: Resource,

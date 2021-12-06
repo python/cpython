@@ -11168,6 +11168,20 @@ unicode_compare_eq(PyObject *str1, PyObject *str2)
     return (cmp == 0);
 }
 
+int
+_PyUnicode_Equal(PyObject *str1, PyObject *str2)
+{
+    assert(PyUnicode_CheckExact(str1));
+    assert(PyUnicode_CheckExact(str2));
+    if (str1 == str2) {
+        return 1;
+    }
+    if (PyUnicode_READY(str1) || PyUnicode_READY(str2)) {
+        return -1;
+    }
+    return unicode_compare_eq(str1, str2);
+}
+
 
 int
 PyUnicode_Compare(PyObject *left, PyObject *right)

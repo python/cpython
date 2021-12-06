@@ -1,0 +1,2 @@
+Fix the repr of :data:`dataclasses.InitVar` with a type alias to the
+built-in class, e.g. ``InitVar[list[int]]``.

@@ -10,6 +10,7 @@
 *.so.*
 *.dylib
 *.dll
+*.wasm
 *.orig
 *.pyc
 *.pyd
@@ -76,6 +77,7 @@ Misc/python-embed.pc
 Misc/python-config.sh
 Modules/Setup.config
 Modules/Setup.local
+Modules/Setup.stdlib
 Modules/config.c
 Modules/ld_so_aix
 Programs/_freeze_module
@@ -113,6 +115,8 @@ Tools/unicode/data/
 /config.log
 /config.status
 /config.status.lineno
+# hendrikmuhs/ccache-action@v1
+/.ccache
 /platform
 /profile-clean-stamp
 /profile-run-stamp

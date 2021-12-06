@@ -60,6 +60,8 @@ module signal
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=b0301a3bde5fe9d3]*/
 
+#ifdef HAVE_SETSIG_T
+
 /*[python input]
 
 class sigset_t_converter(CConverter):
@@ -68,6 +70,7 @@ class sigset_t_converter(CConverter):
 
 [python start generated code]*/
 /*[python end generated code: output=da39a3ee5e6b4b0d input=b5689d14466b6823]*/
+#endif
 
 /*
    NOTES ON THE INTERACTION BETWEEN SIGNALS AND THREADS
@@ -932,6 +935,7 @@ signal_getitimer_impl(PyObject *module, int which)
 #endif // HAVE_GETITIMER
 
 
+#ifdef HAVE_SIGSET_T
 #if defined(PYPTHREAD_SIGMASK) || defined(HAVE_SIGPENDING)
 static PyObject*
 sigset_to_set(sigset_t mask)
@@ -1063,9 +1067,9 @@ signal_sigwait_impl(PyObject *module, sigset_t sigset)
 }
 
 #endif   /* #ifdef HAVE_SIGWAIT */
+#endif   /* #ifdef HAVE_SIGSET_T */
 
-
-#if defined(HAVE_SIGFILLSET) || defined(MS_WINDOWS)
+#if (defined(HAVE_SIGFILLSET) && defined(HAVE_SIGSET_T)) || defined(MS_WINDOWS)
 
 /*[clinic input]
 signal.valid_signals
@@ -1103,7 +1107,8 @@ signal_valid_signals_impl(PyObject *module)
 #endif
 }
 
-#endif   /* #if defined(HAVE_SIGFILLSET) || defined(MS_WINDOWS) */
+#endif   /* #if (defined(HAVE_SIGFILLSET) && defined(HAVE_SIGSET_T)) || defined(MS_WINDOWS) */
+
 
 
 #if defined(HAVE_SIGWAITINFO) || defined(HAVE_SIGTIMEDWAIT)
@@ -1168,6 +1173,7 @@ fill_siginfo(siginfo_t *si)
 }
 #endif
 
+#ifdef HAVE_SIGSET_T
 #ifdef HAVE_SIGWAITINFO
 
 /*[clinic input]
@@ -1270,6 +1276,7 @@ signal_sigtimedwait_impl(PyObject *module, sigset_t sigset,
 }
 
 #endif   /* #ifdef HAVE_SIGTIMEDWAIT */
+#endif   /* #ifdef HAVE_SIGSET_T */
 
 
 #if defined(HAVE_PTHREAD_KILL)

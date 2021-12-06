@@ -892,6 +892,14 @@ class DictTest(unittest.TestCase):
         gc.collect()
         self.assertTrue(gc.is_tracked(t), t)
 
+    def test_string_keys_can_track_values(self):
+        # Test that this doesn't leak.
+        for i in range(10):
+            d = {}
+            for j in range(10):
+                d[str(j)] = j
+            d["foo"] = d
+
     @support.cpython_only
     def test_track_literals(self):
         # Test GC-optimization of dict literals

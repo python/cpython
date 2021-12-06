@@ -4,7 +4,7 @@ When called as a script with arguments, this compiles the directories
 given as arguments recursively; the -l option prevents it from
 recursing into directories.
 
-Without arguments, if compiles all modules on sys.path, without
+Without arguments, it compiles all modules on sys.path, without
 recursing into subdirectories.  (Even though it should do so for
 packages -- for now, you'll have to deal with packages separately.)
 

@@ -14,10 +14,11 @@
 #include "Python.h"
 #include "pycore_atomic_funcs.h" // _Py_atomic_int_get()
 #include "pycore_bitutils.h"     // _Py_bswap32()
-#include "pycore_fileutils.h"    // _Py_normalize_path
+#include "pycore_fileutils.h"    // _Py_normpath
 #include "pycore_gc.h"           // PyGC_Head
 #include "pycore_hashtable.h"    // _Py_hashtable_new()
 #include "pycore_initconfig.h"   // _Py_GetConfigsAsDict()
+#include "pycore_pathconfig.h"   // _PyPathConfig_ClearGlobal()
 #include "pycore_interp.h"       // _PyInterpreterState_GetConfigCopy()
 #include "pycore_pyerrors.h"     // _Py_UTF8_Edit_Cost()
 #include "pycore_pystate.h"      // _PyThreadState_GET()
@@ -273,6 +274,14 @@ error:
 }
 
 
+static PyObject *
+test_reset_path_config(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(arg))
+{
+    _PyPathConfig_ClearGlobal();
+    Py_RETURN_NONE;
+}
+
+
 static PyObject*
 test_atomic_funcs(PyObject *self, PyObject *Py_UNUSED(args))
 {
@@ -378,15 +387,15 @@ normalize_path(PyObject *self, PyObject *filename)
         return NULL;
     }
 
-    wchar_t buf[MAXPATHLEN + 1];
-    int res = _Py_normalize_path(encoded, buf, Py_ARRAY_LENGTH(buf));
+    PyObject *result = PyUnicode_FromWideChar(_Py_normpath(encoded, size), -1);
     PyMem_Free(encoded);
-    if (res != 0) {
-        PyErr_SetString(PyExc_ValueError, "string too long");
-        return NULL;
-    }
 
-    return PyUnicode_FromWideChar(buf, -1);
+    return result;
+}
+
+static PyObject *
+get_getpath_codeobject(PyObject *self, PyObject *Py_UNUSED(args)) {
+    return _Py_Get_Getpath_CodeObject();
 }
 
 
@@ -399,9 +408,11 @@ static PyMethodDef TestMethods[] = {
     {"test_hashtable", test_hashtable, METH_NOARGS},
     {"get_config", test_get_config, METH_NOARGS},
     {"set_config", test_set_config, METH_O},
+    {"reset_path_config", test_reset_path_config, METH_NOARGS},
     {"test_atomic_funcs", test_atomic_funcs, METH_NOARGS},
     {"test_edit_cost", test_edit_cost, METH_NOARGS},
     {"normalize_path", normalize_path, METH_O, NULL},
+    {"get_getpath_codeobject", get_getpath_codeobject, METH_NOARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
 
