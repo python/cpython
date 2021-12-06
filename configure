@@ -1736,7 +1736,7 @@ Optional Packages:
                           path to _freeze_module binary for cross compiling
   --with-build-python=python3.11
                           path to build python binary for cross compiling
-                          (default: python3.11)
+                          (default: _bootstrap_python or python3.11)
   --with-pkg-config=[yes|no|check]
                           use pkg-config to detect build options (default is
                           check)
@@ -3243,14 +3243,11 @@ if test "${with_build_python+set}" = set; then :
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-build-python" >&5
 $as_echo_n "checking for --with-build-python... " >&6; }
 
-    if test "x$cross_compiling" = xno; then :
-  as_fn_error $? "--with-build-python only applies to cross compiling" "$LINENO" 5
-fi
     if test "x$with_build_python" = xyes; then :
   with_build_python=python$PACKAGE_VERSION
 fi
     if test "x$with_build_python" = xno; then :
-  as_fn_error $? "invalid --with-build-python option: expected path, not \"no\"" "$LINENO" 5
+  as_fn_error $? "invalid --with-build-python option: expected path or \"yes\", not \"no\"" "$LINENO" 5
 fi
 
     if ! $(command -v "$with_build_python" >/dev/null 2>&1); then
