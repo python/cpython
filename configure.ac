@@ -125,16 +125,16 @@ AC_ARG_WITH(
 )
 AC_SUBST([FREEZE_MODULE])
 
+dnl build-python is used for cross compiling and macOS framework builds.
 AC_ARG_WITH(
   [build-python],
   [AS_HELP_STRING([--with-build-python=python]PYTHON_VERSION,
-                  [path to build python binary for cross compiling (default: python]PYTHON_VERSION[)])],
+                  [path to build python binary for cross compiling (default: _bootstrap_python or python]PYTHON_VERSION[)])],
   [
     AC_MSG_CHECKING([for --with-build-python])
 
-    AS_VAR_IF([cross_compiling], [no], AC_MSG_ERROR([--with-build-python only applies to cross compiling]))
     AS_VAR_IF([with_build_python], [yes], [with_build_python=python$PACKAGE_VERSION])
-    AS_VAR_IF([with_build_python], [no], [AC_MSG_ERROR([invalid --with-build-python option: expected path, not "no"])])
+    AS_VAR_IF([with_build_python], [no], [AC_MSG_ERROR([invalid --with-build-python option: expected path or "yes", not "no"])])
 
     if ! $(command -v "$with_build_python" >/dev/null 2>&1); then
       AC_MSG_ERROR([invalid or missing build python binary "$with_build_python"])
