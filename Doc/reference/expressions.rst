@@ -816,19 +816,19 @@ Subscriptions
    pair: sequence; item
 
 The subscription of an object in Python can have one of two effects. If the
-object is a :term:`sequence` (such as a :class:`string<str>`,
+object is a :term:`sequence` (such as a :class:`string <str>`,
 :class:`tuple` or :class:`list`) or a :term:`mapping` (such as a
-:class:`dictionary<dict>`), subscripting the object will select an object from
+:class:`dictionary <dict>`), subscripting the object will select an object from
 the collection. Subscripting certain *classes or types*, meanwhile, will
 return a :ref:`generic alias <types-genericalias>` object representing a
 *parameterized generic class*. The latter form of subscription is primarily
-useful for :term:`type hinting<type hint>`.
+useful for :term:`type hinting <type hint>`.
 
 .. productionlist:: python-grammar
    subscription: `primary` "[" `expression_list` "]"
 
 The primary must evaluate to an object that supports subscription, such as a
-:class:`list` or a :class:`dictionary<dict>`. User-defined objects can support
+:class:`list` or a :class:`dictionary <dict>`. User-defined objects can support
 subscription by defining one or both of :meth:`~object.__getitem__` and
 :meth:`~object.__class_getitem__`.
 
@@ -852,7 +852,7 @@ via :meth:`~object.__getitem__`:
   :class:`int` or a :class:`slice` (as discussed in the following section).
 
 The formal syntax makes no special provision for negative indices in
-:term:`sequences<sequence>`. However, built-in sequences all provide a :meth:`~object.__getitem__`
+:term:`sequences <sequence>`. However, built-in sequences all provide a :meth:`~object.__getitem__`
 method that interprets negative indices by adding the length of the sequence
 to the index so that, for example, ``x[-1]`` selects the last item of ``x``. The
 resulting value must be a nonnegative integer less than the number of items in
@@ -865,7 +865,7 @@ this method will need to explicitly add that support.
    single: character
    pair: string; item
 
-A :class:`string<str>` is a special kind of sequence whose items are
+A :class:`string <str>` is a special kind of sequence whose items are
 *characters*. A character is not a separate data type but a string of exactly
 one character.
 
