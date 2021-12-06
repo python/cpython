@@ -11,7 +11,6 @@ __all__ = (
 
 import concurrent.futures
 import contextvars
-import enum
 import functools
 import inspect
 import itertools
@@ -25,9 +24,6 @@ from . import events
 from . import exceptions
 from . import futures
 from .coroutines import _is_coroutine
-
-_SENTINEL = enum.Enum("_SENTINEL", "sentinel")
-sentinel = _SENTINEL.sentinel
 
 # Helper to generate new task names
 # This uses itertools.count() instead of a "+= 1" operation because the latter
@@ -435,15 +431,12 @@ async def wait_for(fut, timeout):
         try:
             await waiter
         except exceptions.CancelledError as e:
-            if fut.done() and e.args == (sentinel,):
-                return fut.result()
-            else:
-                fut.remove_done_callback(cb)
-                # We must ensure that the task is not running
-                # after wait_for() returns.
-                # See https://bugs.python.org/issue32751
-                await _cancel_and_wait(fut, loop=loop)
-                raise
+            fut.remove_done_callback(cb)
+            # We must ensure that the task is not running
+            # after wait_for() returns.
+            # See https://bugs.python.org/issue32751
+            await _cancel_and_wait(fut, loop=loop)
+            raise
 
         if fut.done():
             return fut.result()
@@ -516,7 +509,7 @@ async def _cancel_and_wait(fut, loop):
     fut.add_done_callback(cb)
 
     try:
-        fut.cancel(sentinel)
+        fut.cancel()
         # We cannot wait on *fut* directly to make
         # sure _cancel_and_wait itself is reliably cancellable.
         await waiter
