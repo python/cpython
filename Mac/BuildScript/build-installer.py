@@ -265,11 +265,11 @@ def library_recipes():
             tk_patches = ['tk868_on_10_8_10_9.patch']
 
         else:
-            tcl_tk_ver='8.6.11'
-            tcl_checksum='8a4c004f48984a03a7747e9ba06e4da4'
+            tcl_tk_ver='8.6.12'
+            tcl_checksum='87ea890821d2221f2ab5157bc5eb885f'
 
-            tk_checksum='c7ee71a2d05bba78dfffd76528dc17c6'
-            tk_patches = ['bpo-44828-filedialog-crash-monterey.patch']
+            tk_checksum='1d6dcf6120356e3d211e056dff5e462a'
+            tk_patches = [ ]
 
 
         result.extend([
