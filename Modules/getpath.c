@@ -756,7 +756,7 @@ library_to_dict(PyObject *dict, const char *key)
     }
 #elif defined(WITH_NEXT_FRAMEWORK) && !defined(PY_BOOTSTRAP_PYTHON)
     // _bootstrap_python does not use framework and crashes
-    static const char modPath[MAXPATHLEN + 1];
+    static char modPath[MAXPATHLEN + 1];
     static int modPathInitialized = -1;
     if (modPathInitialized < 0) {
         NSModule pythonModule;
