@@ -158,8 +158,8 @@ public override bool Execute() {
 
   <Target Name="CopyPGCFiles" BeforeTargets="PrepareForBuild" Condition="$(Configuration) == 'PGUpdate'">
     <ItemGroup>
-      <_PGCFiles Include="$(OutDir)instrumented\$(TargetName)!*.pgc" />
-      <_PGDFile Include="$(OutDir)instrumented\$(TargetName).pgd" />
+      <_PGCFiles Include="$(OutDir.TrimEnd('\'))_instrumented\$(TargetName)!*.pgc" />
+      <_PGDFile Include="$(OutDir.TrimEnd('\'))_instrumented\$(TargetName).pgd" />
       <_CopyFiles Include="@(_PGCFiles);@(_PGDFile)" Condition="Exists(%(FullPath))" />
     </ItemGroup>
     <Delete Files="@(_CopyFiles->'$(OutDir)%(Filename)%(Extension)')" />
