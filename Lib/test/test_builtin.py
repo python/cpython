@@ -341,15 +341,6 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(ValueError, compile, chr(0), 'f', 'exec')
         self.assertRaises(ValueError, compile, str('a = 1'), 'f', 'bad')
 
-        codestr = """
-        c ='''
-        d=1
-        '''
-        a = 1
-        b = 2
-        """
-        self.assertRaises(SyntaxError, compile, codestr, '<string>', 'single')
-
         # test the optimize argument
 
         codestr = '''def f():
