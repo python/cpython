@@ -7212,9 +7212,9 @@ error:
 #endif
 
 #if defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) || defined(HAVE_LOGIN_TTY) || defined(HAVE_DEV_PTMX)
-#if defined(HAVE_PTY_H)
+#ifdef HAVE_PTY_H
 #include <pty.h>
-#if defined(HAVE_UTMP_H)
+#ifdef HAVE_UTMP_H
 #include <utmp.h>
 #endif /* HAVE_UTMP_H */
 #elif defined(HAVE_LIBUTIL_H)
