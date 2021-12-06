@@ -829,7 +829,7 @@ class TemporaryDirectory:
                         # On Windows, calling _rmtree again will raise
                         # NotADirectoryError and mask the PermissionError.
                         # So we must re-raise the current PermissionError.
-                        if _os.name == 'nt' and _os.path.isfile(path):
+                        if _os.name == 'nt' and not _os.path.isdir(path):
                             if ignore_errors:
                                 return
                             raise
