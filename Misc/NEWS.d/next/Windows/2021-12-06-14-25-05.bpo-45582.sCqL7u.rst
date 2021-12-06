@@ -1,0 +1,1 @@
+When PGO building on Windows, the folder of the instrumented binaries is now located directly under the PCbuild folder.
