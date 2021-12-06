@@ -430,7 +430,7 @@ async def wait_for(fut, timeout):
         # wait until the future completes or the timeout
         try:
             await waiter
-        except exceptions.CancelledError as e:
+        except exceptions.CancelledError:
             fut.remove_done_callback(cb)
             # We must ensure that the task is not running
             # after wait_for() returns.
