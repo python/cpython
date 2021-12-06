@@ -51,7 +51,7 @@
     <BuildPath Condition="'$(ArchName)' == 'arm64'">$(BuildPathArm64)</BuildPath>
     <BuildPath Condition="'$(BuildPath)' == ''">$(PySourcePath)PCbuild\$(ArchName)\</BuildPath>
     <BuildPath Condition="!HasTrailingSlash($(BuildPath))">$(BuildPath)\</BuildPath>
-    <BuildPath Condition="$(Configuration) == 'PGInstrument'">$(BuildPath)instrumented\</BuildPath>
+    <BuildPath Condition="$(Configuration) == 'PGInstrument'">$(BuildPath.TrimEnd('\'))_instrumented\</BuildPath>
     
     <!-- Directories of external projects. tcltk is handled in tcltk.props -->
     <ExternalsDir>$(EXTERNALS_DIR)</ExternalsDir>
