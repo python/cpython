@@ -230,7 +230,7 @@ getpath_isxfile(PyObject *Py_UNUSED(self), PyObject *args)
         DWORD attr = GetFileAttributesW(path);
         r = (attr != INVALID_FILE_ATTRIBUTES) &&
             !(attr & FILE_ATTRIBUTE_DIRECTORY) &&
-            SUCCEEDED(PathCchFindExtension(path, cchPath, &ext)) &&
+            SUCCEEDED(PathCchFindExtension(path, cchPath + 1, &ext)) &&
             (CompareStringOrdinal(ext, -1, L".exe", -1, 1 /* ignore case */) == CSTR_EQUAL)
             ? Py_True : Py_False;
 #else
