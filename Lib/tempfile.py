@@ -822,8 +822,15 @@ class TemporaryDirectory:
 
                     try:
                         _os.unlink(path)
+                    except IsADirectoryError:
+                        cls._rmtree(path, ignore_errors=ignore_errors)
                     # PermissionError is raised on FreeBSD for directories
-                    except (IsADirectoryError, PermissionError):
+                    except PermissionError:
+                        # On WIndows, _rmtree will cause IsADirectoryError
+                        if _os.name == 'nt' and _os.path.isfile(path):
+                            if ignore_errors:
+                                return
+                            raise
                         cls._rmtree(path, ignore_errors=ignore_errors)
                 except FileNotFoundError:
                     pass
