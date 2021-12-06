@@ -1,5 +1,0 @@
-On Unix, if the ``sem_clockwait()`` function is available in the C library
-(glibc 2.30 and newer), the :meth:`threading.Lock.acquire` method now uses the
-monotonic clock (:data:`time.CLOCK_MONOTONIC`) for the timeout, rather than
-using the system clock (:data:`time.CLOCK_REALTIME`), to not be affected by
-system clock changes. Patch by Victor Stinner.

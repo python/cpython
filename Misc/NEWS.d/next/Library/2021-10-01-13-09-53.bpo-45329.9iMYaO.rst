@@ -1,2 +1,0 @@
-Fix freed memory access in :class:`pyexpat.xmlparser` when building it with an
-installed expat library <= 2.2.0.

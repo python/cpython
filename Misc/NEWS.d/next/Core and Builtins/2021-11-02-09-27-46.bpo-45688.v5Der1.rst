@@ -1,2 +1,0 @@
-:data:`sys.stdlib_module_names` now contains the macOS-specific module
-:mod:`_scproxy`.
