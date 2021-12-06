@@ -5854,8 +5854,8 @@ fail_post_args:
     return -1;
 }
 
-static InterpreterFrame *
-make_coro_frame(PyThreadState *tstate,
+static int
+initialize_coro_frame(InterpreterFrame *frame, PyThreadState *tstate,
            PyFunctionObject *func, PyObject *locals,
            PyObject *const *args, Py_ssize_t argcount,
            PyObject *kwnames)
@@ -5863,36 +5863,14 @@ make_coro_frame(PyThreadState *tstate,
     assert(is_tstate_valid(tstate));
     assert(func->func_defaults == NULL || PyTuple_CheckExact(func->func_defaults));
     PyCodeObject *code = (PyCodeObject *)func->func_code;
-    int size = code->co_nlocalsplus+code->co_stacksize + FRAME_SPECIALS_SIZE;
-    InterpreterFrame *frame = (InterpreterFrame *)PyMem_Malloc(sizeof(PyObject *)*size);
-    if (frame == NULL) {
-        goto fail_no_memory;
-    }
     _PyFrame_InitializeSpecials(frame, func, locals, code->co_nlocalsplus);
     for (int i = 0; i < code->co_nlocalsplus; i++) {
         frame->localsplus[i] = NULL;
     }
     assert(frame->frame_obj == NULL);
-    if (initialize_locals(tstate, func, frame->localsplus, args, argcount, kwnames)) {
-        _PyFrame_Clear(frame);
-        PyMem_Free(frame);
-        return NULL;
-    }
-    return frame;
-fail_no_memory:
-    /* Consume the references */
-    for (Py_ssize_t i = 0; i < argcount; i++) {
-        Py_DECREF(args[i]);
-    }
-    if (kwnames) {
-        Py_ssize_t kwcount = PyTuple_GET_SIZE(kwnames);
-        for (Py_ssize_t i = 0; i < kwcount; i++) {
-            Py_DECREF(args[i+argcount]);
-        }
-    }
-    PyErr_NoMemory();
-    return NULL;
+    return initialize_locals(tstate, func, frame->localsplus, args, argcount, kwnames);
 }
+
 
 /* Consumes all the references to the args */
 static PyObject *
@@ -5902,14 +5880,17 @@ make_coro(PyThreadState *tstate, PyFunctionObject *func,
           PyObject *kwnames)
 {
     assert (((PyCodeObject *)func->func_code)->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR));
-    InterpreterFrame *frame = make_coro_frame(tstate, func, locals, args, argcount, kwnames);
-    if (frame == NULL) {
-        return NULL;
-    }
-    PyObject *gen = _Py_MakeCoro(func, frame);
+    PyObject *gen = _Py_MakeCoro(func);
     if (gen == NULL) {
         return NULL;
     }
+    InterpreterFrame *frame = (InterpreterFrame *)((PyGenObject *)gen)->gi_iframe;
+    if (initialize_coro_frame(frame, tstate, func, locals, args, argcount, kwnames)) {
+        Py_DECREF(gen);
+        return NULL;
+    }
+    frame->generator = gen;
+    ((PyGenObject *)gen)->gi_frame_valid = 1;
     return gen;
 }
 
