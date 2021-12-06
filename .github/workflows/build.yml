@@ -147,7 +147,7 @@ jobs:
         echo "LDFLAGS=-L$(brew --prefix tcl-tk)/lib" >> $GITHUB_ENV
         echo "PKG_CONFIG_PATH=$(brew --prefix openssl@1.1)/lib/pkgconfig:$(brew --prefix tcl-tk)/lib/pkgconfig" >> $GITHUB_ENV
     - name: Configure CPython
-      run: ./configure --with-pydebug --prefix=/opt/python-dev
+      run: ./configure --with-pydebug --prefix=/opt/python-dev --enable-framework=yes
     - name: Build CPython
       run: make -j4
     - name: Display build info
