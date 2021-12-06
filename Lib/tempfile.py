@@ -827,7 +827,7 @@ class TemporaryDirectory:
                     # PermissionError is raised on FreeBSD for directories
                     except PermissionError:
                         # On Windows, calling _rmtree again will raise
-                        # IsADirectoryError and mask the PermissionError.
+                        # NotADirectoryError and mask the PermissionError.
                         # So we must re-raise the current PermissionError.
                         if _os.name == 'nt' and _os.path.isfile(path):
                             if ignore_errors:
