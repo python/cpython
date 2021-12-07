@@ -2125,15 +2125,6 @@ _PyThreadState_PopFrame(PyThreadState *tstate, InterpreterFrame * frame)
 _Py_THREAD_LOCAL PyInterpreterState *_py_current_interpreter = NULL;
 #endif
 
-int
-_Py_IsMainInterpreter(PyInterpreterState *interp)
-{
-    /* Use directly _PyRuntime rather than tstate->interp->runtime, since
-       this function is used in performance critical code path (ceval) */
-    return interp == _PyRuntime.interpreters.main;
-}
-
-
 #ifdef __cplusplus
 }
 #endif
