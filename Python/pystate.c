@@ -46,21 +46,50 @@ static PyThreadState *_PyGILState_GetThisThreadState(struct _gilstate_runtime_st
 static void _PyThreadState_Delete(PyThreadState *tstate, int check_current);
 
 
-static PyStatus
-_PyRuntimeState_Init_impl(_PyRuntimeState *runtime)
+static int
+alloc_for_runtime(PyThread_type_lock *plock1, PyThread_type_lock *plock2,
+                  PyThread_type_lock *plock3)
 {
-    /* We preserve the hook across init, because there is
-       currently no public API to set it between runtime
-       initialization and interpreter initialization. */
-    void *open_code_hook = runtime->open_code_hook;
-    void *open_code_userdata = runtime->open_code_userdata;
-    _Py_AuditHookEntry *audit_hook_head = runtime->audit_hook_head;
-    // bpo-42882: Preserve next_index value if Py_Initialize()/Py_Finalize()
-    // is called multiple times.
-    Py_ssize_t unicode_next_index = runtime->unicode_ids.next_index;
+    /* Force default allocator, since _PyRuntimeState_Fini() must
+       use the same allocator than this function. */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
-    memset(runtime, 0, sizeof(*runtime));
+    PyThread_type_lock lock1 = PyThread_allocate_lock();
+    if (lock1 == NULL) {
+        return -1;
+    }
 
+    PyThread_type_lock lock2 = PyThread_allocate_lock();
+    if (lock2 == NULL) {
+        PyThread_free_lock(lock1);
+        return -1;
+    }
+
+    PyThread_type_lock lock3 = PyThread_allocate_lock();
+    if (lock3 == NULL) {
+        PyThread_free_lock(lock1);
+        PyThread_free_lock(lock2);
+        return -1;
+    }
+
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    *plock1 = lock1;
+    *plock2 = lock2;
+    *plock3 = lock3;
+    return 0;
+}
+
+static void
+init_runtime(_PyRuntimeState *runtime,
+             void *open_code_hook, void *open_code_userdata,
+             _Py_AuditHookEntry *audit_hook_head,
+             Py_ssize_t unicode_next_index,
+             PyThread_type_lock unicode_ids_mutex,
+             PyThread_type_lock interpreters_mutex,
+             PyThread_type_lock xidregistry_mutex)
+{
     runtime->open_code_hook = open_code_hook;
     runtime->open_code_userdata = open_code_userdata;
     runtime->audit_hook_head = audit_hook_head;
@@ -76,41 +105,46 @@ _PyRuntimeState_Init_impl(_PyRuntimeState *runtime)
     Py_tss_t initial = Py_tss_NEEDS_INIT;
     runtime->gilstate.autoTSSkey = initial;
 
-    runtime->interpreters.mutex = PyThread_allocate_lock();
-    if (runtime->interpreters.mutex == NULL) {
-        return _PyStatus_NO_MEMORY();
-    }
+    runtime->interpreters.mutex = interpreters_mutex;
+    // This prevents interpreters from getting created
+    // until _PyInterpreterState_Enable() is called.
     runtime->interpreters.next_id = -1;
 
-    runtime->xidregistry.mutex = PyThread_allocate_lock();
-    if (runtime->xidregistry.mutex == NULL) {
-        return _PyStatus_NO_MEMORY();
-    }
+    runtime->xidregistry.mutex = xidregistry_mutex;
 
     // Set it to the ID of the main thread of the main interpreter.
     runtime->main_thread = PyThread_get_thread_ident();
 
-    runtime->unicode_ids.lock = PyThread_allocate_lock();
-    if (runtime->unicode_ids.lock == NULL) {
-        return _PyStatus_NO_MEMORY();
-    }
     runtime->unicode_ids.next_index = unicode_next_index;
+    runtime->unicode_ids.lock = unicode_ids_mutex;
 
-    return _PyStatus_OK();
+    runtime->_initialized = 1;
 }
 
 PyStatus
 _PyRuntimeState_Init(_PyRuntimeState *runtime)
 {
-    /* Force default allocator, since _PyRuntimeState_Fini() must
-       use the same allocator than this function. */
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    /* We preserve the hook across init, because there is
+       currently no public API to set it between runtime
+       initialization and interpreter initialization. */
+    void *open_code_hook = runtime->open_code_hook;
+    void *open_code_userdata = runtime->open_code_userdata;
+    _Py_AuditHookEntry *audit_hook_head = runtime->audit_hook_head;
+    // bpo-42882: Preserve next_index value if Py_Initialize()/Py_Finalize()
+    // is called multiple times.
+    Py_ssize_t unicode_next_index = runtime->unicode_ids.next_index;
 
-    PyStatus status = _PyRuntimeState_Init_impl(runtime);
+    memset(runtime, 0, sizeof(*runtime));
 
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-    return status;
+    PyThread_type_lock lock1, lock2, lock3;
+    if (alloc_for_runtime(&lock1, &lock2, &lock3) != 0) {
+        return _PyStatus_NO_MEMORY();
+    }
+
+    init_runtime(runtime, open_code_hook, open_code_userdata, audit_hook_head,
+                 unicode_next_index, lock1, lock2, lock3);
+
+    return _PyStatus_OK();
 }
 
 void
