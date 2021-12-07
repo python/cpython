@@ -500,6 +500,8 @@ else:
         prefix, had_delim, exec_prefix = home.partition(DELIM)
         if not had_delim:
             exec_prefix = prefix
+        # Reset the standard library directory if it was already set
+        stdlib_dir = None
 
 
     # First try to detect prefix by looking alongside our runtime library, if known

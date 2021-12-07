@@ -208,6 +208,36 @@ class MockGetPathTests(unittest.TestCase):
         actual = getpath(ns, expected)
         self.assertEqual(expected, actual)
 
+    def test_buildtree_pythonhome_win32(self):
+        "Test an out-of-build-tree layout on Windows with PYTHONHOME override."
+        ns = MockNTNamespace(
+            argv0=r"C:\Out\python.exe",
+            real_executable=r"C:\Out\python.exe",
+            ENV_PYTHONHOME=r"C:\CPython",
+        )
+        ns.add_known_xfile(r"C:\Out\python.exe")
+        ns.add_known_file(r"C:\CPython\Lib\os.py")
+        ns.add_known_file(r"C:\Out\pybuilddir.txt", [""])
+        expected = dict(
+            executable=r"C:\Out\python.exe",
+            base_executable=r"C:\Out\python.exe",
+            prefix=r"C:\CPython",
+            exec_prefix=r"C:\CPython",
+            # This build_prefix is a miscalculation, because we have
+            # moved the output direction out of the prefix.
+            # Specify PYTHONHOME to get the correct prefix/exec_prefix
+            build_prefix="C:\\",
+            _is_python_build=1,
+            module_search_paths_set=1,
+            module_search_paths=[
+                r"C:\Out\python98.zip",
+                r"C:\CPython\Lib",
+                r"C:\Out",
+            ],
+        )
+        actual = getpath(ns, expected)
+        self.assertEqual(expected, actual)
+
     def test_normal_posix(self):
         "Test a 'standard' install layout on *nix"
         ns = MockPosixNamespace(

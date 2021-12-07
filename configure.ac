@@ -125,16 +125,16 @@ AC_ARG_WITH(
 )
 AC_SUBST([FREEZE_MODULE])
 
+dnl build-python is used for cross compiling and macOS framework builds.
 AC_ARG_WITH(
   [build-python],
   [AS_HELP_STRING([--with-build-python=python]PYTHON_VERSION,
-                  [path to build python binary for cross compiling (default: python]PYTHON_VERSION[)])],
+                  [path to build python binary for cross compiling (default: _bootstrap_python or python]PYTHON_VERSION[)])],
   [
     AC_MSG_CHECKING([for --with-build-python])
 
-    AS_VAR_IF([cross_compiling], [no], AC_MSG_ERROR([--with-build-python only applies to cross compiling]))
     AS_VAR_IF([with_build_python], [yes], [with_build_python=python$PACKAGE_VERSION])
-    AS_VAR_IF([with_build_python], [no], [AC_MSG_ERROR([invalid --with-build-python option: expected path, not "no"])])
+    AS_VAR_IF([with_build_python], [no], [AC_MSG_ERROR([invalid --with-build-python option: expected path or "yes", not "no"])])
 
     if ! $(command -v "$with_build_python" >/dev/null 2>&1); then
       AC_MSG_ERROR([invalid or missing build python binary "$with_build_python"])
@@ -2963,7 +2963,6 @@ AS_VAR_IF([have_uuid], [missing], [
     ], [
       LIBUUID_LIBS="-luuid"
       LIBUUID_CFLAGS=
-      have_uuid=no
       AC_CHECK_HEADERS([uuid/uuid.h], [
         WITH_SAVE_ENV(
           [AC_CHECK_LIB([uuid], [uuid_generate_time], [have_uuid=yes])
@@ -2978,6 +2977,19 @@ AS_VAR_IF([have_uuid], [missing], [
     ]
   )
 ])
+
+dnl macOS has uuid/uuid.h but uuid_generate_time is in libc
+AS_VAR_IF([have_uuid], [missing], [
+  AC_CHECK_HEADERS([uuid/uuid.h], [
+    AC_CHECK_FUNC([uuid_generate_time], [
+      have_uuid=yes
+      LIBUUID_CFLAGS=
+      LIBUUID_LIBS=
+    ])
+  ])
+])
+
+AS_VAR_IF([have_uuid], [missing], [have_uuid=no])
 
 # 'Real Time' functions on Solaris
 # posix4 on Solaris 2.6
@@ -3283,14 +3295,9 @@ AS_CASE([$ac_sys_system],
 
 libmpdec_machine=unknown
 if test "$libmpdec_system" = Darwin; then
-    AS_CASE([$MACOSX_DEFAULT_ARCH],
-      [i386],   [libmpdec_machine=ansi32],
-      [ppc],    [libmpdec_machine=ansi32],
-      [x86_64], [libmpdec_machine=x64],
-      [ppc64],  [libmpdec_machine=ansi64],
-      [arm64],  [libmpdec_machine=ansi64],
-      [libmpdec_machine=universal]
-    )
+    # universal here means: build libmpdec with the same arch options
+    # the python interpreter was built with
+    libmpdec_machine=universal
 elif test $ac_cv_sizeof_size_t -eq 8; then
     if test "$ac_cv_gcc_asm_for_x64" = yes; then
         libmpdec_machine=x64

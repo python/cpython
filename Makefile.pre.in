@@ -954,9 +954,9 @@ BOOTSTRAP_HEADERS = \
 
 Programs/_bootstrap_python.o: Programs/_bootstrap_python.c $(BOOTSTRAP_HEADERS) $(PYTHON_HEADERS)
 
-_bootstrap_python: $(LIBRARY_OBJS_OMIT_FROZEN) Programs/_bootstrap_python.o Modules/getpath.o Modules/Setup.local
+_bootstrap_python: $(LIBRARY_OBJS_OMIT_FROZEN) Programs/_bootstrap_python.o Modules/getpath_bootstrap.o Modules/Setup.local
 	$(LINKCC) $(PY_LDFLAGS_NOLTO) -o $@ $(LIBRARY_OBJS_OMIT_FROZEN) \
-		Programs/_bootstrap_python.o Modules/getpath.o $(LIBS) $(MODLIBS) $(SYSLIBS)
+		Programs/_bootstrap_python.o Modules/getpath_bootstrap.o $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 ############################################################################
 # Deepfreeze targets
@@ -1204,6 +1204,18 @@ Modules/getpath.o: $(srcdir)/Modules/getpath.c Python/frozen_modules/getpath.h M
 		-DVPATH='"$(VPATH)"' \
 		-DPLATLIBDIR='"$(PLATLIBDIR)"' \
 		-o $@ $(srcdir)/Modules/getpath.c
+
+# like getpath.o with additional -DPY_BOOTSTRAP_PYTHON=1
+Modules/getpath_bootstrap.o: $(srcdir)/Modules/getpath.c Python/frozen_modules/getpath.h Makefile $(PYTHON_HEADERS)
+	$(CC) -c $(PY_CORE_CFLAGS) -DPYTHONPATH='"$(PYTHONPATH)"' \
+		-DPREFIX='"$(prefix)"' \
+		-DEXEC_PREFIX='"$(exec_prefix)"' \
+		-DVERSION='"$(VERSION)"' \
+		-DVPATH='"$(VPATH)"' \
+		-DPLATLIBDIR='"$(PLATLIBDIR)"' \
+		-DPY_BOOTSTRAP_PYTHON=1 \
+		-o $@ $(srcdir)/Modules/getpath.c
+
 
 Programs/python.o: $(srcdir)/Programs/python.c
 	$(MAINCC) -c $(PY_CORE_CFLAGS) -o $@ $(srcdir)/Programs/python.c

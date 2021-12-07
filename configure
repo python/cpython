@@ -1736,7 +1736,7 @@ Optional Packages:
                           path to _freeze_module binary for cross compiling
   --with-build-python=python3.11
                           path to build python binary for cross compiling
-                          (default: python3.11)
+                          (default: _bootstrap_python or python3.11)
   --with-pkg-config=[yes|no|check]
                           use pkg-config to detect build options (default is
                           check)
@@ -3243,14 +3243,11 @@ if test "${with_build_python+set}" = set; then :
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-build-python" >&5
 $as_echo_n "checking for --with-build-python... " >&6; }
 
-    if test "x$cross_compiling" = xno; then :
-  as_fn_error $? "--with-build-python only applies to cross compiling" "$LINENO" 5
-fi
     if test "x$with_build_python" = xyes; then :
   with_build_python=python$PACKAGE_VERSION
 fi
     if test "x$with_build_python" = xno; then :
-  as_fn_error $? "invalid --with-build-python option: expected path, not \"no\"" "$LINENO" 5
+  as_fn_error $? "invalid --with-build-python option: expected path or \"yes\", not \"no\"" "$LINENO" 5
 fi
 
     if ! $(command -v "$with_build_python" >/dev/null 2>&1); then
@@ -10626,7 +10623,6 @@ fi
 
       LIBUUID_LIBS="-luuid"
       LIBUUID_CFLAGS=
-      have_uuid=no
       for ac_header in uuid/uuid.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "uuid/uuid.h" "ac_cv_header_uuid_uuid_h" "$ac_includes_default"
@@ -10757,7 +10753,6 @@ $as_echo "no" >&6; }
 
       LIBUUID_LIBS="-luuid"
       LIBUUID_CFLAGS=
-      have_uuid=no
       for ac_header in uuid/uuid.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "uuid/uuid.h" "ac_cv_header_uuid_uuid_h" "$ac_includes_default"
@@ -10896,6 +10891,37 @@ $as_echo "yes" >&6; }
 
 fi
 
+fi
+
+if test "x$have_uuid" = xmissing; then :
+
+  for ac_header in uuid/uuid.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "uuid/uuid.h" "ac_cv_header_uuid_uuid_h" "$ac_includes_default"
+if test "x$ac_cv_header_uuid_uuid_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_UUID_UUID_H 1
+_ACEOF
+
+    ac_fn_c_check_func "$LINENO" "uuid_generate_time" "ac_cv_func_uuid_generate_time"
+if test "x$ac_cv_func_uuid_generate_time" = xyes; then :
+
+      have_uuid=yes
+      LIBUUID_CFLAGS=
+      LIBUUID_LIBS=
+
+fi
+
+
+fi
+
+done
+
+
+fi
+
+if test "x$have_uuid" = xmissing; then :
+  have_uuid=no
 fi
 
 # 'Real Time' functions on Solaris
@@ -11789,21 +11815,9 @@ esac
 
 libmpdec_machine=unknown
 if test "$libmpdec_system" = Darwin; then
-    case $MACOSX_DEFAULT_ARCH in #(
-  i386) :
-    libmpdec_machine=ansi32 ;; #(
-  ppc) :
-    libmpdec_machine=ansi32 ;; #(
-  x86_64) :
-    libmpdec_machine=x64 ;; #(
-  ppc64) :
-    libmpdec_machine=ansi64 ;; #(
-  arm64) :
-    libmpdec_machine=ansi64 ;; #(
-  *) :
+    # universal here means: build libmpdec with the same arch options
+    # the python interpreter was built with
     libmpdec_machine=universal
-     ;;
-esac
 elif test $ac_cv_sizeof_size_t -eq 8; then
     if test "$ac_cv_gcc_asm_for_x64" = yes; then
         libmpdec_machine=x64

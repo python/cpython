@@ -518,15 +518,6 @@ Removed
 
   (Contributed by Hugo van Kemenade in :issue:`45320`.)
 
-* Remove the ``asyncore`` and ``asynchat`` modules, deprecated in Python 3.6:
-  use the :mod:`asyncio` module instead.
-  (Contributed by Victor Stinner in :issue:`28533`.)
-
-* Remove the ``smtpd`` module, deprecated in Python 3.6: the `aiosmtpd
-  <https://aiosmtpd.readthedocs.io/>`__ module can be used instead, it is based
-  on asyncio.
-  (Contributed by Victor Stinner in :issue:`28533`.)
-
 
 Porting to Python 3.11
 ======================

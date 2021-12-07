@@ -230,7 +230,7 @@ getpath_isxfile(PyObject *Py_UNUSED(self), PyObject *args)
         DWORD attr = GetFileAttributesW(path);
         r = (attr != INVALID_FILE_ATTRIBUTES) &&
             !(attr & FILE_ATTRIBUTE_DIRECTORY) &&
-            SUCCEEDED(PathCchFindExtension(path, cchPath, &ext)) &&
+            SUCCEEDED(PathCchFindExtension(path, cchPath + 1, &ext)) &&
             (CompareStringOrdinal(ext, -1, L".exe", -1, 1 /* ignore case */) == CSTR_EQUAL)
             ? Py_True : Py_False;
 #else
@@ -754,8 +754,9 @@ library_to_dict(PyObject *dict, const char *key)
     if (PyWin_DLLhModule) {
         return winmodule_to_dict(dict, key, PyWin_DLLhModule);
     }
-#elif defined(WITH_NEXT_FRAMEWORK)
-    static const char modPath[MAXPATHLEN + 1];
+#elif defined(WITH_NEXT_FRAMEWORK) && !defined(PY_BOOTSTRAP_PYTHON)
+    // _bootstrap_python does not use framework and crashes
+    static char modPath[MAXPATHLEN + 1];
     static int modPathInitialized = -1;
     if (modPathInitialized < 0) {
         NSModule pythonModule;
