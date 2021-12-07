@@ -90,6 +90,11 @@ init_runtime(_PyRuntimeState *runtime,
              PyThread_type_lock interpreters_mutex,
              PyThread_type_lock xidregistry_mutex)
 {
+    if (runtime->_initialized) {
+        _PyRuntimeState_reset(runtime);
+        assert(!runtime->initialized);
+    }
+
     runtime->open_code_hook = open_code_hook;
     runtime->open_code_userdata = open_code_userdata;
     runtime->audit_hook_head = audit_hook_head;
@@ -133,8 +138,6 @@ _PyRuntimeState_Init(_PyRuntimeState *runtime)
     // bpo-42882: Preserve next_index value if Py_Initialize()/Py_Finalize()
     // is called multiple times.
     Py_ssize_t unicode_next_index = runtime->unicode_ids.next_index;
-
-    memset(runtime, 0, sizeof(*runtime));
 
     PyThread_type_lock lock1, lock2, lock3;
     if (alloc_for_runtime(&lock1, &lock2, &lock3) != 0) {
