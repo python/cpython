@@ -3,7 +3,7 @@
 /* Interface to Sjoerd's portable C thread library */
 
 #include "Python.h"
-#include "pycore_interp.h"        // _PyInterpreterState.num_threads
+#include "pycore_interp.h"        // _PyInterpreterState.threads.count
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"       // _PyThreadState_Init()
@@ -1089,7 +1089,7 @@ thread_run(void *boot_raw)
 #endif
     _PyThreadState_Init(tstate);
     PyEval_AcquireThread(tstate);
-    tstate->interp->num_threads++;
+    tstate->interp->threads.count++;
 
     PyObject *res = PyObject_Call(boot->func, boot->args, boot->kwargs);
     if (res == NULL) {
@@ -1105,7 +1105,7 @@ thread_run(void *boot_raw)
     }
 
     thread_bootstate_free(boot);
-    tstate->interp->num_threads--;
+    tstate->interp->threads.count--;
     PyThreadState_Clear(tstate);
     _PyThreadState_DeleteCurrent(tstate);
 
@@ -1279,7 +1279,7 @@ static PyObject *
 thread__count(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return PyLong_FromLong(interp->num_threads);
+    return PyLong_FromLong(interp->threads.count);
 }
 
 PyDoc_STRVAR(_count_doc,
