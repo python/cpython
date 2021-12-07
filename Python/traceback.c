@@ -406,16 +406,14 @@ int
 _Py_WriteIndentedMargin(int indent, const char *margin, PyObject *f)
 {
     if (_Py_WriteIndent(indent, f) < 0) {
-        goto error;
+        return -1;
     }
     if (margin) {
         if (PyFile_WriteString(margin, f) < 0) {
-            goto error;
+            return -1;
         }
     }
     return 0;
-error:
-    return -1;
 }
 
 static int
@@ -423,7 +421,6 @@ display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int
                                 int margin_indent, const char *margin,
                                 int *truncation, PyObject **line)
 {
-    int err = 0;
     int fd;
     int i;
     char *found_encoding;
@@ -506,7 +503,6 @@ display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int
         lineobj = PyFile_GetLine(fob, -1);
         if (!lineobj) {
             PyErr_Clear();
-            err = -1;
             break;
         }
     }
@@ -520,7 +516,7 @@ display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int
     Py_DECREF(fob);
     if (!lineobj || !PyUnicode_Check(lineobj)) {
         Py_XDECREF(lineobj);
-        return err;
+        return -1;
     }
 
     if (line) {
@@ -550,8 +546,6 @@ display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int
     if (truncation != NULL) {
         *truncation = i - indent;
     }
-
-    assert(!err);
 
     if (_Py_WriteIndentedMargin(margin_indent, margin, f) < 0) {
         goto error;
