@@ -381,6 +381,7 @@ _PyPegen_expect_token(Parser *p, int type)
     }
     Token *t = p->tokens[p->mark];
     if (t->type != type) {
+        if (Py_DebugFlag) printf("Token = %s - Expected %d\n", PyBytes_AsString(t->bytes), type);
         return NULL;
     }
     p->mark += 1;
