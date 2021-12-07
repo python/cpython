@@ -19,7 +19,7 @@
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_moduleobject.h"  // PyModuleObject
-#include "pycore_pyerrors.h"      // _PyErr_Fetch()
+#include "pycore_pyerrors.h"      // _PyErr_Fetch(), PY_EXC_INFO_STACK_SIZE
 #include "pycore_pylifecycle.h"   // _PyErr_Print()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
@@ -2750,7 +2750,15 @@ check_eval_breaker:
             traceback = exc_info->exc_traceback;
             exc_info->exc_type = POP();
             exc_info->exc_value = POP();
-            exc_info->exc_traceback = POP();
+
+            assert(exc_info->exc_value);
+            if (exc_info->exc_value != Py_None) {
+                exc_info->exc_traceback = PyException_GetTraceback(exc_info->exc_value);
+            }
+            else {
+                exc_info->exc_traceback = NULL;
+            }
+
             ASSERT_EXC_TYPE_IS_REDUNDANT(exc_info->exc_type, exc_info->exc_value);
             Py_XDECREF(type);
             Py_XDECREF(value);
@@ -2759,7 +2767,7 @@ check_eval_breaker:
         }
 
         TARGET(POP_EXCEPT_AND_RERAISE) {
-            PyObject *lasti = PEEK(4);
+            PyObject *lasti = PEEK(PY_EXC_INFO_STACK_SIZE+1);
             if (PyLong_Check(lasti)) {
                 frame->f_lasti = PyLong_AsLong(lasti);
                 assert(!_PyErr_Occurred(tstate));
@@ -2772,7 +2780,9 @@ check_eval_breaker:
             _PyErr_StackItem *exc_info;
             type = POP();
             value = POP();
-            traceback = POP();
+            assert(value);
+            assert(value != Py_None);
+            traceback = PyException_GetTraceback(value);
             ASSERT_EXC_TYPE_IS_REDUNDANT(type, value);
             Py_DECREF(POP()); /* lasti */
             _PyErr_Restore(tstate, type, value, traceback);
@@ -2782,7 +2792,14 @@ check_eval_breaker:
             traceback = exc_info->exc_traceback;
             exc_info->exc_type = POP();
             exc_info->exc_value = POP();
-            exc_info->exc_traceback = POP();
+
+            assert(exc_info->exc_value);
+            if (exc_info->exc_value != Py_None) {
+                exc_info->exc_traceback = PyException_GetTraceback(exc_info->exc_value);
+            }
+            else {
+                exc_info->exc_traceback = NULL;
+            }
             ASSERT_EXC_TYPE_IS_REDUNDANT(exc_info->exc_type, exc_info->exc_value);
             Py_XDECREF(type);
             Py_XDECREF(value);
@@ -2792,7 +2809,7 @@ check_eval_breaker:
 
         TARGET(RERAISE) {
             if (oparg) {
-                PyObject *lasti = PEEK(oparg+3);
+                PyObject *lasti = PEEK(oparg+PY_EXC_INFO_STACK_SIZE);
                 if (PyLong_Check(lasti)) {
                     frame->f_lasti = PyLong_AsLong(lasti);
                     assert(!_PyErr_Occurred(tstate));
@@ -2805,7 +2822,8 @@ check_eval_breaker:
             }
             PyObject *exc = POP();
             PyObject *val = POP();
-            PyObject *tb = POP();
+            assert(val && PyExceptionInstance_Check(val));
+            PyObject *tb = PyException_GetTraceback(val);
             ASSERT_EXC_TYPE_IS_REDUNDANT(exc, val);
             assert(PyExceptionClass_Check(exc));
             _PyErr_Restore(tstate, exc, val, tb);
@@ -2815,7 +2833,8 @@ check_eval_breaker:
         TARGET(END_ASYNC_FOR) {
             PyObject *exc = POP();
             PyObject *val = POP();
-            PyObject *tb = POP();
+            assert(val && PyExceptionInstance_Check(val));
+            PyObject *tb = PyException_GetTraceback(val);
             ASSERT_EXC_TYPE_IS_REDUNDANT(exc, val);
             assert(PyExceptionClass_Check(exc));
             if (PyErr_GivenExceptionMatches(exc, PyExc_StopAsyncIteration)) {
@@ -4368,11 +4387,11 @@ check_eval_breaker:
 
         TARGET(WITH_EXCEPT_START) {
             /* At the top of the stack are 8 values:
-               - (TOP, SECOND, THIRD) = exc_info()
-               - (FOURTH, FIFTH, SIXTH) = previous exception
-               - SEVENTH: lasti of exception in exc_info()
-               - EIGHTH: the context.__exit__ bound method
-               We call EIGHTH(TOP, SECOND, THIRD).
+               - (TOP, SECOND) = exc_info()
+               - (THIRD, FOURTH) = previous exception
+               - FIFTH: lasti of exception in exc_info()
+               - SIXTH: the context.__exit__ bound method
+               We call SIXTH(TOP, SECOND, GetTraceback(SECOND)).
                Then we push again the TOP exception and the __exit__
                return value.
             */
@@ -4381,12 +4400,14 @@ check_eval_breaker:
 
             exc = TOP();
             val = SECOND();
-            tb = THIRD();
+            assert(val && PyExceptionInstance_Check(val));
+            tb = PyException_GetTraceback(val);
+            Py_XDECREF(tb);
             ASSERT_EXC_TYPE_IS_REDUNDANT(exc, val);
             assert(!Py_IsNone(exc));
             assert(!PyLong_Check(exc));
-            assert(PyLong_Check(PEEK(7)));
-            exit_func = PEEK(8);
+            assert(PyLong_Check(PEEK(1 + 2 * PY_EXC_INFO_STACK_SIZE)));
+            exit_func = PEEK(2 + 2 * PY_EXC_INFO_STACK_SIZE);
             PyObject *stack[4] = {NULL, exc, val, tb};
             res = PyObject_Vectorcall(exit_func, stack + 1,
                     3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
@@ -4400,10 +4421,12 @@ check_eval_breaker:
         TARGET(PUSH_EXC_INFO) {
             PyObject *type = TOP();
             PyObject *value = SECOND();
-            PyObject *tb = THIRD();
+            assert(value && PyExceptionInstance_Check(value));
+            PyObject *tb = PyException_GetTraceback(value);
             ASSERT_EXC_TYPE_IS_REDUNDANT(type, value);
+
             _PyErr_StackItem *exc_info = tstate->exc_info;
-            SET_THIRD(exc_info->exc_traceback);
+            Py_XDECREF(exc_info->exc_traceback);
             if (exc_info->exc_value != NULL) {
                 SET_SECOND(exc_info->exc_value);
             }
@@ -4418,8 +4441,6 @@ check_eval_breaker:
                 Py_INCREF(Py_None);
                 SET_TOP(Py_None);
             }
-            Py_INCREF(tb);
-            PUSH(tb);
             exc_info->exc_traceback = tb;
 
             Py_INCREF(value);
@@ -5296,11 +5317,7 @@ exception_unwind:
             PyException_SetTraceback(val, tb);
         else
             PyException_SetTraceback(val, Py_None);
-        if (tb == NULL) {
-            tb = Py_None;
-            Py_INCREF(Py_None);
-        }
-        PUSH(tb);
+        Py_XDECREF(tb);
         PUSH(val);
         PUSH(exc);
         ASSERT_EXC_TYPE_IS_REDUNDANT(exc, val);
