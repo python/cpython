@@ -225,10 +225,12 @@ PyInterpreterState_New(void)
     _PyRuntimeState *runtime = &_PyRuntime;
     interp->runtime = runtime;
 
-    if (_PyEval_InitState(&interp->ceval) < 0) {
+    PyThread_type_lock pending_lock = PyThread_allocate_lock();
+    if (pending_lock == NULL) {
         goto out_of_memory;
     }
 
+    _PyEval_InitState(&interp->ceval, pending_lock);
     _PyGC_InitState(&interp->gc);
     PyConfig_InitPythonConfig(&interp->config);
     _PyType_InitCache(interp);
