@@ -116,7 +116,7 @@ class JSONEncoder(object):
 
         If check_circular is true, then lists, dicts, and custom encoded
         objects will be checked for circular references during encoding to
-        prevent an infinite recursion (which would cause an OverflowError).
+        prevent an infinite recursion (which would cause an RecursionError).
         Otherwise, no such check takes place.
 
         If allow_nan is true, then NaN, Infinity, and -Infinity will be
