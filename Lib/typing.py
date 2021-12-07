@@ -992,8 +992,8 @@ class _BaseGenericAlias(_Final, _root=True):
                         " class and instance checks")
 
     def __dir__(self):
-        return (object.__dir__(self)
-                + [attr for attr in dir(self.__origin__) if not _is_dunder(attr)])
+        return list(set(object.__dir__(self)
+                + [attr for attr in dir(self.__origin__) if not _is_dunder(attr)]))
 
 # Special typing constructs Union, Optional, Generic, Callable and Tuple
 # use three special attributes for internal bookkeeping of generic types:
