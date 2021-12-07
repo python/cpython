@@ -275,6 +275,24 @@ attributes:
       listed in the metaclass' custom :meth:`__dir__`.
 
 
+.. function:: getmembers_static(object[, predicate])
+
+    Return all the members of an object in a list of ``(name, value)``
+    pairs sorted by name without triggering dynamic lookup via the descriptor
+    protocol, __getattr__ or __getattribute__. Optionally, only return members
+    that satisfy a given predicate.
+
+    .. note::
+
+        :func:`getmembers_static` may not be able to retrieve all members
+        that getmembers can fetch (like dynamically created attributes)
+        and may find members that getmembers can't (like descriptors
+        that raise AttributeError). It can also return descriptor objects
+        instead of instance members in some cases.
+
+    .. versionadded:: 3.11
+
+
 .. function:: getmodulename(path)
 
    Return the name of the module named by the file *path*, without including the

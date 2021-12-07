@@ -600,5 +600,12 @@ class TestBuglets(unittest.TestCase):
             except Exception or Exception:
                 pass
 
+    def test_bpo_45773_pop_jump_if_true(self):
+        compile("while True or spam: pass", "<test>", "exec")
+
+    def test_bpo_45773_pop_jump_if_false(self):
+        compile("while True or not spam: pass", "<test>", "exec")
+
+
 if __name__ == "__main__":
     unittest.main()

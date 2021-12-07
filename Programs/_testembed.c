@@ -531,7 +531,7 @@ static int test_init_from_config(void)
     config.import_time = 1;
 
     putenv("PYTHONNODEBUGRANGES=0");
-    config.no_debug_ranges = 1;
+    config.code_debug_ranges = 0;
 
     config.show_ref_count = 1;
     /* FIXME: test dump_refs: bpo-34223 */

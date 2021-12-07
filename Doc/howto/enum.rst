@@ -997,11 +997,12 @@ Plain :class:`Enum` classes always evaluate as :data:`True`.
 """""""""""""""""""""""""""""
 
 If you give your enum subclass extra methods, like the `Planet`_
-class below, those methods will show up in a :func:`dir` of the member,
-but not of the class::
+class below, those methods will show up in a :func:`dir` of the member and the
+class. Attributes defined in an :func:`__init__` method will only show up in a
+:func:`dir` of the member::
 
     >>> dir(Planet)
-    ['EARTH', 'JUPITER', 'MARS', 'MERCURY', 'NEPTUNE', 'SATURN', 'URANUS', 'VENUS', '__class__', '__doc__', '__members__', '__module__']
+    ['EARTH', 'JUPITER', 'MARS', 'MERCURY', 'NEPTUNE', 'SATURN', 'URANUS', 'VENUS', '__class__', '__doc__', '__init__', '__members__', '__module__', 'surface_gravity']
     >>> dir(Planet.EARTH)
     ['__class__', '__doc__', '__module__', 'mass', 'name', 'radius', 'surface_gravity', 'value']
 
