@@ -552,7 +552,6 @@ display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int
     }
 
     assert(!err);
-    assert(lineobj);
 
     if (_Py_WriteIndentedMargin(margin_indent, margin, f) < 0) {
         goto error;
