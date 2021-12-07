@@ -204,6 +204,18 @@ _PyInterpreterState_Enable(_PyRuntimeState *runtime)
     return _PyStatus_OK();
 }
 
+static PyInterpreterState *
+alloc_interpreter(void)
+{
+    return PyMem_RawCalloc(1, sizeof(PyInterpreterState));
+}
+
+static void
+free_interpreter(PyInterpreterState *interp)
+{
+    PyMem_RawFree(interp);
+}
+
 /* Get the interpreter state to a minimal consistent state.
    Further init happens in pylifecycle.c before it can be used.
    All fields not initialized here are expected to be zeroed out,
@@ -289,7 +301,7 @@ PyInterpreterState_New(void)
         assert(interpreters->main == NULL);
         assert(id == 0);
 
-        interp = PyMem_RawCalloc(1, sizeof(PyInterpreterState));
+        interp = alloc_interpreter();
         if (interp == NULL) {
             goto error;
         }
@@ -302,7 +314,7 @@ PyInterpreterState_New(void)
         assert(id != 0);
         assert(interpreters->main != NULL);
 
-        interp = PyMem_RawCalloc(1, sizeof(PyInterpreterState));
+        interp = alloc_interpreter();
         if (interp == NULL) {
             goto error;
         }
@@ -328,7 +340,7 @@ error:
 
     PyThread_free_lock(pending_lock);
     if (interp != NULL) {
-        PyMem_RawFree(interp);
+        free_interpreter(interp);
     }
     return NULL;
 }
@@ -462,7 +474,7 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
     if (interp->id_mutex != NULL) {
         PyThread_free_lock(interp->id_mutex);
     }
-    PyMem_RawFree(interp);
+    free_interpreter(interp);
 }
 
 
@@ -500,7 +512,7 @@ _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime)
         }
         PyInterpreterState *prev_interp = interp;
         interp = interp->next;
-        PyMem_RawFree(prev_interp);
+        free_interpreter(prev_interp);
     }
     HEAD_UNLOCK(runtime);
 
