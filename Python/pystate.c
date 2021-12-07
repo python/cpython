@@ -630,6 +630,18 @@ allocate_chunk(int size_in_bytes, _PyStackChunk* previous)
     return res;
 }
 
+static PyThreadState *
+alloc_threadstate(void)
+{
+    return PyMem_RawCalloc(1, sizeof(PyThreadState));
+}
+
+static void
+free_threadstate(PyThreadState *tstate)
+{
+    PyMem_RawFree(tstate);
+}
+
 /* Get the thread state to a minimal consistent state.
    Further init happens in pylifecycle.c before it can be used.
    All fields not initialized here are expected to be zeroed out,
@@ -708,7 +720,7 @@ new_threadstate(PyInterpreterState *interp)
         // It's the interpreter's initial thread state.
         assert(id == 1);
 
-        tstate = PyMem_RawCalloc(1, sizeof(PyThreadState));
+        tstate = alloc_threadstate();
         if (tstate == NULL) {
             goto error;
         }
@@ -718,7 +730,7 @@ new_threadstate(PyInterpreterState *interp)
         assert(id > 1);
         assert(old_head->prev == NULL);
 
-        tstate = PyMem_RawCalloc(1, sizeof(PyThreadState));
+        tstate = alloc_threadstate();
         if (tstate == NULL) {
             goto error;
         }
@@ -994,7 +1006,7 @@ _PyThreadState_Delete(PyThreadState *tstate, int check_current)
         }
     }
     tstate_delete_common(tstate, gilstate);
-    PyMem_RawFree(tstate);
+    free_threadstate(tstate);
 }
 
 
@@ -1013,7 +1025,7 @@ _PyThreadState_DeleteCurrent(PyThreadState *tstate)
     tstate_delete_common(tstate, gilstate);
     _PyRuntimeGILState_SetThreadState(gilstate, NULL);
     _PyEval_ReleaseLock(tstate);
-    PyMem_RawFree(tstate);
+    free_threadstate(tstate);
 }
 
 void
