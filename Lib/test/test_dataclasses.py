@@ -1126,8 +1126,6 @@ class TestCase(unittest.TestCase):
                          'dataclasses.InitVar[typing.List[int]]')
         self.assertEqual(repr(InitVar[list[int]]),
                          'dataclasses.InitVar[list[int]]')
-        self.assertEqual(repr(InitVar[int|str]),
-                         'dataclasses.InitVar[int | str]')
 
     def test_init_var_inheritance(self):
         # Note that this deliberately tests that a dataclass need not
