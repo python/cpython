@@ -74,7 +74,7 @@ static inline void _PyFrame_StackPush(InterpreterFrame *f, PyObject *value) {
 
 #define FRAME_SPECIALS_SIZE ((sizeof(InterpreterFrame)-1)/sizeof(PyObject *))
 
-InterpreterFrame *_PyFrame_Copy(InterpreterFrame *frame);
+void _PyFrame_Copy(InterpreterFrame *src, InterpreterFrame *dest);
 
 static inline void
 _PyFrame_InitializeSpecials(

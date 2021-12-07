@@ -43,18 +43,12 @@ _PyFrame_MakeAndSetFrameObject(InterpreterFrame *frame)
     return f;
 }
 
-InterpreterFrame *
-_PyFrame_Copy(InterpreterFrame *frame)
+void
+_PyFrame_Copy(InterpreterFrame *src, InterpreterFrame *dest)
 {
-    assert(frame->stacktop >= frame->f_code->co_nlocalsplus);
-    Py_ssize_t size = ((char*)&frame->localsplus[frame->stacktop]) - (char *)frame;
-    InterpreterFrame *copy = PyMem_Malloc(size);
-    if (copy == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-    memcpy(copy, frame, size);
-    return copy;
+    assert(src->stacktop >= src->f_code->co_nlocalsplus);
+    Py_ssize_t size = ((char*)&src->localsplus[src->stacktop]) - (char *)src;
+    memcpy(dest, src, size);
 }
 
 static inline void
@@ -112,7 +106,7 @@ _PyFrame_Clear(InterpreterFrame * frame)
         }
         Py_DECREF(f);
     }
-    assert(_PyFrame_GetStackPointer(frame) >= _PyFrame_Stackbase(frame));
+    assert(frame->stacktop >= 0);
     for (int i = 0; i < frame->stacktop; i++) {
         Py_XDECREF(frame->localsplus[i]);
     }
