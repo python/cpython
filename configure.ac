@@ -3295,14 +3295,9 @@ AS_CASE([$ac_sys_system],
 
 libmpdec_machine=unknown
 if test "$libmpdec_system" = Darwin; then
-    AS_CASE([$MACOSX_DEFAULT_ARCH],
-      [i386],   [libmpdec_machine=ansi32],
-      [ppc],    [libmpdec_machine=ansi32],
-      [x86_64], [libmpdec_machine=x64],
-      [ppc64],  [libmpdec_machine=ansi64],
-      [arm64],  [libmpdec_machine=ansi64],
-      [libmpdec_machine=universal]
-    )
+    # universal here means: build libmpdec with the same arch options
+    # the python interpreter was built with
+    libmpdec_machine=universal
 elif test $ac_cv_sizeof_size_t -eq 8; then
     if test "$ac_cv_gcc_asm_for_x64" = yes; then
         libmpdec_machine=x64
