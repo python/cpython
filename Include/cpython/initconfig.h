@@ -143,7 +143,7 @@ typedef struct PyConfig {
     int faulthandler;
     int tracemalloc;
     int import_time;
-    int no_debug_ranges;
+    int code_debug_ranges;
     int show_ref_count;
     int dump_refs;
     wchar_t *dump_refs_file;
@@ -213,6 +213,9 @@ typedef struct PyConfig {
     // If non-zero, disallow threads, subprocesses, and fork.
     // Default: 0.
     int _isolated_interpreter;
+
+    // If non-zero, we believe we're running from a source tree.
+    int _is_python_build;
 } PyConfig;
 
 PyAPI_FUNC(void) PyConfig_InitPythonConfig(PyConfig *config);

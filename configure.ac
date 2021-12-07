@@ -125,16 +125,16 @@ AC_ARG_WITH(
 )
 AC_SUBST([FREEZE_MODULE])
 
+dnl build-python is used for cross compiling and macOS framework builds.
 AC_ARG_WITH(
   [build-python],
   [AS_HELP_STRING([--with-build-python=python]PYTHON_VERSION,
-                  [path to build python binary for cross compiling (default: python]PYTHON_VERSION[)])],
+                  [path to build python binary for cross compiling (default: _bootstrap_python or python]PYTHON_VERSION[)])],
   [
     AC_MSG_CHECKING([for --with-build-python])
 
-    AS_VAR_IF([cross_compiling], [no], AC_MSG_ERROR([--with-build-python only applies to cross compiling]))
     AS_VAR_IF([with_build_python], [yes], [with_build_python=python$PACKAGE_VERSION])
-    AS_VAR_IF([with_build_python], [no], [AC_MSG_ERROR([invalid --with-build-python option: expected path, not "no"])])
+    AS_VAR_IF([with_build_python], [no], [AC_MSG_ERROR([invalid --with-build-python option: expected path or "yes", not "no"])])
 
     if ! $(command -v "$with_build_python" >/dev/null 2>&1); then
       AC_MSG_ERROR([invalid or missing build python binary "$with_build_python"])
@@ -143,8 +143,9 @@ AC_ARG_WITH(
     if test "$build_python_ver" != "$PACKAGE_VERSION"; then
       AC_MSG_ERROR(["$with_build_python" has incompatible version $build_python_ver (expected: $PACKAGE_VERSION)])
     fi
-    dnl use build Python for regeneration, too
+    dnl Build Python interpreter is used for regeneration and freezing.
     ac_cv_prog_PYTHON_FOR_REGEN=$with_build_python
+    PYTHON_FOR_FREEZE="$with_build_python"
     PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`:)$(srcdir)/Lib _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH) '$with_build_python
     AC_MSG_RESULT([$with_build_python])
   ], [
@@ -152,9 +153,14 @@ AC_ARG_WITH(
       [AC_MSG_ERROR([Cross compiling requires --with-build-python])]
     )
     PYTHON_FOR_BUILD='./$(BUILDPYTHON) -E'
+    PYTHON_FOR_FREEZE="./_bootstrap_python"
   ]
 )
 AC_SUBST([PYTHON_FOR_BUILD])
+
+AC_MSG_CHECKING([for Python interpreter freezing])
+AC_MSG_RESULT([$PYTHON_FOR_FREEZE])
+AC_SUBST([PYTHON_FOR_FREEZE])
 
 AC_CHECK_PROGS([PYTHON_FOR_REGEN],
   [python$PACKAGE_VERSION python3.10 python3.9 python3.8 python3.7 python3.6 python3 python],
@@ -162,7 +168,7 @@ AC_CHECK_PROGS([PYTHON_FOR_REGEN],
 AC_SUBST(PYTHON_FOR_REGEN)
 
 AC_MSG_CHECKING([Python for regen version])
-if command -v $PYTHON_FOR_REGEN >/dev/null 2>&1; then
+if command -v "$PYTHON_FOR_REGEN" >/dev/null 2>&1; then
   AC_MSG_RESULT([$($PYTHON_FOR_REGEN -V 2>/dev/null)])
 else
   AC_MSG_RESULT([missing])
@@ -1510,6 +1516,8 @@ esac
 if test "$Py_LTO" = 'true' ; then
   case $CC in
     *clang*)
+      dnl flag to disable lto during linking
+      LDFLAGS_NOLTO="-fno-lto"
       AC_SUBST(LLVM_AR)
       AC_PATH_TOOL(LLVM_AR, llvm-ar, '', ${llvm_path})
       AC_SUBST(LLVM_AR_FOUND)
@@ -1565,6 +1573,8 @@ if test "$Py_LTO" = 'true' ; then
       then
         AC_MSG_ERROR([thin lto is not supported under gcc compiler.])
       fi
+      dnl flag to disable lto during linking
+      LDFLAGS_NOLTO="-fno-lto"
       case $ac_sys_system in
         Darwin*)
           LTOFLAGS="-flto -Wl,-export_dynamic"
@@ -1746,6 +1756,7 @@ fi
 AC_SUBST(BASECFLAGS)
 AC_SUBST(CFLAGS_NODIST)
 AC_SUBST(LDFLAGS_NODIST)
+AC_SUBST(LDFLAGS_NOLTO)
 
 # The -arch flags for universal builds on macOS
 UNIVERSAL_ARCH_FLAGS=
@@ -2952,7 +2963,6 @@ AS_VAR_IF([have_uuid], [missing], [
     ], [
       LIBUUID_LIBS="-luuid"
       LIBUUID_CFLAGS=
-      have_uuid=no
       AC_CHECK_HEADERS([uuid/uuid.h], [
         WITH_SAVE_ENV(
           [AC_CHECK_LIB([uuid], [uuid_generate_time], [have_uuid=yes])
@@ -2967,6 +2977,19 @@ AS_VAR_IF([have_uuid], [missing], [
     ]
   )
 ])
+
+dnl macOS has uuid/uuid.h but uuid_generate_time is in libc
+AS_VAR_IF([have_uuid], [missing], [
+  AC_CHECK_HEADERS([uuid/uuid.h], [
+    AC_CHECK_FUNC([uuid_generate_time], [
+      have_uuid=yes
+      LIBUUID_CFLAGS=
+      LIBUUID_LIBS=
+    ])
+  ])
+])
+
+AS_VAR_IF([have_uuid], [missing], [have_uuid=no])
 
 # 'Real Time' functions on Solaris
 # posix4 on Solaris 2.6
@@ -3164,6 +3187,60 @@ else
     with_system_ffi="yes"
 fi
 
+dnl detect libffi
+have_libffi=missing
+AS_VAR_IF([with_system_ffi], [yes], [
+  PKG_CHECK_MODULES([LIBFFI], [libffi], [have_libffi=yes], [
+    AC_CHECK_HEADER([ffi.h], [
+      WITH_SAVE_ENV([
+        AC_CHECK_LIB([ffi], [ffi_call], [have_libffi=yes], [have_libffi=no])
+      ])
+    ])
+  ])
+], [
+  dnl private ffi copy
+  have_libffi=yes
+  LIBFFI_CFLAGS="-I\$(srcdir)/Modules/_ctypes/darwin -DUSING_MALLOC_CLOSURE_DOT_C=1 -DMACOSX"
+  LIBFFI_LIBS=
+])
+
+dnl _ctypes needs -ldl for dlopen
+AS_CASE([$LIBS],
+  [*-ldl*], [LIBFFI_LIBS="$LIBFFI_LIBS -ldl"]
+)
+
+if test "$with_system_ffi" = yes -a "$have_libffi" = yes; then
+  WITH_SAVE_ENV([
+    CFLAGS="$LIBFFI_CFLAGS $CFLAGS"
+    LIBS="$LIBFFI_LIBS $LIBS"
+
+    AC_CACHE_CHECK([for ffi_prep_cif_var in ffi.h], [ac_cv_ffi_prep_cif_var], [
+      AC_EGREP_HEADER([ffi_prep_cif_var], [ffi.h], [ac_cv_ffi_prep_cif_var=yes], [ac_cv_ffi_prep_cif_var=no])
+    ])
+    AS_VAR_IF([ac_cv_ffi_prep_cif_var], [yes], [
+      AC_DEFINE([HAVE_FFI_PREP_CIF_VAR], [1],
+      [Define to 1 if you have the ffi_prep_cif_var function in <ffi.h> header file.])
+    ])
+
+    AC_CACHE_CHECK([for ffi_prep_closure_loc in ffi.h], [ac_cv_ffi_prep_closure_loc], [
+      AC_EGREP_HEADER([ffi_prep_closure_loc], [ffi.h], [ac_cv_ffi_prep_closure_loc=yes], [ac_cv_ffi_prep_closure_loc=no])
+    ])
+    AS_VAR_IF([ac_cv_ffi_prep_closure_loc], [yes], [
+      AC_DEFINE([HAVE_FFI_PREP_CLOSURE_LOC], [1],
+      [Define to 1 if you have the ffi_prep_closure_loc function in <ffi.h> header file.])
+    ])
+
+    AC_CACHE_CHECK([for ffi_closure_alloc in ffi.h], [ac_cv_ffi_closure_alloc], [
+      AC_EGREP_HEADER([ffi_closure_alloc], [ffi.h], [ac_cv_ffi_closure_alloc=yes], [ac_cv_ffi_closure_alloc=no])
+    ])
+    AS_VAR_IF([ac_cv_ffi_closure_alloc], [yes], [
+      AC_DEFINE([HAVE_FFI_CLOSURE_ALLOC], [1],
+      [Define to 1 if you have the ffi_closure_alloc function in <ffi.h> header file.])
+    ])
+  ])
+fi
+
+
 if test "$with_system_ffi" = "yes" && test -n "$PKG_CONFIG"; then
     LIBFFI_INCLUDEDIR="`"$PKG_CONFIG" libffi --cflags-only-I 2>/dev/null | sed -e 's/^-I//;s/ *$//'`"
 else
@@ -3218,14 +3295,9 @@ AS_CASE([$ac_sys_system],
 
 libmpdec_machine=unknown
 if test "$libmpdec_system" = Darwin; then
-    AS_CASE([$MACOSX_DEFAULT_ARCH],
-      [i386],   [libmpdec_machine=ansi32],
-      [ppc],    [libmpdec_machine=ansi32],
-      [x86_64], [libmpdec_machine=x64],
-      [ppc64],  [libmpdec_machine=ansi64],
-      [arm64],  [libmpdec_machine=ansi64],
-      [libmpdec_machine=universal]
-    )
+    # universal here means: build libmpdec with the same arch options
+    # the python interpreter was built with
+    libmpdec_machine=universal
 elif test $ac_cv_sizeof_size_t -eq 8; then
     if test "$ac_cv_gcc_asm_for_x64" = yes; then
         libmpdec_machine=x64
@@ -5871,7 +5943,12 @@ AC_ARG_WITH(ensurepip,
     [AS_HELP_STRING([--with-ensurepip@<:@=install|upgrade|no@:>@],
         ["install" or "upgrade" using bundled pip (default is upgrade)])],
     [],
-    [with_ensurepip=upgrade])
+    [
+      AS_CASE([$ac_sys_system],
+        [Emscripten], [with_ensurepip=no],
+        [with_ensurepip=upgrade]
+      )
+    ])
 AS_CASE($with_ensurepip,
     [yes|upgrade],[ENSUREPIP=upgrade],
     [install],[ENSUREPIP=install],
@@ -6407,17 +6484,25 @@ PY_STDLIB_MOD([_blake2], [test "$with_builtin_blake2" = yes])
 PY_STDLIB_MOD([_crypt],
   [], [test "$ac_cv_crypt_crypt" = yes],
   [$LIBCRYPT_CFLAGS], [$LIBCRYPT_LIBS])
+PY_STDLIB_MOD([_ctypes],
+  [], [test "$have_libffi" = yes],
+  [$LIBFFI_CFLAGS], [$LIBFFI_LIBS])
+dnl PY_STDLIB_MOD([_curses], [], [], [], [])
+dnl PY_STDLIB_MOD([_curses_panel], [], [], [], [])
 PY_STDLIB_MOD([_decimal], [], [], [$LIBMPDEC_CFLAGS], [$LIBMPDEC_LDFLAGS])
+dnl PY_STDLIB_MOD([_dbm], [], [], [], [])
 PY_STDLIB_MOD([_gdbm],
   [test "$have_gdbm_dbmliborder" = yes], [test "$have_gdbm" = yes],
   [$GDBM_CFLAGS], [$GDBM_LIBS])
 PY_STDLIB_MOD([nis],
   [], [test "$have_nis" = yes -a "$ac_cv_header_rpc_rpc_h" = yes],
   [$LIBNSL_CFLAGS], [$LIBNSL_LIBS])
+dnl PY_STDLIB_MOD([readline], [], [], [], [])
 PY_STDLIB_MOD([_sqlite3],
   [test "$have_sqlite3" = "yes"],
   [test "$have_supported_sqlite3" = "yes"],
   [$LIBSQLITE3_CFLAGS], [$LIBSQLITE3_LIBS])
+dnl PY_STDLIB_MOD([_tkinter], [], [], [], [])
 PY_STDLIB_MOD([_uuid],
   [], [test "$have_uuid" = "yes"],
   [$LIBUUID_CFLAGS], [$LIBUUID_LIBS])
@@ -6445,7 +6530,9 @@ PY_STDLIB_MOD([_testbuffer], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testimportmultiple], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testmultiphase], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_xxtestfuzz], [test "$TEST_MODULES" = yes])
-PY_STDLIB_MOD([_ctypes_test], [test "$TEST_MODULES" = yes], [], [], [-lm])
+PY_STDLIB_MOD([_ctypes_test],
+  [test "$TEST_MODULES" = yes], [test "$have_libffi" = yes],
+  [], [$LIBM])
 
 dnl Limited API template modules.
 dnl The limited C API is not compatible with the Py_TRACE_REFS macro.

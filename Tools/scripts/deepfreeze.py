@@ -1,3 +1,8 @@
+"""Deep freeze
+
+The script is executed by _bootstrap_python interpreter. Shared library
+extension modules are not available.
+"""
 import argparse
 import ast
 import builtins
@@ -8,7 +13,6 @@ import re
 import sys
 import time
 import types
-import unicodedata
 from typing import Dict, FrozenSet, Tuple, TextIO
 
 import umarshal

@@ -146,6 +146,12 @@ The :option:`-X` ``no_debug_ranges`` option and the environment variable
 See :pep:`657` for more details. (Contributed by Pablo Galindo, Batuhan Taskaya
 and Ammar Askar in :issue:`43950`.)
 
+Exceptions can be enriched with a string ``__note__``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``__note__`` field was added to :exc:`BaseException`. It is ``None``
+by default but can be set to a string which is added to the exception's
+traceback. (Contributed by Irit Katriel in :issue:`45607`.)
 
 Other Language Changes
 ======================
@@ -205,6 +211,13 @@ fractions
 * :class:`~fractions.Fraction` now implements an ``__int__`` method, so
   that an ``isinstance(some_fraction, typing.SupportsInt)`` check passes.
   (Contributed by Mark Dickinson in :issue:`44547`.)
+
+
+inspect
+-------
+* Add :func:`inspect.getmembers_static`: return all members without
+  triggering dynamic lookup via the descriptor protocol. (Contributed by
+  Weipeng Hong in :issue:`30533`.)
 
 
 math
@@ -337,6 +350,11 @@ Optimizations
 
 * Pure ASCII strings are now normalized in constant time by :func:`unicodedata.normalize`.
   (Contributed by Dong-hee Na in :issue:`44987`.)
+
+* :mod:`math` functions :func:`~math.comb` and :func:`~math.perm` are now up
+  to 10 times or more faster for large arguments (the speed up is larger for
+  larger *k*).
+  (Contributed by Serhiy Storchaka in :issue:`37295`.)
 
 
 CPython bytecode changes
@@ -500,15 +518,6 @@ Removed
 
   (Contributed by Hugo van Kemenade in :issue:`45320`.)
 
-* Remove the ``asyncore`` and ``asynchat`` modules, deprecated in Python 3.6:
-  use the :mod:`asyncio` module instead.
-  (Contributed by Victor Stinner in :issue:`28533`.)
-
-* Remove the ``smtpd`` module, deprecated in Python 3.6: the `aiosmtpd
-  <https://aiosmtpd.readthedocs.io/>`__ module can be used instead, it is based
-  on asyncio.
-  (Contributed by Victor Stinner in :issue:`28533`.)
-
 
 Porting to Python 3.11
 ======================
@@ -570,13 +579,17 @@ Build Changes
   (Contributed by Brett Cannon and Christian Heimes in :issue:`45548`,
   :issue:`45570`, :issue:`45571`, and :issue:`43974`.)
 
-* The build dependencies for :mod:`zlib`, :mod:`bz2`, and :mod:`lzma` are now
-  detected by :program:`configure`.
-  (Contributed by Christian Heimes in :issue:`45763`.)
+* Build dependencies, compiler flags, and linker flags for most stdlib
+  extension modules are now detected by :program:`configure`. libffi, libnsl,
+  libsqlite3, zlib, bzip2, liblzma, libcrypt, and uuid flags are detected by
+  ``pkg-config`` (when available).
+  (Contributed by Christian Heimes and Erlend Egeberg Aasland in
+  :issue:`bpo-45847`, :issue:`45747`, and :issue:`45763`.)
 
-* Build dependencies for :mod:`dbm` are now detected by :program:`configure`.
-  ``libdb`` 3.x and 4.x are no longer supported.
-  (Contributed by Christian Heimes in :issue:`45747`.)
+* CPython now has experimental support for cross compiling to WebAssembly
+  platform ``wasm32-emscripten``. The effort is inspired by previous work
+  like Pyodide.
+  (Contributed by Christian Heimes and Ethan Smith in :issue:`40280`.)
 
 C API Changes
 =============

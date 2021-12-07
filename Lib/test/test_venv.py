@@ -15,7 +15,7 @@ import subprocess
 import sys
 import tempfile
 from test.support import (captured_stdout, captured_stderr, requires_zlib,
-                          skip_if_broken_multiprocessing_synchronize)
+                          skip_if_broken_multiprocessing_synchronize, verbose)
 from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree)
 import unittest
 import venv
@@ -40,6 +40,8 @@ def check_output(cmd, encoding=None):
         encoding=encoding)
     out, err = p.communicate()
     if p.returncode:
+        if verbose and err:
+            print(err.decode('utf-8', 'backslashreplace'))
         raise subprocess.CalledProcessError(
             p.returncode, cmd, out, err)
     return out, err
@@ -194,7 +196,7 @@ class BasicTest(BaseTest):
             ('base_exec_prefix', sys.base_exec_prefix)):
             cmd[2] = 'import sys; print(sys.%s)' % prefix
             out, err = check_output(cmd)
-            self.assertEqual(out.strip(), expected.encode())
+            self.assertEqual(out.strip(), expected.encode(), prefix)
 
     if sys.platform == 'win32':
         ENV_SUBDIRS = (
