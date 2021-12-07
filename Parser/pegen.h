@@ -321,8 +321,9 @@ _RAISE_SYNTAX_ERROR_INVALID_TARGET(Parser *p, TARGETS_TYPE type, void *e)
             msg,
             _PyPegen_get_expr_name(invalid_target)
         );
+        return RAISE_SYNTAX_ERROR_KNOWN_LOCATION(invalid_target, "invalid syntax");
     }
-    return RAISE_SYNTAX_ERROR("invalid syntax");
+    return NULL;
 }
 
 void *_PyPegen_arguments_parsing_error(Parser *, expr_ty);
