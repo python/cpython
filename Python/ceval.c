@@ -5852,24 +5852,6 @@ fail_post_args:
     return -1;
 }
 
-static int
-initialize_coro_frame(InterpreterFrame *frame, PyThreadState *tstate,
-           PyFunctionObject *func, PyObject *locals,
-           PyObject *const *args, Py_ssize_t argcount,
-           PyObject *kwnames)
-{
-    assert(is_tstate_valid(tstate));
-    assert(func->func_defaults == NULL || PyTuple_CheckExact(func->func_defaults));
-    PyCodeObject *code = (PyCodeObject *)func->func_code;
-    _PyFrame_InitializeSpecials(frame, func, locals, code->co_nlocalsplus);
-    for (int i = 0; i < code->co_nlocalsplus; i++) {
-        frame->localsplus[i] = NULL;
-    }
-    assert(frame->frame_obj == NULL);
-    return initialize_locals(tstate, func, frame->localsplus, args, argcount, kwnames);
-}
-
-
 /* Consumes all the references to the args */
 static PyObject *
 make_coro(PyThreadState *tstate, PyFunctionObject *func,
@@ -5883,12 +5865,17 @@ make_coro(PyThreadState *tstate, PyFunctionObject *func,
         return NULL;
     }
     InterpreterFrame *frame = (InterpreterFrame *)((PyGenObject *)gen)->gi_iframe;
-    if (initialize_coro_frame(frame, tstate, func, locals, args, argcount, kwnames)) {
+    PyCodeObject *code = (PyCodeObject *)func->func_code;
+    _PyFrame_InitializeSpecials(frame, func, locals, code->co_nlocalsplus);
+    for (int i = 0; i < code->co_nlocalsplus; i++) {
+        frame->localsplus[i] = NULL;
+    }
+    ((PyGenObject *)gen)->gi_frame_valid = 1;
+    if (initialize_locals(tstate, func, frame->localsplus, args, argcount, kwnames)) {
         Py_DECREF(gen);
         return NULL;
     }
     frame->generator = gen;
-    ((PyGenObject *)gen)->gi_frame_valid = 1;
     return gen;
 }
 
