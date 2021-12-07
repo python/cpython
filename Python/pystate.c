@@ -271,7 +271,7 @@ PyInterpreterState_New(void)
         return NULL;
     }
 
-    interp->tstate_next_unique_id = 0;
+    interp->threads.next_unique_id = 0;
 
     interp->audit_hooks = NULL;
 
@@ -297,7 +297,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     }
 
     HEAD_LOCK(runtime);
-    for (PyThreadState *p = interp->tstate_head; p != NULL; p = p->next) {
+    for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
         PyThreadState_Clear(p);
     }
     HEAD_UNLOCK(runtime);
@@ -371,7 +371,7 @@ zapthreads(PyInterpreterState *interp, int check_current)
     PyThreadState *tstate;
     /* No need to lock the mutex here because this should only happen
        when the threads are all really dead (XXX famous last words). */
-    while ((tstate = interp->tstate_head) != NULL) {
+    while ((tstate = interp->threads.head) != NULL) {
         _PyThreadState_Delete(tstate, check_current);
     }
 }
@@ -399,7 +399,7 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
             break;
         }
     }
-    if (interp->tstate_head != NULL) {
+    if (interp->threads.head != NULL) {
         Py_FatalError("remaining threads");
     }
     *p = interp->next;
@@ -702,12 +702,12 @@ new_threadstate(PyInterpreterState *interp, int init)
     }
 
     HEAD_LOCK(runtime);
-    tstate->id = ++interp->tstate_next_unique_id;
+    tstate->id = ++interp->threads.next_unique_id;
     tstate->prev = NULL;
-    tstate->next = interp->tstate_head;
+    tstate->next = interp->threads.head;
     if (tstate->next)
         tstate->next->prev = tstate;
-    interp->tstate_head = tstate;
+    interp->threads.head = tstate;
     HEAD_UNLOCK(runtime);
 
     return tstate;
@@ -930,7 +930,7 @@ tstate_delete_common(PyThreadState *tstate,
         tstate->prev->next = tstate->next;
     }
     else {
-        interp->tstate_head = tstate->next;
+        interp->threads.head = tstate->next;
     }
     if (tstate->next) {
         tstate->next->prev = tstate->prev;
@@ -1008,7 +1008,7 @@ _PyThreadState_DeleteExcept(_PyRuntimeState *runtime, PyThreadState *tstate)
     /* Remove all thread states, except tstate, from the linked list of
        thread states.  This will allow calling PyThreadState_Clear()
        without holding the lock. */
-    PyThreadState *list = interp->tstate_head;
+    PyThreadState *list = interp->threads.head;
     if (list == tstate) {
         list = tstate->next;
     }
@@ -1019,7 +1019,7 @@ _PyThreadState_DeleteExcept(_PyRuntimeState *runtime, PyThreadState *tstate)
         tstate->next->prev = tstate->prev;
     }
     tstate->prev = tstate->next = NULL;
-    interp->tstate_head = tstate;
+    interp->threads.head = tstate;
     HEAD_UNLOCK(runtime);
 
     /* Clear and deallocate all stale thread states.  Even if this
@@ -1180,7 +1180,7 @@ PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
      * head_mutex for the duration.
      */
     HEAD_LOCK(runtime);
-    for (PyThreadState *tstate = interp->tstate_head; tstate != NULL; tstate = tstate->next) {
+    for (PyThreadState *tstate = interp->threads.head; tstate != NULL; tstate = tstate->next) {
         if (tstate->thread_id != id) {
             continue;
         }
@@ -1244,7 +1244,7 @@ PyInterpreterState_Next(PyInterpreterState *interp) {
 
 PyThreadState *
 PyInterpreterState_ThreadHead(PyInterpreterState *interp) {
-    return interp->tstate_head;
+    return interp->threads.head;
 }
 
 PyThreadState *
@@ -1281,7 +1281,7 @@ _PyThread_CurrentFrames(void)
     PyInterpreterState *i;
     for (i = runtime->interpreters.head; i != NULL; i = i->next) {
         PyThreadState *t;
-        for (t = i->tstate_head; t != NULL; t = t->next) {
+        for (t = i->threads.head; t != NULL; t = t->next) {
             InterpreterFrame *frame = t->cframe->current_frame;
             if (frame == NULL) {
                 continue;
@@ -1334,7 +1334,7 @@ _PyThread_CurrentExceptions(void)
     PyInterpreterState *i;
     for (i = runtime->interpreters.head; i != NULL; i = i->next) {
         PyThreadState *t;
-        for (t = i->tstate_head; t != NULL; t = t->next) {
+        for (t = i->threads.head; t != NULL; t = t->next) {
             _PyErr_StackItem *err_info = _PyErr_GetTopmostException(t);
             if (err_info == NULL) {
                 continue;

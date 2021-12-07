@@ -784,7 +784,7 @@ Py_SetRecursionLimit(int new_limit)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     interp->ceval.recursion_limit = new_limit;
-    for (PyThreadState *p = interp->tstate_head; p != NULL; p = p->next) {
+    for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
         int depth = p->recursion_limit - p->recursion_remaining;
         p->recursion_limit = new_limit;
         p->recursion_remaining = new_limit - depth;
