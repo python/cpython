@@ -27,6 +27,7 @@
 #include "pycore_ast.h"           // _PyAST_GetDocString()
 #include "pycore_compile.h"       // _PyFuture_FromAST()
 #include "pycore_code.h"          // _PyCode_New()
+#include "pycore_pyerrors.h"      // PY_EXC_INFO_STACK_SIZE
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_symtable.h"      // PySTEntryObject
@@ -1050,9 +1051,9 @@ stack_effect(int opcode, int oparg, int jump)
         case POP_BLOCK:
             return 0;
         case POP_EXCEPT:
-            return -3;
+            return -PY_EXC_INFO_STACK_SIZE;
         case POP_EXCEPT_AND_RERAISE:
-            return -7;
+            return -(1 + 2 * PY_EXC_INFO_STACK_SIZE);
 
         case STORE_NAME:
             return -1;
@@ -1123,23 +1124,23 @@ stack_effect(int opcode, int oparg, int jump)
             /* 0 in the normal flow.
              * Restore the stack position and push 3 values before jumping to
              * the handler if an exception be raised. */
-            return jump ? 3 : 0;
+            return jump ? PY_EXC_INFO_STACK_SIZE : 0;
         case SETUP_CLEANUP:
             /* As SETUP_FINALLY, but pushes lasti as well */
-            return jump ? 4 : 0;
+            return jump ? 1 + PY_EXC_INFO_STACK_SIZE : 0;
         case SETUP_WITH:
             /* 0 in the normal flow.
              * Restore the stack position to the position before the result
              * of __(a)enter__ and push 4 values before jumping to the handler
              * if an exception be raised. */
-            return jump ? -1 + 4 : 0;
+            return jump ? -1 + PY_EXC_INFO_STACK_SIZE + 1 : 0;
 
         case PREP_RERAISE_STAR:
              return 2;
         case RERAISE:
-            return -3;
+            return -PY_EXC_INFO_STACK_SIZE;
         case PUSH_EXC_INFO:
-            return 3;
+            return PY_EXC_INFO_STACK_SIZE;
 
         case WITH_EXCEPT_START:
             return 1;
@@ -1202,7 +1203,7 @@ stack_effect(int opcode, int oparg, int jump)
         case GET_YIELD_FROM_ITER:
             return 0;
         case END_ASYNC_FOR:
-            return -4;
+            return -(1 + PY_EXC_INFO_STACK_SIZE);
         case FORMAT_VALUE:
             /* If there's a fmt_spec on the stack, we go from 2->1,
                else 1->1. */
@@ -1870,13 +1871,12 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
 
         case FINALLY_END:
             if (preserve_tos) {
-                ADDOP(c, ROT_FOUR);
+                ADDOP(c, ROT_THREE);
             }
-            ADDOP(c, POP_TOP);
-            ADDOP(c, POP_TOP);
-            ADDOP(c, POP_TOP);
+            ADDOP(c, POP_TOP); /* exc_type */
+            ADDOP(c, POP_TOP); /* exc_value */
             if (preserve_tos) {
-                ADDOP(c, ROT_FOUR);
+                ADDOP(c, ROT_THREE);
             }
             ADDOP(c, POP_BLOCK);
             ADDOP(c, POP_EXCEPT);
@@ -1909,7 +1909,7 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
                 ADDOP(c, POP_BLOCK);
             }
             if (preserve_tos) {
-                ADDOP(c, ROT_FOUR);
+                ADDOP(c, ROT_THREE);
             }
             ADDOP(c, POP_BLOCK);
             ADDOP(c, POP_EXCEPT);
@@ -3354,7 +3354,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             ADDOP_JUMP(c, JUMP_IF_NOT_EXC_MATCH, except);
             NEXT_BLOCK(c);
         }
-        ADDOP(c, POP_TOP);
+        ADDOP(c, POP_TOP); /* exc_type */
         if (handler->v.ExceptHandler.name) {
             basicblock *cleanup_end, *cleanup_body;
 
@@ -3365,7 +3365,6 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             }
 
             compiler_nameop(c, handler->v.ExceptHandler.name, Store);
-            ADDOP(c, POP_TOP);
 
             /*
               try:
@@ -3416,8 +3415,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             if (!cleanup_body)
                 return 0;
 
-            ADDOP(c, POP_TOP);
-            ADDOP(c, POP_TOP);
+            ADDOP(c, POP_TOP); /* exc_value */
             compiler_use_next_block(c, cleanup_body);
             if (!compiler_push_fblock(c, HANDLER_CLEANUP, cleanup_body, NULL, NULL))
                 return 0;
@@ -5428,13 +5426,12 @@ compiler_with_except_finish(struct compiler *c, basicblock * cleanup) {
         return 0;
     ADDOP_JUMP(c, POP_JUMP_IF_TRUE, exit);
     NEXT_BLOCK(c);
-    ADDOP_I(c, RERAISE, 4);
+    ADDOP_I(c, RERAISE, 1 + PY_EXC_INFO_STACK_SIZE);
     compiler_use_next_block(c, cleanup);
     ADDOP(c, POP_EXCEPT_AND_RERAISE);
     compiler_use_next_block(c, exit);
-    ADDOP(c, POP_TOP);
-    ADDOP(c, POP_TOP);
-    ADDOP(c, POP_TOP);
+    ADDOP(c, POP_TOP); /* exc_type */
+    ADDOP(c, POP_TOP); /* exc_value */
     ADDOP(c, POP_BLOCK);
     ADDOP(c, POP_EXCEPT);
     ADDOP(c, POP_TOP);
@@ -5566,7 +5563,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     E:  WITH_EXCEPT_START (calls EXPR.__exit__)
         POP_JUMP_IF_TRUE T:
         RERAISE
-    T:  POP_TOP * 3 (remove exception from stack)
+    T:  POP_TOP * PY_EXC_INFO_STACK_SIZE (remove exception from stack)
         POP_EXCEPT
         POP_TOP
     EXIT:
@@ -7347,7 +7344,10 @@ assemble_emit_exception_table_entry(struct assembler *a, int start, int end, bas
     int size = end-start;
     assert(end > start);
     int target = handler->b_offset;
-    int depth = handler->b_preserve_lasti ? handler->b_startdepth-4 : handler->b_startdepth-3;
+    int depth = handler->b_startdepth - PY_EXC_INFO_STACK_SIZE;
+    if (handler->b_preserve_lasti) {
+        depth -= 1;
+    }
     assert(depth >= 0);
     int depth_lasti = (depth<<1) | handler->b_preserve_lasti;
     assemble_emit_exception_table_item(a, start, (1<<7));

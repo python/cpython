@@ -372,6 +372,7 @@ _code_type = type(_write_atomic.__code__)
 #                         BINARY_OP)
 #     Python 3.11a3 3465 (Add COPY_FREE_VARS opcode)
 #     Python 3.11a3 3466 (bpo-45292: PEP-654 except*)
+#     Python 3.11a3 3467 (bpo-45711: remove type, traceback from exc_info)
 
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
