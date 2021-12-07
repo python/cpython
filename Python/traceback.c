@@ -778,7 +778,7 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
 
     int res = PyFile_WriteObject(line, f, Py_PRINT_RAW);
     Py_DECREF(line);
-    if (res == -1) {
+    if (res < 0) {
         return -1;
     }
 
