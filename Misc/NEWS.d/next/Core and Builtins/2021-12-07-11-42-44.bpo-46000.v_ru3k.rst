@@ -1,1 +1,1 @@
-curses module: improve compatibility with NetBSD curses
+Improve compatibility of the :mod:`curses` module with NetBSD curses.
