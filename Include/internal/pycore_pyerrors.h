@@ -24,16 +24,13 @@ static inline PyObject* _PyErr_Occurred(PyThreadState *tstate)
 
 static inline void _PyErr_ClearExcState(_PyErr_StackItem *exc_state)
 {
-    PyObject *t, *v, *tb;
+    PyObject *t, *v;
     t = exc_state->exc_type;
     v = exc_state->exc_value;
-    tb = exc_state->exc_traceback;
     exc_state->exc_type = NULL;
     exc_state->exc_value = NULL;
-    exc_state->exc_traceback = NULL;
     Py_XDECREF(t);
     Py_XDECREF(v);
-    Py_XDECREF(tb);
 }
 
 PyAPI_FUNC(PyObject*) _PyErr_StackItemToExcInfoTuple(
