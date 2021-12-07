@@ -1,2 +1,2 @@
-The build-in :func:`compile` can cause `SyntaxError` when compiling multiple
-nested lines in 'single' mode now.  Patch by Weipeng Hong.
+The build-in :func:`compile` should raise a `SyntaxError` when it compile
+multiple statements in 'single' mode. Patch by Weipeng Hong.
