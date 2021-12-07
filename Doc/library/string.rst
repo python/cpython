@@ -309,7 +309,7 @@ non-empty format specification typically modifies the result.
 The general form of a *standard format specifier* is:
 
 .. productionlist:: format-spec
-   format_spec: [[`fill`]`align`][`sign`][#][0][`width`][`grouping_option`][.`precision`][`type`]
+   format_spec: [[`fill`]`align`][`sign`][z][#][0][`width`][`grouping_option`][.`precision`][`type`]
    fill: <any character>
    align: "<" | ">" | "=" | "^"
    sign: "+" | "-" | " "
@@ -379,6 +379,14 @@ following:
    |         | positive numbers, and a minus sign on negative numbers.  |
    +---------+----------------------------------------------------------+
 
+
+.. index:: single: z; in string formatting
+
+The ``'z'`` option causes negative zero to be coerced to zero.  This
+option is only valid for float and complex types.
+
+.. versionchanged:: 3.11
+   Added the ``'z'`` option.
 
 .. index:: single: # (hash); in string formatting
 
