@@ -195,8 +195,6 @@ extern int _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
 PyObject * _PyObject_GetInstanceAttribute(PyObject *obj, PyDictValues *values,
                                         PyObject *name);
 
-
-
 static inline PyDictValues **_PyObject_ValuesPointer(PyObject *obj)
 {
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
