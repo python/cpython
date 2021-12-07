@@ -1465,7 +1465,7 @@ class TestTemporaryDirectory(BaseTestCase):
         with tempfile.TemporaryDirectory() as working_dir:
             temp_dir = self.do_create(dir=working_dir)
             with open(os.path.join(temp_dir.name, "example.txt"), 'wb'):
-                # Used to raise NotADirectoryError on Windows.
+                # Used to raise NotADirectoryError on Windows. See bpo-43153.
                 with self.assertRaises(PermissionError):
                     temp_dir.cleanup()
 
