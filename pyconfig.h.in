@@ -356,18 +356,6 @@
 /* Define to 1 if you have the `fexecve' function. */
 #undef HAVE_FEXECVE
 
-/* Define to 1 if you have the ffi_closure_alloc function in <ffi.h> header
-   file. */
-#undef HAVE_FFI_CLOSURE_ALLOC
-
-/* Define to 1 if you have the ffi_prep_cif_var function in <ffi.h> header
-   file. */
-#undef HAVE_FFI_PREP_CIF_VAR
-
-/* Define to 1 if you have the ffi_prep_closure_loc function in <ffi.h> header
-   file. */
-#undef HAVE_FFI_PREP_CLOSURE_LOC
-
 /* Define to 1 if you have the `flock' function. */
 #undef HAVE_FLOCK
 
