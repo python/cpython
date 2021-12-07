@@ -80,12 +80,21 @@ import collections
 from warnings import warn
 from email._header_value_parser import get_addr_spec, get_angle_addr
 
-from test.support import _asyncore as asyncore
-from test.support import _asynchat as asynchat
-
 __all__ = [
     "SMTPChannel", "SMTPServer", "DebuggingServer", "PureProxy",
 ]
+
+warn(
+    'The smtpd module is deprecated and unmaintained.  Please see aiosmtpd '
+    '(https://aiosmtpd.readthedocs.io/) for the recommended replacement.',
+    DeprecationWarning,
+    stacklevel=2)
+
+
+# These are imported after the above warning so that users get the correct
+# deprecation warning.
+import asyncore
+import asynchat
 
 
 program = sys.argv[0]
@@ -178,6 +187,128 @@ class SMTPChannel(asynchat.async_chat):
         self.received_data = ''
         self.received_lines = []
 
+
+    # properties for backwards-compatibility
+    @property
+    def __server(self):
+        warn("Access to __server attribute on SMTPChannel is deprecated, "
+            "use 'smtp_server' instead", DeprecationWarning, 2)
+        return self.smtp_server
+    @__server.setter
+    def __server(self, value):
+        warn("Setting __server attribute on SMTPChannel is deprecated, "
+            "set 'smtp_server' instead", DeprecationWarning, 2)
+        self.smtp_server = value
+
+    @property
+    def __line(self):
+        warn("Access to __line attribute on SMTPChannel is deprecated, "
+            "use 'received_lines' instead", DeprecationWarning, 2)
+        return self.received_lines
+    @__line.setter
+    def __line(self, value):
+        warn("Setting __line attribute on SMTPChannel is deprecated, "
+            "set 'received_lines' instead", DeprecationWarning, 2)
+        self.received_lines = value
+
+    @property
+    def __state(self):
+        warn("Access to __state attribute on SMTPChannel is deprecated, "
+            "use 'smtp_state' instead", DeprecationWarning, 2)
+        return self.smtp_state
+    @__state.setter
+    def __state(self, value):
+        warn("Setting __state attribute on SMTPChannel is deprecated, "
+            "set 'smtp_state' instead", DeprecationWarning, 2)
+        self.smtp_state = value
+
+    @property
+    def __greeting(self):
+        warn("Access to __greeting attribute on SMTPChannel is deprecated, "
+            "use 'seen_greeting' instead", DeprecationWarning, 2)
+        return self.seen_greeting
+    @__greeting.setter
+    def __greeting(self, value):
+        warn("Setting __greeting attribute on SMTPChannel is deprecated, "
+            "set 'seen_greeting' instead", DeprecationWarning, 2)
+        self.seen_greeting = value
+
+    @property
+    def __mailfrom(self):
+        warn("Access to __mailfrom attribute on SMTPChannel is deprecated, "
+            "use 'mailfrom' instead", DeprecationWarning, 2)
+        return self.mailfrom
+    @__mailfrom.setter
+    def __mailfrom(self, value):
+        warn("Setting __mailfrom attribute on SMTPChannel is deprecated, "
+            "set 'mailfrom' instead", DeprecationWarning, 2)
+        self.mailfrom = value
+
+    @property
+    def __rcpttos(self):
+        warn("Access to __rcpttos attribute on SMTPChannel is deprecated, "
+            "use 'rcpttos' instead", DeprecationWarning, 2)
+        return self.rcpttos
+    @__rcpttos.setter
+    def __rcpttos(self, value):
+        warn("Setting __rcpttos attribute on SMTPChannel is deprecated, "
+            "set 'rcpttos' instead", DeprecationWarning, 2)
+        self.rcpttos = value
+
+    @property
+    def __data(self):
+        warn("Access to __data attribute on SMTPChannel is deprecated, "
+            "use 'received_data' instead", DeprecationWarning, 2)
+        return self.received_data
+    @__data.setter
+    def __data(self, value):
+        warn("Setting __data attribute on SMTPChannel is deprecated, "
+            "set 'received_data' instead", DeprecationWarning, 2)
+        self.received_data = value
+
+    @property
+    def __fqdn(self):
+        warn("Access to __fqdn attribute on SMTPChannel is deprecated, "
+            "use 'fqdn' instead", DeprecationWarning, 2)
+        return self.fqdn
+    @__fqdn.setter
+    def __fqdn(self, value):
+        warn("Setting __fqdn attribute on SMTPChannel is deprecated, "
+            "set 'fqdn' instead", DeprecationWarning, 2)
+        self.fqdn = value
+
+    @property
+    def __peer(self):
+        warn("Access to __peer attribute on SMTPChannel is deprecated, "
+            "use 'peer' instead", DeprecationWarning, 2)
+        return self.peer
+    @__peer.setter
+    def __peer(self, value):
+        warn("Setting __peer attribute on SMTPChannel is deprecated, "
+            "set 'peer' instead", DeprecationWarning, 2)
+        self.peer = value
+
+    @property
+    def __conn(self):
+        warn("Access to __conn attribute on SMTPChannel is deprecated, "
+            "use 'conn' instead", DeprecationWarning, 2)
+        return self.conn
+    @__conn.setter
+    def __conn(self, value):
+        warn("Setting __conn attribute on SMTPChannel is deprecated, "
+            "set 'conn' instead", DeprecationWarning, 2)
+        self.conn = value
+
+    @property
+    def __addr(self):
+        warn("Access to __addr attribute on SMTPChannel is deprecated, "
+            "use 'addr' instead", DeprecationWarning, 2)
+        return self.addr
+    @__addr.setter
+    def __addr(self, value):
+        warn("Setting __addr attribute on SMTPChannel is deprecated, "
+            "set 'addr' instead", DeprecationWarning, 2)
+        self.addr = value
 
     # Overrides base class for convenience.
     def push(self, msg):
