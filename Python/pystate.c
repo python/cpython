@@ -204,37 +204,39 @@ _PyInterpreterState_Enable(_PyRuntimeState *runtime)
     return _PyStatus_OK();
 }
 
-PyInterpreterState *
-PyInterpreterState_New(void)
+/* Get the interpreter state to a minimal consistent state.
+   Further init happens in pylifecycle.c before it can be used.
+   All fields not initialized here are expected to be zeroed out,
+   e.g. by PyMem_RawCalloc() or memset().
+   The runtime state is not manipulated.  Instead it is assumed that
+   the interpreter is getting added to the runtime.
+  */
+
+static void
+init_interpreter(PyInterpreterState *interp,
+                 _PyRuntimeState *runtime, int64_t id,
+                 PyInterpreterState *next,
+                 PyThread_type_lock pending_lock)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    /* tstate is NULL when Py_InitializeFromConfig() calls
-       PyInterpreterState_New() to create the main interpreter. */
-    if (_PySys_Audit(tstate, "cpython.PyInterpreterState_New", NULL) < 0) {
-        return NULL;
+    if (interp->_initialized) {
+        Py_FatalError("interpreter already initialized");
     }
 
-    PyInterpreterState *interp = PyMem_RawCalloc(1, sizeof(PyInterpreterState));
-    if (interp == NULL) {
-        return NULL;
-    }
-
-    interp->id_refcount = -1;
-
-    /* Don't get runtime from tstate since tstate can be NULL */
-    _PyRuntimeState *runtime = &_PyRuntime;
+    assert(runtime != NULL);
     interp->runtime = runtime;
 
-    PyThread_type_lock pending_lock = PyThread_allocate_lock();
-    if (pending_lock == NULL) {
-        goto out_of_memory;
-    }
+    assert(id > 0 || (id == 0 && interp == runtime->interpreters.main));
+    interp->id = id;
+    interp->id_refcount = -1;
+
+    assert(runtime->interpreters.head == interp);
+    assert(next != NULL || (interp == runtime->interpreters.main));
+    interp->next = next;
 
     _PyEval_InitState(&interp->ceval, pending_lock);
     _PyGC_InitState(&interp->gc);
     PyConfig_InitPythonConfig(&interp->config);
     _PyType_InitCache(interp);
-
     interp->eval_frame = NULL;
 #ifdef HAVE_DLOPEN
 #if HAVE_DECL_RTLD_NOW
@@ -244,45 +246,90 @@ PyInterpreterState_New(void)
 #endif
 #endif
 
-    struct pyinterpreters *interpreters = &runtime->interpreters;
+    interp->_initialized = 1;
+}
 
-    HEAD_LOCK(runtime);
-    if (interpreters->next_id < 0) {
-        /* overflow or Py_Initialize() not called! */
-        if (tstate != NULL) {
-            _PyErr_SetString(tstate, PyExc_RuntimeError,
-                             "failed to get an interpreter ID");
-        }
-        PyMem_RawFree(interp);
-        interp = NULL;
-    }
-    else {
-        interp->id = interpreters->next_id;
-        interpreters->next_id += 1;
-        interp->next = interpreters->head;
-        if (interpreters->main == NULL) {
-            interpreters->main = interp;
-        }
-        interpreters->head = interp;
-    }
-    HEAD_UNLOCK(runtime);
+PyInterpreterState *
+PyInterpreterState_New(void)
+{
+    PyInterpreterState *interp;
+    PyThreadState *tstate = _PyThreadState_GET();
 
-    if (interp == NULL) {
+    /* tstate is NULL when Py_InitializeFromConfig() calls
+       PyInterpreterState_New() to create the main interpreter. */
+    if (_PySys_Audit(tstate, "cpython.PyInterpreterState_New", NULL) < 0) {
         return NULL;
     }
 
-    interp->threads.next_unique_id = 0;
-
-    interp->audit_hooks = NULL;
-
-    return interp;
-
-out_of_memory:
-    if (tstate != NULL) {
-        _PyErr_NoMemory(tstate);
+    PyThread_type_lock pending_lock = PyThread_allocate_lock();
+    if (pending_lock == NULL) {
+        if (tstate != NULL) {
+            _PyErr_NoMemory(tstate);
+        }
+        return NULL;
     }
 
-    PyMem_RawFree(interp);
+    /* Don't get runtime from tstate since tstate can be NULL. */
+    _PyRuntimeState *runtime = &_PyRuntime;
+    struct pyinterpreters *interpreters = &runtime->interpreters;
+
+    /* We completely serialize creation of multiple interpreters, since
+       it simplifies things here and blocking concurrent calls isn't a problem.
+       Regardless, we must fully block subinterpreter creation until
+       after the main interpreter is created. */
+    HEAD_LOCK(runtime);
+
+    int64_t id = interpreters->next_id;
+    interpreters->next_id += 1;
+
+    // Allocate the interpreter and add it to the runtime state.
+    PyInterpreterState *old_head = interpreters->head;
+    if (old_head == NULL) {
+        // We are creating the main interpreter.
+        assert(interpreters->main == NULL);
+        assert(id == 0);
+
+        interp = PyMem_RawCalloc(1, sizeof(PyInterpreterState));
+        if (interp == NULL) {
+            goto error;
+        }
+        assert(interp->id == 0);
+        assert(interp->next == NULL);
+
+        interpreters->main = interp;
+    }
+    else {
+        assert(id != 0);
+        assert(interpreters->main != NULL);
+
+        interp = PyMem_RawCalloc(1, sizeof(PyInterpreterState));
+        if (interp == NULL) {
+            goto error;
+        }
+
+        if (id < 0) {
+            /* overflow or Py_Initialize() not called yet! */
+            if (tstate != NULL) {
+                _PyErr_SetString(tstate, PyExc_RuntimeError,
+                                 "failed to get an interpreter ID");
+            }
+            goto error;
+        }
+    }
+    interpreters->head = interp;
+
+    init_interpreter(interp, runtime, id, old_head, pending_lock);
+
+    HEAD_UNLOCK(runtime);
+    return interp;
+
+error:
+    HEAD_UNLOCK(runtime);
+
+    PyThread_free_lock(pending_lock);
+    if (interp != NULL) {
+        PyMem_RawFree(interp);
+    }
     return NULL;
 }
 
