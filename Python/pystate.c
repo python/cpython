@@ -687,6 +687,14 @@ _PyThreadState_Prealloc(PyInterpreterState *interp)
     return new_threadstate(interp);
 }
 
+// We keep this around for (accidental) stable ABI compatibility.
+// Realisically, no extensions are using it.
+void
+_PyThreadState_Init(PyThreadState *tstate)
+{
+    Py_FatalError("_PyThreadState_Init() is for internal use only");
+}
+
 void
 _PyThreadState_SetCurrent(PyThreadState *tstate)
 {
