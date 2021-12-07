@@ -1037,9 +1037,6 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
         cmdline = [scriptfile]
         if self.is_python(scriptfile):
             interp = sys.executable
-            if interp.lower().endswith("w.exe"):
-                # On Windows, use python.exe, not pythonw.exe
-                interp = interp[:-5] + interp[-4:]
             cmdline = [interp, '-u'] + cmdline
         if '=' not in query:
             cmdline.append(query)
