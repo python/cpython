@@ -168,6 +168,15 @@ _PyObject_IS_GC(PyObject *obj)
 // Fast inlined version of PyType_IS_GC()
 #define _PyType_IS_GC(t) _PyType_HasFeature((t), Py_TPFLAGS_HAVE_GC)
 
+static inline size_t
+_PyType_PreHeaderSize(PyTypeObject *tp)
+{
+    return _PyType_IS_GC(tp) * sizeof(PyGC_Head) +
+        _PyType_HasFeature(tp, Py_TPFLAGS_MANAGED_DICT) * 2 * sizeof(PyObject *);
+}
+
+void _PyObject_GC_Link(PyObject *op);
+
 // Usage: assert(_Py_CheckSlotResult(obj, "__getitem__", result != NULL));
 extern int _Py_CheckSlotResult(
     PyObject *obj,
@@ -185,7 +194,19 @@ extern int _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
                                           PyObject *name, PyObject *value);
 PyObject * _PyObject_GetInstanceAttribute(PyObject *obj, PyDictValues *values,
                                         PyObject *name);
-PyDictValues ** _PyObject_ValuesPointer(PyObject *);
+
+static inline PyDictValues **_PyObject_ValuesPointer(PyObject *obj)
+{
+    assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+    return ((PyDictValues **)obj)-4;
+}
+
+static inline PyObject **_PyObject_ManagedDictPointer(PyObject *obj)
+{
+    assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+    return ((PyObject **)obj)-3;
+}
+
 PyObject ** _PyObject_DictPointer(PyObject *);
 int _PyObject_VisitInstanceAttributes(PyObject *self, visitproc visit, void *arg);
 void _PyObject_ClearInstanceAttributes(PyObject *self);
