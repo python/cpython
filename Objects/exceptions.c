@@ -3484,7 +3484,6 @@ _PyErr_TrySetFromCause(const char *format, ...)
     PyObject* msg_prefix;
     PyObject *exc, *val, *tb;
     PyTypeObject *caught_type;
-    PyObject **dictptr;
     PyObject *instance_args;
     Py_ssize_t num_args, caught_type_size, base_exc_size;
     PyObject *new_exc, *new_val, *new_tb;
@@ -3530,9 +3529,7 @@ _PyErr_TrySetFromCause(const char *format, ...)
     }
 
     /* Ensure the instance dict is also empty */
-    dictptr = _PyObject_GetDictPtr(val);
-    if (dictptr != NULL && *dictptr != NULL &&
-        PyDict_GET_SIZE(*dictptr) > 0) {
+    if (!_PyObject_IsInstanceDictEmpty(val)) {
         /* While we could potentially copy a non-empty instance dictionary
          * to the replacement exception, for now we take the more
          * conservative path of leaving exceptions with attributes set
