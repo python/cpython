@@ -1460,12 +1460,12 @@ class TestTemporaryDirectory(BaseTestCase):
                 temp_path.exists(),
                 f"TemporaryDirectory {temp_path!s} exists after cleanup")
 
-    @unittest.skipUnless(os.name == "nt", "Only on Windows.")
     def test_explicit_cleanup_correct_error(self):
         with tempfile.TemporaryDirectory() as working_dir:
             temp_dir = self.do_create(dir=working_dir)
             with open(os.path.join(temp_dir.name, "example.txt"), 'wb'):
-                # Used to raise NotADirectoryError on Windows. See bpo-43153.
+                # Previously raised NotADirectoryError on some OSes
+                # (e.g. WIndows). See bpo-43153.
                 with self.assertRaises(PermissionError):
                     temp_dir.cleanup()
 
