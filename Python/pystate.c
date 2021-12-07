@@ -634,7 +634,7 @@ static PyThreadState *
 new_threadstate(PyInterpreterState *interp, int init)
 {
     _PyRuntimeState *runtime = interp->runtime;
-    PyThreadState *tstate = (PyThreadState *)PyMem_RawMalloc(sizeof(PyThreadState));
+    PyThreadState *tstate = (PyThreadState *)PyMem_RawCalloc(1, sizeof(PyThreadState));
     if (tstate == NULL) {
         return NULL;
     }
@@ -643,49 +643,16 @@ new_threadstate(PyInterpreterState *interp, int init)
 
     tstate->recursion_limit = interp->ceval.recursion_limit;
     tstate->recursion_remaining = interp->ceval.recursion_limit;
-    tstate->recursion_headroom = 0;
-    tstate->tracing = 0;
-    tstate->root_cframe.use_tracing = 0;
-    tstate->root_cframe.current_frame = NULL;
     tstate->cframe = &tstate->root_cframe;
-    tstate->gilstate_counter = 0;
-    tstate->async_exc = NULL;
     tstate->thread_id = PyThread_get_thread_ident();
 #ifdef PY_HAVE_THREAD_NATIVE_ID
     tstate->native_thread_id = PyThread_get_thread_native_id();
-#else
-    tstate->native_thread_id = 0;
 #endif
 
-    tstate->dict = NULL;
-
-    tstate->curexc_type = NULL;
-    tstate->curexc_value = NULL;
-    tstate->curexc_traceback = NULL;
-
-    tstate->exc_state.exc_type = NULL;
-    tstate->exc_state.exc_value = NULL;
-    tstate->exc_state.exc_traceback = NULL;
-    tstate->exc_state.previous_item = NULL;
     tstate->exc_info = &tstate->exc_state;
 
-    tstate->c_profilefunc = NULL;
-    tstate->c_tracefunc = NULL;
-    tstate->c_profileobj = NULL;
-    tstate->c_traceobj = NULL;
-
-    tstate->trash_delete_nesting = 0;
-    tstate->trash_delete_later = NULL;
-    tstate->on_delete = NULL;
-    tstate->on_delete_data = NULL;
-
-    tstate->coroutine_origin_tracking_depth = 0;
-
-    tstate->async_gen_firstiter = NULL;
-    tstate->async_gen_finalizer = NULL;
-
-    tstate->context = NULL;
     tstate->context_ver = 1;
+
     tstate->datastack_chunk = allocate_chunk(DATA_STACK_CHUNK_SIZE, NULL);
     if (tstate->datastack_chunk == NULL) {
         PyMem_RawFree(tstate);
@@ -694,8 +661,6 @@ new_threadstate(PyInterpreterState *interp, int init)
     /* If top points to entry 0, then _PyThreadState_PopFrame will try to pop this chunk */
     tstate->datastack_top = &tstate->datastack_chunk->data[1];
     tstate->datastack_limit = (PyObject **)(((char *)tstate->datastack_chunk) + DATA_STACK_CHUNK_SIZE);
-    /* Mark trace_info as uninitialized */
-    tstate->trace_info.code = NULL;
 
     if (init) {
         _PyThreadState_Init(tstate);
@@ -703,7 +668,6 @@ new_threadstate(PyInterpreterState *interp, int init)
 
     HEAD_LOCK(runtime);
     tstate->id = ++interp->threads.next_unique_id;
-    tstate->prev = NULL;
     tstate->next = interp->threads.head;
     if (tstate->next)
         tstate->next->prev = tstate;
