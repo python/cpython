@@ -133,7 +133,7 @@ def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
 
     If ``check_circular`` is false, then the circular reference check
     for container types will be skipped and a circular reference will
-    result in an ``OverflowError`` (or worse).
+    result in an ``RecursionError`` (or worse).
 
     If ``allow_nan`` is false, then it will be a ``ValueError`` to
     serialize out of range ``float`` values (``nan``, ``inf``, ``-inf``)
@@ -195,7 +195,7 @@ def dumps(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True,
 
     If ``check_circular`` is false, then the circular reference check
     for container types will be skipped and a circular reference will
-    result in an ``OverflowError`` (or worse).
+    result in an ``RecursionError`` (or worse).
 
     If ``allow_nan`` is false, then it will be a ``ValueError`` to
     serialize out of range ``float`` values (``nan``, ``inf``, ``-inf``) in
