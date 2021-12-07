@@ -1,2 +1,2 @@
-The build-in :func:`compile` should raise a `SyntaxError` when it compile
+The build-in :func:`compile` should raise :exc:`SyntaxError` when it compile
 multiple statements in 'single' mode. Patch by Weipeng Hong.
