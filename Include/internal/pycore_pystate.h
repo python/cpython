@@ -127,8 +127,7 @@ static inline PyInterpreterState* _PyInterpreterState_GET(void) {
 
 // PyThreadState functions
 
-PyAPI_FUNC(void) _PyThreadState_Init(
-    PyThreadState *tstate);
+PyAPI_FUNC(void) _PyThreadState_SetCurrent(PyThreadState *tstate);
 PyAPI_FUNC(void) _PyThreadState_DeleteExcept(
     _PyRuntimeState *runtime,
     PyThreadState *tstate);
