@@ -1170,7 +1170,7 @@ All of the following opcodes use their arguments.
 
 .. opcode:: GEN_START (kind)
 
-    Pops TOS. The ``kind``operand corresponds to the type of generator or
+    Pops TOS. The ``kind`` operand corresponds to the type of generator or
     coroutine. The legal kinds are 0 for generator, 1 for coroutine,
     and 2 for async generator.
 
