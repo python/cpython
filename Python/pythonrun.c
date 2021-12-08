@@ -960,84 +960,84 @@ print_exception_message(struct exception_print_context *ctx,
 {
     PyObject *f = ctx->file;
 
-    PyObject *modulename = NULL;
-    PyObject *qualname = NULL;
-    PyObject *s = NULL;
-
     _Py_IDENTIFIER(__module__);
 
     assert(PyExceptionClass_Check(type));
 
     if (write_indented_margin(ctx, f) < 0) {
-        goto error;
+        return -1;
     }
-    modulename = _PyObject_GetAttrId(type, &PyId___module__);
+    PyObject *modulename = _PyObject_GetAttrId(type, &PyId___module__);
     if (modulename == NULL || !PyUnicode_Check(modulename)) {
-        Py_CLEAR(modulename);
+        Py_XDECREF(modulename);
         PyErr_Clear();
         if (PyFile_WriteString("<unknown>.", f) < 0) {
-            goto error;
+            return -1;
         }
     }
     else {
         if (!_PyUnicode_EqualToASCIIId(modulename, &PyId_builtins) &&
             !_PyUnicode_EqualToASCIIId(modulename, &PyId___main__))
         {
-            if (PyFile_WriteObject(modulename, f, Py_PRINT_RAW)) {
-                goto error;
+            int res = PyFile_WriteObject(modulename, f, Py_PRINT_RAW);
+            Py_DECREF(modulename);
+            if (res < 0) {
+                return -1;
             }
             if (PyFile_WriteString(".", f) < 0) {
-                goto error;
-            }
-        }
-        Py_CLEAR(modulename);
-    }
-
-    qualname = PyType_GetQualName((PyTypeObject *)type);
-    if (qualname == NULL || !PyUnicode_Check(qualname)) {
-        Py_CLEAR(qualname);
-        PyErr_Clear();
-        if (PyFile_WriteString("<unknown>", f) < 0) {
-            goto error;
-        }
-    }
-    else {
-        if (PyFile_WriteObject(qualname, f, Py_PRINT_RAW) < 0) {
-            goto error;
-        }
-        Py_CLEAR(qualname);
-    }
-
-    if (value != Py_None) {
-        s = PyObject_Str(value);
-        /* only print colon if the str() of the
-           object is not the empty string
-        */
-        if (s == NULL) {
-            PyErr_Clear();
-            if (PyFile_WriteString(": <exception str() failed>", f) < 0) {
-                goto error;
+                return -1;
             }
         }
         else {
-            if (!PyUnicode_Check(s) || PyUnicode_GetLength(s) != 0) {
-                if (PyFile_WriteString(": ", f) < 0) {
-                    goto error;
-                }
-            }
-            if (PyFile_WriteObject(s, f, Py_PRINT_RAW) < 0) {
-                goto error;
+            Py_DECREF(modulename);
+        }
+    }
+
+    PyObject *qualname = PyType_GetQualName((PyTypeObject *)type);
+    if (qualname == NULL || !PyUnicode_Check(qualname)) {
+        Py_XDECREF(qualname);
+        PyErr_Clear();
+        if (PyFile_WriteString("<unknown>", f) < 0) {
+            return -1;
+        }
+    }
+    else {
+        int res = PyFile_WriteObject(qualname, f, Py_PRINT_RAW);
+        Py_DECREF(qualname);
+        if (res < 0) {
+            return -1;
+        }
+    }
+
+    if (Py_IsNone(value)) {
+        return 0;
+    }
+
+    PyObject *s = PyObject_Str(value);
+    if (s == NULL) {
+        PyErr_Clear();
+        if (PyFile_WriteString(": <exception str() failed>", f) < 0) {
+            return -1;
+        }
+    }
+    else {
+        /* only print colon if the str() of the
+           object is not the empty string
+        */
+        if (!PyUnicode_Check(s) || PyUnicode_GetLength(s) != 0) {
+            if (PyFile_WriteString(": ", f) < 0) {
+                Py_DECREF(s);
+                return -1;
             }
         }
-        Py_CLEAR(s);
+        int res = PyFile_WriteObject(s, f, Py_PRINT_RAW);
+        Py_DECREF(s);
+        if (res < 0) {
+            return -1;
+        }
     }
 
     return 0;
-error:
-    Py_XDECREF(modulename);
-    Py_XDECREF(qualname);
-    Py_XDECREF(s);
-    return -1;
 }
 
 static void
