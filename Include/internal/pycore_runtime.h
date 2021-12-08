@@ -8,10 +8,11 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_atomic.h"    /* _Py_atomic_address */
-#include "pycore_gil.h"       // struct _gil_runtime_state
-#include "pycore_long_state.h"  // struct _Py_long_state
-#include "pycore_unicodeobject.h"  // struct _Py_unicode_runtime_ids
+#include "pycore_atomic.h"          /* _Py_atomic_address */
+#include "pycore_gil.h"             // struct _gil_runtime_state
+#include "pycore_global_objects.h"  // struct _Py_global_objects
+#include "pycore_long_state.h"      // struct _Py_long_state
+#include "pycore_unicodeobject.h"   // struct _Py_unicode_runtime_ids
 
 /* ceval state */
 
@@ -103,6 +104,8 @@ typedef struct pyruntimestate {
 
     struct _Py_long_state int_state;
 
+    struct _Py_global_objects global_objects;
+
 #define NEXITFUNCS 32
     void (*exitfuncs[NEXITFUNCS])(void);
     int nexitfuncs;
@@ -125,7 +128,7 @@ typedef struct pyruntimestate {
 
 #define _PyRuntimeState_INIT \
     { \
-        ._initialized = 0, \
+        .global_objects = _Py_global_objects_INIT, \
     }
 /* Note: _PyRuntimeState_INIT sets other fields to 0/NULL */
 
