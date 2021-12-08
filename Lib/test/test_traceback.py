@@ -1224,6 +1224,22 @@ class BaseExceptionReportingTests:
                 exp = "\n".join(expected)
                 self.assertEqual(exp, err)
 
+    def test_exception_with_note(self):
+        e = ValueError(42)
+        vanilla = self.get_report(e)
+
+        e.__note__ = 'My Note'
+        self.assertEqual(self.get_report(e), vanilla + 'My Note\n')
+
+        e.__note__ = ''
+        self.assertEqual(self.get_report(e), vanilla + '\n')
+
+        e.__note__ = 'Your Note'
+        self.assertEqual(self.get_report(e), vanilla + 'Your Note\n')
+
+        e.__note__ = None
+        self.assertEqual(self.get_report(e), vanilla)
+
     def test_exception_qualname(self):
         class A:
             class B:
@@ -1562,6 +1578,59 @@ class BaseExceptionReportingTests:
                     '    +---------------- 3 ----------------\n'
                     '    | ValueError: -999\n'
                     '    +------------------------------------\n')
+
+        report = self.get_report(exc)
+        self.assertEqual(report, expected)
+
+    def test_exception_group_with_notes(self):
+        def exc():
+            try:
+                excs = []
+                for msg in ['bad value', 'terrible value']:
+                    try:
+                        raise ValueError(msg)
+                    except ValueError as e:
+                        e.__note__ = f'the {msg}'
+                        excs.append(e)
+                raise ExceptionGroup("nested", excs)
+            except ExceptionGroup as e:
+                e.__note__ = ('>> Multi line note\n'
+                              '>> Because I am such\n'
+                              '>> an important exception.\n'
+                              '>> empty lines work too\n'
+                              '\n'
+                              '(that was an empty line)')
+                raise
+
+        expected = (f'  + Exception Group Traceback (most recent call last):\n'
+                    f'  |   File "{__file__}", line {self.callable_line}, in get_exception\n'
+                    f'  |     exception_or_callable()\n'
+                    f'  |     ^^^^^^^^^^^^^^^^^^^^^^^\n'
+                    f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 9}, in exc\n'
+                    f'  |     raise ExceptionGroup("nested", excs)\n'
+                    f'  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
+                    f'  | ExceptionGroup: nested\n'
+                    f'  | >> Multi line note\n'
+                    f'  | >> Because I am such\n'
+                    f'  | >> an important exception.\n'
+                    f'  | >> empty lines work too\n'
+                    f'  | \n'
+                    f'  | (that was an empty line)\n'
+                    f'  +-+---------------- 1 ----------------\n'
+                    f'    | Traceback (most recent call last):\n'
+                    f'    |   File "{__file__}", line {exc.__code__.co_firstlineno + 5}, in exc\n'
+                    f'    |     raise ValueError(msg)\n'
+                    f'    |     ^^^^^^^^^^^^^^^^^^^^^\n'
+                    f'    | ValueError: bad value\n'
+                    f'    | the bad value\n'
+                    f'    +---------------- 2 ----------------\n'
+                    f'    | Traceback (most recent call last):\n'
+                    f'    |   File "{__file__}", line {exc.__code__.co_firstlineno + 5}, in exc\n'
+                    f'    |     raise ValueError(msg)\n'
+                    f'    |     ^^^^^^^^^^^^^^^^^^^^^\n'
+                    f'    | ValueError: terrible value\n'
+                    f'    | the terrible value\n'
+                    f'    +------------------------------------\n')
 
         report = self.get_report(exc)
         self.assertEqual(report, expected)

@@ -19,6 +19,11 @@ enum _framestate {
 
 typedef signed char PyFrameState;
 
+/*
+    frame->f_lasti refers to the index of the last instruction,
+    unless it's -1 in which case next_instr should be first_instr.
+*/
+
 typedef struct _interpreter_frame {
     PyFunctionObject *f_func; /* Strong reference */
     PyObject *f_globals; /* Borrowed reference */
@@ -69,7 +74,7 @@ static inline void _PyFrame_StackPush(InterpreterFrame *f, PyObject *value) {
 
 #define FRAME_SPECIALS_SIZE ((sizeof(InterpreterFrame)-1)/sizeof(PyObject *))
 
-InterpreterFrame *_PyFrame_Copy(InterpreterFrame *frame);
+void _PyFrame_Copy(InterpreterFrame *src, InterpreterFrame *dest);
 
 static inline void
 _PyFrame_InitializeSpecials(
