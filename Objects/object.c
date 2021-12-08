@@ -1862,8 +1862,6 @@ _PyTypes_InitTypes(PyInterpreterState *interp)
     INIT_TYPE(PyBool_Type);
     INIT_TYPE(PyByteArrayIter_Type);
     INIT_TYPE(PyByteArray_Type);
-    INIT_TYPE(PyBytesIter_Type);
-    INIT_TYPE(PyBytes_Type);
     INIT_TYPE(PyCFunction_Type);
     INIT_TYPE(PyCMethod_Type);
     INIT_TYPE(PyCallIter_Type);

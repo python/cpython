@@ -2,6 +2,7 @@
 
 #include "Python.h"
 
+#include "pycore_bytesobject.h"   // _PyBytes_InitTypes()
 #include "pycore_ceval.h"         // _PyEval_FiniGIL()
 #include "pycore_context.h"       // _PyContext_Init()
 #include "pycore_fileutils.h"     // _Py_ResetForceASCII()
@@ -672,7 +673,7 @@ pycore_init_global_objects(PyInterpreterState *interp)
 
     _PyFloat_InitState(interp);
 
-    status = _PyBytes_Init(interp);
+    status = _PyBytes_InitGlobalObjects(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -710,6 +711,11 @@ pycore_init_types(PyInterpreterState *interp)
     }
 
     status = _PyTypes_InitTypes(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = _PyBytes_InitTypes(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
