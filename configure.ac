@@ -2961,8 +2961,6 @@ AS_VAR_IF([have_uuid], [missing], [
       AC_DEFINE([HAVE_UUID_H], [1])
       AC_DEFINE([HAVE_UUID_GENERATE_TIME_SAFE], [1])
     ], [
-      LIBUUID_CFLAGS=${LIBUUID_CFLAGS:-""}
-      LIBUUID_LIBS=${LIBUUID_LIBS:-"-luuid"}
       AC_CHECK_HEADERS([uuid/uuid.h], [
         WITH_SAVE_ENV(
           [AC_CHECK_LIB([uuid], [uuid_generate_time], [have_uuid=yes])
@@ -2972,6 +2970,10 @@ AS_VAR_IF([have_uuid], [missing], [
             have_uuid=yes
             AC_DEFINE([HAVE_UUID_GENERATE_TIME_SAFE], [1])
           ])
+        ])
+        AS_VAR_IF([have_uuid], [yes], [
+          LIBUUID_CFLAGS=${LIBUUID_CFLAGS:-""}
+          LIBUUID_LIBS=${LIBUUID_LIBS:-"-luuid"}
         ])
       ])
     ]

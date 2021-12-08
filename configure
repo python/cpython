@@ -10612,8 +10612,6 @@ fi
 	echo "$LIBUUID_PKG_ERRORS" >&5
 
 
-      LIBUUID_CFLAGS=${LIBUUID_CFLAGS:-""}
-      LIBUUID_LIBS=${LIBUUID_LIBS:-"-luuid"}
       for ac_header in uuid/uuid.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "uuid/uuid.h" "ac_cv_header_uuid_uuid_h" "$ac_includes_default"
@@ -10731,6 +10729,12 @@ LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
 
 
+        if test "x$have_uuid" = xyes; then :
+
+          LIBUUID_CFLAGS=${LIBUUID_CFLAGS:-""}
+          LIBUUID_LIBS=${LIBUUID_LIBS:-"-luuid"}
+
+fi
 
 fi
 
@@ -10742,8 +10746,6 @@ elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
-      LIBUUID_CFLAGS=${LIBUUID_CFLAGS:-""}
-      LIBUUID_LIBS=${LIBUUID_LIBS:-"-luuid"}
       for ac_header in uuid/uuid.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "uuid/uuid.h" "ac_cv_header_uuid_uuid_h" "$ac_includes_default"
@@ -10861,6 +10863,12 @@ LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
 
 
+        if test "x$have_uuid" = xyes; then :
+
+          LIBUUID_CFLAGS=${LIBUUID_CFLAGS:-""}
+          LIBUUID_LIBS=${LIBUUID_LIBS:-"-luuid"}
+
+fi
 
 fi
 
