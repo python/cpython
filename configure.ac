@@ -3304,7 +3304,7 @@ PKG_CHECK_MODULES([LIBNSL], [libnsl], [have_nis=yes], [
     ["none required"], [libnsl=""],
     [libnsl="$ac_cv_search_yp_match"]
   )
-  LIBNSL_LIBS=${LIBNSL_LIBS:-$libnsl}
+  LIBNSL_LIBS=${LIBNSL_LIBS-$libnsl}
 ])
 
 AS_VAR_IF([have_nis], [yes], [
@@ -4310,7 +4310,7 @@ PKG_CHECK_MODULES([LIBCRYPT], [libxcrypt >= 3.1.1], [
       else
         libcrypt="$ac_cv_search_crypt_r"
       fi
-      LIBCRYPT_LIBS=${LIBCRYPT_LIBS:-$libcrypt}
+      LIBCRYPT_LIBS=${LIBCRYPT_LIBS-$libcrypt}
     ])
   ])
 ])

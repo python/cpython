@@ -11689,7 +11689,7 @@ LIBS=$save_LIBS
     libnsl="$ac_cv_search_yp_match"
    ;;
 esac
-  LIBNSL_LIBS=${LIBNSL_LIBS:-$libnsl}
+  LIBNSL_LIBS=${LIBNSL_LIBS-$libnsl}
 
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
@@ -11776,7 +11776,7 @@ LIBS=$save_LIBS
     libnsl="$ac_cv_search_yp_match"
    ;;
 esac
-  LIBNSL_LIBS=${LIBNSL_LIBS:-$libnsl}
+  LIBNSL_LIBS=${LIBNSL_LIBS-$libnsl}
 
 else
 	LIBNSL_CFLAGS=$pkg_cv_LIBNSL_CFLAGS
@@ -15854,7 +15854,7 @@ if test "$ac_res" != no; then :
       else
         libcrypt="$ac_cv_search_crypt_r"
       fi
-      LIBCRYPT_LIBS=${LIBCRYPT_LIBS:-$libcrypt}
+      LIBCRYPT_LIBS=${LIBCRYPT_LIBS-$libcrypt}
 
 fi
 
@@ -15937,7 +15937,7 @@ if test "$ac_res" != no; then :
       else
         libcrypt="$ac_cv_search_crypt_r"
       fi
-      LIBCRYPT_LIBS=${LIBCRYPT_LIBS:-$libcrypt}
+      LIBCRYPT_LIBS=${LIBCRYPT_LIBS-$libcrypt}
 
 fi
 
