@@ -609,9 +609,6 @@ _PyErr_ChainExceptions(PyObject *typ, PyObject *val, PyObject *tb)
 
 /* Set the currently set exception's context to the given exception.
 
-   If the provided exc_info is NULL, then the current Python thread state's
-   exc_info will be used for the context instead.
-
    This function can only be called when _PyErr_Occurred() is true.
    Also, this function won't create any cycles in the exception context
    chain to the extent that _PyErr_SetObject ensures this. */
@@ -620,29 +617,16 @@ _PyErr_ChainStackItem(_PyErr_StackItem *exc_info)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     assert(_PyErr_Occurred(tstate));
-
-    int exc_info_given;
-    if (exc_info == NULL) {
-        exc_info_given = 0;
-        exc_info = tstate->exc_info;
-    } else {
-        exc_info_given = 1;
-    }
-
-    assert( (exc_info->exc_type == NULL || exc_info->exc_type == Py_None) ==
-            (exc_info->exc_value == NULL || exc_info->exc_value == Py_None) );
+    assert(exc_info);
 
     if (exc_info->exc_value == NULL || exc_info->exc_value == Py_None) {
         return;
     }
 
-    _PyErr_StackItem *saved_exc_info;
-    if (exc_info_given) {
-        /* Temporarily set the thread state's exc_info since this is what
-           _PyErr_SetObject uses for implicit exception chaining. */
-        saved_exc_info = tstate->exc_info;
-        tstate->exc_info = exc_info;
-    }
+    /* Temporarily set the thread state's exc_info since this is what
+       _PyErr_SetObject uses for implicit exception chaining. */
+    _PyErr_StackItem *saved_exc_info = tstate->exc_info;
+    tstate->exc_info = exc_info;
 
     PyObject *typ, *val, *tb;
     _PyErr_Fetch(tstate, &typ, &val, &tb);
@@ -653,9 +637,7 @@ _PyErr_ChainStackItem(_PyErr_StackItem *exc_info)
     Py_XDECREF(val);
     Py_XDECREF(tb);
 
-    if (exc_info_given) {
-        tstate->exc_info = saved_exc_info;
-    }
+    tstate->exc_info = saved_exc_info;
 }
 
 static PyObject *
