@@ -699,7 +699,6 @@ static PyStatus
 pycore_init_types(PyInterpreterState *interp)
 {
     PyStatus status;
-    int is_main_interp = _Py_IsMainInterpreter(interp);
 
     status = _PyStructSequence_InitState(interp);
     if (_PyStatus_EXCEPTION(status)) {
@@ -751,10 +750,9 @@ pycore_init_types(PyInterpreterState *interp)
         return status;
     }
 
-    if (is_main_interp) {
-        if (!_PyContext_Init()) {
-            return _PyStatus_ERR("can't init context");
-        }
+    status = _PyContext_InitTypes(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
 
     return _PyStatus_OK();

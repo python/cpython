@@ -7,6 +7,15 @@
 
 #include "pycore_hamt.h"   /* PyHamtObject */
 
+
+/* runtime lifecycle */
+
+PyStatus _PyContext_InitTypes(PyInterpreterState *);
+void _PyContext_Fini(PyInterpreterState *);
+
+
+/* other API */
+
 struct _pycontextobject {
     PyObject_HEAD
     PyContext *ctx_prev;
@@ -35,8 +44,5 @@ struct _pycontexttokenobject {
     int tok_used;
 };
 
-
-int _PyContext_Init(void);
-void _PyContext_Fini(PyInterpreterState *interp);
 
 #endif /* !Py_INTERNAL_CONTEXT_H */
