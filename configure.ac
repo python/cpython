@@ -2947,8 +2947,8 @@ dnl stream in big-endian byte-order
 AC_CHECK_HEADERS([uuid.h], [
   AC_CHECK_FUNCS([uuid_create uuid_enc_be], [
     have_uuid=yes
-    LIBUUID_CFLAGS=${LIBUUID_CFLAGS:-""}
-    LIBUUID_LIBS=${LIBUUID_LIBS:-""}
+    LIBUUID_CFLAGS=${LIBUUID_CFLAGS-""}
+    LIBUUID_LIBS=${LIBUUID_LIBS-""}
   ])
 ])
 
@@ -2972,8 +2972,8 @@ AS_VAR_IF([have_uuid], [missing], [
           ])
         ])
         AS_VAR_IF([have_uuid], [yes], [
-          LIBUUID_CFLAGS=${LIBUUID_CFLAGS:-""}
-          LIBUUID_LIBS=${LIBUUID_LIBS:-"-luuid"}
+          LIBUUID_CFLAGS=${LIBUUID_CFLAGS-""}
+          LIBUUID_LIBS=${LIBUUID_LIBS-"-luuid"}
         ])
       ])
     ]
@@ -2985,8 +2985,8 @@ AS_VAR_IF([have_uuid], [missing], [
   AC_CHECK_HEADERS([uuid/uuid.h], [
     AC_CHECK_FUNC([uuid_generate_time], [
       have_uuid=yes
-      LIBUUID_CFLAGS=${LIBUUID_CFLAGS:-""}
-      LIBUUID_LIBS=${LIBUUID_LIBS:-""}
+      LIBUUID_CFLAGS=${LIBUUID_CFLAGS-""}
+      LIBUUID_LIBS=${LIBUUID_LIBS-""}
     ])
   ])
 ])
@@ -3149,8 +3149,8 @@ AC_ARG_WITH(system_expat,
 AC_MSG_RESULT($with_system_expat)
 
 AS_VAR_IF([with_system_expat], [yes], [
-  LIBEXPAT_CFLAGS=${LIBEXPAT_CFLAGS:-""}
-  LIBEXPAT_LDFLAGS=${LIBEXPAT_LDFLAGS:-"-lexpat"}
+  LIBEXPAT_CFLAGS=${LIBEXPAT_CFLAGS-""}
+  LIBEXPAT_LDFLAGS=${LIBEXPAT_LDFLAGS-"-lexpat"}
   LIBEXPAT_INTERNAL=
 ], [
   LIBEXPAT_CFLAGS="-I\$(srcdir)/Modules/expat"
@@ -3205,8 +3205,8 @@ AC_ARG_WITH(system_libmpdec,
 AC_MSG_RESULT($with_system_libmpdec)
 
 AS_VAR_IF([with_system_libmpdec], [yes], [
-  LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS:-""}
-  LIBMPDEC_LDFLAGS=${LIBMPDEC_LDFLAGS:-"-lmpdec"}
+  LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
+  LIBMPDEC_LDFLAGS=${LIBMPDEC_LDFLAGS-"-lmpdec"}
   LIBMPDEC_INTERNAL=
 ], [
   LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
@@ -3295,7 +3295,7 @@ fi
 dnl check for NIS / libnsl dependencies
 dnl libnsl dependencies include tirpc includes and lib
 PKG_CHECK_MODULES([LIBNSL], [libnsl], [have_nis=yes], [
-  LIBNSL_CFLAGS=${LIBNSL_CFLAGS:-""}
+  LIBNSL_CFLAGS=${LIBNSL_CFLAGS-""}
   WITH_SAVE_ENV([
     AC_SEARCH_LIBS([yp_match], [nsl], [have_nis=yes], [have_nis=no])
   ])
@@ -3317,8 +3317,8 @@ AS_VAR_IF([have_nis], [yes], [
 dnl Check for SQLite library. Use pkg-config if available.
 PKG_CHECK_MODULES(
   [LIBSQLITE3], [sqlite3 >= 3.7.15], [], [
-    LIBSQLITE3_CFLAGS=${LIBSQLITE3_CFLAGS:-""}
-    LIBSQLITE3_LIBS=${LIBSQLITE3_LIBS:-"-lsqlite3"}
+    LIBSQLITE3_CFLAGS=${LIBSQLITE3_CFLAGS-""}
+    LIBSQLITE3_LIBS=${LIBSQLITE3_LIBS-"-lsqlite3"}
   ]
 )
 AS_VAR_APPEND([LIBSQLITE3_CFLAGS], [' -I$(srcdir)/Modules/_sqlite'])
@@ -3405,7 +3405,7 @@ WITH_SAVE_ENV([
   AC_CHECK_HEADERS([gdbm.h], [
     AC_CHECK_LIB([gdbm], [gdbm_open], [
       have_gdbm=yes
-      GDBM_LIBS=${GDBM_LIBS:-"-lgdbm"}
+      GDBM_LIBS=${GDBM_LIBS-"-lgdbm"}
     ], [have_gdbm=no])
   ], [have_gdbm=no])
 ])
@@ -4199,8 +4199,8 @@ PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
     WITH_SAVE_ENV([
       AC_CHECK_LIB([z], [gzread], [
         have_zlib=yes
-        ZLIB_CFLAGS=${ZLIB_CFLAGS:-""}
-        ZLIB_LIBS=${ZLIB_LIBS:-"-lz"}
+        ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
+        ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
         AC_CHECK_LIB([z], [inflateCopy], [AC_DEFINE([HAVE_ZLIB_COPY], [1])])
       ], [
         have_zlib=no
@@ -4220,8 +4220,8 @@ PKG_CHECK_MODULES([BZIP2], [bzip2], [have_bzip2=yes], [
     WITH_SAVE_ENV([
       AC_CHECK_LIB([bz2], [BZ2_bzCompress], [
         have_bzip2=yes
-        BZIP2_CFLAGS=${BZIP2_CFLAGS:-""}
-        BZIP2_LIBS=${BZIP2_LIBS:-"-lbz2"}
+        BZIP2_CFLAGS=${BZIP2_CFLAGS-""}
+        BZIP2_LIBS=${BZIP2_LIBS-"-lbz2"}
       ], [have_bzip2=no])
     ])
   ], [have_bzip2=no])
@@ -4232,8 +4232,8 @@ PKG_CHECK_MODULES([LIBLZMA], [liblzma], [have_liblzma=yes], [
     WITH_SAVE_ENV([
       AC_CHECK_LIB([lzma], [lzma_easy_encoder], [
         have_liblzma=yes
-        LIBLZMA_CFLAGS=${LIBLZMA_CFLAGS:-""}
-        LIBLZMA_LIBS=${LIBLZMA_LIBS:-"-llzma"}
+        LIBLZMA_CFLAGS=${LIBLZMA_CFLAGS-""}
+        LIBLZMA_LIBS=${LIBLZMA_LIBS-"-llzma"}
       ], [have_liblzma=no])
     ])
   ], [have_liblzma=no])
