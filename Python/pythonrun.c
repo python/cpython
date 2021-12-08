@@ -915,7 +915,9 @@ print_exception_invalid_type(struct exception_print_context *ctx, PyObject *valu
     if (_Py_WriteIndent(EXC_INDENT(ctx), f) < 0) {
         return -1;
     }
-    if (PyFile_WriteString("TypeError: print_exception(): Exception expected for value, ", f) < 0) {
+    const char *const msg = "TypeError: print_exception(): Exception expected "
+                            "for value, ";
+    if (PyFile_WriteString(msg, f) < 0) {
         return -1;
     }
     if (PyFile_WriteString(Py_TYPE(value)->tp_name, f) < 0) {
