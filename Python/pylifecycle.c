@@ -659,7 +659,7 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
 
 
 static PyStatus
-pycore_init_singletons(PyInterpreterState *interp)
+pycore_init_global_objects(PyInterpreterState *interp)
 {
     PyStatus status;
 
@@ -799,7 +799,7 @@ pycore_interp_init(PyThreadState *tstate)
     // Create singletons before the first PyType_Ready() call, since
     // PyType_Ready() uses singletons like the Unicode empty string (tp_doc)
     // and the empty tuple singletons (tp_bases).
-    status = pycore_init_singletons(interp);
+    status = pycore_init_global_objects(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
