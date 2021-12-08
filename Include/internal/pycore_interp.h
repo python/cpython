@@ -240,7 +240,6 @@ struct _is {
     struct _is *next;
 
     struct pythreads {
-        int _preallocated_used;
         uint64_t next_unique_id;
         struct _ts *head;
         /* Used in Modules/_threadmodule.c. */
@@ -262,6 +261,11 @@ struct _is {
     int requires_idref;
     PyThread_type_lock id_mutex;
 
+    /* Has been initialized to a safe state.
+
+       In order to be effective, this must be set to 0 during or right
+       after allocation. */
+    int _initialized;
     int finalizing;
 
     struct _ceval_state ceval;
