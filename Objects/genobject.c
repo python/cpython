@@ -145,7 +145,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     PyObject *result;
 
     *presult = NULL;
-    if (frame->f_lasti < 0 && arg && arg != Py_None) {
+    if (f->f_lasti < 0 && arg && arg != Py_None) {
         const char *msg = "can't send non-None value to a "
                             "just-started generator";
         if (PyCoro_CheckExact(gen)) {
