@@ -67,6 +67,12 @@ struct _Py_unicode_runtime_ids {
 /* Full Python runtime state */
 
 typedef struct pyruntimestate {
+    /* Has been initialized to a safe state.
+
+       In order to be effective, this must be set to 0 during or right
+       after allocation. */
+    int _initialized;
+
     /* Is running Py_PreInitialize()? */
     int preinitializing;
 
@@ -136,8 +142,17 @@ typedef struct pyruntimestate {
 } _PyRuntimeState;
 
 #define _PyRuntimeState_INIT \
-    {.preinitialized = 0, .core_initialized = 0, .initialized = 0}
+    { \
+        ._initialized = 0, \
+    }
 /* Note: _PyRuntimeState_INIT sets other fields to 0/NULL */
+
+static inline void
+_PyRuntimeState_reset(_PyRuntimeState *runtime)
+{
+    /* Make it match _PyRuntimeState_INIT. */
+    memset(runtime, 0, sizeof(*runtime));
+}
 
 
 PyAPI_DATA(_PyRuntimeState) _PyRuntime;

@@ -238,7 +238,18 @@ struct type_cache {
 struct _is {
 
     struct _is *next;
-    struct _ts *tstate_head;
+
+    struct pythreads {
+        uint64_t next_unique_id;
+        struct _ts *head;
+        /* Used in Modules/_threadmodule.c. */
+        long count;
+        /* Support for runtime thread stack size tuning.
+           A value of 0 means using the platform's default stack size
+           or the size specified by the THREAD_STACK_SIZE macro. */
+        /* Used in Python/thread.c. */
+        size_t stacksize;
+    } threads;
 
     /* Reference to the _PyRuntime global variable. This field exists
        to not have to pass runtime in addition to tstate to a function.
@@ -250,6 +261,11 @@ struct _is {
     int requires_idref;
     PyThread_type_lock id_mutex;
 
+    /* Has been initialized to a safe state.
+
+       In order to be effective, this must be set to 0 during or right
+       after allocation. */
+    int _initialized;
     int finalizing;
 
     struct _ceval_state ceval;
@@ -267,14 +283,6 @@ struct _is {
     // override for config->use_frozen_modules (for tests)
     // (-1: "off", 1: "on", 0: no override)
     int override_frozen_modules;
-
-    /* Used in Modules/_threadmodule.c. */
-    long num_threads;
-    /* Support for runtime thread stack size tuning.
-       A value of 0 means using the platform's default stack size
-       or the size specified by the THREAD_STACK_SIZE macro. */
-    /* Used in Python/thread.c. */
-    size_t pythread_stacksize;
 
     PyObject *codec_search_path;
     PyObject *codec_search_cache;
@@ -301,8 +309,6 @@ struct _is {
     PyObject *after_forkers_parent;
     PyObject *after_forkers_child;
 #endif
-
-    uint64_t tstate_next_unique_id;
 
     struct _warnings_runtime_state warnings;
     struct atexit_state atexit;

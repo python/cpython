@@ -1953,7 +1953,7 @@ new_interpreter(PyThreadState **tstate_p, int isolated_subinterpreter)
 #endif
     {
         /* No current thread state, copy from the main interpreter */
-        PyInterpreterState *main_interp = PyInterpreterState_Main();
+        PyInterpreterState *main_interp = _PyInterpreterState_Main();
         config = _PyInterpreterState_GetConfig(main_interp);
     }
 
@@ -2043,7 +2043,7 @@ Py_EndInterpreter(PyThreadState *tstate)
 
     _PyAtExit_Call(tstate->interp);
 
-    if (tstate != interp->tstate_head || tstate->next != NULL) {
+    if (tstate != interp->threads.head || tstate->next != NULL) {
         Py_FatalError("not the last thread");
     }
 
