@@ -9,6 +9,15 @@ extern "C" {
 #endif
 
 
+#define _PY_NSMALLPOSINTS           257
+#define _PY_NSMALLNEGINTS           5
+
+// _PyLong_GetZero() and _PyLong_GetOne() must always be available
+#if _PY_NSMALLPOSINTS < 2
+#  error "_PY_NSMALLPOSINTS must be greater than 1"
+#endif
+
+
 // Only immutable objects should be considered runtime-global.
 // All others must be per-interpreter.
 
@@ -19,6 +28,12 @@ extern "C" {
 
 struct _Py_global_objects {
     struct {
+        /* Small integers are preallocated in this array so that they
+         * can be shared.
+         * The integers that are preallocated are those in the range
+         *-_PY_NSMALLNEGINTS (inclusive) to _PY_NSMALLPOSINTS (not inclusive).
+         */
+        PyLongObject small_ints[_PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS];
     } singletons;
 };
 
