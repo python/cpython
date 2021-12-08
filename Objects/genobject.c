@@ -145,6 +145,19 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     PyObject *result;
 
     *presult = NULL;
+    if (f != NULL && f->f_lasti < 0 && arg && arg != Py_None) {
+        const char *msg = "can't send non-None value to a "
+                            "just-started generator";
+        if (PyCoro_CheckExact(gen)) {
+            msg = NON_INIT_CORO_MSG;
+        }
+        else if (PyAsyncGen_CheckExact(gen)) {
+            msg = "can't send non-None value to a "
+                    "just-started async generator";
+        }
+        PyErr_SetString(PyExc_TypeError, msg);
+        return PYGEN_ERROR;
+    }
     if (f != NULL && _PyFrame_IsExecuting(f)) {
         const char *msg = "generator already executing";
         if (PyCoro_CheckExact(gen)) {
