@@ -631,7 +631,7 @@ allocate_chunk(int size_in_bytes, _PyStackChunk* previous)
 }
 
 static PyThreadState *
-new_threadstate(PyInterpreterState *interp, int init)
+new_threadstate(PyInterpreterState *interp)
 {
     _PyRuntimeState *runtime = interp->runtime;
     PyThreadState *tstate = (PyThreadState *)PyMem_RawCalloc(1, sizeof(PyThreadState));
@@ -662,10 +662,6 @@ new_threadstate(PyInterpreterState *interp, int init)
     tstate->datastack_top = &tstate->datastack_chunk->data[1];
     tstate->datastack_limit = (PyObject **)(((char *)tstate->datastack_chunk) + DATA_STACK_CHUNK_SIZE);
 
-    if (init) {
-        _PyThreadState_Init(tstate);
-    }
-
     HEAD_LOCK(runtime);
     tstate->id = ++interp->threads.next_unique_id;
     tstate->next = interp->threads.head;
@@ -680,17 +676,27 @@ new_threadstate(PyInterpreterState *interp, int init)
 PyThreadState *
 PyThreadState_New(PyInterpreterState *interp)
 {
-    return new_threadstate(interp, 1);
+    PyThreadState *tstate = new_threadstate(interp);
+    _PyThreadState_SetCurrent(tstate);
+    return tstate;
 }
 
 PyThreadState *
 _PyThreadState_Prealloc(PyInterpreterState *interp)
 {
-    return new_threadstate(interp, 0);
+    return new_threadstate(interp);
+}
+
+// We keep this around for (accidental) stable ABI compatibility.
+// Realisically, no extensions are using it.
+void
+_PyThreadState_Init(PyThreadState *tstate)
+{
+    Py_FatalError("_PyThreadState_Init() is for internal use only");
 }
 
 void
-_PyThreadState_Init(PyThreadState *tstate)
+_PyThreadState_SetCurrent(PyThreadState *tstate)
 {
     _PyGILState_NoteThreadState(&tstate->interp->runtime->gilstate, tstate);
 }
