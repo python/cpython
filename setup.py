@@ -761,7 +761,7 @@ class PyBuildExt(build_ext):
 
         tmpfile_sysroot = os.path.join(self.build_temp, 'sysroot')
         ret_sysroot = run_command(
-            '%s -print-sysroot > %s 2> /dev/null' % (cc, tmpfile_sysroot))
+            '%s -print-sysroot > %s 2> /dev/null' % (CC, tmpfile_sysroot))
 
         try:
             if ret_sysroot == 0:
