@@ -1,6 +1,0 @@
-The three values of ``exc_info`` are now always consistent with each other.
-In particular, the ``type`` and ``traceback`` fields are now derived from
-the exception instance. This impacts the return values of :func:`sys.exc_info`
-and :c:func:`PyErr_GetExcInfo()` if the exception instance is modified while
-the exception is handled, as well as :c:func:`PyErr_SetExcInfo()`, which now
-ignores the ``type`` and ``traceback`` arguments provided to it.
