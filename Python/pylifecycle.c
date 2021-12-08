@@ -13,6 +13,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pylifecycle.h"   // _PyErr_Print()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_structseq.h"     // _PyStructSequence_InitState()
 #include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
 #include "pycore_typeobject.h"    // _PyTypes_Init()
@@ -696,10 +697,9 @@ pycore_init_types(PyInterpreterState *interp)
     PyStatus status;
     int is_main_interp = _Py_IsMainInterpreter(interp);
 
-    if (is_main_interp) {
-        if (_PyStructSequence_Init() < 0) {
-            return _PyStatus_ERR("can't initialize structseq");
-        }
+    status = _PyStructSequence_InitState(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
 
     status = _PyTypes_InitState(interp);
