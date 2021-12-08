@@ -2196,14 +2196,16 @@ class CoroutineTest(unittest.TestCase):
         async def f():
             pass
         frame = f().cr_frame
-        frame.clear()
+        with self.assertWarns(RuntimeWarning):
+            frame.clear()
 
     def test_bpo_45813_2(self):
         'This would crash the interpreter in 3.11a2'
         async def f():
             pass
         gen = f()
-        gen.cr_frame.clear()
+        with self.assertWarns(RuntimeWarning):
+            gen.cr_frame.clear()
 
 
 class CoroAsyncIOCompatTest(unittest.TestCase):

@@ -613,6 +613,10 @@ static PyGetSetDef frame_getsetlist[] = {
 static void
 frame_dealloc(PyFrameObject *f)
 {
+    /* It is the responsibility of the owning generator/coroutine
+     * to have cleared the generator pointer */
+    assert(f->f_frame->generator == NULL);
+
     if (_PyObject_GC_IS_TRACKED(f)) {
         _PyObject_GC_UNTRACK(f);
     }
