@@ -8,6 +8,16 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+
+/* runtime lifecycle */
+
+extern void _PyFloat_InitState(PyInterpreterState *);
+extern PyStatus _PyFloat_InitTypes(PyInterpreterState *);
+extern void _PyFloat_Fini(PyInterpreterState *);
+
+
+/* other API */
+
 /* _PyFloat_{Pack,Unpack}{4,8}
  *
  * The struct and pickle (at least) modules need an efficient platform-

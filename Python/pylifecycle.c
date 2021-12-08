@@ -5,6 +5,7 @@
 #include "pycore_ceval.h"         // _PyEval_FiniGIL()
 #include "pycore_context.h"       // _PyContext_Init()
 #include "pycore_fileutils.h"     // _Py_ResetForceASCII()
+#include "pycore_floatobject.h"   // _PyFloat_InitTypes()
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_long.h"          // _PyLong_InitTypes()
@@ -669,9 +670,7 @@ pycore_init_global_objects(PyInterpreterState *interp)
 
     _PyLong_InitGlobalObjects(interp);
 
-    if (_Py_IsMainInterpreter(interp)) {
-        _PyFloat_Init();
-    }
+    _PyFloat_InitState(interp);
 
     status = _PyBytes_Init(interp);
     if (_PyStatus_EXCEPTION(status)) {
@@ -725,10 +724,9 @@ pycore_init_types(PyInterpreterState *interp)
         return status;
     }
 
-    if (is_main_interp) {
-        if (_PyFloat_InitTypes() < 0) {
-            return _PyStatus_ERR("can't init float");
-        }
+    status = _PyFloat_InitTypes(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
 
     status = _PyExc_Init(interp);

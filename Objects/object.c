@@ -1887,7 +1887,6 @@ _PyTypes_InitTypes(PyInterpreterState *interp)
     INIT_TYPE(PyDict_Type);
     INIT_TYPE(PyEllipsis_Type);
     INIT_TYPE(PyEnum_Type);
-    INIT_TYPE(PyFloat_Type);
     INIT_TYPE(PyFrame_Type);
     INIT_TYPE(PyFrozenSet_Type);
     INIT_TYPE(PyFunction_Type);
