@@ -891,8 +891,8 @@ All of the following opcodes use their arguments.
    the exception group representing TOS1. Jumps if no match is found.
 
    Pops one item from the stack. If a match was found, pops the 3 items representing
-   the exception and pushes the 3items representing the non-matching part of
-   the exception group, followed by the 3items representing the matching part.
+   the exception and pushes the 3 items representing the non-matching part of
+   the exception group, followed by the 3 items representing the matching part.
    In other words, in case of a match it pops 4 items and pushes 6.
 
    .. versionadded:: 3.11
