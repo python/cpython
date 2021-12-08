@@ -7,6 +7,7 @@
 #include "pycore_fileutils.h"     // _Py_ResetForceASCII()
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_long.h"          // _PyLong_InitTypes()
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
 #include "pycore_pathconfig.h"    // _PyConfig_WritePathConfig()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
@@ -664,7 +665,7 @@ pycore_init_global_objects(PyInterpreterState *interp)
 {
     PyStatus status;
 
-    _PyLong_Init(interp);
+    _PyLong_InitGlobalObjects(interp);
 
     if (_Py_IsMainInterpreter(interp)) {
         _PyFloat_Init();
@@ -711,10 +712,9 @@ pycore_init_types(PyInterpreterState *interp)
         return status;
     }
 
-    if (is_main_interp) {
-        if (_PyLong_InitTypes() < 0) {
-            return _PyStatus_ERR("can't init int type");
-        }
+    status = _PyLong_InitTypes(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
 
     if (is_main_interp) {
@@ -1665,7 +1665,6 @@ finalize_interp_types(PyInterpreterState *interp)
     _PyBytes_Fini(interp);
     _PyUnicode_Fini(interp);
     _PyFloat_Fini(interp);
-    _PyLong_Fini(interp);
 }
 
 

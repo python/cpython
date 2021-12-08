@@ -1898,7 +1898,6 @@ _PyTypes_InitTypes(PyInterpreterState *interp)
     INIT_TYPE(PyListRevIter_Type);
     INIT_TYPE(PyList_Type);
     INIT_TYPE(PyLongRangeIter_Type);
-    INIT_TYPE(PyLong_Type);
     INIT_TYPE(PyMemberDescr_Type);
     INIT_TYPE(PyMemoryView_Type);
     INIT_TYPE(PyMethodDescr_Type);

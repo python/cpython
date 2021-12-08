@@ -8,8 +8,16 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_interp.h"        // PyInterpreterState.small_ints
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+
+
+/* runtime lifecycle */
+
+extern void _PyLong_InitGlobalObjects(PyInterpreterState *);
+extern PyStatus _PyLong_InitTypes(PyInterpreterState *);
+
+
+/* other API */
 
 // Return a borrowed reference to the zero singleton.
 // The function cannot return NULL.

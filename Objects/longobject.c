@@ -4,10 +4,11 @@
 
 #include "Python.h"
 #include "pycore_bitutils.h"      // _Py_popcount32()
-#include "pycore_runtime.h"       // _PY_NSMALLPOSINTS
+#include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_long.h"          // _Py_SmallInts
 #include "pycore_object.h"        // _PyObject_InitVar()
 #include "pycore_pystate.h"       // _Py_IsMainInterpreter()
+#include "pycore_runtime.h"       // _PY_NSMALLPOSINTS
 
 #include <ctype.h>
 #include <float.h>
@@ -5828,8 +5829,11 @@ PyLong_GetInfo(void)
     return int_info;
 }
 
+
+/* runtime lifecycle */
+
 void
-_PyLong_Init(PyInterpreterState *interp)
+_PyLong_InitGlobalObjects(PyInterpreterState *interp)
 {
     if (_PyRuntime.small_ints[0].ob_base.ob_base.ob_refcnt == 0) {
         for (Py_ssize_t i=0; i < _PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS; i++) {
@@ -5843,16 +5847,25 @@ _PyLong_Init(PyInterpreterState *interp)
     }
 }
 
-int
-_PyLong_InitTypes(void)
+PyStatus
+_PyLong_InitTypes(PyInterpreterState *interp)
 {
+    if (!_Py_IsMainInterpreter(interp)) {
+        return _PyStatus_OK();
+    }
+
+    if (PyType_Ready(&PyLong_Type) < 0) {
+        return _PyStatus_ERR("Can't initialize int type");
+    }
+
     /* initialize int_info */
     if (Int_InfoType.tp_name == NULL) {
         if (PyStructSequence_InitType2(&Int_InfoType, &int_info_desc) < 0) {
-            return -1;
+            return _PyStatus_ERR("can't init int info type");
         }
     }
-    return 0;
+
+    return _PyStatus_OK();
 }
 
 void
