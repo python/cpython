@@ -647,26 +647,6 @@ _PyErr_ChainStackItem(_PyErr_StackItem *exc_info)
     PyObject *typ, *val, *tb;
     _PyErr_Fetch(tstate, &typ, &val, &tb);
 
-    PyObject *typ2, *val2, *tb2;
-    typ2 = exc_info->exc_type;
-    val2 = exc_info->exc_value;
-    tb2 = exc_info->exc_traceback;
-#ifdef Py_DEBUG
-    PyObject *typ2_before = typ2;
-    PyObject *val2_before = val2;
-    PyObject *tb2_before = tb2;
-#endif
-    _PyErr_NormalizeException(tstate, &typ2, &val2, &tb2);
-#ifdef Py_DEBUG
-    /* exc_info should already be normalized */
-    assert(typ2 == typ2_before);
-    assert(val2 == val2_before);
-    assert(tb2 == tb2_before);
-#endif
-    if (tb2 != NULL) {
-        PyException_SetTraceback(val2, tb2);
-    }
-
     /* _PyErr_SetObject sets the context from PyThreadState. */
     _PyErr_SetObject(tstate, typ, val);
     Py_DECREF(typ);  // since _PyErr_Occurred was true
