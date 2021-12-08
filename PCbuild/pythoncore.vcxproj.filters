@@ -468,6 +468,9 @@
     <ClInclude Include="..\Include\cpython\initconfig.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_unicodeobject.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_warnings.h">
       <Filter>Include\internal</Filter>
     </ClInclude>

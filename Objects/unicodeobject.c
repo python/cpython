@@ -15504,29 +15504,36 @@ PyTypeObject PyUnicode_Type = {
 
 /* Initialize the Unicode implementation */
 
+void
+_PyUnicode_InitState(PyInterpreterState *interp)
+{
+    if (!_Py_IsMainInterpreter(interp)) {
+        return;
+    }
+
+    /* initialize the linebreak bloom filter */
+    const Py_UCS2 linebreak[] = {
+        0x000A, /* LINE FEED */
+        0x000D, /* CARRIAGE RETURN */
+        0x001C, /* FILE SEPARATOR */
+        0x001D, /* GROUP SEPARATOR */
+        0x001E, /* RECORD SEPARATOR */
+        0x0085, /* NEXT LINE */
+        0x2028, /* LINE SEPARATOR */
+        0x2029, /* PARAGRAPH SEPARATOR */
+    };
+    bloom_linebreak = make_bloom_mask(
+        PyUnicode_2BYTE_KIND, linebreak,
+        Py_ARRAY_LENGTH(linebreak));
+}
+
+
 PyStatus
-_PyUnicode_Init(PyInterpreterState *interp)
+_PyUnicode_InitGlobalObjects(PyInterpreterState *interp)
 {
     struct _Py_unicode_state *state = &interp->unicode;
     if (unicode_create_empty_string_singleton(state) < 0) {
         return _PyStatus_NO_MEMORY();
-    }
-
-    if (_Py_IsMainInterpreter(interp)) {
-        /* initialize the linebreak bloom filter */
-        const Py_UCS2 linebreak[] = {
-            0x000A, /* LINE FEED */
-            0x000D, /* CARRIAGE RETURN */
-            0x001C, /* FILE SEPARATOR */
-            0x001D, /* GROUP SEPARATOR */
-            0x001E, /* RECORD SEPARATOR */
-            0x0085, /* NEXT LINE */
-            0x2028, /* LINE SEPARATOR */
-            0x2029, /* PARAGRAPH SEPARATOR */
-        };
-        bloom_linebreak = make_bloom_mask(
-            PyUnicode_2BYTE_KIND, linebreak,
-            Py_ARRAY_LENGTH(linebreak));
     }
 
     return _PyStatus_OK();
@@ -15534,11 +15541,19 @@ _PyUnicode_Init(PyInterpreterState *interp)
 
 
 PyStatus
-_PyUnicode_InitTypes(void)
+_PyUnicode_InitTypes(PyInterpreterState *interp)
 {
+    if (!_Py_IsMainInterpreter(interp)) {
+        return _PyStatus_OK();
+    }
+
     if (PyType_Ready(&PyUnicode_Type) < 0) {
         return _PyStatus_ERR("Can't initialize unicode type");
     }
+    if (PyType_Ready(&PyUnicodeIter_Type) < 0) {
+        return _PyStatus_ERR("Can't initialize unicode iterator type");
+    }
+
     if (PyType_Ready(&EncodingMapType) < 0) {
          return _PyStatus_ERR("Can't initialize encoding map type");
     }

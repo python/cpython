@@ -1925,8 +1925,6 @@ _PyTypes_InitTypes(PyInterpreterState *interp)
     INIT_TYPE(PyTraceBack_Type);
     INIT_TYPE(PyTupleIter_Type);
     INIT_TYPE(PyTuple_Type);
-    INIT_TYPE(PyUnicodeIter_Type);
-    INIT_TYPE(PyUnicode_Type);
     INIT_TYPE(PyWrapperDescr_Type);
     INIT_TYPE(Py_GenericAliasType);
     INIT_TYPE(_PyAnextAwaitable_Type);
