@@ -909,7 +909,8 @@ write_indented_margin(struct exception_print_context *ctx, PyObject *f)
 }
 
 static int
-print_exception_invalid_type(struct exception_print_context *ctx, PyObject *value)
+print_exception_invalid_type(struct exception_print_context *ctx,
+                             PyObject *value)
 {
     PyObject *f = ctx->file;
     if (_Py_WriteIndent(EXC_INDENT(ctx), f) < 0) {
