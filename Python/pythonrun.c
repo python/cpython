@@ -955,9 +955,8 @@ print_exception_traceback(struct exception_print_context *ctx, PyObject *value)
 
 /* Prints the message line: module.qualname[: str(exc)] */
 static int
-print_exception_message(struct exception_print_context *ctx,
-                        PyObject *type,
-                        PyObject *value)
+print_exception_message(struct exception_print_context *ctx, PyObject *type,
+                        PyObject *value) 
 {
     PyObject *f = ctx->file;
 
