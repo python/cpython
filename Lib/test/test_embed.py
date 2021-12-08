@@ -1362,6 +1362,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             if not MS_WINDOWS:
                 paths[-1] = lib_dynload
             else:
+                # Include DLLs directory as well
+                paths.insert(1, '.\\DLLs')
                 for index, path in enumerate(paths):
                     if index == 0:
                         # Because we copy the DLLs into tmpdir as well, the zip file
