@@ -42,9 +42,12 @@
 #   - a combination of the above (functions that were called by macros that
 #     were public in the past)
 
-# For more details, see:
-# - devguide: https://devguide.python.org/c-api/#limited-api
-# - user-facing docs: https://docs.python.org/3/c-api/stable.html#stable
+# Removing items from this file is generally not allowed, and additions should
+# be considered with that in mind. See the devguide for exact rules:
+#    https://devguide.python.org/c-api/#limited-api
+
+# User-facing docs are at:
+#    https://docs.python.org/3/c-api/stable.html#stable
 
 
 # Mentioned in PEP 384:
