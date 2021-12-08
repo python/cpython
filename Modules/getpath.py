@@ -449,6 +449,10 @@ if not home_was_set and real_executable_dir and not py_setpath:
             readlines(joinpath(real_executable_dir, BUILDDIR_TXT))[0],
         )
         build_prefix = joinpath(real_executable_dir, VPATH)
+    except IndexError:
+        # File exists but is empty
+        platstdlib_dir = real_executable_dir
+        build_prefix = joinpath(real_executable_dir, VPATH)
     except FileNotFoundError:
         if isfile(joinpath(real_executable_dir, BUILD_LANDMARK)):
             build_prefix = joinpath(real_executable_dir, VPATH)
