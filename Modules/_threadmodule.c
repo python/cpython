@@ -6,7 +6,7 @@
 #include "pycore_interp.h"        // _PyInterpreterState.threads.count
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pylifecycle.h"
-#include "pycore_pystate.h"       // _PyThreadState_Init()
+#include "pycore_pystate.h"       // _PyThreadState_SetCurrent()
 #include <stddef.h>               // offsetof()
 #include "structmember.h"         // PyMemberDef
 
@@ -1087,7 +1087,7 @@ thread_run(void *boot_raw)
 #else
     tstate->native_thread_id = 0;
 #endif
-    _PyThreadState_Init(tstate);
+    _PyThreadState_SetCurrent(tstate);
     PyEval_AcquireThread(tstate);
     tstate->interp->threads.count++;
 
