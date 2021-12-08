@@ -6,13 +6,31 @@
 extern "C" {
 #endif
 
-/* === New Buffer API ============================================
- * Limited API since Python 3.11
- */
-
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030b0000
 
-typedef struct bufferinfo Py_buffer;
+/* === New Buffer API ============================================
+ * Limited API and stable ABI since Python 3.11
+ *
+ * Py_buffer struct layout and size is now part of the stable abi3. The
+ * struct layout and size must not be changed in any way, as it would
+ * break the ABI.
+ *
+ */
+
+typedef struct bufferinfo {
+    void *buf;
+    PyObject *obj;        /* owned reference */
+    Py_ssize_t len;
+    Py_ssize_t itemsize;  /* This is Py_ssize_t so it can be
+                             pointed to by strides in simple case.*/
+    int readonly;
+    int ndim;
+    char *format;
+    Py_ssize_t *shape;
+    Py_ssize_t *strides;
+    Py_ssize_t *suboffsets;
+    void *internal;
+} Py_buffer;
 
 /* Return 1 if the getbuffer function is available, otherwise return 0. */
 PyAPI_FUNC(int) PyObject_CheckBuffer(PyObject *obj);
@@ -116,7 +134,7 @@ PyAPI_FUNC(void) PyBuffer_Release(Py_buffer *view);
 #define PyBUF_READ  0x100
 #define PyBUF_WRITE 0x200
 
-#endif /* Py_LIMITED_API */
+#endif /* !Py_LIMITED_API || Py_LIMITED_API >= 3.11 */
 
 #ifdef __cplusplus
 }
