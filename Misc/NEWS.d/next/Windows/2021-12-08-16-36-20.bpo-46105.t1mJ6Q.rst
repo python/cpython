@@ -1,1 +1,0 @@
-Fixed calculation of :data:`sys.path` in a venv on Windows.
