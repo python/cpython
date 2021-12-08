@@ -329,6 +329,14 @@ unicodedata
 * The Unicode database has been updated to version 14.0.0. (:issue:`45190`).
 
 
+fcntl
+-----
+
+* On FreeBSD, the `F_DUP2FD` and `F_DUP2FD_CLOEXEC` flags respectively
+  are supported, the former equals to ``dup2`` usage while the latter set
+  the ``FD_CLOEXEC`` flag in addition.
+
+
 Optimizations
 =============
 
