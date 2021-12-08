@@ -747,24 +747,19 @@ _PyEval_InitRuntimeState(struct _ceval_runtime_state *ceval)
 #endif
 }
 
-int
-_PyEval_InitState(struct _ceval_state *ceval)
+void
+_PyEval_InitState(struct _ceval_state *ceval, PyThread_type_lock pending_lock)
 {
     ceval->recursion_limit = Py_DEFAULT_RECURSION_LIMIT;
 
     struct _pending_calls *pending = &ceval->pending;
     assert(pending->lock == NULL);
 
-    pending->lock = PyThread_allocate_lock();
-    if (pending->lock == NULL) {
-        return -1;
-    }
+    pending->lock = pending_lock;
 
 #ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
     _gil_initialize(&ceval->gil);
 #endif
-
-    return 0;
 }
 
 void
@@ -789,7 +784,7 @@ Py_SetRecursionLimit(int new_limit)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     interp->ceval.recursion_limit = new_limit;
-    for (PyThreadState *p = interp->tstate_head; p != NULL; p = p->next) {
+    for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
         int depth = p->recursion_limit - p->recursion_remaining;
         p->recursion_limit = new_limit;
         p->recursion_remaining = new_limit - depth;
@@ -2719,25 +2714,9 @@ check_eval_breaker:
 
         TARGET(GEN_START) {
             PyObject *none = POP();
+            assert(none == Py_None);
+            assert(oparg < 3);
             Py_DECREF(none);
-            if (!Py_IsNone(none)) {
-                if (oparg > 2) {
-                    _PyErr_SetString(tstate, PyExc_SystemError,
-                        "Illegal kind for GEN_START");
-                }
-                else {
-                    static const char *gen_kind[3] = {
-                        "generator",
-                        "coroutine",
-                        "async generator"
-                    };
-                    _PyErr_Format(tstate, PyExc_TypeError,
-                        "can't send non-None value to a "
-                                "just-started %s",
-                                gen_kind[oparg]);
-                }
-                goto error;
-            }
             DISPATCH();
         }
 
@@ -5869,24 +5848,6 @@ fail_post_args:
     return -1;
 }
 
-static int
-initialize_coro_frame(InterpreterFrame *frame, PyThreadState *tstate,
-           PyFunctionObject *func, PyObject *locals,
-           PyObject *const *args, Py_ssize_t argcount,
-           PyObject *kwnames)
-{
-    assert(is_tstate_valid(tstate));
-    assert(func->func_defaults == NULL || PyTuple_CheckExact(func->func_defaults));
-    PyCodeObject *code = (PyCodeObject *)func->func_code;
-    _PyFrame_InitializeSpecials(frame, func, locals, code->co_nlocalsplus);
-    for (int i = 0; i < code->co_nlocalsplus; i++) {
-        frame->localsplus[i] = NULL;
-    }
-    assert(frame->frame_obj == NULL);
-    return initialize_locals(tstate, func, frame->localsplus, args, argcount, kwnames);
-}
-
-
 /* Consumes all the references to the args */
 static PyObject *
 make_coro(PyThreadState *tstate, PyFunctionObject *func,
@@ -5900,12 +5861,17 @@ make_coro(PyThreadState *tstate, PyFunctionObject *func,
         return NULL;
     }
     InterpreterFrame *frame = (InterpreterFrame *)((PyGenObject *)gen)->gi_iframe;
-    if (initialize_coro_frame(frame, tstate, func, locals, args, argcount, kwnames)) {
+    PyCodeObject *code = (PyCodeObject *)func->func_code;
+    _PyFrame_InitializeSpecials(frame, func, locals, code->co_nlocalsplus);
+    for (int i = 0; i < code->co_nlocalsplus; i++) {
+        frame->localsplus[i] = NULL;
+    }
+    ((PyGenObject *)gen)->gi_frame_valid = 1;
+    if (initialize_locals(tstate, func, frame->localsplus, args, argcount, kwnames)) {
         Py_DECREF(gen);
         return NULL;
     }
     frame->generator = gen;
-    ((PyGenObject *)gen)->gi_frame_valid = 1;
     return gen;
 }
 

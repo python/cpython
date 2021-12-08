@@ -482,8 +482,7 @@ the original TOS1.
    .. versionadded:: 3.8
 
     .. versionchanged:: 3.11
-
-    Exception representation on the stack now consist of two, not three, items.
+       Exception representation on the stack now consist of two, not three, items.
 
 .. opcode:: BEFORE_ASYNC_WITH
 
@@ -567,8 +566,7 @@ iterations of the loop.
    Pops two values from the stack, which are used to restore the exception state.
 
     .. versionchanged:: 3.11
-
-    Exception representation on the stack now consist of two, not three, items.
+       Exception representation on the stack now consist of two, not three, items.
 
 .. opcode:: RERAISE
 
@@ -579,8 +577,7 @@ iterations of the loop.
     .. versionadded:: 3.9
 
     .. versionchanged:: 3.11
-
-    Exception representation on the stack now consist of two, not three, items.
+       Exception representation on the stack now consist of two, not three, items.
 
 .. opcode:: PUSH_EXC_INFO
 
@@ -600,10 +597,9 @@ iterations of the loop.
     has occurred in a :keyword:`with` statement.
 
     .. versionadded:: 3.9
-
     .. versionchanged:: 3.11
-
-    Exception representation on the stack now consist of two, not three, items.
+       The ``__exit__`` function is in position 6 of the stack rather than 7.
+       Exception representation on the stack now consist of two, not three, items.
 
 .. opcode:: POP_EXCEPT_AND_RERAISE
 
@@ -1181,9 +1177,8 @@ All of the following opcodes use their arguments.
 
 .. opcode:: GEN_START (kind)
 
-    Pops TOS. If TOS was not ``None``, raises an exception. The ``kind``
-    operand corresponds to the type of generator or coroutine and determines
-    the error message. The legal kinds are 0 for generator, 1 for coroutine,
+    Pops TOS. The ``kind`` operand corresponds to the type of generator or
+    coroutine. The legal kinds are 0 for generator, 1 for coroutine,
     and 2 for async generator.
 
    .. versionadded:: 3.10

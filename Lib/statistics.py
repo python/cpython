@@ -463,7 +463,7 @@ def geometric_mean(data):
         return exp(fmean(map(log, data)))
     except ValueError:
         raise StatisticsError('geometric mean requires a non-empty dataset '
-                              ' containing positive numbers') from None
+                              'containing positive numbers') from None
 
 
 def harmonic_mean(data, weights=None):
