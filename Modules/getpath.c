@@ -390,7 +390,7 @@ getpath_readlines(PyObject *Py_UNUSED(self), PyObject *args)
         while (cb && (p1[cb] == L'\n' || p1[cb] == L'\r')) {
             --cb;
         }
-        PyObject *u = PyUnicode_FromWideChar(p1, cb + 1);
+        PyObject *u = PyUnicode_FromWideChar(p1, cb ? cb + 1 : 0);
         if (!u || PyList_Append(r, u) < 0) {
             Py_XDECREF(u);
             Py_CLEAR(r);
