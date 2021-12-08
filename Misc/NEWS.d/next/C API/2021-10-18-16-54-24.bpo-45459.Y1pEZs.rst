@@ -1,1 +1,2 @@
-Add :c:type:`Py_buffer` to limited API / stable ABI.
+:c:type:`Py_buffer` and various ``Py_buffer`` related functions are now
+part of the limited API and stable ABI.
