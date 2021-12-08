@@ -1115,6 +1115,9 @@ stack_effect(int opcode, int oparg, int jump)
         case LOAD_GLOBAL:
             return 1;
 
+        case EXIT_INIT_CHECK:
+            return -1;
+
         /* Exception handling pseudo-instructions */
         case SETUP_FINALLY:
             /* 0 in the normal flow.

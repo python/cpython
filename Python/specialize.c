@@ -6,6 +6,8 @@
 #include "pycore_object.h"
 #include "opcode.h"
 #include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
+#include "pycore_function.h"      // _PyFunction_FromConstructor()
+
 
 #include <stdlib.h> // rand()
 
@@ -491,6 +493,7 @@ initial_counter_value(void) {
 #define SPEC_FAIL_PYCFUNCTION_NOARGS 16
 #define SPEC_FAIL_BAD_CALL_FLAGS 17
 #define SPEC_FAIL_CLASS 18
+#define SPEC_FAIL_INIT_NOT_SIMPLE 25
 
 /* COMPARE_OP */
 #define SPEC_FAIL_STRING_COMPARE 13
@@ -1256,11 +1259,56 @@ success:
     return 0;
 }
 
+
+static PyFunctionObject *
+get_init_for_simple_managed_python_class(PyTypeObject *tp)
+{
+    _Py_IDENTIFIER(__init__);
+    if (tp->tp_new != PyBaseObject_Type.tp_new) {
+        return NULL;
+    }
+    if (tp->tp_alloc != PyType_GenericAlloc) {
+        return NULL;
+    }
+    if ((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
+        return NULL;
+    }
+    PyObject *init = _PyType_LookupId(tp, &PyId___init__);
+    if (init == NULL || !PyFunction_Check(init)) {
+        return NULL;
+    }
+    int kind = function_kind((PyCodeObject *)PyFunction_GET_CODE(init));
+    if (kind != SIMPLE_FUNCTION) {
+        return NULL;
+    }
+    return (PyFunctionObject *)init;
+}
+
+static int
+setup_init_cleanup_func(void);
+
 static int
 specialize_class_call(
     PyObject *callable, _Py_CODEUNIT *instr,
     int nargs, SpecializedCacheEntry *cache)
 {
+    if (setup_init_cleanup_func()) {
+        return -1;
+    }
+    PyTypeObject *tp = (PyTypeObject *)callable;
+    PyFunctionObject *init = get_init_for_simple_managed_python_class(tp);
+    if (init) {
+        if (((PyCodeObject *)init->func_code)->co_argcount != nargs+1) {
+            SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
+            return -1;
+        }
+        _PyAdaptiveEntry *cache0 = &cache[0].adaptive;
+        _PyObjectCache *cache1 = &cache[-1].obj;
+        cache0->version = tp->tp_version_tag;
+        cache1->obj = (PyObject *)init; /* borrowed */
+        *instr = _Py_MAKECODEUNIT(CALL_FUNCTION_ALLOC_AND_ENTER_INIT, _Py_OPARG(*instr));
+        return 0;
+    }
     SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_CLASS);
     return -1;
 }
@@ -1586,4 +1634,83 @@ failure:
 success:
     STAT_INC(COMPARE_OP, specialization_success);
     adaptive->counter = initial_counter_value();
+}
+
+PyFunctionObject *_Py_InitCleanupFunc = NULL;
+
+char INIT_CLEANUP_CODE[8] = {
+    LOAD_ASSERTION_ERROR, 0,
+    RAISE_VARARGS, 1,
+    EXIT_INIT_CHECK, 0,
+    RETURN_VALUE, 0
+};
+
+static int
+setup_init_cleanup_func(void) {
+    if (_Py_InitCleanupFunc != NULL) {
+        return 0;
+    }
+    PyObject *empty_bytes = PyBytes_FromStringAndSize(NULL, 0);
+    PyObject *empty_tuple = PyTuple_New(0);
+    PyObject *empty_str = _PyUnicode_FromASCII("", 0);
+    PyObject *name = _PyUnicode_FromASCII("type.__call__", strlen("type.__call__"));
+    PyObject *code = PyBytes_FromStringAndSize(INIT_CLEANUP_CODE, 8);
+    if (empty_bytes == NULL || empty_str == NULL || name == NULL || code == NULL) {
+        goto cleanup;
+    }
+    struct _PyCodeConstructor con = {
+        .filename = empty_str,
+        .name = name,
+        .qualname = name,
+        .flags = CO_NEWLOCALS | CO_OPTIMIZED,
+
+        .code = code,
+        .firstlineno = 1,
+        .linetable = empty_bytes,
+        .endlinetable = empty_bytes,
+        .columntable = empty_bytes,
+
+        .consts = empty_tuple,
+        .names = empty_tuple,
+
+        .localsplusnames = empty_tuple,
+        .localspluskinds = empty_bytes,
+
+        .argcount = 0,
+        .posonlyargcount = 0,
+        .kwonlyargcount = 0,
+
+        .stacksize = 2,
+
+        .exceptiontable = empty_bytes,
+    };
+
+    PyCodeObject *codeobj = _PyCode_New(&con);
+    if (codeobj == NULL) {
+        goto cleanup;
+    }
+    PyObject *globals = PyDict_New();
+    if (globals == NULL) {
+        Py_DECREF(codeobj);
+        goto cleanup;
+    }
+    PyFrameConstructor desc = {
+        .fc_globals = globals,
+        .fc_builtins = globals,
+        .fc_name = codeobj->co_name,
+        .fc_qualname = codeobj->co_name,
+        .fc_code = (PyObject *)codeobj,
+        .fc_defaults = NULL,
+        .fc_kwdefaults = NULL,
+        .fc_closure = NULL
+    };
+    _Py_InitCleanupFunc = _PyFunction_FromConstructor(&desc);
+cleanup:
+    Py_XDECREF(empty_bytes);
+    Py_XDECREF(empty_tuple);
+    Py_XDECREF(empty_str);
+    Py_XDECREF(name);
+    Py_XDECREF(code);
+    PyErr_Clear();
+    return _Py_InitCleanupFunc == NULL ? -1 : 0;
 }

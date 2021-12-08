@@ -102,6 +102,8 @@ static InterpreterFrame *
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
                         PyObject *locals, PyObject* const* args,
                         size_t argcount, PyObject *kwnames);
+static InterpreterFrame *
+_PyEvalFramePush(PyThreadState *tstate, PyFunctionObject *func, PyObject *locals);
 static void
 _PyEvalFrameClearAndPop(PyThreadState *tstate, InterpreterFrame *frame);
 
@@ -2720,6 +2722,20 @@ check_eval_breaker:
             DISPATCH();
         }
 
+        TARGET(EXIT_INIT_CHECK) {
+            assert(STACK_LEVEL() == 2);
+            PyObject *should_be_none = TOP();
+            if (should_be_none != Py_None) {
+                PyErr_Format(PyExc_TypeError,
+                    "__init__() should return None, not '%.200s'",
+                    Py_TYPE(should_be_none)->tp_name);
+                goto error;
+            }
+            Py_DECREF(Py_None);
+            STACK_SHRINK(1);
+            DISPATCH();
+        }
+
         TARGET(POP_EXCEPT) {
             PyObject *type, *value, *traceback;
             _PyErr_StackItem *exc_info;
@@ -4741,6 +4757,63 @@ check_eval_breaker:
             goto start_frame;
         }
 
+        TARGET(CALL_FUNCTION_ALLOC_AND_ENTER_INIT) {
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            int argcount = cache0->original_oparg;
+            _PyObjectCache *cache1 = &caches[-1].obj;
+            PyObject *callable = PEEK(argcount+1);
+            DEOPT_IF(!PyType_Check(callable), CALL_FUNCTION);
+            PyTypeObject *tp = (PyTypeObject *)callable;
+            DEOPT_IF(tp->tp_version_tag != cache0->version, CALL_FUNCTION);
+            PyFunctionObject *init = (PyFunctionObject *)cache1->obj;
+            PyCodeObject *code = (PyCodeObject *)init->func_code;
+            DEOPT_IF(code->co_argcount != argcount+1, CALL_FUNCTION);
+            PyObject *self = _PyType_NewManagedObject(tp);
+            if (self == NULL) {
+                goto error;
+            }
+            PEEK(argcount+1) = self;
+            Py_DECREF(tp);
+            assert(_Py_InitCleanupFunc != NULL);
+            InterpreterFrame *shim = _PyEvalFramePush(tstate, _Py_InitCleanupFunc, NULL);
+            if (shim == NULL) {
+                goto error;
+            }
+            shim->previous = frame;
+            shim->depth = frame->depth + 1;
+            shim->f_lasti = 1;
+            if (_Py_EnterRecursiveCall(tstate, "")) {
+                tstate->recursion_remaining--;
+                goto exit_unwind;
+            }
+            /* Push self onto stack of shim */
+            Py_INCREF(self);
+            shim->stacktop = 1;
+            shim->localsplus[0] = self;
+            size_t size = code->co_nlocalsplus + code->co_stacksize + FRAME_SPECIALS_SIZE;
+            InterpreterFrame *init_frame = _PyThreadState_BumpFramePointer(tstate, size);
+            if (init_frame == NULL) {
+                _PyEvalFrameClearAndPop(tstate, shim);
+                goto error;
+            }
+            _PyFrame_InitializeSpecials(init_frame, init,
+                                        NULL, code->co_nlocalsplus);
+            /* Copy self followed by args to __init__ frame */
+            STACK_SHRINK(argcount+1);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            for (int i = 0; i < argcount+1; i++) {
+                init_frame->localsplus[i] = stack_pointer[i];
+            }
+            for (int i = argcount+1; i < code->co_nlocalsplus; i++) {
+                init_frame->localsplus[i] = NULL;
+            }
+            init_frame->previous = shim;
+            init_frame->depth = shim->depth + 1;
+            frame = cframe.current_frame = init_frame;
+            goto start_frame;
+        }
+
         TARGET(CALL_FUNCTION_BUILTIN_O) {
             assert(cframe.use_tracing == 0);
             /* Builtin METH_O functions */
@@ -5856,6 +5929,23 @@ make_coro(PyThreadState *tstate, PyFunctionObject *func,
     }
     frame->generator = gen;
     return gen;
+}
+
+static InterpreterFrame *
+_PyEvalFramePush(PyThreadState *tstate, PyFunctionObject *func, PyObject *locals)
+{
+    PyCodeObject * code = (PyCodeObject *)func->func_code;
+    size_t size = code->co_nlocalsplus + code->co_stacksize + FRAME_SPECIALS_SIZE;
+    InterpreterFrame *frame = _PyThreadState_BumpFramePointer(tstate, size);
+    if (frame == NULL) {
+        return NULL;
+    }
+    _PyFrame_InitializeSpecials(frame, func, locals, code->co_nlocalsplus);
+    PyObject **localsarray = &frame->localsplus[0];
+    for (int i = 0; i < code->co_nlocalsplus; i++) {
+        localsarray[i] = NULL;
+    }
+    return frame;
 }
 
 /* Consumes all the references to the args */

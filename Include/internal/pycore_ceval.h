@@ -115,6 +115,8 @@ struct _interpreter_frame *_PyEval_GetFrame(void);
 
 PyObject *_Py_MakeCoro(PyFunctionObject *func);
 
+extern PyFunctionObject *_Py_InitCleanupFunc;
+
 #ifdef __cplusplus
 }
 #endif
