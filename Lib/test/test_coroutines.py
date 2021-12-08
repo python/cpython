@@ -2195,9 +2195,9 @@ class CoroutineTest(unittest.TestCase):
         'This would crash the interpreter in 3.11a2'
         async def f():
             pass
-        frame = f().cr_frame
         with self.assertWarns(RuntimeWarning):
-            frame.clear()
+            frame = f().cr_frame
+        frame.clear()
 
     def test_bpo_45813_2(self):
         'This would crash the interpreter in 3.11a2'
