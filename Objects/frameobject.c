@@ -686,7 +686,6 @@ frame_clear(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
     }
     if (f->f_frame->generator) {
         _PyGen_Finalize(f->f_frame->generator);
-        assert(f->f_frame->generator == NULL);
     }
     (void)frame_tp_clear(f);
     Py_RETURN_NONE;
