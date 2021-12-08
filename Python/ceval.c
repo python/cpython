@@ -2714,25 +2714,9 @@ check_eval_breaker:
 
         TARGET(GEN_START) {
             PyObject *none = POP();
+            assert(none == Py_None);
+            assert(oparg < 3);
             Py_DECREF(none);
-            if (!Py_IsNone(none)) {
-                if (oparg > 2) {
-                    _PyErr_SetString(tstate, PyExc_SystemError,
-                        "Illegal kind for GEN_START");
-                }
-                else {
-                    static const char *gen_kind[3] = {
-                        "generator",
-                        "coroutine",
-                        "async generator"
-                    };
-                    _PyErr_Format(tstate, PyExc_TypeError,
-                        "can't send non-None value to a "
-                                "just-started %s",
-                                gen_kind[oparg]);
-                }
-                goto error;
-            }
             DISPATCH();
         }
 
