@@ -11,9 +11,9 @@
 
 --------------
 
-`JSON (JavaScript Object Notation) <http://json.org>`_, specified by
+`JSON (JavaScript Object Notation) <https://json.org>`_, specified by
 :rfc:`7159` (which obsoletes :rfc:`4627`) and by
-`ECMA-404 <http://www.ecma-international.org/publications/standards/Ecma-404.htm>`_,
+`ECMA-404 <https://www.ecma-international.org/publications-and-standards/standards/ecma-404/>`_,
 is a lightweight data interchange format inspired by
 `JavaScript <https://en.wikipedia.org/wiki/JavaScript>`_ object literal syntax
 (although it is not a strict subset of JavaScript [#rfc-errata]_ ).
@@ -159,7 +159,7 @@ Basic Usage
 
    If *check_circular* is false (default: ``True``), then the circular
    reference check for container types will be skipped and a circular reference
-   will result in an :exc:`OverflowError` (or worse).
+   will result in an :exc:`RecursionError` (or worse).
 
    If *allow_nan* is false (default: ``True``), then it will be a
    :exc:`ValueError` to serialize out of range :class:`float` values (``nan``,
@@ -432,7 +432,7 @@ Encoders and Decoders
 
    If *check_circular* is true (the default), then lists, dicts, and custom
    encoded objects will be checked for circular references during encoding to
-   prevent an infinite recursion (which would cause an :exc:`OverflowError`).
+   prevent an infinite recursion (which would cause an :exc:`RecursionError`).
    Otherwise, no such check takes place.
 
    If *allow_nan* is true (the default), then ``NaN``, ``Infinity``, and
@@ -544,7 +544,7 @@ Standard Compliance and Interoperability
 ----------------------------------------
 
 The JSON format is specified by :rfc:`7159` and by
-`ECMA-404 <http://www.ecma-international.org/publications/standards/Ecma-404.htm>`_.
+`ECMA-404 <https://www.ecma-international.org/publications-and-standards/standards/ecma-404/>`_.
 This section details this module's level of compliance with the RFC.
 For simplicity, :class:`JSONEncoder` and :class:`JSONDecoder` subclasses, and
 parameters other than those explicitly mentioned, are not considered.

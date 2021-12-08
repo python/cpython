@@ -57,7 +57,7 @@ When the debug mode is enabled:
 * The execution time of the I/O selector is logged if it takes too long to
   perform an I/O operation.
 
-* Callbacks taking longer than 100ms are logged.  The
+* Callbacks taking longer than 100 milliseconds are logged.  The
   :attr:`loop.slow_callback_duration` attribute can be used to set the
   minimum execution duration in seconds that is considered "slow".
 

@@ -1009,20 +1009,16 @@ class BaseTaskTests:
         self.assertEqual(res, "ok")
 
     def test_wait_for_cancellation_race_condition(self):
-        def gen():
-            yield 0.1
-            yield 0.1
-            yield 0.1
-            yield 0.1
+        async def inner():
+            with contextlib.suppress(asyncio.CancelledError):
+                await asyncio.sleep(1)
+            return 1
 
-        loop = self.new_test_loop(gen)
+        async def main():
+            result = await asyncio.wait_for(inner(), timeout=.01)
+            assert result == 1
 
-        fut = self.new_future(loop)
-        loop.call_later(0.1, fut.set_result, "ok")
-        task = loop.create_task(asyncio.wait_for(fut, timeout=1))
-        loop.call_later(0.1, task.cancel)
-        res = loop.run_until_complete(task)
-        self.assertEqual(res, "ok")
+        asyncio.run(main())
 
     def test_wait_for_waits_for_task_cancellation(self):
         loop = asyncio.new_event_loop()
@@ -1099,24 +1095,6 @@ class BaseTaskTests:
             await asyncio.wait_for(inner_task, timeout=_EPSILON)
 
         with self.assertRaises(FooException):
-            loop.run_until_complete(foo())
-
-    def test_wait_for_raises_timeout_error_if_returned_during_cancellation(self):
-        loop = asyncio.new_event_loop()
-        self.addCleanup(loop.close)
-
-        async def foo():
-            async def inner():
-                try:
-                    await asyncio.sleep(0.2)
-                except asyncio.CancelledError:
-                    return 42
-
-            inner_task = self.new_task(loop, inner())
-
-            await asyncio.wait_for(inner_task, timeout=_EPSILON)
-
-        with self.assertRaises(asyncio.TimeoutError):
             loop.run_until_complete(foo())
 
     def test_wait_for_self_cancellation(self):
@@ -3269,7 +3247,7 @@ class RunCoroutineThreadsafeTests(test_utils.TestCase):
             self.assertTrue(task.done())
 
     def test_run_coroutine_threadsafe_task_cancelled(self):
-        """Test coroutine submission from a tread to an event loop
+        """Test coroutine submission from a thread to an event loop
         when the task is cancelled."""
         callback = lambda: self.target(cancel=True)
         future = self.loop.run_in_executor(None, callback)
@@ -3277,7 +3255,7 @@ class RunCoroutineThreadsafeTests(test_utils.TestCase):
             self.loop.run_until_complete(future)
 
     def test_run_coroutine_threadsafe_task_factory_exception(self):
-        """Test coroutine submission from a tread to an event loop
+        """Test coroutine submission from a thread to an event loop
         when the task factory raise an exception."""
 
         def task_factory(loop, coro):

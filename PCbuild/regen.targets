@@ -104,7 +104,9 @@
           Condition="($(Platform) == 'Win32' or $(Platform) == 'x64') and
                      $(Configuration) != 'PGInstrument' and $(Configuration) != 'PGUpdate'">
     <Message Text="Regenerate @(_TestFrozenOutputs->'%(Filename)%(Extension)', ' ')" Importance="high" />
-    <Exec Command="$(PythonExe) Programs\freeze_test_frozenmain.py Programs/test_frozenmain.h"
+    <Exec Command='setlocal
+set PYTHONPATH=$(PySourcePath)Lib
+"$(PythonExe)" Programs\freeze_test_frozenmain.py Programs\test_frozenmain.h'
           WorkingDirectory="$(PySourcePath)" />
   </Target>
 

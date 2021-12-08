@@ -41,8 +41,8 @@ def _io_wrapper(file, mode='r', *args, **kwargs):
 
 class CompatibilityFiles:
     """
-    Adapter for an existing or non-existant resource reader
-    to provide a compability .files().
+    Adapter for an existing or non-existent resource reader
+    to provide a compatibility .files().
     """
 
     class SpecPath(abc.Traversable):
@@ -83,7 +83,7 @@ class CompatibilityFiles:
     class ChildPath(abc.Traversable):
         """
         Path tied to a resource reader child.
-        Can be read but doesn't expose any meaningfull children.
+        Can be read but doesn't expose any meaningful children.
         """
 
         def __init__(self, reader, name):

@@ -235,15 +235,15 @@ except ImportError:
         loop = 1
         from_bytes = int.from_bytes
         while len(dkey) < dklen:
-            prev = prf(salt + loop.to_bytes(4, 'big'))
+            prev = prf(salt + loop.to_bytes(4))
             # endianness doesn't matter here as long to / from use the same
-            rkey = int.from_bytes(prev, 'big')
+            rkey = from_bytes(prev)
             for i in range(iterations - 1):
                 prev = prf(prev)
                 # rkey = rkey ^ prev
-                rkey ^= from_bytes(prev, 'big')
+                rkey ^= from_bytes(prev)
             loop += 1
-            dkey += rkey.to_bytes(inner.digest_size, 'big')
+            dkey += rkey.to_bytes(inner.digest_size)
 
         return dkey[:dklen]
 

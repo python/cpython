@@ -22,6 +22,8 @@ typedef struct {
  */
 Py_ssize_t _Py_dict_lookup(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr);
 
+/* Consumes references to key and value */
+int _PyDict_SetItem_Take2(PyDictObject *op, PyObject *key, PyObject *value);
 
 #define DKIX_EMPTY (-1)
 #define DKIX_DUMMY (-2)  /* Used internally */
@@ -71,6 +73,14 @@ struct _dictkeysobject {
        see the DK_ENTRIES() macro */
 };
 
+/* This must be no more than 16, for the order vector to fit in 64 bits */
+#define SHARED_KEYS_MAX_SIZE 16
+
+struct _dictvalues {
+    uint64_t mv_order;
+    PyObject *values[1];
+};
+
 #define DK_LOG_SIZE(dk)  ((dk)->dk_log2_size)
 #if SIZEOF_VOID_P > 4
 #define DK_SIZE(dk)      (((int64_t)1)<<DK_LOG_SIZE(dk))
@@ -92,6 +102,8 @@ struct _dictkeysobject {
 extern uint64_t _pydict_global_version;
 
 #define DICT_NEXT_VERSION() (++_pydict_global_version)
+
+PyObject *_PyObject_MakeDictFromInstanceAttributes(PyObject *obj, PyDictValues *values);
 
 #ifdef __cplusplus
 }

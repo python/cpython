@@ -17,13 +17,10 @@
 
 --------------
 
-This module provides runtime support for type hints as specified by
-:pep:`484`, :pep:`526`, :pep:`544`, :pep:`586`, :pep:`589`, :pep:`591`,
-:pep:`612` and :pep:`613`.
-The most fundamental support consists of the types :data:`Any`, :data:`Union`,
-:data:`Tuple`, :data:`Callable`, :class:`TypeVar`, and
-:class:`Generic`.  For full specification please see :pep:`484`.  For
-a simplified introduction to type hints see :pep:`483`.
+This module provides runtime support for type hints. The most fundamental
+support consists of the types :data:`Any`, :data:`Union`, :data:`Callable`,
+:class:`TypeVar`, and :class:`Generic`. For a full specification, please see
+:pep:`484`. For a simplified introduction to type hints, see :pep:`483`.
 
 
 The function below takes and returns a string and is annotated as follows::
@@ -34,6 +31,43 @@ The function below takes and returns a string and is annotated as follows::
 In the function ``greeting``, the argument ``name`` is expected to be of type
 :class:`str` and the return type :class:`str`. Subtypes are accepted as
 arguments.
+
+.. _relevant-peps:
+
+Relevant PEPs
+=============
+
+Since the initial introduction of type hints in :pep:`484` and :pep:`483`, a
+number of PEPs have modified and enhanced Python's framework for type
+annotations. These include:
+
+* :pep:`526`: Syntax for Variable Annotations
+     *Introducing* syntax for annotating variables outside of function
+     definitions, and :data:`ClassVar`
+* :pep:`544`: Protocols: Structural subtyping (static duck typing)
+     *Introducing* :class:`Protocol` and the
+     :func:`@runtime_checkable<runtime_checkable>` decorator
+* :pep:`585`: Type Hinting Generics In Standard Collections
+     *Introducing* :class:`types.GenericAlias` and the ability to use standard
+     library classes as :ref:`generic types<types-genericalias>`
+* :pep:`586`: Literal Types
+     *Introducing* :data:`Literal`
+* :pep:`589`: TypedDict: Type Hints for Dictionaries with a Fixed Set of Keys
+     *Introducing* :class:`TypedDict`
+* :pep:`591`: Adding a final qualifier to typing
+     *Introducing* :data:`Final` and the :func:`@final<final>` decorator
+* :pep:`593`: Flexible function and variable annotations
+     *Introducing* :data:`Annotated`
+* :pep:`604`: Allow writing union types as ``X | Y``
+     *Introducing* :data:`types.UnionType` and the ability to use
+     the binary-or operator ``|`` to signify a
+     :ref:`union of types<types-union>`
+* :pep:`612`: Parameter Specification Variables
+     *Introducing* :class:`ParamSpec` and :data:`Concatenate`
+* :pep:`613`: Explicit Type Aliases
+     *Introducing* :data:`TypeAlias`
+* :pep:`647`: User-Defined Type Guards
+     *Introducing* :data:`TypeGuard`
 
 .. _type-aliases:
 
@@ -222,6 +256,7 @@ called :class:`TypeVar`.
    def first(l: Sequence[T]) -> T:   # Generic function
        return l[0]
 
+.. _user-defined-generics:
 
 User-defined generic types
 ==========================
@@ -256,8 +291,8 @@ A user-defined class can be defined as a generic class.
 single type parameter ``T`` . This also makes ``T`` valid as a type within the
 class body.
 
-The :class:`Generic` base class defines :meth:`__class_getitem__` so that
-``LoggedVar[t]`` is valid as a type::
+The :class:`Generic` base class defines :meth:`~object.__class_getitem__` so
+that ``LoggedVar[t]`` is valid as a type::
 
    from collections.abc import Iterable
 
@@ -975,16 +1010,16 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
       For example::
 
-         def is_str_list(val: List[object]) -> TypeGuard[List[str]]:
+         def is_str_list(val: list[object]) -> TypeGuard[list[str]]:
              '''Determines whether all objects in the list are strings'''
              return all(isinstance(x, str) for x in val)
 
-         def func1(val: List[object]):
+         def func1(val: list[object]):
              if is_str_list(val):
-                 # Type of ``val`` is narrowed to ``List[str]``.
+                 # Type of ``val`` is narrowed to ``list[str]``.
                  print(" ".join(val))
              else:
-                 # Type of ``val`` remains as ``List[object]``.
+                 # Type of ``val`` remains as ``list[object]``.
                  print("Not a list of strings!")
 
    If ``is_str_list`` is a class or instance method, then the type in
@@ -999,8 +1034,8 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
       ``TypeB`` need not be a narrower form of ``TypeA`` -- it can even be a
       wider form. The main reason is to allow for things like
-      narrowing ``List[object]`` to ``List[str]`` even though the latter
-      is not a subtype of the former, since ``List`` is invariant.
+      narrowing ``list[object]`` to ``list[str]`` even though the latter
+      is not a subtype of the former, since ``list`` is invariant.
       The responsibility of writing type-safe type guards is left to the user.
 
    ``TypeGuard`` also works with type variables.  For more information, see
@@ -2065,8 +2100,8 @@ Introspection helpers
 .. class:: ForwardRef
 
    A class used for internal typing representation of string forward references.
-   For example, ``List["SomeClass"]`` is implicitly transformed into
-   ``List[ForwardRef("SomeClass")]``.  This class should not be instantiated by
+   For example, ``list["SomeClass"]`` is implicitly transformed into
+   ``list[ForwardRef("SomeClass")]``.  This class should not be instantiated by
    a user, but may be used by introspection tools.
 
    .. note::

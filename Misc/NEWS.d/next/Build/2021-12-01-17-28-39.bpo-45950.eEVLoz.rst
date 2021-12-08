@@ -1,0 +1,4 @@
+The build system now uses a :program:`_bootstrap_python` interpreter for
+freezing and deepfreezing again. To speed up build process the build tools
+:program:`_bootstrap_python` and :program:`_freeze_module` are no longer
+build with LTO.

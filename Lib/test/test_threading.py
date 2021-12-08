@@ -928,6 +928,39 @@ class ThreadTests(BaseTestCase):
                b'is deprecated and will be removed in Python 3.12')
         self.assertIn(msg, err)
 
+    def test_import_from_another_thread(self):
+        # bpo-1596321: If the threading module is first import from a thread
+        # different than the main thread, threading._shutdown() must handle
+        # this case without logging an error at Python exit.
+        code = textwrap.dedent('''
+            import _thread
+            import sys
+
+            event = _thread.allocate_lock()
+            event.acquire()
+
+            def import_threading():
+                import threading
+                event.release()
+
+            if 'threading' in sys.modules:
+                raise Exception('threading is already imported')
+
+            _thread.start_new_thread(import_threading, ())
+
+            # wait until the threading module is imported
+            event.acquire()
+            event.release()
+
+            if 'threading' not in sys.modules:
+                raise Exception('threading is not imported')
+
+            # don't wait until the thread completes
+        ''')
+        rc, out, err = assert_python_ok("-c", code)
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
+
 
 class ThreadJoinOnShutdown(BaseTestCase):
 

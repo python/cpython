@@ -10,35 +10,34 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "pycore_fileutils.h"
-#include "pycore_moduleobject.h"  // _PyModule_GetState()
+// Include <windows.h> before pycore internal headers. FSCTL_GET_REPARSE_POINT
+// is not exported by <windows.h> if the WIN32_LEAN_AND_MEAN macro is defined,
+// whereas pycore_condvar.h defines the WIN32_LEAN_AND_MEAN macro.
 #ifdef MS_WINDOWS
-   /* include <windows.h> early to avoid conflict with pycore_condvar.h:
-
-        #define WIN32_LEAN_AND_MEAN
-        #include <windows.h>
-
-      FSCTL_GET_REPARSE_POINT is not exported with WIN32_LEAN_AND_MEAN. */
 #  include <windows.h>
 #  include <pathcch.h>
-#endif
-
-#if !defined(EX_OK) && defined(EXIT_SUCCESS)
-#define EX_OK EXIT_SUCCESS
 #endif
 
 #ifdef __VXWORKS__
 #  include "pycore_bitutils.h"    // _Py_popcount32()
 #endif
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_fileutils.h"     // _Py_closerange()
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_ceval.h"         // _PyEval_ReInitThreads()
 #include "pycore_import.h"        // _PyImport_ReInitLock()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+
 #include "structmember.h"         // PyMemberDef
 #ifndef MS_WINDOWS
 #  include "posixmodule.h"
 #else
 #  include "winreparse.h"
+#endif
+
+#if !defined(EX_OK) && defined(EXIT_SUCCESS)
+#  define EX_OK EXIT_SUCCESS
 #endif
 
 /* On android API level 21, 'AT_EACCESS' is not declared although
@@ -47,7 +46,8 @@
 #  undef HAVE_FACCESSAT
 #endif
 
-#include <stdio.h>  /* needed for ctermid() */
+#include <stdio.h>                // ctermid()
+#include <stdlib.h>               // system()
 
 /*
  * A number of APIs are available on macOS from a certain macOS version.
@@ -320,26 +320,6 @@ corresponding Unix manual entries for more information on calls.");
 #    define HAVE_CWAIT      1
 #    define HAVE_FSYNC      1
 #    define fsync _commit
-#  else
-     /* Unix functions that the configure script doesn't check for */
-#    ifndef __VXWORKS__
-#      define HAVE_EXECV      1
-#      define HAVE_FORK       1
-#      if defined(__USLC__) && defined(__SCO_VERSION__)       /* SCO UDK Compiler */
-#        define HAVE_FORK1      1
-#      endif
-#    endif
-#    define HAVE_GETEGID    1
-#    define HAVE_GETEUID    1
-#    define HAVE_GETGID     1
-#    define HAVE_GETPPID    1
-#    define HAVE_GETUID     1
-#    define HAVE_KILL       1
-#    define HAVE_OPENDIR    1
-#    define HAVE_PIPE       1
-#    define HAVE_SYSTEM     1
-#    define HAVE_WAIT       1
-#    define HAVE_TTYNAME    1
 #  endif  /* _MSC_VER */
 #endif  /* ! __WATCOMC__ || __QNX__ */
 
@@ -561,7 +541,7 @@ run_at_forkers(PyObject *lst, int reverse)
             for (i = 0; i < PyList_GET_SIZE(cpy); i++) {
                 PyObject *func, *res;
                 func = PyList_GET_ITEM(cpy, i);
-                res = _PyObject_CallNoArg(func);
+                res = _PyObject_CallNoArgs(func);
                 if (res == NULL)
                     PyErr_WriteUnraisable(func);
                 else
@@ -1183,7 +1163,7 @@ path_converter(PyObject *o, void *p)
         if (NULL == func) {
             goto error_format;
         }
-        res = _PyObject_CallNoArg(func);
+        res = _PyObject_CallNoArgs(func);
         Py_DECREF(func);
         if (NULL == res) {
             goto error_exit;
@@ -4465,6 +4445,33 @@ os__path_splitroot_impl(PyObject *module, path_t *path)
 
 
 /*[clinic input]
+os._path_normpath
+
+    path: object
+
+Basic path normalization.
+[clinic start generated code]*/
+
+static PyObject *
+os__path_normpath_impl(PyObject *module, PyObject *path)
+/*[clinic end generated code: output=b94d696d828019da input=5e90c39e12549dc0]*/
+{
+    if (!PyUnicode_Check(path)) {
+        PyErr_Format(PyExc_TypeError, "expected 'str', not '%.200s'",
+            Py_TYPE(path)->tp_name);
+        return NULL;
+    }
+    Py_ssize_t len;
+    wchar_t *buffer = PyUnicode_AsWideCharString(path, &len);
+    if (!buffer) {
+        return NULL;
+    }
+    PyObject *result = PyUnicode_FromWideChar(_Py_normpath(buffer, len), -1);
+    PyMem_Free(buffer);
+    return result;
+}
+
+/*[clinic input]
 os.mkdir
 
     path : path_t
@@ -5934,6 +5941,7 @@ parse_posix_spawn_flags(PyObject *module, const char *func_name, PyObject *setpg
 
     }
 
+#ifdef HAVE_SIGSET_T
    if (setsigmask) {
         sigset_t set;
         if (!_Py_Sigset_Converter(setsigmask, &set)) {
@@ -5959,6 +5967,13 @@ parse_posix_spawn_flags(PyObject *module, const char *func_name, PyObject *setpg
         }
         all_flags |= POSIX_SPAWN_SETSIGDEF;
     }
+#else
+    if (setsigmask || setsigdef) {
+        PyErr_SetString(PyExc_NotImplementedError,
+                        "sigset is not supported on this platform");
+        goto fail;
+    }
+#endif
 
     if (scheduler) {
 #ifdef POSIX_SPAWN_SETSCHEDULER
@@ -13779,7 +13794,7 @@ static PyMethodDef DirEntry_methods[] = {
     OS_DIRENTRY_STAT_METHODDEF
     OS_DIRENTRY_INODE_METHODDEF
     OS_DIRENTRY___FSPATH___METHODDEF
-    {"__class_getitem__",       (PyCFunction)Py_GenericAlias,
+    {"__class_getitem__",       Py_GenericAlias,
     METH_O|METH_CLASS,          PyDoc_STR("See PEP 585")},
     {NULL}
 };
@@ -14380,7 +14395,7 @@ PyOS_FSPath(PyObject *path)
                             _PyType_Name(Py_TYPE(path)));
     }
 
-    path_repr = _PyObject_CallNoArg(func);
+    path_repr = _PyObject_CallNoArgs(func);
     Py_DECREF(func);
     if (NULL == path_repr) {
         return NULL;
@@ -14838,6 +14853,7 @@ static PyMethodDef posix_methods[] = {
     OS__GETFINALPATHNAME_METHODDEF
     OS__GETVOLUMEPATHNAME_METHODDEF
     OS__PATH_SPLITROOT_METHODDEF
+    OS__PATH_NORMPATH_METHODDEF
     OS_GETLOADAVG_METHODDEF
     OS_URANDOM_METHODDEF
     OS_SETRESUID_METHODDEF

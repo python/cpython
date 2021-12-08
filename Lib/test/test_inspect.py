@@ -24,7 +24,7 @@ try:
 except ImportError:
     ThreadPoolExecutor = None
 
-from test.support import run_unittest, cpython_only
+from test.support import cpython_only
 from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
 from test.support.import_helper import DirsOnSysPath
 from test.support.os_helper import TESTFN
@@ -43,7 +43,7 @@ from test.test_import import _ready_to_import
 # ismodule, isclass, ismethod, isfunction, istraceback, isframe, iscode,
 # isbuiltin, isroutine, isgenerator, isgeneratorfunction, getmembers,
 # getdoc, getfile, getmodule, getsourcefile, getcomments, getsource,
-# getclasstree, getargvalues, formatargspec, formatargvalues,
+# getclasstree, getargvalues, formatargvalues,
 # currentframe, stack, trace, isdatadescriptor
 
 # NOTE: There are some additional tests relating to interaction with
@@ -493,6 +493,15 @@ class TestRetrievingSourceCode(GetSourceBase):
         # Check filename override
         self.assertEqual(inspect.getmodule(None, modfile), mod)
 
+    def test_getmodule_file_not_found(self):
+        # See bpo-45406
+        def _getabsfile(obj, _filename):
+            raise FileNotFoundError('bad file')
+        with unittest.mock.patch('inspect.getabsfile', _getabsfile):
+            f = inspect.currentframe()
+            self.assertIsNone(inspect.getmodule(f))
+            inspect.getouterframes(f)  # smoke test
+
     def test_getframeinfo_get_first_line(self):
         frame_info = inspect.getframeinfo(self.fodderModule.fr, 50)
         self.assertEqual(frame_info.code_context[0], "# line 1\n")
@@ -844,24 +853,11 @@ class TestClassesAndFunctions(unittest.TestCase):
         got = inspect.getmro(D)
         self.assertEqual(expected, got)
 
-    def assertArgSpecEquals(self, routine, args_e, varargs_e=None,
-                            varkw_e=None, defaults_e=None, formatted=None):
-        with self.assertWarns(DeprecationWarning):
-            args, varargs, varkw, defaults = inspect.getargspec(routine)
-        self.assertEqual(args, args_e)
-        self.assertEqual(varargs, varargs_e)
-        self.assertEqual(varkw, varkw_e)
-        self.assertEqual(defaults, defaults_e)
-        if formatted is not None:
-            with self.assertWarns(DeprecationWarning):
-                self.assertEqual(inspect.formatargspec(args, varargs, varkw, defaults),
-                                 formatted)
-
     def assertFullArgSpecEquals(self, routine, args_e, varargs_e=None,
                                     varkw_e=None, defaults_e=None,
                                     posonlyargs_e=[], kwonlyargs_e=[],
                                     kwonlydefaults_e=None,
-                                    ann_e={}, formatted=None):
+                                    ann_e={}):
         args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, ann = \
             inspect.getfullargspec(routine)
         self.assertEqual(args, args_e)
@@ -871,58 +867,30 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assertEqual(kwonlyargs, kwonlyargs_e)
         self.assertEqual(kwonlydefaults, kwonlydefaults_e)
         self.assertEqual(ann, ann_e)
-        if formatted is not None:
-            with self.assertWarns(DeprecationWarning):
-                self.assertEqual(inspect.formatargspec(args, varargs, varkw, defaults,
-                                                       kwonlyargs, kwonlydefaults, ann),
-                                 formatted)
-
-    def test_getargspec(self):
-        self.assertArgSpecEquals(mod.eggs, ['x', 'y'], formatted='(x, y)')
-
-        self.assertArgSpecEquals(mod.spam,
-                                 ['a', 'b', 'c', 'd', 'e', 'f'],
-                                 'g', 'h', (3, 4, 5),
-                                 '(a, b, c, d=3, e=4, f=5, *g, **h)')
-
-        self.assertRaises(ValueError, self.assertArgSpecEquals,
-                          mod2.keyworded, [])
-
-        self.assertRaises(ValueError, self.assertArgSpecEquals,
-                          mod2.annotated, [])
-        self.assertRaises(ValueError, self.assertArgSpecEquals,
-                          mod2.keyword_only_arg, [])
-
 
     def test_getfullargspec(self):
         self.assertFullArgSpecEquals(mod2.keyworded, [], varargs_e='arg1',
                                      kwonlyargs_e=['arg2'],
-                                     kwonlydefaults_e={'arg2':1},
-                                     formatted='(*arg1, arg2=1)')
+                                     kwonlydefaults_e={'arg2':1})
 
         self.assertFullArgSpecEquals(mod2.annotated, ['arg1'],
-                                     ann_e={'arg1' : list},
-                                     formatted='(arg1: list)')
+                                     ann_e={'arg1' : list})
         self.assertFullArgSpecEquals(mod2.keyword_only_arg, [],
-                                     kwonlyargs_e=['arg'],
-                                     formatted='(*, arg)')
+                                     kwonlyargs_e=['arg'])
 
         self.assertFullArgSpecEquals(mod2.all_markers, ['a', 'b', 'c', 'd'],
-                                     kwonlyargs_e=['e', 'f'],
-                                     formatted='(a, b, c, d, *, e, f)')
+                                     kwonlyargs_e=['e', 'f'])
 
         self.assertFullArgSpecEquals(mod2.all_markers_with_args_and_kwargs,
                                      ['a', 'b', 'c', 'd'],
                                      varargs_e='args',
                                      varkw_e='kwargs',
-                                     kwonlyargs_e=['e', 'f'],
-                                     formatted='(a, b, c, d, *args, e, f, **kwargs)')
+                                     kwonlyargs_e=['e', 'f'])
 
         self.assertFullArgSpecEquals(mod2.all_markers_with_defaults, ['a', 'b', 'c', 'd'],
                                      defaults_e=(1,2,3),
                                      kwonlyargs_e=['e', 'f'],
-                                     kwonlydefaults_e={'e': 4, 'f': 5},
-                                     formatted='(a, b=1, c=2, d=3, *, e=4, f=5)')
+                                     kwonlydefaults_e={'e': 4, 'f': 5})
 
     def test_argspec_api_ignores_wrapped(self):
         # Issue 20684: low level introspection API must ignore __wrapped__
@@ -930,39 +898,9 @@ class TestClassesAndFunctions(unittest.TestCase):
         def ham(x, y):
             pass
         # Basic check
-        self.assertArgSpecEquals(ham, ['x', 'y'], formatted='(x, y)')
-        self.assertFullArgSpecEquals(ham, ['x', 'y'], formatted='(x, y)')
+        self.assertFullArgSpecEquals(ham, ['x', 'y'])
         self.assertFullArgSpecEquals(functools.partial(ham),
-                                     ['x', 'y'], formatted='(x, y)')
-        # Other variants
-        def check_method(f):
-            self.assertArgSpecEquals(f, ['self', 'x', 'y'],
-                                        formatted='(self, x, y)')
-        class C:
-            @functools.wraps(mod.spam)
-            def ham(self, x, y):
-                pass
-            pham = functools.partialmethod(ham)
-            @functools.wraps(mod.spam)
-            def __call__(self, x, y):
-                pass
-        check_method(C())
-        check_method(C.ham)
-        check_method(C().ham)
-        check_method(C.pham)
-        check_method(C().pham)
-
-        class C_new:
-            @functools.wraps(mod.spam)
-            def __new__(self, x, y):
-                pass
-        check_method(C_new)
-
-        class C_init:
-            @functools.wraps(mod.spam)
-            def __init__(self, x, y):
-                pass
-        check_method(C_init)
+                                     ['x', 'y'])
 
     def test_getfullargspec_signature_attr(self):
         def test():
@@ -970,7 +908,7 @@ class TestClassesAndFunctions(unittest.TestCase):
         spam_param = inspect.Parameter('spam', inspect.Parameter.POSITIONAL_ONLY)
         test.__signature__ = inspect.Signature(parameters=(spam_param,))
 
-        self.assertFullArgSpecEquals(test, ['spam'], formatted='(spam)')
+        self.assertFullArgSpecEquals(test, ['spam'])
 
     def test_getfullargspec_signature_annos(self):
         def test(a:'spam') -> 'ham': pass
@@ -984,18 +922,15 @@ class TestClassesAndFunctions(unittest.TestCase):
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
     def test_getfullargspec_builtin_methods(self):
-        self.assertFullArgSpecEquals(_pickle.Pickler.dump, ['self', 'obj'],
-                                     formatted='(self, obj)')
+        self.assertFullArgSpecEquals(_pickle.Pickler.dump, ['self', 'obj'])
 
-        self.assertFullArgSpecEquals(_pickle.Pickler(io.BytesIO()).dump, ['self', 'obj'],
-                                     formatted='(self, obj)')
+        self.assertFullArgSpecEquals(_pickle.Pickler(io.BytesIO()).dump, ['self', 'obj'])
 
         self.assertFullArgSpecEquals(
              os.stat,
              args_e=['path'],
              kwonlyargs_e=['dir_fd', 'follow_symlinks'],
-             kwonlydefaults_e={'dir_fd': None, 'follow_symlinks': True},
-             formatted='(path, *, dir_fd=None, follow_symlinks=True)')
+             kwonlydefaults_e={'dir_fd': None, 'follow_symlinks': True})
 
     @cpython_only
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
@@ -1025,12 +960,6 @@ class TestClassesAndFunctions(unittest.TestCase):
         signature = inspect.getfullargspec(unsorted_keyword_only_parameters_fn)
         l = list(signature.kwonlyargs)
         self.assertEqual(l, unsorted_keyword_only_parameters)
-
-    def test_getargspec_method(self):
-        class A(object):
-            def m(self):
-                pass
-        self.assertArgSpecEquals(A.m, ['self'])
 
     def test_classify_newstyle(self):
         class A(object):
@@ -1285,6 +1214,23 @@ class TestClassesAndFunctions(unittest.TestCase):
                 return 'spam'
         self.assertIn(('eggs', 'scrambled'), inspect.getmembers(A))
         self.assertIn(('eggs', 'spam'), inspect.getmembers(A()))
+
+    def test_getmembers_static(self):
+        class A:
+            @property
+            def name(self):
+                raise NotImplementedError
+            @types.DynamicClassAttribute
+            def eggs(self):
+                raise NotImplementedError
+
+        a = A()
+        instance_members = inspect.getmembers_static(a)
+        class_members = inspect.getmembers_static(A)
+        self.assertIn(('name', inspect.getattr_static(a, 'name')), instance_members)
+        self.assertIn(('eggs', inspect.getattr_static(a, 'eggs')), instance_members)
+        self.assertIn(('name', inspect.getattr_static(A, 'name')), class_members)
+        self.assertIn(('eggs', inspect.getattr_static(A, 'eggs')), class_members)
 
     def test_getmembers_with_buggy_dir(self):
         class M(type):
@@ -3316,6 +3262,17 @@ class TestSignatureObject(unittest.TestCase):
             pass
         self.assertEqual(str(inspect.signature(foo)), '()')
 
+        def foo(a: list[str]) -> tuple[str, float]:
+            pass
+        self.assertEqual(str(inspect.signature(foo)),
+                         '(a: list[str]) -> tuple[str, float]')
+
+        from typing import Tuple
+        def foo(a: list[str]) -> Tuple[str, float]:
+            pass
+        self.assertEqual(str(inspect.signature(foo)),
+                         '(a: list[str]) -> Tuple[str, float]')
+
     def test_signature_str_positional_only(self):
         P = inspect.Parameter
         S = inspect.Signature
@@ -4343,19 +4300,5 @@ def foo():
             self.assertInspectEqual(path, module)
 
 
-def test_main():
-    run_unittest(
-        TestDecorators, TestRetrievingSourceCode, TestOneliners, TestBlockComments,
-        TestBuggyCases, TestInterpreterStack, TestClassesAndFunctions, TestPredicates,
-        TestGetcallargsFunctions, TestGetcallargsMethods,
-        TestGetcallargsUnboundMethods, TestGetattrStatic, TestGetGeneratorState,
-        TestNoEOL, TestSignatureObject, TestSignatureBind, TestParameterObject,
-        TestBoundArguments, TestSignaturePrivateHelpers,
-        TestSignatureDefinitions, TestIsDataDescriptor,
-        TestGetClosureVars, TestUnwrap, TestMain, TestReload,
-        TestGetCoroutineState, TestGettingSourceOfToplevelFrames,
-        TestGetsourceInteractive,
-    )
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

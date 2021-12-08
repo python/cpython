@@ -318,7 +318,7 @@ PyAPI_FUNC(int) PyObject_DelItem(PyObject *o, PyObject *key);
 
 /* Takes an arbitrary object which must support the (character, single segment)
    buffer interface and returns a pointer to a read-only memory location
-   useable as character based input for subsequent processing.
+   usable as character based input for subsequent processing.
 
    Return 0 on success.  buffer and buffer_len are only set in case no error
    occurs. Otherwise, -1 is returned and an exception set. */
@@ -863,7 +863,7 @@ PyAPI_FUNC(int) PyObject_IsSubclass(PyObject *object, PyObject *typeorclass);
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_ABSTRACTOBJECT_H
-#  include  "cpython/abstract.h"
+#  include "cpython/abstract.h"
 #  undef Py_CPYTHON_ABSTRACTOBJECT_H
 #endif
 

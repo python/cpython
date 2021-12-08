@@ -199,7 +199,7 @@ class SocketUDPLITETest(SocketUDPTest):
         self.serv = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDPLITE)
         self.port = socket_helper.bind_port(self.serv)
 
-class ThreadSafeCleanupTestCase(unittest.TestCase):
+class ThreadSafeCleanupTestCase:
     """Subclass of unittest.TestCase with thread-safe cleanup methods.
 
     This subclass protects the addCleanup() and doCleanups() methods
@@ -1017,8 +1017,10 @@ class GeneralModuleTests(unittest.TestCase):
 
     def test_host_resolution_bad_address(self):
         # These are all malformed IP addresses and expected not to resolve to
-        # any result.  But some ISPs, e.g. AWS, may successfully resolve these
-        # IPs.
+        # any result.  But some ISPs, e.g. AWS and AT&T, may successfully
+        # resolve these IPs. In particular, AT&T's DNS Error Assist service
+        # will break this test.  See https://bugs.python.org/issue42092 for a
+        # workaround.
         explanation = (
             "resolving an invalid IP address did not raise OSError; "
             "can be caused by a broken DNS server"
@@ -4448,7 +4450,7 @@ class RecvmsgIntoSCMRightsStreamTest(RecvmsgIntoMixin, SCMRightsTest,
 # threads alive during the test so that the OS cannot deliver the
 # signal to the wrong one.
 
-class InterruptedTimeoutBase(unittest.TestCase):
+class InterruptedTimeoutBase:
     # Base class for interrupted send/receive tests.  Installs an
     # empty handler for SIGALRM and removes it on teardown, along with
     # any scheduled alarms.
@@ -6207,6 +6209,7 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
     def testWithTimeoutTriggeredSend(self):
         conn = self.accept_conn()
         conn.recv(88192)
+        # bpo-45212: the wait here needs to be longer than the client-side timeout (0.01s)
         time.sleep(1)
 
     # errors
@@ -6527,13 +6530,6 @@ class CreateServerTest(unittest.TestCase):
 class CreateServerFunctionalTest(unittest.TestCase):
     timeout = support.LOOPBACK_TIMEOUT
 
-    def setUp(self):
-        self.thread = None
-
-    def tearDown(self):
-        if self.thread is not None:
-            self.thread.join(self.timeout)
-
     def echo_server(self, sock):
         def run(sock):
             with sock:
@@ -6547,8 +6543,9 @@ class CreateServerFunctionalTest(unittest.TestCase):
 
         event = threading.Event()
         sock.settimeout(self.timeout)
-        self.thread = threading.Thread(target=run, args=(sock, ))
-        self.thread.start()
+        thread = threading.Thread(target=run, args=(sock, ))
+        thread.start()
+        self.addCleanup(thread.join, self.timeout)
         event.set()
 
     def echo_client(self, addr, family):
@@ -6636,84 +6633,10 @@ class SendRecvFdsTests(unittest.TestCase):
             self.assertEqual(data,  str(index).encode())
 
 
-def test_main():
-    tests = [GeneralModuleTests, BasicTCPTest, TCPCloserTest, TCPTimeoutTest,
-             TestExceptions, BufferIOTest, BasicTCPTest2, BasicUDPTest,
-             UDPTimeoutTest, CreateServerTest, CreateServerFunctionalTest,
-             SendRecvFdsTests]
-
-    tests.extend([
-        NonBlockingTCPTests,
-        FileObjectClassTestCase,
-        UnbufferedFileObjectClassTestCase,
-        LineBufferedFileObjectClassTestCase,
-        SmallBufferedFileObjectClassTestCase,
-        UnicodeReadFileObjectClassTestCase,
-        UnicodeWriteFileObjectClassTestCase,
-        UnicodeReadWriteFileObjectClassTestCase,
-        NetworkConnectionNoServer,
-        NetworkConnectionAttributesTest,
-        NetworkConnectionBehaviourTest,
-        ContextManagersTest,
-        InheritanceTest,
-        NonblockConstantTest
-    ])
-    tests.append(BasicSocketPairTest)
-    tests.append(TestUnixDomain)
-    tests.append(TestLinuxAbstractNamespace)
-    tests.extend([TIPCTest, TIPCThreadableTest])
-    tests.extend([BasicCANTest, CANTest])
-    tests.extend([BasicRDSTest, RDSTest])
-    tests.append(LinuxKernelCryptoAPI)
-    tests.append(BasicQIPCRTRTest)
-    tests.extend([
-        BasicVSOCKTest,
-        ThreadedVSOCKSocketStreamTest,
-    ])
-    tests.append(BasicBluetoothTest)
-    tests.extend([
-        CmsgMacroTests,
-        SendmsgUDPTest,
-        RecvmsgUDPTest,
-        RecvmsgIntoUDPTest,
-        SendmsgUDP6Test,
-        RecvmsgUDP6Test,
-        RecvmsgRFC3542AncillaryUDP6Test,
-        RecvmsgIntoRFC3542AncillaryUDP6Test,
-        RecvmsgIntoUDP6Test,
-        SendmsgUDPLITETest,
-        RecvmsgUDPLITETest,
-        RecvmsgIntoUDPLITETest,
-        SendmsgUDPLITE6Test,
-        RecvmsgUDPLITE6Test,
-        RecvmsgRFC3542AncillaryUDPLITE6Test,
-        RecvmsgIntoRFC3542AncillaryUDPLITE6Test,
-        RecvmsgIntoUDPLITE6Test,
-        SendmsgTCPTest,
-        RecvmsgTCPTest,
-        RecvmsgIntoTCPTest,
-        SendmsgSCTPStreamTest,
-        RecvmsgSCTPStreamTest,
-        RecvmsgIntoSCTPStreamTest,
-        SendmsgUnixStreamTest,
-        RecvmsgUnixStreamTest,
-        RecvmsgIntoUnixStreamTest,
-        RecvmsgSCMRightsStreamTest,
-        RecvmsgIntoSCMRightsStreamTest,
-        # These are slow when setitimer() is not available
-        InterruptedRecvTimeoutTest,
-        InterruptedSendTimeoutTest,
-        TestSocketSharing,
-        SendfileUsingSendTest,
-        SendfileUsingSendfileTest,
-    ])
-    tests.append(TestMSWindowsTCPFlags)
-    tests.append(TestMacOSTCPFlags)
-
+def setUpModule():
     thread_info = threading_helper.threading_setup()
-    support.run_unittest(*tests)
-    threading_helper.threading_cleanup(*thread_info)
+    unittest.addModuleCleanup(threading_helper.threading_cleanup, *thread_info)
 
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

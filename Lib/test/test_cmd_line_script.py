@@ -738,9 +738,9 @@ class CmdLineTest(unittest.TestCase):
         self.assertNotEqual(proc.returncode, 0)
 
 
-def test_main():
-    support.run_unittest(CmdLineTest)
+def tearDownModule():
     support.reap_children()
 
+
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
