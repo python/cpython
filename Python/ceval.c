@@ -2788,7 +2788,7 @@ check_eval_breaker:
 
         TARGET(RERAISE) {
             if (oparg) {
-                PyObject *lasti = PEEK(oparg+PY_EXC_INFO_STACK_SIZE);
+                PyObject *lasti = PEEK(oparg + PY_EXC_INFO_STACK_SIZE);
                 if (PyLong_Check(lasti)) {
                     frame->f_lasti = PyLong_AsLong(lasti);
                     assert(!_PyErr_Occurred(tstate));
