@@ -1844,14 +1844,18 @@ Super Binding
 
         def m(self):
             'Demonstrate these two descriptor invocations are equivalent'
-            result1 = super(A, a).x
-            result2 = B.__dict__['x'].__get__(a, A)
+            result1 = super(A, self).x
+            result2 = B.__dict__['x'].__get__(self, A)
             return result1 == result2
 
 .. doctest::
     :hide:
 
     >>> a = A()
+    >>> a.__class__.__mro__.index(B) > a.__class__.__mro__.index(A)
+    True
+    >>> super(A, a).x == B.__dict__['x'].__get__(a, A)
+    True
     >>> a.m()
     True
 
