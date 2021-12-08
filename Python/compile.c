@@ -1052,7 +1052,7 @@ stack_effect(int opcode, int oparg, int jump)
         case POP_EXCEPT:
             return -PY_EXC_INFO_STACK_SIZE;
         case POP_EXCEPT_AND_RERAISE:
-            return -1 -2 * PY_EXC_INFO_STACK_SIZE;
+            return -(1 + 2 * PY_EXC_INFO_STACK_SIZE);
 
         case STORE_NAME:
             return -1;

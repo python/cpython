@@ -2746,7 +2746,7 @@ check_eval_breaker:
         }
 
         TARGET(POP_EXCEPT_AND_RERAISE) {
-            PyObject *lasti = PEEK(PY_EXC_INFO_STACK_SIZE+1);
+            PyObject *lasti = PEEK(PY_EXC_INFO_STACK_SIZE + 1);
             if (PyLong_Check(lasti)) {
                 frame->f_lasti = PyLong_AsLong(lasti);
                 assert(!_PyErr_Occurred(tstate));
