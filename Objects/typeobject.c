@@ -294,7 +294,7 @@ PyType_ClearCache(void)
 
 
 void
-_PyType_Fini(PyInterpreterState *interp)
+_PyTypes_Fini(PyInterpreterState *interp)
 {
     struct type_cache *cache = &interp->type_cache;
     type_cache_clear(cache, NULL);

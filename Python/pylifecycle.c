@@ -14,6 +14,7 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
+#include "pycore_typeobject.h"    // _PyTypes_Init()
 
 #include <locale.h>               // setlocale()
 #include <stdlib.h>               // getenv()
@@ -698,16 +699,25 @@ pycore_init_types(PyInterpreterState *interp)
         if (_PyStructSequence_Init() < 0) {
             return _PyStatus_ERR("can't initialize structseq");
         }
+    }
 
-        status = _PyTypes_Init();
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
+    status = _PyTypes_InitState(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
 
+    status = _PyTypes_InitTypes(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    if (is_main_interp) {
         if (_PyLong_InitTypes() < 0) {
             return _PyStatus_ERR("can't init int type");
         }
+    }
 
+    if (is_main_interp) {
         status = _PyUnicode_InitTypes();
         if (_PyStatus_EXCEPTION(status)) {
             return status;
@@ -1641,7 +1651,7 @@ finalize_interp_types(PyInterpreterState *interp)
     _PyFrame_Fini(interp);
     _PyAsyncGen_Fini(interp);
     _PyContext_Fini(interp);
-    _PyType_Fini(interp);
+    _PyTypes_Fini(interp);
     // Call _PyUnicode_ClearInterned() before _PyDict_Fini() since it uses
     // a dict internally.
     _PyUnicode_ClearInterned(interp);
