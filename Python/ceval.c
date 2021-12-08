@@ -749,24 +749,19 @@ _PyEval_InitRuntimeState(struct _ceval_runtime_state *ceval)
 #endif
 }
 
-int
-_PyEval_InitState(struct _ceval_state *ceval)
+void
+_PyEval_InitState(struct _ceval_state *ceval, PyThread_type_lock pending_lock)
 {
     ceval->recursion_limit = Py_DEFAULT_RECURSION_LIMIT;
 
     struct _pending_calls *pending = &ceval->pending;
     assert(pending->lock == NULL);
 
-    pending->lock = PyThread_allocate_lock();
-    if (pending->lock == NULL) {
-        return -1;
-    }
+    pending->lock = pending_lock;
 
 #ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
     _gil_initialize(&ceval->gil);
 #endif
-
-    return 0;
 }
 
 void
@@ -791,7 +786,7 @@ Py_SetRecursionLimit(int new_limit)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     interp->ceval.recursion_limit = new_limit;
-    for (PyThreadState *p = interp->tstate_head; p != NULL; p = p->next) {
+    for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
         int depth = p->recursion_limit - p->recursion_remaining;
         p->recursion_limit = new_limit;
         p->recursion_remaining = new_limit - depth;
@@ -3637,9 +3632,9 @@ check_eval_breaker:
             _PyAttrCache *cache1 = &caches[-1].attr;
             assert(cache1->tp_version != 0);
             DEOPT_IF(tp->tp_version_tag != cache1->tp_version, LOAD_ATTR);
-            assert(tp->tp_dictoffset > 0);
-            assert(tp->tp_inline_values_offset > 0);
-            PyDictValues *values = *(PyDictValues **)(((char *)owner) + tp->tp_inline_values_offset);
+            assert(tp->tp_dictoffset < 0);
+            assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+            PyDictValues *values = *_PyObject_ValuesPointer(owner);
             DEOPT_IF(values == NULL, LOAD_ATTR);
             res = values->values[cache0->index];
             DEOPT_IF(res == NULL, LOAD_ATTR);
@@ -3671,8 +3666,8 @@ check_eval_breaker:
             _PyAttrCache *cache1 = &caches[-1].attr;
             assert(cache1->tp_version != 0);
             DEOPT_IF(tp->tp_version_tag != cache1->tp_version, LOAD_ATTR);
-            assert(tp->tp_dictoffset > 0);
-            PyDictObject *dict = *(PyDictObject **)(((char *)owner) + tp->tp_dictoffset);
+            assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+            PyDictObject *dict = *(PyDictObject **)_PyObject_ManagedDictPointer(owner);
             DEOPT_IF(dict == NULL, LOAD_ATTR);
             assert(PyDict_CheckExact((PyObject *)dict));
             PyObject *name = GETITEM(names, cache0->original_oparg);
@@ -3739,9 +3734,8 @@ check_eval_breaker:
             _PyAttrCache *cache1 = &caches[-1].attr;
             assert(cache1->tp_version != 0);
             DEOPT_IF(tp->tp_version_tag != cache1->tp_version, STORE_ATTR);
-            assert(tp->tp_dictoffset > 0);
-            assert(tp->tp_inline_values_offset > 0);
-            PyDictValues *values = *(PyDictValues **)(((char *)owner) + tp->tp_inline_values_offset);
+            assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+            PyDictValues *values = *_PyObject_ValuesPointer(owner);
             DEOPT_IF(values == NULL, STORE_ATTR);
             STAT_INC(STORE_ATTR, hit);
             int index = cache0->index;
@@ -3769,8 +3763,8 @@ check_eval_breaker:
             _PyAttrCache *cache1 = &caches[-1].attr;
             assert(cache1->tp_version != 0);
             DEOPT_IF(tp->tp_version_tag != cache1->tp_version, STORE_ATTR);
-            assert(tp->tp_dictoffset > 0);
-            PyDictObject *dict = *(PyDictObject **)(((char *)owner) + tp->tp_dictoffset);
+            assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+            PyDictObject *dict = *(PyDictObject **)_PyObject_ManagedDictPointer(owner);
             DEOPT_IF(dict == NULL, STORE_ATTR);
             assert(PyDict_CheckExact((PyObject *)dict));
             PyObject *name = GETITEM(names, cache0->original_oparg);
@@ -4622,9 +4616,8 @@ check_eval_breaker:
             _PyObjectCache *cache2 = &caches[-2].obj;
 
             DEOPT_IF(self_cls->tp_version_tag != cache1->tp_version, LOAD_METHOD);
-            assert(self_cls->tp_dictoffset > 0);
-            assert(self_cls->tp_inline_values_offset > 0);
-            PyDictObject *dict = *(PyDictObject **)(((char *)self) + self_cls->tp_dictoffset);
+            assert(self_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+            PyDictObject *dict = *(PyDictObject**)_PyObject_ManagedDictPointer(self);
             DEOPT_IF(dict != NULL, LOAD_METHOD);
             DEOPT_IF(((PyHeapTypeObject *)self_cls)->ht_cached_keys->dk_version != cache1->dk_version_or_hint, LOAD_METHOD);
             STAT_INC(LOAD_METHOD, hit);
@@ -5970,24 +5963,6 @@ fail_post_args:
     return -1;
 }
 
-static int
-initialize_coro_frame(InterpreterFrame *frame, PyThreadState *tstate,
-           PyFunctionObject *func, PyObject *locals,
-           PyObject *const *args, Py_ssize_t argcount,
-           PyObject *kwnames)
-{
-    assert(is_tstate_valid(tstate));
-    assert(func->func_defaults == NULL || PyTuple_CheckExact(func->func_defaults));
-    PyCodeObject *code = (PyCodeObject *)func->func_code;
-    _PyFrame_InitializeSpecials(frame, func, locals, code->co_nlocalsplus);
-    for (int i = 0; i < code->co_nlocalsplus; i++) {
-        frame->localsplus[i] = NULL;
-    }
-    assert(frame->frame_obj == NULL);
-    return initialize_locals(tstate, func, frame->localsplus, args, argcount, kwnames);
-}
-
-
 /* Consumes all the references to the args */
 static PyObject *
 make_coro(PyThreadState *tstate, PyFunctionObject *func,
@@ -6001,12 +5976,17 @@ make_coro(PyThreadState *tstate, PyFunctionObject *func,
         return NULL;
     }
     InterpreterFrame *frame = (InterpreterFrame *)((PyGenObject *)gen)->gi_iframe;
-    if (initialize_coro_frame(frame, tstate, func, locals, args, argcount, kwnames)) {
+    PyCodeObject *code = (PyCodeObject *)func->func_code;
+    _PyFrame_InitializeSpecials(frame, func, locals, code->co_nlocalsplus);
+    for (int i = 0; i < code->co_nlocalsplus; i++) {
+        frame->localsplus[i] = NULL;
+    }
+    ((PyGenObject *)gen)->gi_frame_valid = 1;
+    if (initialize_locals(tstate, func, frame->localsplus, args, argcount, kwnames)) {
         Py_DECREF(gen);
         return NULL;
     }
     frame->generator = gen;
-    ((PyGenObject *)gen)->gi_frame_valid = 1;
     return gen;
 }
 
