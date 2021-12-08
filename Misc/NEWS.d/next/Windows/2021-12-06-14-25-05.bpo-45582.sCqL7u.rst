@@ -1,1 +1,3 @@
-When PGO building on Windows, the folder of the instrumented binaries is now located directly under the PCbuild folder.
+When PGO building on Windows, the folder for the instrumented binaries is
+now located at the same level as that for the production builds.
+(e.g. `PCbuild/amd64/instrumented` to `PCbuild/amd64_instrumented`)
