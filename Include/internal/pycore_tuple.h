@@ -10,6 +10,16 @@ extern "C" {
 
 #include "tupleobject.h"   /* _PyTuple_CAST() */
 
+
+/* runtime lifecycle */
+
+extern PyStatus _PyTuple_InitGlobalObjects(PyInterpreterState *);
+extern PyStatus _PyTuple_InitTypes(PyInterpreterState *);
+extern void _PyTuple_Fini(PyInterpreterState *);
+
+
+/* other API */
+
 #define _PyTuple_ITEMS(op) (_PyTuple_CAST(op)->ob_item)
 
 extern PyObject *_PyTuple_FromArray(PyObject *const *, Py_ssize_t);
