@@ -10538,8 +10538,8 @@ if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
 _ACEOF
 
     have_uuid=yes
-    LIBUUID_CFLAGS=
-    LIBUUID_LIBS=
+    LIBUUID_CFLAGS=${LIBUUID_CFLAGS-""}
+    LIBUUID_LIBS=${LIBUUID_LIBS-""}
 
 fi
 done
@@ -10612,8 +10612,6 @@ fi
 	echo "$LIBUUID_PKG_ERRORS" >&5
 
 
-      LIBUUID_LIBS="-luuid"
-      LIBUUID_CFLAGS=
       for ac_header in uuid/uuid.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "uuid/uuid.h" "ac_cv_header_uuid_uuid_h" "$ac_includes_default"
@@ -10731,6 +10729,12 @@ LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
 
 
+        if test "x$have_uuid" = xyes; then :
+
+          LIBUUID_CFLAGS=${LIBUUID_CFLAGS-""}
+          LIBUUID_LIBS=${LIBUUID_LIBS-"-luuid"}
+
+fi
 
 fi
 
@@ -10742,8 +10746,6 @@ elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
-      LIBUUID_LIBS="-luuid"
-      LIBUUID_CFLAGS=
       for ac_header in uuid/uuid.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "uuid/uuid.h" "ac_cv_header_uuid_uuid_h" "$ac_includes_default"
@@ -10861,6 +10863,12 @@ LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
 
 
+        if test "x$have_uuid" = xyes; then :
+
+          LIBUUID_CFLAGS=${LIBUUID_CFLAGS-""}
+          LIBUUID_LIBS=${LIBUUID_LIBS-"-luuid"}
+
+fi
 
 fi
 
@@ -10898,8 +10906,8 @@ _ACEOF
 if test "x$ac_cv_func_uuid_generate_time" = xyes; then :
 
       have_uuid=yes
-      LIBUUID_CFLAGS=
-      LIBUUID_LIBS=
+      LIBUUID_CFLAGS=${LIBUUID_CFLAGS-""}
+      LIBUUID_LIBS=${LIBUUID_LIBS-""}
 
 fi
 
@@ -11350,8 +11358,8 @@ $as_echo "$with_system_expat" >&6; }
 
 if test "x$with_system_expat" = xyes; then :
 
-  LIBEXPAT_CFLAGS=""
-  LIBEXPAT_LDFLAGS="-lexpat"
+  LIBEXPAT_CFLAGS=${LIBEXPAT_CFLAGS-""}
+  LIBEXPAT_LDFLAGS=${LIBEXPAT_LDFLAGS-"-lexpat"}
   LIBEXPAT_INTERNAL=
 
 else
@@ -11424,8 +11432,8 @@ $as_echo "$with_system_libmpdec" >&6; }
 
 if test "x$with_system_libmpdec" = xyes; then :
 
-  LIBMPDEC_CFLAGS=""
-  LIBMPDEC_LDFLAGS="-lmpdec"
+  LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
+  LIBMPDEC_LDFLAGS=${LIBMPDEC_LDFLAGS-"-lmpdec"}
   LIBMPDEC_INTERNAL=
 
 else
@@ -11600,7 +11608,7 @@ fi
 	echo "$LIBNSL_PKG_ERRORS" >&5
 
 
-  LIBNSL_CFLAGS=
+  LIBNSL_CFLAGS=${LIBNSL_CFLAGS-""}
   save_CFLAGS=$CFLAGS
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
@@ -11674,19 +11682,20 @@ LIBS=$save_LIBS
 
   case $ac_cv_search_yp_match in #(
   no) :
-    LIBNSL_LIBS= ;; #(
+    libnsl="" ;; #(
   "none required") :
-    LIBNSL_LIBS= ;; #(
+    libnsl="" ;; #(
   *) :
-    LIBNSL_LIBS=$ac_cv_search_yp_match
+    libnsl="$ac_cv_search_yp_match"
    ;;
 esac
+  LIBNSL_LIBS=${LIBNSL_LIBS-$libnsl}
 
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
-  LIBNSL_CFLAGS=
+  LIBNSL_CFLAGS=${LIBNSL_CFLAGS-""}
   save_CFLAGS=$CFLAGS
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
@@ -11760,13 +11769,14 @@ LIBS=$save_LIBS
 
   case $ac_cv_search_yp_match in #(
   no) :
-    LIBNSL_LIBS= ;; #(
+    libnsl="" ;; #(
   "none required") :
-    LIBNSL_LIBS= ;; #(
+    libnsl="" ;; #(
   *) :
-    LIBNSL_LIBS=$ac_cv_search_yp_match
+    libnsl="$ac_cv_search_yp_match"
    ;;
 esac
+  LIBNSL_LIBS=${LIBNSL_LIBS-$libnsl}
 
 else
 	LIBNSL_CFLAGS=$pkg_cv_LIBNSL_CFLAGS
@@ -11867,16 +11877,16 @@ fi
 	echo "$LIBSQLITE3_PKG_ERRORS" >&5
 
 
-    LIBSQLITE3_LIBS="-lsqlite3"
-    LIBSQLITE3_CFLAGS=
+    LIBSQLITE3_CFLAGS=${LIBSQLITE3_CFLAGS-""}
+    LIBSQLITE3_LIBS=${LIBSQLITE3_LIBS-"-lsqlite3"}
 
 
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
-    LIBSQLITE3_LIBS="-lsqlite3"
-    LIBSQLITE3_CFLAGS=
+    LIBSQLITE3_CFLAGS=${LIBSQLITE3_CFLAGS-""}
+    LIBSQLITE3_LIBS=${LIBSQLITE3_LIBS-"-lsqlite3"}
 
 
 else
@@ -12147,7 +12157,7 @@ $as_echo "$ac_cv_lib_gdbm_gdbm_open" >&6; }
 if test "x$ac_cv_lib_gdbm_gdbm_open" = xyes; then :
 
       have_gdbm=yes
-      GDBM_LIBS="$GDBM_LIBS -lgdbm"
+      GDBM_LIBS=${GDBM_LIBS-"-lgdbm"}
 
 else
   have_gdbm=no
@@ -14619,8 +14629,8 @@ $as_echo "$ac_cv_lib_z_gzread" >&6; }
 if test "x$ac_cv_lib_z_gzread" = xyes; then :
 
         have_zlib=yes
-        ZLIB_CFLAGS=
-        ZLIB_LIBS=-lz
+        ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
+        ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
 $as_echo_n "checking for inflateCopy in -lz... " >&6; }
 if ${ac_cv_lib_z_inflateCopy+:} false; then :
@@ -14741,8 +14751,8 @@ $as_echo "$ac_cv_lib_z_gzread" >&6; }
 if test "x$ac_cv_lib_z_gzread" = xyes; then :
 
         have_zlib=yes
-        ZLIB_CFLAGS=
-        ZLIB_LIBS=-lz
+        ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
+        ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
 $as_echo_n "checking for inflateCopy in -lz... " >&6; }
 if ${ac_cv_lib_z_inflateCopy+:} false; then :
@@ -14938,8 +14948,8 @@ $as_echo "$ac_cv_lib_bz2_BZ2_bzCompress" >&6; }
 if test "x$ac_cv_lib_bz2_BZ2_bzCompress" = xyes; then :
 
         have_bzip2=yes
-        BZIP2_CFLAGS=
-        BZIP2_LIBS=-lbz2
+        BZIP2_CFLAGS=${BZIP2_CFLAGS-""}
+        BZIP2_LIBS=${BZIP2_LIBS-"-lbz2"}
 
 else
   have_bzip2=no
@@ -15017,8 +15027,8 @@ $as_echo "$ac_cv_lib_bz2_BZ2_bzCompress" >&6; }
 if test "x$ac_cv_lib_bz2_BZ2_bzCompress" = xyes; then :
 
         have_bzip2=yes
-        BZIP2_CFLAGS=
-        BZIP2_LIBS=-lbz2
+        BZIP2_CFLAGS=${BZIP2_CFLAGS-""}
+        BZIP2_LIBS=${BZIP2_LIBS-"-lbz2"}
 
 else
   have_bzip2=no
@@ -15160,8 +15170,8 @@ $as_echo "$ac_cv_lib_lzma_lzma_easy_encoder" >&6; }
 if test "x$ac_cv_lib_lzma_lzma_easy_encoder" = xyes; then :
 
         have_liblzma=yes
-        LIBLZMA_CFLAGS=
-        LIBLZMA_LIBS=-llzma
+        LIBLZMA_CFLAGS=${LIBLZMA_CFLAGS-""}
+        LIBLZMA_LIBS=${LIBLZMA_LIBS-"-llzma"}
 
 else
   have_liblzma=no
@@ -15239,8 +15249,8 @@ $as_echo "$ac_cv_lib_lzma_lzma_easy_encoder" >&6; }
 if test "x$ac_cv_lib_lzma_lzma_easy_encoder" = xyes; then :
 
         have_liblzma=yes
-        LIBLZMA_CFLAGS=
-        LIBLZMA_LIBS=-llzma
+        LIBLZMA_CFLAGS=${LIBLZMA_CFLAGS-""}
+        LIBLZMA_LIBS=${LIBLZMA_LIBS-"-llzma"}
 
 else
   have_liblzma=no
@@ -15840,10 +15850,11 @@ if test "$ac_res" != no; then :
       $as_echo "#define HAVE_CRYPT_R 1" >>confdefs.h
 
       if test "$ac_cv_search_crypt_r" = "none required"; then
-        LIBCRYPT_LIBS=
+        libcrypt=
       else
-        LIBCRYPT_LIBS="$ac_cv_search_crypt_r"
+        libcrypt="$ac_cv_search_crypt_r"
       fi
+      LIBCRYPT_LIBS=${LIBCRYPT_LIBS-$libcrypt}
 
 fi
 
@@ -15922,10 +15933,11 @@ if test "$ac_res" != no; then :
       $as_echo "#define HAVE_CRYPT_R 1" >>confdefs.h
 
       if test "$ac_cv_search_crypt_r" = "none required"; then
-        LIBCRYPT_LIBS=
+        libcrypt=
       else
-        LIBCRYPT_LIBS="$ac_cv_search_crypt_r"
+        libcrypt="$ac_cv_search_crypt_r"
       fi
+      LIBCRYPT_LIBS=${LIBCRYPT_LIBS-$libcrypt}
 
 fi
 
