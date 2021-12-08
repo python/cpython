@@ -146,6 +146,12 @@ The :option:`-X` ``no_debug_ranges`` option and the environment variable
 See :pep:`657` for more details. (Contributed by Pablo Galindo, Batuhan Taskaya
 and Ammar Askar in :issue:`43950`.)
 
+Exceptions can be enriched with a string ``__note__``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``__note__`` field was added to :exc:`BaseException`. It is ``None``
+by default but can be set to a string which is added to the exception's
+traceback. (Contributed by Irit Katriel in :issue:`45607`.)
 
 Other Language Changes
 ======================
@@ -181,6 +187,12 @@ Other CPython Implementation Changes
   hash-based pyc files now use ``siphash13``, too.
   (Contributed by Inada Naoki in :issue:`29410`.)
 
+* When an active exception is re-raised by a :keyword:`raise` statement with no parameters,
+  the traceback attached to this exception is now always ``sys.exc_info()[1].__traceback__``.
+  This means that changes made to the traceback in the current :keyword:`except` clause are
+  reflected in the re-raised exception.
+  (Contributed by Irit Katriel in :issue:`45711`.)
+
 New Modules
 ===========
 
@@ -201,8 +213,17 @@ fractions
   (Contributed by Mark Dickinson in :issue:`44547`.)
 
 
+inspect
+-------
+* Add :func:`inspect.getmembers_static`: return all members without
+  triggering dynamic lookup via the descriptor protocol. (Contributed by
+  Weipeng Hong in :issue:`30533`.)
+
+
 math
 ----
+* Add :func:`math.exp2`: return 2 raised to the power of x.
+  (Contributed by Gideon Mitchell in :issue:`45917`.)
 
 * Add :func:`math.cbrt`: return the cube root of x.
   (Contributed by Ajith Ramachandran in :issue:`44357`.)
@@ -248,7 +269,6 @@ sqlite3
   (Contributed by Aviv Palivoda, Daniel Shahaf, and Erlend E. Aasland in
   :issue:`16379` and :issue:`24139`.)
 
-
 * Add :meth:`~sqlite3.Connection.setlimit` and
   :meth:`~sqlite3.Connection.getlimit` to :class:`sqlite3.Connection` for
   setting and getting SQLite limits by connection basis.
@@ -257,6 +277,22 @@ sqlite3
 * :mod:`sqlite3` now sets :attr:`sqlite3.threadsafety` based on the default
   threading mode the underlying SQLite library has been compiled with.
   (Contributed by Erlend E. Aasland in :issue:`45613`.)
+
+* :mod:`sqlite3` C callbacks now use unraisable exceptions if callback
+  tracebacks are enabled. Users can now register an
+  :func:`unraisable hook handler <sys.unraisablehook>` to improve their debug
+  experience.
+  (Contributed by Erlend E. Aasland in :issue:`45828`.)
+
+
+sys
+---
+
+* :func:`sys.exc_info` now derives the ``type`` and ``traceback`` fields
+  from the ``value`` (the exception instance), so when an exception is
+  modified while it is being handled, the changes are reflected in
+  the results of subsequent calls to :func:`exc_info`.
+  (Contributed by Irit Katriel in :issue:`45711`.)
 
 
 threading
@@ -269,6 +305,7 @@ threading
   by system clock changes.
   (Contributed by Victor Stinner in :issue:`41710`.)
 
+
 time
 ----
 
@@ -278,10 +315,13 @@ time
   of 1 microsecond (10\ :sup:`-6` seconds).
   (Contributed by Benjamin Szőke and Victor Stinner in :issue:`21302`.)
 
-* On Windows, :func:`time.sleep` now uses a waitable timer which has a
-  resolution of 100 nanoseconds (10\ :sup:`-7` seconds). Previously, it had
-  a resolution of 1 millisecond (10\ :sup:`-3` seconds).
-  (Contributed by Benjamin Szőke and Victor Stinner in :issue:`21302`.)
+* On Windows 8.1 and newer, :func:`time.sleep` now uses a waitable timer based
+  on `high-resolution timers
+  <https://docs.microsoft.com/en-us/windows-hardware/drivers/kernel/high-resolution-timers>`_
+  which has a resolution of 100 nanoseconds (10\ :sup:`-7` seconds). Previously,
+  it had a resolution of 1 millisecond (10\ :sup:`-3` seconds).
+  (Contributed by Benjamin Szőke, Dong-hee Na, Eryk Sun and Victor Stinner in :issue:`21302` and :issue:`45429`.)
+
 
 unicodedata
 -----------
@@ -311,9 +351,17 @@ Optimizations
 * Pure ASCII strings are now normalized in constant time by :func:`unicodedata.normalize`.
   (Contributed by Dong-hee Na in :issue:`44987`.)
 
+* :mod:`math` functions :func:`~math.comb` and :func:`~math.perm` are now up
+  to 10 times or more faster for large arguments (the speed up is larger for
+  larger *k*).
+  (Contributed by Serhiy Storchaka in :issue:`37295`.)
+
 
 CPython bytecode changes
 ========================
+
+* Replaced all numeric ``BINARY_*`` and ``INPLACE_*`` instructions with a single
+  :opcode:`BINARY_OP` implementation.
 
 * Added a new :opcode:`CALL_METHOD_KW` opcode.  Calls a method in a similar
   fashion as :opcode:`CALL_METHOD`, but also supports keyword arguments.  Works
@@ -328,6 +376,8 @@ CPython bytecode changes
 
 * Added :opcode:`COPY`, which pushes the *i*-th item to the top of the stack.
   The item is not removed from its original location.
+
+* :opcode:`JUMP_IF_NOT_EXC_MATCH` no longer pops the active exception.
 
 
 Deprecated
@@ -360,6 +410,11 @@ Deprecated
 
   (Contributed by Erlend E. Aasland in :issue:`5846`.)
 
+* The :meth:`turtle.RawTurtle.settiltangle` is deprecated since Python 3.1,
+  it now emits a deprecation warning and will be removed in Python 3.13. Use
+  :meth:`turtle.RawTurtle.tiltangle` instead (it was earlier incorrectly marked
+  as deprecated, its docstring is now corrected).
+  (Contributed by Hugo van Kemenade in :issue:`45837`.)
 
 Removed
 =======
@@ -524,6 +579,17 @@ Build Changes
   (Contributed by Brett Cannon and Christian Heimes in :issue:`45548`,
   :issue:`45570`, :issue:`45571`, and :issue:`43974`.)
 
+* Build dependencies, compiler flags, and linker flags for most stdlib
+  extension modules are now detected by :program:`configure`. libffi, libnsl,
+  libsqlite3, zlib, bzip2, liblzma, libcrypt, and uuid flags are detected by
+  ``pkg-config`` (when available).
+  (Contributed by Christian Heimes and Erlend Egeberg Aasland in
+  :issue:`bpo-45847`, :issue:`45747`, and :issue:`45763`.)
+
+* CPython now has experimental support for cross compiling to WebAssembly
+  platform ``wasm32-emscripten``. The effort is inspired by previous work
+  like Pyodide.
+  (Contributed by Christian Heimes and Ethan Smith in :issue:`40280`.)
 
 C API Changes
 =============
@@ -541,6 +607,17 @@ New Features
   :c:func:`PyThreadState_LeaveTracing` functions to the limited C API to
   suspend and resume tracing and profiling.
   (Contributed by Victor Stinner in :issue:`43760`.)
+
+* :c:func:`PyErr_SetExcInfo()` no longer uses the ``type`` and ``traceback``
+  arguments, the interpreter now derives those values from the exception
+  instance (the ``value`` argument). The function still steals references
+  of all three arguments.
+  (Contributed by Irit Katriel in :issue:`45711`.)
+
+* :c:func:`PyErr_GetExcInfo()` now derives the ``type`` and ``traceback``
+  fields of the result from the exception instance (the ``value`` field).
+  (Contributed by Irit Katriel in :issue:`45711`.)
+
 
 Porting to Python 3.11
 ----------------------

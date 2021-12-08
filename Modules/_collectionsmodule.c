@@ -2,12 +2,7 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "structmember.h"         // PyMemberDef
-
-#ifdef STDC_HEADERS
 #include <stddef.h>
-#else
-#include <sys/types.h>            // size_t
-#endif
 
 /*[clinic input]
 module _collections

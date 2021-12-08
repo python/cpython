@@ -1016,6 +1016,9 @@ PyAPI_FUNC(PyObject*) _PyUnicode_FromId(_Py_Identifier*);
    and where the hash values are equal (i.e. a very probable match) */
 PyAPI_FUNC(int) _PyUnicode_EQ(PyObject *, PyObject *);
 
+/* Equality check. Returns -1 on failure. */
+PyAPI_FUNC(int) _PyUnicode_Equal(PyObject *, PyObject *);
+
 PyAPI_FUNC(int) _PyUnicode_WideCharString_Converter(PyObject *, void *);
 PyAPI_FUNC(int) _PyUnicode_WideCharString_Opt_Converter(PyObject *, void *);
 

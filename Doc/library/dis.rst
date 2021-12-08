@@ -406,156 +406,29 @@ result back on the stack.
    .. versionadded:: 3.5
 
 
-**Binary operations**
+**Binary and in-place operations**
 
 Binary operations remove the top of the stack (TOS) and the second top-most
 stack item (TOS1) from the stack.  They perform the operation, and put the
 result back on the stack.
-
-.. opcode:: BINARY_POWER
-
-   Implements ``TOS = TOS1 ** TOS``.
-
-
-.. opcode:: BINARY_MULTIPLY
-
-   Implements ``TOS = TOS1 * TOS``.
-
-
-.. opcode:: BINARY_MATRIX_MULTIPLY
-
-   Implements ``TOS = TOS1 @ TOS``.
-
-   .. versionadded:: 3.5
-
-
-.. opcode:: BINARY_FLOOR_DIVIDE
-
-   Implements ``TOS = TOS1 // TOS``.
-
-
-.. opcode:: BINARY_TRUE_DIVIDE
-
-   Implements ``TOS = TOS1 / TOS``.
-
-
-.. opcode:: BINARY_MODULO
-
-   Implements ``TOS = TOS1 % TOS``.
-
-
-.. opcode:: BINARY_ADD
-
-   Implements ``TOS = TOS1 + TOS``.
-
-
-.. opcode:: BINARY_SUBTRACT
-
-   Implements ``TOS = TOS1 - TOS``.
-
-
-.. opcode:: BINARY_SUBSCR
-
-   Implements ``TOS = TOS1[TOS]``.
-
-
-.. opcode:: BINARY_LSHIFT
-
-   Implements ``TOS = TOS1 << TOS``.
-
-
-.. opcode:: BINARY_RSHIFT
-
-   Implements ``TOS = TOS1 >> TOS``.
-
-
-.. opcode:: BINARY_AND
-
-   Implements ``TOS = TOS1 & TOS``.
-
-
-.. opcode:: BINARY_XOR
-
-   Implements ``TOS = TOS1 ^ TOS``.
-
-
-.. opcode:: BINARY_OR
-
-   Implements ``TOS = TOS1 | TOS``.
-
-
-**In-place operations**
 
 In-place operations are like binary operations, in that they remove TOS and
 TOS1, and push the result back on the stack, but the operation is done in-place
 when TOS1 supports it, and the resulting TOS may be (but does not have to be)
 the original TOS1.
 
-.. opcode:: INPLACE_POWER
 
-   Implements in-place ``TOS = TOS1 ** TOS``.
+.. opcode:: BINARY_OP (op)
 
+   Implements the binary and in-place operators (depending on the value of
+   *op*).
 
-.. opcode:: INPLACE_MULTIPLY
-
-   Implements in-place ``TOS = TOS1 * TOS``.
-
-
-.. opcode:: INPLACE_MATRIX_MULTIPLY
-
-   Implements in-place ``TOS = TOS1 @ TOS``.
-
-   .. versionadded:: 3.5
+   .. versionadded:: 3.11
 
 
-.. opcode:: INPLACE_FLOOR_DIVIDE
+.. opcode:: BINARY_SUBSCR
 
-   Implements in-place ``TOS = TOS1 // TOS``.
-
-
-.. opcode:: INPLACE_TRUE_DIVIDE
-
-   Implements in-place ``TOS = TOS1 / TOS``.
-
-
-.. opcode:: INPLACE_MODULO
-
-   Implements in-place ``TOS = TOS1 % TOS``.
-
-
-.. opcode:: INPLACE_ADD
-
-   Implements in-place ``TOS = TOS1 + TOS``.
-
-
-.. opcode:: INPLACE_SUBTRACT
-
-   Implements in-place ``TOS = TOS1 - TOS``.
-
-
-.. opcode:: INPLACE_LSHIFT
-
-   Implements in-place ``TOS = TOS1 << TOS``.
-
-
-.. opcode:: INPLACE_RSHIFT
-
-   Implements in-place ``TOS = TOS1 >> TOS``.
-
-
-.. opcode:: INPLACE_AND
-
-   Implements in-place ``TOS = TOS1 & TOS``.
-
-
-.. opcode:: INPLACE_XOR
-
-   Implements in-place ``TOS = TOS1 ^ TOS``.
-
-
-.. opcode:: INPLACE_OR
-
-   Implements in-place ``TOS = TOS1 | TOS``.
+   Implements ``TOS = TOS1[TOS]``.
 
 
 .. opcode:: STORE_SUBSCR
@@ -711,12 +584,14 @@ iterations of the loop.
 
 .. opcode:: WITH_EXCEPT_START
 
-    Calls the function in position 7 on the stack with the top three
+    Calls the function in position 8 on the stack with the top three
     items on the stack as arguments.
     Used to implement the call ``context_manager.__exit__(*exc_info())`` when an exception
     has occurred in a :keyword:`with` statement.
 
     .. versionadded:: 3.9
+    .. versionchanged:: 3.11
+       The ``__exit__`` function is in position 8 of the stack rather than 7.
 
 
 .. opcode:: POP_EXCEPT_AND_RERAISE
@@ -1000,9 +875,12 @@ All of the following opcodes use their arguments.
 .. opcode:: JUMP_IF_NOT_EXC_MATCH (target)
 
    Tests whether the second value on the stack is an exception matching TOS,
-   and jumps if it is not. Pops two values from the stack.
+   and jumps if it is not. Pops one value from the stack.
 
    .. versionadded:: 3.9
+
+   .. versionchanged:: 3.11
+      This opcode no longer pops the active exception.
 
 
 .. opcode:: JUMP_IF_TRUE_OR_POP (target)
@@ -1113,6 +991,15 @@ All of the following opcodes use their arguments.
 
    .. versionchanged:: 3.11
       ``i`` is no longer offset by the length of ``co_varnames``.
+
+
+.. opcode:: COPY_FREE_VARS (n)
+
+   Copies the ``n`` free variables from the closure into the frame.
+   Removes the need for special code on the caller's side when calling
+   closures.
+
+   .. versionadded:: 3.11
 
 
 .. opcode:: RAISE_VARARGS (argc)
@@ -1283,9 +1170,8 @@ All of the following opcodes use their arguments.
 
 .. opcode:: GEN_START (kind)
 
-    Pops TOS. If TOS was not ``None``, raises an exception. The ``kind``
-    operand corresponds to the type of generator or coroutine and determines
-    the error message. The legal kinds are 0 for generator, 1 for coroutine,
+    Pops TOS. The ``kind`` operand corresponds to the type of generator or
+    coroutine. The legal kinds are 0 for generator, 1 for coroutine,
     and 2 for async generator.
 
    .. versionadded:: 3.10
