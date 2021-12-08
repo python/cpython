@@ -824,12 +824,15 @@ class TemporaryDirectory:
                         _os.unlink(path)
                     except IsADirectoryError:
                         cls._rmtree(path, ignore_errors=ignore_errors)
-                    # PermissionError is raised on FreeBSD for directories
                     except PermissionError:
+                        # The PermissionError handler was originally added for
+                        # FreeBSD in directories, but it seems that it is raised
+                        # on Windows too.
                         # bpo-43153: Calling _rmtree again may
                         # raise NotADirectoryError and mask the PermissionError.
-                        # So we must re-raise the current PermissionError.
-                        if not _os.path.isdir(path):
+                        # So we must re-raise the current PermissionError if
+                        # path is not a directory.
+                        if _os.path.islink(path) or not _os.path.isdir(path):
                             if ignore_errors:
                                 return
                             raise
