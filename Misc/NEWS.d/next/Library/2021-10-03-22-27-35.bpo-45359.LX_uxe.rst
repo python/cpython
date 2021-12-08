@@ -1,1 +1,1 @@
-Support :class:`graphlib.TopologicalSorter` type subscript
+Implement :pep:`585` for :class:`graphlib.TopologicalSorter`.
