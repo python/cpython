@@ -389,6 +389,7 @@ SYMBOL_NAMES = (
     "PyMemberDescr_Type",
     "PyMember_GetOne",
     "PyMember_SetOne",
+    "PyMemoryView_FromBuffer",
     "PyMemoryView_FromMemory",
     "PyMemoryView_FromObject",
     "PyMemoryView_GetContiguous",

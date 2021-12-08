@@ -2216,6 +2216,8 @@ function PyBuffer_FillInfo
     added 3.11
 function PyBuffer_Release
     added 3.11
+function PyMemoryView_FromBuffer
+    added 3.11
 
 # (Detailed comments aren't really needed for further entries: from here on
 #  we can use version control logs.)
