@@ -24,8 +24,6 @@ _Py_IsMainThread(void)
 static inline PyInterpreterState *
 _PyInterpreterState_Main(void)
 {
-    /* Use directly _PyRuntime rather than tstate->interp->runtime, since
-       this function is used in performance critical code path (ceval) */
     return _PyRuntime.interpreters.main;
 }
 
