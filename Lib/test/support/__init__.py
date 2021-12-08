@@ -449,7 +449,7 @@ def has_no_debug_ranges():
     except ImportError:
         raise unittest.SkipTest("_testinternalcapi required")
     config = _testinternalcapi.get_config()
-    return bool(config['no_debug_ranges'])
+    return not bool(config['code_debug_ranges'])
 
 def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
     return unittest.skipIf(has_no_debug_ranges(), reason)

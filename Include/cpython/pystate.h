@@ -77,7 +77,11 @@ struct _ts {
     struct _ts *next;
     PyInterpreterState *interp;
 
-    int _initialized;  // low-level
+    /* Has been initialized to a safe state.
+
+       In order to be effective, this must be set to 0 during or right
+       after allocation. */
+    int _initialized;
 
     int recursion_remaining;
     int recursion_limit;

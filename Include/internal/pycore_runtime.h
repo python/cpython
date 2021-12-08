@@ -68,7 +68,10 @@ struct _Py_unicode_runtime_ids {
 /* Full Python runtime state */
 
 typedef struct pyruntimestate {
-    /* Is the struct data low-level initialized? */
+    /* Has been initialized to a safe state.
+
+       In order to be effective, this must be set to 0 during or right
+       after allocation. */
     int _initialized;
 
     /* Is running Py_PreInitialize()? */

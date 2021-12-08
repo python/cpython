@@ -8,6 +8,7 @@ import abc
 import pickle
 import inspect
 import builtins
+import types
 import unittest
 from unittest.mock import Mock
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, Protocol
@@ -1126,6 +1127,10 @@ class TestCase(unittest.TestCase):
         self.assertEqual(repr(InitVar[int]), 'dataclasses.InitVar[int]')
         self.assertEqual(repr(InitVar[List[int]]),
                          'dataclasses.InitVar[typing.List[int]]')
+        self.assertEqual(repr(InitVar[list[int]]),
+                         'dataclasses.InitVar[list[int]]')
+        self.assertEqual(repr(InitVar[int|str]),
+                         'dataclasses.InitVar[int | str]')
 
     def test_init_var_inheritance(self):
         # Note that this deliberately tests that a dataclass need not
@@ -1349,6 +1354,17 @@ class TestCase(unittest.TestCase):
                     astuple(obj)
                 with self.assertRaisesRegex(TypeError, 'should be called on dataclass instances'):
                     replace(obj, x=0)
+
+    def test_is_dataclass_genericalias(self):
+        @dataclass
+        class A(types.GenericAlias):
+            origin: type
+            args: type
+        self.assertTrue(is_dataclass(A))
+        a = A(list, int)
+        self.assertTrue(is_dataclass(type(a)))
+        self.assertTrue(is_dataclass(a))
+
 
     def test_helper_fields_with_class_instance(self):
         # Check that we can call fields() on either a class or instance,

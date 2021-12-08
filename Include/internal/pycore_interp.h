@@ -262,7 +262,11 @@ struct _is {
     int requires_idref;
     PyThread_type_lock id_mutex;
 
-    int _initialized;  // low-level
+    /* Has been initialized to a safe state.
+
+       In order to be effective, this must be set to 0 during or right
+       after allocation. */
+    int _initialized;
     int finalizing;
 
     struct _ceval_state ceval;
