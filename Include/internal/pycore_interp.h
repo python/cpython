@@ -10,6 +10,7 @@ extern "C" {
 
 #include "pycore_atomic.h"        // _Py_atomic_address
 #include "pycore_ast_state.h"     // struct ast_state
+#include "pycore_context.h"       // struct _Py_context_state
 #include "pycore_dict.h"          // struct _Py_dict_state
 #include "pycore_floatobject.h"   // struct _Py_float_state
 #include "pycore_genobject.h"     // struct _Py_async_gen_state
@@ -53,23 +54,6 @@ struct _ceval_state {
 struct _Py_bytes_state {
     PyObject *empty_string;
     PyBytesObject *characters[256];
-};
-
-#ifndef WITH_FREELISTS
-// without freelists
-#  define PyContext_MAXFREELIST 0
-#endif
-
-#ifndef PyContext_MAXFREELIST
-#  define PyContext_MAXFREELIST 255
-#endif
-
-struct _Py_context_state {
-#if PyContext_MAXFREELIST > 0
-    // List of free PyContext objects
-    PyContext *freelist;
-    int numfree;
-#endif
 };
 
 struct _Py_exc_state {

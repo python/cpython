@@ -16,6 +16,23 @@ void _PyContext_Fini(PyInterpreterState *);
 
 /* other API */
 
+#ifndef WITH_FREELISTS
+// without freelists
+#  define PyContext_MAXFREELIST 0
+#endif
+
+#ifndef PyContext_MAXFREELIST
+#  define PyContext_MAXFREELIST 255
+#endif
+
+struct _Py_context_state {
+#if PyContext_MAXFREELIST > 0
+    // List of free PyContext objects
+    PyContext *freelist;
+    int numfree;
+#endif
+};
+
 struct _pycontextobject {
     PyObject_HEAD
     PyContext *ctx_prev;
