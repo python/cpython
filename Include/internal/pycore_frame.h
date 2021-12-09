@@ -4,6 +4,14 @@
 extern "C" {
 #endif
 
+
+/* runtime lifecycle */
+
+extern void _PyFrame_Fini(PyInterpreterState *interp);
+
+
+/* other API */
+
 /* These values are chosen so that the inline functions below all
  * compare f_state to zero.
  */

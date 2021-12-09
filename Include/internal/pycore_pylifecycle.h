@@ -68,7 +68,6 @@ extern PyStatus _PyAtExit_Init(PyInterpreterState *interp);
 
 /* Various internal finalizers */
 
-extern void _PyFrame_Fini(PyInterpreterState *interp);
 extern void _PyDict_Fini(PyInterpreterState *interp);
 extern void _PyList_Fini(PyInterpreterState *interp);
 extern void _PySlice_Fini(PyInterpreterState *interp);
