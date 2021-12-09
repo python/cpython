@@ -1,0 +1,3 @@
+On lines 725, 737 and 749 there is the following code:
+
+'''for c in (self, other) for e in c''' which generates an iterable with all the keys in self and other - casting c to a set will remove duplicates and allow faster iteration - some minor benchmarks I ran seem to agree.
