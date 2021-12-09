@@ -312,7 +312,7 @@ Standard names are defined for the following types:
       This type can now be subclassed.
 
 
-.. data:: UnionType
+.. class:: UnionType
 
    The type of :ref:`union type expressions<types-union>`.
 
