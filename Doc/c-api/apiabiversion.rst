@@ -64,6 +64,7 @@ See :ref:`stable` for a discussion of API and ABI stability across versions.
 
    The Python runtime version number encoded in a single constant integer, with
    the same format as the c:macro:`PY_VERSION_HEX` macro.
+   This contains the Python version used at run time.
 
    .. versionadded:: 3.11
 
