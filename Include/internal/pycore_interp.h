@@ -20,6 +20,7 @@ extern "C" {
 #include "pycore_gc.h"            // struct _gc_runtime_state
 #include "pycore_list.h"          // struct _Py_list_state
 #include "pycore_tuple.h"         // struct _Py_tuple_state
+#include "pycore_typeobject.h"    // struct type_cache
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
 #include "pycore_warnings.h"      // struct _warnings_runtime_state
 
@@ -65,27 +66,6 @@ struct atexit_state {
     atexit_callback **callbacks;
     int ncallbacks;
     int callback_len;
-};
-
-
-// Type attribute lookup cache: speed up attribute and method lookups,
-// see _PyType_Lookup().
-struct type_cache_entry {
-    unsigned int version;  // initialized from type->tp_version_tag
-    PyObject *name;        // reference to exactly a str or None
-    PyObject *value;       // borrowed reference or NULL
-};
-
-#define MCACHE_SIZE_EXP 12
-#define MCACHE_STATS 0
-
-struct type_cache {
-    struct type_cache_entry hashtable[1 << MCACHE_SIZE_EXP];
-#if MCACHE_STATS
-    size_t hits;
-    size_t misses;
-    size_t collisions;
-#endif
 };
 
 
