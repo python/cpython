@@ -11,6 +11,13 @@ extern "C" {
 #include "listobject.h"           // _PyList_CAST()
 
 
+/* runtime lifecycle */
+
+extern void _PyList_Fini(PyInterpreterState *);
+
+
+/* other API */
+
 #define _PyList_ITEMS(op) (_PyList_CAST(op)->ob_item)
 
 

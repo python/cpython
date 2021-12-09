@@ -12,6 +12,7 @@
 #include "pycore_frame.h"         // _PyFrame_Fini()
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_list.h"          // _PyList_Fini()
 #include "pycore_long.h"          // _PyLong_InitTypes()
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
 #include "pycore_pathconfig.h"    // _PyConfig_WritePathConfig()
