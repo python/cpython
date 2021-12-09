@@ -1069,8 +1069,7 @@ error:
 }
 
 static int
-print_exception_note(struct exception_print_context *ctx,
-                     PyObject *value)
+print_exception_note(struct exception_print_context *ctx, PyObject *value)
 {
     PyObject *f = ctx->file;
     _Py_IDENTIFIER(__note__);
