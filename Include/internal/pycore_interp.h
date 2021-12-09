@@ -10,6 +10,7 @@ extern "C" {
 
 #include "pycore_atomic.h"        // _Py_atomic_address
 #include "pycore_ast_state.h"     // struct ast_state
+#include "pycore_bytesobject.h"   // struct _Py_bytes_state
 #include "pycore_context.h"       // struct _Py_context_state
 #include "pycore_dict.h"          // struct _Py_dict_state
 #include "pycore_floatobject.h"   // struct _Py_float_state
@@ -49,11 +50,6 @@ struct _ceval_state {
 #ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
     struct _gil_runtime_state gil;
 #endif
-};
-
-struct _Py_bytes_state {
-    PyObject *empty_string;
-    PyBytesObject *characters[256];
 };
 
 struct _Py_exc_state {
