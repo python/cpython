@@ -5485,11 +5485,10 @@ return !!nl_langinfo(_NL_TIME_FIRST_WEEKDAY);
 ]])],
   [ac_cv_have__nl_time_first_weekday=yes],[ac_cv_have__nl_time_first_weekday=no]))
 AC_MSG_RESULT($ac_cv_have__nl_time_first_weekday)
-if test "$ac_cv_have__nl_time_first_weekday" = yes
-then
-  AC_DEFINE(HAVE__NL_TIME_FIRST_WEEKDAY, 1,
-  [Define if you have _NL_TIME_FIRST_WEEKDAY in langinfo.h])
-fi
+AS_VAR_IF([ac_cv_have__nl_time_first_weekday], [yes], [
+  AC_DEFINE([HAVE__NL_TIME_FIRST_WEEKDAY], [1],
+    [Define to 1 if you have _NL_TIME_FIRST_WEEKDAY in langinfo.h])
+])
 
 # first curses header check
 ac_save_cppflags="$CPPFLAGS"

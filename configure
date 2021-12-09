@@ -19249,10 +19249,11 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 $as_echo "$ac_res" >&6; }
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_have__nl_time_first_weekday" >&5
 $as_echo "$ac_cv_have__nl_time_first_weekday" >&6; }
-if test "$ac_cv_have__nl_time_first_weekday" = yes
-then
+if test "x$ac_cv_have__nl_time_first_weekday" = xyes; then :
+
 
 $as_echo "#define HAVE__NL_TIME_FIRST_WEEKDAY 1" >>confdefs.h
+
 
 fi
 
