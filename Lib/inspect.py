@@ -32,7 +32,18 @@ Here are some of the useful functions provided by this module:
 
 __author__ = ('Ka-Ping Yee <ping@lfw.org>',
               'Yury Selivanov <yselivanov@sprymix.com>')
-
+__all__ = ['get_annotations', 'ismodule', 'isclass', 'ismethod', 'ismethoddescriptor', 
+            'isdatadescriptor', 'ismemberdescriptor', 'isgetsetdescriptor', 'isfunction', 
+            'isgeneratorfunction', 'iscoroutinefunction', 'isasyncgenfunction', 'isasyncgen', 
+            'isgenerator', 'iscoroutine', 'isawaitable', 'istraceback', 'isframe', 'iscode',
+            'isbuiltin', 'isroutine', 'isabstract', 'getmembers', 'getmembers_static', 
+            'classify_class_attrs', 'getmro', 'unwrap', 'indentsize', 'getdoc', 'cleandoc', 
+            'getfile', 'getmodulename', 'getsourcefile', 'getabsfile', 'getmodule', 'findsource', 
+            'getcomments', 'getblock', 'getsourcelines', 'getsource', 'walktree', 'getclasstree',
+            'getargs', 'getfullargspec', 'getargvalues', 'formatannotation', 'formatannotationrelativeto', 
+            'formatargvalues', 'getcallargs', 'getclosurevars', 'getframeinfo', 'getlineno', 'getouterframes', 
+            'getinnerframes', 'currentframe', 'stack', 'trace', 'getattr_static', 'getgeneratorstate', 
+            'getgeneratorlocals', 'getcoroutinestate', 'getcoroutinelocals', 'signature']
 import abc
 import ast
 import dis
