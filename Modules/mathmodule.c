@@ -1032,7 +1032,7 @@ is_error(double x)
 static PyObject *
 math_1_to_whatever(PyObject *arg, double (*func) (double),
                    PyObject *(*from_double_func) (double),
-                   int can_overflow)
+                   int can_overflow, int underflow_to_neg_one)
 {
     double x, r;
     x = PyFloat_AsDouble(arg);
@@ -1054,9 +1054,16 @@ math_1_to_whatever(PyObject *arg, double (*func) (double),
                             "math domain error"); /* singularity */
         return NULL;
     }
-    if (Py_IS_FINITE(r) && errno && is_error(r))
+    if (Py_IS_FINITE(r) && errno) {
         /* this branch unnecessary on most platforms */
-        return NULL;
+        if (!underflow_to_neg_one) {
+            if (is_error(r)) {
+                return NULL;
+            }
+        } else if (is_error(r + 1.0)) {
+            return NULL;
+        }
+    }
 
     return (*from_double_func)(r);
 }
@@ -1109,7 +1116,7 @@ math_1a(PyObject *arg, double (*func) (double))
 static PyObject *
 math_1(PyObject *arg, double (*func) (double), int can_overflow)
 {
-    return math_1_to_whatever(arg, func, PyFloat_FromDouble, can_overflow);
+    return math_1_to_whatever(arg, func, PyFloat_FromDouble, can_overflow, 0);
 }
 
 static PyObject *
@@ -1251,11 +1258,18 @@ FUNC1(exp, exp, 1,
 FUNC1(exp2, exp2, 1,
       "exp2($module, x, /)\n--\n\n"
       "Return 2 raised to the power of x.")
-FUNC1(expm1, expm1, 1,
-      "expm1($module, x, /)\n--\n\n"
-      "Return exp(x)-1.\n\n"
-      "This function avoids the loss of precision involved in the direct "
-      "evaluation of exp(x)-1 for small x.")
+
+static PyObject * math_expm1(PyObject *Py_UNUSED(self), PyObject *arg) {
+    return math_1_to_whatever(arg, expm1, PyFloat_FromDouble, 1, 1);
+}
+
+PyDoc_STRVAR(math_expm1_doc,
+    "expm1($module, x, /)\n--\n\n"
+    "Return exp(x)-1.\n\n"
+    "This function avoids the loss of precision involved in the direct "
+    "evaluation of exp(x)-1 for small x.");
+
+
 FUNC1(fabs, fabs, 0,
       "fabs($module, x, /)\n--\n\n"
       "Return the absolute value of the float x.")
