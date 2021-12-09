@@ -12,6 +12,7 @@ extern "C" {
 #include "pycore_ast_state.h"     // struct ast_state
 #include "pycore_dict.h"          // struct _Py_dict_state
 #include "pycore_floatobject.h"   // struct _Py_float_state
+#include "pycore_genobject.h"     // struct _Py_async_gen_state
 #include "pycore_gil.h"           // struct _gil_runtime_state
 #include "pycore_gc.h"            // struct _gc_runtime_state
 #include "pycore_list.h"          // struct _Py_list_state
@@ -56,27 +57,8 @@ struct _Py_bytes_state {
 
 #ifndef WITH_FREELISTS
 // without freelists
-#  define _PyAsyncGen_MAXFREELIST 0
 #  define PyContext_MAXFREELIST 0
 #endif
-
-#ifndef _PyAsyncGen_MAXFREELIST
-#  define _PyAsyncGen_MAXFREELIST 80
-#endif
-
-struct _Py_async_gen_state {
-#if _PyAsyncGen_MAXFREELIST > 0
-    /* Freelists boost performance 6-10%; they also reduce memory
-       fragmentation, as _PyAsyncGenWrappedValue and PyAsyncGenASend
-       are short-living objects that are instantiated for every
-       __anext__() call. */
-    struct _PyAsyncGenWrappedValue* value_freelist[_PyAsyncGen_MAXFREELIST];
-    int value_numfree;
-
-    struct PyAsyncGenASend* asend_freelist[_PyAsyncGen_MAXFREELIST];
-    int asend_numfree;
-#endif
-};
 
 #ifndef PyContext_MAXFREELIST
 #  define PyContext_MAXFREELIST 255
