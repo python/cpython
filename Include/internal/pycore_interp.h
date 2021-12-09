@@ -10,6 +10,7 @@ extern "C" {
 
 #include "pycore_atomic.h"        // _Py_atomic_address
 #include "pycore_ast_state.h"     // struct ast_state
+#include "pycore_dict.h"          // struct _Py_dict_state
 #include "pycore_floatobject.h"   // struct _Py_float_state
 #include "pycore_gil.h"           // struct _gil_runtime_state
 #include "pycore_gc.h"            // struct _gc_runtime_state
@@ -55,24 +56,9 @@ struct _Py_bytes_state {
 
 #ifndef WITH_FREELISTS
 // without freelists
-#  define PyDict_MAXFREELIST 0
 #  define _PyAsyncGen_MAXFREELIST 0
 #  define PyContext_MAXFREELIST 0
 #endif
-
-#ifndef PyDict_MAXFREELIST
-#  define PyDict_MAXFREELIST 80
-#endif
-
-struct _Py_dict_state {
-#if PyDict_MAXFREELIST > 0
-    /* Dictionary reuse scheme to save calls to malloc and free */
-    PyDictObject *free_list[PyDict_MAXFREELIST];
-    int numfree;
-    PyDictKeysObject *keys_free_list[PyDict_MAXFREELIST];
-    int keys_numfree;
-#endif
-};
 
 #ifndef _PyAsyncGen_MAXFREELIST
 #  define _PyAsyncGen_MAXFREELIST 80
