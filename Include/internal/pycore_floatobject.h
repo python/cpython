@@ -18,6 +18,25 @@ extern void _PyFloat_Fini(PyInterpreterState *);
 
 /* other API */
 
+#ifndef WITH_FREELISTS
+// without freelists
+#  define PyFloat_MAXFREELIST 0
+#endif
+
+#ifndef PyFloat_MAXFREELIST
+#  define PyFloat_MAXFREELIST   100
+#endif
+
+struct _Py_float_state {
+#if PyFloat_MAXFREELIST > 0
+    /* Special free list
+       free_list is a singly-linked list of available PyFloatObjects,
+       linked via abuse of their ob_type members. */
+    int numfree;
+    PyFloatObject *free_list;
+#endif
+};
+
 /* _PyFloat_{Pack,Unpack}{4,8}
  *
  * The struct and pickle (at least) modules need an efficient platform-

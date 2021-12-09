@@ -10,6 +10,7 @@ extern "C" {
 
 #include "pycore_atomic.h"        // _Py_atomic_address
 #include "pycore_ast_state.h"     // struct ast_state
+#include "pycore_floatobject.h"   // struct _Py_float_state
 #include "pycore_gil.h"           // struct _gil_runtime_state
 #include "pycore_gc.h"            // struct _gc_runtime_state
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
@@ -52,7 +53,6 @@ struct _Py_bytes_state {
 
 #ifndef WITH_FREELISTS
 // without freelists
-#  define PyFloat_MAXFREELIST 0
 // for tuples only store empty tuple singleton
 #  define PyTuple_MAXSAVESIZE 1
 #  define PyTuple_MAXFREELIST 1
@@ -61,20 +61,6 @@ struct _Py_bytes_state {
 #  define _PyAsyncGen_MAXFREELIST 0
 #  define PyContext_MAXFREELIST 0
 #endif
-
-#ifndef PyFloat_MAXFREELIST
-#  define PyFloat_MAXFREELIST   100
-#endif
-
-struct _Py_float_state {
-#if PyFloat_MAXFREELIST > 0
-    /* Special free list
-       free_list is a singly-linked list of available PyFloatObjects,
-       linked via abuse of their ob_type members. */
-    int numfree;
-    PyFloatObject *free_list;
-#endif
-};
 
 /* Speed optimization to avoid frequent malloc/free of small tuples */
 #ifndef PyTuple_MAXSAVESIZE
