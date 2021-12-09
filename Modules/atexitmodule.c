@@ -93,7 +93,7 @@ atexit_callfuncs(struct atexit_state *state)
             continue;
         }
 
-        // Increment the refcount of cb->func as the call itself may unregister it
+        // bpo-46025: Increment the refcount of cb->func as the call itself may unregister it
         PyObject* the_func = cb->func;
         Py_INCREF(the_func);
         PyObject *res = PyObject_Call(cb->func, cb->args, cb->kwargs);
