@@ -213,6 +213,13 @@ fractions
   (Contributed by Mark Dickinson in :issue:`44547`.)
 
 
+functools
+---------
+
+* :class:`functools.singledispatchmethod` exposes members 'registry' and
+  'dispatch'. (Contributed by Weipeng Hong in :issue:`42943`.)
+
+
 inspect
 -------
 * Add :func:`inspect.getmembers_static`: return all members without
