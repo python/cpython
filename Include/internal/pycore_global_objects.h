@@ -54,6 +54,9 @@ struct _Py_global_objects {
          * -_PY_NSMALLNEGINTS (inclusive) to _PY_NSMALLPOSINTS (exclusive).
          */
         PyLongObject small_ints[_PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS];
+
+        PyBytesObject *bytes_empty;
+        PyBytesObject *bytes_characters[256];
     } singletons;
 };
 
