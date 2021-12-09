@@ -7,6 +7,7 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <stdbool.h>
+#include "pycore_exceptions.h"    // struct _Py_exc_state
 #include "pycore_initconfig.h"
 #include "pycore_object.h"
 #include "structmember.h"         // PyMemberDef

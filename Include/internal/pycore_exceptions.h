@@ -19,6 +19,15 @@ extern void _PyExc_Fini(PyInterpreterState *);
 
 /* other API */
 
+struct _Py_exc_state {
+    // The dict mapping from errno codes to OSError subclasses
+    PyObject *errnomap;
+    PyBaseExceptionObject *memerrors_freelist;
+    int memerrors_numfree;
+    // The ExceptionGroup type
+    PyObject *PyExc_ExceptionGroup;
+};
+
 extern void _PyExc_ClearExceptionGroupType(PyInterpreterState *);
 
 

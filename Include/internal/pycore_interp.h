@@ -13,6 +13,7 @@ extern "C" {
 #include "pycore_bytesobject.h"   // struct _Py_bytes_state
 #include "pycore_context.h"       // struct _Py_context_state
 #include "pycore_dict.h"          // struct _Py_dict_state
+#include "pycore_exceptions.h"    // struct _Py_exc_state
 #include "pycore_floatobject.h"   // struct _Py_float_state
 #include "pycore_genobject.h"     // struct _Py_async_gen_state
 #include "pycore_gil.h"           // struct _gil_runtime_state
@@ -50,15 +51,6 @@ struct _ceval_state {
 #ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
     struct _gil_runtime_state gil;
 #endif
-};
-
-struct _Py_exc_state {
-    // The dict mapping from errno codes to OSError subclasses
-    PyObject *errnomap;
-    PyBaseExceptionObject *memerrors_freelist;
-    int memerrors_numfree;
-    // The ExceptionGroup type
-    PyObject *PyExc_ExceptionGroup;
 };
 
 
