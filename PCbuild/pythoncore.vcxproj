@@ -115,11 +115,12 @@
         PREFIX=NULL;
         EXEC_PREFIX=NULL;
         VERSION=NULL;
-        VPATH="..\\..";
         PYDEBUGEXT="$(PyDebugExt)";
         PLATLIBDIR="DLLs";
         %(PreprocessorDefinitions)
       </PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="$(Configuration) != 'PGInstrument'">VPATH="..\\..";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="$(Configuration) == 'PGInstrument'">VPATH="..\\..\\..";%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
