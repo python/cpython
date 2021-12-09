@@ -723,6 +723,12 @@ Porting to Python 3.11
   been included directly, consider including ``Python.h`` instead.
   (Contributed by Victor Stinner in :issue:`35134`.)
 
+* The :c:func:`PyUnicode_CHECK_INTERNED` macro has been excluded from the
+  limited C API. It was never usable there, because it used internal structures
+  which are not available in the limited C API.
+  (Contributed by Victor Stinner in :issue:`46007`.)
+
+
 Deprecated
 ----------
 
