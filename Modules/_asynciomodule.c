@@ -810,7 +810,6 @@ FutureObj_traverse(FutureObj *fut, visitproc visit, void *arg)
     Py_VISIT(fut->dict);
 
     _PyErr_StackItem *exc_state = &fut->fut_cancelled_exc_state;
-    Py_VISIT(exc_state->exc_type);
     Py_VISIT(exc_state->exc_value);
 
     return 0;
@@ -1374,9 +1373,6 @@ _asyncio_Future__make_cancelled_error_impl(FutureObj *self)
     if (exc_state->exc_value) {
         PyException_SetContext(exc, Py_NewRef(exc_state->exc_value));
         _PyErr_ClearExcState(exc_state);
-    }
-    else {
-        assert(exc_state->exc_type == NULL);
     }
 
     return exc;
@@ -2706,10 +2702,10 @@ task_step_impl(TaskObj *task, PyObject *exc)
                 PyException_SetTraceback(ev, tb);
                 Py_DECREF(tb);
             }
+            Py_XDECREF(et);
 
             FutureObj *fut = (FutureObj*)task;
             _PyErr_StackItem *exc_state = &fut->fut_cancelled_exc_state;
-            exc_state->exc_type = et;
             exc_state->exc_value = ev;
 
             return future_cancel(fut, NULL);

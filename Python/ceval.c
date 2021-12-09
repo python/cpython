@@ -2710,25 +2710,11 @@ check_eval_breaker:
         }
 
         TARGET(POP_EXCEPT) {
-            PyObject *type, *value;
+            PyObject *value;
             _PyErr_StackItem *exc_info;
             exc_info = tstate->exc_info;
-            type = exc_info->exc_type;
             value = exc_info->exc_value;
-
             exc_info->exc_value = POP();
-
-            assert(exc_info->exc_value);
-            if (exc_info->exc_value != Py_None) {
-                assert(PyExceptionInstance_Check(exc_info->exc_value));
-                exc_info->exc_type = Py_NewRef(
-                    PyExceptionInstance_Class(exc_info->exc_value));
-            }
-            else {
-                exc_info->exc_type = Py_NewRef(Py_None);
-            }
-
-            Py_XDECREF(type);
             Py_XDECREF(value);
             DISPATCH();
         }
@@ -2752,20 +2738,10 @@ check_eval_breaker:
             traceback = PyException_GetTraceback(value);
             Py_DECREF(POP()); /* lasti */
             _PyErr_Restore(tstate, type, value, traceback);
+
             exc_info = tstate->exc_info;
-            type = exc_info->exc_type;
             value = exc_info->exc_value;
             exc_info->exc_value = POP();
-            if (exc_info->exc_value && exc_info->exc_value != Py_None) {
-                assert(PyExceptionInstance_Check(exc_info->exc_value));
-                exc_info->exc_type = Py_NewRef(
-                    PyExceptionInstance_Class(exc_info->exc_value));
-            }
-            else {
-                exc_info->exc_type = Py_NewRef(Py_None);
-            }
-
-            Py_XDECREF(type);
             Py_XDECREF(value);
             goto exception_unwind;
         }
@@ -4483,15 +4459,11 @@ check_eval_breaker:
                 Py_INCREF(Py_None);
                 SET_TOP(Py_None);
             }
-            Py_XDECREF(exc_info->exc_type);
 
             Py_INCREF(value);
             PUSH(value);
             assert(PyExceptionInstance_Check(value));
-
             exc_info->exc_value = value;
-            exc_info->exc_type = Py_NewRef(
-                PyExceptionInstance_Class(exc_info->exc_value));
 
             DISPATCH();
         }
