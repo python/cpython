@@ -8,7 +8,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_long_state.h"    // _PyLong_SMALL_INTS
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_runtime.h"       // _PyRuntime
 
 
 /* runtime lifecycle */
@@ -22,12 +24,12 @@ extern PyStatus _PyLong_InitTypes(PyInterpreterState *);
 // Return a borrowed reference to the zero singleton.
 // The function cannot return NULL.
 static inline PyObject* _PyLong_GetZero(void)
-{ return (PyObject *)&_PyRuntime.small_ints[_PY_NSMALLNEGINTS]; }
+{ return (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS]; }
 
 // Return a borrowed reference to the one singleton.
 // The function cannot return NULL.
 static inline PyObject* _PyLong_GetOne(void)
-{ return (PyObject *)&_PyRuntime.small_ints[_PY_NSMALLNEGINTS+1]; }
+{ return (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS+1]; }
 
 PyObject *_PyLong_Add(PyLongObject *left, PyLongObject *right);
 PyObject *_PyLong_Multiply(PyLongObject *left, PyLongObject *right);
