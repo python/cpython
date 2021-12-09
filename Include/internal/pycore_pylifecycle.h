@@ -68,7 +68,6 @@ extern PyStatus _PyAtExit_Init(PyInterpreterState *interp);
 
 /* Various internal finalizers */
 
-extern void _PySlice_Fini(PyInterpreterState *interp);
 extern void _PyAsyncGen_Fini(PyInterpreterState *interp);
 
 extern int _PySignal_Init(int install_signal_handlers);
