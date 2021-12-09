@@ -4697,6 +4697,7 @@ check_eval_breaker:
             SpecializedCacheEntry *caches = GET_CACHE();
             _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
             int argcount = cache0->original_oparg + extra_args;
+            DEOPT_IF(argcount != cache0->index, CALL_NO_KW);
             _PyCallCache *cache1 = &caches[-1].call;
             PyObject *callable = PEEK(argcount+1);
             DEOPT_IF(!PyFunction_Check(callable), CALL_NO_KW);

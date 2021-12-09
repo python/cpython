@@ -1324,6 +1324,10 @@ specialize_py_call(
         return -1;
     }
     int argcount = code->co_argcount;
+    if (argcount > 0xffff) {
+        SPECIALIZATION_FAIL(CALL_NO_KW, SPEC_FAIL_OUT_OF_RANGE);
+        return -1;
+    }
     int defcount = func->func_defaults == NULL ? 0 : (int)PyTuple_GET_SIZE(func->func_defaults);
     assert(defcount <= argcount);
     int min_args = argcount-defcount;
@@ -1345,6 +1349,7 @@ specialize_py_call(
         SPECIALIZATION_FAIL(CALL_NO_KW, SPEC_FAIL_OUT_OF_VERSIONS);
         return -1;
     }
+    cache[0].adaptive.index = nargs;
     cache1->func_version = version;
     cache1->defaults_start = defstart;
     cache1->defaults_len = deflen;
@@ -1462,8 +1467,6 @@ _Py_Specialize_CallNoKw(
     PyObject *builtins)
 {
     int fail;
-
-
     if (PyCFunction_CheckExact(callable)) {
         fail = specialize_c_call(callable, instr, nargs, cache, builtins);
     }
