@@ -474,16 +474,15 @@ the original TOS1.
 .. opcode:: END_ASYNC_FOR
 
    Terminates an :keyword:`async for` loop.  Handles an exception raised
-   when awaiting a next item.  If TOS is :exc:`StopAsyncIteration` pop 5
+   when awaiting a next item.  If TOS is :exc:`StopAsyncIteration` pop 3
    values from the stack and restore the exception state using the second
-   two of them.  Otherwise re-raise the exception using the two values
+   of them.  Otherwise re-raise the exception using the value
    from the stack.  An exception handler block is removed from the block stack.
 
    .. versionadded:: 3.8
 
     .. versionchanged:: 3.11
-
-    Exception representation on the stack now consist of two, not three, items.
+       Exception representation on the stack now consist of one, not three, items.
 
 .. opcode:: BEFORE_ASYNC_WITH
 
@@ -564,11 +563,10 @@ iterations of the loop.
 
 .. opcode:: POP_EXCEPT
 
-   Pops two values from the stack, which are used to restore the exception state.
+   Pops a value from the stack, which is used to restore the exception state.
 
     .. versionchanged:: 3.11
-
-    Exception representation on the stack now consist of two, not three, items.
+       Exception representation on the stack now consist of one, not three, items.
 
 .. opcode:: RERAISE
 
@@ -579,13 +577,12 @@ iterations of the loop.
     .. versionadded:: 3.9
 
     .. versionchanged:: 3.11
-
-    Exception representation on the stack now consist of two, not three, items.
+       Exception representation on the stack now consist of one, not three, items.
 
 .. opcode:: PUSH_EXC_INFO
 
-    Pops two values from the stack. Pushes the current exception to the top of the stack.
-    Pushes the two values originally popped back to the stack.
+    Pops a value from the stack. Pushes the current exception to the top of the stack.
+    Pushes the value originally popped back to the stack.
     Used in exception handlers.
 
     .. versionadded:: 3.11
@@ -593,9 +590,8 @@ iterations of the loop.
 
 .. opcode:: WITH_EXCEPT_START
 
-    Calls the function in position 6 on the stack with the top two
-    items on the stack, as well as a traceback derived from the second item,
-    as arguments.
+    Calls the function in position 4 on the stack with arguments (type, val, tb)
+    representing the exception at the top of the stack.
     Used to implement the call ``context_manager.__exit__(*exc_info())`` when an exception
     has occurred in a :keyword:`with` statement.
 
@@ -604,8 +600,8 @@ iterations of the loop.
        The ``__exit__`` function is in position 8 of the stack rather than 7.
 
     .. versionchanged:: 3.11
-
-    Exception representation on the stack now consist of two, not three, items.
+       The ``__exit__`` function is in position 4 of the stack rather than 7.
+       Exception representation on the stack now consist of one, not three, items.
 
 .. opcode:: POP_EXCEPT_AND_RERAISE
 
