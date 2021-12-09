@@ -58,7 +58,6 @@ extern PyStatus _PySys_Create(
 extern PyStatus _PySys_ReadPreinitWarnOptions(PyWideStringList *options);
 extern PyStatus _PySys_ReadPreinitXOptions(PyConfig *config);
 extern int _PySys_UpdateConfig(PyThreadState *tstate);
-extern PyStatus _PyExc_Init(PyInterpreterState *interp);
 extern PyStatus _PyErr_InitTypes(void);
 extern PyStatus _PyBuiltins_AddExceptions(PyObject * bltinmod);
 extern PyStatus _Py_HashRandomization_Init(const PyConfig *);
@@ -79,8 +78,6 @@ extern void _PyAsyncGen_Fini(PyInterpreterState *interp);
 extern int _PySignal_Init(int install_signal_handlers);
 extern void _PySignal_Fini(void);
 
-extern void _PyExc_ClearExceptionGroupType(PyInterpreterState *interp);
-extern void _PyExc_Fini(PyInterpreterState *interp);
 extern void _PyImport_Fini(void);
 extern void _PyImport_Fini2(void);
 extern void _PyGC_Fini(PyInterpreterState *interp);
