@@ -13,6 +13,7 @@ extern "C" {
 #include "pycore_floatobject.h"   // struct _Py_float_state
 #include "pycore_gil.h"           // struct _gil_runtime_state
 #include "pycore_gc.h"            // struct _gc_runtime_state
+#include "pycore_list.h"          // struct _Py_list_state
 #include "pycore_tuple.h"         // struct _Py_tuple_state
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
 #include "pycore_warnings.h"      // struct _warnings_runtime_state
@@ -54,23 +55,10 @@ struct _Py_bytes_state {
 
 #ifndef WITH_FREELISTS
 // without freelists
-#  define PyList_MAXFREELIST 0
 #  define PyDict_MAXFREELIST 0
 #  define _PyAsyncGen_MAXFREELIST 0
 #  define PyContext_MAXFREELIST 0
 #endif
-
-/* Empty list reuse scheme to save calls to malloc and free */
-#ifndef PyList_MAXFREELIST
-#  define PyList_MAXFREELIST 80
-#endif
-
-struct _Py_list_state {
-#if PyList_MAXFREELIST > 0
-    PyListObject *free_list[PyList_MAXFREELIST];
-    int numfree;
-#endif
-};
 
 #ifndef PyDict_MAXFREELIST
 #  define PyDict_MAXFREELIST 80
