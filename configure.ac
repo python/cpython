@@ -5478,16 +5478,10 @@ fi
 
 # checking for glibc extensions to langinfo.h
 #  _NL_TIME_FIRST_WEEKDAY isn't #define'd, so test it directly
-AC_MSG_CHECKING(for _NL_TIME_FIRST_WEEKDAY)
-AC_CACHE_CHECK(ac_cv_have__nl_time_first_weekday,
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <langinfo.h>]], [[
-return !!nl_langinfo(_NL_TIME_FIRST_WEEKDAY);
-]])],
-  [ac_cv_have__nl_time_first_weekday=yes],[ac_cv_have__nl_time_first_weekday=no]))
-AC_MSG_RESULT($ac_cv_have__nl_time_first_weekday)
-AS_VAR_IF([ac_cv_have__nl_time_first_weekday], [yes], [
-  AC_DEFINE([HAVE__NL_TIME_FIRST_WEEKDAY], [1],
-    [Define to 1 if you have _NL_TIME_FIRST_WEEKDAY in langinfo.h])
+AC_CACHE_CHECK([for _NL_TIME_FIRST_WEEKDAY], [ac_cv_have__nl_time_first_weekday], [
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include <langinfo.h>], [
+    return !!nl_langinfo(_NL_TIME_FIRST_WEEKDAY);
+    ])], [ac_cv_have__nl_time_first_weekday=yes], [ac_cv_have__nl_time_first_weekday=no])
 ])
 
 # first curses header check
