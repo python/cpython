@@ -1045,7 +1045,7 @@ print_exception_suggestions(struct exception_print_context *ctx,
                             PyObject *value)
 {
     PyObject *f = ctx->file;
-    PyObject* suggestions = _Py_Offer_Suggestions(value);
+    PyObject *suggestions = _Py_Offer_Suggestions(value);
     if (suggestions) {
         // Add a trailer ". Did you mean: (...)?"
         if (PyFile_WriteString(". Did you mean: '", f) < 0) {
