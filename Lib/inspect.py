@@ -32,18 +32,20 @@ Here are some of the useful functions provided by this module:
 
 __author__ = ('Ka-Ping Yee <ping@lfw.org>',
               'Yury Selivanov <yselivanov@sprymix.com>')
-__all__ = ['get_annotations', 'ismodule', 'isclass', 'ismethod', 'ismethoddescriptor', 
-            'isdatadescriptor', 'ismemberdescriptor', 'isgetsetdescriptor', 'isfunction', 
-            'isgeneratorfunction', 'iscoroutinefunction', 'isasyncgenfunction', 'isasyncgen', 
-            'isgenerator', 'iscoroutine', 'isawaitable', 'istraceback', 'isframe', 'iscode',
-            'isbuiltin', 'isroutine', 'isabstract', 'getmembers', 'getmembers_static', 
-            'classify_class_attrs', 'getmro', 'unwrap', 'indentsize', 'getdoc', 'cleandoc', 
-            'getfile', 'getmodulename', 'getsourcefile', 'getabsfile', 'getmodule', 'findsource', 
-            'getcomments', 'getblock', 'getsourcelines', 'getsource', 'walktree', 'getclasstree',
-            'getargs', 'getfullargspec', 'getargvalues', 'formatannotation', 'formatannotationrelativeto', 
-            'formatargvalues', 'getcallargs', 'getclosurevars', 'getframeinfo', 'getlineno', 'getouterframes', 
-            'getinnerframes', 'currentframe', 'stack', 'trace', 'getattr_static', 'getgeneratorstate', 
-            'getgeneratorlocals', 'getcoroutinestate', 'getcoroutinelocals', 'signature']
+__all__ = ['classify_class_attrs', 'cleandoc', 'currentframe', 'findsource',
+           'formatannotation', 'formatannotationrelativeto', 'formatargvalues', 
+           'get_annotations', 'getabsfile', 'getargs', 'getargvalues', 'getattr_static',
+           'getblock', 'getcallargs', 'getclasstree', 'getclosurevars', 'getcomments',
+           'getcoroutinelocals', 'getcoroutinestate', 'getdoc', 'getfile', 'getframeinfo',
+           'getfullargspec', 'getgeneratorlocals', 'getgeneratorstate', 'getinnerframes', 
+           'getlineno', 'getmembers', 'getmembers_static', 'getmodule', 'getmodulename',
+           'getmro', 'getouterframes', 'getsource', 'getsourcefile', 'getsourcelines', 
+           'indentsize', 'isabstract', 'isasyncgen', 'isasyncgenfunction', 'isawaitable',
+           'isbuiltin', 'isclass', 'iscode', 'iscoroutine', 'iscoroutinefunction', 'isdatadescriptor',
+           'isframe', 'isfunction', 'isgenerator', 'isgeneratorfunction', 'isgetsetdescriptor', 
+           'ismemberdescriptor', 'ismethod', 'ismethoddescriptor', 'ismodule', 'isroutine',
+           'istraceback', 'signature', 'stack', 'trace', 'unwrap', 'walktree']
+           
 import abc
 import ast
 import dis
