@@ -1083,9 +1083,7 @@ print_exception_note(struct exception_print_context *ctx, PyObject *value)
         return 0;
     }
 
-    _Py_static_string(PyId_newline, "\n");
-    PyObject *lines = PyUnicode_Split(
-        note, _PyUnicode_FromId(&PyId_newline), -1);
+    PyObject *lines = PyUnicode_Splitlines(note, 1);
     Py_DECREF(note);
 
     if (lines == NULL) {
@@ -1102,10 +1100,11 @@ print_exception_note(struct exception_print_context *ctx, PyObject *value)
         if (PyFile_WriteObject(line, f, Py_PRINT_RAW) < 0) {
             goto error;
         }
-        if (PyFile_WriteString("\n", f) < 0) {
-            goto error;
-        }
     }
+    if (PyFile_WriteString("\n", f) < 0) {
+        goto error;
+    }
+
     Py_DECREF(lines);
     return 0;
 error:
