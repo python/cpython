@@ -642,6 +642,8 @@ PyLocale_getfirstweekday(PyObject* self, PyObject* args)
 #elif defined(HAVE__NL_TIME_FIRST_WEEKDAY)
     int first_weekday = nl_langinfo(_NL_TIME_FIRST_WEEKDAY)[0];
     long week_1stday = (long)nl_langinfo(_NL_TIME_WEEK_1STDAY);
+    /* Magic constant is defined by glibc as the third value of the week
+     * keyword of LC_TIME */
     switch (week_1stday) {
     default:
     case 19971130:
