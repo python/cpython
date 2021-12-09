@@ -594,12 +594,12 @@ def regen_makefile(modules):
             freezedep = '$(FREEZE_MODULE_C)'
         else:
             freezecmd = '$(FREEZE_MODULE_PY)'
-            freezedep = '_bootstrap_python'
+            freezedep = '_bootstrap_python $(srcdir)/Programs/_freeze_module.py'
 
         freeze = (f'{freezecmd} {src.frozenid} '
                     f'$(srcdir)/{pyfile} {frozen_header}')
         rules.extend([
-            f'{frozen_header}: {pyfile} {freezedep} $(srcdir)/Tools/scripts/freeze_module.py',
+            f'{frozen_header}: {pyfile} {freezedep}',
             f'\t{freeze}',
             '',
         ])

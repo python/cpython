@@ -287,7 +287,7 @@ PYTHON_FOR_BUILD=@PYTHON_FOR_BUILD@
 # uses build Python, which must have the same version and bytecode,
 PYTHON_FOR_FREEZE?=@PYTHON_FOR_FREEZE@
 FREEZE_MODULE_C=Programs/_freeze_module
-FREEZE_MODULE_PY=$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/freeze_module.py
+FREEZE_MODULE_PY=$(PYTHON_FOR_FREEZE) $(srcdir)/Programs/_freeze_module.py
 # bootstrap freezing uses FREEZE_MODULE_C for normal builds and _PY for cross builds
 FREEZE_MODULE_BOOTSTRAP=@FREEZE_MODULE_BOOTSTRAP@
 
@@ -1061,13 +1061,14 @@ Python/deepfreeze/frozen_only.c: Python/frozen_modules/frozen_only.h $(DEEPFREEZ
 # 2) build Programs/_freeze_module binary.
 # 3) create frozen module headers for importlib and getpath.
 # 4) build _bootstrap_python binary.
-# 5) create remaining frozen module headers with _bootstrap_python and 
-#    Python freeze_module.py (so we test this code path).
+# 5) create remaining frozen module headers with
+#    ``./_bootstrap_python Programs/_freeze_module.py``. The pure Python
+#    script is used to test the cross compile code path.
 # 6) deepfreeze modules with _bootstrap_python
 #
 # Cross compile proces:
 # 1) create all frozen module headers with external build Python and
-#    freeze_module.py script.
+#    Programs/_freeze_module.py script.
 # 2) deepfreeze modules with external build Python.
 #
 # Cross compiling also creates Programs/_freeze_module and _bootstrap_python
@@ -1130,82 +1131,82 @@ Programs/_freeze_module.o: Programs/_freeze_module.c Makefile
 
 Modules/getpath_noop.o: $(srcdir)/Modules/getpath_noop.c Makefile
 
-Programs/_freeze_module: Programs/_freeze_module.o Modules/getpath_noop.o $(LIBRARY_OBJS_OMIT_FROZEN)
+$(FREEZE_MODULE_C): Programs/_freeze_module.o Modules/getpath_noop.o $(LIBRARY_OBJS_OMIT_FROZEN)
 	$(LINKCC) $(PY_CORE_LDFLAGS) -o $@ Programs/_freeze_module.o Modules/getpath_noop.o $(LIBRARY_OBJS_OMIT_FROZEN) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 # We manually freeze getpath.py rather than through freeze_modules
-Python/frozen_modules/getpath.h: $(FREEZE_MODULE_C) Modules/getpath.py
+Python/frozen_modules/getpath.h: Modules/getpath.py $(FREEZE_MODULE_C)
 	$(FREEZE_MODULE_BOOTSTRAP) getpath $(srcdir)/Modules/getpath.py Python/frozen_modules/getpath.h
 
 # BEGIN: freezing modules
 
-Python/frozen_modules/importlib._bootstrap.h: Lib/importlib/_bootstrap.py $(FREEZE_MODULE_C) $(srcdir)/Tools/scripts/freeze_module.py
+Python/frozen_modules/importlib._bootstrap.h: Lib/importlib/_bootstrap.py $(FREEZE_MODULE_C)
 	$(FREEZE_MODULE_BOOTSTRAP) importlib._bootstrap $(srcdir)/Lib/importlib/_bootstrap.py Python/frozen_modules/importlib._bootstrap.h
 
-Python/frozen_modules/importlib._bootstrap_external.h: Lib/importlib/_bootstrap_external.py $(FREEZE_MODULE_C) $(srcdir)/Tools/scripts/freeze_module.py
+Python/frozen_modules/importlib._bootstrap_external.h: Lib/importlib/_bootstrap_external.py $(FREEZE_MODULE_C)
 	$(FREEZE_MODULE_BOOTSTRAP) importlib._bootstrap_external $(srcdir)/Lib/importlib/_bootstrap_external.py Python/frozen_modules/importlib._bootstrap_external.h
 
-Python/frozen_modules/zipimport.h: Lib/zipimport.py $(FREEZE_MODULE_C) $(srcdir)/Tools/scripts/freeze_module.py
+Python/frozen_modules/zipimport.h: Lib/zipimport.py $(FREEZE_MODULE_C)
 	$(FREEZE_MODULE_BOOTSTRAP) zipimport $(srcdir)/Lib/zipimport.py Python/frozen_modules/zipimport.h
 
-Python/frozen_modules/abc.h: Lib/abc.py _bootstrap_python $(srcdir)/Tools/scripts/freeze_module.py
+Python/frozen_modules/abc.h: Lib/abc.py _bootstrap_python $(srcdir)/Programs/_freeze_module.py
 	$(FREEZE_MODULE_PY) abc $(srcdir)/Lib/abc.py Python/frozen_modules/abc.h
 
-Python/frozen_modules/codecs.h: Lib/codecs.py _bootstrap_python $(srcdir)/Tools/scripts/freeze_module.py
+Python/frozen_modules/codecs.h: Lib/codecs.py _bootstrap_python $(srcdir)/Programs/_freeze_module.py
 	$(FREEZE_MODULE_PY) codecs $(srcdir)/Lib/codecs.py Python/frozen_modules/codecs.h
 
-Python/frozen_modules/io.h: Lib/io.py _bootstrap_python $(srcdir)/Tools/scripts/freeze_module.py
+Python/frozen_modules/io.h: Lib/io.py _bootstrap_python $(srcdir)/Programs/_freeze_module.py
 	$(FREEZE_MODULE_PY) io $(srcdir)/Lib/io.py Python/frozen_modules/io.h
 
-Python/frozen_modules/_collections_abc.h: Lib/_collections_abc.py _bootstrap_python $(srcdir)/Tools/scripts/freeze_module.py
+Python/frozen_modules/_collections_abc.h: Lib/_collections_abc.py _bootstrap_python $(srcdir)/Programs/_freeze_module.py
 	$(FREEZE_MODULE_PY) _collections_abc $(srcdir)/Lib/_collections_abc.py Python/frozen_modules/_collections_abc.h
 
-Python/frozen_modules/_sitebuiltins.h: Lib/_sitebuiltins.py _bootstrap_python $(srcdir)/Tools/scripts/freeze_module.py
+Python/frozen_modules/_sitebuiltins.h: Lib/_sitebuiltins.py _bootstrap_python $(srcdir)/Programs/_freeze_module.py
 	$(FREEZE_MODULE_PY) _sitebuiltins $(srcdir)/Lib/_sitebuiltins.py Python/frozen_modules/_sitebuiltins.h
 
-Python/frozen_modules/genericpath.h: Lib/genericpath.py _bootstrap_python $(srcdir)/Tools/scripts/freeze_module.py
+Python/frozen_modules/genericpath.h: Lib/genericpath.py _bootstrap_python $(srcdir)/Programs/_freeze_module.py
 	$(FREEZE_MODULE_PY) genericpath $(srcdir)/Lib/genericpath.py Python/frozen_modules/genericpath.h
 
-Python/frozen_modules/ntpath.h: Lib/ntpath.py _bootstrap_python $(srcdir)/Tools/scripts/freeze_module.py
+Python/frozen_modules/ntpath.h: Lib/ntpath.py _bootstrap_python $(srcdir)/Programs/_freeze_module.py
 	$(FREEZE_MODULE_PY) ntpath $(srcdir)/Lib/ntpath.py Python/frozen_modules/ntpath.h
 
-Python/frozen_modules/posixpath.h: Lib/posixpath.py _bootstrap_python $(srcdir)/Tools/scripts/freeze_module.py
+Python/frozen_modules/posixpath.h: Lib/posixpath.py _bootstrap_python $(srcdir)/Programs/_freeze_module.py
 	$(FREEZE_MODULE_PY) posixpath $(srcdir)/Lib/posixpath.py Python/frozen_modules/posixpath.h
 
-Python/frozen_modules/os.h: Lib/os.py _bootstrap_python $(srcdir)/Tools/scripts/freeze_module.py
+Python/frozen_modules/os.h: Lib/os.py _bootstrap_python $(srcdir)/Programs/_freeze_module.py
 	$(FREEZE_MODULE_PY) os $(srcdir)/Lib/os.py Python/frozen_modules/os.h
 
-Python/frozen_modules/site.h: Lib/site.py _bootstrap_python $(srcdir)/Tools/scripts/freeze_module.py
+Python/frozen_modules/site.h: Lib/site.py _bootstrap_python $(srcdir)/Programs/_freeze_module.py
 	$(FREEZE_MODULE_PY) site $(srcdir)/Lib/site.py Python/frozen_modules/site.h
 
-Python/frozen_modules/stat.h: Lib/stat.py _bootstrap_python $(srcdir)/Tools/scripts/freeze_module.py
+Python/frozen_modules/stat.h: Lib/stat.py _bootstrap_python $(srcdir)/Programs/_freeze_module.py
 	$(FREEZE_MODULE_PY) stat $(srcdir)/Lib/stat.py Python/frozen_modules/stat.h
 
-Python/frozen_modules/importlib.util.h: Lib/importlib/util.py _bootstrap_python $(srcdir)/Tools/scripts/freeze_module.py
+Python/frozen_modules/importlib.util.h: Lib/importlib/util.py _bootstrap_python $(srcdir)/Programs/_freeze_module.py
 	$(FREEZE_MODULE_PY) importlib.util $(srcdir)/Lib/importlib/util.py Python/frozen_modules/importlib.util.h
 
-Python/frozen_modules/importlib.machinery.h: Lib/importlib/machinery.py _bootstrap_python $(srcdir)/Tools/scripts/freeze_module.py
+Python/frozen_modules/importlib.machinery.h: Lib/importlib/machinery.py _bootstrap_python $(srcdir)/Programs/_freeze_module.py
 	$(FREEZE_MODULE_PY) importlib.machinery $(srcdir)/Lib/importlib/machinery.py Python/frozen_modules/importlib.machinery.h
 
-Python/frozen_modules/runpy.h: Lib/runpy.py _bootstrap_python $(srcdir)/Tools/scripts/freeze_module.py
+Python/frozen_modules/runpy.h: Lib/runpy.py _bootstrap_python $(srcdir)/Programs/_freeze_module.py
 	$(FREEZE_MODULE_PY) runpy $(srcdir)/Lib/runpy.py Python/frozen_modules/runpy.h
 
-Python/frozen_modules/__hello__.h: Lib/__hello__.py _bootstrap_python $(srcdir)/Tools/scripts/freeze_module.py
+Python/frozen_modules/__hello__.h: Lib/__hello__.py _bootstrap_python $(srcdir)/Programs/_freeze_module.py
 	$(FREEZE_MODULE_PY) __hello__ $(srcdir)/Lib/__hello__.py Python/frozen_modules/__hello__.h
 
-Python/frozen_modules/__phello__.h: Lib/__phello__/__init__.py _bootstrap_python $(srcdir)/Tools/scripts/freeze_module.py
+Python/frozen_modules/__phello__.h: Lib/__phello__/__init__.py _bootstrap_python $(srcdir)/Programs/_freeze_module.py
 	$(FREEZE_MODULE_PY) __phello__ $(srcdir)/Lib/__phello__/__init__.py Python/frozen_modules/__phello__.h
 
-Python/frozen_modules/__phello__.ham.h: Lib/__phello__/ham/__init__.py _bootstrap_python $(srcdir)/Tools/scripts/freeze_module.py
+Python/frozen_modules/__phello__.ham.h: Lib/__phello__/ham/__init__.py _bootstrap_python $(srcdir)/Programs/_freeze_module.py
 	$(FREEZE_MODULE_PY) __phello__.ham $(srcdir)/Lib/__phello__/ham/__init__.py Python/frozen_modules/__phello__.ham.h
 
-Python/frozen_modules/__phello__.ham.eggs.h: Lib/__phello__/ham/eggs.py _bootstrap_python $(srcdir)/Tools/scripts/freeze_module.py
+Python/frozen_modules/__phello__.ham.eggs.h: Lib/__phello__/ham/eggs.py _bootstrap_python $(srcdir)/Programs/_freeze_module.py
 	$(FREEZE_MODULE_PY) __phello__.ham.eggs $(srcdir)/Lib/__phello__/ham/eggs.py Python/frozen_modules/__phello__.ham.eggs.h
 
-Python/frozen_modules/__phello__.spam.h: Lib/__phello__/spam.py _bootstrap_python $(srcdir)/Tools/scripts/freeze_module.py
+Python/frozen_modules/__phello__.spam.h: Lib/__phello__/spam.py _bootstrap_python $(srcdir)/Programs/_freeze_module.py
 	$(FREEZE_MODULE_PY) __phello__.spam $(srcdir)/Lib/__phello__/spam.py Python/frozen_modules/__phello__.spam.h
 
-Python/frozen_modules/frozen_only.h: Tools/freeze/flag.py _bootstrap_python $(srcdir)/Tools/scripts/freeze_module.py
+Python/frozen_modules/frozen_only.h: Tools/freeze/flag.py _bootstrap_python $(srcdir)/Programs/_freeze_module.py
 	$(FREEZE_MODULE_PY) frozen_only $(srcdir)/Tools/freeze/flag.py Python/frozen_modules/frozen_only.h
 
 # END: freezing modules
