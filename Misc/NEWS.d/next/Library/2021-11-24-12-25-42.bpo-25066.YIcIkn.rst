@@ -1,1 +1,1 @@
-Added repr for ``multiprocessing.Event``, patch by Kumar Aditya.
+Added a :meth:`__repr__` method to  :class:`multiprocessing.Event` objects, patch by Kumar Aditya.
