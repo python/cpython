@@ -10,6 +10,13 @@ extern "C" {
 #endif
 
 
+/* runtime lifecycle */
+
+extern void _PyDict_Fini(PyInterpreterState *interp);
+
+
+/* other API */
+
 typedef struct {
     /* Cached hash code of me_key. */
     Py_hash_t me_hash;
