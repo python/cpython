@@ -645,13 +645,14 @@ PyLocale_getfirstweekday(PyObject* self, PyObject* args)
     /* Magic constant is defined by glibc as the third value of the week
      * keyword of LC_TIME */
     switch (week_1stday) {
-    default:
     case 19971130:
         week_1stday = 0;
         break;
     case 19971201:
         week_1stday = 1;
         break;
+    default:
+        Py_RETURN_NONE;
     }
     start = (week_1stday + first_weekday - 1) % 7;
 #endif
