@@ -10,6 +10,7 @@
 #include "pycore_fileutils.h"     // _Py_ResetForceASCII()
 #include "pycore_floatobject.h"   // _PyFloat_InitTypes()
 #include "pycore_frame.h"         // _PyFrame_Fini()
+#include "pycore_genobject.h"     // _PyAsyncGen_Fini()
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_list.h"          // _PyList_Fini()

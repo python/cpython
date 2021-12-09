@@ -540,6 +540,9 @@
     <ClInclude Include="..\Include\internal\pycore_gc.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_genobject.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_getopt.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
