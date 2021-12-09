@@ -756,7 +756,7 @@ pycore_init_types(PyInterpreterState *interp)
         return status;
     }
 
-    status = _PyErr_InitTypes();
+    status = _PyErr_InitTypes(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
