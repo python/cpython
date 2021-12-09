@@ -639,8 +639,7 @@ PyLocale_getfirstweekday(PyObject* self, PyObject* args)
                        locale, sizeof(locale))) {
         start = (locale[0] - '0') % 7;
     }
-#else
-#ifdef HAVE__NL_TIME_FIRST_WEEKDAY
+#elif defined(HAVE__NL_TIME_FIRST_WEEKDAY)
     int first_weekday = nl_langinfo(_NL_TIME_FIRST_WEEKDAY)[0];
     long week_1stday = (long)nl_langinfo(_NL_TIME_WEEK_1STDAY);
     switch (week_1stday) {
@@ -653,7 +652,6 @@ PyLocale_getfirstweekday(PyObject* self, PyObject* args)
         break;
     }
     start = (week_1stday + first_weekday - 1) % 7;
-#endif
 #endif
     if (0 <= start && start <= 6) {
         return PyLong_FromLong(start);
