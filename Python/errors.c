@@ -1241,8 +1241,12 @@ static PyStructSequence_Desc UnraisableHookArgs_desc = {
 
 
 PyStatus
-_PyErr_InitTypes(void)
+_PyErr_InitTypes(PyInterpreterState *interp)
 {
+    if (!_Py_IsMainInterpreter(interp)) {
+        return _PyStatus_OK();
+    }
+
     if (UnraisableHookArgsType.tp_name == NULL) {
         if (PyStructSequence_InitType2(&UnraisableHookArgsType,
                                        &UnraisableHookArgs_desc) < 0) {

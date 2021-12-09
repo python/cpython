@@ -1576,6 +1576,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_atomic_funcs.h \
 		$(srcdir)/Include/internal/pycore_bitutils.h \
 		$(srcdir)/Include/internal/pycore_bytes_methods.h \
+		$(srcdir)/Include/internal/pycore_bytesobject.h \
 		$(srcdir)/Include/internal/pycore_call.h \
 		$(srcdir)/Include/internal/pycore_ceval.h \
 		$(srcdir)/Include/internal/pycore_code.h \
@@ -1584,10 +1585,12 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_context.h \
 		$(srcdir)/Include/internal/pycore_dict.h \
 		$(srcdir)/Include/internal/pycore_dtoa.h \
+		$(srcdir)/Include/internal/pycore_exceptions.h \
 		$(srcdir)/Include/internal/pycore_fileutils.h \
 		$(srcdir)/Include/internal/pycore_floatobject.h \
 		$(srcdir)/Include/internal/pycore_format.h \
 		$(srcdir)/Include/internal/pycore_function.h \
+		$(srcdir)/Include/internal/pycore_genobject.h \
 		$(srcdir)/Include/internal/pycore_getopt.h \
 		$(srcdir)/Include/internal/pycore_gil.h \
 		$(srcdir)/Include/internal/pycore_hamt.h \
@@ -1598,6 +1601,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_interpreteridobject.h \
 		$(srcdir)/Include/internal/pycore_list.h \
 		$(srcdir)/Include/internal/pycore_long.h \
+		$(srcdir)/Include/internal/pycore_long_state.h \
 		$(srcdir)/Include/internal/pycore_moduleobject.h \
 		$(srcdir)/Include/internal/pycore_namespace.h \
 		$(srcdir)/Include/internal/pycore_object.h \
@@ -1609,14 +1613,17 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_pymem.h \
 		$(srcdir)/Include/internal/pycore_pystate.h \
 		$(srcdir)/Include/internal/pycore_runtime.h \
+		$(srcdir)/Include/internal/pycore_sliceobject.h \
 		$(srcdir)/Include/internal/pycore_strhex.h \
 		$(srcdir)/Include/internal/pycore_structseq.h \
 		$(srcdir)/Include/internal/pycore_symtable.h \
 		$(srcdir)/Include/internal/pycore_sysmodule.h \
 		$(srcdir)/Include/internal/pycore_traceback.h \
 		$(srcdir)/Include/internal/pycore_tuple.h \
+		$(srcdir)/Include/internal/pycore_typeobject.h \
 		$(srcdir)/Include/internal/pycore_ucnhash.h \
 		$(srcdir)/Include/internal/pycore_unionobject.h \
+		$(srcdir)/Include/internal/pycore_unicodeobject.h \
 		$(srcdir)/Include/internal/pycore_warnings.h \
 		$(DTRACE_HEADERS) \
 		\

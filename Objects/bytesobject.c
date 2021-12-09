@@ -5,6 +5,7 @@
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_bytes_methods.h" // _Py_bytes_startswith()
+#include "pycore_bytesobject.h"   // struct _Py_bytes_state
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_format.h"        // F_LJUST
 #include "pycore_initconfig.h"    // _PyStatus_OK()
@@ -3086,12 +3087,31 @@ error:
 
 
 PyStatus
-_PyBytes_Init(PyInterpreterState *interp)
+_PyBytes_InitGlobalObjects(PyInterpreterState *interp)
 {
     struct _Py_bytes_state *state = &interp->bytes;
     if (bytes_create_empty_string_singleton(state) < 0) {
         return _PyStatus_NO_MEMORY();
     }
+    return _PyStatus_OK();
+}
+
+
+PyStatus
+_PyBytes_InitTypes(PyInterpreterState *interp)
+{
+    if (!_Py_IsMainInterpreter(interp)) {
+        return _PyStatus_OK();
+    }
+
+    if (PyType_Ready(&PyBytes_Type) < 0) {
+        return _PyStatus_ERR("Can't initialize bytes type");
+    }
+
+    if (PyType_Ready(&PyBytesIter_Type) < 0) {
+        return _PyStatus_ERR("Can't initialize bytes iterator type");
+    }
+
     return _PyStatus_OK();
 }
 
