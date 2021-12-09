@@ -312,11 +312,24 @@ def expanduser(path):
             drive = ''
         userhome = join(drive, os.environ['HOMEPATH'])
 
+    if i != 1: #~user
+        target_user = path[1:i]
+        if isinstance(target_user, bytes):
+            target_user = os.fsdecode(target_user)
+        current_user = os.environ.get('USERNAME')
+
+        if target_user != current_user:
+            # Try to guess user home directory.  By default all user
+            # profile directories are located in the same place and are
+            # named by corresponding usernames.  If userhome isn't a
+            # normal profile directory, this guess is likely wrong,
+            # so we bail out.
+            if current_user != basename(userhome):
+                return path
+            userhome = join(dirname(userhome), target_user)
+
     if isinstance(path, bytes):
         userhome = os.fsencode(userhome)
-
-    if i != 1: #~user
-        userhome = join(dirname(userhome), path[1:i])
 
     return userhome + path[i:]
 
@@ -622,7 +635,7 @@ else:
                 tail = join(name, tail) if tail else name
         return tail
 
-    def realpath(path):
+    def realpath(path, *, strict=False):
         path = normpath(path)
         if isinstance(path, bytes):
             prefix = b'\\\\?\\'
@@ -647,6 +660,8 @@ else:
             path = _getfinalpathname(path)
             initial_winerror = 0
         except OSError as ex:
+            if strict:
+                raise
             initial_winerror = ex.winerror
             path = _getfinalpathname_nonstrict(path)
         # The path returned by _getfinalpathname will always start with \\?\ -

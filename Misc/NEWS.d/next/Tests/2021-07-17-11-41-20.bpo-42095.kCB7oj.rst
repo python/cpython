@@ -1,0 +1,2 @@
+Added interop tests for Apple plists: generate plist files with Python
+plistlib and parse with Apple plutil; and the other way round.

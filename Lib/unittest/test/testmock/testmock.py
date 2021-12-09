@@ -11,7 +11,7 @@ from unittest.mock import (
     call, DEFAULT, patch, sentinel,
     MagicMock, Mock, NonCallableMock,
     NonCallableMagicMock, AsyncMock, _Call, _CallList,
-    create_autospec
+    create_autospec, InvalidSpecError
 )
 
 
@@ -204,6 +204,28 @@ class MockTest(unittest.TestCase):
         mock.side_effect = ValueError('Bazinga!')
         self.assertRaisesRegex(ValueError, 'Bazinga!', mock)
 
+
+    def test_autospec_mock(self):
+        class A(object):
+            class B(object):
+                C = None
+
+        with mock.patch.object(A, 'B'):
+            with self.assertRaisesRegex(InvalidSpecError,
+                                        "Cannot autospec attr 'B' from target <MagicMock spec='A'"):
+                create_autospec(A).B
+            with self.assertRaisesRegex(InvalidSpecError,
+                                        "Cannot autospec attr 'B' from target 'A'"):
+                mock.patch.object(A, 'B', autospec=True).start()
+            with self.assertRaisesRegex(InvalidSpecError,
+                                        "Cannot autospec attr 'C' as the patch target "):
+                mock.patch.object(A.B, 'C', autospec=True).start()
+            with self.assertRaisesRegex(InvalidSpecError,
+                                        "Cannot spec attr 'B' as the spec "):
+                mock.patch.object(A, 'B', spec=A.B).start()
+            with self.assertRaisesRegex(InvalidSpecError,
+                                        "Cannot spec attr 'B' as the spec_set "):
+                mock.patch.object(A, 'B', spec_set=A.B).start()
 
     def test_reset_mock(self):
         parent = Mock()
@@ -2177,7 +2199,7 @@ class MockTest(unittest.TestCase):
                 self.obj_with_bool_func = unittest.mock.MagicMock()
 
         obj = Something()
-        with unittest.mock.patch.object(obj, 'obj_with_bool_func', autospec=True): pass
+        with unittest.mock.patch.object(obj, 'obj_with_bool_func', spec=object): pass
 
         self.assertEqual(obj.obj_with_bool_func.__bool__.call_count, 0)
 

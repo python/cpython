@@ -1,0 +1,2 @@
+Fixes ``TypedDict`` to work with ``typing.get_type_hints()`` and postponed evaluation of
+annotations across modules.

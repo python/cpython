@@ -1,0 +1,2 @@
+Adjust recently added contextlib tests to avoid assuming the use of a
+refcounted GC

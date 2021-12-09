@@ -1,0 +1,4 @@
+Added a permanent Unicode-valued environment variable to regression tests to
+ensure they handle this use case in the future. If your test environment
+breaks because of that, report a bug to us, and temporarily set
+PYTHONREGRTEST_UNICODE_GUARD=0 in your test environment.

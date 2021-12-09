@@ -41,7 +41,8 @@
 extern int pysqlite_microprotocols_init(PyObject *module);
 extern int pysqlite_microprotocols_add(
     PyTypeObject *type, PyObject *proto, PyObject *cast);
-extern PyObject *pysqlite_microprotocols_adapt(
-    PyObject *obj, PyObject *proto, PyObject *alt);
+extern PyObject *pysqlite_microprotocols_adapt(pysqlite_state *state,
+                                               PyObject *obj, PyObject *proto,
+                                               PyObject *alt);
 
 #endif /* !defined(PSYCOPG_MICROPROTOCOLS_H) */

@@ -249,6 +249,10 @@ class TestChainMap(unittest.TestCase):
         for k, v in dict(a=1, B=20, C=30, z=100).items():             # check get
             self.assertEqual(d.get(k, 100), v)
 
+        c = ChainMap({'a': 1, 'b': 2})
+        d = c.new_child(b=20, c=30)
+        self.assertEqual(d.maps, [{'b': 20, 'c': 30}, {'a': 1, 'b': 2}])
+
     def test_union_operators(self):
         cm1 = ChainMap(dict(a=1, b=2), dict(c=3, d=4))
         cm2 = ChainMap(dict(a=10, e=5), dict(b=20, d=4))
@@ -680,6 +684,16 @@ class TestNamedTuple(unittest.TestCase):
 
         self.assertEqual(np.x, 1)
         self.assertEqual(np.y, 2)
+
+    def test_new_builtins_issue_43102(self):
+        obj = namedtuple('C', ())
+        new_func = obj.__new__
+        self.assertEqual(new_func.__globals__['__builtins__'], {})
+        self.assertEqual(new_func.__builtins__, {})
+
+    def test_match_args(self):
+        Point = namedtuple('Point', 'x y')
+        self.assertEqual(Point.__match_args__, ('x', 'y'))
 
 
 ################################################################################
@@ -1498,8 +1512,12 @@ class TestCollectionABCs(ABCTestCase):
                 return result
             def __repr__(self):
                 return "MySet(%s)" % repr(list(self))
-        s = MySet([5,43,2,1])
-        self.assertEqual(s.pop(), 1)
+        items = [5,43,2,1]
+        s = MySet(items)
+        r = s.pop()
+        self.assertEqual(len(s), len(items) - 1)
+        self.assertNotIn(r, s)
+        self.assertIn(r, items)
 
     def test_issue8750(self):
         empty = WithSet()
@@ -1783,6 +1801,18 @@ class TestCollectionABCs(ABCTestCase):
         self.assertTrue(f1 != l1)
         self.assertTrue(f1 != l2)
 
+    def test_Set_hash_matches_frozenset(self):
+        sets = [
+            {}, {1}, {None}, {-1}, {0.0}, {"abc"}, {1, 2, 3},
+            {10**100, 10**101}, {"a", "b", "ab", ""}, {False, True},
+            {object(), object(), object()}, {float("nan")},  {frozenset()},
+            {*range(1000)}, {*range(1000)} - {100, 200, 300},
+            {*range(sys.maxsize - 10, sys.maxsize + 10)},
+        ]
+        for s in sets:
+            fs = frozenset(s)
+            self.assertEqual(hash(fs), Set._hash(fs), msg=s)
+
     def test_Mapping(self):
         for sample in [dict]:
             self.assertIsInstance(sample(), Mapping)
@@ -1949,6 +1979,12 @@ class TestCollectionABCs(ABCTestCase):
         self.assertEqual(len(mss), len(mss2))
         self.assertEqual(list(mss), list(mss2))
 
+    def test_illegal_patma_flags(self):
+        with self.assertRaises(TypeError):
+            class Both(Collection):
+                __abc_tpflags__ = (Sequence.__flags__ | Mapping.__flags__)
+
+
 
 ################################################################################
 ### Counter
@@ -2041,6 +2077,10 @@ class TestCounter(unittest.TestCase):
         self.assertRaises(TypeError, Counter, 42)
         self.assertRaises(TypeError, Counter, (), ())
         self.assertRaises(TypeError, Counter.__init__)
+
+    def test_total(self):
+        c = Counter(a=10, b=5, c=0)
+        self.assertEqual(c.total(), 15)
 
     def test_order_preservation(self):
         # Input order dictates items() order

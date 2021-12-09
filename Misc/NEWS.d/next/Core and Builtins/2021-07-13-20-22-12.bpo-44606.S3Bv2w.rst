@@ -1,0 +1,1 @@
+Fix ``__instancecheck__`` and ``__subclasscheck__`` for the union type.

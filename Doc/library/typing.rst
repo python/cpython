@@ -77,7 +77,7 @@ Note that ``None`` as a type hint is a special case and is replaced by
 NewType
 =======
 
-Use the :func:`NewType` helper function to create distinct types::
+Use the :class:`NewType` helper class to create distinct types::
 
    from typing import NewType
 
@@ -106,15 +106,14 @@ accidentally creating a ``UserId`` in an invalid way::
 
 Note that these checks are enforced only by the static type checker. At runtime,
 the statement ``Derived = NewType('Derived', Base)`` will make ``Derived`` a
-function that immediately returns whatever parameter you pass it. That means
+class that immediately returns whatever parameter you pass it. That means
 the expression ``Derived(some_value)`` does not create a new class or introduce
-any overhead beyond that of a regular function call.
+much overhead beyond that of a regular function call.
 
 More precisely, the expression ``some_value is Derived(some_value)`` is always
 true at runtime.
 
-This also means that it is not possible to create a subtype of ``Derived``
-since it is an identity function at runtime, not an actual type::
+It is invalid to create a subtype of ``Derived``::
 
    from typing import NewType
 
@@ -123,7 +122,7 @@ since it is an identity function at runtime, not an actual type::
    # Fails at runtime and does not typecheck
    class AdminUserId(UserId): pass
 
-However, it is possible to create a :func:`NewType` based on a 'derived' ``NewType``::
+However, it is possible to create a :class:`NewType` based on a 'derived' ``NewType``::
 
    from typing import NewType
 
@@ -150,6 +149,12 @@ See :pep:`484` for more details.
    errors with minimal runtime cost.
 
 .. versionadded:: 3.5.2
+
+.. versionchanged:: 3.10
+   ``NewType`` is now a class rather than a function.  There is some additional
+   runtime cost when calling ``NewType`` over a regular function.  However, this
+   cost will be reduced in 3.11.0.
+
 
 Callable
 ========
@@ -799,10 +804,10 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    .. versionadded:: 3.8
 
    .. versionchanged:: 3.9.1
-      ``Literal`` now de-duplicates parameters.  Equality comparison of
+      ``Literal`` now de-duplicates parameters.  Equality comparisons of
       ``Literal`` objects are no longer order dependent. ``Literal`` objects
       will now raise a :exc:`TypeError` exception during equality comparisons
-      if one of their parameters are not :term:`immutable`.
+      if one of their parameters are not :term:`hashable`.
 
 .. data:: ClassVar
 
@@ -933,6 +938,75 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
    .. versionadded:: 3.9
 
+
+.. data:: TypeGuard
+
+   Special typing form used to annotate the return type of a user-defined
+   type guard function.  ``TypeGuard`` only accepts a single type argument.
+   At runtime, functions marked this way should return a boolean.
+
+   ``TypeGuard`` aims to benefit *type narrowing* -- a technique used by static
+   type checkers to determine a more precise type of an expression within a
+   program's code flow.  Usually type narrowing is done by analyzing
+   conditional code flow and applying the narrowing to a block of code.  The
+   conditional expression here is sometimes referred to as a "type guard"::
+
+      def is_str(val: Union[str, float]):
+          # "isinstance" type guard
+          if isinstance(val, str):
+              # Type of ``val`` is narrowed to ``str``
+              ...
+          else:
+              # Else, type of ``val`` is narrowed to ``float``.
+              ...
+
+   Sometimes it would be convenient to use a user-defined boolean function
+   as a type guard.  Such a function should use ``TypeGuard[...]`` as its
+   return type to alert static type checkers to this intention.
+
+   Using  ``-> TypeGuard`` tells the static type checker that for a given
+   function:
+
+   1. The return value is a boolean.
+   2. If the return value is ``True``, the type of its argument
+      is the type inside ``TypeGuard``.
+
+      For example::
+
+         def is_str_list(val: List[object]) -> TypeGuard[List[str]]:
+             '''Determines whether all objects in the list are strings'''
+             return all(isinstance(x, str) for x in val)
+
+         def func1(val: List[object]):
+             if is_str_list(val):
+                 # Type of ``val`` is narrowed to ``List[str]``.
+                 print(" ".join(val))
+             else:
+                 # Type of ``val`` remains as ``List[object]``.
+                 print("Not a list of strings!")
+
+   If ``is_str_list`` is a class or instance method, then the type in
+   ``TypeGuard`` maps to the type of the second parameter after ``cls`` or
+   ``self``.
+
+   In short, the form ``def foo(arg: TypeA) -> TypeGuard[TypeB]: ...``,
+   means that if ``foo(arg)`` returns ``True``, then ``arg`` narrows from
+   ``TypeA`` to ``TypeB``.
+
+   .. note::
+
+      ``TypeB`` need not be a narrower form of ``TypeA`` -- it can even be a
+      wider form. The main reason is to allow for things like
+      narrowing ``List[object]`` to ``List[str]`` even though the latter
+      is not a subtype of the former, since ``List`` is invariant.
+      The responsibility of writing type-safe type guards is left to the user.
+
+   ``TypeGuard`` also works with type variables.  For more information, see
+   :pep:`647` (User-Defined Type Guards).
+
+   .. versionadded:: 3.10
+
+
 Building generic types
 """"""""""""""""""""""
 
@@ -1058,8 +1132,10 @@ These are not used in annotations. They are building blocks for creating generic
       components.  ``P.args`` represents the tuple of positional parameters in a
       given call and should only be used to annotate ``*args``.  ``P.kwargs``
       represents the mapping of keyword parameters to their values in a given call,
-      and should be only be used to annotate ``**kwargs`` or ``**kwds``.  Both
-      attributes require the annotated parameter to be in scope.
+      and should be only be used to annotate ``**kwargs``.  Both
+      attributes require the annotated parameter to be in scope. At runtime,
+      ``P.args`` and ``P.kwargs`` are instances respectively of
+      :class:`ParamSpecArgs` and :class:`ParamSpecKwargs`.
 
    Parameter specification variables created with ``covariant=True`` or
    ``contravariant=True`` can be used to declare covariant or contravariant
@@ -1077,6 +1153,24 @@ These are not used in annotations. They are building blocks for creating generic
       * :pep:`612` -- Parameter Specification Variables (the PEP which introduced
         ``ParamSpec`` and ``Concatenate``).
       * :class:`Callable` and :class:`Concatenate`.
+
+.. data:: ParamSpecArgs
+.. data:: ParamSpecKwargs
+
+   Arguments and keyword arguments attributes of a :class:`ParamSpec`. The
+   ``P.args`` attribute of a ``ParamSpec`` is an instance of ``ParamSpecArgs``,
+   and ``P.kwargs`` is an instance of ``ParamSpecKwargs``. They are intended
+   for runtime introspection and have no special meaning to static type checkers.
+
+   Calling :func:`get_origin` on either of these objects will return the
+   original ``ParamSpec``::
+
+      P = ParamSpec("P")
+      get_origin(P.args)  # returns P
+      get_origin(P.kwargs)  # returns P
+
+   .. versionadded:: 3.10
+
 
 .. data:: AnyStr
 
@@ -1143,11 +1237,13 @@ These are not used in annotations. They are building blocks for creating generic
 
    .. note::
 
-        :func:`runtime_checkable` will check only the presence of the required methods,
-        not their type signatures! For example, :class:`builtins.complex <complex>`
-        implements :func:`__float__`, therefore it passes an :func:`issubclass` check
-        against :class:`SupportsFloat`. However, the ``complex.__float__`` method
-        exists only to raise a :class:`TypeError` with a more informative message.
+        :func:`runtime_checkable` will check only the presence of the required
+        methods, not their type signatures. For example, :class:`ssl.SSLObject`
+        is a class, therefore it passes an :func:`issubclass`
+        check against :data:`Callable`.  However, the
+        :meth:`ssl.SSLObject.__init__` method exists only to raise a
+        :exc:`TypeError` with a more informative message, therefore making
+        it impossible to call (instantiate) :class:`ssl.SSLObject`.
 
    .. versionadded:: 3.8
 
@@ -1215,16 +1311,20 @@ These are not used in annotations. They are building blocks for declaring types.
       Removed the ``_field_types`` attribute in favor of the more
       standard ``__annotations__`` attribute which has the same information.
 
-.. function:: NewType(name, tp)
+.. class:: NewType(name, tp)
 
-   A helper function to indicate a distinct type to a typechecker,
-   see :ref:`distinct`. At runtime it returns a function that returns
-   its argument. Usage::
+   A helper class to indicate a distinct type to a typechecker,
+   see :ref:`distinct`. At runtime it returns an object that returns
+   its argument when called.
+   Usage::
 
       UserId = NewType('UserId', int)
       first_user = UserId(1)
 
    .. versionadded:: 3.5.2
+
+   .. versionchanged:: 3.10
+      ``NewType`` is now a class rather than a function.
 
 .. class:: TypedDict(dict)
 
@@ -1247,26 +1347,28 @@ These are not used in annotations. They are building blocks for declaring types.
 
       assert Point2D(x=1, y=2, label='first') == dict(x=1, y=2, label='first')
 
-   The type info for introspection can be accessed via ``Point2D.__annotations__``
-   and ``Point2D.__total__``.  To allow using this feature with older versions
-   of Python that do not support :pep:`526`, ``TypedDict`` supports two additional
-   equivalent syntactic forms::
+   The type info for introspection can be accessed via ``Point2D.__annotations__``,
+   ``Point2D.__total__``, ``Point2D.__required_keys__``, and
+   ``Point2D.__optional_keys__``.
+   To allow using this feature with older versions of Python that do not
+   support :pep:`526`, ``TypedDict`` supports two additional equivalent
+   syntactic forms::
 
       Point2D = TypedDict('Point2D', x=int, y=int, label=str)
       Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
 
-   By default, all keys must be present in a TypedDict. It is possible
-   to override this by specifying totality.
+   By default, all keys must be present in a ``TypedDict``. It is possible to
+   override this by specifying totality.
    Usage::
 
-      class point2D(TypedDict, total=False):
+      class Point2D(TypedDict, total=False):
           x: int
           y: int
 
-   This means that a point2D TypedDict can have any of the keys omitted. A type
-   checker is only expected to support a literal False or True as the value of
-   the total argument. True is the default, and makes all items defined in the
-   class body be required.
+   This means that a ``Point2D`` ``TypedDict`` can have any of the keys
+   omitted. A type checker is only expected to support a literal ``False`` or
+   ``True`` as the value of the ``total`` argument. ``True`` is the default,
+   and makes all items defined in the class body required.
 
    See :pep:`589` for more examples and detailed rules of using ``TypedDict``.
 
@@ -1400,7 +1502,11 @@ Other concrete types
    Generic type ``IO[AnyStr]`` and its subclasses ``TextIO(IO[str])``
    and ``BinaryIO(IO[bytes])``
    represent the types of I/O streams such as returned by
-   :func:`open`. These types are also in the ``typing.io`` namespace.
+   :func:`open`.
+
+   .. deprecated-removed:: 3.8 3.12
+      These types are also in the ``typing.io`` namespace, which was
+      never supported by type checkers and will be removed.
 
 .. class:: Pattern
            Match
@@ -1410,7 +1516,11 @@ Other concrete types
    :func:`re.match`.  These types (and the corresponding functions)
    are generic in ``AnyStr`` and can be made specific by writing
    ``Pattern[str]``, ``Pattern[bytes]``, ``Match[str]``, or
-   ``Match[bytes]``. These types are also in the ``typing.re`` namespace.
+   ``Match[bytes]``.
+
+   .. deprecated-removed:: 3.8 3.12
+      These types are also in the ``typing.re`` namespace, which was
+      never supported by type checkers and will be removed.
 
    .. deprecated:: 3.9
       Classes ``Pattern`` and ``Match`` from :mod:`re` now support ``[]``.
@@ -1946,9 +2056,16 @@ Introspection helpers
 .. class:: ForwardRef
 
    A class used for internal typing representation of string forward references.
-   For example, ``list["SomeClass"]`` is implicitly transformed into
-   ``list[ForwardRef("SomeClass")]``.  This class should not be instantiated by
+   For example, ``List["SomeClass"]`` is implicitly transformed into
+   ``List[ForwardRef("SomeClass")]``.  This class should not be instantiated by
    a user, but may be used by introspection tools.
+
+   .. note::
+      :pep:`585` generic types such as ``list["SomeClass"]`` will not be
+      implicitly transformed into ``list[ForwardRef("SomeClass")]`` and thus
+      will not automatically resolve to ``list[SomeClass]``.
+
+   .. versionadded:: 3.7.4
 
 Constant
 --------
@@ -1978,4 +2095,3 @@ Constant
       (see :pep:`563`).
 
    .. versionadded:: 3.5.2
-

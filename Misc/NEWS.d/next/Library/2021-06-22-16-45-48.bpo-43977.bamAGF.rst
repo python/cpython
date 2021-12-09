@@ -1,0 +1,3 @@
+Set the proper :const:`Py_TPFLAGS_MAPPING` and :const:`Py_TPFLAGS_SEQUENCE`
+flags for subclasses created before a parent has been registered as a
+:class:`collections.abc.Mapping` or :class:`collections.abc.Sequence`.

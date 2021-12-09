@@ -229,7 +229,7 @@ In regular release builds, the default warning filter has the following entries
     ignore::ImportWarning
     ignore::ResourceWarning
 
-In debug builds, the list of default warning filters is empty.
+In a :ref:`debug build <debug-build>`, the list of default warning filters is empty.
 
 .. versionchanged:: 3.2
    :exc:`DeprecationWarning` is now ignored by default in addition to

@@ -427,6 +427,14 @@ The :mod:`locale` module defines the following exception and functions:
     .. versionadded:: 3.5
 
 
+.. function:: localize(string, grouping=False, monetary=False)
+
+    Converts a normalized number string into a formatted string following the
+    :const:`LC_NUMERIC` settings.
+
+    .. versionadded:: 3.10
+
+
 .. function:: atof(string)
 
    Converts a string to a floating point number, following the :const:`LC_NUMERIC`

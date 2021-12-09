@@ -1,0 +1,2 @@
+The :mod:`faulthandler` module now detects if a fatal error occurs during a
+garbage collector collection. Patch by Victor Stinner.

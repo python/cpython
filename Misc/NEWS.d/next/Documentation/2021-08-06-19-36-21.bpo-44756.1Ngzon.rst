@@ -1,0 +1,3 @@
+Reverted automated virtual environment creation on ``make html`` when
+building documentation. It turned out to be disruptive for downstream
+distributors.

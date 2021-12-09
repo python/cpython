@@ -1,0 +1,14 @@
+Deprecate the following functions to configure the Python initialization:
+
+* :c:func:`PySys_AddWarnOptionUnicode`
+* :c:func:`PySys_AddWarnOption`
+* :c:func:`PySys_AddXOption`
+* :c:func:`PySys_HasWarnOptions`
+* :c:func:`Py_SetPath`
+* :c:func:`Py_SetProgramName`
+* :c:func:`Py_SetPythonHome`
+* :c:func:`Py_SetStandardStreamEncoding`
+* :c:func:`_Py_SetProgramFullPath`
+
+Use the new :c:type:`PyConfig` API of the :ref:`Python Initialization
+Configuration <init-config>` instead (:pep:`587`).

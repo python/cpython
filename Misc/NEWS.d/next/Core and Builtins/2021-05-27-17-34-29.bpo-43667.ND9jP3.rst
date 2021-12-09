@@ -1,0 +1,2 @@
+Improve Unicode support in non-UTF locales on Oracle Solaris. This issue
+does not affect other Solaris systems.

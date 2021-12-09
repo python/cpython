@@ -75,6 +75,25 @@ PyThread_init_thread(void)
     PyThread__init_thread();
 }
 
+void
+_PyThread_debug_deprecation(void)
+{
+#ifdef Py_DEBUG
+    if (thread_debug) {
+        // Flush previous dprintf() logs
+        fflush(stdout);
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "The threading debug (PYTHONTHREADDEBUG environment "
+                         "variable) is deprecated and will be removed "
+                         "in Python 3.12",
+                         0))
+        {
+            _PyErr_WriteUnraisableMsg("at Python startup", NULL);
+        }
+    }
+#endif
+}
+
 #if defined(_POSIX_THREADS)
 #   define PYTHREAD_NAME "pthread"
 #   include "thread_pthread.h"

@@ -1,0 +1,1 @@
+Expose specialization stats in python via :func:`_opcode.get_specialization_stats`.

@@ -1,0 +1,2 @@
+Fix a bug in :mod:`pdb` where :meth:`~pdb.Pdb.checkline` raises
+:exc:`AttributeError` if it is called after :meth:`~pdb.Pdb.reset`.

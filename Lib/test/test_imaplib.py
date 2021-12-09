@@ -96,7 +96,7 @@ if ssl:
 
         def get_request(self):
             newsocket, fromaddr = self.socket.accept()
-            context = ssl.SSLContext()
+            context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
             context.load_cert_chain(CERTFILE)
             connstream = context.wrap_socket(newsocket, server_side=True)
             return connstream, fromaddr

@@ -108,6 +108,19 @@ EXTERNAL_ENTITY_XML = """\
 <document>&entity;</document>
 """
 
+ATTLIST_XML = """\
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE Foo [
+<!ELEMENT foo (bar*)>
+<!ELEMENT bar (#PCDATA)*>
+<!ATTLIST bar xml:lang CDATA "eng">
+<!ENTITY qux "quux">
+]>
+<foo>
+<bar>&qux;</bar>
+</foo>
+"""
+
 def checkwarnings(*filters, quiet=False):
     def decorator(test):
         def newtest(*args, **kwargs):
@@ -315,6 +328,9 @@ class ElementTreeTest(unittest.TestCase):
         self.serialize_check(elem, '<body><tag2 /><tag /></body>')
         elem.remove(e)
         elem.extend([e])
+        self.serialize_check(elem, '<body><tag /><tag2 /></body>')
+        elem.remove(e)
+        elem.extend(iter([e]))
         self.serialize_check(elem, '<body><tag /><tag2 /></body>')
         elem.remove(e)
 
@@ -1353,6 +1369,12 @@ class ElementTreeTest(unittest.TestCase):
                          '<cirriculum status="public" company="example" />')
         self.assertEqual(serialize(root, method='html'),
                 '<cirriculum status="public" company="example"></cirriculum>')
+
+    def test_attlist_default(self):
+        # Test default attribute values; See BPO 42151.
+        root = ET.fromstring(ATTLIST_XML)
+        self.assertEqual(root[0].attrib,
+                         {'{http://www.w3.org/XML/1998/namespace}lang': 'eng'})
 
 
 class XMLPullParserTest(unittest.TestCase):

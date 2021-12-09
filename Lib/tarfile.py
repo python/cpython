@@ -1604,17 +1604,20 @@ class TarFile(object):
             # Find out which *open() is appropriate for opening the file.
             def not_compressed(comptype):
                 return cls.OPEN_METH[comptype] == 'taropen'
+            error_msgs = []
             for comptype in sorted(cls.OPEN_METH, key=not_compressed):
                 func = getattr(cls, cls.OPEN_METH[comptype])
                 if fileobj is not None:
                     saved_pos = fileobj.tell()
                 try:
                     return func(name, "r", fileobj, **kwargs)
-                except (ReadError, CompressionError):
+                except (ReadError, CompressionError) as e:
+                    error_msgs.append(f'- method {comptype}: {e!r}')
                     if fileobj is not None:
                         fileobj.seek(saved_pos)
                     continue
-            raise ReadError("file could not be opened successfully")
+            error_msgs_summary = '\n'.join(error_msgs)
+            raise ReadError(f"file could not be opened successfully:\n{error_msgs_summary}")
 
         elif ":" in mode:
             filemode, comptype = mode.split(":", 1)

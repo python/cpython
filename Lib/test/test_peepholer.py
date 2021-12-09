@@ -1,4 +1,5 @@
 import dis
+from itertools import combinations, product
 import unittest
 
 from test.support.bytecode_helper import BytecodeTestCase
@@ -493,6 +494,81 @@ class TestTranforms(BytecodeTestCase):
         def genexpr():
             return (y for x in a for y in [f(x)])
         self.assertEqual(count_instr_recursively(genexpr, 'FOR_ITER'), 1)
+
+    def test_format_combinations(self):
+        flags = '-+ #0'
+        testcases = [
+            *product(('', '1234', 'абвг'), 'sra'),
+            *product((1234, -1234), 'duioxX'),
+            *product((1234.5678901, -1234.5678901), 'duifegFEG'),
+            *product((float('inf'), -float('inf')), 'fegFEG'),
+        ]
+        width_precs = [
+            *product(('', '1', '30'), ('', '.', '.0', '.2')),
+            ('', '.40'),
+            ('30', '.40'),
+        ]
+        for value, suffix in testcases:
+            for width, prec in width_precs:
+                for r in range(len(flags) + 1):
+                    for spec in combinations(flags, r):
+                        fmt = '%' + ''.join(spec) + width + prec + suffix
+                        with self.subTest(fmt=fmt, value=value):
+                            s1 = fmt % value
+                            s2 = eval(f'{fmt!r} % (x,)', {'x': value})
+                            self.assertEqual(s2, s1, f'{fmt = }')
+
+    def test_format_misc(self):
+        def format(fmt, *values):
+            vars = [f'x{i+1}' for i in range(len(values))]
+            if len(vars) == 1:
+                args = '(' + vars[0] + ',)'
+            else:
+                args = '(' + ', '.join(vars) + ')'
+            return eval(f'{fmt!r} % {args}', dict(zip(vars, values)))
+
+        self.assertEqual(format('string'), 'string')
+        self.assertEqual(format('x = %s!', 1234), 'x = 1234!')
+        self.assertEqual(format('x = %d!', 1234), 'x = 1234!')
+        self.assertEqual(format('x = %x!', 1234), 'x = 4d2!')
+        self.assertEqual(format('x = %f!', 1234), 'x = 1234.000000!')
+        self.assertEqual(format('x = %s!', 1234.5678901), 'x = 1234.5678901!')
+        self.assertEqual(format('x = %f!', 1234.5678901), 'x = 1234.567890!')
+        self.assertEqual(format('x = %d!', 1234.5678901), 'x = 1234!')
+        self.assertEqual(format('x = %s%% %%%%', 1234), 'x = 1234% %%')
+        self.assertEqual(format('x = %s!', '%% %s'), 'x = %% %s!')
+        self.assertEqual(format('x = %s, y = %d', 12, 34), 'x = 12, y = 34')
+
+    def test_format_errors(self):
+        with self.assertRaisesRegex(TypeError,
+                    'not enough arguments for format string'):
+            eval("'%s' % ()")
+        with self.assertRaisesRegex(TypeError,
+                    'not all arguments converted during string formatting'):
+            eval("'%s' % (x, y)", {'x': 1, 'y': 2})
+        with self.assertRaisesRegex(ValueError, 'incomplete format'):
+            eval("'%s%' % (x,)", {'x': 1234})
+        with self.assertRaisesRegex(ValueError, 'incomplete format'):
+            eval("'%s%%%' % (x,)", {'x': 1234})
+        with self.assertRaisesRegex(TypeError,
+                    'not enough arguments for format string'):
+            eval("'%s%z' % (x,)", {'x': 1234})
+        with self.assertRaisesRegex(ValueError, 'unsupported format character'):
+            eval("'%s%z' % (x, 5)", {'x': 1234})
+        with self.assertRaisesRegex(TypeError, 'a real number is required, not str'):
+            eval("'%d' % (x,)", {'x': '1234'})
+        with self.assertRaisesRegex(TypeError, 'an integer is required, not float'):
+            eval("'%x' % (x,)", {'x': 1234.56})
+        with self.assertRaisesRegex(TypeError, 'an integer is required, not str'):
+            eval("'%x' % (x,)", {'x': '1234'})
+        with self.assertRaisesRegex(TypeError, 'must be real number, not str'):
+            eval("'%f' % (x,)", {'x': '1234'})
+        with self.assertRaisesRegex(TypeError,
+                    'not enough arguments for format string'):
+            eval("'%s, %s' % (x, *y)", {'x': 1, 'y': []})
+        with self.assertRaisesRegex(TypeError,
+                    'not all arguments converted during string formatting'):
+            eval("'%s, %s' % (x, *y)", {'x': 1, 'y': [2, 3]})
 
 
 class TestBuglets(unittest.TestCase):

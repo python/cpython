@@ -47,18 +47,14 @@ from subprocess import PIPE, STDOUT
 from queue import Queue, Empty
 from threading import Thread, Event, Lock
 
+from test.support import import_fresh_module
 from randdec import randfloat, all_unary, all_binary, all_ternary
 from randdec import unary_optarg, binary_optarg, ternary_optarg
 from formathelper import rand_format, rand_locale
 from _pydecimal import _dec_from_triple
 
-from _testcapi import decimal_as_triple
-from _testcapi import decimal_from_triple
-
-import _decimal as C
-import _pydecimal as P
-
-
+C = import_fresh_module('decimal', fresh=['_decimal'])
+P = import_fresh_module('decimal', blocked=['_decimal'])
 EXIT_STATUS = 0
 
 
@@ -159,45 +155,6 @@ UnaryRestricted = [
 BinaryRestricted = ['__round__']
 
 TernaryRestricted = ['__pow__', 'context.power']
-
-
-# ======================================================================
-#                            Triple tests
-# ======================================================================
-
-def c_as_triple(dec):
-    sign, hi, lo, exp = decimal_as_triple(dec)
-
-    coeff = hi * 2**64 + lo
-    return (sign, coeff, exp)
-
-def c_from_triple(triple):
-    sign, coeff, exp = triple
-
-    hi = coeff // 2**64
-    lo = coeff % 2**64
-    return decimal_from_triple((sign, hi, lo, exp))
-
-def p_as_triple(dec):
-    sign, digits, exp = dec.as_tuple()
-
-    s = "".join(str(d) for d in digits)
-    coeff = int(s) if s else 0
-
-    if coeff < 0 or coeff >= 2**128:
-        raise ValueError("value out of bounds for a uint128 triple")
-
-    return (sign, coeff, exp)
-
-def p_from_triple(triple):
-    sign, coeff, exp = triple
-
-    if coeff < 0 or coeff >= 2**128:
-        raise ValueError("value out of bounds for a uint128 triple")
-
-    digits = tuple(int(c) for c in str(coeff))
-
-    return P.Decimal((sign, digits, exp))
 
 
 # ======================================================================
@@ -893,43 +850,11 @@ def verify(t, stat):
         t.presults.append(str(t.rp.imag))
         t.presults.append(str(t.rp.real))
 
-        ctriple = None
-        if str(t.rc) == str(t.rp): # see skip handler
-            try:
-                ctriple = c_as_triple(t.rc)
-            except ValueError:
-                try:
-                    ptriple = p_as_triple(t.rp)
-                except ValueError:
-                    pass
-                else:
-                    raise RuntimeError("ValueError not raised")
-            else:
-                cres = c_from_triple(ctriple)
-                t.cresults.append(ctriple)
-                t.cresults.append(str(cres))
-
-                ptriple = p_as_triple(t.rp)
-                pres = p_from_triple(ptriple)
-                t.presults.append(ptriple)
-                t.presults.append(str(pres))
-
         if t.with_maxcontext and isinstance(t.rmax, C.Decimal):
             t.maxresults.append(t.rmax.to_eng_string())
             t.maxresults.append(t.rmax.as_tuple())
             t.maxresults.append(str(t.rmax.imag))
             t.maxresults.append(str(t.rmax.real))
-
-            if ctriple is not None:
-                # NaN payloads etc. depend on precision and clamp.
-                if all_nan(t.rc) and all_nan(t.rmax):
-                    t.maxresults.append(ctriple)
-                    t.maxresults.append(str(cres))
-                else:
-                    maxtriple = c_as_triple(t.rmax)
-                    maxres = c_from_triple(maxtriple)
-                    t.maxresults.append(maxtriple)
-                    t.maxresults.append(str(maxres))
 
         nc = t.rc.number_class().lstrip('+-s')
         stat[nc] += 1

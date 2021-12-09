@@ -1,0 +1,4 @@
+_thread.start_new_thread() no longer calls PyThread_exit_thread() explicitly
+at the thread exit, the call was redundant. On Linux with the glibc,
+pthread_exit() aborts the whole process if dlopen() fails to open
+libgcc_s.so file (ex: EMFILE error). Patch by Victor Stinner.

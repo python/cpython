@@ -1706,15 +1706,30 @@ class CreateTest(WriteTestBase, unittest.TestCase):
 
 
 class GzipCreateTest(GzipTest, CreateTest):
-    pass
+
+    def test_create_with_compresslevel(self):
+        with tarfile.open(tmpname, self.mode, compresslevel=1) as tobj:
+            tobj.add(self.file_path)
+        with tarfile.open(tmpname, 'r:gz', compresslevel=1) as tobj:
+            pass
 
 
 class Bz2CreateTest(Bz2Test, CreateTest):
-    pass
+
+    def test_create_with_compresslevel(self):
+        with tarfile.open(tmpname, self.mode, compresslevel=1) as tobj:
+            tobj.add(self.file_path)
+        with tarfile.open(tmpname, 'r:bz2', compresslevel=1) as tobj:
+            pass
 
 
 class LzmaCreateTest(LzmaTest, CreateTest):
-    pass
+
+    # Unlike gz and bz2, xz uses the preset keyword instead of compresslevel.
+    # It does not allow for preset to be specified when reading.
+    def test_create_with_preset(self):
+        with tarfile.open(tmpname, self.mode, preset=1) as tobj:
+            tobj.add(self.file_path)
 
 
 class CreateWithXModeTest(CreateTest):
@@ -2282,6 +2297,18 @@ class MiscTest(unittest.TestCase):
             'TruncatedHeaderError', 'EOFHeaderError', 'InvalidHeaderError',
             'SubsequentHeaderError', 'ExFileObject', 'main'}
         support.check__all__(self, tarfile, not_exported=not_exported)
+
+    def test_useful_error_message_when_modules_missing(self):
+        fname = os.path.join(os.path.dirname(__file__), 'testtar.tar.xz')
+        with self.assertRaises(tarfile.ReadError) as excinfo:
+            error = tarfile.CompressionError('lzma module is not available'),
+            with unittest.mock.patch.object(tarfile.TarFile, 'xzopen', side_effect=error):
+                tarfile.open(fname)
+
+        self.assertIn(
+            "\n- method xz: CompressionError('lzma module is not available')\n",
+            str(excinfo.exception),
+        )
 
 
 class CommandLineTest(unittest.TestCase):

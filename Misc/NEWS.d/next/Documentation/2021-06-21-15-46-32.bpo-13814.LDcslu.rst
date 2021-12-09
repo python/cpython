@@ -1,0 +1,1 @@
+In the Design FAQ, answer "Why don't generators support the with statement?"

@@ -22,11 +22,11 @@ PyAPI_FUNC(void) PySys_FormatStdout(const char *format, ...);
 PyAPI_FUNC(void) PySys_FormatStderr(const char *format, ...);
 
 PyAPI_FUNC(void) PySys_ResetWarnOptions(void);
-PyAPI_FUNC(void) PySys_AddWarnOption(const wchar_t *);
-PyAPI_FUNC(void) PySys_AddWarnOptionUnicode(PyObject *);
-PyAPI_FUNC(int) PySys_HasWarnOptions(void);
+Py_DEPRECATED(3.11) PyAPI_FUNC(void) PySys_AddWarnOption(const wchar_t *);
+Py_DEPRECATED(3.11) PyAPI_FUNC(void) PySys_AddWarnOptionUnicode(PyObject *);
+Py_DEPRECATED(3.11) PyAPI_FUNC(int) PySys_HasWarnOptions(void);
 
-PyAPI_FUNC(void) PySys_AddXOption(const wchar_t *);
+Py_DEPRECATED(3.11) PyAPI_FUNC(void) PySys_AddXOption(const wchar_t *);
 PyAPI_FUNC(PyObject *) PySys_GetXOptions(void);
 
 #ifndef Py_LIMITED_API

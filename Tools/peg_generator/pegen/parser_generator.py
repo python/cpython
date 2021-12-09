@@ -1,30 +1,29 @@
 import contextlib
 from abc import abstractmethod
-
-from typing import AbstractSet, Dict, IO, Iterator, List, Optional, Set, Text, Tuple
+from typing import IO, AbstractSet, Dict, Iterator, List, Optional, Set, Text, Tuple
 
 from pegen import sccutils
 from pegen.grammar import (
-    Grammar,
-    Rule,
-    Rhs,
     Alt,
-    NamedItem,
-    Plain,
-    NameLeaf,
     Gather,
+    Grammar,
+    GrammarError,
+    GrammarVisitor,
+    NamedItem,
+    NameLeaf,
+    Plain,
+    Rhs,
+    Rule,
 )
-from pegen.grammar import GrammarError, GrammarVisitor
 
 
 class RuleCheckingVisitor(GrammarVisitor):
-    def __init__(self, rules: Dict[str, Rule], tokens: Dict[int, str]):
+    def __init__(self, rules: Dict[str, Rule], tokens: Set[str]):
         self.rules = rules
         self.tokens = tokens
 
     def visit_NameLeaf(self, node: NameLeaf) -> None:
-        if node.value not in self.rules and node.value not in self.tokens.values():
-            # TODO: Add line/col info to (leaf) nodes
+        if node.value not in self.rules and node.value not in self.tokens:
             raise GrammarError(f"Dangling reference to rule {node.value!r}")
 
     def visit_NamedItem(self, node: NamedItem) -> None:
@@ -37,7 +36,7 @@ class ParserGenerator:
 
     callmakervisitor: GrammarVisitor
 
-    def __init__(self, grammar: Grammar, tokens: Dict[int, str], file: Optional[IO[Text]]):
+    def __init__(self, grammar: Grammar, tokens: Set[str], file: Optional[IO[Text]]):
         self.grammar = grammar
         self.tokens = tokens
         self.rules = grammar.rules
@@ -133,13 +132,22 @@ class ParserGenerator:
         self.counter += 1
         extra_function_name = f"_loop0_{self.counter}"
         extra_function_alt = Alt(
-            [NamedItem(None, node.separator), NamedItem("elem", node.node)], action="elem",
+            [NamedItem(None, node.separator), NamedItem("elem", node.node)],
+            action="elem",
         )
         self.todo[extra_function_name] = Rule(
-            extra_function_name, None, Rhs([extra_function_alt]),
+            extra_function_name,
+            None,
+            Rhs([extra_function_alt]),
         )
-        alt = Alt([NamedItem("elem", node.node), NamedItem("seq", NameLeaf(extra_function_name))],)
-        self.todo[name] = Rule(name, None, Rhs([alt]),)
+        alt = Alt(
+            [NamedItem("elem", node.node), NamedItem("seq", NameLeaf(extra_function_name))],
+        )
+        self.todo[name] = Rule(
+            name,
+            None,
+            Rhs([alt]),
+        )
         return name
 
     def dedupe(self, name: str) -> str:

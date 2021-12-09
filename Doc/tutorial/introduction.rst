@@ -73,7 +73,7 @@ operator; to calculate the remainder you can use ``%``::
    5
    >>> 17 % 3  # the % operator returns the remainder of the division
    2
-   >>> 5 * 3 + 2  # result * divisor + remainder
+   >>> 5 * 3 + 2  # floored quotient * divisor + remainder
    17
 
 With Python, it is possible to use the ``**`` operator to calculate powers [#]_::

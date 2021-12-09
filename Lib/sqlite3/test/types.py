@@ -23,10 +23,13 @@
 import datetime
 import unittest
 import sqlite3 as sqlite
+import sys
 try:
     import zlib
 except ImportError:
     zlib = None
+
+from test import support
 
 
 class SqliteTypeTests(unittest.TestCase):
@@ -45,6 +48,12 @@ class SqliteTypeTests(unittest.TestCase):
         row = self.cur.fetchone()
         self.assertEqual(row[0], "Österreich")
 
+    def test_string_with_null_character(self):
+        self.cur.execute("insert into test(s) values (?)", ("a\0b",))
+        self.cur.execute("select s from test")
+        row = self.cur.fetchone()
+        self.assertEqual(row[0], "a\0b")
+
     def test_small_int(self):
         self.cur.execute("insert into test(i) values (?)", (42,))
         self.cur.execute("select i from test")
@@ -52,7 +61,7 @@ class SqliteTypeTests(unittest.TestCase):
         self.assertEqual(row[0], 42)
 
     def test_large_int(self):
-        num = 2**40
+        num = 123456789123456789
         self.cur.execute("insert into test(i) values (?)", (num,))
         self.cur.execute("select i from test")
         row = self.cur.fetchone()
@@ -77,6 +86,45 @@ class SqliteTypeTests(unittest.TestCase):
         self.cur.execute("select 'Österreich'")
         row = self.cur.fetchone()
         self.assertEqual(row[0], "Österreich")
+
+    def test_too_large_int(self):
+        for value in 2**63, -2**63-1, 2**64:
+            with self.assertRaises(OverflowError):
+                self.cur.execute("insert into test(i) values (?)", (value,))
+        self.cur.execute("select i from test")
+        row = self.cur.fetchone()
+        self.assertIsNone(row)
+
+    def test_string_with_surrogates(self):
+        for value in 0xd8ff, 0xdcff:
+            with self.assertRaises(UnicodeEncodeError):
+                self.cur.execute("insert into test(s) values (?)", (chr(value),))
+        self.cur.execute("select s from test")
+        row = self.cur.fetchone()
+        self.assertIsNone(row)
+
+    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
+    @support.bigmemtest(size=2**31, memuse=4, dry_run=False)
+    def test_too_large_string(self, maxsize):
+        with self.assertRaises(sqlite.InterfaceError):
+            self.cur.execute("insert into test(s) values (?)", ('x'*(2**31-1),))
+        with self.assertRaises(OverflowError):
+            self.cur.execute("insert into test(s) values (?)", ('x'*(2**31),))
+        self.cur.execute("select 1 from test")
+        row = self.cur.fetchone()
+        self.assertIsNone(row)
+
+    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
+    @support.bigmemtest(size=2**31, memuse=3, dry_run=False)
+    def test_too_large_blob(self, maxsize):
+        with self.assertRaises(sqlite.InterfaceError):
+            self.cur.execute("insert into test(s) values (?)", (b'x'*(2**31-1),))
+        with self.assertRaises(OverflowError):
+            self.cur.execute("insert into test(s) values (?)", (b'x'*(2**31),))
+        self.cur.execute("select 1 from test")
+        row = self.cur.fetchone()
+        self.assertIsNone(row)
+
 
 class DeclTypesTests(unittest.TestCase):
     class Foo:
@@ -110,7 +158,20 @@ class DeclTypesTests(unittest.TestCase):
     def setUp(self):
         self.con = sqlite.connect(":memory:", detect_types=sqlite.PARSE_DECLTYPES)
         self.cur = self.con.cursor()
-        self.cur.execute("create table test(i int, s str, f float, b bool, u unicode, foo foo, bin blob, n1 number, n2 number(5), bad bad)")
+        self.cur.execute("""
+            create table test(
+                i int,
+                s str,
+                f float,
+                b bool,
+                u unicode,
+                foo foo,
+                bin blob,
+                n1 number,
+                n2 number(5),
+                bad bad,
+                cbin cblob)
+        """)
 
         # override float, make them always return the same number
         sqlite.converters["FLOAT"] = lambda x: 47.2
@@ -121,6 +182,7 @@ class DeclTypesTests(unittest.TestCase):
         sqlite.converters["BAD"] = DeclTypesTests.BadConform
         sqlite.converters["WRONG"] = lambda x: "WRONG"
         sqlite.converters["NUMBER"] = float
+        sqlite.converters["CBLOB"] = lambda x: b"blobish"
 
     def tearDown(self):
         del sqlite.converters["FLOAT"]
@@ -129,6 +191,7 @@ class DeclTypesTests(unittest.TestCase):
         del sqlite.converters["BAD"]
         del sqlite.converters["WRONG"]
         del sqlite.converters["NUMBER"]
+        del sqlite.converters["CBLOB"]
         self.cur.close()
         self.con.close()
 
@@ -148,7 +211,7 @@ class DeclTypesTests(unittest.TestCase):
 
     def test_large_int(self):
         # default
-        num = 2**40
+        num = 123456789123456789
         self.cur.execute("insert into test(i) values (?)", (num,))
         self.cur.execute("select i from test")
         row = self.cur.fetchone()
@@ -236,6 +299,14 @@ class DeclTypesTests(unittest.TestCase):
         value = self.cur.execute("select n2 from test").fetchone()[0]
         # if the converter is not used, it's an int instead of a float
         self.assertEqual(type(value), float)
+
+    def test_convert_zero_sized_blob(self):
+        self.con.execute("insert into test(cbin) values (?)", (b"",))
+        cur = self.con.execute("select cbin from test")
+        # Zero-sized blobs with converters returns None.  This differs from
+        # blobs without a converter, where b"" is returned.
+        self.assertIsNone(cur.fetchone()[0])
+
 
 class ColNamesTests(unittest.TestCase):
     def setUp(self):
@@ -357,6 +428,43 @@ class ObjectAdaptationTests(unittest.TestCase):
         self.cur.execute("select ?", (4,))
         val = self.cur.fetchone()[0]
         self.assertEqual(type(val), float)
+
+    def test_missing_adapter(self):
+        with self.assertRaises(sqlite.ProgrammingError):
+            sqlite.adapt(1.)  # No float adapter registered
+
+    def test_missing_protocol(self):
+        with self.assertRaises(sqlite.ProgrammingError):
+            sqlite.adapt(1, None)
+
+    def test_defect_proto(self):
+        class DefectProto():
+            def __adapt__(self):
+                return None
+        with self.assertRaises(sqlite.ProgrammingError):
+            sqlite.adapt(1., DefectProto)
+
+    def test_defect_self_adapt(self):
+        class DefectSelfAdapt(float):
+            def __conform__(self, _):
+                return None
+        with self.assertRaises(sqlite.ProgrammingError):
+            sqlite.adapt(DefectSelfAdapt(1.))
+
+    def test_custom_proto(self):
+        class CustomProto():
+            def __adapt__(self):
+                return "adapted"
+        self.assertEqual(sqlite.adapt(1., CustomProto), "adapted")
+
+    def test_adapt(self):
+        val = 42
+        self.assertEqual(float(val), sqlite.adapt(val))
+
+    def test_adapt_alt(self):
+        alt = "other"
+        self.assertEqual(alt, sqlite.adapt(1., None, alt))
+
 
 @unittest.skipUnless(zlib, "requires zlib")
 class BinaryConverterTests(unittest.TestCase):

@@ -368,6 +368,8 @@ HTTPConnection Objects
    this is called automatically when making a request if the client does not
    already have a connection.
 
+   .. audit-event:: http.client.connect self,host,port http.client.HTTPConnection.connect
+
 
 .. method:: HTTPConnection.close()
 
@@ -436,6 +438,8 @@ also send your request step by step, by using the four functions below.
    Send data to the server.  This should be used directly only after the
    :meth:`endheaders` method has been called and before :meth:`getresponse` is
    called.
+
+   .. audit-event:: http.client.send self,data http.client.HTTPConnection.send
 
 
 .. _httpresponse-objects:

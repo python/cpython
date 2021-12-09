@@ -1,0 +1,3 @@
+:meth:`collections.OrderedDict.popitem` and :meth:`collections.OrderedDict.pop`
+no longer call ``__getitem__`` and ``__delitem__`` methods of the OrderedDict
+subclasses.

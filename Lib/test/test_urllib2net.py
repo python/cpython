@@ -67,7 +67,7 @@ class TransientResource(object):
                 raise ResourceDenied("an optional resource is not available")
 
 # Context managers that raise ResourceDenied when various issues
-# with the Internet connection manifest themselves as exceptions.
+# with the internet connection manifest themselves as exceptions.
 # XXX deprecate these and use transient_internet() instead
 time_out = TransientResource(OSError, errno=errno.ETIMEDOUT)
 socket_peer_reset = TransientResource(OSError, errno=errno.ECONNRESET)

@@ -1,0 +1,4 @@
+The :c:func:`PyType_Ready` function now raises an error if a type is defined
+with the :const:`Py_TPFLAGS_HAVE_GC` flag set but has no traverse function
+(:c:member:`PyTypeObject.tp_traverse`).
+Patch by Victor Stinner.

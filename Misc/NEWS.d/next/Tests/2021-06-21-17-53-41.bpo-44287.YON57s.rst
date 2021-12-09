@@ -1,0 +1,4 @@
+Fix asyncio test_popen() of test_windows_utils by using a longer timeout.
+Use military grade battle-tested :data:`test.support.SHORT_TIMEOUT` timeout
+rather than a hardcoded timeout of 10 seconds: it's 30 seconds by default, but
+it is made longer on slow buildbots. Patch by Victor Stinner.

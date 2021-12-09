@@ -1543,7 +1543,7 @@ some point in the future.
 
 * The :func:`urlopen` and :func:`urlretrieve` functions can cause arbitrarily
   long delays while waiting for a network connection to be set up.  This means
-  that it is difficult to build an interactive Web client using these functions
+  that it is difficult to build an interactive web client using these functions
   without using threads.
 
   .. index::

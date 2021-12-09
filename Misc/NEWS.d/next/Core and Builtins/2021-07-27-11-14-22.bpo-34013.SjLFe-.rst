@@ -1,0 +1,3 @@
+Generalize the invalid legacy statement custom error message (like the one
+generated when "print" is called without parentheses) to include more
+generic expressions. Patch by Pablo Galindo

@@ -1,0 +1,2 @@
+:func:`typing.get_type_hints` now finds annotations in classes and base classes
+with unexpected ``__module__``. Previously, it skipped those MRO elements.

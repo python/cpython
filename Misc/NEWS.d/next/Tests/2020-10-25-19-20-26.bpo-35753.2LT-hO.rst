@@ -1,0 +1,2 @@
+Fix crash in doctest when doctest parses modules that include unwrappable
+functions by skipping those functions.

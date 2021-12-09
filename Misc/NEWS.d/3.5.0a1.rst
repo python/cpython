@@ -2234,7 +2234,7 @@ Cook.
 .. section: Library
 
 Lax cookie parsing in http.cookies could be a security issue when combined
-with non-standard cookie handling in some Web browsers.  Reported by Sergey
+with non-standard cookie handling in some web browsers.  Reported by Sergey
 Bobrov.
 
 ..

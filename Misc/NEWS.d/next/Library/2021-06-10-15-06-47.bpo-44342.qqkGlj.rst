@@ -1,0 +1,1 @@
+[Enum] Change pickling from by-value to by-name.

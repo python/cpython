@@ -167,7 +167,7 @@ The following properties may be passed when building these projects.
     by providing a unique URI for this property. It does not need to be an
     active internet address. Defaults to $(ComputerName).
 
-    Official releases use http://www.python.org/(architecture name)
+    Official releases use https://www.python.org/(architecture name)
 
   /p:DownloadUrlBase=(any URI)
     Specifies the base of a URL where missing parts of the installer layout

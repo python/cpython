@@ -689,6 +689,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                              parts[3], parts[4])
                 new_url = urllib.parse.urlunsplit(new_parts)
                 self.send_header("Location", new_url)
+                self.send_header("Content-Length", "0")
                 self.end_headers()
                 return None
             for index in "index.html", "index.htm":
@@ -703,7 +704,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         # The test for this was added in test_httpserver.py
         # However, some OS platforms accept a trailingSlash as a filename
         # See discussion on python-dev and Issue34711 regarding
-        # parseing and rejection of filenames with a trailing slash
+        # parsing and rejection of filenames with a trailing slash
         if path.endswith("/"):
             self.send_error(HTTPStatus.NOT_FOUND, "File not found")
             return None

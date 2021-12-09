@@ -1,0 +1,2 @@
+Incorporate minor tweaks from importlib_metadata 4.1: SimplePath protocol,
+support for Metadata 2.2.

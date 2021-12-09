@@ -1,0 +1,2 @@
+Updated the docstring and docs of :func:`filecmp.cmp` to be more accurate
+and less confusing especially in respect to *shallow* arg.

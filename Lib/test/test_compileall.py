@@ -16,10 +16,14 @@ import time
 import unittest
 
 from unittest import mock, skipUnless
+from concurrent.futures import ProcessPoolExecutor
 try:
-    from concurrent.futures import ProcessPoolExecutor
+    # compileall relies on ProcessPoolExecutor if ProcessPoolExecutor exists
+    # and it can function.
+    from concurrent.futures.process import _check_system_limits
+    _check_system_limits()
     _have_multiprocessing = True
-except ImportError:
+except NotImplementedError:
     _have_multiprocessing = False
 
 from test import support
@@ -54,7 +58,7 @@ class CompileallTestsBase:
         self.directory = tempfile.mkdtemp()
         self.source_path = os.path.join(self.directory, '_test.py')
         self.bc_path = importlib.util.cache_from_source(self.source_path)
-        with open(self.source_path, 'w') as file:
+        with open(self.source_path, 'w', encoding="utf-8") as file:
             file.write('x = 123\n')
         self.source_path2 = os.path.join(self.directory, '_test2.py')
         self.bc_path2 = importlib.util.cache_from_source(self.source_path2)
@@ -69,7 +73,7 @@ class CompileallTestsBase:
 
     def add_bad_source_file(self):
         self.bad_source_path = os.path.join(self.directory, '_test_bad.py')
-        with open(self.bad_source_path, 'w') as file:
+        with open(self.bad_source_path, 'w', encoding="utf-8") as file:
             file.write('x (\n')
 
     def timestamp_metadata(self):
@@ -160,10 +164,18 @@ class CompileallTestsBase:
         data_file = os.path.join(data_dir, 'file')
         os.mkdir(data_dir)
         # touch data/file
-        with open(data_file, 'w'):
+        with open(data_file, 'wb'):
             pass
         compileall.compile_file(data_file)
         self.assertFalse(os.path.exists(os.path.join(data_dir, '__pycache__')))
+
+
+    def test_compile_file_encoding_fallback(self):
+        # Bug 44666 reported that compile_file failed when sys.stdout.encoding is None
+        self.add_bad_source_file()
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertFalse(compileall.compile_file(self.bad_source_path))
+
 
     def test_optimize(self):
         # make sure compiling with different optimization settings than the
@@ -188,6 +200,7 @@ class CompileallTestsBase:
         self.assertRegex(line, r'Listing ([^WindowsPath|PosixPath].*)')
         self.assertTrue(os.path.isfile(self.bc_path))
 
+    @skipUnless(_have_multiprocessing, "requires multiprocessing")
     @mock.patch('concurrent.futures.ProcessPoolExecutor')
     def test_compile_pool_called(self, pool_mock):
         compileall.compile_dir(self.directory, quiet=True, workers=5)
@@ -198,11 +211,13 @@ class CompileallTestsBase:
                                     "workers must be greater or equal to 0"):
             compileall.compile_dir(self.directory, workers=-1)
 
+    @skipUnless(_have_multiprocessing, "requires multiprocessing")
     @mock.patch('concurrent.futures.ProcessPoolExecutor')
     def test_compile_workers_cpu_count(self, pool_mock):
         compileall.compile_dir(self.directory, quiet=True, workers=0)
         self.assertEqual(pool_mock.call_args[1]['max_workers'], None)
 
+    @skipUnless(_have_multiprocessing, "requires multiprocessing")
     @mock.patch('concurrent.futures.ProcessPoolExecutor')
     @mock.patch('compileall.compile_file')
     def test_compile_one_worker(self, compile_file_mock, pool_mock):
@@ -433,8 +448,7 @@ class CommandLineTestsBase:
                 if not directory.is_dir():
                     directory.mkdir()
                     directory_created = True
-                with path.open('w') as file:
-                    file.write('# for test_compileall')
+                path.write_text('# for test_compileall', encoding="utf-8")
             except OSError:
                 sys_path_writable = False
                 break
@@ -697,7 +711,7 @@ class CommandLineTestsBase:
         f2 = script_helper.make_script(self.pkgdir, 'f2', '')
         f3 = script_helper.make_script(self.pkgdir, 'f3', '')
         f4 = script_helper.make_script(self.pkgdir, 'f4', '')
-        with open(os.path.join(self.directory, 'l1'), 'w') as l1:
+        with open(os.path.join(self.directory, 'l1'), 'w', encoding="utf-8") as l1:
             l1.write(os.path.join(self.pkgdir, 'f1.py')+os.linesep)
             l1.write(os.path.join(self.pkgdir, 'f2.py')+os.linesep)
         self.assertRunOK('-i', os.path.join(self.directory, 'l1'), f4)
@@ -711,7 +725,7 @@ class CommandLineTestsBase:
         f2 = script_helper.make_script(self.pkgdir, 'f2', '')
         f3 = script_helper.make_script(self.pkgdir, 'f3', '')
         f4 = script_helper.make_script(self.pkgdir, 'f4', '')
-        with open(os.path.join(self.directory, 'l1'), 'w') as l1:
+        with open(os.path.join(self.directory, 'l1'), 'w', encoding="utf-8") as l1:
             l1.write(os.path.join(self.pkgdir, 'f2.py')+os.linesep)
         self.assertRunOK('-i', os.path.join(self.directory, 'l1'))
         self.assertNotCompiled(f1)

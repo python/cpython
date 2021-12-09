@@ -108,7 +108,7 @@ usually easy compared to the earlier task of coming up with a good design.
 Discussions of new features can often explode into lengthy mailing list threads,
 making the discussion hard to follow, and no one can read every posting to
 python-dev.  Therefore, a relatively formal process has been set up to write
-Python Enhancement Proposals (PEPs), modelled on the Internet RFC process.  PEPs
+Python Enhancement Proposals (PEPs), modelled on the internet RFC process.  PEPs
 are draft documents that describe a proposed new feature, and are continually
 revised until the community reaches a consensus, either accepting or rejecting
 the proposal.  Quoting from the introduction to :pep:`1`, "PEP Purpose and
@@ -768,7 +768,7 @@ Vladimir Marangozov's long-awaited malloc restructuring was completed, to make
 it easy to have the Python interpreter use a custom allocator instead of C's
 standard :func:`malloc`.  For documentation, read the comments in
 :file:`Include/pymem.h` and :file:`Include/objimpl.h`.  For the lengthy
-discussions during which the interface was hammered out, see the Web archives of
+discussions during which the interface was hammered out, see the web archives of
 the 'patches' and 'python-dev' lists at python.org.
 
 Recent versions of the GUSI development environment for MacOS support POSIX
@@ -1002,7 +1002,7 @@ Relationship to PyXML
 ---------------------
 
 The XML Special Interest Group has been working on XML-related Python code for a
-while.  Its code distribution, called PyXML, is available from the SIG's Web
+while.  Its code distribution, called PyXML, is available from the SIG's web
 pages at https://www.python.org/community/sigs/current/xml-sig. The PyXML distribution also used
 the package name ``xml``.  If you've written programs that used PyXML, you're
 probably wondering about its compatibility with the 2.0 :mod:`xml` package.
@@ -1109,7 +1109,7 @@ module.
   Prescod.)
 
 * :mod:`robotparser`: Parse a :file:`robots.txt` file, which is used for writing
-  Web spiders that politely avoid certain areas of a Web site.  The parser accepts
+  web spiders that politely avoid certain areas of a web site.  The parser accepts
   the contents of a :file:`robots.txt` file, builds a set of rules from it, and
   can then answer questions about the fetchability of a given URL.  (Contributed
   by Skip Montanaro.)

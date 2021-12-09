@@ -1,0 +1,2 @@
+Fix a crash in ``types.Union`` objects when creating a union of an object
+with bad ``__module__`` field.

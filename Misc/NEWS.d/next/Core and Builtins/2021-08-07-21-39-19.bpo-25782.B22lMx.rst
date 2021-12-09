@@ -1,0 +1,1 @@
+Fix bug where ``PyErr_SetObject`` hangs when the current exception has a cycle in its context chain.

@@ -176,6 +176,57 @@ class ScopeTests(unittest.TestCase):
         self.assertEqual(foo(a=42), 50)
         self.assertEqual(foo(), 25)
 
+    def testCellIsArgAndEscapes(self):
+        # We need to be sure that a cell passed in as an arg still
+        # gets wrapped in a new cell if the arg escapes into an
+        # inner function (closure).
+
+        def external():
+            value = 42
+            def inner():
+                return value
+            cell, = inner.__closure__
+            return cell
+        cell_ext = external()
+
+        def spam(arg):
+            def eggs():
+                return arg
+            return eggs
+
+        eggs = spam(cell_ext)
+        cell_closure, = eggs.__closure__
+        cell_eggs = eggs()
+
+        self.assertIs(cell_eggs, cell_ext)
+        self.assertIsNot(cell_eggs, cell_closure)
+
+    def testCellIsLocalAndEscapes(self):
+        # We need to be sure that a cell bound to a local still
+        # gets wrapped in a new cell if the local escapes into an
+        # inner function (closure).
+
+        def external():
+            value = 42
+            def inner():
+                return value
+            cell, = inner.__closure__
+            return cell
+        cell_ext = external()
+
+        def spam(arg):
+            cell = arg
+            def eggs():
+                return cell
+            return eggs
+
+        eggs = spam(cell_ext)
+        cell_closure, = eggs.__closure__
+        cell_eggs = eggs()
+
+        self.assertIs(cell_eggs, cell_ext)
+        self.assertIsNot(cell_eggs, cell_closure)
+
     def testRecursion(self):
 
         def f(x):

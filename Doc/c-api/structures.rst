@@ -62,6 +62,37 @@ the definition of all other Python objects.
    See documentation of :c:type:`PyVarObject` above.
 
 
+.. c:function:: int Py_Is(const PyObject *x, const PyObject *y)
+
+   Test if the *x* object is the *y* object, the same as ``x is y`` in Python.
+
+   .. versionadded:: 3.10
+
+
+.. c:function:: int Py_IsNone(const PyObject *x)
+
+   Test if an object is the ``None`` singleton,
+   the same as ``x is None`` in Python.
+
+   .. versionadded:: 3.10
+
+
+.. c:function:: int Py_IsTrue(const PyObject *x)
+
+   Test if an object is the ``True`` singleton,
+   the same as ``x is True`` in Python.
+
+   .. versionadded:: 3.10
+
+
+.. c:function:: int Py_IsFalse(const PyObject *x)
+
+   Test if an object is the ``False`` singleton,
+   the same as ``x is False`` in Python.
+
+   .. versionadded:: 3.10
+
+
 .. c:function:: PyTypeObject* Py_TYPE(const PyObject *o)
 
    Get the type of the Python object *o*.
@@ -437,6 +468,21 @@ Accessing attributes of extension types
           {"__dictoffset__", T_PYSSIZET, offsetof(Spam_object, dict), READONLY},
           {NULL}  /* Sentinel */
       };
+
+
+.. c:function:: PyObject* PyMember_GetOne(const char *obj_addr, struct PyMemberDef *m)
+
+   Get an attribute belonging to the object at address *obj_addr*.  The
+   attribute is described by ``PyMemberDef`` *m*.  Returns ``NULL``
+   on error.
+
+
+.. c:function:: int PyMember_SetOne(char *obj_addr, struct PyMemberDef *m, PyObject *o)
+
+   Set an attribute belonging to the object at address *obj_addr* to object *o*.
+   The attribute to set is described by ``PyMemberDef`` *m*.  Returns ``0``
+   if successful and a negative value on failure.
+
 
 .. c:type:: PyGetSetDef
 

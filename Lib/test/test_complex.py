@@ -1,4 +1,5 @@
 import unittest
+import sys
 from test import support
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
@@ -247,6 +248,26 @@ class ComplexTest(unittest.TestCase):
 
         b = 5.1+2.3j
         self.assertRaises(ValueError, pow, a, b, 0)
+
+        # Check some boundary conditions; some of these used to invoke
+        # undefined behaviour (https://bugs.python.org/issue44698). We're
+        # not actually checking the results of these operations, just making
+        # sure they don't crash (for example when using clang's
+        # UndefinedBehaviourSanitizer).
+        values = (sys.maxsize, sys.maxsize+1, sys.maxsize-1,
+                  -sys.maxsize, -sys.maxsize+1, -sys.maxsize+1)
+        for real in values:
+            for imag in values:
+                with self.subTest(real=real, imag=imag):
+                    c = complex(real, imag)
+                    try:
+                        c ** real
+                    except OverflowError:
+                        pass
+                    try:
+                        c ** c
+                    except OverflowError:
+                        pass
 
     def test_boolcontext(self):
         for i in range(100):

@@ -27,6 +27,7 @@ __credits__ = ('GvR, ESR, Tim Peters, Thomas Wouters, Fred Drake, '
 from builtins import open as _builtin_open
 from codecs import lookup, BOM_UTF8
 import collections
+import functools
 from io import TextIOWrapper
 import itertools as _itertools
 import re
@@ -95,6 +96,7 @@ def _all_string_prefixes():
                 result.add(''.join(u))
     return result
 
+@functools.lru_cache
 def _compile(expr):
     return re.compile(expr, re.UNICODE)
 
@@ -602,7 +604,7 @@ def _tokenize(readline, encoding):
                 pos += 1
 
     # Add an implicit NEWLINE if the input doesn't end in one
-    if last_line and last_line[-1] not in '\r\n':
+    if last_line and last_line[-1] not in '\r\n' and not last_line.strip().startswith("#"):
         yield TokenInfo(NEWLINE, '', (lnum - 1, len(last_line)), (lnum - 1, len(last_line) + 1), '')
     for indent in indents[1:]:                 # pop remaining indent levels
         yield TokenInfo(DEDENT, '', (lnum, 0), (lnum, 0), '')

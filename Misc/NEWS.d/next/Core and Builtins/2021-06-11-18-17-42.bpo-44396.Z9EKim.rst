@@ -1,0 +1,2 @@
+Fix a possible crash in the tokenizer when raising syntax errors for
+unclosed strings. Patch by Pablo Galindo.

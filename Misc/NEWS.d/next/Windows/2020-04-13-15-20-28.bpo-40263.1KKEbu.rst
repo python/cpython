@@ -1,0 +1,3 @@
+This is a follow-on bug from https://bugs.python.org/issue26903. Once that
+is applied we run into an off-by-one assertion problem. The assert was not
+correct.

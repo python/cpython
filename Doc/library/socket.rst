@@ -66,7 +66,7 @@ created.  Socket addresses are represented as follows:
 .. _host_port:
 
 - A pair ``(host, port)`` is used for the :const:`AF_INET` address family,
-  where *host* is a string representing either a hostname in Internet domain
+  where *host* is a string representing either a hostname in internet domain
   notation like ``'daring.cwi.nl'`` or an IPv4 address like ``'100.50.200.5'``,
   and *port* is an integer.
 
@@ -188,7 +188,7 @@ created.  Socket addresses are represented as follows:
 
     - ``PACKET_HOST`` (the default) - Packet addressed to the local host.
     - ``PACKET_BROADCAST`` - Physical-layer broadcast packet.
-    - ``PACKET_MULTIHOST`` - Packet sent to a physical-layer multicast address.
+    - ``PACKET_MULTICAST`` - Packet sent to a physical-layer multicast address.
     - ``PACKET_OTHERHOST`` - Packet to some other host that has been caught by
       a device driver in promiscuous mode.
     - ``PACKET_OUTGOING`` - Packet originating from the local host that is
@@ -378,6 +378,11 @@ Constants
 
       On Windows, ``TCP_KEEPIDLE``, ``TCP_KEEPINTVL`` appear if run-time Windows
       supports.
+
+   .. versionchanged:: 3.10
+      ``IP_RECVTOS`` was added.
+       Added ``TCP_KEEPALIVE``. On MacOS this constant can be used in the same
+       way that ``TCP_KEEPIDLE`` is used on Linux.
 
 .. data:: AF_CAN
           PF_CAN
@@ -610,6 +615,9 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    .. versionchanged:: 3.9
        The CAN_J1939 protocol was added.
 
+   .. versionchanged:: 3.10
+       The IPPROTO_MPTCP protocol was added.
+
 .. function:: socketpair([family[, type[, proto]]])
 
    Build a pair of connected socket objects using the given address family, socket
@@ -632,7 +640,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 
 .. function:: create_connection(address[, timeout[, source_address]])
 
-   Connect to a TCP service listening on the Internet *address* (a 2-tuple
+   Connect to a TCP service listening on the internet *address* (a 2-tuple
    ``(host, port)``), and return the socket object.  This is a higher-level
    function than :meth:`socket.connect`: if *host* is a non-numeric hostname,
    it will try to resolve it for both :data:`AF_INET` and :data:`AF_INET6`,
@@ -782,9 +790,9 @@ The :mod:`socket` module also offers various network-related services:
    system if IPv6 isn't enabled)::
 
       >>> socket.getaddrinfo("example.org", 80, proto=socket.IPPROTO_TCP)
-      [(<AddressFamily.AF_INET6: 10>, <SocketType.SOCK_STREAM: 1>,
+      [(socket.AF_INET6, socket.SOCK_STREAM,
        6, '', ('2606:2800:220:1:248:1893:25c8:1946', 80, 0, 0)),
-       (<AddressFamily.AF_INET: 2>, <SocketType.SOCK_STREAM: 1>,
+       (socket.AF_INET, socket.SOCK_STREAM,
        6, '', ('93.184.216.34', 80))]
 
    .. versionchanged:: 3.2
@@ -869,7 +877,7 @@ The :mod:`socket` module also offers various network-related services:
 
 .. function:: getprotobyname(protocolname)
 
-   Translate an Internet protocol name (for example, ``'icmp'``) to a constant
+   Translate an internet protocol name (for example, ``'icmp'``) to a constant
    suitable for passing as the (optional) third argument to the :func:`.socket`
    function.  This is usually only needed for sockets opened in "raw" mode
    (:const:`SOCK_RAW`); for the normal socket modes, the correct protocol is chosen
@@ -878,7 +886,7 @@ The :mod:`socket` module also offers various network-related services:
 
 .. function:: getservbyname(servicename[, protocolname])
 
-   Translate an Internet service name and protocol name to a port number for that
+   Translate an internet service name and protocol name to a port number for that
    service.  The optional protocol name, if given, should be ``'tcp'`` or
    ``'udp'``, otherwise any protocol will match.
 
@@ -887,7 +895,7 @@ The :mod:`socket` module also offers various network-related services:
 
 .. function:: getservbyport(port[, protocolname])
 
-   Translate an Internet port number and protocol name to a service name for that
+   Translate an internet port number and protocol name to a service name for that
    service.  The optional protocol name, if given, should be ``'tcp'`` or
    ``'udp'``, otherwise any protocol will match.
 
@@ -1138,6 +1146,32 @@ The :mod:`socket` module also offers various network-related services:
 
    .. seealso::
       "Interface name" is a name as documented in :func:`if_nameindex`.
+
+
+.. function:: send_fds(sock, buffers, fds[, flags[, address]])
+
+   Send the list of file descriptors *fds* over an :const:`AF_UNIX` socket *sock*.
+   The *fds* parameter is a sequence of file descriptors.
+   Consult :meth:`sendmsg` for the documentation of these parameters.
+
+   .. availability:: Unix supporting :meth:`~socket.sendmsg` and :const:`SCM_RIGHTS` mechanism.
+
+   .. versionadded:: 3.9
+
+
+.. function:: recv_fds(sock, bufsize, maxfds[, flags])
+
+   Receive up to *maxfds* file descriptors from an :const:`AF_UNIX` socket *sock*.
+   Return ``(msg, list(fds), flags, addr)``.
+   Consult :meth:`recvmsg` for the documentation of these parameters.
+
+   .. availability:: Unix supporting :meth:`~socket.recvmsg` and :const:`SCM_RIGHTS` mechanism.
+
+   .. versionadded:: 3.9
+
+   .. note::
+
+      Any truncated integers at the end of the list of file descriptors.
 
 
 .. _socket-objects:
@@ -1633,29 +1667,6 @@ to sockets.
    .. availability:: Linux >= 2.6.38.
 
    .. versionadded:: 3.6
-
-.. method:: socket.send_fds(sock, buffers, fds[, flags[, address]])
-
-   Send the list of file descriptors *fds* over an :const:`AF_UNIX` socket.
-   The *fds* parameter is a sequence of file descriptors.
-   Consult :meth:`sendmsg` for the documentation of these parameters.
-
-   .. availability:: Unix supporting :meth:`~socket.sendmsg` and :const:`SCM_RIGHTS` mechanism.
-
-   .. versionadded:: 3.9
-
-.. method:: socket.recv_fds(sock, bufsize, maxfds[, flags])
-
-   Receive up to *maxfds* file descriptors. Return ``(msg, list(fds), flags, addr)``. Consult
-   :meth:`recvmsg` for the documentation of these parameters.
-
-   .. availability:: Unix supporting :meth:`~socket.recvmsg` and :const:`SCM_RIGHTS` mechanism.
-
-   .. versionadded:: 3.9
-
-   .. note::
-
-      Any truncated integers at the end of the list of file descriptors.
 
 .. method:: socket.sendfile(file, offset=0, count=None)
 

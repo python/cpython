@@ -102,6 +102,9 @@ Some facts and figures:
    ``'x:bz2'``, :func:`tarfile.open` accepts the keyword argument
    *compresslevel* (default ``9``) to specify the compression level of the file.
 
+   For modes ``'w:xz'`` and ``'x:xz'``, :func:`tarfile.open` accepts the
+   keyword argument *preset* to specify the compression level of the file.
+
    For special purposes, there is a second format for *mode*:
    ``'filemode|[compression]'``.  :func:`tarfile.open` will return a :class:`TarFile`
    object that processes its data as a stream of blocks.  No random seeking will

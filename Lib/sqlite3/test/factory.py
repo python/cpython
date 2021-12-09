@@ -123,6 +123,8 @@ class RowFactoryTests(unittest.TestCase):
             row[-3]
         with self.assertRaises(IndexError):
             row[2**1000]
+        with self.assertRaises(IndexError):
+            row[complex()]  # index must be int or string
 
     def test_sqlite_row_index_unicode(self):
         self.con.row_factory = sqlite.Row

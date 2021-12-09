@@ -169,6 +169,7 @@ _PyPreCmdline_SetConfig(const _PyPreCmdline *cmdline, PyConfig *config)
     COPY_ATTR(isolated);
     COPY_ATTR(use_environment);
     COPY_ATTR(dev_mode);
+    COPY_ATTR(warn_default_encoding);
     return _PyStatus_OK();
 
 #undef COPY_ATTR
@@ -257,9 +258,17 @@ _PyPreCmdline_Read(_PyPreCmdline *cmdline, const PyPreConfig *preconfig)
         cmdline->dev_mode = 0;
     }
 
+    // warn_default_encoding
+    if (_Py_get_xoption(&cmdline->xoptions, L"warn_default_encoding")
+            || _Py_GetEnv(cmdline->use_environment, "PYTHONWARNDEFAULTENCODING"))
+    {
+        cmdline->warn_default_encoding = 1;
+    }
+
     assert(cmdline->use_environment >= 0);
     assert(cmdline->isolated >= 0);
     assert(cmdline->dev_mode >= 0);
+    assert(cmdline->warn_default_encoding >= 0);
 
     return _PyStatus_OK();
 }

@@ -9,11 +9,6 @@ extern "C" {
 
 PyAPI_FUNC(PyObject *) Py_CompileString(const char *, const char *, int);
 
-PyAPI_FUNC(struct symtable *) Py_SymtableString(
-    const char *str,
-    const char *filename,       /* decoded from the filesystem encoding */
-    int start);
-
 PyAPI_FUNC(void) PyErr_Print(void);
 PyAPI_FUNC(void) PyErr_PrintEx(int);
 PyAPI_FUNC(void) PyErr_Display(PyObject *, PyObject *, PyObject *);
@@ -21,7 +16,6 @@ PyAPI_FUNC(void) PyErr_Display(PyObject *, PyObject *, PyObject *);
 
 /* Stuff with no proper home (yet) */
 PyAPI_DATA(int) (*PyOS_InputHook)(void);
-PyAPI_DATA(char) *(*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, const char *);
 
 /* Stack size, in "pointers" (so we get extra safety margins
    on 64-bit platforms).  On a 32-bit platform, this translates

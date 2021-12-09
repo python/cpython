@@ -1,0 +1,2 @@
+The _thread.RLock type now fully implement the GC protocol: add a traverse
+function and the :const:`Py_TPFLAGS_HAVE_GC` flag. Patch by Victor Stinner.

@@ -1,0 +1,3 @@
+Fix in :meth:`bz2.BZ2File.write` / :meth:`lzma.LZMAFile.write` methods, when
+the input data is an object that supports the buffer protocol, the file length
+may be wrong.

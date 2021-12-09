@@ -1,8 +1,8 @@
-:mod:`webbrowser` --- Convenient Web-browser controller
+:mod:`webbrowser` --- Convenient web-browser controller
 =======================================================
 
 .. module:: webbrowser
-   :synopsis: Easy-to-use controller for Web browsers.
+   :synopsis: Easy-to-use controller for web browsers.
 
 .. moduleauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
@@ -12,7 +12,7 @@
 --------------
 
 The :mod:`webbrowser` module provides a high-level interface to allow displaying
-Web-based documents to users. Under most circumstances, simply calling the
+web-based documents to users. Under most circumstances, simply calling the
 :func:`.open` function from this module will do the right thing.
 
 Under Unix, graphical browsers are preferred under X11, but text-mode browsers
@@ -39,7 +39,7 @@ parameters: ``-n`` opens the URL in a new browser window, if possible;
 ``-t`` opens the URL in a new browser page ("tab"). The options are,
 naturally, mutually exclusive.  Usage example::
 
-   python -m webbrowser -t "http://www.python.org"
+   python -m webbrowser -t "https://www.python.org"
 
 The following exception is defined:
 
@@ -176,7 +176,7 @@ Notes:
 
 Here are some simple examples::
 
-   url = 'http://docs.python.org/'
+   url = 'https://docs.python.org/'
 
    # Open URL in a new tab, if a browser window is already open.
    webbrowser.open_new_tab(url)

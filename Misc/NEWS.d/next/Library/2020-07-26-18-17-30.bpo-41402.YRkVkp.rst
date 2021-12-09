@@ -1,0 +1,1 @@
+Fix :meth:`email.message.EmailMessage.set_content` when called with binary data and ``7bit`` content transfer encoding.

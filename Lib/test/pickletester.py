@@ -1853,6 +1853,14 @@ class AbstractPickleTests(unittest.TestCase):
                     self.assertNotIn(b'bytearray', p)
                     self.assertTrue(opcode_in_pickle(pickle.BYTEARRAY8, p))
 
+    def test_bytearray_memoization_bug(self):
+        for proto in protocols:
+            for s in b'', b'xyz', b'xyz'*100:
+                b = bytearray(s)
+                p = self.dumps((b, b), proto)
+                b1, b2 = self.loads(p)
+                self.assertIs(b1, b2)
+
     def test_ints(self):
         for proto in protocols:
             n = sys.maxsize

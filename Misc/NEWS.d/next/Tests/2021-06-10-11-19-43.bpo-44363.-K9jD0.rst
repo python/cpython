@@ -1,0 +1,2 @@
+Account for address sanitizer in test_capi. test_capi now passes when run
+GCC address sanitizer.

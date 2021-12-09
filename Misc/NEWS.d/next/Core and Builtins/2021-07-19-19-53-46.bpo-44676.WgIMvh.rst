@@ -1,0 +1,2 @@
+Add ability to serialise ``types.Union`` objects. Patch provided by Yurii
+Karabas.

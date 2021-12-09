@@ -1,0 +1,7 @@
+"Zero cost" exception handling.
+
+* Uses a lookup table to determine how to handle exceptions.
+* Removes SETUP_FINALLY and POP_TOP block instructions, eliminating the runtime overhead of try statements.
+* Reduces the size of the frame object by about 60%.
+
+Patch by Mark Shannon

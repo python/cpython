@@ -26,12 +26,12 @@ always available.
 .. function:: addaudithook(hook)
 
    Append the callable *hook* to the list of active auditing hooks for the
-   current interpreter.
+   current (sub)interpreter.
 
    When an auditing event is raised through the :func:`sys.audit` function, each
    hook will be called in the order it was added with the event name and the
    tuple of arguments. Native hooks added by :c:func:`PySys_AddAuditHook` are
-   called first, followed by hooks added in the current interpreter.  Hooks
+   called first, followed by hooks added in the current (sub)interpreter.  Hooks
    can then log the event, raise an exception to abort the operation,
    or terminate the process entirely.
 
@@ -153,9 +153,11 @@ always available.
 
 .. data:: builtin_module_names
 
-   A tuple of strings giving the names of all modules that are compiled into this
+   A tuple of strings containing the names of all modules that are compiled into this
    Python interpreter.  (This information is not available in any other way ---
    ``modules.keys()`` only lists the imported modules.)
+
+   See also the :attr:`sys.stdlib_module_names` list.
 
 
 .. function:: call_tracing(func, args)
@@ -248,7 +250,8 @@ always available.
    Print low-level information to stderr about the state of CPython's memory
    allocator.
 
-   If Python is configured --with-pydebug, it also performs some expensive
+   If Python is `built in debug mode <debug-build>` (:option:`configure
+   --with-pydebug option <--with-pydebug>`), it also performs some expensive
    internal consistency checks.
 
    .. versionadded:: 3.3
@@ -793,10 +796,15 @@ always available.
    Microsoft documentation on :c:func:`OSVERSIONINFOEX` for more information
    about these fields.
 
-   *platform_version* returns the accurate major version, minor version and
+   *platform_version* returns the major version, minor version and
    build number of the current operating system, rather than the version that
    is being emulated for the process. It is intended for use in logging rather
    than for feature detection.
+
+   .. note::
+      *platform_version* derives the version from kernel32.dll which can be of a different
+      version than the OS version. Please use :mod:`platform` module for achieving accurate
+      OS version.
 
    .. availability:: Windows.
 
@@ -852,7 +860,7 @@ always available.
    +---------------------+--------------------------------------------------+
    | :const:`inf`        | hash value returned for a positive infinity      |
    +---------------------+--------------------------------------------------+
-   | :const:`nan`        | hash value returned for a nan                    |
+   | :const:`nan`        | (this attribute is no longer used)               |
    +---------------------+--------------------------------------------------+
    | :const:`imag`       | multiplier used for the imaginary part of a      |
    |                     | complex number                                   |
@@ -1562,6 +1570,25 @@ always available.
        original values ``__stdin__``, ``__stdout__`` and ``__stderr__`` can be
        ``None``. It is usually the case for Windows GUI apps that aren't connected
        to a console and Python apps started with :program:`pythonw`.
+
+
+.. data:: stdlib_module_names
+
+   A frozenset of strings containing the names of standard library modules.
+
+   It is the same on all platforms. Modules which are not available on
+   some platforms and modules disabled at Python build are also listed.
+   All module kinds are listed: pure Python, built-in, frozen and extension
+   modules. Test modules are excluded.
+
+   For packages, only the main package is listed: sub-packages and sub-modules
+   are not listed. For example, the ``email`` package is listed, but the
+   ``email.mime`` sub-package and the ``email.message`` sub-module are not
+   listed.
+
+   See also the :attr:`sys.builtin_module_names` list.
+
+   .. versionadded:: 3.10
 
 
 .. data:: thread_info

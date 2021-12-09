@@ -1,0 +1,2 @@
+Fix regression in previous release when calling :func:`pkgutil.iter_modules`
+with a list of :class:`pathlib.Path` objects

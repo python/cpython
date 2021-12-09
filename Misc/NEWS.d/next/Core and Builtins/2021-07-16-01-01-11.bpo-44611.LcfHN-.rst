@@ -1,0 +1,2 @@
+On Windows, :func:`os.urandom`: uses BCryptGenRandom API instead of CryptGenRandom API
+which is deprecated from Microsoft Windows API. Patch by Dong-hee Na.

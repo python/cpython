@@ -1,0 +1,2 @@
+:meth:`pathlib.PureWindowsPath.is_reserved` now identifies a greater range of
+reserved filenames, including those with trailing spaces or colons.

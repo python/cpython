@@ -84,12 +84,16 @@ class TestPgen2Caching(support.TestCase):
             # different hash randomization seed.
             sub_env = dict(os.environ)
             sub_env['PYTHONHASHSEED'] = 'random'
-            subprocess.check_call(
-                    [sys.executable, '-c', """
+            code = """
 from lib2to3.pgen2 import driver as pgen2_driver
 pgen2_driver.load_grammar(%r, save=True, force=True)
-                    """ % (grammar_sub_copy,)],
-                    env=sub_env)
+            """ % (grammar_sub_copy,)
+            msg = ("lib2to3 package is deprecated and may not be able "
+                   "to parse Python 3.10+")
+            cmd = [sys.executable,
+                   f'-Wignore:{msg}:PendingDeprecationWarning',
+                   '-c', code]
+            subprocess.check_call( cmd, env=sub_env)
             self.assertTrue(os.path.exists(pickle_sub_name))
 
             with open(pickle_name, 'rb') as pickle_f_1, \
@@ -196,19 +200,26 @@ class TestAsyncAwait(GrammarTest):
         self.validate("""await = 1""")
         self.validate("""def async(): pass""")
 
-    def test_async_with(self):
+    def test_async_for(self):
         self.validate("""async def foo():
                              async for a in b: pass""")
 
-        self.invalid_syntax("""def foo():
-                                   async for a in b: pass""")
-
-    def test_async_for(self):
+    def test_async_with(self):
         self.validate("""async def foo():
                              async with a: pass""")
 
         self.invalid_syntax("""def foo():
                                    async with a: pass""")
+
+    def test_async_generator(self):
+        self.validate(
+            """async def foo():
+                   return (i * 2 async for i in arange(42))"""
+        )
+        self.validate(
+            """def foo():
+                   return (i * 2 async for i in arange(42))"""
+        )
 
 
 class TestRaiseChanges(GrammarTest):

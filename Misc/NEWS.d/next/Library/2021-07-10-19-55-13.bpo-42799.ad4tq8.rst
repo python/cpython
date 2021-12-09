@@ -1,0 +1,4 @@
+In :mod:`fnmatch`, the cache size for compiled regex patterns
+(:func:`functools.lru_cache`) was bumped up from 256 to 32768, affecting
+functions: :func:`fnmatch.fnmatch`, :func:`fnmatch.fnmatchcase`,
+:func:`fnmatch.filter`.

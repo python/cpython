@@ -1,0 +1,1 @@
+Added support for recognizing JPEG files without JFIF or Exif markers.

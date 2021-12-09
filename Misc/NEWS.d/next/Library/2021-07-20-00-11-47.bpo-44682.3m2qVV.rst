@@ -1,0 +1,2 @@
+Change the :mod:`pdb` *commands* directive to disallow setting commands
+for an invalid breakpoint and to display an appropriate error.

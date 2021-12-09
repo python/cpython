@@ -203,9 +203,9 @@ class ReprTests(unittest.TestCase):
         class C:
             def foo(cls): pass
         x = staticmethod(C.foo)
-        self.assertTrue(repr(x).startswith('<staticmethod object at 0x'))
+        self.assertEqual(repr(x), f'<staticmethod({C.foo!r})>')
         x = classmethod(C.foo)
-        self.assertTrue(repr(x).startswith('<classmethod object at 0x'))
+        self.assertEqual(repr(x), f'<classmethod({C.foo!r})>')
 
     def test_unsortable(self):
         # Repr.repr() used to call sorted() on sets, frozensets and dicts

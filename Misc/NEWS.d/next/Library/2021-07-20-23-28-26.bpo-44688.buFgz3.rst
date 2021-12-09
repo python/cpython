@@ -1,0 +1,2 @@
+:meth:`sqlite3.Connection.create_collation` now accepts non-ASCII collation
+names. Patch by Erlend E. Aasland.

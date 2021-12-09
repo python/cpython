@@ -275,39 +275,8 @@ for more hints.
 
 However sometimes you have to run the embedded Python interpreter in the same
 thread as your rest application and you can't allow the
-:c:func:`PyRun_InteractiveLoop` to stop while waiting for user input.  The one
-solution then is to call :c:func:`PyParser_ParseString` and test for ``e.error``
-equal to ``E_EOF``, which means the input is incomplete.  Here's a sample code
-fragment, untested, inspired by code from Alex Farber::
-
-   #define PY_SSIZE_T_CLEAN
-   #include <Python.h>
-   #include <node.h>
-   #include <errcode.h>
-   #include <grammar.h>
-   #include <parsetok.h>
-   #include <compile.h>
-
-   int testcomplete(char *code)
-     /* code should end in \n */
-     /* return -1 for error, 0 for incomplete, 1 for complete */
-   {
-     node *n;
-     perrdetail e;
-
-     n = PyParser_ParseString(code, &_PyParser_Grammar,
-                              Py_file_input, &e);
-     if (n == NULL) {
-       if (e.error == E_EOF)
-         return 0;
-       return -1;
-     }
-
-     PyNode_Free(n);
-     return 1;
-   }
-
-Another solution is trying to compile the received string with
+:c:func:`PyRun_InteractiveLoop` to stop while waiting for user input.
+A solution is trying to compile the received string with
 :c:func:`Py_CompileString`. If it compiles without errors, try to execute the
 returned code object by calling :c:func:`PyEval_EvalCode`. Otherwise save the
 input for later. If the compilation fails, find out if it's an error or just

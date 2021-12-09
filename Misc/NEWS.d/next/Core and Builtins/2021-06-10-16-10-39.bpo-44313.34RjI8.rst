@@ -1,0 +1,4 @@
+Directly imported objects and modules (through import and from import
+statements) don't generate ``LOAD_METHOD``/``CALL_METHOD`` for directly
+accessed objects on their namespace. They now use the regular
+``LOAD_ATTR``/``CALL_FUNCTION``.

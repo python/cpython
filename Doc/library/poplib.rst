@@ -118,7 +118,7 @@ One exception is defined as an attribute of the :mod:`poplib` module:
 POP3 Objects
 ------------
 
-All POP3 commands are represented by methods of the same name, in lower-case;
+All POP3 commands are represented by methods of the same name, in lowercase;
 most return the response text sent by the server.
 
 An :class:`POP3` instance has the following methods:

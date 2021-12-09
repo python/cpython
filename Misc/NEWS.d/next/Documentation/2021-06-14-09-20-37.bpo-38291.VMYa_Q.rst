@@ -1,0 +1,2 @@
+Mark ``typing.io`` and ``typing.re`` as deprecated since Python 3.8 in the
+documentation. They were never properly supported by type checkers.

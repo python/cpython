@@ -319,15 +319,12 @@ expect a function argument.
    method.  Dictionaries accept any hashable value.  Lists, tuples, and
    strings accept an index or a slice:
 
-      >>> itemgetter('name')({'name': 'tu', 'age': 18})
-      'tu'
       >>> itemgetter(1)('ABCDEFG')
       'B'
-      >>> itemgetter(1,3,5)('ABCDEFG')
+      >>> itemgetter(1, 3, 5)('ABCDEFG')
       ('B', 'D', 'F')
-      >>> itemgetter(slice(2,None))('ABCDEFG')
+      >>> itemgetter(slice(2, None))('ABCDEFG')
       'CDEFG'
-
       >>> soldier = dict(rank='captain', name='dotterbart')
       >>> itemgetter('rank')(soldier)
       'captain'

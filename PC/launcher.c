@@ -1258,7 +1258,8 @@ static PYC_MAGIC magic_values[] = {
     { 3390, 3399, L"3.7" },
     { 3400, 3419, L"3.8" },
     { 3420, 3429, L"3.9" },
-    { 3430, 3439, L"3.10" },
+    { 3430, 3449, L"3.10" },
+    { 3450, 3469, L"3.11" },
     { 0 }
 };
 
@@ -1552,8 +1553,8 @@ Launcher arguments:\n\n\
     fputws(L"\nany of the following, (in priority order):", stdout);
     fputws(L"\n An active virtual environment", stdout);
     fputws(L"\n A shebang line in the script (if present)", stdout);
-    fputws(L"\n With -2 or -3 flag a matching PY_PYTHON2 or PY_PYTHON3 Enviroment variable", stdout);
-    fputws(L"\n A PY_PYTHON Enviroment variable", stdout);
+    fputws(L"\n With -2 or -3 flag a matching PY_PYTHON2 or PY_PYTHON3 Environment variable", stdout);
+    fputws(L"\n A PY_PYTHON Environment variable", stdout);
     fputws(L"\n From [defaults] in py.ini in your %LOCALAPPDATA%\\py.ini", stdout);
     fputws(L"\n From [defaults] in py.ini beside py.exe (use `where py` to locate)", stdout);
     fputws(L"\n\nThe following help text is from Python:\n\n", stdout);

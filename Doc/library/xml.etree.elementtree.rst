@@ -363,13 +363,6 @@ These two approaches both output::
      |--> Commander Clement
 
 
-Additional resources
-^^^^^^^^^^^^^^^^^^^^
-
-See http://effbot.org/zone/element-index.htm for tutorials and links to other
-docs.
-
-
 .. _elementtree-xpath:
 
 XPath support

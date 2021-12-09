@@ -1,0 +1,4 @@
+Computation of the offsets of cell variables is done in the compiler instead
+of at runtime. This reduces the overhead of handling cell and free
+variables, especially in the case where a variable is both an argument and
+cell variable.

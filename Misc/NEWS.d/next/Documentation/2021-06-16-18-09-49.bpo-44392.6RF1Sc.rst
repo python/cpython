@@ -1,0 +1,2 @@
+Added a new section in the C API documentation for types used in type
+hinting.  Documented ``Py_GenericAlias`` and ``Py_GenericAliasType``.

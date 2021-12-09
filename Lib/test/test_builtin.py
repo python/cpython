@@ -1159,7 +1159,7 @@ class BuiltinTest(unittest.TestCase):
 
     def write_testfile(self):
         # NB the first 4 lines are also used to test input, below
-        fp = open(TESTFN, 'w')
+        fp = open(TESTFN, 'w', encoding="utf-8")
         self.addCleanup(unlink, TESTFN)
         with fp:
             fp.write('1+1\n')
@@ -1171,7 +1171,7 @@ class BuiltinTest(unittest.TestCase):
 
     def test_open(self):
         self.write_testfile()
-        fp = open(TESTFN, 'r')
+        fp = open(TESTFN, encoding="utf-8")
         with fp:
             self.assertEqual(fp.readline(4), '1+1\n')
             self.assertEqual(fp.readline(), 'The quick brown fox jumps over the lazy dog.\n')
@@ -1197,7 +1197,9 @@ class BuiltinTest(unittest.TestCase):
 
             self.write_testfile()
             current_locale_encoding = locale.getpreferredencoding(False)
-            fp = open(TESTFN, 'w')
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", EncodingWarning)
+                fp = open(TESTFN, 'w')
             with fp:
                 self.assertEqual(fp.encoding, current_locale_encoding)
         finally:
@@ -1205,7 +1207,7 @@ class BuiltinTest(unittest.TestCase):
             os.environ.update(old_environ)
 
     def test_open_non_inheritable(self):
-        fileobj = open(__file__)
+        fileobj = open(__file__, encoding="utf-8")
         with fileobj:
             self.assertFalse(os.get_inheritable(fileobj.fileno()))
 
@@ -1300,7 +1302,7 @@ class BuiltinTest(unittest.TestCase):
 
     def test_input(self):
         self.write_testfile()
-        fp = open(TESTFN, 'r')
+        fp = open(TESTFN, encoding="utf-8")
         savestdin = sys.stdin
         savestdout = sys.stdout # Eats the echo
         try:
@@ -2022,7 +2024,7 @@ class PtyTests(unittest.TestCase):
         os.write(fd, terminal_input)
 
         # Get results from the pipe
-        with open(r, "r") as rpipe:
+        with open(r, encoding="utf-8") as rpipe:
             lines = []
             while True:
                 line = rpipe.readline().strip()

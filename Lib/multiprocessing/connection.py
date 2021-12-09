@@ -943,7 +943,7 @@ else:
                             return ready
 
 #
-# Make connection and socket objects sharable if possible
+# Make connection and socket objects shareable if possible
 #
 
 if sys.platform == 'win32':

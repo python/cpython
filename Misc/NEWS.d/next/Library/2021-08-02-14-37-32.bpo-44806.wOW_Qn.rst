@@ -1,0 +1,2 @@
+Non-protocol subclasses of :class:`typing.Protocol` ignore now the
+``__init__`` method inherited from protocol base classes.

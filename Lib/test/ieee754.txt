@@ -104,7 +104,7 @@ infinity and NaN.
 1.0
 
 The power of 0 raised to x is defined as 0, if x is positive. Negative
-values are a domain error or zero division error and NaN result in a
+finite values are a domain error or zero division error and NaN result in a
 silent NaN.
 
 >>> pow(0, 0)
@@ -112,9 +112,7 @@ silent NaN.
 >>> pow(0, INF)
 0.0
 >>> pow(0, -INF)
-Traceback (most recent call last):
-...
-ValueError: math domain error
+inf
 >>> 0 ** -1
 Traceback (most recent call last):
 ...

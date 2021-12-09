@@ -1,0 +1,9 @@
+Initial implementation of adaptive specialization of STORE_ATTR
+
+Three specialized forms of STORE_ATTR are added:
+
+* STORE_ATTR_SLOT
+
+* STORE_ATTR_SPLIT_KEYS
+
+* STORE_ATTR_WITH_HINT

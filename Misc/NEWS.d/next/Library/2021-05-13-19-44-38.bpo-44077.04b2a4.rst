@@ -1,0 +1,3 @@
+It's now possible to receive the type of service (ToS), a.k.a. differentiated
+services (DS), a.k.a. differenciated services code point (DSCP) and excplicit
+congestion notification (ECN) IP header fields with ``socket.IP_RECVTOS``.

@@ -21,13 +21,20 @@
 # Compare the demo tixwidgets.py to the original Tcl program and you will
 # appreciate the advantages.
 #
+# NOTE: This module is deprecated since Python 3.6.
 
 import os
+import warnings
 import tkinter
 from tkinter import *
 from tkinter import _cnfmerge
 
-import _tkinter # If this fails your Python may not be configured for Tk
+warnings.warn(
+    'The Tix Tk extension is unmaintained, and the tkinter.tix wrapper module'
+    ' is deprecated in favor of tkinter.ttk',
+    DeprecationWarning,
+    stacklevel=2,
+    )
 
 # Some more constants (for consistency with Tkinter)
 WINDOW = 'window'

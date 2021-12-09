@@ -72,18 +72,22 @@ The class can be used to simulate nested scopes and is useful in templating.
         be modified to change which mappings are searched.  The list should
         always contain at least one mapping.
 
-    .. method:: new_child(m=None)
+    .. method:: new_child(m=None, **kwargs)
 
         Returns a new :class:`ChainMap` containing a new map followed by
         all of the maps in the current instance.  If ``m`` is specified,
         it becomes the new map at the front of the list of mappings; if not
         specified, an empty dict is used, so that a call to ``d.new_child()``
-        is equivalent to: ``ChainMap({}, *d.maps)``.  This method is used for
-        creating subcontexts that can be updated without altering values in any
-        of the parent mappings.
+        is equivalent to: ``ChainMap({}, *d.maps)``. If any keyword arguments
+        are specified, they update passed map or new empty dict. This method
+        is used for creating subcontexts that can be updated without altering
+        values in any of the parent mappings.
 
         .. versionchanged:: 3.4
            The optional ``m`` parameter was added.
+
+        .. versionchanged:: 3.10
+           Keyword arguments support was added.
 
     .. attribute:: parents
 
@@ -123,7 +127,7 @@ The class can be used to simulate nested scopes and is useful in templating.
       writing to any mapping in the chain.
 
     * Django's `Context class
-      <https://github.com/django/django/blob/master/django/template/context.py>`_
+      <https://github.com/django/django/blob/main/django/template/context.py>`_
       for templating is a read-only chain of mappings.  It also features
       pushing and popping of contexts similar to the
       :meth:`~collections.ChainMap.new_child` method and the
@@ -309,6 +313,16 @@ For example::
 
         .. versionadded:: 3.2
 
+    .. method:: total()
+
+        Compute the sum of the counts.
+
+            >>> c = Counter(a=10, b=5, c=0)
+            >>> c.total()
+            15
+
+        .. versionadded:: 3.10
+
     The usual dictionary methods are available for :class:`Counter` objects
     except for two which work differently for counters.
 
@@ -338,7 +352,7 @@ All of those tests treat missing elements as having zero counts so that
 
 Common patterns for working with :class:`Counter` objects::
 
-    sum(c.values())                 # total of all counts
+    c.total()                       # total of all counts
     c.clear()                       # reset all counts
     list(c)                         # list unique elements
     set(c)                          # convert to a set
@@ -693,9 +707,9 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
 :class:`defaultdict` objects
 ----------------------------
 
-.. class:: defaultdict([default_factory[, ...]])
+.. class:: defaultdict(default_factory=None, /, [...])
 
-    Returns a new dictionary-like object.  :class:`defaultdict` is a subclass of the
+    Return a new dictionary-like object.  :class:`defaultdict` is a subclass of the
     built-in :class:`dict` class.  It overrides one method and adds one writable
     instance variable.  The remaining functionality is the same as for the
     :class:`dict` class and is not documented here.
@@ -1157,27 +1171,43 @@ original insertion position is changed and moved to the end::
             self.move_to_end(key)
 
 An :class:`OrderedDict` would also be useful for implementing
-variants of :func:`functools.lru_cache`::
+variants of :func:`functools.lru_cache`:
 
-    class LRU(OrderedDict):
-        'Limit size, evicting the least recently looked-up key when full'
+.. testcode::
 
-        def __init__(self, maxsize=128, /, *args, **kwds):
+    class LRU:
+
+        def __init__(self, func, maxsize=128):
+            self.func = func
             self.maxsize = maxsize
-            super().__init__(*args, **kwds)
+            self.cache = OrderedDict()
 
-        def __getitem__(self, key):
-            value = super().__getitem__(key)
-            self.move_to_end(key)
+        def __call__(self, *args):
+            if args in self.cache:
+                value = self.cache[args]
+                self.cache.move_to_end(args)
+                return value
+            value = self.func(*args)
+            if len(self.cache) >= self.maxsize:
+                self.cache.popitem(False)
+            self.cache[args] = value
             return value
 
-        def __setitem__(self, key, value):
-            if key in self:
-                self.move_to_end(key)
-            super().__setitem__(key, value)
-            if len(self) > self.maxsize:
-                oldest = next(iter(self))
-                del self[oldest]
+.. doctest::
+    :hide:
+
+    >>> def square(x):
+    ...     return x ** 2
+    ...
+    >>> s = LRU(square, maxsize=5)
+    >>> actual = [(s(x), s(x)) for x in range(20)]
+    >>> expected = [(x**2, x**2) for x in range(20)]
+    >>> actual == expected
+    True
+    >>> actual = list(s.cache.items())
+    >>> expected = [((x,), x**2) for x in range(15, 20)]
+    >>> actual == expected
+    True
 
 
 :class:`UserDict` objects
@@ -1195,7 +1225,7 @@ attribute.
     regular dictionary, which is accessible via the :attr:`data` attribute of
     :class:`UserDict` instances.  If *initialdata* is provided, :attr:`data` is
     initialized with its contents; note that a reference to *initialdata* will not
-    be kept, allowing it be used for other purposes.
+    be kept, allowing it to be used for other purposes.
 
     In addition to supporting the methods and operations of mappings,
     :class:`UserDict` instances provide the following attribute:

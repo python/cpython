@@ -814,11 +814,7 @@ class BaseEventLoop(events.AbstractEventLoop):
 
     def set_default_executor(self, executor):
         if not isinstance(executor, concurrent.futures.ThreadPoolExecutor):
-            warnings.warn(
-                'Using the default executor that is not an instance of '
-                'ThreadPoolExecutor is deprecated and will be prohibited '
-                'in Python 3.9',
-                DeprecationWarning, 2)
+            raise TypeError('executor must be ThreadPoolExecutor instance')
         self._default_executor = executor
 
     def _getaddrinfo_debug(self, host, port, family, type, proto, flags):
@@ -972,7 +968,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             happy_eyeballs_delay=None, interleave=None):
         """Connect to a TCP server.
 
-        Create a streaming transport connection to a given Internet host and
+        Create a streaming transport connection to a given internet host and
         port: socket family AF_INET or socket.AF_INET6 depending on host (or
         family if specified), socket type SOCK_STREAM. protocol_factory must be
         a callable returning a protocol instance.

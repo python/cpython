@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_atomic.h"        // _Py_atomic_address
-#include "pycore_ast.h"           // struct ast_state
+#include "pycore_ast_state.h"     // struct ast_state
 #include "pycore_gil.h"           // struct _gil_runtime_state
 #include "pycore_gc.h"            // struct _gc_runtime_state
 #include "pycore_warnings.h"      // struct _warnings_runtime_state
@@ -33,12 +33,6 @@ struct _pending_calls {
 
 struct _ceval_state {
     int recursion_limit;
-    /* Records whether tracing is on for any thread.  Counts the number
-       of threads for which tstate->c_tracefunc is non-NULL, so if the
-       value is 0, we know we don't have to check this thread's
-       c_tracefunc.  This speeds up the if statement in
-       _PyEval_EvalFrameDefault() after fast_next_opcode. */
-    int tracing_possible;
     /* This single variable consolidates all requests to break out of
        the fast path in the eval loop. */
     _Py_atomic_int eval_breaker;
@@ -340,11 +334,10 @@ struct _xidregitem {
 PyAPI_FUNC(struct _is*) _PyInterpreterState_LookUpID(int64_t);
 
 PyAPI_FUNC(int) _PyInterpreterState_IDInitref(struct _is *);
-PyAPI_FUNC(void) _PyInterpreterState_IDIncref(struct _is *);
+PyAPI_FUNC(int) _PyInterpreterState_IDIncref(struct _is *);
 PyAPI_FUNC(void) _PyInterpreterState_IDDecref(struct _is *);
 
 #ifdef __cplusplus
 }
 #endif
 #endif /* !Py_INTERNAL_INTERP_H */
-

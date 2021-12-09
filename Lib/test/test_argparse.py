@@ -45,7 +45,7 @@ class TempDirMixin(object):
 
     def create_readonly_file(self, filename):
         file_path = os.path.join(self.temp_dir, filename)
-        with open(file_path, 'w') as file:
+        with open(file_path, 'w', encoding="utf-8") as file:
             file.write(filename)
         os.chmod(file_path, stat.S_IREAD)
 
@@ -742,6 +742,25 @@ class TestOptionalsActionAppendWithDefault(ParserTestCase):
         ('', NS(baz=['X'])),
         ('--baz a', NS(baz=['X', 'a'])),
         ('--baz a --baz b', NS(baz=['X', 'a', 'b'])),
+    ]
+
+
+class TestConstActionsMissingConstKwarg(ParserTestCase):
+    """Tests that const gets default value of None when not provided"""
+
+    argument_signatures = [
+        Sig('-f', action='append_const'),
+        Sig('--foo', action='append_const'),
+        Sig('-b', action='store_const'),
+        Sig('--bar', action='store_const')
+    ]
+    failures = ['-f v', '--foo=bar', '--foo bar']
+    successes = [
+        ('', NS(f=None, foo=None, b=None, bar=None)),
+        ('-f', NS(f=[None], foo=None, b=None, bar=None)),
+        ('--foo', NS(f=None, foo=[None], b=None, bar=None)),
+        ('-b', NS(f=None, foo=None, b=None, bar=None)),
+        ('--bar', NS(f=None, foo=None, b=None, bar=None)),
     ]
 
 
@@ -1468,7 +1487,7 @@ class TestArgumentsFromFile(TempDirMixin, ParserTestCase):
             ('invalid', '@no-such-path\n'),
         ]
         for path, text in file_texts:
-            with open(path, 'w') as file:
+            with open(path, 'w', encoding="utf-8") as file:
                 file.write(text)
 
     parser_signature = Sig(fromfile_prefix_chars='@')
@@ -1498,7 +1517,7 @@ class TestArgumentsFromFileConverter(TempDirMixin, ParserTestCase):
             ('hello', 'hello world!\n'),
         ]
         for path, text in file_texts:
-            with open(path, 'w') as file:
+            with open(path, 'w', encoding="utf-8") as file:
                 file.write(text)
 
     class FromFileConverterArgumentParser(ErrorRaisingArgumentParser):
@@ -1580,7 +1599,8 @@ class TestFileTypeR(TempDirMixin, ParserTestCase):
     def setUp(self):
         super(TestFileTypeR, self).setUp()
         for file_name in ['foo', 'bar']:
-            with open(os.path.join(self.temp_dir, file_name), 'w') as file:
+            with open(os.path.join(self.temp_dir, file_name),
+                      'w', encoding="utf-8") as file:
                 file.write(file_name)
         self.create_readonly_file('readonly')
 
@@ -1601,7 +1621,7 @@ class TestFileTypeDefaults(TempDirMixin, ParserTestCase):
     """Test that a file is not created unless the default is needed"""
     def setUp(self):
         super(TestFileTypeDefaults, self).setUp()
-        file = open(os.path.join(self.temp_dir, 'good'), 'w')
+        file = open(os.path.join(self.temp_dir, 'good'), 'w', encoding="utf-8")
         file.write('good')
         file.close()
 
@@ -1620,7 +1640,8 @@ class TestFileTypeRB(TempDirMixin, ParserTestCase):
     def setUp(self):
         super(TestFileTypeRB, self).setUp()
         for file_name in ['foo', 'bar']:
-            with open(os.path.join(self.temp_dir, file_name), 'w') as file:
+            with open(os.path.join(self.temp_dir, file_name),
+                      'w', encoding="utf-8") as file:
                 file.write(file_name)
 
     argument_signatures = [
@@ -2057,6 +2078,30 @@ class TestAddSubparsers(TestCase):
         # No error here
         ret = parser.parse_args(())
         self.assertIsNone(ret.command)
+
+    def test_required_subparsers_no_destination_error(self):
+        parser = ErrorRaisingArgumentParser()
+        subparsers = parser.add_subparsers(required=True)
+        subparsers.add_parser('foo')
+        subparsers.add_parser('bar')
+        with self.assertRaises(ArgumentParserError) as excinfo:
+            parser.parse_args(())
+        self.assertRegex(
+            excinfo.exception.stderr,
+            'error: the following arguments are required: {foo,bar}\n$'
+        )
+
+    def test_wrong_argument_subparsers_no_destination_error(self):
+        parser = ErrorRaisingArgumentParser()
+        subparsers = parser.add_subparsers(required=True)
+        subparsers.add_parser('foo')
+        subparsers.add_parser('bar')
+        with self.assertRaises(ArgumentParserError) as excinfo:
+            parser.parse_args(('baz',))
+        self.assertRegex(
+            excinfo.exception.stderr,
+            r"error: argument {foo,bar}: invalid choice: 'baz' \(choose from 'foo', 'bar'\)\n$"
+        )
 
     def test_optional_subparsers(self):
         parser = ErrorRaisingArgumentParser()

@@ -64,7 +64,7 @@ opener = urllib.request.build_opener(proxy_support, authinfo,
 # install it
 urllib.request.install_opener(opener)
 
-f = urllib.request.urlopen('http://www.python.org/')
+f = urllib.request.urlopen('https://www.python.org/')
 """
 
 # XXX issues:
@@ -945,7 +945,7 @@ class AbstractBasicAuthHandler:
     # (single quotes are a violation of the RFC, but appear in the wild)
     rx = re.compile('(?:^|,)'   # start of the string or ','
                     '[ \t]*'    # optional whitespaces
-                    '([^ \t]+)' # scheme like "Basic"
+                    '([^ \t,]+)' # scheme like "Basic"
                     '[ \t]+'    # mandatory whitespaces
                     # realm=xxx
                     # realm='xxx'
