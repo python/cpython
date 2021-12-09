@@ -94,8 +94,7 @@ atexit_callfuncs(struct atexit_state *state)
         }
 
         // bpo-46025: Increment the refcount of cb->func as the call itself may unregister it
-        PyObject* the_func = cb->func;
-        Py_INCREF(the_func);
+        PyObject* the_func = Py_NewRef(cb->func);
         PyObject *res = PyObject_Call(cb->func, cb->args, cb->kwargs);
         if (res == NULL) {
             _PyErr_WriteUnraisableMsg("in atexit callback", the_func);

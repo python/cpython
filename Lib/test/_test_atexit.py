@@ -123,7 +123,11 @@ class GeneralTest(unittest.TestCase):
             1/0
         atexit.register(func)
         try:
-            atexit._run_exitfuncs()
+            with support.catch_unraisable_exception() as cm:
+                atexit._run_exitfuncs()
+                self.assertEqual(cm.unraisable.object, func)
+                self.assertEqual(cm.unraisable.exc_type, ZeroDivisionError)
+                self.assertEqual(type(cm.unraisable.exc_value), ZeroDivisionError)
         finally:
             atexit.unregister(func)
 
