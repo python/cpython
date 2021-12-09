@@ -193,6 +193,10 @@ def_op('DICT_MERGE', 164)
 def_op('DICT_UPDATE', 165)
 def_op('CALL_METHOD_KW', 166)
 
+def_op('PRECALL_METHOD', 168)
+def_op('CALL_NO_KW', 169)
+def_op('CALL_KW', 170)
+
 del def_op, name_op, jrel_op, jabs_op
 
 _nb_ops = [

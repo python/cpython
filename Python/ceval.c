@@ -1666,6 +1666,12 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
 
     CFrame cframe;
 
+    /* Variables used for making calls */
+    PyObject *kwnames;
+    int nargs;
+    int postcall_shrink = 1;
+    int extra_args = 0;
+
     /* WARNING: Because the CFrame lives on the C stack,
      * but can be accessed from a heap allocated object (tstate)
      * strict stack discipline must be maintained.
@@ -1807,11 +1813,6 @@ check_eval_breaker:
     dispatch_opcode:
         switch (opcode) {
 #endif
-
-        /* Variables used for making calls */
-        PyObject *kwnames;
-        int nargs;
-        int postcall_shrink;
 
         /* BEWARE!
            It is essential that any operation that fails must goto error
@@ -4586,6 +4587,71 @@ check_eval_breaker:
             goto call_function;
         }
 
+        TARGET(PRECALL_METHOD) {
+            /* Designed to work in tamdem with LOAD_METHOD. */
+            /* `meth` is NULL when LOAD_METHOD thinks that it's not
+                a method call.
+
+                Stack layout:
+
+                       ... | NULL | callable | arg1 | ... | argN
+                                                            ^- TOP()
+                                               ^- (-oparg)
+                                    ^- (-oparg-1)
+                             ^- (-oparg-2)
+
+                `callable` will be POPed by call_function.
+                NULL will will be POPed manually later.
+                If `meth` isn't NULL, it's a method call.  Stack layout:
+
+                     ... | method | self | arg1 | ... | argN
+                                                        ^- TOP()
+                                           ^- (-oparg)
+                                    ^- (-oparg-1)
+                           ^- (-oparg-2)
+
+               `self` and `method` will be POPed by call_function.
+               We'll be passing `oparg + 1` to call_function, to
+               make it accept the `self` as a first argument.
+            */
+            int is_method = (PEEK(oparg + 2) != NULL);
+            extra_args = is_method;
+            postcall_shrink = 2-is_method;
+            DISPATCH();
+        }
+
+#define check_call() \
+    assert(PEEK(oparg + 1) != NULL); \
+    if (extra_args == 0) { \
+        if (postcall_shrink == 1) { \
+        } else { \
+            assert(postcall_shrink == 2); \
+            assert(PEEK(oparg + 2) == NULL); \
+        } \
+    } else { \
+        assert(extra_args == 1); \
+        assert(postcall_shrink == 1); \
+        assert(PEEK(oparg + 2) != NULL); \
+    }
+
+        TARGET(CALL_NO_KW) {
+            kwnames = NULL;
+            check_call();
+            oparg += extra_args;
+            extra_args = 0;
+            nargs = oparg;
+            goto call_function;
+        }
+
+        TARGET(CALL_KW) {
+            kwnames = POP();
+            check_call();
+            oparg += extra_args;
+            extra_args = 0;
+            nargs = oparg - (int)PyTuple_GET_SIZE(kwnames);
+            goto call_function;
+        }
+
         TARGET(CALL_METHOD_KW) {
             /* Designed to work in tandem with LOAD_METHOD. Same as CALL_METHOD
             but pops TOS to get a tuple of keyword names. */
@@ -4638,6 +4704,7 @@ check_eval_breaker:
                         stack_pointer, nargs, kwnames
                     );
                     STACK_SHRINK(postcall_shrink);
+                    postcall_shrink = 1;
                     // The frame has stolen all the arguments from the stack,
                     // so there is no need to clean them up.
                     Py_XDECREF(kwnames);
@@ -4670,6 +4737,7 @@ check_eval_breaker:
                 Py_DECREF(stack_pointer[i]);
             }
             STACK_SHRINK(postcall_shrink);
+            postcall_shrink = 1;
             PUSH(res);
             if (res == NULL) {
                 goto error;
@@ -7170,7 +7238,7 @@ format_awaitable_error(PyThreadState *tstate, PyTypeObject *type, int prevprevop
                           "that does not implement __await__: %.100s",
                           type->tp_name);
         }
-        else if (prevopcode == WITH_EXCEPT_START || (prevopcode == CALL_FUNCTION && prevprevopcode == DUP_TOP)) {
+        else if (prevopcode == WITH_EXCEPT_START || (prevopcode == CALL_NO_KW && prevprevopcode == DUP_TOP)) {
             _PyErr_Format(tstate, PyExc_TypeError,
                           "'async with' received an object from __aexit__ "
                           "that does not implement __await__: %.100s",

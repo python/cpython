@@ -112,6 +112,9 @@ extern "C" {
 #define DICT_MERGE                      164
 #define DICT_UPDATE                     165
 #define CALL_METHOD_KW                  166
+#define PRECALL_METHOD                  168
+#define CALL_NO_KW                      169
+#define CALL_KW                         170
 #define BINARY_OP_ADAPTIVE                7
 #define BINARY_OP_ADD_INT                 8
 #define BINARY_OP_ADD_FLOAT              13
