@@ -269,10 +269,6 @@ PyAPI_FUNC(PyObject *) PyUnicode_InternFromString(
 // and will be removed in Python 3.12. Use PyUnicode_InternInPlace() instead.
 Py_DEPRECATED(3.10) PyAPI_FUNC(void) PyUnicode_InternImmortal(PyObject **);
 
-/* Use only if you know it's a string */
-#define PyUnicode_CHECK_INTERNED(op) \
-    (((PyASCIIObject *)(op))->state.interned)
-
 /* --- wchar_t support for platforms which support it --------------------- */
 
 #ifdef HAVE_WCHAR_H
