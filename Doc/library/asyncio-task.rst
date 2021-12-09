@@ -299,12 +299,6 @@ Sleeping
    tasks to run. This can be used by long-running functions to avoid
    blocking the event loop for the full duration of the function call.
 
-   .. deprecated-removed:: 3.8 3.10
-      The ``loop`` parameter.  This function has been implicitly getting the
-      current running loop since 3.7.  See
-      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
-      for more information.
-
    .. _asyncio_example_sleep:
 
    Example of coroutine displaying the current date every second

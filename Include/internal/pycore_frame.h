@@ -4,6 +4,14 @@
 extern "C" {
 #endif
 
+
+/* runtime lifecycle */
+
+extern void _PyFrame_Fini(PyInterpreterState *interp);
+
+
+/* other API */
+
 /* These values are chosen so that the inline functions below all
  * compare f_state to zero.
  */
@@ -74,7 +82,7 @@ static inline void _PyFrame_StackPush(InterpreterFrame *f, PyObject *value) {
 
 #define FRAME_SPECIALS_SIZE ((sizeof(InterpreterFrame)-1)/sizeof(PyObject *))
 
-InterpreterFrame *_PyFrame_Copy(InterpreterFrame *frame);
+void _PyFrame_Copy(InterpreterFrame *src, InterpreterFrame *dest);
 
 static inline void
 _PyFrame_InitializeSpecials(

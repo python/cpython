@@ -1823,7 +1823,7 @@ Class Binding
 
 Super Binding
    A dotted lookup such as ``super(A, a).x`` searches
-   ``obj.__class__.__mro__`` for a base class ``B`` following ``A`` and then
+   ``a.__class__.__mro__`` for a base class ``B`` following ``A`` and then
    returns ``B.__dict__['x'].__get__(a, A)``.  If not a descriptor, ``x`` is
    returned unchanged.
 
@@ -1843,15 +1843,19 @@ Super Binding
         x = 999
 
         def m(self):
-            'Demonstrate these two calls are equivalent'
-            result1 = super(A, a).x
-            result2 = B.__dict__['x'].__get__(a, A)
+            'Demonstrate these two descriptor invocations are equivalent'
+            result1 = super(A, self).x
+            result2 = B.__dict__['x'].__get__(self, A)
             return result1 == result2
 
 .. doctest::
     :hide:
 
     >>> a = A()
+    >>> a.__class__.__mro__.index(B) > a.__class__.__mro__.index(A)
+    True
+    >>> super(A, a).x == B.__dict__['x'].__get__(a, A)
+    True
     >>> a.m()
     True
 
@@ -2327,7 +2331,7 @@ called::
    from inspect import isclass
 
    def subscribe(obj, x):
-       """Return the result of the expression `obj[x]`"""
+       """Return the result of the expression 'obj[x]'"""
 
        class_of_obj = type(obj)
 
