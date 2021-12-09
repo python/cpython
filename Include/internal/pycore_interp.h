@@ -12,6 +12,7 @@ extern "C" {
 #include "pycore_ast_state.h"     // struct ast_state
 #include "pycore_gil.h"           // struct _gil_runtime_state
 #include "pycore_gc.h"            // struct _gc_runtime_state
+#include "pycore_unicodeobject.h" // struct _Py_unicode_state
 #include "pycore_warnings.h"      // struct _warnings_runtime_state
 
 struct _pending_calls {
@@ -44,45 +45,9 @@ struct _ceval_state {
 #endif
 };
 
-/* fs_codec.encoding is initialized to NULL.
-   Later, it is set to a non-NULL string by _PyUnicode_InitEncodings(). */
-struct _Py_unicode_fs_codec {
-    char *encoding;   // Filesystem encoding (encoded to UTF-8)
-    int utf8;         // encoding=="utf-8"?
-    char *errors;     // Filesystem errors (encoded to UTF-8)
-    _Py_error_handler error_handler;
-};
-
 struct _Py_bytes_state {
     PyObject *empty_string;
     PyBytesObject *characters[256];
-};
-
-struct _Py_unicode_ids {
-    Py_ssize_t size;
-    PyObject **array;
-};
-
-struct _Py_unicode_state {
-    // The empty Unicode object is a singleton to improve performance.
-    PyObject *empty_string;
-    /* Single character Unicode strings in the Latin-1 range are being
-       shared as well. */
-    PyObject *latin1[256];
-    struct _Py_unicode_fs_codec fs_codec;
-
-    /* This dictionary holds all interned unicode strings.  Note that references
-       to strings in this dictionary are *not* counted in the string's ob_refcnt.
-       When the interned string reaches a refcnt of 0 the string deallocation
-       function will delete the reference from this dictionary.
-
-       Another way to look at this is that to say that the actual reference
-       count of a string is:  s->ob_refcnt + (s->state ? 2 : 0)
-    */
-    PyObject *interned;
-
-    // Unicode identifiers (_Py_Identifier): see _PyUnicode_FromId()
-    struct _Py_unicode_ids ids;
 };
 
 #ifndef WITH_FREELISTS

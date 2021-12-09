@@ -10,6 +10,7 @@ extern "C" {
 
 #include "pycore_atomic.h"    /* _Py_atomic_address */
 #include "pycore_gil.h"       // struct _gil_runtime_state
+#include "pycore_unicodeobject.h"  // struct _Py_unicode_runtime_ids
 
 #define _PY_NSMALLPOSINTS           257
 #define _PY_NSMALLNEGINTS           5
@@ -56,13 +57,6 @@ typedef struct _Py_AuditHookEntry {
     Py_AuditHookFunction hookCFunction;
     void *userData;
 } _Py_AuditHookEntry;
-
-struct _Py_unicode_runtime_ids {
-    PyThread_type_lock lock;
-    // next_index value must be preserved when Py_Initialize()/Py_Finalize()
-    // is called multiple times: see _PyUnicode_FromId() implementation.
-    Py_ssize_t next_index;
-};
 
 /* Full Python runtime state */
 
