@@ -1058,7 +1058,8 @@ print_exception_suggestions(struct exception_print_context *ctx,
             goto error;
         }
         Py_DECREF(suggestions);
-    } else if (PyErr_Occurred()) {
+    }
+    else if (PyErr_Occurred()) {
         PyErr_Clear();
     }
     return 0;
