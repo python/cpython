@@ -11,6 +11,7 @@
 #include "pycore_import.h"        // _PyImport_FrozenBootstrap
 #include <Python.h>
 #include <inttypes.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>               // putenv()
 #include <wchar.h>
@@ -36,6 +37,26 @@ static void error(const char *msg)
 {
     fprintf(stderr, "ERROR: %s\n", msg);
     fflush(stderr);
+}
+
+
+static int error_format(const char *format, ...) {
+    PyObject *err_msg, *err_msg_bytes;
+    va_list vargs;
+
+    va_start(vargs, format);
+
+    err_msg = PyUnicode_FromFormatV(format, vargs);
+    if (err_msg) {
+        err_msg_bytes = PyUnicode_EncodeLocale(err_msg, NULL);
+        Py_DECREF(err_msg);
+        if (err_msg_bytes) {
+            error(PyBytes_AsString(err_msg_bytes));
+            Py_DECREF(err_msg_bytes);
+            return 0;
+        }
+    }
+    return 1;
 }
 
 
@@ -1828,6 +1849,78 @@ static int test_frozenmain(void)
 #endif  // !MS_WINDOWS
 
 
+static int assert_frozen_module_validation_error(PyObject *name)
+{
+    PyObject *type, *value, *traceback, *actual, *expected;
+
+    expected = PyUnicode_FromString("Invalid frozen object name (None)");
+    if (!expected) {
+        error("failed to created expected string object");
+        return 1;
+    }
+
+    PyImport_ImportFrozenModuleObject(name);
+
+    PyErr_Fetch(&type, &value, &traceback);
+    if (!value) {
+        error("no error raised, expecting ImportError");
+        return 1;
+    }
+
+    if (!PyObject_IsInstance(value, PyExc_ImportError)) {
+        if (error_format("invalid error type, expecting ImportError but got %R", value)) {
+            error("invalid error type");
+        }
+        return 1;
+    }
+
+    actual = PyObject_GetAttrString(value, "msg");
+    if (!actual) {
+        error("failed to fetch error message");
+    }
+
+    int rc = PyObject_RichCompareBool(actual, expected, Py_EQ);
+    switch (rc) {
+        case -1:
+            error("failed to compare error string");
+            goto error;
+        case 0:
+            if (error_format("invalid error string, got %R but expected %R", actual, expected)) {
+                error("invalid error string");
+            }
+            goto error;
+    }
+    Py_DECREF(expected);
+    return 0;
+
+error:
+    Py_DECREF(expected);
+    return 1;
+}
+
+
+static int test_import_frozen_module_null(void)
+{
+    int rc;
+
+    _testembed_Py_Initialize();
+    rc = assert_frozen_module_validation_error(NULL);
+    Py_Finalize();
+    return rc;
+}
+
+
+static int test_import_frozen_module_none(void)
+{
+    int rc;
+
+    _testembed_Py_Initialize();
+    rc = assert_frozen_module_validation_error(Py_None);
+    Py_Finalize();
+    return rc;
+}
+
+
 // List frozen modules.
 // Command used by Tools/scripts/generate_stdlib_module_names.py script.
 static int list_frozen(void)
@@ -1959,6 +2052,8 @@ static struct TestCase TestCases[] = {
 #ifndef MS_WINDOWS
     {"test_frozenmain", test_frozenmain},
 #endif
+    {"test_import_frozen_module_null", test_import_frozen_module_null},
+    {"test_import_frozen_module_none", test_import_frozen_module_none},
 
     // Command
     {"list_frozen", list_frozen},

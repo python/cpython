@@ -723,6 +723,11 @@ Porting to Python 3.11
   been included directly, consider including ``Python.h`` instead.
   (Contributed by Victor Stinner in :issue:`35134`.)
 
+* The :c:func:`PyImport_ImportFrozenModuleObject` function now raises
+  :exc:`ImportError` if a bad module name was passed, instead of failing to find
+  the module. Code that does not validate the ``modname`` parameter needs to be
+  updated to either do so, or handle the exception.
+
 Deprecated
 ----------
 

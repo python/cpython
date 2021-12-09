@@ -1183,6 +1183,8 @@ set_frozen_error(frozen_status status, PyObject *modname)
     const char *err = NULL;
     switch (status) {
         case FROZEN_BAD_NAME:
+            err = "Invalid frozen object name (%R)";
+            break;
         case FROZEN_NOT_FOUND:
             err = "No such frozen object named %R";
             break;
@@ -1202,11 +1204,13 @@ set_frozen_error(frozen_status status, PyObject *modname)
             Py_UNREACHABLE();
     }
     if (err != NULL) {
+        PyObject *type, *value, *traceback;
+        PyErr_Fetch(&type, &value, &traceback);
         PyObject *msg = PyUnicode_FromFormat(err, modname);
         if (msg == NULL) {
             PyErr_Clear();
         }
-        PyErr_SetImportError(msg, modname, NULL);
+        PyErr_SetImportError(msg, modname, traceback);
         Py_XDECREF(msg);
     }
 }
@@ -1281,11 +1285,6 @@ find_frozen(PyObject *nameobj, struct frozen_info *info)
     }
     const char *name = PyUnicode_AsUTF8(nameobj);
     if (name == NULL) {
-        // Note that this function previously used
-        // _PyUnicode_EqualToASCIIString().  We clear the error here
-        // (instead of propagating it) to match the earlier behavior
-        // more closely.
-        PyErr_Clear();
         return FROZEN_BAD_NAME;
     }
 
@@ -1358,10 +1357,12 @@ PyImport_ImportFrozenModuleObject(PyObject *name)
     if (status == FROZEN_NOT_FOUND || status == FROZEN_DISABLED) {
         return 0;
     }
-    else if (status == FROZEN_BAD_NAME) {
-        return 0;
-    }
     else if (status != FROZEN_OKAY) {
+        /* FYI, FROZEN_BAD_NAME used to be treated like FROZEN_NOT_FOUND.
+            See bpo-45379. */
+        if (name == NULL) {
+            name = Py_None;
+        }
         set_frozen_error(status, name);
         return -1;
     }
@@ -2153,7 +2154,8 @@ _imp_find_frozen_impl(PyObject *module, PyObject *name, int withdata)
         Py_RETURN_NONE;
     }
     else if (status == FROZEN_BAD_NAME) {
-        Py_RETURN_NONE;
+        set_frozen_error(status, name);
+        return NULL;
     }
     else if (status != FROZEN_OKAY) {
         set_frozen_error(status, name);
