@@ -332,7 +332,7 @@ unicodedata
 fcntl
 -----
 
-* On FreeBSD, the `F_DUP2FD` and `F_DUP2FD_CLOEXEC` flags respectively
+* On FreeBSD, the :attr:`F_DUP2FD` and :attr:`F_DUP2FD_CLOEXEC` flags respectively
   are supported, the former equals to ``dup2`` usage while the latter set
   the ``FD_CLOEXEC`` flag in addition.
 
