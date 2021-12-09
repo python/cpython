@@ -985,9 +985,13 @@ is_error(double x)
          * On some platforms (Ubuntu/ia64) it seems that errno can be
          * set to ERANGE for subnormal results that do *not* underflow
          * to zero.  So to be safe, we'll ignore ERANGE whenever the
-         * function result is less than one in absolute value.
+         * function result is less than 1.5 in absolute value.
+         *
+         * bpo-46018: Changed to 1.5 to ensure underflows in expm1()
+         * are correctly detected, since the function may underflow
+         * toward -1.0 rather than 0.0.
          */
-        if (fabs(x) < 1.0)
+        if (fabs(x) < 1.5)
             result = 0;
         else
             PyErr_SetString(PyExc_OverflowError,
@@ -1032,7 +1036,7 @@ is_error(double x)
 static PyObject *
 math_1_to_whatever(PyObject *arg, double (*func) (double),
                    PyObject *(*from_double_func) (double),
-                   int can_overflow, int underflow_to_neg_one)
+                   int can_overflow)
 {
     double x, r;
     x = PyFloat_AsDouble(arg);
@@ -1054,16 +1058,9 @@ math_1_to_whatever(PyObject *arg, double (*func) (double),
                             "math domain error"); /* singularity */
         return NULL;
     }
-    if (Py_IS_FINITE(r) && errno) {
+    if (Py_IS_FINITE(r) && errno && is_error(r))
         /* this branch unnecessary on most platforms */
-        if (!underflow_to_neg_one) {
-            if (is_error(r)) {
-                return NULL;
-            }
-        } else if (is_error(r + 1.0)) {
-            return NULL;
-        }
-    }
+        return NULL;
 
     return (*from_double_func)(r);
 }
@@ -1116,7 +1113,7 @@ math_1a(PyObject *arg, double (*func) (double))
 static PyObject *
 math_1(PyObject *arg, double (*func) (double), int can_overflow)
 {
-    return math_1_to_whatever(arg, func, PyFloat_FromDouble, can_overflow, 0);
+    return math_1_to_whatever(arg, func, PyFloat_FromDouble, can_overflow);
 }
 
 static PyObject *
@@ -1258,18 +1255,11 @@ FUNC1(exp, exp, 1,
 FUNC1(exp2, exp2, 1,
       "exp2($module, x, /)\n--\n\n"
       "Return 2 raised to the power of x.")
-
-static PyObject * math_expm1(PyObject *Py_UNUSED(self), PyObject *arg) {
-    return math_1_to_whatever(arg, expm1, PyFloat_FromDouble, 1, 1);
-}
-
-PyDoc_STRVAR(math_expm1_doc,
-    "expm1($module, x, /)\n--\n\n"
-    "Return exp(x)-1.\n\n"
-    "This function avoids the loss of precision involved in the direct "
-    "evaluation of exp(x)-1 for small x.");
-
-
+FUNC1(expm1, expm1, 1,
+      "expm1($module, x, /)\n--\n\n"
+      "Return exp(x)-1.\n\n"
+      "This function avoids the loss of precision involved in the direct "
+      "evaluation of exp(x)-1 for small x.")
 FUNC1(fabs, fabs, 0,
       "fabs($module, x, /)\n--\n\n"
       "Return the absolute value of the float x.")
