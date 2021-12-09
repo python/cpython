@@ -13,6 +13,7 @@ extern "C" {
 #include "pycore_floatobject.h"   // struct _Py_float_state
 #include "pycore_gil.h"           // struct _gil_runtime_state
 #include "pycore_gc.h"            // struct _gc_runtime_state
+#include "pycore_tuple.h"         // struct _Py_tuple_state
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
 #include "pycore_warnings.h"      // struct _warnings_runtime_state
 
@@ -53,34 +54,11 @@ struct _Py_bytes_state {
 
 #ifndef WITH_FREELISTS
 // without freelists
-// for tuples only store empty tuple singleton
-#  define PyTuple_MAXSAVESIZE 1
-#  define PyTuple_MAXFREELIST 1
 #  define PyList_MAXFREELIST 0
 #  define PyDict_MAXFREELIST 0
 #  define _PyAsyncGen_MAXFREELIST 0
 #  define PyContext_MAXFREELIST 0
 #endif
-
-/* Speed optimization to avoid frequent malloc/free of small tuples */
-#ifndef PyTuple_MAXSAVESIZE
-   // Largest tuple to save on free list
-#  define PyTuple_MAXSAVESIZE 20
-#endif
-#ifndef PyTuple_MAXFREELIST
-   // Maximum number of tuples of each size to save
-#  define PyTuple_MAXFREELIST 2000
-#endif
-
-struct _Py_tuple_state {
-#if PyTuple_MAXSAVESIZE > 0
-    /* Entries 1 up to PyTuple_MAXSAVESIZE are free lists,
-       entry 0 is the empty tuple () of which at most one instance
-       will be allocated. */
-    PyTupleObject *free_list[PyTuple_MAXSAVESIZE];
-    int numfree[PyTuple_MAXSAVESIZE];
-#endif
-};
 
 /* Empty list reuse scheme to save calls to malloc and free */
 #ifndef PyList_MAXFREELIST
