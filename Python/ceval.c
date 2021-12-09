@@ -4924,6 +4924,98 @@ check_eval_breaker:
             DISPATCH();
         }
 
+        TARGET(CALL_NO_KW_LIST_APPEND) {
+            assert(_Py_OPCODE(next_instr[-2]) == PRECALL_METHOD);
+            assert(GET_CACHE()->adaptive.original_oparg == 1);
+            DEOPT_IF(extra_args == 0, CALL_NO_KW);
+            PyObject *list = SECOND();
+            DEOPT_IF(!PyList_CheckExact(list), CALL_NO_KW);
+            STAT_INC(CALL_NO_KW, hit);
+            assert(extra_args == 1);
+            extra_args = 0;
+            assert(postcall_shrink == 1);
+            PyObject *arg = TOP();
+            int err = PyList_Append(list, arg);
+            if (err) {
+                goto error;
+            }
+            PyObject *callable = THIRD();
+            Py_DECREF(arg);
+            Py_DECREF(list);
+            Py_INCREF(Py_None);
+            STACK_SHRINK(2);
+            SET_TOP(Py_None);
+            Py_DECREF(callable);
+            DISPATCH();
+        }
+
+        TARGET(CALL_NO_KW_METHOD_DESCRIPTOR_O) {
+            assert(_Py_OPCODE(next_instr[-2]) == PRECALL_METHOD);
+            SpecializedCacheEntry *caches = GET_CACHE();
+            assert(caches[0].adaptive.original_oparg == 1);
+            DEOPT_IF(extra_args == 0, CALL_NO_KW);
+            assert(extra_args == 1);
+            PyObject *callable = THIRD();
+            DEOPT_IF(!Py_IS_TYPE(callable, &PyMethodDescr_Type), CALL_NO_KW);
+            DEOPT_IF(((PyMethodDescrObject *)callable)->d_method->ml_flags != METH_O, CALL_NO_KW);
+            assert(postcall_shrink == 1);
+            STAT_INC(CALL_NO_KW, hit);
+            assert(extra_args == 1);
+            extra_args = 0;
+            PyCFunction cfunc = ((PyMethodDescrObject *)callable)->d_method->ml_meth;
+            // This is slower but CPython promises to check all non-vectorcall
+            // function calls.
+            if (_Py_EnterRecursiveCall(tstate, " while calling a Python object")) {
+                goto error;
+            }
+            PyObject *arg = POP();
+            PyObject *self = POP();
+            PyObject *res = cfunc(self, arg);
+            _Py_LeaveRecursiveCall(tstate);
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+            Py_DECREF(self);
+            Py_DECREF(arg);
+            SET_TOP(res);
+            Py_DECREF(callable);
+            if (res == NULL) {
+                goto error;
+            }
+            DISPATCH();
+        }
+
+        TARGET(CALL_NO_KW_METHOD_DESCRIPTOR_FAST) {
+            assert(_Py_OPCODE(next_instr[-2]) == PRECALL_METHOD);
+            /* Builtin METH_FASTCALL methods, without keywords */
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            DEOPT_IF(extra_args == 0, CALL_NO_KW);
+            assert(extra_args == 1);
+            int nargs = cache0->original_oparg;
+            PyObject *callable = PEEK(nargs + 2);
+            DEOPT_IF(!Py_IS_TYPE(callable, &PyMethodDescr_Type),  CALL_NO_KW);
+            PyMethodDef *meth = ((PyMethodDescrObject *)callable)->d_method;
+            DEOPT_IF(meth->ml_flags != METH_FASTCALL, CALL_NO_KW);
+            assert(postcall_shrink == 1);
+            STAT_INC(CALL_NO_KW, hit);
+            assert(extra_args == 1);
+            extra_args = 0;
+            _PyCFunctionFast cfunc = (_PyCFunctionFast)(void(*)(void))meth->ml_meth;
+            PyObject *self = PEEK(nargs+1);
+            PyObject *res = cfunc(self, &PEEK(nargs), nargs);
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+            /* Clear the stack of the arguments. */
+            STACK_SHRINK(nargs+1);
+            for (int i = 0; i <= nargs; i++) {
+                Py_DECREF(stack_pointer[i]);
+            }
+            SET_TOP(res);
+            Py_DECREF(callable);
+            if (res == NULL) {
+                goto error;
+            }
+            DISPATCH();
+        }
+
         TARGET(CALL_FUNCTION_EX) {
             PREDICTED(CALL_FUNCTION_EX);
             PyObject *func, *callargs, *kwargs = NULL, *result;
