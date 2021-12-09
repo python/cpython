@@ -5845,15 +5845,13 @@ _PyLong_InitGlobalObjects(PyInterpreterState *interp)
         return;
     }
 
-    if (small_ints[0].ob_base.ob_base.ob_refcnt == 0) {
-        for (Py_ssize_t i=0; i < _PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS; i++) {
-            sdigit ival = (sdigit)i - _PY_NSMALLNEGINTS;
-            int size = (ival < 0) ? -1 : ((ival == 0) ? 0 : 1);
-            small_ints[i].ob_base.ob_base.ob_refcnt = 1;
-            small_ints[i].ob_base.ob_base.ob_type = &PyLong_Type;
-            small_ints[i].ob_base.ob_size = size;
-            small_ints[i].ob_digit[0] = (digit)abs(ival);
-        }
+    for (Py_ssize_t i=0; i < _PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS; i++) {
+        sdigit ival = (sdigit)i - _PY_NSMALLNEGINTS;
+        int size = (ival < 0) ? -1 : ((ival == 0) ? 0 : 1);
+        small_ints[i].ob_base.ob_base.ob_refcnt = 1;
+        small_ints[i].ob_base.ob_base.ob_type = &PyLong_Type;
+        small_ints[i].ob_base.ob_size = size;
+        small_ints[i].ob_digit[0] = (digit)abs(ival);
     }
 }
 
