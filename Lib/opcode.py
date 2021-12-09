@@ -152,7 +152,7 @@ haslocal.append(126)
 
 def_op('GEN_START', 129)        # Kind of generator/coroutine
 def_op('RAISE_VARARGS', 130)    # Number of raise arguments (1, 2, or 3)
-def_op('CALL_FUNCTION', 131)    # #args
+
 def_op('MAKE_FUNCTION', 132)    # Flags
 def_op('BUILD_SLICE', 133)      # Number of items
 
@@ -167,7 +167,6 @@ hasfree.append(138)
 def_op('DELETE_DEREF', 139)
 hasfree.append(139)
 
-def_op('CALL_FUNCTION_KW', 141)  # #args + #kwargs
 def_op('CALL_FUNCTION_EX', 142)  # Flags
 
 def_op('EXTENDED_ARG', 144)
@@ -186,12 +185,11 @@ def_op('BUILD_CONST_KEY_MAP', 156)
 def_op('BUILD_STRING', 157)
 
 name_op('LOAD_METHOD', 160)
-def_op('CALL_METHOD', 161)
+
 def_op('LIST_EXTEND', 162)
 def_op('SET_UPDATE', 163)
 def_op('DICT_MERGE', 164)
 def_op('DICT_UPDATE', 165)
-def_op('CALL_METHOD_KW', 166)
 
 def_op('PRECALL_METHOD', 168)
 def_op('CALL_NO_KW', 169)

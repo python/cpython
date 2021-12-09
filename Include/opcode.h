@@ -85,7 +85,6 @@ extern "C" {
 #define DELETE_FAST                     126
 #define GEN_START                       129
 #define RAISE_VARARGS                   130
-#define CALL_FUNCTION                   131
 #define MAKE_FUNCTION                   132
 #define BUILD_SLICE                     133
 #define MAKE_CELL                       135
@@ -93,7 +92,6 @@ extern "C" {
 #define LOAD_DEREF                      137
 #define STORE_DEREF                     138
 #define DELETE_DEREF                    139
-#define CALL_FUNCTION_KW                141
 #define CALL_FUNCTION_EX                142
 #define EXTENDED_ARG                    144
 #define LIST_APPEND                     145
@@ -106,12 +104,10 @@ extern "C" {
 #define BUILD_CONST_KEY_MAP             156
 #define BUILD_STRING                    157
 #define LOAD_METHOD                     160
-#define CALL_METHOD                     161
 #define LIST_EXTEND                     162
 #define SET_UPDATE                      163
 #define DICT_MERGE                      164
 #define DICT_UPDATE                     165
-#define CALL_METHOD_KW                  166
 #define PRECALL_METHOD                  168
 #define CALL_NO_KW                      169
 #define CALL_KW                         170

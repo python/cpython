@@ -4210,7 +4210,7 @@ check_eval_breaker:
             if (iter == NULL)
                 goto error;
             PREDICT(FOR_ITER);
-            PREDICT(CALL_FUNCTION);
+            PREDICT(CALL_NO_KW);
             DISPATCH();
         }
 
@@ -4552,41 +4552,6 @@ check_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(CALL_METHOD) {
-            /* Designed to work in tamdem with LOAD_METHOD. */
-            /* `meth` is NULL when LOAD_METHOD thinks that it's not
-                a method call.
-
-                Stack layout:
-
-                       ... | NULL | callable | arg1 | ... | argN
-                                                            ^- TOP()
-                                               ^- (-oparg)
-                                    ^- (-oparg-1)
-                             ^- (-oparg-2)
-
-                `callable` will be POPed by call_function.
-                NULL will will be POPed manually later.
-                If `meth` isn't NULL, it's a method call.  Stack layout:
-
-                     ... | method | self | arg1 | ... | argN
-                                                        ^- TOP()
-                                           ^- (-oparg)
-                                    ^- (-oparg-1)
-                           ^- (-oparg-2)
-
-               `self` and `method` will be POPed by call_function.
-               We'll be passing `oparg + 1` to call_function, to
-               make it accept the `self` as a first argument.
-            */
-            int is_method = (PEEK(oparg + 2) != NULL);
-            oparg += is_method;
-            nargs = oparg;
-            kwnames = NULL;
-            postcall_shrink = 2-is_method;
-            goto call_function;
-        }
-
         TARGET(PRECALL_METHOD) {
             /* Designed to work in tamdem with LOAD_METHOD. */
             /* `meth` is NULL when LOAD_METHOD thinks that it's not
@@ -4620,15 +4585,6 @@ check_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(CALL_NO_KW) {
-            PREDICTED(CALL_NO_KW);
-            kwnames = NULL;
-            oparg += extra_args;
-            extra_args = 0;
-            nargs = oparg;
-            goto call_function;
-        }
-
         TARGET(CALL_KW) {
             kwnames = POP();
             oparg += extra_args;
@@ -4637,31 +4593,14 @@ check_eval_breaker:
             goto call_function;
         }
 
-        TARGET(CALL_METHOD_KW) {
-            /* Designed to work in tandem with LOAD_METHOD. Same as CALL_METHOD
-            but pops TOS to get a tuple of keyword names. */
-            kwnames = POP();
-            int is_method = (PEEK(oparg + 2) != NULL);
-            oparg += is_method;
-            nargs = oparg - (int)PyTuple_GET_SIZE(kwnames);
-            postcall_shrink = 2-is_method;
-            goto call_function;
-        }
-
-        TARGET(CALL_FUNCTION_KW) {
-            kwnames = POP();
-            nargs = oparg - (int)PyTuple_GET_SIZE(kwnames);
-            postcall_shrink = 1;
-            goto call_function;
-        }
-
-        TARGET(CALL_FUNCTION) {
-            PREDICTED(CALL_FUNCTION);
-            STAT_INC(CALL_FUNCTION, unquickened);
+        TARGET(CALL_NO_KW) {
             PyObject *function;
-            nargs = oparg;
+            PREDICTED(CALL_NO_KW);
+            STAT_INC(CALL_NO_KW, unquickened);
             kwnames = NULL;
-            postcall_shrink = 1;
+            oparg += extra_args;
+            extra_args = 0;
+            nargs = oparg;
         call_function:
             function = PEEK(oparg + 1);
             if (Py_TYPE(function) == &PyMethod_Type) {

@@ -1156,14 +1156,6 @@ stack_effect(int opcode, int oparg, int jump)
             return -oparg;
         case CALL_KW:
             return -oparg-1;
-        case CALL_FUNCTION:
-            return -oparg;
-        case CALL_METHOD:
-            return -oparg-1;
-        case CALL_METHOD_KW:
-            return -oparg-2;
-        case CALL_FUNCTION_KW:
-            return -oparg-1;
         case CALL_FUNCTION_EX:
             return -1 - ((oparg & 0x01) != 0);
         case MAKE_FUNCTION:
