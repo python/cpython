@@ -1,5 +1,5 @@
 #include "Python.h"
-
+#include "pycore_call.h"          // _PyObject_VectorcallTstate()
 #include "pycore_context.h"
 #include "pycore_gc.h"            // _PyObject_GC_MAY_BE_TRACKED()
 #include "pycore_hamt.h"
@@ -7,9 +7,6 @@
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "structmember.h"         // PyMemberDef
-
-
-#define CONTEXT_FREELIST_MAXLEN 255
 
 
 #include "clinic/context.c.h"
@@ -66,12 +63,14 @@ static int
 contextvar_del(PyContextVar *var);
 
 
+#if PyContext_MAXFREELIST > 0
 static struct _Py_context_state *
 get_context_state(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     return &interp->context;
 }
+#endif
 
 
 PyObject *
@@ -340,8 +339,9 @@ class _contextvars.Context "PyContext *" "&PyContext_Type"
 static inline PyContext *
 _context_alloc(void)
 {
-    struct _Py_context_state *state = get_context_state();
     PyContext *ctx;
+#if PyContext_MAXFREELIST > 0
+    struct _Py_context_state *state = get_context_state();
 #ifdef Py_DEBUG
     // _context_alloc() must not be called after _PyContext_Fini()
     assert(state->numfree != -1);
@@ -353,7 +353,9 @@ _context_alloc(void)
         ctx->ctx_weakreflist = NULL;
         _Py_NewReference((PyObject *)ctx);
     }
-    else {
+    else
+#endif
+    {
         ctx = PyObject_GC_New(PyContext, &PyContext_Type);
         if (ctx == NULL) {
             return NULL;
@@ -469,17 +471,20 @@ context_tp_dealloc(PyContext *self)
     }
     (void)context_tp_clear(self);
 
+#if PyContext_MAXFREELIST > 0
     struct _Py_context_state *state = get_context_state();
 #ifdef Py_DEBUG
     // _context_alloc() must not be called after _PyContext_Fini()
     assert(state->numfree != -1);
 #endif
-    if (state->numfree < CONTEXT_FREELIST_MAXLEN) {
+    if (state->numfree < PyContext_MAXFREELIST) {
         state->numfree++;
         self->ctx_weakreflist = (PyObject *)state->freelist;
         state->freelist = self;
     }
-    else {
+    else
+#endif
+    {
         Py_TYPE(self)->tp_free(self);
     }
 }
@@ -728,7 +733,7 @@ static int
 contextvar_set(PyContextVar *var, PyObject *val)
 {
     var->var_cached = NULL;
-    PyThreadState *ts = PyThreadState_Get();
+    PyThreadState *ts = _PyThreadState_GET();
 
     PyContext *ctx = context_get();
     if (ctx == NULL) {
@@ -1289,6 +1294,7 @@ get_token_missing(void)
 void
 _PyContext_ClearFreeList(PyInterpreterState *interp)
 {
+#if PyContext_MAXFREELIST > 0
     struct _Py_context_state *state = &interp->context;
     for (; state->numfree; state->numfree--) {
         PyContext *ctx = state->freelist;
@@ -1296,6 +1302,7 @@ _PyContext_ClearFreeList(PyInterpreterState *interp)
         ctx->ctx_weakreflist = NULL;
         PyObject_GC_Del(ctx);
     }
+#endif
 }
 
 
@@ -1306,7 +1313,7 @@ _PyContext_Fini(PyInterpreterState *interp)
         Py_CLEAR(_token_missing);
     }
     _PyContext_ClearFreeList(interp);
-#ifdef Py_DEBUG
+#if defined(Py_DEBUG) && PyContext_MAXFREELIST > 0
     struct _Py_context_state *state = &interp->context;
     state->numfree = -1;
 #endif

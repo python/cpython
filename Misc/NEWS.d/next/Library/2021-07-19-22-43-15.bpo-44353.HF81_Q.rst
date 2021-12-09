@@ -1,2 +1,0 @@
-Refactor ``typing.NewType`` from function into callable class. Patch
-provided by Yurii Karabas.

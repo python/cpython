@@ -235,11 +235,18 @@ class _proto_member:
         enum_member._sort_order_ = len(enum_class._member_names_)
         # If another member with the same value was already defined, the
         # new member becomes an alias to the existing one.
-        for name, canonical_member in enum_class._member_map_.items():
-            if canonical_member._value_ == enum_member._value_:
-                enum_member = canonical_member
-                break
-        else:
+        try:
+            try:
+                # try to do a fast lookup to avoid the quadratic loop
+                enum_member = enum_class._value2member_map_[value]
+            except TypeError:
+                for name, canonical_member in enum_class._member_map_.items():
+                    if canonical_member._value_ == value:
+                        enum_member = canonical_member
+                        break
+                else:
+                    raise KeyError
+        except KeyError:
             # this could still be an alias if the value is multi-bit and the
             # class is a flag class
             if (
@@ -301,7 +308,7 @@ class _EnumDict(dict):
     """
     def __init__(self):
         super().__init__()
-        self._member_names = []
+        self._member_names = {} # use a dict to keep insertion order
         self._last_values = []
         self._ignore = []
         self._auto_called = False
@@ -365,7 +372,7 @@ class _EnumDict(dict):
                             )
                     self._auto_called = True
                 value = value.value
-            self._member_names.append(key)
+            self._member_names[key] = None
             self._last_values.append(value)
         super().__setitem__(key, value)
 
@@ -628,10 +635,60 @@ class EnumType(type):
         super().__delattr__(attr)
 
     def __dir__(self):
-        return (
-                ['__class__', '__doc__', '__members__', '__module__']
-                + self._member_names_
-                )
+        # Start off with the desired result for dir(Enum)
+        cls_dir = {'__class__', '__doc__', '__members__', '__module__'}
+        add_to_dir = cls_dir.add
+        mro = self.__mro__
+        this_module = globals().values()
+        is_from_this_module = lambda cls: any(cls is thing for thing in this_module)
+        first_enum_base = next(cls for cls in mro if is_from_this_module(cls))
+        enum_dict = Enum.__dict__
+        sentinel = object()
+        # special-case __new__
+        ignored = {'__new__', *filter(_is_sunder, enum_dict)}
+        add_to_ignored = ignored.add
+
+        # We want these added to __dir__
+        # if and only if they have been user-overridden
+        enum_dunders = set(filter(_is_dunder, enum_dict))
+
+        # special-case __new__
+        if self.__new__ is not first_enum_base.__new__:
+            add_to_dir('__new__')
+
+        for cls in mro:
+            # Ignore any classes defined in this module
+            if cls is object or is_from_this_module(cls):
+                continue
+
+            cls_lookup = cls.__dict__
+
+            # If not an instance of EnumType,
+            # ensure all attributes excluded from that class's `dir()` are ignored here.
+            if not isinstance(cls, EnumType):
+                cls_lookup = set(cls_lookup).intersection(dir(cls))
+
+            for attr_name in cls_lookup:
+                # Already seen it? Carry on
+                if attr_name in cls_dir or attr_name in ignored:
+                    continue
+                # Sunders defined in Enum.__dict__ are already in `ignored`,
+                # But sunders defined in a subclass won't be (we want all sunders excluded).
+                elif _is_sunder(attr_name):
+                    add_to_ignored(attr_name)
+                # Not an "enum dunder"? Add it to dir() output.
+                elif attr_name not in enum_dunders:
+                    add_to_dir(attr_name)
+                # Is an "enum dunder", and is defined by a class from enum.py? Ignore it.
+                elif getattr(self, attr_name) is getattr(first_enum_base, attr_name, sentinel):
+                    add_to_ignored(attr_name)
+                # Is an "enum dunder", and is either user-defined or defined by a mixin class?
+                # Add it to dir() output.
+                else:
+                    add_to_dir(attr_name)
+
+        # sort the output before returning it, so that the result is deterministic.
+        return sorted(cls_dir)
 
     def __getattr__(cls, name):
         """
@@ -978,13 +1035,10 @@ class Enum(metaclass=EnumType):
         """
         Returns all members and all public methods
         """
-        added_behavior = [
-                m
-                for cls in self.__class__.mro()
-                for m in cls.__dict__
-                if m[0] != '_' and m not in self._member_map_
-                ] + [m for m in self.__dict__ if m[0] != '_']
-        return (['__class__', '__doc__', '__module__'] + added_behavior)
+        cls = type(self)
+        to_exclude = {'__members__', '__init__', '__new__', *cls._member_names_}
+        filtered_self_dict = (name for name in self.__dict__ if not name.startswith('_'))
+        return sorted({'name', 'value', *dir(cls), *filtered_self_dict} - to_exclude)
 
     def __format__(self, format_spec):
         """

@@ -229,7 +229,7 @@ class InitVar:
         self.type = type
 
     def __repr__(self):
-        if isinstance(self.type, type):
+        if isinstance(self.type, type) and not isinstance(self.type, GenericAlias):
             type_name = self.type.__name__
         else:
             # typing objects, e.g. List[int]
@@ -447,7 +447,7 @@ def _field_assign(frozen, name, value, self_name):
     return f'{self_name}.{name}={value}'
 
 
-def _field_init(f, frozen, globals, self_name):
+def _field_init(f, frozen, globals, self_name, slots):
     # Return the text of the line in the body of __init__ that will
     # initialize this field.
 
@@ -487,9 +487,15 @@ def _field_init(f, frozen, globals, self_name):
                 globals[default_name] = f.default
                 value = f.name
         else:
-            # This field does not need initialization.  Signify that
-            # to the caller by returning None.
-            return None
+            # If the class has slots, then initialize this field.
+            if slots and f.default is not MISSING:
+                globals[default_name] = f.default
+                value = default_name
+            else:
+                # This field does not need initialization: reading from it will
+                # just use the class attribute that contains the default.
+                # Signify that to the caller by returning None.
+                return None
 
     # Only test this now, so that we can create variables for the
     # default.  However, return None to signify that we're not going
@@ -521,7 +527,7 @@ def _init_param(f):
 
 
 def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
-             self_name, globals):
+             self_name, globals, slots):
     # fields contains both real fields and InitVar pseudo-fields.
 
     # Make sure we don't have fields without defaults following fields
@@ -548,7 +554,7 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
 
     body_lines = []
     for f in fields:
-        line = _field_init(f, frozen, locals, self_name)
+        line = _field_init(f, frozen, locals, self_name, slots)
         # line is None means that this field doesn't require
         # initialization (it's a pseudo-field).  Just skip it.
         if line:
@@ -1027,6 +1033,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                                     '__dataclass_self__' if 'self' in fields
                                             else 'self',
                                     globals,
+                                    slots,
                           ))
 
     # Get the fields as a list, and include only real fields.  This is
@@ -1204,7 +1211,7 @@ def _is_dataclass_instance(obj):
 def is_dataclass(obj):
     """Returns True if obj is a dataclass or an instance of a
     dataclass."""
-    cls = obj if isinstance(obj, type) else type(obj)
+    cls = obj if isinstance(obj, type) and not isinstance(obj, GenericAlias) else type(obj)
     return hasattr(cls, _FIELDS)
 
 
@@ -1326,7 +1333,7 @@ def _astuple_inner(obj, tuple_factory):
 
 def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
                    repr=True, eq=True, order=False, unsafe_hash=False,
-                   frozen=False, match_args=True, slots=False):
+                   frozen=False, match_args=True, kw_only=False, slots=False):
     """Return a new dynamically created dataclass.
 
     The dataclass name will be 'cls_name'.  'fields' is an iterable
@@ -1387,13 +1394,13 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
         ns['__annotations__'] = annotations
 
     # We use `types.new_class()` instead of simply `type()` to allow dynamic creation
-    # of generic dataclassses.
+    # of generic dataclasses.
     cls = types.new_class(cls_name, bases, {}, exec_body_callback)
 
     # Apply the normal decorator.
     return dataclass(cls, init=init, repr=repr, eq=eq, order=order,
                      unsafe_hash=unsafe_hash, frozen=frozen,
-                     match_args=match_args, slots=slots)
+                     match_args=match_args, kw_only=kw_only, slots=slots)
 
 
 def replace(obj, /, **changes):

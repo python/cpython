@@ -1,1 +1,0 @@
-Change :func:`dis.dis` output to omit op arg values that cannot be resolved due to ``co_consts``, ``co_names`` etc not being provided. Previously the oparg itself was repeated in the value field, which is not useful and can be confusing.

@@ -704,10 +704,8 @@ static PyObject *
 _operator_is__impl(PyObject *module, PyObject *a, PyObject *b)
 /*[clinic end generated code: output=bcd47a402e482e1d input=5fa9b97df03c427f]*/
 {
-    PyObject *result;
-    result = (a == b) ? Py_True : Py_False;
-    Py_INCREF(result);
-    return result;
+    PyObject *result = Py_Is(a, b) ? Py_True : Py_False;
+    return Py_NewRef(result);
 }
 
 /*[clinic input]

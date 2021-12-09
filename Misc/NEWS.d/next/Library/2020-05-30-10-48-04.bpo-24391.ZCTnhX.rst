@@ -1,3 +1,0 @@
-Improved reprs of :mod:`threading` synchronization objects:
-:class:`~threading.Semaphore`, :class:`~threading.BoundedSemaphore`,
-:class:`~threading.Event` and :class:`~threading.Barrier`.

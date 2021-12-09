@@ -1,4 +1,4 @@
-#include "pycore_interp.h"    // _PyInterpreterState.pythread_stacksize
+#include "pycore_interp.h"    // _PyInterpreterState.threads.stacksize
 
 /* This code implemented by Dag.Gruneau@elsa.preseco.comm.se */
 /* Fast NonRecursiveMutex support by Yakov Markovitch, markovitch@iso.ru */
@@ -75,20 +75,20 @@ EnterNonRecursiveMutex(PNRMUTEX mutex, DWORD milliseconds)
             }
         }
     } else if (milliseconds != 0) {
-        /* wait at least until the target */
-        _PyTime_t now = _PyTime_GetPerfCounter();
+        /* wait at least until the deadline */
         _PyTime_t nanoseconds = _PyTime_FromNanoseconds((_PyTime_t)milliseconds * 1000000);
-        _PyTime_t target = now + nanoseconds;
+        _PyTime_t deadline = _PyTime_Add(_PyTime_GetPerfCounter(), nanoseconds);
         while (mutex->locked) {
-            _PyTime_t microseconds = _PyTime_AsMicroseconds(nanoseconds, _PyTime_ROUND_TIMEOUT);
+            _PyTime_t microseconds = _PyTime_AsMicroseconds(nanoseconds,
+                                                            _PyTime_ROUND_TIMEOUT);
             if (PyCOND_TIMEDWAIT(&mutex->cv, &mutex->cs, microseconds) < 0) {
                 result = WAIT_FAILED;
                 break;
             }
-            now = _PyTime_GetPerfCounter();
-            if (target <= now)
+            nanoseconds = deadline - _PyTime_GetPerfCounter();
+            if (nanoseconds <= 0) {
                 break;
-            nanoseconds = target - now;
+            }
         }
     }
     if (!mutex->locked) {
@@ -199,7 +199,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
     obj->func = func;
     obj->arg = arg;
     PyThreadState *tstate = _PyThreadState_GET();
-    size_t stacksize = tstate ? tstate->interp->pythread_stacksize : 0;
+    size_t stacksize = tstate ? tstate->interp->threads.stacksize : 0;
     hThread = (HANDLE)_beginthreadex(0,
                       Py_SAFE_DOWNCAST(stacksize, Py_ssize_t, unsigned int),
                       bootstrap, obj,
@@ -292,6 +292,11 @@ PyThread_free_lock(PyThread_type_lock aLock)
     FreeNonRecursiveMutex(aLock) ;
 }
 
+// WaitForSingleObject() accepts timeout in milliseconds in the range
+// [0; 0xFFFFFFFE] (DWORD type). INFINITE value (0xFFFFFFFF) means no
+// timeout. 0xFFFFFFFE milliseconds is around 49.7 days.
+const DWORD TIMEOUT_MS_MAX = 0xFFFFFFFE;
+
 /*
  * Return 1 on success if the lock was acquired
  *
@@ -309,11 +314,20 @@ PyThread_acquire_lock_timed(PyThread_type_lock aLock,
 
     if (microseconds >= 0) {
         milliseconds = microseconds / 1000;
-        if (microseconds % 1000 > 0)
-            ++milliseconds;
-        if (milliseconds > PY_DWORD_MAX) {
-            Py_FatalError("Timeout larger than PY_TIMEOUT_MAX");
+        // Round milliseconds away from zero
+        if (microseconds % 1000 > 0) {
+            milliseconds++;
         }
+        if (milliseconds > (PY_TIMEOUT_T)TIMEOUT_MS_MAX) {
+            // bpo-41710: PyThread_acquire_lock_timed() cannot report timeout
+            // overflow to the caller, so clamp the timeout to
+            // [0, TIMEOUT_MS_MAX] milliseconds.
+            //
+            // _thread.Lock.acquire() and _thread.RLock.acquire() raise an
+            // OverflowError if microseconds is greater than PY_TIMEOUT_MAX.
+            milliseconds = TIMEOUT_MS_MAX;
+        }
+        assert(milliseconds != INFINITE);
     }
     else {
         milliseconds = INFINITE;
@@ -362,13 +376,13 @@ _pythread_nt_set_stacksize(size_t size)
 {
     /* set to default */
     if (size == 0) {
-        _PyInterpreterState_GET()->pythread_stacksize = 0;
+        _PyInterpreterState_GET()->threads.stacksize = 0;
         return 0;
     }
 
     /* valid range? */
     if (size >= THREAD_MIN_STACKSIZE && size < THREAD_MAX_STACKSIZE) {
-        _PyInterpreterState_GET()->pythread_stacksize = size;
+        _PyInterpreterState_GET()->threads.stacksize = size;
         return 0;
     }
 

@@ -2,7 +2,9 @@ BaseException
  ├── SystemExit
  ├── KeyboardInterrupt
  ├── GeneratorExit
+ ├── BaseExceptionGroup
  └── Exception
+      ├── ExceptionGroup [BaseExceptionGroup]
       ├── StopIteration
       ├── StopAsyncIteration
       ├── ArithmeticError

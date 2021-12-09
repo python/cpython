@@ -1572,7 +1572,7 @@ def _shutdown():
             break
 
         for lock in locks:
-            # mimick Thread.join()
+            # mimic Thread.join()
             lock.acquire()
             lock.release()
 

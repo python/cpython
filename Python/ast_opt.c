@@ -618,7 +618,6 @@ fold_compare(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 
     ops = node->v.Compare.ops;
     args = node->v.Compare.comparators;
-    /* TODO: optimize cases with literal arguments. */
     /* Change literal list or set in 'in' or 'not in' into
        tuple or frozenset respectively. */
     i = asdl_seq_LEN(ops) - 1;
@@ -1098,8 +1097,9 @@ _PyAST_Optimize(mod_ty mod, PyArena *arena, _PyASTOptimizeState *state)
         return 0;
     }
     /* Be careful here to prevent overflow. */
-    starting_recursion_depth = (tstate->recursion_depth < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
-        tstate->recursion_depth * COMPILER_STACK_FRAME_SCALE : tstate->recursion_depth;
+    int recursion_depth = tstate->recursion_limit - tstate->recursion_remaining;
+    starting_recursion_depth = (recursion_depth < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
+        recursion_depth * COMPILER_STACK_FRAME_SCALE : recursion_depth;
     state->recursion_depth = starting_recursion_depth;
     state->recursion_limit = (recursion_limit < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
         recursion_limit * COMPILER_STACK_FRAME_SCALE : recursion_limit;

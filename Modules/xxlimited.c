@@ -1,4 +1,3 @@
-
 /* Use this file as a template to start implementing a module that
    also declares object types. All occurrences of 'Xxo' should be changed
    to something reasonable for your objects. After that, all other
@@ -55,7 +54,7 @@
           pass
    */
 
-#define Py_LIMITED_API 0x030a0000
+#define Py_LIMITED_API 0x030b0000
 
 #include "Python.h"
 

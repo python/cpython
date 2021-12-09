@@ -1,1 +1,0 @@
-Fix 16 milliseconds jitter when using timeouts in :mod:`threading`, such as with :meth:`threading.Lock.acquire` or :meth:`threading.Condition.wait`.

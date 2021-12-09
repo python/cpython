@@ -62,7 +62,7 @@ if sys.platform == 'darwin':
 
 C = import_fresh_module('decimal', fresh=['_decimal'])
 P = import_fresh_module('decimal', blocked=['_decimal'])
-orig_sys_decimal = sys.modules['decimal']
+import decimal as orig_sys_decimal
 
 # fractions module must import the correct decimal module.
 cfractions = import_fresh_module('fractions', fresh=['fractions'])

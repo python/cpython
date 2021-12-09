@@ -21,6 +21,9 @@ IGNORE = {
     # Test modules and packages
     '__hello__',
     '__phello__',
+    '__hello_alias__',
+    '__phello_alias__',
+    '__hello_only__',
     '_ctypes_test',
     '_testbuffer',
     '_testcapi',
@@ -51,6 +54,10 @@ WINDOWS_MODULES = (
     'winsound'
 )
 
+# macOS extension modules
+MACOS_MODULES = (
+    '_scproxy',
+)
 
 # Pure Python modules (Lib/*.py)
 def list_python_modules(names):
@@ -133,7 +140,7 @@ def list_frozen(names):
 
 
 def list_modules():
-    names = set(sys.builtin_module_names) | set(WINDOWS_MODULES)
+    names = set(sys.builtin_module_names) | set(WINDOWS_MODULES) | set(MACOS_MODULES)
     list_modules_setup_extensions(names)
     list_setup_extensions(names)
     list_packages(names)

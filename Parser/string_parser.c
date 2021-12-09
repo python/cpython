@@ -115,7 +115,7 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
     s = buf;
 
     const char *first_invalid_escape;
-    v = _PyUnicode_DecodeUnicodeEscape(s, len, NULL, &first_invalid_escape);
+    v = _PyUnicode_DecodeUnicodeEscapeInternal(s, len, NULL, NULL, &first_invalid_escape);
 
     if (v != NULL && first_invalid_escape != NULL) {
         if (warn_invalid_escape_sequence(parser, *first_invalid_escape, t) < 0) {
@@ -386,7 +386,7 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
     str[0] = '(';
     str[len+1] = ')';
 
-    struct tok_state* tok = PyTokenizer_FromString(str, 1);
+    struct tok_state* tok = _PyTokenizer_FromString(str, 1);
     if (tok == NULL) {
         PyMem_Free(str);
         return NULL;
@@ -409,7 +409,7 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
 exit:
     PyMem_Free(str);
     _PyPegen_Parser_Free(p2);
-    PyTokenizer_Free(tok);
+    _PyTokenizer_Free(tok);
     return result;
 }
 

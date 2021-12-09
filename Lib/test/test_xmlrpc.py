@@ -561,7 +561,7 @@ class DateTimeTestCase(unittest.TestCase):
 
 class BinaryTestCase(unittest.TestCase):
 
-    # XXX What should str(Binary(b"\xff")) return?  I'm chosing "\xff"
+    # XXX What should str(Binary(b"\xff")) return?  I'm choosing "\xff"
     # for now (i.e. interpreting the binary data as Latin-1-encoded
     # text).  But this feels very unsatisfactory.  Perhaps we should
     # only define repr(), and return r"Binary(b'\xff')" instead?

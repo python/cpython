@@ -256,6 +256,14 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       with :const:`ACCESS_READ` or :const:`ACCESS_COPY`, resizing the map will
       raise a :exc:`TypeError` exception.
 
+      **On Windows**: Resizing the map will raise an :exc:`OSError` if there are other
+      maps against the same named file. Resizing an anonymous map (ie against the
+      pagefile) will silently create a new map with the original data copied over
+      up to the length of the new size.
+
+      .. versionchanged:: 3.11
+         Correctly fails if attempting to resize when another map is held
+         Allows resize against an anonymous map on Windows
 
    .. method:: rfind(sub[, start[, end]])
 

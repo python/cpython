@@ -15,7 +15,7 @@
  * 2001-05-14 fl   fixes for 1.5.2 compatibility
  * 2001-07-01 fl   added BIGCHARSET support (from Martin von Loewis)
  * 2001-10-18 fl   fixed group reset issue (from Matthew Mueller)
- * 2001-10-20 fl   added split primitive; reenable unicode for 1.6/2.0/2.1
+ * 2001-10-20 fl   added split primitive; re-enable unicode for 1.6/2.0/2.1
  * 2001-10-21 fl   added sub/subn primitive
  * 2001-10-24 fl   added finditer primitive (for 2.2 only)
  * 2001-12-07 fl   fixed memory leak in sub/subn (Guido van Rossum)
