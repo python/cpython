@@ -1300,12 +1300,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_init_pybuilddir_win32(self):
         # Test path configuration with pybuilddir.txt configuration file
 
-        if os.path.basename(os.path.dirname(sys.executable)) == 'instrumented':
-            subdir = r'PCbuild\arch\instrumented'
-            vpath  = r'..\..\..'
-        else:
+        vpath = sysconfig.get_config_var("VPATH")
             subdir = r'PCbuild\arch'
-            vpath  = r'..\..'
+        if os.path.normpath(vpath).count(os.sep) == 2:
+            subdir = os.path.join(subdir, 'instrumented')
+
         with self.tmpdir_with_python(subdir) as tmpdir:
             # The prefix is dirname(executable) + VPATH
             prefix = os.path.normpath(os.path.join(tmpdir, vpath))
