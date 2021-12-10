@@ -1301,7 +1301,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         # Test path configuration with pybuilddir.txt configuration file
 
         vpath = sysconfig.get_config_var("VPATH")
-            subdir = r'PCbuild\arch'
+        subdir = r'PCbuild\arch'
         if os.path.normpath(vpath).count(os.sep) == 2:
             subdir = os.path.join(subdir, 'instrumented')
 
