@@ -6,6 +6,7 @@ import subprocess
 from test import support
 import unittest
 import unittest.test
+from .test_result import BufferedWriter
 
 
 class Test_TestProgram(unittest.TestCase):
@@ -104,30 +105,39 @@ class Test_TestProgram(unittest.TestCase):
                           program.testNames)
 
     def test_NonExit(self):
+        stream = BufferedWriter()
         program = unittest.main(exit=False,
                                 argv=["foobar"],
-                                testRunner=unittest.TextTestRunner(stream=io.StringIO()),
+                                testRunner=unittest.TextTestRunner(stream=stream),
                                 testLoader=self.FooBarLoader())
         self.assertTrue(hasattr(program, 'result'))
+        self.assertIn('\nFAIL: testFail ', stream.getvalue())
+        self.assertTrue(stream.getvalue().endswith('\n\nFAILED (failures=1)\n'))
 
 
     def test_Exit(self):
+        stream = BufferedWriter()
         self.assertRaises(
             SystemExit,
             unittest.main,
             argv=["foobar"],
-            testRunner=unittest.TextTestRunner(stream=io.StringIO()),
+            testRunner=unittest.TextTestRunner(stream=stream),
             exit=True,
             testLoader=self.FooBarLoader())
+        self.assertIn('\nFAIL: testFail ', stream.getvalue())
+        self.assertTrue(stream.getvalue().endswith('\n\nFAILED (failures=1)\n'))
 
 
     def test_ExitAsDefault(self):
+        stream = BufferedWriter()
         self.assertRaises(
             SystemExit,
             unittest.main,
             argv=["foobar"],
-            testRunner=unittest.TextTestRunner(stream=io.StringIO()),
+            testRunner=unittest.TextTestRunner(stream=stream),
             testLoader=self.FooBarLoader())
+        self.assertIn('\nFAIL: testFail ', stream.getvalue())
+        self.assertTrue(stream.getvalue().endswith('\n\nFAILED (failures=1)\n'))
 
 
 class InitialisableProgram(unittest.TestProgram):
