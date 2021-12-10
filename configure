@@ -1714,9 +1714,9 @@ Optional Features:
   --enable-optimizations  enable expensive, stable optimizations (PGO, etc.)
                           (default is no)
 
-    --enable-loadable-sqlite-extensions
+  --enable-loadable-sqlite-extensions
                           support loadable extensions in the sqlite3 module,
-                          see Doc/library/sqlite3.rst (default is no)
+                          see Doc/library/sqlite3.rst (default is no),
 
   --enable-ipv6           enable ipv6 (with ipv4) support, see
                           Doc/library/socket.rst (default is yes if supported)

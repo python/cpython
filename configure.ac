@@ -3375,10 +3375,10 @@ dnl hence CPPFLAGS instead of CFLAGS.
 dnl Check for support for loadable sqlite extensions
 AC_MSG_CHECKING([for --enable-loadable-sqlite-extensions])
 AC_ARG_ENABLE([loadable-sqlite-extensions], [
-  AS_HELP_STRING(
-    [--enable-loadable-sqlite-extensions],
-    [support loadable extensions in the sqlite3 module, see Doc/library/sqlite3.rst (default is no)]
-  )
+AS_HELP_STRING(
+  [--enable-loadable-sqlite-extensions],
+  [support loadable extensions in the sqlite3 module, see Doc/library/sqlite3.rst (default is no)]
+),
 ], [
   AS_VAR_IF([have_sqlite3_load_extension], [no], [
     AC_MSG_RESULT([n/a])
