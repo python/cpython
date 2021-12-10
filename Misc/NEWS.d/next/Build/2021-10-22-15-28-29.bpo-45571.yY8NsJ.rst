@@ -1,2 +1,0 @@
-``Modules/Setup`` now use ``PY_CFLAGS_NODIST`` instead of ``PY_CFLAGS`` to
-compile shared modules.

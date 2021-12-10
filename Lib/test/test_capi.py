@@ -635,6 +635,14 @@ class CAPITest(unittest.TestCase):
         s = _testcapi.pyobject_bytes_from_null()
         self.assertEqual(s, b'<NULL>')
 
+    def test_Py_CompileString(self):
+        # Check that Py_CompileString respects the coding cookie
+        _compile = _testcapi.Py_CompileString
+        code = b"# -*- coding: latin1 -*-\nprint('\xc2\xa4')\n"
+        result = _compile(code)
+        expected = compile(code, "<string>", "exec")
+        self.assertEqual(result.co_consts, expected.co_consts)
+
 
 class TestPendingCalls(unittest.TestCase):
 
@@ -831,6 +839,9 @@ class Test_testcapi(unittest.TestCase):
     @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_widechar(self):
         _testcapi.test_widechar()
+
+    def test_version_api_data(self):
+        self.assertEqual(_testcapi.Py_Version, sys.hexversion)
 
 
 class Test_testinternalcapi(unittest.TestCase):

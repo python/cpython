@@ -383,16 +383,16 @@ _PyFunction_Vectorcall(PyObject *func, PyObject* const* stack,
                        size_t nargsf, PyObject *kwnames)
 {
     assert(PyFunction_Check(func));
-    PyFrameConstructor *f = PyFunction_AS_FRAME_CONSTRUCTOR(func);
+    PyFunctionObject *f = (PyFunctionObject *)func;
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     assert(nargs >= 0);
     PyThreadState *tstate = _PyThreadState_GET();
     assert(nargs == 0 || stack != NULL);
-    if (((PyCodeObject *)f->fc_code)->co_flags & CO_OPTIMIZED) {
+    if (((PyCodeObject *)f->func_code)->co_flags & CO_OPTIMIZED) {
         return _PyEval_Vector(tstate, f, NULL, stack, nargs, kwnames);
     }
     else {
-        return _PyEval_Vector(tstate, f, f->fc_globals, stack, nargs, kwnames);
+        return _PyEval_Vector(tstate, f, f->func_globals, stack, nargs, kwnames);
     }
 }
 

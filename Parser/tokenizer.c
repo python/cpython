@@ -87,7 +87,7 @@ tok_new(void)
     tok->async_def_indent = 0;
     tok->async_def_nl = 0;
     tok->interactive_underflow = IUNDERFLOW_NORMAL;
-
+    tok->str = NULL;
     return tok;
 }
 
@@ -1047,9 +1047,9 @@ tok_nextc(struct tok_state *tok)
         }
 #if defined(Py_DEBUG)
         if (Py_DebugFlag) {
-            printf("line[%d] = ", tok->lineno);
-            print_escape(stdout, tok->cur, tok->inp - tok->cur);
-            printf("  tok->done = %d\n", tok->done);
+            fprintf(stderr, "line[%d] = ", tok->lineno);
+            print_escape(stderr, tok->cur, tok->inp - tok->cur);
+            fprintf(stderr, "  tok->done = %d\n", tok->done);
         }
 #endif
         if (!rc) {
@@ -1970,7 +1970,6 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
         c = tok_nextc(tok);
         if (c != '\n') {
             tok->done = E_LINECONT;
-            tok->cur = tok->inp;
             return ERRORTOKEN;
         }
         c = tok_nextc(tok);
@@ -2044,6 +2043,12 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
             }
         }
         break;
+    }
+
+    if (!Py_UNICODE_ISPRINTABLE(c)) {
+        char hex[9];
+        (void)PyOS_snprintf(hex, sizeof(hex), "%04X", c);
+        return syntaxerror(tok, "invalid non-printable character U+%s", hex);
     }
 
     /* Punctuation character */
@@ -2127,8 +2132,8 @@ _PyTokenizer_FindEncodingFilename(int fd, PyObject *filename)
 void
 tok_dump(int type, char *start, char *end)
 {
-    printf("%s", _PyParser_TokenNames[type]);
+    fprintf(stderr, "%s", _PyParser_TokenNames[type]);
     if (type == NAME || type == NUMBER || type == STRING || type == OP)
-        printf("(%.*s)", (int)(end - start), start);
+        fprintf(stderr, "(%.*s)", (int)(end - start), start);
 }
 #endif  // Py_DEBUG

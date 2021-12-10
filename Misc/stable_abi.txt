@@ -1577,9 +1577,6 @@ function _PyObject_CallFunction_SizeT
 function _PyObject_CallMethod_SizeT
     added 3.2
     abi_only
-function _PyObject_GC_Malloc
-    added 3.2
-    abi_only
 function _PyObject_GC_New
     added 3.2
     abi_only
@@ -2156,3 +2153,6 @@ data PyStructSequence_UnnamedField
 
 # (Detailed comments aren't really needed for further entries: from here on
 #  we can use version control logs.)
+
+data Py_Version
+    added 3.11
