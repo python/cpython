@@ -437,6 +437,10 @@ list_contains(PyListObject *a, PyObject *el)
 
     for (i = 0, cmp = 0 ; cmp == 0 && i < Py_SIZE(a); ++i) {
         item = PyList_GET_ITEM(a, i);
+        // Fast-path: avoid reference counting item
+        if (item == el) {
+            return 1;
+        }
         Py_INCREF(item);
         cmp = PyObject_RichCompareBool(item, el, Py_EQ);
         Py_DECREF(item);
@@ -2647,6 +2651,10 @@ list_index_impl(PyListObject *self, PyObject *value, Py_ssize_t start,
     }
     for (i = start; i < stop && i < Py_SIZE(self); i++) {
         PyObject *obj = self->ob_item[i];
+        // Fast-path: avoid reference counting obj
+        if (obj == value) {
+            return PyLong_FromSsize_t(i);
+        }
         Py_INCREF(obj);
         int cmp = PyObject_RichCompareBool(obj, value, Py_EQ);
         Py_DECREF(obj);
