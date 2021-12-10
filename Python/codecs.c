@@ -1421,8 +1421,9 @@ _set_encodings_path(PyObject *mod) {
         goto exit;
     }
     const PyConfig *config = _Py_GetConfig();
-    /* standard stdlib dir */
     if (config->stdlib_dir != NULL) {
+        // standard library directory
+
         // os.path.join(stdlib_dir, "encodings")
         wchar_t *encodings_dirw = _Py_join_relfile(
             config->stdlib_dir, L"encodings");
@@ -1438,9 +1439,8 @@ _set_encodings_path(PyObject *mod) {
         if (PyList_Append(path, encodings_dir) < 0) {
             goto exit;
         }
-    }
-    // Additional search paths, required for embedding
-    if (config->module_search_paths_set) {
+    } else if (config->module_search_paths_set) {
+        // No stdlib_dir, search module_search paths
         for (Py_ssize_t i = 0; i < config->module_search_paths.length; ++i) {
             wchar_t *encodings_dirw = _Py_join_relfile(
                 config->module_search_paths.items[i], L"encodings");
@@ -1470,14 +1470,15 @@ _set_encodings_path(PyObject *mod) {
             }
         }
     }
-    // set and override __path__
-    if (PyObject_SetAttrString(mod, "__path__", path) < 0) {
-        goto exit;
+    if (PyObject_IsTrue(path)) {
+        // set and override __path__
+        if (PyObject_SetAttrString(mod, "__path__", path) < 0) {
+            goto exit;
+        }
     }
     rc = 0;
   exit:
     Py_XDECREF(path);
-
     return rc;
 }
 
