@@ -1,0 +1,1 @@
+Parts of the :mod:`encodings` package is now frozen.

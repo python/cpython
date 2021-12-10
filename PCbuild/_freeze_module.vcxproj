@@ -272,6 +272,34 @@
       <DeepIntFile>$(IntDir)codecs.g.c</DeepIntFile>
       <DeepOutFile>$(PySourcePath)Python\deepfreeze\df.codecs.c</DeepOutFile>
     </None>
+    <None Include="..\Lib\encodings\__init__.py">
+      <ModName>encodings</ModName>
+      <IntFile>$(IntDir)encodings.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.h</OutFile>
+      <DeepIntFile>$(IntDir)encodings.g.c</DeepIntFile>
+      <DeepOutFile>$(PySourcePath)Python\deepfreeze\df.encodings.c</DeepOutFile>
+    </None>
+    <None Include="..\Lib\encodings\aliases.py">
+      <ModName>encodings.aliases</ModName>
+      <IntFile>$(IntDir)encodings.aliases.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.aliases.h</OutFile>
+      <DeepIntFile>$(IntDir)encodings.aliases.g.c</DeepIntFile>
+      <DeepOutFile>$(PySourcePath)Python\deepfreeze\df.encodings.aliases.c</DeepOutFile>
+    </None>
+    <None Include="..\Lib\encodings\ascii.py">
+      <ModName>encodings.ascii</ModName>
+      <IntFile>$(IntDir)encodings.ascii.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.ascii.h</OutFile>
+      <DeepIntFile>$(IntDir)encodings.ascii.g.c</DeepIntFile>
+      <DeepOutFile>$(PySourcePath)Python\deepfreeze\df.encodings.ascii.c</DeepOutFile>
+    </None>
+    <None Include="..\Lib\encodings\utf_8.py">
+      <ModName>encodings.utf_8</ModName>
+      <IntFile>$(IntDir)encodings.utf_8.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.utf_8.h</OutFile>
+      <DeepIntFile>$(IntDir)encodings.utf_8.g.c</DeepIntFile>
+      <DeepOutFile>$(PySourcePath)Python\deepfreeze\df.encodings.utf_8.c</DeepOutFile>
+    </None>
     <None Include="..\Lib\io.py">
       <ModName>io</ModName>
       <IntFile>$(IntDir)io.g.h</IntFile>

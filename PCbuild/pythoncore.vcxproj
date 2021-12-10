@@ -532,6 +532,10 @@
     <ClCompile Include="..\Python\deepfreeze\df.zipimport.c" />
     <ClCompile Include="..\Python\deepfreeze\df.abc.c" />
     <ClCompile Include="..\Python\deepfreeze\df.codecs.c" />
+    <ClCompile Include="..\Python\deepfreeze\df.encodings.c" />
+    <ClCompile Include="..\Python\deepfreeze\df.encodings.aliases.c" />
+    <ClCompile Include="..\Python\deepfreeze\df.encodings.ascii.c" />
+    <ClCompile Include="..\Python\deepfreeze\df.encodings.utf_8.c" />
     <ClCompile Include="..\Python\deepfreeze\df.io.c" />
     <ClCompile Include="..\Python\deepfreeze\df._collections_abc.c" />
     <ClCompile Include="..\Python\deepfreeze\df._sitebuiltins.c" />

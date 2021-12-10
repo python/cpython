@@ -13,6 +13,7 @@ Copyright (c) Corporation for National Research Initiatives.
 #include "pycore_interp.h"        // PyInterpreterState.codec_search_path
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
+#include "pycore_fileutils.h"     // _Py_join_relfile()
 #include <ctype.h>
 
 const char *Py_hexdigits = "0123456789abcdef";
@@ -1405,6 +1406,50 @@ static PyObject *surrogateescape_errors(PyObject *self, PyObject *exc)
     return PyCodec_SurrogateEscapeErrors(exc);
 }
 
+/* Set encodings.__path__ for frozen encodings package
+ *
+ * The encodings package is frozen but most encodings modules are not. The
+ * __path__ attribute of the encodings package must be reset so importlib is
+ * able to find the pure Python modules.
+ * Returns -1 on error, 0 on nothing to do, and 1 on update.
+ */
+static int
+_set_encodings_path(PyObject *mod) {
+    const PyConfig *config = _Py_GetConfig();
+    if (config->stdlib_dir == NULL) {
+        // no stdlib dir, do nothing
+        return 0;
+    }
+    // os.path.join(stdlib_dir, "encodings")
+    wchar_t *encodings_dirw = _Py_join_relfile(
+        config->stdlib_dir, L"encodings");
+    if (encodings_dirw == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    PyObject *encodings_dir = PyUnicode_FromWideChar(encodings_dirw, -1);
+    PyMem_RawFree(encodings_dirw);
+    if (encodings_dir == NULL) {
+        return -1;
+    }
+    // new __path__ list. The old may contain invalid path from freezing.
+    PyObject *path = PyList_New(1);
+    if (path == NULL) {
+        Py_DECREF(encodings_dir);
+        return -1;
+    }
+    if (PyList_SetItem(path, 0, encodings_dir) < 0) {
+        return -1;
+    }
+    // set and override __path__
+    if (PyObject_SetAttrString(mod, "__path__", path) < 0) {
+        Py_DECREF(path);
+        return -1;
+    }
+    Py_DECREF(path);
+    return 1;
+}
+
 static int _PyCodecRegistry_Init(void)
 {
     static struct {
@@ -1529,6 +1574,11 @@ static int _PyCodecRegistry_Init(void)
 
     mod = PyImport_ImportModule("encodings");
     if (mod == NULL) {
+        return -1;
+    }
+
+    if (_set_encodings_path(mod) < 0) {
+        Py_DECREF(mod);
         return -1;
     }
     Py_DECREF(mod);

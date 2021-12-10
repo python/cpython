@@ -44,6 +44,10 @@
 #include "frozen_modules/zipimport.h"
 #include "frozen_modules/abc.h"
 #include "frozen_modules/codecs.h"
+#include "frozen_modules/encodings.h"
+#include "frozen_modules/encodings.aliases.h"
+#include "frozen_modules/encodings.ascii.h"
+#include "frozen_modules/encodings.utf_8.h"
 #include "frozen_modules/io.h"
 #include "frozen_modules/_collections_abc.h"
 #include "frozen_modules/_sitebuiltins.h"
@@ -72,6 +76,10 @@ extern PyObject *_Py_get_importlib__bootstrap_external_toplevel(void);
 extern PyObject *_Py_get_zipimport_toplevel(void);
 extern PyObject *_Py_get_abc_toplevel(void);
 extern PyObject *_Py_get_codecs_toplevel(void);
+extern PyObject *_Py_get_encodings_toplevel(void);
+extern PyObject *_Py_get_encodings_aliases_toplevel(void);
+extern PyObject *_Py_get_encodings_ascii_toplevel(void);
+extern PyObject *_Py_get_encodings_utf_8_toplevel(void);
 extern PyObject *_Py_get_io_toplevel(void);
 extern PyObject *_Py_get__collections_abc_toplevel(void);
 extern PyObject *_Py_get__sitebuiltins_toplevel(void);
@@ -110,6 +118,10 @@ static const struct _frozen stdlib_modules[] = {
     /* stdlib - startup, without site (python -S) */
     {"abc", _Py_M__abc, (int)sizeof(_Py_M__abc), GET_CODE(abc)},
     {"codecs", _Py_M__codecs, (int)sizeof(_Py_M__codecs), GET_CODE(codecs)},
+    {"encodings", _Py_M__encodings, -(int)sizeof(_Py_M__encodings), GET_CODE(encodings)},
+    {"encodings.aliases", _Py_M__encodings_aliases, (int)sizeof(_Py_M__encodings_aliases), GET_CODE(encodings_aliases)},
+    {"encodings.ascii", _Py_M__encodings_ascii, (int)sizeof(_Py_M__encodings_ascii), GET_CODE(encodings_ascii)},
+    {"encodings.utf_8", _Py_M__encodings_utf_8, (int)sizeof(_Py_M__encodings_utf_8), GET_CODE(encodings_utf_8)},
     {"io", _Py_M__io, (int)sizeof(_Py_M__io), GET_CODE(io)},
 
     /* stdlib - startup, with site */
