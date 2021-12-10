@@ -80,6 +80,7 @@ extern "C" {
 #define COPY                            120
 #define JUMP_IF_NOT_EXC_MATCH           121
 #define BINARY_OP                       122
+#define SEND                            123
 #define LOAD_FAST                       124
 #define STORE_FAST                      125
 #define DELETE_FAST                     126
@@ -168,7 +169,7 @@ static uint32_t _PyOpcode_RelativeJump[8] = {
     0U,
     0U,
     536870912U,
-    16384U,
+    134234112U,
     0U,
     0U,
     0U,
@@ -178,7 +179,7 @@ static uint32_t _PyOpcode_Jump[8] = {
     0U,
     0U,
     536870912U,
-    34586624U,
+    168804352U,
     0U,
     0U,
     0U,

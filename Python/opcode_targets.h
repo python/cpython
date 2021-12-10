@@ -122,7 +122,7 @@ static void *opcode_targets[256] = {
     &&TARGET_COPY,
     &&TARGET_JUMP_IF_NOT_EXC_MATCH,
     &&TARGET_BINARY_OP,
-    &&_unknown_opcode,
+    &&TARGET_SEND,
     &&TARGET_LOAD_FAST,
     &&TARGET_STORE_FAST,
     &&TARGET_DELETE_FAST,
