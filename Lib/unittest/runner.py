@@ -59,6 +59,7 @@ class TextTestResult(result.TestResult):
         super(TextTestResult, self).addSuccess(test)
         if self.showAll:
             self.stream.writeln("ok")
+            self.stream.flush()
         elif self.dots:
             self.stream.write('.')
             self.stream.flush()
@@ -67,6 +68,7 @@ class TextTestResult(result.TestResult):
         super(TextTestResult, self).addError(test, err)
         if self.showAll:
             self.stream.writeln("ERROR")
+            self.stream.flush()
         elif self.dots:
             self.stream.write('E')
             self.stream.flush()
@@ -75,6 +77,7 @@ class TextTestResult(result.TestResult):
         super(TextTestResult, self).addFailure(test, err)
         if self.showAll:
             self.stream.writeln("FAIL")
+            self.stream.flush()
         elif self.dots:
             self.stream.write('F')
             self.stream.flush()
@@ -83,6 +86,7 @@ class TextTestResult(result.TestResult):
         super(TextTestResult, self).addSkip(test, reason)
         if self.showAll:
             self.stream.writeln("skipped {0!r}".format(reason))
+            self.stream.flush()
         elif self.dots:
             self.stream.write("s")
             self.stream.flush()
@@ -91,6 +95,7 @@ class TextTestResult(result.TestResult):
         super(TextTestResult, self).addExpectedFailure(test, err)
         if self.showAll:
             self.stream.writeln("expected failure")
+            self.stream.flush()
         elif self.dots:
             self.stream.write("x")
             self.stream.flush()
@@ -99,6 +104,7 @@ class TextTestResult(result.TestResult):
         super(TextTestResult, self).addUnexpectedSuccess(test)
         if self.showAll:
             self.stream.writeln("unexpected success")
+            self.stream.flush()
         elif self.dots:
             self.stream.write("u")
             self.stream.flush()
@@ -106,6 +112,7 @@ class TextTestResult(result.TestResult):
     def printErrors(self):
         if self.dots or self.showAll:
             self.stream.writeln()
+            self.stream.flush()
         self.printErrorList('ERROR', self.errors)
         self.printErrorList('FAIL', self.failures)
 
@@ -115,6 +122,7 @@ class TextTestResult(result.TestResult):
             self.stream.writeln("%s: %s" % (flavour,self.getDescription(test)))
             self.stream.writeln(self.separator2)
             self.stream.writeln("%s" % err)
+            self.stream.flush()
 
 
 class TextTestRunner(object):
@@ -218,4 +226,5 @@ class TextTestRunner(object):
             self.stream.writeln(" (%s)" % (", ".join(infos),))
         else:
             self.stream.write("\n")
+        self.stream.flush()
         return result
