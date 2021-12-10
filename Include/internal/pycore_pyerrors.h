@@ -8,6 +8,14 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+
+/* runtime lifecycle */
+
+extern PyStatus _PyErr_InitTypes(PyInterpreterState *);
+
+
+/* other API */
+
 static inline PyObject* _PyErr_Occurred(PyThreadState *tstate)
 {
     assert(tstate != NULL);

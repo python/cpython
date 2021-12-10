@@ -100,6 +100,7 @@ class MockGetPathTests(unittest.TestCase):
             module_search_paths_set=1,
             module_search_paths=[
                 r"C:\Python\python98.zip",
+                r"C:\Python\DLLs",
                 r"C:\Python\Lib",
                 r"C:\Python",
             ],

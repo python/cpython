@@ -447,6 +447,18 @@
     <None Include="..\Lib\stat.py">
       <Filter>Python Files</Filter>
     </None>
+    <None Include="..\Lib\types.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\importlib\util.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\importlib\machinery.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\runpy.py">
+      <Filter>Python Files</Filter>
+    </None>
     <None Include="..\Lib\__hello__.py">
       <Filter>Python Files</Filter>
     </None>
