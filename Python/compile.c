@@ -2142,7 +2142,7 @@ compiler_apply_decorators(struct compiler *c, asdl_expr_seq* decos)
     int old_end_lineno = c->u->u_end_lineno;
     int old_col_offset = c->u->u_col_offset;
     int old_end_col_offset = c->u->u_end_col_offset;
-    for (int i = asdl_seq_LEN(decos) - 1; i > -1; i--) {
+    for (Py_ssize_t i = asdl_seq_LEN(decos) - 1; i > -1; i--) {
         SET_LOC(c, (expr_ty)asdl_seq_GET(decos, i));
         ADDOP_I(c, CALL_FUNCTION, 1);
     }

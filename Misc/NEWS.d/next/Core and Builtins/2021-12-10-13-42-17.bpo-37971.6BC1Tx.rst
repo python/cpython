@@ -1,10 +1,3 @@
 Fix a bug where the line numbers given in a traceback when a decorator
 application raised an exception were wrong.
 
-#.. section: Library #.. section: Documentation #.. section: Tests #..
-section: Build #.. section: Windows #.. section: macOS #.. section: IDLE #..
-section: Tools/Demos #.. section: C API
-
-# Write your Misc/NEWS entry below.  It should be a simple ReST paragraph. #
-Don't start with "- Issue #<n>: " or "- bpo-<n>: " or that sort of stuff.
-###########################################################################
