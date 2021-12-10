@@ -1,1 +1,0 @@
-Teach makesetup about the -pthread flag.
