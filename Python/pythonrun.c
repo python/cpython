@@ -1254,13 +1254,13 @@ print_chained(struct exception_print_context* ctx, PyObject *value,
 }
 
 /* Return true if value is in seen or there was a lookup error.
- * False if lookup succeeded and the item was not found.
+ * Return false if lookup succeeded and the item was not found.
  * We suppress errors because this makes us err on the side of
  * under-printing which is better than over-printing irregular
  * exceptions (e.g., unhashable ones).
  */
 static bool
-print_exception_seen_lookup(struct exception_print_context* ctx,
+print_exception_seen_lookup(struct exception_print_context *ctx,
                             PyObject *value)
 {
     int in_seen;
@@ -1285,7 +1285,7 @@ print_exception_seen_lookup(struct exception_print_context* ctx,
 }
 
 static int
-print_exception_cause_and_context(struct exception_print_context* ctx,
+print_exception_cause_and_context(struct exception_print_context *ctx,
                                   PyObject *value)
 {
     PyObject *value_id = PyLong_FromVoidPtr(value);
@@ -1325,7 +1325,7 @@ print_exception_cause_and_context(struct exception_print_context* ctx,
 }
 
 static int
-print_exception_group(struct exception_print_context* ctx, PyObject *value)
+print_exception_group(struct exception_print_context *ctx, PyObject *value)
 {
     PyObject *f = ctx->file;
 
@@ -1336,8 +1336,8 @@ print_exception_group(struct exception_print_context* ctx, PyObject *value)
             return -1;
         }
 
-        PyObject *line = PyUnicode_FromFormat(
-            "... (max_group_depth is %d)\n", ctx->max_group_depth);
+        PyObject *line = PyUnicode_FromFormat("... (max_group_depth is %d)\n",
+                                              ctx->max_group_depth);
         if (line == NULL) {
             return -1;
         }
@@ -1447,7 +1447,7 @@ print_exception_group(struct exception_print_context* ctx, PyObject *value)
 }
 
 static void
-print_exception_recursive(struct exception_print_context* ctx, PyObject *value)
+print_exception_recursive(struct exception_print_context *ctx, PyObject *value)
 {
     int err = 0;
     if (ctx->seen != NULL) {
