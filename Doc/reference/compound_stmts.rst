@@ -158,13 +158,13 @@ The :keyword:`for` statement is used to iterate over the elements of a sequence
            : ["else" ":" `suite`]
 
 The expression list is evaluated once; it should yield an iterable object.  An
-iterator is created for the result of the ``expression_list``.  The suite is
-then executed once for each item provided by the iterator, in the order returned
-by the iterator.  Each item in turn is assigned to the target list using the
-standard rules for assignments (see :ref:`assignment`), and then the suite is
-executed.  When the items are exhausted (which is immediately when the sequence
-is empty or an iterator raises a :exc:`StopIteration` exception), the suite in
-the :keyword:`!else` clause, if present, is executed, and the loop terminates.
+iterator is created for the result of the ``expression_list``.  First item
+provided by the iterator is then assigned to the target list using the standard
+rules for assignments (see :ref:`assignment`), and the suite is executed - this
+repeats for each item provided by the iterator.  When the items are exhausted
+(which is immediately when the sequence is empty or an iterator raises
+a :exc:`StopIteration` exception), the suite in the :keyword:`!else` clause,
+if present, is executed, and the loop terminates.
 
 .. index::
    statement: break
