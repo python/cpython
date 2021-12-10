@@ -37,7 +37,6 @@ extern "C" {
 #define GET_YIELD_FROM_ITER              69
 #define PRINT_EXPR                       70
 #define LOAD_BUILD_CLASS                 71
-#define YIELD_FROM                       72
 #define GET_AWAITABLE                    73
 #define LOAD_ASSERTION_ERROR             74
 #define LIST_TO_TUPLE                    82
@@ -154,15 +153,15 @@ extern "C" {
 #define LOAD_METHOD_CLASS                65
 #define LOAD_METHOD_MODULE               66
 #define LOAD_METHOD_NO_DICT              67
-#define STORE_ATTR_ADAPTIVE              75
-#define STORE_ATTR_INSTANCE_VALUE        76
-#define STORE_ATTR_SLOT                  77
-#define STORE_ATTR_WITH_HINT             78
-#define LOAD_FAST__LOAD_FAST             79
-#define STORE_FAST__LOAD_FAST            80
-#define LOAD_FAST__LOAD_CONST            81
-#define LOAD_CONST__LOAD_FAST            87
-#define STORE_FAST__STORE_FAST           88
+#define STORE_ATTR_ADAPTIVE              72
+#define STORE_ATTR_INSTANCE_VALUE        75
+#define STORE_ATTR_SLOT                  76
+#define STORE_ATTR_WITH_HINT             77
+#define LOAD_FAST__LOAD_FAST             78
+#define STORE_FAST__LOAD_FAST            79
+#define LOAD_FAST__LOAD_CONST            80
+#define LOAD_CONST__LOAD_FAST            81
+#define STORE_FAST__STORE_FAST           87
 #define DO_TRACING                      255
 #ifdef NEED_OPCODE_JUMP_TABLES
 static uint32_t _PyOpcode_RelativeJump[8] = {

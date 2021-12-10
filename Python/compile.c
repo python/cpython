@@ -1044,8 +1044,6 @@ stack_effect(int opcode, int oparg, int jump)
             return 0;
         case YIELD_VALUE:
             return 0;
-        case YIELD_FROM:
-            return -1;
         case POP_BLOCK:
             return 0;
         case POP_EXCEPT:
