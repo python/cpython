@@ -808,6 +808,7 @@ SYMBOL_NAMES = (
     "Py_SetRecursionLimit",
     "Py_UTF8Mode",
     "Py_VaBuildValue",
+    "Py_Version",
     "Py_XNewRef",
     "_PyArg_ParseTupleAndKeywords_SizeT",
     "_PyArg_ParseTuple_SizeT",
