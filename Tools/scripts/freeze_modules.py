@@ -69,10 +69,9 @@ FROZEN = [
         'stat',
         ]),
     ('runpy - run module with -m', [
-        "types",
         "importlib.util",
         "importlib.machinery",
-        "runpy"
+        "runpy",
     ]),
     (TESTS_SECTION, [
         '__hello__',
