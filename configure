@@ -3834,32 +3834,33 @@ fi
 $as_echo "$MACHDEP" >&6; }
 
 
-if test "$cross_compiling" = yes; then
-	case "$host" in
-	*-*-linux*)
-		case "$host_cpu" in
-		arm*)
-			_host_cpu=arm
-			;;
-		*)
-			_host_cpu=$host_cpu
-		esac
-		;;
-	*-*-cygwin*)
-		_host_cpu=
-		;;
-	*-*-vxworks*)
-		_host_cpu=$host_cpu
-		;;
-	wasm32-*-* | wasm64-*-*)
-		_host_cpu=$host_cpu
-		;;
-	*)
-		# for now, limit cross builds to known configurations
-		MACHDEP="unknown"
-		as_fn_error $? "cross build not supported for $host" "$LINENO" 5
-	esac
-	_PYTHON_HOST_PLATFORM="$MACHDEP${_host_cpu:+-$_host_cpu}"
+if test "x$cross_compiling" = xyes; then :
+
+  case $host in #(
+  *-*-linux*) :
+
+      case $host_cpu in #(
+  arm*) :
+    _host_cpu=arm ;; #(
+  *) :
+    _host_cpu=$host_cpu
+       ;;
+esac
+     ;; #(
+  *-*-cygwin*) :
+    _host_cpu= ;; #(
+  *-*-vxworks*) :
+    _host_cpu=$host_cpu ;; #(
+  wasm32-*-*|wasm64-*-*) :
+    _host_cpu=$host_cpu ;; #(
+  *) :
+          MACHDEP="unknown"
+      as_fn_error $? "cross build not supported for $host" "$LINENO" 5
+
+   ;;
+esac
+  _PYTHON_HOST_PLATFORM="$MACHDEP${_host_cpu:+-$_host_cpu}"
+
 fi
 
 # Some systems cannot stand _XOPEN_SOURCE being defined at all; they

@@ -529,33 +529,24 @@ AS_VAR_SET_IF([MACHDEP], [], [
 AC_MSG_RESULT([$MACHDEP])
 
 AC_SUBST(_PYTHON_HOST_PLATFORM)
-if test "$cross_compiling" = yes; then
-	case "$host" in
-	*-*-linux*)
-		case "$host_cpu" in
-		arm*)
-			_host_cpu=arm
-			;;
-		*)
-			_host_cpu=$host_cpu
-		esac
-		;;
-	*-*-cygwin*)
-		_host_cpu=
-		;;
-	*-*-vxworks*)
-		_host_cpu=$host_cpu
-		;;
-	wasm32-*-* | wasm64-*-*)
-		_host_cpu=$host_cpu
-		;;
-	*)
-		# for now, limit cross builds to known configurations
-		MACHDEP="unknown"
-		AC_MSG_ERROR([cross build not supported for $host])
-	esac
-	_PYTHON_HOST_PLATFORM="$MACHDEP${_host_cpu:+-$_host_cpu}"
-fi
+AS_VAR_IF([cross_compiling], [yes], [
+  AS_CASE([$host],
+    [*-*-linux*], [
+      AS_CASE([$host_cpu],
+        [arm*], [_host_cpu=arm],
+        [_host_cpu=$host_cpu]
+      )
+    ],
+    [*-*-cygwin*], [_host_cpu=],
+    [*-*-vxworks*], [_host_cpu=$host_cpu],
+    [wasm32-*-*|wasm64-*-*], [_host_cpu=$host_cpu],
+    [dnl For now, limit cross builds to known configurations.
+      MACHDEP="unknown"
+      AC_MSG_ERROR([cross build not supported for $host])
+    ]
+  )
+  _PYTHON_HOST_PLATFORM="$MACHDEP${_host_cpu:+-$_host_cpu}"
+])
 
 # Some systems cannot stand _XOPEN_SOURCE being defined at all; they
 # disable features if it is defined, without any means to access these
