@@ -487,63 +487,46 @@ AC_DEFINE_UNQUOTED(_PYTHONFRAMEWORK, "${PYTHONFRAMEWORK}", [framework name])
 
 # Set name for machine-dependent library files
 AC_ARG_VAR([MACHDEP], [name for machine-dependent library files])
-AC_MSG_CHECKING(MACHDEP)
-if test -z "$MACHDEP"
-then
-    # avoid using uname for cross builds
-    if test "$cross_compiling" = yes; then
-       # ac_sys_system and ac_sys_release are used for setting
-       # a lot of different things including 'define_xopen_source'
-       # in the case statement below.
-	case "$host" in
-	*-*-linux-android*)
-		ac_sys_system=Linux-android
-		;;
-	*-*-linux*)
-		ac_sys_system=Linux
-		;;
-	*-*-cygwin*)
-		ac_sys_system=Cygwin
-		;;
-	*-*-vxworks*)
-	    ac_sys_system=VxWorks
-	    ;;
-	*-*-emscripten)
-	    ac_sys_system=Emscripten
-	    ;;
-	*-*-wasi)
-	    ac_sys_system=WASI
-	    ;;
-	*)
-		# for now, limit cross builds to known configurations
-		MACHDEP="unknown"
-		AC_MSG_ERROR([cross build not supported for $host])
-	esac
-	ac_sys_release=
-    else
-	ac_sys_system=`uname -s`
-	if test "$ac_sys_system" = "AIX" \
-	-o "$ac_sys_system" = "UnixWare" -o "$ac_sys_system" = "OpenUNIX"; then
-		ac_sys_release=`uname -v`
-	else
-		ac_sys_release=`uname -r`
-	fi
-    fi
-    ac_md_system=`echo $ac_sys_system |
-			tr -d '[/ ]' | tr '[[A-Z]]' '[[a-z]]'`
-    ac_md_release=`echo $ac_sys_release |
-			tr -d '[/ ]' | sed 's/^[[A-Z]]\.//' | sed 's/\..*//'`
-    MACHDEP="$ac_md_system$ac_md_release"
+AC_MSG_CHECKING([MACHDEP])
+AS_VAR_SET_IF([MACHDEP], [], [
+  dnl Avoid using uname for cross builds.
+  AS_VAR_IF([cross_compiling], [yes], [
+    dnl ac_sys_system and ac_sys_release are used for setting
+    dnl a lot of different things including 'define_xopen_source'
+    dnl in the case statement below.
+    AS_CASE([$host],
+      [*-*-linux-android*], [ac_sys_system=Linux-android],
+      [*-*-linux*],         [ac_sys_system=Linux],
+      [*-*-cygwin*],        [ac_sys_system=Cygwin],
+      [*-*-vxworks*],       [ac_sys_system=VxWorks],
+      [*-*-emscripten],     [ac_sys_system=Emscripten],
+      [*-*-wasi],           [ac_sys_system=WASI],
+      [dnl For now, limit cross builds to known configurations.
+        MACHDEP="unknown"
+        AC_MSG_ERROR([cross build not supported for $host])
+      ]
+    )
+    ac_sys_release=
+  ], [
+    ac_sys_system=$(uname -s)
+    AS_CASE([$ac_sys_system],
+      [AIX|UnixWare|OpenUNIX], [ac_sys_release=$(uname -v)],
+      [ac_sys_release=$(uname -r)]
+    )
+  ])
+  ac_md_system=$(echo $ac_sys_system | tr -d '[/ ]' | tr '[[A-Z]]' '[[a-z]]')
+  ac_md_release=$(echo $ac_sys_release | tr -d '[/ ]' | sed 's/^[[A-Z]]\.//' | sed 's/\..*//')
+  MACHDEP="$ac_md_system$ac_md_release"
 
-    case $MACHDEP in
-	aix*) MACHDEP="aix";;
-	linux*) MACHDEP="linux";;
-	cygwin*) MACHDEP="cygwin";;
-	darwin*) MACHDEP="darwin";;
-	'')	MACHDEP="unknown";;
-    esac
-fi
-AC_MSG_RESULT("$MACHDEP")
+  AS_CASE([$MACHDEP],
+    [aix*],    [MACHDEP="aix"],
+    [linux*],  [MACHDEP="linux"],
+    [cygwin*], [MACHDEP="cygwin"],
+    [darwin*], [MACHDEP="darwin"],
+    [''],      [MACHDEP="unknown"]
+  )
+])
+AC_MSG_RESULT([$MACHDEP])
 
 AC_SUBST(_PYTHON_HOST_PLATFORM)
 if test "$cross_compiling" = yes; then
