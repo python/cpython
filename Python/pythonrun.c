@@ -1263,14 +1263,13 @@ static bool
 print_exception_seen_lookup(struct exception_print_context *ctx,
                             PyObject *value)
 {
-    int in_seen;
     PyObject *check_id = PyLong_FromVoidPtr(value);
     if (check_id == NULL) {
         PyErr_Clear();
         return true;
     }
 
-    in_seen = PySet_Contains(ctx->seen, check_id);
+    int in_seen = PySet_Contains(ctx->seen, check_id);
     Py_DECREF(check_id);
     if (in_seen == -1) {
         PyErr_Clear();
@@ -1365,7 +1364,7 @@ print_exception_group(struct exception_print_context *ctx, PyObject *value)
 
     ctx->need_close = false;
     for (Py_ssize_t i = 0; i < n; i++) {
-        int last_exc = (i == n - 1);
+        bool last_exc = (i == n - 1);
         if (last_exc) {
             // The closing frame may be added in a recursive call
             ctx->need_close = true;
