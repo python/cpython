@@ -206,6 +206,9 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			cpps="\$(MODULE_${mods_upper}_CFLAGS)"
 			libs="\$(MODULE_${mods_upper}_LDFLAGS)"
 		fi
+		case $DISABLED in
+		*$mods*) doconfig=disabled;;
+		esac
 		case $doconfig in
 		yes)
 			LIBS="$LIBS $libs"
