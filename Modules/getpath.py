@@ -187,7 +187,7 @@ if os_name == 'posix' or os_name == 'darwin':
 
 elif os_name == 'nt':
     BUILDDIR_TXT = 'pybuilddir.txt'
-    BUILD_LANDMARK = r'..\..\Modules\Setup.local'
+    BUILD_LANDMARK = f'{VPATH}\\Modules\\Setup.local'
     DEFAULT_PROGRAM_NAME = f'python'
     STDLIB_SUBDIR = 'Lib'
     STDLIB_LANDMARKS = [f'{STDLIB_SUBDIR}\\os.py', f'{STDLIB_SUBDIR}\\os.pyc']
