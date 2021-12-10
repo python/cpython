@@ -115,11 +115,11 @@
         PREFIX=NULL;
         EXEC_PREFIX=NULL;
         VERSION=NULL;
+        VPATH="$(PyVPath)";
         PYDEBUGEXT="$(PyDebugExt)";
         PLATLIBDIR="DLLs";
         %(PreprocessorDefinitions)
       </PreprocessorDefinitions>
-      <PreprocessorDefinitions>VPATH="$(PyVPath)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
