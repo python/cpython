@@ -1490,6 +1490,10 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
             break;
         case NB_SUBTRACT:
         case NB_INPLACE_SUBTRACT:
+            if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
+                SPECIALIZATION_FAIL(BINARY_OP, SPEC_FAIL_DIFFERENT_TYPES);
+                goto failure;
+            }
             if (PyLong_CheckExact(lhs)) {
                 *instr = _Py_MAKECODEUNIT(BINARY_OP_SUBTRACT_INT,
                                           _Py_OPARG(*instr));

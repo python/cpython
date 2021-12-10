@@ -908,38 +908,35 @@ write_indented_margin(struct exception_print_context *ctx, PyObject *f)
     return _Py_WriteIndentedMargin(EXC_INDENT(ctx), EXC_MARGIN(ctx), f);
 }
 
-static void
-print_exception(struct exception_print_context *ctx, PyObject *value)
+static int
+print_exception_invalid_type(struct exception_print_context *ctx,
+                             PyObject *value)
 {
-    int err = 0;
-    PyObject *type, *tb, *tmp;
     PyObject *f = ctx->file;
-
-    _Py_IDENTIFIER(print_file_and_line);
-
-    if (!PyExceptionInstance_Check(value)) {
-        if (err == 0) {
-            err = _Py_WriteIndent(EXC_INDENT(ctx), f);
-        }
-        if (err == 0) {
-            err = PyFile_WriteString("TypeError: print_exception(): Exception expected for value, ", f);
-        }
-        if (err == 0) {
-            err = PyFile_WriteString(Py_TYPE(value)->tp_name, f);
-        }
-        if (err == 0) {
-            err = PyFile_WriteString(" found\n", f);
-        }
-        if (err != 0) {
-            PyErr_Clear();
-        }
-        return;
+    if (_Py_WriteIndent(EXC_INDENT(ctx), f) < 0) {
+        return -1;
     }
+    const char *const msg = "TypeError: print_exception(): Exception expected "
+                            "for value, ";
+    if (PyFile_WriteString(msg, f) < 0) {
+        return -1;
+    }
+    if (PyFile_WriteString(Py_TYPE(value)->tp_name, f) < 0) {
+        return -1;
+    }
+    if (PyFile_WriteString(" found\n", f) < 0) {
+        return -1;
+    }
+    return 0;
+}
 
-    Py_INCREF(value);
-    fflush(stdout);
-    type = (PyObject *) Py_TYPE(value);
-    tb = PyException_GetTraceback(value);
+static int
+print_exception_traceback(struct exception_print_context *ctx, PyObject *value)
+{
+    PyObject *f = ctx->file;
+    int err = 0;
+
+    PyObject *tb = PyException_GetTraceback(value);
     if (tb && tb != Py_None) {
         const char *header = EXCEPTION_TB_HEADER;
         const char *header_margin = EXC_MARGIN(ctx);
@@ -952,6 +949,189 @@ print_exception(struct exception_print_context *ctx, PyObject *value)
         err = _PyTraceBack_Print_Indented(
             tb, EXC_INDENT(ctx), EXC_MARGIN(ctx), header_margin, header, f);
     }
+    Py_XDECREF(tb);
+    return err;
+}
+
+/* Prints the message line: module.qualname[: str(exc)] */
+static int
+print_exception_message(struct exception_print_context *ctx, PyObject *type,
+                        PyObject *value) 
+{
+    PyObject *f = ctx->file;
+
+    _Py_IDENTIFIER(__module__);
+
+    assert(PyExceptionClass_Check(type));
+
+    if (write_indented_margin(ctx, f) < 0) {
+        return -1;
+    }
+    PyObject *modulename = _PyObject_GetAttrId(type, &PyId___module__);
+    if (modulename == NULL || !PyUnicode_Check(modulename)) {
+        Py_XDECREF(modulename);
+        PyErr_Clear();
+        if (PyFile_WriteString("<unknown>.", f) < 0) {
+            return -1;
+        }
+    }
+    else {
+        if (!_PyUnicode_EqualToASCIIId(modulename, &PyId_builtins) &&
+            !_PyUnicode_EqualToASCIIId(modulename, &PyId___main__))
+        {
+            int res = PyFile_WriteObject(modulename, f, Py_PRINT_RAW);
+            Py_DECREF(modulename);
+            if (res < 0) {
+                return -1;
+            }
+            if (PyFile_WriteString(".", f) < 0) {
+                return -1;
+            }
+        }
+        else {
+            Py_DECREF(modulename);
+        }
+    }
+
+    PyObject *qualname = PyType_GetQualName((PyTypeObject *)type);
+    if (qualname == NULL || !PyUnicode_Check(qualname)) {
+        Py_XDECREF(qualname);
+        PyErr_Clear();
+        if (PyFile_WriteString("<unknown>", f) < 0) {
+            return -1;
+        }
+    }
+    else {
+        int res = PyFile_WriteObject(qualname, f, Py_PRINT_RAW);
+        Py_DECREF(qualname);
+        if (res < 0) {
+            return -1;
+        }
+    }
+
+    if (Py_IsNone(value)) {
+        return 0;
+    }
+
+    PyObject *s = PyObject_Str(value);
+    if (s == NULL) {
+        PyErr_Clear();
+        if (PyFile_WriteString(": <exception str() failed>", f) < 0) {
+            return -1;
+        }
+    }
+    else {
+        /* only print colon if the str() of the
+           object is not the empty string
+        */
+        if (!PyUnicode_Check(s) || PyUnicode_GetLength(s) != 0) {
+            if (PyFile_WriteString(": ", f) < 0) {
+                Py_DECREF(s);
+                return -1;
+            }
+        }
+        int res = PyFile_WriteObject(s, f, Py_PRINT_RAW);
+        Py_DECREF(s);
+        if (res < 0) {
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+static int
+print_exception_suggestions(struct exception_print_context *ctx,
+                            PyObject *value)
+{
+    PyObject *f = ctx->file;
+    PyObject *suggestions = _Py_Offer_Suggestions(value);
+    if (suggestions) {
+        // Add a trailer ". Did you mean: (...)?"
+        if (PyFile_WriteString(". Did you mean: '", f) < 0) {
+            goto error;
+        }
+        if (PyFile_WriteObject(suggestions, f, Py_PRINT_RAW) < 0) {
+            goto error;
+        }
+        if (PyFile_WriteString("'?", f) < 0) {
+            goto error;
+        }
+        Py_DECREF(suggestions);
+    }
+    else if (PyErr_Occurred()) {
+        PyErr_Clear();
+    }
+    return 0;
+error:
+    Py_XDECREF(suggestions);
+    return -1;
+}
+
+static int
+print_exception_note(struct exception_print_context *ctx, PyObject *value)
+{
+    PyObject *f = ctx->file;
+    _Py_IDENTIFIER(__note__);
+
+    PyObject *note = _PyObject_GetAttrId(value, &PyId___note__);
+    if (note == NULL) {
+        return -1;
+    }
+    if (!PyUnicode_Check(note)) {
+        Py_DECREF(note);
+        return 0;
+    }
+
+    PyObject *lines = PyUnicode_Splitlines(note, 1);
+    Py_DECREF(note);
+
+    if (lines == NULL) {
+        return -1;
+    }
+
+    Py_ssize_t n = PyList_GET_SIZE(lines);
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *line = PyList_GET_ITEM(lines, i);
+        assert(PyUnicode_Check(line));
+        if (write_indented_margin(ctx, f) < 0) {
+            goto error;
+        }
+        if (PyFile_WriteObject(line, f, Py_PRINT_RAW) < 0) {
+            goto error;
+        }
+    }
+    if (PyFile_WriteString("\n", f) < 0) {
+        goto error;
+    }
+
+    Py_DECREF(lines);
+    return 0;
+error:
+    Py_DECREF(lines);
+    return -1;
+}
+
+static void
+print_exception(struct exception_print_context *ctx, PyObject *value)
+{
+    int err = 0;
+    PyObject *tmp;
+    PyObject *f = ctx->file;
+
+    _Py_IDENTIFIER(print_file_and_line);
+
+    if (!PyExceptionInstance_Check(value)) {
+        if (print_exception_invalid_type(ctx, value) < 0) {
+            PyErr_Clear(); /* TODO: change to return -1 */
+        }
+        return;
+    }
+
+    Py_INCREF(value);
+    fflush(stdout);
+    PyObject *type = (PyObject *) Py_TYPE(value);
+    err = print_exception_traceback(ctx, value);
     if (err == 0 &&
         (err = _PyObject_LookupAttrId(value, &PyId_print_file_and_line, &tmp)) > 0)
     {
@@ -965,13 +1145,12 @@ print_exception(struct exception_print_context *ctx, PyObject *value)
             PyErr_Clear();
         }
         else {
-            PyObject *line;
 
             Py_DECREF(value);
             value = message;
 
-            line = PyUnicode_FromFormat("  File \"%S\", line %zd\n",
-                                          filename, lineno);
+            PyObject *line = PyUnicode_FromFormat("  File \"%S\", line %zd\n",
+                                                  filename, lineno);
             Py_DECREF(filename);
             if (line != NULL) {
                 err = write_indented_margin(ctx, f);
@@ -1006,119 +1185,20 @@ print_exception(struct exception_print_context *ctx, PyObject *value)
                 err = -1;
         }
     }
-    if (err != 0) {
-        /* Don't do anything else */
-    }
-    else {
-        PyObject* modulename;
 
-        _Py_IDENTIFIER(__module__);
-        assert(PyExceptionClass_Check(type));
-
-        err = write_indented_margin(ctx, f);
-        if (err == 0) {
-            modulename = _PyObject_GetAttrId(type, &PyId___module__);
-            if (modulename == NULL || !PyUnicode_Check(modulename))
-            {
-                Py_XDECREF(modulename);
-                PyErr_Clear();
-                err = PyFile_WriteString("<unknown>.", f);
-            }
-            else {
-                if (!_PyUnicode_EqualToASCIIId(modulename, &PyId_builtins) &&
-                    !_PyUnicode_EqualToASCIIId(modulename, &PyId___main__))
-                {
-                    err = PyFile_WriteObject(modulename, f, Py_PRINT_RAW);
-                    if (err == 0) {
-                        err = PyFile_WriteString(".", f);
-                    }
-                }
-                Py_DECREF(modulename);
-            }
-        }
-        if (err == 0) {
-            PyObject* qualname = PyType_GetQualName((PyTypeObject *)type);
-            if (qualname == NULL || !PyUnicode_Check(qualname)) {
-                Py_XDECREF(qualname);
-                PyErr_Clear();
-                err = PyFile_WriteString("<unknown>", f);
-            }
-            else {
-                err = PyFile_WriteObject(qualname, f, Py_PRINT_RAW);
-                Py_DECREF(qualname);
-            }
-        }
+    if (err == 0) {
+        err = print_exception_message(ctx, type, value);
     }
-    if (err == 0 && (value != Py_None)) {
-        PyObject *s = PyObject_Str(value);
-        /* only print colon if the str() of the
-           object is not the empty string
-        */
-        if (s == NULL) {
-            PyErr_Clear();
-            err = -1;
-            PyFile_WriteString(": <exception str() failed>", f);
-        }
-        else if (!PyUnicode_Check(s) ||
-            PyUnicode_GetLength(s) != 0)
-            err = PyFile_WriteString(": ", f);
-        if (err == 0)
-          err = PyFile_WriteObject(s, f, Py_PRINT_RAW);
-        Py_XDECREF(s);
+    if (err == 0) {
+        err = print_exception_suggestions(ctx, value);
     }
-    /* try to write a newline in any case */
-    if (err < 0) {
-        PyErr_Clear();
+    if (err == 0) {
+        err = PyFile_WriteString("\n", f);
     }
-    PyObject* suggestions = _Py_Offer_Suggestions(value);
-    if (suggestions) {
-        // Add a trailer ". Did you mean: (...)?"
-        err = PyFile_WriteString(". Did you mean: '", f);
-        if (err == 0) {
-            err = PyFile_WriteObject(suggestions, f, Py_PRINT_RAW);
-            err += PyFile_WriteString("'?", f);
-        }
-        Py_DECREF(suggestions);
-    } else if (PyErr_Occurred()) {
-        PyErr_Clear();
-    }
-    err += PyFile_WriteString("\n", f);
-
     if (err == 0 && PyExceptionInstance_Check(value)) {
-        _Py_IDENTIFIER(__note__);
-
-        PyObject *note = _PyObject_GetAttrId(value, &PyId___note__);
-        if (note == NULL) {
-            err = -1;
-        }
-        if (err == 0 && PyUnicode_Check(note)) {
-            _Py_static_string(PyId_newline, "\n");
-            PyObject *lines = PyUnicode_Split(
-                note, _PyUnicode_FromId(&PyId_newline), -1);
-            if (lines == NULL) {
-                err = -1;
-            }
-            else {
-                Py_ssize_t n = PyList_GET_SIZE(lines);
-                for (Py_ssize_t i = 0; i < n; i++) {
-                    if (err == 0) {
-                        PyObject *line = PyList_GET_ITEM(lines, i);
-                        assert(PyUnicode_Check(line));
-                        err = write_indented_margin(ctx, f);
-                        if (err == 0) {
-                            err = PyFile_WriteObject(line, f, Py_PRINT_RAW);
-                        }
-                        if (err == 0) {
-                            err = PyFile_WriteString("\n", f);
-                        }
-                    }
-                }
-            }
-            Py_DECREF(lines);
-        }
-        Py_XDECREF(note);
+        err = print_exception_note(ctx, value);
     }
-    Py_XDECREF(tb);
+
     Py_DECREF(value);
     /* If an error happened here, don't show it.
        XXX This is wrong, but too many callers rely on this behavior. */
@@ -1142,36 +1222,35 @@ print_chained(struct exception_print_context* ctx, PyObject *value,
               const char * message, const char *tag)
 {
     PyObject *f = ctx->file;
-    bool need_close = ctx->need_close;
 
-    int err = Py_EnterRecursiveCall(" in print_chained");
-    if (err == 0) {
-        print_exception_recursive(ctx, value);
-        Py_LeaveRecursiveCall();
-
-        if (err == 0) {
-            err = write_indented_margin(ctx, f);
-        }
-        if (err == 0) {
-            err = PyFile_WriteString("\n", f);
-        }
-        if (err == 0) {
-            err = write_indented_margin(ctx, f);
-        }
-        if (err == 0) {
-            err = PyFile_WriteString(message, f);
-        }
-        if (err == 0) {
-            err = write_indented_margin(ctx, f);
-        }
-        if (err == 0) {
-            err = PyFile_WriteString("\n", f);
-        }
+    if (Py_EnterRecursiveCall(" in print_chained") < 0) {
+        return -1;
     }
-
+    bool need_close = ctx->need_close;
+    print_exception_recursive(ctx, value);
     ctx->need_close = need_close;
 
-    return err;
+    Py_LeaveRecursiveCall();
+
+    if (write_indented_margin(ctx, f) < 0) {
+        return -1;
+    }
+    if (PyFile_WriteString("\n", f) < 0) {
+        return -1;
+    }
+    if (write_indented_margin(ctx, f) < 0) {
+        return -1;
+    }
+    if (PyFile_WriteString(message, f) < 0) {
+        return -1;
+    }
+    if (write_indented_margin(ctx, f) < 0) {
+        return -1;
+    }
+    if (PyFile_WriteString("\n", f) < 0) {
+        return -1;
+    }
+    return 0;
 }
 
 static void

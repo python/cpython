@@ -2153,3 +2153,6 @@ data PyStructSequence_UnnamedField
 
 # (Detailed comments aren't really needed for further entries: from here on
 #  we can use version control logs.)
+
+data Py_Version
+    added 3.11
