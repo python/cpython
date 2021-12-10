@@ -53,7 +53,6 @@
 #include "frozen_modules/os.h"
 #include "frozen_modules/site.h"
 #include "frozen_modules/stat.h"
-#include "frozen_modules/types.h"
 #include "frozen_modules/importlib.util.h"
 #include "frozen_modules/importlib.machinery.h"
 #include "frozen_modules/runpy.h"
@@ -83,7 +82,6 @@ extern PyObject *_Py_get_posixpath_toplevel(void);
 extern PyObject *_Py_get_os_toplevel(void);
 extern PyObject *_Py_get_site_toplevel(void);
 extern PyObject *_Py_get_stat_toplevel(void);
-extern PyObject *_Py_get_types_toplevel(void);
 extern PyObject *_Py_get_importlib_util_toplevel(void);
 extern PyObject *_Py_get_importlib_machinery_toplevel(void);
 extern PyObject *_Py_get_runpy_toplevel(void);
@@ -126,7 +124,6 @@ static const struct _frozen stdlib_modules[] = {
     {"stat", _Py_M__stat, (int)sizeof(_Py_M__stat), GET_CODE(stat)},
 
     /* runpy - run module with -m */
-    {"types", _Py_M__types, (int)sizeof(_Py_M__types), GET_CODE(types)},
     {"importlib.util", _Py_M__importlib_util, (int)sizeof(_Py_M__importlib_util), GET_CODE(importlib_util)},
     {"importlib.machinery", _Py_M__importlib_machinery, (int)sizeof(_Py_M__importlib_machinery), GET_CODE(importlib_machinery)},
     {"runpy", _Py_M__runpy, (int)sizeof(_Py_M__runpy), GET_CODE(runpy)},

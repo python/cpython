@@ -490,7 +490,6 @@ DEEPFREEZE_OBJS = \
 		Python/deepfreeze/os.o \
 		Python/deepfreeze/site.o \
 		Python/deepfreeze/stat.o \
-		Python/deepfreeze/types.o \
 		Python/deepfreeze/importlib.util.o \
 		Python/deepfreeze/importlib.machinery.o \
 		Python/deepfreeze/runpy.o \
@@ -1014,9 +1013,6 @@ Python/deepfreeze/site.c: Python/frozen_modules/site.h $(DEEPFREEZE_DEPS)
 Python/deepfreeze/stat.c: Python/frozen_modules/stat.h $(DEEPFREEZE_DEPS)
 	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/stat.h -m stat -o Python/deepfreeze/stat.c
 
-Python/deepfreeze/types.c: Python/frozen_modules/types.h $(DEEPFREEZE_DEPS)
-	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/types.h -m types -o Python/deepfreeze/types.c
-
 Python/deepfreeze/importlib.util.c: Python/frozen_modules/importlib.util.h $(DEEPFREEZE_DEPS)
 	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/importlib.util.h -m importlib.util -o Python/deepfreeze/importlib.util.c
 
@@ -1065,7 +1061,6 @@ FROZEN_FILES_IN = \
 		Lib/os.py \
 		Lib/site.py \
 		Lib/stat.py \
-		Lib/types.py \
 		Lib/importlib/util.py \
 		Lib/importlib/machinery.py \
 		Lib/runpy.py \
@@ -1091,7 +1086,6 @@ FROZEN_FILES_OUT = \
 		Python/frozen_modules/os.h \
 		Python/frozen_modules/site.h \
 		Python/frozen_modules/stat.h \
-		Python/frozen_modules/types.h \
 		Python/frozen_modules/importlib.util.h \
 		Python/frozen_modules/importlib.machinery.h \
 		Python/frozen_modules/runpy.h \
@@ -1153,9 +1147,6 @@ Python/frozen_modules/site.h: $(FREEZE_MODULE) Lib/site.py
 
 Python/frozen_modules/stat.h: $(FREEZE_MODULE) Lib/stat.py
 	$(FREEZE_MODULE) stat $(srcdir)/Lib/stat.py Python/frozen_modules/stat.h
-
-Python/frozen_modules/types.h: $(FREEZE_MODULE) Lib/types.py
-	$(FREEZE_MODULE) types $(srcdir)/Lib/types.py Python/frozen_modules/types.h
 
 Python/frozen_modules/importlib.util.h: $(FREEZE_MODULE) Lib/importlib/util.py
 	$(FREEZE_MODULE) importlib.util $(srcdir)/Lib/importlib/util.py Python/frozen_modules/importlib.util.h
