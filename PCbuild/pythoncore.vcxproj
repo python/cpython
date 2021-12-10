@@ -539,7 +539,6 @@
     <ClCompile Include="..\Python\deepfreeze\df.os.c" />
     <ClCompile Include="..\Python\deepfreeze\df.site.c" />
     <ClCompile Include="..\Python\deepfreeze\df.stat.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.types.c" />
     <ClCompile Include="..\Python\deepfreeze\df.importlib.util.c" />
     <ClCompile Include="..\Python\deepfreeze\df.importlib.machinery.c" />
     <ClCompile Include="..\Python\deepfreeze\df.runpy.c" />
