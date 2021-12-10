@@ -1037,8 +1037,7 @@ if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
   _arm_arch=`sed -n -e '/__ARM_ARCH/d' -e 's/^arm_arch = //p' conftest.out`
   AC_MSG_RESULT([$ANDROID_API_LEVEL])
   if test -z "$ANDROID_API_LEVEL"; then
-    echo 'Fatal: you must define __ANDROID_API__'
-    exit 1
+    AC_MSG_ERROR([Fatal: you must define __ANDROID_API__])
   fi
   AC_DEFINE_UNQUOTED(ANDROID_API_LEVEL, $ANDROID_API_LEVEL, [The Android API level.])
 
@@ -1054,12 +1053,14 @@ fi
 rm -f conftest.c conftest.out
 
 # Check for unsupported systems
-case $ac_sys_system/$ac_sys_release in
-atheos*|Linux*/1*)
-   echo This system \($ac_sys_system/$ac_sys_release\) is no longer supported.
-   echo See README for details.
-   exit 1;;
-esac
+AS_CASE([$ac_sys_system/$ac_sys_release],
+  [atheos*|Linux*/1*], [
+    AC_MSG_ERROR([m4_normalize([
+      This system \($ac_sys_system/$ac_sys_release\) is no longer supported.
+      See README for details.
+   ])])
+ ]
+)
 
 AC_MSG_CHECKING([for --with-suffix])
 AC_ARG_WITH([suffix],
@@ -3795,16 +3796,17 @@ fi
 if test "$ipv6" = "yes" -a "$ipv6lib" != "none"; then
 	if test -d $ipv6libdir -a -f $ipv6libdir/lib$ipv6lib.a; then
 		LIBS="-L$ipv6libdir -l$ipv6lib $LIBS"
-		echo "using lib$ipv6lib"
+		AC_MSG_NOTICE([using lib$ipv6lib])
 	else
-		if test $ipv6trylibc = "yes"; then
-			echo "using libc"
-		else
-			echo 'Fatal: no $ipv6lib library found.  cannot continue.'
-			echo "You need to fetch lib$ipv6lib.a from appropriate"
-			echo 'ipv6 kit and compile beforehand.'
-			exit 1
-		fi
+    AS_VAR_IF([ipv6trylibc], [yes], [
+      AC_MSG_NOTICE([using libc])
+    ], [
+      AC_MSG_ERROR([m4_normalize([
+        No $ipv6lib library found; cannot continue.
+        You need to fetch lib$ipv6lib.a from appropriate
+        ipv6 kit and compile beforehand.
+      ])])
+    ])
 	fi
 fi
 
@@ -4510,12 +4512,12 @@ dnl if ac_cv_func_getaddrinfo
 
 if test "$ac_cv_func_getaddrinfo" = no -o "$ac_cv_buggy_getaddrinfo" = yes
 then
-	if test $ipv6 = yes
-	then
-		echo 'Fatal: You must get working getaddrinfo() function.'
-		echo '       or you can specify "--disable-ipv6"'.
-		exit 1
-	fi
+  AS_VAR_IF([ipv6], [yes], [
+    AC_MSG_ERROR([m4_normalize([
+      You must get working getaddrinfo() function
+      or pass the "--disable-ipv6" option to configure.
+    ])])
+  ])
 else
 	AC_DEFINE(HAVE_GETADDRINFO, 1, [Define if you have the getaddrinfo function.])
 fi
@@ -6494,28 +6496,26 @@ AC_CONFIG_FILES([Modules/Setup.stdlib])
 AC_CONFIG_FILES([Modules/ld_so_aix], [chmod +x Modules/ld_so_aix])
 AC_OUTPUT
 
-echo "creating Modules/Setup.local" >&AS_MESSAGE_FD
+AC_MSG_NOTICE([creating Modules/Setup.local])
 if test ! -f Modules/Setup.local
 then
 	echo "# Edit this file for local setup changes" >Modules/Setup.local
 fi
 
-echo "creating Makefile" >&AS_MESSAGE_FD
+AC_MSG_NOTICE([creating Makefile])
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
 			Modules/Setup.local $srcdir/Modules/Setup.bootstrap $srcdir/Modules/Setup
 mv config.c Modules
 
 if test -z "$PKG_CONFIG"; then
-  echo "" >&AS_MESSAGE_FD
-  echo "pkg-config is missing. Some dependencies may not be detected correctly." >&AS_MESSAGE_FD
+  AC_MSG_WARN([pkg-config is missing. Some dependencies may not be detected correctly.])
 fi
 
 if test "$Py_OPT" = 'false' -a "$Py_DEBUG" != 'true'; then
-    echo "" >&AS_MESSAGE_FD
-    echo "" >&AS_MESSAGE_FD
-    echo "If you want a release build with all stable optimizations active (PGO, etc)," >&AS_MESSAGE_FD
-    echo "please run ./configure --enable-optimizations" >&AS_MESSAGE_FD
-    echo "" >&AS_MESSAGE_FD
-    echo "" >&AS_MESSAGE_FD
+  AC_MSG_NOTICE([
+
+If you want a release build with all stable optimizations active (PGO, etc),
+please run ./configure --enable-optimizations
+])
 fi

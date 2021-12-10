@@ -6169,8 +6169,7 @@ if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ANDROID_API_LEVEL" >&5
 $as_echo "$ANDROID_API_LEVEL" >&6; }
   if test -z "$ANDROID_API_LEVEL"; then
-    echo 'Fatal: you must define __ANDROID_API__'
-    exit 1
+    as_fn_error $? "Fatal: you must define __ANDROID_API__" "$LINENO" 5
   fi
 
 cat >>confdefs.h <<_ACEOF
@@ -6193,11 +6192,14 @@ fi
 rm -f conftest.c conftest.out
 
 # Check for unsupported systems
-case $ac_sys_system/$ac_sys_release in
-atheos*|Linux*/1*)
-   echo This system \($ac_sys_system/$ac_sys_release\) is no longer supported.
-   echo See README for details.
-   exit 1;;
+case $ac_sys_system/$ac_sys_release in #(
+  atheos*|Linux*/1*) :
+
+    as_fn_error $? "This system \($ac_sys_system/$ac_sys_release\) is no longer supported. See README for details." "$LINENO" 5
+
+ ;; #(
+  *) :
+     ;;
 esac
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-suffix" >&5
@@ -13159,16 +13161,19 @@ fi
 if test "$ipv6" = "yes" -a "$ipv6lib" != "none"; then
 	if test -d $ipv6libdir -a -f $ipv6libdir/lib$ipv6lib.a; then
 		LIBS="-L$ipv6libdir -l$ipv6lib $LIBS"
-		echo "using lib$ipv6lib"
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: using lib$ipv6lib" >&5
+$as_echo "$as_me: using lib$ipv6lib" >&6;}
 	else
-		if test $ipv6trylibc = "yes"; then
-			echo "using libc"
-		else
-			echo 'Fatal: no $ipv6lib library found.  cannot continue.'
-			echo "You need to fetch lib$ipv6lib.a from appropriate"
-			echo 'ipv6 kit and compile beforehand.'
-			exit 1
-		fi
+    if test "x$ipv6trylibc" = xyes; then :
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: using libc" >&5
+$as_echo "$as_me: using libc" >&6;}
+
+else
+
+      as_fn_error $? "No $ipv6lib library found; cannot continue. You need to fetch lib$ipv6lib.a from appropriate ipv6 kit and compile beforehand." "$LINENO" 5
+
+fi
 	fi
 fi
 
@@ -16522,12 +16527,11 @@ fi
 
 if test "$ac_cv_func_getaddrinfo" = no -o "$ac_cv_buggy_getaddrinfo" = yes
 then
-	if test $ipv6 = yes
-	then
-		echo 'Fatal: You must get working getaddrinfo() function.'
-		echo '       or you can specify "--disable-ipv6"'.
-		exit 1
-	fi
+  if test "x$ipv6" = xyes; then :
+
+    as_fn_error $? "You must get working getaddrinfo() function or pass the \"--disable-ipv6\" option to configure." "$LINENO" 5
+
+fi
 else
 
 $as_echo "#define HAVE_GETADDRINFO 1" >>confdefs.h
@@ -25071,28 +25075,34 @@ $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
 
 
-echo "creating Modules/Setup.local" >&6
+{ $as_echo "$as_me:${as_lineno-$LINENO}: creating Modules/Setup.local" >&5
+$as_echo "$as_me: creating Modules/Setup.local" >&6;}
 if test ! -f Modules/Setup.local
 then
 	echo "# Edit this file for local setup changes" >Modules/Setup.local
 fi
 
-echo "creating Makefile" >&6
+{ $as_echo "$as_me:${as_lineno-$LINENO}: creating Makefile" >&5
+$as_echo "$as_me: creating Makefile" >&6;}
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
 			Modules/Setup.local $srcdir/Modules/Setup.bootstrap $srcdir/Modules/Setup
 mv config.c Modules
 
 if test -z "$PKG_CONFIG"; then
-  echo "" >&6
-  echo "pkg-config is missing. Some dependencies may not be detected correctly." >&6
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: pkg-config is missing. Some dependencies may not be detected correctly." >&5
+$as_echo "$as_me: WARNING: pkg-config is missing. Some dependencies may not be detected correctly." >&2;}
 fi
 
 if test "$Py_OPT" = 'false' -a "$Py_DEBUG" != 'true'; then
-    echo "" >&6
-    echo "" >&6
-    echo "If you want a release build with all stable optimizations active (PGO, etc)," >&6
-    echo "please run ./configure --enable-optimizations" >&6
-    echo "" >&6
-    echo "" >&6
+  { $as_echo "$as_me:${as_lineno-$LINENO}:
+
+If you want a release build with all stable optimizations active (PGO, etc),
+please run ./configure --enable-optimizations
+" >&5
+$as_echo "$as_me:
+
+If you want a release build with all stable optimizations active (PGO, etc),
+please run ./configure --enable-optimizations
+" >&6;}
 fi
