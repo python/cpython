@@ -14,12 +14,17 @@ extern "C" {
 
 #define _Py_GLOBAL_OBJECT(NAME) \
     _PyRuntime.global_objects.NAME
+#define _Py_SINGLETON(NAME) \
+    _Py_GLOBAL_OBJECT(singletons.NAME)
 
 struct _Py_global_objects {
+    struct {
+    } singletons;
 };
 
-
 #define _Py_global_objects_INIT { \
+    .singletons = { \
+    }, \
 }
 
 #ifdef __cplusplus
