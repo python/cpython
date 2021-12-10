@@ -1,2 +1,0 @@
-CI now verifies that autoconf files have been regenerated with a current and
-unpatched autoconf package.

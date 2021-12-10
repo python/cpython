@@ -584,12 +584,14 @@ iterations of the loop.
 
 .. opcode:: WITH_EXCEPT_START
 
-    Calls the function in position 7 on the stack with the top three
+    Calls the function in position 8 on the stack with the top three
     items on the stack as arguments.
     Used to implement the call ``context_manager.__exit__(*exc_info())`` when an exception
     has occurred in a :keyword:`with` statement.
 
     .. versionadded:: 3.9
+    .. versionchanged:: 3.11
+       The ``__exit__`` function is in position 8 of the stack rather than 7.
 
 
 .. opcode:: POP_EXCEPT_AND_RERAISE
@@ -1168,9 +1170,8 @@ All of the following opcodes use their arguments.
 
 .. opcode:: GEN_START (kind)
 
-    Pops TOS. If TOS was not ``None``, raises an exception. The ``kind``
-    operand corresponds to the type of generator or coroutine and determines
-    the error message. The legal kinds are 0 for generator, 1 for coroutine,
+    Pops TOS. The ``kind`` operand corresponds to the type of generator or
+    coroutine. The legal kinds are 0 for generator, 1 for coroutine,
     and 2 for async generator.
 
    .. versionadded:: 3.10

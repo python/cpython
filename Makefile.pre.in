@@ -490,6 +490,10 @@ DEEPFREEZE_OBJS = \
 		Python/deepfreeze/os.o \
 		Python/deepfreeze/site.o \
 		Python/deepfreeze/stat.o \
+		Python/deepfreeze/types.o \
+		Python/deepfreeze/importlib.util.o \
+		Python/deepfreeze/importlib.machinery.o \
+		Python/deepfreeze/runpy.o \
 		Python/deepfreeze/__hello__.o \
 		Python/deepfreeze/__phello__.o \
 		Python/deepfreeze/__phello__.ham.o \
@@ -954,9 +958,9 @@ BOOTSTRAP_HEADERS = \
 
 Programs/_bootstrap_python.o: Programs/_bootstrap_python.c $(BOOTSTRAP_HEADERS) $(PYTHON_HEADERS)
 
-_bootstrap_python: $(LIBRARY_OBJS_OMIT_FROZEN) Programs/_bootstrap_python.o Modules/getpath_bootstrap.o Modules/Setup.local
+_bootstrap_python: $(LIBRARY_OBJS_OMIT_FROZEN) Programs/_bootstrap_python.o Modules/getpath.o Modules/Setup.local
 	$(LINKCC) $(PY_LDFLAGS_NOLTO) -o $@ $(LIBRARY_OBJS_OMIT_FROZEN) \
-		Programs/_bootstrap_python.o Modules/getpath_bootstrap.o $(LIBS) $(MODLIBS) $(SYSLIBS)
+		Programs/_bootstrap_python.o Modules/getpath.o $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 ############################################################################
 # Deepfreeze targets
@@ -1010,6 +1014,18 @@ Python/deepfreeze/site.c: Python/frozen_modules/site.h $(DEEPFREEZE_DEPS)
 Python/deepfreeze/stat.c: Python/frozen_modules/stat.h $(DEEPFREEZE_DEPS)
 	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/stat.h -m stat -o Python/deepfreeze/stat.c
 
+Python/deepfreeze/types.c: Python/frozen_modules/types.h $(DEEPFREEZE_DEPS)
+	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/types.h -m types -o Python/deepfreeze/types.c
+
+Python/deepfreeze/importlib.util.c: Python/frozen_modules/importlib.util.h $(DEEPFREEZE_DEPS)
+	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/importlib.util.h -m importlib.util -o Python/deepfreeze/importlib.util.c
+
+Python/deepfreeze/importlib.machinery.c: Python/frozen_modules/importlib.machinery.h $(DEEPFREEZE_DEPS)
+	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/importlib.machinery.h -m importlib.machinery -o Python/deepfreeze/importlib.machinery.c
+
+Python/deepfreeze/runpy.c: Python/frozen_modules/runpy.h $(DEEPFREEZE_DEPS)
+	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/runpy.h -m runpy -o Python/deepfreeze/runpy.c
+
 Python/deepfreeze/__hello__.c: Python/frozen_modules/__hello__.h $(DEEPFREEZE_DEPS)
 	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py Python/frozen_modules/__hello__.h -m __hello__ -o Python/deepfreeze/__hello__.c
 
@@ -1049,6 +1065,10 @@ FROZEN_FILES_IN = \
 		Lib/os.py \
 		Lib/site.py \
 		Lib/stat.py \
+		Lib/types.py \
+		Lib/importlib/util.py \
+		Lib/importlib/machinery.py \
+		Lib/runpy.py \
 		Lib/__hello__.py \
 		Lib/__phello__/__init__.py \
 		Lib/__phello__/ham/__init__.py \
@@ -1071,6 +1091,10 @@ FROZEN_FILES_OUT = \
 		Python/frozen_modules/os.h \
 		Python/frozen_modules/site.h \
 		Python/frozen_modules/stat.h \
+		Python/frozen_modules/types.h \
+		Python/frozen_modules/importlib.util.h \
+		Python/frozen_modules/importlib.machinery.h \
+		Python/frozen_modules/runpy.h \
 		Python/frozen_modules/__hello__.h \
 		Python/frozen_modules/__phello__.h \
 		Python/frozen_modules/__phello__.ham.h \
@@ -1129,6 +1153,18 @@ Python/frozen_modules/site.h: $(FREEZE_MODULE) Lib/site.py
 
 Python/frozen_modules/stat.h: $(FREEZE_MODULE) Lib/stat.py
 	$(FREEZE_MODULE) stat $(srcdir)/Lib/stat.py Python/frozen_modules/stat.h
+
+Python/frozen_modules/types.h: $(FREEZE_MODULE) Lib/types.py
+	$(FREEZE_MODULE) types $(srcdir)/Lib/types.py Python/frozen_modules/types.h
+
+Python/frozen_modules/importlib.util.h: $(FREEZE_MODULE) Lib/importlib/util.py
+	$(FREEZE_MODULE) importlib.util $(srcdir)/Lib/importlib/util.py Python/frozen_modules/importlib.util.h
+
+Python/frozen_modules/importlib.machinery.h: $(FREEZE_MODULE) Lib/importlib/machinery.py
+	$(FREEZE_MODULE) importlib.machinery $(srcdir)/Lib/importlib/machinery.py Python/frozen_modules/importlib.machinery.h
+
+Python/frozen_modules/runpy.h: $(FREEZE_MODULE) Lib/runpy.py
+	$(FREEZE_MODULE) runpy $(srcdir)/Lib/runpy.py Python/frozen_modules/runpy.h
 
 Python/frozen_modules/__hello__.h: $(FREEZE_MODULE) Lib/__hello__.py
 	$(FREEZE_MODULE) __hello__ $(srcdir)/Lib/__hello__.py Python/frozen_modules/__hello__.h
@@ -1204,18 +1240,6 @@ Modules/getpath.o: $(srcdir)/Modules/getpath.c Python/frozen_modules/getpath.h M
 		-DVPATH='"$(VPATH)"' \
 		-DPLATLIBDIR='"$(PLATLIBDIR)"' \
 		-o $@ $(srcdir)/Modules/getpath.c
-
-# like getpath.o with additional -DPY_BOOTSTRAP_PYTHON=1
-Modules/getpath_bootstrap.o: $(srcdir)/Modules/getpath.c Python/frozen_modules/getpath.h Makefile $(PYTHON_HEADERS)
-	$(CC) -c $(PY_CORE_CFLAGS) -DPYTHONPATH='"$(PYTHONPATH)"' \
-		-DPREFIX='"$(prefix)"' \
-		-DEXEC_PREFIX='"$(exec_prefix)"' \
-		-DVERSION='"$(VERSION)"' \
-		-DVPATH='"$(VPATH)"' \
-		-DPLATLIBDIR='"$(PLATLIBDIR)"' \
-		-DPY_BOOTSTRAP_PYTHON=1 \
-		-o $@ $(srcdir)/Modules/getpath.c
-
 
 Programs/python.o: $(srcdir)/Programs/python.c
 	$(MAINCC) -c $(PY_CORE_CFLAGS) -o $@ $(srcdir)/Programs/python.c
@@ -1552,6 +1576,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_atomic_funcs.h \
 		$(srcdir)/Include/internal/pycore_bitutils.h \
 		$(srcdir)/Include/internal/pycore_bytes_methods.h \
+		$(srcdir)/Include/internal/pycore_bytesobject.h \
 		$(srcdir)/Include/internal/pycore_call.h \
 		$(srcdir)/Include/internal/pycore_ceval.h \
 		$(srcdir)/Include/internal/pycore_code.h \
@@ -1560,10 +1585,12 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_context.h \
 		$(srcdir)/Include/internal/pycore_dict.h \
 		$(srcdir)/Include/internal/pycore_dtoa.h \
+		$(srcdir)/Include/internal/pycore_exceptions.h \
 		$(srcdir)/Include/internal/pycore_fileutils.h \
 		$(srcdir)/Include/internal/pycore_floatobject.h \
 		$(srcdir)/Include/internal/pycore_format.h \
 		$(srcdir)/Include/internal/pycore_function.h \
+		$(srcdir)/Include/internal/pycore_genobject.h \
 		$(srcdir)/Include/internal/pycore_getopt.h \
 		$(srcdir)/Include/internal/pycore_gil.h \
 		$(srcdir)/Include/internal/pycore_hamt.h \
@@ -1574,6 +1601,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_interpreteridobject.h \
 		$(srcdir)/Include/internal/pycore_list.h \
 		$(srcdir)/Include/internal/pycore_long.h \
+		$(srcdir)/Include/internal/pycore_long_state.h \
 		$(srcdir)/Include/internal/pycore_moduleobject.h \
 		$(srcdir)/Include/internal/pycore_namespace.h \
 		$(srcdir)/Include/internal/pycore_object.h \
@@ -1585,14 +1613,17 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_pymem.h \
 		$(srcdir)/Include/internal/pycore_pystate.h \
 		$(srcdir)/Include/internal/pycore_runtime.h \
+		$(srcdir)/Include/internal/pycore_sliceobject.h \
 		$(srcdir)/Include/internal/pycore_strhex.h \
 		$(srcdir)/Include/internal/pycore_structseq.h \
 		$(srcdir)/Include/internal/pycore_symtable.h \
 		$(srcdir)/Include/internal/pycore_sysmodule.h \
 		$(srcdir)/Include/internal/pycore_traceback.h \
 		$(srcdir)/Include/internal/pycore_tuple.h \
+		$(srcdir)/Include/internal/pycore_typeobject.h \
 		$(srcdir)/Include/internal/pycore_ucnhash.h \
 		$(srcdir)/Include/internal/pycore_unionobject.h \
+		$(srcdir)/Include/internal/pycore_unicodeobject.h \
 		$(srcdir)/Include/internal/pycore_warnings.h \
 		$(DTRACE_HEADERS) \
 		\

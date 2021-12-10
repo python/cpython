@@ -449,6 +449,10 @@ if not home_was_set and real_executable_dir and not py_setpath:
             readlines(joinpath(real_executable_dir, BUILDDIR_TXT))[0],
         )
         build_prefix = joinpath(real_executable_dir, VPATH)
+    except IndexError:
+        # File exists but is empty
+        platstdlib_dir = real_executable_dir
+        build_prefix = joinpath(real_executable_dir, VPATH)
     except FileNotFoundError:
         if isfile(joinpath(real_executable_dir, BUILD_LANDMARK)):
             build_prefix = joinpath(real_executable_dir, VPATH)
@@ -664,14 +668,17 @@ elif not pythonpath:
             pythonpath.append(joinpath(prefix, p))
 
     # Then add stdlib_dir and platstdlib_dir
-    if stdlib_dir:
-        pythonpath.append(stdlib_dir)
-    if platstdlib_dir:
-        if os_name == 'nt' and venv_prefix:
-            # QUIRK: Windows appends executable_dir instead of platstdlib_dir
-            # when in a venv
-            pythonpath.append(executable_dir)
-        else:
+    if os_name == 'nt' and venv_prefix:
+        # QUIRK: Windows generates paths differently in a venv
+        if platstdlib_dir:
+            pythonpath.append(platstdlib_dir)
+        if stdlib_dir:
+            pythonpath.append(stdlib_dir)
+        pythonpath.append(executable_dir)
+    else:
+        if stdlib_dir:
+            pythonpath.append(stdlib_dir)
+        if platstdlib_dir:
             pythonpath.append(platstdlib_dir)
 
     config['module_search_paths'] = pythonpath

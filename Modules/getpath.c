@@ -390,7 +390,7 @@ getpath_readlines(PyObject *Py_UNUSED(self), PyObject *args)
         while (cb && (p1[cb] == L'\n' || p1[cb] == L'\r')) {
             --cb;
         }
-        PyObject *u = PyUnicode_FromWideChar(p1, cb + 1);
+        PyObject *u = PyUnicode_FromWideChar(p1, cb ? cb + 1 : 0);
         if (!u || PyList_Append(r, u) < 0) {
             Py_XDECREF(u);
             Py_CLEAR(r);
@@ -754,12 +754,10 @@ library_to_dict(PyObject *dict, const char *key)
     if (PyWin_DLLhModule) {
         return winmodule_to_dict(dict, key, PyWin_DLLhModule);
     }
-#elif defined(WITH_NEXT_FRAMEWORK) && !defined(PY_BOOTSTRAP_PYTHON)
-    // _bootstrap_python does not use framework and crashes
+#elif defined(WITH_NEXT_FRAMEWORK)
     static char modPath[MAXPATHLEN + 1];
     static int modPathInitialized = -1;
     if (modPathInitialized < 0) {
-        NSModule pythonModule;
         modPathInitialized = 0;
 
         /* On Mac OS X we have a special case if we're running from a framework.
@@ -767,12 +765,17 @@ library_to_dict(PyObject *dict, const char *key)
            which is in the framework, not relative to the executable, which may
            be outside of the framework. Except when we're in the build
            directory... */
-        pythonModule = NSModuleForSymbol(NSLookupAndBindSymbol("_Py_Initialize"));
-
-        /* Use dylib functions to find out where the framework was loaded from */
-        const char *path = NSLibraryNameForModule(pythonModule);
-        if (path) {
-            strncpy(modPath, path, MAXPATHLEN);
+        NSSymbol symbol = NSLookupAndBindSymbol("_Py_Initialize");
+        if (symbol != NULL) {
+            NSModule pythonModule = NSModuleForSymbol(symbol);
+            if (pythonModule != NULL) {
+                /* Use dylib functions to find out where the framework was loaded from */
+                const char *path = NSLibraryNameForModule(pythonModule);
+                if (path) {
+                    strncpy(modPath, path, MAXPATHLEN);
+                    modPathInitialized = 1;
+                }
+            }
         }
     }
     if (modPathInitialized > 0) {
