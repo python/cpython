@@ -2392,10 +2392,7 @@ AC_DEFINE_UNQUOTED([RETSIGTYPE],[void],[assume C89 semantics that RETSIGTYPE is 
 AC_TYPE_SIZE_T
 AC_TYPE_UID_T
 
-AC_CHECK_TYPE(ssize_t,
-  AC_DEFINE(HAVE_SSIZE_T, 1, [Define if your compiler provides ssize_t]),,)
-AC_CHECK_TYPE(__uint128_t,
-  AC_DEFINE(HAVE_GCC_UINT128_T, 1, [Define if your compiler provides __uint128_t]),,)
+AC_CHECK_TYPES([ssize_t])
 
 # Sizes and alignments of various common basic types
 # ANSI C requires sizeof(char) == 1, so no need to check it
@@ -5646,15 +5643,18 @@ if test "$ac_cv_have_size_t_format" != no ; then
   [Define to printf format modifier for Py_ssize_t])
 fi
 
-AC_CHECK_TYPE(socklen_t,,
-  AC_DEFINE(socklen_t,int,
-            [Define to `int' if <sys/socket.h> does not define.]),[
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-#ifdef HAVE_SYS_SOCKET_H
-#include <sys/socket.h>
-#endif
+AC_CHECK_TYPES([socklen_t], [], [
+  AC_DEFINE(
+    [socklen_t], [int],
+    [Define to `int' if <sys/socket.h> does not define.]
+  )
+], [
+  #ifdef HAVE_SYS_TYPES_H
+  #  include <sys/types.h>
+  #endif
+  #ifdef HAVE_SYS_SOCKET_H
+  #  include <sys/socket.h>
+  #endif
 ])
 
 AC_CACHE_CHECK([for broken mbstowcs], [ac_cv_broken_mbstowcs],

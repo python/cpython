@@ -9041,14 +9041,10 @@ fi
 ac_fn_c_check_type "$LINENO" "ssize_t" "ac_cv_type_ssize_t" "$ac_includes_default"
 if test "x$ac_cv_type_ssize_t" = xyes; then :
 
-$as_echo "#define HAVE_SSIZE_T 1" >>confdefs.h
+cat >>confdefs.h <<_ACEOF
+#define HAVE_SSIZE_T 1
+_ACEOF
 
-fi
-
-ac_fn_c_check_type "$LINENO" "__uint128_t" "ac_cv_type___uint128_t" "$ac_includes_default"
-if test "x$ac_cv_type___uint128_t" = xyes; then :
-
-$as_echo "#define HAVE_GCC_UINT128_T 1" >>confdefs.h
 
 fi
 
@@ -19908,19 +19904,26 @@ $as_echo "#define PY_FORMAT_SIZE_T \"z\"" >>confdefs.h
 fi
 
 ac_fn_c_check_type "$LINENO" "socklen_t" "ac_cv_type_socklen_t" "
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-#ifdef HAVE_SYS_SOCKET_H
-#include <sys/socket.h>
-#endif
+  #ifdef HAVE_SYS_TYPES_H
+  #  include <sys/types.h>
+  #endif
+  #ifdef HAVE_SYS_SOCKET_H
+  #  include <sys/socket.h>
+  #endif
 
 "
 if test "x$ac_cv_type_socklen_t" = xyes; then :
 
+cat >>confdefs.h <<_ACEOF
+#define HAVE_SOCKLEN_T 1
+_ACEOF
+
+
 else
 
+
 $as_echo "#define socklen_t int" >>confdefs.h
+
 
 fi
 

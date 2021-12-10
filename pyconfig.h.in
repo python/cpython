@@ -420,9 +420,6 @@
    */
 #undef HAVE_GCC_ASM_FOR_X87
 
-/* Define if your compiler provides __uint128_t */
-#undef HAVE_GCC_UINT128_T
-
 /* Define to 1 if you have the <gdbm-ndbm.h> header file. */
 #undef HAVE_GDBM_DASH_NDBM_H
 
@@ -1070,13 +1067,16 @@
 /* Define if you have the 'socketpair' function. */
 #undef HAVE_SOCKETPAIR
 
+/* Define to 1 if the system has the type `socklen_t'. */
+#undef HAVE_SOCKLEN_T
+
 /* Define to 1 if you have the <spawn.h> header file. */
 #undef HAVE_SPAWN_H
 
 /* Define to 1 if you have the `splice' function. */
 #undef HAVE_SPLICE
 
-/* Define if your compiler provides ssize_t */
+/* Define to 1 if the system has the type `ssize_t'. */
 #undef HAVE_SSIZE_T
 
 /* Define to 1 if you have the `statvfs' function. */
