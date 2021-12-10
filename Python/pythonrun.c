@@ -1465,7 +1465,8 @@ print_exception_recursive(struct exception_print_context *ctx, PyObject *value)
         if (err < 0) {
             /* restore the depth as long as we're ignoring errors */
             ctx->exception_group_depth = prev_depth;
-        } else {
+        }
+        else {
             assert(prev_depth == ctx->exception_group_depth);
         }
     }
