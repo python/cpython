@@ -1411,43 +1411,74 @@ static PyObject *surrogateescape_errors(PyObject *self, PyObject *exc)
  * The encodings package is frozen but most encodings modules are not. The
  * __path__ attribute of the encodings package must be reset so importlib is
  * able to find the pure Python modules.
- * Returns -1 on error, 0 on nothing to do, and 1 on update.
+ * Returns -1 on error
  */
 static int
 _set_encodings_path(PyObject *mod) {
-    const PyConfig *config = _Py_GetConfig();
-    if (config->stdlib_dir == NULL) {
-        // no stdlib dir, do nothing
-        return 0;
-    }
-    // os.path.join(stdlib_dir, "encodings")
-    wchar_t *encodings_dirw = _Py_join_relfile(
-        config->stdlib_dir, L"encodings");
-    if (encodings_dirw == NULL) {
-        PyErr_NoMemory();
-        return -1;
-    }
-    PyObject *encodings_dir = PyUnicode_FromWideChar(encodings_dirw, -1);
-    PyMem_RawFree(encodings_dirw);
-    if (encodings_dir == NULL) {
-        return -1;
-    }
-    // new __path__ list. The old may contain invalid path from freezing.
-    PyObject *path = PyList_New(1);
+    int rc = -1;
+    PyObject *path = PyList_New(0);
     if (path == NULL) {
-        Py_DECREF(encodings_dir);
-        return -1;
+        goto exit;
     }
-    if (PyList_SetItem(path, 0, encodings_dir) < 0) {
-        return -1;
+    const PyConfig *config = _Py_GetConfig();
+    /* standard stdlib dir */
+    if (config->stdlib_dir != NULL) {
+        // os.path.join(stdlib_dir, "encodings")
+        wchar_t *encodings_dirw = _Py_join_relfile(
+            config->stdlib_dir, L"encodings");
+        if (encodings_dirw == NULL) {
+            PyErr_NoMemory();
+            goto exit;
+        }
+        PyObject *encodings_dir = PyUnicode_FromWideChar(encodings_dirw, -1);
+        PyMem_RawFree(encodings_dirw);
+        if (encodings_dir == NULL) {
+            goto exit;
+        }
+        if (PyList_Append(path, encodings_dir) < 0) {
+            goto exit;
+        }
+    }
+    // Additional search paths, required for embedding
+    if (config->module_search_paths_set) {
+        for (Py_ssize_t i = 0; i < config->module_search_paths.length; ++i) {
+            wchar_t *encodings_dirw = _Py_join_relfile(
+                config->module_search_paths.items[i], L"encodings");
+            if (encodings_dirw == NULL) {
+                PyErr_NoMemory();
+                goto exit;
+            }
+#ifdef MS_WINDOWS
+            DWORD attr = GetFileAttributesW(path);
+            int isdir = (attr != INVALID_FILE_ATTRIBUTES) &&
+                         (attr & FILE_ATTRIBUTE_DIRECTORY);
+#else
+            struct stat st;
+            int isdir = (_Py_wstat(path, &st) == 0) && S_ISDIR(st.st_mode);
+#endif
+            if (!isdir) {
+                PyMem_RawFree(encodings_dirw);
+                continue;
+            }
+            PyObject *encodings_dir = PyUnicode_FromWideChar(encodings_dirw, -1);
+            PyMem_RawFree(encodings_dirw);
+            if (encodings_dir == NULL) {
+                goto exit;
+            }
+            if (PyList_Append(path, encodings_dir) < 0) {
+                goto exit;
+            }
+        }
     }
     // set and override __path__
     if (PyObject_SetAttrString(mod, "__path__", path) < 0) {
-        Py_DECREF(path);
-        return -1;
+        goto exit;
     }
-    Py_DECREF(path);
-    return 1;
+    rc = 0;
+  exit:
+    Py_XDECREF(path);
+
+    return rc;
 }
 
 static int _PyCodecRegistry_Init(void)
