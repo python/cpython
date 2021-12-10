@@ -6175,7 +6175,7 @@ if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ANDROID_API_LEVEL" >&5
 $as_echo "$ANDROID_API_LEVEL" >&6; }
   if test -z "$ANDROID_API_LEVEL"; then
-    as_fn_error $? "Fatal: you must define __ANDROID_API__" "$LINENO" 5
+    as_fn_error $? "You must define __ANDROID_API__" "$LINENO" 5
   fi
 
 cat >>confdefs.h <<_ACEOF
