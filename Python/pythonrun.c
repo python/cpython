@@ -956,7 +956,7 @@ print_exception_traceback(struct exception_print_context *ctx, PyObject *value)
 /* Prints the message line: module.qualname[: str(exc)] */
 static int
 print_exception_message(struct exception_print_context *ctx, PyObject *type,
-                        PyObject *value) 
+                        PyObject *value)
 {
     PyObject *f = ctx->file;
 
@@ -1253,6 +1253,37 @@ print_chained(struct exception_print_context* ctx, PyObject *value,
     return 0;
 }
 
+/* Return true if value is in seen or there was a lookup error.
+ * False if lookup succeeded and the item was not found.
+ * We suppress errors because this makes us err on the side of
+ * under-printing which is better than over-printing irregular
+ * exceptions (e.g., unhashable ones).
+ */
+static bool
+print_exception_seen_lookup(struct exception_print_context* ctx,
+                            PyObject *value)
+{
+    int in_seen;
+    PyObject *check_id = PyLong_FromVoidPtr(value);
+    if (check_id == NULL) {
+        PyErr_Clear();
+        return true;
+    }
+
+    in_seen = PySet_Contains(ctx->seen, check_id);
+    Py_DECREF(check_id);
+    if (in_seen == -1) {
+        PyErr_Clear();
+        return true;
+    }
+
+    if (in_seen == 1) {
+        /* value is in seen */
+        return true;
+    }
+    return false;
+}
+
 static int
 print_exception_cause_and_context(struct exception_print_context* ctx,
                                   PyObject *value)
@@ -1271,21 +1302,9 @@ print_exception_cause_and_context(struct exception_print_context* ctx,
 
     PyObject *cause = PyException_GetCause(value);
     if (cause) {
-        int in_seen;
-        PyObject *check_id = PyLong_FromVoidPtr(cause);
-        if (check_id == NULL) {
-            in_seen = -1;
-        } else {
-            in_seen = PySet_Contains(ctx->seen, check_id);
-            Py_DECREF(check_id);
-        }
         int err = 0;
-        if (in_seen == 0) {
+        if (!print_exception_seen_lookup(ctx, cause)) {
             err = print_chained(ctx, cause, cause_message, "cause");
-        }
-        else if (in_seen == -1) {
-            /* Ignore errors in 'seen' lookup */
-            PyErr_Clear();
         }
         Py_DECREF(cause);
         return err;
@@ -1295,21 +1314,9 @@ print_exception_cause_and_context(struct exception_print_context* ctx,
     }
     PyObject *context = PyException_GetContext(value);
     if (context) {
-        int in_seen;
-        PyObject *check_id = PyLong_FromVoidPtr(context);
-        if (check_id == NULL) {
-            in_seen = -1;
-        } else {
-            in_seen = PySet_Contains(ctx->seen, check_id);
-            Py_DECREF(check_id);
-        }
         int err = 0;
-        if (in_seen == 0) {
+        if (!print_exception_seen_lookup(ctx, context)) {
             err = print_chained(ctx, context, context_message, "context");
-        }
-        else if (in_seen == -1) {
-            /* Ignore errors in 'seen' lookup */
-            PyErr_Clear();
         }
         Py_DECREF(context);
         return err;
