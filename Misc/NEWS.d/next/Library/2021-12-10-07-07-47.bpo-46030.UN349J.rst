@@ -1,0 +1,1 @@
+Add ``LOCAL_CREDS``, ``LOCAL_CREDS_PERSISTENT`` and ``SCM_CREDS2`` FreeBSD constants to the socket module.
