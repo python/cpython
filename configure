@@ -1713,11 +1713,9 @@ Optional Features:
                           no)
   --enable-optimizations  enable expensive, stable optimizations (PGO, etc.)
                           (default is no)
-
   --enable-loadable-sqlite-extensions
                           support loadable extensions in the sqlite3 module,
-                          see Doc/library/sqlite3.rst (default is no),
-
+                          see Doc/library/sqlite3.rst (default is no)
   --enable-ipv6           enable ipv6 (with ipv4) support, see
                           Doc/library/socket.rst (default is yes if supported)
   --enable-big-digits[=15|30]
@@ -12566,16 +12564,16 @@ $as_echo_n "checking for --enable-loadable-sqlite-extensions... " >&6; }
 # Check whether --enable-loadable-sqlite-extensions was given.
 if test "${enable_loadable_sqlite_extensions+set}" = set; then :
   enableval=$enable_loadable_sqlite_extensions;
-  if test "x$have_sqlite3_load_extension" = xno; then :
+    if test "x$have_sqlite3_load_extension" = xno; then :
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
 $as_echo "n/a" >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Your version of SQLite does not support loadable extensions" >&5
+      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Your version of SQLite does not support loadable extensions" >&5
 $as_echo "$as_me: WARNING: Your version of SQLite does not support loadable extensions" >&2;}
 
 else
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 
 $as_echo "#define PY_SQLITE_ENABLE_LOAD_EXTENSION 1" >>confdefs.h
@@ -12585,8 +12583,9 @@ fi
 
 else
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
+
 
 fi
 
