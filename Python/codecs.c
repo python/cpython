@@ -1449,12 +1449,12 @@ _set_encodings_path(PyObject *mod) {
                 goto exit;
             }
 #ifdef MS_WINDOWS
-            DWORD attr = GetFileAttributesW(path);
+            DWORD attr = GetFileAttributesW(encodings_dirw);
             int isdir = (attr != INVALID_FILE_ATTRIBUTES) &&
                          (attr & FILE_ATTRIBUTE_DIRECTORY);
 #else
             struct stat st;
-            int isdir = (_Py_wstat(path, &st) == 0) && S_ISDIR(st.st_mode);
+            int isdir = (_Py_wstat(encodings_dirw, &st) == 0) && S_ISDIR(st.st_mode);
 #endif
             if (!isdir) {
                 PyMem_RawFree(encodings_dirw);
