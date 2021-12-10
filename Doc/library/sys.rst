@@ -396,9 +396,14 @@ always available.
    ``(type, value, traceback)``.  Their meaning is: *type* gets the type of the
    exception being handled (a subclass of :exc:`BaseException`); *value* gets
    the exception instance (an instance of the exception type); *traceback* gets
-   a :ref:`traceback object <traceback-objects>` which encapsulates the call
-   stack at the point where the exception originally occurred.
+   a :ref:`traceback object <traceback-objects>` which typically encapsulates
+   the call stack at the point where the exception last occurred.
 
+   .. versionchanged:: 3.11
+      The ``type`` and ``traceback`` fields are now derived from the ``value``
+      (the exception instance), so when an exception is modified while it is
+      being handled, the changes are reflected in the results of subsequent
+      calls to :func:`exc_info`.
 
 .. data:: exec_prefix
 
@@ -1216,13 +1221,10 @@ always available.
 .. data:: prefix
 
    A string giving the site-specific directory prefix where the platform
-   independent Python files are installed; by default, this is the string
+   independent Python files are installed; on Unix, the default is
    ``'/usr/local'``.  This can be set at build time with the ``--prefix``
-   argument to the :program:`configure` script.  The main collection of Python
-   library modules is installed in the directory :file:`{prefix}/lib/python{X.Y}`
-   while the platform independent header files (all except :file:`pyconfig.h`) are
-   stored in :file:`{prefix}/include/python{X.Y}`, where *X.Y* is the version
-   number of Python, for example ``3.2``.
+   argument to the :program:`configure` script.  See
+   :ref:`installation_paths` for derived paths.
 
    .. note:: If a :ref:`virtual environment <venv-def>` is in effect, this
       value will be changed in ``site.py`` to point to the virtual

@@ -130,13 +130,14 @@ __all__ = [
 import math
 import numbers
 import random
+import sys
 
 from fractions import Fraction
 from decimal import Decimal
 from itertools import groupby, repeat
 from bisect import bisect_left, bisect_right
 from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum
-from operator import itemgetter, mul
+from operator import mul
 from collections import Counter, namedtuple
 
 _SQRT2 = sqrt(2.0)
@@ -247,6 +248,28 @@ def _exact_ratio(x):
 
     x is expected to be an int, Fraction, Decimal or float.
     """
+
+    # XXX We should revisit whether using fractions to accumulate exact
+    # ratios is the right way to go.
+
+    # The integer ratios for binary floats can have numerators or
+    # denominators with over 300 decimal digits.  The problem is more
+    # acute with decimal floats where the the default decimal context
+    # supports a huge range of exponents from Emin=-999999 to
+    # Emax=999999.  When expanded with as_integer_ratio(), numbers like
+    # Decimal('3.14E+5000') and Decimal('3.14E-5000') have large
+    # numerators or denominators that will slow computation.
+
+    # When the integer ratios are accumulated as fractions, the size
+    # grows to cover the full range from the smallest magnitude to the
+    # largest.  For example, Fraction(3.14E+300) + Fraction(3.14E-300),
+    # has a 616 digit numerator.  Likewise,
+    # Fraction(Decimal('3.14E+5000')) + Fraction(Decimal('3.14E-5000'))
+    # has 10,003 digit numerator.
+
+    # This doesn't seem to have been problem in practice, but it is a
+    # potential pitfall.
+
     try:
         return x.as_integer_ratio()
     except AttributeError:
@@ -303,6 +326,59 @@ def _fail_neg(values, errmsg='negative value'):
         if x < 0:
             raise StatisticsError(errmsg)
         yield x
+
+
+def _integer_sqrt_of_frac_rto(n: int, m: int) -> int:
+    """Square root of n/m, rounded to the nearest integer using round-to-odd."""
+    # Reference: https://www.lri.fr/~melquion/doc/05-imacs17_1-expose.pdf
+    a = math.isqrt(n // m)
+    return a | (a*a*m != n)
+
+
+# For 53 bit precision floats, the bit width used in
+# _float_sqrt_of_frac() is 109.
+_sqrt_bit_width: int = 2 * sys.float_info.mant_dig + 3
+
+
+def _float_sqrt_of_frac(n: int, m: int) -> float:
+    """Square root of n/m as a float, correctly rounded."""
+    # See principle and proof sketch at: https://bugs.python.org/msg407078
+    q = (n.bit_length() - m.bit_length() - _sqrt_bit_width) // 2
+    if q >= 0:
+        numerator = _integer_sqrt_of_frac_rto(n, m << 2 * q) << q
+        denominator = 1
+    else:
+        numerator = _integer_sqrt_of_frac_rto(n << -2 * q, m)
+        denominator = 1 << -q
+    return numerator / denominator   # Convert to float
+
+
+def _decimal_sqrt_of_frac(n: int, m: int) -> Decimal:
+    """Square root of n/m as a Decimal, correctly rounded."""
+    # Premise:  For decimal, computing (n/m).sqrt() can be off
+    #           by 1 ulp from the correctly rounded result.
+    # Method:   Check the result, moving up or down a step if needed.
+    if n <= 0:
+        if not n:
+            return Decimal('0.0')
+        n, m = -n, -m
+
+    root = (Decimal(n) / Decimal(m)).sqrt()
+    nr, dr = root.as_integer_ratio()
+
+    plus = root.next_plus()
+    np, dp = plus.as_integer_ratio()
+    # test: n / m > ((root + plus) / 2) ** 2
+    if 4 * n * (dr*dp)**2 > m * (dr*np + dp*nr)**2:
+        return plus
+
+    minus = root.next_minus()
+    nm, dm = minus.as_integer_ratio()
+    # test: n / m < ((root + minus) / 2) ** 2
+    if 4 * n * (dr*dm)**2 < m * (dr*nm + dm*nr)**2:
+        return minus
+
+    return root
 
 
 # === Measures of central tendency (averages) ===
@@ -387,7 +463,7 @@ def geometric_mean(data):
         return exp(fmean(map(log, data)))
     except ValueError:
         raise StatisticsError('geometric mean requires a non-empty dataset '
-                              ' containing positive numbers') from None
+                              'containing positive numbers') from None
 
 
 def harmonic_mean(data, weights=None):
@@ -609,9 +685,11 @@ def multimode(data):
     >>> multimode('')
     []
     """
-    counts = Counter(iter(data)).most_common()
-    maxcount, mode_items = next(groupby(counts, key=itemgetter(1)), (0, []))
-    return list(map(itemgetter(0), mode_items))
+    counts = Counter(iter(data))
+    if not counts:
+        return []
+    maxcount = max(counts.values())
+    return [value for value, count in counts.items() if count == maxcount]
 
 
 # Notes on methods for computing quantiles
@@ -835,14 +913,16 @@ def stdev(data, xbar=None):
     1.0810874155219827
 
     """
-    # Fixme: Despite the exact sum of squared deviations, some inaccuracy
-    # remain because there are two rounding steps.  The first occurs in
-    # the _convert() step for variance(), the second occurs in math.sqrt().
-    var = variance(data, xbar)
-    try:
-        return var.sqrt()
-    except AttributeError:
-        return math.sqrt(var)
+    if iter(data) is data:
+        data = list(data)
+    n = len(data)
+    if n < 2:
+        raise StatisticsError('stdev requires at least two data points')
+    T, ss = _ss(data, xbar)
+    mss = ss / (n - 1)
+    if issubclass(T, Decimal):
+        return _decimal_sqrt_of_frac(mss.numerator, mss.denominator)
+    return _float_sqrt_of_frac(mss.numerator, mss.denominator)
 
 
 def pstdev(data, mu=None):
@@ -854,14 +934,16 @@ def pstdev(data, mu=None):
     0.986893273527251
 
     """
-    # Fixme: Despite the exact sum of squared deviations, some inaccuracy
-    # remain because there are two rounding steps.  The first occurs in
-    # the _convert() step for pvariance(), the second occurs in math.sqrt().
-    var = pvariance(data, mu)
-    try:
-        return var.sqrt()
-    except AttributeError:
-        return math.sqrt(var)
+    if iter(data) is data:
+        data = list(data)
+    n = len(data)
+    if n < 1:
+        raise StatisticsError('pstdev requires at least one data point')
+    T, ss = _ss(data, mu)
+    mss = ss / n
+    if issubclass(T, Decimal):
+        return _decimal_sqrt_of_frac(mss.numerator, mss.denominator)
+    return _float_sqrt_of_frac(mss.numerator, mss.denominator)
 
 
 # === Statistics for relations between two inputs ===
@@ -935,13 +1017,13 @@ def correlation(x, y, /):
 LinearRegression = namedtuple('LinearRegression', ('slope', 'intercept'))
 
 
-def linear_regression(x, y, /):
+def linear_regression(x, y, /, *, proportional=False):
     """Slope and intercept for simple linear regression.
 
     Return the slope and intercept of simple linear regression
     parameters estimated using ordinary least squares. Simple linear
     regression describes relationship between an independent variable
-    *x* and a dependent variable *y* in terms of linear function:
+    *x* and a dependent variable *y* in terms of a linear function:
 
         y = slope * x + intercept + noise
 
@@ -959,21 +1041,38 @@ def linear_regression(x, y, /):
     >>> linear_regression(x, y)  #doctest: +ELLIPSIS
     LinearRegression(slope=3.09078914170..., intercept=1.75684970486...)
 
+    If *proportional* is true, the independent variable *x* and the
+    dependent variable *y* are assumed to be directly proportional.
+    The data is fit to a line passing through the origin.
+
+    Since the *intercept* will always be 0.0, the underlying linear
+    function simplifies to:
+
+        y = slope * x + noise
+
+    >>> y = [3 * x[i] + noise[i] for i in range(5)]
+    >>> linear_regression(x, y, proportional=True)  #doctest: +ELLIPSIS
+    LinearRegression(slope=3.02447542484..., intercept=0.0)
+
     """
     n = len(x)
     if len(y) != n:
         raise StatisticsError('linear regression requires that both inputs have same number of data points')
     if n < 2:
         raise StatisticsError('linear regression requires at least two data points')
-    xbar = fsum(x) / n
-    ybar = fsum(y) / n
-    sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
-    sxx = fsum((d := xi - xbar) * d for xi in x)
+    if proportional:
+        sxy = fsum(xi * yi for xi, yi in zip(x, y))
+        sxx = fsum(xi * xi for xi in x)
+    else:
+        xbar = fsum(x) / n
+        ybar = fsum(y) / n
+        sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
+        sxx = fsum((d := xi - xbar) * d for xi in x)
     try:
         slope = sxy / sxx   # equivalent to:  covariance(x, y) / variance(x)
     except ZeroDivisionError:
         raise StatisticsError('x is constant')
-    intercept = ybar - slope * xbar
+    intercept = 0.0 if proportional else ybar - slope * xbar
     return LinearRegression(slope=slope, intercept=intercept)
 
 

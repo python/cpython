@@ -685,6 +685,8 @@ class TracebackException:
         # Capture now to permit freeing resources: only complication is in the
         # unofficial API _format_final_exc_line
         self._str = _some_str(exc_value)
+        self.__note__ = exc_value.__note__ if exc_value else None
+
         if exc_type and issubclass(exc_type, SyntaxError):
             # Handle SyntaxError's specially
             self.filename = exc_value.filename
@@ -808,12 +810,16 @@ class TracebackException:
         stype = self.exc_type.__qualname__
         smod = self.exc_type.__module__
         if smod not in ("__main__", "builtins"):
+            if not isinstance(smod, str):
+                smod = "<unknown>"
             stype = smod + '.' + stype
 
         if not issubclass(self.exc_type, SyntaxError):
             yield _format_final_exc_line(stype, self._str)
         else:
             yield from self._format_syntax_error(stype)
+        if self.__note__ is not None:
+            yield from [l + '\n' for l in self.__note__.split('\n')]
 
     def _format_syntax_error(self, stype):
         """Format SyntaxError exceptions (internal helper)."""

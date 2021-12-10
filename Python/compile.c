@@ -1173,6 +1173,7 @@ stack_effect(int opcode, int oparg, int jump)
 
         /* Closures */
         case MAKE_CELL:
+        case COPY_FREE_VARS:
             return 0;
         case LOAD_CLOSURE:
             return 1;
@@ -5065,11 +5066,6 @@ compiler_visit_keyword(struct compiler *c, keyword_ty k)
     return 1;
 }
 
-/* Test whether expression is constant.  For constants, report
-   whether they are true or false.
-
-   Return values: 1 for true, 0 for false, -1 for non-constant.
- */
 
 static int
 compiler_with_except_finish(struct compiler *c, basicblock * cleanup) {
@@ -6985,7 +6981,7 @@ assemble_emit_exception_table_item(struct assembler *a, int value, int msb)
     write_except_byte(a, (value&0x3f) | msb);
 }
 
-/* See Objects/exception_table_notes.txt for details of layout */
+/* See Objects/exception_handling_notes.txt for details of layout */
 #define MAX_SIZE_OF_ENTRY 20
 
 static int
@@ -7613,7 +7609,7 @@ insert_instruction(basicblock *block, int pos, struct instr *instr) {
 
 static int
 insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
-                           int *fixed)
+                           int *fixed, int nfreevars)
 {
 
     int flags = compute_code_flags(c);
@@ -7684,6 +7680,22 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
         if (insert_instruction(entryblock, 0, &gen_start) < 0) {
             return -1;
         }
+    }
+
+    if (nfreevars) {
+        struct instr copy_frees = {
+            .i_opcode = COPY_FREE_VARS,
+            .i_oparg = nfreevars,
+            .i_lineno = -1,
+            .i_col_offset = -1,
+            .i_end_lineno = -1,
+            .i_end_col_offset = -1,
+            .i_target = NULL,
+        };
+        if (insert_instruction(entryblock, 0, &copy_frees) < 0) {
+            return -1;
+        }
+
     }
 
     return 0;
@@ -7820,7 +7832,7 @@ assemble(struct compiler *c, int addNone)
     }
 
     // This must be called before fix_cell_offsets().
-    if (insert_prefix_instructions(c, entryblock, cellfixedoffsets)) {
+    if (insert_prefix_instructions(c, entryblock, cellfixedoffsets, nfreevars)) {
         goto error;
     }
 

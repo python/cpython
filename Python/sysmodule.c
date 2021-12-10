@@ -785,12 +785,7 @@ sys_exc_info_impl(PyObject *module)
 /*[clinic end generated code: output=3afd0940cf3a4d30 input=b5c5bf077788a3e5]*/
 {
     _PyErr_StackItem *err_info = _PyErr_GetTopmostException(_PyThreadState_GET());
-    return Py_BuildValue(
-        "(OOO)",
-        err_info->exc_type != NULL ? err_info->exc_type : Py_None,
-        err_info->exc_value != NULL ? err_info->exc_value : Py_None,
-        err_info->exc_traceback != NULL ?
-            err_info->exc_traceback : Py_None);
+    return _PyErr_StackItemToExcInfoTuple(err_info);
 }
 
 
@@ -1187,20 +1182,14 @@ sys_setrecursionlimit_impl(PyObject *module, int new_limit)
         return NULL;
     }
 
-    /* Issue #25274: When the recursion depth hits the recursion limit in
-       _Py_CheckRecursiveCall(), the overflowed flag of the thread state is
-       set to 1 and a RecursionError is raised. The overflowed flag is reset
-       to 0 when the recursion depth goes below the low-water mark: see
-       Py_LeaveRecursiveCall().
-
-       Reject too low new limit if the current recursion depth is higher than
-       the new low-water mark. Otherwise it may not be possible anymore to
-       reset the overflowed flag to 0. */
-    if (tstate->recursion_depth >= new_limit) {
+    /* Reject too low new limit if the current recursion depth is higher than
+       the new low-water mark. */
+    int depth = tstate->recursion_limit - tstate->recursion_remaining;
+    if (depth >= new_limit) {
         _PyErr_Format(tstate, PyExc_RecursionError,
                       "cannot set the recursion limit to %i at "
                       "the recursion depth %i: the limit is too low",
-                      new_limit, tstate->recursion_depth);
+                      new_limit, depth);
         return NULL;
     }
 
@@ -1692,10 +1681,7 @@ _PySys_GetSizeOf(PyObject *o)
         return (size_t)-1;
     }
 
-    /* add gc_head size */
-    if (_PyObject_IS_GC(o))
-        return ((size_t)size) + sizeof(PyGC_Head);
-    return (size_t)size;
+    return (size_t)size + _PyType_PreHeaderSize(Py_TYPE(o));
 }
 
 static PyObject *

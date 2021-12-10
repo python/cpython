@@ -909,6 +909,44 @@ Missing parens after function definition
    Traceback (most recent call last):
    SyntaxError: expected '('
 
+Parenthesized arguments in function definitions
+
+   >>> def f(x, (y, z), w):
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: Function parameters cannot be parenthesized
+
+   >>> def f((x, y, z, w)):
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: Function parameters cannot be parenthesized
+
+   >>> def f(x, (y, z, w)):
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: Function parameters cannot be parenthesized
+
+   >>> def f((x, y, z), w):
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: Function parameters cannot be parenthesized
+
+   >>> lambda x, (y, z), w: None
+   Traceback (most recent call last):
+   SyntaxError: Lambda expression parameters cannot be parenthesized
+
+   >>> lambda (x, y, z, w): None
+   Traceback (most recent call last):
+   SyntaxError: Lambda expression parameters cannot be parenthesized
+
+   >>> lambda x, (y, z, w): None
+   Traceback (most recent call last):
+   SyntaxError: Lambda expression parameters cannot be parenthesized
+
+   >>> lambda (x, y, z), w: None
+   Traceback (most recent call last):
+   SyntaxError: Lambda expression parameters cannot be parenthesized
+
 Custom error messages for try blocks that are not followed by except/finally
 
    >>> try:
@@ -1527,6 +1565,9 @@ def func2():
 
         for paren in ")]}":
             self._check_error(paren + "1 + 2", f"unmatched '\\{paren}'")
+
+    def test_invisible_characters(self):
+        self._check_error('print\x17("Hello")', "invalid non-printable character")
 
     def test_match_call_does_not_raise_syntax_error(self):
         code = """
