@@ -2133,6 +2133,27 @@ compiler_decorators(struct compiler *c, asdl_expr_seq* decos)
 }
 
 static int
+compiler_apply_decorators(struct compiler *c, asdl_expr_seq* decos)
+{
+    if (!decos)
+        return 1;
+
+    int old_lineno = c->u->u_lineno;
+    int old_end_lineno = c->u->u_end_lineno;
+    int old_col_offset = c->u->u_col_offset;
+    int old_end_col_offset = c->u->u_end_col_offset;
+    for (Py_ssize_t i = asdl_seq_LEN(decos) - 1; i > -1; i--) {
+        SET_LOC(c, (expr_ty)asdl_seq_GET(decos, i));
+        ADDOP_I(c, CALL_FUNCTION, 1);
+    }
+    c->u->u_lineno = old_lineno;
+    c->u->u_end_lineno = old_end_lineno;
+    c->u->u_col_offset = old_col_offset;
+    c->u->u_end_col_offset = old_end_col_offset;
+    return 1;
+}
+
+static int
 compiler_visit_kwonlydefaults(struct compiler *c, asdl_arg_seq *kwonlyargs,
                               asdl_expr_seq *kw_defaults)
 {
@@ -2462,11 +2483,8 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     Py_DECREF(qualname);
     Py_DECREF(co);
 
-    /* decorators */
-    for (i = 0; i < asdl_seq_LEN(decos); i++) {
-        ADDOP_I(c, CALL_FUNCTION, 1);
-    }
-
+    if (!compiler_apply_decorators(c, decos))
+        return 0;
     return compiler_nameop(c, name, Store);
 }
 
@@ -2597,9 +2615,8 @@ compiler_class(struct compiler *c, stmt_ty s)
         return 0;
 
     /* 6. apply decorators */
-    for (i = 0; i < asdl_seq_LEN(decos); i++) {
-        ADDOP_I(c, CALL_FUNCTION, 1);
-    }
+    if (!compiler_apply_decorators(c, decos))
+        return 0;
 
     /* 7. store into <name> */
     if (!compiler_nameop(c, s->v.ClassDef.name, Store))
