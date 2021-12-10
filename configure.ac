@@ -1011,7 +1011,7 @@ if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
   _arm_arch=`sed -n -e '/__ARM_ARCH/d' -e 's/^arm_arch = //p' conftest.out`
   AC_MSG_RESULT([$ANDROID_API_LEVEL])
   if test -z "$ANDROID_API_LEVEL"; then
-    AC_MSG_ERROR([You must define __ANDROID_API__])
+    AC_MSG_ERROR([you must define __ANDROID_API__])
   fi
   AC_DEFINE_UNQUOTED(ANDROID_API_LEVEL, $ANDROID_API_LEVEL, [The Android API level.])
 
