@@ -504,6 +504,7 @@ if 1:
         self.compile_single("if x:\n   f(x)")
         self.compile_single("if x:\n   f(x)\nelse:\n   g(x)")
         self.compile_single("class T:\n   pass")
+        self.compile_single("c = '''\na=1\nb=2\nc=3\n'''")
 
     def test_bad_single_statement(self):
         self.assertInvalidSingle('1\n2')
@@ -514,6 +515,7 @@ if 1:
         self.assertInvalidSingle('f()\n# blah\nblah()')
         self.assertInvalidSingle('f()\nxy # blah\nblah()')
         self.assertInvalidSingle('x = 5 # comment\nx = 6\n')
+        self.assertInvalidSingle("c = '''\nd=1\n'''\na = 1\n\nb = 2\n")
 
     def test_particularly_evil_undecodable(self):
         # Issue 24022
@@ -649,6 +651,17 @@ if 1:
 
         self.assertIs(f1.__code__.co_linetable, f2.__code__.co_linetable)
         self.assertIs(f1.__code__.co_code, f2.__code__.co_code)
+
+    # Stripping unused constants is not a strict requirement for the
+    # Python semantics, it's a more an implementation detail.
+    @support.cpython_only
+    def test_strip_unused_consts(self):
+        # Python 3.10rc1 appended None to co_consts when None is not used
+        # at all. See bpo-45056.
+        def f1():
+            "docstring"
+            return 42
+        self.assertEqual(f1.__code__.co_consts, ("docstring", 42))
 
     # This is a regression test for a CPython specific peephole optimizer
     # implementation bug present in a few releases.  It's assertion verifies
@@ -1037,15 +1050,17 @@ class TestSourcePositions(unittest.TestCase):
         return code, ast_tree
 
     def assertOpcodeSourcePositionIs(self, code, opcode,
-            line, end_line, column, end_column):
+            line, end_line, column, end_column, occurrence=1):
 
         for instr, position in zip(dis.Bytecode(code), code.co_positions()):
             if instr.opname == opcode:
-                self.assertEqual(position[0], line)
-                self.assertEqual(position[1], end_line)
-                self.assertEqual(position[2], column)
-                self.assertEqual(position[3], end_column)
-                return
+                occurrence -= 1
+                if not occurrence:
+                    self.assertEqual(position[0], line)
+                    self.assertEqual(position[1], end_line)
+                    self.assertEqual(position[2], column)
+                    self.assertEqual(position[3], end_column)
+                    return
 
         self.fail(f"Opcode {opcode} not found in code")
 
@@ -1066,12 +1081,12 @@ class TestSourcePositions(unittest.TestCase):
 
         compiled_code, _ = self.check_positions_against_ast(snippet)
 
-        self.assertOpcodeSourcePositionIs(compiled_code, 'INPLACE_SUBTRACT',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
             line=10_000 + 2, end_line=10_000 + 2,
-            column=2, end_column=8)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'INPLACE_ADD',
+            column=2, end_column=8, occurrence=1)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
             line=10_000 + 4, end_line=10_000 + 4,
-            column=2, end_column=9)
+            column=2, end_column=9, occurrence=2)
 
     def test_multiline_expression(self):
         snippet = """\
@@ -1099,14 +1114,14 @@ f(
         compiled_code, _ = self.check_positions_against_ast(snippet)
         self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_SUBSCR',
             line=1, end_line=1, column=13, end_column=21)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_MULTIPLY',
-            line=1, end_line=1, column=9, end_column=21)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_ADD',
-            line=1, end_line=1, column=9, end_column=26)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_MATRIX_MULTIPLY',
-            line=1, end_line=1, column=4, end_column=27)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_SUBTRACT',
-            line=1, end_line=1, column=0, end_column=27)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
+            line=1, end_line=1, column=9, end_column=21, occurrence=1)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
+            line=1, end_line=1, column=9, end_column=26, occurrence=2)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
+            line=1, end_line=1, column=4, end_column=27, occurrence=3)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
+            line=1, end_line=1, column=0, end_column=27, occurrence=4)
 
 
 class TestExpressionStackSize(unittest.TestCase):

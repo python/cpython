@@ -205,7 +205,7 @@ Module contents
    follows a field with a default value.  This is true whether this
    occurs in a single class, or as a result of class inheritance.
 
-.. function:: field(*, default=MISSING, default_factory=MISSING, init=True, repr=True, hash=None, compare=True, metadata=None, kw_only=MISSING):
+.. function:: field(*, default=MISSING, default_factory=MISSING, init=True, repr=True, hash=None, compare=True, metadata=None, kw_only=MISSING)
 
    For common and simple use cases, no other functionality is
    required.  There are, however, some dataclass features that
@@ -221,10 +221,9 @@ Module contents
      c.mylist += [1, 2, 3]
 
    As shown above, the :const:`MISSING` value is a sentinel object used to
-   detect if the ``default`` and ``default_factory`` parameters are
-   provided.  This sentinel is used because ``None`` is a valid value
-   for ``default``.  No code should directly use the :const:`MISSING`
-   value.
+   detect if some parameters are provided by the user. This sentinel is
+   used because ``None`` is a valid value for some parameters with
+   a distinct meaning.  No code should directly use the :const:`MISSING` value.
 
    The parameters to :func:`field` are:
 
@@ -325,7 +324,10 @@ Module contents
    Converts the dataclass ``instance`` to a dict (by using the
    factory function ``dict_factory``).  Each dataclass is converted
    to a dict of its fields, as ``name: value`` pairs.  dataclasses, dicts,
-   lists, and tuples are recursed into.  For example::
+   lists, and tuples are recursed into.  Other objects are copied with
+   :func:`copy.deepcopy`.
+
+   Example of using :func:`asdict` on nested dataclasses::
 
      @dataclass
      class Point:
@@ -342,21 +344,32 @@ Module contents
      c = C([Point(0, 0), Point(10, 4)])
      assert asdict(c) == {'mylist': [{'x': 0, 'y': 0}, {'x': 10, 'y': 4}]}
 
-   Raises :exc:`TypeError` if ``instance`` is not a dataclass instance.
+   To create a shallow copy, the following workaround may be used::
+
+     dict((field.name, getattr(instance, field.name)) for field in fields(instance))
+
+   :func:`asdict` raises :exc:`TypeError` if ``instance`` is not a dataclass
+   instance.
 
 .. function:: astuple(instance, *, tuple_factory=tuple)
 
    Converts the dataclass ``instance`` to a tuple (by using the
    factory function ``tuple_factory``).  Each dataclass is converted
    to a tuple of its field values.  dataclasses, dicts, lists, and
-   tuples are recursed into.
+   tuples are recursed into. Other objects are copied with
+   :func:`copy.deepcopy`.
 
    Continuing from the previous example::
 
      assert astuple(p) == (10, 20)
      assert astuple(c) == ([(0, 0), (10, 4)],)
 
-   Raises :exc:`TypeError` if ``instance`` is not a dataclass instance.
+   To create a shallow copy, the following workaround may be used::
+
+     tuple(getattr(instance, field.name) for field in dataclasses.fields(instance))
+
+   :func:`astuple` raises :exc:`TypeError` if ``instance`` is not a dataclass
+   instance.
 
 .. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False)
 

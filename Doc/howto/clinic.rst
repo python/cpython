@@ -567,9 +567,6 @@ expression.  Currently the following are explicitly supported:
 * Simple symbolic constants like ``sys.maxsize``, which must
   start with the name of the module
 
-In case you're curious, this is implemented in  ``from_builtin()``
-in ``Lib/inspect.py``.
-
 (In the future, this may need to get even more elaborate,
 to allow full expressions like ``CONSTANT - 1``.)
 

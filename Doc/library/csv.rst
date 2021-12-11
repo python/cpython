@@ -383,6 +383,8 @@ Dialects support the following attributes:
    :const:`False`. On reading, the *escapechar* removes any special meaning from
    the following character. It defaults to :const:`None`, which disables escaping.
 
+   .. versionchanged:: 3.11
+      An empty *escapechar* is not allowed.
 
 .. attribute:: Dialect.lineterminator
 
@@ -402,6 +404,8 @@ Dialects support the following attributes:
    as the *delimiter* or *quotechar*, or which contain new-line characters.  It
    defaults to ``'"'``.
 
+   .. versionchanged:: 3.11
+      An empty *quotechar* is not allowed.
 
 .. attribute:: Dialect.quoting
 

@@ -1,5 +1,6 @@
 """Tests for the md5sum script in the Tools directory."""
 
+import sys
 import os
 import unittest
 from test.support import os_helper
@@ -15,8 +16,8 @@ class MD5SumTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.script = os.path.join(scriptsdir, 'md5sum.py')
-        os.mkdir(os_helper.TESTFN)
-        cls.fodder = os.path.join(os_helper.TESTFN, 'md5sum.fodder')
+        os.mkdir(os_helper.TESTFN_ASCII)
+        cls.fodder = os.path.join(os_helper.TESTFN_ASCII, 'md5sum.fodder')
         with open(cls.fodder, 'wb') as f:
             f.write(b'md5sum\r\ntest file\r\n')
         cls.fodder_md5 = b'd38dae2eb1ab346a292ef6850f9e1a0d'
@@ -24,7 +25,7 @@ class MD5SumTests(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        os_helper.rmtree(os_helper.TESTFN)
+        os_helper.rmtree(os_helper.TESTFN_ASCII)
 
     def test_noargs(self):
         rc, out, err = assert_python_ok(self.script)

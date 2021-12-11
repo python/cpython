@@ -255,6 +255,8 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.assertIsInstance(h, asyncio.TimerHandle)
         self.assertIn(h, self.loop._scheduled)
         self.assertNotIn(h, self.loop._ready)
+        with self.assertRaises(TypeError, msg="delay must not be None"):
+            self.loop.call_later(None, cb)
 
     def test_call_later_negative_delays(self):
         calls = []
@@ -286,6 +288,8 @@ class BaseEventLoopTests(test_utils.TestCase):
         # tolerate a difference of +800 ms because some Python buildbots
         # are really slow
         self.assertLessEqual(dt, 0.9, dt)
+        with self.assertRaises(TypeError, msg="when cannot be None"):
+            self.loop.call_at(None, cb)
 
     def check_thread(self, loop, debug):
         def cb():
@@ -1793,32 +1797,6 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         transport.close()
         self.loop.run_until_complete(protocol.done)
         self.assertEqual('CLOSED', protocol.state)
-
-    def test_create_datagram_endpoint_reuse_address_error(self):
-        # bpo-37228: Ensure that explicit passing of `reuse_address=True`
-        # raises an error, as it is not safe to use SO_REUSEADDR when using UDP
-
-        coro = self.loop.create_datagram_endpoint(
-            lambda: MyDatagramProto(create_future=True, loop=self.loop),
-            local_addr=('127.0.0.1', 0),
-            reuse_address=True)
-
-        with self.assertRaises(ValueError):
-            self.loop.run_until_complete(coro)
-
-    def test_create_datagram_endpoint_reuse_address_warning(self):
-        # bpo-37228: Deprecate *reuse_address* parameter
-
-        coro = self.loop.create_datagram_endpoint(
-            lambda: MyDatagramProto(create_future=True, loop=self.loop),
-            local_addr=('127.0.0.1', 0),
-            reuse_address=False)
-
-        with self.assertWarns(DeprecationWarning):
-            transport, protocol = self.loop.run_until_complete(coro)
-            transport.close()
-            self.loop.run_until_complete(protocol.done)
-            self.assertEqual('CLOSED', protocol.state)
 
     @patch_socket
     def test_create_datagram_endpoint_nosoreuseport(self, m_socket):

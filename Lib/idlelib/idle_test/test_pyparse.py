@@ -284,7 +284,7 @@ class PyParseTest(unittest.TestCase):
         tests = (
             TestInfo('[x for x in a]\n', 1),      # Closed on one line.
             TestInfo('[x\nfor x in a\n', 2),      # Not closed.
-            TestInfo('[x\\\nfor x in a\\\n', 2),  # "", uneeded backslashes.
+            TestInfo('[x\\\nfor x in a\\\n', 2),  # "", unneeded backslashes.
             TestInfo('[x\nfor x in a\n]\n', 3),   # Closed on multi-line.
             TestInfo('\n"""Docstring comment L1"""\nL2\nL3\nL4\n', 1),
             TestInfo('\n"""Docstring comment L1\nL2"""\nL3\nL4\n', 1),

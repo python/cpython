@@ -134,10 +134,16 @@ static inline Py_ssize_t _Py_REFCNT(const PyObject *ob) {
 
 
 // bpo-39573: The Py_SET_TYPE() function must be used to set an object type.
-#define Py_TYPE(ob)             (_PyObject_CAST(ob)->ob_type)
+static inline PyTypeObject* _Py_TYPE(const PyObject *ob) {
+    return ob->ob_type;
+}
+#define Py_TYPE(ob) _Py_TYPE(_PyObject_CAST_CONST(ob))
 
 // bpo-39573: The Py_SET_SIZE() function must be used to set an object size.
-#define Py_SIZE(ob)             (_PyVarObject_CAST(ob)->ob_size)
+static inline Py_ssize_t _Py_SIZE(const PyVarObject *ob) {
+    return ob->ob_size;
+}
+#define Py_SIZE(ob) _Py_SIZE(_PyVarObject_CAST_CONST(ob))
 
 
 static inline int _Py_IS_TYPE(const PyObject *ob, const PyTypeObject *type) {
@@ -241,6 +247,7 @@ PyAPI_FUNC(void *) PyType_GetModuleState(struct _typeobject *);
 #endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030B0000
 PyAPI_FUNC(PyObject *) PyType_GetName(PyTypeObject *);
+PyAPI_FUNC(PyObject *) PyType_GetQualName(PyTypeObject *);
 #endif
 
 /* Generic type check */
@@ -326,6 +333,13 @@ given type object has a specified feature.
 */
 
 #ifndef Py_LIMITED_API
+
+/* Placement of dict (and values) pointers are managed by the VM, not by the type.
+ * The VM will automatically set tp_dictoffset. Should not be used for variable sized
+ * classes, such as classes that extend tuple.
+ */
+#define Py_TPFLAGS_MANAGED_DICT (1 << 4)
+
 /* Set if instances of the type object are treated as sequences for pattern matching */
 #define Py_TPFLAGS_SEQUENCE (1 << 5)
 /* Set if instances of the type object are treated as mappings for pattern matching */
@@ -593,7 +607,7 @@ static inline PyObject* _Py_XNewRef(PyObject *obj)
 }
 
 // Py_NewRef() and Py_XNewRef() are exported as functions for the stable ABI.
-// Names overriden with macros by static inline functions for best
+// Names overridden with macros by static inline functions for best
 // performances.
 #define Py_NewRef(obj) _Py_NewRef(_PyObject_CAST(obj))
 #define Py_XNewRef(obj) _Py_XNewRef(_PyObject_CAST(obj))
@@ -716,7 +730,7 @@ times.
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_OBJECT_H
-#  include  "cpython/object.h"
+#  include "cpython/object.h"
 #  undef Py_CPYTHON_OBJECT_H
 #endif
 

@@ -1,6 +1,0 @@
-<<<<<<< HEAD
-:mod:`http.client` now avoids infinitely reading potential HTTP headers after a
-=======
-mod:`http.client` now avoids infinitely reading potential HTTP headers after a
->>>>>>> origin/3.10
-``100 Continue`` status response from the server.

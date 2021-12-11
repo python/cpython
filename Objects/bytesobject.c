@@ -5,12 +5,15 @@
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_bytes_methods.h" // _Py_bytes_startswith()
+#include "pycore_bytesobject.h"   // struct _Py_bytes_state
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_format.h"        // F_LJUST
 #include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_long.h"          // _PyLong_DigitValue
 #include "pycore_object.h"        // _PyObject_GC_TRACK
 #include "pycore_pymem.h"         // PYMEM_CLEANBYTE
+#include "pycore_strhex.h"        // _Py_strhex_with_sep()
 
-#include "pystrhex.h"
 #include <stddef.h>
 
 /*[clinic input]
@@ -572,7 +575,7 @@ format_obj(PyObject *v, const char **pbuf, Py_ssize_t *plen)
     /* does it support __bytes__? */
     func = _PyObject_LookupSpecial(v, &PyId___bytes__);
     if (func != NULL) {
-        result = _PyObject_CallNoArg(func);
+        result = _PyObject_CallNoArgs(func);
         Py_DECREF(func);
         if (result == NULL)
             return NULL;
@@ -1687,6 +1690,25 @@ static PyBufferProcs bytes_as_buffer = {
 };
 
 
+/*[clinic input]
+bytes.__bytes__
+Convert this value to exact type bytes.
+[clinic start generated code]*/
+
+static PyObject *
+bytes___bytes___impl(PyBytesObject *self)
+/*[clinic end generated code: output=63a306a9bc0caac5 input=34ec5ddba98bd6bb]*/
+{
+    if (PyBytes_CheckExact(self)) {
+        Py_INCREF(self);
+        return (PyObject *)self;
+    }
+    else {
+        return PyBytes_FromStringAndSize(self->ob_sval, Py_SIZE(self));
+    }
+}
+
+
 #define LEFTSTRIP 0
 #define RIGHTSTRIP 1
 #define BOTHSTRIP 2
@@ -2474,6 +2496,7 @@ bytes_getnewargs(PyBytesObject *v, PyObject *Py_UNUSED(ignored))
 static PyMethodDef
 bytes_methods[] = {
     {"__getnewargs__",          (PyCFunction)bytes_getnewargs,  METH_NOARGS},
+    BYTES___BYTES___METHODDEF
     {"capitalize", stringlib_capitalize, METH_NOARGS,
      _Py_capitalize__doc__},
     STRINGLIB_CENTER_METHODDEF
@@ -2602,7 +2625,7 @@ bytes_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
        integer argument before deferring to PyBytes_FromObject, something
        PyObject_Bytes doesn't do. */
     else if ((func = _PyObject_LookupSpecial(x, &PyId___bytes__)) != NULL) {
-        bytes = _PyObject_CallNoArg(func);
+        bytes = _PyObject_CallNoArgs(func);
         Py_DECREF(func);
         if (bytes == NULL)
             return NULL;
@@ -3064,12 +3087,31 @@ error:
 
 
 PyStatus
-_PyBytes_Init(PyInterpreterState *interp)
+_PyBytes_InitGlobalObjects(PyInterpreterState *interp)
 {
     struct _Py_bytes_state *state = &interp->bytes;
     if (bytes_create_empty_string_singleton(state) < 0) {
         return _PyStatus_NO_MEMORY();
     }
+    return _PyStatus_OK();
+}
+
+
+PyStatus
+_PyBytes_InitTypes(PyInterpreterState *interp)
+{
+    if (!_Py_IsMainInterpreter(interp)) {
+        return _PyStatus_OK();
+    }
+
+    if (PyType_Ready(&PyBytes_Type) < 0) {
+        return _PyStatus_ERR("Can't initialize bytes type");
+    }
+
+    if (PyType_Ready(&PyBytesIter_Type) < 0) {
+        return _PyStatus_ERR("Can't initialize bytes iterator type");
+    }
+
     return _PyStatus_OK();
 }
 

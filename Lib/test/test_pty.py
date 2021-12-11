@@ -136,7 +136,7 @@ class PtyTest(unittest.TestCase):
             mode = None
 
         new_stdin_winsz = None
-        if self.stdin_rows != None and self.stdin_cols != None:
+        if self.stdin_rows is not None and self.stdin_cols is not None:
             try:
                 # Modify pty.STDIN_FILENO window size; we need to
                 # check if pty.openpty() is able to set pty slave

@@ -17,13 +17,10 @@
 
 --------------
 
-This module provides runtime support for type hints as specified by
-:pep:`484`, :pep:`526`, :pep:`544`, :pep:`586`, :pep:`589`, :pep:`591`,
-:pep:`612` and :pep:`613`.
-The most fundamental support consists of the types :data:`Any`, :data:`Union`,
-:data:`Tuple`, :data:`Callable`, :class:`TypeVar`, and
-:class:`Generic`.  For full specification please see :pep:`484`.  For
-a simplified introduction to type hints see :pep:`483`.
+This module provides runtime support for type hints. The most fundamental
+support consists of the types :data:`Any`, :data:`Union`, :data:`Callable`,
+:class:`TypeVar`, and :class:`Generic`. For a full specification, please see
+:pep:`484`. For a simplified introduction to type hints, see :pep:`483`.
 
 
 The function below takes and returns a string and is annotated as follows::
@@ -34,6 +31,43 @@ The function below takes and returns a string and is annotated as follows::
 In the function ``greeting``, the argument ``name`` is expected to be of type
 :class:`str` and the return type :class:`str`. Subtypes are accepted as
 arguments.
+
+.. _relevant-peps:
+
+Relevant PEPs
+=============
+
+Since the initial introduction of type hints in :pep:`484` and :pep:`483`, a
+number of PEPs have modified and enhanced Python's framework for type
+annotations. These include:
+
+* :pep:`526`: Syntax for Variable Annotations
+     *Introducing* syntax for annotating variables outside of function
+     definitions, and :data:`ClassVar`
+* :pep:`544`: Protocols: Structural subtyping (static duck typing)
+     *Introducing* :class:`Protocol` and the
+     :func:`@runtime_checkable<runtime_checkable>` decorator
+* :pep:`585`: Type Hinting Generics In Standard Collections
+     *Introducing* :class:`types.GenericAlias` and the ability to use standard
+     library classes as :ref:`generic types<types-genericalias>`
+* :pep:`586`: Literal Types
+     *Introducing* :data:`Literal`
+* :pep:`589`: TypedDict: Type Hints for Dictionaries with a Fixed Set of Keys
+     *Introducing* :class:`TypedDict`
+* :pep:`591`: Adding a final qualifier to typing
+     *Introducing* :data:`Final` and the :func:`@final<final>` decorator
+* :pep:`593`: Flexible function and variable annotations
+     *Introducing* :data:`Annotated`
+* :pep:`604`: Allow writing union types as ``X | Y``
+     *Introducing* :data:`types.UnionType` and the ability to use
+     the binary-or operator ``|`` to signify a
+     :ref:`union of types<types-union>`
+* :pep:`612`: Parameter Specification Variables
+     *Introducing* :class:`ParamSpec` and :data:`Concatenate`
+* :pep:`613`: Explicit Type Aliases
+     *Introducing* :data:`TypeAlias`
+* :pep:`647`: User-Defined Type Guards
+     *Introducing* :data:`TypeGuard`
 
 .. _type-aliases:
 
@@ -222,6 +256,7 @@ called :class:`TypeVar`.
    def first(l: Sequence[T]) -> T:   # Generic function
        return l[0]
 
+.. _user-defined-generics:
 
 User-defined generic types
 ==========================
@@ -256,8 +291,8 @@ A user-defined class can be defined as a generic class.
 single type parameter ``T`` . This also makes ``T`` valid as a type within the
 class body.
 
-The :class:`Generic` base class defines :meth:`__class_getitem__` so that
-``LoggedVar[t]`` is valid as a type::
+The :class:`Generic` base class defines :meth:`~object.__class_getitem__` so
+that ``LoggedVar[t]`` is valid as a type::
 
    from collections.abc import Iterable
 
@@ -321,11 +356,11 @@ not generic but implicitly inherits from ``Iterable[Any]``::
 User defined generic type aliases are also supported. Examples::
 
    from collections.abc import Iterable
-   from typing import TypeVar, Union
+   from typing import TypeVar
    S = TypeVar('S')
-   Response = Union[Iterable[S], int]
+   Response = Iterable[S] | int
 
-   # Return type here is same as Union[Iterable[str], int]
+   # Return type here is same as Iterable[str] | int
    def response(query: str) -> Response[str]:
        ...
 
@@ -588,9 +623,9 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
 .. data:: Union
 
-   Union type; ``Union[X, Y]`` means either X or Y.
+   Union type; ``Union[X, Y]`` is equivalent to ``X | Y`` and means either X or Y.
 
-   To define a union, use e.g. ``Union[int, str]``.  Details:
+   To define a union, use e.g. ``Union[int, str]`` or the shorthand ``int | str``.  Details:
 
    * The arguments must be types and there must be at least one.
 
@@ -604,17 +639,15 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
    * Redundant arguments are skipped, e.g.::
 
-       Union[int, str, int] == Union[int, str]
+       Union[int, str, int] == Union[int, str] == int | str
 
    * When comparing unions, the argument order is ignored, e.g.::
 
        Union[int, str] == Union[str, int]
 
-   * You cannot subclass or instantiate a union.
+   * You cannot subclass or instantiate a ``Union``.
 
    * You cannot write ``Union[X][Y]``.
-
-   * You can use ``Optional[X]`` as a shorthand for ``Union[X, None]``.
 
    .. versionchanged:: 3.7
       Don't remove explicit subclasses from unions at runtime.
@@ -627,7 +660,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
    Optional type.
 
-   ``Optional[X]`` is equivalent to ``Union[X, None]``.
+   ``Optional[X]`` is equivalent to ``X | None`` (or ``Union[X, None]``).
 
    Note that this is not the same concept as an optional argument,
    which is one that has a default.  An optional argument with a
@@ -643,6 +676,10 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
       def foo(arg: Optional[int] = None) -> None:
           ...
+
+   .. versionchanged:: 3.10
+      Optional can now be written as ``X | None``. See
+      :ref:`union type expressions<types-union>`.
 
 .. data:: Callable
 
@@ -770,7 +807,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    :ref:`type variables <generics>`, and unions of any of these types.
    For example::
 
-      def new_non_team_user(user_class: Type[Union[BasicUser, ProUser]]): ...
+      def new_non_team_user(user_class: Type[BasicUser | ProUser]): ...
 
    ``Type[Any]`` is equivalent to ``Type`` which in turn is equivalent
    to ``type``, which is the root of Python's metaclass hierarchy.
@@ -951,7 +988,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    conditional code flow and applying the narrowing to a block of code.  The
    conditional expression here is sometimes referred to as a "type guard"::
 
-      def is_str(val: Union[str, float]):
+      def is_str(val: str | float):
           # "isinstance" type guard
           if isinstance(val, str):
               # Type of ``val`` is narrowed to ``str``
@@ -973,16 +1010,16 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
       For example::
 
-         def is_str_list(val: List[object]) -> TypeGuard[List[str]]:
+         def is_str_list(val: list[object]) -> TypeGuard[list[str]]:
              '''Determines whether all objects in the list are strings'''
              return all(isinstance(x, str) for x in val)
 
-         def func1(val: List[object]):
+         def func1(val: list[object]):
              if is_str_list(val):
-                 # Type of ``val`` is narrowed to ``List[str]``.
+                 # Type of ``val`` is narrowed to ``list[str]``.
                  print(" ".join(val))
              else:
-                 # Type of ``val`` remains as ``List[object]``.
+                 # Type of ``val`` remains as ``list[object]``.
                  print("Not a list of strings!")
 
    If ``is_str_list`` is a class or instance method, then the type in
@@ -997,8 +1034,8 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
       ``TypeB`` need not be a narrower form of ``TypeA`` -- it can even be a
       wider form. The main reason is to allow for things like
-      narrowing ``List[object]`` to ``List[str]`` even though the latter
-      is not a subtype of the former, since ``List`` is invariant.
+      narrowing ``list[object]`` to ``list[str]`` even though the latter
+      is not a subtype of the former, since ``list`` is invariant.
       The responsibility of writing type-safe type guards is left to the user.
 
    ``TypeGuard`` also works with type variables.  For more information, see
@@ -1505,8 +1542,8 @@ Other concrete types
    :func:`open`.
 
    .. deprecated-removed:: 3.8 3.12
-      These types are also in the ``typing.io`` namespace, which was
-      never supported by type checkers and will be removed.
+      The ``typing.io`` namespace is deprecated and will be removed.
+      These types should be directly imported from ``typing`` instead.
 
 .. class:: Pattern
            Match
@@ -1519,8 +1556,8 @@ Other concrete types
    ``Match[bytes]``.
 
    .. deprecated-removed:: 3.8 3.12
-      These types are also in the ``typing.re`` namespace, which was
-      never supported by type checkers and will be removed.
+      The ``typing.re`` namespace is deprecated and will be removed.
+      These types should be directly imported from ``typing`` instead.
 
    .. deprecated:: 3.9
       Classes ``Pattern`` and ``Match`` from :mod:`re` now support ``[]``.
@@ -2013,6 +2050,13 @@ Introspection helpers
            'name': Annotated[str, 'some marker']
        }
 
+   .. note::
+
+      :func:`get_type_hints` does not work with imported
+      :ref:`type aliases <type-aliases>` that include forward references.
+      Enabling postponed evaluation of annotations (:pep:`563`) may remove
+      the need for most forward references.
+
    .. versionchanged:: 3.9
       Added ``include_extras`` parameter as part of :pep:`593`.
 
@@ -2024,7 +2068,7 @@ Introspection helpers
    For a typing object of the form ``X[Y, Z, ...]`` these functions return
    ``X`` and ``(Y, Z, ...)``. If ``X`` is a generic alias for a builtin or
    :mod:`collections` class, it gets normalized to the original class.
-   If ``X`` is a :class:`Union` or :class:`Literal` contained in another
+   If ``X`` is a union or :class:`Literal` contained in another
    generic type, the order of ``(Y, Z, ...)`` may be different from the order
    of the original arguments ``[Y, Z, ...]`` due to type caching.
    For unsupported objects return ``None`` and ``()`` correspondingly.
@@ -2049,15 +2093,15 @@ Introspection helpers
           year: int
 
       is_typeddict(Film)  # => True
-      is_typeddict(Union[list, str])  # => False
+      is_typeddict(list | str)  # => False
 
    .. versionadded:: 3.10
 
 .. class:: ForwardRef
 
    A class used for internal typing representation of string forward references.
-   For example, ``List["SomeClass"]`` is implicitly transformed into
-   ``List[ForwardRef("SomeClass")]``.  This class should not be instantiated by
+   For example, ``list["SomeClass"]`` is implicitly transformed into
+   ``list[ForwardRef("SomeClass")]``.  This class should not be instantiated by
    a user, but may be used by introspection tools.
 
    .. note::
