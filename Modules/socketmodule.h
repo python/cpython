@@ -129,6 +129,8 @@ typedef int socklen_t;
 
 #ifdef HAVE_LINUX_CAN_H
 # include <linux/can.h>
+#elif defined(HAVE_NETCAN_CAN_H)
+# include <netcan/can.h>
 #else
 # undef AF_CAN
 # undef PF_CAN
@@ -253,7 +255,7 @@ typedef union sock_addr {
 #ifdef HAVE_NETPACKET_PACKET_H
     struct sockaddr_ll ll;
 #endif
-#ifdef HAVE_LINUX_CAN_H
+#if defined(HAVE_LINUX_CAN_H) || defined(HAVE_NETCAN_CAN_H)
     struct sockaddr_can can;
 #endif
 #ifdef HAVE_SYS_KERN_CONTROL_H
