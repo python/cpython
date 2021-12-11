@@ -564,26 +564,39 @@ class StartupImportTests(unittest.TestCase):
             'import site, sys; site.enablerlcompleter(); sys.exit(hasattr(sys, "__interactivehook__"))']).wait()
         self.assertTrue(r, "'__interactivehook__' not added by enablerlcompleter()")
 
-@unittest.skipUnless(sys.platform == 'win32', "only supported on Windows")
 class _pthFileTests(unittest.TestCase):
 
-    def _create_underpth_exe(self, lines, exe_pth=True):
-        import _winapi
-        temp_dir = tempfile.mkdtemp()
-        self.addCleanup(os_helper.rmtree, temp_dir)
-        exe_file = os.path.join(temp_dir, os.path.split(sys.executable)[1])
-        dll_src_file = _winapi.GetModuleFileName(sys.dllhandle)
-        dll_file = os.path.join(temp_dir, os.path.split(dll_src_file)[1])
-        shutil.copy(sys.executable, exe_file)
-        shutil.copy(dll_src_file, dll_file)
-        if exe_pth:
-            _pth_file = os.path.splitext(exe_file)[0] + '._pth'
-        else:
-            _pth_file = os.path.splitext(dll_file)[0] + '._pth'
-        with open(_pth_file, 'w') as f:
-            for line in lines:
-                print(line, file=f)
-        return exe_file
+    if sys.platform == 'win32':
+        def _create_underpth_exe(self, lines, exe_pth=True):
+            import _winapi
+            temp_dir = tempfile.mkdtemp()
+            self.addCleanup(os_helper.rmtree, temp_dir)
+            exe_file = os.path.join(temp_dir, os.path.split(sys.executable)[1])
+            dll_src_file = _winapi.GetModuleFileName(sys.dllhandle)
+            dll_file = os.path.join(temp_dir, os.path.split(dll_src_file)[1])
+            shutil.copy(sys.executable, exe_file)
+            shutil.copy(dll_src_file, dll_file)
+            if exe_pth:
+                _pth_file = os.path.splitext(exe_file)[0] + '._pth'
+            else:
+                _pth_file = os.path.splitext(dll_file)[0] + '._pth'
+            with open(_pth_file, 'w') as f:
+                for line in lines:
+                    print(line, file=f)
+            return exe_file
+    else:
+        def _create_underpth_exe(self, lines, exe_pth=True):
+            if not exe_pth:
+                raise unittest.SkipTest("library ._pth file not supported on this platform")
+            temp_dir = tempfile.mkdtemp()
+            self.addCleanup(os_helper.rmtree, temp_dir)
+            exe_file = os.path.join(temp_dir, os.path.split(sys.executable)[1])
+            os.symlink(sys.executable, exe_file)
+            _pth_file = exe_file + '._pth'
+            with open(_pth_file, 'w') as f:
+                for line in lines:
+                    print(line, file=f)
+            return exe_file
 
     def _calc_sys_path_for_underpth_nosite(self, sys_prefix, lines):
         sys_path = []
@@ -605,7 +618,7 @@ class _pthFileTests(unittest.TestCase):
 
         output = subprocess.check_output([exe_file, '-c',
             'import sys; print("\\n".join(sys.path) if sys.flags.no_site else "")'
-        ], encoding='ansi')
+        ], encoding='utf-8', errors='surrogateescape')
         actual_sys_path = output.rstrip().split('\n')
         self.assertTrue(actual_sys_path, "sys.flags.no_site was False")
         self.assertEqual(
@@ -630,10 +643,10 @@ class _pthFileTests(unittest.TestCase):
 
         env = os.environ.copy()
         env['PYTHONPATH'] = 'from-env'
-        env['PATH'] = '{};{}'.format(exe_prefix, os.getenv('PATH'))
+        env['PATH'] = '{}{}{}'.format(exe_prefix, os.pathsep, os.getenv('PATH'))
         output = subprocess.check_output([exe_file, '-c',
             'import sys; print("\\n".join(sys.path) if sys.flags.no_site else "")'
-        ], env=env, encoding='ansi')
+        ], env=env, encoding='utf-8', errors='surrogateescape')
         actual_sys_path = output.rstrip().split('\n')
         self.assertTrue(actual_sys_path, "sys.flags.no_site was False")
         self.assertEqual(
@@ -665,7 +678,6 @@ class _pthFileTests(unittest.TestCase):
                 os.path.join(sys_prefix, 'from-env'),
             )], env=env)
         self.assertTrue(rc, "sys.path is incorrect")
-
 
     def test_underpth_dll_file(self):
         libpath = test.support.STDLIB_DIR
