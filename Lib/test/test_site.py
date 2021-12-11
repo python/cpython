@@ -594,6 +594,26 @@ class _pthFileTests(unittest.TestCase):
             sys_path.append(abs_path)
         return sys_path
 
+    def test_underpth_basic(self):
+        libpath = test.support.STDLIB_DIR
+        exe_prefix = os.path.dirname(sys.executable)
+        pth_lines = ['#.', '# ..', *sys.path, '.', '..']
+        exe_file = self._create_underpth_exe(pth_lines)
+        sys_path = self._calc_sys_path_for_underpth_nosite(
+            os.path.dirname(exe_file),
+            pth_lines)
+
+        output = subprocess.check_output([exe_file, '-c',
+            'import sys; print("\\n".join(sys.path) if sys.flags.no_site else "")'
+        ], encoding='ansi')
+        actual_sys_path = output.rstrip().split('\n')
+        self.assertTrue(actual_sys_path, "sys.flags.no_site was False")
+        self.assertEqual(
+            actual_sys_path,
+            sys_path,
+            "sys.path is incorrect"
+        )
+
     def test_underpth_nosite_file(self):
         libpath = test.support.STDLIB_DIR
         exe_prefix = os.path.dirname(sys.executable)
