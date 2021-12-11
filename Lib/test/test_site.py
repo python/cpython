@@ -592,7 +592,7 @@ class _pthFileTests(unittest.TestCase):
             self.addCleanup(os_helper.rmtree, temp_dir)
             exe_file = os.path.join(temp_dir, os.path.split(sys.executable)[1])
             os.symlink(sys.executable, exe_file)
-            _pth_file = os.path.splitext(exe_file)[0] + '._pth'
+            _pth_file = exe_file + '._pth'
             with open(_pth_file, 'w') as f:
                 for line in lines:
                     print(line, file=f)
