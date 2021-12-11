@@ -10,6 +10,7 @@ import stat
 import fnmatch
 import collections
 import errno
+import logging
 
 try:
     import zlib
@@ -1186,8 +1187,9 @@ def _unpack_zipfile(filename, extract_dir):
                     copyfileobj(source, target)
     finally:
         if skipped:
-            import warnings
-            warnings.warn(f'unpack {filename}: {skipped} file(s) skipped'
+            import logging
+            logging.getLogger(__file__)
+            logging.warning(f'unpack {filename}: {skipped} file(s) skipped'
                           ' (due to absolute path or `..` path component)')
         zip.close()
 
