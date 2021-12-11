@@ -50,6 +50,8 @@ Building C and C++ Extensions with distutils
 
 .. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
 
+.. include:: ../distutils/_setuptools_disclaimer.rst
+
 Extension modules can be built using distutils,  which is included in Python.
 Since distutils also supports creation of binary packages, users don't
 necessarily need a compiler and distutils to install the extension.
