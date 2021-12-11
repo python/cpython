@@ -3210,20 +3210,28 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
 static int
 compiler_try_star_finally(struct compiler *c, stmt_ty s)
 {
-    basicblock *body, *end, *exit, *cleanup;
-
-    body = compiler_new_block(c);
-    end = compiler_new_block(c);
-    exit = compiler_new_block(c);
-    cleanup = compiler_new_block(c);
-    if (body == NULL || end == NULL || exit == NULL || cleanup == NULL) {
+    basicblock *body = compiler_new_block(c);
+    if (body == NULL) {
+        return 0;
+    }
+    basicblock *end = compiler_new_block(c);
+    if (!end) {
+        return 0;
+    }
+    basicblock *exit = compiler_new_block(c);
+    if (!exit) {
+        return 0;
+    }
+    basicblock *cleanup = compiler_new_block(c);
+    if (!cleanup) {
         return 0;
     }
     /* `try` block */
     ADDOP_JUMP(c, SETUP_FINALLY, end);
     compiler_use_next_block(c, body);
-    if (!compiler_push_fblock(c, FINALLY_TRY, body, end, s->v.TryStar.finalbody))
+    if (!compiler_push_fblock(c, FINALLY_TRY, body, end, s->v.TryStar.finalbody)) {
         return 0;
+    }
     if (s->v.TryStar.handlers && asdl_seq_LEN(s->v.TryStar.handlers)) {
         if (!compiler_try_star_except(c, s)) {
             return 0;
@@ -3474,19 +3482,27 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 static int
 compiler_try_star_except(struct compiler *c, stmt_ty s)
 {
-    basicblock *body, *orelse, *except, *end, *cleanup;
-    basicblock *reraise_star = NULL; /* for except* */
-    Py_ssize_t i, n;
-
-    body = compiler_new_block(c);
-    except = compiler_new_block(c);
-    orelse = compiler_new_block(c);
-    end = compiler_new_block(c);
-    cleanup = compiler_new_block(c);
-    if (body == NULL || except == NULL || orelse == NULL || end == NULL || cleanup == NULL)
+    basicblock *body = compiler_new_block(c);
+    if (body == NULL) {
         return 0;
-
-    reraise_star = compiler_new_block(c);
+    }
+    basicblock *except = compiler_new_block(c);
+    if (except == NULL) {
+        return 0;
+    }
+    basicblock *orelse = compiler_new_block(c);
+     if (orelse == NULL) {
+        return 0;
+    }
+    basicblock *end = compiler_new_block(c);
+    if (end == NULL) {
+        return 0;
+    }
+    basicblock *cleanup = compiler_new_block(c);
+    if (cleanup == NULL) {
+        return 0;
+    }
+    basicblock *reraise_star = compiler_new_block(c);
     if (reraise_star == NULL) {
         return 0;
     }
@@ -3500,16 +3516,18 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
     compiler_pop_fblock(c, TRY_EXCEPT, body);
     ADDOP_NOLINE(c, POP_BLOCK);
     ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, orelse);
-    n = asdl_seq_LEN(s->v.TryStar.handlers);
+    Py_ssize_t n = asdl_seq_LEN(s->v.TryStar.handlers);
     compiler_use_next_block(c, except);
 
     UNSET_LOC(c);
     ADDOP_JUMP(c, SETUP_CLEANUP, cleanup);
     ADDOP(c, PUSH_EXC_INFO);
     /* Runtime will push a block here, so we need to account for that */
-    if (!compiler_push_fblock(c, EXCEPTION_GROUP_HANDLER, NULL, NULL, "except handler"))
+    if (!compiler_push_fblock(c, EXCEPTION_GROUP_HANDLER,
+                                 NULL, NULL, "except handler")) {
         return 0;
-    for (i = 0; i < n; i++) {
+    }
+    for (Py_ssize_t i = 0; i < n; i++) {
         excepthandler_ty handler = (excepthandler_ty)asdl_seq_GET(
             s->v.TryStar.handlers, i);
         SET_LOC(c, handler);
@@ -3544,11 +3562,13 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
             NEXT_BLOCK(c);
         }
         ADDOP(c, POP_TOP);  // exc_type
-        basicblock *cleanup_end, *cleanup_body;
 
-        cleanup_end = compiler_new_block(c);
-        cleanup_body = compiler_new_block(c);
-        if (cleanup_end == NULL || cleanup_body == NULL) {
+        basicblock *cleanup_end = compiler_new_block(c);
+        if (cleanup_end == NULL) {
+            return 0;
+        }
+        basicblock *cleanup_body = compiler_new_block(c);
+        if (cleanup_body == NULL) {
             return 0;
         }
 

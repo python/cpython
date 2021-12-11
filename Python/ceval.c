@@ -4049,14 +4049,8 @@ check_eval_breaker:
 
             int res = PyErr_GivenExceptionMatches(left, right);
             Py_DECREF(right);
-            if (res > 0) {
-                /* Exception matches -- Do nothing */;
-            }
-            else if (res == 0) {
+            if (res == 0) {
                 JUMPTO(oparg);
-            }
-            else {
-                goto error;
             }
             DISPATCH();
         }
@@ -6260,11 +6254,7 @@ exception_group_match(PyObject *exc_type, PyObject* exc_value,
     assert(PyExceptionClass_Check(exc_type));
     assert(PyExceptionInstance_Check(exc_value));
 
-    int res = PyErr_GivenExceptionMatches(exc_type, match_type);
-    if (res == -1) {
-        return -1;
-    }
-    if (res > 0) {
+    if (PyErr_GivenExceptionMatches(exc_type, match_type)) {
         /* Full match of exc itself */
         bool is_eg = _PyBaseExceptionGroup_Check(exc_value);
         if (is_eg) {
@@ -6398,7 +6388,7 @@ do_reraise_star(PyObject *excs, PyObject *orig)
         }
         bool is_reraise = is_same_exception_metadata(e, orig);
         PyObject *append_list = is_reraise ? reraised_list : raised_list;
-        if (PyList_Append(append_list, e) == -1) {
+        if (PyList_Append(append_list, e) < 0) {
             goto done;
         }
     }
@@ -7367,28 +7357,30 @@ check_except_star_type_valid(PyThreadState *tstate, PyObject* right)
     if (check_except_type_valid(tstate, right) < 0) {
         return -1;
     }
-    // reject except *ExceptionGroup
-    int res = 0;
+
+    /* reject except *ExceptionGroup */
+
+    int is_subclass = 0;
     if (PyTuple_Check(right)) {
         Py_ssize_t length = PyTuple_GET_SIZE(right);
         for (Py_ssize_t i = 0; i < length; i++) {
             PyObject *exc = PyTuple_GET_ITEM(right, i);
-            res = PyObject_IsSubclass(exc, PyExc_BaseExceptionGroup);
-            if (res < 0) {
+            is_subclass = PyObject_IsSubclass(exc, PyExc_BaseExceptionGroup);
+            if (is_subclass < 0) {
                 return -1;
             }
-            if (res == 1) {
+            if (is_subclass) {
                 break;
             }
         }
     }
     else {
-        res = PyObject_IsSubclass(right, PyExc_BaseExceptionGroup);
-        if (res < 0) {
+        is_subclass = PyObject_IsSubclass(right, PyExc_BaseExceptionGroup);
+        if (is_subclass < 0) {
             return -1;
         }
     }
-    if (res == 1) {
+    if (is_subclass) {
         _PyErr_SetString(tstate, PyExc_TypeError,
             CANNOT_EXCEPT_STAR_EG);
             return -1;

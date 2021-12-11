@@ -1312,6 +1312,26 @@ class ASTValidatorTests(unittest.TestCase):
         t = ast.Try([p], e, [p], [ast.Expr(ast.Name("x", ast.Store()))])
         self.stmt(t, "must have Load context")
 
+    def test_try_star(self):
+        p = ast.Pass()
+        t = ast.TryStar([], [], [], [p])
+        self.stmt(t, "empty body on TryStar")
+        t = ast.TryStar([ast.Expr(ast.Name("x", ast.Store()))], [], [], [p])
+        self.stmt(t, "must have Load context")
+        t = ast.TryStar([p], [], [], [])
+        self.stmt(t, "TryStar has neither except handlers nor finalbody")
+        t = ast.TryStar([p], [], [p], [p])
+        self.stmt(t, "TryStar has orelse but no except handlers")
+        t = ast.TryStar([p], [ast.ExceptHandler(None, "x", [])], [], [])
+        self.stmt(t, "empty body on ExceptHandler")
+        e = [ast.ExceptHandler(ast.Name("x", ast.Store()), "y", [p])]
+        self.stmt(ast.TryStar([p], e, [], []), "must have Load context")
+        e = [ast.ExceptHandler(None, "x", [p])]
+        t = ast.TryStar([p], e, [ast.Expr(ast.Name("x", ast.Store()))], [p])
+        self.stmt(t, "must have Load context")
+        t = ast.TryStar([p], e, [p], [ast.Expr(ast.Name("x", ast.Store()))])
+        self.stmt(t, "must have Load context")
+
     def test_assert(self):
         self.stmt(ast.Assert(ast.Name("x", ast.Store()), None),
                   "must have Load context")
