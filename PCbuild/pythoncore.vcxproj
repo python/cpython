@@ -115,7 +115,7 @@
         PREFIX=NULL;
         EXEC_PREFIX=NULL;
         VERSION=NULL;
-        VPATH="..\\..";
+        VPATH="$(PyVPath)";
         PYDEBUGEXT="$(PyDebugExt)";
         PLATLIBDIR="DLLs";
         %(PreprocessorDefinitions)
@@ -519,7 +519,9 @@
     <ClCompile Include="..\Python\suggestions.c" />
     <ClCompile Include="..\Python\structmember.c" />
     <ClCompile Include="..\Python\symtable.c" />
-    <ClCompile Include="..\Python\sysmodule.c" />
+    <ClCompile Include="..\Python\sysmodule.c">
+      <PreprocessorDefinitions>VPATH="$(PyVPath)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
     <ClCompile Include="..\Python\thread.c" />
     <ClCompile Include="..\Python\traceback.c" />
   </ItemGroup>
@@ -539,7 +541,6 @@
     <ClCompile Include="..\Python\deepfreeze\df.os.c" />
     <ClCompile Include="..\Python\deepfreeze\df.site.c" />
     <ClCompile Include="..\Python\deepfreeze\df.stat.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.types.c" />
     <ClCompile Include="..\Python\deepfreeze\df.importlib.util.c" />
     <ClCompile Include="..\Python\deepfreeze\df.importlib.machinery.c" />
     <ClCompile Include="..\Python\deepfreeze\df.runpy.c" />
