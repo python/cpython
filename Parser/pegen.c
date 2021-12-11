@@ -88,7 +88,7 @@ init_normalization(Parser *p)
     if (p->normalize) {
         return 1;
     }
-    PyObject *m = PyImport_ImportModuleNoBlock("unicodedata");
+    PyObject *m = PyImport_ImportModule("unicodedata");
     if (!m)
     {
         return 0;
