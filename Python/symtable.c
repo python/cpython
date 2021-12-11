@@ -1965,10 +1965,10 @@ symtable_visit_alias(struct symtable *st, alias_ty a)
     }
     else {
         if (st->st_cur->ste_type != ModuleBlock) {
-            int lineno = st->st_cur->ste_lineno;
-            int col_offset = st->st_cur->ste_col_offset;
-            int end_lineno = st->st_cur->ste_end_lineno;
-            int end_col_offset = st->st_cur->ste_end_col_offset;
+            int lineno = a->lineno;
+            int col_offset = a->col_offset;
+            int end_lineno = a->end_lineno;
+            int end_col_offset = a->end_col_offset;
             PyErr_SetString(PyExc_SyntaxError, IMPORT_STAR_WARNING);
             PyErr_RangedSyntaxLocationObject(st->st_filename,
                                              lineno, col_offset + 1,
