@@ -933,6 +933,9 @@ CONFIG_ARGS
 SOVERSION
 VERSION
 PYTHON_FOR_REGEN
+FREEZE_MODULE_DEPS
+FREEZE_MODULE
+FREEZE_MODULE_BOOTSTRAP_DEPS
 FREEZE_MODULE_BOOTSTRAP
 PYTHON_FOR_FREEZE
 PYTHON_FOR_BUILD
@@ -3240,11 +3243,24 @@ $as_echo "$PYTHON_FOR_FREEZE" >&6; }
 
 
 if test "x$cross_compiling" = xyes; then :
-  FREEZE_MODULE_BOOTSTRAP='$(FREEZE_MODULE_PY)'
+
+        FREEZE_MODULE_BOOTSTRAP='$(PYTHON_FOR_FREEZE) $(srcdir)/Programs/_freeze_module.py'
+    FREEZE_MODULE_BOOTSTRAP_DEPS='$(srcdir)/Programs/_freeze_module.py'
+    FREEZE_MODULE='$(FREEZE_MODULE_BOOTSTRAP)'
+    FREEZE_MODULE_DEPS='$(FREEZE_MODULE_BOOTSTRAP_DEPS)'
+
 else
-  FREEZE_MODULE_BOOTSTRAP='$(FREEZE_MODULE_C)'
+
+        FREEZE_MODULE_BOOTSTRAP='./Programs/_freeze_module'
+    FREEZE_MODULE_BOOTSTRAP_DEPS="Programs/_freeze_module"
+    FREEZE_MODULE='$(PYTHON_FOR_FREEZE) $(srcdir)/Programs/_freeze_module.py'
+    FREEZE_MODULE_DEPS="_bootstrap_python \$(srcdir)/Programs/_freeze_module.py"
+
 
 fi
+
+
+
 
 
 for ac_prog in python$PACKAGE_VERSION python3.10 python3.9 python3.8 python3.7 python3.6 python3 python

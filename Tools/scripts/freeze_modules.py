@@ -591,10 +591,10 @@ def regen_makefile(modules):
 
         if src.isbootstrap:
             freezecmd = '$(FREEZE_MODULE_BOOTSTRAP)'
-            freezedep = '$(FREEZE_MODULE_C)'
+            freezedep = '$(FREEZE_MODULE_BOOTSTRAP_DEPS)'
         else:
-            freezecmd = '$(FREEZE_MODULE_PY)'
-            freezedep = '_bootstrap_python $(srcdir)/Programs/_freeze_module.py'
+            freezecmd = '$(FREEZE_MODULE)'
+            freezedep = '$(FREEZE_MODULE_DEPS)'
 
         freeze = (f'{freezecmd} {src.frozenid} '
                     f'$(srcdir)/{pyfile} {frozen_header}')

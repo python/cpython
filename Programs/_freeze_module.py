@@ -24,7 +24,6 @@ def compile_and_marshal(name: str, text: bytes) -> bytes:
     filename = f"<frozen {name}>"
     # exec == Py_file_input
     code = compile(text, filename, "exec", optimize=0, dont_inherit=True)
-    # defaults to Py_MARSHAL_VERSION)
     return marshal.dumps(code)
 
 
