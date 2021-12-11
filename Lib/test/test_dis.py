@@ -8,6 +8,7 @@ import dis
 import io
 import re
 import types
+import textwrap
 import contextlib
 
 def get_tb():
@@ -1452,6 +1453,32 @@ class TestFinderMethods(unittest.TestCase):
             with self.subTest(src=src):
                 code = compile(src, "<string>", "exec")
                 res = tuple(dis._find_store_names(code))
+                self.assertEqual(res, expected)
+
+    def test_findlabels(self):
+        def zero_labels(x):
+            return 0
+        def one_label(x):
+            if x > 0:     # This will jump to "return 2" if not x > 0
+                return 1
+            else:
+                return 2
+        def two_labels(x):
+            if x > 0:
+                return 1
+            elif x > 10:
+                return 10
+            else:
+                return 2
+
+        cases = [
+            (zero_labels, []),
+            (one_label, [12]),
+            (two_labels, [12, 24]),
+        ]
+        for src, expected in cases:
+            with self.subTest(src=src):
+                res = dis.findlabels(src.__code__.co_code)
                 self.assertEqual(res, expected)
 
 
