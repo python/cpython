@@ -774,8 +774,7 @@ error:
 }
 
 PyObject *
-_PyExc_CreateExceptionGroup(
-    const char *msg_str, PyObject *excs)
+_PyExc_CreateExceptionGroup(const char *msg_str, PyObject *excs)
 {
     PyObject *msg = PyUnicode_FromString(msg_str);
     if (!msg) {
@@ -786,8 +785,7 @@ _PyExc_CreateExceptionGroup(
     if (!args) {
         return NULL;
     }
-    PyObject *result = PyObject_CallObject(
-        PyExc_BaseExceptionGroup, args);
+    PyObject *result = PyObject_CallObject(PyExc_BaseExceptionGroup, args);
     Py_DECREF(args);
     return result;
 }
@@ -979,12 +977,8 @@ exceptiongroup_split_check_match(PyObject *exc,
     }
     case EXCEPTION_GROUP_MATCH_INSTANCES: {
         assert(PySet_Check(matcher_value));
-        if (! _PyBaseExceptionGroup_Check(exc)) {
-            int include = PySet_Contains(matcher_value, exc);
-            if (include == -1) {
-                return -1;
-            }
-            return include;
+        if (!_PyBaseExceptionGroup_Check(exc)) {
+            return PySet_Contains(matcher_value, exc);
         }
         return 0;
     }
@@ -1168,9 +1162,9 @@ BaseExceptionGroup_subgroup(PyObject *self, PyObject *args)
 }
 
 static int
-collect_exception_group_leaves(PyObject* exc, PyObject *leaves)
+collect_exception_group_leaves(PyObject *exc, PyObject *leaves)
 {
-    if (exc == Py_None) {
+    if (Py_IsNone(exc)) {
         return 0;
     }
 
@@ -1180,7 +1174,7 @@ collect_exception_group_leaves(PyObject* exc, PyObject *leaves)
     /* Add all leaf exceptions in exc to the leaves set */
 
     if (!_PyBaseExceptionGroup_Check(exc)) {
-        if (PySet_Add(leaves, exc) == -1) {
+        if (PySet_Add(leaves, exc) < 0) {
             return -1;
         }
         return 0;
@@ -1219,7 +1213,7 @@ _PyExc_ExceptionGroupProjection(PyObject *eg, PyObject *keep)
         PyObject *e = PyList_GET_ITEM(keep, i);
         assert(e != NULL);
         assert(_PyBaseExceptionGroup_Check(e));
-        if (collect_exception_group_leaves(e, leaves) == -1) {
+        if (collect_exception_group_leaves(e, leaves) < 0) {
             Py_DECREF(leaves);
             return NULL;
         }
@@ -1231,7 +1225,7 @@ _PyExc_ExceptionGroupProjection(PyObject *eg, PyObject *keep)
                 eg, EXCEPTION_GROUP_MATCH_INSTANCES, leaves,
                 construct_rest, &split_result);
     Py_DECREF(leaves);
-    if (err == -1) {
+    if (err < 0) {
         return NULL;
     }
 

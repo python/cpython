@@ -3225,8 +3225,9 @@ compiler_try_star_finally(struct compiler *c, stmt_ty s)
     if (!compiler_push_fblock(c, FINALLY_TRY, body, end, s->v.TryStar.finalbody))
         return 0;
     if (s->v.TryStar.handlers && asdl_seq_LEN(s->v.TryStar.handlers)) {
-        if (!compiler_try_star_except(c, s))
+        if (!compiler_try_star_except(c, s)) {
             return 0;
+        }
     }
     else {
         VISIT_SEQ(c, stmt, s->v.TryStar.body);
@@ -3241,8 +3242,9 @@ compiler_try_star_finally(struct compiler *c, stmt_ty s)
     UNSET_LOC(c);
     ADDOP_JUMP(c, SETUP_CLEANUP, cleanup);
     ADDOP(c, PUSH_EXC_INFO);
-    if (!compiler_push_fblock(c, FINALLY_END, end, NULL, NULL))
+    if (!compiler_push_fblock(c, FINALLY_END, end, NULL, NULL)) {
         return 0;
+    }
     VISIT_SEQ(c, stmt, s->v.TryStar.finalbody);
     compiler_pop_fblock(c, FINALLY_END, end);
     ADDOP_I(c, RERAISE, 0);
@@ -3485,13 +3487,15 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         return 0;
 
     reraise_star = compiler_new_block(c);
-    if (reraise_star == NULL)
+    if (reraise_star == NULL) {
         return 0;
+    }
 
     ADDOP_JUMP(c, SETUP_FINALLY, except);
     compiler_use_next_block(c, body);
-    if (!compiler_push_fblock(c, TRY_EXCEPT, body, NULL, NULL))
+    if (!compiler_push_fblock(c, TRY_EXCEPT, body, NULL, NULL)) {
         return 0;
+    }
     VISIT_SEQ(c, stmt, s->v.TryStar.body);
     compiler_pop_fblock(c, TRY_EXCEPT, body);
     ADDOP_NOLINE(c, POP_BLOCK);
@@ -3510,8 +3514,9 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
             s->v.TryStar.handlers, i);
         SET_LOC(c, handler);
         except = compiler_new_block(c);
-        if (except == NULL)
+        if (except == NULL) {
             return 0;
+        }
         if (i == 0) {
             /* Push the original EG into the stack */
             /*
@@ -3577,7 +3582,7 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         /* name = None; del name; # Mark as artificial */
         UNSET_LOC(c);
         ADDOP(c, POP_BLOCK);
-        if(handler->v.ExceptHandler.name) {
+        if (handler->v.ExceptHandler.name) {
             ADDOP_LOAD_CONST(c, Py_None);
             compiler_nameop(c, handler->v.ExceptHandler.name, Store);
             compiler_nameop(c, handler->v.ExceptHandler.name, Del);
@@ -3590,7 +3595,7 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         /* name = None; del name; # Mark as artificial */
         UNSET_LOC(c);
 
-        if(handler->v.ExceptHandler.name) {
+        if (handler->v.ExceptHandler.name) {
             ADDOP_LOAD_CONST(c, Py_None);
             compiler_nameop(c, handler->v.ExceptHandler.name, Store);
             compiler_nameop(c, handler->v.ExceptHandler.name, Del);
@@ -3616,10 +3621,10 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
     /* Mark as artificial */
     UNSET_LOC(c);
     compiler_pop_fblock(c, EXCEPTION_GROUP_HANDLER, NULL);
-    basicblock *reraise;
-    reraise = compiler_new_block(c);
-    if (!reraise)
+    basicblock *reraise = compiler_new_block(c);
+    if (!reraise) {
         return 0;
+    }
 
     compiler_use_next_block(c, reraise_star);
     ADDOP(c, PREP_RERAISE_STAR);
@@ -3656,11 +3661,14 @@ compiler_try(struct compiler *c, stmt_ty s) {
 }
 
 static int
-compiler_try_star(struct compiler *c, stmt_ty s) {
-    if (s->v.TryStar.finalbody && asdl_seq_LEN(s->v.TryStar.finalbody))
+compiler_try_star(struct compiler *c, stmt_ty s)
+{
+    if (s->v.TryStar.finalbody && asdl_seq_LEN(s->v.TryStar.finalbody)) {
         return compiler_try_star_finally(c, s);
-    else
+    }
+    else {
         return compiler_try_star_except(c, s);
+    }   
 }
 
 static int

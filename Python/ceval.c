@@ -1092,7 +1092,7 @@ fail:
 
 
 static int do_raise(PyThreadState *tstate, PyObject *exc, PyObject *cause);
-static PyObject* do_reraise_star(PyObject *excs, PyObject *orig);
+static PyObject *do_reraise_star(PyObject *excs, PyObject *orig);
 static int exception_group_match(
     PyObject *exc_type, PyObject* exc_value, PyObject *match_type,
     PyObject **match, PyObject **rest);
@@ -2814,7 +2814,7 @@ check_eval_breaker:
 
             PyObject *lasti_unused = Py_NewRef(_PyLong_GetZero());
             PUSH(lasti_unused);
-            if (val != Py_None) {
+            if (!Py_IsNone(val)) {
                 PyObject *tb = PyException_GetTraceback(val);
                 PUSH(tb ? tb : Py_NewRef(Py_None));
                 PUSH(val);
@@ -3970,10 +3970,10 @@ check_eval_breaker:
             }
 
             PyObject *match = NULL, *rest = NULL;
-            int res = exception_group_match(
-                exc_type, exc_value, match_type, &match, &rest);
+            int res = exception_group_match(exc_type, exc_value,
+                                            match_type, &match, &rest);
             Py_DECREF(match_type);
-            if (res == -1) {
+            if (res < 0) {
                 goto error;
             }
 
@@ -3983,7 +3983,7 @@ check_eval_breaker:
                 goto error;
             }
 
-            if (match == Py_None) {
+            if (Py_IsNone(match)) {
                 Py_DECREF(match);
                 Py_XDECREF(rest);
                 /* no match - jump to target */
@@ -4003,7 +4003,7 @@ check_eval_breaker:
                 PyObject *val = SECOND();
                 PyObject *tb = THIRD();
 
-                if (rest != Py_None) {
+                if (!Py_IsNone(rest)) {
                     /* tb remains the same */
                     SET_TOP(Py_NewRef(Py_TYPE(rest)));
                     SET_SECOND(Py_NewRef(rest));
@@ -6248,12 +6248,11 @@ raise_error:
 */
 
 static int
-exception_group_match(
-    PyObject *exc_type, PyObject* exc_value, PyObject *match_type,
-    PyObject **match, PyObject **rest)
+exception_group_match(PyObject *exc_type, PyObject* exc_value,
+                      PyObject *match_type, PyObject **match, PyObject **rest)
 {
-    if (exc_type == Py_None) {
-        assert(exc_value == Py_None);
+    if (Py_IsNone(exc_type)) {
+        assert(Py_IsNone(exc_value));
         *match = Py_NewRef(Py_None);
         *rest = Py_NewRef(Py_None);
         return 0;
@@ -6292,8 +6291,8 @@ exception_group_match(
      * Check for partial match if it's an exception group.
      */
     if (_PyBaseExceptionGroup_Check(exc_value)) {
-        PyObject *pair = PyObject_CallMethod(
-            exc_value, "split", "(O)", match_type);
+        PyObject *pair = PyObject_CallMethod(exc_value, "split", "(O)",
+                                             match_type);
         if (pair == NULL) {
             return -1;
         }
@@ -6327,9 +6326,9 @@ is_same_exception_metadata(PyObject *exc1, PyObject *exc2)
     PyObject *ctx2 = PyException_GetContext(exc2);
     PyObject *cause2 = PyException_GetCause(exc2);
 
-    bool result = ((tb1 == tb2) &&
-                   (ctx1 == ctx2) &&
-                   (cause1 == cause2));
+    bool result = (Py_Is(tb1, tb2) &&
+                   Py_Is(ctx1, ctx2) &&
+                   Py_Is(cause1, cause2));
 
     Py_XDECREF(tb1);
     Py_XDECREF(ctx1);
@@ -6351,7 +6350,7 @@ is_same_exception_metadata(PyObject *exc1, PyObject *exc2)
 
    Returns NULL and sets an exception on failure.
 */
-static PyObject*
+static PyObject *
 do_reraise_star(PyObject *excs, PyObject *orig)
 {
     assert(PyList_Check(excs));
@@ -6394,7 +6393,7 @@ do_reraise_star(PyObject *excs, PyObject *orig)
     for (Py_ssize_t i = 0; i < numexcs; i++) {
         PyObject *e = PyList_GET_ITEM(excs, i);
         assert(e != NULL);
-        if (e == Py_None) {
+        if (Py_IsNone(e)) {
             continue;
         }
         bool is_reraise = is_same_exception_metadata(e, orig);
@@ -6409,20 +6408,21 @@ do_reraise_star(PyObject *excs, PyObject *orig)
         goto done;
     }
 
-    if (reraised_eg != Py_None) {
+    if (!Py_IsNone(reraised_eg)) {
         assert(is_same_exception_metadata(reraised_eg, orig));
     }
 
     Py_ssize_t num_raised = PyList_GET_SIZE(raised_list);
     if (num_raised == 0) {
         result = reraised_eg;
-    } else if (num_raised > 0) {
+    }
+    else if (num_raised > 0) {
         int res = 0;
-        if (reraised_eg != Py_None) {
+        if (!Py_IsNone(reraised_eg)) {
             res = PyList_Append(raised_list, reraised_eg);
         }
         Py_DECREF(reraised_eg);
-        if (res == -1) {
+        if (res < 0) {
             goto done;
         }
         result = _PyExc_CreateExceptionGroup("", raised_list);
@@ -7334,7 +7334,7 @@ import_all_from(PyThreadState *tstate, PyObject *locals, PyObject *v)
                          "BaseException is not allowed"
 
 #define CANNOT_EXCEPT_STAR_EG "catching ExceptionGroup with except* "\
-                          "is not allowed. Use except instead."
+                              "is not allowed. Use except instead."
 
 static int
 check_except_type_valid(PyThreadState *tstate, PyObject* right)
@@ -7370,12 +7370,11 @@ check_except_star_type_valid(PyThreadState *tstate, PyObject* right)
     // reject except *ExceptionGroup
     int res = 0;
     if (PyTuple_Check(right)) {
-        Py_ssize_t i, length;
-        length = PyTuple_GET_SIZE(right);
-        for (i = 0; i < length; i++) {
+        Py_ssize_t length = PyTuple_GET_SIZE(right);
+        for (Py_ssize_t i = 0; i < length; i++) {
             PyObject *exc = PyTuple_GET_ITEM(right, i);
             res = PyObject_IsSubclass(exc, PyExc_BaseExceptionGroup);
-            if (res == -1) {
+            if (res < 0) {
                 return -1;
             }
             if (res == 1) {
@@ -7385,7 +7384,7 @@ check_except_star_type_valid(PyThreadState *tstate, PyObject* right)
     }
     else {
         res = PyObject_IsSubclass(right, PyExc_BaseExceptionGroup);
-        if (res == -1) {
+        if (res < 0) {
             return -1;
         }
     }
