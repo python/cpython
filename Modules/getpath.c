@@ -141,7 +141,7 @@ getpath_hassuffix(PyObject *Py_UNUSED(self), PyObject *args)
     if (path) {
         suffix = PyUnicode_AsWideCharString(suffixobj, &suffixLen);
         if (suffix) {
-            if (suffixLen < len ||
+            if (suffixLen > len ||
 #ifdef MS_WINDOWS
                 wcsicmp(&path[len - suffixLen], suffix) != 0
 #else
