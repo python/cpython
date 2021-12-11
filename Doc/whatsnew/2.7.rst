@@ -953,12 +953,12 @@ Several performance enhancements have been added:
   considered and traversed by the collector.
   (Contributed by Antoine Pitrou; :issue:`4688`.)
 
-* Long integers are now stored internally either in base ``2**15`` or in base
-  ``2**30``, the base being determined at build time.  Previously, they
-  were always stored in base ``2**15``.  Using base ``2**30`` gives
+* Long integers are now stored internally either in base 2**15 or in base
+  2**30, the base being determined at build time.  Previously, they
+  were always stored in base 2**15.  Using base 2**30 gives
   significant performance improvements on 64-bit machines, but
   benchmark results on 32-bit machines have been mixed.  Therefore,
-  the default is to use base ``2**30`` on 64-bit machines and base ``2**15``
+  the default is to use base 2**30 on 64-bit machines and base 2**15
   on 32-bit machines; on Unix, there's a new configure option
   :option:`!--enable-big-digits` that can be used to override this default.
 

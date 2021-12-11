@@ -342,30 +342,3 @@ behind it:
    >>> c.shm.close()
    >>> c.shm.unlink()
 
-The following examples demonstrates that ``ShareableList``
-(and underlying ``SharedMemory``) objects
-can be pickled and unpickled if needed.
-Note, that it will still be the same shared object.
-This happens, because the deserialized object has
-the same unique name and is just attached to an existing
-object with the same name (if the object is still alive):
-
-   >>> import pickle
-   >>> from multiprocessing import shared_memory
-   >>> sl = shared_memory.ShareableList(range(10))
-   >>> list(sl)
-   [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-
-   >>> deserialized_sl = pickle.loads(pickle.dumps(sl))
-   >>> list(deserialized_sl)
-   [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-
-   >>> sl[0] = -1
-   >>> deserialized_sl[1] = -2
-   >>> list(sl)
-   [-1, -2, 2, 3, 4, 5, 6, 7, 8, 9]
-   >>> list(deserialized_sl)
-   [-1, -2, 2, 3, 4, 5, 6, 7, 8, 9]
-
-   >>> sl.shm.close()
-   >>> sl.shm.unlink()

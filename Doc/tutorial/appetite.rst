@@ -1,87 +1,44 @@
 .. _tut-intro:
 
 **********************
-Whetting Your Appetite
+课前甜点
 **********************
 
-If you do much work on computers, eventually you find that there's some task
-you'd like to automate.  For example, you may wish to perform a
-search-and-replace over a large number of text files, or rename and rearrange a
-bunch of photo files in a complicated way. Perhaps you'd like to write a small
-custom database, or a specialized GUI application, or a simple game.
+如果您的工作主要是使用计算机完成的，最终您会发现有一些任务需要自动执行。比如，您可能希望对大量文本文件执行搜索和替换，或者以复杂的方式重命名和重新排列一组照片文件。亦或您想编写一个小型自定义数据库，或专门的GUI应用程序，或一个简单的游戏。
 
-If you're a professional software developer, you may have to work with several
-C/C++/Java libraries but find the usual write/compile/test/re-compile cycle is
-too slow.  Perhaps you're writing a test suite for such a library and find
-writing the testing code a tedious task.  Or maybe you've written a program that
-could use an extension language, and you don't want to design and implement a
-whole new language for your application.
+如果您是一名专业的软件开发人员，您可能要处理 C/C++/Java 库，但发现通常的编写/编译/测试/重新编译周期太慢。也许您正在为这样的库编写测试套件，并发现编写测试代码是一项乏味的任务。又或许，您已经编写了一个可以使用扩展语言的程序，却不想为您的应用程序设计和实现一种全新的语言。
 
-Python is just the language for you.
+Python 就是你需要的语言。
 
-You could write a Unix shell script or Windows batch files for some of these
-tasks, but shell scripts are best at moving around files and changing text data,
-not well-suited for GUI applications or games. You could write a C/C++/Java
-program, but it can take a lot of development time to get even a first-draft
-program.  Python is simpler to use, available on Windows, macOS, and Unix
-operating systems, and will help you get the job done more quickly.
+虽然，Unix shell 脚本或 Windows 批处理文件也可以完成这些任务，但 shell 脚本擅长的是移动文件和替换文本，并不擅长 GUI 应用程序或游戏开发。当然，您也可以编写 C/C++/Java 程序，但开发第一个版本的初稿可能就要耗费很长时间。Python 则简单易用，既可以在 Windows、Mac OS X、Unix 等操作系统上使用，也可以让您更快完成任务。
 
-Python is simple to use, but it is a real programming language, offering much
-more structure and support for large programs than shell scripts or batch files
-can offer.  On the other hand, Python also offers much more error checking than
-C, and, being a *very-high-level language*, it has high-level data types built
-in, such as flexible arrays and dictionaries.  Because of its more general data
-types Python is applicable to a much larger problem domain than Awk or even
-Perl, yet many things are at least as easy in Python as in those languages.
+Python 使用起来很简单，但它是一种真正的编程语言，为大型程序提供了比 shell 脚本或批处理文件所能提供的更多的结构和支持。此外，Python 也提供了比 C 更多的错误检查，并且，作为一种*非常高级的语言*，它内置了高级数据类型，比如灵活的数组和字典。由于其更通用的数据类型，Python 适用于比 Awk 甚至 Perl 更大的问题领域，但 Python 中的许多事情至少和这些语言一样容易。
 
-Python allows you to split your program into modules that can be reused in other
-Python programs.  It comes with a large collection of standard modules that you
-can use as the basis of your programs --- or as examples to start learning to
-program in Python.  Some of these modules provide things like file I/O, system
-calls, sockets, and even interfaces to graphical user interface toolkits like
-Tk.
+Python 允许你把你的程序分成模块，以便这些模块可以在其他 Python 程序中重用。它提供了大量的标准模块，您可以使用它们作为程序的基础 —— 或者作为开始学习 Python 编程的示例。其中一些模块提供了文件I/O、系统调用、套接字，甚至图形用户界面工具包(如Tk)的接口。
 
-Python is an interpreted language, which can save you considerable time during
-program development because no compilation and linking is necessary.  The
-interpreter can be used interactively, which makes it easy to experiment with
-features of the language, to write throw-away programs, or to test functions
-during bottom-up program development. It is also a handy desk calculator.
+Python 是一种解释型语言，由于不需要编译和链接它可以在程序开发过程中节省大量时间。解释器可以交互式地使用，这使得实验语言的特性、编写临时程序或在自底向上程序开发过程中测试函数变得容易。同时它还是一个超好用的计算器。
 
-Python enables programs to be written compactly and readably.  Programs written
-in Python are typically much shorter than equivalent C,  C++, or Java programs,
-for several reasons:
+高级数据类型允许在单一语句中表述复杂操作；
 
-* the high-level data types allow you to express complex operations in a single
-  statement;
+使用缩进，而不是括号实现代码块分组；
 
-* statement grouping is done by indentation instead of beginning and ending
-  brackets;
+无需预声明变量或参数。
 
-* no variable or argument declarations are necessary.
+Python 程序简洁、易读。用Python编写的程序比实现同种功能的 C、C++、Java 代码短很多，原因如下:
 
-Python is *extensible*: if you know how to program in C it is easy to add a new
-built-in function or module to the interpreter, either to perform critical
-operations at maximum speed, or to link Python programs to libraries that may
-only be available in binary form (such as a vendor-specific graphics library).
-Once you are really hooked, you can link the Python interpreter into an
-application written in C and use it as an extension or command language for that
-application.
+* 高级数据类型允许您在单个语句中表达复杂的操作;
 
-By the way, the language is named after the BBC show "Monty Python's Flying
-Circus" and has nothing to do with reptiles.  Making references to Monty
-Python skits in documentation is not only allowed, it is encouraged!
+* 使用缩进，而不是括号实现代码块分组；
 
-Now that you are all excited about Python, you'll want to examine it in some
-more detail.  Since the best way to learn a language is to use it, the tutorial
-invites you to play with the Python interpreter as you read.
+* 无需预声明变量或参数。
 
-In the next chapter, the mechanics of using the interpreter are explained.  This
-is rather mundane information, but essential for trying out the examples shown
-later.
+Python是*可扩展的*: 如果你知道如何编写C程序那么就很容易为解释器添加新的内置函数或模块, 不论是让核心程序以最高速度运行，还是把 Python 程序链接到只提供预编译程序的库（比如，硬件图形库）。只要下点功夫，就能把 Python 解释器和用 C 开发的应用链接在一起，用它来扩展和控制该应用。
 
-The rest of the tutorial introduces various features of the Python language and
-system through examples, beginning with simple expressions, statements and data
-types, through functions and modules, and finally touching upon advanced
-concepts like exceptions and user-defined classes.
+顺便提一句，本语言的命名源自 BBC 的 “Monty Python 飞行马戏团”，与爬行动物无关（Python 原义为“蟒蛇”）。欢迎大家在文档中引用 Monty Python 小品短篇集，多多益善！
 
+现在，您已经对 Python 跃跃欲试，想深入了解一些细节了吧。要知道，学习语言的最佳方式是上手实践，建议您边阅读本教程，边在 Python 解释器中练习。
+
+下一章介绍解释器的用法。这部分内容有些单调乏味，但对上手实践后面的例子来说却至关重要。
+
+本教程的其他部分将利用各种示例，介绍 Python 语言、系统的功能，开始只是简单的表达式、语句和数据类型，然后是函数、模块，最后，介绍一些高级概念，如，异常、自定义的类等功能。
 

@@ -1815,7 +1815,8 @@ names.
    ===============================   ==============================
 
   Likewise, the ``TestCase.fail*`` methods deprecated in Python 3.1 are expected
-  to be removed in Python 3.3.
+  to be removed in Python 3.3.  Also see the :ref:`deprecated-aliases` section in
+  the :mod:`unittest` documentation.
 
   (Contributed by Ezio Melotti; :issue:`9424`.)
 

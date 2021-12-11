@@ -88,11 +88,6 @@ For example:
   '~/envs/tutorial-env/lib/python3.5/site-packages']
   >>>
 
-To deactivate a virtual environment, type::
-
-    deactivate
-
-into the terminal.
 
 使用pip管理包
 ==========================

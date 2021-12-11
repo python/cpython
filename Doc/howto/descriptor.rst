@@ -1264,9 +1264,6 @@ Using the non-data descriptor protocol, a pure Python version of
         def __get__(self, obj, objtype=None):
             return self.f
 
-        def __call__(self, *args, **kwds):
-            return self.f(*args, **kwds)
-
 .. testcode::
     :hide:
 
@@ -1275,8 +1272,6 @@ Using the non-data descriptor protocol, a pure Python version of
         def f(x):
             return x * 10
 
-    wrapped_ord = StaticMethod(ord)
-
 .. doctest::
     :hide:
 
@@ -1284,8 +1279,6 @@ Using the non-data descriptor protocol, a pure Python version of
     30
     >>> E_sim().f(3)
     30
-    >>> wrapped_ord('A')
-    65
 
 
 Class methods
@@ -1351,7 +1344,7 @@ Using the non-data descriptor protocol, a pure Python version of
             if cls is None:
                 cls = type(obj)
             if hasattr(type(self.f), '__get__'):
-                return self.f.__get__(cls, cls)
+                return self.f.__get__(cls)
             return MethodType(self.f, cls)
 
 .. testcode::
