@@ -733,9 +733,9 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: globals()
 
-   Return a dictionary representing the current global symbol table. This is always
-   the dictionary of the current module (inside a function or method, this is the
-   module where it is defined, not the module from which it is called).
+   Return the dictionary implementing the current module namespace. For code within
+   functions, this is set when the function is defined and remains the same
+   regardless of where the function is called.
 
 
 .. function:: hasattr(object, name)
