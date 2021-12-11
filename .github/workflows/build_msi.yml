@@ -3,20 +3,36 @@ name: TestsMSI
 on:
   push:
     branches:
+<<<<<<< HEAD
     - 'main'
     - '3.10'
     - '3.9'
     - '3.8'
     - '3.7'
+=======
+    - master
+    - 3.10
+    - 3.9
+    - 3.8
+    - 3.7
+>>>>>>> origin/3.10
     paths:
     - 'Tools/msi/**'
   pull_request:
     branches:
+<<<<<<< HEAD
     - 'main'
     - '3.10'
     - '3.9'
     - '3.8'
     - '3.7'
+=======
+    - master
+    - 3.10
+    - 3.9
+    - 3.8
+    - 3.7
+>>>>>>> origin/3.10
     paths:
     - 'Tools/msi/**'
 

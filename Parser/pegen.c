@@ -1346,9 +1346,13 @@ _PyPegen_run_parser(Parser *p)
         reset_parser_state(p);
         _PyPegen_parse(p);
         if (PyErr_Occurred()) {
+<<<<<<< HEAD
             // Prioritize tokenizer errors to custom syntax errors raised
             // on the second phase only if the errors come from the parser.
             if (p->tok->done != E_ERROR && PyErr_ExceptionMatches(PyExc_SyntaxError)) {
+=======
+            if (PyErr_ExceptionMatches(PyExc_SyntaxError)) {
+>>>>>>> origin/3.10
                 _PyPegen_check_tokenizer_errors(p);
             }
             return NULL;

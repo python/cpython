@@ -200,7 +200,11 @@ These improvements are inspired by previous work in the PyPy interpreter.
 :issue:`40176`.)
 
 :exc:`SyntaxError` exceptions raised by the interpreter will now highlight the
+<<<<<<< HEAD
 full error range of the expression that constitutes the syntax error itself,
+=======
+full error range of the expression that consistutes the syntax error itself,
+>>>>>>> origin/3.10
 instead of just where the problem is detected. In this way, instead of displaying
 (before Python 3.10):
 

@@ -1,7 +1,11 @@
 variables:
   coverage: false
 
+<<<<<<< HEAD
 trigger: ['main', '3.9', '3.8', '3.7']
+=======
+trigger: ['master', '3.10', '3.9', '3.8', '3.7']
+>>>>>>> origin/3.10
 
 jobs:
 - job: Prebuild

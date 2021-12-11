@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 This is Python version 3.11.0 alpha 0
 =====================================
+=======
+This is Python version 3.10.0 beta 1
+====================================
+>>>>>>> origin/3.10
 
 .. image:: https://travis-ci.com/python/cpython.svg?branch=main
    :alt: CPython build status on Travis CI
