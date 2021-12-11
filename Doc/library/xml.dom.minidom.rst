@@ -156,6 +156,9 @@ module documentation.  This section lists the differences between the API and
       The :meth:`writexml` method now preserves the attribute order specified
       by the user.
 
+   .. versionchanged:: 3.9
+      The *standalone* parameter was added.
+
 .. method:: Node.toxml(encoding=None, standalone=None)
 
    Return a string or byte string containing the XML represented by
@@ -174,6 +177,9 @@ module documentation.  This section lists the differences between the API and
       The :meth:`toxml` method now preserves the attribute order specified
       by the user.
 
+   .. versionchanged:: 3.9
+      The *standalone* parameter was added.
+
 .. method:: Node.toprettyxml(indent="\\t", newl="\\n", encoding=None, \
                              standalone=None)
 
@@ -190,6 +196,8 @@ module documentation.  This section lists the differences between the API and
       The :meth:`toprettyxml` method now preserves the attribute order specified
       by the user.
 
+   .. versionchanged:: 3.9
+      The *standalone* parameter was added.
 
 .. _dom-example:
 

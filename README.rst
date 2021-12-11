@@ -1,4 +1,4 @@
-This is Python version 3.11.0 alpha 0
+This is Python version 3.11.0 alpha 3
 =====================================
 
 .. image:: https://travis-ci.com/python/cpython.svg?branch=main
@@ -227,18 +227,19 @@ You can also follow development discussion on the `python-dev mailing list
 -------------------------
 
 If you have a proposal to change Python, you may want to send an email to the
-comp.lang.python or `python-ideas`_ mailing lists for initial feedback.  A
+`comp.lang.python`_ or `python-ideas`_ mailing lists for initial feedback.  A
 Python Enhancement Proposal (PEP) may be submitted if your idea gains ground.
 All current PEPs, as well as guidelines for submitting a new PEP, are listed at
 `python.org/dev/peps/ <https://www.python.org/dev/peps/>`_.
 
 .. _python-ideas: https://mail.python.org/mailman/listinfo/python-ideas/
+.. _comp.lang.python: https://mail.python.org/mailman/listinfo/python-list
 
 
 版本系列
 ----------------
 
-See :pep:`619` for Python 3.10 release details.
+See :pep:`664` for Python 3.11 release details.
 
 
 版权及证书信息

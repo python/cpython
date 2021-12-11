@@ -39,7 +39,7 @@ PyAPI_DATA(int) Py_UTF8Mode;
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_FILEOBJECT_H
-#  include  "cpython/fileobject.h"
+#  include "cpython/fileobject.h"
 #  undef Py_CPYTHON_FILEOBJECT_H
 #endif
 

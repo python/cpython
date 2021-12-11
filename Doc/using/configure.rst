@@ -53,7 +53,11 @@ General Options
    Set the Python executable suffix to *SUFFIX*.
 
    The default suffix is ``.exe`` on Windows and macOS (``python.exe``
-   executable), and an empty string on other platforms (``python`` executable).
+   executable), ``.wasm`` on Emscripten (``python.wasm`` executable), and
+   an empty string on other platforms (``python`` executable).
+
+   .. versionchanged:: 3.11
+      The default suffix on Emscripten platform is ``.wasm``.
 
 .. cmdoption:: --with-tzpath=<list of absolute paths separated by pathsep>
 
@@ -76,7 +80,7 @@ General Options
 
    .. versionadded:: 3.9
 
-.. cmdoption:: --with-dbmliborder=db1:db2:...
+.. cmdoption:: --with-dbmliborder=<list of backend names>
 
    Override order to check db backends for the :mod:`dbm` module
 
@@ -115,6 +119,17 @@ General Options
    :mod:`ensurepip._bundled` package.
 
    .. versionadded:: 3.10
+
+.. cmdoption:: --with-pkg-config=[check|yes|no]
+
+   Whether configure should use :program:`pkg-config` to detect build
+   dependencies.
+
+   * ``check`` (default): :program:`pkg-config` is optional
+   * ``yes``: :program:`pkg-config` is mandatory
+   * ``no``: configure does not use :program:`pkg-config` even when present
+
+   .. versionadded:: 3.11
 
 
 Install Options
@@ -416,14 +431,18 @@ Libraries options
 Security Options
 ----------------
 
-.. cmdoption:: --with-hash-algorithm=[fnv|siphash24]
+.. cmdoption:: --with-hash-algorithm=[fnv|siphash13|siphash24]
 
    Select hash algorithm for use in ``Python/pyhash.c``:
 
-   * ``siphash24`` (default).
-   * ``fnv``;
+   * ``siphash13`` (default);
+   * ``siphash24``;
+   * ``fnv``.
 
    .. versionadded:: 3.4
+
+   .. versionadded:: 3.11
+      ``siphash13`` is added and it is the new default.
 
 .. cmdoption:: --with-builtin-hashlib-hashes=md5,sha1,sha256,sha512,sha3,blake2
 
@@ -494,6 +513,56 @@ See ``Mac/README.rst``.
    :option:`--enable-framework` is set (default: ``Python``).
 
 
+Cross Compiling Options
+-----------------------
+
+Cross compiling, also known as cross building, can be used to build Python
+for another CPU architecture or platform. Cross compiling requires a Python
+interpreter and the :program:`_freeze_module` binary from another build. The
+version of the build Python and :program:`_freeze_module` command must be
+the same as the cross compiled host Python.
+
+.. cmdoption:: --build=BUILD
+
+   configure for building on BUILD, usually guessed by :program:`config.guess`.
+
+.. cmdoption:: --host=HOST
+
+   cross-compile to build programs to run on HOST (target platform)
+
+.. cmdoption:: --with-freeze-module=Programs/_freeze_module
+
+   path to ``_freeze_module`` binary for cross compiling.
+
+   .. versionadded:: 3.11
+
+.. cmdoption:: --with-build-python=python3.xx
+
+   path to build ``python`` binary for cross compiling
+
+   .. versionadded:: 3.11
+
+.. cmdoption:: CONFIG_SITE=file
+
+   An environment variable that points to a file with configure overrides.
+
+   Example *config.site* file::
+
+      # config.site-aarch64
+      ac_cv_buggy_getaddrinfo=no
+      ac_cv_file__dev_ptmx=yes
+      ac_cv_file__dev_ptc=no
+
+
+Cross compiling example::
+
+   CONFIG_SITE=config.site-aarch64 ../configure \
+       --build=x86_64-pc-linux-gnu \
+       --host=aarch64-unknown-linux-gnu \
+       --with-freeze-module=../x86_64/Programs/_freeze_module \
+       --with-build-python=../x86_64/python
+
+
 Python Build System
 ===================
 
@@ -553,7 +622,7 @@ Built-in modules have no ``__file__`` attribute::
       File "<stdin>", line 1, in <module>
     AttributeError: module 'sys' has no attribute '__file__'
 
-Other C extensions are built as dynamic libraires, like the ``_asyncio`` module.
+Other C extensions are built as dynamic libraries, like the ``_asyncio`` module.
 They are built with the ``Py_BUILD_CORE_MODULE`` macro defined.
 Example on Linux x86-64::
 

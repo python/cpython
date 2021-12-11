@@ -2,6 +2,7 @@ import datetime
 import warnings
 import weakref
 import unittest
+from test.support import gc_collect
 from itertools import product
 
 
@@ -124,8 +125,10 @@ class Test_Assertions(unittest.TestCase):
                     self.foo()
 
         Foo("test_functional").run()
+        gc_collect()  # For PyPy or other GCs.
         self.assertIsNone(wr())
         Foo("test_with").run()
+        gc_collect()  # For PyPy or other GCs.
         self.assertIsNone(wr())
 
     def testAssertNotRegex(self):
@@ -267,15 +270,6 @@ class TestLongMessage(unittest.TestCase):
                             [r"\+ \{'key': 'value'\}$", "^oops$",
                              r"\+ \{'key': 'value'\}$",
                              r"\+ \{'key': 'value'\} : oops$"])
-
-    def testAssertDictContainsSubset(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-
-            self.assertMessages('assertDictContainsSubset', ({'key': 'value'}, {}),
-                                ["^Missing: 'key'$", "^oops$",
-                                 "^Missing: 'key'$",
-                                 "^Missing: 'key' : oops$"])
 
     def testAssertMultiLineEqual(self):
         self.assertMessages('assertMultiLineEqual', ("", "foo"),

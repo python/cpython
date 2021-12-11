@@ -1861,7 +1861,7 @@ class BuiltinTest(unittest.TestCase):
         # be evaluated in a boolean context (virtually all such use cases
         # are a result of accidental misuse implementing rich comparison
         # operations in terms of one another).
-        # For the time being, it will continue to evaluate as truthy, but
+        # For the time being, it will continue to evaluate as a true value, but
         # issue a deprecation warning (with the eventual intent to make it
         # a TypeError).
         self.assertWarns(DeprecationWarning, bool, NotImplemented)

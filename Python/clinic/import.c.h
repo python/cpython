@@ -169,33 +169,100 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_imp_find_frozen__doc__,
+"find_frozen($module, name, /, *, withdata=False)\n"
+"--\n"
+"\n"
+"Return info about the corresponding frozen module (if there is one) or None.\n"
+"\n"
+"The returned info (a 2-tuple):\n"
+"\n"
+" * data         the raw marshalled bytes\n"
+" * is_package   whether or not it is a package\n"
+" * origname     the originally frozen module\'s name, or None if not\n"
+"                a stdlib module (this will usually be the same as\n"
+"                the module\'s current name)");
+
+#define _IMP_FIND_FROZEN_METHODDEF    \
+    {"find_frozen", (PyCFunction)(void(*)(void))_imp_find_frozen, METH_FASTCALL|METH_KEYWORDS, _imp_find_frozen__doc__},
+
+static PyObject *
+_imp_find_frozen_impl(PyObject *module, PyObject *name, int withdata);
+
+static PyObject *
+_imp_find_frozen(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "withdata", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "find_frozen", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *name;
+    int withdata = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("find_frozen", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[0]) == -1) {
+        goto exit;
+    }
+    name = args[0];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    withdata = PyObject_IsTrue(args[1]);
+    if (withdata < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = _imp_find_frozen_impl(module, name, withdata);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_imp_get_frozen_object__doc__,
-"get_frozen_object($module, name, /)\n"
+"get_frozen_object($module, name, data=None, /)\n"
 "--\n"
 "\n"
 "Create a code object for a frozen module.");
 
 #define _IMP_GET_FROZEN_OBJECT_METHODDEF    \
-    {"get_frozen_object", (PyCFunction)_imp_get_frozen_object, METH_O, _imp_get_frozen_object__doc__},
+    {"get_frozen_object", (PyCFunction)(void(*)(void))_imp_get_frozen_object, METH_FASTCALL, _imp_get_frozen_object__doc__},
 
 static PyObject *
-_imp_get_frozen_object_impl(PyObject *module, PyObject *name);
+_imp_get_frozen_object_impl(PyObject *module, PyObject *name,
+                            PyObject *dataobj);
 
 static PyObject *
-_imp_get_frozen_object(PyObject *module, PyObject *arg)
+_imp_get_frozen_object(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *name;
+    PyObject *dataobj = Py_None;
 
-    if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("get_frozen_object", "argument", "str", arg);
+    if (!_PyArg_CheckPositional("get_frozen_object", nargs, 1, 2)) {
         goto exit;
     }
-    if (PyUnicode_READY(arg) == -1) {
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("get_frozen_object", "argument 1", "str", args[0]);
         goto exit;
     }
-    name = arg;
-    return_value = _imp_get_frozen_object_impl(module, name);
+    if (PyUnicode_READY(args[0]) == -1) {
+        goto exit;
+    }
+    name = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    dataobj = args[1];
+skip_optional:
+    return_value = _imp_get_frozen_object_impl(module, name, dataobj);
 
 exit:
     return return_value;
@@ -292,6 +359,55 @@ _imp_is_frozen(PyObject *module, PyObject *arg)
     }
     name = arg;
     return_value = _imp_is_frozen_impl(module, name);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_imp__frozen_module_names__doc__,
+"_frozen_module_names($module, /)\n"
+"--\n"
+"\n"
+"Returns the list of available frozen modules.");
+
+#define _IMP__FROZEN_MODULE_NAMES_METHODDEF    \
+    {"_frozen_module_names", (PyCFunction)_imp__frozen_module_names, METH_NOARGS, _imp__frozen_module_names__doc__},
+
+static PyObject *
+_imp__frozen_module_names_impl(PyObject *module);
+
+static PyObject *
+_imp__frozen_module_names(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _imp__frozen_module_names_impl(module);
+}
+
+PyDoc_STRVAR(_imp__override_frozen_modules_for_tests__doc__,
+"_override_frozen_modules_for_tests($module, override, /)\n"
+"--\n"
+"\n"
+"(internal-only) Override PyConfig.use_frozen_modules.\n"
+"\n"
+"(-1: \"off\", 1: \"on\", 0: no override)\n"
+"See frozen_modules() in Lib/test/support/import_helper.py.");
+
+#define _IMP__OVERRIDE_FROZEN_MODULES_FOR_TESTS_METHODDEF    \
+    {"_override_frozen_modules_for_tests", (PyCFunction)_imp__override_frozen_modules_for_tests, METH_O, _imp__override_frozen_modules_for_tests__doc__},
+
+static PyObject *
+_imp__override_frozen_modules_for_tests_impl(PyObject *module, int override);
+
+static PyObject *
+_imp__override_frozen_modules_for_tests(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int override;
+
+    override = _PyLong_AsInt(arg);
+    if (override == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _imp__override_frozen_modules_for_tests_impl(module, override);
 
 exit:
     return return_value;
@@ -449,4 +565,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=7c31c433af88af6b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=adcf787969a11353 input=a9049054013a1b77]*/

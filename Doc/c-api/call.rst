@@ -185,7 +185,7 @@ Object Calling API
 Various functions are available for calling a Python object.
 Each converts its arguments to a convention supported by the called object –
 either *tp_call* or vectorcall.
-In order to do as litle conversion as possible, pick one that best fits
+In order to do as little conversion as possible, pick one that best fits
 the format of data you have available.
 
 The following table summarizes the available functions;

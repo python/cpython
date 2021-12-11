@@ -21,6 +21,9 @@ IGNORE = {
     # Test modules and packages
     '__hello__',
     '__phello__',
+    '__hello_alias__',
+    '__phello_alias__',
+    '__hello_only__',
     '_ctypes_test',
     '_testbuffer',
     '_testcapi',
@@ -51,6 +54,10 @@ WINDOWS_MODULES = (
     'winsound'
 )
 
+# macOS extension modules
+MACOS_MODULES = (
+    '_scproxy',
+)
 
 # Pure Python modules (Lib/*.py)
 def list_python_modules(names):
@@ -117,13 +124,23 @@ def list_frozen(names):
         cmd = ' '.join(args)
         print(f"{cmd} failed with exitcode {exitcode}")
         sys.exit(exitcode)
+    submodules = set()
     for line in proc.stdout.splitlines():
         name = line.strip()
-        names.add(name)
+        if '.' in name:
+            submodules.add(name)
+        else:
+            names.add(name)
+    # Make sure all frozen submodules have a known parent.
+    for name in list(submodules):
+        if name.partition('.')[0] in names:
+            submodules.remove(name)
+    if submodules:
+        raise Exception(f'unexpected frozen submodules: {sorted(submodules)}')
 
 
 def list_modules():
-    names = set(sys.builtin_module_names) | set(WINDOWS_MODULES)
+    names = set(sys.builtin_module_names) | set(WINDOWS_MODULES) | set(MACOS_MODULES)
     list_modules_setup_extensions(names)
     list_setup_extensions(names)
     list_packages(names)

@@ -269,6 +269,34 @@ class ComplexTest(unittest.TestCase):
                     except OverflowError:
                         pass
 
+    def test_pow_with_small_integer_exponents(self):
+        # Check that small integer exponents are handled identically
+        # regardless of their type.
+        values = [
+            complex(5.0, 12.0),
+            complex(5.0e100, 12.0e100),
+            complex(-4.0, INF),
+            complex(INF, 0.0),
+        ]
+        exponents = [-19, -5, -3, -2, -1, 0, 1, 2, 3, 5, 19]
+        for value in values:
+            for exponent in exponents:
+                with self.subTest(value=value, exponent=exponent):
+                    try:
+                        int_pow = value**exponent
+                    except OverflowError:
+                        int_pow = "overflow"
+                    try:
+                        float_pow = value**float(exponent)
+                    except OverflowError:
+                        float_pow = "overflow"
+                    try:
+                        complex_pow = value**complex(exponent)
+                    except OverflowError:
+                        complex_pow = "overflow"
+                    self.assertEqual(str(float_pow), str(int_pow))
+                    self.assertEqual(str(complex_pow), str(int_pow))
+
     def test_boolcontext(self):
         for i in range(100):
             self.assertTrue(complex(random() + 1e-6, random() + 1e-6))
@@ -470,6 +498,18 @@ class ComplexTest(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(complex(complex1(1j)), 2j)
         self.assertRaises(TypeError, complex, complex2(1j))
+
+    def test___complex__(self):
+        z = 3 + 4j
+        self.assertEqual(z.__complex__(), z)
+        self.assertEqual(type(z.__complex__()), complex)
+
+        class complex_subclass(complex):
+            pass
+
+        z = complex_subclass(3 + 4j)
+        self.assertEqual(z.__complex__(), 3 + 4j)
+        self.assertEqual(type(z.__complex__()), complex)
 
     @support.requires_IEEE_754
     def test_constructor_special_numbers(self):
@@ -749,8 +789,6 @@ class ComplexTest(unittest.TestCase):
         self.assertEqual(format(complex(INF, 1), 'F'), 'INF+1.000000j')
         self.assertEqual(format(complex(INF, -1), 'F'), 'INF-1.000000j')
 
-def test_main():
-    support.run_unittest(ComplexTest)
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

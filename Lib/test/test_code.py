@@ -128,6 +128,7 @@ consts: ('None',)
 import inspect
 import sys
 import threading
+import doctest
 import unittest
 import textwrap
 import weakref
@@ -136,9 +137,12 @@ try:
     import ctypes
 except ImportError:
     ctypes = None
-from test.support import (run_doctest, run_unittest, cpython_only,
-                          check_impl_detail, requires_debug_ranges)
+from test.support import (cpython_only,
+                          check_impl_detail, requires_debug_ranges,
+                          gc_collect)
 from test.support.script_helper import assert_python_ok
+from opcode import opmap
+COPY_FREE_VARS = opmap['COPY_FREE_VARS']
 
 
 def consts(t):
@@ -183,7 +187,7 @@ class CodeTest(unittest.TestCase):
 
         def new_code(c):
             '''A new code object with a __class__ cell added to freevars'''
-            return c.replace(co_freevars=c.co_freevars + ('__class__',))
+            return c.replace(co_freevars=c.co_freevars + ('__class__',), co_code=bytes([COPY_FREE_VARS, 1])+c.co_code)
 
         def add_foreign_method(cls, name, f):
             code = new_code(f.__code__)
@@ -212,7 +216,7 @@ class CodeTest(unittest.TestCase):
         CodeType = type(co)
 
         # test code constructor
-        return CodeType(co.co_argcount,
+        CodeType(co.co_argcount,
                         co.co_posonlyargcount,
                         co.co_kwonlyargcount,
                         co.co_nlocals,
@@ -319,6 +323,15 @@ class CodeTest(unittest.TestCase):
             co.replace(co_nlocals=co.co_nlocals - 1)
         with self.assertRaises(ValueError):
             co.replace(co_nlocals=co.co_nlocals + 1)
+
+    def test_shrinking_localsplus(self):
+        # Check that PyCode_NewWithPosOnlyArgs resizes both
+        # localsplusnames and localspluskinds, if an argument is a cell.
+        def func(arg):
+            return lambda: arg
+        code = func.__code__
+        newcode = code.replace(co_name="func")  # Should not raise SystemError
+        self.assertEqual(code, newcode)
 
     def test_empty_linetable(self):
         def func():
@@ -501,6 +514,7 @@ class CodeWeakRefTest(unittest.TestCase):
         coderef = weakref.ref(f.__code__, callback)
         self.assertTrue(bool(coderef()))
         del f
+        gc_collect()  # For PyPy or other GCs.
         self.assertFalse(bool(coderef()))
         self.assertTrue(self.called)
 
@@ -598,13 +612,10 @@ if check_impl_detail(cpython=True) and ctypes is not None:
             self.assertEqual(LAST_FREED, 500)
 
 
-def test_main(verbose=None):
-    from test import test_code
-    run_doctest(test_code, verbose)
-    tests = [CodeTest, CodeConstsTest, CodeWeakRefTest]
-    if check_impl_detail(cpython=True) and ctypes is not None:
-        tests.append(CoExtra)
-    run_unittest(*tests)
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite())
+    return tests
+
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

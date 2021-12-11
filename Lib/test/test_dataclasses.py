@@ -8,9 +8,10 @@ import abc
 import pickle
 import inspect
 import builtins
+import types
 import unittest
 from unittest.mock import Mock
-from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional
+from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, Protocol
 from typing import get_type_hints
 from collections import deque, OrderedDict, namedtuple
 from functools import total_ordering
@@ -1126,6 +1127,10 @@ class TestCase(unittest.TestCase):
         self.assertEqual(repr(InitVar[int]), 'dataclasses.InitVar[int]')
         self.assertEqual(repr(InitVar[List[int]]),
                          'dataclasses.InitVar[typing.List[int]]')
+        self.assertEqual(repr(InitVar[list[int]]),
+                         'dataclasses.InitVar[list[int]]')
+        self.assertEqual(repr(InitVar[int|str]),
+                         'dataclasses.InitVar[int | str]')
 
     def test_init_var_inheritance(self):
         # Note that this deliberately tests that a dataclass need not
@@ -1349,6 +1354,17 @@ class TestCase(unittest.TestCase):
                     astuple(obj)
                 with self.assertRaisesRegex(TypeError, 'should be called on dataclass instances'):
                     replace(obj, x=0)
+
+    def test_is_dataclass_genericalias(self):
+        @dataclass
+        class A(types.GenericAlias):
+            origin: type
+            args: type
+        self.assertTrue(is_dataclass(A))
+        a = A(list, int)
+        self.assertTrue(is_dataclass(type(a)))
+        self.assertTrue(is_dataclass(a))
+
 
     def test_helper_fields_with_class_instance(self):
         # Check that we can call fields() on either a class or instance,
@@ -1907,7 +1923,7 @@ class TestCase(unittest.TestCase):
         # Check MRO resolution.
         self.assertEqual(Child.__mro__, (Child, Parent, Generic, object))
 
-    def test_dataclassses_pickleable(self):
+    def test_dataclasses_pickleable(self):
         global P, Q, R
         @dataclass
         class P:
@@ -2149,6 +2165,26 @@ class TestInit(unittest.TestCase):
             def __init__(self, x):
                 self.x = 2 * x
         self.assertEqual(C(5).x, 10)
+
+    def test_inherit_from_protocol(self):
+        # Dataclasses inheriting from protocol should preserve their own `__init__`.
+        # See bpo-45081.
+
+        class P(Protocol):
+            a: int
+
+        @dataclass
+        class C(P):
+            a: int
+
+        self.assertEqual(C(5).a, 5)
+
+        @dataclass
+        class D(P):
+            def __init__(self, a):
+                self.a = a * 2
+
+        self.assertEqual(D(5).a, 10)
 
 
 class TestRepr(unittest.TestCase):
@@ -2839,13 +2875,48 @@ class TestSlots(unittest.TestCase):
         foo: str
         bar: int
 
+    @dataclass(frozen=True)
+    class FrozenWithoutSlotsClass:
+        foo: str
+        bar: int
+
     def test_frozen_pickle(self):
         # bpo-43999
 
-        assert self.FrozenSlotsClass.__slots__ == ("foo", "bar")
-        p = pickle.dumps(self.FrozenSlotsClass("a", 1))
-        assert pickle.loads(p) == self.FrozenSlotsClass("a", 1)
+        self.assertEqual(self.FrozenSlotsClass.__slots__, ("foo", "bar"))
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                obj = self.FrozenSlotsClass("a", 1)
+                p = pickle.loads(pickle.dumps(obj, protocol=proto))
+                self.assertIsNot(obj, p)
+                self.assertEqual(obj, p)
 
+                obj = self.FrozenWithoutSlotsClass("a", 1)
+                p = pickle.loads(pickle.dumps(obj, protocol=proto))
+                self.assertIsNot(obj, p)
+                self.assertEqual(obj, p)
+
+    def test_slots_with_default_no_init(self):
+        # Originally reported in bpo-44649.
+        @dataclass(slots=True)
+        class A:
+            a: str
+            b: str = field(default='b', init=False)
+
+        obj = A("a")
+        self.assertEqual(obj.a, 'a')
+        self.assertEqual(obj.b, 'b')
+
+    def test_slots_with_default_factory_no_init(self):
+        # Originally reported in bpo-44649.
+        @dataclass(slots=True)
+        class A:
+            a: str
+            b: str = field(default_factory=lambda:'b', init=False)
+
+        obj = A("a")
+        self.assertEqual(obj.a, 'a')
+        self.assertEqual(obj.b, 'b')
 
 class TestDescriptors(unittest.TestCase):
     def test_set_name(self):
@@ -3675,7 +3746,7 @@ class TestKeywordArgs(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, msg):
             B(3, 4, 5)
 
-        # Explicitely make a field that follows KW_ONLY be non-keyword-only.
+        # Explicitly make a field that follows KW_ONLY be non-keyword-only.
         @dataclass
         class C:
             a: int
@@ -3830,6 +3901,17 @@ class TestKeywordArgs(unittest.TestCase):
                 b: int
                 c: int = 1
                 d: int
+
+    def test_make_dataclass(self):
+        A = make_dataclass("A", ['a'], kw_only=True)
+        self.assertTrue(fields(A)[0].kw_only)
+
+        B = make_dataclass("B",
+                           ['a', ('b', int, field(kw_only=False))],
+                           kw_only=True)
+        self.assertTrue(fields(B)[0].kw_only)
+        self.assertFalse(fields(B)[1].kw_only)
+
 
 if __name__ == '__main__':
     unittest.main()

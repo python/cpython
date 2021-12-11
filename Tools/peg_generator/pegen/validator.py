@@ -1,12 +1,7 @@
 from typing import Optional
 
 from pegen import grammar
-from pegen.grammar import (
-    Alt,
-    GrammarVisitor,
-    Rule,
-    Rhs,
-)
+from pegen.grammar import Alt, GrammarVisitor, Rhs, Rule
 
 
 class ValidationError(Exception):

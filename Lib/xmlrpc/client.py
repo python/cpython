@@ -264,16 +264,22 @@ boolean = Boolean = bool
 
 # Issue #13305: different format codes across platforms
 _day0 = datetime(1, 1, 1)
-if _day0.strftime('%Y') == '0001':      # Mac OS X
+def _try(fmt):
+    try:
+        return _day0.strftime(fmt) == '0001'
+    except ValueError:
+        return False
+if _try('%Y'):      # Mac OS X
     def _iso8601_format(value):
         return value.strftime("%Y%m%dT%H:%M:%S")
-elif _day0.strftime('%4Y') == '0001':   # Linux
+elif _try('%4Y'):   # Linux
     def _iso8601_format(value):
         return value.strftime("%4Y%m%dT%H:%M:%S")
 else:
     def _iso8601_format(value):
         return value.strftime("%Y%m%dT%H:%M:%S").zfill(17)
 del _day0
+del _try
 
 
 def _strftime(value):

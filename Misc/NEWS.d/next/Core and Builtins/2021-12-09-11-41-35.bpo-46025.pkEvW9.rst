@@ -1,0 +1,2 @@
+Fix a crash in the :mod:`atexit` module involving functions that unregister
+themselves before raising exceptions. Patch by Pablo Galindo.

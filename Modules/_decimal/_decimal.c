@@ -25,9 +25,12 @@
  * SUCH DAMAGE.
  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 
 #include <Python.h>
-#include "longintrepr.h"
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "complexobject.h"
 #include "mpdecimal.h"
 
@@ -1511,18 +1514,20 @@ static PyGetSetDef context_getsets [] =
 static PyObject *
 current_context_from_dict(void)
 {
-    PyObject *dict;
-    PyObject *tl_context;
-    PyThreadState *tstate;
+    PyThreadState *tstate = _PyThreadState_GET();
+#ifdef Py_DEBUG
+    // The caller must hold the GIL
+    _Py_EnsureTstateNotNULL(tstate);
+#endif
 
-    dict = PyThreadState_GetDict();
+    PyObject *dict = _PyThreadState_GetDict(tstate);
     if (dict == NULL) {
         PyErr_SetString(PyExc_RuntimeError,
             "cannot get thread state");
         return NULL;
     }
 
-    tl_context = PyDict_GetItemWithError(dict, tls_context_key);
+    PyObject *tl_context = PyDict_GetItemWithError(dict, tls_context_key);
     if (tl_context != NULL) {
         /* We already have a thread local context. */
         CONTEXT_CHECK(tl_context);
@@ -1548,11 +1553,8 @@ current_context_from_dict(void)
 
     /* Cache the context of the current thread, assuming that it
      * will be accessed several times before a thread switch. */
-    tstate = PyThreadState_GET();
-    if (tstate) {
-        cached_context = (PyDecContextObject *)tl_context;
-        cached_context->tstate = tstate;
-    }
+    cached_context = (PyDecContextObject *)tl_context;
+    cached_context->tstate = tstate;
 
     /* Borrowed reference with refcount==1 */
     return tl_context;
@@ -1562,9 +1564,7 @@ current_context_from_dict(void)
 static PyObject *
 current_context(void)
 {
-    PyThreadState *tstate;
-
-    tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     if (cached_context && cached_context->tstate == tstate) {
         return (PyObject *)cached_context;
     }

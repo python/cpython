@@ -10,6 +10,8 @@ extern "C" {
 
 #include "pycore_atomic.h"    /* _Py_atomic_address */
 #include "pycore_gil.h"       // struct _gil_runtime_state
+#include "pycore_long_state.h"  // struct _Py_long_state
+#include "pycore_unicodeobject.h"  // struct _Py_unicode_runtime_ids
 
 /* ceval state */
 
@@ -49,16 +51,15 @@ typedef struct _Py_AuditHookEntry {
     void *userData;
 } _Py_AuditHookEntry;
 
-struct _Py_unicode_runtime_ids {
-    PyThread_type_lock lock;
-    // next_index value must be preserved when Py_Initialize()/Py_Finalize()
-    // is called multiple times: see _PyUnicode_FromId() implementation.
-    Py_ssize_t next_index;
-};
-
 /* Full Python runtime state */
 
 typedef struct pyruntimestate {
+    /* Has been initialized to a safe state.
+
+       In order to be effective, this must be set to 0 during or right
+       after allocation. */
+    int _initialized;
+
     /* Is running Py_PreInitialize()? */
     int preinitializing;
 
@@ -100,6 +101,8 @@ typedef struct pyruntimestate {
 
     unsigned long main_thread;
 
+    struct _Py_long_state int_state;
+
 #define NEXITFUNCS 32
     void (*exitfuncs[NEXITFUNCS])(void);
     int nexitfuncs;
@@ -121,8 +124,17 @@ typedef struct pyruntimestate {
 } _PyRuntimeState;
 
 #define _PyRuntimeState_INIT \
-    {.preinitialized = 0, .core_initialized = 0, .initialized = 0}
+    { \
+        ._initialized = 0, \
+    }
 /* Note: _PyRuntimeState_INIT sets other fields to 0/NULL */
+
+static inline void
+_PyRuntimeState_reset(_PyRuntimeState *runtime)
+{
+    /* Make it match _PyRuntimeState_INIT. */
+    memset(runtime, 0, sizeof(*runtime));
+}
 
 
 PyAPI_DATA(_PyRuntimeState) _PyRuntime;

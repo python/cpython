@@ -66,6 +66,10 @@
 
 /* ---------------------------------------------------------------*/
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #ifdef HAVE_PROCESS_H
@@ -523,8 +527,9 @@ random_init(RandomObject *self, PyObject *args, PyObject *kwds)
     PyObject *arg = NULL;
     _randomstate *state = _randomstate_type(Py_TYPE(self));
 
-    if (Py_IS_TYPE(self, (PyTypeObject *)state->Random_Type) &&
-        !_PyArg_NoKeywords("Random()", kwds)) {
+    if ((Py_IS_TYPE(self, (PyTypeObject *)state->Random_Type) ||
+         Py_TYPE(self)->tp_init == ((PyTypeObject*)state->Random_Type)->tp_init) &&
+        !_PyArg_NoKeywords("Random", kwds)) {
         return -1;
     }
 
