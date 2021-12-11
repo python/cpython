@@ -712,9 +712,9 @@ Mutable default values
    creation they also share this behavior.  There is no general way
    for Data Classes to detect this condition.  Instead, the
    :func:`dataclass` decorator will raise a :exc:`TypeError` if it
-   detects a default parameter of type ``list``, ``dict``, or ``set``.
-   This is a partial solution, but it does protect against many common
-   errors.
+   detects an unhashable default parameter.  The assumption is that if
+   a value is unhashable, it is mutable.  This is a partial solution,
+   but it does protect against many common errors.
 
    Using default factory functions is a way to create new instances of
    mutable types as default values for fields::
@@ -724,3 +724,9 @@ Mutable default values
          x: list = field(default_factory=list)
 
      assert D().x is not D().x
+
+   .. versionchanged:: 3.11
+      Instead of looking for and disallowing objects of type ``list``,
+      ``dict``, or ``set``, unhashable objects are now not allowed as
+      default values.  Unhashability is used to approximate
+      mutability.
