@@ -421,7 +421,7 @@ if not py_setpath and not home_was_set:
                 pth = readlines(p)
                 pth_dir = dirname(p)
                 break
-            except FileNotFoundError:
+            except OSError:
                 pass
 
     # If we found a ._pth file, disable environment and home
