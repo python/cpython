@@ -4,7 +4,7 @@
 .. _extending-intro:
 
 ******************************
-Extending Python with C or C++
+使用 C 或 C++ 扩展 Python
 ******************************
 
 It is quite easy to add new built-in modules to Python, if you know how to

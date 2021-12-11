@@ -1,5 +1,5 @@
 ****************************
-  What's New in Python 2.2
+  Python 2.2有什么新变化
 ****************************
 
 :Author: A.M. Kuchling
@@ -13,7 +13,7 @@ Introduction
 ============
 
 This article explains the new features in Python 2.2.2, released on October 14,
-2002.  Python 2.2.2 is a bugfix release of Python 2.2, originally released on
+1.     Python 2.2.2 is a bugfix release of Python 2.2, originally released on
 December 21, 2001.
 
 Python 2.2 can be thought of as the "cleanup release".  There are some features

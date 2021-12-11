@@ -1,7 +1,7 @@
 .. _compound:
 
 *******************
-Compound statements
+符合语句
 *******************
 
 .. index:: pair: compound; statement

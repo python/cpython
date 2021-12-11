@@ -2,7 +2,7 @@
 .. _top-level:
 
 ********************
-Top-level components
+顶级组件
 ********************
 
 .. index:: single: interpreter

@@ -1,7 +1,7 @@
 .. _regex-howto:
 
 ****************************
-  Regular Expression HOWTO
+  正则表达式开胃菜
 ****************************
 
 :Author: A.M. Kuchling <amk@amk.ca>

@@ -101,7 +101,7 @@ sys``，可以导入这个模块，并访问该列表。该列表最少有一个
 
    # -*- coding: cp1252 -*-
 
-*第一行* 的规则也有一种例外情况，源码以 :ref:`UNIX "shebang" 行 开头。此时，编码声明要写在文件的第二行。例如：
+*第一行* 的规则也有一种例外情况，源码以 :ref:`UNIX "shebang" line <tut-scripts>` 开头。此时，编码声明要写在文件的第二行。例如：
 
    #!/usr/bin/env python3
    # -*- coding: cp1252 -*-

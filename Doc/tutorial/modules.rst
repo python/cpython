@@ -1,7 +1,7 @@
 .. _tut-modules:
 
 *******
-Modules
+模块
 *******
 
 If you quit from the Python interpreter and enter it again, the definitions you

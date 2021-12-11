@@ -1,5 +1,5 @@
 ****************
-Configure Python
+配置 Python
 ****************
 
 .. _configure-options:

@@ -1,7 +1,7 @@
 .. _logging-cookbook:
 
 ================
-Logging Cookbook
+日志手册
 ================
 
 :Author: Vinay Sajip <vinay_sajip at red-dove dot com>

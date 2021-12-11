@@ -3,7 +3,7 @@
 .. _package-index:
 
 *******************************
-The Python Package Index (PyPI)
+Python包索引 (PyPI)
 *******************************
 
 The `Python Package Index (PyPI)`_ stores metadata describing distributions

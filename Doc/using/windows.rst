@@ -3,7 +3,7 @@
 .. _using-on-windows:
 
 *************************
- Using Python on Windows
+在 Widnows 上使用 Python
 *************************
 
 .. sectionauthor:: Robert Lehmann <lehmannro@gmail.com>

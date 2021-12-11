@@ -2,7 +2,7 @@
 .. _lexical:
 
 ****************
-Lexical analysis
+词法分析
 ****************
 
 .. index:: lexical analysis, parser, token
@@ -19,17 +19,17 @@ raised.
 
 .. _line-structure:
 
-Line structure
+行结构
 ==============
 
 .. index:: line structure
 
-A Python program is divided into a number of *logical lines*.
+Python 程序可以拆分为多个 *逻辑行*。
 
 
 .. _logical-lines:
 
-Logical lines
+逻辑行
 -------------
 
 .. index:: logical line, physical line, line joining, NEWLINE token

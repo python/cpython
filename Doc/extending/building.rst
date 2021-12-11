@@ -3,7 +3,7 @@
 .. _building:
 
 *****************************
-Building C and C++ Extensions
+构建 C and C++ 扩展
 *****************************
 
 A C extension for CPython is a shared library (e.g. a ``.so`` file on Linux,

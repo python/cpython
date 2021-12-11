@@ -5,7 +5,7 @@
 .. _windows-faq:
 
 =====================
-Python on Windows FAQ
+Windows上Python问答
 =====================
 
 .. only:: html

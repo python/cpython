@@ -2,7 +2,7 @@
 .. _expressions:
 
 ***********
-Expressions
+表达式
 ***********
 
 .. index:: expression, BNF

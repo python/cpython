@@ -1,7 +1,7 @@
 .. _distutils-intro:
 
 ****************************
-An Introduction to Distutils
+关于Distutils的介绍
 ****************************
 
 .. include:: ./_setuptools_disclaimer.rst

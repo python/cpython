@@ -1,7 +1,7 @@
 .. _tut-structures:
 
 ***************
-Data Structures
+数据结构
 ***************
 
 This chapter describes some things you've learned about already in more detail,

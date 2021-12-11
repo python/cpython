@@ -1,7 +1,7 @@
 :tocdepth: 2
 
 =========================
-Library and Extension FAQ
+库和扩展问答
 =========================
 
 .. only:: html

@@ -2,10 +2,10 @@
 .. _tut-venv:
 
 *********************************
-Virtual Environments and Packages
+虚拟环境及包
 *********************************
 
-Introduction
+介绍
 ============
 
 Python applications will often use packages and modules that don't
@@ -32,7 +32,7 @@ If application B requires a library be upgraded to version 3.0, this will
 not affect application A's environment.
 
 
-Creating Virtual Environments
+创建虚拟环境
 =============================
 
 The module used to create and manage virtual environments is called
@@ -89,7 +89,7 @@ For example:
   >>>
 
 
-Managing Packages with pip
+使用pip管理包
 ==========================
 
 You can install, upgrade, and remove packages using a program called

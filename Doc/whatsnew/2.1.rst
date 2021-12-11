@@ -1,5 +1,5 @@
 ****************************
-  What's New in Python 2.1
+  Python 2.1有什么新变化
 ****************************
 
 :Author: A.M. Kuchling

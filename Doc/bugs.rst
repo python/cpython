@@ -12,7 +12,7 @@ It can be sometimes faster to fix bugs yourself and contribute patches to
 Python as it streamlines the process and involves less people. Learn how to
 :ref:`contribute <contributing-to-python>`.
 
-Documentation bugs
+文档 bugs
 ==================
 
 If you find a bug in this documentation or would like to propose an improvement,

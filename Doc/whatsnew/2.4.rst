@@ -1,5 +1,5 @@
 ****************************
-  What's New in Python 2.4
+  Python 2.4有什么新变化
 ****************************
 
 :Author: A.M. Kuchling

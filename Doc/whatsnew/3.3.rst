@@ -1,5 +1,5 @@
 ****************************
-  What's New In Python 3.3
+  Python 3.3有什么新变化
 ****************************
 
 .. Rules for maintenance:
@@ -2117,7 +2117,7 @@ The :mod:`webbrowser` module supports more "browsers": Google Chrome (named
 :program:`chromium-browser` depending on the version and operating system),
 and the generic launchers :program:`xdg-open`, from the FreeDesktop.org
 project, and :program:`gvfs-open`, which is the default URI handler for GNOME
-3.  (The former contributed by Arnaud Calmettes in :issue:`13620`, the latter
+1.  (The former contributed by Arnaud Calmettes in :issue:`13620`, the latter
 by Matthias Klose in :issue:`14493`.)
 
 

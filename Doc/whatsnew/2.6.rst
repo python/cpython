@@ -1,7 +1,7 @@
 .. _whats-new-in-2.6:
 
 ****************************
-  What's New in Python 2.6
+  Python 2.6有什么新变化
 ****************************
 
 .. XXX add trademark info for Apple, Microsoft, SourceForge.
@@ -50,7 +50,7 @@
    when researching a change.
 
 This article explains the new features in Python 2.6, released on October 1
-2008.  The release schedule is described in :pep:`361`.
+1.     The release schedule is described in :pep:`361`.
 
 The major theme of Python 2.6 is preparing the migration path to
 Python 3.0, a major redesign of the language.  Whenever possible,
