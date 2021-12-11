@@ -6,6 +6,7 @@ import collections
 
 from . import exceptions
 from . import mixins
+from . import tasks
 
 
 class _ContextManagerMixin:
@@ -350,6 +351,7 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
             raise ValueError("Semaphore initial value must be >= 0")
         self._value = value
         self._waiters = collections.deque()
+        self._skip_loop_iteration = False
 
     def __repr__(self):
         res = super().__repr__()
@@ -365,6 +367,9 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
                 waiter.set_result(None)
                 return
 
+        # Next acquire call should give a chance to other waiters acquire lock
+        self._skip_loop_iteration = True
+
     def locked(self):
         """Returns True if semaphore can not be acquired immediately."""
         return self._value == 0
@@ -378,6 +383,12 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
         called release() to make it larger than 0, and then return
         True.
         """
+
+        # Skip one loop iteration and give a change to next waiter to acquire
+        if self._skip_loop_iteration:
+            self._skip_loop_iteration = False
+            await tasks.sleep(0)
+
         while self._value <= 0:
             fut = self._get_loop().create_future()
             self._waiters.append(fut)
