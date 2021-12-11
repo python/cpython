@@ -591,13 +591,13 @@ class FormatTest(unittest.TestCase):
     def test_specifier_z_error(self):
         error_msg = re.compile("Invalid format specifier '.*z.*'")
         with self.assertRaisesRegex(ValueError, error_msg):
-            f"{0:z+f}" # wrong position
+            f"{0:z+f}"  # wrong position
 
         error_msg = re.escape("Negative zero coercion (z) not allowed")
         with self.assertRaisesRegex(ValueError, error_msg):
-            f"{0:zd}" # can't apply to int
+            f"{0:zd}"  # can't apply to int
         with self.assertRaisesRegex(ValueError, error_msg):
-            f"{'x':zs}" # can't apply to string
+            f"{'x':zs}"  # can't apply to string
 
         error_msg = re.escape("unsupported format character 'z'")
         with self.assertRaisesRegex(ValueError, error_msg):
