@@ -32,7 +32,9 @@ static inline stwodigits
 medium_value(PyLongObject *x)
 {
     assert(IS_MEDIUM_VALUE(x));
-    return ((stwodigits)Py_SIZE(x)) * x->ob_digit[0];
+    Py_ssize_t s = Py_SIZE(x);
+    stwodigits d = x->ob_digit[0];
+    return s == 1 ? d : s == -1 ? -d : 0;
 }
 
 #define IS_SMALL_INT(ival) (-_PY_NSMALLNEGINTS <= (ival) && (ival) < _PY_NSMALLPOSINTS)
@@ -45,7 +47,7 @@ static inline int is_medium_int(stwodigits x)
     return x_plus_mask < ((twodigits)PyLong_MASK) + PyLong_BASE;
 }
 
-static PyObject *
+static inline PyObject *
 get_small_int(sdigit ival)
 {
     assert(IS_SMALL_INT(ival));
@@ -54,7 +56,7 @@ get_small_int(sdigit ival)
     return v;
 }
 
-static PyLongObject *
+static inline PyLongObject *
 maybe_small_long(PyLongObject *v)
 {
     if (v && IS_MEDIUM_VALUE(v)) {
@@ -4491,38 +4493,58 @@ long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
 {
     PyLongObject *z = NULL;
     Py_ssize_t newsize, hishift, i, j;
-    digit lomask, himask;
+    digit lomask, himask, omitmark;
+
+    /* for a positive integrate x
+         -x >> m = -(x >> m)      when x is two's pow
+                 = -(x >> m) -1   otherwise */
+
+    if (IS_MEDIUM_VALUE(a)) {
+        stwodigits sval;
+        if (wordshift > 0)
+            return get_small_int((sdigit)Py_SIZE(a) >> 1);
+
+        sval = medium_value(a) >> remshift;
+        if (IS_SMALL_INT(sval))
+            return get_small_int((sdigit)sval);
+
+        z = _PyLong_New(Py_SIZE(a));
+        z->ob_digit[0] = a->ob_digit[0] >> remshift;
+        if (Py_SIZE(a) < 0 && (a->ob_digit[0] & ~(PyLong_MASK << remshift)))
+            z->ob_digit[0] += 1;
+        return (PyObject *)z;
+    }
+
+    newsize = Py_ABS(Py_SIZE(a)) - wordshift;
+    if (newsize <= 0)
+        return PyLong_FromLong(0);
+    z = _PyLong_New(newsize);
+    if (z == NULL)
+        return NULL;
+
+    hishift = PyLong_SHIFT - remshift;
+    lomask = ((digit)1 << hishift) - 1;
+    himask = PyLong_MASK ^ lomask;
+    for (i = 0, j = wordshift; i < newsize; i++, j++) {
+        z->ob_digit[i] = (a->ob_digit[j] >> remshift) & lomask;
+        if (i + 1 < newsize)
+            z->ob_digit[i] |= (a->ob_digit[j + 1] << hishift) & himask;
+    }
 
     if (Py_SIZE(a) < 0) {
-        /* Right shifting negative numbers is harder */
-        PyLongObject *a1, *a2;
-        a1 = (PyLongObject *) long_invert(a);
-        if (a1 == NULL)
-            return NULL;
-        a2 = (PyLongObject *) long_rshift1(a1, wordshift, remshift);
-        Py_DECREF(a1);
-        if (a2 == NULL)
-            return NULL;
-        z = (PyLongObject *) long_invert(a2);
-        Py_DECREF(a2);
-    }
-    else {
-        newsize = Py_SIZE(a) - wordshift;
-        if (newsize <= 0)
-            return PyLong_FromLong(0);
-        hishift = PyLong_SHIFT - remshift;
-        lomask = ((digit)1 << hishift) - 1;
-        himask = PyLong_MASK ^ lomask;
-        z = _PyLong_New(newsize);
-        if (z == NULL)
-            return NULL;
-        for (i = 0, j = wordshift; i < newsize; i++, j++) {
-            z->ob_digit[i] = (a->ob_digit[j] >> remshift) & lomask;
-            if (i+1 < newsize)
-                z->ob_digit[i] |= (a->ob_digit[j+1] << hishift) & himask;
+        Py_SET_SIZE(z, -newsize);
+        omitmark = a->ob_digit[wordshift] & ((1 << remshift) - 1);
+        for (j = 0; omitmark == 0 && j < wordshift; j++)
+            omitmark |= a->ob_digit[j];
+        if (omitmark) {
+            Py_DECREF(z);
+            z = (PyLongObject *) long_sub(z, (PyLongObject *)_PyLong_GetOne());
+            if (z == NULL)
+                return NULL;
         }
-        z = maybe_small_long(long_normalize(z));
     }
+
+    z = maybe_small_long(long_normalize(z));
     return (PyObject *)z;
 }
 
@@ -4565,11 +4587,21 @@ _PyLong_Rshift(PyObject *a, size_t shiftby)
 static PyObject *
 long_lshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
 {
-    /* This version due to Tim Peters */
     PyLongObject *z = NULL;
     Py_ssize_t oldsize, newsize, i, j;
     twodigits accum;
 
+    if (wordshift == 0 && IS_MEDIUM_VALUE(a) &&
+        (a->ob_digit[0] & ~(PyLong_MASK >> remshift)) == 0) {
+        stwodigits sval = medium_value(a) << remshift;
+        if (IS_SMALL_INT(sval))
+            return get_small_int((sdigit)sval);
+        z = _PyLong_New(Py_SIZE(a));
+        z->ob_digit[0] = a->ob_digit[0] << remshift;
+        return (PyObject *)z;
+    }
+
+    /* This version due to Tim Peters */
     oldsize = Py_ABS(Py_SIZE(a));
     newsize = oldsize + wordshift;
     if (remshift)
