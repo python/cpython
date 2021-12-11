@@ -270,7 +270,8 @@ class ExceptionTests(unittest.TestCase):
         # Errors thrown by symtable.c
         check('x = [(yield i) for i in range(3)]', 1, 5)
         check('def f():\n  from _ import *', 1, 1)
-        check('def f(x, x):\n  pass', 1, 1)
+        check('def f(x, x):\n  pass', 1, 10)
+        check('{i for i in range(5) if (j := 0) for j in range(5)}', 1, 38)
         check('def f(x):\n  nonlocal x', 2, 3)
         check('def f(x):\n  x = 1\n  global x', 3, 3)
         check('nonlocal x', 1, 1)

@@ -49,6 +49,13 @@
 "'%s' can not be used within an annotation"
 
 
+#define LOCATION(x) \
+ (x)->lineno, (x)->col_offset, (x)->end_lineno, (x)->end_col_offset
+
+#define ST_LOCATION(x) \
+ (x)->ste_lineno, (x)->ste_col_offset, (x)->ste_end_lineno, (x)->ste_end_col_offset
+
+
 static PySTEntryObject *
 ste_new(struct symtable *st, identifier name, _Py_block_ty block,
         void *key, int lineno, int col_offset,
@@ -1025,7 +1032,8 @@ symtable_lookup(struct symtable *st, PyObject *name)
 }
 
 static int
-symtable_add_def_helper(struct symtable *st, PyObject *name, int flag, struct _symtable_entry *ste)
+symtable_add_def_helper(struct symtable *st, PyObject *name, int flag, struct _symtable_entry *ste,
+                        int lineno, int col_offset, int end_lineno, int end_col_offset)
 {
     PyObject *o;
     PyObject *dict;
@@ -1042,10 +1050,8 @@ symtable_add_def_helper(struct symtable *st, PyObject *name, int flag, struct _s
             /* Is it better to use 'mangled' or 'name' here? */
             PyErr_Format(PyExc_SyntaxError, DUPLICATE_ARGUMENT, name);
             PyErr_RangedSyntaxLocationObject(st->st_filename,
-                                             ste->ste_lineno,
-                                             ste->ste_col_offset + 1,
-                                             ste->ste_end_lineno,
-                                             ste->ste_end_col_offset + 1);
+                                             lineno, col_offset + 1,
+                                             end_lineno, end_col_offset + 1);
             goto error;
         }
         val |= flag;
@@ -1066,10 +1072,8 @@ symtable_add_def_helper(struct symtable *st, PyObject *name, int flag, struct _s
             PyErr_Format(PyExc_SyntaxError,
                 NAMED_EXPR_COMP_INNER_LOOP_CONFLICT, name);
             PyErr_RangedSyntaxLocationObject(st->st_filename,
-                                             ste->ste_lineno,
-                                             ste->ste_col_offset + 1,
-                                             ste->ste_end_lineno,
-                                             ste->ste_end_col_offset + 1);
+                                             lineno, col_offset + 1,
+                                             end_lineno, end_col_offset + 1);
             goto error;
         }
         val |= DEF_COMP_ITER;
@@ -1114,8 +1118,11 @@ error:
 }
 
 static int
-symtable_add_def(struct symtable *st, PyObject *name, int flag) {
-    return symtable_add_def_helper(st, name, flag, st->st_cur);
+symtable_add_def(struct symtable *st, PyObject *name, int flag,
+                 int lineno, int col_offset, int end_lineno, int end_col_offset)
+{
+    return symtable_add_def_helper(st, name, flag, st->st_cur, 
+                        lineno, col_offset, end_lineno, end_col_offset);
 }
 
 /* VISIT, VISIT_SEQ and VIST_SEQ_TAIL take an ASDL type as their second argument.
@@ -1200,7 +1207,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
     }
     switch (s->kind) {
     case FunctionDef_kind:
-        if (!symtable_add_def(st, s->v.FunctionDef.name, DEF_LOCAL))
+        if (!symtable_add_def(st, s->v.FunctionDef.name, DEF_LOCAL, LOCATION(s)))
             VISIT_QUIT(st, 0);
         if (s->v.FunctionDef.args->defaults)
             VISIT_SEQ(st, expr, s->v.FunctionDef.args->defaults);
@@ -1213,8 +1220,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             VISIT_SEQ(st, expr, s->v.FunctionDef.decorator_list);
         if (!symtable_enter_block(st, s->v.FunctionDef.name,
                                   FunctionBlock, (void *)s,
-                                  s->lineno, s->col_offset,
-                                  s->end_lineno, s->end_col_offset))
+                                  LOCATION(s)))
             VISIT_QUIT(st, 0);
         VISIT(st, arguments, s->v.FunctionDef.args);
         VISIT_SEQ(st, stmt, s->v.FunctionDef.body);
@@ -1223,7 +1229,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         break;
     case ClassDef_kind: {
         PyObject *tmp;
-        if (!symtable_add_def(st, s->v.ClassDef.name, DEF_LOCAL))
+        if (!symtable_add_def(st, s->v.ClassDef.name, DEF_LOCAL, LOCATION(s)))
             VISIT_QUIT(st, 0);
         VISIT_SEQ(st, expr, s->v.ClassDef.bases);
         VISIT_SEQ(st, keyword, s->v.ClassDef.keywords);
@@ -1276,12 +1282,12 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             }
             if (s->v.AnnAssign.simple &&
                 !symtable_add_def(st, e_name->v.Name.id,
-                                  DEF_ANNOT | DEF_LOCAL)) {
+                                  DEF_ANNOT | DEF_LOCAL, LOCATION(e_name))) {
                 VISIT_QUIT(st, 0);
             }
             else {
                 if (s->v.AnnAssign.value
-                    && !symtable_add_def(st, e_name->v.Name.id, DEF_LOCAL)) {
+                    && !symtable_add_def(st, e_name->v.Name.id, DEF_LOCAL, LOCATION(e_name))) {
                     VISIT_QUIT(st, 0);
                 }
             }
@@ -1378,7 +1384,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                                                  s->end_col_offset + 1);
                 VISIT_QUIT(st, 0);
             }
-            if (!symtable_add_def(st, name, DEF_GLOBAL))
+            if (!symtable_add_def(st, name, DEF_GLOBAL, LOCATION(s)))
                 VISIT_QUIT(st, 0);
             if (!symtable_record_directive(st, name, s->lineno, s->col_offset,
                                            s->end_lineno, s->end_col_offset))
@@ -1413,7 +1419,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                                                  s->end_col_offset + 1);
                 VISIT_QUIT(st, 0);
             }
-            if (!symtable_add_def(st, name, DEF_NONLOCAL))
+            if (!symtable_add_def(st, name, DEF_NONLOCAL, LOCATION(s)))
                 VISIT_QUIT(st, 0);
             if (!symtable_record_directive(st, name, s->lineno, s->col_offset,
                                            s->end_lineno, s->end_col_offset))
@@ -1434,7 +1440,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         VISIT_SEQ(st, stmt, s->v.With.body);
         break;
     case AsyncFunctionDef_kind:
-        if (!symtable_add_def(st, s->v.AsyncFunctionDef.name, DEF_LOCAL))
+        if (!symtable_add_def(st, s->v.AsyncFunctionDef.name, DEF_LOCAL, LOCATION(s)))
             VISIT_QUIT(st, 0);
         if (s->v.AsyncFunctionDef.args->defaults)
             VISIT_SEQ(st, expr, s->v.AsyncFunctionDef.args->defaults);
@@ -1509,27 +1515,25 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
         if (ste->ste_type == FunctionBlock) {
             long target_in_scope = _PyST_GetSymbol(ste, target_name);
             if (target_in_scope & DEF_GLOBAL) {
-                if (!symtable_add_def(st, target_name, DEF_GLOBAL))
+                if (!symtable_add_def(st, target_name, DEF_GLOBAL, LOCATION(e)))
                     VISIT_QUIT(st, 0);
             } else {
-                if (!symtable_add_def(st, target_name, DEF_NONLOCAL))
+                if (!symtable_add_def(st, target_name, DEF_NONLOCAL, LOCATION(e)))
                     VISIT_QUIT(st, 0);
             }
-            if (!symtable_record_directive(st, target_name, e->lineno, e->col_offset,
-                                           e->end_lineno, e->end_col_offset))
+            if (!symtable_record_directive(st, target_name, LOCATION(e)))
                 VISIT_QUIT(st, 0);
 
-            return symtable_add_def_helper(st, target_name, DEF_LOCAL, ste);
+            return symtable_add_def_helper(st, target_name, DEF_LOCAL, ste, LOCATION(e));
         }
         /* If we find a ModuleBlock entry, add as GLOBAL */
         if (ste->ste_type == ModuleBlock) {
-            if (!symtable_add_def(st, target_name, DEF_GLOBAL))
+            if (!symtable_add_def(st, target_name, DEF_GLOBAL, LOCATION(e)))
                 VISIT_QUIT(st, 0);
-            if (!symtable_record_directive(st, target_name, e->lineno, e->col_offset,
-                                           e->end_lineno, e->end_col_offset))
+            if (!symtable_record_directive(st, target_name, LOCATION(e)))
                 VISIT_QUIT(st, 0);
 
-            return symtable_add_def_helper(st, target_name, DEF_GLOBAL, ste);
+            return symtable_add_def_helper(st, target_name, DEF_GLOBAL, ste, LOCATION(e));
         }
         /* Disallow usage in ClassBlock */
         if (ste->ste_type == ClassBlock) {
@@ -1708,14 +1712,14 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         break;
     case Name_kind:
         if (!symtable_add_def(st, e->v.Name.id,
-                              e->v.Name.ctx == Load ? USE : DEF_LOCAL))
+                              e->v.Name.ctx == Load ? USE : DEF_LOCAL, LOCATION(e)))
             VISIT_QUIT(st, 0);
         /* Special-case super: it counts as a use of __class__ */
         if (e->v.Name.ctx == Load &&
             st->st_cur->ste_type == FunctionBlock &&
             _PyUnicode_EqualToASCIIString(e->v.Name.id, "super")) {
             if (!GET_IDENTIFIER(__class__) ||
-                !symtable_add_def(st, __class__, USE))
+                !symtable_add_def(st, __class__, USE, LOCATION(e)))
                 VISIT_QUIT(st, 0);
         }
         break;
@@ -1750,14 +1754,14 @@ symtable_visit_pattern(struct symtable *st, pattern_ty p)
         break;
     case MatchStar_kind:
         if (p->v.MatchStar.name) {
-            symtable_add_def(st, p->v.MatchStar.name, DEF_LOCAL);
+            symtable_add_def(st, p->v.MatchStar.name, DEF_LOCAL, LOCATION(p));
         }
         break;
     case MatchMapping_kind:
         VISIT_SEQ(st, expr, p->v.MatchMapping.keys);
         VISIT_SEQ(st, pattern, p->v.MatchMapping.patterns);
         if (p->v.MatchMapping.rest) {
-            symtable_add_def(st, p->v.MatchMapping.rest, DEF_LOCAL);
+            symtable_add_def(st, p->v.MatchMapping.rest, DEF_LOCAL, LOCATION(p));
         }
         break;
     case MatchClass_kind:
@@ -1770,7 +1774,7 @@ symtable_visit_pattern(struct symtable *st, pattern_ty p)
             VISIT(st, pattern, p->v.MatchAs.pattern);
         }
         if (p->v.MatchAs.name) {
-            symtable_add_def(st, p->v.MatchAs.name, DEF_LOCAL);
+            symtable_add_def(st, p->v.MatchAs.name, DEF_LOCAL, LOCATION(p));
         }
         break;
     case MatchOr_kind:
@@ -1786,7 +1790,7 @@ symtable_implicit_arg(struct symtable *st, int pos)
     PyObject *id = PyUnicode_FromFormat(".%d", pos);
     if (id == NULL)
         return 0;
-    if (!symtable_add_def(st, id, DEF_PARAM)) {
+    if (!symtable_add_def(st, id, DEF_PARAM, ST_LOCATION(st->st_cur))) {
         Py_DECREF(id);
         return 0;
     }
@@ -1804,7 +1808,7 @@ symtable_visit_params(struct symtable *st, asdl_arg_seq *args)
 
     for (i = 0; i < asdl_seq_LEN(args); i++) {
         arg_ty arg = (arg_ty)asdl_seq_GET(args, i);
-        if (!symtable_add_def(st, arg->arg, DEF_PARAM))
+        if (!symtable_add_def(st, arg->arg, DEF_PARAM, LOCATION(arg)))
             return 0;
     }
 
@@ -1888,12 +1892,12 @@ symtable_visit_arguments(struct symtable *st, arguments_ty a)
     if (a->kwonlyargs && !symtable_visit_params(st, a->kwonlyargs))
         return 0;
     if (a->vararg) {
-        if (!symtable_add_def(st, a->vararg->arg, DEF_PARAM))
+        if (!symtable_add_def(st, a->vararg->arg, DEF_PARAM, LOCATION(a->vararg)))
             return 0;
         st->st_cur->ste_varargs = 1;
     }
     if (a->kwarg) {
-        if (!symtable_add_def(st, a->kwarg->arg, DEF_PARAM))
+        if (!symtable_add_def(st, a->kwarg->arg, DEF_PARAM, LOCATION(a->kwarg)))
             return 0;
         st->st_cur->ste_varkeywords = 1;
     }
@@ -1907,7 +1911,7 @@ symtable_visit_excepthandler(struct symtable *st, excepthandler_ty eh)
     if (eh->v.ExceptHandler.type)
         VISIT(st, expr, eh->v.ExceptHandler.type);
     if (eh->v.ExceptHandler.name)
-        if (!symtable_add_def(st, eh->v.ExceptHandler.name, DEF_LOCAL))
+        if (!symtable_add_def(st, eh->v.ExceptHandler.name, DEF_LOCAL, LOCATION(eh)))
             return 0;
     VISIT_SEQ(st, stmt, eh->v.ExceptHandler.body);
     return 1;
@@ -1955,7 +1959,7 @@ symtable_visit_alias(struct symtable *st, alias_ty a)
         Py_INCREF(store_name);
     }
     if (!_PyUnicode_EqualToASCIIString(name, "*")) {
-        int r = symtable_add_def(st, store_name, DEF_IMPORT);
+        int r = symtable_add_def(st, store_name, DEF_IMPORT, LOCATION(a));
         Py_DECREF(store_name);
         return r;
     }
