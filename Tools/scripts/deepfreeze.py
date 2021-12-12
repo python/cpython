@@ -1,3 +1,8 @@
+"""Deep freeze
+
+The script is executed by _bootstrap_python interpreter. Shared library
+extension modules are not available.
+"""
 import argparse
 import ast
 import builtins
@@ -5,6 +10,7 @@ import collections
 import contextlib
 import os
 import re
+import sys
 import time
 import types
 from typing import Dict, FrozenSet, Tuple, TextIO
@@ -14,9 +20,13 @@ import umarshal
 verbose = False
 
 
+def isprintable(b: bytes) -> bool:
+    return all(0x20 <= c < 0x7f for c in b)
+
+
 def make_string_literal(b: bytes) -> str:
     res = ['"']
-    if b.isascii() and b.decode("ascii").isprintable():
+    if isprintable(b):
         res.append(b.decode("ascii").replace("\\", "\\\\").replace("\"", "\\\""))
     else:
         for i in b:
@@ -411,7 +421,7 @@ def generate(source: str, filename: str, modname: str, file: TextIO) -> None:
     printer = Printer(file)
     printer.generate("toplevel", code)
     printer.write("")
-    with printer.block("static void do_patchups()"):
+    with printer.block("static void do_patchups(void)"):
         for p in printer.patchups:
             printer.write(p)
     here = os.path.dirname(__file__)

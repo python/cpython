@@ -324,7 +324,10 @@ Module contents
    Converts the dataclass ``instance`` to a dict (by using the
    factory function ``dict_factory``).  Each dataclass is converted
    to a dict of its fields, as ``name: value`` pairs.  dataclasses, dicts,
-   lists, and tuples are recursed into.  For example::
+   lists, and tuples are recursed into.  Other objects are copied with
+   :func:`copy.deepcopy`.
+
+   Example of using :func:`asdict` on nested dataclasses::
 
      @dataclass
      class Point:
@@ -341,21 +344,32 @@ Module contents
      c = C([Point(0, 0), Point(10, 4)])
      assert asdict(c) == {'mylist': [{'x': 0, 'y': 0}, {'x': 10, 'y': 4}]}
 
-   Raises :exc:`TypeError` if ``instance`` is not a dataclass instance.
+   To create a shallow copy, the following workaround may be used::
+
+     dict((field.name, getattr(instance, field.name)) for field in fields(instance))
+
+   :func:`asdict` raises :exc:`TypeError` if ``instance`` is not a dataclass
+   instance.
 
 .. function:: astuple(instance, *, tuple_factory=tuple)
 
    Converts the dataclass ``instance`` to a tuple (by using the
    factory function ``tuple_factory``).  Each dataclass is converted
    to a tuple of its field values.  dataclasses, dicts, lists, and
-   tuples are recursed into.
+   tuples are recursed into. Other objects are copied with
+   :func:`copy.deepcopy`.
 
    Continuing from the previous example::
 
      assert astuple(p) == (10, 20)
      assert astuple(c) == ([(0, 0), (10, 4)],)
 
-   Raises :exc:`TypeError` if ``instance`` is not a dataclass instance.
+   To create a shallow copy, the following workaround may be used::
+
+     tuple(getattr(instance, field.name) for field in dataclasses.fields(instance))
+
+   :func:`astuple` raises :exc:`TypeError` if ``instance`` is not a dataclass
+   instance.
 
 .. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False)
 
@@ -698,9 +712,9 @@ Mutable default values
    creation they also share this behavior.  There is no general way
    for Data Classes to detect this condition.  Instead, the
    :func:`dataclass` decorator will raise a :exc:`TypeError` if it
-   detects a default parameter of type ``list``, ``dict``, or ``set``.
-   This is a partial solution, but it does protect against many common
-   errors.
+   detects an unhashable default parameter.  The assumption is that if
+   a value is unhashable, it is mutable.  This is a partial solution,
+   but it does protect against many common errors.
 
    Using default factory functions is a way to create new instances of
    mutable types as default values for fields::
@@ -710,3 +724,9 @@ Mutable default values
          x: list = field(default_factory=list)
 
      assert D().x is not D().x
+
+   .. versionchanged:: 3.11
+      Instead of looking for and disallowing objects of type ``list``,
+      ``dict``, or ``set``, unhashable objects are now not allowed as
+      default values.  Unhashability is used to approximate
+      mutability.

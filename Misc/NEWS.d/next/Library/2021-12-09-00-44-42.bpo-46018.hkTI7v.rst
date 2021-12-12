@@ -1,0 +1,1 @@
+Ensure that :func:`math.expm1` does not raise on underflow.

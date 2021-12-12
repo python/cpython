@@ -2427,7 +2427,7 @@ class NewType:
     """NewType creates simple unique types with almost zero
     runtime overhead. NewType(name, tp) is considered a subtype of tp
     by static type checkers. At runtime, NewType(name, tp) returns
-    a dummy function that simply returns its argument. Usage::
+    a dummy callable that simply returns its argument. Usage::
 
         UserId = NewType('UserId', int)
 

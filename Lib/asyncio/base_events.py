@@ -706,6 +706,8 @@ class BaseEventLoop(events.AbstractEventLoop):
         Any positional arguments after the callback will be passed to
         the callback when it is called.
         """
+        if delay is None:
+            raise TypeError('delay must not be None')
         timer = self.call_at(self.time() + delay, callback, *args,
                              context=context)
         if timer._source_traceback:
@@ -717,6 +719,8 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         Absolute time corresponds to the event loop's time() method.
         """
+        if when is None:
+            raise TypeError("when cannot be None")
         self._check_closed()
         if self._debug:
             self._check_thread()

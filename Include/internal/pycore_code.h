@@ -42,6 +42,7 @@ typedef struct {
     uint16_t defaults_len;
 } _PyCallCache;
 
+
 /* Add specialized versions of entries to this union.
  *
  * Do not break the invariant: sizeof(SpecializedCacheEntry) == 8
@@ -137,23 +138,24 @@ _GetSpecializedCacheEntryForInstruction(const _Py_CODEUNIT *first_instr, int nex
 #define QUICKENING_INITIAL_WARMUP_VALUE (-QUICKENING_WARMUP_DELAY)
 #define QUICKENING_WARMUP_COLDEST 1
 
-static inline void
-PyCodeObject_IncrementWarmup(PyCodeObject * co)
-{
-    co->co_warmup++;
-}
-
-/* Used by the interpreter to determine when a code object should be quickened */
-static inline int
-PyCodeObject_IsWarmedUp(PyCodeObject * co)
-{
-    return (co->co_warmup == 0);
-}
-
 int _Py_Quicken(PyCodeObject *code);
 
-extern Py_ssize_t _Py_QuickenedCount;
+/* Returns 1 if quickening occurs.
+ * -1 if an error occurs
+ * 0 otherwise */
+static inline int
+_Py_IncrementCountAndMaybeQuicken(PyCodeObject *code)
+{
+    if (code->co_warmup != 0) {
+        code->co_warmup++;
+        if (code->co_warmup == 0) {
+            return _Py_Quicken(code) ? -1 : 1;
+        }
+    }
+    return 0;
+}
 
+extern Py_ssize_t _Py_QuickenedCount;
 
 /* "Locals plus" for a code object is the set of locals + cell vars +
  * free vars.  This relates to variable names as well as offsets into
@@ -272,6 +274,7 @@ int _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT 
 int _Py_Specialize_CallFunction(PyObject *callable, _Py_CODEUNIT *instr, int nargs, SpecializedCacheEntry *cache, PyObject *builtins);
 void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                              SpecializedCacheEntry *cache);
+void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache);
 
 #define PRINT_SPECIALIZATION_STATS 0
 #define PRINT_SPECIALIZATION_STATS_DETAILED 0

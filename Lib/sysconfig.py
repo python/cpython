@@ -216,6 +216,11 @@ def _expand_vars(scheme, vars):
     if vars is None:
         vars = {}
     _extend_dict(vars, get_config_vars())
+    if os.name == 'nt':
+        # On Windows we want to substitute 'lib' for schemes rather
+        # than the native value (without modifying vars, in case it
+        # was passed in)
+        vars = vars | {'platlibdir': 'lib'}
 
     for key, value in _INSTALL_SCHEMES[scheme].items():
         if os.name in ('posix', 'nt'):
@@ -611,6 +616,7 @@ def get_config_vars(*args):
 
         if os.name == 'nt':
             _init_non_posix(_CONFIG_VARS)
+            _CONFIG_VARS['VPATH'] = sys._vpath
         if os.name == 'posix':
             _init_posix(_CONFIG_VARS)
         # For backward compatibility, see issue19555
