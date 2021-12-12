@@ -80,8 +80,17 @@ jobs:
         run: |
           # Build Python with the libpython dynamic library
           ./configure --with-pydebug --enable-shared
+          make -j4
+      - name: Run regen-all/stdlib/frozen
+        run: |
           make -j4 regen-all
           make regen-stdlib-module-names
+          make regen-frozen
+      - name: "Suggest make regen-all changes"
+        uses: reviewdog/action-suggester@v1.3.0
+        if: github.event_name == 'pull_request'
+        with:
+          tool_name: autoconf/regen-all
       - name: Check for changes
         run: |
           git add -u
