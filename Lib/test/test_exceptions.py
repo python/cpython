@@ -2391,11 +2391,11 @@ class SyntaxErrorTests(unittest.TestCase):
         # Check non utf-8 characters
         try:
             with open(TESTFN, 'bw') as testfile:
-                testfile.write(b'\x7fELF\x02\x01\x01\x00\x00\x00')
+                testfile.write(b"\x89")
             rc, out, err = script_helper.assert_python_failure('-Wd', '-X', 'utf8', TESTFN)
             err = err.decode('utf-8').splitlines()
 
-            self.assertEqual(err[-1], "SyntaxError: invalid non-printable character U+007F")
+            self.assertIn("SyntaxError: Non-UTF-8 code starting with '\\x89' in file", err[-1])
         finally:
             unlink(TESTFN)
 
