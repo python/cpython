@@ -775,30 +775,6 @@ lru_list_elem_dealloc(lru_list_elem *link)
     Py_DECREF(tp);
 }
 
-<<<<<<< HEAD
-static PyTypeObject lru_list_elem_type = {
-    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
-    "functools._lru_list_elem",         /* tp_name */
-    sizeof(lru_list_elem),              /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)lru_list_elem_dealloc,  /* tp_dealloc */
-    0,                                  /* tp_vectorcall_offset */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_as_async */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    0,                                  /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                 /* tp_flags */
-=======
 static PyType_Slot lru_list_elem_type_slots[] = {
     {Py_tp_dealloc, lru_list_elem_dealloc},
     {0, 0}
@@ -810,7 +786,6 @@ static PyType_Spec lru_list_elem_type_spec = {
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION |
              Py_TPFLAGS_IMMUTABLETYPE,
     .slots = lru_list_elem_type_slots
->>>>>>> master
 };
 
 

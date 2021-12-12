@@ -1991,7 +1991,7 @@ immortalize_object(PyObject *obj, PyObject *Py_UNUSED(ignored))
         _Py_SetImmortal(code->co_cellvars);
         _Py_SetImmortal(code->co_filename);
         _Py_SetImmortal(code->co_name);
-        _Py_SetImmortal(code->co_lnotab);
+        _Py_SetImmortal(code->co_linetable);
     }
     return 0;
 }

@@ -197,7 +197,9 @@ static inline int _Py_IsImmortal(PyObject *op)
 
 static inline void _Py_SetImmortal(PyObject *op)
 {
-    op->ob_refcnt = _Py_IMMORTAL_BIT;
+    if (op) {
+        op->ob_refcnt = _Py_IMMORTAL_BIT;
+    }
 }
 
 #endif  /* Py_IMMORTAL_OBJECTS */
