@@ -4497,15 +4497,15 @@ long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
     digit lomask, himask, omitmark;
 
     /* for a positive integrate x
-         -x >> m = -(x >> m)      when x is two's pow
-                 = -(x >> m) -1   otherwise */
+         -x >> m = -(x >> m)      when the dropped bits are all zeros,
+                 = -(x >> m) -1   otherwise. */
 
     if (IS_MEDIUM_VALUE(a)) {
         stwodigits sval;
         if (wordshift > 0)
-            return get_small_int((sdigit)Py_SIZE(a) >> 1);
+            return get_small_int(-(Py_SIZE(a) < 0));
 
-        sval = medium_value(a) >> remshift;
+        sval = Py_ARITHMETIC_RIGHT_SHIFT(stwodigits, medium_value(a), remshift);
         if (IS_SMALL_INT(sval))
             return get_small_int((sdigit)sval);
 
