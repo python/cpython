@@ -26,24 +26,8 @@ class LockTests(test_utils.TestCase):
         super().setUp()
         self.loop = self.new_test_loop()
 
-    def test_ctor_loop(self):
-        loop = mock.Mock()
-        with self.assertWarns(DeprecationWarning):
-            lock = asyncio.Lock(loop=loop)
-        self.assertIs(lock._loop, loop)
-
-        with self.assertWarns(DeprecationWarning):
-            lock = asyncio.Lock(loop=self.loop)
-        self.assertIs(lock._loop, self.loop)
-
-    def test_ctor_noloop(self):
-        asyncio.set_event_loop(self.loop)
-        lock = asyncio.Lock()
-        self.assertIs(lock._loop, self.loop)
-
     def test_repr(self):
-        with self.assertWarns(DeprecationWarning):
-            lock = asyncio.Lock(loop=self.loop)
+        lock = asyncio.Lock()
         self.assertTrue(repr(lock).endswith('[unlocked]>'))
         self.assertTrue(RGX_REPR.match(repr(lock)))
 
@@ -52,51 +36,63 @@ class LockTests(test_utils.TestCase):
         self.assertTrue(RGX_REPR.match(repr(lock)))
 
     def test_lock(self):
-        with self.assertWarns(DeprecationWarning):
-            lock = asyncio.Lock(loop=self.loop)
+        lock = asyncio.Lock()
 
-            @asyncio.coroutine
-            def acquire_lock():
-                return (yield from lock)
+        async def acquire_lock():
+            return await lock
 
         with self.assertRaisesRegex(
             TypeError,
-            "object is not iterable"
+            "object Lock can't be used in 'await' expression"
         ):
             self.loop.run_until_complete(acquire_lock())
 
         self.assertFalse(lock.locked())
 
+    def test_lock_doesnt_accept_loop_parameter(self):
+        primitives_cls = [
+            asyncio.Lock,
+            asyncio.Condition,
+            asyncio.Event,
+            asyncio.Semaphore,
+            asyncio.BoundedSemaphore,
+        ]
+
+        for cls in primitives_cls:
+            with self.assertRaisesRegex(
+                TypeError,
+                rf'As of 3.10, the \*loop\* parameter was removed from '
+                rf'{cls.__name__}\(\) since it is no longer necessary'
+            ):
+                cls(loop=self.loop)
+
     def test_lock_by_with_statement(self):
         loop = asyncio.new_event_loop()  # don't use TestLoop quirks
         self.set_event_loop(loop)
-        with self.assertWarns(DeprecationWarning):
-            primitives = [
-                asyncio.Lock(loop=loop),
-                asyncio.Condition(loop=loop),
-                asyncio.Semaphore(loop=loop),
-                asyncio.BoundedSemaphore(loop=loop),
-            ]
+        primitives = [
+            asyncio.Lock(),
+            asyncio.Condition(),
+            asyncio.Semaphore(),
+            asyncio.BoundedSemaphore(),
+        ]
 
-            @asyncio.coroutine
-            def test(lock):
-                yield from asyncio.sleep(0.01)
-                self.assertFalse(lock.locked())
-                with self.assertRaisesRegex(
-                    TypeError,
-                    "object is not iterable"
-                ):
-                    with (yield from lock):
-                        pass
-                self.assertFalse(lock.locked())
+        async def test(lock):
+            await asyncio.sleep(0.01)
+            self.assertFalse(lock.locked())
+            with self.assertRaisesRegex(
+                TypeError,
+                r"object \w+ can't be used in 'await' expression"
+            ):
+                with await lock:
+                    pass
+            self.assertFalse(lock.locked())
 
         for primitive in primitives:
             loop.run_until_complete(test(primitive))
             self.assertFalse(primitive.locked())
 
     def test_acquire(self):
-        with self.assertWarns(DeprecationWarning):
-            lock = asyncio.Lock(loop=self.loop)
+        lock = asyncio.Lock()
         result = []
 
         self.assertTrue(self.loop.run_until_complete(lock.acquire()))
@@ -147,8 +143,7 @@ class LockTests(test_utils.TestCase):
         self.assertTrue(t3.result())
 
     def test_acquire_cancel(self):
-        with self.assertWarns(DeprecationWarning):
-            lock = asyncio.Lock(loop=self.loop)
+        lock = asyncio.Lock()
         self.assertTrue(self.loop.run_until_complete(lock.acquire()))
 
         task = self.loop.create_task(lock.acquire())
@@ -173,8 +168,7 @@ class LockTests(test_utils.TestCase):
         # B's waiter; instead, it should move on to C's waiter.
 
         # Setup: A has the lock, b and c are waiting.
-        with self.assertWarns(DeprecationWarning):
-            lock = asyncio.Lock(loop=self.loop)
+        lock = asyncio.Lock()
 
         async def lockit(name, blocker):
             await lock.acquire()
@@ -210,8 +204,7 @@ class LockTests(test_utils.TestCase):
         # Issue 32734
         # Acquire 4 locks, cancel second, release first
         # and 2 locks are taken at once.
-        with self.assertWarns(DeprecationWarning):
-            lock = asyncio.Lock(loop=self.loop)
+        lock = asyncio.Lock()
         lock_count = 0
         call_count = 0
 
@@ -256,8 +249,7 @@ class LockTests(test_utils.TestCase):
         self.assertTrue(t3.cancelled())
 
     def test_finished_waiter_cancelled(self):
-        with self.assertWarns(DeprecationWarning):
-            lock = asyncio.Lock(loop=self.loop)
+        lock = asyncio.Lock()
 
         ta = self.loop.create_task(lock.acquire())
         test_utils.run_briefly(self.loop)
@@ -279,14 +271,12 @@ class LockTests(test_utils.TestCase):
         self.assertTrue(tb.cancelled())
 
     def test_release_not_acquired(self):
-        with self.assertWarns(DeprecationWarning):
-            lock = asyncio.Lock(loop=self.loop)
+        lock = asyncio.Lock()
 
         self.assertRaises(RuntimeError, lock.release)
 
     def test_release_no_waiters(self):
-        with self.assertWarns(DeprecationWarning):
-            lock = asyncio.Lock(loop=self.loop)
+        lock = asyncio.Lock()
         self.loop.run_until_complete(lock.acquire())
         self.assertTrue(lock.locked())
 
@@ -312,24 +302,8 @@ class EventTests(test_utils.TestCase):
         super().setUp()
         self.loop = self.new_test_loop()
 
-    def test_ctor_loop(self):
-        loop = mock.Mock()
-        with self.assertWarns(DeprecationWarning):
-            ev = asyncio.Event(loop=loop)
-        self.assertIs(ev._loop, loop)
-
-        with self.assertWarns(DeprecationWarning):
-            ev = asyncio.Event(loop=self.loop)
-        self.assertIs(ev._loop, self.loop)
-
-    def test_ctor_noloop(self):
-        asyncio.set_event_loop(self.loop)
-        ev = asyncio.Event()
-        self.assertIs(ev._loop, self.loop)
-
     def test_repr(self):
-        with self.assertWarns(DeprecationWarning):
-            ev = asyncio.Event(loop=self.loop)
+        ev = asyncio.Event()
         self.assertTrue(repr(ev).endswith('[unset]>'))
         match = RGX_REPR.match(repr(ev))
         self.assertEqual(match.group('extras'), 'unset')
@@ -343,8 +317,7 @@ class EventTests(test_utils.TestCase):
         self.assertTrue(RGX_REPR.match(repr(ev)))
 
     def test_wait(self):
-        with self.assertWarns(DeprecationWarning):
-            ev = asyncio.Event(loop=self.loop)
+        ev = asyncio.Event()
         self.assertFalse(ev.is_set())
 
         result = []
@@ -381,16 +354,14 @@ class EventTests(test_utils.TestCase):
         self.assertIsNone(t3.result())
 
     def test_wait_on_set(self):
-        with self.assertWarns(DeprecationWarning):
-            ev = asyncio.Event(loop=self.loop)
+        ev = asyncio.Event()
         ev.set()
 
         res = self.loop.run_until_complete(ev.wait())
         self.assertTrue(res)
 
     def test_wait_cancel(self):
-        with self.assertWarns(DeprecationWarning):
-            ev = asyncio.Event(loop=self.loop)
+        ev = asyncio.Event()
 
         wait = self.loop.create_task(ev.wait())
         self.loop.call_soon(wait.cancel)
@@ -400,8 +371,7 @@ class EventTests(test_utils.TestCase):
         self.assertFalse(ev._waiters)
 
     def test_clear(self):
-        with self.assertWarns(DeprecationWarning):
-            ev = asyncio.Event(loop=self.loop)
+        ev = asyncio.Event()
         self.assertFalse(ev.is_set())
 
         ev.set()
@@ -411,8 +381,7 @@ class EventTests(test_utils.TestCase):
         self.assertFalse(ev.is_set())
 
     def test_clear_with_waiters(self):
-        with self.assertWarns(DeprecationWarning):
-            ev = asyncio.Event(loop=self.loop)
+        ev = asyncio.Event()
         result = []
 
         async def c1(result):
@@ -446,23 +415,8 @@ class ConditionTests(test_utils.TestCase):
         super().setUp()
         self.loop = self.new_test_loop()
 
-    def test_ctor_loop(self):
-        loop = mock.Mock()
-        with self.assertWarns(DeprecationWarning):
-            cond = asyncio.Condition(loop=loop)
-            self.assertIs(cond._loop, loop)
-
-            cond = asyncio.Condition(loop=self.loop)
-            self.assertIs(cond._loop, self.loop)
-
-    def test_ctor_noloop(self):
-        asyncio.set_event_loop(self.loop)
-        cond = asyncio.Condition()
-        self.assertIs(cond._loop, self.loop)
-
     def test_wait(self):
-        with self.assertWarns(DeprecationWarning):
-            cond = asyncio.Condition(loop=self.loop)
+        cond = asyncio.Condition()
         result = []
 
         async def c1(result):
@@ -525,8 +479,7 @@ class ConditionTests(test_utils.TestCase):
         self.assertTrue(t3.result())
 
     def test_wait_cancel(self):
-        with self.assertWarns(DeprecationWarning):
-            cond = asyncio.Condition(loop=self.loop)
+        cond = asyncio.Condition()
         self.loop.run_until_complete(cond.acquire())
 
         wait = self.loop.create_task(cond.wait())
@@ -538,8 +491,7 @@ class ConditionTests(test_utils.TestCase):
         self.assertTrue(cond.locked())
 
     def test_wait_cancel_contested(self):
-        with self.assertWarns(DeprecationWarning):
-            cond = asyncio.Condition(loop=self.loop)
+        cond = asyncio.Condition()
 
         self.loop.run_until_complete(cond.acquire())
         self.assertTrue(cond.locked())
@@ -565,9 +517,10 @@ class ConditionTests(test_utils.TestCase):
 
     def test_wait_cancel_after_notify(self):
         # See bpo-32841
-        with self.assertWarns(DeprecationWarning):
-            cond = asyncio.Condition(loop=self.loop)
         waited = False
+
+        cond = asyncio.Condition()
+        cond._loop = self.loop
 
         async def wait_on_cond():
             nonlocal waited
@@ -590,15 +543,13 @@ class ConditionTests(test_utils.TestCase):
         self.assertTrue(waited)
 
     def test_wait_unacquired(self):
-        with self.assertWarns(DeprecationWarning):
-            cond = asyncio.Condition(loop=self.loop)
+        cond = asyncio.Condition()
         self.assertRaises(
             RuntimeError,
             self.loop.run_until_complete, cond.wait())
 
     def test_wait_for(self):
-        with self.assertWarns(DeprecationWarning):
-            cond = asyncio.Condition(loop=self.loop)
+        cond = asyncio.Condition()
         presult = False
 
         def predicate():
@@ -635,8 +586,7 @@ class ConditionTests(test_utils.TestCase):
         self.assertTrue(t.result())
 
     def test_wait_for_unacquired(self):
-        with self.assertWarns(DeprecationWarning):
-            cond = asyncio.Condition(loop=self.loop)
+        cond = asyncio.Condition()
 
         # predicate can return true immediately
         res = self.loop.run_until_complete(cond.wait_for(lambda: [1, 2, 3]))
@@ -648,8 +598,7 @@ class ConditionTests(test_utils.TestCase):
             cond.wait_for(lambda: False))
 
     def test_notify(self):
-        with self.assertWarns(DeprecationWarning):
-            cond = asyncio.Condition(loop=self.loop)
+        cond = asyncio.Condition()
         result = []
 
         async def c1(result):
@@ -701,8 +650,7 @@ class ConditionTests(test_utils.TestCase):
         self.assertTrue(t3.result())
 
     def test_notify_all(self):
-        with self.assertWarns(DeprecationWarning):
-            cond = asyncio.Condition(loop=self.loop)
+        cond = asyncio.Condition()
 
         result = []
 
@@ -738,18 +686,15 @@ class ConditionTests(test_utils.TestCase):
         self.assertTrue(t2.result())
 
     def test_notify_unacquired(self):
-        with self.assertWarns(DeprecationWarning):
-            cond = asyncio.Condition(loop=self.loop)
+        cond = asyncio.Condition()
         self.assertRaises(RuntimeError, cond.notify)
 
     def test_notify_all_unacquired(self):
-        with self.assertWarns(DeprecationWarning):
-            cond = asyncio.Condition(loop=self.loop)
+        cond = asyncio.Condition()
         self.assertRaises(RuntimeError, cond.notify_all)
 
     def test_repr(self):
-        with self.assertWarns(DeprecationWarning):
-            cond = asyncio.Condition(loop=self.loop)
+        cond = asyncio.Condition()
         self.assertTrue('unlocked' in repr(cond))
         self.assertTrue(RGX_REPR.match(repr(cond)))
 
@@ -775,33 +720,80 @@ class ConditionTests(test_utils.TestCase):
         self.loop.run_until_complete(f())
 
     def test_explicit_lock(self):
-        with self.assertWarns(DeprecationWarning):
-            lock = asyncio.Lock(loop=self.loop)
-            cond = asyncio.Condition(lock, loop=self.loop)
+        async def f(lock=None, cond=None):
+            if lock is None:
+                lock = asyncio.Lock()
+            if cond is None:
+                cond = asyncio.Condition(lock)
+            self.assertIs(cond._lock, lock)
+            self.assertFalse(lock.locked())
+            self.assertFalse(cond.locked())
+            async with cond:
+                self.assertTrue(lock.locked())
+                self.assertTrue(cond.locked())
+            self.assertFalse(lock.locked())
+            self.assertFalse(cond.locked())
+            async with lock:
+                self.assertTrue(lock.locked())
+                self.assertTrue(cond.locked())
+            self.assertFalse(lock.locked())
+            self.assertFalse(cond.locked())
 
-        self.assertIs(cond._lock, lock)
-        self.assertIs(cond._loop, lock._loop)
+        # All should work in the same way.
+        self.loop.run_until_complete(f())
+        self.loop.run_until_complete(f(asyncio.Lock()))
+        lock = asyncio.Lock()
+        self.loop.run_until_complete(f(lock, asyncio.Condition(lock)))
 
     def test_ambiguous_loops(self):
-        loop = self.new_test_loop()
+        loop = asyncio.new_event_loop()
         self.addCleanup(loop.close)
-        with self.assertWarns(DeprecationWarning):
-            lock = asyncio.Lock(loop=self.loop)
-            with self.assertRaises(ValueError):
-                asyncio.Condition(lock, loop=loop)
+
+        async def wrong_loop_in_lock():
+            with self.assertRaises(TypeError):
+                asyncio.Lock(loop=loop)  # actively disallowed since 3.10
+            lock = asyncio.Lock()
+            lock._loop = loop  # use private API for testing
+            async with lock:
+                # acquired immediately via the fast-path
+                # without interaction with any event loop.
+                cond = asyncio.Condition(lock)
+                # cond.acquire() will trigger waiting on the lock
+                # and it will discover the event loop mismatch.
+                with self.assertRaisesRegex(
+                    RuntimeError,
+                    "is bound to a different event loop",
+                ):
+                    await cond.acquire()
+
+        async def wrong_loop_in_cond():
+            # Same analogy here with the condition's loop.
+            lock = asyncio.Lock()
+            async with lock:
+                with self.assertRaises(TypeError):
+                    asyncio.Condition(lock, loop=loop)
+                cond = asyncio.Condition(lock)
+                cond._loop = loop
+                with self.assertRaisesRegex(
+                    RuntimeError,
+                    "is bound to a different event loop",
+                ):
+                    await cond.wait()
+
+        self.loop.run_until_complete(wrong_loop_in_lock())
+        self.loop.run_until_complete(wrong_loop_in_cond())
 
     def test_timeout_in_block(self):
         loop = asyncio.new_event_loop()
         self.addCleanup(loop.close)
 
         async def task_timeout():
-            condition = asyncio.Condition(loop=loop)
+            condition = asyncio.Condition()
             async with condition:
                 with self.assertRaises(asyncio.TimeoutError):
                     await asyncio.wait_for(condition.wait(), timeout=0.5)
 
-        with self.assertWarns(DeprecationWarning):
-            loop.run_until_complete(task_timeout())
+        loop.run_until_complete(task_timeout())
 
 
 class SemaphoreTests(test_utils.TestCase):
@@ -810,29 +802,12 @@ class SemaphoreTests(test_utils.TestCase):
         super().setUp()
         self.loop = self.new_test_loop()
 
-    def test_ctor_loop(self):
-        loop = mock.Mock()
-        with self.assertWarns(DeprecationWarning):
-            sem = asyncio.Semaphore(loop=loop)
-        self.assertIs(sem._loop, loop)
-
-        with self.assertWarns(DeprecationWarning):
-            sem = asyncio.Semaphore(loop=self.loop)
-        self.assertIs(sem._loop, self.loop)
-
-    def test_ctor_noloop(self):
-        asyncio.set_event_loop(self.loop)
-        sem = asyncio.Semaphore()
-        self.assertIs(sem._loop, self.loop)
-
     def test_initial_value_zero(self):
-        with self.assertWarns(DeprecationWarning):
-            sem = asyncio.Semaphore(0, loop=self.loop)
+        sem = asyncio.Semaphore(0)
         self.assertTrue(sem.locked())
 
     def test_repr(self):
-        with self.assertWarns(DeprecationWarning):
-            sem = asyncio.Semaphore(loop=self.loop)
+        sem = asyncio.Semaphore()
         self.assertTrue(repr(sem).endswith('[unlocked, value:1]>'))
         self.assertTrue(RGX_REPR.match(repr(sem)))
 
@@ -850,18 +825,15 @@ class SemaphoreTests(test_utils.TestCase):
         self.assertTrue(RGX_REPR.match(repr(sem)))
 
     def test_semaphore(self):
-        with self.assertWarns(DeprecationWarning):
-            sem = asyncio.Semaphore(loop=self.loop)
+        sem = asyncio.Semaphore()
         self.assertEqual(1, sem._value)
 
-        with self.assertWarns(DeprecationWarning):
-            @asyncio.coroutine
-            def acquire_lock():
-                return (yield from sem)
+        async def acquire_lock():
+            return await sem
 
         with self.assertRaisesRegex(
             TypeError,
-            "'Semaphore' object is not iterable",
+            "object Semaphore can't be used in 'await' expression",
         ):
             self.loop.run_until_complete(acquire_lock())
 
@@ -872,8 +844,7 @@ class SemaphoreTests(test_utils.TestCase):
         self.assertRaises(ValueError, asyncio.Semaphore, -1)
 
     def test_acquire(self):
-        with self.assertWarns(DeprecationWarning):
-            sem = asyncio.Semaphore(3, loop=self.loop)
+        sem = asyncio.Semaphore(3)
         result = []
 
         self.assertTrue(self.loop.run_until_complete(sem.acquire()))
@@ -934,8 +905,7 @@ class SemaphoreTests(test_utils.TestCase):
         self.loop.run_until_complete(asyncio.gather(*race_tasks))
 
     def test_acquire_cancel(self):
-        with self.assertWarns(DeprecationWarning):
-            sem = asyncio.Semaphore(loop=self.loop)
+        sem = asyncio.Semaphore()
         self.loop.run_until_complete(sem.acquire())
 
         acquire = self.loop.create_task(sem.acquire())
@@ -947,8 +917,7 @@ class SemaphoreTests(test_utils.TestCase):
                         all(waiter.done() for waiter in sem._waiters))
 
     def test_acquire_cancel_before_awoken(self):
-        with self.assertWarns(DeprecationWarning):
-            sem = asyncio.Semaphore(value=0, loop=self.loop)
+        sem = asyncio.Semaphore(value=0)
 
         t1 = self.loop.create_task(sem.acquire())
         t2 = self.loop.create_task(sem.acquire())
@@ -970,8 +939,7 @@ class SemaphoreTests(test_utils.TestCase):
         test_utils.run_briefly(self.loop)
 
     def test_acquire_hang(self):
-        with self.assertWarns(DeprecationWarning):
-            sem = asyncio.Semaphore(value=0, loop=self.loop)
+        sem = asyncio.Semaphore(value=0)
 
         t1 = self.loop.create_task(sem.acquire())
         t2 = self.loop.create_task(sem.acquire())
@@ -985,14 +953,12 @@ class SemaphoreTests(test_utils.TestCase):
         self.assertTrue(sem.locked())
 
     def test_release_not_acquired(self):
-        with self.assertWarns(DeprecationWarning):
-            sem = asyncio.BoundedSemaphore(loop=self.loop)
+        sem = asyncio.BoundedSemaphore()
 
         self.assertRaises(ValueError, sem.release)
 
     def test_release_no_waiters(self):
-        with self.assertWarns(DeprecationWarning):
-            sem = asyncio.Semaphore(loop=self.loop)
+        sem = asyncio.Semaphore()
         self.loop.run_until_complete(sem.acquire())
         self.assertTrue(sem.locked())
 

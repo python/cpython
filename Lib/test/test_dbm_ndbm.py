@@ -1,5 +1,6 @@
-from test import support
-support.import_module("dbm.ndbm") #skip if not supported
+from test.support import import_helper
+from test.support import os_helper
+import_helper.import_module("dbm.ndbm") #skip if not supported
 import os
 import unittest
 import dbm.ndbm
@@ -8,13 +9,13 @@ from dbm.ndbm import error
 class DbmTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.filename = support.TESTFN
+        self.filename = os_helper.TESTFN
         self.d = dbm.ndbm.open(self.filename, 'c')
         self.d.close()
 
     def tearDown(self):
         for suffix in ['', '.pag', '.dir', '.db']:
-            support.unlink(self.filename + suffix)
+            os_helper.unlink(self.filename + suffix)
 
     def test_keys(self):
         self.d = dbm.ndbm.open(self.filename, 'c')
@@ -101,12 +102,12 @@ class DbmTestCase(unittest.TestCase):
             with self.assertRaises(error):
                 db[b'not exist key'] = b'not exist value'
 
-    @unittest.skipUnless(support.TESTFN_NONASCII,
+    @unittest.skipUnless(os_helper.TESTFN_NONASCII,
                          'requires OS support of non-ASCII encodings')
     def test_nonascii_filename(self):
-        filename = support.TESTFN_NONASCII
+        filename = os_helper.TESTFN_NONASCII
         for suffix in ['', '.pag', '.dir', '.db']:
-            self.addCleanup(support.unlink, filename + suffix)
+            self.addCleanup(os_helper.unlink, filename + suffix)
         with dbm.ndbm.open(filename, 'c') as db:
             db[b'key'] = b'value'
         self.assertTrue(any(os.path.exists(filename + suffix)
@@ -122,6 +123,15 @@ class DbmTestCase(unittest.TestCase):
             dbm.ndbm.open(nonexisting_file)
         self.assertIn(nonexisting_file, str(cm.exception))
         self.assertEqual(cm.exception.filename, nonexisting_file)
+
+    def test_open_with_pathlib_path(self):
+        dbm.ndbm.open(os_helper.FakePath(self.filename), "c").close()
+
+    def test_open_with_bytes_path(self):
+        dbm.ndbm.open(os.fsencode(self.filename), "c").close()
+
+    def test_open_with_pathlib_bytes_path(self):
+        dbm.ndbm.open(os_helper.FakePath(os.fsencode(self.filename)), "c").close()
 
 
 if __name__ == '__main__':

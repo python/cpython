@@ -19,8 +19,9 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
+#include <stdlib.h>               // getenv()
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #else
@@ -154,7 +155,7 @@ oss_dealloc(oss_audio_t *self)
     /* if already closed, don't reclose it */
     if (self->fd != -1)
         close(self->fd);
-    PyObject_Del(self);
+    PyObject_Free(self);
 }
 
 
@@ -199,7 +200,7 @@ oss_mixer_dealloc(oss_mixer_t *self)
     /* if already closed, don't reclose it */
     if (self->fd != -1)
         close(self->fd);
-    PyObject_Del(self);
+    PyObject_Free(self);
 }
 
 

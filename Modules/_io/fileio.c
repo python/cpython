@@ -2,8 +2,9 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "pycore_object.h"
-#include "structmember.h"
+#include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
+#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "structmember.h"         // PyMemberDef
 #include <stdbool.h>
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -255,12 +256,6 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
             self->fd = -1;
     }
 
-    if (PyFloat_Check(nameobj)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float");
-        return -1;
-    }
-
     fd = _PyLong_AsInt(nameobj);
     if (fd < 0) {
         if (!PyErr_Occurred()) {
@@ -276,7 +271,14 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
         if (!PyUnicode_FSDecoder(nameobj, &stringobj)) {
             return -1;
         }
+#if USE_UNICODE_WCHAR_CACHE
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
         widename = PyUnicode_AsUnicode(stringobj);
+_Py_COMP_DIAG_POP
+#else /* USE_UNICODE_WCHAR_CACHE */
+        widename = PyUnicode_AsWideCharString(stringobj, NULL);
+#endif /* USE_UNICODE_WCHAR_CACHE */
         if (widename == NULL)
             return -1;
 #else
@@ -497,6 +499,11 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
         internal_close(self);
 
  done:
+#ifdef MS_WINDOWS
+#if !USE_UNICODE_WCHAR_CACHE
+    PyMem_Free(widename);
+#endif /* USE_UNICODE_WCHAR_CACHE */
+#endif
     Py_CLEAR(stringobj);
     return ret;
 }
@@ -895,10 +902,6 @@ portable_lseek(fileio *self, PyObject *posobj, int whence, bool suppress_pipe_er
         pos = 0;
     }
     else {
-        if(PyFloat_Check(posobj)) {
-            PyErr_SetString(PyExc_TypeError, "an integer is required");
-            return NULL;
-        }
 #if defined(HAVE_LARGEFILE_SUPPORT)
         pos = PyLong_AsLongLong(posobj);
 #else

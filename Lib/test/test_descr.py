@@ -4,6 +4,8 @@ import gc
 import itertools
 import math
 import pickle
+import random
+import string
 import sys
 import types
 import unittest
@@ -845,6 +847,14 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             self.fail("inheriting from ModuleType and str at the same time "
                       "should fail")
 
+        # Issue 34805: Verify that definition order is retained
+        def random_name():
+            return ''.join(random.choices(string.ascii_letters, k=10))
+        class A:
+            pass
+        subclasses = [type(random_name(), (A,), {}) for i in range(100)]
+        self.assertEqual(A.__subclasses__(), subclasses)
+
     def test_multiple_inheritance(self):
         # Testing multiple inheritance...
         class C(object):
@@ -1293,6 +1303,12 @@ order (MRO) for bases """
         with self.assertRaises(AttributeError):
             del X().a
 
+        # Inherit from object on purpose to check some backwards compatibility paths
+        class X(object):
+            __slots__ = "a"
+        with self.assertRaisesRegex(AttributeError, "'X' object has no attribute 'a'"):
+            X().a
+
     def test_slots_special(self):
         # Testing __dict__ and __weakref__ in __slots__...
         class D(object):
@@ -1535,7 +1551,9 @@ order (MRO) for bases """
         self.assertEqual(d.foo(1), (d, 1))
         self.assertEqual(D.foo(d, 1), (d, 1))
         # Test for a specific crash (SF bug 528132)
-        def f(cls, arg): return (cls, arg)
+        def f(cls, arg):
+            "f docstring"
+            return (cls, arg)
         ff = classmethod(f)
         self.assertEqual(ff.__get__(0, int)(42), (int, 42))
         self.assertEqual(ff.__get__(0)(42), (int, 42))
@@ -1561,10 +1579,16 @@ order (MRO) for bases """
             self.fail("classmethod shouldn't accept keyword args")
 
         cm = classmethod(f)
-        self.assertEqual(cm.__dict__, {})
+        cm_dict = {'__annotations__': {},
+                   '__doc__': "f docstring",
+                   '__module__': __name__,
+                   '__name__': 'f',
+                   '__qualname__': f.__qualname__}
+        self.assertEqual(cm.__dict__, cm_dict)
+
         cm.x = 42
         self.assertEqual(cm.x, 42)
-        self.assertEqual(cm.__dict__, {"x" : 42})
+        self.assertEqual(cm.__dict__, {"x" : 42, **cm_dict})
         del cm.x
         self.assertNotHasAttr(cm, "x")
 
@@ -1644,10 +1668,10 @@ order (MRO) for bases """
         self.assertEqual(d.foo(1), (d, 1))
         self.assertEqual(D.foo(d, 1), (d, 1))
         sm = staticmethod(None)
-        self.assertEqual(sm.__dict__, {})
+        self.assertEqual(sm.__dict__, {'__doc__': None})
         sm.x = 42
         self.assertEqual(sm.x, 42)
-        self.assertEqual(sm.__dict__, {"x" : 42})
+        self.assertEqual(sm.__dict__, {"x" : 42, '__doc__': None})
         del sm.x
         self.assertNotHasAttr(sm, "x")
 
@@ -2975,12 +2999,12 @@ order (MRO) for bases """
         ##             self.ateof = 1
         ##        return s
         ##
-        ## f = file(name=support.TESTFN, mode='w')
+        ## f = file(name=os_helper.TESTFN, mode='w')
         ## lines = ['a\n', 'b\n', 'c\n']
         ## try:
         ##     f.writelines(lines)
         ##     f.close()
-        ##     f = CountedInput(support.TESTFN)
+        ##     f = CountedInput(os_helper.TESTFN)
         ##     for (i, expected) in zip(range(1, 5) + [4], lines + 2 * [""]):
         ##         got = f.readline()
         ##         self.assertEqual(expected, got)
@@ -2992,7 +3016,7 @@ order (MRO) for bases """
         ##         f.close()
         ##     except:
         ##         pass
-        ##     support.unlink(support.TESTFN)
+        ##     os_helper.unlink(os_helper.TESTFN)
 
     def test_keywords(self):
         # Testing keyword args to basic type constructors ...
@@ -3552,13 +3576,6 @@ order (MRO) for bases """
         self.assertEqual(o.__str__(), '41')
         self.assertEqual(o.__repr__(), 'A repr')
 
-        capture = io.StringIO()
-        # Calling str() or not exercises different internal paths.
-        print(o, file=capture)
-        print(str(o), file=capture)
-        self.assertEqual(capture.getvalue(), '41\n41\n')
-        capture.close()
-
     def test_keyword_arguments(self):
         # Testing keyword arguments to __init__, __call__...
         def f(a): return a
@@ -3900,6 +3917,48 @@ order (MRO) for bases """
         a = C()
         a **= 2
 
+    def test_ipow_returns_not_implemented(self):
+        class A:
+            def __ipow__(self, other):
+                return NotImplemented
+
+        class B(A):
+            def __rpow__(self, other):
+                return 1
+
+        class C(A):
+            def __pow__(self, other):
+                return 2
+        a = A()
+        b = B()
+        c = C()
+
+        a **= b
+        self.assertEqual(a, 1)
+
+        c **= b
+        self.assertEqual(c, 2)
+
+    def test_no_ipow(self):
+        class B:
+            def __rpow__(self, other):
+                return 1
+
+        a = object()
+        b = B()
+        a **= b
+        self.assertEqual(a, 1)
+
+    def test_ipow_exception_text(self):
+        x = None
+        with self.assertRaises(TypeError) as cm:
+            x **= 2
+        self.assertIn('unsupported operand type(s) for **=', str(cm.exception))
+
+        with self.assertRaises(TypeError) as cm:
+            y = x ** 2
+        self.assertIn('unsupported operand type(s) for **', str(cm.exception))
+
     def test_mutable_bases(self):
         # Testing mutable bases...
 
@@ -3973,7 +4032,11 @@ order (MRO) for bases """
         for tp in builtin_types:
             object.__getattribute__(tp, "__bases__")
             if tp is not object:
-                self.assertEqual(len(tp.__bases__), 1, tp)
+                if tp is ExceptionGroup:
+                    num_bases = 2
+                else:
+                    num_bases = 1
+                self.assertEqual(len(tp.__bases__), num_bases, tp)
 
         class L(list):
             pass
@@ -4314,6 +4377,42 @@ order (MRO) for bases """
             pass
         else:
             self.fail("Carlo Verre __delattr__ succeeded!")
+
+    def test_carloverre_multi_inherit_valid(self):
+        class A(type):
+            def __setattr__(cls, key, value):
+                type.__setattr__(cls, key, value)
+
+        class B:
+            pass
+
+        class C(B, A):
+            pass
+
+        obj = C('D', (object,), {})
+        try:
+            obj.test = True
+        except TypeError:
+            self.fail("setattr through direct base types should be legal")
+
+    def test_carloverre_multi_inherit_invalid(self):
+        class A(type):
+            def __setattr__(cls, key, value):
+                object.__setattr__(cls, key, value)  # this should fail!
+
+        class B:
+            pass
+
+        class C(B, A):
+            pass
+
+        obj = C('D', (object,), {})
+        try:
+            obj.test = True
+        except TypeError:
+            pass
+        else:
+            self.fail("setattr through indirect base types should be rejected")
 
     def test_weakref_segfault(self):
         # Testing weakref segfault...
@@ -4674,12 +4773,14 @@ order (MRO) for bases """
             "elephant"
         X.__doc__ = "banana"
         self.assertEqual(X.__doc__, "banana")
+
         with self.assertRaises(TypeError) as cm:
             type(list).__dict__["__doc__"].__set__(list, "blah")
-        self.assertIn("can't set list.__doc__", str(cm.exception))
+        self.assertIn("cannot set '__doc__' attribute of immutable type 'list'", str(cm.exception))
+
         with self.assertRaises(TypeError) as cm:
             type(X).__dict__["__doc__"].__delete__(X)
-        self.assertIn("can't delete X.__doc__", str(cm.exception))
+        self.assertIn("cannot delete '__doc__' attribute of immutable type 'X'", str(cm.exception))
         self.assertEqual(X.__doc__, "banana")
 
     def test_qualname(self):
@@ -4899,8 +5000,11 @@ class DictProxyTests(unittest.TestCase):
             self.assertIn('{!r}: {!r}'.format(k, v), r)
 
 
-class PTypesLongInitTest(unittest.TestCase):
+class AAAPTypesLongInitTest(unittest.TestCase):
     # This is in its own TestCase so that it can be run before any other tests.
+    # (Hence the 'AAA' in the test class name: to make it the first
+    # item in a list sorted by name, like
+    # unittest.TestLoader.getTestCaseNames() does.)
     def test_pytype_long_ready(self):
         # Testing SF bug 551412 ...
 
@@ -5400,17 +5504,19 @@ class SharedKeyTests(unittest.TestCase):
         class B(A):
             pass
 
+        #Shrink keys by repeatedly creating instances
+        [(A(), B()) for _ in range(20)]
+
         a, b = A(), B()
         self.assertEqual(sys.getsizeof(vars(a)), sys.getsizeof(vars(b)))
         self.assertLess(sys.getsizeof(vars(a)), sys.getsizeof({"a":1}))
-        # Initial hash table can contain at most 5 elements.
+        # Initial hash table can contain only one or two elements.
         # Set 6 attributes to cause internal resizing.
         a.x, a.y, a.z, a.w, a.v, a.u = range(6)
         self.assertNotEqual(sys.getsizeof(vars(a)), sys.getsizeof(vars(b)))
         a2 = A()
-        self.assertEqual(sys.getsizeof(vars(a)), sys.getsizeof(vars(a2)))
-        self.assertLess(sys.getsizeof(vars(a)), sys.getsizeof({"a":1}))
-        b.u, b.v, b.w, b.t, b.s, b.r = range(6)
+        self.assertGreater(sys.getsizeof(vars(a)), sys.getsizeof(vars(a2)))
+        self.assertLess(sys.getsizeof(vars(a2)), sys.getsizeof({"a":1}))
         self.assertLess(sys.getsizeof(vars(b)), sys.getsizeof({"a":1}))
 
 
@@ -5605,7 +5711,7 @@ class MroTest(unittest.TestCase):
 
     def test_incomplete_extend(self):
         """
-        Extending an unitialized type with type->tp_mro == NULL must
+        Extending an uninitialized type with type->tp_mro == NULL must
         throw a reasonable TypeError exception, instead of failing
         with PyErr_BadInternalCall.
         """
@@ -5623,7 +5729,7 @@ class MroTest(unittest.TestCase):
 
     def test_incomplete_super(self):
         """
-        Attrubute lookup on a super object must be aware that
+        Attribute lookup on a super object must be aware that
         its target type can be uninitialized (type->tp_mro == NULL).
         """
         class M(DebugHelperMeta):
@@ -5638,12 +5744,5 @@ class MroTest(unittest.TestCase):
             pass
 
 
-def test_main():
-    # Run all local test cases, with PTypesLongInitTest first.
-    support.run_unittest(PTypesLongInitTest, OperatorsTest,
-                         ClassPropertiesAndMethods, DictProxyTests,
-                         MiscTests, PicklingTests, SharedKeyTests,
-                         MroTest)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

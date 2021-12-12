@@ -37,7 +37,7 @@ Some facts and figures:
    Added support for :mod:`lzma` compression.
 
 
-.. function:: open(name=None, mode='r', fileobj=None, bufsize=10240, \*\*kwargs)
+.. function:: open(name=None, mode='r', fileobj=None, bufsize=10240, **kwargs)
 
    Return a :class:`TarFile` object for the pathname *name*. For detailed
    information on :class:`TarFile` objects and the keyword arguments that are
@@ -102,6 +102,9 @@ Some facts and figures:
    ``'x:bz2'``, :func:`tarfile.open` accepts the keyword argument
    *compresslevel* (default ``9``) to specify the compression level of the file.
 
+   For modes ``'w:xz'`` and ``'x:xz'``, :func:`tarfile.open` accepts the
+   keyword argument *preset* to specify the compression level of the file.
+
    For special purposes, there is a second format for *mode*:
    ``'filemode|[compression]'``.  :func:`tarfile.open` will return a :class:`TarFile`
    object that processes its data as a stream of blocks.  No random seeking will
@@ -151,6 +154,7 @@ Some facts and figures:
 
 
 .. class:: TarFile
+   :noindex:
 
    Class for reading and writing tar archives. Do not use this class directly:
    use :func:`tarfile.open` instead. See :ref:`tarfile-objects`.
@@ -444,10 +448,11 @@ be finalized; only the internally used file object will be closed. See the
 
 .. method:: TarFile.extractfile(member)
 
-   Extract a member from the archive as a file object. *member* may be a filename
-   or a :class:`TarInfo` object. If *member* is a regular file or a link, an
-   :class:`io.BufferedReader` object is returned. Otherwise, :const:`None` is
-   returned.
+   Extract a member from the archive as a file object. *member* may be
+   a filename or a :class:`TarInfo` object. If *member* is a regular file or
+   a link, an :class:`io.BufferedReader` object is returned. For all other
+   existing members, :const:`None` is returned. If *member* does not appear
+   in the archive, :exc:`KeyError` is raised.
 
    .. versionchanged:: 3.3
       Return an :class:`io.BufferedReader` object.
@@ -787,7 +792,7 @@ How to read a gzip compressed tar archive and display some member information::
    import tarfile
    tar = tarfile.open("sample.tar.gz", "r:gz")
    for tarinfo in tar:
-       print(tarinfo.name, "is", tarinfo.size, "bytes in size and is", end="")
+       print(tarinfo.name, "is", tarinfo.size, "bytes in size and is ", end="")
        if tarinfo.isreg():
            print("a regular file.")
        elif tarinfo.isdir():

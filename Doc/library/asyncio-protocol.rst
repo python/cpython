@@ -683,7 +683,7 @@ factories passed to the :meth:`loop.create_datagram_endpoint` method.
 Subprocess Protocols
 --------------------
 
-Datagram Protocol instances should be constructed by protocol
+Subprocess Protocol instances should be constructed by protocol
 factories passed to the :meth:`loop.subprocess_exec` and
 :meth:`loop.subprocess_shell` methods.
 
@@ -993,7 +993,7 @@ loop.subprocess_exec() and SubprocessProtocol
 An example of a subprocess protocol used to get the output of a
 subprocess and to wait for the subprocess exit.
 
-The subprocess is created by th :meth:`loop.subprocess_exec` method::
+The subprocess is created by the :meth:`loop.subprocess_exec` method::
 
     import asyncio
     import sys

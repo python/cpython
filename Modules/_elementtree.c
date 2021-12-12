@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  * Licensed to PSF under a Contributor Agreement.
- * See http://www.python.org/psf/license for licensing details.
+ * See https://www.python.org/psf/license for licensing details.
  *
  * _elementtree - C accelerator for xml.etree.ElementTree
  * Copyright (c) 1999-2009 by Secret Labs AB.  All rights reserved.
@@ -14,7 +14,7 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 /* -------------------------------------------------------------------- */
 /* configuration */
@@ -1153,7 +1153,7 @@ checkpath(PyObject* tag)
         return 0;
     }
     if (PyBytes_Check(tag)) {
-        char *p = PyBytes_AS_STRING(tag);
+        const char *p = PyBytes_AS_STRING(tag);
         const Py_ssize_t len = PyBytes_GET_SIZE(tag);
         if (len >= 3 && p[0] == '{' && (
                 p[1] == '}' || (p[1] == '*' && p[2] == '}'))) {
@@ -1393,22 +1393,19 @@ _elementtree_Element_get_impl(ElementObject *self, PyObject *key,
                               PyObject *default_value)
 /*[clinic end generated code: output=523c614142595d75 input=ee153bbf8cdb246e]*/
 {
-    PyObject* value;
-
-    if (!self->extra || !self->extra->attrib)
-        value = default_value;
-    else {
-        value = PyDict_GetItemWithError(self->extra->attrib, key);
-        if (!value) {
-            if (PyErr_Occurred()) {
-                return NULL;
-            }
-            value = default_value;
+    if (self->extra && self->extra->attrib) {
+        PyObject *attrib = self->extra->attrib;
+        Py_INCREF(attrib);
+        PyObject *value = PyDict_GetItemWithError(attrib, key);
+        Py_XINCREF(value);
+        Py_DECREF(attrib);
+        if (value != NULL || PyErr_Occurred()) {
+            return value;
         }
     }
 
-    Py_INCREF(value);
-    return value;
+    Py_INCREF(default_value);
+    return default_value;
 }
 
 static PyObject *
@@ -2040,7 +2037,7 @@ element_attrib_setter(ElementObject *self, PyObject *value, void *closure)
     if (!PyDict_Check(value)) {
         PyErr_Format(PyExc_TypeError,
                      "attrib must be dict, not %.200s",
-                     value->ob_type->tp_name);
+                     Py_TYPE(value)->tp_name);
         return -1;
     }
     if (!self->extra) {
@@ -3818,6 +3815,17 @@ xmlparser_dealloc(XMLParserObject* self)
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
+Py_LOCAL_INLINE(int)
+_check_xmlparser(XMLParserObject* self)
+{
+    if (self->target == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                        "XMLParser.__init__() wasn't called");
+        return 0;
+    }
+    return 1;
+}
+
 LOCAL(PyObject*)
 expat_parse(XMLParserObject* self, const char* data, int data_len, int final)
 {
@@ -3854,6 +3862,10 @@ _elementtree_XMLParser_close_impl(XMLParserObject *self)
     /* end feeding data to parser */
 
     PyObject* res;
+
+    if (!_check_xmlparser(self)) {
+        return NULL;
+    }
     res = expat_parse(self, "", 0, 1);
     if (!res)
         return NULL;
@@ -3885,6 +3897,9 @@ _elementtree_XMLParser_feed(XMLParserObject *self, PyObject *data)
 {
     /* feed data to parser */
 
+    if (!_check_xmlparser(self)) {
+        return NULL;
+    }
     if (PyUnicode_Check(data)) {
         Py_ssize_t data_len;
         const char *data_ptr = PyUnicode_AsUTF8AndSize(data, &data_len);
@@ -3932,6 +3947,9 @@ _elementtree_XMLParser__parse_whole(XMLParserObject *self, PyObject *file)
     PyObject* temp;
     PyObject* res;
 
+    if (!_check_xmlparser(self)) {
+        return NULL;
+    }
     reader = PyObject_GetAttrString(file, "read");
     if (!reader)
         return NULL;
@@ -4019,6 +4037,9 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
     TreeBuilderObject *target;
     PyObject *events_append, *events_seq;
 
+    if (!_check_xmlparser(self)) {
+        return NULL;
+    }
     if (!TreeBuilder_CheckExact(self->target)) {
         PyErr_SetString(
             PyExc_TypeError,

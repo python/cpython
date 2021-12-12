@@ -1,0 +1,1 @@
+Ensure :file:`._pth` files work as intended on platforms other than Windows.

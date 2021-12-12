@@ -2,6 +2,7 @@
 import unittest
 import os
 import sys
+import sysconfig
 from test.support import run_unittest, missing_compiler_executable
 
 from distutils.command.config import dump_file, config
@@ -21,9 +22,12 @@ class ConfigTestCase(support.LoggingSilencer,
         self._logs = []
         self.old_log = log.info
         log.info = self._info
+        self.old_config_vars = dict(sysconfig._CONFIG_VARS)
 
     def tearDown(self):
         log.info = self.old_log
+        sysconfig._CONFIG_VARS.clear()
+        sysconfig._CONFIG_VARS.update(self.old_config_vars)
         super(ConfigTestCase, self).tearDown()
 
     def test_dump_file(self):
@@ -39,7 +43,6 @@ class ConfigTestCase(support.LoggingSilencer,
 
     @unittest.skipIf(sys.platform == 'win32', "can't test on Windows")
     def test_search_cpp(self):
-        import shutil
         cmd = missing_compiler_executable(['preprocessor'])
         if cmd is not None:
             self.skipTest('The %r command is not found' % cmd)
@@ -91,7 +94,7 @@ class ConfigTestCase(support.LoggingSilencer,
             self.assertFalse(os.path.exists(f))
 
 def test_suite():
-    return unittest.makeSuite(ConfigTestCase)
+    return unittest.TestLoader().loadTestsFromTestCase(ConfigTestCase)
 
 if __name__ == "__main__":
     run_unittest(test_suite())

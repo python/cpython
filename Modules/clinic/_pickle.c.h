@@ -735,7 +735,7 @@ exit:
 }
 
 PyDoc_STRVAR(_pickle_loads__doc__,
-"loads($module, /, data, *, fix_imports=True, encoding=\'ASCII\',\n"
+"loads($module, data, /, *, fix_imports=True, encoding=\'ASCII\',\n"
 "      errors=\'strict\', buffers=())\n"
 "--\n"
 "\n"
@@ -766,7 +766,7 @@ static PyObject *
 _pickle_loads(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"data", "fix_imports", "encoding", "errors", "buffers", NULL};
+    static const char * const _keywords[] = {"", "fix_imports", "encoding", "errors", "buffers", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "loads", 0};
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
@@ -836,4 +836,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e2506823be1960c5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=324aad69644beda2 input=a9049054013a1b77]*/

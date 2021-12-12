@@ -31,13 +31,13 @@
 @if "%_Py_EXTERNALS_DIR%"=="" (set _Py_EXTERNALS_DIR=%~dp0\..\externals)
 
 @rem If we have Python in externals, use that one
-@if exist "%_Py_EXTERNALS_DIR%\pythonx86\tools\python.exe" (set PYTHON="%_Py_EXTERNALS_DIR%\pythonx86\tools\python.exe") & (set _Py_Python_Source=found in externals directory) & goto :found
+@if exist "%_Py_EXTERNALS_DIR%\pythonx86\tools\python.exe" ("%_Py_EXTERNALS_DIR%\pythonx86\tools\python.exe" -Ec "import sys; assert sys.version_info[:2] >= (3, 8)" >nul 2>nul) && (set PYTHON="%_Py_EXTERNALS_DIR%\pythonx86\tools\python.exe") && (set _Py_Python_Source=found in externals directory) && goto :found || rmdir /Q /S "%_Py_EXTERNALS_DIR%\pythonx86"
 
 @rem If HOST_PYTHON is recent enough, use that
-@if NOT "%HOST_PYTHON%"=="" @%HOST_PYTHON% -Ec "import sys; assert sys.version_info[:2] >= (3, 6)" >nul 2>nul && (set PYTHON="%HOST_PYTHON%") && (set _Py_Python_Source=found as HOST_PYTHON) && goto :found
+@if NOT "%HOST_PYTHON%"=="" @%HOST_PYTHON% -Ec "import sys; assert sys.version_info[:2] >= (3, 8)" >nul 2>nul && (set PYTHON="%HOST_PYTHON%") && (set _Py_Python_Source=found as HOST_PYTHON) && goto :found
 
 @rem If py.exe finds a recent enough version, use that one
-@for %%p in (3.8 3.7 3.6) do @py -%%p -EV >nul 2>&1 && (set PYTHON=py -%%p) && (set _Py_Python_Source=found %%p with py.exe) && goto :found
+@for %%p in (3.10 3.9 3.8) do @py -%%p -EV >nul 2>&1 && (set PYTHON=py -%%p) && (set _Py_Python_Source=found %%p with py.exe) && goto :found
 
 @if NOT exist "%_Py_EXTERNALS_DIR%" mkdir "%_Py_EXTERNALS_DIR%"
 @set _Py_NUGET=%NUGET%

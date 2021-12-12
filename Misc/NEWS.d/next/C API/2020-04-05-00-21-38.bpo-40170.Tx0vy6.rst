@@ -1,4 +1,0 @@
-:c:func:`PyType_HasFeature` now always calls :c:func:`PyType_GetFlags` to
-hide implementation details. Previously, it accessed directly the
-:c:member:`PyTypeObject.tp_flags` member when the limited C API was not
-used.

@@ -28,6 +28,7 @@ Lib/test/test_email/data/*.txt -text
 Lib/test/xmltestdata/* -text
 Lib/test/coding20731.py -text
 Lib/test/test_importlib/data01/* -text
+Lib/test/test_importlib/namespacedata01/* -text
 
 # CRLF files
 *.bat text eol=crlf
@@ -41,15 +42,14 @@ PC/readme.txt text eol=crlf
 
 # Generated files
 # https://github.com/github/linguist#generated-code
-Include/graminit.h          linguist-generated=true
-Python/graminit.h           linguist-generated=true
 Modules/clinic/*.h          linguist-generated=true
 Objects/clinic/*.h          linguist-generated=true
 PC/clinic/*.h               linguist-generated=true
 Python/clinic/*.h           linguist-generated=true
-Python/importlib.h          linguist-generated=true
-Python/importlib_external.h linguist-generated=true
-Include/Python-ast.h        linguist-generated=true
+Python/deepfreeze/*.c       linguist-generated=true
+Python/frozen_modules/*.h   linguist-generated=true
+Python/frozen_modules/MANIFEST  linguist-generated=true
+Include/internal/pycore_ast.h   linguist-generated=true
 Python/Python-ast.c         linguist-generated=true
 Include/opcode.h            linguist-generated=true
 Python/opcode_targets.h     linguist-generated=true
@@ -59,3 +59,14 @@ Doc/library/token-list.inc  linguist-generated=true
 Include/token.h             linguist-generated=true
 Lib/token.py                linguist-generated=true
 Parser/token.c              linguist-generated=true
+Programs/test_frozenmain.h  linguist-generated=true
+
+# Language aware diff headers
+# https://tekin.co.uk/2020/10/better-git-diff-output-for-ruby-python-elixir-and-more
+# https://gist.github.com/tekin/12500956bd56784728e490d8cef9cb81
+*.c     diff=cpp
+*.h     diff=cpp
+*.css   diff=css
+*.html  diff=html
+*.py    diff=python
+*.md    diff=markdown

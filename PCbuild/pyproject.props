@@ -25,12 +25,12 @@
     <_DebugPreprocessorDefinition Condition="$(Configuration) == 'Debug'">_DEBUG;</_DebugPreprocessorDefinition>
     <_PlatformPreprocessorDefinition>_WIN32;</_PlatformPreprocessorDefinition>
     <_PlatformPreprocessorDefinition Condition="$(Platform) == 'x64'">_WIN64;_M_X64;</_PlatformPreprocessorDefinition>
-    <_PydPreprocessorDefinition Condition="$(TargetExt) == '.pyd'">Py_BUILD_CORE_MODULE;</_PydPreprocessorDefinition>
+    <_Py3NamePreprocessorDefinition>PY3_DLLNAME=L"$(Py3DllName)";</_Py3NamePreprocessorDefinition>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(PySourcePath)Include;$(PySourcePath)Include\internal;$(PySourcePath)PC;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;$(_PlatformPreprocessorDefinition)$(_DebugPreprocessorDefinition)$(_PydPreprocessorDefinition)%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;$(_Py3NamePreprocessorDefinition);$(_PlatformPreprocessorDefinition)$(_DebugPreprocessorDefinition)$(_PydPreprocessorDefinition)%(PreprocessorDefinitions)</PreprocessorDefinitions>
 
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -43,10 +43,11 @@
       <CompileAs>Default</CompileAs>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <WholeProgramOptimization>true</WholeProgramOptimization>
-      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">OnlyExplicitInline</InlineFunctionExpansion>
-      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">OnlyExplicitInline</InlineFunctionExpansion>
+      <ControlFlowGuard Condition="$(EnableControlFlowGuard) != ''">$(EnableControlFlowGuard)</ControlFlowGuard>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ClCompile Condition="$(Configuration) == 'Debug'">
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
       <Optimization>Disabled</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -72,6 +73,7 @@
       <LinkTimeCodeGeneration Condition="$(SupportPGO) and $(Configuration) == 'PGInstrument'">PGInstrument</LinkTimeCodeGeneration>
       <LinkTimeCodeGeneration Condition="$(SupportPGO) and $(Configuration) == 'PGUpdate'">PGUpdate</LinkTimeCodeGeneration>
       <AdditionalDependencies>advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions Condition="$(Configuration) != 'Debug'">/OPT:REF,NOICF %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <Lib>
       <LinkTimeCodeGeneration Condition="$(Configuration) == 'Release'">true</LinkTimeCodeGeneration>
@@ -80,7 +82,7 @@
     </Lib>
     <ResourceCompile>
       <AdditionalIncludeDirectories>$(PySourcePath)PC;$(PySourcePath)Include;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>$(_DebugPreprocessorDefinition)%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ORIGINAL_FILENAME=\"$(TargetName)$(TargetExt)\";FIELD3=$(Field3Value);$(_DebugPreprocessorDefinition)%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Midl>
@@ -94,21 +96,6 @@
       <ProxyFileName>$(MSBuildProjectName)_p.c</ProxyFileName>
     </Midl>
   </ItemDefinitionGroup>
-
-  <Target Name="GeneratePythonNtRcH"
-          BeforeTargets="ClCompile"
-          Inputs="$(PySourcePath)Include\patchlevel.h"
-          Outputs="$(IntDir)pythonnt_rc.h">
-    <WriteLinesToFile File="$(IntDir)pythonnt_rc.h" Overwrite="true" Encoding="ascii"
-                      Lines='/* This file created by pyproject.props /t:GeneratePythonNtRcH */
-#define FIELD3 $(Field3Value)
-#define MS_DLL_ID "$(SysWinVer)"
-#define PYTHON_DLL_NAME "$(TargetName)$(TargetExt)"
-' />
-    <ItemGroup>
-        <FileWrites Include="$(IntDir)pythonnt_rc.h" />
-    </ItemGroup>
-  </Target>
 
   <UsingTask TaskName="KillPython" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
     <ParameterGroup>
@@ -190,8 +177,8 @@ public override bool Execute() {
     <SdkBinPath Condition="!Exists($(SdkBinPath))">$(registry:HKEY_LOCAL_MACHINE\Software\Microsoft\Windows Kits\Installed Roots@KitsRoot81)\bin\x86</SdkBinPath>
     <SdkBinPath Condition="!Exists($(SdkBinPath))">$(registry:HKEY_LOCAL_MACHINE\Software\Microsoft\Windows Kits\Installed Roots@KitsRoot)\bin\x86</SdkBinPath>
     <SdkBinPath Condition="!Exists($(SdkBinPath))">$(registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v7.1A@InstallationFolder)\Bin\</SdkBinPath>
-    <_SignCommand Condition="Exists($(SdkBinPath)) and '$(SigningCertificate)' != '' and $(SupportSigning)">"$(SdkBinPath)\signtool.exe" sign /a /n "$(SigningCertificate)" /fd sha256 /t http://timestamp.verisign.com/scripts/timestamp.dll /d "Python $(PythonVersion)"</_SignCommand>
-    <_SignCommand Condition="Exists($(SdkBinPath)) and '$(SigningCertificateSha1)' != '' and $(SupportSigning)">"$(SdkBinPath)\signtool.exe" sign /a /sha1 "$(SigningCertificateSha1)" /fd sha256 /t http://timestamp.verisign.com/scripts/timestamp.dll /d "Python $(PythonVersion)"</_SignCommand>
+    <_SignCommand Condition="Exists($(SdkBinPath)) and '$(SigningCertificate)' != '' and $(SupportSigning)">"$(SdkBinPath)\signtool.exe" sign /a /n "$(SigningCertificate)" /fd sha256 /tr http://timestamp.digicert.com/ /td sha256 /d "Python $(PythonVersion)"</_SignCommand>
+    <_SignCommand Condition="Exists($(SdkBinPath)) and '$(SigningCertificateSha1)' != '' and $(SupportSigning)">"$(SdkBinPath)\signtool.exe" sign /a /sha1 "$(SigningCertificateSha1)" /fd sha256 /tr http://timestamp.digicert.com/ /td sha256 /d "Python $(PythonVersion)"</_SignCommand>
     <_MakeCatCommand Condition="Exists($(SdkBinPath))">"$(SdkBinPath)\makecat.exe"</_MakeCatCommand>
   </PropertyGroup>
 

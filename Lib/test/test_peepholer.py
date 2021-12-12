@@ -1,4 +1,5 @@
 import dis
+from itertools import combinations, product
 import unittest
 
 from test.support.bytecode_helper import BytecodeTestCase
@@ -71,9 +72,10 @@ class TestTranforms(BytecodeTestCase):
             ('not a in b', 'CONTAINS_OP', 1,),
             ('not a not in b', 'CONTAINS_OP', 0,),
             ):
-            code = compile(line, '', 'single')
-            self.assertInBytecode(code, cmp_op, invert)
-            self.check_lnotab(code)
+            with self.subTest(line=line):
+                code = compile(line, '', 'single')
+                self.assertInBytecode(code, cmp_op, invert)
+                self.check_lnotab(code)
 
     def test_global_as_constant(self):
         # LOAD_GLOBAL None/True/False  -->  LOAD_CONST None/True/False
@@ -89,9 +91,10 @@ class TestTranforms(BytecodeTestCase):
             return x
 
         for func, elem in ((f, None), (g, True), (h, False)):
-            self.assertNotInBytecode(func, 'LOAD_GLOBAL')
-            self.assertInBytecode(func, 'LOAD_CONST', elem)
-            self.check_lnotab(func)
+            with self.subTest(func=func):
+                self.assertNotInBytecode(func, 'LOAD_GLOBAL')
+                self.assertInBytecode(func, 'LOAD_CONST', elem)
+                self.check_lnotab(func)
 
         def f():
             'Adding a docstring made this test fail in Py2.5.0'
@@ -119,11 +122,12 @@ class TestTranforms(BytecodeTestCase):
             ('a, b = a, b', 'ROT_TWO',),
             ('a, b, c = a, b, c', 'ROT_THREE',),
             ):
-            code = compile(line,'','single')
-            self.assertInBytecode(code, elem)
-            self.assertNotInBytecode(code, 'BUILD_TUPLE')
-            self.assertNotInBytecode(code, 'UNPACK_TUPLE')
-            self.check_lnotab(code)
+            with self.subTest(line=line):
+                code = compile(line,'','single')
+                self.assertInBytecode(code, elem)
+                self.assertNotInBytecode(code, 'BUILD_TUPLE')
+                self.assertNotInBytecode(code, 'UNPACK_TUPLE')
+                self.check_lnotab(code)
 
     def test_folding_of_tuples_of_constants(self):
         for line, elem in (
@@ -133,10 +137,11 @@ class TestTranforms(BytecodeTestCase):
             ('(None, 1, None)', (None, 1, None)),
             ('((1, 2), 3, 4)', ((1, 2), 3, 4)),
             ):
-            code = compile(line,'','single')
-            self.assertInBytecode(code, 'LOAD_CONST', elem)
-            self.assertNotInBytecode(code, 'BUILD_TUPLE')
-            self.check_lnotab(code)
+            with self.subTest(line=line):
+                code = compile(line,'','single')
+                self.assertInBytecode(code, 'LOAD_CONST', elem)
+                self.assertNotInBytecode(code, 'BUILD_TUPLE')
+                self.check_lnotab(code)
 
         # Long tuples should be folded too.
         code = compile(repr(tuple(range(10000))),'','single')
@@ -173,10 +178,11 @@ class TestTranforms(BytecodeTestCase):
             ('a in [None, 1, None]', (None, 1, None)),
             ('a not in [(1, 2), 3, 4]', ((1, 2), 3, 4)),
             ):
-            code = compile(line, '', 'single')
-            self.assertInBytecode(code, 'LOAD_CONST', elem)
-            self.assertNotInBytecode(code, 'BUILD_LIST')
-            self.check_lnotab(code)
+            with self.subTest(line=line):
+                code = compile(line, '', 'single')
+                self.assertInBytecode(code, 'LOAD_CONST', elem)
+                self.assertNotInBytecode(code, 'BUILD_LIST')
+                self.check_lnotab(code)
 
     def test_folding_of_sets_of_constants(self):
         for line, elem in (
@@ -187,10 +193,11 @@ class TestTranforms(BytecodeTestCase):
             ('a not in {(1, 2), 3, 4}', frozenset({(1, 2), 3, 4})),
             ('a in {1, 2, 3, 3, 2, 1}', frozenset({1, 2, 3})),
             ):
-            code = compile(line, '', 'single')
-            self.assertNotInBytecode(code, 'BUILD_SET')
-            self.assertInBytecode(code, 'LOAD_CONST', elem)
-            self.check_lnotab(code)
+            with self.subTest(line=line):
+                code = compile(line, '', 'single')
+                self.assertNotInBytecode(code, 'BUILD_SET')
+                self.assertInBytecode(code, 'LOAD_CONST', elem)
+                self.check_lnotab(code)
 
         # Ensure that the resulting code actually works:
         def f(a):
@@ -226,11 +233,12 @@ class TestTranforms(BytecodeTestCase):
             ('a = 13 ^ 7', 10),                 # binary xor
             ('a = 13 | 7', 15),                 # binary or
             ):
-            code = compile(line, '', 'single')
-            self.assertInBytecode(code, 'LOAD_CONST', elem)
-            for instr in dis.get_instructions(code):
-                self.assertFalse(instr.opname.startswith('BINARY_'))
-            self.check_lnotab(code)
+            with self.subTest(line=line):
+                code = compile(line, '', 'single')
+                self.assertInBytecode(code, 'LOAD_CONST', elem)
+                for instr in dis.get_instructions(code):
+                    self.assertFalse(instr.opname.startswith('BINARY_'))
+                self.check_lnotab(code)
 
         # Verify that unfoldables are skipped
         code = compile('a=2+"b"', '', 'single')
@@ -284,11 +292,12 @@ class TestTranforms(BytecodeTestCase):
             ('~-2', 1),                         # unary invert
             ('+1', 1),                          # unary positive
         ):
-            code = compile(line, '', 'single')
-            self.assertInBytecode(code, 'LOAD_CONST', elem)
-            for instr in dis.get_instructions(code):
-                self.assertFalse(instr.opname.startswith('UNARY_'))
-            self.check_lnotab(code)
+            with self.subTest(line=line):
+                code = compile(line, '', 'single')
+                self.assertInBytecode(code, 'LOAD_CONST', elem)
+                for instr in dis.get_instructions(code):
+                    self.assertFalse(instr.opname.startswith('UNARY_'))
+                self.check_lnotab(code)
 
         # Check that -0.0 works after marshaling
         def negzero():
@@ -303,10 +312,11 @@ class TestTranforms(BytecodeTestCase):
             ('-"abc"', 'abc', 'UNARY_NEGATIVE'),
             ('~"abc"', 'abc', 'UNARY_INVERT'),
         ):
-            code = compile(line, '', 'single')
-            self.assertInBytecode(code, 'LOAD_CONST', elem)
-            self.assertInBytecode(code, opname)
-            self.check_lnotab(code)
+            with self.subTest(line=line):
+                code = compile(line, '', 'single')
+                self.assertInBytecode(code, 'LOAD_CONST', elem)
+                self.assertInBytecode(code, opname)
+                self.check_lnotab(code)
 
     def test_elim_extra_return(self):
         # RETURN LOAD_CONST None RETURN  -->  RETURN
@@ -409,27 +419,12 @@ class TestTranforms(BytecodeTestCase):
         self.assertLessEqual(len(returns), 6)
         self.check_lnotab(f)
 
-    def test_elim_jump_after_return2(self):
-        # Eliminate dead code: jumps immediately after returns can't be reached
-        def f(cond1, cond2):
-            while 1:
-                if cond1: return 4
-        self.assertNotInBytecode(f, 'JUMP_FORWARD')
-        # There should be one jump for the while loop.
-        returns = [instr for instr in dis.get_instructions(f)
-                          if instr.opname == 'JUMP_ABSOLUTE']
-        self.assertEqual(len(returns), 1)
-        returns = [instr for instr in dis.get_instructions(f)
-                          if instr.opname == 'RETURN_VALUE']
-        self.assertLessEqual(len(returns), 2)
-        self.check_lnotab(f)
-
     def test_make_function_doesnt_bail(self):
         def f():
             def g()->1+1:
                 pass
             return g
-        self.assertNotInBytecode(f, 'BINARY_ADD')
+        self.assertNotInBytecode(f, 'BINARY_OP')
         self.check_lnotab(f)
 
     def test_constant_folding(self):
@@ -446,12 +441,13 @@ class TestTranforms(BytecodeTestCase):
             'lambda x: x in {(3 * -5) + (-1 - 6), (1, -2, 3) * 2, None}',
         ]
         for e in exprs:
-            code = compile(e, '', 'single')
-            for instr in dis.get_instructions(code):
-                self.assertFalse(instr.opname.startswith('UNARY_'))
-                self.assertFalse(instr.opname.startswith('BINARY_'))
-                self.assertFalse(instr.opname.startswith('BUILD_'))
-            self.check_lnotab(code)
+            with self.subTest(e=e):
+                code = compile(e, '', 'single')
+                for instr in dis.get_instructions(code):
+                    self.assertFalse(instr.opname.startswith('UNARY_'))
+                    self.assertFalse(instr.opname.startswith('BINARY_'))
+                    self.assertFalse(instr.opname.startswith('BUILD_'))
+                self.check_lnotab(code)
 
     def test_in_literal_list(self):
         def containtest():
@@ -509,6 +505,81 @@ class TestTranforms(BytecodeTestCase):
             return (y for x in a for y in [f(x)])
         self.assertEqual(count_instr_recursively(genexpr, 'FOR_ITER'), 1)
 
+    def test_format_combinations(self):
+        flags = '-+ #0'
+        testcases = [
+            *product(('', '1234', 'абвг'), 'sra'),
+            *product((1234, -1234), 'duioxX'),
+            *product((1234.5678901, -1234.5678901), 'duifegFEG'),
+            *product((float('inf'), -float('inf')), 'fegFEG'),
+        ]
+        width_precs = [
+            *product(('', '1', '30'), ('', '.', '.0', '.2')),
+            ('', '.40'),
+            ('30', '.40'),
+        ]
+        for value, suffix in testcases:
+            for width, prec in width_precs:
+                for r in range(len(flags) + 1):
+                    for spec in combinations(flags, r):
+                        fmt = '%' + ''.join(spec) + width + prec + suffix
+                        with self.subTest(fmt=fmt, value=value):
+                            s1 = fmt % value
+                            s2 = eval(f'{fmt!r} % (x,)', {'x': value})
+                            self.assertEqual(s2, s1, f'{fmt = }')
+
+    def test_format_misc(self):
+        def format(fmt, *values):
+            vars = [f'x{i+1}' for i in range(len(values))]
+            if len(vars) == 1:
+                args = '(' + vars[0] + ',)'
+            else:
+                args = '(' + ', '.join(vars) + ')'
+            return eval(f'{fmt!r} % {args}', dict(zip(vars, values)))
+
+        self.assertEqual(format('string'), 'string')
+        self.assertEqual(format('x = %s!', 1234), 'x = 1234!')
+        self.assertEqual(format('x = %d!', 1234), 'x = 1234!')
+        self.assertEqual(format('x = %x!', 1234), 'x = 4d2!')
+        self.assertEqual(format('x = %f!', 1234), 'x = 1234.000000!')
+        self.assertEqual(format('x = %s!', 1234.5678901), 'x = 1234.5678901!')
+        self.assertEqual(format('x = %f!', 1234.5678901), 'x = 1234.567890!')
+        self.assertEqual(format('x = %d!', 1234.5678901), 'x = 1234!')
+        self.assertEqual(format('x = %s%% %%%%', 1234), 'x = 1234% %%')
+        self.assertEqual(format('x = %s!', '%% %s'), 'x = %% %s!')
+        self.assertEqual(format('x = %s, y = %d', 12, 34), 'x = 12, y = 34')
+
+    def test_format_errors(self):
+        with self.assertRaisesRegex(TypeError,
+                    'not enough arguments for format string'):
+            eval("'%s' % ()")
+        with self.assertRaisesRegex(TypeError,
+                    'not all arguments converted during string formatting'):
+            eval("'%s' % (x, y)", {'x': 1, 'y': 2})
+        with self.assertRaisesRegex(ValueError, 'incomplete format'):
+            eval("'%s%' % (x,)", {'x': 1234})
+        with self.assertRaisesRegex(ValueError, 'incomplete format'):
+            eval("'%s%%%' % (x,)", {'x': 1234})
+        with self.assertRaisesRegex(TypeError,
+                    'not enough arguments for format string'):
+            eval("'%s%z' % (x,)", {'x': 1234})
+        with self.assertRaisesRegex(ValueError, 'unsupported format character'):
+            eval("'%s%z' % (x, 5)", {'x': 1234})
+        with self.assertRaisesRegex(TypeError, 'a real number is required, not str'):
+            eval("'%d' % (x,)", {'x': '1234'})
+        with self.assertRaisesRegex(TypeError, 'an integer is required, not float'):
+            eval("'%x' % (x,)", {'x': 1234.56})
+        with self.assertRaisesRegex(TypeError, 'an integer is required, not str'):
+            eval("'%x' % (x,)", {'x': '1234'})
+        with self.assertRaisesRegex(TypeError, 'must be real number, not str'):
+            eval("'%f' % (x,)", {'x': '1234'})
+        with self.assertRaisesRegex(TypeError,
+                    'not enough arguments for format string'):
+            eval("'%s, %s' % (x, *y)", {'x': 1, 'y': []})
+        with self.assertRaisesRegex(TypeError,
+                    'not all arguments converted during string formatting'):
+            eval("'%s, %s' % (x, *y)", {'x': 1, 'y': [2, 3]})
+
 
 class TestBuglets(unittest.TestCase):
 
@@ -521,6 +592,19 @@ class TestBuglets(unittest.TestCase):
             return x, y
         with self.assertRaises(ValueError):
             f()
+
+    def test_bpo_42057(self):
+        for i in range(10):
+            try:
+                raise Exception
+            except Exception or Exception:
+                pass
+
+    def test_bpo_45773_pop_jump_if_true(self):
+        compile("while True or spam: pass", "<test>", "exec")
+
+    def test_bpo_45773_pop_jump_if_false(self):
+        compile("while True or not spam: pass", "<test>", "exec")
 
 
 if __name__ == "__main__":

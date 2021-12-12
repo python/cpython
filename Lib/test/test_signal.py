@@ -1,3 +1,4 @@
+import enum
 import errno
 import os
 import random
@@ -6,9 +7,11 @@ import socket
 import statistics
 import subprocess
 import sys
+import threading
 import time
 import unittest
 from test import support
+from test.support import os_helper
 from test.support.script_helper import assert_python_ok, spawn_python
 try:
     import _testcapi
@@ -30,6 +33,32 @@ class GenericTests(unittest.TestCase):
             elif name.startswith('CTRL_'):
                 self.assertIsInstance(sig, signal.Signals)
                 self.assertEqual(sys.platform, "win32")
+
+        CheckedSignals = enum._old_convert_(
+                enum.IntEnum, 'Signals', 'signal',
+                lambda name:
+                    name.isupper()
+                    and (name.startswith('SIG') and not name.startswith('SIG_'))
+                    or name.startswith('CTRL_'),
+                source=signal,
+                )
+        enum._test_simple_enum(CheckedSignals, signal.Signals)
+
+        CheckedHandlers = enum._old_convert_(
+                enum.IntEnum, 'Handlers', 'signal',
+                lambda name: name in ('SIG_DFL', 'SIG_IGN'),
+                source=signal,
+                )
+        enum._test_simple_enum(CheckedHandlers, signal.Handlers)
+
+        Sigmasks = getattr(signal, 'Sigmasks', None)
+        if Sigmasks is not None:
+            CheckedSigmasks = enum._old_convert_(
+                    enum.IntEnum, 'Sigmasks', 'signal',
+                    lambda name: name in ('SIG_BLOCK', 'SIG_UNBLOCK', 'SIG_SETMASK'),
+                    source=signal,
+                    )
+            enum._test_simple_enum(CheckedSigmasks, Sigmasks)
 
 
 @unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
@@ -154,7 +183,7 @@ class WakeupFDTests(unittest.TestCase):
             signal.set_wakeup_fd(signal.SIGINT, False)
 
     def test_invalid_fd(self):
-        fd = support.make_bad_fd()
+        fd = os_helper.make_bad_fd()
         self.assertRaises((ValueError, OSError),
                           signal.set_wakeup_fd, fd)
 
@@ -518,16 +547,20 @@ class WakeupSocketSignalTests(unittest.TestCase):
         else:
             write.setblocking(False)
 
-        # Start with large chunk size to reduce the
-        # number of send needed to fill the buffer.
         written = 0
-        for chunk_size in (2 ** 16, 2 ** 8, 1):
+        if sys.platform == "vxworks":
+            CHUNK_SIZES = (1,)
+        else:
+            # Start with large chunk size to reduce the
+            # number of send needed to fill the buffer.
+            CHUNK_SIZES = (2 ** 16, 2 ** 8, 1)
+        for chunk_size in CHUNK_SIZES:
             chunk = b"x" * chunk_size
             try:
                 while True:
                     write.send(chunk)
                     written += chunk_size
-            except (BlockingIOError, socket.timeout):
+            except (BlockingIOError, TimeoutError):
                 pass
 
         print(f"%s bytes written into the socketpair" % written, flush=True)
@@ -594,6 +627,7 @@ class WakeupSocketSignalTests(unittest.TestCase):
 
 
 @unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
+@unittest.skipUnless(hasattr(signal, 'siginterrupt'), "needs signal.siginterrupt()")
 class SiginterruptTest(unittest.TestCase):
 
     def readpipe_interrupted(self, interrupt):
@@ -679,6 +713,8 @@ class SiginterruptTest(unittest.TestCase):
 
 
 @unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
+@unittest.skipUnless(hasattr(signal, 'getitimer') and hasattr(signal, 'setitimer'),
+                         "needs signal.getitimer() and signal.setitimer()")
 class ItimerTest(unittest.TestCase):
     def setUp(self):
         self.hndl_called = False
@@ -863,7 +899,7 @@ class PendingSignalsTests(unittest.TestCase):
 
         %s
 
-        blocked = %s
+        blocked = %r
         signum = signal.SIGALRM
 
         # child: block and wait the signal
@@ -1242,6 +1278,65 @@ class StressTest(unittest.TestCase):
         # All ITIMER_REAL signals should have been delivered to the
         # Python handler
         self.assertEqual(len(sigs), N, "Some signals were lost")
+
+    @unittest.skipUnless(hasattr(signal, "SIGUSR1"),
+                         "test needs SIGUSR1")
+    def test_stress_modifying_handlers(self):
+        # bpo-43406: race condition between trip_signal() and signal.signal
+        signum = signal.SIGUSR1
+        num_sent_signals = 0
+        num_received_signals = 0
+        do_stop = False
+
+        def custom_handler(signum, frame):
+            nonlocal num_received_signals
+            num_received_signals += 1
+
+        def set_interrupts():
+            nonlocal num_sent_signals
+            while not do_stop:
+                signal.raise_signal(signum)
+                num_sent_signals += 1
+
+        def cycle_handlers():
+            while num_sent_signals < 100:
+                for i in range(20000):
+                    # Cycle between a Python-defined and a non-Python handler
+                    for handler in [custom_handler, signal.SIG_IGN]:
+                        signal.signal(signum, handler)
+
+        old_handler = signal.signal(signum, custom_handler)
+        self.addCleanup(signal.signal, signum, old_handler)
+
+        t = threading.Thread(target=set_interrupts)
+        try:
+            ignored = False
+            with support.catch_unraisable_exception() as cm:
+                t.start()
+                cycle_handlers()
+                do_stop = True
+                t.join()
+
+                if cm.unraisable is not None:
+                    # An unraisable exception may be printed out when
+                    # a signal is ignored due to the aforementioned
+                    # race condition, check it.
+                    self.assertIsInstance(cm.unraisable.exc_value, OSError)
+                    self.assertIn(
+                        f"Signal {signum:d} ignored due to race condition",
+                        str(cm.unraisable.exc_value))
+                    ignored = True
+
+            # bpo-43406: Even if it is unlikely, it's technically possible that
+            # all signals were ignored because of race conditions.
+            if not ignored:
+                # Sanity check that some signals were received, but not all
+                self.assertGreater(num_received_signals, 0)
+            self.assertLess(num_received_signals, num_sent_signals)
+        finally:
+            do_stop = True
+            t.join()
+
 
 class RaiseSignalTest(unittest.TestCase):
 

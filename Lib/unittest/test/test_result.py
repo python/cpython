@@ -2,10 +2,11 @@ import io
 import sys
 import textwrap
 
-from test import support
+from test.support import warnings_helper, captured_stdout, captured_stderr
 
 import traceback
 import unittest
+from unittest.util import strclass
 
 
 class MockTraceback(object):
@@ -20,6 +21,32 @@ class MockTraceback(object):
 
 def restore_traceback():
     unittest.result.traceback = traceback
+
+
+def bad_cleanup1():
+    print('do cleanup1')
+    raise TypeError('bad cleanup1')
+
+
+def bad_cleanup2():
+    print('do cleanup2')
+    raise ValueError('bad cleanup2')
+
+
+class BufferedWriter:
+    def __init__(self):
+        self.result = ''
+        self.buffer = ''
+
+    def write(self, arg):
+        self.buffer += arg
+
+    def flush(self):
+        self.result += self.buffer
+        self.buffer = ''
+
+    def getvalue(self):
+        return self.result
 
 
 class Test_TestResult(unittest.TestCase):
@@ -294,115 +321,6 @@ class Test_TestResult(unittest.TestCase):
         self.assertIs(test_case, subtest)
         self.assertIn("some recognizable failure", formatted_exc)
 
-    def testGetDescriptionWithoutDocstring(self):
-        result = unittest.TextTestResult(None, True, 1)
-        self.assertEqual(
-                result.getDescription(self),
-                'testGetDescriptionWithoutDocstring (' + __name__ +
-                '.Test_TestResult)')
-
-    def testGetSubTestDescriptionWithoutDocstring(self):
-        with self.subTest(foo=1, bar=2):
-            result = unittest.TextTestResult(None, True, 1)
-            self.assertEqual(
-                    result.getDescription(self._subtest),
-                    'testGetSubTestDescriptionWithoutDocstring (' + __name__ +
-                    '.Test_TestResult) (foo=1, bar=2)')
-        with self.subTest('some message'):
-            result = unittest.TextTestResult(None, True, 1)
-            self.assertEqual(
-                    result.getDescription(self._subtest),
-                    'testGetSubTestDescriptionWithoutDocstring (' + __name__ +
-                    '.Test_TestResult) [some message]')
-
-    def testGetSubTestDescriptionWithoutDocstringAndParams(self):
-        with self.subTest():
-            result = unittest.TextTestResult(None, True, 1)
-            self.assertEqual(
-                    result.getDescription(self._subtest),
-                    'testGetSubTestDescriptionWithoutDocstringAndParams '
-                    '(' + __name__ + '.Test_TestResult) (<subtest>)')
-
-    def testGetSubTestDescriptionForFalsyValues(self):
-        expected = 'testGetSubTestDescriptionForFalsyValues (%s.Test_TestResult) [%s]'
-        result = unittest.TextTestResult(None, True, 1)
-        for arg in [0, None, []]:
-            with self.subTest(arg):
-                self.assertEqual(
-                    result.getDescription(self._subtest),
-                    expected % (__name__, arg)
-                )
-
-    def testGetNestedSubTestDescriptionWithoutDocstring(self):
-        with self.subTest(foo=1):
-            with self.subTest(baz=2, bar=3):
-                result = unittest.TextTestResult(None, True, 1)
-                self.assertEqual(
-                        result.getDescription(self._subtest),
-                        'testGetNestedSubTestDescriptionWithoutDocstring '
-                        '(' + __name__ + '.Test_TestResult) (baz=2, bar=3, foo=1)')
-
-    def testGetDuplicatedNestedSubTestDescriptionWithoutDocstring(self):
-        with self.subTest(foo=1, bar=2):
-            with self.subTest(baz=3, bar=4):
-                result = unittest.TextTestResult(None, True, 1)
-                self.assertEqual(
-                        result.getDescription(self._subtest),
-                        'testGetDuplicatedNestedSubTestDescriptionWithoutDocstring '
-                        '(' + __name__ + '.Test_TestResult) (baz=3, bar=4, foo=1)')
-
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     "Docstrings are omitted with -O2 and above")
-    def testGetDescriptionWithOneLineDocstring(self):
-        """Tests getDescription() for a method with a docstring."""
-        result = unittest.TextTestResult(None, True, 1)
-        self.assertEqual(
-                result.getDescription(self),
-               ('testGetDescriptionWithOneLineDocstring '
-                '(' + __name__ + '.Test_TestResult)\n'
-                'Tests getDescription() for a method with a docstring.'))
-
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     "Docstrings are omitted with -O2 and above")
-    def testGetSubTestDescriptionWithOneLineDocstring(self):
-        """Tests getDescription() for a method with a docstring."""
-        result = unittest.TextTestResult(None, True, 1)
-        with self.subTest(foo=1, bar=2):
-            self.assertEqual(
-                result.getDescription(self._subtest),
-               ('testGetSubTestDescriptionWithOneLineDocstring '
-                '(' + __name__ + '.Test_TestResult) (foo=1, bar=2)\n'
-                'Tests getDescription() for a method with a docstring.'))
-
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     "Docstrings are omitted with -O2 and above")
-    def testGetDescriptionWithMultiLineDocstring(self):
-        """Tests getDescription() for a method with a longer docstring.
-        The second line of the docstring.
-        """
-        result = unittest.TextTestResult(None, True, 1)
-        self.assertEqual(
-                result.getDescription(self),
-               ('testGetDescriptionWithMultiLineDocstring '
-                '(' + __name__ + '.Test_TestResult)\n'
-                'Tests getDescription() for a method with a longer '
-                'docstring.'))
-
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     "Docstrings are omitted with -O2 and above")
-    def testGetSubTestDescriptionWithMultiLineDocstring(self):
-        """Tests getDescription() for a method with a longer docstring.
-        The second line of the docstring.
-        """
-        result = unittest.TextTestResult(None, True, 1)
-        with self.subTest(foo=1, bar=2):
-            self.assertEqual(
-                result.getDescription(self._subtest),
-               ('testGetSubTestDescriptionWithMultiLineDocstring '
-                '(' + __name__ + '.Test_TestResult) (foo=1, bar=2)\n'
-                'Tests getDescription() for a method with a longer '
-                'docstring.'))
-
     def testStackFrameTrimming(self):
         class Frame(object):
             class tb_frame(object):
@@ -433,10 +351,240 @@ class Test_TestResult(unittest.TestCase):
         self.assertTrue(result.shouldStop)
 
     def testFailFastSetByRunner(self):
-        runner = unittest.TextTestRunner(stream=io.StringIO(), failfast=True)
+        stream = BufferedWriter()
+        runner = unittest.TextTestRunner(stream=stream, failfast=True)
         def test(result):
             self.assertTrue(result.failfast)
         result = runner.run(test)
+        stream.flush()
+        self.assertTrue(stream.getvalue().endswith('\n\nOK\n'))
+
+
+class Test_TextTestResult(unittest.TestCase):
+    maxDiff = None
+
+    def testGetDescriptionWithoutDocstring(self):
+        result = unittest.TextTestResult(None, True, 1)
+        self.assertEqual(
+                result.getDescription(self),
+                'testGetDescriptionWithoutDocstring (' + __name__ +
+                '.Test_TextTestResult)')
+
+    def testGetSubTestDescriptionWithoutDocstring(self):
+        with self.subTest(foo=1, bar=2):
+            result = unittest.TextTestResult(None, True, 1)
+            self.assertEqual(
+                    result.getDescription(self._subtest),
+                    'testGetSubTestDescriptionWithoutDocstring (' + __name__ +
+                    '.Test_TextTestResult) (foo=1, bar=2)')
+        with self.subTest('some message'):
+            result = unittest.TextTestResult(None, True, 1)
+            self.assertEqual(
+                    result.getDescription(self._subtest),
+                    'testGetSubTestDescriptionWithoutDocstring (' + __name__ +
+                    '.Test_TextTestResult) [some message]')
+
+    def testGetSubTestDescriptionWithoutDocstringAndParams(self):
+        with self.subTest():
+            result = unittest.TextTestResult(None, True, 1)
+            self.assertEqual(
+                    result.getDescription(self._subtest),
+                    'testGetSubTestDescriptionWithoutDocstringAndParams '
+                    '(' + __name__ + '.Test_TextTestResult) (<subtest>)')
+
+    def testGetSubTestDescriptionForFalsyValues(self):
+        expected = 'testGetSubTestDescriptionForFalsyValues (%s.Test_TextTestResult) [%s]'
+        result = unittest.TextTestResult(None, True, 1)
+        for arg in [0, None, []]:
+            with self.subTest(arg):
+                self.assertEqual(
+                    result.getDescription(self._subtest),
+                    expected % (__name__, arg)
+                )
+
+    def testGetNestedSubTestDescriptionWithoutDocstring(self):
+        with self.subTest(foo=1):
+            with self.subTest(baz=2, bar=3):
+                result = unittest.TextTestResult(None, True, 1)
+                self.assertEqual(
+                        result.getDescription(self._subtest),
+                        'testGetNestedSubTestDescriptionWithoutDocstring '
+                        '(' + __name__ + '.Test_TextTestResult) (baz=2, bar=3, foo=1)')
+
+    def testGetDuplicatedNestedSubTestDescriptionWithoutDocstring(self):
+        with self.subTest(foo=1, bar=2):
+            with self.subTest(baz=3, bar=4):
+                result = unittest.TextTestResult(None, True, 1)
+                self.assertEqual(
+                        result.getDescription(self._subtest),
+                        'testGetDuplicatedNestedSubTestDescriptionWithoutDocstring '
+                        '(' + __name__ + '.Test_TextTestResult) (baz=3, bar=4, foo=1)')
+
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
+    def testGetDescriptionWithOneLineDocstring(self):
+        """Tests getDescription() for a method with a docstring."""
+        result = unittest.TextTestResult(None, True, 1)
+        self.assertEqual(
+                result.getDescription(self),
+               ('testGetDescriptionWithOneLineDocstring '
+                '(' + __name__ + '.Test_TextTestResult)\n'
+                'Tests getDescription() for a method with a docstring.'))
+
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
+    def testGetSubTestDescriptionWithOneLineDocstring(self):
+        """Tests getDescription() for a method with a docstring."""
+        result = unittest.TextTestResult(None, True, 1)
+        with self.subTest(foo=1, bar=2):
+            self.assertEqual(
+                result.getDescription(self._subtest),
+               ('testGetSubTestDescriptionWithOneLineDocstring '
+                '(' + __name__ + '.Test_TextTestResult) (foo=1, bar=2)\n'
+                'Tests getDescription() for a method with a docstring.'))
+
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
+    def testGetDescriptionWithMultiLineDocstring(self):
+        """Tests getDescription() for a method with a longer docstring.
+        The second line of the docstring.
+        """
+        result = unittest.TextTestResult(None, True, 1)
+        self.assertEqual(
+                result.getDescription(self),
+               ('testGetDescriptionWithMultiLineDocstring '
+                '(' + __name__ + '.Test_TextTestResult)\n'
+                'Tests getDescription() for a method with a longer '
+                'docstring.'))
+
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
+    def testGetSubTestDescriptionWithMultiLineDocstring(self):
+        """Tests getDescription() for a method with a longer docstring.
+        The second line of the docstring.
+        """
+        result = unittest.TextTestResult(None, True, 1)
+        with self.subTest(foo=1, bar=2):
+            self.assertEqual(
+                result.getDescription(self._subtest),
+               ('testGetSubTestDescriptionWithMultiLineDocstring '
+                '(' + __name__ + '.Test_TextTestResult) (foo=1, bar=2)\n'
+                'Tests getDescription() for a method with a longer '
+                'docstring.'))
+
+    class Test(unittest.TestCase):
+        def testSuccess(self):
+            pass
+        def testSkip(self):
+            self.skipTest('skip')
+        def testFail(self):
+            self.fail('fail')
+        def testError(self):
+            raise Exception('error')
+        @unittest.expectedFailure
+        def testExpectedFailure(self):
+            self.fail('fail')
+        @unittest.expectedFailure
+        def testUnexpectedSuccess(self):
+            pass
+        def testSubTestSuccess(self):
+            with self.subTest('one', a=1):
+                pass
+            with self.subTest('two', b=2):
+                pass
+        def testSubTestMixed(self):
+            with self.subTest('success', a=1):
+                pass
+            with self.subTest('skip', b=2):
+                self.skipTest('skip')
+            with self.subTest('fail', c=3):
+                self.fail('fail')
+            with self.subTest('error', d=4):
+                raise Exception('error')
+
+        tearDownError = None
+        def tearDown(self):
+            if self.tearDownError is not None:
+                raise self.tearDownError
+
+    def _run_test(self, test_name, verbosity, tearDownError=None):
+        stream = BufferedWriter()
+        stream = unittest.runner._WritelnDecorator(stream)
+        result = unittest.TextTestResult(stream, True, verbosity)
+        test = self.Test(test_name)
+        test.tearDownError = tearDownError
+        test.run(result)
+        return stream.getvalue()
+
+    def testDotsOutput(self):
+        self.assertEqual(self._run_test('testSuccess', 1), '.')
+        self.assertEqual(self._run_test('testSkip', 1), 's')
+        self.assertEqual(self._run_test('testFail', 1), 'F')
+        self.assertEqual(self._run_test('testError', 1), 'E')
+        self.assertEqual(self._run_test('testExpectedFailure', 1), 'x')
+        self.assertEqual(self._run_test('testUnexpectedSuccess', 1), 'u')
+
+    def testLongOutput(self):
+        classname = f'{__name__}.{self.Test.__qualname__}'
+        self.assertEqual(self._run_test('testSuccess', 2),
+                         f'testSuccess ({classname}) ... ok\n')
+        self.assertEqual(self._run_test('testSkip', 2),
+                         f"testSkip ({classname}) ... skipped 'skip'\n")
+        self.assertEqual(self._run_test('testFail', 2),
+                         f'testFail ({classname}) ... FAIL\n')
+        self.assertEqual(self._run_test('testError', 2),
+                         f'testError ({classname}) ... ERROR\n')
+        self.assertEqual(self._run_test('testExpectedFailure', 2),
+                         f'testExpectedFailure ({classname}) ... expected failure\n')
+        self.assertEqual(self._run_test('testUnexpectedSuccess', 2),
+                         f'testUnexpectedSuccess ({classname}) ... unexpected success\n')
+
+    def testDotsOutputSubTestSuccess(self):
+        self.assertEqual(self._run_test('testSubTestSuccess', 1), '.')
+
+    def testLongOutputSubTestSuccess(self):
+        classname = f'{__name__}.{self.Test.__qualname__}'
+        self.assertEqual(self._run_test('testSubTestSuccess', 2),
+                         f'testSubTestSuccess ({classname}) ... ok\n')
+
+    def testDotsOutputSubTestMixed(self):
+        self.assertEqual(self._run_test('testSubTestMixed', 1), 'sFE')
+
+    def testLongOutputSubTestMixed(self):
+        classname = f'{__name__}.{self.Test.__qualname__}'
+        self.assertEqual(self._run_test('testSubTestMixed', 2),
+                f'testSubTestMixed ({classname}) ... \n'
+                f"  testSubTestMixed ({classname}) [skip] (b=2) ... skipped 'skip'\n"
+                f'  testSubTestMixed ({classname}) [fail] (c=3) ... FAIL\n'
+                f'  testSubTestMixed ({classname}) [error] (d=4) ... ERROR\n')
+
+    def testDotsOutputTearDownFail(self):
+        out = self._run_test('testSuccess', 1, AssertionError('fail'))
+        self.assertEqual(out, 'F')
+        out = self._run_test('testError', 1, AssertionError('fail'))
+        self.assertEqual(out, 'EF')
+        out = self._run_test('testFail', 1, Exception('error'))
+        self.assertEqual(out, 'FE')
+        out = self._run_test('testSkip', 1, AssertionError('fail'))
+        self.assertEqual(out, 'sF')
+
+    def testLongOutputTearDownFail(self):
+        classname = f'{__name__}.{self.Test.__qualname__}'
+        out = self._run_test('testSuccess', 2, AssertionError('fail'))
+        self.assertEqual(out,
+                         f'testSuccess ({classname}) ... FAIL\n')
+        out = self._run_test('testError', 2, AssertionError('fail'))
+        self.assertEqual(out,
+                         f'testError ({classname}) ... ERROR\n'
+                         f'testError ({classname}) ... FAIL\n')
+        out = self._run_test('testFail', 2, Exception('error'))
+        self.assertEqual(out,
+                         f'testFail ({classname}) ... FAIL\n'
+                         f'testFail ({classname}) ... ERROR\n')
+        out = self._run_test('testSkip', 2, AssertionError('fail'))
+        self.assertEqual(out,
+                         f"testSkip ({classname}) ... skipped 'skip'\n"
+                         f'testSkip ({classname}) ... FAIL\n')
 
 
 classDict = dict(unittest.TestResult.__dict__)
@@ -458,8 +606,8 @@ OldResult = type('OldResult', (object,), classDict)
 class Test_OldTestResult(unittest.TestCase):
 
     def assertOldResultWarning(self, test, failures):
-        with support.check_warnings(("TestResult has no add.+ method,",
-                                     RuntimeWarning)):
+        with warnings_helper.check_warnings(
+                ("TestResult has no add.+ method,", RuntimeWarning)):
             result = OldResult()
             test.run(result)
             self.assertEqual(len(result.failures), failures)
@@ -633,36 +781,327 @@ class TestOutputBuffering(unittest.TestCase):
             self.assertEqual(result._original_stderr.getvalue(), expectedErrMessage)
             self.assertMultiLineEqual(message, expectedFullMessage)
 
+    def testBufferSetUp(self):
+        with captured_stdout() as stdout:
+            result = unittest.TestResult()
+        result.buffer = True
+
+        class Foo(unittest.TestCase):
+            def setUp(self):
+                print('set up')
+                1/0
+            def test_foo(self):
+                pass
+        suite = unittest.TestSuite([Foo('test_foo')])
+        suite(result)
+        expected_out = '\nStdout:\nset up\n'
+        self.assertEqual(stdout.getvalue(), expected_out)
+        self.assertEqual(len(result.errors), 1)
+        description = f'test_foo ({strclass(Foo)})'
+        test_case, formatted_exc = result.errors[0]
+        self.assertEqual(str(test_case), description)
+        self.assertIn('ZeroDivisionError: division by zero', formatted_exc)
+        self.assertIn(expected_out, formatted_exc)
+
+    def testBufferTearDown(self):
+        with captured_stdout() as stdout:
+            result = unittest.TestResult()
+        result.buffer = True
+
+        class Foo(unittest.TestCase):
+            def tearDown(self):
+                print('tear down')
+                1/0
+            def test_foo(self):
+                pass
+        suite = unittest.TestSuite([Foo('test_foo')])
+        suite(result)
+        expected_out = '\nStdout:\ntear down\n'
+        self.assertEqual(stdout.getvalue(), expected_out)
+        self.assertEqual(len(result.errors), 1)
+        description = f'test_foo ({strclass(Foo)})'
+        test_case, formatted_exc = result.errors[0]
+        self.assertEqual(str(test_case), description)
+        self.assertIn('ZeroDivisionError: division by zero', formatted_exc)
+        self.assertIn(expected_out, formatted_exc)
+
+    def testBufferDoCleanups(self):
+        with captured_stdout() as stdout:
+            result = unittest.TestResult()
+        result.buffer = True
+
+        class Foo(unittest.TestCase):
+            def setUp(self):
+                print('set up')
+                self.addCleanup(bad_cleanup1)
+                self.addCleanup(bad_cleanup2)
+            def test_foo(self):
+                pass
+        suite = unittest.TestSuite([Foo('test_foo')])
+        suite(result)
+        expected_out = '\nStdout:\nset up\ndo cleanup2\ndo cleanup1\n'
+        self.assertEqual(stdout.getvalue(), expected_out)
+        self.assertEqual(len(result.errors), 2)
+        description = f'test_foo ({strclass(Foo)})'
+        test_case, formatted_exc = result.errors[0]
+        self.assertEqual(str(test_case), description)
+        self.assertIn('ValueError: bad cleanup2', formatted_exc)
+        self.assertNotIn('TypeError', formatted_exc)
+        self.assertIn('\nStdout:\nset up\ndo cleanup2\n', formatted_exc)
+        self.assertNotIn('\ndo cleanup1\n', formatted_exc)
+        test_case, formatted_exc = result.errors[1]
+        self.assertEqual(str(test_case), description)
+        self.assertIn('TypeError: bad cleanup1', formatted_exc)
+        self.assertNotIn('ValueError', formatted_exc)
+        self.assertIn(expected_out, formatted_exc)
+
+    def testBufferSetUp_DoCleanups(self):
+        with captured_stdout() as stdout:
+            result = unittest.TestResult()
+        result.buffer = True
+
+        class Foo(unittest.TestCase):
+            def setUp(self):
+                print('set up')
+                self.addCleanup(bad_cleanup1)
+                self.addCleanup(bad_cleanup2)
+                1/0
+            def test_foo(self):
+                pass
+        suite = unittest.TestSuite([Foo('test_foo')])
+        suite(result)
+        expected_out = '\nStdout:\nset up\ndo cleanup2\ndo cleanup1\n'
+        self.assertEqual(stdout.getvalue(), expected_out)
+        self.assertEqual(len(result.errors), 3)
+        description = f'test_foo ({strclass(Foo)})'
+        test_case, formatted_exc = result.errors[0]
+        self.assertEqual(str(test_case), description)
+        self.assertIn('ZeroDivisionError: division by zero', formatted_exc)
+        self.assertNotIn('ValueError', formatted_exc)
+        self.assertNotIn('TypeError', formatted_exc)
+        self.assertIn('\nStdout:\nset up\n', formatted_exc)
+        self.assertNotIn('\ndo cleanup2\n', formatted_exc)
+        self.assertNotIn('\ndo cleanup1\n', formatted_exc)
+        test_case, formatted_exc = result.errors[1]
+        self.assertEqual(str(test_case), description)
+        self.assertIn('ValueError: bad cleanup2', formatted_exc)
+        self.assertNotIn('ZeroDivisionError', formatted_exc)
+        self.assertNotIn('TypeError', formatted_exc)
+        self.assertIn('\nStdout:\nset up\ndo cleanup2\n', formatted_exc)
+        self.assertNotIn('\ndo cleanup1\n', formatted_exc)
+        test_case, formatted_exc = result.errors[2]
+        self.assertEqual(str(test_case), description)
+        self.assertIn('TypeError: bad cleanup1', formatted_exc)
+        self.assertNotIn('ZeroDivisionError', formatted_exc)
+        self.assertNotIn('ValueError', formatted_exc)
+        self.assertIn(expected_out, formatted_exc)
+
+    def testBufferTearDown_DoCleanups(self):
+        with captured_stdout() as stdout:
+            result = unittest.TestResult()
+        result.buffer = True
+
+        class Foo(unittest.TestCase):
+            def setUp(self):
+                print('set up')
+                self.addCleanup(bad_cleanup1)
+                self.addCleanup(bad_cleanup2)
+            def tearDown(self):
+                print('tear down')
+                1/0
+            def test_foo(self):
+                pass
+        suite = unittest.TestSuite([Foo('test_foo')])
+        suite(result)
+        expected_out = '\nStdout:\nset up\ntear down\ndo cleanup2\ndo cleanup1\n'
+        self.assertEqual(stdout.getvalue(), expected_out)
+        self.assertEqual(len(result.errors), 3)
+        description = f'test_foo ({strclass(Foo)})'
+        test_case, formatted_exc = result.errors[0]
+        self.assertEqual(str(test_case), description)
+        self.assertIn('ZeroDivisionError: division by zero', formatted_exc)
+        self.assertNotIn('ValueError', formatted_exc)
+        self.assertNotIn('TypeError', formatted_exc)
+        self.assertIn('\nStdout:\nset up\ntear down\n', formatted_exc)
+        self.assertNotIn('\ndo cleanup2\n', formatted_exc)
+        self.assertNotIn('\ndo cleanup1\n', formatted_exc)
+        test_case, formatted_exc = result.errors[1]
+        self.assertEqual(str(test_case), description)
+        self.assertIn('ValueError: bad cleanup2', formatted_exc)
+        self.assertNotIn('ZeroDivisionError', formatted_exc)
+        self.assertNotIn('TypeError', formatted_exc)
+        self.assertIn('\nStdout:\nset up\ntear down\ndo cleanup2\n', formatted_exc)
+        self.assertNotIn('\ndo cleanup1\n', formatted_exc)
+        test_case, formatted_exc = result.errors[2]
+        self.assertEqual(str(test_case), description)
+        self.assertIn('TypeError: bad cleanup1', formatted_exc)
+        self.assertNotIn('ZeroDivisionError', formatted_exc)
+        self.assertNotIn('ValueError', formatted_exc)
+        self.assertIn(expected_out, formatted_exc)
+
     def testBufferSetupClass(self):
-        result = unittest.TestResult()
+        with captured_stdout() as stdout:
+            result = unittest.TestResult()
         result.buffer = True
 
         class Foo(unittest.TestCase):
             @classmethod
             def setUpClass(cls):
+                print('set up class')
                 1/0
             def test_foo(self):
                 pass
         suite = unittest.TestSuite([Foo('test_foo')])
         suite(result)
+        expected_out = '\nStdout:\nset up class\n'
+        self.assertEqual(stdout.getvalue(), expected_out)
         self.assertEqual(len(result.errors), 1)
+        description = f'setUpClass ({strclass(Foo)})'
+        test_case, formatted_exc = result.errors[0]
+        self.assertEqual(test_case.description, description)
+        self.assertIn('ZeroDivisionError: division by zero', formatted_exc)
+        self.assertIn(expected_out, formatted_exc)
 
     def testBufferTearDownClass(self):
-        result = unittest.TestResult()
+        with captured_stdout() as stdout:
+            result = unittest.TestResult()
         result.buffer = True
 
         class Foo(unittest.TestCase):
             @classmethod
             def tearDownClass(cls):
+                print('tear down class')
                 1/0
             def test_foo(self):
                 pass
         suite = unittest.TestSuite([Foo('test_foo')])
         suite(result)
+        expected_out = '\nStdout:\ntear down class\n'
+        self.assertEqual(stdout.getvalue(), expected_out)
         self.assertEqual(len(result.errors), 1)
+        description = f'tearDownClass ({strclass(Foo)})'
+        test_case, formatted_exc = result.errors[0]
+        self.assertEqual(test_case.description, description)
+        self.assertIn('ZeroDivisionError: division by zero', formatted_exc)
+        self.assertIn(expected_out, formatted_exc)
+
+    def testBufferDoClassCleanups(self):
+        with captured_stdout() as stdout:
+            result = unittest.TestResult()
+        result.buffer = True
+
+        class Foo(unittest.TestCase):
+            @classmethod
+            def setUpClass(cls):
+                print('set up class')
+                cls.addClassCleanup(bad_cleanup1)
+                cls.addClassCleanup(bad_cleanup2)
+            @classmethod
+            def tearDownClass(cls):
+                print('tear down class')
+            def test_foo(self):
+                pass
+        suite = unittest.TestSuite([Foo('test_foo')])
+        suite(result)
+        expected_out = '\nStdout:\ntear down class\ndo cleanup2\ndo cleanup1\n'
+        self.assertEqual(stdout.getvalue(), expected_out)
+        self.assertEqual(len(result.errors), 2)
+        description = f'tearDownClass ({strclass(Foo)})'
+        test_case, formatted_exc = result.errors[0]
+        self.assertEqual(test_case.description, description)
+        self.assertIn('ValueError: bad cleanup2', formatted_exc)
+        self.assertNotIn('TypeError', formatted_exc)
+        self.assertIn(expected_out, formatted_exc)
+        test_case, formatted_exc = result.errors[1]
+        self.assertEqual(test_case.description, description)
+        self.assertIn('TypeError: bad cleanup1', formatted_exc)
+        self.assertNotIn('ValueError', formatted_exc)
+        self.assertIn(expected_out, formatted_exc)
+
+    def testBufferSetupClass_DoClassCleanups(self):
+        with captured_stdout() as stdout:
+            result = unittest.TestResult()
+        result.buffer = True
+
+        class Foo(unittest.TestCase):
+            @classmethod
+            def setUpClass(cls):
+                print('set up class')
+                cls.addClassCleanup(bad_cleanup1)
+                cls.addClassCleanup(bad_cleanup2)
+                1/0
+            def test_foo(self):
+                pass
+        suite = unittest.TestSuite([Foo('test_foo')])
+        suite(result)
+        expected_out = '\nStdout:\nset up class\ndo cleanup2\ndo cleanup1\n'
+        self.assertEqual(stdout.getvalue(), expected_out)
+        self.assertEqual(len(result.errors), 3)
+        description = f'setUpClass ({strclass(Foo)})'
+        test_case, formatted_exc = result.errors[0]
+        self.assertEqual(test_case.description, description)
+        self.assertIn('ZeroDivisionError: division by zero', formatted_exc)
+        self.assertNotIn('ValueError', formatted_exc)
+        self.assertNotIn('TypeError', formatted_exc)
+        self.assertIn('\nStdout:\nset up class\n', formatted_exc)
+        test_case, formatted_exc = result.errors[1]
+        self.assertEqual(test_case.description, description)
+        self.assertIn('ValueError: bad cleanup2', formatted_exc)
+        self.assertNotIn('ZeroDivisionError', formatted_exc)
+        self.assertNotIn('TypeError', formatted_exc)
+        self.assertIn(expected_out, formatted_exc)
+        test_case, formatted_exc = result.errors[2]
+        self.assertEqual(test_case.description, description)
+        self.assertIn('TypeError: bad cleanup1', formatted_exc)
+        self.assertNotIn('ZeroDivisionError', formatted_exc)
+        self.assertNotIn('ValueError', formatted_exc)
+        self.assertIn(expected_out, formatted_exc)
+
+    def testBufferTearDownClass_DoClassCleanups(self):
+        with captured_stdout() as stdout:
+            result = unittest.TestResult()
+        result.buffer = True
+
+        class Foo(unittest.TestCase):
+            @classmethod
+            def setUpClass(cls):
+                print('set up class')
+                cls.addClassCleanup(bad_cleanup1)
+                cls.addClassCleanup(bad_cleanup2)
+            @classmethod
+            def tearDownClass(cls):
+                print('tear down class')
+                1/0
+            def test_foo(self):
+                pass
+        suite = unittest.TestSuite([Foo('test_foo')])
+        suite(result)
+        expected_out = '\nStdout:\ntear down class\ndo cleanup2\ndo cleanup1\n'
+        self.assertEqual(stdout.getvalue(), expected_out)
+        self.assertEqual(len(result.errors), 3)
+        description = f'tearDownClass ({strclass(Foo)})'
+        test_case, formatted_exc = result.errors[0]
+        self.assertEqual(test_case.description, description)
+        self.assertIn('ZeroDivisionError: division by zero', formatted_exc)
+        self.assertNotIn('ValueError', formatted_exc)
+        self.assertNotIn('TypeError', formatted_exc)
+        self.assertIn('\nStdout:\ntear down class\n', formatted_exc)
+        test_case, formatted_exc = result.errors[1]
+        self.assertEqual(test_case.description, description)
+        self.assertIn('ValueError: bad cleanup2', formatted_exc)
+        self.assertNotIn('ZeroDivisionError', formatted_exc)
+        self.assertNotIn('TypeError', formatted_exc)
+        self.assertIn(expected_out, formatted_exc)
+        test_case, formatted_exc = result.errors[2]
+        self.assertEqual(test_case.description, description)
+        self.assertIn('TypeError: bad cleanup1', formatted_exc)
+        self.assertNotIn('ZeroDivisionError', formatted_exc)
+        self.assertNotIn('ValueError', formatted_exc)
+        self.assertIn(expected_out, formatted_exc)
 
     def testBufferSetUpModule(self):
-        result = unittest.TestResult()
+        with captured_stdout() as stdout:
+            result = unittest.TestResult()
         result.buffer = True
 
         class Foo(unittest.TestCase):
@@ -671,6 +1110,7 @@ class TestOutputBuffering(unittest.TestCase):
         class Module(object):
             @staticmethod
             def setUpModule():
+                print('set up module')
                 1/0
 
         Foo.__module__ = 'Module'
@@ -678,10 +1118,18 @@ class TestOutputBuffering(unittest.TestCase):
         self.addCleanup(sys.modules.pop, 'Module')
         suite = unittest.TestSuite([Foo('test_foo')])
         suite(result)
+        expected_out = '\nStdout:\nset up module\n'
+        self.assertEqual(stdout.getvalue(), expected_out)
         self.assertEqual(len(result.errors), 1)
+        description = 'setUpModule (Module)'
+        test_case, formatted_exc = result.errors[0]
+        self.assertEqual(test_case.description, description)
+        self.assertIn('ZeroDivisionError: division by zero', formatted_exc)
+        self.assertIn(expected_out, formatted_exc)
 
     def testBufferTearDownModule(self):
-        result = unittest.TestResult()
+        with captured_stdout() as stdout:
+            result = unittest.TestResult()
         result.buffer = True
 
         class Foo(unittest.TestCase):
@@ -690,6 +1138,7 @@ class TestOutputBuffering(unittest.TestCase):
         class Module(object):
             @staticmethod
             def tearDownModule():
+                print('tear down module')
                 1/0
 
         Foo.__module__ = 'Module'
@@ -697,7 +1146,124 @@ class TestOutputBuffering(unittest.TestCase):
         self.addCleanup(sys.modules.pop, 'Module')
         suite = unittest.TestSuite([Foo('test_foo')])
         suite(result)
+        expected_out = '\nStdout:\ntear down module\n'
+        self.assertEqual(stdout.getvalue(), expected_out)
         self.assertEqual(len(result.errors), 1)
+        description = 'tearDownModule (Module)'
+        test_case, formatted_exc = result.errors[0]
+        self.assertEqual(test_case.description, description)
+        self.assertIn('ZeroDivisionError: division by zero', formatted_exc)
+        self.assertIn(expected_out, formatted_exc)
+
+    def testBufferDoModuleCleanups(self):
+        with captured_stdout() as stdout:
+            result = unittest.TestResult()
+        result.buffer = True
+
+        class Foo(unittest.TestCase):
+            def test_foo(self):
+                pass
+        class Module(object):
+            @staticmethod
+            def setUpModule():
+                print('set up module')
+                unittest.addModuleCleanup(bad_cleanup1)
+                unittest.addModuleCleanup(bad_cleanup2)
+
+        Foo.__module__ = 'Module'
+        sys.modules['Module'] = Module
+        self.addCleanup(sys.modules.pop, 'Module')
+        suite = unittest.TestSuite([Foo('test_foo')])
+        suite(result)
+        expected_out = '\nStdout:\ndo cleanup2\ndo cleanup1\n'
+        self.assertEqual(stdout.getvalue(), expected_out)
+        self.assertEqual(len(result.errors), 1)
+        description = 'tearDownModule (Module)'
+        test_case, formatted_exc = result.errors[0]
+        self.assertEqual(test_case.description, description)
+        self.assertIn('ValueError: bad cleanup2', formatted_exc)
+        self.assertNotIn('TypeError', formatted_exc)
+        self.assertIn(expected_out, formatted_exc)
+
+    def testBufferSetUpModule_DoModuleCleanups(self):
+        with captured_stdout() as stdout:
+            result = unittest.TestResult()
+        result.buffer = True
+
+        class Foo(unittest.TestCase):
+            def test_foo(self):
+                pass
+        class Module(object):
+            @staticmethod
+            def setUpModule():
+                print('set up module')
+                unittest.addModuleCleanup(bad_cleanup1)
+                unittest.addModuleCleanup(bad_cleanup2)
+                1/0
+
+        Foo.__module__ = 'Module'
+        sys.modules['Module'] = Module
+        self.addCleanup(sys.modules.pop, 'Module')
+        suite = unittest.TestSuite([Foo('test_foo')])
+        suite(result)
+        expected_out = '\nStdout:\nset up module\ndo cleanup2\ndo cleanup1\n'
+        self.assertEqual(stdout.getvalue(), expected_out)
+        self.assertEqual(len(result.errors), 2)
+        description = 'setUpModule (Module)'
+        test_case, formatted_exc = result.errors[0]
+        self.assertEqual(test_case.description, description)
+        self.assertIn('ZeroDivisionError: division by zero', formatted_exc)
+        self.assertNotIn('ValueError', formatted_exc)
+        self.assertNotIn('TypeError', formatted_exc)
+        self.assertIn('\nStdout:\nset up module\n', formatted_exc)
+        test_case, formatted_exc = result.errors[1]
+        self.assertIn(expected_out, formatted_exc)
+        self.assertEqual(test_case.description, description)
+        self.assertIn('ValueError: bad cleanup2', formatted_exc)
+        self.assertNotIn('ZeroDivisionError', formatted_exc)
+        self.assertNotIn('TypeError', formatted_exc)
+        self.assertIn(expected_out, formatted_exc)
+
+    def testBufferTearDownModule_DoModuleCleanups(self):
+        with captured_stdout() as stdout:
+            result = unittest.TestResult()
+        result.buffer = True
+
+        class Foo(unittest.TestCase):
+            def test_foo(self):
+                pass
+        class Module(object):
+            @staticmethod
+            def setUpModule():
+                print('set up module')
+                unittest.addModuleCleanup(bad_cleanup1)
+                unittest.addModuleCleanup(bad_cleanup2)
+            @staticmethod
+            def tearDownModule():
+                print('tear down module')
+                1/0
+
+        Foo.__module__ = 'Module'
+        sys.modules['Module'] = Module
+        self.addCleanup(sys.modules.pop, 'Module')
+        suite = unittest.TestSuite([Foo('test_foo')])
+        suite(result)
+        expected_out = '\nStdout:\ntear down module\ndo cleanup2\ndo cleanup1\n'
+        self.assertEqual(stdout.getvalue(), expected_out)
+        self.assertEqual(len(result.errors), 2)
+        description = 'tearDownModule (Module)'
+        test_case, formatted_exc = result.errors[0]
+        self.assertEqual(test_case.description, description)
+        self.assertIn('ZeroDivisionError: division by zero', formatted_exc)
+        self.assertNotIn('ValueError', formatted_exc)
+        self.assertNotIn('TypeError', formatted_exc)
+        self.assertIn('\nStdout:\ntear down module\n', formatted_exc)
+        test_case, formatted_exc = result.errors[1]
+        self.assertEqual(test_case.description, description)
+        self.assertIn('ValueError: bad cleanup2', formatted_exc)
+        self.assertNotIn('ZeroDivisionError', formatted_exc)
+        self.assertNotIn('TypeError', formatted_exc)
+        self.assertIn(expected_out, formatted_exc)
 
 
 if __name__ == '__main__':

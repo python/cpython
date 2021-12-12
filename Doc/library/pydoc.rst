@@ -18,7 +18,7 @@
 
 The :mod:`pydoc` module automatically generates documentation from Python
 modules.  The documentation can be presented as pages of text on the console,
-served to a Web browser, or saved to HTML files.
+served to a web browser, or saved to HTML files.
 
 For modules, classes, functions and methods, the displayed documentation is
 derived from the docstring (i.e. the :attr:`__doc__` attribute) of the object,
@@ -65,9 +65,9 @@ manner similar to the Unix :program:`man` command.  The synopsis line of a
 module is the first line of its documentation string.
 
 You can also use :program:`pydoc` to start an HTTP server on the local machine
-that will serve documentation to visiting Web browsers.  :program:`pydoc -p 1234`
+that will serve documentation to visiting web browsers.  :program:`pydoc -p 1234`
 will start a HTTP server on port 1234, allowing you to browse the
-documentation at ``http://localhost:1234/`` in your preferred Web browser.
+documentation at ``http://localhost:1234/`` in your preferred web browser.
 Specifying ``0`` as the port number will select an arbitrary unused port.
 
 :program:`pydoc -n <hostname>` will start the server listening at the given

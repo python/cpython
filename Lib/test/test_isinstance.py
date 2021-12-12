@@ -4,6 +4,8 @@
 
 import unittest
 import sys
+import typing
+from test import support
 
 
 
@@ -208,6 +210,25 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
         self.assertEqual(False, isinstance(AbstractChild(), Super))
         self.assertEqual(False, isinstance(AbstractChild(), Child))
 
+    def test_isinstance_with_or_union(self):
+        self.assertTrue(isinstance(Super(), Super | int))
+        self.assertFalse(isinstance(None, str | int))
+        self.assertTrue(isinstance(3, str | int))
+        self.assertTrue(isinstance("", str | int))
+        self.assertTrue(isinstance([], typing.List | typing.Tuple))
+        self.assertTrue(isinstance(2, typing.List | int))
+        self.assertFalse(isinstance(2, typing.List | typing.Tuple))
+        self.assertTrue(isinstance(None, int | None))
+        self.assertFalse(isinstance(3.14, int | str))
+        with self.assertRaises(TypeError):
+            isinstance(2, list[int])
+        with self.assertRaises(TypeError):
+            isinstance(2, list[int] | int)
+        with self.assertRaises(TypeError):
+            isinstance(2, int | str | list[int] | float)
+
+
+
     def test_subclass_normal(self):
         # normal classes
         self.assertEqual(True, issubclass(Super, Super))
@@ -217,6 +238,8 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
         self.assertEqual(True, issubclass(Child, Child))
         self.assertEqual(True, issubclass(Child, Super))
         self.assertEqual(False, issubclass(Child, AbstractSuper))
+        self.assertTrue(issubclass(typing.List, typing.List|typing.Tuple))
+        self.assertFalse(issubclass(int, typing.List|typing.Tuple))
 
     def test_subclass_abstract(self):
         # abstract classes
@@ -244,12 +267,24 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
     def test_subclass_recursion_limit(self):
         # make sure that issubclass raises RecursionError before the C stack is
         # blown
-        self.assertRaises(RecursionError, blowstack, issubclass, str, str)
+        with support.infinite_recursion():
+            self.assertRaises(RecursionError, blowstack, issubclass, str, str)
 
     def test_isinstance_recursion_limit(self):
         # make sure that issubclass raises RecursionError before the C stack is
         # blown
-        self.assertRaises(RecursionError, blowstack, isinstance, '', str)
+        with support.infinite_recursion():
+            self.assertRaises(RecursionError, blowstack, isinstance, '', str)
+
+    def test_subclass_with_union(self):
+        self.assertTrue(issubclass(int, int | float | int))
+        self.assertTrue(issubclass(str, str | Child | str))
+        self.assertFalse(issubclass(dict, float|str))
+        self.assertFalse(issubclass(object, float|str))
+        with self.assertRaises(TypeError):
+            issubclass(2, Child | Super)
+        with self.assertRaises(TypeError):
+            issubclass(int, list[int] | Child)
 
     def test_issubclass_refcount_handling(self):
         # bpo-39382: abstract_issubclass() didn't hold item reference while
@@ -270,6 +305,48 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
                 return (A(), )
 
         self.assertEqual(True, issubclass(B(), int))
+
+    def test_infinite_recursion_in_bases(self):
+        class X:
+            @property
+            def __bases__(self):
+                return self.__bases__
+        with support.infinite_recursion():
+            self.assertRaises(RecursionError, issubclass, X(), int)
+            self.assertRaises(RecursionError, issubclass, int, X())
+            self.assertRaises(RecursionError, isinstance, 1, X())
+
+    def test_infinite_recursion_via_bases_tuple(self):
+        """Regression test for bpo-30570."""
+        class Failure(object):
+            def __getattr__(self, attr):
+                return (self, None)
+        with support.infinite_recursion():
+            with self.assertRaises(RecursionError):
+                issubclass(Failure(), int)
+
+    def test_infinite_cycle_in_bases(self):
+        """Regression test for bpo-30570."""
+        class X:
+            @property
+            def __bases__(self):
+                return (self, self, self)
+        with support.infinite_recursion():
+            self.assertRaises(RecursionError, issubclass, X(), int)
+
+    def test_infinitely_many_bases(self):
+        """Regression test for bpo-30570."""
+        class X:
+            def __getattr__(self, attr):
+                self.assertEqual(attr, "__bases__")
+                class A:
+                    pass
+                class B:
+                    pass
+                A.__getattr__ = B.__getattr__ = X.__getattr__
+                return (A(), B())
+        with support.infinite_recursion():
+            self.assertRaises(RecursionError, issubclass, X(), int)
 
 
 def blowstack(fxn, arg, compare_to):

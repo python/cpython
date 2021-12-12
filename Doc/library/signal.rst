@@ -68,10 +68,34 @@ Module contents
    signal (SIG*), handler (:const:`SIG_DFL`, :const:`SIG_IGN`) and sigmask
    (:const:`SIG_BLOCK`, :const:`SIG_UNBLOCK`, :const:`SIG_SETMASK`)
    related constants listed below were turned into
-   :class:`enums <enum.IntEnum>`.
+   :class:`enums <enum.IntEnum>` (:class:`Signals`, :class:`Handlers` and :class:`Sigmasks` respectively).
    :func:`getsignal`, :func:`pthread_sigmask`, :func:`sigpending` and
    :func:`sigwait` functions return human-readable
-   :class:`enums <enum.IntEnum>`.
+   :class:`enums <enum.IntEnum>` as :class:`Signals` objects.
+
+
+The signal module defines three enums:
+
+.. class:: Signals
+
+   :class:`enum.IntEnum` collection of SIG* constants and the CTRL_* constants.
+
+   .. versionadded:: 3.5
+
+.. class:: Handlers
+
+   :class:`enum.IntEnum` collection the constants :const:`SIG_DFL` and :const:`SIG_IGN`.
+
+   .. versionadded:: 3.5
+
+.. class:: Sigmasks
+
+   :class:`enum.IntEnum` collection the constants :const:`SIG_BLOCK`, :const:`SIG_UNBLOCK` and :const:`SIG_SETMASK`.
+
+   Availability: Unix. See the man page :manpage:`sigprocmask(3)` and
+   :manpage:`pthread_sigmask(3)` for further information.
+
+   .. versionadded:: 3.5
 
 
 The variables defined in the :mod:`signal` module are:
@@ -117,7 +141,7 @@ The variables defined in the :mod:`signal` module are:
 
    Child process stopped or terminated.
 
-   .. availability:: Windows.
+   .. availability:: Unix.
 
 .. data:: SIGCLD
 
@@ -416,7 +440,7 @@ The :mod:`signal` module defines the following functions:
 
    :data:`SIGKILL` and :data:`SIGSTOP` cannot be blocked.
 
-   .. availability:: Unix.  See the man page :manpage:`sigprocmask(3)` and
+   .. availability:: Unix.  See the man page :manpage:`sigprocmask(2)` and
       :manpage:`pthread_sigmask(3)` for further information.
 
    See also :func:`pause`, :func:`sigpending` and :func:`sigwait`.
@@ -618,8 +642,8 @@ The :mod:`signal` module defines the following functions:
 
 .. _signal-example:
 
-Example
--------
+Examples
+--------
 
 Here is a minimal example program. It uses the :func:`alarm` function to limit
 the time spent waiting to open a file; this is useful if the file is for a
@@ -631,7 +655,8 @@ be sent, and the handler raises an exception. ::
    import signal, os
 
    def handler(signum, frame):
-       print('Signal handler called with signal', signum)
+       signame = signal.Signals(signum).name
+       print(f'Signal handler called with signal {signame} ({signum})')
        raise OSError("Couldn't open device!")
 
    # Set the signal handler and a 5-second alarm

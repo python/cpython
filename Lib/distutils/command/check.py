@@ -11,7 +11,6 @@ try:
     from docutils.parsers.rst import Parser
     from docutils import frontend
     from docutils import nodes
-    from io import StringIO
 
     class SilentReporter(Reporter):
 
@@ -84,7 +83,7 @@ class check(Command):
             name, version, URL
 
         Recommended fields:
-            (author and author_email) or (maintainer and maintainer_email))
+            (author and author_email) or (maintainer and maintainer_email)
 
         Warns if any are missing.
         """

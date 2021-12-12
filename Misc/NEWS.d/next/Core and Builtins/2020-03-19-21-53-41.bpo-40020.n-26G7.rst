@@ -1,1 +1,0 @@
-Fix a leak and subsequent crash in parsetok.c caused by realloc misuse on a rare codepath.

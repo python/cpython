@@ -19,7 +19,6 @@ import sys
 import threading
 
 from . import format_helpers
-from . import exceptions
 
 
 class Handle:
@@ -102,7 +101,6 @@ class TimerHandle(Handle):
     __slots__ = ['_scheduled', '_when']
 
     def __init__(self, when, callback, args, loop, context=None):
-        assert when is not None
         super().__init__(callback, args, loop, context)
         if self._source_traceback:
             del self._source_traceback[-1]
@@ -284,7 +282,7 @@ class AbstractEventLoop:
     def call_soon_threadsafe(self, callback, *args):
         raise NotImplementedError
 
-    async def run_in_executor(self, executor, func, *args):
+    def run_in_executor(self, executor, func, *args):
         raise NotImplementedError
 
     def set_default_executor(self, executor):
@@ -397,7 +395,7 @@ class AbstractEventLoop:
         The return value is a Server object, which can be used to stop
         the service.
 
-        path is a str, representing a file systsem path to bind the
+        path is a str, representing a file system path to bind the
         server socket to.
 
         sock can optionally be specified in order to use a preexisting
@@ -416,6 +414,20 @@ class AbstractEventLoop:
         to start accepting connections immediately.  When set to False,
         the user should await Server.start_serving() or Server.serve_forever()
         to make the server to start accepting connections.
+        """
+        raise NotImplementedError
+
+    async def connect_accepted_socket(
+            self, protocol_factory, sock,
+            *, ssl=None,
+            ssl_handshake_timeout=None):
+        """Handle an accepted connection.
+
+        This is used by servers that accept connections outside of
+        asyncio, but use asyncio to handle connections.
+
+        This method is a coroutine.  When completed, the coroutine
+        returns a (transport, protocol) pair.
         """
         raise NotImplementedError
 
@@ -466,7 +478,7 @@ class AbstractEventLoop:
         # The reason to accept file-like object instead of just file descriptor
         # is: we need to own pipe and close it at transport finishing
         # Can got complicated errors if pass f.fileno(),
-        # close fd in pipe transport then close f and vise versa.
+        # close fd in pipe transport then close f and vice versa.
         raise NotImplementedError
 
     async def connect_write_pipe(self, protocol_factory, pipe):
@@ -479,7 +491,7 @@ class AbstractEventLoop:
         # The reason to accept file-like object instead of just file descriptor
         # is: we need to own pipe and close it at transport finishing
         # Can got complicated errors if pass f.fileno(),
-        # close fd in pipe transport then close f and vise versa.
+        # close fd in pipe transport then close f and vice versa.
         raise NotImplementedError
 
     async def subprocess_shell(self, protocol_factory, cmd, *,
@@ -648,7 +660,8 @@ class BaseDefaultEventLoopPolicy(AbstractEventLoopPolicy):
     def set_event_loop(self, loop):
         """Set the event loop."""
         self._local._set_called = True
-        assert loop is None or isinstance(loop, AbstractEventLoop)
+        if loop is not None and not isinstance(loop, AbstractEventLoop):
+            raise TypeError(f"loop must be an instance of AbstractEventLoop or None, not '{type(loop).__name__}'")
         self._local._loop = loop
 
     def new_event_loop(self):
@@ -732,7 +745,8 @@ def set_event_loop_policy(policy):
 
     If policy is None, the default policy is restored."""
     global _event_loop_policy
-    assert policy is None or isinstance(policy, AbstractEventLoopPolicy)
+    if policy is not None and not isinstance(policy, AbstractEventLoopPolicy):
+        raise TypeError(f"policy must be an instance of AbstractEventLoopPolicy or None, not '{type(policy).__name__}'")
     _event_loop_policy = policy
 
 
@@ -746,9 +760,16 @@ def get_event_loop():
     the result of `get_event_loop_policy().get_event_loop()` call.
     """
     # NOTE: this function is implemented in C (see _asynciomodule.c)
+    return _py__get_event_loop()
+
+
+def _get_event_loop(stacklevel=3):
     current_loop = _get_running_loop()
     if current_loop is not None:
         return current_loop
+    import warnings
+    warnings.warn('There is no current event loop',
+                  DeprecationWarning, stacklevel=stacklevel)
     return get_event_loop_policy().get_event_loop()
 
 
@@ -778,6 +799,7 @@ _py__get_running_loop = _get_running_loop
 _py__set_running_loop = _set_running_loop
 _py_get_running_loop = get_running_loop
 _py_get_event_loop = get_event_loop
+_py__get_event_loop = _get_event_loop
 
 
 try:
@@ -785,7 +807,7 @@ try:
     # functions in asyncio.  Pure Python implementation is
     # about 4 times slower than C-accelerated.
     from _asyncio import (_get_running_loop, _set_running_loop,
-                          get_running_loop, get_event_loop)
+                          get_running_loop, get_event_loop, _get_event_loop)
 except ImportError:
     pass
 else:
@@ -794,3 +816,4 @@ else:
     _c__set_running_loop = _set_running_loop
     _c_get_running_loop = get_running_loop
     _c_get_event_loop = get_event_loop
+    _c__get_event_loop = _get_event_loop

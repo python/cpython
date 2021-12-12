@@ -3,7 +3,6 @@
 import concurrent.futures
 import errno
 import math
-import os
 import socket
 import sys
 import threading
@@ -17,6 +16,8 @@ from asyncio import constants
 from test.test_asyncio import utils as test_utils
 from test import support
 from test.support.script_helper import assert_python_ok
+from test.support import os_helper
+from test.support import socket_helper
 
 
 MOCK_ANY = mock.ANY
@@ -91,7 +92,7 @@ class BaseEventTests(test_utils.TestCase):
         self.assertIsNone(
             base_events._ipaddr_info('1.2.3.4', 1, UNSPEC, 0, 0))
 
-        if support.IPV6_ENABLED:
+        if socket_helper.IPV6_ENABLED:
             # IPv4 address with family IPv6.
             self.assertIsNone(
                 base_events._ipaddr_info('1.2.3.4', 1, INET6, STREAM, TCP))
@@ -223,14 +224,14 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.loop.set_default_executor(executor)
         self.assertIs(executor, self.loop._default_executor)
 
-    def test_set_default_executor_deprecation_warnings(self):
+    def test_set_default_executor_error(self):
         executor = mock.Mock()
 
-        with self.assertWarns(DeprecationWarning):
+        msg = 'executor must be ThreadPoolExecutor instance'
+        with self.assertRaisesRegex(TypeError, msg):
             self.loop.set_default_executor(executor)
 
-        # Avoid cleaning up the executor mock
-        self.loop._default_executor = None
+        self.assertIsNone(self.loop._default_executor)
 
     def test_call_soon(self):
         def cb():
@@ -254,6 +255,8 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.assertIsInstance(h, asyncio.TimerHandle)
         self.assertIn(h, self.loop._scheduled)
         self.assertNotIn(h, self.loop._ready)
+        with self.assertRaises(TypeError, msg="delay must not be None"):
+            self.loop.call_later(None, cb)
 
     def test_call_later_negative_delays(self):
         calls = []
@@ -285,6 +288,8 @@ class BaseEventLoopTests(test_utils.TestCase):
         # tolerate a difference of +800 ms because some Python buildbots
         # are really slow
         self.assertLessEqual(dt, 0.9, dt)
+        with self.assertRaises(TypeError, msg="when cannot be None"):
+            self.loop.call_at(None, cb)
 
     def check_thread(self, loop, debug):
         def cb():
@@ -1156,12 +1161,10 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             srv.close()
             self.loop.run_until_complete(srv.wait_closed())
 
-    @unittest.skipUnless(support.IPV6_ENABLED, 'no IPv6 support')
+    @unittest.skipUnless(socket_helper.IPV6_ENABLED, 'no IPv6 support')
     def test_create_server_ipv6(self):
         async def main():
-            with self.assertWarns(DeprecationWarning):
-                srv = await asyncio.start_server(
-                    lambda: None, '::1', 0, loop=self.loop)
+            srv = await asyncio.start_server(lambda: None, '::1', 0)
             try:
                 self.assertGreater(len(srv.sockets), 0)
             finally:
@@ -1288,7 +1291,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             t.close()
             test_utils.run_briefly(self.loop)  # allow transport to close
 
-        if support.IPV6_ENABLED:
+        if socket_helper.IPV6_ENABLED:
             sock.family = socket.AF_INET6
             coro = self.loop.create_connection(asyncio.Protocol, '::1', 80)
             t, p = self.loop.run_until_complete(coro)
@@ -1307,7 +1310,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
                 t.close()
                 test_utils.run_briefly(self.loop)  # allow transport to close
 
-    @unittest.skipUnless(support.IPV6_ENABLED, 'no IPv6 support')
+    @unittest.skipUnless(socket_helper.IPV6_ENABLED, 'no IPv6 support')
     @unittest.skipIf(sys.platform.startswith('aix'),
                     "bpo-25545: IPv6 scope id and getaddrinfo() behave differently on AIX")
     @patch_socket
@@ -1639,7 +1642,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.assertRaises(
             OSError, self.loop.run_until_complete, coro)
 
-    @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 not supported or enabled')
+    @unittest.skipUnless(socket_helper.IPV6_ENABLED, 'IPv6 not supported or enabled')
     def test_create_datagram_endpoint_no_matching_family(self):
         coro = self.loop.create_datagram_endpoint(
             asyncio.DatagramProtocol,
@@ -1700,7 +1703,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.loop.run_until_complete(protocol.done)
         self.assertEqual('CLOSED', protocol.state)
 
-    @support.skip_unless_bind_unix_socket
+    @socket_helper.skip_unless_bind_unix_socket
     def test_create_datagram_endpoint_existing_sock_unix(self):
         with test_utils.unix_socket_path() as path:
             sock = socket.socket(socket.AF_UNIX, type=socket.SOCK_DGRAM)
@@ -1746,6 +1749,8 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             MyDatagramProto, allow_broadcast=True, sock=FakeSock())
         self.assertRaises(ValueError, self.loop.run_until_complete, fut)
 
+    @unittest.skipIf(sys.platform == 'vxworks',
+                    "SO_BROADCAST is enabled by default on VxWorks")
     def test_create_datagram_endpoint_sockopts(self):
         # Socket options should not be applied unless asked for.
         # SO_REUSEPORT is not available on all platforms.
@@ -1792,32 +1797,6 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         transport.close()
         self.loop.run_until_complete(protocol.done)
         self.assertEqual('CLOSED', protocol.state)
-
-    def test_create_datagram_endpoint_reuse_address_error(self):
-        # bpo-37228: Ensure that explicit passing of `reuse_address=True`
-        # raises an error, as it is not safe to use SO_REUSEADDR when using UDP
-
-        coro = self.loop.create_datagram_endpoint(
-            lambda: MyDatagramProto(create_future=True, loop=self.loop),
-            local_addr=('127.0.0.1', 0),
-            reuse_address=True)
-
-        with self.assertRaises(ValueError):
-            self.loop.run_until_complete(coro)
-
-    def test_create_datagram_endpoint_reuse_address_warning(self):
-        # bpo-37228: Deprecate *reuse_address* parameter
-
-        coro = self.loop.create_datagram_endpoint(
-            lambda: MyDatagramProto(create_future=True, loop=self.loop),
-            local_addr=('127.0.0.1', 0),
-            reuse_address=False)
-
-        with self.assertWarns(DeprecationWarning):
-            transport, protocol = self.loop.run_until_complete(coro)
-            transport.close()
-            self.loop.run_until_complete(protocol.done)
-            self.assertEqual('CLOSED', protocol.state)
 
     @patch_socket
     def test_create_datagram_endpoint_nosoreuseport(self, m_socket):
@@ -1883,10 +1862,8 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             MyProto, sock, None, None, mock.ANY, mock.ANY)
 
     def test_call_coroutine(self):
-        with self.assertWarns(DeprecationWarning):
-            @asyncio.coroutine
-            def simple_coroutine():
-                pass
+        async def simple_coroutine():
+            pass
 
         self.loop.set_debug(True)
         coro_func = simple_coroutine
@@ -1983,14 +1960,14 @@ class BaseLoopSockSendfileTests(test_utils.TestCase):
     def setUpClass(cls):
         cls.__old_bufsize = constants.SENDFILE_FALLBACK_READBUFFER_SIZE
         constants.SENDFILE_FALLBACK_READBUFFER_SIZE = 1024 * 16
-        with open(support.TESTFN, 'wb') as fp:
+        with open(os_helper.TESTFN, 'wb') as fp:
             fp.write(cls.DATA)
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
         constants.SENDFILE_FALLBACK_READBUFFER_SIZE = cls.__old_bufsize
-        support.unlink(support.TESTFN)
+        os_helper.unlink(os_helper.TESTFN)
         super().tearDownClass()
 
     def setUp(self):
@@ -1998,7 +1975,7 @@ class BaseLoopSockSendfileTests(test_utils.TestCase):
         # BaseSelectorEventLoop() has no native implementation
         self.loop = BaseSelectorEventLoop()
         self.set_event_loop(self.loop)
-        self.file = open(support.TESTFN, 'rb')
+        self.file = open(os_helper.TESTFN, 'rb')
         self.addCleanup(self.file.close)
         super().setUp()
 
@@ -2015,7 +1992,7 @@ class BaseLoopSockSendfileTests(test_utils.TestCase):
         sock = self.make_socket()
         proto = self.MyProto(self.loop)
         server = self.run_loop(self.loop.create_server(
-            lambda: proto, support.HOST, 0, family=socket.AF_INET))
+            lambda: proto, socket_helper.HOST, 0, family=socket.AF_INET))
         addr = server.sockets[0].getsockname()
 
         for _ in range(10):
@@ -2095,7 +2072,7 @@ class BaseLoopSockSendfileTests(test_utils.TestCase):
 
     def test_nonbinary_file(self):
         sock = self.make_socket()
-        with open(support.TESTFN, 'r') as f:
+        with open(os_helper.TESTFN, encoding="utf-8") as f:
             with self.assertRaisesRegex(ValueError, "binary mode"):
                 self.run_loop(self.loop.sock_sendfile(sock, f))
 

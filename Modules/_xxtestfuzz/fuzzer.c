@@ -83,7 +83,7 @@ static int fuzz_builtin_unicode(const char* data, size_t size) {
 PyObject* struct_unpack_method = NULL;
 PyObject* struct_error = NULL;
 /* Called by LLVMFuzzerTestOneInput for initialization */
-static int init_struct_unpack() {
+static int init_struct_unpack(void) {
     /* Import struct.unpack */
     PyObject* struct_module = PyImport_ImportModule("struct");
     if (struct_module == NULL) {
@@ -146,7 +146,7 @@ static int fuzz_struct_unpack(const char* data, size_t size) {
 
 PyObject* json_loads_method = NULL;
 /* Called by LLVMFuzzerTestOneInput for initialization */
-static int init_json_loads() {
+static int init_json_loads(void) {
     /* Import json.loads */
     PyObject* json_module = PyImport_ImportModule("json");
     if (json_module == NULL) {
@@ -192,7 +192,7 @@ PyObject* sre_compile_method = NULL;
 PyObject* sre_error_exception = NULL;
 int SRE_FLAG_DEBUG = 0;
 /* Called by LLVMFuzzerTestOneInput for initialization */
-static int init_sre_compile() {
+static int init_sre_compile(void) {
     /* Import sre_compile.compile and sre.error */
     PyObject* sre_compile_module = PyImport_ImportModule("sre_compile");
     if (sre_compile_module == NULL) {
@@ -284,7 +284,7 @@ static const char* regex_patterns[] = {
 const size_t NUM_PATTERNS = sizeof(regex_patterns) / sizeof(regex_patterns[0]);
 PyObject** compiled_patterns = NULL;
 /* Called by LLVMFuzzerTestOneInput for initialization */
-static int init_sre_match() {
+static int init_sre_match(void) {
     PyObject* re_module = PyImport_ImportModule("re");
     if (re_module == NULL) {
         return 0;
@@ -339,7 +339,7 @@ static int fuzz_sre_match(const char* data, size_t size) {
 PyObject* csv_module = NULL;
 PyObject* csv_error = NULL;
 /* Called by LLVMFuzzerTestOneInput for initialization */
-static int init_csv_reader() {
+static int init_csv_reader(void) {
     /* Import csv and csv.Error */
     csv_module = PyImport_ImportModule("csv");
     if (csv_module == NULL) {
@@ -354,7 +354,7 @@ static int fuzz_csv_reader(const char* data, size_t size) {
         return 0;
     }
     /* Ignore non null-terminated strings since _csv can't handle
-       embeded nulls */
+       embedded nulls */
     if (memchr(data, '\0', size) == NULL) {
         return 0;
     }
@@ -383,12 +383,57 @@ static int fuzz_csv_reader(const char* data, size_t size) {
     }
 
     /* Ignore csv.Error because we're probably going to generate
-       some bad files (embeded new-lines, unterminated quotes etc) */
+       some bad files (embedded new-lines, unterminated quotes etc) */
     if (PyErr_ExceptionMatches(csv_error)) {
         PyErr_Clear();
     }
 
     Py_XDECREF(reader);
+    Py_DECREF(s);
+    return 0;
+}
+
+#define MAX_AST_LITERAL_EVAL_TEST_SIZE 0x10000
+PyObject* ast_literal_eval_method = NULL;
+/* Called by LLVMFuzzerTestOneInput for initialization */
+static int init_ast_literal_eval(void) {
+    PyObject* ast_module = PyImport_ImportModule("ast");
+    if (ast_module == NULL) {
+        return 0;
+    }
+    ast_literal_eval_method = PyObject_GetAttrString(ast_module, "literal_eval");
+    return ast_literal_eval_method != NULL;
+}
+/* Fuzz ast.literal_eval(x) */
+static int fuzz_ast_literal_eval(const char* data, size_t size) {
+    if (size > MAX_AST_LITERAL_EVAL_TEST_SIZE) {
+        return 0;
+    }
+    /* Ignore non null-terminated strings since ast can't handle
+       embedded nulls */
+    if (memchr(data, '\0', size) == NULL) {
+        return 0;
+    }
+
+    PyObject* s = PyUnicode_FromString(data);
+    /* Ignore exceptions until we have a valid string */
+    if (s == NULL) {
+        PyErr_Clear();
+        return 0;
+    }
+
+    PyObject* literal = PyObject_CallOneArg(ast_literal_eval_method, s);
+    /* Ignore some common errors thrown by ast.literal_eval */
+    if (literal == NULL && (PyErr_ExceptionMatches(PyExc_ValueError) ||
+                            PyErr_ExceptionMatches(PyExc_TypeError) ||
+                            PyErr_ExceptionMatches(PyExc_SyntaxError) ||
+                            PyErr_ExceptionMatches(PyExc_MemoryError) ||
+                            PyErr_ExceptionMatches(PyExc_RecursionError))
+    ) {
+        PyErr_Clear();
+    }
+
+    Py_XDECREF(literal);
     Py_DECREF(s);
     return 0;
 }
@@ -411,9 +456,26 @@ int __lsan_is_turned_off(void) { return 1; }
 
 
 int LLVMFuzzerInitialize(int *argc, char ***argv) {
-    wchar_t* wide_program_name = Py_DecodeLocale(*argv[0], NULL);
-    Py_SetProgramName(wide_program_name);
+    PyConfig config;
+    PyConfig_InitPythonConfig(&config);
+    config.install_signal_handlers = 0;
+    PyStatus status;
+    status = PyConfig_SetBytesString(&config, &config.program_name, *argv[0]);
+    if (PyStatus_Exception(status)) {
+        goto fail;
+    }
+
+    status = Py_InitializeFromConfig(&config);
+    if (PyStatus_Exception(status)) {
+        goto fail;
+    }
+    PyConfig_Clear(&config);
+
     return 0;
+
+fail:
+    PyConfig_Clear(&config);
+    Py_ExitStatusException(status);
 }
 
 /* Fuzz test interface.
@@ -424,12 +486,7 @@ int LLVMFuzzerInitialize(int *argc, char ***argv) {
    (And we bitwise or when running multiple tests to verify that normally we
    only return 0.) */
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-    if (!Py_IsInitialized()) {
-        /* LLVMFuzzerTestOneInput is called repeatedly from the same process,
-           with no separate initialization phase, sadly, so we need to
-           initialize CPython ourselves on the first run. */
-        Py_InitializeEx(0);
-    }
+    assert(Py_IsInitialized());
 
     int rv = 0;
 
@@ -495,6 +552,17 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     }
 
     rv |= _run_fuzz(data, size, fuzz_csv_reader);
+#endif
+#if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_fuzz_ast_literal_eval)
+    static int AST_LITERAL_EVAL_INITIALIZED = 0;
+    if (!AST_LITERAL_EVAL_INITIALIZED && !init_ast_literal_eval()) {
+        PyErr_Print();
+        abort();
+    } else {
+        AST_LITERAL_EVAL_INITIALIZED = 1;
+    }
+
+    rv |= _run_fuzz(data, size, fuzz_ast_literal_eval);
 #endif
   return rv;
 }

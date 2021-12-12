@@ -8,12 +8,36 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+
+/* runtime lifecycle */
+
+extern PyStatus _PyErr_InitTypes(PyInterpreterState *);
+
+
+/* other API */
+
 static inline PyObject* _PyErr_Occurred(PyThreadState *tstate)
 {
     assert(tstate != NULL);
     return tstate->curexc_type;
 }
 
+static inline void _PyErr_ClearExcState(_PyErr_StackItem *exc_state)
+{
+    PyObject *t, *v, *tb;
+    t = exc_state->exc_type;
+    v = exc_state->exc_value;
+    tb = exc_state->exc_traceback;
+    exc_state->exc_type = NULL;
+    exc_state->exc_value = NULL;
+    exc_state->exc_traceback = NULL;
+    Py_XDECREF(t);
+    Py_XDECREF(v);
+    Py_XDECREF(tb);
+}
+
+PyAPI_FUNC(PyObject*) _PyErr_StackItemToExcInfoTuple(
+    _PyErr_StackItem *err_info);
 
 PyAPI_FUNC(void) _PyErr_Fetch(
     PyThreadState *tstate,
@@ -35,6 +59,9 @@ PyAPI_FUNC(void) _PyErr_SetObject(
     PyThreadState *tstate,
     PyObject *type,
     PyObject *value);
+
+PyAPI_FUNC(void) _PyErr_ChainStackItem(
+    _PyErr_StackItem *exc_info);
 
 PyAPI_FUNC(void) _PyErr_Clear(PyThreadState *tstate);
 
@@ -66,6 +93,18 @@ PyAPI_FUNC(PyObject *) _PyErr_FormatFromCauseTstate(
     ...);
 
 PyAPI_FUNC(int) _PyErr_CheckSignalsTstate(PyThreadState *tstate);
+
+PyAPI_FUNC(void) _Py_DumpExtensionModules(int fd, PyInterpreterState *interp);
+
+extern PyObject* _Py_Offer_Suggestions(PyObject* exception);
+PyAPI_FUNC(Py_ssize_t) _Py_UTF8_Edit_Cost(PyObject *str_a, PyObject *str_b,
+                                          Py_ssize_t max_cost);
+
+PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
+    const char *func,
+    const char *message);
+
+#define _Py_FatalRefcountError(message) _Py_FatalRefcountErrorFunc(__func__, message)
 
 #ifdef __cplusplus
 }

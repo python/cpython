@@ -1,6 +1,6 @@
 #include "Python.h"
-#include "pycore_object.h"   // _PyObject_GET_WEAKREFS_LISTPTR
-#include "structmember.h"
+#include "pycore_object.h"        // _PyObject_GET_WEAKREFS_LISTPTR()
+#include "structmember.h"         // PyMemberDef
 
 
 #define GET_WEAKREFS_LISTPTR(o) \
@@ -362,6 +362,12 @@ static PyMemberDef weakref_members[] = {
     {NULL} /* Sentinel */
 };
 
+static PyMethodDef weakref_methods[] = {
+    {"__class_getitem__",    Py_GenericAlias,
+    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
+    {NULL} /* Sentinel */
+};
+
 PyTypeObject
 _PyWeakref_RefType = {
     PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
@@ -392,7 +398,7 @@ _PyWeakref_RefType = {
     0,                          /*tp_weaklistoffset*/
     0,                          /*tp_iter*/
     0,                          /*tp_iternext*/
-    0,                          /*tp_methods*/
+    weakref_methods,            /*tp_methods*/
     weakref_members,            /*tp_members*/
     0,                          /*tp_getset*/
     0,                          /*tp_base*/
@@ -651,6 +657,12 @@ proxy_iternext(PyWeakReference *proxy)
         return NULL;
 
     PyObject *obj = PyWeakref_GET_OBJECT(proxy);
+    if (!PyIter_Check(obj)) {
+        PyErr_Format(PyExc_TypeError,
+            "Weakref proxy referenced a non-iterator '%.200s' object",
+            Py_TYPE(obj)->tp_name);
+        return NULL;
+    }
     Py_INCREF(obj);
     PyObject* res = PyIter_Next(obj);
     Py_DECREF(obj);
@@ -659,10 +671,12 @@ proxy_iternext(PyWeakReference *proxy)
 
 
 WRAP_METHOD(proxy_bytes, __bytes__)
+WRAP_METHOD(proxy_reversed, __reversed__)
 
 
 static PyMethodDef proxy_methods[] = {
         {"__bytes__", proxy_bytes, METH_NOARGS},
+        {"__reversed__", proxy_reversed, METH_NOARGS},
         {NULL, NULL}
 };
 
@@ -740,6 +754,7 @@ _PyWeakref_ProxyType = {
     &proxy_as_number,                   /* tp_as_number */
     &proxy_as_sequence,                 /* tp_as_sequence */
     &proxy_as_mapping,                  /* tp_as_mapping */
+// Notice that tp_hash is intentionally omitted as proxies are "mutable" (when the reference dies).
     0,                                  /* tp_hash */
     0,                                  /* tp_call */
     proxy_str,                          /* tp_str */

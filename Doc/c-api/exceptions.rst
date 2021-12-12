@@ -100,7 +100,7 @@ For convenience, some of these functions will always return a
    This is the most common way to set the error indicator.  The first argument
    specifies the exception type; it is normally one of the standard exceptions,
    e.g. :c:data:`PyExc_RuntimeError`.  You need not increment its reference count.
-   The second argument is an error message; it is decoded from ``'utf-8``'.
+   The second argument is an error message; it is decoded from ``'utf-8'``.
 
 
 .. c:function:: void PyErr_SetObject(PyObject *type, PyObject *value)
@@ -182,8 +182,8 @@ For convenience, some of these functions will always return a
 .. c:function:: PyObject* PyErr_SetFromErrnoWithFilename(PyObject *type, const char *filename)
 
    Similar to :c:func:`PyErr_SetFromErrnoWithFilenameObject`, but the filename
-   is given as a C string.  *filename* is decoded from the filesystem encoding
-   (:func:`os.fsdecode`).
+   is given as a C string.  *filename* is decoded from the :term:`filesystem
+   encoding and error handler`.
 
 
 .. c:function:: PyObject* PyErr_SetFromWindowsErr(int ierr)
@@ -266,7 +266,7 @@ For convenience, some of these functions will always return a
 .. c:function:: void PyErr_SyntaxLocationEx(const char *filename, int lineno, int col_offset)
 
    Like :c:func:`PyErr_SyntaxLocationObject`, but *filename* is a byte string
-   decoded from the filesystem encoding (:func:`os.fsdecode`).
+   decoded from the :term:`filesystem encoding and error handler`.
 
    .. versionadded:: 3.2
 
@@ -343,7 +343,7 @@ an error value).
 
    Similar to :c:func:`PyErr_WarnExplicitObject` except that *message* and
    *module* are UTF-8 encoded strings, and *filename* is decoded from the
-   filesystem encoding (:func:`os.fsdecode`).
+   :term:`filesystem encoding and error handler`.
 
 
 .. c:function:: int PyErr_WarnFormat(PyObject *category, Py_ssize_t stack_level, const char *format, ...)
@@ -482,7 +482,6 @@ Querying the error indicator
    to an exception that was *already caught*, not to an exception that was
    freshly raised.  This function steals the references of the arguments.
    To clear the exception state, pass ``NULL`` for all three arguments.
-   For general rules about the three arguments, see :c:func:`PyErr_Restore`.
 
    .. note::
 
@@ -492,6 +491,12 @@ Querying the error indicator
       state.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.11
+      The ``type`` and ``traceback`` arguments are no longer used and
+      can be NULL. The interpreter now derives them from the exception
+      instance (the ``value`` argument). The function still steals
+      references of all three arguments.
 
 
 Signal Handling
@@ -505,29 +510,73 @@ Signal Handling
       single: SIGINT
       single: KeyboardInterrupt (built-in exception)
 
-   This function interacts with Python's signal handling.  It checks whether a
-   signal has been sent to the processes and if so, invokes the corresponding
-   signal handler.  If the :mod:`signal` module is supported, this can invoke a
-   signal handler written in Python.  In all cases, the default effect for
-   :const:`SIGINT` is to raise the  :exc:`KeyboardInterrupt` exception.  If an
-   exception is raised the error indicator is set and the function returns ``-1``;
-   otherwise the function returns ``0``.  The error indicator may or may not be
-   cleared if it was previously set.
+   This function interacts with Python's signal handling.
+
+   If the function is called from the main thread and under the main Python
+   interpreter, it checks whether a signal has been sent to the processes
+   and if so, invokes the corresponding signal handler.  If the :mod:`signal`
+   module is supported, this can invoke a signal handler written in Python.
+
+   The function attempts to handle all pending signals, and then returns ``0``.
+   However, if a Python signal handler raises an exception, the error
+   indicator is set and the function returns ``-1`` immediately (such that
+   other pending signals may not have been handled yet: they will be on the
+   next :c:func:`PyErr_CheckSignals()` invocation).
+
+   If the function is called from a non-main thread, or under a non-main
+   Python interpreter, it does nothing and returns ``0``.
+
+   This function can be called by long-running C code that wants to
+   be interruptible by user requests (such as by pressing Ctrl-C).
+
+   .. note::
+      The default Python signal handler for :const:`SIGINT` raises the
+      :exc:`KeyboardInterrupt` exception.
 
 
 .. c:function:: void PyErr_SetInterrupt()
 
    .. index::
+      module: signal
       single: SIGINT
       single: KeyboardInterrupt (built-in exception)
 
-   Simulate the effect of a :const:`SIGINT` signal arriving. The next time
-   :c:func:`PyErr_CheckSignals` is called,  the Python signal handler for
-   :const:`SIGINT` will be called.
+   Simulate the effect of a :const:`SIGINT` signal arriving.
+   This is equivalent to ``PyErr_SetInterruptEx(SIGINT)``.
 
-   If :const:`SIGINT` isn't handled by Python (it was set to
-   :data:`signal.SIG_DFL` or :data:`signal.SIG_IGN`), this function does
-   nothing.
+   .. note::
+      This function is async-signal-safe.  It can be called without
+      the :term:`GIL` and from a C signal handler.
+
+
+.. c:function:: int PyErr_SetInterruptEx(int signum)
+
+   .. index::
+      module: signal
+      single: KeyboardInterrupt (built-in exception)
+
+   Simulate the effect of a signal arriving. The next time
+   :c:func:`PyErr_CheckSignals` is called,  the Python signal handler for
+   the given signal number will be called.
+
+   This function can be called by C code that sets up its own signal handling
+   and wants Python signal handlers to be invoked as expected when an
+   interruption is requested (for example when the user presses Ctrl-C
+   to interrupt an operation).
+
+   If the given signal isn't handled by Python (it was set to
+   :data:`signal.SIG_DFL` or :data:`signal.SIG_IGN`), it will be ignored.
+
+   If *signum* is outside of the allowed range of signal numbers, ``-1``
+   is returned.  Otherwise, ``0`` is returned.  The error indicator is
+   never changed by this function.
+
+   .. note::
+      This function is async-signal-safe.  It can be called without
+      the :term:`GIL` and from a C signal handler.
+
+   .. versionadded:: 3.10
+
 
 .. c:function:: int PySignal_SetWakeupFd(int fd)
 
@@ -630,17 +679,6 @@ The following functions are used to create and modify Unicode exceptions from C.
    Create a :class:`UnicodeDecodeError` object with the attributes *encoding*,
    *object*, *length*, *start*, *end* and *reason*. *encoding* and *reason* are
    UTF-8 encoded strings.
-
-.. c:function:: PyObject* PyUnicodeEncodeError_Create(const char *encoding, const Py_UNICODE *object, Py_ssize_t length, Py_ssize_t start, Py_ssize_t end, const char *reason)
-
-   Create a :class:`UnicodeEncodeError` object with the attributes *encoding*,
-   *object*, *length*, *start*, *end* and *reason*. *encoding* and *reason* are
-   UTF-8 encoded strings.
-
-.. c:function:: PyObject* PyUnicodeTranslateError_Create(const Py_UNICODE *object, Py_ssize_t length, Py_ssize_t start, Py_ssize_t end, const char *reason)
-
-   Create a :class:`UnicodeTranslateError` object with the attributes *object*,
-   *length*, *start*, *end* and *reason*. *reason* is a UTF-8 encoded string.
 
 .. c:function:: PyObject* PyUnicodeDecodeError_GetEncoding(PyObject *exc)
                 PyObject* PyUnicodeEncodeError_GetEncoding(PyObject *exc)
@@ -773,7 +811,7 @@ Standard Exceptions
 
 All standard Python exceptions are available as global variables whose names are
 ``PyExc_`` followed by the Python exception name.  These have the type
-:c:type:`PyObject\*`; they are all class objects.  For completeness, here are all
+:c:type:`PyObject*`; they are all class objects.  For completeness, here are all
 the variables:
 
 .. index::
@@ -993,7 +1031,7 @@ Standard Warning Categories
 
 All standard Python warning categories are available as global variables whose
 names are ``PyExc_`` followed by the Python exception name. These have the type
-:c:type:`PyObject\*`; they are all class objects. For completeness, here are all
+:c:type:`PyObject*`; they are all class objects. For completeness, here are all
 the variables:
 
 .. index::

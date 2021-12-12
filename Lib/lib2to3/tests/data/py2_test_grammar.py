@@ -8,7 +8,7 @@
 # regression test, the filterwarnings() call has been added to
 # regrtest.py.
 
-from test.test_support import run_unittest, check_syntax_error
+from test.test_support import check_syntax_error
 import unittest
 import sys
 # testing import *
@@ -735,7 +735,7 @@ hello world
         s = a[-5:]
         s = a[:-1]
         s = a[-4:-3]
-        # A rough test of SF bug 1333982.  http://python.org/sf/1333982
+        # A rough test of SF bug 1333982.  https://python.org/sf/1333982
         # The testing here is fairly incomplete.
         # Test cases should include: commas with 1 and 2 colons
         d = {}
@@ -967,8 +967,5 @@ hello world
         self.assertEqual((6 < 4 if 0 else 2), 2)
 
 
-def test_main():
-    run_unittest(TokenTests, GrammarTests)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

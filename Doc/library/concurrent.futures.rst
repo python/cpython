@@ -67,7 +67,7 @@ Executor Objects
        .. versionchanged:: 3.5
           Added the *chunksize* argument.
 
-    .. method:: shutdown(wait=True, \*, cancel_futures=False)
+    .. method:: shutdown(wait=True, *, cancel_futures=False)
 
        Signal the executor that it should free any resources that it is using
        when the currently pending futures are done executing.  Calls to
@@ -221,7 +221,8 @@ ProcessPoolExecutor
 The :class:`ProcessPoolExecutor` class is an :class:`Executor` subclass that
 uses a pool of processes to execute calls asynchronously.
 :class:`ProcessPoolExecutor` uses the :mod:`multiprocessing` module, which
-allows it to side-step the :term:`Global Interpreter Lock` but also means that
+allows it to side-step the :term:`Global Interpreter Lock
+<global interpreter lock>` but also means that
 only picklable objects can be executed and returned.
 
 The ``__main__`` module must be importable by worker subprocesses. This means
@@ -230,14 +231,14 @@ that :class:`ProcessPoolExecutor` will not work in the interactive interpreter.
 Calling :class:`Executor` or :class:`Future` methods from a callable submitted
 to a :class:`ProcessPoolExecutor` will result in deadlock.
 
-.. class:: ProcessPoolExecutor(max_workers=None, mp_context=None, initializer=None, initargs=())
+.. class:: ProcessPoolExecutor(max_workers=None, mp_context=None, initializer=None, initargs=(), max_tasks_per_child=None)
 
    An :class:`Executor` subclass that executes calls asynchronously using a pool
    of at most *max_workers* processes.  If *max_workers* is ``None`` or not
    given, it will default to the number of processors on the machine.
-   If *max_workers* is lower or equal to ``0``, then a :exc:`ValueError`
+   If *max_workers* is less than or equal to ``0``, then a :exc:`ValueError`
    will be raised.
-   On Windows, *max_workers* must be equal or lower than ``61``. If it is not
+   On Windows, *max_workers* must be less than or equal to ``61``. If it is not
    then :exc:`ValueError` will be raised. If *max_workers* is ``None``, then
    the default chosen will be at most ``61``, even if more processors are
    available.
@@ -249,7 +250,12 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
    each worker process; *initargs* is a tuple of arguments passed to the
    initializer.  Should *initializer* raise an exception, all currently
    pending jobs will raise a :exc:`~concurrent.futures.process.BrokenProcessPool`,
-   as well any attempt to submit more jobs to the pool.
+   as well as any attempt to submit more jobs to the pool.
+
+   *max_tasks_per_child* is an optional argument that specifies the maximum
+   number of tasks a single process can execute before it will exit and be
+   replaced with a fresh worker process. The default *max_tasks_per_child* is
+   ``None`` which means worker processes will live as long as the pool.
 
    .. versionchanged:: 3.3
       When one of the worker processes terminates abruptly, a
@@ -262,6 +268,10 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
       start_method for worker processes created by the pool.
 
       Added the *initializer* and *initargs* arguments.
+
+   .. versionchanged:: 3.11
+      The *max_tasks_per_child* argument was added to allow users to
+      control the lifetime of workers in the pool.
 
 
 .. _processpoolexecutor-example:
@@ -349,7 +359,7 @@ The :class:`Future` class encapsulates the asynchronous execution of a callable.
        If the future is cancelled before completing then :exc:`.CancelledError`
        will be raised.
 
-       If the call raised, this method will raise the same exception.
+       If the call raised an exception, this method will raise the same exception.
 
     .. method:: exception(timeout=None)
 

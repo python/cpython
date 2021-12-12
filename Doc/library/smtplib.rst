@@ -15,7 +15,7 @@
 --------------
 
 The :mod:`smtplib` module defines an SMTP client session object that can be used
-to send mail to any Internet machine with an SMTP or ESMTP listener daemon.  For
+to send mail to any internet machine with an SMTP or ESMTP listener daemon.  For
 details of SMTP and ESMTP operation, consult :rfc:`821` (Simple Mail Transfer
 Protocol) and :rfc:`1869` (SMTP Service Extensions).
 
@@ -32,7 +32,7 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    than a success code, an :exc:`SMTPConnectError` is raised. The optional
    *timeout* parameter specifies a timeout in seconds for blocking operations
    like the connection attempt (if not specified, the global default timeout
-   setting will be used).  If the timeout expires, :exc:`socket.timeout` is
+   setting will be used).  If the timeout expires, :exc:`TimeoutError` is
    raised.  The optional source_address parameter allows binding
    to some specific source address in a machine with multiple network
    interfaces, and/or to some specific source TCP port. It takes a 2-tuple
@@ -115,7 +115,7 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
       If the *timeout* parameter is set to be zero, it will raise a
       :class:`ValueError` to prevent the creation of a non-blocking socket
 
-.. class:: LMTP(host='', port=LMTP_PORT, local_hostname=None,
+.. class:: LMTP(host='', port=LMTP_PORT, local_hostname=None, \
                 source_address=None[, timeout])
 
    The LMTP protocol, which is very similar to ESMTP, is heavily based on the
@@ -279,9 +279,10 @@ An :class:`SMTP` instance has the following methods:
    response for ESMTP option and store them for use by :meth:`has_extn`.
    Also sets several informational attributes: the message returned by
    the server is stored as the :attr:`ehlo_resp` attribute, :attr:`does_esmtp`
-   is set to true or false depending on whether the server supports ESMTP, and
-   :attr:`esmtp_features` will be a dictionary containing the names of the
-   SMTP service extensions this server supports, and their parameters (if any).
+   is set to ``True`` or ``False`` depending on whether the server supports
+   ESMTP, and :attr:`esmtp_features` will be a dictionary containing the names
+   of the SMTP service extensions this server supports, and their parameters
+   (if any).
 
    Unless you wish to use :meth:`has_extn` before sending mail, it should not be
    necessary to call this method explicitly.  It will be implicitly called by

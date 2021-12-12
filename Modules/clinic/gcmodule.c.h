@@ -102,11 +102,6 @@ gc_collect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     generation = _PyLong_AsInt(args[0]);
     if (generation == -1 && PyErr_Occurred()) {
         goto exit;
@@ -151,11 +146,6 @@ gc_set_debug(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int flags;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     flags = _PyLong_AsInt(arg);
     if (flags == -1 && PyErr_Occurred()) {
         goto exit;
@@ -456,4 +446,4 @@ gc_immortalize_heap(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef GC_IMMORTALIZE_HEAP_METHODDEF
     #define GC_IMMORTALIZE_HEAP_METHODDEF
 #endif /* !defined(GC_IMMORTALIZE_HEAP_METHODDEF) */
-/*[clinic end generated code: output=61d235c0b90f92c3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=575e0a5cd2ff2de6 input=a9049054013a1b77]*/

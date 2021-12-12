@@ -14,7 +14,7 @@
 
 --------------
 
-This module defines classes for implementing HTTP servers (Web servers).
+This module defines classes for implementing HTTP servers.
 
 
 .. warning::
@@ -98,7 +98,9 @@ provides three different variants:
 
    .. attribute:: path
 
-      Contains the request path.
+      Contains the request path. If query component of the URL is present,
+      then ``path`` includes the query. Using the terminology of :rfc:`3986`,
+      ``path`` here includes ``hier-part`` and the ``query``.
 
    .. attribute:: request_version
 
@@ -195,7 +197,7 @@ provides three different variants:
       request header it responds back with a ``100 Continue`` followed by ``200
       OK`` headers.
       This method can be overridden to raise an error if the server does not
-      want the client to continue.  For e.g. server can chose to send ``417
+      want the client to continue.  For e.g. server can choose to send ``417
       Expectation Failed`` as a response header and ``return False``.
 
       .. versionadded:: 3.2
@@ -318,8 +320,15 @@ provides three different variants:
 
 .. class:: SimpleHTTPRequestHandler(request, client_address, server, directory=None)
 
-   This class serves files from the current directory and below, directly
+   This class serves files from the directory *directory* and below,
+   or the current directory if *directory* is not provided, directly
    mapping the directory structure to HTTP requests.
+
+   .. versionadded:: 3.7
+      The *directory* parameter.
+
+   .. versionchanged:: 3.9
+      The *directory* parameter accepts a :term:`path-like object`.
 
    A lot of the work, such as parsing the request, is done by the base class
    :class:`BaseHTTPRequestHandler`.  This class implements the :func:`do_GET`
@@ -342,13 +351,6 @@ provides three different variants:
       .. versionchanged:: 3.9
          This dictionary is no longer filled with the default system mappings,
          but only contains overrides.
-
-   .. attribute:: directory
-
-      If not specified, the directory to serve is the current working directory.
-
-      .. versionchanged:: 3.9
-         Accepts a :term:`path-like object`.
 
    The :class:`SimpleHTTPRequestHandler` class defines the following methods:
 

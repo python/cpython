@@ -5,16 +5,22 @@ import subprocess
 import shutil
 from copy import copy
 
-from test.support import (import_module, TESTFN, unlink, check_warnings,
-                          captured_stdout, skip_unless_symlink, change_cwd,
-                          PythonSymlink)
+from test.support import (captured_stdout, PythonSymlink)
+from test.support.import_helper import import_module
+from test.support.os_helper import (TESTFN, unlink, skip_unless_symlink,
+                                    change_cwd)
+from test.support.warnings_helper import check_warnings
 
 import sysconfig
 from sysconfig import (get_paths, get_platform, get_config_vars,
                        get_path, get_path_names, _INSTALL_SCHEMES,
-                       _get_default_scheme, _expand_vars,
-                       get_scheme_names, get_config_var, _main)
+                       get_default_scheme, get_scheme_names, get_config_var,
+                       _expand_vars, _get_preferred_schemes, _main)
 import _osx_support
+
+
+HAS_USER_BASE = sysconfig._HAS_USER_BASE
+
 
 class TestSysConfig(unittest.TestCase):
 
@@ -88,17 +94,50 @@ class TestSysConfig(unittest.TestCase):
 
     def test_get_paths(self):
         scheme = get_paths()
-        default_scheme = _get_default_scheme()
+        default_scheme = get_default_scheme()
         wanted = _expand_vars(default_scheme, None)
         wanted = sorted(wanted.items())
         scheme = sorted(scheme.items())
         self.assertEqual(scheme, wanted)
 
     def test_get_path(self):
-        # XXX make real tests here
+        config_vars = get_config_vars()
+        if os.name == 'nt':
+            # On Windows, we replace the native platlibdir name with the
+            # default so that POSIX schemes resolve correctly
+            config_vars = config_vars | {'platlibdir': 'lib'}
         for scheme in _INSTALL_SCHEMES:
             for name in _INSTALL_SCHEMES[scheme]:
-                res = get_path(name, scheme)
+                expected = _INSTALL_SCHEMES[scheme][name].format(**config_vars)
+                self.assertEqual(
+                    os.path.normpath(get_path(name, scheme)),
+                    os.path.normpath(expected),
+                )
+
+    def test_get_default_scheme(self):
+        self.assertIn(get_default_scheme(), _INSTALL_SCHEMES)
+
+    def test_get_preferred_schemes(self):
+        expected_schemes = {'prefix', 'home', 'user'}
+
+        # Windows.
+        os.name = 'nt'
+        schemes = _get_preferred_schemes()
+        self.assertIsInstance(schemes, dict)
+        self.assertEqual(set(schemes), expected_schemes)
+
+        # Mac and Linux, shared library build.
+        os.name = 'posix'
+        schemes = _get_preferred_schemes()
+        self.assertIsInstance(schemes, dict)
+        self.assertEqual(set(schemes), expected_schemes)
+
+        # Mac, framework build.
+        os.name = 'posix'
+        sys.platform = 'darwin'
+        sys._framework = True
+        self.assertIsInstance(schemes, dict)
+        self.assertEqual(set(schemes), expected_schemes)
 
     def test_get_config_vars(self):
         cvars = get_config_vars()
@@ -228,9 +267,10 @@ class TestSysConfig(unittest.TestCase):
         self.assertTrue(os.path.isfile(config_h), config_h)
 
     def test_get_scheme_names(self):
-        wanted = ('nt', 'nt_user', 'osx_framework_user',
-                  'posix_home', 'posix_prefix', 'posix_user')
-        self.assertEqual(get_scheme_names(), wanted)
+        wanted = ['nt', 'posix_home', 'posix_prefix']
+        if HAS_USER_BASE:
+            wanted.extend(['nt_user', 'osx_framework_user', 'posix_user'])
+        self.assertEqual(get_scheme_names(), tuple(sorted(wanted)))
 
     @skip_unless_symlink
     def test_symlink(self): # Issue 7880
@@ -242,7 +282,8 @@ class TestSysConfig(unittest.TestCase):
         # Issue #8759: make sure the posix scheme for the users
         # is similar to the global posix_prefix one
         base = get_config_var('base')
-        user = get_config_var('userbase')
+        if HAS_USER_BASE:
+            user = get_config_var('userbase')
         # the global scheme mirrors the distinction between prefix and
         # exec-prefix but not the user scheme, so we have to adapt the paths
         # before comparing (issue #9100)
@@ -257,8 +298,19 @@ class TestSysConfig(unittest.TestCase):
                 # before comparing
                 global_path = global_path.replace(sys.base_prefix, sys.prefix)
                 base = base.replace(sys.base_prefix, sys.prefix)
-            user_path = get_path(name, 'posix_user')
-            self.assertEqual(user_path, global_path.replace(base, user, 1))
+            if HAS_USER_BASE:
+                user_path = get_path(name, 'posix_user')
+                expected = global_path.replace(base, user, 1)
+                # bpo-44860: platlib of posix_user doesn't use sys.platlibdir,
+                # whereas posix_prefix does.
+                if name == 'platlib':
+                    # Replace "/lib64/python3.11/site-packages" suffix
+                    # with "/lib/python3.11/site-packages".
+                    py_version_short = sysconfig.get_python_version()
+                    suffix = f'python{py_version_short}/site-packages'
+                    expected = expected.replace(f'/{sys.platlibdir}/{suffix}',
+                                                f'/lib/{suffix}')
+                self.assertEqual(user_path, expected)
 
     def test_main(self):
         # just making sure _main() runs and returns things in the stdout
@@ -358,10 +410,12 @@ class TestSysConfig(unittest.TestCase):
 
     @unittest.skipIf(sysconfig.get_config_var('EXT_SUFFIX') is None,
                      'EXT_SUFFIX required for this test')
-    def test_SO_in_vars(self):
+    def test_EXT_SUFFIX_in_vars(self):
+        import _imp
         vars = sysconfig.get_config_vars()
         self.assertIsNotNone(vars['SO'])
         self.assertEqual(vars['SO'], vars['EXT_SUFFIX'])
+        self.assertEqual(vars['EXT_SUFFIX'], _imp.extension_suffixes()[0])
 
     @unittest.skipUnless(sys.platform == 'linux' and
                          hasattr(sys.implementation, '_multiarch'),

@@ -52,8 +52,18 @@ raised for division by zero and mod by zero.
    returned.
  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
-#include "pycore_dtoa.h"
+#include "pycore_bitutils.h"      // _Py_bit_length()
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_dtoa.h"          // _Py_dg_infinity()
+#include "pycore_long.h"          // _PyLong_GetZero()
+/* For DBL_EPSILON in _math.h */
+#include <float.h>
+/* For _Py_log1p with workarounds for buggy handling of zeros. */
 #include "_math.h"
 
 #include "clinic/mathmodule.c.h"
@@ -843,13 +853,15 @@ math_gcd(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
         Py_SETREF(res, PyNumber_Absolute(res));
         return res;
     }
+
+    PyObject *one = _PyLong_GetOne();  // borrowed ref
     for (i = 1; i < nargs; i++) {
-        x = PyNumber_Index(args[i]);
+        x = _PyNumber_Index(args[i]);
         if (x == NULL) {
             Py_DECREF(res);
             return NULL;
         }
-        if (res == _PyLong_One) {
+        if (res == one) {
             /* Fast path: just check arguments.
                It is okay to use identity comparison here. */
             Py_DECREF(x);
@@ -916,13 +928,15 @@ math_lcm(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
         Py_SETREF(res, PyNumber_Absolute(res));
         return res;
     }
+
+    PyObject *zero = _PyLong_GetZero();  // borrowed ref
     for (i = 1; i < nargs; i++) {
         x = PyNumber_Index(args[i]);
         if (x == NULL) {
             Py_DECREF(res);
             return NULL;
         }
-        if (res == _PyLong_Zero) {
+        if (res == zero) {
             /* Fast path: just check arguments.
                It is okay to use identity comparison here. */
             Py_DECREF(x);
@@ -971,9 +985,13 @@ is_error(double x)
          * On some platforms (Ubuntu/ia64) it seems that errno can be
          * set to ERANGE for subnormal results that do *not* underflow
          * to zero.  So to be safe, we'll ignore ERANGE whenever the
-         * function result is less than one in absolute value.
+         * function result is less than 1.5 in absolute value.
+         *
+         * bpo-46018: Changed to 1.5 to ensure underflows in expm1()
+         * are correctly detected, since the function may underflow
+         * toward -1.0 rather than 0.0.
          */
-        if (fabs(x) < 1.0)
+        if (fabs(x) < 1.5)
             result = 0;
         else
             PyErr_SetString(PyExc_OverflowError,
@@ -1155,14 +1173,14 @@ FUNC1(acos, acos, 0,
       "acos($module, x, /)\n--\n\n"
       "Return the arc cosine (measured in radians) of x.\n\n"
       "The result is between 0 and pi.")
-FUNC1(acosh, m_acosh, 0,
+FUNC1(acosh, acosh, 0,
       "acosh($module, x, /)\n--\n\n"
       "Return the inverse hyperbolic cosine of x.")
 FUNC1(asin, asin, 0,
       "asin($module, x, /)\n--\n\n"
       "Return the arc sine (measured in radians) of x.\n\n"
       "The result is between -pi/2 and pi/2.")
-FUNC1(asinh, m_asinh, 0,
+FUNC1(asinh, asinh, 0,
       "asinh($module, x, /)\n--\n\n"
       "Return the inverse hyperbolic sine of x.")
 FUNC1(atan, atan, 0,
@@ -1173,9 +1191,12 @@ FUNC2(atan2, m_atan2,
       "atan2($module, y, x, /)\n--\n\n"
       "Return the arc tangent (measured in radians) of y/x.\n\n"
       "Unlike atan(y/x), the signs of both x and y are considered.")
-FUNC1(atanh, m_atanh, 0,
+FUNC1(atanh, atanh, 0,
       "atanh($module, x, /)\n--\n\n"
       "Return the inverse hyperbolic tangent of x.")
+FUNC1(cbrt, cbrt, 0,
+      "cbrt($module, x, /)\n--\n\n"
+      "Return the cube root of x.")
 
 /*[clinic input]
 math.ceil
@@ -1197,7 +1218,7 @@ math_ceil(PyObject *module, PyObject *number)
     if (!PyFloat_CheckExact(number)) {
         PyObject *method = _PyObject_LookupSpecial(number, &PyId___ceil__);
         if (method != NULL) {
-            PyObject *result = _PyObject_CallNoArg(method);
+            PyObject *result = _PyObject_CallNoArgs(method);
             Py_DECREF(method);
             return result;
         }
@@ -1231,7 +1252,10 @@ FUNC1A(erfc, m_erfc,
 FUNC1(exp, exp, 1,
       "exp($module, x, /)\n--\n\n"
       "Return e raised to the power of x.")
-FUNC1(expm1, m_expm1, 1,
+FUNC1(exp2, exp2, 1,
+      "exp2($module, x, /)\n--\n\n"
+      "Return 2 raised to the power of x.")
+FUNC1(expm1, expm1, 1,
       "expm1($module, x, /)\n--\n\n"
       "Return exp(x)-1.\n\n"
       "This function avoids the loss of precision involved in the direct "
@@ -1255,22 +1279,27 @@ static PyObject *
 math_floor(PyObject *module, PyObject *number)
 /*[clinic end generated code: output=c6a65c4884884b8a input=63af6b5d7ebcc3d6]*/
 {
+    double x;
+
     _Py_IDENTIFIER(__floor__);
 
-    if (!PyFloat_CheckExact(number)) {
+    if (PyFloat_CheckExact(number)) {
+        x = PyFloat_AS_DOUBLE(number);
+    }
+    else
+    {
         PyObject *method = _PyObject_LookupSpecial(number, &PyId___floor__);
         if (method != NULL) {
-            PyObject *result = _PyObject_CallNoArg(method);
+            PyObject *result = _PyObject_CallNoArgs(method);
             Py_DECREF(method);
             return result;
         }
         if (PyErr_Occurred())
             return NULL;
+        x = PyFloat_AsDouble(number);
+        if (x == -1.0 && PyErr_Occurred())
+            return NULL;
     }
-    double x = PyFloat_AsDouble(number);
-    if (x == -1.0 && PyErr_Occurred())
-        return NULL;
-
     return PyLong_FromDouble(floor(x));
 }
 
@@ -1723,7 +1752,7 @@ math_isqrt(PyObject *module, PyObject *n)
     uint64_t m, u;
     PyObject *a = NULL, *b;
 
-    n = PyNumber_Index(n);
+    n = _PyNumber_Index(n);
     if (n == NULL) {
         return NULL;
     }
@@ -1831,7 +1860,7 @@ math_isqrt(PyObject *module, PyObject *n)
     }
 
     if (a_too_large) {
-        Py_SETREF(a, PyNumber_Subtract(a, _PyLong_One));
+        Py_SETREF(a, PyNumber_Subtract(a, _PyLong_GetOne()));
     }
     Py_DECREF(n);
     return a;
@@ -1868,7 +1897,7 @@ math_isqrt(PyObject *module, PyObject *n)
  *        (1) *
  *        (1) *
  *        (1 * 3 * 5) *
- *        (1 * 3 * 5 * 7 * 9)
+ *        (1 * 3 * 5 * 7 * 9) *
  *        (1 * 3 * 5 * 7 * 9 * 11 * 13 * 15 * 17 * 19)
  *
  * Here i goes from large to small: the first term corresponds to i=4 (any
@@ -2047,37 +2076,9 @@ math_factorial(PyObject *module, PyObject *arg)
 {
     long x, two_valuation;
     int overflow;
-    PyObject *result, *odd_part, *pyint_form;
+    PyObject *result, *odd_part;
 
-    if (PyFloat_Check(arg)) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                         "Using factorial() with floats is deprecated",
-                         1) < 0)
-        {
-            return NULL;
-        }
-        PyObject *lx;
-        double dx = PyFloat_AS_DOUBLE((PyFloatObject *)arg);
-        if (!(Py_IS_FINITE(dx) && dx == floor(dx))) {
-            PyErr_SetString(PyExc_ValueError,
-                            "factorial() only accepts integral values");
-            return NULL;
-        }
-        lx = PyLong_FromDouble(dx);
-        if (lx == NULL)
-            return NULL;
-        x = PyLong_AsLongAndOverflow(lx, &overflow);
-        Py_DECREF(lx);
-    }
-    else {
-        pyint_form = PyNumber_Index(arg);
-        if (pyint_form == NULL) {
-            return NULL;
-        }
-        x = PyLong_AsLongAndOverflow(pyint_form, &overflow);
-        Py_DECREF(pyint_form);
-    }
-
+    x = PyLong_AsLongAndOverflow(arg, &overflow);
     if (x == -1 && PyErr_Occurred()) {
         return NULL;
     }
@@ -2144,7 +2145,7 @@ math_trunc(PyObject *module, PyObject *x)
                          Py_TYPE(x)->tp_name);
         return NULL;
     }
-    result = _PyObject_CallNoArg(trunc);
+    result = _PyObject_CallNoArgs(trunc);
     Py_DECREF(trunc);
     return result;
 }
@@ -2426,40 +2427,108 @@ math_fmod_impl(PyObject *module, double x, double y)
 }
 
 /*
-Given an *n* length *vec* of values and a value *max*, compute:
+Given a *vec* of values, compute the vector norm:
 
-    max * sqrt(sum((x / max) ** 2 for x in vec))
+    sqrt(sum(x ** 2 for x in vec))
 
-The value of the *max* variable must be non-negative and
-equal to the absolute value of the largest magnitude
-entry in the vector.  If n==0, then *max* should be 0.0.
+The *max* variable should be equal to the largest fabs(x).
+The *n* variable is the length of *vec*.
+If n==0, then *max* should be 0.0.
 If an infinity is present in the vec, *max* should be INF.
-
 The *found_nan* variable indicates whether some member of
 the *vec* is a NaN.
 
-To improve accuracy and to increase the number of cases where
-vector_norm() is commutative, we use a variant of Neumaier
-summation specialized to exploit that we always know that
-|csum| >= |x|.
+To avoid overflow/underflow and to achieve high accuracy giving results
+that are almost always correctly rounded, four techniques are used:
 
-The *csum* variable tracks the cumulative sum and *frac* tracks
-the cumulative fractional errors at each step.  Since this
-variant assumes that |csum| >= |x| at each step, we establish
-the precondition by starting the accumulation from 1.0 which
-represents the largest possible value of (x/max)**2.
+* lossless scaling using a power-of-two scaling factor
+* accurate squaring using Veltkamp-Dekker splitting [1]
+* compensated summation using a variant of the Neumaier algorithm [2]
+* differential correction of the square root [3]
 
-After the loop is finished, the initial 1.0 is subtracted out
-for a net zero effect on the final sum.  Since *csum* will be
-greater than 1.0, the subtraction of 1.0 will not cause
-fractional digits to be dropped from *csum*.
+The usual presentation of the Neumaier summation algorithm has an
+expensive branch depending on which operand has the larger
+magnitude.  We avoid this cost by arranging the calculation so that
+fabs(csum) is always as large as fabs(x).
+
+To establish the invariant, *csum* is initialized to 1.0 which is
+always larger than x**2 after scaling or after division by *max*.
+After the loop is finished, the initial 1.0 is subtracted out for a
+net zero effect on the final sum.  Since *csum* will be greater than
+1.0, the subtraction of 1.0 will not cause fractional digits to be
+dropped from *csum*.
+
+To get the full benefit from compensated summation, the largest
+addend should be in the range: 0.5 <= |x| <= 1.0.  Accordingly,
+scaling or division by *max* should not be skipped even if not
+otherwise needed to prevent overflow or loss of precision.
+
+The assertion that hi*hi <= 1.0 is a bit subtle.  Each vector element
+gets scaled to a magnitude below 1.0.  The Veltkamp-Dekker splitting
+algorithm gives a *hi* value that is correctly rounded to half
+precision.  When a value at or below 1.0 is correctly rounded, it
+never goes above 1.0.  And when values at or below 1.0 are squared,
+they remain at or below 1.0, thus preserving the summation invariant.
+
+Another interesting assertion is that csum+lo*lo == csum. In the loop,
+each scaled vector element has a magnitude less than 1.0.  After the
+Veltkamp split, *lo* has a maximum value of 2**-27.  So the maximum
+value of *lo* squared is 2**-54.  The value of ulp(1.0)/2.0 is 2**-53.
+Given that csum >= 1.0, we have:
+    lo**2 <= 2**-54 < 2**-53 == 1/2*ulp(1.0) <= ulp(csum)/2
+Since lo**2 is less than 1/2 ulp(csum), we have csum+lo*lo == csum.
+
+To minimize loss of information during the accumulation of fractional
+values, each term has a separate accumulator.  This also breaks up
+sequential dependencies in the inner loop so the CPU can maximize
+floating point throughput. [4]  On a 2.6 GHz Haswell, adding one
+dimension has an incremental cost of only 5ns -- for example when
+moving from hypot(x,y) to hypot(x,y,z).
+
+The square root differential correction is needed because a
+correctly rounded square root of a correctly rounded sum of
+squares can still be off by as much as one ulp.
+
+The differential correction starts with a value *x* that is
+the difference between the square of *h*, the possibly inaccurately
+rounded square root, and the accurately computed sum of squares.
+The correction is the first order term of the Maclaurin series
+expansion of sqrt(h**2 + x) == h + x/(2*h) + O(x**2). [5]
+
+Essentially, this differential correction is equivalent to one
+refinement step in Newton's divide-and-average square root
+algorithm, effectively doubling the number of accurate bits.
+This technique is used in Dekker's SQRT2 algorithm and again in
+Borges' ALGORITHM 4 and 5.
+
+Without proof for all cases, hypot() cannot claim to be always
+correctly rounded.  However for n <= 1000, prior to the final addition
+that rounds the overall result, the internal accuracy of "h" together
+with its correction of "x / (2.0 * h)" is at least 100 bits. [6]
+Also, hypot() was tested against a Decimal implementation with
+prec=300.  After 100 million trials, no incorrectly rounded examples
+were found.  In addition, perfect commutativity (all permutations are
+exactly equal) was verified for 1 billion random inputs with n=5. [7]
+
+References:
+
+1. Veltkamp-Dekker splitting: http://csclub.uwaterloo.ca/~pbarfuss/dekker1971.pdf
+2. Compensated summation:  http://www.ti3.tu-harburg.de/paper/rump/Ru08b.pdf
+3. Square root differential correction:  https://arxiv.org/pdf/1904.09481.pdf
+4. Data dependency graph:  https://bugs.python.org/file49439/hypot.png
+5. https://www.wolframalpha.com/input/?i=Maclaurin+series+sqrt%28h**2+%2B+x%29+at+x%3D0
+6. Analysis of internal accuracy:  https://bugs.python.org/file49484/best_frac.py
+7. Commutativity test:  https://bugs.python.org/file49448/test_hypot_commutativity.py
 
 */
 
 static inline double
 vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 {
-    double x, csum = 1.0, oldcsum, frac = 0.0;
+    const double T27 = 134217729.0;     /* ldexp(1.0, 27) + 1.0) */
+    double x, scale, oldcsum, csum = 1.0, frac1 = 0.0, frac2 = 0.0, frac3 = 0.0;
+    double t, hi, lo, h;
+    int max_e;
     Py_ssize_t i;
 
     if (Py_IS_INFINITY(max)) {
@@ -2471,17 +2540,83 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
     if (max == 0.0 || n <= 1) {
         return max;
     }
+    frexp(max, &max_e);
+    if (max_e >= -1023) {
+        scale = ldexp(1.0, -max_e);
+        assert(max * scale >= 0.5);
+        assert(max * scale < 1.0);
+        for (i=0 ; i < n ; i++) {
+            x = vec[i];
+            assert(Py_IS_FINITE(x) && fabs(x) <= max);
+
+            x *= scale;
+            assert(fabs(x) < 1.0);
+
+            t = x * T27;
+            hi = t - (t - x);
+            lo = x - hi;
+            assert(hi + lo == x);
+
+            x = hi * hi;
+            assert(x <= 1.0);
+            assert(fabs(csum) >= fabs(x));
+            oldcsum = csum;
+            csum += x;
+            frac1 += (oldcsum - csum) + x;
+
+            x = 2.0 * hi * lo;
+            assert(fabs(csum) >= fabs(x));
+            oldcsum = csum;
+            csum += x;
+            frac2 += (oldcsum - csum) + x;
+
+            assert(csum + lo * lo == csum);
+            frac3 += lo * lo;
+        }
+        h = sqrt(csum - 1.0 + (frac1 + frac2 + frac3));
+
+        x = h;
+        t = x * T27;
+        hi = t - (t - x);
+        lo = x - hi;
+        assert (hi + lo == x);
+
+        x = -hi * hi;
+        assert(fabs(csum) >= fabs(x));
+        oldcsum = csum;
+        csum += x;
+        frac1 += (oldcsum - csum) + x;
+
+        x = -2.0 * hi * lo;
+        assert(fabs(csum) >= fabs(x));
+        oldcsum = csum;
+        csum += x;
+        frac2 += (oldcsum - csum) + x;
+
+        x = -lo * lo;
+        assert(fabs(csum) >= fabs(x));
+        oldcsum = csum;
+        csum += x;
+        frac3 += (oldcsum - csum) + x;
+
+        x = csum - 1.0 + (frac1 + frac2 + frac3);
+        return (h + x / (2.0 * h)) / scale;
+    }
+    /* When max_e < -1023, ldexp(1.0, -max_e) overflows.
+       So instead of multiplying by a scale, we just divide by *max*.
+    */
     for (i=0 ; i < n ; i++) {
         x = vec[i];
         assert(Py_IS_FINITE(x) && fabs(x) <= max);
         x /= max;
         x = x*x;
+        assert(x <= 1.0);
+        assert(fabs(csum) >= fabs(x));
         oldcsum = csum;
         csum += x;
-        assert(csum >= x);
-        frac += (oldcsum - csum) + x;
+        frac1 += (oldcsum - csum) + x;
     }
-    return max * sqrt(csum - 1.0 + frac);
+    return max * sqrt(csum - 1.0 + frac1);
 }
 
 #define NUM_STACK_ELEMS 16
@@ -2690,8 +2825,6 @@ math_pow_impl(PyObject *module, double x, double y)
                 r = y;
             else if (y < 0. && fabs(x) < 1.0) {
                 r = -y; /* result is +inf */
-                if (x == 0.) /* 0**-inf: divide-by-zero */
-                    errno = EDOM;
             }
             else
                 r = 0.;
@@ -2964,14 +3097,9 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
     }
 
     if (result == NULL) {
-        result = PyLong_FromLong(1);
-        if (result == NULL) {
-            Py_DECREF(iter);
-            return NULL;
-        }
-    } else {
-        Py_INCREF(result);
+        result = _PyLong_GetOne();
     }
+    Py_INCREF(result);
 #ifndef SLOW_PROD
     /* Fast paths for integers keeping temporary products in C.
      * Assumes all inputs are the same type.
@@ -2987,7 +3115,7 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
         }
         /* Loop over all the items in the iterable until we finish, we overflow
          * or we found a non integer element */
-        while(result == NULL) {
+        while (result == NULL) {
             item = PyIter_Next(iter);
             if (item == NULL) {
                 Py_DECREF(iter);
@@ -3097,6 +3225,138 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
 }
 
 
+/* Number of permutations and combinations.
+ * P(n, k) = n! / (n-k)!
+ * C(n, k) = P(n, k) / k!
+ */
+
+/* Calculate C(n, k) for n in the 63-bit range. */
+static PyObject *
+perm_comb_small(unsigned long long n, unsigned long long k, int iscomb)
+{
+    /* long long is at least 64 bit */
+    static const unsigned long long fast_comb_limits[] = {
+        0, ULLONG_MAX, 4294967296ULL, 3329022, 102570, 13467, 3612, 1449,  // 0-7
+        746, 453, 308, 227, 178, 147, 125, 110,  // 8-15
+        99, 90, 84, 79, 75, 72, 69, 68,  // 16-23
+        66, 65, 64, 63, 63, 62, 62, 62,  // 24-31
+    };
+    static const unsigned long long fast_perm_limits[] = {
+        0, ULLONG_MAX, 4294967296ULL, 2642246, 65537, 7133, 1627, 568,  // 0-7
+        259, 142, 88, 61, 45, 36, 30,  // 8-14
+    };
+
+    if (k == 0) {
+        return PyLong_FromLong(1);
+    }
+
+    /* For small enough n and k the result fits in the 64-bit range and can
+     * be calculated without allocating intermediate PyLong objects. */
+    if (iscomb
+        ? (k < Py_ARRAY_LENGTH(fast_comb_limits)
+           && n <= fast_comb_limits[k])
+        : (k < Py_ARRAY_LENGTH(fast_perm_limits)
+            && n <= fast_perm_limits[k]))
+    {
+        unsigned long long result = n;
+        if (iscomb) {
+            for (unsigned long long i = 1; i < k;) {
+                result *= --n;
+                result /= ++i;
+            }
+        }
+        else {
+            for (unsigned long long i = 1; i < k;) {
+                result *= --n;
+                ++i;
+            }
+        }
+        return PyLong_FromUnsignedLongLong(result);
+    }
+
+    /* For larger n use recursive formula. */
+    /* C(n, k) = C(n, j) * C(n-j, k-j) // C(k, j) */
+    unsigned long long j = k / 2;
+    PyObject *a, *b;
+    a = perm_comb_small(n, j, iscomb);
+    if (a == NULL) {
+        return NULL;
+    }
+    b = perm_comb_small(n - j, k - j, iscomb);
+    if (b == NULL) {
+        goto error;
+    }
+    Py_SETREF(a, PyNumber_Multiply(a, b));
+    Py_DECREF(b);
+    if (iscomb && a != NULL) {
+        b = perm_comb_small(k, j, 1);
+        if (b == NULL) {
+            goto error;
+        }
+        Py_SETREF(a, PyNumber_FloorDivide(a, b));
+        Py_DECREF(b);
+    }
+    return a;
+
+error:
+    Py_DECREF(a);
+    return NULL;
+}
+
+/* Calculate P(n, k) or C(n, k) using recursive formulas.
+ * It is more efficient than sequential multiplication thanks to
+ * Karatsuba multiplication.
+ */
+static PyObject *
+perm_comb(PyObject *n, unsigned long long k, int iscomb)
+{
+    if (k == 0) {
+        return PyLong_FromLong(1);
+    }
+    if (k == 1) {
+        Py_INCREF(n);
+        return n;
+    }
+
+    /* P(n, k) = P(n, j) * P(n-j, k-j) */
+    /* C(n, k) = C(n, j) * C(n-j, k-j) // C(k, j) */
+    unsigned long long j = k / 2;
+    PyObject *a, *b;
+    a = perm_comb(n, j, iscomb);
+    if (a == NULL) {
+        return NULL;
+    }
+    PyObject *t = PyLong_FromUnsignedLongLong(j);
+    if (t == NULL) {
+        goto error;
+    }
+    n = PyNumber_Subtract(n, t);
+    Py_DECREF(t);
+    if (n == NULL) {
+        goto error;
+    }
+    b = perm_comb(n, k - j, iscomb);
+    Py_DECREF(n);
+    if (b == NULL) {
+        goto error;
+    }
+    Py_SETREF(a, PyNumber_Multiply(a, b));
+    Py_DECREF(b);
+    if (iscomb && a != NULL) {
+        b = perm_comb_small(k, j, 1);
+        if (b == NULL) {
+            goto error;
+        }
+        Py_SETREF(a, PyNumber_FloorDivide(a, b));
+        Py_DECREF(b);
+    }
+    return a;
+
+error:
+    Py_DECREF(a);
+    return NULL;
+}
+
 /*[clinic input]
 math.perm
 
@@ -3120,9 +3380,9 @@ static PyObject *
 math_perm_impl(PyObject *module, PyObject *n, PyObject *k)
 /*[clinic end generated code: output=e021a25469653e23 input=5311c5a00f359b53]*/
 {
-    PyObject *result = NULL, *factor = NULL;
+    PyObject *result = NULL;
     int overflow, cmp;
-    long long i, factors;
+    long long ki, ni;
 
     if (k == Py_None) {
         return math_factorial(module, n);
@@ -3131,24 +3391,12 @@ math_perm_impl(PyObject *module, PyObject *n, PyObject *k)
     if (n == NULL) {
         return NULL;
     }
-    if (!PyLong_CheckExact(n)) {
-        Py_SETREF(n, _PyLong_Copy((PyLongObject *)n));
-        if (n == NULL) {
-            return NULL;
-        }
-    }
     k = PyNumber_Index(k);
     if (k == NULL) {
         Py_DECREF(n);
         return NULL;
     }
-    if (!PyLong_CheckExact(k)) {
-        Py_SETREF(k, _PyLong_Copy((PyLongObject *)k));
-        if (k == NULL) {
-            Py_DECREF(n);
-            return NULL;
-        }
-    }
+    assert(PyLong_CheckExact(n) && PyLong_CheckExact(k));
 
     if (Py_SIZE(n) < 0) {
         PyErr_SetString(PyExc_ValueError,
@@ -3170,42 +3418,26 @@ math_perm_impl(PyObject *module, PyObject *n, PyObject *k)
         goto error;
     }
 
-    factors = PyLong_AsLongLongAndOverflow(k, &overflow);
+    ki = PyLong_AsLongLongAndOverflow(k, &overflow);
+    assert(overflow >= 0 && !PyErr_Occurred());
     if (overflow > 0) {
         PyErr_Format(PyExc_OverflowError,
                      "k must not exceed %lld",
                      LLONG_MAX);
         goto error;
     }
-    else if (factors == -1) {
-        /* k is nonnegative, so a return value of -1 can only indicate error */
-        goto error;
-    }
+    assert(ki >= 0);
 
-    if (factors == 0) {
-        result = PyLong_FromLong(1);
-        goto done;
+    ni = PyLong_AsLongLongAndOverflow(n, &overflow);
+    assert(overflow >= 0 && !PyErr_Occurred());
+    if (!overflow && ki > 1) {
+        assert(ni >= 0);
+        result = perm_comb_small((unsigned long long)ni,
+                                 (unsigned long long)ki, 0);
     }
-
-    result = n;
-    Py_INCREF(result);
-    if (factors == 1) {
-        goto done;
+    else {
+        result = perm_comb(n, (unsigned long long)ki, 0);
     }
-
-    factor = n;
-    Py_INCREF(factor);
-    for (i = 1; i < factors; ++i) {
-        Py_SETREF(factor, PyNumber_Subtract(factor, _PyLong_One));
-        if (factor == NULL) {
-            goto error;
-        }
-        Py_SETREF(result, PyNumber_Multiply(result, factor));
-        if (result == NULL) {
-            goto error;
-        }
-    }
-    Py_DECREF(factor);
 
 done:
     Py_DECREF(n);
@@ -3213,13 +3445,10 @@ done:
     return result;
 
 error:
-    Py_XDECREF(factor);
-    Py_XDECREF(result);
     Py_DECREF(n);
     Py_DECREF(k);
     return NULL;
 }
-
 
 /*[clinic input]
 math.comb
@@ -3246,32 +3475,20 @@ static PyObject *
 math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
 /*[clinic end generated code: output=bd2cec8d854f3493 input=9a05315af2518709]*/
 {
-    PyObject *result = NULL, *factor = NULL, *temp;
+    PyObject *result = NULL, *temp;
     int overflow, cmp;
-    long long i, factors;
+    long long ki, ni;
 
     n = PyNumber_Index(n);
     if (n == NULL) {
         return NULL;
-    }
-    if (!PyLong_CheckExact(n)) {
-        Py_SETREF(n, _PyLong_Copy((PyLongObject *)n));
-        if (n == NULL) {
-            return NULL;
-        }
     }
     k = PyNumber_Index(k);
     if (k == NULL) {
         Py_DECREF(n);
         return NULL;
     }
-    if (!PyLong_CheckExact(k)) {
-        Py_SETREF(k, _PyLong_Copy((PyLongObject *)k));
-        if (k == NULL) {
-            Py_DECREF(n);
-            return NULL;
-        }
-    }
+    assert(PyLong_CheckExact(n) && PyLong_CheckExact(k));
 
     if (Py_SIZE(n) < 0) {
         PyErr_SetString(PyExc_ValueError,
@@ -3284,73 +3501,59 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
         goto error;
     }
 
-    /* k = min(k, n - k) */
-    temp = PyNumber_Subtract(n, k);
-    if (temp == NULL) {
-        goto error;
-    }
-    if (Py_SIZE(temp) < 0) {
-        Py_DECREF(temp);
-        result = PyLong_FromLong(0);
-        goto done;
-    }
-    cmp = PyObject_RichCompareBool(temp, k, Py_LT);
-    if (cmp > 0) {
-        Py_SETREF(k, temp);
+    ni = PyLong_AsLongLongAndOverflow(n, &overflow);
+    assert(overflow >= 0 && !PyErr_Occurred());
+    if (!overflow) {
+        assert(ni >= 0);
+        ki = PyLong_AsLongLongAndOverflow(k, &overflow);
+        assert(overflow >= 0 && !PyErr_Occurred());
+        if (overflow || ki > ni) {
+            result = PyLong_FromLong(0);
+            goto done;
+        }
+        assert(ki >= 0);
+        ki = Py_MIN(ki, ni - ki);
+        if (ki > 1) {
+            result = perm_comb_small((unsigned long long)ni,
+                                     (unsigned long long)ki, 1);
+            goto done;
+        }
+        /* For k == 1 just return the original n in perm_comb(). */
     }
     else {
-        Py_DECREF(temp);
-        if (cmp < 0) {
-            goto error;
-        }
-    }
-
-    factors = PyLong_AsLongLongAndOverflow(k, &overflow);
-    if (overflow > 0) {
-        PyErr_Format(PyExc_OverflowError,
-                     "min(n - k, k) must not exceed %lld",
-                     LLONG_MAX);
-        goto error;
-    }
-    if (factors == -1) {
-        /* k is nonnegative, so a return value of -1 can only indicate error */
-        goto error;
-    }
-
-    if (factors == 0) {
-        result = PyLong_FromLong(1);
-        goto done;
-    }
-
-    result = n;
-    Py_INCREF(result);
-    if (factors == 1) {
-        goto done;
-    }
-
-    factor = n;
-    Py_INCREF(factor);
-    for (i = 1; i < factors; ++i) {
-        Py_SETREF(factor, PyNumber_Subtract(factor, _PyLong_One));
-        if (factor == NULL) {
-            goto error;
-        }
-        Py_SETREF(result, PyNumber_Multiply(result, factor));
-        if (result == NULL) {
-            goto error;
-        }
-
-        temp = PyLong_FromUnsignedLongLong((unsigned long long)i + 1);
+        /* k = min(k, n - k) */
+        temp = PyNumber_Subtract(n, k);
         if (temp == NULL) {
             goto error;
         }
-        Py_SETREF(result, PyNumber_FloorDivide(result, temp));
-        Py_DECREF(temp);
-        if (result == NULL) {
+        if (Py_SIZE(temp) < 0) {
+            Py_DECREF(temp);
+            result = PyLong_FromLong(0);
+            goto done;
+        }
+        cmp = PyObject_RichCompareBool(temp, k, Py_LT);
+        if (cmp > 0) {
+            Py_SETREF(k, temp);
+        }
+        else {
+            Py_DECREF(temp);
+            if (cmp < 0) {
+                goto error;
+            }
+        }
+
+        ki = PyLong_AsLongLongAndOverflow(k, &overflow);
+        assert(overflow >= 0 && !PyErr_Occurred());
+        if (overflow) {
+            PyErr_Format(PyExc_OverflowError,
+                         "min(n - k, k) must not exceed %lld",
+                         LLONG_MAX);
             goto error;
         }
+        assert(ki >= 0);
     }
-    Py_DECREF(factor);
+
+    result = perm_comb(n, (unsigned long long)ki, 1);
 
 done:
     Py_DECREF(n);
@@ -3358,8 +3561,6 @@ done:
     return result;
 
 error:
-    Py_XDECREF(factor);
-    Py_XDECREF(result);
     Py_DECREF(n);
     Py_DECREF(k);
     return NULL;
@@ -3384,6 +3585,12 @@ math_nextafter_impl(PyObject *module, double x, double y)
     if (x == y) {
         /* On AIX 7.1, libm nextafter(-0.0, +0.0) returns -0.0.
            Bug fixed in bos.adt.libm 7.2.2.0 by APAR IV95512. */
+        return PyFloat_FromDouble(y);
+    }
+    if (Py_IS_NAN(x)) {
+        return PyFloat_FromDouble(x);
+    }
+    if (Py_IS_NAN(y)) {
         return PyFloat_FromDouble(y);
     }
 #endif
@@ -3453,6 +3660,7 @@ static PyMethodDef math_methods[] = {
     {"atan",            math_atan,      METH_O,         math_atan_doc},
     {"atan2",           (PyCFunction)(void(*)(void))math_atan2,     METH_FASTCALL,  math_atan2_doc},
     {"atanh",           math_atanh,     METH_O,         math_atanh_doc},
+    {"cbrt",            math_cbrt,      METH_O,         math_cbrt_doc},
     MATH_CEIL_METHODDEF
     {"copysign",        (PyCFunction)(void(*)(void))math_copysign,  METH_FASTCALL,  math_copysign_doc},
     {"cos",             math_cos,       METH_O,         math_cos_doc},
@@ -3462,6 +3670,7 @@ static PyMethodDef math_methods[] = {
     {"erf",             math_erf,       METH_O,         math_erf_doc},
     {"erfc",            math_erfc,      METH_O,         math_erfc_doc},
     {"exp",             math_exp,       METH_O,         math_exp_doc},
+    {"exp2",            math_exp2,      METH_O,         math_exp2_doc},
     {"expm1",           math_expm1,     METH_O,         math_expm1_doc},
     {"fabs",            math_fabs,      METH_O,         math_fabs_doc},
     MATH_FACTORIAL_METHODDEF

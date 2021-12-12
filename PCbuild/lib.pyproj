@@ -53,7 +53,6 @@
     <Compile Include="asyncore.py" />
     <Compile Include="base64.py" />
     <Compile Include="bdb.py" />
-    <Compile Include="binhex.py" />
     <Compile Include="bisect.py" />
     <Compile Include="bz2.py" />
     <Compile Include="calendar.py" />
@@ -160,9 +159,7 @@
     <Compile Include="distutils\cmd.py" />
     <Compile Include="distutils\command\bdist.py" />
     <Compile Include="distutils\command\bdist_dumb.py" />
-    <Compile Include="distutils\command\bdist_msi.py" />
     <Compile Include="distutils\command\bdist_rpm.py" />
-    <Compile Include="distutils\command\bdist_wininst.py" />
     <Compile Include="distutils\command\build.py" />
     <Compile Include="distutils\command\build_clib.py" />
     <Compile Include="distutils\command\build_ext.py" />
@@ -202,9 +199,7 @@
     <Compile Include="distutils\tests\test_archive_util.py" />
     <Compile Include="distutils\tests\test_bdist.py" />
     <Compile Include="distutils\tests\test_bdist_dumb.py" />
-    <Compile Include="distutils\tests\test_bdist_msi.py" />
     <Compile Include="distutils\tests\test_bdist_rpm.py" />
-    <Compile Include="distutils\tests\test_bdist_wininst.py" />
     <Compile Include="distutils\tests\test_build.py" />
     <Compile Include="distutils\tests\test_build_clib.py" />
     <Compile Include="distutils\tests\test_build_ext.py" />
@@ -419,6 +414,7 @@
     <Compile Include="getpass.py" />
     <Compile Include="gettext.py" />
     <Compile Include="glob.py" />
+    <Compile Include="graphlib.py" />
     <Compile Include="gzip.py" />
     <Compile Include="hashlib.py" />
     <Compile Include="heapq.py" />
@@ -895,7 +891,6 @@
     <Compile Include="test\test_bigaddrspace.py" />
     <Compile Include="test\test_bigmem.py" />
     <Compile Include="test\test_binascii.py" />
-    <Compile Include="test\test_binhex.py" />
     <Compile Include="test\test_binop.py" />
     <Compile Include="test\test_bisect.py" />
     <Compile Include="test\test_bool.py" />
@@ -1184,7 +1179,6 @@
     <Compile Include="test\test_mmap.py" />
     <Compile Include="test\test_module.py" />
     <Compile Include="test\test_modulefinder.py" />
-    <Compile Include="test\test_msilib.py" />
     <Compile Include="test\test_multibytecodec.py" />
     <Compile Include="test\test_multiprocessing_fork.py" />
     <Compile Include="test\test_multiprocessing_forkserver.py" />
@@ -1195,6 +1189,7 @@
     <Compile Include="test\test_nntplib.py" />
     <Compile Include="test\test_ntpath.py" />
     <Compile Include="test\test_numeric_tower.py" />
+    <Compile Include="test\test_opcache.py" />
     <Compile Include="test\test_opcodes.py" />
     <Compile Include="test\test_openpty.py" />
     <Compile Include="test\test_operator.py" />
@@ -1207,6 +1202,12 @@
     <Compile Include="test\test_pathlib.py" />
     <Compile Include="test\test_pdb.py" />
     <Compile Include="test\test_peepholer.py" />
+    <Compile Include="test\test_peg_generator\__init__.py" />
+    <Compile Include="test\test_peg_generator\__main__.py" />
+    <Compile Include="test\test_peg_generator\ast_dump.py" />
+    <Compile Include="test\test_peg_generator\test_c_parser.py" />
+    <Compile Include="test\test_peg_generator\test_first_sets.py" />
+    <Compile Include="test\test_peg_generator\test_pegen.py" />
     <Compile Include="test\test_pickle.py" />
     <Compile Include="test\test_pickletools.py" />
     <Compile Include="test\test_pipes.py" />
@@ -1271,7 +1272,17 @@
     <Compile Include="test\test_sort.py" />
     <Compile Include="test\test_source_encoding.py" />
     <Compile Include="test\test_spwd.py" />
-    <Compile Include="test\test_sqlite.py" />
+    <Compile Include="test\test_sqlite3" />
+    <Compile Include="test\test_sqlite3\__init__.py" />
+    <Compile Include="test\test_sqlite3\test_backup.py" />
+    <Compile Include="test\test_sqlite3\test_dbapi.py" />
+    <Compile Include="test\test_sqlite3\test_dump.py" />
+    <Compile Include="test\test_sqlite3\test_factory.py" />
+    <Compile Include="test\test_sqlite3\test_hooks.py" />
+    <Compile Include="test\test_sqlite3\test_regression.py" />
+    <Compile Include="test\test_sqlite3\test_transactions.py" />
+    <Compile Include="test\test_sqlite3\test_types.py" />
+    <Compile Include="test\test_sqlite3\test_userfunctions.py" />
     <Compile Include="test\test_ssl.py" />
     <Compile Include="test\test_startfile.py" />
     <Compile Include="test\test_stat.py" />
@@ -1390,6 +1401,10 @@
     <Compile Include="test\test_zipimport.py" />
     <Compile Include="test\test_zipimport_support.py" />
     <Compile Include="test\test_zlib.py" />
+    <Compile Include="test\test_zoneinfo\__init__.py" />
+    <Compile Include="test\test_zoneinfo\__main__.py" />
+    <Compile Include="test\test_zoneinfo\_support.py" />
+    <Compile Include="test\test_zoneinfo\test_zoneinfo.py" />
     <Compile Include="test\test__locale.py" />
     <Compile Include="test\test__opcode.py" />
     <Compile Include="test\test__osx_support.py" />
@@ -1419,7 +1434,6 @@
     <Compile Include="tkinter\messagebox.py" />
     <Compile Include="tkinter\scrolledtext.py" />
     <Compile Include="tkinter\simpledialog.py" />
-    <Compile Include="tkinter\test\runtktests.py" />
     <Compile Include="tkinter\test\support.py" />
     <Compile Include="tkinter\test\test_tkinter\test_font.py" />
     <Compile Include="tkinter\test\test_tkinter\test_geometry_managers.py" />
@@ -1431,7 +1445,6 @@
     <Compile Include="tkinter\test\test_tkinter\test_widgets.py" />
     <Compile Include="tkinter\test\test_tkinter\__init__.py" />
     <Compile Include="tkinter\test\test_ttk\test_extensions.py" />
-    <Compile Include="tkinter\test\test_ttk\test_functions.py" />
     <Compile Include="tkinter\test\test_ttk\test_style.py" />
     <Compile Include="tkinter\test\test_ttk\test_widgets.py" />
     <Compile Include="tkinter\test\test_ttk\__init__.py" />
@@ -1557,7 +1570,10 @@
     <Compile Include="xml\__init__.py" />
     <Compile Include="zipapp.py" />
     <Compile Include="zipfile.py" />
-    <Compile Include="_bootlocale.py" />
+    <Compile Include="zoneinfo\_common.py" />
+    <Compile Include="zoneinfo\__init__.py" />
+    <Compile Include="zoneinfo\_tzpath.py" />
+    <Compile Include="zoneinfo\_zoneinfo.py" />
     <Compile Include="_collections_abc.py" />
     <Compile Include="_compat_pickle.py" />
     <Compile Include="_compression.py" />
@@ -1585,6 +1601,7 @@
     <Content Include="idlelib\Icons\idle_32.png" />
     <Content Include="idlelib\Icons\idle_48.gif" />
     <Content Include="idlelib\Icons\idle_48.png" />
+    <Content Include="idlelib\Icons\idle_256.png" />
     <Content Include="idlelib\Icons\minusnode.gif" />
     <Content Include="idlelib\Icons\openfolder.gif" />
     <Content Include="idlelib\Icons\plusnode.gif" />
@@ -1786,6 +1803,7 @@
     <Folder Include="test\test_import\data\package" />
     <Folder Include="test\test_import\data\package2" />
     <Folder Include="test\test_json" />
+    <Folder Include="test\test_peg_generator" />
     <Folder Include="test\test_tools" />
     <Folder Include="test\test_warnings" />
     <Folder Include="test\test_warnings\data" />
