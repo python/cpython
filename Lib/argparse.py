@@ -1725,6 +1725,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         self._positionals = add_group(_('positional arguments'))
         self._optionals = add_group(_('options'))
         self._subparsers = None
+        self._disabled_interspersed_args = False
 
         # register types
         def identity(string):
@@ -1749,6 +1750,12 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 pass
             else:
                 self._defaults.update(defaults)
+
+    def disable_interspersed_args(self):
+        self._disabled_interspersed_args = True
+
+    def enable_interspersed_args(self):
+        self._disabled_interspersed_args = False
 
     # =======================
     # Pretty __repr__ methods
@@ -2035,6 +2042,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             max_option_string_index = max(option_string_indices)
         else:
             max_option_string_index = -1
+
         while start_index <= max_option_string_index:
 
             # consume any Positionals preceding the next option
@@ -2042,6 +2050,11 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 index
                 for index in option_string_indices
                 if index >= start_index])
+
+            if self._disabled_interspersed_args and next_option_string_index != start_index:
+                arg_strings_pattern = arg_strings_pattern[:start_index] + "A" *  (len(arg_strings_pattern) - start_index)
+                break
+
             if start_index != next_option_string_index:
                 positionals_end_index = consume_positionals(start_index)
 

@@ -1,0 +1,2 @@
+Add argparse.ArgumentParser.disable_interspersed_args() and
+enable_interspersed_args() based on optparse.OptionParser's similar methods.
