@@ -3959,7 +3959,7 @@ static int
 update_lines_cols(void)
 {
     PyObject *o;
-    PyObject *m = PyImport_ImportModuleNoBlock("curses");
+    PyObject *m = PyImport_ImportModule("curses");
     _Py_IDENTIFIER(LINES);
     _Py_IDENTIFIER(COLS);
 
