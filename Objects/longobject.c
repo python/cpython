@@ -116,14 +116,15 @@ PyLongObject *
 _PyLong_New(Py_ssize_t size)
 {
     PyLongObject *result;
-    if (size > (Py_ssize_t)MAX_LONG_DIGITS) {
+    Py_ssize_t size_abs = Py_ABS(size);
+    if (size_abs > (Py_ssize_t)MAX_LONG_DIGITS) {
         PyErr_SetString(PyExc_OverflowError,
                         "too many digits in integer");
         return NULL;
     }
     /* Fast operations for single digit integers (including zero)
      * assume that there is always at least one digit present. */
-    Py_ssize_t ndigits = size ? size : 1;
+    Py_ssize_t ndigits = size_abs ? size_abs : 1;
     /* Number of bytes needed is: offsetof(PyLongObject, ob_digit) +
        sizeof(digit)*size.  Previous incarnations of this code used
        sizeof(PyVarObject) instead of the offsetof, but this risks being
@@ -4508,8 +4509,7 @@ long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
         if (IS_SMALL_INT(sval))
             return get_small_int((sdigit)sval);
 
-        z = _PyLong_New(Py_ABS(Py_SIZE(a)));
-        Py_SET_SIZE(z, Py_SIZE(a));
+        z = _PyLong_New(Py_SIZE(a));
         z->ob_digit[0] = (digit)(a->ob_digit[0] >> remshift);
         if (Py_SIZE(a) < 0 && (a->ob_digit[0] & ~(PyLong_MASK << remshift)))
             z->ob_digit[0] += 1;
@@ -4598,8 +4598,7 @@ long_lshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
         stwodigits sval = medium_value(a) << remshift;
         if (IS_SMALL_INT(sval))
             return get_small_int((sdigit)sval);
-        z = _PyLong_New(Py_ABS(Py_SIZE(a)));
-        Py_SET_SIZE(z, Py_SIZE(a));
+        z = _PyLong_New(Py_SIZE(a));
         z->ob_digit[0] = (digit)(a->ob_digit[0] << remshift);
         return (PyObject *)z;
     }
