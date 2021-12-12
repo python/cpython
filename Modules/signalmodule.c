@@ -765,7 +765,7 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args, PyObject *kwds)
     is_socket = 0;
     if (sockfd != INVALID_FD) {
         /* Import the _socket module to call WSAStartup() */
-        mod = PyImport_ImportModuleNoBlock("_socket");
+        mod = PyImport_ImportModule("_socket");
         if (mod == NULL)
             return NULL;
         Py_DECREF(mod);

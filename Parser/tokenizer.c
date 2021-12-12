@@ -461,7 +461,7 @@ fp_setreadl(struct tok_state *tok, const char* enc)
         return 0;
     }
 
-    io = PyImport_ImportModuleNoBlock("io");
+    io = PyImport_ImportModule("io");
     if (io == NULL)
         return 0;
 
