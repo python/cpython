@@ -895,7 +895,7 @@ exceptiongroup_subset(
     if (tb) {
         int res = PyException_SetTraceback(eg, tb);
         Py_DECREF(tb);
-        if (res == -1) {
+        if (res < 0) {
             goto error;
         }
     }
@@ -1052,7 +1052,7 @@ exceptiongroup_split_recursive(PyObject *exc,
         }
         if (exceptiongroup_split_recursive(
                 e, matcher_type, matcher_value,
-                construct_rest, &rec_result) == -1) {
+                construct_rest, &rec_result) < 0) {
             assert(!rec_result.match);
             assert(!rec_result.rest);
             Py_LeaveRecursiveCall();
@@ -1061,7 +1061,7 @@ exceptiongroup_split_recursive(PyObject *exc,
         Py_LeaveRecursiveCall();
         if (rec_result.match) {
             assert(PyList_CheckExact(match_list));
-            if (PyList_Append(match_list, rec_result.match) == -1) {
+            if (PyList_Append(match_list, rec_result.match) < 0) {
                 Py_DECREF(rec_result.match);
                 goto done;
             }
@@ -1070,7 +1070,7 @@ exceptiongroup_split_recursive(PyObject *exc,
         if (rec_result.rest) {
             assert(construct_rest);
             assert(PyList_CheckExact(rest_list));
-            if (PyList_Append(rest_list, rec_result.rest) == -1) {
+            if (PyList_Append(rest_list, rec_result.rest) < 0) {
                 Py_DECREF(rec_result.rest);
                 goto done;
             }
@@ -1079,13 +1079,13 @@ exceptiongroup_split_recursive(PyObject *exc,
     }
 
     /* construct result */
-    if (exceptiongroup_subset(eg, match_list, &result->match) == -1) {
+    if (exceptiongroup_subset(eg, match_list, &result->match) < 0) {
         goto done;
     }
 
     if (construct_rest) {
         assert(PyList_CheckExact(rest_list));
-        if (exceptiongroup_subset(eg, rest_list, &result->rest) == -1) {
+        if (exceptiongroup_subset(eg, rest_list, &result->rest) < 0) {
             Py_CLEAR(result->match);
             goto done;
         }
@@ -1094,7 +1094,7 @@ exceptiongroup_split_recursive(PyObject *exc,
 done:
     Py_DECREF(match_list);
     Py_XDECREF(rest_list);
-    if (retval == -1) {
+    if (retval < 0) {
         Py_CLEAR(result->match);
         Py_CLEAR(result->rest);
     }
@@ -1110,7 +1110,7 @@ BaseExceptionGroup_split(PyObject *self, PyObject *args)
     }
 
     _exceptiongroup_split_matcher_type matcher_type;
-    if (get_matcher_type(matcher_value, &matcher_type) == -1) {
+    if (get_matcher_type(matcher_value, &matcher_type) < 0) {
         return NULL;
     }
 
@@ -1118,7 +1118,7 @@ BaseExceptionGroup_split(PyObject *self, PyObject *args)
     bool construct_rest = true;
     if (exceptiongroup_split_recursive(
             self, matcher_type, matcher_value,
-            construct_rest, &split_result) == -1) {
+            construct_rest, &split_result) < 0) {
         return NULL;
     }
 
@@ -1141,7 +1141,7 @@ BaseExceptionGroup_subgroup(PyObject *self, PyObject *args)
     }
 
     _exceptiongroup_split_matcher_type matcher_type;
-    if (get_matcher_type(matcher_value, &matcher_type) == -1) {
+    if (get_matcher_type(matcher_value, &matcher_type) < 0) {
         return NULL;
     }
 
@@ -1149,7 +1149,7 @@ BaseExceptionGroup_subgroup(PyObject *self, PyObject *args)
     bool construct_rest = false;
     if (exceptiongroup_split_recursive(
             self, matcher_type, matcher_value,
-            construct_rest, &split_result) == -1) {
+            construct_rest, &split_result) < 0) {
         return NULL;
     }
 
@@ -1184,7 +1184,12 @@ collect_exception_group_leaves(PyObject *exc, PyObject *leaves)
     /* recursive calls */
     for (Py_ssize_t i = 0; i < num_excs; i++) {
         PyObject *e = PyTuple_GET_ITEM(eg->excs, i);
-        if (collect_exception_group_leaves(e, leaves) == -1) {
+        if (Py_EnterRecursiveCall(" in collect_exception_group_leaves")) {
+            return -1;
+        }
+        int res = collect_exception_group_leaves(e, leaves);
+        Py_LeaveRecursiveCall();
+        if (res < 0) {
             return -1;
         }
     }
