@@ -2840,7 +2840,7 @@ os.stat
 
     path : path_t(allow_fd=True)
         Path to be examined; can be string, bytes, a path-like object or
-        open-file-descriptor int.
+        open-file-descriptor int. test change
 
     *
 

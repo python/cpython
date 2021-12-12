@@ -99,6 +99,7 @@ AS_VAR_IF([cross_compiling], [maybe],
 
 # pybuilddir.txt will be created by --generate-posix-vars in the Makefile
 rm -f pybuilddir.txt
+echo "test suggestion"
 
 dnl cross-compiling needs a freeze_module binary for build platform
 AC_ARG_WITH(
