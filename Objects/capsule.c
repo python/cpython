@@ -215,7 +215,7 @@ PyCapsule_Import(const char *name, int no_block)
 
         if (object == NULL) {
             if (no_block) {
-                object = PyImport_ImportModuleNoBlock(trace);
+                object = PyImport_ImportModule(trace);
             } else {
                 object = PyImport_ImportModule(trace);
                 if (!object) {
