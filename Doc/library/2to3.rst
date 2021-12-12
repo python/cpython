@@ -338,7 +338,7 @@ and off individually.  They are described here in more detail.
 
 .. 2to3fixer:: nonzero
 
-   Renames definitions of class methods called :meth:`__nonzero__`
+   Renames definitions of methods called :meth:`__nonzero__`
    to :meth:`~object.__bool__`.
 
 .. 2to3fixer:: numliterals
