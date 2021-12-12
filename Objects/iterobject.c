@@ -454,7 +454,7 @@ static PyAsyncMethods anextawaitable_as_async = {
 };
 
 PyTypeObject _PyAnextAwaitable_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "anext_awaitable",                          /* tp_name */
     sizeof(anextawaitableobject),               /* tp_basicsize */
     0,                                          /* tp_itemsize */

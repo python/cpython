@@ -2008,13 +2008,13 @@ static PyObject *
 gc_immortalize_heap_impl(PyObject *module)
 /*[clinic end generated code: output=a7bb85fe2e27e4ae input=ca1709e4667c0623]*/
 {
-    return _PyGC_ImmortalizeHeap();
+    return PyGC_ImmortalizeHeap();
 }
 #endif  /* Py_IMMORTAL_OBJECTS */
 
 #ifdef Py_IMMORTAL_OBJECTS
 PyObject *
-_PyGC_ImmortalizeHeap(void) {
+PyGC_ImmortalizeHeap(void) {
     PyGC_Head *gc, *list;
     PyThreadState *tstate = _PyThreadState_GET();
     GCState *gcstate = &tstate->interp->gc;

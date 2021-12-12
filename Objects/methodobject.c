@@ -371,7 +371,7 @@ PyTypeObject PyCFunction_Type = {
 };
 
 PyTypeObject PyCMethod_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     .tp_name = "builtin_method",
     .tp_basicsize = sizeof(PyCMethodObject),
     .tp_base = &PyCFunction_Type,

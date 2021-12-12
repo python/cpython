@@ -702,8 +702,8 @@ pymain_main(_PyArgv *args)
 #ifdef Py_IMMORTAL_OBJECTS
     /* Most of the objects alive at this point will stay alive throughout the
      * lifecycle of the runtime. Immortalize to avoid the GC and refcnt costs */
-    // TODO(eduardo-elizondo): Fix broekn tests
-    // _PyGC_ImmortalizeHeap();
+    // TODO(eduardo-elizondo): Fix broken tests
+    // PyGC_ImmortalizeHeap();
 #endif  /* Py_IMMORTAL_OBJECTS */
     return Py_RunMain();
 }

@@ -3255,7 +3255,7 @@ memory_iter(PyObject *seq)
 }
 
 static PyTypeObject PyMemoryIter_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     .tp_name = "memory_iterator",
     .tp_basicsize = sizeof(memoryiterobject),
     // methods

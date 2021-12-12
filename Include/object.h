@@ -188,7 +188,7 @@ static inline Py_ssize_t _Py_SIZE(const PyVarObject *ob) {
 
 #ifdef Py_IMMORTAL_OBJECTS
 
-PyAPI_FUNC(PyObject *) _PyGC_ImmortalizeHeap(void);
+PyAPI_FUNC(PyObject *) PyGC_ImmortalizeHeap(void);
 
 static inline int _Py_IsImmortal(PyObject *op)
 {

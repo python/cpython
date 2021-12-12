@@ -2196,3 +2196,4 @@ data PyStructSequence_UnnamedField
 
 data Py_Version
     added 3.11
+function PyGC_ImmortalizeHeap
