@@ -22,6 +22,11 @@ extern PyStatus _PyLong_InitTypes(PyInterpreterState *);
 
 #define _PyLong_SMALL_INTS _Py_SINGLETON(small_ints)
 
+// _PyLong_GetZero() and _PyLong_GetOne() must always be available
+#if _PY_NSMALLPOSINTS < 2
+#  error "_PY_NSMALLPOSINTS must be greater than 1"
+#endif
+
 // Return a borrowed reference to the zero singleton.
 // The function cannot return NULL.
 static inline PyObject* _PyLong_GetZero(void)

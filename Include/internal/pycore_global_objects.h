@@ -12,10 +12,6 @@ extern "C" {
 #define _PY_NSMALLPOSINTS           257
 #define _PY_NSMALLNEGINTS           5
 
-// _PyLong_GetZero() and _PyLong_GetOne() must always be available
-#if _PY_NSMALLPOSINTS < 2
-#  error "_PY_NSMALLPOSINTS must be greater than 1"
-#endif
 
 
 // Only immutable objects should be considered runtime-global.
