@@ -1554,6 +1554,9 @@ signal_add_constants(PyObject *module)
 #ifdef SIGINFO
     ADD_INT_MACRO(SIGINFO);
 #endif
+#ifdef SIGSTKFLT
+    ADD_INT_MACRO(SIGSTKFLT);
+#endif
 
     // ITIMER_xxx constants
 #ifdef ITIMER_REAL

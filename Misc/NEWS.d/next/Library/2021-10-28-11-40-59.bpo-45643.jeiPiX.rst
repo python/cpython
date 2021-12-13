@@ -1,0 +1,1 @@
+Added :data:`signal.SIGSTKFLT` on platforms where this signal is defined.
