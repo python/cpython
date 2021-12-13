@@ -21,6 +21,8 @@ extern "C" {
     }
 
 
+/* int objects */
+
 #define _PY_NSMALLPOSINTS           257
 #define _PY_NSMALLNEGINTS           5
 
