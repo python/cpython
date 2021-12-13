@@ -2173,8 +2173,8 @@ is_valid_fd(int fd)
    side of the pipe is closed, dup(1) succeed, whereas fstat(1, &st) fails with
    EBADF. FreeBSD has similar issue (bpo-32849).
 
-   Only use dup() on platforms where dup() is enough to detect invalid FD in
-   corner cases: on Linux and Windows (bpo-32849).
+   Only use dup() on Linux where dup() is enough to detect invalid FD
+   (bpo-32849).
 */
     if (fd < 0) {
         return 0;
