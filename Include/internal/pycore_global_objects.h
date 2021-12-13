@@ -32,6 +32,10 @@ extern "C" {
     }
 
 
+/**********************
+ * the global objects *
+ **********************/
+
 // Only immutable objects should be considered runtime-global.
 // All others must be per-interpreter.
 
