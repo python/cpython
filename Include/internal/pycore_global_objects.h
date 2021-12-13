@@ -33,7 +33,7 @@ struct _Py_global_objects {
         /* Small integers are preallocated in this array so that they
          * can be shared.
          * The integers that are preallocated are those in the range
-         *-_PY_NSMALLNEGINTS (inclusive) to _PY_NSMALLPOSINTS (not inclusive).
+         * -_PY_NSMALLNEGINTS (inclusive) to _PY_NSMALLPOSINTS (exclusive).
          */
         PyLongObject small_ints[_PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS];
     } singletons;
