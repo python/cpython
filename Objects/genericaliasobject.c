@@ -631,7 +631,7 @@ static PyNumberMethods ga_as_number = {
 // - __doc__?
 // - cache?
 PyTypeObject Py_GenericAliasType = {
-    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "types.GenericAlias",
     .tp_doc = "Represent a PEP 585 generic type\n"
               "\n"

@@ -113,17 +113,17 @@ typedef struct _typeobject PyTypeObject;
 
 #endif  /* Py_IMMORTAL_OBJECTS */
 
-#define PyVarObject_HEAD_INIT(type, size)       \
-    { PyObject_HEAD_INIT(type) size },
 
 #ifdef Py_IMMORTAL_OBJECTS
 
-#define PyVarObject_HEAD_IMMORTAL_INIT(type, size)       \
+// TODO(eduardo-elizondo): This is only used to simplify the review of GH-19474
+// Rather than changing this API, we'll introduce PyVarObject_HEAD_IMMORTAL_INIT
+#define PyVarObject_HEAD_INIT(type, size)       \
     { PyObject_HEAD_IMMORTAL_INIT(type) size },
 
 #else
 
-#define PyVarObject_HEAD_IMMORTAL_INIT(type, size)       \
+#define PyVarObject_HEAD_INIT(type, size)       \
     { PyObject_HEAD_INIT(type) size },
 
 #endif  /* Py_IMMORTAL_OBJECTS */

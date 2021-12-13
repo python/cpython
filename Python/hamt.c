@@ -2891,7 +2891,7 @@ static PyMappingMethods PyHamt_as_mapping = {
 };
 
 PyTypeObject _PyHamt_Type = {
-    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "hamt",
     sizeof(PyHamtObject),
     .tp_methods = PyHamt_methods,
@@ -2914,7 +2914,7 @@ PyTypeObject _PyHamt_Type = {
 
 
 PyTypeObject _PyHamt_ArrayNode_Type = {
-    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "hamt_array_node",
     sizeof(PyHamtNode_Array),
     0,
@@ -2927,7 +2927,7 @@ PyTypeObject _PyHamt_ArrayNode_Type = {
 };
 
 PyTypeObject _PyHamt_BitmapNode_Type = {
-    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "hamt_bitmap_node",
     sizeof(PyHamtNode_Bitmap) - sizeof(PyObject *),
     sizeof(PyObject *),
@@ -2940,7 +2940,7 @@ PyTypeObject _PyHamt_BitmapNode_Type = {
 };
 
 PyTypeObject _PyHamt_CollisionNode_Type = {
-    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "hamt_collision_node",
     sizeof(PyHamtNode_Collision) - sizeof(PyObject *),
     sizeof(PyObject *),

@@ -936,7 +936,7 @@ static PyMappingMethods tuple_as_mapping = {
 static PyObject *tuple_iter(PyObject *seq);
 
 PyTypeObject PyTuple_Type = {
-    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "tuple",
     sizeof(PyTupleObject) - sizeof(PyObject *),
     sizeof(PyObject *),
@@ -1211,7 +1211,7 @@ static PyMethodDef tupleiter_methods[] = {
 };
 
 PyTypeObject PyTupleIter_Type = {
-    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "tuple_iterator",                           /* tp_name */
     sizeof(tupleiterobject),                    /* tp_basicsize */
     0,                                          /* tp_itemsize */

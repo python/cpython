@@ -1676,7 +1676,7 @@ static PyNumberMethods none_as_number = {
 };
 
 PyTypeObject _PyNone_Type = {
-    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "NoneType",
     0,
     0,
@@ -1782,7 +1782,7 @@ static PyNumberMethods notimplemented_as_number = {
 };
 
 PyTypeObject _PyNotImplemented_Type = {
-    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "NotImplementedType",
     0,
     0,

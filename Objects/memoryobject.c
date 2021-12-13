@@ -151,7 +151,7 @@ mbuf_clear(_PyManagedBufferObject *self)
 }
 
 PyTypeObject _PyManagedBuffer_Type = {
-    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "managedbuffer",
     sizeof(_PyManagedBufferObject),
     0,
@@ -3255,7 +3255,7 @@ memory_iter(PyObject *seq)
 }
 
 static PyTypeObject PyMemoryIter_Type = {
-    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "memory_iterator",
     .tp_basicsize = sizeof(memoryiterobject),
     // methods
@@ -3268,7 +3268,7 @@ static PyTypeObject PyMemoryIter_Type = {
 };
 
 PyTypeObject PyMemoryView_Type = {
-    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "memoryview",                             /* tp_name */
     offsetof(PyMemoryViewObject, ob_array),   /* tp_basicsize */
     sizeof(Py_ssize_t),                       /* tp_itemsize */

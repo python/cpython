@@ -920,7 +920,7 @@ error:
 }
 
 static PyTypeObject LineIterator = {
-    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "line_iterator",                    /* tp_name */
     sizeof(lineiterator),               /* tp_basicsize */
     0,                                  /* tp_itemsize */
@@ -1019,7 +1019,7 @@ positionsiter_next(positionsiterator* pi)
 }
 
 static PyTypeObject PositionsIterator = {
-    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "poisitions_iterator",              /* tp_name */
     sizeof(positionsiterator),          /* tp_basicsize */
     0,                                  /* tp_itemsize */
@@ -1732,7 +1732,7 @@ static struct PyMethodDef code_methods[] = {
 
 
 PyTypeObject PyCode_Type = {
-    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "code",
     sizeof(PyCodeObject),
     0,

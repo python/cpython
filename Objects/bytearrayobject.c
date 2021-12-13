@@ -2318,7 +2318,7 @@ Construct a mutable bytearray object from:\n\
 static PyObject *bytearray_iter(PyObject *seq);
 
 PyTypeObject PyByteArray_Type = {
-    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "bytearray",
     sizeof(PyByteArrayObject),
     0,
@@ -2465,7 +2465,7 @@ static PyMethodDef bytearrayiter_methods[] = {
 };
 
 PyTypeObject PyByteArrayIter_Type = {
-    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "bytearray_iterator",              /* tp_name */
     sizeof(bytesiterobject),           /* tp_basicsize */
     0,                                 /* tp_itemsize */

@@ -162,7 +162,7 @@ bool_dealloc(PyObject* Py_UNUSED(ignore))
 /* The type object for bool.  Note that this cannot be subclassed! */
 
 PyTypeObject PyBool_Type = {
-    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "bool",
     sizeof(struct _longobject),
     0,
@@ -206,11 +206,11 @@ PyTypeObject PyBool_Type = {
 /* The objects representing bool values False and True */
 
 struct _longobject _Py_FalseStruct = {
-    PyVarObject_HEAD_IMMORTAL_INIT(&PyBool_Type, 0)
+    PyVarObject_HEAD_INIT(&PyBool_Type, 0)
     { 0 }
 };
 
 struct _longobject _Py_TrueStruct = {
-    PyVarObject_HEAD_IMMORTAL_INIT(&PyBool_Type, 1)
+    PyVarObject_HEAD_INIT(&PyBool_Type, 1)
     { 1 }
 };

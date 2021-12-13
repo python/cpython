@@ -259,7 +259,7 @@ static PyMethodDef enum_methods[] = {
 };
 
 PyTypeObject PyEnum_Type = {
-    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "enumerate",                    /* tp_name */
     sizeof(enumobject),             /* tp_basicsize */
     0,                              /* tp_itemsize */
@@ -475,7 +475,7 @@ static PyMethodDef reversediter_methods[] = {
 };
 
 PyTypeObject PyReversed_Type = {
-    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "reversed",                     /* tp_name */
     sizeof(reversedobject),         /* tp_basicsize */
     0,                              /* tp_itemsize */

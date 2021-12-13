@@ -48,7 +48,7 @@ static PyMethodDef ellipsis_methods[] = {
 };
 
 PyTypeObject PyEllipsis_Type = {
-    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "ellipsis",                         /* tp_name */
     0,                                  /* tp_basicsize */
     0,                                  /* tp_itemsize */
@@ -629,7 +629,7 @@ slice_traverse(PySliceObject *v, visitproc visit, void *arg)
 }
 
 PyTypeObject PySlice_Type = {
-    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "slice",                    /* Name of this type */
     sizeof(PySliceObject),      /* Basic object size */
     0,                          /* Item size for varobject */

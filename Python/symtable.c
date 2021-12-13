@@ -161,7 +161,7 @@ static PyMemberDef ste_memberlist[] = {
 };
 
 PyTypeObject PySTEntry_Type = {
-    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "symtable entry",
     sizeof(PySTEntryObject),
     0,

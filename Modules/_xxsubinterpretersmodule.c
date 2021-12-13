@@ -1766,7 +1766,7 @@ PyDoc_STRVAR(channelid_doc,
 "A channel ID identifies a channel and may be used as an int.");
 
 static PyTypeObject ChannelIDtype = {
-    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "_xxsubinterpreters.ChannelID", /* tp_name */
     sizeof(channelid),              /* tp_basicsize */
     0,                              /* tp_itemsize */

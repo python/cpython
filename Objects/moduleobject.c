@@ -24,7 +24,7 @@ static PyMemberDef module_members[] = {
 
 
 PyTypeObject PyModuleDef_Type = {
-    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "moduledef",                                /* tp_name */
     sizeof(struct PyModuleDef),                 /* tp_basicsize */
     0,                                          /* tp_itemsize */
@@ -961,7 +961,7 @@ static PyGetSetDef module_getsets[] = {
 };
 
 PyTypeObject PyModule_Type = {
-    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "module",                                   /* tp_name */
     sizeof(PyModuleObject),                     /* tp_basicsize */
     0,                                          /* tp_itemsize */
