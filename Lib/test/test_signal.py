@@ -1,5 +1,6 @@
 import enum
 import errno
+import inspect
 import os
 import random
 import signal
@@ -59,6 +60,14 @@ class GenericTests(unittest.TestCase):
                     source=signal,
                     )
             enum._test_simple_enum(CheckedSigmasks, Sigmasks)
+
+    def test_functions_module_attr(self):
+        # Issue #27718: If __all__ is not defined all non-builtin functions
+        # should have correct __module__ to be displayed by pydoc.
+        for name in dir(signal):
+            value = getattr(signal, name)
+            if inspect.isroutine(value) and not inspect.isbuiltin(value):
+                self.assertEqual(value.__module__, 'signal')
 
 
 @unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
