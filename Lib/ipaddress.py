@@ -52,7 +52,7 @@ def ip_address(address):
         pass
 
     raise ValueError('%r does not appear to be an IPv4 or IPv6 address' %
-                     address)
+                     (address,))
 
 
 def ip_network(address, strict=True):
@@ -82,7 +82,7 @@ def ip_network(address, strict=True):
         pass
 
     raise ValueError('%r does not appear to be an IPv4 or IPv6 network' %
-                     address)
+                     (address,))
 
 
 def ip_interface(address):
@@ -117,7 +117,7 @@ def ip_interface(address):
         pass
 
     raise ValueError('%r does not appear to be an IPv4 or IPv6 interface' %
-                     address)
+                     (address,))
 
 
 def v4_int_to_packed(address):
