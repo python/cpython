@@ -3221,9 +3221,11 @@ dec_format(PyObject *dec, PyObject *args)
     PyObject *context;
     mpd_spec_t spec;
     char *fmt;
+    char *fmt_copy = NULL;
     char *decstring = NULL;
     uint32_t status = 0;
     int replace_fillchar = 0;
+    int coerce_neg_0 = 0;
     Py_ssize_t size;
 
 
@@ -3241,11 +3243,24 @@ dec_format(PyObject *dec, PyObject *args)
             /* NUL fill character: must be replaced with a valid UTF-8 char
                before calling mpd_parse_fmt_str(). */
             replace_fillchar = 1;
-            fmt = dec_strdup(fmt, size);
-            if (fmt == NULL) {
+            fmt = fmt_copy = dec_strdup(fmt, size);
+            if (fmt_copy == NULL) {
                 return NULL;
             }
-            fmt[0] = '_';
+            fmt_copy[0] = '_';
+        }
+        char *z_start = strchr(fmt, 'z');
+        if (z_start != NULL) {
+            coerce_neg_0 = 1;
+            size_t z_index = z_start - fmt;
+            if (fmt_copy == NULL) {
+                fmt = fmt_copy = dec_strdup(fmt, size);
+                if (fmt_copy == NULL) {
+                    return NULL;
+                }
+            }
+            memmove(fmt_copy + z_index, fmt_copy + z_index + 1, size - z_index);
+            size -= 1;
         }
     }
     else {
@@ -3311,6 +3326,19 @@ dec_format(PyObject *dec, PyObject *args)
         }
     }
 
+    if (coerce_neg_0 && mpd_isnegative(MPD(dec)) && !mpd_isspecial(MPD(dec))) {
+        /* round into a temporary and clear sign if result is zero */
+        mpd_uint_t dt[MPD_MINALLOC_MAX];
+        mpd_t tmp = {MPD_STATIC|MPD_STATIC_DATA,0,0,0,MPD_MINALLOC_MAX,dt};
+        mpd_qrescale(&tmp, MPD(dec), -spec.prec, CTX(context), &status);
+        if (status & MPD_Errors) {
+            PyErr_SetString(PyExc_ValueError, "unexpected error when rounding");
+            goto finish;
+        }
+        if (mpd_iszero(&tmp)) {
+            mpd_set_positive(MPD(dec));
+        }
+    }
 
     decstring = mpd_qformat_spec(MPD(dec), &spec, CTX(context), &status);
     if (decstring == NULL) {
@@ -3335,7 +3363,7 @@ finish:
     Py_XDECREF(grouping);
     Py_XDECREF(sep);
     Py_XDECREF(dot);
-    if (replace_fillchar) PyMem_Free(fmt);
+    if (fmt_copy) PyMem_Free(fmt_copy);
     if (decstring) mpd_free(decstring);
     return result;
 }

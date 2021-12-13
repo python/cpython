@@ -1,4 +1,3 @@
-from decimal import Decimal
 from test.support import verbose, TestFailed
 import locale
 import sys
@@ -552,7 +551,6 @@ class FormatTest(unittest.TestCase):
         self.assertEqual(f"{-0.:.1f}", "-0.0")
         self.assertEqual(f"{-.01:.1f}", "-0.0")
         self.assertEqual(f"{-0:.1f}", "0.0")  # integers do not distinguish -0
-        self.assertEqual(f"{Decimal('-0'):.1f}", "-0.0")
 
         ## z sign option
         self.assertEqual(f"{0.:z.1f}", "0.0")
