@@ -9,7 +9,6 @@ extern "C" {
 #endif
 
 #include "pycore_global_objects.h"  // _PY_NSMALLNEGINTS
-#include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_runtime.h"       // _PyRuntime
 
 
