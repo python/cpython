@@ -518,9 +518,8 @@ Cross Compiling Options
 
 Cross compiling, also known as cross building, can be used to build Python
 for another CPU architecture or platform. Cross compiling requires a Python
-interpreter and the :program:`_freeze_module` binary from another build. The
-version of the build Python and :program:`_freeze_module` command must be
-the same as the cross compiled host Python.
+interpreter for the build platform. The version of the build Python must match
+the version of the cross compiled host Python.
 
 .. cmdoption:: --build=BUILD
 
@@ -530,13 +529,7 @@ the same as the cross compiled host Python.
 
    cross-compile to build programs to run on HOST (target platform)
 
-.. cmdoption:: --with-freeze-module=Programs/_freeze_module
-
-   path to ``_freeze_module`` binary for cross compiling.
-
-   .. versionadded:: 3.11
-
-.. cmdoption:: --with-build-python=python3.xx
+.. cmdoption:: --with-build-python=path/to/python
 
    path to build ``python`` binary for cross compiling
 
@@ -559,7 +552,6 @@ Cross compiling example::
    CONFIG_SITE=config.site-aarch64 ../configure \
        --build=x86_64-pc-linux-gnu \
        --host=aarch64-unknown-linux-gnu \
-       --with-freeze-module=../x86_64/Programs/_freeze_module \
        --with-build-python=../x86_64/python
 
 
