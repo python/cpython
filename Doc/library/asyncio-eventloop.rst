@@ -64,7 +64,7 @@ an event loop:
 
 .. function:: new_event_loop()
 
-   Create a new event loop object.
+   Create and return a new event loop object.
 
 Note that the behaviour of :func:`get_event_loop`, :func:`set_event_loop`,
 and :func:`new_event_loop` functions can be altered by
