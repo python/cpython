@@ -137,6 +137,7 @@ _PyRuntimeState_reset(_PyRuntimeState *runtime)
 {
     /* Make it match _PyRuntimeState_INIT. */
     memset(runtime, 0, sizeof(*runtime));
+    _Py_global_objects_reset(&runtime->global_objects);
 }
 
 
