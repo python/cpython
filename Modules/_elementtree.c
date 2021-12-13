@@ -1393,22 +1393,19 @@ _elementtree_Element_get_impl(ElementObject *self, PyObject *key,
                               PyObject *default_value)
 /*[clinic end generated code: output=523c614142595d75 input=ee153bbf8cdb246e]*/
 {
-    PyObject* value;
-
-    if (!self->extra || !self->extra->attrib)
-        value = default_value;
-    else {
-        value = PyDict_GetItemWithError(self->extra->attrib, key);
-        if (!value) {
-            if (PyErr_Occurred()) {
-                return NULL;
-            }
-            value = default_value;
+    if (self->extra && self->extra->attrib) {
+        PyObject *attrib = self->extra->attrib;
+        Py_INCREF(attrib);
+        PyObject *value = PyDict_GetItemWithError(attrib, key);
+        Py_XINCREF(value);
+        Py_DECREF(attrib);
+        if (value != NULL || PyErr_Occurred()) {
+            return value;
         }
     }
 
-    Py_INCREF(value);
-    return value;
+    Py_INCREF(default_value);
+    return default_value;
 }
 
 static PyObject *

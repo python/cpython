@@ -7,7 +7,7 @@ extern "C" {
 
 /* Module support interface */
 
-#include <stdarg.h>
+#include <stdarg.h>               // va_list
 
 /* If PY_SSIZE_T_CLEAN is defined, each functions treats #-specifier
    to mean Py_ssize_t */
