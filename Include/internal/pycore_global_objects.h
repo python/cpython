@@ -34,6 +34,16 @@ extern "C" {
     }
 
 
+/* bytes objects */
+
+#define _PyBytes_EMPTY_INIT \
+    { \
+        _PyVarObject_IMMORTAL_INIT(&PyBytes_Type, 0), \
+        .ob_shash = -1, \
+        .ob_sval[0] = '\0', \
+    }
+
+
 /**********************
  * the global objects *
  **********************/
@@ -55,7 +65,7 @@ struct _Py_global_objects {
          */
         PyLongObject small_ints[_PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS];
 
-        PyBytesObject *bytes_empty;
+        PyBytesObject bytes_empty;
         PyBytesObject *bytes_characters[256];
     } singletons;
 };
@@ -326,6 +336,8 @@ struct _Py_global_objects {
             _PyLong_DIGIT_INIT(255), \
             _PyLong_DIGIT_INIT(256), \
         }, \
+        \
+        .bytes_empty = _PyBytes_EMPTY_INIT, \
     }, \
 }
 

@@ -39,15 +39,12 @@ Py_LOCAL_INLINE(Py_ssize_t) _PyBytesWriter_GetSize(_PyBytesWriter *writer,
 
 
 #define CHARACTERS _Py_SINGLETON(bytes_characters)
-#define EMPTY _Py_SINGLETON(bytes_empty)
+#define EMPTY (&_Py_SINGLETON(bytes_empty))
 
 
 // Return a borrowed reference to the empty bytes string singleton.
 static inline PyObject* bytes_get_empty(void)
 {
-    // bytes_get_empty() must not be called before _PyBytes_Init()
-    // or after _PyBytes_Fini()
-    assert(EMPTY != NULL);
     return &EMPTY->ob_base.ob_base;
 }
 
@@ -57,23 +54,6 @@ static inline PyObject* bytes_new_empty(void)
 {
     Py_INCREF(EMPTY);
     return (PyObject *)EMPTY;
-}
-
-
-static int
-bytes_create_empty_string_singleton(void)
-{
-    // Create the empty bytes string singleton
-    PyBytesObject *op = (PyBytesObject *)PyObject_Malloc(PyBytesObject_SIZE);
-    if (op == NULL) {
-        return -1;
-    }
-    _PyObject_InitVar((PyVarObject*)op, &PyBytes_Type, 0);
-    op->ob_shash = -1;
-    op->ob_sval[0] = '\0';
-
-    EMPTY = op;
-    return 0;
 }
 
 
@@ -3077,20 +3057,6 @@ error:
 
 
 PyStatus
-_PyBytes_InitGlobalObjects(PyInterpreterState *interp)
-{
-    if (!_Py_IsMainInterpreter(interp)) {
-        return _PyStatus_OK();
-    }
-
-    if (bytes_create_empty_string_singleton() < 0) {
-        return _PyStatus_NO_MEMORY();
-    }
-    return _PyStatus_OK();
-}
-
-
-PyStatus
 _PyBytes_InitTypes(PyInterpreterState *interp)
 {
     if (!_Py_IsMainInterpreter(interp)) {
@@ -3118,7 +3084,6 @@ _PyBytes_Fini(PyInterpreterState *interp)
     for (int i = 0; i < UCHAR_MAX + 1; i++) {
         Py_CLEAR(CHARACTERS[i]);
     }
-    Py_CLEAR(EMPTY);
 }
 
 /*********************** Bytes Iterator ****************************/
