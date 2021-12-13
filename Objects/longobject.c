@@ -4538,7 +4538,7 @@ long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
 
     if (Py_SIZE(a) < 0) {
         Py_SET_SIZE(z, -newsize);
-        omitmark = a->ob_digit[wordshift] & ((1 << remshift) - 1);
+        omitmark = a->ob_digit[wordshift] & (((digit)1 << remshift) - 1);
         for (j = 0; omitmark == 0 && j < wordshift; j++) {
             omitmark |= a->ob_digit[j];
         }
@@ -4601,7 +4601,8 @@ long_lshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
 
     if (wordshift == 0 && IS_MEDIUM_VALUE(a) &&
         (a->ob_digit[0] & ~(PyLong_MASK >> remshift)) == 0) {
-        stwodigits sval = medium_value(a) << remshift;
+        stwodigits sval = (stwodigits)((twodigits)medium_value(a) << remshift);
+        // bypass undefined shift operator behavior
         if (IS_SMALL_INT(sval)) {
             return get_small_int((sdigit)sval);
         }
