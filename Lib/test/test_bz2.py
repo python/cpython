@@ -6,7 +6,6 @@ import unittest
 from io import BytesIO, DEFAULT_BUFFER_SIZE
 import os
 import pickle
-import gc
 import glob
 import tempfile
 import pathlib

@@ -5,7 +5,6 @@ if __name__ != 'test.support':
 
 import contextlib
 import functools
-import gc
 import os
 import re
 import stat
@@ -986,6 +985,7 @@ def refcount_test(test):
     unexpected refcounts caused by the trace function.
 
     """
+    import gc
     return no_tracing(cpython_only(test)) and not hasattr(gc, "is_immortal")
 
 
