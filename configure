@@ -933,9 +933,12 @@ CONFIG_ARGS
 SOVERSION
 VERSION
 PYTHON_FOR_REGEN
+FREEZE_MODULE_DEPS
+FREEZE_MODULE
+FREEZE_MODULE_BOOTSTRAP_DEPS
+FREEZE_MODULE_BOOTSTRAP
 PYTHON_FOR_FREEZE
 PYTHON_FOR_BUILD
-FREEZE_MODULE
 host_os
 host_vendor
 host_cpu
@@ -991,7 +994,6 @@ SHELL'
 ac_subst_files=''
 ac_user_opts='
 enable_option_checking
-with_freeze_module
 with_build_python
 with_pkg_config
 enable_universalsdk
@@ -1726,8 +1728,6 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-freeze-module=Programs/_freeze_module
-                          path to _freeze_module binary for cross compiling
   --with-build-python=python3.11
                           path to build python binary for cross compiling
                           (default: _bootstrap_python or python3.11)
@@ -3196,38 +3196,6 @@ fi
 rm -f pybuilddir.txt
 
 
-# Check whether --with-freeze-module was given.
-if test "${with_freeze_module+set}" = set; then :
-  withval=$with_freeze_module;
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-freeze-module" >&5
-$as_echo_n "checking for --with-freeze-module... " >&6; }
-    if test "x$cross_compiling" = xno; then :
-  as_fn_error $? "--with-freeze-module only applies to cross compiling" "$LINENO" 5
-fi
-    if test "$with_freeze_module" = yes -o "$with_freeze_module" = no; then
-      as_fn_error $? "invalid --with-freeze-module option: expected path, not \"$with_freeze_module\"" "$LINENO" 5
-    fi
-    if ! $(command -v "$with_freeze_module" >/dev/null 2>&1); then
-      as_fn_error $? "invalid or missing freeze module binary \"$with_freeze_module\"" "$LINENO" 5
-    fi
-    FREEZE_MODULE="$with_freeze_module"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FREEZE_MODULE" >&5
-$as_echo "$FREEZE_MODULE" >&6; }
-
-else
-
-    if test "x$cross_compiling" = xyes; then :
-  as_fn_error $? "Cross compiling requires --with-freeze-module" "$LINENO" 5
-
-fi
-    FREEZE_MODULE=Programs/_freeze_module
-
-
-fi
-
-
-
-
 # Check whether --with-build-python was given.
 if test "${with_build_python+set}" = set; then :
   withval=$with_build_python;
@@ -3272,6 +3240,27 @@ fi
 $as_echo_n "checking for Python interpreter freezing... " >&6; }
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PYTHON_FOR_FREEZE" >&5
 $as_echo "$PYTHON_FOR_FREEZE" >&6; }
+
+
+if test "x$cross_compiling" = xyes; then :
+
+        FREEZE_MODULE_BOOTSTRAP='$(PYTHON_FOR_FREEZE) $(srcdir)/Programs/_freeze_module.py'
+    FREEZE_MODULE_BOOTSTRAP_DEPS='$(srcdir)/Programs/_freeze_module.py'
+    FREEZE_MODULE='$(FREEZE_MODULE_BOOTSTRAP)'
+    FREEZE_MODULE_DEPS='$(FREEZE_MODULE_BOOTSTRAP_DEPS)'
+
+else
+
+        FREEZE_MODULE_BOOTSTRAP='./Programs/_freeze_module'
+    FREEZE_MODULE_BOOTSTRAP_DEPS="Programs/_freeze_module"
+    FREEZE_MODULE='$(PYTHON_FOR_FREEZE) $(srcdir)/Programs/_freeze_module.py'
+    FREEZE_MODULE_DEPS="_bootstrap_python \$(srcdir)/Programs/_freeze_module.py"
+
+
+fi
+
+
+
 
 
 for ac_prog in python$PACKAGE_VERSION python3.10 python3.9 python3.8 python3.7 python3.6 python3 python
