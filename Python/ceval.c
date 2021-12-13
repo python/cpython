@@ -1669,8 +1669,18 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
     /* Variables used for making calls */
     PyObject *kwnames;
     int nargs;
+    /*
+     * It is only between a PRECALL_METHOD instruction and the following instruction,
+     * that these two values can be anything other than their defaults. */
     int postcall_shrink = 1;
     int extra_args = 0;
+#define RESET_STACK_ADJUST_FOR_CALLS \
+    do { \
+        postcall_shrink = 1; \
+        extra_args = 0; \
+    } while (0)
+#define STACK_ADJUST_IS_RESET \
+    (postcall_shrink == 1 && extra_args == 0)
 
     /* WARNING: Because the CFrame lives on the C stack,
      * but can be accessed from a heap allocated object (tstate)
@@ -4599,7 +4609,6 @@ check_eval_breaker:
             STAT_INC(CALL_NO_KW, unquickened);
             kwnames = NULL;
             oparg += extra_args;
-            extra_args = 0;
             nargs = oparg;
         call_function:
             function = PEEK(oparg + 1);
@@ -4628,7 +4637,7 @@ check_eval_breaker:
                         stack_pointer, nargs, kwnames
                     );
                     STACK_SHRINK(postcall_shrink);
-                    postcall_shrink = 1;
+                    RESET_STACK_ADJUST_FOR_CALLS;
                     // The frame has stolen all the arguments from the stack,
                     // so there is no need to clean them up.
                     Py_XDECREF(kwnames);
@@ -4661,7 +4670,7 @@ check_eval_breaker:
                 Py_DECREF(stack_pointer[i]);
             }
             STACK_SHRINK(postcall_shrink);
-            postcall_shrink = 1;
+            RESET_STACK_ADJUST_FOR_CALLS;
             PUSH(res);
             if (res == NULL) {
                 goto error;
@@ -4687,7 +4696,6 @@ check_eval_breaker:
                 cache->adaptive.counter--;
                 kwnames = NULL;
                 oparg += extra_args;
-                extra_args = 0;
                 nargs = oparg;
                 goto call_function;
             }
@@ -4706,12 +4714,11 @@ check_eval_breaker:
             /* PEP 523 */
             DEOPT_IF(tstate->interp->eval_frame != NULL, CALL_NO_KW);
             STAT_INC(CALL_NO_KW, hit);
-            extra_args = 0;
             PyCodeObject *code = (PyCodeObject *)func->func_code;
             size_t size = code->co_nlocalsplus + code->co_stacksize + FRAME_SPECIALS_SIZE;
             InterpreterFrame *new_frame = _PyThreadState_BumpFramePointer(tstate, size);
             if (new_frame == NULL) {
-                postcall_shrink = 1;
+                RESET_STACK_ADJUST_FOR_CALLS;
                 goto error;
             }
             _PyFrame_InitializeSpecials(new_frame, func,
@@ -4730,7 +4737,7 @@ check_eval_breaker:
                 new_frame->localsplus[i] = NULL;
             }
             STACK_SHRINK(postcall_shrink);
-            postcall_shrink = 1;
+            RESET_STACK_ADJUST_FOR_CALLS;
             Py_DECREF(func);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             new_frame->previous = frame;
@@ -4741,6 +4748,7 @@ check_eval_breaker:
 
         TARGET(CALL_NO_KW_BUILTIN_O) {
             assert(cframe.use_tracing == 0);
+            assert(STACK_ADJUST_IS_RESET);
             /* Builtin METH_O functions */
 
             PyObject *callable = SECOND();
@@ -4771,6 +4779,7 @@ check_eval_breaker:
 
         TARGET(CALL_NO_KW_BUILTIN_FAST) {
             assert(cframe.use_tracing == 0);
+            assert(STACK_ADJUST_IS_RESET);
             /* Builtin METH_FASTCALL functions, without keywords */
             SpecializedCacheEntry *caches = GET_CACHE();
             _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
@@ -4809,6 +4818,7 @@ check_eval_breaker:
 
         TARGET(CALL_NO_KW_LEN) {
             assert(cframe.use_tracing == 0);
+            assert(STACK_ADJUST_IS_RESET);
             /* len(o) */
             SpecializedCacheEntry *caches = GET_CACHE();
             assert(caches[0].adaptive.original_oparg == 1);
@@ -4837,6 +4847,7 @@ check_eval_breaker:
 
         TARGET(CALL_NO_KW_ISINSTANCE) {
             assert(cframe.use_tracing == 0);
+            assert(STACK_ADJUST_IS_RESET);
             /* isinstance(o, o2) */
             SpecializedCacheEntry *caches = GET_CACHE();
             assert(caches[0].adaptive.original_oparg == 2);
@@ -4873,7 +4884,7 @@ check_eval_breaker:
             STAT_INC(CALL_NO_KW, hit);
             assert(extra_args == 1);
             extra_args = 0;
-            assert(postcall_shrink == 1);
+            assert(STACK_ADJUST_IS_RESET);
             PyObject *arg = TOP();
             int err = PyList_Append(list, arg);
             if (err) {
@@ -4891,17 +4902,16 @@ check_eval_breaker:
 
         TARGET(CALL_NO_KW_METHOD_DESCRIPTOR_O) {
             assert(_Py_OPCODE(next_instr[-2]) == PRECALL_METHOD);
-            SpecializedCacheEntry *caches = GET_CACHE();
-            assert(caches[0].adaptive.original_oparg == 1);
+            assert(GET_CACHE()->adaptive.original_oparg == 1);
             DEOPT_IF(extra_args == 0, CALL_NO_KW);
             assert(extra_args == 1);
             PyObject *callable = THIRD();
             DEOPT_IF(!Py_IS_TYPE(callable, &PyMethodDescr_Type), CALL_NO_KW);
             DEOPT_IF(((PyMethodDescrObject *)callable)->d_method->ml_flags != METH_O, CALL_NO_KW);
-            assert(postcall_shrink == 1);
             STAT_INC(CALL_NO_KW, hit);
             assert(extra_args == 1);
             extra_args = 0;
+            assert(STACK_ADJUST_IS_RESET);
             PyCFunction cfunc = ((PyMethodDescrObject *)callable)->d_method->ml_meth;
             // This is slower but CPython promises to check all non-vectorcall
             // function calls.
@@ -4935,10 +4945,10 @@ check_eval_breaker:
             DEOPT_IF(!Py_IS_TYPE(callable, &PyMethodDescr_Type),  CALL_NO_KW);
             PyMethodDef *meth = ((PyMethodDescrObject *)callable)->d_method;
             DEOPT_IF(meth->ml_flags != METH_FASTCALL, CALL_NO_KW);
-            assert(postcall_shrink == 1);
             STAT_INC(CALL_NO_KW, hit);
             assert(extra_args == 1);
             extra_args = 0;
+            assert(STACK_ADJUST_IS_RESET);
             _PyCFunctionFast cfunc = (_PyCFunctionFast)(void(*)(void))meth->ml_meth;
             PyObject *self = PEEK(nargs+1);
             PyObject *res = cfunc(self, &PEEK(nargs), nargs);
