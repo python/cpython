@@ -2182,23 +2182,21 @@ is_valid_fd(int fd)
 #if defined(F_GETFD) && ( \
         defined(__linux__) || \
         defined(__APPLE__) || \
-        defined(MS_WINDOWS) || \
         defined(__wasm__))
-    int res;
-    _Py_BEGIN_SUPPRESS_IPH
-    res = fcntl(fd, F_GETFD);
-    _Py_END_SUPPRESS_IPH
-    return res >= 0;
-#elif defined(__linux__) || defined(MS_WINDOWS)
-    int fd2;
-    _Py_BEGIN_SUPPRESS_IPH
-    fd2 = dup(fd);
+    return fcntl(fd, F_GETFD) >= 0;
+#elif defined(__linux__)
+    int fd2 = dup(fd);
     if (fd2 >= 0) {
         close(fd2);
     }
-    _Py_END_SUPPRESS_IPH
-
     return (fd2 >= 0);
+#elif defined(MS_WINDOWS)
+    HANDLE hfile;
+    _Py_BEGIN_SUPPRESS_IPH
+    hfile = (HANDLE)_get_osfhandle(fd);
+    _Py_END_SUPPRESS_IPH
+    return (hfile != INVALID_HANDLE_VALUE
+            && GetFileType(hfile) != FILE_TYPE_UNKNOWN);
 #else
     struct stat st;
     return (fstat(fd, &st) == 0);
