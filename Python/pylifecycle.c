@@ -2203,8 +2203,8 @@ is_valid_fd(int fd)
     _Py_BEGIN_SUPPRESS_IPH
     hfile = (HANDLE)_get_osfhandle(fd);
     _Py_END_SUPPRESS_IPH
-    return (hfile != INVALID_HANDLE_VALUE &&
-              GetFileType(hfile) != FILE_TYPE_UNKNOWN);
+    return (hfile != INVALID_HANDLE_VALUE
+            && GetFileType(hfile) != FILE_TYPE_UNKNOWN);
 #else
     struct stat st;
     return (fstat(fd, &st) == 0);
