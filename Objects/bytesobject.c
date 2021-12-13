@@ -39,6 +39,8 @@ Py_LOCAL_INLINE(Py_ssize_t) _PyBytesWriter_GetSize(_PyBytesWriter *writer,
 
 
 #define CHARACTERS _Py_SINGLETON(bytes_characters)
+#define CHARACTER(ch) \
+     ((PyBytesObject *)&(CHARACTERS[ch]));
 #define EMPTY (&_Py_SINGLETON(bytes_empty))
 
 
@@ -121,11 +123,9 @@ PyBytes_FromStringAndSize(const char *str, Py_ssize_t size)
         return NULL;
     }
     if (size == 1 && str != NULL) {
-        op = CHARACTERS[*str & UCHAR_MAX];
-        if (op != NULL) {
-            Py_INCREF(op);
-            return (PyObject *)op;
-        }
+        op = CHARACTER(*str & UCHAR_MAX);
+        Py_INCREF(op);
+        return (PyObject *)op;
     }
     if (size == 0) {
         return bytes_new_empty();
@@ -138,11 +138,6 @@ PyBytes_FromStringAndSize(const char *str, Py_ssize_t size)
         return (PyObject *) op;
 
     memcpy(op->ob_sval, str, size);
-    /* share short strings */
-    if (size == 1) {
-        Py_INCREF(op);
-        CHARACTERS[*str & UCHAR_MAX] = op;
-    }
     return (PyObject *) op;
 }
 
@@ -164,11 +159,9 @@ PyBytes_FromString(const char *str)
         return bytes_new_empty();
     }
     else if (size == 1) {
-        op = CHARACTERS[*str & UCHAR_MAX];
-        if (op != NULL) {
-            Py_INCREF(op);
-            return (PyObject *)op;
-        }
+        op = CHARACTER(*str & UCHAR_MAX);
+        Py_INCREF(op);
+        return (PyObject *)op;
     }
 
     /* Inline PyObject_NewVar */
@@ -179,12 +172,6 @@ PyBytes_FromString(const char *str)
     _PyObject_InitVar((PyVarObject*)op, &PyBytes_Type, size);
     op->ob_shash = -1;
     memcpy(op->ob_sval, str, size+1);
-    /* share short strings */
-    if (size == 1) {
-        assert(CHARACTERS[*str & UCHAR_MAX] == NULL);
-        Py_INCREF(op);
-        CHARACTERS[*str & UCHAR_MAX] = op;
-    }
     return (PyObject *) op;
 }
 
@@ -3074,17 +3061,6 @@ _PyBytes_InitTypes(PyInterpreterState *interp)
     return _PyStatus_OK();
 }
 
-
-void
-_PyBytes_Fini(PyInterpreterState *interp)
-{
-    if (!_Py_IsMainInterpreter(interp)) {
-        return;
-    }
-    for (int i = 0; i < UCHAR_MAX + 1; i++) {
-        Py_CLEAR(CHARACTERS[i]);
-    }
-}
 
 /*********************** Bytes Iterator ****************************/
 

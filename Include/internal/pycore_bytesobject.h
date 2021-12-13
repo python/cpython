@@ -12,7 +12,6 @@ extern "C" {
 /* runtime lifecycle */
 
 extern PyStatus _PyBytes_InitTypes(PyInterpreterState *);
-extern void _PyBytes_Fini(PyInterpreterState *);
 
 
 #ifdef __cplusplus
