@@ -1,0 +1,1 @@
+``CookieJar`` with ``DefaultCookiePolicy`` now can process cookies from localhost with domain=localhost explicitly specified in Set-Cookie header.
