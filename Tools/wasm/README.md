@@ -10,7 +10,7 @@ tool chain and a build Python interpreter.
 
 ### Compile a build Python interpreter
 
-```
+```shell
 mkdir -p builddir/build
 pushd builddir/build
 ../../configure -C
@@ -20,13 +20,13 @@ popd
 
 ### Fetch and build additional emscripten ports
 
-```
+```shell
 embuilder build zlib
 ```
 
 ### Cross compile to wasm32-emscripten
 
-```
+```shell
 mkdir -p builddir/emscripten
 pushd builddir/emscripten
 
@@ -43,6 +43,12 @@ emmake make -j$(nproc) python.html
 
 Serve ``python.html`` with a local webserver and open the file in a browser.
 
+```shell
+emrun python.html
 ```
+
+or
+
+```shell
 python3 -m http.server
 ```

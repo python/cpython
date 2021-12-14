@@ -127,6 +127,7 @@ def create_stdlib_zip(
             if entry in OMIT_ABSOLUTE:
                 continue
             if entry.name.endswith(".py") or entry.is_dir():
+                # writepy() writes .pyc files (bytecode)
                 pzf.writepy(entry, filterfunc=filterfunc)
         for entry in sysconfig_data:
             pzf.writepy(entry)
