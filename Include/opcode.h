@@ -45,6 +45,7 @@ extern "C" {
 #define IMPORT_STAR                      84
 #define SETUP_ANNOTATIONS                85
 #define YIELD_VALUE                      86
+#define PREP_RERAISE_STAR                88
 #define POP_EXCEPT                       89
 #define HAVE_ARGUMENT                    90
 #define STORE_NAME                       90
@@ -83,6 +84,7 @@ extern "C" {
 #define LOAD_FAST                       124
 #define STORE_FAST                      125
 #define DELETE_FAST                     126
+#define JUMP_IF_NOT_EG_MATCH            127
 #define GEN_START                       129
 #define RAISE_VARARGS                   130
 #define CALL_FUNCTION                   131
@@ -161,7 +163,7 @@ extern "C" {
 #define STORE_FAST__LOAD_FAST            80
 #define LOAD_FAST__LOAD_CONST            81
 #define LOAD_CONST__LOAD_FAST            87
-#define STORE_FAST__STORE_FAST           88
+#define STORE_FAST__STORE_FAST          123
 #define DO_TRACING                      255
 #ifdef NEED_OPCODE_JUMP_TABLES
 static uint32_t _PyOpcode_RelativeJump[8] = {
@@ -178,7 +180,7 @@ static uint32_t _PyOpcode_Jump[8] = {
     0U,
     0U,
     536870912U,
-    34586624U,
+    2182070272U,
     0U,
     0U,
     0U,
