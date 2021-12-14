@@ -5451,7 +5451,8 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
             p = os.path.join(wd, '%s.log' % prefix)
             rotator = logging.handlers.TimedRotatingFileHandler(p, when='s',
                                                                 interval=5,
-                                                                backupCount=7)
+                                                                backupCount=7,
+                                                                delay=True)
             rotators.append(rotator)
             if prefix.startswith('a.b'):
                 for t in times:
