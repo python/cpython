@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 """Create a WASM asset bundle directory structure
 
-The WASM assett bundles are pre-loaded into the final WASM build. The bundle
+The WASM asset bundles are pre-loaded by the final WASM build. The bundle
 contains:
 
 - a stripped down, pyc-only stdlib zip file, e.g. {PREFIX}/lib/python311.zip
 - os.py as marker module {PREFIX}/lib/python3.11/os.py
-- empty lib-dynload directory {PREFIX}/lib/python3.11/lib-dynload/.empty
+- empty lib-dynload directory, to make sure it is copied into the bundle {PREFIX}/lib/python3.11/lib-dynload/.empty
 """
 
 import argparse
@@ -159,7 +159,7 @@ def main():
     args.wasm_stdlib = args.wasm_root / WASM_STDLIB
     args.wasm_dynload = args.wasm_root / WASM_DYNLOAD
 
-    # empty, unused directory for dynamic libs
+    # empty, unused directory for dynamic libs, but required for site initialization.
     args.wasm_dynload.mkdir(parents=True, exist_ok=True)
     marker = args.wasm_dynload / ".empty"
     marker.touch()
