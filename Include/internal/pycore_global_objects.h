@@ -51,13 +51,6 @@ extern "C" {
         }, \
     }
 
-static inline void
-_PyBytes_reset(PyBytesObject *op)
-{
-    // Force a new hash to be generated since the hash seed may have changed.
-    op->ob_shash = -1;
-}
-
 
 /**********************
  * the global objects *
@@ -620,10 +613,6 @@ struct _Py_global_objects {
 static inline void
 _Py_global_objects_reset(struct _Py_global_objects *objects)
 {
-    _PyBytes_reset(&objects->singletons.bytes_empty);
-    for (int i = 0; i < UCHAR_MAX + 1; i++) {
-        _PyBytes_reset((PyBytesObject *)&objects->singletons.bytes_characters[i]);
-    }
 }
 
 #ifdef __cplusplus
