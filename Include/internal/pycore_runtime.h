@@ -119,6 +119,8 @@ typedef struct pyruntimestate {
     struct _Py_unicode_runtime_ids unicode_ids;
 
     struct _Py_global_objects global_objects;
+    // If anything gets added after global_objects then
+    // _PyRuntimeState_reset() needs to get updated to clear it.
 } _PyRuntimeState;
 
 #define _PyRuntimeState_INIT \
@@ -131,7 +133,7 @@ static inline void
 _PyRuntimeState_reset(_PyRuntimeState *runtime)
 {
     /* Make it match _PyRuntimeState_INIT. */
-    memset(runtime, 0, sizeof(*runtime));
+    memset(runtime, 0, (size_t)&runtime->global_objects - (size_t)runtime);
     _Py_global_objects_reset(&runtime->global_objects);
 }
 
