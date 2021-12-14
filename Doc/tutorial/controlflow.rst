@@ -393,14 +393,13 @@ Several other key features of this statement:
 - Patterns may use named constants.  These must be dotted names
   to prevent them from being interpreted as capture variable::
 
-      import random
       from enum import Enum
       class Color(Enum):
           RED = 0
           GREEN = 1
           BLUE = 2
 
-      color = random.choice(list(Color))
+      color = Color(int(input("Pick a number between 1 to 2: ")))
 
       match color:
           case Color.RED:
