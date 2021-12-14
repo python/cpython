@@ -5832,29 +5832,6 @@ PyLong_GetInfo(void)
 
 /* runtime lifecycle */
 
-void
-_PyLong_InitGlobalObjects(PyInterpreterState *interp)
-{
-    if (!_Py_IsMainInterpreter(interp)) {
-        return;
-    }
-
-    PyLongObject *small_ints = _PyLong_SMALL_INTS;
-    if (small_ints[0].ob_base.ob_base.ob_refcnt != 0) {
-        // Py_Initialize() must be running a second time.
-        return;
-    }
-
-    for (Py_ssize_t i=0; i < _PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS; i++) {
-        sdigit ival = (sdigit)i - _PY_NSMALLNEGINTS;
-        int size = (ival < 0) ? -1 : ((ival == 0) ? 0 : 1);
-        small_ints[i].ob_base.ob_base.ob_refcnt = 1;
-        small_ints[i].ob_base.ob_base.ob_type = &PyLong_Type;
-        small_ints[i].ob_base.ob_size = size;
-        small_ints[i].ob_digit[0] = (digit)abs(ival);
-    }
-}
-
 PyStatus
 _PyLong_InitTypes(PyInterpreterState *interp)
 {
@@ -5874,10 +5851,4 @@ _PyLong_InitTypes(PyInterpreterState *interp)
     }
 
     return _PyStatus_OK();
-}
-
-void
-_PyLong_Fini(PyInterpreterState *interp)
-{
-    (void)interp;
 }
