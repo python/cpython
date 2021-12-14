@@ -1006,6 +1006,7 @@ enable_shared
 enable_profiling
 with_pydebug
 with_trace_refs
+with_pystats
 with_assertions
 enable_optimizations
 with_lto
@@ -1753,6 +1754,7 @@ Optional Packages:
   --with-pydebug          build with Py_DEBUG defined (default is no)
   --with-trace-refs       enable tracing references for debugging purpose
                           (default is no)
+  --with-pystats          enable internal statistics gathering (default is no)
   --with-assertions       build with C assertions enabled (default is no)
   --with-lto=[full|thin|no|yes]
                           enable Link-Time-Optimization in any build (default
@@ -6912,6 +6914,28 @@ if test "$with_trace_refs" = "yes"
 then
 
 $as_echo "#define Py_TRACE_REFS 1" >>confdefs.h
+
+fi
+
+# Check for --with-pystats
+# --with-trace-refs
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-pystats" >&5
+$as_echo_n "checking for --with-pystats... " >&6; }
+
+# Check whether --with-pystats was given.
+if test "${with_pystats+set}" = set; then :
+  withval=$with_pystats;
+else
+  with_pystats=no
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_pystats" >&5
+$as_echo "$with_pystats" >&6; }
+
+if test "$with_pystats" = "yes"
+then
+
+$as_echo "#define Py_STATS 1" >>confdefs.h
 
 fi
 
