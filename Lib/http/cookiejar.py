@@ -1044,12 +1044,13 @@ class DefaultCookiePolicy(CookiePolicy):
             else:
                 undotted_domain = domain
             embedded_dots = (undotted_domain.find(".") >= 0)
-            if not embedded_dots and domain != ".local":
+            if not embedded_dots and not erhn.endswith(".local"):
                 _debug("   non-local domain %s contains no embedded dot",
                        domain)
                 return False
             if cookie.version == 0:
-                if (not erhn.endswith(domain) and
+                if (not (erhn.endswith(domain) or
+                         (erhn.endswith(".local") and erhn[:len(erhn)-6].endswith(undotted_domain))) and
                     (not erhn.startswith(".") and
                      not ("."+erhn).endswith(domain))):
                     _debug("   effective request-host %s (even with added "

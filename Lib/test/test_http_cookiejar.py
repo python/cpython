@@ -920,6 +920,13 @@ class CookieTests(unittest.TestCase):
 ##         self.assertEqual(len(c), 2)
         self.assertEqual(len(c), 4)
 
+    def test_localhost_domain(self):
+        c = CookieJar()
+
+        interact_netscape(c, "http://localhost", "foo=bar; domain=localhost;")
+
+        self.assertEqual(len(c), 1)
+
     def test_two_component_domain_rfc2965(self):
         pol = DefaultCookiePolicy(rfc2965=True)
         c = CookieJar(pol)
