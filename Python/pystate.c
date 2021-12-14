@@ -46,6 +46,10 @@ static PyThreadState *_PyGILState_GetThisThreadState(struct _gilstate_runtime_st
 static void _PyThreadState_Delete(PyThreadState *tstate, int check_current);
 
 
+/* We use "initial" if the runtime gets re-used
+   (e.g. Py_Finalize() followed by Py_Initialize(). */
+static _PyRuntimeState initial = _PyRuntimeState_INIT;
+
 static int
 alloc_for_runtime(PyThread_type_lock *plock1, PyThread_type_lock *plock2,
                   PyThread_type_lock *plock3)
@@ -82,15 +86,6 @@ alloc_for_runtime(PyThread_type_lock *plock1, PyThread_type_lock *plock2,
 }
 
 static void
-reset_runtime(_PyRuntimeState *runtime)
-{
-    // Make runtime match _PyRuntimeState_INIT.
-    memset(runtime, 0, (int)((Py_uintptr_t)(&runtime->_preallocated) -
-                             (Py_uintptr_t)runtime));
-    _Py_global_objects_reset(&runtime->_preallocated.global_objects);
-}
-
-static void
 init_runtime(_PyRuntimeState *runtime,
              void *open_code_hook, void *open_code_userdata,
              _Py_AuditHookEntry *audit_hook_head,
@@ -100,9 +95,7 @@ init_runtime(_PyRuntimeState *runtime,
              PyThread_type_lock xidregistry_mutex)
 {
     if (runtime->_initialized) {
-        // Py_Initialize() must be running again.
-        reset_runtime(runtime);
-        assert(!runtime->initialized);
+        Py_FatalError("runtime already initialized");
     }
     assert(!runtime->preinitializing &&
            !runtime->preinitialized &&
@@ -158,6 +151,11 @@ _PyRuntimeState_Init(_PyRuntimeState *runtime)
         return _PyStatus_NO_MEMORY();
     }
 
+    if (runtime->_initialized) {
+        // Py_Initialize() must be running again.
+        // Reset to _PyRuntimeState_INIT.
+        memcpy(runtime, &initial, sizeof(*runtime));
+    }
     init_runtime(runtime, open_code_hook, open_code_userdata, audit_hook_head,
                  unicode_next_index, lock1, lock2, lock3);
 
@@ -269,37 +267,10 @@ free_interpreter(PyInterpreterState *interp)
     }
 }
 
-static void
-reset_interpreter(PyInterpreterState *interp)
-{
-    /* Make it match _PyInterpreterState_INIT. */
-    memset(interp, 0, (int)((Py_uintptr_t)(&interp->_preallocated) -
-                            (Py_uintptr_t)interp));
-}
-
-static void init_threadstate_static_data(PyThreadState *, PyInterpreterState *);
-
-static void
-init_interpreter_static_data(PyInterpreterState *interp, _PyRuntimeState *runtime)
-{
-    PyInterpreterState *template = runtime->interpreters.main;
-    assert(template != NULL);
-    assert(interp != template);
-    assert(template->_preallocated.initialized);
-    assert(!interp->_preallocated.initialized);
-
-    // We only want to copy static data that every interpreter has in common.
-
-    /* Initialize interp->_preallocated. */
-    init_threadstate_static_data(&interp->_preallocated.tstate, interp);
-    interp->_preallocated.initialized = 1;
-}
-
 /* Get the interpreter state to a minimal consistent state.
    Further init happens in pylifecycle.c before it can be used.
-   If this is a re-used interpreter state then it will be zeroed out first.
-   Otherwise all fields not initialized here are expected to be zeroed out,
-   e.g. by PyMem_RawCalloc() or memset().
+   All fields not initialized here are expected to be zeroed out,
+   e.g. by PyMem_RawCalloc() or memset(), or otherwise pre-initialized.
    The runtime state is not manipulated.  Instead it is assumed that
    the interpreter is getting added to the runtime.
   */
@@ -311,10 +282,7 @@ init_interpreter(PyInterpreterState *interp,
                  PyThread_type_lock pending_lock)
 {
     if (interp->_initialized) {
-        assert(interp->_preallocated.initialized);
-        reset_interpreter(interp);
-        assert(!interp->_initialized);
-        assert(interp->_preallocated.initialized);
+        Py_FatalError("interpreter already initialized");
     }
 
     assert(runtime != NULL);
@@ -389,7 +357,6 @@ PyInterpreterState_New(void)
         assert(id == 0);
 
         interp = &runtime->_preallocated.interpreters_main;
-        assert(interp->_preallocated.initialized);
         assert(interp->id == 0);
         assert(interp->next == NULL);
 
@@ -403,6 +370,9 @@ PyInterpreterState_New(void)
         if (interp == NULL) {
             goto error;
         }
+        // Set to _PyInterpreterState_INIT.
+        memcpy(interp, &initial._preallocated.interpreters_main,
+               sizeof(*interp));
 
         if (id < 0) {
             /* overflow or Py_Initialize() not called yet! */
@@ -412,7 +382,6 @@ PyInterpreterState_New(void)
             }
             goto error;
         }
-        init_interpreter_static_data(interp, runtime);
     }
     interpreters->head = interp;
 
@@ -789,33 +758,10 @@ free_threadstate(PyThreadState *tstate)
     }
 }
 
-static void
-reset_threadstate(PyThreadState *tstate)
-{
-    /* Make it match _PyThreadState_INIT. */
-    memset(tstate, 0, (int)((Py_uintptr_t)(&tstate->_preallocated) -
-                            (Py_uintptr_t)tstate));
-}
-
-static void
-init_threadstate_static_data(PyThreadState *tstate, PyInterpreterState *interp)
-{
-    PyThreadState *template = &interp->_preallocated.tstate;
-    assert(tstate != template);
-    assert(template->_preallocated.initialized);
-    assert(!tstate->_preallocated.initialized);
-
-    // We only want to copy static data that every thread state has in common.
-
-    /* Initialize tstate->_preallocated. */
-    tstate->_preallocated.initialized = 1;
-}
-
 /* Get the thread state to a minimal consistent state.
    Further init happens in pylifecycle.c before it can be used.
-   If this is a re-used thread state then it will be zeroed out first.
-   Otherwise all fields not initialized here are expected to be zeroed out,
-   e.g. by PyMem_RawCalloc() or memset().
+   All fields not initialized here are expected to be zeroed out,
+   e.g. by PyMem_RawCalloc() or memset(), or otherwise pre-initialized.
    The interpreter state is not manipulated.  Instead it is assumed that
    the thread is getting added to the interpreter.
   */
@@ -827,10 +773,7 @@ init_threadstate(PyThreadState *tstate,
                  _PyStackChunk *datastack_chunk)
 {
     if (tstate->_initialized) {
-        assert(tstate->_preallocated.initialized);
-        reset_threadstate(tstate);
-        assert(!tstate->_initialized);
-        assert(tstate->_preallocated.initialized);
+        Py_FatalError("thread state already initialized");
     }
 
     assert(interp != NULL);
@@ -899,7 +842,6 @@ new_threadstate(PyInterpreterState *interp)
         assert(interp->threads._preallocated_used == 0);
 
         tstate = &interp->_preallocated.tstate;
-        assert(tstate->_preallocated.initialized);
 
         interp->threads._preallocated_used += 1;
     }
@@ -913,8 +855,10 @@ new_threadstate(PyInterpreterState *interp)
         if (tstate == NULL) {
             goto error;
         }
-
-        init_threadstate_static_data(tstate, interp);
+        // Set to _PyThreadState_INIT.
+        memcpy(tstate,
+               &initial._preallocated.interpreters_main._preallocated.tstate,
+               sizeof(*tstate));
     }
     interp->threads.head = tstate;
 
