@@ -92,6 +92,14 @@ PyAPI_FUNC(PyObject *) _PyErr_FormatFromCauseTstate(
     const char *format,
     ...);
 
+PyAPI_FUNC(PyObject *) _PyExc_CreateExceptionGroup(
+    const char *msg,
+    PyObject *excs);
+
+PyAPI_FUNC(PyObject *) _PyExc_ExceptionGroupProjection(
+    PyObject *left,
+    PyObject *right);
+
 PyAPI_FUNC(int) _PyErr_CheckSignalsTstate(PyThreadState *tstate);
 
 PyAPI_FUNC(void) _Py_DumpExtensionModules(int fd, PyInterpreterState *interp);
