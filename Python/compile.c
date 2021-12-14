@@ -1155,13 +1155,11 @@ stack_effect(int opcode, int oparg, int jump)
             return -oparg;
 
         /* Functions and calls */
-        case CALL_FUNCTION:
+        case PRECALL_METHOD:
+            return -1;
+        case CALL_NO_KW:
             return -oparg;
-        case CALL_METHOD:
-            return -oparg-1;
-        case CALL_METHOD_KW:
-            return -oparg-2;
-        case CALL_FUNCTION_KW:
+        case CALL_KW:
             return -oparg-1;
         case CALL_FUNCTION_EX:
             return -1 - ((oparg & 0x01) != 0);
@@ -1817,7 +1815,7 @@ compiler_call_exit_with_nones(struct compiler *c) {
     ADDOP_LOAD_CONST(c, Py_None);
     ADDOP(c, DUP_TOP);
     ADDOP(c, DUP_TOP);
-    ADDOP_I(c, CALL_FUNCTION, 3);
+    ADDOP_I(c, CALL_NO_KW, 3);
     return 1;
 }
 
@@ -2166,7 +2164,7 @@ compiler_apply_decorators(struct compiler *c, asdl_expr_seq* decos)
     int old_end_col_offset = c->u->u_end_col_offset;
     for (Py_ssize_t i = asdl_seq_LEN(decos) - 1; i > -1; i--) {
         SET_LOC(c, (expr_ty)asdl_seq_GET(decos, i));
-        ADDOP_I(c, CALL_FUNCTION, 1);
+        ADDOP_I(c, CALL_NO_KW, 1);
     }
     c->u->u_lineno = old_lineno;
     c->u->u_end_lineno = old_end_lineno;
@@ -3885,7 +3883,7 @@ compiler_assert(struct compiler *c, stmt_ty s)
     ADDOP(c, LOAD_ASSERTION_ERROR);
     if (s->v.Assert.msg) {
         VISIT(c, expr, s->v.Assert.msg);
-        ADDOP_I(c, CALL_FUNCTION, 1);
+        ADDOP_I(c, CALL_NO_KW, 1);
     }
     ADDOP_I(c, RAISE_VARARGS, 1);
     compiler_use_next_block(c, end);
@@ -4693,10 +4691,12 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
         if (!compiler_call_simple_kw_helper(c, kwds, kwdsl)) {
             return 0;
         };
-        ADDOP_I(c, CALL_METHOD_KW, argsl + kwdsl);
+        ADDOP_I(c, PRECALL_METHOD, argsl + kwdsl+1);
+        ADDOP_I(c, CALL_KW, argsl + kwdsl);
     }
     else {
-        ADDOP_I(c, CALL_METHOD, argsl);
+        ADDOP_I(c, PRECALL_METHOD, argsl);
+        ADDOP_I(c, CALL_NO_KW, argsl);
     }
     c->u->u_lineno = old_lineno;
     return 1;
@@ -4763,7 +4763,8 @@ compiler_joined_str(struct compiler *c, expr_ty e)
             VISIT(c, expr, asdl_seq_GET(e->v.JoinedStr.values, i));
             ADDOP_I(c, LIST_APPEND, 1);
         }
-        ADDOP_I(c, CALL_METHOD, 1);
+        ADDOP_I(c, PRECALL_METHOD, 1);
+        ADDOP_I(c, CALL_NO_KW, 1);
     }
     else {
         VISIT_SEQ(c, expr, e->v.JoinedStr.values);
@@ -4935,11 +4936,11 @@ compiler_call_helper(struct compiler *c,
         if (!compiler_call_simple_kw_helper(c, keywords, nkwelts)) {
             return 0;
         };
-        ADDOP_I(c, CALL_FUNCTION_KW, n + nelts + nkwelts);
+        ADDOP_I(c, CALL_KW, n + nelts + nkwelts);
         return 1;
     }
     else {
-        ADDOP_I(c, CALL_FUNCTION, n + nelts);
+        ADDOP_I(c, CALL_NO_KW, n + nelts);
         return 1;
     }
 
@@ -5336,7 +5337,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
         ADDOP(c, GET_ITER);
     }
 
-    ADDOP_I(c, CALL_FUNCTION, 1);
+    ADDOP_I(c, CALL_NO_KW, 1);
 
     if (is_async_generator && type != COMP_GENEXP) {
         ADDOP(c, GET_AWAITABLE);

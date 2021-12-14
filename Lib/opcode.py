@@ -155,7 +155,7 @@ jabs_op('JUMP_IF_NOT_EG_MATCH', 127)
 
 def_op('GEN_START', 129)        # Kind of generator/coroutine
 def_op('RAISE_VARARGS', 130)    # Number of raise arguments (1, 2, or 3)
-def_op('CALL_FUNCTION', 131)    # #args
+
 def_op('MAKE_FUNCTION', 132)    # Flags
 def_op('BUILD_SLICE', 133)      # Number of items
 
@@ -170,7 +170,6 @@ hasfree.append(138)
 def_op('DELETE_DEREF', 139)
 hasfree.append(139)
 
-def_op('CALL_FUNCTION_KW', 141)  # #args + #kwargs
 def_op('CALL_FUNCTION_EX', 142)  # Flags
 
 def_op('EXTENDED_ARG', 144)
@@ -189,12 +188,15 @@ def_op('BUILD_CONST_KEY_MAP', 156)
 def_op('BUILD_STRING', 157)
 
 name_op('LOAD_METHOD', 160)
-def_op('CALL_METHOD', 161)
+
 def_op('LIST_EXTEND', 162)
 def_op('SET_UPDATE', 163)
 def_op('DICT_MERGE', 164)
 def_op('DICT_UPDATE', 165)
-def_op('CALL_METHOD_KW', 166)
+
+def_op('PRECALL_METHOD', 168)
+def_op('CALL_NO_KW', 169)
+def_op('CALL_KW', 170)
 
 del def_op, name_op, jrel_op, jabs_op
 
@@ -249,12 +251,15 @@ _specialized_instructions = [
     "STORE_SUBSCR_ADAPTIVE",
     "STORE_SUBSCR_LIST_INT",
     "STORE_SUBSCR_DICT",
-    "CALL_FUNCTION_ADAPTIVE",
-    "CALL_FUNCTION_BUILTIN_O",
-    "CALL_FUNCTION_BUILTIN_FAST",
-    "CALL_FUNCTION_LEN",
-    "CALL_FUNCTION_ISINSTANCE",
-    "CALL_FUNCTION_PY_SIMPLE",
+    "CALL_NO_KW_ADAPTIVE",
+    "CALL_NO_KW_BUILTIN_O",
+    "CALL_NO_KW_BUILTIN_FAST",
+    "CALL_NO_KW_LEN",
+    "CALL_NO_KW_ISINSTANCE",
+    "CALL_NO_KW_PY_SIMPLE",
+    "CALL_NO_KW_LIST_APPEND",
+    "CALL_NO_KW_METHOD_DESCRIPTOR_O",
+    "CALL_NO_KW_METHOD_DESCRIPTOR_FAST",
     "JUMP_ABSOLUTE_QUICK",
     "LOAD_ATTR_ADAPTIVE",
     "LOAD_ATTR_INSTANCE_VALUE",
