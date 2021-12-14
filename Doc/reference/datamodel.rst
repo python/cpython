@@ -1944,9 +1944,7 @@ Notes on using *__slots__*
 * Nonempty *__slots__* does not work for classes derived from "variable-length"
   built-in types such as :class:`int`, :class:`bytes` and :class:`tuple`.
 
-* Any non-string iterable may be assigned to *__slots__*. Mappings may also be
-  used; however, in the future, special meaning may be assigned to the values
-  corresponding to each key.
+* Any non-string :term:`iterable` may be assigned to *__slots__*.
 
 * :attr:`~instance.__class__` assignment works only if both classes have the
   same *__slots__*.
@@ -1961,6 +1959,52 @@ Notes on using *__slots__*
   created for each
   of the iterator's values. However, the *__slots__* attribute will be an empty
   iterator.
+
+Per-attribute docstrings with *__slots__*
+"""""""""""""""""""""""""""""""""""""""""
+
+If a :term:`mapping` is used to specify *__slots__*, the values of the mapping
+can be used to specify docstrings for each attribute. For example::
+
+  class Card:
+      """A card from a standard French deck"""
+
+      __slots__ = {
+          'suit': 'Either "Spades", "Hearts", "Clubs" or "Diamonds"',
+          'rank': 'A positive integer in the range 2 <= x <= 14'
+      }
+
+      def __init__(self, suit, rank):
+          self.suit = suit
+          self.rank = rank
+
+Calling :func:`help` on this class will yield the following output::
+
+  >>> help(Card)
+  Help on class Card in module __main__:
+
+  class Card(builtins.object)
+   |  Card(suit, rank)
+   |
+   |  A card from a standard French deck
+   |
+   |  Methods defined here:
+   |
+   |  __init__(self, suit, rank)
+   |      Initialize self.  See help(type(self)) for accurate signature.
+   |
+   |  ----------------------------------------------------------------------
+   |  Data descriptors defined here:
+   |
+   |  rank
+   |      A positive integer in the range 2 <= x <= 14
+   |
+   |  suit
+   |      Either "Spades", "Hearts", "Clubs" or "Diamonds"
+
+
+.. versionadded:: 3.8
+
 
 .. _class-customization:
 
