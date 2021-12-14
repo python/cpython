@@ -1,1 +1,0 @@
-Delete Wing IDE project files from Misc. Patch by Kumar Aditya.
