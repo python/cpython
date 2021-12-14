@@ -277,24 +277,21 @@ reset_interpreter(PyInterpreterState *interp)
                             (Py_uintptr_t)interp));
 }
 
-static void init_threadstate_static_data(PyThreadState *, PyThreadState *);
+static void init_threadstate_static_data(PyThreadState *, PyInterpreterState *);
 
 static void
-init_interpreter_static_data(PyInterpreterState *interp,
-                             PyInterpreterState *other)
+init_interpreter_static_data(PyInterpreterState *interp, _PyRuntimeState *runtime)
 {
-    assert(other != NULL);
-    assert(other != interp);
-    assert(other->_preallocated.initialized);
+    PyInterpreterState *template = runtime->interpreters.main;
+    assert(template != NULL);
+    assert(interp != template);
+    assert(template->_preallocated.initialized);
     assert(!interp->_preallocated.initialized);
 
     // We only want to copy static data that every interpreter has in common.
-    // Hence, if "other" was statically initialized
-    // then we only want that data.
 
     /* Initialize interp->_preallocated. */
-    init_threadstate_static_data(&interp->_preallocated.tstate,
-                                 &other->_preallocated.tstate);
+    init_threadstate_static_data(&interp->_preallocated.tstate, interp);
     interp->_preallocated.initialized = 1;
 }
 
@@ -415,7 +412,7 @@ PyInterpreterState_New(void)
             }
             goto error;
         }
-        init_interpreter_static_data(interp, interpreters->main);
+        init_interpreter_static_data(interp, runtime);
     }
     interpreters->head = interp;
 
@@ -801,16 +798,14 @@ reset_threadstate(PyThreadState *tstate)
 }
 
 static void
-init_threadstate_static_data(PyThreadState *tstate, PyThreadState *other)
+init_threadstate_static_data(PyThreadState *tstate, PyInterpreterState *interp)
 {
-    assert(other != NULL);
-    assert(other != tstate);
-    assert(other->_preallocated.initialized);
+    PyThreadState *template = &interp->_preallocated.tstate;
+    assert(tstate != template);
+    assert(template->_preallocated.initialized);
     assert(!tstate->_preallocated.initialized);
 
     // We only want to copy static data that every thread state has in common.
-    // Hence, if "other" was statically initialized
-    // then we only want that data.
 
     /* Initialize tstate->_preallocated. */
     tstate->_preallocated.initialized = 1;
@@ -919,7 +914,7 @@ new_threadstate(PyInterpreterState *interp)
             goto error;
         }
 
-        init_threadstate_static_data(tstate, &interp->_preallocated.tstate);
+        init_threadstate_static_data(tstate, interp);
     }
     interp->threads.head = tstate;
 
