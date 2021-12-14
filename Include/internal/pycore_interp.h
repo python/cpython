@@ -185,12 +185,8 @@ struct _is {
         }, \
     }
 
-static inline void
-_PyInterpreterState_reset(PyInterpreterState *interp)
-{
-    /* Make it match _PyInterpreterState_INIT. */
-    memset(interp, 0, (int)((Py_uintptr_t)(&interp->_preallocated) - (Py_uintptr_t)interp));
-}
+
+/* other API */
 
 extern void _PyInterpreterState_ClearModules(PyInterpreterState *interp);
 extern void _PyInterpreterState_Clear(PyThreadState *tstate);

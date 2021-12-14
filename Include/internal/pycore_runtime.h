@@ -137,14 +137,8 @@ typedef struct pyruntimestate {
     }
 /* Note: _PyRuntimeState_INIT sets other fields to 0/NULL */
 
-static inline void
-_PyRuntimeState_reset(_PyRuntimeState *runtime)
-{
-    /* Make it match _PyRuntimeState_INIT. */
-    memset(runtime, 0, (int)((Py_uintptr_t)(&runtime->_preallocated) - (Py_uintptr_t)runtime));
-    _Py_global_objects_reset(&runtime->_preallocated.global_objects);
-}
 
+/* other API */
 
 PyAPI_DATA(_PyRuntimeState) _PyRuntime;
 

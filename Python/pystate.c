@@ -82,6 +82,15 @@ alloc_for_runtime(PyThread_type_lock *plock1, PyThread_type_lock *plock2,
 }
 
 static void
+reset_runtime(_PyRuntimeState *runtime)
+{
+    // Make runtime match _PyRuntimeState_INIT.
+    memset(runtime, 0, (int)((Py_uintptr_t)(&runtime->_preallocated) -
+                             (Py_uintptr_t)runtime));
+    _Py_global_objects_reset(&runtime->_preallocated.global_objects);
+}
+
+static void
 init_runtime(_PyRuntimeState *runtime,
              void *open_code_hook, void *open_code_userdata,
              _Py_AuditHookEntry *audit_hook_head,
@@ -92,7 +101,7 @@ init_runtime(_PyRuntimeState *runtime,
 {
     if (runtime->_initialized) {
         // Py_Initialize() must be running again.
-        _PyRuntimeState_reset(runtime);
+        reset_runtime(runtime);
         assert(!runtime->initialized);
     }
     assert(!runtime->preinitializing &&
@@ -260,6 +269,14 @@ free_interpreter(PyInterpreterState *interp)
     }
 }
 
+static void
+reset_interpreter(PyInterpreterState *interp)
+{
+    /* Make it match _PyInterpreterState_INIT. */
+    memset(interp, 0, (int)((Py_uintptr_t)(&interp->_preallocated) -
+                            (Py_uintptr_t)interp));
+}
+
 static void init_threadstate_static_data(PyThreadState *, PyThreadState *);
 
 static void
@@ -298,7 +315,7 @@ init_interpreter(PyInterpreterState *interp,
 {
     if (interp->_initialized) {
         assert(interp->_preallocated.initialized);
-        _PyInterpreterState_reset(interp);
+        reset_interpreter(interp);
         assert(!interp->_initialized);
         assert(interp->_preallocated.initialized);
     }
@@ -776,6 +793,14 @@ free_threadstate(PyThreadState *tstate)
 }
 
 static void
+reset_threadstate(PyThreadState *tstate)
+{
+    /* Make it match _PyThreadState_INIT. */
+    memset(tstate, 0, (int)((Py_uintptr_t)(&tstate->_preallocated) -
+                            (Py_uintptr_t)tstate));
+}
+
+static void
 init_threadstate_static_data(PyThreadState *tstate, PyThreadState *other)
 {
     assert(other != NULL);
@@ -808,7 +833,7 @@ init_threadstate(PyThreadState *tstate,
 {
     if (tstate->_initialized) {
         assert(tstate->_preallocated.initialized);
-        _PyThreadState_reset(tstate);
+        reset_threadstate(tstate);
         assert(!tstate->_initialized);
         assert(tstate->_preallocated.initialized);
     }

@@ -189,14 +189,10 @@ struct _ts {
             .initialized = 1, \
         }, \
     }
-
-static inline void
-_PyThreadState_reset(PyThreadState *tstate)
-{
-    /* Make it match _PyThreadState_INIT. */
-    memset(tstate, 0, (int)((Py_uintptr_t)(&tstate->_preallocated) - (Py_uintptr_t)tstate));
-}
 #endif
+
+
+/* other API */
 
 // Alias for backward compatibility with Python 3.8
 #define _PyInterpreterState_Get PyInterpreterState_Get
