@@ -3225,7 +3225,7 @@ dec_format(PyObject *dec, PyObject *args)
     char *decstring = NULL;
     uint32_t status = 0;
     int replace_fillchar = 0;
-    int coerce_neg_0 = 0;
+    int no_neg_0 = 0;
     Py_ssize_t size;
 
 
@@ -3251,7 +3251,7 @@ dec_format(PyObject *dec, PyObject *args)
         }
         char *z_start = strchr(fmt, 'z');
         if (z_start != NULL) {
-            coerce_neg_0 = 1;
+            no_neg_0 = 1;
             size_t z_index = z_start - fmt;
             if (fmt_copy == NULL) {
                 fmt = fmt_copy = dec_strdup(fmt, size);
@@ -3326,7 +3326,7 @@ dec_format(PyObject *dec, PyObject *args)
         }
     }
 
-    if (coerce_neg_0 && mpd_isnegative(MPD(dec)) && !mpd_isspecial(MPD(dec))) {
+    if (no_neg_0 && mpd_isnegative(MPD(dec)) && !mpd_isspecial(MPD(dec))) {
         /* round into a temporary and clear sign if result is zero */
         mpd_uint_t dt[MPD_MINALLOC_MAX];
         mpd_t tmp = {MPD_STATIC|MPD_STATIC_DATA,0,0,0,MPD_MINALLOC_MAX,dt};

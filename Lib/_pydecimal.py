@@ -3795,7 +3795,7 @@ class Decimal(object):
         # represented in fixed point; rescale them to 0e0.
         if not self and self._exp > 0 and spec['type'] in 'fF%':
             self = self._rescale(0, rounding)
-        if not self and spec['coerce_neg_0'] and self._sign:
+        if not self and spec['no_neg_0'] and self._sign:
             adjusted_sign = 0
         else:
             adjusted_sign = self._sign
@@ -6155,7 +6155,7 @@ _parse_format_specifier_regex = re.compile(r"""\A
    (?P<align>[<>=^])
 )?
 (?P<sign>[-+ ])?
-(?P<coerce_neg_0>z)?
+(?P<no_neg_0>z)?
 (?P<alt>\#)?
 (?P<zeropad>0)?
 (?P<minimumwidth>(?!0)\d+)?
