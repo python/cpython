@@ -9,6 +9,7 @@ from test.support import hashlib_helper
 from test.support.script_helper import assert_python_ok
 
 import contextlib
+import gc
 import itertools
 import logging
 from logging.handlers import QueueHandler
@@ -301,6 +302,7 @@ class ExecutorShutdownTest:
                           self.executor.submit,
                           pow, 2, 5)
 
+    @unittest.skipIf(hasattr(gc, "is_immortal"), 'mp not available in executor weakref cb')
     def test_interpreter_shutdown(self):
         # Test the atexit hook for shutdown of worker threads and processes
         rc, out, err = assert_python_ok('-c', """if 1:

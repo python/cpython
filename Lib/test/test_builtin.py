@@ -2158,6 +2158,7 @@ class TestSorted(unittest.TestCase):
 
 class ShutdownTest(unittest.TestCase):
 
+    @unittest.skipIf(hasattr(gc, "is_immortal"), '__del__ is never called')
     def test_cleanup(self):
         # Issue #19255: builtins are still available at shutdown
         code = """if 1:

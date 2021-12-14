@@ -4033,6 +4033,7 @@ class _TestSharedMemory(BaseTestCase):
         smm.shutdown()
 
     @unittest.skipIf(os.name != "posix", "resource_tracker is posix only")
+    @unittest.skipIf(hasattr(gc, "is_immortal"), 'util not available in SharedMemoryManager __del__')
     def test_shared_memory_SharedMemoryManager_reuses_resource_tracker(self):
         # bpo-36867: test that a SharedMemoryManager uses the
         # same resource_tracker process as its parent.

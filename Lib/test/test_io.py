@@ -22,6 +22,7 @@
 import abc
 import array
 import errno
+import gc
 import locale
 import os
 import pickle
@@ -3539,6 +3540,7 @@ class TextIOWrapperTest(unittest.TestCase):
             """.format(iomod=iomod, kwargs=kwargs)
         return assert_python_ok("-c", code)
 
+    @unittest.skipIf(hasattr(gc, "is_immortal"), 'io not available in __del__')
     def test_create_at_shutdown_without_encoding(self):
         rc, out, err = self._check_create_at_shutdown()
         if err:
@@ -3548,6 +3550,7 @@ class TextIOWrapperTest(unittest.TestCase):
         else:
             self.assertEqual("ok", out.decode().strip())
 
+    @unittest.skipIf(hasattr(gc, "is_immortal"), 'io not available in __del__')
     def test_create_at_shutdown_with_encoding(self):
         rc, out, err = self._check_create_at_shutdown(encoding='utf-8',
                                                       errors='strict')

@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+import gc
 import linecache
 import os
 from io import StringIO
@@ -1233,6 +1234,7 @@ class BootstrapTest(unittest.TestCase):
 
 
 class FinalizationTest(unittest.TestCase):
+    @unittest.skipIf(hasattr(gc, "is_immortal"), 'warn not available in __del__')
     def test_finalization(self):
         # Issue #19421: warnings.warn() should not crash
         # during Python finalization
