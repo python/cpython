@@ -10,10 +10,10 @@
 #include "pycore_namespace.h"     // _PyNamespace_Type
 #include "pycore_object.h"        // _PyType_CheckConsistency()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
-#include "pycore_pylifecycle.h"   // _PyTypes_InitSlotDefs()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntry_Type
+#include "pycore_typeobject.h"    // _PyTypes_InitSlotDefs()
 #include "pycore_unionobject.h"   // _PyUnion_Type
 #include "frameobject.h"          // PyFrame_Type
 #include "pycore_interpreteridobject.h"  // _PyInterpreterID_Type
@@ -1823,11 +1823,25 @@ PyObject _Py_NotImplementedStruct = {
 };
 
 PyStatus
-_PyTypes_Init(void)
+_PyTypes_InitState(PyInterpreterState *interp)
 {
+    if (!_Py_IsMainInterpreter(interp)) {
+        return _PyStatus_OK();
+    }
+
     PyStatus status = _PyTypes_InitSlotDefs();
     if (_PyStatus_EXCEPTION(status)) {
         return status;
+    }
+
+    return _PyStatus_OK();
+}
+
+PyStatus
+_PyTypes_InitTypes(PyInterpreterState *interp)
+{
+    if (!_Py_IsMainInterpreter(interp)) {
+        return _PyStatus_OK();
     }
 
 #define INIT_TYPE(TYPE) \
@@ -1843,13 +1857,11 @@ _PyTypes_Init(void)
     assert(PyBaseObject_Type.tp_base == NULL);
     assert(PyType_Type.tp_base == &PyBaseObject_Type);
 
-    // All other static types
+    // All other static types (unless initialized elsewhere)
     INIT_TYPE(PyAsyncGen_Type);
     INIT_TYPE(PyBool_Type);
     INIT_TYPE(PyByteArrayIter_Type);
     INIT_TYPE(PyByteArray_Type);
-    INIT_TYPE(PyBytesIter_Type);
-    INIT_TYPE(PyBytes_Type);
     INIT_TYPE(PyCFunction_Type);
     INIT_TYPE(PyCMethod_Type);
     INIT_TYPE(PyCallIter_Type);
@@ -1873,7 +1885,6 @@ _PyTypes_Init(void)
     INIT_TYPE(PyDict_Type);
     INIT_TYPE(PyEllipsis_Type);
     INIT_TYPE(PyEnum_Type);
-    INIT_TYPE(PyFloat_Type);
     INIT_TYPE(PyFrame_Type);
     INIT_TYPE(PyFrozenSet_Type);
     INIT_TYPE(PyFunction_Type);
@@ -1884,7 +1895,6 @@ _PyTypes_Init(void)
     INIT_TYPE(PyListRevIter_Type);
     INIT_TYPE(PyList_Type);
     INIT_TYPE(PyLongRangeIter_Type);
-    INIT_TYPE(PyLong_Type);
     INIT_TYPE(PyMemberDescr_Type);
     INIT_TYPE(PyMemoryView_Type);
     INIT_TYPE(PyMethodDescr_Type);
@@ -1910,10 +1920,6 @@ _PyTypes_Init(void)
     INIT_TYPE(PyStdPrinter_Type);
     INIT_TYPE(PySuper_Type);
     INIT_TYPE(PyTraceBack_Type);
-    INIT_TYPE(PyTupleIter_Type);
-    INIT_TYPE(PyTuple_Type);
-    INIT_TYPE(PyUnicodeIter_Type);
-    INIT_TYPE(PyUnicode_Type);
     INIT_TYPE(PyWrapperDescr_Type);
     INIT_TYPE(Py_GenericAliasType);
     INIT_TYPE(_PyAnextAwaitable_Type);
