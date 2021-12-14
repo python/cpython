@@ -3705,7 +3705,7 @@ compiler_try_star(struct compiler *c, stmt_ty s)
     }
     else {
         return compiler_try_star_except(c, s);
-    }   
+    }
 }
 
 static int
