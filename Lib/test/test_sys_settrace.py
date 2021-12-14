@@ -1213,6 +1213,181 @@ class TraceTestCase(unittest.TestCase):
              (5, 'line'),
              (5, 'return')])
 
+    def test_try_except_star_no_exception(self):
+
+        def func():
+            try:
+                2
+            except* Exception:
+                4
+            else:
+                6
+            finally:
+                8
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (6, 'line'),
+             (8, 'line'),
+             (8, 'return')])
+
+    def test_try_except_star_named_no_exception(self):
+
+        def func():
+            try:
+                2
+            except* Exception as e:
+                4
+            else:
+                6
+            finally:
+                8
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (6, 'line'),
+             (8, 'line'),
+             (8, 'return')])
+
+    def test_try_except_star_exception_caught(self):
+
+        def func():
+            try:
+                raise ValueError(2)
+            except* ValueError:
+                4
+            else:
+                6
+            finally:
+                8
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (2, 'exception'),
+             (3, 'line'),
+             (4, 'line'),
+             (8, 'line'),
+             (8, 'return')])
+
+    def test_try_except_star_named_exception_caught(self):
+
+        def func():
+            try:
+                raise ValueError(2)
+            except* ValueError as e:
+                4
+            else:
+                6
+            finally:
+                8
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (2, 'exception'),
+             (3, 'line'),
+             (4, 'line'),
+             (8, 'line'),
+             (8, 'return')])
+
+    def test_try_except_star_exception_not_caught(self):
+
+        def func():
+            try:
+                try:
+                    raise ValueError(3)
+                except* TypeError:
+                    5
+            except ValueError:
+                7
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (3, 'exception'),
+             (4, 'line'),
+             (6, 'line'),
+             (7, 'line'),
+             (7, 'return')])
+
+    def test_try_except_star_named_exception_not_caught(self):
+
+        def func():
+            try:
+                try:
+                    raise ValueError(3)
+                except* TypeError as e:
+                    5
+            except ValueError:
+                7
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (3, 'exception'),
+             (4, 'line'),
+             (6, 'line'),
+             (7, 'line'),
+             (7, 'return')])
+
+    def test_try_except_star_nested(self):
+
+        def func():
+            try:
+                try:
+                    raise ExceptionGroup(
+                        'eg',
+                        [ValueError(5), TypeError('bad type')])
+                except* TypeError as e:
+                    7
+                except* OSError:
+                    9
+                except* ValueError:
+                    raise
+            except* ValueError:
+                try:
+                    raise TypeError(14)
+                except* OSError:
+                    16
+                except* TypeError as e:
+                    18
+            return 0
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (4, 'line'),
+             (5, 'line'),
+             (3, 'line'),
+             (3, 'exception'),
+             (6, 'line'),
+             (7, 'line'),
+             (8, 'line'),
+             (10, 'line'),
+             (11, 'line'),
+             (12, 'line'),
+             (13, 'line'),
+             (14, 'line'),
+             (14, 'exception'),
+             (15, 'line'),
+             (17, 'line'),
+             (18, 'line'),
+             (19, 'line'),
+             (19, 'return')])
+
 
 class SkipLineEventsTraceTestCase(TraceTestCase):
     """Repeat the trace tests, but with per-line events skipped"""

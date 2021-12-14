@@ -371,6 +371,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.11a3 3464 (bpo-45636: Merge numeric BINARY_*/INPLACE_* into
 #                         BINARY_OP)
 #     Python 3.11a3 3465 (Add COPY_FREE_VARS opcode)
+#     Python 3.11a3 3466 (bpo-45292: PEP-654 except*)
 
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
@@ -380,7 +381,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3465).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3466).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
