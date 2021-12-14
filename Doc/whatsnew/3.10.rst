@@ -1173,7 +1173,7 @@ Highlight the new :ref:`soft keywords <soft-keywords>` :keyword:`match`,
 :keyword:`case <match>`, and :keyword:`_ <wildcard-patterns>` in
 pattern-matching statements. However, this highlighting is not perfect
 and will be incorrect in some rare cases, including some ``_``-s in
-``case`` patterns.  (Contributed by Tal Einat in bpo-44010.)
+``case`` patterns.  (Contributed by Tal Einat in :issue:`44010`.)
 
 importlib.metadata
 ------------------

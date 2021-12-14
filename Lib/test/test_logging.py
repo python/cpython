@@ -1,4 +1,4 @@
-# Copyright 2001-2019 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2021 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -16,7 +16,7 @@
 
 """Test harness for the logging module. Run all tests.
 
-Copyright (C) 2001-2019 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2021 Vinay Sajip. All Rights Reserved.
 """
 
 import logging
@@ -36,6 +36,7 @@ import os
 import queue
 import random
 import re
+import shutil
 import socket
 import struct
 import sys
@@ -5433,6 +5434,53 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
                 self.assertEqual(actual, expected)
             finally:
                 rh.close()
+
+    def test_compute_files_to_delete(self):
+        # See bpo-46063 for background
+        wd = tempfile.mkdtemp(prefix='test_logging_')
+        self.addCleanup(shutil.rmtree, wd)
+        times = []
+        dt = datetime.datetime.now()
+        for i in range(10):
+            times.append(dt.strftime('%Y-%m-%d_%H-%M-%S'))
+            dt += datetime.timedelta(seconds=5)
+        prefixes = ('a.b', 'a.b.c', 'd.e', 'd.e.f')
+        files = []
+        rotators = []
+        for prefix in prefixes:
+            p = os.path.join(wd, '%s.log' % prefix)
+            rotator = logging.handlers.TimedRotatingFileHandler(p, when='s',
+                                                                interval=5,
+                                                                backupCount=7)
+            rotators.append(rotator)
+            if prefix.startswith('a.b'):
+                for t in times:
+                    files.append('%s.log.%s' % (prefix, t))
+            else:
+                rotator.namer = lambda name: name.replace('.log', '') + '.log'
+                for t in times:
+                    files.append('%s.%s.log' % (prefix, t))
+        # Create empty files
+        for fn in files:
+            p = os.path.join(wd, fn)
+            with open(p, 'wb') as f:
+                pass
+        # Now the checks that only the correct files are offered up for deletion
+        for i, prefix in enumerate(prefixes):
+            rotator = rotators[i]
+            candidates = rotator.getFilesToDelete()
+            self.assertEqual(len(candidates), 3)
+            if prefix.startswith('a.b'):
+                p = '%s.log.' % prefix
+                for c in candidates:
+                    d, fn = os.path.split(c)
+                    self.assertTrue(fn.startswith(p))
+            else:
+                for c in candidates:
+                    d, fn = os.path.split(c)
+                    self.assertTrue(fn.endswith('.log'))
+                    self.assertTrue(fn.startswith(prefix + '.') and
+                                    fn[len(prefix) + 2].isdigit())
 
 
 def secs(**kw):

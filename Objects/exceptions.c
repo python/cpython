@@ -7,6 +7,7 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <stdbool.h>
+#include "pycore_exceptions.h"    // struct _Py_exc_state
 #include "pycore_initconfig.h"
 #include "pycore_object.h"
 #include "structmember.h"         // PyMemberDef
@@ -3189,10 +3190,8 @@ SimpleExtendsException(PyExc_Warning, ResourceWarning,
 #endif /* MS_WINDOWS */
 
 PyStatus
-_PyExc_Init(PyInterpreterState *interp)
+_PyExc_InitTypes(PyInterpreterState *interp)
 {
-    struct _Py_exc_state *state = &interp->exc_state;
-
 #define PRE_INIT(TYPE) \
     if (!(_PyExc_ ## TYPE.tp_flags & Py_TPFLAGS_READY)) { \
         if (PyType_Ready(&_PyExc_ ## TYPE) < 0) { \
@@ -3200,17 +3199,6 @@ _PyExc_Init(PyInterpreterState *interp)
         } \
         Py_INCREF(PyExc_ ## TYPE); \
     }
-
-#define ADD_ERRNO(TYPE, CODE) \
-    do { \
-        PyObject *_code = PyLong_FromLong(CODE); \
-        assert(_PyObject_RealIsSubclass(PyExc_ ## TYPE, PyExc_OSError)); \
-        if (!_code || PyDict_SetItem(state->errnomap, _code, PyExc_ ## TYPE)) { \
-            Py_XDECREF(_code); \
-            return _PyStatus_ERR("errmap insertion problem."); \
-        } \
-        Py_DECREF(_code); \
-    } while (0)
 
     PRE_INIT(BaseException);
     PRE_INIT(BaseExceptionGroup);
@@ -3282,9 +3270,36 @@ _PyExc_Init(PyInterpreterState *interp)
     PRE_INIT(ProcessLookupError);
     PRE_INIT(TimeoutError);
 
+    return _PyStatus_OK();
+
+#undef PRE_INIT
+}
+
+PyStatus
+_PyExc_InitGlobalObjects(PyInterpreterState *interp)
+{
     if (preallocate_memerrors() < 0) {
         return _PyStatus_NO_MEMORY();
     }
+
+    return _PyStatus_OK();
+}
+
+PyStatus
+_PyExc_InitState(PyInterpreterState *interp)
+{
+    struct _Py_exc_state *state = &interp->exc_state;
+
+#define ADD_ERRNO(TYPE, CODE) \
+    do { \
+        PyObject *_code = PyLong_FromLong(CODE); \
+        assert(_PyObject_RealIsSubclass(PyExc_ ## TYPE, PyExc_OSError)); \
+        if (!_code || PyDict_SetItem(state->errnomap, _code, PyExc_ ## TYPE)) { \
+            Py_XDECREF(_code); \
+            return _PyStatus_ERR("errmap insertion problem."); \
+        } \
+        Py_DECREF(_code); \
+    } while (0)
 
     /* Add exceptions to errnomap */
     assert(state->errnomap == NULL);
@@ -3317,7 +3332,6 @@ _PyExc_Init(PyInterpreterState *interp)
 
     return _PyStatus_OK();
 
-#undef PRE_INIT
 #undef ADD_ERRNO
 }
 

@@ -268,9 +268,10 @@ class ExceptionTests(unittest.TestCase):
         check(b"\xef\xbb\xbf#coding: utf8\nprint('\xe6\x88\x91')\n", 0, -1)
 
         # Errors thrown by symtable.c
-        check('x = [(yield i) for i in range(3)]', 1, 5)
-        check('def f():\n  from _ import *', 1, 1)
-        check('def f(x, x):\n  pass', 1, 1)
+        check('x = [(yield i) for i in range(3)]', 1, 7)
+        check('def f():\n  from _ import *', 2, 17)
+        check('def f(x, x):\n  pass', 1, 10)
+        check('{i for i in range(5) if (j := 0) for j in range(5)}', 1, 38)
         check('def f(x):\n  nonlocal x', 2, 3)
         check('def f(x):\n  x = 1\n  global x', 3, 3)
         check('nonlocal x', 1, 1)
@@ -2383,6 +2384,18 @@ class SyntaxErrorTests(unittest.TestCase):
 
             self.assertEqual(err[-3], '    (')
             self.assertEqual(err[-2], '    ^')
+        finally:
+            unlink(TESTFN)
+
+    def test_non_utf8(self):
+        # Check non utf-8 characters
+        try:
+            with open(TESTFN, 'bw') as testfile:
+                testfile.write(b"\x89")
+            rc, out, err = script_helper.assert_python_failure('-Wd', '-X', 'utf8', TESTFN)
+            err = err.decode('utf-8').splitlines()
+
+            self.assertIn("SyntaxError: Non-UTF-8 code starting with '\\x89' in file", err[-1])
         finally:
             unlink(TESTFN)
 
