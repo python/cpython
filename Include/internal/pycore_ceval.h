@@ -17,7 +17,7 @@ struct _ceval_runtime_state;
 
 extern void _Py_FinishPendingCalls(PyThreadState *tstate);
 extern void _PyEval_InitRuntimeState(struct _ceval_runtime_state *);
-extern int _PyEval_InitState(struct _ceval_state *ceval);
+extern void _PyEval_InitState(struct _ceval_state *, PyThread_type_lock);
 extern void _PyEval_FiniState(struct _ceval_state *ceval);
 PyAPI_FUNC(void) _PyEval_SignalReceived(PyInterpreterState *interp);
 PyAPI_FUNC(int) _PyEval_AddPendingCall(
@@ -52,7 +52,7 @@ _PyEval_EvalFrame(PyThreadState *tstate, struct _interpreter_frame *frame, int t
 
 extern PyObject *
 _PyEval_Vector(PyThreadState *tstate,
-            PyFrameConstructor *desc, PyObject *locals,
+            PyFunctionObject *func, PyObject *locals,
             PyObject* const* args, size_t argcount,
             PyObject *kwnames);
 
@@ -113,7 +113,7 @@ static inline void _Py_LeaveRecursiveCall_inline(void)  {
 
 struct _interpreter_frame *_PyEval_GetFrame(void);
 
-PyObject *_Py_MakeCoro(PyFrameConstructor *, struct _interpreter_frame *);
+PyObject *_Py_MakeCoro(PyFunctionObject *func);
 
 #ifdef __cplusplus
 }

@@ -2,8 +2,6 @@
 #  error "this header file must not be included directly"
 #endif
 
-#include "cpython/initconfig.h"
-
 PyAPI_FUNC(int) _PyInterpreterState_RequiresIDRef(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_RequireIDRef(PyInterpreterState *, int);
 
@@ -78,6 +76,12 @@ struct _ts {
     struct _ts *prev;
     struct _ts *next;
     PyInterpreterState *interp;
+
+    /* Has been initialized to a safe state.
+
+       In order to be effective, this must be set to 0 during or right
+       after allocation. */
+    int _initialized;
 
     int recursion_remaining;
     int recursion_limit;

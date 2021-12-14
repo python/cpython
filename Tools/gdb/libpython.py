@@ -83,7 +83,8 @@ def _sizeof_void_p():
 # value computed later, see PyUnicodeObjectPtr.proxy()
 _is_pep393 = None
 
-Py_TPFLAGS_HEAPTYPE = (1 << 9)
+Py_TPFLAGS_MANAGED_DICT      = (1 << 4)
+Py_TPFLAGS_HEAPTYPE          = (1 << 9)
 Py_TPFLAGS_LONG_SUBCLASS     = (1 << 24)
 Py_TPFLAGS_LIST_SUBCLASS     = (1 << 25)
 Py_TPFLAGS_TUPLE_SUBCLASS    = (1 << 26)
@@ -507,7 +508,6 @@ class HeapTypeObjectPtr(PyObjectPtr):
                         tsize = -tsize
                     size = _PyObject_VAR_SIZE(typeobj, tsize)
                     dictoffset += size
-                    assert dictoffset > 0
                     assert dictoffset % _sizeof_void_p() == 0
 
                 dictptr = self._gdbval.cast(_type_char_ptr()) + dictoffset
@@ -523,12 +523,11 @@ class HeapTypeObjectPtr(PyObjectPtr):
 
     def get_keys_values(self):
         typeobj = self.type()
-        values_offset = int_from_int(typeobj.field('tp_inline_values_offset'))
-        if values_offset == 0:
+        has_values =  int_from_int(typeobj.field('tp_flags')) & Py_TPFLAGS_MANAGED_DICT
+        if not has_values:
             return None
-        charptr = self._gdbval.cast(_type_char_ptr()) + values_offset
         PyDictValuesPtrPtr = gdb.lookup_type("PyDictValues").pointer().pointer()
-        valuesptr = charptr.cast(PyDictValuesPtrPtr)
+        valuesptr = self._gdbval.cast(PyDictValuesPtrPtr) - 4
         values = valuesptr.dereference()
         if long(values) == 0:
             return None
@@ -1797,10 +1796,10 @@ class Frame(object):
 
     def get_pyop(self):
         try:
-            # frame = self._gdbframe.read_var('frame')
-            # frame = PyFramePtr(frame)
-            # if not frame.is_optimized_out():
-            #     return frame
+            frame = self._gdbframe.read_var('frame')
+            frame = PyFramePtr(frame)
+            if not frame.is_optimized_out():
+                return frame
             cframe = self._gdbframe.read_var('cframe')
             if cframe is None:
                 return None
@@ -1865,6 +1864,7 @@ class Frame(object):
                         break
                 else:
                     sys.stdout.write('#%i (unable to read python frame information)\n' % self.get_index())
+                    break
                 interp_frame = interp_frame.previous()
         else:
             info = self.is_other_python_frame()
@@ -1887,6 +1887,7 @@ class Frame(object):
                         break
                 else:
                     sys.stdout.write('  (unable to read python frame information)\n')
+                    break
                 interp_frame = interp_frame.previous()
         else:
             info = self.is_other_python_frame()

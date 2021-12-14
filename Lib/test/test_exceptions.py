@@ -209,7 +209,7 @@ class ExceptionTests(unittest.TestCase):
                     src = src.decode(encoding, 'replace')
                 line = src.split('\n')[lineno-1]
                 self.assertIn(line, cm.exception.text)
-    
+
     def test_error_offset_continuation_characters(self):
         check = self.check
         check('"\\\n"(1 for c in I,\\\n\\', 2, 2)
@@ -226,19 +226,23 @@ class ExceptionTests(unittest.TestCase):
         check(b'Python = "\xcf\xb3\xf2\xee\xed" +', 1, 18)
         check('x = "a', 1, 5)
         check('lambda x: x = 2', 1, 1)
-        check('f{a + b + c}', 1, 1)
+        check('f{a + b + c}', 1, 2)
         check('[file for str(file) in []\n])', 1, 11)
         check('a = « hello » « world »', 1, 5)
         check('[\nfile\nfor str(file)\nin\n[]\n]', 3, 5)
         check('[file for\n str(file) in []]', 2, 2)
         check("ages = {'Alice'=22, 'Bob'=23}", 1, 16)
         check('match ...:\n    case {**rest, "key": value}:\n        ...', 2, 19)
+        check("[a b c d e f]", 1, 2)
+        check("for x yfff:", 1, 7)
 
         # Errors thrown by compile.c
         check('class foo:return 1', 1, 11)
         check('def f():\n  continue', 2, 3)
         check('def f():\n  break', 2, 3)
         check('try:\n  pass\nexcept:\n  pass\nexcept ValueError:\n  pass', 3, 1)
+        check('try:\n  pass\nexcept*:\n  pass', 3, 8)
+        check('try:\n  pass\nexcept*:\n  pass\nexcept* ValueError:\n  pass', 3, 8)
 
         # Errors thrown by tokenizer.c
         check('(0x+1)', 1, 3)
@@ -266,9 +270,10 @@ class ExceptionTests(unittest.TestCase):
         check(b"\xef\xbb\xbf#coding: utf8\nprint('\xe6\x88\x91')\n", 0, -1)
 
         # Errors thrown by symtable.c
-        check('x = [(yield i) for i in range(3)]', 1, 5)
-        check('def f():\n  from _ import *', 1, 1)
-        check('def f(x, x):\n  pass', 1, 1)
+        check('x = [(yield i) for i in range(3)]', 1, 7)
+        check('def f():\n  from _ import *', 2, 17)
+        check('def f(x, x):\n  pass', 1, 10)
+        check('{i for i in range(5) if (j := 0) for j in range(5)}', 1, 38)
         check('def f(x):\n  nonlocal x', 2, 3)
         check('def f(x):\n  x = 1\n  global x', 3, 3)
         check('nonlocal x', 1, 1)
@@ -514,6 +519,27 @@ class ExceptionTests(unittest.TestCase):
                             self.assertEqual(got, want,
                                              'pickled "%r", attribute "%s' %
                                              (e, checkArgName))
+
+    def test_note(self):
+        for e in [BaseException(1), Exception(2), ValueError(3)]:
+            with self.subTest(e=e):
+                self.assertIsNone(e.__note__)
+                e.__note__ = "My Note"
+                self.assertEqual(e.__note__, "My Note")
+
+                with self.assertRaises(TypeError):
+                    e.__note__ = 42
+                self.assertEqual(e.__note__, "My Note")
+
+                e.__note__ = "Your Note"
+                self.assertEqual(e.__note__, "Your Note")
+
+                with self.assertRaises(TypeError):
+                    del e.__note__
+                self.assertEqual(e.__note__, "Your Note")
+
+                e.__note__ = None
+                self.assertIsNone(e.__note__)
 
     def testWithTraceback(self):
         try:
@@ -1341,9 +1367,7 @@ class ExceptionTests(unittest.TestCase):
         """
         with SuppressCrashReport():
             rc, out, err = script_helper.assert_python_failure("-c", code)
-            self.assertIn(b'Fatal Python error: _PyErr_NormalizeException: '
-                          b'Cannot recover from MemoryErrors while '
-                          b'normalizing exceptions.', err)
+            self.assertIn(b'MemoryError', err)
 
     @cpython_only
     def test_MemoryError(self):
@@ -2352,6 +2376,31 @@ class SyntaxErrorTests(unittest.TestCase):
         finally:
             unlink(TESTFN)
 
+        # Check backwards tokenizer errors
+        source = '# -*- coding: ascii -*-\n\n(\n'
+        try:
+            with open(TESTFN, 'w', encoding='ascii') as testfile:
+                testfile.write(source)
+            rc, out, err = script_helper.assert_python_failure('-Wd', '-X', 'utf8', TESTFN)
+            err = err.decode('utf-8').splitlines()
+
+            self.assertEqual(err[-3], '    (')
+            self.assertEqual(err[-2], '    ^')
+        finally:
+            unlink(TESTFN)
+
+    def test_non_utf8(self):
+        # Check non utf-8 characters
+        try:
+            with open(TESTFN, 'bw') as testfile:
+                testfile.write(b"\x89")
+            rc, out, err = script_helper.assert_python_failure('-Wd', '-X', 'utf8', TESTFN)
+            err = err.decode('utf-8').splitlines()
+
+            self.assertIn("SyntaxError: Non-UTF-8 code starting with '\\x89' in file", err[-1])
+        finally:
+            unlink(TESTFN)
+
     def test_attributes_new_constructor(self):
         args = ("bad.py", 1, 2, "abcdefg", 1, 100)
         the_exception = SyntaxError("bad bad", args)
@@ -2385,6 +2434,21 @@ class SyntaxErrorTests(unittest.TestCase):
 
         args = ("bad.py", 1, 2, "abcdefg", 1)
         self.assertRaises(TypeError, SyntaxError, "bad bad", args)
+
+
+class TestInvalidExceptionMatcher(unittest.TestCase):
+    def test_except_star_invalid_exception_type(self):
+        with self.assertRaises(TypeError):
+            try:
+                raise ValueError
+            except 42:
+                pass
+
+        with self.assertRaises(TypeError):
+            try:
+                raise ValueError
+            except (ValueError, 42):
+                pass
 
 
 class PEP626Tests(unittest.TestCase):

@@ -785,12 +785,7 @@ sys_exc_info_impl(PyObject *module)
 /*[clinic end generated code: output=3afd0940cf3a4d30 input=b5c5bf077788a3e5]*/
 {
     _PyErr_StackItem *err_info = _PyErr_GetTopmostException(_PyThreadState_GET());
-    return Py_BuildValue(
-        "(OOO)",
-        err_info->exc_type != NULL ? err_info->exc_type : Py_None,
-        err_info->exc_value != NULL ? err_info->exc_value : Py_None,
-        err_info->exc_traceback != NULL ?
-            err_info->exc_traceback : Py_None);
+    return _PyErr_StackItemToExcInfoTuple(err_info);
 }
 
 
@@ -1686,10 +1681,7 @@ _PySys_GetSizeOf(PyObject *o)
         return (size_t)-1;
     }
 
-    /* add gc_head size */
-    if (_PyObject_IS_GC(o))
-        return ((size_t)size) + sizeof(PyGC_Head);
-    return (size_t)size;
+    return (size_t)size + _PyType_PreHeaderSize(Py_TYPE(o));
 }
 
 static PyObject *
@@ -2831,6 +2823,8 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
             goto type_init_failed;
         }
     }
+
+    SET_SYS_FROM_STRING("_vpath", VPATH);
 #endif
 
     /* float repr style: 0.03 (short) vs 0.029999999999999999 (legacy) */

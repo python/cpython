@@ -145,6 +145,10 @@ Functions
 
    .. versionadded:: 3.3
 
+   .. versionchanged:: 3.10
+      Namespace packages created/installed in a different :data:`sys.path`
+      location after the same namespace was already imported are noticed.
+
 .. function:: reload(module)
 
    Reload a previously imported *module*.  The argument must be a module object,
@@ -913,7 +917,9 @@ not** have to exist as physical files and directories on the file system.
    on `using importlib.resources
    <http://importlib-resources.readthedocs.io/en/latest/using.html>`_ and
    `migrating from pkg_resources to importlib.resources
-   <http://importlib-resources.readthedocs.io/en/latest/migration.html>`_.
+   <http://importlib-resources.readthedocs.io/en/latest/migration.html>`_
+   and
+   `migrating legacy usage <https://importlib-resources.readthedocs.io/en/latest/using.html#migrating-from-legacy>`_.
 
 Loaders that wish to support resource reading should implement a
 ``get_resource_reader(fullname)`` method as specified by
@@ -975,6 +981,8 @@ The following functions are available.
     sub-resources (i.e. it cannot be a directory).  This function returns a
     ``typing.BinaryIO`` instance, a binary I/O stream open for reading.
 
+   .. deprecated:: 3.11
+
 
 .. function:: open_text(package, resource, encoding='utf-8', errors='strict')
 
@@ -990,6 +998,8 @@ The following functions are available.
     This function returns a ``typing.TextIO`` instance, a text I/O stream open
     for reading.
 
+   .. deprecated:: 3.11
+
 
 .. function:: read_binary(package, resource)
 
@@ -1001,6 +1011,8 @@ The following functions are available.
     within *package*; it may not contain path separators and it may not have
     sub-resources (i.e. it cannot be a directory).  This function returns the
     contents of the resource as :class:`bytes`.
+
+   .. deprecated:: 3.11
 
 
 .. function:: read_text(package, resource, encoding='utf-8', errors='strict')
@@ -1014,6 +1026,8 @@ The following functions are available.
     sub-resources (i.e. it cannot be a directory).  *encoding* and *errors*
     have the same meaning as with built-in :func:`open`.  This function
     returns the contents of the resource as :class:`str`.
+
+   .. deprecated:: 3.11
 
 
 .. function:: path(package, resource)
@@ -1030,6 +1044,8 @@ The following functions are available.
     within *package*; it may not contain path separators and it may not have
     sub-resources (i.e. it cannot be a directory).
 
+   .. deprecated:: 3.11
+
 
 .. function:: is_resource(package, name)
 
@@ -1037,6 +1053,8 @@ The following functions are available.
     otherwise ``False``.  Remember that directories are *not* resources!
     *package* is either a name or a module object which conforms to the
     ``Package`` requirements.
+
+   .. deprecated:: 3.11
 
 
 .. function:: contents(package)
@@ -1047,6 +1065,8 @@ The following functions are available.
 
     *package* is either a name or a module object which conforms to the
     ``Package`` requirements.
+
+   .. deprecated:: 3.11
 
 
 :mod:`importlib.machinery` -- Importers and path hooks
