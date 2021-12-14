@@ -1040,7 +1040,7 @@ All of the following opcodes use their arguments.
    calls the callable object with those arguments, and pushes the return value
    returned by the callable object.
 
-   .. versionadded:: 3.1
+   .. versionadded:: 3.11
 
 
 .. opcode:: CALL_FUNCTION_EX (flags)
