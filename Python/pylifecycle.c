@@ -2168,6 +2168,8 @@ is_valid_fd(int fd)
    some platforms.
 
    fcntl(fd, F_GETFD) is even faster, because it only checks the process table.
+   It is preferred over dup() when available, since it cannot fail with the
+   "too many open files" error (EMFILE).
 
    bpo-30225: On macOS Tiger, when stdout is redirected to a pipe and the other
    side of the pipe is closed, dup(1) succeed, whereas fstat(1, &st) fails with
