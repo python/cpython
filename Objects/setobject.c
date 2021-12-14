@@ -1409,7 +1409,7 @@ set_difference_update_internal(PySetObject *so, PyObject *other)
 
         /* Optimization:  When the other set is more than 8 times
            larger than the base set, replace the other set with
-           interesection of the two sets.
+           intersection of the two sets.
         */
         if ((PySet_GET_SIZE(other) >> 3) > PySet_GET_SIZE(so)) {
             other = set_intersection(so, other);

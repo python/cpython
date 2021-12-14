@@ -15,7 +15,7 @@ From the keyboard of flee@cs.psu.edu (Felix Lee):
 :And Perl is definitely awkward with data types.  I haven't yet found a
 :pleasant way of shoving non-trivial data types into Perl's grammar.
 
-Yes, it's pretty aweful at that, alright.  Sometimes I write perl programs
+Yes, it's pretty awful at that, alright.  Sometimes I write perl programs
 that need them, and sometimes it just takes a little creativity.  But
 sometimes it's not worth it.  I actually wrote a C program the other day
 (gasp) because I didn't want to deal with a game matrix with six links per node.

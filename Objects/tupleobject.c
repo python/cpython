@@ -7,6 +7,7 @@
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_pyerrors.h"      // _Py_FatalRefcountError()
+#include "pycore_tuple.h"         // struct _Py_tuple_state()
 
 /*[clinic input]
 class tuple "PyTupleObject *" "&PyTuple_Type"
@@ -66,7 +67,8 @@ tuple_alloc(Py_ssize_t size)
         return NULL;
     }
 
-#if PyTuple_MAXSAVESIZE > 0
+// Check for max save size > 1. Empty tuple singleton is special case.
+#if PyTuple_MAXSAVESIZE > 1
     struct _Py_tuple_state *state = get_tuple_state();
 #ifdef Py_DEBUG
     // tuple_alloc() must not be called after _PyTuple_Fini()
@@ -478,6 +480,28 @@ _PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
     for (Py_ssize_t i = 0; i < n; i++) {
         PyObject *item = src[i];
         Py_INCREF(item);
+        dst[i] = item;
+    }
+    _PyObject_GC_TRACK(tuple);
+    return (PyObject *)tuple;
+}
+
+PyObject *
+_PyTuple_FromArraySteal(PyObject *const *src, Py_ssize_t n)
+{
+    if (n == 0) {
+        return tuple_get_empty();
+    }
+    PyTupleObject *tuple = tuple_alloc(n);
+    if (tuple == NULL) {
+        for (Py_ssize_t i = 0; i < n; i++) {
+            Py_DECREF(src[i]);
+        }
+        return NULL;
+    }
+    PyObject **dst = tuple->ob_item;
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *item = src[i];
         dst[i] = item;
     }
     _PyObject_GC_TRACK(tuple);
@@ -1043,7 +1067,7 @@ _PyTuple_ClearFreeList(PyInterpreterState *interp)
 
 
 PyStatus
-_PyTuple_Init(PyInterpreterState *interp)
+_PyTuple_InitGlobalObjects(PyInterpreterState *interp)
 {
     struct _Py_tuple_state *state = &interp->tuple;
     if (tuple_create_empty_tuple_singleton(state) < 0) {
@@ -1052,6 +1076,24 @@ _PyTuple_Init(PyInterpreterState *interp)
     return _PyStatus_OK();
 }
 
+
+PyStatus
+_PyTuple_InitTypes(PyInterpreterState *interp)
+{
+    if (!_Py_IsMainInterpreter(interp)) {
+        return _PyStatus_OK();
+    }
+
+    if (PyType_Ready(&PyTuple_Type) < 0) {
+        return _PyStatus_ERR("Can't initialize tuple type");
+    }
+
+    if (PyType_Ready(&PyTupleIter_Type) < 0) {
+        return _PyStatus_ERR("Can't initialize tuple iterator type");
+    }
+
+    return _PyStatus_OK();
+}
 
 void
 _PyTuple_Fini(PyInterpreterState *interp)

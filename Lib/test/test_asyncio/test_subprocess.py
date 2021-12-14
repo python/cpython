@@ -228,7 +228,7 @@ class SubprocessMixin:
         # buffer large enough to feed the whole pipe buffer
         large_data = b'x' * support.PIPE_MAX_SIZE
 
-        # the program ends before the stdin can be feeded
+        # the program ends before the stdin can be fed
         proc = self.loop.run_until_complete(
             asyncio.create_subprocess_exec(
                 sys.executable, '-c', 'pass',

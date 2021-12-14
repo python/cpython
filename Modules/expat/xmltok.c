@@ -42,15 +42,15 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include <stddef.h>
-#include <string.h> /* memcpy */
-#include <stdbool.h>
-
 #ifdef _WIN32
 #  include "winconfig.h"
 #endif
 
 #include <expat_config.h>
+
+#include <stddef.h>
+#include <string.h> /* memcpy */
+#include <stdbool.h>
 
 #include "expat_external.h"
 #include "internal.h"

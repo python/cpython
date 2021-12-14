@@ -50,13 +50,6 @@ This article explains the new features in Python 3.10, compared to 3.9.
 
 For full details, see the :ref:`changelog <changelog>`.
 
-.. note::
-
-   Prerelease users should be aware that this document is currently in draft
-   form. It will be updated substantially as Python 3.10 moves towards release,
-   so it's worth checking back even after reading earlier versions.
-
-
 Summary -- Release highlights
 =============================
 
@@ -1003,7 +996,7 @@ Added ``slots`` parameter in :func:`dataclasses.dataclass` decorator.
 Keyword-only fields
 ~~~~~~~~~~~~~~~~~~~
 
-dataclassses now supports fields that are keyword-only in the
+dataclasses now supports fields that are keyword-only in the
 generated __init__ method.  There are a number of ways of specifying
 keyword-only fields.
 
@@ -1180,7 +1173,7 @@ Highlight the new :ref:`soft keywords <soft-keywords>` :keyword:`match`,
 :keyword:`case <match>`, and :keyword:`_ <wildcard-patterns>` in
 pattern-matching statements. However, this highlighting is not perfect
 and will be incorrect in some rare cases, including some ``_``-s in
-``case`` patterns.  (Contributed by Tal Einat in bpo-44010.)
+``case`` patterns.  (Contributed by Tal Einat in :issue:`44010`.)
 
 importlib.metadata
 ------------------
@@ -1189,7 +1182,7 @@ Feature parity with ``importlib_metadata`` 4.6
 (`history <https://importlib-metadata.readthedocs.io/en/latest/history.html>`_).
 
 :ref:`importlib.metadata entry points <entry-points>`
-now provides a nicer experience
+now provide a nicer experience
 for selecting entry points by group and name through a new
 :class:`importlib.metadata.EntryPoints` class. See the Compatibility
 Note in the docs for more info on the deprecation and usage.

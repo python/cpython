@@ -170,7 +170,7 @@ exit:
 }
 
 PyDoc_STRVAR(_imp_find_frozen__doc__,
-"find_frozen($module, name, /)\n"
+"find_frozen($module, name, /, *, withdata=False)\n"
 "--\n"
 "\n"
 "Return info about the corresponding frozen module (if there is one) or None.\n"
@@ -184,26 +184,43 @@ PyDoc_STRVAR(_imp_find_frozen__doc__,
 "                the module\'s current name)");
 
 #define _IMP_FIND_FROZEN_METHODDEF    \
-    {"find_frozen", (PyCFunction)_imp_find_frozen, METH_O, _imp_find_frozen__doc__},
+    {"find_frozen", (PyCFunction)(void(*)(void))_imp_find_frozen, METH_FASTCALL|METH_KEYWORDS, _imp_find_frozen__doc__},
 
 static PyObject *
-_imp_find_frozen_impl(PyObject *module, PyObject *name);
+_imp_find_frozen_impl(PyObject *module, PyObject *name, int withdata);
 
 static PyObject *
-_imp_find_frozen(PyObject *module, PyObject *arg)
+_imp_find_frozen(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "withdata", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "find_frozen", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *name;
+    int withdata = 0;
 
-    if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("find_frozen", "argument", "str", arg);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
-    if (PyUnicode_READY(arg) == -1) {
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("find_frozen", "argument 1", "str", args[0]);
         goto exit;
     }
-    name = arg;
-    return_value = _imp_find_frozen_impl(module, name);
+    if (PyUnicode_READY(args[0]) == -1) {
+        goto exit;
+    }
+    name = args[0];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    withdata = PyObject_IsTrue(args[1]);
+    if (withdata < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = _imp_find_frozen_impl(module, name, withdata);
 
 exit:
     return return_value;
@@ -548,4 +565,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=8c8dd08158f9ac7c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=adcf787969a11353 input=a9049054013a1b77]*/

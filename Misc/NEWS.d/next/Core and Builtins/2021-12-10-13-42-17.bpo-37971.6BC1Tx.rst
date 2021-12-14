@@ -1,0 +1,3 @@
+Fix a bug where the line numbers given in a traceback when a decorator
+application raised an exception were wrong.
+

@@ -2636,12 +2636,13 @@ handler type) for messages from different processes to get mixed up.
    inherited.
 
 .. currentmodule:: multiprocessing
-.. function:: log_to_stderr()
+.. function:: log_to_stderr(level=None)
 
    This function performs a call to :func:`get_logger` but in addition to
    returning the logger created by get_logger, it adds a handler which sends
    output to :data:`sys.stderr` using format
    ``'[%(levelname)s/%(processName)s] %(message)s'``.
+   You can modify ``levelname`` of the logger by passing a ``level`` argument.
 
 Below is an example session with logging turned on::
 

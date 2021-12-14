@@ -15,7 +15,7 @@ import subprocess
 import sys
 import tempfile
 from test.support import (captured_stdout, captured_stderr, requires_zlib,
-                          skip_if_broken_multiprocessing_synchronize)
+                          skip_if_broken_multiprocessing_synchronize, verbose)
 from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree)
 import unittest
 import venv
@@ -40,6 +40,8 @@ def check_output(cmd, encoding=None):
         encoding=encoding)
     out, err = p.communicate()
     if p.returncode:
+        if verbose and err:
+            print(err.decode('utf-8', 'backslashreplace'))
         raise subprocess.CalledProcessError(
             p.returncode, cmd, out, err)
     return out, err
@@ -150,14 +152,20 @@ class BasicTest(BaseTest):
     def test_upgrade_dependencies(self):
         builder = venv.EnvBuilder()
         bin_path = 'Scripts' if sys.platform == 'win32' else 'bin'
-        python_exe = 'python.exe' if sys.platform == 'win32' else 'python'
+        python_exe = os.path.split(sys.executable)[1]
         with tempfile.TemporaryDirectory() as fake_env_dir:
+            expect_exe = os.path.normcase(
+                os.path.join(fake_env_dir, bin_path, python_exe)
+            )
+            if sys.platform == 'win32':
+                expect_exe = os.path.normcase(os.path.realpath(expect_exe))
 
             def pip_cmd_checker(cmd):
+                cmd[0] = os.path.normcase(cmd[0])
                 self.assertEqual(
                     cmd,
                     [
-                        os.path.join(fake_env_dir, bin_path, python_exe),
+                        expect_exe,
                         '-m',
                         'pip',
                         'install',
@@ -188,7 +196,7 @@ class BasicTest(BaseTest):
             ('base_exec_prefix', sys.base_exec_prefix)):
             cmd[2] = 'import sys; print(sys.%s)' % prefix
             out, err = check_output(cmd)
-            self.assertEqual(out.strip(), expected.encode())
+            self.assertEqual(out.strip(), expected.encode(), prefix)
 
     if sys.platform == 'win32':
         ENV_SUBDIRS = (

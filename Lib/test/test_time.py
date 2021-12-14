@@ -440,8 +440,8 @@ class TimeTestCase(unittest.TestCase):
     @unittest.skipUnless(platform.libc_ver()[0] != 'glibc',
                          "disabled because of a bug in glibc. Issue #13309")
     def test_mktime_error(self):
-        # It may not be possible to reliably make mktime return error
-        # on all platfom.  This will make sure that no other exception
+        # It may not be possible to reliably make mktime return an error
+        # on all platforms.  This will make sure that no other exception
         # than OverflowError is raised for an extreme value.
         tt = time.gmtime(self.t)
         tzname = time.strftime('%Z', tt)

@@ -1,3 +1,5 @@
+/* Interface to random parts in ceval.c */
+
 #ifndef Py_CEVAL_H
 #define Py_CEVAL_H
 #ifdef __cplusplus
@@ -5,7 +7,15 @@ extern "C" {
 #endif
 
 
-/* Interface to random parts in ceval.c */
+PyAPI_FUNC(PyObject *) PyEval_EvalCode(PyObject *, PyObject *, PyObject *);
+
+PyAPI_FUNC(PyObject *) PyEval_EvalCodeEx(PyObject *co,
+                                         PyObject *globals,
+                                         PyObject *locals,
+                                         PyObject *const *args, int argc,
+                                         PyObject *const *kwds, int kwdc,
+                                         PyObject *const *defs, int defc,
+                                         PyObject *kwdefs, PyObject *closure);
 
 /* PyEval_CallObjectWithKeywords(), PyEval_CallObject(), PyEval_CallFunction
  * and PyEval_CallMethod are deprecated. Since they are officially part of the
@@ -148,7 +158,7 @@ PyAPI_FUNC(void) PyEval_ReleaseThread(PyThreadState *tstate);
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_CEVAL_H
-#  include  "cpython/ceval.h"
+#  include "cpython/ceval.h"
 #  undef Py_CPYTHON_CEVAL_H
 #endif
 

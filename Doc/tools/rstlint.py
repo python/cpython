@@ -43,10 +43,10 @@ directives = [
 ]
 
 roles = [
-    ":class:",
-    ":func:",
-    ":meth:",
-    ":mod:",
+    "(?<!py):class:",
+    "(?<!:c|py):func:",
+    "(?<!py):meth:",
+    "(?<!:py):mod:",
     ":exc:",
     ":issue:",
     ":attr:",
@@ -54,7 +54,7 @@ roles = [
     ":ref:",
     ":const:",
     ":term:",
-    ":data:",
+    "(?<!:c|py):data:",
     ":keyword:",
     ":file:",
     ":pep:",
@@ -128,6 +128,11 @@ double_backtick_role = re.compile(r"(?<!``)%s``" % all_roles)
 # :const:`None`
 role_with_no_backticks = re.compile(r"%s[^` ]" % all_roles)
 
+# Find role glued with another word like:
+# the:c:func:`PyThreadState_LeaveTracing` function.
+# instad of:
+# the :c:func:`PyThreadState_LeaveTracing` function.
+role_glued_with_word = re.compile(r"[a-zA-Z]%s" % all_roles)
 
 default_role_re = re.compile(r"(^| )`\w([^`]*?\w)?`($| )")
 leaked_markup_re = re.compile(r"[a-z]::\s|`|\.\.\s*\w+:")
@@ -176,6 +181,8 @@ def check_suspicious_constructs(fn, lines):
             yield lno, "role use a single backtick, double backtick found."
         if role_with_no_backticks.search(line):
             yield lno, "role use a single backtick, no backtick found."
+        if role_glued_with_word.search(line):
+            yield lno, "missing space before role"
         if ".. productionlist::" in line:
             inprod = True
         elif not inprod and default_role_re.search(line):

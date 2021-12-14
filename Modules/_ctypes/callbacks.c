@@ -1,12 +1,19 @@
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
+// windows.h must be included before pycore internal headers
+#ifdef MS_WIN32
+#  include <windows.h>
+#endif
+
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "frameobject.h"
 
 #include <stdbool.h>
 
 #include <ffi.h>
-#ifdef MS_WIN32
-#include <windows.h>
-#endif
 #include "ctypes.h"
 
 /**************************************************************/
@@ -187,7 +194,7 @@ static void _CallPythonObject(void *mem,
             */
         } else if (dict) {
             /* Hm, shouldn't we use PyCData_AtAddress() or something like that instead? */
-            CDataObject *obj = (CDataObject *)_PyObject_CallNoArg(cnv);
+            CDataObject *obj = (CDataObject *)_PyObject_CallNoArgs(cnv);
             if (!obj) {
                 PrintError("create argument %zd:\n", i);
                 Py_DECREF(cnv);
@@ -483,7 +490,7 @@ long Call_GetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
     if (context == NULL)
         context = PyUnicode_InternFromString("_ctypes.DllGetClassObject");
 
-    mod = PyImport_ImportModuleNoBlock("ctypes");
+    mod = PyImport_ImportModule("ctypes");
     if (!mod) {
         PyErr_WriteUnraisable(context ? context : Py_None);
         /* There has been a warning before about this already */
@@ -556,7 +563,7 @@ long Call_CanUnloadNow(void)
     if (context == NULL)
         context = PyUnicode_InternFromString("_ctypes.DllCanUnloadNow");
 
-    mod = PyImport_ImportModuleNoBlock("ctypes");
+    mod = PyImport_ImportModule("ctypes");
     if (!mod) {
 /*              OutputDebugString("Could not import ctypes"); */
         /* We assume that this error can only occur when shutting
@@ -572,7 +579,7 @@ long Call_CanUnloadNow(void)
         return E_FAIL;
     }
 
-    result = _PyObject_CallNoArg(func);
+    result = _PyObject_CallNoArgs(func);
     Py_DECREF(func);
     if (!result) {
         PyErr_WriteUnraisable(context ? context : Py_None);
