@@ -2823,6 +2823,8 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
             goto type_init_failed;
         }
     }
+
+    SET_SYS_FROM_STRING("_vpath", VPATH);
 #endif
 
     /* float repr style: 0.03 (short) vs 0.029999999999999999 (legacy) */

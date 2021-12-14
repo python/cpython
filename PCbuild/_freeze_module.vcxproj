@@ -226,7 +226,9 @@
     <ClCompile Include="..\Python\structmember.c" />
     <ClCompile Include="..\Python\suggestions.c" />
     <ClCompile Include="..\Python\symtable.c" />
-    <ClCompile Include="..\Python\sysmodule.c" />
+    <ClCompile Include="..\Python\sysmodule.c">
+      <PreprocessorDefinitions>VPATH="$(PyVPath)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
     <ClCompile Include="..\Python\thread.c" />
     <ClCompile Include="..\Python\traceback.c" />
   </ItemGroup>
@@ -329,13 +331,6 @@
       <OutFile>$(PySourcePath)Python\frozen_modules\stat.h</OutFile>
       <DeepIntFile>$(IntDir)stat.g.c</DeepIntFile>
       <DeepOutFile>$(PySourcePath)Python\deepfreeze\df.stat.c</DeepOutFile>
-    </None>
-    <None Include="..\Lib\types.py">
-      <ModName>types</ModName>
-      <IntFile>$(IntDir)types.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\types.h</OutFile>
-      <DeepIntFile>$(IntDir)types.g.c</DeepIntFile>
-      <DeepOutFile>$(PySourcePath)Python\deepfreeze\df.types.c</DeepOutFile>
     </None>
     <None Include="..\Lib\importlib\util.py">
       <ModName>importlib.util</ModName>

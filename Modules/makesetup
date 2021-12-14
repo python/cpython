@@ -207,7 +207,10 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			libs="\$(MODULE_${mods_upper}_LDFLAGS)"
 		fi
 		case $DISABLED in
-		*$mods*) doconfig=disabled;;
+		*$mods*)
+			# disabled by previous rule / Setup file
+			continue
+			;;
 		esac
 		case $doconfig in
 		yes)
