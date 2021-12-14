@@ -1,4 +1,4 @@
-# Copyright 2001-2019 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2021 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -16,7 +16,7 @@
 
 """Test harness for the logging module. Run all tests.
 
-Copyright (C) 2001-2019 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2021 Vinay Sajip. All Rights Reserved.
 """
 
 import logging
@@ -5460,7 +5460,7 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
                 rotator.namer = lambda name: name.replace('.log', '') + '.log'
                 for t in times:
                     files.append('%s.%s.log' % (prefix, t))
-        # Open empty files
+        # Create empty files
         for fn in files:
             p = os.path.join(wd, fn)
             with open(p, 'wb') as f:
