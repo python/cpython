@@ -1263,6 +1263,39 @@ class TestStackSizeStability(unittest.TestCase):
             """
         self.check_stack_size(snippet)
 
+    def test_try_except_star_qualified(self):
+        snippet = """
+            try:
+                a
+            except* ImportError:
+                b
+            else:
+                c
+            """
+        self.check_stack_size(snippet)
+
+    def test_try_except_star_as(self):
+        snippet = """
+            try:
+                a
+            except* ImportError as e:
+                b
+            else:
+                c
+            """
+        self.check_stack_size(snippet)
+
+    def test_try_except_star_finally(self):
+        snippet = """
+                try:
+                    a
+                except* A:
+                    b
+                finally:
+                    c
+            """
+        self.check_stack_size(snippet)
+
     def test_try_finally(self):
         snippet = """
                 try:

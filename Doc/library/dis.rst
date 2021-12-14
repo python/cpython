@@ -872,8 +872,10 @@ All of the following opcodes use their arguments.
 
    .. versionadded:: 3.1
 
+
 .. opcode:: JUMP_IF_NOT_EXC_MATCH (target)
 
+   Performs exception matching for ``except``.
    Tests whether the second value on the stack is an exception matching TOS,
    and jumps if it is not. Pops one value from the stack.
 
@@ -881,6 +883,30 @@ All of the following opcodes use their arguments.
 
    .. versionchanged:: 3.11
       This opcode no longer pops the active exception.
+
+
+.. opcode:: JUMP_IF_NOT_EG_MATCH (target)
+
+   Performs exception matching for ``except*``. Applies ``split(TOS)`` on
+   the exception group representing TOS1. Jumps if no match is found.
+
+   Pops one item from the stack. If a match was found, pops the 3 items representing
+   the exception and pushes the 3 items representing the non-matching part of
+   the exception group, followed by the 3 items representing the matching part.
+   In other words, in case of a match it pops 4 items and pushes 6.
+
+   .. versionadded:: 3.11
+
+
+.. opcode:: PREP_RERAISE_STAR
+
+   Combines the raised and reraised exceptions list from TOS, into an exception
+   group to propagate from a try-except* block. Uses the original exception
+   group from TOS1 to reconstruct the structure of reraised exceptions. Pops
+   two items from the stack and pushes a triplet representing the exception to
+   reraise or three ``None`` if there isn't one.
+
+   .. versionadded:: 3.11
 
 
 .. opcode:: JUMP_IF_TRUE_OR_POP (target)
