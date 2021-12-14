@@ -676,8 +676,6 @@ pycore_init_global_objects(PyInterpreterState *interp)
 {
     PyStatus status;
 
-    _PyLong_InitGlobalObjects(interp);
-
     _PyFloat_InitState(interp);
 
     status = _PyBytes_InitGlobalObjects(interp);

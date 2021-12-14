@@ -1613,6 +1613,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_genobject.h \
 		$(srcdir)/Include/internal/pycore_getopt.h \
 		$(srcdir)/Include/internal/pycore_gil.h \
+		$(srcdir)/Include/internal/pycore_global_objects.h \
 		$(srcdir)/Include/internal/pycore_hamt.h \
 		$(srcdir)/Include/internal/pycore_hashtable.h \
 		$(srcdir)/Include/internal/pycore_import.h \
@@ -1621,7 +1622,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_interpreteridobject.h \
 		$(srcdir)/Include/internal/pycore_list.h \
 		$(srcdir)/Include/internal/pycore_long.h \
-		$(srcdir)/Include/internal/pycore_long_state.h \
 		$(srcdir)/Include/internal/pycore_moduleobject.h \
 		$(srcdir)/Include/internal/pycore_namespace.h \
 		$(srcdir)/Include/internal/pycore_object.h \
