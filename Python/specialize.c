@@ -39,7 +39,7 @@
 */
 
 Py_ssize_t _Py_QuickenedCount = 0;
-#if COLLECT_SPECIALIZATION_STATS
+#ifdef Py_STATS
 SpecializationStats _specialization_stats[256] = { 0 };
 
 #define ADD_STAT_TO_DICT(res, field) \

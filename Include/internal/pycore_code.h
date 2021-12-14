@@ -276,21 +276,10 @@ void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                              SpecializedCacheEntry *cache);
 void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache);
 
-#define PRINT_SPECIALIZATION_STATS 0
-#define PRINT_SPECIALIZATION_STATS_DETAILED 0
-#define PRINT_SPECIALIZATION_STATS_TO_FILE 0
 
-#ifdef Py_DEBUG
-#define COLLECT_SPECIALIZATION_STATS 1
-#define COLLECT_SPECIALIZATION_STATS_DETAILED 1
-#else
-#define COLLECT_SPECIALIZATION_STATS PRINT_SPECIALIZATION_STATS
-#define COLLECT_SPECIALIZATION_STATS_DETAILED PRINT_SPECIALIZATION_STATS_DETAILED
-#endif
+#ifdef Py_STATS
 
 #define SPECIALIZATION_FAILURE_KINDS 20
-
-#if COLLECT_SPECIALIZATION_STATS
 
 typedef struct _stats {
     uint64_t specialization_success;
@@ -300,9 +289,7 @@ typedef struct _stats {
     uint64_t miss;
     uint64_t deopt;
     uint64_t unquickened;
-#if COLLECT_SPECIALIZATION_STATS_DETAILED
     uint64_t specialization_failure_kinds[SPECIALIZATION_FAILURE_KINDS];
-#endif
 } SpecializationStats;
 
 extern SpecializationStats _specialization_stats[256];
