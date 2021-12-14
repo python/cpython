@@ -8,18 +8,23 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_long_state.h"    // _PyLong_SMALL_INTS
-#include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_global_objects.h"  // _PY_NSMALLNEGINTS
 #include "pycore_runtime.h"       // _PyRuntime
 
 
 /* runtime lifecycle */
 
-extern void _PyLong_InitGlobalObjects(PyInterpreterState *);
 extern PyStatus _PyLong_InitTypes(PyInterpreterState *);
 
 
 /* other API */
+
+#define _PyLong_SMALL_INTS _Py_SINGLETON(small_ints)
+
+// _PyLong_GetZero() and _PyLong_GetOne() must always be available
+#if _PY_NSMALLPOSINTS < 2
+#  error "_PY_NSMALLPOSINTS must be greater than 1"
+#endif
 
 // Return a borrowed reference to the zero singleton.
 // The function cannot return NULL.
