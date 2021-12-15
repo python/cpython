@@ -1394,7 +1394,7 @@ AC_ARG_WITH(pystats,
   AS_HELP_STRING(
     [--with-pystats],
     [enable internal statistics gathering (default is no)]),,
-  with_trace_refs=no)
+  $with_pystats=no)
 AC_MSG_RESULT($with_pystats)
 
 if test "$with_pystats" = "yes"
