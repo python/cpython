@@ -435,6 +435,10 @@ class TimeTestCase(unittest.TestCase):
             else:
                 self.assertEqual(time.mktime(tt), t)
 
+    def test_mktime_overflow(self):
+        # bpo-44413
+        time.mktime((2017,5,26,15,30,16,4,146,1))
+
     # Issue #13309: passing extreme values to mktime() or localtime()
     # borks the glibc's internal timezone data.
     @unittest.skipUnless(platform.libc_ver()[0] != 'glibc',
