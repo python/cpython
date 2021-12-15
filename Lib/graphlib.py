@@ -57,7 +57,7 @@ class TopologicalSorter:
             self._node2info[node] = result = _NodeInfo(node)
         return result
 
-    def add(self, start_node, *end_nodes):
+    def add(self, node, *end_nodes):
         """Add new nodes and/or edges to the graph.
 
         All of the arguments are nodes and must be hashable.
@@ -65,8 +65,7 @@ class TopologicalSorter:
         First: this adds new nodes to the graph for all of the arguments
         which were not already part of the graph.
 
-        Second: this adds new edges from the *start_node* to each of
-        the *end_nodes*.
+        Second: this adds new edges from the *node* to each of the *end_nodes*.
 
         Raises ValueError if called after "prepare()".
         """
@@ -74,13 +73,13 @@ class TopologicalSorter:
             raise ValueError("Nodes cannot be added after a call to prepare()")
 
         # Create the node -> predecessor edges
-        nodeinfo = self._get_nodeinfo(start_node)
+        nodeinfo = self._get_nodeinfo(node)
         nodeinfo.npredecessors += len(end_nodes)
 
         # Create the predecessor -> node edges
         for pred in end_nodes:
             pred_info = self._get_nodeinfo(pred)
-            pred_info.successors.append(start_node)
+            pred_info.successors.append(node)
 
     def prepare(self):
         """Mark the graph as finished and check for cycles in the graph.

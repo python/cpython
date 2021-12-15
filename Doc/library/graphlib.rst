@@ -82,7 +82,7 @@
            node = finalized_tasks_queue.get()
            topological_sorter.done(node)
 
-   .. method:: add(start_node, *end_nodes)
+   .. method:: add(node, *end_nodes)
 
       Add nodes and/or edges to the graph.
 
@@ -91,8 +91,7 @@
       First: this adds new nodes to the graph for all of the arguments
       which were not already part of the graph.
 
-      Second: this adds new edges from the *start_node* to each of
-      the *end_nodes*.
+      Second: this adds new edges from the *node* to each of the *end_nodes*.
 
       Raises :exc:`ValueError` if called after :meth:`~TopologicalSorter.prepare`.
 
