@@ -1009,34 +1009,63 @@ class BaseTaskTests:
         self.assertEqual(res, "ok")
 
     def test_wait_for_cancellation_race_condition(self):
+        def gen():
+            yield 0.1
+            yield 0.1
+            yield 0.1
+            yield 0.1
+
+        loop = self.new_test_loop(gen)
+
+        fut = self.new_future(loop)
+        # Test that if task is cancelled at the same time the future
+        # completes, the result is still returned.
+        loop.call_later(0.1, fut.set_result, "ok")
+        task = loop.create_task(asyncio.wait_for(fut, timeout=1))
+        loop.call_later(0.1, task.cancel)
+        res = loop.run_until_complete(task)
+        self.assertEqual(res, "ok")
+
+    def test_wait_for_suppress_cancellation(self):
+        def gen():
+            yield
+            yield 0.1
+            yield 0.1
+            yield 0.1
+
         async def inner():
-            with contextlib.suppress(asyncio.CancelledError):
+            try:
                 await asyncio.sleep(1)
-            return 1
+            except asyncio.CancelledError:
+                return "ok"
 
-        async def main():
-            result = await asyncio.wait_for(inner(), timeout=.01)
-            assert result == 1
+        loop = self.new_test_loop(gen)
 
-        asyncio.run(main())
+        fut = self.new_future(loop)
+        task = loop.create_task(asyncio.wait_for(inner(), timeout=1))
+        loop.call_later(0.1, task.cancel)
+        # Cancellation is suppressed in inner(), so should still return here.
+        res = loop.run_until_complete(task)
+        self.assertEqual(res, "ok")
 
-    def test_wait_for_does_not_suppress_cancellation(self):
+    def test_wait_for_cancellation_inner_race_condition(self):
+        def gen():
+            yield
+            yield 0.1
+            yield 0
+            yield 0
+
         async def inner():
-            return
+            # Test that if fut completes at same time as timeout, the result
+            # is still returned.
+            return await asyncio.wait_for(fut, timeout=1)
 
-        async def with_for_coro():
-            await asyncio.wait_for(inner(), timeout=1)
-            assert False, 'End of with_for_coro. Should not be reached!'
+        loop = self.new_test_loop(gen)
 
-        async def main():
-            task = asyncio.create_task(with_for_coro())
-            await asyncio.sleep(0)
-            self.assertFalse(task.done())
-            task.cancel()
-            with self.assertRaises(asyncio.CancelledError):
-                await task
-
-        asyncio.run(main())
+        fut = self.new_future(loop)
+        loop.call_later(0.1, fut.set_result, "ok")
+        res = loop.run_until_complete(asyncio.wait_for(inner(), timeout=0.1))
+        self.assertEqual(res, "ok")
 
     def test_wait_for_waits_for_task_cancellation(self):
         loop = asyncio.new_event_loop()
