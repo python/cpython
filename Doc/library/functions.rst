@@ -54,14 +54,14 @@ are always available.  They are listed here in alphabetical order.
 .. |func-bytearray| replace:: ``bytearray()``
 .. |func-bytes| replace:: ``bytes()``
 
-.. function:: abs(x)
+.. function:: abs(x, /)
 
    Return the absolute value of a number.  The argument may be an
    integer, a floating point number, or an object implementing :meth:`__abs__`.
    If the argument is a complex number, its magnitude is returned.
 
 
-.. function:: aiter(async_iterable)
+.. function:: aiter(async_iterable, /)
 
    Return an :term:`asynchronous iterator` for an :term:`asynchronous iterable`.
    Equivalent to calling ``x.__aiter__()``.
@@ -70,7 +70,7 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionadded:: 3.10
 
-.. function:: all(iterable)
+.. function:: all(iterable, /)
 
    Return ``True`` if all elements of the *iterable* are true (or if the iterable
    is empty).  Equivalent to::
@@ -97,7 +97,7 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionadded:: 3.10
 
-.. function:: any(iterable)
+.. function:: any(iterable, /)
 
    Return ``True`` if any element of the *iterable* is true.  If the iterable
    is empty, return ``False``.  Equivalent to::
@@ -109,7 +109,7 @@ are always available.  They are listed here in alphabetical order.
           return False
 
 
-.. function:: ascii(object)
+.. function:: ascii(obj, /)
 
    As :func:`repr`, return a string containing a printable representation of an
    object, but escape the non-ASCII characters in the string returned by
@@ -117,7 +117,7 @@ are always available.  They are listed here in alphabetical order.
    similar to that returned by :func:`repr` in Python 2.
 
 
-.. function:: bin(x)
+.. function:: bin(number, /)
 
    Convert an integer number to a binary string prefixed with "0b". The result
    is a valid Python expression. If *x* is not a Python :class:`int` object, it
@@ -215,7 +215,7 @@ are always available.  They are listed here in alphabetical order.
    See also :ref:`binaryseq`, :ref:`typebytes`, and :ref:`bytes-methods`.
 
 
-.. function:: callable(object)
+.. function:: callable(obj, /)
 
    Return :const:`True` if the *object* argument appears callable,
    :const:`False` if not.  If this returns ``True``, it is still possible that a
@@ -228,7 +228,7 @@ are always available.  They are listed here in alphabetical order.
       in Python 3.2.
 
 
-.. function:: chr(i)
+.. function:: chr(i, /)
 
    Return the string representing a character whose Unicode code point is the
    integer *i*.  For example, ``chr(97)`` returns the string ``'a'``, while
@@ -384,7 +384,7 @@ are always available.  They are listed here in alphabetical order.
       :meth:`__float__` are not defined.
 
 
-.. function:: delattr(object, name)
+.. function:: delattr(obj, name, /)
 
    This is a relative of :func:`setattr`.  The arguments are an object and a
    string.  The string must be the name of one of the object's attributes.  The
@@ -461,16 +461,16 @@ are always available.  They are listed here in alphabetical order.
       class.
 
 
-.. function:: divmod(a, b)
+.. function:: divmod(x, y, /)
 
    Take two (non-complex) numbers as arguments and return a pair of numbers
    consisting of their quotient and remainder when using integer division.  With
    mixed operand types, the rules for binary arithmetic operators apply.  For
-   integers, the result is the same as ``(a // b, a % b)``. For floating point
-   numbers the result is ``(q, a % b)``, where *q* is usually ``math.floor(a /
-   b)`` but may be 1 less than that.  In any case ``q * b + a % b`` is very
-   close to *a*, if ``a % b`` is non-zero it has the same sign as *b*, and ``0
-   <= abs(a % b) < abs(b)``.
+   integers, the result is the same as ``(x // y, x % y)``. For floating point
+   numbers the result is ``(q, x % y)``, where *q* is usually ``math.floor(x /
+   y)`` but may be 1 less than that.  In any case ``q * x + y % y`` is very
+   close to *x*, if ``x % y`` is non-zero it has the same sign as *y*, and ``0
+   <= abs(x % y) < abs(y)``.
 
 
 .. function:: enumerate(iterable, start=0)
@@ -680,7 +680,7 @@ are always available.  They are listed here in alphabetical order.
    single: __format__
    single: string; format() (built-in function)
 
-.. function:: format(value[, format_spec])
+.. function:: format(value[, format_spec], /)
 
    Convert a *value* to a "formatted" representation, as controlled by
    *format_spec*.  The interpretation of *format_spec* will depend on the type
@@ -738,7 +738,7 @@ are always available.  They are listed here in alphabetical order.
    regardless of where the function is called.
 
 
-.. function:: hasattr(object, name)
+.. function:: hasattr(obj, name, /)
 
    The arguments are an object and a string.  The result is ``True`` if the
    string is the name of one of the object's attributes, ``False`` if not. (This
@@ -746,7 +746,7 @@ are always available.  They are listed here in alphabetical order.
    raises an :exc:`AttributeError` or not.)
 
 
-.. function:: hash(object)
+.. function:: hash(obj, /)
 
    Return the hash value of the object (if it has one).  Hash values are
    integers.  They are used to quickly compare dictionary keys during a
@@ -780,10 +780,10 @@ are always available.  They are listed here in alphabetical order.
       signatures for callables are now more comprehensive and consistent.
 
 
-.. function:: hex(x)
+.. function:: hex(number,/)
 
    Convert an integer number to a lowercase hexadecimal string prefixed with
-   "0x". If *x* is not a Python :class:`int` object, it has to define an
+   "0x". If *number* is not a Python :class:`int` object, it has to define an
    :meth:`__index__` method that returns an integer. Some examples:
 
       >>> hex(255)
@@ -812,7 +812,7 @@ are always available.  They are listed here in alphabetical order.
       :meth:`float.hex` method.
 
 
-.. function:: id(object)
+.. function:: id(obj, /)
 
    Return the "identity" of an object.  This is an integer which
    is guaranteed to be unique and constant for this object during its lifetime.
@@ -892,7 +892,7 @@ are always available.  They are listed here in alphabetical order.
       Falls back to :meth:`__index__` if :meth:`__int__` is not defined.
 
 
-.. function:: isinstance(object, classinfo)
+.. function:: isinstance(obj, class_or_tuple, /)
 
    Return ``True`` if the *object* argument is an instance of the *classinfo*
    argument, or of a (direct, indirect, or :term:`virtual <abstract base
@@ -908,7 +908,7 @@ are always available.  They are listed here in alphabetical order.
       *classinfo* can be a :ref:`types-union`.
 
 
-.. function:: issubclass(class, classinfo)
+.. function:: issubclass(cls, class_or_tuple , /)
 
    Return ``True`` if *class* is a subclass (direct, indirect, or :term:`virtual
    <abstract base class>`) of *classinfo*.  A
@@ -948,7 +948,7 @@ are always available.  They are listed here in alphabetical order.
               process_block(block)
 
 
-.. function:: len(s)
+.. function:: len(obj, /)
 
    Return the length (the number of items) of an object.  The argument may be a
    sequence (such as a string, bytes, tuple, list, or range) or a collection
@@ -979,7 +979,7 @@ are always available.  They are listed here in alphabetical order.
       The contents of this dictionary should not be modified; changes may not
       affect the values of local and free variables used by the interpreter.
 
-.. function:: map(function, iterable, ...)
+.. function:: map(func, *iterable)
 
    Return an iterator that applies *function* to every item of *iterable*,
    yielding the results.  If additional *iterable* arguments are passed,
@@ -989,8 +989,8 @@ are always available.  They are listed here in alphabetical order.
    already arranged into argument tuples, see :func:`itertools.starmap`\.
 
 
-.. function:: max(iterable, *[, key, default])
-              max(arg1, arg2, *args[, key])
+.. function:: max(iterable, *[, default=obj, key=func])
+              max(arg1, arg2, *args, *[, key=func])
 
    Return the largest item in an iterable or the largest of two or more
    arguments.
@@ -1026,8 +1026,8 @@ are always available.  They are listed here in alphabetical order.
    :ref:`typememoryview` for more information.
 
 
-.. function:: min(iterable, *[, key, default])
-              min(arg1, arg2, *args[, key])
+.. function:: min(iterable, *[, default=obj, key=func]) 
+              min(arg1, arg2, *args, *[, key=func])
 
    Return the smallest item in an iterable or the smallest of two or more
    arguments.
@@ -1074,10 +1074,10 @@ are always available.  They are listed here in alphabetical order.
       assign arbitrary attributes to an instance of the :class:`object` class.
 
 
-.. function:: oct(x)
+.. function:: oct(number, /)
 
   Convert an integer number to an octal string prefixed with "0o".  The result
-  is a valid Python expression. If *x* is not a Python :class:`int` object, it
+  is a valid Python expression. If *number* is not a Python :class:`int` object, it
   has to define an :meth:`__index__` method that returns an integer. For
   example:
 
@@ -1323,7 +1323,7 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.11
       The ``'U'`` mode has been removed.
 
-.. function:: ord(c)
+.. function:: ord(c, /)
 
    Given a string representing one Unicode character, return an integer
    representing the Unicode code point of that character.  For example,
@@ -1331,7 +1331,7 @@ are always available.  They are listed here in alphabetical order.
    returns ``8364``.  This is the inverse of :func:`chr`.
 
 
-.. function:: pow(base, exp[, mod])
+.. function:: (base, exp, mod=None)
 
    Return *base* to the power *exp*; if *mod* is present, return *base* to the
    power *exp*, modulo *mod* (computed more efficiently than
@@ -1371,7 +1371,7 @@ are always available.  They are listed here in alphabetical order.
       supported.
 
 
-.. function:: print(*objects, sep=' ', end='\\n', file=sys.stdout, flush=False)
+.. function:: print(value, ..., sep=' ', end='\n', file=sys.stdout, flush=False)
 
    Print *objects* to the text stream *file*, separated by *sep* and followed
    by *end*.  *sep*, *end*, *file*, and *flush*, if present, must be given as keyword
@@ -1482,7 +1482,7 @@ are always available.  They are listed here in alphabetical order.
    sequence type, as documented in :ref:`typesseq-range` and :ref:`typesseq`.
 
 
-.. function:: repr(object)
+.. function:: repr(obj, /)
 
    Return a string containing a printable representation of an object.  For many
    types, this function makes an attempt to return a string that would yield an
@@ -1493,7 +1493,7 @@ are always available.  They are listed here in alphabetical order.
    function returns for its instances by defining a :meth:`__repr__` method.
 
 
-.. function:: reversed(seq)
+.. function:: reversed(sequence, /)
 
    Return a reverse :term:`iterator`.  *seq* must be an object which has
    a :meth:`__reversed__` method or supports the sequence protocol (the
@@ -1501,7 +1501,7 @@ are always available.  They are listed here in alphabetical order.
    arguments starting at ``0``).
 
 
-.. function:: round(number[, ndigits])
+.. function:: (number, ndigits=None)
 
    Return *number* rounded to *ndigits* precision after the decimal
    point.  If *ndigits* is omitted or is ``None``, it returns the
@@ -1541,7 +1541,7 @@ are always available.  They are listed here in alphabetical order.
    module.
 
 
-.. function:: setattr(object, name, value)
+.. function:: setattr(obj, name, value, /)
 
    This is the counterpart of :func:`getattr`.  The arguments are an object, a
    string, and an arbitrary value.  The string may name an existing attribute or a
