@@ -618,6 +618,30 @@ class SequenceMatcher:
 
         matches = sum(triple[-1] for triple in self.get_matching_blocks())
         return _calculate_ratio(matches, len(self.a) + len(self.b))
+    
+        # NEW FUNCTION: ratio_min 
+    def ratio_min(self,m):
+        """Return a measure of the sequences' similarity (float in [0,1]).
+        Where T is the total number of elements in both sequences, and
+        M_min is the number of matches with every single match has length at least m, this is 2.0*M_min / T.
+        Note that this is 1 if the sequences are identical, and 0 if
+        they have no substring of length m or more in common.
+        .ratio_min() is similar to .ratio(). 
+        .ratio_min(1) is equivalent to .ratio().
+        
+        >>> s = SequenceMatcher(None, "abcd", "bcde")
+        >>> s.ratio_min(1)
+        0.75
+        >>> s.ratio_min(2)
+        0.75
+        >>> s.ratio_min(3)
+        0.75
+        >>> s.ratio_min(4)
+        0.0
+        """
+
+        matches = sum(triple[-1] for triple in self.get_matching_blocks() if triple[-1] >=m)
+        return _calculate_ratio(matches, len(self.a) + len(self.b))
 
     def quick_ratio(self):
         """Return an upper bound on ratio() relatively quickly.
