@@ -3557,16 +3557,16 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         if (i == 0) {
             /* Push the original EG into the stack */
             /*
-               [val]            DUP_TOP
-               [orig, val]
+               [exc]            DUP_TOP
+               [orig, exc]
             */
             ADDOP(c, DUP_TOP);
 
             /* create empty list for exceptions raised/reraise in the except* blocks */
             /*
-               [orig, val]       BUILD_LIST
-               [orig, val, []]   ROT_TWO
-               [orig, [], val]
+               [orig, exc]       BUILD_LIST
+               [orig, exc, []]   ROT_TWO
+               [orig, [], exc]
             */
             ADDOP_I(c, BUILD_LIST, 0);
             ADDOP(c, ROT_TWO);
