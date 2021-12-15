@@ -1,0 +1,1 @@
+No longer crashes on help text composition if :class:`argparse.BooleanOptionalAction`'s default is ``argparse.SUPPRESS`` and ``help`` is specified.
