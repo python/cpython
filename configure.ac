@@ -100,41 +100,15 @@ AS_VAR_IF([cross_compiling], [maybe],
 # pybuilddir.txt will be created by --generate-posix-vars in the Makefile
 rm -f pybuilddir.txt
 
-dnl cross-compiling needs a freeze_module binary for build platform
-AC_ARG_WITH(
-  [freeze-module],
-  [AS_HELP_STRING([--with-freeze-module=Programs/_freeze_module],
-                  [path to _freeze_module binary for cross compiling])],
-  [
-    AC_MSG_CHECKING([for --with-freeze-module])
-    AS_VAR_IF([cross_compiling], [no], AC_MSG_ERROR([--with-freeze-module only applies to cross compiling]))
-    if test "$with_freeze_module" = yes -o "$with_freeze_module" = no; then
-      AC_MSG_ERROR([invalid --with-freeze-module option: expected path, not "$with_freeze_module"])
-    fi
-    if ! $(command -v "$with_freeze_module" >/dev/null 2>&1); then
-      AC_MSG_ERROR([invalid or missing freeze module binary "$with_freeze_module"])
-    fi
-    FREEZE_MODULE="$with_freeze_module"
-    AC_MSG_RESULT([$FREEZE_MODULE])
-  ], [
-    AS_VAR_IF([cross_compiling], [yes],
-      [AC_MSG_ERROR([Cross compiling requires --with-freeze-module])]
-    )
-    FREEZE_MODULE=Programs/_freeze_module
-  ]
-)
-AC_SUBST([FREEZE_MODULE])
-
 AC_ARG_WITH(
   [build-python],
   [AS_HELP_STRING([--with-build-python=python]PYTHON_VERSION,
-                  [path to build python binary for cross compiling (default: python]PYTHON_VERSION[)])],
+                  [path to build python binary for cross compiling (default: _bootstrap_python or python]PYTHON_VERSION[)])],
   [
     AC_MSG_CHECKING([for --with-build-python])
 
-    AS_VAR_IF([cross_compiling], [no], AC_MSG_ERROR([--with-build-python only applies to cross compiling]))
     AS_VAR_IF([with_build_python], [yes], [with_build_python=python$PACKAGE_VERSION])
-    AS_VAR_IF([with_build_python], [no], [AC_MSG_ERROR([invalid --with-build-python option: expected path, not "no"])])
+    AS_VAR_IF([with_build_python], [no], [AC_MSG_ERROR([invalid --with-build-python option: expected path or "yes", not "no"])])
 
     if ! $(command -v "$with_build_python" >/dev/null 2>&1); then
       AC_MSG_ERROR([invalid or missing build python binary "$with_build_python"])
@@ -161,6 +135,27 @@ AC_SUBST([PYTHON_FOR_BUILD])
 AC_MSG_CHECKING([for Python interpreter freezing])
 AC_MSG_RESULT([$PYTHON_FOR_FREEZE])
 AC_SUBST([PYTHON_FOR_FREEZE])
+
+AS_VAR_IF([cross_compiling], [yes],
+  [
+    dnl external build Python, freezing depends on Programs/_freeze_module.py
+    FREEZE_MODULE_BOOTSTRAP='$(PYTHON_FOR_FREEZE) $(srcdir)/Programs/_freeze_module.py'
+    FREEZE_MODULE_BOOTSTRAP_DEPS='$(srcdir)/Programs/_freeze_module.py'
+    FREEZE_MODULE='$(FREEZE_MODULE_BOOTSTRAP)'
+    FREEZE_MODULE_DEPS='$(FREEZE_MODULE_BOOTSTRAP_DEPS)'
+  ],
+  [
+    dnl internal build tools also depend on Programs/_freeze_module and _bootstrap_python.
+    FREEZE_MODULE_BOOTSTRAP='./Programs/_freeze_module'
+    FREEZE_MODULE_BOOTSTRAP_DEPS="Programs/_freeze_module"
+    FREEZE_MODULE='$(PYTHON_FOR_FREEZE) $(srcdir)/Programs/_freeze_module.py'
+    FREEZE_MODULE_DEPS="_bootstrap_python \$(srcdir)/Programs/_freeze_module.py"
+  ]
+)
+AC_SUBST([FREEZE_MODULE_BOOTSTRAP])
+AC_SUBST([FREEZE_MODULE_BOOTSTRAP_DEPS])
+AC_SUBST([FREEZE_MODULE])
+AC_SUBST([FREEZE_MODULE_DEPS])
 
 AC_CHECK_PROGS([PYTHON_FOR_REGEN],
   [python$PACKAGE_VERSION python3.10 python3.9 python3.8 python3.7 python3.6 python3 python],
@@ -1037,8 +1032,7 @@ if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
   _arm_arch=`sed -n -e '/__ARM_ARCH/d' -e 's/^arm_arch = //p' conftest.out`
   AC_MSG_RESULT([$ANDROID_API_LEVEL])
   if test -z "$ANDROID_API_LEVEL"; then
-    echo 'Fatal: you must define __ANDROID_API__'
-    exit 1
+    AC_MSG_ERROR([Fatal: you must define __ANDROID_API__])
   fi
   AC_DEFINE_UNQUOTED(ANDROID_API_LEVEL, $ANDROID_API_LEVEL, [The Android API level.])
 
@@ -1054,12 +1048,14 @@ fi
 rm -f conftest.c conftest.out
 
 # Check for unsupported systems
-case $ac_sys_system/$ac_sys_release in
-atheos*|Linux*/1*)
-   echo This system \($ac_sys_system/$ac_sys_release\) is no longer supported.
-   echo See README for details.
-   exit 1;;
-esac
+AS_CASE([$ac_sys_system/$ac_sys_release],
+  [atheos*|Linux*/1*], [
+    AC_MSG_ERROR([m4_normalize([
+      This system \($ac_sys_system/$ac_sys_release\) is no longer supported.
+      See README for details.
+   ])])
+ ]
+)
 
 AC_MSG_CHECKING([for --with-suffix])
 AC_ARG_WITH([suffix],
@@ -2947,8 +2943,8 @@ dnl stream in big-endian byte-order
 AC_CHECK_HEADERS([uuid.h], [
   AC_CHECK_FUNCS([uuid_create uuid_enc_be], [
     have_uuid=yes
-    LIBUUID_CFLAGS=
-    LIBUUID_LIBS=
+    LIBUUID_CFLAGS=${LIBUUID_CFLAGS-""}
+    LIBUUID_LIBS=${LIBUUID_LIBS-""}
   ])
 ])
 
@@ -2961,9 +2957,6 @@ AS_VAR_IF([have_uuid], [missing], [
       AC_DEFINE([HAVE_UUID_H], [1])
       AC_DEFINE([HAVE_UUID_GENERATE_TIME_SAFE], [1])
     ], [
-      LIBUUID_LIBS="-luuid"
-      LIBUUID_CFLAGS=
-      have_uuid=no
       AC_CHECK_HEADERS([uuid/uuid.h], [
         WITH_SAVE_ENV(
           [AC_CHECK_LIB([uuid], [uuid_generate_time], [have_uuid=yes])
@@ -2974,10 +2967,27 @@ AS_VAR_IF([have_uuid], [missing], [
             AC_DEFINE([HAVE_UUID_GENERATE_TIME_SAFE], [1])
           ])
         ])
+        AS_VAR_IF([have_uuid], [yes], [
+          LIBUUID_CFLAGS=${LIBUUID_CFLAGS-""}
+          LIBUUID_LIBS=${LIBUUID_LIBS-"-luuid"}
+        ])
       ])
     ]
   )
 ])
+
+dnl macOS has uuid/uuid.h but uuid_generate_time is in libc
+AS_VAR_IF([have_uuid], [missing], [
+  AC_CHECK_HEADERS([uuid/uuid.h], [
+    AC_CHECK_FUNC([uuid_generate_time], [
+      have_uuid=yes
+      LIBUUID_CFLAGS=${LIBUUID_CFLAGS-""}
+      LIBUUID_LIBS=${LIBUUID_LIBS-""}
+    ])
+  ])
+])
+
+AS_VAR_IF([have_uuid], [missing], [have_uuid=no])
 
 # 'Real Time' functions on Solaris
 # posix4 on Solaris 2.6
@@ -3135,8 +3145,8 @@ AC_ARG_WITH(system_expat,
 AC_MSG_RESULT($with_system_expat)
 
 AS_VAR_IF([with_system_expat], [yes], [
-  LIBEXPAT_CFLAGS=""
-  LIBEXPAT_LDFLAGS="-lexpat"
+  LIBEXPAT_CFLAGS=${LIBEXPAT_CFLAGS-""}
+  LIBEXPAT_LDFLAGS=${LIBEXPAT_LDFLAGS-"-lexpat"}
   LIBEXPAT_INTERNAL=
 ], [
   LIBEXPAT_CFLAGS="-I\$(srcdir)/Modules/expat"
@@ -3175,60 +3185,6 @@ else
     with_system_ffi="yes"
 fi
 
-dnl detect libffi
-have_libffi=missing
-AS_VAR_IF([with_system_ffi], [yes], [
-  PKG_CHECK_MODULES([LIBFFI], [libffi], [have_libffi=yes], [
-    AC_CHECK_HEADER([ffi.h], [
-      WITH_SAVE_ENV([
-        AC_CHECK_LIB([ffi], [ffi_call], [have_libffi=yes], [have_libffi=no])
-      ])
-    ])
-  ])
-], [
-  dnl private ffi copy
-  have_libffi=yes
-  LIBFFI_CFLAGS="-I\$(srcdir)/Modules/_ctypes/darwin -DUSING_MALLOC_CLOSURE_DOT_C=1 -DMACOSX"
-  LIBFFI_LIBS=
-])
-
-dnl _ctypes needs -ldl for dlopen
-AS_CASE([$LIBS],
-  [*-ldl*], [LIBFFI_LIBS="$LIBFFI_LIBS -ldl"]
-)
-
-if test "$with_system_ffi" = yes -a "$have_libffi" = yes; then
-  WITH_SAVE_ENV([
-    CFLAGS="$LIBFFI_CFLAGS $CFLAGS"
-    LIBS="$LIBFFI_LIBS $LIBS"
-
-    AC_CACHE_CHECK([for ffi_prep_cif_var in ffi.h], [ac_cv_ffi_prep_cif_var], [
-      AC_EGREP_HEADER([ffi_prep_cif_var], [ffi.h], [ac_cv_ffi_prep_cif_var=yes], [ac_cv_ffi_prep_cif_var=no])
-    ])
-    AS_VAR_IF([ac_cv_ffi_prep_cif_var], [yes], [
-      AC_DEFINE([HAVE_FFI_PREP_CIF_VAR], [1],
-      [Define to 1 if you have the ffi_prep_cif_var function in <ffi.h> header file.])
-    ])
-
-    AC_CACHE_CHECK([for ffi_prep_closure_loc in ffi.h], [ac_cv_ffi_prep_closure_loc], [
-      AC_EGREP_HEADER([ffi_prep_closure_loc], [ffi.h], [ac_cv_ffi_prep_closure_loc=yes], [ac_cv_ffi_prep_closure_loc=no])
-    ])
-    AS_VAR_IF([ac_cv_ffi_prep_closure_loc], [yes], [
-      AC_DEFINE([HAVE_FFI_PREP_CLOSURE_LOC], [1],
-      [Define to 1 if you have the ffi_prep_closure_loc function in <ffi.h> header file.])
-    ])
-
-    AC_CACHE_CHECK([for ffi_closure_alloc in ffi.h], [ac_cv_ffi_closure_alloc], [
-      AC_EGREP_HEADER([ffi_closure_alloc], [ffi.h], [ac_cv_ffi_closure_alloc=yes], [ac_cv_ffi_closure_alloc=no])
-    ])
-    AS_VAR_IF([ac_cv_ffi_closure_alloc], [yes], [
-      AC_DEFINE([HAVE_FFI_CLOSURE_ALLOC], [1],
-      [Define to 1 if you have the ffi_closure_alloc function in <ffi.h> header file.])
-    ])
-  ])
-fi
-
-
 if test "$with_system_ffi" = "yes" && test -n "$PKG_CONFIG"; then
     LIBFFI_INCLUDEDIR="`"$PKG_CONFIG" libffi --cflags-only-I 2>/dev/null | sed -e 's/^-I//;s/ *$//'`"
 else
@@ -3245,8 +3201,8 @@ AC_ARG_WITH(system_libmpdec,
 AC_MSG_RESULT($with_system_libmpdec)
 
 AS_VAR_IF([with_system_libmpdec], [yes], [
-  LIBMPDEC_CFLAGS=""
-  LIBMPDEC_LDFLAGS="-lmpdec"
+  LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
+  LIBMPDEC_LDFLAGS=${LIBMPDEC_LDFLAGS-"-lmpdec"}
   LIBMPDEC_INTERNAL=
 ], [
   LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
@@ -3283,14 +3239,9 @@ AS_CASE([$ac_sys_system],
 
 libmpdec_machine=unknown
 if test "$libmpdec_system" = Darwin; then
-    AS_CASE([$MACOSX_DEFAULT_ARCH],
-      [i386],   [libmpdec_machine=ansi32],
-      [ppc],    [libmpdec_machine=ansi32],
-      [x86_64], [libmpdec_machine=x64],
-      [ppc64],  [libmpdec_machine=ansi64],
-      [arm64],  [libmpdec_machine=ansi64],
-      [libmpdec_machine=universal]
-    )
+    # universal here means: build libmpdec with the same arch options
+    # the python interpreter was built with
+    libmpdec_machine=universal
 elif test $ac_cv_sizeof_size_t -eq 8; then
     if test "$ac_cv_gcc_asm_for_x64" = yes; then
         libmpdec_machine=x64
@@ -3340,15 +3291,16 @@ fi
 dnl check for NIS / libnsl dependencies
 dnl libnsl dependencies include tirpc includes and lib
 PKG_CHECK_MODULES([LIBNSL], [libnsl], [have_nis=yes], [
-  LIBNSL_CFLAGS=
+  LIBNSL_CFLAGS=${LIBNSL_CFLAGS-""}
   WITH_SAVE_ENV([
     AC_SEARCH_LIBS([yp_match], [nsl], [have_nis=yes], [have_nis=no])
   ])
   AS_CASE([$ac_cv_search_yp_match],
-    [no], [LIBNSL_LIBS=],
-    ["none required"], [LIBNSL_LIBS=],
-    [LIBNSL_LIBS=$ac_cv_search_yp_match]
+    [no], [libnsl=""],
+    ["none required"], [libnsl=""],
+    [libnsl="$ac_cv_search_yp_match"]
   )
+  LIBNSL_LIBS=${LIBNSL_LIBS-$libnsl}
 ])
 
 AS_VAR_IF([have_nis], [yes], [
@@ -3361,8 +3313,8 @@ AS_VAR_IF([have_nis], [yes], [
 dnl Check for SQLite library. Use pkg-config if available.
 PKG_CHECK_MODULES(
   [LIBSQLITE3], [sqlite3 >= 3.7.15], [], [
-    LIBSQLITE3_LIBS="-lsqlite3"
-    LIBSQLITE3_CFLAGS=
+    LIBSQLITE3_CFLAGS=${LIBSQLITE3_CFLAGS-""}
+    LIBSQLITE3_LIBS=${LIBSQLITE3_LIBS-"-lsqlite3"}
   ]
 )
 AS_VAR_APPEND([LIBSQLITE3_CFLAGS], [' -I$(srcdir)/Modules/_sqlite'])
@@ -3449,7 +3401,7 @@ WITH_SAVE_ENV([
   AC_CHECK_HEADERS([gdbm.h], [
     AC_CHECK_LIB([gdbm], [gdbm_open], [
       have_gdbm=yes
-      GDBM_LIBS="$GDBM_LIBS -lgdbm"
+      GDBM_LIBS=${GDBM_LIBS-"-lgdbm"}
     ], [have_gdbm=no])
   ], [have_gdbm=no])
 ])
@@ -3839,16 +3791,17 @@ fi
 if test "$ipv6" = "yes" -a "$ipv6lib" != "none"; then
 	if test -d $ipv6libdir -a -f $ipv6libdir/lib$ipv6lib.a; then
 		LIBS="-L$ipv6libdir -l$ipv6lib $LIBS"
-		echo "using lib$ipv6lib"
+		AC_MSG_NOTICE([using lib$ipv6lib])
 	else
-		if test $ipv6trylibc = "yes"; then
-			echo "using libc"
-		else
-			echo 'Fatal: no $ipv6lib library found.  cannot continue.'
-			echo "You need to fetch lib$ipv6lib.a from appropriate"
-			echo 'ipv6 kit and compile beforehand.'
-			exit 1
-		fi
+    AS_VAR_IF([ipv6trylibc], [yes], [
+      AC_MSG_NOTICE([using libc])
+    ], [
+      AC_MSG_ERROR([m4_normalize([
+        No $ipv6lib library found; cannot continue.
+        You need to fetch lib$ipv6lib.a from appropriate
+        ipv6 kit and compile beforehand.
+      ])])
+    ])
 	fi
 fi
 
@@ -4243,8 +4196,8 @@ PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
     WITH_SAVE_ENV([
       AC_CHECK_LIB([z], [gzread], [
         have_zlib=yes
-        ZLIB_CFLAGS=
-        ZLIB_LIBS=-lz
+        ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
+        ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
         AC_CHECK_LIB([z], [inflateCopy], [AC_DEFINE([HAVE_ZLIB_COPY], [1])])
       ], [
         have_zlib=no
@@ -4264,8 +4217,8 @@ PKG_CHECK_MODULES([BZIP2], [bzip2], [have_bzip2=yes], [
     WITH_SAVE_ENV([
       AC_CHECK_LIB([bz2], [BZ2_bzCompress], [
         have_bzip2=yes
-        BZIP2_CFLAGS=
-        BZIP2_LIBS=-lbz2
+        BZIP2_CFLAGS=${BZIP2_CFLAGS-""}
+        BZIP2_LIBS=${BZIP2_LIBS-"-lbz2"}
       ], [have_bzip2=no])
     ])
   ], [have_bzip2=no])
@@ -4276,8 +4229,8 @@ PKG_CHECK_MODULES([LIBLZMA], [liblzma], [have_liblzma=yes], [
     WITH_SAVE_ENV([
       AC_CHECK_LIB([lzma], [lzma_easy_encoder], [
         have_liblzma=yes
-        LIBLZMA_CFLAGS=
-        LIBLZMA_LIBS=-llzma
+        LIBLZMA_CFLAGS=${LIBLZMA_CFLAGS-""}
+        LIBLZMA_LIBS=${LIBLZMA_LIBS-"-llzma"}
       ], [have_liblzma=no])
     ])
   ], [have_liblzma=no])
@@ -4350,10 +4303,11 @@ PKG_CHECK_MODULES([LIBCRYPT], [libxcrypt >= 3.1.1], [
     AC_SEARCH_LIBS([crypt_r], [crypt], [
       AC_DEFINE([HAVE_CRYPT_R], [1])
       if test "$ac_cv_search_crypt_r" = "none required"; then
-        LIBCRYPT_LIBS=
+        libcrypt=
       else
-        LIBCRYPT_LIBS="$ac_cv_search_crypt_r"
+        libcrypt="$ac_cv_search_crypt_r"
       fi
+      LIBCRYPT_LIBS=${LIBCRYPT_LIBS-$libcrypt}
     ])
   ])
 ])
@@ -4553,12 +4507,12 @@ dnl if ac_cv_func_getaddrinfo
 
 if test "$ac_cv_func_getaddrinfo" = no -o "$ac_cv_buggy_getaddrinfo" = yes
 then
-	if test $ipv6 = yes
-	then
-		echo 'Fatal: You must get working getaddrinfo() function.'
-		echo '       or you can specify "--disable-ipv6"'.
-		exit 1
-	fi
+  AS_VAR_IF([ipv6], [yes], [
+    AC_MSG_ERROR([m4_normalize([
+      You must get working getaddrinfo() function
+      or pass the "--disable-ipv6" option to configure.
+    ])])
+  ])
 else
 	AC_DEFINE(HAVE_GETADDRINFO, 1, [Define if you have the getaddrinfo function.])
 fi
@@ -6477,9 +6431,7 @@ PY_STDLIB_MOD([_blake2], [test "$with_builtin_blake2" = yes])
 PY_STDLIB_MOD([_crypt],
   [], [test "$ac_cv_crypt_crypt" = yes],
   [$LIBCRYPT_CFLAGS], [$LIBCRYPT_LIBS])
-PY_STDLIB_MOD([_ctypes],
-  [], [test "$have_libffi" = yes],
-  [$LIBFFI_CFLAGS], [$LIBFFI_LIBS])
+dnl PY_STDLIB_MOD([_ctypes], [], [], [], [])
 dnl PY_STDLIB_MOD([_curses], [], [], [], [])
 dnl PY_STDLIB_MOD([_curses_panel], [], [], [], [])
 PY_STDLIB_MOD([_decimal], [], [], [$LIBMPDEC_CFLAGS], [$LIBMPDEC_LDFLAGS])
@@ -6523,9 +6475,7 @@ PY_STDLIB_MOD([_testbuffer], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testimportmultiple], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testmultiphase], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_xxtestfuzz], [test "$TEST_MODULES" = yes])
-PY_STDLIB_MOD([_ctypes_test],
-  [test "$TEST_MODULES" = yes], [test "$have_libffi" = yes],
-  [], [$LIBM])
+PY_STDLIB_MOD([_ctypes_test], [test "$TEST_MODULES" = yes], [], [], [-lm])
 
 dnl Limited API template modules.
 dnl The limited C API is not compatible with the Py_TRACE_REFS macro.
@@ -6541,28 +6491,26 @@ AC_CONFIG_FILES([Modules/Setup.stdlib])
 AC_CONFIG_FILES([Modules/ld_so_aix], [chmod +x Modules/ld_so_aix])
 AC_OUTPUT
 
-echo "creating Modules/Setup.local" >&AS_MESSAGE_FD
+AC_MSG_NOTICE([creating Modules/Setup.local])
 if test ! -f Modules/Setup.local
 then
 	echo "# Edit this file for local setup changes" >Modules/Setup.local
 fi
 
-echo "creating Makefile" >&AS_MESSAGE_FD
+AC_MSG_NOTICE([creating Makefile])
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
 			Modules/Setup.local $srcdir/Modules/Setup.bootstrap $srcdir/Modules/Setup
 mv config.c Modules
 
 if test -z "$PKG_CONFIG"; then
-  echo "" >&AS_MESSAGE_FD
-  echo "pkg-config is missing. Some dependencies may not be detected correctly." >&AS_MESSAGE_FD
+  AC_MSG_WARN([pkg-config is missing. Some dependencies may not be detected correctly.])
 fi
 
 if test "$Py_OPT" = 'false' -a "$Py_DEBUG" != 'true'; then
-    echo "" >&AS_MESSAGE_FD
-    echo "" >&AS_MESSAGE_FD
-    echo "If you want a release build with all stable optimizations active (PGO, etc)," >&AS_MESSAGE_FD
-    echo "please run ./configure --enable-optimizations" >&AS_MESSAGE_FD
-    echo "" >&AS_MESSAGE_FD
-    echo "" >&AS_MESSAGE_FD
+  AC_MSG_NOTICE([
+
+If you want a release build with all stable optimizations active (PGO, etc),
+please run ./configure --enable-optimizations
+])
 fi

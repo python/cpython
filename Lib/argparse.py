@@ -392,6 +392,9 @@ class HelpFormatter(object):
         group_actions = set()
         inserts = {}
         for group in groups:
+            if not group._group_actions:
+                raise ValueError(f'empty group {group}')
+
             try:
                 start = actions.index(group._group_actions[0])
             except ValueError:

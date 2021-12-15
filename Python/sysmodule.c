@@ -1681,10 +1681,7 @@ _PySys_GetSizeOf(PyObject *o)
         return (size_t)-1;
     }
 
-    /* add gc_head size */
-    if (_PyObject_IS_GC(o))
-        return ((size_t)size) + sizeof(PyGC_Head);
-    return (size_t)size;
+    return (size_t)size + _PyType_PreHeaderSize(Py_TYPE(o));
 }
 
 static PyObject *
@@ -2826,6 +2823,8 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
             goto type_init_failed;
         }
     }
+
+    SET_SYS_FROM_STRING("_vpath", VPATH);
 #endif
 
     /* float repr style: 0.03 (short) vs 0.029999999999999999 (legacy) */

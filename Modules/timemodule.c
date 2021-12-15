@@ -895,7 +895,7 @@ time_strptime(PyObject *self, PyObject *args)
     PyObject *module, *func, *result;
     _Py_IDENTIFIER(_strptime_time);
 
-    module = PyImport_ImportModuleNoBlock("_strptime");
+    module = PyImport_ImportModule("_strptime");
     if (!module)
         return NULL;
 
@@ -1075,7 +1075,7 @@ time_tzset(PyObject *self, PyObject *unused)
 {
     PyObject* m;
 
-    m = PyImport_ImportModuleNoBlock("time");
+    m = PyImport_ImportModule("time");
     if (m == NULL) {
         return NULL;
     }

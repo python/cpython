@@ -187,7 +187,7 @@ if os_name == 'posix' or os_name == 'darwin':
 
 elif os_name == 'nt':
     BUILDDIR_TXT = 'pybuilddir.txt'
-    BUILD_LANDMARK = r'..\..\Modules\Setup.local'
+    BUILD_LANDMARK = f'{VPATH}\\Modules\\Setup.local'
     DEFAULT_PROGRAM_NAME = f'python'
     STDLIB_SUBDIR = 'Lib'
     STDLIB_LANDMARKS = [f'{STDLIB_SUBDIR}\\os.py', f'{STDLIB_SUBDIR}\\os.pyc']
@@ -407,24 +407,22 @@ pth_dir = None
 # Calling Py_SetPythonHome() or Py_SetPath() will override ._pth search,
 # but environment variables and command-line options cannot.
 if not py_setpath and not home_was_set:
-    # Check adjacent to the main DLL/dylib/so
-    if library:
-        try:
-            pth = readlines(library.rpartition('.')[0] + '._pth')
-            pth_dir = dirname(library)
-        except FileNotFoundError:
-            pass
-
-    # Check adjacent to the original executable, even if we
-    # redirected to actually launch Python. This may allow a
-    # venv to override the base_executable's ._pth file, but
-    # it cannot override the library's one.
-    if not pth_dir:
-        try:
-            pth = readlines(executable.rpartition('.')[0] + '._pth')
-            pth_dir = dirname(executable)
-        except FileNotFoundError:
-            pass
+    # 1. Check adjacent to the main DLL/dylib/so (if set)
+    # 2. Check adjacent to the original executable
+    # 3. Check adjacent to our actual executable
+    # This may allow a venv to override the base_executable's
+    # ._pth file, but it cannot override the library's one.
+    for p in [library, executable, real_executable]:
+        if p:
+            if os_name == 'nt' and (hassuffix(p, 'exe') or hassuffix(p, 'dll')):
+                p = p.rpartition('.')[0]
+            p += '._pth'
+            try:
+                pth = readlines(p)
+                pth_dir = dirname(p)
+                break
+            except OSError:
+                pass
 
     # If we found a ._pth file, disable environment and home
     # detection now. Later, we will do the rest.
@@ -448,6 +446,10 @@ if not home_was_set and real_executable_dir and not py_setpath:
             real_executable_dir,
             readlines(joinpath(real_executable_dir, BUILDDIR_TXT))[0],
         )
+        build_prefix = joinpath(real_executable_dir, VPATH)
+    except IndexError:
+        # File exists but is empty
+        platstdlib_dir = real_executable_dir
         build_prefix = joinpath(real_executable_dir, VPATH)
     except FileNotFoundError:
         if isfile(joinpath(real_executable_dir, BUILD_LANDMARK)):
@@ -500,6 +502,8 @@ else:
         prefix, had_delim, exec_prefix = home.partition(DELIM)
         if not had_delim:
             exec_prefix = prefix
+        # Reset the standard library directory if it was already set
+        stdlib_dir = None
 
 
     # First try to detect prefix by looking alongside our runtime library, if known
@@ -662,14 +666,17 @@ elif not pythonpath:
             pythonpath.append(joinpath(prefix, p))
 
     # Then add stdlib_dir and platstdlib_dir
-    if stdlib_dir:
-        pythonpath.append(stdlib_dir)
-    if platstdlib_dir:
-        if os_name == 'nt' and venv_prefix:
-            # QUIRK: Windows appends executable_dir instead of platstdlib_dir
-            # when in a venv
-            pythonpath.append(executable_dir)
-        else:
+    if os_name == 'nt' and venv_prefix:
+        # QUIRK: Windows generates paths differently in a venv
+        if platstdlib_dir:
+            pythonpath.append(platstdlib_dir)
+        if stdlib_dir:
+            pythonpath.append(stdlib_dir)
+        pythonpath.append(executable_dir)
+    else:
+        if stdlib_dir:
+            pythonpath.append(stdlib_dir)
+        if platstdlib_dir:
             pythonpath.append(platstdlib_dir)
 
     config['module_search_paths'] = pythonpath

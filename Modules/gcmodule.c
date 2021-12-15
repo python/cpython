@@ -69,10 +69,10 @@ module gc
 #define NEXT_MASK_UNREACHABLE  (1)
 
 /* Get an object's GC head */
-#define AS_GC(o) ((PyGC_Head *)(o)-1)
+#define AS_GC(o) ((PyGC_Head *)(((char *)(o))-sizeof(PyGC_Head)))
 
 /* Get the object given the GC head */
-#define FROM_GC(g) ((PyObject *)(((PyGC_Head *)g)+1))
+#define FROM_GC(g) ((PyObject *)(((char *)(g))+sizeof(PyGC_Head)))
 
 static inline int
 gc_is_collecting(PyGC_Head *g)
@@ -2231,28 +2231,14 @@ PyObject_IS_GC(PyObject *obj)
     return _PyObject_IS_GC(obj);
 }
 
-static PyObject *
-_PyObject_GC_Alloc(int use_calloc, size_t basicsize)
+void
+_PyObject_GC_Link(PyObject *op)
 {
+    PyGC_Head *g = AS_GC(op);
+    assert(((uintptr_t)g & (sizeof(uintptr_t)-1)) == 0);  // g must be correctly aligned
+
     PyThreadState *tstate = _PyThreadState_GET();
     GCState *gcstate = &tstate->interp->gc;
-    if (basicsize > PY_SSIZE_T_MAX - sizeof(PyGC_Head)) {
-        return _PyErr_NoMemory(tstate);
-    }
-    size_t size = sizeof(PyGC_Head) + basicsize;
-
-    PyGC_Head *g;
-    if (use_calloc) {
-        g = (PyGC_Head *)PyObject_Calloc(1, size);
-    }
-    else {
-        g = (PyGC_Head *)PyObject_Malloc(size);
-    }
-    if (g == NULL) {
-        return _PyErr_NoMemory(tstate);
-    }
-    assert(((uintptr_t)g & 3) == 0);  // g must be aligned 4bytes boundary
-
     g->_gc_next = 0;
     g->_gc_prev = 0;
     gcstate->generations[0].count++; /* number of allocated GC objects */
@@ -2266,26 +2252,32 @@ _PyObject_GC_Alloc(int use_calloc, size_t basicsize)
         gc_collect_generations(tstate);
         gcstate->collecting = 0;
     }
-    PyObject *op = FROM_GC(g);
+}
+
+static PyObject *
+gc_alloc(size_t basicsize, size_t presize)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (basicsize > PY_SSIZE_T_MAX - presize) {
+        return _PyErr_NoMemory(tstate);
+    }
+    size_t size = presize + basicsize;
+    char *mem = PyObject_Malloc(size);
+    if (mem == NULL) {
+        return _PyErr_NoMemory(tstate);
+    }
+    ((PyObject **)mem)[0] = NULL;
+    ((PyObject **)mem)[1] = NULL;
+    PyObject *op = (PyObject *)(mem + presize);
+    _PyObject_GC_Link(op);
     return op;
-}
-
-PyObject *
-_PyObject_GC_Malloc(size_t basicsize)
-{
-    return _PyObject_GC_Alloc(0, basicsize);
-}
-
-PyObject *
-_PyObject_GC_Calloc(size_t basicsize)
-{
-    return _PyObject_GC_Alloc(1, basicsize);
 }
 
 PyObject *
 _PyObject_GC_New(PyTypeObject *tp)
 {
-    PyObject *op = _PyObject_GC_Malloc(_PyObject_SIZE(tp));
+    size_t presize = _PyType_PreHeaderSize(tp);
+    PyObject *op = gc_alloc(_PyObject_SIZE(tp), presize);
     if (op == NULL) {
         return NULL;
     }
@@ -2303,8 +2295,9 @@ _PyObject_GC_NewVar(PyTypeObject *tp, Py_ssize_t nitems)
         PyErr_BadInternalCall();
         return NULL;
     }
+    size_t presize = _PyType_PreHeaderSize(tp);
     size = _PyObject_VAR_SIZE(tp, nitems);
-    op = (PyVarObject *) _PyObject_GC_Malloc(size);
+    op = (PyVarObject *)gc_alloc(size, presize);
     if (op == NULL) {
         return NULL;
     }
@@ -2333,6 +2326,7 @@ _PyObject_GC_Resize(PyVarObject *op, Py_ssize_t nitems)
 void
 PyObject_GC_Del(void *op)
 {
+    size_t presize = _PyType_PreHeaderSize(((PyObject *)op)->ob_type);
     PyGC_Head *g = AS_GC(op);
     if (_PyObject_GC_IS_TRACKED(op)) {
         gc_list_remove(g);
@@ -2341,7 +2335,7 @@ PyObject_GC_Del(void *op)
     if (gcstate->generations[0].count > 0) {
         gcstate->generations[0].count--;
     }
-    PyObject_Free(g);
+    PyObject_Free(((char *)op)-presize);
 }
 
 int

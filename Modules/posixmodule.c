@@ -6696,7 +6696,7 @@ os_fork1_impl(PyObject *module)
 {
     pid_t pid;
 
-    if (_PyInterpreterState_GET() != PyInterpreterState_Main()) {
+    if (!_Py_IsMainInterpreter(_PyInterpreterState_GET())) {
         PyErr_SetString(PyExc_RuntimeError, "fork not supported for subinterpreters");
         return NULL;
     }
@@ -7348,7 +7348,7 @@ os_forkpty_impl(PyObject *module)
     int master_fd = -1;
     pid_t pid;
 
-    if (_PyInterpreterState_GET() != PyInterpreterState_Main()) {
+    if (!_Py_IsMainInterpreter(_PyInterpreterState_GET())) {
         PyErr_SetString(PyExc_RuntimeError, "fork not supported for subinterpreters");
         return NULL;
     }
@@ -8219,7 +8219,7 @@ wait_helper(PyObject *module, pid_t pid, int status, struct rusage *ru)
         memset(ru, 0, sizeof(*ru));
     }
 
-    PyObject *m = PyImport_ImportModuleNoBlock("resource");
+    PyObject *m = PyImport_ImportModule("resource");
     if (m == NULL)
         return NULL;
     struct_rusage = PyObject_GetAttr(m, get_posix_state(module)->struct_rusage);

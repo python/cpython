@@ -5861,6 +5861,7 @@ test_tstate_capi(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 
+static PyObject *negative_dictoffset(PyObject *, PyObject *);
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
 static PyObject *getargs_s_hash_int(PyObject *, PyObject *, PyObject*);
 
@@ -5929,14 +5930,15 @@ static PyMethodDef TestMethods[] = {
 #if (defined(__linux__) || defined(__FreeBSD__)) && defined(__GNUC__)
     {"test_pep3118_obsolete_write_locks", (PyCFunction)test_pep3118_obsolete_write_locks, METH_NOARGS},
 #endif
-    {"getbuffer_with_null_view", getbuffer_with_null_view, METH_O},
-    {"PyBuffer_SizeFromFormat",  test_PyBuffer_SizeFromFormat, METH_VARARGS},
-    {"test_buildvalue_N",       test_buildvalue_N,               METH_NOARGS},
+    {"getbuffer_with_null_view", getbuffer_with_null_view,       METH_O},
+    {"PyBuffer_SizeFromFormat",  test_PyBuffer_SizeFromFormat,   METH_VARARGS},
+    {"test_buildvalue_N",        test_buildvalue_N,              METH_NOARGS},
+    {"negative_dictoffset",      negative_dictoffset,            METH_NOARGS},
     {"test_buildvalue_issue38913", test_buildvalue_issue38913,   METH_NOARGS},
-    {"get_args",                get_args,                        METH_VARARGS},
+    {"get_args",                  get_args,                      METH_VARARGS},
     {"test_get_statictype_slots", test_get_statictype_slots,     METH_NOARGS},
     {"test_get_type_name",        test_get_type_name,            METH_NOARGS},
-    {"test_get_type_qualname",   test_get_type_qualname,       METH_NOARGS},
+    {"test_get_type_qualname",    test_get_type_qualname,        METH_NOARGS},
     {"test_type_from_ephemeral_spec", test_type_from_ephemeral_spec, METH_NOARGS},
     {"get_kwargs", (PyCFunction)(void(*)(void))get_kwargs,
       METH_VARARGS|METH_KEYWORDS},
@@ -7523,6 +7525,7 @@ PyInit__testcapi(void)
     PyModule_AddObject(m, "PY_SSIZE_T_MAX", PyLong_FromSsize_t(PY_SSIZE_T_MAX));
     PyModule_AddObject(m, "PY_SSIZE_T_MIN", PyLong_FromSsize_t(PY_SSIZE_T_MIN));
     PyModule_AddObject(m, "SIZEOF_TIME_T", PyLong_FromSsize_t(sizeof(time_t)));
+    PyModule_AddObject(m, "Py_Version", PyLong_FromUnsignedLong(Py_Version));
     Py_INCREF(&PyInstanceMethod_Type);
     PyModule_AddObject(m, "instancemethod", (PyObject *)&PyInstanceMethod_Type);
 
@@ -7629,6 +7632,11 @@ PyInit__testcapi(void)
     return m;
 }
 
+static PyObject *
+negative_dictoffset(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return PyType_FromSpec(&HeapCTypeWithNegativeDict_spec);
+}
 
 /* Test the C API exposed when PY_SSIZE_T_CLEAN is not defined */
 

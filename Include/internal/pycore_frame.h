@@ -4,6 +4,14 @@
 extern "C" {
 #endif
 
+
+/* runtime lifecycle */
+
+extern void _PyFrame_Fini(PyInterpreterState *interp);
+
+
+/* other API */
+
 /* These values are chosen so that the inline functions below all
  * compare f_state to zero.
  */
@@ -58,6 +66,7 @@ static inline PyObject **_PyFrame_Stackbase(InterpreterFrame *f) {
 
 static inline PyObject *_PyFrame_StackPeek(InterpreterFrame *f) {
     assert(f->stacktop > f->f_code->co_nlocalsplus);
+    assert(f->localsplus[f->stacktop-1] != NULL);
     return f->localsplus[f->stacktop-1];
 }
 

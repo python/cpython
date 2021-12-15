@@ -117,6 +117,10 @@
     <Import Project="regen.targets" />
   </ImportGroup>
   <Target Name="_TriggerPostRegen" AfterTargets="Build" DependsOnTargets="PostBuildRegen" />
+  <Target Name="GeneratePyBuildDirTxt" AfterTargets="Link">
+    <Message Text="Generating $(OutDir)pybuilddir.txt" />
+    <WriteLinesToFile File="$(OutDir)pybuilddir.txt" Lines="%0D%0A" Overwrite="true" />
+  </Target>
   <Target Name="ValidateUcrtbase" AfterTargets="AfterBuild" Condition="$(Configuration) != 'PGInstrument' and $(Platform) != 'ARM' and $(Platform) != 'ARM64'">
     <PropertyGroup>
       <UcrtName>ucrtbase</UcrtName>
@@ -146,12 +150,5 @@ $(_PGOPath)
       <_ExistingContent Condition="Exists('$(PySourcePath)python.bat')">$([System.IO.File]::ReadAllText('$(PySourcePath)python.bat'))</_ExistingContent>
     </PropertyGroup>
     <WriteLinesToFile File="$(PySourcePath)python.bat" Lines="$(_Content)" Overwrite="true" Condition="'$(_Content)' != '$(_ExistingContent)'" />
-  </Target>
-  <Target Name="GeneratePyBuildDirTxt" BeforeTargets="AfterBuild">
-    <PropertyGroup>
-      <_Content>$(OutDir)</_Content>
-      <_ExistingContent Condition="Exists('$(OutDir)pybuilddir.txt')">$([System.IO.File]::ReadAllText('$(OutDir)pybuilddir.txt'))</_ExistingContent>
-    </PropertyGroup>
-    <WriteLinesToFile File="$(OutDir)pybuilddir.txt" Lines="$(_Content)" Overwrite="true" Condition="'$(_Content)' != '$(_ExistingContent)'" />
   </Target>
 </Project>
