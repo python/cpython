@@ -93,7 +93,7 @@ def_op('GET_ITER', 68)
 def_op('GET_YIELD_FROM_ITER', 69)
 def_op('PRINT_EXPR', 70)
 def_op('LOAD_BUILD_CLASS', 71)
-def_op('YIELD_FROM', 72)
+
 def_op('GET_AWAITABLE', 73)
 def_op('LOAD_ASSERTION_ERROR', 74)
 
@@ -143,7 +143,7 @@ def_op('RERAISE', 119)
 def_op('COPY', 120)
 jabs_op('JUMP_IF_NOT_EXC_MATCH', 121)
 def_op('BINARY_OP', 122)
-
+jrel_op('SEND', 123) # Number of bytes to skip
 def_op('LOAD_FAST', 124)        # Local variable number
 haslocal.append(124)
 def_op('STORE_FAST', 125)       # Local variable number

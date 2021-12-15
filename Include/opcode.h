@@ -37,7 +37,6 @@ extern "C" {
 #define GET_YIELD_FROM_ITER              69
 #define PRINT_EXPR                       70
 #define LOAD_BUILD_CLASS                 71
-#define YIELD_FROM                       72
 #define GET_AWAITABLE                    73
 #define LOAD_ASSERTION_ERROR             74
 #define LIST_TO_TUPLE                    82
@@ -81,6 +80,7 @@ extern "C" {
 #define COPY                            120
 #define JUMP_IF_NOT_EXC_MATCH           121
 #define BINARY_OP                       122
+#define SEND                            123
 #define LOAD_FAST                       124
 #define STORE_FAST                      125
 #define DELETE_FAST                     126
@@ -154,15 +154,15 @@ extern "C" {
 #define LOAD_GLOBAL_BUILTIN              65
 #define LOAD_METHOD_ADAPTIVE             66
 #define LOAD_METHOD_CACHED               67
-#define LOAD_METHOD_CLASS                75
-#define LOAD_METHOD_MODULE               76
-#define LOAD_METHOD_NO_DICT              77
-#define STORE_ATTR_ADAPTIVE              78
-#define STORE_ATTR_INSTANCE_VALUE        79
-#define STORE_ATTR_SLOT                  80
-#define STORE_ATTR_WITH_HINT             81
-#define LOAD_FAST__LOAD_FAST             87
-#define STORE_FAST__LOAD_FAST           123
+#define LOAD_METHOD_CLASS                72
+#define LOAD_METHOD_MODULE               75
+#define LOAD_METHOD_NO_DICT              76
+#define STORE_ATTR_ADAPTIVE              77
+#define STORE_ATTR_INSTANCE_VALUE        78
+#define STORE_ATTR_SLOT                  79
+#define STORE_ATTR_WITH_HINT             80
+#define LOAD_FAST__LOAD_FAST             81
+#define STORE_FAST__LOAD_FAST            87
 #define LOAD_FAST__LOAD_CONST           128
 #define LOAD_CONST__LOAD_FAST           131
 #define STORE_FAST__STORE_FAST          134
@@ -172,7 +172,7 @@ static uint32_t _PyOpcode_RelativeJump[8] = {
     0U,
     0U,
     536870912U,
-    16384U,
+    134234112U,
     0U,
     0U,
     0U,
@@ -182,7 +182,7 @@ static uint32_t _PyOpcode_Jump[8] = {
     0U,
     0U,
     536870912U,
-    2182070272U,
+    2316288000U,
     0U,
     0U,
     0U,
