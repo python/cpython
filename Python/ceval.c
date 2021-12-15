@@ -4175,7 +4175,7 @@ check_eval_breaker:
 
         TARGET(POP_JUMP_IF_NOT_NONE) {
             PyObject *value = POP();
-            if (value != Py_None) {
+            if (!Py_IsNone(value)) {
                 Py_DECREF(value);
                 JUMPTO(oparg);
                 CHECK_EVAL_BREAKER();
@@ -4187,7 +4187,7 @@ check_eval_breaker:
 
         TARGET(POP_JUMP_IF_NONE) {
             PyObject *value = POP();
-            if (value == Py_None) {
+            if (Py_IsNone(value)) {
                 Py_DECREF(value);
                 JUMPTO(oparg);
                 CHECK_EVAL_BREAKER();

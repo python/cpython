@@ -8518,15 +8518,18 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                         break;
                     case IS_OP:
                         cnt = get_const_value(inst->i_opcode, oparg, consts);
+                        if (cnt == NULL) {
+                            goto error;
+                        }
                         int jump_op = i+2 < bb->b_iused ? bb->b_instr[i+2].i_opcode : 0;
                         if (Py_IsNone(cnt) && (jump_op == POP_JUMP_IF_FALSE || jump_op == POP_JUMP_IF_TRUE)) {
-                            Py_DECREF(cnt);
                             unsigned char nextarg = bb->b_instr[i+1].i_oparg;
                             inst->i_opcode = NOP;
                             bb->b_instr[i+1].i_opcode = NOP;
                             bb->b_instr[i+2].i_opcode = nextarg ^ (jump_op == POP_JUMP_IF_FALSE) ?
                                     POP_JUMP_IF_NOT_NONE : POP_JUMP_IF_NONE;
                         }
+                        Py_DECREF(cnt);
                         break;
                 }
                 break;
