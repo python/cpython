@@ -2914,14 +2914,18 @@ class TestSlots(unittest.TestCase):
         self.assertEqual(p.y, 2)
         with self.assertRaises(FrozenInstanceError):
             p.x = 2
+
         try:
             p.z = 5
-        except FrozenInstanceError as exc:
-            raise TypeError(
-                'FrozenInstanceError unexpectedly raised instead of AttributeError'
-            ) from exc
-        except AttributeError:
-            pass
+        except Exception as exc:
+            exc_type = type(exc)
+            if exc_type is not AttributeError:
+                raise TypeError(
+                    f'AttributeError was expected; got {exc_type.__name__!r} instead'
+                ) from exc
+            else:
+                # Good! The test passes; AttributeError is what we want
+                pass
         else:
             self.fail('AttributeError expected, but no error was raised')
 
