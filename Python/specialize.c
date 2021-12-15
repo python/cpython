@@ -1296,6 +1296,9 @@ specialize_class_call(
 {
     assert(PyType_Check(callable));
     PyTypeObject *tp = (PyTypeObject *)callable;
+    if (INVALID_TP_VERSION(CALL_NO_KW, tp)) {
+        return -1;
+    }
     if (_Py_OPCODE(instr[-1]) == PRECALL_METHOD) {
         SPECIALIZATION_FAIL(CALL_NO_KW, SPEC_FAIL_METHOD_CALL_CLASS);
         return -1;
