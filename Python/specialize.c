@@ -494,6 +494,7 @@ initial_counter_value(void) {
 #define SPEC_FAIL_PYTHON_CLASS 19
 #define SPEC_FAIL_C_METHOD_CALL 20
 #define SPEC_FAIL_METHDESCR_NON_METHOD 21
+#define SPEC_FAIL_METHOD_CALL_CLASS 22
 
 /* COMPARE_OP */
 #define SPEC_FAIL_STRING_COMPARE 13
@@ -1266,6 +1267,10 @@ specialize_class_call(
 {
     assert(PyType_Check(callable));
     PyTypeObject *tp = (PyTypeObject *)callable;
+    if (_Py_OPCODE(instr[-1]) == PRECALL_METHOD) {
+        SPECIALIZATION_FAIL(CALL_NO_KW, SPEC_FAIL_METHOD_CALL_CLASS);
+        return -1;
+    }
     if (tp->tp_new == PyBaseObject_Type.tp_new) {
         SPECIALIZATION_FAIL(CALL_NO_KW, SPEC_FAIL_PYTHON_CLASS);
         return -1;

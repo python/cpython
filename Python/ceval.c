@@ -4855,6 +4855,7 @@ check_eval_breaker:
         }
 
         TARGET(CALL_NO_KW_TYPE_1) {
+            assert(STACK_ADJUST_IS_RESET);
             assert(GET_CACHE()->adaptive.original_oparg == 1);
             PyObject *obj = TOP();
             PyObject *callable = SECOND();
@@ -4868,6 +4869,7 @@ check_eval_breaker:
         }
 
         TARGET(CALL_NO_KW_BUILTIN_CLASS_1) {
+            assert(STACK_ADJUST_IS_RESET);
             SpecializedCacheEntry *caches = GET_CACHE();
             _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
             assert(cache0->original_oparg == 1);
