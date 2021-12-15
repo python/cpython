@@ -1046,8 +1046,6 @@ stack_effect(int opcode, int oparg, int jump)
             return 0;
         case YIELD_VALUE:
             return 0;
-        case YIELD_FROM:
-            return -1;
         case POP_BLOCK:
             return 0;
         case POP_EXCEPT:
@@ -1066,7 +1064,8 @@ stack_effect(int opcode, int oparg, int jump)
         case FOR_ITER:
             /* -1 at end of iterator, 1 if continue iterating. */
             return jump > 0 ? -1 : 1;
-
+        case SEND:
+            return jump > 0 ? -1 : 0;
         case STORE_ATTR:
             return -2;
         case DELETE_ATTR:
@@ -1156,13 +1155,11 @@ stack_effect(int opcode, int oparg, int jump)
             return -oparg;
 
         /* Functions and calls */
-        case CALL_FUNCTION:
+        case PRECALL_METHOD:
+            return -1;
+        case CALL_NO_KW:
             return -oparg;
-        case CALL_METHOD:
-            return -oparg-1;
-        case CALL_METHOD_KW:
-            return -oparg-2;
-        case CALL_FUNCTION_KW:
+        case CALL_KW:
             return -oparg-1;
         case CALL_FUNCTION_EX:
             return -1 - ((oparg & 0x01) != 0);
@@ -1670,6 +1667,9 @@ compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
    the ASDL name to synthesize the name of the C type and the visit function.
 */
 
+#define ADD_YIELD_FROM(C) \
+    RETURN_IF_FALSE(compiler_add_yield_from((C)))
+
 #define VISIT(C, TYPE, V) {\
     if (!compiler_visit_ ## TYPE((C), (V))) \
         return 0; \
@@ -1818,7 +1818,25 @@ compiler_call_exit_with_nones(struct compiler *c) {
     ADDOP_LOAD_CONST(c, Py_None);
     ADDOP(c, DUP_TOP);
     ADDOP(c, DUP_TOP);
-    ADDOP_I(c, CALL_FUNCTION, 3);
+    ADDOP_I(c, CALL_NO_KW, 3);
+    return 1;
+}
+
+static int
+compiler_add_yield_from(struct compiler *c)
+{
+    basicblock *start, *jump, *exit;
+    start = compiler_new_block(c);
+    jump = compiler_new_block(c);
+    exit = compiler_new_block(c);
+    if (start == NULL || jump == NULL || exit == NULL) {
+        return 0;
+    }
+    compiler_use_next_block(c, start);
+    ADDOP_JUMP(c, SEND, exit);
+    compiler_use_next_block(c, jump);
+    ADDOP_JUMP(c, JUMP_ABSOLUTE, start);
+    compiler_use_next_block(c, exit);
     return 1;
 }
 
@@ -1894,7 +1912,7 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
             if (info->fb_type == ASYNC_WITH) {
                 ADDOP(c, GET_AWAITABLE);
                 ADDOP_LOAD_CONST(c, Py_None);
-                ADDOP(c, YIELD_FROM);
+                ADD_YIELD_FROM(c);
             }
             ADDOP(c, POP_TOP);
             /* The exit block should appear to execute after the
@@ -2165,7 +2183,7 @@ compiler_apply_decorators(struct compiler *c, asdl_expr_seq* decos)
     int old_end_col_offset = c->u->u_end_col_offset;
     for (Py_ssize_t i = asdl_seq_LEN(decos) - 1; i > -1; i--) {
         SET_LOC(c, (expr_ty)asdl_seq_GET(decos, i));
-        ADDOP_I(c, CALL_FUNCTION, 1);
+        ADDOP_I(c, CALL_NO_KW, 1);
     }
     c->u->u_lineno = old_lineno;
     c->u->u_end_lineno = old_end_lineno;
@@ -3007,7 +3025,7 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     ADDOP_JUMP(c, SETUP_FINALLY, except);
     ADDOP(c, GET_ANEXT);
     ADDOP_LOAD_CONST(c, Py_None);
-    ADDOP(c, YIELD_FROM);
+    ADD_YIELD_FROM(c);
     ADDOP(c, POP_BLOCK);  /* for SETUP_FINALLY */
 
     /* Success block for __anext__ */
@@ -3857,7 +3875,7 @@ compiler_assert(struct compiler *c, stmt_ty s)
     ADDOP(c, LOAD_ASSERTION_ERROR);
     if (s->v.Assert.msg) {
         VISIT(c, expr, s->v.Assert.msg);
-        ADDOP_I(c, CALL_FUNCTION, 1);
+        ADDOP_I(c, CALL_NO_KW, 1);
     }
     ADDOP_I(c, RAISE_VARARGS, 1);
     compiler_use_next_block(c, end);
@@ -4665,10 +4683,12 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
         if (!compiler_call_simple_kw_helper(c, kwds, kwdsl)) {
             return 0;
         };
-        ADDOP_I(c, CALL_METHOD_KW, argsl + kwdsl);
+        ADDOP_I(c, PRECALL_METHOD, argsl + kwdsl+1);
+        ADDOP_I(c, CALL_KW, argsl + kwdsl);
     }
     else {
-        ADDOP_I(c, CALL_METHOD, argsl);
+        ADDOP_I(c, PRECALL_METHOD, argsl);
+        ADDOP_I(c, CALL_NO_KW, argsl);
     }
     c->u->u_lineno = old_lineno;
     return 1;
@@ -4735,7 +4755,8 @@ compiler_joined_str(struct compiler *c, expr_ty e)
             VISIT(c, expr, asdl_seq_GET(e->v.JoinedStr.values, i));
             ADDOP_I(c, LIST_APPEND, 1);
         }
-        ADDOP_I(c, CALL_METHOD, 1);
+        ADDOP_I(c, PRECALL_METHOD, 1);
+        ADDOP_I(c, CALL_NO_KW, 1);
     }
     else {
         VISIT_SEQ(c, expr, e->v.JoinedStr.values);
@@ -4907,11 +4928,11 @@ compiler_call_helper(struct compiler *c,
         if (!compiler_call_simple_kw_helper(c, keywords, nkwelts)) {
             return 0;
         };
-        ADDOP_I(c, CALL_FUNCTION_KW, n + nelts + nkwelts);
+        ADDOP_I(c, CALL_KW, n + nelts + nkwelts);
         return 1;
     }
     else {
-        ADDOP_I(c, CALL_FUNCTION, n + nelts);
+        ADDOP_I(c, CALL_NO_KW, n + nelts);
         return 1;
     }
 
@@ -5163,7 +5184,7 @@ compiler_async_comprehension_generator(struct compiler *c,
     ADDOP_JUMP(c, SETUP_FINALLY, except);
     ADDOP(c, GET_ANEXT);
     ADDOP_LOAD_CONST(c, Py_None);
-    ADDOP(c, YIELD_FROM);
+    ADD_YIELD_FROM(c);
     ADDOP(c, POP_BLOCK);
     VISIT(c, expr, gen->target);
 
@@ -5308,12 +5329,12 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
         ADDOP(c, GET_ITER);
     }
 
-    ADDOP_I(c, CALL_FUNCTION, 1);
+    ADDOP_I(c, CALL_NO_KW, 1);
 
     if (is_async_generator && type != COMP_GENEXP) {
         ADDOP(c, GET_AWAITABLE);
         ADDOP_LOAD_CONST(c, Py_None);
-        ADDOP(c, YIELD_FROM);
+        ADD_YIELD_FROM(c);
     }
 
     return 1;
@@ -5462,7 +5483,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP(c, BEFORE_ASYNC_WITH);
     ADDOP(c, GET_AWAITABLE);
     ADDOP_LOAD_CONST(c, Py_None);
-    ADDOP(c, YIELD_FROM);
+    ADD_YIELD_FROM(c);
 
     ADDOP_JUMP(c, SETUP_WITH, final);
 
@@ -5499,7 +5520,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
         return 0;
     ADDOP(c, GET_AWAITABLE);
     ADDOP_LOAD_CONST(c, Py_None);
-    ADDOP(c, YIELD_FROM);
+    ADD_YIELD_FROM(c);
 
     ADDOP(c, POP_TOP);
 
@@ -5513,7 +5534,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP(c, WITH_EXCEPT_START);
     ADDOP(c, GET_AWAITABLE);
     ADDOP_LOAD_CONST(c, Py_None);
-    ADDOP(c, YIELD_FROM);
+    ADD_YIELD_FROM(c);
     compiler_with_except_finish(c, cleanup);
 
     compiler_use_next_block(c, exit);
@@ -5670,7 +5691,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         VISIT(c, expr, e->v.YieldFrom.value);
         ADDOP(c, GET_YIELD_FROM_ITER);
         ADDOP_LOAD_CONST(c, Py_None);
-        ADDOP(c, YIELD_FROM);
+        ADD_YIELD_FROM(c);
         break;
     case Await_kind:
         if (!IS_TOP_LEVEL_AWAIT(c)){
@@ -5687,7 +5708,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         VISIT(c, expr, e->v.Await.value);
         ADDOP(c, GET_AWAITABLE);
         ADDOP_LOAD_CONST(c, Py_None);
-        ADDOP(c, YIELD_FROM);
+        ADD_YIELD_FROM(c);
         break;
     case Compare_kind:
         return compiler_compare(c, e);
@@ -7516,10 +7537,13 @@ normalize_jumps(struct assembler *a)
             continue;
         }
         struct instr *last = &b->b_instr[b->b_iused-1];
-        if (last->i_opcode == JUMP_ABSOLUTE &&
-            last->i_target->b_visited == 0
-        ) {
-            last->i_opcode = JUMP_FORWARD;
+        if (last->i_opcode == JUMP_ABSOLUTE) {
+            if (last->i_target->b_visited == 0) {
+                last->i_opcode = JUMP_FORWARD;
+            }
+            else if (b->b_iused >= 2 && b->b_instr[b->b_iused-2].i_opcode == SEND) {
+                last->i_opcode = JUMP_ABSOLUTE_QUICK;
+            }
         }
     }
 }
