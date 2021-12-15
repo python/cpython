@@ -1045,8 +1045,6 @@ stack_effect(int opcode, int oparg, int jump)
             return 0;
         case YIELD_VALUE:
             return 0;
-        case YIELD_FROM:
-            return -1;
         case POP_BLOCK:
             return 0;
         case POP_EXCEPT:
@@ -1065,7 +1063,8 @@ stack_effect(int opcode, int oparg, int jump)
         case FOR_ITER:
             /* -1 at end of iterator, 1 if continue iterating. */
             return jump > 0 ? -1 : 1;
-
+        case SEND:
+            return jump > 0 ? -1 : 0;
         case STORE_ATTR:
             return -2;
         case DELETE_ATTR:
@@ -1667,6 +1666,9 @@ compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
    the ASDL name to synthesize the name of the C type and the visit function.
 */
 
+#define ADD_YIELD_FROM(C) \
+    RETURN_IF_FALSE(compiler_add_yield_from((C)))
+
 #define VISIT(C, TYPE, V) {\
     if (!compiler_visit_ ## TYPE((C), (V))) \
         return 0; \
@@ -1819,6 +1821,24 @@ compiler_call_exit_with_nones(struct compiler *c) {
     return 1;
 }
 
+static int
+compiler_add_yield_from(struct compiler *c)
+{
+    basicblock *start, *jump, *exit;
+    start = compiler_new_block(c);
+    jump = compiler_new_block(c);
+    exit = compiler_new_block(c);
+    if (start == NULL || jump == NULL || exit == NULL) {
+        return 0;
+    }
+    compiler_use_next_block(c, start);
+    ADDOP_JUMP(c, SEND, exit);
+    compiler_use_next_block(c, jump);
+    ADDOP_JUMP(c, JUMP_ABSOLUTE, start);
+    compiler_use_next_block(c, exit);
+    return 1;
+}
+
 /* Unwind a frame block.  If preserve_tos is true, the TOS before
  * popping the blocks will be restored afterwards, unless another
  * return, break or continue is found. In which case, the TOS will
@@ -1893,7 +1913,7 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
             if (info->fb_type == ASYNC_WITH) {
                 ADDOP(c, GET_AWAITABLE);
                 ADDOP_LOAD_CONST(c, Py_None);
-                ADDOP(c, YIELD_FROM);
+                ADD_YIELD_FROM(c);
             }
             ADDOP(c, POP_TOP);
             /* The exit block should appear to execute after the
@@ -3006,7 +3026,7 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     ADDOP_JUMP(c, SETUP_FINALLY, except);
     ADDOP(c, GET_ANEXT);
     ADDOP_LOAD_CONST(c, Py_None);
-    ADDOP(c, YIELD_FROM);
+    ADD_YIELD_FROM(c);
     ADDOP(c, POP_BLOCK);  /* for SETUP_FINALLY */
 
     /* Success block for __anext__ */
@@ -5192,7 +5212,7 @@ compiler_async_comprehension_generator(struct compiler *c,
     ADDOP_JUMP(c, SETUP_FINALLY, except);
     ADDOP(c, GET_ANEXT);
     ADDOP_LOAD_CONST(c, Py_None);
-    ADDOP(c, YIELD_FROM);
+    ADD_YIELD_FROM(c);
     ADDOP(c, POP_BLOCK);
     VISIT(c, expr, gen->target);
 
@@ -5342,7 +5362,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     if (is_async_generator && type != COMP_GENEXP) {
         ADDOP(c, GET_AWAITABLE);
         ADDOP_LOAD_CONST(c, Py_None);
-        ADDOP(c, YIELD_FROM);
+        ADD_YIELD_FROM(c);
     }
 
     return 1;
@@ -5493,7 +5513,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP(c, BEFORE_ASYNC_WITH);
     ADDOP(c, GET_AWAITABLE);
     ADDOP_LOAD_CONST(c, Py_None);
-    ADDOP(c, YIELD_FROM);
+    ADD_YIELD_FROM(c);
 
     ADDOP_JUMP(c, SETUP_WITH, final);
 
@@ -5530,7 +5550,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
         return 0;
     ADDOP(c, GET_AWAITABLE);
     ADDOP_LOAD_CONST(c, Py_None);
-    ADDOP(c, YIELD_FROM);
+    ADD_YIELD_FROM(c);
 
     ADDOP(c, POP_TOP);
 
@@ -5544,7 +5564,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP(c, WITH_EXCEPT_START);
     ADDOP(c, GET_AWAITABLE);
     ADDOP_LOAD_CONST(c, Py_None);
-    ADDOP(c, YIELD_FROM);
+    ADD_YIELD_FROM(c);
     compiler_with_except_finish(c, cleanup);
 
     compiler_use_next_block(c, exit);
@@ -5701,7 +5721,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         VISIT(c, expr, e->v.YieldFrom.value);
         ADDOP(c, GET_YIELD_FROM_ITER);
         ADDOP_LOAD_CONST(c, Py_None);
-        ADDOP(c, YIELD_FROM);
+        ADD_YIELD_FROM(c);
         break;
     case Await_kind:
         if (!IS_TOP_LEVEL_AWAIT(c)){
@@ -5718,7 +5738,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         VISIT(c, expr, e->v.Await.value);
         ADDOP(c, GET_AWAITABLE);
         ADDOP_LOAD_CONST(c, Py_None);
-        ADDOP(c, YIELD_FROM);
+        ADD_YIELD_FROM(c);
         break;
     case Compare_kind:
         return compiler_compare(c, e);
@@ -7544,10 +7564,13 @@ normalize_jumps(struct assembler *a)
             continue;
         }
         struct instr *last = &b->b_instr[b->b_iused-1];
-        if (last->i_opcode == JUMP_ABSOLUTE &&
-            last->i_target->b_visited == 0
-        ) {
-            last->i_opcode = JUMP_FORWARD;
+        if (last->i_opcode == JUMP_ABSOLUTE) {
+            if (last->i_target->b_visited == 0) {
+                last->i_opcode = JUMP_FORWARD;
+            }
+            else if (b->b_iused >= 2 && b->b_instr[b->b_iused-2].i_opcode == SEND) {
+                last->i_opcode = JUMP_ABSOLUTE_QUICK;
+            }
         }
     }
 }
