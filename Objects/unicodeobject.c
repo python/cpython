@@ -11336,11 +11336,18 @@ _PyUnicode_EqualToASCIIId(PyObject *left, _Py_Identifier *right)
         return _PyUnicode_EqualToASCIIString(left, right->string);
     }
 
-    if (left == right_uni)
+    if (left == right_uni) {
         return 1;
-
-    if (PyUnicode_CHECK_INTERNED(left))
-        return 0;
+    }
+    // bpo-46006: The left string cannot be considered as not equal to the
+    // right string if the left string is interned, because the two string
+    // objects can belong to two interpreters.
+    //
+    // While an interpreter is supposed to only access objects that it created
+    // (bpo-40533), in practice in Python 3.11, it remains common that a
+    // subinterpreter access objects of the main interprter. For example,
+    // access attribute names (strings) of static types created by the main
+    // interpreter.
 
     assert(_PyUnicode_HASH(right_uni) != -1);
     Py_hash_t hash = _PyUnicode_HASH(left);

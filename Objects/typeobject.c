@@ -8459,7 +8459,10 @@ update_slot(PyTypeObject *type, PyObject *name)
     for (p = slotdefs; p->name; p++) {
         assert(PyUnicode_CheckExact(p->name_strobj));
         assert(PyUnicode_CheckExact(name));
-        if (p->name_strobj == name) {
+        // bpo-46006: subinterpreters require to compare strings contents, even
+        // if both strings are interned. _PyUnicode_EQ() is required to keep
+        // support for built-in static types in subinterpreters.
+        if (p->name_strobj == name || _PyUnicode_EQ(p->name_strobj, name)) {
             *pp++ = p;
         }
     }

@@ -1,0 +1,4 @@
+Fix string comparisons for subinterpreters: no longer make the assumption
+that two interned strings are not equal if they have different different
+memory addresses. This assumption is no longer true since interned strings have
+been made per interpreter in Python 3.10. Patch by Victor Stinner.
