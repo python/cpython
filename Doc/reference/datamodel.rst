@@ -1963,8 +1963,9 @@ Notes on using *__slots__*
 Per-attribute docstrings with *__slots__*
 """""""""""""""""""""""""""""""""""""""""
 
-If a :term:`mapping` is used to specify *__slots__*, the values of the mapping
-can be used to specify docstrings for each attribute. For example::
+If a :class:`dictionary <dict>` is used to specify *__slots__*, the values of
+the dictionary can be used to specify docstrings for each attribute. For
+example::
 
   class Card:
       """A card from a standard French deck"""
