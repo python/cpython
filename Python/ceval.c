@@ -1798,7 +1798,8 @@ check_eval_breaker:
         if (_Py_atomic_load_relaxed(eval_breaker)) {
             opcode = _Py_OPCODE(*next_instr);
             if (opcode != BEFORE_ASYNC_WITH &&
-                opcode != YIELD_FROM) {
+                opcode != SEND &&
+                _Py_OPCODE(next_instr[-1]) != SEND) {
                 /* Few cases where we skip running signal handlers and other
                    pending calls:
                    - If we're about to enter the 'with:'. It will prevent
@@ -2642,8 +2643,9 @@ check_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(YIELD_FROM) {
+        TARGET(SEND) {
             assert(frame->depth == 0);
+            assert(STACK_LEVEL() >= 2);
             PyObject *v = POP();
             PyObject *receiver = TOP();
             PySendResult gen_status;
@@ -2680,17 +2682,13 @@ check_eval_breaker:
             }
             if (gen_status == PYGEN_RETURN) {
                 assert (retval != NULL);
-
                 Py_DECREF(receiver);
                 SET_TOP(retval);
-                retval = NULL;
+                JUMPBY(oparg);
                 DISPATCH();
             }
             assert (gen_status == PYGEN_NEXT);
-            /* receiver remains on stack, retval is value to be yielded */
-            /* and repeat... */
-            assert(frame->f_lasti > 0);
-            frame->f_lasti -= 1;
+            assert (retval != NULL);
             frame->f_state = FRAME_SUSPENDED;
             _PyFrame_SetStackPointer(frame, stack_pointer);
             TRACE_FUNCTION_EXIT();
@@ -6770,8 +6768,11 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
         return -1;
     }
     if (line != -1 && f->f_trace_lines) {
-        /* Trace backward edges or if line number has changed */
-        if (frame->f_lasti < instr_prev || line != lastline) {
+        /* Trace backward edges (except in 'yield from') or if line number has changed */
+        int trace = line != lastline ||
+            (frame->f_lasti < instr_prev &&
+            _Py_OPCODE(frame->f_code->co_firstinstr[frame->f_lasti]) != SEND);
+        if (trace) {
             result = call_trace(func, obj, tstate, frame, PyTrace_LINE, Py_None);
         }
     }
