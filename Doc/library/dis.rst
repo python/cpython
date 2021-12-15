@@ -36,7 +36,7 @@ the following command can be used to display the disassembly of
    >>> dis.dis(myfunc)
      2           0 LOAD_GLOBAL              0 (len)
                  2 LOAD_FAST                0 (alist)
-                 4 CALL_FUNCTION            1
+                 4 CALL_NO_KW               1
                  6 RETURN_VALUE
 
 (The "2" is a line number).
@@ -104,7 +104,7 @@ Example::
     ...
     LOAD_GLOBAL
     LOAD_FAST
-    CALL_FUNCTION
+    CALL_NO_KW
     RETURN_VALUE
 
 
@@ -616,7 +616,7 @@ iterations of the loop.
 .. opcode:: LOAD_BUILD_CLASS
 
    Pushes :func:`builtins.__build_class__` onto the stack.  It is later called
-   by :opcode:`CALL_FUNCTION` to construct a class.
+   by :opcode:`CALL_NO_KW` to construct a class.
 
 
 .. opcode:: BEFORE_WITH (delta)
@@ -872,8 +872,10 @@ All of the following opcodes use their arguments.
 
    .. versionadded:: 3.1
 
+
 .. opcode:: JUMP_IF_NOT_EXC_MATCH (target)
 
+   Performs exception matching for ``except``.
    Tests whether the second value on the stack is an exception matching TOS,
    and jumps if it is not. Pops one value from the stack.
 
@@ -881,6 +883,30 @@ All of the following opcodes use their arguments.
 
    .. versionchanged:: 3.11
       This opcode no longer pops the active exception.
+
+
+.. opcode:: JUMP_IF_NOT_EG_MATCH (target)
+
+   Performs exception matching for ``except*``. Applies ``split(TOS)`` on
+   the exception group representing TOS1. Jumps if no match is found.
+
+   Pops one item from the stack. If a match was found, pops the 3 items representing
+   the exception and pushes the 3 items representing the non-matching part of
+   the exception group, followed by the 3 items representing the matching part.
+   In other words, in case of a match it pops 4 items and pushes 6.
+
+   .. versionadded:: 3.11
+
+
+.. opcode:: PREP_RERAISE_STAR
+
+   Combines the raised and reraised exceptions list from TOS, into an exception
+   group to propagate from a try-except* block. Uses the original exception
+   group from TOS1 to reconstruct the structure of reraised exceptions. Pops
+   two items from the stack and pushes a triplet representing the exception to
+   reraise or three ``None`` if there isn't one.
+
+   .. versionadded:: 3.11
 
 
 .. opcode:: JUMP_IF_TRUE_OR_POP (target)
@@ -1013,21 +1039,20 @@ All of the following opcodes use their arguments.
      with ``__cause__`` set to ``TOS``)
 
 
-.. opcode:: CALL_FUNCTION (argc)
+.. opcode:: CALL_NO_KW (argc)
 
    Calls a callable object with positional arguments.
    *argc* indicates the number of positional arguments.
    The top of the stack contains positional arguments, with the right-most
    argument on top.  Below the arguments is a callable object to call.
-   ``CALL_FUNCTION`` pops all arguments and the callable object off the stack,
+   ``CALL_NO_KW`` pops all arguments and the callable object off the stack,
    calls the callable object with those arguments, and pushes the return value
    returned by the callable object.
 
-   .. versionchanged:: 3.6
-      This opcode is used only for calls with positional arguments.
+   .. versionadded:: 3.11
 
 
-.. opcode:: CALL_FUNCTION_KW (argc)
+.. opcode:: CALL_KW (argc)
 
    Calls a callable object with positional (if any) and keyword arguments.
    *argc* indicates the total number of positional and keyword arguments.
@@ -1037,13 +1062,11 @@ All of the following opcodes use their arguments.
    in the order corresponding to the tuple.
    Below that are positional arguments, with the right-most parameter on
    top.  Below the arguments is a callable object to call.
-   ``CALL_FUNCTION_KW`` pops all arguments and the callable object off the stack,
+   ``CALL_KW`` pops all arguments and the callable object off the stack,
    calls the callable object with those arguments, and pushes the return value
    returned by the callable object.
 
-   .. versionchanged:: 3.6
-      Keyword arguments are packed in a tuple instead of a dictionary,
-      *argc* indicates the total number of arguments.
+   .. versionadded:: 3.11
 
 
 .. opcode:: CALL_FUNCTION_EX (flags)
@@ -1073,29 +1096,15 @@ All of the following opcodes use their arguments.
    .. versionadded:: 3.7
 
 
-.. opcode:: CALL_METHOD (argc)
+.. opcode:: PRECALL_METHOD (argc)
 
-   Calls a method.  *argc* is the number of positional arguments.
-   Keyword arguments are not supported.  This opcode is designed to be used
-   with :opcode:`LOAD_METHOD`.  Positional arguments are on top of the stack.
-   Below them, the two items described in :opcode:`LOAD_METHOD` are on the
-   stack (either ``self`` and an unbound method object or ``NULL`` and an
-   arbitrary callable). All of them are popped and the return value is pushed.
-
-   .. versionadded:: 3.7
-
-
-.. opcode:: CALL_METHOD_KW (argc)
-
-   Calls a method in a similar fashion as :opcode:`CALL_METHOD`, but also supports keyword arguments.
-   *argc* is the number of positional and keyword arguments.
-   This opcode is designed to be used with :opcode:`LOAD_METHOD`.  TOS is a
-   tuple of keyword argument names.  Argument values are below that.
-   Below them, the two items described in :opcode:`LOAD_METHOD` are on the
-   stack (either ``self`` and an unbound method object or ``NULL`` and an
-   arbitrary callable).  All of them are popped from the stack and the return value is pushed.
+   Prefixes either :opcode:`CALL_NO_KW` or :opcode:`CALL_KW`.
+   This opcode is designed to be used with :opcode:`LOAD_METHOD`.
+   Sets internal variables, so that :opcode:`CALL_NO_KW` or :opcode:`CALL_KW`
+   clean up after :opcode:`LOAD_METHOD` correctly.
 
    .. versionadded:: 3.11
+
 
 .. opcode:: MAKE_FUNCTION (flags)
 
