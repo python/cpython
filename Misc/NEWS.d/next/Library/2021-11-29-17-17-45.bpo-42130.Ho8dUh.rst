@@ -1,1 +1,2 @@
-Fix issue where ``asyncio.wait_for()`` may suppress an explicit cancellation.
+Fix issue where ``asyncio.wait_for()`` is cancelled when the coro
+actually suppresses the cancellation.
