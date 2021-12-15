@@ -1387,6 +1387,21 @@ then
   AC_DEFINE(Py_TRACE_REFS, 1, [Define if you want to enable tracing references for debugging purpose])
 fi
 
+
+# Check for --enable-pystats
+AC_MSG_CHECKING([for --enable-pystats])
+AC_ARG_ENABLE([pystats],
+  [AS_HELP_STRING(
+    [--enable-pystats],
+    [enable internal statistics gathering (default is no)])],,
+  [enable_pystats=no]
+)
+AC_MSG_RESULT([$enable_pystats])
+
+AS_VAR_IF([enable_pystats], [yes], [
+  AC_DEFINE([Py_STATS], [1], [Define if you want to enable internal statistics gathering.])
+])
+
 # Check for --with-assertions.
 # This allows enabling assertions without Py_DEBUG.
 assertions='false'
@@ -6323,7 +6338,7 @@ AC_DEFUN([PY_STDLIB_MOD], [
 ])
 
 dnl Define simple stdlib extension module
-dnl Always enable unless the module is listed in py_stdlib_not_available 
+dnl Always enable unless the module is listed in py_stdlib_not_available
 dnl PY_STDLIB_MOD_SIMPLE([NAME], [CFLAGS], [LDFLAGS])
 dnl cflags and ldflags are optional
 AC_DEFUN([PY_STDLIB_MOD_SIMPLE], [

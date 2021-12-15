@@ -24,7 +24,7 @@ def print_stats(name, family_stats):
     for key in ("specialization_success",  "specialization_failure"):
         print(f"  {key}:{family_stats[key]:>12}")
     total_failures = family_stats["specialization_failure"]
-    failure_kinds = [ 0 ] * 20
+    failure_kinds = [ 0 ] * 30
     for key in family_stats:
         if not key.startswith("specialization_failure_kind"):
             continue
