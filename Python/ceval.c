@@ -1094,7 +1094,7 @@ fail:
 static int do_raise(PyThreadState *tstate, PyObject *exc, PyObject *cause);
 static PyObject *do_reraise_star(PyObject *excs, PyObject *orig);
 static int exception_group_match(
-    PyObject *exc_type, PyObject* exc_value, PyObject *match_type,
+    PyObject* exc_value, PyObject *match_type,
     PyObject **match, PyObject **rest);
 
 static int unpack_iterable(PyThreadState *, PyObject *, int, int, PyObject **);
@@ -2782,18 +2782,7 @@ check_eval_breaker:
 
             PyObject *lasti_unused = Py_NewRef(_PyLong_GetZero());
             PUSH(lasti_unused);
-            if (!Py_IsNone(val)) {
-                PyObject *tb = PyException_GetTraceback(val);
-                PUSH(tb ? tb : Py_NewRef(Py_None));
-                PUSH(val);
-                PUSH(Py_NewRef(Py_TYPE(val)));
-            }
-            else {
-                // nothing to reraise
-                PUSH(Py_NewRef(Py_None));
-                PUSH(val);
-                PUSH(Py_NewRef(Py_None));
-            }
+            PUSH(val);
             DISPATCH();
         }
 
@@ -3927,16 +3916,15 @@ check_eval_breaker:
 
         TARGET(JUMP_IF_NOT_EG_MATCH) {
             PyObject *match_type = POP();
-            PyObject *exc_type = TOP();
-            PyObject *exc_value = SECOND();
             if (check_except_star_type_valid(tstate, match_type) < 0) {
                 Py_DECREF(match_type);
                 goto error;
             }
 
+            PyObject *exc_value = TOP();
             PyObject *match = NULL, *rest = NULL;
-            int res = exception_group_match(exc_type, exc_value,
-                                            match_type, &match, &rest);
+            int res = exception_group_match(exc_value, match_type,
+                                            &match, &rest);
             Py_DECREF(match_type);
             if (res < 0) {
                 goto error;
@@ -3957,46 +3945,21 @@ check_eval_breaker:
             else {
 
                 /* Total or partial match - update the stack from
-                 * [tb, val, exc]
+                 * [val]
                  * to
-                 * [tb, rest, exc, tb, match, exc]
+                 * [rest, match]
                  * (rest can be Py_None)
                  */
 
+                PyObject *exc = TOP();
 
-                PyObject *type = TOP();
-                PyObject *val = SECOND();
-                PyObject *tb = THIRD();
+                SET_TOP(rest);
+                PUSH(match);
 
-                if (!Py_IsNone(rest)) {
-                    /* tb remains the same */
-                    SET_TOP(Py_NewRef(Py_TYPE(rest)));
-                    SET_SECOND(Py_NewRef(rest));
-                    SET_THIRD(Py_NewRef(tb));
-                }
-                else {
-                    SET_TOP(Py_NewRef(Py_None));
-                    SET_SECOND(Py_NewRef(Py_None));
-                    SET_THIRD(Py_NewRef(Py_None));
-                }
-                /* Push match */
+                PyErr_SetExcInfo(NULL, Py_NewRef(match), NULL);
 
-                PUSH(Py_NewRef(tb));
-                PUSH(Py_NewRef(match));
-                PUSH(Py_NewRef(Py_TYPE(match)));
+                Py_DECREF(exc);
 
-                // set exc_info to the current match
-                PyErr_SetExcInfo(
-                    Py_NewRef(Py_TYPE(match)),
-                    Py_NewRef(match),
-                    Py_NewRef(tb));
-
-                Py_DECREF(tb);
-                Py_DECREF(val);
-                Py_DECREF(type);
-
-                Py_DECREF(match);
-                Py_DECREF(rest);
             }
 
             DISPATCH();
@@ -6181,19 +6144,17 @@ raise_error:
 */
 
 static int
-exception_group_match(PyObject *exc_type, PyObject* exc_value,
-                      PyObject *match_type, PyObject **match, PyObject **rest)
+exception_group_match(PyObject* exc_value, PyObject *match_type,
+                      PyObject **match, PyObject **rest)
 {
-    if (Py_IsNone(exc_type)) {
-        assert(Py_IsNone(exc_value));
+    if (Py_IsNone(exc_value)) {
         *match = Py_NewRef(Py_None);
         *rest = Py_NewRef(Py_None);
         return 0;
     }
-    assert(PyExceptionClass_Check(exc_type));
     assert(PyExceptionInstance_Check(exc_value));
 
-    if (PyErr_GivenExceptionMatches(exc_type, match_type)) {
+    if (PyErr_GivenExceptionMatches(exc_value, match_type)) {
         /* Full match of exc itself */
         bool is_eg = _PyBaseExceptionGroup_Check(exc_value);
         if (is_eg) {

@@ -899,10 +899,9 @@ All of the following opcodes use their arguments.
    Performs exception matching for ``except*``. Applies ``split(TOS)`` on
    the exception group representing TOS1. Jumps if no match is found.
 
-   Pops one item from the stack. If a match was found, pops the 3 items representing
-   the exception and pushes the 3 items representing the non-matching part of
-   the exception group, followed by the 3 items representing the matching part.
-   In other words, in case of a match it pops 4 items and pushes 6.
+   Pops one item from the stack (the match type). If a match was found,
+   next item (the exception) and pushes the non-matching part of the
+   exception group followed by the matching part.
 
    .. versionadded:: 3.11
 
@@ -912,8 +911,8 @@ All of the following opcodes use their arguments.
    Combines the raised and reraised exceptions list from TOS, into an exception
    group to propagate from a try-except* block. Uses the original exception
    group from TOS1 to reconstruct the structure of reraised exceptions. Pops
-   two items from the stack and pushes a triplet representing the exception to
-   reraise or three ``None`` if there isn't one.
+   two items from the stack and pushes 0 (for lasti, which is unused) followed
+   by the exception to reraise or ``None`` if there isn't one.
 
    .. versionadded:: 3.11
 
