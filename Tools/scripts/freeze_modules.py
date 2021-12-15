@@ -68,6 +68,11 @@ FROZEN = [
         'site',
         'stat',
         ]),
+    ('runpy - run module with -m', [
+        "importlib.util",
+        "importlib.machinery",
+        "runpy",
+    ]),
     (TESTS_SECTION, [
         '__hello__',
         '__hello__ : __hello_alias__',
@@ -258,6 +263,10 @@ class FrozenSource(namedtuple('FrozenSource', 'id pyfile frozenfile deepfreezefi
             return False
         else:
             return os.path.basename(self.pyfile) == '__init__.py'
+
+    @property
+    def isbootstrap(self):
+        return self.id in BOOTSTRAP
 
 
 def resolve_frozen_file(frozenid, destdir):
@@ -471,7 +480,7 @@ def regen_frozen(modules):
     indent = '    '
     lastsection = None
     for mod in modules:
-        if mod.frozenid in BOOTSTRAP:
+        if mod.isbootstrap:
             lines = bootstraplines
         elif mod.section == TESTS_SECTION:
             lines = testlines
@@ -580,10 +589,17 @@ def regen_makefile(modules):
         pyfile = relpath_for_posix_display(src.pyfile, ROOT_DIR)
         pyfiles.append(f'\t\t{pyfile} \\')
 
-        freeze = (f'$(FREEZE_MODULE) {src.frozenid} '
-                  f'$(srcdir)/{pyfile} {frozen_header}')
+        if src.isbootstrap:
+            freezecmd = '$(FREEZE_MODULE_BOOTSTRAP)'
+            freezedep = '$(FREEZE_MODULE_BOOTSTRAP_DEPS)'
+        else:
+            freezecmd = '$(FREEZE_MODULE)'
+            freezedep = '$(FREEZE_MODULE_DEPS)'
+
+        freeze = (f'{freezecmd} {src.frozenid} '
+                    f'$(srcdir)/{pyfile} {frozen_header}')
         rules.extend([
-            f'{frozen_header}: $(FREEZE_MODULE) {pyfile}',
+            f'{frozen_header}: {pyfile} {freezedep}',
             f'\t{freeze}',
             '',
         ])

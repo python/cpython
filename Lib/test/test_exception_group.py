@@ -211,7 +211,8 @@ class ExceptionGroupSubgroupTests(ExceptionGroupTestBase):
     def test_basics_subgroup_split__bad_arg_type(self):
         bad_args = ["bad arg",
                     OSError('instance not type'),
-                    [OSError('instance not type')],]
+                    [OSError, TypeError],
+                    (OSError, 42)]
         for arg in bad_args:
             with self.assertRaises(TypeError):
                 self.eg.subgroup(arg)
