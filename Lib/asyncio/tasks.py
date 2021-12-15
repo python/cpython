@@ -389,7 +389,7 @@ def _release_waiter(waiter, *args):
         waiter.set_result(None)
 
 
-async def wait_for(fut, timeout):
+async def wait_for(fut, timeout, *, loop=None):
     """Wait for the single Future or coroutine to complete, with timeout.
 
     Coroutine will be wrapped in Task.
@@ -402,7 +402,12 @@ async def wait_for(fut, timeout):
 
     This function is a coroutine.
     """
-    loop = events.get_running_loop()
+    if loop is None:
+        loop = events.get_running_loop()
+    else:
+        warnings.warn("The loop argument is deprecated since Python 3.8, "
+                      "and scheduled for removal in Python 3.10.",
+                      DeprecationWarning, stacklevel=2)
 
     if timeout is None:
         return await fut
@@ -421,7 +426,10 @@ async def wait_for(fut, timeout):
 
     waiter = loop.create_future()
     timeout_handle = loop.call_later(timeout, _release_waiter, waiter)
-    cb = functools.partial(_release_waiter, waiter)
+    #cb = functools.partial(_release_waiter, waiter)
+
+    def cb(f):
+        _release_waiter(waiter)
 
     fut = ensure_future(fut, loop=loop)
     fut.add_done_callback(cb)
@@ -431,12 +439,15 @@ async def wait_for(fut, timeout):
         try:
             await waiter
         except exceptions.CancelledError:
-            fut.remove_done_callback(cb)
-            # We must ensure that the task is not running
-            # after wait_for() returns.
-            # See https://bugs.python.org/issue32751
-            await _cancel_and_wait(fut, loop=loop)
-            raise
+            if fut.done():
+                return fut.result()
+            else:
+                fut.remove_done_callback(cb)
+                # We must ensure that the task is not running
+                # after wait_for() returns.
+                # See https://bugs.python.org/issue32751
+                await _cancel_and_wait(fut, loop=loop)
+                return fut.result()
 
         if fut.done():
             return fut.result()
