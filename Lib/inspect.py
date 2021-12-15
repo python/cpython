@@ -32,7 +32,7 @@ Here are some of the useful functions provided by this module:
 
 __author__ = ('Ka-Ping Yee <ping@lfw.org>',
               'Yury Selivanov <yselivanov@sprymix.com>')
-              
+
 __all__ = [
     "ArgInfo",
     "Arguments",
@@ -131,7 +131,7 @@ __all__ = [
     "walktree",
 ]
 
-           
+
 import abc
 import ast
 import dis
@@ -591,7 +591,7 @@ def getmembers_static(object, predicate=None):
     without triggering dynamic lookup via the descriptor protocol,
     __getattr__ or __getattribute__. Optionally, only return members that
     satisfy a given predicate.
-    
+
     Note: this function may not be able to retrieve all members
        that getmembers can fetch (like dynamically created attributes)
        and may find members that getmembers can't (like descriptors
