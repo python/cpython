@@ -4875,7 +4875,8 @@ check_eval_breaker:
             assert(cache0->original_oparg == 1);
             PyObject *callable = SECOND();
             PyObject *arg = TOP();
-            PyTypeObject *tp = Py_TYPE(callable);
+            DEOPT_IF(!PyType_Check(callable), CALL_NO_KW);
+            PyTypeObject *tp = (PyTypeObject *)callable;
             DEOPT_IF(tp->tp_version_tag != cache0->version, CALL_NO_KW);
             STACK_SHRINK(1);
             PyObject *res = tp->tp_vectorcall((PyObject *)tp, stack_pointer, 1, NULL);
