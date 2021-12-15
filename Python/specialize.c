@@ -499,6 +499,21 @@ initial_counter_value(void) {
 #define SPEC_FAIL_NOT_FOLLOWED_BY_COND_JUMP 14
 #define SPEC_FAIL_BIG_INT 15
 
+static inline int
+invalid_tp_version(int opcode, PyTypeObject *type)
+{
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG)) {
+        SPECIALIZATION_FAIL(opcode, SPEC_FAIL_OUT_OF_VERSIONS);
+        return 1;
+    }
+    return 0;
+}
+
+#ifndef INVALID_TP_VERSION
+#define INVALID_TP_VERSION(opcode, type) \
+    invalid_tp_version(opcode, ((PyTypeObject *)(type)))
+#endif
+
 static int
 specialize_module_load_attr(
     PyObject *owner, _Py_CODEUNIT *instr, PyObject *name,
@@ -696,12 +711,11 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
             return -1;
         }
     }
-    if (!_PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG)) {
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
-            goto fail;
-    }
     PyObject *descr;
     DesciptorClassification kind = analyze_descriptor(type, name, &descr, 0);
+    if (INVALID_TP_VERSION(LOAD_ATTR, type)) {
+        goto fail;
+    }
     switch(kind) {
         case OVERRIDING:
             SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OVERRIDING_DESCRIPTOR);
@@ -789,12 +803,11 @@ _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, S
         SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_OVERRIDDEN);
         goto fail;
     }
-    if (!_PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG)) {
-            SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
-            goto fail;
-    }
     PyObject *descr;
     DesciptorClassification kind = analyze_descriptor(type, name, &descr, 1);
+    if (INVALID_TP_VERSION(STORE_ATTR, type)) {
+        goto fail;
+    }
     switch(kind) {
         case OVERRIDING:
             SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_OVERRIDING_DESCRIPTOR);
@@ -906,14 +919,12 @@ static int
 specialize_class_load_method(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name,
                            _PyAttrCache *cache1, _PyObjectCache *cache2)
 {
-    if (!_PyType_HasFeature((PyTypeObject *)owner, Py_TPFLAGS_VALID_VERSION_TAG)) {
-        SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_OUT_OF_VERSIONS);
-        return -1;
-    }
-
     PyObject *descr = NULL;
     DesciptorClassification kind = 0;
     kind = analyze_descriptor((PyTypeObject *)owner, name, &descr, 0);
+    if (INVALID_TP_VERSION(LOAD_METHOD, owner)) {
+        return -1;
+    }
     switch (kind) {
         case METHOD:
         case NON_DESCRIPTOR:
@@ -959,13 +970,12 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         goto success;
     }
 
-    if (!_PyType_HasFeature(owner_cls, Py_TPFLAGS_VALID_VERSION_TAG)) {
-            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_OUT_OF_VERSIONS);
-            goto fail;
-    }
     PyObject *descr = NULL;
     DesciptorClassification kind = 0;
     kind = analyze_descriptor(owner_cls, name, &descr, 0);
+    if (INVALID_TP_VERSION(LOAD_METHOD, owner_cls)) {
+        goto fail;
+    }
     assert(descr != NULL || kind == ABSENT || kind == GETSET_OVERRIDDEN);
     if (kind != METHOD) {
         SPECIALIZATION_FAIL(LOAD_METHOD, load_method_fail_kind(kind));
@@ -1189,6 +1199,9 @@ _Py_Specialize_BinarySubscr(
     }
     PyTypeObject *cls = Py_TYPE(container);
     PyObject *descriptor = _PyType_LookupId(cls, &PyId___getitem__);
+    if (INVALID_TP_VERSION(BINARY_SUBSCR, cls)) {
+        goto fail;
+    }
     if (descriptor && Py_TYPE(descriptor) == &PyFunction_Type) {
         PyFunctionObject *func = (PyFunctionObject *)descriptor;
         PyCodeObject *code = (PyCodeObject *)func->func_code;
