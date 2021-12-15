@@ -2915,19 +2915,22 @@ class TestSlots(unittest.TestCase):
         with self.assertRaises(FrozenInstanceError):
             p.x = 2
 
-        try:
+        with self.assertRaises(AttributeError) as ex:
             p.z = 5
-        except Exception as exc:
-            exc_type = type(exc)
-            if exc_type is not AttributeError:
-                raise TypeError(
-                    f'AttributeError was expected; got {exc_type.__name__!r} instead'
-                ) from exc
-            else:
-                # Good! The test passes; AttributeError is what we want
-                pass
-        else:
-            self.fail('AttributeError expected, but no error was raised')
+        type_of_caught_exception = type(ex.exception)
+
+        # Verify that the caught exception is `AttributeError` exactly,
+        # and *not* a subclass of `AttributeError` such as `FrozenInstanceError`.
+        #
+        # We need to ensure that this error is being caused by the standard machinery that
+        # prevents new attributes being added that aren't specified in __slots__.
+        #
+        # We *do not* want the error to be caused by anything related to dataclasses.
+        self.assertIs(
+            type_of_caught_exception, 
+            AttributeError, 
+            msg=f"expected 'AttributeError', got {type_of_caught_exception.__name__!r}"
+        )
 
         @dataclass(frozen=True)
         class DataclassSubclassOfPointWithNoSlots(Point): pass
@@ -2943,6 +2946,9 @@ class TestSlots(unittest.TestCase):
         n = NonDataclassSubclassOfPointWithNoSlots(1, 2)
         with self.assertRaises(FrozenInstanceError):
             n.x = 2
+
+        # This should pass without any exception being raised,
+        # since the subclass does not define __slots__.
         n.z = 5
 
 class TestDescriptors(unittest.TestCase):
