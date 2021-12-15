@@ -689,11 +689,11 @@ Using type-specific formatting::
 Nesting arguments and more complex examples::
 
    >>> for align, text in zip('<^>', ['left', 'center', 'right']):
-   ...     '{0:{fill}{align}16}'.format(text, fill=align, align=align)
+   ...     print('{0:{fill}{align}16}'.format(text, fill=align, align=align))
    ...
-   'left<<<<<<<<<<<<'
-   '^^^^^center^^^^^'
-   '>>>>>>>>>>>right'
+   left<<<<<<<<<<<<
+   ^^^^^center^^^^^
+   >>>>>>>>>>>right
    >>>
    >>> octets = [192, 168, 0, 1]
    >>> '{:02X}{:02X}{:02X}{:02X}'.format(*octets)
