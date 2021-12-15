@@ -998,8 +998,8 @@ print_exception_file_and_line(struct exception_print_context *ctx,
         PyErr_Clear();
         return 0;
     }
-    Py_DECREF(*value_p);
-    *value_p = message;
+
+    Py_SETREF(*value_p, message);
 
     PyObject *line = PyUnicode_FromFormat("  File \"%S\", line %zd\n",
                                           filename, lineno);
@@ -1509,10 +1509,8 @@ print_exception_recursive(struct exception_print_context *ctx, PyObject *value)
             return -1;
         }
     }
-    else {
-        if (print_exception_group(ctx, value) < 0) {
-            return -1;
-        }
+    else if (print_exception_group(ctx, value) < 0) {
+        return -1;
     }
     assert(!PyErr_Occurred());
     return 0;
