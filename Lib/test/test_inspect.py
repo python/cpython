@@ -109,7 +109,7 @@ class IsTestBase(unittest.TestCase):
 
     def test__all__(self):
         support.check__all__(self, inspect, not_exported=("k", "v", "mod_dict", "modulesbyfile"))
-        
+
 def generator_function_example(self):
     for i in range(2):
         yield i

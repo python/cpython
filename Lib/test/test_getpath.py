@@ -534,7 +534,7 @@ DEFAULT_NAMESPACE = dict(
     VERSION_MINOR=8,    # of testing
     PYWINVER=None,
     EXE_SUFFIX=None,
-    
+
     ENV_PATH="",
     ENV_PYTHONHOME="",
     ENV_PYTHONEXECUTABLE="",
