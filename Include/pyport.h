@@ -87,13 +87,17 @@ Used in:  Py_SAFE_DOWNCAST
 
 /* If PYLONG_BITS_IN_DIGIT is not defined then we'll use 30-bit digits if all
    the necessary integer types are available, and we're on a 64-bit platform
-   (as determined by SIZEOF_VOID_P); otherwise we use 15-bit digits. */
+   (as determined by SIZEOF_VOID_P); otherwise we use 15-bit digits.
+
+   From pyodide: WASM has 32 bit pointers but has native 64 bit arithmetic
+   so it is more efficient to use 30 bit digits.
+ */
 
 #ifndef PYLONG_BITS_IN_DIGIT
-#if SIZEOF_VOID_P >= 8
-#define PYLONG_BITS_IN_DIGIT 30
+#if SIZEOF_VOID_P >= 8 || defined(__wasm__)
+#  define PYLONG_BITS_IN_DIGIT 30
 #else
-#define PYLONG_BITS_IN_DIGIT 15
+#  define PYLONG_BITS_IN_DIGIT 15
 #endif
 #endif
 
@@ -216,17 +220,10 @@ typedef Py_ssize_t Py_ssize_clean_t;
  * WRAPPER FOR <time.h> and/or <sys/time.h> *
  ********************************************/
 
-#ifdef TIME_WITH_SYS_TIME
-#include <sys/time.h>
-#include <time.h>
-#else /* !TIME_WITH_SYS_TIME */
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
-#else /* !HAVE_SYS_TIME_H */
+#endif
 #include <time.h>
-#endif /* !HAVE_SYS_TIME_H */
-#endif /* !TIME_WITH_SYS_TIME */
-
 
 /******************************
  * WRAPPER FOR <sys/select.h> *

@@ -80,6 +80,15 @@ is the module's name in the Python package namespace.
       If this evaluates to false, logging messages are not passed to the handlers
       of ancestor loggers.
 
+      Spelling it out with an example: If the propagate attribute of the logger named
+      ``A.B.C`` evaluates to true, any event logged to ``A.B.C`` via a method call such as
+      ``logging.getLogger('A.B.C').error(...)`` will [subject to passing that logger's
+      level and filter settings] be passed in turn to any handlers attached to loggers
+      named ``A.B``, ``A`` and the root logger, after first being passed to any handlers
+      attached to ``A.B.C``. If any logger in the chain ``A.B.C``, ``A.B``, ``A`` has its
+      ``propagate`` attribute set to false, then that is the last logger whose handlers
+      are offered the event to handle, and propagation stops at that point.
+
       The constructor sets this attribute to ``True``.
 
       .. note:: If you attach a handler to a logger *and* one or more of its
@@ -203,7 +212,7 @@ is the module's name in the Python package namespace.
       attributes can then be used as you like. For example, they could be
       incorporated into logged messages. For example::
 
-         FORMAT = '%(asctime)-15s %(clientip)s %(user)-8s %(message)s'
+         FORMAT = '%(asctime)s %(clientip)-15s %(user)-8s %(message)s'
          logging.basicConfig(format=FORMAT)
          d = {'clientip': '192.168.0.1', 'user': 'fbloggs'}
          logger = logging.getLogger('tcpserver')
@@ -1000,7 +1009,7 @@ functions.
    be used as you like. For example, they could be incorporated into logged
    messages. For example::
 
-      FORMAT = '%(asctime)-15s %(clientip)s %(user)-8s %(message)s'
+      FORMAT = '%(asctime)s %(clientip)-15s %(user)-8s %(message)s'
       logging.basicConfig(format=FORMAT)
       d = {'clientip': '192.168.0.1', 'user': 'fbloggs'}
       logging.warning('Protocol problem: %s', 'connection reset', extra=d)

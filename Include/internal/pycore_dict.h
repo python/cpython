@@ -10,6 +10,32 @@ extern "C" {
 #endif
 
 
+/* runtime lifecycle */
+
+extern void _PyDict_Fini(PyInterpreterState *interp);
+
+
+/* other API */
+
+#ifndef WITH_FREELISTS
+// without freelists
+#  define PyDict_MAXFREELIST 0
+#endif
+
+#ifndef PyDict_MAXFREELIST
+#  define PyDict_MAXFREELIST 80
+#endif
+
+struct _Py_dict_state {
+#if PyDict_MAXFREELIST > 0
+    /* Dictionary reuse scheme to save calls to malloc and free */
+    PyDictObject *free_list[PyDict_MAXFREELIST];
+    int numfree;
+    PyDictKeysObject *keys_free_list[PyDict_MAXFREELIST];
+    int keys_numfree;
+#endif
+};
+
 typedef struct {
     /* Cached hash code of me_key. */
     Py_hash_t me_hash;
@@ -22,6 +48,8 @@ typedef struct {
  */
 Py_ssize_t _Py_dict_lookup(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr);
 
+/* Consumes references to key and value */
+int _PyDict_SetItem_Take2(PyDictObject *op, PyObject *key, PyObject *value);
 
 #define DKIX_EMPTY (-1)
 #define DKIX_DUMMY (-2)  /* Used internally */

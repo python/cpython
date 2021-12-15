@@ -320,26 +320,6 @@ corresponding Unix manual entries for more information on calls.");
 #    define HAVE_CWAIT      1
 #    define HAVE_FSYNC      1
 #    define fsync _commit
-#  else
-     /* Unix functions that the configure script doesn't check for */
-#    ifndef __VXWORKS__
-#      define HAVE_EXECV      1
-#      define HAVE_FORK       1
-#      if defined(__USLC__) && defined(__SCO_VERSION__)       /* SCO UDK Compiler */
-#        define HAVE_FORK1      1
-#      endif
-#    endif
-#    define HAVE_GETEGID    1
-#    define HAVE_GETEUID    1
-#    define HAVE_GETGID     1
-#    define HAVE_GETPPID    1
-#    define HAVE_GETUID     1
-#    define HAVE_KILL       1
-#    define HAVE_OPENDIR    1
-#    define HAVE_PIPE       1
-#    define HAVE_SYSTEM     1
-#    define HAVE_WAIT       1
-#    define HAVE_TTYNAME    1
 #  endif  /* _MSC_VER */
 #endif  /* ! __WATCOMC__ || __QNX__ */
 
@@ -4465,6 +4445,33 @@ os__path_splitroot_impl(PyObject *module, path_t *path)
 
 
 /*[clinic input]
+os._path_normpath
+
+    path: object
+
+Basic path normalization.
+[clinic start generated code]*/
+
+static PyObject *
+os__path_normpath_impl(PyObject *module, PyObject *path)
+/*[clinic end generated code: output=b94d696d828019da input=5e90c39e12549dc0]*/
+{
+    if (!PyUnicode_Check(path)) {
+        PyErr_Format(PyExc_TypeError, "expected 'str', not '%.200s'",
+            Py_TYPE(path)->tp_name);
+        return NULL;
+    }
+    Py_ssize_t len;
+    wchar_t *buffer = PyUnicode_AsWideCharString(path, &len);
+    if (!buffer) {
+        return NULL;
+    }
+    PyObject *result = PyUnicode_FromWideChar(_Py_normpath(buffer, len), -1);
+    PyMem_Free(buffer);
+    return result;
+}
+
+/*[clinic input]
 os.mkdir
 
     path : path_t
@@ -5934,6 +5941,7 @@ parse_posix_spawn_flags(PyObject *module, const char *func_name, PyObject *setpg
 
     }
 
+#ifdef HAVE_SIGSET_T
    if (setsigmask) {
         sigset_t set;
         if (!_Py_Sigset_Converter(setsigmask, &set)) {
@@ -5959,6 +5967,13 @@ parse_posix_spawn_flags(PyObject *module, const char *func_name, PyObject *setpg
         }
         all_flags |= POSIX_SPAWN_SETSIGDEF;
     }
+#else
+    if (setsigmask || setsigdef) {
+        PyErr_SetString(PyExc_NotImplementedError,
+                        "sigset is not supported on this platform");
+        goto fail;
+    }
+#endif
 
     if (scheduler) {
 #ifdef POSIX_SPAWN_SETSCHEDULER
@@ -6681,7 +6696,7 @@ os_fork1_impl(PyObject *module)
 {
     pid_t pid;
 
-    if (_PyInterpreterState_GET() != PyInterpreterState_Main()) {
+    if (!_Py_IsMainInterpreter(_PyInterpreterState_GET())) {
         PyErr_SetString(PyExc_RuntimeError, "fork not supported for subinterpreters");
         return NULL;
     }
@@ -7333,7 +7348,7 @@ os_forkpty_impl(PyObject *module)
     int master_fd = -1;
     pid_t pid;
 
-    if (_PyInterpreterState_GET() != PyInterpreterState_Main()) {
+    if (!_Py_IsMainInterpreter(_PyInterpreterState_GET())) {
         PyErr_SetString(PyExc_RuntimeError, "fork not supported for subinterpreters");
         return NULL;
     }
@@ -8204,7 +8219,7 @@ wait_helper(PyObject *module, pid_t pid, int status, struct rusage *ru)
         memset(ru, 0, sizeof(*ru));
     }
 
-    PyObject *m = PyImport_ImportModuleNoBlock("resource");
+    PyObject *m = PyImport_ImportModule("resource");
     if (m == NULL)
         return NULL;
     struct_rusage = PyObject_GetAttr(m, get_posix_state(module)->struct_rusage);
@@ -14838,6 +14853,7 @@ static PyMethodDef posix_methods[] = {
     OS__GETFINALPATHNAME_METHODDEF
     OS__GETVOLUMEPATHNAME_METHODDEF
     OS__PATH_SPLITROOT_METHODDEF
+    OS__PATH_NORMPATH_METHODDEF
     OS_GETLOADAVG_METHODDEF
     OS_URANDOM_METHODDEF
     OS_SETRESUID_METHODDEF

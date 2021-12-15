@@ -178,13 +178,14 @@ operators are only defined where they make sense; for example, they raise a
    single: __ge__() (instance method)
 
 Non-identical instances of a class normally compare as non-equal unless the
-class defines the :meth:`__eq__` method.
+class defines the :meth:`~object.__eq__` method.
 
 Instances of a class cannot be ordered with respect to other instances of the
 same class, or other types of object, unless the class defines enough of the
-methods :meth:`__lt__`, :meth:`__le__`, :meth:`__gt__`, and :meth:`__ge__` (in
-general, :meth:`__lt__` and :meth:`__eq__` are sufficient, if you want the
-conventional meanings of the comparison operators).
+methods :meth:`~object.__lt__`, :meth:`~object.__le__`, :meth:`~object.__gt__`, and
+:meth:`~object.__ge__` (in general, :meth:`~object.__lt__` and
+:meth:`~object.__eq__` are sufficient, if you want the conventional meanings of the
+comparison operators).
 
 The behavior of the :keyword:`is` and :keyword:`is not` operators cannot be
 customized; also they can be applied to any two objects and never raise an
@@ -698,7 +699,7 @@ Hashing of numeric types
 ------------------------
 
 For numbers ``x`` and ``y``, possibly of different types, it's a requirement
-that ``hash(x) == hash(y)`` whenever ``x == y`` (see the :meth:`__hash__`
+that ``hash(x) == hash(y)`` whenever ``x == y`` (see the :meth:`~object.__hash__`
 method documentation for more details).  For ease of implementation and
 efficiency across a variety of numeric types (including :class:`int`,
 :class:`float`, :class:`decimal.Decimal` and :class:`fractions.Fraction`)
@@ -810,21 +811,21 @@ using two distinct methods; these are used to allow user-defined classes to
 support iteration.  Sequences, described below in more detail, always support
 the iteration methods.
 
-One method needs to be defined for container objects to provide iteration
+One method needs to be defined for container objects to provide :term:`iterable`
 support:
 
 .. XXX duplicated in reference/datamodel!
 
 .. method:: container.__iter__()
 
-   Return an iterator object.  The object is required to support the iterator
-   protocol described below.  If a container supports different types of
-   iteration, additional methods can be provided to specifically request
+   Return an :term:`iterator` object.  The object is required to support the
+   iterator protocol described below.  If a container supports different types
+   of iteration, additional methods can be provided to specifically request
    iterators for those iteration types.  (An example of an object supporting
    multiple forms of iteration would be a tree structure which supports both
    breadth-first and depth-first traversal.)  This method corresponds to the
-   :c:member:`~PyTypeObject.tp_iter` slot of the type structure for Python objects in the Python/C
-   API.
+   :c:member:`~PyTypeObject.tp_iter` slot of the type structure for Python
+   objects in the Python/C API.
 
 The iterator objects themselves are required to support the following two
 methods, which together form the :dfn:`iterator protocol`:
@@ -832,18 +833,19 @@ methods, which together form the :dfn:`iterator protocol`:
 
 .. method:: iterator.__iter__()
 
-   Return the iterator object itself.  This is required to allow both containers
-   and iterators to be used with the :keyword:`for` and :keyword:`in` statements.
-   This method corresponds to the :c:member:`~PyTypeObject.tp_iter` slot of the type structure for
-   Python objects in the Python/C API.
+   Return the :term:`iterator` object itself.  This is required to allow both
+   containers and iterators to be used with the :keyword:`for` and
+   :keyword:`in` statements.  This method corresponds to the
+   :c:member:`~PyTypeObject.tp_iter` slot of the type structure for Python
+   objects in the Python/C API.
 
 
 .. method:: iterator.__next__()
 
-   Return the next item from the container.  If there are no further items, raise
-   the :exc:`StopIteration` exception.  This method corresponds to the
-   :c:member:`~PyTypeObject.tp_iternext` slot of the type structure for Python objects in the
-   Python/C API.
+   Return the next item from the :term:`iterator`.  If there are no further
+   items, raise the :exc:`StopIteration` exception.  This method corresponds to
+   the :c:member:`~PyTypeObject.tp_iternext` slot of the type structure for
+   Python objects in the Python/C API.
 
 Python defines several iterator objects to support iteration over general and
 specific sequence types, dictionaries, and other more specialized forms.  The
@@ -1333,7 +1335,7 @@ loops.
            range(start, stop[, step])
 
    The arguments to the range constructor must be integers (either built-in
-   :class:`int` or any object that implements the ``__index__`` special
+   :class:`int` or any object that implements the :meth:`~object.__index__` special
    method).  If the *step* argument is omitted, it defaults to ``1``.
    If the *start* argument is omitted, it defaults to ``0``.
    If *step* is zero, :exc:`ValueError` is raised.
@@ -4792,9 +4794,9 @@ their implementation of the context management protocol. See the
 Python's :term:`generator`\s and the :class:`contextlib.contextmanager` decorator
 provide a convenient way to implement these protocols.  If a generator function is
 decorated with the :class:`contextlib.contextmanager` decorator, it will return a
-context manager implementing the necessary :meth:`__enter__` and
-:meth:`__exit__` methods, rather than the iterator produced by an undecorated
-generator function.
+context manager implementing the necessary :meth:`~contextmanager.__enter__` and
+:meth:`~contextmanager.__exit__` methods, rather than the iterator produced by an
+undecorated generator function.
 
 Note that there is no specific slot for any of these methods in the type
 structure for Python objects in the Python/C API. Extension types wanting to
