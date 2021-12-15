@@ -2938,6 +2938,10 @@ class TestSlots(unittest.TestCase):
         d = DataclassSubclassOfPointWithNoSlots(1, 2)
         with self.assertRaises(FrozenInstanceError):
             d.x = 2
+
+        # The subclass is frozen, so any attempt to set an attribute should raise an error.
+        # The subclass does not define slots, however,
+        # so the error should be `FrozenInstanceError` here rather than `AttributeError`.
         with self.assertRaises(FrozenInstanceError):
             d.z = 5
 
@@ -2948,7 +2952,7 @@ class TestSlots(unittest.TestCase):
             n.x = 2
 
         # This should pass without any exception being raised,
-        # since the subclass does not define __slots__.
+        # since the subclass does not define __slots__ and is not frozen.
         n.z = 5
 
 class TestDescriptors(unittest.TestCase):
