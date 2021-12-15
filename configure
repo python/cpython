@@ -6918,7 +6918,7 @@ $as_echo "#define Py_TRACE_REFS 1" >>confdefs.h
 fi
 
 # Check for --with-pystats
-# --with-trace-refs
+# --with-pystats
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-pystats" >&5
 $as_echo_n "checking for --with-pystats... " >&6; }
 
