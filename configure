@@ -1006,7 +1006,7 @@ enable_shared
 enable_profiling
 with_pydebug
 with_trace_refs
-with_pystats
+enable_pystats
 with_assertions
 enable_optimizations
 with_lto
@@ -1714,6 +1714,7 @@ Optional Features:
                           no)
   --enable-profiling      enable C-level code profiling with gprof (default is
                           no)
+  --enable-pystats        enable internal statistics gathering (default is no)
   --enable-optimizations  enable expensive, stable optimizations (PGO, etc.)
                           (default is no)
   --enable-loadable-sqlite-extensions
@@ -1754,7 +1755,6 @@ Optional Packages:
   --with-pydebug          build with Py_DEBUG defined (default is no)
   --with-trace-refs       enable tracing references for debugging purpose
                           (default is no)
-  --with-pystats          enable internal statistics gathering (default is no)
   --with-assertions       build with C assertions enabled (default is no)
   --with-lto=[full|thin|no|yes]
                           enable Link-Time-Optimization in any build (default
@@ -6917,25 +6917,26 @@ $as_echo "#define Py_TRACE_REFS 1" >>confdefs.h
 
 fi
 
-# Check for --with-pystats
-# --with-pystats
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-pystats" >&5
-$as_echo_n "checking for --with-pystats... " >&6; }
 
-# Check whether --with-pystats was given.
-if test "${with_pystats+set}" = set; then :
-  withval=$with_pystats;
+# Check for --enable-pystats
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-pystats" >&5
+$as_echo_n "checking for --enable-pystats... " >&6; }
+# Check whether --enable-pystats was given.
+if test "${enable_pystats+set}" = set; then :
+  enableval=$enable_pystats;
 else
-  with_pystats=no
+  enable_pystats=no
+
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_pystats" >&5
-$as_echo "$with_pystats" >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_pystats" >&5
+$as_echo "$enable_pystats" >&6; }
 
-if test "$with_pystats" = "yes"
-then
+if test "x$enable_pystats" = xyes; then :
+
 
 $as_echo "#define Py_STATS 1" >>confdefs.h
+
 
 fi
 
