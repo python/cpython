@@ -1002,7 +1002,7 @@ print_exception_file_and_line(struct exception_print_context *ctx,
     *value_p = message;
 
     PyObject *line = PyUnicode_FromFormat("  File \"%S\", line %zd\n",
-                                              filename, lineno);
+                                          filename, lineno);
     Py_DECREF(filename);
     if (line == NULL) {
         goto error;
@@ -1013,11 +1013,11 @@ print_exception_file_and_line(struct exception_print_context *ctx,
     if (PyFile_WriteObject(line, f, Py_PRINT_RAW) < 0) {
         goto error;
     }
-    Py_DECREF(line);
+    Py_CLEAR(line);
 
     if (text != NULL) {
         Py_ssize_t line_size;
-        const char* error_line = PyUnicode_AsUTF8AndSize(text, &line_size);
+        const char *error_line = PyUnicode_AsUTF8AndSize(text, &line_size);
         // If the location of the error spawn multiple lines, we want
         // to just print the first one and highlight everything until
         // the end of that one since we don't support multi-line error
@@ -1039,7 +1039,7 @@ print_exception_file_and_line(struct exception_print_context *ctx,
     return 0;
 
 error:
-    Py_DECREF(line);
+    Py_XDECREF(line);
     Py_XDECREF(text);
     return -1;
 }
