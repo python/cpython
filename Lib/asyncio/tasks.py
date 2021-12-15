@@ -389,7 +389,7 @@ def _release_waiter(waiter, *args):
         waiter.set_result(None)
 
 
-async def wait_for(fut, timeout, *, loop=None):
+async def wait_for(fut, timeout):
     """Wait for the single Future or coroutine to complete, with timeout.
 
     Coroutine will be wrapped in Task.
@@ -402,12 +402,7 @@ async def wait_for(fut, timeout, *, loop=None):
 
     This function is a coroutine.
     """
-    if loop is None:
-        loop = events.get_running_loop()
-    else:
-        warnings.warn("The loop argument is deprecated since Python 3.8, "
-                      "and scheduled for removal in Python 3.10.",
-                      DeprecationWarning, stacklevel=2)
+    loop = events.get_running_loop()
 
     if timeout is None:
         return await fut
@@ -426,10 +421,7 @@ async def wait_for(fut, timeout, *, loop=None):
 
     waiter = loop.create_future()
     timeout_handle = loop.call_later(timeout, _release_waiter, waiter)
-    #cb = functools.partial(_release_waiter, waiter)
-
-    def cb(f):
-        _release_waiter(waiter)
+    cb = functools.partial(_release_waiter, waiter)
 
     fut = ensure_future(fut, loop=loop)
     fut.add_done_callback(cb)
