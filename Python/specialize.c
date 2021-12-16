@@ -1187,7 +1187,7 @@ _Py_Specialize_BinarySubscr(
         assert(cls->tp_version_tag != 0);
         cache0->version = cls->tp_version_tag;
         int version = _PyFunction_GetVersionForCurrentState(func);
-        if (version == 0) {
+        if (version == 0 || version != (uint16_t)version) {
             SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_OUT_OF_VERSIONS);
             goto fail;
         }
