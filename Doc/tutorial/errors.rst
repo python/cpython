@@ -23,7 +23,7 @@ complaint you get while you are still learning Python::
           ^^^^^^^^^^^^^^^^^^^^^^^^^
 SyntaxError: invalid syntax. Perhaps you forgot a comma?
 
-The parser repeats the offending line and displays a little 'arrow' pointing at
+The parser repeats the offending line and displays a row of 'arrows' pointing at
 the earliest point in the line where the error was detected.  The error is
 caused by (or at least detected at) the token *preceding* the arrow: in the
 example, the error is detected at the function :func:`print`, since a colon
