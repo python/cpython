@@ -39,6 +39,9 @@ extern "C" {
         .ceval = { \
             .recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
         }, \
+        .gc = { \
+            .enabled = 1,  /* automatic collection enabled? */ \
+        }, \
         ._initial_thread = _PyThreadState_INIT, \
     }
 

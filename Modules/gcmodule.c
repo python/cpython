@@ -139,8 +139,6 @@ get_gc_state(void)
 void
 _PyGC_InitState(GCState *gcstate)
 {
-    gcstate->enabled = 1; /* automatic collection enabled? */
-
 #define _GEN_HEAD(n) GEN_HEAD(gcstate, n)
     struct gc_generation generations[NUM_GENERATIONS] = {
         /* PyGC_Head,                                    threshold,    count */
