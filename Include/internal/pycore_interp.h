@@ -173,6 +173,7 @@ struct _is {
     struct {
         int initialized;
         PyThreadState tstate;
+        // XXX Pre-allocate as many objects as possible here.
     } _preallocated;
 };
 

@@ -178,6 +178,8 @@ struct _ts {
 
     // This must be last.
     struct {
+        // XXX Move exc_state and root_cframe down here.
+        // XXX Allocate the initial datastack_chunk here..
     } _preallocated;
 };
 
