@@ -1,0 +1,1 @@
+argparse bug fix when using parents & subcommands: options are no more ignored when provided before a subcommand
