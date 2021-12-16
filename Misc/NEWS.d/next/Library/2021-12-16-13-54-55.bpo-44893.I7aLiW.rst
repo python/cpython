@@ -1,0 +1,3 @@
+EntryPoint objects are no longer tuples. Recommended means to access is by
+attribute ('.name', '.group') or accessor ('.load()'). Access by index is
+deprecated and will raise deprecation warning.
