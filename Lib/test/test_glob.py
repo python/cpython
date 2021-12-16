@@ -310,7 +310,6 @@ class GlobTests(unittest.TestCase):
         with change_cwd(self.tempdir):
             join = os.path.join
             eq(glob.glob('**', recursive=True), [join(*i) for i in full])
-
             eq(glob.glob(join('**', ''), recursive=True),
                 [join(*i) for i in dirs])
             eq(glob.glob(join('**', '*'), recursive=True),
@@ -332,7 +331,6 @@ class GlobTests(unittest.TestCase):
             rec = [('.bb','H'), ('.bb','.J'), ('.aa','G'), ('.aa',), ('.bb',)]
             eq(glob.glob('**', recursive=True, include_hidden=True),
                [join(*i) for i in full+rec])
-
 
     def test_glob_many_open_files(self):
         depth = 30
