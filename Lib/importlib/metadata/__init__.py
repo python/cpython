@@ -16,7 +16,7 @@ import collections
 
 from . import _adapters, _meta
 from ._collections import FreezableDefaultDict, Pair
-from ._functools import method_cache
+from ._functools import method_cache, pass_none
 from ._itertools import always_iterable, unique_everseen
 from ._meta import PackageMetadata, SimplePath
 
@@ -285,51 +285,32 @@ class DeprecatedList(list):
         stacklevel=2,
     )
 
-    def __setitem__(self, *args, **kwargs):
-        self._warn()
-        return super().__setitem__(*args, **kwargs)
+    def _wrap_deprecated_method(method_name: str):  # type: ignore
+        def wrapped(self, *args, **kwargs):
+            self._warn()
+            return getattr(super(), method_name)(*args, **kwargs)
 
-    def __delitem__(self, *args, **kwargs):
-        self._warn()
-        return super().__delitem__(*args, **kwargs)
+        return wrapped
 
-    def append(self, *args, **kwargs):
-        self._warn()
-        return super().append(*args, **kwargs)
-
-    def reverse(self, *args, **kwargs):
-        self._warn()
-        return super().reverse(*args, **kwargs)
-
-    def extend(self, *args, **kwargs):
-        self._warn()
-        return super().extend(*args, **kwargs)
-
-    def pop(self, *args, **kwargs):
-        self._warn()
-        return super().pop(*args, **kwargs)
-
-    def remove(self, *args, **kwargs):
-        self._warn()
-        return super().remove(*args, **kwargs)
-
-    def __iadd__(self, *args, **kwargs):
-        self._warn()
-        return super().__iadd__(*args, **kwargs)
+    for method_name in [
+        '__setitem__',
+        '__delitem__',
+        'append',
+        'reverse',
+        'extend',
+        'pop',
+        'remove',
+        '__iadd__',
+        'insert',
+        'sort',
+    ]:
+        locals()[method_name] = _wrap_deprecated_method(method_name)
 
     def __add__(self, other):
         if not isinstance(other, tuple):
             self._warn()
             other = tuple(other)
         return self.__class__(tuple(self) + other)
-
-    def insert(self, *args, **kwargs):
-        self._warn()
-        return super().insert(*args, **kwargs)
-
-    def sort(self, *args, **kwargs):
-        self._warn()
-        return super().sort(*args, **kwargs)
 
     def __eq__(self, other):
         if not isinstance(other, tuple):
@@ -649,7 +630,6 @@ class Distribution:
         missing.
         Result may be empty if the metadata exists but is empty.
         """
-        file_lines = self._read_files_distinfo() or self._read_files_egginfo()
 
         def make_file(name, hash=None, size_str=None):
             result = PackagePath(name)
@@ -658,7 +638,11 @@ class Distribution:
             result.dist = self
             return result
 
-        return file_lines and list(starmap(make_file, csv.reader(file_lines)))
+        @pass_none
+        def make_files(lines):
+            return list(starmap(make_file, csv.reader(lines)))
+
+        return make_files(self._read_files_distinfo() or self._read_files_egginfo())
 
     def _read_files_distinfo(self):
         """
@@ -771,6 +755,9 @@ class FastPath:
     """
     Micro-optimized class for searching a path for
     children.
+
+    >>> FastPath('').children()
+    ['...']
     """
 
     @functools.lru_cache()  # type: ignore
