@@ -792,8 +792,6 @@ init_threadstate(PyThreadState *tstate,
     tstate->native_thread_id = PyThread_get_thread_native_id();
 #endif
 
-    tstate->context_ver = 1;
-
     tstate->recursion_limit = interp->ceval.recursion_limit,
     tstate->recursion_remaining = interp->ceval.recursion_limit,
 
