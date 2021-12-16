@@ -235,6 +235,7 @@ class APITests(
 
             [extra1]
             dep4
+            dep6@ git+https://example.com/python/dep.git@v1.0.0
 
             [extra2:python_version < "3"]
             dep5
@@ -247,6 +248,7 @@ class APITests(
             'dep3; python_version < "3"',
             'dep4; extra == "extra1"',
             'dep5; (python_version < "3") and extra == "extra2"',
+            'dep6@ git+https://example.com/python/dep.git@v1.0.0 ; extra == "extra1"',
         ]
         # It's important that the environment marker expression be
         # wrapped in parentheses to avoid the following 'and' binding more
