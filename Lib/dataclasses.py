@@ -604,6 +604,11 @@ def _frozen_get_del_attr(cls, fields, globals):
     else:
         # Special case for the zero-length tuple.
         fields_str = '()'
+
+    # bpo-45897: Do not raise FrozenInstanceError
+    # if the dataclass has slots & the attribute is not specified in __slots__.
+    # Instead, let the standard __slots__ machinery raise AttributeError naturally
+    # in the super(cls, self).__setattr__ call
     return (_create_fn('__setattr__',
                       ('self', 'name', 'value'),
                       (f'if "__slots__" in cls.__dict__ and name not in cls.__slots__:',
