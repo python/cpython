@@ -233,6 +233,34 @@ class PrettyPrinter:
 
     _dispatch[_collections.OrderedDict.__repr__] = _pprint_ordered_dict
 
+    def _pprint_dict_view(self, object, stream, indent, allowance, context, level, items=False):
+        key = _safe_tuple if items else _safe_key
+        write = stream.write
+        write(object.__class__.__name__ + '([')
+        if self._indent_per_level > 1:
+            write((self._indent_per_level - 1) * ' ')
+        length = len(object)
+        if length:
+            if self._sort_dicts:
+                entries = sorted(object, key=key)
+            else:
+                entries = object
+            self._format_items(entries, stream, indent, allowance + 1,
+                                    context, level)
+        write('])')
+
+    dict_keys_view = type({}.keys())
+    _dispatch[dict_keys_view.__repr__] = _pprint_dict_view
+
+    dict_values_view = type({}.values())
+    _dispatch[dict_values_view.__repr__] = _pprint_dict_view
+
+    def _pprint_dict_items_view(self, object, stream, indent, allowance, context, level):
+        self._pprint_dict_view(object, stream, indent, allowance, context, level, True)
+
+    dict_items_view = type({}.items())
+    _dispatch[dict_items_view.__repr__] = _pprint_dict_items_view
+
     def _pprint_list(self, object, stream, indent, allowance, context, level):
         stream.write('[')
         self._format_items(object, stream, indent, allowance + 1,

@@ -231,6 +231,7 @@ class QueryTestCase(unittest.TestCase):
                        set(), set2(), set3(),
                        frozenset(), frozenset2(), frozenset3(),
                        {}, dict2(), dict3(),
+                       {}.keys(), {}.values(), {}.items(),
                        self.assertTrue, pprint,
                        -6, -6, -6-6j, -1.5, "x", b"x", bytearray(b"x"),
                        (3,), [3], {3: 6},
@@ -240,6 +241,7 @@ class QueryTestCase(unittest.TestCase):
                        set({7}), set2({7}), set3({7}),
                        frozenset({8}), frozenset2({8}), frozenset3({8}),
                        dict2({5: 6}), dict3({5: 6}),
+                       {5: 6}.keys(), {5: 6}.values(), {5: 6}.items(),
                        range(10, -11, -1),
                        True, False, None, ...,
                       ):
@@ -295,6 +297,36 @@ class QueryTestCase(unittest.TestCase):
  'write_io_runtime_us': 43690}"""
         for type in [dict, dict2]:
             self.assertEqual(pprint.pformat(type(o)), exp)
+
+        o = range(100)
+        exp = 'dict_keys([%s])' % ',\n '.join(map(str, o))
+        keys = dict.fromkeys(o).keys()
+        self.assertEqual(pprint.pformat(keys), exp)
+
+        o = range(100)
+        exp = 'dict_values([%s])' % ',\n '.join(map(str, o))
+        values = {v: v for v in o}.values()
+        self.assertEqual(pprint.pformat(values), exp)
+
+        o = range(100)
+        exp = 'dict_items([%s])' % ',\n '.join("(%s, %s)" % (i, i) for i in o)
+        items = {v: v for v in o}.items()
+        self.assertEqual(pprint.pformat(items), exp)
+
+        o = range(100)
+        exp = 'odict_keys([%s])' % ',\n '.join(map(str, o))
+        keys = collections.OrderedDict.fromkeys(o).keys()
+        self.assertEqual(pprint.pformat(keys), exp)
+
+        o = range(100)
+        exp = 'odict_values([%s])' % ',\n '.join(map(str, o))
+        values = collections.OrderedDict({v: v for v in o}).values()
+        self.assertEqual(pprint.pformat(values), exp)
+
+        o = range(100)
+        exp = 'odict_items([%s])' % ',\n '.join("(%s, %s)" % (i, i) for i in o)
+        items = collections.OrderedDict({v: v for v in o}).items()
+        self.assertEqual(pprint.pformat(items), exp)
 
         o = range(100)
         exp = '[%s]' % ',\n '.join(map(str, o))
@@ -446,6 +478,28 @@ mappingproxy(OrderedDict([('the', 0),
                           ('a', 6),
                           ('lazy', 7),
                           ('dog', 8)]))""")
+
+    def test_dict_views(self):
+        for dict_class in (dict, collections.OrderedDict):
+            empty = dict_class()
+            short = dict_class(zip('abcde', 'abcde'))
+            long = dict_class((chr(x), chr(x)) for x in range(65, 91))
+            prefix = "dict" if dict_class is dict else "odict"
+            for d in empty, short, long:
+                is_short = len(d) < 6
+                joiner = ", " if is_short else ",\n "
+                k = d.keys()
+                v = d.values()
+                i = d.items()
+                self.assertEqual(pprint.pformat(k, sort_dicts=True),
+                                 prefix + "_keys([%s])" %
+                                 joiner.join(repr(key) for key in sorted(k)))
+                self.assertEqual(pprint.pformat(v, sort_dicts=True),
+                                 prefix + "_values([%s])" %
+                                 joiner.join(repr(val) for val in sorted(v)))
+                self.assertEqual(pprint.pformat(i, sort_dicts=True),
+                                 prefix + "_items([%s])" %
+                                 joiner.join(repr(item) for item in sorted(i)))
 
     def test_empty_simple_namespace(self):
         ns = types.SimpleNamespace()
@@ -860,6 +914,10 @@ frozenset2({0,
             'frozenset({' + ','.join(map(repr, skeys)) + '})')
         self.assertEqual(clean(pprint.pformat(dict.fromkeys(keys))),
             '{' + ','.join('%r:None' % k for k in skeys) + '}')
+        self.assertEqual(clean(pprint.pformat(dict.fromkeys(keys).keys())),
+            'dict_keys([' + ','.join('%r' % k for k in skeys) + '])')
+        self.assertEqual(clean(pprint.pformat(dict.fromkeys(keys).items())),
+            'dict_items([' + ','.join('(%r,None)' % k for k in skeys) + '])')
 
         # Issue 10017: TypeError on user-defined types as dict keys.
         self.assertEqual(pprint.pformat({Unorderable: 0, 1: 0}),
