@@ -1,2 +1,0 @@
-Improve documentation for the ability to use a ``__slots__`` dictionary to
-assign per-attribute docstrings. Patch by Alex Waygood.
