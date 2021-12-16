@@ -1347,6 +1347,24 @@ tok_decimal_tail(struct tok_state *tok)
 
 /* Get next token, after space stripping etc. */
 
+static inline int
+tok_continuation_line(struct tok_state *tok) {
+    int c = tok_nextc(tok);
+    if (c != '\n') {
+        tok->done = E_LINECONT;
+        return -1;
+    }
+    c = tok_nextc(tok);
+    if (c == EOF) {
+        tok->done = E_EOF;
+        tok->cur = tok->inp;
+        return -1;
+    } else {
+        tok_backup(tok, c);
+    }
+    return c;
+}
+
 static int
 tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
 {
@@ -1375,12 +1393,18 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
             else if (c == '\014')  {/* Control-L (formfeed) */
                 col = altcol = 0; /* For Emacs users */
             }
+            else if (c == '\\') {
+                c = tok_continuation_line(tok);
+                if (c == -1) {
+                    return ERRORTOKEN;
+                }
+            }
             else {
                 break;
             }
         }
         tok_backup(tok, c);
-        if (c == '#' || c == '\n' || c == '\\') {
+        if (c == '#' || c == '\n') {
             /* Lines with only whitespace and/or comments
                and/or a line continuation character
                shouldn't affect the indentation and are
@@ -1964,18 +1988,9 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
 
     /* Line continuation */
     if (c == '\\') {
-        c = tok_nextc(tok);
-        if (c != '\n') {
-            tok->done = E_LINECONT;
+        c = tok_continuation_line(tok);
+        if (c == -1) {
             return ERRORTOKEN;
-        }
-        c = tok_nextc(tok);
-        if (c == EOF) {
-            tok->done = E_EOF;
-            tok->cur = tok->inp;
-            return ERRORTOKEN;
-        } else {
-            tok_backup(tok, c);
         }
         tok->cont_line = 1;
         goto again; /* Read next line */

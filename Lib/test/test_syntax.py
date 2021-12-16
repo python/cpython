@@ -1513,6 +1513,27 @@ pass
         except SyntaxError:
             self.fail("Empty line after a line continuation character is valid.")
 
+        # See issue-46091
+        s = r"""\
+def fib(n):
+    \
+'''Print a Fibonacci series up to n.'''
+    \
+a, b = 0, 1
+    \
+while a < n:
+        \
+print(a, end=' ')
+        \
+a, b = b, a+b
+    \
+print()
+"""
+        try:
+            compile(s, '<string>', 'exec')
+        except SyntaxError:
+            self.fail("Empty line after a line continuation character is valid.")
+
     @support.cpython_only
     def test_nested_named_except_blocks(self):
         code = ""
