@@ -40,7 +40,13 @@ extern "C" {
             .recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
         }, \
         .gc = { \
-            .enabled = 1,  /* automatic collection enabled? */ \
+            .enabled = 1, \
+            .generations = { \
+                /* .head is set in _PyGC_InitState(). */ \
+                { .threshold = 700, }, \
+                { .threshold = 10, }, \
+                { .threshold = 10, }, \
+            }, \
         }, \
         ._initial_thread = _PyThreadState_INIT, \
     }
