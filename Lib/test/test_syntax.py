@@ -1534,11 +1534,11 @@ def fib(n):
     def test_continuation_bad_indentation(self): 
         # Check that code that breaks indentation across multiple lines raises a syntax error
 
-        code = """
-            if x:
-                y = 1
-              \\
-              foo = 1
+        code = r"""\
+if x:
+    y = 1
+  \
+  foo = 1
         """
 
         self.assertRaises(IndentationError, exec, code)

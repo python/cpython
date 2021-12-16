@@ -1,4 +1,3 @@
-from textwrap import dedent
 from test import support
 from test.support import os_helper
 from tokenize import (tokenize, _tokenize, untokenize, NUMBER, NAME, OP,
