@@ -2719,10 +2719,8 @@ check_eval_breaker:
         }
 
         TARGET(POP_EXCEPT) {
-            PyObject *value;
-            _PyErr_StackItem *exc_info;
-            exc_info = tstate->exc_info;
-            value = exc_info->exc_value;
+            _PyErr_StackItem *exc_info = tstate->exc_info;
+            PyObject *value = exc_info->exc_value;
             exc_info->exc_value = POP();
             Py_XDECREF(value);
             DISPATCH();
@@ -2738,17 +2736,15 @@ check_eval_breaker:
                 _PyErr_SetString(tstate, PyExc_SystemError, "lasti is not an int");
                 goto error;
             }
-            PyObject *type, *value, *traceback;
-            _PyErr_StackItem *exc_info;
-            value = POP();
+            PyObject *value = POP();
             assert(value);
             assert(PyExceptionInstance_Check(value));
-            type = Py_NewRef(PyExceptionInstance_Class(value));
-            traceback = PyException_GetTraceback(value);
+            PyObject *type = Py_NewRef(PyExceptionInstance_Class(value));
+            PyObject *traceback = PyException_GetTraceback(value);
             Py_DECREF(POP()); /* lasti */
             _PyErr_Restore(tstate, type, value, traceback);
 
-            exc_info = tstate->exc_info;
+            _PyErr_StackItem *exc_info = tstate->exc_info;
             value = exc_info->exc_value;
             exc_info->exc_value = POP();
             Py_XDECREF(value);

@@ -521,11 +521,9 @@ PyErr_GetExcInfo(PyObject **p_type, PyObject **p_value, PyObject **p_traceback)
 void
 PyErr_SetExcInfo(PyObject *type, PyObject *value, PyObject *traceback)
 {
-    PyObject *oldvalue;
     PyThreadState *tstate = _PyThreadState_GET();
 
-    oldvalue = tstate->exc_info->exc_value;
-
+    PyObject *oldvalue = tstate->exc_info->exc_value;
 
     tstate->exc_info->exc_value = value;
 
