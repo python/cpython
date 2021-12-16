@@ -1121,7 +1121,7 @@ stack_effect(int opcode, int oparg, int jump)
         /* Exception handling pseudo-instructions */
         case SETUP_FINALLY:
             /* 0 in the normal flow.
-             * Restore the stack position and push 3 values before jumping to
+             * Restore the stack position and push 1 value before jumping to
              * the handler if an exception be raised. */
             return jump ? PY_EXC_INFO_STACK_SIZE : 0;
         case SETUP_CLEANUP:
@@ -1130,7 +1130,7 @@ stack_effect(int opcode, int oparg, int jump)
         case SETUP_WITH:
             /* 0 in the normal flow.
              * Restore the stack position to the position before the result
-             * of __(a)enter__ and push 4 values before jumping to the handler
+             * of __(a)enter__ and push 2 values before jumping to the handler
              * if an exception be raised. */
             return jump ? -1 + PY_EXC_INFO_STACK_SIZE + 1 : 0;
 
