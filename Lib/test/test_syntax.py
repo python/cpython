@@ -1532,7 +1532,7 @@ print()
         try:
             compile(s, '<string>', 'exec')
         except SyntaxError:
-            self.fail("Empty line after a line continuation character is valid.")
+            self.fail("Indented statement over multiple lines is valid")
 
     @support.cpython_only
     def test_nested_named_except_blocks(self):
