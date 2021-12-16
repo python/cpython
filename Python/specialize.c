@@ -167,8 +167,20 @@ _Py_PrintSpecializationStats(int to_file)
 # else
         const char *dirname = "/tmp/py_stats/";
 # endif
-        char buf[48];
-        sprintf(buf, "%s%u_%u.txt", dirname, (unsigned)clock(), (unsigned)rand());
+        /* Use random 160 bit number as file name,
+        * to avoid both accidental collisions and
+        * symlink attacks. */
+        unsigned char rand[20];
+        char hex_name[41];
+        _PyOS_URandomNonblock(rand, 20);
+        for (int i = 0; i < 20; i++) {
+            hex_name[2*i] = "0123456789abcdef"[rand[i]&15];
+            hex_name[2*i+1] = "0123456789abcdef"[(rand[i]>>4)&15];
+        }
+        hex_name[40] = '\0';
+        char buf[64];
+        assert(strlen(dirname) + 40 + strlen(".txt") < 64);
+        sprintf(buf, "%s%s.txt", dirname, hex_name);
         FILE *fout = fopen(buf, "w");
         if (fout) {
             out = fout;
