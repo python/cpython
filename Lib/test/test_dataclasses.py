@@ -2903,7 +2903,10 @@ class TestSlots(unittest.TestCase):
         self.assertEqual(obj.b, 'b')
 
     def test_frozen_slots_raises_correct_error(self):
-        # bpo-45897
+        # bpo-45897: for a frozen-slotted dataclass instance,
+        # attempting to set an attribute not specified
+        # in __slots__ should raise AttributeError,
+        # not TypeError or FrozenInstanceError
         @dataclass(slots=True, frozen=True)
         class Point:
             x: int
