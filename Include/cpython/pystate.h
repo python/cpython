@@ -184,9 +184,7 @@ struct _ts {
 #ifdef Py_BUILD_CORE
 #define _PyThreadState_INIT \
     { \
-        ._preallocated = { \
-            0, \
-        }, \
+        0, \
     }
 #endif
 
