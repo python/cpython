@@ -93,7 +93,8 @@ typedef struct _typeobject PyTypeObject;
 /* The GC bit-shifts refcounts left by two, and after that shift we still
  * need this to be >> 0, so leave three high zero bits (the sign bit and
  * room for a shift of two.) */
-#define _Py_IMMORTAL_BIT (1LL << (8 * sizeof(Py_ssize_t) - 4))
+#define _Py_IMMORTAL_BIT_OFFSET (8 * sizeof(Py_ssize_t) - 4)
+#define _Py_IMMORTAL_BIT (1LL << _Py_IMMORTAL_BIT_OFFSET)
 
 #endif  /* Py_IMMORTAL_OBJECTS */
 
@@ -551,11 +552,10 @@ static inline void _Py_INCREF(PyObject *op)
     _Py_RefTotal++;
 #endif
 #ifdef Py_IMMORTAL_OBJECTS
-    if (_Py_IsImmortal(op)) {
-        return;
-    }
-#endif  /* Py_IMMORTAL_OBJECTS */
+    op->ob_refcnt += !(op->ob_refcnt >> _Py_IMMORTAL_BIT_OFFSET);
+#else
     op->ob_refcnt++;
+#endif  /* Py_IMMORTAL_OBJECTS */
 #endif
 }
 #define Py_INCREF(op) _Py_INCREF(_PyObject_CAST(op))
