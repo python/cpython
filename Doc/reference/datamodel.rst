@@ -2004,7 +2004,9 @@ Calling :func:`help` on this class will yield the following output::
    |      Either "Spades", "Hearts", "Clubs" or "Diamonds"
 
 
-.. versionadded:: 3.8
+.. versionchanged:: 3.8
+   Docstrings in the values of a *__slots__* dictionary are now recognised by
+   :func:`help`.
 
 
 .. _class-customization:
