@@ -702,7 +702,11 @@ PyAPI_FUNC(int) Py_IsNone(PyObject *x);
 #define Py_IsNone(x) Py_Is((x), Py_None)
 
 /* Macro for returning Py_None from a function */
+#ifdef Py_IMMORTAL_OBJECTS
+#define Py_RETURN_NONE return Py_None
+#else
 #define Py_RETURN_NONE return Py_NewRef(Py_None)
+#endif
 
 /*
 Py_NotImplemented is a singleton used to signal that an operation is
