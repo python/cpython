@@ -2601,6 +2601,13 @@ class TestMutuallyExclusiveGroupErrors(TestCase):
               '''
         self.assertEqual(parser.format_help(), textwrap.dedent(expected))
 
+    def test_empty_group(self):
+        # See issue 26952
+        parser = argparse.ArgumentParser()
+        group = parser.add_mutually_exclusive_group()
+        with self.assertRaises(ValueError):
+            parser.parse_args(['-h'])
+
 class MEMixin(object):
 
     def test_failures_when_not_required(self):

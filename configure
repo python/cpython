@@ -1006,6 +1006,7 @@ enable_shared
 enable_profiling
 with_pydebug
 with_trace_refs
+enable_pystats
 with_assertions
 enable_optimizations
 with_lto
@@ -1713,6 +1714,7 @@ Optional Features:
                           no)
   --enable-profiling      enable C-level code profiling with gprof (default is
                           no)
+  --enable-pystats        enable internal statistics gathering (default is no)
   --enable-optimizations  enable expensive, stable optimizations (PGO, etc.)
                           (default is no)
   --enable-loadable-sqlite-extensions
@@ -6912,6 +6914,29 @@ if test "$with_trace_refs" = "yes"
 then
 
 $as_echo "#define Py_TRACE_REFS 1" >>confdefs.h
+
+fi
+
+
+# Check for --enable-pystats
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-pystats" >&5
+$as_echo_n "checking for --enable-pystats... " >&6; }
+# Check whether --enable-pystats was given.
+if test "${enable_pystats+set}" = set; then :
+  enableval=$enable_pystats;
+else
+  enable_pystats=no
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_pystats" >&5
+$as_echo "$enable_pystats" >&6; }
+
+if test "x$enable_pystats" = xyes; then :
+
+
+$as_echo "#define Py_STATS 1" >>confdefs.h
+
 
 fi
 

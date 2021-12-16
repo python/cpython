@@ -349,8 +349,8 @@ PyEval_InitThreads(void)
 void
 _PyEval_Fini(void)
 {
-#if PRINT_SPECIALIZATION_STATS
-    _Py_PrintSpecializationStats();
+#ifdef Py_STATS
+    _Py_PrintSpecializationStats(1);
 #endif
 }
 
@@ -1798,7 +1798,8 @@ check_eval_breaker:
         if (_Py_atomic_load_relaxed(eval_breaker)) {
             opcode = _Py_OPCODE(*next_instr);
             if (opcode != BEFORE_ASYNC_WITH &&
-                opcode != YIELD_FROM) {
+                opcode != SEND &&
+                _Py_OPCODE(next_instr[-1]) != SEND) {
                 /* Few cases where we skip running signal handlers and other
                    pending calls:
                    - If we're about to enter the 'with:'. It will prevent
@@ -2642,8 +2643,9 @@ check_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(YIELD_FROM) {
+        TARGET(SEND) {
             assert(frame->depth == 0);
+            assert(STACK_LEVEL() >= 2);
             PyObject *v = POP();
             PyObject *receiver = TOP();
             PySendResult gen_status;
@@ -2680,17 +2682,13 @@ check_eval_breaker:
             }
             if (gen_status == PYGEN_RETURN) {
                 assert (retval != NULL);
-
                 Py_DECREF(receiver);
                 SET_TOP(retval);
-                retval = NULL;
+                JUMPBY(oparg);
                 DISPATCH();
             }
             assert (gen_status == PYGEN_NEXT);
-            /* receiver remains on stack, retval is value to be yielded */
-            /* and repeat... */
-            assert(frame->f_lasti > 0);
-            frame->f_lasti -= 1;
+            assert (retval != NULL);
             frame->f_state = FRAME_SUSPENDED;
             _PyFrame_SetStackPointer(frame, stack_pointer);
             TRACE_FUNCTION_EXIT();
@@ -4880,6 +4878,41 @@ check_eval_breaker:
             goto start_frame;
         }
 
+        TARGET(CALL_NO_KW_TYPE_1) {
+            assert(STACK_ADJUST_IS_RESET);
+            assert(GET_CACHE()->adaptive.original_oparg == 1);
+            PyObject *obj = TOP();
+            PyObject *callable = SECOND();
+            DEOPT_IF(callable != (PyObject *)&PyType_Type, CALL_NO_KW);
+            PyObject *res = Py_NewRef(Py_TYPE(obj));
+            STACK_SHRINK(1);
+            Py_DECREF(callable);
+            Py_DECREF(obj);
+            SET_TOP(res);
+            DISPATCH();
+        }
+
+        TARGET(CALL_NO_KW_BUILTIN_CLASS_1) {
+            assert(STACK_ADJUST_IS_RESET);
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            assert(cache0->original_oparg == 1);
+            PyObject *callable = SECOND();
+            PyObject *arg = TOP();
+            DEOPT_IF(!PyType_Check(callable), CALL_NO_KW);
+            PyTypeObject *tp = (PyTypeObject *)callable;
+            DEOPT_IF(tp->tp_version_tag != cache0->version, CALL_NO_KW);
+            STACK_SHRINK(1);
+            PyObject *res = tp->tp_vectorcall((PyObject *)tp, stack_pointer, 1, NULL);
+            SET_TOP(res);
+            Py_DECREF(tp);
+            Py_DECREF(arg);
+            if (res == NULL) {
+                goto error;
+            }
+            DISPATCH();
+        }
+
         TARGET(CALL_NO_KW_BUILTIN_O) {
             assert(cframe.use_tracing == 0);
             assert(STACK_ADJUST_IS_RESET);
@@ -6794,8 +6827,11 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
         return -1;
     }
     if (line != -1 && f->f_trace_lines) {
-        /* Trace backward edges or if line number has changed */
-        if (frame->f_lasti < instr_prev || line != lastline) {
+        /* Trace backward edges (except in 'yield from') or if line number has changed */
+        int trace = line != lastline ||
+            (frame->f_lasti < instr_prev &&
+            _Py_OPCODE(frame->f_code->co_firstinstr[frame->f_lasti]) != SEND);
+        if (trace) {
             result = call_trace(func, obj, tstate, frame, PyTrace_LINE, Py_None);
         }
     }

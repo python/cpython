@@ -39,7 +39,7 @@
 */
 
 Py_ssize_t _Py_QuickenedCount = 0;
-#if COLLECT_SPECIALIZATION_STATS
+#ifdef Py_STATS
 SpecializationStats _specialization_stats[256] = { 0 };
 
 #define ADD_STAT_TO_DICT(res, field) \
@@ -71,7 +71,6 @@ stats_to_dict(SpecializationStats *stats)
     ADD_STAT_TO_DICT(res, miss);
     ADD_STAT_TO_DICT(res, deopt);
     ADD_STAT_TO_DICT(res, unquickened);
-#if COLLECT_SPECIALIZATION_STATS_DETAILED
     PyObject *failure_kinds = PyTuple_New(SPECIALIZATION_FAILURE_KINDS);
     if (failure_kinds == NULL) {
         Py_DECREF(res);
@@ -92,7 +91,6 @@ stats_to_dict(SpecializationStats *stats)
         return NULL;
     }
     Py_DECREF(failure_kinds);
-#endif
     return res;
 }
 #undef ADD_STAT_TO_DICT
@@ -113,7 +111,7 @@ add_stat_dict(
     return err;
 }
 
-#if COLLECT_SPECIALIZATION_STATS
+#ifdef Py_STATS
 PyObject*
 _Py_GetSpecializationStats(void) {
     PyObject *stats = PyDict_New();
@@ -151,35 +149,34 @@ print_stats(FILE *out, SpecializationStats *stats, const char *name)
     PRINT_STAT(name, miss);
     PRINT_STAT(name, deopt);
     PRINT_STAT(name, unquickened);
-#if PRINT_SPECIALIZATION_STATS_DETAILED
     for (int i = 0; i < SPECIALIZATION_FAILURE_KINDS; i++) {
         fprintf(out, "    %s.specialization_failure_kinds[%d] : %" PRIu64 "\n",
             name, i, stats->specialization_failure_kinds[i]);
     }
-#endif
 }
 #undef PRINT_STAT
 
 void
-_Py_PrintSpecializationStats(void)
+_Py_PrintSpecializationStats(int to_file)
 {
     FILE *out = stderr;
-#if PRINT_SPECIALIZATION_STATS_TO_FILE
-    /* Write to a file instead of stderr. */
+    if (to_file) {
+        /* Write to a file instead of stderr. */
 # ifdef MS_WINDOWS
-    const char *dirname = "c:\\temp\\py_stats\\";
+        const char *dirname = "c:\\temp\\py_stats\\";
 # else
-    const char *dirname = "/tmp/py_stats/";
+        const char *dirname = "/tmp/py_stats/";
 # endif
-    char buf[48];
-    sprintf(buf, "%s%u_%u.txt", dirname, (unsigned)clock(), (unsigned)rand());
-    FILE *fout = fopen(buf, "w");
-    if (fout) {
-        out = fout;
+        char buf[48];
+        sprintf(buf, "%s%u_%u.txt", dirname, (unsigned)clock(), (unsigned)rand());
+        FILE *fout = fopen(buf, "w");
+        if (fout) {
+            out = fout;
+        }
     }
-#else
-    fprintf(out, "Specialization stats:\n");
-#endif
+    else {
+        fprintf(out, "Specialization stats:\n");
+    }
     print_stats(out, &_specialization_stats[LOAD_ATTR], "load_attr");
     print_stats(out, &_specialization_stats[LOAD_GLOBAL], "load_global");
     print_stats(out, &_specialization_stats[LOAD_METHOD], "load_method");
@@ -194,7 +191,7 @@ _Py_PrintSpecializationStats(void)
     }
 }
 
-#if COLLECT_SPECIALIZATION_STATS_DETAILED
+#ifdef Py_STATS
 
 #define SPECIALIZATION_FAIL(opcode, kind) _specialization_stats[opcode].specialization_failure_kinds[kind]++
 
@@ -491,8 +488,10 @@ initial_counter_value(void) {
 #define SPEC_FAIL_PYCFUNCTION_NOARGS 16
 #define SPEC_FAIL_BAD_CALL_FLAGS 17
 #define SPEC_FAIL_CLASS 18
-#define SPEC_FAIL_C_METHOD_CALL 19
-#define SPEC_FAIL_METHDESCR_NON_METHOD 20
+#define SPEC_FAIL_PYTHON_CLASS 19
+#define SPEC_FAIL_C_METHOD_CALL 20
+#define SPEC_FAIL_METHDESCR_NON_METHOD 21
+#define SPEC_FAIL_METHOD_CALL_CLASS 22
 
 /* COMPARE_OP */
 #define SPEC_FAIL_STRING_COMPARE 13
@@ -858,7 +857,7 @@ success:
 }
 
 
-#if COLLECT_SPECIALIZATION_STATS_DETAILED
+#ifdef Py_STATS
 static int
 load_method_fail_kind(DesciptorClassification kind)
 {
@@ -1084,7 +1083,7 @@ success:
     return 0;
 }
 
-#if COLLECT_SPECIALIZATION_STATS_DETAILED
+#ifdef Py_STATS
 static int
 binary_subscr_fail_kind(PyTypeObject *container_type, PyObject *sub)
 {
@@ -1263,6 +1262,27 @@ specialize_class_call(
     PyObject *callable, _Py_CODEUNIT *instr,
     int nargs, SpecializedCacheEntry *cache)
 {
+    assert(PyType_Check(callable));
+    PyTypeObject *tp = (PyTypeObject *)callable;
+    if (_Py_OPCODE(instr[-1]) == PRECALL_METHOD) {
+        SPECIALIZATION_FAIL(CALL_NO_KW, SPEC_FAIL_METHOD_CALL_CLASS);
+        return -1;
+    }
+    if (tp->tp_new == PyBaseObject_Type.tp_new) {
+        SPECIALIZATION_FAIL(CALL_NO_KW, SPEC_FAIL_PYTHON_CLASS);
+        return -1;
+    }
+    if (nargs == 1) {
+        if (tp == &PyType_Type) {
+            *instr = _Py_MAKECODEUNIT(CALL_NO_KW_TYPE_1, _Py_OPARG(*instr));
+            return 0;
+        }
+        if ((tp->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) && tp->tp_vectorcall != NULL) {
+            cache->adaptive.version = tp->tp_version_tag;
+            *instr = _Py_MAKECODEUNIT(CALL_NO_KW_BUILTIN_CLASS_1, _Py_OPARG(*instr));
+            return 0;
+        }
+    }
     SPECIALIZATION_FAIL(CALL_NO_KW, SPEC_FAIL_CLASS);
     return -1;
 }
@@ -1357,7 +1377,7 @@ specialize_py_call(
     return 0;
 }
 
-#if COLLECT_SPECIALIZATION_STATS_DETAILED
+#ifdef Py_STATS
 static int
 builtin_call_fail_kind(int ml_flags)
 {
@@ -1436,7 +1456,7 @@ specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
     }
 }
 
-#if COLLECT_SPECIALIZATION_STATS_DETAILED
+#ifdef Py_STATS
 static int
 call_fail_kind(PyObject *callable)
 {

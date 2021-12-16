@@ -37,7 +37,6 @@ extern "C" {
 #define GET_YIELD_FROM_ITER              69
 #define PRINT_EXPR                       70
 #define LOAD_BUILD_CLASS                 71
-#define YIELD_FROM                       72
 #define GET_AWAITABLE                    73
 #define LOAD_ASSERTION_ERROR             74
 #define LIST_TO_TUPLE                    82
@@ -81,6 +80,7 @@ extern "C" {
 #define COPY                            120
 #define JUMP_IF_NOT_EXC_MATCH           121
 #define BINARY_OP                       122
+#define SEND                            123
 #define LOAD_FAST                       124
 #define STORE_FAST                      125
 #define DELETE_FAST                     126
@@ -144,37 +144,39 @@ extern "C" {
 #define CALL_NO_KW_PY_SIMPLE             45
 #define CALL_NO_KW_LIST_APPEND           46
 #define CALL_NO_KW_METHOD_DESCRIPTOR_O   47
-#define CALL_NO_KW_METHOD_DESCRIPTOR_FAST  48
-#define JUMP_ABSOLUTE_QUICK              55
-#define LOAD_ATTR_ADAPTIVE               56
-#define LOAD_ATTR_INSTANCE_VALUE         57
-#define LOAD_ATTR_WITH_HINT              58
-#define LOAD_ATTR_SLOT                   59
-#define LOAD_ATTR_MODULE                 62
-#define LOAD_GLOBAL_ADAPTIVE             63
-#define LOAD_GLOBAL_MODULE               64
-#define LOAD_GLOBAL_BUILTIN              65
-#define LOAD_METHOD_ADAPTIVE             66
-#define LOAD_METHOD_CACHED               67
-#define LOAD_METHOD_CLASS                75
-#define LOAD_METHOD_MODULE               76
-#define LOAD_METHOD_NO_DICT              77
-#define STORE_ATTR_ADAPTIVE              78
-#define STORE_ATTR_INSTANCE_VALUE        79
-#define STORE_ATTR_SLOT                  80
-#define STORE_ATTR_WITH_HINT             81
-#define LOAD_FAST__LOAD_FAST             87
-#define STORE_FAST__LOAD_FAST           123
-#define LOAD_FAST__LOAD_CONST           134
-#define LOAD_CONST__LOAD_FAST           140
-#define STORE_FAST__STORE_FAST          141
+#define CALL_NO_KW_TYPE_1                48
+#define CALL_NO_KW_BUILTIN_CLASS_1       55
+#define CALL_NO_KW_METHOD_DESCRIPTOR_FAST  56
+#define JUMP_ABSOLUTE_QUICK              57
+#define LOAD_ATTR_ADAPTIVE               58
+#define LOAD_ATTR_INSTANCE_VALUE         59
+#define LOAD_ATTR_WITH_HINT              62
+#define LOAD_ATTR_SLOT                   63
+#define LOAD_ATTR_MODULE                 64
+#define LOAD_GLOBAL_ADAPTIVE             65
+#define LOAD_GLOBAL_MODULE               66
+#define LOAD_GLOBAL_BUILTIN              67
+#define LOAD_METHOD_ADAPTIVE             72
+#define LOAD_METHOD_CACHED               75
+#define LOAD_METHOD_CLASS                76
+#define LOAD_METHOD_MODULE               77
+#define LOAD_METHOD_NO_DICT              78
+#define STORE_ATTR_ADAPTIVE              79
+#define STORE_ATTR_INSTANCE_VALUE        80
+#define STORE_ATTR_SLOT                  81
+#define STORE_ATTR_WITH_HINT             87
+#define LOAD_FAST__LOAD_FAST            134
+#define STORE_FAST__LOAD_FAST           140
+#define LOAD_FAST__LOAD_CONST           141
+#define LOAD_CONST__LOAD_FAST           143
+#define STORE_FAST__STORE_FAST          150
 #define DO_TRACING                      255
 #ifdef NEED_OPCODE_JUMP_TABLES
 static uint32_t _PyOpcode_RelativeJump[8] = {
     0U,
     0U,
     536870912U,
-    16384U,
+    134234112U,
     0U,
     0U,
     0U,
@@ -184,7 +186,7 @@ static uint32_t _PyOpcode_Jump[8] = {
     0U,
     0U,
     536870912U,
-    2182070272U,
+    2316288000U,
     3U,
     0U,
     0U,
