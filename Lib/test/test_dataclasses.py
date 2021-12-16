@@ -2939,9 +2939,10 @@ class TestSlots(unittest.TestCase):
         with self.assertRaises(FrozenInstanceError):
             d.x = 2
 
-        # The subclass is frozen, so any attempt to set an attribute should raise an error.
-        # The subclass does not define slots, however,
-        # so the error should be `FrozenInstanceError` here rather than `AttributeError`.
+        # The subclass is frozen, so any attempt to set an attribute should
+        # raise an error. The subclass does not define slots, however, so the
+        # error should be `FrozenInstanceError` here rather than
+        # `AttributeError`.
         with self.assertRaises(FrozenInstanceError):
             d.z = 5
 
