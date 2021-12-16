@@ -36,6 +36,9 @@ extern "C" {
     { \
         ._static = 1, \
         .id_refcount = -1, \
+        .ceval = { \
+            .recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
+        }, \
         ._initial_thread = _PyThreadState_INIT, \
     }
 
