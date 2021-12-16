@@ -309,10 +309,6 @@ init_interpreter(PyInterpreterState *interp,
 #endif
 #endif
 
-    // If needed, we could initialize _preallocated manually, instead
-    // of expecting it to be pre-initialized.
-    assert(interp->_preallocated.initialized);
-
     interp->_initialized = 1;
 }
 
@@ -809,10 +805,6 @@ init_threadstate(PyThreadState *tstate,
     /* If top points to entry 0, then _PyThreadState_PopFrame will try to pop this chunk */
     tstate->datastack_top = &tstate->datastack_chunk->data[1];
     tstate->datastack_limit = (PyObject **)(((char *)tstate->datastack_chunk) + DATA_STACK_CHUNK_SIZE);
-
-    // If needed, we could initialize _preallocated manually, instead
-    // of expecting it to be pre-initialized.
-    assert(tstate->_preallocated.initialized);
 
     tstate->_initialized = 1;
 }

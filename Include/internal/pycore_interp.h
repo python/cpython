@@ -180,7 +180,6 @@ struct _is {
 #define _PyInterpreterState_INIT \
     { \
         ._preallocated = { \
-            .initialized = 1, \
             .tstate = _PyThreadState_INIT, \
         }, \
     }

@@ -178,7 +178,6 @@ struct _ts {
 
     // This must be last.
     struct {
-        int initialized;
     } _preallocated;
 };
 
@@ -186,7 +185,7 @@ struct _ts {
 #define _PyThreadState_INIT \
     { \
         ._preallocated = { \
-            .initialized = 1, \
+            0, \
         }, \
     }
 #endif
