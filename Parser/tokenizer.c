@@ -1381,6 +1381,7 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
         int col = 0;
         int altcol = 0;
         tok->atbol = 0;
+        int cont_line_col = 0;
         for (;;) {
             c = tok_nextc(tok);
             if (c == ' ') {
@@ -1394,8 +1395,12 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
                 col = altcol = 0; /* For Emacs users */
             }
             else if (c == '\\') {
-                c = tok_continuation_line(tok);
-                if (c == -1) {
+                // Indentation cannot be split over multiple physical lines
+                // using backslashes. This means that if we found a backslash
+                // preceded by whitespace, **the first one we find** determines
+                // the level of indentation of whatever comes next.
+                cont_line_col = cont_line_col ? cont_line_col : col;
+                if ((c = tok_continuation_line(tok)) == -1) {
                     return ERRORTOKEN;
                 }
             }
@@ -1426,6 +1431,8 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
                may need to skip to the end of a comment */
         }
         if (!blankline && tok->level == 0) {
+            col = cont_line_col ? cont_line_col : col;
+            altcol = cont_line_col ? cont_line_col : altcol;
             if (col == tok->indstack[tok->indent]) {
                 /* No change */
                 if (altcol != tok->altindstack[tok->indent]) {
@@ -1446,7 +1453,7 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
                 tok->indstack[++tok->indent] = col;
                 tok->altindstack[tok->indent] = altcol;
             }
-            else /* col < tok->indstack[tok->indent] */ {
+            else /* indent_col < tok->indstack[tok->indent] */ {
                 /* Dedent -- any number, must be consistent */
                 while (tok->indent > 0 &&
                     col < tok->indstack[tok->indent]) {
@@ -1987,8 +1994,7 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
 
     /* Line continuation */
     if (c == '\\') {
-        c = tok_continuation_line(tok);
-        if (c == -1) {
+        if ((c = tok_continuation_line(tok)) == -1) {
             return ERRORTOKEN;
         }
         tok->cont_line = 1;
