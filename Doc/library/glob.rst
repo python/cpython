@@ -37,7 +37,7 @@ For example, ``'[?]'`` matches the character ``'?'``.
 
 
 .. function:: glob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
-   include_hidden_dirs=False)
+   include_hidden=False)
 
    Return a possibly-empty list of path names that match *pathname*, which must be
    a string containing a path specification. *pathname* can be either absolute
@@ -65,7 +65,7 @@ For example, ``'[?]'`` matches the character ``'?'``.
    pattern is followed by an :data:`os.sep` or :data:`os.altsep` then files will not
    match.
 
-   If *include_hidden_dirs* is true, "``**``" pattern will match hidden directories.
+   If *include_hidden* is true, "``**``" pattern will match hidden directories.
 
    .. audit-event:: glob.glob pathname,recursive glob.glob
    .. audit-event:: glob.glob/2 pathname,recursive,root_dir,dir_fd glob.glob
@@ -81,11 +81,11 @@ For example, ``'[?]'`` matches the character ``'?'``.
       Added the *root_dir* and *dir_fd* parameters.
 
    .. versionchanged:: 3.11
-      Added the *include_hidden_dirs* parameters.
+      Added the *include_hidden* parameter.
 
 
 .. function:: iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
-   include_hidden_dirs=False)
+   include_hidden=False)
 
    Return an :term:`iterator` which yields the same values as :func:`glob`
    without actually storing them all simultaneously.
@@ -100,7 +100,7 @@ For example, ``'[?]'`` matches the character ``'?'``.
       Added the *root_dir* and *dir_fd* parameters.
 
    .. versionchanged:: 3.11
-      Added the *include_hidden_dirs* parameters.
+      Added the *include_hidden* parameter.
 
 
 .. function:: escape(pathname)
