@@ -432,7 +432,10 @@
     <Message Text="Updated files: @(_Updated->'%(Filename)%(Extension)',', ')"
              Condition="'@(_Updated)' != ''" Importance="high" />
   </Target>
-  <Target Name="_RebuildDeepFrozen" AfterTargets="_RebuildFrozen" Condition="$(Configuration) != 'PGUpdate'">
+  <Target Name="_RebuildDeepFrozen"
+          AfterTargets="_RebuildFrozen"
+          DependsOnTargets="FindPythonForBuild"
+          Condition="$(Configuration) != 'PGUpdate'">
     <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\scripts\deepfreeze.py" "%(None.OutFile)" "-m" "%(None.ModName)" -o "%(None.IntFile)"' />
 
     <Copy SourceFiles="%(None.IntFile)"
