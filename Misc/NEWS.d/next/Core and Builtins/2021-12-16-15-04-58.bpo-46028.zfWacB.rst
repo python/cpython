@@ -1,0 +1,3 @@
+Fixes calculation of :data:`sys._base_executable` when inside a virtual
+environment that uses symlinks with different binary names than the base
+environment provides.
