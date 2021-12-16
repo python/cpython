@@ -77,7 +77,6 @@ struct _is {
     struct _is *next;
 
     struct pythreads {
-        int _preallocated_used;
         uint64_t next_unique_id;
         struct _ts *head;
         /* Used in Modules/_threadmodule.c. */
