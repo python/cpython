@@ -8,6 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include <stdbool.h>
+
 #include "pycore_atomic.h"        // _Py_atomic_address
 #include "pycore_ast_state.h"     // struct ast_state
 #include "pycore_bytesobject.h"   // struct _Py_bytes_state
@@ -104,6 +106,7 @@ struct _is {
        after allocation. */
     int _initialized;
     int finalizing;
+    bool _static;
 
     struct _ceval_state ceval;
     struct _gc_runtime_state gc;
@@ -179,6 +182,7 @@ struct _is {
 
 #define _PyInterpreterState_INIT \
     { \
+        ._static = 1, \
         ._preallocated = { \
             .tstate = _PyThreadState_INIT, \
         }, \

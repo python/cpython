@@ -2,6 +2,9 @@
 #  error "this header file must not be included directly"
 #endif
 
+#include <stdbool.h>
+
+
 PyAPI_FUNC(int) _PyInterpreterState_RequiresIDRef(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_RequireIDRef(PyInterpreterState *, int);
 
@@ -82,6 +85,7 @@ struct _ts {
        In order to be effective, this must be set to 0 during or right
        after allocation. */
     int _initialized;
+    bool _static;
 
     int recursion_remaining;
     int recursion_limit;
@@ -186,7 +190,7 @@ struct _ts {
 #ifdef Py_BUILD_CORE
 #define _PyThreadState_INIT \
     { \
-        0, \
+        ._static = 1, \
     }
 #endif
 

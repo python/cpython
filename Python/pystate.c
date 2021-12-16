@@ -262,7 +262,7 @@ alloc_interpreter(void)
 static void
 free_interpreter(PyInterpreterState *interp)
 {
-    if (interp != &interp->runtime->_preallocated.interpreters_main) {
+    if (!interp->_static) {
         PyMem_RawFree(interp);
     }
 }
@@ -749,7 +749,7 @@ alloc_threadstate(void)
 static void
 free_threadstate(PyThreadState *tstate)
 {
-    if (tstate != &tstate->interp->_preallocated.tstate) {
+    if (!tstate->_static) {
         PyMem_RawFree(tstate);
     }
 }
