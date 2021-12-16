@@ -1453,7 +1453,7 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
                 tok->indstack[++tok->indent] = col;
                 tok->altindstack[tok->indent] = altcol;
             }
-            else /* indent_col < tok->indstack[tok->indent] */ {
+            else /* col < tok->indstack[tok->indent] */ {
                 /* Dedent -- any number, must be consistent */
                 while (tok->indent > 0 &&
                     col < tok->indstack[tok->indent]) {
