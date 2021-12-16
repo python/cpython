@@ -1331,7 +1331,7 @@ are always available.  They are listed here in alphabetical order.
    returns ``8364``.  This is the inverse of :func:`chr`.
 
 
-.. function:: (base, exp, mod=None)
+.. function:: pow(base, exp, mod=None)
 
    Return *base* to the power *exp*; if *mod* is present, return *base* to the
    power *exp*, modulo *mod* (computed more efficiently than
