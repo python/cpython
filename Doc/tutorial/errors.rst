@@ -496,3 +496,124 @@ used in a way that ensures they are always cleaned up promptly and correctly. ::
 After the statement is executed, the file *f* is always closed, even if a
 problem was encountered while processing the lines. Objects which, like files,
 provide predefined clean-up actions will indicate this in their documentation.
+
+
+.. _tut-exception-groups:
+
+Raising and Handling Multiple Unrelated Exceptions
+==================================================
+
+There are situations where it is necessary to report several exceptions that
+have occurred. This it often the case in concurrency frameworks, when several
+tasks may have failed in parallel, but there are also other use cases where
+it is desirable to continue execution and collect multiple errors rather than
+raise the first exception.
+
+The builtin :exc:`ExceptionGroup` wraps a list of exceptions so that they can
+be raised together. It is an exception itself, so it can be caught like any
+other exception. ::
+
+   >>> def f():
+   ...     excs = [OSError('error 1'), SystemError('error 2')]
+   ...     raise ExceptionGroup('there were problems', excs)
+   ...
+   >>> f()
+     + Exception Group Traceback (most recent call last):
+     |   File "<stdin>", line 1, in <module>
+     |   File "<stdin>", line 3, in f
+     | ExceptionGroup: there were problems
+     +-+---------------- 1 ----------------
+       | OSError: error 1
+       +---------------- 2 ----------------
+       | SystemError: error 2
+       +------------------------------------
+   >>> try:
+   ...     f()
+   ... except Exception as e:
+   ...     print(f'caught {type(e)}: e')
+   ...
+   caught <class 'ExceptionGroup'>: e
+   >>>
+
+By using ``except*`` instead of ``except``, we can selectively
+handle only the exceptions in the group that match a certain
+type. In the following example, which shows a nested exception
+group, each ``except*`` clause extracts from the group exceptions
+of a certain type while letting all other exceptions propagate to
+other clauses and eventually to be reraised. ::
+
+   >>> def f():
+   ...     raise ExceptionGroup("group1",
+   ...                          [OSError(1),
+   ...                           SystemError(2),
+   ...                           ExceptionGroup("group2",
+   ...                                          [OSError(3), RecursionError(4)])])
+   ...
+   >>> try:
+   ...     f()
+   ... except* OSError as e:
+   ...     print("There were OSErrors")
+   ... except* SystemError as e:
+   ...     print("There were SystemErrors")
+   ...
+   There were OSErrors
+   There were SystemErrors
+     + Exception Group Traceback (most recent call last):
+     |   File "<stdin>", line 2, in <module>
+     |   File "<stdin>", line 2, in f
+     | ExceptionGroup: group1
+     +-+---------------- 1 ----------------
+       | ExceptionGroup: group2
+       +-+---------------- 1 ----------------
+         | RecursionError: 4
+         +------------------------------------
+
+
+Enriching Exceptions with Notes
+===============================
+
+When an exception is created in order to be raised, it is usually initialized
+with information that describes the error that has occurred. There are cases
+where it is useful to add information after the exception was caught. For this
+purpose, exceptions have a mutable field ``__note__`` that can be assigned to
+a string which is included in formatted tracebacks.
+
+For example, when collecting exceptions into an exception group, we may want
+to add context information for the individual errors. In the following each
+exception in the group has a note indicating when this error has occurred. ::
+
+   >>> def f():
+   ...     raise OSError('operation failed')
+   ...
+   >>> excs = []
+   >>> for i in range(3):
+   ...     try:
+   ...         f()
+   ...     except Exception as e:
+   ...         e.__note__ = f'Happened in Iteration {i+1}'
+   ...         excs.append(e)
+   ...
+   >>> raise ExceptionGroup('We have some problems', excs)
+     + Exception Group Traceback (most recent call last):
+     |   File "<stdin>", line 1, in <module>
+     | ExceptionGroup: We have some problems
+     +-+---------------- 1 ----------------
+       | Traceback (most recent call last):
+       |   File "<stdin>", line 3, in <module>
+       |   File "<stdin>", line 2, in f
+       | OSError: operation failed
+       | Happened in Iteration 1
+       +---------------- 2 ----------------
+       | Traceback (most recent call last):
+       |   File "<stdin>", line 3, in <module>
+       |   File "<stdin>", line 2, in f
+       | OSError: operation failed
+       | Happened in Iteration 2
+       +---------------- 3 ----------------
+       | Traceback (most recent call last):
+       |   File "<stdin>", line 3, in <module>
+       |   File "<stdin>", line 2, in f
+       | OSError: operation failed
+       | Happened in Iteration 3
+       +------------------------------------
+   >>>

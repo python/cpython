@@ -851,6 +851,63 @@ The following exceptions are used as warning categories; see the
    .. versionadded:: 3.2
 
 
+Exception groups
+----------------
+
+The following are used when it is necessary to raise multiple unrelated
+exceptions. They are part of the exception hierarcy so they can be
+handled with :keyword:`except` like all other exceptions. In addition,
+they are recognised by :keyword:`except*!except_star`, which matches
+their subgroups based on the types of the contained exceptions.
+
+.. exception:: ExceptionGroup(msg, excs)
+.. exception:: BaseExceptionGroup(msg, excs)
+
+   Both of these exception types wrap the exceptions in the sequence ``excs``.
+   The ``msg`` parameter must be a string. The difference between the two
+   classes is that :exc:`BaseExceptionGroup` extends :exc:`BaseException` and
+   it can wrap any exception, while :exc:`ExceptionGroup` extends :exc:`Exception`
+   and it can wrap only subclasses of :exc:`Exception`. This is so that
+   ``except Exception`` catches an :exc:`ExceptionGroup` but not
+   :exc:`BaseExceptionGroup`.
+
+   It is usaully not necessary for a program to explicitly create a
+   :exc:`BaseExceptionGroup`, because the :exc:`ExceptionGroup` constructor
+   inspects the contained exceptions, and if any of them are not of type
+   :exc:`Exception` it returns a :exc:`BaseExceptionGroup` rather than an
+   :exc:`ExceptionGroup`.  However, this is not automatically true for
+   subclasses of :exc:`ExceptionGroup`.
+
+   .. method:: subgroup(condition)
+
+   Returns an exception group that contains only the exceptions from the
+   current group that match *condition*, or ``None`` if the result is empty.
+
+   The condition can be either a function that accepts an exception and returns
+   true for those that should be in the subgroup, or it can be an exception type
+   or a tuple of exception types, which is used to check for a match using the
+   same check that is used in an ``except`` clause.
+
+   The nesting structure of the current exception is preserved in the result,
+   as are the values of its ``msg``, ``__traceback__``, ``__cause__``,
+   ``__context__`` and ``__note__`` fields. Empty nested groups are omitted
+   from the result.
+
+   .. method:: split(condition)
+
+   Like :meth:`subgroup`, but returns the pair ``(match, rest)`` where ``match``
+   is ``subgroup(condition)`` and ``rest`` is ``subgroup(not condition)``.
+
+   .. method:: derive(excs)
+
+   Returns an exception group with the same ``msg``, ``__traceback__``,
+   ``__cause__``, ``__context__`` and ``__note__`` but which wraps the
+   exceptions in ``excs``. This method is used by :meth:`subgroup` and
+   :meth:`split` and may need to be overridden in subclasses if there are
+   additional values that need to be copied over to the result.
+
+   .. versionadded:: 3.11
+
 
 Exception hierarchy
 -------------------
