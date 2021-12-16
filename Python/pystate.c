@@ -799,7 +799,7 @@ init_threadstate(PyThreadState *tstate,
 
     tstate->exc_info = &tstate->_exc_state;
 
-    tstate->cframe = &tstate->root_cframe;
+    tstate->cframe = &tstate->_root_cframe;
     tstate->datastack_chunk = NULL;
     tstate->datastack_top = NULL;
     tstate->datastack_limit = NULL;

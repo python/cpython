@@ -177,7 +177,6 @@ struct _ts {
     /* Unique thread state id. */
     uint64_t id;
 
-    CFrame root_cframe;
     PyTraceInfo trace_info;
 
     _PyStackChunk *datastack_chunk;
@@ -196,7 +195,9 @@ struct _ts {
     /* The thread's exception stack entry.  (Always the last entry.) */
     _PyErr_StackItem _exc_state;
 
-    // XXX Move root_cframe down here.
+    /* The bottom-most frame on the stack. */
+    CFrame _root_cframe;
+
     // XXX Allocate the initial datastack_chunk here..
 };
 
