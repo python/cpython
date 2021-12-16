@@ -62,8 +62,8 @@ Notes:
    requires the :program:`compress` program. Notice that this format is now
    pending for deprecation and will be removed in the future versions of Python.
 (5)
-  Those have been deprecated by `Pep 527 <https://www.python.org/dev/peps/pep-0527/>`_,
-  and PyPI only accepts ``.zip`` and ``.tar.gz`` file.
+  deprecated by `PEP 527 <https://www.python.org/dev/peps/pep-0527/>`_;
+  `PyPI <https://pypi.org>`_ only accepts ``.zip`` and ``.tar.gz`` files.
 
 When using any ``tar`` format (``gztar``, ``bztar``, ``xztar``, ``ztar`` or
 ``tar``), under Unix you can specify the ``owner`` and ``group`` names
