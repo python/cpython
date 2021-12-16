@@ -2918,7 +2918,8 @@ class TestSlots(unittest.TestCase):
         with self.assertRaises(FrozenInstanceError):
             p.x = 2
 
-        with self.assertRaises(AttributeError) as ex:
+        regex = 'object has no attribute'
+        with self.assertRaisesRegex(AttributeError, regex) as ex:
             p.z = 5
         type_of_caught_exception = type(ex.exception)
 
