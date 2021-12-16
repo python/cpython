@@ -271,26 +271,15 @@ int _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins, _Py_CODEUNI
 int _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
 int _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache);
 int _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *instr);
-int _Py_Specialize_CallFunction(PyObject *callable, _Py_CODEUNIT *instr, int nargs, SpecializedCacheEntry *cache, PyObject *builtins);
+int _Py_Specialize_CallNoKw(PyObject *callable, _Py_CODEUNIT *instr, int nargs, SpecializedCacheEntry *cache, PyObject *builtins);
 void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                              SpecializedCacheEntry *cache);
 void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache);
 
-#define PRINT_SPECIALIZATION_STATS 0
-#define PRINT_SPECIALIZATION_STATS_DETAILED 0
-#define PRINT_SPECIALIZATION_STATS_TO_FILE 0
 
-#ifdef Py_DEBUG
-#define COLLECT_SPECIALIZATION_STATS 1
-#define COLLECT_SPECIALIZATION_STATS_DETAILED 1
-#else
-#define COLLECT_SPECIALIZATION_STATS PRINT_SPECIALIZATION_STATS
-#define COLLECT_SPECIALIZATION_STATS_DETAILED PRINT_SPECIALIZATION_STATS_DETAILED
-#endif
+#ifdef Py_STATS
 
-#define SPECIALIZATION_FAILURE_KINDS 20
-
-#if COLLECT_SPECIALIZATION_STATS
+#define SPECIALIZATION_FAILURE_KINDS 30
 
 typedef struct _stats {
     uint64_t specialization_success;
@@ -300,15 +289,13 @@ typedef struct _stats {
     uint64_t miss;
     uint64_t deopt;
     uint64_t unquickened;
-#if COLLECT_SPECIALIZATION_STATS_DETAILED
     uint64_t specialization_failure_kinds[SPECIALIZATION_FAILURE_KINDS];
-#endif
 } SpecializationStats;
 
 extern SpecializationStats _specialization_stats[256];
 #define STAT_INC(opname, name) _specialization_stats[opname].name++
 #define STAT_DEC(opname, name) _specialization_stats[opname].name--
-void _Py_PrintSpecializationStats(void);
+void _Py_PrintSpecializationStats(int to_file);
 
 PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 
