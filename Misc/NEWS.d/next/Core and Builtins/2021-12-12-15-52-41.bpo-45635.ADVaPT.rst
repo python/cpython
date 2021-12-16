@@ -1,0 +1,1 @@
+The code called from :c:func:`_PyErr_Display` was refactored to improve error handling. It now exits immediately upon an unrecoverable error.
