@@ -15,10 +15,9 @@ import posixpath
 import collections
 
 from . import _adapters, _meta
-from ._meta import PackageMetadata
 from ._collections import FreezableDefaultDict, Pair
 from ._functools import method_cache
-from ._itertools import unique_everseen
+from ._itertools import always_iterable, unique_everseen
 from ._meta import PackageMetadata, SimplePath
 
 from contextlib import suppress
@@ -121,8 +120,33 @@ class Sectioned:
         return line and not line.startswith('#')
 
 
-class EntryPoint(
-        collections.namedtuple('EntryPointBase', 'name value group')):
+class DeprecatedTuple:
+    """
+    Provide subscript item access for backward compatibility.
+
+    >>> recwarn = getfixture('recwarn')
+    >>> ep = EntryPoint(name='name', value='value', group='group')
+    >>> ep[:]
+    ('name', 'value', 'group')
+    >>> ep[0]
+    'name'
+    >>> len(recwarn)
+    1
+    """
+
+    _warn = functools.partial(
+        warnings.warn,
+        "EntryPoint tuple interface is deprecated. Access members by name.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
+    def __getitem__(self, item):
+        self._warn()
+        return self._key()[item]
+
+
+class EntryPoint(DeprecatedTuple):
     """An entry point as defined by Python packaging conventions.
 
     See `the packaging docs on entry points
@@ -153,6 +177,9 @@ class EntryPoint(
 
     dist: Optional['Distribution'] = None
 
+    def __init__(self, name, value, group):
+        vars(self).update(name=name, value=value, group=group)
+
     def load(self):
         """Load the entry point from its definition. If only a module
         is indicated by the value, return that module. Otherwise,
@@ -179,7 +206,7 @@ class EntryPoint(
         return list(re.finditer(r'\w+', match.group('extras') or ''))
 
     def _for(self, dist):
-        self.dist = dist
+        vars(self).update(dist=dist)
         return self
 
     def __iter__(self):
@@ -193,15 +220,30 @@ class EntryPoint(
         warnings.warn(msg, DeprecationWarning)
         return iter((self.name, self))
 
-    def __reduce__(self):
-        return (
-            self.__class__,
-            (self.name, self.value, self.group),
-        )
-
     def matches(self, **params):
         attrs = (getattr(self, param) for param in params)
         return all(map(operator.eq, params.values(), attrs))
+
+    def _key(self):
+        return self.name, self.value, self.group
+
+    def __lt__(self, other):
+        return self._key() < other._key()
+
+    def __eq__(self, other):
+        return self._key() == other._key()
+
+    def __setattr__(self, name, value):
+        raise AttributeError("EntryPoint objects are immutable.")
+
+    def __repr__(self):
+        return (
+            f'EntryPoint(name={self.name!r}, value={self.value!r}, '
+            f'group={self.group!r})'
+        )
+
+    def __hash__(self):
+        return hash(self._key())
 
 
 class DeprecatedList(list):
@@ -333,7 +375,7 @@ class EntryPoints(DeprecatedList):
         """
         Return the set of all names of all entry points.
         """
-        return set(ep.name for ep in self)
+        return {ep.name for ep in self}
 
     @property
     def groups(self):
@@ -344,21 +386,17 @@ class EntryPoints(DeprecatedList):
         >>> EntryPoints().groups
         set()
         """
-        return set(ep.group for ep in self)
+        return {ep.group for ep in self}
 
     @classmethod
     def _from_text_for(cls, text, dist):
         return cls(ep._for(dist) for ep in cls._from_text(text))
 
-    @classmethod
-    def _from_text(cls, text):
-        return itertools.starmap(EntryPoint, cls._parse_groups(text or ''))
-
     @staticmethod
-    def _parse_groups(text):
+    def _from_text(text):
         return (
-            (item.value.name, item.value.value, item.name)
-            for item in Sectioned.section_pairs(text)
+            EntryPoint(name=item.value.name, value=item.value.value, group=item.name)
+            for item in Sectioned.section_pairs(text or '')
         )
 
 
@@ -1002,6 +1040,18 @@ def packages_distributions() -> Mapping[str, List[str]]:
     """
     pkg_to_dist = collections.defaultdict(list)
     for dist in distributions():
-        for pkg in (dist.read_text('top_level.txt') or '').split():
+        for pkg in _top_level_declared(dist) or _top_level_inferred(dist):
             pkg_to_dist[pkg].append(dist.metadata['Name'])
     return dict(pkg_to_dist)
+
+
+def _top_level_declared(dist):
+    return (dist.read_text('top_level.txt') or '').split()
+
+
+def _top_level_inferred(dist):
+    return {
+        f.parts[0] if len(f.parts) > 1 else f.with_suffix('').name
+        for f in always_iterable(dist.files)
+        if f.suffix == ".py"
+    }
