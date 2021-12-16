@@ -349,8 +349,8 @@ PyEval_InitThreads(void)
 void
 _PyEval_Fini(void)
 {
-#if PRINT_SPECIALIZATION_STATS
-    _Py_PrintSpecializationStats();
+#ifdef Py_STATS
+    _Py_PrintSpecializationStats(1);
 #endif
 }
 
@@ -4755,6 +4755,41 @@ check_eval_breaker:
             frame = cframe.current_frame = new_frame;
             new_frame->depth = frame->depth + 1;
             goto start_frame;
+        }
+
+        TARGET(CALL_NO_KW_TYPE_1) {
+            assert(STACK_ADJUST_IS_RESET);
+            assert(GET_CACHE()->adaptive.original_oparg == 1);
+            PyObject *obj = TOP();
+            PyObject *callable = SECOND();
+            DEOPT_IF(callable != (PyObject *)&PyType_Type, CALL_NO_KW);
+            PyObject *res = Py_NewRef(Py_TYPE(obj));
+            STACK_SHRINK(1);
+            Py_DECREF(callable);
+            Py_DECREF(obj);
+            SET_TOP(res);
+            DISPATCH();
+        }
+
+        TARGET(CALL_NO_KW_BUILTIN_CLASS_1) {
+            assert(STACK_ADJUST_IS_RESET);
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            assert(cache0->original_oparg == 1);
+            PyObject *callable = SECOND();
+            PyObject *arg = TOP();
+            DEOPT_IF(!PyType_Check(callable), CALL_NO_KW);
+            PyTypeObject *tp = (PyTypeObject *)callable;
+            DEOPT_IF(tp->tp_version_tag != cache0->version, CALL_NO_KW);
+            STACK_SHRINK(1);
+            PyObject *res = tp->tp_vectorcall((PyObject *)tp, stack_pointer, 1, NULL);
+            SET_TOP(res);
+            Py_DECREF(tp);
+            Py_DECREF(arg);
+            if (res == NULL) {
+                goto error;
+            }
+            DISPATCH();
         }
 
         TARGET(CALL_NO_KW_BUILTIN_O) {
