@@ -35,6 +35,7 @@ extern "C" {
 #define _PyInterpreterState_INIT \
     { \
         ._static = 1, \
+        .id_refcount = -1, \
         ._initial_thread = _PyThreadState_INIT, \
     }
 

@@ -281,7 +281,6 @@ init_interpreter(PyInterpreterState *interp,
 
     assert(id > 0 || (id == 0 && interp == runtime->interpreters.main));
     interp->id = id;
-    interp->id_refcount = -1;
 
     assert(runtime->interpreters.head == interp);
     assert(next != NULL || (interp == runtime->interpreters.main));
