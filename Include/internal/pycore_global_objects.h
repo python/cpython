@@ -45,6 +45,8 @@ extern "C" {
     _PyRuntime.global_objects.NAME
 #define _Py_SINGLETON(NAME) \
     _Py_GLOBAL_OBJECT(singletons.NAME)
+#define _Py_CACHED_OBJECT(NAME) \
+    _Py_GLOBAL_OBJECT(cached.NAME)
 
 struct _Py_global_objects {
     struct {
@@ -66,6 +68,17 @@ struct _Py_global_objects {
             PyObject **array;
         } unicode_ids;
     } singletons;
+    struct {
+        /* This dictionary holds all interned unicode strings.  Note that references
+           to strings in this dictionary are *not* counted in the string's ob_refcnt.
+           When the interned string reaches a refcnt of 0 the string deallocation
+           function will delete the reference from this dictionary.
+
+           Another way to look at this is that to say that the actual reference
+           count of a string is:  s->ob_refcnt + (s->state ? 2 : 0)
+        */
+        PyObject *unicode_interned;
+    } cached;
 };
 
 #define _Py_global_objects_INIT { \
