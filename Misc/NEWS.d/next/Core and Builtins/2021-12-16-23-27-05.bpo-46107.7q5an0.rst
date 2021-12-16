@@ -1,1 +1,1 @@
-Fix bug where :meth:`ExceptionGroup.split` and :meth:`ExceptionGroup.split` do not copy the exception group's ``__note__`` field to the parts.
+Fix bug where :meth:`ExceptionGroup.split` and :meth:`ExceptionGroup.subgroup` do not copy the exception group's ``__note__`` field to the parts.
