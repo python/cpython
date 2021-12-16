@@ -857,7 +857,7 @@ Exception groups
 The following are used when it is necessary to raise multiple unrelated
 exceptions. They are part of the exception hierarcy so they can be
 handled with :keyword:`except` like all other exceptions. In addition,
-they are recognised by :keyword:`except*!except_star`, which matches
+they are recognised by :keyword:`except*<except_star>`, which matches
 their subgroups based on the types of the contained exceptions.
 
 .. exception:: ExceptionGroup(msg, excs)
