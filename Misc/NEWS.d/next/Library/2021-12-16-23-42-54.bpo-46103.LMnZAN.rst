@@ -1,0 +1,2 @@
+Fix :func:`inspect.getmembers` will call the instance __bases__ attribute
+which may cause exception. Patch by Weipeng Hong.
