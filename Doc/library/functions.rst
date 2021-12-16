@@ -1501,7 +1501,7 @@ are always available.  They are listed here in alphabetical order.
    arguments starting at ``0``).
 
 
-.. function:: (number, ndigits=None)
+.. function:: round(number, ndigits=None)
 
    Return *number* rounded to *ndigits* precision after the decimal
    point.  If *ndigits* is omitted or is ``None``, it returns the
