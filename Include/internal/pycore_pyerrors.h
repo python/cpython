@@ -24,9 +24,7 @@ static inline PyObject* _PyErr_Occurred(PyThreadState *tstate)
 
 static inline void _PyErr_ClearExcState(_PyErr_StackItem *exc_state)
 {
-    PyObject *v = exc_state->exc_value;
-    exc_state->exc_value = NULL;
-    Py_XDECREF(v);
+    Py_CLEAR(exc_state->exc_value);
 }
 
 PyAPI_FUNC(PyObject*) _PyErr_StackItemToExcInfoTuple(
