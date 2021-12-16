@@ -1213,9 +1213,12 @@ class _SubParsersAction(Action):
         # In case this subparser defines new defaults, we parse them
         # in a new namespace object and then update the original
         # namespace for the relevant parts.
+        defaults = {action.dest: action.default for action in parser._actions}
         subnamespace, arg_strings = parser.parse_known_args(arg_strings, None)
         for key, value in vars(subnamespace).items():
-            setattr(namespace, key, value)
+            current_value = getattr(namespace, key, None)
+            if current_value is None or value != defaults.get(key):
+                setattr(namespace, key, value)
 
         if arg_strings:
             vars(namespace).setdefault(_UNRECOGNIZED_ARGS_ATTR, [])

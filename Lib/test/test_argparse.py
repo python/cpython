@@ -2560,6 +2560,29 @@ class TestParentParsers(TestCase):
               -x X
         '''.format(progname, ' ' if progname else '' )))
 
+    def test_common_opts_with_defaults(self):
+        common_opts_parser = ErrorRaisingArgumentParser(add_help=False)
+        common_opts_parser.add_argument("--endpoint", choices=("prod", "dev"), default="prod")
+        common_opts_parser.add_argument("--comment")
+
+        parser = ErrorRaisingArgumentParser(parents=[common_opts_parser])
+        subparsers = parser.add_subparsers(required=True)
+        subcmd_cmd = subparsers.add_parser("subcmd", parents=[common_opts_parser])
+        subcmd_cmd.add_argument("--debug", action="store_true")
+
+        self.assertEqual(
+            parser.parse_known_args("--endpoint=dev subcmd".split()),
+            (NS(endpoint="dev", comment=None, debug=False), []),
+        )
+        self.assertEqual(
+            parser.parse_known_args("--comment=Hello subcmd --debug".split()),
+            (NS(endpoint="prod", comment="Hello", debug=True), []),
+        )
+        self.assertEqual(
+            parser.parse_known_args("--comment=Hello subcmd --comment=World".split()),
+            (NS(endpoint="prod", comment="World", debug=False), []),
+        )
+
 # ==============================
 # Mutually exclusive group tests
 # ==============================
