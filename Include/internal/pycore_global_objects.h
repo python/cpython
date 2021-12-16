@@ -54,6 +54,17 @@ struct _Py_global_objects {
          * -_PY_NSMALLNEGINTS (inclusive) to _PY_NSMALLPOSINTS (exclusive).
          */
         PyLongObject small_ints[_PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS];
+
+        /* Unicode identifiers (_Py_Identifier): see _PyUnicode_FromId() */
+        struct _Py_unicode_ids {
+            PyThread_type_lock lock;
+            // next_index value must be preserved when Py_Initialize()/Py_Finalize()
+            // is called multiple times: see _PyUnicode_FromId() implementation.
+            Py_ssize_t next_index;
+
+            Py_ssize_t size;
+            PyObject **array;
+        } unicode_ids;
     } singletons;
 };
 

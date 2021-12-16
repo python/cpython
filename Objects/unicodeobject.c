@@ -233,6 +233,8 @@ static int unicode_is_singleton(PyObject *unicode);
 #endif
 
 
+#define IDENTIFIERS _Py_SINGLETON(unicode_ids)
+
 static struct _Py_unicode_state*
 get_unicode_state(void)
 {
@@ -2331,30 +2333,25 @@ PyUnicode_FromString(const char *u)
 PyObject *
 _PyUnicode_FromId(_Py_Identifier *id)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_unicode_ids *ids = &interp->unicode.ids;
-
     Py_ssize_t index = _Py_atomic_size_get(&id->index);
     if (index < 0) {
-        struct _Py_unicode_runtime_ids *rt_ids = &interp->runtime->unicode_ids;
-
-        PyThread_acquire_lock(rt_ids->lock, WAIT_LOCK);
+        PyThread_acquire_lock(IDENTIFIERS.lock, WAIT_LOCK);
         // Check again to detect concurrent access. Another thread can have
         // initialized the index while this thread waited for the lock.
         index = _Py_atomic_size_get(&id->index);
         if (index < 0) {
-            assert(rt_ids->next_index < PY_SSIZE_T_MAX);
-            index = rt_ids->next_index;
-            rt_ids->next_index++;
+            assert(IDENTIFIERS.next_index < PY_SSIZE_T_MAX);
+            index = IDENTIFIERS.next_index;
+            IDENTIFIERS.next_index++;
             _Py_atomic_size_set(&id->index, index);
         }
-        PyThread_release_lock(rt_ids->lock);
+        PyThread_release_lock(IDENTIFIERS.lock);
     }
     assert(index >= 0);
 
     PyObject *obj;
-    if (index < ids->size) {
-        obj = ids->array[index];
+    if (index < IDENTIFIERS.size) {
+        obj = IDENTIFIERS.array[index];
         if (obj) {
             // Return a borrowed reference
             return obj;
@@ -2368,22 +2365,22 @@ _PyUnicode_FromId(_Py_Identifier *id)
     }
     PyUnicode_InternInPlace(&obj);
 
-    if (index >= ids->size) {
+    if (index >= IDENTIFIERS.size) {
         // Overallocate to reduce the number of realloc
         Py_ssize_t new_size = Py_MAX(index * 2, 16);
-        Py_ssize_t item_size = sizeof(ids->array[0]);
-        PyObject **new_array = PyMem_Realloc(ids->array, new_size * item_size);
+        Py_ssize_t item_size = sizeof(IDENTIFIERS.array[0]);
+        PyObject **new_array = PyMem_Realloc(IDENTIFIERS.array, new_size * item_size);
         if (new_array == NULL) {
             PyErr_NoMemory();
             return NULL;
         }
-        memset(&new_array[ids->size], 0, (new_size - ids->size) * item_size);
-        ids->array = new_array;
-        ids->size = new_size;
+        memset(&new_array[IDENTIFIERS.size], 0, (new_size - IDENTIFIERS.size) * item_size);
+        IDENTIFIERS.array = new_array;
+        IDENTIFIERS.size = new_size;
     }
 
     // The array stores a strong reference
-    ids->array[index] = obj;
+    IDENTIFIERS.array[index] = obj;
 
     // Return a borrowed reference
     return obj;
@@ -2391,15 +2388,14 @@ _PyUnicode_FromId(_Py_Identifier *id)
 
 
 static void
-unicode_clear_identifiers(struct _Py_unicode_state *state)
+unicode_clear_identifiers(void)
 {
-    struct _Py_unicode_ids *ids = &state->ids;
-    for (Py_ssize_t i=0; i < ids->size; i++) {
-        Py_XDECREF(ids->array[i]);
+    for (Py_ssize_t i=0; i < IDENTIFIERS.size; i++) {
+        Py_XDECREF(IDENTIFIERS.array[i]);
     }
-    ids->size = 0;
-    PyMem_Free(ids->array);
-    ids->array = NULL;
+    IDENTIFIERS.size = 0;
+    PyMem_Free(IDENTIFIERS.array);
+    IDENTIFIERS.array = NULL;
     // Don't reset _PyRuntime next_index: _Py_Identifier.id remains valid
     // after Py_Finalize().
 }
@@ -16095,7 +16091,7 @@ _PyUnicode_Fini(PyInterpreterState *interp)
 
     _PyUnicode_FiniEncodings(&state->fs_codec);
 
-    unicode_clear_identifiers(state);
+    unicode_clear_identifiers();
 
     for (Py_ssize_t i = 0; i < 256; i++) {
         Py_CLEAR(state->latin1[i]);

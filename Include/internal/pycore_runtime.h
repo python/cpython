@@ -116,8 +116,6 @@ typedef struct pyruntimestate {
     void *open_code_userdata;
     _Py_AuditHookEntry *audit_hook_head;
 
-    struct _Py_unicode_runtime_ids unicode_ids;
-
     struct _Py_global_objects global_objects;
     // If anything gets added after global_objects then
     // _PyRuntimeState_reset() needs to get updated to clear it.

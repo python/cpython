@@ -120,8 +120,9 @@ init_runtime(_PyRuntimeState *runtime,
     // Set it to the ID of the main thread of the main interpreter.
     runtime->main_thread = PyThread_get_thread_ident();
 
-    runtime->unicode_ids.next_index = unicode_next_index;
-    runtime->unicode_ids.lock = unicode_ids_mutex;
+    struct _Py_unicode_ids *ids = &runtime->global_objects.singletons.unicode_ids;
+    ids->next_index = unicode_next_index;
+    ids->lock = unicode_ids_mutex;
 
     runtime->_initialized = 1;
 }
@@ -137,7 +138,8 @@ _PyRuntimeState_Init(_PyRuntimeState *runtime)
     _Py_AuditHookEntry *audit_hook_head = runtime->audit_hook_head;
     // bpo-42882: Preserve next_index value if Py_Initialize()/Py_Finalize()
     // is called multiple times.
-    Py_ssize_t unicode_next_index = runtime->unicode_ids.next_index;
+    struct _Py_unicode_ids *ids = &runtime->global_objects.singletons.unicode_ids;
+    Py_ssize_t unicode_next_index = ids->next_index;
 
     PyThread_type_lock lock1, lock2, lock3;
     if (alloc_for_runtime(&lock1, &lock2, &lock3) != 0) {
@@ -164,7 +166,8 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
 
     FREE_LOCK(runtime->interpreters.mutex);
     FREE_LOCK(runtime->xidregistry.mutex);
-    FREE_LOCK(runtime->unicode_ids.lock);
+    struct _Py_unicode_ids *ids = &runtime->global_objects.singletons.unicode_ids;
+    FREE_LOCK(ids->lock);
 
 #undef FREE_LOCK
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
@@ -186,7 +189,8 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
 
     int reinit_interp = _PyThread_at_fork_reinit(&runtime->interpreters.mutex);
     int reinit_xidregistry = _PyThread_at_fork_reinit(&runtime->xidregistry.mutex);
-    int reinit_unicode_ids = _PyThread_at_fork_reinit(&runtime->unicode_ids.lock);
+    struct _Py_unicode_ids *ids = &runtime->global_objects.singletons.unicode_ids;
+    int reinit_unicode_ids = _PyThread_at_fork_reinit(&ids->lock);
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
