@@ -2952,8 +2952,8 @@ class TestSlots(unittest.TestCase):
         with self.assertRaises(FrozenInstanceError):
             n.x = 2
 
-        # This should pass without any exception being raised,
-        # since the subclass does not define __slots__ and is not frozen.
+        # This should pass without any exception being raised, since the
+        # subclass does not define __slots__ and is not frozen.
         n.z = 5
 
 class TestDescriptors(unittest.TestCase):
