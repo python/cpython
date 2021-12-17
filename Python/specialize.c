@@ -136,24 +136,37 @@ _Py_GetSpecializationStats(void) {
 #endif
 
 
-#define PRINT_STAT(name, field) fprintf(out, "    %s." #field " : %" PRIu64 "\n", name, stats->field);
+#define PRINT_STAT(i, field) \
+    if (stats[i].field) { \
+        fprintf(out, "    opcode[%d]." #field " : %" PRIu64 "\n", i, stats[i].field); \
+    }
 
 static void
-print_opcode_stats(FILE *out, OpcodeStats *stats, const char *name)
+print_spec_stats(FILE *out, OpcodeStats *stats)
 {
-    PRINT_STAT(name, specialization.success);
-    PRINT_STAT(name, specialization.failure);
-    PRINT_STAT(name, specialization.hit);
-    PRINT_STAT(name, specialization.deferred);
-    PRINT_STAT(name, specialization.miss);
-    PRINT_STAT(name, specialization.deopt);
-    fprintf(out, "    %s.count : %" PRIu64 "\n", name, stats->execution_count);
-    for (int i = 0; i < SPECIALIZATION_FAILURE_KINDS; i++) {
-        fprintf(out, "    %s.specialization.failure_kinds[%d] : %" PRIu64 "\n",
-            name, i, stats->specialization.failure_kinds[i]);
+    for (int i = 0; i < 256; i++) {
+        PRINT_STAT(i, specialization.success);
+        PRINT_STAT(i, specialization.failure);
+        PRINT_STAT(i, specialization.hit);
+        PRINT_STAT(i, specialization.deferred);
+        PRINT_STAT(i, specialization.miss);
+        PRINT_STAT(i, specialization.deopt);
+        PRINT_STAT(i, execution_count);
+        for (int j = 0; j < SPECIALIZATION_FAILURE_KINDS; j++) {
+            uint64_t val = stats[i].specialization.failure_kinds[j];
+            if (val) {
+                fprintf(out, "    opcode[%d].specialization.failure_kinds[%d] : %"
+                    PRIu64 "\n", i, j, val);
+            }
+        }
     }
 }
 #undef PRINT_STAT
+
+static void
+print_stats(FILE *out, PyStats *stats) {
+    print_spec_stats(out, stats->opcode_stats);
+}
 
 void
 _Py_PrintSpecializationStats(int to_file)
@@ -188,16 +201,7 @@ _Py_PrintSpecializationStats(int to_file)
     else {
         fprintf(out, "Specialization stats:\n");
     }
-    OpcodeStats *op_stats = _py_stats.opcode_stats;
-    print_opcode_stats(out, &op_stats[LOAD_ATTR], "load_attr");
-    print_opcode_stats(out, &op_stats[LOAD_GLOBAL], "load_global");
-    print_opcode_stats(out, &op_stats[LOAD_METHOD], "load_method");
-    print_opcode_stats(out, &op_stats[BINARY_SUBSCR], "binary_subscr");
-    print_opcode_stats(out, &op_stats[STORE_SUBSCR], "store_subscr");
-    print_opcode_stats(out, &op_stats[STORE_ATTR], "store_attr");
-    print_opcode_stats(out, &op_stats[CALL_NO_KW], "call_no_kw");
-    print_opcode_stats(out, &op_stats[BINARY_OP], "binary_op");
-    print_opcode_stats(out, &op_stats[COMPARE_OP], "compare_op");
+    print_stats(out, &_py_stats);
     if (out != stderr) {
         fclose(out);
     }
