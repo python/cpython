@@ -1789,9 +1789,9 @@ expression support in the :mod:`re` module).
       >>> from keyword import iskeyword
 
       >>> 'hello'.isidentifier(), iskeyword('hello')
-      True, False
+      (True, False)
       >>> 'def'.isidentifier(), iskeyword('def')
-      True, True
+      (True, True)
 
 
 .. method:: str.islower()
