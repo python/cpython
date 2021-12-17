@@ -867,11 +867,11 @@ their subgroups based on the types of the contained exceptions.
    The ``msg`` parameter must be a string. The difference between the two
    classes is that :exc:`BaseExceptionGroup` extends :exc:`BaseException` and
    it can wrap any exception, while :exc:`ExceptionGroup` extends :exc:`Exception`
-   and it can wrap only subclasses of :exc:`Exception`. This design is so that
+   and it can only wrap subclasses of :exc:`Exception`. This design is so that
    ``except Exception`` catches an :exc:`ExceptionGroup` but not
    :exc:`BaseExceptionGroup`.
 
-   It is usaully not necessary for a program to explicitly create a
+   It is usually not necessary for a program to explicitly create a
    :exc:`BaseExceptionGroup`, because the :exc:`ExceptionGroup` constructor
    inspects the contained exceptions, and if any of them are not of type
    :exc:`Exception` it returns a :exc:`BaseExceptionGroup` rather than an
