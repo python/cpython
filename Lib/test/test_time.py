@@ -120,7 +120,7 @@ class TimeTestCase(unittest.TestCase):
         if platform.system() == "AIX" and (sys.maxsize.bit_length() <= 32):
             self.assertEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
         # Solaris returns CLOCK_THREAD_CPUTIME_ID when current thread is given
-        if sys.platform.startswith("sunos"):
+        elif sys.platform.startswith("sunos"):
             self.assertEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
         else:
             self.assertNotEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
