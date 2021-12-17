@@ -432,7 +432,7 @@ value of type :data:`Any` and assign it to any variable::
    a = []          # OK
    a = 2           # OK
 
-   s = ''          # the type-checker infers the type of s is str
+   s = ''          # Inferred type of s is str
    s = a           # OK
 
    def foo(item: Any) -> int:
@@ -1780,9 +1780,9 @@ Asynchronous programming
 
       from collections.abc import Coroutine
       c: Coroutine[list[str], str, int]  # Some coroutine defined elsewhere
-      x = c.send('hi')                   # the type-checker infers the type of x is list[str]
+      x = c.send('hi')                   # Inferred type of x is list[str]
       async def bar() -> None:
-          y = await c                    # the type-checker infers the type of y is int
+          y = await c                    # Inferred type of y is int
 
    .. versionadded:: 3.5.3
 
