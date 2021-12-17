@@ -3308,7 +3308,7 @@ compiler_try_star_finally(struct compiler *c, stmt_ty s)
    []                           POP_BLOCK
    []                           JUMP_FORWARD    L0
 
-   [exc]                        L1:     <evaluate E1>           )
+   [exc]                L1:     <evaluate E1>           )
    [exc, E1]                    JUMP_IF_NOT_EXC_MATCH L2        ) only if E1
    [exc]                        <assign to V1>  (or POP if no V1)
    []                           <code for S1>
