@@ -1780,7 +1780,7 @@ Asynchronous programming
 
       from collections.abc import Coroutine
       c: Coroutine[list[str], str, int]  # Some coroutine defined elsewhere
-      x = c.send('hi')                   # Inferred type of x is list[str]
+      x = c.send('hi')                   # Inferred type of 'x' is list[str]
       async def bar() -> None:
           y = await c                    # Inferred type of y is int
 
