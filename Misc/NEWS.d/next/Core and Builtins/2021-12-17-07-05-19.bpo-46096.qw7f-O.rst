@@ -1,0 +1,2 @@
+Add support for PyObject interface for setting and deleting of the global variables in local scope.
+Add support for PyObject interface for getting global variables in local scope in a debugger.
