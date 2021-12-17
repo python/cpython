@@ -184,6 +184,7 @@ struct _ts {
     struct {
         // XXX Move exc_state and root_cframe down here.
         // XXX Allocate the initial datastack_chunk here..
+        bool _dummy;  // We'll remove this as soon as we pre-allocated something.
     } _preallocated;
 };
 
