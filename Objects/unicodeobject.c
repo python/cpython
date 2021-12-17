@@ -2388,8 +2388,11 @@ _PyUnicode_FromId(_Py_Identifier *id)
 
 
 static void
-unicode_clear_identifiers(void)
+unicode_clear_identifiers(PyInterpreterState *interp)
 {
+    if (!_Py_IsMainInterpreter(interp)) {
+        return;
+    }
     for (Py_ssize_t i=0; i < IDENTIFIERS.size; i++) {
         Py_XDECREF(IDENTIFIERS.array[i]);
     }
@@ -15653,6 +15656,9 @@ PyUnicode_InternFromString(const char *cp)
 void
 _PyUnicode_ClearInterned(PyInterpreterState *interp)
 {
+    if (!_Py_IsMainInterpreter(interp)) {
+        return;
+    }
     if (INTERNED == NULL) {
         return;
     }
@@ -16088,7 +16094,7 @@ _PyUnicode_Fini(PyInterpreterState *interp)
 
     _PyUnicode_FiniEncodings(&state->fs_codec);
 
-    unicode_clear_identifiers();
+    unicode_clear_identifiers(interp);
 
     for (Py_ssize_t i = 0; i < 256; i++) {
         Py_CLEAR(state->latin1[i]);
