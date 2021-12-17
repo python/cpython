@@ -1463,7 +1463,7 @@ Strings are immutable
 written in a variety of ways:
 
 * Single quotes: ``'allows embedded "double" quotes'``
-* Double quotes: ``"allows embedded 'single' quotes"``.
+* Double quotes: ``"allows embedded 'single' quotes"``
 * Triple quoted: ``'''Three single quotes'''``, ``"""Three double quotes"""``
 
 Triple quoted strings may span multiple lines - all associated whitespace will
@@ -2471,7 +2471,7 @@ data and are closely related to string objects in a variety of other ways.
    literals, except that a ``b`` prefix is added:
 
    * Single quotes: ``b'still allows embedded "double" quotes'``
-   * Double quotes: ``b"still allows embedded 'single' quotes"``.
+   * Double quotes: ``b"still allows embedded 'single' quotes"``
    * Triple quoted: ``b'''3 single quotes'''``, ``b"""3 double quotes"""``
 
    Only ASCII characters are permitted in bytes literals (regardless of the
