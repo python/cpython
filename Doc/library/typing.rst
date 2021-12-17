@@ -1782,7 +1782,7 @@ Asynchronous programming
       c: Coroutine[list[str], str, int]  # Some coroutine defined elsewhere
       x = c.send('hi')                   # Inferred type of 'x' is list[str]
       async def bar() -> None:
-          y = await c                    # Inferred type of y is int
+          y = await c                    # Inferred type of 'y' is int
 
    .. versionadded:: 3.5.3
 
