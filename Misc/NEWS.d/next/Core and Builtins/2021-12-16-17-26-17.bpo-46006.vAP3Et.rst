@@ -1,0 +1,3 @@
+Move the interned strings and Py_IDENTIFIER strings back to the
+process-global runtime state instead of the per-interpreter state (at least
+for now).
