@@ -230,7 +230,7 @@ getpath_isxfile(PyObject *Py_UNUSED(self), PyObject *args)
         DWORD attr = GetFileAttributesW(path);
         r = (attr != INVALID_FILE_ATTRIBUTES) &&
             !(attr & FILE_ATTRIBUTE_DIRECTORY) &&
-            SUCCEEDED(PathCchFindExtension(path, cchPath, &ext)) &&
+            SUCCEEDED(PathCchFindExtension(path, cchPath + 1, &ext)) &&
             (CompareStringOrdinal(ext, -1, L".exe", -1, 1 /* ignore case */) == CSTR_EQUAL)
             ? Py_True : Py_False;
 #else
@@ -755,10 +755,9 @@ library_to_dict(PyObject *dict, const char *key)
         return winmodule_to_dict(dict, key, PyWin_DLLhModule);
     }
 #elif defined(WITH_NEXT_FRAMEWORK)
-    static const char modPath[MAXPATHLEN + 1];
+    static char modPath[MAXPATHLEN + 1];
     static int modPathInitialized = -1;
     if (modPathInitialized < 0) {
-        NSModule pythonModule;
         modPathInitialized = 0;
 
         /* On Mac OS X we have a special case if we're running from a framework.
@@ -766,12 +765,17 @@ library_to_dict(PyObject *dict, const char *key)
            which is in the framework, not relative to the executable, which may
            be outside of the framework. Except when we're in the build
            directory... */
-        pythonModule = NSModuleForSymbol(NSLookupAndBindSymbol("_Py_Initialize"));
-
-        /* Use dylib functions to find out where the framework was loaded from */
-        const char *path = NSLibraryNameForModule(pythonModule);
-        if (path) {
-            strncpy(modPath, path, MAXPATHLEN);
+        NSSymbol symbol = NSLookupAndBindSymbol("_Py_Initialize");
+        if (symbol != NULL) {
+            NSModule pythonModule = NSModuleForSymbol(symbol);
+            if (pythonModule != NULL) {
+                /* Use dylib functions to find out where the framework was loaded from */
+                const char *path = NSLibraryNameForModule(pythonModule);
+                if (path) {
+                    strncpy(modPath, path, MAXPATHLEN);
+                    modPathInitialized = 1;
+                }
+            }
         }
     }
     if (modPathInitialized > 0) {
@@ -783,7 +787,7 @@ library_to_dict(PyObject *dict, const char *key)
 
 
 PyObject *
-_Py_Get_Getpath_CodeObject()
+_Py_Get_Getpath_CodeObject(void)
 {
     return PyMarshal_ReadObjectFromString(
         (const char*)_Py_M__getpath, sizeof(_Py_M__getpath));

@@ -136,7 +136,7 @@
 #
 
 # needs -lffi and -ldl
-@MODULE__CTYPES_TRUE@_ctypes _ctypes/_ctypes.c _ctypes/callbacks.c _ctypes/callproc.c _ctypes/stgdict.c _ctypes/cfield.c
+#@MODULE__CTYPES_TRUE@_ctypes _ctypes/_ctypes.c _ctypes/callbacks.c _ctypes/callproc.c _ctypes/stgdict.c _ctypes/cfield.c
 
 # needs -lncurses, -lncursesw or -lcurses, sometimes -ltermcap
 #@MODULE__CURSES_TRUE@_curses _cursesmodule.c
