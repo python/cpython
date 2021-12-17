@@ -584,7 +584,7 @@ class WaitTests:
         done, not_done = futures.wait([future, future],
                             return_when=futures.ALL_COMPLETED)
         self.assertEqual({future}, done)
-        self.assertEqual({}, not_done)
+        self.assertEqual(set(), not_done)
 
 
     def test_first_completed(self):

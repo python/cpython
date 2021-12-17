@@ -444,7 +444,7 @@ Module Functions
 .. function:: wait(fs, timeout=None, return_when=ALL_COMPLETED)
 
    Wait for the :class:`Future` instances (possibly created by different
-   :class:`Executor` instances) given by *fs* to complete. Duplicate Futures
+   :class:`Executor` instances) given by *fs* to complete. Duplicate futures
    given to *fs* are removed and will be returned only once. Returns a named
    2-tuple of sets.  The first set, named ``done``, contains the futures that
    completed (finished or cancelled futures) before the wait completed.  The

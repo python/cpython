@@ -282,13 +282,13 @@ def wait(fs, timeout=None, return_when=ALL_COMPLETED):
         A named 2-tuple of sets. The first set, named 'done', contains the
         futures that completed (is finished or cancelled) before the wait
         completed. The second set, named 'not_done', contains uncompleted
-        futures. Duplicate Futures given to *fs* are removed and will be 
+        futures. Duplicate futures given to *fs* are removed and will be 
         returned only once.
     """
     fs = set(fs)
     with _AcquireFutures(fs):
         done = {f for f in fs
-                   if f._state in {CANCELLED_AND_NOTIFIED, FINISHED}}
+                   if f._state in [CANCELLED_AND_NOTIFIED, FINISHED]}
         not_done = fs - done
         if (return_when == FIRST_COMPLETED) and done:
             return DoneAndNotDoneFutures(done, not_done)
