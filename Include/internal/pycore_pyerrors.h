@@ -106,9 +106,6 @@ PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
 #define _Py_FatalRefcountError(message) _Py_FatalRefcountErrorFunc(__func__, message)
 
 
-/* number of items stored in the stack for each exception */
-#define PY_EXC_INFO_STACK_SIZE 1
-
 #ifdef __cplusplus
 }
 #endif

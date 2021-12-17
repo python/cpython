@@ -27,7 +27,6 @@
 #include "pycore_ast.h"           // _PyAST_GetDocString()
 #include "pycore_compile.h"       // _PyFuture_FromAST()
 #include "pycore_code.h"          // _PyCode_New()
-#include "pycore_pyerrors.h"      // PY_EXC_INFO_STACK_SIZE
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_symtable.h"      // PySTEntryObject
@@ -1049,9 +1048,9 @@ stack_effect(int opcode, int oparg, int jump)
         case POP_BLOCK:
             return 0;
         case POP_EXCEPT:
-            return -PY_EXC_INFO_STACK_SIZE;
+            return -1;
         case POP_EXCEPT_AND_RERAISE:
-            return -(1 + 2 * PY_EXC_INFO_STACK_SIZE);
+            return -3;
 
         case STORE_NAME:
             return -1;
@@ -1123,23 +1122,23 @@ stack_effect(int opcode, int oparg, int jump)
             /* 0 in the normal flow.
              * Restore the stack position and push 1 value before jumping to
              * the handler if an exception be raised. */
-            return jump ? PY_EXC_INFO_STACK_SIZE : 0;
+            return jump ? 1 : 0;
         case SETUP_CLEANUP:
             /* As SETUP_FINALLY, but pushes lasti as well */
-            return jump ? 1 + PY_EXC_INFO_STACK_SIZE : 0;
+            return jump ? 2 : 0;
         case SETUP_WITH:
             /* 0 in the normal flow.
              * Restore the stack position to the position before the result
              * of __(a)enter__ and push 2 values before jumping to the handler
              * if an exception be raised. */
-            return jump ? -1 + PY_EXC_INFO_STACK_SIZE + 1 : 0;
+            return jump ? 1 : 0;
 
         case PREP_RERAISE_STAR:
              return 0;
         case RERAISE:
-            return -PY_EXC_INFO_STACK_SIZE;
+            return -1;
         case PUSH_EXC_INFO:
-            return PY_EXC_INFO_STACK_SIZE;
+            return 1;
 
         case WITH_EXCEPT_START:
             return 1;
@@ -1200,7 +1199,7 @@ stack_effect(int opcode, int oparg, int jump)
         case GET_YIELD_FROM_ITER:
             return 0;
         case END_ASYNC_FOR:
-            return -(1 + PY_EXC_INFO_STACK_SIZE);
+            return -2;
         case FORMAT_VALUE:
             /* If there's a fmt_spec on the stack, we go from 2->1,
                else 1->1. */
@@ -5421,7 +5420,7 @@ compiler_with_except_finish(struct compiler *c, basicblock * cleanup) {
         return 0;
     ADDOP_JUMP(c, POP_JUMP_IF_TRUE, exit);
     NEXT_BLOCK(c);
-    ADDOP_I(c, RERAISE, 1 + PY_EXC_INFO_STACK_SIZE);
+    ADDOP_I(c, RERAISE, 2);
     compiler_use_next_block(c, cleanup);
     ADDOP(c, POP_EXCEPT_AND_RERAISE);
     compiler_use_next_block(c, exit);
@@ -5557,7 +5556,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     E:  WITH_EXCEPT_START (calls EXPR.__exit__)
         POP_JUMP_IF_TRUE T:
         RERAISE
-    T:  POP_TOP * PY_EXC_INFO_STACK_SIZE (remove exception from stack)
+    T:  POP_TOP (remove exception from stack)
         POP_EXCEPT
         POP_TOP
     EXIT:
@@ -7338,7 +7337,7 @@ assemble_emit_exception_table_entry(struct assembler *a, int start, int end, bas
     int size = end-start;
     assert(end > start);
     int target = handler->b_offset;
-    int depth = handler->b_startdepth - PY_EXC_INFO_STACK_SIZE;
+    int depth = handler->b_startdepth - 1;
     if (handler->b_preserve_lasti) {
         depth -= 1;
     }
