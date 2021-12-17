@@ -855,7 +855,7 @@ Exception groups
 ----------------
 
 The following are used when it is necessary to raise multiple unrelated
-exceptions. They are part of the exception hierarcy so they can be
+exceptions. They are part of the exception hierarchy so they can be
 handled with :keyword:`except` like all other exceptions. In addition,
 they are recognised by :keyword:`except*<except_star>`, which matches
 their subgroups based on the types of the contained exceptions.
@@ -867,7 +867,7 @@ their subgroups based on the types of the contained exceptions.
    The ``msg`` parameter must be a string. The difference between the two
    classes is that :exc:`BaseExceptionGroup` extends :exc:`BaseException` and
    it can wrap any exception, while :exc:`ExceptionGroup` extends :exc:`Exception`
-   and it can wrap only subclasses of :exc:`Exception`. This is so that
+   and it can wrap only subclasses of :exc:`Exception`. This design is so that
    ``except Exception`` catches an :exc:`ExceptionGroup` but not
    :exc:`BaseExceptionGroup`.
 
@@ -875,7 +875,7 @@ their subgroups based on the types of the contained exceptions.
    :exc:`BaseExceptionGroup`, because the :exc:`ExceptionGroup` constructor
    inspects the contained exceptions, and if any of them are not of type
    :exc:`Exception` it returns a :exc:`BaseExceptionGroup` rather than an
-   :exc:`ExceptionGroup`.  However, this is not automatically true for
+   :exc:`ExceptionGroup`.  However, this behavior is not automatically true for
    subclasses of :exc:`ExceptionGroup`.
 
    .. method:: subgroup(condition)

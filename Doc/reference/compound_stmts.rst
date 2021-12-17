@@ -330,7 +330,7 @@ when leaving an exception handler::
    (None, None, None)
 
 .. index::
-   keyword:: except_star
+   keyword: except_star
 
 The :keyword:`except*<except_star>` clause(s) are used for handling
 :exc:`ExceptionGroup`s. The exception type for matching is interpreted as in
