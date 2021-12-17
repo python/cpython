@@ -249,17 +249,17 @@ class PrettyPrinter:
                                     context, level)
         write('])')
 
-    dict_keys_view = type({}.keys())
-    _dispatch[dict_keys_view.__repr__] = _pprint_dict_view
+    _dict_keys_view = type({}.keys())
+    _dispatch[_dict_keys_view.__repr__] = _pprint_dict_view
 
-    dict_values_view = type({}.values())
-    _dispatch[dict_values_view.__repr__] = _pprint_dict_view
+    _dict_values_view = type({}.values())
+    _dispatch[_dict_values_view.__repr__] = _pprint_dict_view
 
     def _pprint_dict_items_view(self, object, stream, indent, allowance, context, level):
         self._pprint_dict_view(object, stream, indent, allowance, context, level, True)
 
-    dict_items_view = type({}.items())
-    _dispatch[dict_items_view.__repr__] = _pprint_dict_items_view
+    _dict_items_view = type({}.items())
+    _dispatch[_dict_items_view.__repr__] = _pprint_dict_items_view
 
     def _pprint_list(self, object, stream, indent, allowance, context, level):
         stream.write('[')
