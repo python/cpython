@@ -306,7 +306,6 @@ extern PyStats _py_stats;
 #define STAT_INC(opname, name) _py_stats.opcode_stats[opname].specialization.name++
 #define STAT_DEC(opname, name) _py_stats.opcode_stats[opname].specialization.name--
 #define OPCODE_EXE_INC(opname) _py_stats.opcode_stats[opname].execution_count++
-#define OPCODE_EXE_DEC(opname) _py_stats.opcode_stats[opname].execution_count--
 
 void _Py_PrintSpecializationStats(int to_file);
 
@@ -316,7 +315,6 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define STAT_INC(opname, name) ((void)0)
 #define STAT_DEC(opname, name) ((void)0)
 #define OPCODE_EXE_INC(opname) ((void)0)
-#define OPCODE_EXE_DEC(opname) ((void)0)
 #endif
 
 

@@ -11,7 +11,7 @@ else:
     DEFAULT_DIR = "/tmp/py_stats/"
 
 
-TOTAL = "deferred", "hit", "miss", "unquickened"
+TOTAL = "specialization.deferred", "specialization.hit", "specialization.miss", "count"
 
 def print_stats(name, family_stats):
     total = sum(family_stats[kind] for kind in TOTAL)
@@ -19,14 +19,21 @@ def print_stats(name, family_stats):
         return
     print(name+":")
     for key in sorted(family_stats):
-        if not key.startswith("specialization"):
-            print(f"{key:>12}:{family_stats[key]:>12} {100*family_stats[key]/total:0.1f}%")
-    for key in ("specialization_success",  "specialization_failure"):
-        print(f"  {key}:{family_stats[key]:>12}")
-    total_failures = family_stats["specialization_failure"]
+        if key.startswith("specialization.failure_kinds"):
+            continue
+        if key.startswith("specialization."):
+            label = key[len("specialization."):]
+        elif key == "count":
+            label = "unquickened"
+        if key not in ("specialization.success",  "specialization.failure"):
+            print(f"{label:>12}:{family_stats[key]:>12} {100*family_stats[key]/total:0.1f}%")
+    for key in ("specialization.success",  "specialization.failure"):
+        label = key[len("specialization."):]
+        print(f"  {label}:{family_stats[key]:>12}")
+    total_failures = family_stats["specialization.failure"]
     failure_kinds = [ 0 ] * 30
     for key in family_stats:
-        if not key.startswith("specialization_failure_kind"):
+        if not key.startswith("specialization.failure_kind"):
             continue
         _, index = key[:-1].split("[")
         index =  int(index)
@@ -42,7 +49,7 @@ def main():
         for line in open(os.path.join(DEFAULT_DIR, filename)):
             key, value = line.split(":")
             key = key.strip()
-            family, stat = key.split(".")
+            family, _, stat = key.partition(".")
             value = int(value.strip())
             stats[family][stat] += value
 

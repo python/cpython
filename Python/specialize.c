@@ -139,7 +139,7 @@ _Py_GetSpecializationStats(void) {
 #define PRINT_STAT(name, field) fprintf(out, "    %s." #field " : %" PRIu64 "\n", name, stats->field);
 
 static void
-print_stats(FILE *out, OpcodeStats *stats, const char *name)
+print_opcode_stats(FILE *out, OpcodeStats *stats, const char *name)
 {
     PRINT_STAT(name, specialization.success);
     PRINT_STAT(name, specialization.failure);
@@ -147,7 +147,7 @@ print_stats(FILE *out, OpcodeStats *stats, const char *name)
     PRINT_STAT(name, specialization.deferred);
     PRINT_STAT(name, specialization.miss);
     PRINT_STAT(name, specialization.deopt);
-    fprintf(out, "    %s.unquickened : %" PRIu64 "\n", name, stats->execution_count);
+    fprintf(out, "    %s.count : %" PRIu64 "\n", name, stats->execution_count);
     for (int i = 0; i < SPECIALIZATION_FAILURE_KINDS; i++) {
         fprintf(out, "    %s.specialization.failure_kinds[%d] : %" PRIu64 "\n",
             name, i, stats->specialization.failure_kinds[i]);
@@ -188,15 +188,16 @@ _Py_PrintSpecializationStats(int to_file)
     else {
         fprintf(out, "Specialization stats:\n");
     }
-    print_stats(out, &_py_stats.opcode_stats[LOAD_ATTR], "load_attr");
-    print_stats(out, &_py_stats.opcode_stats[LOAD_GLOBAL], "load_global");
-    print_stats(out, &_py_stats.opcode_stats[LOAD_METHOD], "load_method");
-    print_stats(out, &_py_stats.opcode_stats[BINARY_SUBSCR], "binary_subscr");
-    print_stats(out, &_py_stats.opcode_stats[STORE_SUBSCR], "store_subscr");
-    print_stats(out, &_py_stats.opcode_stats[STORE_ATTR], "store_attr");
-    print_stats(out, &_py_stats.opcode_stats[CALL_NO_KW], "call_no_kw");
-    print_stats(out, &_py_stats.opcode_stats[BINARY_OP], "binary_op");
-    print_stats(out, &_py_stats.opcode_stats[COMPARE_OP], "compare_op");
+    OpcodeStats *op_stats = _py_stats.opcode_stats;
+    print_opcode_stats(out, &op_stats[LOAD_ATTR], "load_attr");
+    print_opcode_stats(out, &op_stats[LOAD_GLOBAL], "load_global");
+    print_opcode_stats(out, &op_stats[LOAD_METHOD], "load_method");
+    print_opcode_stats(out, &op_stats[BINARY_SUBSCR], "binary_subscr");
+    print_opcode_stats(out, &op_stats[STORE_SUBSCR], "store_subscr");
+    print_opcode_stats(out, &op_stats[STORE_ATTR], "store_attr");
+    print_opcode_stats(out, &op_stats[CALL_NO_KW], "call_no_kw");
+    print_opcode_stats(out, &op_stats[BINARY_OP], "binary_op");
+    print_opcode_stats(out, &op_stats[COMPARE_OP], "compare_op");
     if (out != stderr) {
         fclose(out);
     }
