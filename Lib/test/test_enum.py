@@ -1,5 +1,4 @@
 import enum
-print(enum.__file__)
 import doctest
 import inspect
 import os
@@ -12,7 +11,7 @@ from collections import OrderedDict
 from datetime import date
 from enum import Enum, IntEnum, StrEnum, EnumType, Flag, IntFlag, unique, auto
 from enum import STRICT, CONFORM, EJECT, KEEP, _simple_enum, _test_simple_enum
-from enum import verify, UNIQUE, CONTINUOUS, NAMED_FLAGS
+from enum import verify, UNIQUE, CONTINUOUS, NAMED_FLAGS, ReprEnum
 from io import StringIO
 from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
@@ -190,7 +189,7 @@ class HeadlightsC(IntFlag, boundary=enum.CONFORM):
 
 # tests
 
-class _BasicTests:
+class _EnumTests:
     """
     Test for behavior that is the same across the different types of enumerations.
     """
@@ -206,11 +205,41 @@ class _BasicTests:
             first = auto()
             second = auto()
             third = auto()
-            if self.enum_type._member_type_ is str:
-                dupe = third
-            else:
+            if issubclass(self.enum_type, Flag):
                 dupe = 3
+            else:
+                dupe = third
         self.MainEnum = MainEnum
+        #
+        class NewStrEnum(self.enum_type):
+            def __str__(self):
+                return self.name.upper()
+            first = auto()
+        self.NewStrEnum = NewStrEnum
+        #
+        class NewFormatEnum(self.enum_type):
+            def __format__(self, spec):
+                return self.name.upper()
+            first = auto()
+        self.NewFormatEnum = NewFormatEnum
+        #
+        class NewStrFormatEnum(self.enum_type):
+            def __str__(self):
+                return self.name.title()
+            def __format__(self, spec):
+                return ''.join(reversed(self.name))
+            first = auto()
+        self.NewStrFormatEnum = NewStrFormatEnum
+        #
+        class NewBaseEnum(self.enum_type):
+            def __str__(self):
+                return self.name.title()
+            def __format__(self, spec):
+                return ''.join(reversed(self.name))
+        class NewSubEnum(NewBaseEnum):
+            first = auto()
+        self.NewSubEnum = NewSubEnum
+        #
         self.is_flag = False
         self.names = ['first', 'second', 'third']
         if issubclass(MainEnum, StrEnum):
@@ -224,6 +253,34 @@ class _BasicTests:
         else:
             self.values = self.values or [1, 2, 3]
         #
+        if not getattr(self, 'source_values', False):
+            self.source_values = self.values
+
+    def assertFormatIsValue(self, spec, member):
+        self.assertEqual(spec.format(member), spec.format(member.value))
+
+    def assertFormatIsStr(self, spec, member):
+        self.assertEqual(spec.format(member), spec.format(str(member)))
+
+    def test_attribute_deletion(self):
+        class Season(self.enum_type):
+            SPRING = auto()
+            SUMMER = auto()
+            AUTUMN = auto()
+            #
+            def spam(cls):
+                pass
+        #
+        self.assertTrue(hasattr(Season, 'spam'))
+        del Season.spam
+        self.assertFalse(hasattr(Season, 'spam'))
+        #
+        with self.assertRaises(AttributeError):
+            del Season.SPRING
+        with self.assertRaises(AttributeError):
+            del Season.DRY
+        with self.assertRaises(AttributeError):
+            del Season.SPRING.name
 
     def test_basics(self):
         TE = self.MainEnum
@@ -257,8 +314,257 @@ class _BasicTests:
             self.assertTrue(TE.dupe is TE('third') is TE['dupe'])
         elif TE._member_type_ is str:
             self.assertTrue(TE.dupe is TE('3') is TE['dupe'])
-        else:
+        elif issubclass(TE, Flag):
             self.assertTrue(TE.dupe is TE(3) is TE['dupe'])
+        else:
+            self.assertTrue(TE.dupe is TE(self.values[2]) is TE['dupe'])
+
+    def test_bool_is_true(self):
+        class Empty(self.enum_type):
+            pass
+        self.assertTrue(Empty)
+        #
+        self.assertTrue(self.MainEnum)
+        for member in self.MainEnum:
+            self.assertTrue(member)
+
+    def test_changing_member_fails(self):
+        MainEnum = self.MainEnum
+        with self.assertRaises(AttributeError):
+            self.MainEnum.second = 'really first'
+
+    @unittest.skipIf(
+            python_version >= (3, 12),
+            '__contains__ now returns True/False for all inputs',
+            )
+    def test_contains_er(self):
+        MainEnum = self.MainEnum
+        self.assertIn(MainEnum.third, MainEnum)
+        with self.assertRaises(TypeError):
+            with self.assertWarns(DeprecationWarning):
+                self.source_values[1] in MainEnum
+        with self.assertRaises(TypeError):
+            with self.assertWarns(DeprecationWarning):
+                'first' in MainEnum
+        val = MainEnum.dupe
+        self.assertIn(val, MainEnum)
+        #
+        class OtherEnum(Enum):
+            one = auto()
+            two = auto()
+        self.assertNotIn(OtherEnum.two, MainEnum)
+
+    @unittest.skipIf(
+            python_version < (3, 12),
+            '__contains__ works only with enum memmbers before 3.12',
+            )
+    def test_contains_tf(self):
+        MainEnum = self.MainEnum
+        self.assertIn(MainEnum.first, MainEnum)
+        self.assertTrue(self.source_values[0] in MainEnum)
+        self.assertFalse('first' in MainEnum)
+        val = MainEnum.dupe
+        self.assertIn(val, MainEnum)
+        #
+        class OtherEnum(Enum):
+            one = auto()
+            two = auto()
+        self.assertNotIn(OtherEnum.two, MainEnum)
+
+    def test_dir_on_class(self):
+        TE = self.MainEnum
+        self.assertEqual(set(dir(TE)), set(enum_dir(TE)))
+
+    def test_dir_on_item(self):
+        TE = self.MainEnum
+        self.assertEqual(set(dir(TE.first)), set(member_dir(TE.first)))
+
+    def test_dir_with_added_behavior(self):
+        class Test(self.enum_type):
+            this = auto()
+            these = auto()
+            def wowser(self):
+                return ("Wowser! I'm %s!" % self.name)
+        self.assertTrue('wowser' not in dir(Test))
+        self.assertTrue('wowser' in dir(Test.this))
+
+    def test_dir_on_sub_with_behavior_on_super(self):
+        # see issue22506
+        class SuperEnum(self.enum_type):
+            def invisible(self):
+                return "did you see me?"
+        class SubEnum(SuperEnum):
+            sample = auto()
+        self.assertTrue('invisible' not in dir(SubEnum))
+        self.assertTrue('invisible' in dir(SubEnum.sample))
+
+    def test_dir_on_sub_with_behavior_including_instance_dict_on_super(self):
+        # see issue40084
+        class SuperEnum(self.enum_type):
+            def __new__(cls, *value, **kwds):
+                new = self.enum_type._member_type_.__new__
+                if self.enum_type._member_type_ is object:
+                    obj = new(cls)
+                else:
+                    if isinstance(value[0], tuple):
+                        create_value ,= value[0]
+                    else:
+                        create_value = value
+                    obj = new(cls, *create_value)
+                obj._value_ = value[0] if len(value) == 1 else value
+                obj.description = 'test description'
+                return obj
+        class SubEnum(SuperEnum):
+            sample = self.source_values[1]
+        self.assertTrue('description' not in dir(SubEnum))
+        self.assertTrue('description' in dir(SubEnum.sample), dir(SubEnum.sample))
+
+    def test_enum_in_enum_out(self):
+        Main = self.MainEnum
+        self.assertIs(Main(Main.first), Main.first)
+
+    def test_hash(self):
+        MainEnum = self.MainEnum
+        mapping = {}
+        mapping[MainEnum.first] = '1225'
+        mapping[MainEnum.second] = '0315'
+        mapping[MainEnum.third] = '0704'
+        self.assertEqual(mapping[MainEnum.second], '0315')
+
+    def test_invalid_names(self):
+        with self.assertRaises(ValueError):
+            class Wrong(self.enum_type):
+                mro = 9
+        with self.assertRaises(ValueError):
+            class Wrong(self.enum_type):
+                _create_= 11
+        with self.assertRaises(ValueError):
+            class Wrong(self.enum_type):
+                _get_mixins_ = 9
+        with self.assertRaises(ValueError):
+            class Wrong(self.enum_type):
+                _find_new_ = 1
+        with self.assertRaises(ValueError):
+            class Wrong(self.enum_type):
+                _any_name_ = 9
+
+    def test_object_str_override(self):
+        "check that setting __str__ to object's is not reset to Enum's"
+        class Generic(self.enum_type):
+            item = self.source_values[2]
+            def __repr__(self):
+                return "%s.test" % (self._name_, )
+            __str__ = object.__str__
+        self.assertEqual(str(Generic.item), 'item.test')
+
+    def test_overridden_str(self):
+        NS = self.NewStrEnum
+        self.assertEqual(str(NS.first), NS.first.name.upper())
+        self.assertEqual(format(NS.first), NS.first.name.upper())
+
+    def test_overridden_str_format(self):
+        NSF = self.NewStrFormatEnum
+        self.assertEqual(str(NSF.first), NSF.first.name.title())
+        self.assertEqual(format(NSF.first), ''.join(reversed(NSF.first.name)))
+ 
+    def test_overridden_str_format_inherited(self):
+        NSE = self.NewSubEnum
+        self.assertEqual(str(NSE.first), NSE.first.name.title())
+        self.assertEqual(format(NSE.first), ''.join(reversed(NSE.first.name)))
+ 
+    def test_programmatic_function_string(self):
+        MinorEnum = self.enum_type('MinorEnum', 'june july august')
+        lst = list(MinorEnum)
+        self.assertEqual(len(lst), len(MinorEnum))
+        self.assertEqual(len(MinorEnum), 3, MinorEnum)
+        self.assertEqual(
+                [MinorEnum.june, MinorEnum.july, MinorEnum.august],
+                lst,
+                )
+        values = self.values
+        if self.enum_type is StrEnum:
+            values = ['june','july','august']
+        for month, av in zip('june july august'.split(), values):
+            e = MinorEnum[month]
+            self.assertEqual(e.value, av, list(MinorEnum))
+            self.assertEqual(e.name, month)
+            if MinorEnum._member_type_ is not object and issubclass(MinorEnum, MinorEnum._member_type_):
+                self.assertEqual(e, av)
+            else:
+                self.assertNotEqual(e, av)
+            self.assertIn(e, MinorEnum)
+            self.assertIs(type(e), MinorEnum)
+            self.assertIs(e, MinorEnum(av))
+
+    def test_programmatic_function_string_list(self):
+        MinorEnum = self.enum_type('MinorEnum', ['june', 'july', 'august'])
+        lst = list(MinorEnum)
+        self.assertEqual(len(lst), len(MinorEnum))
+        self.assertEqual(len(MinorEnum), 3, MinorEnum)
+        self.assertEqual(
+                [MinorEnum.june, MinorEnum.july, MinorEnum.august],
+                lst,
+                )
+        values = self.values
+        if self.enum_type is StrEnum:
+            values = ['june','july','august']
+        for month, av in zip('june july august'.split(), values):
+            e = MinorEnum[month]
+            self.assertEqual(e.value, av)
+            self.assertEqual(e.name, month)
+            if MinorEnum._member_type_ is not object and issubclass(MinorEnum, MinorEnum._member_type_):
+                self.assertEqual(e, av)
+            else:
+                self.assertNotEqual(e, av)
+            self.assertIn(e, MinorEnum)
+            self.assertIs(type(e), MinorEnum)
+            self.assertIs(e, MinorEnum(av))
+
+    def test_programmatic_function_iterable(self):
+        MinorEnum = self.enum_type(
+                'MinorEnum',
+                (('june', self.source_values[0]), ('july', self.source_values[1]), ('august', self.source_values[2]))
+                )
+        lst = list(MinorEnum)
+        self.assertEqual(len(lst), len(MinorEnum))
+        self.assertEqual(len(MinorEnum), 3, MinorEnum)
+        self.assertEqual(
+                [MinorEnum.june, MinorEnum.july, MinorEnum.august],
+                lst,
+                )
+        for month, av in zip('june july august'.split(), self.values):
+            e = MinorEnum[month]
+            self.assertEqual(e.value, av)
+            self.assertEqual(e.name, month)
+            if MinorEnum._member_type_ is not object and issubclass(MinorEnum, MinorEnum._member_type_):
+                self.assertEqual(e, av)
+            else:
+                self.assertNotEqual(e, av)
+            self.assertIn(e, MinorEnum)
+            self.assertIs(type(e), MinorEnum)
+            self.assertIs(e, MinorEnum(av))
+
+    def test_programmatic_function_from_dict(self):
+        MinorEnum = self.enum_type(
+                'MinorEnum',
+                OrderedDict((('june', self.source_values[0]), ('july', self.source_values[1]), ('august', self.source_values[2])))
+                )
+        lst = list(MinorEnum)
+        self.assertEqual(len(lst), len(MinorEnum))
+        self.assertEqual(len(MinorEnum), 3, MinorEnum)
+        self.assertEqual(
+                [MinorEnum.june, MinorEnum.july, MinorEnum.august],
+                lst,
+                )
+        for month, av in zip('june july august'.split(), self.values):
+            e = MinorEnum[month]
+            if MinorEnum._member_type_ is not object and issubclass(MinorEnum, MinorEnum._member_type_):
+                self.assertEqual(e, av)
+            else:
+                self.assertNotEqual(e, av)
+            self.assertIn(e, MinorEnum)
+            self.assertIs(type(e), MinorEnum)
+            self.assertIs(e, MinorEnum(av))
 
     def test_repr(self):
         TE = self.MainEnum
@@ -267,13 +573,39 @@ class _BasicTests:
             self.assertEqual(repr(self.dupe2), "<MainEnum.first|third: 5>")
         elif issubclass(TE, StrEnum):
             self.assertEqual(repr(TE.dupe), "<MainEnum.third: 'third'>")
-        elif TE._member_type_ is str:
-            self.assertEqual(repr(TE.dupe), "<MainEnum.third: '3'>")
         else:
-            self.assertEqual(repr(TE.dupe), "<MainEnum.third: 3>")
+            self.assertEqual(repr(TE.dupe), "<MainEnum.third: %r>" % (self.values[2], ), TE._value_repr_)
         for name, value, member in zip(self.names, self.values, TE, strict=True):
             self.assertEqual(repr(member), "<MainEnum.%s: %r>" % (member.name, member.value))
- 
+
+    def test_repr_override(self):
+        class Generic(self.enum_type):
+            first = auto()
+            second = auto()
+            third = auto()
+            def __repr__(self):
+                return "don't you just love shades of %s?" % self.name
+        self.assertEqual(
+                repr(Generic.third),
+                "don't you just love shades of third?",
+                )
+
+    def test_inherited_repr(self):
+        class MyEnum(self.enum_type):
+            def __repr__(self):
+                return "My name is %s." % self.name
+        class MySubEnum(MyEnum):
+            this = auto()
+            that = auto()
+            theother = auto()
+        self.assertEqual(repr(MySubEnum.that), "My name is that.")
+
+    def test_reversed_iteration_order(self):
+        self.assertEqual(
+                list(reversed(self.MainEnum)),
+                [self.MainEnum.third, self.MainEnum.second, self.MainEnum.first],
+                )
+
 class _PlainOutputTests:
 
     def test_str(self):
@@ -296,88 +628,179 @@ class _PlainOutputTests:
         for name, value, member in zip(self.names, self.values, TE, strict=True):
             self.assertEqual(format(member), "MainEnum.%s" % (member.name, ))
 
+    def test_overridden_format(self):
+        NF = self.NewFormatEnum
+        self.assertEqual(str(NF.first), "NewFormatEnum.first", '%s %r' % (NF.__str__, NF.first))
+        self.assertEqual(format(NF.first), "FIRST")
+
+    def test_format_specs(self):
+        TE = self.MainEnum
+        self.assertFormatIsStr('{}', TE.second)
+        self.assertFormatIsStr('{:}', TE.second)
+        self.assertFormatIsStr('{:20}', TE.second)
+        self.assertFormatIsStr('{:^20}', TE.second)
+        self.assertFormatIsStr('{:>20}', TE.second)
+        self.assertFormatIsStr('{:<20}', TE.second)
+        self.assertFormatIsStr('{:5.2}', TE.second)
+
+
 class _MixedOutputTests:
 
     def test_str(self):
         TE = self.MainEnum
-        self.assertEqual(str(TE.dupe), "MainEnum.third")
         if self.is_flag:
+            self.assertEqual(str(TE.dupe), "MainEnum.dupe")
             self.assertEqual(str(self.dupe2), "MainEnum.first|third")
+        else:
+            self.assertEqual(str(TE.dupe), "MainEnum.third")
         for name, value, member in zip(self.names, self.values, TE, strict=True):
             self.assertEqual(str(member), "MainEnum.%s" % (member.name, ))
 
     def test_format(self):
         TE = self.MainEnum
-        self.assertEqual(format(TE.dupe), "MainEnum.third")
         if self.is_flag:
+            self.assertEqual(format(TE.dupe), "MainEnum.dupe")
             self.assertEqual(format(self.dupe2), "MainEnum.first|third")
+        else:
+            self.assertEqual(format(TE.dupe), "MainEnum.third")
         for name, value, member in zip(self.names, self.values, TE, strict=True):
             self.assertEqual(format(member), "MainEnum.%s" % (member.name, ))
 
-class _StdlibOutputTests:
+    def test_overridden_format(self):
+        NF = self.NewFormatEnum
+        self.assertEqual(str(NF.first), "NewFormatEnum.first")
+        self.assertEqual(format(NF.first), "FIRST")
+
+    def test_format_specs(self):
+        TE = self.MainEnum
+        self.assertFormatIsStr('{}', TE.first)
+        self.assertFormatIsStr('{:}', TE.first)
+        self.assertFormatIsStr('{:20}', TE.first)
+        self.assertFormatIsStr('{:^20}', TE.first)
+        self.assertFormatIsStr('{:>20}', TE.first)
+        self.assertFormatIsStr('{:<20}', TE.first)
+        self.assertFormatIsStr('{:5.2}', TE.first)
+
+
+class _MinimalOutputTests:
 
     def test_str(self):
         TE = self.MainEnum
-        self.assertEqual(str(TE.dupe), "3")
         if self.is_flag:
+            self.assertEqual(str(TE.dupe), "3")
             self.assertEqual(str(self.dupe2), "5")
+        else:
+            self.assertEqual(str(TE.dupe), str(self.values[2]))
         for name, value, member in zip(self.names, self.values, TE, strict=True):
             self.assertEqual(str(member), str(value))
 
     def test_format(self):
         TE = self.MainEnum
-        self.assertEqual(format(TE.dupe), "3")
         if self.is_flag:
+            self.assertEqual(format(TE.dupe), "3")
             self.assertEqual(format(self.dupe2), "5")
+        else:
+            self.assertEqual(format(TE.dupe), format(self.values[2]))
         for name, value, member in zip(self.names, self.values, TE, strict=True):
             self.assertEqual(format(member), format(value))
 
+    def test_overridden_format(self):
+        NF = self.NewFormatEnum
+        self.assertEqual(str(NF.first), str(self.values[0]))
+        self.assertEqual(format(NF.first), "FIRST")
 
-class TestPlainEnum(_BasicTests, _PlainOutputTests, unittest.TestCase):
+    def test_format_specs(self):
+        TE = self.MainEnum
+        self.assertFormatIsValue('{}', TE.third)
+        self.assertFormatIsValue('{:}', TE.third)
+        self.assertFormatIsValue('{:20}', TE.third)
+        self.assertFormatIsValue('{:^20}', TE.third)
+        self.assertFormatIsValue('{:>20}', TE.third)
+        self.assertFormatIsValue('{:<20}', TE.third)
+        if TE._member_type_ is float:
+            self.assertFormatIsValue('{:n}', TE.third)
+            self.assertFormatIsValue('{:5.2}', TE.third)
+            self.assertFormatIsValue('{:f}', TE.third)
+
+
+class TestPlainEnum(_EnumTests, _PlainOutputTests, unittest.TestCase):
     enum_type = Enum
 
 
-class TestIntEnum(_BasicTests, _StdlibOutputTests, unittest.TestCase):
-    enum_type = IntEnum
-
-
-class TestStrEnum(_BasicTests, _StdlibOutputTests, unittest.TestCase):
-    enum_type = StrEnum
-
-
-class TestPlainFlag(_BasicTests, _PlainOutputTests, unittest.TestCase):
+class TestPlainFlag(_EnumTests, _PlainOutputTests, unittest.TestCase):
     enum_type = Flag
 
 
-class TestIntFlag(_BasicTests, _StdlibOutputTests, unittest.TestCase):
+class TestIntEnum(_EnumTests, _MinimalOutputTests, unittest.TestCase):
+    enum_type = IntEnum
+
+
+class TestStrEnum(_EnumTests, _MinimalOutputTests, unittest.TestCase):
+    enum_type = StrEnum
+
+
+class TestIntFlag(_EnumTests, _MinimalOutputTests, unittest.TestCase):
     enum_type = IntFlag
 
 
-class TestMixedInt(_BasicTests, _MixedOutputTests, unittest.TestCase):
+class TestMixedInt(_EnumTests, _MixedOutputTests, unittest.TestCase):
     class enum_type(int, Enum): pass
 
 
-class TestMixedStr(_BasicTests, _MixedOutputTests, unittest.TestCase):
+class TestMixedStr(_EnumTests, _MixedOutputTests, unittest.TestCase):
     class enum_type(str, Enum): pass
 
 
-class TestMixedIntFlag(_BasicTests, _MixedOutputTests, unittest.TestCase):
+class TestMixedIntFlag(_EnumTests, _MixedOutputTests, unittest.TestCase):
     class enum_type(int, Flag): pass
 
 
-class TestMixedDate(_BasicTests, _MixedOutputTests, unittest.TestCase):
-    values = [(2021, 12, 25), (2020, 3, 15), (2019, 11, 27)]
+class TestMixedDate(_EnumTests, _MixedOutputTests, unittest.TestCase):
+
+    values = [date(2021, 12, 25), date(2020, 3, 15), date(2019, 11, 27)]
+    source_values = [(2021, 12, 25), (2020, 3, 15), (2019, 11, 27)]
+
     class enum_type(date, Enum):
         def _generate_next_value_(name, start, count, last_values):
+            values = [(2021, 12, 25), (2020, 3, 15), (2019, 11, 27)]
             return values[count]
 
 
+class TestMinimalDate(_EnumTests, _MinimalOutputTests, unittest.TestCase):
 
-class TestMixedFloat(_BasicTests, _MixedOutputTests, unittest.TestCase):
-    class enum_type(float, Enum): pass
+    values = [date(2023, 12, 1), date(2016, 2, 29), date(2009, 1, 1)]
+    source_values = [(2023, 12, 1), (2016, 2, 29), (2009, 1, 1)]
+
+    class enum_type(date, ReprEnum):
+        def _generate_next_value_(name, start, count, last_values):
+            values = [(2023, 12, 1), (2016, 2, 29), (2009, 1, 1)]
+            return values[count]
 
 
-class TestEnum(unittest.TestCase):
+class TestMixedFloat(_EnumTests, _MixedOutputTests, unittest.TestCase):
+
+    values = [1.1, 2.2, 3.3]
+
+    class enum_type(float, Enum):
+        def _generate_next_value_(name, start, count, last_values):
+            values = [1.1, 2.2, 3.3]
+            return values[count]
+
+
+class TestMinimalFloat(_EnumTests, _MinimalOutputTests, unittest.TestCase):
+
+    values = [4.4, 5.5, 6.6]
+
+    class enum_type(float, ReprEnum):
+        def _generate_next_value_(name, start, count, last_values):
+            values = [4.4, 5.5, 6.6]
+            return values[count]
+
+
+class TestSpecial(unittest.TestCase):
+    """
+    various operations that are not attributable to every possible enum
+    """
 
     def setUp(self):
         class Season(Enum):
@@ -386,13 +809,7 @@ class TestEnum(unittest.TestCase):
             AUTUMN = 3
             WINTER = 4
         self.Season = Season
-
-        class Konstants(float, Enum):
-            E = 2.7182818
-            PI = 3.1415926
-            TAU = 2 * PI
-        self.Konstants = Konstants
-
+        #
         class Grades(IntEnum):
             A = 5
             B = 4
@@ -400,14 +817,14 @@ class TestEnum(unittest.TestCase):
             D = 2
             F = 0
         self.Grades = Grades
-
+        #
         class Directional(str, Enum):
             EAST = 'east'
             WEST = 'west'
             NORTH = 'north'
             SOUTH = 'south'
         self.Directional = Directional
-
+        #
         from datetime import date
         class Holiday(date, Enum):
             NEW_YEAR = 2013, 1, 1
@@ -870,92 +1287,50 @@ class TestEnum(unittest.TestCase):
         self.assertTrue(IntLogic.true)
         self.assertFalse(IntLogic.false)
 
-    @unittest.skipIf(
-            python_version >= (3, 12),
-            '__contains__ now returns True/False for all inputs',
-            )
-    def test_contains_er(self):
-        Season = self.Season
-        self.assertIn(Season.AUTUMN, Season)
-        with self.assertRaises(TypeError):
-            with self.assertWarns(DeprecationWarning):
-                3 in Season
-        with self.assertRaises(TypeError):
-            with self.assertWarns(DeprecationWarning):
-                'AUTUMN' in Season
-        val = Season(3)
-        self.assertIn(val, Season)
-        #
-        class OtherEnum(Enum):
-            one = 1; two = 2
-        self.assertNotIn(OtherEnum.two, Season)
-
-    @unittest.skipIf(
-            python_version < (3, 12),
-            '__contains__ only works with enum memmbers before 3.12',
-            )
-    def test_contains_tf(self):
-        Season = self.Season
-        self.assertIn(Season.AUTUMN, Season)
-        self.assertTrue(3 in Season)
-        self.assertFalse('AUTUMN' in Season)
-        val = Season(3)
-        self.assertIn(val, Season)
-        #
-        class OtherEnum(Enum):
-            one = 1; two = 2
-        self.assertNotIn(OtherEnum.two, Season)
-
     def test_comparisons(self):
         Season = self.Season
         with self.assertRaises(TypeError):
             Season.SPRING < Season.WINTER
         with self.assertRaises(TypeError):
             Season.SPRING > 4
-
+        #
         self.assertNotEqual(Season.SPRING, 1)
-
+        #
         class Part(Enum):
             SPRING = 1
             CLIP = 2
             BARREL = 3
-
+        #
         self.assertNotEqual(Season.SPRING, Part.SPRING)
         with self.assertRaises(TypeError):
             Season.SPRING < Part.CLIP
 
-    def test_enum_duplicates(self):
-        class Season(Enum):
-            SPRING = 1
-            SUMMER = 2
-            AUTUMN = FALL = 3
-            WINTER = 4
-            ANOTHER_SPRING = 1
-        lst = list(Season)
-        self.assertEqual(
-            lst,
-            [Season.SPRING, Season.SUMMER,
-             Season.AUTUMN, Season.WINTER,
-            ])
-        self.assertIs(Season.FALL, Season.AUTUMN)
-        self.assertEqual(Season.FALL.value, 3)
-        self.assertEqual(Season.AUTUMN.value, 3)
-        self.assertIs(Season(3), Season.AUTUMN)
-        self.assertIs(Season(1), Season.SPRING)
-        self.assertEqual(Season.FALL.name, 'AUTUMN')
-        self.assertEqual(
-                [k for k,v in Season.__members__.items() if v.name != k],
-                ['FALL', 'ANOTHER_SPRING'],
-                )
+    def test_dir_on_sub_with_behavior_including_slots(self):
+        # see issue40084
+        class SuperEnum(Enum):
+            def __new__(cls, *value, **kwds):
+                new = object.__new__
+                obj = new(cls)
+                obj._value_ = value
+                obj.description = 'test description'
+                return obj
+        class SubEnum(SuperEnum):
+            __slots__ = ('story_time', )
+            sample = 1
+        self.assertTrue('description' not in dir(SubEnum))
+        self.assertTrue('description' in dir(SubEnum.sample))
+        self.assertFalse('story_time' in SubEnum.sample.__dict__)
+        self.assertTrue('story_time' not in dir(SubEnum))
+        self.assertTrue('story_time' in dir(SubEnum.sample))
 
-    def test_duplicate_name(self):
+    def test_duplicate_name_error(self):
         with self.assertRaises(TypeError):
             class Color(Enum):
                 red = 1
                 green = 2
                 blue = 3
                 red = 4
-
+        #
         with self.assertRaises(TypeError):
             class Color(Enum):
                 red = 1
@@ -963,7 +1338,7 @@ class TestEnum(unittest.TestCase):
                 blue = 3
                 def red(self):
                     return 'red'
-
+        #
         with self.assertRaises(TypeError):
             class Color(Enum):
                 @enum.property
@@ -973,210 +1348,19 @@ class TestEnum(unittest.TestCase):
                 green = 2
                 blue = 3
 
-    def test_reserved__sunder_(self):
-        with self.assertRaisesRegex(
-                ValueError,
-                '_sunder_ names, such as ._bad_., are reserved',
-            ):
-            class Bad(Enum):
-                _bad_ = 1
+    def test_enum_function_with_qualname(self):
+        if isinstance(Theory, Exception):
+            raise Theory
+        self.assertEqual(Theory.__qualname__, 'spanish_inquisition')
 
     def test_enum_with_value_name(self):
         class Huh(Enum):
             name = 1
             value = 2
-        self.assertEqual(
-            list(Huh),
-            [Huh.name, Huh.value],
-            )
+        self.assertEqual(list(Huh), [Huh.name, Huh.value])
         self.assertIs(type(Huh.name), Huh)
         self.assertEqual(Huh.name.name, 'name')
         self.assertEqual(Huh.name.value, 1)
-
-    def test_format_enum(self):
-        Season = self.Season
-        self.assertEqual('{}'.format(Season.SPRING),
-                         '{}'.format(str(Season.SPRING)))
-        self.assertEqual( '{:}'.format(Season.SPRING),
-                          '{:}'.format(str(Season.SPRING)))
-        self.assertEqual('{:20}'.format(Season.SPRING),
-                         '{:20}'.format(str(Season.SPRING)))
-        self.assertEqual('{:^20}'.format(Season.SPRING),
-                         '{:^20}'.format(str(Season.SPRING)))
-        self.assertEqual('{:>20}'.format(Season.SPRING),
-                         '{:>20}'.format(str(Season.SPRING)))
-        self.assertEqual('{:<20}'.format(Season.SPRING),
-                         '{:<20}'.format(str(Season.SPRING)))
-
-    def test_str_override_enum(self):
-        class EnumWithStrOverrides(Enum):
-            one = auto()
-            two = auto()
-
-            def __str__(self):
-                return 'Str!'
-        self.assertEqual(str(EnumWithStrOverrides.one), 'Str!')
-        self.assertEqual('{}'.format(EnumWithStrOverrides.one), 'Str!')
-
-    def test_format_override_enum(self):
-        class EnumWithFormatOverride(Enum):
-            one = 1.0
-            two = 2.0
-            def __format__(self, spec):
-                return 'Format!!'
-        self.assertEqual(str(EnumWithFormatOverride.one), 'EnumWithFormatOverride.one')
-        self.assertEqual('{}'.format(EnumWithFormatOverride.one), 'Format!!')
-
-    def test_str_and_format_override_enum(self):
-        class EnumWithStrFormatOverrides(Enum):
-            one = auto()
-            two = auto()
-            def __str__(self):
-                return 'Str!'
-            def __format__(self, spec):
-                return 'Format!'
-        self.assertEqual(str(EnumWithStrFormatOverrides.one), 'Str!')
-        self.assertEqual('{}'.format(EnumWithStrFormatOverrides.one), 'Format!')
-
-    def test_str_override_mixin(self):
-        class MixinEnumWithStrOverride(float, Enum):
-            one = 1.0
-            two = 2.0
-            def __str__(self):
-                return 'Overridden!'
-        self.assertEqual(str(MixinEnumWithStrOverride.one), 'Overridden!')
-        self.assertEqual('{}'.format(MixinEnumWithStrOverride.one), 'Overridden!')
-
-    def test_str_and_format_override_mixin(self):
-        class MixinWithStrFormatOverrides(float, Enum):
-            one = 1.0
-            two = 2.0
-            def __str__(self):
-                return 'Str!'
-            def __format__(self, spec):
-                return 'Format!'
-        self.assertEqual(str(MixinWithStrFormatOverrides.one), 'Str!')
-        self.assertEqual('{}'.format(MixinWithStrFormatOverrides.one), 'Format!')
-
-    def test_format_override_mixin(self):
-        class TestFloat(float, Enum):
-            one = 1.0
-            two = 2.0
-            def __format__(self, spec):
-                return 'TestFloat success!'
-        self.assertEqual(str(TestFloat.one), 'TestFloat.one')
-        self.assertEqual('{}'.format(TestFloat.one), 'TestFloat success!')
-
-    @unittest.skipIf(
-            python_version < (3, 12),
-            'mixin-format is still using member.value',
-            )
-    def test_mixin_format_warning(self):
-        class Grades(int, Enum):
-            A = 5
-            B = 4
-            C = 3
-            D = 2
-            F = 0
-        self.assertEqual(f'{self.Grades.B}', 'B')
-
-    @unittest.skipIf(
-            python_version >= (3, 12),
-            'mixin-format now uses member instead of member.value',
-            )
-    def test_mixin_format_warning(self):
-        class Grades(int, Enum):
-            A = 5
-            B = 4
-            C = 3
-            D = 2
-            F = 0
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(f'{Grades.B}', '4')
-
-    def assertFormatIsValue(self, spec, member):
-        if python_version < (3, 12) and (not spec or spec in ('{}','{:}')):
-            with self.assertWarns(DeprecationWarning):
-                self.assertEqual(spec.format(member), spec.format(member.value))
-        else:
-            self.assertEqual(spec.format(member), spec.format(member.value))
-
-    def test_format_enum_date(self):
-        Holiday = self.Holiday
-        self.assertFormatIsValue('{}', Holiday.IDES_OF_MARCH)
-        self.assertFormatIsValue('{:}', Holiday.IDES_OF_MARCH)
-        self.assertFormatIsValue('{:20}', Holiday.IDES_OF_MARCH)
-        self.assertFormatIsValue('{:^20}', Holiday.IDES_OF_MARCH)
-        self.assertFormatIsValue('{:>20}', Holiday.IDES_OF_MARCH)
-        self.assertFormatIsValue('{:<20}', Holiday.IDES_OF_MARCH)
-        self.assertFormatIsValue('{:%Y %m}', Holiday.IDES_OF_MARCH)
-        self.assertFormatIsValue('{:%Y %m %M:00}', Holiday.IDES_OF_MARCH)
-
-    def test_format_enum_float(self):
-        Konstants = self.Konstants
-        self.assertFormatIsValue('{}', Konstants.TAU)
-        self.assertFormatIsValue('{:}', Konstants.TAU)
-        self.assertFormatIsValue('{:20}', Konstants.TAU)
-        self.assertFormatIsValue('{:^20}', Konstants.TAU)
-        self.assertFormatIsValue('{:>20}', Konstants.TAU)
-        self.assertFormatIsValue('{:<20}', Konstants.TAU)
-        self.assertFormatIsValue('{:n}', Konstants.TAU)
-        self.assertFormatIsValue('{:5.2}', Konstants.TAU)
-        self.assertFormatIsValue('{:f}', Konstants.TAU)
-
-    def test_format_enum_int(self):
-        class Grades(int, Enum):
-            A = 5
-            B = 4
-            C = 3
-            D = 2
-            F = 0
-        self.assertFormatIsValue('{}', Grades.C)
-        self.assertFormatIsValue('{:}', Grades.C)
-        self.assertFormatIsValue('{:20}', Grades.C)
-        self.assertFormatIsValue('{:^20}', Grades.C)
-        self.assertFormatIsValue('{:>20}', Grades.C)
-        self.assertFormatIsValue('{:<20}', Grades.C)
-        self.assertFormatIsValue('{:+}', Grades.C)
-        self.assertFormatIsValue('{:08X}', Grades.C)
-        self.assertFormatIsValue('{:b}', Grades.C)
-
-    def test_format_enum_str(self):
-        Directional = self.Directional
-        self.assertFormatIsValue('{}', Directional.WEST)
-        self.assertFormatIsValue('{:}', Directional.WEST)
-        self.assertFormatIsValue('{:20}', Directional.WEST)
-        self.assertFormatIsValue('{:^20}', Directional.WEST)
-        self.assertFormatIsValue('{:>20}', Directional.WEST)
-        self.assertFormatIsValue('{:<20}', Directional.WEST)
-
-    def test_object_str_override(self):
-        class Colors(Enum):
-            RED, GREEN, BLUE = 1, 2, 3
-            def __repr__(self):
-                return "test.%s" % (self._name_, )
-            __str__ = object.__str__
-        self.assertEqual(str(Colors.RED), 'test.RED')
-
-    def test_enum_str_override(self):
-        class MyStrEnum(Enum):
-            def __str__(self):
-                return 'MyStr'
-        class MyMethodEnum(Enum):
-            def hello(self):
-                return 'Hello!  My name is %s' % self.name
-        class Test1Enum(MyMethodEnum, int, MyStrEnum):
-            One = 1
-            Two = 2
-        self.assertTrue(Test1Enum._member_type_ is int)
-        self.assertEqual(str(Test1Enum.One), 'MyStr')
-        self.assertEqual(format(Test1Enum.One, ''), 'MyStr')
-        #
-        class Test2Enum(MyStrEnum, MyMethodEnum):
-            One = 1
-            Two = 2
-        self.assertEqual(str(Test2Enum.One), 'MyStr')
-        self.assertEqual(format(Test1Enum.One, ''), 'MyStr')
 
     def test_inherited_data_type(self):
         class HexInt(int):
@@ -1224,6 +1408,124 @@ class TestEnum(unittest.TestCase):
         globals()['MyUnBrokenEnum'] = MyUnBrokenEnum
         test_pickle_dump_load(self.assertIs, MyUnBrokenEnum.I)
         test_pickle_dump_load(self.assertIs, MyUnBrokenEnum)
+
+    def test_floatenum_fromhex(self):
+        h = float.hex(FloatStooges.MOE.value)
+        self.assertIs(FloatStooges.fromhex(h), FloatStooges.MOE)
+        h = float.hex(FloatStooges.MOE.value + 0.01)
+        with self.assertRaises(ValueError):
+            FloatStooges.fromhex(h)
+
+    def test_programmatic_function_type(self):
+        MinorEnum = Enum('MinorEnum', 'june july august', type=int)
+        lst = list(MinorEnum)
+        self.assertEqual(len(lst), len(MinorEnum))
+        self.assertEqual(len(MinorEnum), 3, MinorEnum)
+        self.assertEqual(
+                [MinorEnum.june, MinorEnum.july, MinorEnum.august],
+                lst,
+                )
+        for i, month in enumerate('june july august'.split(), 1):
+            e = MinorEnum(i)
+            self.assertEqual(e, i)
+            self.assertEqual(e.name, month)
+            self.assertIn(e, MinorEnum)
+            self.assertIs(type(e), MinorEnum)
+
+    def test_programmatic_function_string_with_start(self):
+        MinorEnum = Enum('MinorEnum', 'june july august', start=10)
+        lst = list(MinorEnum)
+        self.assertEqual(len(lst), len(MinorEnum))
+        self.assertEqual(len(MinorEnum), 3, MinorEnum)
+        self.assertEqual(
+                [MinorEnum.june, MinorEnum.july, MinorEnum.august],
+                lst,
+                )
+        for i, month in enumerate('june july august'.split(), 10):
+            e = MinorEnum(i)
+            self.assertEqual(int(e.value), i)
+            self.assertNotEqual(e, i)
+            self.assertEqual(e.name, month)
+            self.assertIn(e, MinorEnum)
+            self.assertIs(type(e), MinorEnum)
+
+    def test_programmatic_function_type_with_start(self):
+        MinorEnum = Enum('MinorEnum', 'june july august', type=int, start=30)
+        lst = list(MinorEnum)
+        self.assertEqual(len(lst), len(MinorEnum))
+        self.assertEqual(len(MinorEnum), 3, MinorEnum)
+        self.assertEqual(
+                [MinorEnum.june, MinorEnum.july, MinorEnum.august],
+                lst,
+                )
+        for i, month in enumerate('june july august'.split(), 30):
+            e = MinorEnum(i)
+            self.assertEqual(e, i)
+            self.assertEqual(e.name, month)
+            self.assertIn(e, MinorEnum)
+            self.assertIs(type(e), MinorEnum)
+
+    def test_programmatic_function_string_list_with_start(self):
+        MinorEnum = Enum('MinorEnum', ['june', 'july', 'august'], start=20)
+        lst = list(MinorEnum)
+        self.assertEqual(len(lst), len(MinorEnum))
+        self.assertEqual(len(MinorEnum), 3, MinorEnum)
+        self.assertEqual(
+                [MinorEnum.june, MinorEnum.july, MinorEnum.august],
+                lst,
+                )
+        for i, month in enumerate('june july august'.split(), 20):
+            e = MinorEnum(i)
+            self.assertEqual(int(e.value), i)
+            self.assertNotEqual(e, i)
+            self.assertEqual(e.name, month)
+            self.assertIn(e, MinorEnum)
+            self.assertIs(type(e), MinorEnum)
+
+    def test_programmatic_function_type_from_subclass(self):
+        MinorEnum = IntEnum('MinorEnum', 'june july august')
+        lst = list(MinorEnum)
+        self.assertEqual(len(lst), len(MinorEnum))
+        self.assertEqual(len(MinorEnum), 3, MinorEnum)
+        self.assertEqual(
+                [MinorEnum.june, MinorEnum.july, MinorEnum.august],
+                lst,
+                )
+        for i, month in enumerate('june july august'.split(), 1):
+            e = MinorEnum(i)
+            self.assertEqual(e, i)
+            self.assertEqual(e.name, month)
+            self.assertIn(e, MinorEnum)
+            self.assertIs(type(e), MinorEnum)
+
+    def test_programmatic_function_type_from_subclass_with_start(self):
+        MinorEnum = IntEnum('MinorEnum', 'june july august', start=40)
+        lst = list(MinorEnum)
+        self.assertEqual(len(lst), len(MinorEnum))
+        self.assertEqual(len(MinorEnum), 3, MinorEnum)
+        self.assertEqual(
+                [MinorEnum.june, MinorEnum.july, MinorEnum.august],
+                lst,
+                )
+        for i, month in enumerate('june july august'.split(), 40):
+            e = MinorEnum(i)
+            self.assertEqual(e, i)
+            self.assertEqual(e.name, month)
+            self.assertIn(e, MinorEnum)
+            self.assertIs(type(e), MinorEnum)
+
+    def test_intenum_from_bytes(self):
+        self.assertIs(IntStooges.from_bytes(b'\x00\x03', 'big'), IntStooges.MOE)
+        with self.assertRaises(ValueError):
+            IntStooges.from_bytes(b'\x00\x05', 'big')
+
+    def test_reserved_sunder_error(self):
+        with self.assertRaisesRegex(
+                ValueError,
+                '_sunder_ names, such as ._bad_., are reserved',
+            ):
+            class Bad(Enum):
+                _bad_ = 1
 
     def test_too_many_data_types(self):
         with self.assertRaisesRegex(TypeError, 'too many data types'):
@@ -1387,12 +1689,7 @@ class TestEnum(unittest.TestCase):
         test_pickle_dump_load(self.assertIs, Question.who)
         test_pickle_dump_load(self.assertIs, Question)
 
-    def test_enum_function_with_qualname(self):
-        if isinstance(Theory, Exception):
-            raise Theory
-        self.assertEqual(Theory.__qualname__, 'spanish_inquisition')
-
-    def test_class_nested_enum_and_pickle_protocol_four(self):
+    def test_pickle_nested_class(self):
         # would normally just have this directly in the class namespace
         class NestedEnum(Enum):
             twigs = 'common'
@@ -1410,7 +1707,7 @@ class TestEnum(unittest.TestCase):
         for proto in range(HIGHEST_PROTOCOL):
             self.assertEqual(ReplaceGlobalInt.TWO.__reduce_ex__(proto), 'TWO')
 
-    def test_exploding_pickle(self):
+    def test_pickle_explodes(self):
         BadPickle = Enum(
                 'BadPickle', 'dill sweet bread-n-butter', module=__name__)
         globals()['BadPickle'] = BadPickle
@@ -1450,185 +1747,6 @@ class TestEnum(unittest.TestCase):
                 list(Season),
                 [Season.SUMMER, Season.WINTER, Season.AUTUMN, Season.SPRING],
                 )
-
-    def test_reversed_iteration_order(self):
-        self.assertEqual(
-                list(reversed(self.Season)),
-                [self.Season.WINTER, self.Season.AUTUMN, self.Season.SUMMER,
-                 self.Season.SPRING]
-                )
-
-    def test_programmatic_function_string(self):
-        SummerMonth = Enum('SummerMonth', 'june july august')
-        lst = list(SummerMonth)
-        self.assertEqual(len(lst), len(SummerMonth))
-        self.assertEqual(len(SummerMonth), 3, SummerMonth)
-        self.assertEqual(
-                [SummerMonth.june, SummerMonth.july, SummerMonth.august],
-                lst,
-                )
-        for i, month in enumerate('june july august'.split(), 1):
-            e = SummerMonth(i)
-            self.assertEqual(int(e.value), i)
-            self.assertNotEqual(e, i)
-            self.assertEqual(e.name, month)
-            self.assertIn(e, SummerMonth)
-            self.assertIs(type(e), SummerMonth)
-
-    def test_programmatic_function_string_with_start(self):
-        SummerMonth = Enum('SummerMonth', 'june july august', start=10)
-        lst = list(SummerMonth)
-        self.assertEqual(len(lst), len(SummerMonth))
-        self.assertEqual(len(SummerMonth), 3, SummerMonth)
-        self.assertEqual(
-                [SummerMonth.june, SummerMonth.july, SummerMonth.august],
-                lst,
-                )
-        for i, month in enumerate('june july august'.split(), 10):
-            e = SummerMonth(i)
-            self.assertEqual(int(e.value), i)
-            self.assertNotEqual(e, i)
-            self.assertEqual(e.name, month)
-            self.assertIn(e, SummerMonth)
-            self.assertIs(type(e), SummerMonth)
-
-    def test_programmatic_function_string_list(self):
-        SummerMonth = Enum('SummerMonth', ['june', 'july', 'august'])
-        lst = list(SummerMonth)
-        self.assertEqual(len(lst), len(SummerMonth))
-        self.assertEqual(len(SummerMonth), 3, SummerMonth)
-        self.assertEqual(
-                [SummerMonth.june, SummerMonth.july, SummerMonth.august],
-                lst,
-                )
-        for i, month in enumerate('june july august'.split(), 1):
-            e = SummerMonth(i)
-            self.assertEqual(int(e.value), i)
-            self.assertNotEqual(e, i)
-            self.assertEqual(e.name, month)
-            self.assertIn(e, SummerMonth)
-            self.assertIs(type(e), SummerMonth)
-
-    def test_programmatic_function_string_list_with_start(self):
-        SummerMonth = Enum('SummerMonth', ['june', 'july', 'august'], start=20)
-        lst = list(SummerMonth)
-        self.assertEqual(len(lst), len(SummerMonth))
-        self.assertEqual(len(SummerMonth), 3, SummerMonth)
-        self.assertEqual(
-                [SummerMonth.june, SummerMonth.july, SummerMonth.august],
-                lst,
-                )
-        for i, month in enumerate('june july august'.split(), 20):
-            e = SummerMonth(i)
-            self.assertEqual(int(e.value), i)
-            self.assertNotEqual(e, i)
-            self.assertEqual(e.name, month)
-            self.assertIn(e, SummerMonth)
-            self.assertIs(type(e), SummerMonth)
-
-    def test_programmatic_function_iterable(self):
-        SummerMonth = Enum(
-                'SummerMonth',
-                (('june', 1), ('july', 2), ('august', 3))
-                )
-        lst = list(SummerMonth)
-        self.assertEqual(len(lst), len(SummerMonth))
-        self.assertEqual(len(SummerMonth), 3, SummerMonth)
-        self.assertEqual(
-                [SummerMonth.june, SummerMonth.july, SummerMonth.august],
-                lst,
-                )
-        for i, month in enumerate('june july august'.split(), 1):
-            e = SummerMonth(i)
-            self.assertEqual(int(e.value), i)
-            self.assertNotEqual(e, i)
-            self.assertEqual(e.name, month)
-            self.assertIn(e, SummerMonth)
-            self.assertIs(type(e), SummerMonth)
-
-    def test_programmatic_function_from_dict(self):
-        SummerMonth = Enum(
-                'SummerMonth',
-                OrderedDict((('june', 1), ('july', 2), ('august', 3)))
-                )
-        lst = list(SummerMonth)
-        self.assertEqual(len(lst), len(SummerMonth))
-        self.assertEqual(len(SummerMonth), 3, SummerMonth)
-        self.assertEqual(
-                [SummerMonth.june, SummerMonth.july, SummerMonth.august],
-                lst,
-                )
-        for i, month in enumerate('june july august'.split(), 1):
-            e = SummerMonth(i)
-            self.assertEqual(int(e.value), i)
-            self.assertNotEqual(e, i)
-            self.assertEqual(e.name, month)
-            self.assertIn(e, SummerMonth)
-            self.assertIs(type(e), SummerMonth)
-
-    def test_programmatic_function_type(self):
-        SummerMonth = Enum('SummerMonth', 'june july august', type=int)
-        lst = list(SummerMonth)
-        self.assertEqual(len(lst), len(SummerMonth))
-        self.assertEqual(len(SummerMonth), 3, SummerMonth)
-        self.assertEqual(
-                [SummerMonth.june, SummerMonth.july, SummerMonth.august],
-                lst,
-                )
-        for i, month in enumerate('june july august'.split(), 1):
-            e = SummerMonth(i)
-            self.assertEqual(e, i)
-            self.assertEqual(e.name, month)
-            self.assertIn(e, SummerMonth)
-            self.assertIs(type(e), SummerMonth)
-
-    def test_programmatic_function_type_with_start(self):
-        SummerMonth = Enum('SummerMonth', 'june july august', type=int, start=30)
-        lst = list(SummerMonth)
-        self.assertEqual(len(lst), len(SummerMonth))
-        self.assertEqual(len(SummerMonth), 3, SummerMonth)
-        self.assertEqual(
-                [SummerMonth.june, SummerMonth.july, SummerMonth.august],
-                lst,
-                )
-        for i, month in enumerate('june july august'.split(), 30):
-            e = SummerMonth(i)
-            self.assertEqual(e, i)
-            self.assertEqual(e.name, month)
-            self.assertIn(e, SummerMonth)
-            self.assertIs(type(e), SummerMonth)
-
-    def test_programmatic_function_type_from_subclass(self):
-        SummerMonth = IntEnum('SummerMonth', 'june july august')
-        lst = list(SummerMonth)
-        self.assertEqual(len(lst), len(SummerMonth))
-        self.assertEqual(len(SummerMonth), 3, SummerMonth)
-        self.assertEqual(
-                [SummerMonth.june, SummerMonth.july, SummerMonth.august],
-                lst,
-                )
-        for i, month in enumerate('june july august'.split(), 1):
-            e = SummerMonth(i)
-            self.assertEqual(e, i)
-            self.assertEqual(e.name, month)
-            self.assertIn(e, SummerMonth)
-            self.assertIs(type(e), SummerMonth)
-
-    def test_programmatic_function_type_from_subclass_with_start(self):
-        SummerMonth = IntEnum('SummerMonth', 'june july august', start=40)
-        lst = list(SummerMonth)
-        self.assertEqual(len(lst), len(SummerMonth))
-        self.assertEqual(len(SummerMonth), 3, SummerMonth)
-        self.assertEqual(
-                [SummerMonth.june, SummerMonth.july, SummerMonth.august],
-                lst,
-                )
-        for i, month in enumerate('june july august'.split(), 40):
-            e = SummerMonth(i)
-            self.assertEqual(e, i)
-            self.assertEqual(e.name, month)
-            self.assertIn(e, SummerMonth)
-            self.assertIs(type(e), SummerMonth)
 
     def test_subclassing(self):
         if isinstance(Name, Exception):
@@ -1755,27 +1873,7 @@ class TestEnum(unittest.TestCase):
         with self.assertRaises(KeyError):
             Color['chartreuse']
 
-    def test_new_repr(self):
-        class Color(Enum):
-            red = 1
-            green = 2
-            blue = 3
-            def __repr__(self):
-                return "don't you just love shades of %s?" % self.name
-        self.assertEqual(
-                repr(Color.blue),
-                "don't you just love shades of blue?",
-                )
-
-    def test_inherited_repr(self):
-        class MyEnum(Enum):
-            def __repr__(self):
-                return "My name is %s." % self.name
-        class MyIntEnum(int, MyEnum):
-            this = 1
-            that = 2
-            theother = 3
-        self.assertEqual(repr(MyIntEnum.that), "My name is that.")
+    # tests that need to be evalualted for moving
 
     def test_multiple_mixin_mro(self):
         class auto_enum(type(Enum)):
@@ -2424,90 +2522,7 @@ class TestEnum(unittest.TestCase):
         self.assertEqual(LabelledList.unprocessed, 1)
         self.assertEqual(LabelledList(1), LabelledList.unprocessed)
 
-    def test_auto_number(self):
-        class Color(Enum):
-            red = auto()
-            blue = auto()
-            green = auto()
-
-        self.assertEqual(list(Color), [Color.red, Color.blue, Color.green])
-        self.assertEqual(Color.red.value, 1)
-        self.assertEqual(Color.blue.value, 2)
-        self.assertEqual(Color.green.value, 3)
-
-    def test_auto_name(self):
-        class Color(Enum):
-            def _generate_next_value_(name, start, count, last):
-                return name
-            red = auto()
-            blue = auto()
-            green = auto()
-
-        self.assertEqual(list(Color), [Color.red, Color.blue, Color.green])
-        self.assertEqual(Color.red.value, 'red')
-        self.assertEqual(Color.blue.value, 'blue')
-        self.assertEqual(Color.green.value, 'green')
-
-    def test_auto_name_inherit(self):
-        class AutoNameEnum(Enum):
-            def _generate_next_value_(name, start, count, last):
-                return name
-        class Color(AutoNameEnum):
-            red = auto()
-            blue = auto()
-            green = auto()
-
-        self.assertEqual(list(Color), [Color.red, Color.blue, Color.green])
-        self.assertEqual(Color.red.value, 'red')
-        self.assertEqual(Color.blue.value, 'blue')
-        self.assertEqual(Color.green.value, 'green')
-
-    def test_auto_garbage(self):
-        class Color(Enum):
-            red = 'red'
-            blue = auto()
-        self.assertEqual(Color.blue.value, 1)
-
-    def test_auto_garbage_corrected(self):
-        class Color(Enum):
-            red = 'red'
-            blue = 2
-            green = auto()
-
-        self.assertEqual(list(Color), [Color.red, Color.blue, Color.green])
-        self.assertEqual(Color.red.value, 'red')
-        self.assertEqual(Color.blue.value, 2)
-        self.assertEqual(Color.green.value, 3)
-
-    def test_auto_order(self):
-        with self.assertRaises(TypeError):
-            class Color(Enum):
-                red = auto()
-                green = auto()
-                blue = auto()
-                def _generate_next_value_(name, start, count, last):
-                    return name
-
-    def test_auto_order_wierd(self):
-        weird_auto = auto()
-        weird_auto.value = 'pathological case'
-        class Color(Enum):
-            red = weird_auto
-            def _generate_next_value_(name, start, count, last):
-                return name
-            blue = auto()
-        self.assertEqual(list(Color), [Color.red, Color.blue])
-        self.assertEqual(Color.red.value, 'pathological case')
-        self.assertEqual(Color.blue.value, 'blue')
-
-    def test_duplicate_auto(self):
-        class Dupes(Enum):
-            first = primero = auto()
-            second = auto()
-            third = auto()
-        self.assertEqual([Dupes.first, Dupes.second, Dupes.third], list(Dupes))
-
-    def test_default_missing(self):
+    def test_default_missing_no_chained_exception(self):
         class Color(Enum):
             RED = 1
             GREEN = 2
@@ -2519,7 +2534,7 @@ class TestEnum(unittest.TestCase):
         else:
             raise Exception('Exception not raised.')
 
-    def test_missing(self):
+    def test_missing_override(self):
         class Color(Enum):
             red = 1
             green = 2
@@ -2621,6 +2636,7 @@ class TestEnum(unittest.TestCase):
             RED = auto()
             GREEN = auto()
             BLUE = auto()
+            __str__ = StrMixin.__str__          # needed as of 3.11
         self.assertEqual(Color.RED.value, 1)
         self.assertEqual(Color.GREEN.value, 2)
         self.assertEqual(Color.BLUE.value, 3)
@@ -2630,6 +2646,7 @@ class TestEnum(unittest.TestCase):
             RED = auto()
             GREEN = auto()
             BLUE = auto()
+            __str__ = StrMixin.__str__          # needed as of 3.11
         self.assertEqual(Color.RED.value, 1)
         self.assertEqual(Color.GREEN.value, 2)
         self.assertEqual(Color.BLUE.value, 3)
@@ -2639,6 +2656,7 @@ class TestEnum(unittest.TestCase):
             RED = auto()
             GREEN = auto()
             BLUE = auto()
+            __str__ = StrMixin.__str__          # needed as of 3.11
         self.assertEqual(CoolColor.RED.value, 1)
         self.assertEqual(CoolColor.GREEN.value, 2)
         self.assertEqual(CoolColor.BLUE.value, 3)
@@ -2648,6 +2666,7 @@ class TestEnum(unittest.TestCase):
             RED = auto()
             GREEN = auto()
             BLUE = auto()
+            __str__ = StrMixin.__str__          # needed as of 3.11
         self.assertEqual(CoolerColor.RED.value, 1)
         self.assertEqual(CoolerColor.GREEN.value, 2)
         self.assertEqual(CoolerColor.BLUE.value, 3)
@@ -2658,6 +2677,7 @@ class TestEnum(unittest.TestCase):
             RED = auto()
             GREEN = auto()
             BLUE = auto()
+            __str__ = StrMixin.__str__          # needed as of 3.11
         self.assertEqual(CoolestColor.RED.value, 1)
         self.assertEqual(CoolestColor.GREEN.value, 2)
         self.assertEqual(CoolestColor.BLUE.value, 3)
@@ -2668,6 +2688,7 @@ class TestEnum(unittest.TestCase):
             RED = auto()
             GREEN = auto()
             BLUE = auto()
+            __str__ = StrMixin.__str__          # needed as of 3.11
         self.assertEqual(ConfusedColor.RED.value, 1)
         self.assertEqual(ConfusedColor.GREEN.value, 2)
         self.assertEqual(ConfusedColor.BLUE.value, 3)
@@ -2678,6 +2699,7 @@ class TestEnum(unittest.TestCase):
             RED = auto()
             GREEN = auto()
             BLUE = auto()
+            __str__ = StrMixin.__str__          # needed as of 3.11
         self.assertEqual(ReformedColor.RED.value, 1)
         self.assertEqual(ReformedColor.GREEN.value, 2)
         self.assertEqual(ReformedColor.BLUE.value, 3)
@@ -2715,7 +2737,7 @@ class TestEnum(unittest.TestCase):
         class Foo(MyIntEnum):
             TEST = 1
         self.assertTrue(isinstance(Foo.TEST, MyInt))
-        self.assertEqual(repr(Foo.TEST), "0x1")
+        self.assertEqual(repr(Foo.TEST), "<Foo.TEST: 0x1>")
 
         class Fee(MyIntEnum):
             TEST = 1
@@ -2726,7 +2748,7 @@ class TestEnum(unittest.TestCase):
                 return member
         self.assertEqual(Fee.TEST, 2)
 
-    def test_miltuple_mixin_with_common_data_type(self):
+    def test_multiple_mixin_with_common_data_type(self):
         class CaseInsensitiveStrEnum(str, Enum):
             @classmethod
             def _missing_(cls, value):
@@ -2799,6 +2821,7 @@ class TestEnum(unittest.TestCase):
             five = '5'
             six = '6'
             seven = '7'
+            __str__ = DumbMixin.__str__             # needed as of 3.11
         self.assertEqual(DumbStrEnum.seven, '7')
         self.assertEqual(str(DumbStrEnum.seven), "don't do this")
         #
@@ -2840,11 +2863,7 @@ class TestEnum(unittest.TestCase):
                 one = '1'
                 two = b'2', 'ascii', 9
 
-    @unittest.skipIf(
-            python_version >= (3, 12),
-            'mixin-format now uses member instead of member.value',
-            )
-    def test_custom_strenum_with_warning(self):
+    def test_custom_strenum(self):
         class CustomStrEnum(str, Enum):
             pass
         class OkayEnum(CustomStrEnum):
@@ -2854,9 +2873,7 @@ class TestEnum(unittest.TestCase):
             four = b'4', 'latin1', 'strict'
         self.assertEqual(OkayEnum.one, '1')
         self.assertEqual(str(OkayEnum.one), 'OkayEnum.one')
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual('{}'.format(OkayEnum.one), '1')
-            self.assertEqual(OkayEnum.one, '{}'.format(OkayEnum.one))
+        self.assertEqual('{}'.format(OkayEnum.one), 'OkayEnum.one')
         self.assertEqual(repr(OkayEnum.one), "<OkayEnum.one: '1'>")
         #
         class DumbMixin:
@@ -2866,6 +2883,7 @@ class TestEnum(unittest.TestCase):
             five = '5'
             six = '6'
             seven = '7'
+            __str__ = DumbMixin.__str__         # needed as of 3.11
         self.assertEqual(DumbStrEnum.seven, '7')
         self.assertEqual(str(DumbStrEnum.seven), "don't do this")
         #
@@ -2884,68 +2902,6 @@ class TestEnum(unittest.TestCase):
             nine = '9'
         self.assertEqual(GoodbyeEnum.nine, '9')
         self.assertEqual(str(GoodbyeEnum.nine), 'GoodbyeEnum.nine')
-        #
-        class FirstFailedStrEnum(CustomStrEnum):
-            one = 1   # this will become '1'
-            two = '2'
-        class SecondFailedStrEnum(CustomStrEnum):
-            one = '1'
-            two = 2,  # this will become '2'
-            three = '3'
-        class ThirdFailedStrEnum(CustomStrEnum):
-            one = '1'
-            two = 2  # this will become '2'
-        with self.assertRaisesRegex(TypeError, '.encoding. must be str, not '):
-            class ThirdFailedStrEnum(CustomStrEnum):
-                one = '1'
-                two = b'2', sys.getdefaultencoding
-        with self.assertRaisesRegex(TypeError, '.errors. must be str, not '):
-            class ThirdFailedStrEnum(CustomStrEnum):
-                one = '1'
-                two = b'2', 'ascii', 9
-
-    @unittest.skipIf(
-            python_version < (3, 12),
-            'mixin-format currently uses member.value',
-            )
-    def test_custom_strenum(self):
-        class CustomStrEnum(str, Enum):
-            pass
-        class OkayEnum(CustomStrEnum):
-            one = '1'
-            two = '2'
-            three = b'3', 'ascii'
-            four = b'4', 'latin1', 'strict'
-        self.assertEqual(OkayEnum.one, '1')
-        self.assertEqual(str(OkayEnum.one), 'one')
-        self.assertEqual('{}'.format(OkayEnum.one), 'one')
-        self.assertEqual(repr(OkayEnum.one), 'OkayEnum.one')
-        #
-        class DumbMixin:
-            def __str__(self):
-                return "don't do this"
-        class DumbStrEnum(DumbMixin, CustomStrEnum):
-            five = '5'
-            six = '6'
-            seven = '7'
-        self.assertEqual(DumbStrEnum.seven, '7')
-        self.assertEqual(str(DumbStrEnum.seven), "don't do this")
-        #
-        class EnumMixin(Enum):
-            def hello(self):
-                print('hello from %s' % (self, ))
-        class HelloEnum(EnumMixin, CustomStrEnum):
-            eight = '8'
-        self.assertEqual(HelloEnum.eight, '8')
-        self.assertEqual(str(HelloEnum.eight), 'eight')
-        #
-        class GoodbyeMixin:
-            def goodbye(self):
-                print('%s wishes you a fond farewell')
-        class GoodbyeEnum(GoodbyeMixin, EnumMixin, CustomStrEnum):
-            nine = '9'
-        self.assertEqual(GoodbyeEnum.nine, '9')
-        self.assertEqual(str(GoodbyeEnum.nine), 'nine')
         #
         class FirstFailedStrEnum(CustomStrEnum):
             one = 1   # this will become '1'
@@ -2991,21 +2947,6 @@ class TestEnum(unittest.TestCase):
                 code          = 'An$(5,1)', 2
                 description   = 'Bn$',      3
 
-    @unittest.skipUnless(
-            python_version == (3, 9),
-            'private variables are now normal attributes',
-            )
-    def test_warning_for_private_variables(self):
-        with self.assertWarns(DeprecationWarning):
-            class Private(Enum):
-                __corporal = 'Radar'
-        self.assertEqual(Private._Private__corporal.value, 'Radar')
-        try:
-            with self.assertWarns(DeprecationWarning):
-                class Private(Enum):
-                    __major_ = 'Hoolihan'
-        except ValueError:
-            pass
 
     def test_private_variable_is_normal_attribute(self):
         class Private(Enum):
@@ -3014,34 +2955,12 @@ class TestEnum(unittest.TestCase):
         self.assertEqual(Private._Private__corporal, 'Radar')
         self.assertEqual(Private._Private__major_, 'Hoolihan')
 
-    @unittest.skipUnless(
-            python_version < (3, 11),
-            'member-member access now raises an exception',
-            )
-    def test_warning_for_member_from_member_access(self):
-        with self.assertWarns(DeprecationWarning):
-            class Di(Enum):
-                YES = 1
-                NO = 0
-            nope = Di.YES.NO
-        self.assertIs(Di.NO, nope)
-
-    @unittest.skipUnless(
-            python_version >= (3, 11),
-            'member-member access currently issues a warning',
-            )
     def test_exception_for_member_from_member_access(self):
         with self.assertRaisesRegex(AttributeError, "<enum .Di.> member has no attribute .NO."):
             class Di(Enum):
                 YES = 1
                 NO = 0
             nope = Di.YES.NO
-
-    def test_strenum_auto(self):
-        class Strings(StrEnum):
-            ONE = auto()
-            TWO = auto()
-        self.assertEqual([Strings.ONE, Strings.TWO], ['one', 'two'])
 
 
     def test_dynamic_members_with_static_methods(self):
@@ -3071,8 +2990,20 @@ class TestEnum(unittest.TestCase):
                 def upper(self):
                     return self.value.upper()
 
+    def test_repr_with_dataclass(self):
+        "ensure dataclass-mixin has correct repr()"
+        from dataclasses import dataclass
+        @dataclass
+        class Foo:
+            __qualname__ = 'Foo'
+            a: int = 0
+        class Entries(Foo, Enum):
+            ENTRY1 = Foo(1)
+        self.assertEqual(repr(Entries.ENTRY1), '<Entries.ENTRY1: Foo(a=1)>')
+        
 
-class TestOrder(unittest.TestCase):
+class OldTestOrder(unittest.TestCase):
+    "test usage of the `_order_` attribute"
 
     def test_same_members(self):
         class Color(Enum):
@@ -3134,7 +3065,7 @@ class TestOrder(unittest.TestCase):
                 verde = green
 
 
-class TestFlag(unittest.TestCase):
+class OldTestFlag:
     """Tests of the Flags."""
 
     class Perm(Flag):
@@ -3660,7 +3591,7 @@ class TestFlag(unittest.TestCase):
         self.assertIs(ctx.exception.__context__, None)
 
 
-class TestIntFlag(unittest.TestCase):
+class OldTestIntFlag:
     """Tests of the IntFlags."""
 
     class Perm(IntFlag):
@@ -4449,6 +4380,89 @@ class TestHelpers(unittest.TestCase):
         for name in self.sunder_names + self.dunder_names + self.random_names:
             self.assertFalse(enum._is_private('MyEnum', name), '%r is a private name?')
 
+    def test_auto_number(self):
+        class Color(Enum):
+            red = auto()
+            blue = auto()
+            green = auto()
+
+        self.assertEqual(list(Color), [Color.red, Color.blue, Color.green])
+        self.assertEqual(Color.red.value, 1)
+        self.assertEqual(Color.blue.value, 2)
+        self.assertEqual(Color.green.value, 3)
+
+    def test_auto_name(self):
+        class Color(Enum):
+            def _generate_next_value_(name, start, count, last):
+                return name
+            red = auto()
+            blue = auto()
+            green = auto()
+
+        self.assertEqual(list(Color), [Color.red, Color.blue, Color.green])
+        self.assertEqual(Color.red.value, 'red')
+        self.assertEqual(Color.blue.value, 'blue')
+        self.assertEqual(Color.green.value, 'green')
+
+    def test_auto_name_inherit(self):
+        class AutoNameEnum(Enum):
+            def _generate_next_value_(name, start, count, last):
+                return name
+        class Color(AutoNameEnum):
+            red = auto()
+            blue = auto()
+            green = auto()
+
+        self.assertEqual(list(Color), [Color.red, Color.blue, Color.green])
+        self.assertEqual(Color.red.value, 'red')
+        self.assertEqual(Color.blue.value, 'blue')
+        self.assertEqual(Color.green.value, 'green')
+
+    def test_auto_garbage(self):
+        class Color(Enum):
+            red = 'red'
+            blue = auto()
+        self.assertEqual(Color.blue.value, 1)
+
+    def test_auto_garbage_corrected(self):
+        class Color(Enum):
+            red = 'red'
+            blue = 2
+            green = auto()
+
+        self.assertEqual(list(Color), [Color.red, Color.blue, Color.green])
+        self.assertEqual(Color.red.value, 'red')
+        self.assertEqual(Color.blue.value, 2)
+        self.assertEqual(Color.green.value, 3)
+
+    def test_auto_order(self):
+        with self.assertRaises(TypeError):
+            class Color(Enum):
+                red = auto()
+                green = auto()
+                blue = auto()
+                def _generate_next_value_(name, start, count, last):
+                    return name
+
+    def test_auto_order_wierd(self):
+        weird_auto = auto()
+        weird_auto.value = 'pathological case'
+        class Color(Enum):
+            red = weird_auto
+            def _generate_next_value_(name, start, count, last):
+                return name
+            blue = auto()
+        self.assertEqual(list(Color), [Color.red, Color.blue])
+        self.assertEqual(Color.red.value, 'pathological case')
+        self.assertEqual(Color.blue.value, 'blue')
+
+    def test_duplicate_auto(self):
+        class Dupes(Enum):
+            first = primero = auto()
+            second = auto()
+            third = auto()
+        self.assertEqual([Dupes.first, Dupes.second, Dupes.third], list(Dupes))
+
 class TestEnumTypeSubclassing(unittest.TestCase):
     pass
 
@@ -4481,6 +4495,25 @@ class Color(enum.Enum)
  |\x20\x20
  |  value
  |      The value of the Enum member.
+ |\x20\x20
+ |  ----------------------------------------------------------------------
+ |  Methods inherited from enum.EnumType:
+ |\x20\x20
+ |  __contains__(member) from enum.EnumType
+ |      Return True if member is a member of this enum
+ |      raises TypeError if member is not an enum member
+ |\x20\x20\x20\x20\x20\x20
+ |      note: in 3.12 TypeError will no longer be raised, and True will also be
+ |      returned if member is the value of a member in this enum
+ |\x20\x20
+ |  __getitem__(name) from enum.EnumType
+ |      Return the member matching `name`.
+ |\x20\x20
+ |  __iter__() from enum.EnumType
+ |      Return members in definition order.
+ |\x20\x20
+ |  __len__() from enum.EnumType
+ |      Return the number of members (no aliases)
  |\x20\x20
  |  ----------------------------------------------------------------------
  |  Readonly properties inherited from enum.EnumType:
@@ -4554,6 +4587,12 @@ class TestStdLib(unittest.TestCase):
                 ('name', Enum.__dict__['name']),
                 ('red', self.Color.red),
                 ('value', Enum.__dict__['value']),
+                ('__len__', self.Color.__len__),
+                ('__contains__', self.Color.__contains__),
+                ('__name__', 'Color'),
+                ('__getitem__', self.Color.__getitem__),
+                ('__qualname__', 'TestStdLib.Color'),
+                ('__iter__', self.Color.__iter__),
                 ))
         result = dict(inspect.getmembers(self.Color))
         self.assertEqual(set(values.keys()), set(result.keys()))
@@ -4573,12 +4612,24 @@ class TestStdLib(unittest.TestCase):
         values = [
                 Attribute(name='__class__', kind='data',
                     defining_class=object, object=EnumType),
+                Attribute(name='__contains__', kind='method',
+                    defining_class=EnumType, object=self.Color.__contains__),
                 Attribute(name='__doc__', kind='data',
                     defining_class=self.Color, object='An enumeration.'),
+                Attribute(name='__getitem__', kind='method',
+                    defining_class=EnumType, object=self.Color.__getitem__),
+                Attribute(name='__iter__', kind='method',
+                    defining_class=EnumType, object=self.Color.__iter__),
+                Attribute(name='__len__', kind='method',
+                    defining_class=EnumType, object=self.Color.__len__),
                 Attribute(name='__members__', kind='property',
                     defining_class=EnumType, object=EnumType.__members__),
                 Attribute(name='__module__', kind='data',
                     defining_class=self.Color, object=__name__),
+                Attribute(name='__name__', kind='data',
+                    defining_class=self.Color, object='Color'),
+                Attribute(name='__qualname__', kind='data',
+                    defining_class=self.Color, object='TestStdLib.Color'),
                 Attribute(name='blue', kind='data',
                     defining_class=self.Color, object=self.Color.blue),
                 Attribute(name='green', kind='data',
@@ -4590,6 +4641,11 @@ class TestStdLib(unittest.TestCase):
                 Attribute(name='value', kind='data',
                     defining_class=Enum, object=Enum.__dict__['value']),
                 ]
+        for v in values:
+            try:
+                v.name
+            except AttributeError:
+                print(v)
         values.sort(key=lambda item: item.name)
         result = list(inspect.classify_class_attrs(self.Color))
         result.sort(key=lambda item: item.name)
@@ -4761,7 +4817,7 @@ class TestIntEnumConvert(unittest.TestCase):
                     MODULE,
                     filter=lambda x: x.startswith('CONVERT_STRING_TEST_'))
         self.assertEqual(repr(test_type.CONVERT_STRING_TEST_NAME_A), '%s.CONVERT_STRING_TEST_NAME_A' % SHORT_MODULE)
-        self.assertEqual(str(test_type.CONVERT_STRING_TEST_NAME_A), 'CONVERT_STRING_TEST_NAME_A')
+        self.assertEqual(str(test_type.CONVERT_STRING_TEST_NAME_A), '5')
         self.assertEqual(format(test_type.CONVERT_STRING_TEST_NAME_A), '5')
 
 # global names for StrEnum._convert_ test
@@ -4797,6 +4853,38 @@ class TestStrEnumConvert(unittest.TestCase):
         self.assertEqual(repr(test_type.CONVERT_STR_TEST_1), '%s.CONVERT_STR_TEST_1' % SHORT_MODULE)
         self.assertEqual(str(test_type.CONVERT_STR_TEST_2), 'goodbye')
         self.assertEqual(format(test_type.CONVERT_STR_TEST_1), 'hello')
+
+
+# helpers
+
+def enum_dir(cls):
+    # TODO: check for custom __init__, __new__, __format__, __repr__, __str__, __init_subclass__
+    return sorted(set([
+            '__class__', '__contains__', '__doc__', '__getitem__',
+            '__iter__', '__len__', '__members__', '__module__',
+            '__name__', '__qualname__',
+            ]
+            + cls._member_names_
+            ))
+    return sorted(allowed)
+
+def member_dir(member):
+    allowed = set(['__class__', '__doc__', '__eq__', '__hash__', '__module__', 'name', 'value'])
+    for cls in member.__class__.mro():
+        for name, obj in cls.__dict__.items():
+            if name[0] == '_':
+                continue
+            if isinstance(obj, enum.property):
+                if obj.fget is not None or name not in member._member_map_:
+                    allowed.add(name)
+            else:
+                allowed.add(name)
+    names = sorted(allowed)
+    return names
+
+    return sorted(allowed)
+
+missing = object()
 
 
 if __name__ == '__main__':

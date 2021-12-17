@@ -161,7 +161,7 @@ Data Types
       mixin classes will also be included::
 
         >>> dir(Color)
-        ['BLUE', 'GREEN', 'RED', '__class__', '__doc__', '__members__', '__module__']
+        ['BLUE', 'GREEN', 'RED', '__class__', '__contains__', '__doc__', '__getitem__', '__iter__', '__len__', '__members__', '__module__', '__name__', '__qualname__']
 
    .. method:: EnumType.__getattr__(cls, name)
 
@@ -271,7 +271,7 @@ Data Types
          ...     def today(cls):
          ...         print('today is %s' % cls(date.today().isoweekday()).name)
          >>> dir(Weekday.SATURDAY)
-         ['__class__', '__doc__', '__module__', 'name', 'today', 'value']
+         ['__class__', '__doc__', '__eq__', '__hash__', '__module__', 'name', 'today', 'value']
 
    .. method:: Enum._generate_next_value_(name, start, count, last_values)
 

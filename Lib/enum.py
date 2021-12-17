@@ -7,7 +7,7 @@ from functools import reduce
 
 __all__ = [
         'EnumType', 'EnumMeta',
-        'Enum', 'IntEnum', 'StrEnum', 'Flag', 'IntFlag',
+        'Enum', 'IntEnum', 'StrEnum', 'Flag', 'IntFlag', 'ReprEnum',
         'auto', 'unique', 'property', 'verify',
         'FlagBoundary', 'STRICT', 'CONFORM', 'EJECT', 'KEEP',
         'global_flag_repr', 'global_enum_repr', 'global_enum',
@@ -18,7 +18,7 @@ __all__ = [
 # Dummy value for Enum and Flag as there are explicit checks for them
 # before they have been created.
 # This is also why there are checks in EnumType like `if Enum is not None`
-Enum = Flag = EJECT = None
+Enum = Flag = EJECT = _stdlib_enums = ReprEnum = None
 
 def _is_descriptor(obj):
     """
@@ -385,7 +385,7 @@ class EnumType(type):
     @classmethod
     def __prepare__(metacls, cls, bases, **kwds):
         # check that previous enum members do not exist
-        metacls._check_for_existing_members(cls, bases)
+        metacls._check_for_existing_members_(cls, bases)
         # create the namespace dict
         enum_dict = _EnumDict()
         enum_dict._cls_name = cls
@@ -448,6 +448,8 @@ class EnumType(type):
         classdict['_value2member_map_'] = {}
         classdict['_unhashable_values_'] = []
         classdict['_member_type_'] = member_type
+        # now set the __repr__ for the value
+        classdict['_value_repr_'] = metacls._find_data_repr_(cls, bases)
         #
         # Flag structures (will be removed if final class is not a Flag
         classdict['_boundary_'] = (
@@ -471,19 +473,35 @@ class EnumType(type):
         if exc is not None:
             raise exc
         #
+        # update classdict with any changes made by __init_subclass__
+        classdict.update(enum_class.__dict__)
+        #
         # double check that repr and friends are not the mixin's or various
         # things break (such as pickle)
         # however, if the method is defined in the Enum itself, don't replace
         # it
-        # for name in ('__repr__', '__str__', '__format__', '__reduce_ex__'):
-        for name in ('__repr__', '__reduce_ex__'):
-            if name in classdict:
-                continue
-            class_method = getattr(enum_class, name)
-            obj_method = getattr(member_type, name, None)
-            enum_method = getattr(first_enum, name, None)
-            if obj_method is not None and obj_method is class_method:
-                setattr(enum_class, name, enum_method)
+        #
+        # Also, special handling for ReprEnum
+        if ReprEnum is not None and ReprEnum in bases:
+            if member_type is object:
+                raise TypeError(
+                        'ReprEnum subclasses must be mixed with a data type (i.e.'
+                        ' int, str, float, etc.)'
+                        )
+            if '__format__' not in classdict:
+                enum_class.__format__ = member_type.__format__
+                classdict['__format__'] = enum_class.__format__
+            if '__str__' not in classdict:
+                method = member_type.__str__
+                if method is object.__str__:
+                    # if member_type does not define __str__, object.__str__ will use
+                    # its __repr__ instead, so we'll also use its __repr__
+                    method = member_type.__repr__
+                enum_class.__str__ = method
+                classdict['__str__'] = enum_class.__str__
+        for name in ('__repr__', '__str__', '__format__', '__reduce_ex__'):
+            if name not in classdict:
+                setattr(enum_class, name, getattr(first_enum, name))
         #
         # replace any other __new__ with our own (as long as Enum is not None,
         # anyway) -- again, this is to support pickle
@@ -605,6 +623,13 @@ class EnumType(type):
                 )
 
     def __contains__(cls, member):
+        """
+        Return True if member is a member of this enum
+        raises TypeError if member is not an enum member
+
+        note: in 3.12 TypeError will no longer be raised, and True will also be
+        returned if member is the value of a member in this enum
+        """
         if not isinstance(member, Enum):
             import warnings
             warnings.warn(
@@ -694,15 +719,21 @@ class EnumType(type):
             raise AttributeError(name) from None
 
     def __getitem__(cls, name):
+        """
+        Return the member matching `name`.
+        """
         return cls._member_map_[name]
 
     def __iter__(cls):
         """
-        Returns members in definition order.
+        Return members in definition order.
         """
         return (cls._member_map_[name] for name in cls._member_names_)
 
     def __len__(cls):
+        """
+        Return the number of members (no aliases)
+        """
         return len(cls._member_names_)
 
     @bltns.property
@@ -723,7 +754,7 @@ class EnumType(type):
 
     def __reversed__(cls):
         """
-        Returns members in reverse definition order.
+        Return members in reverse definition order.
         """
         return (cls._member_map_[name] for name in reversed(cls._member_names_))
 
@@ -793,7 +824,6 @@ class EnumType(type):
         return metacls.__new__(metacls, class_name, bases, classdict, boundary=boundary)
 
     def _convert_(cls, name, module, filter, source=None, *, boundary=None):
-
         """
         Create a new Enum subclass that replaces a collection of global constants
         """
@@ -830,7 +860,7 @@ class EnumType(type):
         return cls
 
     @classmethod
-    def _check_for_existing_members(mcls, class_name, bases):
+    def _check_for_existing_members_(mcls, class_name, bases):
         for chain in bases:
             for base in chain.__mro__:
                 if issubclass(base, Enum) and base._member_names_:
@@ -850,7 +880,7 @@ class EnumType(type):
         if not bases:
             return object, Enum
 
-        mcls._check_for_existing_members(class_name, bases)
+        mcls._check_for_existing_members_(class_name, bases)
 
         # ensure final parent class is an Enum derivative, find any concrete
         # data type, and check that Enum has no members
@@ -863,7 +893,21 @@ class EnumType(type):
         return member_type, first_enum
 
     @classmethod
-    def _find_data_type(mcls, class_name, bases):
+    def _find_data_repr_(mcls, class_name, bases):
+        for chain in bases:
+            for base in chain.__mro__:
+                if base is object:
+                    continue
+                elif issubclass(base, Enum):
+                    # if we hit an Enum, use it's _value_repr_
+                    return base._value_repr_
+                elif '__repr__' in base.__dict__:
+                    # this is our data repr
+                    return base.__dict__['__repr__']
+        return None
+
+    @classmethod
+    def _find_data_type_(mcls, class_name, bases):
         data_types = set()
         for chain in bases:
             candidate = None
@@ -1015,7 +1059,8 @@ class Enum(metaclass=EnumType):
         return None
 
     def __repr__(self):
-        return "<%s.%s: %r>" % (self.__class__.__name__, self._name_, self._value_)
+        v_repr = self.__class__._value_repr_ or self._value_.__class__.__repr__
+        return "<%s.%s: %s>" % (self.__class__.__name__, self._name_, v_repr(self._value_))
 
     def __str__(self):
         return "%s.%s" % (self.__class__.__name__, self._name_, )
@@ -1085,29 +1130,19 @@ class Enum(metaclass=EnumType):
         return self._value_
 
 
-class IntEnum(int, Enum):
+class ReprEnum(Enum):
+    """
+    Only changes the repr(), leaving str() and format() to the mixed-in type.
+    """
+
+
+class IntEnum(int, ReprEnum):
     """
     Enum where members are also (and must be) ints
     """
 
-    # def __str__(self):
-    #     return "%s" % (self._name_, )
 
-    # def __format__(self, format_spec):
-    #     """
-    #     Returns format using actual value unless __str__ has been overridden.
-    #     """
-    #     str_overridden = type(self).__str__ != IntEnum.__str__
-    #     if str_overridden:
-    #         cls = str
-    #         val = str(self)
-    #     else:
-    #         cls = self._member_type_
-    #         val = self._value_
-    #     return cls.__format__(val, format_spec)
-
-
-class StrEnum(str, Enum):
+class StrEnum(str, ReprEnum):
     """
     Enum where members are also (and must be) strings
     """
@@ -1131,10 +1166,6 @@ class StrEnum(str, Enum):
         member = str.__new__(cls, value)
         member._value_ = value
         return member
-
-    __str__ = str.__str__
-
-    __format__ = str.__format__
 
     def _generate_next_value_(name, start, count, last_values):
         """
@@ -1304,22 +1335,11 @@ class Flag(Enum, boundary=STRICT):
 
     def __repr__(self):
         cls_name = self.__class__.__name__
+        v_repr = self.__class__._value_repr_ or self._value_.__class__.__repr__
         if self._name_ is None:
-            return "<%s: %r>" % (cls_name, self._value_)
+            return "<%s: %s>" % (cls_name, v_repr(self._value_))
         else:
-            return "<%s.%s: %r>" % (cls_name, self._name_, self._value_)
-        # if _is_single_bit(self._value_):
-        #     return '%s.%s' % (cls_name, self._name_)
-        # if self._boundary_ is not FlagBoundary.KEEP:
-        #     return '%s.' % cls_name + ('|%s.' % cls_name).join(self.name.split('|'))
-        # else:
-        #     name = []
-        #     for n in self._name_.split('|'):
-        #         if n.startswith('0'):
-        #             name.append(n)
-        #         else:
-        #             name.append('%s.%s' % (cls_name, n))
-        #     return '|'.join(name)
+            return "<%s.%s: %s>" % (cls_name, self._name_, v_repr(self._value_))
 
     def __str__(self):
         cls_name = self.__class__.__name__
@@ -1369,7 +1389,7 @@ class Flag(Enum, boundary=STRICT):
         return self._inverted_
 
 
-class IntFlag(int, Flag, boundary=EJECT):
+class IntFlag(int, ReprEnum, Flag, boundary=EJECT):
     """
     Support for integer-based Flags
     """
@@ -1418,6 +1438,7 @@ class IntFlag(int, Flag, boundary=EJECT):
     __rand__ = __and__
     __rxor__ = __xor__
     __invert__ = Flag.__invert__
+
 
 def _high_bit(value):
     """
@@ -1529,6 +1550,7 @@ def _simple_enum(etype=Enum, *, boundary=None, use_args=None):
         body['_value2member_map_'] = value2member_map = {}
         body['_unhashable_values_'] = []
         body['_member_type_'] = member_type = etype._member_type_
+        body['_value_repr_'] = etype._value_repr_
         if issubclass(etype, Flag):
             body['_boundary_'] = boundary or etype._boundary_
             body['_flag_mask_'] = None
@@ -1549,15 +1571,16 @@ def _simple_enum(etype=Enum, *, boundary=None, use_args=None):
         # however, if the method is defined in the Enum itself, don't replace
         # it
         enum_class = type(cls_name, (etype, ), body, boundary=boundary, _simple=True)
-        # for name in ('__repr__', '__str__', '__format__', '__reduce_ex__'):
-        for name in ('__repr__', '__reduce_ex__'):
-            if name in body:
-                continue
-            class_method = getattr(enum_class, name)
-            obj_method = getattr(member_type, name, None)
-            enum_method = getattr(etype, name, None)
-            if obj_method is not None and obj_method is class_method:
-                setattr(enum_class, name, enum_method)
+        for name in ('__repr__', '__str__', '__format__', '__reduce_ex__'):
+        # for name in ('__repr__', '__reduce_ex__'):
+            if name not in body:
+                setattr(enum_class, name, getattr(etype, name))
+                # continue
+            # class_method = getattr(enum_class, name)
+            # obj_method = getattr(member_type, name, None)
+            # enum_method = getattr(etype, name, None)
+            # if obj_method is not None and obj_method is class_method:
+            #     setattr(enum_class, name, enum_method)
         gnv_last_values = []
         if issubclass(enum_class, Flag):
             # Flag / IntFlag
@@ -1833,8 +1856,8 @@ def _test_simple_enum(checked_enum, simple_enum):
                         name, '\n      '.join(failed_member),
                         ))
         for method in (
-                # '__str__', '__repr__', '__reduce_ex__', '__format__',
-                '__repr__', '__reduce_ex__',
+                '__str__', '__repr__', '__reduce_ex__', '__format__',
+                # '__repr__', '__reduce_ex__',
                 '__getnewargs_ex__', '__getnewargs__', '__reduce_ex__', '__reduce__'
             ):
             if method in simple_keys and method in checked_keys:
@@ -1891,3 +1914,5 @@ def _old_convert_(etype, name, module, filter, source=None, *, boundary=None):
     cls.__reduce_ex__ = _reduce_ex_by_global_name
     cls.__repr__ = global_enum_repr
     return cls
+
+_stdlib_enums = IntEnum, StrEnum, IntFlag
