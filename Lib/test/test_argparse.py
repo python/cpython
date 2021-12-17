@@ -9,6 +9,7 @@ import textwrap
 import tempfile
 import unittest
 import argparse
+import warnings
 
 from io import StringIO
 
@@ -2973,15 +2974,24 @@ class TestMutuallyExclusiveOptionalsAndPositionalsMixed(MEMixin, TestCase):
 
 class TestMutuallyExclusiveNested(MEMixin, TestCase):
 
+    # Nesting mutually exclusive groups is an undocumented feature
+    # that came about by accident through inheritance and has been
+    # the source of many bugs. It is deprecated and this test should
+    # eventually be removed along with it.
+
     def get_parser(self, required):
         parser = ErrorRaisingArgumentParser(prog='PROG')
         group = parser.add_mutually_exclusive_group(required=required)
         group.add_argument('-a')
         group.add_argument('-b')
-        group2 = group.add_mutually_exclusive_group(required=required)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            group2 = group.add_mutually_exclusive_group(required=required)
         group2.add_argument('-c')
         group2.add_argument('-d')
-        group3 = group2.add_mutually_exclusive_group(required=required)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            group3 = group2.add_mutually_exclusive_group(required=required)
         group3.add_argument('-e')
         group3.add_argument('-f')
         return parser
