@@ -1290,13 +1290,17 @@ eval_frame_handle_pending(PyThreadState *tstate)
     #define USE_COMPUTED_GOTOS 0
 #endif
 
-#define INSTRUCTION_START() frame->f_lasti = INSTR_OFFSET(); next_instr++
+#ifdef Py_STATS
+#define INSTRUCTION_START(op) frame->f_lasti = INSTR_OFFSET(); next_instr++; OPCODE_EXE_INC(op);
+#else
+#define INSTRUCTION_START(op) frame->f_lasti = INSTR_OFFSET(); next_instr++
+#endif
 
 #if USE_COMPUTED_GOTOS
-#define TARGET(op) TARGET_##op: INSTRUCTION_START();
+#define TARGET(op) TARGET_##op: INSTRUCTION_START(op);
 #define DISPATCH_GOTO() goto *opcode_targets[opcode]
 #else
-#define TARGET(op) case op: INSTRUCTION_START();
+#define TARGET(op) case op: INSTRUCTION_START(op);
 #define DISPATCH_GOTO() goto dispatch_opcode
 #endif
 
@@ -1416,7 +1420,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
         opcode = _Py_OPCODE(word) | cframe.use_tracing OR_DTRACE_LINE; \
         if (opcode == op) { \
             oparg = _Py_OPARG(word); \
-            INSTRUCTION_START(); \
+            INSTRUCTION_START(op); \
             goto PREDICT_ID(op); \
         } \
     } while(0)
@@ -2186,7 +2190,6 @@ check_eval_breaker:
 
         TARGET(BINARY_SUBSCR) {
             PREDICTED(BINARY_SUBSCR);
-            STAT_INC(BINARY_SUBSCR, unquickened);
             PyObject *sub = POP();
             PyObject *container = TOP();
             PyObject *res = PyObject_GetItem(container, sub);
@@ -2214,7 +2217,6 @@ check_eval_breaker:
                 cache->adaptive.counter--;
                 assert(cache->adaptive.original_oparg == 0);
                 /* No need to set oparg here; it isn't used by BINARY_SUBSCR */
-                STAT_DEC(BINARY_SUBSCR, unquickened);
                 JUMP_TO_INSTRUCTION(BINARY_SUBSCR);
             }
         }
@@ -2339,7 +2341,6 @@ check_eval_breaker:
 
         TARGET(STORE_SUBSCR) {
             PREDICTED(STORE_SUBSCR);
-            STAT_INC(STORE_SUBSCR, unquickened);
             PyObject *sub = TOP();
             PyObject *container = SECOND();
             PyObject *v = THIRD();
@@ -2369,7 +2370,6 @@ check_eval_breaker:
                 STAT_INC(STORE_SUBSCR, deferred);
                 // oparg is the adaptive cache counter
                 UPDATE_PREV_INSTR_OPARG(next_instr, oparg - 1);
-                STAT_DEC(STORE_SUBSCR, unquickened);
                 JUMP_TO_INSTRUCTION(STORE_SUBSCR);
             }
         }
@@ -2933,7 +2933,6 @@ check_eval_breaker:
 
         TARGET(STORE_ATTR) {
             PREDICTED(STORE_ATTR);
-            STAT_INC(STORE_ATTR, unquickened);
             PyObject *name = GETITEM(names, oparg);
             PyObject *owner = TOP();
             PyObject *v = SECOND();
@@ -3049,7 +3048,6 @@ check_eval_breaker:
 
         TARGET(LOAD_GLOBAL) {
             PREDICTED(LOAD_GLOBAL);
-            STAT_INC(LOAD_GLOBAL, unquickened);
             PyObject *name = GETITEM(names, oparg);
             PyObject *v;
             if (PyDict_CheckExact(GLOBALS())
@@ -3112,7 +3110,6 @@ check_eval_breaker:
                 STAT_INC(LOAD_GLOBAL, deferred);
                 cache->adaptive.counter--;
                 oparg = cache->adaptive.original_oparg;
-                STAT_DEC(LOAD_GLOBAL, unquickened);
                 JUMP_TO_INSTRUCTION(LOAD_GLOBAL);
             }
         }
@@ -3532,7 +3529,6 @@ check_eval_breaker:
 
         TARGET(LOAD_ATTR) {
             PREDICTED(LOAD_ATTR);
-            STAT_INC(LOAD_ATTR, unquickened);
             PyObject *name = GETITEM(names, oparg);
             PyObject *owner = TOP();
             PyObject *res = PyObject_GetAttr(owner, name);
@@ -3560,7 +3556,6 @@ check_eval_breaker:
                 STAT_INC(LOAD_ATTR, deferred);
                 cache->adaptive.counter--;
                 oparg = cache->adaptive.original_oparg;
-                STAT_DEC(LOAD_ATTR, unquickened);
                 JUMP_TO_INSTRUCTION(LOAD_ATTR);
             }
         }
@@ -3663,7 +3658,6 @@ check_eval_breaker:
                 STAT_INC(STORE_ATTR, deferred);
                 cache->adaptive.counter--;
                 oparg = cache->adaptive.original_oparg;
-                STAT_DEC(STORE_ATTR, unquickened);
                 JUMP_TO_INSTRUCTION(STORE_ATTR);
             }
         }
@@ -3754,7 +3748,6 @@ check_eval_breaker:
 
         TARGET(COMPARE_OP) {
             PREDICTED(COMPARE_OP);
-            STAT_INC(COMPARE_OP, unquickened);
             assert(oparg <= Py_GE);
             PyObject *right = POP();
             PyObject *left = TOP();
@@ -3783,7 +3776,6 @@ check_eval_breaker:
                 STAT_INC(COMPARE_OP, deferred);
                 cache->adaptive.counter--;
                 oparg = cache->adaptive.original_oparg;
-                STAT_DEC(COMPARE_OP, unquickened);
                 JUMP_TO_INSTRUCTION(COMPARE_OP);
             }
         }
@@ -4438,7 +4430,6 @@ check_eval_breaker:
 
         TARGET(LOAD_METHOD) {
             PREDICTED(LOAD_METHOD);
-            STAT_INC(LOAD_METHOD, unquickened);
             /* Designed to work in tandem with CALL_METHOD. */
             PyObject *name = GETITEM(names, oparg);
             PyObject *obj = TOP();
@@ -4491,7 +4482,6 @@ check_eval_breaker:
                 STAT_INC(LOAD_METHOD, deferred);
                 cache->adaptive.counter--;
                 oparg = cache->adaptive.original_oparg;
-                STAT_DEC(LOAD_METHOD, unquickened);
                 JUMP_TO_INSTRUCTION(LOAD_METHOD);
             }
         }
@@ -4617,7 +4607,6 @@ check_eval_breaker:
         TARGET(CALL_NO_KW) {
             PyObject *function;
             PREDICTED(CALL_NO_KW);
-            STAT_INC(CALL_NO_KW, unquickened);
             kwnames = NULL;
             oparg += extra_args;
             nargs = oparg;
@@ -5186,7 +5175,6 @@ check_eval_breaker:
 
         TARGET(BINARY_OP) {
             PREDICTED(BINARY_OP);
-            STAT_INC(BINARY_OP, unquickened);
             PyObject *rhs = POP();
             PyObject *lhs = TOP();
             assert(0 <= oparg);
@@ -5216,7 +5204,6 @@ check_eval_breaker:
                 STAT_INC(BINARY_OP, deferred);
                 cache->adaptive.counter--;
                 oparg = cache->adaptive.original_oparg;
-                STAT_DEC(BINARY_OP, unquickened);
                 JUMP_TO_INSTRUCTION(BINARY_OP);
             }
         }
@@ -5301,7 +5288,6 @@ opname ## _miss: \
             cache_backoff(cache); \
         } \
         oparg = cache->original_oparg; \
-        STAT_DEC(opname, unquickened); \
         JUMP_TO_INSTRUCTION(opname); \
     }
 
@@ -5317,7 +5303,6 @@ opname ## _miss: \
             next_instr[-1] = _Py_MAKECODEUNIT(opname ## _ADAPTIVE, oparg); \
             STAT_INC(opname, deopt); \
         } \
-        STAT_DEC(opname, unquickened); \
         JUMP_TO_INSTRUCTION(opname); \
     }
 

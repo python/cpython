@@ -288,11 +288,10 @@ _specialized_instructions = [
     "STORE_FAST__STORE_FAST",
 ]
 _specialization_stats = [
-    "specialization_success",
-    "specialization_failure",
+    "success",
+    "failure",
     "hit",
     "deferred",
     "miss",
     "deopt",
-    "unquickened",
 ]
