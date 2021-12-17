@@ -567,7 +567,7 @@ other clauses and eventually to be reraised. ::
        +-+---------------- 1 ----------------
          | RecursionError: 4
          +------------------------------------
-
+   >>>
 
 Enriching Exceptions with Notes
 ===============================
@@ -576,7 +576,19 @@ When an exception is created in order to be raised, it is usually initialized
 with information that describes the error that has occurred. There are cases
 where it is useful to add information after the exception was caught. For this
 purpose, exceptions have a mutable field ``__note__`` that can be assigned to
-a string which is included in formatted tracebacks.
+a string which is included in formatted tracebacks. ::
+
+   >>> try:
+   ...     raise TypeError('bad type')
+   ... except Exception as e:
+   ...     e.__note__ = 'Add some information'
+   ...     raise
+   ...
+   Traceback (most recent call last):
+     File "<stdin>", line 2, in <module>
+   TypeError: bad type
+   Add some information
+   >>>
 
 For example, when collecting exceptions into an exception group, we may want
 to add context information for the individual errors. In the following each
