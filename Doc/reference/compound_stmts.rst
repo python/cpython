@@ -220,6 +220,7 @@ returns the list ``[0, 1, 2]``.
 
 .. _try:
 .. _except:
+.. _except_star:
 .. _finally:
 
 The :keyword:`!try` statement
