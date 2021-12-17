@@ -16090,7 +16090,7 @@ _PyUnicode_Fini(PyInterpreterState *interp)
     struct _Py_unicode_state *state = &interp->unicode;
 
     // _PyUnicode_ClearInterned() must be called before
-    assert(INTERNED == NULL);
+    assert(INTERNED == NULL || !_Py_IsMainInterpreter(interp));
 
     _PyUnicode_FiniEncodings(&state->fs_codec);
 
