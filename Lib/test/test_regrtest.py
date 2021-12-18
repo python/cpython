@@ -248,7 +248,6 @@ class ParseArgsTestCase(unittest.TestCase):
                 ns = libregrtest._parse_args([opt])
                 self.assertTrue(ns.runleaks)
 
-    @support.refcount_test
     def test_huntrleaks(self):
         for opt in '-R', '--huntrleaks':
             with self.subTest(opt=opt):
@@ -902,7 +901,6 @@ class ArgsTestCase(BaseTestCase):
             reflog = fp.read()
             self.assertIn(line2, reflog)
 
-    @support.refcount_test
     @unittest.skipUnless(Py_DEBUG, 'need a debug build')
     def test_huntrleaks(self):
         # test --huntrleaks

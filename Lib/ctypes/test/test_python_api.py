@@ -49,13 +49,9 @@ class PythonAPITestCase(unittest.TestCase):
         pythonapi.PyLong_AsLong.argtypes = (py_object,)
         pythonapi.PyLong_AsLong.restype = c_long
 
-        import gc
         res = pythonapi.PyLong_AsLong(42)
-        if hasattr(gc, "is_immortal"):
-            # Small int refcnts don't change
-            self.assertEqual(grc(res), ref42)
-        else:
-            self.assertEqual(grc(res), ref42 + 1)
+        # Small int refcnts don't change
+        self.assertEqual(grc(res), ref42)
         del res
         self.assertEqual(grc(42), ref42)
 
