@@ -1699,7 +1699,21 @@ struct ErrorInfo error_info_of[] = {
     {"XML_ERROR_NOT_SUSPENDED", "parser not suspended"},
     {"XML_ERROR_ABORTED", "parsing aborted"},
     {"XML_ERROR_FINISHED", "parsing finished"},
-    {"XML_ERROR_SUSPEND_PE", "cannot suspend in external parameter entity"}
+    {"XML_ERROR_SUSPEND_PE", "cannot suspend in external parameter entity"},
+
+    /* Added in 2.0.0. */
+    {"XML_ERROR_RESERVED_PREFIX_XML", "reserved prefix (xml) must not be undeclared or bound to another namespace name"},
+    {"XML_ERROR_RESERVED_PREFIX_XMLNS", "reserved prefix (xmlns) must not be declared or undeclared"},
+    {"XML_ERROR_RESERVED_NAMESPACE_URI", "prefix must not be bound to one of the reserved namespace names"},
+
+    /* Added in 2.2.1. */
+    {"XML_ERROR_INVALID_ARGUMENT", "invalid argument"},
+
+    /* Added in 2.3.0. */
+    {"XML_ERROR_NO_BUFFER", "a successful prior call to function XML_GetBuffer is required"},
+
+    /* Added in 2.4.0. */
+    {"XML_ERROR_AMPLIFICATION_LIMIT_BREACH", "limit on input amplification factor (from DTD and entities) breached"}
 };
 
 static int
