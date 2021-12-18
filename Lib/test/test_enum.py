@@ -3000,9 +3000,20 @@ class TestSpecial(unittest.TestCase):
         class Entries(Foo, Enum):
             ENTRY1 = Foo(1)
         self.assertEqual(repr(Entries.ENTRY1), '<Entries.ENTRY1: Foo(a=1)>')
-        
 
-class OldTestOrder(unittest.TestCase):
+    def test_repr_with_non_data_type_mixin(self):
+        # non-data_type is a mixin that doesn't define __new__
+        class Foo:
+            def __init__(self, a):
+                self.a = a
+            def __repr__(self):
+                return f'Foo(a={self.a!r})'
+        class Entries(Foo, Enum):
+            ENTRY1 = Foo(1)
+
+        self.assertEqual(repr(Entries.ENTRY1), '<Entries.ENTRY1: Foo(a=1)>')
+
+class TestOrder(unittest.TestCase):
     "test usage of the `_order_` attribute"
 
     def test_same_members(self):
