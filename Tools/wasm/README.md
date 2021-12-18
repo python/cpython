@@ -1,12 +1,13 @@
 # Python WebAssembly (WASM) build
 
 This directory contains configuration and helpers to facilitate cross
-compile CPython to WebAssembly (WASM).
+compilation of CPython to WebAssembly (WASM).
 
 ## wasm32-emscripten build
 
-Cross compiling to wasm32-emscripten platform needs [Emscripten](https://emscripten.org/)
+Cross compiling to wasm32-emscripten platform needs the [Emscripten](https://emscripten.org/)
 tool chain and a build Python interpreter.
+All commands below are relative to a repository checkout.
 
 ### Compile a build Python interpreter
 
@@ -41,7 +42,7 @@ emmake make -j$(nproc) python.html
 
 ### Test in browser
 
-Serve ``python.html`` with a local webserver and open the file in a browser.
+Serve `python.html` with a local webserver and open the file in a browser.
 
 ```shell
 emrun python.html
