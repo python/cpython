@@ -36,8 +36,8 @@ For example, ``'[?]'`` matches the character ``'?'``.
    The :mod:`pathlib` module offers high-level path objects.
 
 
-.. function:: glob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
-   include_hidden=False)
+.. function:: glob(pathname, *, root_dir=None, dir_fd=None, recursive=False, \
+                   include_hidden=False)
 
    Return a possibly-empty list of path names that match *pathname*, which must be
    a string containing a path specification. *pathname* can be either absolute
@@ -84,8 +84,8 @@ For example, ``'[?]'`` matches the character ``'?'``.
       Added the *include_hidden* parameter.
 
 
-.. function:: iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
-   include_hidden=False)
+.. function:: iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False, \
+                    include_hidden=False)
 
    Return an :term:`iterator` which yields the same values as :func:`glob`
    without actually storing them all simultaneously.
