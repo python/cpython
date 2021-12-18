@@ -171,7 +171,6 @@ static inline void _Py_SetImmortal(PyObject *op)
     }
 }
 
-
 static inline int _Py_IS_TYPE(const PyObject *ob, const PyTypeObject *type) {
     // bpo-44378: Don't use Py_TYPE() since Py_TYPE() requires a non-const
     // object.
