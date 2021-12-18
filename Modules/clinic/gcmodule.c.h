@@ -373,8 +373,6 @@ exit:
     return return_value;
 }
 
-#if defined(Py_IMMORTAL_OBJECTS)
-
 PyDoc_STRVAR(gc_is_immortal__doc__,
 "is_immortal($module, /, instance)\n"
 "--\n"
@@ -415,10 +413,6 @@ exit:
     return return_value;
 }
 
-#endif /* defined(Py_IMMORTAL_OBJECTS) */
-
-#if defined(Py_IMMORTAL_OBJECTS)
-
 PyDoc_STRVAR(gc_immortalize_heap__doc__,
 "immortalize_heap($module, /)\n"
 "--\n"
@@ -436,14 +430,4 @@ gc_immortalize_heap(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return gc_immortalize_heap_impl(module);
 }
-
-#endif /* defined(Py_IMMORTAL_OBJECTS) */
-
-#ifndef GC_IS_IMMORTAL_METHODDEF
-    #define GC_IS_IMMORTAL_METHODDEF
-#endif /* !defined(GC_IS_IMMORTAL_METHODDEF) */
-
-#ifndef GC_IMMORTALIZE_HEAP_METHODDEF
-    #define GC_IMMORTALIZE_HEAP_METHODDEF
-#endif /* !defined(GC_IMMORTALIZE_HEAP_METHODDEF) */
-/*[clinic end generated code: output=575e0a5cd2ff2de6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bb69d72cd09585e7 input=a9049054013a1b77]*/

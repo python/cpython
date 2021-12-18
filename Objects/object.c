@@ -1718,11 +1718,7 @@ PyTypeObject _PyNone_Type = {
 
 PyObject _Py_NoneStruct = {
   _PyObject_EXTRA_INIT
-#ifdef Py_IMMORTAL_OBJECTS
   _Py_IMMORTAL_BIT,
-#else
-  1,
-#endif  /* Py_IMMORTAL_OBJECTS */
   &_PyNone_Type
 };
 

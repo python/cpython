@@ -81,53 +81,25 @@ typedef struct _typeobject PyTypeObject;
 /* PyObject_HEAD defines the initial segment of every PyObject. */
 #define PyObject_HEAD                   PyObject ob_base;
 
-/* [RFC] Should we enable Immortal Instances by Default? */
-#define Py_IMMORTAL_OBJECTS
-
-/* Immortalizing causes the instance to not participate in reference counting.
- * Thus, an immortal object will be kept alive until the runtime finalization.
- * This avoids an unnecessary copy-on-write for applications that share
- * a common python heap across many processes. */
-#ifdef Py_IMMORTAL_OBJECTS
-
-/* The GC bit-shifts refcounts left by two, and after that shift we still
- * need this to be >> 0, so leave three high zero bits (the sign bit and
- * room for a shift of two.) */
+/* Immortalization:
+ * This marks the reference count bit that will be used to define immortality.
+ * The GC bit-shifts refcounts left by two, and after that shift it still needs
+ * to be larger than zero, so it's placed after the first three high bits.
+ */
 #define _Py_IMMORTAL_BIT_OFFSET (8 * sizeof(Py_ssize_t) - 4)
 #define _Py_IMMORTAL_BIT (1LL << _Py_IMMORTAL_BIT_OFFSET)
-
-#endif  /* Py_IMMORTAL_OBJECTS */
 
 #define PyObject_HEAD_INIT(type)        \
     { _PyObject_EXTRA_INIT              \
     1, type },
 
-#ifdef Py_IMMORTAL_OBJECTS
-
 #define PyObject_HEAD_IMMORTAL_INIT(type)        \
     { _PyObject_EXTRA_INIT _Py_IMMORTAL_BIT, type },
-
-#else
-
-#define PyObject_HEAD_IMMORTAL_INIT(type)        \
-    { _PyObject_EXTRA_INIT 1, type },
-
-#endif  /* Py_IMMORTAL_OBJECTS */
-
-
-#ifdef Py_IMMORTAL_OBJECTS
 
 // TODO(eduardo-elizondo): This is only used to simplify the review of GH-19474
 // Rather than changing this API, we'll introduce PyVarObject_HEAD_IMMORTAL_INIT
 #define PyVarObject_HEAD_INIT(type, size)       \
     { PyObject_HEAD_IMMORTAL_INIT(type) size },
-
-#else
-
-#define PyVarObject_HEAD_INIT(type, size)       \
-    { PyObject_HEAD_INIT(type) size },
-
-#endif  /* Py_IMMORTAL_OBJECTS */
 
 /* PyObject_VAR_HEAD defines the initial segment of all variable-size
  * container objects.  These end with a declaration of an array with 1
@@ -187,8 +159,6 @@ static inline Py_ssize_t _Py_SIZE(const PyVarObject *ob) {
 #define Py_SIZE(ob) _Py_SIZE(_PyVarObject_CAST_CONST(ob))
 
 
-#ifdef Py_IMMORTAL_OBJECTS
-
 PyAPI_FUNC(PyObject *) PyGC_ImmortalizeHeap(void);
 
 static inline int _Py_IsImmortal(PyObject *op)
@@ -203,8 +173,6 @@ static inline void _Py_SetImmortal(PyObject *op)
     }
 }
 
-#endif  /* Py_IMMORTAL_OBJECTS */
-
 
 static inline int _Py_IS_TYPE(const PyObject *ob, const PyTypeObject *type) {
     // bpo-44378: Don't use Py_TYPE() since Py_TYPE() requires a non-const
@@ -215,11 +183,9 @@ static inline int _Py_IS_TYPE(const PyObject *ob, const PyTypeObject *type) {
 
 
 static inline void _Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
-#ifdef Py_IMMORTAL_OBJECTS
     if (_Py_IsImmortal(ob)) {
         return;
     }
-#endif  /* Py_IMMORTAL_OBJECTS */
     ob->ob_refcnt = refcnt;
 }
 #define Py_SET_REFCNT(ob, refcnt) _Py_SET_REFCNT(_PyObject_CAST(ob), refcnt)
@@ -551,11 +517,9 @@ static inline void _Py_INCREF(PyObject *op)
 #ifdef Py_REF_DEBUG
     _Py_RefTotal++;
 #endif
-#ifdef Py_IMMORTAL_OBJECTS
     if (_Py_IsImmortal(op)) {
         return;
     }
-#endif  /* Py_IMMORTAL_OBJECTS */
     op->ob_refcnt++;
 #endif
 }
@@ -576,11 +540,9 @@ static inline void _Py_DECREF(
 #ifdef Py_REF_DEBUG
     _Py_RefTotal--;
 #endif
-#ifdef Py_IMMORTAL_OBJECTS
     if (_Py_IsImmortal(op)) {
         return;
     }
-#endif  /* Py_IMMORTAL_OBJECTS */
     if (--op->ob_refcnt != 0) {
 #ifdef Py_REF_DEBUG
         if (op->ob_refcnt < 0) {
@@ -702,11 +664,7 @@ PyAPI_FUNC(int) Py_IsNone(PyObject *x);
 #define Py_IsNone(x) Py_Is((x), Py_None)
 
 /* Macro for returning Py_None from a function */
-#ifdef Py_IMMORTAL_OBJECTS
 #define Py_RETURN_NONE return Py_None
-#else
-#define Py_RETURN_NONE return Py_NewRef(Py_None)
-#endif
 
 /*
 Py_NotImplemented is a singleton used to signal that an operation is

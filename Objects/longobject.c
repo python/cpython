@@ -49,11 +49,7 @@ static PyObject *
 get_small_int(sdigit ival)
 {
     assert(IS_SMALL_INT(ival));
-    PyObject *v = (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + ival];
-#ifndef Py_IMMORTAL_OBJECTS
-    Py_INCREF(v);
-#endif  /* Py_IMMORTAL_OBJECTS */
-    return v;
+    return (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + ival];
 }
 
 static PyLongObject *

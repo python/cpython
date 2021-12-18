@@ -288,7 +288,6 @@ SYMBOL_NAMES = (
     "PyGC_Collect",
     "PyGC_Disable",
     "PyGC_Enable",
-    "PyGC_ImmortalizeHeap",
     "PyGC_IsEnabled",
     "PyGILState_Ensure",
     "PyGILState_GetThisThreadState",

@@ -709,7 +709,6 @@ class GCTests(unittest.TestCase):
         stderr = run_command(code % "gc.DEBUG_SAVEALL")
         self.assertNotIn(b"uncollectable objects at shutdown", stderr)
 
-    @unittest.skipIf(hasattr(gc, "is_immortal"), '__del__ is never called')
     def test_gc_main_module_at_shutdown(self):
         # Create a reference cycle through the __main__ module and check
         # it gets collected at interpreter shutdown.
@@ -723,7 +722,6 @@ class GCTests(unittest.TestCase):
         rc, out, err = assert_python_ok('-c', code)
         self.assertEqual(out.strip(), b'__del__ called')
 
-    @unittest.skipIf(hasattr(gc, "is_immortal"), '__del__ is never called')
     def test_gc_ordinary_module_at_shutdown(self):
         # Same as above, but with a non-__main__ module.
         with temp_dir() as script_dir:
@@ -743,7 +741,6 @@ class GCTests(unittest.TestCase):
             rc, out, err = assert_python_ok('-c', code)
             self.assertEqual(out.strip(), b'__del__ called')
 
-    @unittest.skipIf(hasattr(gc, "is_immortal"), '__del__ is never called')
     def test_global_del_SystemExit(self):
         code = """if 1:
             class ClassWithDel:
@@ -1043,53 +1040,6 @@ class GCTests(unittest.TestCase):
         gc.enable()
 
 
-# These tests need to be run in a separate process since gc.immortalize_heap
-# will mess up with the reference count of other tests
-class GCImmortalizeTests(unittest.TestCase):
-    @unittest.skipUnless(hasattr(gc, "is_immortal"), 'needs immortal build')
-    def test_not_immortal(self):
-        obj = []
-        self.assertFalse(gc.is_immortal(obj))
-
-    @unittest.skipIf("win" in sys.platform, 'needs fix under Windows')
-    @unittest.skipUnless(hasattr(gc, "is_immortal"), 'needs immortal build')
-    def test_is_immortal(self):
-        code = """if 1:
-            import gc
-            obj = []
-            gc.immortalize_heap()
-            print(gc.is_immortal(obj))
-            """
-        rc, out, err = assert_python_ok('-c', code)
-        self.assertEqual(out.strip(), b'True')
-
-    @unittest.skipIf("win" in sys.platform, 'needs fix under Windows')
-    @unittest.skipUnless(hasattr(gc, "is_immortal"), 'needs immortal build')
-    def test_post_immortalize(self):
-        code = """if 1:
-            import gc
-            gc.immortalize_heap()
-            obj = []
-            print(gc.is_immortal(obj))
-            """
-        rc, out, err = assert_python_ok('-c', code)
-        self.assertEqual(out.strip(), b'False')
-
-    @unittest.skipIf("win" in sys.platform, 'needs fix under Windows')
-    @unittest.skipUnless(hasattr(gc, "is_immortal"), 'needs immortal build')
-    def test_become_tracked_after_immortalize(self):
-        code = """if 1:
-            import gc
-            d = {}  # untracked by gc
-            gc.immortalize_heap()
-            d["foo"] = []  # now becomes gc-tracked
-            gc.collect()  # gc should not collect immortal objects
-            print(len(d))
-            """
-        rc, out, err = assert_python_ok('-c', code)
-        self.assertEqual(out.strip(), b'1')
-
-
 class GCCallbackTests(unittest.TestCase):
     def setUp(self):
         # Save gc state and disable it.
@@ -1213,7 +1163,6 @@ class GCCallbackTests(unittest.TestCase):
 
     @unittest.skipIf(BUILD_WITH_NDEBUG,
                      'built with -NDEBUG')
-    @unittest.skipIf(hasattr(gc, "is_immortal"), 'Ints are now immortal')
     def test_refcount_errors(self):
         self.preclean()
         # Verify the "handling" of objects with broken refcounts

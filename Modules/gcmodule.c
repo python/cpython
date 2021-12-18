@@ -1957,92 +1957,6 @@ gc_get_freeze_count_impl(PyObject *module)
 }
 
 
-#ifdef Py_IMMORTAL_OBJECTS
-/*[clinic input]
-gc.is_immortal -> bool
-
-    instance: object
-        The instance to perform the immortal check on.
-
-Check if an object has been immortalized.
-[clinic start generated code]*/
-
-static int
-gc_is_immortal_impl(PyObject *module, PyObject *instance)
-/*[clinic end generated code: output=743a163cb6aaf384 input=815182ca5c5d81e4]*/
-{
-    return _Py_IsImmortal(instance);
-}
-#endif  /* Py_IMMORTAL_OBJECTS */
-
-#ifdef Py_IMMORTAL_OBJECTS
-static int
-immortalize_object(PyObject *obj, PyObject *Py_UNUSED(ignored))
-{
-    _Py_SetImmortal(obj);
-    /* Special case for PyCodeObjects since they don't have a tp_traverse */
-    if (PyCode_Check(obj)) {
-        PyCodeObject *code = (PyCodeObject *)obj;
-        _Py_SetImmortal(code->co_code);
-        _Py_SetImmortal(code->co_consts);
-        _Py_SetImmortal(code->co_names);
-        _Py_SetImmortal(code->co_varnames);
-        _Py_SetImmortal(code->co_freevars);
-        _Py_SetImmortal(code->co_cellvars);
-        _Py_SetImmortal(code->co_filename);
-        _Py_SetImmortal(code->co_name);
-        _Py_SetImmortal(code->co_linetable);
-    }
-    return 0;
-}
-#endif  /* Py_IMMORTAL_OBJECTS */
-
-#ifdef Py_IMMORTAL_OBJECTS
-/*[clinic input]
-gc.immortalize_heap
-
-Immortalize all instances accessible through the GC roots.
-[clinic start generated code]*/
-
-static PyObject *
-gc_immortalize_heap_impl(PyObject *module)
-/*[clinic end generated code: output=a7bb85fe2e27e4ae input=ca1709e4667c0623]*/
-{
-    return PyGC_ImmortalizeHeap();
-}
-#endif  /* Py_IMMORTAL_OBJECTS */
-
-#ifdef Py_IMMORTAL_OBJECTS
-PyObject *
-PyGC_ImmortalizeHeap(void) {
-    PyGC_Head *gc, *list;
-    PyThreadState *tstate = _PyThreadState_GET();
-    GCState *gcstate = &tstate->interp->gc;
-
-    /* Remove any dead objects to avoid immortalizing them */
-    PyGC_Collect();
-
-    /* Move all instances into the permanent generation */
-    gc_freeze_impl(NULL);
-
-    /* Immortalize all instances in the permanent generation */
-    list = &gcstate->permanent_generation.head;
-    for (gc = GC_NEXT(list); gc != list; gc = GC_NEXT(gc)) {
-        _Py_SetImmortal(FROM_GC(gc));
-        /* This can traverse to non-GC-tracked objects, and some of those
-         * non-GC-tracked objects (e.g. dicts) can later become GC-tracked, and
-         * not be in the permanent generation. So it is possible for immortal
-         * objects to enter GC collection. Currently what happens in that case
-         * is that their immortal bit makes it look like they have a very large
-         * refcount, so they are not collected. */
-        Py_TYPE(FROM_GC(gc))->tp_traverse(
-              FROM_GC(gc), (visitproc)immortalize_object, NULL);
-    }
-    Py_RETURN_NONE;
-}
-#endif  /* Py_IMMORTAL_OBJECTS */
-
-
 PyDoc_STRVAR(gc__doc__,
 "This module provides access to the garbage collector for reference cycles.\n"
 "\n"
@@ -2086,10 +2000,6 @@ static PyMethodDef GcMethods[] = {
     GC_FREEZE_METHODDEF
     GC_UNFREEZE_METHODDEF
     GC_GET_FREEZE_COUNT_METHODDEF
-#ifdef Py_IMMORTAL_OBJECTS
-    GC_IMMORTALIZE_HEAP_METHODDEF
-    GC_IS_IMMORTAL_METHODDEF
-#endif  /* Py_IMMORTAL_OBJECTS */
     {NULL,      NULL}           /* Sentinel */
 };
 

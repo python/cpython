@@ -1,5 +1,4 @@
 # Test the module type
-import gc
 import unittest
 import weakref
 from test.support import gc_collect
@@ -267,7 +266,6 @@ a = A(destroyed)"""
         self.assertEqual(r[-len(ends_with):], ends_with,
                          '{!r} does not end with {!r}'.format(r, ends_with))
 
-    @unittest.skipIf(hasattr(gc, "is_immortal"), 'test not available in final_b __del__')
     def test_module_finalization_at_shutdown(self):
         # Module globals and builtins should still be available during shutdown
         rc, out, err = assert_python_ok("-c", "from test import final_a")

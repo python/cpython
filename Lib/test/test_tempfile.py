@@ -1,7 +1,6 @@
 # tempfile.py unit tests.
 import tempfile
 import errno
-import gc
 import io
 import os
 import pathlib
@@ -1585,7 +1584,6 @@ class TestTemporaryDirectory(BaseTestCase):
             self.assertNotIn("Error", err)
             self.assertIn("ResourceWarning: Implicitly cleaning up", err)
 
-    @unittest.skipIf(hasattr(gc, "is_immortal"), 'os not available in TemporaryDirectory __del__')
     def test_exit_on_shutdown(self):
         # Issue #22427
         with self.do_create() as dir:

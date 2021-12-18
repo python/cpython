@@ -2158,7 +2158,6 @@ class TestSorted(unittest.TestCase):
 
 class ShutdownTest(unittest.TestCase):
 
-    @unittest.skipIf(hasattr(gc, "is_immortal"), '__del__ is never called')
     def test_cleanup(self):
         # Issue #19255: builtins are still available at shutdown
         code = """if 1:
@@ -2189,6 +2188,18 @@ class ShutdownTest(unittest.TestCase):
         rc, out, err = assert_python_ok("-c", code,
                                         PYTHONIOENCODING="ascii")
         self.assertEqual(["before", "after"], out.decode().splitlines())
+
+
+class ImmortalTests(unittest.TestCase):
+    def test_immortal(self):
+        none = None
+        true = True
+        false = False
+        small_int = 100
+        self.assertGreater(sys.getrefcount(none), 1e15)
+        self.assertGreater(sys.getrefcount(true), 1e15)
+        self.assertGreater(sys.getrefcount(false), 1e15)
+        self.assertGreater(sys.getrefcount(small_int), 1e15)
 
 
 class TestType(unittest.TestCase):
