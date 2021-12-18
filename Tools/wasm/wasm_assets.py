@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Create a WASM asset bundle directory structure
+"""Create a WASM asset bundle directory structure.
 
 The WASM asset bundles are pre-loaded by the final WASM build. The bundle
 contains:
@@ -19,10 +19,10 @@ import zipfile
 SRCDIR = pathlib.Path(__file__).parent.parent.parent.absolute()
 SRCDIR_LIB = SRCDIR / "Lib"
 
-# sysconfig data relative to build dir
+# sysconfig data relative to build dir.
 SYSCONFIGDATA_GLOB = "build/lib.*/_sysconfigdata_*.py"
 
-# library directory relative to $(prefix)
+# Library directory relative to $(prefix).
 WASM_LIB = pathlib.PurePath("lib")
 WASM_STDLIB_ZIP = (
     WASM_LIB / f"python{sys.version_info.major}{sys.version_info.minor}.zip"
@@ -33,7 +33,7 @@ WASM_STDLIB = (
 WASM_DYNLOAD = WASM_STDLIB / "lib-dynload"
 
 
-# don't ship large files / packages that are not particular useful at
+# Don't ship large files / packages that are not particularly useful at
 # the moment.
 OMIT_FILES = (
     # regression tests
@@ -44,7 +44,7 @@ OMIT_FILES = (
     "tkinter/",
     "turtle.py",
     "turtledemo/",
-    # venv / pip
+    # package management
     "ensurepip/",
     "venv/",
     # build system
@@ -56,8 +56,8 @@ OMIT_FILES = (
     # deprecated
     "asyncore.py",
     "asynchat.py",
-    # synchronous network I/O and protocols are not supported, for example
-    # socket.create_connection() raises exception
+    # Synchronous network I/O and protocols are not supported; for example,
+    # socket.create_connection() raises an exception:
     # "BlockingIOError: [Errno 26] Operation in progress".
     "cgi.py",
     "cgitb.py",
@@ -85,14 +85,12 @@ OMIT_FILES = (
     "webbrowser.py",
     # ctypes
     "ctypes/",
-    # pure Python implementations of C extensions
+    # Pure Python implementations of C extensions
     "_pydecimal.py",
     "_pyio.py",
-    # misc unused or large files
+    # Misc unused or large files
     "pydoc_data/",
     "msilib/",
-    # only pyc encoding files
-    # "encoding/*.py",
 )
 
 # regression test sub directories
@@ -112,8 +110,8 @@ def filterfunc(name: str) -> bool:
 
 
 def create_stdlib_zip(
-    args: argparse.Namespace, compression: int = zipfile.ZIP_DEFLATED, optimize: int = 0
-):
+    args: argparse.Namespace, compression: int = zipfile.ZIP_DEFLATED, *, optimize: int = 0
+) -> None:
     sysconfig_data = list(args.builddir.glob(SYSCONFIGDATA_GLOB))
     if not sysconfig_data:
         raise ValueError("No sysconfigdata file found")
@@ -127,7 +125,7 @@ def create_stdlib_zip(
             if entry in OMIT_ABSOLUTE:
                 continue
             if entry.name.endswith(".py") or entry.is_dir():
-                # writepy() writes .pyc files (bytecode)
+                # writepy() writes .pyc files (bytecode).
                 pzf.writepy(entry, filterfunc=filterfunc)
         for entry in sysconfig_data:
             pzf.writepy(entry)
@@ -160,13 +158,13 @@ def main():
     args.wasm_stdlib = args.wasm_root / WASM_STDLIB
     args.wasm_dynload = args.wasm_root / WASM_DYNLOAD
 
-    # empty, unused directory for dynamic libs, but required for site initialization.
+    # Empty, unused directory for dynamic libs, but required for site initialization.
     args.wasm_dynload.mkdir(parents=True, exist_ok=True)
     marker = args.wasm_dynload / ".empty"
     marker.touch()
-    # os.py is a marker for finding the correct lib directory
+    # os.py is a marker for finding the correct lib directory.
     shutil.copy(args.srcdir_lib / "os.py", args.wasm_stdlib)
-    # useful rest of stdlib
+    # The rest of stdlib that's useful in a WASM context.
     create_stdlib_zip(args)
     size = round(args.wasm_stdlib_zip.stat().st_size / 1024 ** 2, 2)
     parser.exit(0, f"Created {args.wasm_stdlib_zip} ({size} MiB)\n")
