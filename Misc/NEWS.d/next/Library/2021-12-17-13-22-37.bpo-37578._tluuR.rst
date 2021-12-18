@@ -1,0 +1,3 @@
+Add *include_hidden* parameter to :func:`~glob.glob` and :func:`~glob.iglob` to
+match hidden files and directories when using special characters like ``*``,
+``**``, ``?`` and ``[]``.
