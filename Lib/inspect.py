@@ -446,7 +446,7 @@ def _getmembers(object, predicate, getter):
     names = dir(object)
     if isclass(object):
         mro = (object,) + getmro(object)
-        # :dd any DynamicClassAttributes to the list of names if object is a class;
+        # add any DynamicClassAttributes to the list of names if object is a class;
         # this may result in duplicate entries if, for example, a virtual
         # attribute with the same name as a DynamicClassAttribute exists
         try:
