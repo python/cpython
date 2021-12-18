@@ -830,6 +830,22 @@ $(DLLLIBRARY) libpython$(LDVERSION).dll.a: $(LIBRARY_OBJS)
 	else true; \
 	fi
 
+# wasm32-emscripten build
+# wasm assets directory is relative to current build dir, e.g. "./usr/local".
+# --preload-file turns a relative asset path into an absolute path.
+WASM_ASSETS_DIR=".$(prefix)"
+WASM_STDLIB="$(WASM_ASSETS_DIR)/local/lib/python$(VERSION)/os.py"
+
+$(WASM_STDLIB): $(srcdir)/Lib/*.py $(srcdir)/Lib/*/*.py \
+                pybuilddir.txt $(srcdir)/Tools/wasm/wasm_assets.py
+	$(PYTHON_FOR_BUILD) $(srcdir)/Tools/wasm/wasm_assets.py \
+	    --builddir . --prefix $(prefix)
+
+python.html: Programs/python.o $(LIBRARY_DEPS) $(WASM_STDLIB)
+	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/python.o \
+	    $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS) \
+	    -s ASSERTIONS=1 --preload-file $(WASM_ASSETS_DIR)
+
 ##########################################################################
 # Build static libmpdec.a
 LIBMPDEC_CFLAGS=$(PY_STDMODULE_CFLAGS) $(CCSHARED) @LIBMPDEC_CFLAGS@
@@ -938,6 +954,7 @@ Makefile Modules/config.c: Makefile.pre \
 	$(SHELL) $(MAKESETUP) -c $(srcdir)/Modules/config.c.in \
 				-s Modules \
 				Modules/Setup.local \
+				@MODULES_SETUP_STDLIB@ \
 				$(srcdir)/Modules/Setup.bootstrap \
 				$(srcdir)/Modules/Setup
 	@mv config.c Modules
@@ -2379,6 +2396,7 @@ clean-retain-profile: pycremoval
 	-rm -f pybuilddir.txt
 	-rm -f Lib/lib2to3/*Grammar*.pickle
 	-rm -f _bootstrap_python
+	-rm -f python.html python.js python.data
 	-rm -f Programs/_testembed Programs/_freeze_module
 	-rm -f Python/deepfreeze/*.[co]
 	-rm -f Python/frozen_modules/*.h
