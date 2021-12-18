@@ -131,6 +131,17 @@ General Options
 
    .. versionadded:: 3.11
 
+.. cmdoption:: --enable-pystats
+
+   Turn on internal statistics gathering.
+
+   The statistics will be dumped to a arbitrary (probably unique) file in
+   ``/tmp/py_stats/``, or ``C:\temp\py_stats\`` on Windows.
+
+   Use ``Tools//summarize_stats.py`` to read the stats.
+
+   .. versionadded:: 3.11
+
 
 Install Options
 ---------------

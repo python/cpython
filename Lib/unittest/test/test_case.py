@@ -631,6 +631,8 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
                  'Tests shortDescription() for a method with a longer '
                  'docstring.')
 
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
     def testShortDescriptionWhitespaceTrimming(self):
         """
             Tests shortDescription() whitespace is trimmed, so that the first

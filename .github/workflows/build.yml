@@ -90,8 +90,10 @@ jobs:
           if test -n "$changes"; then
             echo "Generated files not up to date."
             echo "Perhaps you forgot to run make regen-all or build.bat --regen. ;)"
-            echo "configure files must be regenerated with a specific, unpatched version of autoconf."
+            echo "configure files must be regenerated with a specific version of autoconf."
             echo "$changes"
+            echo ""
+            git diff --staged || true
             exit 1
           fi
       - name: Check exported libpython symbols
@@ -220,7 +222,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        openssl_ver: [1.1.1l, 3.0.0]
+        openssl_ver: [1.1.1l, 3.0.1]
     env:
       OPENSSL_VER: ${{ matrix.openssl_ver }}
       MULTISSL_DIR: ${{ github.workspace }}/multissl

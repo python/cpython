@@ -1,0 +1,70 @@
+# config.site override for cross compiling to wasm32-emscripten platform
+#
+# CONFIG_SITE=Tools/wasm/config.site-wasm32-emscripten \
+#     emconfigure ./configure --host=wasm32-unknown-emscripten --build=...
+#
+# Written by Christian Heimes <christian@python.org>
+# Partly based on pyodide's pyconfig.undefs.h file.
+#
+
+# cannot be detected in cross builds
+ac_cv_buggy_getaddrinfo=no
+
+# Emscripten has no /dev/pt*
+ac_cv_file__dev_ptmx=no
+ac_cv_file__dev_ptc=no
+
+# dummy readelf, Emscripten build does not need readelf.
+ac_cv_prog_ac_ct_READELF=true
+
+# new undefined symbols / unsupported features
+ac_cv_func_posix_spawn=no
+ac_cv_func_posix_spawnp=no
+ac_cv_func_eventfd=no
+ac_cv_func_memfd_create=no
+ac_cv_func_prlimit=no
+
+# unsupported syscall, https://github.com/emscripten-core/emscripten/issues/13393
+ac_cv_func_shutdown=no
+
+# breaks build, see https://github.com/ethanhs/python-wasm/issues/16
+ac_cv_lib_bz2_BZ2_bzCompress=no
+
+# The rest is based on pyodide
+# https://github.com/pyodide/pyodide/blob/main/cpython/pyconfig.undefs.h
+
+ac_cv_func_epoll=no
+ac_cv_func_epoll_create1=no
+ac_cv_header_linux_vm_sockets_h=no
+ac_cv_func_socketpair=no
+ac_cv_func_utimensat=no
+ac_cv_func_sigaction=no
+
+# Untested syscalls in emscripten
+ac_cv_func_openat=no
+ac_cv_func_mkdirat=no
+ac_cv_func_fchownat=no
+ac_cv_func_renameat=no
+ac_cv_func_linkat=no
+ac_cv_func_symlinkat=no
+ac_cv_func_readlinkat=no
+ac_cv_func_fchmodat=no
+ac_cv_func_dup3=no
+
+# Syscalls not implemented in emscripten
+ac_cv_func_preadv2=no
+ac_cv_func_preadv=no
+ac_cv_func_pwritev2=no
+ac_cv_func_pwritev=no
+ac_cv_func_pipe2=no
+ac_cv_func_nice=no
+
+# Syscalls that resulted in a segfault
+ac_cv_func_utimensat=no
+ac_cv_header_sys_ioctl_h=no
+
+# sockets are supported, but only in non-blocking mode
+# ac_cv_header_sys_socket_h=no
+
+# Unsupported functionality
+#undef HAVE_PTHREAD_H

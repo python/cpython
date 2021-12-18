@@ -474,13 +474,15 @@ the original TOS1.
 .. opcode:: END_ASYNC_FOR
 
    Terminates an :keyword:`async for` loop.  Handles an exception raised
-   when awaiting a next item.  If TOS is :exc:`StopAsyncIteration` pop 7
+   when awaiting a next item.  If TOS is :exc:`StopAsyncIteration` pop 3
    values from the stack and restore the exception state using the second
-   three of them.  Otherwise re-raise the exception using the three values
+   of them.  Otherwise re-raise the exception using the value
    from the stack.  An exception handler block is removed from the block stack.
 
    .. versionadded:: 3.8
 
+    .. versionchanged:: 3.11
+       Exception representation on the stack now consist of one, not three, items.
 
 .. opcode:: BEFORE_ASYNC_WITH
 
@@ -561,8 +563,10 @@ iterations of the loop.
 
 .. opcode:: POP_EXCEPT
 
-   Pops three values from the stack, which are used to restore the exception state.
+   Pops a value from the stack, which is used to restore the exception state.
 
+    .. versionchanged:: 3.11
+       Exception representation on the stack now consist of one, not three, items.
 
 .. opcode:: RERAISE
 
@@ -572,11 +576,13 @@ iterations of the loop.
 
     .. versionadded:: 3.9
 
+    .. versionchanged:: 3.11
+       Exception representation on the stack now consist of one, not three, items.
 
 .. opcode:: PUSH_EXC_INFO
 
-    Pops the three values from the stack. Pushes the current exception to the top of the stack.
-    Pushes the three values originally popped back to the stack.
+    Pops a value from the stack. Pushes the current exception to the top of the stack.
+    Pushes the value originally popped back to the stack.
     Used in exception handlers.
 
     .. versionadded:: 3.11
@@ -584,8 +590,8 @@ iterations of the loop.
 
 .. opcode:: WITH_EXCEPT_START
 
-    Calls the function in position 8 on the stack with the top three
-    items on the stack as arguments.
+    Calls the function in position 4 on the stack with arguments (type, val, tb)
+    representing the exception at the top of the stack.
     Used to implement the call ``context_manager.__exit__(*exc_info())`` when an exception
     has occurred in a :keyword:`with` statement.
 
@@ -593,6 +599,9 @@ iterations of the loop.
     .. versionchanged:: 3.11
        The ``__exit__`` function is in position 8 of the stack rather than 7.
 
+    .. versionchanged:: 3.11
+       The ``__exit__`` function is in position 4 of the stack rather than 7.
+       Exception representation on the stack now consist of one, not three, items.
 
 .. opcode:: POP_EXCEPT_AND_RERAISE
 
@@ -890,10 +899,9 @@ All of the following opcodes use their arguments.
    Performs exception matching for ``except*``. Applies ``split(TOS)`` on
    the exception group representing TOS1. Jumps if no match is found.
 
-   Pops one item from the stack. If a match was found, pops the 3 items representing
-   the exception and pushes the 3 items representing the non-matching part of
-   the exception group, followed by the 3 items representing the matching part.
-   In other words, in case of a match it pops 4 items and pushes 6.
+   Pops one item from the stack (the match type). If a match was found,
+   next item (the exception) and pushes the non-matching part of the
+   exception group followed by the matching part.
 
    .. versionadded:: 3.11
 
@@ -903,8 +911,8 @@ All of the following opcodes use their arguments.
    Combines the raised and reraised exceptions list from TOS, into an exception
    group to propagate from a try-except* block. Uses the original exception
    group from TOS1 to reconstruct the structure of reraised exceptions. Pops
-   two items from the stack and pushes a triplet representing the exception to
-   reraise or three ``None`` if there isn't one.
+   two items from the stack and pushes 0 (for lasti, which is unused) followed
+   by the exception to reraise or ``None`` if there isn't one.
 
    .. versionadded:: 3.11
 
