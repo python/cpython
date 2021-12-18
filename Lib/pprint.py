@@ -256,7 +256,7 @@ class PrettyPrinter:
     _dispatch[_dict_values_view.__repr__] = _pprint_dict_view
 
     def _pprint_dict_items_view(self, object, stream, indent, allowance, context, level):
-        self._pprint_dict_view(object, stream, indent, allowance, context, level, True)
+        self._pprint_dict_view(object, stream, indent, allowance, context, level, items=True)
 
     _dict_items_view = type({}.items())
     _dispatch[_dict_items_view.__repr__] = _pprint_dict_items_view
