@@ -2196,10 +2196,10 @@ class ImmortalTests(unittest.TestCase):
         true = True
         false = False
         small_int = 100
-        self.assertGreater(sys.getrefcount(none), 1e15)
-        self.assertGreater(sys.getrefcount(true), 1e15)
-        self.assertGreater(sys.getrefcount(false), 1e15)
-        self.assertGreater(sys.getrefcount(small_int), 1e15)
+        self.assertGreater(sys.getrefcount(none), 1e8)
+        self.assertGreater(sys.getrefcount(true), 1e8)
+        self.assertGreater(sys.getrefcount(false), 1e8)
+        self.assertGreater(sys.getrefcount(small_int), 1e8)
 
 
 class TestType(unittest.TestCase):
