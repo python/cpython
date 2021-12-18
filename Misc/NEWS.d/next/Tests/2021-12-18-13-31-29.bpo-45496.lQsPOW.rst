@@ -1,0 +1,1 @@
+Allow a small margin to avoid failing the tkinter `winfo_rgb` test when on different hardware.
