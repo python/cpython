@@ -536,7 +536,8 @@ mmap_resize_method(mmap_object *self,
                 !SetEndOfFile(self->file_handle)) {
                 /* resizing failed. try to remap the file */
                 file_resize_error = GetLastError();
-                new_size = max_size.QuadPart = self->size;
+                max_size.QuadPart = self->size;
+                new_size = self->size;
             }
         }
 
