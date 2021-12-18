@@ -159,8 +159,6 @@ static inline Py_ssize_t _Py_SIZE(const PyVarObject *ob) {
 #define Py_SIZE(ob) _Py_SIZE(_PyVarObject_CAST_CONST(ob))
 
 
-PyAPI_FUNC(PyObject *) PyGC_ImmortalizeHeap(void);
-
 static inline int _Py_IsImmortal(PyObject *op)
 {
     return (op->ob_refcnt & _Py_IMMORTAL_BIT) != 0;
