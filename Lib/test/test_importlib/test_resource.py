@@ -14,38 +14,18 @@ from test.support.os_helper import unlink
 class ResourceTests:
     # Subclasses are expected to set the `data` attribute.
 
-    def test_is_resource_good_path(self):
-        with util.suppress_known_deprecation():
-            self.assertTrue(resources.is_resource(self.data, 'binary.file'))
+    def test_is_file_exists(self):
+        target = resources.files(self.data) / 'binary.file'
+        self.assertTrue(target.is_file())
 
-    def test_is_resource_missing(self):
-        with util.suppress_known_deprecation():
-            self.assertFalse(resources.is_resource(self.data, 'not-a-file'))
+    def test_is_file_missing(self):
+        target = resources.files(self.data) / 'not-a-file'
+        self.assertFalse(target.is_file())
 
-    def test_is_resource_subresource_directory(self):
-        # Directories are not resources.
-        with util.suppress_known_deprecation():
-            self.assertFalse(resources.is_resource(self.data, 'subdirectory'))
-
-    def test_contents(self):
-        with util.suppress_known_deprecation():
-            contents = set(resources.contents(self.data))
-        # There may be cruft in the directory listing of the data directory.
-        # It could have a __pycache__ directory,
-        # an artifact of the
-        # test suite importing these modules, which
-        # are not germane to this test, so just filter them out.
-        contents.discard('__pycache__')
-        self.assertEqual(
-            sorted(contents),
-            [
-                '__init__.py',
-                'binary.file',
-                'subdirectory',
-                'utf-16.file',
-                'utf-8.file',
-            ],
-        )
+    def test_is_dir(self):
+        target = resources.files(self.data) / 'subdirectory'
+        self.assertFalse(target.is_file())
+        self.assertTrue(target.is_dir())
 
 
 class ResourceDiskTests(ResourceTests, unittest.TestCase):
@@ -57,34 +37,34 @@ class ResourceZipTests(ResourceTests, util.ZipSetup, unittest.TestCase):
     pass
 
 
+def names(traversable):
+    return {item.name for item in traversable.iterdir()}
+
+
 class ResourceLoaderTests(unittest.TestCase):
     def test_resource_contents(self):
         package = util.create_package(
             file=data01, path=data01.__file__, contents=['A', 'B', 'C']
         )
-        with util.suppress_known_deprecation():
-            self.assertEqual(set(resources.contents(package)), {'A', 'B', 'C'})
+        self.assertEqual(names(resources.files(package)), {'A', 'B', 'C'})
 
-    def test_resource_is_resource(self):
+    def test_is_file(self):
         package = util.create_package(
             file=data01, path=data01.__file__, contents=['A', 'B', 'C', 'D/E', 'D/F']
         )
-        with util.suppress_known_deprecation():
-            self.assertTrue(resources.is_resource(package, 'B'))
+        self.assertTrue(resources.files(package).joinpath('B').is_file())
 
-    def test_resource_directory_is_not_resource(self):
+    def test_is_dir(self):
         package = util.create_package(
             file=data01, path=data01.__file__, contents=['A', 'B', 'C', 'D/E', 'D/F']
         )
-        with util.suppress_known_deprecation():
-            self.assertFalse(resources.is_resource(package, 'D'))
+        self.assertTrue(resources.files(package).joinpath('D').is_dir())
 
-    def test_resource_missing_is_not_resource(self):
+    def test_resource_missing(self):
         package = util.create_package(
             file=data01, path=data01.__file__, contents=['A', 'B', 'C', 'D/E', 'D/F']
         )
-        with util.suppress_known_deprecation():
-            self.assertFalse(resources.is_resource(package, 'Z'))
+        self.assertFalse(resources.files(package).joinpath('Z').is_file())
 
 
 class ResourceCornerCaseTests(unittest.TestCase):
@@ -102,8 +82,7 @@ class ResourceCornerCaseTests(unittest.TestCase):
         module.__file__ = '/path/which/shall/not/be/named'
         module.__spec__.loader = module.__loader__
         module.__spec__.origin = module.__file__
-        with util.suppress_known_deprecation():
-            self.assertFalse(resources.is_resource(module, 'A'))
+        self.assertFalse(resources.files(module).joinpath('A').is_file())
 
 
 class ResourceFromZipsTest01(util.ZipSetupBase, unittest.TestCase):
@@ -111,28 +90,26 @@ class ResourceFromZipsTest01(util.ZipSetupBase, unittest.TestCase):
 
     def test_is_submodule_resource(self):
         submodule = import_module('ziptestdata.subdirectory')
-        with util.suppress_known_deprecation():
-            self.assertTrue(resources.is_resource(submodule, 'binary.file'))
+        self.assertTrue(resources.files(submodule).joinpath('binary.file').is_file())
 
     def test_read_submodule_resource_by_name(self):
-        with util.suppress_known_deprecation():
-            self.assertTrue(
-                resources.is_resource('ziptestdata.subdirectory', 'binary.file')
-            )
+        self.assertTrue(
+            resources.files('ziptestdata.subdirectory')
+            .joinpath('binary.file')
+            .is_file()
+        )
 
     def test_submodule_contents(self):
         submodule = import_module('ziptestdata.subdirectory')
-        with util.suppress_known_deprecation():
-            self.assertEqual(
-                set(resources.contents(submodule)), {'__init__.py', 'binary.file'}
-            )
+        self.assertEqual(
+            names(resources.files(submodule)), {'__init__.py', 'binary.file'}
+        )
 
     def test_submodule_contents_by_name(self):
-        with util.suppress_known_deprecation():
-            self.assertEqual(
-                set(resources.contents('ziptestdata.subdirectory')),
-                {'__init__.py', 'binary.file'},
-            )
+        self.assertEqual(
+            names(resources.files('ziptestdata.subdirectory')),
+            {'__init__.py', 'binary.file'},
+        )
 
 
 class ResourceFromZipsTest02(util.ZipSetupBase, unittest.TestCase):
@@ -143,16 +120,14 @@ class ResourceFromZipsTest02(util.ZipSetupBase, unittest.TestCase):
         Test thata zip with two unrelated subpackages return
         distinct resources. Ref python/importlib_resources#44.
         """
-        with util.suppress_known_deprecation():
-            self.assertEqual(
-                set(resources.contents('ziptestdata.one')),
-                {'__init__.py', 'resource1.txt'},
-            )
-        with util.suppress_known_deprecation():
-            self.assertEqual(
-                set(resources.contents('ziptestdata.two')),
-                {'__init__.py', 'resource2.txt'},
-            )
+        self.assertEqual(
+            names(resources.files('ziptestdata.one')),
+            {'__init__.py', 'resource1.txt'},
+        )
+        self.assertEqual(
+            names(resources.files('ziptestdata.two')),
+            {'__init__.py', 'resource2.txt'},
+        )
 
 
 class DeletingZipsTest(unittest.TestCase):
@@ -192,47 +167,43 @@ class DeletingZipsTest(unittest.TestCase):
             # If the test fails, this will probably fail too
             pass
 
-    def test_contents_does_not_keep_open(self):
-        with util.suppress_known_deprecation():
-            c = resources.contents('ziptestdata')
+    def test_iterdir_does_not_keep_open(self):
+        c = [item.name for item in resources.files('ziptestdata').iterdir()]
         self.zip_path.unlink()
         del c
 
-    def test_is_resource_does_not_keep_open(self):
-        with util.suppress_known_deprecation():
-            c = resources.is_resource('ziptestdata', 'binary.file')
+    def test_is_file_does_not_keep_open(self):
+        c = resources.files('ziptestdata').joinpath('binary.file').is_file()
         self.zip_path.unlink()
         del c
 
-    def test_is_resource_failure_does_not_keep_open(self):
-        with util.suppress_known_deprecation():
-            c = resources.is_resource('ziptestdata', 'not-present')
+    def test_is_file_failure_does_not_keep_open(self):
+        c = resources.files('ziptestdata').joinpath('not-present').is_file()
         self.zip_path.unlink()
         del c
 
     @unittest.skip("Desired but not supported.")
-    def test_path_does_not_keep_open(self):
-        c = resources.path('ziptestdata', 'binary.file')
+    def test_as_file_does_not_keep_open(self):  # pragma: no cover
+        c = resources.as_file(resources.files('ziptestdata') / 'binary.file')
         self.zip_path.unlink()
         del c
 
     def test_entered_path_does_not_keep_open(self):
         # This is what certifi does on import to make its bundle
         # available for the process duration.
-        with util.suppress_known_deprecation():
-            c = resources.path('ziptestdata', 'binary.file').__enter__()
+        c = resources.as_file(
+            resources.files('ziptestdata') / 'binary.file'
+        ).__enter__()
         self.zip_path.unlink()
         del c
 
     def test_read_binary_does_not_keep_open(self):
-        with util.suppress_known_deprecation():
-            c = resources.read_binary('ziptestdata', 'binary.file')
+        c = resources.files('ziptestdata').joinpath('binary.file').read_bytes()
         self.zip_path.unlink()
         del c
 
     def test_read_text_does_not_keep_open(self):
-        with util.suppress_known_deprecation():
-            c = resources.read_text('ziptestdata', 'utf-8.file', encoding='utf-8')
+        c = resources.files('ziptestdata').joinpath('utf-8.file').read_text()
         self.zip_path.unlink()
         del c
 
@@ -249,18 +220,19 @@ class ResourceFromNamespaceTest01(unittest.TestCase):
         sys.path.remove(cls.site_dir)
 
     def test_is_submodule_resource(self):
-        with util.suppress_known_deprecation():
-            self.assertTrue(
-                resources.is_resource(import_module('namespacedata01'), 'binary.file')
-            )
+        self.assertTrue(
+            resources.files(import_module('namespacedata01'))
+            .joinpath('binary.file')
+            .is_file()
+        )
 
     def test_read_submodule_resource_by_name(self):
-        with util.suppress_known_deprecation():
-            self.assertTrue(resources.is_resource('namespacedata01', 'binary.file'))
+        self.assertTrue(
+            resources.files('namespacedata01').joinpath('binary.file').is_file()
+        )
 
     def test_submodule_contents(self):
-        with util.suppress_known_deprecation():
-            contents = set(resources.contents(import_module('namespacedata01')))
+        contents = names(resources.files(import_module('namespacedata01')))
         try:
             contents.remove('__pycache__')
         except KeyError:
@@ -268,8 +240,7 @@ class ResourceFromNamespaceTest01(unittest.TestCase):
         self.assertEqual(contents, {'binary.file', 'utf-8.file', 'utf-16.file'})
 
     def test_submodule_contents_by_name(self):
-        with util.suppress_known_deprecation():
-            contents = set(resources.contents('namespacedata01'))
+        contents = names(resources.files('namespacedata01'))
         try:
             contents.remove('__pycache__')
         except KeyError:

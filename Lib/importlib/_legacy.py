@@ -4,12 +4,12 @@ import pathlib
 import types
 import warnings
 
-from typing import Union, Iterable, ContextManager, BinaryIO, TextIO
+from typing import Union, Iterable, ContextManager, BinaryIO, TextIO, Any
 
 from . import _common
 
 Package = Union[types.ModuleType, str]
-Resource = Union[str, os.PathLike]
+Resource = str
 
 
 def deprecated(func):
@@ -27,16 +27,29 @@ def deprecated(func):
     return wrapper
 
 
+def normalize_path(path):
+    # type: (Any) -> str
+    """Normalize a path by ensuring it is a string.
+
+    If the resulting string contains path separators, an exception is raised.
+    """
+    str_path = str(path)
+    parent, file_name = os.path.split(str_path)
+    if parent:
+        raise ValueError(f'{path!r} must be only a file name')
+    return file_name
+
+
 @deprecated
 def open_binary(package: Package, resource: Resource) -> BinaryIO:
     """Return a file-like object opened for binary reading of the resource."""
-    return (_common.files(package) / _common.normalize_path(resource)).open('rb')
+    return (_common.files(package) / normalize_path(resource)).open('rb')
 
 
 @deprecated
 def read_binary(package: Package, resource: Resource) -> bytes:
     """Return the binary contents of the resource."""
-    return (_common.files(package) / _common.normalize_path(resource)).read_bytes()
+    return (_common.files(package) / normalize_path(resource)).read_bytes()
 
 
 @deprecated
@@ -47,7 +60,7 @@ def open_text(
     errors: str = 'strict',
 ) -> TextIO:
     """Return a file-like object opened for text reading of the resource."""
-    return (_common.files(package) / _common.normalize_path(resource)).open(
+    return (_common.files(package) / normalize_path(resource)).open(
         'r', encoding=encoding, errors=errors
     )
 
@@ -85,7 +98,7 @@ def is_resource(package: Package, name: str) -> bool:
 
     Directories are *not* resources.
     """
-    resource = _common.normalize_path(name)
+    resource = normalize_path(name)
     return any(
         traversable.name == resource and traversable.is_file()
         for traversable in _common.files(package).iterdir()
@@ -105,4 +118,4 @@ def path(
     raised if the file was deleted prior to the context manager
     exiting).
     """
-    return _common.as_file(_common.files(package) / _common.normalize_path(resource))
+    return _common.as_file(_common.files(package) / normalize_path(resource))
