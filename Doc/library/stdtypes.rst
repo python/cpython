@@ -1463,7 +1463,7 @@ Strings are immutable
 written in a variety of ways:
 
 * Single quotes: ``'allows embedded "double" quotes'``
-* Double quotes: ``"allows embedded 'single' quotes"``.
+* Double quotes: ``"allows embedded 'single' quotes"``
 * Triple quoted: ``'''Three single quotes'''``, ``"""Three double quotes"""``
 
 Triple quoted strings may span multiple lines - all associated whitespace will
@@ -1789,9 +1789,9 @@ expression support in the :mod:`re` module).
       >>> from keyword import iskeyword
 
       >>> 'hello'.isidentifier(), iskeyword('hello')
-      True, False
+      (True, False)
       >>> 'def'.isidentifier(), iskeyword('def')
-      True, True
+      (True, True)
 
 
 .. method:: str.islower()
@@ -2058,7 +2058,7 @@ expression support in the :mod:`re` module).
 .. index::
    single: universal newlines; str.splitlines method
 
-.. method:: str.splitlines([keepends])
+.. method:: str.splitlines(keepends=False)
 
    Return a list of the lines in the string, breaking at line boundaries.  Line
    breaks are not included in the resulting list unless *keepends* is given and
@@ -2471,7 +2471,7 @@ data and are closely related to string objects in a variety of other ways.
    literals, except that a ``b`` prefix is added:
 
    * Single quotes: ``b'still allows embedded "double" quotes'``
-   * Double quotes: ``b"still allows embedded 'single' quotes"``.
+   * Double quotes: ``b"still allows embedded 'single' quotes"``
    * Triple quoted: ``b'''3 single quotes'''``, ``b"""3 double quotes"""``
 
    Only ASCII characters are permitted in bytes literals (regardless of the
@@ -4372,9 +4372,9 @@ Dictionaries can be created by placing a comma-separated list of ``key: value``
 pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 'jack', 4127: 'sjoerd'}``, or by the :class:`dict` constructor.
 
-.. class:: dict(**kwarg)
-           dict(mapping, **kwarg)
-           dict(iterable, **kwarg)
+.. class:: dict(**kwargs)
+           dict(mapping, **kwargs)
+           dict(iterable, **kwargs)
 
    Return a new dictionary initialized from an optional positional argument
    and a possibly empty set of keyword arguments.
