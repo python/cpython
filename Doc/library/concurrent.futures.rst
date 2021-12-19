@@ -509,7 +509,7 @@ Exception classes
    A deprecated alias of :exc:`TimeoutError`,
    raised when a future operation exceeds the given timeout.
 
-   .. versionchanged:: 3.10
+   .. versionchanged:: 3.11
 
       This class was made an alias of :exc:`TimeoutError`.
 

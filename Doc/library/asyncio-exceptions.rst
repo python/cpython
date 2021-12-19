@@ -16,7 +16,7 @@ Exceptions
    A deprecated alias of :exc:`TimeoutError`,
    raised when the operation has exceeded the given deadline.
 
-   .. versionchanged:: 3.10
+   .. versionchanged:: 3.11
 
       This class was made an alias of :exc:`TimeoutError`.
 
