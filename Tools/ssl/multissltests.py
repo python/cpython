@@ -48,7 +48,7 @@ OPENSSL_OLD_VERSIONS = [
 
 OPENSSL_RECENT_VERSIONS = [
     "1.1.1l",
-    "3.0.0"
+    "3.0.1"
 ]
 
 LIBRESSL_OLD_VERSIONS = [

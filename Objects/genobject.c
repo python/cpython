@@ -25,9 +25,7 @@ static const char *ASYNC_GEN_IGNORED_EXIT_MSG =
 static inline int
 exc_state_traverse(_PyErr_StackItem *exc_state, visitproc visit, void *arg)
 {
-    Py_VISIT(exc_state->exc_type);
     Py_VISIT(exc_state->exc_value);
-    Py_VISIT(exc_state->exc_traceback);
     return 0;
 }
 
@@ -886,9 +884,7 @@ make_gen(PyTypeObject *type, PyFunctionObject *func)
     gen->gi_code = (PyCodeObject *)func->func_code;
     Py_INCREF(gen->gi_code);
     gen->gi_weakreflist = NULL;
-    gen->gi_exc_state.exc_type = NULL;
     gen->gi_exc_state.exc_value = NULL;
-    gen->gi_exc_state.exc_traceback = NULL;
     gen->gi_exc_state.previous_item = NULL;
     if (func->func_name != NULL)
         gen->gi_name = func->func_name;
@@ -975,9 +971,7 @@ gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
     Py_INCREF(gen->gi_code);
     Py_DECREF(f);
     gen->gi_weakreflist = NULL;
-    gen->gi_exc_state.exc_type = NULL;
     gen->gi_exc_state.exc_value = NULL;
-    gen->gi_exc_state.exc_traceback = NULL;
     gen->gi_exc_state.previous_item = NULL;
     if (name != NULL)
         gen->gi_name = name;

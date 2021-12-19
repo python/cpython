@@ -281,20 +281,32 @@ void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
 
 #define SPECIALIZATION_FAILURE_KINDS 30
 
-typedef struct _stats {
-    uint64_t specialization_success;
-    uint64_t specialization_failure;
+typedef struct _specialization_stats {
+    uint64_t success;
+    uint64_t failure;
     uint64_t hit;
     uint64_t deferred;
     uint64_t miss;
     uint64_t deopt;
-    uint64_t unquickened;
-    uint64_t specialization_failure_kinds[SPECIALIZATION_FAILURE_KINDS];
+    uint64_t failure_kinds[SPECIALIZATION_FAILURE_KINDS];
 } SpecializationStats;
 
-extern SpecializationStats _specialization_stats[256];
-#define STAT_INC(opname, name) _specialization_stats[opname].name++
-#define STAT_DEC(opname, name) _specialization_stats[opname].name--
+typedef struct _opcode_stats {
+    SpecializationStats specialization;
+    uint64_t execution_count;
+    uint64_t pair_count[256];
+} OpcodeStats;
+
+typedef struct _stats {
+    OpcodeStats opcode_stats[256];
+} PyStats;
+
+extern PyStats _py_stats;
+
+#define STAT_INC(opname, name) _py_stats.opcode_stats[opname].specialization.name++
+#define STAT_DEC(opname, name) _py_stats.opcode_stats[opname].specialization.name--
+#define OPCODE_EXE_INC(opname) _py_stats.opcode_stats[opname].execution_count++
+
 void _Py_PrintSpecializationStats(int to_file);
 
 PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
@@ -302,6 +314,7 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #else
 #define STAT_INC(opname, name) ((void)0)
 #define STAT_DEC(opname, name) ((void)0)
+#define OPCODE_EXE_INC(opname) ((void)0)
 #endif
 
 
