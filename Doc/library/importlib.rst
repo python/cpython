@@ -13,10 +13,13 @@
 
 --------------
 
+
 Introduction
 ------------
 
-The purpose of the :mod:`importlib` package is two-fold. One is to provide the
+The purpose of the :mod:`importlib` package is three-fold.
+
+One is to provide the
 implementation of the :keyword:`import` statement (and thus, by extension, the
 :func:`__import__` function) in Python source code. This provides an
 implementation of :keyword:`!import` which is portable to any Python
@@ -26,6 +29,15 @@ comprehend than one implemented in a programming language other than Python.
 Two, the components to implement :keyword:`import` are exposed in this
 package, making it easier for users to create their own custom objects (known
 generically as an :term:`importer`) to participate in the import process.
+
+Three, the package contains modules exposing additional functionality for
+managing aspects of Python packages:
+
+* :mod:`importlib.abc` contains the abstract base classes related to import.
+* :mod:`importlib.metadata` presents access to metadata from third-party
+  distributions.
+* :mod:`importlib.resources` provides routines for accessing non-code
+  "resources" from Python packages.
 
 .. seealso::
 
