@@ -51,6 +51,7 @@ class CancelledError(Error):
     pass
 
 TimeoutError = TimeoutError  # make local alias for the standard exception
+
 class InvalidStateError(Error):
     """The operation is not allowed in this state."""
     pass
