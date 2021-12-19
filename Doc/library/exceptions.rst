@@ -893,10 +893,15 @@ their subgroups based on the types of the contained exceptions.
    ``__context__`` and ``__note__`` fields. Empty nested groups are omitted
    from the result.
 
+   The condition is checked for all exceptions in the nested exception group,
+   including the top-level and any nested exception groups. If the condition is
+   true for such an exception group, it is included in the result in full.
+
    .. method:: split(condition)
 
    Like :meth:`subgroup`, but returns the pair ``(match, rest)`` where ``match``
-   is ``subgroup(condition)`` and ``rest`` is ``subgroup(not condition)``.
+   is ``subgroup(condition)`` and ``rest`` is the remainder, the non-matching
+   part.
 
    .. method:: derive(excs)
 
