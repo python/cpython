@@ -1,2 +1,0 @@
-Add a fast path for ``PyFloat_Check`` via a ``Py_TPFLAGS_FLOAT_SUBCLASS``
-flag.
