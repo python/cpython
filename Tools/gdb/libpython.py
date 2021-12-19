@@ -85,6 +85,7 @@ _is_pep393 = None
 
 Py_TPFLAGS_MANAGED_DICT      = (1 << 4)
 Py_TPFLAGS_HEAPTYPE          = (1 << 9)
+Py_TPFLAGS_FLOAT_SUBCLASS    = (1 << 23)
 Py_TPFLAGS_LONG_SUBCLASS     = (1 << 24)
 Py_TPFLAGS_LIST_SUBCLASS     = (1 << 25)
 Py_TPFLAGS_TUPLE_SUBCLASS    = (1 << 26)
@@ -379,6 +380,8 @@ class PyObjectPtr(object):
         if tp_flags & Py_TPFLAGS_HEAPTYPE:
             return HeapTypeObjectPtr
 
+        if tp_flags & Py_TPFLAGS_FLOAT_SUBCLASS:
+            return PyFloatObjectPtr
         if tp_flags & Py_TPFLAGS_LONG_SUBCLASS:
             return PyLongObjectPtr
         if tp_flags & Py_TPFLAGS_LIST_SUBCLASS:
@@ -909,6 +912,16 @@ class PyNoneStructPtr(PyObjectPtr):
 
     def proxyval(self, visited):
         return None
+
+class PyFloatObjectPtr(PyObjectPtr):
+    _typename = 'PyFloatObject'
+
+    def proxyval(self, visited):
+        return self.field('ob_fval')
+
+    def write_repr(self, out, visited):
+        proxy = self.proxyval(visited)
+        out.write("%s" % proxy)
 
 class PyFrameObjectPtr(PyObjectPtr):
     _typename = 'PyFrameObject'

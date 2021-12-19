@@ -1145,6 +1145,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    .. XXX Document more flags here?
 
 
+   .. data:: Py_TPFLAGS_FLOAT_SUBCLASS
    .. data:: Py_TPFLAGS_LONG_SUBCLASS
    .. data:: Py_TPFLAGS_LIST_SUBCLASS
    .. data:: Py_TPFLAGS_TUPLE_SUBCLASS
