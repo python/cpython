@@ -14,8 +14,6 @@ extern "C" {
 PyAPI_DATA(PyTypeObject) PyFloat_Type;
 
 #define PyFloat_Check(op) PyObject_TypeCheck(op, &PyFloat_Type)
-#define PyFloat_Check(op) \
-        PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_FLOAT_SUBCLASS)
 #define PyFloat_CheckExact(op) Py_IS_TYPE(op, &PyFloat_Type)
 
 #ifdef Py_NAN
