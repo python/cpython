@@ -12,16 +12,20 @@ try:
 except ImportError:
     _frozen_importlib_external = _bootstrap_external
 from ._abc import Loader
-from .resources.abc import ResourceReader, Traversable, TraversableResources
 import abc
 import warnings
+
+# for compatibility with Python 3.10
+from .resources.abc import ResourceReader, Traversable, TraversableResources
 
 
 __all__ = [
     'Loader', 'Finder', 'MetaPathFinder', 'PathEntryFinder',
     'ResourceLoader', 'InspectLoader', 'ExecutionLoader',
-    'FileLoader', 'SourceLoader', 'ResourceReader', 'Traversable',
-    'TraversableResources',
+    'FileLoader', 'SourceLoader',
+
+    # for compatibility with Python 3.10
+    'ResourceReader', 'Traversable', 'TraversableResources',
 ]
 
 
