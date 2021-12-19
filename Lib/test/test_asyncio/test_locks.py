@@ -51,7 +51,7 @@ class LockTests(unittest.IsolatedAsyncioTestCase):
             asyncio.BoundedSemaphore,
         ]
 
-        loop = asyncio.new_event_loop()
+        loop = asyncio.get_running_loop()
 
         for cls in primitives_cls:
             with self.assertRaisesRegex(
