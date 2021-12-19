@@ -653,11 +653,11 @@ class ConditionTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(t2.done())
         self.assertTrue(t2.result())
 
-    async def test_notify_unacquired(self):
+    def test_notify_unacquired(self):
         cond = asyncio.Condition()
         self.assertRaises(RuntimeError, cond.notify)
 
-    async def test_notify_all_unacquired(self):
+    def test_notify_all_unacquired(self):
         cond = asyncio.Condition()
         self.assertRaises(RuntimeError, cond.notify_all)
 
