@@ -236,8 +236,7 @@ class LockTests(unittest.IsolatedAsyncioTestCase):
     async def test_finished_waiter_cancelled(self):
         lock = asyncio.Lock()
 
-        ta = asyncio.create_task(lock.acquire())
-        await asyncio.sleep(0)
+        await lock.acquire()
         self.assertTrue(lock.locked())
 
         tb = asyncio.create_task(lock.acquire())
@@ -247,17 +246,15 @@ class LockTests(unittest.IsolatedAsyncioTestCase):
         # Create a second waiter, wake up the first, and cancel it.
         # Without the fix, the second was not woken up.
         tc = asyncio.create_task(lock.acquire())
-        lock.release()
         tb.cancel()
+        lock.release()
         await asyncio.sleep(0)
 
         self.assertTrue(lock.locked())
-        self.assertTrue(ta.done())
         self.assertTrue(tb.cancelled())
 
         # Cleanup
-        tc.cancel()
-        await asyncio.sleep(0)
+        await tc
 
     async def test_release_not_acquired(self):
         lock = asyncio.Lock()
@@ -881,13 +878,15 @@ class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
 
         await asyncio.sleep(0)
 
-        sem.release()
         t1.cancel()
         t2.cancel()
+        sem.release()
 
         await asyncio.sleep(0)
         num_done = sum(t.done() for t in [t3, t4])
         self.assertEqual(num_done, 1)
+        self.assertTrue(t3.done())
+        self.assertFalse(t4.done())
 
         t3.cancel()
         t4.cancel()
@@ -898,14 +897,13 @@ class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
 
         t1 = asyncio.create_task(sem.acquire())
         t2 = asyncio.create_task(sem.acquire())
-
         await asyncio.sleep(0)
 
-        sem.release()
         t1.cancel()
-
+        sem.release()
         await asyncio.sleep(0)
         self.assertTrue(sem.locked())
+        self.assertTrue(t2.done())
 
     def test_release_not_acquired(self):
         sem = asyncio.BoundedSemaphore()
