@@ -509,9 +509,9 @@ tasks may have failed in parallel, but there are also other use cases where
 it is desirable to continue execution and collect multiple errors rather than
 raise the first exception.
 
-The builtin :exc:`ExceptionGroup` wraps a list of exceptions so that they can
-be raised together. It is an exception itself, so it can be caught like any
-other exception. ::
+The builtin :exc:`ExceptionGroup` wraps a list of exception instances so
+that they can be raised together. It is an exception itself, so it can be
+caught like any other exception. ::
 
    >>> def f():
    ...     excs = [OSError('error 1'), SystemError('error 2')]
@@ -568,6 +568,23 @@ other clauses and eventually to be reraised. ::
          | RecursionError: 4
          +------------------------------------
    >>>
+
+Note that the exceptions nested in an exception group must be instances,
+not types. This is because in practice the exceptions would typically
+be ones that have already been raised and caught by the program, along
+the following pattern::
+
+   >>> excs = []
+   ... for test in tests:
+   ...     try:
+   ...         test.run()
+   ...     except Exception as e:
+   ...         excs.append(e)
+   ...
+   ... if excs:
+   ...    raise ExceptionGroup("Test Failures", excs)
+   ...
+
 
 Enriching Exceptions with Notes
 ===============================
