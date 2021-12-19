@@ -205,9 +205,8 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         def assertApprox(col1, col2):
             # A small amount of flexibility is required (bpo-45496)
             # 33 is ~0.05% of 65535, which is a reasonable margin
-            self.assertTrue(all(
-                abs(i - j) < 33 for i, j in zip(col1, col2)
-            ))
+            for col1_channel, col2_channel in zip(col1, col2):
+                self.assertAlmostEqual(col1_channel, col2_channel, delta=33)
 
         root = self.root
         rgb = root.winfo_rgb
