@@ -1731,7 +1731,7 @@ while 1:
 
     @support.cpython_only
     def test_error_on_parser_stack_overflow(self):
-        source = "-" * 2000 + "4"
+        source = "-" * 100000 + "4"
         for mode in ["exec", "eval", "single"]:
             with self.subTest(mode=mode):
                 with self.assertRaises(MemoryError):

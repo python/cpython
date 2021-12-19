@@ -7,7 +7,7 @@
 #  define D(x)
 #endif
 
-# define MAXSTACK 1700
+# define MAXSTACK 6000
 static const int n_keyword_lists = 9;
 static KeywordToken *reserved_keywords[] = {
     (KeywordToken[]) {{NULL, -1}},

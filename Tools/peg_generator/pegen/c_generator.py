@@ -37,7 +37,7 @@ EXTENSION_PREFIX = """\
 #  define D(x)
 #endif
 
-# define MAXSTACK 1700
+# define MAXSTACK 6000
 
 """
 
