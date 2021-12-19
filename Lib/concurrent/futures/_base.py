@@ -50,9 +50,7 @@ class CancelledError(Error):
     """The Future was cancelled."""
     pass
 
-class TimeoutError(Error):
-    """The operation exceeded the given deadline."""
-    pass
+TimeoutError = TimeoutError  # make local alias for the standard exception
 
 class InvalidStateError(Error):
     """The operation is not allowed in this state."""
