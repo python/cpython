@@ -965,6 +965,32 @@ class SemaphoreTests(test_utils.TestCase):
         sem.release()
         self.assertFalse(sem.locked())
 
+    def test_acquire_fifo_order(self):
+        sem = asyncio.Semaphore(1)
+        result = []
+
+        async def coro(tag):
+            await sem.acquire()
+            result.append(f'{tag}_1')
+            await asyncio.sleep(0.01)
+            sem.release()
+
+            await sem.acquire()
+            result.append(f'{tag}_2')
+            await asyncio.sleep(0.01)
+            sem.release()
+
+        t1 = self.loop.create_task(coro('c1'))
+        t2 = self.loop.create_task(coro('c2'))
+        t3 = self.loop.create_task(coro('c3'))
+
+        race_tasks = [t1, t2, t3]
+        self.loop.run_until_complete(asyncio.gather(*race_tasks))
+        self.assertEqual(
+            ['c1_1', 'c2_1', 'c3_1', 'c1_2', 'c2_2', 'c3_2'],
+            result
+        )
+
 
 if __name__ == '__main__':
     unittest.main()
