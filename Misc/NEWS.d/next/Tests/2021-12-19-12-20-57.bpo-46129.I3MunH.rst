@@ -1,2 +1,2 @@
 Rewrite ``asyncio.locks`` tests with
-:class:``unittest.IsolatedAsyncioTestCase` usage.
+:class:`unittest.IsolatedAsyncioTestCase` usage.
