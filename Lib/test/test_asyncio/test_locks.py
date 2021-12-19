@@ -770,7 +770,8 @@ class ConditionTests(unittest.IsolatedAsyncioTestCase):
                     ValueError,
                     "loop argument must agree with lock"
                 ):
-                    asyncio.Condition(lock, loop=loop)
+                    with self.assertWarns(DeprecationWarning):
+                        asyncio.Condition(lock, loop=loop)
 
         await wrong_loop_in_lock()
         await wrong_loop_in_cond()
