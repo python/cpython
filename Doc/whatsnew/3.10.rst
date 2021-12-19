@@ -704,6 +704,7 @@ are added to enable the warning.
 
 See :ref:`io-text-encoding` for more information.
 
+.. _new-feat-related-type-hints:
 
 New Features Related to Type Hints
 ==================================
@@ -1429,7 +1430,7 @@ of types readily interpretable by type checkers.
 typing
 ------
 
-For major changes, see `New Features Related to Type Hints`_.
+For major changes, see :ref:`new-feat-related-type-hints`.
 
 The behavior of :class:`typing.Literal` was changed to conform with :pep:`586`
 and to match the behavior of static type checkers specified in the PEP.
