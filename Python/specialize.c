@@ -1147,7 +1147,6 @@ binary_subscr_fail_kind(PyTypeObject *container_type, PyObject *sub)
 #endif
 
 _Py_IDENTIFIER(__getitem__);
-_Py_IDENTIFIER(__setitem__);
 
 #define SIMPLE_FUNCTION 0
 
@@ -1309,6 +1308,7 @@ _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *ins
         }
         goto fail;
     }
+    _Py_IDENTIFIER(__setitem__);
     PyObject *descriptor = _PyType_LookupId(container_type, &PyId___setitem__);
     if (descriptor && Py_TYPE(descriptor) == &PyFunction_Type) {
         PyFunctionObject *func = (PyFunctionObject *)descriptor;
