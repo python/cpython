@@ -4,6 +4,7 @@ import warnings
 
 from .case import TestCase
 
+__unittest = True
 
 
 class IsolatedAsyncioTestCase(TestCase):
