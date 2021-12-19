@@ -1946,6 +1946,11 @@ Notes on using *__slots__*
 
 * Any non-string :term:`iterable` may be assigned to *__slots__*.
 
+* If a :class:`dictionary <dict>` is used to assign *__slots__*, the dictionary
+  keys will be used as the slot names. The values of the dictionary can be used
+  to provide per-attribute docstrings that will be recognised by
+  :func:`inspect.getdoc` and displayed in the output of :func:`help`.
+
 * :attr:`~instance.__class__` assignment works only if both classes have the
   same *__slots__*.
 
@@ -1959,55 +1964,6 @@ Notes on using *__slots__*
   created for each
   of the iterator's values. However, the *__slots__* attribute will be an empty
   iterator.
-
-Per-attribute docstrings with *__slots__*
-"""""""""""""""""""""""""""""""""""""""""
-
-If a :class:`dictionary <dict>` is used to specify *__slots__*, the values of
-the dictionary can be used to specify docstrings for each attribute. For
-example::
-
-  class Card:
-      """A card from a standard French deck"""
-
-      __slots__ = {
-          'suit': 'Either "Spades", "Hearts", "Clubs" or "Diamonds"',
-          'rank': 'A positive integer in the range 2 <= x <= 14'
-      }
-
-      def __init__(self, suit, rank):
-          self.suit = suit
-          self.rank = rank
-
-Calling :func:`help` on this class will yield the following output::
-
-  >>> help(Card)
-  Help on class Card in module __main__:
-
-  class Card(builtins.object)
-   |  Card(suit, rank)
-   |
-   |  A card from a standard French deck
-   |
-   |  Methods defined here:
-   |
-   |  __init__(self, suit, rank)
-   |      Initialize self.  See help(type(self)) for accurate signature.
-   |
-   |  ----------------------------------------------------------------------
-   |  Data descriptors defined here:
-   |
-   |  rank
-   |      A positive integer in the range 2 <= x <= 14
-   |
-   |  suit
-   |      Either "Spades", "Hearts", "Clubs" or "Diamonds"
-
-
-.. versionchanged:: 3.8
-   Docstrings in the values of a *__slots__* dictionary are now recognised by
-   :func:`help`.
-
 
 .. _class-customization:
 
