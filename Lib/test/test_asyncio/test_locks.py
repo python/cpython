@@ -1,7 +1,6 @@
 """Tests for lock.py"""
 
 import unittest
-from contextlib import suppress
 from unittest import mock
 import re
 
@@ -218,7 +217,7 @@ class LockTests(unittest.IsolatedAsyncioTestCase):
         await asyncio.sleep(0)
 
         loop.call_soon(trigger)
-        with suppress(asyncio.CancelledError):
+        with self.assertRaises(asyncio.CancelledError):
             # Wait for cancellation
             await t1
 
