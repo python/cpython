@@ -1590,7 +1590,8 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             MyDatagramProto, local_addr=('localhost', 0))
         self.assertRaises(
             OSError, self.loop.run_until_complete, coro)
-
+            
+    @unittest.skipIf(sys.flags.optimize, "Assertions are disabled in optimized mode")
     def test_create_datagram_endpoint_addr_error(self):
         coro = self.loop.create_datagram_endpoint(
             MyDatagramProto, local_addr='localhost')
