@@ -900,7 +900,7 @@ their subgroups based on the types of the contained exceptions.
    .. method:: split(condition)
 
    Like :meth:`subgroup`, but returns the pair ``(match, rest)`` where ``match``
-   is ``subgroup(condition)`` and ``rest`` is the remainder, the non-matching
+   is ``subgroup(condition)`` and ``rest`` is the remaining non-matching
    part.
 
    .. method:: derive(excs)
