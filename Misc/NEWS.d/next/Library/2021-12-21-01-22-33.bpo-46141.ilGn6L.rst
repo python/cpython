@@ -1,0 +1,3 @@
+Fix :func:`~ipaddress.ip_network`, :func:`~ipaddress.ip_address` and
+:func:`~ipaddress.ip_interface` to throw a correct error if a tuple is
+passed. Fix by Bar Harel.
