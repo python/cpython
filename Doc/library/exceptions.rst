@@ -889,9 +889,9 @@ their subgroups based on the types of the contained exceptions.
    same check that is used in an ``except`` clause.
 
    The nesting structure of the current exception is preserved in the result,
-   as are the values of its ``msg``, ``__traceback__``, ``__cause__``,
-   ``__context__`` and ``__note__`` fields. Empty nested groups are omitted
-   from the result.
+   as are the values of its :attr:`message`, :attr:`__traceback__`,
+   :attr:`__cause__`, :attr:`__context__` and :attr:`__note__` fields.
+   Empty nested groups are omitted from the result.
 
    The condition is checked for all exceptions in the nested exception group,
    including the top-level and any nested exception groups. If the condition is
@@ -905,11 +905,12 @@ their subgroups based on the types of the contained exceptions.
 
    .. method:: derive(excs)
 
-   Returns an exception group with the same ``msg``, ``__traceback__``,
-   ``__cause__``, ``__context__`` and ``__note__`` but which wraps the
-   exceptions in ``excs``. This method is used by :meth:`subgroup` and
-   :meth:`split` and may need to be overridden in subclasses if there are
-   additional values that need to be copied over to the result.
+   Returns an exception group with the same :attr:`message`,
+   :attr:`__traceback__`, :attr:`__cause__`, :attr:`__context__`
+   and :attr:`__note__` but which wraps the exceptions in ``excs``.
+   This method is used by :meth:`subgroup` and :meth:`split` and
+   may need to be overridden in subclasses if there are additional
+   values that need to be copied over to the result.
 
    .. versionadded:: 3.11
 
