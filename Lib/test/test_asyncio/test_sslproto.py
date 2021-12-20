@@ -383,9 +383,9 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
             def get_buffer(self, sizehint):
                 return self.buf
 
-            def buffer_updated(self, nsize):
-                assert nsize == 1
-                self.on_data.set_result(bytes(self.buf[:nsize]))
+            def buffer_updated(slf, nsize):
+                self.assertEqual(nsize, 1)
+                slf.on_data.set_result(bytes(slf.buf[:nsize]))
 
         class ClientProtoSecond(asyncio.Protocol):
             def __init__(self, on_data, on_eof):
