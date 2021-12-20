@@ -1004,6 +1004,14 @@ while 1:
 """
         self._check_error(source, "too many statically nested blocks")
 
+    @support.cpython_only
+    def test_error_on_parser_stack_overflow(self):
+        source = "-" * 100000 + "4"
+        for mode in ["exec", "eval", "single"]:
+            with self.subTest(mode=mode):
+                with self.assertRaises(MemoryError):
+                    compile(source, "<string>", mode)
+
 
 def test_main():
     support.run_unittest(SyntaxTestCase)
