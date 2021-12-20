@@ -51,8 +51,8 @@ def ip_address(address):
     except (AddressValueError, NetmaskValueError):
         pass
 
-    raise ValueError('%r does not appear to be an IPv4 or IPv6 address' %
-                     (address,))
+    raise ValueError(f'{address!r} does not appear to be an IPv4 or '
+                     f'IPv6 address')
 
 
 def ip_network(address, strict=True):
@@ -81,8 +81,8 @@ def ip_network(address, strict=True):
     except (AddressValueError, NetmaskValueError):
         pass
 
-    raise ValueError('%r does not appear to be an IPv4 or IPv6 network' %
-                     (address,))
+    raise ValueError(f'{address!r} does not appear to be an IPv4 or '
+                     f'IPv6 network')
 
 
 def ip_interface(address):
@@ -116,8 +116,8 @@ def ip_interface(address):
     except (AddressValueError, NetmaskValueError):
         pass
 
-    raise ValueError('%r does not appear to be an IPv4 or IPv6 interface' %
-                     (address,))
+    raise ValueError(f'{address!r} does not appear to be an IPv4 or '
+                     f'IPv6 interface')
 
 
 def v4_int_to_packed(address):
