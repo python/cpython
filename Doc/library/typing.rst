@@ -432,7 +432,7 @@ value of type :data:`Any` and assign it to any variable::
    a = []          # OK
    a = 2           # OK
 
-   s = ''          # Inferred type of 's' is str
+   s: str = ''
    s = a           # OK
 
    def foo(item: Any) -> int:
