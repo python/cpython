@@ -1591,16 +1591,15 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.assertRaises(
             OSError, self.loop.run_until_complete, coro)
             
-    @unittest.skipIf(sys.flags.optimize, "Assertions are disabled in optimized mode")
     def test_create_datagram_endpoint_addr_error(self):
         coro = self.loop.create_datagram_endpoint(
             MyDatagramProto, local_addr='localhost')
         self.assertRaises(
-            AssertionError, self.loop.run_until_complete, coro)
+            TypeError, self.loop.run_until_complete, coro)
         coro = self.loop.create_datagram_endpoint(
             MyDatagramProto, local_addr=('localhost', 1, 2, 3))
         self.assertRaises(
-            AssertionError, self.loop.run_until_complete, coro)
+            TypeError, self.loop.run_until_complete, coro)
 
     def test_create_datagram_endpoint_connect_err(self):
         self.loop.sock_connect = mock.Mock()
