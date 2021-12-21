@@ -249,7 +249,6 @@ def library_recipes():
               name="OpenSSL 1.1.1m",
               url="https://www.openssl.org/source/openssl-1.1.1m.tar.gz",
               checksum='8ec70f665c145c3103f6e330f538a9db',
-              patches=['0001-Darwin-platform-allows-to-build-on-releases-before-Y.patch'],
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
