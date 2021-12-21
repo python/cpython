@@ -592,8 +592,9 @@ Enriching Exceptions with Notes
 When an exception is created in order to be raised, it is usually initialized
 with information that describes the error that has occurred. There are cases
 where it is useful to add information after the exception was caught. For this
-purpose, exceptions have a mutable field ``__note__`` that can be assigned to
-a string which is included in formatted tracebacks. ::
+purpose, exceptions have a mutable field ``__note__`` that can be string or
+``None`` (``None`` by default). If it is a string, it is included in the
+formatted tracebacks after the exception. ::
 
    >>> try:
    ...     raise TypeError('bad type')

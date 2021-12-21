@@ -238,7 +238,9 @@ capture data for later printing in a lightweight fashion.
 
    .. attribute:: __note__
 
-      The ``__note__`` value from the original exception.
+      The ``__note__`` value from the original exception, which is
+      string or ``None``. If it is not ``None`` is it formatted in
+      the traceback after the exception string.
 
       .. versionadded:: 3.11
 
