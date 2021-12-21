@@ -54,30 +54,30 @@ class DuckFuture:
                 or self.__exception is not None)
 
     def result(self):
-        assert not self.cancelled()
+        self.assertFalse(self.cancelled())
         if self.__exception is not None:
             raise self.__exception
         return self.__result
 
     def exception(self):
-        assert not self.cancelled()
+        self.assertFalse(self.cancelled())
         return self.__exception
 
     def set_result(self, result):
-        assert not self.done()
-        assert result is not None
+        self.assertFalse(self.done())
+        self.assertIsNotNone(result)
         self.__result = result
 
     def set_exception(self, exception):
-        assert not self.done()
-        assert exception is not None
+        self.assertFalse(self.done())
+        self.assertIsNotNone(exception)
         self.__exception = exception
 
     def __iter__(self):
         if not self.done():
             self._asyncio_future_blocking = True
             yield self
-        assert self.done()
+        self.assertTrue(self.done())
         return self.result()
 
 
@@ -91,12 +91,12 @@ class DuckTests(test_utils.TestCase):
     def test_wrap_future(self):
         f = DuckFuture()
         g = asyncio.wrap_future(f)
-        assert g is f
+        self.assertIs(g, f)
 
     def test_ensure_future(self):
         f = DuckFuture()
         g = asyncio.ensure_future(f)
-        assert g is f
+        self.assertIs(g, f)
 
 
 class BaseFutureTests:

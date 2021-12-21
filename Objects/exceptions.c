@@ -901,6 +901,11 @@ exceptiongroup_subset(
     }
     PyException_SetContext(eg, PyException_GetContext(orig));
     PyException_SetCause(eg, PyException_GetCause(orig));
+
+    PyObject *note = _PyBaseExceptionObject_cast(orig)->note;
+    Py_XINCREF(note);
+    _PyBaseExceptionObject_cast(eg)->note = note;
+
     *result = eg;
     return 0;
 error:
