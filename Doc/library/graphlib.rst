@@ -20,8 +20,8 @@
    Provides functionality to topologically sort a graph of hashable nodes.
 
    A topological order is a linear ordering of the vertices in a graph such that
-   for every directed edge u -> v from vertex u to vertex v, vertex u comes
-   before vertex v in the ordering. For instance, the vertices of the graph may
+   for every directed edge u -> v from vertex u to vertex v, vertex v comes
+   before vertex u in the ordering. For instance, the vertices of the graph may
    represent tasks to be performed, and the edges may represent constraints that
    one task must be performed before another; in this example, a topological
    ordering is just a valid sequence for the tasks. A complete topological
@@ -30,9 +30,9 @@
 
    If the optional *graph* argument is provided it must be a dictionary
    representing a directed acyclic graph where the keys are nodes and the values
-   are iterables of all predecessors of that node in the graph (the nodes that
-   have edges that point to the value in the key). Additional nodes can be added
-   to the graph using the :meth:`~TopologicalSorter.add` method.
+   are iterables of all predecessors of that node in the graph. The edges are
+   directed from the keys to the values. Additional nodes can be added to the
+   graph using the :meth:`~TopologicalSorter.add` method.
 
    In the general case, the steps required to perform the sorting of a given
    graph are as follows:
