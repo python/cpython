@@ -1400,8 +1400,8 @@ class FileType(object):
 class Namespace(_AttributeHolder):
     """Simple object for storing attributes.
 
-    Default values are stored in a dict name `__defaults__` so they won't mess
-    with the given values.
+    Default values are stored in a dict named `__defaults__` so they won't
+    override the given values.
 
     Implements equality by attribute names and values, and provides a simple
     string representation.
