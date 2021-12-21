@@ -495,13 +495,14 @@ class ExceptionGroupSplitTestBase(ExceptionGroupTestBase):
                 match and e in match_leaves,
                 rest and e in rest_leaves)
 
-        # message, cause and context equal to eg
+        # message, cause and context, traceback and note equal to eg
         for part in [match, rest, sg]:
             if part is not None:
                 self.assertEqual(eg.message, part.message)
                 self.assertIs(eg.__cause__, part.__cause__)
                 self.assertIs(eg.__context__, part.__context__)
                 self.assertIs(eg.__traceback__, part.__traceback__)
+                self.assertIs(eg.__note__, part.__note__)
 
         def tbs_for_leaf(leaf, eg):
             for e, tbs in leaf_generator(eg):
@@ -566,6 +567,7 @@ class NestedExceptionGroupSplitTest(ExceptionGroupSplitTestBase):
         try:
             nested_group()
         except ExceptionGroup as e:
+            e.__note__ = f"the note: {id(e)}"
             eg = e
 
         eg_template = [
