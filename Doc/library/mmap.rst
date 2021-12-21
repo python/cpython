@@ -41,9 +41,6 @@ memory map raises a :exc:`TypeError` exception.  Assignment to an
 Assignment to an :const:`ACCESS_COPY` memory map affects memory but does not
 update the underlying file.
 
-.. versionchanged:: 3.7
-   Added :const:`ACCESS_DEFAULT` constant.
-
 To map anonymous memory, -1 should be passed as the fileno along with the length.
 
 .. class:: mmap(fileno, length, tagname=None, access=ACCESS_DEFAULT[, offset])
@@ -318,6 +315,25 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       the mmap was created with :const:`ACCESS_READ`, then writing to it will
       raise a :exc:`TypeError` exception.
 
+.. data:: ALLOCATIONGRANULARITY
+.. data:: PAGESIZE
+
+
+.. _access-constants:
+
+ACCESS_* Constants
+++++++++++++++++++
+
+.. data:: ACCESS_READ
+          ACCESS_WRITE
+          ACCESS_COPY
+          ACCESS_DEFAULT
+
+   These access types can be passed to :meth:`mmap.mmap`.
+
+   .. versionchanged:: 3.7
+      Added :const:`ACCESS_DEFAULT` constant.
+
 .. _madvise-constants:
 
 MADV_* Constants
@@ -372,3 +388,16 @@ MAP_* Constants
 
     .. versionchanged:: 3.10
        Added MAP_POPULATE constant.
+
+.. _prot-constants:
+
+PROT_* Constants
+++++++++++++++++
+
+.. data:: PROT_READ
+          PROT_WRITE
+          PROT_EXEC
+
+   These memory-protection options can be passed to :meth:`mmap.mmap` on Unix systems.
+
+   Availability: Unix.
