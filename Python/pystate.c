@@ -2199,7 +2199,7 @@ push_chunk(PyThreadState *tstate, int size)
     }
     tstate->datastack_chunk = new;
     tstate->datastack_limit = (PyObject **)(((char *)new) + allocate_size);
-    PyObject **res = &new->data[0];
+    PyObject **res = &new->data[new->previous == NULL];
     tstate->datastack_top = res + size;
     return res;
 }
