@@ -47,7 +47,7 @@ static inline int is_medium_int(stwodigits x)
     return x_plus_mask < ((twodigits)PyLong_MASK) + PyLong_BASE;
 }
 
-static inline PyObject *
+static PyObject *
 get_small_int(sdigit ival)
 {
     assert(IS_SMALL_INT(ival));
@@ -56,7 +56,7 @@ get_small_int(sdigit ival)
     return v;
 }
 
-static inline PyLongObject *
+static PyLongObject *
 maybe_small_long(PyLongObject *v)
 {
     if (v && IS_MEDIUM_VALUE(v)) {
