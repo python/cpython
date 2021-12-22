@@ -33,6 +33,13 @@ def tearDownModule():
 class MimeTypesTestCase(unittest.TestCase):
     def setUp(self):
         self.db = mimetypes.MimeTypes()
+        
+    def test_case_sensitivity(self):
+        eq = self.assertEqual
+        eq(self.db.guess_type("foobar.HTML"), self.db.guess_type("foobar.html"))
+        eq(self.db.guess_type("foobar.TGZ"), self.db.guess_type("foobar.tgz"))
+        eq(self.db.guess_type("foobar.tar.Z"), ("application/x-tar", "compress"))
+        eq(self.db.guess_type("foobar.tar.z"), (None, None))
 
     def test_default_data(self):
         eq = self.assertEqual
