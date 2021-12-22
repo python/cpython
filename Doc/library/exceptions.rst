@@ -871,12 +871,12 @@ their subgroups based on the types of the contained exceptions.
    ``except Exception`` catches an :exc:`ExceptionGroup` but not
    :exc:`BaseExceptionGroup`.
 
-   It is usually not necessary for a program to explicitly create a
-   :exc:`BaseExceptionGroup`, because the :exc:`ExceptionGroup` constructor
-   inspects the contained exceptions, and if any of them are not of type
-   :exc:`Exception` it returns a :exc:`BaseExceptionGroup` rather than an
-   :exc:`ExceptionGroup`.  However, this behavior is not automatically true for
-   subclasses of :exc:`ExceptionGroup`.
+   The :exc:`BaseExceptionGroup` constructor returns an :exc:`ExceptionGroup`
+   rather than a :exc:`BaseExceptionGroup` if all contained exceptions are
+   :exc:`Exception` instances, so it can be used to make the selection
+   automatic. The :exc:`ExceptionGroup` constructor, on the other hand,
+   raises a :exc:`TypeError` if any contained exception is not an
+   :exc:`Exception` subclass.
 
    .. method:: subgroup(condition)
 
