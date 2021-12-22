@@ -8,8 +8,7 @@ import re
 import sys
 import warnings
 from _collections_abc import Sequence
-from errno import EINVAL, ENOENT, ENOTDIR, EBADF, ELOOP
-from operator import attrgetter
+from errno import ENOENT, ENOTDIR, EBADF, ELOOP
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from urllib.parse import quote_from_bytes as urlquote_from_bytes
 
@@ -364,7 +363,7 @@ _normal_accessor = _NormalAccessor()
 #
 # Globbing helpers
 #
-
+@functools.lru_cache
 def _make_selector(pattern_parts, flavour):
     pat = pattern_parts[0]
     child_parts = pattern_parts[1:]
@@ -377,9 +376,6 @@ def _make_selector(pattern_parts, flavour):
     else:
         cls = _PreciseSelector
     return cls(pat, child_parts, flavour)
-
-if hasattr(functools, "lru_cache"):
-    _make_selector = functools.lru_cache()(_make_selector)
 
 
 class _Selector:
@@ -693,11 +689,15 @@ class PurePath(object):
     def __class_getitem__(cls, type):
         return cls
 
-    drive = property(attrgetter('_drv'),
-                     doc="""The drive prefix (letter or UNC path), if any.""")
+    @property
+    def drive(self):
+        """The drive prefix (letter or UNC path), if any."""
+        return self._drv
 
-    root = property(attrgetter('_root'),
-                    doc="""The root of the path, if any.""")
+    @property
+    def root(self):
+        """The root of the path, if any."""
+        return self._root
 
     @property
     def anchor(self):
