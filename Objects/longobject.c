@@ -4510,7 +4510,7 @@ long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
 
     newsize = Py_ABS(Py_SIZE(a)) - wordshift;
     if (newsize <= 0) {
-        return PyLong_FromLong(0);
+        return get_small_int(-(Py_SIZE(a) < 0));
     }
     z = _PyLong_New(newsize);
     if (z == NULL) {
