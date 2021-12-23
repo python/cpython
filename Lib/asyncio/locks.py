@@ -321,9 +321,9 @@ class Condition(_ContextManagerMixin, mixins._LoopBoundMixin):
                 fut.set_result(False)
 
     def notify_all(self):
-        """Wake up all threads waiting on this condition. This method acts
-        like notify(), but wakes up all waiting threads instead of one. If the
-        calling thread has not acquired the lock when this method is called,
+        """Wake up all tasks waiting on this condition. This method acts
+        like notify(), but wakes up all waiting tasks instead of one. If the
+        calling task has not acquired the lock when this method is called,
         a RuntimeError is raised.
         """
         self.notify(len(self._waiters))
@@ -335,7 +335,7 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
     A semaphore manages an internal counter which is decremented by each
     acquire() call and incremented by each release() call. The counter
     can never go below zero; when acquire() finds that it is zero, it blocks,
-    waiting until some other thread calls release().
+    waiting until another task calls release().
 
     Semaphores also support the context management protocol.
 
