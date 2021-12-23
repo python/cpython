@@ -83,7 +83,9 @@ class BaseTest(unittest.TestCase):
                      WeakSet, ReferenceType, ref,
                      ShareableList, MPSimpleQueue,
                      Future, _WorkItem,
-                     Morsel]
+                     Morsel,
+                     property,
+                     ]
     if ctypes is not None:
         generic_types.extend((ctypes.Array, ctypes.LibraryLoader))
 
