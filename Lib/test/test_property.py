@@ -4,7 +4,6 @@
 import sys
 import unittest
 from test import support
-from types import GenericAlias
 
 class PropertyBase(Exception):
     pass
@@ -216,6 +215,7 @@ class PropertyTests(unittest.TestCase):
                 p.__set_name__(*([0] * i))
 
     def test_property___class_getitem__(self):
+        from types import GenericAlias
         p = property[int, str]
         self.assertIsInstance(p, GenericAlias)
         self.assertIs(p.__origin__, property)
