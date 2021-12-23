@@ -1,1 +1,1 @@
-remove redundant ``AsyncContextDecorator.__call__`` override from ``_AsyncGeneratorContextManager``
+remove redundant AsyncContextDecorator override from _AsyncGeneratorContextManager
