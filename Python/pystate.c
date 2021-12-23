@@ -747,7 +747,8 @@ free_threadstate(PyThreadState *tstate)
   */
 
 static void
-init_threadstate(PyThreadState *tstate, PyInterpreterState *interp, uint64_t id,
+init_threadstate(PyThreadState *tstate,
+                 PyInterpreterState *interp, uint64_t id,
                  PyThreadState *next)
 {
     if (tstate->_initialized) {
@@ -795,11 +796,6 @@ new_threadstate(PyInterpreterState *interp)
     PyThreadState *tstate;
     _PyRuntimeState *runtime = interp->runtime;
 
-    _PyStackChunk *datastack_chunk = allocate_chunk(DATA_STACK_CHUNK_SIZE, NULL);
-    if (datastack_chunk == NULL) {
-        return NULL;
-    }
-
     /* We serialize concurrent creation to protect global state. */
     HEAD_LOCK(runtime);
 
@@ -836,7 +832,6 @@ new_threadstate(PyInterpreterState *interp)
 
 error:
     HEAD_UNLOCK(runtime);
-    _PyObject_VirtualFree(datastack_chunk, datastack_chunk->size);
     return NULL;
 }
 
@@ -2196,9 +2191,9 @@ push_chunk(PyThreadState *tstate, int size)
     }
     tstate->datastack_chunk = new;
     tstate->datastack_limit = (PyObject **)(((char *)new) + allocate_size);
-    // When new is the "root" chunk (new->previous == NULL), we keep
+    // When new is the "root" chunk (i.e. new->previous == NULL), we can keep
     // _PyThreadState_PopFrame from freeing it later by "skipping" over the
-    // first element.
+    // first element:
     PyObject **res = &new->data[new->previous == NULL];
     tstate->datastack_top = res + size;
     return res;
