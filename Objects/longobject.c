@@ -4496,11 +4496,11 @@ long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
     digit lomask, himask, omitmark;
 
     if (IS_MEDIUM_VALUE(a)) {
-        stwodigits x;
-        if (wordshift > 0) {
-            return get_small_int(-(Py_SIZE(a) < 0));
-        }
-        x = Py_ARITHMETIC_RIGHT_SHIFT(stwodigits, medium_value(a), remshift);
+        stwodigits m, x;
+        digit shift;
+        m = medium_value(a);
+        shift = wordshift == 0 ? remshift : PyLong_SHIFT;
+        x = m < 0 ? ~(~m >> shift) : m >> shift;
         return _PyLong_FromSTwoDigits(x);
     }
 
@@ -4590,14 +4590,13 @@ long_lshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
     Py_ssize_t oldsize, newsize, i, j;
     twodigits accum;
 
-    if (wordshift == 0 && IS_MEDIUM_VALUE(a) &&
-        (a->ob_digit[0] & ~(PyLong_MASK >> remshift)) == 0) {
+    if (wordshift == 0 && IS_MEDIUM_VALUE(a)) {
+        stwodigits m = medium_value(a);
         // bypass undefined shift operator behavior
-        stwodigits x = (stwodigits)((twodigits)medium_value(a) << remshift);
+        stwodigits x = m < 0 ? -(-m << remshift) : m << remshift;
         return _PyLong_FromSTwoDigits(x);
     }
 
-    /* This version due to Tim Peters */
     oldsize = Py_ABS(Py_SIZE(a));
     newsize = oldsize + wordshift;
     if (remshift)
