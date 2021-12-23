@@ -1566,6 +1566,7 @@ static PyMethodDef property_methods[] = {
     {"setter", property_setter, METH_O, setter_doc},
     {"deleter", property_deleter, METH_O, deleter_doc},
     {"__set_name__", property_set_name, METH_VARARGS, set_name_doc},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {0}
 };
 

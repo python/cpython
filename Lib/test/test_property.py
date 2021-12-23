@@ -4,6 +4,7 @@
 import sys
 import unittest
 from test import support
+from types import GenericAlias
 
 class PropertyBase(Exception):
     pass
@@ -213,6 +214,9 @@ class PropertyTests(unittest.TestCase):
                 fr'^__set_name__\(\) takes 2 positional arguments but {i} were given$'
             ):
                 p.__set_name__(*([0] * i))
+
+    def test_property___class_getitem__(self):
+        self.assertIsInstance(property[int, str], GenericAlias)
 
 
 # Issue 5890: subclasses of property do not preserve method __doc__ strings
