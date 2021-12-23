@@ -4495,27 +4495,18 @@ long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
     Py_ssize_t newsize, hishift, i, j;
     digit lomask, himask, omitmark;
 
-    /* for a positive integrate x
-         -x >> m = -(x >> m)      when the dropped bits are all zeros,
-                 = -(x >> m) -1   otherwise. */
-
     if (IS_MEDIUM_VALUE(a)) {
-        stwodigits sval;
+        stwodigits x;
         if (wordshift > 0) {
             return get_small_int(-(Py_SIZE(a) < 0));
         }
-        sval = Py_ARITHMETIC_RIGHT_SHIFT(stwodigits, medium_value(a), remshift);
-        if (IS_SMALL_INT(sval)) {
-            return get_small_int((sdigit)sval);
-        }
-        z = _PyLong_New(Py_ABS(Py_SIZE(a)));
-        Py_SET_SIZE(z, Py_SIZE(a));
-        z->ob_digit[0] = (digit)(a->ob_digit[0] >> remshift);
-        if (Py_SIZE(a) < 0 && (a->ob_digit[0] & ~(PyLong_MASK << remshift))) {
-            z->ob_digit[0] += 1;
-        }
-        return (PyObject *)z;
+        x = Py_ARITHMETIC_RIGHT_SHIFT(stwodigits, medium_value(a), remshift);
+        return _PyLong_FromSTwoDigits(x);
     }
+
+    /* for a positive integrate x
+     -x >> m = -(x >> m)      when the dropped bits are all zeros,
+             = -(x >> m) -1   otherwise. */
 
     newsize = Py_ABS(Py_SIZE(a)) - wordshift;
     if (newsize <= 0) {
@@ -4601,15 +4592,9 @@ long_lshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
 
     if (wordshift == 0 && IS_MEDIUM_VALUE(a) &&
         (a->ob_digit[0] & ~(PyLong_MASK >> remshift)) == 0) {
-        stwodigits sval = (stwodigits)((twodigits)medium_value(a) << remshift);
         // bypass undefined shift operator behavior
-        if (IS_SMALL_INT(sval)) {
-            return get_small_int((sdigit)sval);
-        }
-        z = _PyLong_New(Py_ABS(Py_SIZE(a)));
-        Py_SET_SIZE(z, Py_SIZE(a));
-        z->ob_digit[0] = (digit)(a->ob_digit[0] << remshift);
-        return (PyObject *)z;
+        stwodigits x = (stwodigits)((twodigits)medium_value(a) << remshift);
+        return _PyLong_FromSTwoDigits(x);
     }
 
     /* This version due to Tim Peters */
