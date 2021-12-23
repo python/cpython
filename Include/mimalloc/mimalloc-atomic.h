@@ -25,7 +25,7 @@ terms of the MIT license. A copy of the license can be found in the file
 #define  mi_memory_order(name)  std::memory_order_##name
 #elif defined(_MSC_VER)
 // Use MSVC C wrapper for C11 atomics
-#define  _Atomic(tp)            tp
+#define  _Atomic(tp)            tp 
 #define  ATOMIC_VAR_INIT(x)     x
 #define  mi_atomic(name)        mi_atomic_##name
 #define  mi_memory_order(name)  mi_memory_order_##name
@@ -173,7 +173,7 @@ static inline uintptr_t mi_atomic_exchange_explicit(_Atomic(uintptr_t)*p, uintpt
 }
 static inline void mi_atomic_thread_fence(mi_memory_order mo) {
   (void)(mo);
-  _Atomic(uintptr_t)x = 0;
+  _Atomic(uintptr_t) x = 0;
   mi_atomic_exchange_explicit(&x, 1, mo);
 }
 static inline uintptr_t mi_atomic_load_explicit(_Atomic(uintptr_t) const* p, mi_memory_order mo) {

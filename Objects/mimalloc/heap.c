@@ -50,9 +50,9 @@ static bool mi_heap_visit_pages(mi_heap_t* heap, heap_page_visitor_fun* fn, void
 
 #if MI_DEBUG>=2
 static bool mi_heap_page_is_valid(mi_heap_t* heap, mi_page_queue_t* pq, mi_page_t* page, void* arg1, void* arg2) {
-  UNUSED(arg1);
-  UNUSED(arg2);
-  UNUSED(pq);
+  MI_UNUSED(arg1);
+  MI_UNUSED(arg2);
+  MI_UNUSED(pq);
   mi_assert_internal(mi_page_heap(page) == heap);
   mi_segment_t* segment = _mi_page_segment(page);
   mi_assert_internal(segment->thread_id == heap->thread_id);
@@ -86,8 +86,8 @@ typedef enum mi_collect_e {
 
 
 static bool mi_heap_page_collect(mi_heap_t* heap, mi_page_queue_t* pq, mi_page_t* page, void* arg_collect, void* arg2 ) {
-  UNUSED(arg2);
-  UNUSED(heap);
+  MI_UNUSED(arg2);
+  MI_UNUSED(heap);
   mi_assert_internal(mi_heap_page_is_valid(heap, pq, page, NULL, NULL));
   mi_collect_t collect = *((mi_collect_t*)arg_collect);
   _mi_page_free_collect(page, collect >= MI_FORCE);
@@ -104,10 +104,10 @@ static bool mi_heap_page_collect(mi_heap_t* heap, mi_page_queue_t* pq, mi_page_t
 }
 
 static bool mi_heap_page_never_delayed_free(mi_heap_t* heap, mi_page_queue_t* pq, mi_page_t* page, void* arg1, void* arg2) {
-  UNUSED(arg1);
-  UNUSED(arg2);
-  UNUSED(heap);
-  UNUSED(pq);
+  MI_UNUSED(arg1);
+  MI_UNUSED(arg2);
+  MI_UNUSED(heap);
+  MI_UNUSED(pq);
   _mi_page_use_delayed_free(page, MI_NEVER_DELAYED_FREE, false);
   return true; // don't break
 }
@@ -154,7 +154,7 @@ static void mi_heap_collect_ex(mi_heap_t* heap, mi_collect_t collect)
 
   // collect regions on program-exit (or shared library unload)
   if (collect >= MI_FORCE && _mi_is_main_thread() && mi_heap_is_backing(heap)) {
-    _mi_mem_collect(&heap->tld->os);
+    //_mi_mem_collect(&heap->tld->os);
   }
 }
 
@@ -262,19 +262,19 @@ static void mi_heap_free(mi_heap_t* heap) {
 ----------------------------------------------------------- */
 
 static bool _mi_heap_page_destroy(mi_heap_t* heap, mi_page_queue_t* pq, mi_page_t* page, void* arg1, void* arg2) {
-  UNUSED(arg1);
-  UNUSED(arg2);
-  UNUSED(heap);
-  UNUSED(pq);
+  MI_UNUSED(arg1);
+  MI_UNUSED(arg2);
+  MI_UNUSED(heap);
+  MI_UNUSED(pq);
 
   // ensure no more thread_delayed_free will be added
   _mi_page_use_delayed_free(page, MI_NEVER_DELAYED_FREE, false);
 
   // stats
   const size_t bsize = mi_page_block_size(page);
-  if (bsize > MI_LARGE_OBJ_SIZE_MAX) {
-    if (bsize > MI_HUGE_OBJ_SIZE_MAX) {
-      mi_heap_stat_decrease(heap, giant, bsize);
+  if (bsize > MI_MEDIUM_OBJ_SIZE_MAX) {
+    if (bsize <= MI_LARGE_OBJ_SIZE_MAX) {
+      mi_heap_stat_decrease(heap, large, bsize);
     }
     else {
       mi_heap_stat_decrease(heap, huge, bsize);
@@ -333,7 +333,7 @@ void mi_heap_destroy(mi_heap_t* heap) {
   Safe Heap delete
 ----------------------------------------------------------- */
 
-// Tranfer the pages from one heap to the other
+// Transfer the pages from one heap to the other
 static void mi_heap_absorb(mi_heap_t* heap, mi_heap_t* from) {
   mi_assert_internal(heap!=NULL);
   if (from==NULL || from->page_count == 0) return;
@@ -422,8 +422,8 @@ bool mi_heap_contains_block(mi_heap_t* heap, const void* p) {
 
 
 static bool mi_heap_page_check_owned(mi_heap_t* heap, mi_page_queue_t* pq, mi_page_t* page, void* p, void* vfound) {
-  UNUSED(heap);
-  UNUSED(pq);
+  MI_UNUSED(heap);
+  MI_UNUSED(pq);
   bool* found = (bool*)vfound;
   mi_segment_t* segment = _mi_page_segment(page);
   void* start = _mi_page_start(segment, page, NULL);
@@ -521,8 +521,8 @@ typedef bool (mi_heap_area_visit_fun)(const mi_heap_t* heap, const mi_heap_area_
 
 
 static bool mi_heap_visit_areas_page(mi_heap_t* heap, mi_page_queue_t* pq, mi_page_t* page, void* vfun, void* arg) {
-  UNUSED(heap);
-  UNUSED(pq);
+  MI_UNUSED(heap);
+  MI_UNUSED(pq);
   mi_heap_area_visit_fun* fun = (mi_heap_area_visit_fun*)vfun;
   mi_heap_area_ex_t xarea;
   const size_t bsize = mi_page_block_size(page);

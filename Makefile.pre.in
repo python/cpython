@@ -367,6 +367,7 @@ MIMALLOC_INCLUDES = \
 		$(srcdir)/Objects/mimalloc/random.c \
 		$(srcdir)/Objects/mimalloc/region.c \
 		$(srcdir)/Objects/mimalloc/segment.c \
+		$(srcdir)/Objects/mimalloc/segment-cache.c \
 		$(srcdir)/Objects/mimalloc/static.c \
 		$(srcdir)/Objects/mimalloc/stats.c
 

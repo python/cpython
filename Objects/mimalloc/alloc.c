@@ -123,7 +123,7 @@ extern inline mi_decl_restrict void* mi_malloc(size_t size) mi_attr_noexcept {
 void _mi_block_zero_init(const mi_page_t* page, void* p, size_t size) {
   // note: we need to initialize the whole usable block size to zero, not just the requested size,
   // or the recalloc/rezalloc functions cannot safely expand in place (see issue #63)
-  UNUSED(size);
+  MI_UNUSED(size);
   mi_assert_internal(p != NULL);
   mi_assert_internal(mi_usable_size(p) >= size); // size can be zero
   mi_assert_internal(_mi_ptr_page(p)==page);
@@ -205,8 +205,8 @@ static inline bool mi_check_is_double_free(const mi_page_t* page, const mi_block
 }
 #else
 static inline bool mi_check_is_double_free(const mi_page_t* page, const mi_block_t* block) {
-  UNUSED(page);
-  UNUSED(block);
+  MI_UNUSED(page);
+  MI_UNUSED(block);
   return false;
 }
 #endif
@@ -278,19 +278,19 @@ static void mi_padding_shrink(const mi_page_t* page, const mi_block_t* block, co
 }
 #else
 static void mi_check_padding(const mi_page_t* page, const mi_block_t* block) {
-  UNUSED(page);
-  UNUSED(block);
+  MI_UNUSED(page);
+  MI_UNUSED(block);
 }
 
 static size_t mi_page_usable_size_of(const mi_page_t* page, const mi_block_t* block) {
-  UNUSED(block);
+  MI_UNUSED(block);
   return mi_page_usable_block_size(page);
 }
 
 static void mi_padding_shrink(const mi_page_t* page, const mi_block_t* block, const size_t min_size) {
-  UNUSED(page);
-  UNUSED(block);
-  UNUSED(min_size);
+  MI_UNUSED(page);
+  MI_UNUSED(block);
+  MI_UNUSED(min_size);
 }
 #endif
 
@@ -298,7 +298,7 @@ static void mi_padding_shrink(const mi_page_t* page, const mi_block_t* block, co
 #if (MI_STAT>0)
 static void mi_stat_free(const mi_page_t* page, const mi_block_t* block) {
 #if (MI_STAT < 2)  
-  UNUSED(block);
+  MI_UNUSED(block);
 #endif
   mi_heap_t* const heap = mi_heap_get_default();
   const size_t bsize = mi_page_usable_block_size(page);  
@@ -315,7 +315,7 @@ static void mi_stat_free(const mi_page_t* page, const mi_block_t* block) {
 }
 #else
 static void mi_stat_free(const mi_page_t* page, const mi_block_t* block) {
-  UNUSED(page); UNUSED(block);
+  MI_UNUSED(page); MI_UNUSED(block);
 }
 #endif
 
@@ -324,16 +324,16 @@ static void mi_stat_free(const mi_page_t* page, const mi_block_t* block) {
 static void mi_stat_huge_free(const mi_page_t* page) {
   mi_heap_t* const heap = mi_heap_get_default();
   const size_t bsize = mi_page_block_size(page); // to match stats in `page.c:mi_page_huge_alloc`
-  if (bsize <= MI_HUGE_OBJ_SIZE_MAX) {
-    mi_heap_stat_decrease(heap, huge, bsize);
+  if (bsize <= MI_LARGE_OBJ_SIZE_MAX) {
+    mi_heap_stat_decrease(heap, large, bsize);
   }
   else {
-    mi_heap_stat_decrease(heap, giant, bsize);
+    mi_heap_stat_decrease(heap, huge, bsize);
   }
 }
 #else
 static void mi_stat_huge_free(const mi_page_t* page) {
-  UNUSED(page);
+  MI_UNUSED(page);
 }
 #endif
 
@@ -353,8 +353,8 @@ static mi_decl_noinline void _mi_free_block_mt(mi_page_t* page, mi_block_t* bloc
   #endif
 
   // huge page segments are always abandoned and can be freed immediately
-  mi_segment_t* const segment = _mi_page_segment(page);
-  if (segment->page_kind==MI_PAGE_HUGE) {
+  mi_segment_t* segment = _mi_page_segment(page);
+  if (segment->kind==MI_SEGMENT_HUGE) {
     mi_stat_huge_free(page);
     _mi_segment_huge_page_free(segment, page, block);
     return;
@@ -435,7 +435,7 @@ mi_block_t* _mi_page_ptr_unalign(const mi_segment_t* segment, const mi_page_t* p
 }
 
 
-static void mi_decl_noinline mi_free_generic(const mi_segment_t* segment, bool local, void* p) {
+static void mi_decl_noinline mi_free_generic(const mi_segment_t* segment, bool local, void* p) mi_attr_noexcept {
   mi_page_t* const page = _mi_segment_page_of(segment, p);
   mi_block_t* const block = (mi_page_has_aligned(page) ? _mi_page_ptr_unalign(segment, page, p) : (mi_block_t*)p);
   mi_stat_free(page, block);
@@ -447,7 +447,7 @@ static void mi_decl_noinline mi_free_generic(const mi_segment_t* segment, bool l
 // (and secure mode) if this was a valid pointer.
 static inline mi_segment_t* mi_checked_ptr_segment(const void* p, const char* msg) 
 {
-  UNUSED(msg);
+  MI_UNUSED(msg);
 #if (MI_DEBUG>0)
   if (mi_unlikely(((uintptr_t)p & (MI_INTPTR_SIZE - 1)) != 0)) {
     _mi_error_message(EINVAL, "%s: invalid (unaligned) pointer: %p\n", msg, p);
@@ -469,7 +469,7 @@ static inline mi_segment_t* mi_checked_ptr_segment(const void* p, const char* ms
 #endif
 #if (MI_DEBUG>0 || MI_SECURE>=4)
   if (mi_unlikely(_mi_ptr_cookie(segment) != segment->cookie)) {
-    _mi_error_message(EINVAL, "%s: pointer does not point to a valid heap space: %p\n", p);
+    _mi_error_message(EINVAL, "%s: pointer does not point to a valid heap space: %p\n", msg, p);
   }
 #endif
   return segment;
@@ -482,12 +482,12 @@ void mi_free(void* p) mi_attr_noexcept
   const mi_segment_t* const segment = mi_checked_ptr_segment(p,"mi_free");
   if (mi_unlikely(segment == NULL)) return; 
 
-  const uintptr_t tid = _mi_thread_id();
+  const mi_threadid_t tid = _mi_thread_id();
   mi_page_t* const page = _mi_segment_page_of(segment, p);
-  mi_block_t* const block = (mi_block_t*)p;
 
-  if (mi_likely(tid == segment->thread_id && page->flags.full_aligned == 0)) {  // the thread id matches and it is not a full page, nor has aligned blocks
+  if (mi_likely(tid == mi_atomic_load_relaxed(&segment->thread_id) && page->flags.full_aligned == 0)) {  // the thread id matches and it is not a full page, nor has aligned blocks
     // local, and not full or aligned
+    mi_block_t* block = (mi_block_t*)(p);
     if (mi_unlikely(mi_check_is_double_free(page,block))) return;
     mi_check_padding(page, block);
     mi_stat_free(page, block);
@@ -574,19 +574,19 @@ void* _mi_externs[] = {
 // ------------------------------------------------------
 
 void mi_free_size(void* p, size_t size) mi_attr_noexcept {
-  UNUSED_RELEASE(size);
+  MI_UNUSED_RELEASE(size);
   mi_assert(p == NULL || size <= _mi_usable_size(p,"mi_free_size"));
   mi_free(p);
 }
 
 void mi_free_size_aligned(void* p, size_t size, size_t alignment) mi_attr_noexcept {
-  UNUSED_RELEASE(alignment);
+  MI_UNUSED_RELEASE(alignment);
   mi_assert(((uintptr_t)p % alignment) == 0);
   mi_free_size(p,size);
 }
 
 void mi_free_aligned(void* p, size_t alignment) mi_attr_noexcept {
-  UNUSED_RELEASE(alignment);
+  MI_UNUSED_RELEASE(alignment);
   mi_assert(((uintptr_t)p % alignment) == 0);
   mi_free(p);
 }
@@ -802,7 +802,10 @@ static bool mi_try_new_handler(bool nothrow) {
     std::set_new_handler(h);
   #endif  
   if (h==NULL) {
-    if (!nothrow) throw std::bad_alloc();
+    _mi_error_message(ENOMEM, "out of memory in 'new'");      
+    if (!nothrow) {
+      throw std::bad_alloc();
+    }
     return false;
   }
   else {
@@ -830,7 +833,10 @@ static std_new_handler_t mi_get_new_handler() {
 static bool mi_try_new_handler(bool nothrow) {
   std_new_handler_t h = mi_get_new_handler();
   if (h==NULL) {
-    if (!nothrow) exit(ENOMEM);  // cannot throw in plain C, use exit as we are out of memory anyway.
+    _mi_error_message(ENOMEM, "out of memory in 'new'");       
+    if (!nothrow) {
+      abort();  // cannot throw in plain C, use abort
+    }
     return false;
   }
   else {

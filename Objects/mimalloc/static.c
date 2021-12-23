@@ -25,7 +25,7 @@ terms of the MIT license. A copy of the license can be found in the file
 #include "os.c"
 #include "bitmap.c"
 #include "arena.c"
-#include "region.c"
+#include "segment-cache.c"
 #include "segment.c"
 #include "page.c"
 #include "heap.c"

@@ -192,14 +192,16 @@ static bool os_random_buf(void* buf, size_t buf_len) {
 
 #elif defined(ANDROID) || defined(XP_DARWIN) || defined(__APPLE__) || defined(__DragonFly__) || \
       defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || \
-      defined(__sun) || defined(__wasi__)
+      defined(__sun) // todo: what to use with __wasi__?
 #include <stdlib.h>
 static bool os_random_buf(void* buf, size_t buf_len) {
   arc4random_buf(buf, buf_len);
   return true;
 }
-#elif defined(__linux__)
+#elif defined(__linux__) || defined(__HAIKU__)
+#if defined(__linux__)
 #include <sys/syscall.h>
+#endif
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -284,7 +286,9 @@ void _mi_random_init(mi_random_ctx_t* ctx) {
   if (!os_random_buf(key, sizeof(key))) {
     // if we fail to get random data from the OS, we fall back to a
     // weak random source based on the current time
+    #if !defined(__wasi__)
     _mi_warning_message("unable to use secure randomness\n");
+    #endif
     uintptr_t x = _mi_os_random_weak(0);
     for (size_t i = 0; i < 8; i++) {  // key is eight 32-bit words.
       x = _mi_random_shuffle(x);

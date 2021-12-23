@@ -33,11 +33,17 @@ terms of the MIT license. A copy of the license can be found in the file
 
 
 size_t mi_malloc_size(const void* p) mi_attr_noexcept {
+  //if (!mi_is_in_heap_region(p)) return 0;
   return mi_usable_size(p);
 }
 
 size_t mi_malloc_usable_size(const void *p) mi_attr_noexcept {
+  //if (!mi_is_in_heap_region(p)) return 0;
   return mi_usable_size(p);
+}
+
+size_t mi_malloc_good_size(size_t size) mi_attr_noexcept {
+  return mi_good_size(size);
 }
 
 void mi_cfree(void* p) mi_attr_noexcept {
