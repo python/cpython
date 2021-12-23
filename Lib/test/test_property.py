@@ -216,7 +216,18 @@ class PropertyTests(unittest.TestCase):
                 p.__set_name__(*([0] * i))
 
     def test_property___class_getitem__(self):
-        self.assertIsInstance(property[int, str], GenericAlias)
+        p = property[int, str]
+        self.assertIsInstance(p, GenericAlias)
+        self.assertIs(p.__origin__, property)
+        self.assertEqual(p.__args__, (int, str))
+        self.assertEqual(p.__parameters__, ())
+
+        from typing import TypeVar
+        G = TypeVar('G')
+        S = TypeVar('S')
+        p1 = property[G, S]
+        self.assertEqual(p1.__args__, (G, S))
+        self.assertEqual(p1.__parameters__, (G, S))
 
 
 # Issue 5890: subclasses of property do not preserve method __doc__ strings
