@@ -173,11 +173,10 @@ _PyThreadState_BumpFramePointerSlow(PyThreadState *tstate, size_t size);
 static inline InterpreterFrame *
 _PyThreadState_BumpFramePointer(PyThreadState *tstate, size_t size)
 {
-    assert(!!tstate->datastack_top == !!tstate->datastack_limit);
-    assert(!!tstate->datastack_top == !!tstate->datastack_chunk);
     PyObject **base = tstate->datastack_top;
     if (base) {
         PyObject **top = base + size;
+        assert(tstate->datastack_limit);
         if (top < tstate->datastack_limit) {
             tstate->datastack_top = top;
             return (InterpreterFrame *)base;

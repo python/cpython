@@ -2182,9 +2182,6 @@ _Py_GetConfig(void)
 static PyObject **
 push_chunk(PyThreadState *tstate, int size)
 {
-    assert(tstate->datastack_chunk == NULL || 
-            tstate->datastack_top + size >= tstate->datastack_limit);
-
     int allocate_size = DATA_STACK_CHUNK_SIZE;
     while (allocate_size < (int)sizeof(PyObject*)*(size + MINIMUM_OVERHEAD)) {
         allocate_size *= 2;
@@ -2199,6 +2196,9 @@ push_chunk(PyThreadState *tstate, int size)
     }
     tstate->datastack_chunk = new;
     tstate->datastack_limit = (PyObject **)(((char *)new) + allocate_size);
+    // When new is the "root" chunk (new->previous == NULL), we keep
+    // _PyThreadState_PopFrame from freeing it later by "skipping" over the
+    // first element.
     PyObject **res = &new->data[new->previous == NULL];
     tstate->datastack_top = res + size;
     return res;
@@ -2225,7 +2225,8 @@ _PyThreadState_PushFrame(PyThreadState *tstate, PyFunctionObject *func, PyObject
 {
     PyCodeObject *code = (PyCodeObject *)func->func_code;
     int nlocalsplus = code->co_nlocalsplus;
-    size_t size = nlocalsplus + code->co_stacksize + FRAME_SPECIALS_SIZE;
+    size_t size = nlocalsplus + code->co_stacksize +
+        FRAME_SPECIALS_SIZE;
     InterpreterFrame *frame  = _PyThreadState_BumpFramePointer(tstate, size);
     if (frame == NULL) {
         return NULL;
@@ -2240,25 +2241,20 @@ _PyThreadState_PushFrame(PyThreadState *tstate, PyFunctionObject *func, PyObject
 void
 _PyThreadState_PopFrame(PyThreadState *tstate, InterpreterFrame * frame)
 {
-    assert(tstate->datastack_top);
-    assert(tstate->datastack_limit);
     assert(tstate->datastack_chunk);
     PyObject **base = (PyObject **)frame;
     if (base == &tstate->datastack_chunk->data[0]) {
         _PyStackChunk *chunk = tstate->datastack_chunk;
         _PyStackChunk *previous = chunk->previous;
-        if (previous) {
-            tstate->datastack_top = &previous->data[previous->top];
-            tstate->datastack_limit = (PyObject **)(((char *)previous) + previous->size);
-        }
-        else {
-            tstate->datastack_top = NULL;
-            tstate->datastack_limit = NULL;
-        }
+        // push_chunk ensures that the root chunk is never popped:
+        assert(previous);
+        tstate->datastack_top = &previous->data[previous->top];
         tstate->datastack_chunk = previous;
         _PyObject_VirtualFree(chunk, chunk->size);
+        tstate->datastack_limit = (PyObject **)(((char *)previous) + previous->size);
     }
     else {
+        assert(tstate->datastack_top);
         assert(tstate->datastack_top >= base);
         tstate->datastack_top = base;
     }
