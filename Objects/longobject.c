@@ -4491,6 +4491,7 @@ long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
 {
     PyLongObject *z = NULL;
     Py_ssize_t newsize, hishift, i, j;
+    twodigits accum;
 
     if (Py_SIZE(a) < 0) {
         /* Right shifting negative numbers is harder */
@@ -4514,13 +4515,13 @@ long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
         if (z == NULL)
             return NULL;
         j = wordshift;
-        twodigits acc = a->ob_digit[j++] >> remshift;
+        accum = a->ob_digit[j++] >> remshift;
         for (i = 0; j < Py_SIZE(a); i++, j++) {
-            acc |= (twodigits)(a->ob_digit[j]) << hishift;
-            z->ob_digit[i] = acc & PyLong_MASK;
-            acc >>= PyLong_SHIFT;
+            accum |= (twodigits)a->ob_digit[j] << hishift;
+            z->ob_digit[i] = (digit)(accum & PyLong_MASK);
+            accum >>= PyLong_SHIFT;
         }
-        z->ob_digit[i] = acc;
+        z->ob_digit[i] = (digit)accum;
         z = maybe_small_long(long_normalize(z));
     }
     return (PyObject *)z;
