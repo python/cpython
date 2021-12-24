@@ -32,9 +32,7 @@ static inline stwodigits
 medium_value(PyLongObject *x)
 {
     assert(IS_MEDIUM_VALUE(x));
-    Py_ssize_t s = Py_SIZE(x);
-    stwodigits d = x->ob_digit[0];
-    return s == 1 ? d : s == -1 ? -d : 0;
+    return ((stwodigits)Py_SIZE(x)) * x->ob_digit[0];
 }
 
 #define IS_SMALL_INT(ival) (-_PY_NSMALLNEGINTS <= (ival) && (ival) < _PY_NSMALLPOSINTS)
