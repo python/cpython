@@ -2449,7 +2449,7 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
         p4 = P('../~' + username + '/Documents')
         p5 = P('/~' + username + '/Documents')
         p6 = P('')
-        p7 = P('~fakeuser/Documents')
+        p7 = P('~fake800813user/Documents')
 
         with support.EnvironmentVarGuard() as env:
             env.pop('HOME', None)
