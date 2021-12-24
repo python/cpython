@@ -2334,6 +2334,20 @@ class TestType(unittest.TestCase):
         with self.assertRaises(TypeError):
             type('A', (B,), {'__slots__': '__weakref__'})
 
+    def test_type_new_create_subclass_fail(self):
+        class A(object):
+            def __init_subclass__(cls, **kwargs):
+                if cls.__name__ == 'C':
+                    raise Exception('1')
+
+        class B(A): pass    # create success
+        a_subclasses = A.__subclasses__()
+        try:
+            class C(A): pass    # create fail
+        except:
+            pass
+        self.assertEqual(a_subclasses, A.__subclasses__())
+
     def test_namespace_order(self):
         # bpo-34320: namespace should preserve order
         od = collections.OrderedDict([('a', 1), ('b', 2)])
