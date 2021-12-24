@@ -8567,7 +8567,6 @@ type_new_init_subclass(PyTypeObject *type, PyObject *kwds)
     PyObject *result = PyObject_VectorcallDict(func, NULL, 0, kwds);
     Py_DECREF(func);
     if (result == NULL) {
-        remove_all_subclasses(type, type->tp_bases);
         return -1;
     }
 

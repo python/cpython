@@ -1,2 +1,0 @@
-When an error occurs in ``__init_subclass__``, the subclass is removed from
-the ``__subclasses__`` of the base class. Patch by Weipeng Hong.
