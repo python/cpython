@@ -269,6 +269,9 @@ class GenericPropertyTests(unittest.TestCase):
             with self.subTest(klass=klass):
                 self.assertEqual(get_type_hints(klass), {})
                 self.assertEqual(klass.__annotations__, {})
+                # Getting hints of `property` itself is not allowed
+                with self.assertRaises(TypeError):
+                    get_type_hints(klass.a)
 
     def test_property_inner_annotations(self):
         from inspect import getattr_static
