@@ -4,6 +4,8 @@
 import sys
 import unittest
 from test import support
+from types import GenericAlias
+from typing import TypeVar, get_type_hints
 
 class PropertyBase(Exception):
     pass
@@ -214,20 +216,78 @@ class PropertyTests(unittest.TestCase):
             ):
                 p.__set_name__(*([0] * i))
 
+
+class Getter:
+    @property
+    def a(self) -> int:
+        pass
+
+class GetterSetter:
+    @property
+    def a(self) -> int:
+        pass
+    @a.setter
+    def a(self, arg: str) -> None:
+        pass
+
+class GetterSetterDeleter:
+    @property
+    def a(self) -> int:
+        pass
+    @a.setter
+    def a(self, arg: str) -> None:
+        pass
+    @a.deleter
+    def a(self) -> None:
+        pass
+
+
+class GenericPropertyTests(unittest.TestCase):
     def test_property___class_getitem__(self):
-        from types import GenericAlias
         p = property[int, str]
         self.assertIsInstance(p, GenericAlias)
         self.assertIs(p.__origin__, property)
         self.assertEqual(p.__args__, (int, str))
         self.assertEqual(p.__parameters__, ())
 
-        from typing import TypeVar
         G = TypeVar('G')
         S = TypeVar('S')
         p1 = property[G, S]
         self.assertEqual(p1.__args__, (G, S))
         self.assertEqual(p1.__parameters__, (G, S))
+
+        # The number of type arguments is not limited:
+        p2 = property[int, str, bool]
+        self.assertEqual(p2.__args__, (int, str, bool))
+        p3 = property[str]
+        self.assertEqual(p3.__args__, (str,))
+
+    def test_property_and_get_type_hints(self):
+        # Properties should not be present in `get_type_hints`
+        # or `__annotations__` of a class.
+        for klass in (Getter, GetterSetter, GetterSetterDeleter):
+            with self.subTest(klass=klass):
+                self.assertEqual(get_type_hints(klass), {})
+                self.assertEqual(klass.__annotations__, {})
+
+    def test_property_inner_annotations(self):
+        from inspect import getattr_static
+
+        p1 = getattr_static(Getter, 'a')
+        self.assertEqual(get_type_hints(p1.fget), {'return': int})
+
+        p2 = getattr_static(GetterSetter, 'a')
+        self.assertEqual(get_type_hints(p2.fget), {'return': int})
+        self.assertEqual(get_type_hints(p2.fset), {'arg': str, 'return': type(None)})
+
+        p3 = getattr_static(GetterSetterDeleter, 'a')
+        self.assertEqual(get_type_hints(p3.fget), {'return': int})
+        self.assertEqual(get_type_hints(p3.fset), {'arg': str, 'return': type(None)})
+        self.assertEqual(get_type_hints(p3.fdel), {'return': type(None)})
+
+    def test_property_and_future_import(self):
+        from test import ann_module7
+        self.assertEqual(get_type_hints(ann_module7), {'p': property[int, str]})
 
 
 # Issue 5890: subclasses of property do not preserve method __doc__ strings
