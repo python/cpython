@@ -2558,13 +2558,21 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
             othername = username
             otherhome = userhome
 
+        fakename = 'fakeuser'
+        # This user can theoretically exist on a test runner. Create unique name:
+        try:
+            while pwd.getpwnam(fakename):
+                fakename += '1'
+        except KeyError:
+            pass  # Non-existent name found
+
         p1 = P('~/Documents')
-        p2 = P('~' + username + '/Documents')
-        p3 = P('~' + othername + '/Documents')
-        p4 = P('../~' + username + '/Documents')
-        p5 = P('/~' + username + '/Documents')
+        p2 = P(f'~{username}/Documents')
+        p3 = P(f'~{othername}/Documents')
+        p4 = P(f'../~{username}/Documents')
+        p5 = P(f'/~{username}/Documents')
         p6 = P('')
-        p7 = P('~fake800813user/Documents')
+        p7 = P(f'~{fakename}/Documents')
 
         with os_helper.EnvironmentVarGuard() as env:
             env.pop('HOME', None)
