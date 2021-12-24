@@ -461,7 +461,7 @@ class TestModuleCleanUp(unittest.TestCase):
         def module_cleanup2(*args, **kwargs):
             module_cleanups.append((4, args, kwargs))
 
-        class Module(object):
+        class Module:
             unittest.addModuleCleanup(module_cleanup1, 1, 2, 3,
                                       four='hello', five='goodbye')
             unittest.addModuleCleanup(module_cleanup2)
@@ -485,7 +485,7 @@ class TestModuleCleanUp(unittest.TestCase):
         def module_cleanup_bad(*args, **kwargs):
             raise Exception('CleanUpExc')
 
-        class Module(object):
+        class Module:
             unittest.addModuleCleanup(module_cleanup_good, 1, 2, 3,
                                       four='hello', five='goodbye')
             unittest.addModuleCleanup(module_cleanup_bad)
@@ -503,7 +503,7 @@ class TestModuleCleanUp(unittest.TestCase):
         def cleanup(*args, **kwargs):
             cleanups.append((args, kwargs))
 
-        class Module(object):
+        class Module:
             unittest.addModuleCleanup(cleanup, 1, 2, function='hello')
             with self.assertRaises(TypeError):
                 unittest.addModuleCleanup(function=cleanup, arg='hello')
@@ -516,7 +516,7 @@ class TestModuleCleanUp(unittest.TestCase):
     def test_run_module_cleanUp(self):
         blowUp = True
         ordering = []
-        class Module(object):
+        class Module:
             @staticmethod
             def setUpModule():
                 ordering.append('setUpModule')
@@ -556,7 +556,7 @@ class TestModuleCleanUp(unittest.TestCase):
         blowUp = True
         blowUp2 = False
         ordering = []
-        class Module1(object):
+        class Module1:
             @staticmethod
             def setUpModule():
                 ordering.append('setUpModule')
@@ -567,7 +567,7 @@ class TestModuleCleanUp(unittest.TestCase):
             def tearDownModule():
                 ordering.append('tearDownModule')
 
-        class Module2(object):
+        class Module2:
             @staticmethod
             def setUpModule():
                 ordering.append('setUpModule2')
@@ -629,7 +629,7 @@ class TestModuleCleanUp(unittest.TestCase):
 
     def test_run_module_cleanUp_without_teardown(self):
         ordering = []
-        class Module(object):
+        class Module:
             @staticmethod
             def setUpModule():
                 ordering.append('setUpModule')
@@ -654,7 +654,7 @@ class TestModuleCleanUp(unittest.TestCase):
 
     def test_run_module_cleanUp_when_teardown_exception(self):
         ordering = []
-        class Module(object):
+        class Module:
             @staticmethod
             def setUpModule():
                 ordering.append('setUpModule')
@@ -685,7 +685,7 @@ class TestModuleCleanUp(unittest.TestCase):
     def test_debug_module_executes_cleanUp(self):
         ordering = []
         blowUp = False
-        class Module(object):
+        class Module:
             @staticmethod
             def setUpModule():
                 ordering.append('setUpModule')
@@ -726,7 +726,7 @@ class TestModuleCleanUp(unittest.TestCase):
     def test_debug_module_cleanUp_when_teardown_exception(self):
         ordering = []
         blowUp = False
-        class Module(object):
+        class Module:
             @staticmethod
             def setUpModule():
                 ordering.append('setUpModule')
@@ -813,7 +813,7 @@ class TestModuleCleanUp(unittest.TestCase):
     def test_with_errors_in_addClassCleanup(self):
         ordering = []
 
-        class Module(object):
+        class Module:
             @staticmethod
             def setUpModule():
                 ordering.append('setUpModule')
@@ -845,7 +845,7 @@ class TestModuleCleanUp(unittest.TestCase):
 
     def test_with_errors_in_addCleanup(self):
         ordering = []
-        class Module(object):
+        class Module:
             @staticmethod
             def setUpModule():
                 ordering.append('setUpModule')
@@ -878,7 +878,7 @@ class TestModuleCleanUp(unittest.TestCase):
         module_blow_up = False
         class_blow_up = False
         method_blow_up = False
-        class Module(object):
+        class Module:
             @staticmethod
             def setUpModule():
                 ordering.append('setUpModule')
@@ -963,7 +963,7 @@ class TestModuleCleanUp(unittest.TestCase):
         def cleanup3():
             ordering.append('cleanup3')
 
-        class Module(object):
+        class Module:
             @staticmethod
             def setUpModule():
                 ordering.append('setUpModule')

@@ -38,7 +38,7 @@ class WithTest(unittest.TestCase):
 
 
     def test_patch_object_with_statement(self):
-        class Foo(object):
+        class Foo:
             something = 'foo'
         original = Foo.something
         with patch.object(Foo, 'something'):

@@ -6,7 +6,7 @@ from functools import wraps
 __unittest = True
 
 
-class _InterruptHandler(object):
+class _InterruptHandler:
     def __init__(self, default_handler):
         self.called = False
         self.original_handler = default_handler

@@ -21,7 +21,7 @@ STDOUT_LINE = '\nStdout:\n%s'
 STDERR_LINE = '\nStderr:\n%s'
 
 
-class TestResult(object):
+class TestResult:
     """Holder for test result information.
 
     Test results are automatically managed by the TestCase and TestSuite

@@ -41,7 +41,7 @@ class _UnexpectedSuccess(Exception):
     """
 
 
-class _Outcome(object):
+class _Outcome:
     def __init__(self, result=None):
         self.expecting_failure = False
         self.result = result
@@ -322,7 +322,7 @@ class _OrderedChainMap(collections.ChainMap):
                     yield k
 
 
-class TestCase(object):
+class TestCase:
     """A class whose instances are single test cases.
 
     By default, the test code itself should be placed in a method named

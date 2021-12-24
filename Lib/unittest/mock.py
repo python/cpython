@@ -278,7 +278,7 @@ def _is_magic(name):
     return '__%s__' % name[2:-2] == name
 
 
-class _SentinelObject(object):
+class _SentinelObject:
     "A unique, named, sentinel object."
     def __init__(self, name):
         self.name = name
@@ -290,7 +290,7 @@ class _SentinelObject(object):
         return 'sentinel.%s' % self.name
 
 
-class _Sentinel(object):
+class _Sentinel:
     """Access attributes to return a named object, usable as a sentinel."""
     def __init__(self):
         self._sentinels = {}
@@ -385,13 +385,13 @@ def _check_and_set_parent(parent, value, name, new_name):
     return True
 
 # Internal class to identify if we wrapped an iterator object or not.
-class _MockIter(object):
+class _MockIter:
     def __init__(self, obj):
         self.obj = iter(obj)
     def __next__(self):
         return next(self.obj)
 
-class Base(object):
+class Base:
     _mock_return_value = DEFAULT
     _mock_side_effect = None
     def __init__(self, /, *args, **kwargs):
@@ -1250,7 +1250,7 @@ def _check_spec_arg_typos(kwargs_to_check):
             )
 
 
-class _patch(object):
+class _patch:
 
     attribute_name = None
     _active_patches = []
@@ -1755,7 +1755,7 @@ def patch(
     )
 
 
-class _patch_dict(object):
+class _patch_dict:
     """
     Patch a dictionary, or dictionary like object, and restore the dictionary
     to its original state after the test.
@@ -2378,7 +2378,7 @@ class AsyncMock(AsyncMockMixin, AsyncMagicMixin, Mock):
     """
 
 
-class _ANY(object):
+class _ANY:
     "A helper object that compares equal to everything."
 
     def __eq__(self, other):
@@ -2768,7 +2768,7 @@ def _must_skip(spec, entry, is_type):
     return is_type
 
 
-class _SpecState(object):
+class _SpecState:
 
     def __init__(self, spec, spec_set=False, parent=None,
                  name=None, ids=None, instance=False):

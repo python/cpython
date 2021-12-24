@@ -32,7 +32,7 @@ class Test_TestProgram(unittest.TestCase):
         result = object()
         test = object()
 
-        class FakeRunner(object):
+        class FakeRunner:
             def run(self, test):
                 self.test = test
                 return result
@@ -73,7 +73,7 @@ class Test_TestProgram(unittest.TestCase):
                 [self.loadTestsFromTestCase(Test_TestProgram.FooBar)])
 
     def test_defaultTest_with_string(self):
-        class FakeRunner(object):
+        class FakeRunner:
             def run(self, test):
                 self.test = test
                 return True
@@ -88,7 +88,7 @@ class Test_TestProgram(unittest.TestCase):
         self.assertEqual(('unittest.test',), program.testNames)
 
     def test_defaultTest_with_iterable(self):
-        class FakeRunner(object):
+        class FakeRunner:
             def run(self, test):
                 self.test = test
                 return True
@@ -156,7 +156,7 @@ class InitialisableProgram(unittest.TestProgram):
 
 RESULT = object()
 
-class FakeRunner(object):
+class FakeRunner:
     initArgs = None
     test = None
     raiseError = 0

@@ -15,7 +15,7 @@ from unittest.mock import (
 )
 
 
-class Iter(object):
+class Iter:
     def __init__(self):
         self.thing = iter(['this', 'is', 'an', 'iter'])
 
@@ -28,7 +28,7 @@ class Iter(object):
     __next__ = next
 
 
-class Something(object):
+class Something:
     def meth(self, a, b, c, d=None): pass
 
     @classmethod
@@ -122,7 +122,7 @@ class MockTest(unittest.TestCase):
 
 
     def test_repr_with_spec(self):
-        class X(object):
+        class X:
             pass
 
         mock = Mock(spec=X)
@@ -206,8 +206,8 @@ class MockTest(unittest.TestCase):
 
 
     def test_autospec_mock(self):
-        class A(object):
-            class B(object):
+        class A:
+            class B:
                 C = None
 
         with mock.patch.object(A, 'B'):
@@ -566,7 +566,7 @@ class MockTest(unittest.TestCase):
 
 
     def test_from_spec(self):
-        class Something(object):
+        class Something:
             x = 3
             __something__ = None
             def y(self): pass
@@ -604,7 +604,7 @@ class MockTest(unittest.TestCase):
 
 
     def test_wraps_prevents_automatic_creation_of_mocks(self):
-        class Real(object):
+        class Real:
             pass
 
         real = Real()
@@ -624,7 +624,7 @@ class MockTest(unittest.TestCase):
 
 
     def test_wraps_attributes(self):
-        class Real(object):
+        class Real:
             attribute = Mock()
 
         real = Real()
@@ -640,7 +640,7 @@ class MockTest(unittest.TestCase):
 
 
     def test_customize_wrapped_object_with_side_effect_iterable_with_default(self):
-        class Real(object):
+        class Real:
             def method(self):
                 return sentinel.ORIGINAL_VALUE
 
@@ -654,7 +654,7 @@ class MockTest(unittest.TestCase):
 
 
     def test_customize_wrapped_object_with_side_effect_iterable(self):
-        class Real(object):
+        class Real:
             def method(self): pass
 
         real = Real()
@@ -667,7 +667,7 @@ class MockTest(unittest.TestCase):
 
 
     def test_customize_wrapped_object_with_side_effect_exception(self):
-        class Real(object):
+        class Real:
             def method(self): pass
 
         real = Real()
@@ -678,7 +678,7 @@ class MockTest(unittest.TestCase):
 
 
     def test_customize_wrapped_object_with_side_effect_function(self):
-        class Real(object):
+        class Real:
             def method(self): pass
         def side_effect():
             return sentinel.VALUE
@@ -691,7 +691,7 @@ class MockTest(unittest.TestCase):
 
 
     def test_customize_wrapped_object_with_return_value(self):
-        class Real(object):
+        class Real:
             def method(self): pass
 
         real = Real()
@@ -703,7 +703,7 @@ class MockTest(unittest.TestCase):
 
     def test_customize_wrapped_object_with_return_value_and_side_effect(self):
         # side_effect should always take precedence over return_value.
-        class Real(object):
+        class Real:
             def method(self): pass
 
         real = Real()
@@ -718,7 +718,7 @@ class MockTest(unittest.TestCase):
 
     def test_customize_wrapped_object_with_return_value_and_side_effect2(self):
         # side_effect can return DEFAULT to default to return_value
-        class Real(object):
+        class Real:
             def method(self): pass
 
         real = Real()
@@ -730,7 +730,7 @@ class MockTest(unittest.TestCase):
 
 
     def test_customize_wrapped_object_with_return_value_and_side_effect_default(self):
-        class Real(object):
+        class Real:
             def method(self): pass
 
         real = Real()
@@ -842,7 +842,7 @@ class MockTest(unittest.TestCase):
 
 
     def test_spec_class(self):
-        class X(object):
+        class X:
             pass
 
         mock = Mock(spec=X)
@@ -882,7 +882,7 @@ class MockTest(unittest.TestCase):
 
 
     def test_setting_attribute_with_spec_set(self):
-        class X(object):
+        class X:
             y = 3
 
         mock = Mock(spec=X)
@@ -1304,7 +1304,7 @@ class MockTest(unittest.TestCase):
         self.assertEqual([mock(), mock(), mock()], ['g', 'h', 'i'])
         self.assertRaises(StopIteration, mock)
 
-        class Foo(object):
+        class Foo:
             pass
         mock = MagicMock(side_effect=Foo)
         self.assertIsInstance(mock(), Foo)
@@ -1742,11 +1742,11 @@ class MockTest(unittest.TestCase):
         self.assertEqual(m.f.side_effect, None)
 
     def test_mock_add_spec(self):
-        class _One(object):
+        class _One:
             one = 1
-        class _Two(object):
+        class _Two:
             two = 2
-        class Anything(object):
+        class Anything:
             one = two = three = 'four'
 
         klasses = [
@@ -1846,7 +1846,7 @@ class MockTest(unittest.TestCase):
 
 
     def test_manager_mock(self):
-        class Foo(object):
+        class Foo:
             one = 'one'
             two = 'two'
         manager = Mock()

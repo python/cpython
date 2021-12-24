@@ -183,7 +183,7 @@ class TestSetups(unittest.TestCase):
     def test_setup_teardown_order_with_pathological_suite(self):
         results = []
 
-        class Module1(object):
+        class Module1:
             @staticmethod
             def setUpModule():
                 results.append('Module1.setUpModule')
@@ -191,7 +191,7 @@ class TestSetups(unittest.TestCase):
             def tearDownModule():
                 results.append('Module1.tearDownModule')
 
-        class Module2(object):
+        class Module2:
             @staticmethod
             def setUpModule():
                 results.append('Module2.setUpModule')
@@ -263,7 +263,7 @@ class TestSetups(unittest.TestCase):
                           'teardown 3', 'Module2.tearDownModule'])
 
     def test_setup_module(self):
-        class Module(object):
+        class Module:
             moduleSetup = 0
             @staticmethod
             def setUpModule():
@@ -283,7 +283,7 @@ class TestSetups(unittest.TestCase):
         self.assertEqual(len(result.errors), 0)
 
     def test_error_in_setup_module(self):
-        class Module(object):
+        class Module:
             moduleSetup = 0
             moduleTornDown = 0
             @staticmethod
@@ -340,7 +340,7 @@ class TestSetups(unittest.TestCase):
         self.assertEqual(result.testsRun, 2)
 
     def test_teardown_module(self):
-        class Module(object):
+        class Module:
             moduleTornDown = 0
             @staticmethod
             def tearDownModule():
@@ -360,7 +360,7 @@ class TestSetups(unittest.TestCase):
         self.assertEqual(len(result.errors), 0)
 
     def test_error_in_teardown_module(self):
-        class Module(object):
+        class Module:
             moduleTornDown = 0
             @staticmethod
             def tearDownModule():
@@ -424,7 +424,7 @@ class TestSetups(unittest.TestCase):
             def test_two(self):
                 pass
 
-        class Module(object):
+        class Module:
             @staticmethod
             def setUpModule():
                 raise unittest.SkipTest('foo')
@@ -442,7 +442,7 @@ class TestSetups(unittest.TestCase):
     def test_suite_debug_executes_setups_and_teardowns(self):
         ordering = []
 
-        class Module(object):
+        class Module:
             @staticmethod
             def setUpModule():
                 ordering.append('setUpModule')
@@ -469,7 +469,7 @@ class TestSetups(unittest.TestCase):
         self.assertEqual(ordering, expectedOrder)
 
     def test_suite_debug_propagates_exceptions(self):
-        class Module(object):
+        class Module:
             @staticmethod
             def setUpModule():
                 if phase == 0:

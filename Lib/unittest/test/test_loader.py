@@ -145,7 +145,7 @@ class Test_TestLoader(unittest.TestCase):
             def test(self):
                 pass
 
-        class NotAModule(object):
+        class NotAModule:
             test_2 = MyTestCase
 
         loader = unittest.TestLoader()
@@ -391,7 +391,7 @@ class Test_TestLoader(unittest.TestCase):
             def test(self):
                 pass
 
-        class NotAModule(object):
+        class NotAModule:
             test_2 = MyTestCase
 
         loader = unittest.TestLoader()
@@ -815,7 +815,7 @@ class Test_TestLoader(unittest.TestCase):
             def test(self):
                 pass
 
-        class NotAModule(object):
+        class NotAModule:
             test_2 = MyTestCase
 
         loader = unittest.TestLoader()

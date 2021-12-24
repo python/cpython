@@ -63,7 +63,7 @@ def _jython_aware_splitext(path):
     return os.path.splitext(path)[0]
 
 
-class TestLoader(object):
+class TestLoader:
     """
     This class is responsible for loading tests according to various criteria
     and returning them wrapped in a TestSuite

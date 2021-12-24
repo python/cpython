@@ -1,7 +1,7 @@
 import unittest
 
 
-class TestEquality(object):
+class TestEquality:
     """Used as a mixin for TestCase"""
 
     # Check for a valid __eq__ implementation
@@ -16,7 +16,7 @@ class TestEquality(object):
             self.assertNotEqual(obj_1, obj_2)
             self.assertNotEqual(obj_2, obj_1)
 
-class TestHashing(object):
+class TestHashing:
     """Used as a mixin for TestCase"""
 
     # Check for a valid __hash__ implementation
@@ -107,7 +107,7 @@ class LoggingResult(_BaseLoggingResult):
         super().addSubTest(test, subtest, err)
 
 
-class ResultWithNoStartTestRunStopTestRun(object):
+class ResultWithNoStartTestRunStopTestRun:
     """An object honouring TestResult before startTestRun/stopTestRun."""
 
     def __init__(self):
