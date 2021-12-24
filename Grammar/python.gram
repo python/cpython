@@ -192,7 +192,9 @@ del_stmt[stmt_ty]:
 
 yield_stmt[stmt_ty]: y=yield_expr { _PyAST_Expr(y, EXTRA) }
 
-assert_stmt[stmt_ty]: 'assert' a=expression b=[',' z=expression { z }] { _PyAST_Assert(a, b, EXTRA) }
+assert_stmt[stmt_ty]:
+    | 'assert' '(' a=expression ',' b=expression [','] ')' &(NEWLINE | '&') { _PyAST_Assert(a, b, EXTRA) }
+    | 'assert' a=expression b=[',' z=expression { z }] { _PyAST_Assert(a, b, EXTRA) }
 
 import_stmt[stmt_ty]: import_name | import_from
 

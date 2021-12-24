@@ -1275,6 +1275,9 @@ class GrammarTests(unittest.TestCase):
         assert 1, 1
         assert lambda x:x
         assert 1, lambda x:x+1
+        assert (1, "Oh no")
+        assert (1,
+                "Oh no")
 
         try:
             assert True
@@ -1304,12 +1307,27 @@ class GrammarTests(unittest.TestCase):
         else:
             self.fail("AssertionError not raised by 'assert False'")
 
+        try:
+            assert (0, "msg")
+        except AssertionError as e:
+            self.assertEqual(e.args[0], "msg")
+        else:
+            self.fail("AssertionError not raised by assert 0")
+
+        try:
+            assert (0,
+                    "msg")
+        except AssertionError as e:
+            self.assertEqual(e.args[0], "msg")
+        else:
+            self.fail("AssertionError not raised by assert 0")
+
     def test_assert_syntax_warnings(self):
         # Ensure that we warn users if they provide a non-zero length tuple as
         # the assertion test.
-        self.check_syntax_warning('assert(x, "msg")',
+        self.check_syntax_warning('assert(x, y, "msg")',
                                   'assertion is always true')
-        self.check_syntax_warning('assert(False, "msg")',
+        self.check_syntax_warning('assert(False, 2, "msg")',
                                   'assertion is always true')
         self.check_syntax_warning('assert(False,)',
                                   'assertion is always true')
@@ -1329,9 +1347,9 @@ class GrammarTests(unittest.TestCase):
             except SyntaxError:
                 self.fail('SyntaxError incorrectly raised for \'assert x, "msg"\'')
             with self.assertRaises(SyntaxError):
-                compile('assert(x, "msg")', '<testcase>', 'exec')
+                compile('assert(x, "msg", 3)', '<testcase>', 'exec')
             with self.assertRaises(SyntaxError):
-                compile('assert(False, "msg")', '<testcase>', 'exec')
+                compile('assert(False, "msg", 4)', '<testcase>', 'exec')
             with self.assertRaises(SyntaxError):
                 compile('assert(False,)', '<testcase>', 'exec')
 
