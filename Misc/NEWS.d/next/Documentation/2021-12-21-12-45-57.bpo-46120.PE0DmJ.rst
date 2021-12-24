@@ -1,1 +1,1 @@
-State that ``|`` is preferred for readability over ``Union`` in the docs.
+State that ``|`` is preferred for readability over ``Union`` in the :mod:`typing` docs.
