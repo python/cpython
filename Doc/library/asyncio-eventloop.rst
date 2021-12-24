@@ -322,7 +322,7 @@ Creating Futures and Tasks
 
 .. method:: loop.create_future()
 
-   Create a :class:`asyncio.Future` object attached to the event loop.
+   Create an :class:`asyncio.Future` object attached to the event loop.
 
    This is the preferred way to create Futures in asyncio. This lets
    third-party event loops provide alternative implementations of
@@ -649,7 +649,7 @@ Creating network servers
    * *backlog* is the maximum number of queued connections passed to
      :meth:`~socket.socket.listen` (defaults to 100).
 
-   * *ssl* can be set to a :class:`~ssl.SSLContext` instance to enable
+   * *ssl* can be set to an :class:`~ssl.SSLContext` instance to enable
      TLS over the accepted connections.
 
    * *reuse_address* tells the kernel to reuse a local socket in
@@ -737,7 +737,7 @@ Creating network servers
    * *sock* is a preexisting socket object returned from
      :meth:`socket.accept <socket.socket.accept>`.
 
-   * *ssl* can be set to a :class:`~ssl.SSLContext` to enable SSL over
+   * *ssl* can be set to an :class:`~ssl.SSLContext` to enable SSL over
      the accepted connections.
 
    * *ssl_handshake_timeout* is (for an SSL connection) the time in seconds to
