@@ -185,7 +185,7 @@ One more support function is also defined:
 
    Note that for recursive protection to apply, data structures have to be
    subclassed from :class:`~object.dict`, :class:`~object.list` or
-   :class:`~object.tuple` and the ``__repr__`` method must not be overriden.
+   :class:`~object.tuple` and the ``__repr__`` method must not be overridden.
 
    >>> pprint.saferepr(stuff)
    "[<Recursion on list with id=...>, 'spam', 'eggs', 'lumberjack', 'knights', 'ni']"
