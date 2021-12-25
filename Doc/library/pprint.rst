@@ -179,7 +179,8 @@ One more support function is also defined:
 .. function:: saferepr(object)
 
    Return a string representation of *object*, protected against recursive data
-   structures.  If the representation of *object* exposes a recursive entry, the
+   structures (recursive protection is limited to structures subclassed from :class:`~object.dict`,
+   :class:`~object.list` and :class:`~object.tuple`).  If the representation of *object* exposes a recursive entry, the
    recursive reference will be represented as ``<Recursion on typename with
    id=number>``.  The representation is not otherwise formatted.
 
