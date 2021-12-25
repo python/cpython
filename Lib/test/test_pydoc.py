@@ -996,6 +996,43 @@ class TestDescriptions(unittest.TestCase):
         expected = 'C in module %s object' % __name__
         self.assertIn(expected, pydoc.render_doc(c))
 
+    def test_generic_alias(self):
+        self.assertEqual(pydoc.describe(typing.List[int]), '_GenericAlias')
+        doc = pydoc.render_doc(typing.List[int], renderer=pydoc.plaintext)
+        self.assertIn('_GenericAlias in module typing', doc)
+        self.assertIn('List = class list(object)', doc)
+        self.assertIn(list.__doc__.strip().splitlines()[0], doc)
+
+        self.assertEqual(pydoc.describe(list[int]), 'GenericAlias')
+        doc = pydoc.render_doc(list[int], renderer=pydoc.plaintext)
+        self.assertIn('GenericAlias in module builtins', doc)
+        self.assertIn('\nclass list(object)', doc)
+        self.assertIn(list.__doc__.strip().splitlines()[0], doc)
+
+    def test_union_type(self):
+        self.assertEqual(pydoc.describe(typing.Union[int, str]), '_UnionGenericAlias')
+        doc = pydoc.render_doc(typing.Union[int, str], renderer=pydoc.plaintext)
+        self.assertIn('_UnionGenericAlias in module typing', doc)
+        self.assertIn('Union = typing.Union', doc)
+        if typing.Union.__doc__:
+            self.assertIn(typing.Union.__doc__.strip().splitlines()[0], doc)
+
+        self.assertEqual(pydoc.describe(int | str), 'UnionType')
+        doc = pydoc.render_doc(int | str, renderer=pydoc.plaintext)
+        self.assertIn('UnionType in module types object', doc)
+        self.assertIn('\nclass UnionType(builtins.object)', doc)
+        self.assertIn(types.UnionType.__doc__.strip().splitlines()[0], doc)
+
+    def test_special_form(self):
+        self.assertEqual(pydoc.describe(typing.Any), '_SpecialForm')
+        doc = pydoc.render_doc(typing.Any, renderer=pydoc.plaintext)
+        self.assertIn('_SpecialForm in module typing', doc)
+        if typing.Any.__doc__:
+            self.assertIn('Any = typing.Any', doc)
+            self.assertIn(typing.Any.__doc__.strip().splitlines()[0], doc)
+        else:
+            self.assertIn('Any = class _SpecialForm(_Final)', doc)
+
     def test_typing_pydoc(self):
         def foo(data: typing.List[typing.Any],
                 x: int) -> typing.Iterator[typing.Tuple[int, typing.Any]]:
