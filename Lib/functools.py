@@ -842,7 +842,9 @@ def singledispatch(func):
         from typing import get_origin, Union
         return get_origin(cls) in {Union, types.UnionType}
 
-    def _is_valid_union_type(cls):
+    def _is_valid_dispatch_type(cls):
+        if isinstance(cls, type) and not isinstance(cls, GenericAlias):
+            return True
         from typing import get_args
         return (_is_union_type(cls) and
                 all(isinstance(arg, type) and not isinstance(arg, GenericAlias)
@@ -855,16 +857,14 @@ def singledispatch(func):
 
         """
         nonlocal cache_token
-        if ((isinstance(cls, type) and not isinstance(cls, GenericAlias))
-                or _is_valid_union_type(cls)):
+        if _is_valid_dispatch_type(cls):
             if func is None:
                 return lambda f: register(cls, f)
         else:
             if func is not None:
                 raise TypeError(
-                    f"Invalid first argument to `register()`: {cls!r}. "
-                    f"Use either `@register(some_class)` or plain `@register` "
-                    f"on an annotated function."
+                    f"Invalid first argument to `register()`. "
+                    f"{cls!r} is not a class or union type."
                 )
             ann = getattr(cls, '__annotations__', {})
             if not ann:
@@ -878,8 +878,7 @@ def singledispatch(func):
             # only import typing if annotation parsing is necessary
             from typing import get_type_hints
             argname, cls = next(iter(get_type_hints(func).items()))
-            if not ((isinstance(cls, type) and not isinstance(cls, GenericAlias))
-                    or _is_valid_union_type(cls)):
+            if not _is_valid_dispatch_type(cls):
                 if _is_union_type(cls):
                     raise TypeError(
                         f"Invalid annotation for {argname!r}. "
