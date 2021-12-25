@@ -88,7 +88,7 @@ init_normalization(Parser *p)
     if (p->normalize) {
         return 1;
     }
-    PyObject *m = PyImport_ImportModuleNoBlock("unicodedata");
+    PyObject *m = PyImport_ImportModule("unicodedata");
     if (!m)
     {
         return 0;
@@ -815,6 +815,7 @@ void *
 _PyPegen_run_parser(Parser *p)
 {
     void *res = _PyPegen_parse(p);
+    assert(p->level == 0);
     if (res == NULL) {
         if (PyErr_Occurred() && !PyErr_ExceptionMatches(PyExc_SyntaxError)) {
             return NULL;

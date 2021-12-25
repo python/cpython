@@ -1944,9 +1944,12 @@ Notes on using *__slots__*
 * Nonempty *__slots__* does not work for classes derived from "variable-length"
   built-in types such as :class:`int`, :class:`bytes` and :class:`tuple`.
 
-* Any non-string iterable may be assigned to *__slots__*. Mappings may also be
-  used; however, in the future, special meaning may be assigned to the values
-  corresponding to each key.
+* Any non-string :term:`iterable` may be assigned to *__slots__*.
+
+* If a :class:`dictionary <dict>` is used to assign *__slots__*, the dictionary
+  keys will be used as the slot names. The values of the dictionary can be used
+  to provide per-attribute docstrings that will be recognised by
+  :func:`inspect.getdoc` and displayed in the output of :func:`help`.
 
 * :attr:`~instance.__class__` assignment works only if both classes have the
   same *__slots__*.

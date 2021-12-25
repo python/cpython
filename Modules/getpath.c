@@ -141,7 +141,7 @@ getpath_hassuffix(PyObject *Py_UNUSED(self), PyObject *args)
     if (path) {
         suffix = PyUnicode_AsWideCharString(suffixobj, &suffixLen);
         if (suffix) {
-            if (suffixLen < len ||
+            if (suffixLen > len ||
 #ifdef MS_WINDOWS
                 wcsicmp(&path[len - suffixLen], suffix) != 0
 #else
@@ -386,11 +386,11 @@ getpath_readlines(PyObject *Py_UNUSED(self), PyObject *args)
     wchar_t *p1 = wbuffer;
     wchar_t *p2 = p1;
     while ((p2 = wcschr(p1, L'\n')) != NULL) {
-        size_t cb = p2 - p1;
-        while (cb && (p1[cb] == L'\n' || p1[cb] == L'\r')) {
+        Py_ssize_t cb = p2 - p1;
+        while (cb >= 0 && (p1[cb] == L'\n' || p1[cb] == L'\r')) {
             --cb;
         }
-        PyObject *u = PyUnicode_FromWideChar(p1, cb ? cb + 1 : 0);
+        PyObject *u = PyUnicode_FromWideChar(p1, cb >= 0 ? cb + 1 : 0);
         if (!u || PyList_Append(r, u) < 0) {
             Py_XDECREF(u);
             Py_CLEAR(r);

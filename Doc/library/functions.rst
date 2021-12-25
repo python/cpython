@@ -1571,7 +1571,7 @@ are always available.  They are listed here in alphabetical order.
    :func:`itertools.islice` for an alternate version that returns an iterator.
 
 
-.. function:: sorted(iterable, *, key=None, reverse=False)
+.. function:: sorted(iterable, /, *, key=None, reverse=False)
 
    Return a new sorted list from the items in *iterable*.
 

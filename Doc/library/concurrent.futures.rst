@@ -47,7 +47,7 @@ Executor Objects
        * *func* is executed asynchronously and several calls to
          *func* may be made concurrently.
 
-       The returned iterator raises a :exc:`concurrent.futures.TimeoutError`
+       The returned iterator raises a :exc:`TimeoutError`
        if :meth:`~iterator.__next__` is called and the result isn't available
        after *timeout* seconds from the original call to :meth:`Executor.map`.
        *timeout* can be an int or a float.  If *timeout* is not specified or
@@ -352,7 +352,7 @@ The :class:`Future` class encapsulates the asynchronous execution of a callable.
        Return the value returned by the call. If the call hasn't yet completed
        then this method will wait up to *timeout* seconds.  If the call hasn't
        completed in *timeout* seconds, then a
-       :exc:`concurrent.futures.TimeoutError` will be raised. *timeout* can be
+       :exc:`TimeoutError` will be raised. *timeout* can be
        an int or float.  If *timeout* is not specified or ``None``, there is no
        limit to the wait time.
 
@@ -366,7 +366,7 @@ The :class:`Future` class encapsulates the asynchronous execution of a callable.
        Return the exception raised by the call.  If the call hasn't yet
        completed then this method will wait up to *timeout* seconds.  If the
        call hasn't completed in *timeout* seconds, then a
-       :exc:`concurrent.futures.TimeoutError` will be raised.  *timeout* can be
+       :exc:`TimeoutError` will be raised.  *timeout* can be
        an int or float.  If *timeout* is not specified or ``None``, there is no
        limit to the wait time.
 
@@ -482,7 +482,7 @@ Module Functions
    they complete (finished or cancelled futures). Any futures given by *fs* that
    are duplicated will be returned once. Any futures that completed before
    :func:`as_completed` is called will be yielded first.  The returned iterator
-   raises a :exc:`concurrent.futures.TimeoutError` if :meth:`~iterator.__next__`
+   raises a :exc:`TimeoutError` if :meth:`~iterator.__next__`
    is called and the result isn't available after *timeout* seconds from the
    original call to :func:`as_completed`.  *timeout* can be an int or float. If
    *timeout* is not specified or ``None``, there is no limit to the wait time.
@@ -506,7 +506,13 @@ Exception classes
 
 .. exception:: TimeoutError
 
-   Raised when a future operation exceeds the given timeout.
+   A deprecated alias of :exc:`TimeoutError`,
+   raised when a future operation exceeds the given timeout.
+
+   .. versionchanged:: 3.11
+
+      This class was made an alias of :exc:`TimeoutError`.
+
 
 .. exception:: BrokenExecutor
 

@@ -10,7 +10,7 @@
 #include "pycore_frame.h"         // InterpreterFrame
 #include "frameobject.h"          // PyFrameObject
 #include "structmember.h"         // PyMemberDef
-#include "opcode.h"               // YIELD_FROM
+#include "opcode.h"               // SEND
 
 static PyObject *gen_close(PyGenObject *, PyObject *);
 static PyObject *async_gen_asend_new(PyAsyncGenObject *, PyObject *);
@@ -25,9 +25,7 @@ static const char *ASYNC_GEN_IGNORED_EXIT_MSG =
 static inline int
 exc_state_traverse(_PyErr_StackItem *exc_state, visitproc visit, void *arg)
 {
-    Py_VISIT(exc_state->exc_type);
     Py_VISIT(exc_state->exc_value);
-    Py_VISIT(exc_state->exc_traceback);
     return 0;
 }
 
@@ -356,14 +354,14 @@ _PyGen_yf(PyGenObject *gen)
         unsigned char *code = (unsigned char *)PyBytes_AS_STRING(bytecode);
 
         if (frame->f_lasti < 0) {
-            /* Return immediately if the frame didn't start yet. YIELD_FROM
+            /* Return immediately if the frame didn't start yet. SEND
                always come after LOAD_CONST: a code object should not start
-               with YIELD_FROM */
-            assert(code[0] != YIELD_FROM);
+               with SEND */
+            assert(code[0] != SEND);
             return NULL;
         }
 
-        if (code[(frame->f_lasti+1)*sizeof(_Py_CODEUNIT)] != YIELD_FROM)
+        if (code[frame->f_lasti*sizeof(_Py_CODEUNIT)] != SEND || frame->stacktop < 0)
             return NULL;
         yf = _PyFrame_StackPeek(frame);
         Py_INCREF(yf);
@@ -486,9 +484,13 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             ret = _PyFrame_StackPop((InterpreterFrame *)gen->gi_iframe);
             assert(ret == yf);
             Py_DECREF(ret);
-            /* Termination repetition of YIELD_FROM */
+            /* Termination repetition of SEND loop */
             assert(frame->f_lasti >= 0);
-            frame->f_lasti += 1;
+            PyObject *bytecode = gen->gi_code->co_code;
+            unsigned char *code = (unsigned char *)PyBytes_AS_STRING(bytecode);
+            assert(code[frame->f_lasti*sizeof(_Py_CODEUNIT)] == SEND);
+            int jump = code[frame->f_lasti*sizeof(_Py_CODEUNIT)+1];
+            frame->f_lasti += jump;
             if (_PyGen_FetchStopIterationValue(&val) == 0) {
                 ret = gen_send(gen, val);
                 Py_DECREF(val);
@@ -882,9 +884,7 @@ make_gen(PyTypeObject *type, PyFunctionObject *func)
     gen->gi_code = (PyCodeObject *)func->func_code;
     Py_INCREF(gen->gi_code);
     gen->gi_weakreflist = NULL;
-    gen->gi_exc_state.exc_type = NULL;
     gen->gi_exc_state.exc_value = NULL;
-    gen->gi_exc_state.exc_traceback = NULL;
     gen->gi_exc_state.previous_item = NULL;
     if (func->func_name != NULL)
         gen->gi_name = func->func_name;
@@ -971,9 +971,7 @@ gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
     Py_INCREF(gen->gi_code);
     Py_DECREF(f);
     gen->gi_weakreflist = NULL;
-    gen->gi_exc_state.exc_type = NULL;
     gen->gi_exc_state.exc_value = NULL;
-    gen->gi_exc_state.exc_traceback = NULL;
     gen->gi_exc_state.previous_item = NULL;
     if (name != NULL)
         gen->gi_name = name;

@@ -207,6 +207,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
                 case POP_JUMP_IF_FALSE:
                 case POP_JUMP_IF_TRUE:
                 case JUMP_IF_NOT_EXC_MATCH:
+                case JUMP_IF_NOT_EG_MATCH:
                 {
                     int64_t target_stack;
                     int j = get_arg(code, i);
@@ -214,7 +215,9 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     if (stacks[j] == UNINITIALIZED && j < i) {
                         todo = 1;
                     }
-                    if (opcode == JUMP_IF_NOT_EXC_MATCH) {
+                    if (opcode == JUMP_IF_NOT_EXC_MATCH ||
+                        opcode == JUMP_IF_NOT_EG_MATCH)
+                    {
                         next_stack = pop_value(pop_value(next_stack));
                         target_stack = next_stack;
                     }
@@ -246,7 +249,13 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     next_stack = pop_value(pop_value(pop_value(next_stack)));
                     stacks[i+1] = next_stack;
                     break;
-
+                case SEND:
+                    j = get_arg(code, i) + i + 1;
+                    assert(j < len);
+                    assert(stacks[j] == UNINITIALIZED || stacks[j] == pop_value(next_stack));
+                    stacks[j] = pop_value(next_stack);
+                    stacks[i+1] = next_stack;
+                    break;
                 case JUMP_FORWARD:
                     j = get_arg(code, i) + i + 1;
                     assert(j < len);

@@ -6,13 +6,12 @@ import contextlib
 import types
 import importlib
 
-from typing import Union, Any, Optional
+from typing import Union, Optional
 from .abc import ResourceReader, Traversable
 
 from ._adapters import wrap_spec
 
 Package = Union[types.ModuleType, str]
-Resource = Union[str, os.PathLike]
 
 
 def files(package):
@@ -21,19 +20,6 @@ def files(package):
     Get a Traversable resource from a package
     """
     return from_package(get_package(package))
-
-
-def normalize_path(path):
-    # type: (Any) -> str
-    """Normalize a path by ensuring it is a string.
-
-    If the resulting string contains path separators, an exception is raised.
-    """
-    str_path = str(path)
-    parent, file_name = os.path.split(str_path)
-    if parent:
-        raise ValueError(f'{path!r} must be only a file name')
-    return file_name
 
 
 def get_resource_reader(package):
