@@ -2460,7 +2460,7 @@ class NewType:
     def __mro_entries__(cls, bases):
         raise TypeError(
             f'Cannot subclass {cls.__name__}, perhaps you were looking for:\n'
-            f'{cls.__name__} = NewType({cls.__name__!r}, {bases[0]}.__name__)'
+            f'{cls.__name__} = NewType({cls.__name__!r}, {bases[0].__name__})'
         )
 
     def __repr__(self):
