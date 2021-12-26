@@ -2457,6 +2457,12 @@ class NewType:
         if def_mod != 'typing':
             self.__module__ = def_mod
 
+    def __mro_entries__(cls, bases):
+        raise TypeError(
+            f'You cannot subclass an instance of NewType, perhaps you were looking for:\n'
+            f'{cls.__name__} = NewType({cls.__name__!r}, {bases[0]}.__name__)'
+        )
+
     def __repr__(self):
         return f'{self.__module__}.{self.__qualname__}'
 
