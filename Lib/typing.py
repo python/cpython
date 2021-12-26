@@ -2461,7 +2461,7 @@ class NewType:
         new_type_name = bases[0].__name__
         current_name = cls.__name__
         raise TypeError(
-            f'Cannot subclass {new_type_name}, perhaps you were looking for:\n'
+            f'Cannot subclass {new_type_name}, perhaps you were looking for: '
             f'{current_name} = NewType({current_name!r}, {new_type_name})'
         )
 

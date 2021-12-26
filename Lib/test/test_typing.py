@@ -4008,7 +4008,7 @@ class NewTypeTests:
     def test_subclassing(self):
         with self.assertRaisesRegex(
             TypeError, 
-            f"Cannot subclass UserId, perhaps you were looking for:\n"
+            f"Cannot subclass UserId, perhaps you were looking for: "
             f"ProUserId = NewType('ProUserId', UserId)"
 
         ):
