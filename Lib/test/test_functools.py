@@ -2560,7 +2560,7 @@ class TestSingleDispatch(unittest.TestCase):
 
         self.assertEqual(without_single_dispatch_foo, single_dispatch_foo)
         self.assertEqual(single_dispatch_foo, '5')
-        
+
         self.assertEqual(
             WithoutSingleDispatch.decorated_classmethod(5),
             WithSingleDispatch.decorated_classmethod(5)
@@ -2665,9 +2665,9 @@ class TestSingleDispatch(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
             f.register(typing.List[int], lambda arg: "typing.GenericAlias")
         with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
-            f.register(list[int] | str, lambda arg: "types.UnionTypes(types.GenericAlias)")
+            f.register(typing.Union[list[int], str], lambda arg: "typing.Union[types.GenericAlias]")
         with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
-            f.register(typing.List[float] | bytes, lambda arg: "typing.Union[typing.GenericAlias]")
+            f.register(typing.Union[typing.List[float], bytes], lambda arg: "typing.Union[typing.GenericAlias]")
         with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
             f.register(typing.Any, lambda arg: "typing.Any")
 
@@ -2686,9 +2686,9 @@ class TestSingleDispatch(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
             f.register(typing.List[int])
         with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
-            f.register(list[int] | str)
+            f.register(typing.Union[list[int], str])
         with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
-            f.register(typing.List[int] | str)
+            f.register(typing.Union[typing.List[int], str])
         with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
             f.register(typing.Any)
 
@@ -2707,11 +2707,11 @@ class TestSingleDispatch(unittest.TestCase):
                 return "typing.GenericAlias"
         with self.assertRaisesRegex(TypeError, "Invalid annotation for 'arg'"):
             @f.register
-            def _(arg: list[int] | str):
+            def _(arg: typing.Union[list[int], str]):
                 return "types.UnionType(types.GenericAlias)"
         with self.assertRaisesRegex(TypeError, "Invalid annotation for 'arg'"):
             @f.register
-            def _(arg: typing.List[float] | bytes):
+            def _(arg: typing.Union[typing.List[float], bytes]):
                 return "typing.Union[typing.GenericAlias]"
         with self.assertRaisesRegex(TypeError, "Invalid annotation for 'arg'"):
             @f.register
