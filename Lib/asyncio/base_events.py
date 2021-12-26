@@ -1285,8 +1285,8 @@ class BaseEventLoop(events.AbstractEventLoop):
                 addr_infos = {}  # Using order preserving dict
                 for idx, addr in ((0, local_addr), (1, remote_addr)):
                     if addr is not None:
-                        assert isinstance(addr, tuple) and len(addr) == 2, (
-                            '2-tuple is expected')
+                        if not (isinstance(addr, tuple) and len(addr) == 2):
+                            raise TypeError('2-tuple is expected')
 
                         infos = await self._ensure_resolved(
                             addr, family=family, type=socket.SOCK_DGRAM,
