@@ -1236,6 +1236,17 @@ class ClassCreationTests(unittest.TestCase):
         self.assertEqual(D.__orig_bases__, (c,))
         self.assertEqual(D.__mro__, (D, A, object))
 
+    def test_new_class_with_mro_entry_genericalias(self):
+        L1 = types.new_class('L1', (typing.List[int],), {})
+        self.assertEqual(L1.__bases__, (list, typing.Generic))
+        self.assertEqual(L1.__orig_bases__, (typing.List[int],))
+        self.assertEqual(L1.__mro__, (L1, list, typing.Generic, object))
+
+        L2 = types.new_class('L2', (list[int],), {})
+        self.assertEqual(L2.__bases__, (list,))
+        self.assertEqual(L2.__orig_bases__, (list[int],))
+        self.assertEqual(L2.__mro__, (L2, list, object))
+
     def test_new_class_with_mro_entry_none(self):
         class A: pass
         class B: pass
@@ -1350,6 +1361,11 @@ class ClassCreationTests(unittest.TestCase):
         t = (A, C, B)
         for bases in [x, y, z, t]:
             self.assertIs(types.resolve_bases(bases), bases)
+
+    def test_resolve_bases_with_mro_entry(self):
+        self.assertEqual(types.resolve_bases((typing.List[int],)),
+                         (list, typing.Generic))
+        self.assertEqual(types.resolve_bases((list[int],)), (list,))
 
     def test_metaclass_derivation(self):
         # issue1294232: correct metaclass calculation

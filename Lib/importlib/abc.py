@@ -213,7 +213,7 @@ class InspectLoader(Loader):
     exec_module = _bootstrap_external._LoaderBasics.exec_module
     load_module = _bootstrap_external._LoaderBasics.load_module
 
-_register(InspectLoader, machinery.BuiltinImporter, machinery.FrozenImporter)
+_register(InspectLoader, machinery.BuiltinImporter, machinery.FrozenImporter, machinery.NamespaceLoader)
 
 
 class ExecutionLoader(InspectLoader):
@@ -381,7 +381,7 @@ class Traversable(Protocol):
     @abc.abstractmethod
     def is_dir(self) -> bool:
         """
-        Return True if self is a dir
+        Return True if self is a directory
         """
 
     @abc.abstractmethod

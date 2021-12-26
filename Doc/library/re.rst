@@ -1572,7 +1572,7 @@ find all of the adverbs in some text, they might use :func:`findall` in
 the following manner::
 
    >>> text = "He was carefully disguised but captured quickly by police."
-   >>> re.findall(r"\w+ly", text)
+   >>> re.findall(r"\w+ly\b", text)
    ['carefully', 'quickly']
 
 
@@ -1586,7 +1586,7 @@ a writer wanted to find all of the adverbs *and their positions* in
 some text, they would use :func:`finditer` in the following manner::
 
    >>> text = "He was carefully disguised but captured quickly by police."
-   >>> for m in re.finditer(r"\w+ly", text):
+   >>> for m in re.finditer(r"\w+ly\b", text):
    ...     print('%02d-%02d: %s' % (m.start(), m.end(), m.group(0)))
    07-16: carefully
    40-47: quickly

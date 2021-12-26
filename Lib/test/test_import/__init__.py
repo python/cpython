@@ -19,7 +19,8 @@ import unittest
 from unittest import mock
 
 from test.support import os_helper
-from test.support import (is_jython, swap_attr, swap_item, cpython_only)
+from test.support import (
+    STDLIB_DIR, is_jython, swap_attr, swap_item, cpython_only)
 from test.support.import_helper import (
     forget, make_legacy_pyc, unlink, unload, DirsOnSysPath, CleanImport)
 from test.support.os_helper import (
@@ -495,7 +496,7 @@ class ImportTests(unittest.TestCase):
 
             env = None
             env = {k.upper(): os.environ[k] for k in os.environ}
-            env["PYTHONPATH"] = tmp2 + ";" + os.path.dirname(os.__file__)
+            env["PYTHONPATH"] = tmp2 + ";" + STDLIB_DIR
 
             # Test 1: import with added DLL directory
             subprocess.check_call([

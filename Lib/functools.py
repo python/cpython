@@ -740,6 +740,7 @@ def _compose_mro(cls, types):
     # Remove entries which are already present in the __mro__ or unrelated.
     def is_related(typ):
         return (typ not in bases and hasattr(typ, '__mro__')
+                                 and not isinstance(typ, GenericAlias)
                                  and issubclass(cls, typ))
     types = [n for n in types if is_related(n)]
     # Remove entries which are strict bases of other entries (they will end up
@@ -837,6 +838,18 @@ def singledispatch(func):
             dispatch_cache[cls] = impl
         return impl
 
+    def _is_union_type(cls):
+        from typing import get_origin, Union
+        return get_origin(cls) in {Union, types.UnionType}
+
+    def _is_valid_dispatch_type(cls):
+        if isinstance(cls, type) and not isinstance(cls, GenericAlias):
+            return True
+        from typing import get_args
+        return (_is_union_type(cls) and
+                all(isinstance(arg, type) and not isinstance(arg, GenericAlias)
+                    for arg in get_args(cls)))
+
     def register(cls, func=None):
         """generic_func.register(cls, func) -> func
 
@@ -844,9 +857,15 @@ def singledispatch(func):
 
         """
         nonlocal cache_token
-        if func is None:
-            if isinstance(cls, type):
+        if _is_valid_dispatch_type(cls):
+            if func is None:
                 return lambda f: register(cls, f)
+        else:
+            if func is not None:
+                raise TypeError(
+                    f"Invalid first argument to `register()`. "
+                    f"{cls!r} is not a class or union type."
+                )
             ann = getattr(cls, '__annotations__', {})
             if not ann:
                 raise TypeError(
@@ -859,12 +878,25 @@ def singledispatch(func):
             # only import typing if annotation parsing is necessary
             from typing import get_type_hints
             argname, cls = next(iter(get_type_hints(func).items()))
-            if not isinstance(cls, type):
-                raise TypeError(
-                    f"Invalid annotation for {argname!r}. "
-                    f"{cls!r} is not a class."
-                )
-        registry[cls] = func
+            if not _is_valid_dispatch_type(cls):
+                if _is_union_type(cls):
+                    raise TypeError(
+                        f"Invalid annotation for {argname!r}. "
+                        f"{cls!r} not all arguments are classes."
+                    )
+                else:
+                    raise TypeError(
+                        f"Invalid annotation for {argname!r}. "
+                        f"{cls!r} is not a class."
+                    )
+
+        if _is_union_type(cls):
+            from typing import get_args
+
+            for arg in get_args(cls):
+                registry[arg] = func
+        else:
+            registry[cls] = func
         if cache_token is None and hasattr(cls, '__abstractmethods__'):
             cache_token = get_cache_token()
         dispatch_cache.clear()

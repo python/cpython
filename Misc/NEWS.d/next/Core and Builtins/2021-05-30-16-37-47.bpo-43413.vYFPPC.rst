@@ -1,3 +1,0 @@
-Constructors of subclasses of some buitin classes (e.g. :class:`tuple`,
-:class:`list`, :class:`frozenset`) no longer accept arbitrary keyword
-arguments.

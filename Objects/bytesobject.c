@@ -5,12 +5,15 @@
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_bytes_methods.h" // _Py_bytes_startswith()
+#include "pycore_bytesobject.h"   // struct _Py_bytes_state
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_format.h"        // F_LJUST
 #include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_long.h"          // _PyLong_DigitValue
 #include "pycore_object.h"        // _PyObject_GC_TRACK
 #include "pycore_pymem.h"         // PYMEM_CLEANBYTE
+#include "pycore_strhex.h"        // _Py_strhex_with_sep()
 
-#include "pystrhex.h"
 #include <stddef.h>
 
 /*[clinic input]
@@ -572,7 +575,7 @@ format_obj(PyObject *v, const char **pbuf, Py_ssize_t *plen)
     /* does it support __bytes__? */
     func = _PyObject_LookupSpecial(v, &PyId___bytes__);
     if (func != NULL) {
-        result = _PyObject_CallNoArg(func);
+        result = _PyObject_CallNoArgs(func);
         Py_DECREF(func);
         if (result == NULL)
             return NULL;
@@ -2622,7 +2625,7 @@ bytes_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
        integer argument before deferring to PyBytes_FromObject, something
        PyObject_Bytes doesn't do. */
     else if ((func = _PyObject_LookupSpecial(x, &PyId___bytes__)) != NULL) {
-        bytes = _PyObject_CallNoArg(func);
+        bytes = _PyObject_CallNoArgs(func);
         Py_DECREF(func);
         if (bytes == NULL)
             return NULL;
@@ -3084,12 +3087,31 @@ error:
 
 
 PyStatus
-_PyBytes_Init(PyInterpreterState *interp)
+_PyBytes_InitGlobalObjects(PyInterpreterState *interp)
 {
     struct _Py_bytes_state *state = &interp->bytes;
     if (bytes_create_empty_string_singleton(state) < 0) {
         return _PyStatus_NO_MEMORY();
     }
+    return _PyStatus_OK();
+}
+
+
+PyStatus
+_PyBytes_InitTypes(PyInterpreterState *interp)
+{
+    if (!_Py_IsMainInterpreter(interp)) {
+        return _PyStatus_OK();
+    }
+
+    if (PyType_Ready(&PyBytes_Type) < 0) {
+        return _PyStatus_ERR("Can't initialize bytes type");
+    }
+
+    if (PyType_Ready(&PyBytesIter_Type) < 0) {
+        return _PyStatus_ERR("Can't initialize bytes iterator type");
+    }
+
     return _PyStatus_OK();
 }
 

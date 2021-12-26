@@ -4,24 +4,22 @@
 
 #include "Python.h"
 #include "pycore_bitutils.h"      // _Py_popcount32()
-#include "pycore_interp.h"        // _PY_NSMALLPOSINTS
-#include "pycore_long.h"          // __PyLong_GetSmallInt_internal()
+#include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_long.h"          // _Py_SmallInts
 #include "pycore_object.h"        // _PyObject_InitVar()
 #include "pycore_pystate.h"       // _Py_IsMainInterpreter()
-#include "longintrepr.h"
+#include "pycore_runtime.h"       // _PY_NSMALLPOSINTS
 
-#include <float.h>
 #include <ctype.h>
+#include <float.h>
 #include <stddef.h>
+#include <stdlib.h>               // abs()
 
 #include "clinic/longobject.c.h"
 /*[clinic input]
 class int "PyObject *" "&PyLong_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=ec0275e3422a36e3]*/
-
-#define NSMALLNEGINTS           _PY_NSMALLNEGINTS
-#define NSMALLPOSINTS           _PY_NSMALLPOSINTS
 
 _Py_IDENTIFIER(little);
 _Py_IDENTIFIER(big);
@@ -37,8 +35,8 @@ medium_value(PyLongObject *x)
     return ((stwodigits)Py_SIZE(x)) * x->ob_digit[0];
 }
 
-#define IS_SMALL_INT(ival) (-NSMALLNEGINTS <= (ival) && (ival) < NSMALLPOSINTS)
-#define IS_SMALL_UINT(ival) ((ival) < NSMALLPOSINTS)
+#define IS_SMALL_INT(ival) (-_PY_NSMALLNEGINTS <= (ival) && (ival) < _PY_NSMALLPOSINTS)
+#define IS_SMALL_UINT(ival) ((ival) < _PY_NSMALLPOSINTS)
 
 static inline int is_medium_int(stwodigits x)
 {
@@ -51,7 +49,7 @@ static PyObject *
 get_small_int(sdigit ival)
 {
     assert(IS_SMALL_INT(ival));
-    PyObject *v = __PyLong_GetSmallInt_internal(ival);
+    PyObject *v = (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + ival];
     Py_INCREF(v);
     return v;
 }
@@ -3158,13 +3156,10 @@ long_add(PyLongObject *a, PyLongObject *b)
     return _PyLong_Add(a, b);
 }
 
-
-static PyObject *
-long_sub(PyLongObject *a, PyLongObject *b)
+PyObject *
+_PyLong_Subtract(PyLongObject *a, PyLongObject *b)
 {
     PyLongObject *z;
-
-    CHECK_BINOP(a, b);
 
     if (IS_MEDIUM_VALUE(a) && IS_MEDIUM_VALUE(b)) {
         return _PyLong_FromSTwoDigits(medium_value(a) - medium_value(b));
@@ -3188,6 +3183,13 @@ long_sub(PyLongObject *a, PyLongObject *b)
             z = x_sub(a, b);
     }
     return (PyObject *)z;
+}
+
+static PyObject *
+long_sub(PyLongObject *a, PyLongObject *b)
+{
+    CHECK_BINOP(a, b);
+    return _PyLong_Subtract(a, b);
 }
 
 /* Grade school multiplication, ignoring the signs.
@@ -3593,12 +3595,10 @@ k_lopsided_mul(PyLongObject *a, PyLongObject *b)
     return NULL;
 }
 
-static PyObject *
-long_mul(PyLongObject *a, PyLongObject *b)
+PyObject *
+_PyLong_Multiply(PyLongObject *a, PyLongObject *b)
 {
     PyLongObject *z;
-
-    CHECK_BINOP(a, b);
 
     /* fast path for single-digit multiplication */
     if (IS_MEDIUM_VALUE(a) && IS_MEDIUM_VALUE(b)) {
@@ -3614,6 +3614,13 @@ long_mul(PyLongObject *a, PyLongObject *b)
             return NULL;
     }
     return (PyObject *)z;
+}
+
+static PyObject *
+long_mul(PyLongObject *a, PyLongObject *b)
+{
+    CHECK_BINOP(a, b);
+    return _PyLong_Multiply(a, b);
 }
 
 /* Fast modulo division for single-digit longs. */
@@ -5822,43 +5829,26 @@ PyLong_GetInfo(void)
     return int_info;
 }
 
-int
-_PyLong_Init(PyInterpreterState *interp)
+
+/* runtime lifecycle */
+
+PyStatus
+_PyLong_InitTypes(PyInterpreterState *interp)
 {
-    for (Py_ssize_t i=0; i < NSMALLNEGINTS + NSMALLPOSINTS; i++) {
-        sdigit ival = (sdigit)i - NSMALLNEGINTS;
-        int size = (ival < 0) ? -1 : ((ival == 0) ? 0 : 1);
-
-        PyLongObject *v = _PyLong_New(1);
-        if (!v) {
-            return -1;
-        }
-
-        Py_SET_SIZE(v, size);
-        v->ob_digit[0] = (digit)abs(ival);
-
-        interp->small_ints[i] = v;
+    if (!_Py_IsMainInterpreter(interp)) {
+        return _PyStatus_OK();
     }
-    return 0;
-}
 
+    if (PyType_Ready(&PyLong_Type) < 0) {
+        return _PyStatus_ERR("Can't initialize int type");
+    }
 
-int
-_PyLong_InitTypes(void)
-{
     /* initialize int_info */
     if (Int_InfoType.tp_name == NULL) {
         if (PyStructSequence_InitType2(&Int_InfoType, &int_info_desc) < 0) {
-            return -1;
+            return _PyStatus_ERR("can't init int info type");
         }
     }
-    return 0;
-}
 
-void
-_PyLong_Fini(PyInterpreterState *interp)
-{
-    for (Py_ssize_t i = 0; i < NSMALLNEGINTS + NSMALLPOSINTS; i++) {
-        Py_CLEAR(interp->small_ints[i]);
-    }
+    return _PyStatus_OK();
 }

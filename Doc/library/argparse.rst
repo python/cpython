@@ -1109,7 +1109,7 @@ Anything with more interesting error-handling or resource management should be
 done downstream after the arguments are parsed.
 
 For example, JSON or YAML conversions have complex error cases that require
-better reporting than can be given by the ``type`` keyword.  An
+better reporting than can be given by the ``type`` keyword.  A
 :exc:`~json.JSONDecodeError` would not be well formatted and a
 :exc:`FileNotFound` exception would not be handled at all.
 
@@ -1898,6 +1898,12 @@ Argument groups
    Note that any arguments not in your user-defined groups will end up back
    in the usual "positional arguments" and "optional arguments" sections.
 
+   .. versionchanged:: 3.11
+    Calling :meth:`add_argument_group` on an argument group is deprecated.
+    This feature was never supported and does not always work correctly.
+    The function exists on the API by accident through inheritance and
+    will be removed in the future.
+
 
 Mutual exclusion
 ^^^^^^^^^^^^^^^^
@@ -1935,6 +1941,12 @@ Mutual exclusion
    Note that currently mutually exclusive argument groups do not support the
    *title* and *description* arguments of
    :meth:`~ArgumentParser.add_argument_group`.
+
+   .. versionchanged:: 3.11
+    Calling :meth:`add_argument_group` or :meth:`add_mutually_exclusive_group`
+    on a mutually exclusive group is deprecated. These features were never
+    supported and do not always work correctly. The functions exist on the
+    API by accident through inheritance and will be removed in the future.
 
 
 Parser defaults

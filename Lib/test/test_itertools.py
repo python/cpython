@@ -1,3 +1,4 @@
+import doctest
 import unittest
 from test import support
 from itertools import *
@@ -2646,10 +2647,11 @@ True
 >>> list(odds)
 [1, 3, 5, 7, 9]
 
->>> all_upper, remainder = before_and_after(str.isupper, 'ABCdEfGhI')
->>> str.join('', all_upper)
+>>> it = iter('ABCdEfGhI')
+>>> all_upper, remainder = before_and_after(str.isupper, it)
+>>> ''.join(all_upper)
 'ABC'
->>> str.join('', remainder)
+>>> ''.join(remainder)
 'dEfGhI'
 
 >>> list(powerset([1,2,3]))
@@ -2689,26 +2691,10 @@ True
 
 __test__ = {'libreftest' : libreftest}
 
-def test_main(verbose=None):
-    test_classes = (TestBasicOps, TestVariousIteratorArgs, TestGC,
-                    RegressionTests, LengthTransparency,
-                    SubclassWithKwargsTest, TestExamples,
-                    TestPurePythonRoughEquivalents,
-                    SizeofTest)
-    support.run_unittest(*test_classes)
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite())
+    return tests
 
-    # verify reference counting
-    if verbose and hasattr(sys, "gettotalrefcount"):
-        import gc
-        counts = [None] * 5
-        for i in range(len(counts)):
-            support.run_unittest(*test_classes)
-            gc.collect()
-            counts[i] = sys.gettotalrefcount()
-        print(counts)
-
-    # doctest the examples in the library reference
-    support.run_doctest(sys.modules[__name__], verbose)
 
 if __name__ == "__main__":
-    test_main(verbose=True)
+    unittest.main()

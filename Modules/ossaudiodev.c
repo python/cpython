@@ -21,6 +21,7 @@
 #include "Python.h"
 #include "structmember.h"         // PyMemberDef
 
+#include <stdlib.h>               // getenv()
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #else

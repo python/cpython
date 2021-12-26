@@ -1,0 +1,2 @@
+:program:`makesetup` no longer builds extensions that have been marked as
+*disabled*. This allows users to disable modules in ``Modules/Setup.local``.

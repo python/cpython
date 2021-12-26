@@ -169,7 +169,7 @@ Notes:
    Only on Windows platforms.
 
 (3)
-   Only on Mac OS X platform.
+   Only on macOS platform.
 
 .. versionadded:: 3.3
    Support for Chrome/Chromium has been added.
