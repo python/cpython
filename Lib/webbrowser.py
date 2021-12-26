@@ -666,7 +666,7 @@ if sys.platform == 'darwin':
             return not rc
 
     class MacOSXOSAScript(BaseBrowser):
-        def __init__(self, name):
+        def __init__(self, name='default'):
             super().__init__(name)
 
         @property
