@@ -1796,36 +1796,43 @@ protocol:  :meth:`~object.__get__`, :meth:`~object.__set__`, and
 :meth:`~object.__delete__`. If any of
 those methods are defined for an object, it is said to be a descriptor.
 
+.. index::
+   single: lookup chain
+
 The default behavior for attribute access is to get, set, or delete the
-attribute from an object's dictionary. For instance, ``a.x`` has a lookup chain
-starting with ``a.__dict__['x']``, then ``type(a).__dict__['x']``, and
-continuing through the base classes of ``type(a)`` excluding metaclasses.
+attribute from an object's dictionary. For instance, ``a.x`` lookup for ``'x'``
+in the dictionaries ``a.__dict__``, then ``type(a).__dict__``, and continuing
+through the base classes of ``type(a)`` excluding metaclasses.  This list of
+dictionaries is called the lookup chain of ``a``.  By default ``a.x`` returns
+``d['x']`` for ``d`` the first dictionary in the lookup chain containing
+``'x'``.
 
 However, if the looked-up value is an object defining one of the descriptor
-methods, then Python may override the default behavior and invoke the descriptor
-method instead.  Where this occurs in the precedence chain depends on which
-descriptor methods were defined and how they were called.
+methods, then Python may override the default behavior. Instead of directly
+returning the value, assigning to it or deleting it, it invokes the descriptor
+method.  Where this occurs in the precedence chain depends on which descriptor
+methods were defined and how they were called.
 
-The starting point for descriptor invocation is a binding, ``a.x``. How the
-arguments are assembled depends on ``a``:
+There are four ways to invoke a descriptor.
 
 Direct Call
    The simplest and least common call is when user code directly invokes a
-   descriptor method:    ``x.__get__(a)``.
+   descriptor method: ``x.__get__(a)`` for ``x`` a descriptor and some value
+   ``a``.
 
 Instance Binding
-   If binding to an object instance, ``a.x`` is transformed into the call:
+   For ``a`` an object instance, ``a.x`` is transformed into the call:
    ``type(a).__dict__['x'].__get__(a, type(a))``.
 
 Class Binding
-   If binding to a class, ``A.x`` is transformed into the call:
+   For ``A`` a class, ``A.x`` is transformed into the call:
    ``A.__dict__['x'].__get__(None, A)``.
 
 Super Binding
-   A dotted lookup such as ``super(A, a).x`` searches
-   ``a.__class__.__mro__`` for a base class ``B`` following ``A`` and then
-   returns ``B.__dict__['x'].__get__(a, A)``.  If not a descriptor, ``x`` is
-   returned unchanged.
+   For ``a`` an instance of ``A``, ``super(A, a).m(*args, **kwargs)`` searches
+   ``a.__class__.__mro__`` for the first base class ``B`` following ``A`` having
+   a method ``m`` and then returns ``B.__dict__['m'].__get__(a, A)(*args,
+   **kwargs)``.
 
 .. testcode::
     :hide:
