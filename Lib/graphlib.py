@@ -24,15 +24,16 @@ class _NodeInfo:
 
 
 class CycleError(ValueError):
-    """Subclass of ValueError raised by TopologicalSorter.prepare if cycles
-    exist in the working graph.
+    """Raised by TopologicalSorter.prepare() if any cycles exist in the graph.
 
-    If multiple cycles exist, only one undefined choice among them will be reported
-    and included in the exception. The detected cycle can be accessed via the second
-    element in the *args* attribute of the exception instance and consists in a list
-    of nodes, such that each node is, in the graph, an immediate predecessor of the
-    next node in the list. In the reported list, the first and the last node will be
-    the same, to make it clear that it is cyclic.
+    If multiple cycles exist, only one of them will be detected and reported in
+    the exception.
+
+    The detected cycle can be accessed via the second element in the *args*
+    attribute of the exception instance: "cycle_error.args[1]". It consists of
+    a list of nodes where each node is an immediate predecessor of the next
+    node in the list. The first and the last node in the list are the same
+    node, to make it clear that it is cyclic.
     """
 
     pass
@@ -61,15 +62,15 @@ class TopologicalSorter:
 
         Both the *node* and all elements in *predecessors* must be hashable.
 
-        If called multiple times with the same node argument, the set of dependencies
-        will be the union of all dependencies passed in.
+        If called multiple times with the same node argument, the set of
+        dependencies will be the union of all dependencies passed in.
 
-        It is possible to add a node with no dependencies (*predecessors* is not provided)
-        as well as provide a dependency twice. If a node that has not been provided before
-        is included among *predecessors* it will be automatically added to the graph with
-        no predecessors of its own.
+        It is possible to add a node with no dependencies (*predecessors* is not
+        provided) as well as provide a dependency twice. If a node that has not
+        been provided before is included among *predecessors* it will be
+        automatically added to the graph with no predecessors of its own.
 
-        Raises ValueError if called after "prepare".
+        Raises ValueError if called after "prepare()".
         """
         if self._ready_nodes is not None:
             raise ValueError("Nodes cannot be added after a call to prepare()")
@@ -86,10 +87,12 @@ class TopologicalSorter:
     def prepare(self):
         """Mark the graph as finished and check for cycles in the graph.
 
-        If any cycle is detected, "CycleError" will be raised, but "get_ready" can
-        still be used to obtain as many nodes as possible until cycles block more
-        progress. After a call to this function, the graph cannot be modified and
-        therefore no more nodes can be added using "add".
+        After calling this method the graph cannot be modified
+        using the "add()" method.
+
+        If any cycles are detected then "CycleError" will be raised,
+        but "get_ready()" can still be used to obtain as many nodes as possible
+        until cycles block more progress.
         """
         if self._ready_nodes is not None:
             raise ValueError("cannot prepare() more than once")
@@ -106,14 +109,14 @@ class TopologicalSorter:
             raise CycleError(f"nodes are in a cycle", cycle)
 
     def get_ready(self):
-        """Return a tuple of all the nodes that are ready.
+        """Return a tuple of all the nodes that are ready to be processed.
 
-        Initially it returns all nodes with no predecessors; once those are marked
-        as processed by calling "done", further calls will return all new nodes that
-        have all their predecessors already processed. Once no more progress can be made,
-        empty tuples are returned.
+        Initially it returns all nodes with no predecessors. Once those are
+        marked as processed by calling "done()", further calls will return all
+        new nodes that have had all their predecessors already processed.
+        Once no more progress can be made, empty tuples are returned.
 
-        Raises ValueError if called without calling "prepare" previously.
+        Raises ValueError if called before "prepare()".
         """
         if self._ready_nodes is None:
             raise ValueError("prepare() must be called first")
@@ -132,14 +135,14 @@ class TopologicalSorter:
         return result
 
     def is_active(self):
-        """Return ``True`` if more progress can be made and ``False`` otherwise.
+        """Return True if more progress can be made and False otherwise.
 
-        Progress can be made if cycles do not block the resolution and either there
-        are still nodes ready that haven't yet been returned by "get_ready" or the
-        number of nodes marked "done" is less than the number that have been returned
-        by "get_ready".
+        Progress can be made if cycles do not block the resolution and either
+        there are still nodes ready to be returned by "get_ready()" or there
+        are nodes which were returned by "get_ready()" and which have not yet
+        been marked as "done()".
 
-        Raises ValueError if called without calling "prepare" previously.
+        Raises ValueError if called before "prepare()".
         """
         if self._ready_nodes is None:
             raise ValueError("prepare() must be called first")
@@ -149,15 +152,15 @@ class TopologicalSorter:
         return self.is_active()
 
     def done(self, *nodes):
-        """Marks a set of nodes returned by "get_ready" as processed.
+        """Marks a set of nodes returned by "get_ready()" as processed.
 
-        This method unblocks any successor of each node in *nodes* for being returned
-        in the future by a call to "get_ready".
+        This method unblocks any successors of each node in *nodes* for being
+        returned by a future call to "get_ready()".
 
-        Raises :exec:`ValueError` if any node in *nodes* has already been marked as
-        processed by a previous call to this method, if a node was not added to the
-        graph by using "add" or if called without calling "prepare" previously or if
-        node has not yet been returned by "get_ready".
+        Raises ValueError if: any node in *nodes* is not part of this graph, has
+        not yet been returned by "get_ready()", has already been marked as
+        processed by a previous call to this method, or if this method is
+        called before "prepare()".
         """
 
         if self._ready_nodes is None:
@@ -236,10 +239,11 @@ class TopologicalSorter:
         """Returns an iterable of nodes in a topological order.
 
         The particular order that is returned may depend on the specific
-        order in which the items were inserted in the graph.
+        order in which items were inserted into the graph.
 
-        Using this method does not require to call "prepare" or "done". If any
-        cycle is detected, :exc:`CycleError` will be raised.
+        When using this method, "prepare()" and "done()" should not be called.
+
+        Raises "CycleError" if any cycles are detected.
         """
         self.prepare()
         while self.is_active():

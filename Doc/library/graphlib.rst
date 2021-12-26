@@ -19,20 +19,20 @@
 
    Provides functionality to topologically sort a graph of hashable nodes.
 
-   A topological order is a linear ordering of the vertices in a graph such that
-   for every directed edge u -> v from vertex u to vertex v, vertex u comes
-   before vertex v in the ordering. For instance, the vertices of the graph may
+   A topological order is a linear ordering of the nodes in a graph such that
+   for every directed edge u -> v from node u to node v, node u comes
+   before node v in the ordering. For instance, the nodes of the graph may
    represent tasks to be performed, and the edges may represent constraints that
    one task must be performed before another; in this example, a topological
    ordering is just a valid sequence for the tasks. A complete topological
-   ordering is possible if and only if the graph has no directed cycles, that
-   is, if it is a directed acyclic graph.
+   ordering is possible if and only if the graph is a directed acyclic graph,
+   that is, if there are no circular dependencies among the tasks to be performed.
 
-   If the optional *graph* argument is provided it must be a dictionary
-   representing a directed acyclic graph where the keys are nodes and the values
-   are iterables of all predecessors of that node in the graph (the nodes that
-   have edges that point to the value in the key). Additional nodes can be added
-   to the graph using the :meth:`~TopologicalSorter.add` method.
+   If the optional *graph* argument is provided it must be a dictionary where
+   the keys are nodes and the values are iterables of all predecessors of that
+   node in the graph (the nodes that have edges that point to the value in the
+   key). Additional nodes can be added to the graph using
+   the :meth:`~TopologicalSorter.add` method.
 
    In the general case, the steps required to perform the sorting of a given
    graph are as follows:
@@ -99,21 +99,23 @@
 
    .. method:: prepare()
 
-      Mark the graph as finished and check for cycles in the graph. If any cycle
-      is detected, :exc:`CycleError` will be raised, but
-      :meth:`~TopologicalSorter.get_ready` can still be used to obtain as many
-      nodes as possible until cycles block more progress. After a call to this
-      function, the graph cannot be modified, and therefore no more nodes can be
-      added using :meth:`~TopologicalSorter.add`.
+      Mark the graph as finished and check for cycles in the graph.
+
+      After calling this method the graph cannot be modified using
+      the :meth:`~TopologicalSorter.add` method.
+
+      Raises :exc:`CycleError` if any cycles are detected,
+      but :meth:`~TopologicalSorter.get_ready` can still be used to obtain as
+      many nodes as possible until cycles block more progress.
 
    .. method:: is_active()
 
       Returns ``True`` if more progress can be made and ``False`` otherwise.
       Progress can be made if cycles do not block the resolution and either
-      there are still nodes ready that haven't yet been returned by
-      :meth:`TopologicalSorter.get_ready` or the number of nodes marked
-      :meth:`TopologicalSorter.done` is less than the number that have been
-      returned by :meth:`TopologicalSorter.get_ready`.
+      there are still nodes ready to be returned by
+      :meth:`~TopologicalSorter.get_ready` or there are nodes which were
+      returned by :meth:`~TopologicalSorter.get_ready` and which have not yet
+      been marked as :meth:`~TopologicalSorter.done`.
 
       The :meth:`~TopologicalSorter.__bool__` method of this class defers to
       this function, so instead of::
@@ -126,35 +128,36 @@
           if ts:
               ...
 
-      Raises :exc:`ValueError` if called without calling
-      :meth:`~TopologicalSorter.prepare` previously.
+      Raises :exc:`ValueError` if this method is called before
+      :meth:`~TopologicalSorter.prepare`.
 
    .. method:: done(*nodes)
 
-      Marks a set of nodes returned by :meth:`TopologicalSorter.get_ready` as
-      processed, unblocking any successor of each node in *nodes* for being
-      returned in the future by a call to :meth:`TopologicalSorter.get_ready`.
+      Marks a set of nodes returned by :meth:`~TopologicalSorter.get_ready` as
+      processed, unblocking any successors of each node in *nodes* for being
+      returned by a future call to :meth:`~TopologicalSorter.get_ready`.
 
-      Raises :exc:`ValueError` if any node in *nodes* has already been marked as
-      processed by a previous call to this method or if a node was not added to
-      the graph by using :meth:`TopologicalSorter.add`, if called without
-      calling :meth:`~TopologicalSorter.prepare` or if node has not yet been
-      returned by :meth:`~TopologicalSorter.get_ready`.
+      Raises :exc:`ValueError` if: any node in *nodes* is not part of this
+      graph, has not yet been returned by :meth:`~TopologicalSorter.get_ready`,
+      has already been marked as processed by a previous call
+      to :meth:`~TopologicalSorter.done`, or if this method is called before
+      :meth:`~TopologicalSorter.prepare`.
 
    .. method:: get_ready()
 
-      Returns a ``tuple`` with all the nodes that are ready. Initially it
-      returns all nodes with no predecessors, and once those are marked as
-      processed by calling :meth:`TopologicalSorter.done`, further calls will
-      return all new nodes that have all their predecessors already processed.
-      Once no more progress can be made, empty tuples are returned.
+      Returns a ``tuple`` with all of the nodes that are ready to be processed.
+      Initially it returns all nodes with no predecessors. Once those are
+      marked as processed by calling :meth:`~TopologicalSorter.done`, further
+      calls will return all new nodes that have had all their predecessors
+      already processed. Once no more progress can be made, empty tuples are
+      returned.
 
-      Raises :exc:`ValueError` if called without calling
-      :meth:`~TopologicalSorter.prepare` previously.
+      Raises :exc:`ValueError` if this method is called before
+      :meth:`~TopologicalSorter.prepare`.
 
    .. method:: static_order()
 
-      Returns an iterator object which will iterate over nodes in a topological
+      Returns an iterator object which iterates over nodes in a topological
       order. When using this method, :meth:`~TopologicalSorter.prepare` and
       :meth:`~TopologicalSorter.done` should not be called. This method is
       equivalent to::
@@ -167,7 +170,7 @@
                   self.done(*node_group)
 
       The particular order that is returned may depend on the specific order in
-      which the items were inserted in the graph. For example:
+      which items were inserted into the graph. For example:
 
       .. doctest::
 
@@ -183,13 +186,12 @@
           >>> print([*ts2.static_order()])
           [0, 2, 1, 3]
 
-      This is due to the fact that "0" and "2" are in the same level in the
+      This is due to the fact that "0" and "2" are on the same level in the
       graph (they would have been returned in the same call to
       :meth:`~TopologicalSorter.get_ready`) and the order between them is
       determined by the order of insertion.
 
-
-      If any cycle is detected, :exc:`CycleError` will be raised.
+      Raises :exc:`CycleError` if any cycles are detected.
 
    .. versionadded:: 3.9
 
@@ -200,11 +202,15 @@ The :mod:`graphlib` module defines the following exception classes:
 
 .. exception:: CycleError
 
-   Subclass of :exc:`ValueError` raised by :meth:`TopologicalSorter.prepare` if cycles exist
-   in the working graph. If multiple cycles exist, only one undefined choice among them will
-   be reported and included in the exception.
+   Subclass of :exc:`ValueError` raised by :meth:`TopologicalSorter.prepare` if
+   any cycles exist in the graph.
 
-   The detected cycle can be accessed via the second element in the :attr:`~CycleError.args`
-   attribute of the exception instance and consists in a list of nodes, such that each node is,
-   in the graph, an immediate predecessor of the next node in the list. In the reported list,
-   the first and the last node will be the same, to make it clear that it is cyclic.
+   If multiple cycles exist, only one of them will be detected and reported in
+   the exception.
+
+   The detected cycle can be accessed via the second element in
+   the :attr:`~CycleError.args` attribute of the exception instance:
+   ``cycle_error.args[1]``. It consists of a list of nodes where each node is
+   an immediate predecessor of the next node in the list. The first and the
+   last node in the list are the same node, to make it clear that it is
+   cyclic.
