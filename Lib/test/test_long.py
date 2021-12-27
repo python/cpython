@@ -946,8 +946,13 @@ class LongTest(unittest.TestCase):
         self.assertEqual(1 << (sys.maxsize + 1000), 1 << 1000 << sys.maxsize)
 
     def test_huge_rshift(self):
-        self.assertEqual(42 >> (1 << 1000), 0)
-        self.assertEqual((-42) >> (1 << 1000), -1)
+        huge_shift = 1 << 1000
+        self.assertEqual(42 >> huge_shift, 0)
+        self.assertEqual((-42) >> huge_shift, -1)
+        self.assertEqual(1123 >> huge_shift, 0)
+        self.assertEqual((-1123) >> huge_shift, -1)
+        self.assertEqual(2**128 >> huge_shift, 0)
+        self.assertEqual(-2**128 >> huge_shift, -1)
 
     @support.cpython_only
     @support.bigmemtest(sys.maxsize + 500, memuse=2/15, dry_run=False)
@@ -955,6 +960,60 @@ class LongTest(unittest.TestCase):
         huge = ((1 << 500) + 11) << sys.maxsize
         self.assertEqual(huge >> (sys.maxsize + 1), (1 << 499) + 5)
         self.assertEqual(huge >> (sys.maxsize + 1000), 0)
+
+    def test_small_rshift(self):
+        self.assertEqual(42 >> 1, 21)
+        self.assertEqual((-42) >> 1, -21)
+        self.assertEqual(43 >> 1, 21)
+        self.assertEqual((-43) >> 1, -22)
+
+        self.assertEqual(1122 >> 1, 561)
+        self.assertEqual((-1122) >> 1, -561)
+        self.assertEqual(1123 >> 1, 561)
+        self.assertEqual((-1123) >> 1, -562)
+
+        self.assertEqual(2**128 >> 1, 2**127)
+        self.assertEqual(-2**128 >> 1, -2**127)
+        self.assertEqual((2**128 + 1) >> 1, 2**127)
+        self.assertEqual(-(2**128 + 1) >> 1, -2**127 - 1)
+
+    def test_medium_rshift(self):
+        self.assertEqual(42 >> 9, 0)
+        self.assertEqual((-42) >> 9, -1)
+        self.assertEqual(1122 >> 9, 2)
+        self.assertEqual((-1122) >> 9, -3)
+        self.assertEqual(2**128 >> 9, 2**119)
+        self.assertEqual(-2**128 >> 9, -2**119)
+
+    def test_big_rshift(self):
+        self.assertEqual(42 >> 32, 0)
+        self.assertEqual((-42) >> 32, -1)
+        self.assertEqual(1122 >> 32, 0)
+        self.assertEqual((-1122) >> 32, -1)
+        self.assertEqual(2**128 >> 32, 2**96)
+        self.assertEqual(-2**128 >> 32, -2**96)
+
+    def test_small_lshift(self):
+        self.assertEqual(42 << 1, 84)
+        self.assertEqual((-42) << 1, -84)
+        self.assertEqual(561 << 1, 1122)
+        self.assertEqual((-561) << 1, -1122)
+        self.assertEqual(2**127 << 1, 2**128)
+        self.assertEqual(-2**127 << 1, -2**128)
+
+    def test_medium_lshift(self):
+        self.assertEqual(42 << 9, 21504)
+        self.assertEqual((-42) << 9, -21504)
+        self.assertEqual(1122 << 9, 574464)
+        self.assertEqual((-1122) << 9, -574464)
+
+    def test_big_lshift(self):
+        self.assertEqual(42 << 32, 42 * 2**32)
+        self.assertEqual((-42) << 32, -42 * 2**32)
+        self.assertEqual(1122 << 32, 1122 * 2**32)
+        self.assertEqual((-1122) << 32, -1122 * 2**32)
+        self.assertEqual(2**128 << 32, 2**160)
+        self.assertEqual(-2**128 << 32, -2**160)
 
     @support.cpython_only
     def test_small_ints_in_huge_calculation(self):
