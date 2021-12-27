@@ -1,9 +1,32 @@
 # IsolatedAsyncioTestCase based tests
 import asyncio
 import unittest
-
+import traceback
 
 class FutureTests(unittest.IsolatedAsyncioTestCase):
+    async def test_future_traceback(self): 
+        async def raise_exc():
+            raise TypeError(42)
+        future = asyncio.create_task(raise_exc())
+        for _ in range(10):
+            try:
+                await future
+            except TypeError:
+                tb = traceback.format_exc()
+                expected = (
+f"""Traceback (most recent call last):
+  File "{__file__}", line 13, in test_future_traceback
+    await future
+    ^^^^^^^^^^^^
+  File "{__file__}", line 9, in raise_exc
+    raise TypeError(42)
+    ^^^^^^^^^^^^^^^^^^^
+TypeError: 42
+"""
+        )
+            self.assertEqual(tb, expected)
+
+        
     async def test_recursive_repr_for_pending_tasks(self):
         # The call crashes if the guard for recursive call
         # in base_futures:_future_repr_info is absent

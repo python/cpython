@@ -68,6 +68,7 @@ typedef enum {
     PyObject *prefix##_context0;                                            \
     PyObject *prefix##_callbacks;                                           \
     PyObject *prefix##_exception;                                           \
+    PyObject *prefix##_exception_tb;                                        \
     PyObject *prefix##_result;                                              \
     PyObject *prefix##_source_tb;                                           \
     PyObject *prefix##_cancel_msg;                                          \
@@ -492,6 +493,7 @@ future_init(FutureObj *fut, PyObject *loop)
     Py_CLEAR(fut->fut_callbacks);
     Py_CLEAR(fut->fut_result);
     Py_CLEAR(fut->fut_exception);
+    Py_CLEAR(fut->fut_exception_tb);
     Py_CLEAR(fut->fut_source_tb);
     Py_CLEAR(fut->fut_cancel_msg);
     _PyErr_ClearExcState(&fut->fut_cancelled_exc_state);
@@ -598,7 +600,9 @@ future_set_exception(FutureObj *fut, PyObject *exc)
     }
 
     assert(!fut->fut_exception);
+    assert(!fut->fut_exception_tb);
     fut->fut_exception = exc_val;
+    fut->fut_exception_tb = PyException_GetTraceback(exc_val);
     fut->fut_state = STATE_FINISHED;
 
     if (future_schedule_callbacks(fut) == -1) {
@@ -646,6 +650,15 @@ future_get_result(FutureObj *fut, PyObject **result)
 
     fut->fut_log_tb = 0;
     if (fut->fut_exception != NULL) {
+        if (fut->fut_exception_tb != NULL) {
+            if (PyException_SetTraceback(fut->fut_exception, fut->fut_exception_tb) < 0)
+            {
+                return -1;
+            }
+        }
+        else {
+            PyException_SetTraceback(fut->fut_exception, Py_None);
+        }
         Py_INCREF(fut->fut_exception);
         *result = fut->fut_exception;
         return 1;
@@ -789,6 +802,7 @@ FutureObj_clear(FutureObj *fut)
     Py_CLEAR(fut->fut_callbacks);
     Py_CLEAR(fut->fut_result);
     Py_CLEAR(fut->fut_exception);
+    Py_CLEAR(fut->fut_exception_tb);
     Py_CLEAR(fut->fut_source_tb);
     Py_CLEAR(fut->fut_cancel_msg);
     _PyErr_ClearExcState(&fut->fut_cancelled_exc_state);
@@ -805,6 +819,7 @@ FutureObj_traverse(FutureObj *fut, visitproc visit, void *arg)
     Py_VISIT(fut->fut_callbacks);
     Py_VISIT(fut->fut_result);
     Py_VISIT(fut->fut_exception);
+    Py_VISIT(fut->fut_exception_tb);
     Py_VISIT(fut->fut_source_tb);
     Py_VISIT(fut->fut_cancel_msg);
     Py_VISIT(fut->dict);
