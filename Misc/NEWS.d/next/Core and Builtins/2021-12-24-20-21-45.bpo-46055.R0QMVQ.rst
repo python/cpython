@@ -1,2 +1,2 @@
-Speed up shifting operation involving integrates less than
-:c:macro:`PyLong_BASE`.
+Speed up shifting operation involving integers less than
+:c:macro:`PyLong_BASE`. Patch by Xinhang Xu.
