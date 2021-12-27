@@ -637,6 +637,9 @@ form.
       programs that use only a few regular expressions at a time needn't worry
       about compiling regular expressions.
 
+.. class:: RegexFlag
+
+   An :class:`~enum.Enum` class containing the regex options listed below.
 
 .. data:: A
           ASCII
@@ -710,6 +713,9 @@ form.
    string and immediately before the newline (if any) at the end of the string.
    Corresponds to the inline flag ``(?m)``.
 
+.. data:: NOFLAG
+
+   Indicates no flag being applied, the value is ``0``.
 
 .. data:: S
           DOTALL
