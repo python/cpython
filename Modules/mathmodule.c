@@ -3471,7 +3471,7 @@ static uint64_t reduced_factorial_odd_part[] = {
     0x18ddf279a2c5800bu, 0x505a90e2542582cbu, 0x5bacad2cd8d5dc2bu, 0xfe3152bcbff89f41u,
 };
 
-/* inverses of factorial_odd_part values modulo 2**64 */
+/* inverses of reduced_factorial_odd_part values modulo 2**64 */
 static uint64_t inverted_factorial_odd_part[] = {
     0x0000000000000001u, 0x0000000000000001u, 0x0000000000000001u, 0xaaaaaaaaaaaaaaabu,
     0xaaaaaaaaaaaaaaabu, 0xeeeeeeeeeeeeeeefu, 0x4fa4fa4fa4fa4fa5u, 0x2ff2ff2ff2ff2ff3u,
@@ -3573,7 +3573,7 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
             */
             uint64_t comb_odd_part = reduced_factorial_odd_part[ni]
                                    * inverted_factorial_odd_part[ki]
-                                   * inverted_factorial_odd_part[ni-ki];
+                                   * inverted_factorial_odd_part[ni - ki];
             int shift = _Py_popcount32(ni ^ ki ^ (ni - ki));
             result = PyLong_FromUnsignedLongLong(comb_odd_part << shift);
             goto done;
