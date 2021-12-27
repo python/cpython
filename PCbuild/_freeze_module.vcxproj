@@ -89,10 +89,13 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>Py_NO_ENABLE_SHARED;Py_BUILD_CORE;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Optimization>Disabled</Optimization>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <AdditionalDependencies>version.lib;ws2_32.lib;pathcch.lib;bcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -226,7 +229,9 @@
     <ClCompile Include="..\Python\structmember.c" />
     <ClCompile Include="..\Python\suggestions.c" />
     <ClCompile Include="..\Python\symtable.c" />
-    <ClCompile Include="..\Python\sysmodule.c" />
+    <ClCompile Include="..\Python\sysmodule.c">
+      <PreprocessorDefinitions>VPATH="$(PyVPath)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
     <ClCompile Include="..\Python\thread.c" />
     <ClCompile Include="..\Python\traceback.c" />
   </ItemGroup>
@@ -330,13 +335,6 @@
       <DeepIntFile>$(IntDir)stat.g.c</DeepIntFile>
       <DeepOutFile>$(PySourcePath)Python\deepfreeze\df.stat.c</DeepOutFile>
     </None>
-    <None Include="..\Lib\types.py">
-      <ModName>types</ModName>
-      <IntFile>$(IntDir)types.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\types.h</OutFile>
-      <DeepIntFile>$(IntDir)types.g.c</DeepIntFile>
-      <DeepOutFile>$(PySourcePath)Python\deepfreeze\df.types.c</DeepOutFile>
-    </None>
     <None Include="..\Lib\importlib\util.py">
       <ModName>importlib.util</ModName>
       <IntFile>$(IntDir)importlib.util.g.h</IntFile>
@@ -437,7 +435,10 @@
     <Message Text="Updated files: @(_Updated->'%(Filename)%(Extension)',', ')"
              Condition="'@(_Updated)' != ''" Importance="high" />
   </Target>
-  <Target Name="_RebuildDeepFrozen" AfterTargets="_RebuildFrozen" Condition="$(Configuration) != 'PGUpdate'">
+  <Target Name="_RebuildDeepFrozen"
+          AfterTargets="_RebuildFrozen"
+          DependsOnTargets="FindPythonForBuild"
+          Condition="$(Configuration) != 'PGUpdate'">
     <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\scripts\deepfreeze.py" "%(None.OutFile)" "-m" "%(None.ModName)" -o "%(None.IntFile)"' />
 
     <Copy SourceFiles="%(None.IntFile)"

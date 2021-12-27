@@ -504,6 +504,7 @@ if 1:
         self.compile_single("if x:\n   f(x)")
         self.compile_single("if x:\n   f(x)\nelse:\n   g(x)")
         self.compile_single("class T:\n   pass")
+        self.compile_single("c = '''\na=1\nb=2\nc=3\n'''")
 
     def test_bad_single_statement(self):
         self.assertInvalidSingle('1\n2')
@@ -514,6 +515,7 @@ if 1:
         self.assertInvalidSingle('f()\n# blah\nblah()')
         self.assertInvalidSingle('f()\nxy # blah\nblah()')
         self.assertInvalidSingle('x = 5 # comment\nx = 6\n')
+        self.assertInvalidSingle("c = '''\nd=1\n'''\na = 1\n\nb = 2\n")
 
     def test_particularly_evil_undecodable(self):
         # Issue 24022
@@ -837,7 +839,7 @@ if 1:
                 self.assertNotIn('LOAD_METHOD', instructions)
                 self.assertNotIn('CALL_METHOD', instructions)
                 self.assertIn('LOAD_ATTR', instructions)
-                self.assertIn('CALL_FUNCTION', instructions)
+                self.assertIn('CALL_NO_KW', instructions)
 
     def test_lineno_procedure_call(self):
         def call():
@@ -1093,7 +1095,7 @@ f(
 )
 """
         compiled_code, _ = self.check_positions_against_ast(snippet)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'CALL_FUNCTION',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'CALL_NO_KW',
             line=1, end_line=3, column=0, end_column=1)
 
     def test_very_long_line_end_offset(self):
@@ -1103,7 +1105,7 @@ f(
         snippet = f"g('{long_string}')"
 
         compiled_code, _ = self.check_positions_against_ast(snippet)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'CALL_FUNCTION',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'CALL_NO_KW',
             line=1, end_line=1, column=None, end_column=None)
 
     def test_complex_single_line_expression(self):
@@ -1258,6 +1260,39 @@ class TestStackSizeStability(unittest.TestCase):
                 c
             else:
                 d
+            """
+        self.check_stack_size(snippet)
+
+    def test_try_except_star_qualified(self):
+        snippet = """
+            try:
+                a
+            except* ImportError:
+                b
+            else:
+                c
+            """
+        self.check_stack_size(snippet)
+
+    def test_try_except_star_as(self):
+        snippet = """
+            try:
+                a
+            except* ImportError as e:
+                b
+            else:
+                c
+            """
+        self.check_stack_size(snippet)
+
+    def test_try_except_star_finally(self):
+        snippet = """
+                try:
+                    a
+                except* A:
+                    b
+                finally:
+                    c
             """
         self.check_stack_size(snippet)
 

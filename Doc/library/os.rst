@@ -2081,7 +2081,7 @@ features:
    directories you can set the umask before invoking :func:`makedirs`.  The
    file permission bits of existing parent directories are not changed.
 
-   If *exist_ok* is ``False`` (the default), an :exc:`FileExistsError` is
+   If *exist_ok* is ``False`` (the default), a :exc:`FileExistsError` is
    raised if the target directory already exists.
 
    .. note::
@@ -2357,7 +2357,7 @@ features:
 .. function:: rmdir(path, *, dir_fd=None)
 
    Remove (delete) the directory *path*.  If the directory does not exist or is
-   not empty, an :exc:`FileNotFoundError` or an :exc:`OSError` is raised
+   not empty, a :exc:`FileNotFoundError` or an :exc:`OSError` is raised
    respectively.  In order to remove whole directory trees,
    :func:`shutil.rmtree` can be used.
 

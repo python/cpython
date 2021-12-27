@@ -653,74 +653,80 @@ re-ordered :meth:`__init__` parameter list.
 Default factory functions
 -------------------------
 
-   If a :func:`field` specifies a ``default_factory``, it is called with
-   zero arguments when a default value for the field is needed.  For
-   example, to create a new instance of a list, use::
+If a :func:`field` specifies a ``default_factory``, it is called with
+zero arguments when a default value for the field is needed.  For
+example, to create a new instance of a list, use::
 
-     mylist: list = field(default_factory=list)
+  mylist: list = field(default_factory=list)
 
-   If a field is excluded from :meth:`__init__` (using ``init=False``)
-   and the field also specifies ``default_factory``, then the default
-   factory function will always be called from the generated
-   :meth:`__init__` function.  This happens because there is no other
-   way to give the field an initial value.
+If a field is excluded from :meth:`__init__` (using ``init=False``)
+and the field also specifies ``default_factory``, then the default
+factory function will always be called from the generated
+:meth:`__init__` function.  This happens because there is no other
+way to give the field an initial value.
 
 Mutable default values
 ----------------------
 
-   Python stores default member variable values in class attributes.
-   Consider this example, not using dataclasses::
+Python stores default member variable values in class attributes.
+Consider this example, not using dataclasses::
 
-     class C:
-         x = []
-         def add(self, element):
-             self.x.append(element)
+  class C:
+      x = []
+      def add(self, element):
+          self.x.append(element)
 
-     o1 = C()
-     o2 = C()
-     o1.add(1)
-     o2.add(2)
-     assert o1.x == [1, 2]
-     assert o1.x is o2.x
+  o1 = C()
+  o2 = C()
+  o1.add(1)
+  o2.add(2)
+  assert o1.x == [1, 2]
+  assert o1.x is o2.x
 
-   Note that the two instances of class ``C`` share the same class
-   variable ``x``, as expected.
+Note that the two instances of class ``C`` share the same class
+variable ``x``, as expected.
 
-   Using dataclasses, *if* this code was valid::
+Using dataclasses, *if* this code was valid::
 
-     @dataclass
-     class D:
-         x: List = []
-         def add(self, element):
-             self.x += element
+  @dataclass
+  class D:
+      x: List = []
+      def add(self, element):
+          self.x += element
 
-   it would generate code similar to::
+it would generate code similar to::
 
-     class D:
-         x = []
-         def __init__(self, x=x):
-             self.x = x
-         def add(self, element):
-             self.x += element
+  class D:
+      x = []
+      def __init__(self, x=x):
+          self.x = x
+      def add(self, element):
+          self.x += element
 
-     assert D().x is D().x
+  assert D().x is D().x
 
-   This has the same issue as the original example using class ``C``.
-   That is, two instances of class ``D`` that do not specify a value
-   for ``x`` when creating a class instance will share the same copy
-   of ``x``.  Because dataclasses just use normal Python class
-   creation they also share this behavior.  There is no general way
-   for Data Classes to detect this condition.  Instead, the
-   :func:`dataclass` decorator will raise a :exc:`TypeError` if it
-   detects a default parameter of type ``list``, ``dict``, or ``set``.
-   This is a partial solution, but it does protect against many common
-   errors.
+This has the same issue as the original example using class ``C``.
+That is, two instances of class ``D`` that do not specify a value
+for ``x`` when creating a class instance will share the same copy
+of ``x``.  Because dataclasses just use normal Python class
+creation they also share this behavior.  There is no general way
+for Data Classes to detect this condition.  Instead, the
+:func:`dataclass` decorator will raise a :exc:`TypeError` if it
+detects an unhashable default parameter.  The assumption is that if
+a value is unhashable, it is mutable.  This is a partial solution,
+but it does protect against many common errors.
 
-   Using default factory functions is a way to create new instances of
-   mutable types as default values for fields::
+Using default factory functions is a way to create new instances of
+mutable types as default values for fields::
 
-     @dataclass
-     class D:
-         x: list = field(default_factory=list)
+  @dataclass
+  class D:
+      x: list = field(default_factory=list)
 
-     assert D().x is not D().x
+  assert D().x is not D().x
+
+.. versionchanged:: 3.11
+   Instead of looking for and disallowing objects of type ``list``,
+   ``dict``, or ``set``, unhashable objects are now not allowed as
+   default values.  Unhashability is used to approximate
+   mutability.

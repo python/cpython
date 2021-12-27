@@ -1,0 +1,2 @@
+Remove the ``YIELD_FROM`` instruction and replace it with the ``SEND``
+instruction which performs the same operation, but without the loop.

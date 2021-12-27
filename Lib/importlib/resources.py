@@ -4,7 +4,6 @@ from ._common import (
     as_file,
     files,
     Package,
-    Resource,
 )
 
 from ._legacy import (
@@ -15,6 +14,7 @@ from ._legacy import (
     read_text,
     is_resource,
     path,
+    Resource,
 )
 
 from importlib.abc import ResourceReader

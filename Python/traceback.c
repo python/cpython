@@ -447,7 +447,7 @@ display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int
         }
     }
 
-    io = PyImport_ImportModuleNoBlock("io");
+    io = PyImport_ImportModule("io");
     if (io == NULL)
         return -1;
     binary = _PyObject_CallMethodId(io, &PyId_open, "Os", filename, "rb");

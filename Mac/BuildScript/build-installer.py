@@ -246,10 +246,9 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="OpenSSL 1.1.1l",
-              url="https://www.openssl.org/source/openssl-1.1.1l.tar.gz",
-              checksum='ac0d4387f3ba0ad741b0580dd45f6ff3',
-              patches=['0001-Darwin-platform-allows-to-build-on-releases-before-Y.patch'],
+              name="OpenSSL 1.1.1m",
+              url="https://www.openssl.org/source/openssl-1.1.1m.tar.gz",
+              checksum='8ec70f665c145c3103f6e330f538a9db',
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
