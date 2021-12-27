@@ -4493,6 +4493,15 @@ long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
     Py_ssize_t newsize, hishift, i, j;
     twodigits accum;
 
+    if (IS_MEDIUM_VALUE(a)) {
+        stwodigits m, x;
+        digit shift;
+        m = medium_value(a);
+        shift = wordshift == 0 ? remshift : PyLong_SHIFT;
+        x = m < 0 ? ~(~m >> shift) : m >> shift;
+        return _PyLong_FromSTwoDigits(x);
+    }
+
     if (Py_SIZE(a) < 0) {
         /* Right shifting negative numbers is harder */
         PyLongObject *a1, *a2;
@@ -4566,10 +4575,16 @@ _PyLong_Rshift(PyObject *a, size_t shiftby)
 static PyObject *
 long_lshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
 {
-    /* This version due to Tim Peters */
     PyLongObject *z = NULL;
     Py_ssize_t oldsize, newsize, i, j;
     twodigits accum;
+
+    if (wordshift == 0 && IS_MEDIUM_VALUE(a)) {
+        stwodigits m = medium_value(a);
+        // bypass undefined shift operator behavior
+        stwodigits x = m < 0 ? -(-m << remshift) : m << remshift;
+        return _PyLong_FromSTwoDigits(x);
+    }
 
     oldsize = Py_ABS(Py_SIZE(a));
     newsize = oldsize + wordshift;
