@@ -4492,6 +4492,12 @@ long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
     PyLongObject *z = NULL;
     Py_ssize_t newsize, hishift, i, j;
     twodigits accum;
+    digit sticky;
+
+    /* Special-case a shift of zero. */
+    if (wordshift == 0 && remshift == 0) {
+        return long_long((PyObject *)a);
+    }
 
     if (IS_MEDIUM_VALUE(a)) {
         stwodigits m, x;
@@ -4503,17 +4509,60 @@ long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
     }
 
     if (Py_SIZE(a) < 0) {
-        /* Right shifting negative numbers is harder */
-        PyLongObject *a1, *a2;
-        a1 = (PyLongObject *) long_invert(a);
-        if (a1 == NULL)
+        /*
+            Right shifting negative numbers is harder. For a positive
+            integer a and nonnegative shift, we have:
+
+                (-a) >> shift == -((a + 2**shift - 1) >> shift).
+
+            With shift == wordshift*SHIFT + remshift, 0 <= remshift <= SHIFT,
+            (a + 2**shift - 1) >> shift is equal to
+
+                (a + 2**shift - 1) >> wordshift*SHIFT >> remshift.
+
+            If the bottom `wordshift` digits of a are all zero, this is the
+            equal to
+
+                ((a >> wordshift*SHIFT) + 2**remshift - 1) >> remshift.
+
+            Otherwise, it's equal to:
+
+                ((a >> wordshift*SHIFT) + 2**remshift) >> remshift
+        */
+
+        /* It's convenient for remshift to be positive below. Note that
+           we dealt with the case remshift == wordshift == 0 earlier. */
+        if (remshift == 0) {
+            remshift = PyLong_SHIFT;
+            wordshift -= 1;
+        }
+        assert(wordshift >= 0);
+
+        newsize = -Py_SIZE(a) - wordshift;
+        if (newsize <= 0) {
+            return PyLong_FromLong(-1);
+        }
+        hishift = PyLong_SHIFT - remshift;
+        z = _PyLong_New(newsize);
+        if (z == NULL) {
             return NULL;
-        a2 = (PyLongObject *) long_rshift1(a1, wordshift, remshift);
-        Py_DECREF(a1);
-        if (a2 == NULL)
-            return NULL;
-        z = (PyLongObject *) long_invert(a2);
-        Py_DECREF(a2);
+        }
+        Py_SET_SIZE(z, -newsize);
+
+        /* sticky is used to determine whether all dropped words are zero. */
+        sticky = 0;
+        for (j = 0; j < wordshift; j++) {
+            sticky |= a->ob_digit[j];
+        }
+        accum = a->ob_digit[j++] + ((digit)1U << remshift) - (sticky == 0);
+        accum >>= remshift;
+        for (i = 0; j < -Py_SIZE(a); i++, j++) {
+            accum += (twodigits)a->ob_digit[j] << hishift;
+            z->ob_digit[i] = (digit)(accum & PyLong_MASK);
+            accum >>= PyLong_SHIFT;
+        }
+        assert(i == newsize - 1);
+        z->ob_digit[i] = (digit)accum;
     }
     else {
         newsize = Py_SIZE(a) - wordshift;
@@ -4531,8 +4580,8 @@ long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
             accum >>= PyLong_SHIFT;
         }
         z->ob_digit[i] = (digit)accum;
-        z = maybe_small_long(long_normalize(z));
     }
+    z = maybe_small_long(long_normalize(z));
     return (PyObject *)z;
 }
 
