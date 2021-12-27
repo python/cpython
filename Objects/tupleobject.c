@@ -7,6 +7,7 @@
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_pyerrors.h"      // _Py_FatalRefcountError()
+#include "pycore_tuple.h"         // struct _Py_tuple_state()
 
 /*[clinic input]
 class tuple "PyTupleObject *" "&PyTuple_Type"
@@ -1066,7 +1067,7 @@ _PyTuple_ClearFreeList(PyInterpreterState *interp)
 
 
 PyStatus
-_PyTuple_Init(PyInterpreterState *interp)
+_PyTuple_InitGlobalObjects(PyInterpreterState *interp)
 {
     struct _Py_tuple_state *state = &interp->tuple;
     if (tuple_create_empty_tuple_singleton(state) < 0) {
@@ -1075,6 +1076,24 @@ _PyTuple_Init(PyInterpreterState *interp)
     return _PyStatus_OK();
 }
 
+
+PyStatus
+_PyTuple_InitTypes(PyInterpreterState *interp)
+{
+    if (!_Py_IsMainInterpreter(interp)) {
+        return _PyStatus_OK();
+    }
+
+    if (PyType_Ready(&PyTuple_Type) < 0) {
+        return _PyStatus_ERR("Can't initialize tuple type");
+    }
+
+    if (PyType_Ready(&PyTupleIter_Type) < 0) {
+        return _PyStatus_ERR("Can't initialize tuple iterator type");
+    }
+
+    return _PyStatus_OK();
+}
 
 void
 _PyTuple_Fini(PyInterpreterState *interp)

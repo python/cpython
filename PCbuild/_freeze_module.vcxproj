@@ -89,10 +89,13 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>Py_NO_ENABLE_SHARED;Py_BUILD_CORE;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Optimization>Disabled</Optimization>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <AdditionalDependencies>version.lib;ws2_32.lib;pathcch.lib;bcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -226,7 +229,9 @@
     <ClCompile Include="..\Python\structmember.c" />
     <ClCompile Include="..\Python\suggestions.c" />
     <ClCompile Include="..\Python\symtable.c" />
-    <ClCompile Include="..\Python\sysmodule.c" />
+    <ClCompile Include="..\Python\sysmodule.c">
+      <PreprocessorDefinitions>VPATH="$(PyVPath)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
     <ClCompile Include="..\Python\thread.c" />
     <ClCompile Include="..\Python\traceback.c" />
   </ItemGroup>
@@ -330,6 +335,27 @@
       <DeepIntFile>$(IntDir)stat.g.c</DeepIntFile>
       <DeepOutFile>$(PySourcePath)Python\deepfreeze\df.stat.c</DeepOutFile>
     </None>
+    <None Include="..\Lib\importlib\util.py">
+      <ModName>importlib.util</ModName>
+      <IntFile>$(IntDir)importlib.util.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\importlib.util.h</OutFile>
+      <DeepIntFile>$(IntDir)importlib.util.g.c</DeepIntFile>
+      <DeepOutFile>$(PySourcePath)Python\deepfreeze\df.importlib.util.c</DeepOutFile>
+    </None>
+    <None Include="..\Lib\importlib\machinery.py">
+      <ModName>importlib.machinery</ModName>
+      <IntFile>$(IntDir)importlib.machinery.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\importlib.machinery.h</OutFile>
+      <DeepIntFile>$(IntDir)importlib.machinery.g.c</DeepIntFile>
+      <DeepOutFile>$(PySourcePath)Python\deepfreeze\df.importlib.machinery.c</DeepOutFile>
+    </None>
+    <None Include="..\Lib\runpy.py">
+      <ModName>runpy</ModName>
+      <IntFile>$(IntDir)runpy.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\runpy.h</OutFile>
+      <DeepIntFile>$(IntDir)runpy.g.c</DeepIntFile>
+      <DeepOutFile>$(PySourcePath)Python\deepfreeze\df.runpy.c</DeepOutFile>
+    </None>
     <None Include="..\Lib\__hello__.py">
       <ModName>__hello__</ModName>
       <IntFile>$(IntDir)__hello__.g.h</IntFile>
@@ -409,7 +435,10 @@
     <Message Text="Updated files: @(_Updated->'%(Filename)%(Extension)',', ')"
              Condition="'@(_Updated)' != ''" Importance="high" />
   </Target>
-  <Target Name="_RebuildDeepFrozen" AfterTargets="_RebuildFrozen" Condition="$(Configuration) != 'PGUpdate'">
+  <Target Name="_RebuildDeepFrozen"
+          AfterTargets="_RebuildFrozen"
+          DependsOnTargets="FindPythonForBuild"
+          Condition="$(Configuration) != 'PGUpdate'">
     <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\scripts\deepfreeze.py" "%(None.OutFile)" "-m" "%(None.ModName)" -o "%(None.IntFile)"' />
 
     <Copy SourceFiles="%(None.IntFile)"

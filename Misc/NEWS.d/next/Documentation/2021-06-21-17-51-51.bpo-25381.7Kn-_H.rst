@@ -1,2 +1,0 @@
-In the extending chapter of the extending doc, update a paragraph about the
-global variables containing exception information.

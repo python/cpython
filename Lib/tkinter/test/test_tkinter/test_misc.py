@@ -201,6 +201,13 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
             root.clipboard_get()
 
     def test_winfo_rgb(self):
+
+        def assertApprox(col1, col2):
+            # A small amount of flexibility is required (bpo-45496)
+            # 33 is ~0.05% of 65535, which is a reasonable margin
+            for col1_channel, col2_channel in zip(col1, col2):
+                self.assertAlmostEqual(col1_channel, col2_channel, delta=33)
+
         root = self.root
         rgb = root.winfo_rgb
 
@@ -212,9 +219,9 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
                                       if get_tk_patchlevel() >= (8, 5, 12)
                                       else (0xF0F0, 0x0000, 0xF0F0))
         # #RRGGBB - extends each 8-bit hex value to be 16-bit.
-        self.assertEqual(rgb('#4a3c8c'), (0x4a4a, 0x3c3c, 0x8c8c))
+        assertApprox(rgb('#4a3c8c'), (0x4a4a, 0x3c3c, 0x8c8c))
         # #RRRRGGGGBBBB
-        self.assertEqual(rgb('#dede14143939'), (0xdede, 0x1414, 0x3939))
+        assertApprox(rgb('#dede14143939'), (0xdede, 0x1414, 0x3939))
         # Invalid string.
         with self.assertRaises(tkinter.TclError):
             rgb('#123456789a')

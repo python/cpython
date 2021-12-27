@@ -33,6 +33,22 @@ def bad_cleanup2():
     raise ValueError('bad cleanup2')
 
 
+class BufferedWriter:
+    def __init__(self):
+        self.result = ''
+        self.buffer = ''
+
+    def write(self, arg):
+        self.buffer += arg
+
+    def flush(self):
+        self.result += self.buffer
+        self.buffer = ''
+
+    def getvalue(self):
+        return self.result
+
+
 class Test_TestResult(unittest.TestCase):
     # Note: there are not separate tests for TestResult.wasSuccessful(),
     # TestResult.errors, TestResult.failures, TestResult.testsRun or
@@ -335,10 +351,13 @@ class Test_TestResult(unittest.TestCase):
         self.assertTrue(result.shouldStop)
 
     def testFailFastSetByRunner(self):
-        runner = unittest.TextTestRunner(stream=io.StringIO(), failfast=True)
+        stream = BufferedWriter()
+        runner = unittest.TextTestRunner(stream=stream, failfast=True)
         def test(result):
             self.assertTrue(result.failfast)
         result = runner.run(test)
+        stream.flush()
+        self.assertTrue(stream.getvalue().endswith('\n\nOK\n'))
 
 
 class Test_TextTestResult(unittest.TestCase):
@@ -462,6 +481,12 @@ class Test_TextTestResult(unittest.TestCase):
             self.fail('fail')
         def testError(self):
             raise Exception('error')
+        @unittest.expectedFailure
+        def testExpectedFailure(self):
+            self.fail('fail')
+        @unittest.expectedFailure
+        def testUnexpectedSuccess(self):
+            pass
         def testSubTestSuccess(self):
             with self.subTest('one', a=1):
                 pass
@@ -483,7 +508,7 @@ class Test_TextTestResult(unittest.TestCase):
                 raise self.tearDownError
 
     def _run_test(self, test_name, verbosity, tearDownError=None):
-        stream = io.StringIO()
+        stream = BufferedWriter()
         stream = unittest.runner._WritelnDecorator(stream)
         result = unittest.TextTestResult(stream, True, verbosity)
         test = self.Test(test_name)
@@ -496,6 +521,8 @@ class Test_TextTestResult(unittest.TestCase):
         self.assertEqual(self._run_test('testSkip', 1), 's')
         self.assertEqual(self._run_test('testFail', 1), 'F')
         self.assertEqual(self._run_test('testError', 1), 'E')
+        self.assertEqual(self._run_test('testExpectedFailure', 1), 'x')
+        self.assertEqual(self._run_test('testUnexpectedSuccess', 1), 'u')
 
     def testLongOutput(self):
         classname = f'{__name__}.{self.Test.__qualname__}'
@@ -507,6 +534,10 @@ class Test_TextTestResult(unittest.TestCase):
                          f'testFail ({classname}) ... FAIL\n')
         self.assertEqual(self._run_test('testError', 2),
                          f'testError ({classname}) ... ERROR\n')
+        self.assertEqual(self._run_test('testExpectedFailure', 2),
+                         f'testExpectedFailure ({classname}) ... expected failure\n')
+        self.assertEqual(self._run_test('testUnexpectedSuccess', 2),
+                         f'testUnexpectedSuccess ({classname}) ... unexpected success\n')
 
     def testDotsOutputSubTestSuccess(self):
         self.assertEqual(self._run_test('testSubTestSuccess', 1), '.')

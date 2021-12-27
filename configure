@@ -772,6 +772,7 @@ MODULE_TIME_FALSE
 MODULE_TIME_TRUE
 MODULE__IO_FALSE
 MODULE__IO_TRUE
+MODULES_SETUP_STDLIB
 MODULE_BUILDTYPE
 TEST_MODULES
 LIBRARY_DEPS
@@ -933,9 +934,12 @@ CONFIG_ARGS
 SOVERSION
 VERSION
 PYTHON_FOR_REGEN
+FREEZE_MODULE_DEPS
+FREEZE_MODULE
+FREEZE_MODULE_BOOTSTRAP_DEPS
+FREEZE_MODULE_BOOTSTRAP
 PYTHON_FOR_FREEZE
 PYTHON_FOR_BUILD
-FREEZE_MODULE
 host_os
 host_vendor
 host_cpu
@@ -991,7 +995,6 @@ SHELL'
 ac_subst_files=''
 ac_user_opts='
 enable_option_checking
-with_freeze_module
 with_build_python
 with_pkg_config
 enable_universalsdk
@@ -1004,6 +1007,7 @@ enable_shared
 enable_profiling
 with_pydebug
 with_trace_refs
+enable_pystats
 with_assertions
 enable_optimizations
 with_lto
@@ -1711,6 +1715,7 @@ Optional Features:
                           no)
   --enable-profiling      enable C-level code profiling with gprof (default is
                           no)
+  --enable-pystats        enable internal statistics gathering (default is no)
   --enable-optimizations  enable expensive, stable optimizations (PGO, etc.)
                           (default is no)
   --enable-loadable-sqlite-extensions
@@ -1726,11 +1731,9 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-freeze-module=Programs/_freeze_module
-                          path to _freeze_module binary for cross compiling
   --with-build-python=python3.11
                           path to build python binary for cross compiling
-                          (default: python3.11)
+                          (default: _bootstrap_python or python3.11)
   --with-pkg-config=[yes|no|check]
                           use pkg-config to detect build options (default is
                           check)
@@ -3196,52 +3199,17 @@ fi
 rm -f pybuilddir.txt
 
 
-# Check whether --with-freeze-module was given.
-if test "${with_freeze_module+set}" = set; then :
-  withval=$with_freeze_module;
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-freeze-module" >&5
-$as_echo_n "checking for --with-freeze-module... " >&6; }
-    if test "x$cross_compiling" = xno; then :
-  as_fn_error $? "--with-freeze-module only applies to cross compiling" "$LINENO" 5
-fi
-    if test "$with_freeze_module" = yes -o "$with_freeze_module" = no; then
-      as_fn_error $? "invalid --with-freeze-module option: expected path, not \"$with_freeze_module\"" "$LINENO" 5
-    fi
-    if ! $(command -v "$with_freeze_module" >/dev/null 2>&1); then
-      as_fn_error $? "invalid or missing freeze module binary \"$with_freeze_module\"" "$LINENO" 5
-    fi
-    FREEZE_MODULE="$with_freeze_module"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FREEZE_MODULE" >&5
-$as_echo "$FREEZE_MODULE" >&6; }
-
-else
-
-    if test "x$cross_compiling" = xyes; then :
-  as_fn_error $? "Cross compiling requires --with-freeze-module" "$LINENO" 5
-
-fi
-    FREEZE_MODULE=Programs/_freeze_module
-
-
-fi
-
-
-
-
 # Check whether --with-build-python was given.
 if test "${with_build_python+set}" = set; then :
   withval=$with_build_python;
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-build-python" >&5
 $as_echo_n "checking for --with-build-python... " >&6; }
 
-    if test "x$cross_compiling" = xno; then :
-  as_fn_error $? "--with-build-python only applies to cross compiling" "$LINENO" 5
-fi
     if test "x$with_build_python" = xyes; then :
   with_build_python=python$PACKAGE_VERSION
 fi
     if test "x$with_build_python" = xno; then :
-  as_fn_error $? "invalid --with-build-python option: expected path, not \"no\"" "$LINENO" 5
+  as_fn_error $? "invalid --with-build-python option: expected path or \"yes\", not \"no\"" "$LINENO" 5
 fi
 
     if ! $(command -v "$with_build_python" >/dev/null 2>&1); then
@@ -3275,6 +3243,27 @@ fi
 $as_echo_n "checking for Python interpreter freezing... " >&6; }
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PYTHON_FOR_FREEZE" >&5
 $as_echo "$PYTHON_FOR_FREEZE" >&6; }
+
+
+if test "x$cross_compiling" = xyes; then :
+
+        FREEZE_MODULE_BOOTSTRAP='$(PYTHON_FOR_FREEZE) $(srcdir)/Programs/_freeze_module.py'
+    FREEZE_MODULE_BOOTSTRAP_DEPS='$(srcdir)/Programs/_freeze_module.py'
+    FREEZE_MODULE='$(FREEZE_MODULE_BOOTSTRAP)'
+    FREEZE_MODULE_DEPS='$(FREEZE_MODULE_BOOTSTRAP_DEPS)'
+
+else
+
+        FREEZE_MODULE_BOOTSTRAP='./Programs/_freeze_module'
+    FREEZE_MODULE_BOOTSTRAP_DEPS="Programs/_freeze_module"
+    FREEZE_MODULE='$(PYTHON_FOR_FREEZE) $(srcdir)/Programs/_freeze_module.py'
+    FREEZE_MODULE_DEPS="_bootstrap_python \$(srcdir)/Programs/_freeze_module.py"
+
+
+fi
+
+
+
 
 
 for ac_prog in python$PACKAGE_VERSION python3.10 python3.9 python3.8 python3.7 python3.6 python3 python
@@ -6172,8 +6161,7 @@ if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ANDROID_API_LEVEL" >&5
 $as_echo "$ANDROID_API_LEVEL" >&6; }
   if test -z "$ANDROID_API_LEVEL"; then
-    echo 'Fatal: you must define __ANDROID_API__'
-    exit 1
+    as_fn_error $? "Fatal: you must define __ANDROID_API__" "$LINENO" 5
   fi
 
 cat >>confdefs.h <<_ACEOF
@@ -6196,11 +6184,14 @@ fi
 rm -f conftest.c conftest.out
 
 # Check for unsupported systems
-case $ac_sys_system/$ac_sys_release in
-atheos*|Linux*/1*)
-   echo This system \($ac_sys_system/$ac_sys_release\) is no longer supported.
-   echo See README for details.
-   exit 1;;
+case $ac_sys_system/$ac_sys_release in #(
+  atheos*|Linux*/1*) :
+
+    as_fn_error $? "This system \($ac_sys_system/$ac_sys_release\) is no longer supported. See README for details." "$LINENO" 5
+
+ ;; #(
+  *) :
+     ;;
 esac
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-suffix" >&5
@@ -6924,6 +6915,29 @@ if test "$with_trace_refs" = "yes"
 then
 
 $as_echo "#define Py_TRACE_REFS 1" >>confdefs.h
+
+fi
+
+
+# Check for --enable-pystats
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-pystats" >&5
+$as_echo_n "checking for --enable-pystats... " >&6; }
+# Check whether --enable-pystats was given.
+if test "${enable_pystats+set}" = set; then :
+  enableval=$enable_pystats;
+else
+  enable_pystats=no
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_pystats" >&5
+$as_echo "$enable_pystats" >&6; }
+
+if test "x$enable_pystats" = xyes; then :
+
+
+$as_echo "#define Py_STATS 1" >>confdefs.h
+
 
 fi
 
@@ -10541,8 +10555,8 @@ if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
 _ACEOF
 
     have_uuid=yes
-    LIBUUID_CFLAGS=
-    LIBUUID_LIBS=
+    LIBUUID_CFLAGS=${LIBUUID_CFLAGS-""}
+    LIBUUID_LIBS=${LIBUUID_LIBS-""}
 
 fi
 done
@@ -10615,9 +10629,6 @@ fi
 	echo "$LIBUUID_PKG_ERRORS" >&5
 
 
-      LIBUUID_LIBS="-luuid"
-      LIBUUID_CFLAGS=
-      have_uuid=no
       for ac_header in uuid/uuid.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "uuid/uuid.h" "ac_cv_header_uuid_uuid_h" "$ac_includes_default"
@@ -10735,6 +10746,12 @@ LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
 
 
+        if test "x$have_uuid" = xyes; then :
+
+          LIBUUID_CFLAGS=${LIBUUID_CFLAGS-""}
+          LIBUUID_LIBS=${LIBUUID_LIBS-"-luuid"}
+
+fi
 
 fi
 
@@ -10746,9 +10763,6 @@ elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
-      LIBUUID_LIBS="-luuid"
-      LIBUUID_CFLAGS=
-      have_uuid=no
       for ac_header in uuid/uuid.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "uuid/uuid.h" "ac_cv_header_uuid_uuid_h" "$ac_includes_default"
@@ -10866,6 +10880,12 @@ LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
 
 
+        if test "x$have_uuid" = xyes; then :
+
+          LIBUUID_CFLAGS=${LIBUUID_CFLAGS-""}
+          LIBUUID_LIBS=${LIBUUID_LIBS-"-luuid"}
+
+fi
 
 fi
 
@@ -10887,6 +10907,37 @@ $as_echo "yes" >&6; }
 
 fi
 
+fi
+
+if test "x$have_uuid" = xmissing; then :
+
+  for ac_header in uuid/uuid.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "uuid/uuid.h" "ac_cv_header_uuid_uuid_h" "$ac_includes_default"
+if test "x$ac_cv_header_uuid_uuid_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_UUID_UUID_H 1
+_ACEOF
+
+    ac_fn_c_check_func "$LINENO" "uuid_generate_time" "ac_cv_func_uuid_generate_time"
+if test "x$ac_cv_func_uuid_generate_time" = xyes; then :
+
+      have_uuid=yes
+      LIBUUID_CFLAGS=${LIBUUID_CFLAGS-""}
+      LIBUUID_LIBS=${LIBUUID_LIBS-""}
+
+fi
+
+
+fi
+
+done
+
+
+fi
+
+if test "x$have_uuid" = xmissing; then :
+  have_uuid=no
 fi
 
 # 'Real Time' functions on Solaris
@@ -11324,8 +11375,8 @@ $as_echo "$with_system_expat" >&6; }
 
 if test "x$with_system_expat" = xyes; then :
 
-  LIBEXPAT_CFLAGS=""
-  LIBEXPAT_LDFLAGS="-lexpat"
+  LIBEXPAT_CFLAGS=${LIBEXPAT_CFLAGS-""}
+  LIBEXPAT_LDFLAGS=${LIBEXPAT_LDFLAGS-"-lexpat"}
   LIBEXPAT_INTERNAL=
 
 else
@@ -11398,8 +11449,8 @@ $as_echo "$with_system_libmpdec" >&6; }
 
 if test "x$with_system_libmpdec" = xyes; then :
 
-  LIBMPDEC_CFLAGS=""
-  LIBMPDEC_LDFLAGS="-lmpdec"
+  LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
+  LIBMPDEC_LDFLAGS=${LIBMPDEC_LDFLAGS-"-lmpdec"}
   LIBMPDEC_INTERNAL=
 
 else
@@ -11451,21 +11502,9 @@ esac
 
 libmpdec_machine=unknown
 if test "$libmpdec_system" = Darwin; then
-    case $MACOSX_DEFAULT_ARCH in #(
-  i386) :
-    libmpdec_machine=ansi32 ;; #(
-  ppc) :
-    libmpdec_machine=ansi32 ;; #(
-  x86_64) :
-    libmpdec_machine=x64 ;; #(
-  ppc64) :
-    libmpdec_machine=ansi64 ;; #(
-  arm64) :
-    libmpdec_machine=ansi64 ;; #(
-  *) :
+    # universal here means: build libmpdec with the same arch options
+    # the python interpreter was built with
     libmpdec_machine=universal
-     ;;
-esac
 elif test $ac_cv_sizeof_size_t -eq 8; then
     if test "$ac_cv_gcc_asm_for_x64" = yes; then
         libmpdec_machine=x64
@@ -11586,7 +11625,7 @@ fi
 	echo "$LIBNSL_PKG_ERRORS" >&5
 
 
-  LIBNSL_CFLAGS=
+  LIBNSL_CFLAGS=${LIBNSL_CFLAGS-""}
   save_CFLAGS=$CFLAGS
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
@@ -11660,19 +11699,20 @@ LIBS=$save_LIBS
 
   case $ac_cv_search_yp_match in #(
   no) :
-    LIBNSL_LIBS= ;; #(
+    libnsl="" ;; #(
   "none required") :
-    LIBNSL_LIBS= ;; #(
+    libnsl="" ;; #(
   *) :
-    LIBNSL_LIBS=$ac_cv_search_yp_match
+    libnsl="$ac_cv_search_yp_match"
    ;;
 esac
+  LIBNSL_LIBS=${LIBNSL_LIBS-$libnsl}
 
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
-  LIBNSL_CFLAGS=
+  LIBNSL_CFLAGS=${LIBNSL_CFLAGS-""}
   save_CFLAGS=$CFLAGS
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
@@ -11746,13 +11786,14 @@ LIBS=$save_LIBS
 
   case $ac_cv_search_yp_match in #(
   no) :
-    LIBNSL_LIBS= ;; #(
+    libnsl="" ;; #(
   "none required") :
-    LIBNSL_LIBS= ;; #(
+    libnsl="" ;; #(
   *) :
-    LIBNSL_LIBS=$ac_cv_search_yp_match
+    libnsl="$ac_cv_search_yp_match"
    ;;
 esac
+  LIBNSL_LIBS=${LIBNSL_LIBS-$libnsl}
 
 else
 	LIBNSL_CFLAGS=$pkg_cv_LIBNSL_CFLAGS
@@ -11853,16 +11894,16 @@ fi
 	echo "$LIBSQLITE3_PKG_ERRORS" >&5
 
 
-    LIBSQLITE3_LIBS="-lsqlite3"
-    LIBSQLITE3_CFLAGS=
+    LIBSQLITE3_CFLAGS=${LIBSQLITE3_CFLAGS-""}
+    LIBSQLITE3_LIBS=${LIBSQLITE3_LIBS-"-lsqlite3"}
 
 
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
-    LIBSQLITE3_LIBS="-lsqlite3"
-    LIBSQLITE3_CFLAGS=
+    LIBSQLITE3_CFLAGS=${LIBSQLITE3_CFLAGS-""}
+    LIBSQLITE3_LIBS=${LIBSQLITE3_LIBS-"-lsqlite3"}
 
 
 else
@@ -12133,7 +12174,7 @@ $as_echo "$ac_cv_lib_gdbm_gdbm_open" >&6; }
 if test "x$ac_cv_lib_gdbm_gdbm_open" = xyes; then :
 
       have_gdbm=yes
-      GDBM_LIBS="$GDBM_LIBS -lgdbm"
+      GDBM_LIBS=${GDBM_LIBS-"-lgdbm"}
 
 else
   have_gdbm=no
@@ -13135,16 +13176,19 @@ fi
 if test "$ipv6" = "yes" -a "$ipv6lib" != "none"; then
 	if test -d $ipv6libdir -a -f $ipv6libdir/lib$ipv6lib.a; then
 		LIBS="-L$ipv6libdir -l$ipv6lib $LIBS"
-		echo "using lib$ipv6lib"
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: using lib$ipv6lib" >&5
+$as_echo "$as_me: using lib$ipv6lib" >&6;}
 	else
-		if test $ipv6trylibc = "yes"; then
-			echo "using libc"
-		else
-			echo 'Fatal: no $ipv6lib library found.  cannot continue.'
-			echo "You need to fetch lib$ipv6lib.a from appropriate"
-			echo 'ipv6 kit and compile beforehand.'
-			exit 1
-		fi
+    if test "x$ipv6trylibc" = xyes; then :
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: using libc" >&5
+$as_echo "$as_me: using libc" >&6;}
+
+else
+
+      as_fn_error $? "No $ipv6lib library found; cannot continue. You need to fetch lib$ipv6lib.a from appropriate ipv6 kit and compile beforehand." "$LINENO" 5
+
+fi
 	fi
 fi
 
@@ -13255,7 +13299,13 @@ fi
 
 if test -z "$with_pymalloc"
 then
+    case $ac_sys_system in #(
+  Emscripten) :
+    with_pymalloc="no" ;; #(
+  *) :
     with_pymalloc="yes"
+   ;;
+esac
 fi
 if test "$with_pymalloc" != "no"
 then
@@ -14605,8 +14655,8 @@ $as_echo "$ac_cv_lib_z_gzread" >&6; }
 if test "x$ac_cv_lib_z_gzread" = xyes; then :
 
         have_zlib=yes
-        ZLIB_CFLAGS=
-        ZLIB_LIBS=-lz
+        ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
+        ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
 $as_echo_n "checking for inflateCopy in -lz... " >&6; }
 if ${ac_cv_lib_z_inflateCopy+:} false; then :
@@ -14727,8 +14777,8 @@ $as_echo "$ac_cv_lib_z_gzread" >&6; }
 if test "x$ac_cv_lib_z_gzread" = xyes; then :
 
         have_zlib=yes
-        ZLIB_CFLAGS=
-        ZLIB_LIBS=-lz
+        ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
+        ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
 $as_echo_n "checking for inflateCopy in -lz... " >&6; }
 if ${ac_cv_lib_z_inflateCopy+:} false; then :
@@ -14924,8 +14974,8 @@ $as_echo "$ac_cv_lib_bz2_BZ2_bzCompress" >&6; }
 if test "x$ac_cv_lib_bz2_BZ2_bzCompress" = xyes; then :
 
         have_bzip2=yes
-        BZIP2_CFLAGS=
-        BZIP2_LIBS=-lbz2
+        BZIP2_CFLAGS=${BZIP2_CFLAGS-""}
+        BZIP2_LIBS=${BZIP2_LIBS-"-lbz2"}
 
 else
   have_bzip2=no
@@ -15003,8 +15053,8 @@ $as_echo "$ac_cv_lib_bz2_BZ2_bzCompress" >&6; }
 if test "x$ac_cv_lib_bz2_BZ2_bzCompress" = xyes; then :
 
         have_bzip2=yes
-        BZIP2_CFLAGS=
-        BZIP2_LIBS=-lbz2
+        BZIP2_CFLAGS=${BZIP2_CFLAGS-""}
+        BZIP2_LIBS=${BZIP2_LIBS-"-lbz2"}
 
 else
   have_bzip2=no
@@ -15146,8 +15196,8 @@ $as_echo "$ac_cv_lib_lzma_lzma_easy_encoder" >&6; }
 if test "x$ac_cv_lib_lzma_lzma_easy_encoder" = xyes; then :
 
         have_liblzma=yes
-        LIBLZMA_CFLAGS=
-        LIBLZMA_LIBS=-llzma
+        LIBLZMA_CFLAGS=${LIBLZMA_CFLAGS-""}
+        LIBLZMA_LIBS=${LIBLZMA_LIBS-"-llzma"}
 
 else
   have_liblzma=no
@@ -15225,8 +15275,8 @@ $as_echo "$ac_cv_lib_lzma_lzma_easy_encoder" >&6; }
 if test "x$ac_cv_lib_lzma_lzma_easy_encoder" = xyes; then :
 
         have_liblzma=yes
-        LIBLZMA_CFLAGS=
-        LIBLZMA_LIBS=-llzma
+        LIBLZMA_CFLAGS=${LIBLZMA_CFLAGS-""}
+        LIBLZMA_LIBS=${LIBLZMA_LIBS-"-llzma"}
 
 else
   have_liblzma=no
@@ -15826,10 +15876,11 @@ if test "$ac_res" != no; then :
       $as_echo "#define HAVE_CRYPT_R 1" >>confdefs.h
 
       if test "$ac_cv_search_crypt_r" = "none required"; then
-        LIBCRYPT_LIBS=
+        libcrypt=
       else
-        LIBCRYPT_LIBS="$ac_cv_search_crypt_r"
+        libcrypt="$ac_cv_search_crypt_r"
       fi
+      LIBCRYPT_LIBS=${LIBCRYPT_LIBS-$libcrypt}
 
 fi
 
@@ -15908,10 +15959,11 @@ if test "$ac_res" != no; then :
       $as_echo "#define HAVE_CRYPT_R 1" >>confdefs.h
 
       if test "$ac_cv_search_crypt_r" = "none required"; then
-        LIBCRYPT_LIBS=
+        libcrypt=
       else
-        LIBCRYPT_LIBS="$ac_cv_search_crypt_r"
+        libcrypt="$ac_cv_search_crypt_r"
       fi
+      LIBCRYPT_LIBS=${LIBCRYPT_LIBS-$libcrypt}
 
 fi
 
@@ -16496,12 +16548,11 @@ fi
 
 if test "$ac_cv_func_getaddrinfo" = no -o "$ac_cv_buggy_getaddrinfo" = yes
 then
-	if test $ipv6 = yes
-	then
-		echo 'Fatal: You must get working getaddrinfo() function.'
-		echo '       or you can specify "--disable-ipv6"'.
-		exit 1
-	fi
+  if test "x$ipv6" = xyes; then :
+
+    as_fn_error $? "You must get working getaddrinfo() function or pass the \"--disable-ipv6\" option to configure." "$LINENO" 5
+
+fi
 else
 
 $as_echo "#define HAVE_GETADDRINFO 1" >>confdefs.h
@@ -21121,12 +21172,22 @@ fi
 
 if test "$enable_test_modules" = no; then
     TEST_MODULES=no
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
 else
+    case $ac_sys_system in #(
+  Emscripten) :
+    TEST_MODULES=no ;; #(
+  *) :
     TEST_MODULES=yes
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+     ;;
+esac
+fi
+if test "x$TEST_MODULES" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
 fi
 
 
@@ -21145,7 +21206,7 @@ case $ac_sys_system in #(
     py_stdlib_not_available="_scproxy spwd" ;; #(
   Emscripten) :
 
-    py_stdlib_not_available="_curses _curses_panel _dbm _gdbm _multiprocessing _posixshmem _posixsubprocess _scproxy _xxsubinterpreters fcntl grp nis ossaudiodev resource spwd syslog termios"
+    py_stdlib_not_available="_ctypes _curses _curses_panel _dbm _gdbm _multiprocessing _posixshmem _posixsubprocess _scproxy _tkinter _xxsubinterpreters fcntl grp nis ossaudiodev resource readline spwd syslog termios"
    ;; #(
   *) :
     py_stdlib_not_available="_scproxy"
@@ -21159,6 +21220,20 @@ case $host_cpu in #(
     MODULE_BUILDTYPE=${MODULE_BUILDTYPE:-shared}
  ;;
 esac
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for additional Modules/Setup files" >&5
+$as_echo_n "checking for additional Modules/Setup files... " >&6; }
+case $ac_sys_system in #(
+  Emscripten) :
+    MODULES_SETUP_STDLIB=Modules/Setup.stdlib ;; #(
+  *) :
+    MODULES_SETUP_STDLIB=
+ ;;
+esac
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $MODULES_SETUP_STDLIB" >&5
+$as_echo "$MODULES_SETUP_STDLIB" >&6; }
+
 
 
 
@@ -25045,28 +25120,34 @@ $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
 
 
-echo "creating Modules/Setup.local" >&6
+{ $as_echo "$as_me:${as_lineno-$LINENO}: creating Modules/Setup.local" >&5
+$as_echo "$as_me: creating Modules/Setup.local" >&6;}
 if test ! -f Modules/Setup.local
 then
 	echo "# Edit this file for local setup changes" >Modules/Setup.local
 fi
 
-echo "creating Makefile" >&6
+{ $as_echo "$as_me:${as_lineno-$LINENO}: creating Makefile" >&5
+$as_echo "$as_me: creating Makefile" >&6;}
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
-			Modules/Setup.local $srcdir/Modules/Setup.bootstrap $srcdir/Modules/Setup
+			Modules/Setup.local $MODULES_SETUP_STDLIB $srcdir/Modules/Setup.bootstrap $srcdir/Modules/Setup
 mv config.c Modules
 
 if test -z "$PKG_CONFIG"; then
-  echo "" >&6
-  echo "pkg-config is missing. Some dependencies may not be detected correctly." >&6
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: pkg-config is missing. Some dependencies may not be detected correctly." >&5
+$as_echo "$as_me: WARNING: pkg-config is missing. Some dependencies may not be detected correctly." >&2;}
 fi
 
 if test "$Py_OPT" = 'false' -a "$Py_DEBUG" != 'true'; then
-    echo "" >&6
-    echo "" >&6
-    echo "If you want a release build with all stable optimizations active (PGO, etc)," >&6
-    echo "please run ./configure --enable-optimizations" >&6
-    echo "" >&6
-    echo "" >&6
+  { $as_echo "$as_me:${as_lineno-$LINENO}:
+
+If you want a release build with all stable optimizations active (PGO, etc),
+please run ./configure --enable-optimizations
+" >&5
+$as_echo "$as_me:
+
+If you want a release build with all stable optimizations active (PGO, etc),
+please run ./configure --enable-optimizations
+" >&6;}
 fi

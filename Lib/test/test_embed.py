@@ -575,7 +575,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         return configs
 
     def get_expected_config(self, expected_preconfig, expected,
-                            env, api, modify_path_cb=None):
+                            env, api, modify_path_cb=None, cwd=None):
         configs = self._get_expected_config()
 
         pre_config = configs['pre_config']
@@ -618,6 +618,14 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             expected['base_executable'] = default_executable
         if expected['program_name'] is self.GET_DEFAULT_CONFIG:
             expected['program_name'] = './_testembed'
+            if MS_WINDOWS:
+                # follow the calculation in getpath.py
+                tmpname = expected['program_name'] + '.exe'
+                if cwd:
+                    tmpname = os.path.join(cwd, tmpname)
+                if os.path.isfile(tmpname):
+                    expected['program_name'] += '.exe'
+                del tmpname
 
         config = configs['config']
         for key, value in expected.items():
@@ -711,7 +719,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.get_expected_config(expected_preconfig,
                                  expected_config,
                                  env,
-                                 api, modify_path_cb)
+                                 api, modify_path_cb, cwd)
 
         out, err = self.run_embedded_interpreter(testname,
                                                  env=env, cwd=cwd)
@@ -1292,11 +1300,16 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_init_pybuilddir_win32(self):
         # Test path configuration with pybuilddir.txt configuration file
 
-        with self.tmpdir_with_python(r'PCbuild\arch') as tmpdir:
+        vpath = sysconfig.get_config_var("VPATH")
+        subdir = r'PCbuild\arch'
+        if os.path.normpath(vpath).count(os.sep) == 2:
+            subdir = os.path.join(subdir, 'instrumented')
+
+        with self.tmpdir_with_python(subdir) as tmpdir:
             # The prefix is dirname(executable) + VPATH
-            prefix = os.path.normpath(os.path.join(tmpdir, r'..\..'))
+            prefix = os.path.normpath(os.path.join(tmpdir, vpath))
             # The stdlib dir is dirname(executable) + VPATH + 'Lib'
-            stdlibdir = os.path.normpath(os.path.join(tmpdir, r'..\..\Lib'))
+            stdlibdir = os.path.normpath(os.path.join(tmpdir, vpath, 'Lib'))
 
             filename = os.path.join(tmpdir, 'pybuilddir.txt')
             with open(filename, "w", encoding="utf8") as fp:
@@ -1354,6 +1367,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             if not MS_WINDOWS:
                 paths[-1] = lib_dynload
             else:
+                # Include DLLs directory as well
+                paths.insert(1, '.\\DLLs')
                 for index, path in enumerate(paths):
                     if index == 0:
                         # Because we copy the DLLs into tmpdir as well, the zip file

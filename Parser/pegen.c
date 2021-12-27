@@ -88,7 +88,7 @@ init_normalization(Parser *p)
     if (p->normalize) {
         return 1;
     }
-    PyObject *m = PyImport_ImportModuleNoBlock("unicodedata");
+    PyObject *m = PyImport_ImportModule("unicodedata");
     if (!m)
     {
         return 0;
@@ -675,31 +675,13 @@ _PyPegen_number_token(Parser *p)
                            t->end_col_offset, p->arena);
 }
 
-static int // bool
-newline_in_string(Parser *p, const char *cur)
-{
-    for (const char *c = cur; c >= p->tok->buf; c--) {
-        if (*c == '\'' || *c == '"') {
-            return 1;
-        }
-    }
-    return 0;
-}
-
 /* Check that the source for a single input statement really is a single
    statement by looking at what is left in the buffer after parsing.
    Trailing whitespace and comments are OK. */
 static int // bool
 bad_single_statement(Parser *p)
 {
-    const char *cur = strchr(p->tok->buf, '\n');
-
-    /* Newlines are allowed if preceded by a line continuation character
-       or if they appear inside a string. */
-    if (!cur || (cur != p->tok->buf && *(cur - 1) == '\\')
-             || newline_in_string(p, cur)) {
-        return 0;
-    }
+    char *cur = p->tok->cur;
     char c = *cur;
 
     for (;;) {
@@ -833,6 +815,7 @@ void *
 _PyPegen_run_parser(Parser *p)
 {
     void *res = _PyPegen_parse(p);
+    assert(p->level == 0);
     if (res == NULL) {
         if (PyErr_Occurred() && !PyErr_ExceptionMatches(PyExc_SyntaxError)) {
             return NULL;

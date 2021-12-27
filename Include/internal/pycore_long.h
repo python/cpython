@@ -8,18 +8,33 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_interp.h"        // PyInterpreterState.small_ints
-#include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_global_objects.h"  // _PY_NSMALLNEGINTS
+#include "pycore_runtime.h"       // _PyRuntime
+
+
+/* runtime lifecycle */
+
+extern PyStatus _PyLong_InitTypes(PyInterpreterState *);
+
+
+/* other API */
+
+#define _PyLong_SMALL_INTS _Py_SINGLETON(small_ints)
+
+// _PyLong_GetZero() and _PyLong_GetOne() must always be available
+#if _PY_NSMALLPOSINTS < 2
+#  error "_PY_NSMALLPOSINTS must be greater than 1"
+#endif
 
 // Return a borrowed reference to the zero singleton.
 // The function cannot return NULL.
 static inline PyObject* _PyLong_GetZero(void)
-{ return (PyObject *)&_PyRuntime.small_ints[_PY_NSMALLNEGINTS]; }
+{ return (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS]; }
 
 // Return a borrowed reference to the one singleton.
 // The function cannot return NULL.
 static inline PyObject* _PyLong_GetOne(void)
-{ return (PyObject *)&_PyRuntime.small_ints[_PY_NSMALLNEGINTS+1]; }
+{ return (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS+1]; }
 
 PyObject *_PyLong_Add(PyLongObject *left, PyLongObject *right);
 PyObject *_PyLong_Multiply(PyLongObject *left, PyLongObject *right);
