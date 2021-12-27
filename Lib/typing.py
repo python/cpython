@@ -2458,12 +2458,17 @@ class NewType:
             self.__module__ = def_mod
 
     def __mro_entries__(cls, bases):
-        new_type_name = bases[0].__name__
-        current_name = cls.__name__
-        raise TypeError(
-            f'Cannot subclass {new_type_name}, perhaps you were looking for: '
-            f'{current_name} = NewType({current_name!r}, {new_type_name})'
-        )
+        new_type_name = cls.__name__
+
+        class Dummy:
+            def __init_subclass__(cls):
+                current_name = cls.__name__
+                raise TypeError(
+                    f'Cannot subclass {new_type_name}, perhaps you were looking for: '
+                    f'{current_name} = NewType({current_name!r}, {new_type_name})'
+                )
+
+        return (Dummy,)
 
     def __repr__(self):
         return f'{self.__module__}.{self.__qualname__}'
