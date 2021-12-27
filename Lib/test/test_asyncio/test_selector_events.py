@@ -1,5 +1,6 @@
 """Tests for selector_events.py"""
 
+import sys
 import selectors
 import socket
 import unittest
@@ -804,6 +805,7 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         self.sock.close.assert_called_with()
         self.protocol.connection_lost.assert_called_with(None)
 
+    @unittest.skipIf(sys.flags.optimize, "Assertions are disabled in optimized mode")
     def test_write_ready_no_data(self):
         transport = self.socket_transport()
         # This is an internal error.
