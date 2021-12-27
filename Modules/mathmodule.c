@@ -3574,7 +3574,7 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
             uint64_t comb_odd_part = reduced_factorial_odd_part[ni]
                                    * inverted_factorial_odd_part[ki]
                                    * inverted_factorial_odd_part[ni - ki];
-            int shift = _Py_popcount32(ni ^ ki ^ (ni - ki));
+            int shift = _Py_popcount32((uint32_t)(ni ^ ki ^ (ni - ki)));
             result = PyLong_FromUnsignedLongLong(comb_odd_part << shift);
             goto done;
         }
