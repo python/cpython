@@ -2,14 +2,14 @@ import struct
 
 
 def load_tzdata(key):
-    from importlib.resources import files
+    from importlib import resources
 
     components = key.split("/")
     package_name = ".".join(["tzdata.zoneinfo"] + components[:-1])
     resource_name = components[-1]
 
     try:
-        return files(package_name).joinpath(resource_name).open('rb')
+        return resources.files(package_name).joinpath(resource_name).open("rb")
     except (ImportError, FileNotFoundError, UnicodeEncodeError):
         # There are three types of exception that can be raised that all amount
         # to "we cannot find this key":
