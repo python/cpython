@@ -226,22 +226,16 @@ class UstarReadTest(ReadTest, unittest.TestCase):
         self.add_dir_and_getmember('a'*101)
 
     def add_dir_and_getmember(self, name):
-        tar = tarfile.open(tmpname, 'w')
-        cwd = os.getcwd()
-        try:
-            os.chdir(TEMPDIR)
-            os.mkdir(name)
-            tar.add(name)
-        finally:
-            os.rmdir(name)
-            os.chdir(cwd)
-            tar.close()
-        tar = tarfile.open(tmpname)
-        try:
-            tar.getmember(name)
-            tar.getmember(name + '/')
-        finally:
-            tar.close()
+        with os_helper.temp_cwd():
+            with tarfile.open(tmpname, 'w') as tar:
+                try:
+                    os.mkdir(name)
+                    tar.add(name)
+                finally:
+                    os.rmdir(name)
+            with tarfile.open(tmpname) as tar:
+                tar.getmember(name)
+                tar.getmember(name + '/')
 
 class GzipUstarReadTest(GzipTest, UstarReadTest):
     pass
