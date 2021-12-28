@@ -4610,7 +4610,6 @@ _PyLong_Rshift(PyObject *a, size_t shiftby)
     if (Py_SIZE(a) == 0) {
         return PyLong_FromLong(0);
     }
-
     wordshift = shiftby / PyLong_SHIFT;
     remshift = shiftby % PyLong_SHIFT;
     return long_rshift1((PyLongObject *)a, wordshift, remshift);
