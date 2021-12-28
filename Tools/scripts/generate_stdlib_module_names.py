@@ -12,7 +12,6 @@ SRC_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 STDLIB_PATH = os.path.join(SRC_DIR, 'Lib')
 MODULES_SETUP = os.path.join(SRC_DIR, 'Modules', 'Setup')
 SETUP_PY = os.path.join(SRC_DIR, 'setup.py')
-TEST_EMBED = os.path.join(SRC_DIR, 'Programs', '_testembed')
 
 IGNORE = {
     '__init__',
