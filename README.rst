@@ -236,6 +236,7 @@ All current PEPs, as well as guidelines for submitting a new PEP, are listed at
 Release Schedule
 ----------------
 
+As of 2021-12-23, Python 3.6 has reached ``end-of-life`` status.
 See :pep:`494` for Python 3.6 release details.
 
 
