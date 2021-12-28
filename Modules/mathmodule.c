@@ -3482,7 +3482,7 @@ static uint64_t reduced_factorial_odd_part[] = {
     0x18ddf279a2c5800bu, 0x505a90e2542582cbu, 0x5bacad2cd8d5dc2bu, 0xfe3152bcbff89f41u,
 };
 
-/* inverses of factorial_odd_part values modulo 2**64.
+/* inverses of reduced_factorial_odd_part values modulo 2**64.
 
 Python code to generate the values:
 
