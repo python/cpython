@@ -4518,7 +4518,7 @@ long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
             --wordshift;
             if (wordshift < 0) {
                 /* Can only happen if the original shift was 0. */
-                return long_long(a);
+                return long_long((PyObject *)a);
             }
         }
     }
