@@ -1610,6 +1610,8 @@ class TarFile(object):
                 if fileobj is not None:
                     saved_pos = fileobj.tell()
                 try:
+                    if fileobj is not None and saved_pos==BLOCKSIZE:
+                        fileobj.seek(0)
                     return func(name, "r", fileobj, **kwargs)
                 except (ReadError, CompressionError) as e:
                     error_msgs.append(f'- method {comptype}: {e!r}')
@@ -1789,7 +1791,7 @@ class TarFile(object):
            than once in the archive, its last occurrence is assumed to be the
            most up-to-date version.
         """
-        tarinfo = self._getmember(name)
+        tarinfo = self._getmember(name.rstrip('/'))
         if tarinfo is None:
             raise KeyError("filename %r not found" % name)
         return tarinfo

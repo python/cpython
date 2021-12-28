@@ -220,6 +220,29 @@ class UstarReadTest(ReadTest, unittest.TestCase):
     def test_issue14160(self):
         self._test_fileobj_link("symtype2", "ustar/regtype")
 
+    def test_add_dir_getmember(self):
+        # bpo-21987
+        self.add_dir_and_getmember('bar')
+        self.add_dir_and_getmember('a'*101)
+
+    def add_dir_and_getmember(self, name):
+        tar = tarfile.open(tmpname, 'w')
+        cwd = os.getcwd()
+        try:
+            os.chdir(TEMPDIR)
+            os.mkdir(name)
+            tar.add(name)
+        finally:
+            os.rmdir(name)
+            os.chdir(cwd)
+            tar.close()
+        tar = tarfile.open(tmpname)
+        try:
+            tar.getmember(name)
+            tar.getmember(name + '/')
+        finally:
+            tar.close()
+
 class GzipUstarReadTest(GzipTest, UstarReadTest):
     pass
 
