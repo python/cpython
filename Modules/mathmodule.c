@@ -3450,7 +3450,18 @@ error:
     return NULL;
 }
 
-/* least significant 64 bits of the odd part of factorial(n), for n in range(68). */
+/* least significant 64 bits of the odd part of factorial(n), for n in range(68).
+
+Python code to generate the values:
+
+    import math
+
+    for n in range(68):
+        fac = math.factorial(n)
+        fac_odd_part = fac // (fac & -fac)
+        reduced_fac_odd_part = fac_odd_part % (2**64)
+        print(f"{reduced_fac_odd_part:#018x}u")
+*/
 static uint64_t reduced_factorial_odd_part[] = {
     0x0000000000000001u, 0x0000000000000001u, 0x0000000000000001u, 0x0000000000000003u,
     0x0000000000000003u, 0x000000000000000fu, 0x000000000000002du, 0x000000000000013bu,
@@ -3471,7 +3482,18 @@ static uint64_t reduced_factorial_odd_part[] = {
     0x18ddf279a2c5800bu, 0x505a90e2542582cbu, 0x5bacad2cd8d5dc2bu, 0xfe3152bcbff89f41u,
 };
 
-/* inverses of reduced_factorial_odd_part values modulo 2**64 */
+/* inverses of factorial_odd_part values modulo 2**64.
+
+Python code to generate the values:
+
+    import math
+
+    for n in range(68):
+        fac = math.factorial(n)
+        fac_odd_part = fac // (fac & -fac)
+        inverted_fac_odd_part = pow(fac_odd_part, -1, 2**64)
+        print(f"{inverted_fac_odd_part:#018x}u")
+*/
 static uint64_t inverted_factorial_odd_part[] = {
     0x0000000000000001u, 0x0000000000000001u, 0x0000000000000001u, 0xaaaaaaaaaaaaaaabu,
     0xaaaaaaaaaaaaaaabu, 0xeeeeeeeeeeeeeeefu, 0x4fa4fa4fa4fa4fa5u, 0x2ff2ff2ff2ff2ff3u,
