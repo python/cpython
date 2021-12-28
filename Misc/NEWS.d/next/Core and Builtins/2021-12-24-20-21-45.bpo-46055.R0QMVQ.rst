@@ -1,2 +1,3 @@
-Speed up shifting operation involving integers less than
-:c:macro:`PyLong_BASE`. Patch by Xinhang Xu.
+Speed up integer shifts: faster left and right shifts of integers smaller than
+:c:macro:`PyLong_BASE`, and faster right shifts in the general case. Patches by
+Xinhang Xu and Mark Dickinson.
