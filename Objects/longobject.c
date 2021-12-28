@@ -4487,7 +4487,7 @@ divmod_shift(PyObject *shiftby, Py_ssize_t *wordshift, digit *remshift)
 }
 
 /* Inner function for both long_rshift and _PyLong_Rshift, shifting an
-   integer right by a strictly positive shift. */
+   integer right by a nonnegative shift. */
 
 static PyObject *
 long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
@@ -4496,8 +4496,6 @@ long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
     Py_ssize_t newsize, hishift, i, j, size_a;
     twodigits accum;
     int a_negative;
-
-    assert (wordshift > 0 || remshift > 0);
 
     /* Fast path for small a. */
     if (IS_MEDIUM_VALUE(a)) {
@@ -4518,10 +4516,14 @@ long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
         if (remshift == 0) {
             remshift = PyLong_SHIFT;
             --wordshift;
+            if (wordshift < 0) {
+                /* Can only happen if the original shift was 0. */
+                return long_long(a);
+            }
         }
-        assert(wordshift >= 0);
     }
 
+    assert(wordshift >= 0);
     newsize = size_a - wordshift;
     if (newsize <= 0) {
         return PyLong_FromLong(-a_negative);
@@ -4584,9 +4586,6 @@ long_rshift(PyObject *a, PyObject *b)
         PyErr_SetString(PyExc_ValueError, "negative shift count");
         return NULL;
     }
-    if (Py_SIZE(b) == 0) {
-        return long_long(a);
-    }
     if (Py_SIZE(a) == 0) {
         return PyLong_FromLong(0);
     }
@@ -4603,10 +4602,6 @@ _PyLong_Rshift(PyObject *a, size_t shiftby)
     digit remshift;
 
     assert(PyLong_Check(a));
-
-    if (shiftby == 0) {
-        return long_long(a);
-    }
     if (Py_SIZE(a) == 0) {
         return PyLong_FromLong(0);
     }
