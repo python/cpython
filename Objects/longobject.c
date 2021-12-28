@@ -4517,7 +4517,7 @@ long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
            0 < remshift <= PyLong_SHIFT. */
         if (remshift == 0) {
             remshift = PyLong_SHIFT;
-            wordshift -= 1;
+            --wordshift;
         }
         assert(wordshift >= 0);
     }
