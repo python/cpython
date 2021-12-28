@@ -111,14 +111,14 @@ def available_timezones():
         determine if a given file on the time zone search path is to open it
         and check for the "magic string" at the beginning.
     """
-    from importlib.resources import files
+    from importlib import resources
 
     valid_zones = set()
 
     # Start with loading from the tzdata package if it exists: this has a
     # pre-assembled list of zones that only requires opening one file.
     try:
-        with files("tzdata").joinpath("zones").open() as f:
+        with resources.files("tzdata").joinpath("zones").open("r") as f:
             for zone in f:
                 zone = zone.strip()
                 if zone:
