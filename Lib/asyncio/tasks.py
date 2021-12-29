@@ -328,7 +328,7 @@ else:
     Task = _CTask = _asyncio.Task
 
 
-def create_task(coro, *, name=None):
+def create_task(coro, used_wrap_await=False, name=None):
     """Schedule the execution of a coroutine object in a spawn task.
 
     Return a Task object.
@@ -618,6 +618,7 @@ def ensure_future(coro_or_future, *, loop=None):
 
 
 def _ensure_future(coro_or_future, *, loop=None):
+    wrap_await = False
     if futures.isfuture(coro_or_future):
         if loop is not None and loop is not futures._get_loop(coro_or_future):
             raise ValueError('The future belongs to a different loop than '
@@ -627,13 +628,14 @@ def _ensure_future(coro_or_future, *, loop=None):
     if not coroutines.iscoroutine(coro_or_future):
         if inspect.isawaitable(coro_or_future):
             coro_or_future = _wrap_awaitable(coro_or_future)
+            wrap_await = True
         else:
             raise TypeError('An asyncio.Future, a coroutine or an awaitable '
                             'is required')
 
     if loop is None:
         loop = events._get_event_loop(stacklevel=4)
-    return loop.create_task(coro_or_future)
+    return loop.create_task(coro_or_future, used_wrap_await=wrap_await)
 
 
 @types.coroutine

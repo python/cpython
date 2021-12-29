@@ -419,12 +419,18 @@ class BaseEventLoop(events.AbstractEventLoop):
         """Create a Future object attached to the loop."""
         return futures.Future(loop=self)
 
-    def create_task(self, coro, *, name=None):
+    def create_task(self, coro, used_wrap_await=False, name=None):
         """Schedule a coroutine object.
 
         Return a task object.
         """
-        self._check_closed()
+        try:
+            self._check_closed()
+        except RuntimeError:
+            if used_wrap_await:
+                coro.close()
+            raise
+
         if self._task_factory is None:
             task = tasks.Task(coro, loop=self, name=name)
             if task._source_traceback:
