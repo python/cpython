@@ -654,6 +654,8 @@ MODULE_BINASCII_FALSE
 MODULE_BINASCII_TRUE
 MODULE_ZLIB_FALSE
 MODULE_ZLIB_TRUE
+MODULE__UUID_FALSE
+MODULE__UUID_TRUE
 MODULE__SQLITE3_FALSE
 MODULE__SQLITE3_TRUE
 MODULE_NIS_FALSE
@@ -710,8 +712,8 @@ MODULE_OSSAUDIODEV_FALSE
 MODULE_OSSAUDIODEV_TRUE
 MODULE_GRP_FALSE
 MODULE_GRP_TRUE
-MODULE__POSIXSHMEM_FALSE
-MODULE__POSIXSHMEM_TRUE
+MODULE__SOCKET_FALSE
+MODULE__SOCKET_TRUE
 MODULE_MMAP_FALSE
 MODULE_MMAP_TRUE
 MODULE_FCNTL_FALSE
@@ -726,6 +728,10 @@ MODULE__STATISTICS_FALSE
 MODULE__STATISTICS_TRUE
 MODULE_AUDIOOP_FALSE
 MODULE_AUDIOOP_TRUE
+MODULE__POSIXSHMEM_FALSE
+MODULE__POSIXSHMEM_TRUE
+MODULE__MULTIPROCESSING_FALSE
+MODULE__MULTIPROCESSING_TRUE
 MODULE__ZONEINFO_FALSE
 MODULE__ZONEINFO_TRUE
 MODULE__XXSUBINTERPRETERS_FALSE
@@ -734,8 +740,6 @@ MODULE__TYPING_FALSE
 MODULE__TYPING_TRUE
 MODULE__STRUCT_FALSE
 MODULE__STRUCT_TRUE
-MODULE__SOCKET_FALSE
-MODULE__SOCKET_TRUE
 MODULE_SELECT_FALSE
 MODULE_SELECT_TRUE
 MODULE__RANDOM_FALSE
@@ -768,6 +772,8 @@ MODULE_TIME_FALSE
 MODULE_TIME_TRUE
 MODULE__IO_FALSE
 MODULE__IO_TRUE
+MODULES_SETUP_STDLIB
+MODULE_BUILDTYPE
 TEST_MODULES
 LIBRARY_DEPS
 STATIC_LIBPYTHON
@@ -827,6 +833,8 @@ LIBEXPAT_INTERNAL
 LIBEXPAT_LDFLAGS
 LIBEXPAT_CFLAGS
 TZPATH
+LIBUUID_LIBS
+LIBUUID_CFLAGS
 SHLIBS
 CFLAGSFORSHARED
 LINKFORSHARED
@@ -838,6 +846,7 @@ SHLIB_SUFFIX
 LIBTOOL_CRUFT
 OTHER_LIBTOOL_OPT
 UNIVERSAL_ARCH_FLAGS
+LDFLAGS_NOLTO
 LDFLAGS_NODIST
 CFLAGS_NODIST
 BASECFLAGS
@@ -924,8 +933,13 @@ PKG_CONFIG
 CONFIG_ARGS
 SOVERSION
 VERSION
-PYTHON_FOR_BUILD
 PYTHON_FOR_REGEN
+FREEZE_MODULE_DEPS
+FREEZE_MODULE
+FREEZE_MODULE_BOOTSTRAP_DEPS
+FREEZE_MODULE_BOOTSTRAP
+PYTHON_FOR_FREEZE
+PYTHON_FOR_BUILD
 host_os
 host_vendor
 host_cpu
@@ -981,6 +995,7 @@ SHELL'
 ac_subst_files=''
 ac_user_opts='
 enable_option_checking
+with_build_python
 with_pkg_config
 enable_universalsdk
 with_universal_archs
@@ -992,6 +1007,7 @@ enable_shared
 enable_profiling
 with_pydebug
 with_trace_refs
+enable_pystats
 with_assertions
 enable_optimizations
 with_lto
@@ -1046,6 +1062,8 @@ LIBS
 CPPFLAGS
 CPP
 PROFILE_TASK
+LIBUUID_CFLAGS
+LIBUUID_LIBS
 LIBNSL_CFLAGS
 LIBNSL_LIBS
 LIBSQLITE3_CFLAGS
@@ -1697,6 +1715,7 @@ Optional Features:
                           no)
   --enable-profiling      enable C-level code profiling with gprof (default is
                           no)
+  --enable-pystats        enable internal statistics gathering (default is no)
   --enable-optimizations  enable expensive, stable optimizations (PGO, etc.)
                           (default is no)
   --enable-loadable-sqlite-extensions
@@ -1712,6 +1731,9 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-build-python=python3.11
+                          path to build python binary for cross compiling
+                          (default: _bootstrap_python or python3.11)
   --with-pkg-config=[yes|no|check]
                           use pkg-config to detect build options (default is
                           check)
@@ -1729,7 +1751,8 @@ Optional Packages:
   --with-cxx-main[=COMPILER]
                           compile main() and link Python executable with C++
                           compiler specified in COMPILER (default is $CXX)
-  --with-suffix=SUFFIX    set executable suffix to SUFFIX (default is '.exe')
+  --with-suffix=SUFFIX    set executable suffix to SUFFIX (default is empty,
+                          yes is mapped to '.exe')
   --with-pydebug          build with Py_DEBUG defined (default is no)
   --with-trace-refs       enable tracing references for debugging purpose
                           (default is no)
@@ -1833,6 +1856,10 @@ Some influential environment variables:
   CPP         C preprocessor
   PROFILE_TASK
               Python args for PGO generation task
+  LIBUUID_CFLAGS
+              C compiler flags for LIBUUID, overriding pkg-config
+  LIBUUID_LIBS
+              linker flags for LIBUUID, overriding pkg-config
   LIBNSL_CFLAGS
               C compiler flags for LIBNSL, overriding pkg-config
   LIBNSL_LIBS linker flags for LIBNSL, overriding pkg-config
@@ -3163,8 +3190,81 @@ case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
 
 
 
+if test "x$cross_compiling" = xmaybe; then :
+  as_fn_error $? "Cross compiling required --host=HOST-TUPLE and --build=ARCH" "$LINENO" 5
+
+fi
+
 # pybuilddir.txt will be created by --generate-posix-vars in the Makefile
 rm -f pybuilddir.txt
+
+
+# Check whether --with-build-python was given.
+if test "${with_build_python+set}" = set; then :
+  withval=$with_build_python;
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-build-python" >&5
+$as_echo_n "checking for --with-build-python... " >&6; }
+
+    if test "x$with_build_python" = xyes; then :
+  with_build_python=python$PACKAGE_VERSION
+fi
+    if test "x$with_build_python" = xno; then :
+  as_fn_error $? "invalid --with-build-python option: expected path or \"yes\", not \"no\"" "$LINENO" 5
+fi
+
+    if ! $(command -v "$with_build_python" >/dev/null 2>&1); then
+      as_fn_error $? "invalid or missing build python binary \"$with_build_python\"" "$LINENO" 5
+    fi
+    build_python_ver=$($with_build_python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+    if test "$build_python_ver" != "$PACKAGE_VERSION"; then
+      as_fn_error $? "\"$with_build_python\" has incompatible version $build_python_ver (expected: $PACKAGE_VERSION)" "$LINENO" 5
+    fi
+        ac_cv_prog_PYTHON_FOR_REGEN=$with_build_python
+    PYTHON_FOR_FREEZE="$with_build_python"
+    PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`:)$(srcdir)/Lib _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH) '$with_build_python
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_build_python" >&5
+$as_echo "$with_build_python" >&6; }
+
+else
+
+    if test "x$cross_compiling" = xyes; then :
+  as_fn_error $? "Cross compiling requires --with-build-python" "$LINENO" 5
+
+fi
+    PYTHON_FOR_BUILD='./$(BUILDPYTHON) -E'
+    PYTHON_FOR_FREEZE="./_bootstrap_python"
+
+
+fi
+
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for Python interpreter freezing" >&5
+$as_echo_n "checking for Python interpreter freezing... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $PYTHON_FOR_FREEZE" >&5
+$as_echo "$PYTHON_FOR_FREEZE" >&6; }
+
+
+if test "x$cross_compiling" = xyes; then :
+
+        FREEZE_MODULE_BOOTSTRAP='$(PYTHON_FOR_FREEZE) $(srcdir)/Programs/_freeze_module.py'
+    FREEZE_MODULE_BOOTSTRAP_DEPS='$(srcdir)/Programs/_freeze_module.py'
+    FREEZE_MODULE='$(FREEZE_MODULE_BOOTSTRAP)'
+    FREEZE_MODULE_DEPS='$(FREEZE_MODULE_BOOTSTRAP_DEPS)'
+
+else
+
+        FREEZE_MODULE_BOOTSTRAP='./Programs/_freeze_module'
+    FREEZE_MODULE_BOOTSTRAP_DEPS="Programs/_freeze_module"
+    FREEZE_MODULE='$(PYTHON_FOR_FREEZE) $(srcdir)/Programs/_freeze_module.py'
+    FREEZE_MODULE_DEPS="_bootstrap_python \$(srcdir)/Programs/_freeze_module.py"
+
+
+fi
+
+
+
+
 
 for ac_prog in python$PACKAGE_VERSION python3.10 python3.9 python3.8 python3.7 python3.6 python3 python
 do
@@ -3213,38 +3313,13 @@ test -n "$PYTHON_FOR_REGEN" || PYTHON_FOR_REGEN="python3"
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking Python for regen version" >&5
 $as_echo_n "checking Python for regen version... " >&6; }
-if command -v $PYTHON_FOR_REGEN >/dev/null 2>&1; then
+if command -v "$PYTHON_FOR_REGEN" >/dev/null 2>&1; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $($PYTHON_FOR_REGEN -V 2>/dev/null)" >&5
 $as_echo "$($PYTHON_FOR_REGEN -V 2>/dev/null)" >&6; }
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: missing" >&5
 $as_echo "missing" >&6; }
 fi
-
-if test "$cross_compiling" = yes; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for python interpreter for cross build" >&5
-$as_echo_n "checking for python interpreter for cross build... " >&6; }
-    if test -z "$PYTHON_FOR_BUILD"; then
-        for interp in python$PACKAGE_VERSION python3 python; do
-	    which $interp >/dev/null 2>&1 || continue
-	    if $interp -c "import sys;sys.exit(not '.'.join(str(n) for n in sys.version_info[:2]) == '$PACKAGE_VERSION')"; then
-	        break
-	    fi
-            interp=
-	done
-        if test x$interp = x; then
-	    as_fn_error $? "python$PACKAGE_VERSION interpreter not found" "$LINENO" 5
-	fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $interp" >&5
-$as_echo "$interp" >&6; }
-	PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`:)$(srcdir)/Lib _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH) '$interp
-    fi
-elif test "$cross_compiling" = maybe; then
-    as_fn_error $? "Cross compiling required --host=HOST-TUPLE and --build=ARCH" "$LINENO" 5
-else
-    PYTHON_FOR_BUILD='./$(BUILDPYTHON) -E'
-fi
-
 
 
 if test "$prefix" != "/"; then
@@ -3707,6 +3782,12 @@ then
 	*-*-vxworks*)
 	    ac_sys_system=VxWorks
 	    ;;
+	*-*-emscripten)
+	    ac_sys_system=Emscripten
+	    ;;
+	*-*-wasi)
+	    ac_sys_system=WASI
+	    ;;
 	*)
 		# for now, limit cross builds to known configurations
 		MACHDEP="unknown"
@@ -3755,6 +3836,9 @@ if test "$cross_compiling" = yes; then
 		_host_cpu=
 		;;
 	*-*-vxworks*)
+		_host_cpu=$host_cpu
+		;;
+	wasm32-*-* | wasm64-*-*)
 		_host_cpu=$host_cpu
 		;;
 	*)
@@ -6077,8 +6161,7 @@ if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ANDROID_API_LEVEL" >&5
 $as_echo "$ANDROID_API_LEVEL" >&6; }
   if test -z "$ANDROID_API_LEVEL"; then
-    echo 'Fatal: you must define __ANDROID_API__'
-    exit 1
+    as_fn_error $? "Fatal: you must define __ANDROID_API__" "$LINENO" 5
   fi
 
 cat >>confdefs.h <<_ACEOF
@@ -6101,11 +6184,14 @@ fi
 rm -f conftest.c conftest.out
 
 # Check for unsupported systems
-case $ac_sys_system/$ac_sys_release in
-atheos*|Linux*/1*)
-   echo This system \($ac_sys_system/$ac_sys_release\) is no longer supported.
-   echo See README for details.
-   exit 1;;
+case $ac_sys_system/$ac_sys_release in #(
+  atheos*|Linux*/1*) :
+
+    as_fn_error $? "This system \($ac_sys_system/$ac_sys_release\) is no longer supported. See README for details." "$LINENO" 5
+
+ ;; #(
+  *) :
+     ;;
 esac
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-suffix" >&5
@@ -6114,11 +6200,26 @@ $as_echo_n "checking for --with-suffix... " >&6; }
 # Check whether --with-suffix was given.
 if test "${with_suffix+set}" = set; then :
   withval=$with_suffix;
-	case $withval in
-	no)	EXEEXT=;;
-	yes)	EXEEXT=.exe;;
-	*)	EXEEXT=$withval;;
-	esac
+	case $with_suffix in #(
+  no) :
+    EXEEXT= ;; #(
+  yes) :
+    EXEEXT=.exe ;; #(
+  *) :
+    EXEEXT=$with_suffix
+   ;;
+esac
+
+else
+
+  case $ac_sys_system in #(
+  Emscripten) :
+    EXEEXT=.wasm ;; #(
+  *) :
+    EXEEXT=
+   ;;
+esac
+
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $EXEEXT" >&5
@@ -6817,6 +6918,29 @@ $as_echo "#define Py_TRACE_REFS 1" >>confdefs.h
 
 fi
 
+
+# Check for --enable-pystats
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-pystats" >&5
+$as_echo_n "checking for --enable-pystats... " >&6; }
+# Check whether --enable-pystats was given.
+if test "${enable_pystats+set}" = set; then :
+  enableval=$enable_pystats;
+else
+  enable_pystats=no
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_pystats" >&5
+$as_echo "$enable_pystats" >&6; }
+
+if test "x$enable_pystats" = xyes; then :
+
+
+$as_echo "#define Py_STATS 1" >>confdefs.h
+
+
+fi
+
 # Check for --with-assertions.
 # This allows enabling assertions without Py_DEBUG.
 assertions='false'
@@ -7001,6 +7125,7 @@ fi
 if test "$Py_LTO" = 'true' ; then
   case $CC in
     *clang*)
+            LDFLAGS_NOLTO="-fno-lto"
 
       if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}llvm-ar", so it can be a program name with args.
@@ -7154,6 +7279,7 @@ $as_echo "$as_me: llvm-ar found via xcrun: ${LLVM_AR}" >&6;}
       then
         as_fn_error $? "thin lto is not supported under gcc compiler." "$LINENO" 5
       fi
+            LDFLAGS_NOLTO="-fno-lto"
       case $ac_sys_system in
         Darwin*)
           LTOFLAGS="-flto -Wl,-export_dynamic"
@@ -7429,6 +7555,7 @@ then
 	;;
     esac
 fi
+
 
 
 
@@ -8335,21 +8462,18 @@ $as_echo "#define STDC_HEADERS 1" >>confdefs.h
 
 
 # checks for header files
-for ac_header in asm/types.h crypt.h conio.h direct.h dlfcn.h errno.h \
-fcntl.h grp.h \
-ieeefp.h io.h langinfo.h libintl.h process.h pthread.h \
-sched.h shadow.h signal.h stropts.h termios.h \
-utime.h \
-poll.h sys/devpoll.h sys/epoll.h sys/poll.h \
-sys/audioio.h sys/xattr.h sys/bsdtty.h sys/event.h sys/file.h sys/ioctl.h \
-sys/kern_control.h sys/loadavg.h sys/lock.h sys/mkdev.h sys/modem.h \
-sys/param.h sys/random.h sys/select.h sys/sendfile.h sys/socket.h sys/statvfs.h \
-sys/stat.h sys/syscall.h sys/sys_domain.h sys/termio.h sys/time.h \
-sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
-libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
-linux/tipc.h linux/random.h spawn.h util.h alloca.h endian.h \
-sys/endian.h sys/sysmacros.h linux/memfd.h linux/wait.h sys/memfd.h \
-sys/mman.h sys/eventfd.h linux/soundcard.h sys/soundcard.h syslog.h
+for ac_header in  \
+  alloca.h asm/types.h bluetooth.h conio.h crypt.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
+  ieeefp.h io.h langinfo.h libintl.h libutil.h linux/memfd.h linux/random.h linux/soundcard.h \
+  linux/tipc.h linux/wait.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
+  sched.h shadow.h signal.h spawn.h stropts.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
+  sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
+  sys/loadavg.h sys/lock.h sys/memfd.h sys/mkdev.h sys/mman.h sys/modem.h sys/param.h sys/poll.h \
+  sys/random.h sys/resource.h sys/select.h sys/sendfile.h sys/socket.h sys/soundcard.h sys/stat.h \
+  sys/statvfs.h sys/sys_domain.h sys/syscall.h sys/sysmacros.h sys/termio.h sys/time.h sys/times.h \
+  sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h sys/xattr.h sysexits.h syslog.h \
+  termios.h util.h utime.h \
+
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -9900,8 +10024,44 @@ if test "${with_memory_sanitizer+set}" = set; then :
   withval=$with_memory_sanitizer;
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
 $as_echo "$withval" >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fsanitize=memory" >&5
+$as_echo_n "checking whether C compiler accepts -fsanitize=memory... " >&6; }
+if ${ax_cv_check_cflags___fsanitize_memory+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -fsanitize=memory"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ax_cv_check_cflags___fsanitize_memory=yes
+else
+  ax_cv_check_cflags___fsanitize_memory=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___fsanitize_memory" >&5
+$as_echo "$ax_cv_check_cflags___fsanitize_memory" >&6; }
+if test "x$ax_cv_check_cflags___fsanitize_memory" = xyes; then :
+
 BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
+
+else
+  as_fn_error $? "The selected compiler doesn't support memory sanitizer" "$LINENO" 5
+fi
+
 # MSan works by controlling memory allocation, our own malloc interferes.
 with_pymalloc="no"
 
@@ -10371,62 +10531,117 @@ _ACEOF
 fi
 	# Dynamic linking for HP-UX
 
-# checks for uuid.h location
-for ac_header in uuid/uuid.h uuid.h
+
+
+
+
+have_uuid=missing
+
+for ac_header in uuid.h
 do :
-  as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
-ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
-if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
+  ac_fn_c_check_header_mongrel "$LINENO" "uuid.h" "ac_cv_header_uuid_h" "$ac_includes_default"
+if test "x$ac_cv_header_uuid_h" = xyes; then :
   cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
+#define HAVE_UUID_H 1
 _ACEOF
+
+  for ac_func in uuid_create uuid_enc_be
+do :
+  as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
+ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
+if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
+  cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
+_ACEOF
+
+    have_uuid=yes
+    LIBUUID_CFLAGS=${LIBUUID_CFLAGS-""}
+    LIBUUID_LIBS=${LIBUUID_LIBS-""}
+
+fi
+done
+
 
 fi
 
 done
 
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time_safe" >&5
-$as_echo_n "checking for uuid_generate_time_safe... " >&6; }
-if ${ac_cv_lib_uuid_uuid_generate_time_safe+:} false; then :
-  $as_echo_n "(cached) " >&6
+if test "x$have_uuid" = xmissing; then :
+
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIBUUID" >&5
+$as_echo_n "checking for LIBUUID... " >&6; }
+
+if test -n "$LIBUUID_CFLAGS"; then
+    pkg_cv_LIBUUID_CFLAGS="$LIBUUID_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"uuid >= 2.20\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "uuid >= 2.20") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBUUID_CFLAGS=`$PKG_CONFIG --cflags "uuid >= 2.20" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
 else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$LIBUUID_LIBS"; then
+    pkg_cv_LIBUUID_LIBS="$LIBUUID_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"uuid >= 2.20\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "uuid >= 2.20") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBUUID_LIBS=`$PKG_CONFIG --libs "uuid >= 2.20" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
 
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <uuid/uuid.h>
-int
-main ()
-{
 
-#ifndef uuid_generate_time_safe
-void *x = uuid_generate_time_safe
-#endif
 
-  ;
-  return 0;
-}
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        LIBUUID_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "uuid >= 2.20" 2>&1`
+        else
+	        LIBUUID_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "uuid >= 2.20" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$LIBUUID_PKG_ERRORS" >&5
+
+
+      for ac_header in uuid/uuid.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "uuid/uuid.h" "ac_cv_header_uuid_uuid_h" "$ac_includes_default"
+if test "x$ac_cv_header_uuid_uuid_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_UUID_UUID_H 1
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ac_cv_lib_uuid_uuid_generate_time_safe=yes
-else
-  ac_cv_lib_uuid_uuid_generate_time_safe=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_uuid_uuid_generate_time_safe" >&5
-$as_echo "$ac_cv_lib_uuid_uuid_generate_time_safe" >&6; }
-if test "x$ac_cv_lib_uuid_uuid_generate_time_safe" = xyes; then :
-
-
-$as_echo "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
-
-
-fi
-
-# check for libuuid from util-linux
+        save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time in -luuid" >&5
 $as_echo_n "checking for uuid_generate_time in -luuid... " >&6; }
 if ${ac_cv_lib_uuid_uuid_generate_time+:} false; then :
@@ -10464,32 +10679,266 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_uuid_uuid_generate_time" >&5
 $as_echo "$ac_cv_lib_uuid_uuid_generate_time" >&6; }
 if test "x$ac_cv_lib_uuid_uuid_generate_time" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBUUID 1
-_ACEOF
-
-  LIBS="-luuid $LIBS"
-
+  have_uuid=yes
 fi
 
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
 
-# AIX provides support for RFC4122 (uuid) in libc.a starting with AIX 6.1 (anno 2007)
-# FreeBSD and OpenBSD provides support in libc as well.
-# Little-endian FreeBSD, OpenBSD and NetBSD needs encoding into an octet
-# stream in big-endian byte-order
-for ac_func in uuid_create uuid_enc_be
-do :
-  as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
-ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
-if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
-  cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
+
+        save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time_safe in -luuid" >&5
+$as_echo_n "checking for uuid_generate_time_safe in -luuid... " >&6; }
+if ${ac_cv_lib_uuid_uuid_generate_time_safe+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-luuid  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char uuid_generate_time_safe ();
+int
+main ()
+{
+return uuid_generate_time_safe ();
+  ;
+  return 0;
+}
 _ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_uuid_uuid_generate_time_safe=yes
+else
+  ac_cv_lib_uuid_uuid_generate_time_safe=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_uuid_uuid_generate_time_safe" >&5
+$as_echo "$ac_cv_lib_uuid_uuid_generate_time_safe" >&6; }
+if test "x$ac_cv_lib_uuid_uuid_generate_time_safe" = xyes; then :
+
+            have_uuid=yes
+            $as_echo "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
+
 
 fi
+
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+        if test "x$have_uuid" = xyes; then :
+
+          LIBUUID_CFLAGS=${LIBUUID_CFLAGS-""}
+          LIBUUID_LIBS=${LIBUUID_LIBS-"-luuid"}
+
+fi
+
+fi
+
 done
 
+
+
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+      for ac_header in uuid/uuid.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "uuid/uuid.h" "ac_cv_header_uuid_uuid_h" "$ac_includes_default"
+if test "x$ac_cv_header_uuid_uuid_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_UUID_UUID_H 1
+_ACEOF
+
+        save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time in -luuid" >&5
+$as_echo_n "checking for uuid_generate_time in -luuid... " >&6; }
+if ${ac_cv_lib_uuid_uuid_generate_time+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-luuid  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char uuid_generate_time ();
+int
+main ()
+{
+return uuid_generate_time ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_uuid_uuid_generate_time=yes
+else
+  ac_cv_lib_uuid_uuid_generate_time=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_uuid_uuid_generate_time" >&5
+$as_echo "$ac_cv_lib_uuid_uuid_generate_time" >&6; }
+if test "x$ac_cv_lib_uuid_uuid_generate_time" = xyes; then :
+  have_uuid=yes
+fi
+
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+        save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time_safe in -luuid" >&5
+$as_echo_n "checking for uuid_generate_time_safe in -luuid... " >&6; }
+if ${ac_cv_lib_uuid_uuid_generate_time_safe+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-luuid  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char uuid_generate_time_safe ();
+int
+main ()
+{
+return uuid_generate_time_safe ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_uuid_uuid_generate_time_safe=yes
+else
+  ac_cv_lib_uuid_uuid_generate_time_safe=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_uuid_uuid_generate_time_safe" >&5
+$as_echo "$ac_cv_lib_uuid_uuid_generate_time_safe" >&6; }
+if test "x$ac_cv_lib_uuid_uuid_generate_time_safe" = xyes; then :
+
+            have_uuid=yes
+            $as_echo "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
+
+
+fi
+
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+        if test "x$have_uuid" = xyes; then :
+
+          LIBUUID_CFLAGS=${LIBUUID_CFLAGS-""}
+          LIBUUID_LIBS=${LIBUUID_LIBS-"-luuid"}
+
+fi
+
+fi
+
+done
+
+
+
+else
+	LIBUUID_CFLAGS=$pkg_cv_LIBUUID_CFLAGS
+	LIBUUID_LIBS=$pkg_cv_LIBUUID_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+                  have_uuid=yes
+      $as_echo "#define HAVE_UUID_H 1" >>confdefs.h
+
+      $as_echo "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
+
+
+fi
+
+fi
+
+if test "x$have_uuid" = xmissing; then :
+
+  for ac_header in uuid/uuid.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "uuid/uuid.h" "ac_cv_header_uuid_uuid_h" "$ac_includes_default"
+if test "x$ac_cv_header_uuid_uuid_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_UUID_UUID_H 1
+_ACEOF
+
+    ac_fn_c_check_func "$LINENO" "uuid_generate_time" "ac_cv_func_uuid_generate_time"
+if test "x$ac_cv_func_uuid_generate_time" = xyes; then :
+
+      have_uuid=yes
+      LIBUUID_CFLAGS=${LIBUUID_CFLAGS-""}
+      LIBUUID_LIBS=${LIBUUID_LIBS-""}
+
+fi
+
+
+fi
+
+done
+
+
+fi
+
+if test "x$have_uuid" = xmissing; then :
+  have_uuid=no
+fi
 
 # 'Real Time' functions on Solaris
 # posix4 on Solaris 2.6
@@ -10926,8 +11375,8 @@ $as_echo "$with_system_expat" >&6; }
 
 if test "x$with_system_expat" = xyes; then :
 
-  LIBEXPAT_CFLAGS=""
-  LIBEXPAT_LDFLAGS="-lexpat"
+  LIBEXPAT_CFLAGS=${LIBEXPAT_CFLAGS-""}
+  LIBEXPAT_LDFLAGS=${LIBEXPAT_LDFLAGS-"-lexpat"}
   LIBEXPAT_INTERNAL=
 
 else
@@ -11000,8 +11449,8 @@ $as_echo "$with_system_libmpdec" >&6; }
 
 if test "x$with_system_libmpdec" = xyes; then :
 
-  LIBMPDEC_CFLAGS=""
-  LIBMPDEC_LDFLAGS="-lmpdec"
+  LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
+  LIBMPDEC_LDFLAGS=${LIBMPDEC_LDFLAGS-"-lmpdec"}
   LIBMPDEC_INTERNAL=
 
 else
@@ -11053,21 +11502,9 @@ esac
 
 libmpdec_machine=unknown
 if test "$libmpdec_system" = Darwin; then
-    case $MACOSX_DEFAULT_ARCH in #(
-  i386) :
-    libmpdec_machine=ansi32 ;; #(
-  ppc) :
-    libmpdec_machine=ansi32 ;; #(
-  x86_64) :
-    libmpdec_machine=x64 ;; #(
-  ppc64) :
-    libmpdec_machine=ansi64 ;; #(
-  arm64) :
-    libmpdec_machine=ansi64 ;; #(
-  *) :
+    # universal here means: build libmpdec with the same arch options
+    # the python interpreter was built with
     libmpdec_machine=universal
-     ;;
-esac
 elif test $ac_cv_sizeof_size_t -eq 8; then
     if test "$ac_cv_gcc_asm_for_x64" = yes; then
         libmpdec_machine=x64
@@ -11188,7 +11625,7 @@ fi
 	echo "$LIBNSL_PKG_ERRORS" >&5
 
 
-  LIBNSL_CFLAGS=
+  LIBNSL_CFLAGS=${LIBNSL_CFLAGS-""}
   save_CFLAGS=$CFLAGS
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
@@ -11262,19 +11699,20 @@ LIBS=$save_LIBS
 
   case $ac_cv_search_yp_match in #(
   no) :
-    LIBNSL_LIBS= ;; #(
+    libnsl="" ;; #(
   "none required") :
-    LIBNSL_LIBS= ;; #(
+    libnsl="" ;; #(
   *) :
-    LIBNSL_LIBS=$ac_cv_search_yp_match
+    libnsl="$ac_cv_search_yp_match"
    ;;
 esac
+  LIBNSL_LIBS=${LIBNSL_LIBS-$libnsl}
 
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
-  LIBNSL_CFLAGS=
+  LIBNSL_CFLAGS=${LIBNSL_CFLAGS-""}
   save_CFLAGS=$CFLAGS
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
@@ -11348,13 +11786,14 @@ LIBS=$save_LIBS
 
   case $ac_cv_search_yp_match in #(
   no) :
-    LIBNSL_LIBS= ;; #(
+    libnsl="" ;; #(
   "none required") :
-    LIBNSL_LIBS= ;; #(
+    libnsl="" ;; #(
   *) :
-    LIBNSL_LIBS=$ac_cv_search_yp_match
+    libnsl="$ac_cv_search_yp_match"
    ;;
 esac
+  LIBNSL_LIBS=${LIBNSL_LIBS-$libnsl}
 
 else
 	LIBNSL_CFLAGS=$pkg_cv_LIBNSL_CFLAGS
@@ -11455,16 +11894,16 @@ fi
 	echo "$LIBSQLITE3_PKG_ERRORS" >&5
 
 
-    LIBSQLITE3_LIBS="-lsqlite3"
-    LIBSQLITE3_CFLAGS=
+    LIBSQLITE3_CFLAGS=${LIBSQLITE3_CFLAGS-""}
+    LIBSQLITE3_LIBS=${LIBSQLITE3_LIBS-"-lsqlite3"}
 
 
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
-    LIBSQLITE3_LIBS="-lsqlite3"
-    LIBSQLITE3_CFLAGS=
+    LIBSQLITE3_CFLAGS=${LIBSQLITE3_CFLAGS-""}
+    LIBSQLITE3_LIBS=${LIBSQLITE3_LIBS-"-lsqlite3"}
 
 
 else
@@ -11735,7 +12174,7 @@ $as_echo "$ac_cv_lib_gdbm_gdbm_open" >&6; }
 if test "x$ac_cv_lib_gdbm_gdbm_open" = xyes; then :
 
       have_gdbm=yes
-      GDBM_LIBS="$GDBM_LIBS -lgdbm"
+      GDBM_LIBS=${GDBM_LIBS-"-lgdbm"}
 
 else
   have_gdbm=no
@@ -12737,16 +13176,19 @@ fi
 if test "$ipv6" = "yes" -a "$ipv6lib" != "none"; then
 	if test -d $ipv6libdir -a -f $ipv6libdir/lib$ipv6lib.a; then
 		LIBS="-L$ipv6libdir -l$ipv6lib $LIBS"
-		echo "using lib$ipv6lib"
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: using lib$ipv6lib" >&5
+$as_echo "$as_me: using lib$ipv6lib" >&6;}
 	else
-		if test $ipv6trylibc = "yes"; then
-			echo "using libc"
-		else
-			echo 'Fatal: no $ipv6lib library found.  cannot continue.'
-			echo "You need to fetch lib$ipv6lib.a from appropriate"
-			echo 'ipv6 kit and compile beforehand.'
-			exit 1
-		fi
+    if test "x$ipv6trylibc" = xyes; then :
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: using libc" >&5
+$as_echo "$as_me: using libc" >&6;}
+
+else
+
+      as_fn_error $? "No $ipv6lib library found; cannot continue. You need to fetch lib$ipv6lib.a from appropriate ipv6 kit and compile beforehand." "$LINENO" 5
+
+fi
 	fi
 fi
 
@@ -12857,7 +13299,13 @@ fi
 
 if test -z "$with_pymalloc"
 then
+    case $ac_sys_system in #(
+  Emscripten) :
+    with_pymalloc="no" ;; #(
+  *) :
     with_pymalloc="yes"
+   ;;
+esac
 fi
 if test "$with_pymalloc" != "no"
 then
@@ -13104,31 +13552,32 @@ $as_echo "$MACHDEP_OBJS" >&6; }
 fi
 
 # checks for library functions
-for ac_func in alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
- clock confstr close_range copy_file_range ctermid dup3 execv explicit_bzero \
- explicit_memset faccessat fchmod fchmodat fchown fchownat \
- fdwalk fexecve fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
- futimens futimes gai_strerror getentropy \
- getgrgid getgrgid_r getgrnam_r \
- getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
- getpriority getresuid getresgid getpwent getpwnam_r getpwuid_r getspnam getspent getsid getwd \
- if_nameindex \
- initgroups kill killpg lchown lockf linkat lstat lutimes mmap \
- memrchr mbrtowc mkdirat mkfifo \
- madvise mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
- posix_fallocate posix_fadvise posix_spawn posix_spawnp pread preadv preadv2 \
- pthread_condattr_setclock pthread_init pthread_kill pwrite pwritev pwritev2 \
- readlink readlinkat readv realpath renameat \
- sem_open sem_timedwait sem_clockwait sem_getvalue sem_unlink sendfile setegid seteuid \
- setgid sethostname \
- setlocale setregid setreuid setresuid setresgid setsid setpgid setpgrp setpriority setuid setvbuf \
- sched_get_priority_max sched_setaffinity sched_setscheduler sched_setparam \
- sched_rr_get_interval \
- sigaction sigaltstack sigfillset siginterrupt sigpending sigrelse \
- sigtimedwait sigwait sigwaitinfo snprintf splice strftime strlcpy strsignal symlinkat sync \
- sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
- truncate uname unlinkat utimensat utimes vfork waitid waitpid wait3 wait4 \
- wcscoll wcsftime wcsxfrm wmemcmp writev _getpty rtpSpawn
+for ac_func in  \
+  accept4 alarm bind_textdomain_codeset chown clock close_range confstr \
+  copy_file_range ctermid dup3 execv explicit_bzero explicit_memset \
+  faccessat fchmod fchmodat fchown fchownat fdopendir fdwalk fexecve \
+  fork fork1 fpathconf fstatat ftime ftruncate futimens futimes futimesat \
+  gai_strerror getegid getentropy geteuid getgid getgrgid getgrgid_r \
+  getgrnam_r getgrouplist getgroups getitimer getloadavg getlogin \
+  getpeername getpgid getpid getppid getpriority _getpty \
+  getpwent getpwnam_r getpwuid_r getresgid getresuid getsid getspent \
+  getspnam getuid getwd if_nameindex initgroups kill killpg lchown linkat \
+  lockf lstat lutimes madvise mbrtowc memrchr mkdirat mkfifo mkfifoat \
+  mknod mknodat mktime mmap mremap nice openat opendir pathconf pause pipe \
+  pipe2 plock poll posix_fadvise posix_fallocate posix_spawn posix_spawnp \
+  pread preadv preadv2 pthread_condattr_setclock pthread_init pthread_kill \
+  pwrite pwritev pwritev2 readlink readlinkat readv realpath renameat \
+  rtpSpawn sched_get_priority_max sched_rr_get_interval sched_setaffinity \
+  sched_setparam sched_setscheduler sem_clockwait sem_getvalue sem_open \
+  sem_timedwait sem_unlink sendfile setegid seteuid setgid sethostname \
+  setitimer setlocale setpgid setpgrp setpriority setregid setresgid \
+  setresuid setreuid setsid setuid setvbuf shutdown sigaction sigaltstack \
+  sigfillset siginterrupt sigpending sigrelse sigtimedwait sigwait \
+  sigwaitinfo snprintf splice strftime strlcpy strsignal symlinkat sync \
+  sysconf system tcgetpgrp tcsetpgrp tempnam timegm times tmpfile \
+  tmpnam tmpnam_r truncate ttyname uname unlinkat utimensat utimes vfork \
+  wait wait3 wait4 waitid waitpid wcscoll wcsftime wcsxfrm wmemcmp writev \
+
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -14206,8 +14655,8 @@ $as_echo "$ac_cv_lib_z_gzread" >&6; }
 if test "x$ac_cv_lib_z_gzread" = xyes; then :
 
         have_zlib=yes
-        ZLIB_CFLAGS=
-        ZLIB_LIBS=-lz
+        ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
+        ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
 $as_echo_n "checking for inflateCopy in -lz... " >&6; }
 if ${ac_cv_lib_z_inflateCopy+:} false; then :
@@ -14328,8 +14777,8 @@ $as_echo "$ac_cv_lib_z_gzread" >&6; }
 if test "x$ac_cv_lib_z_gzread" = xyes; then :
 
         have_zlib=yes
-        ZLIB_CFLAGS=
-        ZLIB_LIBS=-lz
+        ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
+        ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
 $as_echo_n "checking for inflateCopy in -lz... " >&6; }
 if ${ac_cv_lib_z_inflateCopy+:} false; then :
@@ -14525,8 +14974,8 @@ $as_echo "$ac_cv_lib_bz2_BZ2_bzCompress" >&6; }
 if test "x$ac_cv_lib_bz2_BZ2_bzCompress" = xyes; then :
 
         have_bzip2=yes
-        BZIP2_CFLAGS=
-        BZIP2_LIBS=-lbz2
+        BZIP2_CFLAGS=${BZIP2_CFLAGS-""}
+        BZIP2_LIBS=${BZIP2_LIBS-"-lbz2"}
 
 else
   have_bzip2=no
@@ -14604,8 +15053,8 @@ $as_echo "$ac_cv_lib_bz2_BZ2_bzCompress" >&6; }
 if test "x$ac_cv_lib_bz2_BZ2_bzCompress" = xyes; then :
 
         have_bzip2=yes
-        BZIP2_CFLAGS=
-        BZIP2_LIBS=-lbz2
+        BZIP2_CFLAGS=${BZIP2_CFLAGS-""}
+        BZIP2_LIBS=${BZIP2_LIBS-"-lbz2"}
 
 else
   have_bzip2=no
@@ -14747,8 +15196,8 @@ $as_echo "$ac_cv_lib_lzma_lzma_easy_encoder" >&6; }
 if test "x$ac_cv_lib_lzma_lzma_easy_encoder" = xyes; then :
 
         have_liblzma=yes
-        LIBLZMA_CFLAGS=
-        LIBLZMA_LIBS=-llzma
+        LIBLZMA_CFLAGS=${LIBLZMA_CFLAGS-""}
+        LIBLZMA_LIBS=${LIBLZMA_LIBS-"-llzma"}
 
 else
   have_liblzma=no
@@ -14826,8 +15275,8 @@ $as_echo "$ac_cv_lib_lzma_lzma_easy_encoder" >&6; }
 if test "x$ac_cv_lib_lzma_lzma_easy_encoder" = xyes; then :
 
         have_liblzma=yes
-        LIBLZMA_CFLAGS=
-        LIBLZMA_LIBS=-llzma
+        LIBLZMA_CFLAGS=${LIBLZMA_CFLAGS-""}
+        LIBLZMA_LIBS=${LIBLZMA_LIBS-"-llzma"}
 
 else
   have_liblzma=no
@@ -15427,10 +15876,11 @@ if test "$ac_res" != no; then :
       $as_echo "#define HAVE_CRYPT_R 1" >>confdefs.h
 
       if test "$ac_cv_search_crypt_r" = "none required"; then
-        LIBCRYPT_LIBS=
+        libcrypt=
       else
-        LIBCRYPT_LIBS="$ac_cv_search_crypt_r"
+        libcrypt="$ac_cv_search_crypt_r"
       fi
+      LIBCRYPT_LIBS=${LIBCRYPT_LIBS-$libcrypt}
 
 fi
 
@@ -15509,10 +15959,11 @@ if test "$ac_res" != no; then :
       $as_echo "#define HAVE_CRYPT_R 1" >>confdefs.h
 
       if test "$ac_cv_search_crypt_r" = "none required"; then
-        LIBCRYPT_LIBS=
+        libcrypt=
       else
-        LIBCRYPT_LIBS="$ac_cv_search_crypt_r"
+        libcrypt="$ac_cv_search_crypt_r"
       fi
+      LIBCRYPT_LIBS=${LIBCRYPT_LIBS-$libcrypt}
 
 fi
 
@@ -15542,7 +15993,7 @@ save_LIBS=$LIBS
 
 
   CPPFLAGS="$LIBCRYPT_CFLAGS $CFLAGS"
-  LDFLAGS="$LIBCRYPT_LIBS $LDFLAGS"
+  LIBS="$LIBCRYPT_LIBS $LIBS"
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for crypt or crypt_r" >&5
 $as_echo_n "checking for crypt or crypt_r... " >&6; }
 if ${ac_cv_crypt_crypt+:} false; then :
@@ -16097,12 +16548,11 @@ fi
 
 if test "$ac_cv_func_getaddrinfo" = no -o "$ac_cv_buggy_getaddrinfo" = yes
 then
-	if test $ipv6 = yes
-	then
-		echo 'Fatal: You must get working getaddrinfo() function.'
-		echo '       or you can specify "--disable-ipv6"'.
-		exit 1
-	fi
+  if test "x$ipv6" = xyes; then :
+
+    as_fn_error $? "You must get working getaddrinfo() function or pass the \"--disable-ipv6\" option to configure." "$LINENO" 5
+
+fi
 else
 
 $as_echo "#define HAVE_GETADDRINFO 1" >>confdefs.h
@@ -17338,11 +17788,6 @@ done
 
 LIBS=$LIBS_SAVE
 
-# For multiprocessing module, check that sem_open
-# actually works.  For FreeBSD versions <= 7.2,
-# the kernel module that provides POSIX semaphores
-# isn't loaded by default, so an attempt to call
-# sem_open results in a 'Signal 12' error.
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether POSIX semaphores are enabled" >&5
 $as_echo_n "checking whether POSIX semaphores are enabled... " >&6; }
 if ${ac_cv_posix_semaphores_enabled+:} false; then :
@@ -17354,22 +17799,24 @@ else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-#include <unistd.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <semaphore.h>
-#include <sys/stat.h>
 
-int main(void) {
-  sem_t *a = sem_open("/autoconf", O_CREAT, S_IRUSR|S_IWUSR, 0);
-  if (a == SEM_FAILED) {
-    perror("sem_open");
-    return 1;
-  }
-  sem_close(a);
-  sem_unlink("/autoconf");
-  return 0;
-}
+      #include <unistd.h>
+      #include <fcntl.h>
+      #include <stdio.h>
+      #include <semaphore.h>
+      #include <sys/stat.h>
+
+      int main(void) {
+        sem_t *a = sem_open("/autoconf", O_CREAT, S_IRUSR|S_IWUSR, 0);
+        if (a == SEM_FAILED) {
+          perror("sem_open");
+          return 1;
+        }
+        sem_close(a);
+        sem_unlink("/autoconf");
+        return 0;
+      }
+
 
 _ACEOF
 if ac_fn_c_try_run "$LINENO"; then :
@@ -17385,14 +17832,14 @@ fi
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_posix_semaphores_enabled" >&5
 $as_echo "$ac_cv_posix_semaphores_enabled" >&6; }
-if test $ac_cv_posix_semaphores_enabled = no
-then
+if test "x$ac_cv_posix_semaphores_enabled" = xno; then :
+
 
 $as_echo "#define POSIX_SEMAPHORES_NOT_ENABLED 1" >>confdefs.h
 
+
 fi
 
-# Multiprocessing check for broken sem_getvalue
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for broken sem_getvalue" >&5
 $as_echo_n "checking for broken sem_getvalue... " >&6; }
 if ${ac_cv_broken_sem_getvalue+:} false; then :
@@ -17404,26 +17851,28 @@ else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-#include <unistd.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <semaphore.h>
-#include <sys/stat.h>
 
-int main(void){
-  sem_t *a = sem_open("/autocftw", O_CREAT, S_IRUSR|S_IWUSR, 0);
-  int count;
-  int res;
-  if(a==SEM_FAILED){
-    perror("sem_open");
-    return 1;
+      #include <unistd.h>
+      #include <fcntl.h>
+      #include <stdio.h>
+      #include <semaphore.h>
+      #include <sys/stat.h>
 
-  }
-  res = sem_getvalue(a, &count);
-  sem_close(a);
-  sem_unlink("/autocftw");
-  return res==-1 ? 1 : 0;
-}
+      int main(void){
+        sem_t *a = sem_open("/autocftw", O_CREAT, S_IRUSR|S_IWUSR, 0);
+        int count;
+        int res;
+        if(a==SEM_FAILED){
+          perror("sem_open");
+          return 1;
+
+        }
+        res = sem_getvalue(a, &count);
+        sem_close(a);
+        sem_unlink("/autocftw");
+        return res==-1 ? 1 : 0;
+      }
+
 
 _ACEOF
 if ac_fn_c_try_run "$LINENO"; then :
@@ -17439,10 +17888,11 @@ fi
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_broken_sem_getvalue" >&5
 $as_echo "$ac_cv_broken_sem_getvalue" >&6; }
-if test $ac_cv_broken_sem_getvalue = yes
-then
+if test "x$ac_cv_broken_sem_getvalue" = xyes; then :
+
 
 $as_echo "#define HAVE_BROKEN_SEM_GETVALUE 1" >>confdefs.h
+
 
 fi
 
@@ -19882,7 +20332,15 @@ $as_echo_n "checking for ensurepip... " >&6; }
 if test "${with_ensurepip+set}" = set; then :
   withval=$with_ensurepip;
 else
-  with_ensurepip=upgrade
+
+      case $ac_sys_system in #(
+  Emscripten) :
+    with_ensurepip=no ;; #(
+  *) :
+    with_ensurepip=upgrade
+       ;;
+esac
+
 fi
 
 case $with_ensurepip in #(
@@ -20714,12 +21172,22 @@ fi
 
 if test "$enable_test_modules" = no; then
     TEST_MODULES=no
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
 else
+    case $ac_sys_system in #(
+  Emscripten) :
+    TEST_MODULES=no ;; #(
+  *) :
     TEST_MODULES=yes
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+     ;;
+esac
+fi
+if test "x$TEST_MODULES" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
 fi
 
 
@@ -20736,10 +21204,37 @@ case $ac_sys_system in #(
     py_stdlib_not_available="_scproxy nis" ;; #(
   FreeBSD*) :
     py_stdlib_not_available="_scproxy spwd" ;; #(
+  Emscripten) :
+
+    py_stdlib_not_available="_ctypes _curses _curses_panel _dbm _gdbm _multiprocessing _posixshmem _posixsubprocess _scproxy _tkinter _xxsubinterpreters fcntl grp nis ossaudiodev resource readline spwd syslog termios"
+   ;; #(
   *) :
     py_stdlib_not_available="_scproxy"
  ;;
 esac
+
+case $host_cpu in #(
+  wasm32|wasm64) :
+    MODULE_BUILDTYPE=static ;; #(
+  *) :
+    MODULE_BUILDTYPE=${MODULE_BUILDTYPE:-shared}
+ ;;
+esac
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for additional Modules/Setup files" >&5
+$as_echo_n "checking for additional Modules/Setup files... " >&6; }
+case $ac_sys_system in #(
+  Emscripten) :
+    MODULES_SETUP_STDLIB=Modules/Setup.stdlib ;; #(
+  *) :
+    MODULES_SETUP_STDLIB=
+ ;;
+esac
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $MODULES_SETUP_STDLIB" >&5
+$as_echo "$MODULES_SETUP_STDLIB" >&6; }
+
+
 
 
 MODULE_BLOCK=
@@ -20749,255 +21244,680 @@ MODULE_BLOCK=
 
 
 
-     if true; then
+      case $py_stdlib_not_available in #(
+  *_io*) :
+    py_cv_module__io=n/a ;; #(
+  *) :
+    py_cv_module__io=yes
+   ;;
+esac
+   if test "$py_cv_module__io" = yes; then
   MODULE__IO_TRUE=
   MODULE__IO_FALSE='#'
 else
   MODULE__IO_TRUE='#'
   MODULE__IO_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__IO=yes$as_nl"
+
+  as_fn_append MODULE_BLOCK "MODULE__IO=$py_cv_module__io$as_nl"
+  if test "x$py_cv_module__io" = xyes; then :
+
     as_fn_append MODULE_BLOCK "MODULE__IO_CFLAGS=-I\$(srcdir)/Modules/_io$as_nl"
 
 
-     if true; then
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *time*) :
+    py_cv_module_time=n/a ;; #(
+  *) :
+    py_cv_module_time=yes
+   ;;
+esac
+   if test "$py_cv_module_time" = yes; then
   MODULE_TIME_TRUE=
   MODULE_TIME_FALSE='#'
 else
   MODULE_TIME_TRUE='#'
   MODULE_TIME_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE_TIME=yes$as_nl"
+
+  as_fn_append MODULE_BLOCK "MODULE_TIME=$py_cv_module_time$as_nl"
+  if test "x$py_cv_module_time" = xyes; then :
+
+
     as_fn_append MODULE_BLOCK "MODULE_TIME_LDFLAGS=$TIMEMODULE_LIB$as_nl"
 
+fi
 
 
-     if true; then
+
+      case $py_stdlib_not_available in #(
+  *array*) :
+    py_cv_module_array=n/a ;; #(
+  *) :
+    py_cv_module_array=yes
+   ;;
+esac
+   if test "$py_cv_module_array" = yes; then
   MODULE_ARRAY_TRUE=
   MODULE_ARRAY_FALSE='#'
 else
   MODULE_ARRAY_TRUE='#'
   MODULE_ARRAY_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE_ARRAY=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE_ARRAY=$py_cv_module_array$as_nl"
+  if test "x$py_cv_module_array" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_asyncio*) :
+    py_cv_module__asyncio=n/a ;; #(
+  *) :
+    py_cv_module__asyncio=yes
+   ;;
+esac
+   if test "$py_cv_module__asyncio" = yes; then
   MODULE__ASYNCIO_TRUE=
   MODULE__ASYNCIO_FALSE='#'
 else
   MODULE__ASYNCIO_TRUE='#'
   MODULE__ASYNCIO_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__ASYNCIO=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__ASYNCIO=$py_cv_module__asyncio$as_nl"
+  if test "x$py_cv_module__asyncio" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_bisect*) :
+    py_cv_module__bisect=n/a ;; #(
+  *) :
+    py_cv_module__bisect=yes
+   ;;
+esac
+   if test "$py_cv_module__bisect" = yes; then
   MODULE__BISECT_TRUE=
   MODULE__BISECT_FALSE='#'
 else
   MODULE__BISECT_TRUE='#'
   MODULE__BISECT_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__BISECT=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__BISECT=$py_cv_module__bisect$as_nl"
+  if test "x$py_cv_module__bisect" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_contextvars*) :
+    py_cv_module__contextvars=n/a ;; #(
+  *) :
+    py_cv_module__contextvars=yes
+   ;;
+esac
+   if test "$py_cv_module__contextvars" = yes; then
   MODULE__CONTEXTVARS_TRUE=
   MODULE__CONTEXTVARS_FALSE='#'
 else
   MODULE__CONTEXTVARS_TRUE='#'
   MODULE__CONTEXTVARS_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__CONTEXTVARS=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__CONTEXTVARS=$py_cv_module__contextvars$as_nl"
+  if test "x$py_cv_module__contextvars" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_csv*) :
+    py_cv_module__csv=n/a ;; #(
+  *) :
+    py_cv_module__csv=yes
+   ;;
+esac
+   if test "$py_cv_module__csv" = yes; then
   MODULE__CSV_TRUE=
   MODULE__CSV_FALSE='#'
 else
   MODULE__CSV_TRUE='#'
   MODULE__CSV_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__CSV=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__CSV=$py_cv_module__csv$as_nl"
+  if test "x$py_cv_module__csv" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_heapq*) :
+    py_cv_module__heapq=n/a ;; #(
+  *) :
+    py_cv_module__heapq=yes
+   ;;
+esac
+   if test "$py_cv_module__heapq" = yes; then
   MODULE__HEAPQ_TRUE=
   MODULE__HEAPQ_FALSE='#'
 else
   MODULE__HEAPQ_TRUE='#'
   MODULE__HEAPQ_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__HEAPQ=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__HEAPQ=$py_cv_module__heapq$as_nl"
+  if test "x$py_cv_module__heapq" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_json*) :
+    py_cv_module__json=n/a ;; #(
+  *) :
+    py_cv_module__json=yes
+   ;;
+esac
+   if test "$py_cv_module__json" = yes; then
   MODULE__JSON_TRUE=
   MODULE__JSON_FALSE='#'
 else
   MODULE__JSON_TRUE='#'
   MODULE__JSON_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__JSON=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__JSON=$py_cv_module__json$as_nl"
+  if test "x$py_cv_module__json" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_lsprof*) :
+    py_cv_module__lsprof=n/a ;; #(
+  *) :
+    py_cv_module__lsprof=yes
+   ;;
+esac
+   if test "$py_cv_module__lsprof" = yes; then
   MODULE__LSPROF_TRUE=
   MODULE__LSPROF_FALSE='#'
 else
   MODULE__LSPROF_TRUE='#'
   MODULE__LSPROF_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__LSPROF=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__LSPROF=$py_cv_module__lsprof$as_nl"
+  if test "x$py_cv_module__lsprof" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_opcode*) :
+    py_cv_module__opcode=n/a ;; #(
+  *) :
+    py_cv_module__opcode=yes
+   ;;
+esac
+   if test "$py_cv_module__opcode" = yes; then
   MODULE__OPCODE_TRUE=
   MODULE__OPCODE_FALSE='#'
 else
   MODULE__OPCODE_TRUE='#'
   MODULE__OPCODE_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__OPCODE=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__OPCODE=$py_cv_module__opcode$as_nl"
+  if test "x$py_cv_module__opcode" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_pickle*) :
+    py_cv_module__pickle=n/a ;; #(
+  *) :
+    py_cv_module__pickle=yes
+   ;;
+esac
+   if test "$py_cv_module__pickle" = yes; then
   MODULE__PICKLE_TRUE=
   MODULE__PICKLE_FALSE='#'
 else
   MODULE__PICKLE_TRUE='#'
   MODULE__PICKLE_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__PICKLE=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__PICKLE=$py_cv_module__pickle$as_nl"
+  if test "x$py_cv_module__pickle" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_posixsubprocess*) :
+    py_cv_module__posixsubprocess=n/a ;; #(
+  *) :
+    py_cv_module__posixsubprocess=yes
+   ;;
+esac
+   if test "$py_cv_module__posixsubprocess" = yes; then
   MODULE__POSIXSUBPROCESS_TRUE=
   MODULE__POSIXSUBPROCESS_FALSE='#'
 else
   MODULE__POSIXSUBPROCESS_TRUE='#'
   MODULE__POSIXSUBPROCESS_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__POSIXSUBPROCESS=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__POSIXSUBPROCESS=$py_cv_module__posixsubprocess$as_nl"
+  if test "x$py_cv_module__posixsubprocess" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_queue*) :
+    py_cv_module__queue=n/a ;; #(
+  *) :
+    py_cv_module__queue=yes
+   ;;
+esac
+   if test "$py_cv_module__queue" = yes; then
   MODULE__QUEUE_TRUE=
   MODULE__QUEUE_FALSE='#'
 else
   MODULE__QUEUE_TRUE='#'
   MODULE__QUEUE_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__QUEUE=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__QUEUE=$py_cv_module__queue$as_nl"
+  if test "x$py_cv_module__queue" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_random*) :
+    py_cv_module__random=n/a ;; #(
+  *) :
+    py_cv_module__random=yes
+   ;;
+esac
+   if test "$py_cv_module__random" = yes; then
   MODULE__RANDOM_TRUE=
   MODULE__RANDOM_FALSE='#'
 else
   MODULE__RANDOM_TRUE='#'
   MODULE__RANDOM_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__RANDOM=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__RANDOM=$py_cv_module__random$as_nl"
+  if test "x$py_cv_module__random" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *select*) :
+    py_cv_module_select=n/a ;; #(
+  *) :
+    py_cv_module_select=yes
+   ;;
+esac
+   if test "$py_cv_module_select" = yes; then
   MODULE_SELECT_TRUE=
   MODULE_SELECT_FALSE='#'
 else
   MODULE_SELECT_TRUE='#'
   MODULE_SELECT_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE_SELECT=yes$as_nl"
 
-     if true; then
-  MODULE__SOCKET_TRUE=
-  MODULE__SOCKET_FALSE='#'
-else
-  MODULE__SOCKET_TRUE='#'
-  MODULE__SOCKET_FALSE=
+  as_fn_append MODULE_BLOCK "MODULE_SELECT=$py_cv_module_select$as_nl"
+  if test "x$py_cv_module_select" = xyes; then :
+
+
+
+
 fi
-  as_fn_append MODULE_BLOCK "MODULE__SOCKET=yes$as_nl"
 
-     if true; then
+
+      case $py_stdlib_not_available in #(
+  *_struct*) :
+    py_cv_module__struct=n/a ;; #(
+  *) :
+    py_cv_module__struct=yes
+   ;;
+esac
+   if test "$py_cv_module__struct" = yes; then
   MODULE__STRUCT_TRUE=
   MODULE__STRUCT_FALSE='#'
 else
   MODULE__STRUCT_TRUE='#'
   MODULE__STRUCT_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__STRUCT=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__STRUCT=$py_cv_module__struct$as_nl"
+  if test "x$py_cv_module__struct" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_typing*) :
+    py_cv_module__typing=n/a ;; #(
+  *) :
+    py_cv_module__typing=yes
+   ;;
+esac
+   if test "$py_cv_module__typing" = yes; then
   MODULE__TYPING_TRUE=
   MODULE__TYPING_FALSE='#'
 else
   MODULE__TYPING_TRUE='#'
   MODULE__TYPING_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__TYPING=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__TYPING=$py_cv_module__typing$as_nl"
+  if test "x$py_cv_module__typing" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_xxsubinterpreters*) :
+    py_cv_module__xxsubinterpreters=n/a ;; #(
+  *) :
+    py_cv_module__xxsubinterpreters=yes
+   ;;
+esac
+   if test "$py_cv_module__xxsubinterpreters" = yes; then
   MODULE__XXSUBINTERPRETERS_TRUE=
   MODULE__XXSUBINTERPRETERS_FALSE='#'
 else
   MODULE__XXSUBINTERPRETERS_TRUE='#'
   MODULE__XXSUBINTERPRETERS_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__XXSUBINTERPRETERS=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__XXSUBINTERPRETERS=$py_cv_module__xxsubinterpreters$as_nl"
+  if test "x$py_cv_module__xxsubinterpreters" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_zoneinfo*) :
+    py_cv_module__zoneinfo=n/a ;; #(
+  *) :
+    py_cv_module__zoneinfo=yes
+   ;;
+esac
+   if test "$py_cv_module__zoneinfo" = yes; then
   MODULE__ZONEINFO_TRUE=
   MODULE__ZONEINFO_FALSE='#'
 else
   MODULE__ZONEINFO_TRUE='#'
   MODULE__ZONEINFO_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__ZONEINFO=yes$as_nl"
+
+  as_fn_append MODULE_BLOCK "MODULE__ZONEINFO=$py_cv_module__zoneinfo$as_nl"
+  if test "x$py_cv_module__zoneinfo" = xyes; then :
 
 
-     if true; then
+
+
+fi
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _multiprocessing" >&5
+$as_echo_n "checking for stdlib extension module _multiprocessing... " >&6; }
+      case $py_stdlib_not_available in #(
+  *_multiprocessing*) :
+    py_cv_module__multiprocessing=n/a ;; #(
+  *) :
+    if true; then :
+  if test "$ac_cv_func_sem_unlink" = "yes"; then :
+  py_cv_module__multiprocessing=yes
+else
+  py_cv_module__multiprocessing=missing
+fi
+else
+  py_cv_module__multiprocessing=disabled
+fi
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE__MULTIPROCESSING=$py_cv_module__multiprocessing$as_nl"
+  if test "x$py_cv_module__multiprocessing" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__MULTIPROCESSING_CFLAGS=-I\$(srcdir)/Modules/_multiprocessing$as_nl"
+
+
+fi
+   if test "$py_cv_module__multiprocessing" = yes; then
+  MODULE__MULTIPROCESSING_TRUE=
+  MODULE__MULTIPROCESSING_FALSE='#'
+else
+  MODULE__MULTIPROCESSING_TRUE='#'
+  MODULE__MULTIPROCESSING_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__multiprocessing" >&5
+$as_echo "$py_cv_module__multiprocessing" >&6; }
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _posixshmem" >&5
+$as_echo_n "checking for stdlib extension module _posixshmem... " >&6; }
+      case $py_stdlib_not_available in #(
+  *_posixshmem*) :
+    py_cv_module__posixshmem=n/a ;; #(
+  *) :
+    if true; then :
+  if test "$have_posix_shmem" = "yes"; then :
+  py_cv_module__posixshmem=yes
+else
+  py_cv_module__posixshmem=missing
+fi
+else
+  py_cv_module__posixshmem=disabled
+fi
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM=$py_cv_module__posixshmem$as_nl"
+  if test "x$py_cv_module__posixshmem" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM_CFLAGS=$POSIXSHMEM_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM_LDFLAGS=$POSIXSHMEM_LIBS$as_nl"
+
+fi
+   if test "$py_cv_module__posixshmem" = yes; then
+  MODULE__POSIXSHMEM_TRUE=
+  MODULE__POSIXSHMEM_FALSE='#'
+else
+  MODULE__POSIXSHMEM_TRUE='#'
+  MODULE__POSIXSHMEM_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__posixshmem" >&5
+$as_echo "$py_cv_module__posixshmem" >&6; }
+
+
+
+      case $py_stdlib_not_available in #(
+  *audioop*) :
+    py_cv_module_audioop=n/a ;; #(
+  *) :
+    py_cv_module_audioop=yes
+   ;;
+esac
+   if test "$py_cv_module_audioop" = yes; then
   MODULE_AUDIOOP_TRUE=
   MODULE_AUDIOOP_FALSE='#'
 else
   MODULE_AUDIOOP_TRUE='#'
   MODULE_AUDIOOP_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE_AUDIOOP=yes$as_nl"
+
+  as_fn_append MODULE_BLOCK "MODULE_AUDIOOP=$py_cv_module_audioop$as_nl"
+  if test "x$py_cv_module_audioop" = xyes; then :
+
+
     as_fn_append MODULE_BLOCK "MODULE_AUDIOOP_LDFLAGS=$LIBM$as_nl"
 
+fi
 
-     if true; then
+
+      case $py_stdlib_not_available in #(
+  *_statistics*) :
+    py_cv_module__statistics=n/a ;; #(
+  *) :
+    py_cv_module__statistics=yes
+   ;;
+esac
+   if test "$py_cv_module__statistics" = yes; then
   MODULE__STATISTICS_TRUE=
   MODULE__STATISTICS_FALSE='#'
 else
   MODULE__STATISTICS_TRUE='#'
   MODULE__STATISTICS_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__STATISTICS=yes$as_nl"
+
+  as_fn_append MODULE_BLOCK "MODULE__STATISTICS=$py_cv_module__statistics$as_nl"
+  if test "x$py_cv_module__statistics" = xyes; then :
+
+
     as_fn_append MODULE_BLOCK "MODULE__STATISTICS_LDFLAGS=$LIBM$as_nl"
 
+fi
 
-     if true; then
+
+      case $py_stdlib_not_available in #(
+  *cmath*) :
+    py_cv_module_cmath=n/a ;; #(
+  *) :
+    py_cv_module_cmath=yes
+   ;;
+esac
+   if test "$py_cv_module_cmath" = yes; then
   MODULE_CMATH_TRUE=
   MODULE_CMATH_FALSE='#'
 else
   MODULE_CMATH_TRUE='#'
   MODULE_CMATH_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE_CMATH=yes$as_nl"
+
+  as_fn_append MODULE_BLOCK "MODULE_CMATH=$py_cv_module_cmath$as_nl"
+  if test "x$py_cv_module_cmath" = xyes; then :
+
+
     as_fn_append MODULE_BLOCK "MODULE_CMATH_LDFLAGS=$LIBM$as_nl"
 
+fi
 
-     if true; then
+
+      case $py_stdlib_not_available in #(
+  *math*) :
+    py_cv_module_math=n/a ;; #(
+  *) :
+    py_cv_module_math=yes
+   ;;
+esac
+   if test "$py_cv_module_math" = yes; then
   MODULE_MATH_TRUE=
   MODULE_MATH_FALSE='#'
 else
   MODULE_MATH_TRUE='#'
   MODULE_MATH_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE_MATH=yes$as_nl"
+
+  as_fn_append MODULE_BLOCK "MODULE_MATH=$py_cv_module_math$as_nl"
+  if test "x$py_cv_module_math" = xyes; then :
+
+
     as_fn_append MODULE_BLOCK "MODULE_MATH_LDFLAGS=$LIBM$as_nl"
 
+fi
 
 
-     if true; then
+
+      case $py_stdlib_not_available in #(
+  *_datetime*) :
+    py_cv_module__datetime=n/a ;; #(
+  *) :
+    py_cv_module__datetime=yes
+   ;;
+esac
+   if test "$py_cv_module__datetime" = yes; then
   MODULE__DATETIME_TRUE=
   MODULE__DATETIME_FALSE='#'
 else
   MODULE__DATETIME_TRUE='#'
   MODULE__DATETIME_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__DATETIME=yes$as_nl"
+
+  as_fn_append MODULE_BLOCK "MODULE__DATETIME=$py_cv_module__datetime$as_nl"
+  if test "x$py_cv_module__datetime" = xyes; then :
+
+
     as_fn_append MODULE_BLOCK "MODULE__DATETIME_LDFLAGS=$TIMEMODULE_LIB $LIBM$as_nl"
+
+fi
 
 
 
@@ -21073,40 +21993,40 @@ fi
 $as_echo "$py_cv_module_mmap" >&6; }
 
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _posixshmem" >&5
-$as_echo_n "checking for stdlib extension module _posixshmem... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _socket" >&5
+$as_echo_n "checking for stdlib extension module _socket... " >&6; }
       case $py_stdlib_not_available in #(
-  *_posixshmem*) :
-    py_cv_module__posixshmem=n/a ;; #(
+  *_socket*) :
+    py_cv_module__socket=n/a ;; #(
   *) :
     if true; then :
-  if test "$have_posix_shmem" = "yes"; then :
-  py_cv_module__posixshmem=yes
+  if test "$ac_cv_header_sys_socket_h" = "yes"                     -a "$ac_cv_header_sys_types_h" = "yes"                     -a "$ac_cv_header_netinet_in_h" = "yes"; then :
+  py_cv_module__socket=yes
 else
-  py_cv_module__posixshmem=missing
+  py_cv_module__socket=missing
 fi
 else
-  py_cv_module__posixshmem=disabled
+  py_cv_module__socket=disabled
 fi
    ;;
 esac
-  as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM=$py_cv_module__posixshmem$as_nl"
-  if test "x$py_cv_module__posixshmem" = xyes; then :
+  as_fn_append MODULE_BLOCK "MODULE__SOCKET=$py_cv_module__socket$as_nl"
+  if test "x$py_cv_module__socket" = xyes; then :
 
-    as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM_CFLAGS=$POSIXSHMEM_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__POSIXSHMEM_LDFLAGS=$POSIXSHMEM_LIBS$as_nl"
+
+
 
 fi
-   if test "$py_cv_module__posixshmem" = yes; then
-  MODULE__POSIXSHMEM_TRUE=
-  MODULE__POSIXSHMEM_FALSE='#'
+   if test "$py_cv_module__socket" = yes; then
+  MODULE__SOCKET_TRUE=
+  MODULE__SOCKET_FALSE='#'
 else
-  MODULE__POSIXSHMEM_TRUE='#'
-  MODULE__POSIXSHMEM_FALSE=
+  MODULE__SOCKET_TRUE='#'
+  MODULE__SOCKET_FALSE=
 fi
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__posixshmem" >&5
-$as_echo "$py_cv_module__posixshmem" >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__socket" >&5
+$as_echo "$py_cv_module__socket" >&6; }
 
 
 
@@ -21435,77 +22355,197 @@ fi
 $as_echo "$py_cv_module__elementtree" >&6; }
 
 
-     if true; then
+      case $py_stdlib_not_available in #(
+  *_codecs_cn*) :
+    py_cv_module__codecs_cn=n/a ;; #(
+  *) :
+    py_cv_module__codecs_cn=yes
+   ;;
+esac
+   if test "$py_cv_module__codecs_cn" = yes; then
   MODULE__CODECS_CN_TRUE=
   MODULE__CODECS_CN_FALSE='#'
 else
   MODULE__CODECS_CN_TRUE='#'
   MODULE__CODECS_CN_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__CODECS_CN=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_CN=$py_cv_module__codecs_cn$as_nl"
+  if test "x$py_cv_module__codecs_cn" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_codecs_hk*) :
+    py_cv_module__codecs_hk=n/a ;; #(
+  *) :
+    py_cv_module__codecs_hk=yes
+   ;;
+esac
+   if test "$py_cv_module__codecs_hk" = yes; then
   MODULE__CODECS_HK_TRUE=
   MODULE__CODECS_HK_FALSE='#'
 else
   MODULE__CODECS_HK_TRUE='#'
   MODULE__CODECS_HK_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__CODECS_HK=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_HK=$py_cv_module__codecs_hk$as_nl"
+  if test "x$py_cv_module__codecs_hk" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_codecs_iso2022*) :
+    py_cv_module__codecs_iso2022=n/a ;; #(
+  *) :
+    py_cv_module__codecs_iso2022=yes
+   ;;
+esac
+   if test "$py_cv_module__codecs_iso2022" = yes; then
   MODULE__CODECS_ISO2022_TRUE=
   MODULE__CODECS_ISO2022_FALSE='#'
 else
   MODULE__CODECS_ISO2022_TRUE='#'
   MODULE__CODECS_ISO2022_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__CODECS_ISO2022=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_ISO2022=$py_cv_module__codecs_iso2022$as_nl"
+  if test "x$py_cv_module__codecs_iso2022" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_codecs_jp*) :
+    py_cv_module__codecs_jp=n/a ;; #(
+  *) :
+    py_cv_module__codecs_jp=yes
+   ;;
+esac
+   if test "$py_cv_module__codecs_jp" = yes; then
   MODULE__CODECS_JP_TRUE=
   MODULE__CODECS_JP_FALSE='#'
 else
   MODULE__CODECS_JP_TRUE='#'
   MODULE__CODECS_JP_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__CODECS_JP=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_JP=$py_cv_module__codecs_jp$as_nl"
+  if test "x$py_cv_module__codecs_jp" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_codecs_kr*) :
+    py_cv_module__codecs_kr=n/a ;; #(
+  *) :
+    py_cv_module__codecs_kr=yes
+   ;;
+esac
+   if test "$py_cv_module__codecs_kr" = yes; then
   MODULE__CODECS_KR_TRUE=
   MODULE__CODECS_KR_FALSE='#'
 else
   MODULE__CODECS_KR_TRUE='#'
   MODULE__CODECS_KR_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__CODECS_KR=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_KR=$py_cv_module__codecs_kr$as_nl"
+  if test "x$py_cv_module__codecs_kr" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_codecs_tw*) :
+    py_cv_module__codecs_tw=n/a ;; #(
+  *) :
+    py_cv_module__codecs_tw=yes
+   ;;
+esac
+   if test "$py_cv_module__codecs_tw" = yes; then
   MODULE__CODECS_TW_TRUE=
   MODULE__CODECS_TW_FALSE='#'
 else
   MODULE__CODECS_TW_TRUE='#'
   MODULE__CODECS_TW_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__CODECS_TW=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__CODECS_TW=$py_cv_module__codecs_tw$as_nl"
+  if test "x$py_cv_module__codecs_tw" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *_multibytecodec*) :
+    py_cv_module__multibytecodec=n/a ;; #(
+  *) :
+    py_cv_module__multibytecodec=yes
+   ;;
+esac
+   if test "$py_cv_module__multibytecodec" = yes; then
   MODULE__MULTIBYTECODEC_TRUE=
   MODULE__MULTIBYTECODEC_FALSE='#'
 else
   MODULE__MULTIBYTECODEC_TRUE='#'
   MODULE__MULTIBYTECODEC_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE__MULTIBYTECODEC=yes$as_nl"
 
-     if true; then
+  as_fn_append MODULE_BLOCK "MODULE__MULTIBYTECODEC=$py_cv_module__multibytecodec$as_nl"
+  if test "x$py_cv_module__multibytecodec" = xyes; then :
+
+
+
+
+fi
+
+
+      case $py_stdlib_not_available in #(
+  *unicodedata*) :
+    py_cv_module_unicodedata=n/a ;; #(
+  *) :
+    py_cv_module_unicodedata=yes
+   ;;
+esac
+   if test "$py_cv_module_unicodedata" = yes; then
   MODULE_UNICODEDATA_TRUE=
   MODULE_UNICODEDATA_FALSE='#'
 else
   MODULE_UNICODEDATA_TRUE='#'
   MODULE_UNICODEDATA_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE_UNICODEDATA=yes$as_nl"
+
+  as_fn_append MODULE_BLOCK "MODULE_UNICODEDATA=$py_cv_module_unicodedata$as_nl"
+  if test "x$py_cv_module_unicodedata" = xyes; then :
+
+
+
+
+fi
+
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _md5" >&5
@@ -21905,6 +22945,42 @@ fi
 $as_echo "$py_cv_module__sqlite3" >&6; }
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _uuid" >&5
+$as_echo_n "checking for stdlib extension module _uuid... " >&6; }
+      case $py_stdlib_not_available in #(
+  *_uuid*) :
+    py_cv_module__uuid=n/a ;; #(
+  *) :
+    if true; then :
+  if test "$have_uuid" = "yes"; then :
+  py_cv_module__uuid=yes
+else
+  py_cv_module__uuid=missing
+fi
+else
+  py_cv_module__uuid=disabled
+fi
+   ;;
+esac
+  as_fn_append MODULE_BLOCK "MODULE__UUID=$py_cv_module__uuid$as_nl"
+  if test "x$py_cv_module__uuid" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE__UUID_CFLAGS=$LIBUUID_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__UUID_LDFLAGS=$LIBUUID_LIBS$as_nl"
+
+fi
+   if test "$py_cv_module__uuid" = yes; then
+  MODULE__UUID_TRUE=
+  MODULE__UUID_FALSE='#'
+else
+  MODULE__UUID_TRUE='#'
+  MODULE__UUID_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__uuid" >&5
+$as_echo "$py_cv_module__uuid" >&6; }
+
+
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module zlib" >&5
 $as_echo_n "checking for stdlib extension module zlib... " >&6; }
@@ -21942,17 +23018,28 @@ fi
 $as_echo "$py_cv_module_zlib" >&6; }
 
 
-     if true; then
+      case $py_stdlib_not_available in #(
+  *binascii*) :
+    py_cv_module_binascii=n/a ;; #(
+  *) :
+    py_cv_module_binascii=yes
+   ;;
+esac
+   if test "$py_cv_module_binascii" = yes; then
   MODULE_BINASCII_TRUE=
   MODULE_BINASCII_FALSE='#'
 else
   MODULE_BINASCII_TRUE='#'
   MODULE_BINASCII_FALSE=
 fi
-  as_fn_append MODULE_BLOCK "MODULE_BINASCII=yes$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE_BINASCII_CFLAGS=$BINASCII_CFLAGS$as_nl"
 
+  as_fn_append MODULE_BLOCK "MODULE_BINASCII=$py_cv_module_binascii$as_nl"
+  if test "x$py_cv_module_binascii" = xyes; then :
+
+    as_fn_append MODULE_BLOCK "MODULE_BINASCII_CFLAGS=$BINASCII_CFLAGS$as_nl"
     as_fn_append MODULE_BLOCK "MODULE_BINASCII_LDFLAGS=$BINASCII_LIBS$as_nl"
+
+fi
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _bz2" >&5
@@ -22610,10 +23697,6 @@ if test -z "${MODULE_SELECT_TRUE}" && test -z "${MODULE_SELECT_FALSE}"; then
   as_fn_error $? "conditional \"MODULE_SELECT\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${MODULE__SOCKET_TRUE}" && test -z "${MODULE__SOCKET_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE__SOCKET\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
 if test -z "${MODULE__STRUCT_TRUE}" && test -z "${MODULE__STRUCT_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__STRUCT\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
@@ -22628,6 +23711,14 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__ZONEINFO_TRUE}" && test -z "${MODULE__ZONEINFO_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__ZONEINFO\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__MULTIPROCESSING_TRUE}" && test -z "${MODULE__MULTIPROCESSING_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__MULTIPROCESSING\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__POSIXSHMEM_TRUE}" && test -z "${MODULE__POSIXSHMEM_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__POSIXSHMEM\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_AUDIOOP_TRUE}" && test -z "${MODULE_AUDIOOP_FALSE}"; then
@@ -22658,8 +23749,8 @@ if test -z "${MODULE_MMAP_TRUE}" && test -z "${MODULE_MMAP_FALSE}"; then
   as_fn_error $? "conditional \"MODULE_MMAP\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${MODULE__POSIXSHMEM_TRUE}" && test -z "${MODULE__POSIXSHMEM_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE__POSIXSHMEM\" was never defined.
+if test -z "${MODULE__SOCKET_TRUE}" && test -z "${MODULE__SOCKET_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__SOCKET\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_GRP_TRUE}" && test -z "${MODULE_GRP_FALSE}"; then
@@ -22772,6 +23863,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__SQLITE3_TRUE}" && test -z "${MODULE__SQLITE3_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__SQLITE3\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__UUID_TRUE}" && test -z "${MODULE__UUID_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__UUID\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_ZLIB_TRUE}" && test -z "${MODULE_ZLIB_FALSE}"; then
@@ -24025,28 +25120,34 @@ $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
 
 
-echo "creating Modules/Setup.local" >&6
+{ $as_echo "$as_me:${as_lineno-$LINENO}: creating Modules/Setup.local" >&5
+$as_echo "$as_me: creating Modules/Setup.local" >&6;}
 if test ! -f Modules/Setup.local
 then
 	echo "# Edit this file for local setup changes" >Modules/Setup.local
 fi
 
-echo "creating Makefile" >&6
+{ $as_echo "$as_me:${as_lineno-$LINENO}: creating Makefile" >&5
+$as_echo "$as_me: creating Makefile" >&6;}
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
-			Modules/Setup.local $srcdir/Modules/Setup.bootstrap $srcdir/Modules/Setup
+			Modules/Setup.local $MODULES_SETUP_STDLIB $srcdir/Modules/Setup.bootstrap $srcdir/Modules/Setup
 mv config.c Modules
 
 if test -z "$PKG_CONFIG"; then
-  echo "" >&6
-  echo "pkg-config is missing. Some dependencies may not be detected correctly." >&6
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: pkg-config is missing. Some dependencies may not be detected correctly." >&5
+$as_echo "$as_me: WARNING: pkg-config is missing. Some dependencies may not be detected correctly." >&2;}
 fi
 
 if test "$Py_OPT" = 'false' -a "$Py_DEBUG" != 'true'; then
-    echo "" >&6
-    echo "" >&6
-    echo "If you want a release build with all stable optimizations active (PGO, etc)," >&6
-    echo "please run ./configure --enable-optimizations" >&6
-    echo "" >&6
-    echo "" >&6
+  { $as_echo "$as_me:${as_lineno-$LINENO}:
+
+If you want a release build with all stable optimizations active (PGO, etc),
+please run ./configure --enable-optimizations
+" >&5
+$as_echo "$as_me:
+
+If you want a release build with all stable optimizations active (PGO, etc),
+please run ./configure --enable-optimizations
+" >&6;}
 fi

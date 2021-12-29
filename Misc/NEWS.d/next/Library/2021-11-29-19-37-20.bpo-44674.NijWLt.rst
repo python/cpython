@@ -1,0 +1,6 @@
+Change how dataclasses disallows mutable default values.  It used to
+use a list of known types (list, dict, set).  Now it disallows
+unhashable objects to be defaults.  It's using unhashability as a
+proxy for mutability.  Patch by Eric V. Smith, idea by Raymond
+Hettinger.
+

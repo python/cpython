@@ -991,6 +991,9 @@ class _BaseGenericAlias(_Final, _root=True):
         raise TypeError("Subscripted generics cannot be used with"
                         " class and instance checks")
 
+    def __dir__(self):
+        return list(set(super().__dir__()
+                + [attr for attr in dir(self.__origin__) if not _is_dunder(attr)]))
 
 # Special typing constructs Union, Optional, Generic, Callable and Tuple
 # use three special attributes for internal bookkeeping of generic types:
@@ -2427,7 +2430,7 @@ class NewType:
     """NewType creates simple unique types with almost zero
     runtime overhead. NewType(name, tp) is considered a subtype of tp
     by static type checkers. At runtime, NewType(name, tp) returns
-    a dummy function that simply returns its argument. Usage::
+    a dummy callable that simply returns its argument. Usage::
 
         UserId = NewType('UserId', int)
 

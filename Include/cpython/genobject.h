@@ -14,7 +14,6 @@ extern "C" {
 #define _PyGenObject_HEAD(prefix)                                           \
     PyObject_HEAD                                                           \
     /* Note: gi_frame can be NULL if the generator is "finished" */         \
-    struct _interpreter_frame *prefix##_xframe;                             \
     /* The code object backing the generator */                             \
     PyCodeObject *prefix##_code;                                            \
     /* List of weak reference. */                                           \
@@ -23,7 +22,14 @@ extern "C" {
     PyObject *prefix##_name;                                                \
     /* Qualified name of the generator. */                                  \
     PyObject *prefix##_qualname;                                            \
-    _PyErr_StackItem prefix##_exc_state;
+    _PyErr_StackItem prefix##_exc_state;                                    \
+    PyObject *prefix##_origin_or_finalizer;                                 \
+    char prefix##_hooks_inited;                                             \
+    char prefix##_closed;                                                   \
+    char prefix##_running_async;                                            \
+    /* The frame */                                                         \
+    char prefix##_frame_valid;                                              \
+    PyObject *prefix##_iframe[1];
 
 typedef struct {
     /* The gi_ prefix is intended to remind of generator-iterator. */
@@ -48,7 +54,6 @@ PyAPI_FUNC(void) _PyGen_Finalize(PyObject *self);
 
 typedef struct {
     _PyGenObject_HEAD(cr)
-    PyObject *cr_origin;
 } PyCoroObject;
 
 PyAPI_DATA(PyTypeObject) PyCoro_Type;
@@ -64,18 +69,6 @@ PyAPI_FUNC(PyObject *) PyCoro_New(PyFrameObject *,
 
 typedef struct {
     _PyGenObject_HEAD(ag)
-    PyObject *ag_finalizer;
-
-    /* Flag is set to 1 when hooks set up by sys.set_asyncgen_hooks
-       were called on the generator, to avoid calling them more
-       than once. */
-    int ag_hooks_inited;
-
-    /* Flag is set to 1 when aclose() is called for the first time, or
-       when a StopAsyncIteration exception is raised. */
-    int ag_closed;
-
-    int ag_running_async;
 } PyAsyncGenObject;
 
 PyAPI_DATA(PyTypeObject) PyAsyncGen_Type;

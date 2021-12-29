@@ -27,32 +27,28 @@ _PyFrame_MakeAndSetFrameObject(InterpreterFrame *frame)
     assert(frame->frame_obj == NULL);
     PyObject *error_type, *error_value, *error_traceback;
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
-    PyFrameObject *f = _PyFrame_New_NoTrack(frame, 0);
+
+    PyFrameObject *f = _PyFrame_New_NoTrack(frame->f_code);
     if (f == NULL) {
         Py_XDECREF(error_type);
         Py_XDECREF(error_value);
         Py_XDECREF(error_traceback);
     }
     else {
+        f->f_owns_frame = 0;
+        f->f_frame = frame;
+        frame->frame_obj = f;
         PyErr_Restore(error_type, error_value, error_traceback);
     }
-    frame->frame_obj = f;
     return f;
 }
 
-
-static InterpreterFrame *
-copy_frame_to_heap(InterpreterFrame *frame)
+void
+_PyFrame_Copy(InterpreterFrame *src, InterpreterFrame *dest)
 {
-    assert(frame->stacktop >= frame->f_code->co_nlocalsplus);
-    Py_ssize_t size = ((char*)&frame->localsplus[frame->stacktop]) - (char *)frame;
-    InterpreterFrame *copy = PyMem_Malloc(size);
-    if (copy == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-    memcpy(copy, frame, size);
-    return copy;
+    assert(src->stacktop >= src->f_code->co_nlocalsplus);
+    Py_ssize_t size = ((char*)&src->localsplus[src->stacktop]) - (char *)src;
+    memcpy(dest, src, size);
 }
 
 static inline void
@@ -68,10 +64,11 @@ clear_specials(InterpreterFrame *frame)
 static void
 take_ownership(PyFrameObject *f, InterpreterFrame *frame)
 {
-    assert(f->f_own_locals_memory == 0);
-    assert(frame->frame_obj == NULL);
-
-    f->f_own_locals_memory = 1;
+    assert(f->f_owns_frame == 0);
+    Py_ssize_t size = ((char*)&frame->localsplus[frame->stacktop]) - (char *)frame;
+    memcpy((InterpreterFrame *)f->_f_frame_data, frame, size);
+    frame = (InterpreterFrame *)f->_f_frame_data;
+    f->f_owns_frame = 1;
     f->f_frame = frame;
     assert(f->f_back == NULL);
     if (frame->previous != NULL) {
@@ -82,7 +79,6 @@ take_ownership(PyFrameObject *f, InterpreterFrame *frame)
             assert(PyErr_ExceptionMatches(PyExc_MemoryError));
             /* Nothing we can do about it */
             PyErr_Clear();
-            _PyErr_WriteUnraisableMsg("Out of memory lazily allocating frame->f_back", NULL);
         }
         else {
             f->f_back = (PyFrameObject *)Py_NewRef(back);
@@ -94,8 +90,8 @@ take_ownership(PyFrameObject *f, InterpreterFrame *frame)
     }
 }
 
-int
-_PyFrame_Clear(InterpreterFrame * frame, int take)
+void
+_PyFrame_Clear(InterpreterFrame * frame)
 {
     /* It is the responsibility of the owning generator/coroutine
      * to have cleared the generator pointer */
@@ -104,25 +100,15 @@ _PyFrame_Clear(InterpreterFrame * frame, int take)
         PyFrameObject *f = frame->frame_obj;
         frame->frame_obj = NULL;
         if (Py_REFCNT(f) > 1) {
-            if (!take) {
-                frame = copy_frame_to_heap(frame);
-                if (frame == NULL) {
-                    return -1;
-                }
-            }
             take_ownership(f, frame);
             Py_DECREF(f);
-            return 0;
+            return;
         }
         Py_DECREF(f);
     }
-    assert(_PyFrame_GetStackPointer(frame) >= _PyFrame_Stackbase(frame));
+    assert(frame->stacktop >= 0);
     for (int i = 0; i < frame->stacktop; i++) {
         Py_XDECREF(frame->localsplus[i]);
     }
     clear_specials(frame);
-    if (take) {
-        PyMem_Free(frame);
-    }
-    return 0;
 }

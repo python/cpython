@@ -56,7 +56,7 @@ typedef struct _err_stackitem {
      * This ensures that the exception state is not impacted by "yields"
      * from an except handler.
      */
-    PyObject *exc_type, *exc_value, *exc_traceback;
+    PyObject *exc_value;
 
     struct _err_stackitem *previous_item;
 
@@ -76,6 +76,12 @@ struct _ts {
     struct _ts *prev;
     struct _ts *next;
     PyInterpreterState *interp;
+
+    /* Has been initialized to a safe state.
+
+       In order to be effective, this must be set to 0 during or right
+       after allocation. */
+    int _initialized;
 
     int recursion_remaining;
     int recursion_limit;

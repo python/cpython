@@ -8,6 +8,7 @@ import abc
 import pickle
 import inspect
 import builtins
+import types
 import unittest
 from unittest.mock import Mock
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, Protocol
@@ -499,6 +500,32 @@ class TestCase(unittest.TestCase):
         self.assertEqual(C(1, 10), C(1, 20))
         self.assertNotEqual(C(3), C(4, 10))
         self.assertNotEqual(C(3, 10), C(4, 10))
+
+    def test_no_unhashable_default(self):
+        # See bpo-44674.
+        class Unhashable:
+            __hash__ = None
+
+        unhashable_re = 'mutable default .* for field a is not allowed'
+        with self.assertRaisesRegex(ValueError, unhashable_re):
+            @dataclass
+            class A:
+                a: dict = {}
+
+        with self.assertRaisesRegex(ValueError, unhashable_re):
+            @dataclass
+            class A:
+                a: Any = Unhashable()
+
+        # Make sure that the machinery looking for hashability is using the
+        # class's __hash__, not the instance's __hash__.
+        with self.assertRaisesRegex(ValueError, unhashable_re):
+            unhashable = Unhashable()
+            # This shouldn't make the variable hashable.
+            unhashable.__hash__ = lambda: 0
+            @dataclass
+            class A:
+                a: Any = unhashable
 
     def test_hash_field_rules(self):
         # Test all 6 cases of:
@@ -1126,6 +1153,10 @@ class TestCase(unittest.TestCase):
         self.assertEqual(repr(InitVar[int]), 'dataclasses.InitVar[int]')
         self.assertEqual(repr(InitVar[List[int]]),
                          'dataclasses.InitVar[typing.List[int]]')
+        self.assertEqual(repr(InitVar[list[int]]),
+                         'dataclasses.InitVar[list[int]]')
+        self.assertEqual(repr(InitVar[int|str]),
+                         'dataclasses.InitVar[int | str]')
 
     def test_init_var_inheritance(self):
         # Note that this deliberately tests that a dataclass need not
@@ -1349,6 +1380,17 @@ class TestCase(unittest.TestCase):
                     astuple(obj)
                 with self.assertRaisesRegex(TypeError, 'should be called on dataclass instances'):
                     replace(obj, x=0)
+
+    def test_is_dataclass_genericalias(self):
+        @dataclass
+        class A(types.GenericAlias):
+            origin: type
+            args: type
+        self.assertTrue(is_dataclass(A))
+        a = A(list, int)
+        self.assertTrue(is_dataclass(type(a)))
+        self.assertTrue(is_dataclass(a))
+
 
     def test_helper_fields_with_class_instance(self):
         # Check that we can call fields() on either a class or instance,
