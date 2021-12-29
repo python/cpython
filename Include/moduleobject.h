@@ -48,11 +48,13 @@ typedef struct PyModuleDef_Base {
   PyObject* m_copy;
 } PyModuleDef_Base;
 
-#define PyModuleDef_HEAD_INIT { \
-    PyObject_HEAD_INIT(NULL)    \
-    NULL, /* m_init */          \
-    0,    /* m_index */         \
-    NULL, /* m_copy */          \
+// TODO(eduardo-elizondo): This is only used to simplify the review of GH-19474
+// Rather than changing this API, we'll introduce PyModuleDef_HEAD_IMMORTAL_INIT
+#define PyModuleDef_HEAD_INIT {       \
+    PyObject_HEAD_IMMORTAL_INIT(NULL) \
+    NULL, /* m_init */                \
+    0,    /* m_index */               \
+    NULL, /* m_copy */                \
   }
 
 struct PyModuleDef_Slot;

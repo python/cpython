@@ -27,7 +27,7 @@ from textwrap import dedent
 from types import AsyncGeneratorType, FunctionType
 from operator import neg
 from test import support
-from test.support import (swap_attr, maybe_get_event_loop_policy)
+from test.support import (cpython_only, swap_attr, maybe_get_event_loop_policy)
 from test.support.os_helper import (EnvironmentVarGuard, TESTFN, unlink)
 from test.support.script_helper import assert_python_ok
 from test.support.warnings_helper import check_warnings
@@ -2190,16 +2190,27 @@ class ShutdownTest(unittest.TestCase):
         self.assertEqual(["before", "after"], out.decode().splitlines())
 
 
+@cpython_only
 class ImmortalTests(unittest.TestCase):
     def test_immortal(self):
-        none = None
-        true = True
-        false = False
-        small_int = 100
-        self.assertGreater(sys.getrefcount(none), 1e8)
-        self.assertGreater(sys.getrefcount(true), 1e8)
-        self.assertGreater(sys.getrefcount(false), 1e8)
-        self.assertGreater(sys.getrefcount(small_int), 1e8)
+        none_refcount = sys.getrefcount(None)
+        true_refcount = sys.getrefcount(True)
+        false_refcount = sys.getrefcount(False)
+        smallint_refcount = sys.getrefcount(100)
+
+        # Assert that all of these immortal instances have large ref counts
+        self.assertGreater(none_refcount, 1e8)
+        self.assertGreater(true_refcount, 1e8)
+        self.assertGreater(false_refcount, 1e8)
+        self.assertGreater(smallint_refcount, 1e8)
+
+        # Confirm that the refcount doesn't change even with a new ref to them
+        l = [None, True, False, 100]
+        self.assertEqual(sys.getrefcount(None), none_refcount)
+        self.assertEqual(sys.getrefcount(True), true_refcount)
+        self.assertEqual(sys.getrefcount(False), false_refcount)
+        self.assertEqual(sys.getrefcount(100), smallint_refcount)
+
 
 
 class TestType(unittest.TestCase):
