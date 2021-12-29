@@ -1,0 +1,2 @@
+In :func:`inspect.signature`, if the 'base' class has ``__text_signature__``
+attribute, use 'base' to help parse it. Patch by Weipeng Hong.
