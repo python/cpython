@@ -625,7 +625,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
    Union type; ``Union[X, Y]`` is equivalent to ``X | Y`` and means either X or Y.
 
-   To define a union, use e.g. ``Union[int, str]`` or the shorthand ``int | str``.  Details:
+   To define a union, use e.g. ``Union[int, str]`` or the shorthand ``int | str``. Using that shorthand is recommended. Details:
 
    * The arguments must be types and there must be at least one.
 
