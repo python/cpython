@@ -1638,6 +1638,11 @@ mmap_exec(PyObject *module)
 #ifdef MAP_POPULATE
     ADD_INT_MACRO(module, MAP_POPULATE);
 #endif
+#ifdef MAP_STACK
+    // Mostly a no-op on Linux and NetBSD, but useful on OpenBSD
+    // for stack usage (even on x86 arch)
+    ADD_INT_MACRO(module, MAP_STACK);
+#endif
     if (PyModule_AddIntConstant(module, "PAGESIZE", (long)my_getpagesize()) < 0 ) {
         return -1;
     }
