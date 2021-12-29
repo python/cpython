@@ -383,7 +383,10 @@ class CodeTest(unittest.TestCase):
                 ("STORE_NAME", "e"),  # XX: we know the location for this
                 ("DELETE_NAME", "e"),
                 ("RERAISE", 1),
-                ("POP_EXCEPT_AND_RERAISE", None)
+                ("ROT_THREE", None),
+                ("ROT_THREE", None),
+                ("POP_EXCEPT", None),
+                ("RERAISE", 1)
             ]
         )
 
