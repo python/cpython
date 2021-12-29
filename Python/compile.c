@@ -1134,7 +1134,7 @@ stack_effect(int opcode, int oparg, int jump)
             return jump ? 1 : 0;
 
         case PREP_RERAISE_STAR:
-             return 0;
+             return -1;
         case RERAISE:
             return -1;
         case PUSH_EXC_INFO:
@@ -3488,12 +3488,12 @@ compiler_try_except(struct compiler *c, stmt_ty s)
    [orig, res, rest]                Ln+1:     LIST_APPEND 1  ) add unhandled exc to res (could be None)
 
    [orig, res]                                PREP_RERAISE_STAR
-   [i, exc]                                   POP_JUMP_IF_TRUE      RER
-   [i, exc]                                   POP
-   [i]                                        POP
+   [exc]                                      POP_JUMP_IF_TRUE      RER
    []                                         JUMP_FORWARD          L0
 
-   [i, exc]                         RER:      POP_EXCEPT_AND_RERAISE
+   [exc]                            RER:      ROT_TWO
+   [exc, prev_exc_info]                       POP_EXCEPT
+   [exc]                                      RERAISE      0
 
    []                               L0:       <next statement>
 */
@@ -3662,13 +3662,14 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
 
     /* Nothing to reraise - pop it */
     ADDOP(c, POP_TOP);
-    ADDOP(c, POP_TOP);
     ADDOP(c, POP_BLOCK);
     ADDOP(c, POP_EXCEPT);
     ADDOP_JUMP(c, JUMP_FORWARD, end);
     compiler_use_next_block(c, reraise);
     ADDOP(c, POP_BLOCK);
-    ADDOP(c, POP_EXCEPT_AND_RERAISE);
+    ADDOP(c, ROT_TWO);
+    ADDOP(c, POP_EXCEPT);
+    ADDOP_I(c, RERAISE, 0);
     compiler_use_next_block(c, cleanup);
     ADDOP(c, POP_EXCEPT_AND_RERAISE);
     compiler_use_next_block(c, orelse);

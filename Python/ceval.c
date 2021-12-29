@@ -2785,8 +2785,6 @@ check_eval_breaker:
                 goto error;
             }
 
-            PyObject *lasti_unused = Py_NewRef(_PyLong_GetZero());
-            PUSH(lasti_unused);
             PUSH(val);
             DISPATCH();
         }
