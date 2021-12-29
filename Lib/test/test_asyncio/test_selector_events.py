@@ -1089,6 +1089,10 @@ class SelectorDatagramTransportTests(test_utils.TestCase):
         self.addCleanup(close_transport, transport)
         return transport
 
+    def test_isinstance_datagram_transport(self):
+        transport = self.datagram_transport()
+        self.assertIsInstance(transport, asyncio.DatagramTransport)
+
     def test_read_ready(self):
         transport = self.datagram_transport()
 
