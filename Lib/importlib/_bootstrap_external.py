@@ -375,6 +375,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.11a4 3467 (Change CALL_xxx opcodes)
 #     Python 3.11a4 3468 (Add SEND opcode)
 #     Python 3.11a4 3469 (bpo-45711: remove type, traceback from exc_info)
+#     Python 3.11a4 3470 (bpo-45711: PREP_RERAISE_STAR no longer pushes lasti)
 
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
