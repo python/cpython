@@ -100,14 +100,6 @@ class TestProgram(object):
         self.parseArgs(argv)
         self.runTests()
 
-    def usageExit(self, msg=None):
-        if msg:
-            print(msg)
-        if self._discovery_parser is None:
-            self._initArgParsers()
-        self._print_help()
-        sys.exit(2)
-
     def _print_help(self, *args, **kwargs):
         if self.module is None:
             print(self._main_parser.format_help())
