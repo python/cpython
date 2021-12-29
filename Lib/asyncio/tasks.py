@@ -612,6 +612,8 @@ def ensure_future(coro_or_future, *, loop=None):
 
     If the argument is a Future, it is returned directly.
     """
+    if loop is None:
+        coro_or_future.close()
     return _ensure_future(coro_or_future, loop=loop)
 
 
