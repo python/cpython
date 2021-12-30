@@ -1,0 +1,1 @@
+Add docs about :method:`cmd.Cmd.columnize`.
