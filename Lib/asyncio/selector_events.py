@@ -996,7 +996,7 @@ class _SelectorDatagramTransport(transports._FlowControlMixin,
                                  transports.DatagramTransport):
 
     _buffer_factory = collections.deque
-    max_size = 256 * 1024  # Buffer size passed to recv().
+    max_size = 256 * 1024
 
     def __init__(self, loop, sock, protocol, address=None,
                  waiter=None, extra=None, server=None):
