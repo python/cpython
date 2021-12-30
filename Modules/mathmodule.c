@@ -3344,7 +3344,8 @@ perm_comb_small(unsigned long long n, unsigned long long k, int iscomb)
     };
     static const unsigned long long fast_perm_limits[] = {
         0, ULLONG_MAX, 4294967296ULL, 2642246, 65537, 7133, 1627, 568,  // 0-7
-        259, 142, 88, 61, 45, 36, 30,  // 8-14
+        259, 142, 88, 61, 45, 36, 30, 26,  // 8-15
+        24, 22, 21, 20, 20,  // 16-20
     };
 
     if (k == 0) {
@@ -3387,6 +3388,13 @@ perm_comb_small(unsigned long long n, unsigned long long k, int iscomb)
     }
     else {
         if (k < Py_ARRAY_LENGTH(fast_perm_limits) && n <= fast_perm_limits[k]) {
+            if (n <= 127) {
+                uint64_t perm_odd_part = reduced_factorial_odd_part[n]
+                                    * inverted_factorial_odd_part[n - k];
+                int shift = k - _Py_popcount32(n) +  _Py_popcount32(n-k);
+                return PyLong_FromUnsignedLongLong(perm_odd_part << shift);
+            }
+
             unsigned long long result = n;
             for (unsigned long long i = 1; i < k;) {
                 result *= --n;
