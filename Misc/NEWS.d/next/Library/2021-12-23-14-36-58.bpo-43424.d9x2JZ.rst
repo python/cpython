@@ -1,0 +1,1 @@
+Deprecate :attr:`webbrowser.MacOSXOSAScript._name` and use ``name`` instead.
