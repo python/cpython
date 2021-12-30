@@ -1,1 +1,1 @@
-Add docs about :method:`cmd.Cmd.columnize`.
+Add docs about :meth:`cmd.Cmd.columnize`.
