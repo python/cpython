@@ -428,6 +428,18 @@ buffered_clear(buffered *self)
     return 0;
 }
 
+static PyObject *
+buffered_at_fork_reinit(buffered *self, PyObject *Py_UNUSED(ignored))
+{
+    int ret = _PyThread_at_fork_reinit(&self->lock);
+    self->owner = 0;
+    if (ret == 0) {
+        return Py_True;
+    } else {
+        return Py_False;
+    }
+}
+
 /* Because this can call arbitrary code, it shouldn't be called when
    the refcount is 0 (that is, not directly from tp_dealloc unless
    the refcount has been temporarily re-incremented). */
@@ -2493,6 +2505,7 @@ static PyMethodDef bufferedwriter_methods[] = {
     _IO__BUFFERED_SEEK_METHODDEF
     {"tell", (PyCFunction)buffered_tell, METH_NOARGS},
     {"__sizeof__", (PyCFunction)buffered_sizeof, METH_NOARGS},
+    {"_at_fork_reinit", (PyCFunction)buffered_at_fork_reinit, METH_NOARGS},
     {NULL, NULL}
 };
 

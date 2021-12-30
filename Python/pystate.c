@@ -171,6 +171,65 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
 }
 
 #ifdef HAVE_FORK
+_Py_IDENTIFIER(stdout);
+_Py_IDENTIFIER(stderr);
+
+static int stdio_at_fork_reinit(_Py_Identifier *key)
+{
+
+    int ret = 0;
+
+    PyObject *stdio, *closed, *isatty, *buffer, *result;
+
+    stdio = _PySys_GetObjectId(key);
+
+    _Py_IDENTIFIER(closed);
+    if (_PyObject_LookupAttrId(stdio, &PyId_closed, &closed) < 0) {
+        PyErr_Clear();
+        goto end;
+    }
+
+    if (Py_IsTrue(closed)) {
+        goto end;
+    }
+
+    _Py_IDENTIFIER(isatty);
+    if (_PyObject_GetAttrId(stdio, &PyId_isatty) == NULL) {
+        PyErr_Clear();
+        goto end;
+    }
+
+    isatty = _PyObject_CallMethodIdNoArgs(stdio, &PyId_isatty);
+    if (Py_IsFalse(isatty)) {
+        goto end;
+    }
+
+    _Py_IDENTIFIER(buffer);
+    if (_PyObject_LookupAttrId(stdio, &PyId_buffer, &buffer) < 0) {
+        /* stdout.buffer and stderr.buffer are not part of the
+         * TextIOBase API and may not exist in some implementations.
+         * If not present, no need to reinitialize their locks. */
+        goto end;
+    }
+
+    _Py_IDENTIFIER(_at_fork_reinit);
+    if (_PyObject_GetAttrId(buffer, &PyId__at_fork_reinit) == NULL) {
+        PyErr_Clear();
+        goto end;
+    }
+
+    result = _PyObject_CallMethodIdNoArgs(buffer, &PyId__at_fork_reinit);
+
+    if (result == Py_True) {
+        goto end;
+    }
+
+    /* error */
+    ret = -1;
+end:
+    return ret;
+}
+
 /* This function is called from PyOS_AfterFork_Child to ensure that
    newly created child processes do not share locks with the parent. */
 PyStatus
@@ -202,6 +261,15 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
         return _PyStatus_ERR("Failed to reinitialize runtime locks");
 
     }
+
+    int reinit_stdout = stdio_at_fork_reinit(&PyId_stdout);
+    int reinit_stderr = stdio_at_fork_reinit(&PyId_stderr);
+
+    if (reinit_stdout < 0 || reinit_stderr < 0) {
+        return _PyStatus_ERR("Failed to reinitialize stdout and stderr");
+    }
+
+
     return _PyStatus_OK();
 }
 #endif
