@@ -1,0 +1,2 @@
+Add :c:func:`_at_fork_reinit` handler to ``buffer->lock`` of stdout and
+stderr, to fix a deadlock in print.
