@@ -85,7 +85,7 @@ templates_path = ['tools/templates']
 
 # Custom sidebar templates, filenames relative to this file.
 html_sidebars = {
-    # Defaults taken from http://www.sphinx-doc.org/en/stable/config.html#confval-html_sidebars
+    # Defaults taken from https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-html_sidebars
     # Removes the quick search block
     '**': ['localtoc.html', 'relations.html', 'customsourcelink.html'],
     'index': ['indexsidebar.html'],

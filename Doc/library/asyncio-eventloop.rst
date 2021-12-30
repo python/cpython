@@ -64,7 +64,7 @@ an event loop:
 
 .. function:: new_event_loop()
 
-   Create a new event loop object.
+   Create and return a new event loop object.
 
 Note that the behaviour of :func:`get_event_loop`, :func:`set_event_loop`,
 and :func:`new_event_loop` functions can be altered by
@@ -215,6 +215,10 @@ Scheduling callbacks
 
    A thread-safe variant of :meth:`call_soon`.  Must be used to
    schedule callbacks *from another thread*.
+
+   Raises :exc:`RuntimeError` if called on a loop that's been closed.
+   This can happen on a secondary thread when the main application is
+   shutting down.
 
    See the :ref:`concurrency and multithreading <asyncio-multithreading>`
    section of the documentation.
@@ -489,23 +493,8 @@ Opening network connections
 .. coroutinemethod:: loop.create_datagram_endpoint(protocol_factory, \
                         local_addr=None, remote_addr=None, *, \
                         family=0, proto=0, flags=0, \
-                        reuse_address=None, reuse_port=None, \
+                        reuse_port=None, \
                         allow_broadcast=None, sock=None)
-
-   .. note::
-      The parameter *reuse_address* is no longer supported, as using
-      :py:data:`~sockets.SO_REUSEADDR` poses a significant security concern for
-      UDP. Explicitly passing ``reuse_address=True`` will raise an exception.
-
-      When multiple processes with differing UIDs assign sockets to an
-      identical UDP socket address with ``SO_REUSEADDR``, incoming packets can
-      become randomly distributed among the sockets.
-
-      For supported platforms, *reuse_port* can be used as a replacement for
-      similar functionality. With *reuse_port*,
-      :py:data:`~sockets.SO_REUSEPORT` is used instead, which specifically
-      prevents processes with differing UIDs from assigning sockets to the same
-      socket address.
 
    Create a datagram connection.
 
@@ -553,15 +542,30 @@ Opening network connections
    :ref:`UDP echo server protocol <asyncio-udp-echo-server-protocol>` examples.
 
    .. versionchanged:: 3.4.4
-      The *family*, *proto*, *flags*, *reuse_address*, *reuse_port,
+      The *family*, *proto*, *flags*, *reuse_address*, *reuse_port*,
       *allow_broadcast*, and *sock* parameters were added.
 
    .. versionchanged:: 3.8.1
-      The *reuse_address* parameter is no longer supported due to security
-      concerns.
+      The *reuse_address* parameter is no longer supported, as using
+      :py:data:`~sockets.SO_REUSEADDR` poses a significant security concern for
+      UDP. Explicitly passing ``reuse_address=True`` will raise an exception.
+
+      When multiple processes with differing UIDs assign sockets to an
+      identical UDP socket address with ``SO_REUSEADDR``, incoming packets can
+      become randomly distributed among the sockets.
+
+      For supported platforms, *reuse_port* can be used as a replacement for
+      similar functionality. With *reuse_port*,
+      :py:data:`~sockets.SO_REUSEPORT` is used instead, which specifically
+      prevents processes with differing UIDs from assigning sockets to the same
+      socket address.
 
    .. versionchanged:: 3.8
       Added support for Windows.
+
+   .. versionchanged:: 3.11
+      The *reuse_address* parameter, disabled since Python 3.9.0, 3.8.1,
+      3.7.6 and 3.6.10, has been entirely removed.
 
 .. coroutinemethod:: loop.create_unix_connection(protocol_factory, \
                         path=None, *, ssl=None, sock=None, \
@@ -626,6 +630,11 @@ Creating network servers
      - If *host* is an empty string or ``None``, all interfaces are
        assumed and a list of multiple sockets will be returned (most likely
        one for IPv4 and another one for IPv6).
+
+   * The *port* parameter can be set to specify which port the server should
+     listen on. If ``0`` or ``None`` (the default), a random unused port will
+     be selected (note that if *host* resolves to multiple network interfaces,
+     a different random port will be selected for each interface).
 
    * *family* can be set to either :data:`socket.AF_INET` or
      :data:`~socket.AF_INET6` to force the socket to use IPv4 or IPv6.
@@ -888,7 +897,7 @@ convenient.
 
    .. versionchanged:: 3.7
       Even though the method was always documented as a coroutine
-      method, before Python 3.7 it returned an :class:`Future`.
+      method, before Python 3.7 it returned a :class:`Future`.
       Since Python 3.7, this is an ``async def`` method.
 
 .. coroutinemethod:: loop.sock_connect(sock, address)
@@ -1234,9 +1243,10 @@ async/await code consider using the high-level
 
 .. note::
 
-   The default asyncio event loop on **Windows** does not support
-   subprocesses. See :ref:`Subprocess Support on Windows
-   <asyncio-windows-subprocess>` for details.
+   On Windows, the default event loop :class:`ProactorEventLoop` supports
+   subprocesses, whereas :class:`SelectorEventLoop` does not. See
+   :ref:`Subprocess Support on Windows <asyncio-windows-subprocess>` for
+   details.
 
 .. coroutinemethod:: loop.subprocess_exec(protocol_factory, *args, \
                       stdin=subprocess.PIPE, stdout=subprocess.PIPE, \

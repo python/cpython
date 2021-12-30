@@ -32,7 +32,7 @@
  */
 
 /* Licensed to PSF under a Contributor Agreement. */
-/* See http://www.python.org/2.4/license for licensing details. */
+/* See https://www.python.org/2.4/license for licensing details. */
 
 #include "Python.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetState()

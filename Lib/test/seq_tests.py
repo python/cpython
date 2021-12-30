@@ -145,6 +145,9 @@ class CommonTest(unittest.TestCase):
         self.assertEqual(self.type2test(LyingTuple((2,))), self.type2test((1,)))
         self.assertEqual(self.type2test(LyingList([2])), self.type2test([1]))
 
+        with self.assertRaises(TypeError):
+            self.type2test(unsupported_arg=[])
+
     def test_truth(self):
         self.assertFalse(self.type2test())
         self.assertTrue(self.type2test([42]))

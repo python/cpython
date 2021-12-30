@@ -1,5 +1,10 @@
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 #include <stddef.h>               // offsetof()
 
 
@@ -225,7 +230,7 @@ get_running_loop(PyObject **loop)
 {
     PyObject *rl;
 
-    PyThreadState *ts = PyThreadState_Get();
+    PyThreadState *ts = _PyThreadState_GET();
     uint64_t ts_id = PyThreadState_GetID(ts);
     if (ts_id == cached_running_holder_tsid && cached_running_holder != NULL) {
         // Fast path, check the cache.
@@ -287,7 +292,7 @@ set_running_loop(PyObject *loop)
 {
     PyObject *ts_dict = NULL;
 
-    PyThreadState *tstate = PyThreadState_Get();
+    PyThreadState *tstate = _PyThreadState_GET();
     if (tstate != NULL) {
         ts_dict = _PyThreadState_GetDict(tstate);  // borrowed
     }
@@ -805,9 +810,7 @@ FutureObj_traverse(FutureObj *fut, visitproc visit, void *arg)
     Py_VISIT(fut->dict);
 
     _PyErr_StackItem *exc_state = &fut->fut_cancelled_exc_state;
-    Py_VISIT(exc_state->exc_type);
     Py_VISIT(exc_state->exc_value);
-    Py_VISIT(exc_state->exc_traceback);
 
     return 0;
 }
@@ -1366,10 +1369,11 @@ _asyncio_Future__make_cancelled_error_impl(FutureObj *self)
 {
     PyObject *exc = create_cancelled_error(self->fut_cancel_msg);
     _PyErr_StackItem *exc_state = &self->fut_cancelled_exc_state;
-    /* Transfer ownership of exc_value from exc_state to exc since we are
-       done with it. */
-    PyException_SetContext(exc, exc_state->exc_value);
-    exc_state->exc_value = NULL;
+
+    if (exc_state->exc_value) {
+        PyException_SetContext(exc, Py_NewRef(exc_state->exc_value));
+        _PyErr_ClearExcState(exc_state);
+    }
 
     return exc;
 }
@@ -2692,26 +2696,29 @@ task_step_impl(TaskObj *task, PyObject *exc)
         if (PyErr_ExceptionMatches(asyncio_CancelledError)) {
             /* CancelledError */
             PyErr_Fetch(&et, &ev, &tb);
+            assert(et);
+            PyErr_NormalizeException(&et, &ev, &tb);
+            if (tb != NULL) {
+                PyException_SetTraceback(ev, tb);
+                Py_DECREF(tb);
+            }
+            Py_XDECREF(et);
 
             FutureObj *fut = (FutureObj*)task;
             _PyErr_StackItem *exc_state = &fut->fut_cancelled_exc_state;
-            exc_state->exc_type = et;
             exc_state->exc_value = ev;
-            exc_state->exc_traceback = tb;
 
             return future_cancel(fut, NULL);
         }
 
         /* Some other exception; pop it and call Task.set_exception() */
         PyErr_Fetch(&et, &ev, &tb);
-
         assert(et);
-        if (!ev || !PyObject_TypeCheck(ev, (PyTypeObject *) et)) {
-            PyErr_NormalizeException(&et, &ev, &tb);
-        }
+        PyErr_NormalizeException(&et, &ev, &tb);
         if (tb != NULL) {
             PyException_SetTraceback(ev, tb);
         }
+
         o = future_set_exception((FutureObj*)task, ev);
         if (!o) {
             /* An exception in Task.set_exception() */
@@ -2955,7 +2962,7 @@ task_step(TaskObj *task, PyObject *exc)
         PyObject *et, *ev, *tb;
         PyErr_Fetch(&et, &ev, &tb);
         leave_task(task->task_loop, (PyObject*)task);
-        _PyErr_ChainExceptions(et, ev, tb);
+        _PyErr_ChainExceptions(et, ev, tb); /* Normalizes (et, ev, tb) */
         return NULL;
     }
     else {
@@ -3004,8 +3011,10 @@ task_wakeup(TaskObj *task, PyObject *o)
     }
 
     PyErr_Fetch(&et, &ev, &tb);
-    if (!ev || !PyObject_TypeCheck(ev, (PyTypeObject *) et)) {
-        PyErr_NormalizeException(&et, &ev, &tb);
+    assert(et);
+    PyErr_NormalizeException(&et, &ev, &tb);
+    if (tb != NULL) {
+        PyException_SetTraceback(ev, tb);
     }
 
     result = task_step(task, ev);
@@ -3239,6 +3248,9 @@ new_running_loop_holder(PyObject *loop)
 static void
 PyRunningLoopHolder_tp_dealloc(PyRunningLoopHolder *rl)
 {
+    if (cached_running_holder == (PyObject *)rl) {
+        cached_running_holder = NULL;
+    }
     Py_CLEAR(rl->rl_loop);
     PyObject_Free(rl);
 }

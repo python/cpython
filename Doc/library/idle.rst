@@ -518,7 +518,7 @@ and not restarting the Shell thereafter.  This is especially useful
 after adding imports at the top of a file.  This also increases
 possible attribute completions.
 
-Completion boxes intially exclude names beginning with '_' or, for
+Completion boxes initially exclude names beginning with '_' or, for
 modules, not included in '__all__'.  The hidden names can be accessed
 by typing '_' after '.', either before or after the box is opened.
 

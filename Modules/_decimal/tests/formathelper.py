@@ -31,7 +31,7 @@
 
 import os, sys, locale, random
 import platform, subprocess
-from test.support import import_fresh_module
+from test.support.import_helper import import_fresh_module
 from distutils.spawn import find_executable
 
 C = import_fresh_module('decimal', fresh=['_decimal'])

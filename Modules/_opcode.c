@@ -85,7 +85,7 @@ static PyObject *
 _opcode_get_specialization_stats_impl(PyObject *module)
 /*[clinic end generated code: output=fcbc32fdfbec5c17 input=e1f60db68d8ce5f6]*/
 {
-#if SPECIALIZATION_STATS
+#ifdef Py_STATS
     return _Py_GetSpecializationStats();
 #else
     Py_RETURN_NONE;

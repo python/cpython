@@ -4,7 +4,7 @@ When called as a script with arguments, this compiles the directories
 given as arguments recursively; the -l option prevents it from
 recursing into directories.
 
-Without arguments, if compiles all modules on sys.path, without
+Without arguments, it compiles all modules on sys.path, without
 recursing into subdirectories.  (Even though it should do so for
 packages -- for now, you'll have to deal with packages separately.)
 
@@ -221,8 +221,8 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
             if not force:
                 try:
                     mtime = int(os.stat(fullname).st_mtime)
-                    expect = struct.pack('<4sll', importlib.util.MAGIC_NUMBER,
-                                         0, mtime)
+                    expect = struct.pack('<4sLL', importlib.util.MAGIC_NUMBER,
+                                         0, mtime & 0xFFFF_FFFF)
                     for cfile in opt_cfiles.values():
                         with open(cfile, 'rb') as chandle:
                             actual = chandle.read(12)
@@ -254,9 +254,8 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
                 else:
                     print('*** ', end='')
                 # escape non-printable characters in msg
-                msg = err.msg.encode(sys.stdout.encoding,
-                                     errors='backslashreplace')
-                msg = msg.decode(sys.stdout.encoding)
+                encoding = sys.stdout.encoding or sys.getdefaultencoding()
+                msg = err.msg.encode(encoding, errors='backslashreplace').decode(encoding)
                 print(msg)
             except (SyntaxError, UnicodeError, OSError) as e:
                 success = False
@@ -368,9 +367,9 @@ def main():
                               'environment variable is set, and '
                               '"timestamp" otherwise.'))
     parser.add_argument('-o', action='append', type=int, dest='opt_levels',
-                        help=('Optimization levels to run compilation with.'
-                              'Default is -1 which uses optimization level of'
-                              'Python interpreter itself (specified by -O).'))
+                        help=('Optimization levels to run compilation with. '
+                              'Default is -1 which uses the optimization level '
+                              'of the Python interpreter itself (see -O).'))
     parser.add_argument('-e', metavar='DIR', dest='limit_sl_dest',
                         help='Ignore symlinks pointing outsite of the DIR')
     parser.add_argument('--hardlink-dupes', action='store_true',

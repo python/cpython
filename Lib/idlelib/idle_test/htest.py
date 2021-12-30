@@ -246,7 +246,7 @@ _multistatus_bar_spec = {
 _object_browser_spec = {
     'file': 'debugobj',
     'kwds': {},
-    'msg': "Double click on items upto the lowest level.\n"
+    'msg': "Double click on items up to the lowest level.\n"
            "Attributes of the objects and related information "
            "will be displayed side-by-side at each level."
     }
@@ -255,7 +255,7 @@ _path_browser_spec = {
     'file': 'pathbrowser',
     'kwds': {},
     'msg': "Test for correct display of all paths in sys.path.\n"
-           "Toggle nested items upto the lowest level.\n"
+           "Toggle nested items up to the lowest level.\n"
            "Double clicking on an item prints a traceback\n"
            "for an exception that is ignored."
     }
@@ -341,7 +341,7 @@ _tree_widget_spec = {
     'file': 'tree',
     'kwds': {},
     'msg': "The canvas is scrollable.\n"
-           "Click on folders upto to the lowest level."
+           "Click on folders up to to the lowest level."
     }
 
 _undo_delegator_spec = {
