@@ -81,20 +81,29 @@ typedef struct _typeobject PyTypeObject;
 /* PyObject_HEAD defines the initial segment of every PyObject. */
 #define PyObject_HEAD                   PyObject ob_base;
 
-/* Immortalization:
- * This marks the reference count bit that will be used to define immortality.
- * The GC bit-shifts refcounts left by two, and after that shift it still needs
- * to be larger than zero, so it's placed after the first three high bits.
- */
+/*
+Immortalization:
+
+This marks the reference count bit that will be used to define immortality.
+The GC bit-shifts refcounts left by two, and after that shift it still needs
+to be larger than zero, so it's placed after the first three high bits.
+
+For backwards compatibility the actual reference count of an immortal instance
+is set to higher than just the immortal bit. This will ensure that the immortal
+bit will remain active, even with extensions compiled without the updated checks
+in Py_INCREF and Py_DECREF. This can be safely changed to a smaller value if
+additional bits are needed in the reference count field.
+*/
 #define _Py_IMMORTAL_BIT_OFFSET (8 * sizeof(Py_ssize_t) - 4)
 #define _Py_IMMORTAL_BIT (1LL << _Py_IMMORTAL_BIT_OFFSET)
+#define _Py_IMMORTAL_REFCNT (_Py_IMMORTAL_BIT + (_Py_IMMORTAL_BIT / 2))
 
 #define PyObject_HEAD_INIT(type)        \
     { _PyObject_EXTRA_INIT              \
     1, type },
 
 #define PyObject_HEAD_IMMORTAL_INIT(type)        \
-    { _PyObject_EXTRA_INIT _Py_IMMORTAL_BIT, type },
+    { _PyObject_EXTRA_INIT _Py_IMMORTAL_REFCNT, type },
 
 // TODO(eduardo-elizondo): This is only used to simplify the review of GH-19474
 // Rather than changing this API, we'll introduce PyVarObject_HEAD_IMMORTAL_INIT
@@ -167,7 +176,7 @@ static inline int _Py_IsImmortal(PyObject *op)
 static inline void _Py_SetImmortal(PyObject *op)
 {
     if (op) {
-        op->ob_refcnt = _Py_IMMORTAL_BIT;
+        op->ob_refcnt = _Py_IMMORTAL_REFCNT;
     }
 }
 

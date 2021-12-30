@@ -11,7 +11,7 @@ extern "C" {
 
 #define _PyObject_IMMORTAL_INIT(type) \
     { \
-        .ob_refcnt = _Py_IMMORTAL_BIT, \
+        .ob_refcnt = _Py_IMMORTAL_REFCNT, \
         .ob_type = type, \
     }
 #define _PyVarObject_IMMORTAL_INIT(type, size) \
