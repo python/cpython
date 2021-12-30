@@ -4005,12 +4005,12 @@ class NewTypeTests:
                 )
         exec(code, {})
 
-    def test_subclassing(self):
+    def test_error_message_when_subclassing(self):
         with self.assertRaisesRegex(
             TypeError,
             re.escape(
-                f"Cannot subclass an instance of NewType, perhaps you were looking for: "
-                f"ProUserId = NewType('ProUserId', UserId)"
+                "Cannot subclass an instance of NewType. Perhaps you were looking for: "
+                "`ProUserId = NewType('ProUserId', UserId)`"
             )
         ):
             class ProUserId(UserId):
