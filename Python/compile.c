@@ -3506,7 +3506,11 @@ compiler_try_except(struct compiler *c, stmt_ty s)
    [orig, res, rest]                Ln+1:     LIST_APPEND 1  ) add unhandled exc to res (could be None)
 
    [orig, res]                                PREP_RERAISE_STAR
-   [exc]                                      JUMP_IF_TRUE_OR_POP   RER
+   [exc]                                      DUP_TOP
+   [exc, exc]                                 LOAD_CONST            None
+   [exc, exc, None]                           COMPARE_IS
+   [exc, is_none]                             POP_JUMP_IF_FALSE     RER
+   [exc]                                      POP_TOP
    []                                         JUMP_FORWARD          L0
 
    [exc]                            RER:      ROT_TWO
@@ -3674,10 +3678,14 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
 
     compiler_use_next_block(c, reraise_star);
     ADDOP(c, PREP_RERAISE_STAR);
-    ADDOP_JUMP(c, JUMP_IF_TRUE_OR_POP, reraise);
+    ADDOP(c, DUP_TOP);
+    ADDOP_LOAD_CONST(c, Py_None);
+    ADDOP_COMPARE(c, Is);
+    ADDOP_JUMP(c, POP_JUMP_IF_FALSE, reraise);
     NEXT_BLOCK(c);
 
     /* Nothing to reraise */
+    ADDOP(c, POP_TOP);
     ADDOP(c, POP_BLOCK);
     ADDOP(c, POP_EXCEPT);
     ADDOP_JUMP(c, JUMP_FORWARD, end);
