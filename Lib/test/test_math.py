@@ -1957,6 +1957,14 @@ class MathTests(unittest.TestCase):
             for k in range(n + 1):
                 self.assertEqual(comb(n, k), factorial(n)
                     // (factorial(k) * factorial(n - k)))
+        for n in range(100, 200):
+            for k in range(30):
+                self.assertEqual(comb(n, k), factorial(n)
+                    // (factorial(k) * factorial(n - k)))
+        for n in range(200, 500):
+            for k in range(10):
+                self.assertEqual(comb(n, k), factorial(n)
+                    // (factorial(k) * factorial(n - k)))
 
         # Test for Pascal's identity
         for n in range(1, 100):
