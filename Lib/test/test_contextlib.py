@@ -1,6 +1,7 @@
 """Unit tests for contextlib.py, and other context managers."""
 
 import io
+import os
 import sys
 import tempfile
 import threading
@@ -1113,6 +1114,48 @@ class TestSuppress(unittest.TestCase):
             outer_continued = True
             1/0
         self.assertTrue(outer_continued)
+
+
+class TestChdir(unittest.TestCase):
+    def test_simple(self):
+        old_cwd = os.getcwd()
+        target = os.path.join(os.path.dirname(__file__), 'data')
+        self.assertNotEqual(old_cwd, target)
+
+        with chdir(target):
+            self.assertEqual(os.getcwd(), target)
+        self.assertEqual(os.getcwd(), old_cwd)
+
+    def test_reentrant(self):
+        old_cwd = os.getcwd()
+        target1 = os.path.join(os.path.dirname(__file__), 'data')
+        target2 = os.path.join(os.path.dirname(__file__), 'ziptestdata')
+        self.assertNotIn(old_cwd, (target1, target2))
+        chdir1, chdir2 = chdir(target1), chdir(target2)
+
+        with chdir1:
+            self.assertEqual(os.getcwd(), target1)
+            with chdir2:
+                self.assertEqual(os.getcwd(), target2)
+                with chdir1:
+                    self.assertEqual(os.getcwd(), target1)
+                self.assertEqual(os.getcwd(), target2)
+            self.assertEqual(os.getcwd(), target1)
+        self.assertEqual(os.getcwd(), old_cwd)
+
+    def test_exception(self):
+        old_cwd = os.getcwd()
+        target = os.path.join(os.path.dirname(__file__), 'data')
+        self.assertNotEqual(old_cwd, target)
+
+        try:
+            with chdir(target):
+                self.assertEqual(os.getcwd(), target)
+                raise RuntimeError("boom")
+        except RuntimeError as re:
+            self.assertEqual(str(re), "boom")
+        self.assertEqual(os.getcwd(), old_cwd)
+
 
 if __name__ == "__main__":
     unittest.main()

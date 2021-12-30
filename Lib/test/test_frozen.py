@@ -39,9 +39,6 @@ class TestFrozen(unittest.TestCase):
         self.assertIs(spam.__spec__.loader,
                       importlib.machinery.FrozenImporter)
 
-    # This is not possible until frozen packages have __path__ set properly.
-    # See https://bugs.python.org/issue21736.
-    @unittest.expectedFailure
     def test_unfrozen_submodule_in_frozen_package(self):
         with import_helper.CleanImport('__phello__', '__phello__.spam'):
             with import_helper.frozen_modules(enabled=True):

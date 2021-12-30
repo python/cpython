@@ -607,6 +607,15 @@ The :mod:`test.support` module defines the following functions:
    target of the "as" clause, if there is one.
 
 
+.. function:: flush_std_streams()
+
+   Call the ``flush()`` method on :data:`sys.stdout` and then on
+   :data:`sys.stderr`. It can be used to make sure that the logs order is
+   consistent before writing into stderr.
+
+   .. versionadded:: 3.11
+
+
 .. function:: print_warning(msg)
 
    Print a warning into :data:`sys.__stderr__`. Format the message as:

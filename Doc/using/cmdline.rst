@@ -483,7 +483,8 @@ Miscellaneous options
    * ``-X frozen_modules`` determines whether or not frozen modules are
      ignored by the import machinery.  A value of "on" means they get
      imported and "off" means they are ignored.  The default is "on"
-     for non-debug builds (the normal case) and "off" for debug builds.
+     if this is an installed Python (the normal case).  If it's under
+     development (running from the source tree) then the default is "off".
      Note that the "importlib_bootstrap" and "importlib_bootstrap_external"
      frozen modules are always used, even if this flag is set to "off".
 

@@ -5,7 +5,6 @@ import warnings
 from .case import TestCase
 
 
-
 class IsolatedAsyncioTestCase(TestCase):
     # Names intentionally have a long prefix
     # to reduce a chance of clashing with user-defined attributes
@@ -53,7 +52,7 @@ class IsolatedAsyncioTestCase(TestCase):
         # We intentionally don't add inspect.iscoroutinefunction() check
         # for func argument because there is no way
         # to check for async function reliably:
-        # 1. It can be "async def func()" iself
+        # 1. It can be "async def func()" itself
         # 2. Class can implement "async def __call__()" method
         # 3. Regular "def func()" that returns awaitable object
         self.addCleanup(*(func, *args), **kwargs)

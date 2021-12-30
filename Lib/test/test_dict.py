@@ -8,6 +8,7 @@ import sys
 import unittest
 import weakref
 from test import support
+from test.support import import_helper
 
 
 class DictTest(unittest.TestCase):
@@ -891,6 +892,14 @@ class DictTest(unittest.TestCase):
         gc.collect()
         self.assertTrue(gc.is_tracked(t), t)
 
+    def test_string_keys_can_track_values(self):
+        # Test that this doesn't leak.
+        for i in range(10):
+            d = {}
+            for j in range(10):
+                d[str(j)] = j
+            d["foo"] = d
+
     @support.cpython_only
     def test_track_literals(self):
         # Test GC-optimization of dict literals
@@ -994,8 +1003,8 @@ class DictTest(unittest.TestCase):
 
     @support.cpython_only
     def test_splittable_setdefault(self):
-        """split table must be combined when setdefault()
-        breaks insertion order"""
+        """split table must keep correct insertion
+        order when attributes are adding using setdefault()"""
         a, b = self.make_shared_key_dict(2)
 
         a['a'] = 1
@@ -1005,7 +1014,6 @@ class DictTest(unittest.TestCase):
         size_b = sys.getsizeof(b)
         b['a'] = 1
 
-        self.assertGreater(size_b, size_a)
         self.assertEqual(list(a), ['x', 'y', 'z', 'a', 'b'])
         self.assertEqual(list(b), ['x', 'y', 'z', 'b', 'a'])
 
@@ -1046,7 +1054,7 @@ class DictTest(unittest.TestCase):
 
     @support.cpython_only
     def test_splittable_pop_pending(self):
-        """pop a pending key in a splitted table should not crash"""
+        """pop a pending key in a split table should not crash"""
         a, b = self.make_shared_key_dict(2)
 
         a['a'] = 4
@@ -1363,7 +1371,7 @@ class DictTest(unittest.TestCase):
         self.assertRaises(StopIteration, next, r)
 
     def test_reverse_iterator_for_empty_dict(self):
-        # bpo-38525: revered iterator should work properly
+        # bpo-38525: reversed iterator should work properly
 
         # empty dict is directly used for reference count test
         self.assertEqual(list(reversed({})), [])
@@ -1542,7 +1550,8 @@ class CAPITest(unittest.TestCase):
     # Test _PyDict_GetItem_KnownHash()
     @support.cpython_only
     def test_getitem_knownhash(self):
-        from _testcapi import dict_getitem_knownhash
+        _testcapi = import_helper.import_module('_testcapi')
+        dict_getitem_knownhash = _testcapi.dict_getitem_knownhash
 
         d = {'x': 1, 'y': 2, 'z': 3}
         self.assertEqual(dict_getitem_knownhash(d, 'x', hash('x')), 1)

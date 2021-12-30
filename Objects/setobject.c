@@ -1409,7 +1409,7 @@ set_difference_update_internal(PySetObject *so, PyObject *other)
 
         /* Optimization:  When the other set is more than 8 times
            larger than the base set, replace the other set with
-           interesection of the two sets.
+           intersection of the two sets.
         */
         if ((PySet_GET_SIZE(other) >> 3) > PySet_GET_SIZE(so)) {
             other = set_intersection(so, other);
@@ -1946,9 +1946,7 @@ set_init(PySetObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *iterable = NULL;
 
-     if ((Py_IS_TYPE(self, &PySet_Type) ||
-          Py_TYPE(self)->tp_new == PySet_Type.tp_new) &&
-         !_PyArg_NoKeywords("set", kwds))
+     if (!_PyArg_NoKeywords("set", kwds))
         return -1;
     if (!PyArg_UnpackTuple(args, Py_TYPE(self)->tp_name, 0, 1, &iterable))
         return -1;

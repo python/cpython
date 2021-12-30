@@ -504,6 +504,7 @@ if 1:
         self.compile_single("if x:\n   f(x)")
         self.compile_single("if x:\n   f(x)\nelse:\n   g(x)")
         self.compile_single("class T:\n   pass")
+        self.compile_single("c = '''\na=1\nb=2\nc=3\n'''")
 
     def test_bad_single_statement(self):
         self.assertInvalidSingle('1\n2')
@@ -514,6 +515,7 @@ if 1:
         self.assertInvalidSingle('f()\n# blah\nblah()')
         self.assertInvalidSingle('f()\nxy # blah\nblah()')
         self.assertInvalidSingle('x = 5 # comment\nx = 6\n')
+        self.assertInvalidSingle("c = '''\nd=1\n'''\na = 1\n\nb = 2\n")
 
     def test_particularly_evil_undecodable(self):
         # Issue 24022
@@ -837,7 +839,7 @@ if 1:
                 self.assertNotIn('LOAD_METHOD', instructions)
                 self.assertNotIn('CALL_METHOD', instructions)
                 self.assertIn('LOAD_ATTR', instructions)
-                self.assertIn('CALL_FUNCTION', instructions)
+                self.assertIn('CALL_NO_KW', instructions)
 
     def test_lineno_procedure_call(self):
         def call():
@@ -1048,15 +1050,17 @@ class TestSourcePositions(unittest.TestCase):
         return code, ast_tree
 
     def assertOpcodeSourcePositionIs(self, code, opcode,
-            line, end_line, column, end_column):
+            line, end_line, column, end_column, occurrence=1):
 
         for instr, position in zip(dis.Bytecode(code), code.co_positions()):
             if instr.opname == opcode:
-                self.assertEqual(position[0], line)
-                self.assertEqual(position[1], end_line)
-                self.assertEqual(position[2], column)
-                self.assertEqual(position[3], end_column)
-                return
+                occurrence -= 1
+                if not occurrence:
+                    self.assertEqual(position[0], line)
+                    self.assertEqual(position[1], end_line)
+                    self.assertEqual(position[2], column)
+                    self.assertEqual(position[3], end_column)
+                    return
 
         self.fail(f"Opcode {opcode} not found in code")
 
@@ -1077,12 +1081,12 @@ class TestSourcePositions(unittest.TestCase):
 
         compiled_code, _ = self.check_positions_against_ast(snippet)
 
-        self.assertOpcodeSourcePositionIs(compiled_code, 'INPLACE_SUBTRACT',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
             line=10_000 + 2, end_line=10_000 + 2,
-            column=2, end_column=8)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'INPLACE_ADD',
+            column=2, end_column=8, occurrence=1)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
             line=10_000 + 4, end_line=10_000 + 4,
-            column=2, end_column=9)
+            column=2, end_column=9, occurrence=2)
 
     def test_multiline_expression(self):
         snippet = """\
@@ -1091,7 +1095,7 @@ f(
 )
 """
         compiled_code, _ = self.check_positions_against_ast(snippet)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'CALL_FUNCTION',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'CALL_NO_KW',
             line=1, end_line=3, column=0, end_column=1)
 
     def test_very_long_line_end_offset(self):
@@ -1101,7 +1105,7 @@ f(
         snippet = f"g('{long_string}')"
 
         compiled_code, _ = self.check_positions_against_ast(snippet)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'CALL_FUNCTION',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'CALL_NO_KW',
             line=1, end_line=1, column=None, end_column=None)
 
     def test_complex_single_line_expression(self):
@@ -1110,14 +1114,14 @@ f(
         compiled_code, _ = self.check_positions_against_ast(snippet)
         self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_SUBSCR',
             line=1, end_line=1, column=13, end_column=21)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_MULTIPLY',
-            line=1, end_line=1, column=9, end_column=21)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_ADD',
-            line=1, end_line=1, column=9, end_column=26)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_MATRIX_MULTIPLY',
-            line=1, end_line=1, column=4, end_column=27)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_SUBTRACT',
-            line=1, end_line=1, column=0, end_column=27)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
+            line=1, end_line=1, column=9, end_column=21, occurrence=1)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
+            line=1, end_line=1, column=9, end_column=26, occurrence=2)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
+            line=1, end_line=1, column=4, end_column=27, occurrence=3)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
+            line=1, end_line=1, column=0, end_column=27, occurrence=4)
 
 
 class TestExpressionStackSize(unittest.TestCase):
@@ -1256,6 +1260,39 @@ class TestStackSizeStability(unittest.TestCase):
                 c
             else:
                 d
+            """
+        self.check_stack_size(snippet)
+
+    def test_try_except_star_qualified(self):
+        snippet = """
+            try:
+                a
+            except* ImportError:
+                b
+            else:
+                c
+            """
+        self.check_stack_size(snippet)
+
+    def test_try_except_star_as(self):
+        snippet = """
+            try:
+                a
+            except* ImportError as e:
+                b
+            else:
+                c
+            """
+        self.check_stack_size(snippet)
+
+    def test_try_except_star_finally(self):
+        snippet = """
+                try:
+                    a
+                except* A:
+                    b
+                finally:
+                    c
             """
         self.check_stack_size(snippet)
 

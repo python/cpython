@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyObject_GC_TRACK
@@ -268,7 +269,7 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
 static void
 partial_setvectorcall(partialobject *pto)
 {
-    if (PyVectorcall_Function(pto->fn) == NULL) {
+    if (_PyVectorcall_Function(pto->fn) == NULL) {
         /* Don't use vectorcall if the underlying function doesn't support it */
         pto->vectorcall = NULL;
     }
@@ -1440,7 +1441,7 @@ static int
 _functools_exec(PyObject *module)
 {
     _functools_state *state = get_functools_state(module);
-    state->kwd_mark = _PyObject_CallNoArg((PyObject *)&PyBaseObject_Type);
+    state->kwd_mark = _PyObject_CallNoArgs((PyObject *)&PyBaseObject_Type);
     if (state->kwd_mark == NULL) {
         return -1;
     }

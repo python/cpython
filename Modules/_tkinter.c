@@ -797,7 +797,7 @@ PyTclObject_str(PyTclObject *self)
         Py_INCREF(self->string);
         return self->string;
     }
-    /* XXX Could chache result if it is non-ASCII. */
+    /* XXX Could cache result if it is non-ASCII. */
     return unicodeFromTclObj(self->value);
 }
 

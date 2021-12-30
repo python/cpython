@@ -47,7 +47,7 @@ tokenizeriter_new_impl(PyTypeObject *type, const char *source)
     if (filename == NULL) {
         return NULL;
     }
-    self->tok = PyTokenizer_FromUTF8(source, 1);
+    self->tok = _PyTokenizer_FromUTF8(source, 1);
     if (self->tok == NULL) {
         Py_DECREF(filename);
         return NULL;
@@ -61,7 +61,7 @@ tokenizeriter_next(tokenizeriterobject *it)
 {
     const char *start;
     const char *end;
-    int type = PyTokenizer_Get(it->tok, &start, &end);
+    int type = _PyTokenizer_Get(it->tok, &start, &end);
     if (type == ERRORTOKEN && PyErr_Occurred()) {
         return NULL;
     }
@@ -105,7 +105,7 @@ static void
 tokenizeriter_dealloc(tokenizeriterobject *it)
 {
     PyTypeObject *tp = Py_TYPE(it);
-    PyTokenizer_Free(it->tok);
+    _PyTokenizer_Free(it->tok);
     tp->tp_free(it);
     Py_DECREF(tp);
 }

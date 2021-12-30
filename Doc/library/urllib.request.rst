@@ -876,13 +876,17 @@ HTTPRedirectHandler Objects
 .. method:: HTTPRedirectHandler.http_error_307(req, fp, code, msg, hdrs)
 
    The same as :meth:`http_error_301`, but called for the 'temporary redirect'
-   response.
+   response. It does not allow changing the request method from ``POST``
+   to ``GET``.
 
 
 .. method:: HTTPRedirectHandler.http_error_308(req, fp, code, msg, hdrs)
 
    The same as :meth:`http_error_301`, but called for the 'permanent redirect'
-   response.
+   response. It does not allow changing the request method from ``POST``
+   to ``GET``.
+
+   .. versionadded:: 3.11
 
 
 .. _http-cookie-processor:

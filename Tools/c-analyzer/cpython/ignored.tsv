@@ -2106,7 +2106,7 @@ Python/import.c	import_find_and_load	header	-
 #-----------------------
 # runtime state
 
-# (look at the bottome of the file)
+# (look at the bottom of the file)
 
 #-----------------------
 # modules
