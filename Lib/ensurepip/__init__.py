@@ -90,8 +90,16 @@ sys.path = {additional_paths or []} + sys.path
 sys.argv[1:] = {args}
 runpy.run_module("pip", run_name="__main__", alter_sys=True)
 """
-    return subprocess.run([sys.executable, '-W', 'ignore::DeprecationWarning',
-                           "-c", code], check=True).returncode
+
+    cmd = [
+      sys.executable,
+      # run pip interpreter in isolated mode if current interpreter was isolated
+      *( [ '-I', ] if sys.flags.isolated else [] ),
+      '-W', 'ignore::DeprecationWarning',
+      '-c',
+      code ]
+
+    return subprocess.run( cmd, check = True ).returncode
 
 
 def version():
