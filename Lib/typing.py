@@ -2458,14 +2458,14 @@ class NewType:
             self.__module__ = def_mod
 
     def __mro_entries__(cls, bases):
-        new_type_name = cls.__name__
+        superclass_name = cls.__name__
 
         class Dummy:
             def __init_subclass__(cls):
-                current_name = cls.__name__
+                subclass_name = cls.__name__
                 raise TypeError(
-                    f'Cannot subclass {new_type_name}, perhaps you were looking for: '
-                    f'{current_name} = NewType({current_name!r}, {new_type_name})'
+                    f"Cannot subclass an instace of NewType, perhaps you were looking for: "
+                    f"{subclass_name} = NewType({subclass_name!r}, {superclass_name})"
                 )
 
         return (Dummy,)
