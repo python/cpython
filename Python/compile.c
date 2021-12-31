@@ -1844,14 +1844,13 @@ static int
 compiler_pop_except_and_reraise(struct compiler *c)
 {
     /* Stack contents
-     * [exc_info, lasti, exc]  ROT_THREE
-     * [exc, exc_info, lasti]  ROT_THREE
-     * [lasti, exc, exc_info]  POP_EXCEPT
-     * [lasti, exc]            RERAISE      1
+     * [exc_info, lasti, exc]            COPY        3
+     * [exc_info, lasti, exc, exc_info]  POP_EXCEPT
+     * [exc_info, lasti, exc]            RERAISE      1
+     * (exception_unwind clears the stack)
      */
 
-    ADDOP(c, ROT_THREE);
-    ADDOP(c, ROT_THREE);
+    ADDOP_I(c, COPY, 3);
     ADDOP(c, POP_EXCEPT);
     ADDOP_I(c, RERAISE, 1);
     return 1;
