@@ -3523,7 +3523,7 @@ import math
 for n in range(68):
     fac = math.factorial(n)
     fac_trailing_zeros = (fac & -fac).bit_length() - 1
-    print(f"{fac_trailing_zeros}u")
+    print(fac_trailing_zeros)
 */
 
 static const uint8_t factorial_trailing_zeros[] = {
