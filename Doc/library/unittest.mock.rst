@@ -1516,7 +1516,7 @@ attribute in a class) that does not exist will fail with :exc:`AttributeError`::
     >>> test()
     Traceback (most recent call last):
       ...
-    AttributeError: <module 'sys' (built-in)> does not have the attribute 'non_existing'
+    AttributeError: <module 'sys' (built-in)> does not have the attribute 'non_existing_attribute'
 
 but adding ``create=True`` in the call to :func:`patch` will make the previous example
 work as expected::

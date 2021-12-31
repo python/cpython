@@ -840,6 +840,9 @@ class Test_testcapi(unittest.TestCase):
     def test_widechar(self):
         _testcapi.test_widechar()
 
+    def test_version_api_data(self):
+        self.assertEqual(_testcapi.Py_Version, sys.hexversion)
+
 
 class Test_testinternalcapi(unittest.TestCase):
     locals().update((name, getattr(_testinternalcapi, name))

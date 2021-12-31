@@ -1285,8 +1285,8 @@ class BaseEventLoop(events.AbstractEventLoop):
                 addr_infos = {}  # Using order preserving dict
                 for idx, addr in ((0, local_addr), (1, remote_addr)):
                     if addr is not None:
-                        assert isinstance(addr, tuple) and len(addr) == 2, (
-                            '2-tuple is expected')
+                        if not (isinstance(addr, tuple) and len(addr) == 2):
+                            raise TypeError('2-tuple is expected')
 
                         infos = await self._ensure_resolved(
                             addr, family=family, type=socket.SOCK_DGRAM,
@@ -1394,6 +1394,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             sock=None,
             backlog=100,
             ssl=None,
+            reuse_address=None,
             reuse_port=None,
             ssl_handshake_timeout=None,
             start_serving=True):
@@ -1424,6 +1425,8 @@ class BaseEventLoop(events.AbstractEventLoop):
                 raise ValueError(
                     'host/port and sock can not be specified at the same time')
 
+            if reuse_address is None:
+                reuse_address = os.name == "posix" and sys.platform != "cygwin"
             sockets = []
             if host == '':
                 hosts = [None]
@@ -1453,6 +1456,9 @@ class BaseEventLoop(events.AbstractEventLoop):
                                            af, socktype, proto, exc_info=True)
                         continue
                     sockets.append(sock)
+                    if reuse_address:
+                        sock.setsockopt(
+                            socket.SOL_SOCKET, socket.SO_REUSEADDR, True)
                     if reuse_port:
                         _set_reuseport(sock)
                     # Disable IPv4/IPv6 dual stack support (enabled by

@@ -428,12 +428,12 @@ value of type :data:`Any` and assign it to any variable::
 
    from typing import Any
 
-   a = None    # type: Any
-   a = []      # OK
-   a = 2       # OK
+   a: Any = None
+   a = []          # OK
+   a = 2           # OK
 
-   s = ''      # type: str
-   s = a       # OK
+   s: str = ''
+   s = a           # OK
 
    def foo(item: Any) -> int:
        # Typechecks; 'item' could be any type,
@@ -625,7 +625,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
    Union type; ``Union[X, Y]`` is equivalent to ``X | Y`` and means either X or Y.
 
-   To define a union, use e.g. ``Union[int, str]`` or the shorthand ``int | str``.  Details:
+   To define a union, use e.g. ``Union[int, str]`` or the shorthand ``int | str``. Using that shorthand is recommended. Details:
 
    * The arguments must be types and there must be at least one.
 
@@ -1779,11 +1779,10 @@ Asynchronous programming
    correspond to those of :class:`Generator`, for example::
 
       from collections.abc import Coroutine
-      c = None # type: Coroutine[list[str], str, int]
-      ...
-      x = c.send('hi') # type: list[str]
+      c: Coroutine[list[str], str, int]  # Some coroutine defined elsewhere
+      x = c.send('hi')                   # Inferred type of 'x' is list[str]
       async def bar() -> None:
-          x = await c # type: int
+          y = await c                    # Inferred type of 'y' is int
 
    .. versionadded:: 3.5.3
 

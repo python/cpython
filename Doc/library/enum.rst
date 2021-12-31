@@ -177,7 +177,7 @@ Data Types
 
    .. method:: EnumType.__getitem__(cls, name)
 
-      Returns the Enum member in *cls* matching *name*, or raises an :exc:`KeyError`::
+      Returns the Enum member in *cls* matching *name*, or raises a :exc:`KeyError`::
 
         >>> Color['BLUE']
         Color.BLUE
