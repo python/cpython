@@ -125,7 +125,7 @@ A :class:`Cmd` instance has the following methods:
 
    Method called to display a list of strings as a compact set of columns.
    Each column is only as wide as necessary.
-   Columns are separated by two spaces (one was not legible enough).
+   Columns are separated by two spaces for readability.
 
 
 .. method:: Cmd.precmd(line)
