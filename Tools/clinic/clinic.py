@@ -942,7 +942,7 @@ class CLanguage(Language):
                     min_kw_only
                 )
             else:
-                args_declaration = "_PyArg_UnpackKeywordsWithVararg", "%s, %s, %s, %s" % (
+                args_declaration = "_PyArg_UnpackKeywordsWithVararg", "%s, %s, %s, %s, varargssize" % (
                     min_pos,
                     max_pos,
                     min_kw_only,
@@ -957,6 +957,8 @@ class CLanguage(Language):
                     static _PyArg_Parser _parser = {{NULL, _keywords, "{name}", 0}};
                     PyObject *argsbuf[%s];
                     """ % len(converters))
+                if vararg != NO_VARARG:
+                    declarations += "\nPy_ssize_t varargssize = Py_MAX(nargs - %d, 0);" % (max_pos)
                 if has_optional_kw:
                     pre_buffer = "0" if vararg != NO_VARARG else "nargs"
                     declarations += "\nPy_ssize_t noptargs = %s + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - %d;" % (pre_buffer, min_pos + min_kw_only)
@@ -994,6 +996,8 @@ class CLanguage(Language):
             add_label = None
             for i, p in enumerate(parameters):
                 displayname = p.get_displayname(i+1)
+                if p.is_vararg():
+                    p.converter.type = 'PyObject *const *'
                 parsearg = p.converter.parse_arg(argname_fmt % i, displayname)
                 if parsearg is None:
                     #print('Cannot convert %s %r for %s' % (p.converter.__class__.__name__, p.converter.format_unit, p.converter.name), file=sys.stderr)
@@ -1305,9 +1309,6 @@ class CLanguage(Language):
             if (i != -1) and (p.default is not unspecified):
                 first_optional = min(first_optional, i)
 
-            if p.is_vararg():
-                data.cleanup.append("Py_XDECREF({});".format(c.parser_name))
-
             # insert group variable
             group = p.group
             if last_group != group:
@@ -1318,6 +1319,11 @@ class CLanguage(Language):
                     data.declarations.append("int " + group_name + " = 0;")
                     data.impl_parameters.append("int " + group_name)
                     has_option_groups = True
+
+            if p.is_vararg():
+                p.converter.type = 'PyObject *const *'
+                data.impl_arguments.append('varargssize')
+                data.impl_parameters.append('Py_ssize_t varargssize')
 
             c.render(p, data)
 

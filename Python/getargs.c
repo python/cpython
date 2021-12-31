@@ -2470,11 +2470,11 @@ _PyArg_UnpackKeywordsWithVararg(PyObject *const *args, Py_ssize_t nargs,
                                 PyObject *kwargs, PyObject *kwnames,
                                 struct _PyArg_Parser *parser,
                                 int minpos, int maxpos, int minkw,
-                                int vararg, PyObject **buf)
+                                int vararg, Py_ssize_t varargssize,
+                                PyObject **buf)
 {
     PyObject *kwtuple;
     PyObject *keyword;
-    Py_ssize_t varargssize = 0;
     int i, posonly, minposonly, maxargs;
     int reqlimit = minkw ? maxpos + minkw : minpos;
     Py_ssize_t nkwargs;
@@ -2529,26 +2529,12 @@ _PyArg_UnpackKeywordsWithVararg(PyObject *const *args, Py_ssize_t nargs,
         return NULL;
     }
 
-    /* create varargs tuple */
-    varargssize = nargs - maxpos;
-    if (varargssize < 0) {
-        varargssize = 0;
-    }
-    buf[vararg] = PyTuple_New(varargssize);
-    if (!buf[vararg]) {
-        return NULL;
-    }
+    /* pass varargs by pointer */
+    buf[vararg] = (PyObject *)&args[vararg];
 
-    /* copy tuple args */
-    for (i = 0; i < nargs; i++) {
-        if (i >= vararg) {
-            Py_INCREF(args[i]);
-            PyTuple_SET_ITEM(buf[vararg], i - vararg, args[i]);
-            continue;
-        }
-        else {
+    /* copy required positional args */
+    for (i = 0; i < vararg; i++) {
             buf[i] = args[i];
-        }
     }
 
     /* copy keyword args using kwtuple to drive process */
