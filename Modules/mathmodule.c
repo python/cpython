@@ -3391,7 +3391,8 @@ perm_comb_small(unsigned long long n, unsigned long long k, int iscomb)
             if (n <= 127) {
                 uint64_t perm_odd_part = reduced_factorial_odd_part[n]
                                     * inverted_factorial_odd_part[n - k];
-                int shift = k - _Py_popcount32(n) +  _Py_popcount32(n-k);
+                int shift = k - _Py_popcount32((uint32_t)n)
+                            + _Py_popcount32((uint32_t)(n-k));
                 return PyLong_FromUnsignedLongLong(perm_odd_part << shift);
             }
 
