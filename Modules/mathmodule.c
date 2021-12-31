@@ -3514,6 +3514,29 @@ static uint64_t inverted_factorial_odd_part[] = {
     0x547fb1b8ab9d0ba3u, 0x8f15a826498852e3u, 0x32e1a03f38880283u, 0x3de4cce63283f0c1u,
 };
 
+/* exponent of the largest power of 2 dividing factorial(n), for n in range(68)
+
+Python code to generate the values:
+
+import math
+
+for n in range(68):
+    fac = math.factorial(n)
+    fac_trailing_zeros = (fac & -fac).bit_length() - 1
+    print(f"{fac_trailing_zeros}u")
+*/
+
+static uint8_t factorial_trailing_zeros[] = {
+    0u, 0u, 1u, 1u, 3u, 3u, 4u, 4u,
+    7u, 7u, 8u, 8u, 10u, 10u, 11u, 11u,
+    15u, 15u, 16u, 16u, 18u, 18u, 19u, 19u,
+    22u, 22u, 23u, 23u, 25u, 25u, 26u, 26u,
+    31u, 31u, 32u, 32u, 34u, 34u, 35u, 35u,
+    38u, 38u, 39u, 39u, 41u, 41u, 42u, 42u,
+    46u, 46u, 47u, 47u, 49u, 49u, 50u, 50u,
+    53u, 53u, 54u, 54u, 56u, 56u, 57u, 57u,
+    63u, 63u, 64u, 64u,
+};
 
 /*[clinic input]
 math.comb
@@ -3596,7 +3619,9 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
             uint64_t comb_odd_part = reduced_factorial_odd_part[ni]
                                    * inverted_factorial_odd_part[ki]
                                    * inverted_factorial_odd_part[ni - ki];
-            int shift = _Py_popcount32((uint32_t)(ni ^ ki ^ (ni - ki)));
+            int shift = factorial_trailing_zeros[ni]
+                      - factorial_trailing_zeros[ki]
+                      - factorial_trailing_zeros[ni - ki];
             result = PyLong_FromUnsignedLongLong(comb_odd_part << shift);
             goto done;
         }
