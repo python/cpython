@@ -1002,7 +1002,6 @@ stack_effect(int opcode, int oparg, int jump)
             return -1;
         case ROT_TWO:
         case ROT_THREE:
-        case ROT_FOUR:
             return 0;
         case DUP_TOP:
             return 1;
@@ -8393,9 +8392,6 @@ fold_rotations(struct instr *inst, int n)
             case ROT_N:
                 rot = inst[i].i_oparg;
                 break;
-            case ROT_FOUR:
-                rot = 4;
-                break;
             case ROT_THREE:
                 rot = 3;
                 break;
@@ -8641,9 +8637,6 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                         break;
                     case 3:
                         inst->i_opcode = ROT_THREE;
-                        break;
-                    case 4:
-                        inst->i_opcode = ROT_FOUR;
                         break;
                 }
                 if (i >= oparg - 1) {
