@@ -179,27 +179,18 @@ static int stdio_at_fork_reinit(_Py_Identifier *key)
 
     int ret = 0;
 
-    PyObject *stdio, *closed, *isatty, *buffer, *result;
+    PyObject *isatty = NULL;
+    PyObject *buffer = NULL;
+    PyObject *result = NULL;
 
-    stdio = _PySys_GetObjectId(key);
-
-    _Py_IDENTIFIER(closed);
-    if (_PyObject_LookupAttrId(stdio, &PyId_closed, &closed) < 0) {
-        PyErr_Clear();
-        goto end;
-    }
-
-    if (Py_IsTrue(closed)) {
-        goto end;
-    }
+    PyObject *stdio = _PySys_GetObjectId(key);
 
     _Py_IDENTIFIER(isatty);
-    if (_PyObject_GetAttrId(stdio, &PyId_isatty) == NULL) {
+    isatty = _PyObject_CallMethodIdNoArgs(stdio, &PyId_isatty);
+    if (isatty == NULL) {
         PyErr_Clear();
         goto end;
     }
-
-    isatty = _PyObject_CallMethodIdNoArgs(stdio, &PyId_isatty);
     if (Py_IsFalse(isatty)) {
         goto end;
     }
@@ -219,14 +210,16 @@ static int stdio_at_fork_reinit(_Py_Identifier *key)
     }
 
     result = _PyObject_CallMethodIdNoArgs(buffer, &PyId__at_fork_reinit);
-
-    if (result == Py_True) {
+    if (Py_IsTrue(result)) {
         goto end;
     }
 
     /* error */
     ret = -1;
 end:
+    Py_XDECREF(isatty);
+    Py_XDECREF(buffer);
+    Py_XDECREF(result);
     return ret;
 }
 
