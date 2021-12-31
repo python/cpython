@@ -3462,7 +3462,7 @@ Python code to generate the values:
         reduced_fac_odd_part = fac_odd_part % (2**64)
         print(f"{reduced_fac_odd_part:#018x}u")
 */
-static uint64_t reduced_factorial_odd_part[] = {
+static const uint64_t reduced_factorial_odd_part[] = {
     0x0000000000000001u, 0x0000000000000001u, 0x0000000000000001u, 0x0000000000000003u,
     0x0000000000000003u, 0x000000000000000fu, 0x000000000000002du, 0x000000000000013bu,
     0x000000000000013bu, 0x0000000000000b13u, 0x000000000000375fu, 0x0000000000026115u,
@@ -3494,7 +3494,7 @@ Python code to generate the values:
         inverted_fac_odd_part = pow(fac_odd_part, -1, 2**64)
         print(f"{inverted_fac_odd_part:#018x}u")
 */
-static uint64_t inverted_factorial_odd_part[] = {
+static const uint64_t inverted_factorial_odd_part[] = {
     0x0000000000000001u, 0x0000000000000001u, 0x0000000000000001u, 0xaaaaaaaaaaaaaaabu,
     0xaaaaaaaaaaaaaaabu, 0xeeeeeeeeeeeeeeefu, 0x4fa4fa4fa4fa4fa5u, 0x2ff2ff2ff2ff2ff3u,
     0x2ff2ff2ff2ff2ff3u, 0x938cc70553e3771bu, 0xb71c27cddd93e49fu, 0xb38e3229fcdee63du,
@@ -3526,16 +3526,11 @@ for n in range(68):
     print(f"{fac_trailing_zeros}u")
 */
 
-static uint8_t factorial_trailing_zeros[] = {
-    0u, 0u, 1u, 1u, 3u, 3u, 4u, 4u,
-    7u, 7u, 8u, 8u, 10u, 10u, 11u, 11u,
-    15u, 15u, 16u, 16u, 18u, 18u, 19u, 19u,
-    22u, 22u, 23u, 23u, 25u, 25u, 26u, 26u,
-    31u, 31u, 32u, 32u, 34u, 34u, 35u, 35u,
-    38u, 38u, 39u, 39u, 41u, 41u, 42u, 42u,
-    46u, 46u, 47u, 47u, 49u, 49u, 50u, 50u,
-    53u, 53u, 54u, 54u, 56u, 56u, 57u, 57u,
-    63u, 63u, 64u, 64u,
+static const uint8_t factorial_trailing_zeros[] = {
+     0,  0,  1,  1,  3,  3,  4,  4,  7,  7,  8,  8, 10, 10, 11, 11, 15,
+    15, 16, 16, 18, 18, 19, 19, 22, 22, 23, 23, 25, 25, 26, 26, 31, 31,
+    32, 32, 34, 34, 35, 35, 38, 38, 39, 39, 41, 41, 42, 42, 46, 46, 47,
+    47, 49, 49, 50, 50, 53, 53, 54, 54, 56, 56, 57, 57, 63, 63, 64, 64,
 };
 
 /*[clinic input]
@@ -3611,10 +3606,7 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
                 where 2**shift is the largest power of two dividing comb(n, k)
                 and comb_odd_part is comb(n, k) >> shift. comb_odd_part can be
                 calculated efficiently via arithmetic modulo 2**64, using three
-                lookups and two uint64_t multiplications, while the necessary
-                shift can be computed via Kummer's theorem: it's the number of
-                carries when adding k to n - k in binary, which in turn is the
-                number of set bits of n ^ k ^ (n - k).
+                lookups and two uint64_t multiplications.
             */
             uint64_t comb_odd_part = reduced_factorial_odd_part[ni]
                                    * inverted_factorial_odd_part[ki]
