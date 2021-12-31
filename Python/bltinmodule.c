@@ -1963,9 +1963,10 @@ Prints the values to a stream, or to sys.stdout by default.
 [clinic start generated code]*/
 
 static PyObject *
-builtin_print_impl(PyObject *module, PyObject *args, PyObject *sep,
-                   PyObject *end, PyObject *file, int flush)
-/*[clinic end generated code: output=3cfc0940f5bc237b input=c143c575d24fe665]*/
+builtin_print_impl(PyObject *module, Py_ssize_t varargssize,
+                   PyObject *const *args, PyObject *sep, PyObject *end,
+                   PyObject *file, int flush)
+/*[clinic end generated code: output=50b729b4a8731c69 input=c143c575d24fe665]*/
 {
     int i, err;
 
@@ -2001,7 +2002,7 @@ builtin_print_impl(PyObject *module, PyObject *args, PyObject *sep,
         return NULL;
     }
 
-    for (i = 0; i < PyTuple_GET_SIZE(args); i++) {
+    for (i = 0; i < varargssize; i++) {
         if (i > 0) {
             if (sep == NULL) {
                 err = PyFile_WriteString(" ", file);
@@ -2013,7 +2014,7 @@ builtin_print_impl(PyObject *module, PyObject *args, PyObject *sep,
                 return NULL;
             }
         }
-        err = PyFile_WriteObject(PyTuple_GET_ITEM(args, i), file, Py_PRINT_RAW);
+        err = PyFile_WriteObject(args[i], file, Py_PRINT_RAW);
         if (err) {
             return NULL;
         }
