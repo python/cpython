@@ -3319,6 +3319,29 @@ static const uint64_t inverted_factorial_odd_part[] = {
     0xac4dd6b894447dd7u, 0x42ea183eeaa87be3u, 0x15612d1550ee5b5du, 0x226fa19d656cb623u,
 };
 
+/* exponent of the largest power of 2 dividing factorial(n), for n in range(68)
+
+Python code to generate the values:
+
+import math
+
+for n in range(128):
+    fac = math.factorial(n)
+    fac_trailing_zeros = (fac & -fac).bit_length() - 1
+    print(fac_trailing_zeros)
+*/
+
+static const uint8_t factorial_trailing_zeros[] = {
+     0,  0,  1,  1,  3,  3,  4,  4,  7,  7,  8,  8, 10, 10, 11, 11,  //  0-15
+    15, 15, 16, 16, 18, 18, 19, 19, 22, 22, 23, 23, 25, 25, 26, 26,  // 16-31
+    31, 31, 32, 32, 34, 34, 35, 35, 38, 38, 39, 39, 41, 41, 42, 42,  // 32-47
+    46, 46, 47, 47, 49, 49, 50, 50, 53, 53, 54, 54, 56, 56, 57, 57,  // 48-63
+    63, 63, 64, 64, 66, 66, 67, 67, 70, 70, 71, 71, 73, 73, 74, 74,  // 64-79
+    78, 78, 79, 79, 81, 81, 82, 82, 85, 85, 86, 86, 88, 88, 89, 89,  // 80-95
+    94, 94, 95, 95, 97, 97, 98, 98, 101, 101, 102, 102, 104, 104, 105, 105,  // 96-111
+    109, 109, 110, 110, 112, 112, 113, 113, 116, 116, 117, 117, 119, 119, 120, 120,  // 112-127
+};
+
 /* Number of permutations and combinations.
  * P(n, k) = n! / (n-k)!
  * C(n, k) = P(n, k) / k!
@@ -3365,15 +3388,14 @@ perm_comb_small(unsigned long long n, unsigned long long k, int iscomb)
                 where 2**shift is the largest power of two dividing comb(n, k)
                 and comb_odd_part is comb(n, k) >> shift. comb_odd_part can be
                 calculated efficiently via arithmetic modulo 2**64, using three
-                lookups and two uint64_t multiplications, while the necessary
-                shift can be computed via Kummer's theorem: it's the number of
-                carries when adding k to n - k in binary, which in turn is the
-                number of set bits of n ^ k ^ (n - k).
+                lookups and two uint64_t multiplications.
             */
             uint64_t comb_odd_part = reduced_factorial_odd_part[n]
                                    * inverted_factorial_odd_part[k]
                                    * inverted_factorial_odd_part[n - k];
-            int shift = _Py_popcount32((uint32_t)(n ^ k ^ (n - k)));
+            int shift = factorial_trailing_zeros[n]
+                      - factorial_trailing_zeros[k]
+                      - factorial_trailing_zeros[n - k];
             return PyLong_FromUnsignedLongLong(comb_odd_part << shift);
         }
 
@@ -3390,9 +3412,9 @@ perm_comb_small(unsigned long long n, unsigned long long k, int iscomb)
         if (k < Py_ARRAY_LENGTH(fast_perm_limits) && n <= fast_perm_limits[k]) {
             if (n <= 127) {
                 uint64_t perm_odd_part = reduced_factorial_odd_part[n]
-                                    * inverted_factorial_odd_part[n - k];
-                int shift = k - _Py_popcount32((uint32_t)n)
-                            + _Py_popcount32((uint32_t)(n-k));
+                                       * inverted_factorial_odd_part[n - k];
+                int shift = factorial_trailing_zeros[n]
+                          - factorial_trailing_zeros[n - k];
                 return PyLong_FromUnsignedLongLong(perm_odd_part << shift);
             }
 

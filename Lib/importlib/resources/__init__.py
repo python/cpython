@@ -17,7 +17,7 @@ from ._legacy import (
     Resource,
 )
 
-from importlib.abc import ResourceReader
+from .abc import ResourceReader
 
 
 __all__ = [
