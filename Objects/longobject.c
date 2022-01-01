@@ -77,7 +77,7 @@ maybe_small_long(PyLongObject *v)
 /* For exponentiation, use the binary left-to-right algorithm unless the
  ^ exponent contains more than HUGE_EXP_CUTOFF bits.  In that case, do
  * (no more than) EXP_WINDOW_SIZE bits at a time.  The potential drawback is
- * hat a table of 2**(EXP_WINDOW_SIZE - 1) intermediate results is
+ * that a table of 2**(EXP_WINDOW_SIZE - 1) intermediate results is
  * precomputed.
  */
 #define EXP_WINDOW_SIZE 6
