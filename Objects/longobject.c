@@ -4337,7 +4337,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
         }
         /* else bi is 0, and z==1 is correct */
     }
-    else if (i * PyLong_SHIFT <= HUGE_EXP_CUTOFF) {
+    else if (i <= HUGE_EXP_CUTOFF / PyLong_SHIFT ) {
         /* Left-to-right binary exponentiation (HAC Algorithm 14.79) */
         /* http://www.cacr.math.uwaterloo.ca/hac/about/chap14.pdf    */
 
@@ -4446,7 +4446,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
     Py_CLEAR(z);
     /* fall through */
   Done:
-    if (Py_SIZE(b) * PyLong_SHIFT > HUGE_EXP_CUTOFF) {
+    if (Py_SIZE(b) > HUGE_EXP_CUTOFF / PyLong_SHIFT) {
         for (i = 0; i < EXP_TABLE_LEN; ++i)
             Py_XDECREF(table[i]);
     }
