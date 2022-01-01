@@ -196,27 +196,6 @@ the built-in function :func:`range` returns an iterator of integers suitable to
 emulate the effect of Pascal's ``for i := a to b do``; e.g., ``list(range(3))``
 returns the list ``[0, 1, 2]``.
 
-.. note::
-
-   .. index::
-      single: loop; over mutable sequence
-      single: mutable sequence; loop over
-
-   There is a subtlety when the sequence is being modified by the loop (this can
-   only occur for mutable sequences, e.g. lists).  An internal counter is used
-   to keep track of which item is used next, and this is incremented on each
-   iteration.  When this counter has reached the length of the sequence the loop
-   terminates.  This means that if the suite deletes the current (or a previous)
-   item from the sequence, the next item will be skipped (since it gets the
-   index of the current item which has already been treated).  Likewise, if the
-   suite inserts an item in the sequence before the current item, the current
-   item will be treated again the next time through the loop. This can lead to
-   nasty bugs that can be avoided by making a temporary copy using a slice of
-   the whole sequence, e.g., ::
-
-      for x in a[:]:
-          if x < 0: a.remove(x)
-
 
 .. _try:
 .. _except:
