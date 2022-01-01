@@ -1293,5 +1293,5 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 
 .. rubric:: Footnotes
 
-.. [#] :func:`os.path.abspath` normalizes the resulting path, which may change its meaning in the presence of symlinks.
+.. [#] :func:`os.path.abspath` normalizes the resulting path, which may change its meaning in the presence of symlinks, while :meth:`Path.absolute` does not.
 .. [#] :meth:`Path.relative_to` requires ``self`` to be the subpath of the argument, but :func:`os.path.relpath` does not.
