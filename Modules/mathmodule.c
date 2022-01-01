@@ -3358,6 +3358,9 @@ perm_comb_small(unsigned long long n, unsigned long long k, int iscomb)
     /* For small enough n and k the result fits in the 64-bit range and can
      * be calculated without allocating intermediate PyLong objects. */
     if (iscomb) {
+        /* Maps k to the maximal n so that 2*k-1 <= n <= 127 and C(n, k)
+         * fits into a uint64_t.  Exclude k = 1, because the second fast
+         * path is faster for this case.*/
         static const unsigned char fast_comb_limits1[] = {
             0, 0, 127, 127, 127, 127, 127, 127,  // 0-7
             127, 127, 127, 127, 127, 127, 127, 127,  // 8-15
@@ -3367,8 +3370,7 @@ perm_comb_small(unsigned long long n, unsigned long long k, int iscomb)
         };
         if (k < Py_ARRAY_LENGTH(fast_comb_limits1) && n <= fast_comb_limits1[k]) {
             /*
-                For 0 <= k <= n <= fast_comb_limits1[k], comb(n, k) always fits
-                into a uint64_t. We compute it as
+                comb(n, k) fits into a uint64_t. We compute it as
 
                     comb_odd_part << shift
 
@@ -3386,13 +3388,15 @@ perm_comb_small(unsigned long long n, unsigned long long k, int iscomb)
             return PyLong_FromUnsignedLongLong(comb_odd_part << shift);
         }
 
-        /* Only contains items larger than in fast_comb_limits1. */
-        /* long long is at least 64 bit. */
+        /* Maps k to the maximal n so that 2*k-1 <= n <= 127 and C(n, k)*k
+         * fits into a long long (which is at least 64 bit).  Only contains
+         * items larger than in fast_comb_limits1. */
         static const unsigned long long fast_comb_limits2[] = {
             0, ULLONG_MAX, 4294967296ULL, 3329022, 102570, 13467, 3612, 1449,  // 0-7
             746, 453, 308, 227, 178, 147,  // 8-13
         };
         if (k < Py_ARRAY_LENGTH(fast_comb_limits2) && n <= fast_comb_limits2[k]) {
+            /* C(n, k) = C(n, k-1) * (n-k+1) / k */
             unsigned long long result = n;
             for (unsigned long long i = 1; i < k;) {
                 result *= --n;
@@ -3402,6 +3406,8 @@ perm_comb_small(unsigned long long n, unsigned long long k, int iscomb)
         }
     }
     else {
+        /* Maps k to the maximal n so that k <= n and P(n, k)
+         * fits into a long long (which is at least 64 bit). */
         static const unsigned long long fast_perm_limits[] = {
             0, ULLONG_MAX, 4294967296ULL, 2642246, 65537, 7133, 1627, 568,  // 0-7
             259, 142, 88, 61, 45, 36, 30, 26,  // 8-15
@@ -3409,6 +3415,7 @@ perm_comb_small(unsigned long long n, unsigned long long k, int iscomb)
         };
         if (k < Py_ARRAY_LENGTH(fast_perm_limits) && n <= fast_perm_limits[k]) {
             if (n <= 127) {
+                /* P(n, k) fits into a uint64_t. */
                 uint64_t perm_odd_part = reduced_factorial_odd_part[n]
                                        * inverted_factorial_odd_part[n - k];
                 int shift = factorial_trailing_zeros[n]
@@ -3416,6 +3423,7 @@ perm_comb_small(unsigned long long n, unsigned long long k, int iscomb)
                 return PyLong_FromUnsignedLongLong(perm_odd_part << shift);
             }
 
+            /* P(n, k) = P(n, k-1) * (n-k+1) */
             unsigned long long result = n;
             for (unsigned long long i = 1; i < k;) {
                 result *= --n;
@@ -3425,8 +3433,11 @@ perm_comb_small(unsigned long long n, unsigned long long k, int iscomb)
         }
     }
 
-    /* For larger n use recursive formula. */
-    /* C(n, k) = C(n, j) * C(n-j, k-j) // C(k, j) */
+    /* For larger n use recursive formulas:
+     *
+     *   P(n, k) = P(n, j) * P(n-j, k-j)
+     *   C(n, k) = C(n, j) * C(n-j, k-j) // C(k, j)
+     */
     unsigned long long j = k / 2;
     PyObject *a, *b;
     a = perm_comb_small(n, j, iscomb);
