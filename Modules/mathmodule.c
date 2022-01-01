@@ -3269,7 +3269,7 @@ static const uint64_t reduced_factorial_odd_part[] = {
     0x502686d7f6ff6b8fu, 0x6101855406be7a1fu, 0x9956afb5806930e7u, 0xe1f0ee88af40f7c5u,
     0x984b057bda5c1151u, 0x9a49819acc13ea05u, 0x8ef0dead0896ef27u, 0x71f7826efe292b21u,
     0xad80a480e46986efu, 0x01cdc0ebf5e0c6f7u, 0x6e06f839968f68dbu, 0xdd5943ab56e76139u,
-    0xcdcf31bf8604c5e7u, 0x7e2b4a847054a1cbu, 0x0ca75697a4d3d0f5u, 0x4703f53ac514a98bu
+    0xcdcf31bf8604c5e7u, 0x7e2b4a847054a1cbu, 0x0ca75697a4d3d0f5u, 0x4703f53ac514a98bu,
 };
 
 /* inverses of reduced_factorial_odd_part values modulo 2**64.
@@ -3351,26 +3351,6 @@ static const uint8_t factorial_trailing_zeros[] = {
 static PyObject *
 perm_comb_small(unsigned long long n, unsigned long long k, int iscomb)
 {
-    static const unsigned char fast_comb_limits1[] = {
-        127, 127, 127, 127, 127, 127, 127, 127,  // 0-7
-        127, 127, 127, 127, 127, 127, 127, 127,  // 8-15
-        116, 105, 97, 91, 86, 82, 78, 76,  // 16-23
-        74, 72, 71, 70, 69, 68, 68, 67,  // 24-31
-        67, 67, 67,  // 32-34
-    };
-    /* long long is at least 64 bit */
-    static const unsigned long long fast_comb_limits2[] = {
-        0, ULLONG_MAX, 4294967296ULL, 3329022, 102570, 13467, 3612, 1449,  // 0-7
-        746, 453, 308, 227, 178, 147, 125, 110,  // 8-15
-        99, 90, 84, 79, 75, 72, 69, 68,  // 16-23
-        66, 65, 64, 63, 63, 62, 62, 62,  // 24-31
-    };
-    static const unsigned long long fast_perm_limits[] = {
-        0, ULLONG_MAX, 4294967296ULL, 2642246, 65537, 7133, 1627, 568,  // 0-7
-        259, 142, 88, 61, 45, 36, 30, 26,  // 8-15
-        24, 22, 21, 20, 20,  // 16-20
-    };
-
     if (k == 0) {
         return PyLong_FromLong(1);
     }
@@ -3378,10 +3358,17 @@ perm_comb_small(unsigned long long n, unsigned long long k, int iscomb)
     /* For small enough n and k the result fits in the 64-bit range and can
      * be calculated without allocating intermediate PyLong objects. */
     if (iscomb) {
+        static const unsigned char fast_comb_limits1[] = {
+            0, 0, 127, 127, 127, 127, 127, 127,  // 0-7
+            127, 127, 127, 127, 127, 127, 127, 127,  // 8-15
+            116, 105, 97, 91, 86, 82, 78, 76,  // 16-23
+            74, 72, 71, 70, 69, 68, 68, 67,  // 24-31
+            67, 67, 67,  // 32-34
+        };
         if (k < Py_ARRAY_LENGTH(fast_comb_limits1) && n <= fast_comb_limits1[k]) {
             /*
-                For 0 <= k <= n <= 67, comb(n, k) always fits into a uint64_t.
-                We compute it as
+                For 0 <= k <= n <= fast_comb_limits1[k], comb(n, k) always fits
+                into a uint64_t. We compute it as
 
                     comb_odd_part << shift
 
@@ -3399,6 +3386,12 @@ perm_comb_small(unsigned long long n, unsigned long long k, int iscomb)
             return PyLong_FromUnsignedLongLong(comb_odd_part << shift);
         }
 
+        /* Only contains items larger than in fast_comb_limits1. */
+        /* long long is at least 64 bit. */
+        static const unsigned long long fast_comb_limits2[] = {
+            0, ULLONG_MAX, 4294967296ULL, 3329022, 102570, 13467, 3612, 1449,  // 0-7
+            746, 453, 308, 227, 178, 147,  // 8-13
+        };
         if (k < Py_ARRAY_LENGTH(fast_comb_limits2) && n <= fast_comb_limits2[k]) {
             unsigned long long result = n;
             for (unsigned long long i = 1; i < k;) {
@@ -3409,6 +3402,11 @@ perm_comb_small(unsigned long long n, unsigned long long k, int iscomb)
         }
     }
     else {
+        static const unsigned long long fast_perm_limits[] = {
+            0, ULLONG_MAX, 4294967296ULL, 2642246, 65537, 7133, 1627, 568,  // 0-7
+            259, 142, 88, 61, 45, 36, 30, 26,  // 8-15
+            24, 22, 21, 20, 20,  // 16-20
+        };
         if (k < Py_ARRAY_LENGTH(fast_perm_limits) && n <= fast_perm_limits[k]) {
             if (n <= 127) {
                 uint64_t perm_odd_part = reduced_factorial_odd_part[n]
