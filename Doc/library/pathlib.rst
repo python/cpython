@@ -1054,7 +1054,7 @@ call fails (for example because the path doesn't exist).
 
 .. method:: Path.absolute()
 
-   Make the path absolute, without resolving symlinks, and return a new path
+   Make the path absolute, without normalization or resolving symlinks, and return a new path
    object.  This is equivalent to prepending the current directory::
 
       >>> p = Path('..')
