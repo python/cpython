@@ -80,7 +80,7 @@ maybe_small_long(PyLongObject *v)
  * that a table of 2**(EXP_WINDOW_SIZE - 1) intermediate results is
  * precomputed.
  */
-#define EXP_WINDOW_SIZE 6
+#define EXP_WINDOW_SIZE 5
 #define EXP_TABLE_LEN (1 << (EXP_WINDOW_SIZE - 1))
 #define HUGE_EXP_CUTOFF 120
 
@@ -4183,8 +4183,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
      * precomputed so that table[i] == a**(2*i+1) % c for i in
      * range(EXP_TABLE_LEN).
      */
-    PyLongObject *table[EXP_TABLE_LEN] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-                                           0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    PyLongObject *table[EXP_TABLE_LEN] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
     /* a, b, c = v, w, x */
     CHECK_BINOP(v, w);
