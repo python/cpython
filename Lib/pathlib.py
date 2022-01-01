@@ -215,18 +215,6 @@ class _WindowsFlavour(_Flavour):
         name = parts[-1].partition('.')[0].partition(':')[0].rstrip(' ')
         return name.upper() in self.reserved_names
 
-    def make_uri(self, path):
-        # Under Windows, file URIs use the UTF-8 encoding.
-        drive = path.drive
-        if len(drive) == 2 and drive[1] == ':':
-            # It's a path on a local drive => 'file:///c:/a/b'
-            rest = path.as_posix()[2:].lstrip('/')
-            return 'file:///%s/%s' % (
-                drive, urlquote_from_bytes(rest.encode('utf-8')))
-        else:
-            # It's a path on a network drive => 'file://host/share/a/b'
-            return 'file:' + urlquote_from_bytes(path.as_posix().encode('utf-8'))
-
 
 class _PosixFlavour(_Flavour):
     sep = '/'
@@ -262,12 +250,6 @@ class _PosixFlavour(_Flavour):
 
     def is_reserved(self, parts):
         return False
-
-    def make_uri(self, path):
-        # We represent the path using the local filesystem encoding,
-        # for portability to other applications.
-        bpath = bytes(path)
-        return 'file://' + urlquote_from_bytes(bpath)
 
 
 _windows_flavour = _WindowsFlavour()
@@ -647,7 +629,10 @@ class PurePath(object):
         """Return the path as a 'file' URI."""
         if not self.is_absolute():
             raise ValueError("relative path can't be expressed as a file URI")
-        return self._flavour.make_uri(self)
+        # We represent the path using the local filesystem encoding,
+        # for portability to other applications.
+        bpath = bytes(self)
+        return 'file://' + urlquote_from_bytes(bpath)
 
     @property
     def _cparts(self):
@@ -936,6 +921,20 @@ class PureWindowsPath(PurePath):
     _flavour = _windows_flavour
     __slots__ = ()
 
+    def as_uri(self):
+        """Return the path as a 'file' URI."""
+        if not self.is_absolute():
+            raise ValueError("relative path can't be expressed as a file URI")
+        # Under Windows, file URIs use the UTF-8 encoding.
+        drive = self.drive
+        if len(drive) == 2 and drive[1] == ':':
+            # It's a path on a local drive => 'file:///c:/a/b'
+            rest = self.as_posix()[2:].lstrip('/')
+            return 'file:///%s/%s' % (
+                drive, urlquote_from_bytes(rest.encode('utf-8')))
+        else:
+            # It's a path on a network drive => 'file://host/share/a/b'
+            return 'file:' + urlquote_from_bytes(self.as_posix().encode('utf-8'))
 
 # Filesystem-accessing classes
 
