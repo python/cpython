@@ -35,6 +35,12 @@ _IGNORED_WINERRORS = (
     _WINERROR_INVALID_NAME,
     _WINERROR_CANT_RESOLVE_FILENAME)
 
+_WIN_RESERVED_NAMES = (
+    {'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$'} |
+    {'COM%s' % c for c in '123456789\xb9\xb2\xb3'} |
+    {'LPT%s' % c for c in '123456789\xb9\xb2\xb3'}
+)
+
 def _ignore_error(exception):
     return (getattr(exception, 'errno', None) in _IGNORED_ERRNOS or
             getattr(exception, 'winerror', None) in _IGNORED_WINERRORS)
@@ -123,11 +129,6 @@ class _WindowsFlavour(_Flavour):
     drive_letters = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
     ext_namespace_prefix = '\\\\?\\'
 
-    reserved_names = (
-        {'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$'} |
-        {'COM%s' % c for c in '123456789\xb9\xb2\xb3'} |
-        {'LPT%s' % c for c in '123456789\xb9\xb2\xb3'}
-        )
 
     # Interesting findings about extended paths:
     # * '\\?\c:\a' is an extended path, which bypasses normal Windows API
@@ -202,19 +203,6 @@ class _WindowsFlavour(_Flavour):
                 s = '\\' + s[3:]
         return prefix, s
 
-    def is_reserved(self, parts):
-        # NOTE: the rules for reserved names seem somewhat complicated
-        # (e.g. r"..\NUL" is reserved but not r"foo\NUL" if "foo" does not
-        # exist). We err on the side of caution and return True for paths
-        # which are not considered reserved by Windows.
-        if not parts:
-            return False
-        if parts[0].startswith('\\\\'):
-            # UNC paths are never reserved
-            return False
-        name = parts[-1].partition('.')[0].partition(':')[0].rstrip(' ')
-        return name.upper() in self.reserved_names
-
     def make_uri(self, path):
         # Under Windows, file URIs use the UTF-8 encoding.
         drive = path.drive
@@ -259,9 +247,6 @@ class _PosixFlavour(_Flavour):
 
     def compile_pattern(self, pattern):
         return re.compile(fnmatch.translate(pattern)).fullmatch
-
-    def is_reserved(self, parts):
-        return False
 
     def make_uri(self, path):
         # We represent the path using the local filesystem encoding,
@@ -885,7 +870,7 @@ class PurePath(object):
     def is_reserved(self):
         """Return True if the path contains one of the special names reserved
         by the system, if any."""
-        return self._flavour.is_reserved(self._parts)
+        return False
 
     def match(self, path_pattern):
         """
@@ -935,6 +920,22 @@ class PureWindowsPath(PurePath):
     """
     _flavour = _windows_flavour
     __slots__ = ()
+
+    def is_reserved(self):
+        """Return True if the path contains one of the special names reserved
+        by the system, if any."""
+        # NOTE: the rules for reserved names seem somewhat complicated
+        # (e.g. r"..\NUL" is reserved but not r"foo\NUL" if "foo" does not
+        # exist). We err on the side of caution and return True for paths
+        # which are not considered reserved by Windows.
+        parts = self._parts
+        if not parts:
+            return False
+        if parts[0].startswith('\\\\'):
+            # UNC paths are never reserved
+            return False
+        name = parts[-1].partition('.')[0].partition(':')[0].rstrip(' ')
+        return name.upper() in _WIN_RESERVED_NAMES
 
 
 # Filesystem-accessing classes
