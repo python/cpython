@@ -966,8 +966,8 @@ details see :ref:`comparisons` in the language reference.)
 Forward and reversed iterators over mutable sequences access values using an
 index.  That index will continue to march forward (or backward) even if the
 underlying sequence is mutated.  The iterator terminates only when an
-IndexError or StopIteration is encountered (or when the index drops below
-zero).
+:exc:`IndexError` or a :exc:`StopIteration` is encountered (or when the index
+drops below zero).
 
 Notes:
 
