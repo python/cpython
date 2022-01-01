@@ -74,12 +74,15 @@ maybe_small_long(PyLongObject *v)
 #define KARATSUBA_CUTOFF 70
 #define KARATSUBA_SQUARE_CUTOFF (2 * KARATSUBA_CUTOFF)
 
-/* For exponentiation, use the binary left-to-right algorithm
- * unless the exponent contains more than FIVEARY_CUTOFF digits.
- * In that case, do 5 bits at a time.  The potential drawback is that
- * a table of 2**5 intermediate results is computed.
+/* For exponentiation, use the binary left-to-right algorithm unless the
+ ^ exponent contains more than HUGE_EXP_CUTOFF bits.  In that case, do
+ * (no more than) EXP_WINDOW_SIZE bits at a time.  The potential drawback is
+ * hat a table of 2**(EXP_WINDOW_SIZE - 1) intermediate results is
+ * precomputed.
  */
-#define FIVEARY_CUTOFF 8
+#define EXP_WINDOW_SIZE 6
+#define EXP_TABLE_LEN (1 << (EXP_WINDOW_SIZE - 1))
+#define HUGE_EXP_CUTOFF 120
 
 #define SIGCHECK(PyTryBlock)                    \
     do {                                        \
@@ -4172,14 +4175,16 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
     int negativeOutput = 0;  /* if x<0 return negative output */
 
     PyLongObject *z = NULL;  /* accumulated result */
-    Py_ssize_t i, j, k;             /* counters */
+    Py_ssize_t i, j;             /* counters */
     PyLongObject *temp = NULL;
+    PyLongObject *a2 = NULL; /* may temporarily hold a**2 % c */
 
-    /* 5-ary values.  If the exponent is large enough, table is
-     * precomputed so that table[i] == a**i % c for i in range(32).
+    /* k-ary values.  If the exponent is large enough, table is
+     * precomputed so that table[i] == a**(2*i+1) % c for i in
+     * range(EXP_TABLE_LEN).
      */
-    PyLongObject *table[32] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-                               0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    PyLongObject *table[EXP_TABLE_LEN] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                                           0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
     /* a, b, c = v, w, x */
     CHECK_BINOP(v, w);
@@ -4332,7 +4337,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
         }
         /* else bi is 0, and z==1 is correct */
     }
-    else if (i <= FIVEARY_CUTOFF) {
+    else if (i * PyLong_SHIFT <= HUGE_EXP_CUTOFF) {
         /* Left-to-right binary exponentiation (HAC Algorithm 14.79) */
         /* http://www.cacr.math.uwaterloo.ca/hac/about/chap14.pdf    */
 
@@ -4366,23 +4371,65 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
         }
     }
     else {
-        /* Left-to-right 5-ary exponentiation (HAC Algorithm 14.82) */
-        Py_INCREF(z);           /* still holds 1L */
-        table[0] = z;
-        for (i = 1; i < 32; ++i)
-            MULT(table[i-1], a, table[i]);
+        /* Left-to-right k-ary sliding window exponentiation
+         * (HAC Algorithm 14.85)
+         */
+        Py_INCREF(a);
+        table[0] = a;
+        MULT(a, a, a2);
+        /* table[i] == a**(2*i + 1) % c */
+        for (i = 1; i < EXP_TABLE_LEN; ++i)
+            MULT(table[i-1], a2, table[i]);
+        Py_CLEAR(a2);
+
+        /* Repeatedly extract the next (no more than) EXP_WINDOW_SIZE bits
+         * into `pending`, starting with the next 1 bit.  The current bit
+         * length of `pending` is `blen`, and if `pending` is non-zero the
+         * current number of trailing zeroes `ntz`.
+         */
+        int pending = 0, blen = 0, ntz = 0;
+#define ABSORB_PENDING  do { \
+            int k; \
+            assert(pending); \
+            assert((pending >> ntz) & 1); \
+            assert(pending >> (blen - 1)); \
+            assert(pending >> blen == 0); \
+            k = blen - ntz; \
+            assert(k >= 0); \
+            while (k-- > 0) { \
+                MULT(z, z, z); \
+            } \
+            MULT(z, table[pending >> (ntz + 1)], z); \
+            k = ntz; \
+            assert(k >= 0); \
+            while (k-- > 0) { \
+                MULT(z, z, z); \
+            } \
+            pending = blen = ntz = 0; \
+        } while(0)
 
         for (i = Py_SIZE(b) - 1; i >= 0; --i) {
             const digit bi = b->ob_digit[i];
-
-            for (j = PyLong_SHIFT - 5; j >= 0; j -= 5) {
-                const int index = (bi >> j) & 0x1f;
-                for (k = 0; k < 5; ++k)
+            for (j = PyLong_SHIFT - 1; j >= 0; --j) {
+                const int bit = (bi >> j) & 1;
+                if (!pending && !bit) { /* absorb strings of 0 bits */
                     MULT(z, z, z);
-                if (index)
-                    MULT(z, table[index], z);
+                    continue;
+                }
+                pending <<= 1;
+                ++blen;
+                if (bit) {
+                    ++pending;
+                    ntz = 0;
+                }
+                else
+                    ++ntz;
+                if (blen == EXP_WINDOW_SIZE)
+                    ABSORB_PENDING;
             }
         }
+        if (pending)
+            ABSORB_PENDING;
     }
 
     if (negativeOutput && (Py_SIZE(z) != 0)) {
@@ -4399,13 +4446,14 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
     Py_CLEAR(z);
     /* fall through */
   Done:
-    if (Py_SIZE(b) > FIVEARY_CUTOFF) {
-        for (i = 0; i < 32; ++i)
+    if (Py_SIZE(b) * PyLong_SHIFT > HUGE_EXP_CUTOFF) {
+        for (i = 0; i < EXP_TABLE_LEN; ++i)
             Py_XDECREF(table[i]);
     }
     Py_DECREF(a);
     Py_DECREF(b);
     Py_XDECREF(c);
+    Py_XDECREF(a2);
     Py_XDECREF(temp);
     return (PyObject *)z;
 }
