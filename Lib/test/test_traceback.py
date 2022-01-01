@@ -1072,7 +1072,8 @@ class TracebackFormatTests(unittest.TestCase):
         )
 
     def test_print_exception_bad_type_python(self):
-        with self.assertRaises(TypeError):
+        msg = "Exception expected for value, int found"
+        with self.assertRaisesRegex(TypeError, msg):
             traceback.print_exception(42)
 
 
