@@ -273,6 +273,10 @@ class TimeTestCase(unittest.TestCase):
                 self.fail("conversion specifier %r failed with '%s' input." %
                           (format, strf_output))
 
+    def test_strptime_0th_week_day(self):
+        self.assertEqual(time.strptime('2024-0-3','%Y-%W-%w'),
+                         time.strptime('2024-1-3','%Y-%W-%w'))
+
     def test_strptime_bytes(self):
         # Make sure only strings are accepted as arguments to strptime.
         self.assertRaises(TypeError, time.strptime, b'2009', "%Y")
