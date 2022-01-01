@@ -187,7 +187,9 @@ example uses :func:`bisect` to look up a letter grade for an exam score (say)
 based on a set of ordered numeric breakpoints: 90 and up is an 'A', 80 to 89 is
 a 'B', and so on::
 
-   >>> def grade(score, breakpoints=[60, 70, 80, 90], grades='FDCBA'):
+   >>> def grade(score, breakpoints=None, grades='FDCBA'):
+   ...     if breakpoints is None:
+   ...         breakpoints = [60, 70, 80, 90]
    ...     i = bisect(breakpoints, score)
    ...     return grades[i]
    ...
