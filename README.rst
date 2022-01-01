@@ -1,10 +1,6 @@
 This is Python version 3.11.0 alpha 3
 =====================================
 
-.. image:: https://travis-ci.com/python/cpython.svg?branch=main
-   :alt: CPython build status on Travis CI
-   :target: https://travis-ci.com/python/cpython
-
 .. image:: https://github.com/python/cpython/workflows/Tests/badge.svg
    :alt: CPython build status on GitHub Actions
    :target: https://github.com/python/cpython/actions

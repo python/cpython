@@ -2684,6 +2684,17 @@ class TestSingleDispatch(unittest.TestCase):
             'typing.Iterable[str] is not a class.'
         ))
 
+        with self.assertRaises(TypeError) as exc:
+            @i.register
+            def _(arg: typing.Union[int, typing.Iterable[str]]):
+                return "Invalid Union"
+        self.assertTrue(str(exc.exception).startswith(
+            "Invalid annotation for 'arg'."
+        ))
+        self.assertTrue(str(exc.exception).endswith(
+            'typing.Union[int, typing.Iterable[str]] not all arguments are classes.'
+        ))
+
     def test_invalid_positional_argument(self):
         @functools.singledispatch
         def f(*args):
@@ -2691,6 +2702,93 @@ class TestSingleDispatch(unittest.TestCase):
         msg = 'f requires at least 1 positional argument'
         with self.assertRaisesRegex(TypeError, msg):
             f()
+
+    def test_union(self):
+        @functools.singledispatch
+        def f(arg):
+            return "default"
+
+        @f.register
+        def _(arg: typing.Union[str, bytes]):
+            return "typing.Union"
+
+        @f.register
+        def _(arg: int | float):
+            return "types.UnionType"
+
+        self.assertEqual(f([]), "default")
+        self.assertEqual(f(""), "typing.Union")
+        self.assertEqual(f(b""), "typing.Union")
+        self.assertEqual(f(1), "types.UnionType")
+        self.assertEqual(f(1.0), "types.UnionType")
+
+    def test_register_genericalias(self):
+        @functools.singledispatch
+        def f(arg):
+            return "default"
+
+        with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
+            f.register(list[int], lambda arg: "types.GenericAlias")
+        with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
+            f.register(typing.List[int], lambda arg: "typing.GenericAlias")
+        with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
+            f.register(list[int] | str, lambda arg: "types.UnionTypes(types.GenericAlias)")
+        with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
+            f.register(typing.List[float] | bytes, lambda arg: "typing.Union[typing.GenericAlias]")
+        with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
+            f.register(typing.Any, lambda arg: "typing.Any")
+
+        self.assertEqual(f([1]), "default")
+        self.assertEqual(f([1.0]), "default")
+        self.assertEqual(f(""), "default")
+        self.assertEqual(f(b""), "default")
+
+    def test_register_genericalias_decorator(self):
+        @functools.singledispatch
+        def f(arg):
+            return "default"
+
+        with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
+            f.register(list[int])
+        with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
+            f.register(typing.List[int])
+        with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
+            f.register(list[int] | str)
+        with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
+            f.register(typing.List[int] | str)
+        with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
+            f.register(typing.Any)
+
+    def test_register_genericalias_annotation(self):
+        @functools.singledispatch
+        def f(arg):
+            return "default"
+
+        with self.assertRaisesRegex(TypeError, "Invalid annotation for 'arg'"):
+            @f.register
+            def _(arg: list[int]):
+                return "types.GenericAlias"
+        with self.assertRaisesRegex(TypeError, "Invalid annotation for 'arg'"):
+            @f.register
+            def _(arg: typing.List[float]):
+                return "typing.GenericAlias"
+        with self.assertRaisesRegex(TypeError, "Invalid annotation for 'arg'"):
+            @f.register
+            def _(arg: list[int] | str):
+                return "types.UnionType(types.GenericAlias)"
+        with self.assertRaisesRegex(TypeError, "Invalid annotation for 'arg'"):
+            @f.register
+            def _(arg: typing.List[float] | bytes):
+                return "typing.Union[typing.GenericAlias]"
+        with self.assertRaisesRegex(TypeError, "Invalid annotation for 'arg'"):
+            @f.register
+            def _(arg: typing.Any):
+                return "typing.Any"
+
+        self.assertEqual(f([1]), "default")
+        self.assertEqual(f([1.0]), "default")
+        self.assertEqual(f(""), "default")
+        self.assertEqual(f(b""), "default")
 
 
 class CachedCostItem:

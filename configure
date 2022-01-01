@@ -772,6 +772,7 @@ MODULE_TIME_FALSE
 MODULE_TIME_TRUE
 MODULE__IO_FALSE
 MODULE__IO_TRUE
+MODULES_SETUP_STDLIB
 MODULE_BUILDTYPE
 TEST_MODULES
 LIBRARY_DEPS
@@ -933,9 +934,12 @@ CONFIG_ARGS
 SOVERSION
 VERSION
 PYTHON_FOR_REGEN
+FREEZE_MODULE_DEPS
+FREEZE_MODULE
+FREEZE_MODULE_BOOTSTRAP_DEPS
+FREEZE_MODULE_BOOTSTRAP
 PYTHON_FOR_FREEZE
 PYTHON_FOR_BUILD
-FREEZE_MODULE
 host_os
 host_vendor
 host_cpu
@@ -991,7 +995,6 @@ SHELL'
 ac_subst_files=''
 ac_user_opts='
 enable_option_checking
-with_freeze_module
 with_build_python
 with_pkg_config
 enable_universalsdk
@@ -1004,6 +1007,7 @@ enable_shared
 enable_profiling
 with_pydebug
 with_trace_refs
+enable_pystats
 with_assertions
 enable_optimizations
 with_lto
@@ -1711,6 +1715,7 @@ Optional Features:
                           no)
   --enable-profiling      enable C-level code profiling with gprof (default is
                           no)
+  --enable-pystats        enable internal statistics gathering (default is no)
   --enable-optimizations  enable expensive, stable optimizations (PGO, etc.)
                           (default is no)
   --enable-loadable-sqlite-extensions
@@ -1726,8 +1731,6 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-freeze-module=Programs/_freeze_module
-                          path to _freeze_module binary for cross compiling
   --with-build-python=python3.11
                           path to build python binary for cross compiling
                           (default: _bootstrap_python or python3.11)
@@ -3196,38 +3199,6 @@ fi
 rm -f pybuilddir.txt
 
 
-# Check whether --with-freeze-module was given.
-if test "${with_freeze_module+set}" = set; then :
-  withval=$with_freeze_module;
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-freeze-module" >&5
-$as_echo_n "checking for --with-freeze-module... " >&6; }
-    if test "x$cross_compiling" = xno; then :
-  as_fn_error $? "--with-freeze-module only applies to cross compiling" "$LINENO" 5
-fi
-    if test "$with_freeze_module" = yes -o "$with_freeze_module" = no; then
-      as_fn_error $? "invalid --with-freeze-module option: expected path, not \"$with_freeze_module\"" "$LINENO" 5
-    fi
-    if ! $(command -v "$with_freeze_module" >/dev/null 2>&1); then
-      as_fn_error $? "invalid or missing freeze module binary \"$with_freeze_module\"" "$LINENO" 5
-    fi
-    FREEZE_MODULE="$with_freeze_module"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FREEZE_MODULE" >&5
-$as_echo "$FREEZE_MODULE" >&6; }
-
-else
-
-    if test "x$cross_compiling" = xyes; then :
-  as_fn_error $? "Cross compiling requires --with-freeze-module" "$LINENO" 5
-
-fi
-    FREEZE_MODULE=Programs/_freeze_module
-
-
-fi
-
-
-
-
 # Check whether --with-build-python was given.
 if test "${with_build_python+set}" = set; then :
   withval=$with_build_python;
@@ -3272,6 +3243,27 @@ fi
 $as_echo_n "checking for Python interpreter freezing... " >&6; }
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PYTHON_FOR_FREEZE" >&5
 $as_echo "$PYTHON_FOR_FREEZE" >&6; }
+
+
+if test "x$cross_compiling" = xyes; then :
+
+        FREEZE_MODULE_BOOTSTRAP='$(PYTHON_FOR_FREEZE) $(srcdir)/Programs/_freeze_module.py'
+    FREEZE_MODULE_BOOTSTRAP_DEPS='$(srcdir)/Programs/_freeze_module.py'
+    FREEZE_MODULE='$(FREEZE_MODULE_BOOTSTRAP)'
+    FREEZE_MODULE_DEPS='$(FREEZE_MODULE_BOOTSTRAP_DEPS)'
+
+else
+
+        FREEZE_MODULE_BOOTSTRAP='./Programs/_freeze_module'
+    FREEZE_MODULE_BOOTSTRAP_DEPS="Programs/_freeze_module"
+    FREEZE_MODULE='$(PYTHON_FOR_FREEZE) $(srcdir)/Programs/_freeze_module.py'
+    FREEZE_MODULE_DEPS="_bootstrap_python \$(srcdir)/Programs/_freeze_module.py"
+
+
+fi
+
+
+
 
 
 for ac_prog in python$PACKAGE_VERSION python3.10 python3.9 python3.8 python3.7 python3.6 python3 python
@@ -6923,6 +6915,29 @@ if test "$with_trace_refs" = "yes"
 then
 
 $as_echo "#define Py_TRACE_REFS 1" >>confdefs.h
+
+fi
+
+
+# Check for --enable-pystats
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-pystats" >&5
+$as_echo_n "checking for --enable-pystats... " >&6; }
+# Check whether --enable-pystats was given.
+if test "${enable_pystats+set}" = set; then :
+  enableval=$enable_pystats;
+else
+  enable_pystats=no
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_pystats" >&5
+$as_echo "$enable_pystats" >&6; }
+
+if test "x$enable_pystats" = xyes; then :
+
+
+$as_echo "#define Py_STATS 1" >>confdefs.h
+
 
 fi
 
@@ -13284,7 +13299,13 @@ fi
 
 if test -z "$with_pymalloc"
 then
+    case $ac_sys_system in #(
+  Emscripten) :
+    with_pymalloc="no" ;; #(
+  *) :
     with_pymalloc="yes"
+   ;;
+esac
 fi
 if test "$with_pymalloc" != "no"
 then
@@ -21151,12 +21172,22 @@ fi
 
 if test "$enable_test_modules" = no; then
     TEST_MODULES=no
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
 else
+    case $ac_sys_system in #(
+  Emscripten) :
+    TEST_MODULES=no ;; #(
+  *) :
     TEST_MODULES=yes
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+     ;;
+esac
+fi
+if test "x$TEST_MODULES" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
 fi
 
 
@@ -21175,7 +21206,7 @@ case $ac_sys_system in #(
     py_stdlib_not_available="_scproxy spwd" ;; #(
   Emscripten) :
 
-    py_stdlib_not_available="_curses _curses_panel _dbm _gdbm _multiprocessing _posixshmem _posixsubprocess _scproxy _xxsubinterpreters fcntl grp nis ossaudiodev resource spwd syslog termios"
+    py_stdlib_not_available="_ctypes _curses _curses_panel _dbm _gdbm _multiprocessing _posixshmem _posixsubprocess _scproxy _tkinter _xxsubinterpreters fcntl grp nis ossaudiodev resource readline spwd syslog termios"
    ;; #(
   *) :
     py_stdlib_not_available="_scproxy"
@@ -21189,6 +21220,20 @@ case $host_cpu in #(
     MODULE_BUILDTYPE=${MODULE_BUILDTYPE:-shared}
  ;;
 esac
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for additional Modules/Setup files" >&5
+$as_echo_n "checking for additional Modules/Setup files... " >&6; }
+case $ac_sys_system in #(
+  Emscripten) :
+    MODULES_SETUP_STDLIB=Modules/Setup.stdlib ;; #(
+  *) :
+    MODULES_SETUP_STDLIB=
+ ;;
+esac
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $MODULES_SETUP_STDLIB" >&5
+$as_echo "$MODULES_SETUP_STDLIB" >&6; }
+
 
 
 
@@ -25086,7 +25131,7 @@ fi
 $as_echo "$as_me: creating Makefile" >&6;}
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
-			Modules/Setup.local $srcdir/Modules/Setup.bootstrap $srcdir/Modules/Setup
+			Modules/Setup.local $MODULES_SETUP_STDLIB $srcdir/Modules/Setup.bootstrap $srcdir/Modules/Setup
 mv config.c Modules
 
 if test -z "$PKG_CONFIG"; then

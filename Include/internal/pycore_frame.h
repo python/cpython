@@ -66,6 +66,7 @@ static inline PyObject **_PyFrame_Stackbase(InterpreterFrame *f) {
 
 static inline PyObject *_PyFrame_StackPeek(InterpreterFrame *f) {
     assert(f->stacktop > f->f_code->co_nlocalsplus);
+    assert(f->localsplus[f->stacktop-1] != NULL);
     return f->localsplus[f->stacktop-1];
 }
 
@@ -173,10 +174,13 @@ static inline InterpreterFrame *
 _PyThreadState_BumpFramePointer(PyThreadState *tstate, size_t size)
 {
     PyObject **base = tstate->datastack_top;
-    PyObject **top = base + size;
-    if (top < tstate->datastack_limit) {
-        tstate->datastack_top = top;
-        return (InterpreterFrame *)base;
+    if (base) {
+        PyObject **top = base + size;
+        assert(tstate->datastack_limit);
+        if (top < tstate->datastack_limit) {
+            tstate->datastack_top = top;
+            return (InterpreterFrame *)base;
+        }
     }
     return _PyThreadState_BumpFramePointerSlow(tstate, size);
 }

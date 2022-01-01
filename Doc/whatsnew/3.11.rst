@@ -65,6 +65,8 @@ Summary -- Release highlights
 
 .. PEP-sized items next.
 
+PEP-654: Exception Groups and ``except*``.
+(Contributed by Irit Katriel in :issue:`45292`.)
 
 New Features
 ============
@@ -191,6 +193,11 @@ Other CPython Implementation Changes
   the traceback attached to this exception is now always ``sys.exc_info()[1].__traceback__``.
   This means that changes made to the traceback in the current :keyword:`except` clause are
   reflected in the re-raised exception.
+  (Contributed by Irit Katriel in :issue:`45711`.)
+
+* The interpreter state's representation of handled exceptions (a.k.a exc_info, or
+  _PyErr_StackItem) now has only the ``exc_value`` field, ``exc_type`` and ``exc_traceback``
+  have been removed as their values can be derived from ``exc_value``.
   (Contributed by Irit Katriel in :issue:`45711`.)
 
 New Modules
@@ -371,9 +378,11 @@ CPython bytecode changes
 * Replaced all numeric ``BINARY_*`` and ``INPLACE_*`` instructions with a single
   :opcode:`BINARY_OP` implementation.
 
-* Added a new :opcode:`CALL_METHOD_KW` opcode.  Calls a method in a similar
-  fashion as :opcode:`CALL_METHOD`, but also supports keyword arguments.  Works
-  in tandem with :opcode:`LOAD_METHOD`.
+* Replaced the three call instructions: :opcode:`CALL_FUNCTION`,
+  :opcode:`CALL_FUNCTION_KW` and :opcode:`CALL_METHOD` with
+  :opcode:`CALL_NO_KW`, :opcode:`CALL_KW` and :opcode:`PRECALL_METHOD`.
+  This decouples the argument shifting for methods from the handling of
+  keyword arguments and allows better specialization of calls.
 
 * Removed ``COPY_DICT_WITHOUT_KEYS``.
 

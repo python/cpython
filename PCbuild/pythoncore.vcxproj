@@ -115,7 +115,7 @@
         PREFIX=NULL;
         EXEC_PREFIX=NULL;
         VERSION=NULL;
-        VPATH="..\\..";
+        VPATH="$(PyVPath)";
         PYDEBUGEXT="$(PyDebugExt)";
         PLATLIBDIR="DLLs";
         %(PreprocessorDefinitions)
@@ -213,6 +213,7 @@
     <ClInclude Include="..\Include\internal\pycore_genobject.h" />
     <ClInclude Include="..\Include\internal\pycore_getopt.h" />
     <ClInclude Include="..\Include\internal\pycore_gil.h" />
+    <ClInclude Include="..\Include\internal\pycore_global_objects.h" />
     <ClInclude Include="..\Include\internal\pycore_hamt.h" />
     <ClInclude Include="..\Include\internal\pycore_hashtable.h" />
     <ClInclude Include="..\Include\internal\pycore_import.h" />
@@ -221,7 +222,6 @@
     <ClInclude Include="..\Include\internal\pycore_interpreteridobject.h" />
     <ClInclude Include="..\Include\internal\pycore_list.h" />
     <ClInclude Include="..\Include\internal\pycore_long.h" />
-    <ClInclude Include="..\Include\internal\pycore_long_state.h" />
     <ClInclude Include="..\Include\internal\pycore_moduleobject.h" />
     <ClInclude Include="..\Include\internal\pycore_namespace.h" />
     <ClInclude Include="..\Include\internal\pycore_object.h" />
@@ -519,7 +519,9 @@
     <ClCompile Include="..\Python\suggestions.c" />
     <ClCompile Include="..\Python\structmember.c" />
     <ClCompile Include="..\Python\symtable.c" />
-    <ClCompile Include="..\Python\sysmodule.c" />
+    <ClCompile Include="..\Python\sysmodule.c">
+      <PreprocessorDefinitions>VPATH="$(PyVPath)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
     <ClCompile Include="..\Python\thread.c" />
     <ClCompile Include="..\Python\traceback.c" />
   </ItemGroup>
@@ -539,7 +541,6 @@
     <ClCompile Include="..\Python\deepfreeze\df.os.c" />
     <ClCompile Include="..\Python\deepfreeze\df.site.c" />
     <ClCompile Include="..\Python\deepfreeze\df.stat.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.types.c" />
     <ClCompile Include="..\Python\deepfreeze\df.importlib.util.c" />
     <ClCompile Include="..\Python\deepfreeze\df.importlib.machinery.c" />
     <ClCompile Include="..\Python\deepfreeze\df.runpy.c" />
