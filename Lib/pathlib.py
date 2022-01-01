@@ -37,8 +37,8 @@ _IGNORED_WINERRORS = (
 
 _WIN_RESERVED_NAMES = (
     {'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$'} |
-    {'COM%s' % c for c in '123456789\xb9\xb2\xb3'} |
-    {'LPT%s' % c for c in '123456789\xb9\xb2\xb3'}
+    {f'COM{c}' for c in '123456789\xb9\xb2\xb3'} |
+    {f'LPT{c}' for c in '123456789\xb9\xb2\xb3'}
 )
 
 def _ignore_error(exception):
