@@ -4586,7 +4586,7 @@ class AnnotatedTests(BaseTestCase):
         A.x = 5
         self.assertEqual(C.x, 5)
 
-    def test_hash_eq(self):
+    def test_hash_eq_annotated(self):
         self.assertEqual(len({Annotated[int, 4, 5], Annotated[int, 4, 5]}), 1)
         self.assertNotEqual(Annotated[int, 4, 5], Annotated[int, 5, 4])
         self.assertNotEqual(Annotated[int, 4, 5], Annotated[str, 4, 5])
