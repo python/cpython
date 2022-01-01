@@ -1,12 +1,17 @@
 root = true
 
-[*.{py,c,cpp,h,rst,md,yml}]
+[*.{py,c,cpp,h,rst,md,yml,json}]
 trim_trailing_whitespace = true
 insert_final_newline = true
 indent_style = space
 
-[*.{py,c,cpp,h}]
+[*.{py,c,cpp,h,json}]
 indent_size = 4
 
 [*.yml]
 indent_size = 2
+
+[Makefile{,.pre.in,.pre}]
+indent_size = 4
+indent_style = tab
+trim_trailing_whitespace = true
