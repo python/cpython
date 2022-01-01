@@ -4384,48 +4384,42 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
 
         /* Repeatedly extract the next (no more than) EXP_WINDOW_SIZE bits
          * into `pending`, starting with the next 1 bit.  The current bit
-         * length of `pending` is `blen`, and if `pending` is non-zero the
-         * current number of trailing zeroes `ntz`.
+         * length of `pending` is `blen`.
          */
-        int pending = 0, blen = 0, ntz = 0;
+        int pending = 0, blen = 0;
 #define ABSORB_PENDING  do { \
-            int k; \
-            assert(pending); \
-            assert((pending >> ntz) & 1); \
+            int ntz = 0; /* number of trailing zeroes in `pending` */ \
+            assert(pending && blen); \
             assert(pending >> (blen - 1)); \
             assert(pending >> blen == 0); \
-            k = blen - ntz; \
-            assert(k >= 0); \
-            while (k-- > 0) { \
-                MULT(z, z, z); \
+            while ((pending & 1) == 0) { \
+                ++ntz; \
+                pending >>= 1; \
             } \
-            MULT(z, table[pending >> (ntz + 1)], z); \
-            k = ntz; \
-            assert(k >= 0); \
-            while (k-- > 0) { \
+            assert(ntz < blen); \
+            blen -= ntz; \
+            do { \
                 MULT(z, z, z); \
-            } \
-            pending = blen = ntz = 0; \
+            } while (--blen); \
+            MULT(z, table[pending >> 1], z); \
+            while (ntz-- > 0) \
+                MULT(z, z, z); \
+            assert(blen == 0); \
+            pending = 0; \
         } while(0)
 
         for (i = Py_SIZE(b) - 1; i >= 0; --i) {
             const digit bi = b->ob_digit[i];
             for (j = PyLong_SHIFT - 1; j >= 0; --j) {
                 const int bit = (bi >> j) & 1;
-                if (!pending && !bit) { /* absorb strings of 0 bits */
+                pending = (pending << 1) | bit;
+                if (pending) {
+                    ++blen;
+                    if (blen == EXP_WINDOW_SIZE)
+                        ABSORB_PENDING;
+                }
+                else /* absorb strings of 0 bits */
                     MULT(z, z, z);
-                    continue;
-                }
-                pending <<= 1;
-                ++blen;
-                if (bit) {
-                    ++pending;
-                    ntz = 0;
-                }
-                else
-                    ++ntz;
-                if (blen == EXP_WINDOW_SIZE)
-                    ABSORB_PENDING;
             }
         }
         if (pending)

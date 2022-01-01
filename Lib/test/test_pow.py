@@ -102,11 +102,11 @@ class PowTest(unittest.TestCase):
         prime = 1000000000039 # for speed, relatively small prime modulus
         for i in range(10):
             a = random.randrange(1000, 1000000)
-            bpower = random.randrange(1000, 5000)
+            bpower = random.randrange(1000, 50000)
             b = random.randrange(1 << (bpower - 1), 1 << bpower)
             b1 = random.randrange(1, b)
             b2 = b - b1
-            got1 = pow(a, b1 + b2, prime)
+            got1 = pow(a, b, prime)
             got2 = pow(a, b1, prime) * pow(a, b2, prime) % prime
             if got1 != got2:
                 self.fail(f"{a=:x} {b1=:x} {b2=:x} {got1=:x} {got2=:x}")
