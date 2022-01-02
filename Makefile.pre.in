@@ -1911,7 +1911,7 @@ LIBSUBDIRS=	asyncio \
 		html \
 		http \
 		idlelib idlelib/Icons \
-		importlib importlib/metadata \
+		importlib importlib/resources importlib/metadata \
 		json \
 		lib2to3 lib2to3/fixes lib2to3/pgen2 \
 		logging \
