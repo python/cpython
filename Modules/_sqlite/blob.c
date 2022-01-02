@@ -1,7 +1,7 @@
 #include "blob.h"
 #include "util.h"
 
-#define clinic_state() (pysqlite_get_state(NULL))
+#define clinic_state() (pysqlite_get_state_by_type(Py_TYPE(self)))
 #include "clinic/blob.c.h"
 #undef clinic_state
 
