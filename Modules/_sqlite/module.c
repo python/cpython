@@ -581,6 +581,7 @@ module_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->Warning);
 
     // Types
+    Py_VISIT(state->BlobType);
     Py_VISIT(state->ConnectionType);
     Py_VISIT(state->CursorType);
     Py_VISIT(state->PrepareProtocolType);
@@ -613,6 +614,7 @@ module_clear(PyObject *module)
     Py_CLEAR(state->Warning);
 
     // Types
+    Py_CLEAR(state->BlobType);
     Py_CLEAR(state->ConnectionType);
     Py_CLEAR(state->CursorType);
     Py_CLEAR(state->PrepareProtocolType);
