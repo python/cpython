@@ -4202,7 +4202,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
      * precomputed so that table[i] == a**(2*i+1) % c for i in
      * range(EXP_TABLE_LEN).
      */
-    PyLongObject *table[EXP_TABLE_LEN] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    PyLongObject *table[EXP_TABLE_LEN] = {0};
 
     /* a, b, c = v, w, x */
     CHECK_BINOP(v, w);
