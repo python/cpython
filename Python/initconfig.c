@@ -2062,7 +2062,7 @@ config_read(PyConfig *config, int compute_path_config)
     /* -X options */
     const wchar_t* option = _Py_check_xoptions(&config->xoptions, known_xoptions);
     if (option != NULL) {
-        return PyStatus_Error("Unknown value for option -X");
+        return PyStatus_Error("Unknown value for option -X (see -X help)");
     }
 
     if (config_get_xoption(config, L"showrefcount")) {

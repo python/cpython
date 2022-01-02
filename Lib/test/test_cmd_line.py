@@ -89,11 +89,19 @@ class CmdLineTest(unittest.TestCase):
     @unittest.skipIf(interpreter_requires_environment(),
                      'Cannot run -E tests when PYTHON env vars are required.')
     def test_unknown_xoptions(self):
-        rc, out, err = assert_python_failure('-X', 'blech')
+        _, out, err = assert_python_failure('-X', 'blech')
         self.assertIn(b'Unknown value for option -X', err)
-        msg = b'Fatal Python error: Unknown value for option -X'
+        msg = b'Fatal Python error: Unknown value for option -X (see -X help)'
         self.assertEqual(err.splitlines().count(msg), 1)
         self.assertEqual(b'', out)
+
+    @unittest.skipIf(interpreter_requires_environment(),
+                     'Cannot run -E tests when PYTHON env vars are required.')
+    def test_xoptions_help(self):
+        _, out, err = assert_python_ok('-X', 'help')
+        self.assertIn(b'implementation-specific options are available', out)
+        self.assertIn(b'-X faulthandler: enable faulthandler', out)
+        self.assertEqual(b'', err)
 
     def test_showrefcount(self):
         def run_python(*args):
@@ -234,7 +242,6 @@ class CmdLineTest(unittest.TestCase):
         #
         # Test with default config, in the C locale, in the Python UTF-8 Mode.
         code = 'import sys, os; s=os.fsencode(sys.argv[1]); print(ascii(s))'
-        base_cmd = [sys.executable, '-c', code]
 
         def run_default(arg):
             cmd = [sys.executable, '-c', code, arg]
