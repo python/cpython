@@ -1,2 +1,2 @@
 Remove :opcode:`POP_EXCEPT_AND_RERAISE` and replace it by an equivalent
-sequence of other opcodes. 
+sequence of other opcodes.
