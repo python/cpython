@@ -87,9 +87,9 @@ PyAPI_FUNC(PyObject *) _PyExc_CreateExceptionGroup(
     const char *msg,
     PyObject *excs);
 
-PyAPI_FUNC(PyObject *) _PyExc_ExceptionGroupProjection(
-    PyObject *left,
-    PyObject *right);
+PyAPI_FUNC(PyObject *) _PyExc_PrepReraiseStar(
+    PyObject *orig,
+    PyObject *excs);
 
 PyAPI_FUNC(int) _PyErr_CheckSignalsTstate(PyThreadState *tstate);
 
