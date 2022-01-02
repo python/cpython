@@ -2294,11 +2294,8 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
         }
 
         switch (c) {
+        // Integers represent long options, see Python/getopt.c
         case 0:
-          // Handle long options.
-          assert(longindex < 2);  // Only two long options for now.
-          switch(longindex) {
-          case 0:
             // check-hash-based-pycs
             if (wcscmp(_PyOS_optarg, L"always") == 0
                 || wcscmp(_PyOS_optarg, L"never") == 0
@@ -2316,13 +2313,12 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
                 return _PyStatus_EXIT(2);
             }
             break;
-          case 1:
+
+        case 1:
             // help-env
             config_envvars_usage();
             return _PyStatus_EXIT(0);
             break;
-          }
-          break;
 
         case 'b':
             config->bytes_warning++;

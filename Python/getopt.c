@@ -45,8 +45,8 @@ static const wchar_t *opt_ptr = L"";
 
 static const _PyOS_LongOption longopts[] = {
     {L"check-hash-based-pycs", 1, 0},
-    {L"help-env", 0, 0},
-    {NULL, 0, 0},
+    {L"help-env", 0, 1},
+    {NULL, 0, -1},
 };
 
 
