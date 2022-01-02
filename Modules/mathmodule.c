@@ -1724,14 +1724,19 @@ completes the proof sketch.
    Given `n` satisfying `2**62 <= n < 2**64`, return `a`
    satisfying `(a - 1)**2 < n < (a + 1)**2`. */
 
-static uint64_t
+/* Lookup table to short-circuit the first division step in _approximate_isqrt.
+   [8*round(sqrt(72+16*n)) for n in range(12)].  */
+static const uint8_t isqrt_tab[12] = {
+    64, 72, 80, 88, 88, 96, 104, 104, 112, 112, 120, 128,
+};
+
+static inline uint32_t
 _approximate_isqrt(uint64_t n)
 {
-    uint32_t u = 1U + (n >> 62);
-    u = (u << 1) + (n >> 59) / u;
-    u = (u << 3) + (n >> 53) / u;
-    u = (u << 7) + (n >> 41) / u;
-    return (u << 15) + (n >> 17) / u;
+    uint32_t u = isqrt_tab[(n >> 60) - 4];
+    u = u + (uint32_t)(n >> 50) / u;
+    u = (u << 7) + (uint32_t)(n >> 41) / u;
+    return (u << 15) + (uint32_t)((n >> 17) / u);
 }
 
 /*[clinic input]
@@ -1749,7 +1754,8 @@ math_isqrt(PyObject *module, PyObject *n)
 {
     int a_too_large, c_bit_length;
     size_t c, d;
-    uint64_t m, u;
+    uint64_t m;
+    uint32_t u;
     PyObject *a = NULL, *b;
 
     n = _PyNumber_Index(n);
@@ -1776,18 +1782,17 @@ math_isqrt(PyObject *module, PyObject *n)
     c = (c - 1U) / 2U;
 
     /* Fast path: if c <= 31 then n < 2**64 and we can compute directly with a
-       fast, almost branch-free algorithm. In the final correction, we use `u*u
-       - 1 >= m` instead of the simpler `u*u > m` in order to get the correct
-       result in the corner case where `u=2**32`. */
+       fast, almost branch-free algorithm. */
     if (c <= 31U) {
+        int shift = 31 - c;
         m = (uint64_t)PyLong_AsUnsignedLongLong(n);
         Py_DECREF(n);
         if (m == (uint64_t)(-1) && PyErr_Occurred()) {
             return NULL;
         }
-        u = _approximate_isqrt(m << (62U - 2U*c)) >> (31U - c);
-        u -= u * u - 1U >= m;
-        return PyLong_FromUnsignedLongLong((unsigned long long)u);
+        u = _approximate_isqrt(m << 2*shift) >> shift;
+        u -= (uint64_t)u * u > m;
+        return PyLong_FromUnsignedLong(u);
     }
 
     /* Slow path: n >= 2**64. We perform the first five iterations in C integer
@@ -1811,7 +1816,7 @@ math_isqrt(PyObject *module, PyObject *n)
         goto error;
     }
     u = _approximate_isqrt(m) >> (31U - d);
-    a = PyLong_FromUnsignedLongLong((unsigned long long)u);
+    a = PyLong_FromUnsignedLong(u);
     if (a == NULL) {
         goto error;
     }
