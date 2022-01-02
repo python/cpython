@@ -22,7 +22,7 @@ This is Python version 3.9.9
    :target: https://discuss.python.org/
 
 
-Copyright (c) 2001-2021 Python Software Foundation.  All rights reserved.
+Copyright (c) 2001-2022 Python Software Foundation.  All rights reserved.
 
 See the end of this file for further copyright and license information.
 
@@ -251,7 +251,7 @@ See :pep:`596` for Python 3.9 release details.
 Copyright and License Information
 ---------------------------------
 
-Copyright (c) 2001-2021 Python Software Foundation.  All rights reserved.
+Copyright (c) 2001-2022 Python Software Foundation.  All rights reserved.
 
 Copyright (c) 2000 BeOpen.com.  All rights reserved.
 
