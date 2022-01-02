@@ -1,1 +1,0 @@
-Add ``setuptools`` note to ``Doc/extending/building.rst``.
