@@ -4390,7 +4390,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
     }
     else {
         /* Left-to-right k-ary sliding window exponentiation
-         * (Handbookd of Applied Cryptography (HAC) Algorithm 14.85)
+         * (Handbook of Applied Cryptography (HAC) Algorithm 14.85)
          */
         Py_INCREF(a);
         table[0] = a;
