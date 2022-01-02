@@ -12,6 +12,6 @@ indent_size = 4
 indent_size = 2
 
 [Makefile{,.pre.in,.pre}]
-indent_size = 4
+indent_size = 8
 indent_style = tab
 trim_trailing_whitespace = true
