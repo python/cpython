@@ -666,19 +666,33 @@ if sys.platform == 'darwin':
             return not rc
 
     class MacOSXOSAScript(BaseBrowser):
-        def __init__(self, name):
-            self._name = name
+        def __init__(self, name='default'):
+            super().__init__(name)
+
+        @property
+        def _name(self):
+            warnings.warn(f'{self.__class__.__name__}._name is deprecated in 3.11'
+                          f' use {self.__class__.__name__}.name instead.',
+                          DeprecationWarning, stacklevel=2)
+            return self.name
+
+        @_name.setter
+        def _name(self, val):
+            warnings.warn(f'{self.__class__.__name__}._name is deprecated in 3.11'
+                          f' use {self.__class__.__name__}.name instead.',
+                          DeprecationWarning, stacklevel=2)
+            self.name = val
 
         def open(self, url, new=0, autoraise=True):
-            if self._name == 'default':
+            if self.name == 'default':
                 script = 'open location "%s"' % url.replace('"', '%22') # opens in default browser
             else:
-                script = '''
+                script = f'''
                    tell application "%s"
                        activate
                        open location "%s"
                    end
-                   '''%(self._name, url.replace('"', '%22'))
+                   '''%(self.name, url.replace('"', '%22'))
 
             osapipe = os.popen("osascript", "w")
             if osapipe is None:
