@@ -5,6 +5,15 @@
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#if defined(MIMALLOC_H) || defined(MIMALLOC_TYPES_H)
+#  error "pycore_mimalloc.h must be included before mimalloc.h"
+#endif
+
+#include "pycore_pymem.h"
+#define MI_DEBUG_UNINIT     PYMEM_CLEANBYTE
+#define MI_DEBUG_FREED      PYMEM_DEADBYTE
+#define MI_DEBUG_PADDING    PYMEM_FORBIDDENBYTE
+
 #ifdef Py_DEBUG
 // see mimalloc-types.h
 // basic and internal assertion checks
