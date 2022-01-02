@@ -589,10 +589,8 @@ tupleconcat(PyTupleObject *a, PyObject *bb)
 static PyObject *
 tuplerepeat(PyTupleObject *a, Py_ssize_t n)
 {
-    Py_ssize_t i, j;
     Py_ssize_t size;
     PyTupleObject *np;
-    PyObject **p, **items;
     if (Py_SIZE(a) == 0 || n == 1) {
         if (PyTuple_CheckExact(a)) {
             /* Since tuples are immutable, we can return a shared
@@ -610,15 +608,22 @@ tuplerepeat(PyTupleObject *a, Py_ssize_t n)
     np = tuple_alloc(size);
     if (np == NULL)
         return NULL;
-    p = np->ob_item;
-    items = a->ob_item;
-    for (i = 0; i < n; i++) {
-        for (j = 0; j < Py_SIZE(a); j++) {
-            *p = items[j];
-            Py_INCREF(*p);
-            p++;
+
+    PyObject **src0 = a->ob_item;
+    PyObject **src_end = src0 + Py_SIZE(a);
+    PyObject **src;
+    for (src = src0; src < src_end; src++) {
+        Py_SET_REFCNT(*src, Py_REFCNT(*src) + n);
+    }
+    PyObject **dest = np->ob_item;
+    PyObject **dest_end = dest + size;
+    while (dest < dest_end) {
+        src = src0;
+        while (src < src_end) {
+            *dest++ = *src++;
         }
     }
+    assert(src == src_end && dest == dest_end);
     _PyObject_GC_TRACK(np);
     return (PyObject *) np;
 }
