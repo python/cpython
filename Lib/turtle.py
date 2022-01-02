@@ -1002,6 +1002,7 @@ class TurtleScreen(TurtleScreenBase):
             rootwindow = cv.winfo_toplevel()
             rootwindow.call('wm', 'attributes', '.', '-topmost', '1')
             rootwindow.call('wm', 'attributes', '.', '-topmost', '0')
+        TurtleScreen._RUNNING = True
 
     def clear(self):
         """Delete all drawings and all turtles from the TurtleScreen.
