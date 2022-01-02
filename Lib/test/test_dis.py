@@ -8,7 +8,6 @@ import dis
 import io
 import re
 import types
-import textwrap
 import contextlib
 
 def get_tb():
