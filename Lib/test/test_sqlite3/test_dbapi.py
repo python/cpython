@@ -993,18 +993,17 @@ class CursorTests(unittest.TestCase):
 class BlobTests(unittest.TestCase):
     def setUp(self):
         self.cx = sqlite.connect(":memory:")
-        self.cx.execute("create table test(blob_col blob)")
-        self.blob_data = b"a" * 100
-        self.cx.execute("insert into test(blob_col) values (?)", (self.blob_data,))
-        self.blob = self.cx.open_blob("test", "blob_col", 1)
-        self.second_data = b"b" * 100
+        self.cx.execute("create table test(b blob)")
+        self.data = b"this blob data string is exactly fifty bytes long!"
+        self.cx.execute("insert into test(b) values (?)", (self.data,))
+        self.blob = self.cx.open_blob("test", "b", 1)
 
     def tearDown(self):
         self.blob.close()
         self.cx.close()
 
     def test_blob_length(self):
-        self.assertEqual(len(self.blob), 100)
+        self.assertEqual(len(self.blob), 50)
 
     def test_blob_seek_and_tell(self):
         self.blob.seek(10)
@@ -1017,7 +1016,7 @@ class BlobTests(unittest.TestCase):
         self.assertEqual(self.blob.tell(), 20)
 
         self.blob.seek(-10, os.SEEK_END)
-        self.assertEqual(self.blob.tell(), 90)
+        self.assertEqual(self.blob.tell(), 40)
 
     def test_blob_seek_error(self):
         dataset = (
@@ -1033,65 +1032,71 @@ class BlobTests(unittest.TestCase):
 
     def test_blob_read(self):
         buf = self.blob.read()
-        self.assertEqual(buf, self.blob_data)
-        self.assertEqual(len(buf), len(self.blob_data))
+        self.assertEqual(buf, self.data)
+        self.assertEqual(len(buf), len(self.data))
 
     def test_blob_read_too_much(self):
-        buf = self.blob.read(len(self.blob_data) * 2)
-        self.assertEqual(buf, self.blob_data)
-        self.assertEqual(len(buf), len(self.blob_data))
+        buf = self.blob.read(len(self.data) * 2)
+        self.assertEqual(buf, self.data)
+        self.assertEqual(len(buf), len(self.data))
 
     def test_blob_read_advance_offset(self):
         self.blob.read(10)
         self.assertEqual(self.blob.tell(), 10)
 
     def test_blob_read_start_at_offset(self):
+        new_data = b"b" * 50
         self.blob.seek(10)
-        self.blob.write(self.second_data[:10])
+        self.blob.write(new_data[:10])
         self.blob.seek(10)
-        self.assertEqual(self.blob.read(10), self.second_data[:10])
+        self.assertEqual(self.blob.read(10), new_data[:10])
 
     def test_blob_write(self):
-        self.blob.write(self.second_data)
-        self.assertEqual(self.cx.execute("select blob_col from test").fetchone()[0], self.second_data)
+        new_data = b"new data".ljust(50)
+        self.blob.write(new_data)
+        row = self.cx.execute("select b from test").fetchone()
+        self.assertEqual(row[0], new_data)
 
     def test_blob_write_at_offset(self):
-        self.blob.seek(50)
-        self.blob.write(self.second_data[:50])
-        self.assertEqual(self.cx.execute("select blob_col from test").fetchone()[0],
-                         self.blob_data[:50] + self.second_data[:50])
+        new_data = b"c" * 50
+        self.blob.seek(25)
+        self.blob.write(new_data[:25])
+        row = self.cx.execute("select b from test").fetchone()
+        self.assertEqual(row[0], self.data[:25] + new_data[:25])
 
     def test_blob_write_advance_offset(self):
-        self.blob.write(self.second_data[:50])
-        self.assertEqual(self.blob.tell(), 50)
+        new_data = b"d" * 50
+        self.blob.write(new_data[:25])
+        self.assertEqual(self.blob.tell(), 25)
 
     def test_blob_write_more_then_blob_size(self):
-        with self.assertRaises(ValueError):
+        msg = "data longer than blob length"
+        with self.assertRaisesRegex(ValueError, msg):
             self.blob.write(b"a" * 1000)
 
     def test_blob_read_after_row_change(self):
-        self.cx.execute("UPDATE test SET blob_col='aaaa' where rowid=1")
+        self.cx.execute("UPDATE test SET b='aaaa' where rowid=1")
         with self.assertRaises(sqlite.OperationalError):
             self.blob.read()
 
     def test_blob_write_after_row_change(self):
-        self.cx.execute("UPDATE test SET blob_col='aaaa' where rowid=1")
+        self.cx.execute("UPDATE test SET b='aaaa' where rowid=1")
         with self.assertRaises(sqlite.OperationalError):
             self.blob.write(b"aaa")
 
     def test_blob_write_when_readonly(self):
         read_only_blob = \
-            self.cx.open_blob("test", "blob_col", 1, readonly=True)
-        with self.assertRaises(sqlite.OperationalError):
+            self.cx.open_blob("test", "b", 1, readonly=True)
+        with self.assertRaisesRegex(sqlite.OperationalError, "readonly"):
             read_only_blob.write(b"aaa")
         read_only_blob.close()
 
     def test_blob_open_error(self):
         dataset = (
-            (("test", "blob_col", 1), {"name": "notexisting"}),
-            (("notexisting", "blob_col", 1), {}),
+            (("test", "b", 1), {"name": "notexisting"}),
+            (("notexisting", "b", 1), {}),
             (("test", "notexisting", 1), {}),
-            (("test", "blob_col", 2), {}),
+            (("test", "b", 2), {}),
         )
         regex = "no such"
         for args, kwds in dataset:
@@ -1100,10 +1105,11 @@ class BlobTests(unittest.TestCase):
                     self.cx.open_blob(*args, **kwds)
 
     def test_blob_get_item(self):
-        self.assertEqual(self.blob[5], b"a")
-
-    def test_blob_get_item_negative_index(self):
-        self.assertEqual(self.blob[-5], b"a")
+        self.assertEqual(self.blob[5], b"b")
+        self.assertEqual(self.blob[6], b"l")
+        self.assertEqual(self.blob[7], b"o")
+        self.assertEqual(self.blob[8], b"b")
+        self.assertEqual(self.blob[-1], b"!")
 
     def test_blob_get_item_error(self):
         dataset = (
@@ -1118,10 +1124,10 @@ class BlobTests(unittest.TestCase):
                     self.blob[idx]
 
     def test_blob_get_slice(self):
-        self.assertEqual(self.blob[5:10], b"aaaaa")
+        self.assertEqual(self.blob[5:14], b"blob data")
 
     def test_blob_get_slice_negative_index(self):
-        self.assertEqual(self.blob[5:-5], self.blob_data[5:-5])
+        self.assertEqual(self.blob[5:-5], self.data[5:-5])
 
     def test_blob_get_slice_invalid_index(self):
         with self.assertRaisesRegex(TypeError, "indices must be integers"):
@@ -1133,8 +1139,8 @@ class BlobTests(unittest.TestCase):
 
     def test_blob_set_item(self):
         self.blob[0] = b"b"
-        actual = self.cx.execute("select blob_col from test").fetchone()[0]
-        expected = b"b" + self.blob_data[1:]
+        actual = self.cx.execute("select b from test").fetchone()[0]
+        expected = b"b" + self.data[1:]
         self.assertEqual(actual, expected)
 
     def test_blob_set_item(self):
@@ -1153,17 +1159,18 @@ class BlobTests(unittest.TestCase):
 
     def test_blob_set_slice(self):
         self.blob[0:5] = b"bbbbb"
-        actual = self.cx.execute("select blob_col from test").fetchone()[0]
-        expected = b"bbbbb" + self.blob_data[5:]
+        actual = self.cx.execute("select b from test").fetchone()[0]
+        expected = b"bbbbb" + self.data[5:]
         self.assertEqual(actual, expected)
 
     def test_blob_set_empty_slice(self):
         self.blob[0:0] = b""
+        self.assertEqual(self.blob[:], self.data)
 
     def test_blob_set_slice_with_skip(self):
         self.blob[0:10:2] = b"bbbbb"
-        actual = self.cx.execute("select blob_col from test").fetchone()[0]
-        expected = b"bababababa" + self.blob_data[10:]
+        actual = self.cx.execute("select b from test").fetchone()[0]
+        expected = b"bhbsbbbob " + self.data[10:]
         self.assertEqual(actual, expected)
 
     def test_blob_get_empty_slice(self):
@@ -1192,56 +1199,57 @@ class BlobTests(unittest.TestCase):
                 self.assertRaises(TypeError, op)
 
     def test_blob_context_manager(self):
-        data = b"a" * 100
-        with self.cx.open_blob("test", "blob_col", 1) as blob:
+        data = b"a" * 50
+        with self.cx.open_blob("test", "b", 1) as blob:
             blob.write(data)
-        actual = self.cx.execute("select blob_col from test").fetchone()[0]
+        actual = self.cx.execute("select b from test").fetchone()[0]
         self.assertEqual(actual, data)
 
     def test_blob_closed(self):
-        cx = sqlite.connect(":memory:")
-        cx.execute("create table test(b blob)")
-        cx.execute("insert into test values (zeroblob(100))")
-        blob = cx.open_blob("test", "b", 1)
-        blob.close()
+        with memory_database() as cx:
+            cx.execute("create table test(b blob)")
+            cx.execute("insert into test values (zeroblob(100))")
+            blob = cx.open_blob("test", "b", 1)
+            blob.close()
 
-        def assign(): blob[0] = b""
-        ops = [
-            lambda: blob.read(),
-            lambda: blob.write(b""),
-            lambda: blob.seek(0),
-            lambda: blob.tell(),
-            lambda: blob.__enter__(),
-            lambda: blob.__exit__(None, None, None),
-            lambda: len(blob),
-            lambda: blob[0],
-            lambda: blob[0:1],
-            assign,
-        ]
-        msg = "Cannot operate on a closed blob"
-        for op in ops:
-            with self.subTest(op=op):
-                with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
-                    op()
+            def assign(): blob[0] = b""
+            ops = [
+                lambda: blob.read(),
+                lambda: blob.write(b""),
+                lambda: blob.seek(0),
+                lambda: blob.tell(),
+                lambda: blob.__enter__(),
+                lambda: blob.__exit__(None, None, None),
+                lambda: len(blob),
+                lambda: blob[0],
+                lambda: blob[0:1],
+                assign,
+            ]
+            msg = "Cannot operate on a closed blob"
+            for op in ops:
+                with self.subTest(op=op):
+                    with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
+                        op()
 
     def test_blob_close_bad_connection(self):
-        cx = sqlite.connect(":memory:")
-        cx.execute("create table test(b blob)")
-        cx.execute("insert into test values(zeroblob(1))")
-        blob = cx.open_blob("test", "b", 1)
-        cx.close()
-        self.assertRaisesRegex(sqlite.ProgrammingError,
-                               "Cannot operate on a closed database",
-                               blob.close)
+        with memory_database() as cx:
+            cx.execute("create table test(b blob)")
+            cx.execute("insert into test values(zeroblob(1))")
+            blob = cx.open_blob("test", "b", 1)
+            cx.close()
+            self.assertRaisesRegex(sqlite.ProgrammingError,
+                                   "Cannot operate on a closed database",
+                                   blob.close)
 
     def test_closed_blob_read(self):
-        con = sqlite.connect(":memory:")
-        con.execute("create table test(blob_col blob)")
-        con.execute("insert into test(blob_col) values (zeroblob(100))")
-        blob = con.open_blob("test", "blob_col", 1)
-        con.close()
-        with self.assertRaises(sqlite.ProgrammingError):
-            blob.read()
+        with memory_database() as cx:
+            cx.execute("create table test(b blob)")
+            cx.execute("insert into test(b) values (zeroblob(100))")
+            blob = cx.open_blob("test", "b", 1)
+            cx.close()
+            self.assertRaisesRegex(sqlite.ProgrammingError,
+                                   "Cannot operate on a closed database",
+                                   blob.read)
 
 
 class ThreadTests(unittest.TestCase):
