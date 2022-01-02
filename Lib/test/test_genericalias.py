@@ -42,10 +42,11 @@ from queue import Queue, SimpleQueue
 from weakref import WeakSet, ReferenceType, ref
 import typing
 
-from typing import TypeVar
+from typing import TypeVar, TypeVarTuple
 T = TypeVar('T')
 K = TypeVar('K')
 V = TypeVar('V')
+Ts = TypeVarTuple('Ts')
 
 class BaseTest(unittest.TestCase):
     """Test basics."""
@@ -162,6 +163,10 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(repr(list[str]), 'list[str]')
         self.assertEqual(repr(list[()]), 'list[()]')
         self.assertEqual(repr(tuple[int, ...]), 'tuple[int, ...]')
+        self.assertEqual(repr(tuple[*Ts]), 'tuple[*Ts]')
+        self.assertEqual(repr(tuple[*tuple[int]]), 'tuple[*tuple[int]]')
+        self.assertEqual(repr(tuple[*tuple[int, str]]), 'tuple[*tuple[int, str]]')
+        self.assertEqual(repr(tuple[*tuple[int, ...]]), 'tuple[*tuple[int, ...]]')
         self.assertTrue(repr(MyList[int]).endswith('.BaseTest.test_repr.<locals>.MyList[int]'))
         self.assertEqual(repr(list[str]()), '[]')  # instances should keep their normal repr
 
@@ -175,6 +180,7 @@ class BaseTest(unittest.TestCase):
 
     def test_parameters(self):
         from typing import List, Dict, Callable
+
         D0 = dict[str, int]
         self.assertEqual(D0.__args__, (str, int))
         self.assertEqual(D0.__parameters__, ())
@@ -190,6 +196,7 @@ class BaseTest(unittest.TestCase):
         D2b = dict[T, T]
         self.assertEqual(D2b.__args__, (T, T))
         self.assertEqual(D2b.__parameters__, (T,))
+
         L0 = list[str]
         self.assertEqual(L0.__args__, (str,))
         self.assertEqual(L0.__parameters__, ())
@@ -211,6 +218,55 @@ class BaseTest(unittest.TestCase):
         L5 = list[Callable[[K, V], K]]
         self.assertEqual(L5.__args__, (Callable[[K, V], K],))
         self.assertEqual(L5.__parameters__, (K, V))
+
+        with self.assertRaises(TypeError):
+            tuple[*list[int]]
+
+        T0 = tuple[*Ts]
+        self.assertEqual(T0.__args__, (*Ts,))
+        self.assertEqual(T0.__parameters__, (Ts,))
+        T1 = tuple[*tuple[int]]
+        self.assertEqual(T1.__args__, (*tuple[int],))
+        self.assertEqual(T1.__parameters__, ())
+        T2 = tuple[*tuple[T]]
+        self.assertEqual(T2.__args__, (*tuple[T],))
+        self.assertEqual(T2.__parameters__, (T,))
+        T3 = tuple[*tuple[int]]
+        self.assertEqual(T3.__args__, (*tuple[int],))
+        self.assertEqual(T3.__parameters__, ())
+        T4 = tuple[*tuple[int, str]]
+        self.assertEqual(T4.__args__, (*tuple[int, str],))
+        self.assertEqual(T4.__parameters__, ())
+        T5 = tuple[*tuple[*Ts]]
+        self.assertEqual(T5.__args__, (*tuple[*Ts],))
+        self.assertEqual(T5.__parameters__, (Ts,))
+        T5_0 = T5.__args__[0]
+        self.assertEqual(T5_0.__args__, (*Ts,))
+        self.assertEqual(T5_0.__parameters__, (Ts,))
+        T6 = tuple[*tuple[*Ts, int]]
+        self.assertEqual(T6.__args__, (*tuple[*Ts, int],))
+        self.assertEqual(T6.__parameters__, (Ts,))
+        T6_0 = T6.__args__[0]
+        self.assertEqual(T6_0.__args__, (*Ts, int))
+        self.assertEqual(T6_0.__parameters__, (Ts,))
+        T7 = tuple[*tuple[int, *Ts]]
+        self.assertEqual(T7.__args__, (*tuple[int, *Ts],))
+        self.assertEqual(T7.__parameters__, (Ts,))
+        T7_0 = T7.__args__[0]
+        self.assertEqual(T7_0.__args__, (int, *Ts))
+        self.assertEqual(T7_0.__parameters__, (Ts,))
+        T8 = tuple[*tuple[int, *Ts, str]]
+        self.assertEqual(T8.__args__, (*tuple[int, *Ts, str],))
+        self.assertEqual(T8.__parameters__, (Ts,))
+        T8_0 = T8.__args__[0]
+        self.assertEqual(T8_0.__args__, (int, *Ts, str))
+        self.assertEqual(T8_0.__parameters__, (Ts,))
+        T9 = tuple[*tuple[T, *Ts]]
+        self.assertEqual(T9.__args__, (*tuple[T, *Ts],))
+        self.assertEqual(T9.__parameters__, (T, Ts))
+        T10 = tuple[*tuple[*Ts, T]]
+        self.assertEqual(T10.__args__, (*tuple[*Ts, T],))
+        self.assertEqual(T10.__parameters__, (Ts, T))
 
     def test_parameter_chaining(self):
         from typing import List, Dict, Union, Callable
@@ -242,6 +298,8 @@ class BaseTest(unittest.TestCase):
     def test_equality(self):
         self.assertEqual(list[int], list[int])
         self.assertEqual(dict[str, int], dict[str, int])
+        self.assertEqual((*tuple[int],)[0], (*tuple[int],)[0])
+        self.assertEqual(tuple[*tuple[int]], tuple[*tuple[int]])
         self.assertNotEqual(dict[str, int], dict[str, str])
         self.assertNotEqual(list, list[int])
         self.assertNotEqual(list[int], list)
