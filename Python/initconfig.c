@@ -2239,6 +2239,7 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
     const PyWideStringList *argv = &config->argv;
     int print_version = 0;
     const wchar_t* program = config->program_name;
+    const wchar_t* xoption_help;
 
     _PyOS_ResetGetOpt();
     do {
@@ -2377,8 +2378,8 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
             break;
 
         case 'X':
-            const wchar_t *xoption = config_get_xoption(config, L"help");
-            if (xoption) {
+            xoption_help = config_get_xoption(config, L"help");
+            if (xoption_help) {
                 config_xoptions_usage();
                 return _PyStatus_EXIT(0);
             }
