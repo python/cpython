@@ -614,6 +614,9 @@ tuplerepeat(PyTupleObject *a, Py_ssize_t n)
     PyObject **src;
     for (src = src0; src < src_end; src++) {
         Py_SET_REFCNT(*src, Py_REFCNT(*src) + n);
+#ifdef Py_REF_DEBUG
+        _Py_RefTotal += n;
+#endif
     }
     PyObject **dest = np->ob_item;
     PyObject **dest_end = dest + size;
