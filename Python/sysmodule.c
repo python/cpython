@@ -1907,6 +1907,7 @@ static PyStructSequence_Field malloc_info_fields[] = {
     {"implementation", "malloc implementation name"},
     {"freelists", "with freelists"},
     {"obmalloc", "with obmalloc"},
+    {"mimalloc", "with mimalloc"},
     {0}
 };
 
@@ -1914,14 +1915,14 @@ static PyStructSequence_Desc malloc_info_desc = {
     "sys._malloc_info",     /* name */
     malloc_info__doc__ ,    /* doc */
     malloc_info_fields,     /* fields */
-    3
+    4
 };
 
 static PyObject *
 make_malloc_info(void)
 {
     PyObject *malloc_info;
-    char *s;
+    const char *name;
     PyObject *v;
     int pos = 0;
 
@@ -1930,12 +1931,24 @@ make_malloc_info(void)
         return NULL;
     }
 
-#if WITH_MIMALLOC
-    s = "mimalloc";
+    name = _PyMem_GetCurrentAllocatorName();
+    if (name == NULL) {
+        name = "unknown";
+    }
+    v = PyUnicode_FromString(name);
+    if (v == NULL) {
+        Py_DECREF(malloc_info);
+        return NULL;
+    }
+
+    PyStructSequence_SET_ITEM(malloc_info, pos++, v);
+
+#if WITH_FREELISTS
+    v = Py_True;
 #else
-    s = "malloc";
+    v = Py_False;
 #endif
-    PyStructSequence_SET_ITEM(malloc_info, pos++, PyUnicode_FromString(s));
+    PyStructSequence_SET_ITEM(malloc_info, pos++, _Py_NewRef(v));
 
 #if WITH_PYMALLOC
     v = Py_True;
@@ -1944,7 +1957,7 @@ make_malloc_info(void)
 #endif
     PyStructSequence_SET_ITEM(malloc_info, pos++, _Py_NewRef(v));
 
-#if WITH_FREELISTS
+#if WITH_MIMALLOC
     v = Py_True;
 #else
     v = Py_False;

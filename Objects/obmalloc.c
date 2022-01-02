@@ -96,9 +96,6 @@ struct _PyTraceMalloc_Config _Py_tracemalloc_config = _PyTraceMalloc_Config_INIT
 static void *
 _PyMem_RawMalloc(void *ctx, size_t size)
 {
-#ifdef WITH_MIMALLOC
-    return mi_malloc(size);
-#else
     /* PyMem_RawMalloc(0) means malloc(1). Some systems would return NULL
        for malloc(0), which would be treated as an error. Some platforms would
        return a pointer with no memory behind it, which would break pymalloc.
@@ -106,15 +103,11 @@ _PyMem_RawMalloc(void *ctx, size_t size)
     if (size == 0)
         size = 1;
     return malloc(size);
-#endif
 }
 
 static void *
 _PyMem_RawCalloc(void *ctx, size_t nelem, size_t elsize)
 {
-#ifdef WITH_MIMALLOC
-    return mi_calloc(nelem, elsize);
-#else
     /* PyMem_RawCalloc(0, 0) means calloc(1, 1). Some systems would return NULL
        for calloc(0, 0), which would be treated as an error. Some platforms
        would return a pointer with no memory behind it, which would break
@@ -124,46 +117,59 @@ _PyMem_RawCalloc(void *ctx, size_t nelem, size_t elsize)
         elsize = 1;
     }
     return calloc(nelem, elsize);
-#endif
 }
 
 static void *
 _PyMem_RawRealloc(void *ctx, void *ptr, size_t size)
 {
-#ifdef WITH_MIMALLOC
-    return mi_realloc(ptr, size);
-#else
     if (size == 0)
         size = 1;
     return realloc(ptr, size);
-#endif
 }
 
 static void
 _PyMem_RawFree(void *ctx, void *ptr)
 {
-#ifdef WITH_MIMALLOC
-    mi_free(ptr);
-#else
     free(ptr);
-#endif
 }
 
 
 #ifdef WITH_MIMALLOC
 static void *
-_PyObject_ArenaMiallocMalloc(void *ctx, size_t size)
+_PyMimalloc_Malloc(void *ctx, size_t size)
 {
+    if (size == 0)
+        size = 1;
     return mi_malloc(size);
 }
 
+static void *
+_PyMimalloc_Calloc(void *ctx, size_t nelem, size_t elsize)
+{
+    if (nelem == 0 || elsize == 0) {
+        nelem = 1;
+        elsize = 1;
+    }
+    return mi_calloc(nelem, elsize);
+}
+
+static void *
+_PyMimalloc_Realloc(void *ctx, void *ptr, size_t size)
+{
+    if (size == 0)
+        size = 1;
+    return mi_realloc(ptr, size);
+}
+
 static void
-_PyObject_ArenaMiallocFree(void *ctx, void *ptr, size_t size)
+_PyMimalloc_Free(void *ctx, void *ptr)
 {
     mi_free(ptr);
 }
+#endif
 
-#elif defined(MS_WINDOWS)
+
+#ifdef MS_WINDOWS
 static void *
 _PyObject_ArenaVirtualAlloc(void *ctx, size_t size)
 {
@@ -211,17 +217,27 @@ _PyObject_ArenaFree(void *ctx, void *ptr, size_t size)
 #endif
 
 #define MALLOC_ALLOC {NULL, _PyMem_RawMalloc, _PyMem_RawCalloc, _PyMem_RawRealloc, _PyMem_RawFree}
+#ifdef WITH_MIMALLOC
+#  define MIMALLOC_ALLOC {NULL, _PyMimalloc_Malloc, _PyMimalloc_Calloc, _PyMimalloc_Realloc, _PyMimalloc_Free}
+#endif
 #ifdef WITH_PYMALLOC
 #  define PYMALLOC_ALLOC {NULL, _PyObject_Malloc, _PyObject_Calloc, _PyObject_Realloc, _PyObject_Free}
 #endif
 
-#define PYRAW_ALLOC MALLOC_ALLOC
-#ifdef WITH_PYMALLOC
+#ifdef WITH_MIMALLOC
+#  define PYRAW_ALLOC MIMALLOC_ALLOC
+#  define PYOBJ_ALLOC MIMALLOC_ALLOC
+#  define PYMEM_ALLOC MIMALLOC_ALLOC
+#elif defined(WITH_PYMALLOC)
+#  define PYRAW_ALLOC MALLOC_ALLOC
 #  define PYOBJ_ALLOC PYMALLOC_ALLOC
+#  define PYMEM_ALLOC PYMALLOC_ALLOC
 #else
+#  define PYRAW_ALLOC MALLOC_ALLOC
 #  define PYOBJ_ALLOC MALLOC_ALLOC
-#endif
-#define PYMEM_ALLOC PYOBJ_ALLOC
+#  define PYMEM_ALLOC PYMALLOC_ALLO
+#endif // WITH_MIMALLOC
+
 
 typedef struct {
     /* We tag each block with an API ID in order to tag API violations */
@@ -324,6 +340,14 @@ _PyMem_GetAllocatorName(const char *name, PyMemAllocatorName *allocator)
         *allocator = PYMEM_ALLOCATOR_PYMALLOC_DEBUG;
     }
 #endif
+#ifdef WITH_MIMALLOC
+    else if (strcmp(name, "mimalloc") == 0) {
+        *allocator = PYMEM_ALLOCATOR_MIMALLOC;
+    }
+    else if (strcmp(name, "mimalloc_debug") == 0) {
+        *allocator = PYMEM_ALLOCATOR_MIMALLOC_DEBUG;
+    }
+#endif
     else if (strcmp(name, "malloc") == 0) {
         *allocator = PYMEM_ALLOCATOR_MALLOC;
     }
@@ -375,7 +399,21 @@ _PyMem_SetupAllocators(PyMemAllocatorName allocator)
         break;
     }
 #endif
+#ifdef WITH_MIMALLOC
+    case PYMEM_ALLOCATOR_MIMALLOC:
+    case PYMEM_ALLOCATOR_MIMALLOC_DEBUG:
+    {
+        PyMemAllocatorEx mimalloc = MIMALLOC_ALLOC;
+        PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &mimalloc);
+        PyMem_SetAllocator(PYMEM_DOMAIN_MEM, &mimalloc);
+        PyMem_SetAllocator(PYMEM_DOMAIN_OBJ, &mimalloc);
 
+        if (allocator == PYMEM_ALLOCATOR_MIMALLOC_DEBUG) {
+            PyMem_SetupDebugHooks();
+        }
+        break;
+    }
+#endif
     case PYMEM_ALLOCATOR_MALLOC:
     case PYMEM_ALLOCATOR_MALLOC_DEBUG:
     {
@@ -412,6 +450,9 @@ _PyMem_GetCurrentAllocatorName(void)
 #ifdef WITH_PYMALLOC
     PyMemAllocatorEx pymalloc = PYMALLOC_ALLOC;
 #endif
+#ifdef WITH_MIMALLOC
+    PyMemAllocatorEx mimalloc = MIMALLOC_ALLOC;
+#endif
 
     if (pymemallocator_eq(&_PyMem_Raw, &malloc_alloc) &&
         pymemallocator_eq(&_PyMem, &malloc_alloc) &&
@@ -425,6 +466,14 @@ _PyMem_GetCurrentAllocatorName(void)
         pymemallocator_eq(&_PyObject, &pymalloc))
     {
         return "pymalloc";
+    }
+#endif
+#ifdef WITH_MIMALLOC
+    if (pymemallocator_eq(&_PyMem_Raw, &mimalloc) &&
+        pymemallocator_eq(&_PyMem, &mimalloc) &&
+        pymemallocator_eq(&_PyObject, &mimalloc))
+    {
+        return "mimalloc";
     }
 #endif
 
@@ -451,6 +500,14 @@ _PyMem_GetCurrentAllocatorName(void)
             return "pymalloc_debug";
         }
 #endif
+#ifdef WITH_MIMALLOC
+        if (pymemallocator_eq(&_PyMem_Debug.raw.alloc, &mimalloc) &&
+            pymemallocator_eq(&_PyMem_Debug.mem.alloc, &mimalloc) &&
+            pymemallocator_eq(&_PyMem_Debug.obj.alloc, &mimalloc))
+        {
+            return "mimalloc_debug";
+        }
+#endif
     }
     return NULL;
 }
@@ -458,6 +515,7 @@ _PyMem_GetCurrentAllocatorName(void)
 
 #undef MALLOC_ALLOC
 #undef PYMALLOC_ALLOC
+#undef MIMALLOC_ALLOC
 #undef PYRAW_ALLOC
 #undef PYMEM_ALLOC
 #undef PYOBJ_ALLOC
@@ -467,9 +525,7 @@ _PyMem_GetCurrentAllocatorName(void)
 
 
 static PyObjectArenaAllocator _PyObject_Arena = {NULL,
-#ifdef WITH_MIMALLOC
-    _PyObject_ArenaMiallocMalloc, _PyObject_ArenaMiallocFree
-#elif defined(MS_WINDOWS)
+#ifdef MS_WINDOWS
     _PyObject_ArenaVirtualAlloc, _PyObject_ArenaVirtualFree
 #elif defined(ARENAS_USE_MMAP)
     _PyObject_ArenaMmap, _PyObject_ArenaMunmap
