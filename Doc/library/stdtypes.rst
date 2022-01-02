@@ -4107,7 +4107,7 @@ a dictionary key or as an element of another set.
 
 Non-empty sets (not frozensets) can be created by placing a comma-separated list
 of elements within braces, for example: ``{'jack', 'sjoerd'}``.  Sets can
-be created by using a set comprehension, for example ``{x for x in iterable}``.
+be created by using a set comprehension, for example ``{2 * x for x in iterable}``.
 Also, set comprehensions can make both empty and non-empty sets.  In addition to
 the :class:`set` constructor.
 
