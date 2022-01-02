@@ -63,8 +63,12 @@ static const char usage_3[] = "\
 -W arg : warning control; arg is action:message:category:module:lineno\n\
          also PYTHONWARNINGS=arg\n\
 -x     : skip first line of source, allowing use of non-Unix forms of #!cmd\n\
--X opt : set implementation-specific option. The following options are available:\n\
-\n\
+-X opt : set implementation-specific option (see details with -X help)\n\
+--check-hash-based-pycs always|default|never:\n\
+         control how Python invalidates hash-based .pyc files\n\
+";
+static const char usage_xoptions[] = "\
+The following implementation-specific options are available:\n\
          -X faulthandler: enable faulthandler\n\
          -X showrefcount: output the total reference count and number of used\n\
              memory blocks when the program finishes or after each statement in the\n\
@@ -99,9 +103,6 @@ static const char usage_3[] = "\
             when the interpreter displays tracebacks.\n\
          -X frozen_modules=[on|off]: whether or not frozen modules should be used.\n\
             The default is \"on\" (or \"off\" if you are running a local build).\n\
-\n\
---check-hash-based-pycs always|default|never:\n\
-    control how Python invalidates hash-based .pyc files\n\
 ";
 static const char usage_4[] = "\
 file   : program read from script file\n\
@@ -2005,6 +2006,7 @@ _PyConfig_InitImportConfig(PyConfig *config)
 // set, like -X showrefcount which requires a debug build. In this case unknown
 // options are silently ignored.
 const wchar_t* known_xoptions[] = {
+    L"help",
     L"faulthandler",
     L"showrefcount",
     L"tracemalloc",
@@ -2222,6 +2224,11 @@ config_usage(int error, const wchar_t* program)
     }
 }
 
+static void
+config_xoptions_usage()
+{
+    fputs(usage_xoptions, stdout);
+}
 
 /* Parse the command line arguments */
 static PyStatus
@@ -2308,7 +2315,6 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
 
         case 'E':
         case 'I':
-        case 'X':
             /* option handled by _PyPreCmdline_Read() */
             break;
 
@@ -2368,6 +2374,15 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
 
         case 'R':
             config->use_hash_seed = 0;
+            break;
+
+        case 'X':
+            const wchar_t *xoption = config_get_xoption(config, L"help");
+            if (xoption) {
+                config_xoptions_usage();
+                return _PyStatus_EXIT(0);
+            }
+            /* option handled by _PyPreCmdline_Read() */
             break;
 
         /* This space reserved for other options */

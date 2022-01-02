@@ -436,6 +436,7 @@ Miscellaneous options
    See :ref:`warning-filter` and :ref:`describing-warning-filters` for more
    details.
 
+
 .. cmdoption:: -x
 
    Skip the first line of the source, allowing use of non-Unix forms of
@@ -447,6 +448,7 @@ Miscellaneous options
    Reserved for various implementation-specific options.  CPython currently
    defines the following possible values:
 
+   * ``-X help`` to print a short description of all X options;
    * ``-X faulthandler`` to enable :mod:`faulthandler`;
    * ``-X showrefcount`` to output the total reference count and number of used
      memory blocks when the program finishes or after each statement in the
@@ -527,6 +529,9 @@ Miscellaneous options
 
    .. versionadded:: 3.11
       The ``-X frozen_modules`` option.
+
+   .. versionadded:: 3.11
+      The ``-X help`` option.
 
 
 Options you shouldn't use
