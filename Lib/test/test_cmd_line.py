@@ -37,6 +37,14 @@ class CmdLineTest(unittest.TestCase):
         self.assertNotIn(b'Traceback', out)
         self.assertNotIn(b'Traceback', err)
 
+    def test_help(self):
+        self.verify_valid_flag('-h')
+        self.verify_valid_flag('-?')
+        self.verify_valid_flag('--help')
+
+    def test_help_env(self):
+        self.verify_valid_flag('--help-env')
+
     def test_optimize(self):
         self.verify_valid_flag('-O')
         self.verify_valid_flag('-OO')
