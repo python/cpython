@@ -1,0 +1,1 @@
+Revert changes in ``set.__init__``. Subclass of :class:`set` needs to define a ``__init__()`` method if it defines a ``__new__()`` method with additional keyword parameters.

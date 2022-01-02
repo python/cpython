@@ -197,6 +197,11 @@ Browser controllers provide these methods which parallel three of the
 module-level convenience functions:
 
 
+.. attribute:: name
+
+   System-dependent name for the browser.
+
+
 .. method:: controller.open(url, new=0, autoraise=True)
 
    Display *url* using the browser handled by this controller. If *new* is 1, a new

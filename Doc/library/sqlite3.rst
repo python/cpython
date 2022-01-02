@@ -329,9 +329,27 @@ Module functions and constants
 
    By default you will not get any tracebacks in user-defined functions,
    aggregates, converters, authorizer callbacks etc. If you want to debug them,
-   you can call this function with *flag* set to ``True``. Afterwards, you will
-   get tracebacks from callbacks on ``sys.stderr``. Use :const:`False` to
-   disable the feature again.
+   you can call this function with *flag* set to :const:`True`. Afterwards, you
+   will get tracebacks from callbacks on :data:`sys.stderr`. Use :const:`False`
+   to disable the feature again.
+
+   Register an :func:`unraisable hook handler <sys.unraisablehook>` for an
+   improved debug experience::
+
+      >>> import sqlite3
+      >>> sqlite3.enable_callback_tracebacks(True)
+      >>> cx = sqlite3.connect(":memory:")
+      >>> cx.set_trace_callback(lambda stmt: 5/0)
+      >>> cx.execute("select 1")
+      Exception ignored in: <function <lambda> at 0x10b4e3ee0>
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <lambda>
+      ZeroDivisionError: division by zero
+      >>> import sys
+      >>> sys.unraisablehook = lambda unraisable: print(unraisable)
+      >>> cx.execute("select 1")
+      UnraisableHookArgs(exc_type=<class 'ZeroDivisionError'>, exc_value=ZeroDivisionError('division by zero'), exc_traceback=<traceback object at 0x10b559900>, err_msg=None, object=<function <lambda> at 0x10b4e3ee0>)
+      <sqlite3.Cursor object at 0x10b1fe840>
 
 
 .. _sqlite3-connection-objects:

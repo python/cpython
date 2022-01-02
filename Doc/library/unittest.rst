@@ -72,8 +72,9 @@ test runner
    a GUI tool for test discovery and execution.  This is intended largely for ease of use
    for those new to unit testing.  For production environments it is
    recommended that tests be driven by a continuous integration system such as
-   `Buildbot <https://buildbot.net/>`_, `Jenkins <https://jenkins.io/>`_
-   or `Travis-CI <https://travis-ci.com>`_, or `AppVeyor <https://www.appveyor.com/>`_.
+   `Buildbot <https://buildbot.net/>`_, `Jenkins <https://jenkins.io/>`_,
+   `GitHub Actions <https://github.com/features/actions>`_, or
+   `AppVeyor <https://www.appveyor.com/>`_.
 
 
 .. _unittest-minimal-example:
@@ -227,7 +228,7 @@ Command-line options
 
    Only run test methods and classes that match the pattern or substring.
    This option may be used multiple times, in which case all test cases that
-   match of the given patterns are included.
+   match any of the given patterns are included.
 
    Patterns that contain a wildcard character (``*``) are matched against the
    test name using :meth:`fnmatch.fnmatchcase`; otherwise simple case-sensitive

@@ -2,18 +2,31 @@
 
 #include "Python.h"
 
+#include "pycore_bytesobject.h"   // _PyBytes_InitTypes()
 #include "pycore_ceval.h"         // _PyEval_FiniGIL()
 #include "pycore_context.h"       // _PyContext_Init()
+#include "pycore_exceptions.h"    // _PyExc_InitTypes()
+#include "pycore_dict.h"          // _PyDict_Fini()
 #include "pycore_fileutils.h"     // _Py_ResetForceASCII()
+#include "pycore_floatobject.h"   // _PyFloat_InitTypes()
+#include "pycore_frame.h"         // _PyFrame_Fini()
+#include "pycore_genobject.h"     // _PyAsyncGen_Fini()
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_list.h"          // _PyList_Fini()
+#include "pycore_long.h"          // _PyLong_InitTypes()
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
 #include "pycore_pathconfig.h"    // _PyConfig_WritePathConfig()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pylifecycle.h"   // _PyErr_Print()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_sliceobject.h"   // _PySlice_Fini()
+#include "pycore_structseq.h"     // _PyStructSequence_InitState()
 #include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
+#include "pycore_tuple.h"         // _PyTuple_InitTypes()
+#include "pycore_typeobject.h"    // _PyTypes_InitTypes()
+#include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
 
 #include <locale.h>               // setlocale()
 #include <stdlib.h>               // getenv()
@@ -28,6 +41,10 @@
 
 #ifdef HAVE_LANGINFO_H
 #  include <langinfo.h>           // nl_langinfo(CODESET)
+#endif
+
+#ifdef HAVE_FCNTL_H
+#  include <fcntl.h>              // F_GETFD
 #endif
 
 #ifdef MS_WINDOWS
@@ -455,7 +472,7 @@ interpreter_update_config(PyThreadState *tstate, int only_update_path_config)
     }
 
     if (_Py_IsMainInterpreter(tstate->interp)) {
-        PyStatus status = _PyConfig_WritePathConfig(config);
+        PyStatus status = _PyPathConfig_UpdateGlobal(config);
         if (_PyStatus_EXCEPTION(status)) {
             _PyErr_SetFromPyStatus(status);
             return -1;
@@ -484,7 +501,7 @@ _PyInterpreterState_SetConfig(const PyConfig *src_config)
         goto done;
     }
 
-    status = PyConfig_Read(&config);
+    status = _PyConfig_Read(&config, 1);
     if (_PyStatus_EXCEPTION(status)) {
         _PyErr_SetFromPyStatus(status);
         goto done;
@@ -545,7 +562,7 @@ pyinit_core_reconfigure(_PyRuntimeState *runtime,
     config = _PyInterpreterState_GetConfig(interp);
 
     if (config->_install_importlib) {
-        status = _PyConfig_WritePathConfig(config);
+        status = _PyPathConfig_UpdateGlobal(config);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
@@ -655,27 +672,25 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
 
 
 static PyStatus
-pycore_init_singletons(PyInterpreterState *interp)
+pycore_init_global_objects(PyInterpreterState *interp)
 {
     PyStatus status;
 
-    _PyLong_Init(interp);
+    _PyFloat_InitState(interp);
 
-    if (_Py_IsMainInterpreter(interp)) {
-        _PyFloat_Init();
-    }
-
-    status = _PyBytes_Init(interp);
+    status = _PyBytes_InitGlobalObjects(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
 
-    status = _PyUnicode_Init(interp);
+    status = _PyUnicode_InitGlobalObjects(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
 
-    status = _PyTuple_Init(interp);
+    _PyUnicode_InitState(interp);
+
+    status = _PyTuple_InitGlobalObjects(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -688,48 +703,70 @@ static PyStatus
 pycore_init_types(PyInterpreterState *interp)
 {
     PyStatus status;
-    int is_main_interp = _Py_IsMainInterpreter(interp);
 
-    if (is_main_interp) {
-        if (_PyStructSequence_Init() < 0) {
-            return _PyStatus_ERR("can't initialize structseq");
-        }
-
-        status = _PyTypes_Init();
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-
-        if (_PyLong_InitTypes() < 0) {
-            return _PyStatus_ERR("can't init int type");
-        }
-
-        status = _PyUnicode_InitTypes();
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-    }
-
-    if (is_main_interp) {
-        if (_PyFloat_InitTypes() < 0) {
-            return _PyStatus_ERR("can't init float");
-        }
-    }
-
-    status = _PyExc_Init(interp);
+    status = _PyStructSequence_InitState(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
 
-    status = _PyErr_InitTypes();
+    status = _PyTypes_InitState(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
 
-    if (is_main_interp) {
-        if (!_PyContext_Init()) {
-            return _PyStatus_ERR("can't init context");
-        }
+    status = _PyTypes_InitTypes(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = _PyBytes_InitTypes(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = _PyLong_InitTypes(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = _PyUnicode_InitTypes(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = _PyFloat_InitTypes(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = _PyTuple_InitTypes(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = _PyExc_InitTypes(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = _PyExc_InitGlobalObjects(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = _PyExc_InitState(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = _PyErr_InitTypes(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = _PyContext_InitTypes(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
 
     return _PyStatus_OK();
@@ -795,7 +832,7 @@ pycore_interp_init(PyThreadState *tstate)
     // Create singletons before the first PyType_Ready() call, since
     // PyType_Ready() uses singletons like the Unicode empty string (tp_doc)
     // and the empty tuple singletons (tp_bases).
-    status = pycore_init_singletons(interp);
+    status = pycore_init_global_objects(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1637,7 +1674,7 @@ finalize_interp_types(PyInterpreterState *interp)
     _PyFrame_Fini(interp);
     _PyAsyncGen_Fini(interp);
     _PyContext_Fini(interp);
-    _PyType_Fini(interp);
+    _PyTypes_Fini(interp);
     // Call _PyUnicode_ClearInterned() before _PyDict_Fini() since it uses
     // a dict internally.
     _PyUnicode_ClearInterned(interp);
@@ -1651,7 +1688,6 @@ finalize_interp_types(PyInterpreterState *interp)
     _PyBytes_Fini(interp);
     _PyUnicode_Fini(interp);
     _PyFloat_Fini(interp);
-    _PyLong_Fini(interp);
 }
 
 
@@ -1949,7 +1985,7 @@ new_interpreter(PyThreadState **tstate_p, int isolated_subinterpreter)
 #endif
     {
         /* No current thread state, copy from the main interpreter */
-        PyInterpreterState *main_interp = PyInterpreterState_Main();
+        PyInterpreterState *main_interp = _PyInterpreterState_Main();
         config = _PyInterpreterState_GetConfig(main_interp);
     }
 
@@ -2039,7 +2075,7 @@ Py_EndInterpreter(PyThreadState *tstate)
 
     _PyAtExit_Call(tstate->interp);
 
-    if (tstate != interp->tstate_head || tstate->next != NULL) {
+    if (tstate != interp->threads.head || tstate->next != NULL) {
         Py_FatalError("not the last thread");
     }
 
@@ -2129,26 +2165,38 @@ is_valid_fd(int fd)
    startup. Problem: dup() doesn't check if the file descriptor is valid on
    some platforms.
 
+   fcntl(fd, F_GETFD) is even faster, because it only checks the process table.
+   It is preferred over dup() when available, since it cannot fail with the
+   "too many open files" error (EMFILE).
+
    bpo-30225: On macOS Tiger, when stdout is redirected to a pipe and the other
    side of the pipe is closed, dup(1) succeed, whereas fstat(1, &st) fails with
    EBADF. FreeBSD has similar issue (bpo-32849).
 
-   Only use dup() on platforms where dup() is enough to detect invalid FD in
-   corner cases: on Linux and Windows (bpo-32849). */
-#if defined(__linux__) || defined(MS_WINDOWS)
+   Only use dup() on Linux where dup() is enough to detect invalid FD
+   (bpo-32849).
+*/
     if (fd < 0) {
         return 0;
     }
-    int fd2;
-
-    _Py_BEGIN_SUPPRESS_IPH
-    fd2 = dup(fd);
+#if defined(F_GETFD) && ( \
+        defined(__linux__) || \
+        defined(__APPLE__) || \
+        defined(__wasm__))
+    return fcntl(fd, F_GETFD) >= 0;
+#elif defined(__linux__)
+    int fd2 = dup(fd);
     if (fd2 >= 0) {
         close(fd2);
     }
-    _Py_END_SUPPRESS_IPH
-
     return (fd2 >= 0);
+#elif defined(MS_WINDOWS)
+    HANDLE hfile;
+    _Py_BEGIN_SUPPRESS_IPH
+    hfile = (HANDLE)_get_osfhandle(fd);
+    _Py_END_SUPPRESS_IPH
+    return (hfile != INVALID_HANDLE_VALUE
+            && GetFileType(hfile) != FILE_TYPE_UNKNOWN);
 #else
     struct stat st;
     return (fstat(fd, &st) == 0);

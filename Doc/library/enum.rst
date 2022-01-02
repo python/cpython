@@ -162,7 +162,8 @@ Data Types
    .. method:: EnumType.__dir__(cls)
 
       Returns ``['__class__', '__doc__', '__members__', '__module__']`` and the
-      names of the members in *cls*::
+      names of the members in ``cls``. User-defined methods and methods from
+      mixin classes will also be included::
 
         >>> dir(Color)
         ['BLUE', 'GREEN', 'RED', '__class__', '__doc__', '__members__', '__module__']
@@ -176,7 +177,7 @@ Data Types
 
    .. method:: EnumType.__getitem__(cls, name)
 
-      Returns the Enum member in *cls* matching *name*, or raises an :exc:`KeyError`::
+      Returns the Enum member in *cls* matching *name*, or raises a :exc:`KeyError`::
 
         >>> Color['BLUE']
         Color.BLUE
@@ -260,7 +261,7 @@ Data Types
    .. method:: Enum.__dir__(self)
 
       Returns ``['__class__', '__doc__', '__module__', 'name', 'value']`` and
-      any public methods defined on *self.__class__*::
+      any public methods defined on ``self.__class__`` or a mixin class::
 
          >>> from datetime import date
          >>> class Weekday(Enum):

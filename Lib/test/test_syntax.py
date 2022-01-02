@@ -909,6 +909,44 @@ Missing parens after function definition
    Traceback (most recent call last):
    SyntaxError: expected '('
 
+Parenthesized arguments in function definitions
+
+   >>> def f(x, (y, z), w):
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: Function parameters cannot be parenthesized
+
+   >>> def f((x, y, z, w)):
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: Function parameters cannot be parenthesized
+
+   >>> def f(x, (y, z, w)):
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: Function parameters cannot be parenthesized
+
+   >>> def f((x, y, z), w):
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: Function parameters cannot be parenthesized
+
+   >>> lambda x, (y, z), w: None
+   Traceback (most recent call last):
+   SyntaxError: Lambda expression parameters cannot be parenthesized
+
+   >>> lambda (x, y, z, w): None
+   Traceback (most recent call last):
+   SyntaxError: Lambda expression parameters cannot be parenthesized
+
+   >>> lambda x, (y, z, w): None
+   Traceback (most recent call last):
+   SyntaxError: Lambda expression parameters cannot be parenthesized
+
+   >>> lambda (x, y, z), w: None
+   Traceback (most recent call last):
+   SyntaxError: Lambda expression parameters cannot be parenthesized
+
 Custom error messages for try blocks that are not followed by except/finally
 
    >>> try:
@@ -916,6 +954,48 @@ Custom error messages for try blocks that are not followed by except/finally
    ...
    Traceback (most recent call last):
    SyntaxError: expected 'except' or 'finally' block
+
+Custom error message for try block mixing except and except*
+
+   >>> try:
+   ...    pass
+   ... except TypeError:
+   ...    pass
+   ... except* ValueError:
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: cannot have both 'except' and 'except*' on the same 'try'
+
+   >>> try:
+   ...    pass
+   ... except* TypeError:
+   ...    pass
+   ... except ValueError:
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: cannot have both 'except' and 'except*' on the same 'try'
+
+   >>> try:
+   ...    pass
+   ... except TypeError:
+   ...    pass
+   ... except TypeError:
+   ...    pass
+   ... except* ValueError:
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: cannot have both 'except' and 'except*' on the same 'try'
+
+   >>> try:
+   ...    pass
+   ... except* TypeError:
+   ...    pass
+   ... except* TypeError:
+   ...    pass
+   ... except ValueError:
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: cannot have both 'except' and 'except*' on the same 'try'
 
 Ensure that early = are not matched by the parser as invalid comparisons
    >>> f(2, 4, x=34); 1 $ 2
@@ -1032,7 +1112,23 @@ Specialized indentation errors:
 
    >>> try:
    ...     something()
+   ... except* A:
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after 'except*' statement on line 3
+
+   >>> try:
+   ...     something()
    ... except A:
+   ...     pass
+   ... finally:
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after 'finally' statement on line 5
+
+   >>> try:
+   ...     something()
+   ... except* A:
    ...     pass
    ... finally:
    ... pass
@@ -1140,6 +1236,48 @@ raise a custom exception
    ...   pass
    Traceback (most recent call last):
    SyntaxError: multiple exception types must be parenthesized
+
+
+   >>> try:
+   ...   pass
+   ... except* A, B:
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: multiple exception types must be parenthesized
+
+   >>> try:
+   ...   pass
+   ... except* A, B, C:
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: multiple exception types must be parenthesized
+
+   >>> try:
+   ...   pass
+   ... except* A, B, C as blech:
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: multiple exception types must be parenthesized
+
+   >>> try:
+   ...   pass
+   ... except* A, B, C as blech:
+   ...   pass
+   ... finally:
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: multiple exception types must be parenthesized
+
+Custom exception for 'except*' without an exception type
+
+   >>> try:
+   ...   pass
+   ... except* A as a:
+   ...   pass
+   ... except*:
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: expected one or more exception types
 
 
 >>> f(a=23, a=234)
@@ -1528,6 +1666,9 @@ def func2():
         for paren in ")]}":
             self._check_error(paren + "1 + 2", f"unmatched '\\{paren}'")
 
+    def test_invisible_characters(self):
+        self._check_error('print\x17("Hello")', "invalid non-printable character")
+
     def test_match_call_does_not_raise_syntax_error(self):
         code = """
 def match(x):
@@ -1587,6 +1728,14 @@ while 1:
                      break
 """
         self._check_error(source, "too many statically nested blocks")
+
+    @support.cpython_only
+    def test_error_on_parser_stack_overflow(self):
+        source = "-" * 100000 + "4"
+        for mode in ["exec", "eval", "single"]:
+            with self.subTest(mode=mode):
+                with self.assertRaises(MemoryError):
+                    compile(source, "<string>", mode)
 
 
 def load_tests(loader, tests, pattern):

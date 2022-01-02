@@ -93,6 +93,19 @@ finally:
     suite5
 """
 
+try_except_star_finally = """\
+try:
+    suite1
+except* ex1:
+    suite2
+except* ex2:
+    suite3
+else:
+    suite4
+finally:
+    suite5
+"""
+
 with_simple = """\
 with f():
     suite1
@@ -303,6 +316,9 @@ class UnparseTestCase(ASTTestCase):
 
     def test_try_except_finally(self):
         self.check_ast_roundtrip(try_except_finally)
+
+    def test_try_except_star_finally(self):
+        self.check_ast_roundtrip(try_except_star_finally)
 
     def test_starred_assignment(self):
         self.check_ast_roundtrip("a, *b, c = seq")

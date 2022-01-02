@@ -196,27 +196,6 @@ the built-in function :func:`range` returns an iterator of integers suitable to
 emulate the effect of Pascal's ``for i := a to b do``; e.g., ``list(range(3))``
 returns the list ``[0, 1, 2]``.
 
-.. note::
-
-   .. index::
-      single: loop; over mutable sequence
-      single: mutable sequence; loop over
-
-   There is a subtlety when the sequence is being modified by the loop (this can
-   only occur for mutable sequences, e.g. lists).  An internal counter is used
-   to keep track of which item is used next, and this is incremented on each
-   iteration.  When this counter has reached the length of the sequence the loop
-   terminates.  This means that if the suite deletes the current (or a previous)
-   item from the sequence, the next item will be skipped (since it gets the
-   index of the current item which has already been treated).  Likewise, if the
-   suite inserts an item in the sequence before the current item, the current
-   item will be treated again the next time through the loop. This can lead to
-   nasty bugs that can be avoided by making a temporary copy using a slice of
-   the whole sequence, e.g., ::
-
-      for x in a[:]:
-          if x < 0: a.remove(x)
-
 
 .. _try:
 .. _except:
@@ -418,8 +397,8 @@ usage patterns to be encapsulated for convenient reuse.
 
 The execution of the :keyword:`with` statement with one "item" proceeds as follows:
 
-#. The context expression (the expression given in the :token:`with_item`) is
-   evaluated to obtain a context manager.
+#. The context expression (the expression given in the
+   :token:`~python-grammar:with_item`) is evaluated to obtain a context manager.
 
 #. The context manager's :meth:`__enter__` is loaded for later use.
 
@@ -797,7 +776,8 @@ Syntax:
    capture_pattern: !'_' NAME
 
 A single underscore ``_`` is not a capture pattern (this is what ``!'_'``
-expresses). It is instead treated as a :token:`wildcard_pattern`.
+expresses). It is instead treated as a
+:token:`~python-grammar:wildcard_pattern`.
 
 In a given pattern, a given name can only be bound once.  E.g.
 ``case x, x: ...`` is invalid while ``case [x] | x: ...`` is allowed.
@@ -1182,9 +1162,9 @@ is roughly equivalent to ::
 except that the original function is not temporarily bound to the name ``func``.
 
 .. versionchanged:: 3.9
-   Functions may be decorated with any valid :token:`assignment_expression`.
-   Previously, the grammar was much more restrictive; see :pep:`614` for
-   details.
+   Functions may be decorated with any valid
+   :token:`~python-grammar:assignment_expression`. Previously, the grammar was
+   much more restrictive; see :pep:`614` for details.
 
 .. index::
    triple: default; parameter; value
@@ -1360,9 +1340,9 @@ The evaluation rules for the decorator expressions are the same as for function
 decorators.  The result is then bound to the class name.
 
 .. versionchanged:: 3.9
-   Classes may be decorated with any valid :token:`assignment_expression`.
-   Previously, the grammar was much more restrictive; see :pep:`614` for
-   details.
+   Classes may be decorated with any valid
+   :token:`~python-grammar:assignment_expression`. Previously, the grammar was
+   much more restrictive; see :pep:`614` for details.
 
 **Programmer's note:** Variables defined in the class definition are class
 attributes; they are shared by instances.  Instance attributes can be set in a

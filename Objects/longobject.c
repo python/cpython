@@ -4,10 +4,11 @@
 
 #include "Python.h"
 #include "pycore_bitutils.h"      // _Py_popcount32()
-#include "pycore_runtime.h"       // _PY_NSMALLPOSINTS
+#include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_long.h"          // _Py_SmallInts
 #include "pycore_object.h"        // _PyObject_InitVar()
 #include "pycore_pystate.h"       // _Py_IsMainInterpreter()
+#include "pycore_runtime.h"       // _PY_NSMALLPOSINTS
 
 #include <ctype.h>
 #include <float.h>
@@ -48,7 +49,7 @@ static PyObject *
 get_small_int(sdigit ival)
 {
     assert(IS_SMALL_INT(ival));
-    PyObject *v = (PyObject *)&_PyRuntime.small_ints[_PY_NSMALLNEGINTS + ival];
+    PyObject *v = (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + ival];
     Py_INCREF(v);
     return v;
 }
@@ -3155,13 +3156,10 @@ long_add(PyLongObject *a, PyLongObject *b)
     return _PyLong_Add(a, b);
 }
 
-
-static PyObject *
-long_sub(PyLongObject *a, PyLongObject *b)
+PyObject *
+_PyLong_Subtract(PyLongObject *a, PyLongObject *b)
 {
     PyLongObject *z;
-
-    CHECK_BINOP(a, b);
 
     if (IS_MEDIUM_VALUE(a) && IS_MEDIUM_VALUE(b)) {
         return _PyLong_FromSTwoDigits(medium_value(a) - medium_value(b));
@@ -3185,6 +3183,13 @@ long_sub(PyLongObject *a, PyLongObject *b)
             z = x_sub(a, b);
     }
     return (PyObject *)z;
+}
+
+static PyObject *
+long_sub(PyLongObject *a, PyLongObject *b)
+{
+    CHECK_BINOP(a, b);
+    return _PyLong_Subtract(a, b);
 }
 
 /* Grade school multiplication, ignoring the signs.
@@ -4486,7 +4491,16 @@ long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
 {
     PyLongObject *z = NULL;
     Py_ssize_t newsize, hishift, i, j;
-    digit lomask, himask;
+    twodigits accum;
+
+    if (IS_MEDIUM_VALUE(a)) {
+        stwodigits m, x;
+        digit shift;
+        m = medium_value(a);
+        shift = wordshift == 0 ? remshift : PyLong_SHIFT;
+        x = m < 0 ? ~(~m >> shift) : m >> shift;
+        return _PyLong_FromSTwoDigits(x);
+    }
 
     if (Py_SIZE(a) < 0) {
         /* Right shifting negative numbers is harder */
@@ -4506,16 +4520,17 @@ long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
         if (newsize <= 0)
             return PyLong_FromLong(0);
         hishift = PyLong_SHIFT - remshift;
-        lomask = ((digit)1 << hishift) - 1;
-        himask = PyLong_MASK ^ lomask;
         z = _PyLong_New(newsize);
         if (z == NULL)
             return NULL;
-        for (i = 0, j = wordshift; i < newsize; i++, j++) {
-            z->ob_digit[i] = (a->ob_digit[j] >> remshift) & lomask;
-            if (i+1 < newsize)
-                z->ob_digit[i] |= (a->ob_digit[j+1] << hishift) & himask;
+        j = wordshift;
+        accum = a->ob_digit[j++] >> remshift;
+        for (i = 0; j < Py_SIZE(a); i++, j++) {
+            accum |= (twodigits)a->ob_digit[j] << hishift;
+            z->ob_digit[i] = (digit)(accum & PyLong_MASK);
+            accum >>= PyLong_SHIFT;
         }
+        z->ob_digit[i] = (digit)accum;
         z = maybe_small_long(long_normalize(z));
     }
     return (PyObject *)z;
@@ -4560,10 +4575,16 @@ _PyLong_Rshift(PyObject *a, size_t shiftby)
 static PyObject *
 long_lshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
 {
-    /* This version due to Tim Peters */
     PyLongObject *z = NULL;
     Py_ssize_t oldsize, newsize, i, j;
     twodigits accum;
+
+    if (wordshift == 0 && IS_MEDIUM_VALUE(a)) {
+        stwodigits m = medium_value(a);
+        // bypass undefined shift operator behavior
+        stwodigits x = m < 0 ? -(-m << remshift) : m << remshift;
+        return _PyLong_FromSTwoDigits(x);
+    }
 
     oldsize = Py_ABS(Py_SIZE(a));
     newsize = oldsize + wordshift;
@@ -5824,35 +5845,26 @@ PyLong_GetInfo(void)
     return int_info;
 }
 
-void
-_PyLong_Init(PyInterpreterState *interp)
-{
-    if (_PyRuntime.small_ints[0].ob_base.ob_base.ob_refcnt == 0) {
-        for (Py_ssize_t i=0; i < _PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS; i++) {
-            sdigit ival = (sdigit)i - _PY_NSMALLNEGINTS;
-            int size = (ival < 0) ? -1 : ((ival == 0) ? 0 : 1);
-            _PyRuntime.small_ints[i].ob_base.ob_base.ob_refcnt = 1;
-            _PyRuntime.small_ints[i].ob_base.ob_base.ob_type = &PyLong_Type;
-            _PyRuntime.small_ints[i].ob_base.ob_size = size;
-            _PyRuntime.small_ints[i].ob_digit[0] = (digit)abs(ival);
-        }
-    }
-}
 
-int
-_PyLong_InitTypes(void)
+/* runtime lifecycle */
+
+PyStatus
+_PyLong_InitTypes(PyInterpreterState *interp)
 {
+    if (!_Py_IsMainInterpreter(interp)) {
+        return _PyStatus_OK();
+    }
+
+    if (PyType_Ready(&PyLong_Type) < 0) {
+        return _PyStatus_ERR("Can't initialize int type");
+    }
+
     /* initialize int_info */
     if (Int_InfoType.tp_name == NULL) {
         if (PyStructSequence_InitType2(&Int_InfoType, &int_info_desc) < 0) {
-            return -1;
+            return _PyStatus_ERR("can't init int info type");
         }
     }
-    return 0;
-}
 
-void
-_PyLong_Fini(PyInterpreterState *interp)
-{
-    (void)interp;
+    return _PyStatus_OK();
 }

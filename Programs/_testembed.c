@@ -531,7 +531,7 @@ static int test_init_from_config(void)
     config.import_time = 1;
 
     putenv("PYTHONNODEBUGRANGES=0");
-    config.no_debug_ranges = 1;
+    config.code_debug_ranges = 0;
 
     config.show_ref_count = 1;
     /* FIXME: test dump_refs: bpo-34223 */
@@ -1827,26 +1827,6 @@ static int test_frozenmain(void)
 }
 #endif  // !MS_WINDOWS
 
-
-// List frozen modules.
-// Command used by Tools/scripts/generate_stdlib_module_names.py script.
-static int list_frozen(void)
-{
-    const struct _frozen *p;
-    for (p = _PyImport_FrozenBootstrap; ; p++) {
-        if (p->name == NULL)
-            break;
-        printf("%s\n", p->name);
-    }
-    for (p = _PyImport_FrozenStdlib; ; p++) {
-        if (p->name == NULL)
-            break;
-        printf("%s\n", p->name);
-    }
-    return 0;
-}
-
-
 static int test_repeated_init_and_inittab(void)
 {
     // bpo-44441: Py_RunMain() must reset PyImport_Inittab at exit.
@@ -1960,8 +1940,6 @@ static struct TestCase TestCases[] = {
     {"test_frozenmain", test_frozenmain},
 #endif
 
-    // Command
-    {"list_frozen", list_frozen},
     {NULL, NULL}
 };
 
