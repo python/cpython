@@ -1,3 +1,2 @@
 Remove :opcode:`POP_EXCEPT_AND_RERAISE` and replace it by an equivalent
-sequence of four other opcodes. Change :opcode:`PREP_RERAISE_STAR` to not
-push a dummy lasti to the stack.
+sequence of four other opcodes. 
