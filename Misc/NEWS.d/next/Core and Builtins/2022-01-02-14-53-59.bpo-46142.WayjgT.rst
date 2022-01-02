@@ -1,0 +1,2 @@
+Add ``-X help`` and ``--help-env`` options and make ``--help`` output
+shorter.

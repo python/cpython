@@ -64,11 +64,19 @@ static const char usage_3[] = "\
          also PYTHONWARNINGS=arg\n\
 -x     : skip first line of source, allowing use of non-Unix forms of #!cmd\n\
 -X opt : set implementation-specific option (see details with -X help)\n\
---check-hash-based-pycs always|default|never:\n\
+--help-env : print help about other environment variables\n\
+--check-hash-based-pycs always|default|never :\n\
          control how Python invalidates hash-based .pyc files\n\
 ";
+static const char usage_4[] = "\
+file   : program read from script file\n\
+-      : program read from stdin (default; interactive mode if a tty)\n\
+arg ...: arguments passed to program in sys.argv[1:]\n\
+";
+
 static const char usage_xoptions[] = "\
 The following implementation-specific options are available:\n\
+         -X help: show this help\n\
          -X faulthandler: enable faulthandler\n\
          -X showrefcount: output the total reference count and number of used\n\
              memory blocks when the program finishes or after each statement in the\n\
@@ -104,16 +112,13 @@ The following implementation-specific options are available:\n\
          -X frozen_modules=[on|off]: whether or not frozen modules should be used.\n\
             The default is \"on\" (or \"off\" if you are running a local build).\n\
 ";
-static const char usage_4[] = "\
-file   : program read from script file\n\
--      : program read from stdin (default; interactive mode if a tty)\n\
-arg ...: arguments passed to program in sys.argv[1:]\n\n\
-Other environment variables:\n\
+static const char usage_envvars1[] = "\
+Environment variables that change behavior (see also --help):\n\
 PYTHONSTARTUP: file executed on interactive startup (no default)\n\
 PYTHONPATH   : '%lc'-separated list of directories prefixed to the\n\
                default module search path.  The result is sys.path.\n\
 ";
-static const char usage_5[] =
+static const char usage_envvars2[] =
 "PYTHONHOME   : alternate <prefix> directory (or <prefix>%lc<exec_prefix>).\n"
 "               The default module search path uses %s.\n"
 "PYTHONPLATLIBDIR : override sys.platlibdir.\n"
@@ -121,7 +126,7 @@ static const char usage_5[] =
 "PYTHONUTF8: if set to 1, enable the UTF-8 mode.\n"
 "PYTHONIOENCODING: Encoding[:errors] used for stdin/stdout/stderr.\n"
 "PYTHONFAULTHANDLER: dump the Python traceback on fatal errors.\n";
-static const char usage_6[] =
+static const char usage_envvars3[] =
 "PYTHONHASHSEED: if this variable is set to 'random', a random value is used\n"
 "   to seed the hashes of str and bytes objects.  It can also be set to an\n"
 "   integer in the range [0,4294967295] to get hash values with a\n"
@@ -2218,16 +2223,24 @@ config_usage(int error, const wchar_t* program)
         fputs(usage_1, f);
         fputs(usage_2, f);
         fputs(usage_3, f);
-        fprintf(f, usage_4, (wint_t)DELIM);
-        fprintf(f, usage_5, (wint_t)DELIM, PYTHONHOMEHELP);
-        fputs(usage_6, f);
+        fputs(usage_4, f);
     }
+}
+
+static void
+config_envvars_usage()
+{
+    FILE *f = stdout;
+    fprintf(f, usage_envvars1, (wint_t)DELIM);
+    fprintf(f, usage_envvars2, (wint_t)DELIM, PYTHONHOMEHELP);
+    fputs(usage_envvars3, f);
 }
 
 static void
 config_xoptions_usage()
 {
-    fputs(usage_xoptions, stdout);
+    FILE *f = stdout;
+    fputs(usage_xoptions, f);
 }
 
 /* Parse the command line arguments */
@@ -2282,8 +2295,11 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
 
         switch (c) {
         case 0:
-            // Handle long option.
-            assert(longindex == 0); // Only one long option now.
+          // Handle long options.
+          assert(longindex < 2);  // Only two long options for now.
+          switch(longindex) {
+          case 0:
+            // check-hash-based-pycs
             if (wcscmp(_PyOS_optarg, L"always") == 0
                 || wcscmp(_PyOS_optarg, L"never") == 0
                 || wcscmp(_PyOS_optarg, L"default") == 0)
@@ -2300,6 +2316,13 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
                 return _PyStatus_EXIT(2);
             }
             break;
+          case 1:
+            // help-env
+            config_envvars_usage();
+            return _PyStatus_EXIT(0);
+            break;
+          }
+          break;
 
         case 'b':
             config->bytes_warning++;
