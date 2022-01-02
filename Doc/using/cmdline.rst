@@ -183,6 +183,8 @@ automatically enabled, if available on your platform (see
    Automatic enabling of tab-completion and history editing.
 
 
+.. _using-on-generic-options:
+
 Generic options
 ~~~~~~~~~~~~~~~
 
@@ -190,8 +192,12 @@ Generic options
                -h
                --help
 
-   Print a short description of all command line options.
+   Print a short description of all command line options and related
+   environment variables.
 
+.. cmdoption:: --help-env
+
+   Print a short description of additional environment variables.
 
 .. cmdoption:: -V
                --version
@@ -211,6 +217,10 @@ Generic options
 
    .. versionadded:: 3.6
       The ``-VV`` option.
+
+   .. versionadded:: 3.11
+      The ``--help-env`` option.
+
 
 .. _using-on-misc-options:
 

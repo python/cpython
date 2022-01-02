@@ -1,2 +1,2 @@
-Add ``-X help`` and ``--help-env`` options and make ``--help`` output
-shorter.
+Make ``--help`` output shorter by moving some info to the new
+``--help-env`` and ``-X help`` options.
