@@ -3237,12 +3237,12 @@ x_mul(PyLongObject *a, PyLongObject *b)
          * via exploiting that each entry in the multiplication
          * pyramid appears twice (except for the size_a squares).
          */
+        digit *paend = a->ob_digit + size_a;
         for (i = 0; i < size_a; ++i) {
             twodigits carry;
             twodigits f = a->ob_digit[i];
             digit *pz = z->ob_digit + (i << 1);
             digit *pa = a->ob_digit + i + 1;
-            digit *paend = a->ob_digit + size_a;
 
             SIGCHECK({
                     Py_DECREF(z);
@@ -3268,10 +3268,22 @@ x_mul(PyLongObject *a, PyLongObject *b)
                 carry += *pz;
                 *pz++ = (digit)(carry & PyLong_MASK);
                 carry >>= PyLong_SHIFT;
+                if (carry) {
+                    /* If there's still a carry, it must be into a position
+                     * that still holds a 0. Where the base
+                     ^ B is 1 << PyLong_SHIFT, the last add was of a carry no
+                     * more than 2*B - 2 to a stored digit no more than B - 1.
+                     * So the sum was no more than 3*B - 3, so the current
+                     * carry no more than floor((3*B - 3)/B) = 2, assuming
+                     * B > 3. I believe a more demanding analysis would show
+                     * the carry can be no larger than 1, but the 2 from that
+                     * easy analysis is good enough for code correctness.
+                     */
+                    assert(*pz == 0);
+                    assert(carry <= 2);
+                    *pz = (digit)carry;
+                }
             }
-            if (carry)
-                *pz += (digit)(carry & PyLong_MASK);
-            assert((carry >> PyLong_SHIFT) == 0);
         }
     }
     else {      /* a is not the same as b -- gradeschool int mult */
