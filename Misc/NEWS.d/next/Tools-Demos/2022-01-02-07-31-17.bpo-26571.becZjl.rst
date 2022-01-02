@@ -1,0 +1,1 @@
+Turtle based code used to raise terminator exception (usually on every second run) in applications such as Jupyter/Spyder notebooks. Update to fix this error.
