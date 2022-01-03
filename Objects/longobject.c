@@ -3281,10 +3281,9 @@ x_mul(PyLongObject *a, PyLongObject *b)
                      * So the sum was no more than 2*B - 1, so the current
                      * carry no more than floor((2*B - 1)/B) = 1.
                      */
-                    ++pz;
-                    assert(*pz == 0);
                     assert(carry == 1);
-                    *pz = (digit)carry;
+                    assert(pz[1] == 0);
+                    pz[1] = (digit)carry;
                 }
             }
         }
