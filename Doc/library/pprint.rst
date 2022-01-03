@@ -171,21 +171,20 @@ The :mod:`pprint` module defines one class:
 
 .. function:: isrecursive(object)
 
-   Determine if *object* requires a recursive representation.
+   Determine if *object* requires a recursive representation.  This function is
+   subject to the same limitations as noted in :func:`saferepr` below.
 
 
 One more support function is also defined:
 
 .. function:: saferepr(object)
 
-   Return a string representation of *object*, protected against recursive data
-   structures.  If the representation of *object* exposes a recursive entry, the
-   recursive reference will be represented as ``<Recursion on typename with
-   id=number>``.  The representation is not otherwise formatted.
-
-   Note that for recursive protection to apply, data structures have to be
-   subclassed from :class:`~object.dict`, :class:`~object.list` or
-   :class:`~object.tuple` and the ``__repr__`` method must not be overridden.
+   Return a string representation of *object*, protected against recursion in
+   some common data structures, namely :class:~object.dict, :class:~object.list
+   and :class:~object.tuple whose ``__repr__`` has not been overridden.  If the
+   representation of object exposes a recursive entry, the recursive reference
+   will be represented as ``<Recursion on typename with id=number>``.  The
+   representation is not otherwise formatted.
 
    >>> pprint.saferepr(stuff)
    "[<Recursion on list with id=...>, 'spam', 'eggs', 'lumberjack', 'knights', 'ni']"
