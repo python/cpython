@@ -113,7 +113,13 @@ def _infer_return_type(*args):
 
 def _sanitize_params(prefix, suffix, dir):
     """Common parameter processing for most APIs in this module."""
-    output_type = _infer_return_type(prefix, suffix, dir)
+    if isinstance(dir, int):
+        dir_fd = dir
+        output_type = _infer_return_type(prefix, suffix)
+        dir = output_type()
+    else:
+        dir_fd = None
+        output_type = _infer_return_type(prefix, suffix, dir)
     if suffix is None:
         suffix = output_type()
     if prefix is None:
@@ -126,7 +132,7 @@ def _sanitize_params(prefix, suffix, dir):
             dir = gettempdir()
         else:
             dir = gettempdirb()
-    return prefix, suffix, dir, output_type
+    return prefix, suffix, dir, dir_fd, output_type
 
 
 class _RandomNameSequence:
@@ -241,7 +247,7 @@ def _get_candidate_names():
     return _name_sequence
 
 
-def _mkstemp_inner(dir, pre, suf, flags, output_type):
+def _mkstemp_inner(dir_fd, dir, pre, suf, flags, output_type):
     """Code common to mkstemp, TemporaryFile, and NamedTemporaryFile."""
 
     names = _get_candidate_names()
@@ -251,20 +257,24 @@ def _mkstemp_inner(dir, pre, suf, flags, output_type):
     for seq in range(TMP_MAX):
         name = next(names)
         file = _os.path.join(dir, pre + name + suf)
-        _sys.audit("tempfile.mkstemp", file)
+        _sys.audit("tempfile.mkstemp", file, dir_fd)
         try:
-            fd = _os.open(file, flags, 0o600)
+            fd = _os.open(file, flags, 0o600, dir_fd=dir_fd)
         except FileExistsError:
             continue    # try again
         except PermissionError:
             # This exception is thrown when a directory with the chosen name
             # already exists on windows.
-            if (_os.name == 'nt' and _os.path.isdir(dir) and
-                _os.access(dir, _os.W_OK)):
-                continue
-            else:
-                raise
-        return (fd, _os.path.abspath(file))
+            if _os.name == 'nt':
+                if dir_fd is not None:
+                    raise TypeError(f"dir must be a path or None, "
+                                    f"not {type(dir_fd).__name__}")
+                if _os.path.isdir(dir) and _os.access(dir, _os.W_OK):
+                    continue
+            raise
+        if dir_fd is None:
+            file = _os.path.abspath(file)
+        return (fd, file)
 
     raise FileExistsError(_errno.EEXIST,
                           "No usable temporary file name found")
@@ -331,14 +341,14 @@ def mkstemp(suffix=None, prefix=None, dir=None, text=False):
     Caller is responsible for deleting the file when done with it.
     """
 
-    prefix, suffix, dir, output_type = _sanitize_params(prefix, suffix, dir)
+    prefix, suffix, dir, dir_fd, output_type = _sanitize_params(prefix, suffix, dir)
 
     if text:
         flags = _text_openflags
     else:
         flags = _bin_openflags
 
-    return _mkstemp_inner(dir, prefix, suffix, flags, output_type)
+    return _mkstemp_inner(dir_fd, dir, prefix, suffix, flags, output_type)
 
 
 def mkdtemp(suffix=None, prefix=None, dir=None):
@@ -354,7 +364,7 @@ def mkdtemp(suffix=None, prefix=None, dir=None):
     Caller is responsible for deleting the directory when done with it.
     """
 
-    prefix, suffix, dir, output_type = _sanitize_params(prefix, suffix, dir)
+    prefix, suffix, dir, dir_fd, output_type = _sanitize_params(prefix, suffix, dir)
 
     names = _get_candidate_names()
     if output_type is bytes:
@@ -363,19 +373,21 @@ def mkdtemp(suffix=None, prefix=None, dir=None):
     for seq in range(TMP_MAX):
         name = next(names)
         file = _os.path.join(dir, prefix + name + suffix)
-        _sys.audit("tempfile.mkdtemp", file)
+        _sys.audit("tempfile.mkdtemp", file, dir_fd)
         try:
-            _os.mkdir(file, 0o700)
+            _os.mkdir(file, 0o700, dir_fd=dir_fd)
         except FileExistsError:
             continue    # try again
         except PermissionError:
             # This exception is thrown when a directory with the chosen name
             # already exists on windows.
-            if (_os.name == 'nt' and _os.path.isdir(dir) and
-                _os.access(dir, _os.W_OK)):
-                continue
-            else:
-                raise
+            if _os.name == 'nt':
+                if dir_fd is not None:
+                    raise TypeError(f"dir must be a path or None, "
+                                    f"not {type(dir_fd).__name__}")
+                if _os.path.isdir(dir) and _os.access(dir, _os.W_OK):
+                    continue
+            raise
         return file
 
     raise FileExistsError(_errno.EEXIST,
@@ -421,9 +433,10 @@ class _TemporaryFileCloser:
     file = None  # Set here since __del__ checks it
     close_called = False
 
-    def __init__(self, file, name, delete=True):
+    def __init__(self, file, name, delete=True, dir_fd=None):
         self.file = file
         self.name = name
+        self.dir_fd = dir_fd
         self.delete = delete
 
     # NT provides delete-on-close as a primitive, so we don't need
@@ -443,7 +456,7 @@ class _TemporaryFileCloser:
                     self.file.close()
                 finally:
                     if self.delete:
-                        unlink(self.name)
+                        unlink(self.name, dir_fd=self.dir_fd)
 
         # Need to ensure the file is deleted on __del__
         def __del__(self):
@@ -464,11 +477,12 @@ class _TemporaryFileWrapper:
     remove the file when it is no longer needed.
     """
 
-    def __init__(self, file, name, delete=True):
+    def __init__(self, file, name, delete=True, dir_fd=None):
         self.file = file
         self.name = name
+        self.dir_fd = dir_fd
         self.delete = delete
-        self._closer = _TemporaryFileCloser(file, name, delete)
+        self._closer = _TemporaryFileCloser(file, name, delete, dir_fd)
 
     def __getattr__(self, name):
         # Attribute lookups are delegated to the underlying file
@@ -542,7 +556,7 @@ def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
     Windows can delete the file even in this case.
     """
 
-    prefix, suffix, dir, output_type = _sanitize_params(prefix, suffix, dir)
+    prefix, suffix, dir, dir_fd, output_type = _sanitize_params(prefix, suffix, dir)
 
     flags = _bin_openflags
 
@@ -554,14 +568,14 @@ def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
     if "b" not in mode:
         encoding = _io.text_encoding(encoding)
 
-    (fd, name) = _mkstemp_inner(dir, prefix, suffix, flags, output_type)
+    (fd, name) = _mkstemp_inner(dir_fd, dir, prefix, suffix, flags, output_type)
     try:
         file = _io.open(fd, mode, buffering=buffering,
                         newline=newline, encoding=encoding, errors=errors)
 
-        return _TemporaryFileWrapper(file, name, delete)
+        return _TemporaryFileWrapper(file, name, delete, dir_fd)
     except BaseException:
-        _os.unlink(name)
+        _os.unlink(name, dir_fd=dir_fd)
         _os.close(fd)
         raise
 
@@ -597,13 +611,13 @@ else:
         if "b" not in mode:
             encoding = _io.text_encoding(encoding)
 
-        prefix, suffix, dir, output_type = _sanitize_params(prefix, suffix, dir)
+        prefix, suffix, dir, dir_fd, output_type = _sanitize_params(prefix, suffix, dir)
 
         flags = _bin_openflags
         if _O_TMPFILE_WORKS:
             try:
                 flags2 = (flags | _os.O_TMPFILE) & ~_os.O_CREAT
-                fd = _os.open(dir, flags2, 0o600)
+                fd = _os.open(dir, flags2, 0o600, dir_fd=dir_fd)
             except IsADirectoryError:
                 # Linux kernel older than 3.11 ignores the O_TMPFILE flag:
                 # O_TMPFILE is read as O_DIRECTORY. Trying to open a directory
@@ -630,9 +644,9 @@ else:
                     raise
             # Fallback to _mkstemp_inner().
 
-        (fd, name) = _mkstemp_inner(dir, prefix, suffix, flags, output_type)
+        (fd, name) = _mkstemp_inner(dir_fd, dir, prefix, suffix, flags, output_type)
         try:
-            _os.unlink(name)
+            _os.unlink(name, dir_fd=dir_fd)
             return _io.open(fd, mode, buffering=buffering,
                             newline=newline, encoding=encoding, errors=errors)
         except:
@@ -797,23 +811,28 @@ class TemporaryDirectory:
 
     def __init__(self, suffix=None, prefix=None, dir=None,
                  ignore_cleanup_errors=False):
+        if isinstance(dir, int):
+            self.dir_fd = dir
+        else:
+            self.dir_fd = None
         self.name = mkdtemp(suffix, prefix, dir)
         self._ignore_cleanup_errors = ignore_cleanup_errors
         self._finalizer = _weakref.finalize(
             self, self._cleanup, self.name,
             warn_message="Implicitly cleaning up {!r}".format(self),
-            ignore_errors=self._ignore_cleanup_errors)
+            ignore_errors=self._ignore_cleanup_errors,
+            dir_fd=self.dir_fd)
 
     @classmethod
-    def _rmtree(cls, name, ignore_errors=False):
+    def _rmtree(cls, name, ignore_errors, dir_fd):
         def onerror(func, path, exc_info):
             if issubclass(exc_info[0], PermissionError):
                 def resetperms(path):
                     try:
-                        _os.chflags(path, 0)
+                        _os.chflags(path, 0, dir_fd=dir_fd)
                     except AttributeError:
                         pass
-                    _os.chmod(path, 0o700)
+                    _os.chmod(path, 0o700, dir_fd=dir_fd)
 
                 try:
                     if path != name:
@@ -821,10 +840,10 @@ class TemporaryDirectory:
                     resetperms(path)
 
                     try:
-                        _os.unlink(path)
+                        _os.unlink(path, dir_fd=dir_fd)
                     # PermissionError is raised on FreeBSD for directories
                     except (IsADirectoryError, PermissionError):
-                        cls._rmtree(path, ignore_errors=ignore_errors)
+                        cls._rmtree(path, ignore_errors=ignore_errors, dir_fd=dir_fd)
                 except FileNotFoundError:
                     pass
             elif issubclass(exc_info[0], FileNotFoundError):
@@ -833,11 +852,11 @@ class TemporaryDirectory:
                 if not ignore_errors:
                     raise
 
-        _shutil.rmtree(name, onerror=onerror)
+        _shutil.rmtree(name, dir_fd=dir_fd, onerror=onerror)
 
     @classmethod
-    def _cleanup(cls, name, warn_message, ignore_errors=False):
-        cls._rmtree(name, ignore_errors=ignore_errors)
+    def _cleanup(cls, name, warn_message, ignore_errors, dir_fd):
+        cls._rmtree(name, ignore_errors=ignore_errors, dir_fd=dir_fd)
         _warnings.warn(warn_message, ResourceWarning)
 
     def __repr__(self):
@@ -850,7 +869,12 @@ class TemporaryDirectory:
         self.cleanup()
 
     def cleanup(self):
-        if self._finalizer.detach() or _os.path.exists(self.name):
-            self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+        if not self._finalizer.detach():
+            return
+        try:
+            _os.stat(self.name, dir_fd=self.dir_fd)
+        except OSError:
+            return
+        self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors, dir_fd=self.dir_fd)
 
     __class_getitem__ = classmethod(_types.GenericAlias)

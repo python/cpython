@@ -385,7 +385,7 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
             else:   flags = self._tflags
 
             output_type = tempfile._infer_return_type(dir, pre, suf)
-            (self.fd, self.name) = tempfile._mkstemp_inner(dir, pre, suf, flags, output_type)
+            (self.fd, self.name) = tempfile._mkstemp_inner(None, dir, pre, suf, flags, output_type)
 
         def write(self, str):
             os.write(self.fd, str)
@@ -514,7 +514,8 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
         self.assertEqual(os.read(f.fd, 20), b"blat")
 
     def make_temp(self):
-        return tempfile._mkstemp_inner(tempfile.gettempdir(),
+        return tempfile._mkstemp_inner(None,
+                                       tempfile.gettempdir(),
                                        tempfile.gettempprefix(),
                                        '',
                                        tempfile._bin_openflags,
@@ -639,16 +640,23 @@ class TestMkstemp(BaseTestCase):
         if suf is None:
             suf = output_type()
         (fd, name) = tempfile.mkstemp(dir=dir, prefix=pre, suffix=suf)
-        (ndir, nbase) = os.path.split(name)
-        adir = os.path.abspath(dir)
-        self.assertEqual(adir, ndir,
-            "Directory '%s' incorrectly returned as '%s'" % (adir, ndir))
+        if isinstance(dir, int):
+            self.assertFalse(os.path.dirname(name))
+        else:
+            (ndir, nbase) = os.path.split(name)
+            adir = os.path.abspath(dir)
+            self.assertEqual(adir, ndir,
+                "Directory '%s' incorrectly returned as '%s'" % (adir, ndir))
 
         try:
-            self.nameCheck(name, dir, pre, suf)
+            if not isinstance(dir, int):
+                self.nameCheck(name, dir, pre, suf)
         finally:
             os.close(fd)
-            os.unlink(name)
+            if isinstance(dir, int):
+                os.unlink(name, dir_fd=dir)
+            else:
+                os.unlink(name)
 
     def test_basic(self):
         # mkstemp can create files
@@ -676,13 +684,22 @@ class TestMkstemp(BaseTestCase):
         with self.assertRaises(TypeError):
             self.do_create(dir=b".", pre=b"aa", suf=".txt")
 
-
     def test_choose_directory(self):
         # mkstemp can create directories in a user-selected directory
         dir = tempfile.mkdtemp()
         try:
+            dirb = os.fsencode(dir)
             self.do_create(dir=dir)
-            self.do_create(dir=pathlib.Path(dir))
+            self.do_create(dir=dirb)
+            self.do_create(dir=os_helper.FakePath(dir))
+        finally:
+            os.rmdir(dir)
+
+    def test_choose_directory_fd(self):
+        dir = tempfile.mkdtemp()
+        try:
+            with os_helper.open_dir_fd(dir) as dirfd:
+                self.do_create(dir=dirfd)
         finally:
             os.rmdir(dir)
 
@@ -738,10 +755,14 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
         name = tempfile.mkdtemp(dir=dir, prefix=pre, suffix=suf)
 
         try:
-            self.nameCheck(name, dir, pre, suf)
+            if not isinstance(dir, int):
+                self.nameCheck(name, dir, pre, suf)
             return name
         except:
-            os.rmdir(name)
+            if isinstance(dir, int):
+                os.rmdir(name, dir_fd=dir)
+            else:
+                os.rmdir(name)
             raise
 
     def test_basic(self):
@@ -782,8 +803,18 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
         # mkdtemp can create directories in a user-selected directory
         dir = tempfile.mkdtemp()
         try:
+            dirb = os.fsencode(dir)
             os.rmdir(self.do_create(dir=dir))
-            os.rmdir(self.do_create(dir=pathlib.Path(dir)))
+            os.rmdir(self.do_create(dir=dirb))
+            os.rmdir(self.do_create(dir=os_helper.FakePath(dir)))
+        finally:
+            os.rmdir(dir)
+
+    def test_choose_directory_fd(self):
+        dir = tempfile.mkdtemp()
+        try:
+            with os_helper.open_dir_fd(dir) as dirfd:
+                os.rmdir(self.do_create(dir=dirfd), dir_fd=dirfd)
         finally:
             os.rmdir(dir)
 

@@ -65,7 +65,7 @@ The module defines the following user-callable items:
    On platforms that are neither Posix nor Cygwin, TemporaryFile is an alias
    for NamedTemporaryFile.
 
-   .. audit-event:: tempfile.mkstemp fullpath tempfile.TemporaryFile
+   .. audit-event:: tempfile.mkstemp fullpath,dir_fd tempfile.TemporaryFile
 
    .. versionchanged:: 3.5
 
@@ -93,7 +93,7 @@ The module defines the following user-callable items:
    On POSIX (only), a process that is terminated abruptly with SIGKILL
    cannot automatically delete any NamedTemporaryFiles it created.
 
-   .. audit-event:: tempfile.mkstemp fullpath tempfile.NamedTemporaryFile
+   .. audit-event:: tempfile.mkstemp fullpath,dir_fd tempfile.NamedTemporaryFile
 
    .. versionchanged:: 3.8
       Added *errors* parameter.
@@ -146,7 +146,7 @@ The module defines the following user-callable items:
    (the :func:`cleanup` call, exiting the context manager, when the object
    is garbage-collected or during interpreter shutdown).
 
-   .. audit-event:: tempfile.mkdtemp fullpath tempfile.TemporaryDirectory
+   .. audit-event:: tempfile.mkdtemp fullpath,dir_fd tempfile.TemporaryDirectory
 
    .. versionadded:: 3.2
 
@@ -183,9 +183,13 @@ The module defines the following user-callable items:
    environment variables.  There is thus no guarantee that the generated
    filename will have any nice properties, such as not requiring quoting
    when passed to external commands via ``os.popen()``.
+   On some platforms, *dir* may also be specified as a file descriptor
+   open to a directory; the generated filename will then be relative to
+   that directory.
 
    If any of *suffix*, *prefix*, and *dir* are not
-   ``None``, they must be the same type.
+   ``None``, they must be the same type (except *dir* which can be
+   a file descriptor).
    If they are bytes, the returned name will be bytes instead of str.
    If you want to force a bytes return value with otherwise default behavior,
    pass ``suffix=b''``.
@@ -194,10 +198,11 @@ The module defines the following user-callable items:
    Otherwise, (the default) the file is opened in binary mode.
 
    :func:`mkstemp` returns a tuple containing an OS-level handle to an open
-   file (as would be returned by :func:`os.open`) and the absolute pathname
-   of that file, in that order.
+   file (as would be returned by :func:`os.open`) and the pathname
+   of that file, in that order.  The pathname is absolute unless *dir* is
+   a file descriptor.
 
-   .. audit-event:: tempfile.mkstemp fullpath tempfile.mkstemp
+   .. audit-event:: tempfile.mkstemp fullpath,dir_fd tempfile.mkstemp
 
    .. versionchanged:: 3.5
       *suffix*, *prefix*, and *dir* may now be supplied in bytes in order to
@@ -207,6 +212,9 @@ The module defines the following user-callable items:
 
    .. versionchanged:: 3.6
       The *dir* parameter now accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.11
+      The *dir* parameter now accepts a file descriptor.
 
 
 .. function:: mkdtemp(suffix=None, prefix=None, dir=None)
@@ -223,7 +231,7 @@ The module defines the following user-callable items:
 
    :func:`mkdtemp` returns the absolute pathname of the new directory.
 
-   .. audit-event:: tempfile.mkdtemp fullpath tempfile.mkdtemp
+   .. audit-event:: tempfile.mkdtemp fullpath,dir_fd tempfile.mkdtemp
 
    .. versionchanged:: 3.5
       *suffix*, *prefix*, and *dir* may now be supplied in bytes in order to
@@ -233,6 +241,9 @@ The module defines the following user-callable items:
 
    .. versionchanged:: 3.6
       The *dir* parameter now accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.11
+      The *dir* parameter now accepts a file descriptor.
 
 
 .. function:: gettempdir()
