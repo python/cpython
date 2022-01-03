@@ -150,7 +150,7 @@ static void *opcode_targets[256] = {
     &&TARGET_LOAD_CLASSDEREF,
     &&TARGET_COPY_FREE_VARS,
     &&_unknown_opcode,
-    &&_unknown_opcode,
+    &&TARGET_RESUME,
     &&TARGET_MATCH_CLASS,
     &&_unknown_opcode,
     &&_unknown_opcode,

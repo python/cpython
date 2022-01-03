@@ -689,7 +689,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
     u->u_blocks = NULL;
     u->u_nfblocks = 0;
     u->u_firstlineno = lineno;
-    u->u_lineno = 0;
+    u->u_lineno = lineno;
     u->u_col_offset = 0;
     u->u_end_lineno = 0;
     u->u_end_col_offset = 0;
@@ -995,6 +995,7 @@ stack_effect(int opcode, int oparg, int jump)
     switch (opcode) {
         case NOP:
         case EXTENDED_ARG:
+        case RESUME:
             return 0;
 
         /* Stack manipulation */
@@ -1824,16 +1825,17 @@ compiler_call_exit_with_nones(struct compiler *c) {
 static int
 compiler_add_yield_from(struct compiler *c)
 {
-    basicblock *start, *jump, *exit;
+    basicblock *start, *resume, *exit;
     start = compiler_new_block(c);
-    jump = compiler_new_block(c);
+    resume = compiler_new_block(c);
     exit = compiler_new_block(c);
-    if (start == NULL || jump == NULL || exit == NULL) {
+    if (start == NULL || resume == NULL || exit == NULL) {
         return 0;
     }
     compiler_use_next_block(c, start);
     ADDOP_JUMP(c, SEND, exit);
-    compiler_use_next_block(c, jump);
+    compiler_use_next_block(c, resume);
+    ADDOP_I(c, RESUME, 2);
     ADDOP_JUMP(c, JUMP_ABSOLUTE, start);
     compiler_use_next_block(c, exit);
     return 1;
@@ -2030,9 +2032,11 @@ compiler_mod(struct compiler *c, mod_ty mod)
     if (module == NULL) {
         return 0;
     }
-    /* Use 0 for firstlineno initially, will fixup in assemble(). */
     if (!compiler_enter_scope(c, module, COMPILER_SCOPE_MODULE, mod, 1))
         return NULL;
+    c->u->u_lineno = -1;
+    ADDOP_I(c, RESUME, 0);
+    c->u->u_lineno = 1;
     switch (mod->kind) {
     case Module_kind:
         if (!compiler_body(c, mod->v.Module.body)) {
@@ -2487,6 +2491,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     if (!compiler_enter_scope(c, name, scope_type, (void *)s, firstlineno)) {
         return 0;
     }
+    ADDOP_I(c, RESUME, 0);
 
     /* if not -OO mode, add docstring */
     if (c->c_optimize < 2) {
@@ -2556,8 +2561,10 @@ compiler_class(struct compiler *c, stmt_ty s)
 
     /* 1. compile the class body into a code object */
     if (!compiler_enter_scope(c, s->v.ClassDef.name,
-                              COMPILER_SCOPE_CLASS, (void *)s, firstlineno))
+                              COMPILER_SCOPE_CLASS, (void *)s, firstlineno)) {
         return 0;
+    }
+    ADDOP_I(c, RESUME, 0);
     /* this block represents what we do in the new scope */
     {
         /* use the class name for name mangling */
@@ -2890,6 +2897,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
     if (funcflags == -1) {
         return 0;
     }
+    ADDOP_I(c, RESUME, 0);
 
     if (!compiler_enter_scope(c, name, COMPILER_SCOPE_LAMBDA,
                               (void *)e, e->lineno))
@@ -5118,6 +5126,7 @@ compiler_sync_comprehension_generator(struct compiler *c,
         case COMP_GENEXP:
             VISIT(c, expr, elt);
             ADDOP(c, YIELD_VALUE);
+            ADDOP_I(c, RESUME, 1);
             ADDOP(c, POP_TOP);
             break;
         case COMP_LISTCOMP:
@@ -5216,6 +5225,7 @@ compiler_async_comprehension_generator(struct compiler *c,
         case COMP_GENEXP:
             VISIT(c, expr, elt);
             ADDOP(c, YIELD_VALUE);
+            ADDOP_I(c, RESUME, 1);
             ADDOP(c, POP_TOP);
             break;
         case COMP_LISTCOMP:
@@ -5268,6 +5278,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     {
         goto error;
     }
+    ADDOP_I(c, RESUME, 0);
     SET_LOC(c, e);
 
     is_async_generator = c->u->u_ste->ste_coroutine;
@@ -5686,6 +5697,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
             ADDOP_LOAD_CONST(c, Py_None);
         }
         ADDOP(c, YIELD_VALUE);
+        ADDOP_I(c, RESUME, 1);
         break;
     case YieldFrom_kind:
         if (c->u->u_ste->ste_type != FunctionBlock)
@@ -7971,6 +7983,7 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
     if (flags < 0) {
         return -1;
     }
+    assert(c->u->u_firstlineno > 0);
 
     /* Set up cells for any variable that escapes, to be put in a closure. */
     const int ncellvars = (int)PyDict_GET_SIZE(c->u->u_cellvars);
@@ -8186,17 +8199,17 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
 
-    // This must be called before fix_cell_offsets().
-    if (insert_prefix_instructions(c, entryblock, cellfixedoffsets, nfreevars)) {
-        goto error;
-    }
-
     /* Set firstlineno if it wasn't explicitly set. */
     if (!c->u->u_firstlineno) {
-        if (entryblock->b_instr && entryblock->b_instr->i_lineno)
+       if (entryblock->b_instr && entryblock->b_instr->i_lineno)
             c->u->u_firstlineno = entryblock->b_instr->i_lineno;
        else
             c->u->u_firstlineno = 1;
+    }
+
+    // This must be called before fix_cell_offsets().
+    if (insert_prefix_instructions(c, entryblock, cellfixedoffsets, nfreevars)) {
+        goto error;
     }
 
     if (!assemble_init(&a, nblocks, c->u->u_firstlineno))
