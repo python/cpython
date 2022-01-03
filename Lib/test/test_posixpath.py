@@ -336,8 +336,6 @@ class PosixPathTest(unittest.TestCase):
         ("/../foo/../bar", "/bar"),
         ("/../../foo/../bar/./baz/boom/..", "/bar/baz"),
         ("/../../foo/../bar/./baz/boom/.", "/bar/baz/boom"),
-        ("handbook/../../Tests/image.png", "../Tests/image.png"),
-        ("handbook/../../../Tests/image.png", "../../Tests/image.png"),
     ]
 
     def test_normpath(self):
@@ -350,6 +348,31 @@ class PosixPathTest(unittest.TestCase):
             expected = expected.encode('utf-8')
             with self.subTest(path, type=bytes):
                 result = posixpath.normpath(path)
+                self.assertEqual(result, expected)
+
+    NORMPATH_CASES_DUMMY = [
+        ("handbook/../../Tests/image.png", "Tests/image.png"),
+        ("handbook/../../../Tests/image.png", "Tests/image.png"),
+        ("handbook///../a/.././../b/c", "b/c"),
+        ("handbook/a/../..///../../b/c", "b/c"),
+    ]
+
+    def test_normpath_dummy(self):
+        for path, expected in self.NORMPATH_CASES_DUMMY:
+            with self.subTest(path):
+                print(path)
+                result = posixpath.normpath(path)
+                print(result)
+                print()
+                self.assertEqual(result, expected)
+
+            path = path.encode('utf-8')
+            expected = expected.encode('utf-8')
+            with self.subTest(path, type=bytes):
+                print(path)
+                result = posixpath.normpath(path)
+                print(result)
+                print()
                 self.assertEqual(result, expected)
 
     @skip_if_ABSTFN_contains_backslash
