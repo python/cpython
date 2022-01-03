@@ -1104,7 +1104,7 @@ class TestSpooledTemporaryFile(BaseTestCase):
         f.write(b'foo')
         self.assertEqual(f.name, None)  # Unrolled so no filename/fd
         with self.assertWarns(ResourceWarning):
-            del f
+            f.__del__()
 
     def test_del_rolled_file(self):
         # The rolled file should be deleted when the SpooledTemporaryFile
@@ -1115,7 +1115,7 @@ class TestSpooledTemporaryFile(BaseTestCase):
         name = f.name  # This is a fd on posix+cygwin, a filename everywhere else
         self.assertTrue(os.path.exists(name))
         with self.assertWarns(ResourceWarning):
-            del f
+            f.__del__()
         self.assertFalse(
             os.path.exists(name),
             "Rolled SpooledTemporaryFile (name=%s) exists after delete" % name
