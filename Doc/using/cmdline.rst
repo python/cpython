@@ -458,7 +458,7 @@ Miscellaneous options
    Reserved for various implementation-specific options.  CPython currently
    defines the following possible values:
 
-   * ``-X help`` to print a short description of all X options;
+   * ``-X help`` to print a short description of all ``-X`` options;
    * ``-X faulthandler`` to enable :mod:`faulthandler`;
    * ``-X showrefcount`` to output the total reference count and number of used
      memory blocks when the program finishes or after each statement in the
