@@ -1085,11 +1085,10 @@ class BlobTests(unittest.TestCase):
             self.blob.write(b"aaa")
 
     def test_blob_write_when_readonly(self):
-        read_only_blob = \
-            self.cx.open_blob("test", "b", 1, readonly=True)
+        ro_blob = self.cx.open_blob("test", "b", 1, readonly=True)
         with self.assertRaisesRegex(sqlite.OperationalError, "readonly"):
-            read_only_blob.write(b"aaa")
-        read_only_blob.close()
+            ro_blob.write(b"aaa")
+        ro_blob.close()
 
     def test_blob_open_error(self):
         dataset = (
@@ -1134,13 +1133,12 @@ class BlobTests(unittest.TestCase):
             self.blob[5:b"a"]
 
     def test_blob_get_slice_with_skip(self):
-        self.blob.write(b"abcdefghij")
-        self.assertEqual(self.blob[0:10:2], b"acegi")
+        self.assertEqual(self.blob[0:10:2], b"ti lb")
 
     def test_blob_set_item(self):
         self.blob[0] = b"b"
-        actual = self.cx.execute("select b from test").fetchone()[0]
         expected = b"b" + self.data[1:]
+        actual = self.cx.execute("select b from test").fetchone()[0]
         self.assertEqual(actual, expected)
 
     def test_blob_set_item(self):
@@ -1159,8 +1157,8 @@ class BlobTests(unittest.TestCase):
 
     def test_blob_set_slice(self):
         self.blob[0:5] = b"bbbbb"
-        actual = self.cx.execute("select b from test").fetchone()[0]
         expected = b"bbbbb" + self.data[5:]
+        actual = self.cx.execute("select b from test").fetchone()[0]
         self.assertEqual(actual, expected)
 
     def test_blob_set_empty_slice(self):
