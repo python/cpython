@@ -1,1 +1,1 @@
-Enables turtle to be instantiated multiple times. Fixes error which causes it to through error every other time when running in notebooks or shell or other GUI based application involving close-and-reinstantiate operations of turtle screen.
+Enables turtle object to be instantiated multiple times. Fixes error thrown every other time when turtle screen is closed and turtle object is again reinstantiated through code. This particularly helps to use this module smoothly in notebooks or shell or other GUI based applications.
