@@ -2301,7 +2301,14 @@ _Py_normpath(wchar_t *path, Py_ssize_t size)
                         // Absolute path, so absorb segment
                         p2 = p3 + 1;
                     } else {
-                        p2 = p3;
+                        if (p2 == minP2) {
+                            *p2++ = '.';
+                            *p2++ = '.';
+                            lastC = '.';
+                        }
+                        else {
+                            p2 = p3;
+                        }
                     }
                     p1 += 1;
                 } else if (sep_at_1) {
@@ -2314,7 +2321,7 @@ _Py_normpath(wchar_t *path, Py_ssize_t size)
             }
         } else {
             *p2++ = lastC = c;
-        } 
+        }
     }
     *p2 = L'\0';
     if (p2 != minP2) {
