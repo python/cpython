@@ -767,7 +767,7 @@ class EnumType(type):
         """
         metacls = cls.__class__
         bases = (cls, ) if type is None else (type, cls)
-        _, first_enum = cls._get_mixins_(cls, bases)
+        _, first_enum = cls._get_mixins_(class_name, bases)
         classdict = metacls.__prepare__(class_name, bases)
 
         # special processing needed for names?
@@ -896,7 +896,10 @@ class EnumType(type):
                     "`EnumName([mixin_type, ...] [data_type,] enum_type)`")
         member_type = _find_data_type(bases) or object
         if first_enum._member_names_:
-            raise TypeError("Cannot extend enumerations")
+            raise TypeError(
+                "%s: cannot extend enumeration %r"
+                % (class_name, first_enum.__name__)
+                )
         return member_type, first_enum
 
     @staticmethod
