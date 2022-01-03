@@ -502,10 +502,12 @@ the :mod:`glob` module.)
       >>> splitext('foo.bar.exe')
       ('foo.bar', '.exe')
 
-   Leading periods on the basename are ignored::
+   Leading periods are considered to be part of the basename::
 
       >>> splitext('.cshrc')
       ('.cshrc', '')
+      >>> splitext('....jpg')
+      ('....jpg', '')
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
