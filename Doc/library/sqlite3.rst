@@ -382,9 +382,9 @@ Connection Objects
 
    .. method:: open_blob(table, column, row, /, *, readonly=False, name="main")
 
-      On success a :class:`Blob` handle to the :abbr:`BLOB (Binary Large
+      On success, a :class:`Blob` handle to the :abbr:`BLOB (Binary Large
       OBject)` located in row *row*, column *column*, table *table* in database
-      *name* will be returned.  When *readonly* is :const:`True` the BLOB is
+      *name* will be returned.  When *readonly* is :const:`True` the blob is
       opened without write permissions.
 
       .. note::
@@ -1029,11 +1029,9 @@ Blob Objects
 
 .. class:: Blob
 
-   A :class:`Blob` instance can read and write the data in the :abbr:`BLOB
+   A :class:`Blob` instance can read and write the data in a :abbr:`BLOB
    (Binary Large OBject)`.  The :class:`Blob` class implements the file and
-   mapping protocols.  For example, you can read data from the :class:`Blob` by
-   doing ``obj.read(5)`` or by doing ``obj[:5]``.  Call ``len(obj)`` to get size
-   of the BLOB.
+   mapping protocols.
 
    .. method:: Blob.close()
 
@@ -1041,15 +1039,15 @@ Blob Objects
 
       The BLOB will be unusable from this point forward.  An
       :class:`~sqlite3.Error` (or subclass) exception will be raised if any
-      operation is attempted with the BLOB.
+      further operation is attempted with the BLOB.
 
    .. method:: Blob.__len__()
 
-      Return the BLOB size.
+      Return the BLOB size as length in bytes.
 
-   .. method:: Blob.read([size])
+   .. method:: Blob.read(length=-1, /)
 
-      Read *size* bytes of data from the BLOB at the current offset position.
+      Read *length* bytes of data from the BLOB at the current offset position.
       If the end of the BLOB is reached we will return the data up to end of
       file.  When *size* is not specified or is negative, :meth:`~Blob.read`
       will read till the end of the BLOB.
@@ -1064,13 +1062,13 @@ Blob Objects
 
       Return the current access position of the BLOB.
 
-   .. method:: Blob.seek(offset, /, origin=sqlite3.BLOB_SEEK_START)
+   .. method:: Blob.seek(offset, origin=sqlite3.BLOB_SEEK_START, /)
 
-      Set the current access position of the BLOB.  The *origin* argument is
-      optional and defaults to :data:`os.SEEK_SET` or 0 (absolute BLOB
-      positioning); other values are :data:`os.SEEK_CUR` or 1 (seek relative to
-      the current position) and :data:`os.SEEK_END` or 2 (seek relative to the
-      BLOB’s end).
+      Set the current access position of the BLOB to *offset*.  The *origin*
+      argument defaults to :data:`os.SEEK_SET` (absolute BLOB positioning).
+      Other values for *origin* are :data:`os.SEEK_CUR` (seek relative to the
+      current position) and :data:`os.SEEK_END` (seek relative to the BLOB’s
+      end).
 
    :class:`Blob` example:
 
