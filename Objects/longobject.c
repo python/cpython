@@ -3265,22 +3265,25 @@ x_mul(PyLongObject *a, PyLongObject *b)
                 assert(carry <= (PyLong_MASK << 1));
             }
             if (carry) {
+                /* See comment below. pz points at the highest possible
+                 * carry position from the last outer loop iteration, so
+                 * *pz is at most 1.
+                 */
+                assert(*pz <= 1);
                 carry += *pz;
-                *pz++ = (digit)(carry & PyLong_MASK);
+                *pz = (digit)(carry & PyLong_MASK);
                 carry >>= PyLong_SHIFT;
                 if (carry) {
                     /* If there's still a carry, it must be into a position
                      * that still holds a 0. Where the base
                      ^ B is 1 << PyLong_SHIFT, the last add was of a carry no
-                     * more than 2*B - 2 to a stored digit no more than B - 1.
-                     * So the sum was no more than 3*B - 3, so the current
-                     * carry no more than floor((3*B - 3)/B) = 2, assuming
-                     * B >= 3. I believe a more demanding analysis would show
-                     * the carry can be no larger than 1, but the 2 from that
-                     * easy analysis is good enough for code correctness.
+                     * more than 2*B - 2 to a stored digit no more than 1.
+                     * So the sum was no more than 2*B - 1, so the current
+                     * carry no more than floor((2*B - 1)/B) = 1.
                      */
+                    ++pz;
                     assert(*pz == 0);
-                    assert(carry <= 2);
+                    assert(carry == 1);
                     *pz = (digit)carry;
                 }
             }
