@@ -1122,13 +1122,6 @@ class BlobTests(unittest.TestCase):
             with self.subTest(op=op):
                 self.assertRaises(TypeError, op)
 
-    def test_blob_context_manager(self):
-        data = b"a" * 50
-        with self.cx.blobopen("test", "b", 1) as blob:
-            blob.write(data)
-        actual = self.cx.execute("select b from test").fetchone()[0]
-        self.assertEqual(actual, data)
-
     def test_blob_closed(self):
         with memory_database() as cx:
             cx.execute("create table test(b blob)")
@@ -1141,8 +1134,6 @@ class BlobTests(unittest.TestCase):
                 lambda: blob.write(b""),
                 lambda: blob.seek(0),
                 lambda: blob.tell(),
-                lambda: blob.__enter__(),
-                lambda: blob.__exit__(None, None, None),
             ]
             msg = "Cannot operate on a closed blob"
             for op in ops:
