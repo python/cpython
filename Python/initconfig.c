@@ -76,7 +76,7 @@ arg ...: arguments passed to program in sys.argv[1:]\n\
 
 static const char usage_xoptions[] = "\
 The following implementation-specific options are available:\n\
-         -X help: show this help\n\
+         -X help: show this help and exit\n\
          -X faulthandler: enable faulthandler\n\
          -X showrefcount: output the total reference count and number of used\n\
              memory blocks when the program finishes or after each statement in the\n\

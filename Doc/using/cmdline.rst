@@ -192,7 +192,7 @@ Generic options
                -h
                --help
 
-   Print a short description of all command line options and related
+   Print a short description of all command line options and corresponding
    environment variables.
 
 .. cmdoption:: --help-env
