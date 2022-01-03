@@ -540,7 +540,7 @@ The corresponding simplest possible writing example is::
 Since :func:`open` is used to open a CSV file for reading, the file
 will by default be decoded into unicode using the system default
 encoding (see :func:`locale.getpreferredencoding`).  To decode a file
-using a different encoding, use the ``encoding`` argument of open::
+using a different encoding, use the ``encoding`` argument::
 
    import csv
    with open('some.csv', newline='', encoding='utf-8') as f:
@@ -549,7 +549,7 @@ using a different encoding, use the ``encoding`` argument of open::
            print(row)
 
 The same applies to writing in something other than the system default
-encoding: specify the encoding argument when opening the output file.
+encoding: specify the ``encoding`` argument when opening the output file.
 
 Registering a new dialect::
 
