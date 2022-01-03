@@ -2709,14 +2709,6 @@ check_eval_breaker:
             return retval;
         }
 
-        TARGET(GEN_START) {
-            PyObject *none = POP();
-            assert(none == Py_None);
-            assert(oparg < 3);
-            Py_DECREF(none);
-            DISPATCH();
-        }
-
         TARGET(POP_EXCEPT) {
             _PyErr_StackItem *exc_info = tstate->exc_info;
             PyObject *value = exc_info->exc_value;
