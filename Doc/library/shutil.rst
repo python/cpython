@@ -286,7 +286,7 @@ Directory and files operations
    .. versionadded:: 3.8
       The *dirs_exist_ok* parameter.
 
-.. function:: rmtree(path, ignore_errors=False, onerror=None)
+.. function:: rmtree(path, ignore_errors=False, onerror=None, *, dir_fd=None)
 
    .. index:: single: directory; deleting
 
@@ -295,6 +295,9 @@ Directory and files operations
    from failed removals will be ignored; if false or omitted, such errors are
    handled by calling a handler specified by *onerror* or, if that is omitted,
    they raise an exception.
+
+   This function can support :ref:`paths relative to directory descriptors
+   <dir_fd>`.
 
    .. note::
 
@@ -315,7 +318,7 @@ Directory and files operations
    *excinfo*, will be the exception information returned by
    :func:`sys.exc_info`.  Exceptions raised by *onerror* will not be caught.
 
-   .. audit-event:: shutil.rmtree path shutil.rmtree
+   .. audit-event:: shutil.rmtree path,dir_fd shutil.rmtree
 
    .. versionchanged:: 3.3
       Added a symlink attack resistant version that is used automatically
@@ -324,6 +327,9 @@ Directory and files operations
    .. versionchanged:: 3.8
       On Windows, will no longer delete the contents of a directory junction
       before removing the junction.
+
+   .. versionchanged:: 3.11
+      The *dir_fd* parameter.
 
    .. attribute:: rmtree.avoids_symlink_attacks
 
