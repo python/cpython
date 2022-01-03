@@ -16,10 +16,12 @@ static void
 close_blob(pysqlite_Blob *self)
 {
     if (self->blob) {
-        Py_BEGIN_ALLOW_THREADS
-        sqlite3_blob_close(self->blob);
-        Py_END_ALLOW_THREADS
+        sqlite3_blob *blob = self->blob;
         self->blob = NULL;
+
+        Py_BEGIN_ALLOW_THREADS
+        sqlite3_blob_close(blob);
+        Py_END_ALLOW_THREADS
     }
 }
 
