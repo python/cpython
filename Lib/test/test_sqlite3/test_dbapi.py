@@ -1003,9 +1003,6 @@ class BlobTests(unittest.TestCase):
         self.blob.close()
         self.cx.close()
 
-    def test_blob_length(self):
-        self.assertEqual(len(self.blob), 50)
-
     def test_blob_seek_and_tell(self):
         self.blob.seek(10)
         self.assertEqual(self.blob.tell(), 10)
@@ -1115,90 +1112,6 @@ class BlobTests(unittest.TestCase):
                 with self.assertRaisesRegex(sqlite.OperationalError, regex):
                     self.cx.blobopen(*args, **kwds)
 
-    def test_blob_get_item(self):
-        self.assertEqual(self.blob[5], b"b")
-        self.assertEqual(self.blob[6], b"l")
-        self.assertEqual(self.blob[7], b"o")
-        self.assertEqual(self.blob[8], b"b")
-        self.assertEqual(self.blob[-1], b"!")
-
-    def test_blob_get_item_error(self):
-        dataset = (
-            (b"", TypeError, "Blob indices must be integers"),
-            (105, IndexError, "Blob index out of range"),
-            (-105, IndexError, "Blob index out of range"),
-            (_testcapi.ULLONG_MAX, IndexError, "cannot fit 'int'"),
-            (len(self.blob), IndexError, "Blob index out of range"),
-        )
-        for idx, exc, regex in dataset:
-            with self.subTest(idx=idx, exc=exc, regex=regex):
-                with self.assertRaisesRegex(exc, regex):
-                    self.blob[idx]
-
-    def test_blob_get_slice(self):
-        self.assertEqual(self.blob[5:14], b"blob data")
-
-    def test_blob_get_slice_negative_index(self):
-        self.assertEqual(self.blob[5:-5], self.data[5:-5])
-
-    def test_blob_get_slice_invalid_index(self):
-        with self.assertRaisesRegex(TypeError, "indices must be integers"):
-            self.blob[5:b"a"]
-
-    def test_blob_get_slice_with_skip(self):
-        self.assertEqual(self.blob[0:10:2], b"ti lb")
-
-    def test_blob_set_item(self):
-        self.blob[0] = b"b"
-        expected = b"b" + self.data[1:]
-        actual = self.cx.execute("select b from test").fetchone()[0]
-        self.assertEqual(actual, expected)
-
-    def test_blob_set_item(self):
-        self.blob[-1] = b"z"
-        self.assertEqual(self.blob[-1], b"z")
-
-    def test_blob_set_item_error(self):
-        with self.assertRaisesRegex(TypeError, "indices must be integers"):
-            self.blob["a"] = b"b"
-        with self.assertRaisesRegex(ValueError, "must be a single byte"):
-            self.blob[0] = b"abc"
-        with self.assertRaisesRegex(TypeError, "doesn't support.*deletion"):
-            del self.blob[0]
-        with self.assertRaisesRegex(IndexError, "Blob index out of range"):
-            self.blob[1000] = b"a"
-
-    def test_blob_set_slice(self):
-        self.blob[0:5] = b"bbbbb"
-        expected = b"bbbbb" + self.data[5:]
-        actual = self.cx.execute("select b from test").fetchone()[0]
-        self.assertEqual(actual, expected)
-
-    def test_blob_set_empty_slice(self):
-        self.blob[0:0] = b""
-        self.assertEqual(self.blob[:], self.data)
-
-    def test_blob_set_slice_with_skip(self):
-        self.blob[0:10:2] = b"bbbbb"
-        actual = self.cx.execute("select b from test").fetchone()[0]
-        expected = b"bhbsbbbob " + self.data[10:]
-        self.assertEqual(actual, expected)
-
-    def test_blob_get_empty_slice(self):
-        self.assertEqual(self.blob[5:5], b"")
-
-    def test_blob_set_slice_error(self):
-        with self.assertRaises(IndexError):
-            self.blob[5:10] = b"a"
-        with self.assertRaises(IndexError):
-            self.blob[5:10] = b"a" * 1000
-        with self.assertRaises(TypeError):
-            del self.blob[5:10]
-        with self.assertRaises(BufferError):
-            self.blob[5:10] = memoryview(b"abcde")[::2]
-        with self.assertRaises(ValueError):
-            self.blob[5:10:0] = b"12345"
-
     def test_blob_sequence_not_supported(self):
         ops = (
             lambda: self.blob + self.blob,
@@ -1223,7 +1136,6 @@ class BlobTests(unittest.TestCase):
             blob = cx.blobopen("test", "b", 1)
             blob.close()
 
-            def assign(): blob[0] = b""
             ops = [
                 lambda: blob.read(),
                 lambda: blob.write(b""),
@@ -1231,10 +1143,6 @@ class BlobTests(unittest.TestCase):
                 lambda: blob.tell(),
                 lambda: blob.__enter__(),
                 lambda: blob.__exit__(None, None, None),
-                lambda: len(blob),
-                lambda: blob[0],
-                lambda: blob[0:1],
-                assign,
             ]
             msg = "Cannot operate on a closed blob"
             for op in ops:
