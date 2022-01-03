@@ -103,4 +103,4 @@ void _PyObject_VirtualFree(void *, size_t size);
 #ifdef __cplusplus
 }
 #endif
-#endif /* !Py_INTERNAL_PYMEM_H */
+#endif  // !Py_INTERNAL_PYMEM_H

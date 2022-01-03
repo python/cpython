@@ -1,2 +1,0 @@
-On Mac, give turtledemo button text a color that works on both light
-or dark background.  Programmers cannot control the latter.

@@ -2190,10 +2190,23 @@ class DecryptionTests(unittest.TestCase):
         self.assertEqual(self.zip2.read("zero"), self.plain2)
 
     def test_unicode_password(self):
-        self.assertRaises(TypeError, self.zip.setpassword, "unicode")
-        self.assertRaises(TypeError, self.zip.read, "test.txt", "python")
-        self.assertRaises(TypeError, self.zip.open, "test.txt", pwd="python")
-        self.assertRaises(TypeError, self.zip.extract, "test.txt", pwd="python")
+        expected_msg = "pwd: expected bytes, got str"
+
+        with self.assertRaisesRegex(TypeError, expected_msg):
+            self.zip.setpassword("unicode")
+
+        with self.assertRaisesRegex(TypeError, expected_msg):
+            self.zip.read("test.txt", "python")
+
+        with self.assertRaisesRegex(TypeError, expected_msg):
+            self.zip.open("test.txt", pwd="python")
+
+        with self.assertRaisesRegex(TypeError, expected_msg):
+            self.zip.extract("test.txt", pwd="python")
+
+        with self.assertRaisesRegex(TypeError, expected_msg):
+            self.zip.pwd = "python"
+            self.zip.open("test.txt")
 
     def test_seek_tell(self):
         self.zip.setpassword(b"python")

@@ -1,0 +1,2 @@
+Fixes parsing of :file:`._pth` files on startup so that single-character
+paths are correctly read.

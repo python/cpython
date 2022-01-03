@@ -465,10 +465,10 @@ later:
 */
 
 #include "Python.h"
-#include "pycore_object.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_dict.h"          // _Py_dict_lookup()
 #include <stddef.h>               // offsetof()
-#include "pycore_dict.h"
-#include <stddef.h>
 
 #include "clinic/odictobject.c.h"
 
@@ -1203,7 +1203,7 @@ odict_copy(register PyODictObject *od, PyObject *Py_UNUSED(ignored))
     if (PyODict_CheckExact(od))
         od_copy = PyODict_New();
     else
-        od_copy = _PyObject_CallNoArg((PyObject *)Py_TYPE(od));
+        od_copy = _PyObject_CallNoArgs((PyObject *)Py_TYPE(od));
     if (od_copy == NULL)
         return NULL;
 
@@ -1249,6 +1249,7 @@ PyDoc_STRVAR(odict_reversed__doc__, "od.__reversed__() <==> reversed(od)");
 #define _odict_ITER_REVERSED 1
 #define _odict_ITER_KEYS 2
 #define _odict_ITER_VALUES 4
+#define _odict_ITER_ITEMS (_odict_ITER_KEYS|_odict_ITER_VALUES)
 
 /* forward */
 static PyObject * odictiter_new(PyODictObject *, int);
@@ -1666,7 +1667,7 @@ odictiter_dealloc(odictiterobject *di)
     _PyObject_GC_UNTRACK(di);
     Py_XDECREF(di->di_odict);
     Py_XDECREF(di->di_current);
-    if (di->kind & (_odict_ITER_KEYS | _odict_ITER_VALUES)) {
+    if ((di->kind & _odict_ITER_ITEMS) == _odict_ITER_ITEMS) {
         Py_DECREF(di->di_result);
     }
     PyObject_GC_Del(di);
@@ -1872,15 +1873,16 @@ odictiter_new(PyODictObject *od, int kind)
     if (di == NULL)
         return NULL;
 
-    if (kind & (_odict_ITER_KEYS | _odict_ITER_VALUES)){
+    if ((kind & _odict_ITER_ITEMS) == _odict_ITER_ITEMS) {
         di->di_result = PyTuple_Pack(2, Py_None, Py_None);
         if (di->di_result == NULL) {
             Py_DECREF(di);
             return NULL;
         }
     }
-    else
+    else {
         di->di_result = NULL;
+    }
 
     di->kind = kind;
     node = reversed ? _odict_LAST(od) : _odict_FIRST(od);
@@ -2221,7 +2223,7 @@ mutablemapping_update_arg(PyObject *self, PyObject *arg)
         return -1;
     }
     if (func != NULL) {
-        PyObject *keys = _PyObject_CallNoArg(func);
+        PyObject *keys = _PyObject_CallNoArgs(func);
         Py_DECREF(func);
         if (keys == NULL) {
             return -1;
@@ -2253,7 +2255,7 @@ mutablemapping_update_arg(PyObject *self, PyObject *arg)
         return -1;
     }
     if (func != NULL) {
-        PyObject *items = _PyObject_CallNoArg(func);
+        PyObject *items = _PyObject_CallNoArgs(func);
         Py_DECREF(func);
         if (items == NULL) {
             return -1;

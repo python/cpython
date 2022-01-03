@@ -12,6 +12,7 @@
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "structmember.h"         // PyMemberDef
 #include "pycore_structseq.h"     // PyStructSequence_InitType()
+#include "pycore_initconfig.h"    // _PyStatus_OK()
 
 static const char visible_length_key[] = "n_sequence_fields";
 static const char real_length_key[] = "n_fields";
@@ -583,13 +584,20 @@ PyStructSequence_NewType(PyStructSequence_Desc *desc)
     return type;
 }
 
-int _PyStructSequence_Init(void)
+
+/* runtime lifecycle */
+
+PyStatus _PyStructSequence_InitState(PyInterpreterState *interp)
 {
+    if (!_Py_IsMainInterpreter(interp)) {
+        return _PyStatus_OK();
+    }
+
     if (_PyUnicode_FromId(&PyId_n_sequence_fields) == NULL
         || _PyUnicode_FromId(&PyId_n_fields) == NULL
         || _PyUnicode_FromId(&PyId_n_unnamed_fields) == NULL)
     {
-        return -1;
+        return _PyStatus_ERR("can't initialize structseq state");
     }
-    return 0;
+    return _PyStatus_OK();
 }

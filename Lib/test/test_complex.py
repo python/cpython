@@ -499,6 +499,18 @@ class ComplexTest(unittest.TestCase):
             self.assertEqual(complex(complex1(1j)), 2j)
         self.assertRaises(TypeError, complex, complex2(1j))
 
+    def test___complex__(self):
+        z = 3 + 4j
+        self.assertEqual(z.__complex__(), z)
+        self.assertEqual(type(z.__complex__()), complex)
+
+        class complex_subclass(complex):
+            pass
+
+        z = complex_subclass(3 + 4j)
+        self.assertEqual(z.__complex__(), 3 + 4j)
+        self.assertEqual(type(z.__complex__()), complex)
+
     @support.requires_IEEE_754
     def test_constructor_special_numbers(self):
         class complex2(complex):
@@ -777,8 +789,6 @@ class ComplexTest(unittest.TestCase):
         self.assertEqual(format(complex(INF, 1), 'F'), 'INF+1.000000j')
         self.assertEqual(format(complex(INF, -1), 'F'), 'INF-1.000000j')
 
-def test_main():
-    support.run_unittest(ComplexTest)
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

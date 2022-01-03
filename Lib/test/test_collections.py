@@ -668,6 +668,7 @@ class TestNamedTuple(unittest.TestCase):
         a.w = 5
         self.assertEqual(a.__dict__, {'w': 5})
 
+    @support.cpython_only
     def test_field_descriptor(self):
         Point = namedtuple('Point', 'x y')
         p = Point(11, 22)
@@ -1594,7 +1595,7 @@ class TestCollectionABCs(ABCTestCase):
         self.assertSetEqual(set(s1), set(s2))
 
     def test_Set_from_iterable(self):
-        """Verify _from_iterable overriden to an instance method works."""
+        """Verify _from_iterable overridden to an instance method works."""
         class SetUsingInstanceFromIterable(MutableSet):
             def __init__(self, values, created_by):
                 if not created_by:
@@ -2351,19 +2352,10 @@ class TestCounter(unittest.TestCase):
         self.assertFalse(Counter(a=2, b=1, c=0) > Counter('aab'))
 
 
-################################################################################
-### Run tests
-################################################################################
-
-def test_main(verbose=None):
-    NamedTupleDocs = doctest.DocTestSuite(module=collections)
-    test_classes = [TestNamedTuple, NamedTupleDocs, TestOneTrickPonyABCs,
-                    TestCollectionABCs, TestCounter, TestChainMap,
-                    TestUserObjects,
-                    ]
-    support.run_unittest(*test_classes)
-    support.run_doctest(collections, verbose)
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite(collections))
+    return tests
 
 
 if __name__ == "__main__":
-    test_main(verbose=True)
+    unittest.main()

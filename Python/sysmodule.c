@@ -15,21 +15,23 @@ Data members:
 */
 
 #include "Python.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _Py_RecursionLimitLowerWaterMark()
-#include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
-#include "pycore_object.h"        // _PyObject_IS_GC()
 #include "pycore_code.h"          // _Py_QuickenedCount
+#include "pycore_frame.h"         // InterpreterFrame
+#include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
+#include "pycore_namespace.h"     // _PyNamespace_New()
+#include "pycore_object.h"        // _PyObject_IS_GC()
 #include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
 #include "pycore_pyerrors.h"      // _PyErr_Fetch()
 #include "pycore_pylifecycle.h"   // _PyErr_WriteUnraisableDefaultHook()
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_tuple.h"         // _PyTuple_FromArray()
 #include "pycore_structseq.h"     // PyStructSequence_InitType()
+#include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 #include "code.h"
 #include "frameobject.h"          // PyFrame_GetBack()
-#include "pycore_frame.h"
 #include "pydtrace.h"
 #include "osdefs.h"               // DELIM
 #include "stdlib_module_names.h"  // _Py_stdlib_module_names
@@ -254,8 +256,7 @@ sys_audit_tstate(PyThreadState *ts, const char *event,
         }
 
         /* Disallow tracing in hooks unless explicitly enabled */
-        ts->tracing++;
-        ts->cframe->use_tracing = 0;
+        PyThreadState_EnterTracing(ts);
         while ((hook = PyIter_Next(hooks)) != NULL) {
             _Py_IDENTIFIER(__cantrace__);
             PyObject *o;
@@ -268,14 +269,12 @@ sys_audit_tstate(PyThreadState *ts, const char *event,
                 break;
             }
             if (canTrace) {
-                ts->cframe->use_tracing = (ts->c_tracefunc || ts->c_profilefunc);
-                ts->tracing--;
+                PyThreadState_LeaveTracing(ts);
             }
             PyObject* args[2] = {eventName, eventArgs};
             o = _PyObject_FastCallTstate(ts, hook, args, 2);
             if (canTrace) {
-                ts->tracing++;
-                ts->cframe->use_tracing = 0;
+                PyThreadState_EnterTracing(ts);
             }
             if (!o) {
                 break;
@@ -283,8 +282,7 @@ sys_audit_tstate(PyThreadState *ts, const char *event,
             Py_DECREF(o);
             Py_CLEAR(hook);
         }
-        ts->cframe->use_tracing = (ts->c_tracefunc || ts->c_profilefunc);
-        ts->tracing--;
+        PyThreadState_LeaveTracing(ts);
         if (_PyErr_Occurred(ts)) {
             goto exit;
         }
@@ -787,12 +785,7 @@ sys_exc_info_impl(PyObject *module)
 /*[clinic end generated code: output=3afd0940cf3a4d30 input=b5c5bf077788a3e5]*/
 {
     _PyErr_StackItem *err_info = _PyErr_GetTopmostException(_PyThreadState_GET());
-    return Py_BuildValue(
-        "(OOO)",
-        err_info->exc_type != NULL ? err_info->exc_type : Py_None,
-        err_info->exc_value != NULL ? err_info->exc_value : Py_None,
-        err_info->exc_traceback != NULL ?
-            err_info->exc_traceback : Py_None);
+    return _PyErr_StackItemToExcInfoTuple(err_info);
 }
 
 
@@ -1189,20 +1182,14 @@ sys_setrecursionlimit_impl(PyObject *module, int new_limit)
         return NULL;
     }
 
-    /* Issue #25274: When the recursion depth hits the recursion limit in
-       _Py_CheckRecursiveCall(), the overflowed flag of the thread state is
-       set to 1 and a RecursionError is raised. The overflowed flag is reset
-       to 0 when the recursion depth goes below the low-water mark: see
-       Py_LeaveRecursiveCall().
-
-       Reject too low new limit if the current recursion depth is higher than
-       the new low-water mark. Otherwise it may not be possible anymore to
-       reset the overflowed flag to 0. */
-    if (tstate->recursion_depth >= new_limit) {
+    /* Reject too low new limit if the current recursion depth is higher than
+       the new low-water mark. */
+    int depth = tstate->recursion_limit - tstate->recursion_remaining;
+    if (depth >= new_limit) {
         _PyErr_Format(tstate, PyExc_RecursionError,
                       "cannot set the recursion limit to %i at "
                       "the recursion depth %i: the limit is too low",
-                      new_limit, tstate->recursion_depth);
+                      new_limit, depth);
         return NULL;
     }
 
@@ -1676,7 +1663,7 @@ _PySys_GetSizeOf(PyObject *o)
         }
     }
     else {
-        res = _PyObject_CallNoArg(method);
+        res = _PyObject_CallNoArgs(method);
         Py_DECREF(method);
     }
 
@@ -1694,10 +1681,7 @@ _PySys_GetSizeOf(PyObject *o)
         return (size_t)-1;
     }
 
-    /* add gc_head size */
-    if (_PyObject_IS_GC(o))
-        return ((size_t)size) + sizeof(PyGC_Head);
-    return (size_t)size;
+    return (size_t)size + _PyType_PreHeaderSize(Py_TYPE(o));
 }
 
 static PyObject *
@@ -1815,7 +1799,7 @@ sys__getframe_impl(PyObject *module, int depth)
 /*[clinic end generated code: output=d438776c04d59804 input=c1be8a6464b11ee5]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    InterpreterFrame *frame = tstate->frame;
+    InterpreterFrame *frame = tstate->cframe->current_frame;
 
     if (_PySys_Audit(tstate, "sys._getframe", NULL) < 0) {
         return NULL;
@@ -2839,6 +2823,8 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
             goto type_init_failed;
         }
     }
+
+    SET_SYS_FROM_STRING("_vpath", VPATH);
 #endif
 
     /* float repr style: 0.03 (short) vs 0.029999999999999999 (legacy) */
@@ -2973,6 +2959,14 @@ _PySys_UpdateConfig(PyThreadState *tstate)
     COPY_LIST("warnoptions", config->warnoptions);
 
     SET_SYS("_xoptions", sys_create_xoptions_dict(config));
+
+    const wchar_t *stdlibdir = _Py_GetStdlibDir();
+    if (stdlibdir != NULL) {
+        SET_SYS_FROM_WSTR("_stdlib_dir", stdlibdir);
+    }
+    else {
+        PyDict_SetItemString(sysdict, "_stdlib_dir", Py_None);
+    }
 
 #undef SET_SYS_FROM_WSTR
 #undef COPY_LIST

@@ -492,6 +492,8 @@ loops that truncate the stream.
             next(b, None)
             return zip(a, b)
 
+   .. versionadded:: 3.10
+
 
 .. function:: permutations(iterable, r=None)
 
@@ -812,10 +814,26 @@ which incur interpreter overhead.
        return starmap(func, repeat(args, times))
 
    def grouper(iterable, n, fillvalue=None):
-       "Collect data into fixed-length chunks or blocks"
-       # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx"
+       "Collect data into non-overlapping fixed-length chunks or blocks"
+       # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx
        args = [iter(iterable)] * n
        return zip_longest(*args, fillvalue=fillvalue)
+
+   def triplewise(iterable):
+       "Return overlapping triplets from an iterable"
+       # triplewise('ABCDEFG') -> ABC BCD CDE DEF EFG
+       for (a, _), (b, c) in pairwise(pairwise(iterable)):
+           yield a, b, c
+
+   def sliding_window(iterable, n):
+       # sliding_window('ABCDEFG', 4) -> ABCD BCDE CDEF DEFG
+       it = iter(iterable)
+       window = collections.deque(islice(it, n), maxlen=n)
+       if len(window) == n:
+           yield tuple(window)
+       for x in it:
+           window.append(x)
+           yield tuple(window)
 
    def roundrobin(*iterables):
        "roundrobin('ABC', 'D', 'EF') --> A D E B F C"
@@ -836,6 +854,35 @@ which incur interpreter overhead.
        # partition(is_odd, range(10)) --> 0 2 4 6 8   and  1 3 5 7 9
        t1, t2 = tee(iterable)
        return filterfalse(pred, t1), filter(pred, t2)
+
+   def before_and_after(predicate, it):
+       """ Variant of takewhile() that allows complete
+           access to the remainder of the iterator.
+
+           >>> it = iter('ABCdEfGhI')
+           >>> all_upper, remainder = before_and_after(str.isupper, it)
+           >>> ''.join(all_upper)
+           'ABC'
+           >>> ''.join(remainder)     # takewhile() would lose the 'd'
+           'dEfGhI'
+
+           Note that the first iterator must be fully
+           consumed before the second iterator can
+           generate valid results.
+       """
+       it = iter(it)
+       transition = []
+       def true_iterator():
+           for elem in it:
+               if predicate(elem):
+                   yield elem
+               else:
+                   transition.append(elem)
+                   return
+       def remainder_iterator():
+           yield from transition
+           yield from it
+       return true_iterator(), remainder_iterator()
 
    def powerset(iterable):
        "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
@@ -948,4 +995,3 @@ which incur interpreter overhead.
                c, n = c*(n-r)//n, n-1
            result.append(pool[-1-n])
        return tuple(result)
-

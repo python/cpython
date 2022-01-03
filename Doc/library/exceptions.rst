@@ -34,6 +34,10 @@ class or one of its subclasses, and not from :exc:`BaseException`.  More
 information on defining exceptions is available in the Python Tutorial under
 :ref:`tut-userexceptions`.
 
+
+Exception context
+-----------------
+
 When raising (or re-raising) an exception in an :keyword:`except` or
 :keyword:`finally` clause
 :attr:`__context__` is automatically set to the last exception caught; if the
@@ -65,6 +69,25 @@ is :const:`None` and :attr:`__suppress_context__` is false.
 In either case, the exception itself is always shown after any chained
 exceptions so that the final line of the traceback always shows the last
 exception that was raised.
+
+
+Inheriting from built-in exceptions
+-----------------------------------
+
+User code can create subclasses that inherit from an exception type.
+It's recommended to only subclass one exception type at a time to avoid
+any possible conflicts between how the bases handle the ``args``
+attribute, as well as due to possible memory layout incompatibilities.
+
+.. impl-detail::
+
+   Most built-in exceptions are implemented in C for efficiency, see:
+   :source:`Objects/exceptions.c`.  Some have custom memory layouts
+   which makes it impossible to create a subclass that inherits from
+   multiple exception types. The memory layout of a type is an implementation
+   detail and might change between Python versions, leading to new
+   conflicts in the future.  Therefore, it's recommended to avoid
+   subclassing multiple exception types altogether.
 
 
 Base classes
@@ -103,6 +126,14 @@ The following exceptions are used mostly as base classes for other exceptions.
          except SomeException:
              tb = sys.exc_info()[2]
              raise OtherException(...).with_traceback(tb)
+
+   .. attribute:: __note__
+
+      A mutable field which is :const:`None` by default and can be set to a string.
+      If it is not :const:`None`, it is included in the traceback. This field can
+      be used to enrich exceptions after they have been caught.
+
+   .. versionadded:: 3.11
 
 
 .. exception:: Exception
@@ -748,6 +779,8 @@ The following exceptions are used as warning categories; see the
    (:pep:`565`). Enabling the :ref:`Python Development Mode <devmode>` shows
    this warning.
 
+   The deprecation policy is described in :pep:`387`.
+
 
 .. exception:: PendingDeprecationWarning
 
@@ -761,6 +794,8 @@ The following exceptions are used as warning categories; see the
 
    Ignored by the default warning filters. Enabling the :ref:`Python
    Development Mode <devmode>` shows this warning.
+
+   The deprecation policy is described in :pep:`387`.
 
 
 .. exception:: SyntaxWarning

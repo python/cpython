@@ -28,6 +28,9 @@ def load_tests(loader, tests, ignore):
                 ))
     return tests
 
+MODULE = ('test.test_enum', '__main__')[__name__=='__main__']
+SHORT_MODULE = MODULE.split('.')[-1]
+
 # for pickle tests
 try:
     class Stooges(Enum):
@@ -143,6 +146,23 @@ class classproperty:
     def __get__(self, instance, ownerclass):
         return self.fget(ownerclass)
 
+# for global repr tests
+
+@enum.global_enum
+class HeadlightsK(IntFlag, boundary=enum.KEEP):
+    OFF_K = 0
+    LOW_BEAM_K = auto()
+    HIGH_BEAM_K = auto()
+    FOG_K = auto()
+
+
+@enum.global_enum
+class HeadlightsC(IntFlag, boundary=enum.CONFORM):
+    OFF_C = 0
+    LOW_BEAM_C = auto()
+    HIGH_BEAM_C = auto()
+    FOG_C = auto()
+
 
 # tests
 
@@ -183,59 +203,340 @@ class TestEnum(unittest.TestCase):
             IDES_OF_MARCH = 2013, 3, 15
         self.Holiday = Holiday
 
-    def test_dir_on_class(self):
-        Season = self.Season
-        self.assertEqual(
-            set(dir(Season)),
-            set(['__class__', '__doc__', '__members__', '__module__',
-                'SPRING', 'SUMMER', 'AUTUMN', 'WINTER']),
-            )
+        class DateEnum(date, Enum): pass
+        self.DateEnum = DateEnum
 
-    def test_dir_on_item(self):
-        Season = self.Season
-        self.assertEqual(
-            set(dir(Season.WINTER)),
-            set(['__class__', '__doc__', '__module__', 'name', 'value']),
-            )
+        class FloatEnum(float, Enum): pass
+        self.FloatEnum = FloatEnum
 
-    def test_dir_with_added_behavior(self):
-        class Test(Enum):
+        class Wowser(Enum):
             this = 'that'
             these = 'those'
             def wowser(self):
+                """Wowser docstring"""
                 return ("Wowser! I'm %s!" % self.name)
-        self.assertEqual(
-                set(dir(Test)),
-                set(['__class__', '__doc__', '__members__', '__module__', 'this', 'these']),
-                )
-        self.assertEqual(
-                set(dir(Test.this)),
-                set(['__class__', '__doc__', '__module__', 'name', 'value', 'wowser']),
-                )
+            @classmethod
+            def classmethod_wowser(cls): pass
+            @staticmethod
+            def staticmethod_wowser(): pass
+        self.Wowser = Wowser
 
-    def test_dir_on_sub_with_behavior_on_super(self):
+        class IntWowser(IntEnum):
+            this = 1
+            these = 2
+            def wowser(self):
+                """Wowser docstring"""
+                return ("Wowser! I'm %s!" % self.name)
+            @classmethod
+            def classmethod_wowser(cls): pass
+            @staticmethod
+            def staticmethod_wowser(): pass
+        self.IntWowser = IntWowser
+
+        class FloatWowser(float, Enum):
+            this = 3.14
+            these = 4.2
+            def wowser(self):
+                """Wowser docstring"""
+                return ("Wowser! I'm %s!" % self.name)
+            @classmethod
+            def classmethod_wowser(cls): pass
+            @staticmethod
+            def staticmethod_wowser(): pass
+        self.FloatWowser = FloatWowser
+
+        class WowserNoMembers(Enum):
+            def wowser(self): pass
+            @classmethod
+            def classmethod_wowser(cls): pass
+            @staticmethod
+            def staticmethod_wowser(): pass
+        class SubclassOfWowserNoMembers(WowserNoMembers): pass
+        self.WowserNoMembers = WowserNoMembers
+        self.SubclassOfWowserNoMembers = SubclassOfWowserNoMembers
+
+        class IntWowserNoMembers(IntEnum):
+            def wowser(self): pass
+            @classmethod
+            def classmethod_wowser(cls): pass
+            @staticmethod
+            def staticmethod_wowser(): pass
+        self.IntWowserNoMembers = IntWowserNoMembers
+
+        class FloatWowserNoMembers(float, Enum):
+            def wowser(self): pass
+            @classmethod
+            def classmethod_wowser(cls): pass
+            @staticmethod
+            def staticmethod_wowser(): pass
+        self.FloatWowserNoMembers = FloatWowserNoMembers
+
+        class EnumWithInit(Enum):
+            def __init__(self, greeting, farewell):
+                self.greeting = greeting
+                self.farewell = farewell
+            ENGLISH = 'hello', 'goodbye'
+            GERMAN = 'Guten Morgen', 'Auf Wiedersehen'
+            def some_method(self): pass
+        self.EnumWithInit = EnumWithInit
+
         # see issue22506
-        class SuperEnum(Enum):
+        class SuperEnum1(Enum):
             def invisible(self):
                 return "did you see me?"
-        class SubEnum(SuperEnum):
+        class SubEnum1(SuperEnum1):
             sample = 5
-        self.assertEqual(
-                set(dir(SubEnum.sample)),
-                set(['__class__', '__doc__', '__module__', 'name', 'value', 'invisible']),
-                )
+        self.SubEnum1 = SubEnum1
 
-    def test_dir_on_sub_with_behavior_including_instance_dict_on_super(self):
-        # see issue40084
-        class SuperEnum(IntEnum):
+        class SuperEnum2(IntEnum):
             def __new__(cls, value, description=""):
                 obj = int.__new__(cls, value)
                 obj._value_ = value
                 obj.description = description
                 return obj
-        class SubEnum(SuperEnum):
+        class SubEnum2(SuperEnum2):
             sample = 5
-        self.assertTrue({'description'} <= set(dir(SubEnum.sample)))
+        self.SubEnum2 = SubEnum2
+
+    def test_dir_basics_for_all_enums(self):
+        enums_for_tests = (
+            # Generic enums in enum.py
+            Enum,
+            IntEnum,
+            StrEnum,
+            # Generic enums defined outside of enum.py
+            self.DateEnum,
+            self.FloatEnum,
+            # Concrete enums derived from enum.py generics
+            self.Grades,
+            self.Season,
+            # Concrete enums derived from generics defined outside of enum.py
+            self.Konstants,
+            self.Holiday,
+            # Standard enum with added behaviour & members
+            self.Wowser,
+            # Mixin-enum-from-enum.py with added behaviour & members
+            self.IntWowser,
+            # Mixin-enum-from-oustide-enum.py with added behaviour & members
+            self.FloatWowser,
+            # Equivalents of the three immediately above, but with no members
+            self.WowserNoMembers,
+            self.IntWowserNoMembers,
+            self.FloatWowserNoMembers,
+            # Enum with members and an __init__ method
+            self.EnumWithInit,
+            # Special cases to test
+            self.SubEnum1,
+            self.SubEnum2
+        )
+
+        for cls in enums_for_tests:
+            with self.subTest(cls=cls):
+                cls_dir = dir(cls)
+                # test that dir is deterministic
+                self.assertEqual(cls_dir, dir(cls))
+                # test that dir is sorted
+                self.assertEqual(list(cls_dir), sorted(cls_dir))
+                # test that there are no dupes in dir
+                self.assertEqual(len(cls_dir), len(set(cls_dir)))
+                # test that there are no sunders in dir
+                self.assertFalse(any(enum._is_sunder(attr) for attr in cls_dir))
+                self.assertNotIn('__new__', cls_dir)
+
+                for attr in ('__class__', '__doc__', '__members__', '__module__'):
+                    with self.subTest(attr=attr):
+                        self.assertIn(attr, cls_dir)
+
+    def test_dir_for_enum_with_members(self):
+        enums_for_test = (
+            # Enum with members
+            self.Season,
+            # IntEnum with members
+            self.Grades,
+            # Two custom-mixin enums with members
+            self.Konstants,
+            self.Holiday,
+            # several enums-with-added-behaviour and members
+            self.Wowser,
+            self.IntWowser,
+            self.FloatWowser,
+            # An enum with an __init__ method and members
+            self.EnumWithInit,
+            # Special cases to test
+            self.SubEnum1,
+            self.SubEnum2
+        )
+
+        for cls in enums_for_test:
+            cls_dir = dir(cls)
+            member_names = cls._member_names_
+            with self.subTest(cls=cls):
+                self.assertTrue(all(member_name in cls_dir for member_name in member_names))
+                for member in cls:
+                    member_dir = dir(member)
+                    # test that dir is deterministic
+                    self.assertEqual(member_dir, dir(member))
+                    # test that dir is sorted
+                    self.assertEqual(list(member_dir), sorted(member_dir))
+                    # test that there are no dupes in dir
+                    self.assertEqual(len(member_dir), len(set(member_dir)))
+
+                    for attr_name in cls_dir:
+                        with self.subTest(attr_name=attr_name):
+                            if attr_name in {'__members__', '__init__', '__new__', *member_names}:
+                                self.assertNotIn(attr_name, member_dir)
+                            else:
+                                self.assertIn(attr_name, member_dir)
+
+                    self.assertFalse(any(enum._is_sunder(attr) for attr in member_dir))
+
+    def test_dir_for_enums_with_added_behaviour(self):
+        enums_for_test = (
+            self.Wowser,
+            self.IntWowser,
+            self.FloatWowser,
+            self.WowserNoMembers,
+            self.SubclassOfWowserNoMembers,
+            self.IntWowserNoMembers,
+            self.FloatWowserNoMembers
+        )
+
+        for cls in enums_for_test:
+            with self.subTest(cls=cls):
+                self.assertIn('wowser', dir(cls))
+                self.assertIn('classmethod_wowser', dir(cls))
+                self.assertIn('staticmethod_wowser', dir(cls))
+                self.assertTrue(all(
+                    all(attr in dir(member) for attr in ('wowser', 'classmethod_wowser', 'staticmethod_wowser'))
+                    for member in cls
+                ))
+
+        self.assertEqual(dir(self.WowserNoMembers), dir(self.SubclassOfWowserNoMembers))
+        # Check classmethods are present
+        self.assertIn('from_bytes', dir(self.IntWowser))
+        self.assertIn('from_bytes', dir(self.IntWowserNoMembers))
+
+    def test_help_output_on_enum_members(self):
+        added_behaviour_enums = (
+            self.Wowser,
+            self.IntWowser,
+            self.FloatWowser
+        )
+
+        for cls in added_behaviour_enums:
+            with self.subTest(cls=cls):
+                rendered_doc = pydoc.render_doc(cls.this)
+                self.assertIn('Wowser docstring', rendered_doc)
+                if cls in {self.IntWowser, self.FloatWowser}:
+                    self.assertIn('float(self)', rendered_doc)
+
+    def test_dir_for_enum_with_init(self):
+        EnumWithInit = self.EnumWithInit
+
+        cls_dir = dir(EnumWithInit)
+        self.assertIn('__init__', cls_dir)
+        self.assertIn('some_method', cls_dir)
+        self.assertNotIn('greeting', cls_dir)
+        self.assertNotIn('farewell', cls_dir)
+
+        member_dir = dir(EnumWithInit.ENGLISH)
+        self.assertNotIn('__init__', member_dir)
+        self.assertIn('some_method', member_dir)
+        self.assertIn('greeting', member_dir)
+        self.assertIn('farewell', member_dir)
+
+    def test_mixin_dirs(self):
+        from datetime import date
+
+        enums_for_test = (
+            # generic mixins from enum.py
+            (IntEnum, int),
+            (StrEnum, str),
+            # generic mixins from outside enum.py
+            (self.FloatEnum, float),
+            (self.DateEnum, date),
+            # concrete mixin from enum.py
+            (self.Grades, int),
+            # concrete mixin from outside enum.py
+            (self.Holiday, date),
+            # concrete mixin from enum.py with added behaviour
+            (self.IntWowser, int),
+            # concrete mixin from outside enum.py with added behaviour
+            (self.FloatWowser, float)
+        )
+
+        enum_dict = Enum.__dict__
+        enum_dir = dir(Enum)
+        enum_module_names = enum.__all__
+        is_from_enum_module = lambda cls: cls.__name__ in enum_module_names
+        is_enum_dunder = lambda attr: enum._is_dunder(attr) and attr in enum_dict
+
+        def attr_is_inherited_from_object(cls, attr_name):
+            for base in cls.__mro__:
+                if attr_name in base.__dict__:
+                    return base is object
+            return False
+
+        # General tests
+        for enum_cls, mixin_cls in enums_for_test:
+            with self.subTest(enum_cls=enum_cls):
+                cls_dir = dir(enum_cls)
+                cls_dict = enum_cls.__dict__
+
+                mixin_attrs = [
+                    x for x in dir(mixin_cls)
+                    if not attr_is_inherited_from_object(cls=mixin_cls, attr_name=x)
+                ]
+
+                first_enum_base = next(
+                    base for base in enum_cls.__mro__
+                    if is_from_enum_module(base)
+                )
+
+                for attr in mixin_attrs:
+                    with self.subTest(attr=attr):
+                        if enum._is_sunder(attr):
+                            # Unlikely, but no harm in testing
+                            self.assertNotIn(attr, cls_dir)
+                        elif attr in {'__class__', '__doc__', '__members__', '__module__'}:
+                            self.assertIn(attr, cls_dir)
+                        elif is_enum_dunder(attr):
+                            if is_from_enum_module(enum_cls):
+                                self.assertNotIn(attr, cls_dir)
+                            elif getattr(enum_cls, attr) is getattr(first_enum_base, attr):
+                                self.assertNotIn(attr, cls_dir)
+                            else:
+                                self.assertIn(attr, cls_dir)
+                        else:
+                            self.assertIn(attr, cls_dir)
+
+        # Some specific examples
+        int_enum_dir = dir(IntEnum)
+        self.assertIn('imag', int_enum_dir)
+        self.assertIn('__rfloordiv__', int_enum_dir)
+        self.assertNotIn('__format__', int_enum_dir)
+        self.assertNotIn('__hash__', int_enum_dir)
+        self.assertNotIn('__init_subclass__', int_enum_dir)
+        self.assertNotIn('__subclasshook__', int_enum_dir)
+
+        class OverridesFormatOutsideEnumModule(Enum):
+            def __format__(self, *args, **kwargs):
+                return super().__format__(*args, **kwargs)
+            SOME_MEMBER = 1
+
+        self.assertIn('__format__', dir(OverridesFormatOutsideEnumModule))
+        self.assertIn('__format__', dir(OverridesFormatOutsideEnumModule.SOME_MEMBER))
+
+    def test_dir_on_sub_with_behavior_on_super(self):
+        # see issue22506
+        self.assertEqual(
+                set(dir(self.SubEnum1.sample)),
+                set(['__class__', '__doc__', '__module__', 'name', 'value', 'invisible']),
+                )
+
+    def test_dir_on_sub_with_behavior_including_instance_dict_on_super(self):
+        # see issue40084
+        self.assertTrue({'description'} <= set(dir(self.SubEnum2.sample)))
 
     def test_enum_in_enum_out(self):
         Season = self.Season
@@ -2024,6 +2325,7 @@ class TestEnum(unittest.TestCase):
             raise Exception('Exception not raised.')
 
     def test_missing_exceptions_reset(self):
+        import gc
         import weakref
         #
         class TestEnum(enum.Enum):
@@ -2050,8 +2352,9 @@ class TestEnum(unittest.TestCase):
         class_2_ref = weakref.ref(Class2())
         #
         # The exception raised by Enum creates a reference loop and thus
-        # Class2 instances will stick around until the next gargage collection
+        # Class2 instances will stick around until the next garbage collection
         # cycle, unlike Class1.
+        gc.collect()  # For PyPy or other GCs.
         self.assertIs(class_1_ref(), None)
         self.assertIs(class_2_ref(), None)
 
@@ -3224,6 +3527,34 @@ class TestIntFlag(unittest.TestCase):
         self.assertEqual(repr(~(Open.WO | Open.CE)), 'Open.RW')
         self.assertEqual(repr(Open(~4)), '-5')
 
+    def test_global_repr_keep(self):
+        self.assertEqual(
+                repr(HeadlightsK(0)),
+                '%s.OFF_K' % SHORT_MODULE,
+                )
+        self.assertEqual(
+                repr(HeadlightsK(2**0 + 2**2 + 2**3)),
+                '%(m)s.LOW_BEAM_K|%(m)s.FOG_K|0x8' % {'m': SHORT_MODULE},
+                )
+        self.assertEqual(
+                repr(HeadlightsK(2**3)),
+                '%(m)s.HeadlightsK(0x8)' % {'m': SHORT_MODULE},
+                )
+
+    def test_global_repr_conform1(self):
+        self.assertEqual(
+                repr(HeadlightsC(0)),
+                '%s.OFF_C' % SHORT_MODULE,
+                )
+        self.assertEqual(
+                repr(HeadlightsC(2**0 + 2**2 + 2**3)),
+                '%(m)s.LOW_BEAM_C|%(m)s.FOG_C' % {'m': SHORT_MODULE},
+                )
+        self.assertEqual(
+                repr(HeadlightsC(2**3)),
+                '%(m)s.OFF_C' % {'m': SHORT_MODULE},
+                )
+
     def test_format(self):
         Perm = self.Perm
         self.assertEqual(format(Perm.R, ''), '4')
@@ -4085,7 +4416,7 @@ class TestIntEnumConvert(unittest.TestCase):
     def test_convert_value_lookup_priority(self):
         test_type = enum.IntEnum._convert_(
                 'UnittestConvert',
-                ('test.test_enum', '__main__')[__name__=='__main__'],
+                MODULE,
                 filter=lambda x: x.startswith('CONVERT_TEST_'))
         # We don't want the reverse lookup value to vary when there are
         # multiple possible names for a given value.  It should always
@@ -4095,7 +4426,7 @@ class TestIntEnumConvert(unittest.TestCase):
     def test_convert(self):
         test_type = enum.IntEnum._convert_(
                 'UnittestConvert',
-                ('test.test_enum', '__main__')[__name__=='__main__'],
+                MODULE,
                 filter=lambda x: x.startswith('CONVERT_TEST_'))
         # Ensure that test_type has all of the desired names and values.
         self.assertEqual(test_type.CONVERT_TEST_NAME_F,
@@ -4106,7 +4437,8 @@ class TestIntEnumConvert(unittest.TestCase):
         self.assertEqual(test_type.CONVERT_TEST_NAME_E, 5)
         # Ensure that test_type only picked up names matching the filter.
         self.assertEqual([name for name in dir(test_type)
-                          if name[0:2] not in ('CO', '__')],
+                          if name[0:2] not in ('CO', '__')
+                          and name not in dir(IntEnum)],
                          [], msg='Names other than CONVERT_TEST_* found.')
 
     @unittest.skipUnless(python_version == (3, 8),
@@ -4115,7 +4447,7 @@ class TestIntEnumConvert(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             enum.IntEnum._convert(
                 'UnittestConvert',
-                ('test.test_enum', '__main__')[__name__=='__main__'],
+                MODULE,
                 filter=lambda x: x.startswith('CONVERT_TEST_'))
 
     @unittest.skipUnless(python_version >= (3, 9),
@@ -4124,16 +4456,15 @@ class TestIntEnumConvert(unittest.TestCase):
         with self.assertRaises(AttributeError):
             enum.IntEnum._convert(
                 'UnittestConvert',
-                ('test.test_enum', '__main__')[__name__=='__main__'],
+                MODULE,
                 filter=lambda x: x.startswith('CONVERT_TEST_'))
 
     def test_convert_repr_and_str(self):
-        module = ('test.test_enum', '__main__')[__name__=='__main__']
         test_type = enum.IntEnum._convert_(
                 'UnittestConvert',
-                module,
+                MODULE,
                 filter=lambda x: x.startswith('CONVERT_STRING_TEST_'))
-        self.assertEqual(repr(test_type.CONVERT_STRING_TEST_NAME_A), '%s.CONVERT_STRING_TEST_NAME_A' % module)
+        self.assertEqual(repr(test_type.CONVERT_STRING_TEST_NAME_A), '%s.CONVERT_STRING_TEST_NAME_A' % SHORT_MODULE)
         self.assertEqual(str(test_type.CONVERT_STRING_TEST_NAME_A), 'CONVERT_STRING_TEST_NAME_A')
         self.assertEqual(format(test_type.CONVERT_STRING_TEST_NAME_A), '5')
 
@@ -4151,23 +4482,23 @@ class TestStrEnumConvert(unittest.TestCase):
     def test_convert(self):
         test_type = enum.StrEnum._convert_(
                 'UnittestConvert',
-                ('test.test_enum', '__main__')[__name__=='__main__'],
+                MODULE,
                 filter=lambda x: x.startswith('CONVERT_STR_'))
         # Ensure that test_type has all of the desired names and values.
         self.assertEqual(test_type.CONVERT_STR_TEST_1, 'hello')
         self.assertEqual(test_type.CONVERT_STR_TEST_2, 'goodbye')
         # Ensure that test_type only picked up names matching the filter.
         self.assertEqual([name for name in dir(test_type)
-                          if name[0:2] not in ('CO', '__')],
+                          if name[0:2] not in ('CO', '__')
+                          and name not in dir(StrEnum)],
                          [], msg='Names other than CONVERT_STR_* found.')
 
     def test_convert_repr_and_str(self):
-        module = ('test.test_enum', '__main__')[__name__=='__main__']
         test_type = enum.StrEnum._convert_(
                 'UnittestConvert',
-                module,
+                MODULE,
                 filter=lambda x: x.startswith('CONVERT_STR_'))
-        self.assertEqual(repr(test_type.CONVERT_STR_TEST_1), '%s.CONVERT_STR_TEST_1' % module)
+        self.assertEqual(repr(test_type.CONVERT_STR_TEST_1), '%s.CONVERT_STR_TEST_1' % SHORT_MODULE)
         self.assertEqual(str(test_type.CONVERT_STR_TEST_2), 'goodbye')
         self.assertEqual(format(test_type.CONVERT_STR_TEST_1), 'hello')
 

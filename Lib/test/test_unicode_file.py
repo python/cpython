@@ -6,7 +6,6 @@ import sys
 import unicodedata
 
 import unittest
-from test.support import run_unittest
 from test.support.os_helper import (rmtree, change_cwd, TESTFN_UNICODE,
     TESTFN_UNENCODABLE, create_empty_file)
 
@@ -136,8 +135,6 @@ class TestUnicodeFiles(unittest.TestCase):
             self._do_directory(TESTFN_UNENCODABLE+ext,
                                TESTFN_UNENCODABLE+ext)
 
-def test_main():
-    run_unittest(__name__)
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
