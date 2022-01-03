@@ -405,6 +405,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
             self.assertFalse(shutil._use_fd_functions)
             self.assertFalse(shutil.rmtree.avoids_symlink_attacks)
 
+    @unittest.skipUnless(shutil._use_fd_functions, "dir_fd is not supported")
     def test_rmtree_with_dir_fd(self):
         tmp_dir = self.mkdtemp()
         victim = 'killme'
@@ -415,14 +416,15 @@ class TestRmTree(BaseTest, unittest.TestCase):
         os.mkdir(os.path.join(fullname, 'subdir'))
         write_file(os.path.join(fullname, 'subdir', 'somefile'), 'foo')
         self.assertTrue(os.path.exists(fullname))
-        if shutil._use_fd_functions:
-            shutil.rmtree(victim, dir_fd=dir_fd)
-        else:
-            with self.assertRaises(NotImplementedError):
-                shutil.rmtree(victim, dir_fd=dir_fd)
-            self.assertTrue(os.path.exists(fullname))
-            shutil.rmtree(fullname)
+        shutil.rmtree(victim, dir_fd=dir_fd)
         self.assertFalse(os.path.exists(fullname))
+
+    @unittest.skipIf(shutil._use_fd_functions, "dir_fd is supported")
+    def test_rmtree_with_dir_fd_unsupported(self):
+        tmp_dir = self.mkdtemp()
+        with self.assertRaises(NotImplementedError):
+            shutil.rmtree(tmp_dir, dir_fd=0)
+        self.assertTrue(os.path.exists(tmp_dir))
 
     def test_rmtree_dont_delete_file(self):
         # When called on a file instead of a directory, don't delete it.
