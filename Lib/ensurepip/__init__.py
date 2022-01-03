@@ -93,7 +93,7 @@ runpy.run_module("pip", run_name="__main__", alter_sys=True)
 
     cmd = [
       sys.executable,
-      # run pip interpreter in isolated mode if current interpreter was isolated
+      # run code in isolated mode if currently running isolated
       *( [ '-I', ] if sys.flags.isolated else [] ),
       '-W', 'ignore::DeprecationWarning',
       '-c',
