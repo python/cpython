@@ -1002,6 +1002,10 @@ class TurtleScreen(TurtleScreenBase):
             rootwindow = cv.winfo_toplevel()
             rootwindow.call('wm', 'attributes', '.', '-topmost', '1')
             rootwindow.call('wm', 'attributes', '.', '-topmost', '0')
+        # The class variable _RUNNING being persistent after this module is imported, this should be made True when the next object is created.
+        # This is particularly needed for running in notebooks or GUI application but does not affect the usual self-contained single instance execution 
+        # nor any of the turtle-demos
+        
         TurtleScreen._RUNNING = True
 
     def clear(self):
