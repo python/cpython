@@ -3275,7 +3275,7 @@ x_mul(PyLongObject *a, PyLongObject *b)
                      * more than 2*B - 2 to a stored digit no more than B - 1.
                      * So the sum was no more than 3*B - 3, so the current
                      * carry no more than floor((3*B - 3)/B) = 2, assuming
-                     * B > 3. I believe a more demanding analysis would show
+                     * B >= 3. I believe a more demanding analysis would show
                      * the carry can be no larger than 1, but the 2 from that
                      * easy analysis is good enough for code correctness.
                      */
