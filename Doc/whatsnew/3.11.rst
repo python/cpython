@@ -302,6 +302,11 @@ sys
   (Contributed by Irit Katriel in :issue:`45711`.)
 
 
+* Fetch across rollback no longer raises :exc:`~sqlite3.InterfaceError`.
+  Instead we leave it to the SQLite library to handle these cases.
+  (Contributed by Erlend E. Aasland in :issue:`44092`.)
+
+
 threading
 ---------
 
