@@ -46,7 +46,7 @@ typedef struct _interpreter_frame {
     int f_lasti;       /* Last instruction if called */
     int stacktop;     /* Offset of TOS from localsplus  */
     PyFrameState f_state;  /* What state the frame is in */
-    bool own_cframe;  // Whether this is the root frame for the current cframe.
+    bool own_cframe;  // Whether this is the "root" frame for the current CFrame
     PyObject *localsplus[1];
 } InterpreterFrame;
 
