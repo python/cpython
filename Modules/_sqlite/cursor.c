@@ -475,7 +475,6 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
     int rc;
     int numcols;
     PyObject* column_name;
-    sqlite_int64 lastrowid;
 
     if (!check_cursor(self)) {
         goto error;
@@ -641,16 +640,6 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
             self->rowcount= -1L;
         }
 
-        if (!multiple) {
-            Py_BEGIN_ALLOW_THREADS
-            lastrowid = sqlite3_last_insert_rowid(self->connection->db);
-            Py_END_ALLOW_THREADS
-            Py_SETREF(self->lastrowid, PyLong_FromLongLong(lastrowid));
-            if (self->lastrowid == NULL) {
-                goto error;
-            }
-        }
-
         if (rc == SQLITE_DONE && !multiple) {
             pysqlite_statement_reset(self->statement);
             Py_CLEAR(self->statement);
@@ -660,6 +649,17 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
             pysqlite_statement_reset(self->statement);
         }
         Py_XDECREF(parameters);
+    }
+
+    if (!multiple) {
+        sqlite_int64 lastrowid;
+
+        Py_BEGIN_ALLOW_THREADS
+        lastrowid = sqlite3_last_insert_rowid(self->connection->db);
+        Py_END_ALLOW_THREADS
+
+        Py_SETREF(self->lastrowid, PyLong_FromLongLong(lastrowid));
+        // Fall through on error.
     }
 
 error:
