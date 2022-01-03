@@ -911,8 +911,8 @@ All of the following opcodes use their arguments.
    Combines the raised and reraised exceptions list from TOS, into an exception
    group to propagate from a try-except* block. Uses the original exception
    group from TOS1 to reconstruct the structure of reraised exceptions. Pops
-   two items from the stack and pushes 0 (for lasti, which is unused) followed
-   by the exception to reraise or ``None`` if there isn't one.
+   two items from the stack and pushes the exception to reraise or ``None``
+   if there isn't one.
 
    .. versionadded:: 3.11
 

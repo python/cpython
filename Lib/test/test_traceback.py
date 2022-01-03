@@ -1060,6 +1060,22 @@ class TracebackFormatTests(unittest.TestCase):
         self.assertIn('ExceptionGroup', output)
         self.assertLessEqual(output.count('ExceptionGroup'), LIMIT)
 
+    @cpython_only
+    def test_print_exception_bad_type_capi(self):
+        from _testcapi import exception_print
+        with captured_output("stderr") as stderr:
+            exception_print(42)
+        self.assertEqual(
+            stderr.getvalue(),
+            ('TypeError: print_exception(): '
+             'Exception expected for value, int found\n')
+        )
+
+    def test_print_exception_bad_type_python(self):
+        msg = "Exception expected for value, int found"
+        with self.assertRaisesRegex(TypeError, msg):
+            traceback.print_exception(42)
+
 
 cause_message = (
     "\nThe above exception was the direct cause "
