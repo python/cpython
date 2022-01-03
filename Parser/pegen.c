@@ -815,7 +815,6 @@ void *
 _PyPegen_run_parser(Parser *p)
 {
     void *res = _PyPegen_parse(p);
-    assert(p->level == 0);
     if (res == NULL) {
         if (PyErr_Occurred() && !PyErr_ExceptionMatches(PyExc_SyntaxError)) {
             return NULL;
