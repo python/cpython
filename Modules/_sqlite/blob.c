@@ -11,7 +11,6 @@ class _sqlite3.Blob "pysqlite_Blob *" "clinic_state()->BlobType"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=908d3e16a45f8da7]*/
 
-
 static void
 close_blob(pysqlite_Blob *self)
 {
@@ -56,11 +55,7 @@ blob_dealloc(pysqlite_Blob *self)
     Py_DECREF(tp);
 }
 
-/*
- * Checks if a blob object is usable (i. e. not closed).
- *
- * 0 => error; 1 => ok
- */
+// Return 1 if the blob object is usable, 0 if not.
 static int
 check_blob(pysqlite_Blob *self)
 {
