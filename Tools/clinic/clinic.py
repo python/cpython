@@ -942,7 +942,7 @@ class CLanguage(Language):
                     min_kw_only
                 )
             else:
-                args_declaration = "_PyArg_UnpackKeywordsWithVararg", "%s, %s, %s, %s" % (
+                args_declaration = "_PyArg_UnpackKeywordsWithVarargFast", "%s, %s, %s, %s, varargssize" % (
                     min_pos,
                     max_pos,
                     min_kw_only,
