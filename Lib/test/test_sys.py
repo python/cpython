@@ -849,9 +849,9 @@ class SysModuleTest(unittest.TestCase):
         info = sys._malloc_info
         self.assertEqual(len(info), 4)
         self.assertIsInstance(info.allocator, str)
-        self.assertIsInstance(info.freelists, bool)
-        self.assertIsInstance(info.pymalloc, bool)
-        self.assertIsInstance(info.mimalloc, bool)
+        self.assertIsInstance(info.with_freelists, bool)
+        self.assertIsInstance(info.with_pymalloc, bool)
+        self.assertIsInstance(info.with_mimalloc, bool)
 
     @unittest.skipUnless(hasattr(sys, "getallocatedblocks"),
                          "sys.getallocatedblocks unavailable on this build")

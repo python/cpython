@@ -1905,9 +1905,9 @@ static PyTypeObject MallocInfoType;
 
 static PyStructSequence_Field malloc_info_fields[] = {
     {"allocator", "current memory allocator"},
-    {"freelists", "uses freelists"},
-    {"pymalloc", "supports pymalloc (aka obmalloc)"},
-    {"mimalloc", "supports mimalloc"},
+    {"with_freelists", "uses freelists"},
+    {"with_pymalloc", "supports pymalloc (aka obmalloc)"},
+    {"with_mimalloc", "supports mimalloc"},
     {0}
 };
 

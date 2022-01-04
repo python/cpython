@@ -1830,11 +1830,11 @@ class SaveSignals:
 
 
 def with_pymalloc():
-    return sys._malloc_info.pymalloc
+    return sys._malloc_info.with_pymalloc
 
 
 def with_mimalloc():
-    return sys._malloc_info.mimalloc
+    return sys._malloc_info.with_mimalloc
 
 
 class _ALWAYS_EQ:
