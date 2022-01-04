@@ -1,1 +1,1 @@
-Prevent `asyncio` socket transport from closing on `SSLWantReadError` and `SSLWantWriteError`.
+Prevent ``asyncio`` socket transport from closing on ``SSLWantReadError`` and ``SSLWantWriteError``.
