@@ -911,6 +911,7 @@ class StarredTuple(_Final, _Immutable, _root=True):
     """
 
     def __init__(self, tup):
+        self.__origin__ = tuple
         self._tuple = tup
         self.__args__ = tup.__args__
         self.__parameters__ = tup.__parameters__
@@ -1470,10 +1471,10 @@ class _TupleType(_SpecialGenericAlias, _root=True):
             return self.copy_with((_TypingEmpty,))
         if not isinstance(params, tuple):
             params = (params,)
-        if len(params) == 2 and params[1] is ...:
+        if len(params) >= 2 and params[-1] is ...:
             msg = "Tuple[t, ...]: t must be a type."
-            p = _type_check(params[0], msg)
-            return self.copy_with((p, _TypingEllipsis))
+            params = tuple(_type_check(p, msg) for p in params[:-1])
+            return self.copy_with((*params, _TypingEllipsis))
         msg = "Tuple[t0, t1, ...]: each t must be a type."
         params = tuple(_type_check(p, msg) for p in params)
         return self.copy_with(params)
@@ -2178,7 +2179,7 @@ def get_origin(tp):
     if isinstance(tp, _AnnotatedAlias):
         return Annotated
     if isinstance(tp, (_BaseGenericAlias, GenericAlias,
-                       ParamSpecArgs, ParamSpecKwargs)):
+                       ParamSpecArgs, ParamSpecKwargs, StarredTuple)):
         return tp.__origin__
     if tp is Generic:
         return Generic
