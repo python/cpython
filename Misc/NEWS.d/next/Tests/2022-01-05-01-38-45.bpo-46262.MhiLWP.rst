@@ -1,0 +1,1 @@
+Cover `ValueError` path in :meth:`enum.Flag._missing_`.
