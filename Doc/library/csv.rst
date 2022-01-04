@@ -320,7 +320,7 @@ The :mod:`csv` module defines the following constants:
 
    Instructs :class:`writer` objects to quote all non-numeric fields.
 
-   Instructs :class:`reader` to convert all non-quoted fields to type *float*.
+   Instructs :class:`reader` objects to convert all non-quoted fields to type *float*.
 
 
 .. data:: QUOTE_NONE
