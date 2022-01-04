@@ -99,6 +99,17 @@ PyAPI_DATA(struct _PyTraceMalloc_Config) _Py_tracemalloc_config;
 void *_PyObject_VirtualAlloc(size_t size);
 void _PyObject_VirtualFree(void *, size_t size);
 
+/* Simple valgrind integration */
+#ifdef WITH_VALGRIND
+#include <valgrind/valgrind.h>
+#include <valgrind/memcheck.h>
+#else
+#define VALGRIND_MALLOCLIKE_BLOCK(addr, sizeB, rzB, is_zeroed) do {} while(0)
+#define VALGRIND_RESIZEINPLACE_BLOCK(addr, oldSizeB, newSizeB, rzB) do {} while(0)
+#define VALGRIND_FREELIKE_BLOCK(addr, rzB) do {} while(0)
+#define VALGRIND_MAKE_MEM_UNDEFINED(addr, size) do {} while(0)
+#define VALGRIND_MAKE_MEM_DEFINED(addr, size) do {} while(0)
+#endif
 
 #ifdef __cplusplus
 }
