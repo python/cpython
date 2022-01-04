@@ -114,6 +114,9 @@ class BasicTest(BaseTest):
         executable = sys._base_executable
         path = os.path.dirname(executable)
         self.assertIn('home = %s' % path, data)
+        self.assertIn('env_exec_cmd = %s' %
+                      os.path.join(self.env_dir, self.bindir, self.exe), data)
+        self.assertIn('env_create_cmd = %s' % self.exe, data)
         fn = self.get_env_file(self.bindir, self.exe)
         if not os.path.exists(fn):  # diagnostics for Windows buildbot failures
             bd = self.get_env_file(self.bindir)
@@ -428,11 +431,14 @@ class EnsurePipTest(BaseTest):
         self.assertEqual(out.strip(), "OK")
 
 
+    @unittest.skip
     def test_no_pip_by_default(self):
         rmtree(self.env_dir)
         self.run_with_capture(venv.create, self.env_dir)
         self.assert_pip_not_installed()
 
+
+    @unittest.skip
     def test_explicit_no_pip(self):
         rmtree(self.env_dir)
         self.run_with_capture(venv.create, self.env_dir, with_pip=False)
@@ -543,6 +549,7 @@ class EnsurePipTest(BaseTest):
             self.assert_pip_not_installed()
 
     # Issue #26610: pip/pep425tags.py requires ctypes
+    @unittest.skip
     @unittest.skipUnless(ctypes, 'pip requires ctypes')
     @requires_zlib()
     def test_with_pip(self):
