@@ -712,7 +712,7 @@ builtin_print(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     PyObject *file = Py_None;
     int flush = 0;
 
-    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, varargssize, argsbuf);
+    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -952,4 +952,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f821a31890f729b6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=40c7ad14b0e76975 input=a9049054013a1b77]*/
