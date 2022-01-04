@@ -1120,16 +1120,14 @@ Some differences from :class:`dict` still remain:
         Move an existing *key* to either end of an ordered dictionary.  The item
         is moved to the right end if *last* is true (the default) or to the
         beginning if *last* is false.  Raises :exc:`KeyError` if the *key* does
-        not exist:
-
-        .. doctest::
+        not exist::
 
             >>> d = OrderedDict.fromkeys('abcde')
             >>> d.move_to_end('b')
-            >>> ''.join(d)
+            >>> ''.join(d.keys())
             'acdeb'
             >>> d.move_to_end('b', last=False)
-            >>> ''.join(d)
+            >>> ''.join(d.keys())
             'bacde'
 
         .. versionadded:: 3.2
