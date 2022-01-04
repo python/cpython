@@ -1,5 +1,10 @@
 """Selector and proactor event loops for Windows."""
 
+import sys
+
+if sys.platform != 'win32':  # pragma: no cover
+    raise ImportError('win32 only')
+
 import _overlapped
 import _winapi
 import errno
@@ -28,8 +33,8 @@ __all__ = (
 )
 
 
-NULL = 0
-INFINITE = 0xffffffff
+NULL = _winapi.NULL
+INFINITE = _winapi.INFINITE
 ERROR_CONNECTION_REFUSED = 1225
 ERROR_CONNECTION_ABORTED = 1236
 
@@ -405,7 +410,7 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
 class IocpProactor:
     """Proactor implementation using IOCP."""
 
-    def __init__(self, concurrency=0xffffffff):
+    def __init__(self, concurrency=INFINITE):
         self._loop = None
         self._results = []
         self._iocp = _overlapped.CreateIoCompletionPort(

@@ -1050,8 +1050,6 @@ stack_effect(int opcode, int oparg, int jump)
             return 0;
         case POP_EXCEPT:
             return -1;
-        case POP_EXCEPT_AND_RERAISE:
-            return -3;
 
         case STORE_NAME:
             return -1;
@@ -1670,6 +1668,9 @@ compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
 #define ADD_YIELD_FROM(C) \
     RETURN_IF_FALSE(compiler_add_yield_from((C)))
 
+#define POP_EXCEPT_AND_RERAISE(C) \
+    RETURN_IF_FALSE(compiler_pop_except_and_reraise((C)))
+
 #define VISIT(C, TYPE, V) {\
     if (!compiler_visit_ ## TYPE((C), (V))) \
         return 0; \
@@ -1838,6 +1839,22 @@ compiler_add_yield_from(struct compiler *c)
     ADDOP_I(c, RESUME, 2);
     ADDOP_JUMP(c, JUMP_ABSOLUTE, start);
     compiler_use_next_block(c, exit);
+    return 1;
+}
+
+static int
+compiler_pop_except_and_reraise(struct compiler *c)
+{
+    /* Stack contents
+     * [exc_info, lasti, exc]            COPY        3
+     * [exc_info, lasti, exc, exc_info]  POP_EXCEPT
+     * [exc_info, lasti, exc]            RERAISE      1
+     * (exception_unwind clears the stack)
+     */
+
+    ADDOP_I(c, COPY, 3);
+    ADDOP(c, POP_EXCEPT);
+    ADDOP_I(c, RERAISE, 1);
     return 1;
 }
 
@@ -3243,7 +3260,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     compiler_pop_fblock(c, FINALLY_END, end);
     ADDOP_I(c, RERAISE, 0);
     compiler_use_next_block(c, cleanup);
-    ADDOP(c, POP_EXCEPT_AND_RERAISE);
+    POP_EXCEPT_AND_RERAISE(c);
     compiler_use_next_block(c, exit);
     return 1;
 }
@@ -3298,7 +3315,7 @@ compiler_try_star_finally(struct compiler *c, stmt_ty s)
     compiler_pop_fblock(c, FINALLY_END, end);
     ADDOP_I(c, RERAISE, 0);
     compiler_use_next_block(c, cleanup);
-    ADDOP(c, POP_EXCEPT_AND_RERAISE);
+    POP_EXCEPT_AND_RERAISE(c);
     compiler_use_next_block(c, exit);
     return 1;
 }
@@ -3454,7 +3471,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
     compiler_pop_fblock(c, EXCEPTION_HANDLER, NULL);
     ADDOP_I(c, RERAISE, 0);
     compiler_use_next_block(c, cleanup);
-    ADDOP(c, POP_EXCEPT_AND_RERAISE);
+    POP_EXCEPT_AND_RERAISE(c);
     compiler_use_next_block(c, orelse);
     VISIT_SEQ(c, stmt, s->v.Try.orelse);
     ADDOP_JUMP(c, JUMP_FORWARD, end);
@@ -3505,7 +3522,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 
    [exc]                            RER:      ROT_TWO
    [exc, prev_exc_info]                       POP_EXCEPT
-   [exc]                                      RERAISE      0
+   [exc]                                      RERAISE               0
 
    []                               L0:       <next statement>
 */
@@ -3685,7 +3702,7 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
     ADDOP(c, POP_EXCEPT);
     ADDOP_I(c, RERAISE, 0);
     compiler_use_next_block(c, cleanup);
-    ADDOP(c, POP_EXCEPT_AND_RERAISE);
+    POP_EXCEPT_AND_RERAISE(c);
     compiler_use_next_block(c, orelse);
     VISIT_SEQ(c, stmt, s->v.TryStar.orelse);
     ADDOP_JUMP(c, JUMP_FORWARD, end);
@@ -5440,7 +5457,7 @@ compiler_with_except_finish(struct compiler *c, basicblock * cleanup) {
     NEXT_BLOCK(c);
     ADDOP_I(c, RERAISE, 2);
     compiler_use_next_block(c, cleanup);
-    ADDOP(c, POP_EXCEPT_AND_RERAISE);
+    POP_EXCEPT_AND_RERAISE(c);
     compiler_use_next_block(c, exit);
     ADDOP(c, POP_TOP); /* exc_value */
     ADDOP(c, POP_BLOCK);
@@ -7044,8 +7061,7 @@ stackdepth(struct compiler *c)
                 instr->i_opcode == JUMP_FORWARD ||
                 instr->i_opcode == RETURN_VALUE ||
                 instr->i_opcode == RAISE_VARARGS ||
-                instr->i_opcode == RERAISE ||
-                instr->i_opcode == POP_EXCEPT_AND_RERAISE)
+                instr->i_opcode == RERAISE)
             {
                 /* remaining code is dead */
                 next = NULL;
@@ -8769,7 +8785,6 @@ normalize_basic_block(basicblock *bb) {
             case RETURN_VALUE:
             case RAISE_VARARGS:
             case RERAISE:
-            case POP_EXCEPT_AND_RERAISE:
                 bb->b_exit = 1;
                 bb->b_nofallthrough = 1;
                 break;

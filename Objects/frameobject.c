@@ -289,7 +289,6 @@ mark_stacks(PyCodeObject *code_obj, int len)
                 case RETURN_VALUE:
                 case RAISE_VARARGS:
                 case RERAISE:
-                case POP_EXCEPT_AND_RERAISE:
                     /* End of block */
                     break;
                 case GEN_START:
