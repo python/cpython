@@ -1,0 +1,3 @@
+Correct the error message for unclosed parentheses when the tokenizer
+doesn't reach the end of the source when the error is reported. Patch by
+Pablo Galindo

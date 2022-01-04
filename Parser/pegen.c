@@ -1342,7 +1342,8 @@ _PyPegen_run_parser(Parser *p)
         if (PyErr_Occurred()) {
             // Prioritize tokenizer errors to custom syntax errors raised
             // on the second phase only if the errors come from the parser.
-            if (p->tok->done == E_DONE && PyErr_ExceptionMatches(PyExc_SyntaxError)) {
+            int is_tok_ok = (p->tok->done == E_DONE || p->tok->done == E_OK);
+            if (is_tok_ok && PyErr_ExceptionMatches(PyExc_SyntaxError)) {
                 _PyPegen_check_tokenizer_errors(p);
             }
             return NULL;
