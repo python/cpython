@@ -199,13 +199,10 @@ iobase_check_closed(PyObject *self)
 }
 
 PyObject *
-_PyIOBase_check_closed(PyObject *self, PyObject *args)
+_PyIOBase_check_closed(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     if (iobase_check_closed(self)) {
         return NULL;
-    }
-    if (args == Py_True) {
-        return Py_None;
     }
     Py_RETURN_NONE;
 }
@@ -381,20 +378,18 @@ _io__IOBase_seekable_impl(PyObject *self)
 }
 
 PyObject *
-_PyIOBase_check_seekable(PyObject *self, PyObject *args)
+_PyIOBase_check_seekable(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *res  = PyObject_CallMethodNoArgs(self, _PyIO_str_seekable);
-    if (res == NULL)
+    PyObject *res = PyObject_CallMethodNoArgs(self, _PyIO_str_seekable);
+    if (res == NULL) {
         return NULL;
-    if (res != Py_True) {
-        Py_CLEAR(res);
+    } else if (res == Py_True) {
+        return res;
+    } else {
+        Py_DECREF(res);
         iobase_unsupported("File or stream is not seekable.");
         return NULL;
     }
-    if (args == Py_True) {
-        Py_DECREF(res);
-    }
-    return res;
 }
 
 /*[clinic input]
@@ -414,20 +409,18 @@ _io__IOBase_readable_impl(PyObject *self)
 
 /* May be called with any object */
 PyObject *
-_PyIOBase_check_readable(PyObject *self, PyObject *args)
+_PyIOBase_check_readable(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *res = PyObject_CallMethodNoArgs(self, _PyIO_str_readable);
-    if (res == NULL)
+    if (res == NULL) {
         return NULL;
-    if (res != Py_True) {
-        Py_CLEAR(res);
+    } else if (res == Py_True) {
+        return res;
+    } else {
+        Py_DECREF(res);
         iobase_unsupported("File or stream is not readable.");
         return NULL;
     }
-    if (args == Py_True) {
-        Py_DECREF(res);
-    }
-    return res;
 }
 
 /*[clinic input]
@@ -447,20 +440,18 @@ _io__IOBase_writable_impl(PyObject *self)
 
 /* May be called with any object */
 PyObject *
-_PyIOBase_check_writable(PyObject *self, PyObject *args)
+_PyIOBase_check_writable(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *res = PyObject_CallMethodNoArgs(self, _PyIO_str_writable);
-    if (res == NULL)
+    if (res == NULL) {
         return NULL;
-    if (res != Py_True) {
-        Py_CLEAR(res);
+    } else if (res == Py_True) {
+        return res;
+    } else {
+        Py_DECREF(res);
         iobase_unsupported("File or stream is not writable.");
         return NULL;
     }
-    if (args == Py_True) {
-        Py_DECREF(res);
-    }
-    return res;
 }
 
 /* Context manager */
