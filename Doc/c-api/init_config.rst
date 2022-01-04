@@ -262,8 +262,8 @@ PyPreConfig
       Default: ``PYMEM_ALLOCATOR_NOT_SET``.
 
       .. versionchanged:: 3.11
-        Added ``PYMEM_ALLOCATOR_MIMALLOC` and 
-        ``PYMEM_ALLOCATOR_MIMALLOC_DEBUG``.
+         Added ``PYMEM_ALLOCATOR_MIMALLOC`` and
+         ``PYMEM_ALLOCATOR_MIMALLOC_DEBUG``.
 
    .. c:member:: int configure_locale
 
