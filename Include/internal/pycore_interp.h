@@ -174,7 +174,6 @@ struct _is {
 
     // This must be last.
     struct {
-        int initialized;
         PyThreadState tstate;
         // XXX Pre-allocate as many objects as possible here.
     } _preallocated;
