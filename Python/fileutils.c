@@ -2223,7 +2223,7 @@ _Py_normpath(wchar_t *path, Py_ssize_t size)
     wchar_t *pEnd = size >= 0 ? &path[size] : NULL;
     wchar_t *p2 = path;
     wchar_t *minP2 = path;
-    int do_appendleft_dotdot = 1;
+    int minP2_dotdot_joinable = 1;
 
 #define IS_END(x) (pEnd ? (x) == pEnd : !*(x))
 #ifdef ALTSEP
@@ -2274,7 +2274,7 @@ _Py_normpath(wchar_t *path, Py_ssize_t size)
         *p2++ = *p1++;
         minP2 = p2;
         lastC = SEP;
-        do_appendleft_dotdot = 0;  // follow pure python's caluculation
+        minP2_dotdot_joinable = 0;  // follow pure python's caluculation
     }
 #endif /* MS_WINDOWS */
 
@@ -2292,7 +2292,7 @@ _Py_normpath(wchar_t *path, Py_ssize_t size)
                 int sep_at_2 = !sep_at_1 && SEP_OR_END(&p1[2]);
                 if (sep_at_2 && p1[1] == L'.') {
                     if (p2 == minP2) {
-                        if (do_appendleft_dotdot) {
+                        if (minP2_dotdot_joinable) {
                             *p2++ = L'.';
                             *p2++ = L'.';
                             lastC = L'.';
