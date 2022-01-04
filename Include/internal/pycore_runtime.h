@@ -123,7 +123,9 @@ typedef struct pyruntimestate {
     struct {
         struct _Py_global_objects global_objects;
         struct _is interpreters_main;
-        // XXX Pre-allocate as many objects as possible here.
+        // The only other values to possibly include here are
+        // PyThread_type_lock.  Currently we don't pre-allocate them
+        // because on Windows we only get a pointer type.
     } _preallocated;
 } _PyRuntimeState;
 
