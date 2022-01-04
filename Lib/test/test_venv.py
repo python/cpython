@@ -431,14 +431,11 @@ class EnsurePipTest(BaseTest):
         self.assertEqual(out.strip(), "OK")
 
 
-    @unittest.skip
     def test_no_pip_by_default(self):
         rmtree(self.env_dir)
         self.run_with_capture(venv.create, self.env_dir)
         self.assert_pip_not_installed()
 
-
-    @unittest.skip
     def test_explicit_no_pip(self):
         rmtree(self.env_dir)
         self.run_with_capture(venv.create, self.env_dir, with_pip=False)
@@ -549,7 +546,6 @@ class EnsurePipTest(BaseTest):
             self.assert_pip_not_installed()
 
     # Issue #26610: pip/pep425tags.py requires ctypes
-    @unittest.skip
     @unittest.skipUnless(ctypes, 'pip requires ctypes')
     @requires_zlib()
     def test_with_pip(self):
