@@ -179,7 +179,7 @@ class EnvBuilder:
             if self.prompt is not None:
                 f.write(f'prompt = {self.prompt!r}\n')
             f.write('executable = %s\n' % context.env_exec_cmd)
-            f.write('command = %s\n' % ' '.join(sys.argv))
+            f.write('command = %s\n' % sys.executable)
 
     if os.name != 'nt':
         def symlink_or_copy(self, src, dst, relative_symlinks_ok=False):
