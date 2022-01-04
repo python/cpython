@@ -817,6 +817,10 @@ conflict.
    * ``pymalloc``: use the :ref:`pymalloc allocator <pymalloc>` for
      :c:data:`PYMEM_DOMAIN_MEM` and :c:data:`PYMEM_DOMAIN_OBJ` domains and use
      the :c:func:`malloc` function for the :c:data:`PYMEM_DOMAIN_RAW` domain.
+   * ``mimalloc``: use the :ref:`mimalloc allocator <mimalloc>` for
+     all domains (in debug mode :c:data:`PYMEM_DOMAIN_RAW` uses :c:func:`malloc`
+     function).
+
 
    Install :ref:`debug hooks <pymem-debug-hooks>`:
 
@@ -824,6 +828,10 @@ conflict.
      allocators <default-memory-allocators>`.
    * ``malloc_debug``: same as ``malloc`` but also install debug hooks.
    * ``pymalloc_debug``: same as ``pymalloc`` but also install debug hooks.
+   * ``mimalloc_debug``: same as ``mimalloc`` but also install debug hooks.
+
+   .. versionchanged:: 3.11
+      Added the ``"mimalloc"`` and ``"mimalloc_debug"`` allocators
 
    .. versionchanged:: 3.7
       Added the ``"default"`` allocator.
