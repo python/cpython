@@ -8218,10 +8218,12 @@ assemble(struct compiler *c, int addNone)
 
     /* Set firstlineno if it wasn't explicitly set. */
     if (!c->u->u_firstlineno) {
-       if (entryblock->b_instr && entryblock->b_instr->i_lineno)
+        if (entryblock->b_instr && entryblock->b_instr->i_lineno) {
             c->u->u_firstlineno = entryblock->b_instr->i_lineno;
-       else
+        }
+        else {
             c->u->u_firstlineno = 1;
+        }
     }
 
     // This must be called before fix_cell_offsets().
