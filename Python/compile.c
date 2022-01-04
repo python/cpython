@@ -2920,6 +2920,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
                               (void *)e, e->lineno))
         return 0;
 
+    ADDOP_I(c, RESUME, 0);
     /* Make None the first constant, so the lambda can't have a
        docstring. */
     if (compiler_add_const(c, Py_None) < 0)

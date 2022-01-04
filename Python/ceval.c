@@ -1745,13 +1745,6 @@ start_frame:
         goto exit_unwind;
     }
 
-    assert(tstate->cframe == &cframe);
-    assert(frame == cframe.current_frame);
-
-    if (_Py_IncrementCountAndMaybeQuicken(frame->f_code) < 0) {
-        goto exit_unwind;
-    }
-
 resume_frame:
     SET_LOCALS_FROM_FRAME();
 
@@ -1836,9 +1829,16 @@ check_eval_breaker:
             assert(tstate->cframe == &cframe);
             assert(frame == cframe.current_frame);
 
-            //if (_Py_IncrementCountAndMaybeQuicken(frame->f_code) < 0) {
-            //    goto exit_unwind;
-            //}
+            int err = _Py_IncrementCountAndMaybeQuicken(frame->f_code);
+            if (err) {
+                if (err < 0) {
+                    goto error;
+                }
+                /* Update first_instr and next_instr to point to newly quickened code */
+                int nexti = INSTR_OFFSET();
+                first_instr = frame->f_code->co_firstinstr;
+                next_instr = first_instr + nexti;
+            }
             frame->f_state = FRAME_EXECUTING;
             DISPATCH();
         }
