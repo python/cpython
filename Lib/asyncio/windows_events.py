@@ -1,5 +1,10 @@
 """Selector and proactor event loops for Windows."""
 
+import sys
+
+if sys.platform != 'win32':  # pragma: no cover
+    raise ImportError('win32 only')
+
 import _overlapped
 import _winapi
 import errno
