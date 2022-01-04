@@ -30,7 +30,7 @@ Executor Objects
 
     .. method:: submit(fn, /, *args, **kwargs)
 
-       Schedules the callable, *fn*, to be executed as ``fn(*args **kwargs)``
+       Schedules the callable, *fn*, to be executed as ``fn(*args, **kwargs)``
        and returns a :class:`Future` object representing the execution of the
        callable. ::
 
