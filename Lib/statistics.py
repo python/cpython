@@ -776,14 +776,6 @@ def quantiles(data, *, n=4, method='exclusive'):
 
 # See http://mathworld.wolfram.com/Variance.html
 #     http://mathworld.wolfram.com/SampleVariance.html
-#     http://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
-#
-# Under no circumstances use the so-called "computational formula for
-# variance", as that is only suitable for hand calculations with a small
-# amount of low-precision data. It has terrible numeric properties.
-#
-# See a comparison of three computational methods here:
-# http://www.johndcook.com/blog/2008/09/26/comparing-three-methods-of-computing-standard-deviation/
 
 def _ss(data, c=None):
     """Return sum of square deviations of sequence data.
@@ -796,20 +788,30 @@ def _ss(data, c=None):
     if c is not None:
         T, total, count = _sum((d := x - c) * d for x in data)
         return (T, total)
-    T, total, count = _sum(data)
-    mean_n, mean_d = (total / count).as_integer_ratio()
-    partials = Counter()
-    for n, d in map(_exact_ratio, data):
-        diff_n = n * mean_d - d * mean_n
-        diff_d = d * mean_d
-        partials[diff_d * diff_d] += diff_n * diff_n
-    if None in partials:
+    count = 0
+    sx_partials = {}
+    sx_partials_get = sx_partials.get
+    sxx_partials = {}
+    sxx_partials_get = sxx_partials.get
+    T = int
+    for typ, values in groupby(data, type):
+        T = _coerce(T, typ)  # or raise TypeError
+        for n, d in map(_exact_ratio, values):
+            count += 1
+            sx_partials[d] = sx_partials_get(d, 0) + n
+            dd = d * d
+            sxx_partials[dd] = sxx_partials_get(dd, 0) + n*n
+    if None in sx_partials:
         # The sum will be a NAN or INF. We can ignore all the finite
         # partials, and just look at this special one.
-        total = partials[None]
+        total = sx_partials[None]
         assert not _isfinite(total)
     else:
-        total = sum(Fraction(n, d) for d, n in partials.items())
+        sx = sum(Fraction(n, d) for d, n in sx_partials.items())
+        sxx = sum(Fraction(n, d) for d, n in sxx_partials.items())
+        # This formula is has poor numeric properties for floats,
+        # but with fractions it is exact.
+        total = (count * sxx - sx * sx) / count
     return (T, total)
 
 
