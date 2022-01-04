@@ -202,6 +202,45 @@ def _sum(data):
     return (T, total, count)
 
 
+def _ss(data, c=None):
+    """Return sum of square deviations of sequence data.
+
+    If ``c`` is None, the mean is calculated in one pass, and the deviations
+    from the mean are calculated in a second pass. Otherwise, deviations are
+    calculated from ``c`` as given. Use the second case with care, as it can
+    lead to garbage results.
+    """
+    if c is not None:
+        T, total, count = _sum((d := x - c) * d for x in data)
+        return (T, total, count)
+    count = 0
+    sx_partials = {}
+    sx_partials_get = sx_partials.get
+    sxx_partials = {}
+    sxx_partials_get = sxx_partials.get
+    T = int
+    for typ, values in groupby(data, type):
+        T = _coerce(T, typ)  # or raise TypeError
+        for n, d in map(_exact_ratio, values):
+            count += 1
+            sx_partials[d] = sx_partials_get(d, 0) + n
+            sxx_partials[d] = sxx_partials_get(d, 0) + n * n
+    if not count:
+        total = Fraction(0)
+    elif None in sx_partials:
+        # The sum will be a NAN or INF. We can ignore all the finite
+        # partials, and just look at this special one.
+        total = sx_partials[None]
+        assert not _isfinite(total)
+    else:
+        sx = sum(Fraction(n, d) for d, n in sx_partials.items())
+        sxx = sum(Fraction(n, d*d) for d, n in sxx_partials.items())
+        # This formula has poor numeric properties for floats,
+        # but with fractions it is exact.
+        total = (count * sxx - sx * sx) / count
+    return (T, total, count)
+
+
 def _isfinite(x):
     try:
         return x.is_finite()  # Likely a Decimal.
@@ -772,44 +811,6 @@ def quantiles(data, *, n=4, method='exclusive'):
 
 # See http://mathworld.wolfram.com/Variance.html
 #     http://mathworld.wolfram.com/SampleVariance.html
-
-def _ss(data, c=None):
-    """Return sum of square deviations of sequence data.
-
-    If ``c`` is None, the mean is calculated in one pass, and the deviations
-    from the mean are calculated in a second pass. Otherwise, deviations are
-    calculated from ``c`` as given. Use the second case with care, as it can
-    lead to garbage results.
-    """
-    if c is not None:
-        T, total, count = _sum((d := x - c) * d for x in data)
-        return (T, total, count)
-    count = 0
-    sx_partials = {}
-    sx_partials_get = sx_partials.get
-    sxx_partials = {}
-    sxx_partials_get = sxx_partials.get
-    T = int
-    for typ, values in groupby(data, type):
-        T = _coerce(T, typ)  # or raise TypeError
-        for n, d in map(_exact_ratio, values):
-            count += 1
-            sx_partials[d] = sx_partials_get(d, 0) + n
-            sxx_partials[d] = sxx_partials_get(d, 0) + n * n
-    if not count:
-        total = Fraction(0)
-    elif None in sx_partials:
-        # The sum will be a NAN or INF. We can ignore all the finite
-        # partials, and just look at this special one.
-        total = sx_partials[None]
-        assert not _isfinite(total)
-    else:
-        sx = sum(Fraction(n, d) for d, n in sx_partials.items())
-        sxx = sum(Fraction(n, d*d) for d, n in sxx_partials.items())
-        # This formula has poor numeric properties for floats,
-        # but with fractions it is exact.
-        total = (count * sxx - sx * sx) / count
-    return (T, total, count)
 
 
 def variance(data, xbar=None):
