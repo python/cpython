@@ -178,8 +178,8 @@ class EnvBuilder:
             f.write('version = %d.%d.%d\n' % sys.version_info[:3])
             if self.prompt is not None:
                 f.write(f'prompt = {self.prompt!r}\n')
-            f.write('env_exec_cmd = %s\n' % context.env_exec_cmd)
-            f.write('env_create_cmd = %s\n' % ' '.join(sys.argv))
+            f.write('executable = %s\n' % context.env_exec_cmd)
+            f.write('command = %s\n' % ' '.join(sys.argv))
 
     if os.name != 'nt':
         def symlink_or_copy(self, src, dst, relative_symlinks_ok=False):
