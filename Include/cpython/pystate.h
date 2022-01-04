@@ -181,9 +181,13 @@ struct _ts {
     /* XXX signal handlers should also be here */
 
     struct {
+        // The fields here are values that would otherwise have been
+        // malloc'ed during thread init in pystate.c.
+        // This allows us to avoid allocation costs during startup and
+        // helps simplify the startup code.
         // XXX Move exc_state and root_cframe down here.
         // XXX Allocate the initial datastack_chunk here..
-        bool _dummy;  // We'll remove this as soon as we pre-allocated something.
+        bool _dummy;  // We'll remove this as soon as we pre-allocate something.
     } _preallocated;
 };
 
