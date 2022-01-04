@@ -56,11 +56,9 @@ pysqlite_cursor_init_impl(pysqlite_Cursor *self,
     Py_INCREF(Py_None);
     Py_XSETREF(self->description, Py_None);
 
-    Py_INCREF(Py_None);
-    Py_XSETREF(self->lastrowid, Py_None);
-
     self->arraysize = 1;
     self->closed = 0;
+    self->lastrowid = 0;
     self->rowcount = -1L;
 
     Py_INCREF(Py_None);
@@ -86,7 +84,6 @@ cursor_traverse(pysqlite_Cursor *self, visitproc visit, void *arg)
     Py_VISIT(self->connection);
     Py_VISIT(self->description);
     Py_VISIT(self->row_cast_map);
-    Py_VISIT(self->lastrowid);
     Py_VISIT(self->row_factory);
     Py_VISIT(self->statement);
     return 0;
@@ -98,7 +95,6 @@ cursor_clear(pysqlite_Cursor *self)
     Py_CLEAR(self->connection);
     Py_CLEAR(self->description);
     Py_CLEAR(self->row_cast_map);
-    Py_CLEAR(self->lastrowid);
     Py_CLEAR(self->row_factory);
     if (self->statement) {
         /* Reset the statement if the user has not closed the cursor */
@@ -465,7 +461,6 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
     int rc;
     int numcols;
     PyObject* column_name;
-    sqlite_int64 lastrowid;
 
     if (!check_cursor(self)) {
         goto error;
@@ -630,16 +625,6 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
             self->rowcount= -1L;
         }
 
-        if (!multiple) {
-            Py_BEGIN_ALLOW_THREADS
-            lastrowid = sqlite3_last_insert_rowid(self->connection->db);
-            Py_END_ALLOW_THREADS
-            Py_SETREF(self->lastrowid, PyLong_FromLongLong(lastrowid));
-            if (self->lastrowid == NULL) {
-                goto error;
-            }
-        }
-
         if (rc == SQLITE_DONE && !multiple) {
             pysqlite_statement_reset(self->statement);
             Py_CLEAR(self->statement);
@@ -650,6 +635,8 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         }
         Py_XDECREF(parameters);
     }
+
+    self->lastrowid = sqlite3_last_insert_rowid(self->connection->db);
 
 error:
     Py_XDECREF(parameters);
@@ -770,6 +757,7 @@ pysqlite_cursor_executescript_impl(pysqlite_Cursor *self,
         sql_script = tail;
     }
 
+    self->lastrowid = sqlite3_last_insert_rowid(db);
     return Py_NewRef((PyObject *)self);
 
 error:
@@ -999,8 +987,8 @@ static struct PyMemberDef cursor_members[] =
     {"connection", T_OBJECT, offsetof(pysqlite_Cursor, connection), READONLY},
     {"description", T_OBJECT, offsetof(pysqlite_Cursor, description), READONLY},
     {"arraysize", T_INT, offsetof(pysqlite_Cursor, arraysize), 0},
-    {"lastrowid", T_OBJECT, offsetof(pysqlite_Cursor, lastrowid), READONLY},
     {"rowcount", T_LONG, offsetof(pysqlite_Cursor, rowcount), READONLY},
+    {"lastrowid", T_LONG, offsetof(pysqlite_Cursor, lastrowid), READONLY},
     {"row_factory", T_OBJECT, offsetof(pysqlite_Cursor, row_factory), 0},
     {"__weaklistoffset__", T_PYSSIZET, offsetof(pysqlite_Cursor, in_weakreflist), READONLY},
     {NULL}

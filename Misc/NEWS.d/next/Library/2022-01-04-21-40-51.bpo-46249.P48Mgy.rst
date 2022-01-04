@@ -1,0 +1,4 @@
+In :mod:`sqlite3`, :attr:`~sqlite3.Cursor.lastrowid` is now available for
+:meth:`~sqlite3.Cursor.executemany` and :meth:`~sqlite3.Cursor.executescript`.
+As with :meth:`~sqlite3.Cursor.execute`, it holds the value of the actual last
+inserted row id in the connected database. Patch by Erlend E. Aasland.

@@ -26,6 +26,8 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 
+#include "stdbool.h"
+
 #include "statement.h"
 #include "connection.h"
 #include "module.h"
@@ -37,7 +39,7 @@ typedef struct
     PyObject* description;
     PyObject* row_cast_map;
     int arraysize;
-    PyObject* lastrowid;
+    sqlite3_int64 lastrowid;
     long rowcount;
     PyObject* row_factory;
     pysqlite_Statement* statement;

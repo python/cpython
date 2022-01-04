@@ -972,6 +972,36 @@ class CursorTests(unittest.TestCase):
         ]
         self.assertEqual(results, expected)
 
+    def test_last_row_id_initial_value(self):
+        with memory_database() as cx:
+            cu = cx.cursor()
+            self.assertEqual(cu.lastrowid, 0)
+
+            # lastrowid is updated (valid) after a successful INSERT or REPLACE
+            # statement.
+            cu.execute("create table t(t unuqie, alt)")
+            cu.execute("insert into t values (1, 'a'), (2, 'b')")
+            self.assertEqual(cu.lastrowid, 2)
+            cu.execute("replace into t values (1, 'c')")
+            self.assertEqual(cu.lastrowid, 3)
+
+    def test_last_row_id_executemany(self):
+        with memory_database() as cx:
+            n = 4
+            cu = cx.cursor()
+            cu.execute("create table t(t)")
+            cu.executemany("insert into t values (?)", ((v,) for v in range(n)))
+            self.assertEqual(cu.lastrowid, n)
+
+    def test_last_row_id_executescript(self):
+        with memory_database() as cx:
+            cu = cx.cursor()
+            cu.executescript("""
+                create table t(t);
+                insert into t values (1), (2), (3);
+            """)
+            self.assertEqual(cu.lastrowid, 3)
+
     def test_column_count(self):
         # Check that column count is updated correctly for cached statements
         select = "select * from test"

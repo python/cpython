@@ -846,17 +846,19 @@ Cursor Objects
    .. attribute:: lastrowid
 
       This read-only attribute provides the row id of the last inserted row. It
-      is only updated after successful ``INSERT`` or ``REPLACE`` statements
-      using the :meth:`execute` method.  For other statements, after
-      :meth:`executemany` or :meth:`executescript`, or if the insertion failed,
-      the value of ``lastrowid`` is left unchanged.  The initial value of
-      ``lastrowid`` is :const:`None`.
+      is only updated after successful ``INSERT`` or ``REPLACE`` statements.
+      For other statements, or if the insertion failed, the value of
+      ``lastrowid`` is left unchanged.  The initial value of ``lastrowid`` is
+      `0`.
 
       .. note::
          Inserts into ``WITHOUT ROWID`` tables are not recorded.
 
       .. versionchanged:: 3.6
          Added support for the ``REPLACE`` statement.
+
+      .. versionchanged:: 3.11
+         Added support for :meth:`executemany` and :meth:`executescript`.
 
    .. attribute:: arraysize
 
