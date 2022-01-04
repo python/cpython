@@ -192,6 +192,11 @@ mark_stacks(PyCodeObject *code_obj, int len)
         stacks[i] = UNINITIALIZED;
     }
     stacks[0] = 0;
+    if (code_obj->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR))
+    {
+        // Generators get sent None while starting:
+        stacks[0] = push_value(stacks[0], Object);
+    }
     int todo = 1;
     while (todo) {
         todo = 0;
@@ -290,9 +295,6 @@ mark_stacks(PyCodeObject *code_obj, int len)
                 case RAISE_VARARGS:
                 case RERAISE:
                     /* End of block */
-                    break;
-                case GEN_START:
-                    stacks[i+1] = next_stack;
                     break;
                 default:
                 {
