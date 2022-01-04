@@ -267,7 +267,14 @@ _PyObject_ArenaFree(void *ctx, void *ptr, size_t size)
 #endif
 
 #ifdef WITH_MIMALLOC
-#  define PYRAW_ALLOC MIMALLOC_ALLOC
+// XXX: MIMALLOC_ALLOC as raw malloc breaks tests in debug mode
+// alloc_for_runtime() initializes PYMEM_DOMAIN_RAW before env var
+// PYTHONMALLOC is parsed.
+#  ifdef Py_DEBUG
+#    define PYRAW_ALLOC MALLOC_ALLOC
+#  else
+#    define PYRAW_ALLOC MIMALLOC_ALLOC
+#  endif
 #  define PYOBJ_ALLOC MIMALLOC_ALLOC
 #  define PYMEM_ALLOC MIMALLOC_ALLOC
 #elif defined(WITH_PYMALLOC)
@@ -277,7 +284,7 @@ _PyObject_ArenaFree(void *ctx, void *ptr, size_t size)
 #else
 #  define PYRAW_ALLOC MALLOC_ALLOC
 #  define PYOBJ_ALLOC MALLOC_ALLOC
-#  define PYMEM_ALLOC PYMALLOC_ALLO
+#  define PYMEM_ALLOC PYMALLOC_ALLOC
 #endif // WITH_MIMALLOC
 
 
@@ -446,7 +453,12 @@ _PyMem_SetupAllocators(PyMemAllocatorName allocator)
     case PYMEM_ALLOCATOR_MIMALLOC_DEBUG:
     {
         PyMemAllocatorEx mimalloc = MIMALLOC_ALLOC;
+#if Py_DEBUG
+        PyMemAllocatorEx malloc_alloc = MALLOC_ALLOC;
+        PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &malloc_alloc);
+#else
         PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &mimalloc);
+#endif
         PyMem_SetAllocator(PYMEM_DOMAIN_MEM, &mimalloc);
         PyMem_SetAllocator(PYMEM_DOMAIN_OBJ, &mimalloc);
 
@@ -511,7 +523,12 @@ _PyMem_GetCurrentAllocatorName(void)
     }
 #endif
 #ifdef WITH_MIMALLOC
-    if (pymemallocator_eq(&_PyMem_Raw, &mimalloc) &&
+    if (
+#ifdef Py_DEBUG
+        pymemallocator_eq(&_PyMem_Raw, &malloc_alloc) &&
+#else
+        pymemallocator_eq(&_PyMem_Raw, &mimalloc) &&
+#endif
         pymemallocator_eq(&_PyMem, &mimalloc) &&
         pymemallocator_eq(&_PyObject, &mimalloc))
     {
@@ -543,7 +560,12 @@ _PyMem_GetCurrentAllocatorName(void)
         }
 #endif
 #ifdef WITH_MIMALLOC
-        if (pymemallocator_eq(&_PyMem_Debug.raw.alloc, &mimalloc) &&
+        if (
+#ifdef Py_DEBUG
+            pymemallocator_eq(&_PyMem_Debug.raw.alloc, &malloc_alloc) &&
+#else
+            pymemallocator_eq(&_PyMem_Debug.raw.alloc, &mimalloc) &&
+#endif
             pymemallocator_eq(&_PyMem_Debug.mem.alloc, &mimalloc) &&
             pymemallocator_eq(&_PyMem_Debug.obj.alloc, &mimalloc))
         {
