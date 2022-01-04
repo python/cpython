@@ -3462,7 +3462,7 @@ Python code to generate the values:
         reduced_fac_odd_part = fac_odd_part % (2**64)
         print(f"{reduced_fac_odd_part:#018x}u")
 */
-static uint64_t reduced_factorial_odd_part[] = {
+static const uint64_t reduced_factorial_odd_part[] = {
     0x0000000000000001u, 0x0000000000000001u, 0x0000000000000001u, 0x0000000000000003u,
     0x0000000000000003u, 0x000000000000000fu, 0x000000000000002du, 0x000000000000013bu,
     0x000000000000013bu, 0x0000000000000b13u, 0x000000000000375fu, 0x0000000000026115u,
@@ -3494,7 +3494,7 @@ Python code to generate the values:
         inverted_fac_odd_part = pow(fac_odd_part, -1, 2**64)
         print(f"{inverted_fac_odd_part:#018x}u")
 */
-static uint64_t inverted_factorial_odd_part[] = {
+static const uint64_t inverted_factorial_odd_part[] = {
     0x0000000000000001u, 0x0000000000000001u, 0x0000000000000001u, 0xaaaaaaaaaaaaaaabu,
     0xaaaaaaaaaaaaaaabu, 0xeeeeeeeeeeeeeeefu, 0x4fa4fa4fa4fa4fa5u, 0x2ff2ff2ff2ff2ff3u,
     0x2ff2ff2ff2ff2ff3u, 0x938cc70553e3771bu, 0xb71c27cddd93e49fu, 0xb38e3229fcdee63du,
@@ -3514,6 +3514,25 @@ static uint64_t inverted_factorial_odd_part[] = {
     0x547fb1b8ab9d0ba3u, 0x8f15a826498852e3u, 0x32e1a03f38880283u, 0x3de4cce63283f0c1u,
 };
 
+/* exponent of the largest power of 2 dividing factorial(n), for n in range(68)
+
+Python code to generate the values:
+
+import math
+
+for n in range(68):
+    fac = math.factorial(n)
+    fac_trailing_zeros = (fac & -fac).bit_length() - 1
+    print(fac_trailing_zeros)
+*/
+
+static const uint8_t factorial_trailing_zeros[] = {
+     0,  0,  1,  1,  3,  3,  4,  4,  7,  7,  8,  8, 10, 10, 11, 11,  //  0-15
+    15, 15, 16, 16, 18, 18, 19, 19, 22, 22, 23, 23, 25, 25, 26, 26,  // 16-31
+    31, 31, 32, 32, 34, 34, 35, 35, 38, 38, 39, 39, 41, 41, 42, 42,  // 32-47
+    46, 46, 47, 47, 49, 49, 50, 50, 53, 53, 54, 54, 56, 56, 57, 57,  // 48-63
+    63, 63, 64, 64,                                                  // 64-67
+};
 
 /*[clinic input]
 math.comb
@@ -3588,15 +3607,14 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
                 where 2**shift is the largest power of two dividing comb(n, k)
                 and comb_odd_part is comb(n, k) >> shift. comb_odd_part can be
                 calculated efficiently via arithmetic modulo 2**64, using three
-                lookups and two uint64_t multiplications, while the necessary
-                shift can be computed via Kummer's theorem: it's the number of
-                carries when adding k to n - k in binary, which in turn is the
-                number of set bits of n ^ k ^ (n - k).
+                lookups and two uint64_t multiplications.
             */
             uint64_t comb_odd_part = reduced_factorial_odd_part[ni]
                                    * inverted_factorial_odd_part[ki]
                                    * inverted_factorial_odd_part[ni - ki];
-            int shift = _Py_popcount32((uint32_t)(ni ^ ki ^ (ni - ki)));
+            int shift = factorial_trailing_zeros[ni]
+                      - factorial_trailing_zeros[ki]
+                      - factorial_trailing_zeros[ni - ki];
             result = PyLong_FromUnsignedLongLong(comb_odd_part << shift);
             goto done;
         }

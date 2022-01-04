@@ -1,0 +1,1 @@
+Functions in the :mod:`traceback` module raise :exc:`TypeError` rather than :exc:`AttributeError` when an exception argument is not of type :exc:`BaseException`.
