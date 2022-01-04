@@ -486,6 +486,13 @@ initial_counter_value(void) {
 #define SPEC_FAIL_BUFFER_SLICE 16
 #define SPEC_FAIL_SEQUENCE_INT 17
 
+/* Store subscr */
+#define SPEC_FAIL_BYTEARRAY_INT 18
+#define SPEC_FAIL_BYTEARRAY_SLICE 19
+#define SPEC_FAIL_PY_SIMPLE 20
+#define SPEC_FAIL_PY_OTHER 21
+#define SPEC_FAIL_DICT_SUBCLASS_NO_OVERRIDE 22
+
 /* Binary add */
 
 #define SPEC_FAIL_NON_FUNCTION_SCOPE 11
@@ -1253,15 +1260,73 @@ _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *ins
             goto fail;
         }
     }
-    else if (container_type == &PyDict_Type) {
+    if (container_type == &PyDict_Type) {
         *instr = _Py_MAKECODEUNIT(STORE_SUBSCR_DICT,
                                   initial_counter_value());
          goto success;
     }
-    else {
-        SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_OTHER);
+#ifdef Py_STATS
+    PyMappingMethods *as_mapping = container_type->tp_as_mapping;
+    if (as_mapping && (as_mapping->mp_ass_subscript
+                       == PyDict_Type.tp_as_mapping->mp_ass_subscript)) {
+        SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_DICT_SUBCLASS_NO_OVERRIDE);
         goto fail;
     }
+    if (PyObject_CheckBuffer(container)) {
+        if (PyLong_CheckExact(sub) && (((size_t)Py_SIZE(sub)) > 1)) {
+            SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_OUT_OF_RANGE);
+        }
+        else if (strcmp(container_type->tp_name, "array.array") == 0) {
+            if (PyLong_CheckExact(sub)) {
+                SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_ARRAY_INT);
+            }
+            else if (PySlice_Check(sub)) {
+                SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_ARRAY_SLICE);
+            }
+            else {
+                SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_OTHER);
+            }
+        }
+        else if (PyByteArray_CheckExact(container)) {
+            if (PyLong_CheckExact(sub)) {
+                SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_BYTEARRAY_INT);
+            }
+            else if (PySlice_Check(sub)) {
+                SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_BYTEARRAY_SLICE);
+            }
+            else {
+                SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_OTHER);
+            }
+        }
+        else {
+            if (PyLong_CheckExact(sub)) {
+                SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_BUFFER_INT);
+            }
+            else if (PySlice_Check(sub)) {
+                SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_BUFFER_SLICE);
+            }
+            else {
+                SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_OTHER);
+            }
+        }
+        goto fail;
+    }
+    _Py_IDENTIFIER(__setitem__);
+    PyObject *descriptor = _PyType_LookupId(container_type, &PyId___setitem__);
+    if (descriptor && Py_TYPE(descriptor) == &PyFunction_Type) {
+        PyFunctionObject *func = (PyFunctionObject *)descriptor;
+        PyCodeObject *code = (PyCodeObject *)func->func_code;
+        int kind = function_kind(code);
+        if (kind == SIMPLE_FUNCTION) {
+            SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_PY_SIMPLE);
+        }
+        else {
+            SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_PY_OTHER);
+        }
+        goto fail;
+    }
+#endif
+    SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_OTHER);
 fail:
     STAT_INC(STORE_SUBSCR, failure);
     assert(!PyErr_Occurred());
