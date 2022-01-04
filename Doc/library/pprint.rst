@@ -172,7 +172,8 @@ The :mod:`pprint` module defines one class:
 .. function:: isrecursive(object)
 
    Determine if *object* requires a recursive representation.  This function is
-   subject to the same limitations as noted in :func:`saferepr` below.
+   subject to the same limitations as noted in :func:`saferepr` below and may raise an
+   :exc:`RecursionError` if it fails to detect a recursive object.
 
 
 One more support function is also defined:
