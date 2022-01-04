@@ -5040,6 +5040,17 @@ class SpecialAttrsTests(BaseTestCase):
             loaded = pickle.loads(s)
             self.assertIs(SpecialAttrsP, loaded)
 
+    def test_genericalias_dir(self):
+        class Foo(Generic[T]):
+            def bar(self):
+                pass
+            baz = 3
+        # The class attributes of the original class should be visible even
+        # in dir() of the GenericAlias. See bpo-45755.
+        self.assertIn('bar', dir(Foo[int]))
+        self.assertIn('baz', dir(Foo[int]))
+
+
 class AllTests(BaseTestCase):
     """Tests for __all__."""
 

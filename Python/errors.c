@@ -84,11 +84,8 @@ _PyErr_GetTopmostException(PyThreadState *tstate)
     while ((exc_info->exc_value == NULL || exc_info->exc_value == Py_None) &&
            exc_info->previous_item != NULL)
     {
-        assert(exc_info->exc_type == NULL || exc_info->exc_type == Py_None);
         exc_info = exc_info->previous_item;
     }
-    assert(exc_info->previous_item == NULL ||
-           (exc_info->exc_type != NULL && exc_info->exc_type != Py_None));
     return exc_info;
 }
 
@@ -524,27 +521,17 @@ PyErr_GetExcInfo(PyObject **p_type, PyObject **p_value, PyObject **p_traceback)
 void
 PyErr_SetExcInfo(PyObject *type, PyObject *value, PyObject *traceback)
 {
-    PyObject *oldtype, *oldvalue, *oldtraceback;
     PyThreadState *tstate = _PyThreadState_GET();
 
-    oldtype = tstate->exc_info->exc_type;
-    oldvalue = tstate->exc_info->exc_value;
-    oldtraceback = tstate->exc_info->exc_traceback;
+    PyObject *oldvalue = tstate->exc_info->exc_value;
 
-
-    tstate->exc_info->exc_type = get_exc_type(value);
-    Py_XINCREF(tstate->exc_info->exc_type);
     tstate->exc_info->exc_value = value;
-    tstate->exc_info->exc_traceback = get_exc_traceback(value);
-    Py_XINCREF(tstate->exc_info->exc_traceback);
 
     /* These args are no longer used, but we still need to steal a ref */
     Py_XDECREF(type);
     Py_XDECREF(traceback);
 
-    Py_XDECREF(oldtype);
     Py_XDECREF(oldvalue);
-    Py_XDECREF(oldtraceback);
 }
 
 
@@ -628,9 +615,6 @@ _PyErr_ChainStackItem(_PyErr_StackItem *exc_info)
     } else {
         exc_info_given = 1;
     }
-
-    assert( (exc_info->exc_type == NULL || exc_info->exc_type == Py_None) ==
-            (exc_info->exc_value == NULL || exc_info->exc_value == Py_None) );
 
     if (exc_info->exc_value == NULL || exc_info->exc_value == Py_None) {
         return;
