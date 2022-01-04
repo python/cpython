@@ -927,8 +927,7 @@ trace_init(void)
         "opcode"
     };
     PyObject *name;
-    int i;
-    for (i = 0; i < 8; ++i) {
+    for (unsigned char i = 0; i < 8; ++i) {
         if (whatstrings[i] == NULL) {
             name = PyUnicode_InternFromString(whatnames[i]);
             if (name == NULL)

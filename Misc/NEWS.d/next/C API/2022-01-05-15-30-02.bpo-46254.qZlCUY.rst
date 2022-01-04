@@ -1,0 +1,2 @@
+Better fitting type for iterating in the ``trace_init`` C function inside ``Python/sysmodule.c``.
+Improvement by Uriya Harpeness.
