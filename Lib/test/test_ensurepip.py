@@ -6,12 +6,33 @@ import tempfile
 import test.support
 import unittest
 import unittest.mock
-
+import json
 import ensurepip
 import ensurepip._uninstall
-
+import hashlib
 
 class TestPackages(unittest.TestCase):
+
+    def test_packages_hash(self):
+        packages = ensurepip._get_packages()
+        for name, package in packages.items():
+            with test.support.open_urlresource(f"https://pypi.org/pypi/{name}/{package.version}/json") as data:
+                expected_sha256 = json.load(data)["releases"][package.version][0]["digests"]["sha256"]
+                if package.wheel_name:
+                    # Use bundled wheel package
+                    from ensurepip import _bundled
+                    from importlib import resources
+                    wheel_name = package.wheel_name
+                    whl = (resources.files(_bundled) / wheel_name).read_bytes()
+                else:
+                    # Use the wheel package directory
+                    with open(package.wheel_path, "rb") as fp:
+                        whl = fp.read()
+                self.assertEqual(
+                    hashlib.sha256(whl).hexdigest(),
+                    expected_sha256,
+                )
+
     def touch(self, directory, filename):
         fullname = os.path.join(directory, filename)
         open(fullname, "wb").close()
