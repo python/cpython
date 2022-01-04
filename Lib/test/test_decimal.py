@@ -5514,7 +5514,7 @@ class CWhitebox(unittest.TestCase):
     @unittest.skipIf(MEMORY_SANITIZER or ADDRESS_SANITIZER, "sanitizer defaults to crashing "
                      "instead of returning NULL for malloc failure.")
     @unittest.skipIf(
-        sys._malloc_info.implementation == "mimalloc" and
+        sys._malloc_info.allocator.startswith("mimalloc") and
         os.name == "posix" and os.uname().machine == "s390x",
         reason="Test segfaults on s390x under mimalloc"
     )

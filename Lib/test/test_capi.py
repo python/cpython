@@ -40,7 +40,7 @@ def decode_stderr(err):
     return err.decode('utf-8', 'replace').replace('\r', '')
 
 
-WITH_MIMALLOC = sys._malloc_info.implementation == "mimalloc"
+WITH_MIMALLOC = sys._malloc_info.allocator.startswith("mimalloc")
 
 
 def testfunction(self):

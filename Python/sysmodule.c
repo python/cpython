@@ -1904,10 +1904,10 @@ Memory allocator info as a named tuple.");
 static PyTypeObject MallocInfoType;
 
 static PyStructSequence_Field malloc_info_fields[] = {
-    {"implementation", "malloc implementation name"},
-    {"freelists", "with freelists"},
-    {"obmalloc", "with obmalloc"},
-    {"mimalloc", "with mimalloc"},
+    {"allocator", "current memory allocator"},
+    {"freelists", "uses freelists"},
+    {"pymalloc", "supports pymalloc (aka obmalloc)"},
+    {"mimalloc", "supports mimalloc"},
     {0}
 };
 

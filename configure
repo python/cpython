@@ -13396,10 +13396,8 @@ if test "$with_mimalloc" != no; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
   # disable pymalloc with mimalloc
-  with_pymalloc="no"
+  # with_pymalloc="no"
   # with_freelists="no"
-  # AC_CHECK_HEADERS([mimalloc.h], [], [AC_MSG_ERROR([--with-mimalloc requires mimalloc.h])]  )
-  # AC_SEARCH_LIBS([mi_malloc], [mimalloc], [], [AC_MSG_ERROR([--with-mimalloc requires libmimalloc])]  )
 
 $as_echo "#define WITH_MIMALLOC 1" >>confdefs.h
 

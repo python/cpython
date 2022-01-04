@@ -13,7 +13,6 @@
 /* Defined in tracemalloc.c */
 extern void _PyMem_DumpTraceback(int fd, const void *ptr);
 
-
 /* Python's malloc wrappers (see pymem.h) */
 
 #undef  uint
@@ -135,7 +134,9 @@ _PyMem_RawFree(void *ctx, void *ptr)
 
 
 #ifdef WITH_MIMALLOC
+#ifdef WITH_VALGRIND
 #define WITH_VALGRIND_MIMALLOC 1
+#endif
 
 static void *
 _PyMimalloc_Malloc(void *ctx, size_t size)
@@ -206,7 +207,8 @@ _PyMimalloc_Free(void *ctx, void *ptr)
     VALGRIND_MAKE_MEM_DEFINED(ptr, osize);
 #endif
 }
-#endif
+
+#endif // WITH_MIMALLOC
 
 
 #ifdef MS_WINDOWS
@@ -574,13 +576,27 @@ static PyObjectArenaAllocator _PyObject_Arena = {NULL,
 #endif
     };
 
-#ifdef WITH_PYMALLOC
+#if defined(WITH_PYMALLOC) || defined(WITH_MIMALLOC)
 static int
 _PyMem_DebugEnabled(void)
 {
     return (_PyObject.malloc == _PyMem_DebugMalloc);
 }
 
+#ifdef WITH_MIMALLOC
+static int
+_PyMem_MimallocEnabled(void)
+{
+    if (_PyMem_DebugEnabled()) {
+        return (_PyMem_Debug.obj.alloc.malloc == _PyMimalloc_Malloc);
+    }
+    else {
+        return (_PyObject.malloc == _PyMimalloc_Malloc);
+    }
+}
+#endif
+
+#ifdef WITH_PYMALLOC
 static int
 _PyMem_PymallocEnabled(void)
 {
@@ -592,7 +608,7 @@ _PyMem_PymallocEnabled(void)
     }
 }
 #endif
-
+#endif // WITH_PYMALLOC || WITH_MIMALLOC
 
 static void
 _PyMem_SetupDebugHooksDomain(PyMemAllocatorDomain domain)
@@ -3043,8 +3059,8 @@ mimalloc_output(const char *msg, void *arg) {
     fputs(msg, (FILE *)arg);
 }
 
-int
-_PyObject_DebugMallocStats(FILE *out) {
+static int
+_PyObject_DebugMimallocStats(FILE *out) {
     fprintf(out, "mimalloc (version: %i)\n", mi_version());
     mi_stats_print_out(mimalloc_output, (void *)out);
     fputc('\n', out);
@@ -3083,13 +3099,9 @@ pool_is_in_list(const poolp target, poolp list)
  * Return 0 if the memory debug hooks are not installed or no statistics was
  * written into out, return 1 otherwise.
  */
-int
-_PyObject_DebugMallocStats(FILE *out)
+static int
+_PyObject_DebugObjectMallocStats(FILE *out)
 {
-    if (!_PyMem_PymallocEnabled()) {
-        return 0;
-    }
-
     uint i;
     const uint numclasses = SMALL_REQUEST_THRESHOLD >> ALIGNMENT_SHIFT;
     /* # of pools, allocated blocks, and free blocks per class index */
@@ -3246,3 +3258,23 @@ _PyObject_DebugMallocStats(FILE *out)
 }
 
 #endif /* #ifdef WITH_PYMALLOC */
+
+
+/* Print summary info to "out" about the state of mimalloc/pymalloc
+ */
+
+int
+_PyObject_DebugMallocStats(FILE *out)
+{
+#ifdef WITH_PYMALLOC
+    if (_PyMem_PymallocEnabled()) {
+        return _PyObject_DebugObjectMallocStats(out);
+    }
+#endif
+#ifdef WITH_MIMALLOC
+    if (_PyMem_MimallocEnabled()) {
+        return _PyObject_DebugMimallocStats(out);
+    }
+#endif
+    return 0;
+}
