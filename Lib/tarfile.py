@@ -247,12 +247,18 @@ def copyfileobj(src, dst, length=None, exception=OSError, bufsize=None):
     for b in range(blocks):
         buf = src.read(bufsize)
         if len(buf) < bufsize:
+            if exception is None:
+                print("warning: unexpected end of data")
+                return
             raise exception("unexpected end of data")
         dst.write(buf)
 
     if remainder != 0:
         buf = src.read(remainder)
         if len(buf) < remainder:
+            if exception is None:
+                print("warning: unexpected end of data")
+                return
             raise exception("unexpected end of data")
         dst.write(buf)
     return
@@ -2008,7 +2014,7 @@ class TarFile(object):
         bufsize=self.copybufsize
         # If there's data to follow, append it.
         if fileobj is not None:
-            copyfileobj(fileobj, self.fileobj, tarinfo.size, bufsize=bufsize)
+            copyfileobj(fileobj, self.fileobj, tarinfo.size, exception=None, bufsize=bufsize)
             blocks, remainder = divmod(tarinfo.size, BLOCKSIZE)
             if remainder > 0:
                 self.fileobj.write(NUL * (BLOCKSIZE - remainder))

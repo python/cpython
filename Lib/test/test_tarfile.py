@@ -1753,6 +1753,40 @@ class CreateWithXModeTest(CreateTest):
     test_create_taropen = None
     test_create_existing_taropen = None
 
+@unittest.skipUnless(hasattr(os, 'lstat'), "missing os.lstat")
+class ChangingFileTest(TarTest, unittest.TestCase):
+
+    prefix = "w:"
+    original_lstat = os.lstat
+
+    def setUp(self):
+        self._filename = os.path.join(TEMPDIR, "tempfile")
+        self._create_temporary_file(self._filename)
+
+    def tearDown(self):
+        os.remove(self._filename)
+
+    @staticmethod
+    def _intercept_lstat(arg):
+        res = ChangingFileTest.original_lstat(arg)
+        return os.stat_result(
+            (
+                res.st_mode, res.st_ino, res.st_dev, res.st_nlink, res.st_uid,
+                res.st_gid, res.st_size+1, res.st_atime, res.st_mtime,
+                res.st_ctime
+            )
+        )
+
+    @staticmethod
+    def _create_temporary_file(filename):
+        with open(filename, "w+") as f:
+            f.write('test')
+
+    @unittest.mock.patch('os.lstat', side_effect=_intercept_lstat)
+    def test_stat_change(self, _):
+        with tarfile.open(tmpname, self.mode) as tar:
+            tar.add(self._filename)
+
 
 @unittest.skipUnless(hasattr(os, "link"), "Missing hardlink implementation")
 class HardlinkTest(unittest.TestCase):
