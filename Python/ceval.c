@@ -1683,7 +1683,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
     cframe.previous = prev_cframe;
     tstate->cframe = &cframe;
 
-    assert(!frame->is_entry);
     frame->is_entry = true;
     /* Push frame */
     frame->previous = prev_cframe->current_frame;
@@ -2680,7 +2679,6 @@ check_eval_breaker:
             tstate->cframe->use_tracing = cframe.use_tracing;
             assert(tstate->cframe->current_frame == frame->previous);
             assert(!_PyErr_Occurred(tstate));
-            frame->is_entry = false;
             return retval;
         }
 
@@ -2707,7 +2705,6 @@ check_eval_breaker:
             tstate->cframe->use_tracing = cframe.use_tracing;
             assert(tstate->cframe->current_frame == frame->previous);
             assert(!_PyErr_Occurred(tstate));
-            frame->is_entry = false;
             return retval;
         }
 
