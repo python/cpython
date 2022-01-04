@@ -180,7 +180,6 @@ struct _ts {
     PyObject **datastack_limit;
     /* XXX signal handlers should also be here */
 
-    // This must be last.
     struct {
         // XXX Move exc_state and root_cframe down here.
         // XXX Allocate the initial datastack_chunk here..

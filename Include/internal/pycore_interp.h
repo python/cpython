@@ -172,7 +172,6 @@ struct _is {
     struct ast_state ast;
     struct type_cache type_cache;
 
-    // This must be last.
     struct {
         PyThreadState tstate;
         // XXX Pre-allocate as many objects as possible here.
