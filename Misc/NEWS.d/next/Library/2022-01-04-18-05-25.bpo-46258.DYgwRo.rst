@@ -1,0 +1,2 @@
+Speed up :func:`math.isqrt` for positive integers smaller than ``2**64`` by
+approximately 10%.
