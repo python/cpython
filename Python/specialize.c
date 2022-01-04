@@ -1273,8 +1273,11 @@ _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *ins
         goto fail;
     }
     if (PyObject_CheckBuffer(container)) {
-        if (strcmp(container_type->tp_name, "array.array") == 0) {
-            if (PyLong_CheckExact(sub) && (((size_t)Py_SIZE(sub)) <= 1)) {
+        if (PyLong_CheckExact(sub) && (((size_t)Py_SIZE(sub)) > 1)) {
+            SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_OUT_OF_RANGE);
+        }
+        else if (strcmp(container_type->tp_name, "array.array") == 0) {
+            if (PyLong_CheckExact(sub)) {
                 SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_ARRAY_INT);
             }
             else if (PySlice_Check(sub)) {
@@ -1285,7 +1288,7 @@ _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *ins
             }
         }
         else if (PyByteArray_CheckExact(container)) {
-            if (PyLong_CheckExact(sub) && (((size_t)Py_SIZE(sub)) <= 1)) {
+            if (PyLong_CheckExact(sub)) {
                 SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_BYTEARRAY_INT);
             }
             else if (PySlice_Check(sub)) {
@@ -1296,7 +1299,7 @@ _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *ins
             }
         }
         else {
-            if (PyLong_CheckExact(sub) && (((size_t)Py_SIZE(sub)) <= 1)) {
+            if (PyLong_CheckExact(sub)) {
                 SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_BUFFER_INT);
             }
             else if (PySlice_Check(sub)) {
