@@ -1,0 +1,2 @@
+Print unexpected successes together with failures and errors in summary in
+:class:`unittest.TextTestResult`.

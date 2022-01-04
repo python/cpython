@@ -15170,11 +15170,15 @@ all_ins(PyObject *m)
 #ifdef SF_NODISKIO
     if (PyModule_AddIntMacro(m, SF_NODISKIO)) return -1;
 #endif
+    /* is obsolete since the 11.x release */
 #ifdef SF_MNOWAIT
     if (PyModule_AddIntMacro(m, SF_MNOWAIT)) return -1;
 #endif
 #ifdef SF_SYNC
     if (PyModule_AddIntMacro(m, SF_SYNC)) return -1;
+#endif
+#ifdef SF_NOCACHE
+    if (PyModule_AddIntMacro(m, SF_NOCACHE)) return -1;
 #endif
 
     /* constants for posix_fadvise */

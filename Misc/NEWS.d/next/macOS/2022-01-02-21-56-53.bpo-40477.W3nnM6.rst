@@ -1,0 +1,2 @@
+The Python Launcher app for macOS now properly launches scripts and, if
+necessary, the Terminal app when running on recent macOS releases.

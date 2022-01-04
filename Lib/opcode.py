@@ -78,8 +78,6 @@ def_op('MATCH_KEYS', 33)
 
 def_op('PUSH_EXC_INFO', 35)
 
-def_op('POP_EXCEPT_AND_RERAISE', 37)
-
 def_op('WITH_EXCEPT_START', 49)
 def_op('GET_AITER', 50)
 def_op('GET_ANEXT', 51)
@@ -290,11 +288,10 @@ _specialized_instructions = [
     "STORE_FAST__STORE_FAST",
 ]
 _specialization_stats = [
-    "specialization_success",
-    "specialization_failure",
+    "success",
+    "failure",
     "hit",
     "deferred",
     "miss",
     "deopt",
-    "unquickened",
 ]

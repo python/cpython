@@ -41,8 +41,8 @@
 */
 
 Py_ssize_t _Py_QuickenedCount = 0;
-#if COLLECT_SPECIALIZATION_STATS
-SpecializationStats _specialization_stats[256] = { 0 };
+#ifdef Py_STATS
+PyStats _py_stats = { 0 };
 
 #define ADD_STAT_TO_DICT(res, field) \
     do { \
@@ -66,21 +66,19 @@ stats_to_dict(SpecializationStats *stats)
     if (res == NULL) {
         return NULL;
     }
-    ADD_STAT_TO_DICT(res, specialization_success);
-    ADD_STAT_TO_DICT(res, specialization_failure);
+    ADD_STAT_TO_DICT(res, success);
+    ADD_STAT_TO_DICT(res, failure);
     ADD_STAT_TO_DICT(res, hit);
     ADD_STAT_TO_DICT(res, deferred);
     ADD_STAT_TO_DICT(res, miss);
     ADD_STAT_TO_DICT(res, deopt);
-    ADD_STAT_TO_DICT(res, unquickened);
-#if COLLECT_SPECIALIZATION_STATS_DETAILED
     PyObject *failure_kinds = PyTuple_New(SPECIALIZATION_FAILURE_KINDS);
     if (failure_kinds == NULL) {
         Py_DECREF(res);
         return NULL;
     }
     for (int i = 0; i < SPECIALIZATION_FAILURE_KINDS; i++) {
-        PyObject *stat = PyLong_FromUnsignedLongLong(stats->specialization_failure_kinds[i]);
+        PyObject *stat = PyLong_FromUnsignedLongLong(stats->failure_kinds[i]);
         if (stat == NULL) {
             Py_DECREF(res);
             Py_DECREF(failure_kinds);
@@ -88,13 +86,12 @@ stats_to_dict(SpecializationStats *stats)
         }
         PyTuple_SET_ITEM(failure_kinds, i, stat);
     }
-    if (PyDict_SetItemString(res, "specialization_failure_kinds", failure_kinds)) {
+    if (PyDict_SetItemString(res, "failure_kinds", failure_kinds)) {
         Py_DECREF(res);
         Py_DECREF(failure_kinds);
         return NULL;
     }
     Py_DECREF(failure_kinds);
-#endif
     return res;
 }
 #undef ADD_STAT_TO_DICT
@@ -105,7 +102,7 @@ add_stat_dict(
     int opcode,
     const char *name) {
 
-    SpecializationStats *stats = &_specialization_stats[opcode];
+    SpecializationStats *stats = &_py_stats.opcode_stats[opcode].specialization;
     PyObject *d = stats_to_dict(stats);
     if (d == NULL) {
         return -1;
@@ -115,7 +112,7 @@ add_stat_dict(
     return err;
 }
 
-#if COLLECT_SPECIALIZATION_STATS
+#ifdef Py_STATS
 PyObject*
 _Py_GetSpecializationStats(void) {
     PyObject *stats = PyDict_New();
@@ -141,64 +138,80 @@ _Py_GetSpecializationStats(void) {
 #endif
 
 
-#define PRINT_STAT(name, field) fprintf(out, "    %s." #field " : %" PRIu64 "\n", name, stats->field);
+#define PRINT_STAT(i, field) \
+    if (stats[i].field) { \
+        fprintf(out, "    opcode[%d]." #field " : %" PRIu64 "\n", i, stats[i].field); \
+    }
 
 static void
-print_stats(FILE *out, SpecializationStats *stats, const char *name)
+print_spec_stats(FILE *out, OpcodeStats *stats)
 {
-    PRINT_STAT(name, specialization_success);
-    PRINT_STAT(name, specialization_failure);
-    PRINT_STAT(name, hit);
-    PRINT_STAT(name, deferred);
-    PRINT_STAT(name, miss);
-    PRINT_STAT(name, deopt);
-    PRINT_STAT(name, unquickened);
-#if PRINT_SPECIALIZATION_STATS_DETAILED
-    for (int i = 0; i < SPECIALIZATION_FAILURE_KINDS; i++) {
-        fprintf(out, "    %s.specialization_failure_kinds[%d] : %" PRIu64 "\n",
-            name, i, stats->specialization_failure_kinds[i]);
+    for (int i = 0; i < 256; i++) {
+        PRINT_STAT(i, specialization.success);
+        PRINT_STAT(i, specialization.failure);
+        PRINT_STAT(i, specialization.hit);
+        PRINT_STAT(i, specialization.deferred);
+        PRINT_STAT(i, specialization.miss);
+        PRINT_STAT(i, specialization.deopt);
+        PRINT_STAT(i, execution_count);
+        for (int j = 0; j < SPECIALIZATION_FAILURE_KINDS; j++) {
+            uint64_t val = stats[i].specialization.failure_kinds[j];
+            if (val) {
+                fprintf(out, "    opcode[%d].specialization.failure_kinds[%d] : %"
+                    PRIu64 "\n", i, j, val);
+            }
+        }
     }
-#endif
 }
 #undef PRINT_STAT
 
+static void
+print_stats(FILE *out, PyStats *stats) {
+    print_spec_stats(out, stats->opcode_stats);
+}
+
 void
-_Py_PrintSpecializationStats(void)
+_Py_PrintSpecializationStats(int to_file)
 {
     FILE *out = stderr;
-#if PRINT_SPECIALIZATION_STATS_TO_FILE
-    /* Write to a file instead of stderr. */
+    if (to_file) {
+        /* Write to a file instead of stderr. */
 # ifdef MS_WINDOWS
-    const char *dirname = "c:\\temp\\py_stats\\";
+        const char *dirname = "c:\\temp\\py_stats\\";
 # else
-    const char *dirname = "/tmp/py_stats/";
+        const char *dirname = "/tmp/py_stats/";
 # endif
-    char buf[48];
-    sprintf(buf, "%s%u_%u.txt", dirname, (unsigned)clock(), (unsigned)rand());
-    FILE *fout = fopen(buf, "w");
-    if (fout) {
-        out = fout;
+        /* Use random 160 bit number as file name,
+        * to avoid both accidental collisions and
+        * symlink attacks. */
+        unsigned char rand[20];
+        char hex_name[41];
+        _PyOS_URandomNonblock(rand, 20);
+        for (int i = 0; i < 20; i++) {
+            hex_name[2*i] = "0123456789abcdef"[rand[i]&15];
+            hex_name[2*i+1] = "0123456789abcdef"[(rand[i]>>4)&15];
+        }
+        hex_name[40] = '\0';
+        char buf[64];
+        assert(strlen(dirname) + 40 + strlen(".txt") < 64);
+        sprintf(buf, "%s%s.txt", dirname, hex_name);
+        FILE *fout = fopen(buf, "w");
+        if (fout) {
+            out = fout;
+        }
     }
-#else
-    fprintf(out, "Specialization stats:\n");
-#endif
-    print_stats(out, &_specialization_stats[LOAD_ATTR], "load_attr");
-    print_stats(out, &_specialization_stats[LOAD_GLOBAL], "load_global");
-    print_stats(out, &_specialization_stats[LOAD_METHOD], "load_method");
-    print_stats(out, &_specialization_stats[BINARY_SUBSCR], "binary_subscr");
-    print_stats(out, &_specialization_stats[STORE_SUBSCR], "store_subscr");
-    print_stats(out, &_specialization_stats[STORE_ATTR], "store_attr");
-    print_stats(out, &_specialization_stats[CALL_NO_KW], "call_no_kw");
-    print_stats(out, &_specialization_stats[BINARY_OP], "binary_op");
-    print_stats(out, &_specialization_stats[COMPARE_OP], "compare_op");
+    else {
+        fprintf(out, "Specialization stats:\n");
+    }
+    print_stats(out, &_py_stats);
     if (out != stderr) {
         fclose(out);
     }
 }
 
-#if COLLECT_SPECIALIZATION_STATS_DETAILED
+#ifdef Py_STATS
 
-#define SPECIALIZATION_FAIL(opcode, kind) _specialization_stats[opcode].specialization_failure_kinds[kind]++
+#define SPECIALIZATION_FAIL(opcode, kind) _py_stats.opcode_stats[opcode].specialization.failure_kinds[kind]++
 
 
 #endif
@@ -769,12 +782,12 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
         goto success;
     }
 fail:
-    STAT_INC(LOAD_ATTR, specialization_failure);
+    STAT_INC(LOAD_ATTR, failure);
     assert(!PyErr_Occurred());
     cache_backoff(cache0);
     return 0;
 success:
-    STAT_INC(LOAD_ATTR, specialization_success);
+    STAT_INC(LOAD_ATTR, success);
     assert(!PyErr_Occurred());
     cache0->counter = initial_counter_value();
     return 0;
@@ -851,19 +864,19 @@ _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, S
         goto success;
     }
 fail:
-    STAT_INC(STORE_ATTR, specialization_failure);
+    STAT_INC(STORE_ATTR, failure);
     assert(!PyErr_Occurred());
     cache_backoff(cache0);
     return 0;
 success:
-    STAT_INC(STORE_ATTR, specialization_success);
+    STAT_INC(STORE_ATTR, success);
     assert(!PyErr_Occurred());
     cache0->counter = initial_counter_value();
     return 0;
 }
 
 
-#if COLLECT_SPECIALIZATION_STATS_DETAILED
+#ifdef Py_STATS
 static int
 load_method_fail_kind(DesciptorClassification kind)
 {
@@ -1007,12 +1020,12 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
     cache2->obj = descr;
     // Fall through.
 success:
-    STAT_INC(LOAD_METHOD, specialization_success);
+    STAT_INC(LOAD_METHOD, success);
     assert(!PyErr_Occurred());
     cache0->counter = initial_counter_value();
     return 0;
 fail:
-    STAT_INC(LOAD_METHOD, specialization_failure);
+    STAT_INC(LOAD_METHOD, failure);
     assert(!PyErr_Occurred());
     cache_backoff(cache0);
     return 0;
@@ -1078,18 +1091,18 @@ _Py_Specialize_LoadGlobal(
     *instr = _Py_MAKECODEUNIT(LOAD_GLOBAL_BUILTIN, _Py_OPARG(*instr));
     goto success;
 fail:
-    STAT_INC(LOAD_GLOBAL, specialization_failure);
+    STAT_INC(LOAD_GLOBAL, failure);
     assert(!PyErr_Occurred());
     cache_backoff(cache0);
     return 0;
 success:
-    STAT_INC(LOAD_GLOBAL, specialization_success);
+    STAT_INC(LOAD_GLOBAL, success);
     assert(!PyErr_Occurred());
     cache0->counter = initial_counter_value();
     return 0;
 }
 
-#if COLLECT_SPECIALIZATION_STATS_DETAILED
+#ifdef Py_STATS
 static int
 binary_subscr_fail_kind(PyTypeObject *container_type, PyObject *sub)
 {
@@ -1193,7 +1206,7 @@ _Py_Specialize_BinarySubscr(
         assert(cls->tp_version_tag != 0);
         cache0->version = cls->tp_version_tag;
         int version = _PyFunction_GetVersionForCurrentState(func);
-        if (version == 0) {
+        if (version == 0 || version != (uint16_t)version) {
             SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_OUT_OF_VERSIONS);
             goto fail;
         }
@@ -1205,12 +1218,12 @@ _Py_Specialize_BinarySubscr(
     SPECIALIZATION_FAIL(BINARY_SUBSCR,
                         binary_subscr_fail_kind(container_type, sub));
 fail:
-    STAT_INC(BINARY_SUBSCR, specialization_failure);
+    STAT_INC(BINARY_SUBSCR, failure);
     assert(!PyErr_Occurred());
     cache_backoff(cache0);
     return 0;
 success:
-    STAT_INC(BINARY_SUBSCR, specialization_success);
+    STAT_INC(BINARY_SUBSCR, success);
     assert(!PyErr_Occurred());
     cache0->counter = initial_counter_value();
     return 0;
@@ -1253,12 +1266,12 @@ _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *ins
         goto fail;
     }
 fail:
-    STAT_INC(STORE_SUBSCR, specialization_failure);
+    STAT_INC(STORE_SUBSCR, failure);
     assert(!PyErr_Occurred());
     *instr = _Py_MAKECODEUNIT(_Py_OPCODE(*instr), ADAPTIVE_CACHE_BACKOFF);
     return 0;
 success:
-    STAT_INC(STORE_SUBSCR, specialization_success);
+    STAT_INC(STORE_SUBSCR, success);
     assert(!PyErr_Occurred());
     return 0;
 }
@@ -1427,7 +1440,7 @@ specialize_py_call(
     return 0;
 }
 
-#if COLLECT_SPECIALIZATION_STATS_DETAILED
+#ifdef Py_STATS
 static int
 builtin_call_fail_kind(int ml_flags)
 {
@@ -1506,7 +1519,7 @@ specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
     }
 }
 
-#if COLLECT_SPECIALIZATION_STATS_DETAILED
+#ifdef Py_STATS
 static int
 call_fail_kind(PyObject *callable)
 {
@@ -1556,12 +1569,12 @@ _Py_Specialize_CallNoKw(
     }
     _PyAdaptiveEntry *cache0 = &cache->adaptive;
     if (fail) {
-        STAT_INC(CALL_NO_KW, specialization_failure);
+        STAT_INC(CALL_NO_KW, failure);
         assert(!PyErr_Occurred());
         cache_backoff(cache0);
     }
     else {
-        STAT_INC(CALL_NO_KW, specialization_success);
+        STAT_INC(CALL_NO_KW, success);
         assert(!PyErr_Occurred());
         cache0->counter = initial_counter_value();
     }
@@ -1642,11 +1655,11 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
     }
     SPECIALIZATION_FAIL(BINARY_OP, SPEC_FAIL_OTHER);
 failure:
-    STAT_INC(BINARY_OP, specialization_failure);
+    STAT_INC(BINARY_OP, failure);
     cache_backoff(adaptive);
     return;
 success:
-    STAT_INC(BINARY_OP, specialization_success);
+    STAT_INC(BINARY_OP, success);
     adaptive->counter = initial_counter_value();
 }
 
@@ -1713,11 +1726,11 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
     }
     SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_OTHER);
 failure:
-    STAT_INC(COMPARE_OP, specialization_failure);
+    STAT_INC(COMPARE_OP, failure);
     cache_backoff(adaptive);
     return;
 success:
-    STAT_INC(COMPARE_OP, specialization_success);
+    STAT_INC(COMPARE_OP, success);
     adaptive->counter = initial_counter_value();
 }
 

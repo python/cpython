@@ -1048,9 +1048,7 @@ stack_effect(int opcode, int oparg, int jump)
         case POP_BLOCK:
             return 0;
         case POP_EXCEPT:
-            return -3;
-        case POP_EXCEPT_AND_RERAISE:
-            return -7;
+            return -1;
 
         case STORE_NAME:
             return -1;
@@ -1095,7 +1093,7 @@ stack_effect(int opcode, int oparg, int jump)
         case JUMP_IF_NOT_EXC_MATCH:
             return -1;
         case JUMP_IF_NOT_EG_MATCH:
-            return jump > 0 ? -1 : 2;
+            return jump > 0 ? -1 : 0;
         case IMPORT_NAME:
             return -1;
         case IMPORT_FROM:
@@ -1123,25 +1121,25 @@ stack_effect(int opcode, int oparg, int jump)
         /* Exception handling pseudo-instructions */
         case SETUP_FINALLY:
             /* 0 in the normal flow.
-             * Restore the stack position and push 3 values before jumping to
+             * Restore the stack position and push 1 value before jumping to
              * the handler if an exception be raised. */
-            return jump ? 3 : 0;
+            return jump ? 1 : 0;
         case SETUP_CLEANUP:
             /* As SETUP_FINALLY, but pushes lasti as well */
-            return jump ? 4 : 0;
+            return jump ? 2 : 0;
         case SETUP_WITH:
             /* 0 in the normal flow.
              * Restore the stack position to the position before the result
-             * of __(a)enter__ and push 4 values before jumping to the handler
+             * of __(a)enter__ and push 2 values before jumping to the handler
              * if an exception be raised. */
-            return jump ? -1 + 4 : 0;
+            return jump ? 1 : 0;
 
         case PREP_RERAISE_STAR:
-             return 2;
+             return -1;
         case RERAISE:
-            return -3;
+            return -1;
         case PUSH_EXC_INFO:
-            return 3;
+            return 1;
 
         case WITH_EXCEPT_START:
             return 1;
@@ -1202,7 +1200,7 @@ stack_effect(int opcode, int oparg, int jump)
         case GET_YIELD_FROM_ITER:
             return 0;
         case END_ASYNC_FOR:
-            return -4;
+            return -2;
         case FORMAT_VALUE:
             /* If there's a fmt_spec on the stack, we go from 2->1,
                else 1->1. */
@@ -1672,6 +1670,9 @@ compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
 #define ADD_YIELD_FROM(C) \
     RETURN_IF_FALSE(compiler_add_yield_from((C)))
 
+#define POP_EXCEPT_AND_RERAISE(C) \
+    RETURN_IF_FALSE(compiler_pop_except_and_reraise((C)))
+
 #define VISIT(C, TYPE, V) {\
     if (!compiler_visit_ ## TYPE((C), (V))) \
         return 0; \
@@ -1842,6 +1843,22 @@ compiler_add_yield_from(struct compiler *c)
     return 1;
 }
 
+static int
+compiler_pop_except_and_reraise(struct compiler *c)
+{
+    /* Stack contents
+     * [exc_info, lasti, exc]            COPY        3
+     * [exc_info, lasti, exc, exc_info]  POP_EXCEPT
+     * [exc_info, lasti, exc]            RERAISE      1
+     * (exception_unwind clears the stack)
+     */
+
+    ADDOP_I(c, COPY, 3);
+    ADDOP(c, POP_EXCEPT);
+    ADDOP_I(c, RERAISE, 1);
+    return 1;
+}
+
 /* Unwind a frame block.  If preserve_tos is true, the TOS before
  * popping the blocks will be restored afterwards, unless another
  * return, break or continue is found. In which case, the TOS will
@@ -1891,13 +1908,11 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
 
         case FINALLY_END:
             if (preserve_tos) {
-                ADDOP(c, ROT_FOUR);
+                ADDOP(c, ROT_TWO);
             }
-            ADDOP(c, POP_TOP);
-            ADDOP(c, POP_TOP);
-            ADDOP(c, POP_TOP);
+            ADDOP(c, POP_TOP); /* exc_value */
             if (preserve_tos) {
-                ADDOP(c, ROT_FOUR);
+                ADDOP(c, ROT_TWO);
             }
             ADDOP(c, POP_BLOCK);
             ADDOP(c, POP_EXCEPT);
@@ -1930,7 +1945,7 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
                 ADDOP(c, POP_BLOCK);
             }
             if (preserve_tos) {
-                ADDOP(c, ROT_FOUR);
+                ADDOP(c, ROT_TWO);
             }
             ADDOP(c, POP_BLOCK);
             ADDOP(c, POP_EXCEPT);
@@ -3240,7 +3255,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     compiler_pop_fblock(c, FINALLY_END, end);
     ADDOP_I(c, RERAISE, 0);
     compiler_use_next_block(c, cleanup);
-    ADDOP(c, POP_EXCEPT_AND_RERAISE);
+    POP_EXCEPT_AND_RERAISE(c);
     compiler_use_next_block(c, exit);
     return 1;
 }
@@ -3295,7 +3310,7 @@ compiler_try_star_finally(struct compiler *c, stmt_ty s)
     compiler_pop_fblock(c, FINALLY_END, end);
     ADDOP_I(c, RERAISE, 0);
     compiler_use_next_block(c, cleanup);
-    ADDOP(c, POP_EXCEPT_AND_RERAISE);
+    POP_EXCEPT_AND_RERAISE(c);
     compiler_use_next_block(c, exit);
     return 1;
 }
@@ -3313,18 +3328,16 @@ compiler_try_star_finally(struct compiler *c, stmt_ty s)
    []                           POP_BLOCK
    []                           JUMP_FORWARD    L0
 
-   [tb, val, exc]       L1:     <evaluate E1>                   )
-   [tb, val, exc, E1]           JUMP_IF_NOT_EXC_MATCH L2        ) only if E1
-   [tb, val, exc]               POP
-   [tb, val]                    <assign to V1>  (or POP if no V1)
-   [tb]                         POP
+   [exc]                L1:     <evaluate E1>           )
+   [exc, E1]                    JUMP_IF_NOT_EXC_MATCH L2        ) only if E1
+   [exc]                        <assign to V1>  (or POP if no V1)
    []                           <code for S1>
                                 JUMP_FORWARD    L0
 
-   [tb, val, exc]       L2:     <evaluate E2>
+   [exc]                L2:     <evaluate E2>
    .............................etc.......................
 
-   [tb, val, exc]       Ln+1:   RERAISE     # re-raise exception
+   [exc]                Ln+1:   RERAISE     # re-raise exception
 
    []                   L0:     <next statement>
 
@@ -3375,7 +3388,6 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             ADDOP_JUMP(c, JUMP_IF_NOT_EXC_MATCH, except);
             NEXT_BLOCK(c);
         }
-        ADDOP(c, POP_TOP);
         if (handler->v.ExceptHandler.name) {
             basicblock *cleanup_end, *cleanup_body;
 
@@ -3386,7 +3398,6 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             }
 
             compiler_nameop(c, handler->v.ExceptHandler.name, Store);
-            ADDOP(c, POP_TOP);
 
             /*
               try:
@@ -3437,8 +3448,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             if (!cleanup_body)
                 return 0;
 
-            ADDOP(c, POP_TOP);
-            ADDOP(c, POP_TOP);
+            ADDOP(c, POP_TOP); /* exc_value */
             compiler_use_next_block(c, cleanup_body);
             if (!compiler_push_fblock(c, HANDLER_CLEANUP, cleanup_body, NULL, NULL))
                 return 0;
@@ -3456,7 +3466,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
     compiler_pop_fblock(c, EXCEPTION_HANDLER, NULL);
     ADDOP_I(c, RERAISE, 0);
     compiler_use_next_block(c, cleanup);
-    ADDOP(c, POP_EXCEPT_AND_RERAISE);
+    POP_EXCEPT_AND_RERAISE(c);
     compiler_use_next_block(c, orelse);
     VISIT_SEQ(c, stmt, s->v.Try.orelse);
     ADDOP_JUMP(c, JUMP_FORWARD, end);
@@ -3470,52 +3480,46 @@ compiler_try_except(struct compiler *c, stmt_ty s)
    at the right; 'tb' is trace-back info, 'val' the exception instance,
    and 'typ' the exception's type.)
 
-   Value stack                             Label         Instruction     Argument
-   []                                                   SETUP_FINALLY         L1
-   []                                                   <code for S>
-   []                                                   POP_BLOCK
-   []                                                   JUMP_FORWARD          L0
+   Value stack                   Label         Instruction     Argument
+   []                                         SETUP_FINALLY         L1
+   []                                         <code for S>
+   []                                         POP_BLOCK
+   []                                         JUMP_FORWARD          L0
 
-   [tb, val, typ]                            L1:        DUP_TOP_TWO               )  save a copy of the
-   [tb, val, typ, orig, typ]                            POP_TOP                   )  original raised exception
-   [tb, val, typ, orig]                                 ROT_FOUR                  )
-   [orig, tb, val, typ]                                 BUILD_LIST                )  list for raised/reraised
-   [orig, tb, val, typ, res]                            ROT_FOUR                  )  exceptions ("result")
+   [exc]                            L1:       DUP_TOP      )  save copy of the original exception
+   [orig, exc]                                BUILD_LIST   )  list for raised/reraised excs ("result")
+   [orig, exc, res]                           ROT_TWO
 
-   [orig, res, tb, val, typ]                            <evaluate E1>             )
-   [orig, res, tb, val, typ, E1]                        JUMP_IF_NOT_EXC_MATCH L2  ) only if E1
+   [orig, res, exc]                           <evaluate E1>
+   [orig, res, exc, E1]                       JUMP_IF_NOT_EG_MATCH L2
 
-   [orig, res, tb, rest, typ, tb, match, typ]           POP
-   [orig, res, tb, rest, typ, tb, match]                <assign to V1>  (or POP if no V1)
-   [orig, res, tb, rest, typ, tb]                       POP
+   [orig, res, rest, match]                   <assign to V1>  (or POP if no V1)
 
-   [orig, res, tb, rest, typ]                           SETUP_FINALLY         R1
-   [orig, res, tb, rest, typ]                           <code for S1>
-   [orig, res, tb, rest, typ]                           JUMP_FORWARD          L2
+   [orig, res, rest]                          SETUP_FINALLY         R1
+   [orig, res, rest]                          <code for S1>
+   [orig, res, rest]                          JUMP_FORWARD          L2
 
-   [orig, res, tb, rest, typ, i, tb, v, t]   R1:        POP           ) exception raised in except* body
-   [orig, res, tb, rest, typ, i, tb, v]                 LIST_APPEND 6 ) add it to res
-   [orig, res, tb, rest, typ, i, tb]                    POP
-   [orig, res, tb, rest, typ, i]                        POP
+   [orig, res, rest, i, v]          R1:       LIST_APPEND   3 ) exc raised in except* body - add to res
+   [orig, res, rest, i]                       POP
 
-   [orig, res, tb, rest, typ]                L2:        <evaluate E2>
+   [orig, res, rest]                L2:       <evaluate E2>
    .............................etc.......................
 
-   [orig, res, tb, rest, typ]                Ln+1:       POP           ) add unhandled exception
-   [orig, res, tb, rest]                                 LIST_APPEND 2 ) to res (could be None)
-   [orig, res, tb]                                       POP
+   [orig, res, rest]                Ln+1:     LIST_APPEND 1  ) add unhandled exc to res (could be None)
 
-   [orig, res]                                           PREP_RERAISE_STAR
-   [i, tb, val, typ]                                     POP_JUMP_IF_TRUE      RER
-   [i, tb, val, typ]                                     POP
-   [i, tb, val]                                          POP
-   [i, tb]                                               POP
-   [i]                                                   POP
-   []                                                    JUMP_FORWARD          L0
+   [orig, res]                                PREP_RERAISE_STAR
+   [exc]                                      DUP_TOP
+   [exc, exc]                                 LOAD_CONST            None
+   [exc, exc, None]                           COMPARE_IS
+   [exc, is_none]                             POP_JUMP_IF_FALSE     RER
+   [exc]                                      POP_TOP
+   []                                         JUMP_FORWARD          L0
 
-   [i, tb, val, typ]                        RER:         POP_EXCEPT_AND_RERAISE
+   [exc]                            RER:      ROT_TWO
+   [exc, prev_exc_info]                       POP_EXCEPT
+   [exc]                                      RERAISE               0
 
-   []                                       L0:     <next statement>
+   []                               L0:       <next statement>
 */
 static int
 compiler_try_star_except(struct compiler *c, stmt_ty s)
@@ -3576,30 +3580,25 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         if (i == 0) {
             /* Push the original EG into the stack */
             /*
-               [tb, val, exc]            DUP_TOP_TWO
-               [tb, val, exc, val, exc]  POP_TOP
-               [tb, val, exc, val]       ROT_FOUR
-               [val, tb, val, exc]
+               [exc]            DUP_TOP
+               [orig, exc]
             */
-            ADDOP(c, DUP_TOP_TWO);
-            ADDOP(c, POP_TOP);
-            ADDOP(c, ROT_FOUR);
+            ADDOP(c, DUP_TOP);
 
             /* create empty list for exceptions raised/reraise in the except* blocks */
             /*
-               [val, tb, val, exc]       BUILD_LIST
-               [val, tb, val, exc, []]   ROT_FOUR
-               [val, [], tb, val, exc]
+               [orig, exc]       BUILD_LIST
+               [orig, exc, []]   ROT_TWO
+               [orig, [], exc]
             */
             ADDOP_I(c, BUILD_LIST, 0);
-            ADDOP(c, ROT_FOUR);
+            ADDOP(c, ROT_TWO);
         }
         if (handler->v.ExceptHandler.type) {
             VISIT(c, expr, handler->v.ExceptHandler.type);
             ADDOP_JUMP(c, JUMP_IF_NOT_EG_MATCH, except);
             NEXT_BLOCK(c);
         }
-        ADDOP(c, POP_TOP);  // exc_type
 
         basicblock *cleanup_end = compiler_new_block(c);
         if (cleanup_end == NULL) {
@@ -3614,9 +3613,8 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
             compiler_nameop(c, handler->v.ExceptHandler.name, Store);
         }
         else {
-            ADDOP(c, POP_TOP);  // val
+            ADDOP(c, POP_TOP);  // exc
         }
-        ADDOP(c, POP_TOP);  // tb
 
         /*
           try:
@@ -3660,9 +3658,7 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         }
 
         /* add exception raised to the res list */
-        ADDOP(c, POP_TOP); // type
-        ADDOP_I(c, LIST_APPEND, 6); // exc
-        ADDOP(c, POP_TOP); // tb
+        ADDOP_I(c, LIST_APPEND, 3); // exc
         ADDOP(c, POP_TOP); // lasti
 
         ADDOP_JUMP(c, JUMP_ABSOLUTE, except);
@@ -3670,9 +3666,7 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
 
         if (i == n - 1) {
             /* Add exc to the list (if not None it's the unhandled part of the EG) */
-            ADDOP(c, POP_TOP);
-            ADDOP_I(c, LIST_APPEND, 2);
-            ADDOP(c, POP_TOP);
+            ADDOP_I(c, LIST_APPEND, 1);
             ADDOP_JUMP(c, JUMP_FORWARD, reraise_star);
         }
     }
@@ -3687,22 +3681,23 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
     compiler_use_next_block(c, reraise_star);
     ADDOP(c, PREP_RERAISE_STAR);
     ADDOP(c, DUP_TOP);
-    ADDOP_JUMP(c, POP_JUMP_IF_TRUE, reraise);
+    ADDOP_LOAD_CONST(c, Py_None);
+    ADDOP_COMPARE(c, Is);
+    ADDOP_JUMP(c, POP_JUMP_IF_FALSE, reraise);
     NEXT_BLOCK(c);
 
-    /* Nothing to reraise - pop it */
-    ADDOP(c, POP_TOP);
-    ADDOP(c, POP_TOP);
-    ADDOP(c, POP_TOP);
+    /* Nothing to reraise */
     ADDOP(c, POP_TOP);
     ADDOP(c, POP_BLOCK);
     ADDOP(c, POP_EXCEPT);
     ADDOP_JUMP(c, JUMP_FORWARD, end);
     compiler_use_next_block(c, reraise);
     ADDOP(c, POP_BLOCK);
-    ADDOP(c, POP_EXCEPT_AND_RERAISE);
+    ADDOP(c, ROT_TWO);
+    ADDOP(c, POP_EXCEPT);
+    ADDOP_I(c, RERAISE, 0);
     compiler_use_next_block(c, cleanup);
-    ADDOP(c, POP_EXCEPT_AND_RERAISE);
+    POP_EXCEPT_AND_RERAISE(c);
     compiler_use_next_block(c, orelse);
     VISIT_SEQ(c, stmt, s->v.TryStar.orelse);
     ADDOP_JUMP(c, JUMP_FORWARD, end);
@@ -5452,13 +5447,11 @@ compiler_with_except_finish(struct compiler *c, basicblock * cleanup) {
         return 0;
     ADDOP_JUMP(c, POP_JUMP_IF_TRUE, exit);
     NEXT_BLOCK(c);
-    ADDOP_I(c, RERAISE, 4);
+    ADDOP_I(c, RERAISE, 2);
     compiler_use_next_block(c, cleanup);
-    ADDOP(c, POP_EXCEPT_AND_RERAISE);
+    POP_EXCEPT_AND_RERAISE(c);
     compiler_use_next_block(c, exit);
-    ADDOP(c, POP_TOP);
-    ADDOP(c, POP_TOP);
-    ADDOP(c, POP_TOP);
+    ADDOP(c, POP_TOP); /* exc_value */
     ADDOP(c, POP_BLOCK);
     ADDOP(c, POP_EXCEPT);
     ADDOP(c, POP_TOP);
@@ -5590,7 +5583,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     E:  WITH_EXCEPT_START (calls EXPR.__exit__)
         POP_JUMP_IF_TRUE T:
         RERAISE
-    T:  POP_TOP * 3 (remove exception from stack)
+    T:  POP_TOP (remove exception from stack)
         POP_EXCEPT
         POP_TOP
     EXIT:
@@ -7059,8 +7052,7 @@ stackdepth(struct compiler *c)
                 instr->i_opcode == JUMP_FORWARD ||
                 instr->i_opcode == RETURN_VALUE ||
                 instr->i_opcode == RAISE_VARARGS ||
-                instr->i_opcode == RERAISE ||
-                instr->i_opcode == POP_EXCEPT_AND_RERAISE)
+                instr->i_opcode == RERAISE)
             {
                 /* remaining code is dead */
                 next = NULL;
@@ -7371,7 +7363,10 @@ assemble_emit_exception_table_entry(struct assembler *a, int start, int end, bas
     int size = end-start;
     assert(end > start);
     int target = handler->b_offset;
-    int depth = handler->b_preserve_lasti ? handler->b_startdepth-4 : handler->b_startdepth-3;
+    int depth = handler->b_startdepth - 1;
+    if (handler->b_preserve_lasti) {
+        depth -= 1;
+    }
     assert(depth >= 0);
     int depth_lasti = (depth<<1) | handler->b_preserve_lasti;
     assemble_emit_exception_table_item(a, start, (1<<7));
@@ -8780,7 +8775,6 @@ normalize_basic_block(basicblock *bb) {
             case RETURN_VALUE:
             case RAISE_VARARGS:
             case RERAISE:
-            case POP_EXCEPT_AND_RERAISE:
                 bb->b_exit = 1;
                 bb->b_nofallthrough = 1;
                 break;

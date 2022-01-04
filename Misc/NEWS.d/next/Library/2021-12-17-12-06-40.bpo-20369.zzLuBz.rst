@@ -1,0 +1,1 @@
+:func:`concurrent.futures.wait` no longer blocks forever when given duplicate Futures. Patch by Kumar Aditya.

@@ -1387,6 +1387,21 @@ then
   AC_DEFINE(Py_TRACE_REFS, 1, [Define if you want to enable tracing references for debugging purpose])
 fi
 
+
+# Check for --enable-pystats
+AC_MSG_CHECKING([for --enable-pystats])
+AC_ARG_ENABLE([pystats],
+  [AS_HELP_STRING(
+    [--enable-pystats],
+    [enable internal statistics gathering (default is no)])],,
+  [enable_pystats=no]
+)
+AC_MSG_RESULT([$enable_pystats])
+
+AS_VAR_IF([enable_pystats], [yes], [
+  AC_DEFINE([Py_STATS], [1], [Define if you want to enable internal statistics gathering.])
+])
+
 # Check for --with-assertions.
 # This allows enabling assertions without Py_DEBUG.
 assertions='false'
@@ -3850,7 +3865,11 @@ AC_ARG_WITH(pymalloc,
 
 if test -z "$with_pymalloc"
 then
-    with_pymalloc="yes"
+  dnl default to yes except for wasm32-emscripten
+  AS_CASE([$ac_sys_system],
+    [Emscripten], [with_pymalloc="no"],
+    [with_pymalloc="yes"]
+  )
 fi
 if test "$with_pymalloc" != "no"
 then
@@ -6238,11 +6257,15 @@ AC_ARG_ENABLE(test-modules,
               AS_HELP_STRING([--disable-test-modules], [don't build nor install test modules]))
 if test "$enable_test_modules" = no; then
     TEST_MODULES=no
-    AC_MSG_RESULT(yes)
 else
-    TEST_MODULES=yes
-    AC_MSG_RESULT(no)
+    AS_CASE([$ac_sys_system],
+      [Emscripten], [TEST_MODULES=no],
+      [TEST_MODULES=yes]
+    )
 fi
+AS_VAR_IF([TEST_MODULES], [yes],
+  [AC_MSG_RESULT(no)], [AC_MSG_RESULT(yes)]
+)
 AC_SUBST(TEST_MODULES)
 
 dnl Modules that are not available on some platforms
@@ -6257,6 +6280,7 @@ AS_CASE([$ac_sys_system],
   [FreeBSD*], [py_stdlib_not_available="_scproxy spwd"],
   [Emscripten], [
     py_stdlib_not_available="m4_normalize([
+      _ctypes
       _curses
       _curses_panel
       _dbm
@@ -6265,12 +6289,14 @@ AS_CASE([$ac_sys_system],
       _posixshmem
       _posixsubprocess
       _scproxy
+      _tkinter
       _xxsubinterpreters
       fcntl
       grp
       nis
       ossaudiodev
       resource
+      readline
       spwd
       syslog
       termios
@@ -6285,6 +6311,16 @@ AS_CASE([$host_cpu],
   [MODULE_BUILDTYPE=${MODULE_BUILDTYPE:-shared}]
 )
 AC_SUBST([MODULE_BUILDTYPE])
+
+dnl Use Modules/Setup.stdlib as additional provider?
+AC_MSG_CHECKING([for additional Modules/Setup files])
+AS_CASE([$ac_sys_system],
+    [Emscripten], [MODULES_SETUP_STDLIB=Modules/Setup.stdlib],
+    [MODULES_SETUP_STDLIB=]
+)
+AC_MSG_RESULT([$MODULES_SETUP_STDLIB])
+AC_SUBST([MODULES_SETUP_STDLIB])
+
 
 dnl _MODULE_BLOCK_ADD([VAR], [VALUE])
 dnl internal: adds $1=quote($2) to MODULE_BLOCK
@@ -6323,7 +6359,7 @@ AC_DEFUN([PY_STDLIB_MOD], [
 ])
 
 dnl Define simple stdlib extension module
-dnl Always enable unless the module is listed in py_stdlib_not_available 
+dnl Always enable unless the module is listed in py_stdlib_not_available
 dnl PY_STDLIB_MOD_SIMPLE([NAME], [CFLAGS], [LDFLAGS])
 dnl cflags and ldflags are optional
 AC_DEFUN([PY_STDLIB_MOD_SIMPLE], [
@@ -6500,7 +6536,7 @@ fi
 AC_MSG_NOTICE([creating Makefile])
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
-			Modules/Setup.local $srcdir/Modules/Setup.bootstrap $srcdir/Modules/Setup
+			Modules/Setup.local $MODULES_SETUP_STDLIB $srcdir/Modules/Setup.bootstrap $srcdir/Modules/Setup
 mv config.c Modules
 
 if test -z "$PKG_CONFIG"; then

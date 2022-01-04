@@ -772,6 +772,7 @@ MODULE_TIME_FALSE
 MODULE_TIME_TRUE
 MODULE__IO_FALSE
 MODULE__IO_TRUE
+MODULES_SETUP_STDLIB
 MODULE_BUILDTYPE
 TEST_MODULES
 LIBRARY_DEPS
@@ -1006,6 +1007,7 @@ enable_shared
 enable_profiling
 with_pydebug
 with_trace_refs
+enable_pystats
 with_assertions
 enable_optimizations
 with_lto
@@ -1713,6 +1715,7 @@ Optional Features:
                           no)
   --enable-profiling      enable C-level code profiling with gprof (default is
                           no)
+  --enable-pystats        enable internal statistics gathering (default is no)
   --enable-optimizations  enable expensive, stable optimizations (PGO, etc.)
                           (default is no)
   --enable-loadable-sqlite-extensions
@@ -6912,6 +6915,29 @@ if test "$with_trace_refs" = "yes"
 then
 
 $as_echo "#define Py_TRACE_REFS 1" >>confdefs.h
+
+fi
+
+
+# Check for --enable-pystats
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-pystats" >&5
+$as_echo_n "checking for --enable-pystats... " >&6; }
+# Check whether --enable-pystats was given.
+if test "${enable_pystats+set}" = set; then :
+  enableval=$enable_pystats;
+else
+  enable_pystats=no
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_pystats" >&5
+$as_echo "$enable_pystats" >&6; }
+
+if test "x$enable_pystats" = xyes; then :
+
+
+$as_echo "#define Py_STATS 1" >>confdefs.h
+
 
 fi
 
@@ -13273,7 +13299,13 @@ fi
 
 if test -z "$with_pymalloc"
 then
+    case $ac_sys_system in #(
+  Emscripten) :
+    with_pymalloc="no" ;; #(
+  *) :
     with_pymalloc="yes"
+   ;;
+esac
 fi
 if test "$with_pymalloc" != "no"
 then
@@ -21140,12 +21172,22 @@ fi
 
 if test "$enable_test_modules" = no; then
     TEST_MODULES=no
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
 else
+    case $ac_sys_system in #(
+  Emscripten) :
+    TEST_MODULES=no ;; #(
+  *) :
     TEST_MODULES=yes
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+     ;;
+esac
+fi
+if test "x$TEST_MODULES" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
 fi
 
 
@@ -21164,7 +21206,7 @@ case $ac_sys_system in #(
     py_stdlib_not_available="_scproxy spwd" ;; #(
   Emscripten) :
 
-    py_stdlib_not_available="_curses _curses_panel _dbm _gdbm _multiprocessing _posixshmem _posixsubprocess _scproxy _xxsubinterpreters fcntl grp nis ossaudiodev resource spwd syslog termios"
+    py_stdlib_not_available="_ctypes _curses _curses_panel _dbm _gdbm _multiprocessing _posixshmem _posixsubprocess _scproxy _tkinter _xxsubinterpreters fcntl grp nis ossaudiodev resource readline spwd syslog termios"
    ;; #(
   *) :
     py_stdlib_not_available="_scproxy"
@@ -21178,6 +21220,20 @@ case $host_cpu in #(
     MODULE_BUILDTYPE=${MODULE_BUILDTYPE:-shared}
  ;;
 esac
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for additional Modules/Setup files" >&5
+$as_echo_n "checking for additional Modules/Setup files... " >&6; }
+case $ac_sys_system in #(
+  Emscripten) :
+    MODULES_SETUP_STDLIB=Modules/Setup.stdlib ;; #(
+  *) :
+    MODULES_SETUP_STDLIB=
+ ;;
+esac
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $MODULES_SETUP_STDLIB" >&5
+$as_echo "$MODULES_SETUP_STDLIB" >&6; }
+
 
 
 
@@ -25075,7 +25131,7 @@ fi
 $as_echo "$as_me: creating Makefile" >&6;}
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
-			Modules/Setup.local $srcdir/Modules/Setup.bootstrap $srcdir/Modules/Setup
+			Modules/Setup.local $MODULES_SETUP_STDLIB $srcdir/Modules/Setup.bootstrap $srcdir/Modules/Setup
 mv config.c Modules
 
 if test -z "$PKG_CONFIG"; then
