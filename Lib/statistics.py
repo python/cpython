@@ -787,7 +787,8 @@ def _ss(data, c=None):
     """
     if c is not None:
         T, total, count = _sum((d := x - c) * d for x in data)
-        return (T, total)
+        return (T, total, count)
+    count = 0
     sx_partials = {}
     sx_partials_get = sx_partials.get
     sxx_partials = {}
@@ -796,22 +797,24 @@ def _ss(data, c=None):
     for typ, values in groupby(data, type):
         T = _coerce(T, typ)  # or raise TypeError
         for n, d in map(_exact_ratio, values):
+            count += 1
             sx_partials[d] = sx_partials_get(d, 0) + n
             dd = d * d
             sxx_partials[dd] = sxx_partials_get(dd, 0) + n*n
-    if None in sx_partials:
+    if not count:
+        total = Fraction(0)
+    elif None in sx_partials:
         # The sum will be a NAN or INF. We can ignore all the finite
         # partials, and just look at this special one.
         total = sx_partials[None]
         assert not _isfinite(total)
     else:
-        count = len(data)
         sx = sum(Fraction(n, d) for d, n in sx_partials.items())
         sxx = sum(Fraction(n, d) for d, n in sxx_partials.items())
         # This formula is has poor numeric properties for floats,
         # but with fractions it is exact.
         total = (count * sxx - sx * sx) / count
-    return (T, total)
+    return (T, total, count)
 
 
 def variance(data, xbar=None):
@@ -852,12 +855,9 @@ def variance(data, xbar=None):
     Fraction(67, 108)
 
     """
-    if iter(data) is data:
-        data = list(data)
-    n = len(data)
+    T, ss, n = _ss(data, xbar)
     if n < 2:
         raise StatisticsError('variance requires at least two data points')
-    T, ss = _ss(data, xbar)
     return _convert(ss / (n - 1), T)
 
 
@@ -896,12 +896,9 @@ def pvariance(data, mu=None):
     Fraction(13, 72)
 
     """
-    if iter(data) is data:
-        data = list(data)
-    n = len(data)
+    T, ss, n = _ss(data, mu)
     if n < 1:
         raise StatisticsError('pvariance requires at least one data point')
-    T, ss = _ss(data, mu)
     return _convert(ss / n, T)
 
 
@@ -914,12 +911,9 @@ def stdev(data, xbar=None):
     1.0810874155219827
 
     """
-    if iter(data) is data:
-        data = list(data)
-    n = len(data)
+    T, ss, n = _ss(data, xbar)
     if n < 2:
         raise StatisticsError('stdev requires at least two data points')
-    T, ss = _ss(data, xbar)
     mss = ss / (n - 1)
     if issubclass(T, Decimal):
         return _decimal_sqrt_of_frac(mss.numerator, mss.denominator)
@@ -935,12 +929,9 @@ def pstdev(data, mu=None):
     0.986893273527251
 
     """
-    if iter(data) is data:
-        data = list(data)
-    n = len(data)
+    T, ss, n = _ss(data, mu)
     if n < 1:
         raise StatisticsError('pstdev requires at least one data point')
-    T, ss = _ss(data, mu)
     mss = ss / n
     if issubclass(T, Decimal):
         return _decimal_sqrt_of_frac(mss.numerator, mss.denominator)
