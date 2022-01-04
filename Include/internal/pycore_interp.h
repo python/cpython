@@ -173,12 +173,9 @@ struct _is {
     struct type_cache type_cache;
 
     struct {
-        // The fields here are values that would otherwise have been
-        // malloc'ed during interpreter init in pystate.c and pylifecycle.c.
-        // This allows us to avoid allocation costs during startup and
-        // helps simplify the startup code.
+        // See _PyRuntimeState._preallocated for an explanation.
         PyThreadState tstate;
-        // XXX Pre-allocate as many objects as possible here.
+        // XXX Pre-allocate as many objects from above as possible here.
     } _preallocated;
 };
 
