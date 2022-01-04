@@ -1200,6 +1200,13 @@ All of the following opcodes use their arguments.
    .. versionadded:: 3.11
 
 
+.. opcode:: RESUME
+
+    A no-op. Performs internal tracing, debugging and optimization checks.
+
+   .. versionadded:: 3.11
+
+
 .. opcode:: HAVE_ARGUMENT
 
    This is not really an opcode.  It identifies the dividing line between
