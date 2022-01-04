@@ -800,7 +800,7 @@ def _ss(data, c=None):
             count += 1
             sx_partials[d] = sx_partials_get(d, 0) + n
             dd = d * d
-            sxx_partials[dd] = sxx_partials_get(dd, 0) + n*n
+            sxx_partials[dd] = sxx_partials_get(dd, 0) + n * n
     if not count:
         total = Fraction(0)
     elif None in sx_partials:
