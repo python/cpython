@@ -46,7 +46,7 @@ typedef struct _interpreter_frame {
     int f_lasti;       /* Last instruction if called */
     int stacktop;     /* Offset of TOS from localsplus  */
     PyFrameState f_state;  /* What state the frame is in */
-    bool own_cframe;  // Whether this is the "root" frame for the current CFrame
+    bool is_entry;  // Whether this is the "root" frame for the current CFrame.
     PyObject *localsplus[1];
 } InterpreterFrame;
 
@@ -103,7 +103,7 @@ _PyFrame_InitializeSpecials(
     frame->generator = NULL;
     frame->f_lasti = -1;
     frame->f_state = FRAME_CREATED;
-    frame->own_cframe = true;
+    frame->is_entry = false;
 }
 
 /* Gets the pointer to the locals array
