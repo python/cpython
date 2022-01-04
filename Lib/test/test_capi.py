@@ -10,7 +10,6 @@ import random
 import re
 import subprocess
 import sys
-import sysconfig
 import textwrap
 import threading
 import time
@@ -38,9 +37,6 @@ Py_DEBUG = hasattr(sys, 'gettotalrefcount')
 
 def decode_stderr(err):
     return err.decode('utf-8', 'replace').replace('\r', '')
-
-
-WITH_MIMALLOC = sys._malloc_info.allocator.startswith("mimalloc")
 
 
 def testfunction(self):
@@ -952,7 +948,6 @@ class PyMemDebugTests(unittest.TestCase):
     def test_pyobject_forbidden_bytes_is_freed(self):
         self.check_pyobject_is_freed('check_pyobject_forbidden_bytes_is_freed')
 
-    @unittest.skipIf(WITH_MIMALLOC, reason="TODO: fails with mimalloc")
     def test_pyobject_freed_is_freed(self):
         self.check_pyobject_is_freed('check_pyobject_freed_is_freed')
 

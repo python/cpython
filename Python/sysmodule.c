@@ -1943,21 +1943,21 @@ make_malloc_info(void)
 
     PyStructSequence_SET_ITEM(malloc_info, pos++, v);
 
-#if WITH_FREELISTS
+#ifdef WITH_FREELISTS
     v = Py_True;
 #else
     v = Py_False;
 #endif
     PyStructSequence_SET_ITEM(malloc_info, pos++, _Py_NewRef(v));
 
-#if WITH_PYMALLOC
+#ifdef WITH_PYMALLOC
     v = Py_True;
 #else
     v = Py_False;
 #endif
     PyStructSequence_SET_ITEM(malloc_info, pos++, _Py_NewRef(v));
 
-#if WITH_MIMALLOC
+#ifdef WITH_MIMALLOC
     v = Py_True;
 #else
     v = Py_False;

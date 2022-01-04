@@ -268,7 +268,7 @@ _PyObject_ArenaFree(void *ctx, void *ptr, size_t size)
 
 #ifdef WITH_MIMALLOC
 // XXX: MIMALLOC_ALLOC as raw malloc breaks tests in debug mode
-// alloc_for_runtime() initializes PYMEM_DOMAIN_RAW before env var
+// alloc_for_runtime() initializes PYMEM_DOMAIN_RAW before the env var
 // PYTHONMALLOC is parsed.
 #  ifdef Py_DEBUG
 #    define PYRAW_ALLOC MALLOC_ALLOC
@@ -284,7 +284,7 @@ _PyObject_ArenaFree(void *ctx, void *ptr, size_t size)
 #else
 #  define PYRAW_ALLOC MALLOC_ALLOC
 #  define PYOBJ_ALLOC MALLOC_ALLOC
-#  define PYMEM_ALLOC PYMALLOC_ALLOC
+#  define PYMEM_ALLOC MALLOC_ALLOC
 #endif // WITH_MIMALLOC
 
 
@@ -453,7 +453,7 @@ _PyMem_SetupAllocators(PyMemAllocatorName allocator)
     case PYMEM_ALLOCATOR_MIMALLOC_DEBUG:
     {
         PyMemAllocatorEx mimalloc = MIMALLOC_ALLOC;
-#if Py_DEBUG
+#ifdef Py_DEBUG
         PyMemAllocatorEx malloc_alloc = MALLOC_ALLOC;
         PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &malloc_alloc);
 #else
