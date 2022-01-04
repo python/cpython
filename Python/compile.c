@@ -1208,8 +1208,6 @@ stack_effect(int opcode, int oparg, int jump)
             return 1;
         case LIST_TO_TUPLE:
             return 0;
-        case GEN_START:
-            return -1;
         case LIST_EXTEND:
         case SET_UPDATE:
         case DICT_MERGE:
@@ -8028,27 +8026,16 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
 
     /* Add the generator prefix instructions. */
     if (flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
-        int kind;
-        if (flags & CO_COROUTINE) {
-            kind = 1;
-        }
-        else if (flags & CO_ASYNC_GENERATOR) {
-            kind = 2;
-        }
-        else {
-            kind = 0;
-        }
-
-        struct instr gen_start = {
-            .i_opcode = GEN_START,
-            .i_oparg = kind,
+        struct instr pop_top = {
+            .i_opcode = POP_TOP,
+            .i_oparg = 0,
             .i_lineno = -1,
             .i_col_offset = -1,
             .i_end_lineno = -1,
             .i_end_col_offset = -1,
             .i_target = NULL,
         };
-        if (insert_instruction(entryblock, 0, &gen_start) < 0) {
+        if (insert_instruction(entryblock, 0, &pop_top) < 0) {
             return -1;
         }
     }
