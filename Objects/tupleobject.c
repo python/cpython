@@ -608,25 +608,34 @@ tuplerepeat(PyTupleObject *a, Py_ssize_t n)
     np = tuple_alloc(size);
     if (np == NULL)
         return NULL;
-
-    PyObject **src0 = a->ob_item;
-    PyObject **src_end = src0 + Py_SIZE(a);
-    PyObject **src;
-    for (src = src0; src < src_end; src++) {
-        Py_SET_REFCNT(*src, Py_REFCNT(*src) + n);
+    PyObject **dest = np->ob_item;
+    PyObject **dest_end = dest + size;
+    if (Py_SIZE(a) == 1) {
+        PyObject *elem = a->ob_item[0];
+        Py_SET_REFCNT(elem, Py_REFCNT(elem) + n);
 #ifdef Py_REF_DEBUG
         _Py_RefTotal += n;
 #endif
+        while (dest < dest_end) {
+            *dest++ = elem;
+        }
     }
-    PyObject **dest = np->ob_item;
-    PyObject **dest_end = dest + size;
-    while (dest < dest_end) {
-        src = src0;
+    else {
+        PyObject **src = a->ob_item;
+        PyObject **src_end = src + Py_SIZE(a);
         while (src < src_end) {
+            Py_SET_REFCNT(*src, Py_REFCNT(*src) + n);
+#ifdef Py_REF_DEBUG
+            _Py_RefTotal += n;
+#endif
+            *dest++ = *src++;
+        }
+        // Now src chases after dest in the same buffer
+        src = np->ob_item;
+        while (dest < dest_end) {
             *dest++ = *src++;
         }
     }
-    assert(src == src_end && dest == dest_end);
     _PyObject_GC_TRACK(np);
     return (PyObject *) np;
 }

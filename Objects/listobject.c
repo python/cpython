@@ -565,7 +565,6 @@ list_repeat(PyListObject *a, Py_ssize_t n)
     np = (PyListObject *) list_new_prealloc(size);
     if (np == NULL)
         return NULL;
-
     PyObject **dest = np->ob_item;
     PyObject **dest_end = dest + size;
     if (Py_SIZE(a) == 1) {
@@ -579,22 +578,20 @@ list_repeat(PyListObject *a, Py_ssize_t n)
         }
     }
     else {
-        PyObject **src0 = a->ob_item;
-        PyObject **src_end = src0 + Py_SIZE(a);
-        PyObject **src;
-        for (src = src0; src < src_end; src++) {
+        PyObject **src = a->ob_item;
+        PyObject **src_end = src + Py_SIZE(a);
+        while (src < src_end) {
             Py_SET_REFCNT(*src, Py_REFCNT(*src) + n);
 #ifdef Py_REF_DEBUG
             _Py_RefTotal += n;
 #endif
+            *dest++ = *src++;
         }
+        // Now src chases after dest in the same buffer
+        src = np->ob_item;
         while (dest < dest_end) {
-            src = src0;
-            while (src < src_end) {
-                *dest++ = *src++;
-            }
+            *dest++ = *src++;
         }
-        assert(src == src_end && dest == dest_end);
     }
     Py_SET_SIZE(np, size);
     return (PyObject *) np;
