@@ -788,7 +788,6 @@ def _ss(data, c=None):
     if c is not None:
         T, total, count = _sum((d := x - c) * d for x in data)
         return (T, total)
-    count = 0
     sx_partials = {}
     sx_partials_get = sx_partials.get
     sxx_partials = {}
@@ -797,7 +796,6 @@ def _ss(data, c=None):
     for typ, values in groupby(data, type):
         T = _coerce(T, typ)  # or raise TypeError
         for n, d in map(_exact_ratio, values):
-            count += 1
             sx_partials[d] = sx_partials_get(d, 0) + n
             dd = d * d
             sxx_partials[dd] = sxx_partials_get(dd, 0) + n*n
@@ -807,6 +805,7 @@ def _ss(data, c=None):
         total = sx_partials[None]
         assert not _isfinite(total)
     else:
+        count = len(data)
         sx = sum(Fraction(n, d) for d, n in sx_partials.items())
         sxx = sum(Fraction(n, d) for d, n in sxx_partials.items())
         # This formula is has poor numeric properties for floats,
