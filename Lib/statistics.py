@@ -810,7 +810,7 @@ def _ss(data, c=None):
     else:
         sx = sum(Fraction(n, d) for d, n in sx_partials.items())
         sxx = sum(Fraction(n, d*d) for d, n in sxx_partials.items())
-        # This formula is has poor numeric properties for floats,
+        # This formula has poor numeric properties for floats,
         # but with fractions it is exact.
         total = (count * sxx - sx * sx) / count
     return (T, total, count)
