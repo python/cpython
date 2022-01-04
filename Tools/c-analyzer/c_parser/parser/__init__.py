@@ -120,12 +120,12 @@ from ..info import ParsedItem
 from ._info import SourceInfo
 
 
-def parse(srclines):
+def parse(srclines, **srckwargs):
     if isinstance(srclines, str):  # a filename
         raise NotImplementedError
 
     anon_name = anonymous_names()
-    for result in _parse(srclines, anon_name):
+    for result in _parse(srclines, anon_name, **srckwargs):
         yield ParsedItem.from_raw(result)
 
 
@@ -152,17 +152,19 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
-def _parse(srclines, anon_name):
+def _parse(srclines, anon_name, **srckwargs):
     from ._global import parse_globals
 
-    source = _iter_source(srclines)
-    #source = _iter_source(srclines, showtext=True)
+    source = _iter_source(srclines, **srckwargs)
     for result in parse_globals(source, anon_name):
         # XXX Handle blocks here instead of in parse_globals().
         yield result
 
 
-def _iter_source(lines, *, maxtext=20_000, maxlines=700, showtext=False):
+# We use defaults that cover most files.  Files with bigger declarations
+# are covered elsewhere (MAX_SIZES in cpython/_parser.py).
+
+def _iter_source(lines, *, maxtext=10_000, maxlines=200, showtext=False):
     maxtext = maxtext if maxtext and maxtext > 0 else None
     maxlines = maxlines if maxlines and maxlines > 0 else None
     filestack = []

@@ -27,7 +27,7 @@ any other object.
 
    .. versionadded:: 3.3
 
-.. c:function:: PyObject *PyMemoryView_FromBuffer(Py_buffer *view)
+.. c:function:: PyObject *PyMemoryView_FromBuffer(const Py_buffer *view)
 
    Create a memoryview object wrapping the given buffer structure *view*.
    For simple byte buffers, :c:func:`PyMemoryView_FromMemory` is the preferred
@@ -61,4 +61,3 @@ any other object.
    on or ``NULL`` if the memoryview has been created by one of the functions
    :c:func:`PyMemoryView_FromMemory` or :c:func:`PyMemoryView_FromBuffer`.
    *mview* **must** be a memoryview instance.
-

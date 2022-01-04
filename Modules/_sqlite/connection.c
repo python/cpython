@@ -274,28 +274,6 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
     return 0;
 }
 
-static void
-pysqlite_do_all_statements(pysqlite_Connection *self)
-{
-    // Reset all statements
-    sqlite3_stmt *stmt = NULL;
-    while ((stmt = sqlite3_next_stmt(self->db, stmt))) {
-        if (sqlite3_stmt_busy(stmt)) {
-            (void)sqlite3_reset(stmt);
-        }
-    }
-
-    // Reset all cursors
-    for (int i = 0; i < PyList_Size(self->cursors); i++) {
-        PyObject *weakref = PyList_GetItem(self->cursors, i);
-        PyObject *object = PyWeakref_GetObject(weakref);
-        if (object != Py_None) {
-            pysqlite_Cursor *cursor = (pysqlite_Cursor *)object;
-            cursor->reset = 1;
-        }
-    }
-}
-
 #define VISIT_CALLBACK_CONTEXT(ctx) \
 do {                                \
     if (ctx) {                      \
@@ -549,8 +527,6 @@ pysqlite_connection_rollback_impl(pysqlite_Connection *self)
     }
 
     if (!sqlite3_get_autocommit(self->db)) {
-        pysqlite_do_all_statements(self);
-
         int rc;
 
         Py_BEGIN_ALLOW_THREADS

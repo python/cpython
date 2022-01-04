@@ -1,0 +1,2 @@
+Updated OpenSSL to 1.1.1m in Windows builds, macOS installer builds, and CI.
+Patch by Kumar Aditya.

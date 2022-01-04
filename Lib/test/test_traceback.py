@@ -616,6 +616,51 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
         self.assertSpecialized(lambda: 1// 0,
                                       "~^^~~")
 
+    def test_decorator_application_lineno_correct(self):
+        def dec_error(func):
+            raise TypeError
+        def dec_fine(func):
+            return func
+        def applydecs():
+            @dec_error
+            @dec_fine
+            def g(): pass
+        result_lines = self.get_exception(applydecs)
+        lineno_applydescs = applydecs.__code__.co_firstlineno
+        lineno_dec_error = dec_error.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ^^^^^^^^^^\n'
+            f'  File "{__file__}", line {lineno_applydescs + 1}, in applydecs\n'
+            '    @dec_error\n'
+            '     ^^^^^^^^^\n'
+            f'  File "{__file__}", line {lineno_dec_error + 1}, in dec_error\n'
+            '    raise TypeError\n'
+            '    ^^^^^^^^^^^^^^^\n'
+        )
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+        def applydecs_class():
+            @dec_error
+            @dec_fine
+            class A: pass
+        result_lines = self.get_exception(applydecs_class)
+        lineno_applydescs_class = applydecs_class.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ^^^^^^^^^^\n'
+            f'  File "{__file__}", line {lineno_applydescs_class + 1}, in applydecs_class\n'
+            '    @dec_error\n'
+            '     ^^^^^^^^^\n'
+            f'  File "{__file__}", line {lineno_dec_error + 1}, in dec_error\n'
+            '    raise TypeError\n'
+            '    ^^^^^^^^^^^^^^^\n'
+        )
+        self.assertEqual(result_lines, expected_error.splitlines())
 
 @cpython_only
 @requires_debug_ranges()
@@ -1015,6 +1060,22 @@ class TracebackFormatTests(unittest.TestCase):
         self.assertIn('ExceptionGroup', output)
         self.assertLessEqual(output.count('ExceptionGroup'), LIMIT)
 
+    @cpython_only
+    def test_print_exception_bad_type_capi(self):
+        from _testcapi import exception_print
+        with captured_output("stderr") as stderr:
+            exception_print(42)
+        self.assertEqual(
+            stderr.getvalue(),
+            ('TypeError: print_exception(): '
+             'Exception expected for value, int found\n')
+        )
+
+    def test_print_exception_bad_type_python(self):
+        msg = "Exception expected for value, int found"
+        with self.assertRaisesRegex(TypeError, msg):
+            traceback.print_exception(42)
+
 
 cause_message = (
     "\nThe above exception was the direct cause "
@@ -1223,6 +1284,22 @@ class BaseExceptionReportingTests:
                 err = self.get_report(SyntaxError("msg", ("file.py", 1, offset+add, text)))
                 exp = "\n".join(expected)
                 self.assertEqual(exp, err)
+
+    def test_exception_with_note(self):
+        e = ValueError(42)
+        vanilla = self.get_report(e)
+
+        e.__note__ = 'My Note'
+        self.assertEqual(self.get_report(e), vanilla + 'My Note\n')
+
+        e.__note__ = ''
+        self.assertEqual(self.get_report(e), vanilla + '\n')
+
+        e.__note__ = 'Your Note'
+        self.assertEqual(self.get_report(e), vanilla + 'Your Note\n')
+
+        e.__note__ = None
+        self.assertEqual(self.get_report(e), vanilla)
 
     def test_exception_qualname(self):
         class A:
@@ -1562,6 +1639,59 @@ class BaseExceptionReportingTests:
                     '    +---------------- 3 ----------------\n'
                     '    | ValueError: -999\n'
                     '    +------------------------------------\n')
+
+        report = self.get_report(exc)
+        self.assertEqual(report, expected)
+
+    def test_exception_group_with_notes(self):
+        def exc():
+            try:
+                excs = []
+                for msg in ['bad value', 'terrible value']:
+                    try:
+                        raise ValueError(msg)
+                    except ValueError as e:
+                        e.__note__ = f'the {msg}'
+                        excs.append(e)
+                raise ExceptionGroup("nested", excs)
+            except ExceptionGroup as e:
+                e.__note__ = ('>> Multi line note\n'
+                              '>> Because I am such\n'
+                              '>> an important exception.\n'
+                              '>> empty lines work too\n'
+                              '\n'
+                              '(that was an empty line)')
+                raise
+
+        expected = (f'  + Exception Group Traceback (most recent call last):\n'
+                    f'  |   File "{__file__}", line {self.callable_line}, in get_exception\n'
+                    f'  |     exception_or_callable()\n'
+                    f'  |     ^^^^^^^^^^^^^^^^^^^^^^^\n'
+                    f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 9}, in exc\n'
+                    f'  |     raise ExceptionGroup("nested", excs)\n'
+                    f'  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
+                    f'  | ExceptionGroup: nested\n'
+                    f'  | >> Multi line note\n'
+                    f'  | >> Because I am such\n'
+                    f'  | >> an important exception.\n'
+                    f'  | >> empty lines work too\n'
+                    f'  | \n'
+                    f'  | (that was an empty line)\n'
+                    f'  +-+---------------- 1 ----------------\n'
+                    f'    | Traceback (most recent call last):\n'
+                    f'    |   File "{__file__}", line {exc.__code__.co_firstlineno + 5}, in exc\n'
+                    f'    |     raise ValueError(msg)\n'
+                    f'    |     ^^^^^^^^^^^^^^^^^^^^^\n'
+                    f'    | ValueError: bad value\n'
+                    f'    | the bad value\n'
+                    f'    +---------------- 2 ----------------\n'
+                    f'    | Traceback (most recent call last):\n'
+                    f'    |   File "{__file__}", line {exc.__code__.co_firstlineno + 5}, in exc\n'
+                    f'    |     raise ValueError(msg)\n'
+                    f'    |     ^^^^^^^^^^^^^^^^^^^^^\n'
+                    f'    | ValueError: terrible value\n'
+                    f'    | the terrible value\n'
+                    f'    +------------------------------------\n')
 
         report = self.get_report(exc)
         self.assertEqual(report, expected)
