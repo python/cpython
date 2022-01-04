@@ -374,6 +374,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.11a3 3466 (bpo-45292: PEP-654 except*)
 #     Python 3.11a4 3467 (Change CALL_xxx opcodes)
 #     Python 3.11a4 3468 (Add SEND opcode)
+#     Python 3.11a4 3469 (Add POP_JUMP_IF_NOT_NONE/POP_JUMP_IF_NONE opcode)
 
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
@@ -383,7 +384,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3468).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3469).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
