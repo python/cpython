@@ -286,7 +286,7 @@ Directory and files operations
    .. versionadded:: 3.8
       The *dirs_exist_ok* parameter.
 
-.. function:: rmtree(path, ignore_errors=False, onerror=None)
+.. function:: rmtree(path, ignore_errors=False, onerror=None, dir_fd=None)
 
    .. index:: single: directory; deleting
 

@@ -680,7 +680,7 @@ _use_fd_functions = ({os.open, os.stat, os.unlink, os.rmdir} <=
                      os.scandir in os.supports_fd and
                      os.stat in os.supports_follow_symlinks)
 
-def rmtree(path, ignore_errors=False, onerror=None):
+def rmtree(path, ignore_errors=False, onerror=None, dir_fd=None):
     """Recursively delete a directory tree.
 
     If ignore_errors is set, errors are ignored; otherwise, if onerror
@@ -691,7 +691,7 @@ def rmtree(path, ignore_errors=False, onerror=None):
     is false and onerror is None, an exception is raised.
 
     """
-    sys.audit("shutil.rmtree", path)
+    sys.audit("shutil.rmtree", path, dir_fd)
     if ignore_errors:
         def onerror(*args):
             pass
@@ -705,12 +705,12 @@ def rmtree(path, ignore_errors=False, onerror=None):
         # Note: To guard against symlink races, we use the standard
         # lstat()/open()/fstat() trick.
         try:
-            orig_st = os.lstat(path)
+            orig_st = os.lstat(path, dir_fd=dir_fd)
         except Exception:
             onerror(os.lstat, path, sys.exc_info())
             return
         try:
-            fd = os.open(path, os.O_RDONLY)
+            fd = os.open(path, os.O_RDONLY, dir_fd=dir_fd)
         except Exception:
             onerror(os.open, path, sys.exc_info())
             return
@@ -718,7 +718,7 @@ def rmtree(path, ignore_errors=False, onerror=None):
             if os.path.samestat(orig_st, os.fstat(fd)):
                 _rmtree_safe_fd(fd, path, onerror)
                 try:
-                    os.rmdir(path)
+                    os.rmdir(path, dir_fd=dir_fd)
                 except OSError:
                     onerror(os.rmdir, path, sys.exc_info())
             else:
