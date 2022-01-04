@@ -1,0 +1,1 @@
+Correct documented argument and return types of C API ``Py_UNICODE_*`` macros from ``Py_UNICODE`` to ``Py_UCS4``.
