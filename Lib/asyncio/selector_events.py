@@ -854,7 +854,7 @@ class _SelectorSocketTransport(_SelectorTransport):
             return
         try:
             data = self._sock.recv(self.max_size)
-        except (BlockingIOError, InterruptedError):
+        except (BlockingIOError, InterruptedError, ssl.SSLWantReadError, ssl.SSLWantWriteError):
             return
         except (SystemExit, KeyboardInterrupt):
             raise
