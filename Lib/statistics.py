@@ -399,13 +399,9 @@ def mean(data):
 
     If ``data`` is empty, StatisticsError will be raised.
     """
-    if iter(data) is data:
-        data = list(data)
-    n = len(data)
+    T, total, n = _sum(data)
     if n < 1:
         raise StatisticsError('mean requires at least one data point')
-    T, total, count = _sum(data)
-    assert count == n
     return _convert(total / n, T)
 
 
