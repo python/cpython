@@ -125,8 +125,6 @@ typedef struct pyruntimestate {
         struct _is interpreters_main;
         // XXX Pre-allocate as many objects as possible here.
     } _preallocated;
-    // If anything gets added after _preallocated
-    // then _PyRuntimeState_reset() needs to get updated to clear it.
 } _PyRuntimeState;
 
 #define _PyRuntimeState_INIT \
