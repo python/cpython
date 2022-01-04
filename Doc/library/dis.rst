@@ -1175,14 +1175,6 @@ All of the following opcodes use their arguments.
       Previously, this instruction also pushed a boolean value indicating
       success (``True``) or failure (``False``).
 
-.. opcode:: GEN_START (kind)
-
-    Pops TOS. The ``kind`` operand corresponds to the type of generator or
-    coroutine. The legal kinds are 0 for generator, 1 for coroutine,
-    and 2 for async generator.
-
-   .. versionadded:: 3.10
-
 
 .. opcode:: ROT_N (count)
 

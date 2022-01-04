@@ -151,7 +151,6 @@ haslocal.append(126)
 
 jabs_op('JUMP_IF_NOT_EG_MATCH', 127)
 
-def_op('GEN_START', 129)        # Kind of generator/coroutine
 def_op('RAISE_VARARGS', 130)    # Number of raise arguments (1, 2, or 3)
 
 def_op('MAKE_FUNCTION', 132)    # Flags
