@@ -652,10 +652,6 @@ class EnumType(type):
         # if and only if they have been user-overridden
         enum_dunders = set(filter(_is_dunder, enum_dict))
 
-        # special-case __new__
-        if self.__new__ is not first_enum_base.__new__:
-            add_to_dir('__new__')
-
         for cls in mro:
             # Ignore any classes defined in this module
             if cls is object or is_from_this_module(cls):
