@@ -30,7 +30,7 @@ Executor Objects
 
     .. method:: submit(fn, /, *args, **kwargs)
 
-       Schedules the callable, *fn*, to be executed as ``fn(*args **kwargs)``
+       Schedules the callable, *fn*, to be executed as ``fn(*args, **kwargs)``
        and returns a :class:`Future` object representing the execution of the
        callable. ::
 
@@ -444,7 +444,8 @@ Module Functions
 .. function:: wait(fs, timeout=None, return_when=ALL_COMPLETED)
 
    Wait for the :class:`Future` instances (possibly created by different
-   :class:`Executor` instances) given by *fs* to complete.  Returns a named
+   :class:`Executor` instances) given by *fs* to complete. Duplicate futures
+   given to *fs* are removed and will be returned only once. Returns a named
    2-tuple of sets.  The first set, named ``done``, contains the futures that
    completed (finished or cancelled futures) before the wait completed.  The
    second set, named ``not_done``, contains the futures that did not complete

@@ -388,7 +388,7 @@ CPython bytecode changes
   This decouples the argument shifting for methods from the handling of
   keyword arguments and allows better specialization of calls.
 
-* Removed ``COPY_DICT_WITHOUT_KEYS``.
+* Removed ``COPY_DICT_WITHOUT_KEYS`` and ``GEN_START``.
 
 * :opcode:`MATCH_CLASS` and :opcode:`MATCH_KEYS` no longer push an additional
   boolean value indicating whether the match succeeded or failed. Instead, they
