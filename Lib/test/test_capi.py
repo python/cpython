@@ -1061,6 +1061,18 @@ class Test_ModuleStateAccess(unittest.TestCase):
                 with self.assertRaises(TypeError):
                     increment_count(1, 2, 3)
 
+    def test_get_module_bad_def(self):
+        instance = self.module.StateAccessType()
+        with self.assertRaises(TypeError):
+            instance.getmodulebydef_bad_def()
+
+    def test_get_module_static_in_mro(self):
+        # Here, the class _PyType_GetModuleByDef is looking for
+        # appears in the MRO after a static type (Exception).
+        class Subclass(Exception, self.module.StateAccessType):
+            pass
+        self.assertIs(Subclass().get_defining_module(), self.module)
+
 
 if __name__ == "__main__":
     unittest.main()
