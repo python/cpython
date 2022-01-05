@@ -294,12 +294,14 @@ func_get_annotation_dict(PyFunctionObject *op)
                                      PyTuple_GET_ITEM(ann_tuple, i),
                                      PyTuple_GET_ITEM(ann_tuple, i + 1));
 
-            if (err < 0)
+            if (err < 0) {
                 return NULL;
+            }
         }
         Py_SETREF(op->func_annotations, ann_dict);
     }
     Py_INCREF(op->func_annotations);
+    assert(PyDict_Check(op->func_annotations));
     return op->func_annotations;
 }
 
