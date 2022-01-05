@@ -349,10 +349,6 @@ class _WildcardSelector(_Selector):
 
     def _select_from(self, parent_path, is_dir, exists):
         try:
-            # bpo-24132: a future version of pathlib will support subclassing
-            # of pathlib.Path to customize how the filesystem is accessed. We
-            # must honour those customizations here, rather than calling
-            # os.scandir() directly.
             with parent_path._scandir() as scandir_it:
                 entries = list(scandir_it)
             for entry in entries:
@@ -934,6 +930,9 @@ class Path(PurePath):
             yield self._make_child_relpath(name)
 
     def _scandir(self):
+        # bpo-24132: a future version of pathlib will support subclassing of
+        # pathlib.Path to customize how the filesystem is accessed. This
+        # includes scandir(), which is used to implement glob().
         return os.scandir(self)
 
     def glob(self, pattern):
