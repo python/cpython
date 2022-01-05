@@ -116,7 +116,7 @@ class BasicTest(BaseTest):
         self.assertIn('home = %s' % path, data)
         self.assertIn('executable = %s' %
                       os.path.realpath(sys.executable), data)
-        self.assertIn(f'command = {sys.executable} -m {self.env_dir}', data)
+        self.assertIn(f'command = {sys.executable} -m venv {self.env_dir}', data)
         fn = self.get_env_file(self.bindir, self.exe)
         if not os.path.exists(fn):  # diagnostics for Windows buildbot failures
             bd = self.get_env_file(self.bindir)
