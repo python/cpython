@@ -1,0 +1,2 @@
+:meth:`pathlib.Path.absolute` is now documented. This method has always been
+present in pathlib.
