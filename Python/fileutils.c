@@ -2223,7 +2223,6 @@ _Py_normpath(wchar_t *path, Py_ssize_t size)
     wchar_t *p2 = path;     // destination of a scanned character to be ljusted
     wchar_t *minP2 = path;  // the beginning of the destination range
     wchar_t lastC = L'\0';  // the last ljusted character, p2[-1] in most cases
-    int is_absolute = 0;    // whether the path is confirmed to be absolute
 
 #define IS_END(x) (pEnd ? (x) == pEnd : !*(x))
 #ifdef ALTSEP
