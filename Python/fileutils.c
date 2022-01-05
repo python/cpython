@@ -2265,17 +2265,19 @@ _Py_normpath(wchar_t *path, Py_ssize_t size)
                 *p2++ = lastC = *p1;
             }
         }
-        minP2 = p2;
-        is_absolute = 1;
+        if (sepCount) {
+            minP2 = p2;      // Invalid path
+        } else {
+            minP2 = p2 - 1;  // Absolute path has SEP at minP2
+        }
     }
 #else
     // Skip past two leading SEPs
     else if (IS_SEP(&p1[0]) && IS_SEP(&p1[1]) && !IS_SEP(&p1[2])) {
         *p2++ = *p1++;
         *p2++ = *p1++;
-        minP2 = p2;
+        minP2 = p2 - 1;  // Absolute path has SEP at minP2
         lastC = SEP;
-        is_absolute = 1;
     }
 #endif /* MS_WINDOWS */
 
@@ -2292,29 +2294,22 @@ _Py_normpath(wchar_t *path, Py_ssize_t size)
                 int sep_at_1 = SEP_OR_END(&p1[1]);
                 int sep_at_2 = !sep_at_1 && SEP_OR_END(&p1[2]);
                 if (sep_at_2 && p1[1] == L'.') {
-                    if (p2 == minP2) {
-                        if (!is_absolute) {
-                            // Relative path does not absorb the dotdot
-                            *p2++ = L'.';
-                            *p2++ = L'.';
-                            lastC = L'.';
-                        }
-                    }
-                    else {
-                        wchar_t *p3 = p2;
-                        while (p3 != minP2 && *--p3 == SEP) { }
-                        while (p3 != minP2 && *(p3 - 1) != SEP) { --p3; }
-                        if (p3[0] == L'.' && p3[1] == L'.' && IS_SEP(&p3[2])) {
-                            // Previous segment is also ../, so append instead
-                            *p2++ = L'.';
-                            *p2++ = L'.';
-                            lastC = L'.';
-                        } else if (p3[0] == SEP) {
-                            // Absolute path, so absorb segment
-                            p2 = p3 + 1;
-                        } else {
-                            p2 = p3;
-                        }
+                    wchar_t *p3 = p2;
+                    while (p3 != minP2 && *--p3 == SEP) { }
+                    while (p3 != minP2 && *(p3 - 1) != SEP) { --p3; }
+                    if (p2 == minP2
+                        || (p3[0] == L'.' && p3[1] == L'.' && IS_SEP(&p3[2])))
+                    {
+                        // Previous segment is also ../, so append instead.
+                        // Relative path does not absorb ../ at minP2 as well.
+                        *p2++ = L'.';
+                        *p2++ = L'.';
+                        lastC = L'.';
+                    } else if (p3[0] == SEP) {
+                        // Absolute path, so absorb segment
+                        p2 = p3 + 1;
+                    } else {
+                        p2 = p3;
                     }
                     p1 += 1;
                 } else if (sep_at_1) {
