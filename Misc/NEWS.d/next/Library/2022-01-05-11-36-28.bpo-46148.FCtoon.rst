@@ -1,0 +1,1 @@
+Speedup :class:`~pathlib.Path` creation up to ``3x``. Patch by Kumar Aditya.
