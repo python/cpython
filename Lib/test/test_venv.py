@@ -19,7 +19,7 @@ from test.support import (captured_stdout, captured_stderr, requires_zlib,
 from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree)
 import unittest
 import venv
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 try:
     import ctypes
@@ -93,7 +93,6 @@ class BasicTest(BaseTest):
         fn = self.get_env_file(*args)
         self.assertTrue(os.path.isdir(fn))
 
-    @unittest.skip
     def test_defaults(self):
         """
         Test the create function with default arguments.
@@ -127,15 +126,18 @@ class BasicTest(BaseTest):
 
     def test_config_file_command_key(self):
         attrs = [
-            ('symlinks', '--use-symlinks'),
-            ('with_pip', '--with-pip'),
+            ('symlinks', '--symlinks'),
+            ('with_pip', '--without-pip'),
             ('system_site_packages', '--system-site-packages'),
             ('clear', '--clear'),
             ('upgrade', '--upgrade'),
+            ('upgrade_deps', '--upgrade-deps'),
         ]
         for attr, opt in attrs:
             rmtree(self.env_dir)
-            self.run_with_capture(venv.create, self.env_dir, **{attr:True})
+            b = venv.EnvBuilder(**{attr: False if attr=='with_pip' else True})
+            b.upgrade_dependencies = Mock() # avoid pip command to upgrade deps
+            self.run_with_capture(b.create, self.env_dir)
             data = self.get_text_file_contents('pyvenv.cfg')
             self.assertRegex(data, rf'command = .* {opt}')
 
@@ -430,7 +432,6 @@ class BasicTest(BaseTest):
             'import os; print("__PYVENV_LAUNCHER__" in os.environ)'])
         self.assertEqual(out.strip(), 'False'.encode())
 
-@unittest.skip
 @requireVenvCreate
 class EnsurePipTest(BaseTest):
     """Test venv module installation of pip."""
