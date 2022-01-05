@@ -1,0 +1,1 @@
+Fix a bug in :c:func:`PyFunction_GetAnnotations` that caused it to return a ``tuple`` instead of a ``dict``.
