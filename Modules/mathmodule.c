@@ -1807,7 +1807,7 @@ math_isqrt(PyObject *module, PyObject *n)
     /* Fast path: if c <= 31 then n < 2**64 and we can compute directly with a
        fast, almost branch-free algorithm. */
     if (c <= 31U) {
-        int shift = 31 - c;
+        int shift = 31 - (int)c;
         m = (uint64_t)PyLong_AsUnsignedLongLong(n);
         Py_DECREF(n);
         if (m == (uint64_t)(-1) && PyErr_Occurred()) {
