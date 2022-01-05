@@ -603,16 +603,6 @@ iterations of the loop.
        The ``__exit__`` function is in position 4 of the stack rather than 7.
        Exception representation on the stack now consist of one, not three, items.
 
-.. opcode:: POP_EXCEPT_AND_RERAISE
-
-    Pops the exception currently on top of the stack. Pops the integer value on top
-    of the stack and sets the ``f_lasti`` attribute of the frame with that value.
-    Then pops the next exception from the stack uses it to restore the current exception.
-    Finally it re-raises the originally popped exception.
-    Used in exception handler cleanup.
-
-    .. versionadded:: 3.11
-
 
 .. opcode:: LOAD_ASSERTION_ERROR
 
@@ -911,8 +901,8 @@ All of the following opcodes use their arguments.
    Combines the raised and reraised exceptions list from TOS, into an exception
    group to propagate from a try-except* block. Uses the original exception
    group from TOS1 to reconstruct the structure of reraised exceptions. Pops
-   two items from the stack and pushes 0 (for lasti, which is unused) followed
-   by the exception to reraise or ``None`` if there isn't one.
+   two items from the stack and pushes the exception to reraise or ``None``
+   if there isn't one.
 
    .. versionadded:: 3.11
 
@@ -1184,14 +1174,6 @@ All of the following opcodes use their arguments.
    .. versionchanged:: 3.11
       Previously, this instruction also pushed a boolean value indicating
       success (``True``) or failure (``False``).
-
-.. opcode:: GEN_START (kind)
-
-    Pops TOS. The ``kind`` operand corresponds to the type of generator or
-    coroutine. The legal kinds are 0 for generator, 1 for coroutine,
-    and 2 for async generator.
-
-   .. versionadded:: 3.10
 
 
 .. opcode:: ROT_N (count)
