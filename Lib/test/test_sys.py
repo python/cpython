@@ -71,6 +71,26 @@ class DisplayHookTest(unittest.TestCase):
             code = compile("42", "<string>", "single")
             self.assertRaises(ValueError, eval, code)
 
+class ExcInfoTest(unittest.TestCase):
+    def test_exc_info_no_exception(self):
+        self.assertEqual(sys.exc_info(), (None, None, None))
+        self.assertEqual(sys.exception(), None)
+
+    def test_exc_info_with_exception(self):
+        def f():
+            raise ValueError(42)
+
+        try:
+            f()
+        except Exception as e_:
+            e = e_
+            exc_info = sys.exc_info()
+            exc = sys.exception()
+
+        self.assertIs(exc, e)
+        self.assertIs(exc_info[0], type(e))
+        self.assertIs(exc_info[1], e)
+        self.assertIs(exc_info[2], e.__traceback__)
 
 class ExceptHookTest(unittest.TestCase):
 
