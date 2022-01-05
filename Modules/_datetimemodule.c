@@ -6694,27 +6694,27 @@ _datetime_exec(PyObject *module)
     return 0;
 }
 
+static struct PyModuleDef_Slot _datetime_slots[] = {
+    {Py_mod_exec, _datetime_exec},
+    {0, NULL}
+};
+
+PyDoc_STRVAR(module_doc,
+"Fast implementation of the datetime type.");
+
 static struct PyModuleDef datetimemodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_datetime",
-    .m_doc = "Fast implementation of the datetime type.",
-    .m_size = -1,
+    .m_doc = module_doc,
+    .m_size = 0,
     .m_methods = module_methods,
+    .m_slots = _datetime_slots,
 };
 
 PyMODINIT_FUNC
 PyInit__datetime(void)
 {
-    PyObject *mod = PyModule_Create(&datetimemodule);
-    if (mod == NULL)
-        return NULL;
-
-    if (_datetime_exec(mod) < 0) {
-        Py_DECREF(mod);
-        return NULL;
-    }
-
-    return mod;
+    return PyModuleDef_Init(&datetimemodule);
 }
 
 /* ---------------------------------------------------------------------------
