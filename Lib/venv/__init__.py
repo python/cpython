@@ -178,8 +178,21 @@ class EnvBuilder:
             f.write('version = %d.%d.%d\n' % sys.version_info[:3])
             if self.prompt is not None:
                 f.write(f'prompt = {self.prompt!r}\n')
-            f.write('executable = %s\n' % context.env_exec_cmd)
-            f.write('command = %s\n' % sys.executable)
+            f.write('executable = %s\n' % os.path.realpath(sys.executable))
+            args = []
+            if self.symlinks:
+                args.append('--use-symlinks')
+            if self.with_pip:
+                args.append('--with-pip')
+            if self.system_site_packages:
+                args.append('--system-site-packages')
+            if self.clear:
+                args.append('--clear')
+            if self.upgrade:
+                args.append('--upgrade')
+            args.append(context.env_dir)
+            args = ' '.join(args)
+            f.write(f'command = {sys.executable} -m {args}\n')
 
     if os.name != 'nt':
         def symlink_or_copy(self, src, dst, relative_symlinks_ok=False):
@@ -417,11 +430,13 @@ class EnvBuilder:
 
 
 def create(env_dir, system_site_packages=False, clear=False,
-           symlinks=False, with_pip=False, prompt=None, upgrade_deps=False):
+           symlinks=False, with_pip=False, prompt=None, upgrade_deps=False,
+           upgrade=False):
     """Create a virtual environment in a directory."""
     builder = EnvBuilder(system_site_packages=system_site_packages,
                          clear=clear, symlinks=symlinks, with_pip=with_pip,
-                         prompt=prompt, upgrade_deps=upgrade_deps)
+                         prompt=prompt, upgrade_deps=upgrade_deps,
+                         upgrade=upgrade)
     builder.create(env_dir)
 
 def main(args=None):

@@ -93,6 +93,7 @@ class BasicTest(BaseTest):
         fn = self.get_env_file(*args)
         self.assertTrue(os.path.isdir(fn))
 
+    @unittest.skip
     def test_defaults(self):
         """
         Test the create function with default arguments.
@@ -115,14 +116,28 @@ class BasicTest(BaseTest):
         path = os.path.dirname(executable)
         self.assertIn('home = %s' % path, data)
         self.assertIn('executable = %s' %
-                      os.path.join(self.env_dir, self.bindir, self.exe), data)
-        self.assertIn('command = %s' % sys.executable, data)
+                      os.path.realpath(sys.executable), data)
+        self.assertIn(f'command = {sys.executable} -m {self.env_dir}', data)
         fn = self.get_env_file(self.bindir, self.exe)
         if not os.path.exists(fn):  # diagnostics for Windows buildbot failures
             bd = self.get_env_file(self.bindir)
             print('Contents of %r:' % bd)
             print('    %r' % os.listdir(bd))
         self.assertTrue(os.path.exists(fn), 'File %r should exist.' % fn)
+
+    def test_config_file_command_key(self):
+        attrs = [
+            ('symlinks', '--use-symlinks'),
+            ('with_pip', '--with-pip'),
+            ('system_site_packages', '--system-site-packages'),
+            ('clear', '--clear'),
+            ('upgrade', '--upgrade'),
+        ]
+        for attr, opt in attrs:
+            rmtree(self.env_dir)
+            self.run_with_capture(venv.create, self.env_dir, **{attr:True})
+            data = self.get_text_file_contents('pyvenv.cfg')
+            self.assertRegex(data, rf'command = .* {opt}')
 
     def test_prompt(self):
         env_name = os.path.split(self.env_dir)[1]
@@ -415,6 +430,7 @@ class BasicTest(BaseTest):
             'import os; print("__PYVENV_LAUNCHER__" in os.environ)'])
         self.assertEqual(out.strip(), 'False'.encode())
 
+@unittest.skip
 @requireVenvCreate
 class EnsurePipTest(BaseTest):
     """Test venv module installation of pip."""
