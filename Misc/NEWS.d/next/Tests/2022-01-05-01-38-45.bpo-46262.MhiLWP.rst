@@ -1,0 +1,1 @@
+Cover ``ValueError`` path in tests for :meth:`enum.Flag._missing_`.
