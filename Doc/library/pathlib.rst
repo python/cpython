@@ -400,8 +400,8 @@ Pure paths provide the following methods and properties:
 
    A list of the path's file extensions::
 
-      >>> PurePosixPath('my/library.tar.gar').suffixes
-      ['.tar', '.gar']
+      >>> PurePosixPath('my/library/setup.py').suffixes
+      ['.py']
       >>> PurePosixPath('my/library.tar.gz').suffixes
       ['.tar', '.gz']
       >>> PurePosixPath('my/library').suffixes
