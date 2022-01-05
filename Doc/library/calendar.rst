@@ -28,7 +28,7 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 2 BC, and so on.
 
 
-.. class:: Calendar(firstweekday=MONDAY)
+.. class:: Calendar(firstweekday=0)
 
    Creates a :class:`Calendar` object. *firstweekday* is an integer specifying the
    first day of the week. :const:`MONDAY` is ``0`` (the default), :const:`SUNDAY` is ``6``.
@@ -275,13 +275,13 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
            cssclass_year = "text-italic lead"
 
 
-.. class:: LocaleTextCalendar(firstweekday=MONDAY, locale=None)
+.. class:: LocaleTextCalendar(firstweekday=0, locale=None)
 
    This subclass of :class:`TextCalendar` can be passed a locale name in the
    constructor and will return month and weekday names in the specified locale.
 
 
-.. class:: LocaleHTMLCalendar(firstweekday=MONDAY, locale=None)
+.. class:: LocaleHTMLCalendar(firstweekday=0, locale=None)
 
    This subclass of :class:`HTMLCalendar` can be passed a locale name in the
    constructor and will return month and weekday names in the specified

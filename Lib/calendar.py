@@ -153,7 +153,7 @@ class Calendar(object):
     provides data to subclasses.
     """
 
-    def __init__(self, firstweekday=MONDAY):
+    def __init__(self, firstweekday=0):
         self.firstweekday = firstweekday # 0 = Monday, 6 = Sunday
 
     def getfirstweekday(self):
@@ -563,7 +563,7 @@ class LocaleTextCalendar(TextCalendar):
     month and weekday names in the specified locale.
     """
 
-    def __init__(self, firstweekday=MONDAY, locale=None):
+    def __init__(self, firstweekday=0, locale=None):
         TextCalendar.__init__(self, firstweekday)
         if locale is None:
             locale = _locale.getdefaultlocale()
@@ -583,7 +583,7 @@ class LocaleHTMLCalendar(HTMLCalendar):
     This class can be passed a locale name in the constructor and will return
     month and weekday names in the specified locale.
     """
-    def __init__(self, firstweekday=MONDAY, locale=None):
+    def __init__(self, firstweekday=0, locale=None):
         HTMLCalendar.__init__(self, firstweekday)
         if locale is None:
             locale = _locale.getdefaultlocale()
