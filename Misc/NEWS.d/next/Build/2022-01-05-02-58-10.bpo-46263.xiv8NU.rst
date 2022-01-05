@@ -1,0 +1,1 @@
+``configure`` no longer sets ``MULTIARCH`` on FreeBSD platforms.
