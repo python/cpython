@@ -8,6 +8,10 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#ifdef HAVE_FORK
+extern PyStatus _PySys_ReInitStdio(void);
+#endif
+
 PyAPI_FUNC(int) _PySys_Audit(
     PyThreadState *tstate,
     const char *event,

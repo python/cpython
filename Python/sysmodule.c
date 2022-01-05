@@ -2861,6 +2861,72 @@ err_occurred:
     return _PyStatus_ERR("can't initialize sys module");
 }
 
+#ifdef HAVE_FORK
+static int
+stdio_at_fork_reinit(_Py_Identifier *key)
+{
+
+    int ret = 0;
+
+    PyObject *isatty = NULL;
+    PyObject *buffer = NULL;
+    PyObject *result = NULL;
+
+    PyObject *stdio = _PySys_GetObjectId(key);
+
+    _Py_IDENTIFIER(isatty);
+    isatty = _PyObject_CallMethodIdNoArgs(stdio, &PyId_isatty);
+    if (isatty == NULL) {
+        PyErr_Clear();
+        goto end;
+    }
+    if (Py_IsFalse(isatty)) {
+        goto end;
+    }
+
+    _Py_IDENTIFIER(buffer);
+    if (_PyObject_LookupAttrId(stdio, &PyId_buffer, &buffer) < 0) {
+        /* stdout.buffer and stderr.buffer are not part of the
+         * TextIOBase API and may not exist in some implementations.
+         * If not present, no need to reinitialize their locks. */
+        goto end;
+    }
+
+    _Py_IDENTIFIER(_at_fork_reinit);
+    if (_PyObject_GetAttrId(buffer, &PyId__at_fork_reinit) == NULL) {
+        PyErr_Clear();
+        goto end;
+    }
+
+    result = _PyObject_CallMethodIdNoArgs(buffer, &PyId__at_fork_reinit);
+    if (Py_IsTrue(result)) {
+        goto end;
+    }
+
+    /* error */
+    ret = -1;
+end:
+    Py_XDECREF(isatty);
+    Py_XDECREF(buffer);
+    Py_XDECREF(result);
+    return ret;
+}
+
+/* This function is called from PyOS_AfterFork_Child() to ensure that newly
+   created child processes do not share locks with the parent. */
+PyStatus
+_PySys_ReInitStdio(void)
+{
+    int reinit_stdout = stdio_at_fork_reinit(&PyId_stdout);
+    int reinit_stderr = stdio_at_fork_reinit(&PyId_stderr);
+
+    if (reinit_stdout < 0 || reinit_stderr < 0) {
+        return _PyStatus_ERR("Failed to reinitialize stdout and stderr");
+    }
+    return _PyStatus_OK();
+}
+#endif
+
 static int
 sys_add_xoption(PyObject *opts, const wchar_t *s)
 {
