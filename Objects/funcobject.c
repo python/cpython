@@ -281,7 +281,11 @@ PyFunction_GetAnnotations(PyObject *op)
         PyErr_BadInternalCall();
         return NULL;
     }
-    return ((PyFunctionObject *) op) -> func_annotations;
+    PyObject *func = (PyFunctionObject *)op;
+    if (func->func_annotations == NULL) {
+        return NULL;
+    }
+    return func_get_annotations(op, NULL);
 }
 
 int
