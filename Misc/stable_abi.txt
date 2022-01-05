@@ -2224,3 +2224,5 @@ function PyMemoryView_FromBuffer
 
 data Py_Version
     added 3.11
+function PyType_GetModuleByDef
+    added 3.11
