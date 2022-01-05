@@ -1,0 +1,1 @@
+Creating a tar archieve of changing files is now supported. Creating an archive is not interrupted even if a file changes while collected.
