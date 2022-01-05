@@ -561,6 +561,7 @@ class PurePath(object):
         return (self.__class__, tuple(self._parts))
 
     @classmethod
+    @functools.cache
     def _parse_args(cls, args):
         # This is useful when you don't want to create an instance, just
         # canonicalize some constructor arguments.
