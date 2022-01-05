@@ -635,11 +635,11 @@ static void* mi_os_mem_alloc(size_t size, size_t try_alignment, bool commit, boo
     if (commit) flags |= MEM_COMMIT;
     p = mi_win_virtual_alloc(NULL, size, try_alignment, flags, false, allow_large, is_large);
   #elif defined(MI_USE_SBRK)
-    KK_UNUSED(allow_large);
+    MI_UNUSED(allow_large);
     *is_large = false;
     p = mi_sbrk_heap_grow(size, try_alignment);
   #elif defined(__wasi__)
-    KK_UNUSED(allow_large);
+    MI_UNUSED(allow_large);
     *is_large = false;
     p = mi_wasm_heap_grow(size, try_alignment);
   #else
