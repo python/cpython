@@ -1044,8 +1044,8 @@ class PyFramePtr:
     def _f_lasti(self):
         return self._f_special("f_lasti", int_from_int)
 
-    def depth(self):
-        return self._f_special("depth", int_from_int)
+    def is_entry(self):
+        return self._f_special("is_entry", bool)
 
     def previous(self):
         return self._f_special("previous", PyFramePtr)
@@ -1860,7 +1860,7 @@ class Frame(object):
                         line = interp_frame.current_line()
                         if line is not None:
                             sys.stdout.write('    %s\n' % line.strip())
-                    if interp_frame.depth() == 0:
+                    if interp_frame.is_entry():
                         break
                 else:
                     sys.stdout.write('#%i (unable to read python frame information)\n' % self.get_index())
@@ -1883,7 +1883,7 @@ class Frame(object):
                         line = interp_frame.current_line()
                         if line is not None:
                             sys.stdout.write('    %s\n' % line.strip())
-                    if interp_frame.depth() == 0:
+                    if interp_frame.is_entry():
                         break
                 else:
                     sys.stdout.write('  (unable to read python frame information)\n')
@@ -2147,7 +2147,7 @@ class PyLocals(gdb.Command):
                     % (pyop_name.proxyval(set()),
                         pyop_value.get_truncated_repr(MAX_OUTPUT_LEN)))
 
-            if pyop_frame.depth() == 0:
+            if pyop_frame.is_entry():
                 break
 
             pyop_frame = pyop_frame.previous()
