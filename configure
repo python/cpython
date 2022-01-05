@@ -6091,10 +6091,20 @@ $as_echo "none" >&6; }
 fi
 rm -f conftest.c conftest.out
 
-if test x$PLATFORM_TRIPLET != xdarwin; then
-  MULTIARCH=$($CC --print-multiarch 2>/dev/null)
-fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for multiarch" >&5
+$as_echo_n "checking for multiarch... " >&6; }
+case $ac_sys_system in #(
+  Darwin*) :
+    MULTIARCH="" ;; #(
+  FreeBSD*) :
+    MULTIARCH="" ;; #(
+  *) :
+    MULTIARCH=$($CC --print-multiarch 2>/dev/null)
+ ;;
+esac
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $MULTIARCH" >&5
+$as_echo "$MULTIARCH" >&6; }
 
 if test x$PLATFORM_TRIPLET != x && test x$MULTIARCH != x; then
   if test x$PLATFORM_TRIPLET != x$MULTIARCH; then
@@ -6103,6 +6113,7 @@ if test x$PLATFORM_TRIPLET != x && test x$MULTIARCH != x; then
 elif test x$PLATFORM_TRIPLET != x && test x$MULTIARCH = x; then
   MULTIARCH=$PLATFORM_TRIPLET
 fi
+
 
 if test x$MULTIARCH != x; then
   MULTIARCH_CPPFLAGS="-DMULTIARCH=\\\"$MULTIARCH\\\""

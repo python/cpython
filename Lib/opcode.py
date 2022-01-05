@@ -77,8 +77,6 @@ def_op('MATCH_KEYS', 33)
 
 def_op('PUSH_EXC_INFO', 35)
 
-def_op('POP_EXCEPT_AND_RERAISE', 37)
-
 def_op('WITH_EXCEPT_START', 49)
 def_op('GET_AITER', 50)
 def_op('GET_ANEXT', 51)
@@ -153,7 +151,6 @@ haslocal.append(126)
 
 jabs_op('JUMP_IF_NOT_EG_MATCH', 127)
 
-def_op('GEN_START', 129)        # Kind of generator/coroutine
 def_op('RAISE_VARARGS', 130)    # Number of raise arguments (1, 2, or 3)
 
 def_op('MAKE_FUNCTION', 132)    # Flags

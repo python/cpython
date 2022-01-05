@@ -1502,6 +1502,17 @@ class LongTest(unittest.TestCase):
             self.assertEqual(type(numerator), int)
             self.assertEqual(type(denominator), int)
 
+    def test_square(self):
+        # Multiplication makes a special case of multiplying an int with
+        # itself, using a special, faster algorithm. This test is mostly
+        # to ensure that no asserts in the implementation trigger, in
+        # cases with a maximal amount of carries.
+        for bitlen in range(1, 400):
+            n = (1 << bitlen) - 1 # solid string of 1 bits
+            with self.subTest(bitlen=bitlen, n=n):
+                # (2**i - 1)**2 = 2**(2*i) - 2*2**i + 1
+                self.assertEqual(n**2,
+                    (1 << (2 * bitlen)) - (1 << (bitlen + 1)) + 1)
 
 if __name__ == "__main__":
     unittest.main()
