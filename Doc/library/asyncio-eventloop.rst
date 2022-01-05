@@ -897,7 +897,7 @@ convenient.
 
    .. versionchanged:: 3.7
       Even though the method was always documented as a coroutine
-      method, before Python 3.7 it returned an :class:`Future`.
+      method, before Python 3.7 it returned a :class:`Future`.
       Since Python 3.7, this is an ``async def`` method.
 
 .. coroutinemethod:: loop.sock_connect(sock, address)

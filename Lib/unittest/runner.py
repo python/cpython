@@ -142,6 +142,12 @@ class TextTestResult(result.TestResult):
             self.stream.flush()
         self.printErrorList('ERROR', self.errors)
         self.printErrorList('FAIL', self.failures)
+        unexpectedSuccesses = getattr(self, 'unexpectedSuccesses', ())
+        if unexpectedSuccesses:
+            self.stream.writeln(self.separator1)
+            for test in unexpectedSuccesses:
+                self.stream.writeln(f"UNEXPECTED SUCCESS: {self.getDescription(test)}")
+            self.stream.flush()
 
     def printErrorList(self, flavour, errors):
         for test, err in errors:

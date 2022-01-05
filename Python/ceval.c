@@ -1092,7 +1092,6 @@ fail:
 
 
 static int do_raise(PyThreadState *tstate, PyObject *exc, PyObject *cause);
-static PyObject *do_reraise_star(PyObject *excs, PyObject *orig);
 static int exception_group_match(
     PyObject* exc_value, PyObject *match_type,
     PyObject **match, PyObject **rest);
@@ -2710,45 +2709,12 @@ check_eval_breaker:
             return retval;
         }
 
-        TARGET(GEN_START) {
-            PyObject *none = POP();
-            assert(none == Py_None);
-            assert(oparg < 3);
-            Py_DECREF(none);
-            DISPATCH();
-        }
-
         TARGET(POP_EXCEPT) {
             _PyErr_StackItem *exc_info = tstate->exc_info;
             PyObject *value = exc_info->exc_value;
             exc_info->exc_value = POP();
             Py_XDECREF(value);
             DISPATCH();
-        }
-
-        TARGET(POP_EXCEPT_AND_RERAISE) {
-            PyObject *lasti = PEEK(2);
-            if (PyLong_Check(lasti)) {
-                frame->f_lasti = PyLong_AsLong(lasti);
-                assert(!_PyErr_Occurred(tstate));
-            }
-            else {
-                _PyErr_SetString(tstate, PyExc_SystemError, "lasti is not an int");
-                goto error;
-            }
-            PyObject *value = POP();
-            assert(value);
-            assert(PyExceptionInstance_Check(value));
-            PyObject *type = Py_NewRef(PyExceptionInstance_Class(value));
-            PyObject *traceback = PyException_GetTraceback(value);
-            Py_DECREF(POP()); /* lasti */
-            _PyErr_Restore(tstate, type, value, traceback);
-
-            _PyErr_StackItem *exc_info = tstate->exc_info;
-            value = exc_info->exc_value;
-            exc_info->exc_value = POP();
-            Py_XDECREF(value);
-            goto exception_unwind;
         }
 
         TARGET(RERAISE) {
@@ -2777,7 +2743,7 @@ check_eval_breaker:
             assert(PyList_Check(excs));
             PyObject *orig = POP();
 
-            PyObject *val = do_reraise_star(excs, orig);
+            PyObject *val = _PyExc_PrepReraiseStar(orig, excs);
             Py_DECREF(excs);
             Py_DECREF(orig);
 
@@ -2785,8 +2751,6 @@ check_eval_breaker:
                 goto error;
             }
 
-            PyObject *lasti_unused = Py_NewRef(_PyLong_GetZero());
-            PUSH(lasti_unused);
             PUSH(val);
             DISPATCH();
         }
@@ -6311,134 +6275,6 @@ exception_group_match(PyObject* exc_value, PyObject *match_type,
     *match = Py_NewRef(Py_None);
     *rest = Py_NewRef(Py_None);
     return 0;
-}
-
-/* Logic for the final raise/reraise of a try-except* contruct
-   (too complicated for inlining).
-*/
-
-static bool
-is_same_exception_metadata(PyObject *exc1, PyObject *exc2)
-{
-    assert(PyExceptionInstance_Check(exc1));
-    assert(PyExceptionInstance_Check(exc2));
-
-    PyObject *tb1 = PyException_GetTraceback(exc1);
-    PyObject *ctx1 = PyException_GetContext(exc1);
-    PyObject *cause1 = PyException_GetCause(exc1);
-    PyObject *tb2 = PyException_GetTraceback(exc2);
-    PyObject *ctx2 = PyException_GetContext(exc2);
-    PyObject *cause2 = PyException_GetCause(exc2);
-
-    bool result = (Py_Is(tb1, tb2) &&
-                   Py_Is(ctx1, ctx2) &&
-                   Py_Is(cause1, cause2));
-
-    Py_XDECREF(tb1);
-    Py_XDECREF(ctx1);
-    Py_XDECREF(cause1);
-    Py_XDECREF(tb2);
-    Py_XDECREF(ctx2);
-    Py_XDECREF(cause2);
-    return result;
-}
-
-/*
-   excs: a list of exceptions to raise/reraise
-   orig: the original except that was caught
-
-   Calculates an exception group to raise. It contains
-   all exceptions in excs, where those that were reraised
-   have same nesting structure as in orig, and those that
-   were raised (if any) are added as siblings in a new EG.
-
-   Returns NULL and sets an exception on failure.
-*/
-static PyObject *
-do_reraise_star(PyObject *excs, PyObject *orig)
-{
-    assert(PyList_Check(excs));
-    assert(PyExceptionInstance_Check(orig));
-
-    Py_ssize_t numexcs = PyList_GET_SIZE(excs);
-
-    if (numexcs == 0) {
-        return Py_NewRef(Py_None);
-    }
-
-    if (!_PyBaseExceptionGroup_Check(orig)) {
-        /* a naked exception was caught and wrapped. Only one except* clause
-         * could have executed,so there is at most one exception to raise.
-         */
-
-        assert(numexcs == 1 || (numexcs == 2 && PyList_GET_ITEM(excs, 1) == Py_None));
-
-        PyObject *e = PyList_GET_ITEM(excs, 0);
-        assert(e != NULL);
-        return Py_NewRef(e);
-    }
-
-
-    PyObject *raised_list = PyList_New(0);
-    if (raised_list == NULL) {
-        return NULL;
-    }
-    PyObject* reraised_list = PyList_New(0);
-    if (reraised_list == NULL) {
-        Py_DECREF(raised_list);
-        return NULL;
-    }
-
-    /* Now we are holding refs to raised_list and reraised_list */
-
-    PyObject *result = NULL;
-
-    /* Split excs into raised and reraised by comparing metadata with orig */
-    for (Py_ssize_t i = 0; i < numexcs; i++) {
-        PyObject *e = PyList_GET_ITEM(excs, i);
-        assert(e != NULL);
-        if (Py_IsNone(e)) {
-            continue;
-        }
-        bool is_reraise = is_same_exception_metadata(e, orig);
-        PyObject *append_list = is_reraise ? reraised_list : raised_list;
-        if (PyList_Append(append_list, e) < 0) {
-            goto done;
-        }
-    }
-
-    PyObject *reraised_eg = _PyExc_ExceptionGroupProjection(orig, reraised_list);
-    if (reraised_eg == NULL) {
-        goto done;
-    }
-
-    if (!Py_IsNone(reraised_eg)) {
-        assert(is_same_exception_metadata(reraised_eg, orig));
-    }
-
-    Py_ssize_t num_raised = PyList_GET_SIZE(raised_list);
-    if (num_raised == 0) {
-        result = reraised_eg;
-    }
-    else if (num_raised > 0) {
-        int res = 0;
-        if (!Py_IsNone(reraised_eg)) {
-            res = PyList_Append(raised_list, reraised_eg);
-        }
-        Py_DECREF(reraised_eg);
-        if (res < 0) {
-            goto done;
-        }
-        result = _PyExc_CreateExceptionGroup("", raised_list);
-        if (result == NULL) {
-            goto done;
-        }
-    }
-
-done:
-    Py_XDECREF(raised_list);
-    Py_XDECREF(reraised_list);
-    return result;
 }
 
 /* Iterate v argcnt times and store the results on the stack (via decreasing

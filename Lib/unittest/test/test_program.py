@@ -61,6 +61,17 @@ class Test_TestProgram(unittest.TestCase):
             pass
         def testFail(self):
             raise AssertionError
+        def testError(self):
+            1/0
+        @unittest.skip('skipping')
+        def testSkipped(self):
+            raise AssertionError
+        @unittest.expectedFailure
+        def testExpectedFailure(self):
+            raise AssertionError
+        @unittest.expectedFailure
+        def testUnexpectedSuccess(self):
+            pass
 
     class FooBarLoader(unittest.TestLoader):
         """Test loader that returns a suite containing FooBar."""
@@ -111,9 +122,13 @@ class Test_TestProgram(unittest.TestCase):
                                 testRunner=unittest.TextTestRunner(stream=stream),
                                 testLoader=self.FooBarLoader())
         self.assertTrue(hasattr(program, 'result'))
-        self.assertIn('\nFAIL: testFail ', stream.getvalue())
-        self.assertTrue(stream.getvalue().endswith('\n\nFAILED (failures=1)\n'))
-
+        out = stream.getvalue()
+        self.assertIn('\nFAIL: testFail ', out)
+        self.assertIn('\nERROR: testError ', out)
+        self.assertIn('\nUNEXPECTED SUCCESS: testUnexpectedSuccess ', out)
+        expected = ('\n\nFAILED (failures=1, errors=1, skipped=1, '
+                    'expected failures=1, unexpected successes=1)\n')
+        self.assertTrue(out.endswith(expected))
 
     def test_Exit(self):
         stream = BufferedWriter()
@@ -124,9 +139,13 @@ class Test_TestProgram(unittest.TestCase):
             testRunner=unittest.TextTestRunner(stream=stream),
             exit=True,
             testLoader=self.FooBarLoader())
-        self.assertIn('\nFAIL: testFail ', stream.getvalue())
-        self.assertTrue(stream.getvalue().endswith('\n\nFAILED (failures=1)\n'))
-
+        out = stream.getvalue()
+        self.assertIn('\nFAIL: testFail ', out)
+        self.assertIn('\nERROR: testError ', out)
+        self.assertIn('\nUNEXPECTED SUCCESS: testUnexpectedSuccess ', out)
+        expected = ('\n\nFAILED (failures=1, errors=1, skipped=1, '
+                    'expected failures=1, unexpected successes=1)\n')
+        self.assertTrue(out.endswith(expected))
 
     def test_ExitAsDefault(self):
         stream = BufferedWriter()
@@ -136,8 +155,13 @@ class Test_TestProgram(unittest.TestCase):
             argv=["foobar"],
             testRunner=unittest.TextTestRunner(stream=stream),
             testLoader=self.FooBarLoader())
-        self.assertIn('\nFAIL: testFail ', stream.getvalue())
-        self.assertTrue(stream.getvalue().endswith('\n\nFAILED (failures=1)\n'))
+        out = stream.getvalue()
+        self.assertIn('\nFAIL: testFail ', out)
+        self.assertIn('\nERROR: testError ', out)
+        self.assertIn('\nUNEXPECTED SUCCESS: testUnexpectedSuccess ', out)
+        expected = ('\n\nFAILED (failures=1, errors=1, skipped=1, '
+                    'expected failures=1, unexpected successes=1)\n')
+        self.assertTrue(out.endswith(expected))
 
 
 class InitialisableProgram(unittest.TestProgram):
