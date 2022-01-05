@@ -857,7 +857,7 @@ class PurePath(object):
 
     def __rtruediv__(self, key):
         try:
-            return self._from_parts([key] + self._parts)
+            return self._from_parts((key, *self._parts))
         except TypeError:
             return NotImplemented
 
@@ -1058,7 +1058,7 @@ class Path(PurePath):
             return self
         # FIXME this must defer to the specific flavour (and, under Windows,
         # use nt._getfullpathname())
-        return self._from_parts([self._accessor.getcwd()] + self._parts)
+        return self._from_parts((self._accessor.getcwd(), *self._parts))
 
     def resolve(self, strict=False):
         """
@@ -1437,7 +1437,7 @@ class Path(PurePath):
             homedir = self._accessor.expanduser(self._parts[0])
             if homedir[:1] == "~":
                 raise RuntimeError("Could not determine home directory.")
-            return self._from_parts([homedir] + self._parts[1:])
+            return self._from_parts((homedir, *self._parts[1:]))
 
         return self
 
