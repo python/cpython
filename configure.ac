@@ -987,12 +987,14 @@ else
 fi
 rm -f conftest.c conftest.out
 
+AC_MSG_CHECKING([for multiarch])
 AS_CASE([$ac_sys_system],
   [Darwin*], [MULTIARCH=""],
   [FreeBSD*], [MULTIARCH=""],
   [MULTIARCH=$($CC --print-multiarch 2>/dev/null)]
 )
 AC_SUBST([MULTIARCH])
+AC_MSG_RESULT([$MULTIARCH])
 
 if test x$PLATFORM_TRIPLET != x && test x$MULTIARCH != x; then
   if test x$PLATFORM_TRIPLET != x$MULTIARCH; then

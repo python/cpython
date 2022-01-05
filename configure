@@ -6091,6 +6091,8 @@ $as_echo "none" >&6; }
 fi
 rm -f conftest.c conftest.out
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for multiarch" >&5
+$as_echo_n "checking for multiarch... " >&6; }
 case $ac_sys_system in #(
   Darwin*) :
     MULTIARCH="" ;; #(
@@ -6101,6 +6103,8 @@ case $ac_sys_system in #(
  ;;
 esac
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $MULTIARCH" >&5
+$as_echo "$MULTIARCH" >&6; }
 
 if test x$PLATFORM_TRIPLET != x && test x$MULTIARCH != x; then
   if test x$PLATFORM_TRIPLET != x$MULTIARCH; then
