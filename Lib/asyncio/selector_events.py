@@ -15,8 +15,10 @@ import warnings
 import weakref
 try:
     import ssl
+    RECOVERABLE_ERRORS = (BlockingIOError, InterruptedError, ssl.SSLWantReadError, ssl.SSLWantWriteError)
 except ImportError:  # pragma: no cover
     ssl = None
+    RECOVERABLE_ERRORS = (BlockingIOError, InterruptedError)
 
 from . import base_events
 from . import constants
@@ -362,7 +364,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             raise ValueError("the socket must be non-blocking")
         try:
             return sock.recv(n)
-        except (BlockingIOError, InterruptedError):
+        except RECOVERABLE_ERRORS:
             pass
         fut = self.create_future()
         fd = sock.fileno()
@@ -383,7 +385,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             return
         try:
             data = sock.recv(n)
-        except (BlockingIOError, InterruptedError):
+        except RECOVERABLE_ERRORS:
             return  # try again next time
         except (SystemExit, KeyboardInterrupt):
             raise
@@ -403,7 +405,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             raise ValueError("the socket must be non-blocking")
         try:
             return sock.recv_into(buf)
-        except (BlockingIOError, InterruptedError):
+        except RECOVERABLE_ERRORS:
             pass
         fut = self.create_future()
         fd = sock.fileno()
@@ -421,7 +423,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             return
         try:
             nbytes = sock.recv_into(buf)
-        except (BlockingIOError, InterruptedError):
+        except RECOVERABLE_ERRORS:
             return  # try again next time
         except (SystemExit, KeyboardInterrupt):
             raise
@@ -444,7 +446,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             raise ValueError("the socket must be non-blocking")
         try:
             n = sock.send(data)
-        except (BlockingIOError, InterruptedError):
+        except RECOVERABLE_ERRORS:
             n = 0
 
         if n == len(data):
@@ -468,7 +470,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         start = pos[0]
         try:
             n = sock.send(view[start:])
-        except (BlockingIOError, InterruptedError):
+        except RECOVERABLE_ERRORS:
             return
         except (SystemExit, KeyboardInterrupt):
             raise
@@ -505,7 +507,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         fd = sock.fileno()
         try:
             sock.connect(address)
-        except (BlockingIOError, InterruptedError):
+        except RECOVERABLE_ERRORS:
             # Issue #23618: When the C function connect() fails with EINTR, the
             # connection runs in background. We have to wait until the socket
             # becomes writable to be notified when the connection succeed or
@@ -535,7 +537,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             if err != 0:
                 # Jump to any except clause below.
                 raise OSError(err, f'Connect call failed {address}')
-        except (BlockingIOError, InterruptedError):
+        except RECOVERABLE_ERRORS:
             # socket is still registered, the callback will be retried later
             pass
         except (SystemExit, KeyboardInterrupt):
@@ -565,7 +567,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         try:
             conn, address = sock.accept()
             conn.setblocking(False)
-        except (BlockingIOError, InterruptedError):
+        except RECOVERABLE_ERRORS:
             self._ensure_fd_no_transport(fd)
             handle = self._add_reader(fd, self._sock_accept, fut, sock)
             fut.add_done_callback(
@@ -829,7 +831,7 @@ class _SelectorSocketTransport(_SelectorTransport):
 
         try:
             nbytes = self._sock.recv_into(buf)
-        except (BlockingIOError, InterruptedError):
+        except RECOVERABLE_ERRORS:
             return
         except (SystemExit, KeyboardInterrupt):
             raise
@@ -854,7 +856,7 @@ class _SelectorSocketTransport(_SelectorTransport):
             return
         try:
             data = self._sock.recv(self.max_size)
-        except (BlockingIOError, InterruptedError, ssl.SSLWantReadError, ssl.SSLWantWriteError):
+        except RECOVERABLE_ERRORS:
             return
         except (SystemExit, KeyboardInterrupt):
             raise
@@ -916,7 +918,7 @@ class _SelectorSocketTransport(_SelectorTransport):
             # Optimization: try to send now.
             try:
                 n = self._sock.send(data)
-            except (BlockingIOError, InterruptedError):
+            except RECOVERABLE_ERRORS:
                 pass
             except (SystemExit, KeyboardInterrupt):
                 raise
@@ -941,7 +943,7 @@ class _SelectorSocketTransport(_SelectorTransport):
             return
         try:
             n = self._sock.send(self._buffer)
-        except (BlockingIOError, InterruptedError):
+        except RECOVERABLE_ERRORS:
             pass
         except (SystemExit, KeyboardInterrupt):
             raise
@@ -1017,7 +1019,7 @@ class _SelectorDatagramTransport(_SelectorTransport):
             return
         try:
             data, addr = self._sock.recvfrom(self.max_size)
-        except (BlockingIOError, InterruptedError):
+        except RECOVERABLE_ERRORS:
             pass
         except OSError as exc:
             self._protocol.error_received(exc)
@@ -1055,7 +1057,7 @@ class _SelectorDatagramTransport(_SelectorTransport):
                 else:
                     self._sock.sendto(data, addr)
                 return
-            except (BlockingIOError, InterruptedError):
+            except RECOVERABLE_ERRORS:
                 self._loop._add_writer(self._sock_fd, self._sendto_ready)
             except OSError as exc:
                 self._protocol.error_received(exc)
@@ -1079,7 +1081,7 @@ class _SelectorDatagramTransport(_SelectorTransport):
                     self._sock.send(data)
                 else:
                     self._sock.sendto(data, addr)
-            except (BlockingIOError, InterruptedError):
+            except RECOVERABLE_ERRORS:
                 self._buffer.appendleft((data, addr))  # Try again later.
                 break
             except OSError as exc:
