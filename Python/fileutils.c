@@ -2218,12 +2218,12 @@ _Py_normpath(wchar_t *path, Py_ssize_t size)
     if (!path[0] || size == 0) {
         return path;
     }
-    wchar_t lastC = L'\0';
-    wchar_t *p1 = path;
     wchar_t *pEnd = size >= 0 ? &path[size] : NULL;
-    wchar_t *p2 = path;
-    wchar_t *minP2 = path;
-    int minP2_dotdot_joinable = 1;
+    wchar_t *p1 = path;     // sequentially scanned address in the path
+    wchar_t *p2 = path;     // destination of a scanned character to be ljusted
+    wchar_t *minP2 = path;  // the beginning of the destination range
+    wchar_t lastC = L'\0';  // the last ljusted character, p2[-1] in most cases
+    int is_absolute = 0;    // whether the path is confirmed to be absolute
 
 #define IS_END(x) (pEnd ? (x) == pEnd : !*(x))
 #ifdef ALTSEP
@@ -2266,6 +2266,7 @@ _Py_normpath(wchar_t *path, Py_ssize_t size)
             }
         }
         minP2 = p2;
+        is_absolute = 1;
     }
 #else
     // Skip past two leading SEPs
@@ -2274,7 +2275,7 @@ _Py_normpath(wchar_t *path, Py_ssize_t size)
         *p2++ = *p1++;
         minP2 = p2;
         lastC = SEP;
-        minP2_dotdot_joinable = 0;  // follow pure python's caluculation
+        is_absolute = 1;
     }
 #endif /* MS_WINDOWS */
 
@@ -2292,7 +2293,8 @@ _Py_normpath(wchar_t *path, Py_ssize_t size)
                 int sep_at_2 = !sep_at_1 && SEP_OR_END(&p1[2]);
                 if (sep_at_2 && p1[1] == L'.') {
                     if (p2 == minP2) {
-                        if (minP2_dotdot_joinable) {
+                        if (!is_absolute) {
+                            // Relative path does not absorb the dotdot
                             *p2++ = L'.';
                             *p2++ = L'.';
                             lastC = L'.';
