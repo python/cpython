@@ -1154,6 +1154,8 @@ stack_effect(int opcode, int oparg, int jump)
         /* Functions and calls */
         case PRECALL_METHOD:
             return -1;
+        case PRECALL_FUNCTION:
+            return 0;
         case CALL_NO_KW:
             return -oparg;
         case CALL_KW:
@@ -1816,6 +1818,7 @@ compiler_call_exit_with_nones(struct compiler *c) {
     ADDOP_LOAD_CONST(c, Py_None);
     ADDOP(c, DUP_TOP);
     ADDOP(c, DUP_TOP);
+    ADDOP_I(c, PRECALL_FUNCTION, 3);
     ADDOP_I(c, CALL_NO_KW, 3);
     return 1;
 }
@@ -2197,6 +2200,7 @@ compiler_apply_decorators(struct compiler *c, asdl_expr_seq* decos)
     int old_end_col_offset = c->u->u_end_col_offset;
     for (Py_ssize_t i = asdl_seq_LEN(decos) - 1; i > -1; i--) {
         SET_LOC(c, (expr_ty)asdl_seq_GET(decos, i));
+        ADDOP_I(c, PRECALL_FUNCTION, 1);
         ADDOP_I(c, CALL_NO_KW, 1);
     }
     c->u->u_lineno = old_lineno;
@@ -3896,6 +3900,7 @@ compiler_assert(struct compiler *c, stmt_ty s)
     ADDOP(c, LOAD_ASSERTION_ERROR);
     if (s->v.Assert.msg) {
         VISIT(c, expr, s->v.Assert.msg);
+        ADDOP_I(c, PRECALL_FUNCTION, 1);
         ADDOP_I(c, CALL_NO_KW, 1);
     }
     ADDOP_I(c, RAISE_VARARGS, 1);
@@ -4949,10 +4954,12 @@ compiler_call_helper(struct compiler *c,
         if (!compiler_call_simple_kw_helper(c, keywords, nkwelts)) {
             return 0;
         };
+        ADDOP_I(c, PRECALL_FUNCTION, n + nelts + nkwelts + 1);
         ADDOP_I(c, CALL_KW, n + nelts + nkwelts);
         return 1;
     }
     else {
+        ADDOP_I(c, PRECALL_FUNCTION, n + nelts);
         ADDOP_I(c, CALL_NO_KW, n + nelts);
         return 1;
     }
@@ -5350,6 +5357,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
         ADDOP(c, GET_ITER);
     }
 
+    ADDOP_I(c, PRECALL_FUNCTION, 1);
     ADDOP_I(c, CALL_NO_KW, 1);
 
     if (is_async_generator && type != COMP_GENEXP) {

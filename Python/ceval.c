@@ -1662,15 +1662,10 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
     PyObject *kwnames;
     int nargs;
     /*
-     * It is only between a PRECALL_METHOD instruction and the following instruction,
-     * that these two values can be anything other than their defaults. */
+     * It is only between a PRECALL_METHOD/FUNCTION instruction and the following instruction,
+     * that these two values have any meaning. */
     int postcall_shrink = 1;
     int extra_args = 0;
-#define RESET_STACK_ADJUST_FOR_CALLS \
-    do { \
-        postcall_shrink = 1; \
-        extra_args = 0; \
-    } while (0)
 #define STACK_ADJUST_IS_RESET \
     (postcall_shrink == 1 && extra_args == 0)
 
@@ -2588,12 +2583,12 @@ check_eval_breaker:
             PyObject *iter = _PyCoro_GetAwaitableIter(iterable);
 
             if (iter == NULL) {
-                int opcode_at_minus_3 = 0;
-                if ((next_instr - first_instr) > 2) {
-                    opcode_at_minus_3 = _Py_OPCODE(next_instr[-3]);
+                int opcode_at_minus_4 = 0;
+                if ((next_instr - first_instr) > 4) {
+                    opcode_at_minus_4 = _Py_OPCODE(next_instr[-4]);
                 }
                 format_awaitable_error(tstate, Py_TYPE(iterable),
-                                       opcode_at_minus_3,
+                                       opcode_at_minus_4,
                                        _Py_OPCODE(next_instr[-2]));
             }
 
@@ -4526,6 +4521,12 @@ check_eval_breaker:
             DISPATCH();
         }
 
+        TARGET(PRECALL_FUNCTION) {
+            postcall_shrink = 1;
+            extra_args = 0;
+            DISPATCH();
+        }
+
         TARGET(PRECALL_METHOD) {
             /* Designed to work in tamdem with LOAD_METHOD. */
             /* `meth` is NULL when LOAD_METHOD thinks that it's not
@@ -4600,7 +4601,6 @@ check_eval_breaker:
                         stack_pointer, nargs, kwnames
                     );
                     STACK_SHRINK(postcall_shrink);
-                    RESET_STACK_ADJUST_FOR_CALLS;
                     // The frame has stolen all the arguments from the stack,
                     // so there is no need to clean them up.
                     Py_XDECREF(kwnames);
@@ -4632,7 +4632,6 @@ check_eval_breaker:
                 Py_DECREF(stack_pointer[i]);
             }
             STACK_SHRINK(postcall_shrink);
-            RESET_STACK_ADJUST_FOR_CALLS;
             PUSH(res);
             if (res == NULL) {
                 goto error;
@@ -4680,7 +4679,6 @@ check_eval_breaker:
             size_t size = code->co_nlocalsplus + code->co_stacksize + FRAME_SPECIALS_SIZE;
             InterpreterFrame *new_frame = _PyThreadState_BumpFramePointer(tstate, size);
             if (new_frame == NULL) {
-                RESET_STACK_ADJUST_FOR_CALLS;
                 goto error;
             }
             _PyFrame_InitializeSpecials(new_frame, func,
@@ -4699,7 +4697,6 @@ check_eval_breaker:
                 new_frame->localsplus[i] = NULL;
             }
             STACK_SHRINK(postcall_shrink);
-            RESET_STACK_ADJUST_FOR_CALLS;
             Py_DECREF(func);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             new_frame->previous = frame;
@@ -7350,7 +7347,7 @@ format_exc_unbound(PyThreadState *tstate, PyCodeObject *co, int oparg)
 }
 
 static void
-format_awaitable_error(PyThreadState *tstate, PyTypeObject *type, int prevprevopcode, int prevopcode)
+format_awaitable_error(PyThreadState *tstate, PyTypeObject *type, int prevprevprevopcode, int prevopcode)
 {
     if (type->tp_as_async == NULL || type->tp_as_async->am_await == NULL) {
         if (prevopcode == BEFORE_ASYNC_WITH) {
@@ -7359,7 +7356,7 @@ format_awaitable_error(PyThreadState *tstate, PyTypeObject *type, int prevprevop
                           "that does not implement __await__: %.100s",
                           type->tp_name);
         }
-        else if (prevopcode == WITH_EXCEPT_START || (prevopcode == CALL_NO_KW && prevprevopcode == DUP_TOP)) {
+        else if (prevopcode == WITH_EXCEPT_START || (prevopcode == CALL_NO_KW && prevprevprevopcode == DUP_TOP)) {
             _PyErr_Format(tstate, PyExc_TypeError,
                           "'async with' received an object from __aexit__ "
                           "that does not implement __await__: %.100s",

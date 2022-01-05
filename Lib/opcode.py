@@ -191,6 +191,7 @@ def_op('SET_UPDATE', 163)
 def_op('DICT_MERGE', 164)
 def_op('DICT_UPDATE', 165)
 
+def_op('PRECALL_FUNCTION', 167)
 def_op('PRECALL_METHOD', 168)
 def_op('CALL_NO_KW', 169)
 def_op('CALL_KW', 170)
