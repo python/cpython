@@ -388,7 +388,8 @@ _Pypegen_set_syntax_error(Parser* p, Token* last_token) {
     if (PyErr_Occurred()) {
         // Prioritize tokenizer errors to custom syntax errors raised
         // on the second phase only if the errors come from the parser.
-        if (p->tok->done == E_DONE && PyErr_ExceptionMatches(PyExc_SyntaxError)) {
+        int is_tok_ok = (p->tok->done == E_DONE || p->tok->done == E_OK);
+        if (is_tok_ok && PyErr_ExceptionMatches(PyExc_SyntaxError)) {
             _PyPegen_tokenize_full_source_to_check_for_errors(p);
         }
         // Propagate the existing syntax error.

@@ -2709,45 +2709,12 @@ check_eval_breaker:
             return retval;
         }
 
-        TARGET(GEN_START) {
-            PyObject *none = POP();
-            assert(none == Py_None);
-            assert(oparg < 3);
-            Py_DECREF(none);
-            DISPATCH();
-        }
-
         TARGET(POP_EXCEPT) {
             _PyErr_StackItem *exc_info = tstate->exc_info;
             PyObject *value = exc_info->exc_value;
             exc_info->exc_value = POP();
             Py_XDECREF(value);
             DISPATCH();
-        }
-
-        TARGET(POP_EXCEPT_AND_RERAISE) {
-            PyObject *lasti = PEEK(2);
-            if (PyLong_Check(lasti)) {
-                frame->f_lasti = PyLong_AsLong(lasti);
-                assert(!_PyErr_Occurred(tstate));
-            }
-            else {
-                _PyErr_SetString(tstate, PyExc_SystemError, "lasti is not an int");
-                goto error;
-            }
-            PyObject *value = POP();
-            assert(value);
-            assert(PyExceptionInstance_Check(value));
-            PyObject *type = Py_NewRef(PyExceptionInstance_Class(value));
-            PyObject *traceback = PyException_GetTraceback(value);
-            Py_DECREF(POP()); /* lasti */
-            _PyErr_Restore(tstate, type, value, traceback);
-
-            _PyErr_StackItem *exc_info = tstate->exc_info;
-            value = exc_info->exc_value;
-            exc_info->exc_value = POP();
-            Py_XDECREF(value);
-            goto exception_unwind;
         }
 
         TARGET(RERAISE) {

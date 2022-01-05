@@ -376,7 +376,9 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.11a4 3468 (Add SEND opcode)
 #     Python 3.11a4 3469 (bpo-45711: remove type, traceback from exc_info)
 #     Python 3.11a4 3470 (bpo-46221: PREP_RERAISE_STAR no longer pushes lasti)
-#     Python 3.11a4 3471 (Add POP_JUMP_IF_NOT_NONE/POP_JUMP_IF_NONE opcode)
+#     Python 3.11a4 3471 (bpo-46202: remove pop POP_EXCEPT_AND_RERAISE)
+#     Python 3.11a4 3472 (bpo-46009: replace GEN_START with POP_TOP)
+#     Python 3.11a4 3473 (Add POP_JUMP_IF_NOT_NONE/POP_JUMP_IF_NONE opcodes)
 
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
@@ -386,7 +388,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3471).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3473).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
