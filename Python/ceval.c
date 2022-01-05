@@ -2711,14 +2711,6 @@ check_eval_breaker:
             return retval;
         }
 
-        TARGET(GEN_START) {
-            PyObject *none = POP();
-            assert(none == Py_None);
-            assert(oparg < 3);
-            Py_DECREF(none);
-            DISPATCH();
-        }
-
         TARGET(EXIT_INIT_CHECK) {
             assert(STACK_LEVEL() == 2);
             PyObject *should_be_none = TOP();

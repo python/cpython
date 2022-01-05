@@ -3414,6 +3414,19 @@ class TestFlag(unittest.TestCase):
         self.assertFalse(NeverEnum.__dict__.get('_test1', False))
         self.assertFalse(NeverEnum.__dict__.get('_test2', False))
 
+    def test_default_missing(self):
+        with self.assertRaisesRegex(
+            ValueError,
+            "'RED' is not a valid TestFlag.Color",
+        ) as ctx:
+            self.Color('RED')
+        self.assertIs(ctx.exception.__context__, None)
+
+        P = Flag('P', 'X Y')
+        with self.assertRaisesRegex(ValueError, "'X' is not a valid P") as ctx:
+            P('X')
+        self.assertIs(ctx.exception.__context__, None)
+
 
 class TestIntFlag(unittest.TestCase):
     """Tests of the IntFlags."""
@@ -3974,6 +3987,19 @@ class TestIntFlag(unittest.TestCase):
                 failed,
                 'at least one thread failed while creating composite members')
         self.assertEqual(256, len(seen), 'too many composite members created')
+
+    def test_default_missing(self):
+        with self.assertRaisesRegex(
+            ValueError,
+            "'RED' is not a valid TestIntFlag.Color",
+        ) as ctx:
+            self.Color('RED')
+        self.assertIs(ctx.exception.__context__, None)
+
+        P = IntFlag('P', 'X Y')
+        with self.assertRaisesRegex(ValueError, "'X' is not a valid P") as ctx:
+            P('X')
+        self.assertIs(ctx.exception.__context__, None)
 
 
 class TestEmptyAndNonLatinStrings(unittest.TestCase):

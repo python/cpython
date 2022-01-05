@@ -1,0 +1,1 @@
+Remove the ``GEN_START`` opcode.
