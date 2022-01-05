@@ -552,6 +552,15 @@ class TestGzip(BaseTest):
                         f.read(1) # to set mtime attribute
                         self.assertEqual(f.mtime, mtime)
 
+    def test_compress_correct_level(self):
+        # gzip.compress calls with mtime == 0 take a different code path.
+        for mtime in (0, 42):
+            with self.subTest(mtime=mtime):
+                nocompress = gzip.compress(data1, compresslevel=0, mtime=mtime)
+                yescompress = gzip.compress(data1, compresslevel=1, mtime=mtime)
+                self.assertIn(data1, nocompress)
+                self.assertNotIn(data1, yescompress)
+
     def test_decompress(self):
         for data in (data1, data2):
             buf = io.BytesIO()

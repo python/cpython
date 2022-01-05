@@ -1,0 +1,2 @@
+Fix an issue in :func:`gzip.compress` where the compression level was not passed
+through to the underlying :func:`zlib.compress` function.
