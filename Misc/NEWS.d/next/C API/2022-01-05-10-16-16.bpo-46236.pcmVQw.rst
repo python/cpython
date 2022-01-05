@@ -1,2 +1,1 @@
-Fix :c:func:`PyFunction_GetAnnotations` might return a tuple instead of a
-dict.
+Fix a bug in :c:func:`PyFunction_GetAnnotations` that caused it to return a ``tuple`` instead of a ``dict``.
