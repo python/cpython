@@ -138,7 +138,7 @@ from itertools import groupby, repeat
 from bisect import bisect_left, bisect_right
 from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum
 from operator import mul
-from collections import Counter, namedtuple
+from collections import Counter, namedtuple, defaultdict
 
 _SQRT2 = sqrt(2.0)
 
@@ -214,17 +214,15 @@ def _ss(data, c=None):
         T, total, count = _sum((d := x - c) * d for x in data)
         return (T, total, count)
     count = 0
-    sx_partials = {}
-    sx_partials_get = sx_partials.get
-    sxx_partials = {}
-    sxx_partials_get = sxx_partials.get
+    sx_partials = defaultdict(int)
+    sxx_partials = defaultdict(int)
     T = int
     for typ, values in groupby(data, type):
         T = _coerce(T, typ)  # or raise TypeError
         for n, d in map(_exact_ratio, values):
             count += 1
-            sx_partials[d] = sx_partials_get(d, 0) + n
-            sxx_partials[d] = sxx_partials_get(d, 0) + n * n
+            sx_partials[d] += n
+            sxx_partials[d] += n * n
     if not count:
         total = Fraction(0)
     elif None in sx_partials:
