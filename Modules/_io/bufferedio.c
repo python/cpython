@@ -436,7 +436,8 @@ buffered_at_fork_reinit(buffered *self, PyObject *Py_UNUSED(ignored))
     self->owner = 0;
     if (ret == 0) {
         Py_RETURN_TRUE;
-    } else {
+    }
+    else {
         Py_RETURN_FALSE;
     }
 }
