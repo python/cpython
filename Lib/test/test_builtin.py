@@ -509,6 +509,9 @@ class BuiltinTest(unittest.TestCase):
         sys.spam = 1
         delattr(sys, 'spam')
         self.assertRaises(TypeError, delattr)
+        self.assertRaises(TypeError, delattr, sys)
+        msg = r"^attribute name must be string, not 'int'$"
+        self.assertRaisesRegex(TypeError, msg, delattr, sys, 1)
 
     def test_dir(self):
         # dir(wrong number of arguments)
@@ -801,17 +804,21 @@ class BuiltinTest(unittest.TestCase):
 
     def test_getattr(self):
         self.assertTrue(getattr(sys, 'stdout') is sys.stdout)
-        self.assertRaises(TypeError, getattr, sys, 1)
-        self.assertRaises(TypeError, getattr, sys, 1, "foo")
         self.assertRaises(TypeError, getattr)
+        self.assertRaises(TypeError, getattr, sys)
+        msg = r"^attribute name must be string, not 'int'$"
+        self.assertRaisesRegex(TypeError, msg, getattr, sys, 1)
+        self.assertRaisesRegex(TypeError, msg, getattr, sys, 1, 'spam')
         self.assertRaises(AttributeError, getattr, sys, chr(sys.maxunicode))
         # unicode surrogates are not encodable to the default encoding (utf8)
         self.assertRaises(AttributeError, getattr, 1, "\uDAD1\uD51E")
 
     def test_hasattr(self):
         self.assertTrue(hasattr(sys, 'stdout'))
-        self.assertRaises(TypeError, hasattr, sys, 1)
         self.assertRaises(TypeError, hasattr)
+        self.assertRaises(TypeError, hasattr, sys)
+        msg = r"^attribute name must be string, not 'int'$"
+        self.assertRaisesRegex(TypeError, msg, hasattr, sys, 1)
         self.assertEqual(False, hasattr(sys, chr(sys.maxunicode)))
 
         # Check that hasattr propagates all exceptions outside of
@@ -1457,8 +1464,11 @@ class BuiltinTest(unittest.TestCase):
     def test_setattr(self):
         setattr(sys, 'spam', 1)
         self.assertEqual(sys.spam, 1)
-        self.assertRaises(TypeError, setattr, sys, 1, 'spam')
         self.assertRaises(TypeError, setattr)
+        self.assertRaises(TypeError, setattr, sys)
+        self.assertRaises(TypeError, setattr, sys, 'spam')
+        msg = r"^attribute name must be string, not 'int'$"
+        self.assertRaisesRegex(TypeError, msg, setattr, sys, 1, 'spam')
 
     # test_str(): see test_unicode.py and test_bytes.py for str() tests.
 
