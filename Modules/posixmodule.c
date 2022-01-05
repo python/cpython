@@ -26,6 +26,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_ceval.h"         // _PyEval_ReInitThreads()
 #include "pycore_import.h"        // _PyImport_ReInitLock()
+#include "pycore_sysmodule.h"     // _PySys_ReInitStdio()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
@@ -589,6 +590,11 @@ PyOS_AfterFork_Child(void)
     }
 
     status = _PyImport_ReInitLock();
+    if (_PyStatus_EXCEPTION(status)) {
+        goto fatal_error;
+    }
+
+    status = _PySys_ReInitStdio();
     if (_PyStatus_EXCEPTION(status)) {
         goto fatal_error;
     }
