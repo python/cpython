@@ -1639,6 +1639,17 @@ pop_frame(PyThreadState *tstate, InterpreterFrame *frame)
     return prev_frame;
 }
 
+/* It is only between a PRECALL_METHOD/FUNCTION instruction and the following instruction,
+ * that these two values have any meaning.
+ */
+typedef struct {
+    PyObject *kwnames;
+    int nargs;
+    int postcall_shrink;;
+    int extra_args;
+} CallShape;
+
+
 PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int throwflag)
 {
@@ -1657,17 +1668,13 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
     _Py_atomic_int * const eval_breaker = &tstate->interp->ceval.eval_breaker;
 
     CFrame cframe;
+    CallShape call_shape;
+    call_shape.kwnames = NULL;
+    call_shape.postcall_shrink = 1;
+    call_shape.extra_args = 0;
 
-    /* Variables used for making calls */
-    PyObject *kwnames;
-    int nargs;
-    /*
-     * It is only between a PRECALL_METHOD/FUNCTION instruction and the following instruction,
-     * that these two values have any meaning. */
-    int postcall_shrink = 1;
-    int extra_args = 0;
 #define STACK_ADJUST_IS_RESET \
-    (postcall_shrink == 1 && extra_args == 0)
+    (call_shape.postcall_shrink == 1 && call_shape.extra_args == 0 && call_shape.kwnames == NULL)
 
     /* WARNING: Because the CFrame lives on the C stack,
      * but can be accessed from a heap allocated object (tstate)
@@ -4522,8 +4529,9 @@ check_eval_breaker:
         }
 
         TARGET(PRECALL_FUNCTION) {
-            postcall_shrink = 1;
-            extra_args = 0;
+            call_shape.postcall_shrink = 1;
+            call_shape.extra_args = 0;
+            call_shape.kwnames = NULL;
             DISPATCH();
         }
 
@@ -4555,25 +4563,26 @@ check_eval_breaker:
                make it accept the `self` as a first argument.
             */
             int is_method = (PEEK(oparg + 2) != NULL);
-            extra_args = is_method;
-            postcall_shrink = 2-is_method;
+            call_shape.extra_args = is_method;
+            call_shape.postcall_shrink = 2-is_method;
+            call_shape.kwnames = NULL;
             DISPATCH();
         }
 
         TARGET(CALL_KW) {
-            kwnames = POP();
-            oparg += extra_args;
-            extra_args = 0;
-            nargs = oparg - (int)PyTuple_GET_SIZE(kwnames);
+            call_shape.kwnames = POP();
+            oparg += call_shape.extra_args;
+            call_shape.extra_args = 0;
+            call_shape.nargs = oparg - (int)PyTuple_GET_SIZE(call_shape.kwnames);
             goto call_function;
         }
 
         TARGET(CALL_NO_KW) {
             PyObject *function;
             PREDICTED(CALL_NO_KW);
-            kwnames = NULL;
-            oparg += extra_args;
-            nargs = oparg;
+            call_shape.kwnames = NULL;
+            oparg += call_shape.extra_args;
+            call_shape.nargs = oparg;
         call_function:
             function = PEEK(oparg + 1);
             if (Py_TYPE(function) == &PyMethod_Type) {
@@ -4585,9 +4594,9 @@ check_eval_breaker:
                 Py_DECREF(function);
                 function = meth;
                 oparg++;
-                nargs++;
-                assert(postcall_shrink >= 1);
-                postcall_shrink--;
+                call_shape.nargs++;
+                assert(call_shape.postcall_shrink >= 1);
+                call_shape.postcall_shrink--;
             }
             // Check if the call can be inlined or not
             if (Py_TYPE(function) == &PyFunction_Type && tstate->interp->eval_frame == NULL) {
@@ -4598,12 +4607,12 @@ check_eval_breaker:
                     STACK_SHRINK(oparg);
                     InterpreterFrame *new_frame = _PyEvalFramePushAndInit(
                         tstate, (PyFunctionObject *)function, locals,
-                        stack_pointer, nargs, kwnames
+                        stack_pointer, call_shape.nargs, call_shape.kwnames
                     );
-                    STACK_SHRINK(postcall_shrink);
+                    STACK_SHRINK(call_shape.postcall_shrink);
                     // The frame has stolen all the arguments from the stack,
                     // so there is no need to clean them up.
-                    Py_XDECREF(kwnames);
+                    Py_XDECREF(call_shape.kwnames);
                     Py_DECREF(function);
                     if (new_frame == NULL) {
                         goto error;
@@ -4617,21 +4626,25 @@ check_eval_breaker:
             /* Callable is not a normal Python function */
             PyObject *res;
             if (cframe.use_tracing) {
-                res = trace_call_function(tstate, function, stack_pointer-oparg, nargs, kwnames);
+                res = trace_call_function(
+                    tstate, function, stack_pointer-oparg,
+                    call_shape.nargs, call_shape.kwnames);
             }
             else {
-                res = PyObject_Vectorcall(function, stack_pointer-oparg,
-                                          nargs | PY_VECTORCALL_ARGUMENTS_OFFSET, kwnames);
+                res = PyObject_Vectorcall(
+                    function, stack_pointer-oparg,
+                    call_shape.nargs | PY_VECTORCALL_ARGUMENTS_OFFSET,
+                    call_shape.kwnames);
             }
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             Py_DECREF(function);
-            Py_XDECREF(kwnames);
+            Py_XDECREF(call_shape.kwnames);
             /* Clear the stack */
             STACK_SHRINK(oparg);
             for (int i = 0; i < oparg; i++) {
                 Py_DECREF(stack_pointer[i]);
             }
-            STACK_SHRINK(postcall_shrink);
+            STACK_SHRINK(call_shape.postcall_shrink);
             PUSH(res);
             if (res == NULL) {
                 goto error;
