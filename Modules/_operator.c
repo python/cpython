@@ -760,7 +760,7 @@ _tscmp(const unsigned char *a, const unsigned char *b,
         left = *((volatile const unsigned char**)&a);
         result = 0;
     }
-    if (len_a != length) {
+    else {
         left = b;
         result = 1;
     }
