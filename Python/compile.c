@@ -689,9 +689,9 @@ compiler_enter_scope(struct compiler *c, identifier name,
     u->u_blocks = NULL;
     u->u_nfblocks = 0;
     u->u_firstlineno = lineno;
-    u->u_lineno = 0;
+    u->u_lineno = lineno;
     u->u_col_offset = 0;
-    u->u_end_lineno = 0;
+    u->u_end_lineno = lineno;
     u->u_end_col_offset = 0;
     u->u_consts = PyDict_New();
     if (!u->u_consts) {
@@ -995,6 +995,7 @@ stack_effect(int opcode, int oparg, int jump)
     switch (opcode) {
         case NOP:
         case EXTENDED_ARG:
+        case RESUME:
             return 0;
 
         /* Stack manipulation */
@@ -1664,8 +1665,8 @@ compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
    the ASDL name to synthesize the name of the C type and the visit function.
 */
 
-#define ADD_YIELD_FROM(C) \
-    RETURN_IF_FALSE(compiler_add_yield_from((C)))
+#define ADD_YIELD_FROM(C, await) \
+    RETURN_IF_FALSE(compiler_add_yield_from((C), (await)))
 
 #define POP_EXCEPT_AND_RERAISE(C) \
     RETURN_IF_FALSE(compiler_pop_except_and_reraise((C)))
@@ -1823,18 +1824,19 @@ compiler_call_exit_with_nones(struct compiler *c) {
 }
 
 static int
-compiler_add_yield_from(struct compiler *c)
+compiler_add_yield_from(struct compiler *c, int await)
 {
-    basicblock *start, *jump, *exit;
+    basicblock *start, *resume, *exit;
     start = compiler_new_block(c);
-    jump = compiler_new_block(c);
+    resume = compiler_new_block(c);
     exit = compiler_new_block(c);
-    if (start == NULL || jump == NULL || exit == NULL) {
+    if (start == NULL || resume == NULL || exit == NULL) {
         return 0;
     }
     compiler_use_next_block(c, start);
     ADDOP_JUMP(c, SEND, exit);
-    compiler_use_next_block(c, jump);
+    compiler_use_next_block(c, resume);
+    ADDOP_I(c, RESUME, await ? 3 : 2);
     ADDOP_JUMP(c, JUMP_ABSOLUTE, start);
     compiler_use_next_block(c, exit);
     return 1;
@@ -1928,7 +1930,7 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
             if (info->fb_type == ASYNC_WITH) {
                 ADDOP(c, GET_AWAITABLE);
                 ADDOP_LOAD_CONST(c, Py_None);
-                ADD_YIELD_FROM(c);
+                ADD_YIELD_FROM(c, 1);
             }
             ADDOP(c, POP_TOP);
             /* The exit block should appear to execute after the
@@ -2047,9 +2049,11 @@ compiler_mod(struct compiler *c, mod_ty mod)
     if (module == NULL) {
         return 0;
     }
-    /* Use 0 for firstlineno initially, will fixup in assemble(). */
     if (!compiler_enter_scope(c, module, COMPILER_SCOPE_MODULE, mod, 1))
         return NULL;
+    c->u->u_lineno = -1;
+    ADDOP_I(c, RESUME, 0);
+    c->u->u_lineno = 1;
     switch (mod->kind) {
     case Module_kind:
         if (!compiler_body(c, mod->v.Module.body)) {
@@ -2504,6 +2508,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     if (!compiler_enter_scope(c, name, scope_type, (void *)s, firstlineno)) {
         return 0;
     }
+    ADDOP_I(c, RESUME, 0);
 
     /* if not -OO mode, add docstring */
     if (c->c_optimize < 2) {
@@ -2573,8 +2578,10 @@ compiler_class(struct compiler *c, stmt_ty s)
 
     /* 1. compile the class body into a code object */
     if (!compiler_enter_scope(c, s->v.ClassDef.name,
-                              COMPILER_SCOPE_CLASS, (void *)s, firstlineno))
+                              COMPILER_SCOPE_CLASS, (void *)s, firstlineno)) {
         return 0;
+    }
+    ADDOP_I(c, RESUME, 0);
     /* this block represents what we do in the new scope */
     {
         /* use the class name for name mangling */
@@ -2907,11 +2914,13 @@ compiler_lambda(struct compiler *c, expr_ty e)
     if (funcflags == -1) {
         return 0;
     }
+    ADDOP_I(c, RESUME, 0);
 
     if (!compiler_enter_scope(c, name, COMPILER_SCOPE_LAMBDA,
                               (void *)e, e->lineno))
         return 0;
 
+    ADDOP_I(c, RESUME, 0);
     /* Make None the first constant, so the lambda can't have a
        docstring. */
     if (compiler_add_const(c, Py_None) < 0)
@@ -3041,7 +3050,7 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     ADDOP_JUMP(c, SETUP_FINALLY, except);
     ADDOP(c, GET_ANEXT);
     ADDOP_LOAD_CONST(c, Py_None);
-    ADD_YIELD_FROM(c);
+    ADD_YIELD_FROM(c, 1);
     ADDOP(c, POP_BLOCK);  /* for SETUP_FINALLY */
 
     /* Success block for __anext__ */
@@ -5135,6 +5144,7 @@ compiler_sync_comprehension_generator(struct compiler *c,
         case COMP_GENEXP:
             VISIT(c, expr, elt);
             ADDOP(c, YIELD_VALUE);
+            ADDOP_I(c, RESUME, 1);
             ADDOP(c, POP_TOP);
             break;
         case COMP_LISTCOMP:
@@ -5207,7 +5217,7 @@ compiler_async_comprehension_generator(struct compiler *c,
     ADDOP_JUMP(c, SETUP_FINALLY, except);
     ADDOP(c, GET_ANEXT);
     ADDOP_LOAD_CONST(c, Py_None);
-    ADD_YIELD_FROM(c);
+    ADD_YIELD_FROM(c, 1);
     ADDOP(c, POP_BLOCK);
     VISIT(c, expr, gen->target);
 
@@ -5233,6 +5243,7 @@ compiler_async_comprehension_generator(struct compiler *c,
         case COMP_GENEXP:
             VISIT(c, expr, elt);
             ADDOP(c, YIELD_VALUE);
+            ADDOP_I(c, RESUME, 1);
             ADDOP(c, POP_TOP);
             break;
         case COMP_LISTCOMP:
@@ -5285,6 +5296,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     {
         goto error;
     }
+    ADDOP_I(c, RESUME, 0);
     SET_LOC(c, e);
 
     is_async_generator = c->u->u_ste->ste_coroutine;
@@ -5357,7 +5369,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     if (is_async_generator && type != COMP_GENEXP) {
         ADDOP(c, GET_AWAITABLE);
         ADDOP_LOAD_CONST(c, Py_None);
-        ADD_YIELD_FROM(c);
+        ADD_YIELD_FROM(c, 1);
     }
 
     return 1;
@@ -5506,7 +5518,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP(c, BEFORE_ASYNC_WITH);
     ADDOP(c, GET_AWAITABLE);
     ADDOP_LOAD_CONST(c, Py_None);
-    ADD_YIELD_FROM(c);
+    ADD_YIELD_FROM(c, 1);
 
     ADDOP_JUMP(c, SETUP_WITH, final);
 
@@ -5543,7 +5555,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
         return 0;
     ADDOP(c, GET_AWAITABLE);
     ADDOP_LOAD_CONST(c, Py_None);
-    ADD_YIELD_FROM(c);
+    ADD_YIELD_FROM(c, 1);
 
     ADDOP(c, POP_TOP);
 
@@ -5557,7 +5569,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP(c, WITH_EXCEPT_START);
     ADDOP(c, GET_AWAITABLE);
     ADDOP_LOAD_CONST(c, Py_None);
-    ADD_YIELD_FROM(c);
+    ADD_YIELD_FROM(c, 1);
     compiler_with_except_finish(c, cleanup);
 
     compiler_use_next_block(c, exit);
@@ -5703,6 +5715,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
             ADDOP_LOAD_CONST(c, Py_None);
         }
         ADDOP(c, YIELD_VALUE);
+        ADDOP_I(c, RESUME, 1);
         break;
     case YieldFrom_kind:
         if (c->u->u_ste->ste_type != FunctionBlock)
@@ -5714,7 +5727,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         VISIT(c, expr, e->v.YieldFrom.value);
         ADDOP(c, GET_YIELD_FROM_ITER);
         ADDOP_LOAD_CONST(c, Py_None);
-        ADD_YIELD_FROM(c);
+        ADD_YIELD_FROM(c, 0);
         break;
     case Await_kind:
         if (!IS_TOP_LEVEL_AWAIT(c)){
@@ -5731,7 +5744,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         VISIT(c, expr, e->v.Await.value);
         ADDOP(c, GET_AWAITABLE);
         ADDOP_LOAD_CONST(c, Py_None);
-        ADD_YIELD_FROM(c);
+        ADD_YIELD_FROM(c, 1);
         break;
     case Compare_kind:
         return compiler_compare(c, e);
@@ -7987,6 +8000,7 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
     if (flags < 0) {
         return -1;
     }
+    assert(c->u->u_firstlineno > 0);
 
     /* Set up cells for any variable that escapes, to be put in a closure. */
     const int ncellvars = (int)PyDict_GET_SIZE(c->u->u_cellvars);
@@ -8191,17 +8205,19 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
 
+    /* Set firstlineno if it wasn't explicitly set. */
+    if (!c->u->u_firstlineno) {
+        if (entryblock->b_instr && entryblock->b_instr->i_lineno) {
+            c->u->u_firstlineno = entryblock->b_instr->i_lineno;
+        }
+        else {
+            c->u->u_firstlineno = 1;
+        }
+    }
+
     // This must be called before fix_cell_offsets().
     if (insert_prefix_instructions(c, entryblock, cellfixedoffsets, nfreevars)) {
         goto error;
-    }
-
-    /* Set firstlineno if it wasn't explicitly set. */
-    if (!c->u->u_firstlineno) {
-        if (entryblock->b_instr && entryblock->b_instr->i_lineno)
-            c->u->u_firstlineno = entryblock->b_instr->i_lineno;
-       else
-            c->u->u_firstlineno = 1;
     }
 
     if (!assemble_init(&a, nblocks, c->u->u_firstlineno))
