@@ -896,6 +896,20 @@ All of the following opcodes use their arguments.
    .. versionadded:: 3.11
 
 
+.. opcode:: POP_JUMP_IF_NOT_NONE (target)
+
+   If TOS is not none, sets the bytecode counter to *target*.  TOS is popped.
+
+   .. versionadded:: 3.11
+
+
+.. opcode:: POP_JUMP_IF_NONE (target)
+
+   If TOS is none, sets the bytecode counter to *target*.  TOS is popped.
+
+   .. versionadded:: 3.11
+
+
 .. opcode:: PREP_RERAISE_STAR
 
    Combines the raised and reraised exceptions list from TOS, into an exception
