@@ -1192,9 +1192,16 @@ All of the following opcodes use their arguments.
    .. versionadded:: 3.11
 
 
-.. opcode:: RESUME
+.. opcode:: RESUME (where)
 
     A no-op. Performs internal tracing, debugging and optimization checks.
+
+    The ``where`` operand marks where the ``RESUME`` occurs:
+
+    * ``0`` The start of a function
+    * ``1`` After a ``yield`` expression
+    * ``2`` After a ``yield from`` expression
+    * ``3`` After an ``await`` expression
 
    .. versionadded:: 3.11
 

@@ -691,7 +691,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
     u->u_firstlineno = lineno;
     u->u_lineno = lineno;
     u->u_col_offset = 0;
-    u->u_end_lineno = 0;
+    u->u_end_lineno = lineno;
     u->u_end_col_offset = 0;
     u->u_consts = PyDict_New();
     if (!u->u_consts) {
@@ -1663,8 +1663,8 @@ compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
    the ASDL name to synthesize the name of the C type and the visit function.
 */
 
-#define ADD_YIELD_FROM(C) \
-    RETURN_IF_FALSE(compiler_add_yield_from((C)))
+#define ADD_YIELD_FROM(C, await) \
+    RETURN_IF_FALSE(compiler_add_yield_from((C), (await)))
 
 #define POP_EXCEPT_AND_RERAISE(C) \
     RETURN_IF_FALSE(compiler_pop_except_and_reraise((C)))
@@ -1822,7 +1822,7 @@ compiler_call_exit_with_nones(struct compiler *c) {
 }
 
 static int
-compiler_add_yield_from(struct compiler *c)
+compiler_add_yield_from(struct compiler *c, int await)
 {
     basicblock *start, *resume, *exit;
     start = compiler_new_block(c);
@@ -1834,7 +1834,7 @@ compiler_add_yield_from(struct compiler *c)
     compiler_use_next_block(c, start);
     ADDOP_JUMP(c, SEND, exit);
     compiler_use_next_block(c, resume);
-    ADDOP_I(c, RESUME, 2);
+    ADDOP_I(c, RESUME, await ? 3 : 2);
     ADDOP_JUMP(c, JUMP_ABSOLUTE, start);
     compiler_use_next_block(c, exit);
     return 1;
@@ -1928,7 +1928,7 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
             if (info->fb_type == ASYNC_WITH) {
                 ADDOP(c, GET_AWAITABLE);
                 ADDOP_LOAD_CONST(c, Py_None);
-                ADD_YIELD_FROM(c);
+                ADD_YIELD_FROM(c, 1);
             }
             ADDOP(c, POP_TOP);
             /* The exit block should appear to execute after the
@@ -3048,7 +3048,7 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     ADDOP_JUMP(c, SETUP_FINALLY, except);
     ADDOP(c, GET_ANEXT);
     ADDOP_LOAD_CONST(c, Py_None);
-    ADD_YIELD_FROM(c);
+    ADD_YIELD_FROM(c, 1);
     ADDOP(c, POP_BLOCK);  /* for SETUP_FINALLY */
 
     /* Success block for __anext__ */
@@ -5215,7 +5215,7 @@ compiler_async_comprehension_generator(struct compiler *c,
     ADDOP_JUMP(c, SETUP_FINALLY, except);
     ADDOP(c, GET_ANEXT);
     ADDOP_LOAD_CONST(c, Py_None);
-    ADD_YIELD_FROM(c);
+    ADD_YIELD_FROM(c, 1);
     ADDOP(c, POP_BLOCK);
     VISIT(c, expr, gen->target);
 
@@ -5367,7 +5367,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     if (is_async_generator && type != COMP_GENEXP) {
         ADDOP(c, GET_AWAITABLE);
         ADDOP_LOAD_CONST(c, Py_None);
-        ADD_YIELD_FROM(c);
+        ADD_YIELD_FROM(c, 1);
     }
 
     return 1;
@@ -5516,7 +5516,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP(c, BEFORE_ASYNC_WITH);
     ADDOP(c, GET_AWAITABLE);
     ADDOP_LOAD_CONST(c, Py_None);
-    ADD_YIELD_FROM(c);
+    ADD_YIELD_FROM(c, 1);
 
     ADDOP_JUMP(c, SETUP_WITH, final);
 
@@ -5553,7 +5553,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
         return 0;
     ADDOP(c, GET_AWAITABLE);
     ADDOP_LOAD_CONST(c, Py_None);
-    ADD_YIELD_FROM(c);
+    ADD_YIELD_FROM(c, 1);
 
     ADDOP(c, POP_TOP);
 
@@ -5567,7 +5567,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP(c, WITH_EXCEPT_START);
     ADDOP(c, GET_AWAITABLE);
     ADDOP_LOAD_CONST(c, Py_None);
-    ADD_YIELD_FROM(c);
+    ADD_YIELD_FROM(c, 1);
     compiler_with_except_finish(c, cleanup);
 
     compiler_use_next_block(c, exit);
@@ -5725,7 +5725,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         VISIT(c, expr, e->v.YieldFrom.value);
         ADDOP(c, GET_YIELD_FROM_ITER);
         ADDOP_LOAD_CONST(c, Py_None);
-        ADD_YIELD_FROM(c);
+        ADD_YIELD_FROM(c, 0);
         break;
     case Await_kind:
         if (!IS_TOP_LEVEL_AWAIT(c)){
@@ -5742,7 +5742,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         VISIT(c, expr, e->v.Await.value);
         ADDOP(c, GET_AWAITABLE);
         ADDOP_LOAD_CONST(c, Py_None);
-        ADD_YIELD_FROM(c);
+        ADD_YIELD_FROM(c, 1);
         break;
     case Compare_kind:
         return compiler_compare(c, e);
