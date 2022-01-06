@@ -134,6 +134,7 @@ class BasicTest(BaseTest):
             ('clear', '--clear'),
             ('upgrade', '--upgrade'),
             ('upgrade_deps', '--upgrade-deps'),
+            ('prompt', '--prompt'),
         ]
         for attr, opt in attrs:
             rmtree(self.env_dir)
@@ -147,7 +148,7 @@ class BasicTest(BaseTest):
             data = self.get_text_file_contents('pyvenv.cfg')
             if not attr:
                 for opt in ('--system-site-packages', '--clear', '--upgrade',
-                        '--upgrade-deps'):
+                        '--upgrade-deps', '--prompt'):
                     self.assertNotRegex(data, rf'command = .* {opt}')
             else:
                 self.assertRegex(data, rf'command = .* {opt}')
