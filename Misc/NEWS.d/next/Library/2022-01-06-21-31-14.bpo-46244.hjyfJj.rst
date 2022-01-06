@@ -1,0 +1,2 @@
+Add missing ``__slots__`` to ``typing._TypeVarLike``. Patch by Arie
+Bovenberg.
