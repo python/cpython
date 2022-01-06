@@ -1787,7 +1787,6 @@ class ChangingFileTest(TarTest, unittest.TestCase):
         with tarfile.open(tmpname) as tar:
             members = tar.getmembers()
             self.assertEqual(1, len(members))
-            self.assertIn(members[0].name, self._filename)
             self.assertEqual(len(self._data), members[0].size)
             self.assertTrue(members[0].isreg())
             self.assertFalse(members[0].isdir())
