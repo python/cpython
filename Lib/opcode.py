@@ -148,9 +148,9 @@ def_op('STORE_FAST', 125)       # Local variable number
 haslocal.append(125)
 def_op('DELETE_FAST', 126)      # Local variable number
 haslocal.append(126)
-
 jabs_op('JUMP_IF_NOT_EG_MATCH', 127)
-
+jabs_op('POP_JUMP_IF_NOT_NONE', 128)
+jabs_op('POP_JUMP_IF_NONE', 129)
 def_op('RAISE_VARARGS', 130)    # Number of raise arguments (1, 2, or 3)
 
 def_op('MAKE_FUNCTION', 132)    # Flags
