@@ -101,6 +101,7 @@ extern "C" {
 #define MAP_ADD                         147
 #define LOAD_CLASSDEREF                 148
 #define COPY_FREE_VARS                  149
+#define RESUME                          151
 #define MATCH_CLASS                     152
 #define FORMAT_VALUE                    155
 #define BUILD_CONST_KEY_MAP             156

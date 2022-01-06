@@ -178,6 +178,7 @@ def_op('LOAD_CLASSDEREF', 148)
 hasfree.append(148)
 def_op('COPY_FREE_VARS', 149)
 
+def_op('RESUME', 151)
 def_op('MATCH_CLASS', 152)
 
 def_op('FORMAT_VALUE', 155)
