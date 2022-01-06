@@ -51,6 +51,7 @@ class EnvBuilder:
         self.symlinks = symlinks
         self.upgrade = upgrade
         self.with_pip = with_pip
+        self.orig_prompt = prompt
         if prompt == '.':  # see bpo-38901
             prompt = os.path.basename(os.getcwd())
         self.prompt = prompt
@@ -180,8 +181,11 @@ class EnvBuilder:
                 f.write(f'prompt = {self.prompt!r}\n')
             f.write('executable = %s\n' % os.path.realpath(sys.executable))
             args = []
-            if self.symlinks:
+            nt = os.name == 'nt'
+            if nt and self.symlinks:
                 args.append('--symlinks')
+            if not nt and not self.symlinks:
+                args.append('--copies')
             if not self.with_pip:
                 args.append('--without-pip')
             if self.system_site_packages:
@@ -192,6 +196,9 @@ class EnvBuilder:
                 args.append('--upgrade')
             if self.upgrade_deps:
                 args.append('--upgrade-deps')
+            if self.orig_prompt is not None:
+                args.append(f'--prompt={self.orig_prompt}')
+
             args.append(context.env_dir)
             args = ' '.join(args)
             f.write(f'command = {sys.executable} -m venv {args}\n')

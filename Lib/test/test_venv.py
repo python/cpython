@@ -116,7 +116,7 @@ class BasicTest(BaseTest):
         self.assertIn('home = %s' % path, data)
         self.assertIn('executable = %s' %
                       os.path.realpath(sys.executable), data)
-        cmd = f'command = {sys.executable} -m venv --without-pip {self.env_dir}'
+        cmd = f'command = {sys.executable} -m venv --copies --without-pip {self.env_dir}'
         self.assertIn(cmd, data)
         fn = self.get_env_file(self.bindir, self.exe)
         if not os.path.exists(fn):  # diagnostics for Windows buildbot failures
@@ -127,7 +127,8 @@ class BasicTest(BaseTest):
 
     def test_config_file_command_key(self):
         attrs = [
-            ('symlinks', '--symlinks'),
+            (None, None),
+            ('symlinks', '--copies'),
             ('with_pip', '--without-pip'),
             ('system_site_packages', '--system-site-packages'),
             ('clear', '--clear'),
@@ -136,11 +137,20 @@ class BasicTest(BaseTest):
         ]
         for attr, opt in attrs:
             rmtree(self.env_dir)
-            b = venv.EnvBuilder(**{attr: False if attr=='with_pip' else True})
+            if not attr:
+                b = venv.EnvBuilder()
+            else:
+                b = venv.EnvBuilder(
+                    **{attr: False if attr in ('with_pip', 'symlinks') else True})
             b.upgrade_dependencies = Mock() # avoid pip command to upgrade deps
             self.run_with_capture(b.create, self.env_dir)
             data = self.get_text_file_contents('pyvenv.cfg')
-            self.assertRegex(data, rf'command = .* {opt}')
+            if not attr:
+                for opt in ('--system-site-packages', '--clear', '--upgrade',
+                        '--upgrade-deps'):
+                    self.assertNotRegex(data, rf'command = .* {opt}')
+            else:
+                self.assertRegex(data, rf'command = .* {opt}')
 
     def test_prompt(self):
         env_name = os.path.split(self.env_dir)[1]
