@@ -235,6 +235,15 @@ class TestNtpath(NtpathTestCase):
 
         tester("ntpath.normpath('\\\\.\\NUL')", r'\\.\NUL')
         tester("ntpath.normpath('\\\\?\\D:/XY\\Z')", r'\\?\D:/XY\Z')
+        tester("ntpath.normpath('handbook/../../Tests/image.png')", r'..\Tests\image.png')
+        tester("ntpath.normpath('handbook/../../../Tests/image.png')", r'..\..\Tests\image.png')
+        tester("ntpath.normpath('handbook///../a/.././../b/c')", r'..\b\c')
+        tester("ntpath.normpath('handbook/a/../..///../../b/c')", r'..\..\b\c')
+
+        tester("ntpath.normpath('//server/share/..')" ,    '\\\\server\\share\\')
+        tester("ntpath.normpath('//server/share/../')" ,   '\\\\server\\share\\')
+        tester("ntpath.normpath('//server/share/../..')",  '\\\\server\\share\\')
+        tester("ntpath.normpath('//server/share/../../')", '\\\\server\\share\\')
 
     def test_realpath_curdir(self):
         expected = ntpath.normpath(os.getcwd())
