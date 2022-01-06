@@ -197,7 +197,7 @@ class EnvBuilder:
             if self.upgrade_deps:
                 args.append('--upgrade-deps')
             if self.orig_prompt is not None:
-                args.append(f'--prompt={self.orig_prompt}')
+                args.append(f'--prompt="{self.orig_prompt}"')
 
             args.append(context.env_dir)
             args = ' '.join(args)
