@@ -236,6 +236,14 @@ capture data for later printing in a lightweight fashion.
 
       The ``__suppress_context__`` value from the original exception.
 
+   .. attribute:: __note__
+
+      The ``__note__`` value from the original exception, which is
+      string or ``None``. If it is not ``None`` is it formatted in
+      the traceback after the exception string.
+
+      .. versionadded:: 3.11
+
    .. attribute:: stack
 
       A :class:`StackSummary` representing the traceback.
