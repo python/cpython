@@ -857,8 +857,13 @@ class PyMemDebugTests(unittest.TestCase):
 
     def check(self, code):
         with support.SuppressCrashReport():
-            out = assert_python_failure('-c', code,
-                                        PYTHONMALLOC=self.PYTHONMALLOC)
+            out = assert_python_failure(
+                '-c', code,
+                PYTHONMALLOC=self.PYTHONMALLOC,
+                # FreeBSD: instruct jemalloc to not fill freed() memory
+                # with junk byte 0x5a, see JEMALLOC(3)
+                MALLOC_CONF="junk:false",
+            )
         stderr = out.err
         return stderr.decode('ascii', 'replace')
 
