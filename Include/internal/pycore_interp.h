@@ -71,6 +71,10 @@ struct _Py_unicode_state {
     PyObject *latin1[256];
     struct _Py_unicode_fs_codec fs_codec;
 
+    // Unused member kept for ABI backward compatibility with Python 3.10.0:
+    // see bpo-46006.
+    PyObject *unused_interned;
+
     // Unicode identifiers (_Py_Identifier): see _PyUnicode_FromId()
     struct _Py_unicode_ids ids;
 };
