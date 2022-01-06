@@ -1,0 +1,2 @@
+Fix test_capi on FreeBSD 14-dev: instruct jemalloc to not fill freed memory
+with junk byte.
