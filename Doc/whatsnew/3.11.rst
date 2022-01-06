@@ -398,6 +398,9 @@ CPython bytecode changes
 * Added :opcode:`COPY`, which pushes the *i*-th item to the top of the stack.
   The item is not removed from its original location.
 
+* Add :opcode:`POP_JUMP_IF_NOT_NONE` and :opcode:`POP_JUMP_IF_NONE` opcodes to
+  speed up conditional jumps.
+
 * :opcode:`JUMP_IF_NOT_EXC_MATCH` no longer pops the active exception.
 
 
