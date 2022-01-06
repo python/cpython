@@ -4049,6 +4049,30 @@ check_eval_breaker:
             DISPATCH();
         }
 
+        TARGET(POP_JUMP_IF_NOT_NONE) {
+            PyObject *value = POP();
+            if (!Py_IsNone(value)) {
+                Py_DECREF(value);
+                JUMPTO(oparg);
+                CHECK_EVAL_BREAKER();
+                DISPATCH();
+            }
+            Py_DECREF(value);
+            DISPATCH();
+        }
+
+        TARGET(POP_JUMP_IF_NONE) {
+            PyObject *value = POP();
+            if (Py_IsNone(value)) {
+                Py_DECREF(value);
+                JUMPTO(oparg);
+                CHECK_EVAL_BREAKER();
+                DISPATCH();
+            }
+            Py_DECREF(value);
+            DISPATCH();
+        }
+
         TARGET(JUMP_IF_FALSE_OR_POP) {
             PyObject *cond = TOP();
             int err;
