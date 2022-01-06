@@ -581,7 +581,7 @@ the following pattern::
    ...     except Exception as e:
    ...         excs.append(e)
    ...
-   ... if excs:
+   >>> if excs:
    ...    raise ExceptionGroup("Test Failures", excs)
    ...
 
