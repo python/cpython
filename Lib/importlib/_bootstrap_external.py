@@ -379,16 +379,21 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.11a4 3471 (bpo-46202: remove pop POP_EXCEPT_AND_RERAISE)
 #     Python 3.11a4 3472 (bpo-46009: replace GEN_START with POP_TOP)
 #     Python 3.11a4 3473 (Add POP_JUMP_IF_NOT_NONE/POP_JUMP_IF_NONE opcodes)
+#     Python 3.11a4 3474 (Add RESUME opcode)
+
+#     Python 3.12 will start with magic number 3500
 
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
 # longer be understood by older implementations of the eval loop (usually
 # due to the addition of new opcodes).
 #
+# Starting with Python 3.11, Python 3.n starts with magic number 2900+50n.
+#
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3473).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3474).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'

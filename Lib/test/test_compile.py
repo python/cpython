@@ -158,7 +158,7 @@ if 1:
         s256 = "".join(["\n"] * 256 + ["spam"])
         co = compile(s256, 'fn', 'exec')
         self.assertEqual(co.co_firstlineno, 1)
-        self.assertEqual(list(co.co_lines()), [(0, 8, 257)])
+        self.assertEqual(list(co.co_lines()), [(0, 2, None), (2, 10, 257)])
 
     def test_literals_with_leading_zeroes(self):
         for arg in ["077787", "0xj", "0x.", "0e",  "090000000000000",
@@ -759,7 +759,7 @@ if 1:
 
         for func in funcs:
             opcodes = list(dis.get_instructions(func))
-            self.assertLessEqual(len(opcodes), 3)
+            self.assertLessEqual(len(opcodes), 4)
             self.assertEqual('LOAD_CONST', opcodes[-2].opname)
             self.assertEqual(None, opcodes[-2].argval)
             self.assertEqual('RETURN_VALUE', opcodes[-1].opname)
@@ -778,10 +778,10 @@ if 1:
         # Check that we did not raise but we also don't generate bytecode
         for func in funcs:
             opcodes = list(dis.get_instructions(func))
-            self.assertEqual(2, len(opcodes))
-            self.assertEqual('LOAD_CONST', opcodes[0].opname)
-            self.assertEqual(None, opcodes[0].argval)
-            self.assertEqual('RETURN_VALUE', opcodes[1].opname)
+            self.assertEqual(3, len(opcodes))
+            self.assertEqual('LOAD_CONST', opcodes[1].opname)
+            self.assertEqual(None, opcodes[1].argval)
+            self.assertEqual('RETURN_VALUE', opcodes[2].opname)
 
     def test_consts_in_conditionals(self):
         def and_true(x):
@@ -802,9 +802,9 @@ if 1:
         for func in funcs:
             with self.subTest(func=func):
                 opcodes = list(dis.get_instructions(func))
-                self.assertEqual(2, len(opcodes))
-                self.assertIn('LOAD_', opcodes[0].opname)
-                self.assertEqual('RETURN_VALUE', opcodes[1].opname)
+                self.assertLessEqual(len(opcodes), 3)
+                self.assertIn('LOAD_', opcodes[-2].opname)
+                self.assertEqual('RETURN_VALUE', opcodes[-1].opname)
 
     def test_imported_load_method(self):
         sources = [
@@ -906,7 +906,7 @@ if 1:
                 o.
                 a
             )
-        load_attr_lines = [ 2, 3, 1 ]
+        load_attr_lines = [ 0, 2, 3, 1 ]
 
         def load_method():
             return (
@@ -915,7 +915,7 @@ if 1:
                     0
                 )
             )
-        load_method_lines = [ 2, 3, 4, 3, 1 ]
+        load_method_lines = [ 0, 2, 3, 4, 3, 1 ]
 
         def store_attr():
             (
@@ -924,7 +924,7 @@ if 1:
             ) = (
                 v
             )
-        store_attr_lines = [ 5, 2, 3 ]
+        store_attr_lines = [ 0, 5, 2, 3 ]
 
         def aug_store_attr():
             (
@@ -933,7 +933,7 @@ if 1:
             ) += (
                 v
             )
-        aug_store_attr_lines = [ 2, 3, 5, 1, 3 ]
+        aug_store_attr_lines = [ 0, 2, 3, 5, 1, 3 ]
 
         funcs = [ load_attr, load_method, store_attr, aug_store_attr]
         func_lines = [ load_attr_lines, load_method_lines,
@@ -942,7 +942,8 @@ if 1:
         for func, lines in zip(funcs, func_lines, strict=True):
             with self.subTest(func=func):
                 code_lines = [ line-func.__code__.co_firstlineno
-                              for (_, _, line) in func.__code__.co_lines() ]
+                              for (_, _, line) in func.__code__.co_lines()
+                              if line is not None ]
                 self.assertEqual(lines, code_lines)
 
     def test_line_number_genexp(self):
@@ -966,7 +967,7 @@ if 1:
             async for i in aseq:
                 body
 
-        expected_lines = [None, 1, 2, 1]
+        expected_lines = [None, 0, 1, 2, 1]
         code_lines = [ None if line is None else line-test.__code__.co_firstlineno
                       for (_, _, line) in test.__code__.co_lines() ]
         self.assertEqual(expected_lines, code_lines)
