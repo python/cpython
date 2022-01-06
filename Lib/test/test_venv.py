@@ -151,6 +151,8 @@ class BasicTest(BaseTest):
                 for opt in ('--system-site-packages', '--clear', '--upgrade',
                         '--upgrade-deps', '--prompt'):
                     self.assertNotRegex(data, rf'command = .* {opt}')
+            elif os.name=='nt' and attr=='symlinks':
+                pass
             else:
                 self.assertRegex(data, rf'command = .* {opt}')
 
