@@ -1375,7 +1375,7 @@ are always available.  They are listed here in alphabetical order.
 
    Print *objects* to the text stream *file*, separated by *sep* and followed
    by *end*.  *sep*, *end*, *file*, and *flush*, if present, must be given as keyword
-   arguments. The return value is None.
+   arguments. The return value is :const:`None`.
 
    All non-keyword arguments are converted to strings like :func:`str` does and
    written to the stream, separated by *sep* and followed by *end*.  Both *sep*
