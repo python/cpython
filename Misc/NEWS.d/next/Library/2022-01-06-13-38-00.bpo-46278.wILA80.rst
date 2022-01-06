@@ -1,0 +1,2 @@
+Reflect ``context`` argument in ``AbstractEventLoop.call_*()`` methods. Loop
+implementations already support it.
