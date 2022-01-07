@@ -197,7 +197,7 @@ Generic options
 
 .. cmdoption:: --help-env
 
-   Print a short description of additional environment variables.
+   Print a short description of Python-specific environment variables.
 
 .. cmdoption:: -V
                --version

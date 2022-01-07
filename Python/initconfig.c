@@ -28,9 +28,10 @@
 static const char usage_line[] =
 "usage: %ls [option] ... [-c cmd | -m mod | file | -] [arg] ...\n";
 
-/* Long usage message, split into parts < 512 bytes */
+/* Long help messages, split into parts < 512 bytes */
+/* Lines sorted by option name; keep in sync with usage_envvars* below */
 static const char usage_1[] = "\
-Options and arguments (and corresponding environment variables):\n\
+Options (and corresponding environment variables):\n\
 -b     : issue warnings about str(bytes_instance), str(bytearray_instance)\n\
          and comparing bytes/bytearray with str. (-bb: issue errors)\n\
 -B     : don't write .pyc files on import; also PYTHONDONTWRITEBYTECODE=x\n\
@@ -64,11 +65,12 @@ static const char usage_3[] = "\
          also PYTHONWARNINGS=arg\n\
 -x     : skip first line of source, allowing use of non-Unix forms of #!cmd\n\
 -X opt : set implementation-specific option (see details with -X help)\n\
---help-env : print help about other environment variables\n\
+--help-env : print help about Python-specific environment variables\n\
 --check-hash-based-pycs always|default|never :\n\
          control how Python invalidates hash-based .pyc files\n\
 ";
 static const char usage_4[] = "\
+Arguments:\n\
 file   : program read from script file\n\
 -      : program read from stdin (default; interactive mode if a tty)\n\
 arg ...: arguments passed to program in sys.argv[1:]\n\
@@ -112,8 +114,10 @@ The following implementation-specific options are available:\n\
          -X frozen_modules=[on|off]: whether or not frozen modules should be used.\n\
             The default is \"on\" (or \"off\" if you are running a local build).\n\
 ";
+
+/* Envvars that don't have equivalent command-line options are listed first */
 static const char usage_envvars1[] = "\
-Environment variables that change behavior (see also --help):\n\
+Environment variables that change behavior:\n\
 PYTHONSTARTUP: file executed on interactive startup (no default)\n\
 PYTHONPATH   : '%lc'-separated list of directories prefixed to the\n\
                default module search path.  The result is sys.path.\n\
@@ -137,6 +141,8 @@ static const char usage_envvars3[] =
 "PYTHONCOERCECLOCALE: if this variable is set to 0, it disables the locale\n"
 "   coercion behavior. Use PYTHONCOERCECLOCALE=warn to request display of\n"
 "   locale coercion and locale compatibility warnings on stderr.\n"
+;
+static const char usage_envvars4[] =
 "PYTHONBREAKPOINT: if this variable is set to 0, it disables the default\n"
 "   debugger. It can be set to the callable of your debugger of choice.\n"
 "PYTHONDEVMODE: enable the development mode.\n"
@@ -147,6 +153,18 @@ static const char usage_envvars3[] =
 "   and end column offset) to every instruction in code objects. This is useful \n"
 "   when smaller cothe de objects and pyc files are desired as well as suppressing the \n"
 "   extra visual location indicators when the interpreter displays tracebacks.\n";
+static const char usage_envvars5[] = "\
+These variables have equivalent command-line parameters (see --help for details):\n\
+PYTHONDEBUG             : enable parser debug mode (-d)\n\
+PYTHONDONTWRITEBYTECODE : don't write .pyc files (-B)\n\
+PYTHONINSPECT           : inspect interactively after running script (-i)\n\
+PYTHONNOUSERSITE        : disable user site directory (-s)\n\
+PYTHONOPTIMIZE          : enable level 1 optimizations (-O)\n\
+PYTHONUNBUFFERED        : disable stdout/stderr buffering (-u)\n\
+PYTHONVERBOSE           : trace import statements (-v)\n\
+PYTHONWARNINGS=arg      : warning control (-W arg)\n\
+\n\
+";
 
 #if defined(MS_WINDOWS)
 #  define PYTHONHOMEHELP "<prefix>\\python{major}{minor}"
@@ -2234,6 +2252,8 @@ config_envvars_usage()
     fprintf(f, usage_envvars1, (wint_t)DELIM);
     fprintf(f, usage_envvars2, (wint_t)DELIM, PYTHONHOMEHELP);
     fputs(usage_envvars3, f);
+    fputs(usage_envvars4, f);
+    fputs(usage_envvars5, f);
 }
 
 static void

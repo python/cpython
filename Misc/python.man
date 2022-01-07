@@ -157,7 +157,7 @@ the behavior of the interpreter.
 Prints the usage for the interpreter executable and exits.
 .TP
 .B \-\-help\-env
-Prints help about environment variables and exits.
+Prints help about Python-specific environment variables and exits.
 .TP
 .B \-i
 When a script is passed as first argument or the \fB\-c\fP option is
