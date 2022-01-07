@@ -4,6 +4,8 @@
 extern "C" {
 #endif
 
+#include <stdbool.h>
+
 
 /* runtime lifecycle */
 
@@ -44,7 +46,7 @@ typedef struct _interpreter_frame {
     int f_lasti;       /* Last instruction if called */
     int stacktop;     /* Offset of TOS from localsplus  */
     PyFrameState f_state;  /* What state the frame is in */
-    int depth; /* Depth of the frame in a ceval loop */
+    bool is_entry;  // Whether this is the "root" frame for the current CFrame.
     PyObject *localsplus[1];
 } InterpreterFrame;
 
@@ -66,6 +68,7 @@ static inline PyObject **_PyFrame_Stackbase(InterpreterFrame *f) {
 
 static inline PyObject *_PyFrame_StackPeek(InterpreterFrame *f) {
     assert(f->stacktop > f->f_code->co_nlocalsplus);
+    assert(f->localsplus[f->stacktop-1] != NULL);
     return f->localsplus[f->stacktop-1];
 }
 
@@ -100,7 +103,7 @@ _PyFrame_InitializeSpecials(
     frame->generator = NULL;
     frame->f_lasti = -1;
     frame->f_state = FRAME_CREATED;
-    frame->depth = 0;
+    frame->is_entry = false;
 }
 
 /* Gets the pointer to the locals array
@@ -173,10 +176,13 @@ static inline InterpreterFrame *
 _PyThreadState_BumpFramePointer(PyThreadState *tstate, size_t size)
 {
     PyObject **base = tstate->datastack_top;
-    PyObject **top = base + size;
-    if (top < tstate->datastack_limit) {
-        tstate->datastack_top = top;
-        return (InterpreterFrame *)base;
+    if (base) {
+        PyObject **top = base + size;
+        assert(tstate->datastack_limit);
+        if (top < tstate->datastack_limit) {
+            tstate->datastack_top = top;
+            return (InterpreterFrame *)base;
+        }
     }
     return _PyThreadState_BumpFramePointerSlow(tstate, size);
 }

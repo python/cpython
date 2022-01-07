@@ -1663,6 +1663,9 @@ def func2():
         for paren in "([{":
             self._check_error(paren + "1 + 2", f"\\{paren}' was never closed")
 
+        for paren in "([{":
+            self._check_error(f"a = {paren} 1, 2, 3\nb=3", f"\\{paren}' was never closed")
+
         for paren in ")]}":
             self._check_error(paren + "1 + 2", f"unmatched '\\{paren}'")
 
@@ -1728,6 +1731,14 @@ while 1:
                      break
 """
         self._check_error(source, "too many statically nested blocks")
+
+    @support.cpython_only
+    def test_error_on_parser_stack_overflow(self):
+        source = "-" * 100000 + "4"
+        for mode in ["exec", "eval", "single"]:
+            with self.subTest(mode=mode):
+                with self.assertRaises(MemoryError):
+                    compile(source, "<string>", mode)
 
 
 def load_tests(loader, tests, pattern):
