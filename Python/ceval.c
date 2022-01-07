@@ -1657,7 +1657,6 @@ typedef struct {
     PyObject *callable;
     PyObject *kwnames;
     int positional_args;
-    int named_args;
     int postcall_shrink;
 } CallShape;
 
@@ -1684,7 +1683,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
     call_shape.kwnames = NULL;
     call_shape.postcall_shrink = 1;
     call_shape.positional_args = 0;
-    call_shape.named_args = 0;
 
     /* WARNING: Because the CFrame lives on the C stack,
      * but can be accessed from a heap allocated object (tstate)
@@ -4572,7 +4570,6 @@ check_eval_breaker:
             call_shape.callable = PEEK(oparg + 1);
             call_shape.postcall_shrink = 1;
             call_shape.positional_args = oparg;
-            call_shape.named_args = 0;
             call_shape.kwnames = NULL;
             DISPATCH();
         }
@@ -4609,7 +4606,6 @@ check_eval_breaker:
             call_shape.callable = PEEK(nargs + 1);
             call_shape.positional_args = nargs;
             call_shape.postcall_shrink = 2-is_method;
-            call_shape.named_args = 0;
             call_shape.kwnames = NULL;
             DISPATCH();
         }
@@ -4618,32 +4614,31 @@ check_eval_breaker:
             assert(call_shape.kwnames == NULL);
             assert(oparg < PyTuple_GET_SIZE(consts));
             call_shape.kwnames = GETITEM(consts, oparg);
-            call_shape.named_args = PyTuple_GET_SIZE(call_shape.kwnames);
-            call_shape.positional_args -= call_shape.named_args;
             DISPATCH();
         }
 
         TARGET(CALL) {
-            PyObject *function;
+            int total_args;
             PREDICTED(CALL);
-            assert(call_shape.named_args == oparg);
             assert((oparg == 0 && call_shape.kwnames == NULL)
                 || (oparg != 0 && oparg == PyTuple_GET_SIZE(call_shape.kwnames)));
         call_function:
-            function = call_shape.callable;
+            total_args = call_shape.positional_args;
+            call_shape.positional_args -= oparg;
+            PyObject *function = call_shape.callable;
             if (Py_TYPE(function) == &PyMethod_Type) {
                 PyObject *meth = ((PyMethodObject *)function)->im_func;
                 PyObject *self = ((PyMethodObject *)function)->im_self;
                 Py_INCREF(meth);
                 Py_INCREF(self);
-                PEEK(call_shape.positional_args + call_shape.named_args + 1) = self;
+                PEEK(call_shape.positional_args + oparg + 1) = self;
                 Py_DECREF(function);
                 function = meth;
                 call_shape.positional_args++;
+                total_args++;
                 assert(call_shape.postcall_shrink >= 1);
                 call_shape.postcall_shrink--;
             }
-            int total_args = call_shape.positional_args + call_shape.named_args;
             // Check if the call can be inlined or not
             if (Py_TYPE(function) == &PyFunction_Type && tstate->interp->eval_frame == NULL) {
                 int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(function))->co_flags;
@@ -4700,7 +4695,6 @@ check_eval_breaker:
         TARGET(CALL_ADAPTIVE) {
             SpecializedCacheEntry *cache = GET_CACHE();
             int named_args = cache->adaptive.original_oparg;
-            assert(call_shape.named_args == named_args);
             assert((named_args == 0 && call_shape.kwnames == NULL)
                 || (named_args != 0 && named_args == PyTuple_GET_SIZE(call_shape.kwnames)));
             if (cache->adaptive.counter == 0) {
@@ -4724,7 +4718,6 @@ check_eval_breaker:
             SpecializedCacheEntry *caches = GET_CACHE();
             _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
             int argcount = call_shape.positional_args;
-            assert(call_shape.named_args == 0);
             DEOPT_IF(argcount != cache0->index, CALL);
             _PyCallCache *cache1 = &caches[-1].call;
             PyObject *callable = PEEK(argcount+1);
@@ -4764,7 +4757,8 @@ check_eval_breaker:
         }
 
         TARGET(CALL_NO_KW_TYPE_1) {
-            assert(GET_CACHE()->adaptive.original_oparg == 1);
+            assert(call_shape.positional_args = 1);
+            assert(GET_CACHE()->adaptive.original_oparg == 0);
             PyObject *obj = TOP();
             PyObject *callable = SECOND();
             DEOPT_IF(callable != (PyObject *)&PyType_Type, CALL);
