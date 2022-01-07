@@ -173,9 +173,8 @@ class APITests(
             entry_points().get('missing', ()) == ()
 
     def test_entry_points_allows_no_attributes(self):
-        self.assertRaises(
-            AttributeError, setattr, entry_points()['entries'][0], 'foo', 4
-        )
+        with self.assertRaises(AttributeError):
+            entry_points()['entries'][0].foo = 4
 
     def test_metadata_for_this_package(self):
         md = metadata('egginfo-pkg')
