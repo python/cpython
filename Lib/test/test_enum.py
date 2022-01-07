@@ -419,6 +419,20 @@ class _EnumTests:
         self.assertTrue('description' not in dir(SubEnum))
         self.assertTrue('description' in dir(SubEnum.sample), dir(SubEnum.sample))
 
+    def test_empty_slots(self):
+        class FinalEnum(self.enum_type):
+            __slots__ = ()
+            FROZEN = auto()
+            FINAL = auto()
+            UNCHANGING = auto()
+        with self.assertRaisesRegex(AttributeError, 'blah'):
+            print()
+            print(FinalEnum.FROZEN.__dict__)
+            FinalEnum.FROZEN.steam = 33
+            print(FinalEnum.FROZEN.steam)
+            print(FinalEnum.__slots__)
+
+
     def test_enum_in_enum_out(self):
         Main = self.MainEnum
         self.assertIs(Main(Main.first), Main.first)

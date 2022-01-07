@@ -986,6 +986,8 @@ class Enum(metaclass=EnumType):
     Derive from this class to define new enumerations.
     """
 
+    __slots__ = '_name_', '_value_', '_objclass_', '_sort_order_'
+
     def __new__(cls, value):
         # all enum instances are actually created during class construction
         # without calling this method; this method is called by the metaclass'
@@ -1134,18 +1136,22 @@ class ReprEnum(Enum):
     """
     Only changes the repr(), leaving str() and format() to the mixed-in type.
     """
+    __slots__ = ()
 
 
 class IntEnum(int, ReprEnum):
     """
     Enum where members are also (and must be) ints
     """
+    __slots__ = ()
 
 
 class StrEnum(str, ReprEnum):
     """
     Enum where members are also (and must be) strings
     """
+    __slots__ = ()
+
 
     def __new__(cls, *values):
         if len(values) > 3:
@@ -1196,6 +1202,7 @@ class Flag(Enum, boundary=STRICT):
     """
     Support for flags
     """
+    __slots__ = ()
 
     def _generate_next_value_(name, start, count, last_values):
         """
@@ -1393,6 +1400,7 @@ class IntFlag(int, ReprEnum, Flag, boundary=EJECT):
     """
     Support for integer-based Flags
     """
+    __slots__ = ()
 
     # def __format__(self, format_spec):
     #     """
