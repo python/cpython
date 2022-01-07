@@ -1,0 +1,2 @@
+Fix possible segfault when importing the :mod:`asyncio` module from
+different sub-interpreters in parallel. Patch by Erlend E. Aasland.
