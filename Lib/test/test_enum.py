@@ -1022,6 +1022,16 @@ class TestEnum(unittest.TestCase):
             class Huh(MyStr, MyInt, Enum):
                 One = 1
 
+    def test_value_auto_assign(self):
+        class Some(Enum):
+            def __new__(cls, val):
+                return object.__new__(cls)
+            x = 1
+            y = 2
+
+        self.assertEqual(Some.x.value, 1)
+        self.assertEqual(Some.y.value, 2)
+
     def test_hash(self):
         Season = self.Season
         dates = {}
