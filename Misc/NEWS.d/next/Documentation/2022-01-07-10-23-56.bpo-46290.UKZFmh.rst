@@ -1,1 +1,1 @@
-Fix parameter names in the dataclasses module's documentation.
+Fix parameter names in the :mod:`dataclasses` documentation.
