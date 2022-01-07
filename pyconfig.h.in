@@ -293,7 +293,7 @@
 /* Define to 1 if you have the <endian.h> header file. */
 #undef HAVE_ENDIAN_H
 
-/* Define if you have the 'epoll' function. */
+/* Define if you have the 'epoll_create' function. */
 #undef HAVE_EPOLL
 
 /* Define if you have the 'epoll_create1' function. */

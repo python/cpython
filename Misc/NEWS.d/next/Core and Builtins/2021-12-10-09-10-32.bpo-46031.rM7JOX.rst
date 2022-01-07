@@ -1,0 +1,1 @@
+Add :opcode:`POP_JUMP_IF_NOT_NONE` and :opcode:`POP_JUMP_IF_NONE` opcodes to speed up conditional jumps.

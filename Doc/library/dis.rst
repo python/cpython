@@ -896,6 +896,20 @@ All of the following opcodes use their arguments.
    .. versionadded:: 3.11
 
 
+.. opcode:: POP_JUMP_IF_NOT_NONE (target)
+
+   If TOS is not none, sets the bytecode counter to *target*.  TOS is popped.
+
+   .. versionadded:: 3.11
+
+
+.. opcode:: POP_JUMP_IF_NONE (target)
+
+   If TOS is none, sets the bytecode counter to *target*.  TOS is popped.
+
+   .. versionadded:: 3.11
+
+
 .. opcode:: PREP_RERAISE_STAR
 
    Combines the raised and reraised exceptions list from TOS, into an exception
@@ -1188,6 +1202,20 @@ All of the following opcodes use their arguments.
 
    Push the *i*-th item to the top of the stack. The item is not removed from its
    original location.
+
+   .. versionadded:: 3.11
+
+
+.. opcode:: RESUME (where)
+
+    A no-op. Performs internal tracing, debugging and optimization checks.
+
+    The ``where`` operand marks where the ``RESUME`` occurs:
+
+    * ``0`` The start of a function
+    * ``1`` After a ``yield`` expression
+    * ``2`` After a ``yield from`` expression
+    * ``3`` After an ``await`` expression
 
    .. versionadded:: 3.11
 
