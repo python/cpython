@@ -145,6 +145,7 @@ class BasicTest(BaseTest):
                 b = venv.EnvBuilder(
                     **{attr: False if attr in ('with_pip', 'symlinks') else True})
             b.upgrade_dependencies = Mock() # avoid pip command to upgrade deps
+            b._setup_pip = Mock() # avoid pip setup
             self.run_with_capture(b.create, self.env_dir)
             data = self.get_text_file_contents('pyvenv.cfg')
             if not attr:
