@@ -1410,9 +1410,14 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
     /* let OpenSSL validate the rest */
     retval = EVP_PBE_scrypt(NULL, 0, NULL, 0, n, r, p, maxmem, NULL, 0);
     if (!retval) {
-        /* sorry, can't do much better */
-        PyErr_SetString(PyExc_ValueError,
-                        "Invalid parameter combination for n, r, p, maxmem.");
+        unsigned long errcode = ERR_peek_last_error();
+        if (errcode) {
+            _setException(PyExc_ValueError);
+        } else {
+            /* sorry, can't do much better */
+            PyErr_SetString(PyExc_ValueError,
+                            "Invalid parameter combination for n, r, p, maxmem.");
+        }
         return NULL;
    }
 
