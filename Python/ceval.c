@@ -4571,6 +4571,18 @@ check_eval_breaker:
             call_shape.postcall_shrink = 1;
             call_shape.positional_args = oparg;
             call_shape.kwnames = NULL;
+            if (Py_TYPE(call_shape.callable) == &PyMethod_Type) {
+                PyObject *meth = ((PyMethodObject *)call_shape.callable)->im_func;
+                PyObject *self = ((PyMethodObject *)call_shape.callable)->im_self;
+                Py_INCREF(meth);
+                Py_INCREF(self);
+                PEEK(oparg + 1) = self;
+                Py_DECREF(call_shape.callable);
+                call_shape.callable = meth;
+                call_shape.positional_args++;
+                assert(call_shape.postcall_shrink >= 1);
+                call_shape.postcall_shrink--;
+            }
             DISPATCH();
         }
 
@@ -4607,6 +4619,18 @@ check_eval_breaker:
             call_shape.positional_args = nargs;
             call_shape.postcall_shrink = 2-is_method;
             call_shape.kwnames = NULL;
+            if (Py_TYPE(call_shape.callable) == &PyMethod_Type) {
+                PyObject *meth = ((PyMethodObject *)call_shape.callable)->im_func;
+                PyObject *self = ((PyMethodObject *)call_shape.callable)->im_self;
+                Py_INCREF(meth);
+                Py_INCREF(self);
+                PEEK(nargs + 1) = self;
+                Py_DECREF(call_shape.callable);
+                call_shape.callable = meth;
+                call_shape.positional_args++;
+                assert(call_shape.postcall_shrink >= 1);
+                call_shape.postcall_shrink--;
+            }
             DISPATCH();
         }
 
@@ -4626,19 +4650,6 @@ check_eval_breaker:
             total_args = call_shape.positional_args;
             call_shape.positional_args -= oparg;
             PyObject *function = call_shape.callable;
-            if (Py_TYPE(function) == &PyMethod_Type) {
-                PyObject *meth = ((PyMethodObject *)function)->im_func;
-                PyObject *self = ((PyMethodObject *)function)->im_self;
-                Py_INCREF(meth);
-                Py_INCREF(self);
-                PEEK(call_shape.positional_args + oparg + 1) = self;
-                Py_DECREF(function);
-                function = meth;
-                call_shape.positional_args++;
-                total_args++;
-                assert(call_shape.postcall_shrink >= 1);
-                call_shape.postcall_shrink--;
-            }
             // Check if the call can be inlined or not
             if (Py_TYPE(function) == &PyFunction_Type && tstate->interp->eval_frame == NULL) {
                 int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(function))->co_flags;
