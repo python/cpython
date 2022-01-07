@@ -163,7 +163,6 @@ PYTHONOPTIMIZE          : enable level 1 optimizations (-O)\n\
 PYTHONUNBUFFERED        : disable stdout/stderr buffering (-u)\n\
 PYTHONVERBOSE           : trace import statements (-v)\n\
 PYTHONWARNINGS=arg      : warning control (-W arg)\n\
-\n\
 ";
 
 #if defined(MS_WINDOWS)
