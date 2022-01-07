@@ -127,7 +127,7 @@
 # checked by looking for the BUILDDIR_TXT file, which contains the
 # relative path to the platlib dir. The executable_dir value is
 # derived from joining the VPATH preprocessor variable to the
-# directory containing pybuilddir.txt. If it is not found, the 
+# directory containing pybuilddir.txt. If it is not found, the
 # BUILD_LANDMARK file is found, which is part of the source tree.
 # prefix is then found by searching up for a file that should only
 # exist in the source tree, and the stdlib dir is set to prefix/Lib.
@@ -642,19 +642,12 @@ elif not pythonpath:
                     i = 0
                     while True:
                         try:
-                            keyname = winreg.EnumKey(key, i)
-                            subkey = winreg.OpenKeyEx(key, keyname)
-                            if not subkey:
-                                continue
-                            try:
-                                v = winreg.QueryValue(subkey)
-                            finally:
-                                winreg.CloseKey(subkey)
-                            if isinstance(v, str):
-                                pythonpath.append(v)
-                            i += 1
+                            v = winreg.QueryValue(key, winreg.EnumKey(key, i))
                         except OSError:
                             break
+                        if isinstance(v, str):
+                            pythonpath.append(v)
+                        i += 1
                 finally:
                     winreg.CloseKey(key)
             except OSError:
