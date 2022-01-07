@@ -1,1 +1,1 @@
-Add support for [Termux](https://termux.com/) to the webbrowser library
+Add support for `Termux <https://termux.com/>`_ to the webbrowser library
