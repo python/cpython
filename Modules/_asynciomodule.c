@@ -27,6 +27,7 @@ get_asyncio_state(PyObject *Py_UNUSED(mod))
     return &global_state;
 }
 
+static PyTypeObject *FutureIterType;
 static PyObject *asyncio_mod;
 static PyObject *traceback_extract_stack;
 static PyObject *asyncio_get_event_loop_policy;
@@ -1566,8 +1567,9 @@ static Py_ssize_t fi_freelist_len = 0;
 static void
 FutureIter_dealloc(futureiterobject *it)
 {
+    PyTypeObject *tp = Py_TYPE(it);
     PyObject_GC_UnTrack(it);
-    Py_CLEAR(it->future);
+    tp->tp_clear((PyObject *)it);
 
     if (fi_freelist_len < FI_FREELIST_MAXLEN) {
         fi_freelist_len++;
@@ -1576,6 +1578,7 @@ FutureIter_dealloc(futureiterobject *it)
     }
     else {
         PyObject_GC_Del(it);
+        Py_DECREF(tp);
     }
 }
 
@@ -1714,16 +1717,24 @@ FutureIter_throw(futureiterobject *self, PyObject *const *args, Py_ssize_t nargs
     return NULL;
 }
 
+static int
+FutureIter_clear(futureiterobject *it)
+{
+    Py_CLEAR(it->future);
+    return 0;
+}
+
 static PyObject *
 FutureIter_close(futureiterobject *self, PyObject *arg)
 {
-    Py_CLEAR(self->future);
+    FutureIter_clear(self);
     Py_RETURN_NONE;
 }
 
 static int
 FutureIter_traverse(futureiterobject *it, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(it));
     Py_VISIT(it->future);
     return 0;
 }
@@ -1735,27 +1746,26 @@ static PyMethodDef FutureIter_methods[] = {
     {NULL, NULL}        /* Sentinel */
 };
 
-static PyAsyncMethods FutureIterType_as_async = {
-    0,                                  /* am_await */
-    0,                                  /* am_aiter */
-    0,                                  /* am_anext */
-    (sendfunc)FutureIter_am_send,       /* am_send  */
+static PyType_Slot FutureIter_slots[] = {
+    {Py_tp_dealloc, (destructor)FutureIter_dealloc},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_traverse, (traverseproc)FutureIter_traverse},
+    {Py_tp_clear, FutureIter_clear},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, (iternextfunc)FutureIter_iternext},
+    {Py_tp_methods, FutureIter_methods},
+
+    // async methods
+    {Py_am_send, (sendfunc)FutureIter_am_send},
+    {0, NULL},
 };
 
-
-static PyTypeObject FutureIterType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_asyncio.FutureIter",
-    .tp_basicsize = sizeof(futureiterobject),
-    .tp_itemsize = 0,
-    .tp_dealloc = (destructor)FutureIter_dealloc,
-    .tp_as_async = &FutureIterType_as_async,
-    .tp_getattro = PyObject_GenericGetAttr,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
-    .tp_traverse = (traverseproc)FutureIter_traverse,
-    .tp_iter = PyObject_SelfIter,
-    .tp_iternext = (iternextfunc)FutureIter_iternext,
-    .tp_methods = FutureIter_methods,
+static PyType_Spec FutureIter_spec = {
+    .name = "_asyncio.FutureIter",
+    .basicsize = sizeof(futureiterobject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = FutureIter_slots,
 };
 
 static PyObject *
@@ -1778,7 +1788,7 @@ future_new_iter(PyObject *fut)
         _Py_NewReference((PyObject*) it);
     }
     else {
-        it = PyObject_GC_New(futureiterobject, &FutureIterType);
+        it = PyObject_GC_New(futureiterobject, FutureIterType);
         if (it == NULL) {
             return NULL;
         }
@@ -3464,9 +3474,6 @@ PyInit__asyncio(void)
     if (module_init() < 0) {
         return NULL;
     }
-    if (PyType_Ready(&FutureIterType) < 0) {
-        return NULL;
-    }
     if (PyType_Ready(&TaskStepMethWrapper_Type) < 0) {
         return NULL;
     }
@@ -3478,6 +3485,18 @@ PyInit__asyncio(void)
     if (m == NULL) {
         return NULL;
     }
+
+#define CREATE_TYPE(m, tp, spec) \
+    do {                  \
+        tp = (PyTypeObject *)PyType_FromMetaclass(NULL, m, spec, NULL); \
+        if (tp == NULL) { \
+            goto error; \
+        } \
+    } while (0)
+
+    CREATE_TYPE(m, FutureIterType, &FutureIter_spec);
+
+#undef CREATE_TYPE
 
     /* FutureType and TaskType are made ready by PyModule_AddType() calls below. */
     if (PyModule_AddType(m, &FutureType) < 0) {
@@ -3505,4 +3524,8 @@ PyInit__asyncio(void)
     }
 
     return m;
+
+error:
+    Py_DECREF(m);
+    return NULL;
 }
