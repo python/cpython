@@ -4089,7 +4089,7 @@ PY_CHECK_FUNC([symlink], [#include <unistd.h>])
 PY_CHECK_FUNC([fchdir], [#include <unistd.h>])
 PY_CHECK_FUNC([fsync], [#include <unistd.h>])
 PY_CHECK_FUNC([fdatasync], [#include <unistd.h>])
-PY_CHECK_FUNC([epoll], [#include <sys/epoll.h>])
+PY_CHECK_FUNC([epoll_create], [#include <sys/epoll.h>], [HAVE_EPOLL])
 PY_CHECK_FUNC([epoll_create1], [#include <sys/epoll.h>])
 PY_CHECK_FUNC([kqueue],[
 #include <sys/types.h>
