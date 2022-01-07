@@ -2318,7 +2318,6 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
             // help-env
             config_envvars_usage();
             return _PyStatus_EXIT(0);
-            break;
 
         case 'b':
             config->bytes_warning++;
