@@ -1,0 +1,1 @@
+Improve ``test_descr.py`` by adding stricter error handling.
