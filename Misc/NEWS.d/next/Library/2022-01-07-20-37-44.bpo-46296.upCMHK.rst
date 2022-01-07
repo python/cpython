@@ -1,2 +1,0 @@
-Remove unused ``if enum_class._member_type_ is object`` condition in
-:mod:`enum`.
