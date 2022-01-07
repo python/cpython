@@ -1244,9 +1244,8 @@ pbkdf2_hmac_impl(PyObject *module, const char *hash_name,
     char *key;
     long dklen;
     int retval;
-    PY_EVP_MD *digest = NULL;
 
-    digest = py_digest_by_name(module, hash_name, Py_ht_pbkdf2);
+    PY_EVP_MD *digest = py_digest_by_name(module, hash_name, Py_ht_pbkdf2);
     if (digest == NULL) {
         PyErr_SetString(PyExc_ValueError, "unsupported hash type");
         goto end;
