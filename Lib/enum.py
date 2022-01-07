@@ -219,15 +219,12 @@ class _proto_member:
         else:
             enum_member = enum_class._new_member_(enum_class, *args)
             if not hasattr(enum_member, '_value_'):
-                if enum_class._member_type_ is object:
-                    enum_member._value_ = value
-                else:
-                    try:
-                        enum_member._value_ = enum_class._member_type_(*args)
-                    except Exception as exc:
-                        raise TypeError(
-                                '_value_ not set in __new__, unable to create it'
-                                ) from None
+                try:
+                    enum_member._value_ = enum_class._member_type_(*args)
+                except Exception as exc:
+                    raise TypeError(
+                            '_value_ not set in __new__, unable to create it'
+                            ) from None
         value = enum_member._value_
         enum_member._name_ = member_name
         enum_member.__objclass__ = enum_class
