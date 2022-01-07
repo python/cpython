@@ -110,8 +110,8 @@ extern "C" {
 #define DICT_UPDATE                     165
 #define PRECALL_FUNCTION                167
 #define PRECALL_METHOD                  168
-#define CALL_NO_KW                      169
-#define CALL_KW                         170
+#define CALL                            171
+#define KW_NAMES                        172
 #define BINARY_OP_ADAPTIVE                7
 #define BINARY_OP_ADD_INT                 8
 #define BINARY_OP_ADD_FLOAT              13
@@ -133,7 +133,7 @@ extern "C" {
 #define STORE_SUBSCR_ADAPTIVE            36
 #define STORE_SUBSCR_LIST_INT            37
 #define STORE_SUBSCR_DICT                38
-#define CALL_NO_KW_ADAPTIVE              39
+#define CALL_ADAPTIVE                    39
 #define CALL_NO_KW_BUILTIN_O             40
 #define CALL_NO_KW_BUILTIN_FAST          41
 #define CALL_NO_KW_LEN                   42

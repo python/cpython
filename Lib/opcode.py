@@ -193,8 +193,9 @@ def_op('DICT_UPDATE', 165)
 
 def_op('PRECALL_FUNCTION', 167)
 def_op('PRECALL_METHOD', 168)
-def_op('CALL_NO_KW', 169)
-def_op('CALL_KW', 170)
+
+def_op('CALL', 171)
+def_op('KW_NAMES', 172)
 
 del def_op, name_op, jrel_op, jabs_op
 
@@ -249,7 +250,7 @@ _specialized_instructions = [
     "STORE_SUBSCR_ADAPTIVE",
     "STORE_SUBSCR_LIST_INT",
     "STORE_SUBSCR_DICT",
-    "CALL_NO_KW_ADAPTIVE",
+    "CALL_ADAPTIVE",
     "CALL_NO_KW_BUILTIN_O",
     "CALL_NO_KW_BUILTIN_FAST",
     "CALL_NO_KW_LEN",

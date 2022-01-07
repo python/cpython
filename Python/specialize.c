@@ -251,7 +251,7 @@ static uint8_t adaptive_opcodes[256] = {
     [LOAD_METHOD] = LOAD_METHOD_ADAPTIVE,
     [BINARY_SUBSCR] = BINARY_SUBSCR_ADAPTIVE,
     [STORE_SUBSCR] = STORE_SUBSCR_ADAPTIVE,
-    [CALL_NO_KW] = CALL_NO_KW_ADAPTIVE,
+    [CALL] = CALL_ADAPTIVE,
     [STORE_ATTR] = STORE_ATTR_ADAPTIVE,
     [BINARY_OP] = BINARY_OP_ADAPTIVE,
     [COMPARE_OP] = COMPARE_OP_ADAPTIVE,
@@ -264,7 +264,7 @@ static uint8_t cache_requirements[256] = {
     [LOAD_METHOD] = 3, /* _PyAdaptiveEntry, _PyAttrCache and _PyObjectCache */
     [BINARY_SUBSCR] = 2, /* _PyAdaptiveEntry, _PyObjectCache */
     [STORE_SUBSCR] = 0,
-    [CALL_NO_KW] = 2, /* _PyAdaptiveEntry and _PyObjectCache/_PyCallCache */
+    [CALL] = 2, /* _PyAdaptiveEntry and _PyObjectCache/_PyCallCache */
     [STORE_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
     [BINARY_OP] = 1,  // _PyAdaptiveEntry
     [COMPARE_OP] = 1, /* _PyAdaptiveEntry */
@@ -1567,6 +1567,8 @@ _Py_Specialize_CallNoKw(
     int nargs, SpecializedCacheEntry *cache,
     PyObject *builtins)
 {
+    cache_backoff(&cache->adaptive);
+    return 0;
     int fail;
     if (PyCFunction_CheckExact(callable)) {
         fail = specialize_c_call(callable, instr, nargs, cache, builtins);
