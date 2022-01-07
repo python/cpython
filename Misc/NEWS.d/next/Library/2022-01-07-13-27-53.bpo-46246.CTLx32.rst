@@ -1,0 +1,2 @@
+Add missing ``__slots__`` to ``importlib.metadata.DeprecatedList``. Patch by
+Arie Bovenberg.
