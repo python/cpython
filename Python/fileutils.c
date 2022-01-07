@@ -2129,7 +2129,7 @@ join_relfile(wchar_t *buffer, size_t bufsize,
 {
 #ifdef MS_WINDOWS
     if (FAILED(PathCchCombineEx(buffer, bufsize, dirname, relfile, 
-        PATHCCH_ALLOW_LONG_PATHS | PATHCCH_FORCE_ENABLE_LONG_NAME_PROCESS))) {
+        PATHCCH_ALLOW_LONG_PATHS))) {
         return -1;
     }
 #else
