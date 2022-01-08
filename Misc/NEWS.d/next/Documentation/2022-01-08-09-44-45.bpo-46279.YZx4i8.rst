@@ -1,0 +1,1 @@
+Corrected trivial clarification error in __main__.py documentation
