@@ -268,6 +268,18 @@ class ExceptionTests(unittest.TestCase):
         check("(1+)", 1, 4)
         check("[interesting\nfoo()\n", 1, 1)
         check(b"\xef\xbb\xbf#coding: utf8\nprint('\xe6\x88\x91')\n", 0, -1)
+        check("""f'''
+            {
+            (123_a)
+            }'''""", 3, 17)
+        check("""f'''
+            {
+            f\"\"\"
+            {
+            (123_a)
+            }
+            \"\"\"
+            }'''""", 5, 17)
 
         # Errors thrown by symtable.c
         check('x = [(yield i) for i in range(3)]', 1, 7)
