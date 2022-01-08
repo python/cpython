@@ -4440,6 +4440,15 @@ CONVERT_STRING_TEST_NAME_A = 5  # This one should sort first.
 CONVERT_STRING_TEST_NAME_E = 5
 CONVERT_STRING_TEST_NAME_F = 5
 
+# We also need values that cannot be compared:
+UNCOMPARABLE_A = 5
+UNCOMPARABLE_C = (9, 1)  # naming order is broken on purpose
+UNCOMPARABLE_B = 'value'
+
+COMPLEX_C = 1j
+COMPLEX_A = 2j
+COMPLEX_B = 3j
+
 class TestIntEnumConvert(unittest.TestCase):
     def setUp(self):
         # Reset the module-level test variables to their original integer
@@ -4476,6 +4485,32 @@ class TestIntEnumConvert(unittest.TestCase):
                           if name[0:2] not in ('CO', '__')
                           and name not in dir(IntEnum)],
                          [], msg='Names other than CONVERT_TEST_* found.')
+
+    def test_convert_uncomparable(self):
+        uncomp = enum.Enum._convert_(
+            'Uncomparable',
+            MODULE,
+            filter=lambda x: x.startswith('UNCOMPARABLE_'),
+        )
+
+        # Should be ordered by `name` only:
+        self.assertEqual(
+            list(uncomp),
+            [uncomp.UNCOMPARABLE_A, uncomp.UNCOMPARABLE_B, uncomp.UNCOMPARABLE_C],
+        )
+
+    def test_convert_complex(self):
+        uncomp = enum.Enum._convert_(
+            'Uncomparable',
+            MODULE,
+            filter=lambda x: x.startswith('COMPLEX_'),
+        )
+
+        # Should be ordered by `name` only:
+        self.assertEqual(
+            list(uncomp),
+            [uncomp.COMPLEX_A, uncomp.COMPLEX_B, uncomp.COMPLEX_C],
+        )
 
     @unittest.skipUnless(python_version == (3, 8),
                          '_convert was deprecated in 3.8')
