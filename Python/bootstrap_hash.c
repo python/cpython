@@ -1,5 +1,7 @@
 #include "Python.h"
 #include "pycore_initconfig.h"
+#include "pycore_fileutils.h"     // _Py_fstat_noraise()
+
 #ifdef MS_WINDOWS
 #  include <windows.h>
 #  include <bcrypt.h>

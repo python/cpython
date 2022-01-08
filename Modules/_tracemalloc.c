@@ -1,8 +1,9 @@
 #include "Python.h"
+#include "pycore_fileutils.h"     // _Py_write_noraise()
 #include "pycore_gc.h"            // PyGC_Head
+#include "pycore_hashtable.h"     // _Py_hashtable_t
 #include "pycore_pymem.h"         // _Py_tracemalloc_config
 #include "pycore_traceback.h"
-#include "pycore_hashtable.h"
 #include <pycore_frame.h>
 
 #include <stdlib.h>               // malloc()
