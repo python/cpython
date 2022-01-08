@@ -45,7 +45,7 @@ class ProactorLoopCtrlC(test_utils.TestCase):
             signal.raise_signal(signal.SIGINT)
 
         thread = threading.Thread(target=SIGINT_after_delay)
-        loop = asyncio.get_event_loop()
+        loop = asyncio.new_event_loop()
         try:
             # only start the loop once the event loop is running
             loop.call_soon(thread.start)
