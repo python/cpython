@@ -1,2 +1,2 @@
-Assume that :class:`types.CodeType` always has ``co_firstlineno`` prop in
+Assume that :class:`types.CodeType` always has :attr:`types.CodeType.co_firstlineno` in
 :mod:`doctest`.
