@@ -195,7 +195,7 @@ py_hashentry_t_hash_name(const void *key) {
 
 static int
 py_hashentry_t_compare_name(const void *key1, const void *key2) {
-    return strcmp((const char *)key1, (const char *)key2);
+    return strcmp((const char *)key1, (const char *)key2) == 0;
 }
 
 static void
