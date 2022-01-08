@@ -120,7 +120,7 @@ typedef struct {
     const char *py_alias;
     const char *ossl_name;
     int ossl_nid;
-    Py_ssize_t refcnt;
+    int refcnt;
     PY_EVP_MD *evp;
     PY_EVP_MD *evp_nosecurity;
 } py_hashentry_t;
@@ -131,27 +131,19 @@ typedef struct {
 #define Py_hash_sha256 "sha256"
 #define Py_hash_sha384 "sha384"
 #define Py_hash_sha512 "sha512"
-#ifdef NID_sha512_224
 #define Py_hash_sha512_224 "sha512_224"
 #define Py_hash_sha512_256 "sha512_256"
-#endif
-#ifdef PY_OPENSSL_HAS_SHA3
 #define Py_hash_sha3_224 "sha3_224"
 #define Py_hash_sha3_256 "sha3_256"
 #define Py_hash_sha3_384 "sha3_384"
 #define Py_hash_sha3_512 "sha3_512"
-#endif
-#ifdef PY_OPENSSL_HAS_SHAKE
 #define Py_hash_shake_128 "shake_128"
 #define Py_hash_shake_256 "shake_256"
-#endif
-#ifdef PY_OPENSSL_HAS_BLAKE2
 #define Py_hash_blake2s "blake2s"
 #define Py_hash_blake2b "blake2b"
-#endif
 
 #define PY_HASH_ENTRY(py_name, py_alias, ossl_name, ossl_nid) \
-    {py_name, py_alias, ossl_name, ossl_nid, 0, NULL}
+    {py_name, py_alias, ossl_name, ossl_nid, 0, NULL, NULL}
 
 static const py_hashentry_t py_hashes[] = {
     /* md5 */
@@ -163,28 +155,20 @@ static const py_hashentry_t py_hashes[] = {
     PY_HASH_ENTRY(Py_hash_sha256, "SHA256", SN_sha256, NID_sha256),
     PY_HASH_ENTRY(Py_hash_sha384, "SHA384", SN_sha384, NID_sha384),
     PY_HASH_ENTRY(Py_hash_sha512, "SHA512", SN_sha512, NID_sha512),
-#ifdef NID_sha512_224
     /* truncated sha2 */
     PY_HASH_ENTRY(Py_hash_sha512_224, "SHA512_224", SN_sha512_224, NID_sha512_224),
     PY_HASH_ENTRY(Py_hash_sha512_256, "SHA512_256", SN_sha512_256, NID_sha512_256),
-#endif
-#ifdef PY_OPENSSL_HAS_SHA3
     /* sha3 */
     PY_HASH_ENTRY(Py_hash_sha3_224, NULL, SN_sha3_224, NID_sha3_224),
     PY_HASH_ENTRY(Py_hash_sha3_256, NULL, SN_sha3_256, NID_sha3_256),
     PY_HASH_ENTRY(Py_hash_sha3_384, NULL, SN_sha3_384, NID_sha3_384),
     PY_HASH_ENTRY(Py_hash_sha3_512, NULL, SN_sha3_512, NID_sha3_512),
-#endif
-#ifdef PY_OPENSSL_HAS_SHAKE
     /* sha3 shake */
     PY_HASH_ENTRY(Py_hash_shake_128, NULL, SN_shake128, NID_shake128),
     PY_HASH_ENTRY(Py_hash_shake_256, NULL, SN_shake256, NID_shake256),
-#endif
-#ifdef PY_OPENSSL_HAS_BLAKE2
     /* blake2 digest */
     PY_HASH_ENTRY(Py_hash_blake2s, "blake2s256", SN_blake2s256, NID_blake2s256),
     PY_HASH_ENTRY(Py_hash_blake2b, "blake2b512", SN_blake2b512, NID_blake2b512),
-#endif
     PY_HASH_ENTRY(NULL, NULL, NULL, 0),
 };
 
@@ -312,7 +296,7 @@ _setException(PyObject *exc, const char* altmsg, ...)
 #endif
     if (!errcode) {
         if (altmsg == NULL) {
-            PyErr_SetString(exc, "unknown reasons");
+            PyErr_SetString(exc, "no reason supplied");
         } else {
             PyErr_FormatV(exc, altmsg, vargs);
         }
@@ -379,10 +363,14 @@ static PY_EVP_MD*
 py_digest_by_name(PyObject *module, const char *name, enum Py_hash_type py_ht)
 {
     PY_EVP_MD *digest = NULL;
+#if 1
     _hashlibstate *state = get_hashlib_state(module);
     py_hashentry_t *entry = (py_hashentry_t *)_Py_hashtable_get(
         state->hashtable, (const void*)name
     );
+#else
+    py_hashentry_t *entry = NULL;
+#endif
 
     if (entry != NULL) {
         switch (py_ht) {
@@ -405,7 +393,7 @@ py_digest_by_name(PyObject *module, const char *name, enum Py_hash_type py_ht)
             PY_EVP_MD_up_ref(digest);
         }
     } else {
-        // fall back for OpenSSL
+        // Fall back for looking up an unindexed OpenSSL specific name.
         switch (py_ht) {
         case Py_ht_evp:
         case Py_ht_mac:
@@ -871,83 +859,75 @@ static PyType_Spec EVPXOFtype_spec = {
 
 #endif
 
-static PyObject *
-EVPnew(PyObject *module, PY_EVP_MD *digest,
-       const unsigned char *cp, Py_ssize_t len, int usedforsecurity)
+static PyObject*
+py_evp_fromname(PyObject *module, const char *digestname, PyObject *data_obj,
+                int usedforsecurity)
 {
-    int result = 0;
+    Py_buffer view = { 0 };
+    PY_EVP_MD *digest = NULL;
+    PyTypeObject *type;
     EVPobject *self = NULL;
-    PyTypeObject *type = get_hashlib_state(module)->EVPtype;
 
-    assert(digest != NULL);
+    if (data_obj != NULL) {
+        GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view);
+    }
 
-#ifdef PY_OPENSSL_HAS_SHAKE
+    digest = py_digest_by_name(
+        module, digestname, usedforsecurity ? Py_ht_evp : Py_ht_evp_nosecurity
+    );
+    if (digest == NULL) {
+        goto exit;
+    }
+
     if ((EVP_MD_flags(digest) & EVP_MD_FLAG_XOF) == EVP_MD_FLAG_XOF) {
         type = get_hashlib_state(module)->EVPXOFtype;
-    }
-#endif
-
-    if ((self = newEVPobject(type)) == NULL) {
-        PY_EVP_MD_free(digest);
-        return NULL;
+    } else {
+        type = get_hashlib_state(module)->EVPtype;
     }
 
+    self = newEVPobject(type);
+    if (self == NULL) {
+        goto exit;
+    }
+
+#if defined(EVP_MD_CTX_FLAG_NON_FIPS_ALLOW) &&  OPENSSL_VERSION_NUMBER >= 0x30000000L
+    // In OpenSSL 1.1.1 the non FIPS allowed flag is context specific while
+    // in 3.0.0 it is a different EVP_MD provider.
     if (!usedforsecurity) {
-#ifdef EVP_MD_CTX_FLAG_NON_FIPS_ALLOW
         EVP_MD_CTX_set_flags(self->ctx, EVP_MD_CTX_FLAG_NON_FIPS_ALLOW);
-#endif
     }
+#endif
 
-    result = EVP_DigestInit_ex(self->ctx, digest, NULL);
-    PY_EVP_MD_free(digest);
+    int result = EVP_DigestInit_ex(self->ctx, digest, NULL);
     if (!result) {
         _setException(PyExc_ValueError, NULL);
-        Py_DECREF(self);
-        return NULL;
+        Py_CLEAR(self);
+        goto exit;
     }
 
-    if (cp && len) {
-        if (len >= HASHLIB_GIL_MINSIZE) {
+    if (view.buf && view.len) {
+        if (view.len >= HASHLIB_GIL_MINSIZE) {
             Py_BEGIN_ALLOW_THREADS
-            result = EVP_hash(self, cp, len);
+            result = EVP_hash(self, view.buf, view.len);
             Py_END_ALLOW_THREADS
         } else {
-            result = EVP_hash(self, cp, len);
+            result = EVP_hash(self, view.buf, view.len);
         }
         if (result == -1) {
-            Py_DECREF(self);
-            return NULL;
+            Py_CLEAR(self);
+            goto exit;
         }
+    }
+
+  exit:
+    if (data_obj != NULL) {
+        PyBuffer_Release(&view);
+    }
+    if (digest != NULL) {
+        PY_EVP_MD_free(digest);
     }
 
     return (PyObject *)self;
-}
-
-static PyObject*
-EVP_raw_new(PyObject *module, PyObject *data_obj, const char *name,
-             int usedforsecurity)
-{
-    Py_buffer view = { 0 };
-    PyObject *ret_obj = NULL;
-
-    if (data_obj)
-        GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view);
-
-    PY_EVP_MD *digest = py_digest_by_name(
-        module, name,
-        usedforsecurity ? Py_ht_evp : Py_ht_evp_nosecurity
-    );
-
-    if (digest != NULL) {
-        ret_obj = EVPnew(module, digest,
-                    (unsigned char*)view.buf, view.len,
-                    usedforsecurity);
-    }
-
-    if (data_obj)
-        PyBuffer_Release(&view);
-
-    return ret_obj;
 }
 
 
@@ -979,7 +959,7 @@ EVP_new_impl(PyObject *module, PyObject *name_obj, PyObject *data_obj,
         PyErr_SetString(PyExc_TypeError, "name must be a string");
         return NULL;
     }
-    return EVP_raw_new(module, data_obj, name, usedforsecurity);
+    return py_evp_fromname(module, name, data_obj, usedforsecurity);
 }
 
 
@@ -999,7 +979,7 @@ _hashlib_openssl_md5_impl(PyObject *module, PyObject *data_obj,
                           int usedforsecurity)
 /*[clinic end generated code: output=87b0186440a44f8c input=990e36d5e689b16e]*/
 {
-    return EVP_raw_new(module, data_obj, Py_hash_md5, usedforsecurity);
+    return py_evp_fromname(module, Py_hash_md5, data_obj, usedforsecurity);
 }
 
 
@@ -1019,7 +999,7 @@ _hashlib_openssl_sha1_impl(PyObject *module, PyObject *data_obj,
                            int usedforsecurity)
 /*[clinic end generated code: output=6813024cf690670d input=948f2f4b6deabc10]*/
 {
-    return EVP_raw_new(module, data_obj, Py_hash_sha1, usedforsecurity);
+    return py_evp_fromname(module, Py_hash_sha1, data_obj, usedforsecurity);
 }
 
 
@@ -1039,7 +1019,7 @@ _hashlib_openssl_sha224_impl(PyObject *module, PyObject *data_obj,
                              int usedforsecurity)
 /*[clinic end generated code: output=a2dfe7cc4eb14ebb input=f9272821fadca505]*/
 {
-    return EVP_raw_new(module, data_obj, Py_hash_sha224, usedforsecurity);
+    return py_evp_fromname(module, Py_hash_sha224, data_obj, usedforsecurity);
 }
 
 
@@ -1059,7 +1039,7 @@ _hashlib_openssl_sha256_impl(PyObject *module, PyObject *data_obj,
                              int usedforsecurity)
 /*[clinic end generated code: output=1f874a34870f0a68 input=549fad9d2930d4c5]*/
 {
-    return EVP_raw_new(module, data_obj, Py_hash_sha256, usedforsecurity);
+    return py_evp_fromname(module, Py_hash_sha256, data_obj, usedforsecurity);
 }
 
 
@@ -1079,7 +1059,7 @@ _hashlib_openssl_sha384_impl(PyObject *module, PyObject *data_obj,
                              int usedforsecurity)
 /*[clinic end generated code: output=58529eff9ca457b2 input=48601a6e3bf14ad7]*/
 {
-    return EVP_raw_new(module, data_obj, Py_hash_sha384, usedforsecurity);
+    return py_evp_fromname(module, Py_hash_sha384, data_obj, usedforsecurity);
 }
 
 
@@ -1099,7 +1079,7 @@ _hashlib_openssl_sha512_impl(PyObject *module, PyObject *data_obj,
                              int usedforsecurity)
 /*[clinic end generated code: output=2c744c9e4a40d5f6 input=c5c46a2a817aa98f]*/
 {
-    return EVP_raw_new(module, data_obj, Py_hash_sha512, usedforsecurity);
+    return py_evp_fromname(module, Py_hash_sha512, data_obj, usedforsecurity);
 }
 
 
@@ -1121,7 +1101,7 @@ _hashlib_openssl_sha3_224_impl(PyObject *module, PyObject *data_obj,
                                int usedforsecurity)
 /*[clinic end generated code: output=144641c1d144b974 input=e3a01b2888916157]*/
 {
-    return EVP_raw_new(module, data_obj, Py_hash_sha3_224, usedforsecurity);
+    return py_evp_fromname(module, Py_hash_sha3_224, data_obj, usedforsecurity);
 }
 
 /*[clinic input]
@@ -1140,7 +1120,7 @@ _hashlib_openssl_sha3_256_impl(PyObject *module, PyObject *data_obj,
                                int usedforsecurity)
 /*[clinic end generated code: output=c61f1ab772d06668 input=e2908126c1b6deed]*/
 {
-    return EVP_raw_new(module, data_obj, Py_hash_sha3_256, usedforsecurity);
+    return py_evp_fromname(module, Py_hash_sha3_256, data_obj , usedforsecurity);
 }
 
 /*[clinic input]
@@ -1159,7 +1139,7 @@ _hashlib_openssl_sha3_384_impl(PyObject *module, PyObject *data_obj,
                                int usedforsecurity)
 /*[clinic end generated code: output=f68e4846858cf0ee input=ec0edf5c792f8252]*/
 {
-    return EVP_raw_new(module, data_obj, Py_hash_sha3_384, usedforsecurity);
+    return py_evp_fromname(module, Py_hash_sha3_384, data_obj , usedforsecurity);
 }
 
 /*[clinic input]
@@ -1178,7 +1158,7 @@ _hashlib_openssl_sha3_512_impl(PyObject *module, PyObject *data_obj,
                                int usedforsecurity)
 /*[clinic end generated code: output=2eede478c159354a input=64e2cc0c094d56f4]*/
 {
-    return EVP_raw_new(module, data_obj, Py_hash_sha3_512, usedforsecurity);
+    return py_evp_fromname(module, Py_hash_sha3_512, data_obj , usedforsecurity);
 }
 #endif /* PY_OPENSSL_HAS_SHA3 */
 
@@ -1199,7 +1179,7 @@ _hashlib_openssl_shake_128_impl(PyObject *module, PyObject *data_obj,
                                 int usedforsecurity)
 /*[clinic end generated code: output=bc49cdd8ada1fa97 input=6c9d67440eb33ec8]*/
 {
-    return EVP_raw_new(module, data_obj, Py_hash_shake_128, usedforsecurity);
+    return py_evp_fromname(module, Py_hash_shake_128, data_obj , usedforsecurity);
 }
 
 /*[clinic input]
@@ -1218,7 +1198,7 @@ _hashlib_openssl_shake_256_impl(PyObject *module, PyObject *data_obj,
                                 int usedforsecurity)
 /*[clinic end generated code: output=358d213be8852df7 input=479cbe9fefd4a9f8]*/
 {
-    return EVP_raw_new(module, data_obj, Py_hash_shake_256, usedforsecurity);
+    return py_evp_fromname(module, Py_hash_shake_256, data_obj , usedforsecurity);
 }
 #endif /* PY_OPENSSL_HAS_SHAKE */
 
