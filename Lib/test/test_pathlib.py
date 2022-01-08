@@ -1462,18 +1462,18 @@ class _BasePathTest(object):
         with mock.patch("pathlib._normal_accessor.getcwd") as getcwd:
             getcwd.return_value = BASE
 
-            # Simple relative paths
+            # Simple relative paths.
             self.assertEqual(str(P().absolute()), BASE)
             self.assertEqual(str(P('.').absolute()), BASE)
             self.assertEqual(str(P('a').absolute()), os.path.join(BASE, 'a'))
             self.assertEqual(str(P('a', 'b', 'c').absolute()), os.path.join(BASE, 'a', 'b', 'c'))
 
-            # Symlinks should not be resolved
+            # Symlinks should not be resolved.
             self.assertEqual(str(P('linkB', 'fileB').absolute()), os.path.join(BASE, 'linkB', 'fileB'))
             self.assertEqual(str(P('brokenLink').absolute()), os.path.join(BASE, 'brokenLink'))
             self.assertEqual(str(P('brokenLinkLoop').absolute()), os.path.join(BASE, 'brokenLinkLoop'))
 
-            # '..' entries should be preserved and not normalised
+            # '..' entries should be preserved and not normalised.
             self.assertEqual(str(P('..').absolute()), os.path.join(BASE, '..'))
             self.assertEqual(str(P('a', '..').absolute()), os.path.join(BASE, 'a', '..'))
             self.assertEqual(str(P('..', 'b').absolute()), os.path.join(BASE, '..', 'b'))
@@ -2485,7 +2485,7 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
         self.assertEqual(str(P('/a').absolute()), '/a')
         self.assertEqual(str(P('/a/b').absolute()), '/a/b')
 
-        # '//'-prefixed absolute path (supported by POSIX)
+        # '//'-prefixed absolute path (supported by POSIX).
         self.assertEqual(str(P('//').absolute()), '//')
         self.assertEqual(str(P('//a').absolute()), '//a')
         self.assertEqual(str(P('//a/b').absolute()), '//a/b')
@@ -2658,18 +2658,18 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
     def test_absolute(self):
         P = self.cls
 
-        # Simple absolute paths
+        # Simple absolute paths.
         self.assertEqual(str(P('c:\\').absolute()), 'c:\\')
         self.assertEqual(str(P('c:\\a').absolute()), 'c:\\a')
         self.assertEqual(str(P('c:\\a\\b').absolute()), 'c:\\a\\b')
 
-        # UNC absolute paths
+        # UNC absolute paths.
         share = '\\\\server\\share\\'
         self.assertEqual(str(P(share).absolute()), share)
         self.assertEqual(str(P(share + 'a').absolute()), share + 'a')
         self.assertEqual(str(P(share + 'a\\b').absolute()), share + 'a\\b')
 
-        # UNC relative paths
+        # UNC relative paths.
         with mock.patch("pathlib._normal_accessor.getcwd") as getcwd:
             getcwd.return_value = share
 
