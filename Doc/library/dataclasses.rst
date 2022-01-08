@@ -319,9 +319,9 @@ Module contents
    Raises :exc:`TypeError` if not passed a dataclass or instance of one.
    Does not return pseudo-fields which are ``ClassVar`` or ``InitVar``.
 
-.. function:: asdict(instance, *, dict_factory=dict)
+.. function:: asdict(obj, *, dict_factory=dict)
 
-   Converts the dataclass ``instance`` to a dict (by using the
+   Converts the dataclass ``obj`` to a dict (by using the
    factory function ``dict_factory``).  Each dataclass is converted
    to a dict of its fields, as ``name: value`` pairs.  dataclasses, dicts,
    lists, and tuples are recursed into.  Other objects are copied with
@@ -346,14 +346,14 @@ Module contents
 
    To create a shallow copy, the following workaround may be used::
 
-     dict((field.name, getattr(instance, field.name)) for field in fields(instance))
+     dict((field.name, getattr(obj, field.name)) for field in fields(obj))
 
-   :func:`asdict` raises :exc:`TypeError` if ``instance`` is not a dataclass
+   :func:`asdict` raises :exc:`TypeError` if ``obj`` is not a dataclass
    instance.
 
-.. function:: astuple(instance, *, tuple_factory=tuple)
+.. function:: astuple(obj, *, tuple_factory=tuple)
 
-   Converts the dataclass ``instance`` to a tuple (by using the
+   Converts the dataclass ``obj`` to a tuple (by using the
    factory function ``tuple_factory``).  Each dataclass is converted
    to a tuple of its field values.  dataclasses, dicts, lists, and
    tuples are recursed into. Other objects are copied with
@@ -366,9 +366,9 @@ Module contents
 
    To create a shallow copy, the following workaround may be used::
 
-     tuple(getattr(instance, field.name) for field in dataclasses.fields(instance))
+     tuple(getattr(obj, field.name) for field in dataclasses.fields(obj))
 
-   :func:`astuple` raises :exc:`TypeError` if ``instance`` is not a dataclass
+   :func:`astuple` raises :exc:`TypeError` if ``obj`` is not a dataclass
    instance.
 
 .. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False)
@@ -406,10 +406,10 @@ Module contents
          def add_one(self):
              return self.x + 1
 
-.. function:: replace(instance, /, **changes)
+.. function:: replace(obj, /, **changes)
 
-   Creates a new object of the same type as ``instance``, replacing
-   fields with values from ``changes``.  If ``instance`` is not a Data
+   Creates a new object of the same type as ``obj``, replacing
+   fields with values from ``changes``.  If ``obj`` is not a Data
    Class, raises :exc:`TypeError`.  If values in ``changes`` do not
    specify fields, raises :exc:`TypeError`.
 
@@ -434,7 +434,7 @@ Module contents
    ``replace()`` (or similarly named) method which handles instance
    copying.
 
-.. function:: is_dataclass(class_or_instance)
+.. function:: is_dataclass(obj)
 
    Return ``True`` if its parameter is a dataclass or an instance of one,
    otherwise return ``False``.
