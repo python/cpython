@@ -1,0 +1,2 @@
+Assume that :class:`types.CodeType` always has :attr:`types.CodeType.co_firstlineno` in
+:mod:`doctest`.
