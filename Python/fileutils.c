@@ -1209,7 +1209,7 @@ _Py_fstat(int fd, struct _Py_stat_struct *status)
 
 /* Like _Py_stat() but with a raw filename. */
 int
-_Py_wstat(const wchar_t* path, struct stat *buf)
+_Py_wstat(const wchar_t* path, struct _Py_stat_struct *buf)
 {
     int err;
 #ifdef MS_WINDOWS
@@ -1239,7 +1239,7 @@ _Py_wstat(const wchar_t* path, struct stat *buf)
    raised. */
 
 int
-_Py_stat(PyObject *path, struct stat *statbuf)
+_Py_stat(PyObject *path, struct _Py_stat_struct *statbuf)
 {
 #ifdef MS_WINDOWS
     int err;

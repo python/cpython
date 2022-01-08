@@ -84,7 +84,7 @@ PyAPI_FUNC(int) _Py_fstat_noraise(
 
 PyAPI_FUNC(int) _Py_stat(
     PyObject *path,
-    struct stat *status);
+    struct _Py_stat_struct *status);
 
 PyAPI_FUNC(int) _Py_open(
     const char *pathname,

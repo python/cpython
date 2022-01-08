@@ -40,7 +40,7 @@ PyAPI_FUNC(wchar_t*) _Py_DecodeUTF8_surrogateescape(
     size_t *wlen);
 
 extern int
-_Py_wstat(const wchar_t *, struct stat *);
+_Py_wstat(const wchar_t *, struct _Py_stat_struct *);
 
 PyAPI_FUNC(int) _Py_GetForceASCII(void);
 
