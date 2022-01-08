@@ -849,7 +849,8 @@ Cursor Objects
       is only updated after successful ``INSERT`` or ``REPLACE`` statements
       using the :meth:`execute` method.  For other statements, after
       :meth:`executemany` or :meth:`executescript`, or if the insertion failed,
-      the value of ``lastrowid`` is left unchanged.
+      the value of ``lastrowid`` is left unchanged.  The initial value of
+      ``lastrowid`` is :const:`None`.
 
       .. note::
          Inserts into ``WITHOUT ROWID`` tables are not recorded.
