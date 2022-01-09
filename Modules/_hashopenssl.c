@@ -320,14 +320,10 @@ static PY_EVP_MD*
 py_digest_by_name(PyObject *module, const char *name, enum Py_hash_type py_ht)
 {
     PY_EVP_MD *digest = NULL;
-#if 1
     _hashlibstate *state = get_hashlib_state(module);
     py_hashentry_t *entry = (py_hashentry_t *)_Py_hashtable_get(
         state->hashtable, (const void*)name
     );
-#else
-    py_hashentry_t *entry = NULL;
-#endif
 
     if (entry != NULL) {
         switch (py_ht) {
