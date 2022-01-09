@@ -1,0 +1,2 @@
+Fix the line number of tokenizer errors inside f-strings. Patch by Pablo
+Galindo.

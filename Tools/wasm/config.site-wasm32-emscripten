@@ -33,7 +33,7 @@ ac_cv_lib_bz2_BZ2_bzCompress=no
 # The rest is based on pyodide
 # https://github.com/pyodide/pyodide/blob/main/cpython/pyconfig.undefs.h
 
-ac_cv_func_epoll=no
+ac_cv_func_epoll_create=no
 ac_cv_func_epoll_create1=no
 ac_cv_header_linux_vm_sockets_h=no
 ac_cv_func_socketpair=no
