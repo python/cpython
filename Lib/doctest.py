@@ -1087,7 +1087,7 @@ class DocTestFinder:
         """
         Return a line number of the given object's docstring.
 
-        This method returns `None` if an object does not have a docstring.
+        Returns `None` if the given object does not have a docstring.
         """
         lineno = None
         docstring = getattr(obj, '__doc__', None)
