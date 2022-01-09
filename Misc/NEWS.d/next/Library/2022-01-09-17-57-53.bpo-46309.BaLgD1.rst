@@ -1,0 +1,2 @@
+Added reference to task created in
+:meth:`asyncio.streams.StreamReaderProtocol.connection_made`.
