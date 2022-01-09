@@ -3318,16 +3318,13 @@ static int
 module_init(void)
 {
     PyObject *module = NULL;
+    if (module_initialized) {
+        return 0;
+    }
 
     asyncio_mod = PyImport_ImportModule("asyncio");
     if (asyncio_mod == NULL) {
         goto fail;
-    }
-    if (module_initialized != 0) {
-        return 0;
-    }
-    else {
-        module_initialized = 1;
     }
 
     current_tasks = PyDict_New();
@@ -3389,6 +3386,7 @@ module_init(void)
         goto fail;
     }
 
+    module_initialized = 1;
     Py_DECREF(module);
     return 0;
 

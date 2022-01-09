@@ -857,8 +857,13 @@ class PyMemDebugTests(unittest.TestCase):
 
     def check(self, code):
         with support.SuppressCrashReport():
-            out = assert_python_failure('-c', code,
-                                        PYTHONMALLOC=self.PYTHONMALLOC)
+            out = assert_python_failure(
+                '-c', code,
+                PYTHONMALLOC=self.PYTHONMALLOC,
+                # FreeBSD: instruct jemalloc to not fill freed() memory
+                # with junk byte 0x5a, see JEMALLOC(3)
+                MALLOC_CONF="junk:false",
+            )
         stderr = out.err
         return stderr.decode('ascii', 'replace')
 
@@ -928,7 +933,11 @@ class PyMemDebugTests(unittest.TestCase):
             except _testcapi.error:
                 os._exit(1)
         ''')
-        assert_python_ok('-c', code, PYTHONMALLOC=self.PYTHONMALLOC)
+        assert_python_ok(
+            '-c', code,
+            PYTHONMALLOC=self.PYTHONMALLOC,
+            MALLOC_CONF="junk:false",
+        )
 
     def test_pyobject_null_is_freed(self):
         self.check_pyobject_is_freed('check_pyobject_null_is_freed')

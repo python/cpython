@@ -84,6 +84,8 @@ extern "C" {
 #define STORE_FAST                      125
 #define DELETE_FAST                     126
 #define JUMP_IF_NOT_EG_MATCH            127
+#define POP_JUMP_IF_NOT_NONE            128
+#define POP_JUMP_IF_NONE                129
 #define RAISE_VARARGS                   130
 #define MAKE_FUNCTION                   132
 #define BUILD_SLICE                     133
@@ -99,6 +101,7 @@ extern "C" {
 #define MAP_ADD                         147
 #define LOAD_CLASSDEREF                 148
 #define COPY_FREE_VARS                  149
+#define RESUME                          151
 #define MATCH_CLASS                     152
 #define FORMAT_VALUE                    155
 #define BUILD_CONST_KEY_MAP             156
@@ -162,10 +165,10 @@ extern "C" {
 #define STORE_ATTR_SLOT                  80
 #define STORE_ATTR_WITH_HINT             81
 #define LOAD_FAST__LOAD_FAST             87
-#define STORE_FAST__LOAD_FAST           128
-#define LOAD_FAST__LOAD_CONST           129
-#define LOAD_CONST__LOAD_FAST           131
-#define STORE_FAST__STORE_FAST          134
+#define STORE_FAST__LOAD_FAST           131
+#define LOAD_FAST__LOAD_CONST           134
+#define LOAD_CONST__LOAD_FAST           140
+#define STORE_FAST__STORE_FAST          141
 #define DO_TRACING                      255
 #ifdef NEED_OPCODE_JUMP_TABLES
 static uint32_t _PyOpcode_RelativeJump[8] = {
@@ -183,7 +186,7 @@ static uint32_t _PyOpcode_Jump[8] = {
     0U,
     536870912U,
     2316288000U,
-    0U,
+    3U,
     0U,
     0U,
     0U,

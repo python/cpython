@@ -10315,7 +10315,7 @@ then
 		# small for the default recursion limit. Increase the stack size
 		# to ensure that tests don't crash
     stack_size="1000000"  # 16 MB
-    if test "$with_ubsan" == "yes"
+    if test "$with_ubsan" = "yes"
     then
         # Undefined behavior sanitizer requires an even deeper stack
         stack_size="4000000"  # 64 MB
@@ -13850,9 +13850,9 @@ fi
 
 
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for epoll" >&5
-$as_echo_n "checking for epoll... " >&6; }
-if ${ac_cv_func_epoll+:} false; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for epoll_create" >&5
+$as_echo_n "checking for epoll_create... " >&6; }
+if ${ac_cv_func_epoll_create+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -13861,22 +13861,22 @@ else
 int
 main ()
 {
-void *x=epoll
+void *x=epoll_create
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-  ac_cv_func_epoll=yes
+  ac_cv_func_epoll_create=yes
 else
-  ac_cv_func_epoll=no
+  ac_cv_func_epoll_create=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_epoll" >&5
-$as_echo "$ac_cv_func_epoll" >&6; }
-  if test "x$ac_cv_func_epoll" = xyes; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_epoll_create" >&5
+$as_echo "$ac_cv_func_epoll_create" >&6; }
+  if test "x$ac_cv_func_epoll_create" = xyes; then :
 
 $as_echo "#define HAVE_EPOLL 1" >>confdefs.h
 

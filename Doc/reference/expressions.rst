@@ -427,9 +427,9 @@ Yield expressions
 The yield expression is used when defining a :term:`generator` function
 or an :term:`asynchronous generator` function and
 thus can only be used in the body of a function definition.  Using a yield
-expression in a function's body causes that function to be a generator,
+expression in a function's body causes that function to be a generator function,
 and using it in an :keyword:`async def` function's body causes that
-coroutine function to be an asynchronous generator. For example::
+coroutine function to be an asynchronous generator function. For example::
 
     def gen():  # defines a generator function
         yield 123
