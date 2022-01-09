@@ -771,7 +771,7 @@ def create_default_context(purpose=Purpose.SERVER_AUTH, *, cafile=None,
     # OpenSSL 1.1.1 keylog file
     if hasattr(context, 'keylog_filename'):
         keylogfile = os.environ.get('SSLKEYLOGFILE')
-        if keylogfile and not sys.flags.ignore_environment:
+        if keylogfile and not sys.flags.ignore_environment and os.path.isfile(keylogfile):
             context.keylog_filename = keylogfile
     return context
 
