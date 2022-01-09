@@ -16,15 +16,13 @@ Syntax Errors
 
 Syntax errors, also known as parsing errors, are perhaps the most common kind of
 complaint you get while you are still learning Python::
-   
-   >>> greeting = 'Hello World'
-   >>> print greeting
+   >>> print('Are you suggesting that coconuts migrate?)
      File "<stdin>", line 1
-       print greeting
-       ^^^^^^^^^^^^^^
-   SyntaxError: Missing parentheses in call to 'print'. Did you mean print(greeting)?
-
-The parser repeats the offending line and displays 'arrows' pointing at
+       print('Are you suggesting that coconuts migrate?)
+          ^
+   SyntaxError: unterminated string literal (detected at line 1)
+   
+The parser repeats the offending line and displays a little 'arrow' pointing at
 the earliest point in the line where the error was detected.  The error is
 caused by (or at least detected at) the token *preceding* the arrow: in the
 example, the error is detected at the function :func:`print`, since a colon
