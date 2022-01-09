@@ -87,8 +87,7 @@ Used in:  Py_SAFE_DOWNCAST
 
 /* PYLONG_BITS_IN_DIGIT describes the number of bits per "digit" (limb) in the
  * PyLongObject implementation (longintrepr.h). It's currently either 30 or 15,
- * defaulting to 30. The 15-bit PyLong digit option may be removed in the
- * future.
+ * defaulting to 30. The 15-bit digit option may be removed in the future.
  */
 #ifndef PYLONG_BITS_IN_DIGIT
 #define PYLONG_BITS_IN_DIGIT 30
