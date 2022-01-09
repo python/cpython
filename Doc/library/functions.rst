@@ -248,7 +248,7 @@ are always available.  They are listed here in alphabetical order.
 
       class C:
           @classmethod
-          def f(cls, arg1, arg2, ...): ...
+          def f(cls, arg1, arg2): ...
 
    The ``@classmethod`` form is a function :term:`decorator` -- see
    :ref:`function` for details.
