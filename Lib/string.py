@@ -141,6 +141,16 @@ class Template:
                              self.pattern)
         return self.pattern.sub(convert, self.template)
 
+    def get_identifiers(self, *, raise_on_invalid=True):
+        ids = []
+        for mo in self.pattern.finditer(self.template):
+            named = mo.group('named') or mo.group('braced')
+            if named is not None and named not in ids:
+                ids.append(named)
+            elif mo.group('invalid') is not None and raise_on_invalid:
+                self._invalid(mo)
+        return ids
+
 # Initialize Template.pattern.  __init_subclass__() is automatically called
 # only for subclasses, not for the Template class itself.
 Template.__init_subclass__()

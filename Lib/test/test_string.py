@@ -475,6 +475,27 @@ class TestTemplate(unittest.TestCase):
         self.assertEqual(s.substitute(dict(who='tim', what='ham')),
                          'tim likes to eat a bag of ham worth $100')
 
+    def test_get_identifiers(self):
+        eq = self.assertEqual
+        raises = self.assertRaises
+        s = Template('$who likes to eat a bag of ${what} worth $$100')
+        ids = s.get_identifiers()
+        eq(ids, ['who', 'what'])
+
+        # repeated identifiers only included once
+        s = Template('$who likes to eat a bag of ${what} worth $$100; ${who} likes to eat a bag of $what worth $$100')
+        ids = s.get_identifiers()
+        eq(ids, ['who', 'what'])
+
+        # invalid identifiers are raised
+        s = Template('$who likes to eat a bag of ${what} worth $100')
+        raises(ValueError, s.get_identifiers)
+
+        # invalid identifiers are ignored with raise_on_invalid=False
+        s = Template('$who likes to eat a bag of ${what} worth $100')
+        ids = s.get_identifiers(raise_on_invalid=False)
+        eq(ids, ['who', 'what'])
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,0 +1,1 @@
+Add get_identifiers() method to string.Template.
