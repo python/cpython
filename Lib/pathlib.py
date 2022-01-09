@@ -314,14 +314,15 @@ class _Selector:
         path_cls = type(parent_path)
         is_dir = path_cls.is_dir
         exists = path_cls.exists
+        scandir = path_cls._scandir
         if not is_dir(parent_path):
             return iter([])
-        return self._select_from(parent_path, is_dir, exists)
+        return self._select_from(parent_path, is_dir, exists, scandir)
 
 
 class _TerminatingSelector:
 
-    def _select_from(self, parent_path, is_dir, exists):
+    def _select_from(self, parent_path, is_dir, exists, scandir):
         yield parent_path
 
 
@@ -331,11 +332,11 @@ class _PreciseSelector(_Selector):
         self.name = name
         _Selector.__init__(self, child_parts, flavour)
 
-    def _select_from(self, parent_path, is_dir, exists):
+    def _select_from(self, parent_path, is_dir, exists, scandir):
         try:
             path = parent_path._make_child_relpath(self.name)
             if (is_dir if self.dironly else exists)(path):
-                for p in self.successor._select_from(path, is_dir, exists):
+                for p in self.successor._select_from(path, is_dir, exists, scandir):
                     yield p
         except PermissionError:
             return
@@ -347,9 +348,9 @@ class _WildcardSelector(_Selector):
         self.match = flavour.compile_pattern(pat)
         _Selector.__init__(self, child_parts, flavour)
 
-    def _select_from(self, parent_path, is_dir, exists):
+    def _select_from(self, parent_path, is_dir, exists, scandir):
         try:
-            with parent_path._scandir() as scandir_it:
+            with scandir(parent_path) as scandir_it:
                 entries = list(scandir_it)
             for entry in entries:
                 if self.dironly:
@@ -366,7 +367,7 @@ class _WildcardSelector(_Selector):
                 name = entry.name
                 if self.match(name):
                     path = parent_path._make_child_relpath(name)
-                    for p in self.successor._select_from(path, is_dir, exists):
+                    for p in self.successor._select_from(path, is_dir, exists, scandir):
                         yield p
         except PermissionError:
             return
@@ -377,10 +378,10 @@ class _RecursiveWildcardSelector(_Selector):
     def __init__(self, pat, child_parts, flavour):
         _Selector.__init__(self, child_parts, flavour)
 
-    def _iterate_directories(self, parent_path, is_dir):
+    def _iterate_directories(self, parent_path, is_dir, scandir):
         yield parent_path
         try:
-            with parent_path._scandir() as scandir_it:
+            with scandir(parent_path) as scandir_it:
                 entries = list(scandir_it)
             for entry in entries:
                 entry_is_dir = False
@@ -391,18 +392,18 @@ class _RecursiveWildcardSelector(_Selector):
                         raise
                 if entry_is_dir and not entry.is_symlink():
                     path = parent_path._make_child_relpath(entry.name)
-                    for p in self._iterate_directories(path, is_dir):
+                    for p in self._iterate_directories(path, is_dir, scandir):
                         yield p
         except PermissionError:
             return
 
-    def _select_from(self, parent_path, is_dir, exists):
+    def _select_from(self, parent_path, is_dir, exists, scandir):
         try:
             yielded = set()
             try:
                 successor_select = self.successor._select_from
-                for starting_point in self._iterate_directories(parent_path, is_dir):
-                    for p in successor_select(starting_point, is_dir, exists):
+                for starting_point in self._iterate_directories(parent_path, is_dir, scandir):
+                    for p in successor_select(starting_point, is_dir, exists, scandir):
                         if p not in yielded:
                             yield p
                             yielded.add(p)
