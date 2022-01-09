@@ -100,6 +100,21 @@ OMIT_SUBDIRS = (
     "unittest/test/",
 )
 
+SKIP_COMPILE = (
+    "test/bad_coding.py",
+    "test/bad_coding2.py",
+    "test/badsyntax_3131.py",
+    "test/badsyntax_future3.py",
+    "test/badsyntax_future4.py",
+    "test/badsyntax_future5.py",
+    "test/badsyntax_future6.py",
+    "test/badsyntax_future7.py",
+    "test/badsyntax_future8.py",
+    "test/badsyntax_future9.py",
+    "test/badsyntax_future10.py",
+    "test/badsyntax_pep3120.py",
+)
+
 
 OMIT_ABSOLUTE = {SRCDIR_LIB / name for name in OMIT_FILES}
 OMIT_SUBDIRS_ABSOLUTE = tuple(str(SRCDIR_LIB / name) for name in OMIT_SUBDIRS)
@@ -124,7 +139,9 @@ def create_stdlib_zip(
                 continue
             if entry in OMIT_ABSOLUTE:
                 continue
-            if entry.name.endswith(".py") or entry.is_dir():
+            if entry in SKIP_COMPILE:
+                pzf.write(entry)
+            elif entry.name.endswith(".py") or entry.is_dir():
                 # writepy() writes .pyc files (bytecode).
                 pzf.writepy(entry, filterfunc=filterfunc)
         for entry in sysconfig_data:
