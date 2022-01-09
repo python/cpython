@@ -1022,6 +1022,16 @@ class TestEnum(unittest.TestCase):
             class Huh(MyStr, MyInt, Enum):
                 One = 1
 
+    def test_value_auto_assign(self):
+        class Some(Enum):
+            def __new__(cls, val):
+                return object.__new__(cls)
+            x = 1
+            y = 2
+
+        self.assertEqual(Some.x.value, 1)
+        self.assertEqual(Some.y.value, 2)
+
     def test_hash(self):
         Season = self.Season
         dates = {}
@@ -3414,6 +3424,19 @@ class TestFlag(unittest.TestCase):
         self.assertFalse(NeverEnum.__dict__.get('_test1', False))
         self.assertFalse(NeverEnum.__dict__.get('_test2', False))
 
+    def test_default_missing(self):
+        with self.assertRaisesRegex(
+            ValueError,
+            "'RED' is not a valid TestFlag.Color",
+        ) as ctx:
+            self.Color('RED')
+        self.assertIs(ctx.exception.__context__, None)
+
+        P = Flag('P', 'X Y')
+        with self.assertRaisesRegex(ValueError, "'X' is not a valid P") as ctx:
+            P('X')
+        self.assertIs(ctx.exception.__context__, None)
+
 
 class TestIntFlag(unittest.TestCase):
     """Tests of the IntFlags."""
@@ -3975,6 +3998,19 @@ class TestIntFlag(unittest.TestCase):
                 'at least one thread failed while creating composite members')
         self.assertEqual(256, len(seen), 'too many composite members created')
 
+    def test_default_missing(self):
+        with self.assertRaisesRegex(
+            ValueError,
+            "'RED' is not a valid TestIntFlag.Color",
+        ) as ctx:
+            self.Color('RED')
+        self.assertIs(ctx.exception.__context__, None)
+
+        P = IntFlag('P', 'X Y')
+        with self.assertRaisesRegex(ValueError, "'X' is not a valid P") as ctx:
+            P('X')
+        self.assertIs(ctx.exception.__context__, None)
+
 
 class TestEmptyAndNonLatinStrings(unittest.TestCase):
 
@@ -4404,6 +4440,15 @@ CONVERT_STRING_TEST_NAME_A = 5  # This one should sort first.
 CONVERT_STRING_TEST_NAME_E = 5
 CONVERT_STRING_TEST_NAME_F = 5
 
+# We also need values that cannot be compared:
+UNCOMPARABLE_A = 5
+UNCOMPARABLE_C = (9, 1)  # naming order is broken on purpose
+UNCOMPARABLE_B = 'value'
+
+COMPLEX_C = 1j
+COMPLEX_A = 2j
+COMPLEX_B = 3j
+
 class TestIntEnumConvert(unittest.TestCase):
     def setUp(self):
         # Reset the module-level test variables to their original integer
@@ -4440,6 +4485,32 @@ class TestIntEnumConvert(unittest.TestCase):
                           if name[0:2] not in ('CO', '__')
                           and name not in dir(IntEnum)],
                          [], msg='Names other than CONVERT_TEST_* found.')
+
+    def test_convert_uncomparable(self):
+        uncomp = enum.Enum._convert_(
+            'Uncomparable',
+            MODULE,
+            filter=lambda x: x.startswith('UNCOMPARABLE_'),
+        )
+
+        # Should be ordered by `name` only:
+        self.assertEqual(
+            list(uncomp),
+            [uncomp.UNCOMPARABLE_A, uncomp.UNCOMPARABLE_B, uncomp.UNCOMPARABLE_C],
+        )
+
+    def test_convert_complex(self):
+        uncomp = enum.Enum._convert_(
+            'Uncomparable',
+            MODULE,
+            filter=lambda x: x.startswith('COMPLEX_'),
+        )
+
+        # Should be ordered by `name` only:
+        self.assertEqual(
+            list(uncomp),
+            [uncomp.COMPLEX_A, uncomp.COMPLEX_B, uncomp.COMPLEX_C],
+        )
 
     @unittest.skipUnless(python_version == (3, 8),
                          '_convert was deprecated in 3.8')

@@ -293,7 +293,7 @@
 /* Define to 1 if you have the <endian.h> header file. */
 #undef HAVE_ENDIAN_H
 
-/* Define if you have the 'epoll' function. */
+/* Define if you have the 'epoll_create' function. */
 #undef HAVE_EPOLL
 
 /* Define if you have the 'epoll_create1' function. */
@@ -1495,6 +1495,9 @@
 /* Define hash algorithm for str, bytes and memoryview. SipHash24: 1, FNV: 2,
    SipHash13: 3, externally defined: 0 */
 #undef Py_HASH_ALGORITHM
+
+/* Define if you want to enable internal statistics gathering. */
+#undef Py_STATS
 
 /* Define if you want to enable tracing references for debugging purpose */
 #undef Py_TRACE_REFS

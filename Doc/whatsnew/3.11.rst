@@ -65,6 +65,8 @@ Summary -- Release highlights
 
 .. PEP-sized items next.
 
+PEP-654: Exception Groups and ``except*``.
+(Contributed by Irit Katriel in :issue:`45292`.)
 
 New Features
 ============
@@ -193,6 +195,11 @@ Other CPython Implementation Changes
   reflected in the re-raised exception.
   (Contributed by Irit Katriel in :issue:`45711`.)
 
+* The interpreter state's representation of handled exceptions (a.k.a exc_info, or
+  _PyErr_StackItem) now has only the ``exc_value`` field, ``exc_type`` and ``exc_traceback``
+  have been removed as their values can be derived from ``exc_value``.
+  (Contributed by Irit Katriel in :issue:`45711`.)
+
 New Modules
 ===========
 
@@ -284,6 +291,10 @@ sqlite3
   experience.
   (Contributed by Erlend E. Aasland in :issue:`45828`.)
 
+* Fetch across rollback no longer raises :exc:`~sqlite3.InterfaceError`.
+  Instead we leave it to the SQLite library to handle these cases.
+  (Contributed by Erlend E. Aasland in :issue:`44092`.)
+
 
 sys
 ---
@@ -371,11 +382,13 @@ CPython bytecode changes
 * Replaced all numeric ``BINARY_*`` and ``INPLACE_*`` instructions with a single
   :opcode:`BINARY_OP` implementation.
 
-* Added a new :opcode:`CALL_METHOD_KW` opcode.  Calls a method in a similar
-  fashion as :opcode:`CALL_METHOD`, but also supports keyword arguments.  Works
-  in tandem with :opcode:`LOAD_METHOD`.
+* Replaced the three call instructions: :opcode:`CALL_FUNCTION`,
+  :opcode:`CALL_FUNCTION_KW` and :opcode:`CALL_METHOD` with
+  :opcode:`CALL_NO_KW`, :opcode:`CALL_KW` and :opcode:`PRECALL_METHOD`.
+  This decouples the argument shifting for methods from the handling of
+  keyword arguments and allows better specialization of calls.
 
-* Removed ``COPY_DICT_WITHOUT_KEYS``.
+* Removed ``COPY_DICT_WITHOUT_KEYS`` and ``GEN_START``.
 
 * :opcode:`MATCH_CLASS` and :opcode:`MATCH_KEYS` no longer push an additional
   boolean value indicating whether the match succeeded or failed. Instead, they
@@ -384,6 +397,9 @@ CPython bytecode changes
 
 * Added :opcode:`COPY`, which pushes the *i*-th item to the top of the stack.
   The item is not removed from its original location.
+
+* Add :opcode:`POP_JUMP_IF_NOT_NONE` and :opcode:`POP_JUMP_IF_NONE` opcodes to
+  speed up conditional jumps.
 
 * :opcode:`JUMP_IF_NOT_EXC_MATCH` no longer pops the active exception.
 
@@ -519,7 +535,7 @@ Removed
     use the :func:`inspect.signature` function and :class:`Signature` object
     directly.
 
-  * the undocumented ``Signature.from_callable`` and ``Signature.from_function``
+  * the undocumented ``Signature.from_builtin`` and ``Signature.from_function``
     functions, deprecated since Python 3.5; use the
     :meth:`Signature.from_callable() <inspect.Signature.from_callable>` method
     instead.
