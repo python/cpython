@@ -1,0 +1,1 @@
+Use ``.values()`` over ``.items()`` with unused key variable in :mod:`asyncio.windows_events`.
