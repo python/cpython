@@ -1720,10 +1720,11 @@ completes the proof sketch.
 
 /*
     The _approximate_isqrt_tab table provides approximate square roots for
-    16-bit integers. It can be verified by direct computation that for each n
-    in the range 2**14 <= n < 2**16, the value a =
-    _approximate_isqrt_tab[(n >> 8) - 64] is an 8-bit approximate square root
-    of n, satisfying (a - 1)**2 < n < (a + 1)**2.
+    16-bit integers. For any n in the range 2**14 <= n < 2**16, the value
+
+        a = _approximate_isqrt_tab[(n >> 8) - 64]
+
+    is an approximate square root of n, satisfying (a - 1)**2 < n < (a + 1)**2.
 
     The table was computed in Python using the expression:
 
