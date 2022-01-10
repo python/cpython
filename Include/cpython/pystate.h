@@ -179,13 +179,6 @@ struct _ts {
     PyObject **datastack_top;
     PyObject **datastack_limit;
     /* XXX signal handlers should also be here */
-
-    struct {
-        // See _PyRuntimeState._preallocated for an explanation.
-        // XXX Move exc_state and root_cframe down here.
-        // XXX Allocate the initial datastack_chunk here..
-        bool _dummy;  // We'll remove this as soon as we pre-allocate something.
-    } _preallocated;
 };
 
 
