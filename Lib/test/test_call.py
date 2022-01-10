@@ -170,6 +170,7 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         self.assertRaisesRegex(TypeError, msg, [].count, x=2, y=2)
 
 
+
 class TestCallingConventions(unittest.TestCase):
     """Test calling using various C calling conventions (METH_*) from Python
 
