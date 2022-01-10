@@ -23,7 +23,7 @@ jobs:
         days-before-stale: 30
         days-before-close: -1
 
-    - name: "Check PR's with 'CLA not signed' label"
+    - name: "Check PRs with 'CLA not signed' label"
       uses: actions/stale@v4
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
