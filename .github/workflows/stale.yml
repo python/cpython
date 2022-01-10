@@ -13,7 +13,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/stale@v4
+    - name: "Check PR's with 'CLA signed' label"
+      uses: actions/stale@v4
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         exempt-pr-labels: 'CLA not signed'
@@ -22,7 +23,8 @@ jobs:
         days-before-stale: 30
         days-before-close: -1
 
-    - uses: actions/stale@v4
+    - name: "Check PR's with 'CLA not signed' label"
+      uses: actions/stale@v4
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         only-pr-labels: 'CLA not signed'
