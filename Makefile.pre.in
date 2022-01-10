@@ -848,11 +848,11 @@ python.html: Programs/python.o $(LIBRARY_DEPS) $(WASM_STDLIB)
 	    -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 \
 		--preload-file $(WASM_ASSETS_DIR)
 
-python.js: Programs/python.o $(LIBRARY_DEPS) $(WASM_STDLIB)
+python.js: Programs/python.o $(LIBRARY_DEPS)
 	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/python.o \
 	    $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS) \
-	    -s ASSERTIONS=1 -s NODERAWFS=1 -s ALLOW_MEMORY_GROWTH=1 \
-		-s EXIT_RUNTIME=1
+	    -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 \
+	    -s NODERAWFS=1 -s EXIT_RUNTIME=1
 
 ##########################################################################
 # Build static libmpdec.a
