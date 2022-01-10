@@ -36,19 +36,15 @@ extern "C" {
 
 /* bytes objects */
 
-#define _PyBytes_EMPTY_INIT \
+#define _PyBytes_SIMPLE_INIT(CH, LEN) \
     { \
-        _PyVarObject_IMMORTAL_INIT(&PyBytes_Type, 0), \
+        _PyVarObject_IMMORTAL_INIT(&PyBytes_Type, LEN), \
         .ob_shash = -1, \
-        .ob_sval[0] = '\0', \
+        .ob_sval = { CH }, \
     }
 #define _PyBytes_CHAR_INIT(CH) \
     { \
-        { \
-            _PyVarObject_IMMORTAL_INIT(&PyBytes_Type, 1), \
-            .ob_shash = -1, \
-            .ob_sval = { CH }, \
-        }, \
+        _PyBytes_SIMPLE_INIT(CH, 1) \
     }
 
 
@@ -348,7 +344,7 @@ struct _Py_global_objects {
             _PyLong_DIGIT_INIT(256), \
         }, \
         \
-        .bytes_empty = _PyBytes_EMPTY_INIT, \
+        .bytes_empty = _PyBytes_SIMPLE_INIT(0, 0), \
         .bytes_characters = { \
             _PyBytes_CHAR_INIT(0), \
             _PyBytes_CHAR_INIT(1), \
