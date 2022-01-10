@@ -395,7 +395,7 @@ always available.
    If no exception is being handled anywhere on the stack, ``None`` is
    returned.
 
-   .. versionadded: 3.11
+   .. versionadded:: 3.11
 
 
 .. function:: exc_info()
