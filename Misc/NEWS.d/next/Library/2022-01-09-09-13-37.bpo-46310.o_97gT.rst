@@ -1,1 +1,0 @@
-Use :meth:`dict.values` over :meth:`dict.items` with unused key variable in asyncio.windows_events.
