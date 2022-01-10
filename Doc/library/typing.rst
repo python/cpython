@@ -2056,9 +2056,9 @@ Introspection helpers
 
    .. versionchanged:: 3.9
       Added ``include_extras`` parameter as part of :pep:`593`.
-   
+
    .. versionchanged:: 3.11
-      ``Optional`` annotation is not added implicitly anymore 
+      ``Optional`` annotation is not added implicitly anymore
       when ``None`` default is used for a function argument.
 
 .. function:: get_args(tp)
