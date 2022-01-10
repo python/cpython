@@ -141,14 +141,33 @@ class Template:
                              self.pattern)
         return self.pattern.sub(convert, self.template)
 
-    def get_identifiers(self, *, raise_on_invalid=True):
+    def is_valid(self):
+        for mo in self.pattern.finditer(self.template):
+            if mo.group('invalid') is not None:
+                return False
+            if (mo.group('named') is None
+                and mo.group('braced') is None
+                and mo.group('escaped') is None):
+                # If all the groups are None, there must be
+                # another group we're not expecting
+                raise ValueError('Unrecognized named group in pattern',
+                    self.pattern)
+        return True
+
+    def get_identifiers(self):
         ids = []
         for mo in self.pattern.finditer(self.template):
             named = mo.group('named') or mo.group('braced')
             if named is not None and named not in ids:
+                # add a named group only the first time it appears
                 ids.append(named)
-            elif mo.group('invalid') is not None and raise_on_invalid:
-                self._invalid(mo)
+            elif (named is None
+                and mo.group('invalid') is None
+                and mo.group('escaped') is None):
+                # If all the groups are None, there must be
+                # another group we're not expecting
+                raise ValueError('Unrecognized named group in pattern',
+                    self.pattern)
         return ids
 
 # Initialize Template.pattern.  __init_subclass__() is automatically called

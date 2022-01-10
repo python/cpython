@@ -783,6 +783,18 @@ these rules.  The methods of :class:`Template` are:
       templates containing dangling delimiters, unmatched braces, or
       placeholders that are not valid Python identifiers.
 
+
+   .. method:: is_valid()
+
+      Returns false if the template has invalid placeholders that will cause
+      :meth:`substitute` to raise :exc:`ValueError`.
+
+
+   .. method:: get_identifiers()
+
+      Returns a list of the valid identifiers in the template, in the order
+      they first appear, ignoring any invalid identifiers.
+
    :class:`Template` instances also provide one public data attribute:
 
    .. attribute:: template
