@@ -819,17 +819,20 @@ Some rules:
 1. When subclassing :class:`Enum`, mix-in types must appear before
    :class:`Enum` itself in the sequence of bases, as in the :class:`IntEnum`
    example above.
-2. While :class:`Enum` can have members of any type, once you mix in an
+2. Mix-in types must be subclassable. For example,
+   :class:`bool` and :class:`range` are not subclassable
+   and will throw an error during Enum creation if used as the mix-in type.
+3. While :class:`Enum` can have members of any type, once you mix in an
    additional type, all the members must have values of that type, e.g.
    :class:`int` above.  This restriction does not apply to mix-ins which only
    add methods and don't specify another type.
-3. When another data type is mixed in, the :attr:`value` attribute is *not the
+4. When another data type is mixed in, the :attr:`value` attribute is *not the
    same* as the enum member itself, although it is equivalent and will compare
    equal.
-4. %-style formatting:  `%s` and `%r` call the :class:`Enum` class's
+5. %-style formatting:  `%s` and `%r` call the :class:`Enum` class's
    :meth:`__str__` and :meth:`__repr__` respectively; other codes (such as
    `%i` or `%h` for IntEnum) treat the enum member as its mixed-in type.
-5. :ref:`Formatted string literals <f-strings>`, :meth:`str.format`,
+6. :ref:`Formatted string literals <f-strings>`, :meth:`str.format`,
    and :func:`format` will use the mixed-in type's :meth:`__format__`
    unless :meth:`__str__` or :meth:`__format__` is overridden in the subclass,
    in which case the overridden methods or :class:`Enum` methods will be used.
