@@ -381,14 +381,14 @@ always available.
 
 .. function:: exception()
 
-   This function returns the exception that is currently being handled.  This
-   exception is specific both to the current thread and to the current stack
-   frame.  If the current stack frame is not handling an exception, the
-   exception is taken from the calling stack frame, or its caller, and so on
-   until a stack frame is found that is handling an exception.  Here,
-   "handling an exception" is defined as "executing an except clause."
-   For any stack frame, only the exception being currently handled is
-   accessible.
+   This function returns the exception instance that is currently being
+   handled.  This exception is specific both to the current thread and
+   to the current stack frame.  If the current stack frame is not handling
+   an exception, the exception is taken from the calling stack frame, or its
+   caller, and so on until a stack frame is found that is handling an
+   exception.  Here, "handling an exception" is defined as "executing an
+   except clause." For any stack frame, only the exception being currently
+   handled is accessible.
 
    .. index:: object: traceback
 
