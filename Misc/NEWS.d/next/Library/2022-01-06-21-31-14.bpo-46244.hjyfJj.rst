@@ -1,0 +1,2 @@
+Removed ``__slots__`` from :class:`typing.ParamSpec` and :class:`typing.TypeVar`.
+They served no purpose. Patch by Arie Bovenberg.
