@@ -2914,12 +2914,11 @@ compiler_lambda(struct compiler *c, expr_ty e)
     if (funcflags == -1) {
         return 0;
     }
-    ADDOP_I(c, RESUME, 0);
 
     if (!compiler_enter_scope(c, name, COMPILER_SCOPE_LAMBDA,
-                              (void *)e, e->lineno))
+                              (void *)e, e->lineno)) {
         return 0;
-
+    }
     ADDOP_I(c, RESUME, 0);
     /* Make None the first constant, so the lambda can't have a
        docstring. */
