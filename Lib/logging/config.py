@@ -30,7 +30,6 @@ import logging
 import logging.handlers
 import re
 import struct
-import sys
 import threading
 import traceback
 
