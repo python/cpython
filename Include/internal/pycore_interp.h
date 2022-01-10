@@ -183,7 +183,9 @@ struct _is {
     { \
         ._static = 1, \
         ._preallocated = { \
-            .tstate = _PyThreadState_INIT, \
+            .tstate = { \
+                ._static = 1, \
+            } \
         }, \
     }
 

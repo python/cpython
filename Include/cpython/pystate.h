@@ -188,13 +188,6 @@ struct _ts {
     } _preallocated;
 };
 
-#ifdef Py_BUILD_CORE
-#define _PyThreadState_INIT \
-    { \
-        ._static = 1, \
-    }
-#endif
-
 
 /* other API */
 
