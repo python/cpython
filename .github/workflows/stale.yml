@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: "Check PR's with 'CLA signed' label"
+    - name: "Check PRs with 'CLA signed' label"
       uses: actions/stale@v4
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
