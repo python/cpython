@@ -4804,8 +4804,9 @@ check_eval_breaker:
         TARGET(CALL_NO_KW_BUILTIN_O) {
             assert(cframe.use_tracing == 0);
             /* Builtin METH_O functions */
-
-            PyObject *callable = SECOND();
+            assert(call_shape.kwnames == NULL);
+            DEOPT_IF(call_shape.positional_args != 1, CALL);
+            PyObject *callable = call_shape.callable;
             DEOPT_IF(!PyCFunction_CheckExact(callable), CALL);
             DEOPT_IF(PyCFunction_GET_FLAGS(callable) != METH_O, CALL);
             STAT_INC(CALL, hit);
@@ -4816,14 +4817,14 @@ check_eval_breaker:
             if (_Py_EnterRecursiveCall(tstate, " while calling a Python object")) {
                 goto error;
             }
-            PyObject *arg = POP();
+            PyObject *arg = TOP();
             PyObject *res = cfunc(PyCFunction_GET_SELF(callable), arg);
             _Py_LeaveRecursiveCall(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 
-            /* Clear the stack of the function object. */
             Py_DECREF(arg);
             Py_DECREF(callable);
+            STACK_SHRINK(call_shape.postcall_shrink);
             SET_TOP(res);
             if (res == NULL) {
                 goto error;
@@ -4836,27 +4837,29 @@ check_eval_breaker:
             /* Builtin METH_FASTCALL functions, without keywords */
             SpecializedCacheEntry *caches = GET_CACHE();
             _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
-            int nargs = cache0->original_oparg;
-            PyObject **pfunc = &PEEK(nargs + 1);
-            PyObject *callable = *pfunc;
+            assert(cache0->original_oparg == 0);
+            PyObject *callable = call_shape.callable;
+            assert(call_shape.kwnames == NULL);
+            int nargs = call_shape.positional_args;
             DEOPT_IF(!PyCFunction_CheckExact(callable), CALL);
             DEOPT_IF(PyCFunction_GET_FLAGS(callable) != METH_FASTCALL,
                 CALL);
             STAT_INC(CALL, hit);
 
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
+            STACK_SHRINK(nargs);
             /* res = func(self, args, nargs) */
             PyObject *res = ((_PyCFunctionFast)(void(*)(void))cfunc)(
                 PyCFunction_GET_SELF(callable),
-                &PEEK(nargs),
+                stack_pointer,
                 nargs);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 
-            /* Clear the stack of the function object. */
-            while (stack_pointer > pfunc) {
-                PyObject *x = POP();
-                Py_DECREF(x);
+            /* Free the arguments. */
+            for (int i = 0; i < nargs; i++) {
+                Py_DECREF(stack_pointer[i]);
             }
+            STACK_SHRINK(call_shape.postcall_shrink);
             PUSH(res);
             if (res == NULL) {
                 /* Not deopting because this doesn't mean our optimization was
@@ -4871,26 +4874,29 @@ check_eval_breaker:
 
         TARGET(CALL_NO_KW_LEN) {
             assert(cframe.use_tracing == 0);
+            assert(call_shape.kwnames == NULL);
             /* len(o) */
             SpecializedCacheEntry *caches = GET_CACHE();
-            assert(caches[0].adaptive.original_oparg == 1);
+            DEOPT_IF(call_shape.positional_args != 1, CALL);
+            assert(caches[0].adaptive.original_oparg == 0);
             _PyObjectCache *cache1 = &caches[-1].obj;
 
-            PyObject *callable = SECOND();
+            PyObject *callable = call_shape.callable;
             DEOPT_IF(callable != cache1->obj, CALL);
             STAT_INC(CALL, hit);
 
-            Py_ssize_t len_i = PyObject_Length(TOP());
+            PyObject *arg = TOP();
+            Py_ssize_t len_i = PyObject_Length(arg);
             if (len_i < 0) {
                 goto error;
             }
             PyObject *res = PyLong_FromSsize_t(len_i);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 
-            /* Clear the stack of the function object. */
-            Py_DECREF(POP());
-            Py_DECREF(callable);
+            STACK_SHRINK(call_shape.postcall_shrink);
             SET_TOP(res);
+            Py_DECREF(callable);
+            Py_DECREF(arg);
             if (res == NULL) {
                 goto error;
             }
@@ -4901,25 +4907,27 @@ check_eval_breaker:
             assert(cframe.use_tracing == 0);
             /* isinstance(o, o2) */
             SpecializedCacheEntry *caches = GET_CACHE();
-            assert(caches[0].adaptive.original_oparg == 2);
+            assert(caches[0].adaptive.original_oparg == 0);
+            DEOPT_IF(call_shape.positional_args != 2, CALL);
             _PyObjectCache *cache1 = &caches[-1].obj;
 
-            PyObject *callable = THIRD();
-            DEOPT_IF(callable != cache1->obj, CALL);
+            DEOPT_IF(call_shape.callable != cache1->obj, CALL);
             STAT_INC(CALL, hit);
 
-            int retval = PyObject_IsInstance(SECOND(), TOP());
+            PyObject *cls = POP();
+            PyObject *inst = TOP();
+            int retval = PyObject_IsInstance(inst, cls);
             if (retval < 0) {
                 goto error;
             }
             PyObject *res = PyBool_FromLong(retval);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 
-            /* Clear the stack of the function object. */
-            Py_DECREF(POP());
-            Py_DECREF(POP());
-            Py_DECREF(callable);
+            STACK_SHRINK(call_shape.postcall_shrink);
             SET_TOP(res);
+            Py_DECREF(inst);
+            Py_DECREF(cls);
+            Py_DECREF(call_shape.callable);
             if (res == NULL) {
                 goto error;
             }

@@ -1487,8 +1487,8 @@ specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
     SpecializedCacheEntry *cache, PyObject *builtins)
 {
     _PyObjectCache *cache1 = &cache[-1].obj;
-    if (_Py_OPCODE(instr[-1]) == PRECALL_METHOD) {
-        SPECIALIZATION_FAIL(CALL_NO_KW, SPEC_FAIL_C_METHOD_CALL);
+    if (_Py_OPCODE(instr[-1]) == KW_NAMES) {
+        SPECIALIZATION_FAIL(CALL_NO_KW, SPEC_FAIL_COMPLEX_PARAMETERS);
         return -1;
     }
     if (PyCFunction_GET_FUNCTION(callable) == NULL) {
@@ -1567,26 +1567,27 @@ _Py_Specialize_CallNoKw(
     int nargs, SpecializedCacheEntry *cache,
     PyObject *builtins)
 {
-    cache_backoff(&cache->adaptive);
-    return 0;
     int fail;
     if (PyCFunction_CheckExact(callable)) {
         fail = specialize_c_call(callable, instr, nargs, cache, builtins);
     }
-    else if (PyFunction_Check(callable)) {
-        fail = specialize_py_call((PyFunctionObject *)callable, instr, nargs, cache);
-    }
-    else if (PyType_Check(callable)) {
-        fail = specialize_class_call(callable, instr, nargs, cache);
-    }
-    else if (Py_IS_TYPE(callable, &PyMethodDescr_Type)) {
-        fail = specialize_method_descriptor(
-            (PyMethodDescrObject *)callable, instr, nargs, cache);
-    }
     else {
-        SPECIALIZATION_FAIL(CALL_NO_KW, call_fail_kind(callable));
         fail = -1;
     }
+//     else if (PyFunction_Check(callable)) {
+//         fail = specialize_py_call((PyFunctionObject *)callable, instr, nargs, cache);
+//     }
+//     else if (PyType_Check(callable)) {
+//         fail = specialize_class_call(callable, instr, nargs, cache);
+//     }
+//     else if (Py_IS_TYPE(callable, &PyMethodDescr_Type)) {
+//         fail = specialize_method_descriptor(
+//             (PyMethodDescrObject *)callable, instr, nargs, cache);
+//     }
+//     else {
+//         SPECIALIZATION_FAIL(CALL_NO_KW, call_fail_kind(callable));
+//         fail = -1;
+//     }
     _PyAdaptiveEntry *cache0 = &cache->adaptive;
     if (fail) {
         STAT_INC(CALL_NO_KW, failure);
