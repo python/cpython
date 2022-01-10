@@ -1388,6 +1388,21 @@ class TraceTestCase(unittest.TestCase):
              (19, 'line'),
              (19, 'return')])
 
+    def test_notrace_lambda(self):
+        #Regression test for issue 46314
+
+        def func():
+            1
+            lambda x: 2
+            3
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (3, 'return')])
+
 
 class SkipLineEventsTraceTestCase(TraceTestCase):
     """Repeat the trace tests, but with per-line events skipped"""
