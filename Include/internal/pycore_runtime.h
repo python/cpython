@@ -139,10 +139,17 @@ typedef struct pyruntimestate {
     { \
         ._preallocated = { \
             .global_objects = _Py_global_objects_INIT, \
-            .interpreters_main = _PyInterpreterState_INIT, \
+            .interpreters_main = { \
+                ._static = 1, \
+                ._preallocated = { \
+                    .tstate = { \
+                        ._static = 1, \
+                    } \
+                }, \
+            } \
         }, \
     }
-/* Note: _PyRuntimeState_INIT sets other fields to 0/NULL */
+/* Note: _PyRuntimeState_INIT sets all other fields to 0/NULL */
 
 
 /* other API */

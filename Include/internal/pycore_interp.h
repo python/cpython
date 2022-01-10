@@ -179,16 +179,6 @@ struct _is {
     } _preallocated;
 };
 
-#define _PyInterpreterState_INIT \
-    { \
-        ._static = 1, \
-        ._preallocated = { \
-            .tstate = { \
-                ._static = 1, \
-            } \
-        }, \
-    }
-
 
 /* other API */
 
