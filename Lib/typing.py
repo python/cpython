@@ -729,7 +729,6 @@ class ForwardRef(_Final, _root=True):
 
 class _TypeVarLike:
     """Mixin for TypeVar-like types (TypeVar and ParamSpec)."""
-
     def __init__(self, bound, covariant, contravariant):
         """Used to setup TypeVars and ParamSpec's bound, covariant and
         contravariant attributes.
