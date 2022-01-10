@@ -4449,6 +4449,12 @@ COMPLEX_C = 1j
 COMPLEX_A = 2j
 COMPLEX_B = 3j
 
+class _ModuleWrapper:
+    """We use this class as a namespace for swapping modules."""
+
+    def __init__(self, module):
+        self.__dict__.update(module.__dict__)
+
 class TestIntEnumConvert(unittest.TestCase):
     def setUp(self):
         # Reset the module-level test variables to their original integer
@@ -4487,11 +4493,17 @@ class TestIntEnumConvert(unittest.TestCase):
                          [], msg='Names other than CONVERT_TEST_* found.')
 
     def test_convert_uncomparable(self):
-        uncomp = enum.Enum._convert_(
-            'Uncomparable',
-            MODULE,
-            filter=lambda x: x.startswith('UNCOMPARABLE_'),
-        )
+        # We swap a module to some other object with `__dict__`
+        # because otherwise refleak is created.
+        # `_convert_` uses a module side effect that does this. See 30472
+        with support.swap_item(
+            sys.modules, MODULE, _ModuleWrapper(sys.modules[MODULE]),
+        ):
+            uncomp = enum.Enum._convert_(
+                'Uncomparable',
+                MODULE,
+                filter=lambda x: x.startswith('UNCOMPARABLE_'),
+            )
 
         # Should be ordered by `name` only:
         self.assertEqual(
@@ -4500,11 +4512,14 @@ class TestIntEnumConvert(unittest.TestCase):
         )
 
     def test_convert_complex(self):
-        uncomp = enum.Enum._convert_(
-            'Uncomparable',
-            MODULE,
-            filter=lambda x: x.startswith('COMPLEX_'),
-        )
+        with support.swap_item(
+            sys.modules, MODULE, _ModuleWrapper(sys.modules[MODULE]),
+        ):
+            uncomp = enum.Enum._convert_(
+                'Uncomparable',
+                MODULE,
+                filter=lambda x: x.startswith('COMPLEX_'),
+            )
 
         # Should be ordered by `name` only:
         self.assertEqual(
