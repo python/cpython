@@ -737,7 +737,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
       from collections.abc import Callable
       from threading import Lock
-      from typing import Any, Concatenate, ParamSpec, TypeVar
+      from typing import Concatenate, ParamSpec, TypeVar
 
       P = ParamSpec('P')
       R = TypeVar('R')
