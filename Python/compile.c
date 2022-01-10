@@ -631,140 +631,6 @@ compiler_unit_free(struct compiler_unit *u)
 }
 
 static int
-compiler_enter_scope(struct compiler *c, identifier name,
-                     int scope_type, void *key, int lineno)
-{
-    struct compiler_unit *u;
-    basicblock *block;
-
-    u = (struct compiler_unit *)PyObject_Calloc(1, sizeof(
-                                            struct compiler_unit));
-    if (!u) {
-        PyErr_NoMemory();
-        return 0;
-    }
-    u->u_scope_type = scope_type;
-    u->u_argcount = 0;
-    u->u_posonlyargcount = 0;
-    u->u_kwonlyargcount = 0;
-    u->u_ste = PySymtable_Lookup(c->c_st, key);
-    if (!u->u_ste) {
-        compiler_unit_free(u);
-        return 0;
-    }
-    Py_INCREF(name);
-    u->u_name = name;
-    u->u_varnames = list2dict(u->u_ste->ste_varnames);
-    u->u_cellvars = dictbytype(u->u_ste->ste_symbols, CELL, 0, 0);
-    if (!u->u_varnames || !u->u_cellvars) {
-        compiler_unit_free(u);
-        return 0;
-    }
-    if (u->u_ste->ste_needs_class_closure) {
-        /* Cook up an implicit __class__ cell. */
-        _Py_IDENTIFIER(__class__);
-        PyObject *name;
-        int res;
-        assert(u->u_scope_type == COMPILER_SCOPE_CLASS);
-        assert(PyDict_GET_SIZE(u->u_cellvars) == 0);
-        name = _PyUnicode_FromId(&PyId___class__);
-        if (!name) {
-            compiler_unit_free(u);
-            return 0;
-        }
-        res = PyDict_SetItem(u->u_cellvars, name, _PyLong_GetZero());
-        if (res < 0) {
-            compiler_unit_free(u);
-            return 0;
-        }
-    }
-
-    u->u_freevars = dictbytype(u->u_ste->ste_symbols, FREE, DEF_FREE_CLASS,
-                               PyDict_GET_SIZE(u->u_cellvars));
-    if (!u->u_freevars) {
-        compiler_unit_free(u);
-        return 0;
-    }
-
-    u->u_blocks = NULL;
-    u->u_nfblocks = 0;
-    u->u_firstlineno = lineno;
-    u->u_lineno = lineno;
-    u->u_col_offset = 0;
-    u->u_end_lineno = lineno;
-    u->u_end_col_offset = 0;
-    u->u_consts = PyDict_New();
-    if (!u->u_consts) {
-        compiler_unit_free(u);
-        return 0;
-    }
-    u->u_names = PyDict_New();
-    if (!u->u_names) {
-        compiler_unit_free(u);
-        return 0;
-    }
-
-    u->u_private = NULL;
-
-    /* Push the old compiler_unit on the stack. */
-    if (c->u) {
-        PyObject *capsule = PyCapsule_New(c->u, CAPSULE_NAME, NULL);
-        if (!capsule || PyList_Append(c->c_stack, capsule) < 0) {
-            Py_XDECREF(capsule);
-            compiler_unit_free(u);
-            return 0;
-        }
-        Py_DECREF(capsule);
-        u->u_private = c->u->u_private;
-        Py_XINCREF(u->u_private);
-    }
-    c->u = u;
-
-    c->c_nestlevel++;
-
-    block = compiler_new_block(c);
-    if (block == NULL)
-        return 0;
-    c->u->u_curblock = block;
-
-    if (u->u_scope_type != COMPILER_SCOPE_MODULE) {
-        if (!compiler_set_qualname(c))
-            return 0;
-    }
-
-    return 1;
-}
-
-static void
-compiler_exit_scope(struct compiler *c)
-{
-    // Don't call PySequence_DelItem() with an exception raised
-    PyObject *exc_type, *exc_val, *exc_tb;
-    PyErr_Fetch(&exc_type, &exc_val, &exc_tb);
-
-    c->c_nestlevel--;
-    compiler_unit_free(c->u);
-    /* Restore c->u to the parent unit. */
-    Py_ssize_t n = PyList_GET_SIZE(c->c_stack) - 1;
-    if (n >= 0) {
-        PyObject *capsule = PyList_GET_ITEM(c->c_stack, n);
-        c->u = (struct compiler_unit *)PyCapsule_GetPointer(capsule, CAPSULE_NAME);
-        assert(c->u);
-        /* we are deleting from a list so this really shouldn't fail */
-        if (PySequence_DelItem(c->c_stack, n) < 0) {
-            _PyErr_WriteUnraisableMsg("on removing the last compiler "
-                                      "stack item", NULL);
-        }
-        compiler_unit_check(c->u);
-    }
-    else {
-        c->u = NULL;
-    }
-
-    PyErr_Restore(exc_type, exc_val, exc_tb);
-}
-
-static int
 compiler_set_qualname(struct compiler *c)
 {
     _Py_static_string(dot, ".");
@@ -1715,6 +1581,144 @@ compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
         return 0;           \
     }
 
+static int
+compiler_enter_scope(struct compiler *c, identifier name,
+                     int scope_type, void *key, int lineno)
+{
+    struct compiler_unit *u;
+    basicblock *block;
+
+    u = (struct compiler_unit *)PyObject_Calloc(1, sizeof(
+                                            struct compiler_unit));
+    if (!u) {
+        PyErr_NoMemory();
+        return 0;
+    }
+    u->u_scope_type = scope_type;
+    u->u_argcount = 0;
+    u->u_posonlyargcount = 0;
+    u->u_kwonlyargcount = 0;
+    u->u_ste = PySymtable_Lookup(c->c_st, key);
+    if (!u->u_ste) {
+        compiler_unit_free(u);
+        return 0;
+    }
+    Py_INCREF(name);
+    u->u_name = name;
+    u->u_varnames = list2dict(u->u_ste->ste_varnames);
+    u->u_cellvars = dictbytype(u->u_ste->ste_symbols, CELL, 0, 0);
+    if (!u->u_varnames || !u->u_cellvars) {
+        compiler_unit_free(u);
+        return 0;
+    }
+    if (u->u_ste->ste_needs_class_closure) {
+        /* Cook up an implicit __class__ cell. */
+        _Py_IDENTIFIER(__class__);
+        PyObject *name;
+        int res;
+        assert(u->u_scope_type == COMPILER_SCOPE_CLASS);
+        assert(PyDict_GET_SIZE(u->u_cellvars) == 0);
+        name = _PyUnicode_FromId(&PyId___class__);
+        if (!name) {
+            compiler_unit_free(u);
+            return 0;
+        }
+        res = PyDict_SetItem(u->u_cellvars, name, _PyLong_GetZero());
+        if (res < 0) {
+            compiler_unit_free(u);
+            return 0;
+        }
+    }
+
+    u->u_freevars = dictbytype(u->u_ste->ste_symbols, FREE, DEF_FREE_CLASS,
+                               PyDict_GET_SIZE(u->u_cellvars));
+    if (!u->u_freevars) {
+        compiler_unit_free(u);
+        return 0;
+    }
+
+    u->u_blocks = NULL;
+    u->u_nfblocks = 0;
+    u->u_firstlineno = lineno;
+    u->u_lineno = lineno;
+    u->u_col_offset = 0;
+    u->u_end_lineno = lineno;
+    u->u_end_col_offset = 0;
+    u->u_consts = PyDict_New();
+    if (!u->u_consts) {
+        compiler_unit_free(u);
+        return 0;
+    }
+    u->u_names = PyDict_New();
+    if (!u->u_names) {
+        compiler_unit_free(u);
+        return 0;
+    }
+
+    u->u_private = NULL;
+
+    /* Push the old compiler_unit on the stack. */
+    if (c->u) {
+        PyObject *capsule = PyCapsule_New(c->u, CAPSULE_NAME, NULL);
+        if (!capsule || PyList_Append(c->c_stack, capsule) < 0) {
+            Py_XDECREF(capsule);
+            compiler_unit_free(u);
+            return 0;
+        }
+        Py_DECREF(capsule);
+        u->u_private = c->u->u_private;
+        Py_XINCREF(u->u_private);
+    }
+    c->u = u;
+
+    c->c_nestlevel++;
+
+    block = compiler_new_block(c);
+    if (block == NULL)
+        return 0;
+    c->u->u_curblock = block;
+
+    if (u->u_scope_type == COMPILER_SCOPE_MODULE) {
+        c->u->u_lineno = -1;
+    }
+    else {
+        if (!compiler_set_qualname(c))
+            return 0;
+    }
+    ADDOP_I(c, RESUME, 0);
+
+    return 1;
+}
+
+static void
+compiler_exit_scope(struct compiler *c)
+{
+    // Don't call PySequence_DelItem() with an exception raised
+    PyObject *exc_type, *exc_val, *exc_tb;
+    PyErr_Fetch(&exc_type, &exc_val, &exc_tb);
+
+    c->c_nestlevel--;
+    compiler_unit_free(c->u);
+    /* Restore c->u to the parent unit. */
+    Py_ssize_t n = PyList_GET_SIZE(c->c_stack) - 1;
+    if (n >= 0) {
+        PyObject *capsule = PyList_GET_ITEM(c->c_stack, n);
+        c->u = (struct compiler_unit *)PyCapsule_GetPointer(capsule, CAPSULE_NAME);
+        assert(c->u);
+        /* we are deleting from a list so this really shouldn't fail */
+        if (PySequence_DelItem(c->c_stack, n) < 0) {
+            _PyErr_WriteUnraisableMsg("on removing the last compiler "
+                                      "stack item", NULL);
+        }
+        compiler_unit_check(c->u);
+    }
+    else {
+        c->u = NULL;
+    }
+
+    PyErr_Restore(exc_type, exc_val, exc_tb);
+}
+
 /* Search if variable annotations are present statically in a block. */
 
 static int
@@ -2049,10 +2053,9 @@ compiler_mod(struct compiler *c, mod_ty mod)
     if (module == NULL) {
         return 0;
     }
-    if (!compiler_enter_scope(c, module, COMPILER_SCOPE_MODULE, mod, 1))
+    if (!compiler_enter_scope(c, module, COMPILER_SCOPE_MODULE, mod, 1)) {
         return NULL;
-    c->u->u_lineno = -1;
-    ADDOP_I(c, RESUME, 0);
+    }
     c->u->u_lineno = 1;
     switch (mod->kind) {
     case Module_kind:
@@ -2508,7 +2511,6 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     if (!compiler_enter_scope(c, name, scope_type, (void *)s, firstlineno)) {
         return 0;
     }
-    ADDOP_I(c, RESUME, 0);
 
     /* if not -OO mode, add docstring */
     if (c->c_optimize < 2) {
@@ -2581,7 +2583,6 @@ compiler_class(struct compiler *c, stmt_ty s)
                               COMPILER_SCOPE_CLASS, (void *)s, firstlineno)) {
         return 0;
     }
-    ADDOP_I(c, RESUME, 0);
     /* this block represents what we do in the new scope */
     {
         /* use the class name for name mangling */
@@ -2914,13 +2915,11 @@ compiler_lambda(struct compiler *c, expr_ty e)
     if (funcflags == -1) {
         return 0;
     }
-    ADDOP_I(c, RESUME, 0);
 
     if (!compiler_enter_scope(c, name, COMPILER_SCOPE_LAMBDA,
-                              (void *)e, e->lineno))
+                              (void *)e, e->lineno)) {
         return 0;
-
-    ADDOP_I(c, RESUME, 0);
+    }
     /* Make None the first constant, so the lambda can't have a
        docstring. */
     if (compiler_add_const(c, Py_None) < 0)
@@ -5292,7 +5291,6 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     {
         goto error;
     }
-    ADDOP_I(c, RESUME, 0);
     SET_LOC(c, e);
 
     is_async_generator = c->u->u_ste->ste_coroutine;
