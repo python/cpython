@@ -123,7 +123,7 @@ PyBytes_FromStringAndSize(const char *str, Py_ssize_t size)
         return NULL;
     }
     if (size == 1 && str != NULL) {
-        op = CHARACTER(*str & UCHAR_MAX);
+        op = CHARACTER(*str & 255);
         Py_INCREF(op);
         return (PyObject *)op;
     }
@@ -159,7 +159,7 @@ PyBytes_FromString(const char *str)
         return bytes_new_empty();
     }
     else if (size == 1) {
-        op = CHARACTER(*str & UCHAR_MAX);
+        op = CHARACTER(*str & 255);
         Py_INCREF(op);
         return (PyObject *)op;
     }
