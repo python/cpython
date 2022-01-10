@@ -805,9 +805,6 @@ class TypeVar( _Final, _Immutable, _TypeVarLike, _root=True):
     Note that only type variables defined in global scope can be pickled.
     """
 
-    __slots__ = ('__name__', '__bound__', '__constraints__',
-                 '__covariant__', '__contravariant__', '__dict__')
-
     def __init__(self, name, *constraints, bound=None,
                  covariant=False, contravariant=False):
         self.__name__ = name
@@ -906,9 +903,6 @@ class ParamSpec(_Final, _Immutable, _TypeVarLike, _root=True):
     Note that only parameter specification variables defined in global scope can
     be pickled.
     """
-
-    __slots__ = ('__name__', '__bound__', '__covariant__', '__contravariant__',
-                 '__dict__')
 
     @property
     def args(self):
