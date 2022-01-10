@@ -730,8 +730,6 @@ class ForwardRef(_Final, _root=True):
 class _TypeVarLike:
     """Mixin for TypeVar-like types (TypeVar and ParamSpec)."""
 
-    __slots__ = ('__name__', '__bound__', '__covariant__', '__contravariant__')
-
     def __init__(self, bound, covariant, contravariant):
         """Used to setup TypeVars and ParamSpec's bound, covariant and
         contravariant attributes.
@@ -807,8 +805,6 @@ class TypeVar( _Final, _Immutable, _TypeVarLike, _root=True):
 
     Note that only type variables defined in global scope can be pickled.
     """
-
-    __slots__ = ('__constraints__', '__dict__')
 
     def __init__(self, name, *constraints, bound=None,
                  covariant=False, contravariant=False):
@@ -908,8 +904,6 @@ class ParamSpec(_Final, _Immutable, _TypeVarLike, _root=True):
     Note that only parameter specification variables defined in global scope can
     be pickled.
     """
-
-    __slots__ = ('__dict__', )
 
     @property
     def args(self):
