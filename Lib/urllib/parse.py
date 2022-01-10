@@ -28,6 +28,7 @@ test_urlparse.py provides a good indicator of parsing behavior.
 """
 
 from collections import namedtuple
+from enum import Enum
 import functools
 import re
 import sys
@@ -38,12 +39,18 @@ __all__ = ["urlparse", "urlunparse", "urljoin", "urldefrag",
            "urlsplit", "urlunsplit", "urlencode", "parse_qs",
            "parse_qsl", "quote", "quote_plus", "quote_from_bytes",
            "unquote", "unquote_plus", "unquote_to_bytes",
-           "DefragResult", "ParseResult", "SplitResult",
+           "DefragResult", "ParseResult", "SplitResult", "SchemeClass",
            "DefragResultBytes", "ParseResultBytes", "SplitResultBytes"]
 
 # A classification of schemes.
 # The empty string classifies URLs with no scheme specified,
 # being the default value returned by “urlsplit” and “urlparse”.
+
+"""SchemeClass is an enum with members. RELATIVE, NETLOC, and PARAMS. These
+describe methods for URL resolution, usually by scheme. These resolution classes
+determine, namely, whether a scheme supports, respectively, relative addressing,
+preserving the netloc (domain name), and preserving the parameters."""
+SchemeClass = Enum('SchemeClass', 'RELATIVE NETLOC PARAMS')
 
 uses_relative = ['', 'ftp', 'http', 'gopher', 'nntp', 'imap',
                  'wais', 'file', 'https', 'shttp', 'mms',
@@ -59,6 +66,24 @@ uses_netloc = ['', 'ftp', 'http', 'gopher', 'nntp', 'telnet',
 uses_params = ['', 'ftp', 'hdl', 'prospero', 'http', 'imap',
                'https', 'shttp', 'rtsp', 'rtspu', 'sip', 'sips',
                'mms', 'sftp', 'tel']
+
+def _scheme_classes(scheme, overrides=set()):
+    """Find out what scheme classes a given scheme fits in. This consults the
+    variables uses_relative, uses_netloc, and uses_params. It returns a set of
+    all the classes that apply, with at least the unique classes specified by
+    the optional overrides parameter."""
+    scheme_classes = set(overrides)
+
+    if scheme in uses_relative:
+        scheme_classes.add(SchemeClass.RELATIVE)
+
+    if scheme in uses_netloc:
+        scheme_classes.add(SchemeClass.NETLOC)
+
+    if scheme in uses_params:
+        scheme_classes.add(SchemeClass.PARAMS)
+
+    return scheme_classes
 
 # These are not actually used anymore, but should stay for backwards
 # compatibility.  (They are undocumented, but have a public-looking name.)
@@ -386,7 +411,8 @@ def urlparse(url, scheme='', allow_fragments=True):
     url, scheme, _coerce_result = _coerce_args(url, scheme)
     splitresult = urlsplit(url, scheme, allow_fragments)
     scheme, netloc, url, query, fragment = splitresult
-    if scheme in uses_params and ';' in url:
+    scheme_classes = _scheme_classes(scheme)
+    if SchemeClass.PARAMS in scheme_classes and ';' in url:
         url, params = _splitparams(url)
     else:
         params = ''
@@ -500,7 +526,9 @@ def urlunsplit(components):
     empty query; the RFC states that these are equivalent)."""
     scheme, netloc, url, query, fragment, _coerce_result = (
                                           _coerce_args(*components))
-    if netloc or (scheme and scheme in uses_netloc and url[:2] != '//'):
+
+    scheme_classes = _scheme_classes(scheme)
+    if netloc or (scheme and SchemeClass.NETLOC in scheme_classes and url[:2] != '//'):
         if url and url[:1] != '/': url = '/' + url
         url = '//' + (netloc or '') + url
     if scheme:
@@ -525,9 +553,11 @@ def urljoin(base, url, allow_fragments=True):
     scheme, netloc, path, params, query, fragment = \
             urlparse(url, bscheme, allow_fragments)
 
-    if scheme != bscheme or scheme not in uses_relative:
+    scheme_classes = _scheme_classes(scheme)
+
+    if scheme != bscheme or SchemeClass.RELATIVE not in scheme_classes:
         return _coerce_result(url)
-    if scheme in uses_netloc:
+    if SchemeClass.NETLOC in scheme_classes:
         if netloc:
             return _coerce_result(urlunparse((scheme, netloc, path,
                                               params, query, fragment)))
