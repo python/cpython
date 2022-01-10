@@ -542,6 +542,10 @@ Removed
 
   (Contributed by Hugo van Kemenade in :issue:`45320`.)
 
+* Remove namespace package support from unittest discovery. It was introduced in
+  Python 3.4 but has been broken since Python 3.7.
+  (Contributed by Inada Naoki in :issue:`23882`.)
+
 
 Porting to Python 3.11
 ======================
