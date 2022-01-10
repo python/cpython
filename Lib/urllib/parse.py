@@ -388,7 +388,7 @@ def _fix_result_transcoding():
 _fix_result_transcoding()
 del _fix_result_transcoding
 
-def urlparse(url, scheme='', allow_fragments=True):
+def urlparse(url, scheme='', allow_fragments=True, classes=set()):
     """Parse a URL into 6 components:
     <scheme>://<netloc>/<path>;<params>?<query>#<fragment>
 
@@ -411,7 +411,7 @@ def urlparse(url, scheme='', allow_fragments=True):
     url, scheme, _coerce_result = _coerce_args(url, scheme)
     splitresult = urlsplit(url, scheme, allow_fragments)
     scheme, netloc, url, query, fragment = splitresult
-    scheme_classes = _scheme_classes(scheme)
+    scheme_classes = _scheme_classes(scheme, overrides=classes)
     if SchemeClass.PARAMS in scheme_classes and ';' in url:
         url, params = _splitparams(url)
     else:
@@ -539,9 +539,10 @@ def urlunsplit(components):
         url = url + '#' + fragment
     return _coerce_result(url)
 
-def urljoin(base, url, allow_fragments=True):
+def urljoin(base, url, allow_fragments=True, classes=set()):
     """Join a base URL and a possibly relative URL to form an absolute
-    interpretation of the latter."""
+    interpretation of the latter. Some logic may be enabled by setting
+    the classes variable."""
     if not base:
         return url
     if not url:
@@ -549,11 +550,11 @@ def urljoin(base, url, allow_fragments=True):
 
     base, url, _coerce_result = _coerce_args(base, url)
     bscheme, bnetloc, bpath, bparams, bquery, bfragment = \
-            urlparse(base, '', allow_fragments)
+            urlparse(base, '', allow_fragments, classes=classes)
     scheme, netloc, path, params, query, fragment = \
-            urlparse(url, bscheme, allow_fragments)
+            urlparse(url, bscheme, allow_fragments, classes=classes)
 
-    scheme_classes = _scheme_classes(scheme)
+    scheme_classes = _scheme_classes(scheme, overrides=classes)
 
     if scheme != bscheme or SchemeClass.RELATIVE not in scheme_classes:
         return _coerce_result(url)

@@ -213,12 +213,12 @@ class UrlParseTestCase(unittest.TestCase):
                     split = (scheme,) + split
                     self.checkRoundtrips(url, parsed, split)
 
-    def checkJoin(self, base, relurl, expected):
+    def checkJoin(self, base, relurl, expected, classes=[]):
         str_components = (base, relurl, expected)
-        self.assertEqual(urllib.parse.urljoin(base, relurl), expected)
+        self.assertEqual(urllib.parse.urljoin(base, relurl, classes=classes), expected)
         bytes_components = baseb, relurlb, expectedb = [
                             x.encode('ascii') for x in str_components]
-        self.assertEqual(urllib.parse.urljoin(baseb, relurlb), expectedb)
+        self.assertEqual(urllib.parse.urljoin(baseb, relurlb, classes=classes), expectedb)
 
     def test_unparse_parse(self):
         str_cases = ['Python', './Python','x-newscheme://foo.com/stuff','x://y','x:/y','x:/','/',]
@@ -417,6 +417,11 @@ class UrlParseTestCase(unittest.TestCase):
         self.checkJoin('svn+ssh://pathtorepo/dir1', 'dir2', 'svn+ssh://pathtorepo/dir2')
         self.checkJoin('ws://a/b','g','ws://a/g')
         self.checkJoin('wss://a/b','g','wss://a/g')
+        self.checkJoin(
+            'nonsensebase://net.loc/url/', '..',
+            'nonsensebase://net.loc/',
+            classes=[urllib.parse.SchemeClass.RELATIVE, urllib.parse.SchemeClass.NETLOC],
+        )
 
         # XXX: The following tests are no longer compatible with RFC3986
         # self.checkJoin(SIMPLE_BASE, '../../../g','http://a/../g')
