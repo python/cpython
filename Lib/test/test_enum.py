@@ -4523,17 +4523,6 @@ class TestIntEnumConvert(unittest.TestCase):
             [uncomp.COMPLEX_A, uncomp.COMPLEX_B, uncomp.COMPLEX_C],
         )
 
-    @unittest.skipUnless(python_version == (3, 8),
-                         '_convert was deprecated in 3.8')
-    def test_convert_warn(self):
-        with self.assertWarns(DeprecationWarning):
-            enum.IntEnum._convert(
-                'UnittestConvert',
-                MODULE,
-                filter=lambda x: x.startswith('CONVERT_TEST_'))
-
-    @unittest.skipUnless(python_version >= (3, 9),
-                         '_convert was removed in 3.9')
     def test_convert_raise(self):
         with self.assertRaises(AttributeError):
             enum.IntEnum._convert(
