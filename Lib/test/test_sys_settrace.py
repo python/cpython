@@ -1403,6 +1403,25 @@ class TraceTestCase(unittest.TestCase):
              (3, 'line'),
              (3, 'return')])
 
+    def test_class_creation_with_docstrings(self):
+
+        def func():
+            class Class_1:
+                ''' the docstring. 2'''
+                def __init__(self):
+                    ''' Another docstring. 4'''
+                    self.a = 5
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (1, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (3, 'return'),
+             (1, 'return')])
+
 
 class SkipLineEventsTraceTestCase(TraceTestCase):
     """Repeat the trace tests, but with per-line events skipped"""
