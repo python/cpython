@@ -150,10 +150,8 @@ typedef struct pyruntimestate {
         .interpreters = { \
             .main = { \
                 ._static = 1, \
-                .threads = { \
-                    ._initial = { \
-                        ._static = 1, \
-                    }, \
+                ._initial_thread = { \
+                    ._static = 1, \
                 }, \
             }, \
         }, \

@@ -91,10 +91,6 @@ struct _is {
 
     struct pythreads {
         uint64_t next_unique_id;
-        /* The initial threadstate for the interpreter.
-           For the main interpreter this is the main thread.
-           It should not be accessed directly outside of init. */
-        struct _ts _initial;
         /* The linked list of threads, newest first. */
         struct _ts *head;
         /* Used in Modules/_threadmodule.c. */
@@ -186,6 +182,11 @@ struct _is {
 
     struct ast_state ast;
     struct type_cache type_cache;
+
+    /* Below is pre-allocated data that is exposed through PyInterpreterState
+       pointer fields.  They should not be accessed directly outside of init. */
+    /* PyInterpreterState.head */
+    struct _ts _initial_thread;
 };
 
 
