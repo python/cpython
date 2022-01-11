@@ -56,7 +56,7 @@ extern "C" {
 // All others must be per-interpreter.
 
 #define _Py_GLOBAL_OBJECT(NAME) \
-    _PyRuntime._preallocated.global_objects.NAME
+    _PyRuntime.global_objects.NAME
 #define _Py_SINGLETON(NAME) \
     _Py_GLOBAL_OBJECT(singletons.NAME)
 

@@ -55,6 +55,19 @@ typedef struct _Py_AuditHookEntry {
 
 /* Full Python runtime state */
 
+/* _PyRuntimeState holds the global state for the CPython runtime.
+   That data is exposed in the internal API as a static variable (_PyRuntime).
+
+   A number of its fields are declared as values rather than pointers,
+   to avoid dynamic allocation during runtime init.
+   Any pointer fields are populated when needed and default to NULL.
+
+   For now there are some exceptions to that rule, which require
+   allocation during init.
+   Not all of the main interpreter is pre-allocated like this.
+   Also, we don't pre-allocated the several mutex (PyThread_type_lock)
+   fields yet, because on Windows we only ever get a pointer type.
+   */
 typedef struct pyruntimestate {
     /* Has been initialized to a safe state.
 
@@ -83,8 +96,13 @@ typedef struct pyruntimestate {
 
     struct pyinterpreters {
         PyThread_type_lock mutex;
+        /* The linked list of interpreters, newest first. */
         PyInterpreterState *head;
-        PyInterpreterState *main;
+        /* The runtime's initial interpreter, which has a special role
+           in the operation of the runtime.  It is also often the only
+           interpreter.
+           Note that this is not a pointer. */
+        PyInterpreterState main;
         /* _next_interp_id is an auto-numbered sequence of small
            integers.  It gets initialized in _PyInterpreterState_Init(),
            which is called in Py_Initialize(), and used in
@@ -120,41 +138,26 @@ typedef struct pyruntimestate {
 
     struct _Py_unicode_runtime_ids unicode_ids;
 
-    // The fields in _preallocated are values that would otherwise have
-    // been malloc'ed during runtime init in pystate.c and pylifecycle.c.
-    // This allows us to avoid allocation costs during startup and
-    // helps simplify the startup code.
-    struct {
-        struct _Py_global_objects global_objects;
-        // Below here, all fields mirror the corresponding
-        // _PyRuntimeState fields.
-        struct {
-            struct _is main;
-        } interpreters;
-        // The only other values to possibly include here are
-        // mutexes (PyThread_type_lock).  Currently we don't pre-allocate them
-        // because on Windows we only get a pointer type.
-        // All other pointers in PyThreadState are either
-        // populated lazily or change but default to NULL.
-    } _preallocated;
+    /* All the objects that are shared by the runtime's interpreters.
+       Note that the object values are declared here, rather than
+       pointers to the objects. */
+    struct _Py_global_objects global_objects;
 } _PyRuntimeState;
 
 #define _PyRuntimeState_INIT \
     { \
-        ._preallocated = { \
-            .global_objects = _Py_global_objects_INIT, \
-            .interpreters = { \
-                .main = { \
-                    ._static = 1, \
-                    ._preallocated = { \
-                        .threads = { \
-                            .head = { \
-                                ._static = 1, \
-                            }, \
+        .global_objects = _Py_global_objects_INIT, \
+        .interpreters = { \
+            .main = { \
+                ._static = 1, \
+                ._preallocated = { \
+                    .threads = { \
+                        .head = { \
+                            ._static = 1, \
                         }, \
                     }, \
                 }, \
-            } \
+            }, \
         }, \
     }
 /* Note: _PyRuntimeState_INIT sets all other fields to 0/NULL */

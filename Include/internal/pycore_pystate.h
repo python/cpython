@@ -24,7 +24,7 @@ _Py_IsMainThread(void)
 static inline PyInterpreterState *
 _PyInterpreterState_Main(void)
 {
-    return _PyRuntime.interpreters.main;
+    return &_PyRuntime.interpreters.main;
 }
 
 static inline int

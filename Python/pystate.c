@@ -204,7 +204,7 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
 
     /* bpo-42540: id_mutex is freed by _PyInterpreterState_Delete, which does
      * not force the default allocator. */
-    int reinit_main_id = _PyThread_at_fork_reinit(&runtime->interpreters.main->id_mutex);
+    int reinit_main_id = _PyThread_at_fork_reinit(&runtime->interpreters.main.id_mutex);
 
     if (reinit_interp < 0
         || reinit_main_id < 0
@@ -288,12 +288,12 @@ init_interpreter(PyInterpreterState *interp,
     assert(runtime != NULL);
     interp->runtime = runtime;
 
-    assert(id > 0 || (id == 0 && interp == runtime->interpreters.main));
+    assert(id > 0 || (id == 0 && interp == &runtime->interpreters.main));
     interp->id = id;
     interp->id_refcount = -1;
 
     assert(runtime->interpreters.head == interp);
-    assert(next != NULL || (interp == runtime->interpreters.main));
+    assert(next != NULL || (interp == &runtime->interpreters.main));
     interp->next = next;
 
     _PyEval_InitState(&interp->ceval, pending_lock);
@@ -349,25 +349,21 @@ PyInterpreterState_New(void)
     PyInterpreterState *old_head = interpreters->head;
     if (old_head == NULL) {
         // We are creating the main interpreter.
-        assert(interpreters->main == NULL);
         assert(id == 0);
 
-        interp = &runtime->_preallocated.interpreters.main;
+        interp = &runtime->interpreters.main;
         assert(interp->id == 0);
         assert(interp->next == NULL);
-
-        interpreters->main = interp;
     }
     else {
         assert(id != 0);
-        assert(interpreters->main != NULL);
 
         interp = alloc_interpreter();
         if (interp == NULL) {
             goto error;
         }
         // Set to _PyInterpreterState_INIT.
-        memcpy(interp, &initial._preallocated.interpreters.main,
+        memcpy(interp, &initial.interpreters.main,
                sizeof(*interp));
 
         if (id < 0) {
@@ -514,8 +510,7 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
     }
     *p = interp->next;
 
-    if (interpreters->main == interp) {
-        interpreters->main = NULL;
+    if (&interpreters->main == interp) {
         if (interpreters->head != NULL) {
             Py_FatalError("remaining subinterpreters");
         }
@@ -541,7 +536,7 @@ _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime)
     struct pyinterpreters *interpreters = &runtime->interpreters;
 
     PyThreadState *tstate = _PyThreadState_Swap(gilstate, NULL);
-    if (tstate != NULL && tstate->interp != interpreters->main) {
+    if (tstate != NULL && tstate->interp != &interpreters->main) {
         return _PyStatus_ERR("not main interpreter");
     }
 
@@ -549,8 +544,8 @@ _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime)
     PyInterpreterState *interp = interpreters->head;
     interpreters->head = NULL;
     while (interp != NULL) {
-        if (interp == interpreters->main) {
-            interpreters->main->next = NULL;
+        if (interp == &interpreters->main) {
+            interpreters->main.next = NULL;
             interpreters->head = interp;
             interp = interp->next;
             continue;
@@ -837,7 +832,7 @@ new_threadstate(PyInterpreterState *interp)
         }
         // Set to _PyThreadState_INIT.
         memcpy(tstate,
-               &initial._preallocated.interpreters.main._preallocated.threads.head,
+               &initial.interpreters.main._preallocated.threads.head,
                sizeof(*tstate));
     }
     interp->threads.head = tstate;
