@@ -1162,6 +1162,20 @@ then
 fi
 AC_MSG_RESULT($LINKCC)
 
+AC_SUBST(LINKCC_BUILDPYTHON)
+AC_MSG_CHECKING(LINKCC_BUILDPYTHON)
+if test -z "$LINKCC_BUILDPYTHON"
+then
+  # the .wasm executable doesn't support building with pthreads,
+  # so we hack around the symbol errors as they will be provided by
+  # Emscripten
+  AS_CASE([$ac_sys_system],
+    [Emscripten], [LINKCC_BUILDPYTHON="emcc -s ERROR_ON_UNDEFINED_SYMBOLS=0"],
+    [LINKCC_BUILDPYTHON='$(LINKCC)']
+  )
+fi
+AC_MSG_RESULT($LINKCC_BUILDPYTHON)
+
 # EXPORTSYMS holds the list of exported symbols for AIX.
 # EXPORTSFROM holds the module name exporting symbols on AIX.
 EXPORTSYMS=
@@ -2125,7 +2139,6 @@ int main(){
 ],[ac_cv_pthread_is_default=no],[ac_cv_pthread_is_default=no])
 ])
 
-
 if test $ac_cv_pthread_is_default = yes
 then
   ac_cv_kpthread=no
@@ -2233,16 +2246,21 @@ fi
 
 if test $ac_cv_cxx_thread = yes
 then
-  echo 'void foo();int main(){foo();}void foo(){}' > conftest.$ac_ext
-  $CXX -c conftest.$ac_ext 2>&5
-  if $CXX -o conftest$ac_exeext conftest.$ac_objext 2>&5 \
-     && test -s conftest$ac_exeext && ./conftest$ac_exeext
-  then
+  if test "$cross_compiling" = yes; then
+    # assume that it works
     ac_cv_cxx_thread=yes
   else
-    ac_cv_cxx_thread=no
+    echo 'void foo();int main(){foo();}void foo(){}' > conftest.$ac_ext
+    $CXX -c conftest.$ac_ext 2>&5
+    if $CXX -o conftest$ac_exeext conftest.$ac_objext 2>&5 \
+      && test -s conftest$ac_exeext && ./conftest$ac_exeext
+    then
+      ac_cv_cxx_thread=yes
+    else
+      ac_cv_cxx_thread=no
+    fi
+    rm -fr conftest*
   fi
-  rm -fr conftest*
 fi
 AC_MSG_RESULT($ac_cv_cxx_thread)
 fi

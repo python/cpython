@@ -38,6 +38,7 @@ CC=		@CC@
 CXX=		@CXX@
 MAINCC=		@MAINCC@
 LINKCC=		@LINKCC@
+LINKCC_BUILDPYTHON =	@LINKCC_BUILDPYTHON@
 AR=		@AR@
 READELF=	@READELF@
 SOABI=		@SOABI@
@@ -317,6 +318,7 @@ COVERAGE_REPORT_OPTIONS=--no-branch-coverage --title "CPython lcov report"
 
 
 ##########################################################################
+
 # Modules
 MODULE_OBJS=	\
 		Modules/config.o \
@@ -717,7 +719,7 @@ clinic: check-clean-src $(srcdir)/Modules/_blake2/blake2s_impl.c
 
 # Build the interpreter
 $(BUILDPYTHON):	Programs/python.o $(LIBRARY_DEPS)
-	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/python.o $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS)
+	$(LINKCC_BUILDPYTHON) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/python.o $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 platform: $(BUILDPYTHON) pybuilddir.txt
 	$(RUNSHARED) $(PYTHON_FOR_BUILD) -c 'import sys ; from sysconfig import get_platform ; print("%s-%d.%d" % (get_platform(), *sys.version_info[:2]))' >platform
@@ -845,14 +847,15 @@ $(WASM_STDLIB): $(srcdir)/Lib/*.py $(srcdir)/Lib/*/*.py \
 python.html: Programs/python.o $(LIBRARY_DEPS) $(WASM_STDLIB)
 	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/python.o \
 	    $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS) \
-	    -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 \
-		--preload-file $(WASM_ASSETS_DIR)
+	    -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 -s USE_PTHREADS \
+		-s PROXY_TO_PTHREAD --preload-file $(WASM_ASSETS_DIR)
 
-python-rawfs.js: Programs/python.o $(LIBRARY_DEPS)
+python-rawfs.js: Programs/python.o $(LIBRARY_DEPS) pybuilddir.txt
 	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/python.o \
 	    $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS) \
 	    -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 \
-	    -s NODERAWFS=1 -s EXIT_RUNTIME=1
+	    -s NODERAWFS=1 -s EXIT_RUNTIME=1 -s USE_PTHREADS \
+		-s PROXY_TO_PTHREAD
 
 ##########################################################################
 # Build static libmpdec.a

@@ -7,6 +7,13 @@
 # Partly based on pyodide's pyconfig.undefs.h file.
 #
 
+ac_exeext=.wasm
+
+# Emscripten will build code that includes pthreads without the flag, but fail to run...
+ac_cv_pthread_is_default=no
+ac_cv_kthread=no
+ac_cv_pthread=yes
+
 # cannot be detected in cross builds
 ac_cv_buggy_getaddrinfo=no
 
