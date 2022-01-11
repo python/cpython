@@ -5668,13 +5668,6 @@ wstring_at(const wchar_t *ptr, int size)
 }
 
 
-static struct PyModuleDef _ctypesmodule = {
-    PyModuleDef_HEAD_INIT,
-    .m_name = "_ctypes",
-    .m_doc = module_docs,
-    .m_size = -1,
-    .m_methods = _ctypes_module_methods,
-};
 
 
 static int
@@ -5847,20 +5840,25 @@ _ctypes_mod_exec(PyObject *mod)
     return 0;
 }
 
+static struct PyModuleDef_Slot _ctypes_slots[] = {
+    {Py_mod_exec, _ctypes_mod_exec},
+    {0, NULL}
+};
+
+static struct PyModuleDef _ctypesmodule = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_ctypes",
+    .m_doc = module_docs,
+    .m_size = 0,
+    .m_methods = _ctypes_module_methods,
+    .m_slots = _ctypes_slots,
+};
+
 
 PyMODINIT_FUNC
 PyInit__ctypes(void)
 {
-    PyObject *mod = PyModule_Create(&_ctypesmodule);
-    if (!mod) {
-        return NULL;
-    }
-
-    if (_ctypes_mod_exec(mod) < 0) {
-        Py_DECREF(mod);
-        return NULL;
-    }
-    return mod;
+    return PyModuleDef_Init(&_ctypesmodule);
 }
 
 /*
