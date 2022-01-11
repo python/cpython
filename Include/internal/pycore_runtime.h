@@ -144,19 +144,22 @@ typedef struct pyruntimestate {
     struct _Py_global_objects global_objects;
 } _PyRuntimeState;
 
+#define _PyThreadState_INIT \
+    { \
+        ._static = 1, \
+    }
+#define _PyInterpreterState_INIT \
+    { \
+        ._static = 1, \
+        ._initial_thread = _PyThreadState_INIT, \
+    }
 #define _PyRuntimeState_INIT \
     { \
         .global_objects = _Py_global_objects_INIT, \
         .interpreters = { \
-            .main = { \
-                ._static = 1, \
-                ._initial_thread = { \
-                    ._static = 1, \
-                }, \
-            }, \
+            .main = _PyInterpreterState_INIT, \
         }, \
     }
-/* Note: _PyRuntimeState_INIT sets all other fields to 0/NULL */
 
 
 /* other API */
