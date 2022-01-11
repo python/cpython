@@ -490,7 +490,7 @@ Timeouts
    completes.
 
    If a timeout occurs, it cancels the task and raises
-   :exc:`asyncio.TimeoutError`.
+   :exc:`TimeoutError`.
 
    To avoid the task :meth:`cancellation <Task.cancel>`,
    wrap it in :func:`shield`.
@@ -520,7 +520,7 @@ Timeouts
            # Wait for at most 1 second
            try:
                await asyncio.wait_for(eternity(), timeout=1.0)
-           except asyncio.TimeoutError:
+           except TimeoutError:
                print('timeout!')
 
        asyncio.run(main())
@@ -532,7 +532,7 @@ Timeouts
    .. versionchanged:: 3.7
       When *aw* is cancelled due to a timeout, ``wait_for`` waits
       for *aw* to be cancelled.  Previously, it raised
-      :exc:`asyncio.TimeoutError` immediately.
+      :exc:`TimeoutError` immediately.
 
    .. deprecated-removed:: 3.8 3.10
       The ``loop`` parameter.  This function has been implicitly getting the
@@ -561,7 +561,7 @@ Waiting Primitives
    *timeout* (a float or int), if specified, can be used to control
    the maximum number of seconds to wait before returning.
 
-   Note that this function does not raise :exc:`asyncio.TimeoutError`.
+   Note that this function does not raise :exc:`TimeoutError`.
    Futures or Tasks that aren't done when the timeout occurs are simply
    returned in the second set.
 
@@ -649,7 +649,7 @@ Waiting Primitives
    Each coroutine returned can be awaited to get the earliest next
    result from the iterable of the remaining awaitables.
 
-   Raises :exc:`asyncio.TimeoutError` if the timeout occurs before
+   Raises :exc:`TimeoutError` if the timeout occurs before
    all Futures are done.
 
    .. deprecated-removed:: 3.8 3.10
@@ -762,7 +762,7 @@ Scheduling From Other Threads
 
      try:
          result = future.result(timeout)
-     except concurrent.futures.TimeoutError:
+     except TimeoutError:
          print('The coroutine took too long, cancelling the task...')
          future.cancel()
      except Exception as exc:

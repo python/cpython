@@ -77,8 +77,6 @@ def_op('MATCH_KEYS', 33)
 
 def_op('PUSH_EXC_INFO', 35)
 
-def_op('POP_EXCEPT_AND_RERAISE', 37)
-
 def_op('WITH_EXCEPT_START', 49)
 def_op('GET_AITER', 50)
 def_op('GET_ANEXT', 51)
@@ -93,7 +91,7 @@ def_op('GET_ITER', 68)
 def_op('GET_YIELD_FROM_ITER', 69)
 def_op('PRINT_EXPR', 70)
 def_op('LOAD_BUILD_CLASS', 71)
-def_op('YIELD_FROM', 72)
+
 def_op('GET_AWAITABLE', 73)
 def_op('LOAD_ASSERTION_ERROR', 74)
 
@@ -103,6 +101,7 @@ def_op('IMPORT_STAR', 84)
 def_op('SETUP_ANNOTATIONS', 85)
 def_op('YIELD_VALUE', 86)
 
+def_op('PREP_RERAISE_STAR', 88)
 def_op('POP_EXCEPT', 89)
 
 HAVE_ARGUMENT = 90              # Opcodes from here have an argument:
@@ -142,17 +141,18 @@ def_op('RERAISE', 119)
 def_op('COPY', 120)
 jabs_op('JUMP_IF_NOT_EXC_MATCH', 121)
 def_op('BINARY_OP', 122)
-
+jrel_op('SEND', 123) # Number of bytes to skip
 def_op('LOAD_FAST', 124)        # Local variable number
 haslocal.append(124)
 def_op('STORE_FAST', 125)       # Local variable number
 haslocal.append(125)
 def_op('DELETE_FAST', 126)      # Local variable number
 haslocal.append(126)
-
-def_op('GEN_START', 129)        # Kind of generator/coroutine
+jabs_op('JUMP_IF_NOT_EG_MATCH', 127)
+jabs_op('POP_JUMP_IF_NOT_NONE', 128)
+jabs_op('POP_JUMP_IF_NONE', 129)
 def_op('RAISE_VARARGS', 130)    # Number of raise arguments (1, 2, or 3)
-def_op('CALL_FUNCTION', 131)    # #args
+
 def_op('MAKE_FUNCTION', 132)    # Flags
 def_op('BUILD_SLICE', 133)      # Number of items
 
@@ -167,7 +167,6 @@ hasfree.append(138)
 def_op('DELETE_DEREF', 139)
 hasfree.append(139)
 
-def_op('CALL_FUNCTION_KW', 141)  # #args + #kwargs
 def_op('CALL_FUNCTION_EX', 142)  # Flags
 
 def_op('EXTENDED_ARG', 144)
@@ -179,6 +178,7 @@ def_op('LOAD_CLASSDEREF', 148)
 hasfree.append(148)
 def_op('COPY_FREE_VARS', 149)
 
+def_op('RESUME', 151)
 def_op('MATCH_CLASS', 152)
 
 def_op('FORMAT_VALUE', 155)
@@ -186,12 +186,15 @@ def_op('BUILD_CONST_KEY_MAP', 156)
 def_op('BUILD_STRING', 157)
 
 name_op('LOAD_METHOD', 160)
-def_op('CALL_METHOD', 161)
+
 def_op('LIST_EXTEND', 162)
 def_op('SET_UPDATE', 163)
 def_op('DICT_MERGE', 164)
 def_op('DICT_UPDATE', 165)
-def_op('CALL_METHOD_KW', 166)
+
+def_op('PRECALL_METHOD', 168)
+def_op('CALL_NO_KW', 169)
+def_op('CALL_KW', 170)
 
 del def_op, name_op, jrel_op, jabs_op
 
@@ -246,12 +249,17 @@ _specialized_instructions = [
     "STORE_SUBSCR_ADAPTIVE",
     "STORE_SUBSCR_LIST_INT",
     "STORE_SUBSCR_DICT",
-    "CALL_FUNCTION_ADAPTIVE",
-    "CALL_FUNCTION_BUILTIN_O",
-    "CALL_FUNCTION_BUILTIN_FAST",
-    "CALL_FUNCTION_LEN",
-    "CALL_FUNCTION_ISINSTANCE",
-    "CALL_FUNCTION_PY_SIMPLE",
+    "CALL_NO_KW_ADAPTIVE",
+    "CALL_NO_KW_BUILTIN_O",
+    "CALL_NO_KW_BUILTIN_FAST",
+    "CALL_NO_KW_LEN",
+    "CALL_NO_KW_ISINSTANCE",
+    "CALL_NO_KW_PY_SIMPLE",
+    "CALL_NO_KW_LIST_APPEND",
+    "CALL_NO_KW_METHOD_DESCRIPTOR_O",
+    "CALL_NO_KW_TYPE_1",
+    "CALL_NO_KW_BUILTIN_CLASS_1",
+    "CALL_NO_KW_METHOD_DESCRIPTOR_FAST",
     "JUMP_ABSOLUTE_QUICK",
     "LOAD_ATTR_ADAPTIVE",
     "LOAD_ATTR_INSTANCE_VALUE",
@@ -278,11 +286,10 @@ _specialized_instructions = [
     "STORE_FAST__STORE_FAST",
 ]
 _specialization_stats = [
-    "specialization_success",
-    "specialization_failure",
+    "success",
+    "failure",
     "hit",
     "deferred",
     "miss",
     "deopt",
-    "unquickened",
 ]

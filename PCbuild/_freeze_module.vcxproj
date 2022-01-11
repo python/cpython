@@ -89,10 +89,13 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>Py_NO_ENABLE_SHARED;Py_BUILD_CORE;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Optimization>Disabled</Optimization>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <AdditionalDependencies>version.lib;ws2_32.lib;pathcch.lib;bcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -432,7 +435,10 @@
     <Message Text="Updated files: @(_Updated->'%(Filename)%(Extension)',', ')"
              Condition="'@(_Updated)' != ''" Importance="high" />
   </Target>
-  <Target Name="_RebuildDeepFrozen" AfterTargets="_RebuildFrozen" Condition="$(Configuration) != 'PGUpdate'">
+  <Target Name="_RebuildDeepFrozen"
+          AfterTargets="_RebuildFrozen"
+          DependsOnTargets="FindPythonForBuild"
+          Condition="$(Configuration) != 'PGUpdate'">
     <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\scripts\deepfreeze.py" "%(None.OutFile)" "-m" "%(None.ModName)" -o "%(None.IntFile)"' />
 
     <Copy SourceFiles="%(None.IntFile)"

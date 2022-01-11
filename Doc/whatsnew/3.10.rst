@@ -704,6 +704,7 @@ are added to enable the warning.
 
 See :ref:`io-text-encoding` for more information.
 
+.. _new-feat-related-type-hints:
 
 New Features Related to Type Hints
 ==================================
@@ -1429,14 +1430,14 @@ of types readily interpretable by type checkers.
 typing
 ------
 
-For major changes, see `New Features Related to Type Hints`_.
+For major changes, see :ref:`new-feat-related-type-hints`.
 
 The behavior of :class:`typing.Literal` was changed to conform with :pep:`586`
 and to match the behavior of static type checkers specified in the PEP.
 
 1. ``Literal`` now de-duplicates parameters.
 2. Equality comparisons between ``Literal`` objects are now order independent.
-3. ``Literal`` comparisons now respects types.  For example,
+3. ``Literal`` comparisons now respect types.  For example,
    ``Literal[0] == Literal[False]`` previously evaluated to ``True``.  It is
    now ``False``.  To support this change, the internally used type cache now
    supports differentiating types.
@@ -1646,13 +1647,12 @@ Deprecated
   :meth:`importlib.machinery.FrozenImporter.find_module`,
   :meth:`importlib.machinery.WindowsRegistryFinder.find_module`,
   :meth:`importlib.machinery.PathFinder.find_module`,
-  :meth:`importlib.abc.MetaPathFinder.find_module`),
+  :meth:`importlib.abc.MetaPathFinder.find_module` ),
   :meth:`importlib.abc.PathEntryFinder.find_module` (
-  :meth:`importlib.machinery.FileFinder.find_module`,
-  ), and
+  :meth:`importlib.machinery.FileFinder.find_module` ), and
   :meth:`importlib.abc.PathEntryFinder.find_loader` (
-  :meth:`importlib.machinery.FileFinder.find_loader`
-  ) now raise :exc:`DeprecationWarning` and are slated for removal in
+  :meth:`importlib.machinery.FileFinder.find_loader` )
+  now raise :exc:`DeprecationWarning` and are slated for removal in
   Python 3.12 (previously they were documented as deprecated in Python 3.4).
   (Contributed by Brett Cannon in :issue:`42135`.)
 
@@ -1693,7 +1693,7 @@ Deprecated
 * :func:`asyncio.get_event_loop` now emits a deprecation warning if there is
   no running event loop. In the future it will be an alias of
   :func:`~asyncio.get_running_loop`.
-  :mod:`asyncio` functions which implicitly create a :class:`~asyncio.Future`
+  :mod:`asyncio` functions which implicitly create :class:`~asyncio.Future`
   or :class:`~asyncio.Task` objects now emit
   a deprecation warning if there is no running event loop and no explicit
   *loop* argument is passed: :func:`~asyncio.ensure_future`,
@@ -1833,7 +1833,7 @@ Removed
      running in different threads.
 
   Note that the low-level API will still accept ``loop``.
-  See `Changes in the Python API`_ for examples of how to replace existing code.
+  See :ref:`changes-python-api` for examples of how to replace existing code.
 
   (Contributed by Yurii Karabas, Andrew Svetlov, Yury Selivanov and Kyle Stanley
   in :issue:`42392`.)
@@ -1857,6 +1857,7 @@ Changes in the Python syntax
   following keyword.
   (Contributed by Serhiy Storchaka in :issue:`43833`).
 
+.. _changes-python-api:
 
 Changes in the Python API
 -------------------------
@@ -1978,7 +1979,7 @@ Build Changes
   (Contributed by Victor Stinner in :issue:`36020`.)
 
 * :mod:`sqlite3` requires SQLite 3.7.15 or higher. (Contributed by Sergey Fedoseev
-  and Erlend E. Aasland :issue:`40744` and :issue:`40810`.)
+  and Erlend E. Aasland in :issue:`40744` and :issue:`40810`.)
 
 * The :mod:`atexit` module must now always be built as a built-in module.
   (Contributed by Victor Stinner in :issue:`42639`.)

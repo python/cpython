@@ -227,7 +227,7 @@ class ExceptionTests(unittest.TestCase):
         check('x = "a', 1, 5)
         check('lambda x: x = 2', 1, 1)
         check('f{a + b + c}', 1, 2)
-        check('[file for str(file) in []\n])', 1, 11)
+        check('[file for str(file) in []\n]', 1, 11)
         check('a = « hello » « world »', 1, 5)
         check('[\nfile\nfor str(file)\nin\n[]\n]', 3, 5)
         check('[file for\n str(file) in []]', 2, 2)
@@ -241,6 +241,8 @@ class ExceptionTests(unittest.TestCase):
         check('def f():\n  continue', 2, 3)
         check('def f():\n  break', 2, 3)
         check('try:\n  pass\nexcept:\n  pass\nexcept ValueError:\n  pass', 3, 1)
+        check('try:\n  pass\nexcept*:\n  pass', 3, 8)
+        check('try:\n  pass\nexcept*:\n  pass\nexcept* ValueError:\n  pass', 3, 8)
 
         # Errors thrown by tokenizer.c
         check('(0x+1)', 1, 3)
@@ -266,6 +268,24 @@ class ExceptionTests(unittest.TestCase):
         check("(1+)", 1, 4)
         check("[interesting\nfoo()\n", 1, 1)
         check(b"\xef\xbb\xbf#coding: utf8\nprint('\xe6\x88\x91')\n", 0, -1)
+        check("""f'''
+            {
+            (123_a)
+            }'''""", 3, 17)
+        check("""f'''
+            {
+            f\"\"\"
+            {
+            (123_a)
+            }
+            \"\"\"
+            }'''""", 5, 17)
+        check('''f"""
+
+
+            {
+            6
+            0="""''', 5, 13)
 
         # Errors thrown by symtable.c
         check('x = [(yield i) for i in range(3)]', 1, 7)

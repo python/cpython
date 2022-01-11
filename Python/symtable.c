@@ -1345,6 +1345,12 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         VISIT_SEQ(st, excepthandler, s->v.Try.handlers);
         VISIT_SEQ(st, stmt, s->v.Try.finalbody);
         break;
+    case TryStar_kind:
+        VISIT_SEQ(st, stmt, s->v.TryStar.body);
+        VISIT_SEQ(st, stmt, s->v.TryStar.orelse);
+        VISIT_SEQ(st, excepthandler, s->v.TryStar.handlers);
+        VISIT_SEQ(st, stmt, s->v.TryStar.finalbody);
+        break;
     case Assert_kind:
         VISIT(st, expr, s->v.Assert.test);
         if (s->v.Assert.msg)

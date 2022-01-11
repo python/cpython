@@ -1,0 +1,2 @@
+Do not set line number of instruction storing doc-string. Fixes regression
+introduced in 3.11 alpha.

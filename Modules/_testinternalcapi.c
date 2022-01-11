@@ -399,6 +399,98 @@ get_getpath_codeobject(PyObject *self, PyObject *Py_UNUSED(args)) {
 }
 
 
+static PyObject *
+encode_locale_ex(PyObject *self, PyObject *args)
+{
+    PyObject *unicode;
+    int current_locale = 0;
+    wchar_t *wstr;
+    PyObject *res = NULL;
+    const char *errors = NULL;
+
+    if (!PyArg_ParseTuple(args, "U|is", &unicode, &current_locale, &errors)) {
+        return NULL;
+    }
+    wstr = PyUnicode_AsWideCharString(unicode, NULL);
+    if (wstr == NULL) {
+        return NULL;
+    }
+    _Py_error_handler error_handler = _Py_GetErrorHandler(errors);
+
+    char *str = NULL;
+    size_t error_pos;
+    const char *reason = NULL;
+    int ret = _Py_EncodeLocaleEx(wstr,
+                                 &str, &error_pos, &reason,
+                                 current_locale, error_handler);
+    PyMem_Free(wstr);
+
+    switch(ret) {
+    case 0:
+        res = PyBytes_FromString(str);
+        PyMem_RawFree(str);
+        break;
+    case -1:
+        PyErr_NoMemory();
+        break;
+    case -2:
+        PyErr_Format(PyExc_RuntimeError, "encode error: pos=%zu, reason=%s",
+                     error_pos, reason);
+        break;
+    case -3:
+        PyErr_SetString(PyExc_ValueError, "unsupported error handler");
+        break;
+    default:
+        PyErr_SetString(PyExc_ValueError, "unknown error code");
+        break;
+    }
+    return res;
+}
+
+
+static PyObject *
+decode_locale_ex(PyObject *self, PyObject *args)
+{
+    char *str;
+    int current_locale = 0;
+    PyObject *res = NULL;
+    const char *errors = NULL;
+
+    if (!PyArg_ParseTuple(args, "y|is", &str, &current_locale, &errors)) {
+        return NULL;
+    }
+    _Py_error_handler error_handler = _Py_GetErrorHandler(errors);
+
+    wchar_t *wstr = NULL;
+    size_t wlen = 0;
+    const char *reason = NULL;
+    int ret = _Py_DecodeLocaleEx(str,
+                                 &wstr, &wlen, &reason,
+                                 current_locale, error_handler);
+
+    switch(ret) {
+    case 0:
+        res = PyUnicode_FromWideChar(wstr, wlen);
+        PyMem_RawFree(wstr);
+        break;
+    case -1:
+        PyErr_NoMemory();
+        break;
+    case -2:
+        PyErr_Format(PyExc_RuntimeError, "decode error: pos=%zu, reason=%s",
+                     wlen, reason);
+        break;
+    case -3:
+        PyErr_SetString(PyExc_ValueError, "unsupported error handler");
+        break;
+    default:
+        PyErr_SetString(PyExc_ValueError, "unknown error code");
+        break;
+    }
+    return res;
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -413,6 +505,8 @@ static PyMethodDef TestMethods[] = {
     {"test_edit_cost", test_edit_cost, METH_NOARGS},
     {"normalize_path", normalize_path, METH_O, NULL},
     {"get_getpath_codeobject", get_getpath_codeobject, METH_NOARGS, NULL},
+    {"EncodeLocaleEx", encode_locale_ex, METH_VARARGS},
+    {"DecodeLocaleEx", decode_locale_ex, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 

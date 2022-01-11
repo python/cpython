@@ -534,7 +534,7 @@ DEFAULT_NAMESPACE = dict(
     VERSION_MINOR=8,    # of testing
     PYWINVER=None,
     EXE_SUFFIX=None,
-    
+
     ENV_PATH="",
     ENV_PYTHONHOME="",
     ENV_PYTHONEXECUTABLE="",
@@ -734,12 +734,15 @@ class MockWinreg:
                 return n.removeprefix(prefix)
         raise OSError("end of enumeration")
 
-    def QueryValue(self, hkey):
+    def QueryValue(self, hkey, subkey):
         if verbose:
-            print(f"QueryValue({hkey})")
+            print(f"QueryValue({hkey}, {subkey})")
         hkey = hkey.casefold()
         if hkey not in self.open:
             raise RuntimeError("key is not open")
+        if subkey:
+            subkey = subkey.casefold()
+            hkey = f'{hkey}\\{subkey}'
         try:
             return self.keys[hkey]
         except KeyError:

@@ -1429,6 +1429,15 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    .. versionadded:: 3.3
 
+.. data:: SF_NOCACHE
+
+   Parameter to the :func:`sendfile` function, if the implementation supports
+   it. The data won't be cached in the virtual memory and will be freed afterwards.
+
+   .. availability:: Unix.
+
+   .. versionadded:: 3.11
+
 
 .. function:: splice(src, dst, count, offset_src=None, offset_dst=None)
 
@@ -2081,7 +2090,7 @@ features:
    directories you can set the umask before invoking :func:`makedirs`.  The
    file permission bits of existing parent directories are not changed.
 
-   If *exist_ok* is ``False`` (the default), an :exc:`FileExistsError` is
+   If *exist_ok* is ``False`` (the default), a :exc:`FileExistsError` is
    raised if the target directory already exists.
 
    .. note::
@@ -2357,7 +2366,7 @@ features:
 .. function:: rmdir(path, *, dir_fd=None)
 
    Remove (delete) the directory *path*.  If the directory does not exist or is
-   not empty, an :exc:`FileNotFoundError` or an :exc:`OSError` is raised
+   not empty, a :exc:`FileNotFoundError` or an :exc:`OSError` is raised
    respectively.  In order to remove whole directory trees,
    :func:`shutil.rmtree` can be used.
 
@@ -4245,20 +4254,20 @@ written in Python, such as a mail server's external command delivery program.
    Returns the current global process times.
    The return value is an object with five attributes:
 
-   * :attr:`user` - user time
-   * :attr:`system` - system time
-   * :attr:`children_user` - user time of all child processes
-   * :attr:`children_system` - system time of all child processes
-   * :attr:`elapsed` - elapsed real time since a fixed point in the past
+   * :attr:`!user` - user time
+   * :attr:`!system` - system time
+   * :attr:`!children_user` - user time of all child processes
+   * :attr:`!children_system` - system time of all child processes
+   * :attr:`!elapsed` - elapsed real time since a fixed point in the past
 
    For backwards compatibility, this object also behaves like a five-tuple
-   containing :attr:`user`, :attr:`system`, :attr:`children_user`,
-   :attr:`children_system`, and :attr:`elapsed` in that order.
+   containing :attr:`!user`, :attr:`!system`, :attr:`!children_user`,
+   :attr:`!children_system`, and :attr:`!elapsed` in that order.
 
    See the Unix manual page
    :manpage:`times(2)` and :manpage:`times(3)` manual page on Unix or `the GetProcessTimes MSDN
    <https://docs.microsoft.com/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocesstimes>`_
-   on Windows. On Windows, only :attr:`user` and :attr:`system` are known; the other attributes are zero.
+   on Windows. On Windows, only :attr:`!user` and :attr:`!system` are known; the other attributes are zero.
 
    .. availability:: Unix, Windows.
 

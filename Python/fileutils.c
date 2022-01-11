@@ -2129,7 +2129,7 @@ join_relfile(wchar_t *buffer, size_t bufsize,
 {
 #ifdef MS_WINDOWS
     if (FAILED(PathCchCombineEx(buffer, bufsize, dirname, relfile, 
-        PATHCCH_ALLOW_LONG_PATHS | PATHCCH_FORCE_ENABLE_LONG_NAME_PROCESS))) {
+        PATHCCH_ALLOW_LONG_PATHS))) {
         return -1;
     }
 #else
@@ -2218,11 +2218,11 @@ _Py_normpath(wchar_t *path, Py_ssize_t size)
     if (!path[0] || size == 0) {
         return path;
     }
-    wchar_t lastC = L'\0';
-    wchar_t *p1 = path;
     wchar_t *pEnd = size >= 0 ? &path[size] : NULL;
-    wchar_t *p2 = path;
-    wchar_t *minP2 = path;
+    wchar_t *p1 = path;     // sequentially scanned address in the path
+    wchar_t *p2 = path;     // destination of a scanned character to be ljusted
+    wchar_t *minP2 = path;  // the beginning of the destination range
+    wchar_t lastC = L'\0';  // the last ljusted character, p2[-1] in most cases
 
 #define IS_END(x) (pEnd ? (x) == pEnd : !*(x))
 #ifdef ALTSEP
@@ -2264,14 +2264,18 @@ _Py_normpath(wchar_t *path, Py_ssize_t size)
                 *p2++ = lastC = *p1;
             }
         }
-        minP2 = p2;
+        if (sepCount) {
+            minP2 = p2;      // Invalid path
+        } else {
+            minP2 = p2 - 1;  // Absolute path has SEP at minP2
+        }
     }
 #else
     // Skip past two leading SEPs
     else if (IS_SEP(&p1[0]) && IS_SEP(&p1[1]) && !IS_SEP(&p1[2])) {
         *p2++ = *p1++;
         *p2++ = *p1++;
-        minP2 = p2;
+        minP2 = p2 - 1;  // Absolute path has SEP at minP2
         lastC = SEP;
     }
 #endif /* MS_WINDOWS */
@@ -2292,8 +2296,11 @@ _Py_normpath(wchar_t *path, Py_ssize_t size)
                     wchar_t *p3 = p2;
                     while (p3 != minP2 && *--p3 == SEP) { }
                     while (p3 != minP2 && *(p3 - 1) != SEP) { --p3; }
-                    if (p3[0] == L'.' && p3[1] == L'.' && IS_SEP(&p3[2])) {
-                        // Previous segment is also ../, so append instead
+                    if (p2 == minP2
+                        || (p3[0] == L'.' && p3[1] == L'.' && IS_SEP(&p3[2])))
+                    {
+                        // Previous segment is also ../, so append instead.
+                        // Relative path does not absorb ../ at minP2 as well.
                         *p2++ = L'.';
                         *p2++ = L'.';
                         lastC = L'.';
@@ -2314,7 +2321,7 @@ _Py_normpath(wchar_t *path, Py_ssize_t size)
             }
         } else {
             *p2++ = lastC = c;
-        } 
+        }
     }
     *p2 = L'\0';
     if (p2 != minP2) {
