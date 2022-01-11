@@ -648,8 +648,12 @@ class TraceTestCase(unittest.TestCase):
                     8
                 else:
                     10
+                if func.__name__ == 'Fred': 
+                    12
+                else:
+                    14
             finally:
-                12
+                16
 
         self.run_and_compare(func,
             [(0, 'call'),
@@ -658,8 +662,10 @@ class TraceTestCase(unittest.TestCase):
              (6, 'line'),
              (7, 'line'),
              (10, 'line'),
-             (12, 'line'),
-             (12, 'return')])
+             (11, 'line'),
+             (14, 'line'),
+             (16, 'line'),
+             (16, 'return')])
 
     def test_nested_loops(self):
 
@@ -1232,8 +1238,12 @@ class TraceTestCase(unittest.TestCase):
                     8
                 else:
                     10
+                if func.__name__ == 'Fred':
+                    12
+                else:
+                    14
             finally:
-                12
+                16
 
         self.run_and_compare(func,
             [(0, 'call'),
@@ -1242,8 +1252,10 @@ class TraceTestCase(unittest.TestCase):
              (6, 'line'),
              (7, 'line'),
              (10, 'line'),
-             (12, 'line'),
-             (12, 'return')])
+             (11, 'line'),
+             (14, 'line'),
+             (16, 'line'),
+             (16, 'return')])
 
     def test_try_except_star_named_no_exception(self):
 
