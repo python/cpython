@@ -855,7 +855,7 @@ python-rawfs.js: Programs/python.o $(LIBRARY_DEPS) pybuilddir.txt
 	    $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS) \
 	    -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 \
 	    -s NODERAWFS=1 -s EXIT_RUNTIME=1 -s USE_PTHREADS \
-		-s PROXY_TO_PTHREAD
+	    -s PROXY_TO_PTHREAD
 
 ##########################################################################
 # Build static libmpdec.a
