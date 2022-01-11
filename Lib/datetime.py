@@ -558,6 +558,7 @@ class timedelta:
         self._microseconds = us
         self._hashcode = -1
         return self
+ 
 
     def __repr__(self):
         args = []
@@ -616,6 +617,8 @@ class timedelta:
         return NotImplemented
 
     __radd__ = __add__
+    
+    __iadd__ = __add__
 
     def __sub__(self, other):
         if isinstance(other, timedelta):
@@ -630,6 +633,8 @@ class timedelta:
         if isinstance(other, timedelta):
             return -self + other
         return NotImplemented
+    
+    __isub__ = __sub__
 
     def __neg__(self):
         # for CPython compatibility, we cannot use
@@ -661,6 +666,8 @@ class timedelta:
         return NotImplemented
 
     __rmul__ = __mul__
+    
+    __imul__ = __mul__
 
     def _to_microseconds(self):
         return ((self._days * (24*3600) + self._seconds) * 1000000 +
@@ -692,6 +699,8 @@ class timedelta:
             r = self._to_microseconds() % other._to_microseconds()
             return timedelta(0, 0, r)
         return NotImplemented
+    
+    __imod__ = __mod__
 
     def __divmod__(self, other):
         if isinstance(other, timedelta):
