@@ -90,9 +90,13 @@ PyAPI_FUNC(int) _Py_fstat_noraise(
     int fd,
     struct _Py_stat_struct *status);
 
+#ifndef MS_WINDOWS
 PyAPI_FUNC(int) _Py_stat(
     PyObject *path,
     struct stat *status);
+
+extern int _Py_wstat(const wchar_t *, struct stat *);
+#endif
 
 PyAPI_FUNC(int) _Py_open(
     const char *pathname,
@@ -197,9 +201,6 @@ PyAPI_FUNC(wchar_t*) _Py_DecodeUTF8_surrogateescape(
     const char *arg,
     Py_ssize_t arglen,
     size_t *wlen);
-
-extern int
-_Py_wstat(const wchar_t *, struct stat *);
 
 PyAPI_FUNC(int) _Py_GetForceASCII(void);
 

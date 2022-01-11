@@ -1207,18 +1207,12 @@ _Py_fstat(int fd, struct _Py_stat_struct *status)
     return 0;
 }
 
-/* Like _Py_stat() but with a raw filename. */
+#ifndef MS_WINDOWS
+/* Like _Py_stat() but with a wide-string filename. */
 int
 _Py_wstat(const wchar_t* path, struct stat *buf)
 {
     int err;
-#ifdef MS_WINDOWS
-    struct _stat wstatbuf;
-    err = _wstat(path, &wstatbuf);
-    if (!err) {
-        buf->st_mode = wstatbuf.st_mode;
-    }
-#else
     char *fname;
     fname = _Py_EncodeLocaleRaw(path, NULL);
     if (fname == NULL) {
@@ -1227,37 +1221,20 @@ _Py_wstat(const wchar_t* path, struct stat *buf)
     }
     err = stat(fname, buf);
     PyMem_RawFree(fname);
-#endif
     return err;
 }
+#endif  // !defined(MS_WINDOWS)
 
 
+#ifndef MS_WINDOWS
 /* Call _wstat() on Windows, or encode the path to the filesystem encoding and
    call stat() otherwise. Only fill st_mode attribute on Windows.
 
    Return 0 on success, -1 on _wstat() / stat() error, -2 if an exception was
    raised. */
-
 int
 _Py_stat(PyObject *path, struct stat *statbuf)
 {
-#ifdef MS_WINDOWS
-    int err;
-
-#if USE_UNICODE_WCHAR_CACHE
-    const wchar_t *wpath = _PyUnicode_AsUnicode(path);
-#else /* USE_UNICODE_WCHAR_CACHE */
-    wchar_t *wpath = PyUnicode_AsWideCharString(path, NULL);
-#endif /* USE_UNICODE_WCHAR_CACHE */
-    if (wpath == NULL)
-        return -2;
-
-    err = _Py_wstat(wpath, statbuf);
-#if !USE_UNICODE_WCHAR_CACHE
-    PyMem_Free(wpath);
-#endif /* USE_UNICODE_WCHAR_CACHE */
-    return err;
-#else
     int ret;
     PyObject *bytes;
     char *cpath;
@@ -1275,8 +1252,8 @@ _Py_stat(PyObject *path, struct stat *statbuf)
     ret = stat(cpath, statbuf);
     Py_DECREF(bytes);
     return ret;
-#endif
 }
+#endif  // !defined(MS_WINDOWS)
 
 
 /* This function MUST be kept async-signal-safe on POSIX when raise=0. */
@@ -2128,7 +2105,7 @@ join_relfile(wchar_t *buffer, size_t bufsize,
              const wchar_t *dirname, const wchar_t *relfile)
 {
 #ifdef MS_WINDOWS
-    if (FAILED(PathCchCombineEx(buffer, bufsize, dirname, relfile, 
+    if (FAILED(PathCchCombineEx(buffer, bufsize, dirname, relfile,
         PATHCCH_ALLOW_LONG_PATHS))) {
         return -1;
     }

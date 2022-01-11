@@ -116,16 +116,30 @@ Copyright (C) 1994 Steen Lumholt.
 #include <conio.h>
 #define WAIT_FOR_STDIN
 
+static int
+file_exists(PyObject *path)
+{
+    wchar_t *wpath = PyUnicode_AsWideCharString(path, NULL);
+    if (wpath == NULL) {
+        return -2;
+    }
+
+    DWORD attr = GetFileAttributesW(wpath);
+    int res = (attr != INVALID_FILE_ATTRIBUTES);
+
+    PyMem_Free(wpath);
+    return res;
+}
+
 static PyObject *
-_get_tcl_lib_path()
+_get_tcl_lib_path(void)
 {
     static PyObject *tcl_library_path = NULL;
     static int already_checked = 0;
 
     if (already_checked == 0) {
         PyObject *prefix;
-        struct stat stat_buf;
-        int stat_return_value;
+        int res;
 
         prefix = PyUnicode_FromWideChar(Py_GetPrefix(), -1);
         if (prefix == NULL) {
@@ -141,11 +155,11 @@ _get_tcl_lib_path()
         if (tcl_library_path == NULL) {
             return NULL;
         }
-        stat_return_value = _Py_stat(tcl_library_path, &stat_buf);
-        if (stat_return_value == -2) {
+        res = file_exists(tcl_library_path);
+        if (res == -2) {
             return NULL;
         }
-        if (stat_return_value == -1) {
+        if (res == -1) {
             /* install location doesn't exist, reset errno and see if
                we're a repository build */
             errno = 0;
@@ -155,11 +169,11 @@ _get_tcl_lib_path()
             if (tcl_library_path == NULL) {
                 return NULL;
             }
-            stat_return_value = _Py_stat(tcl_library_path, &stat_buf);
-            if (stat_return_value == -2) {
+            res = file_exists(tcl_library_path);
+            if (res == -2) {
                 return NULL;
             }
-            if (stat_return_value == -1) {
+            if (res == -1) {
                 /* tcltkDir for a repository build doesn't exist either,
                    reset errno and leave Tcl to its own devices */
                 errno = 0;
