@@ -48,7 +48,7 @@ static void _PyThreadState_Delete(PyThreadState *tstate, int check_current);
 
 /* We use "initial" if the runtime gets re-used
    (e.g. Py_Finalize() followed by Py_Initialize(). */
-static _PyRuntimeState initial = _PyRuntimeState_INIT;
+static const _PyRuntimeState initial = _PyRuntimeState_INIT;
 
 static int
 alloc_for_runtime(PyThread_type_lock *plock1, PyThread_type_lock *plock2,
