@@ -352,7 +352,7 @@ PyInterpreterState_New(void)
         assert(interpreters->main == NULL);
         assert(id == 0);
 
-        interp = &runtime->_preallocated.interpreters_main;
+        interp = &runtime->_preallocated.interpreters.main;
         assert(interp->id == 0);
         assert(interp->next == NULL);
 
@@ -367,7 +367,7 @@ PyInterpreterState_New(void)
             goto error;
         }
         // Set to _PyInterpreterState_INIT.
-        memcpy(interp, &initial._preallocated.interpreters_main,
+        memcpy(interp, &initial._preallocated.interpreters.main,
                sizeof(*interp));
 
         if (id < 0) {
@@ -832,7 +832,7 @@ new_threadstate(PyInterpreterState *interp)
         // It's the interpreter's initial thread state.
         assert(id == 1);
 
-        tstate = &interp->_preallocated.initial_thread;
+        tstate = &interp->_preallocated.threads.head;
     }
     else {
         // Every valid interpreter must have at least one thread.
@@ -845,7 +845,7 @@ new_threadstate(PyInterpreterState *interp)
         }
         // Set to _PyThreadState_INIT.
         memcpy(tstate,
-               &initial._preallocated.interpreters_main._preallocated.initial_thread,
+               &initial._preallocated.interpreters.main._preallocated.threads.head,
                sizeof(*tstate));
     }
     interp->threads.head = tstate;

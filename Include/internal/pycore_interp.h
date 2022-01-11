@@ -174,7 +174,10 @@ struct _is {
 
     struct {
         // See _PyRuntimeState._preallocated for an explanation.
-        PyThreadState initial_thread;
+        // Below here, all fields mirror the corresponding fields above.
+        struct {
+            PyThreadState head;
+        } threads;
         // XXX Pre-allocate as many objects from above as possible here.
     } _preallocated;
 };

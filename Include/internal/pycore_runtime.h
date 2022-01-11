@@ -126,7 +126,10 @@ typedef struct pyruntimestate {
         // This allows us to avoid allocation costs during startup and
         // helps simplify the startup code.
         struct _Py_global_objects global_objects;
-        struct _is interpreters_main;
+        // Below here, all fields mirror the corresponding fields above.
+        struct {
+            struct _is main;
+        } interpreters;
         // The only other values to possibly include here are
         // mutexes (PyThread_type_lock).  Currently we don't pre-allocate them
         // because on Windows we only get a pointer type.
@@ -139,12 +142,16 @@ typedef struct pyruntimestate {
     { \
         ._preallocated = { \
             .global_objects = _Py_global_objects_INIT, \
-            .interpreters_main = { \
-                ._static = 1, \
-                ._preallocated = { \
-                    .initial_thread = { \
-                        ._static = 1, \
-                    } \
+            .interpreters = { \
+                .main = { \
+                    ._static = 1, \
+                    ._preallocated = { \
+                        .threads = { \
+                            .head = { \
+                                ._static = 1, \
+                            }, \
+                        }, \
+                    }, \
                 }, \
             } \
         }, \
