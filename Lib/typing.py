@@ -2042,8 +2042,17 @@ def final(f):
       class Other(Leaf):  # Error reported by type checker
           ...
 
-    There is no runtime checking of these properties.
+    There is no runtime checking of these properties. The decorator
+    sets the ``__final__`` attribute to ``True`` on the decorated object
+    to allow runtime introspection.
     """
+    try:
+        f.__final__ = True
+    except (AttributeError, TypeError):
+        # Skip the attribute silently if it is not writable.
+        # AttributeError happens if the object has __slots__ or a
+        # read-only property, TypeError if it's a builtin class.
+        pass
     return f
 
 
