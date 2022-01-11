@@ -459,12 +459,45 @@ Querying the error indicator
          }
 
 
+.. c:function:: void PyErr_GetActiveException(PyObject **pexc)
+
+   Retrieve the active exception instance, as would be returned by ``sys.exception()``.
+   This refers to an exception that was *already caught*, not to an exception that was
+   freshly raised. Returns a new reference to the exception or to ``Py_None``.
+   Does not modify the exception state.
+
+   .. note::
+
+      This function is not normally used by code that wants to handle exceptions.
+      Rather, it can be used when code needs to save and restore the exception
+      state temporarily.  Use :c:func:`PyErr_SetActiveException` to restore or
+      clear the exception state.
+
+   .. versionadded:: 3.11
+
+.. c:function:: void PyErr_SetActiveException(PyObject *exc)
+
+   Set the active exception, as known from ``sys.exception()``.  This refers
+   to an exception that was *already caught*, not to an exception that was
+   freshly raised.  This function steals the reference of the argument.
+   To clear the exception state, pass ``NULL``.
+
+   .. note::
+
+      This function is not normally used by code that wants to handle exceptions.
+      Rather, it can be used when code needs to save and restore the exception
+      state temporarily.  Use :c:func:`PyErr_GetActiveException` to read the exception
+      state.
+
+   .. versionadded:: 3.11
+
 .. c:function:: void PyErr_GetExcInfo(PyObject **ptype, PyObject **pvalue, PyObject **ptraceback)
 
-   Retrieve the exception info, as known from ``sys.exc_info()``.  This refers
-   to an exception that was *already caught*, not to an exception that was
-   freshly raised.  Returns new references for the three objects, any of which
-   may be ``NULL``.  Does not modify the exception info state.
+   Retrieve the old-style representation of the exception info, as known from
+   ``sys.exc_info()``.  This refers to an exception that was *already caught*,
+   not to an exception that was freshly raised.  Returns new references for the
+   three objects, any of which may be ``NULL``.  Does not modify the exception
+   info state.
 
    .. note::
 

@@ -2559,6 +2559,24 @@ set_errno(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+test_set_exception(PyObject *self, PyObject *args)
+{
+    PyObject *orig_exc;
+    PyObject *new_exc;
+    PyObject *exc;
+    if (!PyArg_ParseTuple(args, "O:test_set_exception",
+                          &new_exc)) {
+        return NULL;
+    }
+
+    PyErr_GetActiveException(&exc);
+
+    Py_INCREF(new_exc);
+    PyErr_SetActiveException(new_exc);
+    return exc;
+}
+
+static PyObject *
 test_set_exc_info(PyObject *self, PyObject *args)
 {
     PyObject *orig_exc;
@@ -5930,6 +5948,7 @@ static PyMethodDef TestMethods[] = {
 #endif
     {"traceback_print",         traceback_print,                 METH_VARARGS},
     {"exception_print",         exception_print,                 METH_VARARGS},
+    {"set_exception",           test_set_exception,              METH_VARARGS},
     {"set_exc_info",            test_set_exc_info,               METH_VARARGS},
     {"argparsing",              argparsing,                      METH_VARARGS},
     {"code_newempty",           code_newempty,                   METH_VARARGS},

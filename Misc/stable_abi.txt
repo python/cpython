@@ -2196,3 +2196,8 @@ data PyStructSequence_UnnamedField
 
 data Py_Version
     added 3.11
+function PyErr_GetActiveException
+    added 3.11
+function PyErr_SetActiveException
+    added 3.11
+
