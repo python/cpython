@@ -6236,9 +6236,8 @@ fi
 
 else
 
-  eval as_val=\$ac_sys_system, Emscripten
-   if test "x$as_val" = xac_sys_emscripten_target=browser; then :
-
+  if test "x$ac_sys_system" = xEmscripten; then :
+  ac_sys_emscripten_target=browser
 fi
 
 fi

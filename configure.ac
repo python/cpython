@@ -1076,7 +1076,7 @@ AC_ARG_WITH([emscripten-target],
     AC_MSG_ERROR([--with-emscripten-target only applies to Emscripten])
   ])
 ], [
-  AS_VAR_IF([ac_sys_system, Emscripten], [ac_sys_emscripten_target=browser])
+  AS_VAR_IF([ac_sys_system], [Emscripten], [ac_sys_emscripten_target=browser])
 ])
 AC_MSG_RESULT([$ac_sys_emscripten_target])
 
