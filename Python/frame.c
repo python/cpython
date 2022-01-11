@@ -91,7 +91,7 @@ take_ownership(PyFrameObject *f, InterpreterFrame *frame)
 }
 
 void
-_PyFrame_Clear(InterpreterFrame * frame)
+_PyFrame_Clear(InterpreterFrame *frame)
 {
     /* It is the responsibility of the owning generator/coroutine
      * to have cleared the generator pointer */
@@ -111,4 +111,17 @@ _PyFrame_Clear(InterpreterFrame * frame)
         Py_XDECREF(frame->localsplus[i]);
     }
     clear_specials(frame);
+}
+
+InterpreterFrame *
+_PyFrame_Push(PyThreadState *tstate, PyFunctionObject *func)
+{
+    PyCodeObject *code = (PyCodeObject *)func->func_code;
+    size_t size = code->co_nlocalsplus + code->co_stacksize + FRAME_SPECIALS_SIZE;
+    InterpreterFrame *new_frame = _PyThreadState_BumpFramePointer(tstate, size);
+    if (new_frame == NULL) {
+        return NULL;
+    }
+    _PyFrame_InitializeSpecials(new_frame, func, NULL, code->co_nlocalsplus);
+    return new_frame;
 }
