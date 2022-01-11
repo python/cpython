@@ -2561,15 +2561,13 @@ set_errno(PyObject *self, PyObject *args)
 static PyObject *
 test_set_exception(PyObject *self, PyObject *args)
 {
-    PyObject *orig_exc;
     PyObject *new_exc;
-    PyObject *exc;
     if (!PyArg_ParseTuple(args, "O:test_set_exception",
                           &new_exc)) {
         return NULL;
     }
 
-    PyErr_GetActiveException(&exc);
+    PyObject *exc = PyErr_GetActiveException();
 
     Py_INCREF(new_exc);
     PyErr_SetActiveException(new_exc);

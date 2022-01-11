@@ -510,19 +510,20 @@ _PyErr_GetExcInfo(PyThreadState *tstate,
     Py_XINCREF(*p_traceback);
 }
 
-void
-_PyErr_GetActiveException(PyThreadState *tstate, PyObject **p_exc)
+PyObject*
+_PyErr_GetActiveException(PyThreadState *tstate)
 {
     _PyErr_StackItem *exc_info = _PyErr_GetTopmostException(tstate);
-    *p_exc = exc_info->exc_value;
-    Py_XINCREF(*p_exc);
+    PyObject *exc = exc_info->exc_value;
+    Py_XINCREF(exc);
+    return exc;
 }
 
-void
-PyErr_GetActiveException(PyObject **p_exc)
+PyObject*
+PyErr_GetActiveException()
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    _PyErr_GetActiveException(tstate, p_exc);
+    return _PyErr_GetActiveException(tstate);
 }
 
 void

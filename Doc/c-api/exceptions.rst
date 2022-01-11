@@ -459,7 +459,7 @@ Querying the error indicator
          }
 
 
-.. c:function:: void PyErr_GetActiveException(PyObject **pexc)
+.. c:function:: PyObject* PyErr_GetActiveException()
 
    Retrieve the active exception instance, as would be returned by ``sys.exception()``.
    This refers to an exception that was *already caught*, not to an exception that was
