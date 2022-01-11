@@ -142,7 +142,7 @@ typedef struct pyruntimestate {
             .interpreters_main = { \
                 ._static = 1, \
                 ._preallocated = { \
-                    .tstate = { \
+                    .initial_thread = { \
                         ._static = 1, \
                     } \
                 }, \

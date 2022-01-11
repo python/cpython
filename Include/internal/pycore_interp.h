@@ -174,7 +174,7 @@ struct _is {
 
     struct {
         // See _PyRuntimeState._preallocated for an explanation.
-        PyThreadState tstate;
+        PyThreadState initial_thread;
         // XXX Pre-allocate as many objects from above as possible here.
     } _preallocated;
 };

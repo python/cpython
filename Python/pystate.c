@@ -832,7 +832,7 @@ new_threadstate(PyInterpreterState *interp)
         // It's the interpreter's initial thread state.
         assert(id == 1);
 
-        tstate = &interp->_preallocated.tstate;
+        tstate = &interp->_preallocated.initial_thread;
     }
     else {
         // Every valid interpreter must have at least one thread.
@@ -845,7 +845,7 @@ new_threadstate(PyInterpreterState *interp)
         }
         // Set to _PyThreadState_INIT.
         memcpy(tstate,
-               &initial._preallocated.interpreters_main._preallocated.tstate,
+               &initial._preallocated.interpreters_main._preallocated.initial_thread,
                sizeof(*tstate));
     }
     interp->threads.head = tstate;
