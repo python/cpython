@@ -318,7 +318,6 @@ COVERAGE_REPORT_OPTIONS=--no-branch-coverage --title "CPython lcov report"
 
 
 ##########################################################################
-
 # Modules
 MODULE_OBJS=	\
 		Modules/config.o \
