@@ -150,11 +150,9 @@ typedef struct pyruntimestate {
         .interpreters = { \
             .main = { \
                 ._static = 1, \
-                ._preallocated = { \
-                    .threads = { \
-                        .head = { \
-                            ._static = 1, \
-                        }, \
+                .threads = { \
+                    ._initial = { \
+                        ._static = 1, \
                     }, \
                 }, \
             }, \

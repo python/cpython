@@ -73,12 +73,29 @@ struct atexit_state {
 /* interpreter state */
 
 // The PyInterpreterState typedef is in Include/pystate.h.
+
+/* PyInterpreterState holds the global state for one of the runtime's
+   interpreters.  Typically the initial (main) interpreter is the only one.
+
+   A number of the fields are declared as values rather than pointers,
+   to avoid dynamic allocation during init.  Any pointer fields
+   are populated when needed and default to NULL.
+
+   For now there are some exceptions to that rule, which require
+   allocation during init.  These will be addressed on a case-by-case basis.
+   Also see _PyRuntimeState regarding the various mutex fields.
+   */
 struct _is {
 
     struct _is *next;
 
     struct pythreads {
         uint64_t next_unique_id;
+        /* The initial threadstate for the interpreter.
+           For the main interpreter this is the main thread.
+           It should not be accessed directly outside of init. */
+        struct _ts _initial;
+        /* The linked list of threads, newest first. */
         struct _ts *head;
         /* Used in Modules/_threadmodule.c. */
         long count;
@@ -169,16 +186,6 @@ struct _is {
 
     struct ast_state ast;
     struct type_cache type_cache;
-
-    // See _PyRuntimeState._preallocated for an explanation of this field.
-    struct {
-        // Below here, all fields mirror the corresponding
-        // PyInterpreterState fields.
-        struct {
-            PyThreadState head;
-        } threads;
-        // XXX Pre-allocate as many objects from above as possible here.
-    } _preallocated;
 };
 
 
