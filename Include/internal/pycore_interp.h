@@ -183,9 +183,10 @@ struct _is {
     struct ast_state ast;
     struct type_cache type_cache;
 
-    /* Below is pre-allocated data that is exposed through PyInterpreterState
-       pointer fields.  They should not be accessed directly outside of init. */
-    /* PyInterpreterState.head */
+    /* The following fields are here to avoid allocation during init.
+       The data is exposed through PyInterpreterState pointer fields.
+       These fields should not be accessed directly outside of init. */
+    /* (the initial PyInterpreterState.threads.head) */
     struct _ts _initial_thread;
 };
 
