@@ -2,6 +2,10 @@
 #  error "this header file must not be included directly"
 #endif
 
+// bpo-46303: On Windows, 'struct stat' may not be defined. Forward declaration
+// to avoid compiler warning on 'struct stat*' in this header file.
+struct stat;
+
 typedef enum {
     _Py_ERROR_UNKNOWN=0,
     _Py_ERROR_STRICT,

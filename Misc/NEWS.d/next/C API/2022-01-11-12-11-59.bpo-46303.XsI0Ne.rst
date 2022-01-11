@@ -1,0 +1,3 @@
+Fix build error when including the main Python.h header file if ``struct
+stat`` is not defined. This structure is used by ``fileutils.h``. Patch by
+Victor Stinner.
