@@ -2614,7 +2614,7 @@ class ForwardRefTests(BaseTestCase):
         self.assertNotEqual(fr, typing.ForwardRef('int', module=__name__))
         frm = typing.ForwardRef('int', module=__name__)
         self.assertEqual(frm, typing.ForwardRef('int', module=__name__))
-        self.assertNotEqual(frm, typing.ForwardRef('int', module='__other_name___'))
+        self.assertNotEqual(frm, typing.ForwardRef('int', module='__other_name__'))
 
     def test_forward_equality_gth(self):
         c1 = typing.ForwardRef('C')
