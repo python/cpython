@@ -881,6 +881,9 @@ rule:
 * *invalid* -- This group matches any other delimiter pattern (usually a single
   delimiter), and it should appear last in the regular expression.
 
+The methods on this class will raise :exc:`ValueError` if the pattern matches
+the template without one of these named groups matching.
+
 
 Helper functions
 ----------------
