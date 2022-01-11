@@ -848,7 +848,7 @@ python.html: Programs/python.o $(LIBRARY_DEPS) $(WASM_STDLIB)
 	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/python.o \
 	    $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS) \
 	    -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 -s USE_PTHREADS \
-		-s PROXY_TO_PTHREAD --preload-file $(WASM_ASSETS_DIR)
+	    -s PROXY_TO_PTHREAD --preload-file $(WASM_ASSETS_DIR)
 
 python-rawfs.js: Programs/python.o $(LIBRARY_DEPS) pybuilddir.txt
 	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/python.o \
