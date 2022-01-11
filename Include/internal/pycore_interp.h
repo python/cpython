@@ -78,7 +78,7 @@ struct atexit_state {
    interpreters.  Typically the initial (main) interpreter is the only one.
 
    A number of the fields are declared as values rather than pointers,
-   to avoid dynamic allocation during init.  Any pointer fields
+   to avoid dynamic allocation during init.  The remaining pointer fields
    are populated when needed and default to NULL.
 
    For now there are some exceptions to that rule, which require

@@ -59,14 +59,14 @@ typedef struct _Py_AuditHookEntry {
    That data is exposed in the internal API as a static variable (_PyRuntime).
 
    A number of its fields are declared as values rather than pointers,
-   to avoid dynamic allocation during runtime init.
-   Any pointer fields are populated when needed and default to NULL.
+   to avoid dynamic allocation during runtime init.  The remaining
+   pointer fields are populated when needed and default to NULL.
 
    For now there are some exceptions to that rule, which require
    allocation during init.
-   Not all of the main interpreter is pre-allocated like this.
+   Not all of the main interpreter is pre-allocated yet.
    Also, we don't pre-allocated the several mutex (PyThread_type_lock)
-   fields yet, because on Windows we only ever get a pointer type.
+   fields (yet?), because on Windows we only ever get a pointer type.
    */
 typedef struct pyruntimestate {
     /* Has been initialized to a safe state.
@@ -137,9 +137,7 @@ typedef struct pyruntimestate {
 
     struct _Py_unicode_runtime_ids unicode_ids;
 
-    /* All the objects that are shared by the runtime's interpreters.
-       Note that the object values are declared here, rather than
-       pointers to the objects. */
+    /* All the objects that are shared by the runtime's interpreters. */
     struct _Py_global_objects global_objects;
 
     /* The "pre-allocated" initial interpreter.  It is exposed through
