@@ -11,6 +11,10 @@ extern "C" {
 #include "pycore_object.h"
 
 
+/* The static initializers defined here should only be used
+   in the runtime init code (in pystate.c and pylifecycle.c). */
+
+
 #define _PyRuntimeState_INIT \
     { \
         .global_objects = _Py_global_objects_INIT, \
