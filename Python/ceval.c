@@ -1681,8 +1681,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
     CFrame cframe;
     CallShape call_shape;
     call_shape.kwnames = NULL;
-    call_shape.postcall_shrink = 1;
+    call_shape.postcall_shrink = 0;
     call_shape.positional_args = 0;
+    call_shape.callable = NULL;
 
     /* WARNING: Because the CFrame lives on the C stack,
      * but can be accessed from a heap allocated object (tstate)
@@ -4860,9 +4861,7 @@ check_eval_breaker:
         TARGET(CALL_NO_KW_BUILTIN_FAST) {
             assert(cframe.use_tracing == 0);
             /* Builtin METH_FASTCALL functions, without keywords */
-            SpecializedCacheEntry *caches = GET_CACHE();
-            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
-            assert(cache0->original_oparg == 0);
+            assert(call_shape.kwnames == NULL);
             PyObject *callable = call_shape.callable;
             assert(call_shape.kwnames == NULL);
             int nargs = call_shape.positional_args;
