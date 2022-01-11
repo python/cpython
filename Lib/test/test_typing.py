@@ -1,5 +1,7 @@
 import contextlib
 import collections
+from functools import lru_cache
+import inspect
 import pickle
 import re
 import sys
@@ -2576,6 +2578,39 @@ class FinalDecoratorTests(BaseTestCase):
         # attribute.
         final(int)
         self.assertIs(False, hasattr(int, "__final__"))
+
+        # Make sure it works with common builtin decorators
+        class Methods:
+            @final
+            @classmethod
+            def clsmethod(cls): ...
+
+            @final
+            @staticmethod
+            def stmethod(): ...
+
+            # The other order doesn't work because property objects
+            # don't allow attribute assignment.
+            @property
+            @final
+            def prop(self): ...
+
+            @final
+            @lru_cache()
+            def cached(self): ...
+
+        # Use getattr_static because the descriptor returns the
+        # underlying function, which doesn't have __final__.
+        self.assertIs(
+            True,
+            inspect.getattr_static(Methods, "clsmethod").__final__
+        )
+        self.assertIs(
+            True,
+            inspect.getattr_static(Methods, "stmethod").__final__
+        )
+        self.assertIs(True, Methods.prop.fget.__final__)
+        self.assertIs(True, Methods.cached.__final__)
 
 
 class CastTests(BaseTestCase):
