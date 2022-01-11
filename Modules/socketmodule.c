@@ -5114,7 +5114,6 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
                                      &family, &type, &proto, &fdobj))
         return -1;
 
-
 #ifdef MS_WINDOWS
     /* In this case, we don't use the family, type and proto args */
     if (fdobj == NULL || fdobj == Py_None)
