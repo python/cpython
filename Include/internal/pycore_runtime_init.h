@@ -11,19 +11,21 @@ extern "C" {
 #include "pycore_object.h"
 
 
-#define _PyThreadState_INIT \
+#define _PyRuntimeState_INIT \
     { \
-        ._static = 1, \
+        .global_objects = _Py_global_objects_INIT, \
+        ._main_interpreter = _PyInterpreterState_INIT, \
     }
+
 #define _PyInterpreterState_INIT \
     { \
         ._static = 1, \
         ._initial_thread = _PyThreadState_INIT, \
     }
-#define _PyRuntimeState_INIT \
+
+#define _PyThreadState_INIT \
     { \
-        .global_objects = _Py_global_objects_INIT, \
-        ._main_interpreter = _PyInterpreterState_INIT, \
+        ._static = 1, \
     }
 
 
