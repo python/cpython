@@ -1054,16 +1054,14 @@ call fails (for example because the path doesn't exist).
 
 .. method:: Path.absolute()
 
-   Make the path absolute, without normalization or resolving symlinks, and return a new path
-   object.  This is equivalent to prepending the current directory::
+   Make the path absolute, without normalization or resolving symlinks.
+   Returns a new path object::
 
-      >>> p = Path('..')
+      >>> p = Path('tests')
       >>> p
-      PosixPath('..')
+      PosixPath('tests')
       >>> p.absolute()
-      PosixPath('/home/antoine/pathlib/..')
-      >>> Path.cwd() / p
-      PosixPath('/home/antoine/pathlib/..')
+      PosixPath('/home/antoine/pathlib/tests')
 
 
 .. method:: Path.resolve(strict=False)
