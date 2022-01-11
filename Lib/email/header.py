@@ -59,10 +59,13 @@ _max_append = email.quoprimime._max_append
 def decode_header(header):
     """Decode a message header value without converting charset.
 
-    Returns a list of (string, charset) pairs containing each of the decoded
-    parts of the header.  Charset is None for non-encoded parts of the header,
-    otherwise a lower-case string containing the name of the character set
-    specified in the encoded string.
+    For historical reasons, this function may return either:
+
+    1. A list of length 1 containing a pair (str, None).
+    2. A list of (bytes, charset) pairs containing each of the decoded
+       parts of the header.  Charset is None for non-encoded parts of the header,
+       otherwise a lower-case string containing the name of the character set
+       specified in the encoded string.
 
     header may be a string that may or may not contain RFC2047 encoded words,
     or it may be a Header object.
