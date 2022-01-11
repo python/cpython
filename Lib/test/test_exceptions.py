@@ -280,6 +280,12 @@ class ExceptionTests(unittest.TestCase):
             }
             \"\"\"
             }'''""", 5, 17)
+        check('''f"""
+
+
+            {
+            6
+            0="""''', 5, 13)
 
         # Errors thrown by symtable.c
         check('x = [(yield i) for i in range(3)]', 1, 7)
