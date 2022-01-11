@@ -254,6 +254,7 @@ get_error_line_from_tokenizer_buffers(Parser *p, Py_ssize_t lineno)
 
     for (int i = 0; i < relative_lineno - 1; i++) {
         char *new_line = strchr(cur_line, '\n') + 1;
+        assert(new_line != NULL && new_line < p->tok->inp);
         if (new_line == NULL || new_line >= p->tok->inp) {
             break;
         }
