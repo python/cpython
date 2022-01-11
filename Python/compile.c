@@ -2034,6 +2034,7 @@ compiler_body(struct compiler *c, asdl_stmt_seq *stmts)
             st = (stmt_ty)asdl_seq_GET(stmts, 0);
             assert(st->kind == Expr_kind);
             VISIT(c, expr, st->v.Expr.value);
+            UNSET_LOC(c);
             if (!compiler_nameop(c, __doc__, Store))
                 return 0;
         }
