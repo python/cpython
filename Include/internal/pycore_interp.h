@@ -10,7 +10,6 @@ extern "C" {
 
 #include "pycore_atomic.h"        // _Py_atomic_address
 #include "pycore_ast_state.h"     // struct ast_state
-#include "pycore_bytesobject.h"   // struct _Py_bytes_state
 #include "pycore_context.h"       // struct _Py_context_state
 #include "pycore_dict.h"          // struct _Py_dict_state
 #include "pycore_exceptions.h"    // struct _Py_exc_state
@@ -152,7 +151,6 @@ struct _is {
 
     PyObject *audit_hooks;
 
-    struct _Py_bytes_state bytes;
     struct _Py_unicode_state unicode;
     struct _Py_float_state float_state;
     /* Using a cache is very effective since typically only a single slice is
