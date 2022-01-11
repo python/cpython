@@ -100,9 +100,8 @@ typedef struct pyruntimestate {
         PyInterpreterState *head;
         /* The runtime's initial interpreter, which has a special role
            in the operation of the runtime.  It is also often the only
-           interpreter.
-           Note that this is not a pointer. */
-        PyInterpreterState main;
+           interpreter. */
+        PyInterpreterState* main;
         /* _next_interp_id is an auto-numbered sequence of small
            integers.  It gets initialized in _PyInterpreterState_Init(),
            which is called in Py_Initialize(), and used in
@@ -142,6 +141,11 @@ typedef struct pyruntimestate {
        Note that the object values are declared here, rather than
        pointers to the objects. */
     struct _Py_global_objects global_objects;
+
+    /* The "pre-allocated" initial interpreter.  It is exposed through
+       PyInterpreterState.interpreters.main and should not be accessed
+       directly (outside of init). */
+    PyInterpreterState _main_interpreter;
 } _PyRuntimeState;
 
 #define _PyThreadState_INIT \
@@ -156,9 +160,7 @@ typedef struct pyruntimestate {
 #define _PyRuntimeState_INIT \
     { \
         .global_objects = _Py_global_objects_INIT, \
-        .interpreters = { \
-            .main = _PyInterpreterState_INIT, \
-        }, \
+        ._main_interpreter = _PyInterpreterState_INIT, \
     }
 
 
