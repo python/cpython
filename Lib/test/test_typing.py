@@ -2941,7 +2941,6 @@ class OverloadTests(BaseTestCase):
 # Definitions needed for features introduced in Python 3.6
 
 from test import ann_module, ann_module2, ann_module3, ann_module5, ann_module6
-from typing import AsyncContextManager
 import asyncio
 
 T_a = TypeVar('T_a')
@@ -3034,7 +3033,7 @@ class HasForeignBaseClass(mod_generics_cache.A):
     some_xrepr: 'XRepr'
     other_a: 'mod_generics_cache.A'
 
-async def g_with(am: AsyncContextManager[int]):
+async def g_with(am: typing.AsyncContextManager[int]):
     x: int
     async with am as x:
         return x
