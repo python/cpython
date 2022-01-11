@@ -1621,7 +1621,9 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                                           _Py_OPARG(*instr));
                 goto success;
             }
-            if (PyLong_CheckExact(lhs)) {
+            if (PyLong_CheckExact(lhs) && 
+                (size_t)Py_SIZE(lhs) < 1 && (size_t)Py_SIZE(rhs) < 1)
+            {
                 *instr = _Py_MAKECODEUNIT(BINARY_OP_ADD_INT, _Py_OPARG(*instr));
                 goto success;
             }
@@ -1637,7 +1639,9 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                 SPECIALIZATION_FAIL(BINARY_OP, SPEC_FAIL_DIFFERENT_TYPES);
                 goto failure;
             }
-            if (PyLong_CheckExact(lhs)) {
+            if (PyLong_CheckExact(lhs) && 
+                (size_t)Py_SIZE(lhs) < 1 && (size_t)Py_SIZE(rhs) < 1)
+            {
                 *instr = _Py_MAKECODEUNIT(BINARY_OP_MULTIPLY_INT,
                                           _Py_OPARG(*instr));
                 goto success;
@@ -1654,7 +1658,9 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                 SPECIALIZATION_FAIL(BINARY_OP, SPEC_FAIL_DIFFERENT_TYPES);
                 goto failure;
             }
-            if (PyLong_CheckExact(lhs)) {
+            if (PyLong_CheckExact(lhs) && 
+                (size_t)Py_SIZE(lhs) < 1 && (size_t)Py_SIZE(rhs) < 1)
+            {
                 *instr = _Py_MAKECODEUNIT(BINARY_OP_SUBTRACT_INT,
                                           _Py_OPARG(*instr));
                 goto success;

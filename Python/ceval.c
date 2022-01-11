@@ -2058,12 +2058,24 @@ check_eval_breaker:
             PyObject *right = TOP();
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
+            DEOPT_IF(1 < (size_t)Py_SIZE(left), BINARY_OP);
+            DEOPT_IF(1 < (size_t)Py_SIZE(right), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
-            PyObject *prod = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
-            SET_SECOND(prod);
+            stwodigits i = Py_SIZE(left) * ((PyLongObject *)left)->ob_digit[0];
+            i *= Py_SIZE(right) * ((PyLongObject *)right)->ob_digit[0];
             Py_DECREF(right);
-            Py_DECREF(left);
             STACK_SHRINK(1);
+            int op = GET_CACHE()->adaptive.original_oparg;
+            if (_PY_NSMALLPOSINTS < i && i < PyLong_BASE &&
+                Py_REFCNT(left) == 1 + (op == NB_INPLACE_MULTIPLY))
+            {
+                ((PyLongObject *)left)->ob_digit[0] = i;
+                Py_SET_SIZE(left, 1);
+                DISPATCH();
+            }
+            Py_DECREF(left);
+            PyObject *prod = PyLong_FromLong(i);
+            SET_TOP(prod);
             if (prod == NULL) {
                 goto error;
             }
@@ -2076,14 +2088,18 @@ check_eval_breaker:
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
-            double dprod = ((PyFloatObject *)left)->ob_fval *
-                ((PyFloatObject *)right)->ob_fval;
-            PyObject *prod = PyFloat_FromDouble(dprod);
-            SET_SECOND(prod);
+            double dprod = PyFloat_AS_DOUBLE(left) * PyFloat_AS_DOUBLE(right);
             Py_DECREF(right);
-            Py_DECREF(left);
             STACK_SHRINK(1);
-            if (prod == NULL) {
+            int op = GET_CACHE()->adaptive.original_oparg;
+            if (Py_REFCNT(left) == 1 + (op == NB_INPLACE_SUBTRACT)) {
+                PyFloat_AS_DOUBLE(left) = dprod;
+                DISPATCH();
+            }
+            Py_DECREF(left);
+            PyObject *sub = PyFloat_FromDouble(dprod);
+            SET_TOP(sub);
+            if (sub == NULL) {
                 goto error;
             }
             DISPATCH();
@@ -2094,12 +2110,24 @@ check_eval_breaker:
             PyObject *right = TOP();
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
+            DEOPT_IF(1 < (size_t)Py_SIZE(left), BINARY_OP);
+            DEOPT_IF(1 < (size_t)Py_SIZE(right), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
-            PyObject *sub = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
-            SET_SECOND(sub);
+            stwodigits i = Py_SIZE(left) * ((PyLongObject *)left)->ob_digit[0];
+            i -= Py_SIZE(right) * ((PyLongObject *)right)->ob_digit[0];
             Py_DECREF(right);
-            Py_DECREF(left);
             STACK_SHRINK(1);
+            int op = GET_CACHE()->adaptive.original_oparg;
+            if (_PY_NSMALLPOSINTS < i && i < PyLong_BASE &&
+                Py_REFCNT(left) == 1 + (op == NB_INPLACE_SUBTRACT))
+            {
+                ((PyLongObject *)left)->ob_digit[0] = i;
+                Py_SET_SIZE(left, 1);
+                DISPATCH();
+            }
+            Py_DECREF(left);
+            PyObject *sub = PyLong_FromLong(i);
+            SET_TOP(sub);
             if (sub == NULL) {
                 goto error;
             }
@@ -2112,12 +2140,17 @@ check_eval_breaker:
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
-            double dsub = ((PyFloatObject *)left)->ob_fval - ((PyFloatObject *)right)->ob_fval;
-            PyObject *sub = PyFloat_FromDouble(dsub);
-            SET_SECOND(sub);
+            double dsub = PyFloat_AS_DOUBLE(left) - PyFloat_AS_DOUBLE(right);
             Py_DECREF(right);
-            Py_DECREF(left);
             STACK_SHRINK(1);
+            int op = GET_CACHE()->adaptive.original_oparg;
+            if (Py_REFCNT(left) == 1 + (op == NB_INPLACE_SUBTRACT)) {
+                PyFloat_AS_DOUBLE(left) = dsub;
+                DISPATCH();
+            }
+            Py_DECREF(left);
+            PyObject *sub = PyFloat_FromDouble(dsub);
+            SET_TOP(sub);
             if (sub == NULL) {
                 goto error;
             }
@@ -2175,14 +2208,18 @@ check_eval_breaker:
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
-            double dsum = ((PyFloatObject *)left)->ob_fval +
-                ((PyFloatObject *)right)->ob_fval;
-            PyObject *sum = PyFloat_FromDouble(dsum);
-            SET_SECOND(sum);
+            double dsum = PyFloat_AS_DOUBLE(left) + PyFloat_AS_DOUBLE(right);
             Py_DECREF(right);
-            Py_DECREF(left);
             STACK_SHRINK(1);
-            if (sum == NULL) {
+            int op = GET_CACHE()->adaptive.original_oparg;
+            if (Py_REFCNT(left) == 1 + (op == NB_INPLACE_SUBTRACT)) {
+                PyFloat_AS_DOUBLE(left) = dsum;
+                DISPATCH();
+            }
+            Py_DECREF(left);
+            PyObject *sub = PyFloat_FromDouble(dsum);
+            SET_TOP(sub);
+            if (sub == NULL) {
                 goto error;
             }
             DISPATCH();
@@ -2192,13 +2229,25 @@ check_eval_breaker:
             PyObject *left = SECOND();
             PyObject *right = TOP();
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
-            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
+            DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
+            DEOPT_IF(1 < (size_t)Py_SIZE(left), BINARY_OP);
+            DEOPT_IF(1 < (size_t)Py_SIZE(right), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
-            PyObject *sum = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
-            SET_SECOND(sum);
+            stwodigits i = Py_SIZE(left) * ((PyLongObject *)left)->ob_digit[0];
+            i += Py_SIZE(right) * ((PyLongObject *)right)->ob_digit[0];
             Py_DECREF(right);
-            Py_DECREF(left);
             STACK_SHRINK(1);
+            int op = GET_CACHE()->adaptive.original_oparg;
+            if (_PY_NSMALLPOSINTS < i && i < PyLong_BASE &&
+                Py_REFCNT(left) == 1 + (op == NB_INPLACE_ADD))
+            {
+                ((PyLongObject *)left)->ob_digit[0] = i;
+                Py_SET_SIZE(left, 1);
+                DISPATCH();
+            }
+            Py_DECREF(left);
+            PyObject *sum = PyLong_FromLong(i);
+            SET_TOP(sum);
             if (sum == NULL) {
                 goto error;
             }
