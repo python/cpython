@@ -302,12 +302,6 @@ Sleeping
    tasks to run. This can be used by long-running functions to avoid
    blocking the event loop for the full duration of the function call.
 
-   .. deprecated-removed:: 3.8 3.10
-      The ``loop`` parameter.  This function has been implicitly getting the
-      current running loop since 3.7.  See
-      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
-      for more information.
-
    .. _asyncio_example_sleep:
 
    Example of coroutine displaying the current date every second
@@ -367,12 +361,6 @@ Running Tasks Concurrently
    call is **not** cancelled in this case.  This is to prevent the
    cancellation of one submitted Task/Future to cause other
    Tasks/Futures to be cancelled.
-
-   .. deprecated-removed:: 3.8 3.10
-      The ``loop`` parameter.  This function has been implicitly getting the
-      current running loop since 3.7.  See
-      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
-      for more information.
 
    .. _asyncio_example_gather:
 
@@ -510,12 +498,6 @@ Timeouts
 
    If the wait is cancelled, the future *aw* is also cancelled.
 
-   .. deprecated-removed:: 3.8 3.10
-      The ``loop`` parameter.  This function has been implicitly getting the
-      current running loop since 3.7.  See
-      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
-      for more information.
-
    .. _asyncio_example_waitfor:
 
    Example::
@@ -605,12 +587,6 @@ Waiting Primitives
       ``wait()`` directly is deprecated as it leads to
       :ref:`confusing behavior <asyncio_example_wait_coroutine>`.
 
-   .. deprecated-removed:: 3.8 3.10
-      The ``loop`` parameter.  This function has been implicitly getting the
-      current running loop since 3.7.  See
-      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
-      for more information.
-
    .. _asyncio_example_wait_coroutine:
    .. note::
 
@@ -660,12 +636,6 @@ Waiting Primitives
 
    Raises :exc:`asyncio.TimeoutError` if the timeout occurs before
    all Futures are done.
-
-   .. deprecated-removed:: 3.8 3.10
-      The ``loop`` parameter.  This function has been implicitly getting the
-      current running loop since 3.7.  See
-      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
-      for more information.
 
    Example::
 
@@ -863,7 +833,10 @@ Task Object
       Added the ``name`` parameter.
 
    .. deprecated-removed:: 3.8 3.10
-      The *loop* parameter.
+      The ``loop`` parameter.  This function has been implicitly getting the
+      current running loop since 3.7.  See
+      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
+      for more information.
 
    .. deprecated:: 3.10
       Deprecation warning is emitted if *loop* is not specified
