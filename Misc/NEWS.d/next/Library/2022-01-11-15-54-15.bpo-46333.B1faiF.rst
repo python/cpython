@@ -1,1 +1,1 @@
-Honor module parameter in :class:`ForwardRef` as it carries semantic information about the forward ref. This affects :func:`__eq__`, :func:`__repr__` and :func:`__hash__` .
+Honor the ``module`` parameter in :class:`typing.ForwardRef`, as it carries semantic information about the forward reference. This affects the :meth:`__eq__`, :meth:`__repr__` and :meth:`__hash__` methods of the class.
