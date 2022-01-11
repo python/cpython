@@ -2611,6 +2611,10 @@ class ForwardRefTests(BaseTestCase):
         fr = typing.ForwardRef('int')
         self.assertEqual(fr, typing.ForwardRef('int'))
         self.assertNotEqual(List['int'], List[int])
+        self.assertNotEqual(fr, typing.ForwardRef('int', module=__name__))
+        frm = typing.ForwardRef('int', module=__name__)
+        self.assertEqual(frm, typing.ForwardRef('int', module=__name__))
+        self.assertNotEqual(frm, typing.ForwardRef('int', module='__other_name___'))
 
     def test_forward_equality_gth(self):
         c1 = typing.ForwardRef('C')
@@ -2673,6 +2677,8 @@ class ForwardRefTests(BaseTestCase):
 
     def test_forward_repr(self):
         self.assertEqual(repr(List['int']), "typing.List[ForwardRef('int')]")
+        self.assertEqual(repr(List[ForwardRef('int', module='mod')]), 
+                         "typing.List[ForwardRef('int', module='mod')]")
 
     def test_union_forward(self):
 
