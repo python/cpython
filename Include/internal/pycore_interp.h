@@ -170,9 +170,10 @@ struct _is {
     struct ast_state ast;
     struct type_cache type_cache;
 
+    // See _PyRuntimeState._preallocated for an explanation of this field.
     struct {
-        // See _PyRuntimeState._preallocated for an explanation.
-        // Below here, all fields mirror the corresponding fields above.
+        // Below here, all fields mirror the corresponding
+        // PyInterpreterState fields.
         struct {
             PyThreadState head;
         } threads;

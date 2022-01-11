@@ -120,13 +120,14 @@ typedef struct pyruntimestate {
 
     struct _Py_unicode_runtime_ids unicode_ids;
 
+    // The fields in _preallocated are values that would otherwise have
+    // been malloc'ed during runtime init in pystate.c and pylifecycle.c.
+    // This allows us to avoid allocation costs during startup and
+    // helps simplify the startup code.
     struct {
-        // The fields here are values that would otherwise have been
-        // malloc'ed during runtime init in pystate.c and pylifecycle.c.
-        // This allows us to avoid allocation costs during startup and
-        // helps simplify the startup code.
         struct _Py_global_objects global_objects;
-        // Below here, all fields mirror the corresponding fields above.
+        // Below here, all fields mirror the corresponding
+        // _PyRuntimeState fields.
         struct {
             struct _is main;
         } interpreters;
