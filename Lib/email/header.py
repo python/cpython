@@ -61,7 +61,7 @@ _max_append = email.quoprimime._max_append
 def decode_header(header):
     """Decode a message header value without converting charset.
 
-    Returns a list of (string, charset) pairs containing each of the decoded
+    Returns a list of (bytes, charset) pairs containing each of the decoded
     parts of the header.  Charset is None for non-encoded parts of the header,
     otherwise a lower-case string containing the name of the character set
     specified in the encoded string.
@@ -78,7 +78,7 @@ def decode_header(header):
                     for string, charset in header._chunks]
     # If no encoding, just return the header with no charset.
     if not ecre.search(header):
-        return [(header, None)]
+        return [bytes(header, 'raw-unicode-escape'), None)]
     # First step is to parse all the encoded parts into triplets of the form
     # (encoded_string, encoding, charset).  For unencoded strings, the last
     # two parts will be None.

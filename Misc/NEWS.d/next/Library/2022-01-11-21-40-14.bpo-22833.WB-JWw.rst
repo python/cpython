@@ -1,0 +1,3 @@
+The :func:`email.header.decode_header` function now always provides :class:`bytes`,
+never :class:`str`, as the first member of the tuples it returns. Previously, it would
+return (str, None) when decoding a header consisting only of a single, unencoded part.

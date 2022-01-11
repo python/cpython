@@ -2432,6 +2432,18 @@ Re: =?mac-iceland?q?r=8Aksm=9Arg=8Cs?= baz foo bar =?mac-iceland?q?r=8Aksm?=
         self.assertEqual(str(make_header(decode_header(s))),
                          '"Müller T" <T.Mueller@xxx.com>')
 
+    def test_unencoded_ascii(self):
+        # issue 22833
+        s = 'header without encoded words'
+        self.assertEqual(decode_header(s),
+            [(b'header without encoded words', None)])
+
+    def test_unencoded_utf8(self):
+        # issue 22833
+        s = 'header with unexpected non ASCII caract\xe8res'
+        self.assertEqual(decode_header(s),
+            [(b'header with unexpected non ASCII caract\xe8res', None)])
+
 
 # Test the MIMEMessage class
 class TestMIMEMessage(TestEmailBase):
