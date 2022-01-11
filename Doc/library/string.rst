@@ -789,11 +789,15 @@ these rules.  The methods of :class:`Template` are:
       Returns false if the template has invalid placeholders that will cause
       :meth:`substitute` to raise :exc:`ValueError`.
 
+      .. versionadded:: 3.11
+
 
    .. method:: get_identifiers()
 
       Returns a list of the valid identifiers in the template, in the order
       they first appear, ignoring any invalid identifiers.
+
+      .. versionadded:: 3.11
 
    :class:`Template` instances also provide one public data attribute:
 
