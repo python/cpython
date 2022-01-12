@@ -21258,8 +21258,8 @@ fi
 if test "$enable_test_modules" = no; then
     TEST_MODULES=no
 else
-    case $ac_sys_system in #(
-  Emscripten) :
+    case $ac_sys_system/$ac_sys_emscripten_target in #(
+  Emscripten/browser) :
     TEST_MODULES=no ;; #(
   *) :
     TEST_MODULES=yes
