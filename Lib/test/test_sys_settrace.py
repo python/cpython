@@ -648,7 +648,7 @@ class TraceTestCase(unittest.TestCase):
                     8
                 else:
                     10
-                if func.__name__ == 'Fred':
+                if func.__name__ == 'Fred': 
                     12
                 else:
                     14
