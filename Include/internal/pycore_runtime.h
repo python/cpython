@@ -91,7 +91,7 @@ typedef struct pyruntimestate {
         /* The runtime's initial interpreter, which has a special role
            in the operation of the runtime.  It is also often the only
            interpreter. */
-        PyInterpreterState* main;
+        PyInterpreterState *main;
         /* _next_interp_id is an auto-numbered sequence of small
            integers.  It gets initialized in _PyInterpreterState_Init(),
            which is called in Py_Initialize(), and used in
