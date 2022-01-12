@@ -656,7 +656,7 @@ def regen_pcbuild(modules):
         filterlines.append(f'    <None Include="..\\{pyfile}">')
         filterlines.append('      <Filter>Python Files</Filter>')
         filterlines.append('    </None>')
-        deepfreezerules[-1] += f' "-i" "$(PySourcePath){pyfile}" "{src.frozenid}"'
+        deepfreezerules[-1] += f' "-i" "$(PySourcePath){header}" "{src.frozenid}"'
     deepfreezerules[-1] += ' "-o" "$(PySourcePath)Python\\deepfreeze\\deepfreeze.c"\'/>' 
 
     corelines.append(f'    <ClCompile Include="..\\Python\\deepfreeze\\deepfreeze.c" />')
