@@ -863,6 +863,63 @@ static const binaryfunc binary_ops[] = {
     [NB_INPLACE_XOR] = PyNumber_InPlaceXor,
 };
 
+#define BINARY_OP_INT_FAST(NAME, OP)                                      \
+    do {                                                                  \
+        PyObject *lhs = SECOND();                                         \
+        PyObject *rhs = TOP();                                            \
+        DEOPT_IF(!PyLong_CheckExact(lhs), BINARY_OP);                     \
+        DEOPT_IF(!PyLong_CheckExact(rhs), BINARY_OP);                     \
+        DEOPT_IF(1 < Py_ABS(Py_SIZE(lhs)), BINARY_OP);                    \
+        DEOPT_IF(1 < Py_ABS(Py_SIZE(rhs)), BINARY_OP);                    \
+        STAT_INC(BINARY_OP, hit);                                         \
+        stwodigits l = Py_SIZE(lhs) * ((PyLongObject *)lhs)->ob_digit[0]; \
+        stwodigits r = Py_SIZE(rhs) * ((PyLongObject *)rhs)->ob_digit[0]; \
+        stwodigits i = l OP r;                                            \
+        Py_DECREF(rhs);                                                   \
+        STACK_SHRINK(1);                                                  \
+        int op = GET_CACHE()->adaptive.original_oparg;                    \
+        if (Py_ABS(i) < PyLong_BASE &&                                    \
+            (_PY_NSMALLPOSINTS <= i || i < -_PY_NSMALLNEGINTS) &&         \
+            (_PY_NSMALLPOSINTS <= l || l < -_PY_NSMALLNEGINTS) &&         \
+            Py_REFCNT(lhs) == 1 + (op == NB_INPLACE_ ## NAME))            \
+        {                                                                 \
+            assert(i);                                                    \
+            ((PyLongObject *)lhs)->ob_digit[0] = Py_ABS(i);               \
+            Py_SET_SIZE(lhs, i < 0 ? -1 : 1);                             \
+            DISPATCH();                                                   \
+        }                                                                 \
+        Py_DECREF(lhs);                                                   \
+        PyObject *res = PyLong_FromLong(i);                               \
+        SET_TOP(res);                                                     \
+        if (res == NULL) {                                                \
+            goto error;                                                   \
+        }                                                                 \
+        DISPATCH();                                                       \
+    } while (0)
+
+#define BINARY_OP_FLOAT_FAST(NAME, OP)                               \
+    do {                                                             \
+        PyObject *lhs = SECOND();                                    \
+        PyObject *rhs = TOP();                                       \
+        DEOPT_IF(!PyFloat_CheckExact(lhs), BINARY_OP);               \
+        DEOPT_IF(!PyFloat_CheckExact(rhs), BINARY_OP);               \
+        STAT_INC(BINARY_OP, hit);                                    \
+        double d = PyFloat_AS_DOUBLE(lhs) OP PyFloat_AS_DOUBLE(rhs); \
+        Py_DECREF(rhs);                                              \
+        STACK_SHRINK(1);                                             \
+        int op = GET_CACHE()->adaptive.original_oparg;               \
+        if (Py_REFCNT(lhs) == 1 + (op == NB_INPLACE_ ## NAME)) {     \
+            PyFloat_AS_DOUBLE(lhs) = d;                              \
+            DISPATCH();                                              \
+        }                                                            \
+        Py_DECREF(lhs);                                              \
+        PyObject *res = PyFloat_FromDouble(d);                       \
+        SET_TOP(res);                                                \
+        if (res == NULL) {                                           \
+            goto error;                                              \
+        }                                                            \
+        DISPATCH();                                                  \
+    } while (0)
 
 // PEP 634: Structural Pattern Matching
 
@@ -2054,107 +2111,19 @@ check_eval_breaker:
         }
 
         TARGET(BINARY_OP_MULTIPLY_INT) {
-            PyObject *left = SECOND();
-            PyObject *right = TOP();
-            DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
-            DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
-            DEOPT_IF(1 < (size_t)Py_SIZE(left), BINARY_OP);
-            DEOPT_IF(1 < (size_t)Py_SIZE(right), BINARY_OP);
-            STAT_INC(BINARY_OP, hit);
-            stwodigits i = Py_SIZE(left) * ((PyLongObject *)left)->ob_digit[0];
-            i *= Py_SIZE(right) * ((PyLongObject *)right)->ob_digit[0];
-            Py_DECREF(right);
-            STACK_SHRINK(1);
-            int op = GET_CACHE()->adaptive.original_oparg;
-            if (_PY_NSMALLPOSINTS < i && i < PyLong_BASE &&
-                Py_REFCNT(left) == 1 + (op == NB_INPLACE_MULTIPLY))
-            {
-                ((PyLongObject *)left)->ob_digit[0] = i;
-                Py_SET_SIZE(left, 1);
-                DISPATCH();
-            }
-            Py_DECREF(left);
-            PyObject *prod = PyLong_FromLong(i);
-            SET_TOP(prod);
-            if (prod == NULL) {
-                goto error;
-            }
-            DISPATCH();
+            BINARY_OP_INT_FAST(MULTIPLY, *);
         }
 
         TARGET(BINARY_OP_MULTIPLY_FLOAT) {
-            PyObject *left = SECOND();
-            PyObject *right = TOP();
-            DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
-            DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
-            STAT_INC(BINARY_OP, hit);
-            double dprod = PyFloat_AS_DOUBLE(left) * PyFloat_AS_DOUBLE(right);
-            Py_DECREF(right);
-            STACK_SHRINK(1);
-            int op = GET_CACHE()->adaptive.original_oparg;
-            if (Py_REFCNT(left) == 1 + (op == NB_INPLACE_SUBTRACT)) {
-                PyFloat_AS_DOUBLE(left) = dprod;
-                DISPATCH();
-            }
-            Py_DECREF(left);
-            PyObject *sub = PyFloat_FromDouble(dprod);
-            SET_TOP(sub);
-            if (sub == NULL) {
-                goto error;
-            }
-            DISPATCH();
+            BINARY_OP_FLOAT_FAST(MULTIPLY, *);
         }
 
         TARGET(BINARY_OP_SUBTRACT_INT) {
-            PyObject *left = SECOND();
-            PyObject *right = TOP();
-            DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
-            DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
-            DEOPT_IF(1 < (size_t)Py_SIZE(left), BINARY_OP);
-            DEOPT_IF(1 < (size_t)Py_SIZE(right), BINARY_OP);
-            STAT_INC(BINARY_OP, hit);
-            stwodigits i = Py_SIZE(left) * ((PyLongObject *)left)->ob_digit[0];
-            i -= Py_SIZE(right) * ((PyLongObject *)right)->ob_digit[0];
-            Py_DECREF(right);
-            STACK_SHRINK(1);
-            int op = GET_CACHE()->adaptive.original_oparg;
-            if (_PY_NSMALLPOSINTS < i && i < PyLong_BASE &&
-                Py_REFCNT(left) == 1 + (op == NB_INPLACE_SUBTRACT))
-            {
-                ((PyLongObject *)left)->ob_digit[0] = i;
-                Py_SET_SIZE(left, 1);
-                DISPATCH();
-            }
-            Py_DECREF(left);
-            PyObject *sub = PyLong_FromLong(i);
-            SET_TOP(sub);
-            if (sub == NULL) {
-                goto error;
-            }
-            DISPATCH();
+            BINARY_OP_INT_FAST(SUBTRACT, -);
         }
 
         TARGET(BINARY_OP_SUBTRACT_FLOAT) {
-            PyObject *left = SECOND();
-            PyObject *right = TOP();
-            DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
-            DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
-            STAT_INC(BINARY_OP, hit);
-            double dsub = PyFloat_AS_DOUBLE(left) - PyFloat_AS_DOUBLE(right);
-            Py_DECREF(right);
-            STACK_SHRINK(1);
-            int op = GET_CACHE()->adaptive.original_oparg;
-            if (Py_REFCNT(left) == 1 + (op == NB_INPLACE_SUBTRACT)) {
-                PyFloat_AS_DOUBLE(left) = dsub;
-                DISPATCH();
-            }
-            Py_DECREF(left);
-            PyObject *sub = PyFloat_FromDouble(dsub);
-            SET_TOP(sub);
-            if (sub == NULL) {
-                goto error;
-            }
-            DISPATCH();
+            BINARY_OP_FLOAT_FAST(SUBTRACT, -);
         }
 
         TARGET(BINARY_OP_ADD_UNICODE) {
@@ -2203,55 +2172,11 @@ check_eval_breaker:
         }
 
         TARGET(BINARY_OP_ADD_FLOAT) {
-            PyObject *left = SECOND();
-            PyObject *right = TOP();
-            DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
-            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
-            STAT_INC(BINARY_OP, hit);
-            double dsum = PyFloat_AS_DOUBLE(left) + PyFloat_AS_DOUBLE(right);
-            Py_DECREF(right);
-            STACK_SHRINK(1);
-            int op = GET_CACHE()->adaptive.original_oparg;
-            if (Py_REFCNT(left) == 1 + (op == NB_INPLACE_SUBTRACT)) {
-                PyFloat_AS_DOUBLE(left) = dsum;
-                DISPATCH();
-            }
-            Py_DECREF(left);
-            PyObject *sub = PyFloat_FromDouble(dsum);
-            SET_TOP(sub);
-            if (sub == NULL) {
-                goto error;
-            }
-            DISPATCH();
+            BINARY_OP_FLOAT_FAST(ADD, +);
         }
 
         TARGET(BINARY_OP_ADD_INT) {
-            PyObject *left = SECOND();
-            PyObject *right = TOP();
-            DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
-            DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
-            DEOPT_IF(1 < (size_t)Py_SIZE(left), BINARY_OP);
-            DEOPT_IF(1 < (size_t)Py_SIZE(right), BINARY_OP);
-            STAT_INC(BINARY_OP, hit);
-            stwodigits i = Py_SIZE(left) * ((PyLongObject *)left)->ob_digit[0];
-            i += Py_SIZE(right) * ((PyLongObject *)right)->ob_digit[0];
-            Py_DECREF(right);
-            STACK_SHRINK(1);
-            int op = GET_CACHE()->adaptive.original_oparg;
-            if (_PY_NSMALLPOSINTS < i && i < PyLong_BASE &&
-                Py_REFCNT(left) == 1 + (op == NB_INPLACE_ADD))
-            {
-                ((PyLongObject *)left)->ob_digit[0] = i;
-                Py_SET_SIZE(left, 1);
-                DISPATCH();
-            }
-            Py_DECREF(left);
-            PyObject *sum = PyLong_FromLong(i);
-            SET_TOP(sum);
-            if (sum == NULL) {
-                goto error;
-            }
-            DISPATCH();
+            BINARY_OP_INT_FAST(ADD, +);
         }
 
         TARGET(BINARY_SUBSCR) {
