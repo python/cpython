@@ -515,6 +515,8 @@ initial_counter_value(void) {
 #define SPEC_FAIL_C_METHOD_CALL 20
 #define SPEC_FAIL_METHDESCR_NON_METHOD 21
 #define SPEC_FAIL_METHOD_CALL_CLASS 22
+#define SPEC_FAIL_CLASS_NO_VECTORCALL 23
+#define SPEC_FAIL_CLASS_MUTABLE 24
 
 /* COMPARE_OP */
 #define SPEC_FAIL_STRING_COMPARE 13
@@ -1361,11 +1363,15 @@ specialize_class_call(
         *instr = _Py_MAKECODEUNIT(CALL_NO_KW_TYPE_1, _Py_OPARG(*instr));
         return 0;
     }
-    if ((tp->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) && tp->tp_vectorcall != NULL) {
-        *instr = _Py_MAKECODEUNIT(CALL_NO_KW_BUILTIN_CLASS, _Py_OPARG(*instr));
-        return 0;
+    if (tp->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) {
+        if (tp->tp_vectorcall != NULL) {
+            *instr = _Py_MAKECODEUNIT(CALL_NO_KW_BUILTIN_CLASS, _Py_OPARG(*instr));
+            return 0;
+        }
+        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CLASS_NO_VECTORCALL);
+        return -1;
     }
-    SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CLASS);
+    SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CLASS_MUTABLE);
     return -1;
 }
 
