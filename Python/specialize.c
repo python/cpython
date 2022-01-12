@@ -1404,10 +1404,19 @@ specialize_method_descriptor(
     switch (descr->d_method->ml_flags &
         (METH_VARARGS | METH_FASTCALL | METH_NOARGS | METH_O |
         METH_KEYWORDS | METH_METHOD)) {
-        case METH_O: {
+        case METH_NOARGS: {
             if (nargs != 1) {
+                SPECIALIZATION_FAIL(CALL, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
+                return -1;
+            }
+            *instr = _Py_MAKECODEUNIT(CALL_NO_KW_METHOD_DESCRIPTOR_O,
+                _Py_OPARG(*instr));
+            return 0;
+        }
+        case METH_O: {
+            if (nargs != 2) {
                 SPECIALIZATION_FAIL(CALL, SPEC_FAIL_OUT_OF_RANGE);
-                return 1;
+                return -1;
             }
             *instr = _Py_MAKECODEUNIT(CALL_NO_KW_METHOD_DESCRIPTOR_O,
                 _Py_OPARG(*instr));

@@ -5014,6 +5014,33 @@ check_eval_breaker:
             DISPATCH();
         }
 
+        TARGET(CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS) {
+            assert(call_shape.kwnames == NULL);
+            DEOPT_IF(call_shape.positional_args != 1, CALL);
+            DEOPT_IF(!Py_IS_TYPE(call_shape.callable, &PyMethodDescr_Type), CALL);
+            PyMethodDef *meth = ((PyMethodDescrObject *)call_shape.callable)->d_method;
+            DEOPT_IF(meth->ml_flags != METH_NOARGS, CALL);
+            STAT_INC(CALL, hit);
+            PyCFunction cfunc = meth->ml_meth;
+            // This is slower but CPython promises to check all non-vectorcall
+            // function calls.
+            if (_Py_EnterRecursiveCall(tstate, " while calling a Python object")) {
+                goto error;
+            }
+            PyObject *self = TOP();
+            PyObject *res = cfunc(self, NULL);
+            _Py_LeaveRecursiveCall(tstate);
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+            Py_DECREF(self);
+            STACK_SHRINK(call_shape.postcall_shrink);
+            SET_TOP(res);
+            Py_DECREF(call_shape.callable);
+            if (res == NULL) {
+                goto error;
+            }
+            DISPATCH();
+        }
+
         TARGET(CALL_NO_KW_METHOD_DESCRIPTOR_FAST) {
             assert(call_shape.kwnames == NULL);
             /* Builtin METH_FASTCALL methods, without keywords */
