@@ -72,18 +72,10 @@ struct atexit_state {
 
 /* interpreter state */
 
-// The PyInterpreterState typedef is in Include/pystate.h.
-
 /* PyInterpreterState holds the global state for one of the runtime's
    interpreters.  Typically the initial (main) interpreter is the only one.
 
-   A number of the fields are declared as values rather than pointers,
-   to avoid dynamic allocation during init.  The remaining pointer fields
-   are populated when needed and default to NULL.
-
-   For now there are some exceptions to that rule, which require
-   allocation during init.  These will be addressed on a case-by-case basis.
-   Also see _PyRuntimeState regarding the various mutex fields.
+   The PyInterpreterState typedef is in Include/pystate.h.
    */
 struct _is {
 
@@ -187,8 +179,17 @@ struct _is {
 
     /* The following fields are here to avoid allocation during init.
        The data is exposed through PyInterpreterState pointer fields.
-       These fields should not be accessed directly outside of init. */
-    /* (the initial PyInterpreterState.threads.head) */
+       These fields should not be accessed directly outside of init.
+
+       All other PyInterpreterState pointer fields are populated when
+       needed and default to NULL.
+
+       For now there are some exceptions to that rule, which require
+       allocation during init.  These will be addressed on a case-by-case
+       basis.  Also see _PyRuntimeState regarding the various mutex fields.
+       */
+
+    /* the initial PyInterpreterState.threads.head */
     struct _ts _initial_thread;
 };
 

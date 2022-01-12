@@ -57,16 +57,6 @@ typedef struct _Py_AuditHookEntry {
 
 /* _PyRuntimeState holds the global state for the CPython runtime.
    That data is exposed in the internal API as a static variable (_PyRuntime).
-
-   A number of its fields are declared as values rather than pointers,
-   to avoid dynamic allocation during runtime init.  The remaining
-   pointer fields are populated when needed and default to NULL.
-
-   For now there are some exceptions to that rule, which require
-   allocation during init.
-   Not all of the main interpreter is pre-allocated yet.
-   Also, we don't pre-allocated the several mutex (PyThread_type_lock)
-   fields (yet?), because on Windows we only ever get a pointer type.
    */
 typedef struct pyruntimestate {
     /* Has been initialized to a safe state.
@@ -140,9 +130,21 @@ typedef struct pyruntimestate {
     /* All the objects that are shared by the runtime's interpreters. */
     struct _Py_global_objects global_objects;
 
-    /* The "pre-allocated" initial interpreter.  It is exposed through
-       PyInterpreterState.interpreters.main and should not be accessed
-       directly (outside of init). */
+    /* The following fields are here to avoid allocation during init.
+       The data is exposed through _PyRuntimeState pointer fields.
+       These fields should not be accessed directly outside of init.
+
+       All other _PyRuntimeState pointer fields are populated when
+       needed and default to NULL.
+
+       For now there are some exceptions to that rule, which require
+       allocation during init.  These will be addressed on a case-by-case
+       basis.  Most notably, we don't pre-allocated the several mutex
+       (PyThread_type_lock) fields, because on Windows we only ever get
+       a pointer type.
+       */
+
+    /* PyInterpreterState.interpreters.main */
     PyInterpreterState _main_interpreter;
 } _PyRuntimeState;
 
