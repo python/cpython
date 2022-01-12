@@ -1,5 +1,7 @@
 import contextlib
 import collections
+from functools import lru_cache
+import inspect
 import pickle
 import re
 import sys
@@ -2536,9 +2538,79 @@ class FinalTests(BaseTestCase):
         with self.assertRaises(TypeError):
             issubclass(int, Final)
 
+
+class FinalDecoratorTests(BaseTestCase):
     def test_final_unmodified(self):
         def func(x): ...
         self.assertIs(func, final(func))
+
+    def test_dunder_final(self):
+        @final
+        def func(): ...
+        @final
+        class Cls: ...
+        self.assertIs(True, func.__final__)
+        self.assertIs(True, Cls.__final__)
+
+        class Wrapper:
+            __slots__ = ("func",)
+            def __init__(self, func):
+                self.func = func
+            def __call__(self, *args, **kwargs):
+                return self.func(*args, **kwargs)
+
+        # Check that no error is thrown if the attribute
+        # is not writable.
+        @final
+        @Wrapper
+        def wrapped(): ...
+        self.assertIsInstance(wrapped, Wrapper)
+        self.assertIs(False, hasattr(wrapped, "__final__"))
+
+        class Meta(type):
+            @property
+            def __final__(self): return "can't set me"
+        @final
+        class WithMeta(metaclass=Meta): ...
+        self.assertEqual(WithMeta.__final__, "can't set me")
+
+        # Builtin classes throw TypeError if you try to set an
+        # attribute.
+        final(int)
+        self.assertIs(False, hasattr(int, "__final__"))
+
+        # Make sure it works with common builtin decorators
+        class Methods:
+            @final
+            @classmethod
+            def clsmethod(cls): ...
+
+            @final
+            @staticmethod
+            def stmethod(): ...
+
+            # The other order doesn't work because property objects
+            # don't allow attribute assignment.
+            @property
+            @final
+            def prop(self): ...
+
+            @final
+            @lru_cache()
+            def cached(self): ...
+
+        # Use getattr_static because the descriptor returns the
+        # underlying function, which doesn't have __final__.
+        self.assertIs(
+            True,
+            inspect.getattr_static(Methods, "clsmethod").__final__
+        )
+        self.assertIs(
+            True,
+            inspect.getattr_static(Methods, "stmethod").__final__
+        )
+        self.assertIs(True, Methods.prop.fget.__final__)
+        self.assertIs(True, Methods.cached.__final__)
 
 
 class CastTests(BaseTestCase):
