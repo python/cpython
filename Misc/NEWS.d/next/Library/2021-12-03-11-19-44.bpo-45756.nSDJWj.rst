@@ -1,2 +1,2 @@
-We no longer execute ``@property`` descriptors while creating autospecs in
-``mock.py``. This was not safe and could affect user's code in unknown way.
+Do not execute ``@property`` descriptors while creating autospecs in :mod:`unittest.mock`. 
+This was not safe and could affect users' code in unknown way.
