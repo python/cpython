@@ -520,6 +520,7 @@ initial_counter_value(void) {
 #define SPEC_FAIL_KWNAMES 25
 #define SPEC_FAIL_METHOD_WRAPPER 26
 #define SPEC_FAIL_OPERATOR_WRAPPER 27
+#define SPEC_FAIL_CALL_STR 28
 
 /* COMPARE_OP */
 #define SPEC_FAIL_STRING_COMPARE 13
@@ -1351,7 +1352,7 @@ specialize_class_call(
     assert(PyType_Check(callable));
     PyTypeObject *tp = (PyTypeObject *)callable;
     if (kwnames) {
-        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_COMPLEX_PARAMETERS);
+        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_KWNAMES);
         return -1;
     }
     if (_Py_OPCODE(instr[-1]) == PRECALL_METHOD) {
@@ -1371,12 +1372,37 @@ specialize_class_call(
             *instr = _Py_MAKECODEUNIT(CALL_NO_KW_BUILTIN_CLASS, _Py_OPARG(*instr));
             return 0;
         }
-        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CLASS_NO_VECTORCALL);
+        SPECIALIZATION_FAIL(CALL, tp == &PyUnicode_Type ?
+            SPEC_FAIL_CALL_STR : SPEC_FAIL_CLASS_NO_VECTORCALL);
         return -1;
     }
     SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CLASS_MUTABLE);
     return -1;
 }
+
+#ifdef Py_STATS
+static int
+builtin_call_fail_kind(int ml_flags)
+{
+    switch (ml_flags & (METH_VARARGS | METH_FASTCALL | METH_NOARGS | METH_O |
+        METH_KEYWORDS | METH_METHOD)) {
+        case METH_VARARGS:
+            return SPEC_FAIL_PYCFUNCTION;
+        case METH_VARARGS | METH_KEYWORDS:
+            return SPEC_FAIL_PYCFUNCTION_WITH_KEYWORDS;
+        case METH_FASTCALL | METH_KEYWORDS:
+            return SPEC_FAIL_PYCFUNCTION_FAST_WITH_KEYWORDS;
+        case METH_NOARGS:
+            return SPEC_FAIL_PYCFUNCTION_NOARGS;
+        /* This case should never happen with PyCFunctionObject -- only
+            PyMethodObject. See zlib.compressobj()'s methods for an example.
+        */
+        case METH_METHOD | METH_FASTCALL | METH_KEYWORDS:
+        default:
+            return SPEC_FAIL_BAD_CALL_FLAGS;
+    }
+}
+#endif
 
 static PyMethodDescrObject *_list_append = NULL;
 _Py_IDENTIFIER(append);
@@ -1387,7 +1413,7 @@ specialize_method_descriptor(
     int nargs, PyObject *kwnames, SpecializedCacheEntry *cache)
 {
     if (kwnames) {
-        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_COMPLEX_PARAMETERS);
+        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_KWNAMES);
         return -1;
     }
     if (_list_append == NULL) {
@@ -1428,7 +1454,7 @@ specialize_method_descriptor(
             return 0;
         }
     }
-    SPECIALIZATION_FAIL(CALL, SPEC_FAIL_OTHER);
+    SPECIALIZATION_FAIL(CALL, builtin_call_fail_kind(descr->d_method->ml_flags));
     return -1;
 }
 
@@ -1484,30 +1510,6 @@ specialize_py_call(
     }
     return 0;
 }
-
-#ifdef Py_STATS
-static int
-builtin_call_fail_kind(int ml_flags)
-{
-    switch (ml_flags & (METH_VARARGS | METH_FASTCALL | METH_NOARGS | METH_O |
-        METH_KEYWORDS | METH_METHOD)) {
-        case METH_VARARGS:
-            return SPEC_FAIL_PYCFUNCTION;
-        case METH_VARARGS | METH_KEYWORDS:
-            return SPEC_FAIL_PYCFUNCTION_WITH_KEYWORDS;
-        case METH_FASTCALL | METH_KEYWORDS:
-            return SPEC_FAIL_PYCFUNCTION_FAST_WITH_KEYWORDS;
-        case METH_NOARGS:
-            return SPEC_FAIL_PYCFUNCTION_NOARGS;
-        /* This case should never happen with PyCFunctionObject -- only
-            PyMethodObject. See zlib.compressobj()'s methods for an example.
-        */
-        case METH_METHOD | METH_FASTCALL | METH_KEYWORDS:
-        default:
-            return SPEC_FAIL_BAD_CALL_FLAGS;
-    }
-}
-#endif
 
 static int
 specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
