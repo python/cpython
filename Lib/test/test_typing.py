@@ -2938,7 +2938,9 @@ class OverloadTests(BaseTestCase):
         blah()
 
 
-ASYNCIO_TESTS = """
+# Definitions needed for features introduced in Python 3.6
+
+from test import ann_module, ann_module2, ann_module3, ann_module5, ann_module6
 import asyncio
 
 T_a = TypeVar('T_a')
@@ -2972,19 +2974,6 @@ class ACM:
         return 42
     async def __aexit__(self, etype, eval, tb):
         return None
-"""
-
-try:
-    exec(ASYNCIO_TESTS)
-except ImportError:
-    ASYNCIO = False  # multithreading is not enabled
-else:
-    ASYNCIO = True
-
-# Definitions needed for features introduced in Python 3.6
-
-from test import ann_module, ann_module2, ann_module3, ann_module5, ann_module6
-from typing import AsyncContextManager
 
 class A:
     y: float
@@ -3044,7 +3033,7 @@ class HasForeignBaseClass(mod_generics_cache.A):
     some_xrepr: 'XRepr'
     other_a: 'mod_generics_cache.A'
 
-async def g_with(am: AsyncContextManager[int]):
+async def g_with(am: typing.AsyncContextManager[int]):
     x: int
     async with am as x:
         return x
@@ -3386,7 +3375,6 @@ class CollectionsAbcTests(BaseTestCase):
         self.assertIsInstance(it, typing.Iterator)
         self.assertNotIsInstance(42, typing.Iterator)
 
-    @skipUnless(ASYNCIO, 'Python 3.5 and multithreading required')
     def test_awaitable(self):
         ns = {}
         exec(
@@ -3399,7 +3387,6 @@ class CollectionsAbcTests(BaseTestCase):
         self.assertNotIsInstance(foo, typing.Awaitable)
         g.send(None)  # Run foo() till completion, to avoid warning.
 
-    @skipUnless(ASYNCIO, 'Python 3.5 and multithreading required')
     def test_coroutine(self):
         ns = {}
         exec(
@@ -3417,7 +3404,6 @@ class CollectionsAbcTests(BaseTestCase):
         except StopIteration:
             pass
 
-    @skipUnless(ASYNCIO, 'Python 3.5 and multithreading required')
     def test_async_iterable(self):
         base_it = range(10)  # type: Iterator[int]
         it = AsyncIteratorWrapper(base_it)
@@ -3425,7 +3411,6 @@ class CollectionsAbcTests(BaseTestCase):
         self.assertIsInstance(it, typing.AsyncIterable)
         self.assertNotIsInstance(42, typing.AsyncIterable)
 
-    @skipUnless(ASYNCIO, 'Python 3.5 and multithreading required')
     def test_async_iterator(self):
         base_it = range(10)  # type: Iterator[int]
         it = AsyncIteratorWrapper(base_it)
@@ -3580,7 +3565,6 @@ class CollectionsAbcTests(BaseTestCase):
         self.assertIsSubclass(MyOrdDict, collections.OrderedDict)
         self.assertNotIsSubclass(collections.OrderedDict, MyOrdDict)
 
-    @skipUnless(sys.version_info >= (3, 3), 'ChainMap was added in 3.3')
     def test_chainmap_instantiation(self):
         self.assertIs(type(typing.ChainMap()), collections.ChainMap)
         self.assertIs(type(typing.ChainMap[KT, VT]()), collections.ChainMap)
@@ -3588,7 +3572,6 @@ class CollectionsAbcTests(BaseTestCase):
         class CM(typing.ChainMap[KT, VT]): ...
         self.assertIs(type(CM[int, str]()), CM)
 
-    @skipUnless(sys.version_info >= (3, 3), 'ChainMap was added in 3.3')
     def test_chainmap_subclass(self):
 
         class MyChainMap(typing.ChainMap[str, int]):
@@ -3852,7 +3835,6 @@ class OtherABCTests(BaseTestCase):
         self.assertIsInstance(cm, typing.ContextManager)
         self.assertNotIsInstance(42, typing.ContextManager)
 
-    @skipUnless(ASYNCIO, 'Python 3.5 required')
     def test_async_contextmanager(self):
         class NotACM:
             pass
