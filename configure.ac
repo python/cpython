@@ -1062,6 +1062,24 @@ AS_CASE([$ac_sys_system/$ac_sys_release],
  ]
 )
 
+AC_MSG_CHECKING([for --with-emscripten-target])
+AC_ARG_WITH([emscripten-target],
+  [AS_HELP_STRING([--with-emscripten-target=@<:@browser|node@:>@], [Emscripten platform])],
+[
+	AS_VAR_IF([ac_sys_system], [Emscripten], [
+    AS_CASE([$with_emscripten_target],
+      [browser], [ac_sys_emscripten_target=browser],
+      [node], [ac_sys_emscripten_target=node],
+      [AC_MSG_ERROR([Invalid argument: --with-emscripten-target=browser|node])]
+    )
+  ], [
+    AC_MSG_ERROR([--with-emscripten-target only applies to Emscripten])
+  ])
+], [
+  AS_VAR_IF([ac_sys_system], [Emscripten], [ac_sys_emscripten_target=browser])
+])
+AC_MSG_RESULT([$ac_sys_emscripten_target])
+
 AC_MSG_CHECKING([for --with-suffix])
 AC_ARG_WITH([suffix],
             [AS_HELP_STRING([--with-suffix=SUFFIX], [set executable suffix to SUFFIX (default is empty, yes is mapped to '.exe')])],
@@ -1072,8 +1090,10 @@ AC_ARG_WITH([suffix],
     [EXEEXT=$with_suffix]
   )
 ], [
-  AS_CASE([$ac_sys_system],
-    [Emscripten], [EXEEXT=.wasm],
+  AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
+    [Emscripten/browser], [EXEEXT=.html],
+    [Emscripten/node], [EXEEXT=.js],
+    [wasi/*], [EXEEXT=.wasm],
     [EXEEXT=]
   )
 ])
@@ -1446,6 +1466,7 @@ else
   AC_MSG_RESULT(no);
 fi],
 [AC_MSG_RESULT(no)])
+
 if test "$Py_OPT" = 'true' ; then
   # Intentionally not forcing Py_LTO='true' here.  Too many toolchains do not
   # compile working code using it and both test_distutils and test_gdb are
@@ -1462,8 +1483,12 @@ if test "$Py_OPT" = 'true' ; then
       ])
       ;;
   esac
-
-
+elif test "$ac_sys_system" = "Emscripten"; then
+  dnl Emscripten does not support shared extensions yet. Build
+  dnl "python.[js,html,wasm]", "pybuilddir.txt", and "platform" files.
+  DEF_MAKE_ALL_RULE="build_platform"
+  REQUIRE_PGO="no"
+  DEF_MAKE_RULE="all"
 else
   DEF_MAKE_ALL_RULE="build_all"
   REQUIRE_PGO="no"
@@ -1769,10 +1794,25 @@ then
     esac
 fi
 
+# WASM flags
+AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
+  [Emscripten/browser], [
+    LDFLAGS_NODIST="$(LDFLAGS_NODIST) -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 --preload-file \$(WASM_ASSETS_DIR)"
+    WASM_ASSETS_DIR=".\$(prefix)"
+    WASM_STDLIB="\$(WASM_ASSETS_DIR)/local/lib/python\$(VERSION)/os.py"
+  ],
+  [Emscripten/node], [
+    LDFLAGS_NODIST="$(LDFLAGS_NODIST) -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 -s NODERAWFS=1 -s EXIT_RUNTIME=1 -s USE_PTHREADS -s PROXY_TO_PTHREAD"
+    CFLAGS_NODIST="$(CFLAGS_NODIST) -pthread"
+  ],
+)
+
 AC_SUBST(BASECFLAGS)
 AC_SUBST(CFLAGS_NODIST)
 AC_SUBST(LDFLAGS_NODIST)
 AC_SUBST(LDFLAGS_NOLTO)
+AC_SUBST([WASM_ASSETS_DIR])
+AC_SUBST([WASM_STDLIB])
 
 # The -arch flags for universal builds on macOS
 UNIVERSAL_ARCH_FLAGS=
@@ -6252,6 +6292,12 @@ if test "$PY_ENABLE_SHARED" = 1 || test "$enable_framework" ; then
 else
     LIBRARY_DEPS="\$(LIBRARY) $LIBRARY_DEPS"
 fi
+
+dnl browser needs a WASM assets stdlib bundle
+AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
+  [Emscripten/browser], [LIBRARY_DEPS="$LIBRARY_DEPS \$(WASM_STDLIB)"],
+)
+
 AC_SUBST(STATIC_LIBPYTHON)
 AC_SUBST(LIBRARY_DEPS)
 
@@ -6520,8 +6566,9 @@ PY_STDLIB_MOD([_ctypes_test], [test "$TEST_MODULES" = yes], [], [], [-lm])
 
 dnl Limited API template modules.
 dnl The limited C API is not compatible with the Py_TRACE_REFS macro.
-PY_STDLIB_MOD([xxlimited], [test "$with_trace_refs" = "no"])
-PY_STDLIB_MOD([xxlimited_35], [test "$with_trace_refs" = "no"])
+dnl Emscripten does not support shared libraries yet.
+PY_STDLIB_MOD([xxlimited], [test "$with_trace_refs" = "no" -a "$ac_sys_system" != "Emscripten"])
+PY_STDLIB_MOD([xxlimited_35], [test "$with_trace_refs" = "no" -a "$ac_sys_system" != "Emscripten"])
 
 # substitute multiline block, must come after last PY_STDLIB_MOD()
 AC_SUBST([MODULE_BLOCK])

@@ -27,6 +27,8 @@ embuilder build zlib
 
 ### Cross compile to wasm32-emscripten
 
+For browser:
+
 ```shell
 mkdir -p builddir/emscripten
 pushd builddir/emscripten
@@ -35,9 +37,23 @@ CONFIG_SITE=../../Tools/wasm/config.site-wasm32-emscripten \
   emconfigure ../../configure -C \
     --host=wasm32-unknown-emscripten \
     --build=$(../../config.guess) \
+    --with-emscripten-target=browser \
     --with-build-python=$(pwd)/../build/python
 
-emmake make -j$(nproc) python.html
+emmake make -j$(nproc)
+```
+
+For node:
+
+```
+CONFIG_SITE=../../Tools/wasm/config.site-wasm32-emscripten \
+  emconfigure ../../configure -C \
+    --host=wasm32-unknown-emscripten \
+    --build=$(../../config.guess) \
+    --with-emscripten-target=node \
+    --with-build-python=$(pwd)/../build/python
+
+emmake make -j$(nproc)
 ```
 
 ### Test in browser

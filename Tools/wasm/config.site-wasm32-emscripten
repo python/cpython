@@ -30,6 +30,11 @@ ac_cv_func_shutdown=no
 # breaks build, see https://github.com/ethanhs/python-wasm/issues/16
 ac_cv_lib_bz2_BZ2_bzCompress=no
 
+# clock_nanosleep() causes time.sleep() to sleep forever.
+# nanosleep() works correctly
+ac_cv_func_clock_nanosleep=no
+ac_cv_lib_rt_clock_nanosleep=no
+
 # The rest is based on pyodide
 # https://github.com/pyodide/pyodide/blob/main/cpython/pyconfig.undefs.h
 
