@@ -517,6 +517,9 @@ initial_counter_value(void) {
 #define SPEC_FAIL_METHOD_CALL_CLASS 22
 #define SPEC_FAIL_CLASS_NO_VECTORCALL 23
 #define SPEC_FAIL_CLASS_MUTABLE 24
+#define SPEC_FAIL_KWNAMES 25
+#define SPEC_FAIL_METHOD_WRAPPER 26
+#define SPEC_FAIL_OPERATOR_WRAPPER 27
 
 /* COMPARE_OP */
 #define SPEC_FAIL_STRING_COMPARE 13
@@ -1429,7 +1432,7 @@ specialize_py_call(
     PyCodeObject *code = (PyCodeObject *)func->func_code;
     int kind = function_kind(code);
     if (kwnames) {
-        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_COMPLEX_PARAMETERS);
+        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_KWNAMES);
         return -1;
     }
     if (kind != SIMPLE_FUNCTION) {
@@ -1503,7 +1506,7 @@ specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
 {
     _PyObjectCache *cache1 = &cache[-1].obj;
     if (kwnames) {
-        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_COMPLEX_PARAMETERS);
+        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_KWNAMES);
         return -1;
     }
     if (PyCFunction_GET_FUNCTION(callable) == NULL) {
@@ -1514,7 +1517,7 @@ specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
         METH_KEYWORDS | METH_METHOD)) {
         case METH_O: {
             if (nargs != 1) {
-                SPECIALIZATION_FAIL(CALL, SPEC_FAIL_OUT_OF_RANGE);
+                SPECIALIZATION_FAIL(CALL, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
                 return 1;
             }
             /* len(o) */
@@ -1568,6 +1571,12 @@ call_fail_kind(PyObject *callable)
     }
     else if (PyType_Check(callable)) {
         return  SPEC_FAIL_CLASS;
+    }
+    else if (Py_TYPE(callable) == &PyWrapperDescr_Type) {
+        return SPEC_FAIL_OPERATOR_WRAPPER;
+    }
+    else if (Py_TYPE(callable) == &_PyMethodWrapper_Type) {
+        return SPEC_FAIL_METHOD_WRAPPER;
     }
     return SPEC_FAIL_OTHER;
 }
