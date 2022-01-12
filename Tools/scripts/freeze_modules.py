@@ -642,26 +642,24 @@ def regen_pcbuild(modules):
     projlines = []
     filterlines = []
     corelines = []
+    deepfreezerules = ["\t<Exec Command='$(PythonForBuild) \"$(PySourcePath)Tools\scripts\deepfreeze.py\""]
     for src in _iter_sources(modules):
         pyfile = relpath_for_windows_display(src.pyfile, ROOT_DIR)
         header = relpath_for_windows_display(src.frozenfile, ROOT_DIR)
-        deepbase = "df." + src.id
-        deepoutfile = f"Python\\deepfreeze\\{deepbase}.c"
         intfile = ntpath.splitext(ntpath.basename(header))[0] + '.g.h'
-        deepintfile = ntpath.splitext(ntpath.basename(header))[0] + '.g.c'
         projlines.append(f'    <None Include="..\\{pyfile}">')
         projlines.append(f'      <ModName>{src.frozenid}</ModName>')
         projlines.append(f'      <IntFile>$(IntDir){intfile}</IntFile>')
         projlines.append(f'      <OutFile>$(PySourcePath){header}</OutFile>')
-        projlines.append(f'      <DeepIntFile>$(IntDir){deepintfile}</DeepIntFile>')
-        projlines.append(f'      <DeepOutFile>$(PySourcePath){deepoutfile}</DeepOutFile>')
         projlines.append(f'    </None>')
 
         filterlines.append(f'    <None Include="..\\{pyfile}">')
         filterlines.append('      <Filter>Python Files</Filter>')
         filterlines.append('    </None>')
+        deepfreezerules[-1] += f' "-i" "$(PySourcePath){pyfile}" "{src.frozenid}"'
+    deepfreezerules[-1] += ' "-o" "$(PySourcePath)Python\\deepfreeze\\deepfreeze.c"\'/>' 
 
-        corelines.append(f'    <ClCompile Include="..\\{deepoutfile}" />')
+    corelines.append(f'    <ClCompile Include="..\\Python\\deepfreeze\\deepfreeze.c" />')
 
     print(f'# Updating {os.path.relpath(PCBUILD_PROJECT)}')
     with updating_file_with_tmpfile(PCBUILD_PROJECT) as (infile, outfile):
@@ -671,6 +669,16 @@ def regen_pcbuild(modules):
             '<!-- BEGIN frozen modules -->',
             '<!-- END frozen modules -->',
             projlines,
+            PCBUILD_PROJECT,
+        )
+        outfile.writelines(lines)
+    with updating_file_with_tmpfile(PCBUILD_PROJECT) as (infile, outfile):
+        lines = infile.readlines()
+        lines = replace_block(
+            lines,
+            '<!-- BEGIN deepfreeze rule -->',
+            '<!-- END deepfreeze rule -->',
+            deepfreezerules,
             PCBUILD_PROJECT,
         )
         outfile.writelines(lines)

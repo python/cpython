@@ -431,7 +431,7 @@ def main() -> None:
     args = parser.parse_args()
     verbose = args.verbose
     output = args.output or 'deepfreeze.c'
-    with open(output, "w", encoding="utf-8") as file:
+    with open(output, "w+", encoding="utf-8") as file:
         with report_time("generate"):
             generate(args.input, file)
     if verbose:
