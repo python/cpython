@@ -643,12 +643,14 @@ class CAPITest(unittest.TestCase):
         expected = compile(code, "<string>", "exec")
         self.assertEqual(result.co_consts, expected.co_consts)
 
-    def test_export_frozenmain(self):
-        # bpo-44133: Ensure that the "Py_FrozenMain" symbol is exported
-        # by the Python (directly by the binary, or via by the Python dynamic
-        # library).
+    def test_export_symbols(self):
+        # bpo-44133: Ensure that the "Py_FrozenMain" and
+        # "PyThread_get_thread_native_id" symbols are exported by the Python
+        # (directly by the binary, or via by the Python dynamic library).
         ctypes = import_helper.import_module('ctypes')
-        self.assertTrue(hasattr(ctypes.pythonapi, 'Py_FrozenMain'))
+        for name in ('Py_FrozenMain', 'PyThread_get_thread_native_id'):
+            with self.subTest(name=name):
+                self.assertTrue(hasattr(ctypes.pythonapi, name))
 
 
 class TestPendingCalls(unittest.TestCase):
