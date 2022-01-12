@@ -606,10 +606,6 @@ struct _Py_global_objects {
     }, \
 }
 
-static inline void
-_Py_global_objects_reset(struct _Py_global_objects *objects)
-{
-}
 
 #ifdef __cplusplus
 }
