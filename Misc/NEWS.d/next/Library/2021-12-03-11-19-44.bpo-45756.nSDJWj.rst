@@ -1,2 +1,2 @@
-Do not execute ``@property`` descriptors while creating autospecs in :mod:`unittest.mock`. 
+Do not execute ``@property`` descriptors while creating autospecs in :mod:`unittest.mock`.
 This was not safe and could affect users' code in unknown way.
