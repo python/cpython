@@ -3348,7 +3348,6 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
     PyLongObject *pylong;
     digit *ob_digit;
     size_t n;
-    Py_ssize_t i;
     mpd_t *x;
     mpd_context_t workctx;
     uint32_t status = 0;
@@ -3388,34 +3387,36 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
     #error "PYLONG_BITS_IN_DIGIT should be 15 or 30"
 #endif
 
+    Py_ssize_t sign = mpd_isnegative(x) && !mpd_iszero(x) ? -1 : 1;
+    mpd_del(x);
+
     if (n == SIZE_MAX) {
         PyErr_NoMemory();
-        mpd_del(x);
         return NULL;
     }
 
     assert(n > 0);
+    while ((n > 0) && (ob_digit[n - 1] == 0)) {
+        n--;
+    }
+
+    if (n < 2) {
+        pylong = (PyLongObject *)PyLong_FromLong(sign * ob_digit[0]);
+        mpd_free(ob_digit);
+        return (PyObject *)pylong;
+    }
+
     pylong = _PyLong_New(n);
     if (pylong == NULL) {
         mpd_free(ob_digit);
-        mpd_del(x);
         return NULL;
     }
 
     memcpy(pylong->ob_digit, ob_digit, n * sizeof(digit));
     mpd_free(ob_digit);
 
-    i = n;
-    while ((i > 0) && (pylong->ob_digit[i-1] == 0)) {
-        i--;
-    }
+    Py_SET_SIZE(pylong, sign * n);
 
-    Py_SET_SIZE(pylong, i);
-    if (mpd_isnegative(x) && !mpd_iszero(x)) {
-        Py_SET_SIZE(pylong, -i);
-    }
-
-    mpd_del(x);
     return (PyObject *) pylong;
 }
 
