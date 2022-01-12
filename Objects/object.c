@@ -2099,8 +2099,7 @@ finally:
 void
 _PyTrash_deposit_object(PyObject *op)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
-    struct _gc_runtime_state *gcstate = &runtime->gc;
+    struct _gc_runtime_state *gcstate = _PyGC_GetState();
 
     _PyObject_ASSERT(op, _PyObject_IS_GC(op));
     _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
@@ -2127,8 +2126,7 @@ _PyTrash_thread_deposit_object(PyObject *op)
 void
 _PyTrash_destroy_chain(void)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
-    struct _gc_runtime_state *gcstate = &runtime->gc;
+    struct _gc_runtime_state *gcstate = _PyGC_GetState();
 
     while (gcstate->trash_delete_later) {
         PyObject *op = gcstate->trash_delete_later;

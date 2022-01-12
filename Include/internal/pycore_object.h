@@ -57,6 +57,16 @@ _PyObject_InitVar(PyVarObject *op, PyTypeObject *typeobj, Py_ssize_t size)
 }
 
 
+static inline struct _gc_runtime_state*
+_PyGC_GetState(void)
+{
+    // bpo-46070: Even if each PyInterpreterState has a GC state,
+    // _PyGC_GetState() only uses the state of the main interpreter.
+    PyInterpreterState *interp = _PyRuntime.interpreters.main;
+    return &interp->gc;
+}
+
+
 /* Tell the GC to track this object.
  *
  * The object must not be tracked by the GC.
@@ -87,8 +97,8 @@ static inline void _PyObject_GC_TRACK(
                           "object is in generation which is garbage collected",
                           filename, lineno, __func__);
 
-    _PyRuntimeState *runtime = &_PyRuntime;
-    PyGC_Head *generation0 = runtime->gc.generation0;
+    struct _gc_runtime_state *state = _PyGC_GetState();
+    PyGC_Head *generation0 = state->generation0;
     PyGC_Head *last = (PyGC_Head*)(generation0->_gc_prev);
     _PyGCHead_SET_NEXT(last, gc);
     _PyGCHead_SET_PREV(gc, last);
