@@ -6309,8 +6309,8 @@ AC_ARG_ENABLE(test-modules,
 if test "$enable_test_modules" = no; then
     TEST_MODULES=no
 else
-    AS_CASE([$ac_sys_system],
-      [Emscripten], [TEST_MODULES=no],
+    AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
+      [Emscripten/browser], [TEST_MODULES=no],
       [TEST_MODULES=yes]
     )
 fi
