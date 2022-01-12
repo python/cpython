@@ -85,6 +85,8 @@ struct _ts {
        In order to be effective, this must be set to 0 during or right
        after allocation. */
     int _initialized;
+
+    /* Was this thread state statically allocated? */
     bool _static;
 
     int recursion_remaining;
