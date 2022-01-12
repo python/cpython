@@ -111,6 +111,9 @@ typedef int socklen_t;
 #endif
 
 #ifdef HAVE_BLUETOOTH_H
+# ifdef __FreeBSD__
+#  define L2CAP_SOCKET_CHECKED
+# endif
 #include <bluetooth.h>
 #endif
 
