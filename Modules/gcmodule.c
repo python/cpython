@@ -132,13 +132,12 @@ gc_decref(PyGC_Head *g)
 static GCState *
 get_gc_state(void)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
-    return &runtime->gc;
+    return _PyGC_GetState();
 }
 
 
 void
-_PyGC_InitializeRuntime(GCState *gcstate)
+_PyGC_InitState(GCState *gcstate)
 {
     gcstate->enabled = 1; /* automatic collection enabled? */
 

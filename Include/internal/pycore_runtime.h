@@ -9,7 +9,6 @@ extern "C" {
 #endif
 
 #include "pycore_atomic.h"    /* _Py_atomic_address */
-#include "pycore_gc.h"        // struct _gc_runtime_state
 #include "pycore_gil.h"       // struct _gil_runtime_state
 
 /* ceval state */
@@ -96,7 +95,6 @@ typedef struct pyruntimestate {
     void (*exitfuncs[NEXITFUNCS])(void);
     int nexitfuncs;
 
-    struct _gc_runtime_state gc;
     struct _ceval_runtime_state ceval;
     struct _gilstate_runtime_state gilstate;
 

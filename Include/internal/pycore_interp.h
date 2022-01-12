@@ -10,6 +10,7 @@ extern "C" {
 
 #include "pycore_atomic.h"    /* _Py_atomic_address */
 #include "pycore_gil.h"       /* struct _gil_runtime_state  */
+#include "pycore_gc.h"        /* struct _gc_runtime_state */
 #include "pycore_warnings.h"  /* struct _warnings_runtime_state */
 
 /* ceval state */
@@ -85,6 +86,9 @@ struct _is {
     int finalizing;
 
     struct _ceval_state ceval;
+    // bpo-46070: Even if each PyInterpreterState has a GC state,
+    // _PyGC_GetState() only uses the state of the main interpreter.
+    struct _gc_runtime_state gc;
 
     PyObject *modules;
     PyObject *modules_by_index;

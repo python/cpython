@@ -18,6 +18,16 @@ PyAPI_FUNC(int) _PyDict_CheckConsistency(PyObject *mp, int check_content);
 /* Only private in Python 3.10 and 3.9.8+; public in 3.11 */
 extern PyObject *_PyType_GetQualName(PyTypeObject *type);
 
+static inline struct _gc_runtime_state*
+_PyGC_GetState(void)
+{
+    // bpo-46070: Even if each PyInterpreterState has a GC state,
+    // _PyGC_GetState() only uses the state of the main interpreter.
+    PyInterpreterState *interp = _PyRuntime.interpreters.main;
+    return &interp->gc;
+}
+
+
 /* Tell the GC to track this object.
  *
  * NB: While the object is tracked by the collector, it must be safe to call the
@@ -42,8 +52,8 @@ static inline void _PyObject_GC_TRACK_impl(const char *filename, int lineno,
                           "object is in generation which is garbage collected",
                           filename, lineno, "_PyObject_GC_TRACK");
 
-    _PyRuntimeState *runtime = &_PyRuntime;
-    PyGC_Head *generation0 = runtime->gc.generation0;
+    struct _gc_runtime_state *state = _PyGC_GetState();
+    PyGC_Head *generation0 = state->generation0;
     PyGC_Head *last = (PyGC_Head*)(generation0->_gc_prev);
     _PyGCHead_SET_NEXT(last, gc);
     _PyGCHead_SET_PREV(gc, last);

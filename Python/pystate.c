@@ -61,7 +61,6 @@ _PyRuntimeState_Init_impl(_PyRuntimeState *runtime)
     runtime->audit_hook_head = audit_hook_head;
 
     _PyEval_InitRuntimeState(&runtime->ceval);
-    _PyGC_InitializeRuntime(&runtime->gc);
 
     PyPreConfig_InitPythonConfig(&runtime->preconfig);
 
@@ -222,6 +221,7 @@ PyInterpreterState_New(void)
         goto out_of_memory;
     }
 
+    _PyGC_InitState(&interp->gc);
     PyConfig_InitPythonConfig(&interp->config);
 
     interp->eval_frame = _PyEval_EvalFrameDefault;
