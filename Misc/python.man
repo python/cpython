@@ -89,7 +89,7 @@ python \- an interpreted, interactive, object-oriented programming language
 .B \--help-env
 ]
 [
-.B \-X help
+.B \--help-xoptions
 ]
 .br
        [
@@ -156,8 +156,11 @@ the behavior of the interpreter.
 .B \-h ", " \-? ", "\-\-help
 Prints the usage for the interpreter executable and exits.
 .TP
-.B \-\-help\-env
+.B "\-\-help\-env"
 Prints help about Python-specific environment variables and exits.
+.TP
+.B "\-\-help\-xoptions"
+Prints help about implementation-specific \fB\-X\fP options and exits.
 .TP
 .B \-i
 When a script is passed as first argument or the \fB\-c\fP option is
@@ -293,8 +296,6 @@ a regular expression on the warning message.
 .TP
 .BI "\-X " option
 Set implementation-specific option. The following options are available:
-
-    -X help: show help about available options
 
     -X faulthandler: enable faulthandler
 

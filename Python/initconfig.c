@@ -40,6 +40,8 @@ Options (and corresponding environment variables):\n\
          debug builds); also PYTHONDEBUG=x\n\
 -E     : ignore PYTHON* environment variables (such as PYTHONPATH)\n\
 -h     : print this help message and exit (also --help)\n\
+--help-env      : print help about Python-specific environment variables and exit\n\
+--help-xoptions : print help about implementation-specific -X options and exit\n\
 ";
 static const char usage_2[] = "\
 -i     : inspect interactively after running script; forces a prompt even\n\
@@ -64,8 +66,7 @@ static const char usage_3[] = "\
 -W arg : warning control; arg is action:message:category:module:lineno\n\
          also PYTHONWARNINGS=arg\n\
 -x     : skip first line of source, allowing use of non-Unix forms of #!cmd\n\
--X opt : set implementation-specific option (see details with -X help)\n\
---help-env : print help about Python-specific environment variables\n\
+-X opt : set implementation-specific option\n\
 --check-hash-based-pycs always|default|never :\n\
          control how Python invalidates hash-based .pyc files\n\
 ";
@@ -78,7 +79,6 @@ arg ...: arguments passed to program in sys.argv[1:]\n\
 
 static const char usage_xoptions[] = "\
 The following implementation-specific options are available:\n\
-         -X help: show this help and exit\n\
          -X faulthandler: enable faulthandler\n\
          -X showrefcount: output the total reference count and number of used\n\
              memory blocks when the program finishes or after each statement in the\n\
@@ -2028,7 +2028,6 @@ _PyConfig_InitImportConfig(PyConfig *config)
 // set, like -X showrefcount which requires a debug build. In this case unknown
 // options are silently ignored.
 const wchar_t* known_xoptions[] = {
-    L"help",
     L"faulthandler",
     L"showrefcount",
     L"tracemalloc",
@@ -2084,7 +2083,7 @@ config_read(PyConfig *config, int compute_path_config)
     /* -X options */
     const wchar_t* option = _Py_check_xoptions(&config->xoptions, known_xoptions);
     if (option != NULL) {
-        return PyStatus_Error("Unknown value for option -X (see -X help)");
+        return PyStatus_Error("Unknown value for option -X (see --help-xoptions)");
     }
 
     if (config_get_xoption(config, L"showrefcount")) {
@@ -2271,7 +2270,6 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
     const PyWideStringList *argv = &config->argv;
     int print_version = 0;
     const wchar_t* program = config->program_name;
-    const wchar_t* xoption_help;
 
     _PyOS_ResetGetOpt();
     do {
@@ -2338,6 +2336,11 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
             config_envvars_usage();
             return _PyStatus_EXIT(0);
 
+        case 2:
+            // help-xoptions
+            config_xoptions_usage();
+            return _PyStatus_EXIT(0);
+
         case 'b':
             config->bytes_warning++;
             break;
@@ -2353,6 +2356,7 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
 
         case 'E':
         case 'I':
+        case 'X':
             /* option handled by _PyPreCmdline_Read() */
             break;
 
@@ -2412,15 +2416,6 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
 
         case 'R':
             config->use_hash_seed = 0;
-            break;
-
-        case 'X':
-            xoption_help = config_get_xoption(config, L"help");
-            if (xoption_help) {
-                config_xoptions_usage();
-                return _PyStatus_EXIT(0);
-            }
-            /* option handled by _PyPreCmdline_Read() */
             break;
 
         /* This space reserved for other options */

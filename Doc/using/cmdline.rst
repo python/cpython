@@ -193,11 +193,21 @@ Generic options
                --help
 
    Print a short description of all command line options and corresponding
-   environment variables.
+   environment variables and exit.
 
 .. cmdoption:: --help-env
 
-   Print a short description of Python-specific environment variables.
+   Print a short description of Python-specific environment variables
+   and exit.
+
+   .. versionadded:: 3.11
+
+.. cmdoption:: --help-xoptions
+
+   Print a description of implementation-specific :option:`-X` options
+   and exit.
+
+   .. versionadded:: 3.11
 
 .. cmdoption:: -V
                --version
@@ -217,9 +227,6 @@ Generic options
 
    .. versionadded:: 3.6
       The ``-VV`` option.
-
-   .. versionadded:: 3.11
-      The ``--help-env`` option.
 
 
 .. _using-on-misc-options:
@@ -458,7 +465,6 @@ Miscellaneous options
    Reserved for various implementation-specific options.  CPython currently
    defines the following possible values:
 
-   * ``-X help`` to print a short description of all ``-X`` options;
    * ``-X faulthandler`` to enable :mod:`faulthandler`;
    * ``-X showrefcount`` to output the total reference count and number of used
      memory blocks when the program finishes or after each statement in the
@@ -540,8 +546,6 @@ Miscellaneous options
    .. versionadded:: 3.11
       The ``-X frozen_modules`` option.
 
-   .. versionadded:: 3.11
-      The ``-X help`` option.
 
 
 Options you shouldn't use

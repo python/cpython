@@ -99,7 +99,7 @@ class CmdLineTest(unittest.TestCase):
     def test_unknown_xoptions(self):
         _, out, err = assert_python_failure('-X', 'blech')
         self.assertIn(b'Unknown value for option -X', err)
-        msg = b'Fatal Python error: Unknown value for option -X (see -X help)'
+        msg = b'Fatal Python error: Unknown value for option -X (see --help-xoptions)'
         self.assertEqual(err.splitlines().count(msg), 1)
         self.assertEqual(b'', out)
 
