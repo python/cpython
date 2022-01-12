@@ -6288,7 +6288,10 @@ else
     LIBRARY_DEPS="\$(LIBRARY) $LIBRARY_DEPS"
 fi
 AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
+  dnl browser needs a WASM assets stdlib bundle
   [Emscripten/browser], [LIBRARY_DEPS="$LIBRARY_DEPS \$(WASM_STDLIB)"],
+  dnl create pybuilddir.txt when building python.js directly
+  [Emscripten/node], [LIBRARY_DEPS="$LIBRARY_DEPS pybuilddir.txt"],
 )
 
 AC_SUBST(STATIC_LIBPYTHON)

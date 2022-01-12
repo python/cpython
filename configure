@@ -21233,8 +21233,10 @@ else
     LIBRARY_DEPS="\$(LIBRARY) $LIBRARY_DEPS"
 fi
 case $ac_sys_system/$ac_sys_emscripten_target in #(
-  Emscripten/browser) :
+    Emscripten/browser) :
     LIBRARY_DEPS="$LIBRARY_DEPS \$(WASM_STDLIB)" ;; #(
+    Emscripten/node) :
+    LIBRARY_DEPS="$LIBRARY_DEPS pybuilddir.txt" ;; #(
   *) :
      ;;
 esac
