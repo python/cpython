@@ -6269,7 +6269,7 @@ else
   Emscripten/node) :
     EXEEXT=.js ;; #(
   wasi/*) :
-    EXEEXT=.js ;; #(
+    EXEEXT=.wasm ;; #(
   *) :
     EXEEXT=
    ;;
