@@ -1466,6 +1466,7 @@ else
   AC_MSG_RESULT(no);
 fi],
 [AC_MSG_RESULT(no)])
+
 if test "$Py_OPT" = 'true' ; then
   # Intentionally not forcing Py_LTO='true' here.  Too many toolchains do not
   # compile working code using it and both test_distutils and test_gdb are
@@ -1482,8 +1483,12 @@ if test "$Py_OPT" = 'true' ; then
       ])
       ;;
   esac
-
-
+elif test "$ac_sys_system" = "Emscripten"; then
+  dnl Emscripten does not support shared extensions yet. Build
+  dnl "python.[js,html,wasm]", "pybuilddir.txt", and "platform" files.
+  DEF_MAKE_ALL_RULE="build_platform"
+  REQUIRE_PGO="no"
+  DEF_MAKE_RULE="all"
 else
   DEF_MAKE_ALL_RULE="build_all"
   REQUIRE_PGO="no"
@@ -6287,11 +6292,10 @@ if test "$PY_ENABLE_SHARED" = 1 || test "$enable_framework" ; then
 else
     LIBRARY_DEPS="\$(LIBRARY) $LIBRARY_DEPS"
 fi
+
+dnl browser needs a WASM assets stdlib bundle
 AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-  dnl browser needs a WASM assets stdlib bundle
   [Emscripten/browser], [LIBRARY_DEPS="$LIBRARY_DEPS \$(WASM_STDLIB)"],
-  dnl create pybuilddir.txt when building python.js directly
-  [Emscripten/node], [LIBRARY_DEPS="$LIBRARY_DEPS pybuilddir.txt"],
 )
 
 AC_SUBST(STATIC_LIBPYTHON)

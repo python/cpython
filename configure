@@ -7047,6 +7047,7 @@ else
 $as_echo "no" >&6; }
 fi
 
+
 if test "$Py_OPT" = 'true' ; then
   # Intentionally not forcing Py_LTO='true' here.  Too many toolchains do not
   # compile working code using it and both test_distutils and test_gdb are
@@ -7097,8 +7098,10 @@ fi
 
       ;;
   esac
-
-
+elif test "$ac_sys_system" = "Emscripten"; then
+  DEF_MAKE_ALL_RULE="build_platform"
+  REQUIRE_PGO="no"
+  DEF_MAKE_RULE="all"
 else
   DEF_MAKE_ALL_RULE="build_all"
   REQUIRE_PGO="no"
@@ -21232,11 +21235,10 @@ if test "$PY_ENABLE_SHARED" = 1 || test "$enable_framework" ; then
 else
     LIBRARY_DEPS="\$(LIBRARY) $LIBRARY_DEPS"
 fi
+
 case $ac_sys_system/$ac_sys_emscripten_target in #(
-    Emscripten/browser) :
+  Emscripten/browser) :
     LIBRARY_DEPS="$LIBRARY_DEPS \$(WASM_STDLIB)" ;; #(
-    Emscripten/node) :
-    LIBRARY_DEPS="$LIBRARY_DEPS pybuilddir.txt" ;; #(
   *) :
      ;;
 esac

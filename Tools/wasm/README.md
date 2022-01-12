@@ -40,7 +40,7 @@ CONFIG_SITE=../../Tools/wasm/config.site-wasm32-emscripten \
     --with-emscripten-target=browser \
     --with-build-python=$(pwd)/../build/python
 
-emmake make -j$(nproc) python.html
+emmake make -j$(nproc)
 ```
 
 For node:
@@ -53,7 +53,7 @@ CONFIG_SITE=../../Tools/wasm/config.site-wasm32-emscripten \
     --with-emscripten-target=node \
     --with-build-python=$(pwd)/../build/python
 
-emmake make -j$(nproc) python.js
+emmake make -j$(nproc)
 ```
 
 ### Test in browser
