@@ -575,16 +575,12 @@ def regen_frozen(modules):
 def regen_makefile(modules):
     pyfiles = []
     frozenfiles = []
-    deepfreezefiles = []
     rules = ['']
-    deepfreezerules = ['']
+    deepfreezerule = ["Python/deepfreeze/deepfreeze.c: $(DEEPFREEZE_DEPS)",
+                       "\t$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py"]
     for src in _iter_sources(modules):
         frozen_header = relpath_for_posix_display(src.frozenfile, ROOT_DIR)
-        deepfreeze_header = relpath_for_posix_display(src.deepfreezefile, ROOT_DIR)
         frozenfiles.append(f'\t\t{frozen_header} \\')
-        cfile = deepfreeze_header[:-2] + ".c"
-        ofile = deepfreeze_header[:-2] + ".o"
-        deepfreezefiles.append(f"\t\t{ofile} \\")
 
         pyfile = relpath_for_posix_display(src.pyfile, ROOT_DIR)
         pyfiles.append(f'\t\t{pyfile} \\')
@@ -603,15 +599,10 @@ def regen_makefile(modules):
             f'\t{freeze}',
             '',
         ])
-        deepfreezerules.append(f'{cfile}: {frozen_header} $(DEEPFREEZE_DEPS)')
-        deepfreezerules.append(
-            f"\t$(PYTHON_FOR_FREEZE) "
-            f"$(srcdir)/Tools/scripts/deepfreeze.py "
-            f"{frozen_header} -m {src.frozenid} -o {cfile}")
-        deepfreezerules.append('')
+        deepfreezerule[-1] += f" -i {pyfile} {src.frozenid}"
+    deepfreezerule[-1] += ' -o Python/deepfreeze/deepfreeze.c'
     pyfiles[-1] = pyfiles[-1].rstrip(" \\")
     frozenfiles[-1] = frozenfiles[-1].rstrip(" \\")
-    deepfreezefiles[-1] = deepfreezefiles[-1].rstrip(" \\")
 
     print(f'# Updating {os.path.relpath(MAKEFILE)}')
     with updating_file_with_tmpfile(MAKEFILE) as (infile, outfile):
@@ -632,13 +623,6 @@ def regen_makefile(modules):
         )
         lines = replace_block(
             lines,
-            "DEEPFREEZE_OBJS =",
-            "# End DEEPFREEZE_OBJS",
-            deepfreezefiles,
-            MAKEFILE,
-        )
-        lines = replace_block(
-            lines,
             "# BEGIN: freezing modules",
             "# END: freezing modules",
             rules,
@@ -648,7 +632,7 @@ def regen_makefile(modules):
             lines,
             "# BEGIN: deepfreeze modules",
             "# END: deepfreeze modules",
-            deepfreezerules,
+            deepfreezerule,
             MAKEFILE,
         )
         outfile.writelines(lines)

@@ -32,9 +32,6 @@ def make_string_literal(b: bytes) -> str:
     return "".join(res)
 
 
-def normalize_filename(modname: str)->str:
-    return modname.replace(".", "_").replace("/", "_")
-
 CO_FAST_LOCAL = 0x20
 CO_FAST_CELL = 0x40
 CO_FAST_FREE = 0x80
@@ -106,7 +103,8 @@ class Printer:
 
     def __init__(self, file: TextIO) -> None:
         self.file = file
-        self.cache: Dict[Tuple[type, object], str] = {}
+        self.level = 0
+        self.cache: Dict[tuple[object, object, str], str] = {}
         self.hits, self.misses = 0, 0
         self.patchups: list[str] = []
         self.write('#include "Python.h"')
@@ -343,13 +341,13 @@ class Printer:
         self.write("// TODO: The above tuple should be a frozenset")
         return ret
 
-    def generate_file(self, filename: str, code: object)-> None:
-        filename = normalize_filename(filename)
-        self.generate(f"{filename}_toplevel", code)
-        with self.block(f"static void {filename}_do_patchups(void)"):
+    def generate_file(self, module: str, code: object)-> None:
+        module = module.replace(".", "_")
+        self.generate(f"{module}_toplevel", code)
+        with self.block(f"static void {module}_do_patchups(void)"):
             for p in self.patchups:
                 self.write(p)
-        self.write(EPILOGUE.replace("%%NAME%%", filename))
+        self.write(EPILOGUE.replace("%%NAME%%", module))
 
     def generate(self, name: str, obj: object) -> str:
         # Use repr() in the key to distinguish -0.0 from +0.0
@@ -401,12 +399,12 @@ _Py_get_%%NAME%%_toplevel(void)
 """
 
 
-def generate(files: str, output: TextIO) -> None:
+def generate(input: tuple[str,str], output: TextIO) -> None:
     printer = Printer(output)
-    for file in files:
+    for file, modname in input:
         with open(file, "r", encoding="utf8") as fd:
-            code = compile(fd.read(),f'<frozen {removesuffix(os.path.basename(file),".py")}>', "exec")
-            printer.generate_file(file, code)
+            code = compile(fd.read(), f'<module {modname!r} frozen>', "exec")
+            printer.generate_file(modname, code)
     if verbose:
         print(f"Cache hits: {printer.hits}, misses: {printer.misses}")
 
@@ -414,7 +412,7 @@ def generate(files: str, output: TextIO) -> None:
 parser = argparse.ArgumentParser()
 parser.add_argument("-o", "--output", help="Defaults to MODULE.c")
 parser.add_argument("-v", "--verbose", action="store_true", help="Print diagnostics")
-parser.add_argument("files", nargs='+', help="Input files (required)")
+parser.add_argument("-i","--input", nargs=2, action='append', help="Input files (required)", metavar=('file', 'module'))
 
 
 @contextlib.contextmanager
@@ -435,7 +433,7 @@ def main() -> None:
     output = args.output or 'deepfreeze.c'
     with open(output, "w", encoding="utf-8") as file:
         with report_time("generate"):
-            generate(args.files, file)
+            generate(args.input, file)
     if verbose:
         print(f"Wrote {os.path.getsize(output)} bytes to {output}")
 
