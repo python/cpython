@@ -161,7 +161,7 @@ struct _gc_runtime_state {
     Py_ssize_t long_lived_pending;
 };
 
-extern void _PyGC_InitState(struct _gc_runtime_state *);
+extern void _PyGC_InitializeRuntime(struct _gc_runtime_state *);
 
 extern Py_ssize_t _PyGC_CollectNoFail(PyThreadState *tstate);
 

@@ -100,6 +100,7 @@ init_runtime(_PyRuntimeState *runtime,
     runtime->audit_hook_head = audit_hook_head;
 
     _PyEval_InitRuntimeState(&runtime->ceval);
+    _PyGC_InitializeRuntime(&runtime->gc);
 
     PyPreConfig_InitPythonConfig(&runtime->preconfig);
 
@@ -283,7 +284,6 @@ init_interpreter(PyInterpreterState *interp,
     interp->next = next;
 
     _PyEval_InitState(&interp->ceval, pending_lock);
-    _PyGC_InitState(&interp->gc);
     PyConfig_InitPythonConfig(&interp->config);
     _PyType_InitCache(interp);
     interp->eval_frame = NULL;
@@ -426,7 +426,9 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
     /* Last garbage collection on this interpreter */
     _PyGC_CollectNoFail(tstate);
-    _PyGC_Fini(interp);
+    if (_Py_IsMainInterpreter(interp)) {
+        _PyGC_Fini();
+    }
 
     /* We don't clear sysdict and builtins until the end of this function.
        Because clearing other attributes can execute arbitrary Python code

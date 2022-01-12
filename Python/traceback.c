@@ -1309,6 +1309,7 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
         return "unable to get the thread head state";
 
     /* Dump the traceback of each thread */
+    _PyRuntimeState *runtime = &_PyRuntime;
     tstate = PyInterpreterState_ThreadHead(interp);
     nthreads = 0;
     _Py_BEGIN_SUPPRESS_IPH
@@ -1321,7 +1322,7 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
             break;
         }
         write_thread_id(fd, tstate, tstate == current_tstate);
-        if (tstate == current_tstate && tstate->interp->gc.collecting) {
+        if (tstate == current_tstate && runtime->gc.collecting) {
             PUTS(fd, "  Garbage-collecting\n");
         }
         dump_traceback(fd, tstate, 0);

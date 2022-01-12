@@ -16,7 +16,6 @@ extern "C" {
 #include "pycore_floatobject.h"   // struct _Py_float_state
 #include "pycore_genobject.h"     // struct _Py_async_gen_state
 #include "pycore_gil.h"           // struct _gil_runtime_state
-#include "pycore_gc.h"            // struct _gc_runtime_state
 #include "pycore_list.h"          // struct _Py_list_state
 #include "pycore_tuple.h"         // struct _Py_tuple_state
 #include "pycore_typeobject.h"    // struct type_cache
@@ -105,7 +104,6 @@ struct _is {
     int finalizing;
 
     struct _ceval_state ceval;
-    struct _gc_runtime_state gc;
 
     // sys.modules dictionary
     PyObject *modules;

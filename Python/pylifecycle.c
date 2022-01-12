@@ -832,10 +832,12 @@ pycore_interp_init(PyThreadState *tstate)
         return status;
     }
 
-    // The GC must be initialized before the first GC collection.
-    status = _PyGC_Init(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
+    if (_Py_IsMainInterpreter(interp)) {
+        // The GC must be initialized before the first GC collection.
+        status = _PyGC_Init();
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
     }
 
     status = pycore_init_types(interp);
@@ -1557,7 +1559,7 @@ finalize_modules(PyThreadState *tstate)
 
     // Dump GC stats before it's too late, since it uses the warnings
     // machinery.
-    _PyGC_DumpShutdownStats(interp);
+    _PyGC_DumpShutdownStats();
 
     if (weaklist != NULL) {
         // Now, if there are any modules left alive, clear their globals to
