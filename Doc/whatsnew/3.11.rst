@@ -757,7 +757,6 @@ Porting to Python 3.11
   * ``f_code``: removed, use :c:func:`PyFrame_GetCode` instead.
     Warning: the function returns a :term:`strong reference`, need to call
     :c:func:`Py_DECREF`.
-  * ``f_lineno``: changed, use :c:func:`PyFrame_GetLineNumber`.
   * ``f_back``: changed, use :c:func:`PyFrame_GetBack`.
   * ``f_builtins``: removed,
     use ``PyObject_GetAttrString(frame, "f_builtins")``.
@@ -775,10 +774,10 @@ Porting to Python 3.11
   * ``f_blockstack``: removed.
   * ``f_localsplus``: removed.
 
-  The Python frame object is now created lazily. A side effect is that
-  ``f_lineno`` and ``f_back`` members must not be accessed directly, since
-  their value is now also computed lazily. :c:func:`PyFrame_GetLineNumber`
-  and :c:func:`PyFrame_GetBack` functions must be called instead.
+  The Python frame object is now created lazily. A side effect is that the
+  ``f_back`` member must not be accessed directly, since its value is now also
+  computed lazily. The :c:func:`PyFrame_GetBack` function must be called
+  instead.
 
   Code defining ``PyFrame_GetCode()`` on Python 3.8 and older::
 
