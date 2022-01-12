@@ -75,7 +75,7 @@ extern PyStatus _Py_HashRandomization_Init(const PyConfig *);
 extern PyStatus _PyTypes_Init(void);
 extern PyStatus _PyTypes_InitSlotDefs(void);
 extern PyStatus _PyImportZip_Init(PyThreadState *tstate);
-extern PyStatus _PyGC_Init(PyInterpreterState *interp);
+extern PyStatus _PyGC_Init(void);
 extern PyStatus _PyAtExit_Init(PyInterpreterState *interp);
 
 
@@ -96,7 +96,7 @@ extern void _PySignal_Fini(void);
 extern void _PyExc_Fini(PyInterpreterState *interp);
 extern void _PyImport_Fini(void);
 extern void _PyImport_Fini2(void);
-extern void _PyGC_Fini(PyInterpreterState *interp);
+extern void _PyGC_Fini(void);
 extern void _PyType_Fini(PyInterpreterState *interp);
 extern void _Py_HashRandomization_Fini(void);
 extern void _PyUnicode_Fini(PyInterpreterState *interp);
@@ -113,7 +113,7 @@ extern PyStatus _PyGILState_Init(_PyRuntimeState *runtime);
 extern PyStatus _PyGILState_SetTstate(PyThreadState *tstate);
 extern void _PyGILState_Fini(PyInterpreterState *interp);
 
-PyAPI_FUNC(void) _PyGC_DumpShutdownStats(PyInterpreterState *interp);
+PyAPI_FUNC(void) _PyGC_DumpShutdownStats(void);
 
 PyAPI_FUNC(PyStatus) _Py_PreInitializeFromPyArgv(
     const PyPreConfig *src_config,

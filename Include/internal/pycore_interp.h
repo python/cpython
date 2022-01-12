@@ -11,7 +11,6 @@ extern "C" {
 #include "pycore_atomic.h"        // _Py_atomic_address
 #include "pycore_ast_state.h"     // struct ast_state
 #include "pycore_gil.h"           // struct _gil_runtime_state
-#include "pycore_gc.h"            // struct _gc_runtime_state
 #include "pycore_warnings.h"      // struct _warnings_runtime_state
 
 struct _pending_calls {
@@ -229,7 +228,6 @@ struct _is {
     int finalizing;
 
     struct _ceval_state ceval;
-    struct _gc_runtime_state gc;
 
     // sys.modules dictionary
     PyObject *modules;

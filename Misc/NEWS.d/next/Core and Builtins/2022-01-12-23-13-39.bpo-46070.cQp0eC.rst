@@ -1,0 +1,3 @@
+Fix a random crash involving subinterpreters on Windows. Revert the change
+which made the gc module state per interpreter: the gc module state is
+shared again by all interpreters. Patch by Victor Stinner.
