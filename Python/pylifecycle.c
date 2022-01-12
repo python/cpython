@@ -579,12 +579,12 @@ pycore_init_types(PyThreadState *tstate)
     PyStatus status;
     int is_main_interp = _Py_IsMainInterpreter(tstate);
 
-    status = _PyGC_Init(tstate);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
     if (is_main_interp) {
+        status = _PyGC_Init();
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+
         status = _PyTypes_Init();
         if (_PyStatus_EXCEPTION(status)) {
             return status;
@@ -1317,9 +1317,9 @@ finalize_interp_clear(PyThreadState *tstate)
         PyGrammar_RemoveAccelerators(&_PyParser_Grammar);
 
         _PyExc_Fini();
-    }
 
-    _PyGC_Fini(tstate);
+        _PyGC_Fini();
+    }
 }
 
 

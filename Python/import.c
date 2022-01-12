@@ -575,7 +575,7 @@ _PyImport_Cleanup(PyThreadState *tstate)
     _PyGC_CollectNoFail();
     /* Dump GC stats before it's too late, since it uses the warnings
        machinery. */
-    _PyGC_DumpShutdownStats(tstate);
+    _PyGC_DumpShutdownStats();
 
     /* Now, if there are any modules left alive, clear their globals to
        minimize potential leaks.  All C extension modules actually end
