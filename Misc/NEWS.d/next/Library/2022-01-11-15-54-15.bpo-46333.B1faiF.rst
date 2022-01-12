@@ -1,1 +1,4 @@
-Honor the ``module`` parameter in :class:`typing.ForwardRef`, as it carries semantic information about the forward reference. This affects the :meth:`__eq__`, :meth:`__repr__` and :meth:`__hash__` methods of the class.
+The :meth:`__eq__`, :meth:`__repr__` and :meth:`__hash__` methods of
+:class:`typing.ForwardRef` now honor the ``module`` parameter of
+:class:`typing.ForwardRef`. Forward references from different
+modules are now differentiated.
