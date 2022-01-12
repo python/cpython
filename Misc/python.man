@@ -91,6 +91,9 @@ python \- an interpreted, interactive, object-oriented programming language
 [
 .B \--help-xoptions
 ]
+[
+.B \--help-all
+]
 .br
        [
 .B \-c
@@ -161,6 +164,10 @@ Prints help about Python-specific environment variables and exits.
 .TP
 .B "\-\-help\-xoptions"
 Prints help about implementation-specific \fB\-X\fP options and exits.
+.TP
+.TP
+.B "\-\-help\-all"
+Prints complete usage information and exits.
 .TP
 .B \-i
 When a script is passed as first argument or the \fB\-c\fP option is

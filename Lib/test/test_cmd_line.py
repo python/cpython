@@ -45,6 +45,12 @@ class CmdLineTest(unittest.TestCase):
     def test_help_env(self):
         self.verify_valid_flag('--help-env')
 
+    def test_help_xoptions(self):
+        self.verify_valid_flag('--help-xoptions')
+
+    def test_help_all(self):
+        self.verify_valid_flag('--help-all')
+
     def test_optimize(self):
         self.verify_valid_flag('-O')
         self.verify_valid_flag('-OO')
@@ -103,14 +109,6 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(err.splitlines().count(msg), 1)
         self.assertEqual(b'', out)
 
-    @unittest.skipIf(interpreter_requires_environment(),
-                     'Cannot run -E tests when PYTHON env vars are required.')
-    def test_xoptions_help(self):
-        _, out, err = assert_python_ok('-X', 'help')
-        self.assertIn(b'implementation-specific options are available', out)
-        self.assertIn(b'-X faulthandler: enable faulthandler', out)
-        self.assertEqual(b'', err)
-
     def test_showrefcount(self):
         def run_python(*args):
             # this is similar to assert_python_ok but doesn't strip
@@ -148,7 +146,6 @@ class CmdLineTest(unittest.TestCase):
         }
         for raw, expected in tests:
             cmd = ['-X', f'frozen_modules{raw}',
-                   #'-c', 'import os; print(os.__spec__.loader.__name__, end="")']
                    '-c', 'import os; print(os.__spec__.loader, end="")']
             with self.subTest(raw):
                 res = assert_python_ok(*cmd)

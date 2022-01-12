@@ -42,6 +42,7 @@ Options (and corresponding environment variables):\n\
 -h     : print this help message and exit (also --help)\n\
 --help-env      : print help about Python-specific environment variables and exit\n\
 --help-xoptions : print help about implementation-specific -X options and exit\n\
+--help-all      : print complete help information and exit\n\
 ";
 static const char usage_2[] = "\
 -i     : inspect interactively after running script; forces a prompt even\n\
@@ -2261,6 +2262,18 @@ config_xoptions_usage()
     fputs(usage_xoptions, f);
 }
 
+static void
+config_complete_usage(const wchar_t* program)
+{
+   FILE *f = stdout;
+   config_usage(0, program);
+   fputs("\n", f);
+   config_envvars_usage();
+   fputs("\n", f);
+   config_xoptions_usage();
+}
+
+
 /* Parse the command line arguments */
 static PyStatus
 config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
@@ -2332,11 +2345,16 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
             break;
 
         case 1:
+            // help-all
+            config_complete_usage(program);
+            return _PyStatus_EXIT(0);
+
+        case 2:
             // help-env
             config_envvars_usage();
             return _PyStatus_EXIT(0);
 
-        case 2:
+        case 3:
             // help-xoptions
             config_xoptions_usage();
             return _PyStatus_EXIT(0);

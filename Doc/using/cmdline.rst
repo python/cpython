@@ -209,6 +209,12 @@ Generic options
 
    .. versionadded:: 3.11
 
+.. cmdoption:: --help-all
+
+   Print complete usage information and exit.
+
+   .. versionadded:: 3.11
+
 .. cmdoption:: -V
                --version
 
