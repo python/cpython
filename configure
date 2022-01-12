@@ -7099,7 +7099,7 @@ fi
       ;;
   esac
 elif test "$ac_sys_system" = "Emscripten"; then
-  DEF_MAKE_ALL_RULE="build_platform"
+      DEF_MAKE_ALL_RULE="build_platform"
   REQUIRE_PGO="no"
   DEF_MAKE_RULE="all"
 else
