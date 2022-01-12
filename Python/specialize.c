@@ -1357,16 +1357,13 @@ specialize_class_call(
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_PYTHON_CLASS);
         return -1;
     }
-    if (nargs == 1) {
-        if (tp == &PyType_Type) {
-            *instr = _Py_MAKECODEUNIT(CALL_NO_KW_TYPE_1, _Py_OPARG(*instr));
-            return 0;
-        }
-        if ((tp->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) && tp->tp_vectorcall != NULL) {
-            cache->adaptive.version = tp->tp_version_tag;
-            *instr = _Py_MAKECODEUNIT(CALL_NO_KW_BUILTIN_CLASS_1, _Py_OPARG(*instr));
-            return 0;
-        }
+    if (tp == &PyType_Type && nargs == 1) {
+        *instr = _Py_MAKECODEUNIT(CALL_NO_KW_TYPE_1, _Py_OPARG(*instr));
+        return 0;
+    }
+    if ((tp->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) && tp->tp_vectorcall != NULL) {
+        *instr = _Py_MAKECODEUNIT(CALL_NO_KW_BUILTIN_CLASS, _Py_OPARG(*instr));
+        return 0;
     }
     SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CLASS);
     return -1;

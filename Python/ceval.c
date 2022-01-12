@@ -4806,20 +4806,22 @@ check_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(CALL_NO_KW_BUILTIN_CLASS_1) {
-            SpecializedCacheEntry *caches = GET_CACHE();
-            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
-            DEOPT_IF(call_shape.positional_args != 1, CALL);
+        TARGET(CALL_NO_KW_BUILTIN_CLASS) {
             assert(call_shape.kwnames == NULL);
-            PyObject *callable = SECOND();
-            PyObject *arg = TOP();
-            DEOPT_IF(!PyType_Check(callable), CALL);
-            PyTypeObject *tp = (PyTypeObject *)callable;
-            DEOPT_IF(tp->tp_version_tag != cache0->version, CALL);
-            PyObject *res = tp->tp_vectorcall((PyObject *)tp, stack_pointer-1, 1, NULL);
+            DEOPT_IF(!PyType_Check(call_shape.callable), CALL);
+            PyTypeObject *tp = (PyTypeObject *)call_shape.callable;
+            DEOPT_IF(tp->tp_vectorcall == NULL, CALL);
+            STAT_INC(CALL, hit);
+
+            int nargs = call_shape.positional_args;
+            STACK_SHRINK(nargs);
+            PyObject *res = tp->tp_vectorcall((PyObject *)tp, stack_pointer, nargs, NULL);
+            /* Free the arguments. */
+            for (int i = 0; i < nargs; i++) {
+                Py_DECREF(stack_pointer[i]);
+            }
             Py_DECREF(tp);
-            Py_DECREF(arg);
-            STACK_SHRINK(call_shape.postcall_shrink);
+            STACK_SHRINK(call_shape.postcall_shrink-1);
             SET_TOP(res);
             if (res == NULL) {
                 goto error;
@@ -4864,12 +4866,12 @@ check_eval_breaker:
             assert(call_shape.kwnames == NULL);
             PyObject *callable = call_shape.callable;
             assert(call_shape.kwnames == NULL);
-            int nargs = call_shape.positional_args;
             DEOPT_IF(!PyCFunction_CheckExact(callable), CALL);
             DEOPT_IF(PyCFunction_GET_FLAGS(callable) != METH_FASTCALL,
                 CALL);
             STAT_INC(CALL, hit);
 
+            int nargs = call_shape.positional_args;
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
             STACK_SHRINK(nargs);
             /* res = func(self, args, nargs) */

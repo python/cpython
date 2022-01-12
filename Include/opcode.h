@@ -146,7 +146,7 @@ extern "C" {
 #define CALL_NO_KW_LIST_APPEND           46
 #define CALL_NO_KW_METHOD_DESCRIPTOR_O   47
 #define CALL_NO_KW_TYPE_1                48
-#define CALL_NO_KW_BUILTIN_CLASS_1       55
+#define CALL_NO_KW_BUILTIN_CLASS         55
 #define CALL_NO_KW_METHOD_DESCRIPTOR_FAST  56
 #define JUMP_ABSOLUTE_QUICK              57
 #define LOAD_ATTR_ADAPTIVE               58
