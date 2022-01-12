@@ -1,0 +1,2 @@
+The ``configure`` script has a new option ``--with-emscripten-target`` to
+select browser or node as Emscripten build target.

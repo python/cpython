@@ -846,6 +846,8 @@ SHLIB_SUFFIX
 LIBTOOL_CRUFT
 OTHER_LIBTOOL_OPT
 UNIVERSAL_ARCH_FLAGS
+WASM_STDLIB
+WASM_ASSETS_DIR
 LDFLAGS_NOLTO
 LDFLAGS_NODIST
 CFLAGS_NODIST
@@ -1002,6 +1004,7 @@ with_universal_archs
 with_framework_name
 enable_framework
 with_cxx_main
+with_emscripten_target
 with_suffix
 enable_shared
 enable_profiling
@@ -1751,6 +1754,8 @@ Optional Packages:
   --with-cxx-main[=COMPILER]
                           compile main() and link Python executable with C++
                           compiler specified in COMPILER (default is $CXX)
+  --with-emscripten-target=[browser|node]
+                          Emscripten platform
   --with-suffix=SUFFIX    set executable suffix to SUFFIX (default is empty,
                           yes is mapped to '.exe')
   --with-pydebug          build with Py_DEBUG defined (default is no)
@@ -6205,6 +6210,41 @@ case $ac_sys_system/$ac_sys_release in #(
      ;;
 esac
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-emscripten-target" >&5
+$as_echo_n "checking for --with-emscripten-target... " >&6; }
+
+# Check whether --with-emscripten-target was given.
+if test "${with_emscripten_target+set}" = set; then :
+  withval=$with_emscripten_target;
+	if test "x$ac_sys_system" = xEmscripten; then :
+
+    case $with_emscripten_target in #(
+  browser) :
+    ac_sys_emscripten_target=browser ;; #(
+  node) :
+    ac_sys_emscripten_target=node ;; #(
+  *) :
+    as_fn_error $? "Invalid argument: --with-emscripten-target=browser|node" "$LINENO" 5
+     ;;
+esac
+
+else
+
+    as_fn_error $? "--with-emscripten-target only applies to Emscripten" "$LINENO" 5
+
+fi
+
+else
+
+  if test "x$ac_sys_system" = xEmscripten; then :
+  ac_sys_emscripten_target=browser
+fi
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_sys_emscripten_target" >&5
+$as_echo "$ac_sys_emscripten_target" >&6; }
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-suffix" >&5
 $as_echo_n "checking for --with-suffix... " >&6; }
 
@@ -6223,8 +6263,12 @@ esac
 
 else
 
-  case $ac_sys_system in #(
-  Emscripten) :
+  case $ac_sys_system/$ac_sys_emscripten_target in #(
+  Emscripten/browser) :
+    EXEEXT=.html ;; #(
+  Emscripten/node) :
+    EXEEXT=.js ;; #(
+  wasi/*) :
     EXEEXT=.wasm ;; #(
   *) :
     EXEEXT=
@@ -7003,6 +7047,7 @@ else
 $as_echo "no" >&6; }
 fi
 
+
 if test "$Py_OPT" = 'true' ; then
   # Intentionally not forcing Py_LTO='true' here.  Too many toolchains do not
   # compile working code using it and both test_distutils and test_gdb are
@@ -7053,8 +7098,10 @@ fi
 
       ;;
   esac
-
-
+elif test "$ac_sys_system" = "Emscripten"; then
+      DEF_MAKE_ALL_RULE="build_platform"
+  REQUIRE_PGO="no"
+  DEF_MAKE_RULE="all"
 else
   DEF_MAKE_ALL_RULE="build_all"
   REQUIRE_PGO="no"
@@ -7566,6 +7613,25 @@ then
 	;;
     esac
 fi
+
+# WASM flags
+case $ac_sys_system/$ac_sys_emscripten_target in #(
+  Emscripten/browser) :
+
+    LDFLAGS_NODIST="$(LDFLAGS_NODIST) -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 --preload-file \$(WASM_ASSETS_DIR)"
+    WASM_ASSETS_DIR=".\$(prefix)"
+    WASM_STDLIB="\$(WASM_ASSETS_DIR)/local/lib/python\$(VERSION)/os.py"
+   ;; #(
+  Emscripten/node) :
+
+    LDFLAGS_NODIST="$(LDFLAGS_NODIST) -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 -s NODERAWFS=1 -s EXIT_RUNTIME=1 -s USE_PTHREADS -s PROXY_TO_PTHREAD"
+    CFLAGS_NODIST="$(CFLAGS_NODIST) -pthread"
+   ;; #(
+  *) :
+     ;;
+esac
+
+
 
 
 
@@ -21170,6 +21236,14 @@ else
     LIBRARY_DEPS="\$(LIBRARY) $LIBRARY_DEPS"
 fi
 
+case $ac_sys_system/$ac_sys_emscripten_target in #(
+  Emscripten/browser) :
+    LIBRARY_DEPS="$LIBRARY_DEPS \$(WASM_STDLIB)" ;; #(
+  *) :
+     ;;
+esac
+
+
 
 
 # Check whether to disable test modules. Once set, setup.py will not build
@@ -23458,7 +23532,7 @@ $as_echo_n "checking for stdlib extension module xxlimited... " >&6; }
   *xxlimited*) :
     py_cv_module_xxlimited=n/a ;; #(
   *) :
-    if test "$with_trace_refs" = "no"; then :
+    if test "$with_trace_refs" = "no" -a "$ac_sys_system" != "Emscripten"; then :
   if true; then :
   py_cv_module_xxlimited=yes
 else
@@ -23494,7 +23568,7 @@ $as_echo_n "checking for stdlib extension module xxlimited_35... " >&6; }
   *xxlimited_35*) :
     py_cv_module_xxlimited_35=n/a ;; #(
   *) :
-    if test "$with_trace_refs" = "no"; then :
+    if test "$with_trace_refs" = "no" -a "$ac_sys_system" != "Emscripten"; then :
   if true; then :
   py_cv_module_xxlimited_35=yes
 else
