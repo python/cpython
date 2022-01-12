@@ -436,9 +436,10 @@ def generate(input: tuple[str,str], output: TextIO) -> None:
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-o", "--output", help="Defaults to MODULE.c")
+parser.add_argument("-o", "--output", help="Defaults to deepfreeze.c")
 parser.add_argument("-v", "--verbose", action="store_true", help="Print diagnostics")
-parser.add_argument("-i","--input", nargs=2, action='append', help="Input files (required)", metavar=('file', 'module'))
+parser.add_argument("-i","--input", nargs=2, action='append', help="Input file and module name (required)", 
+                    metavar=('file', 'module'))
 
 
 @contextlib.contextmanager
