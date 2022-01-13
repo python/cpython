@@ -88,11 +88,11 @@ class CAPITest(unittest.TestCase):
         try:
             raise raised_exception
         except ValueError as e:
-            orig_sys_exception = sys.exc_info()[1]
+            orig_sys_exception = sys.exception()
             orig_exception = _testcapi.set_exception(new_exc)
-            new_sys_exception = sys.exc_info()[1]
+            new_sys_exception = sys.exception()
             new_exception = _testcapi.set_exception(orig_exception)
-            reset_sys_exception = sys.exc_info()[1]
+            reset_sys_exception = sys.exception()
 
             self.assertEqual(orig_exception, e)
 
