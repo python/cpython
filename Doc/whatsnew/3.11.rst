@@ -626,9 +626,9 @@ Build Changes
   implementation. Previously, the default was to use 30-bit digits on platforms
   with ``SIZEOF_VOID_P >= 8``, and 15-bit digits otherwise. It's still possible
   to explicitly request use of 15-bit digits via either the
-  ``--enable-big-digits`` option to the configure script or the
-  ``PYLONG_BITS_IN_DIGIT`` variable in ``pyconfig.h``, but this option may be
-  removed at some point in the future. (Contributed by Mark Dickinson in
+  ``--enable-big-digits`` option to the configure script or (for Windows) the
+  ``PYLONG_BITS_IN_DIGIT`` variable in ``PC/pyconfig.h``, but this option may
+  be removed at some point in the future. (Contributed by Mark Dickinson in
   :issue:`45569`.)
 
 
