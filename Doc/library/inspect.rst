@@ -503,7 +503,7 @@ Retrieving source code
    If the documentation string for an object is not provided and the object is
    a class, a method, a property or a descriptor, retrieve the documentation
    string from the inheritance hierarchy.
-   Might return ``None`` for invalid docstrings.
+   Might return ``None`` for missing or invalid docstrings.
 
    .. versionchanged:: 3.5
       Documentation strings are now inherited if not overridden.
