@@ -1407,7 +1407,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     @unittest.skipUnless(MS_WINDOWS, 'specific to Windows')
     def test_getpath_abspath_win32(self):
         # Check _Py_abspath() is passed a backslashed path not to fall back to
-        # GetFullPathNameW() at startup, which (re-)normalize the path overly.
+        # GetFullPathNameW() on startup, which (re-)normalizes the path overly.
         # Currently, _Py_normpath() doesn't trim trailing dots and spaces.
         CASES = [
             ("C:/a. . .",  "C:\\a. . ."),
