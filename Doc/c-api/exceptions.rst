@@ -459,7 +459,7 @@ Querying the error indicator
          }
 
 
-.. c:function:: PyObject* PyErr_GetActiveException()
+.. c:function:: PyObject* PyErr_GetActiveException(void)
 
    Retrieve the active exception instance, as would be returned by ``sys.exception()``.
    This refers to an exception that was *already caught*, not to an exception that was
@@ -479,7 +479,7 @@ Querying the error indicator
 
    Set the active exception, as known from ``sys.exception()``.  This refers
    to an exception that was *already caught*, not to an exception that was
-   freshly raised.  This function steals the reference of the argument.
+   freshly raised.
    To clear the exception state, pass ``NULL``.
 
    .. note::
