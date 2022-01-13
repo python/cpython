@@ -349,6 +349,7 @@ class Printer:
         with self.block(f"static void {module}_do_patchups(void)"):
             for p in self.patchups:
                 self.write(p)
+            self.patchups.clear()
         self.write(EPILOGUE.replace("%%NAME%%", module))
 
     def generate(self, name: str, obj: object) -> str:
