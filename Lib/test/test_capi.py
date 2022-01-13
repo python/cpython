@@ -648,7 +648,16 @@ class CAPITest(unittest.TestCase):
         # "PyThread_get_thread_native_id" symbols are exported by the Python
         # (directly by the binary, or via by the Python dynamic library).
         ctypes = import_helper.import_module('ctypes')
-        for name in ('Py_FrozenMain', 'PyThread_get_thread_native_id'):
+        names = ['PyThread_get_thread_native_id']
+
+        # Python/frozenmain.c fails to build on Windows when the symbols are
+        # missing:
+        # - PyWinFreeze_ExeInit
+        # - PyWinFreeze_ExeTerm
+        # - PyInitFrozenExtensions
+        if os.name != 'nt':
+            names.append('Py_FrozenMain')
+        for name in names:
             with self.subTest(name=name):
                 self.assertTrue(hasattr(ctypes.pythonapi, name))
 
