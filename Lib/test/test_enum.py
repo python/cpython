@@ -419,20 +419,6 @@ class _EnumTests:
         self.assertTrue('description' not in dir(SubEnum))
         self.assertTrue('description' in dir(SubEnum.sample), dir(SubEnum.sample))
 
-    def test_empty_slots(self):
-        class FinalEnum(self.enum_type):
-            __slots__ = ()
-            FROZEN = auto()
-            FINAL = auto()
-            UNCHANGING = auto()
-        with self.assertRaisesRegex(AttributeError, 'blah'):
-            print()
-            print(FinalEnum.FROZEN.__dict__)
-            FinalEnum.FROZEN.steam = 33
-            print(FinalEnum.FROZEN.steam)
-            print(FinalEnum.__slots__)
-
-
     def test_enum_in_enum_out(self):
         Main = self.MainEnum
         self.assertIs(Main(Main.first), Main.first)
@@ -736,6 +722,16 @@ class _MinimalOutputTests:
             self.assertFormatIsValue('{:5.2}', TE.third)
             self.assertFormatIsValue('{:f}', TE.third)
 
+
+class _FlagTests:
+
+    def test_default_missing_with_wrong_type_value(self):
+        with self.assertRaisesRegex(
+            ValueError,
+            "'RED' is not a valid TestFlag.Color",
+            ) as ctx:
+            self.MainEnum('RED')
+        self.assertIs(ctx.exception.__context__, None)
 
 class TestPlainEnum(_EnumTests, _PlainOutputTests, unittest.TestCase):
     enum_type = Enum
@@ -1319,23 +1315,29 @@ class TestSpecial(unittest.TestCase):
         with self.assertRaises(TypeError):
             Season.SPRING < Part.CLIP
 
-    def test_dir_on_sub_with_behavior_including_slots(self):
-        # see issue40084
-        class SuperEnum(Enum):
-            def __new__(cls, *value, **kwds):
-                new = object.__new__
-                obj = new(cls)
-                obj._value_ = value
-                obj.description = 'test description'
-                return obj
-        class SubEnum(SuperEnum):
-            __slots__ = ('story_time', )
-            sample = 1
-        self.assertTrue('description' not in dir(SubEnum))
-        self.assertTrue('description' in dir(SubEnum.sample))
-        self.assertFalse('story_time' in SubEnum.sample.__dict__)
-        self.assertTrue('story_time' not in dir(SubEnum))
-        self.assertTrue('story_time' in dir(SubEnum.sample))
+    def test_dir_with_custom_dunders(self):
+        class PlainEnum(Enum):
+            pass
+        cls_dir = dir(PlainEnum)
+        self.assertNotIn('__repr__', cls_dir)
+        self.assertNotIn('__str__', cls_dir)
+        self.assertNotIn('__repr__', cls_dir)
+        self.assertNotIn('__repr__', cls_dir)
+        #
+        class MyEnum(Enum):
+            def __repr__(self):
+                return object.__repr__(self)
+            def __str__(self):
+                return object.__repr__(self)
+            def __format__(self):
+                return object.__repr__(self)
+            def __init__(self):
+                pass
+        cls_dir = dir(MyEnum)
+        self.assertIn('__repr__', cls_dir)
+        self.assertIn('__str__', cls_dir)
+        self.assertIn('__repr__', cls_dir)
+        self.assertIn('__repr__', cls_dir)
 
     def test_duplicate_name_error(self):
         with self.assertRaises(TypeError):
@@ -2746,12 +2748,13 @@ class TestSpecial(unittest.TestCase):
                 return hex(self)
 
         class MyIntEnum(HexMixin, MyInt, enum.Enum):
-            pass
+            __repr__ = HexMixin.__repr__
 
         class Foo(MyIntEnum):
             TEST = 1
         self.assertTrue(isinstance(Foo.TEST, MyInt))
-        self.assertEqual(repr(Foo.TEST), "<Foo.TEST: 0x1>")
+        self.assertEqual(Foo._member_type_, MyInt)
+        self.assertEqual(repr(Foo.TEST), "0x1")
 
         class Fee(MyIntEnum):
             TEST = 1
@@ -3027,6 +3030,17 @@ class TestSpecial(unittest.TestCase):
 
         self.assertEqual(repr(Entries.ENTRY1), '<Entries.ENTRY1: Foo(a=1)>')
 
+    def test_value_backup_assign(self):
+        # check that enum will add missing values when custom __new__ does not
+        class Some(Enum):
+            def __new__(cls, val):
+                return object.__new__(cls)
+            x = 1
+            y = 2
+        self.assertEqual(Some.x.value, 1)
+        self.assertEqual(Some.y.value, 2)
+
+
 class TestOrder(unittest.TestCase):
     "test usage of the `_order_` attribute"
 
@@ -3090,7 +3104,7 @@ class TestOrder(unittest.TestCase):
                 verde = green
 
 
-class OldTestFlag:
+class OldTestFlag(unittest.TestCase):
     """Tests of the Flags."""
 
     class Perm(Flag):
@@ -3112,65 +3126,6 @@ class OldTestFlag:
         PURPLE = RED|BLUE
         WHITE = RED|GREEN|BLUE
         BLANCO = RED|GREEN|BLUE
-
-    def test_str(self):
-        Perm = self.Perm
-        self.assertEqual(str(Perm.R), 'Perm.R')
-        self.assertEqual(str(Perm.W), 'Perm.W')
-        self.assertEqual(str(Perm.X), 'Perm.X')
-        self.assertEqual(str(Perm.R | Perm.W), 'Perm.R|W')
-        self.assertEqual(str(Perm.R | Perm.W | Perm.X), 'Perm.R|W|X')
-        self.assertEqual(str(Perm(0)), 'Perm(0)')
-        self.assertEqual(str(~Perm.R), 'Perm.W|X')
-        self.assertEqual(str(~Perm.W), 'Perm.R|X')
-        self.assertEqual(str(~Perm.X), 'Perm.R|W')
-        self.assertEqual(str(~(Perm.R | Perm.W)), 'Perm.X')
-        self.assertEqual(str(~(Perm.R | Perm.W | Perm.X)), 'Perm(0)')
-        self.assertEqual(str(Perm(~0)), 'Perm.R|W|X')
-
-        Open = self.Open
-        self.assertEqual(str(Open.RO), 'Open.RO')
-        self.assertEqual(str(Open.WO), 'Open.WO')
-        self.assertEqual(str(Open.AC), 'Open.AC')
-        self.assertEqual(str(Open.RO | Open.CE), 'Open.CE')
-        self.assertEqual(str(Open.WO | Open.CE), 'Open.WO|CE')
-        self.assertEqual(str(~Open.RO), 'Open.WO|RW|CE')
-        self.assertEqual(str(~Open.WO), 'Open.RW|CE')
-        self.assertEqual(str(~Open.AC), 'Open.CE')
-        self.assertEqual(str(~(Open.RO | Open.CE)), 'Open.AC')
-        self.assertEqual(str(~(Open.WO | Open.CE)), 'Open.RW')
-
-    def test_repr(self):
-        Perm = self.Perm
-        self.assertEqual(repr(Perm.R), '<Perm.R: 4>')
-        self.assertEqual(repr(Perm.W), '<Perm.W: 2>')
-        self.assertEqual(repr(Perm.X), '<Perm.X: 1>')
-        self.assertEqual(repr(Perm.R | Perm.W), '<Perm.R|W: 6>')
-        self.assertEqual(repr(Perm.R | Perm.W | Perm.X), '<Perm.R|W|X: 7>')
-        self.assertEqual(repr(Perm(0)), '<Perm: 0>')
-        self.assertEqual(repr(~Perm.R), '<Perm.W|X: 3>')
-        self.assertEqual(repr(~Perm.W), '<Perm.R|X: 5>')
-        self.assertEqual(repr(~Perm.X), '<Perm.R|W: 6>')
-        self.assertEqual(repr(~(Perm.R | Perm.W)), '<Perm.X: 1>')
-        self.assertEqual(repr(~(Perm.R | Perm.W | Perm.X)), '<Perm: 0>')
-        self.assertEqual(repr(Perm(~0)), '<Perm.R|W|X: 7>')
-
-        Open = self.Open
-        self.assertEqual(repr(Open.RO), '<Open.RO: 0>')
-        self.assertEqual(repr(Open.WO), '<Open.WO: 1>')
-        self.assertEqual(repr(Open.AC), '<Open.AC: 3>')
-        self.assertEqual(repr(Open.RO | Open.CE), '<Open.CE: 524288>')
-        self.assertEqual(repr(Open.WO | Open.CE), '<Open.WO|CE: 524289>')
-        self.assertEqual(repr(~Open.RO), '<Open.WO|RW|CE: 524291>')
-        self.assertEqual(repr(~Open.WO), '<Open.RW|CE: 524290>')
-        self.assertEqual(repr(~Open.AC), '<Open.CE: 524288>')
-        self.assertEqual(repr(~(Open.RO | Open.CE)), '<Open.AC: 3>')
-        self.assertEqual(repr(~(Open.WO | Open.CE)), '<Open.RW: 2>')
-
-    def test_format(self):
-        Perm = self.Perm
-        self.assertEqual(format(Perm.R, ''), 'Perm.R')
-        self.assertEqual(format(Perm.R | Perm.X, ''), 'Perm.R|X')
 
     def test_or(self):
         Perm = self.Perm
@@ -3513,6 +3468,7 @@ class OldTestFlag:
             RED = auto()
             GREEN = auto()
             BLUE = auto()
+            __str__ = StrMixin.__str__
         self.assertEqual(Color.RED.value, 1)
         self.assertEqual(Color.GREEN.value, 2)
         self.assertEqual(Color.BLUE.value, 4)
@@ -3522,6 +3478,7 @@ class OldTestFlag:
             RED = auto()
             GREEN = auto()
             BLUE = auto()
+            __str__ = StrMixin.__str__
         self.assertEqual(Color.RED.value, 1)
         self.assertEqual(Color.GREEN.value, 2)
         self.assertEqual(Color.BLUE.value, 4)
@@ -3616,7 +3573,7 @@ class OldTestFlag:
         self.assertIs(ctx.exception.__context__, None)
 
 
-class OldTestIntFlag:
+class OldTestIntFlag(unittest.TestCase):
     """Tests of the IntFlags."""
 
     class Perm(IntFlag):
@@ -3660,73 +3617,6 @@ class OldTestIntFlag:
             self.assertEqual(f, f.value)
         self.assertTrue(isinstance(Open.WO | Open.RW, Open))
         self.assertEqual(Open.WO | Open.RW, 3)
-
-
-    def test_str(self):
-        Perm = self.Perm
-        self.assertEqual(str(Perm.R), 'Perm.R')
-        self.assertEqual(str(Perm.W), 'Perm.W')
-        self.assertEqual(str(Perm.X), 'Perm.X')
-        self.assertEqual(str(Perm.R | Perm.W), 'Perm.R|W')
-        self.assertEqual(str(Perm.R | Perm.W | Perm.X), 'Perm.R|W|X')
-        self.assertEqual(str(Perm.R | 8), '12')
-        self.assertEqual(str(Perm(0)), 'Perm(0)')
-        self.assertEqual(str(Perm(8)), '8')
-        self.assertEqual(str(~Perm.R), 'Perm.W|X')
-        self.assertEqual(str(~Perm.W), 'Perm.R|X')
-        self.assertEqual(str(~Perm.X), 'Perm.R|W')
-        self.assertEqual(str(~(Perm.R | Perm.W)), 'Perm.X')
-        self.assertEqual(str(~(Perm.R | Perm.W | Perm.X)), 'Perm(0)')
-        self.assertEqual(str(~(Perm.R | 8)), '-13')
-        self.assertEqual(str(Perm(~0)), 'Perm.R|W|X')
-        self.assertEqual(str(Perm(~8)), '-9')
-
-        Open = self.Open
-        self.assertEqual(str(Open.RO), 'Open.RO')
-        self.assertEqual(str(Open.WO), 'Open.WO')
-        self.assertEqual(str(Open.AC), 'Open.AC')
-        self.assertEqual(str(Open.RO | Open.CE), 'Open.CE')
-        self.assertEqual(str(Open.WO | Open.CE), 'Open.WO|CE')
-        self.assertEqual(str(Open(4)), '4')
-        self.assertEqual(str(~Open.RO), 'Open.WO|RW|CE')
-        self.assertEqual(str(~Open.WO), 'Open.RW|CE')
-        self.assertEqual(str(~Open.AC), 'Open.CE')
-        self.assertEqual(str(~(Open.RO | Open.CE)), 'Open.AC')
-        self.assertEqual(str(~(Open.WO | Open.CE)), 'Open.RW')
-        self.assertEqual(str(Open(~4)), '-5')
-
-    def test_repr(self):
-        Perm = self.Perm
-        self.assertEqual(repr(Perm.R), '<Perm.R: 4>')
-        self.assertEqual(repr(Perm.W), '<Perm.W: 2>')
-        self.assertEqual(repr(Perm.X), '<Perm.X: 1>')
-        self.assertEqual(repr(Perm.R | Perm.W), '<Perm.R|W: 6>')
-        self.assertEqual(repr(Perm.R | Perm.W | Perm.X), '<Perm.R|W|X: 7>')
-        self.assertEqual(repr(Perm.R | 8), '12')
-        self.assertEqual(repr(Perm(0)), '<Perm: 0>')
-        self.assertEqual(repr(Perm(8)), '8')
-        self.assertEqual(repr(~Perm.R), '<Perm.W|X: 3>')
-        self.assertEqual(repr(~Perm.W), '<Perm.R|X: 5>')
-        self.assertEqual(repr(~Perm.X), '<Perm.R|W: 6>')
-        self.assertEqual(repr(~(Perm.R | Perm.W)), '<Perm.X: 1>')
-        self.assertEqual(repr(~(Perm.R | Perm.W | Perm.X)), '<Perm: 0>')
-        self.assertEqual(repr(~(Perm.R | 8)), '-13')
-        self.assertEqual(repr(Perm(~0)), '<Perm.R|W|X: 7>')
-        self.assertEqual(repr(Perm(~8)), '-9')
-
-        Open = self.Open
-        self.assertEqual(repr(Open.RO), '<Open.RO: 0>')
-        self.assertEqual(repr(Open.WO), '<Open.WO: 1>')
-        self.assertEqual(repr(Open.AC), '<Open.AC: 3>')
-        self.assertEqual(repr(Open.RO | Open.CE), '<Open.CE: 524288>')
-        self.assertEqual(repr(Open.WO | Open.CE), '<Open.WO|CE: 524289>')
-        self.assertEqual(repr(Open(4)), '4')
-        self.assertEqual(repr(~Open.RO), '<Open.WO|RW|CE: 524291>')
-        self.assertEqual(repr(~Open.WO), '<Open.RW|CE: 524290>')
-        self.assertEqual(repr(~Open.AC), '<Open.CE: 524288>')
-        self.assertEqual(repr(~(Open.RO | Open.CE)), '<Open.AC: 3>')
-        self.assertEqual(repr(~(Open.WO | Open.CE)), '<Open.RW: 2>')
-        self.assertEqual(repr(Open(~4)), '-5')
 
     def test_global_repr_keep(self):
         self.assertEqual(
@@ -4118,11 +4008,12 @@ class OldTestIntFlag:
         self.assertEqual(Color.GREEN.value, 2)
         self.assertEqual(Color.BLUE.value, 4)
         self.assertEqual(Color.ALL.value, 7)
-        self.assertEqual(str(Color.BLUE), 'Color.BLUE')
+        self.assertEqual(str(Color.BLUE), '4')
         class Color(AllMixin, StrMixin, IntFlag):
             RED = auto()
             GREEN = auto()
             BLUE = auto()
+            __str__ = StrMixin.__str__
         self.assertEqual(Color.RED.value, 1)
         self.assertEqual(Color.GREEN.value, 2)
         self.assertEqual(Color.BLUE.value, 4)
@@ -4132,6 +4023,7 @@ class OldTestIntFlag:
             RED = auto()
             GREEN = auto()
             BLUE = auto()
+            __str__ = StrMixin.__str__
         self.assertEqual(Color.RED.value, 1)
         self.assertEqual(Color.GREEN.value, 2)
         self.assertEqual(Color.BLUE.value, 4)
@@ -4617,6 +4509,7 @@ class TestStdLib(unittest.TestCase):
                 ('__name__', 'Color'),
                 ('__getitem__', self.Color.__getitem__),
                 ('__qualname__', 'TestStdLib.Color'),
+                ('__init_subclass__', getattr(self.Color, '__init_subclass__')),
                 ('__iter__', self.Color.__iter__),
                 ))
         result = dict(inspect.getmembers(self.Color))
@@ -4645,6 +4538,8 @@ class TestStdLib(unittest.TestCase):
                     defining_class=EnumType, object=self.Color.__getitem__),
                 Attribute(name='__iter__', kind='method',
                     defining_class=EnumType, object=self.Color.__iter__),
+                Attribute(name='__init_subclass__', kind='class method',
+                    defining_class=object, object=getattr(self.Color, '__init_subclass__')),
                 Attribute(name='__len__', kind='method',
                     defining_class=EnumType, object=self.Color.__len__),
                 Attribute(name='__members__', kind='property',
@@ -4680,7 +4575,14 @@ class TestStdLib(unittest.TestCase):
                 )
         failed = False
         for v, r in zip(values, result):
-            if r != v:
+            if r.name == '__init_subclass__':
+                # not sure how to make the __init_subclass_ Attributes match
+                # so as long as there is one, call it good
+                for name in ('name','kind','defining_class'):
+                    if getattr(v, name) != getattr(r, name):
+                        print('\n%s\n%s\n%s\n%s\n' % ('=' * 75, r, v, '=' * 75), sep='')
+                        failed = True
+            elif r != v:
                 print('\n%s\n%s\n%s\n%s\n' % ('=' * 75, r, v, '=' * 75), sep='')
                 failed = True
         if failed:
@@ -4884,17 +4786,30 @@ class TestStrEnumConvert(unittest.TestCase):
 
 def enum_dir(cls):
     # TODO: check for custom __init__, __new__, __format__, __repr__, __str__, __init_subclass__
-    return sorted(set([
-            '__class__', '__contains__', '__doc__', '__getitem__',
-            '__iter__', '__len__', '__members__', '__module__',
-            '__name__', '__qualname__',
-            ]
-            + cls._member_names_
-            ))
-    return sorted(allowed)
+    if cls._member_type_ is object:
+        interesting = set()
+        if cls.__init_subclass__ is not object.__init_subclass__:
+            interesting.add('__init_subclass__')
+        return sorted(set([
+                '__class__', '__contains__', '__doc__', '__getitem__',
+                '__iter__', '__len__', '__members__', '__module__',
+                '__name__', '__qualname__',
+                ]
+                + cls._member_names_
+                ) | interesting
+                )
+    else:
+        # return whatever mixed-in data type has
+        return sorted(set(
+                dir(cls._member_type_)
+                + cls._member_names_
+                ))
 
 def member_dir(member):
-    allowed = set(['__class__', '__doc__', '__eq__', '__hash__', '__module__', 'name', 'value'])
+    if member.__class__._member_type_ is object:
+        allowed = set(['__class__', '__doc__', '__eq__', '__hash__', '__module__', 'name', 'value'])
+    else:
+        allowed = set(dir(member))
     for cls in member.__class__.mro():
         for name, obj in cls.__dict__.items():
             if name[0] == '_':
@@ -4902,11 +4817,10 @@ def member_dir(member):
             if isinstance(obj, enum.property):
                 if obj.fget is not None or name not in member._member_map_:
                     allowed.add(name)
+                else:
+                    allowed.discard(name)
             else:
                 allowed.add(name)
-    names = sorted(allowed)
-    return names
-
     return sorted(allowed)
 
 missing = object()

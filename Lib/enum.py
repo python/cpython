@@ -578,7 +578,7 @@ class EnumType(type):
         #
         return enum_class
 
-    def __bool__(self):
+    def __bool__(cls):
         """
         classes/types should always be True.
         """
@@ -986,8 +986,6 @@ class Enum(metaclass=EnumType):
     Derive from this class to define new enumerations.
     """
 
-    __slots__ = '_name_', '_value_', '_objclass_', '_sort_order_'
-
     def __new__(cls, value):
         # all enum instances are actually created during class construction
         # without calling this method; this method is called by the metaclass'
@@ -1038,6 +1036,9 @@ class Enum(metaclass=EnumType):
             # ensure all variables that could hold an exception are destroyed
             exc = None
             ve_exc = None
+
+    def __init__(self, *args, **kwds):
+        pass
 
     def _generate_next_value_(name, start, count, last_values):
         """
@@ -1136,24 +1137,21 @@ class ReprEnum(Enum):
     """
     Only changes the repr(), leaving str() and format() to the mixed-in type.
     """
-    __slots__ = ()
 
 
 class IntEnum(int, ReprEnum):
     """
     Enum where members are also (and must be) ints
     """
-    __slots__ = ()
 
 
 class StrEnum(str, ReprEnum):
     """
     Enum where members are also (and must be) strings
     """
-    __slots__ = ()
-
 
     def __new__(cls, *values):
+        "values must already be of type `str`"
         if len(values) > 3:
             raise TypeError('too many arguments for str():  %r' % (values, ))
         if len(values) == 1:
@@ -1202,7 +1200,6 @@ class Flag(Enum, boundary=STRICT):
     """
     Support for flags
     """
-    __slots__ = ()
 
     def _generate_next_value_(name, start, count, last_values):
         """
@@ -1400,7 +1397,6 @@ class IntFlag(int, ReprEnum, Flag, boundary=EJECT):
     """
     Support for integer-based Flags
     """
-    __slots__ = ()
 
     # def __format__(self, format_spec):
     #     """
