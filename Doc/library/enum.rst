@@ -31,7 +31,7 @@ An enumeration:
 * uses *call* syntax to return members by value
 * uses *index* syntax to return members by name
 
-Enumerations are created either by using the :keyword:`class` syntax, or by
+Enumerations are created either by using :keyword:`class` syntax, or by
 using function-call syntax::
 
    >>> from enum import Enum
@@ -45,7 +45,7 @@ using function-call syntax::
    >>> # functional syntax
    >>> Color = Enum('Color', ['RED', 'GREEN', 'BLUE'])
 
-Even though we can use the :keyword:`class` syntax to create Enums, Enums
+Even though we can use :keyword:`class` syntax to create Enums, Enums
 are not normal Python classes.  See
 :ref:`How are Enums different? <enum-class-differences>` for more details.
 
@@ -53,7 +53,7 @@ are not normal Python classes.  See
 
    - The class :class:`Color` is an *enumeration* (or *enum*)
    - The attributes :attr:`Color.RED`, :attr:`Color.GREEN`, etc., are
-     *enumeration members* (or *enum members*) and are functionally constants.
+     *enumeration members* (or *members*) and are functionally constants.
    - The enum members have *names* and *values* (the name of
      :attr:`Color.RED` is ``RED``, the value of :attr:`Color.BLUE` is
      ``3``, etc.)
@@ -110,10 +110,10 @@ Module Contents
       :class:`StrEnum` defaults to the lower-cased version of the member name,
       while other Enums default to 1 and increase from there.
 
-   :func:`enum_property`
+   :func:`property`
 
       Allows :class:`Enum` members to have attributes without conflicting with
-      other members' names.
+      member names.
 
    :func:`unique`
 
@@ -126,7 +126,7 @@ Module Contents
 
 
 .. versionadded:: 3.6  ``Flag``, ``IntFlag``, ``auto``
-.. versionadded:: 3.11  ``StrEnum``, ``EnumCheck``, ``FlagBoundary``, ``enum_property``
+.. versionadded:: 3.11  ``StrEnum``, ``EnumCheck``, ``FlagBoundary``, ``property``
 
 ---------------
 
@@ -293,6 +293,11 @@ Data Types
          >>> PowersOfThree.SECOND.value
          6
 
+   .. method:: Enum.__init_subclass__(cls, \**kwds)
+
+      A *classmethod* that is used to further configure subsequent subclasses.
+      By default, does nothing.
+
    .. method:: Enum._missing_(cls, value)
 
       A *classmethod* for looking up values not found in *cls*.  By default it
@@ -342,6 +347,21 @@ Data Types
          ...         return f'{self.name}'
          >>> str(OtherStyle.ALTERNATE)
          'ALTERNATE'
+
+.. sidebar:: Important
+
+   The :method:`__repr__`, :method:`__str__`, :method:`__format__`, and
+   :method:`__reduce__` methods are not inherited from mix-in classes.  To use
+   them they must be manually assigned::
+
+         >>> class MyReprMixin:
+         ...     def __repr__(self):
+         ...         return 'I am %r and %r' % (self.name, self.value)'
+         >>> class MyEnum(MyReprMixin, Enum):
+         ...     __repr__ = MyReprMixin.__repr__
+         ...     ONE = 1
+         >>> MyEnum.ONE
+         'I am ONE and 1'
 
 .. note::
 
@@ -663,13 +683,13 @@ Utilities and Decorators
    ``_generate_next_value_`` can be overridden to customize the values used by
    *auto*.
 
-.. decorator:: enum_property
+.. decorator:: property
 
    A decorator similar to the built-in *property*, but specifically for
    enumerations.  It allows member attributes to have the same names as members
    themselves.
 
-   .. note:: the *enum_property* and the member must be defined in separate classes;
+   .. note:: the *property* and the member must be defined in separate classes;
              for example, the *value* and *name* attributes are defined in the
              *Enum* class, and *Enum* subclasses can define members with the
              names ``value`` and ``name``.
