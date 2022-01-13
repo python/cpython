@@ -258,7 +258,11 @@ random_seed_time_pid(RandomObject *self)
     key[0] = (uint32_t)(now & 0xffffffffU);
     key[1] = (uint32_t)(now >> 32);
 
+#ifdef HAVE_GETPID
     key[2] = (uint32_t)getpid();
+#else
+    key[2] = 0;
+#endif
 
     now = _PyTime_GetMonotonicClock();
     key[3] = (uint32_t)(now & 0xffffffffU);

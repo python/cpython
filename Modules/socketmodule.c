@@ -85,6 +85,10 @@ Local naming conventions:
 
 */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #ifdef __APPLE__
 // Issue #35569: Expose RFC 3542 socket options.
 #define __APPLE_USE_RFC_3542 1
@@ -103,6 +107,7 @@ Local naming conventions:
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_fileutils.h"     // _Py_set_inheritable()
 #include "structmember.h"         // PyMemberDef
 
 #ifdef _Py_MEMORY_SANITIZER
@@ -7926,7 +7931,7 @@ PyInit__socket(void)
 #ifdef  IPPROTO_VRRP
     PyModule_AddIntMacro(m, IPPROTO_VRRP);
 #endif
-#ifdef  IPPROTO_SCTP
+#if defined(IPPROTO_SCTP) && !defined(__EMSCRIPTEN__)
     PyModule_AddIntMacro(m, IPPROTO_SCTP);
 #endif
 #ifdef  IPPROTO_BIP

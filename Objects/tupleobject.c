@@ -589,10 +589,8 @@ tupleconcat(PyTupleObject *a, PyObject *bb)
 static PyObject *
 tuplerepeat(PyTupleObject *a, Py_ssize_t n)
 {
-    Py_ssize_t i, j;
     Py_ssize_t size;
     PyTupleObject *np;
-    PyObject **p, **items;
     if (Py_SIZE(a) == 0 || n == 1) {
         if (PyTuple_CheckExact(a)) {
             /* Since tuples are immutable, we can return a shared
@@ -610,13 +608,32 @@ tuplerepeat(PyTupleObject *a, Py_ssize_t n)
     np = tuple_alloc(size);
     if (np == NULL)
         return NULL;
-    p = np->ob_item;
-    items = a->ob_item;
-    for (i = 0; i < n; i++) {
-        for (j = 0; j < Py_SIZE(a); j++) {
-            *p = items[j];
-            Py_INCREF(*p);
-            p++;
+    PyObject **dest = np->ob_item;
+    PyObject **dest_end = dest + size;
+    if (Py_SIZE(a) == 1) {
+        PyObject *elem = a->ob_item[0];
+        Py_SET_REFCNT(elem, Py_REFCNT(elem) + n);
+#ifdef Py_REF_DEBUG
+        _Py_RefTotal += n;
+#endif
+        while (dest < dest_end) {
+            *dest++ = elem;
+        }
+    }
+    else {
+        PyObject **src = a->ob_item;
+        PyObject **src_end = src + Py_SIZE(a);
+        while (src < src_end) {
+            Py_SET_REFCNT(*src, Py_REFCNT(*src) + n);
+#ifdef Py_REF_DEBUG
+            _Py_RefTotal += n;
+#endif
+            *dest++ = *src++;
+        }
+        // Now src chases after dest in the same buffer
+        src = np->ob_item;
+        while (dest < dest_end) {
+            *dest++ = *src++;
         }
     }
     _PyObject_GC_TRACK(np);

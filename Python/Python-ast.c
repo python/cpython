@@ -1324,7 +1324,7 @@ init_types(struct ast_state *state)
         "     | YieldFrom(expr value)\n"
         "     | Compare(expr left, cmpop* ops, expr* comparators)\n"
         "     | Call(expr func, expr* args, keyword* keywords)\n"
-        "     | FormattedValue(expr value, int? conversion, expr? format_spec)\n"
+        "     | FormattedValue(expr value, int conversion, expr? format_spec)\n"
         "     | JoinedStr(expr* values)\n"
         "     | Constant(constant value, string? kind)\n"
         "     | Attribute(expr value, identifier attr, expr_context ctx)\n"
@@ -1414,11 +1414,8 @@ init_types(struct ast_state *state)
     state->FormattedValue_type = make_type(state, "FormattedValue",
                                            state->expr_type,
                                            FormattedValue_fields, 3,
-        "FormattedValue(expr value, int? conversion, expr? format_spec)");
+        "FormattedValue(expr value, int conversion, expr? format_spec)");
     if (!state->FormattedValue_type) return 0;
-    if (PyObject_SetAttr(state->FormattedValue_type, state->conversion,
-        Py_None) == -1)
-        return 0;
     if (PyObject_SetAttr(state->FormattedValue_type, state->format_spec,
         Py_None) == -1)
         return 0;
@@ -9249,9 +9246,9 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
         if (_PyObject_LookupAttr(obj, state->conversion, &tmp) < 0) {
             return 1;
         }
-        if (tmp == NULL || tmp == Py_None) {
-            Py_CLEAR(tmp);
-            conversion = 0;
+        if (tmp == NULL) {
+            PyErr_SetString(PyExc_TypeError, "required field \"conversion\" missing from FormattedValue");
+            return 1;
         }
         else {
             int res;

@@ -1,5 +1,7 @@
 import contextlib
 import collections
+from functools import lru_cache
+import inspect
 import pickle
 import re
 import sys
@@ -1938,13 +1940,12 @@ class GenericTests(BaseTestCase):
         self.assertNotEqual(typing.FrozenSet[A[str]],
                             typing.FrozenSet[mod_generics_cache.B.A[str]])
 
-        if sys.version_info[:2] > (3, 2):
-            self.assertTrue(repr(Tuple[A[str]]).endswith('<locals>.A[str]]'))
-            self.assertTrue(repr(Tuple[B.A[str]]).endswith('<locals>.B.A[str]]'))
-            self.assertTrue(repr(Tuple[mod_generics_cache.A[str]])
-                            .endswith('mod_generics_cache.A[str]]'))
-            self.assertTrue(repr(Tuple[mod_generics_cache.B.A[str]])
-                            .endswith('mod_generics_cache.B.A[str]]'))
+        self.assertTrue(repr(Tuple[A[str]]).endswith('<locals>.A[str]]'))
+        self.assertTrue(repr(Tuple[B.A[str]]).endswith('<locals>.B.A[str]]'))
+        self.assertTrue(repr(Tuple[mod_generics_cache.A[str]])
+                        .endswith('mod_generics_cache.A[str]]'))
+        self.assertTrue(repr(Tuple[mod_generics_cache.B.A[str]])
+                        .endswith('mod_generics_cache.B.A[str]]'))
 
     def test_extended_generic_rules_eq(self):
         T = TypeVar('T')
@@ -2063,11 +2064,9 @@ class GenericTests(BaseTestCase):
         class MyDef(typing.DefaultDict[str, T]): ...
         self.assertIs(MyDef[int]().__class__, MyDef)
         self.assertEqual(MyDef[int]().__orig_class__, MyDef[int])
-        # ChainMap was added in 3.3
-        if sys.version_info >= (3, 3):
-            class MyChain(typing.ChainMap[str, T]): ...
-            self.assertIs(MyChain[int]().__class__, MyChain)
-            self.assertEqual(MyChain[int]().__orig_class__, MyChain[int])
+        class MyChain(typing.ChainMap[str, T]): ...
+        self.assertIs(MyChain[int]().__class__, MyChain)
+        self.assertEqual(MyChain[int]().__orig_class__, MyChain[int])
 
     def test_all_repr_eq_any(self):
         objs = (getattr(typing, el) for el in typing.__all__)
@@ -2536,9 +2535,79 @@ class FinalTests(BaseTestCase):
         with self.assertRaises(TypeError):
             issubclass(int, Final)
 
+
+class FinalDecoratorTests(BaseTestCase):
     def test_final_unmodified(self):
         def func(x): ...
         self.assertIs(func, final(func))
+
+    def test_dunder_final(self):
+        @final
+        def func(): ...
+        @final
+        class Cls: ...
+        self.assertIs(True, func.__final__)
+        self.assertIs(True, Cls.__final__)
+
+        class Wrapper:
+            __slots__ = ("func",)
+            def __init__(self, func):
+                self.func = func
+            def __call__(self, *args, **kwargs):
+                return self.func(*args, **kwargs)
+
+        # Check that no error is thrown if the attribute
+        # is not writable.
+        @final
+        @Wrapper
+        def wrapped(): ...
+        self.assertIsInstance(wrapped, Wrapper)
+        self.assertIs(False, hasattr(wrapped, "__final__"))
+
+        class Meta(type):
+            @property
+            def __final__(self): return "can't set me"
+        @final
+        class WithMeta(metaclass=Meta): ...
+        self.assertEqual(WithMeta.__final__, "can't set me")
+
+        # Builtin classes throw TypeError if you try to set an
+        # attribute.
+        final(int)
+        self.assertIs(False, hasattr(int, "__final__"))
+
+        # Make sure it works with common builtin decorators
+        class Methods:
+            @final
+            @classmethod
+            def clsmethod(cls): ...
+
+            @final
+            @staticmethod
+            def stmethod(): ...
+
+            # The other order doesn't work because property objects
+            # don't allow attribute assignment.
+            @property
+            @final
+            def prop(self): ...
+
+            @final
+            @lru_cache()
+            def cached(self): ...
+
+        # Use getattr_static because the descriptor returns the
+        # underlying function, which doesn't have __final__.
+        self.assertIs(
+            True,
+            inspect.getattr_static(Methods, "clsmethod").__final__
+        )
+        self.assertIs(
+            True,
+            inspect.getattr_static(Methods, "stmethod").__final__
+        )
+        self.assertIs(True, Methods.prop.fget.__final__)
+        self.assertIs(True, Methods.cached.__final__)
 
 
 class CastTests(BaseTestCase):
@@ -2938,7 +3007,9 @@ class OverloadTests(BaseTestCase):
         blah()
 
 
-ASYNCIO_TESTS = """
+# Definitions needed for features introduced in Python 3.6
+
+from test import ann_module, ann_module2, ann_module3, ann_module5, ann_module6
 import asyncio
 
 T_a = TypeVar('T_a')
@@ -2972,19 +3043,6 @@ class ACM:
         return 42
     async def __aexit__(self, etype, eval, tb):
         return None
-"""
-
-try:
-    exec(ASYNCIO_TESTS)
-except ImportError:
-    ASYNCIO = False  # multithreading is not enabled
-else:
-    ASYNCIO = True
-
-# Definitions needed for features introduced in Python 3.6
-
-from test import ann_module, ann_module2, ann_module3, ann_module5, ann_module6
-from typing import AsyncContextManager
 
 class A:
     y: float
@@ -3044,7 +3102,7 @@ class HasForeignBaseClass(mod_generics_cache.A):
     some_xrepr: 'XRepr'
     other_a: 'mod_generics_cache.A'
 
-async def g_with(am: AsyncContextManager[int]):
+async def g_with(am: typing.AsyncContextManager[int]):
     x: int
     async with am as x:
         return x
@@ -3115,6 +3173,12 @@ class GetTypeHintTests(BaseTestCase):
                          {'my_inner_a1': mod_generics_cache.B.A,
                           'my_inner_a2': mod_generics_cache.B.A,
                           'my_outer_a': mod_generics_cache.A})
+
+    def test_get_type_hints_classes_no_implicit_optional(self):
+        class WithNoneDefault:
+            field: int = None  # most type-checkers won't be happy with it
+
+        self.assertEqual(gth(WithNoneDefault), {'field': int})
 
     def test_respect_no_type_check(self):
         @no_type_check
@@ -3386,7 +3450,6 @@ class CollectionsAbcTests(BaseTestCase):
         self.assertIsInstance(it, typing.Iterator)
         self.assertNotIsInstance(42, typing.Iterator)
 
-    @skipUnless(ASYNCIO, 'Python 3.5 and multithreading required')
     def test_awaitable(self):
         ns = {}
         exec(
@@ -3399,7 +3462,6 @@ class CollectionsAbcTests(BaseTestCase):
         self.assertNotIsInstance(foo, typing.Awaitable)
         g.send(None)  # Run foo() till completion, to avoid warning.
 
-    @skipUnless(ASYNCIO, 'Python 3.5 and multithreading required')
     def test_coroutine(self):
         ns = {}
         exec(
@@ -3417,7 +3479,6 @@ class CollectionsAbcTests(BaseTestCase):
         except StopIteration:
             pass
 
-    @skipUnless(ASYNCIO, 'Python 3.5 and multithreading required')
     def test_async_iterable(self):
         base_it = range(10)  # type: Iterator[int]
         it = AsyncIteratorWrapper(base_it)
@@ -3425,7 +3486,6 @@ class CollectionsAbcTests(BaseTestCase):
         self.assertIsInstance(it, typing.AsyncIterable)
         self.assertNotIsInstance(42, typing.AsyncIterable)
 
-    @skipUnless(ASYNCIO, 'Python 3.5 and multithreading required')
     def test_async_iterator(self):
         base_it = range(10)  # type: Iterator[int]
         it = AsyncIteratorWrapper(base_it)
@@ -3580,7 +3640,6 @@ class CollectionsAbcTests(BaseTestCase):
         self.assertIsSubclass(MyOrdDict, collections.OrderedDict)
         self.assertNotIsSubclass(collections.OrderedDict, MyOrdDict)
 
-    @skipUnless(sys.version_info >= (3, 3), 'ChainMap was added in 3.3')
     def test_chainmap_instantiation(self):
         self.assertIs(type(typing.ChainMap()), collections.ChainMap)
         self.assertIs(type(typing.ChainMap[KT, VT]()), collections.ChainMap)
@@ -3588,7 +3647,6 @@ class CollectionsAbcTests(BaseTestCase):
         class CM(typing.ChainMap[KT, VT]): ...
         self.assertIs(type(CM[int, str]()), CM)
 
-    @skipUnless(sys.version_info >= (3, 3), 'ChainMap was added in 3.3')
     def test_chainmap_subclass(self):
 
         class MyChainMap(typing.ChainMap[str, int]):
@@ -3852,7 +3910,6 @@ class OtherABCTests(BaseTestCase):
         self.assertIsInstance(cm, typing.ContextManager)
         self.assertNotIsInstance(42, typing.ContextManager)
 
-    @skipUnless(ASYNCIO, 'Python 3.5 required')
     def test_async_contextmanager(self):
         class NotACM:
             pass
@@ -4035,14 +4092,6 @@ class NamedTupleTests(BaseTestCase):
         self.assertEqual(Emp._fields, ('name', 'id'))
         self.assertEqual(Emp.__annotations__,
                          collections.OrderedDict([('name', str), ('id', int)]))
-
-    def test_namedtuple_pyversion(self):
-        if sys.version_info[:2] < (3, 6):
-            with self.assertRaises(TypeError):
-                NamedTuple('Name', one=int, other=str)
-            with self.assertRaises(TypeError):
-                class NotYet(NamedTuple):
-                    whatever = 0
 
     def test_annotation_usage(self):
         tim = CoolEmployee('Tim', 9000)
