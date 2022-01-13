@@ -17,6 +17,17 @@ extern "C" {
 
 #define _PyRuntimeState_INIT \
     { \
+        .gilstate = { \
+            .check_enabled = 1, \
+            /* A TSS key must be initialized with Py_tss_NEEDS_INIT \
+               in accordance with the specification. */ \
+            .autoTSSkey = Py_tss_NEEDS_INIT, \
+        }, \
+        .interpreters = { \
+            /* This prevents interpreters from getting created \
+              until _PyInterpreterState_Enable() is called. */ \
+            .next_id = -1, \
+        }, \
         .global_objects = _Py_global_objects_INIT, \
         ._main_interpreter = _PyInterpreterState_INIT, \
     }
