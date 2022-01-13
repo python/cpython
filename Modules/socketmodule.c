@@ -7698,7 +7698,7 @@ PyInit__socket(void)
     PyModule_AddIntMacro(m, SOL_CAN_RAW);
     PyModule_AddIntMacro(m, CAN_RAW);
 #endif
-#ifdef HAVE_LINUX_CAN_H
+#if defined(HAVE_LINUX_CAN_H) || defined(HAVE_NETCAN_CAN_H)
     PyModule_AddIntMacro(m, CAN_EFF_FLAG);
     PyModule_AddIntMacro(m, CAN_RTR_FLAG);
     PyModule_AddIntMacro(m, CAN_ERR_FLAG);
@@ -7713,9 +7713,11 @@ PyInit__socket(void)
     PyModule_AddIntMacro(m, CAN_J1939);
 #endif
 #endif
-#ifdef HAVE_LINUX_CAN_RAW_H
+#if defined(HAVE_LINUX_CAN_RAW_H) || defined(HAVE_NETCAN_CAN_H)
     PyModule_AddIntMacro(m, CAN_RAW_FILTER);
+#if defined(CAN_RAW_ERR_FILTER)
     PyModule_AddIntMacro(m, CAN_RAW_ERR_FILTER);
+#endif
     PyModule_AddIntMacro(m, CAN_RAW_LOOPBACK);
     PyModule_AddIntMacro(m, CAN_RAW_RECV_OWN_MSGS);
 #endif
@@ -7789,20 +7791,6 @@ PyInit__socket(void)
     PyModule_AddIntMacro(m, J1939_EE_INFO_TX_ABORT);
 
     PyModule_AddIntMacro(m, J1939_FILTER_MAX);
-#endif
-#ifdef HAVE_NETCAN_CAN_H
-    PyModule_AddIntMacro(m, CAN_EFF_FLAG);
-    PyModule_AddIntMacro(m, CAN_RTR_FLAG);
-    PyModule_AddIntMacro(m, CAN_ERR_FLAG);
-
-    PyModule_AddIntMacro(m, CAN_SFF_MASK);
-    PyModule_AddIntMacro(m, CAN_EFF_MASK);
-    PyModule_AddIntMacro(m, CAN_ERR_MASK);
-
-    PyModule_AddIntMacro(m, CAN_RAW_FILTER);
-    /* PyModule_AddIntMacro(m, CAN_RAW_ERR_FILTER); */
-    PyModule_AddIntMacro(m, CAN_RAW_LOOPBACK);
-    PyModule_AddIntMacro(m, CAN_RAW_RECV_OWN_MSGS);
 #endif
 #ifdef SOL_RDS
     PyModule_AddIntMacro(m, SOL_RDS);
