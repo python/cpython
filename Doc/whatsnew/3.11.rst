@@ -305,6 +305,9 @@ sys
   the results of subsequent calls to :func:`exc_info`.
   (Contributed by Irit Katriel in :issue:`45711`.)
 
+* Add :func:`sys.exception` which returns the active exception instance
+  (equivalent to ``sys.exc_info()[1]``).
+  (Contributed by Irit Katriel in :issue:`46328`.)
 
 threading
 ---------
@@ -541,6 +544,10 @@ Removed
     instead.
 
   (Contributed by Hugo van Kemenade in :issue:`45320`.)
+
+* Remove namespace package support from unittest discovery. It was introduced in
+  Python 3.4 but has been broken since Python 3.7.
+  (Contributed by Inada Naoki in :issue:`23882`.)
 
 
 Porting to Python 3.11

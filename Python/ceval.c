@@ -617,7 +617,7 @@ Py_AddPendingCall(int (*func)(void *), void *arg)
     }
     else {
         /* Last resort: use the main interpreter */
-        interp = _PyRuntime.interpreters.main;
+        interp = _PyInterpreterState_Main();
     }
     return _PyEval_AddPendingCall(interp, func, arg);
 }
@@ -6086,7 +6086,7 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
                   PyObject *kwdefs, PyObject *closure)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *res;
+    PyObject *res = NULL;
     PyObject *defaults = _PyTuple_FromArray(defs, defcount);
     if (defaults == NULL) {
         return NULL;
@@ -6099,23 +6099,20 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
     if (locals == NULL) {
         locals = globals;
     }
-    PyObject *kwnames;
+    PyObject *kwnames = NULL;
     PyObject *const *allargs;
-    PyObject **newargs;
+    PyObject **newargs = NULL;
+    PyFunctionObject *func = NULL;
     if (kwcount == 0) {
         allargs = args;
-        kwnames = NULL;
     }
     else {
         kwnames = PyTuple_New(kwcount);
         if (kwnames == NULL) {
-            res = NULL;
             goto fail;
         }
         newargs = PyMem_Malloc(sizeof(PyObject *)*(kwcount+argcount));
         if (newargs == NULL) {
-            res = NULL;
-            Py_DECREF(kwnames);
             goto fail;
         }
         for (int i = 0; i < argcount; i++) {
@@ -6128,16 +6125,9 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
         }
         allargs = newargs;
     }
-    PyObject **kwargs = PyMem_Malloc(sizeof(PyObject *)*kwcount);
-    if (kwargs == NULL) {
-        res = NULL;
-        Py_DECREF(kwnames);
-        goto fail;
-    }
     for (int i = 0; i < kwcount; i++) {
         Py_INCREF(kws[2*i]);
         PyTuple_SET_ITEM(kwnames, i, kws[2*i]);
-        kwargs[i] = kws[2*i+1];
     }
     PyFrameConstructor constr = {
         .fc_globals = globals,
@@ -6149,19 +6139,17 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
         .fc_kwdefaults = kwdefs,
         .fc_closure = closure
     };
-    PyFunctionObject *func = _PyFunction_FromConstructor(&constr);
+    func = _PyFunction_FromConstructor(&constr);
     if (func == NULL) {
-        return NULL;
+        goto fail;
     }
     res = _PyEval_Vector(tstate, func, locals,
                          allargs, argcount,
                          kwnames);
-    Py_DECREF(func);
-    if (kwcount) {
-        Py_DECREF(kwnames);
-        PyMem_Free(newargs);
-    }
 fail:
+    Py_XDECREF(func);
+    Py_XDECREF(kwnames);
+    PyMem_Free(newargs);
     Py_DECREF(defaults);
     return res;
 }

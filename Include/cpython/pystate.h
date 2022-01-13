@@ -2,6 +2,9 @@
 #  error "this header file must not be included directly"
 #endif
 
+#include <stdbool.h>
+
+
 PyAPI_FUNC(int) _PyInterpreterState_RequiresIDRef(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_RequireIDRef(PyInterpreterState *, int);
 
@@ -82,6 +85,9 @@ struct _ts {
        In order to be effective, this must be set to 0 during or right
        after allocation. */
     int _initialized;
+
+    /* Was this thread state statically allocated? */
+    bool _static;
 
     int recursion_remaining;
     int recursion_limit;
@@ -175,8 +181,10 @@ struct _ts {
     PyObject **datastack_top;
     PyObject **datastack_limit;
     /* XXX signal handlers should also be here */
-
 };
+
+
+/* other API */
 
 // Alias for backward compatibility with Python 3.8
 #define _PyInterpreterState_Get PyInterpreterState_Get

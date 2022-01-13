@@ -8,9 +8,10 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include <stdbool.h>
+
 #include "pycore_atomic.h"        // _Py_atomic_address
 #include "pycore_ast_state.h"     // struct ast_state
-#include "pycore_bytesobject.h"   // struct _Py_bytes_state
 #include "pycore_context.h"       // struct _Py_context_state
 #include "pycore_dict.h"          // struct _Py_dict_state
 #include "pycore_exceptions.h"    // struct _Py_exc_state
@@ -71,13 +72,18 @@ struct atexit_state {
 
 /* interpreter state */
 
-// The PyInterpreterState typedef is in Include/pystate.h.
+/* PyInterpreterState holds the global state for one of the runtime's
+   interpreters.  Typically the initial (main) interpreter is the only one.
+
+   The PyInterpreterState typedef is in Include/pystate.h.
+   */
 struct _is {
 
     struct _is *next;
 
     struct pythreads {
         uint64_t next_unique_id;
+        /* The linked list of threads, newest first. */
         struct _ts *head;
         /* Used in Modules/_threadmodule.c. */
         long count;
@@ -104,6 +110,9 @@ struct _is {
        after allocation. */
     int _initialized;
     int finalizing;
+
+    /* Was this interpreter statically allocated? */
+    bool _static;
 
     struct _ceval_state ceval;
     struct _gc_runtime_state gc;
@@ -152,7 +161,6 @@ struct _is {
 
     PyObject *audit_hooks;
 
-    struct _Py_bytes_state bytes;
     struct _Py_unicode_state unicode;
     struct _Py_float_state float_state;
     /* Using a cache is very effective since typically only a single slice is
@@ -168,7 +176,25 @@ struct _is {
 
     struct ast_state ast;
     struct type_cache type_cache;
+
+    /* The following fields are here to avoid allocation during init.
+       The data is exposed through PyInterpreterState pointer fields.
+       These fields should not be accessed directly outside of init.
+
+       All other PyInterpreterState pointer fields are populated when
+       needed and default to NULL.
+
+       For now there are some exceptions to that rule, which require
+       allocation during init.  These will be addressed on a case-by-case
+       basis.  Also see _PyRuntimeState regarding the various mutex fields.
+       */
+
+    /* the initial PyInterpreterState.threads.head */
+    struct _ts _initial_thread;
 };
+
+
+/* other API */
 
 extern void _PyInterpreterState_ClearModules(PyInterpreterState *interp);
 extern void _PyInterpreterState_Clear(PyThreadState *tstate);

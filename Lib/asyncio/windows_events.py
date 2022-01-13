@@ -839,7 +839,7 @@ class IocpProactor:
             return
 
         # Cancel remaining registered operations.
-        for address, (fut, ov, obj, callback) in list(self._cache.items()):
+        for fut, ov, obj, callback in list(self._cache.values()):
             if fut.cancelled():
                 # Nothing to do with cancelled futures
                 pass

@@ -737,7 +737,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
       from collections.abc import Callable
       from threading import Lock
-      from typing import Any, Concatenate, ParamSpec, TypeVar
+      from typing import Concatenate, ParamSpec, TypeVar
 
       P = ParamSpec('P')
       R = TypeVar('R')
@@ -1984,6 +1984,15 @@ Functions and decorators
    more details.
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.11
+      The decorator will now set the ``__final__`` attribute to ``True``
+      on the decorated object. Thus, a check like
+      ``if getattr(obj, "__final__", False)`` can be used at runtime
+      to determine whether an object ``obj`` has been marked as final.
+      If the decorated object does not support setting attributes,
+      the decorator returns the object unchanged without raising an exception.
+
 
 .. decorator:: no_type_check
 
