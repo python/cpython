@@ -254,6 +254,7 @@ _specialized_instructions = [
     "CALL_ADAPTIVE",
     "CALL_NO_KW_BUILTIN_O",
     "CALL_NO_KW_BUILTIN_FAST",
+    "CALL_BUILTIN_FAST_WITH_KEYWORDS",
     "CALL_NO_KW_LEN",
     "CALL_NO_KW_ISINSTANCE",
     "CALL_PY_EXACT_ARGS",

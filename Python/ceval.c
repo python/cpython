@@ -4896,6 +4896,48 @@ check_eval_breaker:
             DISPATCH();
         }
 
+        TARGET(CALL_BUILTIN_FAST_WITH_KEYWORDS) {
+            assert(cframe.use_tracing == 0);
+            /* Builtin METH_FASTCALL functions, without keywords */
+            PyObject *callable = call_shape.callable;
+            assert(call_shape.kwnames == NULL);
+            DEOPT_IF(!PyCFunction_CheckExact(callable), CALL);
+            DEOPT_IF(PyCFunction_GET_FLAGS(callable) !=
+                (METH_FASTCALL | METH_KEYWORDS), CALL);
+            STAT_INC(CALL, hit);
+            int kwnames_len = GET_CACHE()->adaptive.original_oparg;
+            assert(
+                (call_shape.kwnames == NULL && kwnames_len == 0) ||
+                (call_shape.kwnames != NULL &&
+                 PyTuple_GET_SIZE(call_shape.kwnames) == kwnames_len)
+            );
+            int nargs = call_shape.positional_args - kwnames_len;
+            STACK_SHRINK(call_shape.positional_args);
+            /* res = func(self, args, nargs, kwnames) */
+            _PyCFunctionFastWithKeywords cfunc =
+                (_PyCFunctionFastWithKeywords)(void(*)(void))
+                PyCFunction_GET_FUNCTION(callable);
+            PyObject *res = cfunc(
+                PyCFunction_GET_SELF(callable),
+                stack_pointer,
+                nargs,
+                call_shape.kwnames
+            );
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+
+            /* Free the arguments. */
+            for (int i = 0; i < call_shape.positional_args; i++) {
+                Py_DECREF(stack_pointer[i]);
+            }
+            STACK_SHRINK(call_shape.postcall_shrink);
+            PUSH(res);
+            Py_DECREF(callable);
+            if (res == NULL) {
+                goto error;
+            }
+            DISPATCH();
+        }
+
         TARGET(CALL_NO_KW_LEN) {
             assert(cframe.use_tracing == 0);
             assert(call_shape.kwnames == NULL);

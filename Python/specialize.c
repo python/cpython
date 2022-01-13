@@ -1554,6 +1554,11 @@ specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
                 _Py_OPARG(*instr));
             return 0;
         }
+        case METH_FASTCALL | METH_KEYWORDS: {
+            *instr = _Py_MAKECODEUNIT(CALL_BUILTIN_FAST_WITH_KEYWORDS,
+                _Py_OPARG(*instr));
+            return 0;
+        }
         default:
             SPECIALIZATION_FAIL(CALL,
                 builtin_call_fail_kind(PyCFunction_GET_FLAGS(callable)));
