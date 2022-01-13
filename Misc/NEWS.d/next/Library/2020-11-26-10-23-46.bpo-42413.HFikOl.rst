@@ -1,2 +1,0 @@
-Replace ``concurrent.futures.TimeoutError`` and ``asyncio.TimeoutError``
-with builtin :exc:`TimeoutError`, keep these names as deprecated aliases.
