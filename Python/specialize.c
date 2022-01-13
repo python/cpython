@@ -513,14 +513,13 @@ initial_counter_value(void) {
 #define SPEC_FAIL_CLASS 18
 #define SPEC_FAIL_PYTHON_CLASS 19
 #define SPEC_FAIL_C_METHOD_CALL 20
-#define SPEC_FAIL_METHDESCR_NON_METHOD 21
-#define SPEC_FAIL_METHOD_CALL_CLASS 22
+#define SPEC_FAIL_BOUND_METHOD 21
+#define SPEC_FAIL_CALL_STR 22
 #define SPEC_FAIL_CLASS_NO_VECTORCALL 23
 #define SPEC_FAIL_CLASS_MUTABLE 24
 #define SPEC_FAIL_KWNAMES 25
 #define SPEC_FAIL_METHOD_WRAPPER 26
 #define SPEC_FAIL_OPERATOR_WRAPPER 27
-#define SPEC_FAIL_CALL_STR 28
 
 /* COMPARE_OP */
 #define SPEC_FAIL_STRING_COMPARE 13
@@ -1355,10 +1354,6 @@ specialize_class_call(
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_KWNAMES);
         return -1;
     }
-    if (_Py_OPCODE(instr[-1]) == PRECALL_METHOD) {
-        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_METHOD_CALL_CLASS);
-        return -1;
-    }
     if (tp->tp_new == PyBaseObject_Type.tp_new) {
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_PYTHON_CLASS);
         return -1;
@@ -1588,6 +1583,9 @@ call_fail_kind(PyObject *callable)
     }
     else if (Py_TYPE(callable) == &_PyMethodWrapper_Type) {
         return SPEC_FAIL_METHOD_WRAPPER;
+    }
+    else if (Py_TYPE(callable) == &PyMethod_Type) {
+        return SPEC_FAIL_BOUND_METHOD;
     }
     return SPEC_FAIL_OTHER;
 }

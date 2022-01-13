@@ -4573,16 +4573,7 @@ check_eval_breaker:
             call_shape.positional_args = oparg;
             call_shape.kwnames = NULL;
             if (Py_TYPE(call_shape.callable) == &PyMethod_Type) {
-                PyObject *meth = ((PyMethodObject *)call_shape.callable)->im_func;
-                PyObject *self = ((PyMethodObject *)call_shape.callable)->im_self;
-                Py_INCREF(meth);
-                Py_INCREF(self);
-                PEEK(oparg + 1) = self;
-                Py_DECREF(call_shape.callable);
-                call_shape.callable = meth;
-                call_shape.positional_args++;
-                assert(call_shape.postcall_shrink >= 1);
-                call_shape.postcall_shrink--;
+                goto precall_bound_method;
             }
             DISPATCH();
         }
@@ -4621,17 +4612,23 @@ check_eval_breaker:
             call_shape.postcall_shrink = 2-is_method;
             call_shape.kwnames = NULL;
             if (Py_TYPE(call_shape.callable) == &PyMethod_Type) {
-                PyObject *meth = ((PyMethodObject *)call_shape.callable)->im_func;
-                PyObject *self = ((PyMethodObject *)call_shape.callable)->im_self;
-                Py_INCREF(meth);
-                Py_INCREF(self);
-                PEEK(nargs + 1) = self;
-                Py_DECREF(call_shape.callable);
-                call_shape.callable = meth;
-                call_shape.positional_args++;
-                assert(call_shape.postcall_shrink >= 1);
-                call_shape.postcall_shrink--;
+                goto precall_bound_method;
             }
+            DISPATCH();
+        }
+
+    precall_bound_method:
+        {
+            PyObject *meth = ((PyMethodObject *)call_shape.callable)->im_func;
+            PyObject *self = ((PyMethodObject *)call_shape.callable)->im_self;
+            Py_INCREF(meth);
+            Py_INCREF(self);
+            PEEK(call_shape.positional_args + 1) = self;
+            Py_DECREF(call_shape.callable);
+            call_shape.callable = meth;
+            call_shape.positional_args++;
+            assert(call_shape.postcall_shrink >= 1);
+            call_shape.postcall_shrink--;
             DISPATCH();
         }
 
