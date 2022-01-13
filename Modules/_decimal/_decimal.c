@@ -31,7 +31,6 @@
 
 #include <Python.h>
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_long.h"          // _PyLong_SMALL_INTS
 #include "complexobject.h"
 #include "mpdecimal.h"
 
