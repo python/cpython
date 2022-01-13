@@ -1477,7 +1477,6 @@ class LongTest(unittest.TestCase):
         for i in range(-5, 257):
             b = i.to_bytes(2, signed=True)
             self.assertIs(int.from_bytes(b, signed=True), i)
-        
 
     def test_access_to_nonexistent_digit_0(self):
         # http://bugs.python.org/issue14630: A bug in _PyLong_Copy meant that

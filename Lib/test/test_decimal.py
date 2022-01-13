@@ -2551,12 +2551,11 @@ class PythonAPItests(unittest.TestCase):
         self.assertRaises(ValueError, int, Decimal('snan'))
         self.assertRaises(OverflowError, int, Decimal('inf'))
         self.assertRaises(OverflowError, int, Decimal('-inf'))
-    
+
     @cpython_only
     def test_small_ints(self):
-        # bpo-46361
         Decimal = self.decimal.Decimal
-
+        # bpo-46361
         for x in range(-5, 257):
             self.assertIs(int(Decimal(x)), x)
 
