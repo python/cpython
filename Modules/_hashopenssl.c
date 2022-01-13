@@ -886,9 +886,12 @@ py_evp_fromname(PyObject *module, const char *digestname, PyObject *data_obj,
         goto exit;
     }
 
+#ifdef PY_OPENSSL_HAS_SHAKE
     if ((EVP_MD_flags(digest) & EVP_MD_FLAG_XOF) == EVP_MD_FLAG_XOF) {
         type = get_hashlib_state(module)->EVPXOFtype;
-    } else {
+    } else
+#endif
+    {
         type = get_hashlib_state(module)->EVPtype;
     }
 
@@ -1452,7 +1455,7 @@ _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
     unsigned char md[EVP_MAX_MD_SIZE] = {0};
     unsigned int md_len = 0;
     unsigned char *result;
-    const EVP_MD *evp;
+    PY_EVP_MD *evp;
 
     evp = py_digest_by_name(module, digest, Py_ht_mac);
     if (evp == NULL) {
