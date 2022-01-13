@@ -1,1 +1,0 @@
-Add fast path for ``0 <= k <= n <= 67`` for :func:`math.comb`.
