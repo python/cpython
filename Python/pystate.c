@@ -111,17 +111,7 @@ init_runtime(_PyRuntimeState *runtime,
 
     PyPreConfig_InitPythonConfig(&runtime->preconfig);
 
-    runtime->gilstate.check_enabled = 1;
-
-    /* A TSS key must be initialized with Py_tss_NEEDS_INIT
-       in accordance with the specification. */
-    Py_tss_t initial = Py_tss_NEEDS_INIT;
-    runtime->gilstate.autoTSSkey = initial;
-
     runtime->interpreters.mutex = interpreters_mutex;
-    // This prevents interpreters from getting created
-    // until _PyInterpreterState_Enable() is called.
-    runtime->interpreters.next_id = -1;
 
     runtime->xidregistry.mutex = xidregistry_mutex;
 
