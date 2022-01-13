@@ -39,15 +39,17 @@ extern "C" {
 #  else
 #    define _Py_DLOPEN_FLAGS RTLD_LAZY
 #  endif
+#  define DLOPENFLAGS_INIT .dlopenflags = _Py_DLOPEN_FLAGS,
 #else
 #  define _Py_DLOPEN_FLAGS 0
+#  define DLOPENFLAGS_INIT
 #endif
 
 #define _PyInterpreterState_INIT \
     { \
         ._static = 1, \
         .id_refcount = -1, \
-        .dlopenflags = _Py_DLOPEN_FLAGS, \
+        DLOPENFLAGS_INIT \
         .ceval = { \
             .recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
         }, \
