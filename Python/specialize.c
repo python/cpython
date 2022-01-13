@@ -1350,21 +1350,21 @@ specialize_class_call(
 {
     assert(PyType_Check(callable));
     PyTypeObject *tp = (PyTypeObject *)callable;
-    if (kwnames) {
-        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_KWNAMES);
-        return -1;
-    }
     if (tp->tp_new == PyBaseObject_Type.tp_new) {
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_PYTHON_CLASS);
         return -1;
     }
     if (tp == &PyType_Type && nargs == 1) {
+        if (kwnames) {
+            SPECIALIZATION_FAIL(CALL, SPEC_FAIL_KWNAMES);
+            return -1;
+        }
         *instr = _Py_MAKECODEUNIT(CALL_NO_KW_TYPE_1, _Py_OPARG(*instr));
         return 0;
     }
     if (tp->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) {
         if (tp->tp_vectorcall != NULL) {
-            *instr = _Py_MAKECODEUNIT(CALL_NO_KW_BUILTIN_CLASS, _Py_OPARG(*instr));
+            *instr = _Py_MAKECODEUNIT(CALL_BUILTIN_CLASS, _Py_OPARG(*instr));
             return 0;
         }
         SPECIALIZATION_FAIL(CALL, tp == &PyUnicode_Type ?
@@ -1511,10 +1511,6 @@ specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
     PyObject *kwnames, SpecializedCacheEntry *cache, PyObject *builtins)
 {
     _PyObjectCache *cache1 = &cache[-1].obj;
-    if (kwnames) {
-        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_KWNAMES);
-        return -1;
-    }
     if (PyCFunction_GET_FUNCTION(callable) == NULL) {
         return 1;
     }
@@ -1522,6 +1518,10 @@ specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
         (METH_VARARGS | METH_FASTCALL | METH_NOARGS | METH_O |
         METH_KEYWORDS | METH_METHOD)) {
         case METH_O: {
+            if (kwnames) {
+                SPECIALIZATION_FAIL(CALL, SPEC_FAIL_KWNAMES);
+                return -1;
+            }
             if (nargs != 1) {
                 SPECIALIZATION_FAIL(CALL, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
                 return 1;
@@ -1539,6 +1539,10 @@ specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
             return 0;
         }
         case METH_FASTCALL: {
+            if (kwnames) {
+                SPECIALIZATION_FAIL(CALL, SPEC_FAIL_KWNAMES);
+                return -1;
+            }
             if (nargs == 2) {
                 /* isinstance(o1, o2) */
                 PyObject *builtin_isinstance = PyDict_GetItemString(

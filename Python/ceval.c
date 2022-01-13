@@ -4803,18 +4803,18 @@ check_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(CALL_NO_KW_BUILTIN_CLASS) {
-            assert(call_shape.kwnames == NULL);
+        TARGET(CALL_BUILTIN_CLASS) {
             DEOPT_IF(!PyType_Check(call_shape.callable), CALL);
             PyTypeObject *tp = (PyTypeObject *)call_shape.callable;
             DEOPT_IF(tp->tp_vectorcall == NULL, CALL);
             STAT_INC(CALL, hit);
+            int kwnames_len = GET_CACHE()->adaptive.original_oparg;
 
-            int nargs = call_shape.positional_args;
-            STACK_SHRINK(nargs);
-            PyObject *res = tp->tp_vectorcall((PyObject *)tp, stack_pointer, nargs, NULL);
+            int nargs = call_shape.positional_args - kwnames_len;
+            STACK_SHRINK(call_shape.positional_args);
+            PyObject *res = tp->tp_vectorcall((PyObject *)tp, stack_pointer, nargs, call_shape.kwnames);
             /* Free the arguments. */
-            for (int i = 0; i < nargs; i++) {
+            for (int i = 0; i < call_shape.positional_args; i++) {
                 Py_DECREF(stack_pointer[i]);
             }
             Py_DECREF(tp);
@@ -4900,7 +4900,6 @@ check_eval_breaker:
             assert(cframe.use_tracing == 0);
             /* Builtin METH_FASTCALL functions, without keywords */
             PyObject *callable = call_shape.callable;
-            assert(call_shape.kwnames == NULL);
             DEOPT_IF(!PyCFunction_CheckExact(callable), CALL);
             DEOPT_IF(PyCFunction_GET_FLAGS(callable) !=
                 (METH_FASTCALL | METH_KEYWORDS), CALL);
