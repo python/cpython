@@ -1,0 +1,1 @@
+Added the :meth:`sys.exception` method which returns the active exception instance.
