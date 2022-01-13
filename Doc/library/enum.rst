@@ -349,8 +349,8 @@ Data Types
 
 .. sidebar:: Important
 
-   The :method:`__repr__`, :method:`__str__`, :method:`__format__`, and
-   :method:`__reduce__` methods are not inherited from mix-in classes.  To use
+   The :meth:`__repr__`, :meth:`__str__`, :meth:`__format__`, and
+   :meth:`__reduce__` methods are not inherited from mix-in classes.  To use
    them they must be manually assigned::
 
          >>> class MyReprMixin:
