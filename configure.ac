@@ -1231,6 +1231,23 @@ then
 fi
 AC_MSG_RESULT($enable_shared)
 
+# --with-static-libpython
+STATIC_LIBPYTHON=1
+AC_MSG_CHECKING(for --with-static-libpython)
+AC_ARG_WITH(static-libpython,
+  AS_HELP_STRING([--without-static-libpython],
+                 [do not build libpythonMAJOR.MINOR.a and do not install python.o (default is yes)]),
+[
+if test "$withval" = no
+then
+  AC_MSG_RESULT(no);
+  STATIC_LIBPYTHON=0
+else
+  AC_MSG_RESULT(yes);
+fi],
+[AC_MSG_RESULT(yes)])
+AC_SUBST(STATIC_LIBPYTHON)
+
 AC_MSG_CHECKING(for --enable-profiling)
 AC_ARG_ENABLE(profiling,
               AS_HELP_STRING([--enable-profiling], [enable C-level code profiling with gprof (default is no)]))
@@ -1336,6 +1353,31 @@ fi
 
 AC_MSG_RESULT($LDLIBRARY)
 
+# LIBRARY_DEPS, LINK_PYTHON_OBJS and LINK_PYTHON_DEPS variable
+LIBRARY_DEPS='$(PY3LIBRARY) $(EXPORTSYMS)'
+LINK_PYTHON_DEPS='$(LIBRARY_DEPS)'
+if test "$PY_ENABLE_SHARED" = 1 || test "$enable_framework" ; then
+    LIBRARY_DEPS="\$(LDLIBRARY) $LIBRARY_DEPS"
+    if test "$STATIC_LIBPYTHON" = 1; then
+        LIBRARY_DEPS="\$(LIBRARY) $LIBRARY_DEPS"
+    fi
+    # Link Python program to the shared library
+    LINK_PYTHON_OBJS='$(BLDLIBRARY)'
+else
+    if test "$STATIC_LIBPYTHON" = 0; then
+        # Build Python needs object files but don't need to build
+        # Python static library
+        LINK_PYTHON_DEPS="$LIBRARY_DEPS \$(LIBRARY_OBJS)"
+    fi
+    LIBRARY_DEPS="\$(LIBRARY) $LIBRARY_DEPS"
+    # Link Python program to object files
+    LINK_PYTHON_OBJS='$(LIBRARY_OBJS)'
+fi
+AC_SUBST(LIBRARY_DEPS)
+AC_SUBST(LINK_PYTHON_DEPS)
+AC_SUBST(LINK_PYTHON_OBJS)
+
+# ar program
 AC_SUBST(AR)
 AC_CHECK_TOOLS(AR, ar aal, ar)
 
@@ -6272,39 +6314,6 @@ else
   AC_MSG_RESULT(no);
 fi],
 [AC_MSG_RESULT(no)])
-
-# --with-static-libpython
-STATIC_LIBPYTHON=1
-AC_MSG_CHECKING(for --with-static-libpython)
-AC_ARG_WITH(static-libpython,
-  AS_HELP_STRING([--without-static-libpython],
-                 [do not build libpythonMAJOR.MINOR.a and do not install python.o (default is yes)]),
-[
-if test "$withval" = no
-then
-  AC_MSG_RESULT(no);
-  STATIC_LIBPYTHON=0
-else
-  AC_MSG_RESULT(yes);
-fi],
-[AC_MSG_RESULT(yes)])
-LIBRARY_DEPS='$(PY3LIBRARY) $(EXPORTSYMS)'
-if test "$PY_ENABLE_SHARED" = 1 || test "$enable_framework" ; then
-    LIBRARY_DEPS="\$(LDLIBRARY) $LIBRARY_DEPS"
-    if test "$STATIC_LIBPYTHON" = 1; then
-        LIBRARY_DEPS="\$(LIBRARY) $LIBRARY_DEPS"
-    fi
-else
-    LIBRARY_DEPS="\$(LIBRARY) $LIBRARY_DEPS"
-fi
-
-dnl browser needs a WASM assets stdlib bundle
-AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-  [Emscripten/browser], [LIBRARY_DEPS="$LIBRARY_DEPS \$(WASM_STDLIB)"],
-)
-
-AC_SUBST(STATIC_LIBPYTHON)
-AC_SUBST(LIBRARY_DEPS)
 
 # Check whether to disable test modules. Once set, setup.py will not build
 # test extension modules and "make install" will not install test suites.

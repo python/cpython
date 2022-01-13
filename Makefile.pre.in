@@ -265,6 +265,7 @@ DLLLIBRARY=	@DLLLIBRARY@
 LDLIBRARYDIR=   @LDLIBRARYDIR@
 INSTSONAME=	@INSTSONAME@
 LIBRARY_DEPS=	@LIBRARY_DEPS@
+LINK_PYTHON_DEPS=@LINK_PYTHON_DEPS@
 PY_ENABLE_SHARED=	@PY_ENABLE_SHARED@
 STATIC_LIBPYTHON=	@STATIC_LIBPYTHON@
 
@@ -526,6 +527,8 @@ LIBRARY_OBJS=	\
 		Modules/getpath.o \
 		Python/frozen.o
 
+LINK_PYTHON_OBJS=@LINK_PYTHON_OBJS@
+
 ##########################################################################
 # DTrace
 
@@ -721,8 +724,8 @@ clinic: check-clean-src $(srcdir)/Modules/_blake2/blake2s_impl.c
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py --make --srcdir $(srcdir)
 
 # Build the interpreter
-$(BUILDPYTHON):	Programs/python.o $(LIBRARY_DEPS)
-	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/python.o $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS)
+$(BUILDPYTHON):	Programs/python.o $(LINK_PYTHON_DEPS)
+	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/python.o $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 platform: $(BUILDPYTHON) pybuilddir.txt
 	$(RUNSHARED) $(PYTHON_FOR_BUILD) -c 'import sys ; from sysconfig import get_platform ; print("%s-%d.%d" % (get_platform(), *sys.version_info[:2]))' >platform
@@ -965,8 +968,8 @@ regen-test-frozenmain: $(BUILDPYTHON)
 	# using Programs/freeze_test_frozenmain.py
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Programs/freeze_test_frozenmain.py Programs/test_frozenmain.h
 
-Programs/_testembed: Programs/_testembed.o $(LIBRARY_DEPS)
-	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/_testembed.o $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS)
+Programs/_testembed: Programs/_testembed.o $(LINK_PYTHON_DEPS)
+	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/_testembed.o $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 ############################################################################
 # "Bootstrap Python" used to run deepfreeze.py
