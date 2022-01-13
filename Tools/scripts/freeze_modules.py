@@ -599,7 +599,7 @@ def regen_makefile(modules):
             f'\t{freeze}',
             '',
         ])
-        deepfreezerule[-1] += f" -i {pyfile} {src.frozenid}"
+        deepfreezerule[-1] += f" -i {frozen_header} {src.frozenid}"
     deepfreezerule[-1] += ' -o Python/deepfreeze/deepfreeze.c'
     pyfiles[-1] = pyfiles[-1].rstrip(" \\")
     frozenfiles[-1] = frozenfiles[-1].rstrip(" \\")
@@ -642,7 +642,7 @@ def regen_pcbuild(modules):
     projlines = []
     filterlines = []
     corelines = []
-    deepfreezerules = ["\t<Exec Command='$(PythonForBuild) \"$(PySourcePath)Tools\scripts\deepfreeze.py\""]
+    deepfreezerules = ['\t<Exec Command=\'$(PythonForBuild) "$(PySourcePath)Tools\\scripts\\deepfreeze.py"']
     for src in _iter_sources(modules):
         pyfile = relpath_for_windows_display(src.pyfile, ROOT_DIR)
         header = relpath_for_windows_display(src.frozenfile, ROOT_DIR)
