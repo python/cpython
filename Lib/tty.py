@@ -2,7 +2,7 @@
 
 # Author: Steen Lumholt.
 
-from termios import *
+from termios import TCSAFLUSH, tcgetattr, tcsetattr, BRKINT, ICRNL, INPCK, ISTRIP, IXON, VMIN, VTIME, CS8, OPOST, CSIZE, PARENB, ECHO, ICANON, IEXTEN, ISIG
 
 __all__ = ["setraw", "setcbreak"]
 
@@ -15,7 +15,7 @@ ISPEED = 4
 OSPEED = 5
 CC = 6
 
-def setraw(fd, when=TCSAFLUSH):
+def setraw(fd, when: int = TCSAFLUSH):
     """Put terminal into a raw mode."""
     mode = tcgetattr(fd)
     mode[IFLAG] = mode[IFLAG] & ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON)
@@ -27,7 +27,7 @@ def setraw(fd, when=TCSAFLUSH):
     mode[CC][VTIME] = 0
     tcsetattr(fd, when, mode)
 
-def setcbreak(fd, when=TCSAFLUSH):
+def setcbreak(fd, when: int = TCSAFLUSH):
     """Put terminal into a cbreak mode."""
     mode = tcgetattr(fd)
     mode[LFLAG] = mode[LFLAG] & ~(ECHO | ICANON)
