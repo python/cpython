@@ -126,6 +126,19 @@ def bin(num, max_bits=None):
             digits = (sign[-1] * max_bits + digits)[-max_bits:]
     return "%s %s" % (sign, digits)
 
+def _dedent(text):
+    """
+    Like textwrap.dedent.  Rewritten because we cannot import textwrap.
+    """
+    lines = text.split('\n')
+    blanks = 0
+    for i, ch in enumerate(lines[0]):
+        if ch != ' ':
+            break
+    for j, l in enumerate(lines):
+        lines[j] = l[i:]
+    return '\n'.join(lines)
+
 
 _auto_null = object()
 class auto:
@@ -459,10 +472,6 @@ class EnumType(type):
         classdict['_flag_mask_'] = flag_mask
         classdict['_all_bits_'] = 2 ** ((flag_mask).bit_length()) - 1
         classdict['_inverted_'] = None
-        #
-        # create a default docstring if one has not been provided
-        if '__doc__' not in classdict:
-            classdict['__doc__'] = 'An enumeration.'
         try:
             exc = None
             enum_class = super().__new__(metacls, cls, bases, classdict, **kwds)
@@ -475,6 +484,120 @@ class EnumType(type):
         #
         # update classdict with any changes made by __init_subclass__
         classdict.update(enum_class.__dict__)
+        #
+        # create a default docstring if one has not been provided
+        if enum_class.__doc__ is None:
+            if not member_names:
+                enum_class.__doc__ = classdict['__doc__'] = _dedent("""\
+                        Create a collection of name/value pairs.
+
+                        Example enumeration:
+
+                        >>> class Color(Enum):
+                        ...     RED = 1
+                        ...     BLUE = 2
+                        ...     GREEN = 3
+
+                        Access them by:
+
+                        - attribute access::
+
+                        >>> Color.RED
+                        <Color.RED: 1>
+
+                        - value lookup:
+
+                        >>> Color(1)
+                        <Color.RED: 1>
+
+                        - name lookup:
+
+                        >>> Color['RED']
+                        <Color.RED: 1>
+
+                        Enumerations can be iterated over, and know how many members they have:
+
+                        >>> len(Color)
+                        3
+
+                        >>> list(Color)
+                        [<Color.RED: 1>, <Color.BLUE: 2>, <Color.GREEN: 3>]
+
+                        Methods can be added to enumerations, and members can have their own
+                        attributes -- see the documentation for details.
+                        """)
+            else:
+                member = list(enum_class)[0]
+                enum_length = len(enum_class)
+                cls_name = enum_class.__name__
+                if enum_length == 1:
+                    list_line = 'list(%s)' % cls_name
+                    list_repr = '[<%s.%s: %r>]' % (cls_name, member.name, member.value)
+                elif enum_length == 2:
+                    member2 = list(enum_class)[1]
+                    list_line = 'list(%s)' % cls_name
+                    list_repr = '[<%s.%s: %r>, <%s.%s: %r>]' % (
+                            cls_name, member.name, member.value,
+                            cls_name, member2.name, member2.value,
+                            )
+                elif enum_length == 3:
+                    member2 = list(enum_class)[1]
+                    member3 = list(enum_class)[2]
+                    list_line = 'list(%s)' % cls_name
+                    list_repr = '[<%s.%s: %r>, <%s.%s: %r>, <%s.%s: %r>]' % (
+                            cls_name, member.name, member.value,
+                            cls_name, member2.name, member2.value,
+                            cls_name, member3.name, member3.value,
+                            )
+                else:
+                    member2 = list(enum_class)[1]
+                    member3 = list(enum_class)[2]
+                    list_line = 'list(%s)[:3]' % cls_name
+                    list_repr = '[<%s.%s: %r>, <%s.%s: %r>, <%s.%s: %r>]' % (
+                            cls_name, member.name, member.value,
+                            cls_name, member2.name, member2.value,
+                            cls_name, member3.name, member3.value,
+                            )
+                enum_class.__doc__ = classdict['__doc__'] = _dedent("""\
+                        A collection of name/value pairs.
+
+                        Access them by:
+
+                        - attribute access::
+
+                        >>> %s.%s
+                        <%s.%s: %r>
+
+                        - value lookup:
+
+                        >>> %s(%r)
+                        <%s.%s: %r>
+
+                        - name lookup:
+
+                        >>> %s[%r]
+                        <%s.%s: %r>
+
+                        Enumerations can be iterated over, and know how many members they have:
+
+                        >>> len(%s)
+                        %r
+
+                        >>> list(%s)[:1]
+                        [<%s.%s: %r>]
+
+                        Methods can be added to enumerations, and members can have their own
+                        attributes -- see the documentation for details.
+                        """
+                        % (cls_name, member.name,
+                            cls_name, member.name, member.value,
+                            cls_name, member.value,
+                            cls_name, member.name, member.value,
+                            cls_name, member.name,
+                            cls_name, member.name, member.value,
+                            cls_name, enum_length,
+                            cls_name, cls_name, member.name, member.value,
+                        ))
         #
         # double check that repr and friends are not the mixin's or various
         # things break (such as pickle)
@@ -954,9 +1077,42 @@ EnumMeta = EnumType
 
 class Enum(metaclass=EnumType):
     """
-    Generic enumeration.
+    Create a collection of name/value pairs.
 
-    Derive from this class to define new enumerations.
+    Example enumeration:
+
+    >>> class Color(Enum):
+    ...     RED = 1
+    ...     BLUE = 2
+    ...     GREEN = 3
+
+    Access them by:
+
+    - attribute access::
+
+    >>> Color.RED
+    <Color.RED: 1>
+
+    - value lookup:
+
+    >>> Color(1)
+    <Color.RED: 1>
+
+    - name lookup:
+
+    >>> Color['RED']
+    <Color.RED: 1>
+
+    Enumerations can be iterated over, and know how many members they have:
+
+    >>> len(Color)
+    3
+
+    >>> list(Color)
+    [<Color.RED: 1>, <Color.BLUE: 2>, <Color.GREEN: 3>]
+
+    Methods can be added to enumerations, and members can have their own
+    attributes -- see the documentation for details.
     """
 
     def __new__(cls, value):
@@ -1761,8 +1917,8 @@ def _test_simple_enum(checked_enum, simple_enum):
                 + list(simple_enum._member_map_.keys())
                 )
         for key in set(checked_keys + simple_keys):
-            if key in ('__module__', '_member_map_', '_value2member_map_'):
-                # keys known to be different
+            if key in ('__module__', '_member_map_', '_value2member_map_', '__doc__'):
+                # keys known to be different, or very long
                 continue
             elif key in member_names:
                 # members are checked below

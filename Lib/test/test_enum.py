@@ -3813,7 +3813,35 @@ Help on class Color in module %s:
 class Color(enum.Enum)
  |  Color(value, names=None, *, module=None, qualname=None, type=None, start=1, boundary=None)
  |\x20\x20
- |  An enumeration.
+ |  A collection of name/value pairs.
+ |\x20\x20
+ |  Access them by:
+ |\x20\x20
+ |  - attribute access::
+ |\x20\x20
+ |  >>> Color.CYAN
+ |  <Color.CYAN: 1>
+ |\x20\x20
+ |  - value lookup:
+ |\x20\x20
+ |  >>> Color(1)
+ |  <Color.CYAN: 1>
+ |\x20\x20
+ |  - name lookup:
+ |\x20\x20
+ |  >>> Color['CYAN']
+ |  <Color.CYAN: 1>
+ |\x20\x20
+ |  Enumerations can be iterated over, and know how many members they have:
+ |\x20\x20
+ |  >>> len(Color)
+ |  3
+ |\x20\x20
+ |  >>> list(Color)[:1]
+ |  [<Color.CYAN: 1>]
+ |\x20\x20
+ |  Methods can be added to enumerations, and members can have their own
+ |  attributes -- see the documentation for details.
  |\x20\x20
  |  Method resolution order:
  |      Color
@@ -3822,11 +3850,11 @@ class Color(enum.Enum)
  |\x20\x20
  |  Data and other attributes defined here:
  |\x20\x20
- |  blue = <Color.blue: 3>
+ |  CYAN = <Color.CYAN: 1>
  |\x20\x20
- |  green = <Color.green: 2>
+ |  MAGENTA = <Color.MAGENTA: 2>
  |\x20\x20
- |  red = <Color.red: 1>
+ |  YELLOW = <Color.YELLOW: 3>
  |\x20\x20
  |  ----------------------------------------------------------------------
  |  Data descriptors inherited from enum.Enum:
@@ -3878,11 +3906,11 @@ class Color(enum.Enum)
  |\x20\x20
  |  Data and other attributes defined here:
  |\x20\x20
- |  blue = <Color.blue: 3>
+ |  YELLOW = <Color.YELLOW: 3>
  |\x20\x20
- |  green = <Color.green: 2>
+ |  MAGENTA = <Color.MAGENTA: 2>
  |\x20\x20
- |  red = <Color.red: 1>
+ |  CYAN = <Color.CYAN: 1>
  |\x20\x20
  |  ----------------------------------------------------------------------
  |  Data descriptors inherited from enum.Enum:
@@ -3901,9 +3929,9 @@ class TestStdLib(unittest.TestCase):
     maxDiff = None
 
     class Color(Enum):
-        red = 1
-        green = 2
-        blue = 3
+        CYAN = 1
+        MAGENTA = 2
+        YELLOW = 3
 
     def test_pydoc(self):
         # indirectly test __objclass__
@@ -3915,18 +3943,18 @@ class TestStdLib(unittest.TestCase):
         helper = pydoc.Helper(output=output)
         helper(self.Color)
         result = output.getvalue().strip()
-        self.assertEqual(result, expected_text)
+        self.assertEqual(result, expected_text, result)
 
     def test_inspect_getmembers(self):
         values = dict((
                 ('__class__', EnumType),
-                ('__doc__', 'An enumeration.'),
+                ('__doc__', '...'),
                 ('__members__', self.Color.__members__),
                 ('__module__', __name__),
-                ('blue', self.Color.blue),
-                ('green', self.Color.green),
+                ('YELLOW', self.Color.YELLOW),
+                ('MAGENTA', self.Color.MAGENTA),
+                ('CYAN', self.Color.CYAN),
                 ('name', Enum.__dict__['name']),
-                ('red', self.Color.red),
                 ('value', Enum.__dict__['value']),
                 ('__len__', self.Color.__len__),
                 ('__contains__', self.Color.__contains__),
@@ -3940,6 +3968,9 @@ class TestStdLib(unittest.TestCase):
         self.assertEqual(set(values.keys()), set(result.keys()))
         failed = False
         for k in values.keys():
+            if k == '__doc__':
+                # __doc__ is huge, not comparing
+                continue
             if result[k] != values[k]:
                 print()
                 print('\n%s\n     key: %s\n  result: %s\nexpected: %s\n%s\n' %
@@ -3957,7 +3988,7 @@ class TestStdLib(unittest.TestCase):
                 Attribute(name='__contains__', kind='method',
                     defining_class=EnumType, object=self.Color.__contains__),
                 Attribute(name='__doc__', kind='data',
-                    defining_class=self.Color, object='An enumeration.'),
+                    defining_class=self.Color, object='...'),
                 Attribute(name='__getitem__', kind='method',
                     defining_class=EnumType, object=self.Color.__getitem__),
                 Attribute(name='__iter__', kind='method',
@@ -3974,12 +4005,12 @@ class TestStdLib(unittest.TestCase):
                     defining_class=self.Color, object='Color'),
                 Attribute(name='__qualname__', kind='data',
                     defining_class=self.Color, object='TestStdLib.Color'),
-                Attribute(name='blue', kind='data',
-                    defining_class=self.Color, object=self.Color.blue),
-                Attribute(name='green', kind='data',
-                    defining_class=self.Color, object=self.Color.green),
-                Attribute(name='red', kind='data',
-                    defining_class=self.Color, object=self.Color.red),
+                Attribute(name='YELLOW', kind='data',
+                    defining_class=self.Color, object=self.Color.YELLOW),
+                Attribute(name='MAGENTA', kind='data',
+                    defining_class=self.Color, object=self.Color.MAGENTA),
+                Attribute(name='CYAN', kind='data',
+                    defining_class=self.Color, object=self.Color.CYAN),
                 Attribute(name='name', kind='data',
                     defining_class=Enum, object=Enum.__dict__['name']),
                 Attribute(name='value', kind='data',
@@ -3999,9 +4030,10 @@ class TestStdLib(unittest.TestCase):
                 )
         failed = False
         for v, r in zip(values, result):
-            if r.name == '__init_subclass__':
+            if r.name in ('__init_subclass__', '__doc__'):
                 # not sure how to make the __init_subclass_ Attributes match
                 # so as long as there is one, call it good
+                # __doc__ is too big to check exactly, so treat the same as __init_subclass__
                 for name in ('name','kind','defining_class'):
                     if getattr(v, name) != getattr(r, name):
                         print('\n%s\n%s\n%s\n%s\n' % ('=' * 75, r, v, '=' * 75), sep='')
@@ -4015,15 +4047,15 @@ class TestStdLib(unittest.TestCase):
     def test_test_simple_enum(self):
         @_simple_enum(Enum)
         class SimpleColor:
-            RED = 1
-            GREEN = 2
-            BLUE = 3
+            CYAN = 1
+            MAGENTA = 2
+            YELLOW = 3
         class CheckedColor(Enum):
-            RED = 1
-            GREEN = 2
-            BLUE = 3
+            CYAN = 1
+            MAGENTA = 2
+            YELLOW = 3
         self.assertTrue(_test_simple_enum(CheckedColor, SimpleColor) is None)
-        SimpleColor.GREEN._value_ = 9
+        SimpleColor.MAGENTA._value_ = 9
         self.assertRaisesRegex(
                 TypeError, "enum mismatch",
                 _test_simple_enum, CheckedColor, SimpleColor,
