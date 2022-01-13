@@ -2480,8 +2480,8 @@ Functions:\n\
 \n\
 displayhook() -- print an object to the screen, and save it in builtins._\n\
 excepthook() -- print an exception and its traceback to sys.stderr\n\
-exception() -- return the current exception (thread safe)\n\
-exc_info() -- return thread-safe information about the current exception\n\
+exception() -- return the current thread's active exception\n\
+exc_info() -- return information about the current thread's active exception\n\
 exit() -- exit the interpreter by raising SystemExit\n\
 getdlopenflags() -- returns flags to be used for dlopen() calls\n\
 getprofile() -- get the global profiling function\n\
