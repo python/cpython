@@ -1,3 +1,0 @@
-Fix bug where the built-in :func:`compile` function did not always raise a
-:exc:`SyntaxError` when passed multiple statements in 'single' mode. Patch by
-Weipeng Hong.

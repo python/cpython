@@ -1,0 +1,393 @@
+.. bpo: 46347
+.. date: 2022-01-11-13-57-00
+.. nonce: Gd8M-S
+.. release date: 2022-01-13
+.. section: Core and Builtins
+
+Fix memory leak in PyEval_EvalCodeEx.
+
+..
+
+.. bpo: 46289
+.. date: 2022-01-07-23-32-03
+.. nonce: NnjpVc
+.. section: Core and Builtins
+
+ASDL declaration of ``FormattedValue`` has changed to reflect ``conversion``
+field is not optional.
+
+..
+
+.. bpo: 46237
+.. date: 2022-01-07-19-33-05
+.. nonce: 9A6Hpq
+.. section: Core and Builtins
+
+Fix the line number of tokenizer errors inside f-strings. Patch by Pablo
+Galindo.
+
+..
+
+.. bpo: 46006
+.. date: 2022-01-05-17-13-47
+.. nonce: hdH5Vn
+.. section: Core and Builtins
+
+Fix a regression when a type method like ``__init__()`` is modified in a
+subinterpreter. Fix a regression in ``_PyUnicode_EqualToASCIIId()`` and type
+``update_slot()``. Revert the change which made the Unicode dictionary of
+interned strings compatible with subinterpreters: the internal interned
+dictionary is shared again by all interpreters. Patch by Victor Stinner.
+
+..
+
+.. bpo: 46085
+.. date: 2021-12-30-00-23-41
+.. nonce: bDuJqu
+.. section: Core and Builtins
+
+Fix iterator cache mechanism of :class:`OrderedDict`.
+
+..
+
+.. bpo: 46110
+.. date: 2021-12-18-02-37-07
+.. nonce: B6hAfu
+.. section: Core and Builtins
+
+Add a maximum recursion check to the PEG parser to avoid stack overflow.
+Patch by Pablo Galindo
+
+..
+
+.. bpo: 46054
+.. date: 2021-12-12-05-30-21
+.. nonce: 2P-foG
+.. section: Core and Builtins
+
+Fix parser error when parsing non-utf8 characters in source files. Patch by
+Pablo Galindo.
+
+..
+
+.. bpo: 46042
+.. date: 2021-12-11-17-40-34
+.. nonce: aqYxku
+.. section: Core and Builtins
+
+Improve the location of the caret in :exc:`SyntaxError` exceptions emitted
+by the symbol table. Patch by Pablo Galindo.
+
+..
+
+.. bpo: 46025
+.. date: 2021-12-09-11-41-35
+.. nonce: pkEvW9
+.. section: Core and Builtins
+
+Fix a crash in the :mod:`atexit` module involving functions that unregister
+themselves before raising exceptions. Patch by Pablo Galindo.
+
+..
+
+.. bpo: 46009
+.. date: 2021-12-08-11-06-53
+.. nonce: cL8pH0
+.. section: Core and Builtins
+
+Restore behavior from 3.9 and earlier when sending non-None to newly started
+generator. In 3.9 this did not affect the state of the generator. In 3.10.0
+and 3.10.1 ``gen_func().send(0)`` is equivalent to
+``gen_func().throw(TypeError(...)`` which exhausts the generator. In 3.10.2
+onward, the behavior has been reverted to that of 3.9.
+
+..
+
+.. bpo: 46000
+.. date: 2021-12-07-11-42-44
+.. nonce: v_ru3k
+.. section: Core and Builtins
+
+Improve compatibility of the :mod:`curses` module with NetBSD curses.
+
+..
+
+.. bpo: 46004
+.. date: 2021-12-07-11-24-24
+.. nonce: TTEU1p
+.. section: Core and Builtins
+
+Fix the :exc:`SyntaxError` location for errors involving for loops with
+invalid targets. Patch by Pablo Galindo
+
+..
+
+.. bpo: 42918
+.. date: 2021-12-06-15-32-12
+.. nonce: Czpgtg
+.. section: Core and Builtins
+
+Fix bug where the built-in :func:`compile` function did not always raise a
+:exc:`SyntaxError` when passed multiple statements in 'single' mode. Patch
+by Weipeng Hong.
+
+..
+
+.. bpo: 40479
+.. date: 2022-01-07-15-20-19
+.. nonce: EKfr3F
+.. section: Library
+
+Fix :mod:`hashlib` *usedforsecurity* option to work correctly with OpenSSL
+3.0.0 in FIPS mode.
+
+..
+
+.. bpo: 46070
+.. date: 2022-01-07-13-51-22
+.. nonce: -axLUW
+.. section: Library
+
+Fix possible segfault when importing the :mod:`asyncio` module from
+different sub-interpreters in parallel. Patch by Erlend E. Aasland.
+
+..
+
+.. bpo: 46278
+.. date: 2022-01-06-13-38-00
+.. nonce: wILA80
+.. section: Library
+
+Reflect ``context`` argument in ``AbstractEventLoop.call_*()`` methods. Loop
+implementations already support it.
+
+..
+
+.. bpo: 46239
+.. date: 2022-01-03-12-59-20
+.. nonce: ySVSEy
+.. section: Library
+
+Improve error message when importing :mod:`asyncio.windows_events` on
+non-Windows.
+
+..
+
+.. bpo: 20369
+.. date: 2021-12-17-12-06-40
+.. nonce: zzLuBz
+.. section: Library
+
+:func:`concurrent.futures.wait` no longer blocks forever when given
+duplicate Futures. Patch by Kumar Aditya.
+
+..
+
+.. bpo: 46105
+.. date: 2021-12-16-14-30-36
+.. nonce: pprB1K
+.. section: Library
+
+Honor spec when generating requirement specs with urls and extras
+(importlib_metadata 4.8.3).
+
+..
+
+.. bpo: 26952
+.. date: 2021-12-14-13-18-45
+.. nonce: hjhISq
+.. section: Library
+
+:mod:`argparse` raises :exc:`ValueError` with clear message when trying to
+render usage for an empty mutually-exclusive group. Previously it raised a
+cryptic :exc:`IndexError`.
+
+..
+
+.. bpo: 27718
+.. date: 2021-12-11-22-51-30
+.. nonce: MgQiGl
+.. section: Library
+
+Fix help for the :mod:`signal` module. Some functions (e.g. ``signal()`` and
+``getsignal()``) were omitted.
+
+..
+
+.. bpo: 46032
+.. date: 2021-12-11-15-45-07
+.. nonce: HmciLT
+.. section: Library
+
+The ``registry()`` method of :func:`functools.singledispatch` functions
+checks now the first argument or the first parameter annotation and raises a
+TypeError if it is not supported. Previously unsupported "types" were
+ignored (e.g. ``typing.List[int]``) or caused an error at calling time (e.g.
+``list[int]``).
+
+..
+
+.. bpo: 46018
+.. date: 2021-12-09-00-44-42
+.. nonce: hkTI7v
+.. section: Library
+
+Ensure that :func:`math.expm1` does not raise on underflow.
+
+..
+
+.. bpo: 45755
+.. date: 2021-12-07-21-55-22
+.. nonce: bRqKGa
+.. section: Library
+
+:mod:`typing` generic aliases now reveal the class attributes of the
+original generic class when passed to ``dir()``. This was the behavior up to
+Python 3.6, but was changed in 3.7-3.9.
+
+..
+
+.. bpo: 13236
+.. date: 2021-11-30-13-52-02
+.. nonce: FmJIkO
+.. section: Library
+
+:class:`unittest.TextTestResult` and :class:`unittest.TextTestRunner` flush
+now the output stream more often.
+
+..
+
+.. bpo: 42378
+.. date: 2021-07-25-08-17-55
+.. nonce: WIhUZK
+.. section: Library
+
+Fixes the issue with log file being overwritten when
+:class:`logging.FileHandler` is used in :mod:`atexit` with *filemode* set to
+``'w'``. Note this will cause the message in *atexit* not being logged if
+the log stream is already closed due to shutdown of logging.
+
+..
+
+.. bpo: 46120
+.. date: 2021-12-21-12-45-57
+.. nonce: PE0DmJ
+.. section: Documentation
+
+State that ``|`` is preferred for readability over ``Union`` in the
+:mod:`typing` docs.
+
+..
+
+.. bpo: 46040
+.. date: 2021-12-11-20-03-09
+.. nonce: qrsG0C
+.. section: Documentation
+
+Fix removal Python version for ``@asyncio.coroutine``, the correct value is
+3.11.
+
+..
+
+.. bpo: 19737
+.. date: 2021-11-28-22-43-21
+.. nonce: cOOubB
+.. section: Documentation
+
+Update the documentation for the :func:`globals` function.
+
+..
+
+.. bpo: 45840
+.. date: 2021-11-19-02-02-32
+.. nonce: A51B2S
+.. section: Documentation
+
+Improve cross-references in the documentation for the data model.
+
+..
+
+.. bpo: 46205
+.. date: 2022-01-07-14-06-12
+.. nonce: dnc2OC
+.. section: Tests
+
+Fix hang in runtest_mp due to race condition
+
+..
+
+.. bpo: 46263
+.. date: 2022-01-06-15-45-34
+.. nonce: bJXek6
+.. section: Tests
+
+Fix test_capi on FreeBSD 14-dev: instruct jemalloc to not fill freed memory
+with junk byte.
+
+..
+
+.. bpo: 46150
+.. date: 2021-12-23-13-42-15
+.. nonce: RhtADs
+.. section: Tests
+
+Now ``fakename`` in ``test_pathlib.PosixPathTest.test_expanduser`` is
+checked to be non-existent.
+
+..
+
+.. bpo: 46129
+.. date: 2021-12-19-12-20-57
+.. nonce: I3MunH
+.. section: Tests
+
+Rewrite ``asyncio.locks`` tests with
+:class:`unittest.IsolatedAsyncioTestCase` usage.
+
+..
+
+.. bpo: 46114
+.. date: 2021-12-17-14-46-19
+.. nonce: 9iyZ_9
+.. section: Tests
+
+Fix test case for OpenSSL 3.0.1 version. OpenSSL 3.0 uses ``0xMNN00PP0L``.
+
+..
+
+.. bpo: 46263
+.. date: 2022-01-05-02-58-10
+.. nonce: xiv8NU
+.. section: Build
+
+``configure`` no longer sets ``MULTIARCH`` on FreeBSD platforms.
+
+..
+
+.. bpo: 46106
+.. date: 2021-12-20-07-10-41
+.. nonce: 5qcv3L
+.. section: Build
+
+Updated OpenSSL to 1.1.1m in Windows builds, macOS installer builds, and CI.
+Patch by Kumar Aditya.
+
+..
+
+.. bpo: 40477
+.. date: 2022-01-02-21-56-53
+.. nonce: W3nnM6
+.. section: macOS
+
+The Python Launcher app for macOS now properly launches scripts and, if
+necessary, the Terminal app when running on recent macOS releases.
+
+..
+
+.. bpo: 46236
+.. date: 2022-01-05-10-16-16
+.. nonce: pcmVQw
+.. section: C API
+
+Fix a bug in :c:func:`PyFunction_GetAnnotations` that caused it to return a
+``tuple`` instead of a ``dict``.
