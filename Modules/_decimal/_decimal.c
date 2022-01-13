@@ -3396,6 +3396,7 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
     }
 
     Py_ssize_t sign = mpd_isnegative(x) && !mpd_iszero(x) ? -1 : 1;
+    mpd_del(x);
 
     if (n == 1) {
         sdigit value = sign * ob_digit[0];
@@ -3410,7 +3411,6 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
     pylong = _PyLong_New(n);
     if (pylong == NULL) {
         mpd_free(ob_digit);
-        mpd_del(x);
         return NULL;
     }
 
@@ -3424,7 +3424,6 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
 
     Py_SET_SIZE(pylong, sign * i);
 
-    mpd_del(x);
     return (PyObject *) pylong;
 }
 
