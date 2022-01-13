@@ -650,57 +650,30 @@ class EnumType(type):
             raise AttributeError("%r cannot delete member %r." % (cls.__name__, attr))
         super().__delattr__(attr)
 
-    def __dir__(self):
-        # Start off with the desired result for dir(Enum)
-        cls_dir = {'__class__', '__doc__', '__members__', '__module__'}
-        add_to_dir = cls_dir.add
-        mro = self.__mro__
-        this_module = globals().values()
-        is_from_this_module = lambda cls: any(cls is thing for thing in this_module)
-        first_enum_base = next(cls for cls in mro if is_from_this_module(cls))
-        enum_dict = Enum.__dict__
-        sentinel = object()
-        # special-case __new__
-        ignored = {'__new__', *filter(_is_sunder, enum_dict)}
-        add_to_ignored = ignored.add
-
-        # We want these added to __dir__
-        # if and only if they have been user-overridden
-        enum_dunders = set(filter(_is_dunder, enum_dict))
-
-        for cls in mro:
-            # Ignore any classes defined in this module
-            if cls is object or is_from_this_module(cls):
-                continue
-
-            cls_lookup = cls.__dict__
-
-            # If not an instance of EnumType,
-            # ensure all attributes excluded from that class's `dir()` are ignored here.
-            if not isinstance(cls, EnumType):
-                cls_lookup = set(cls_lookup).intersection(dir(cls))
-
-            for attr_name in cls_lookup:
-                # Already seen it? Carry on
-                if attr_name in cls_dir or attr_name in ignored:
-                    continue
-                # Sunders defined in Enum.__dict__ are already in `ignored`,
-                # But sunders defined in a subclass won't be (we want all sunders excluded).
-                elif _is_sunder(attr_name):
-                    add_to_ignored(attr_name)
-                # Not an "enum dunder"? Add it to dir() output.
-                elif attr_name not in enum_dunders:
-                    add_to_dir(attr_name)
-                # Is an "enum dunder", and is defined by a class from enum.py? Ignore it.
-                elif getattr(self, attr_name) is getattr(first_enum_base, attr_name, sentinel):
-                    add_to_ignored(attr_name)
-                # Is an "enum dunder", and is either user-defined or defined by a mixin class?
-                # Add it to dir() output.
-                else:
-                    add_to_dir(attr_name)
-
-        # sort the output before returning it, so that the result is deterministic.
-        return sorted(cls_dir)
+    def __dir__(cls):
+        # TODO: check for custom __init__, __new__, __format__, __repr__, __str__, __init_subclass__
+        # on object-based enums
+        if cls._member_type_ is object:
+            interesting = set(cls._member_names_)
+            if cls._new_member_ is not object.__new__:
+                interesting.add('__new__')
+            if cls.__init_subclass__ is not object.__init_subclass__:
+                interesting.add('__init_subclass__')
+            for method in ('__init__', '__format__', '__repr__', '__str__'):
+                if getattr(cls, method) not in (getattr(Enum, method), getattr(Flag, method)):
+                    interesting.add(method)
+            return sorted(set([
+                    '__class__', '__contains__', '__doc__', '__getitem__',
+                    '__iter__', '__len__', '__members__', '__module__',
+                    '__name__', '__qualname__',
+                    ]) | interesting
+                    )
+        else:
+            # return whatever mixed-in data type has
+            return sorted(set(
+                    dir(cls._member_type_)
+                    + cls._member_names_
+                    ))
 
     def __getattr__(cls, name):
         """
@@ -1072,38 +1045,31 @@ class Enum(metaclass=EnumType):
         """
         Returns all members and all public methods
         """
-        cls = type(self)
-        to_exclude = {'__members__', '__init__', '__new__', *cls._member_names_}
-        filtered_self_dict = (name for name in self.__dict__ if not name.startswith('_'))
-        return sorted({'name', 'value', *dir(cls), *filtered_self_dict} - to_exclude)
-
-    # def __format__(self, format_spec):
-    #     """
-    #     Returns format using actual value type unless __str__ has been overridden.
-    #     """
-    #     # mixed-in Enums should use the mixed-in type's __format__, otherwise
-    #     # we can get strange results with the Enum name showing up instead of
-    #     # the value
-    #     #
-    #     # pure Enum branch, or branch with __str__ explicitly overridden
-    #     str_overridden = type(self).__str__ not in (Enum.__str__, IntEnum.__str__, Flag.__str__)
-    #     if self._member_type_ is object or str_overridden:
-    #         cls = str
-    #         val = str(self)
-    #     # mix-in branch
-    #     else:
-    #         if not format_spec or format_spec in ('{}','{:}'):
-    #             import warnings
-    #             warnings.warn(
-    #                     "in 3.12 format() will use the enum member, not the enum member's value;\n"
-    #                     "use a format specifier, such as :d for an integer-based Enum, to maintain "
-    #                     "the current display",
-    #                     DeprecationWarning,
-    #                     stacklevel=2,
-    #                     )
-    #         cls = self._member_type_
-    #         val = self._value_
-    #     return cls.__format__(val, format_spec)
+        if self.__class__._member_type_ is object:
+            interesting = set(['__class__', '__doc__', '__eq__', '__hash__', '__module__', 'name', 'value'])
+        else:
+            interesting = set(object.__dir__(self))
+        for name in getattr(self, '__dict__', []):
+            if name[0] != '_':
+                interesting.add(name)
+        for cls in self.__class__.mro():
+            for name, obj in cls.__dict__.items():
+                if name[0] == '_':
+                    continue
+                if isinstance(obj, property):
+                    # that's an enum.property
+                    if obj.fget is not None or name not in self._member_map_:
+                        interesting.add(name)
+                    else:
+                        # in case it was added by `dir(self)`
+                        interesting.discard(name)
+                else:
+                    interesting.add(name)
+        names = sorted( 
+                set(['__class__', '__doc__', '__eq__', '__hash__', '__module__'])
+                | interesting
+                )
+        return names
 
     def __format__(self, format_spec):
         return str.__format__(str(self), format_spec)

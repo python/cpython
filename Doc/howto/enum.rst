@@ -816,9 +816,9 @@ Some rules:
 1. When subclassing :class:`Enum`, mix-in types must appear before
    :class:`Enum` itself in the sequence of bases, as in the :class:`IntEnum`
    example above.
-2. Mix-in types must be subclassable. For example,
-   :class:`bool` and :class:`range` are not subclassable
-   and will throw an error during Enum creation if used as the mix-in type.
+2. Mix-in types must be subclassable. For example, :class:`bool` and
+   :class:`range` are not subclassable and will throw an error during Enum
+   creation if used as the mix-in type.
 3. While :class:`Enum` can have members of any type, once you mix in an
    additional type, all the members must have values of that type, e.g.
    :class:`int` above.  This restriction does not apply to mix-ins which only
@@ -826,15 +826,18 @@ Some rules:
 4. When another data type is mixed in, the :attr:`value` attribute is *not the
    same* as the enum member itself, although it is equivalent and will compare
    equal.
-5. %-style formatting:  `%s` and `%r` call the :class:`Enum` class's
+5. %-style formatting:  ``%s`` and ``%r`` call the :class:`Enum` class's
    :meth:`__str__` and :meth:`__repr__` respectively; other codes (such as
-   `%i` or `%h` for IntEnum) treat the enum member as its mixed-in type.
+   ``%i`` or ``%h`` for IntEnum) treat the enum member as its mixed-in type.
 6. :ref:`Formatted string literals <f-strings>`, :meth:`str.format`,
-   and :func:`format` will use the mixed-in type's :meth:`__format__`
-   unless :meth:`__str__` or :meth:`__format__` is overridden in the subclass,
-   in which case the overridden methods or :class:`Enum` methods will be used.
-   Use the !s and !r format codes to force usage of the :class:`Enum` class's
-   :meth:`__str__` and :meth:`__repr__` methods.
+   and :func:`format` will use the enum's :meth:`__str__` method.
+
+.. note::
+
+   Because :class:`IntEnum`, :class:`IntFlag`, and :class:`StrEnum` are
+   designed to be drop-in replacements for existing constants, their
+   :meth:`__str__` method has been reset to their data types
+   :meth:`__str__` method.
 
 When to use :meth:`__new__` vs. :meth:`__init__`
 ------------------------------------------------
@@ -998,13 +1001,12 @@ Plain :class:`Enum` classes always evaluate as :data:`True`.
 """""""""""""""""""""""""""""
 
 If you give your enum subclass extra methods, like the `Planet`_
-class below, those methods will show up in a :func:`dir` of the member and the
-class. Attributes defined in an :func:`__init__` method will only show up in a
-:func:`dir` of the member::
+class below, those methods will show up in a :func:`dir` of the member,
+but not of the class::
 
-    >>> dir(Planet)
-    ['EARTH', 'JUPITER', 'MARS', 'MERCURY', 'NEPTUNE', 'SATURN', 'URANUS', 'VENUS', '__class__', '__doc__', '__init__', '__members__', '__module__', 'surface_gravity']
-    >>> dir(Planet.EARTH)
+    >>> dir(Planet)                         # doctest: +SKIP
+    ['EARTH', 'JUPITER', 'MARS', 'MERCURY', 'NEPTUNE', 'SATURN', 'URANUS', 'VENUS', '__class__', '__doc__', '__members__', '__module__']
+    >>> dir(Planet.EARTH)                   # doctest: +SKIP
     ['__class__', '__doc__', '__module__', 'mass', 'name', 'radius', 'surface_gravity', 'value']
 
 
