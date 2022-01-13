@@ -576,7 +576,7 @@ def regen_makefile(modules):
     pyfiles = []
     frozenfiles = []
     rules = ['']
-    deepfreezerule = ["Python/deepfreeze/deepfreeze.c: $(DEEPFREEZE_DEPS)",
+    deepfreezerules = ["Python/deepfreeze/deepfreeze.c: $(DEEPFREEZE_DEPS)",
                        "\t$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py"]
     for src in _iter_sources(modules):
         frozen_header = relpath_for_posix_display(src.frozenfile, ROOT_DIR)
@@ -599,8 +599,9 @@ def regen_makefile(modules):
             f'\t{freeze}',
             '',
         ])
-        deepfreezerule[-1] += f" -i {frozen_header} {src.frozenid}"
-    deepfreezerule[-1] += ' -o Python/deepfreeze/deepfreeze.c'
+        deepfreezerules[-1] += f" -i {frozen_header} {src.frozenid}"
+    deepfreezerules[-1] += ' -o Python/deepfreeze/deepfreeze.c'
+    deepfreezerules.append('')
     pyfiles[-1] = pyfiles[-1].rstrip(" \\")
     frozenfiles[-1] = frozenfiles[-1].rstrip(" \\")
 
@@ -632,7 +633,7 @@ def regen_makefile(modules):
             lines,
             "# BEGIN: deepfreeze modules",
             "# END: deepfreeze modules",
-            deepfreezerule,
+            deepfreezerules,
             MAKEFILE,
         )
         outfile.writelines(lines)
