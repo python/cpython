@@ -506,6 +506,11 @@ Data Types
          >>> ~Color.RED
          <Color.GREEN|BLUE: 6>
 
+   .. method:: _numeric_repr_
+
+      Function used to format any remaining unnamed numeric values.  Default is
+      the value's repr; common choices are :func:`hex` and :func:`oct`.
+
 .. note::
 
    Using :class:`auto` with :class:`Flag` results in integers that are powers

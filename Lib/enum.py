@@ -331,7 +331,7 @@ class _EnumDict(dict):
         elif _is_sunder(key):
             if key not in (
                     '_order_',
-                    '_generate_next_value_', '_missing_', '_ignore_',
+                    '_generate_next_value_', '_numeric_repr_', '_missing_', '_ignore_',
                     '_iter_member_', '_iter_member_by_value_', '_iter_member_by_def_',
                     ):
                 raise ValueError(
@@ -1221,7 +1221,7 @@ class Enum(metaclass=EnumType):
                         interesting.discard(name)
                 else:
                     interesting.add(name)
-        names = sorted( 
+        names = sorted(
                 set(['__class__', '__doc__', '__eq__', '__hash__', '__module__'])
                 | interesting
                 )
@@ -1322,6 +1322,8 @@ class Flag(Enum, boundary=STRICT):
     """
     Support for flags
     """
+
+    _numeric_repr_ = repr
 
     def _generate_next_value_(name, start, count, last_values):
         """
@@ -1428,7 +1430,7 @@ class Flag(Enum, boundary=STRICT):
                 m._name_ for m in cls._iter_member_(member_value)
                 ])
             if unknown:
-                pseudo_member._name_ += '|%r' % unknown
+                pseudo_member._name_ += '|%s' % cls._numeric_repr_(unknown)
         else:
             pseudo_member._name_ = None
         # use setdefault in case another thread already created a composite

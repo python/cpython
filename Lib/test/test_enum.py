@@ -466,12 +466,12 @@ class _EnumTests:
         NSF = self.NewStrFormatEnum
         self.assertEqual(str(NSF.first), NSF.first.name.title())
         self.assertEqual(format(NSF.first), ''.join(reversed(NSF.first.name)))
- 
+
     def test_overridden_str_format_inherited(self):
         NSE = self.NewSubEnum
         self.assertEqual(str(NSE.first), NSE.first.name.title())
         self.assertEqual(format(NSE.first), ''.join(reversed(NSE.first.name)))
- 
+
     def test_programmatic_function_string(self):
         MinorEnum = self.enum_type('MinorEnum', 'june july august')
         lst = list(MinorEnum)
