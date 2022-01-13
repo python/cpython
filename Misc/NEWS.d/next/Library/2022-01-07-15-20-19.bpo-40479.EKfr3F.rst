@@ -1,0 +1,2 @@
+Fix :mod:`hashlib` *usedforsecurity* option to work correctly with OpenSSL
+3.0.0 in FIPS mode.
