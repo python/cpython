@@ -161,7 +161,7 @@ struct _gc_runtime_state {
     Py_ssize_t long_lived_pending;
 };
 
-extern void _PyGC_InitState(struct _gc_runtime_state *);
+PyAPI_FUNC(void) _PyGC_InitState(struct _gc_runtime_state *);
 
 
 // Functions to clear types free lists
