@@ -25,13 +25,14 @@ from . import tasks
 from . import windows_utils
 from .log import logger
 
-
 __all__ = (
-    'SelectorEventLoop', 'ProactorEventLoop', 'IocpProactor',
-    'DefaultEventLoopPolicy', 'WindowsSelectorEventLoopPolicy',
+    'SelectorEventLoop',
+    'ProactorEventLoop',
+    'IocpProactor',
+    'DefaultEventLoopPolicy',
+    'WindowsSelectorEventLoopPolicy',
     'WindowsProactorEventLoopPolicy',
 )
-
 
 NULL = _winapi.NULL
 INFINITE = _winapi.INFINITE
@@ -47,7 +48,6 @@ CONNECT_PIPE_MAX_DELAY = 0.100
 
 class _OverlappedFuture(futures.Future):
     """Subclass of Future which represents an overlapped operation.
-
     Cancelling it will immediately cancel the overlapped operation.
     """
 
@@ -112,8 +112,8 @@ class _BaseWaitHandleFuture(futures.Future):
 
     def _poll(self):
         # non-blocking wait: use a timeout of 0 millisecond
-        return (_winapi.WaitForSingleObject(self._handle, 0) ==
-                _winapi.WAIT_OBJECT_0)
+        return (_winapi.WaitForSingleObject(self._handle,
+                                            0) == _winapi.WAIT_OBJECT_0)
 
     def _repr_info(self):
         info = super()._repr_info()
@@ -192,6 +192,7 @@ class _WaitCancelFuture(_BaseWaitHandleFuture):
 
 
 class _WaitHandleFuture(_BaseWaitHandleFuture):
+
     def __init__(self, ov, handle, wait_handle, proactor, *, loop=None):
         super().__init__(ov, handle, wait_handle, loop=loop)
         self._proactor = proactor
@@ -245,9 +246,9 @@ class _WaitHandleFuture(_BaseWaitHandleFuture):
 
 class PipeServer(object):
     """Class representing a pipe server.
-
     This is much like a bound, listening socket.
     """
+
     def __init__(self, address):
         self._address = address
         self._free_instances = weakref.WeakSet()
@@ -274,12 +275,10 @@ class PipeServer(object):
         if first:
             flags |= _winapi.FILE_FLAG_FIRST_PIPE_INSTANCE
         h = _winapi.CreateNamedPipe(
-            self._address, flags,
-            _winapi.PIPE_TYPE_MESSAGE | _winapi.PIPE_READMODE_MESSAGE |
-            _winapi.PIPE_WAIT,
-            _winapi.PIPE_UNLIMITED_INSTANCES,
-            windows_utils.BUFSIZE, windows_utils.BUFSIZE,
-            _winapi.NMPWAIT_WAIT_FOREVER, _winapi.NULL)
+            self._address, flags, _winapi.PIPE_TYPE_MESSAGE
+            | _winapi.PIPE_READMODE_MESSAGE | _winapi.PIPE_WAIT,
+            _winapi.PIPE_UNLIMITED_INSTANCES, windows_utils.BUFSIZE,
+            windows_utils.BUFSIZE, _winapi.NMPWAIT_WAIT_FOREVER, _winapi.NULL)
         pipe = windows_utils.PipeHandle(h)
         self._free_instances.add(pipe)
         return pipe
@@ -337,7 +336,8 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
         f = self._proactor.connect_pipe(address)
         pipe = await f
         protocol = protocol_factory()
-        trans = self._make_duplex_pipe_transport(pipe, protocol,
+        trans = self._make_duplex_pipe_transport(pipe,
+                                                 protocol,
                                                  extra={'addr': address})
         return trans, protocol
 
@@ -358,8 +358,9 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
                         return
 
                     protocol = protocol_factory()
-                    self._make_duplex_pipe_transport(
-                        pipe, protocol, extra={'addr': address})
+                    self._make_duplex_pipe_transport(pipe,
+                                                     protocol,
+                                                     extra={'addr': address})
 
                 pipe = server._get_unconnected_pipe()
                 if pipe is None:
@@ -376,7 +377,8 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
                     pipe.close()
                 elif self._debug:
                     logger.warning("Accept pipe failed on pipe %r",
-                                   pipe, exc_info=True)
+                                   pipe,
+                                   exc_info=True)
             except exceptions.CancelledError:
                 if pipe:
                     pipe.close()
@@ -387,13 +389,27 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
         self.call_soon(loop_accept_pipe)
         return [server]
 
-    async def _make_subprocess_transport(self, protocol, args, shell,
-                                         stdin, stdout, stderr, bufsize,
-                                         extra=None, **kwargs):
+    async def _make_subprocess_transport(self,
+                                         protocol,
+                                         args,
+                                         shell,
+                                         stdin,
+                                         stdout,
+                                         stderr,
+                                         bufsize,
+                                         extra=None,
+                                         **kwargs):
         waiter = self.create_future()
-        transp = _WindowsSubprocessTransport(self, protocol, args, shell,
-                                             stdin, stdout, stderr, bufsize,
-                                             waiter=waiter, extra=extra,
+        transp = _WindowsSubprocessTransport(self,
+                                             protocol,
+                                             args,
+                                             shell,
+                                             stdin,
+                                             stdout,
+                                             stderr,
+                                             bufsize,
+                                             waiter=waiter,
+                                             extra=extra,
                                              **kwargs)
         try:
             await waiter
@@ -425,8 +441,10 @@ class IocpProactor:
             raise RuntimeError('IocpProactor is closed')
 
     def __repr__(self):
-        info = ['overlapped#=%s' % len(self._cache),
-                'result#=%s' % len(self._results)]
+        info = [
+            'overlapped#=%s' % len(self._cache),
+            'result#=%s' % len(self._results)
+        ]
         if self._iocp is None:
             info.append('closed')
         return '<%s %s>' % (self.__class__.__name__, " ".join(info))
@@ -614,10 +632,8 @@ class IocpProactor:
         ov = _overlapped.Overlapped(NULL)
         offset_low = offset & 0xffff_ffff
         offset_high = (offset >> 32) & 0xffff_ffff
-        ov.TransmitFile(sock.fileno(),
-                        msvcrt.get_osfhandle(file.fileno()),
-                        offset_low, offset_high,
-                        count, 0, 0)
+        ov.TransmitFile(sock.fileno(), msvcrt.get_osfhandle(file.fileno()),
+                        offset_low, offset_high, count, 0, 0)
 
         def finish_sendfile(trans, key, ov):
             try:
@@ -628,6 +644,7 @@ class IocpProactor:
                     raise ConnectionResetError(*exc.args)
                 else:
                     raise
+
         return self._register(ov, sock, finish_sendfile)
 
     def accept_pipe(self, pipe):
@@ -668,7 +685,6 @@ class IocpProactor:
 
     def wait_for_handle(self, handle, timeout=None):
         """Wait for a handle.
-
         Return a Future object. The result of the future is True if the wait
         completed, or False if the wait did not complete (on timeout).
         """
@@ -698,7 +714,10 @@ class IocpProactor:
         if _is_cancel:
             f = _WaitCancelFuture(ov, handle, wait_handle, loop=self._loop)
         else:
-            f = _WaitHandleFuture(ov, handle, wait_handle, self,
+            f = _WaitHandleFuture(ov,
+                                  handle,
+                                  wait_handle,
+                                  self,
                                   loop=self._loop)
         if f._source_traceback:
             del f._source_traceback[-1]
@@ -759,7 +778,6 @@ class IocpProactor:
 
     def _unregister(self, ov):
         """Unregister an overlapped object.
-
         Call this method when its future has been cancelled. The event can
         already be signalled (pending in the proactor event queue). It is also
         safe if the event is never signalled (because it was cancelled).
@@ -798,8 +816,9 @@ class IocpProactor:
                     self._loop.call_exception_handler({
                         'message': ('GetQueuedCompletionStatus() returned an '
                                     'unexpected event'),
-                        'status': ('err=%s transferred=%s key=%#x address=%#x'
-                                   % (err, transferred, key, address)),
+                        'status':
+                        ('err=%s transferred=%s key=%#x address=%#x' %
+                         (err, transferred, key, address)),
                     })
 
                 # key is either zero, or it is used to return a pipe
@@ -869,7 +888,8 @@ class IocpProactor:
         while self._cache:
             if next_msg <= time.monotonic():
                 logger.debug('%r is running after closing for %.1f seconds',
-                             self, time.monotonic() - start_time)
+                             self,
+                             time.monotonic() - start_time)
                 next_msg = time.monotonic() + msg_update
 
             # handle a few events, or timeout
@@ -887,9 +907,13 @@ class IocpProactor:
 class _WindowsSubprocessTransport(base_subprocess.BaseSubprocessTransport):
 
     def _start(self, args, shell, stdin, stdout, stderr, bufsize, **kwargs):
-        self._proc = windows_utils.Popen(
-            args, shell=shell, stdin=stdin, stdout=stdout, stderr=stderr,
-            bufsize=bufsize, **kwargs)
+        self._proc = windows_utils.Popen(args,
+                                         shell=shell,
+                                         stdin=stdin,
+                                         stdout=stdout,
+                                         stderr=stderr,
+                                         bufsize=bufsize,
+                                         **kwargs)
 
         def callback(f):
             returncode = self._proc.poll()
