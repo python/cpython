@@ -595,8 +595,7 @@ class BaseEventLoopTests(test_utils.TestCase):
             self.loop.run_forever()
             fut = None # Trigger Future.__del__ or futures._TracebackLogger
             support.gc_collect()
-            # Future.__del__ in Python 3.4 logs error with
-            # an actual exception context
+            # Future.__del__ in logs error with an actual exception context
             log.error.assert_called_with(
                 test_utils.MockPattern('.*exception was never retrieved'),
                 exc_info=(ZeroDivisionError, MOCK_ANY, MOCK_ANY))
