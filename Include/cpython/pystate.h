@@ -197,8 +197,6 @@ struct _ts {
 
     /* The bottom-most frame on the stack. */
     CFrame _root_cframe;
-
-    // XXX Allocate the initial datastack_chunk here..
 };
 
 
