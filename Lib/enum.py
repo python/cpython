@@ -961,7 +961,7 @@ class EnumType(type):
                             )
 
     @classmethod
-    def _get_mixins_(cls, class_name, bases):
+    def _get_mixins_(mcls, class_name, bases):
         """
         Returns the type for creating enum members, and the first inherited
         enum class.
@@ -979,8 +979,7 @@ class EnumType(type):
         if not issubclass(first_enum, Enum):
             raise TypeError("new enumerations should be created as "
                     "`EnumName([mixin_type, ...] [data_type,] enum_type)`")
-        cls._check_for_existing_members(class_name, bases)
-        member_type = _find_data_type(bases) or object
+        member_type = mcls._find_data_type_(class_name, bases) or object
         return member_type, first_enum
 
     @classmethod
