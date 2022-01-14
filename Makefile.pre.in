@@ -1651,6 +1651,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_pymem.h \
 		$(srcdir)/Include/internal/pycore_pystate.h \
 		$(srcdir)/Include/internal/pycore_runtime.h \
+		$(srcdir)/Include/internal/pycore_runtime_init.h \
 		$(srcdir)/Include/internal/pycore_sliceobject.h \
 		$(srcdir)/Include/internal/pycore_strhex.h \
 		$(srcdir)/Include/internal/pycore_structseq.h \
@@ -2398,6 +2399,7 @@ clean-retain-profile: pycremoval
 	-rm -f Lib/lib2to3/*Grammar*.pickle
 	-rm -f _bootstrap_python
 	-rm -f python.html python*.js python.data
+	-rm -rf $(WASM_STDLIB)
 	-rm -f Programs/_testembed Programs/_freeze_module
 	-rm -f Python/deepfreeze/*.[co]
 	-rm -f Python/frozen_modules/*.h

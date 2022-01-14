@@ -139,24 +139,20 @@ get_gc_state(void)
 void
 _PyGC_InitState(GCState *gcstate)
 {
-    gcstate->enabled = 1; /* automatic collection enabled? */
+#define INIT_HEAD(GEN) \
+    do { \
+        GEN.head._gc_next = (uintptr_t)&GEN.head; \
+        GEN.head._gc_prev = (uintptr_t)&GEN.head; \
+    } while (0)
 
-#define _GEN_HEAD(n) GEN_HEAD(gcstate, n)
-    struct gc_generation generations[NUM_GENERATIONS] = {
-        /* PyGC_Head,                                    threshold,    count */
-        {{(uintptr_t)_GEN_HEAD(0), (uintptr_t)_GEN_HEAD(0)},   700,        0},
-        {{(uintptr_t)_GEN_HEAD(1), (uintptr_t)_GEN_HEAD(1)},   10,         0},
-        {{(uintptr_t)_GEN_HEAD(2), (uintptr_t)_GEN_HEAD(2)},   10,         0},
-    };
     for (int i = 0; i < NUM_GENERATIONS; i++) {
-        gcstate->generations[i] = generations[i];
+        assert(gcstate->generations[i].count == 0);
+        INIT_HEAD(gcstate->generations[i]);
     };
     gcstate->generation0 = GEN_HEAD(gcstate, 0);
-    struct gc_generation permanent_generation = {
-          {(uintptr_t)&gcstate->permanent_generation.head,
-           (uintptr_t)&gcstate->permanent_generation.head}, 0, 0
-    };
-    gcstate->permanent_generation = permanent_generation;
+    INIT_HEAD(gcstate->permanent_generation);
+
+#undef INIT_HEAD
 }
 
 

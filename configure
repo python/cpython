@@ -1730,7 +1730,7 @@ Optional Features:
                           Doc/library/socket.rst (default is yes if supported)
   --enable-big-digits[=15|30]
                           use big digits (30 or 15 bits) for Python longs
-                          (default is system-dependent)]
+                          (default is 30)]
   --disable-test-modules  don't build nor install test modules
 
 Optional Packages:
@@ -6577,7 +6577,13 @@ fi
 $as_echo "$LDLIBRARY" >&6; }
 
 # LIBRARY_DEPS, LINK_PYTHON_OBJS and LINK_PYTHON_DEPS variable
-LIBRARY_DEPS='$(PY3LIBRARY) $(EXPORTSYMS)'
+case $ac_sys_system/$ac_sys_emscripten_target in #(
+  Emscripten/browser) :
+    LIBRARY_DEPS='$(PY3LIBRARY) $(WASM_STDLIB)' ;; #(
+  *) :
+    LIBRARY_DEPS='$(PY3LIBRARY) $(EXPORTSYMS)'
+ ;;
+esac
 LINK_PYTHON_DEPS='$(LIBRARY_DEPS)'
 if test "$PY_ENABLE_SHARED" = 1 || test "$enable_framework" ; then
     LIBRARY_DEPS="\$(LDLIBRARY) $LIBRARY_DEPS"
@@ -7669,14 +7675,14 @@ fi
 case $ac_sys_system/$ac_sys_emscripten_target in #(
   Emscripten/browser) :
 
-    LDFLAGS_NODIST="$(LDFLAGS_NODIST) -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 --preload-file \$(WASM_ASSETS_DIR)"
+    LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 --preload-file \$(WASM_ASSETS_DIR)"
     WASM_ASSETS_DIR=".\$(prefix)"
     WASM_STDLIB="\$(WASM_ASSETS_DIR)/local/lib/python\$(VERSION)/os.py"
    ;; #(
   Emscripten/node) :
 
-    LDFLAGS_NODIST="$(LDFLAGS_NODIST) -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 -s NODERAWFS=1 -s EXIT_RUNTIME=1 -s USE_PTHREADS -s PROXY_TO_PTHREAD"
-    CFLAGS_NODIST="$(CFLAGS_NODIST) -pthread"
+    LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 -s NODERAWFS=1 -s EXIT_RUNTIME=1 -s USE_PTHREADS -s PROXY_TO_PTHREAD"
+    CFLAGS_NODIST="$CFLAGS_NODIST -pthread"
    ;; #(
   WASI) :
 
@@ -21294,22 +21300,26 @@ $as_echo "yes" >&6; }
 fi
 
 
-case $ac_sys_system in #(
-  AIX) :
+case $ac_sys_system/$ac_sys_emscripten_target in #(
+  AIX/*) :
     py_stdlib_not_available="_scproxy spwd" ;; #(
-  VxWorks*) :
+  VxWorks*/*) :
     py_stdlib_not_available="_scproxy _crypt termios grp" ;; #(
-  Darwin) :
+  Darwin/*) :
     py_stdlib_not_available="ossaudiodev spwd" ;; #(
-  CYGWIN*) :
+  CYGWIN*/*) :
     py_stdlib_not_available="_scproxy nis" ;; #(
-  QNX*) :
+  QNX*/*) :
     py_stdlib_not_available="_scproxy nis" ;; #(
-  FreeBSD*) :
+  FreeBSD*/*) :
     py_stdlib_not_available="_scproxy spwd" ;; #(
-  Emscripten) :
+  Emscripten/browser) :
 
     py_stdlib_not_available="_ctypes _curses _curses_panel _dbm _gdbm _multiprocessing _posixshmem _posixsubprocess _scproxy _tkinter _xxsubinterpreters fcntl grp nis ossaudiodev resource readline spwd syslog termios"
+   ;; #(
+      Emscripten/node) :
+
+    py_stdlib_not_available="_ctypes _curses _curses_panel _dbm _gdbm _scproxy _tkinter nis ossaudiodev spwd syslog"
    ;; #(
   *) :
     py_stdlib_not_available="_scproxy"
