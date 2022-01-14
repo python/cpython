@@ -167,7 +167,7 @@ The following properties may be passed when building these projects.
     by providing a unique URI for this property. It does not need to be an
     active internet address. Defaults to $(ComputerName).
 
-    Official releases use http://www.python.org/(architecture name)
+    Official releases use https://www.python.org/(architecture name)
 
   /p:DownloadUrlBase=(any URI)
     Specifies the base of a URL where missing parts of the installer layout
@@ -363,6 +363,8 @@ of Python's files.
 Within this install directory is the following approximate layout:
 
 .\python[w].exe The core executable files
+.\python3x.dll  The core interpreter
+.\python3.dll   The stable ABI reference
 .\DLLs          Stdlib extensions (*.pyd) and dependencies
 .\Doc           Documentation (*.chm)
 .\include       Development headers (*.h)
@@ -374,19 +376,12 @@ Within this install directory is the following approximate layout:
 .\Tools         Tool scripts (*.py)
 
 When installed for all users, the following files are installed to
-either "%SystemRoot%\System32" or "%SystemRoot%\SysWOW64" as
-appropriate. For the current user, they are installed in the Python
-install directory.
-
-.\python3x.dll      The core interpreter
-.\python3.dll       The stable ABI reference
-
-When installed for all users, the following files are installed to
 "%SystemRoot%" (typically "C:\Windows") to ensure they are always
 available on PATH. (See Launching Python below.) For the current user,
 they are installed in "%LocalAppData%\Programs\Python\PyLauncher".
 
 .\py[w].exe         PEP 397 launcher
+
 
 System Settings
 ===============

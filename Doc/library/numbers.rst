@@ -10,7 +10,7 @@
 
 The :mod:`numbers` module (:pep:`3141`) defines a hierarchy of numeric
 :term:`abstract base classes <abstract base class>` which progressively define
-more operations.  None of the types defined in this module can be instantiated.
+more operations.  None of the types defined in this module are intended to be instantiated.
 
 
 .. class:: Number
@@ -27,8 +27,8 @@ The numeric tower
    Subclasses of this type describe complex numbers and include the operations
    that work on the built-in :class:`complex` type. These are: conversions to
    :class:`complex` and :class:`bool`, :attr:`.real`, :attr:`.imag`, ``+``,
-   ``-``, ``*``, ``/``, :func:`abs`, :meth:`conjugate`, ``==``, and ``!=``. All
-   except ``-`` and ``!=`` are abstract.
+   ``-``, ``*``, ``/``, ``**``, :func:`abs`, :meth:`conjugate`, ``==``, and
+   ``!=``. All except ``-`` and ``!=`` are abstract.
 
    .. attribute:: real
 
@@ -49,30 +49,19 @@ The numeric tower
    numbers.
 
    In short, those are: a conversion to :class:`float`, :func:`math.trunc`,
-   :func:`round`, :func:`math.floor`, :func:`math.ceil`, :func:`divmod`,
-   :func:`~Real.is_integer`, ``//``, ``%``, ``<``, ``<=``, ``>``, and ``>=``.
+   :func:`round`, :func:`math.floor`, :func:`math.ceil`, :func:`divmod`, ``//``,
+   ``%``, ``<``, ``<=``, ``>``, and ``>=``.
 
    Real also provides defaults for :func:`complex`, :attr:`~Complex.real`,
    :attr:`~Complex.imag`, and :meth:`~Complex.conjugate`.
-
-   .. method:: is_integer()
-
-      Returns :const:`True` if this number has a finite and integral value,
-      otherwise :const:`False`.  This is a default implementation which
-      relies on successful conversion to :class:`int`. It may be overridden
-      in subclasses (such as it is in :class:`float`) for better performance,
-      or to handle special values such as NaN which are not
-      convertible to :class:`int`.
-
-      .. versionadded:: 3.10
 
 
 .. class:: Rational
 
    Subtypes :class:`Real` and adds
    :attr:`~Rational.numerator` and :attr:`~Rational.denominator` properties, which
-   should be in lowest terms. With these, it provides defaults for
-   :func:`float` and :func:`~Real.is_integer`.
+   should be in lowest terms. With these, it provides a default for
+   :func:`float`.
 
    .. attribute:: numerator
 
@@ -86,10 +75,10 @@ The numeric tower
 .. class:: Integral
 
    Subtypes :class:`Rational` and adds a conversion to :class:`int`.  Provides
-   defaults for :func:`float`, :attr:`~Rational.numerator`,
-   :attr:`~Rational.denominator`, and :func:`~Real.is_integer`.  Adds abstract
-   methods for ``**`` and bit-string operations: ``<<``, ``>>``, ``&``, ``^``,
-   ``|``, ``~``.
+   defaults for :func:`float`, :attr:`~Rational.numerator`, and
+   :attr:`~Rational.denominator`.  Adds abstract methods for :func:`pow` with
+   modulus and bit-string operations: ``<<``, ``>>``, ``&``, ``^``, ``|``,
+   ``~``.
 
 
 Notes for type implementors

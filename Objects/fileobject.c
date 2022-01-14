@@ -2,7 +2,8 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "pycore_runtime.h"  // _PyRuntime
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_runtime.h"       // _PyRuntime
 
 #if defined(HAVE_GETC_UNLOCKED) && !defined(_Py_MEMORY_SANITIZER)
 /* clang MemorySanitizer doesn't yet understand getc_unlocked. */
@@ -190,7 +191,7 @@ PyObject_AsFileDescriptor(PyObject *o)
         return -1;
     }
     else if (meth != NULL) {
-        PyObject *fno = _PyObject_CallNoArg(meth);
+        PyObject *fno = _PyObject_CallNoArgs(meth);
         Py_DECREF(meth);
         if (fno == NULL)
             return -1;
@@ -223,17 +224,22 @@ PyObject_AsFileDescriptor(PyObject *o)
     return fd;
 }
 
+int
+_PyLong_FileDescriptor_Converter(PyObject *o, void *ptr)
+{
+    int fd = PyObject_AsFileDescriptor(o);
+    if (fd == -1) {
+        return 0;
+    }
+    *(int *)ptr = fd;
+    return 1;
+}
+
 /*
 ** Py_UniversalNewlineFgets is an fgets variation that understands
 ** all of \r, \n and \r\n conventions.
 ** The stream should be opened in binary mode.
-** If fobj is NULL the routine always does newline conversion, and
-** it may peek one char ahead to gobble the second char in \r\n.
-** If fobj is non-NULL it must be a PyFileObject. In this case there
-** is no readahead but in stead a flag is used to skip a following
-** \n on the next read. Also, if the file is open in binary mode
-** the whole conversion is skipped. Finally, the routine keeps track of
-** the different types of newlines seen.
+** The fobj parameter exists solely for legacy reasons and must be NULL.
 ** Note that we need no error handling: fgets() treats error and eof
 ** identically.
 */
@@ -242,63 +248,28 @@ Py_UniversalNewlineFgets(char *buf, int n, FILE *stream, PyObject *fobj)
 {
     char *p = buf;
     int c;
-    int newlinetypes = 0;
-    int skipnextlf = 0;
 
     if (fobj) {
         errno = ENXIO;          /* What can you do... */
         return NULL;
     }
     FLOCKFILE(stream);
-    c = 'x'; /* Shut up gcc warning */
     while (--n > 0 && (c = GETC(stream)) != EOF ) {
-        if (skipnextlf ) {
-            skipnextlf = 0;
-            if (c == '\n') {
-                /* Seeing a \n here with skipnextlf true
-                ** means we saw a \r before.
-                */
-                newlinetypes |= NEWLINE_CRLF;
-                c = GETC(stream);
-                if (c == EOF) break;
-            } else {
-                /*
-                ** Note that c == EOF also brings us here,
-                ** so we're okay if the last char in the file
-                ** is a CR.
-                */
-                newlinetypes |= NEWLINE_CR;
+        if (c == '\r') {
+            // A \r is translated into a \n, and we skip an adjacent \n, if any.
+            c = GETC(stream);
+            if (c != '\n') {
+                ungetc(c, stream);
+                c = '\n';
             }
         }
-        if (c == '\r') {
-            /* A \r is translated into a \n, and we skip
-            ** an adjacent \n, if any. We don't set the
-            ** newlinetypes flag until we've seen the next char.
-            */
-            skipnextlf = 1;
-            c = '\n';
-        } else if ( c == '\n') {
-            newlinetypes |= NEWLINE_LF;
-        }
         *p++ = c;
-        if (c == '\n') break;
+        if (c == '\n') {
+            break;
+        }
     }
-    /* if ( c == EOF && skipnextlf )
-        newlinetypes |= NEWLINE_CR; */
     FUNLOCKFILE(stream);
     *p = '\0';
-    if ( skipnextlf ) {
-        /* If we have no file object we cannot save the
-        ** skipnextlf flag. We have to readahead, which
-        ** will cause a pause if we're reading from an
-        ** interactive stream, but that is very unlikely
-        ** unless we're doing something silly like
-        ** exec(open("/dev/tty").read()).
-        */
-        c = GETC(stream);
-        if ( c != '\n' )
-            ungetc(c, stream);
-    }
     if (p == buf)
         return NULL;
     return buf;
@@ -313,29 +284,6 @@ typedef struct {
     PyObject_HEAD
     int fd;
 } PyStdPrinter_Object;
-
-static PyObject *
-stdprinter_new(PyTypeObject *type, PyObject *args, PyObject *kews)
-{
-    PyStdPrinter_Object *self;
-
-    assert(type != NULL && type->tp_alloc != NULL);
-
-    self = (PyStdPrinter_Object *) type->tp_alloc(type, 0);
-    if (self != NULL) {
-        self->fd = -1;
-    }
-
-    return (PyObject *) self;
-}
-
-static int
-stdprinter_init(PyObject *self, PyObject *args, PyObject *kwds)
-{
-    PyErr_SetString(PyExc_TypeError,
-                    "cannot create 'stderrprinter' instances");
-    return -1;
-}
 
 PyObject *
 PyFile_NewStdPrinter(int fd)
@@ -379,7 +327,7 @@ stdprinter_write(PyStdPrinter_Object *self, PyObject *args)
         return NULL;
     }
 
-    /* Encode Unicode to UTF-8/surrogateescape */
+    /* Encode Unicode to UTF-8/backslashreplace */
     str = PyUnicode_AsUTF8AndSize(unicode, &n);
     if (str == NULL) {
         PyErr_Clear();
@@ -496,7 +444,7 @@ PyTypeObject PyStdPrinter_Type = {
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                         /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION, /* tp_flags */
     0,                                          /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
@@ -512,9 +460,9 @@ PyTypeObject PyStdPrinter_Type = {
     0,                                          /* tp_descr_get */
     0,                                          /* tp_descr_set */
     0,                                          /* tp_dictoffset */
-    stdprinter_init,                            /* tp_init */
+    0,                                          /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
-    stdprinter_new,                             /* tp_new */
+    0,                                          /* tp_new */
     PyObject_Del,                               /* tp_free */
 };
 

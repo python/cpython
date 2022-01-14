@@ -1,0 +1,2 @@
+Extracted ``importlib.resources`` and ``importlib.resources.abc`` documentation into
+separate files.

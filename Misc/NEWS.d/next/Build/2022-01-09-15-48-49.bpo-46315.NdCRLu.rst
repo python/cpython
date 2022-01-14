@@ -1,0 +1,2 @@
+Added and fixed ``#ifdef HAVE_FEATURE`` checks for functionality that is not
+available on WASI platform.

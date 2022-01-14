@@ -186,8 +186,7 @@ static PyMethodDef module_methods[] = {
 static int
 multiprocessing_exec(PyObject *module)
 {
-#if defined(MS_WINDOWS) ||                                              \
-  (defined(HAVE_SEM_OPEN) && !defined(POSIX_SEMAPHORES_NOT_ENABLED))
+#ifdef HAVE_MP_SEMAPHORE
 
     /* Add _PyMp_SemLock type to module */
     if (PyModule_AddType(module, &_PyMp_SemLockType) < 0) {
@@ -207,7 +206,6 @@ multiprocessing_exec(PyObject *module)
             py_sem_value_max = PyLong_FromLong(SEM_VALUE_MAX);
 
         if (py_sem_value_max == NULL) {
-            Py_DECREF(py_sem_value_max);
             return -1;
         }
         if (PyDict_SetItemString(_PyMp_SemLockType.tp_dict, "SEM_VALUE_MAX",

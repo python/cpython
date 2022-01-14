@@ -419,7 +419,7 @@ def _close_stdin():
     try:
         fd = os.open(os.devnull, os.O_RDONLY)
         try:
-            sys.stdin = open(fd, closefd=False)
+            sys.stdin = open(fd, encoding="utf-8", closefd=False)
         except:
             os.close(fd)
             raise

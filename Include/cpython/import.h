@@ -13,8 +13,6 @@ PyAPI_FUNC(int) _PyImport_SetModuleString(const char *name, PyObject* module);
 PyAPI_FUNC(void) _PyImport_AcquireLock(void);
 PyAPI_FUNC(int) _PyImport_ReleaseLock(void);
 
-PyAPI_FUNC(PyObject *) _PyImport_FindExtensionObject(PyObject *, PyObject *);
-
 PyAPI_FUNC(int) _PyImport_FixupBuiltin(
     PyObject *mod,
     const char *name,            /* UTF-8 encoded string */
@@ -34,6 +32,7 @@ struct _frozen {
     const char *name;                 /* ASCII encoded string */
     const unsigned char *code;
     int size;
+    PyObject *(*get_code)(void);
 };
 
 /* Embedding apps may change this pointer to point to their favorite

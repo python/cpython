@@ -115,4 +115,4 @@ Other Objects
    coro.rst
    contextvars.rst
    datetime.rst
-   decimal.rst
+   typehints.rst

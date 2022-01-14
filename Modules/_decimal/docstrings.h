@@ -260,11 +260,6 @@ Return True if the argument is a (positive or negative) zero and False\n\
 otherwise.\n\
 \n");
 
-PyDoc_STRVAR(doc_is_integer,
-"is_integer($self, /)\n--\n\n\
-Return True if the argument is finite and integral, otherwise False.\n\
-\n");
-
 PyDoc_STRVAR(doc_ln,
 "ln($self, /, context=None)\n--\n\n\
 Return the natural (base e) logarithm of the operand. The function always\n\
@@ -690,11 +685,6 @@ PyDoc_STRVAR(doc_ctx_is_zero,
 Return True if x is a zero, False otherwise.\n\
 \n");
 
-PyDoc_STRVAR(doc_ctx_is_integer,
-"is_integer($self, x, /)\n--\n\n\
-+Return True if x is finite and integral, False otherwise.\n\
-+\n");
-
 PyDoc_STRVAR(doc_ctx_ln,
 "ln($self, x, /)\n--\n\n\
 Return the natural (base e) logarithm of x.\n\
@@ -889,3 +879,6 @@ Convert a number to a string using scientific notation.\n\
 
 
 #endif /* DOCSTRINGS_H */
+
+
+

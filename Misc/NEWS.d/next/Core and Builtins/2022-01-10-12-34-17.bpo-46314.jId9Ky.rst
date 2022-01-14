@@ -1,0 +1,2 @@
+Remove spurious "call" event when creating a lambda function that was
+accidentally introduced in 3.11a4.

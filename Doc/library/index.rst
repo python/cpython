@@ -56,7 +56,6 @@ the `Python Package Index <https://pypi.org>`_.
    crypto.rst
    allos.rst
    concurrency.rst
-   contextvars.rst
    ipc.rst
    netdata.rst
    markup.rst
@@ -72,8 +71,8 @@ the `Python Package Index <https://pypi.org>`_.
    custominterp.rst
    modules.rst
    language.rst
-   misc.rst
    windows.rst
    unix.rst
    superseded.rst
    undoc.rst
+   security_warnings.rst

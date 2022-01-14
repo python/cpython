@@ -13,11 +13,10 @@
 
 This module offers several classes to implement SMTP (email) servers.
 
-.. seealso::
-
-    The `aiosmtpd <http://aiosmtpd.readthedocs.io/>`_ package is a recommended
-    replacement for this module.  It is based on :mod:`asyncio` and provides a
-    more straightforward API.  :mod:`smtpd` should be considered deprecated.
+.. deprecated:: 3.6
+   The `aiosmtpd <https://aiosmtpd.readthedocs.io/>`_ package is a recommended
+   replacement for this module.  It is based on :mod:`asyncio` and provides a
+   more straightforward API.
 
 Several server implementations are present; one is a generic
 do-nothing implementation, which can be overridden, while the other two offer
@@ -141,24 +140,6 @@ PureProxy Objects
    Everything will be relayed to *remoteaddr*.  Note that running this has a good
    chance to make you into an open relay, so please be careful.
 
-
-MailmanProxy Objects
---------------------
-
-
-.. class:: MailmanProxy(localaddr, remoteaddr)
-
-   .. deprecated-removed:: 3.9 3.11
-
-      :class:`MailmanProxy` is deprecated, it depends on a ``Mailman``
-      module which no longer exists and therefore is already broken.
-
-
-   Create a new pure proxy server. Arguments are as per :class:`SMTPServer`.
-   Everything will be relayed to *remoteaddr*, unless local mailman configurations
-   knows about an address, in which case it will be handled via mailman.  Note that
-   running this has a good chance to make you into an open relay, so please be
-   careful.
 
 SMTPChannel Objects
 -------------------

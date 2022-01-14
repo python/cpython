@@ -100,7 +100,7 @@ PSF LICENSE AGREEMENT FOR PYTHON |release|
       analyze, test, perform and/or display publicly, prepare derivative works,
       distribute, and otherwise use Python |release| alone or in any derivative
       version, provided, however, that PSF's License Agreement and PSF's notice of
-      copyright, i.e., "Copyright © 2001-2020 Python Software Foundation; All Rights
+      copyright, i.e., "Copyright © 2001-2022 Python Software Foundation; All Rights
       Reserved" are retained in Python |release| alone or in any derivative version
       prepared by Licensee.
 
@@ -203,9 +203,9 @@ CNRI LICENSE AGREEMENT FOR PYTHON 1.6.1
       Licensee may substitute the following text (omitting the quotes): "Python 1.6.1
       is made available subject to the terms and conditions in CNRI's License
       Agreement.  This Agreement together with Python 1.6.1 may be located on the
-      Internet using the following unique, persistent identifier (known as a handle):
+      internet using the following unique, persistent identifier (known as a handle):
       1895.22/1013.  This Agreement may also be obtained from a proxy server on the
-      Internet using the following URL: http://hdl.handle.net/1895.22/1013."
+      internet using the following URL: http://hdl.handle.net/1895.22/1013."
 
    3. In the event Licensee prepares a derivative work that is based on or
       incorporates Python 1.6.1 or any part thereof, and wants to make the derivative
@@ -655,7 +655,7 @@ OpenSSL
 
 The modules :mod:`hashlib`, :mod:`posix`, :mod:`ssl`, :mod:`crypt` use
 the OpenSSL library for added performance if made available by the
-operating system. Additionally, the Windows and Mac OS X installers for
+operating system. Additionally, the Windows and macOS installers for
 Python may include a copy of the OpenSSL libraries, so we include a copy
 of the OpenSSL license here::
 
@@ -955,7 +955,7 @@ W3C C14N test suite
 The C14N 2.0 test suite in the :mod:`test` package
 (``Lib/test/xmltestdata/c14n-20/``) was retrieved from the W3C website at
 https://www.w3.org/TR/xml-c14n2-testcases/ and is distributed under the
-3-clause BSD license:
+3-clause BSD license::
 
    Copyright (c) 2013 W3C(R) (MIT, ERCIM, Keio, Beihang),
    All Rights Reserved.

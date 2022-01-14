@@ -236,7 +236,7 @@ coroutine of an asynchronous generator.
 
 Removed WITH_CLEANUP_START, WITH_CLEANUP_FINISH, BEGIN_FINALLY, END_FINALLY,
 CALL_FINALLY and POP_FINALLY bytecodes. Replaced with RERAISE and
-WITH_EXCEPT_FINISH bytecodes. The compiler now generates different code for
+WITH_EXCEPT_START bytecodes. The compiler now generates different code for
 exceptional and non-exceptional branches for 'with' and 'try-except'
 statements. For 'try-finally' statements the 'finally' block is replicated
 for each exit from the 'try' body.

@@ -621,13 +621,6 @@ Decimal objects
       Return :const:`True` if the argument is either positive or negative
       infinity and :const:`False` otherwise.
 
-   .. method:: is_integer()
-
-      Return :const:`True` if the argument is a finite integral value and
-      :const:`False` otherwise.
-
-      .. versionadded:: 3.10
-
    .. method:: is_nan()
 
       Return :const:`True` if the argument is a (quiet or signaling) NaN and
@@ -1222,13 +1215,6 @@ In addition to the three supplied contexts, new contexts can be created with the
       Returns ``True`` if *x* is infinite; otherwise returns ``False``.
 
 
-   .. method:: is_integer(x)
-
-      Returns ``True`` if *x* is finite and integral; otherwise
-      returns ``False``.
-
-      .. versionadded:: 3.10
-
    .. method:: is_nan(x)
 
       Returns ``True`` if *x* is a qNaN or sNaN; otherwise returns ``False``.
@@ -1498,7 +1484,8 @@ are also included in the pure Python version for compatibility.
 
 .. data:: HAVE_CONTEXTVAR
 
-   The default value is ``True``. If Python is compiled ``--without-decimal-contextvar``,
+   The default value is ``True``. If Python is :option:`configured using
+   the --without-decimal-contextvar option <--without-decimal-contextvar>`,
    the C version uses a thread-local rather than a coroutine-local context and the value
    is ``False``.  This is slightly faster in some nested context scenarios.
 

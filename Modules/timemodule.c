@@ -1,33 +1,29 @@
 /* Time module */
 
 #include "Python.h"
+#include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
+#include "pycore_namespace.h"     // _PyNamespace_New()
 
 #include <ctype.h>
 
 #ifdef HAVE_SYS_TIMES_H
-#include <sys/times.h>
+#  include <sys/times.h>
 #endif
-
 #ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
+#  include <sys/types.h>
 #endif
-
 #if defined(HAVE_SYS_RESOURCE_H)
-#include <sys/resource.h>
+#  include <sys/resource.h>
 #endif
-
 #ifdef QUICKWIN
-#include <io.h>
+# include <io.h>
 #endif
-
 #if defined(HAVE_PTHREAD_H)
 #  include <pthread.h>
 #endif
-
 #if defined(_AIX)
 #   include <sys/thread.h>
 #endif
-
 #if defined(__WATCOMC__) && !defined(__QNX__)
 #  include <i86.h>
 #else
@@ -38,23 +34,34 @@
 #endif /* !__WATCOMC__ || __QNX__ */
 
 #ifdef _Py_MEMORY_SANITIZER
-# include <sanitizer/msan_interface.h>
+#  include <sanitizer/msan_interface.h>
 #endif
 
 #ifdef _MSC_VER
-#define _Py_timezone _timezone
-#define _Py_daylight _daylight
-#define _Py_tzname _tzname
+#  define _Py_timezone _timezone
+#  define _Py_daylight _daylight
+#  define _Py_tzname _tzname
 #else
-#define _Py_timezone timezone
-#define _Py_daylight daylight
-#define _Py_tzname tzname
+#  define _Py_timezone timezone
+#  define _Py_daylight daylight
+#  define _Py_tzname tzname
 #endif
+
+#if defined(__APPLE__ ) && defined(__has_builtin)
+#  if __has_builtin(__builtin_available)
+#    define HAVE_CLOCK_GETTIME_RUNTIME __builtin_available(macOS 10.12, iOS 10.0, tvOS 10.0, watchOS 3.0, *)
+#  endif
+#endif
+#ifndef HAVE_CLOCK_GETTIME_RUNTIME
+#  define HAVE_CLOCK_GETTIME_RUNTIME 1
+#endif
+
 
 #define SEC_TO_NS (1000 * 1000 * 1000)
 
+
 /* Forward declarations */
-static int pysleep(_PyTime_t);
+static int pysleep(_PyTime_t timeout);
 
 
 static PyObject*
@@ -65,10 +72,21 @@ _PyFloat_FromPyTime(_PyTime_t t)
 }
 
 
+static int
+get_system_time(_PyTime_t *t)
+{
+    // Avoid _PyTime_GetSystemClock() which silently ignores errors.
+    return _PyTime_GetSystemClockWithInfo(t, NULL);
+}
+
+
 static PyObject *
 time_time(PyObject *self, PyObject *unused)
 {
-    _PyTime_t t = _PyTime_GetSystemClock();
+    _PyTime_t t;
+    if (get_system_time(&t) < 0) {
+        return NULL;
+    }
     return _PyFloat_FromPyTime(t);
 }
 
@@ -82,7 +100,10 @@ Fractions of a second may be present if the system clock provides them.");
 static PyObject *
 time_time_ns(PyObject *self, PyObject *unused)
 {
-    _PyTime_t t = _PyTime_GetSystemClock();
+    _PyTime_t t;
+    if (get_system_time(&t) < 0) {
+        return NULL;
+    }
     return _PyTime_AsNanosecondsObject(t);
 }
 
@@ -105,12 +126,11 @@ static int
 _PyTime_GetClockWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 {
     static int initialized = 0;
-    clock_t ticks;
 
     if (!initialized) {
         initialized = 1;
 
-        /* must sure that _PyTime_MulDiv(ticks, SEC_TO_NS, CLOCKS_PER_SEC)
+        /* Make sure that _PyTime_MulDiv(ticks, SEC_TO_NS, CLOCKS_PER_SEC)
            above cannot overflow */
         if ((_PyTime_t)CLOCKS_PER_SEC > _PyTime_MAX / SEC_TO_NS) {
             PyErr_SetString(PyExc_OverflowError,
@@ -126,29 +146,31 @@ _PyTime_GetClockWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
         info->adjustable = 0;
     }
 
-    ticks = clock();
+    clock_t ticks = clock();
     if (ticks == (clock_t)-1) {
         PyErr_SetString(PyExc_RuntimeError,
                         "the processor time used is not available "
                         "or its value cannot be represented");
         return -1;
     }
-    *tp = _PyTime_MulDiv(ticks, SEC_TO_NS, (_PyTime_t)CLOCKS_PER_SEC);
+    _PyTime_t ns = _PyTime_MulDiv(ticks, SEC_TO_NS, (_PyTime_t)CLOCKS_PER_SEC);
+    *tp = _PyTime_FromNanoseconds(ns);
     return 0;
 }
 #endif /* HAVE_CLOCK */
 
-static PyObject*
-perf_counter(_Py_clock_info_t *info)
-{
-    _PyTime_t t;
-    if (_PyTime_GetPerfCounterWithInfo(&t, info) < 0) {
-        return NULL;
-    }
-    return _PyFloat_FromPyTime(t);
-}
 
 #ifdef HAVE_CLOCK_GETTIME
+
+#ifdef __APPLE__
+/*
+ * The clock_* functions will be removed from the module
+ * dict entirely when the C API is not available.
+ */
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability"
+#endif
+
 static PyObject *
 time_clock_gettime(PyObject *self, PyObject *args)
 {
@@ -297,6 +319,11 @@ PyDoc_STRVAR(clock_getres_doc,
 "clock_getres(clk_id) -> floating point number\n\
 \n\
 Return the resolution (precision) of the specified clock clk_id.");
+
+#ifdef __APPLE__
+#pragma clang diagnostic pop
+#endif
+
 #endif   /* HAVE_CLOCK_GETRES */
 
 #ifdef HAVE_PTHREAD_GETCPUCLOCKID
@@ -328,18 +355,19 @@ Return the clk_id of a thread's CPU time clock.");
 #endif /* HAVE_PTHREAD_GETCPUCLOCKID */
 
 static PyObject *
-time_sleep(PyObject *self, PyObject *obj)
+time_sleep(PyObject *self, PyObject *timeout_obj)
 {
-    _PyTime_t secs;
-    if (_PyTime_FromSecondsObject(&secs, obj, _PyTime_ROUND_TIMEOUT))
+    _PyTime_t timeout;
+    if (_PyTime_FromSecondsObject(&timeout, timeout_obj, _PyTime_ROUND_TIMEOUT))
         return NULL;
-    if (secs < 0) {
+    if (timeout < 0) {
         PyErr_SetString(PyExc_ValueError,
                         "sleep length must be non-negative");
         return NULL;
     }
-    if (pysleep(secs) != 0)
+    if (pysleep(timeout) != 0) {
         return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -380,6 +408,13 @@ static PyStructSequence_Desc struct_time_type_desc = {
 static int initialized;
 static PyTypeObject StructTimeType;
 
+#if defined(MS_WINDOWS)
+#ifndef CREATE_WAITABLE_TIMER_HIGH_RESOLUTION
+  #define CREATE_WAITABLE_TIMER_HIGH_RESOLUTION 0x00000002
+#endif
+
+static DWORD timer_flags = (DWORD)-1;
+#endif
 
 static PyObject *
 tmtotuple(struct tm *p
@@ -860,7 +895,7 @@ time_strptime(PyObject *self, PyObject *args)
     PyObject *module, *func, *result;
     _Py_IDENTIFIER(_strptime_time);
 
-    module = PyImport_ImportModuleNoBlock("_strptime");
+    module = PyImport_ImportModule("_strptime");
     if (!module)
         return NULL;
 
@@ -1040,7 +1075,7 @@ time_tzset(PyObject *self, PyObject *unused)
 {
     PyObject* m;
 
-    m = PyImport_ImportModuleNoBlock("time");
+    m = PyImport_ImportModule("time");
     if (m == NULL) {
         return NULL;
     }
@@ -1072,10 +1107,22 @@ the local timezone used by methods such as localtime, but this behaviour\n\
 should not be relied on.");
 #endif /* HAVE_WORKING_TZSET */
 
+
+static int
+get_monotonic(_PyTime_t *t)
+{
+    // Avoid _PyTime_GetMonotonicClock() which silently ignores errors.
+    return _PyTime_GetMonotonicClockWithInfo(t, NULL);
+}
+
+
 static PyObject *
 time_monotonic(PyObject *self, PyObject *unused)
 {
-    _PyTime_t t = _PyTime_GetMonotonicClock();
+    _PyTime_t t;
+    if (get_monotonic(&t) < 0) {
+        return NULL;
+    }
     return _PyFloat_FromPyTime(t);
 }
 
@@ -1087,7 +1134,10 @@ Monotonic clock, cannot go backward.");
 static PyObject *
 time_monotonic_ns(PyObject *self, PyObject *unused)
 {
-    _PyTime_t t = _PyTime_GetMonotonicClock();
+    _PyTime_t t;
+    if (get_monotonic(&t) < 0) {
+        return NULL;
+    }
     return _PyTime_AsNanosecondsObject(t);
 }
 
@@ -1096,10 +1146,23 @@ PyDoc_STRVAR(monotonic_ns_doc,
 \n\
 Monotonic clock, cannot go backward, as nanoseconds.");
 
+
+static int
+get_perf_counter(_PyTime_t *t)
+{
+    // Avoid _PyTime_GetPerfCounter() which silently ignores errors.
+    return _PyTime_GetPerfCounterWithInfo(t, NULL);
+}
+
+
 static PyObject *
 time_perf_counter(PyObject *self, PyObject *unused)
 {
-    return perf_counter(NULL);
+    _PyTime_t t;
+    if (get_perf_counter(&t) < 0) {
+        return NULL;
+    }
+    return _PyFloat_FromPyTime(t);
 }
 
 PyDoc_STRVAR(perf_counter_doc,
@@ -1107,10 +1170,14 @@ PyDoc_STRVAR(perf_counter_doc,
 \n\
 Performance counter for benchmarking.");
 
+
 static PyObject *
 time_perf_counter_ns(PyObject *self, PyObject *unused)
 {
-    _PyTime_t t = _PyTime_GetPerfCounter();
+    _PyTime_t t;
+    if (get_perf_counter(&t) < 0) {
+        return NULL;
+    }
     return _PyTime_AsNanosecondsObject(t);
 }
 
@@ -1162,31 +1229,35 @@ _PyTime_GetProcessTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 #if defined(HAVE_CLOCK_GETTIME) \
     && (defined(CLOCK_PROCESS_CPUTIME_ID) || defined(CLOCK_PROF))
     struct timespec ts;
+
+    if (HAVE_CLOCK_GETTIME_RUNTIME) {
+
 #ifdef CLOCK_PROF
-    const clockid_t clk_id = CLOCK_PROF;
-    const char *function = "clock_gettime(CLOCK_PROF)";
+        const clockid_t clk_id = CLOCK_PROF;
+        const char *function = "clock_gettime(CLOCK_PROF)";
 #else
-    const clockid_t clk_id = CLOCK_PROCESS_CPUTIME_ID;
-    const char *function = "clock_gettime(CLOCK_PROCESS_CPUTIME_ID)";
+        const clockid_t clk_id = CLOCK_PROCESS_CPUTIME_ID;
+        const char *function = "clock_gettime(CLOCK_PROCESS_CPUTIME_ID)";
 #endif
 
-    if (clock_gettime(clk_id, &ts) == 0) {
-        if (info) {
-            struct timespec res;
-            info->implementation = function;
-            info->monotonic = 1;
-            info->adjustable = 0;
-            if (clock_getres(clk_id, &res)) {
-                PyErr_SetFromErrno(PyExc_OSError);
+        if (clock_gettime(clk_id, &ts) == 0) {
+            if (info) {
+                struct timespec res;
+                info->implementation = function;
+                info->monotonic = 1;
+                info->adjustable = 0;
+                if (clock_getres(clk_id, &res)) {
+                    PyErr_SetFromErrno(PyExc_OSError);
+                    return -1;
+                }
+                info->resolution = res.tv_sec + res.tv_nsec * 1e-9;
+            }
+
+            if (_PyTime_FromTimespec(tp, &ts) < 0) {
                 return -1;
             }
-            info->resolution = res.tv_sec + res.tv_nsec * 1e-9;
+            return 0;
         }
-
-        if (_PyTime_FromTimespec(tp, &ts) < 0) {
-            return -1;
-        }
-        return 0;
     }
 #endif
 
@@ -1260,10 +1331,10 @@ _PyTime_GetProcessTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
                 info->resolution = 1.0 / (double)ticks_per_second;
             }
 
-            _PyTime_t total;
-            total = _PyTime_MulDiv(t.tms_utime, SEC_TO_NS, ticks_per_second);
-            total += _PyTime_MulDiv(t.tms_stime, SEC_TO_NS, ticks_per_second);
-            *tp = total;
+            _PyTime_t ns;
+            ns = _PyTime_MulDiv(t.tms_utime, SEC_TO_NS, ticks_per_second);
+            ns += _PyTime_MulDiv(t.tms_stime, SEC_TO_NS, ticks_per_second);
+            *tp = _PyTime_FromNanoseconds(ns);
             return 0;
         }
     }
@@ -1371,8 +1442,35 @@ _PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
     return 0;
 }
 
+#elif defined(__sun) && defined(__SVR4)
+#define HAVE_THREAD_TIME
+static int
+_PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
+{
+    /* bpo-35455: On Solaris, CLOCK_THREAD_CPUTIME_ID clock is not always
+       available; use gethrvtime() to substitute this functionality. */
+    if (info) {
+        info->implementation = "gethrvtime()";
+        info->resolution = 1e-9;
+        info->monotonic = 1;
+        info->adjustable = 0;
+    }
+    *tp = _PyTime_FromNanoseconds(gethrvtime());
+    return 0;
+}
+
 #elif defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_PROCESS_CPUTIME_ID)
 #define HAVE_THREAD_TIME
+
+#if defined(__APPLE__) && defined(__has_attribute) && __has_attribute(availability)
+static int
+_PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
+     __attribute__((availability(macos, introduced=10.12)))
+     __attribute__((availability(ios, introduced=10.0)))
+     __attribute__((availability(tvos, introduced=10.0)))
+     __attribute__((availability(watchos, introduced=3.0)));
+#endif
+
 static int
 _PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 {
@@ -1404,6 +1502,15 @@ _PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 #endif
 
 #ifdef HAVE_THREAD_TIME
+#ifdef __APPLE__
+/*
+ * The clock_* functions will be removed from the module
+ * dict entirely when the C API is not available.
+ */
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability"
+#endif
+
 static PyObject *
 time_thread_time(PyObject *self, PyObject *unused)
 {
@@ -1434,6 +1541,11 @@ PyDoc_STRVAR(thread_time_ns_doc,
 \n\
 Thread time for profiling as nanoseconds:\n\
 sum of the kernel and user-space CPU time.");
+
+#ifdef __APPLE__
+#pragma clang diagnostic pop
+#endif
+
 #endif
 
 
@@ -1483,9 +1595,19 @@ time_get_clock_info(PyObject *self, PyObject *args)
     }
 #ifdef HAVE_THREAD_TIME
     else if (strcmp(name, "thread_time") == 0) {
-        if (_PyTime_GetThreadTimeWithInfo(&t, &info) < 0) {
+
+#ifdef __APPLE__
+        if (HAVE_CLOCK_GETTIME_RUNTIME) {
+#endif
+            if (_PyTime_GetThreadTimeWithInfo(&t, &info) < 0) {
+                return NULL;
+            }
+#ifdef __APPLE__
+        } else {
+            PyErr_SetString(PyExc_ValueError, "unknown clock");
             return NULL;
         }
+#endif
     }
 #endif
     else {
@@ -1766,68 +1888,116 @@ if it is -1, mktime() should guess based on the date and time.\n");
 static int
 time_exec(PyObject *module)
 {
+#if defined(__APPLE__) && defined(HAVE_CLOCK_GETTIME)
+    if (HAVE_CLOCK_GETTIME_RUNTIME) {
+        /* pass: ^^^ cannot use '!' here */
+    } else {
+        PyObject* dct = PyModule_GetDict(module);
+        if (dct == NULL) {
+            return -1;
+        }
+
+        if (PyDict_DelItemString(dct, "clock_gettime") == -1) {
+            PyErr_Clear();
+        }
+        if (PyDict_DelItemString(dct, "clock_gettime_ns") == -1) {
+            PyErr_Clear();
+        }
+        if (PyDict_DelItemString(dct, "clock_settime") == -1) {
+            PyErr_Clear();
+        }
+        if (PyDict_DelItemString(dct, "clock_settime_ns") == -1) {
+            PyErr_Clear();
+        }
+        if (PyDict_DelItemString(dct, "clock_getres") == -1) {
+            PyErr_Clear();
+        }
+    }
+#endif
+#if defined(__APPLE__) && defined(HAVE_THREAD_TIME)
+    if (HAVE_CLOCK_GETTIME_RUNTIME) {
+        /* pass: ^^^ cannot use '!' here */
+    } else {
+        PyObject* dct = PyModule_GetDict(module);
+
+        if (PyDict_DelItemString(dct, "thread_time") == -1) {
+            PyErr_Clear();
+        }
+        if (PyDict_DelItemString(dct, "thread_time_ns") == -1) {
+            PyErr_Clear();
+        }
+    }
+#endif
     /* Set, or reset, module variables like time.timezone */
     if (init_timezone(module) < 0) {
         return -1;
     }
 
 #if defined(HAVE_CLOCK_GETTIME) || defined(HAVE_CLOCK_SETTIME) || defined(HAVE_CLOCK_GETRES)
+    if (HAVE_CLOCK_GETTIME_RUNTIME) {
 
 #ifdef CLOCK_REALTIME
-    if (PyModule_AddIntMacro(module, CLOCK_REALTIME) < 0) {
-        return -1;
-    }
+        if (PyModule_AddIntMacro(module, CLOCK_REALTIME) < 0) {
+            return -1;
+        }
 #endif
+
 #ifdef CLOCK_MONOTONIC
-    if (PyModule_AddIntMacro(module, CLOCK_MONOTONIC) < 0) {
-        return -1;
-    }
+
+        if (PyModule_AddIntMacro(module, CLOCK_MONOTONIC) < 0) {
+            return -1;
+        }
+
 #endif
 #ifdef CLOCK_MONOTONIC_RAW
-    if (PyModule_AddIntMacro(module, CLOCK_MONOTONIC_RAW) < 0) {
-        return -1;
-    }
+        if (PyModule_AddIntMacro(module, CLOCK_MONOTONIC_RAW) < 0) {
+            return -1;
+        }
 #endif
+
 #ifdef CLOCK_HIGHRES
-    if (PyModule_AddIntMacro(module, CLOCK_HIGHRES) < 0) {
-        return -1;
-    }
+        if (PyModule_AddIntMacro(module, CLOCK_HIGHRES) < 0) {
+            return -1;
+        }
 #endif
 #ifdef CLOCK_PROCESS_CPUTIME_ID
-    if (PyModule_AddIntMacro(module, CLOCK_PROCESS_CPUTIME_ID) < 0) {
-        return -1;
-    }
+        if (PyModule_AddIntMacro(module, CLOCK_PROCESS_CPUTIME_ID) < 0) {
+            return -1;
+        }
 #endif
+
 #ifdef CLOCK_THREAD_CPUTIME_ID
-    if (PyModule_AddIntMacro(module, CLOCK_THREAD_CPUTIME_ID) < 0) {
-        return -1;
-    }
+        if (PyModule_AddIntMacro(module, CLOCK_THREAD_CPUTIME_ID) < 0) {
+            return -1;
+        }
 #endif
 #ifdef CLOCK_PROF
-    if (PyModule_AddIntMacro(module, CLOCK_PROF) < 0) {
-        return -1;
-    }
+        if (PyModule_AddIntMacro(module, CLOCK_PROF) < 0) {
+            return -1;
+        }
 #endif
 #ifdef CLOCK_BOOTTIME
-    if (PyModule_AddIntMacro(module, CLOCK_BOOTTIME) < 0) {
-        return -1;
-    }
+        if (PyModule_AddIntMacro(module, CLOCK_BOOTTIME) < 0) {
+            return -1;
+        }
 #endif
 #ifdef CLOCK_TAI
-    if (PyModule_AddIntMacro(module, CLOCK_TAI) < 0) {
-        return -1;
-    }
+        if (PyModule_AddIntMacro(module, CLOCK_TAI) < 0) {
+            return -1;
+        }
 #endif
 #ifdef CLOCK_UPTIME
-    if (PyModule_AddIntMacro(module, CLOCK_UPTIME) < 0) {
-        return -1;
-    }
+        if (PyModule_AddIntMacro(module, CLOCK_UPTIME) < 0) {
+            return -1;
+        }
 #endif
 #ifdef CLOCK_UPTIME_RAW
-    if (PyModule_AddIntMacro(module, CLOCK_UPTIME_RAW) < 0) {
-        return -1;
-    }
+
+        if (PyModule_AddIntMacro(module, CLOCK_UPTIME_RAW) < 0) {
+            return -1;
+        }
 #endif
+    }
 
 #endif  /* defined(HAVE_CLOCK_GETTIME) || defined(HAVE_CLOCK_SETTIME) || defined(HAVE_CLOCK_GETRES) */
 
@@ -1852,6 +2022,23 @@ time_exec(PyObject *module)
     const time_t zero = 0;
     if (gmtime_r(&zero, &tm) != NULL)
         utc_string = tm.tm_zone;
+#endif
+
+#if defined(MS_WINDOWS)
+    if (timer_flags == (DWORD)-1) {
+        DWORD test_flags = CREATE_WAITABLE_TIMER_HIGH_RESOLUTION;
+        HANDLE timer = CreateWaitableTimerExW(NULL, NULL, test_flags,
+                                              TIMER_ALL_ACCESS);
+        if (timer == NULL) {
+            // CREATE_WAITABLE_TIMER_HIGH_RESOLUTION is not supported.
+            timer_flags = 0;
+        }
+        else {
+            // CREATE_WAITABLE_TIMER_HIGH_RESOLUTION is supported.
+            timer_flags = CREATE_WAITABLE_TIMER_HIGH_RESOLUTION;
+            CloseHandle(timer);
+        }
+    }
 #endif
 
     return 0;
@@ -1880,82 +2067,188 @@ PyInit_time(void)
     return PyModuleDef_Init(&timemodule);
 }
 
-/* Implement pysleep() for various platforms.
-   When interrupted (or when another error occurs), return -1 and
-   set an exception; else return 0. */
 
+// time.sleep() implementation.
+// On error, raise an exception and return -1.
+// On success, return 0.
 static int
-pysleep(_PyTime_t secs)
+pysleep(_PyTime_t timeout)
 {
-    _PyTime_t deadline, monotonic;
+    assert(timeout >= 0);
+
 #ifndef MS_WINDOWS
-    struct timeval timeout;
-    int err = 0;
+#ifdef HAVE_CLOCK_NANOSLEEP
+    struct timespec timeout_abs;
+#elif defined(HAVE_NANOSLEEP)
+    struct timespec timeout_ts;
 #else
-    _PyTime_t millisecs;
-    unsigned long ul_millis;
-    DWORD rc;
-    HANDLE hInterruptEvent;
+    struct timeval timeout_tv;
+#endif
+    _PyTime_t deadline, monotonic;
+    int err = 0;
+
+    if (get_monotonic(&monotonic) < 0) {
+        return -1;
+    }
+    deadline = monotonic + timeout;
+#ifdef HAVE_CLOCK_NANOSLEEP
+    if (_PyTime_AsTimespec(deadline, &timeout_abs) < 0) {
+        return -1;
+    }
 #endif
 
-    deadline = _PyTime_GetMonotonicClock() + secs;
-
     do {
-#ifndef MS_WINDOWS
-        if (_PyTime_AsTimeval(secs, &timeout, _PyTime_ROUND_CEILING) < 0)
+#ifdef HAVE_CLOCK_NANOSLEEP
+        // use timeout_abs
+#elif defined(HAVE_NANOSLEEP)
+        if (_PyTime_AsTimespec(timeout, &timeout_ts) < 0) {
             return -1;
+        }
+#else
+        if (_PyTime_AsTimeval(timeout, &timeout_tv, _PyTime_ROUND_CEILING) < 0) {
+            return -1;
+        }
+#endif
 
+        int ret;
         Py_BEGIN_ALLOW_THREADS
-        err = select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &timeout);
+#ifdef HAVE_CLOCK_NANOSLEEP
+        ret = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &timeout_abs, NULL);
+        err = ret;
+#elif defined(HAVE_NANOSLEEP)
+        ret = nanosleep(&timeout_ts, NULL);
+        err = errno;
+#else
+        ret = select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &timeout_tv);
+        err = errno;
+#endif
         Py_END_ALLOW_THREADS
 
-        if (err == 0)
+        if (ret == 0) {
             break;
+        }
 
-        if (errno != EINTR) {
+        if (err != EINTR) {
+            errno = err;
             PyErr_SetFromErrno(PyExc_OSError);
             return -1;
         }
-#else
-        millisecs = _PyTime_AsMilliseconds(secs, _PyTime_ROUND_CEILING);
-        if (millisecs > (double)ULONG_MAX) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "sleep length is too large");
-            return -1;
-        }
-
-        /* Allow sleep(0) to maintain win32 semantics, and as decreed
-         * by Guido, only the main thread can be interrupted.
-         */
-        ul_millis = (unsigned long)millisecs;
-        if (ul_millis == 0 || !_PyOS_IsMainThread()) {
-            Py_BEGIN_ALLOW_THREADS
-            Sleep(ul_millis);
-            Py_END_ALLOW_THREADS
-            break;
-        }
-
-        hInterruptEvent = _PyOS_SigintEvent();
-        ResetEvent(hInterruptEvent);
-
-        Py_BEGIN_ALLOW_THREADS
-        rc = WaitForSingleObjectEx(hInterruptEvent, ul_millis, FALSE);
-        Py_END_ALLOW_THREADS
-
-        if (rc != WAIT_OBJECT_0)
-            break;
-#endif
 
         /* sleep was interrupted by SIGINT */
-        if (PyErr_CheckSignals())
+        if (PyErr_CheckSignals()) {
             return -1;
+        }
 
-        monotonic = _PyTime_GetMonotonicClock();
-        secs = deadline - monotonic;
-        if (secs < 0)
+#ifndef HAVE_CLOCK_NANOSLEEP
+        if (get_monotonic(&monotonic) < 0) {
+            return -1;
+        }
+        timeout = deadline - monotonic;
+        if (timeout < 0) {
             break;
+        }
         /* retry with the recomputed delay */
+#endif
     } while (1);
 
     return 0;
+#else  // MS_WINDOWS
+    _PyTime_t timeout_100ns = _PyTime_As100Nanoseconds(timeout,
+                                                       _PyTime_ROUND_CEILING);
+
+    // Maintain Windows Sleep() semantics for time.sleep(0)
+    if (timeout_100ns == 0) {
+        Py_BEGIN_ALLOW_THREADS
+        // A value of zero causes the thread to relinquish the remainder of its
+        // time slice to any other thread that is ready to run. If there are no
+        // other threads ready to run, the function returns immediately, and
+        // the thread continues execution.
+        Sleep(0);
+        Py_END_ALLOW_THREADS
+        return 0;
+    }
+
+    LARGE_INTEGER relative_timeout;
+    // No need to check for integer overflow, both types are signed
+    assert(sizeof(relative_timeout) == sizeof(timeout_100ns));
+    // SetWaitableTimer(): a negative due time indicates relative time
+    relative_timeout.QuadPart = -timeout_100ns;
+
+    HANDLE timer = CreateWaitableTimerExW(NULL, NULL, timer_flags,
+                                          TIMER_ALL_ACCESS);
+    if (timer == NULL) {
+        PyErr_SetFromWindowsErr(0);
+        return -1;
+    }
+
+    if (!SetWaitableTimerEx(timer, &relative_timeout,
+                            0, // no period; the timer is signaled once
+                            NULL, NULL, // no completion routine
+                            NULL,  // no wake context; do not resume from suspend
+                            0)) // no tolerable delay for timer coalescing
+    {
+        PyErr_SetFromWindowsErr(0);
+        goto error;
+    }
+
+    // Only the main thread can be interrupted by SIGINT.
+    // Signal handlers are only executed in the main thread.
+    if (_PyOS_IsMainThread()) {
+        HANDLE sigint_event = _PyOS_SigintEvent();
+
+        while (1) {
+            // Check for pending SIGINT signal before resetting the event
+            if (PyErr_CheckSignals()) {
+                goto error;
+            }
+            ResetEvent(sigint_event);
+
+            HANDLE events[] = {timer, sigint_event};
+            DWORD rc;
+
+            Py_BEGIN_ALLOW_THREADS
+            rc = WaitForMultipleObjects(Py_ARRAY_LENGTH(events), events,
+                                        // bWaitAll
+                                        FALSE,
+                                        // No wait timeout
+                                        INFINITE);
+            Py_END_ALLOW_THREADS
+
+            if (rc == WAIT_FAILED) {
+                PyErr_SetFromWindowsErr(0);
+                goto error;
+            }
+
+            if (rc == WAIT_OBJECT_0) {
+                // Timer signaled: we are done
+                break;
+            }
+
+            assert(rc == (WAIT_OBJECT_0 + 1));
+            // The sleep was interrupted by SIGINT: restart sleeping
+        }
+    }
+    else {
+        DWORD rc;
+
+        Py_BEGIN_ALLOW_THREADS
+        rc = WaitForSingleObject(timer, INFINITE);
+        Py_END_ALLOW_THREADS
+
+        if (rc == WAIT_FAILED) {
+            PyErr_SetFromWindowsErr(0);
+            goto error;
+        }
+
+        assert(rc == WAIT_OBJECT_0);
+        // Timer signaled: we are done
+    }
+
+    CloseHandle(timer);
+    return 0;
+
+error:
+    CloseHandle(timer);
+    return -1;
+#endif
 }

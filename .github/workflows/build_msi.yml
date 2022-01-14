@@ -1,20 +1,23 @@
 name: TestsMSI
 
 on:
+  workflow_dispatch:
   push:
     branches:
-    - master
-    - 3.9
-    - 3.8
-    - 3.7
+    - 'main'
+    - '3.10'
+    - '3.9'
+    - '3.8'
+    - '3.7'
     paths:
     - 'Tools/msi/**'
   pull_request:
     branches:
-    - master
-    - 3.9
-    - 3.8
-    - 3.7
+    - 'main'
+    - '3.10'
+    - '3.9'
+    - '3.8'
+    - '3.7'
     paths:
     - 'Tools/msi/**'
 

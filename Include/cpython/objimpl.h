@@ -79,10 +79,6 @@ PyAPI_FUNC(void) PyObject_GetArenaAllocator(PyObjectArenaAllocator *allocator);
 PyAPI_FUNC(void) PyObject_SetArenaAllocator(PyObjectArenaAllocator *allocator);
 
 
-PyAPI_FUNC(Py_ssize_t) _PyGC_CollectNoFail(void);
-PyAPI_FUNC(Py_ssize_t) _PyGC_CollectIfEnabled(void);
-
-
 /* Test if an object implements the garbage collector protocol */
 PyAPI_FUNC(int) PyObject_IS_GC(PyObject *obj);
 
@@ -93,9 +89,6 @@ PyAPI_FUNC(int) PyObject_IS_GC(PyObject *obj);
    // Kept for backward compatibility with Python 3.8
 #  define _PyGC_FINALIZED(o) PyObject_GC_IsFinalized(o)
 #endif
-
-PyAPI_FUNC(PyObject *) _PyObject_GC_Malloc(size_t size);
-PyAPI_FUNC(PyObject *) _PyObject_GC_Calloc(size_t size);
 
 
 /* Test if a type supports weak references */

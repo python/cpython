@@ -217,43 +217,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_codecs__forget_codec__doc__,
-"_forget_codec($module, encoding, /)\n"
-"--\n"
-"\n"
-"Purge the named codec from the internal codec lookup cache");
-
-#define _CODECS__FORGET_CODEC_METHODDEF    \
-    {"_forget_codec", (PyCFunction)_codecs__forget_codec, METH_O, _codecs__forget_codec__doc__},
-
-static PyObject *
-_codecs__forget_codec_impl(PyObject *module, const char *encoding);
-
-static PyObject *
-_codecs__forget_codec(PyObject *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    const char *encoding;
-
-    if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("_forget_codec", "argument", "str", arg);
-        goto exit;
-    }
-    Py_ssize_t encoding_length;
-    encoding = PyUnicode_AsUTF8AndSize(arg, &encoding_length);
-    if (encoding == NULL) {
-        goto exit;
-    }
-    if (strlen(encoding) != (size_t)encoding_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        goto exit;
-    }
-    return_value = _codecs__forget_codec_impl(module, encoding);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(_codecs_escape_decode__doc__,
 "escape_decode($module, data, errors=None, /)\n"
 "--\n"
@@ -1100,7 +1063,7 @@ exit:
 }
 
 PyDoc_STRVAR(_codecs_unicode_escape_decode__doc__,
-"unicode_escape_decode($module, data, errors=None, /)\n"
+"unicode_escape_decode($module, data, errors=None, final=True, /)\n"
 "--\n"
 "\n");
 
@@ -1109,7 +1072,7 @@ PyDoc_STRVAR(_codecs_unicode_escape_decode__doc__,
 
 static PyObject *
 _codecs_unicode_escape_decode_impl(PyObject *module, Py_buffer *data,
-                                   const char *errors);
+                                   const char *errors, int final);
 
 static PyObject *
 _codecs_unicode_escape_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -1117,8 +1080,9 @@ _codecs_unicode_escape_decode(PyObject *module, PyObject *const *args, Py_ssize_
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
+    int final = 1;
 
-    if (!_PyArg_CheckPositional("unicode_escape_decode", nargs, 1, 2)) {
+    if (!_PyArg_CheckPositional("unicode_escape_decode", nargs, 1, 3)) {
         goto exit;
     }
     if (PyUnicode_Check(args[0])) {
@@ -1159,8 +1123,15 @@ _codecs_unicode_escape_decode(PyObject *module, PyObject *const *args, Py_ssize_
         _PyArg_BadArgument("unicode_escape_decode", "argument 2", "str or None", args[1]);
         goto exit;
     }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    final = _PyLong_AsInt(args[2]);
+    if (final == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
 skip_optional:
-    return_value = _codecs_unicode_escape_decode_impl(module, &data, errors);
+    return_value = _codecs_unicode_escape_decode_impl(module, &data, errors, final);
 
 exit:
     /* Cleanup for data */
@@ -1172,7 +1143,7 @@ exit:
 }
 
 PyDoc_STRVAR(_codecs_raw_unicode_escape_decode__doc__,
-"raw_unicode_escape_decode($module, data, errors=None, /)\n"
+"raw_unicode_escape_decode($module, data, errors=None, final=True, /)\n"
 "--\n"
 "\n");
 
@@ -1181,7 +1152,7 @@ PyDoc_STRVAR(_codecs_raw_unicode_escape_decode__doc__,
 
 static PyObject *
 _codecs_raw_unicode_escape_decode_impl(PyObject *module, Py_buffer *data,
-                                       const char *errors);
+                                       const char *errors, int final);
 
 static PyObject *
 _codecs_raw_unicode_escape_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -1189,8 +1160,9 @@ _codecs_raw_unicode_escape_decode(PyObject *module, PyObject *const *args, Py_ss
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
+    int final = 1;
 
-    if (!_PyArg_CheckPositional("raw_unicode_escape_decode", nargs, 1, 2)) {
+    if (!_PyArg_CheckPositional("raw_unicode_escape_decode", nargs, 1, 3)) {
         goto exit;
     }
     if (PyUnicode_Check(args[0])) {
@@ -1231,8 +1203,15 @@ _codecs_raw_unicode_escape_decode(PyObject *module, PyObject *const *args, Py_ss
         _PyArg_BadArgument("raw_unicode_escape_decode", "argument 2", "str or None", args[1]);
         goto exit;
     }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    final = _PyLong_AsInt(args[2]);
+    if (final == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
 skip_optional:
-    return_value = _codecs_raw_unicode_escape_decode_impl(module, &data, errors);
+    return_value = _codecs_raw_unicode_escape_decode_impl(module, &data, errors, final);
 
 exit:
     /* Cleanup for data */
@@ -2838,4 +2817,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=9a97e2ddf3e69072 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=814dae36b6f885cb input=a9049054013a1b77]*/

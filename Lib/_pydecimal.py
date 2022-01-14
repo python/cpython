@@ -951,7 +951,7 @@ class Decimal(object):
             if self.is_snan():
                 raise TypeError('Cannot hash a signaling NaN value.')
             elif self.is_nan():
-                return _PyHASH_NAN
+                return object.__hash__(self)
             else:
                 if self._sign:
                     return -_PyHASH_INF
@@ -2230,7 +2230,7 @@ class Decimal(object):
             if xe != 0 and len(str(abs(yc*xe))) <= -ye:
                 return None
             xc_bits = _nbits(xc)
-            if xc != 1 and len(str(abs(yc)*xc_bits)) <= -ye:
+            if len(str(abs(yc)*xc_bits)) <= -ye:
                 return None
             m, n = yc, 10**(-ye)
             while m % 2 == n % 2 == 0:
@@ -2243,7 +2243,7 @@ class Decimal(object):
         # compute nth root of xc*10**xe
         if n > 1:
             # if 1 < xc < 2**n then xc isn't an nth power
-            if xc != 1 and xc_bits <= n:
+            if xc_bits <= n:
                 return None
 
             xe, rem = divmod(xe, n)
@@ -3163,12 +3163,6 @@ class Decimal(object):
     def is_zero(self):
         """Return True if self is a zero; otherwise return False."""
         return not self._is_special and self._int == '0'
-
-    def is_integer(self):
-        """Return True is self is finite and integral; otherwise False."""
-        if self._is_special:
-            return False
-        return self.to_integral_value(rounding=ROUND_FLOOR) == self
 
     def _ln_exp_bound(self):
         """Compute a lower bound for the adjusted exponent of self.ln().
@@ -4664,25 +4658,6 @@ class Context(object):
         """
         a = _convert_other(a, raiseit=True)
         return a.is_zero()
-
-    def is_integer(self, a):
-        """Return True if the operand is integral; otherwise return False.
-
-        >>> ExtendedContext.is_integer(Decimal('0'))
-        True
-        >>> ExtendedContext.is_integer(Decimal('2.50'))
-        False
-        >>> ExtendedContext.is_integer(Decimal('-0E+2'))
-        True
-        >>> ExtendedContext.is_integer(Decimal('-0.5'))
-        False
-        >>> ExtendedContext.is_integer(Decimal('NaN'))
-        False
-        >>> ExtendedContext.is_integer(10)
-        True
-        """
-        a = _convert_other(a, raiseit=True)
-        return a.is_integer()
 
     def ln(self, a):
         """Returns the natural (base e) logarithm of the operand.

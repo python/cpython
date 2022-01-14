@@ -16,7 +16,7 @@ to values.  For 'main' and 'extensions', user values override
 default values.  For 'highlight' and 'keys', user sections augment the
 default sections (and must, therefore, have distinct names).
 
-Throughout this module there is an emphasis on returning useable defaults
+Throughout this module there is an emphasis on returning usable defaults
 when a problem occurs in returning a requested configuration value back to
 idle. This is to allow IDLE to continue to function in spite of errors in
 the retrieval of config information. When a default is returned instead of

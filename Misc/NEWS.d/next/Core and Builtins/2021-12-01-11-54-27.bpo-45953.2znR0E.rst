@@ -1,0 +1,4 @@
+The main interpreter in _PyRuntimeState.interpreters is now statically
+allocated (as part of _PyRuntime).  Likewise for the initial thread state of
+each interpreter.  This means less allocation during runtime init, as well
+as better memory locality for these key state objects.

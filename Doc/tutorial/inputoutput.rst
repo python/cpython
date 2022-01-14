@@ -329,11 +329,16 @@ equivalent :keyword:`try`\ -\ :keyword:`finally` blocks::
 
 If you're not using the :keyword:`with` keyword, then you should call
 ``f.close()`` to close the file and immediately free up any system
-resources used by it. If you don't explicitly close a file, Python's
-garbage collector will eventually destroy the object and close the
-open file for you, but the file may stay open for a while.  Another
-risk is that different Python implementations will do this clean-up at
-different times.
+resources used by it.
+
+.. warning::
+   Calling ``f.write()`` without using the :keyword:`!with` keyword or calling
+   ``f.close()`` **might** result in the arguments
+   of ``f.write()`` not being completely written to the disk, even if the
+   program exits successfully.
+
+..
+   See also https://bugs.python.org/issue17852
 
 After a file object is closed, either by a :keyword:`with` statement
 or by calling ``f.close()``, attempts to use the file object will
@@ -475,7 +480,8 @@ If you have an object ``x``, you can view its JSON string representation with a
 simple line of code::
 
    >>> import json
-   >>> json.dumps([1, 'simple', 'list'])
+   >>> x = [1, 'simple', 'list']
+   >>> json.dumps(x)
    '[1, "simple", "list"]'
 
 Another variant of the :func:`~json.dumps` function, called :func:`~json.dump`,

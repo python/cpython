@@ -2,6 +2,7 @@
 
 import unittest
 import pickle
+import copy
 from collections import (
     defaultdict, deque, OrderedDict, Counter, UserDict, UserList
 )
@@ -12,6 +13,7 @@ from contextlib import AbstractContextManager, AbstractAsyncContextManager
 from contextvars import ContextVar, Token
 from dataclasses import Field
 from functools import partial, partialmethod, cached_property
+from graphlib import TopologicalSorter
 from mailbox import Mailbox, _PartialFile
 try:
     import ctypes
@@ -29,7 +31,7 @@ try:
 except ImportError:
     # multiprocessing.shared_memory is not available on e.g. Android
     ShareableList = None
-from multiprocessing.queues import SimpleQueue
+from multiprocessing.queues import SimpleQueue as MPSimpleQueue
 from os import DirEntry
 from re import Pattern, Match
 from types import GenericAlias, MappingProxyType, AsyncGeneratorType
@@ -47,46 +49,46 @@ V = TypeVar('V')
 
 class BaseTest(unittest.TestCase):
     """Test basics."""
+    generic_types = [type, tuple, list, dict, set, frozenset, enumerate,
+                     defaultdict, deque,
+                     SequenceMatcher,
+                     dircmp,
+                     FileInput,
+                     OrderedDict, Counter, UserDict, UserList,
+                     Pattern, Match,
+                     partial, partialmethod, cached_property,
+                     TopologicalSorter,
+                     AbstractContextManager, AbstractAsyncContextManager,
+                     Awaitable, Coroutine,
+                     AsyncIterable, AsyncIterator,
+                     AsyncGenerator, Generator,
+                     Iterable, Iterator,
+                     Reversible,
+                     Container, Collection,
+                     Mailbox, _PartialFile,
+                     ContextVar, Token,
+                     Field,
+                     Set, MutableSet,
+                     Mapping, MutableMapping, MappingView,
+                     KeysView, ItemsView, ValuesView,
+                     Sequence, MutableSequence,
+                     MappingProxyType, AsyncGeneratorType,
+                     DirEntry,
+                     chain,
+                     TemporaryDirectory, SpooledTemporaryFile,
+                     Queue, SimpleQueue,
+                     _AssertRaisesContext,
+                     SplitResult, ParseResult,
+                     ValueProxy, ApplyResult,
+                     WeakSet, ReferenceType, ref,
+                     ShareableList, MPSimpleQueue,
+                     Future, _WorkItem,
+                     Morsel]
+    if ctypes is not None:
+        generic_types.extend((ctypes.Array, ctypes.LibraryLoader))
 
     def test_subscriptable(self):
-        types = [type, tuple, list, dict, set, frozenset, enumerate,
-                 defaultdict, deque,
-                 SequenceMatcher,
-                 dircmp,
-                 FileInput,
-                 OrderedDict, Counter, UserDict, UserList,
-                 Pattern, Match,
-                 partial, partialmethod, cached_property,
-                 AbstractContextManager, AbstractAsyncContextManager,
-                 Awaitable, Coroutine,
-                 AsyncIterable, AsyncIterator,
-                 AsyncGenerator, Generator,
-                 Iterable, Iterator,
-                 Reversible,
-                 Container, Collection,
-                 Callable,
-                 Mailbox, _PartialFile,
-                 ContextVar, Token,
-                 Field,
-                 Set, MutableSet,
-                 Mapping, MutableMapping, MappingView,
-                 KeysView, ItemsView, ValuesView,
-                 Sequence, MutableSequence,
-                 MappingProxyType, AsyncGeneratorType,
-                 DirEntry,
-                 chain,
-                 TemporaryDirectory, SpooledTemporaryFile,
-                 Queue, SimpleQueue,
-                 _AssertRaisesContext,
-                 SplitResult, ParseResult,
-                 ValueProxy, ApplyResult,
-                 WeakSet, ReferenceType, ref,
-                 ShareableList, SimpleQueue,
-                 Future, _WorkItem,
-                 Morsel]
-        if ctypes is not None:
-            types.extend((ctypes.Array, ctypes.LibraryLoader))
-        for t in types:
+        for t in self.generic_types:
             if t is None:
                 continue
             tname = t.__name__
@@ -271,11 +273,30 @@ class BaseTest(unittest.TestCase):
 
     def test_pickle(self):
         alias = GenericAlias(list, T)
-        s = pickle.dumps(alias)
-        loaded = pickle.loads(s)
-        self.assertEqual(alias.__origin__, loaded.__origin__)
-        self.assertEqual(alias.__args__, loaded.__args__)
-        self.assertEqual(alias.__parameters__, loaded.__parameters__)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            s = pickle.dumps(alias, proto)
+            loaded = pickle.loads(s)
+            self.assertEqual(loaded.__origin__, alias.__origin__)
+            self.assertEqual(loaded.__args__, alias.__args__)
+            self.assertEqual(loaded.__parameters__, alias.__parameters__)
+
+    def test_copy(self):
+        class X(list):
+            def __copy__(self):
+                return self
+            def __deepcopy__(self, memo):
+                return self
+
+        for origin in list, deque, X:
+            alias = GenericAlias(origin, T)
+            copied = copy.copy(alias)
+            self.assertEqual(copied.__origin__, alias.__origin__)
+            self.assertEqual(copied.__args__, alias.__args__)
+            self.assertEqual(copied.__parameters__, alias.__parameters__)
+            copied = copy.deepcopy(alias)
+            self.assertEqual(copied.__origin__, alias.__origin__)
+            self.assertEqual(copied.__args__, alias.__args__)
+            self.assertEqual(copied.__parameters__, alias.__parameters__)
 
     def test_union(self):
         a = typing.Union[list[int], list[str]]
@@ -292,6 +313,32 @@ class BaseTest(unittest.TestCase):
         self.assertTrue(dir_of_gen_alias.issuperset(dir(list)))
         for generic_alias_property in ("__origin__", "__args__", "__parameters__"):
             self.assertIn(generic_alias_property, dir_of_gen_alias)
+
+    def test_weakref(self):
+        for t in self.generic_types:
+            if t is None:
+                continue
+            tname = t.__name__
+            with self.subTest(f"Testing {tname}"):
+                alias = t[int]
+                self.assertEqual(ref(alias)(), alias)
+
+    def test_no_kwargs(self):
+        # bpo-42576
+        with self.assertRaises(TypeError):
+            GenericAlias(bad=float)
+
+    def test_subclassing_types_genericalias(self):
+        class SubClass(GenericAlias): ...
+        alias = SubClass(list, int)
+        class Bad(GenericAlias):
+            def __new__(cls, *args, **kwargs):
+                super().__new__(cls, *args, **kwargs)
+
+        self.assertEqual(alias, list[int])
+        with self.assertRaises(TypeError):
+            Bad(list, int, bad=int)
+
 
 if __name__ == "__main__":
     unittest.main()

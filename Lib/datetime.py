@@ -1548,7 +1548,7 @@ class time:
         self._tzinfo = tzinfo
 
     def __reduce_ex__(self, protocol):
-        return (time, self._getstate(protocol))
+        return (self.__class__, self._getstate(protocol))
 
     def __reduce__(self):
         return self.__reduce_ex__(2)
@@ -2327,7 +2327,7 @@ _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 #    This is again a requirement for a sane tzinfo class.
 #
 # 4. (x+k).s = x.s
-#    This follows from #2, and that datimetimetz+timedelta preserves tzinfo.
+#    This follows from #2, and that datetime.timetz+timedelta preserves tzinfo.
 #
 # 5. (x+k).n = x.n + k
 #    Again follows from how arithmetic is defined.
