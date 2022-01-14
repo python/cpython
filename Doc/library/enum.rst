@@ -672,6 +672,47 @@ Data Types
 
 ---------------
 
+Supported ``__dunder__`` names
+""""""""""""""""""""""""""""""
+
+:attr:`__members__` is a read-only ordered mapping of ``member_name``:``member``
+items.  It is only available on the class.
+
+:meth:`__new__`, if specified, must create and return the enum members; it is
+also a very good idea to set the member's :attr:`_value_` appropriately.  Once
+all the members are created it is no longer used.
+
+
+Supported ``_sunder_`` names
+""""""""""""""""""""""""""""
+
+- ``_name_`` -- name of the member
+- ``_value_`` -- value of the member; can be set / modified in ``__new__``
+
+- ``_missing_`` -- a lookup function used when a value is not found; may be
+  overridden
+- ``_ignore_`` -- a list of names, either as a :class:`list` or a :class:`str`,
+  that will not be transformed into members, and will be removed from the final
+  class
+- ``_order_`` -- used in Python 2/3 code to ensure member order is consistent
+  (class attribute, removed during class creation)
+- ``_generate_next_value_`` -- used by the `Functional API`_ and by
+  :class:`auto` to get an appropriate value for an enum member; may be
+  overridden
+
+.. note::
+
+    For standard :class:`Enum` classes the next value chosen is the last value seen
+    incremented by one.
+
+    For :class:`Flag` classes the next value chosen will be the next highest
+    power-of-two, regardless of the last value seen.
+
+.. versionadded:: 3.6 ``_missing_``, ``_order_``, ``_generate_next_value_``
+.. versionadded:: 3.7 ``_ignore_``
+
+---------------
+
 Utilities and Decorators
 ------------------------
 

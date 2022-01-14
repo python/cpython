@@ -4194,7 +4194,8 @@ class TestConvert(unittest.TestCase):
         test_type = enum.StrEnum._convert_(
                 'UnittestConvert',
                 MODULE,
-                filter=lambda x: x.startswith('CONVERT_STR_'))
+                filter=lambda x: x.startswith('CONVERT_STR_'),
+                as_global=True)
         # Ensure that test_type has all of the desired names and values.
         self.assertEqual(test_type.CONVERT_STR_TEST_1, 'hello')
         self.assertEqual(test_type.CONVERT_STR_TEST_2, 'goodbye')
@@ -4220,7 +4221,8 @@ class TestConvert(unittest.TestCase):
         test_type = enum.IntEnum._convert_(
                 'UnittestConvert',
                 MODULE,
-                filter=lambda x: x.startswith('CONVERT_STRING_TEST_'))
+                filter=lambda x: x.startswith('CONVERT_STRING_TEST_'),
+                as_global=True)
         self.assertEqual(repr(test_type.CONVERT_STRING_TEST_NAME_A), '%s.CONVERT_STRING_TEST_NAME_A' % SHORT_MODULE)
         self.assertEqual(str(test_type.CONVERT_STRING_TEST_NAME_A), '5')
         self.assertEqual(format(test_type.CONVERT_STRING_TEST_NAME_A), '5')

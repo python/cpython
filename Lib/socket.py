@@ -72,22 +72,31 @@ __all__.extend(os._get_exports_list(_socket))
 # in this module understands the enums and translates them back from integers
 # where needed (e.g. .family property of a socket object).
 
-IntEnum._convert_(
+class _SocketEnum(IntEnum):
+    def __repr__(self):
+        return '%s.%s' % (self.__class__.__name__, self._name_)
+    __str__ = __repr__
+
+class _SocketFlag(IntFlag):
+    __repr__ = IntFlag.__str__
+    __str__ = __repr__
+
+_SocketEnum._convert_(
         'AddressFamily',
         __name__,
         lambda C: C.isupper() and C.startswith('AF_'))
 
-IntEnum._convert_(
+_SocketEnum._convert_(
         'SocketKind',
         __name__,
         lambda C: C.isupper() and C.startswith('SOCK_'))
 
-IntFlag._convert_(
+_SocketFlag._convert_(
         'MsgFlag',
         __name__,
         lambda C: C.isupper() and C.startswith('MSG_'))
 
-IntFlag._convert_(
+_SocketFlag._convert_(
         'AddressInfo',
         __name__,
         lambda C: C.isupper() and C.startswith('AI_'))

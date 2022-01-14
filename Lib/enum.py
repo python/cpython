@@ -10,7 +10,7 @@ __all__ = [
         'Enum', 'IntEnum', 'StrEnum', 'Flag', 'IntFlag', 'ReprEnum',
         'auto', 'unique', 'property', 'verify',
         'FlagBoundary', 'STRICT', 'CONFORM', 'EJECT', 'KEEP',
-        'global_flag_repr', 'global_enum_repr', 'global_enum',
+        'global_flag_repr', 'global_enum_repr', 'global_str', 'global_enum',
         'EnumCheck', 'CONTINUOUS', 'NAMED_FLAGS', 'UNIQUE',
         ]
 
@@ -416,9 +416,10 @@ class EnumType(type):
         # inherited __new__ unless a new __new__ is defined (or the resulting
         # class will fail).
         #
-        # remove any keys listed in _ignore_
         if _simple:
             return super().__new__(metacls, cls, bases, classdict, **kwds)
+        #
+        # remove any keys listed in _ignore_
         classdict.setdefault('_ignore_', []).append('_ignore_')
         ignore = classdict['_ignore_']
         for key in ignore:
@@ -919,7 +920,7 @@ class EnumType(type):
 
         return metacls.__new__(metacls, class_name, bases, classdict, boundary=boundary)
 
-    def _convert_(cls, name, module, filter, source=None, *, boundary=None):
+    def _convert_(cls, name, module, filter, source=None, *, boundary=None, as_global=False):
         """
         Create a new Enum subclass that replaces a collection of global constants
         """
@@ -951,7 +952,10 @@ class EnumType(type):
         tmp_cls = type(name, (object, ), body)
         cls = _simple_enum(etype=cls, boundary=boundary or KEEP)(tmp_cls)
         cls.__reduce_ex__ = _reduce_ex_by_global_name
-        global_enum(cls)
+        if as_global:
+            global_enum(cls)
+        else:
+            sys.modules[cls.__module__].__dict__.update(cls.__members__)
         module_globals[name] = cls
         return cls
 
@@ -1626,8 +1630,16 @@ def global_flag_repr(self):
                 name.append('%s.%s' % (module, n))
         return '|'.join(name)
 
+def global_str(self):
+    """
+    use enum_name instead of class.enum_name
+    """
+    if self._name_ is None:
+        return "%s(%r)" % (cls_name, self._value_)
+    else:
+        return self._name_
 
-def global_enum(cls):
+def global_enum(cls, update_str=False):
     """
     decorator that makes the repr() of an enum member reference its module
     instead of its class; also exports all members to the enum's module's
@@ -1637,6 +1649,8 @@ def global_enum(cls):
         cls.__repr__ = global_flag_repr
     else:
         cls.__repr__ = global_enum_repr
+    if not issubclass(cls, ReprEnum) or update_str:
+        cls.__str__ = global_str
     sys.modules[cls.__module__].__dict__.update(cls.__members__)
     return cls
 
