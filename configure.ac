@@ -1354,7 +1354,10 @@ fi
 AC_MSG_RESULT($LDLIBRARY)
 
 # LIBRARY_DEPS, LINK_PYTHON_OBJS and LINK_PYTHON_DEPS variable
-LIBRARY_DEPS='$(PY3LIBRARY) $(EXPORTSYMS)'
+AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
+  [Emscripten/browser], [LIBRARY_DEPS='$(PY3LIBRARY) $(WASM_STDLIB)'],
+  [LIBRARY_DEPS='$(PY3LIBRARY) $(EXPORTSYMS)']
+)
 LINK_PYTHON_DEPS='$(LIBRARY_DEPS)'
 if test "$PY_ENABLE_SHARED" = 1 || test "$enable_framework" ; then
     LIBRARY_DEPS="\$(LDLIBRARY) $LIBRARY_DEPS"
@@ -1839,13 +1842,13 @@ fi
 # WASM flags
 AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
   [Emscripten/browser], [
-    LDFLAGS_NODIST="$(LDFLAGS_NODIST) -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 --preload-file \$(WASM_ASSETS_DIR)"
+    LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 --preload-file \$(WASM_ASSETS_DIR)"
     WASM_ASSETS_DIR=".\$(prefix)"
     WASM_STDLIB="\$(WASM_ASSETS_DIR)/local/lib/python\$(VERSION)/os.py"
   ],
   [Emscripten/node], [
-    LDFLAGS_NODIST="$(LDFLAGS_NODIST) -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 -s NODERAWFS=1 -s EXIT_RUNTIME=1 -s USE_PTHREADS -s PROXY_TO_PTHREAD"
-    CFLAGS_NODIST="$(CFLAGS_NODIST) -pthread"
+    LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 -s NODERAWFS=1 -s EXIT_RUNTIME=1 -s USE_PTHREADS -s PROXY_TO_PTHREAD"
+    CFLAGS_NODIST="$CFLAGS_NODIST -pthread"
   ],
   [WASI], [
     AC_DEFINE([_WASI_EMULATED_SIGNAL], [1], [Define to 1 if you want to emulate signals on WASI])
@@ -5081,7 +5084,7 @@ AC_CHECK_DECLS([RTLD_LAZY, RTLD_NOW, RTLD_GLOBAL, RTLD_LOCAL, RTLD_NODELETE, RTL
 # determine what size digit to use for Python's longs
 AC_MSG_CHECKING([digit size for Python's longs])
 AC_ARG_ENABLE(big-digits,
-AS_HELP_STRING([--enable-big-digits@<:@=15|30@:>@],[use big digits (30 or 15 bits) for Python longs (default is system-dependent)]]),
+AS_HELP_STRING([--enable-big-digits@<:@=15|30@:>@],[use big digits (30 or 15 bits) for Python longs (default is 30)]]),
 [case $enable_big_digits in
 yes)
   enable_big_digits=30 ;;
@@ -6336,14 +6339,14 @@ AC_SUBST(TEST_MODULES)
 dnl Modules that are not available on some platforms
 dnl AIX has shadow passwords, but access is not via getspent()
 dnl VxWorks does not provide crypt() function
-AS_CASE([$ac_sys_system],
-  [AIX], [py_stdlib_not_available="_scproxy spwd"],
-  [VxWorks*], [py_stdlib_not_available="_scproxy _crypt termios grp"],
-  [Darwin], [py_stdlib_not_available="ossaudiodev spwd"],
-  [CYGWIN*], [py_stdlib_not_available="_scproxy nis"],
-  [QNX*], [py_stdlib_not_available="_scproxy nis"],
-  [FreeBSD*], [py_stdlib_not_available="_scproxy spwd"],
-  [Emscripten], [
+AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
+  [AIX/*], [py_stdlib_not_available="_scproxy spwd"],
+  [VxWorks*/*], [py_stdlib_not_available="_scproxy _crypt termios grp"],
+  [Darwin/*], [py_stdlib_not_available="ossaudiodev spwd"],
+  [CYGWIN*/*], [py_stdlib_not_available="_scproxy nis"],
+  [QNX*/*], [py_stdlib_not_available="_scproxy nis"],
+  [FreeBSD*/*], [py_stdlib_not_available="_scproxy spwd"],
+  [Emscripten/browser], [
     py_stdlib_not_available="m4_normalize([
       _ctypes
       _curses
@@ -6365,6 +6368,23 @@ AS_CASE([$ac_sys_system],
       spwd
       syslog
       termios
+    ])"
+  ],
+  dnl Some modules like _posixsubprocess do not work. We build them anyway
+  dnl so imports in tests do not fail.
+  [Emscripten/node], [
+    py_stdlib_not_available="m4_normalize([
+      _ctypes
+      _curses
+      _curses_panel
+      _dbm
+      _gdbm
+      _scproxy
+      _tkinter
+      nis
+      ossaudiodev
+      spwd
+      syslog
     ])"
   ],
   [py_stdlib_not_available="_scproxy"]

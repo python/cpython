@@ -1,0 +1,5 @@
+The build now defaults to using 30-bit digits for Python integers. Previously
+either 15-bit or 30-bit digits would be selected, depending on the platform.
+15-bit digits may still be selected using the ``--enable-big-digits=15`` option
+to the ``configure`` script, or by defining ``PYLONG_BITS_IN_DIGIT`` in
+``pyconfig.h``.
