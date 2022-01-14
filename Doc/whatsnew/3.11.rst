@@ -622,6 +622,16 @@ Build Changes
   like Pyodide.
   (Contributed by Christian Heimes and Ethan Smith in :issue:`40280`.)
 
+* CPython will now use 30-bit digits by default for the Python :class:`int`
+  implementation. Previously, the default was to use 30-bit digits on platforms
+  with ``SIZEOF_VOID_P >= 8``, and 15-bit digits otherwise. It's still possible
+  to explicitly request use of 15-bit digits via either the
+  ``--enable-big-digits`` option to the configure script or (for Windows) the
+  ``PYLONG_BITS_IN_DIGIT`` variable in ``PC/pyconfig.h``, but this option may
+  be removed at some point in the future. (Contributed by Mark Dickinson in
+  :issue:`45569`.)
+
+
 C API Changes
 =============
 
