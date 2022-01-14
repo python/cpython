@@ -763,7 +763,7 @@ class EnumType(type):
         """
         metacls = cls.__class__
         bases = (cls, ) if type is None else (type, cls)
-        _, first_enum = cls._get_mixins_(cls, bases)
+        _, first_enum = cls._get_mixins_(class_name, bases)
         classdict = metacls.__prepare__(class_name, bases)
 
         # special processing needed for names?
@@ -848,8 +848,8 @@ class EnumType(type):
                             % (class_name, base.__name__)
                             )
 
-    @staticmethod
-    def _get_mixins_(class_name, bases):
+    @classmethod
+    def _get_mixins_(cls, class_name, bases):
         """
         Returns the type for creating enum members, and the first inherited
         enum class.
@@ -890,9 +890,8 @@ class EnumType(type):
         if not issubclass(first_enum, Enum):
             raise TypeError("new enumerations should be created as "
                     "`EnumName([mixin_type, ...] [data_type,] enum_type)`")
+        cls._check_for_existing_members(class_name, bases)
         member_type = _find_data_type(bases) or object
-        if first_enum._member_names_:
-            raise TypeError("Cannot extend enumerations")
         return member_type, first_enum
 
     @staticmethod
