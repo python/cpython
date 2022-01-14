@@ -1026,7 +1026,7 @@ class EnumType(type):
                 else:
                     candidate = candidate or base
         if len(data_types) > 1:
-            raise TypeError('too many data types for %r:  %r' % (class_name, data_types))
+            raise TypeError('too many data types for %r: %r' % (class_name, data_types))
         elif data_types:
             return data_types.pop()
         else:
@@ -1279,7 +1279,7 @@ class StrEnum(str, ReprEnum):
     def __new__(cls, *values):
         "values must already be of type `str`"
         if len(values) > 3:
-            raise TypeError('too many arguments for str():  %r' % (values, ))
+            raise TypeError('too many arguments for str(): %r' % (values, ))
         if len(values) == 1:
             # it must be a string
             if not isinstance(values[0], str):
@@ -1589,7 +1589,7 @@ def unique(enumeration):
     if duplicates:
         alias_details = ', '.join(
                 ["%s -> %s" % (alias, name) for (alias, name) in duplicates])
-        raise ValueError('duplicate values found in %r:  %s' %
+        raise ValueError('duplicate values found in %r: %s' %
                 (enumeration, alias_details))
     return enumeration
 
@@ -1846,7 +1846,7 @@ class verify:
                 if duplicates:
                     alias_details = ', '.join(
                             ["%s -> %s" % (alias, name) for (alias, name) in duplicates])
-                    raise ValueError('aliases found in %r:  %s' %
+                    raise ValueError('aliases found in %r: %s' %
                             (enumeration, alias_details))
             elif check is CONTINUOUS:
                 values = set(e.value for e in enumeration)

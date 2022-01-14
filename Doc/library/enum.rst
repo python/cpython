@@ -160,7 +160,7 @@ Data Types
       names of the members in *cls*::
 
         >>> dir(Color)
-        ['BLUE', 'GREEN', 'RED', '__class__', '__contains__', '__doc__', '__getitem__', '__iter__', '__len__', '__members__', '__module__', '__name__', '__qualname__']
+        ['BLUE', 'GREEN', 'RED', '__class__', '__contains__', '__doc__', '__getitem__', '__init_subclass__', '__iter__', '__len__', '__members__', '__module__', '__name__', '__qualname__']
 
    .. method:: EnumType.__getattr__(cls, name)
 
@@ -355,12 +355,12 @@ Data Types
 
          >>> class MyReprMixin:
          ...     def __repr__(self):
-         ...         return 'I am %r and %r' % (self.name, self.value)'
+         ...         return 'I am %r and %r' % (self.name, self.value)
          >>> class MyEnum(MyReprMixin, Enum):
          ...     __repr__ = MyReprMixin.__repr__
          ...     ONE = 1
          >>> MyEnum.ONE
-         'I am ONE and 1'
+         I am 'ONE' and 1
 
 .. note::
 
@@ -566,7 +566,7 @@ Data Types
          ...     CRIMSON = 1
          Traceback (most recent call last):
          ...
-         ValueError: aliases found in <enum 'Color'>:  CRIMSON -> RED
+         ValueError: aliases found in <enum 'Color'>: CRIMSON -> RED
 
 
    .. attribute:: CONTINUOUS
@@ -757,7 +757,7 @@ Utilities and Decorators
       ...
       Traceback (most recent call last):
       ...
-      ValueError: duplicate values found in <enum 'Mistake'>:  FOUR -> THREE
+      ValueError: duplicate values found in <enum 'Mistake'>: FOUR -> THREE
 
 .. decorator:: verify
 

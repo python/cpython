@@ -265,7 +265,7 @@ When this behavior isn't desired, you can use the :func:`unique` decorator::
     ...
     Traceback (most recent call last):
     ...
-    ValueError: duplicate values found in <enum 'Mistake'>:  FOUR -> THREE
+    ValueError: duplicate values found in <enum 'Mistake'>: FOUR -> THREE
 
 
 Using automatic values
