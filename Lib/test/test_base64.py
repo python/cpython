@@ -541,6 +541,40 @@ class BaseXYTestCase(unittest.TestCase):
         self.check_other_types(base64.b85encode, b"www.python.org",
                                b'cXxL#aCvlSZ*DGca%T')
 
+    def test_z85encode(self):
+        eq = self.assertEqual
+
+        tests = {
+            b'': b'',
+            b'www.python.org': b'CxXl-AcVLsz/dgCA+t',
+            bytes(range(255)): b"""009c61o!#m2NH?C3>iWS5d]J*6CRx17-skh9337x"""
+                b"""ar.{NbQB=+c[cR@eg&FcfFLssg=mfIi5%2YjuU>)kTv.7l}6Nnnj=AD"""
+                b"""oIFnTp/ga?r8($2sxO*itWpVyu$0IOwmYv=xLzi%y&a6dAb/]tBAI+J"""
+                b"""CZjQZE0{D[FpSr8GOteoH(41EJe-<UKDCY&L:dM3N3<zjOsMmzPRn9P"""
+                b"""Q[%@^ShV!$TGwUeU^7HuW6^uKXvGh.YUh4]Z})[9-kP:p:JqPF+*1CV"""
+                b"""^9Zp<!yAd4/Xb0k*$*&A&nJXQ<MkK!>&}x#)cTlf[Bu8v].4}L}1:^-"""
+                b"""@qDP""",
+            b"""abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"""
+                b"""0123456789!@#0^&*();:<>,. []{}""":
+                b"""vpA.SwObN*x>?B1zeKohADlbxB-}$ND3R+ylQTvjm[uizoh55PpF:[^"""
+                b"""q=D:$s6eQefFLssg=mfIi5@cEbqrBJdKV-ciY]OSe*aw7DWL""",
+            b'no padding..': b'zF{UpvpS[.zF7NO',
+            b'zero compression\x00\x00\x00\x00': b'Ds.bnay/tbAb]JhB7]Mg00000',
+            b'zero compression\x00\x00\x00': b'Ds.bnay/tbAb]JhB7]Mg0000',
+            b"""Boundary:\x00\x00\x00\x00""": b"""lt}0:wmoI7iSGcW00""",
+            b'Space compr:    ': b'q/DePwGUG3ze:IRarR^H',
+            b'\xff': b'@@',
+            b'\xff'*2: b'%nJ',
+            b'\xff'*3: b'%nS9',
+            b'\xff'*4: b'%nSc0',
+        }
+
+        for data, res in tests.items():
+            eq(base64.z85encode(data), res)
+
+        self.check_other_types(base64.z85encode, b"www.python.org",
+                               b'CxXl-AcVLsz/dgCA+t')
+
     def test_a85decode(self):
         eq = self.assertEqual
 
@@ -620,6 +654,41 @@ class BaseXYTestCase(unittest.TestCase):
 
         self.check_other_types(base64.b85decode, b'cXxL#aCvlSZ*DGca%T',
                                b"www.python.org")
+
+    def test_z85decode(self):
+        eq = self.assertEqual
+
+        tests = {
+            b'': b'',
+            b'CxXl-AcVLsz/dgCA+t': b'www.python.org',
+            b"""009c61o!#m2NH?C3>iWS5d]J*6CRx17-skh9337x"""
+                b"""ar.{NbQB=+c[cR@eg&FcfFLssg=mfIi5%2YjuU>)kTv.7l}6Nnnj=AD"""
+                b"""oIFnTp/ga?r8($2sxO*itWpVyu$0IOwmYv=xLzi%y&a6dAb/]tBAI+J"""
+                b"""CZjQZE0{D[FpSr8GOteoH(41EJe-<UKDCY&L:dM3N3<zjOsMmzPRn9P"""
+                b"""Q[%@^ShV!$TGwUeU^7HuW6^uKXvGh.YUh4]Z})[9-kP:p:JqPF+*1CV"""
+                b"""^9Zp<!yAd4/Xb0k*$*&A&nJXQ<MkK!>&}x#)cTlf[Bu8v].4}L}1:^-"""
+                b"""@qDP""": bytes(range(255)),
+            b"""vpA.SwObN*x>?B1zeKohADlbxB-}$ND3R+ylQTvjm[uizoh55PpF:[^"""
+                b"""q=D:$s6eQefFLssg=mfIi5@cEbqrBJdKV-ciY]OSe*aw7DWL""":
+                b"""abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"""
+                b"""0123456789!@#0^&*();:<>,. []{}""",
+            b'zF{UpvpS[.zF7NO': b'no padding..',
+            b'Ds.bnay/tbAb]JhB7]Mg00000': b'zero compression\x00\x00\x00\x00',
+            b'Ds.bnay/tbAb]JhB7]Mg0000': b'zero compression\x00\x00\x00',
+            b"""lt}0:wmoI7iSGcW00""": b"""Boundary:\x00\x00\x00\x00""",
+            b'q/DePwGUG3ze:IRarR^H': b'Space compr:    ',
+            b'@@': b'\xff',
+            b'%nJ': b'\xff'*2,
+            b'%nS9': b'\xff'*3,
+            b'%nSc0': b'\xff'*4,
+        }
+
+        for data, res in tests.items():
+            eq(base64.z85decode(data), res)
+            eq(base64.z85decode(data.decode("ascii")), res)
+
+        self.check_other_types(base64.z85decode, b'CxXl-AcVLsz/dgCA+t',
+                               b'www.python.org')
 
     def test_a85_padding(self):
         eq = self.assertEqual
@@ -707,7 +776,8 @@ class BaseXYTestCase(unittest.TestCase):
                         base64.b32decode,
                         base64.b16decode,
                         base64.b85decode,
-                        base64.a85decode)
+                        base64.a85decode,
+                        base64.z85decode)
         for f in decode_funcs:
             self.assertRaises(ValueError, f, 'with non-ascii \xcb')
 

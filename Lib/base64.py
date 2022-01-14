@@ -18,7 +18,7 @@ __all__ = [
     'b64encode', 'b64decode', 'b32encode', 'b32decode',
     'b32hexencode', 'b32hexdecode', 'b16encode', 'b16decode',
     # Base85 and Ascii85 encodings
-    'b85encode', 'b85decode', 'a85encode', 'a85decode',
+    'b85encode', 'b85decode', 'a85encode', 'a85decode', 'z85encode', 'z85decode',
     # Standard Base64 encoding
     'standard_b64encode', 'standard_b64decode',
     # Some common Base64 alternatives.  As referenced by RFC 3458, see thread
@@ -498,6 +498,24 @@ def b85decode(b):
     if padding:
         result = result[:-padding]
     return result
+
+_z85alphabet = (b'0123456789abcdefghijklmnopqrstuvwxyz'
+                b'ABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#')
+_z85_decode_translation = bytes.maketrans(_z85alphabet, _b85alphabet)
+_z85_encode_translation = bytes.maketrans(_b85alphabet, _z85alphabet)
+
+def z85encode(s):
+    """Encode bytes-like object b in z85 format and return a bytes object."""
+    return b85encode(s).translate(_z85_encode_translation)
+
+def z85decode(s):
+    """Decode the z85-encoded bytes-like object or ASCII string b
+
+    The result is returned as a bytes object.
+    """
+    s = _bytes_from_decode_data(s)
+    s = s.translate(_z85_decode_translation)
+    return b85decode(s)
 
 # Legacy interface.  This code could be cleaned up since I don't believe
 # binascii has any line length limitations.  It just doesn't seem worth it
