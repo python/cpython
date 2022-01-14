@@ -1,0 +1,3 @@
+Changed `PySequence_Check` and `PyMapping_Check` to use `Py_TPFLAGS_SEQUENCE` and `Py_TPFLAGS_MAPPING`.
+This fixes possible scenarios where an object is both sequence and mapping at the same time when checked using those functions.
+It changes behavior for objects not being iterable/sequences if not inheriting from `abc.collections.Sequence`.
