@@ -1354,15 +1354,21 @@ specialize_class_call(
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_PYTHON_CLASS);
         return -1;
     }
-    if (tp == &PyType_Type && nargs == 1) {
-        if (kwnames) {
-            SPECIALIZATION_FAIL(CALL, SPEC_FAIL_KWNAMES);
-            return -1;
-        }
-        *instr = _Py_MAKECODEUNIT(CALL_NO_KW_TYPE_1, _Py_OPARG(*instr));
-        return 0;
-    }
     if (tp->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) {
+        if (nargs == 1 && kwnames == NULL) {
+            if (tp == &PyUnicode_Type) {
+                *instr = _Py_MAKECODEUNIT(CALL_NO_KW_STR_1, _Py_OPARG(*instr));
+                return 0;
+            }
+            else if (tp == &PyType_Type) {
+                *instr = _Py_MAKECODEUNIT(CALL_NO_KW_TYPE_1, _Py_OPARG(*instr));
+                return 0;
+            }
+            else if (tp == &PyTuple_Type) {
+                *instr = _Py_MAKECODEUNIT(CALL_NO_KW_TUPLE_1, _Py_OPARG(*instr));
+                return 0;
+            }
+        }
         if (tp->tp_vectorcall != NULL) {
             *instr = _Py_MAKECODEUNIT(CALL_BUILTIN_CLASS, _Py_OPARG(*instr));
             return 0;

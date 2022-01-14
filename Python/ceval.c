@@ -4803,6 +4803,44 @@ check_eval_breaker:
             DISPATCH();
         }
 
+        TARGET(CALL_NO_KW_STR_1) {
+            DEOPT_IF(!PyType_Check(call_shape.callable), CALL);
+            PyTypeObject *tp = (PyTypeObject *)call_shape.callable;
+            DEOPT_IF(call_shape.positional_args != 1, CALL);
+            DEOPT_IF(tp != &PyUnicode_Type, CALL);
+            STAT_INC(CALL, hit);
+            assert(call_shape.kwnames == NULL);
+            PyObject *arg = TOP();
+            PyObject *res = PyObject_Str(arg);
+            Py_DECREF(arg);
+            Py_DECREF(&PyUnicode_Type);
+            STACK_SHRINK(call_shape.postcall_shrink);
+            SET_TOP(res);
+            if (res == NULL) {
+                goto error;
+            }
+            DISPATCH();
+        }
+
+        TARGET(CALL_NO_KW_TUPLE_1) {
+            DEOPT_IF(!PyType_Check(call_shape.callable), CALL);
+            PyTypeObject *tp = (PyTypeObject *)call_shape.callable;
+            DEOPT_IF(call_shape.positional_args != 1, CALL);
+            DEOPT_IF(tp != &PyTuple_Type, CALL);
+            STAT_INC(CALL, hit);
+            assert(call_shape.kwnames == NULL);
+            PyObject *arg = TOP();
+            PyObject *res = PySequence_Tuple(arg);
+            Py_DECREF(arg);
+            Py_DECREF(&PyTuple_Type);
+            STACK_SHRINK(call_shape.postcall_shrink);
+            SET_TOP(res);
+            if (res == NULL) {
+                goto error;
+            }
+            DISPATCH();
+        }
+
         TARGET(CALL_BUILTIN_CLASS) {
             DEOPT_IF(!PyType_Check(call_shape.callable), CALL);
             PyTypeObject *tp = (PyTypeObject *)call_shape.callable;
