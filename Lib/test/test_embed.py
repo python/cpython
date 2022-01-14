@@ -1419,7 +1419,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         ]
         out, err = self.run_embedded_interpreter(
             "test_init_initialize_config",
-            env=dict(PYTHONPATH=os.path.pathsep.join(c[0] for c in CASES))
+            env={**remove_python_envvars(),
+                 "PYTHONPATH": os.path.pathsep.join(c[0] for c in CASES)}
         )
         self.assertEqual(err, "")
         try:
