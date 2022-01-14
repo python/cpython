@@ -32,9 +32,36 @@ extern "C" {
         ._main_interpreter = _PyInterpreterState_INIT, \
     }
 
+#ifdef HAVE_DLOPEN
+#  include <dlfcn.h>
+#  if HAVE_DECL_RTLD_NOW
+#    define _Py_DLOPEN_FLAGS RTLD_NOW
+#  else
+#    define _Py_DLOPEN_FLAGS RTLD_LAZY
+#  endif
+#  define DLOPENFLAGS_INIT .dlopenflags = _Py_DLOPEN_FLAGS,
+#else
+#  define _Py_DLOPEN_FLAGS 0
+#  define DLOPENFLAGS_INIT
+#endif
+
 #define _PyInterpreterState_INIT \
     { \
         ._static = 1, \
+        .id_refcount = -1, \
+        DLOPENFLAGS_INIT \
+        .ceval = { \
+            .recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
+        }, \
+        .gc = { \
+            .enabled = 1, \
+            .generations = { \
+                /* .head is set in _PyGC_InitState(). */ \
+                { .threshold = 700, }, \
+                { .threshold = 10, }, \
+                { .threshold = 10, }, \
+            }, \
+        }, \
         ._initial_thread = _PyThreadState_INIT, \
     }
 
