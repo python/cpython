@@ -1433,6 +1433,8 @@ class TestEnum(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "EvenMoreColor: cannot extend enumeration 'Color'"):
             class EvenMoreColor(Color, IntEnum):
                 chartruese = 7
+        with self.assertRaisesRegex(TypeError, "Foo: cannot extend enumeration 'Color'"):
+            Color('Foo', ('pink', 'black'))
 
     def test_exclude_methods(self):
         class whatever(Enum):
