@@ -391,9 +391,9 @@ class TestSysConfig(unittest.TestCase):
                                 suffix.endswith('i386-linux-musl.so'),
                                 suffix)
             else: # 8 byte pointer size
-                self.assertTrue(suffix.endswith('x86_64-linux-gnu.so') or
-                                suffix.endswith('x86_64-linux-musl.so'),
-                                suffix)
+                expected_suffixes = 'x86_64-linux-gnu.so', 'x86_64-linux-musl.so'
+                self.assertTrue(suffix.endswith(expected_suffixes),
+                                f'unexpected suffix {suffix!r}'))
 
     @unittest.skipUnless(sys.platform == 'darwin', 'OS X-specific test')
     def test_osx_ext_suffix(self):
