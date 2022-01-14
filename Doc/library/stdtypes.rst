@@ -4306,8 +4306,8 @@ is usually unwise to use them as dictionary keys.)
 Dictionaries can be created by placing a comma-separated list of ``key: value``
 pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 'jack', 4127: 'sjoerd'}``, by a dict comprehension, for example: ``{x: x**2 for
-x in iterable}``.  Dictionaries can be created by the :class:`dict` constructor,
-for example: ``dict(jack=4098, sjoerd=4127)``.
+x in iterable}``.  Dictionaries can also be created by the :class:`dict`
+constructor, for example: ``dict(jack=4098, sjoerd=4127)``.
 
 .. class:: dict(**kwarg)
            dict(mapping, **kwarg)
