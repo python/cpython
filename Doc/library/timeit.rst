@@ -282,6 +282,13 @@ It is possible to provide a setup statement that is executed only once at the be
    $ python -m timeit -s 'text = "sample string"; char = "g"'  'text.find(char)'
    1000000 loops, best of 5: 0.342 usec per loop
 
+In the output, there are three fields. The loop count, which tells you how many
+times the statement body was run per timing loop repetition. The repetition
+count ('best of 5') which tells you how many times the timing loop was
+repeated, and finally the time the statement body took on average within the
+best repetition of the timing loop. That is, the time the fastest repetition
+took divided by the loop count.
+
 ::
 
    >>> import timeit
