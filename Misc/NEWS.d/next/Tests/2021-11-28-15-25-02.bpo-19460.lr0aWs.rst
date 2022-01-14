@@ -1,1 +1,0 @@
-Add new Test for :class:`email.mime.nonmultipart.MIMENonMultipart`.

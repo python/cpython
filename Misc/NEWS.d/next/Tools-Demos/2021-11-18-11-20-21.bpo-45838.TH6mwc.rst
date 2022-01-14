@@ -1,1 +1,0 @@
-Fix line number calculation when debugging Python with GDB.
