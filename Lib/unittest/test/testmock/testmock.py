@@ -1,5 +1,4 @@
 import copy
-import inspect
 import re
 import sys
 import tempfile
@@ -897,19 +896,53 @@ class MockTest(unittest.TestCase):
         self.assertRaises(AttributeError, set_attr)
 
 
-    def test_finds_attrs_set_in__init__(self):
+    def test_finds_attr_set_in__init__(self):
         class X(object):
             y = 3
 
-            def __init__(self, z):
-                self.z = self.__get_z()
-
-            def __get_z(self): return 'Z'
+            def __init__(self):
+                self.z = 'Z'
 
         mock = Mock(spec=X)
         self.assertTrue(hasattr(mock, 'y'))
         self.assertTrue(hasattr(mock, 'z'))
 
+    def test_finds_underscore_attr_set_in__init__(self):
+        class X(object):
+            y = 3
+
+            def __init__(self):
+                self._z = 'Z'
+
+        mock = Mock(spec=X)
+        self.assertTrue(hasattr(mock, 'y'))
+        self.assertTrue(hasattr(mock, '_z'))
+
+
+    def test_does_not_find_dunder_attr_set_in__init__(self):
+        class X(object):
+            y = 3
+
+            def __init__(self):
+                self.__z = 'Z'
+
+        mock = Mock(spec=X)
+        self.assertTrue(hasattr(mock, 'y'))
+        self.assertFalse(hasattr(mock, '__z'))
+
+    def test_finds_attr_set_in_function_used_in__init__(self):
+        class X(object):
+            y = 3
+
+            def __init__(self):
+                self.set_z()
+            
+            def set_z(self):
+                self.z = 'Z'
+
+        mock = Mock(spec=X)
+        self.assertTrue(hasattr(mock, 'y'))
+        self.assertFalse(hasattr(mock, 'z'))
 
     def test_copy(self):
         current = sys.getrecursionlimit()
