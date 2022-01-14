@@ -507,6 +507,41 @@ class CompatPickleTests(unittest.TestCase):
                     self.assertEqual(mapping('exceptions', name),
                                      ('builtins', name))
 
+    def test_custom_exceptions(self):
+        global CustomException1, CustomException2, CustomException3
+        class CustomException1(Exception):
+            def __init__(self,a,b):
+                c = f"{a}{b}"
+                super().__init__(c)
+        class CustomException2(Exception):
+            def __init__(self,a,**b):
+                c = f"{a}{b}"
+                super().__init__(c)
+        class CustomException3(Exception):
+            def __init__(self,a,b):
+                super().__init__()
+                self.c = f"{a}{b}"
+
+        CustomExc1 = CustomException1(1,'2')
+        CustomExc2 = CustomException2(1,test='2')
+        CustomExc3 = CustomException3(1,'2')
+
+        self.assertEqual(str(CustomExc1), "12")
+        self.assertEqual(str(CustomExc2), "1{'test': '2'}")
+        self.assertEqual(str(CustomExc3), "")
+
+        CustomExc1_pickled = pickle.dumps(CustomExc1)
+        CustomExc1_unpickled = pickle.loads(CustomExc1_pickled)
+        self.assertEqual(CustomExc1.args, CustomExc1_unpickled.args)
+
+        CustomExc2_pickled = pickle.dumps(CustomExc2)
+        CustomExc2_unpickled = pickle.loads(CustomExc2_pickled)
+        self.assertEqual(CustomExc2.args, CustomExc2_unpickled.args)
+
+        CustomExc3_pickled = pickle.dumps(CustomExc3)
+        CustomExc3_unpickled = pickle.loads(CustomExc3_pickled)
+        self.assertEqual(CustomExc3.args, CustomExc3_unpickled.args)
+
     def test_multiprocessing_exceptions(self):
         module = import_helper.import_module('multiprocessing.context')
         for name, exc in get_exceptions(module):

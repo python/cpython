@@ -83,6 +83,7 @@ BaseException_clear(PyBaseExceptionObject *self)
 {
     Py_CLEAR(self->dict);
     Py_CLEAR(self->args);
+    Py_CLEAR(self->newargs);
     Py_CLEAR(self->note);
     Py_CLEAR(self->traceback);
     Py_CLEAR(self->cause);
@@ -108,6 +109,7 @@ BaseException_traverse(PyBaseExceptionObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(self->dict);
     Py_VISIT(self->args);
+    Py_CLEAR(self->newargs);
     Py_VISIT(self->note);
     Py_VISIT(self->traceback);
     Py_VISIT(self->cause);
@@ -137,6 +139,27 @@ BaseException_repr(PyBaseExceptionObject *self)
                                     PyTuple_GET_ITEM(self->args, 0));
     else
         return PyUnicode_FromFormat("%s%R", name, self->args);
+}
+
+static PyObject*
+BaseException_reduce(PyBaseExceptionObject* self, PyObject* Py_UNUSED(ignored))
+{
+    if (self->args && self->dict) {
+        if (self->newargs == NULL) {
+            return PyTuple_Pack(3, Py_TYPE(self), self->args, self->dict);
+        }
+        else {
+            return PyTuple_Pack(3, Py_TYPE(self), BaseException_get_newargs_reduce(self, NULL), self->dict);
+        }
+    }
+    else {
+        if (self->newargs == NULL) {
+            return PyTuple_Pack(2, Py_TYPE(self), self->args);
+        }
+        else {
+            return PyTuple_Pack(2, Py_TYPE(self), BaseException_get_newargs_reduce(self, NULL));
+        }
+    }
 }
 
 /* Pickling support */
@@ -333,10 +356,35 @@ BaseException_set_cause(PyObject *self, PyObject *arg, void *Py_UNUSED(ignored))
     return 0;
 }
 
+static PyObject*
+BaseException_get_newargs(PyBaseExceptionObject* self, void* Py_UNUSED(ignored))
+{
+    if (self->newargs == NULL) {
+        Py_RETURN_NONE;
+    }
+    Py_INCREF(self->newargs);
+    return self->newargs;
+}
+
+static int
+BaseException_set_newargs(PyBaseExceptionObject* self, PyObject* val, void* Py_UNUSED(ignored))
+{
+    PyObject* seq;
+    if (val == NULL) {
+        PyErr_SetString(PyExc_TypeError, "__newargs__ may not be deleted");
+        return -1;
+    }
+    seq = PySequence_Tuple(val);
+    if (!seq)
+        return -1;
+    Py_XSETREF(self->newargs, seq);
+    return 0;
+}
 
 static PyGetSetDef BaseException_getset[] = {
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
     {"args", (getter)BaseException_get_args, (setter)BaseException_set_args},
+    {"__newargs__", (getter)BaseException_get_newargs, (setter)BaseException_set_newargs},
     {"__note__", (getter)BaseException_get_note, (setter)BaseException_set_note},
     {"__traceback__", (getter)BaseException_get_tb, (setter)BaseException_set_tb},
     {"__context__", BaseException_get_context,

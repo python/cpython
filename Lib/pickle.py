@@ -1587,7 +1587,25 @@ class _Unpickler:
         stack = self.stack
         args = stack.pop()
         func = stack[-1]
-        stack[-1] = func(*args)
+        if (type(func) == type(BaseException)
+            and issubclass(func, BaseException)
+            and isinstance(func,type(func))):
+            flags = 0
+            if (hasattr(func,"__init__")
+                    and hasattr(func.__init__,"__code__")):
+                flags = func.__init__.__code__.co_flags
+            if (len(args) == 1
+                    and type(args[-1]) == dict
+                    and (1 << 3 & flags)):
+                stack[-1] = func((),**args[-1])
+            elif (len(args) > 1
+                    and type(args[-1]) == dict
+                    and (1 << 3 & flags)):
+                stack[-1] = func(*args[0:-1],**args[-1])
+            else:
+                stack[-1] = func(*args)
+        else:
+            stack[-1] = func(*args)
     dispatch[REDUCE[0]] = load_reduce
 
     def load_pop(self):

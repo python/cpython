@@ -7,7 +7,7 @@
 /* PyException_HEAD defines the initial segment of every exception class. */
 #define PyException_HEAD PyObject_HEAD PyObject *dict;\
              PyObject *args; PyObject *note; PyObject *traceback;\
-             PyObject *context; PyObject *cause;\
+             PyObject *context; PyObject* newargs; PyObject *cause;\
              char suppress_context;
 
 typedef struct {
