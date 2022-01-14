@@ -389,7 +389,7 @@ class TestSysConfig(unittest.TestCase):
                 self.assertTrue(suffix.endswith('i386-linux-gnu.so') or
                                 suffix.endswith('x86_64-linux-gnux32.so') or
                                 suffix.endswith('i386-linux-musl.so'),
-                                suffix)
+                                f'unexpected suffix {suffix!r}')
             else: # 8 byte pointer size
                 expected_suffixes = 'x86_64-linux-gnu.so', 'x86_64-linux-musl.so'
                 self.assertTrue(suffix.endswith(expected_suffixes),
