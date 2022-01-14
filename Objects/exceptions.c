@@ -142,6 +142,16 @@ BaseException_repr(PyBaseExceptionObject *self)
 }
 
 static PyObject*
+BaseException_newargs_reduce(PyBaseExceptionObject* self, PyObject* Py_UNUSED(ignored)) {
+    if (self->newargs != NULL) {
+        Py_INCREF(self->newargs);
+        return self->newargs;
+    }
+    return PyTuple_New(0);
+}
+
+/* Pickling support */
+static PyObject*
 BaseException_reduce(PyBaseExceptionObject* self, PyObject* Py_UNUSED(ignored))
 {
     if (self->args && self->dict) {
@@ -149,7 +159,7 @@ BaseException_reduce(PyBaseExceptionObject* self, PyObject* Py_UNUSED(ignored))
             return PyTuple_Pack(3, Py_TYPE(self), self->args, self->dict);
         }
         else {
-            return PyTuple_Pack(3, Py_TYPE(self), BaseException_get_newargs_reduce(self, NULL), self->dict);
+            return PyTuple_Pack(3, Py_TYPE(self), BaseException_newargs_reduce(self, NULL), self->dict);
         }
     }
     else {
@@ -157,19 +167,9 @@ BaseException_reduce(PyBaseExceptionObject* self, PyObject* Py_UNUSED(ignored))
             return PyTuple_Pack(2, Py_TYPE(self), self->args);
         }
         else {
-            return PyTuple_Pack(2, Py_TYPE(self), BaseException_get_newargs_reduce(self, NULL));
+            return PyTuple_Pack(2, Py_TYPE(self), BaseException_newargs_reduce(self, NULL));
         }
     }
-}
-
-/* Pickling support */
-static PyObject *
-BaseException_reduce(PyBaseExceptionObject *self, PyObject *Py_UNUSED(ignored))
-{
-    if (self->args && self->dict)
-        return PyTuple_Pack(3, Py_TYPE(self), self->args, self->dict);
-    else
-        return PyTuple_Pack(2, Py_TYPE(self), self->args);
 }
 
 /*
