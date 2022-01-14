@@ -775,21 +775,19 @@ init_threadstate(PyThreadState *tstate,
         next->prev = tstate;
     }
     tstate->next = next;
-    tstate->prev = NULL;
+    assert(tstate->prev == NULL);
 
     tstate->thread_id = PyThread_get_thread_ident();
 #ifdef PY_HAVE_THREAD_NATIVE_ID
     tstate->native_thread_id = PyThread_get_thread_native_id();
 #endif
 
-    tstate->context_ver = 1;
-
     tstate->recursion_limit = interp->ceval.recursion_limit,
     tstate->recursion_remaining = interp->ceval.recursion_limit,
 
-    tstate->exc_info = &tstate->exc_state;
+    tstate->exc_info = &tstate->_exc_state;
 
-    tstate->cframe = &tstate->root_cframe;
+    tstate->cframe = &tstate->_root_cframe;
     tstate->datastack_chunk = NULL;
     tstate->datastack_top = NULL;
     tstate->datastack_limit = NULL;
@@ -1027,10 +1025,10 @@ PyThreadState_Clear(PyThreadState *tstate)
     Py_CLEAR(tstate->curexc_value);
     Py_CLEAR(tstate->curexc_traceback);
 
-    Py_CLEAR(tstate->exc_state.exc_value);
+    Py_CLEAR(tstate->_exc_state.exc_value);
 
     /* The stack of exception states should contain just this thread. */
-    if (verbose && tstate->exc_info != &tstate->exc_state) {
+    if (verbose && tstate->exc_info != &tstate->_exc_state) {
         fprintf(stderr,
           "PyThreadState_Clear: warning: thread still has a generator\n");
     }
