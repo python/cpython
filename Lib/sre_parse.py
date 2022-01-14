@@ -11,7 +11,7 @@
 """Internal support module for sre"""
 
 # XXX: show string offset and offending character for all errors
-
+import collections.abc
 from sre_constants import *
 
 SPECIAL_CHARS = ".\\[{()*+?^$|"
@@ -106,7 +106,7 @@ class State:
                 raise source.error('cannot refer to group defined in the same '
                                    'lookbehind subpattern')
 
-class SubPattern:
+class SubPattern(collections.abc.Sequence):
     # a subpattern, in intermediate form
     def __init__(self, state, data=None):
         self.state = state

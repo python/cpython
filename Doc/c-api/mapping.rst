@@ -11,11 +11,13 @@ See also :c:func:`PyObject_GetItem`, :c:func:`PyObject_SetItem` and
 
 .. c:function:: int PyMapping_Check(PyObject *o)
 
-   Return ``1`` if the object provides mapping protocol or supports slicing,
-   and ``0`` otherwise.  Note that it returns ``1`` for Python classes with
-   a :meth:`__getitem__` method since in general case it is impossible to
-   determine what type of keys it supports. This function always succeeds.
-
+   Return ``1`` if the object provides mapping protocol
+   and ``0`` otherwise. This checks if :const:`Py_TPFLAGS_MAPPING` flag
+   set in its :c:member:`~PyTypeObject.tp_flags`). This function always succeeds.
+   
+   .. versionchanged:: 3.11
+      Previously, the function only checked for the existence of :meth:`__getitem__`
+      leading to uncertainity between sequences and mappings.
 
 .. c:function:: Py_ssize_t PyMapping_Size(PyObject *o)
                Py_ssize_t PyMapping_Length(PyObject *o)

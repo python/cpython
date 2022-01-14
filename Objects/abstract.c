@@ -1708,10 +1708,7 @@ PyNumber_ToBase(PyObject *n, int base)
 int
 PySequence_Check(PyObject *s)
 {
-    if (PyDict_Check(s))
-        return 0;
-    return Py_TYPE(s)->tp_as_sequence &&
-        Py_TYPE(s)->tp_as_sequence->sq_item != NULL;
+    return s && (Py_TYPE(s)->tp_flags & Py_TPFLAGS_SEQUENCE);
 }
 
 Py_ssize_t
@@ -2297,8 +2294,7 @@ PySequence_Index(PyObject *s, PyObject *o)
 int
 PyMapping_Check(PyObject *o)
 {
-    return o && Py_TYPE(o)->tp_as_mapping &&
-        Py_TYPE(o)->tp_as_mapping->mp_subscript;
+    return o && (Py_TYPE(o)->tp_flags & Py_TPFLAGS_MAPPING);
 }
 
 Py_ssize_t

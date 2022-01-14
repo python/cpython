@@ -8,11 +8,13 @@ Sequence Protocol
 
 .. c:function:: int PySequence_Check(PyObject *o)
 
-   Return ``1`` if the object provides sequence protocol, and ``0`` otherwise.
-   Note that it returns ``1`` for Python classes with a :meth:`__getitem__`
-   method unless they are :class:`dict` subclasses since in general case it
-   is impossible to determine what the type of keys it supports.  This
-   function always succeeds.
+   Return ``1`` if the object provides sequence protocol
+   and ``0`` otherwise. This checks if :const:`Py_TPFLAGS_SEQUENCE` flag
+   set in its :c:member:`~PyTypeObject.tp_flags`). This function always succeeds.
+   
+   .. versionchanged:: 3.11
+      Previously, the function only checked for the existence of :meth:`__getitem__`
+      leading to uncertainity between sequences and mappings.
 
 
 .. c:function:: Py_ssize_t PySequence_Size(PyObject *o)
