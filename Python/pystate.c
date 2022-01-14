@@ -281,7 +281,6 @@ init_interpreter(PyInterpreterState *interp,
 
     assert(id > 0 || (id == 0 && interp == runtime->interpreters.main));
     interp->id = id;
-    interp->id_refcount = -1;
 
     assert(runtime->interpreters.head == interp);
     assert(next != NULL || (interp == runtime->interpreters.main));
@@ -291,14 +290,6 @@ init_interpreter(PyInterpreterState *interp,
     _PyGC_InitState(&interp->gc);
     PyConfig_InitPythonConfig(&interp->config);
     _PyType_InitCache(interp);
-    interp->eval_frame = NULL;
-#ifdef HAVE_DLOPEN
-#if HAVE_DECL_RTLD_NOW
-    interp->dlopenflags = RTLD_NOW;
-#else
-    interp->dlopenflags = RTLD_LAZY;
-#endif
-#endif
 
     interp->_initialized = 1;
 }
