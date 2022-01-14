@@ -541,15 +541,6 @@ class EnumType(type):
                             cls_name, member.name, member.value,
                             cls_name, member2.name, member2.value,
                             )
-                # elif enum_length == 3:
-                #     member2 = list(enum_class)[1]
-                #     member3 = list(enum_class)[2]
-                #     list_line = 'list(%s)' % cls_name
-                #     list_repr = '[<%s.%s: %r>, <%s.%s: %r>, <%s.%s: %r>]' % (
-                #             cls_name, member.name, member.value,
-                #             cls_name, member2.name, member2.value,
-                #             cls_name, member3.name, member3.value,
-                #             )
                 else:
                     member2 = list(enum_class)[1]
                     member3 = list(enum_class)[2]
@@ -1479,16 +1470,6 @@ class Flag(Enum, boundary=STRICT):
             return '%s(%r)' % (cls_name, self._value_)
         else:
             return "%s.%s" % (cls_name, self._name_)
-        # elif _is_single_bit(self._value_) or self._boundary_ is not FlagBoundary.KEEP:
-        #     return '|'.join(['%s.%s' % (cls_name, name) for name in self._name_.split('|')])
-        # else:
-        #     name = []
-        #     for n in self._name_.split('|'):
-        #         if n[0].isdigit():
-        #             name.append(n)
-        #         else:
-        #             name.append('%s.%s' % (cls_name, n))
-        #     return '|'.join(name)
 
     def __bool__(self):
         return bool(self._value_)
@@ -1526,15 +1507,6 @@ class IntFlag(int, ReprEnum, Flag, boundary=EJECT):
     Support for integer-based Flags
     """
 
-    # def __format__(self, format_spec):
-    #     """
-    #     Returns format using actual value unless __str__ has been overridden.
-    #     """
-    #     str_overridden = type(self).__str__ != Flag.__str__
-    #     value = self
-    #     if not str_overridden:
-    #         value = self._value_
-    #     return int.__format__(value, format_spec)
 
     def __or__(self, other):
         if isinstance(other, self.__class__):
@@ -1714,15 +1686,8 @@ def _simple_enum(etype=Enum, *, boundary=None, use_args=None):
         # it
         enum_class = type(cls_name, (etype, ), body, boundary=boundary, _simple=True)
         for name in ('__repr__', '__str__', '__format__', '__reduce_ex__'):
-        # for name in ('__repr__', '__reduce_ex__'):
             if name not in body:
                 setattr(enum_class, name, getattr(etype, name))
-                # continue
-            # class_method = getattr(enum_class, name)
-            # obj_method = getattr(member_type, name, None)
-            # enum_method = getattr(etype, name, None)
-            # if obj_method is not None and obj_method is class_method:
-            #     setattr(enum_class, name, enum_method)
         gnv_last_values = []
         if issubclass(enum_class, Flag):
             # Flag / IntFlag
@@ -1999,7 +1964,6 @@ def _test_simple_enum(checked_enum, simple_enum):
                         ))
         for method in (
                 '__str__', '__repr__', '__reduce_ex__', '__format__',
-                # '__repr__', '__reduce_ex__',
                 '__getnewargs_ex__', '__getnewargs__', '__reduce_ex__', '__reduce__'
             ):
             if method in simple_keys and method in checked_keys:

@@ -1228,11 +1228,13 @@ class TestSpecial(unittest.TestCase):
             red = 1
             green = 2
             blue = 3
+        #
         with self.assertRaises(TypeError):
             class MoreColor(Color):
                 cyan = 4
                 magenta = 5
                 yellow = 6
+        #
         with self.assertRaisesRegex(TypeError, "<enum .EvenMoreColor.> cannot extend <enum .Color.>"):
             class EvenMoreColor(Color, IntEnum):
                 chartruese = 7
