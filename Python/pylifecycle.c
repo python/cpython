@@ -20,6 +20,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pylifecycle.h"   // _PyErr_Print()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_sliceobject.h"   // _PySlice_Fini()
 #include "pycore_structseq.h"     // _PyStructSequence_InitState()
 #include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()

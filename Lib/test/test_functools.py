@@ -1414,7 +1414,7 @@ class TestLRU:
 
     def test_lru_star_arg_handling(self):
         # Test regression that arose in ea064ff3c10f
-        @functools.lru_cache()
+        @self.module.lru_cache()
         def f(*args):
             return args
 
@@ -1426,11 +1426,11 @@ class TestLRU:
         # lru_cache was leaking when one of the arguments
         # wasn't cacheable.
 
-        @functools.lru_cache(maxsize=None)
+        @self.module.lru_cache(maxsize=None)
         def infinite_cache(o):
             pass
 
-        @functools.lru_cache(maxsize=10)
+        @self.module.lru_cache(maxsize=10)
         def limited_cache(o):
             pass
 
