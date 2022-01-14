@@ -541,19 +541,19 @@ class EnumType(type):
                             cls_name, member.name, member.value,
                             cls_name, member2.name, member2.value,
                             )
-                elif enum_length == 3:
-                    member2 = list(enum_class)[1]
-                    member3 = list(enum_class)[2]
-                    list_line = 'list(%s)' % cls_name
-                    list_repr = '[<%s.%s: %r>, <%s.%s: %r>, <%s.%s: %r>]' % (
-                            cls_name, member.name, member.value,
-                            cls_name, member2.name, member2.value,
-                            cls_name, member3.name, member3.value,
-                            )
+                # elif enum_length == 3:
+                #     member2 = list(enum_class)[1]
+                #     member3 = list(enum_class)[2]
+                #     list_line = 'list(%s)' % cls_name
+                #     list_repr = '[<%s.%s: %r>, <%s.%s: %r>, <%s.%s: %r>]' % (
+                #             cls_name, member.name, member.value,
+                #             cls_name, member2.name, member2.value,
+                #             cls_name, member3.name, member3.value,
+                #             )
                 else:
                     member2 = list(enum_class)[1]
                     member3 = list(enum_class)[2]
-                    list_line = 'list(%s)[:3]' % cls_name
+                    list_line = 'list(%s)%s' % (cls_name, ('','[:3]')[enum_length > 3])
                     list_repr = '[<%s.%s: %r>, <%s.%s: %r>, <%s.%s: %r>]' % (
                             cls_name, member.name, member.value,
                             cls_name, member2.name, member2.value,
@@ -584,8 +584,8 @@ class EnumType(type):
                         >>> len(%s)
                         %r
 
-                        >>> list(%s)[:1]
-                        [<%s.%s: %r>]
+                        >>> %s
+                        %s
 
                         Methods can be added to enumerations, and members can have their own
                         attributes -- see the documentation for details.
@@ -597,7 +597,7 @@ class EnumType(type):
                             cls_name, member.name,
                             cls_name, member.name, member.value,
                             cls_name, enum_length,
-                            cls_name, cls_name, member.name, member.value,
+                            list_line, list_repr,
                         ))
         #
         # double check that repr and friends are not the mixin's or various
