@@ -9,7 +9,8 @@ import unittest
 import re
 from test import support
 from test.support import (Error, captured_output, cpython_only, ALWAYS_EQ,
-                          requires_debug_ranges, has_no_debug_ranges)
+                          requires_debug_ranges, has_no_debug_ranges,
+                          requires_subprocess)
 from test.support.os_helper import TESTFN, unlink
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
@@ -203,6 +204,7 @@ class TracebackCases(unittest.TestCase):
             str_name = '.'.join([X.__module__, X.__qualname__])
         self.assertEqual(err[0], "%s: %s\n" % (str_name, str_value))
 
+    @requires_subprocess()
     def test_encoded_file(self):
         # Test that tracebacks are correctly printed for encoded source files:
         # - correct line number (Issue2384)
