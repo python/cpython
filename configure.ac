@@ -6339,14 +6339,14 @@ AC_SUBST(TEST_MODULES)
 dnl Modules that are not available on some platforms
 dnl AIX has shadow passwords, but access is not via getspent()
 dnl VxWorks does not provide crypt() function
-AS_CASE([$ac_sys_system],
-  [AIX], [py_stdlib_not_available="_scproxy spwd"],
-  [VxWorks*], [py_stdlib_not_available="_scproxy _crypt termios grp"],
-  [Darwin], [py_stdlib_not_available="ossaudiodev spwd"],
-  [CYGWIN*], [py_stdlib_not_available="_scproxy nis"],
-  [QNX*], [py_stdlib_not_available="_scproxy nis"],
-  [FreeBSD*], [py_stdlib_not_available="_scproxy spwd"],
-  [Emscripten], [
+AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
+  [AIX/*], [py_stdlib_not_available="_scproxy spwd"],
+  [VxWorks*/*], [py_stdlib_not_available="_scproxy _crypt termios grp"],
+  [Darwin/*], [py_stdlib_not_available="ossaudiodev spwd"],
+  [CYGWIN*/*], [py_stdlib_not_available="_scproxy nis"],
+  [QNX*/*], [py_stdlib_not_available="_scproxy nis"],
+  [FreeBSD*/*], [py_stdlib_not_available="_scproxy spwd"],
+  [Emscripten/browser], [
     py_stdlib_not_available="m4_normalize([
       _ctypes
       _curses
@@ -6368,6 +6368,23 @@ AS_CASE([$ac_sys_system],
       spwd
       syslog
       termios
+    ])"
+  ],
+  dnl Some modules like _posixsubprocess do not work. We build them anyway
+  dnl so imports in tests do not fail.
+  [Emscripten/node], [
+    py_stdlib_not_available="m4_normalize([
+      _ctypes
+      _curses
+      _curses_panel
+      _dbm
+      _gdbm
+      _scproxy
+      _tkinter
+      nis
+      ossaudiodev
+      spwd
+      syslog
     ])"
   ],
   [py_stdlib_not_available="_scproxy"]

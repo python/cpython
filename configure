@@ -21300,22 +21300,26 @@ $as_echo "yes" >&6; }
 fi
 
 
-case $ac_sys_system in #(
-  AIX) :
+case $ac_sys_system/$ac_sys_emscripten_target in #(
+  AIX/*) :
     py_stdlib_not_available="_scproxy spwd" ;; #(
-  VxWorks*) :
+  VxWorks*/*) :
     py_stdlib_not_available="_scproxy _crypt termios grp" ;; #(
-  Darwin) :
+  Darwin/*) :
     py_stdlib_not_available="ossaudiodev spwd" ;; #(
-  CYGWIN*) :
+  CYGWIN*/*) :
     py_stdlib_not_available="_scproxy nis" ;; #(
-  QNX*) :
+  QNX*/*) :
     py_stdlib_not_available="_scproxy nis" ;; #(
-  FreeBSD*) :
+  FreeBSD*/*) :
     py_stdlib_not_available="_scproxy spwd" ;; #(
-  Emscripten) :
+  Emscripten/browser) :
 
     py_stdlib_not_available="_ctypes _curses _curses_panel _dbm _gdbm _multiprocessing _posixshmem _posixsubprocess _scproxy _tkinter _xxsubinterpreters fcntl grp nis ossaudiodev resource readline spwd syslog termios"
+   ;; #(
+      Emscripten/node) :
+
+    py_stdlib_not_available="_ctypes _curses _curses_panel _dbm _gdbm _scproxy _tkinter nis ossaudiodev spwd syslog"
    ;; #(
   *) :
     py_stdlib_not_available="_scproxy"
