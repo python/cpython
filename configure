@@ -1730,7 +1730,7 @@ Optional Features:
                           Doc/library/socket.rst (default is yes if supported)
   --enable-big-digits[=15|30]
                           use big digits (30 or 15 bits) for Python longs
-                          (default is system-dependent)]
+                          (default is 30)]
   --disable-test-modules  don't build nor install test modules
 
 Optional Packages:
