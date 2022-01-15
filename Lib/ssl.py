@@ -119,41 +119,32 @@ from _ssl import (
 )
 from _ssl import _DEFAULT_CIPHERS, _OPENSSL_API_VERSION
 
-class _SSLEnum(_IntEnum):
-    def __repr__(self):
-        return '%s.%s' % (self.__class__.__name__, self._name_)
-    __str__ = __repr__
-
-class _SSLFlag(_IntFlag):
-    __repr__ = _IntFlag.__str__
-    __str__ = __repr__
-
-_SSLEnum._convert_(
+_IntEnum._convert_(
     '_SSLMethod', __name__,
     lambda name: name.startswith('PROTOCOL_') and name != 'PROTOCOL_SSLv23',
     source=_ssl)
 
-_SSLFlag._convert_(
+_IntFlag._convert_(
     'Options', __name__,
     lambda name: name.startswith('OP_'),
     source=_ssl)
 
-_SSLEnum._convert_(
+_IntEnum._convert_(
     'AlertDescription', __name__,
     lambda name: name.startswith('ALERT_DESCRIPTION_'),
     source=_ssl)
 
-_SSLEnum._convert_(
+_IntEnum._convert_(
     'SSLErrorNumber', __name__,
     lambda name: name.startswith('SSL_ERROR_'),
     source=_ssl)
 
-_SSLFlag._convert_(
+_IntFlag._convert_(
     'VerifyFlags', __name__,
     lambda name: name.startswith('VERIFY_'),
     source=_ssl)
 
-_SSLEnum._convert_(
+_IntEnum._convert_(
     'VerifyMode', __name__,
     lambda name: name.startswith('CERT_'),
     source=_ssl)
@@ -164,7 +155,7 @@ _PROTOCOL_NAMES = {value: name for name, value in _SSLMethod.__members__.items()
 _SSLv2_IF_EXISTS = getattr(_SSLMethod, 'PROTOCOL_SSLv2', None)
 
 
-@_simple_enum(_SSLEnum)
+@_simple_enum(_IntEnum)
 class TLSVersion:
     MINIMUM_SUPPORTED = _ssl.PROTO_MINIMUM_SUPPORTED
     SSLv3 = _ssl.PROTO_SSLv3
@@ -175,7 +166,7 @@ class TLSVersion:
     MAXIMUM_SUPPORTED = _ssl.PROTO_MAXIMUM_SUPPORTED
 
 
-@_simple_enum(_SSLEnum)
+@_simple_enum(_IntEnum)
 class _TLSContentType:
     """Content types (record layer)
 
@@ -190,7 +181,7 @@ class _TLSContentType:
     INNER_CONTENT_TYPE = 0x101
 
 
-@_simple_enum(_SSLEnum)
+@_simple_enum(_IntEnum)
 class _TLSAlertType:
     """Alert types for TLSContentType.ALERT messages
 
@@ -232,7 +223,7 @@ class _TLSAlertType:
     NO_APPLICATION_PROTOCOL = 120
 
 
-@_simple_enum(_SSLEnum)
+@_simple_enum(_IntEnum)
 class _TLSMessageType:
     """Message types (handshake protocol)
 
