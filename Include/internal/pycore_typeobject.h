@@ -40,6 +40,8 @@ struct type_cache {
 
 extern PyStatus _PyTypes_InitSlotDefs(void);
 
+extern void _PyStaticType_Dealloc(PyTypeObject *type);
+
 
 #ifdef __cplusplus
 }
