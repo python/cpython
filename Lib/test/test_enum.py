@@ -570,6 +570,7 @@ class _EnumTests:
     def test_repr(self):
         TE = self.MainEnum
         if self.is_flag:
+            self.assertEqual(repr(TE(0)), "<MainEnum: 0>")
             self.assertEqual(repr(TE.dupe), "<MainEnum.dupe: 3>")
             self.assertEqual(repr(self.dupe2), "<MainEnum.first|third: 5>")
         elif issubclass(TE, StrEnum):

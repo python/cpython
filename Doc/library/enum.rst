@@ -140,6 +140,11 @@ Data Types
    to subclass *EnumType* -- see :ref:`Subclassing EnumType <enumtype-examples>`
    for details.
 
+   *EnumType* is responsible for setting the correct :meth:`__repr__`,
+   :meth:`__str__`, :meth:`__format__`, and :meth:`__reduce__` methods on the
+   final *enum*, as well as creating the enum members, properly handling
+   duplicates, providing iteration over the enum class, etc.
+
    .. method:: EnumType.__contains__(cls, member)
 
       Returns ``True`` if member belongs to the ``cls``::
@@ -362,7 +367,7 @@ Data Types
          (<OtherStyle.ALTERNATE: 1>, 'OtherStyle.ALTERNATE', 'ALTERNATE')
 
    .. note::
-   
+
       Using :class:`auto` with :class:`Enum` results in integers of increasing value,
       starting with ``1``.
 
@@ -388,9 +393,13 @@ Data Types
       True
 
    .. note::
-   
-      Using :class:`auto` with :class:`IntEnum` results in integers of increasing value,
-      starting with ``1``.
+
+      Using :class:`auto` with :class:`IntEnum` results in integers of increasing
+      value, starting with ``1``.
+
+   .. versionchanged:: 3.11 :meth:`__str__` is now :func:`int.__str__` to
+      better support the *replacement of existing constants* use-case.
+      :meth:`__format__` was already :func:`int.__format__` for that same reason.
 
 
 .. class:: StrEnum
@@ -405,9 +414,13 @@ Data Types
              will need to use ``str(StrEnum.member)``.
 
    .. note::
-   
+
       Using :class:`auto` with :class:`StrEnum` results in the lower-cased member
       name as the value.
+
+   .. note:: :meth:`__str__` is :func:`str.__str__` to better support the
+      *replacement of existing constants* use-case.  :meth:`__format__` is likewise
+      :func:`int.__format__` for that same reason.
 
    .. versionadded:: 3.11
 
@@ -509,10 +522,15 @@ Data Types
       the value's repr; common choices are :func:`hex` and :func:`oct`.
 
    .. note::
-   
+
       Using :class:`auto` with :class:`Flag` results in integers that are powers
       of two, starting with ``1``.
 
+   .. versionchanged:: 3.11  The *repr()* of zero-valued flags has changed.  It
+      is now::
+
+          >>> Color(0)
+          <Color: 0>
 
 .. class:: IntFlag
 
@@ -541,9 +559,19 @@ Data Types
       * the result is not a valid *IntFlag*: the result depends on the *FlagBoundary* setting
 
    .. note::
-   
+
       Using :class:`auto` with :class:`IntFlag` results in integers that are powers
       of two, starting with ``1``.
+
+   .. versionchanged:: 3.11 :meth:`__str__` is now :func:`int.__str__` to
+      better support the *replacement of existing constants* use-case.
+      :meth:`__format__` was already :func:`int.__format__` for that same reason.
+
+      The *repr()* of zero-valued flags has changed.  It is now::
+
+          >>> Color(0)
+          <Color: 0>
+
 
 .. class:: EnumCheck
 
@@ -599,9 +627,9 @@ Data Types
          ValueError: invalid Flag 'Color': aliases WHITE and NEON are missing combined values of 0x18 [use enum.show_flag_values(value) for details]
 
    .. note::
-   
+
       CONTINUOUS and NAMED_FLAGS are designed to work with integer-valued members.
-   
+
    .. versionadded:: 3.11
 
 .. class:: FlagBoundary
@@ -697,10 +725,10 @@ Supported ``_sunder_`` names
   member; may be overridden
 
    .. note::
-   
+
        For standard :class:`Enum` classes the next value chosen is the last value seen
        incremented by one.
-   
+
        For :class:`Flag` classes the next value chosen will be the next highest
        power-of-two, regardless of the last value seen.
 
