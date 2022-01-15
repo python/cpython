@@ -94,7 +94,7 @@ import sys
 import os
 from collections import namedtuple
 from enum import Enum as _Enum, IntEnum as _IntEnum, IntFlag as _IntFlag
-from enum import _simple_enum, global_enum as _global_enum
+from enum import _simple_enum
 
 import _ssl             # if we can't import it, let the error propagate
 
