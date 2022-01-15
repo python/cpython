@@ -696,7 +696,7 @@ Supported ``_sunder_`` names
   class
 - ``_order_`` -- used in Python 2/3 code to ensure member order is consistent
   (class attribute, removed during class creation)
-- ``_generate_next_value_`` -- used by the `Functional API`_ and by
+- ``_generate_next_value_`` -- used by the Functional API and by
   :class:`auto` to get an appropriate value for an enum member; may be
   overridden
 
