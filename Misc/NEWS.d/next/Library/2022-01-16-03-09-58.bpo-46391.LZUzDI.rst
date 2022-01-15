@@ -1,0 +1,2 @@
+Fix that Library multiprocess leaks named resources when global named
+resources are used in the main module in spawn context.
