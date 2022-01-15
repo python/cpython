@@ -1433,6 +1433,8 @@ class TestEnum(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "EvenMoreColor: cannot extend enumeration 'Color'"):
             class EvenMoreColor(Color, IntEnum):
                 chartruese = 7
+        with self.assertRaisesRegex(TypeError, "Foo: cannot extend enumeration 'Color'"):
+            Color('Foo', ('pink', 'black'))
 
     def test_exclude_methods(self):
         class whatever(Enum):
@@ -4440,30 +4442,43 @@ CONVERT_STRING_TEST_NAME_A = 5  # This one should sort first.
 CONVERT_STRING_TEST_NAME_E = 5
 CONVERT_STRING_TEST_NAME_F = 5
 
-class TestIntEnumConvert(unittest.TestCase):
-    def setUp(self):
-        # Reset the module-level test variables to their original integer
-        # values, otherwise the already created enum values get converted
-        # instead.
-        for suffix in ['A', 'B', 'C', 'D', 'E', 'F']:
-            globals()[f'CONVERT_TEST_NAME_{suffix}'] = 5
-            globals()[f'CONVERT_STRING_TEST_NAME_{suffix}'] = 5
+# We also need values that cannot be compared:
+UNCOMPARABLE_A = 5
+UNCOMPARABLE_C = (9, 1)  # naming order is broken on purpose
+UNCOMPARABLE_B = 'value'
 
+COMPLEX_C = 1j
+COMPLEX_A = 2j
+COMPLEX_B = 3j
+
+class _ModuleWrapper:
+    """We use this class as a namespace for swapping modules."""
+
+    def __init__(self, module):
+        self.__dict__.update(module.__dict__)
+
+class TestIntEnumConvert(unittest.TestCase):
     def test_convert_value_lookup_priority(self):
-        test_type = enum.IntEnum._convert_(
-                'UnittestConvert',
-                MODULE,
-                filter=lambda x: x.startswith('CONVERT_TEST_'))
+        with support.swap_item(
+                sys.modules, MODULE, _ModuleWrapper(sys.modules[MODULE]),
+            ):
+            test_type = enum.IntEnum._convert_(
+                    'UnittestConvert',
+                    MODULE,
+                    filter=lambda x: x.startswith('CONVERT_TEST_'))
         # We don't want the reverse lookup value to vary when there are
         # multiple possible names for a given value.  It should always
         # report the first lexigraphical name in that case.
         self.assertEqual(test_type(5).name, 'CONVERT_TEST_NAME_A')
 
     def test_convert(self):
-        test_type = enum.IntEnum._convert_(
-                'UnittestConvert',
-                MODULE,
-                filter=lambda x: x.startswith('CONVERT_TEST_'))
+        with support.swap_item(
+                sys.modules, MODULE, _ModuleWrapper(sys.modules[MODULE]),
+            ):
+            test_type = enum.IntEnum._convert_(
+                    'UnittestConvert',
+                    MODULE,
+                    filter=lambda x: x.startswith('CONVERT_TEST_'))
         # Ensure that test_type has all of the desired names and values.
         self.assertEqual(test_type.CONVERT_TEST_NAME_F,
                          test_type.CONVERT_TEST_NAME_A)
@@ -4477,17 +4492,39 @@ class TestIntEnumConvert(unittest.TestCase):
                           and name not in dir(IntEnum)],
                          [], msg='Names other than CONVERT_TEST_* found.')
 
-    @unittest.skipUnless(python_version == (3, 8),
-                         '_convert was deprecated in 3.8')
-    def test_convert_warn(self):
-        with self.assertWarns(DeprecationWarning):
-            enum.IntEnum._convert(
-                'UnittestConvert',
-                MODULE,
-                filter=lambda x: x.startswith('CONVERT_TEST_'))
+    def test_convert_uncomparable(self):
+        # We swap a module to some other object with `__dict__`
+        # because otherwise refleak is created.
+        # `_convert_` uses a module side effect that does this. See 30472
+        with support.swap_item(
+                sys.modules, MODULE, _ModuleWrapper(sys.modules[MODULE]),
+            ):
+            uncomp = enum.Enum._convert_(
+                    'Uncomparable',
+                    MODULE,
+                    filter=lambda x: x.startswith('UNCOMPARABLE_'))
 
-    @unittest.skipUnless(python_version >= (3, 9),
-                         '_convert was removed in 3.9')
+        # Should be ordered by `name` only:
+        self.assertEqual(
+            list(uncomp),
+            [uncomp.UNCOMPARABLE_A, uncomp.UNCOMPARABLE_B, uncomp.UNCOMPARABLE_C],
+        )
+
+    def test_convert_complex(self):
+        with support.swap_item(
+                sys.modules, MODULE, _ModuleWrapper(sys.modules[MODULE]),
+            ):
+            uncomp = enum.Enum._convert_(
+                'Uncomparable',
+                MODULE,
+                filter=lambda x: x.startswith('COMPLEX_'))
+
+        # Should be ordered by `name` only:
+        self.assertEqual(
+            list(uncomp),
+            [uncomp.COMPLEX_A, uncomp.COMPLEX_B, uncomp.COMPLEX_C],
+        )
+
     def test_convert_raise(self):
         with self.assertRaises(AttributeError):
             enum.IntEnum._convert(
@@ -4496,10 +4533,13 @@ class TestIntEnumConvert(unittest.TestCase):
                 filter=lambda x: x.startswith('CONVERT_TEST_'))
 
     def test_convert_repr_and_str(self):
-        test_type = enum.IntEnum._convert_(
-                'UnittestConvert',
-                MODULE,
-                filter=lambda x: x.startswith('CONVERT_STRING_TEST_'))
+        with support.swap_item(
+                sys.modules, MODULE, _ModuleWrapper(sys.modules[MODULE]),
+            ):
+            test_type = enum.IntEnum._convert_(
+                    'UnittestConvert',
+                    MODULE,
+                    filter=lambda x: x.startswith('CONVERT_STRING_TEST_'))
         self.assertEqual(repr(test_type.CONVERT_STRING_TEST_NAME_A), '%s.CONVERT_STRING_TEST_NAME_A' % SHORT_MODULE)
         self.assertEqual(str(test_type.CONVERT_STRING_TEST_NAME_A), 'CONVERT_STRING_TEST_NAME_A')
         self.assertEqual(format(test_type.CONVERT_STRING_TEST_NAME_A), '5')
@@ -4509,17 +4549,14 @@ CONVERT_STR_TEST_2 = 'goodbye'
 CONVERT_STR_TEST_1 = 'hello'
 
 class TestStrEnumConvert(unittest.TestCase):
-    def setUp(self):
-        global CONVERT_STR_TEST_1
-        global CONVERT_STR_TEST_2
-        CONVERT_STR_TEST_2 = 'goodbye'
-        CONVERT_STR_TEST_1 = 'hello'
-
     def test_convert(self):
-        test_type = enum.StrEnum._convert_(
-                'UnittestConvert',
-                MODULE,
-                filter=lambda x: x.startswith('CONVERT_STR_'))
+        with support.swap_item(
+                sys.modules, MODULE, _ModuleWrapper(sys.modules[MODULE]),
+            ):
+            test_type = enum.StrEnum._convert_(
+                    'UnittestConvert',
+                    MODULE,
+                    filter=lambda x: x.startswith('CONVERT_STR_'))
         # Ensure that test_type has all of the desired names and values.
         self.assertEqual(test_type.CONVERT_STR_TEST_1, 'hello')
         self.assertEqual(test_type.CONVERT_STR_TEST_2, 'goodbye')
@@ -4530,10 +4567,13 @@ class TestStrEnumConvert(unittest.TestCase):
                          [], msg='Names other than CONVERT_STR_* found.')
 
     def test_convert_repr_and_str(self):
-        test_type = enum.StrEnum._convert_(
-                'UnittestConvert',
-                MODULE,
-                filter=lambda x: x.startswith('CONVERT_STR_'))
+        with support.swap_item(
+                sys.modules, MODULE, _ModuleWrapper(sys.modules[MODULE]),
+            ):
+            test_type = enum.StrEnum._convert_(
+                    'UnittestConvert',
+                    MODULE,
+                    filter=lambda x: x.startswith('CONVERT_STR_'))
         self.assertEqual(repr(test_type.CONVERT_STR_TEST_1), '%s.CONVERT_STR_TEST_1' % SHORT_MODULE)
         self.assertEqual(str(test_type.CONVERT_STR_TEST_2), 'goodbye')
         self.assertEqual(format(test_type.CONVERT_STR_TEST_1), 'hello')

@@ -644,16 +644,25 @@ class TraceTestCase(unittest.TestCase):
                 4
             else:
                 6
+                if False:
+                    8
+                else:
+                    10
+                if func.__name__ == 'Fred':
+                    12
             finally:
-                8
+                14
 
         self.run_and_compare(func,
             [(0, 'call'),
              (1, 'line'),
              (2, 'line'),
              (6, 'line'),
-             (8, 'line'),
-             (8, 'return')])
+             (7, 'line'),
+             (10, 'line'),
+             (11, 'line'),
+             (14, 'line'),
+             (14, 'return')])
 
     def test_nested_loops(self):
 
@@ -1222,16 +1231,25 @@ class TraceTestCase(unittest.TestCase):
                 4
             else:
                 6
+                if False:
+                    8
+                else:
+                    10
+                if func.__name__ == 'Fred':
+                    12
             finally:
-                8
+                14
 
         self.run_and_compare(func,
             [(0, 'call'),
              (1, 'line'),
              (2, 'line'),
              (6, 'line'),
-             (8, 'line'),
-             (8, 'return')])
+             (7, 'line'),
+             (10, 'line'),
+             (11, 'line'),
+             (14, 'line'),
+             (14, 'return')])
 
     def test_try_except_star_named_no_exception(self):
 
@@ -1387,6 +1405,40 @@ class TraceTestCase(unittest.TestCase):
              (18, 'line'),
              (19, 'line'),
              (19, 'return')])
+
+    def test_notrace_lambda(self):
+        #Regression test for issue 46314
+
+        def func():
+            1
+            lambda x: 2
+            3
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (3, 'return')])
+
+    def test_class_creation_with_docstrings(self):
+
+        def func():
+            class Class_1:
+                ''' the docstring. 2'''
+                def __init__(self):
+                    ''' Another docstring. 4'''
+                    self.a = 5
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (1, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (3, 'return'),
+             (1, 'return')])
 
 
 class SkipLineEventsTraceTestCase(TraceTestCase):

@@ -1,4 +1,4 @@
-This is Python version 3.11.0 alpha 3
+This is Python version 3.11.0 alpha 4
 =====================================
 
 .. image:: https://github.com/python/cpython/workflows/Tests/badge.svg

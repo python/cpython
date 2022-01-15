@@ -1,3 +1,0 @@
-Fetch across rollback no longer raises :exc:`~sqlite3.InterfaceError`. Instead
-we leave it to the SQLite library to handle these cases.
-Patch by Erlend E. Aasland.
