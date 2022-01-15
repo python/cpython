@@ -113,16 +113,14 @@ The following implementation-specific options are available:\n\
             files are desired as well as suppressing the extra visual location indicators \n\
             when the interpreter displays tracebacks.\n\
          -X frozen_modules=[on|off]: whether or not frozen modules should be used.\n\
-            The default is \"on\" (or \"off\" if you are running a local build).\n\
-";
+            The default is \"on\" (or \"off\" if you are running a local build).";
 
 /* Envvars that don't have equivalent command-line options are listed first */
 static const char usage_envvars1[] = "\
 Environment variables that change behavior:\n\
 PYTHONSTARTUP: file executed on interactive startup (no default)\n\
 PYTHONPATH   : '%lc'-separated list of directories prefixed to the\n\
-               default module search path.  The result is sys.path.\n\
-";
+               default module search path.  The result is sys.path.\n";
 static const char usage_envvars2[] =
 "PYTHONHOME   : alternate <prefix> directory (or <prefix>%lc<exec_prefix>).\n"
 "               The default module search path uses %s.\n"
@@ -141,8 +139,7 @@ static const char usage_envvars3[] =
 "   hooks.\n"
 "PYTHONCOERCECLOCALE: if this variable is set to 0, it disables the locale\n"
 "   coercion behavior. Use PYTHONCOERCECLOCALE=warn to request display of\n"
-"   locale coercion and locale compatibility warnings on stderr.\n"
-;
+"   locale coercion and locale compatibility warnings on stderr.";
 static const char usage_envvars4[] =
 "PYTHONBREAKPOINT: if this variable is set to 0, it disables the default\n"
 "   debugger. It can be set to the callable of your debugger of choice.\n"
@@ -163,8 +160,7 @@ PYTHONNOUSERSITE        : disable user site directory (-s)\n\
 PYTHONOPTIMIZE          : enable level 1 optimizations (-O)\n\
 PYTHONUNBUFFERED        : disable stdout/stderr buffering (-u)\n\
 PYTHONVERBOSE           : trace import statements (-v)\n\
-PYTHONWARNINGS=arg      : warning control (-W arg)\n\
-";
+PYTHONWARNINGS=arg      : warning control (-W arg)";
 
 #if defined(MS_WINDOWS)
 #  define PYTHONHOMEHELP "<prefix>\\python{major}{minor}"
@@ -2247,29 +2243,26 @@ config_usage(int error, const wchar_t* program)
 static void
 config_envvars_usage()
 {
-    FILE *f = stdout;
-    fprintf(f, usage_envvars1, (wint_t)DELIM);
-    fprintf(f, usage_envvars2, (wint_t)DELIM, PYTHONHOMEHELP);
-    fputs(usage_envvars3, f);
-    fputs(usage_envvars4, f);
-    fputs(usage_envvars5, f);
+    printf(usage_envvars1, (wint_t)DELIM);
+    printf(usage_envvars2, (wint_t)DELIM, PYTHONHOMEHELP);
+    puts(usage_envvars3);
+    puts(usage_envvars4);
+    puts(usage_envvars5);
 }
 
 static void
 config_xoptions_usage()
 {
-    FILE *f = stdout;
-    fputs(usage_xoptions, f);
+    puts(usage_xoptions);
 }
 
 static void
 config_complete_usage(const wchar_t* program)
 {
-   FILE *f = stdout;
    config_usage(0, program);
-   fputs("\n", f);
+   puts("\n");
    config_envvars_usage();
-   fputs("\n", f);
+   puts("\n");
    config_xoptions_usage();
 }
 
