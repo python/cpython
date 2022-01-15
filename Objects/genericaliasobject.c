@@ -19,7 +19,6 @@ typedef struct {
 typedef struct {
     PyObject_HEAD
     PyObject *obj;  /* Set to NULL when iterator is exhausted */
-    int exhausted;
 } gaiterobject;
 
 static void
@@ -642,37 +641,23 @@ static PyNumberMethods ga_as_number = {
 
 static PyObject *
 ga_iternext(gaiterobject *gi) {
-    gaobject *alias = (gaobject *) gi->obj;
-
-    if (gi->exhausted) {
-        gi->obj = NULL;
+    if (gi->obj == NULL) {
         return NULL;
     }
-    gi->exhausted = 1;
-
-    gaobject *starred_tuple = PyObject_GC_New(gaobject, &Py_GenericAliasType);
-    starred_tuple->origin = alias->origin;
-    starred_tuple->args = alias->args;
-    starred_tuple->parameters = alias->parameters;
-    starred_tuple->weakreflist = alias->weakreflist;
-    starred_tuple->starred = 1;
-    Py_INCREF(alias->args);
-    // We may not have any parameters to deal with - e.g. `*tuple[int]`
-    if (alias->parameters != NULL) {
-        Py_INCREF(alias->parameters);
-    }
-    _PyObject_GC_TRACK(starred_tuple);
-    return (PyObject *) starred_tuple;
+    gaobject *alias = (gaobject *) gi->obj;
+    PyObject *starred_tuple = Py_GenericAlias(alias->origin, alias->args);
+    ((gaobject * ) starred_tuple)->starred = 1;
+    Py_SETREF(gi->obj, NULL);
+    return starred_tuple;
 }
 
 static void
 ga_iter_dealloc(gaiterobject *gi) {
     _PyObject_GC_UNTRACK(gi);
-    Py_XDECREF(gi->obj);
     PyObject_GC_Del(gi);
 }
 
-PyTypeObject Py_GenericAliasIterType = {
+static PyTypeObject Py_GenericAliasIterType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "generic_alias_iter",
     .tp_basicsize = sizeof(gaiterobject),
@@ -693,7 +678,6 @@ ga_iter(PyObject *self) {
     if (gi == NULL)
         return NULL;
     gi->obj = self;
-    gi->exhausted = 0;
     Py_INCREF(self);
     _PyObject_GC_TRACK(gi);
     return (PyObject *) gi;
