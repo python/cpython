@@ -330,8 +330,8 @@ Data Types
          ...     def __repr__(self):
          ...         cls_name = self.__class__.__name__
          ...         return f'{cls_name}.{self.name}'
-         >>> OtherStyle.ALTERNATE
-         OtherStyle.ALTERNATE
+         >>> OtherStyle.ALTERNATE, str(OtherStyle.ALTERNATE), f"{OtherStyle.ALTERNATE}"
+         (OtherStyle.ALTERNATE, 'OtherStyle.ALTERNATE', 'OtherStyle.ALTERNATE')
 
    .. method:: Enum.__str__(self)
 
@@ -344,28 +344,27 @@ Data Types
          ...     SOMETHING_ELSE = auto()
          ...     def __str__(self):
          ...         return f'{self.name}'
-         >>> str(OtherStyle.ALTERNATE)
-         'ALTERNATE'
+         >>> OtherStyle.ALTERNATE, str(OtherStyle.ALTERNATE), f"{OtherStyle.ALTERNATE}"
+         (<OtherStyle.ALTERNATE: 1>, 'ALTERNATE', 'ALTERNATE')
 
-.. sidebar:: Important
+   .. method:: Enum.__format__(self)
 
-   The :meth:`__repr__`, :meth:`__str__`, :meth:`__format__`, and
-   :meth:`__reduce__` methods are not inherited from mix-in classes.  To use
-   them they must be manually assigned::
+      Returns the string used for *format()* and *f-string* calls.  By default,
+      returns :meth:`__str__` returns, but can be overridden::
 
-         >>> class MyReprMixin:
-         ...     def __repr__(self):
-         ...         return 'I am %r and %r' % (self.name, self.value)
-         >>> class MyEnum(MyReprMixin, Enum):
-         ...     __repr__ = MyReprMixin.__repr__
-         ...     ONE = 1
-         >>> MyEnum.ONE
-         I am 'ONE' and 1
+         >>> class OtherStyle(Enum):
+         ...     ALTERNATE = auto()
+         ...     OTHER = auto()
+         ...     SOMETHING_ELSE = auto()
+         ...     def __format__(self, spec):
+         ...         return f'{self.name}'
+         >>> OtherStyle.ALTERNATE, str(OtherStyle.ALTERNATE), f"{OtherStyle.ALTERNATE}"
+         (<OtherStyle.ALTERNATE: 1>, 'OtherStyle.ALTERNATE', 'ALTERNATE')
 
-.. note::
-
-   Using :class:`auto` with :class:`Enum` results in integers of increasing value,
-   starting with ``1``.
+   .. note::
+   
+      Using :class:`auto` with :class:`Enum` results in integers of increasing value,
+      starting with ``1``.
 
 
 .. class:: IntEnum
@@ -388,10 +387,10 @@ Data Types
       >>> Numbers.THREE == 3
       True
 
-.. note::
-
-   Using :class:`auto` with :class:`IntEnum` results in integers of increasing value,
-   starting with ``1``.
+   .. note::
+   
+      Using :class:`auto` with :class:`IntEnum` results in integers of increasing value,
+      starting with ``1``.
 
 
 .. class:: StrEnum
@@ -405,14 +404,12 @@ Data Types
              instead of ``isinstance(str, unknown)``), and in those locations you
              will need to use ``str(StrEnum.member)``.
 
-.. note::
+   .. note::
+   
+      Using :class:`auto` with :class:`StrEnum` results in the lower-cased member
+      name as the value.
 
-   Using :class:`auto` with :class:`StrEnum` results in the lower-cased member
-   name as the value.
-
-.. versionadded:: 3.11
-
-.. versionadded:: 3.11
+   .. versionadded:: 3.11
 
 .. class:: Flag
 
@@ -511,10 +508,10 @@ Data Types
       Function used to format any remaining unnamed numeric values.  Default is
       the value's repr; common choices are :func:`hex` and :func:`oct`.
 
-.. note::
-
-   Using :class:`auto` with :class:`Flag` results in integers that are powers
-   of two, starting with ``1``.
+   .. note::
+   
+      Using :class:`auto` with :class:`Flag` results in integers that are powers
+      of two, starting with ``1``.
 
 
 .. class:: IntFlag
@@ -543,10 +540,10 @@ Data Types
       * the result is a valid *IntFlag*: an *IntFlag* is returned
       * the result is not a valid *IntFlag*: the result depends on the *FlagBoundary* setting
 
-.. note::
-
-   Using :class:`auto` with :class:`IntFlag` results in integers that are powers
-   of two, starting with ``1``.
+   .. note::
+   
+      Using :class:`auto` with :class:`IntFlag` results in integers that are powers
+      of two, starting with ``1``.
 
 .. class:: EnumCheck
 
@@ -601,11 +598,11 @@ Data Types
          ...
          ValueError: invalid Flag 'Color': aliases WHITE and NEON are missing combined values of 0x18 [use enum.show_flag_values(value) for details]
 
-.. note::
-
-   CONTINUOUS and NAMED_FLAGS are designed to work with integer-valued members.
-
-.. versionadded:: 3.11
+   .. note::
+   
+      CONTINUOUS and NAMED_FLAGS are designed to work with integer-valued members.
+   
+   .. versionadded:: 3.11
 
 .. class:: FlagBoundary
 
@@ -696,17 +693,16 @@ Supported ``_sunder_`` names
   class
 - ``_order_`` -- used in Python 2/3 code to ensure member order is consistent
   (class attribute, removed during class creation)
-- ``_generate_next_value_`` -- used by the Functional API and by
-  :class:`auto` to get an appropriate value for an enum member; may be
-  overridden
+- ``_generate_next_value_`` -- used to get an appropriate value for an enum
+  member; may be overridden
 
-.. note::
-
-    For standard :class:`Enum` classes the next value chosen is the last value seen
-    incremented by one.
-
-    For :class:`Flag` classes the next value chosen will be the next highest
-    power-of-two, regardless of the last value seen.
+   .. note::
+   
+       For standard :class:`Enum` classes the next value chosen is the last value seen
+       incremented by one.
+   
+       For :class:`Flag` classes the next value chosen will be the next highest
+       power-of-two, regardless of the last value seen.
 
 .. versionadded:: 3.6 ``_missing_``, ``_order_``, ``_generate_next_value_``
 .. versionadded:: 3.7 ``_ignore_``
@@ -739,7 +735,7 @@ Utilities and Decorators
              *Enum* class, and *Enum* subclasses can define members with the
              names ``value`` and ``name``.
 
-.. versionadded:: 3.11
+   .. versionadded:: 3.11
 
 .. decorator:: unique
 
@@ -765,7 +761,7 @@ Utilities and Decorators
    :class:`EnumCheck` are used to specify which constraints should be checked
    on the decorated enumeration.
 
-.. versionadded:: 3.11
+   .. versionadded:: 3.11
 
 ---------------
 
@@ -782,9 +778,15 @@ Notes
     - ``__format__``, because it uses ``__str__``, will also use the value of
       the enum member instead of its name
 
-    If you do not need/want those limitations, you can create your own base
-    class by mixing in the ``int`` or ``str`` type yourself::
+    If you do not need/want those limitations, you can either create your own
+    base class by mixing in the ``int`` or ``str`` type yourself::
 
         >>> from enum import Enum
         >>> class MyIntEnum(int, Enum):
         ...     pass
+
+   or you can reassign the appropriate :meth:`str`, etc., in your enum::
+
+        >>> from enum import IntEnum
+        >>> class MyIntEnum(IntEnum):
+        ...     __str__ = IntEnum.__str__

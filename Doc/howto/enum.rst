@@ -2,14 +2,9 @@
 Enum HOWTO
 ==========
 
-:Author: Ethan Furman <ethan at stoneleaf dot us>
-
 .. _enum-basic-tutorial:
 
 .. currentmodule:: enum
-
-Basic Enum Tutorial
--------------------
 
 An :class:`Enum` is a set of symbolic names bound to unique values.  They are
 similar to global variables, but they offer a more useful :func:`repr()`,
@@ -181,6 +176,7 @@ yourself some work and use :func:`auto()` for the values::
 
 
 .. _enum-advanced-tutorial:
+
 
 Programmatic access to enumeration members and their attributes
 ---------------------------------------------------------------
