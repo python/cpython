@@ -11,6 +11,7 @@ __all__ = [ 'SharedMemory', 'ShareableList' ]
 from functools import partial
 import mmap
 import os
+import platform
 import errno
 import struct
 import secrets
@@ -252,6 +253,32 @@ class SharedMemory:
             _posixshmem.shm_unlink(self._name)
             if self._track:
                 resource_tracker.unregister(self._name, "shared_memory")
+
+    def rename(self, newname, flags = 0):
+        """Renames a shared memory block.
+
+        The policy how the operation is handled depends on the flag passed.
+        The default behavior is if the newname already exists, it will
+        be unlinked beforehand.
+        With the SHM_RENAME_EXCHANGE flag, the old and new name will
+        be exchanged.
+        With the SHM_RENAME_NOREPLACE flag, an error will be returned
+        if the new name exists.
+        """
+        if platform.system() != "FreeBSD":
+            raise OSError("Unsupported operation on this platform")
+
+        if newname:
+            newname = "/" + newname if self._prepend_leading_slash else newname
+            r = _posixshmem.shm_rename(self._name, newname, flags)
+            if r == None:
+                from .resource_tracker import unregister, register
+                unregister(self._name, "shared_memory")
+                self._name = newname
+                register(self._name, "shared_memory")
+                return True
+
+        return False
 
 
 _encoding = "utf8"
