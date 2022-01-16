@@ -39,12 +39,13 @@ __all__ = [
     "requires_gzip", "requires_bz2", "requires_lzma",
     "bigmemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
     "requires_IEEE_754", "requires_zlib",
+    "has_fork_support", "requires_fork",
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
     "check__all__", "skip_if_buggy_ucrt_strfptime",
     "check_disallow_instantiation",
     # sys
-    "is_jython", "is_android", "check_impl_detail", "unix_shell",
-    "setswitchinterval",
+    "is_jython", "is_android", "is_emscripten",
+    "check_impl_detail", "unix_shell", "setswitchinterval",
     # network
     "open_urlresource",
     # processes
@@ -465,6 +466,15 @@ if sys.platform not in ('win32', 'vxworks'):
     unix_shell = '/system/bin/sh' if is_android else '/bin/sh'
 else:
     unix_shell = None
+
+# wasm32-emscripten is POSIX-like but does not provide a
+# working fork() or subprocess API.
+is_emscripten = sys.platform == "emscripten"
+
+has_fork_support = hasattr(os, "fork") and not is_emscripten
+
+def requires_fork():
+    return unittest.skipUnless(has_fork_support, "requires working os.fork()")
 
 # Define the URL of a dedicated HTTP server for the network tests.
 # The URL must use clear-text HTTP: no redirection to encrypted HTTPS.
