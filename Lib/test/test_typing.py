@@ -4868,7 +4868,7 @@ class ConcatenateTests(BaseTestCase):
         self.assertEqual(C4.__args__, (Concatenate[int, T, P], T))
         self.assertEqual(C4.__parameters__, (T, P))
 
-    def test_invalud_uses(self):
+    def test_invalid_uses(self):
         P = ParamSpec('P')
         T = TypeVar('T')
 
