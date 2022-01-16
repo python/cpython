@@ -558,6 +558,11 @@ Data Types
       * the result is a valid *IntFlag*: an *IntFlag* is returned
       * the result is not a valid *IntFlag*: the result depends on the *FlagBoundary* setting
 
+      The *repr()* of unnamed zero-valued flags has changed.  It is now::
+
+          >>> Color(0)
+          <Color: 0>
+
    .. note::
 
       Using :class:`auto` with :class:`IntFlag` results in integers that are powers
@@ -566,11 +571,6 @@ Data Types
    .. versionchanged:: 3.11 :meth:`__str__` is now :func:`int.__str__` to
       better support the *replacement of existing constants* use-case.
       :meth:`__format__` was already :func:`int.__format__` for that same reason.
-
-      The *repr()* of zero-valued flags has changed.  It is now::
-
-          >>> Color(0)                                          # doctest: +SKIP
-          <Color: 0>
 
 
 .. class:: EnumCheck
