@@ -7222,10 +7222,10 @@ error:
 #elif defined(HAVE_UTIL_H)
 #include <util.h>
 #endif /* HAVE_PTY_H */
-#if defined(HAVE_STROPTS_H)
+#ifdef HAVE_STROPTS_H
 #include <stropts.h>
 #endif
-#endif /* if defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) || defined(HAVE_LOGIN_TTY) || defined(HAVE_DEV_PTMX) */
+#endif /* defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) || defined(HAVE_LOGIN_TTY) || defined(HAVE_DEV_PTMX) */
 
 
 #if defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) || defined(HAVE_DEV_PTMX)
@@ -7328,7 +7328,7 @@ error:
 #endif /* defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) || defined(HAVE_DEV_PTMX) */
 
 
-#if defined(HAVE_SETSID)
+#ifdef HAVE_SETSID
 #if defined(TIOCSCTTY) || defined(HAVE_TTYNAME)
 #define HAVE_FALLBACK_LOGIN_TTY 1
 #endif /* defined(TIOCSCTTY) || defined(HAVE_TTYNAME) */
@@ -7352,7 +7352,7 @@ static PyObject *
 os_login_tty_impl(PyObject *module, int fd)
 /*[clinic end generated code: output=495a79911b4cc1bc input=5f298565099903a2]*/
 {
-#if defined(HAVE_LOGIN_TTY)
+#ifdef HAVE_LOGIN_TTY
     if (login_tty(fd) == -1) {
         return posix_error();
     }
@@ -7363,7 +7363,7 @@ os_login_tty_impl(PyObject *module, int fd)
     }
 
     /* The tty becomes the controlling terminal. */
-#if defined(TIOCSCTTY)
+#ifdef TIOCSCTTY
     if (ioctl(fd, TIOCSCTTY, (char *)NULL) == -1) {
         return posix_error();
     }
@@ -7393,7 +7393,7 @@ os_login_tty_impl(PyObject *module, int fd)
         return posix_error();
     }
     close(tmpfd);
-#endif /* defined(TIOCSCTTY) */
+#endif /* TIOCSCTTY */
 
     /* The tty becomes stdin/stdout/stderr */
     if (dup2(fd, 0) == -1 || dup2(fd, 1) == -1 || dup2(fd, 2) == -1) {
@@ -7402,7 +7402,7 @@ os_login_tty_impl(PyObject *module, int fd)
     if (fd > 2) {
         close(fd);
     }
-#endif /* defined(HAVE_LOGIN_TTY) */
+#endif /* HAVE_LOGIN_TTY */
     Py_RETURN_NONE;
 }
 #endif /* defined(HAVE_LOGIN_TTY) || defined(HAVE_FALLBACK_LOGIN_TTY) */
