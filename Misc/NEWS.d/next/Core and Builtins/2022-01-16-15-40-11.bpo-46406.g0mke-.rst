@@ -1,0 +1,2 @@
+The int division code has been optimized, using modern compilers it can be
+20% faster on large numbers in some scenarios.
