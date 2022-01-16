@@ -4860,13 +4860,24 @@ class ConcatenateTests(BaseTestCase):
         self.assertEqual(C2.__args__, (Concatenate[int, T, P], T))
         self.assertEqual(C2.__parameters__, (T, P))
 
-        # Test collections.abc.Callable too.
-        C3 = collections.abc.Callable[Concatenate[int, P], int]
-        self.assertEqual(C3.__args__, (Concatenate[int, P], int))
+        # As a return type.
+        C3 = Callable[[str], Concatenate[int, P]]
+        self.assertEqual(C3.__args__, (str, Concatenate[int, P]))
         self.assertEqual(C3.__parameters__, (P,))
-        C4 = collections.abc.Callable[Concatenate[int, T, P], T]
-        self.assertEqual(C4.__args__, (Concatenate[int, T, P], T))
+        C4 = Callable[[str], Concatenate[int, T, P]]
+        self.assertEqual(C4.__args__, (str, Concatenate[int, T, P]))
         self.assertEqual(C4.__parameters__, (T, P))
+
+        # Test collections.abc.Callable too.
+        C5 = collections.abc.Callable[Concatenate[int, P], int]
+        self.assertEqual(C5.__args__, (Concatenate[int, P], int))
+        self.assertEqual(C5.__parameters__, (P,))
+        C6 = collections.abc.Callable[Concatenate[int, T, P], T]
+        self.assertEqual(C6.__args__, (Concatenate[int, T, P], T))
+        self.assertEqual(C6.__parameters__, (T, P))
+        C7 = collections.abc.Callable[[str], Concatenate[int, T, P]]
+        self.assertEqual(C7.__args__, (str, Concatenate[int, T, P]))
+        self.assertEqual(C7.__parameters__, (T, P))
 
 
 class TypeGuardTests(BaseTestCase):
