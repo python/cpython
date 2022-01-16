@@ -42,6 +42,71 @@ exit:
 
 #endif /* defined(HAVE_SHM_OPEN) */
 
+#if defined(HAVE_SHM_RENAME)
+
+PyDoc_STRVAR(_posixshmem_shm_rename__doc__,
+"shm_rename($module, /, path_from, path_to, flags)\n"
+"--\n"
+"\n"
+"Rename a shared memory object.\n"
+"\n"
+"Remove a shared memory object and relink to another path\n"
+"By default, if the destination path already exist, it will be unlinked.\n"
+"With the SHM_RENAME_EXCHANGE flag, source and destination paths\n"
+"will be exchanged.\n"
+"With the SHM_RENAME_NOREPLACE flag, an error will be triggered\n"
+"if the destination alredady exists.");
+
+#define _POSIXSHMEM_SHM_RENAME_METHODDEF    \
+    {"shm_rename", (PyCFunction)(void(*)(void))_posixshmem_shm_rename, METH_FASTCALL|METH_KEYWORDS, _posixshmem_shm_rename__doc__},
+
+static PyObject *
+_posixshmem_shm_rename_impl(PyObject *module, PyObject *path_from,
+                            PyObject *path_to, int flags);
+
+static PyObject *
+_posixshmem_shm_rename(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"path_from", "path_to", "flags", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "shm_rename", 0};
+    PyObject *argsbuf[3];
+    PyObject *path_from;
+    PyObject *path_to;
+    int flags;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("shm_rename", "argument 'path_from'", "str", args[0]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[0]) == -1) {
+        goto exit;
+    }
+    path_from = args[0];
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("shm_rename", "argument 'path_to'", "str", args[1]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[1]) == -1) {
+        goto exit;
+    }
+    path_to = args[1];
+    flags = _PyLong_AsInt(args[2]);
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _posixshmem_shm_rename_impl(module, path_from, path_to, flags);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_SHM_RENAME) */
+
 #if defined(HAVE_SHM_UNLINK)
 
 PyDoc_STRVAR(_posixshmem_shm_unlink__doc__,
@@ -82,7 +147,11 @@ exit:
     #define _POSIXSHMEM_SHM_OPEN_METHODDEF
 #endif /* !defined(_POSIXSHMEM_SHM_OPEN_METHODDEF) */
 
+#ifndef _POSIXSHMEM_SHM_RENAME_METHODDEF
+    #define _POSIXSHMEM_SHM_RENAME_METHODDEF
+#endif /* !defined(_POSIXSHMEM_SHM_RENAME_METHODDEF) */
+
 #ifndef _POSIXSHMEM_SHM_UNLINK_METHODDEF
     #define _POSIXSHMEM_SHM_UNLINK_METHODDEF
 #endif /* !defined(_POSIXSHMEM_SHM_UNLINK_METHODDEF) */
-/*[clinic end generated code: output=be0661dbed83ea23 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dedbfe53c5c203af input=a9049054013a1b77]*/
