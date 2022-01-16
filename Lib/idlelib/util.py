@@ -15,7 +15,7 @@ TODO:
 from os import path
 
 # .pyw is for Windows; .pyi is for stub files.
-PYTHON_EXTENSIONS = frozenset({'.py', '.pyw', '.pyi'})
+PYTHON_EXTENSIONS = frozenset(('.py', '.pyw', '.pyi'))
 
 
 def is_python_extension(extension, valid_extensions=PYTHON_EXTENSIONS):
