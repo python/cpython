@@ -532,15 +532,15 @@ class CompatPickleTests(unittest.TestCase):
 
         CustomExc1_pickled = pickle.dumps(CustomExc1)
         CustomExc1_unpickled = pickle.loads(CustomExc1_pickled)
-        self.assertEqual(CustomExc1.args, CustomExc1_unpickled.args)
+        self.assertEqual(CustomExc1_unpickled.args, ("12",))
 
         CustomExc2_pickled = pickle.dumps(CustomExc2)
         CustomExc2_unpickled = pickle.loads(CustomExc2_pickled)
-        self.assertEqual(CustomExc2.args, CustomExc2_unpickled.args)
+        self.assertEqual(CustomExc2_unpickled.args, ("1{'test': '2'}",))
 
         CustomExc3_pickled = pickle.dumps(CustomExc3)
         CustomExc3_unpickled = pickle.loads(CustomExc3_pickled)
-        self.assertEqual(CustomExc3.args, CustomExc3_unpickled.args)
+        self.assertEqual(CustomExc3_unpickled.args, ())
 
     def test_multiprocessing_exceptions(self):
         module = import_helper.import_module('multiprocessing.context')

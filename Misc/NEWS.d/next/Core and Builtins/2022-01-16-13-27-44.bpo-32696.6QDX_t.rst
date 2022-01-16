@@ -1,0 +1,3 @@
+The `__newargs__` field was added to `BaseException`. It is `None` by
+default but can be set if super init was called. Stores `__init__` arguments
+for `__reduce__`
