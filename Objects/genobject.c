@@ -1335,9 +1335,6 @@ compute_cr_origin(int origin_depth, InterpreterFrame *current_frame)
         return NULL;
     }
     frame = current_frame;
-    if (frame) {
-
-    }
     for (int i = 0; i < frame_count; ++i) {
         PyCodeObject *code = frame->f_code;
         PyObject *frameinfo = Py_BuildValue("OiO",

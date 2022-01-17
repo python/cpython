@@ -322,7 +322,6 @@ class BaseTaskTests:
         self.loop.run_until_complete(runner())
 
     def test_task_repr(self):
-        self.maxDiff = None
         self.loop.set_debug(False)
 
         async def notmuch():
