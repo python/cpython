@@ -3106,6 +3106,41 @@ os_openpty(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* (defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) || defined(HAVE_DEV_PTMX)) */
 
+#if (defined(HAVE_LOGIN_TTY) || defined(HAVE_FALLBACK_LOGIN_TTY))
+
+PyDoc_STRVAR(os_login_tty__doc__,
+"login_tty($module, fd, /)\n"
+"--\n"
+"\n"
+"Prepare the tty of which fd is a file descriptor for a new login session.\n"
+"\n"
+"Make the calling process a session leader; make the tty the\n"
+"controlling tty, the stdin, the stdout, and the stderr of the\n"
+"calling process; close fd.");
+
+#define OS_LOGIN_TTY_METHODDEF    \
+    {"login_tty", (PyCFunction)os_login_tty, METH_O, os_login_tty__doc__},
+
+static PyObject *
+os_login_tty_impl(PyObject *module, int fd);
+
+static PyObject *
+os_login_tty(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int fd;
+
+    if (!_PyLong_FileDescriptor_Converter(arg, &fd)) {
+        goto exit;
+    }
+    return_value = os_login_tty_impl(module, fd);
+
+exit:
+    return return_value;
+}
+
+#endif /* (defined(HAVE_LOGIN_TTY) || defined(HAVE_FALLBACK_LOGIN_TTY)) */
+
 #if defined(HAVE_FORKPTY)
 
 PyDoc_STRVAR(os_forkpty__doc__,
@@ -8904,6 +8939,10 @@ exit:
     #define OS_OPENPTY_METHODDEF
 #endif /* !defined(OS_OPENPTY_METHODDEF) */
 
+#ifndef OS_LOGIN_TTY_METHODDEF
+    #define OS_LOGIN_TTY_METHODDEF
+#endif /* !defined(OS_LOGIN_TTY_METHODDEF) */
+
 #ifndef OS_FORKPTY_METHODDEF
     #define OS_FORKPTY_METHODDEF
 #endif /* !defined(OS_FORKPTY_METHODDEF) */
@@ -9303,4 +9342,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=d95ba7b0b9c52685 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=60c509fd80741877 input=a9049054013a1b77]*/
