@@ -239,7 +239,7 @@ Standard names are defined for the following types:
       The :term:`loader` which loaded the module. Defaults to ``None``.
 
       This attribute is to match :attr:`importlib.machinery.ModuleSpec.loader`
-      as stored in the attr:`__spec__` object.
+      as stored in the :attr:`__spec__` object.
 
       .. note::
          A future version of Python may stop setting this attribute by default.
@@ -264,7 +264,7 @@ Standard names are defined for the following types:
       :attr:`__name__` if the module is a package itself). Defaults to ``None``.
 
       This attribute is to match :attr:`importlib.machinery.ModuleSpec.parent`
-      as stored in the attr:`__spec__` object.
+      as stored in the :attr:`__spec__` object.
 
       .. note::
          A future version of Python may stop setting this attribute by default.
@@ -312,7 +312,7 @@ Standard names are defined for the following types:
       This type can now be subclassed.
 
 
-.. data:: UnionType
+.. class:: UnionType
 
    The type of :ref:`union type expressions<types-union>`.
 

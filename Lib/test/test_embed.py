@@ -575,7 +575,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         return configs
 
     def get_expected_config(self, expected_preconfig, expected,
-                            env, api, modify_path_cb=None):
+                            env, api, modify_path_cb=None, cwd=None):
         configs = self._get_expected_config()
 
         pre_config = configs['pre_config']
@@ -618,6 +618,14 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             expected['base_executable'] = default_executable
         if expected['program_name'] is self.GET_DEFAULT_CONFIG:
             expected['program_name'] = './_testembed'
+            if MS_WINDOWS:
+                # follow the calculation in getpath.py
+                tmpname = expected['program_name'] + '.exe'
+                if cwd:
+                    tmpname = os.path.join(cwd, tmpname)
+                if os.path.isfile(tmpname):
+                    expected['program_name'] += '.exe'
+                del tmpname
 
         config = configs['config']
         for key, value in expected.items():
@@ -711,7 +719,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.get_expected_config(expected_preconfig,
                                  expected_config,
                                  env,
-                                 api, modify_path_cb)
+                                 api, modify_path_cb, cwd)
 
         out, err = self.run_embedded_interpreter(testname,
                                                  env=env, cwd=cwd)
@@ -1239,8 +1247,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'stdlib_dir': stdlib,
         }
         self.default_program_name(config)
-        if not config['executable']:
-            config['use_frozen_modules'] = -1
         env = {'TESTHOME': home, 'PYTHONPATH': paths_str}
         self.check_all_configs("test_init_setpythonhome", config,
                                api=API_COMPAT, env=env)
@@ -1292,11 +1298,16 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_init_pybuilddir_win32(self):
         # Test path configuration with pybuilddir.txt configuration file
 
-        with self.tmpdir_with_python(r'PCbuild\arch') as tmpdir:
+        vpath = sysconfig.get_config_var("VPATH")
+        subdir = r'PCbuild\arch'
+        if os.path.normpath(vpath).count(os.sep) == 2:
+            subdir = os.path.join(subdir, 'instrumented')
+
+        with self.tmpdir_with_python(subdir) as tmpdir:
             # The prefix is dirname(executable) + VPATH
-            prefix = os.path.normpath(os.path.join(tmpdir, r'..\..'))
+            prefix = os.path.normpath(os.path.join(tmpdir, vpath))
             # The stdlib dir is dirname(executable) + VPATH + 'Lib'
-            stdlibdir = os.path.normpath(os.path.join(tmpdir, r'..\..\Lib'))
+            stdlibdir = os.path.normpath(os.path.join(tmpdir, vpath, 'Lib'))
 
             filename = os.path.join(tmpdir, 'pybuilddir.txt')
             with open(filename, "w", encoding="utf8") as fp:
@@ -1354,6 +1365,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             if not MS_WINDOWS:
                 paths[-1] = lib_dynload
             else:
+                # Include DLLs directory as well
+                paths.insert(1, '.\\DLLs')
                 for index, path in enumerate(paths):
                     if index == 0:
                         # Because we copy the DLLs into tmpdir as well, the zip file
@@ -1390,6 +1403,34 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             self.check_all_configs("test_init_compat_config", config,
                                    api=API_COMPAT, env=env,
                                    ignore_stderr=True, cwd=tmpdir)
+
+    @unittest.skipUnless(MS_WINDOWS, 'specific to Windows')
+    def test_getpath_abspath_win32(self):
+        # Check _Py_abspath() is passed a backslashed path not to fall back to
+        # GetFullPathNameW() on startup, which (re-)normalizes the path overly.
+        # Currently, _Py_normpath() doesn't trim trailing dots and spaces.
+        CASES = [
+            ("C:/a. . .",  "C:\\a. . ."),
+            ("C:\\a. . .", "C:\\a. . ."),
+            ("\\\\?\\C:////a////b. . .", "\\\\?\\C:\\a\\b. . ."),
+            ("//a/b/c. . .", "\\\\a\\b\\c. . ."),
+            ("\\\\a\\b\\c. . .", "\\\\a\\b\\c. . ."),
+            ("a. . .", f"{os.getcwd()}\\a"),  # relpath gets fully normalized
+        ]
+        out, err = self.run_embedded_interpreter(
+            "test_init_initialize_config",
+            env={**remove_python_envvars(),
+                 "PYTHONPATH": os.path.pathsep.join(c[0] for c in CASES)}
+        )
+        self.assertEqual(err, "")
+        try:
+            out = json.loads(out)
+        except json.JSONDecodeError:
+            self.fail(f"fail to decode stdout: {out!r}")
+
+        results = out['config']["module_search_paths"]
+        for (_, expected), result in zip(CASES, results):
+            self.assertEqual(result, expected)
 
     def test_global_pathconfig(self):
         # Test C API functions getting the path configuration:

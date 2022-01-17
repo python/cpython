@@ -83,7 +83,8 @@ def _sizeof_void_p():
 # value computed later, see PyUnicodeObjectPtr.proxy()
 _is_pep393 = None
 
-Py_TPFLAGS_HEAPTYPE = (1 << 9)
+Py_TPFLAGS_MANAGED_DICT      = (1 << 4)
+Py_TPFLAGS_HEAPTYPE          = (1 << 9)
 Py_TPFLAGS_LONG_SUBCLASS     = (1 << 24)
 Py_TPFLAGS_LIST_SUBCLASS     = (1 << 25)
 Py_TPFLAGS_TUPLE_SUBCLASS    = (1 << 26)
@@ -507,7 +508,6 @@ class HeapTypeObjectPtr(PyObjectPtr):
                         tsize = -tsize
                     size = _PyObject_VAR_SIZE(typeobj, tsize)
                     dictoffset += size
-                    assert dictoffset > 0
                     assert dictoffset % _sizeof_void_p() == 0
 
                 dictptr = self._gdbval.cast(_type_char_ptr()) + dictoffset
@@ -523,12 +523,11 @@ class HeapTypeObjectPtr(PyObjectPtr):
 
     def get_keys_values(self):
         typeobj = self.type()
-        values_offset = int_from_int(typeobj.field('tp_inline_values_offset'))
-        if values_offset == 0:
+        has_values =  int_from_int(typeobj.field('tp_flags')) & Py_TPFLAGS_MANAGED_DICT
+        if not has_values:
             return None
-        charptr = self._gdbval.cast(_type_char_ptr()) + values_offset
         PyDictValuesPtrPtr = gdb.lookup_type("PyDictValues").pointer().pointer()
-        valuesptr = charptr.cast(PyDictValuesPtrPtr)
+        valuesptr = self._gdbval.cast(PyDictValuesPtrPtr) - 4
         values = valuesptr.dereference()
         if long(values) == 0:
             return None
@@ -1045,8 +1044,8 @@ class PyFramePtr:
     def _f_lasti(self):
         return self._f_special("f_lasti", int_from_int)
 
-    def depth(self):
-        return self._f_special("depth", int_from_int)
+    def is_entry(self):
+        return self._f_special("is_entry", bool)
 
     def previous(self):
         return self._f_special("previous", PyFramePtr)
@@ -1861,7 +1860,7 @@ class Frame(object):
                         line = interp_frame.current_line()
                         if line is not None:
                             sys.stdout.write('    %s\n' % line.strip())
-                    if interp_frame.depth() == 0:
+                    if interp_frame.is_entry():
                         break
                 else:
                     sys.stdout.write('#%i (unable to read python frame information)\n' % self.get_index())
@@ -1884,7 +1883,7 @@ class Frame(object):
                         line = interp_frame.current_line()
                         if line is not None:
                             sys.stdout.write('    %s\n' % line.strip())
-                    if interp_frame.depth() == 0:
+                    if interp_frame.is_entry():
                         break
                 else:
                     sys.stdout.write('  (unable to read python frame information)\n')
@@ -2148,7 +2147,7 @@ class PyLocals(gdb.Command):
                     % (pyop_name.proxyval(set()),
                         pyop_value.get_truncated_repr(MAX_OUTPUT_LEN)))
 
-            if pyop_frame.depth() == 0:
+            if pyop_frame.is_entry():
                 break
 
             pyop_frame = pyop_frame.previous()

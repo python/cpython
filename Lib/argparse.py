@@ -89,6 +89,8 @@ import os as _os
 import re as _re
 import sys as _sys
 
+import warnings
+
 from gettext import gettext as _, ngettext
 
 SUPPRESS = '==SUPPRESS=='
@@ -392,6 +394,9 @@ class HelpFormatter(object):
         group_actions = set()
         inserts = {}
         for group in groups:
+            if not group._group_actions:
+                raise ValueError(f'empty group {group}')
+
             try:
                 start = actions.index(group._group_actions[0])
             except ValueError:
@@ -1645,6 +1650,14 @@ class _ArgumentGroup(_ActionsContainer):
         super(_ArgumentGroup, self)._remove_action(action)
         self._group_actions.remove(action)
 
+    def add_argument_group(self, *args, **kwargs):
+        warnings.warn(
+            "Nesting argument groups is deprecated.",
+            category=DeprecationWarning,
+            stacklevel=2
+        )
+        return super().add_argument_group(*args, **kwargs)
+
 
 class _MutuallyExclusiveGroup(_ArgumentGroup):
 
@@ -1665,12 +1678,21 @@ class _MutuallyExclusiveGroup(_ArgumentGroup):
         self._container._remove_action(action)
         self._group_actions.remove(action)
 
+    def add_mutually_exclusive_group(self, *args, **kwargs):
+        warnings.warn(
+            "Nesting mutually exclusive groups is deprecated.",
+            category=DeprecationWarning,
+            stacklevel=2
+        )
+        return super().add_mutually_exclusive_group(*args, **kwargs)
+
 
 class ArgumentParser(_AttributeHolder, _ActionsContainer):
     """Object for parsing command line strings into Python objects.
 
     Keyword Arguments:
-        - prog -- The name of the program (default: sys.argv[0])
+        - prog -- The name of the program (default:
+            ``os.path.basename(sys.argv[0])``)
         - usage -- A usage message (default: auto-generated from arguments)
         - description -- A description of what the program does
         - epilog -- Text following the argument descriptions

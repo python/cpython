@@ -10,7 +10,7 @@
 #include <signal.h>
 #include <signal.h>
 #include <stdlib.h>               // abort()
-#if defined(HAVE_PTHREAD_SIGMASK) && !defined(HAVE_BROKEN_PTHREAD_SIGMASK)
+#if defined(HAVE_PTHREAD_SIGMASK) && !defined(HAVE_BROKEN_PTHREAD_SIGMASK) && defined(HAVE_PTHREAD_H)
 #  include <pthread.h>
 #endif
 #ifdef MS_WINDOWS

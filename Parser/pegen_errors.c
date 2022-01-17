@@ -250,8 +250,15 @@ get_error_line_from_tokenizer_buffers(Parser *p, Py_ssize_t lineno)
     char *cur_line = p->tok->fp_interactive ? p->tok->interactive_src_start : p->tok->str;
     assert(cur_line != NULL);
 
-    for (int i = 0; i < lineno - 1; i++) {
-        cur_line = strchr(cur_line, '\n') + 1;
+    Py_ssize_t relative_lineno = p->starting_lineno ? lineno - p->starting_lineno + 1 : lineno;
+
+    for (int i = 0; i < relative_lineno - 1; i++) {
+        char *new_line = strchr(cur_line, '\n') + 1;
+        assert(new_line != NULL && new_line < p->tok->inp);
+        if (new_line == NULL || new_line >= p->tok->inp) {
+            break;
+        }
+        cur_line = new_line;
     }
 
     char *next_newline;
@@ -388,7 +395,8 @@ _Pypegen_set_syntax_error(Parser* p, Token* last_token) {
     if (PyErr_Occurred()) {
         // Prioritize tokenizer errors to custom syntax errors raised
         // on the second phase only if the errors come from the parser.
-        if (p->tok->done == E_DONE && PyErr_ExceptionMatches(PyExc_SyntaxError)) {
+        int is_tok_ok = (p->tok->done == E_DONE || p->tok->done == E_OK);
+        if (is_tok_ok && PyErr_ExceptionMatches(PyExc_SyntaxError)) {
             _PyPegen_tokenize_full_source_to_check_for_errors(p);
         }
         // Propagate the existing syntax error.

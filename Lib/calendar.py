@@ -15,7 +15,9 @@ __all__ = ["IllegalMonthError", "IllegalWeekdayError", "setfirstweekday",
            "monthcalendar", "prmonth", "month", "prcal", "calendar",
            "timegm", "month_name", "month_abbr", "day_name", "day_abbr",
            "Calendar", "TextCalendar", "HTMLCalendar", "LocaleTextCalendar",
-           "LocaleHTMLCalendar", "weekheader"]
+           "LocaleHTMLCalendar", "weekheader",
+           "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY",
+           "SATURDAY", "SUNDAY"]
 
 # Exception raised for bad input (with string parameter for details)
 error = ValueError

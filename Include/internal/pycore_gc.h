@@ -134,6 +134,7 @@ struct _gc_runtime_state {
     /* Current call-stack depth of tp_dealloc calls. */
     int trash_delete_nesting;
 
+    /* Is automatic collection enabled? */
     int enabled;
     int debug;
     /* linked lists of container objects */
@@ -160,6 +161,7 @@ struct _gc_runtime_state {
        the first time. */
     Py_ssize_t long_lived_pending;
 };
+
 
 extern void _PyGC_InitState(struct _gc_runtime_state *);
 

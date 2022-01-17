@@ -35,6 +35,7 @@ is currently supported on most popular platforms.  Here is an overview:
    imaplib.rst
    nntplib.rst
    smtplib.rst
+   smtpd.rst
    telnetlib.rst
    uuid.rst
    socketserver.rst

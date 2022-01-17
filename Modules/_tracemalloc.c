@@ -1,8 +1,9 @@
 #include "Python.h"
+#include "pycore_fileutils.h"     // _Py_write_noraise()
 #include "pycore_gc.h"            // PyGC_Head
+#include "pycore_hashtable.h"     // _Py_hashtable_t
 #include "pycore_pymem.h"         // _Py_tracemalloc_config
 #include "pycore_traceback.h"
-#include "pycore_hashtable.h"
 #include <pycore_frame.h>
 
 #include <stdlib.h>               // malloc()
@@ -1241,6 +1242,9 @@ tracemalloc_copy_domain(_Py_hashtable_t *domains,
     _Py_hashtable_t *traces = (_Py_hashtable_t *)value;
 
     _Py_hashtable_t *traces2 = tracemalloc_copy_traces(traces);
+    if (traces2 == NULL) {
+        return -1;
+    }
     if (_Py_hashtable_set(domains2, TO_PTR(domain), traces2) < 0) {
         _Py_hashtable_destroy(traces2);
         return -1;
