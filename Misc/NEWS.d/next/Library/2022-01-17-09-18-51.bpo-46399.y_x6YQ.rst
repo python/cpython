@@ -1,3 +1,3 @@
 Expose type of objects returned by ``dict.keys()``, ``dict.values()`` and ``dict.items()``
-as :class:`types.DictKeysType`, :class:`types.DictValuesType`, and :class:`types.DictItemsType`
-respectively in :mod:`types` module.
+as :class:`types.DictKeysType`, :class:`types.DictValuesType` and :class:`types.DictItemsType`
+respectively in :mod:`types` module. Patch by Kumar Aditya.
