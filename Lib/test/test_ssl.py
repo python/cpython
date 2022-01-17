@@ -373,8 +373,8 @@ class BasicSocketTests(unittest.TestCase):
         # Make sure that the PROTOCOL_* constants have enum-like string
         # reprs.
         proto = ssl.PROTOCOL_TLS_CLIENT
-        self.assertEqual(repr(proto), '<_SSLMethod.PROTOCOL_TLS_CLIENT: 16>')
-        self.assertEqual(str(proto), '16')
+        self.assertEqual(repr(proto), '<_SSLMethod.PROTOCOL_TLS_CLIENT: %r>' % proto.value)
+        self.assertEqual(str(proto), str(proto.value))
         ctx = ssl.SSLContext(proto)
         self.assertIs(ctx.protocol, proto)
 
