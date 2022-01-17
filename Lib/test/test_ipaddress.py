@@ -1205,7 +1205,7 @@ class IpaddrUnitTest(unittest.TestCase):
 
         # Invalid netmask using factory
         with self.assertRaises(ValueError):
-            ipaddress.ip_network('2001:db8::1', '255.255.255.0'))
+            ipaddress.ip_network(('2001:db8::1', '255.255.255.0'))
 
     # issue57
     def testAddressIntMath(self):
