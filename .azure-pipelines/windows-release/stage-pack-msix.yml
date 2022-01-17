@@ -96,9 +96,7 @@ jobs:
   displayName: Sign side-loadable MSIX bundles
   dependsOn:
   - Pack_MSIX
-  # Our current certificate does not support MSIX signing, so we unconditionally skip this step
-  #condition: and(succeeded(), variables['SigningCertificate'])
-  condition: false
+  condition: and(succeeded(), variables['SigningCertificate'])
 
   pool:
     name: 'Windows Release'
