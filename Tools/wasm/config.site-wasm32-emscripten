@@ -45,9 +45,10 @@ ac_cv_func_socketpair=no
 ac_cv_func_utimensat=no
 ac_cv_func_sigaction=no
 
-# Untested syscalls in emscripten
+# Untested or failing syscalls in emscripten
 ac_cv_func_openat=no
 ac_cv_func_mkdirat=no
+ac_cv_func_faccessat=no
 ac_cv_func_fchownat=no
 ac_cv_func_renameat=no
 ac_cv_func_linkat=no
@@ -71,5 +72,10 @@ ac_cv_header_sys_ioctl_h=no
 # sockets are supported, but only in non-blocking mode
 # ac_cv_header_sys_socket_h=no
 
-# Unsupported functionality
-#undef HAVE_PTHREAD_H
+# aborts with bad ioctl
+ac_cv_func_openpty=no
+ac_cv_func_forkpty=no
+
+# To use dlopen, you need to use Emscripten's linking support,
+# see https://github.com/emscripten-core/emscripten/wiki/Linking)
+ac_cv_func_dlopen=no

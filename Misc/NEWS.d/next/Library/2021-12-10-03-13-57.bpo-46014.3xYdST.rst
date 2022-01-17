@@ -1,2 +1,0 @@
-Add ability to use ``typing.Union`` and ``types.UnionType`` as dispatch
-argument to ``functools.singledispatch``. Patch provided by Yurii Karabas.
