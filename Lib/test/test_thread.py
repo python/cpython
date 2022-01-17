@@ -224,7 +224,7 @@ class TestForkInThread(unittest.TestCase):
     def setUp(self):
         self.read_fd, self.write_fd = os.pipe()
 
-    @unittest.skipUnless(hasattr(os, 'fork'), 'need os.fork')
+    @support.requires_fork()
     @threading_helper.reap_threads
     def test_forkinthread(self):
         pid = None

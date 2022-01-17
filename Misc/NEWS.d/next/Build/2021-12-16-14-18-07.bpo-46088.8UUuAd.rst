@@ -1,2 +1,0 @@
-Automatically detect or install bootstrap Python runtime when building from
-Visual Studio.

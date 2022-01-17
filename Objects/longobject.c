@@ -911,7 +911,7 @@ _PyLong_FromByteArray(const unsigned char* bytes, size_t n,
     }
 
     Py_SET_SIZE(v, is_signed ? -idigit : idigit);
-    return (PyObject *)long_normalize(v);
+    return (PyObject *)maybe_small_long(long_normalize(v));
 }
 
 int

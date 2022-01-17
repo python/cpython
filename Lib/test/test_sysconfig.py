@@ -412,6 +412,8 @@ class TestSysConfig(unittest.TestCase):
                      'EXT_SUFFIX required for this test')
     def test_EXT_SUFFIX_in_vars(self):
         import _imp
+        if not _imp.extension_suffixes():
+            self.skipTest("stub loader has no suffixes")
         vars = sysconfig.get_config_vars()
         self.assertIsNotNone(vars['SO'])
         self.assertEqual(vars['SO'], vars['EXT_SUFFIX'])
