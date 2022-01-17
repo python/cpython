@@ -8002,9 +8002,9 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
         struct instr make_gen = {
             .i_opcode = RETURN_GENERATOR,
             .i_oparg = 0,
-            .i_lineno = -1,
+            .i_lineno = c->u->u_firstlineno,
             .i_col_offset = -1,
-            .i_end_lineno = -1,
+            .i_end_lineno = c->u->u_firstlineno,
             .i_end_col_offset = -1,
             .i_target = NULL,
         };

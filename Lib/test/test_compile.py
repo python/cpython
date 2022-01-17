@@ -954,7 +954,7 @@ if 1:
                     x
                     in
                     y)
-        genexp_lines = [None, 1, 3, 1]
+        genexp_lines = [1, 3, 1]
 
         genexp_code = return_genexp.__code__.co_consts[1]
         code_lines = [ None if line is None else line-return_genexp.__code__.co_firstlineno
@@ -967,7 +967,7 @@ if 1:
             async for i in aseq:
                 body
 
-        expected_lines = [None, 0, 1, 2, 1]
+        expected_lines = [0, 1, 2, 1]
         code_lines = [ None if line is None else line-test.__code__.co_firstlineno
                       for (_, _, line) in test.__code__.co_lines() ]
         self.assertEqual(expected_lines, code_lines)
