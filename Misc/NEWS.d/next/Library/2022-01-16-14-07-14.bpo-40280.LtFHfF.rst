@@ -1,0 +1,4 @@
+:mod:`subprocess` now imports Windows-specific imports when
+``sys.platform == "win32"`` and POSIX-specific imports on all other
+platforms. This gives a clean exception when ``_posixsubprocess`` is not
+available (e.g. Emscripten browser target) and it's slightly faster, too.
