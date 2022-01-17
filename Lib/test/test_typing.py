@@ -434,6 +434,10 @@ class TupleTests(BaseTestCase):
         self.assertEqual(repr(Tuple[int, ...]), 'typing.Tuple[int, ...]')
         self.assertEqual(repr(Tuple[list[int]]), 'typing.Tuple[list[int]]')
 
+    def test_or_and_ror(self):
+        self.assertEqual(Tuple | int, Union[Tuple | int])
+        self.assertEqual(int | Tuple, Union[int, Tuple])
+
     def test_errors(self):
         with self.assertRaises(TypeError):
             issubclass(42, Tuple)
@@ -523,6 +527,10 @@ class BaseCallableTests:
         # Shouldn't crash; see https://github.com/python/typing/issues/259
         typing.List[Callable[..., str]]
 
+    def test_or_and_ror(self):
+        Callable = self.Callable
+        self.assertEqual(Callable | bool, Union[Callable, bool])
+        self.assertEqual(bool | Callable, Union[bool, Callable])
 
     def test_basic(self):
         Callable = self.Callable
@@ -2460,6 +2468,17 @@ class GenericTests(BaseTestCase):
                     class Foo(obj):
                         pass
 
+    def test_or_and_ror(self):
+        self.assertEqual(
+            SimpleMapping[str, int] | bool,
+            Union[SimpleMapping[str, int], bool],
+        )
+        self.assertEqual(
+            bool | SimpleMapping[str, int],
+            Union[bool, SimpleMapping[str, int]],
+        )
+
+
 class ClassVarTests(BaseTestCase):
 
     def test_basics(self):
@@ -3905,6 +3924,10 @@ class CollectionsAbcTests(BaseTestCase):
         class B: ...
         A.register(B)
         self.assertIsSubclass(B, typing.Mapping)
+
+    def test_or_and_ror(self):
+        self.assertEqual(typing.Sized | int, Union[typing.Sized, int])
+        self.assertEqual(int | typing.Hashable, Union[int, typing.Hashable])
 
 
 class OtherABCTests(BaseTestCase):
