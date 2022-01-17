@@ -31,7 +31,7 @@ def load_tests(loader, tests, ignore):
                 ))
     return tests
 
-MODULE = ('test.test_enum', '__main__')[__name__=='__main__']
+MODULE = __name__
 SHORT_MODULE = MODULE.split('.')[-1]
 
 # for pickle tests
