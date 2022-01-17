@@ -12,8 +12,8 @@ import unittest
 def get_tb():
     try:
         raise OSError()
-    except:
-        return sys.exc_info()[2]
+    except OSError as e:
+        return e.__traceback__
 
 
 class Context:
