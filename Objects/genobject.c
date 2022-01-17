@@ -87,7 +87,7 @@ _PyGen_Finalize(PyObject *self)
        issue a RuntimeWarning. */
     if (gen->gi_code != NULL &&
         ((PyCodeObject *)gen->gi_code)->co_flags & CO_COROUTINE &&
-        ((InterpreterFrame *)gen->gi_iframe)->f_lasti == -1)
+        ((InterpreterFrame *)gen->gi_iframe)->f_state == FRAME_CREATED)
     {
         _PyErr_WarnUnawaitedCoroutine((PyObject *)gen);
     }
@@ -156,7 +156,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     PyObject *result;
 
     *presult = NULL;
-    if (frame->f_lasti < 0 && arg && arg != Py_None) {
+    if (frame->f_state == FRAME_CREATED && arg && arg != Py_None) {
         const char *msg = "can't send non-None value to a "
                             "just-started generator";
         if (PyCoro_CheckExact(gen)) {
@@ -754,6 +754,15 @@ gen_getrunning(PyGenObject *gen, void *Py_UNUSED(ignored))
 }
 
 static PyObject *
+gen_getsuspended(PyGenObject *gen, void *Py_UNUSED(ignored))
+{
+    if (gen->gi_frame_valid == 0) {
+        Py_RETURN_FALSE;
+    }
+    return PyBool_FromLong(((InterpreterFrame *)gen->gi_iframe)->f_state == FRAME_SUSPENDED);
+}
+
+static PyObject *
 _gen_getframe(PyGenObject *gen, const char *const name)
 {
     if (PySys_Audit("object.__getattr__", "Os", gen, name) < 0) {
@@ -780,6 +789,7 @@ static PyGetSetDef gen_getsetlist[] = {
      PyDoc_STR("object being iterated by yield from, or None")},
     {"gi_running", (getter)gen_getrunning, NULL, NULL},
     {"gi_frame", (getter)gen_getframe,  NULL, NULL},
+    {"gi_suspended", (getter)gen_getsuspended,  NULL, NULL},
     {NULL} /* Sentinel */
 };
 
@@ -901,7 +911,7 @@ make_gen(PyTypeObject *type, PyFunctionObject *func)
 }
 
 static PyObject *
-compute_cr_origin(int origin_depth);
+compute_cr_origin(int origin_depth, InterpreterFrame *current_frame);
 
 PyObject *
 _Py_MakeCoro(PyFunctionObject *func)
@@ -935,7 +945,8 @@ _Py_MakeCoro(PyFunctionObject *func)
     if (origin_depth == 0) {
         ((PyCoroObject *)coro)->cr_origin_or_finalizer = NULL;
     } else {
-        PyObject *cr_origin = compute_cr_origin(origin_depth);
+        assert(_PyEval_GetFrame());
+        PyObject *cr_origin = compute_cr_origin(origin_depth, _PyEval_GetFrame()->previous);
         ((PyCoroObject *)coro)->cr_origin_or_finalizer = cr_origin;
         if (!cr_origin) {
             Py_DECREF(coro);
@@ -1098,6 +1109,15 @@ coro_get_cr_await(PyCoroObject *coro, void *Py_UNUSED(ignored))
 }
 
 static PyObject *
+cr_getsuspended(PyCoroObject *coro, void *Py_UNUSED(ignored))
+{
+    if (coro->cr_frame_valid == 0) {
+        Py_RETURN_FALSE;
+    }
+    return PyBool_FromLong(((InterpreterFrame *)coro->cr_iframe)->f_state == FRAME_SUSPENDED);
+}
+
+static PyObject *
 cr_getrunning(PyCoroObject *coro, void *Py_UNUSED(ignored))
 {
     if (coro->cr_frame_valid == 0) {
@@ -1122,6 +1142,7 @@ static PyGetSetDef coro_getsetlist[] = {
      PyDoc_STR("object being awaited on, or None")},
     {"cr_running", (getter)cr_getrunning, NULL, NULL},
     {"cr_frame", (getter)cr_getframe, NULL, NULL},
+    {"cr_suspended", (getter)cr_getsuspended, NULL, NULL},
     {NULL} /* Sentinel */
 };
 
@@ -1299,9 +1320,9 @@ PyTypeObject _PyCoroWrapper_Type = {
 };
 
 static PyObject *
-compute_cr_origin(int origin_depth)
+compute_cr_origin(int origin_depth, InterpreterFrame *current_frame)
 {
-    InterpreterFrame *frame = _PyEval_GetFrame();
+    InterpreterFrame *frame = current_frame;
     /* First count how many frames we have */
     int frame_count = 0;
     for (; frame && frame_count < origin_depth; ++frame_count) {
@@ -1313,7 +1334,10 @@ compute_cr_origin(int origin_depth)
     if (cr_origin == NULL) {
         return NULL;
     }
-    frame = _PyEval_GetFrame();
+    frame = current_frame;
+    if (frame) {
+
+    }
     for (int i = 0; i < frame_count; ++i) {
         PyCodeObject *code = frame->f_code;
         PyObject *frameinfo = Py_BuildValue("OiO",
@@ -1345,7 +1369,7 @@ PyCoro_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
     if (origin_depth == 0) {
         ((PyCoroObject *)coro)->cr_origin_or_finalizer = NULL;
     } else {
-        PyObject *cr_origin = compute_cr_origin(origin_depth);
+        PyObject *cr_origin = compute_cr_origin(origin_depth, _PyEval_GetFrame());
         ((PyCoroObject *)coro)->cr_origin_or_finalizer = cr_origin;
         if (!cr_origin) {
             Py_DECREF(coro);

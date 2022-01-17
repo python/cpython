@@ -242,6 +242,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     break;
                 }
                 case JUMP_ABSOLUTE:
+                case YIELD_FROM_LOOP:
                     j = get_arg(code, i);
                     assert(j < len);
                     if (stacks[j] == UNINITIALIZED && j < i) {

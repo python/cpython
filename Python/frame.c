@@ -3,6 +3,7 @@
 #include "frameobject.h"
 #include "pycore_frame.h"
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "opcode.h"
 
 int
 _PyFrame_Traverse(InterpreterFrame *frame, visitproc visit, void *arg)
@@ -21,9 +22,23 @@ _PyFrame_Traverse(InterpreterFrame *frame, visitproc visit, void *arg)
     return 0;
 }
 
+static int
+frame_is_initialized(InterpreterFrame *frame)
+{
+    if (frame->f_lasti < 0) {
+        return 0;
+    }
+    int opcode = _Py_OPCODE(frame->f_code->co_firstinstr[frame->f_lasti]);
+    if (opcode == MAKE_CELL || opcode == COPY_FREE_VARS) {
+        return 0;
+    }
+    return 1;
+}
+
 PyFrameObject *
 _PyFrame_MakeAndSetFrameObject(InterpreterFrame *frame)
 {
+    assert(frame_is_initialized(frame));
     assert(frame->frame_obj == NULL);
     PyObject *error_type, *error_value, *error_traceback;
     PyErr_Fetch(&error_type, &error_value, &error_traceback);

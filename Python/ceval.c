@@ -1345,7 +1345,9 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 #define CHECK_EVAL_BREAKER() \
     if (_Py_atomic_load_relaxed(eval_breaker)) { \
-        goto check_eval_breaker; \
+        if (eval_frame_handle_pending(tstate) != 0) { \
+            goto error; \
+        } \
     }
 
 
@@ -1620,12 +1622,6 @@ trace_function_exit(PyThreadState *tstate, InterpreterFrame *frame, PyObject *re
     return 0;
 }
 
-static PyObject *
-make_coro(PyThreadState *tstate, PyFunctionObject *func,
-          PyObject *locals,
-          PyObject* const* args, size_t argcount,
-          PyObject *kwnames);
-
 static int
 skip_backwards_over_extended_args(PyCodeObject *code, int offset)
 {
@@ -1760,6 +1756,7 @@ resume_frame:
     assert(!_PyErr_Occurred(tstate));
 #endif
 
+    DISPATCH();
 check_eval_breaker:
     {
         assert(STACK_LEVEL() >= 0); /* else underflow */
@@ -1834,6 +1831,9 @@ check_eval_breaker:
                 next_instr = first_instr + nexti;
             }
             frame->f_state = FRAME_EXECUTING;
+            if (oparg < 2) {
+                CHECK_EVAL_BREAKER();
+            }
             DISPATCH();
         }
 
@@ -4152,6 +4152,12 @@ check_eval_breaker:
             DISPATCH();
         }
 
+        TARGET(YIELD_FROM_LOOP) {
+            frame->f_state = FRAME_EXECUTING;
+            JUMPTO(oparg);
+            DISPATCH();
+        }
+
         TARGET(JUMP_ABSOLUTE_QUICK) {
             assert(oparg < INSTR_OFFSET());
             JUMPTO(oparg);
@@ -5076,6 +5082,37 @@ check_eval_breaker:
             DISPATCH();
         }
 
+        TARGET(RETURN_GENERATOR) {
+            PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(frame->f_func);
+            if (gen == NULL) {
+                goto error;
+            }
+            assert(EMPTY());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            InterpreterFrame *gen_frame = (InterpreterFrame *)gen->gi_iframe;
+            _PyFrame_Copy(frame, gen_frame);
+            frame->stacktop = 0;
+            Py_INCREF(frame->f_func);
+            Py_INCREF(frame->f_code);
+            assert(frame->frame_obj == NULL);
+            frame->f_locals = NULL;
+            gen->gi_frame_valid = 1;
+            gen_frame->generator = (PyObject *)gen;
+            gen_frame->f_state = FRAME_CREATED;
+            _Py_LeaveRecursiveCall(tstate);
+            if (!frame->is_entry) {
+                frame = cframe.current_frame = pop_frame(tstate, frame);
+                _PyFrame_StackPush(frame, (PyObject *)gen);
+                goto resume_frame;
+            }
+            /* Restore previous cframe and return. */
+            tstate->cframe = cframe.previous;
+            tstate->cframe->use_tracing = cframe.use_tracing;
+            assert(tstate->cframe->current_frame == frame->previous);
+            assert(!_PyErr_Occurred(tstate));
+            return (PyObject *)gen;
+        }
+
         TARGET(BUILD_SLICE) {
             PyObject *start, *stop, *step, *slice;
             if (oparg == 3)
@@ -5222,11 +5259,14 @@ check_eval_breaker:
             frame->f_lasti = INSTR_OFFSET();
             TRACING_NEXTOPARG();
             if (opcode == RESUME) {
+                if (oparg < 2) {
+                    CHECK_EVAL_BREAKER();
+                }
                 /* Call tracing */
                 TRACE_FUNCTION_ENTRY();
                 DTRACE_FUNCTION_ENTRY();
             }
-            else {
+            else if (frame->f_state > FRAME_CREATED) {
                 /* line-by-line tracing support */
                 if (PyDTrace_LINE_ENABLED()) {
                     maybe_dtrace_line(frame, &tstate->trace_info, instr_prev);
@@ -5962,33 +6002,6 @@ fail_post_args:
 }
 
 /* Consumes all the references to the args */
-static PyObject *
-make_coro(PyThreadState *tstate, PyFunctionObject *func,
-          PyObject *locals,
-          PyObject* const* args, size_t argcount,
-          PyObject *kwnames)
-{
-    assert (((PyCodeObject *)func->func_code)->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR));
-    PyObject *gen = _Py_MakeCoro(func);
-    if (gen == NULL) {
-        return NULL;
-    }
-    InterpreterFrame *frame = (InterpreterFrame *)((PyGenObject *)gen)->gi_iframe;
-    PyCodeObject *code = (PyCodeObject *)func->func_code;
-    _PyFrame_InitializeSpecials(frame, func, locals, code->co_nlocalsplus);
-    for (int i = 0; i < code->co_nlocalsplus; i++) {
-        frame->localsplus[i] = NULL;
-    }
-    ((PyGenObject *)gen)->gi_frame_valid = 1;
-    if (initialize_locals(tstate, func, frame->localsplus, args, argcount, kwnames)) {
-        Py_DECREF(gen);
-        return NULL;
-    }
-    frame->generator = gen;
-    return gen;
-}
-
-/* Consumes all the references to the args */
 static InterpreterFrame *
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
                         PyObject *locals, PyObject* const* args,
@@ -6041,10 +6054,7 @@ _PyEval_Vector(PyThreadState *tstate, PyFunctionObject *func,
                PyObject* const* args, size_t argcount,
                PyObject *kwnames)
 {
-    PyCodeObject *code = (PyCodeObject *)func->func_code;
-    /* _PyEvalFramePushAndInit and make_coro consume
-     * all the references to their arguments
-     */
+    /* _PyEvalFramePushAndInit consumes all the references to its arguments */
     for (size_t i = 0; i < argcount; i++) {
         Py_INCREF(args[i]);
     }
@@ -6054,19 +6064,16 @@ _PyEval_Vector(PyThreadState *tstate, PyFunctionObject *func,
             Py_INCREF(args[i+argcount]);
         }
     }
-    int is_coro = code->co_flags &
-        (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);
-    if (is_coro) {
-        return make_coro(tstate, func, locals, args, argcount, kwnames);
-    }
     InterpreterFrame *frame = _PyEvalFramePushAndInit(
         tstate, func, locals, args, argcount, kwnames);
     if (frame == NULL) {
         return NULL;
     }
     PyObject *retval = _PyEval_EvalFrame(tstate, frame, 0);
-    assert(frame->stacktop >= 0);
-    assert(_PyFrame_GetStackPointer(frame) == _PyFrame_Stackbase(frame));
+    assert(
+        _PyFrame_GetStackPointer(frame) == _PyFrame_Stackbase(frame) ||
+        _PyFrame_GetStackPointer(frame) == frame->localsplus
+    );
     _PyEvalFrameClearAndPop(tstate, frame);
     return retval;
 }
