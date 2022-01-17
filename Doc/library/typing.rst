@@ -1956,7 +1956,10 @@ Functions and decorators
    communicates intent more clearly.
 
    At runtime, this function prints the runtime type of its argument
-   and returns it unchanged.
+   and returns it unchanged::
+
+      x = reveal_type(1)  # prints "Runtime type is int"
+      print(x)  # prints "1"
 
    .. versionadded:: 3.11
 
