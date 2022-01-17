@@ -1831,6 +1831,8 @@ exit:
 
 #endif /* defined(HAVE_SYSTEM) && !defined(MS_WINDOWS) */
 
+#if defined(HAVE_UMASK)
+
 PyDoc_STRVAR(os_umask__doc__,
 "umask($module, mask, /)\n"
 "--\n"
@@ -1858,6 +1860,8 @@ os_umask(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
+
+#endif /* defined(HAVE_UMASK) */
 
 PyDoc_STRVAR(os_unlink__doc__,
 "unlink($module, /, path, *, dir_fd=None)\n"
@@ -3101,41 +3105,6 @@ os_openpty(PyObject *module, PyObject *Py_UNUSED(ignored))
 }
 
 #endif /* (defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) || defined(HAVE_DEV_PTMX)) */
-
-#if (defined(HAVE_LOGIN_TTY) || defined(HAVE_FALLBACK_LOGIN_TTY))
-
-PyDoc_STRVAR(os_login_tty__doc__,
-"login_tty($module, fd, /)\n"
-"--\n"
-"\n"
-"Prepare the tty of which fd is a file descriptor for a new login session.\n"
-"\n"
-"Make the calling process a session leader; make the tty the\n"
-"controlling tty, the stdin, the stdout, and the stderr of the\n"
-"calling process; close fd.");
-
-#define OS_LOGIN_TTY_METHODDEF    \
-    {"login_tty", (PyCFunction)os_login_tty, METH_O, os_login_tty__doc__},
-
-static PyObject *
-os_login_tty_impl(PyObject *module, int fd);
-
-static PyObject *
-os_login_tty(PyObject *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    int fd;
-
-    if (!_PyLong_FileDescriptor_Converter(arg, &fd)) {
-        goto exit;
-    }
-    return_value = os_login_tty_impl(module, fd);
-
-exit:
-    return return_value;
-}
-
-#endif /* (defined(HAVE_LOGIN_TTY) || defined(HAVE_FALLBACK_LOGIN_TTY)) */
 
 #if defined(HAVE_FORKPTY)
 
@@ -8847,6 +8816,10 @@ exit:
     #define OS_SYSTEM_METHODDEF
 #endif /* !defined(OS_SYSTEM_METHODDEF) */
 
+#ifndef OS_UMASK_METHODDEF
+    #define OS_UMASK_METHODDEF
+#endif /* !defined(OS_UMASK_METHODDEF) */
+
 #ifndef OS_UNAME_METHODDEF
     #define OS_UNAME_METHODDEF
 #endif /* !defined(OS_UNAME_METHODDEF) */
@@ -8930,10 +8903,6 @@ exit:
 #ifndef OS_OPENPTY_METHODDEF
     #define OS_OPENPTY_METHODDEF
 #endif /* !defined(OS_OPENPTY_METHODDEF) */
-
-#ifndef OS_LOGIN_TTY_METHODDEF
-    #define OS_LOGIN_TTY_METHODDEF
-#endif /* !defined(OS_LOGIN_TTY_METHODDEF) */
 
 #ifndef OS_FORKPTY_METHODDEF
     #define OS_FORKPTY_METHODDEF
@@ -9334,4 +9303,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=6afdc1313a84dee8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d95ba7b0b9c52685 input=a9049054013a1b77]*/
