@@ -101,7 +101,6 @@ class TimerHandle(Handle):
     __slots__ = ['_scheduled', '_when']
 
     def __init__(self, when, callback, args, loop, context=None):
-        assert when is not None
         super().__init__(callback, args, loop, context)
         if self._source_traceback:
             del self._source_traceback[-1]
@@ -258,13 +257,13 @@ class AbstractEventLoop:
         """Notification that a TimerHandle has been cancelled."""
         raise NotImplementedError
 
-    def call_soon(self, callback, *args):
-        return self.call_later(0, callback, *args)
+    def call_soon(self, callback, *args, context=None):
+        return self.call_later(0, callback, *args, context=context)
 
-    def call_later(self, delay, callback, *args):
+    def call_later(self, delay, callback, *args, context=None):
         raise NotImplementedError
 
-    def call_at(self, when, callback, *args):
+    def call_at(self, when, callback, *args, context=None):
         raise NotImplementedError
 
     def time(self):
@@ -280,7 +279,7 @@ class AbstractEventLoop:
 
     # Methods for interacting with threads.
 
-    def call_soon_threadsafe(self, callback, *args):
+    def call_soon_threadsafe(self, callback, *args, context=None):
         raise NotImplementedError
 
     def run_in_executor(self, executor, func, *args):
@@ -479,7 +478,7 @@ class AbstractEventLoop:
         # The reason to accept file-like object instead of just file descriptor
         # is: we need to own pipe and close it at transport finishing
         # Can got complicated errors if pass f.fileno(),
-        # close fd in pipe transport then close f and vise versa.
+        # close fd in pipe transport then close f and vice versa.
         raise NotImplementedError
 
     async def connect_write_pipe(self, protocol_factory, pipe):
@@ -492,7 +491,7 @@ class AbstractEventLoop:
         # The reason to accept file-like object instead of just file descriptor
         # is: we need to own pipe and close it at transport finishing
         # Can got complicated errors if pass f.fileno(),
-        # close fd in pipe transport then close f and vise versa.
+        # close fd in pipe transport then close f and vice versa.
         raise NotImplementedError
 
     async def subprocess_shell(self, protocol_factory, cmd, *,
@@ -661,7 +660,8 @@ class BaseDefaultEventLoopPolicy(AbstractEventLoopPolicy):
     def set_event_loop(self, loop):
         """Set the event loop."""
         self._local._set_called = True
-        assert loop is None or isinstance(loop, AbstractEventLoop)
+        if loop is not None and not isinstance(loop, AbstractEventLoop):
+            raise TypeError(f"loop must be an instance of AbstractEventLoop or None, not '{type(loop).__name__}'")
         self._local._loop = loop
 
     def new_event_loop(self):
@@ -745,7 +745,8 @@ def set_event_loop_policy(policy):
 
     If policy is None, the default policy is restored."""
     global _event_loop_policy
-    assert policy is None or isinstance(policy, AbstractEventLoopPolicy)
+    if policy is not None and not isinstance(policy, AbstractEventLoopPolicy):
+        raise TypeError(f"policy must be an instance of AbstractEventLoopPolicy or None, not '{type(policy).__name__}'")
     _event_loop_policy = policy
 
 

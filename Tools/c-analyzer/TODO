@@ -1,3 +1,11 @@
+# For up-to-date results, run:
+#   ./python Tools/c-analyzer/c-analyzer.py check --format summary
+# or
+#   ./python Tools/c-analyzer/c-analyzer.py analyze
+
+
+#######################################
+# non-PyObject (61)
 
 # allocator (16)
 Objects/obmalloc.c:_PyMem                                        static PyMemAllocatorEx _PyMem
@@ -32,12 +40,7 @@ Objects/dictobject.c:empty_keys_struct                           static PyDictKe
 Python/fileutils.c:_Py_open_cloexec_works                        int _Py_open_cloexec_works
 
 
-# freelists
-Objects/dictobject.c:keys_free_list                              static PyDictKeysObject *keys_free_list[PyDict_MAXFREELIST]
-Objects/dictobject.c:numfreekeys                                 static int numfreekeys
-
-
-# other non-object (43)
+# other non-object (40)
 Modules/_tracemalloc.c:allocators                                static struct { PyMemAllocatorEx mem; PyMemAllocatorEx raw; PyMemAllocatorEx obj; } allocators
 Modules/_tracemalloc.c:tables_lock                               static PyThread_type_lock tables_lock
 Modules/_tracemalloc.c:tracemalloc_filenames                     static _Py_hashtable_t *tracemalloc_filenames
@@ -81,30 +84,7 @@ Python/pylifecycle.c:fatal_error():reentrant                     static int reen
 
 
 #######################################
-# PyObject (960)
-
-# freelists (10 + 10)
-Modules/_collectionsmodule.c:freeblocks                          static block *freeblocks[MAXFREEBLOCKS]
-Modules/_collectionsmodule.c:numfreeblocks                       static Py_ssize_t numfreeblocks
-Objects/dictobject.c:free_list                                   static PyDictObject *free_list[PyDict_MAXFREELIST]
-Objects/dictobject.c:numfree                                     static int numfree
-Objects/exceptions.c:memerrors_freelist                          static PyBaseExceptionObject *memerrors_freelist
-Objects/exceptions.c:memerrors_numfree                           static int memerrors_numfree
-Objects/floatobject.c:free_list                                  static PyFloatObject *free_list
-Objects/floatobject.c:numfree                                    static int numfree
-Objects/frameobject.c:free_list                                  static PyFrameObject *free_list
-Objects/frameobject.c:numfree                                    static int numfree
-Objects/genobject.c:ag_asend_freelist                            static PyAsyncGenASend *ag_asend_freelist[_PyAsyncGen_MAXFREELIST]
-Objects/genobject.c:ag_asend_freelist_free                       static int ag_asend_freelist_free
-Objects/genobject.c:ag_value_freelist                            static _PyAsyncGenWrappedValue *ag_value_freelist[_PyAsyncGen_MAXFREELIST]
-Objects/genobject.c:ag_value_freelist_free                       static int ag_value_freelist_free
-Objects/listobject.c:free_list                                   static PyListObject *free_list[PyList_MAXFREELIST]
-Objects/listobject.c:numfree                                     static int numfree
-Objects/tupleobject.c:free_list                                  static PyTupleObject *free_list[PyTuple_MAXSAVESIZE]
-Objects/tupleobject.c:numfree                                    static int numfree[PyTuple_MAXSAVESIZE]
-Python/context.c:ctx_freelist                                    static PyContext *ctx_freelist
-Python/context.c:ctx_freelist_len                                static int ctx_freelist_len
-
+# PyObject (919)
 
 # singletons (7)
 Objects/boolobject.c:_Py_FalseStruct                             static struct _longobject _Py_FalseStruct
@@ -116,16 +96,8 @@ Objects/object.c:_Py_NotImplementedStruct                        PyObject _Py_No
 Objects/sliceobject.c:_Py_EllipsisObject                         PyObject _Py_EllipsisObject
 
 
-# module vars (9)
-Modules/_functoolsmodule.c:kwd_mark                              static PyObject *kwd_mark
-Modules/_localemodule.c:Error                                    static PyObject *Error
-Modules/_threadmodule.c:ThreadError                              static PyObject *ThreadError
+# module vars (1)
 Modules/_tracemalloc.c:unknown_filename                          static PyObject *unknown_filename
-Modules/signalmodule.c:DefaultHandler                            static PyObject *DefaultHandler
-Modules/signalmodule.c:IgnoreHandler                             static PyObject *IgnoreHandler
-Modules/signalmodule.c:IntHandler                                static PyObject *IntHandler
-Modules/signalmodule.c:ItimerError                               static PyObject *ItimerError
-Objects/exceptions.c:errnomap                                    static PyObject *errnomap
 
 
 # other (non-cache) (5)
@@ -136,26 +108,15 @@ Modules/signalmodule.c:Handlers                                  static volatile
 Objects/setobject.c:_dummy_struct                                static PyObject _dummy_struct
 
 
-# caches (5)
-Modules/posixmodule.c:posix_putenv_garbage                       static PyObject *posix_putenv_garbage
-Objects/sliceobject.c:slice_cache                                static PySliceObject *slice_cache
-Objects/typeobject.c:method_cache                                static struct method_cache_entry method_cache[1 << MCACHE_SIZE_EXP]
-Objects/unicodeobject.c:interned                                 static PyObject *interned
+# caches (1)
 Python/import.c:extensions                                       static PyObject *extensions
 
 
-# cached constants - non-str (15)
+# cached constants - non-str (6)
 Modules/_io/_iomodule.c:_PyIO_empty_bytes                        PyObject *_PyIO_empty_bytes
 Modules/_io/bufferedio.c:_PyIO_trap_eintr():eintr_int            static PyObject *eintr_int
-Modules/posixmodule.c:billion                                    static PyObject *billion
-Modules/posixmodule.c:wait_helper():struct_rusage                static PyObject *struct_rusage
-Objects/bytesobject.c:characters                                 static PyBytesObject *characters[UCHAR_MAX + 1]
-Objects/bytesobject.c:nullstring                                 static PyBytesObject *nullstring
-Objects/codeobject.c:PyCode_NewEmpty():nulltuple                 static PyObject *nulltuple
-Objects/dictobject.c:empty_values                                static PyObject *empty_values[1]
+Objects/dictobject.c:empty_values_struct                         static PyDictValues
 Objects/listobject.c:indexerr                                    static PyObject *indexerr
-Objects/longobject.c:small_ints                                  static PyLongObject small_ints[NSMALLNEGINTS + NSMALLPOSINTS]
-Objects/setobject.c:emptyfrozenset                               static PyObject *emptyfrozenset
 Python/context.c:_token_missing                                  static PyObject *_token_missing
 Python/hamt.c:_empty_hamt                                        static PyHamtObject *_empty_hamt
 
@@ -662,15 +623,6 @@ Modules/itertoolsmodule.c:takewhile_type                         static PyTypeOb
 Modules/itertoolsmodule.c:tee_type                               static PyTypeObject tee_type
 Modules/itertoolsmodule.c:teedataobject_type                     static PyTypeObject teedataobject_type
 Modules/itertoolsmodule.c:ziplongest_type                        static PyTypeObject ziplongest_type
-Modules/posixmodule.c:DirEntryType                               static PyTypeObject DirEntryType
-Modules/posixmodule.c:ScandirIteratorType                        static PyTypeObject ScandirIteratorType
-Modules/posixmodule.c:SchedParamType                             static PyTypeObject* SchedParamType
-Modules/posixmodule.c:StatResultType                             static PyTypeObject* StatResultType
-Modules/posixmodule.c:StatVFSResultType                          static PyTypeObject* StatVFSResultType
-Modules/posixmodule.c:TerminalSizeType                           static PyTypeObject* TerminalSizeType
-Modules/posixmodule.c:TimesResultType                            static PyTypeObject* TimesResultType
-Modules/posixmodule.c:UnameResultType                            static PyTypeObject* UnameResultType
-Modules/posixmodule.c:WaitidResultType                           static PyTypeObject* WaitidResultType
 Modules/signalmodule.c:SiginfoType                               static PyTypeObject SiginfoType
 Modules/timemodule.c:StructTimeType                              static PyTypeObject StructTimeType
 Modules/xxsubtype.c:spamdict_type                                static PyTypeObject spamdict_type

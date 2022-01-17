@@ -121,6 +121,10 @@ jobs:
       downloadPath: $(Build.BinariesDirectory)
 
   # MSIX must be signed and timestamped simultaneously
+  #
+  # Getting "Error: SignerSign() failed." (-2147024885/0x8007000b)"?
+  # It may be that the certificate info collected in stage-sign.yml is wrong. Check that
+  # you do not have multiple matches for the certificate name you have specified.
   - powershell: |
       $failed = $true
       foreach ($retry in 1..3) {

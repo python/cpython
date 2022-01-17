@@ -1,1 +1,0 @@
-Prefer f-strings to ``.format`` in importlib.resources.

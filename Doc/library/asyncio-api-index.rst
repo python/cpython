@@ -203,11 +203,6 @@ Exceptions
     :class: full-width-table
 
 
-    * - :exc:`asyncio.TimeoutError`
-      - Raised on timeout by functions like :func:`wait_for`.
-        Keep in mind that ``asyncio.TimeoutError`` is **unrelated**
-        to the built-in :exc:`TimeoutError` exception.
-
     * - :exc:`asyncio.CancelledError`
       - Raised when a Task is cancelled. See also :meth:`Task.cancel`.
 

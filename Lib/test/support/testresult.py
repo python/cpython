@@ -173,7 +173,7 @@ if __name__ == '__main__':
             raise RuntimeError('error message')
 
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestTests))
+    suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestTests))
     stream = io.StringIO()
     runner_cls = get_test_runner_class(sum(a == '-v' for a in sys.argv))
     runner = runner_cls(sys.stdout)

@@ -62,6 +62,25 @@ class TestLowLevelInternals(unittest.TestCase):
     def test_infer_return_type_pathlib(self):
         self.assertIs(str, tempfile._infer_return_type(pathlib.Path('/')))
 
+    def test_infer_return_type_pathlike(self):
+        class Path:
+            def __init__(self, path):
+                self.path = path
+
+            def __fspath__(self):
+                return self.path
+
+        self.assertIs(str, tempfile._infer_return_type(Path('/')))
+        self.assertIs(bytes, tempfile._infer_return_type(Path(b'/')))
+        self.assertIs(str, tempfile._infer_return_type('', Path('')))
+        self.assertIs(bytes, tempfile._infer_return_type(b'', Path(b'')))
+        self.assertIs(bytes, tempfile._infer_return_type(None, Path(b'')))
+        self.assertIs(str, tempfile._infer_return_type(None, Path('')))
+
+        with self.assertRaises(TypeError):
+            tempfile._infer_return_type('', Path(b''))
+        with self.assertRaises(TypeError):
+            tempfile._infer_return_type(b'', Path(''))
 
 # Common functionality.
 
@@ -179,8 +198,7 @@ class TestRandomNameSequence(BaseTestCase):
             if i == 20:
                 break
 
-    @unittest.skipUnless(hasattr(os, 'fork'),
-        "os.fork is required for this test")
+    @support.requires_fork()
     def test_process_awareness(self):
         # ensure that the random source differs between
         # child and parent.
@@ -1435,7 +1453,7 @@ class TestTemporaryDirectory(BaseTestCase):
             self.assertEqual(
                 temp_path.exists(),
                 sys.platform.startswith("win"),
-                f"TemporaryDirectory {temp_path!s} existance state unexpected")
+                f"TemporaryDirectory {temp_path!s} existence state unexpected")
             temp_dir.cleanup()
             self.assertFalse(
                 temp_path.exists(),
@@ -1494,7 +1512,7 @@ class TestTemporaryDirectory(BaseTestCase):
             self.assertEqual(
                 temp_path.exists(),
                 sys.platform.startswith("win"),
-                f"TemporaryDirectory {temp_path!s} existance state unexpected")
+                f"TemporaryDirectory {temp_path!s} existence state unexpected")
 
     def test_del_on_shutdown(self):
         # A TemporaryDirectory may be cleaned up during shutdown
@@ -1559,7 +1577,7 @@ class TestTemporaryDirectory(BaseTestCase):
             self.assertEqual(
                 temp_path.exists(),
                 sys.platform.startswith("win"),
-                f"TemporaryDirectory {temp_path!s} existance state unexpected")
+                f"TemporaryDirectory {temp_path!s} existence state unexpected")
             err = err.decode('utf-8', 'backslashreplace')
             self.assertNotIn("Exception", err)
             self.assertNotIn("Error", err)

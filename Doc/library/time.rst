@@ -351,11 +351,31 @@ Functions
 
    Suspend execution of the calling thread for the given number of seconds.
    The argument may be a floating point number to indicate a more precise sleep
-   time. The actual suspension time may be less than that requested because any
-   caught signal will terminate the :func:`sleep` following execution of that
-   signal's catching routine.  Also, the suspension time may be longer than
-   requested by an arbitrary amount because of the scheduling of other activity
-   in the system.
+   time.
+
+   If the sleep is interrupted by a signal and no exception is raised by the
+   signal handler, the sleep is restarted with a recomputed timeout.
+
+   The suspension time may be longer than requested by an arbitrary amount,
+   because of the scheduling of other activity in the system.
+
+   On Windows, if *secs* is zero, the thread relinquishes the remainder of its
+   time slice to any other thread that is ready to run. If there are no other
+   threads ready to run, the function returns immediately, and the thread
+   continues execution.  On Windows 8.1 and newer the implementation uses
+   a `high-resolution timer
+   <https://docs.microsoft.com/en-us/windows-hardware/drivers/kernel/high-resolution-timers>`_
+   which provides resolution of 100 nanoseconds. If *secs* is zero, ``Sleep(0)`` is used.
+
+   Unix implementation:
+
+   * Use ``clock_nanosleep()`` if available (resolution: 1 nanosecond);
+   * Or use ``nanosleep()`` if available (resolution: 1 nanosecond);
+   * Or use ``select()`` (resolution: 1 microsecond).
+
+   .. versionchanged:: 3.11
+      On Unix, the ``clock_nanosleep()`` and ``nanosleep()`` functions are now
+      used if available. On Windows, a waitable timer is now used.
 
    .. versionchanged:: 3.5
       The function now sleeps at least *secs* even if the sleep is interrupted
@@ -456,10 +476,10 @@ Functions
    |           | negative time difference from UTC/GMT of the   |       |
    |           | form +HHMM or -HHMM, where H represents decimal|       |
    |           | hour digits and M represents decimal minute    |       |
-   |           | digits [-23:59, +23:59].                       |       |
+   |           | digits [-23:59, +23:59]. [1]_                  |       |
    +-----------+------------------------------------------------+-------+
    | ``%Z``    | Time zone name (no characters if no time zone  |       |
-   |           | exists).                                       |       |
+   |           | exists). Deprecated. [1]_                      |       |
    +-----------+------------------------------------------------+-------+
    | ``%%``    | A literal ``'%'`` character.                   |       |
    +-----------+------------------------------------------------+-------+
@@ -480,7 +500,7 @@ Functions
       calculations when the day of the week and the year are specified.
 
    Here is an example, a format for dates compatible with that specified  in the
-   :rfc:`2822` Internet email standard.  [#]_ ::
+   :rfc:`2822` Internet email standard.  [1]_ ::
 
       >>> from time import gmtime, strftime
       >>> strftime("%a, %d %b %Y %H:%M:%S +0000", gmtime())
@@ -908,10 +928,9 @@ Timezone Constants
 
 .. rubric:: Footnotes
 
-.. [#] The use of ``%Z`` is now deprecated, but the ``%z`` escape that expands to the
-   preferred  hour/minute offset is not supported by all ANSI C libraries. Also, a
+.. [1] The use of ``%Z`` is now deprecated, but the ``%z`` escape that expands to the
+   preferred hour/minute offset is not supported by all ANSI C libraries. Also, a
    strict reading of the original 1982 :rfc:`822` standard calls for a two-digit
-   year (%y rather than %Y), but practice moved to 4-digit years long before the
+   year (``%y`` rather than ``%Y``), but practice moved to 4-digit years long before the
    year 2000.  After that, :rfc:`822` became obsolete and the 4-digit year has
    been first recommended by :rfc:`1123` and then mandated by :rfc:`2822`.
-

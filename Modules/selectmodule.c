@@ -4,11 +4,16 @@
    have any value except INVALID_SOCKET.
 */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #if defined(HAVE_POLL_H) && !defined(_GNU_SOURCE)
-#define _GNU_SOURCE
+#  define _GNU_SOURCE
 #endif
 
 #include "Python.h"
+#include "pycore_fileutils.h"     // _Py_set_inheritable()
 #include "structmember.h"         // PyMemberDef
 
 #ifdef HAVE_SYS_DEVPOLL_H
@@ -318,8 +323,9 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
     if (omax > max) max = omax;
     if (emax > max) max = emax;
 
-    if (tvp)
-        deadline = _PyTime_GetMonotonicClock() + timeout;
+    if (tvp) {
+        deadline = _PyDeadline_Init(timeout);
+    }
 
     do {
         Py_BEGIN_ALLOW_THREADS
@@ -335,7 +341,7 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
             goto finally;
 
         if (tvp) {
-            timeout = deadline - _PyTime_GetMonotonicClock();
+            timeout = _PyDeadline_Get(deadline);
             if (timeout < 0) {
                 /* bpo-35310: lists were unmodified -- clear them explicitly */
                 FD_ZERO(&ifdset);
@@ -344,7 +350,7 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
                 n = 0;
                 break;
             }
-            _PyTime_AsTimeval_noraise(timeout, &tv, _PyTime_ROUND_CEILING);
+            _PyTime_AsTimeval_clamp(timeout, &tv, _PyTime_ROUND_CEILING);
             /* retry select() with the recomputed timeout */
         }
     } while (1);
@@ -599,7 +605,7 @@ select_poll_poll_impl(pollObject *self, PyObject *timeout_obj)
         }
 
         if (timeout >= 0) {
-            deadline = _PyTime_GetMonotonicClock() + timeout;
+            deadline = _PyDeadline_Init(timeout);
         }
     }
 
@@ -646,7 +652,7 @@ select_poll_poll_impl(pollObject *self, PyObject *timeout_obj)
         }
 
         if (timeout >= 0) {
-            timeout = deadline - _PyTime_GetMonotonicClock();
+            timeout = _PyDeadline_Get(deadline);
             if (timeout < 0) {
                 poll_result = 0;
                 break;
@@ -938,8 +944,9 @@ select_devpoll_poll_impl(devpollObject *self, PyObject *timeout_obj)
     dvp.dp_nfds = self->max_n_fds;
     dvp.dp_timeout = (int)ms;
 
-    if (timeout >= 0)
-        deadline = _PyTime_GetMonotonicClock() + timeout;
+    if (timeout >= 0) {
+        deadline = _PyDeadline_Init(timeout);
+    }
 
     do {
         /* call devpoll() */
@@ -956,7 +963,7 @@ select_devpoll_poll_impl(devpollObject *self, PyObject *timeout_obj)
             return NULL;
 
         if (timeout >= 0) {
-            timeout = deadline - _PyTime_GetMonotonicClock();
+            timeout = _PyDeadline_Get(deadline);
             if (timeout < 0) {
                 poll_result = 0;
                 break;
@@ -1550,7 +1557,7 @@ select_epoll_poll_impl(pyEpoll_Object *self, PyObject *timeout_obj,
         }
 
         if (timeout >= 0) {
-            deadline = _PyTime_GetMonotonicClock() + timeout;
+            deadline = _PyDeadline_Init(timeout);
         }
     }
 
@@ -1584,7 +1591,7 @@ select_epoll_poll_impl(pyEpoll_Object *self, PyObject *timeout_obj,
             goto error;
 
         if (timeout >= 0) {
-            timeout = deadline - _PyTime_GetMonotonicClock();
+            timeout = _PyDeadline_Get(deadline);
             if (timeout < 0) {
                 nfds = 0;
                 break;
@@ -2172,8 +2179,9 @@ select_kqueue_control_impl(kqueue_queue_Object *self, PyObject *changelist,
         }
     }
 
-    if (ptimeoutspec)
-        deadline = _PyTime_GetMonotonicClock() + timeout;
+    if (ptimeoutspec) {
+        deadline = _PyDeadline_Init(timeout);
+    }
 
     do {
         Py_BEGIN_ALLOW_THREADS
@@ -2190,7 +2198,7 @@ select_kqueue_control_impl(kqueue_queue_Object *self, PyObject *changelist,
             goto error;
 
         if (ptimeoutspec) {
-            timeout = deadline - _PyTime_GetMonotonicClock();
+            timeout = _PyDeadline_Get(deadline);
             if (timeout < 0) {
                 gotevents = 0;
                 break;

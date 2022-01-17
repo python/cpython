@@ -3,19 +3,17 @@
 /* An array is a uniform list -- all items have the same type.
    The item type is restricted to simple C types like int or float */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_floatobject.h"   // _PyFloat_Unpack4()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "structmember.h"         // PyMemberDef
 #include <stddef.h>               // offsetof()
-
-#ifdef STDC_HEADERS
 #include <stddef.h>
-#else /* !STDC_HEADERS */
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>          /* For size_t */
-#endif /* HAVE_SYS_TYPES_H */
-#endif /* !STDC_HEADERS */
 
 /*[clinic input]
 module array
@@ -1678,12 +1676,12 @@ array.array.frombytes
     buffer: Py_buffer
     /
 
-Appends items from the string, interpreting it as an array of machine values, as if it had been read from a file using the fromfile() method).
+Appends items from the string, interpreting it as an array of machine values, as if it had been read from a file using the fromfile() method.
 [clinic start generated code]*/
 
 static PyObject *
 array_array_frombytes_impl(arrayobject *self, Py_buffer *buffer)
-/*[clinic end generated code: output=d9842c8f7510a516 input=2bbf2b53ebfcc988]*/
+/*[clinic end generated code: output=d9842c8f7510a516 input=378db226dfac949e]*/
 {
     return frombytes(self, buffer);
 }
@@ -2617,7 +2615,9 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *initial = NULL, *it = NULL;
     const struct arraydescr *descr;
 
-    if (type == state->ArrayType && !_PyArg_NoKeywords("array.array", kwds))
+    if ((type == state->ArrayType ||
+         type->tp_init == state->ArrayType->tp_init) &&
+        !_PyArg_NoKeywords("array.array", kwds))
         return NULL;
 
     if (!PyArg_ParseTuple(args, "C|O:array", &c, &initial))

@@ -296,7 +296,7 @@ How do I create a binary distribution?
 Download and unpack the source release from https://www.python.org/download/.
 Go to the directory ``Mac/BuildScript``. There you will find a script
 ``build-installer.py`` that does all the work. This will download and build
-a number of 3rd-party libaries, configures and builds a framework Python,
+a number of 3rd-party libraries, configures and builds a framework Python,
 installs it, creates the installer package files and then packs this in a
 DMG image.  The script also builds an HTML copy of the current Python
 documentation set for this release for inclusion in the framework.  The

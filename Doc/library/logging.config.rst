@@ -168,7 +168,7 @@ in :mod:`logging` itself) and defining handlers which are declared either in
       :func:`listen` socket and sending a configuration which runs whatever
       code the attacker wants to have executed in the victim's process. This is
       especially easy to do if the default port is used, but not hard even if a
-      different port is used). To avoid the risk of this happening, use the
+      different port is used. To avoid the risk of this happening, use the
       ``verify`` argument to :func:`listen` to prevent unrecognised
       configurations from being applied.
 
@@ -189,6 +189,20 @@ in :mod:`logging` itself) and defining handlers which are declared either in
    Stops the listening server which was created with a call to :func:`listen`.
    This is typically called before calling :meth:`join` on the return value from
    :func:`listen`.
+
+
+Security considerations
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The logging configuration functionality tries to offer convenience, and in part this
+is done by offering the ability to convert text in configuration files into Python
+objects used in logging configuration - for example, as described in
+:ref:`logging-config-dict-userdef`. However, these same mechanisms (importing
+callables from user-defined modules and calling them with parameters from the
+configuration) could be used to invoke any code you like, and for this reason you
+should treat configuration files from untrusted sources with *extreme caution* and
+satisfy yourself that nothing bad can happen if you load them, before actually loading
+them.
 
 
 .. _logging-config-dictschema:

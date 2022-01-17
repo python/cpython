@@ -373,7 +373,8 @@ class BasicSocketTests(unittest.TestCase):
         # Make sure that the PROTOCOL_* constants have enum-like string
         # reprs.
         proto = ssl.PROTOCOL_TLS_CLIENT
-        self.assertEqual(str(proto), 'PROTOCOL_TLS_CLIENT')
+        self.assertEqual(repr(proto), '<_SSLMethod.PROTOCOL_TLS_CLIENT: %r>' % proto.value)
+        self.assertEqual(str(proto), str(proto.value))
         ctx = ssl.SSLContext(proto)
         self.assertIs(ctx.protocol, proto)
 
@@ -540,7 +541,11 @@ class BasicSocketTests(unittest.TestCase):
         self.assertLessEqual(status, 15)
 
         libressl_ver = f"LibreSSL {major:d}"
-        openssl_ver = f"OpenSSL {major:d}.{minor:d}.{fix:d}"
+        if major >= 3:
+            # 3.x uses 0xMNN00PP0L
+            openssl_ver = f"OpenSSL {major:d}.{minor:d}.{patch:d}"
+        else:
+            openssl_ver = f"OpenSSL {major:d}.{minor:d}.{fix:d}"
         self.assertTrue(
             s.startswith((openssl_ver, libressl_ver)),
             (s, t, hex(n))
@@ -618,7 +623,7 @@ class BasicSocketTests(unittest.TestCase):
                 with self.assertWarns(DeprecationWarning) as cm:
                     ssl.SSLContext(protocol)
                 self.assertEqual(
-                    f'{protocol!r} is deprecated',
+                    f'ssl.{protocol.name} is deprecated',
                     str(cm.warning)
                 )
 
@@ -627,8 +632,9 @@ class BasicSocketTests(unittest.TestCase):
                 ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
                 with self.assertWarns(DeprecationWarning) as cm:
                     ctx.minimum_version = version
+                version_text = '%s.%s' % (version.__class__.__name__, version.name)
                 self.assertEqual(
-                    f'ssl.{version!r} is deprecated',
+                    f'ssl.{version_text} is deprecated',
                     str(cm.warning)
                 )
 
@@ -2344,6 +2350,7 @@ class SimpleBackgroundTests(unittest.TestCase):
         self.ssl_io_loop(sock, incoming, outgoing, sslobj.unwrap)
 
 
+@support.requires_resource('network')
 class NetworkedTests(unittest.TestCase):
 
     def test_timeout_connect_ex(self):
@@ -4969,16 +4976,17 @@ class TestEnumerations(unittest.TestCase):
                 lambda name: name.startswith('PROTOCOL_') and name != 'PROTOCOL_SSLv23',
                 source=ssl._ssl,
                 )
+        # This member is assigned dynamically in `ssl.py`:
+        Checked_SSLMethod.PROTOCOL_SSLv23 = Checked_SSLMethod.PROTOCOL_TLS
         enum._test_simple_enum(Checked_SSLMethod, ssl._SSLMethod)
 
     def test_options(self):
         CheckedOptions = enum._old_convert_(
-                enum.FlagEnum, 'Options', 'ssl',
+                enum.IntFlag, 'Options', 'ssl',
                 lambda name: name.startswith('OP_'),
                 source=ssl._ssl,
                 )
         enum._test_simple_enum(CheckedOptions, ssl.Options)
-
 
     def test_alertdescription(self):
         CheckedAlertDescription = enum._old_convert_(
@@ -4989,16 +4997,16 @@ class TestEnumerations(unittest.TestCase):
         enum._test_simple_enum(CheckedAlertDescription, ssl.AlertDescription)
 
     def test_sslerrornumber(self):
-        Checked_SSLMethod = enum._old_convert_(
-                enum.IntEnum, '_SSLMethod', 'ssl',
-                lambda name: name.startswith('PROTOCOL_') and name != 'PROTOCOL_SSLv23',
+        Checked_SSLErrorNumber = enum._old_convert_(
+                enum.IntEnum, 'SSLErrorNumber', 'ssl',
+                lambda name: name.startswith('SSL_ERROR_'),
                 source=ssl._ssl,
                 )
-        enum._test_simple_enum(Checked_SSLMethod, ssl._SSLMethod)
+        enum._test_simple_enum(Checked_SSLErrorNumber, ssl.SSLErrorNumber)
 
     def test_verifyflags(self):
         CheckedVerifyFlags = enum._old_convert_(
-                enum.FlagEnum, 'VerifyFlags', 'ssl',
+                enum.IntFlag, 'VerifyFlags', 'ssl',
                 lambda name: name.startswith('VERIFY_'),
                 source=ssl._ssl,
                 )
@@ -5012,7 +5020,8 @@ class TestEnumerations(unittest.TestCase):
                 )
         enum._test_simple_enum(CheckedVerifyMode, ssl.VerifyMode)
 
-def test_main(verbose=False):
+
+def setUpModule():
     if support.verbose:
         plats = {
             'Mac': platform.mac_ver,
@@ -5043,20 +5052,9 @@ def test_main(verbose=False):
         if not os.path.exists(filename):
             raise support.TestFailed("Can't read certificate file %r" % filename)
 
-    tests = [
-        ContextTests, BasicSocketTests, SSLErrorTests, MemoryBIOTests,
-        SSLObjectTests, SimpleBackgroundTests, ThreadedTests,
-        TestPostHandshakeAuth, TestSSLDebug
-    ]
-
-    if support.is_resource_enabled('network'):
-        tests.append(NetworkedTests)
-
     thread_info = threading_helper.threading_setup()
-    try:
-        support.run_unittest(*tests)
-    finally:
-        threading_helper.threading_cleanup(*thread_info)
+    unittest.addModuleCleanup(threading_helper.threading_cleanup, *thread_info)
+
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

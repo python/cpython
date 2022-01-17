@@ -63,19 +63,19 @@ Some facts and figures:
    +------------------+---------------------------------------------+
    | ``'x'`` or       | Create a tarfile exclusively without        |
    | ``'x:'``         | compression.                                |
-   |                  | Raise an :exc:`FileExistsError` exception   |
+   |                  | Raise a :exc:`FileExistsError` exception    |
    |                  | if it already exists.                       |
    +------------------+---------------------------------------------+
    | ``'x:gz'``       | Create a tarfile with gzip compression.     |
-   |                  | Raise an :exc:`FileExistsError` exception   |
+   |                  | Raise a :exc:`FileExistsError` exception    |
    |                  | if it already exists.                       |
    +------------------+---------------------------------------------+
    | ``'x:bz2'``      | Create a tarfile with bzip2 compression.    |
-   |                  | Raise an :exc:`FileExistsError` exception   |
+   |                  | Raise a :exc:`FileExistsError` exception    |
    |                  | if it already exists.                       |
    +------------------+---------------------------------------------+
    | ``'x:xz'``       | Create a tarfile with lzma compression.     |
-   |                  | Raise an :exc:`FileExistsError` exception   |
+   |                  | Raise a :exc:`FileExistsError` exception    |
    |                  | if it already exists.                       |
    +------------------+---------------------------------------------+
    | ``'a' or 'a:'``  | Open for appending with no compression. The |
