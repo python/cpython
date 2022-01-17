@@ -153,7 +153,10 @@ def decode(in_file, out_file=None, mode=None, quiet=False):
             except binascii.Error as v:
                 # Workaround for broken uuencoders by /Fredrik Lundh
                 nbytes = (((s[0]-32) & 63) * 4 + 5) // 3
-                data = binascii.a2b_uu(s[:nbytes])
+                try:
+                    data = binascii.a2b_uu(s[:nbytes])
+                except:
+                    raise Error("Broken uuencoder")
                 if not quiet:
                     sys.stderr.write("Warning: %s\n" % v)
             out_file.write(data)
