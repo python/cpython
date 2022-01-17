@@ -4421,7 +4421,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
            We could _always_ do this reduction, but l_divmod() isn't cheap,
            so we only do it when it buys something. */
         if (Py_SIZE(a) < 0 || Py_SIZE(a) > Py_SIZE(c)) {
-            if (l_divmod(a, c, NULL, &temp) < 0)
+            if (l_mod(a, c, &temp) < 0)
                 goto Error;
             Py_DECREF(a);
             a = temp;
@@ -4442,7 +4442,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
 #define REDUCE(X)                                       \
     do {                                                \
         if (c != NULL) {                                \
-            if (l_divmod(X, c, NULL, &temp) < 0)        \
+            if (l_mod(X, c, &temp) < 0)                 \
                 goto Error;                             \
             Py_XDECREF(X);                              \
             X = temp;                                   \
@@ -5107,7 +5107,7 @@ _PyLong_GCD(PyObject *aarg, PyObject *barg)
 
         if (k == 0) {
             /* no progress; do a Euclidean step */
-            if (l_divmod(a, b, NULL, &r) < 0)
+            if (l_mod(a, b, &r) < 0)
                 goto error;
             Py_DECREF(a);
             a = b;
