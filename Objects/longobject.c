@@ -4390,6 +4390,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
                     goto Error;
                 /* set the last digit of ob_digit to 1 << b%PyLong_SHIFT */
                 z->ob_digit[j] = 1 << (i - j*PyLong_SHIFT);
+                z = maybe_small_long(z);
                 goto Done;
             }
             else if (Py_SIZE(b) == 0) {
@@ -4842,7 +4843,7 @@ long_lshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
             if (z == NULL)
                 return NULL;
             z->ob_digit[wordshift] = 1 << remshift;
-            return (PyObject *)z;
+            return (PyObject *)maybe_small_long(z);
         }
         Py_INCREF(DIGIT_ONE);
         return (PyObject *)DIGIT_ONE;
