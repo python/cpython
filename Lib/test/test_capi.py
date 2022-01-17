@@ -102,7 +102,7 @@ class CAPITest(unittest.TestCase):
             self.assertEqual(new_exception, new_exc)
             self.assertEqual(new_sys_exception, new_exception)
         else:
-            self.assertTrue(False)
+            self.fail("Exception not raised")
 
     def test_exc_info(self):
         raised_exception = ValueError("5")

@@ -2569,8 +2569,7 @@ test_set_exception(PyObject *self, PyObject *args)
 
     PyObject *exc = PyErr_GetActiveException();
 
-    Py_INCREF(new_exc);
-    PyErr_SetActiveException(new_exc);
+    PyErr_SetActiveException(Py_NewRef(new_exc));
     return exc;
 }
 

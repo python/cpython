@@ -515,8 +515,7 @@ _PyErr_GetActiveException(PyThreadState *tstate)
 {
     _PyErr_StackItem *exc_info = _PyErr_GetTopmostException(tstate);
     PyObject *exc = exc_info->exc_value;
-    Py_XINCREF(exc);
-    return exc;
+    return Py_XNewRef(exc);
 }
 
 PyObject*
