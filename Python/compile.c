@@ -4233,7 +4233,7 @@ starunpack_helper(struct compiler *c, asdl_expr_seq *elts, int pushed,
             Py_INCREF(val);
             PyTuple_SET_ITEM(folded, i, val);
         }
-        if (tuple) {
+        if (tuple && !pushed) {
             ADDOP_LOAD_CONST_NEW(c, folded);
         } else {
             if (add == SET_ADD) {
@@ -4245,6 +4245,9 @@ starunpack_helper(struct compiler *c, asdl_expr_seq *elts, int pushed,
             ADDOP_I(c, build, pushed);
             ADDOP_LOAD_CONST_NEW(c, folded);
             ADDOP_I(c, extend, 1);
+            if (tuple) {
+                ADDOP(c, LIST_TO_TUPLE);
+            }
         }
         return 1;
     }
