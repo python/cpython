@@ -1,1 +1,1 @@
-
+The installer now offers the option to add the installation directory to the end of :envvar:`PATH` instead of at the start.
