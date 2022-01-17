@@ -626,12 +626,15 @@ class TypesTests(unittest.TestCase):
 
     def test_dict_keys_type(self):
         self.assertIsInstance({}.keys(), types.DictKeysType)
+        self.assertEqual(type({}.keys())[int, int], types.DictKeysType[int, int])
 
     def test_dict_values_type(self):
         self.assertIsInstance({}.values(), types.DictValuesType)
+        self.assertEqual(type({}.values())[int, int], types.DictValuesType[int, int])
 
     def test_dict_items_type(self):
         self.assertIsInstance({}.items(), types.DictItemsType)
+        self.assertEqual(type({}.items())[int, int], types.DictItemsType[int, int])
 
 class UnionTests(unittest.TestCase):
 
