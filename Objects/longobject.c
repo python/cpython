@@ -1677,7 +1677,6 @@ inplace_rem1(digit *pin, Py_ssize_t size, digit n)
     assert(n > 0 && n <= PyLong_MASK);
     pin += size;
     while (--size >= 0) {
-        digit hi;
         rem = (rem << PyLong_SHIFT) | *--pin;
         rem %= n;
     }
@@ -2756,15 +2755,14 @@ long_rem(PyLongObject *a, PyLongObject *b, PyLongObject **prem)
         return -(*prem == NULL);
     }
     if (size_b == 1) {
-        digit rem = 0;
-        *prem = rem1(a, b->ob_digit[0])
+        *prem = rem1(a, b->ob_digit[0]);
         if (*prem == NULL)
             return -1;
     }
     else {
         /* Slow path using divrem. */
         x_divrem(a, b, prem);
-        if (*prem = NULL)
+        if (*prem == NULL)
             return -1;
     }
     /* Set the sign. */
