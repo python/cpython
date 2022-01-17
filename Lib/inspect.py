@@ -2567,27 +2567,29 @@ class _empty:
 
 
 class _ParameterKind(enum.IntEnum):
-    POSITIONAL_ONLY = 'positional-only'
-    POSITIONAL_OR_KEYWORD = 'positional or keyword'
-    VAR_POSITIONAL = 'variadic positional'
-    KEYWORD_ONLY = 'keyword-only'
-    VAR_KEYWORD = 'variadic keyword'
+    POSITIONAL_ONLY = 0
+    POSITIONAL_OR_KEYWORD = 1
+    VAR_POSITIONAL = 2
+    KEYWORD_ONLY = 3
+    VAR_KEYWORD = 4
 
-    def __new__(cls, description):
-        value = len(cls.__members__)
-        member = int.__new__(cls, value)
-        member._value_ = value
-        member.description = description
-        return member
-
-    def __str__(self):
-        return self.name
+    @property
+    def description(self):
+        return _PARAM_NAME_MAPPING[self]
 
 _POSITIONAL_ONLY         = _ParameterKind.POSITIONAL_ONLY
 _POSITIONAL_OR_KEYWORD   = _ParameterKind.POSITIONAL_OR_KEYWORD
 _VAR_POSITIONAL          = _ParameterKind.VAR_POSITIONAL
 _KEYWORD_ONLY            = _ParameterKind.KEYWORD_ONLY
 _VAR_KEYWORD             = _ParameterKind.VAR_KEYWORD
+
+_PARAM_NAME_MAPPING = {
+    _POSITIONAL_ONLY: 'positional-only',
+    _POSITIONAL_OR_KEYWORD: 'positional or keyword',
+    _VAR_POSITIONAL: 'variadic positional',
+    _KEYWORD_ONLY: 'keyword-only',
+    _VAR_KEYWORD: 'variadic keyword'
+}
 
 
 class Parameter:

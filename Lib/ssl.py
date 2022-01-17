@@ -119,6 +119,7 @@ from _ssl import (
 )
 from _ssl import _DEFAULT_CIPHERS, _OPENSSL_API_VERSION
 
+
 _IntEnum._convert_(
     '_SSLMethod', __name__,
     lambda name: name.startswith('PROTOCOL_') and name != 'PROTOCOL_SSLv23',
