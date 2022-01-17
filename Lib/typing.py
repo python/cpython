@@ -875,6 +875,27 @@ class TypeVar( _Final, _Immutable, _TypeVarLike, _root=True):
 
 
 class TypeVarTuple(_Final, _Immutable, _root=True):
+    """Type variable tuple.
+
+    Usage:
+
+      Ts = TypeVarTuple('Ts')  # Can be given any name
+
+    Just as a TypeVar (type variable) is a placeholder for a single type,
+    a TypeVarTuple is a placeholder for an *arbitrary* number of types. For
+    example, if we define a generic class using a TypeVarTuple:
+
+      class C(Generic[*Ts]): ...
+
+    Then we can parameterize that class with an arbitrary number of type
+    arguments:
+
+      C[int]       # Fine
+      C[int, str]  # Also fine
+      C[()]        # Even this is fine
+
+    For more details, see PEP 646.
+    """
 
     def __init__(self, name):
         self._name = name
