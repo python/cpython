@@ -155,8 +155,6 @@ class RegexFlag:
     # sre extensions (experimental, don't rely on these)
     TEMPLATE = T = sre_compile.SRE_FLAG_TEMPLATE # disable backtracking
     DEBUG = sre_compile.SRE_FLAG_DEBUG # dump pattern after compilation
-    __str__ = object.__str__
-    _numeric_repr_ = hex
 
 # sre exception
 error = sre_compile.error
