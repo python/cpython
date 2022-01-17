@@ -4111,7 +4111,7 @@ resume_frame:
             DISPATCH();
         }
 
-        TARGET(YIELD_FROM_LOOP) {
+        TARGET(JUMP_NO_INTERRUPT) {
             frame->f_state = FRAME_EXECUTING;
             JUMPTO(oparg);
             DISPATCH();

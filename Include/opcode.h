@@ -90,7 +90,7 @@ extern "C" {
 #define RAISE_VARARGS                   130
 #define MAKE_FUNCTION                   132
 #define BUILD_SLICE                     133
-#define YIELD_FROM_LOOP                 134
+#define JUMP_NO_INTERRUPT               134
 #define MAKE_CELL                       135
 #define LOAD_CLOSURE                    136
 #define LOAD_DEREF                      137

@@ -969,7 +969,7 @@ stack_effect(int opcode, int oparg, int jump)
         /* Jumps */
         case JUMP_FORWARD:
         case JUMP_ABSOLUTE:
-        case YIELD_FROM_LOOP:
+        case JUMP_NO_INTERRUPT:
             return 0;
 
         case JUMP_IF_TRUE_OR_POP:
@@ -1845,7 +1845,7 @@ compiler_add_yield_from(struct compiler *c, int await)
     ADDOP_JUMP(c, SEND, exit);
     compiler_use_next_block(c, resume);
     ADDOP_I(c, RESUME, await ? 3 : 2);
-    ADDOP_JUMP(c, YIELD_FROM_LOOP, start);
+    ADDOP_JUMP(c, JUMP_NO_INTERRUPT, start);
     compiler_use_next_block(c, exit);
     return 1;
 }
@@ -7056,7 +7056,7 @@ stackdepth(struct compiler *c)
             }
             depth = new_depth;
             if (instr->i_opcode == JUMP_ABSOLUTE ||
-                instr->i_opcode == YIELD_FROM_LOOP ||
+                instr->i_opcode == JUMP_NO_INTERRUPT ||
                 instr->i_opcode == JUMP_FORWARD ||
                 instr->i_opcode == RETURN_VALUE ||
                 instr->i_opcode == RAISE_VARARGS ||
@@ -8812,7 +8812,7 @@ normalize_basic_block(basicblock *bb) {
                 break;
             case JUMP_ABSOLUTE:
             case JUMP_FORWARD:
-            case YIELD_FROM_LOOP:
+            case JUMP_NO_INTERRUPT:
                 bb->b_nofallthrough = 1;
                 /* fall through */
             case POP_JUMP_IF_NOT_NONE:
@@ -8997,7 +8997,7 @@ optimize_cfg(struct compiler *c, struct assembler *a, PyObject *consts)
         if (b->b_iused > 0) {
             struct instr *b_last_instr = &b->b_instr[b->b_iused - 1];
             if (b_last_instr->i_opcode == JUMP_ABSOLUTE ||
-                b_last_instr->i_opcode == YIELD_FROM_LOOP ||
+                b_last_instr->i_opcode == JUMP_NO_INTERRUPT ||
                 b_last_instr->i_opcode == JUMP_FORWARD) {
                 if (b_last_instr->i_target == b->b_next) {
                     assert(b->b_next->b_iused);
