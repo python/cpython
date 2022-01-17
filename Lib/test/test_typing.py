@@ -20,6 +20,7 @@ from typing import cast, runtime_checkable
 from typing import get_type_hints
 from typing import get_origin, get_args
 from typing import is_typeddict
+from typing import reveal_type
 from typing import no_type_check, no_type_check_decorator
 from typing import Type
 from typing import NewType
@@ -5106,6 +5107,12 @@ class SpecialAttrsTests(BaseTestCase):
         # in dir() of the GenericAlias. See bpo-45755.
         self.assertIn('bar', dir(Foo[int]))
         self.assertIn('baz', dir(Foo[int]))
+
+
+class RevealTypeTests(BaseTestCase):
+    def test_reveal_type(self):
+        obj = object()
+        self.assertIs(obj, reveal_type(obj))
 
 
 class AllTests(BaseTestCase):
