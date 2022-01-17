@@ -1517,11 +1517,9 @@ class GeneralModuleTests(unittest.TestCase):
         infos = socket.getaddrinfo(HOST, 80, socket.AF_INET, socket.SOCK_STREAM)
         for family, type, _, _, _ in infos:
             self.assertEqual(family, socket.AF_INET)
-            self.assertEqual(repr(family), '<AddressFamily.AF_INET: 2>')
-            self.assertEqual(str(family), '2')
+            self.assertEqual(str(family), 'AF_INET')
             self.assertEqual(type, socket.SOCK_STREAM)
-            self.assertEqual(repr(type), '<SocketKind.SOCK_STREAM: 1>')
-            self.assertEqual(str(type), '1')
+            self.assertEqual(str(type), 'SOCK_STREAM')
         infos = socket.getaddrinfo(HOST, None, 0, socket.SOCK_STREAM)
         for _, socktype, _, _, _ in infos:
             self.assertEqual(socktype, socket.SOCK_STREAM)
@@ -1795,10 +1793,8 @@ class GeneralModuleTests(unittest.TestCase):
         # Make sure that the AF_* and SOCK_* constants have enum-like string
         # reprs.
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            self.assertEqual(repr(s.family), '<AddressFamily.AF_INET: 2>')
-            self.assertEqual(repr(s.type), '<SocketKind.SOCK_STREAM: 1>')
-            self.assertEqual(str(s.family), '2')
-            self.assertEqual(str(s.type), '1')
+            self.assertEqual(str(s.family), 'AF_INET')
+            self.assertEqual(str(s.type), 'SOCK_STREAM')
 
     def test_socket_consistent_sock_type(self):
         SOCK_NONBLOCK = getattr(socket, 'SOCK_NONBLOCK', 0)
