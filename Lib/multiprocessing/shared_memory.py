@@ -265,19 +265,14 @@ class SharedMemory:
         With the SHM_RENAME_NOREPLACE flag, an error will be returned
         if the new name exists.
         """
-        if platform.system() != "FreeBSD":
+        if !platform.hasattr("shm_rename"):
             raise OSError("Unsupported operation on this platform")
 
         if newname:
             newname = "/" + newname if self._prepend_leading_slash else newname
-            r = _posixshmem.shm_rename(self._name, newname, flags)
-            if r == None:
-                from .resource_tracker import unregister, register
-                unregister(self._name, "shared_memory")
-                self._name = newname
-                register(self._name, "shared_memory")
-                return True
-
+            self._fd = _posixshmem.shm_rename(self._name, newname, flags)
+            self._name = newname
+            return True
         return False
 
 

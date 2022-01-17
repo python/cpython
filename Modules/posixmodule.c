@@ -17297,7 +17297,6 @@ all_ins(PyObject *m)
 #endif
 #endif /* HAVE_SHM_RENAME */
 
-#ifdef HAVE_EVENTFD
 #if defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC)
     if (PyModule_AddIntMacro(m, EFD_CLOEXEC)) return -1;
 #ifdef EFD_NONBLOCK

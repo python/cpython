@@ -74,10 +74,11 @@ _posixshmem.shm_rename
     path_from: unicode
     path_to: unicode
     flags: int
+    /
 
 Rename a shared memory object.
 
-Remove a shared memory object and relink to another path
+Remove a shared memory object and relink to another path.
 By default, if the destination path already exist, it will be unlinked.
 With the SHM_RENAME_EXCHANGE flag, source and destination paths
 will be exchanged.
@@ -86,17 +87,17 @@ if the destination alredady exists.
 
 [clinic start generated code]*/
 
-static PyObject *
+static int
 _posixshmem_shm_rename_impl(PyObject *module, PyObject *path_from,
                             PyObject *path_to, int flags)
-/*[clinic end generated code: output=a9101f606826ad30 input=e32a44cee3e0326e]*/
+/*[clinic end generated code: output=a9101f606826ad30 input=0373bfc9c491e123]*/
 {
     int rv;
     int async_err = 0;
-    const char *from = PyUnicode_AsUTF8(path_from);
-    const char *to = PyUnicode_AsUTF8(path_to);
+    const char *from = PyUnicode_AsUTF8AndSize(path_from, NULL);
+    const char *to = PyUnicode_AsUTF8AndSize(path_to, NULL);
     if (from == NULL || to == NULL) {
-        return NULL;
+        return -1;
     }
     do {
         Py_BEGIN_ALLOW_THREADS
@@ -107,10 +108,10 @@ _posixshmem_shm_rename_impl(PyObject *module, PyObject *path_from,
     if (rv < 0) {
         if (!async_err)
             PyErr_SetFromErrnoWithFilenameObjects(PyExc_OSError, path_from, path_to);
-        return NULL;
+        return -1;
     }
 
-    Py_RETURN_NONE;
+    return rv;
 }
 #endif /* HAVE_SHM_RENAME */
 
