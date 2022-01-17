@@ -2070,7 +2070,7 @@ to speed up repeated connections from the same clients.
       :attr:`SSLContext.verify_flags` returns :class:`VerifyFlags` flags:
 
          >>> ssl.create_default_context().verify_flags  # doctest: +SKIP
-         ssl.VERIFY_X509_TRUSTED_FIRST
+         <VerifyFlags.VERIFY_X509_TRUSTED_FIRST: 32768>
 
 .. attribute:: SSLContext.verify_mode
 
@@ -2082,7 +2082,7 @@ to speed up repeated connections from the same clients.
       :attr:`SSLContext.verify_mode` returns :class:`VerifyMode` enum:
 
          >>> ssl.create_default_context().verify_mode
-         ssl.CERT_REQUIRED
+         <VerifyMode.CERT_REQUIRED: 2>
 
 .. index:: single: certificates
 
