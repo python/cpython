@@ -42,9 +42,7 @@ jobs:
       }
     displayName: 'Sign nuget package'
     workingDirectory: $(Build.ArtifactStagingDirectory)
-    # Our current certificate does not support Nuget signing, so we unconditionally skip this step
-    #condition: and(succeeded(), variables['SigningCertificate'])
-    condition: false
+    condition: and(succeeded(), variables['SigningCertificate'])
 
   - task: PublishBuildArtifacts@1
     displayName: 'Publish Artifact: nuget'
