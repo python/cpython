@@ -666,5 +666,23 @@ class ClassTests(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, error_msg):
             object.__init__(E(), 42)
 
+    def testClassWithExtCall(self):
+        class Meta(int):
+            def __init__(*args, **kwargs):
+                pass
+
+            def __new__(cls, name, bases, attrs, **kwargs):
+                return bases, kwargs
+
+        d = {'metaclass': Meta}
+
+        class A(**d): pass
+        self.assertEqual(A, ((), {}))
+        class A(0, 1, 2, 3, 4, 5, 6, 7, **d): pass
+        self.assertEqual(A, (tuple(range(8)), {}))
+        class A(0, *range(1, 8), **d, foo='bar'): pass
+        self.assertEqual(A, (tuple(range(8)), {'foo': 'bar'}))
+
+
 if __name__ == '__main__':
     unittest.main()
