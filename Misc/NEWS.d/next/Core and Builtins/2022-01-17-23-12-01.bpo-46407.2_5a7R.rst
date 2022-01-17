@@ -1,0 +1,1 @@
+Optimize some modulo operations in ``Objects/longobject.c`` as part of bpo-46407. Patch by Jeremiah Vivian.
