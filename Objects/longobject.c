@@ -24,6 +24,9 @@ class int "PyObject *" "&PyLong_Type"
 _Py_IDENTIFIER(little);
 _Py_IDENTIFIER(big);
 
+static PyLongObject *DIGIT_ONE = &_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + 1];
+static PyLongObject *DIGIT_TWO = &_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + 2];
+
 /* Is this PyLong of size 1, 0 or -1? */
 #define IS_MEDIUM_VALUE(x) (((size_t)Py_SIZE(x)) + 1U < 3U)
 
@@ -151,6 +154,34 @@ _PyLong_New(Py_ssize_t size)
        and the digits. */
     result = PyObject_Malloc(offsetof(PyLongObject, ob_digit) +
                              ndigits*sizeof(digit));
+    if (!result) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    _PyObject_InitVar((PyVarObject*)result, &PyLong_Type, size);
+    return result;
+}
+
+/* Like _PyLong_New, but it uses `PyObject_Calloc` instead */
+PyLongObject *
+_PyLong_NewFillZero(Py_ssize_t size)
+{
+    PyLongObject *result;
+    if (size > (Py_ssize_t)MAX_LONG_DIGITS) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "too many digits in integer");
+        return NULL;
+    }
+    /* Fast operations for single digit integers (including zero)
+     * assume that there is always at least one digit present. */
+    Py_ssize_t ndigits = size ? size : 1;
+    /* Number of bytes needed is: offsetof(PyLongObject, ob_digit) +
+       sizeof(digit)*size.  Previous incarnations of this code used
+       sizeof(PyVarObject) instead of the offsetof, but this risks being
+       incorrect in the presence of padding between the PyVarObject header
+       and the digits. */
+    result = PyObject_Calloc(offsetof(PyLongObject, ob_digit) +
+                             ndigits*sizeof(digit), 1);
     if (!result) {
         PyErr_NoMemory();
         return NULL;
@@ -1635,6 +1666,24 @@ inplace_divrem1(digit *pout, digit *pin, Py_ssize_t size, digit n)
     return (digit)rem;
 }
 
+/* Divide long pin, w/ size digits, by non-zero digit n,
+   returning the remainder. pin points at the LSD. */
+
+static digit
+inplace_rem1(digit *pin, Py_ssize_t size, digit n)
+{
+    twodigits rem = 0;
+
+    assert(n > 0 && n <= PyLong_MASK);
+    pin += size;
+    while (--size >= 0) {
+        digit hi;
+        rem = (rem << PyLong_SHIFT) | *--pin;
+        rem %= n;
+    }
+    return (digit)rem;
+}
+
 /* Divide an integer by a digit, returning both the quotient
    (as function result) and the remainder (through *prem).
    The sign of a is ignored; n should not be zero. */
@@ -1651,6 +1700,21 @@ divrem1(PyLongObject *a, digit n, digit *prem)
         return NULL;
     *prem = inplace_divrem1(z->ob_digit, a->ob_digit, size, n);
     return long_normalize(z);
+}
+
+/* Get the remainder of an integer divided by a digit, returning
+   the remainder as the result of the function. The sign of a is
+   ignored; n should not be zero. */
+
+static PyLongObject *
+rem1(PyLongObject *a, digit n)
+{
+    const Py_ssize_t size = Py_ABS(Py_SIZE(a));
+
+    assert(n > 0 && n <= PyLong_MASK);
+    return (PyLongObject *)PyLong_FromLong(
+        (long)inplace_rem1(a->ob_digit, size, n)
+    );
 }
 
 /* Convert an integer to a base 10 string.  Returns a new non-shared
@@ -2669,6 +2733,48 @@ long_divrem(PyLongObject *a, PyLongObject *b,
         }
     }
     *pdiv = maybe_small_long(z);
+    return 0;
+}
+
+/* Int remainder, top-level routine */
+
+static int
+long_rem(PyLongObject *a, PyLongObject *b, PyLongObject **prem)
+{
+    Py_ssize_t size_a = Py_ABS(Py_SIZE(a)), size_b = Py_ABS(Py_SIZE(b));
+
+    if (size_b == 0) {
+        PyErr_SetString(PyExc_ZeroDivisionError,
+                        "integer modulo by zero");
+        return -1;
+    }
+    if (size_a < size_b ||
+        (size_a == size_b &&
+         a->ob_digit[size_a-1] < b->ob_digit[size_b-1])) {
+        /* |a| < |b|. */
+        *prem = (PyLongObject *)long_long((PyObject *)a);
+        return -(*prem == NULL);
+    }
+    if (size_b == 1) {
+        digit rem = 0;
+        *prem = rem1(a, b->ob_digit[0])
+        if (*prem == NULL)
+            return -1;
+    }
+    else {
+        /* Slow path using divrem. */
+        x_divrem(a, b, prem);
+        if (*prem = NULL)
+            return -1;
+    }
+    /* Set the sign. */
+    if (Py_SIZE(a) < 0 && Py_SIZE(*prem) != 0) {
+        _PyLong_Negate(prem);
+        if (*prem == NULL) {
+            Py_CLEAR(*prem);
+            return -1;
+        }
+    }
     return 0;
 }
 
@@ -3768,7 +3874,7 @@ l_divmod(PyLongObject *v, PyLongObject *w,
             Py_DECREF(div);
             return -1;
         }
-        temp = (PyLongObject *) long_sub(div, (PyLongObject *)_PyLong_GetOne());
+        temp = (PyLongObject *) long_sub(div, DIGIT_ONE);
         if (temp == NULL) {
             Py_DECREF(mod);
             Py_DECREF(div);
@@ -3786,6 +3892,47 @@ l_divmod(PyLongObject *v, PyLongObject *w,
         *pmod = mod;
     else
         Py_DECREF(mod);
+
+    return 0;
+}
+
+/* Compute
+ *     *pmod = mod(v)
+ * NULL can be passed for pmod, in which case the function
+ * never runs code.  The caller owns a reference to
+ * each of these it requests (does not pass NULL for).
+ */
+static int
+l_mod(PyLongObject *v, PyLongObject *w, PyLongObject **pmod)
+{
+    PyLongObject *mod;
+
+    if (pmod == NULL)
+        return 0;
+    if (Py_ABS(Py_SIZE(v)) == 1 && Py_ABS(Py_SIZE(w)) == 1) {
+        /* Fast path for single-digit longs */
+        mod = (PyLongObject *)fast_mod(v, w);
+        if (mod == NULL) {
+            Py_XDECREF(div);
+            return -1;
+        }
+        *pmod = mod;
+        return 0;
+    }
+    if (long_rem(v, w, &mod) < 0)
+        return -1;
+    if ((Py_SIZE(mod) < 0 && Py_SIZE(w) > 0) ||
+        (Py_SIZE(mod) > 0 && Py_SIZE(w) < 0)) {
+        PyLongObject *temp;
+        temp = (PyLongObject *) long_add(mod, w);
+        Py_DECREF(mod);
+        mod = temp;
+        if (mod == NULL) {
+            Py_DECREF(div);
+            return -1;
+        }
+    }
+    *pmod = mod;
 
     return 0;
 }
@@ -4080,7 +4227,7 @@ long_mod(PyObject *a, PyObject *b)
         return fast_mod((PyLongObject*)a, (PyLongObject*)b);
     }
 
-    if (l_divmod((PyLongObject*)a, (PyLongObject*)b, NULL, &mod) < 0)
+    if (l_mod((PyLongObject*)a, (PyLongObject*)b, &mod) < 0)
         mod = NULL;
     return (PyObject *)mod;
 }
@@ -4231,8 +4378,29 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
         c = (PyLongObject *)x;
         Py_INCREF(x);
     }
-    else if (x == Py_None)
+    else if (x == Py_None) {
         c = NULL;
+        if (a == DIGIT_TWO) {
+            /* only compute positive powers of 2 */
+            if (Py_SIZE(b) > 0) {
+                /* b must fit a Py_ssize_t */
+                i = PyLong_AsSsize_t((PyObject *)b);
+                if (i == -1)
+                    goto Error;
+                z = _PyLong_NewFillZero((j = i / PyLong_SHIFT) + 1);
+                if (z == NULL)
+                    goto Error;
+                /* set the last digit of ob_digit to 1 << b%PyLong_SHIFT */
+                z->ob_digit[j] = 1 << (i - j*PyLong_SHIFT);
+                goto Done;
+            }
+            else if (Py_SIZE(b) == 0) {
+                z = DIGIT_ONE;
+                Py_INCREF(z);
+                goto Done;
+            }
+        }
+    }
     else {
         Py_DECREF(a);
         Py_DECREF(b);
@@ -4312,7 +4480,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
            We could _always_ do this reduction, but l_divmod() isn't cheap,
            so we only do it when it buys something. */
         if (Py_SIZE(a) < 0 || Py_SIZE(a) > Py_SIZE(c)) {
-            if (l_divmod(a, c, NULL, &temp) < 0)
+            if (l_mod(a, c, &temp) < 0)
                 goto Error;
             Py_DECREF(a);
             a = temp;
@@ -4333,7 +4501,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
 #define REDUCE(X)                                       \
     do {                                                \
         if (c != NULL) {                                \
-            if (l_divmod(X, c, NULL, &temp) < 0)        \
+            if (l_mod(X, c, &temp) < 0)                 \
                 goto Error;                             \
             Py_XDECREF(X);                              \
             X = temp;                                   \
@@ -4665,6 +4833,21 @@ long_lshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
         // bypass undefined shift operator behavior
         stwodigits x = m < 0 ? -(-m << remshift) : m << remshift;
         return _PyLong_FromSTwoDigits(x);
+    }
+    if (a == DIGIT_ONE) {
+        /* shifting is guaranteed positive, so there is
+           no need for filtering less than 0 shifting unlike
+           long_pow */
+        /* if statement for checking greater than 0 shifts */
+        if (wordshift || remshift) {
+            z = _PyLong_NewFillZero(wordshift + 1);
+            if (z == NULL)
+                return NULL;
+            z->ob_digit[wordshift] = 1 << remshift;
+            return (PyObject *)z;
+        }
+        Py_INCREF(DIGIT_ONE);
+        return (PyObject *)DIGIT_ONE;
     }
 
     oldsize = Py_ABS(Py_SIZE(a));
@@ -4998,7 +5181,7 @@ _PyLong_GCD(PyObject *aarg, PyObject *barg)
 
         if (k == 0) {
             /* no progress; do a Euclidean step */
-            if (l_divmod(a, b, NULL, &r) < 0)
+            if (l_mod(a, b, &r) < 0)
                 goto error;
             Py_DECREF(a);
             a = b;
