@@ -3909,13 +3909,8 @@ l_mod(PyLongObject *v, PyLongObject *w, PyLongObject **pmod)
         return 0;
     if (Py_ABS(Py_SIZE(v)) == 1 && Py_ABS(Py_SIZE(w)) == 1) {
         /* Fast path for single-digit longs */
-        mod = (PyLongObject *)fast_mod(v, w);
-        if (mod == NULL) {
-            Py_XDECREF(div);
-            return -1;
-        }
-        *pmod = mod;
-        return 0;
+        *pmod = (PyLongObject *)fast_mod(v, w);
+        return -(*pmod == NULL);
     }
     if (long_rem(v, w, &mod) < 0)
         return -1;
