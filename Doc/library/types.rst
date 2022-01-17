@@ -318,6 +318,28 @@ Standard names are defined for the following types:
 
    .. versionadded:: 3.10
 
+
+.. class:: DictKeysType
+
+   The type of object returned by :meth:`dict.keys`.
+
+   .. versionadded:: 3.11
+
+
+.. class:: DictValuesType
+
+   The type of object returned by :meth:`dict.values`.
+
+   .. versionadded:: 3.11
+
+
+.. class:: DictItemsType
+
+   The type of object returned by :meth:`dict.items`.
+
+   .. versionadded:: 3.11
+
+
 .. class:: TracebackType(tb_next, tb_frame, tb_lasti, tb_lineno)
 
    The type of traceback objects such as found in ``sys.exc_info()[2]``.

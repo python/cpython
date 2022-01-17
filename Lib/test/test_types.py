@@ -624,6 +624,14 @@ class TypesTests(unittest.TestCase):
     def test_none_type(self):
         self.assertIsInstance(None, types.NoneType)
 
+    def test_dict_keys_type(self):
+        self.assertIsInstance({}.keys(), types.DictKeysType)
+
+    def test_dict_values_type(self):
+        self.assertIsInstance({}.values(), types.DictValuesType)
+
+    def test_dict_items_type(self):
+        self.assertIsInstance({}.items(), types.DictItemsType)
 
 class UnionTests(unittest.TestCase):
 

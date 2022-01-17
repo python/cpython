@@ -49,6 +49,9 @@ MethodDescriptorType = type(str.join)
 ClassMethodDescriptorType = type(dict.__dict__['fromkeys'])
 
 ModuleType = type(sys)
+DictKeysType = type({}.keys())
+DictValuesType = type({}.values())
+DictItemsType = type({}.items())
 
 try:
     raise TypeError
