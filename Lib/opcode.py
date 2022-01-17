@@ -153,6 +153,7 @@ jabs_op('JUMP_IF_NOT_EG_MATCH', 127)
 jabs_op('POP_JUMP_IF_NOT_NONE', 128)
 jabs_op('POP_JUMP_IF_NONE', 129)
 def_op('RAISE_VARARGS', 130)    # Number of raise arguments (1, 2, or 3)
+
 def_op('MAKE_FUNCTION', 132)    # Flags
 def_op('BUILD_SLICE', 133)      # Number of items
 jabs_op('JUMP_NO_INTERRUPT', 134) # Target byte offset from beginning of code
