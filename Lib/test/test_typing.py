@@ -529,8 +529,8 @@ class BaseCallableTests:
 
     def test_or_and_ror(self):
         Callable = self.Callable
-        self.assertEqual(Callable | bool, Union[Callable, bool])
-        self.assertEqual(bool | Callable, Union[bool, Callable])
+        self.assertEqual(Callable | Tuple, Union[Callable, Tuple])
+        self.assertEqual(Tuple | Callable, Union[Tuple, Callable])
 
     def test_basic(self):
         Callable = self.Callable
