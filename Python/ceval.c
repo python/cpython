@@ -885,15 +885,18 @@ static const binaryfunc binary_ops[] = {
         }                                                                      \
         bool inplace = NEXT_OP_STORES(lhs);                                    \
         if (Py_ABS(i) < PyLong_BASE && Py_REFCNT(lhs) == inplace + 1) {        \
-            assert(lhs < (PyObject *)&_PyLong_SMALL_INTS[0] ||                 \
-                   lhs >= (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS +  \
-                                                          _PY_NSMALLPOSINTS]); \
-            ((PyLongObject *)lhs)->ob_digit[0] = Py_ABS(i);                    \
+            /* If this assert fails, it's probably one of two things:       */ \
+            /* - If lhs lives in _PyLong_SMALL_INTS, its refcount is wrong. */ \
+            /* - Otherwise, whatever created lhs should have used           */ \
+            /*   _PyLong_SMALL_INTS, but didn't (see bpo-46361 for an       */ \
+            /*   example of this.)                                          */ \
+            assert(l < -_PY_NSMALLNEGINTS || _PY_NSMALLPOSINTS <= l);          \
+            ((PyLongObject *)lhs)->ob_digit[0] = (digit)Py_ABS(i);             \
             Py_SET_SIZE(lhs, i < 0 ? -1 : 1);                                  \
             DISPATCH();                                                        \
         }                                                                      \
         Py_DECREF(lhs);                                                        \
-        PyObject *res = PyLong_FromLong(i);                                    \
+        PyObject *res = PyLong_FromLongLong(i);                                \
         SET_TOP(res);                                                          \
         if (res == NULL) {                                                     \
             goto error;                                                        \

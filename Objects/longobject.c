@@ -3139,9 +3139,10 @@ x_sub(PyLongObject *a, PyLongObject *b)
     return maybe_small_long(long_normalize(z));
 }
 
-PyObject *
-_PyLong_Add(PyLongObject *a, PyLongObject *b)
+static PyObject *
+long_add(PyLongObject *a, PyLongObject *b)
 {
+    CHECK_BINOP(a, b);
     if (IS_MEDIUM_VALUE(a) && IS_MEDIUM_VALUE(b)) {
         return _PyLong_FromSTwoDigits(medium_value(a) + medium_value(b));
     }
@@ -3172,20 +3173,14 @@ _PyLong_Add(PyLongObject *a, PyLongObject *b)
 }
 
 static PyObject *
-long_add(PyLongObject *a, PyLongObject *b)
+long_sub(PyLongObject *a, PyLongObject *b)
 {
     CHECK_BINOP(a, b);
-    return _PyLong_Add(a, b);
-}
-
-PyObject *
-_PyLong_Subtract(PyLongObject *a, PyLongObject *b)
-{
-    PyLongObject *z;
-
     if (IS_MEDIUM_VALUE(a) && IS_MEDIUM_VALUE(b)) {
         return _PyLong_FromSTwoDigits(medium_value(a) - medium_value(b));
     }
+
+    PyLongObject *z;
     if (Py_SIZE(a) < 0) {
         if (Py_SIZE(b) < 0) {
             z = x_sub(b, a);
@@ -3205,13 +3200,6 @@ _PyLong_Subtract(PyLongObject *a, PyLongObject *b)
             z = x_sub(a, b);
     }
     return (PyObject *)z;
-}
-
-static PyObject *
-long_sub(PyLongObject *a, PyLongObject *b)
-{
-    CHECK_BINOP(a, b);
-    return _PyLong_Subtract(a, b);
 }
 
 /* Grade school multiplication, ignoring the signs.
@@ -3631,18 +3619,17 @@ k_lopsided_mul(PyLongObject *a, PyLongObject *b)
     return NULL;
 }
 
-PyObject *
-_PyLong_Multiply(PyLongObject *a, PyLongObject *b)
+static PyObject *
+long_mul(PyLongObject *a, PyLongObject *b)
 {
-    PyLongObject *z;
-
+    CHECK_BINOP(a, b);
     /* fast path for single-digit multiplication */
     if (IS_MEDIUM_VALUE(a) && IS_MEDIUM_VALUE(b)) {
         stwodigits v = medium_value(a) * medium_value(b);
         return _PyLong_FromSTwoDigits(v);
     }
 
-    z = k_mul(a, b);
+    PyLongObject *z = k_mul(a, b);
     /* Negate if exactly one of the inputs is negative. */
     if (((Py_SIZE(a) ^ Py_SIZE(b)) < 0) && z) {
         _PyLong_Negate(&z);
@@ -3650,13 +3637,6 @@ _PyLong_Multiply(PyLongObject *a, PyLongObject *b)
             return NULL;
     }
     return (PyObject *)z;
-}
-
-static PyObject *
-long_mul(PyLongObject *a, PyLongObject *b)
-{
-    CHECK_BINOP(a, b);
-    return _PyLong_Multiply(a, b);
 }
 
 /* Fast modulo division for single-digit longs. */

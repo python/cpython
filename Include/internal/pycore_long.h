@@ -36,10 +36,6 @@ static inline PyObject* _PyLong_GetZero(void)
 static inline PyObject* _PyLong_GetOne(void)
 { return (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS+1]; }
 
-PyObject *_PyLong_Add(PyLongObject *left, PyLongObject *right);
-PyObject *_PyLong_Multiply(PyLongObject *left, PyLongObject *right);
-PyObject *_PyLong_Subtract(PyLongObject *left, PyLongObject *right);
-
 /* Used by Python/mystrtoul.c, _PyBytes_FromHex(),
    _PyBytes_DecodeEscape(), etc. */
 PyAPI_DATA(unsigned char) _PyLong_DigitValue[256];
