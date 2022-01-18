@@ -5,7 +5,7 @@ the test_suite() function there returns a test suite that's ready to
 be run.
 """
 
-import warnings
+import unittest
 from test import support
 from test.support import warnings_helper
 
