@@ -28,7 +28,7 @@ def _staged_outfile(path):
     try:
         with file:
             yield file
-    except BaseException as e:
+    except:
         os.remove(tempname)
         raise
     else:
