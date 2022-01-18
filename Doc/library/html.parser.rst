@@ -126,7 +126,7 @@ implementations do nothing (except for :meth:`~HTMLParser.handle_startendtag`):
 
 .. method:: HTMLParser.handle_starttag(tag, attrs)
 
-   This method is called to handle the start of a tag (e.g. ``<div id="main">``).
+   This method is called to handle the start tag of an element (e.g. ``<div id="main">``).
 
    The *tag* argument is the name of the tag converted to lower case. The *attrs*
    argument is a list of ``(name, value)`` pairs containing the attributes found
@@ -134,8 +134,8 @@ implementations do nothing (except for :meth:`~HTMLParser.handle_startendtag`):
    and quotes in the *value* have been removed, and character and entity references
    have been replaced.
 
-   For instance, for the tag ``<A HREF="https://www.cwi.nl/">``, this method
-   would be called as ``handle_starttag('a', [('href', 'https://www.cwi.nl/')])``.
+   For example, for the tag ``<A HREF="https://www.cwi.nl/">``, the *tag* parameter
+   will be ``'a'`` and the *attrs* parameter will be ``[('href', 'https://www.cwi.nl/')]``.
 
    All entity references from :mod:`html.entities` are replaced in the attribute
    values.
@@ -145,7 +145,7 @@ implementations do nothing (except for :meth:`~HTMLParser.handle_startendtag`):
 
    This method is called to handle the end tag of an element (e.g. ``</div>``).
 
-   The *tag* argument is the name of the tag converted to lower case.
+   The *tag* parameter will be the name of the tag converted to lower case.
 
 
 .. method:: HTMLParser.handle_startendtag(tag, attrs)
@@ -175,7 +175,7 @@ implementations do nothing (except for :meth:`~HTMLParser.handle_startendtag`):
    This method is called to process decimal and hexadecimal numeric character
    references of the form ``&#NNN;`` and ``&#xNNN;``.  For example, the decimal
    equivalent for ``&gt;`` is ``&#62;``, whereas the hexadecimal is ``&#x3E;``;
-   in this case the method will receive ``'62'`` or ``'x3E'``.  This method
+   in this case the *name* parameter will be ``'62'`` or ``'x3E'``.  This method
    is never called if *convert_charrefs* is ``True``.
 
 
@@ -183,8 +183,8 @@ implementations do nothing (except for :meth:`~HTMLParser.handle_startendtag`):
 
    This method is called when a comment is encountered (e.g. ``<!--comment-->``).
 
-   For example, the comment ``<!-- comment -->`` will cause this method to be
-   called with the argument ``' comment '``.
+   For example, for the comment ``<!-- comment -->`` the *data* parameter will be
+   ``' comment '``.
 
    The content of Internet Explorer conditional comments (condcoms) will also be
    sent to this method, so, for ``<!--[if IE 9]>IE9-specific content<![endif]-->``,
