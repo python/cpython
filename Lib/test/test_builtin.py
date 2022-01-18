@@ -2090,12 +2090,24 @@ class PtyTests(unittest.TestCase):
         # is different and invokes GNU readline if available).
         self.check_input_tty("prompt", b"quux")
 
+    def skip_if_readline(self):
+        # bpo-13886: When the readline module is loaded, PyOS_Readline() uses
+        # the readline implementation. In some cases, the Python readline
+        # callback rlhandler() is called by readline with a string without
+        # non-ASCII characters. Skip tests on non-ASCII characters if the
+        # readline module is loaded, since test_builtin is not intented to test
+        # the readline module, but the builtins module.
+        if 'readline' in sys.modules:
+            self.skipTest("the readline module is loaded")
+
     def test_input_tty_non_ascii(self):
-        # Check stdin/stdout encoding is used when invoking GNU readline
+        self.skip_if_readline()
+        # Check stdin/stdout encoding is used when invoking PyOS_Readline()
         self.check_input_tty("prompté", b"quux\xe9", "utf-8")
 
     def test_input_tty_non_ascii_unicode_errors(self):
-        # Check stdin/stdout error handler is used when invoking GNU readline
+        self.skip_if_readline()
+        # Check stdin/stdout error handler is used when invoking PyOS_Readline()
         self.check_input_tty("prompté", b"quux\xe9", "ascii")
 
     def test_input_no_stdout_fileno(self):

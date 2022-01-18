@@ -127,6 +127,9 @@
 /* Define to 1 if you have the 'chflags' function. */
 #undef HAVE_CHFLAGS
 
+/* Define to 1 if you have the `chmod' function. */
+#undef HAVE_CHMOD
+
 /* Define to 1 if you have the `chown' function. */
 #undef HAVE_CHOWN
 
@@ -977,6 +980,9 @@
 /* Define to 1 if you have the `setitimer' function. */
 #undef HAVE_SETITIMER
 
+/* Define to 1 if you have the <setjmp.h> header file. */
+#undef HAVE_SETJMP_H
+
 /* Define to 1 if you have the `setlocale' function. */
 #undef HAVE_SETLOCALE
 
@@ -1335,6 +1341,9 @@
 
 /* Define this if you have tcl and TCL_UTF_MAX==6 */
 #undef HAVE_UCS4_TCL
+
+/* Define to 1 if you have the `umask' function. */
+#undef HAVE_UMASK
 
 /* Define to 1 if you have the `uname' function. */
 #undef HAVE_UNAME
@@ -1703,6 +1712,9 @@
 
 /* Define to force use of thread-safe errno, h_errno, and other functions */
 #undef _REENTRANT
+
+/* Define to 1 if you want to emulate signals on WASI */
+#undef _WASI_EMULATED_SIGNAL
 
 /* Define to the level of X/Open that your system supports */
 #undef _XOPEN_SOURCE
