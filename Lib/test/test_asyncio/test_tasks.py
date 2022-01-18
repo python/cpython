@@ -278,7 +278,7 @@ class BaseTaskTests:
         self.set_event_loop(loop)
         fut = asyncio.ensure_future(Aw(coro()), loop=loop)
         loop.run_until_complete(fut)
-        assert fut.result() == 'ok'
+        self.assertEqual(fut.result(), 'ok')
 
     def test_ensure_future_neither(self):
         with self.assertRaises(TypeError):
@@ -1016,7 +1016,7 @@ class BaseTaskTests:
 
         async def main():
             result = await asyncio.wait_for(inner(), timeout=.01)
-            assert result == 1
+            self.assertEqual(result, 1)
 
         asyncio.run(main())
 

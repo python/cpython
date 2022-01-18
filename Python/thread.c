@@ -109,7 +109,7 @@ _PyThread_debug_deprecation(void)
 size_t
 PyThread_get_stacksize(void)
 {
-    return _PyInterpreterState_GET()->pythread_stacksize;
+    return _PyInterpreterState_GET()->threads.stacksize;
 }
 
 /* Only platforms defining a THREAD_SET_STACKSIZE() macro

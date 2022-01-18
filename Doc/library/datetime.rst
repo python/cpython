@@ -2359,8 +2359,8 @@ requires, and these work on all platforms with a standard C implementation.
 |           | decimal number.                |                        | \(9)  |
 +-----------+--------------------------------+------------------------+-------+
 | ``%f``    | Microsecond as a decimal       | 000000, 000001, ...,   | \(5)  |
-|           | number, zero-padded on the     | 999999                 |       |
-|           | left.                          |                        |       |
+|           | number, zero-padded to 6       | 999999                 |       |
+|           | digits.                        |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%z``    | UTC offset in the form         | (empty), +0000,        | \(6)  |
 |           | ``±HHMM[SS[.ffffff]]`` (empty  | -0400, +1030,          |       |

@@ -37,6 +37,8 @@ EXTENSION_PREFIX = """\
 #  define D(x)
 #endif
 
+# define MAXSTACK 6000
+
 """
 
 
@@ -364,10 +366,14 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         self.skip_actions = skip_actions
 
     def add_level(self) -> None:
-        self.print("D(p->level++);")
+        self.print("if (p->level++ == MAXSTACK) {")
+        with self.indent():
+            self.print("p->error_indicator = 1;")
+            self.print("PyErr_NoMemory();")
+        self.print("}")
 
     def remove_level(self) -> None:
-        self.print("D(p->level--);")
+        self.print("p->level--;")
 
     def add_return(self, ret_val: str) -> None:
         self.remove_level()
@@ -544,9 +550,10 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 self.print("p->in_raw_rule++;")
                 self.print(f"void *_raw = {node.name}_raw(p);")
                 self.print("p->in_raw_rule--;")
-                self.print("if (p->error_indicator)")
+                self.print("if (p->error_indicator) {")
                 with self.indent():
-                    self.print("return NULL;")
+                    self.add_return("NULL")
+                self.print("}")
                 self.print("if (_raw == NULL || p->mark <= _resmark)")
                 with self.indent():
                     self.print("break;")

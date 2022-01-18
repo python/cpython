@@ -71,6 +71,69 @@ class DisplayHookTest(unittest.TestCase):
             code = compile("42", "<string>", "single")
             self.assertRaises(ValueError, eval, code)
 
+class ActiveExceptionTests(unittest.TestCase):
+    def test_exc_info_no_exception(self):
+        self.assertEqual(sys.exc_info(), (None, None, None))
+
+    def test_sys_exception_no_exception(self):
+        self.assertEqual(sys.exception(), None)
+
+    def test_exc_info_with_exception_instance(self):
+        def f():
+            raise ValueError(42)
+
+        try:
+            f()
+        except Exception as e_:
+            e = e_
+            exc_info = sys.exc_info()
+
+        self.assertIsInstance(e, ValueError)
+        self.assertIs(exc_info[0], ValueError)
+        self.assertIs(exc_info[1], e)
+        self.assertIs(exc_info[2], e.__traceback__)
+
+    def test_exc_info_with_exception_type(self):
+        def f():
+            raise ValueError
+
+        try:
+            f()
+        except Exception as e_:
+            e = e_
+            exc_info = sys.exc_info()
+
+        self.assertIsInstance(e, ValueError)
+        self.assertIs(exc_info[0], ValueError)
+        self.assertIs(exc_info[1], e)
+        self.assertIs(exc_info[2], e.__traceback__)
+
+    def test_sys_exception_with_exception_instance(self):
+        def f():
+            raise ValueError(42)
+
+        try:
+            f()
+        except Exception as e_:
+            e = e_
+            exc = sys.exception()
+
+        self.assertIsInstance(e, ValueError)
+        self.assertIs(exc, e)
+
+    def test_sys_exception_with_exception_type(self):
+        def f():
+            raise ValueError
+
+        try:
+            f()
+        except Exception as e_:
+            e = e_
+            exc = sys.exception()
+
+        self.assertIsInstance(e, ValueError)
+        self.assertIs(exc, e)
+
 
 class ExceptHookTest(unittest.TestCase):
 
@@ -1298,13 +1361,13 @@ class SizeofTest(unittest.TestCase):
         class C(object): pass
         check(C.__dict__, size('P'))
         # BaseException
-        check(BaseException(), size('5Pb'))
+        check(BaseException(), size('6Pb'))
         # UnicodeEncodeError
-        check(UnicodeEncodeError("", "", 0, 0, ""), size('5Pb 2P2nP'))
+        check(UnicodeEncodeError("", "", 0, 0, ""), size('6Pb 2P2nP'))
         # UnicodeDecodeError
-        check(UnicodeDecodeError("", b"", 0, 0, ""), size('5Pb 2P2nP'))
+        check(UnicodeDecodeError("", b"", 0, 0, ""), size('6Pb 2P2nP'))
         # UnicodeTranslateError
-        check(UnicodeTranslateError("", 0, 1, ""), size('5Pb 2P2nP'))
+        check(UnicodeTranslateError("", 0, 1, ""), size('6Pb 2P2nP'))
         # ellipses
         check(Ellipsis, size(''))
         # EncodingMap
@@ -1312,7 +1375,7 @@ class SizeofTest(unittest.TestCase):
         x = codecs.charmap_build(encodings.iso8859_3.decoding_table)
         check(x, size('32B2iB'))
         # enumerate
-        check(enumerate([]), size('n3P'))
+        check(enumerate([]), size('n4P'))
         # reverse
         check(reversed(''), size('nP'))
         # float
@@ -1323,7 +1386,7 @@ class SizeofTest(unittest.TestCase):
         def func():
             return sys._getframe()
         x = func()
-        check(x, size('3Pi3c8P2iciP'))
+        check(x, size('3Pi3c8P2ic?P'))
         # function
         def func(): pass
         check(func, size('14Pi'))
@@ -1340,7 +1403,7 @@ class SizeofTest(unittest.TestCase):
             check(bar, size('PP'))
         # generator
         def get_gen(): yield 1
-        check(get_gen(), size('P2PPP4P'))
+        check(get_gen(), size('P2P4P4c8P2ic?P'))
         # iterator
         check(iter('abc'), size('lP'))
         # callable-iterator
@@ -1421,8 +1484,8 @@ class SizeofTest(unittest.TestCase):
         check((1,2,3), vsize('') + 3*self.P)
         # type
         # static type: PyTypeObject
-        fmt = 'P2nPI13Pl4Pn9Pn12PIPP'
-        s = vsize(fmt)
+        fmt = 'P2nPI13Pl4Pn9Pn12PIP'
+        s = vsize('2P' + fmt)
         check(int, s)
         # class
         s = vsize(fmt +                 # PyTypeObject

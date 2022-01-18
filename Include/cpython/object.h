@@ -270,7 +270,6 @@ struct _typeobject {
 
     destructor tp_finalize;
     vectorcallfunc tp_vectorcall;
-    Py_ssize_t tp_inline_values_offset;
 };
 
 /* The *real* layout of a type object when allocated on the heap */

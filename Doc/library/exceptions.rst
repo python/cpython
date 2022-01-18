@@ -127,6 +127,14 @@ The following exceptions are used mostly as base classes for other exceptions.
              tb = sys.exc_info()[2]
              raise OtherException(...).with_traceback(tb)
 
+   .. attribute:: __note__
+
+      A mutable field which is :const:`None` by default and can be set to a string.
+      If it is not :const:`None`, it is included in the traceback. This field can
+      be used to enrich exceptions after they have been caught.
+
+   .. versionadded:: 3.11
+
 
 .. exception:: Exception
 
@@ -842,6 +850,78 @@ The following exceptions are used as warning categories; see the
 
    .. versionadded:: 3.2
 
+
+Exception groups
+----------------
+
+The following are used when it is necessary to raise multiple unrelated
+exceptions. They are part of the exception hierarchy so they can be
+handled with :keyword:`except` like all other exceptions. In addition,
+they are recognised by :keyword:`except*<except_star>`, which matches
+their subgroups based on the types of the contained exceptions.
+
+.. exception:: ExceptionGroup(msg, excs)
+.. exception:: BaseExceptionGroup(msg, excs)
+
+   Both of these exception types wrap the exceptions in the sequence ``excs``.
+   The ``msg`` parameter must be a string. The difference between the two
+   classes is that :exc:`BaseExceptionGroup` extends :exc:`BaseException` and
+   it can wrap any exception, while :exc:`ExceptionGroup` extends :exc:`Exception`
+   and it can only wrap subclasses of :exc:`Exception`. This design is so that
+   ``except Exception`` catches an :exc:`ExceptionGroup` but not
+   :exc:`BaseExceptionGroup`.
+
+   The :exc:`BaseExceptionGroup` constructor returns an :exc:`ExceptionGroup`
+   rather than a :exc:`BaseExceptionGroup` if all contained exceptions are
+   :exc:`Exception` instances, so it can be used to make the selection
+   automatic. The :exc:`ExceptionGroup` constructor, on the other hand,
+   raises a :exc:`TypeError` if any contained exception is not an
+   :exc:`Exception` subclass.
+
+   .. method:: subgroup(condition)
+
+   Returns an exception group that contains only the exceptions from the
+   current group that match *condition*, or ``None`` if the result is empty.
+
+   The condition can be either a function that accepts an exception and returns
+   true for those that should be in the subgroup, or it can be an exception type
+   or a tuple of exception types, which is used to check for a match using the
+   same check that is used in an ``except`` clause.
+
+   The nesting structure of the current exception is preserved in the result,
+   as are the values of its :attr:`message`, :attr:`__traceback__`,
+   :attr:`__cause__`, :attr:`__context__` and :attr:`__note__` fields.
+   Empty nested groups are omitted from the result.
+
+   The condition is checked for all exceptions in the nested exception group,
+   including the top-level and any nested exception groups. If the condition is
+   true for such an exception group, it is included in the result in full.
+
+   .. method:: split(condition)
+
+   Like :meth:`subgroup`, but returns the pair ``(match, rest)`` where ``match``
+   is ``subgroup(condition)`` and ``rest`` is the remaining non-matching
+   part.
+
+   .. method:: derive(excs)
+
+   Returns an exception group with the same :attr:`message`,
+   :attr:`__traceback__`, :attr:`__cause__`, :attr:`__context__`
+   and :attr:`__note__` but which wraps the exceptions in ``excs``.
+
+   This method is used by :meth:`subgroup` and :meth:`split`. A
+   subclass needs to override it in order to make :meth:`subgroup`
+   and :meth:`split` return instances of the subclass rather
+   than :exc:`ExceptionGroup`. ::
+
+      >>> class MyGroup(ExceptionGroup):
+      ...     def derive(self, exc):
+      ...         return MyGroup(self.message, exc)
+      ...
+      >>> MyGroup("eg", [ValueError(1), TypeError(2)]).split(TypeError)
+      (MyGroup('eg', [TypeError(2)]), MyGroup('eg', [ValueError(1)]))
+
+   .. versionadded:: 3.11
 
 
 Exception hierarchy

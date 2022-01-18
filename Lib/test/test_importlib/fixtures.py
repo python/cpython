@@ -8,7 +8,16 @@ import textwrap
 import contextlib
 
 from test.support.os_helper import FS_NONASCII
+from test.support import requires_zlib
 from typing import Dict, Union
+
+try:
+    from importlib import resources
+
+    getattr(resources, 'files')
+    getattr(resources, 'as_file')
+except (ImportError, AttributeError):
+    import importlib_resources as resources  # type: ignore
 
 
 @contextlib.contextmanager
@@ -54,7 +63,7 @@ class Fixtures:
 
 class SiteDir(Fixtures):
     def setUp(self):
-        super(SiteDir, self).setUp()
+        super().setUp()
         self.site_dir = self.fixtures.enter_context(tempdir())
 
 
@@ -69,7 +78,7 @@ class OnSysPath(Fixtures):
             sys.path.remove(str(dir))
 
     def setUp(self):
-        super(OnSysPath, self).setUp()
+        super().setUp()
         self.fixtures.enter_context(self.add_sys_path(self.site_dir))
 
 
@@ -106,7 +115,7 @@ class DistInfoPkg(OnSysPath, SiteDir):
     }
 
     def setUp(self):
-        super(DistInfoPkg, self).setUp()
+        super().setUp()
         build_files(DistInfoPkg.files, self.site_dir)
 
     def make_uppercase(self):
@@ -131,7 +140,7 @@ class DistInfoPkgWithDot(OnSysPath, SiteDir):
     }
 
     def setUp(self):
-        super(DistInfoPkgWithDot, self).setUp()
+        super().setUp()
         build_files(DistInfoPkgWithDot.files, self.site_dir)
 
 
@@ -152,13 +161,13 @@ class DistInfoPkgWithDotLegacy(OnSysPath, SiteDir):
     }
 
     def setUp(self):
-        super(DistInfoPkgWithDotLegacy, self).setUp()
+        super().setUp()
         build_files(DistInfoPkgWithDotLegacy.files, self.site_dir)
 
 
 class DistInfoPkgOffPath(SiteDir):
     def setUp(self):
-        super(DistInfoPkgOffPath, self).setUp()
+        super().setUp()
         build_files(DistInfoPkg.files, self.site_dir)
 
 
@@ -198,7 +207,7 @@ class EggInfoPkg(OnSysPath, SiteDir):
     }
 
     def setUp(self):
-        super(EggInfoPkg, self).setUp()
+        super().setUp()
         build_files(EggInfoPkg.files, prefix=self.site_dir)
 
 
@@ -219,7 +228,7 @@ class EggInfoFile(OnSysPath, SiteDir):
     }
 
     def setUp(self):
-        super(EggInfoFile, self).setUp()
+        super().setUp()
         build_files(EggInfoFile.files, prefix=self.site_dir)
 
 
@@ -285,3 +294,20 @@ def DALS(str):
 class NullFinder:
     def find_module(self, name):
         pass
+
+
+@requires_zlib()
+class ZipFixtures:
+    root = 'test.test_importlib.data'
+
+    def _fixture_on_path(self, filename):
+        pkg_file = resources.files(self.root).joinpath(filename)
+        file = self.resources.enter_context(resources.as_file(pkg_file))
+        assert file.name.startswith('example'), file.name
+        sys.path.insert(0, str(file))
+        self.resources.callback(sys.path.pop, 0)
+
+    def setUp(self):
+        # Add self.zip_name to the front of sys.path.
+        self.resources = contextlib.ExitStack()
+        self.addCleanup(self.resources.close)

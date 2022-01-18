@@ -461,7 +461,7 @@ fp_setreadl(struct tok_state *tok, const char* enc)
         return 0;
     }
 
-    io = PyImport_ImportModuleNoBlock("io");
+    io = PyImport_ImportModule("io");
     if (io == NULL)
         return 0;
 
@@ -819,10 +819,10 @@ tok_readline_raw(struct tok_state *tok)
             tok_concatenate_interactive_new_line(tok, line) == -1) {
             return 0;
         }
-        if (*tok->inp == '\0') {
+        tok->inp = strchr(tok->inp, '\0');
+        if (tok->inp == tok->buf) {
             return 0;
         }
-        tok->inp = strchr(tok->inp, '\0');
     } while (tok->inp[-1] != '\n');
     return 1;
 }
@@ -984,12 +984,9 @@ tok_underflow_file(struct tok_state *tok) {
     }
     /* The default encoding is UTF-8, so make sure we don't have any
        non-UTF-8 sequences in it. */
-    if (!tok->encoding
-        && (tok->decoding_state != STATE_NORMAL || tok->lineno >= 2)) {
-        if (!ensure_utf8(tok->cur, tok)) {
-            error_ret(tok);
-            return 0;
-        }
+    if (!tok->encoding && !ensure_utf8(tok->cur, tok)) {
+        error_ret(tok);
+        return 0;
     }
     assert(tok->done == E_OK);
     return tok->done == E_OK;

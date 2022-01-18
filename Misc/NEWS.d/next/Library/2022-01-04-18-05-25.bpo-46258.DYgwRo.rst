@@ -1,0 +1,2 @@
+Speed up :func:`math.isqrt` for small positive integers by replacing two
+division steps with a lookup table.

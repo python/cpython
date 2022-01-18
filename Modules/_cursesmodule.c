@@ -1230,8 +1230,8 @@ PyCursesWindow_ChgAt(PyCursesWindowObject *self, PyObject *args)
         return NULL;
     }
 
-    color = (short)((attr >> 8) & 0xff);
-    attr = attr - (color << 8);
+    color = (short) PAIR_NUMBER(attr);
+    attr = attr & A_ATTRIBUTES;
 
     if (use_xy) {
         rtn = mvwchgat(self->win,y,x,num,attr,color,NULL);
@@ -3959,7 +3959,7 @@ static int
 update_lines_cols(void)
 {
     PyObject *o;
-    PyObject *m = PyImport_ImportModuleNoBlock("curses");
+    PyObject *m = PyImport_ImportModule("curses");
     _Py_IDENTIFIER(LINES);
     _Py_IDENTIFIER(COLS);
 

@@ -1,1 +1,0 @@
-Add MIME types for N-quads, N-triples, Notation3 and TriG to ``mimetypes``.

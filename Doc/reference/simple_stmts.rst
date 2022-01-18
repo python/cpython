@@ -655,6 +655,12 @@ and information about handling exceptions is in section :ref:`try`.
     The ``__suppress_context__`` attribute to suppress automatic display of the
     exception context.
 
+.. versionchanged:: 3.11
+    If the traceback of the active exception is modified in an :keyword:`except`
+    clause, a subsequent ``raise`` statement re-raises the exception with the
+    modified traceback. Previously, the exception was re-raised with the
+    traceback it had when it was caught.
+
 .. _break:
 
 The :keyword:`!break` statement

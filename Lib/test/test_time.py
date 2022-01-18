@@ -117,12 +117,13 @@ class TimeTestCase(unittest.TestCase):
         clk_id = time.pthread_getcpuclockid(threading.get_ident())
         self.assertTrue(type(clk_id) is int)
         # when in 32-bit mode AIX only returns the predefined constant
-        if not platform.system() == "AIX":
-            self.assertNotEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
-        elif (sys.maxsize.bit_length() > 32):
-            self.assertNotEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
-        else:
+        if platform.system() == "AIX" and (sys.maxsize.bit_length() <= 32):
             self.assertEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
+        # Solaris returns CLOCK_THREAD_CPUTIME_ID when current thread is given
+        elif sys.platform.startswith("sunos"):
+            self.assertEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
+        else:
+            self.assertNotEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
         t1 = time.clock_gettime(clk_id)
         t2 = time.clock_gettime(clk_id)
         self.assertLessEqual(t1, t2)
