@@ -4609,6 +4609,10 @@ class AnnotatedTests(BaseTestCase):
         with self.assertRaises(TypeError):
             issubclass(int, Annotated[int, "positive"])
 
+    def test_too_few_type_args(self):
+        with self.assertRaisesRegex(TypeError, 'at least two arguments'):
+            Annotated[int]
+
     def test_pickle(self):
         samples = [typing.Any, typing.Union[int, str],
                    typing.Optional[str], Tuple[int, ...],
