@@ -290,7 +290,7 @@ Module functions and constants
        con1 = sqlite3.connect("file:mem1?mode=memory&cache=shared", uri=True)
        con2 = sqlite3.connect("file:mem1?mode=memory&cache=shared", uri=True)
        con1.executescript("create table t(t); insert into t values(28);")
-       row = con2.execute("select * from t").fetchall()
+       rows = con2.execute("select * from t").fetchall()
 
    More information about this feature, including a list of recognized
    parameters, can be found in the
