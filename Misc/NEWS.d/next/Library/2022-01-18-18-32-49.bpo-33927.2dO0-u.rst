@@ -1,0 +1,3 @@
+``python -m json.tool infile outfile`` uses staged write idiom for
+``outfile``. This allows that outfile is same to infile even when
+``--json-lines`` option is used.
