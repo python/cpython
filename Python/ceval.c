@@ -1345,9 +1345,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 #define CHECK_EVAL_BREAKER() \
     if (_Py_atomic_load_relaxed(eval_breaker)) { \
-        if (eval_frame_handle_pending(tstate) != 0) { \
-            goto error; \
-        } \
+        goto check_eval_breaker; \
     }
 
 
@@ -1758,6 +1756,12 @@ resume_frame:
 
     DISPATCH();
 
+check_eval_breaker:
+    if (eval_frame_handle_pending(tstate) != 0) {
+        goto error;
+    }
+    DISPATCH();
+
     {
     /* Start instructions */
 #if USE_COMPUTED_GOTOS
@@ -1790,8 +1794,8 @@ resume_frame:
                 next_instr = first_instr + nexti;
             }
             frame->f_state = FRAME_EXECUTING;
-            if (oparg < 2) {
-                CHECK_EVAL_BREAKER();
+            if (_Py_atomic_load_relaxed(eval_breaker) && oparg < 2) {
+                goto check_eval_breaker;
             }
             DISPATCH();
         }
