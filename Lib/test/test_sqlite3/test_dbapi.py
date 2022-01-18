@@ -645,17 +645,6 @@ class SerializeTests(unittest.TestCase):
                 # deserialized database.
                 cx.execute("create table fail(f)")
 
-    def test_fetch_across_deserialize(self):
-        with memory_database() as cx:
-            with cx:
-                cx.execute("create table t(t)")
-            data = cx.serialize()
-            cu = cx.execute("select t from t")
-            cx.deserialize(data)
-            regex = "Cursor.*can no longer be fetched from"
-            with self.assertRaisesRegex(sqlite.InterfaceError, regex):
-                cu.fetchall()
-
 
 class OpenTests(unittest.TestCase):
     _sql = "create table test(id integer)"
