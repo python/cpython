@@ -571,13 +571,10 @@ class BaseFutureTests:
         test_utils.run_briefly(self.loop)
         support.gc_collect()
 
-        if sys.version_info >= (3, 4):
-            regex = f'^{self.cls.__name__} exception was never retrieved\n'
-            exc_info = (type(exc), exc, exc.__traceback__)
-            m_log.error.assert_called_once_with(mock.ANY, exc_info=exc_info)
-        else:
-            regex = r'^Future/Task exception was never retrieved\n'
-            m_log.error.assert_called_once_with(mock.ANY, exc_info=False)
+        regex = f'^{self.cls.__name__} exception was never retrieved\n'
+        exc_info = (type(exc), exc, exc.__traceback__)
+        m_log.error.assert_called_once_with(mock.ANY, exc_info=exc_info)
+
         message = m_log.error.call_args[0][0]
         self.assertRegex(message, re.compile(regex, re.DOTALL))
 

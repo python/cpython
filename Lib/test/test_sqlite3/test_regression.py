@@ -231,28 +231,6 @@ class RegressionTests(unittest.TestCase):
         with self.assertRaises(sqlite.ProgrammingError):
             cur = con.cursor()
 
-    def test_cursor_registration(self):
-        """
-        Verifies that subclassed cursor classes are correctly registered with
-        the connection object, too.  (fetch-across-rollback problem)
-        """
-        class Connection(sqlite.Connection):
-            def cursor(self):
-                return Cursor(self)
-
-        class Cursor(sqlite.Cursor):
-            def __init__(self, con):
-                sqlite.Cursor.__init__(self, con)
-
-        con = Connection(":memory:")
-        cur = con.cursor()
-        cur.execute("create table foo(x)")
-        cur.executemany("insert into foo(x) values (?)", [(3,), (4,), (5,)])
-        cur.execute("select x from foo")
-        con.rollback()
-        with self.assertRaises(sqlite.InterfaceError):
-            cur.fetchall()
-
     def test_auto_commit(self):
         """
         Verifies that creating a connection in autocommit mode works.
