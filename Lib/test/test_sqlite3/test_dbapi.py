@@ -20,6 +20,7 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
+import _testcapi
 import contextlib
 import os
 import sqlite3 as sqlite
@@ -1019,16 +1020,26 @@ class BlobTests(unittest.TestCase):
         self.assertEqual(self.blob.tell(), 40)
 
     def test_blob_seek_error(self):
+        msg_oor = "offset out of blob range"
+        msg_orig = "'origin' should be 0, 1, or 2"
+        msg_of = "seek offset result in overflow"
+
         dataset = (
-            (ValueError, lambda: self.blob.seek(1000)),
-            (ValueError, lambda: self.blob.seek(-10)),
-            (ValueError, lambda: self.blob.seek(10, -1)),
-            (OverflowError, lambda: self.blob.seek(2**65, os.SEEK_CUR)),
-            (OverflowError, lambda: self.blob.seek(2**65, os.SEEK_END)),
+            (ValueError, msg_oor, lambda: self.blob.seek(1000)),
+            (ValueError, msg_oor, lambda: self.blob.seek(-10)),
+            (ValueError, msg_orig, lambda: self.blob.seek(10, -1)),
+            (ValueError, msg_orig, lambda: self.blob.seek(10, 3)),
         )
-        for exc, fn in dataset:
-            with self.subTest(exc=exc, fn=fn):
-                self.assertRaises(exc, fn)
+        for exc, msg, fn in dataset:
+            with self.subTest(exc=exc, msg=msg, fn=fn):
+                self.assertRaisesRegex(exc, msg, fn)
+
+        n = len(self.data) // 2
+        self.blob.seek(n, os.SEEK_SET)
+        with self.assertRaisesRegex(OverflowError, msg_of):
+            self.blob.seek(_testcapi.INT_MAX, os.SEEK_CUR)
+        with self.assertRaisesRegex(OverflowError, msg_of):
+            self.blob.seek( _testcapi.INT_MAX, os.SEEK_END)
 
     def test_blob_read(self):
         buf = self.blob.read()
@@ -1053,6 +1064,11 @@ class BlobTests(unittest.TestCase):
         self.blob.seek(10)
         self.assertEqual(self.blob.read(10), new_data[:10])
 
+    def test_blob_read_after_row_change(self):
+        self.cx.execute("update test set b='aaaa' where rowid=1")
+        with self.assertRaises(sqlite.OperationalError):
+            self.blob.read()
+
     def test_blob_write(self):
         new_data = b"new data".ljust(50)
         self.blob.write(new_data)
@@ -1071,22 +1087,16 @@ class BlobTests(unittest.TestCase):
         self.blob.write(new_data[:25])
         self.assertEqual(self.blob.tell(), 25)
 
-    def test_blob_write_more_than_blob_size(self):
-        msg = "data longer than blob length"
-        with self.assertRaisesRegex(ValueError, msg):
+    def test_blob_write_error_length(self):
+        with self.assertRaisesRegex(ValueError, "data longer than blob"):
             self.blob.write(b"a" * 1000)
 
-    def test_blob_read_after_row_change(self):
-        self.cx.execute("UPDATE test SET b='aaaa' where rowid=1")
-        with self.assertRaises(sqlite.OperationalError):
-            self.blob.read()
-
-    def test_blob_write_after_row_change(self):
-        self.cx.execute("UPDATE test SET b='aaaa' where rowid=1")
+    def test_blob_write_error_row_changed(self):
+        self.cx.execute("update test set b='aaaa' where rowid=1")
         with self.assertRaises(sqlite.OperationalError):
             self.blob.write(b"aaa")
 
-    def test_blob_write_when_readonly(self):
+    def test_blob_write_error_readonly(self):
         ro_blob = self.cx.open_blob("test", "b", 1, readonly=True)
         with self.assertRaisesRegex(sqlite.OperationalError, "readonly"):
             ro_blob.write(b"aaa")
@@ -1117,6 +1127,7 @@ class BlobTests(unittest.TestCase):
             (b"", TypeError, "Blob indices must be integers"),
             (105, IndexError, "Blob index out of range"),
             (-105, IndexError, "Blob index out of range"),
+            (_testcapi.ULONG_MAX, IndexError, "cannot fit 'int'"),
             (len(self.blob), IndexError, "Blob index out of range"),
         )
         for idx, exc, regex in dataset:
