@@ -187,8 +187,9 @@ blob_read_impl(pysqlite_Blob *self, int length)
 static int
 inner_write(pysqlite_Blob *self, const void *buf, Py_ssize_t len, int offset)
 {
-    if (len > INT_MAX) {
-        PyErr_SetString(PyExc_OverflowError, "data longer than INT_MAX bytes");
+    int remaining_len = sqlite3_blob_bytes(self->blob) - self->offset;
+    if (len > remaining_len) {
+        PyErr_SetString(PyExc_ValueError, "data longer than blob length");
         return -1;
     }
 
@@ -219,12 +220,6 @@ blob_write_impl(pysqlite_Blob *self, Py_buffer *data)
 /*[clinic end generated code: output=b34cf22601b570b2 input=0dcf4018286f55d2]*/
 {
     if (!check_blob(self)) {
-        return NULL;
-    }
-
-    int remaining_len = sqlite3_blob_bytes(self->blob) - self->offset;
-    if (data->len > remaining_len) {
-        PyErr_SetString(PyExc_ValueError, "data longer than blob length");
         return NULL;
     }
 
