@@ -581,8 +581,8 @@ class BuiltinTest(unittest.TestCase):
         # dir(traceback)
         try:
             raise IndexError
-        except:
-            self.assertEqual(len(dir(sys.exc_info()[2])), 4)
+        except IndexError as e:
+            self.assertEqual(len(dir(e.__traceback__)), 4)
 
         # test that object has a __dir__()
         self.assertEqual(sorted([].__dir__()), dir([]))
