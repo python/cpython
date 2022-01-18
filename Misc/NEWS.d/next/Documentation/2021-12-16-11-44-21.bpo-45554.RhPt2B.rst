@@ -1,1 +1,0 @@
-Expand the :attr:`multiprocessing.Process.exitcode` documentation.
