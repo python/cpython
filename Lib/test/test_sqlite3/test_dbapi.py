@@ -1041,8 +1041,10 @@ class BlobTests(unittest.TestCase):
         self.assertEqual(len(buf), len(self.data))
 
     def test_blob_read_advance_offset(self):
-        self.blob.read(10)
-        self.assertEqual(self.blob.tell(), 10)
+        n = 10
+        buf = self.blob.read(n)
+        self.assertEqual(buf, self.data[:n])
+        self.assertEqual(self.blob.tell(), n)
 
     def test_blob_read_start_at_offset(self):
         new_data = b"b" * 50
