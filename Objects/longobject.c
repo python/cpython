@@ -3799,7 +3799,7 @@ l_divmod(PyLongObject *v, PyLongObject *w,
             Py_DECREF(div);
             return -1;
         }
-        temp = (PyLongObject *) long_sub(div, (PyLongObject *)_PyLong_GetOne());
+        temp = (PyLongObject *) long_sub(div, DIGIT_ONE);
         if (temp == NULL) {
             Py_DECREF(mod);
             Py_DECREF(div);
@@ -4208,7 +4208,7 @@ long_invmod(PyLongObject *a, PyLongObject *n)
 
     Py_DECREF(c);
     Py_DECREF(n);
-    if (long_compare(a, (PyLongObject *)_PyLong_GetOne())) {
+    if (long_compare(a, DIGIT_ONE)) {
         /* a != 1; we don't have an inverse. */
         Py_DECREF(a);
         Py_DECREF(b);
@@ -4274,7 +4274,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
                 z = _PyLong_NewFillZero((j = i / PyLong_SHIFT) + 1);
                 if (z == NULL)
                     goto Error;
-                /* set the last digit of ob_digit to 1 << b%PyLong_SHIFT */
+                /* set the last digit of ob_digit to 1 << (b % PyLong_SHIFT) */
                 z->ob_digit[j] = 1 << (i - j*PyLong_SHIFT);
                 z = maybe_small_long(z);
                 goto Done;
@@ -4551,7 +4551,7 @@ long_invert(PyLongObject *v)
     PyLongObject *x;
     if (IS_MEDIUM_VALUE(v))
         return _PyLong_FromSTwoDigits(~medium_value(v));
-    x = (PyLongObject *) long_add(v, (PyLongObject *)_PyLong_GetOne());
+    x = (PyLongObject *) long_add(v, DIGIT_ONE);
     if (x == NULL)
         return NULL;
     _PyLong_Negate(&x);
@@ -5383,7 +5383,7 @@ _PyLong_DivmodNear(PyObject *a, PyObject *b)
 
     /* compare twice the remainder with the divisor, to see
        if we need to adjust the quotient and remainder */
-    PyObject *one = _PyLong_GetOne();  // borrowed reference
+    PyObject *one = (PyObject *)DIGIT_ONE;  // borrowed reference
     twice_rem = long_lshift((PyObject *)rem, one);
     if (twice_rem == NULL)
         goto error;
@@ -5685,7 +5685,7 @@ int_as_integer_ratio_impl(PyObject *self)
     if (numerator == NULL) {
         return NULL;
     }
-    ratio_tuple = PyTuple_Pack(2, numerator, _PyLong_GetOne());
+    ratio_tuple = PyTuple_Pack(2, numerator, (PyObject *)DIGIT_ONE);
     Py_DECREF(numerator);
     return ratio_tuple;
 }
