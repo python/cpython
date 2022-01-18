@@ -218,6 +218,7 @@ class ArchiveUtilTestCase(support.TempdirManager,
             os.chdir(old_dir)
         tarball = base_name + '.tar.Z'
         self.assertTrue(os.path.exists(tarball))
+        raise ValueError([war.message for war in w])
         self.assertEqual(len(w.warnings), 1)
 
         # same test with dry_run
