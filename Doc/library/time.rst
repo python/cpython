@@ -22,7 +22,7 @@ An explanation of some terminology and conventions is in order.
 .. index:: single: epoch
 
 * The :dfn:`epoch` is the point where the time starts, and is platform
-  dependent.  For Unix, the epoch is January 1, 1970, 00:00:00 (UTC).
+  dependent.  For Unix and Windows, the epoch is January 1, 1970, 00:00:00 (UTC).
   To find out what the epoch is on a given platform, look at
   ``time.gmtime(0)``.
 
