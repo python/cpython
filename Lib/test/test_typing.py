@@ -3926,8 +3926,8 @@ class CollectionsAbcTests(BaseTestCase):
         self.assertIsSubclass(B, typing.Mapping)
 
     def test_or_and_ror(self):
-        self.assertEqual(typing.Sized | int, Union[typing.Sized, int])
-        self.assertEqual(int | typing.Hashable, Union[int, typing.Hashable])
+        self.assertEqual(typing.Sized | typing.Awaitable, Union[typing.Sized, typing.Awaitable])
+        self.assertEqual(typing.Coroutine | typing.Hashable, Union[typing.Coroutine, typing.Hashable])
 
 
 class OtherABCTests(BaseTestCase):
