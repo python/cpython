@@ -2468,16 +2468,6 @@ class GenericTests(BaseTestCase):
                     class Foo(obj):
                         pass
 
-    def test_or_and_ror(self):
-        self.assertEqual(
-            SimpleMapping[str, int] | bool,
-            Union[SimpleMapping[str, int], bool],
-        )
-        self.assertEqual(
-            bool | SimpleMapping[str, int],
-            Union[bool, SimpleMapping[str, int]],
-        )
-
 
 class ClassVarTests(BaseTestCase):
 
