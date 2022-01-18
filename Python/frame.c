@@ -55,7 +55,6 @@ _PyFrame_Copy(InterpreterFrame *src, InterpreterFrame *dest)
 static inline void
 clear_specials(InterpreterFrame *frame)
 {
-    frame->generator = NULL;
     Py_XDECREF(frame->frame_obj);
     Py_XDECREF(frame->f_locals);
     Py_DECREF(frame->f_func);
@@ -95,8 +94,8 @@ void
 _PyFrame_Clear(InterpreterFrame * frame)
 {
     /* It is the responsibility of the owning generator/coroutine
-     * to have cleared the generator pointer */
-    assert(frame->generator == NULL);
+     * to have cleared the enclosing generator, if any. */
+    assert(!frame->is_generator);
     if (frame->frame_obj) {
         PyFrameObject *f = frame->frame_obj;
         frame->frame_obj = NULL;

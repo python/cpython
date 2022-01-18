@@ -626,7 +626,7 @@ frame_dealloc(PyFrameObject *f)
 {
     /* It is the responsibility of the owning generator/coroutine
      * to have cleared the generator pointer */
-    assert(f->f_frame->generator == NULL);
+    assert(!f->f_frame->is_generator);
 
     if (_PyObject_GC_IS_TRACKED(f)) {
         _PyObject_GC_UNTRACK(f);
@@ -699,8 +699,10 @@ frame_clear(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
                         "cannot clear an executing frame");
         return NULL;
     }
-    if (f->f_frame->generator) {
-        _PyGen_Finalize(f->f_frame->generator);
+    if (f->f_frame->is_generator) {
+        assert(!f->f_owns_frame);
+        PyObject *gen = (PyObject *)(((char *)f->f_frame)-offsetof(PyGenObject, gi_iframe));
+        _PyGen_Finalize(gen);
     }
     (void)frame_tp_clear(f);
     Py_RETURN_NONE;

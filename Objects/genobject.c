@@ -133,7 +133,7 @@ gen_dealloc(PyGenObject *gen)
     if (gen->gi_frame_valid) {
         InterpreterFrame *frame = (InterpreterFrame *)gen->gi_iframe;
         gen->gi_frame_valid = 0;
-        frame->generator = NULL;
+        frame->is_generator = false;
         frame->previous = NULL;
         _PyFrame_Clear(frame);
     }
@@ -265,7 +265,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     /* first clean reference cycle through stored exception traceback */
     _PyErr_ClearExcState(&gen->gi_exc_state);
 
-    frame->generator = NULL;
+    frame->is_generator = false;
     gen->gi_frame_valid = 0;
     _PyFrame_Clear(frame);
     *presult = result;
@@ -896,16 +896,12 @@ make_gen(PyTypeObject *type, PyFunctionObject *func)
     gen->gi_weakreflist = NULL;
     gen->gi_exc_state.exc_value = NULL;
     gen->gi_exc_state.previous_item = NULL;
-    if (func->func_name != NULL)
-        gen->gi_name = func->func_name;
-    else
-        gen->gi_name = gen->gi_code->co_name;
-    Py_INCREF(gen->gi_name);
-    if (func->func_qualname != NULL)
-        gen->gi_qualname = func->func_qualname;
-    else
-        gen->gi_qualname = gen->gi_name;
-    Py_INCREF(gen->gi_qualname);
+    assert(func->func_name != NULL);
+    Py_INCREF(func->func_name);
+    gen->gi_name = func->func_name;
+    assert(func->func_qualname != NULL);
+    Py_INCREF(func->func_qualname);
+    gen->gi_qualname = func->func_qualname;
     _PyObject_GC_TRACK(gen);
     return (PyObject *)gen;
 }
@@ -976,7 +972,7 @@ gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
     assert(frame->frame_obj == f);
     f->f_owns_frame = 0;
     f->f_frame = frame;
-    frame->generator = (PyObject *) gen;
+    frame->is_generator = true;
     assert(PyObject_GC_IsTracked((PyObject *)f));
     gen->gi_code = PyFrame_GetCode(f);
     Py_INCREF(gen->gi_code);

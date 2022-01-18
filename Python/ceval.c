@@ -5056,7 +5056,7 @@ resume_frame:
             assert(frame->frame_obj == NULL);
             frame->f_locals = NULL;
             gen->gi_frame_valid = 1;
-            gen_frame->generator = (PyObject *)gen;
+            gen_frame->is_generator = true;
             gen_frame->f_state = FRAME_CREATED;
             _Py_LeaveRecursiveCall(tstate);
             if (!frame->is_entry) {
