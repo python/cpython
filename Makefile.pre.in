@@ -959,19 +959,6 @@ _bootstrap_python: $(LIBRARY_OBJS_OMIT_FROZEN) Programs/_bootstrap_python.o Modu
 	$(LINKCC) $(PY_LDFLAGS_NOLTO) -o $@ $(LIBRARY_OBJS_OMIT_FROZEN) \
 		Programs/_bootstrap_python.o Modules/getpath.o $(LIBS) $(MODLIBS) $(SYSLIBS)
 
-############################################################################
-# Deepfreeze targets
-
-.PHONY: regen-deepfreeze
-regen-deepfreeze: $(DEEPFREEZE_OBJS)
-
-DEEPFREEZE_DEPS=$(srcdir)/Tools/scripts/deepfreeze.py $(FREEZE_MODULE_DEPS)
-
-# BEGIN: deepfreeze modules
-Python/deepfreeze/deepfreeze.c: $(DEEPFREEZE_DEPS)
-	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py -i Python/frozen_modules/importlib._bootstrap.h importlib._bootstrap -i Python/frozen_modules/importlib._bootstrap_external.h importlib._bootstrap_external -i Python/frozen_modules/zipimport.h zipimport -i Python/frozen_modules/abc.h abc -i Python/frozen_modules/codecs.h codecs -i Python/frozen_modules/io.h io -i Python/frozen_modules/_collections_abc.h _collections_abc -i Python/frozen_modules/_sitebuiltins.h _sitebuiltins -i Python/frozen_modules/genericpath.h genericpath -i Python/frozen_modules/ntpath.h ntpath -i Python/frozen_modules/posixpath.h posixpath -i Python/frozen_modules/os.h os -i Python/frozen_modules/site.h site -i Python/frozen_modules/stat.h stat -i Python/frozen_modules/importlib.util.h importlib.util -i Python/frozen_modules/importlib.machinery.h importlib.machinery -i Python/frozen_modules/runpy.h runpy -i Python/frozen_modules/__hello__.h __hello__ -i Python/frozen_modules/__phello__.h __phello__ -i Python/frozen_modules/__phello__.ham.h __phello__.ham -i Python/frozen_modules/__phello__.ham.eggs.h __phello__.ham.eggs -i Python/frozen_modules/__phello__.spam.h __phello__.spam -i Python/frozen_modules/frozen_only.h frozen_only -o Python/deepfreeze/deepfreeze.c
-
-# END: deepfreeze modules
 
 ############################################################################
 # frozen modules (including importlib)
@@ -1142,6 +1129,20 @@ Tools/scripts/freeze_modules.py: $(FREEZE_MODULE)
 regen-frozen: Tools/scripts/freeze_modules.py $(FROZEN_FILES_IN)
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/freeze_modules.py
 	@echo "The Makefile was updated, you may need to re-run make."
+
+############################################################################
+# Deepfreeze targets
+
+.PHONY: regen-deepfreeze
+regen-deepfreeze: $(DEEPFREEZE_OBJS)
+
+DEEPFREEZE_DEPS=$(srcdir)/Tools/scripts/deepfreeze.py $(FREEZE_MODULE_DEPS) $(FROZEN_FILES_OUT)
+
+# BEGIN: deepfreeze modules
+Python/deepfreeze/deepfreeze.c: $(DEEPFREEZE_DEPS)
+	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py -i Python/frozen_modules/importlib._bootstrap.h importlib._bootstrap -i Python/frozen_modules/importlib._bootstrap_external.h importlib._bootstrap_external -i Python/frozen_modules/zipimport.h zipimport -i Python/frozen_modules/abc.h abc -i Python/frozen_modules/codecs.h codecs -i Python/frozen_modules/io.h io -i Python/frozen_modules/_collections_abc.h _collections_abc -i Python/frozen_modules/_sitebuiltins.h _sitebuiltins -i Python/frozen_modules/genericpath.h genericpath -i Python/frozen_modules/ntpath.h ntpath -i Python/frozen_modules/posixpath.h posixpath -i Python/frozen_modules/os.h os -i Python/frozen_modules/site.h site -i Python/frozen_modules/stat.h stat -i Python/frozen_modules/importlib.util.h importlib.util -i Python/frozen_modules/importlib.machinery.h importlib.machinery -i Python/frozen_modules/runpy.h runpy -i Python/frozen_modules/__hello__.h __hello__ -i Python/frozen_modules/__phello__.h __phello__ -i Python/frozen_modules/__phello__.ham.h __phello__.ham -i Python/frozen_modules/__phello__.ham.eggs.h __phello__.ham.eggs -i Python/frozen_modules/__phello__.spam.h __phello__.spam -i Python/frozen_modules/frozen_only.h frozen_only -o Python/deepfreeze/deepfreeze.c
+
+# END: deepfreeze modules
 
 # We keep this renamed target around for folks with muscle memory.
 .PHONY: regen-importlib
