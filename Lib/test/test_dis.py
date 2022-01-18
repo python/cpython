@@ -1455,45 +1455,14 @@ class TestFinderMethods(unittest.TestCase):
                 self.assertEqual(res, expected)
 
     def test_findlabels(self):
-        def zero_labels(x):
-            return 0
-
-        def one_label_jabs(x):
-            if x > 0:     # This will jump to "return 2" if not "x > 0"
-                return 1
-            else:
-                return 2
-        def two_labels_jabs(x):
-            if x > 0:     # This will jump to "x > 10" if not "x > 0"
-                return 1
-            elif x > 10:  # This will jump to "return 2" if not "x > 10"
-                return 10
-            else:
-                return 2
-
-        def one_label_jrel(x):
-            for item in x:  # This will jump to the end of func after iteration
-                yield item
-
-        cases = [
-            # Where do these numbers come from?
-            # They are offsets of label opcodes. It can be visualized better by:
-            # `dis.dis(two_labels_jabs)`
-            # It will show something like:
-            #        >>   6 POP_JUMP_IF_FALSE         6 (to 12)
-            #        >>   12 LOAD_FAST                0 (x)
-            #
-            #        >>   18 POP_JUMP_IF_FALSE       12 (to 24)
-            #        >>   24 LOAD_CONST               4 (2)
-            (zero_labels, []),
-            (one_label_jabs, [12]),
-            (two_labels_jabs, [12, 24]),
-            (one_label_jrel, [22]),
+        labels = dis.findlabels(jumpy.__code__.co_code)
+        jumps = [
+            instr.offset
+            for instr in expected_opinfo_jumpy
+            if instr.is_jump_target
         ]
-        for src, expected in cases:
-            with self.subTest(src=src):
-                res = dis.findlabels(src.__code__.co_code)
-                self.assertEqual(res, expected)
+
+        self.assertEqual(sorted(labels), sorted(jumps))
 
 
 class TestDisTraceback(unittest.TestCase):
