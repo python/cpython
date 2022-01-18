@@ -1457,23 +1457,38 @@ class TestFinderMethods(unittest.TestCase):
     def test_findlabels(self):
         def zero_labels(x):
             return 0
-        def one_label(x):
-            if x > 0:     # This will jump to "return 2" if not x > 0
+
+        def one_label_jabs(x):
+            if x > 0:     # This will jump to "return 2" if not "x > 0"
                 return 1
             else:
                 return 2
-        def two_labels(x):
-            if x > 0:
+        def two_labels_jabs(x):
+            if x > 0:     # This will jump to "x > 10" if not "x > 0"
                 return 1
-            elif x > 10:
+            elif x > 10:  # This will jump to "return 2" if not "x > 10"
                 return 10
             else:
                 return 2
 
+        def one_label_jrel(x):
+            for item in x:  # This will jump to the end of func after iteration
+                yield item
+
         cases = [
+            # Where do these numbers come from?
+            # They are offsets of label opcodes. It can be visualized better by:
+            # `dis.dis(two_labels_jabs)`
+            # It will show something like:
+            #        >>   6 POP_JUMP_IF_FALSE         6 (to 12)
+            #        >>   12 LOAD_FAST                0 (x)
+            #
+            #        >>   18 POP_JUMP_IF_FALSE       12 (to 24)
+            #        >>   24 LOAD_CONST               4 (2)
             (zero_labels, []),
-            (one_label, [12]),
-            (two_labels, [12, 24]),
+            (one_label_jabs, [12]),
+            (two_labels_jabs, [12, 24]),
+            (one_label_jrel, [22]),
         ]
         for src, expected in cases:
             with self.subTest(src=src):
