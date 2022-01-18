@@ -200,6 +200,12 @@ Other CPython Implementation Changes
   have been removed as their values can be derived from ``exc_value``.
   (Contributed by Irit Katriel in :issue:`45711`.)
 
+* A new command line option for the Windows installer ``AppendPath`` has beend added.
+  It behaves similiar to ``PrependPath`` but appends the install and scripts directories
+  instead of prepending it.
+  (Contributed by Bastian Neuburger in :issue:`44934`.)
+
+
 New Modules
 ===========
 
@@ -305,6 +311,9 @@ sys
   the results of subsequent calls to :func:`exc_info`.
   (Contributed by Irit Katriel in :issue:`45711`.)
 
+* Add :func:`sys.exception` which returns the active exception instance
+  (equivalent to ``sys.exc_info()[1]``).
+  (Contributed by Irit Katriel in :issue:`46328`.)
 
 threading
 ---------
@@ -619,6 +628,16 @@ Build Changes
   like Pyodide.
   (Contributed by Christian Heimes and Ethan Smith in :issue:`40280`.)
 
+* CPython will now use 30-bit digits by default for the Python :class:`int`
+  implementation. Previously, the default was to use 30-bit digits on platforms
+  with ``SIZEOF_VOID_P >= 8``, and 15-bit digits otherwise. It's still possible
+  to explicitly request use of 15-bit digits via either the
+  ``--enable-big-digits`` option to the configure script or (for Windows) the
+  ``PYLONG_BITS_IN_DIGIT`` variable in ``PC/pyconfig.h``, but this option may
+  be removed at some point in the future. (Contributed by Mark Dickinson in
+  :issue:`45569`.)
+
+
 C API Changes
 =============
 
@@ -751,6 +770,110 @@ Porting to Python 3.11
   limited C API. It was never usable there, because it used internal structures
   which are not available in the limited C API.
   (Contributed by Victor Stinner in :issue:`46007`.)
+
+* Changes of the :c:type:`PyFrameObject` structure members:
+
+  * ``f_code``: removed, use :c:func:`PyFrame_GetCode` instead.
+    Warning: the function returns a :term:`strong reference`, need to call
+    :c:func:`Py_DECREF`.
+  * ``f_back``: changed, use :c:func:`PyFrame_GetBack`.
+  * ``f_builtins``: removed,
+    use ``PyObject_GetAttrString(frame, "f_builtins")``.
+  * ``f_globals``: removed,
+    use ``PyObject_GetAttrString(frame, "f_globals")``.
+  * ``f_locals``: removed,
+    use ``PyObject_GetAttrString(frame, "f_locals")``.
+  * ``f_lasti``: removed,
+    use ``PyObject_GetAttrString(frame, "f_lasti")``.
+  * ``f_valuesstack``: removed.
+  * ``f_stackdepth``: removed.
+  * ``f_gen``: removed.
+  * ``f_iblock``: removed.
+  * ``f_state``: removed.
+  * ``f_blockstack``: removed.
+  * ``f_localsplus``: removed.
+
+  The Python frame object is now created lazily. A side effect is that the
+  ``f_back`` member must not be accessed directly, since its value is now also
+  computed lazily. The :c:func:`PyFrame_GetBack` function must be called
+  instead.
+
+  Code defining ``PyFrame_GetCode()`` on Python 3.8 and older::
+
+      #if PY_VERSION_HEX < 0x030900B1
+      static inline PyCodeObject* PyFrame_GetCode(PyFrameObject *frame)
+      {
+          Py_INCREF(frame->f_code);
+          return frame->f_code;
+      }
+      #endif
+
+  Code defining ``PyFrame_GetBack()`` on Python 3.8 and older::
+
+      #if PY_VERSION_HEX < 0x030900B1
+      static inline PyFrameObject* PyFrame_GetBack(PyFrameObject *frame)
+      {
+          Py_XINCREF(frame->f_back);
+          return frame->f_back;
+      }
+      #endif
+
+  Or use `the pythoncapi_compat project
+  <https://github.com/pythoncapi/pythoncapi_compat>`__ to get these functions
+  on old Python functions.
+
+* Changes of the :c:type:`PyThreadState` structure members:
+
+  * ``frame``: removed, use :c:func:`PyThreadState_GetFrame` (function added
+    to Python 3.9 by :issue:`40429`).
+    Warning: the function returns a :term:`strong reference`, need to call
+    :c:func:`Py_XDECREF`.
+  * ``tracing``: changed, use :c:func:`PyThreadState_EnterTracing`
+    and :c:func:`PyThreadState_LeaveTracing`
+    (functions added to Python 3.11 by :issue:`43760`).
+  * ``recursion_depth``: removed,
+    use ``(tstate->recursion_limit - tstate->recursion_remaining)`` instead.
+  * ``stackcheck_counter``: removed.
+
+  Code defining ``PyThreadState_GetFrame()`` on Python 3.8 and older::
+
+      #if PY_VERSION_HEX < 0x030900B1
+      static inline PyFrameObject* PyThreadState_GetFrame(PyThreadState *tstate)
+      {
+          Py_XINCREF(tstate->frame);
+          return tstate->frame;
+      }
+      #endif
+
+  Code defining ``PyThreadState_EnterTracing()`` and
+  ``PyThreadState_LeaveTracing()`` on Python 3.10 and older::
+
+      #if PY_VERSION_HEX < 0x030B00A2
+      static inline void PyThreadState_EnterTracing(PyThreadState *tstate)
+      {
+          tstate->tracing++;
+      #if PY_VERSION_HEX >= 0x030A00A1
+          tstate->cframe->use_tracing = 0;
+      #else
+          tstate->use_tracing = 0;
+      #endif
+      }
+
+      static inline void PyThreadState_LeaveTracing(PyThreadState *tstate)
+      {
+          int use_tracing = (tstate->c_tracefunc != NULL || tstate->c_profilefunc != NULL);
+          tstate->tracing--;
+      #if PY_VERSION_HEX >= 0x030A00A1
+          tstate->cframe->use_tracing = use_tracing;
+      #else
+          tstate->use_tracing = use_tracing;
+      #endif
+      }
+      #endif
+
+  Or use `the pythoncapi_compat project
+  <https://github.com/pythoncapi/pythoncapi_compat>`__ to get these functions
+  on old Python functions.
 
 
 Deprecated

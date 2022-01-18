@@ -8,6 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_fileutils.h"     // _Py_error_handler
+
 
 /* runtime lifecycle */
 

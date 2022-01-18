@@ -2,6 +2,7 @@
 # these are all functions _testcapi exports whose name begins with 'test_'.
 
 from collections import OrderedDict
+import _thread
 import importlib.machinery
 import importlib.util
 import os
@@ -642,6 +643,29 @@ class CAPITest(unittest.TestCase):
         result = _compile(code)
         expected = compile(code, "<string>", "exec")
         self.assertEqual(result.co_consts, expected.co_consts)
+
+    def test_export_symbols(self):
+        # bpo-44133: Ensure that the "Py_FrozenMain" and
+        # "PyThread_get_thread_native_id" symbols are exported by the Python
+        # (directly by the binary, or via by the Python dynamic library).
+        ctypes = import_helper.import_module('ctypes')
+        names = []
+
+        # Test if the PY_HAVE_THREAD_NATIVE_ID macro is defined
+        if hasattr(_thread, 'get_native_id'):
+            names.append('PyThread_get_thread_native_id')
+
+        # Python/frozenmain.c fails to build on Windows when the symbols are
+        # missing:
+        # - PyWinFreeze_ExeInit
+        # - PyWinFreeze_ExeTerm
+        # - PyInitFrozenExtensions
+        if os.name != 'nt':
+            names.append('Py_FrozenMain')
+
+        for name in names:
+            with self.subTest(name=name):
+                self.assertTrue(hasattr(ctypes.pythonapi, name))
 
 
 class TestPendingCalls(unittest.TestCase):

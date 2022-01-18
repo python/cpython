@@ -2034,6 +2034,7 @@ compiler_body(struct compiler *c, asdl_stmt_seq *stmts)
             st = (stmt_ty)asdl_seq_GET(stmts, 0);
             assert(st->kind == Expr_kind);
             VISIT(c, expr, st->v.Expr.value);
+            UNSET_LOC(c);
             if (!compiler_nameop(c, __doc__, Store))
                 return 0;
         }
@@ -3474,7 +3475,6 @@ compiler_try_except(struct compiler *c, stmt_ty s)
     POP_EXCEPT_AND_RERAISE(c);
     compiler_use_next_block(c, orelse);
     VISIT_SEQ(c, stmt, s->v.Try.orelse);
-    ADDOP_JUMP(c, JUMP_FORWARD, end);
     compiler_use_next_block(c, end);
     return 1;
 }
@@ -3701,7 +3701,6 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
     POP_EXCEPT_AND_RERAISE(c);
     compiler_use_next_block(c, orelse);
     VISIT_SEQ(c, stmt, s->v.TryStar.orelse);
-    ADDOP_JUMP(c, JUMP_FORWARD, end);
     compiler_use_next_block(c, end);
     return 1;
 }
@@ -4234,7 +4233,7 @@ starunpack_helper(struct compiler *c, asdl_expr_seq *elts, int pushed,
             Py_INCREF(val);
             PyTuple_SET_ITEM(folded, i, val);
         }
-        if (tuple) {
+        if (tuple && !pushed) {
             ADDOP_LOAD_CONST_NEW(c, folded);
         } else {
             if (add == SET_ADD) {
@@ -4246,6 +4245,9 @@ starunpack_helper(struct compiler *c, asdl_expr_seq *elts, int pushed,
             ADDOP_I(c, build, pushed);
             ADDOP_LOAD_CONST_NEW(c, folded);
             ADDOP_I(c, extend, 1);
+            if (tuple) {
+                ADDOP(c, LIST_TO_TUPLE);
+            }
         }
         return 1;
     }
