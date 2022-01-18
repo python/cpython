@@ -1,4 +1,4 @@
-﻿<?xml version="1.0"?>
+<?xml version="1.0"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
      xmlns:bal="http://schemas.microsoft.com/wix/BalExtension"
      xmlns:dep="http://schemas.microsoft.com/wix/DependencyExtension">
@@ -87,6 +87,7 @@
     <Variable Name="AssociateFiles" Value="1" bal:Overridable="yes" />
     <Variable Name="Shortcuts" Value="1" bal:Overridable="yes" />
     <Variable Name="PrependPath" Value="0" bal:Overridable="yes" />
+    <Variable Name="AppendPath" Value="0" bal:Overridable="yes" />
     <Variable Name="CompileAll" Value="0" bal:Overridable="yes" />
     
     <Variable Name="SimpleInstall" Value="0" bal:Overridable="yes" />
