@@ -7715,7 +7715,7 @@ PyInit__socket(void)
 #endif
 #if defined(HAVE_LINUX_CAN_RAW_H) || defined(HAVE_NETCAN_CAN_H)
     PyModule_AddIntMacro(m, CAN_RAW_FILTER);
-#if defined(CAN_RAW_ERR_FILTER)
+#ifdef CAN_RAW_ERR_FILTER
     PyModule_AddIntMacro(m, CAN_RAW_ERR_FILTER);
 #endif
     PyModule_AddIntMacro(m, CAN_RAW_LOOPBACK);
