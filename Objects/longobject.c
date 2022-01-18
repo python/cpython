@@ -3867,7 +3867,7 @@ l_divmod(PyLongObject *v, PyLongObject *w,
  *     *pmod = mod(v)
  * NULL can be passed for pmod, in which case the function
  * never runs code.  The caller owns a reference to
- * each of these it requests (does not pass NULL for).
+ * pmod that it requests (does not pass NULL for).
  */
 static int
 l_mod(PyLongObject *v, PyLongObject *w, PyLongObject **pmod)
@@ -4184,6 +4184,11 @@ long_mod(PyObject *a, PyObject *b)
     PyLongObject *mod;
 
     CHECK_BINOP(a, b);
+
+    /* Fast path to avoid more checking and overhead in l_mod */
+    if (Py_ABS(Py_SIZE(a)) == 1 && Py_ABS(Py_SIZE(b)) == 1) {
+        return fast_mod((PyLongObject*)a, (PyLongObject*)b);
+    }
 
     if (l_mod((PyLongObject*)a, (PyLongObject*)b, &mod) < 0)
         mod = NULL;
