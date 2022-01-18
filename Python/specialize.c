@@ -1153,9 +1153,6 @@ _Py_IDENTIFIER(__getitem__);
 static int
 function_kind(PyCodeObject *code) {
     int flags = code->co_flags;
-    if (flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
-        return SPEC_FAIL_GENERATOR;
-    }
     if ((flags & (CO_VARKEYWORDS | CO_VARARGS)) || code->co_kwonlyargcount) {
         return SPEC_FAIL_COMPLEX_PARAMETERS;
     }
