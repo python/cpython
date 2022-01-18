@@ -1069,7 +1069,7 @@ class BlobTests(unittest.TestCase):
         self.blob.write(new_data[:25])
         self.assertEqual(self.blob.tell(), 25)
 
-    def test_blob_write_more_then_blob_size(self):
+    def test_blob_write_more_than_blob_size(self):
         msg = "data longer than blob length"
         with self.assertRaisesRegex(ValueError, msg):
             self.blob.write(b"a" * 1000)
