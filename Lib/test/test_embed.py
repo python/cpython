@@ -1247,8 +1247,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'stdlib_dir': stdlib,
         }
         self.default_program_name(config)
-        if not config['executable']:
-            config['use_frozen_modules'] = -1
         env = {'TESTHOME': home, 'PYTHONPATH': paths_str}
         self.check_all_configs("test_init_setpythonhome", config,
                                api=API_COMPAT, env=env)
@@ -1405,6 +1403,34 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             self.check_all_configs("test_init_compat_config", config,
                                    api=API_COMPAT, env=env,
                                    ignore_stderr=True, cwd=tmpdir)
+
+    @unittest.skipUnless(MS_WINDOWS, 'specific to Windows')
+    def test_getpath_abspath_win32(self):
+        # Check _Py_abspath() is passed a backslashed path not to fall back to
+        # GetFullPathNameW() on startup, which (re-)normalizes the path overly.
+        # Currently, _Py_normpath() doesn't trim trailing dots and spaces.
+        CASES = [
+            ("C:/a. . .",  "C:\\a. . ."),
+            ("C:\\a. . .", "C:\\a. . ."),
+            ("\\\\?\\C:////a////b. . .", "\\\\?\\C:\\a\\b. . ."),
+            ("//a/b/c. . .", "\\\\a\\b\\c. . ."),
+            ("\\\\a\\b\\c. . .", "\\\\a\\b\\c. . ."),
+            ("a. . .", f"{os.getcwd()}\\a"),  # relpath gets fully normalized
+        ]
+        out, err = self.run_embedded_interpreter(
+            "test_init_initialize_config",
+            env={**remove_python_envvars(),
+                 "PYTHONPATH": os.path.pathsep.join(c[0] for c in CASES)}
+        )
+        self.assertEqual(err, "")
+        try:
+            out = json.loads(out)
+        except json.JSONDecodeError:
+            self.fail(f"fail to decode stdout: {out!r}")
+
+        results = out['config']["module_search_paths"]
+        for (_, expected), result in zip(CASES, results):
+            self.assertEqual(result, expected)
 
     def test_global_pathconfig(self):
         # Test C API functions getting the path configuration:

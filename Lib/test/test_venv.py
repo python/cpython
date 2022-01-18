@@ -19,7 +19,7 @@ from test.support import (captured_stdout, captured_stderr, requires_zlib,
 from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree)
 import unittest
 import venv
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 try:
     import ctypes
@@ -114,12 +114,48 @@ class BasicTest(BaseTest):
         executable = sys._base_executable
         path = os.path.dirname(executable)
         self.assertIn('home = %s' % path, data)
+        self.assertIn('executable = %s' %
+                      os.path.realpath(sys.executable), data)
+        copies = '' if os.name=='nt' else ' --copies'
+        cmd = f'command = {sys.executable} -m venv{copies} --without-pip {self.env_dir}'
+        self.assertIn(cmd, data)
         fn = self.get_env_file(self.bindir, self.exe)
         if not os.path.exists(fn):  # diagnostics for Windows buildbot failures
             bd = self.get_env_file(self.bindir)
             print('Contents of %r:' % bd)
             print('    %r' % os.listdir(bd))
         self.assertTrue(os.path.exists(fn), 'File %r should exist.' % fn)
+
+    def test_config_file_command_key(self):
+        attrs = [
+            (None, None),
+            ('symlinks', '--copies'),
+            ('with_pip', '--without-pip'),
+            ('system_site_packages', '--system-site-packages'),
+            ('clear', '--clear'),
+            ('upgrade', '--upgrade'),
+            ('upgrade_deps', '--upgrade-deps'),
+            ('prompt', '--prompt'),
+        ]
+        for attr, opt in attrs:
+            rmtree(self.env_dir)
+            if not attr:
+                b = venv.EnvBuilder()
+            else:
+                b = venv.EnvBuilder(
+                    **{attr: False if attr in ('with_pip', 'symlinks') else True})
+            b.upgrade_dependencies = Mock() # avoid pip command to upgrade deps
+            b._setup_pip = Mock() # avoid pip setup
+            self.run_with_capture(b.create, self.env_dir)
+            data = self.get_text_file_contents('pyvenv.cfg')
+            if not attr:
+                for opt in ('--system-site-packages', '--clear', '--upgrade',
+                        '--upgrade-deps', '--prompt'):
+                    self.assertNotRegex(data, rf'command = .* {opt}')
+            elif os.name=='nt' and attr=='symlinks':
+                pass
+            else:
+                self.assertRegex(data, rf'command = .* {opt}')
 
     def test_prompt(self):
         env_name = os.path.split(self.env_dir)[1]

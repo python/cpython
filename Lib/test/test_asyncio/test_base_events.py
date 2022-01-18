@@ -21,7 +21,6 @@ from test.support import socket_helper
 
 
 MOCK_ANY = mock.ANY
-PY34 = sys.version_info >= (3, 4)
 
 
 def tearDownModule():
@@ -596,18 +595,10 @@ class BaseEventLoopTests(test_utils.TestCase):
             self.loop.run_forever()
             fut = None # Trigger Future.__del__ or futures._TracebackLogger
             support.gc_collect()
-            if PY34:
-                # Future.__del__ in Python 3.4 logs error with
-                # an actual exception context
-                log.error.assert_called_with(
-                    test_utils.MockPattern('.*exception was never retrieved'),
-                    exc_info=(ZeroDivisionError, MOCK_ANY, MOCK_ANY))
-            else:
-                # futures._TracebackLogger logs only textual traceback
-                log.error.assert_called_with(
-                    test_utils.MockPattern(
-                        '.*exception was never retrieved.*ZeroDiv'),
-                    exc_info=False)
+            # Future.__del__ in logs error with an actual exception context
+            log.error.assert_called_with(
+                test_utils.MockPattern('.*exception was never retrieved'),
+                exc_info=(ZeroDivisionError, MOCK_ANY, MOCK_ANY))
 
     def test_set_exc_handler_invalid(self):
         with self.assertRaisesRegex(TypeError, 'A callable object or None'):

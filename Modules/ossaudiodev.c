@@ -17,8 +17,13 @@
  * $Id$
  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_fileutils.h"     // _Py_write()
 #include "structmember.h"         // PyMemberDef
 
 #include <stdlib.h>               // getenv()

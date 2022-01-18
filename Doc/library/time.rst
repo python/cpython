@@ -476,10 +476,10 @@ Functions
    |           | negative time difference from UTC/GMT of the   |       |
    |           | form +HHMM or -HHMM, where H represents decimal|       |
    |           | hour digits and M represents decimal minute    |       |
-   |           | digits [-23:59, +23:59].                       |       |
+   |           | digits [-23:59, +23:59]. [1]_                  |       |
    +-----------+------------------------------------------------+-------+
    | ``%Z``    | Time zone name (no characters if no time zone  |       |
-   |           | exists).                                       |       |
+   |           | exists). Deprecated. [1]_                      |       |
    +-----------+------------------------------------------------+-------+
    | ``%%``    | A literal ``'%'`` character.                   |       |
    +-----------+------------------------------------------------+-------+
@@ -500,7 +500,7 @@ Functions
       calculations when the day of the week and the year are specified.
 
    Here is an example, a format for dates compatible with that specified  in the
-   :rfc:`2822` Internet email standard.  [#]_ ::
+   :rfc:`2822` Internet email standard.  [1]_ ::
 
       >>> from time import gmtime, strftime
       >>> strftime("%a, %d %b %Y %H:%M:%S +0000", gmtime())
@@ -928,10 +928,9 @@ Timezone Constants
 
 .. rubric:: Footnotes
 
-.. [#] The use of ``%Z`` is now deprecated, but the ``%z`` escape that expands to the
-   preferred  hour/minute offset is not supported by all ANSI C libraries. Also, a
+.. [1] The use of ``%Z`` is now deprecated, but the ``%z`` escape that expands to the
+   preferred hour/minute offset is not supported by all ANSI C libraries. Also, a
    strict reading of the original 1982 :rfc:`822` standard calls for a two-digit
-   year (%y rather than %Y), but practice moved to 4-digit years long before the
+   year (``%y`` rather than ``%Y``), but practice moved to 4-digit years long before the
    year 2000.  After that, :rfc:`822` became obsolete and the 4-digit year has
    been first recommended by :rfc:`1123` and then mandated by :rfc:`2822`.
-

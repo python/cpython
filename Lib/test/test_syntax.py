@@ -1663,6 +1663,9 @@ def func2():
         for paren in "([{":
             self._check_error(paren + "1 + 2", f"\\{paren}' was never closed")
 
+        for paren in "([{":
+            self._check_error(f"a = {paren} 1, 2, 3\nb=3", f"\\{paren}' was never closed")
+
         for paren in ")]}":
             self._check_error(paren + "1 + 2", f"unmatched '\\{paren}'")
 

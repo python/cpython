@@ -120,10 +120,10 @@ More condensed:
 
 Using :func:`new` with an algorithm provided by OpenSSL:
 
-   >>> h = hashlib.new('sha512_256')
+   >>> h = hashlib.new('sha256')
    >>> h.update(b"Nobody inspects the spammish repetition")
    >>> h.hexdigest()
-   '19197dc4d03829df858011c6c87600f994a858103bbc19005f20987aa19a97e2'
+   '031edd7d41651593c5fe5c006fa5752b37fddff7bc4e843aa6af0c950f4b9406'
 
 Hashlib provides the following constant attributes:
 

@@ -1113,7 +1113,7 @@ class DocTestFinder:
         if inspect.istraceback(obj): obj = obj.tb_frame
         if inspect.isframe(obj): obj = obj.f_code
         if inspect.iscode(obj):
-            lineno = getattr(obj, 'co_firstlineno', None)-1
+            lineno = obj.co_firstlineno - 1
 
         # Find the line number where the docstring starts.  Assume
         # that it's the first line that begins with a quote mark.
