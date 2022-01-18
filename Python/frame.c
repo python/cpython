@@ -52,14 +52,6 @@ _PyFrame_Copy(InterpreterFrame *src, InterpreterFrame *dest)
     memcpy(dest, src, size);
 }
 
-static inline void
-clear_specials(InterpreterFrame *frame)
-{
-    Py_XDECREF(frame->frame_obj);
-    Py_XDECREF(frame->f_locals);
-    Py_DECREF(frame->f_func);
-    Py_DECREF(frame->f_code);
-}
 
 static void
 take_ownership(PyFrameObject *f, InterpreterFrame *frame)
@@ -110,5 +102,8 @@ _PyFrame_Clear(InterpreterFrame * frame)
     for (int i = 0; i < frame->stacktop; i++) {
         Py_XDECREF(frame->localsplus[i]);
     }
-    clear_specials(frame);
+    Py_XDECREF(frame->frame_obj);
+    Py_XDECREF(frame->f_locals);
+    Py_DECREF(frame->f_func);
+    Py_DECREF(frame->f_code);
 }
