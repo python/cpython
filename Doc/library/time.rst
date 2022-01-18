@@ -21,9 +21,8 @@ An explanation of some terminology and conventions is in order.
 
 .. index:: single: epoch
 
-* The :dfn:`epoch` is the point where the time starts.
-  It is January 1, 1970, 00:00:00 (UTC) on all platforms.
-  To find out what the epoch is, look at ``time.gmtime(0)``.
+* The :dfn:`epoch` is the point where the time starts, the return value of
+  ``time.gmtime(0)``. It is January 1, 1970, 00:00:00 (UTC) on all platforms.
 
 .. _leap seconds: https://en.wikipedia.org/wiki/Leap_second
 
