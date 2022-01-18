@@ -5050,20 +5050,23 @@ resume_frame:
             _PyFrame_SetStackPointer(frame, stack_pointer);
             InterpreterFrame *gen_frame = (InterpreterFrame *)gen->gi_iframe;
             _PyFrame_Copy(frame, gen_frame);
-            frame->stacktop = 0;
-            Py_INCREF(frame->f_func);
-            Py_INCREF(frame->f_code);
             assert(frame->frame_obj == NULL);
-            frame->f_locals = NULL;
             gen->gi_frame_valid = 1;
             gen_frame->is_generator = true;
             gen_frame->f_state = FRAME_CREATED;
             _Py_LeaveRecursiveCall(tstate);
             if (!frame->is_entry) {
-                frame = cframe.current_frame = pop_frame(tstate, frame);
+                InterpreterFrame *prev = frame->previous;
+                _PyThreadState_PopFrame(tstate, frame);
+                frame = cframe.current_frame = prev;
                 _PyFrame_StackPush(frame, (PyObject *)gen);
                 goto resume_frame;
             }
+            /* Make sure that frame is in a valid state */
+            frame->stacktop = 0;
+            frame->f_locals = NULL;
+            Py_INCREF(frame->f_func);
+            Py_INCREF(frame->f_code);
             /* Restore previous cframe and return. */
             tstate->cframe = cframe.previous;
             tstate->cframe->use_tracing = cframe.use_tracing;
