@@ -13007,6 +13007,10 @@ $as_echo "#define HAVE_BROKEN_POSIX_SEMAPHORES 1" >>confdefs.h
 $as_echo "#define HAVE_BROKEN_POSIX_SEMAPHORES 1" >>confdefs.h
 
 		       ;;
+      NetBSD/*)
+$as_echo "#define HAVE_BROKEN_POSIX_SEMAPHORES 1" >>confdefs.h
+
+		       ;;
       esac
 
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking if PTHREAD_SCOPE_SYSTEM is supported" >&5

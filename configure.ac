@@ -3716,6 +3716,9 @@ if test "$posix_threads" = "yes"; then
       AIX/*) AC_DEFINE(HAVE_BROKEN_POSIX_SEMAPHORES, 1,
 		       [Define if the Posix semaphores do not work on your system])
 		       ;;
+      NetBSD/*) AC_DEFINE(HAVE_BROKEN_POSIX_SEMAPHORES, 1,
+		       [Define if the Posix semaphores do not work on your system])
+		       ;;
       esac
 
       AC_CACHE_CHECK([if PTHREAD_SCOPE_SYSTEM is supported], [ac_cv_pthread_system_supported],
