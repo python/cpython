@@ -11,9 +11,28 @@ Usage::
 
 """
 import argparse
+import contextlib
 import json
+import os.path
 import sys
-from pathlib import Path
+import tempfile
+
+
+@contextlib.contextmanager
+def _staged_outfile(path):
+    # Use tempfile to support outfile == infile case.
+    # See https://discuss.python.org/t/adding-atomicwrite-in-stdlib/11899
+    dir, base = os.path.split(path)
+    fd, tempname = tempfile.mkstemp(prefix=base + '.', dir=dir)
+    file = os.fdopen(fd, "w", encoding="utf-8")
+    try:
+        with file:
+            yield file
+    except BaseException as e:
+        os.remove(tempname)
+        raise
+    else:
+        os.replace(tempname, path)
 
 
 def main():
@@ -26,7 +45,7 @@ def main():
                         help='a JSON file to be validated or pretty-printed',
                         default=sys.stdin)
     parser.add_argument('outfile', nargs='?',
-                        type=Path,
+                        type=str,
                         help='write the output of infile to outfile',
                         default=None)
     parser.add_argument('--sort-keys', action='store_true', default=False,
@@ -66,10 +85,12 @@ def main():
             else:
                 objs = (json.load(infile),)
 
-            if options.outfile is None:
+            if options.outfile is None or options.outfile == '-':
+                # infile (argparse.FileType) supports '-' so outfile
+                # supports '-' for consistency.
                 out = sys.stdout
             else:
-                out = options.outfile.open('w', encoding='utf-8')
+                out = _staged_outfile(options.outfile)
             with out as outfile:
                 for obj in objs:
                     json.dump(obj, outfile, **dump_args)
