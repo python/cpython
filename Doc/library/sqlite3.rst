@@ -274,8 +274,8 @@ Module functions and constants
    implemented default is to cache 128 statements.
 
    If *uri* is :const:`True`, *database* is interpreted as a
-   :abbr:`URI (Uniform Resource Identifier)` consisting of a scheme, an
-   authority, a path, and a query string. The scheme part *must* be ``"file:"``.
+   :abbr:`URI (Uniform Resource Identifier)` with a file path and an optional query string.
+   The scheme part *must* be ``"file:"``.  The path can be a relative or absolute file path.
    The query string allows us to pass parameters to SQLite. Some useful URI
    tricks include::
 
