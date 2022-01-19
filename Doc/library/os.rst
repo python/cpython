@@ -4623,7 +4623,7 @@ Random numbers
 
 .. function:: urandom(size)
 
-   Return a string of *size* random bytes suitable for cryptographic use.
+   Return a bytestring of *size* random bytes suitable for cryptographic use.
 
    This function returns random bytes from an OS-specific randomness source.  The
    returned data should be unpredictable enough for cryptographic applications,
