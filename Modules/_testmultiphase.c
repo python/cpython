@@ -166,7 +166,7 @@ Test that result of _PyType_GetModuleByDef with a bad def is NULL.
 static PyObject *
 _testmultiphase_StateAccessType_getmodulebydef_bad_def_impl(StateAccessTypeObject *self,
                                                             PyTypeObject *cls)
-/*[clinic end generated code: output=64509074dfcdbd31 input=edaff09aa4788204]*/
+/*[clinic end generated code: output=64509074dfcdbd31 input=906047715ee293cd]*/
 {
     _PyType_GetModuleByDef(Py_TYPE(self), &def_nonmodule);  // should raise
     assert(PyErr_Occurred);

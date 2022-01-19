@@ -39,7 +39,7 @@ PyDoc_STRVAR(_testmultiphase_StateAccessType_getmodulebydef_bad_def__doc__,
 "getmodulebydef_bad_def($self, /)\n"
 "--\n"
 "\n"
-"Test that result of PyType_GetModuleByDef with a bad def is NULL.");
+"Test that result of _PyType_GetModuleByDef with a bad def is NULL.");
 
 #define _TESTMULTIPHASE_STATEACCESSTYPE_GETMODULEBYDEF_BAD_DEF_METHODDEF    \
     {"getmodulebydef_bad_def", (PyCFunction)(void(*)(void))_testmultiphase_StateAccessType_getmodulebydef_bad_def, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _testmultiphase_StateAccessType_getmodulebydef_bad_def__doc__},
@@ -131,4 +131,4 @@ _testmultiphase_StateAccessType_get_count(StateAccessTypeObject *self, PyTypeObj
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2a867a15ef01fab3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=eb1b8c2ee6290be3 input=a9049054013a1b77]*/
