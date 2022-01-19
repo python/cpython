@@ -45,8 +45,8 @@ class PEGLexer(RegexLexer):
         ],
         "variables": [(_name + _text_ws + "(=)", bygroups(None, None, None),),],
         "invalids": [
-            (r"^(\s+\|\s+invalid_\w+\s*\n)", bygroups(None)),
-            (r"^(\s+\|\s+incorrect_\w+\s*\n)", bygroups(None)),
+            (r"^(\s+\|\s+.*invalid_\w+.*\n)", bygroups(None)),
+            (r"^(\s+\|\s+.*incorrect_\w+.*\n)", bygroups(None)),
             (r"^(#.*invalid syntax.*(?:.|\n)*)", bygroups(None),),
         ],
         "root": [
