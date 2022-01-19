@@ -4310,6 +4310,11 @@ class AnnotatedTests(BaseTestCase):
         X = List[Annotated[T, 5]]
         self.assertEqual(X[int], List[Annotated[int, 5]])
 
+    def test_annotated_mro(self):
+        class X(Annotated[int, (1, 10)]): ...
+        self.assertEqual(X.__mro__, (X, int, object),
+                         "Annotated should be transparent.")
+
 
 class AllTests(BaseTestCase):
     """Tests for __all__."""
