@@ -1604,12 +1604,9 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                         SpecializedCacheEntry *cache)
 {
     _PyAdaptiveEntry *adaptive = &cache->adaptive;
-    bool inplace = false;
     switch (adaptive->original_oparg) {
-        case NB_INPLACE_ADD:
-            inplace = true;
-            // Fall through...
         case NB_ADD:
+        case NB_INPLACE_ADD:
             if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
                 SPECIALIZATION_FAIL(BINARY_OP, SPEC_FAIL_DIFFERENT_TYPES);
                 goto failure;
@@ -1628,18 +1625,16 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                 Py_ABS(Py_SIZE(lhs)) < 2 && Py_ABS(Py_SIZE(rhs)) < 2)
             {
                 *instr = _Py_MAKECODEUNIT(BINARY_OP_ADD_INT, _Py_OPARG(*instr));
-                goto success_set_index;
+                goto success;
             }
             if (PyFloat_CheckExact(lhs)) {
                 *instr = _Py_MAKECODEUNIT(BINARY_OP_ADD_FLOAT,
                                           _Py_OPARG(*instr));
-                goto success_set_index;
+                goto success;
             }
             break;
-        case NB_INPLACE_MULTIPLY:
-            inplace = true;
-            // Fall through...
         case NB_MULTIPLY:
+        case NB_INPLACE_MULTIPLY:
             if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
                 SPECIALIZATION_FAIL(BINARY_OP, SPEC_FAIL_DIFFERENT_TYPES);
                 goto failure;
@@ -1649,18 +1644,16 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
             {
                 *instr = _Py_MAKECODEUNIT(BINARY_OP_MULTIPLY_INT,
                                           _Py_OPARG(*instr));
-                goto success_set_index;
+                goto success;
             }
             if (PyFloat_CheckExact(lhs)) {
                 *instr = _Py_MAKECODEUNIT(BINARY_OP_MULTIPLY_FLOAT,
                                           _Py_OPARG(*instr));
-                goto success_set_index;
+                goto success;
             }
             break;
-        case NB_INPLACE_SUBTRACT:
-            inplace = true;
-            // Fall through...
         case NB_SUBTRACT:
+        case NB_INPLACE_SUBTRACT:
             if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
                 SPECIALIZATION_FAIL(BINARY_OP, SPEC_FAIL_DIFFERENT_TYPES);
                 goto failure;
@@ -1670,12 +1663,12 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
             {
                 *instr = _Py_MAKECODEUNIT(BINARY_OP_SUBTRACT_INT,
                                           _Py_OPARG(*instr));
-                goto success_set_index;
+                goto success;
             }
             if (PyFloat_CheckExact(lhs)) {
                 *instr = _Py_MAKECODEUNIT(BINARY_OP_SUBTRACT_FLOAT,
                                           _Py_OPARG(*instr));
-                goto success_set_index;
+                goto success;
             }
             break;
         default:
@@ -1689,15 +1682,6 @@ failure:
     STAT_INC(BINARY_OP, failure);
     cache_backoff(adaptive);
     return;
-success_set_index:
-    ;  // The technology just isn't there yet...
-    int next_opcode = _Py_OPCODE(instr[1]);
-    if (next_opcode == STORE_FAST || next_opcode == STORE_FAST__LOAD_FAST) {
-        adaptive->index = inplace + 1;
-    }
-    else {
-        adaptive->index = 1;
-    }
 success:
     STAT_INC(BINARY_OP, success);
     adaptive->counter = initial_counter_value();
