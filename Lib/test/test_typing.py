@@ -494,6 +494,10 @@ class CallableTests(BaseTestCase):
         # Shouldn't crash; see https://github.com/python/typing/issues/259
         typing.List[Callable[..., str]]
 
+    def test_or_and_ror(self):
+        Callable = self.Callable
+        self.assertEqual(Callable | Tuple, Union[Callable, Tuple])
+        self.assertEqual(Tuple | Callable, Union[Tuple, Callable])
 
 class LiteralTests(BaseTestCase):
     def test_basics(self):
@@ -3628,6 +3632,10 @@ class CollectionsAbcTests(BaseTestCase):
         class B: ...
         A.register(B)
         self.assertIsSubclass(B, typing.Mapping)
+
+    def test_or_and_ror(self):
+        self.assertEqual(typing.Sized | typing.Awaitable, Union[typing.Sized, typing.Awaitable])
+        self.assertEqual(typing.Coroutine | typing.Hashable, Union[typing.Coroutine, typing.Hashable])
 
 
 class OtherABCTests(BaseTestCase):
