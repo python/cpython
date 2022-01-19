@@ -40,13 +40,10 @@ PCbuild/readme.txt text eol=crlf
 PC/readme.txt text eol=crlf
 
 # Generated files
-# https://github.com/github/linguist#generated-code
+# https://github.com/github/linguist/blob/master/docs/overrides.md
 Include/graminit.h          linguist-generated=true
 Python/graminit.h           linguist-generated=true
-Modules/clinic/*.h          linguist-generated=true
-Objects/clinic/*.h          linguist-generated=true
-PC/clinic/*.h               linguist-generated=true
-Python/clinic/*.h           linguist-generated=true
+**/clinic/*.h               linguist-generated=true
 Python/importlib.h          linguist-generated=true
 Python/importlib_external.h linguist-generated=true
 Include/Python-ast.h        linguist-generated=true
