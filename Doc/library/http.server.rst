@@ -352,13 +352,13 @@ provides three different variants:
 
    .. method:: do_HEAD()
 
-      This method serves HEAD requests: it sends the headers it
+      Serves HEAD requests: it sends the headers it
       would send for the equivalent GET request. See the :meth:`do_GET`
       method for a more complete explanation of the possible headers.
 
    .. method:: do_GET()
 
-      This method serves GET requests: it sends a local file by interpreting the request as a
+      Serves GET requests: it sends a local file by interpreting the request as a
       path relative to the current working directory.
 
       If the request was mapped to a directory, the directory is checked for a
@@ -424,7 +424,7 @@ to bind to localhost only::
     ``--bind`` argument was introduced.
 
 .. versionadded:: 3.8
-    ``--bind`` argument enhanced to support IPv6
+    ``--bind`` argument enhanced to support IPv6.
 
 By default, server uses the current directory. The option ``-d/--directory``
 specifies a directory to which it should serve the files. For example,
@@ -433,7 +433,7 @@ the following command uses a specific directory::
         python -m http.server --directory /tmp/
 
 .. versionadded:: 3.7
-    ``--directory`` specify alternate directory
+    ``--directory`` specifies alternate directory.
 
 .. class:: CGIHTTPRequestHandler(request, client_address, server)
 
@@ -444,7 +444,7 @@ the following command uses a specific directory::
    .. note::
 
       CGI scripts run by the :class:`CGIHTTPRequestHandler` class cannot
-      send a 302 (Found) redirection response, because a 200 (OK) sucessful response is
+      send a 302 (Found) redirection status code, because a 200 (OK) successful status code is
       sent prior to execution of the CGI script.  This pre-empts the status
       code.
 
@@ -468,8 +468,8 @@ the following command uses a specific directory::
 
    .. method:: do_POST()
 
-      This method serves POST requests, only allowed for CGI
-      scripts.  A 501 (Not Implemented) server error response is sent when trying
+      Serves POST requests and is only allowed for CGI scripts.
+      A 501 (Not Implemented) server error response is sent when trying
       to POST to a non-CGI URI.
 
    Note that CGI scripts will be run with UID of user nobody, for security
