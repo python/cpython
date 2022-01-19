@@ -4854,11 +4854,12 @@ type and the :class:`bytes` data type:
   :ref:`re.Match <match-objects>` object where the return values of
   ``x.group(0)`` and ``x[0]`` will both be of type :class:`str`. We can
   represent this kind of object in type annotations with the ``GenericAlias``
-  ``re.Match[str]``
+  ``re.Match[str]``.
 
-* If ``y = re.search(b'bar', b'bar')``, (note the ``b`` for :class:`bytes`), ``y`` will also be an instance
-  of ``re.Match``, but the return values of ``y.group(0)`` and ``y[0]`` will
-  both be of type :class:`bytes`. In type annotations, we would represent this
+* If ``y = re.search(b'bar', b'bar')``, (note the ``b`` for :class:`bytes`),
+  ``y`` will also be an instance of ``re.Match``, but the return
+  values of ``y.group(0)`` and ``y[0]`` will both be of type
+  :class:`bytes`. In type annotations, we would represent this
   variety of :ref:`re.Match <match-objects>` objects with ``re.Match[bytes]``.
 
 ``GenericAlias`` objects are instances of the class
@@ -4920,8 +4921,8 @@ Calling :func:`repr` or :func:`str` on a generic shows the parameterized type::
    >>> str(list[int])
    'list[int]'
 
-The :meth:`~object.__getitem__` method of generic containers will raise an exception to disallow
-mistakes like ``dict[str][str]``::
+The :meth:`~object.__getitem__` method of generic containers will raise an
+exception to disallow mistakes like ``dict[str][str]``::
 
    >>> dict[str][str]
    Traceback (most recent call last):
@@ -5048,7 +5049,7 @@ All parameterized generics implement special read-only attributes.
 .. seealso::
 
    :pep:`484` - Type Hints
-      Introducing Python's framework for type annotations
+      Introducing Python's framework for type annotations.
 
    :pep:`585` - "Type Hinting Generics In Standard Collections"
       Introducing the ability to natively parameterize standard-library
