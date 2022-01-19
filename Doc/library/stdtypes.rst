@@ -5063,7 +5063,7 @@ All parameterized generics implement special read-only attributes.
    :pep:`484` - Type Hints
       Introducing Python's framework for type annotations.
 
-   :pep:`585` - "Type Hinting Generics In Standard Collections"
+   :pep:`585` - Type Hinting Generics In Standard Collections
       Introducing the ability to natively parameterize standard-library
       classes, provided they implement the special class method
       :meth:`~object.__class_getitem__`.
