@@ -63,12 +63,12 @@ provides three different variants:
 
    The handler will parse the request and the headers, then call a method
    specific to the request type. The method name is constructed from the
-   request. For example, for the request method ``SPAM``, the :meth:`do_SPAM`
+   request. For example, for the request method SPAM, the :meth:`do_SPAM`
    method will be called with no arguments. All of the relevant information is
    stored in instance variables of the handler.  Subclasses should not need to
    override or extend the :meth:`__init__` method.
 
-   :class:`BaseHTTPRequestHandler` has the following instance variables:
+   :class:`BaseHTTPRequestHandler` defines the following instance variables:
 
    .. attribute:: client_address
 
@@ -129,17 +129,18 @@ provides three different variants:
       .. versionchanged:: 3.6
          This is an :class:`io.BufferedIOBase` stream.
 
-   :class:`BaseHTTPRequestHandler` has the following attributes:
+   :class:`BaseHTTPRequestHandler` defines the following class variables:
 
    .. attribute:: server_version
 
-      Specifies the server software version.  You may want to override this. The
+      Specifies the server software version based on ``__version__`` defined
+      at the module level. You may want to override this. The
       format is multiple whitespace-separated strings, where each string is of
       the form name[/version]. For example, ``'BaseHTTP/0.2'``.
 
    .. attribute:: sys_version
 
-      Contains the Python system version, in a form usable by the
+      Specifies the Python system version, in a form usable by the
       :attr:`version_string` method and the :attr:`server_version` class
       variable. For example, ``'Python/1.4'``.
 
@@ -157,11 +158,11 @@ provides three different variants:
 
    .. attribute:: protocol_version
 
-      This specifies the HTTP protocol version used in responses.  If set to
+      Specifies the HTTP protocol version used in responses.  If set to
       ``'HTTP/1.1'``, the server will permit HTTP persistent connections;
-      however, your server *must* then include an accurate ``Content-Length``
+      however, your server *must* then include an accurate Content-Length
       header (using :meth:`send_header`) in all of its responses to clients.
-      For backwards compatibility, the setting defaults to ``'HTTP/1.0'``.
+      For backwards compatibility, the default value is ``'HTTP/1.0'``.
 
    .. attribute:: MessageClass
 
@@ -171,13 +172,13 @@ provides three different variants:
 
    .. attribute:: responses
 
-      This attribute contains a mapping of error code integers to two-element tuples
-      containing a short and long message. For example, ``{code: (shortmessage,
-      longmessage)}``. The *shortmessage* is usually used as the *message* key in an
-      error response, and *longmessage* as the *explain* key.  It is used by
+      This attribute contains a mapping of status codes to two-element tuples
+      containing a reason phrase and long description.  For example, ``{code: (reason,
+      description)}``.  The reason phrase is usually used as the *message* key in an
+      error response, and the long description as the *explain* key.  It is used by
       :meth:`send_response_only` and :meth:`send_error` methods.
 
-   A :class:`BaseHTTPRequestHandler` instance has the following methods:
+   :class:`BaseHTTPRequestHandler` defines the following methods:
 
    .. method:: handle()
 
@@ -193,13 +194,13 @@ provides three different variants:
 
    .. method:: handle_expect_100()
 
-      Sends the status line with a 100 (Continue) status code to the output stream.
+      Sends a 100 (Continue) informational status line to the output stream.
       When a HTTP/1.1 compliant server receives a request with an ``Expect: 100-continue``
       header which indicates that a request message body will follow, it must either
-      send a 100 (Continue) response to tell the client to continue, or send a response
+      send a 100 (Continue) informational response to tell the client to continue, or send a response
       with a final status code to tell the client to stop.
       This method can be overridden to tell the client to stop. E.g. the server can
-      choose to send a 417 (Expectation Failed) status code and ``return False``.
+      choose to send a 417 (Expectation Failed) client error status line and ``return False``.
 
       .. versionadded:: 3.2
 
@@ -223,7 +224,7 @@ provides three different variants:
 
    .. method:: send_response(code, message=None)
 
-      Adds the status line followed by the *Server* and *Date* headers to
+      Adds a status line followed by a Server header and Date header to
       the internal buffer, and logs the status code. If *message* is not specified,
       the value corresponding to the status code in the :class:`http.HTTPStatus` enum is used.
       The values for the headers are picked up from the :meth:`version_string` and
@@ -249,7 +250,7 @@ provides three different variants:
 
    .. method:: send_response_only(code, message=None)
 
-      Adds the status line to the internal buffer. *code* specifies the status code
+      Adds a status line to the internal buffer. *code* specifies the status code
       and *message* the reason phrase. If *message* is not specified, the value
       corresponding to the status code in the :class:`http.HTTPStatus` enum is used.
 
@@ -316,8 +317,8 @@ provides three different variants:
 
 .. class:: SimpleHTTPRequestHandler(request, client_address, server, directory=None)
 
-   This class serves files from the directory *directory* and below,
-   or the current directory if *directory* is not provided, directly
+   This class serves files from the directory specified by *directory* and below,
+   or the current directory and below if *directory* is not specified, directly
    mapping the directory structure to HTTP requests.
 
    .. versionadded:: 3.7
@@ -330,13 +331,12 @@ provides three different variants:
    :class:`BaseHTTPRequestHandler`.  This class implements the :func:`do_GET`
    and :func:`do_HEAD` functions.
 
-   The following are defined as class-level attributes of
-   :class:`SimpleHTTPRequestHandler`:
+   :class:`SimpleHTTPRequestHandler` defines the following class variables:
 
    .. attribute:: server_version
 
-      This will be ``"SimpleHTTP/" + __version__``, where ``__version__`` is
-      defined at the module level.
+      Specifies the server software version based on ``__version__`` defined
+      at the module level. For example, ``'SimpleHTTP/0.2'``.
 
    .. attribute:: extensions_map
 
@@ -348,37 +348,37 @@ provides three different variants:
          This dictionary is no longer filled with the default system mappings,
          but only contains overrides.
 
-   The :class:`SimpleHTTPRequestHandler` class defines the following methods:
+   :class:`SimpleHTTPRequestHandler` defines the following methods:
 
    .. method:: do_HEAD()
 
-      This method serves the ``'HEAD'`` request type: it sends the headers it
-      would send for the equivalent ``GET`` request. See the :meth:`do_GET`
+      This method serves HEAD requests: it sends the headers it
+      would send for the equivalent GET request. See the :meth:`do_GET`
       method for a more complete explanation of the possible headers.
 
    .. method:: do_GET()
 
-      The request is mapped to a local file by interpreting the request as a
+      This method serves GET requests: it sends a local file by interpreting the request as a
       path relative to the current working directory.
 
       If the request was mapped to a directory, the directory is checked for a
       file named ``index.html`` or ``index.htm`` (in that order). If found, the
       file's contents are returned; otherwise a directory listing is generated
       by calling the :meth:`list_directory` method. This method uses
-      :func:`os.listdir` to scan the directory, and returns a ``404`` error
-      response if the :func:`~os.listdir` fails.
+      :func:`os.listdir` to scan the directory, and returns a 404 (Not Found)
+      client error response if the :func:`~os.listdir` fails.
 
-      If the request was mapped to a file, it is opened. Any :exc:`OSError`
-      exception in opening the requested file is mapped to a ``404``,
-      ``'File not found'`` error. If there was a ``'If-Modified-Since'``
+      If the request was mapped to a file, it is opened. For any :exc:`OSError`
+      exception in opening the requested file, a 404 (Not Found) client error
+      response is sent. If there was a If-Modified-Since
       header in the request, and the file was not modified after this time,
-      a ``304``, ``'Not Modified'`` response is sent. Otherwise, the content
+      a 304 (Not Modified) redirection response is sent. Otherwise, the content
       type is guessed by calling the :meth:`guess_type` method, which in turn
       uses the *extensions_map* variable, and the file contents are returned.
 
-      A ``'Content-type:'`` header with the guessed content type is output,
-      followed by a ``'Content-Length:'`` header with the file's size and a
-      ``'Last-Modified:'`` header with the file's modification time.
+      A Content-Type header with the guessed content type is output,
+      followed by a Content-Length header with the file's size and a
+      Last-Modified header with the file's modification time.
 
       Then follows a blank line signifying the end of the headers, and then the
       contents of the file are output. If the file's MIME type starts with
@@ -388,7 +388,7 @@ provides three different variants:
       invocation in the :mod:`http.server` module.
 
       .. versionchanged:: 3.7
-         Support of the ``'If-Modified-Since'`` header.
+         Support of the If-Modified-Since header.
 
 The :class:`SimpleHTTPRequestHandler` class can be used in the following
 manner in order to create a very basic webserver serving files relative to
@@ -443,8 +443,8 @@ the following command uses a specific directory::
 
    .. note::
 
-      CGI scripts run by the :class:`CGIHTTPRequestHandler` class cannot execute
-      redirects (HTTP code 302), because code 200 (script output follows) is
+      CGI scripts run by the :class:`CGIHTTPRequestHandler` class cannot
+      send a 302 (Found) redirection response, because a 200 (OK) sucessful response is
       sent prior to execution of the CGI script.  This pre-empts the status
       code.
 
@@ -457,23 +457,23 @@ the following command uses a specific directory::
    and serve the output, instead of serving files, if the request leads to
    somewhere below the ``cgi_directories`` path.
 
-   The :class:`CGIHTTPRequestHandler` defines the following data member:
+   :class:`CGIHTTPRequestHandler` defines the following class variable:
 
    .. attribute:: cgi_directories
 
       This defaults to ``['/cgi-bin', '/htbin']`` and describes directories to
       treat as containing CGI scripts.
 
-   The :class:`CGIHTTPRequestHandler` defines the following method:
+   :class:`CGIHTTPRequestHandler` defines the following method:
 
    .. method:: do_POST()
 
-      This method serves the ``'POST'`` request type, only allowed for CGI
-      scripts.  Error 501, "Can only POST to CGI scripts", is output when trying
-      to POST to a non-CGI url.
+      This method serves POST requests, only allowed for CGI
+      scripts.  A 501 (Not Implemented) server error response is sent when trying
+      to POST to a non-CGI URI.
 
    Note that CGI scripts will be run with UID of user nobody, for security
-   reasons.  Problems with the CGI script will be translated to error 403.
+   reasons.  Problems with the CGI script will be translated to a 403 (Forbidden) client error response.
 
 :class:`CGIHTTPRequestHandler` can be enabled in the command line by passing
 the ``--cgi`` option::
