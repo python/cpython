@@ -326,13 +326,13 @@ static PyType_Spec blob_spec = {
 };
 
 int
-pysqlite_blob_setup_types(PyObject *module)
+pysqlite_blob_setup_types(PyObject *mod)
 {
-    PyObject *type = PyType_FromModuleAndSpec(module, &blob_spec, NULL);
+    PyObject *type = PyType_FromModuleAndSpec(mod, &blob_spec, NULL);
     if (type == NULL) {
         return -1;
     }
-    pysqlite_state *state = pysqlite_get_state(module);
+    pysqlite_state *state = pysqlite_get_state(mod);
     state->BlobType = (PyTypeObject *)type;
     return 0;
 }
