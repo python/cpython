@@ -1,4 +1,4 @@
-from . import load_tests
+from test.test_importlib import load_tests
 import unittest
 
 unittest.main()
