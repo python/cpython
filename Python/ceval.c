@@ -880,9 +880,11 @@ static const binaryfunc binary_ops[] = {
             SET_TOP((PyObject *)res);                                          \
             DISPATCH();                                                        \
         }                                                                      \
-        uint16_t maybe_store = GET_CACHE()->adaptive.index;                    \
-        bool inplace = maybe_store && GETLOCAL(maybe_store - 1) == lhs;        \
-        if (Py_ABS(i) < PyLong_BASE && Py_REFCNT(lhs) == inplace + 1) {        \
+        uint16_t inplace_refcount = GET_CACHE()->adaptive.index;               \
+        assert(inplace_refcount == 2                                           \
+               ? GETLOCAL(_Py_OPARG(*next_instr)) == lhs                       \
+               : inplace_refcount == 1);                                       \
+        if (Py_ABS(i) < PyLong_BASE && Py_REFCNT(lhs) == inplace_refcount) {   \
             /* If this assert fails, it's probably one of two things:       */ \
             /* - If lhs lives in _PyLong_SMALL_INTS, its refcount is wrong. */ \
             /* - Whatever created lhs should have used _PyLong_SMALL_INTS,  */ \
@@ -913,9 +915,11 @@ static const binaryfunc binary_ops[] = {
         double d = l OP r;                                              \
         Py_DECREF(rhs);                                                 \
         STACK_SHRINK(1);                                                \
-        uint16_t maybe_store = GET_CACHE()->adaptive.index;             \
-        bool inplace = maybe_store && GETLOCAL(maybe_store - 1) == lhs; \
-        if (Py_REFCNT(lhs) == inplace + 1) {                            \
+        uint16_t inplace_refcount = GET_CACHE()->adaptive.index;        \
+        assert(inplace_refcount == 2                                    \
+               ? GETLOCAL(_Py_OPARG(*next_instr)) == lhs                \
+               : inplace_refcount == 1);                                \
+        if (Py_REFCNT(lhs) == inplace_refcount) {                       \
             PyFloat_AS_DOUBLE(lhs) = d;                                 \
             DISPATCH();                                                 \
         }                                                               \
