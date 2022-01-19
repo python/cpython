@@ -21,6 +21,8 @@ extern "C" {
 #define ID(NAME) \
     STR(NAME, #NAME)
 
+// XXX Order by frequency of use?
+
 struct _Py_global_strings {
     struct {
         STR(empty, "")
