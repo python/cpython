@@ -169,7 +169,7 @@ _testmultiphase_StateAccessType_getmodulebydef_bad_def_impl(StateAccessTypeObjec
 /*[clinic end generated code: output=64509074dfcdbd31 input=906047715ee293cd]*/
 {
     _PyType_GetModuleByDef(Py_TYPE(self), &def_nonmodule);  // should raise
-    assert(PyErr_Occurred);
+    assert(PyErr_Occurred());
     return NULL;
 }
 
