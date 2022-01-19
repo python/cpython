@@ -464,6 +464,7 @@ struct _Py_global_strings {
         ID(_strptime_time)
         ID(_warn_unawaited_coroutine)
         ID(_xoptions)
+        ID(append)
         ID(big)
         ID(buffer)
         ID(builtins)

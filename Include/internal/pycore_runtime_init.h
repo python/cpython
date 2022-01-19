@@ -1084,6 +1084,7 @@ extern "C" {
                 INIT_ID(_strptime_time), \
                 INIT_ID(_warn_unawaited_coroutine), \
                 INIT_ID(_xoptions), \
+                INIT_ID(append), \
                 INIT_ID(big), \
                 INIT_ID(buffer), \
                 INIT_ID(builtins), \
