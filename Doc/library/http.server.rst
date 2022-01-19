@@ -319,7 +319,7 @@ provides three different variants:
 
    This class serves files from the directory specified by *directory* and below,
    or the current directory and below if *directory* is not specified, directly
-   mapping the directory structure to HTTP requests.
+   mapping URI structure to directory structure.
 
    .. versionadded:: 3.7
       The *directory* parameter.
@@ -435,11 +435,11 @@ the following command uses a specific directory::
 .. versionadded:: 3.7
     ``--directory`` specifies alternate directory.
 
-.. class:: CGIHTTPRequestHandler(request, client_address, server)
+.. class:: CGIHTTPRequestHandler(request, client_address, server, directory=None)
 
-   This class is used to serve either files or output of CGI scripts from the
-   current directory and below. Note that mapping HTTP hierarchic structure to
-   local directory structure is exactly as in :class:`SimpleHTTPRequestHandler`.
+   This class serves files or runs and serves the output of CGI scripts from the directory
+   specified by *directory* and below, or the current directory and below if
+   *directory* is not specified, directly mapping URI structure to directory structure.
 
    .. note::
 
@@ -453,9 +453,10 @@ the following command uses a specific directory::
    the other common server configuration is to treat special extensions as
    denoting CGI scripts.
 
-   The :func:`do_GET` and :func:`do_HEAD` functions are modified to run CGI scripts
-   and serve the output, instead of serving files, if the request leads to
-   somewhere below the ``cgi_directories`` path.
+   The :func:`do_GET` and :func:`do_HEAD` functions inherited from
+   :class:`SimpleHTTPRequestHandler` are extended to run and serve the output
+   of CGI scripts, instead of serving files, if the request path points to
+   a file below the ``cgi_directories`` path.
 
    :class:`CGIHTTPRequestHandler` defines the following class variable:
 
