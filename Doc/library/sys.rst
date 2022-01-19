@@ -729,9 +729,10 @@ always available.
 
 .. function:: getintmaxdigits()
 
-   Return limit for int digits, :func:`setintmaxdigits` TODO
+   Return current global value for :ref:`int maximum digits limitation
+   <intmaxdigits>`. See also :func:`setintmaxdigits`
 
-   .. versionadded:: 3.9
+   .. versionadded:: 3.11
 
 .. function:: getrefcount(object)
 
@@ -1328,7 +1329,8 @@ always available.
 
 .. function:: setintmaxdigits(n)
 
-   Set maximum amount of int digits, :func:`getintmaxdigits` TODO
+   Set global interpreter limit for :ref:`int maximum digits limitation
+   <intmaxdigits>`. See also :func:`getintmaxdigits`
 
    .. versionadded:: 3.9
 

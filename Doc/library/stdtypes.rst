@@ -5460,6 +5460,72 @@ types, where they are relevant.  Some of these are not reported by the
       [<class 'bool'>]
 
 
+.. _intmaxdigits:
+
+Integer maximum digits limitation
+=================================
+
+CPython has a global limit for converting between :class:`int` and class:`str`
+to mitigate denial of service attacks. The limit is necessary because there
+exists no efficient algorithm, that can convert a string to an integer or
+an integer to a string in linear time, unless the base is a power of *2*. Even
+the best known algorithms for base *10* have sub-quadratic complexity. A large
+input like::
+
+   int('1' * 500_000)
+
+takes about a second at 100% CPU load on an X86_64 CPU from 2020 with 4.2 GHz
+max frequency.
+
+Configure limitations
+---------------------
+
+* :data:`sys.int_info.default_max_digits` is the compiled-in default value.
+* :data:`sys.int_info.max_digits_check_threshold` is the minimum limit for
+  digit limitation. For performance reasons Python does not check
+
+* :envvar:`PYTHONINTMAXDIGITS`, e.g. ``PYTHONINTMAXDIGITS=4096 python3`` to
+  set the limit to ``4096`` or ``PYTHONINTMAXDIGITS=0 python3`` to disable
+  the limitation
+* :option:`-X intmaxdigits <-X>`, e.g. ``python3 -X intmaxdigits=4096``
+* :data:`sys.flags.intmaxdigits` contains the value of
+  :envvar:`PYTHONINTMAXDIGITS` or :option:`-X intmaxdigits <-X>`. In case
+  both the env var and the ``-X`` option are set, the ``-X`` option takes
+  precedence. The flag defaults to *-1*.
+
+* :func:`sys.getintmaxdigits` and :func:`sys.setintmaxdigits` are getter
+  and setter for interpreter-wide limit.
+
+Recommended configuration::
+
+   import sys
+   if hasattr(sys.flags, "intmaxdigits") and sys.flags.intmaxdigits == -1:
+       sys.setintmaxdigits(4096)
+
+Affected APIs
+-------------
+
+The limition only applies to slow conversions between :class:`int` and
+class:`str`:
+
+* ``int(string)`` with default base 10.
+* ``int(string, base)`` for all bases that are not power of 2.
+* ``str(integer)``
+* ``repr(integer)``
+* any other string conversion to base 10, for example ``f"{integer}"``,
+  ``"{}".format(integer)``, or ``"%d" % integer``.
+
+The limitations do not apply to functions with a linear algorithm:
+
+* ``int(string, base)`` with base 2, 4, 8, 16, or 32
+* :func:`int.from_bytes` and :func:`int.to_bytes`
+* :func:`hex`, :func:`oct`, :func:`bin` (the resulting string may consume
+  a substantial amount of memory)
+* :ref:`formatspec` for hex, octet, and binary types
+* :class:`str` to :class:`float`
+* :class:`str` to :class:`decimal.Decimal`
+
+
 .. rubric:: Footnotes
 
 .. [1] Additional information on these special methods may be found in the Python

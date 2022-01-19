@@ -911,7 +911,8 @@ are always available.  They are listed here in alphabetical order.
       The delegation to :meth:`__trunc__` is deprecated.
 
    .. versionchanged:: 3.12
-      :class:`int` are now limited, :func:`sys.setintmaxdigits` TODO
+      :class:`int` string inputs are now limited, see :ref:`int maximum
+      digits limitation <intmaxdigits>`.
 
 .. function:: isinstance(object, classinfo)
 
