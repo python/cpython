@@ -297,8 +297,8 @@ struct _Py_global_strings {
 #undef STR
 
 
-#define _PyInterpreterState_GET_IDENTIFIER(interp, NAME) \
-     (&interp->strings.identifiers.$ ## NAME._ascii.ob_base)
+#define _Py_GET_GLOBAL_IDENTIFIER(NAME) \
+     (&_Py_SINGLETON(strings.identifiers.$ ## NAME._ascii.ob_base))
 
 
 #ifdef __cplusplus
