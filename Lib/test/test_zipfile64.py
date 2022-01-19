@@ -16,6 +16,7 @@ import time
 import sys
 
 from tempfile import TemporaryFile
+
 from test.support import TESTFN, requires_zlib
 
 TESTFN2 = TESTFN + "2"
