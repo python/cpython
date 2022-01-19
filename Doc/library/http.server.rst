@@ -152,7 +152,7 @@ provides three different variants:
 
    .. attribute:: error_content_type
 
-      Specifies the Content-Type HTTP header of error responses sent to the
+      Specifies the Content-Type header of error responses sent to the
       client.  The default value is ``'text/html'``.
 
    .. attribute:: protocol_version
@@ -188,33 +188,34 @@ provides three different variants:
 
    .. method:: handle_one_request()
 
-      This method will parse and dispatch the request to the appropriate
+      Parses and dispatches the request to the appropriate
       :meth:`do_\*` method.  You should never need to override it.
 
    .. method:: handle_expect_100()
 
-      When a HTTP/1.1 compliant server receives an ``Expect: 100-continue``
-      request header it responds back with a ``100 Continue`` followed by ``200
-      OK`` headers.
-      This method can be overridden to raise an error if the server does not
-      want the client to continue.  For e.g. server can choose to send ``417
-      Expectation Failed`` as a response header and ``return False``.
+      Sends the status line with a 100 (Continue) status code to the output stream.
+      When a HTTP/1.1 compliant server receives a request with an ``Expect: 100-continue``
+      header which indicates that a request message body will follow, it must either
+      send a 100 (Continue) response to tell the client to continue, or send a response
+      with a final status code to tell the client to stop.
+      This method can be overridden to tell the client to stop. E.g. the server can
+      choose to send a 417 (Expectation Failed) status code and ``return False``.
 
       .. versionadded:: 3.2
 
    .. method:: send_error(code, message=None, explain=None)
 
-      Sends and logs a complete error reply to the client. The numeric *code*
-      specifies the HTTP error code, with *message* as an optional, short, human
-      readable description of the error.  The *explain* argument can be used to
-      provide more detailed information about the error; it will be formatted
+      Sends a complete error response to the client and logs the status code and reason phrase.
+      *code* specifies the status code, *message* the reason phrase, and *explain*
+      a long description of the error. If *message* or *explain* is not specified,
+      the value corresponding to the status code in the :class:`http.HTTPStatus` enum is used.
+      For unknown status codes, the default value for both is the string ``???``.
+      *explain* will be formatted
       using the :attr:`error_message_format` attribute and emitted, after
-      a complete set of headers, as the response body.  The :attr:`responses`
-      attribute holds the default values for *message* and *explain* that
-      will be used if no value is provided; for unknown codes the default value
-      for both is the string ``???``. The body will be empty if the method is
-      HEAD or the response code is one of the following: ``1xx``,
-      ``204 No Content``, ``205 Reset Content``, ``304 Not Modified``.
+      a complete set of headers, as the response body.
+      The body will be empty if the method is
+      HEAD or the status code is one of the following:
+      1xx, 204 (No Content), 205 (Reset Content), 304 (Not Modified).
 
       .. versionchanged:: 3.4
          The error response includes a Content-Length header.
@@ -222,10 +223,10 @@ provides three different variants:
 
    .. method:: send_response(code, message=None)
 
-      Adds a response header to the headers buffer and logs the accepted
-      request. The HTTP response line is written to the internal buffer,
-      followed by *Server* and *Date* headers. The values for these two headers
-      are picked up from the :meth:`version_string` and
+      Adds the status line followed by the *Server* and *Date* headers to
+      the internal buffer, and logs the status code. If *message* is not specified,
+      the value corresponding to the status code in the :class:`http.HTTPStatus` enum is used.
+      The values for the headers are picked up from the :meth:`version_string` and
       :meth:`date_time_string` methods, respectively. If the server does not
       intend to send any other headers using the :meth:`send_header` method,
       then :meth:`send_response` should be followed by an :meth:`end_headers`
@@ -237,45 +238,41 @@ provides three different variants:
 
    .. method:: send_header(keyword, value)
 
-      Adds the HTTP header to an internal buffer which will be written to the
+      Adds the header to the internal buffer which will be written to the
       output stream when either :meth:`end_headers` or :meth:`flush_headers` is
-      invoked. *keyword* should specify the header keyword, with *value*
-      specifying its value. Note that, after the send_header calls are done,
-      :meth:`end_headers` MUST BE called in order to complete the operation.
+      invoked. *keyword* specifies the header name and *value* its value.
+      Note that, after the send_header calls are done,
+      :meth:`end_headers` must be called in order to complete the operation.
 
       .. versionchanged:: 3.2
          Headers are stored in an internal buffer.
 
    .. method:: send_response_only(code, message=None)
 
-      Sends the response header only, used for the purposes when ``100
-      Continue`` response is sent by the server to the client. The headers not
-      buffered and sent directly the output stream.If the *message* is not
-      specified, the HTTP message corresponding the response *code*  is sent.
+      Adds the status line to the internal buffer. *code* specifies the status code
+      and *message* the reason phrase. If *message* is not specified, the value
+      corresponding to the status code in the :class:`http.HTTPStatus` enum is used.
 
       .. versionadded:: 3.2
 
    .. method:: end_headers()
 
-      Adds a blank line
-      (indicating the end of the HTTP headers in the response)
-      to the headers buffer and calls :meth:`flush_headers()`.
+      Adds a blank line (indicating the end of the headers in the response)
+      to the internal buffer and calls :meth:`flush_headers()`.
 
       .. versionchanged:: 3.2
          The buffered headers are written to the output stream.
 
    .. method:: flush_headers()
 
-      Finally send the headers to the output stream and flush the internal
-      headers buffer.
+      Sends the headers to the output stream and flush the internal buffer.
 
       .. versionadded:: 3.3
 
    .. method:: log_request(code='-', size='-')
 
-      Logs an accepted (successful) request. *code* should specify the numeric
-      HTTP code associated with the response. If a size of the response is
-      available, then it should be passed as the *size* parameter.
+      Logs an accepted (successful) request. *code* specifies the status code
+      and *size* the response size, if available.
 
    .. method:: log_error(...)
 
@@ -283,14 +280,13 @@ provides three different variants:
       the message to :meth:`log_message`, so it takes the same arguments
       (*format* and additional values).
 
-
    .. method:: log_message(format, ...)
 
       Logs an arbitrary message to ``sys.stderr``. This is typically overridden
       to create custom error logging mechanisms. The *format* argument is a
       standard printf-style format string, where the additional arguments to
       :meth:`log_message` are applied as inputs to the formatting. The client
-      ip address and current date and time are prefixed to every message logged.
+      IP address and current date and time are prefixed to every message logged.
 
    .. method:: version_string()
 
