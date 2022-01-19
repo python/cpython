@@ -482,24 +482,35 @@ mappingproxy(OrderedDict([('the', 0),
     def test_dict_views(self):
         for dict_class in (dict, collections.OrderedDict):
             empty = dict_class()
-            short = dict_class(zip('abcde', 'abcde'))
-            long = dict_class((chr(x), chr(x)) for x in range(65, 91))
+            short = dict_class(zip('edcba', 'edcba'))
+            long = dict_class((chr(x), chr(x)) for x in range(90, 64, -1))
+            lengths = {"empty": empty, "short": short, "long": long}
             prefix = "dict" if dict_class is dict else "odict"
-            for d in empty, short, long:
-                is_short = len(d) < 6
-                joiner = ", " if is_short else ",\n "
-                k = d.keys()
-                v = d.values()
-                i = d.items()
-                self.assertEqual(pprint.pformat(k, sort_dicts=True),
-                                 prefix + "_keys([%s])" %
-                                 joiner.join(repr(key) for key in sorted(k)))
-                self.assertEqual(pprint.pformat(v, sort_dicts=True),
-                                 prefix + "_values([%s])" %
-                                 joiner.join(repr(val) for val in sorted(v)))
-                self.assertEqual(pprint.pformat(i, sort_dicts=True),
-                                 prefix + "_items([%s])" %
-                                 joiner.join(repr(item) for item in sorted(i)))
+            for name, d in lengths.items():
+                with self.subTest(lenght=name, prefix=prefix):
+                    is_short = len(d) < 6
+                    joiner = ", " if is_short else ",\n "
+                    k = d.keys()
+                    v = d.values()
+                    i = d.items()
+                    self.assertEqual(pprint.pformat(k, sort_dicts=True),
+                                     prefix + "_keys([%s])" %
+                                     joiner.join(repr(key) for key in sorted(k)))
+                    self.assertEqual(pprint.pformat(v, sort_dicts=True),
+                                     prefix + "_values([%s])" %
+                                     joiner.join(repr(val) for val in sorted(v)))
+                    self.assertEqual(pprint.pformat(i, sort_dicts=True),
+                                     prefix + "_items([%s])" %
+                                     joiner.join(repr(item) for item in sorted(i)))
+                    self.assertEqual(pprint.pformat(k, sort_dicts=False),
+                                     prefix + "_keys([%s])" %
+                                     joiner.join(repr(key) for key in k))
+                    self.assertEqual(pprint.pformat(v, sort_dicts=False),
+                                     prefix + "_values([%s])" %
+                                     joiner.join(repr(val) for val in v))
+                    self.assertEqual(pprint.pformat(i, sort_dicts=False),
+                                     prefix + "_items([%s])" %
+                                     joiner.join(repr(item) for item in i))
 
     def test_empty_simple_namespace(self):
         ns = types.SimpleNamespace()

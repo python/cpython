@@ -620,6 +620,18 @@ class PrettyPrinter:
             del context[objid]
             return "{%s}" % ", ".join(components), readable, recursive
 
+        views = self._dict_keys_view, self._dict_values_view, self._dict_items_view
+        view_reprs = {cls.__repr__ for cls in views}
+        if issubclass(typ, views) and r in view_reprs:
+            key = _safe_key
+            if isinstance(typ, self._dict_items_view):
+                key = _safe_tuple
+            if self._sort_dicts:
+                object = sorted(object, key=key)
+            format = typ.__name__ + '([%s])'
+            # TODO: Figure out whether we need to handle recursion here
+            return format % ', '.join(repr(x) for x in object), True, False
+
         if (issubclass(typ, list) and r is list.__repr__) or \
            (issubclass(typ, tuple) and r is tuple.__repr__):
             if issubclass(typ, list):
