@@ -460,16 +460,17 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
     def test_caret_multiline_expression_syntax_error(self):
         # Make sure an expression spanning multiple lines that has
         # a syntax error is correctly marked with carets.
-        code = """
-def foo(*args, **kwargs):
-    pass
+        code = textwrap.dedent("""
+        def foo(*args, **kwargs):
+            pass
 
-a, b, c = 1, 2, 3
+        a, b, c = 1, 2, 3
 
-foo(a, z \
-        for z in \
-            range(10), b, c)
-"""
+        foo(a, z \
+                for z in \
+                    range(10), b, c)
+        """)
+
         def f_with_multiline():
             # Need to defer the compilation until in self.get_exception(..)
             return compile(code, "?", "exec")
@@ -488,8 +489,8 @@ foo(a, z \
         if not isinstance(self, CPythonTracebackErrorCaretTests):
             expected_f += (
                 '  File "?", line 7\n'
-                '    foo(a, z         for z in             range(10), b, c)\n'
-                '           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'
+                '    foo(a, z                 for z in                     range(10), b, c)\n'
+                '           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'
                 )
 
         result_lines = self.get_exception(f_with_multiline)
