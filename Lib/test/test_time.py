@@ -159,6 +159,13 @@ class TimeTestCase(unittest.TestCase):
         self.assertRaises(ValueError, time.sleep, -1)
         time.sleep(1.2)
 
+    def test_epoch(self):
+        # bpo-43869: Make sure that Python use the same Epoch on all platforms:
+        # January 1, 1970, 00:00:00 (UTC).
+        epoch = time.gmtime(0)
+        # Only test the date and time, ignore other gmtime() members
+        self.assertEqual(tuple(epoch)[:6], (1970, 1, 1, 0, 0, 0), epoch)
+
     def test_strftime(self):
         tt = time.gmtime(self.t)
         for directive in ('a', 'A', 'b', 'B', 'c', 'd', 'H', 'I',
