@@ -28,8 +28,7 @@ class SignalAndYieldFromTest(unittest.TestCase):
 
     def generator2(self):
         try:
-            while True:
-                yield
+            yield
         except KeyboardInterrupt:
             return "PASSED"
         else:
