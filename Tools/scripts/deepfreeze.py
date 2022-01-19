@@ -106,7 +106,7 @@ class Printer:
     def __init__(self, file: TextIO) -> None:
         self.level = 0
         self.file = file
-        self.cache: Dict[tuple[object, object, str], str] = {}
+        self.cache: Dict[tuple[type, object, str], str] = {}
         self.hits, self.misses = 0, 0
         self.patchups: list[str] = []
         self.write('#include "Python.h"')
