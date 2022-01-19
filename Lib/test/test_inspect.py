@@ -4150,13 +4150,14 @@ class TestSignatureDefinitions(unittest.TestCase):
 
     def test_base_class_have_text_signature(self):
         # see issue 43118
-        from io import BufferedReader
+        from .ann_module7 import BufferedReader
         class MyBufferedReader(BufferedReader):
             """buffer reader class."""
 
-        self.assertTrue(hasattr(BufferedReader, '__text_signature__'))
+        text_signature = BufferedReader.__text_signature__
+        self.assertEqual(text_signature, '(raw, buffer_size=DEFAULT_BUFFER_SIZE)')
         sig = inspect.signature(MyBufferedReader)
-        self.assertIsNotNone(sig)
+        self.assertEqual(str(sig), '(raw, buffer_size=8192)')
 
 
 class NTimesUnwrappable:

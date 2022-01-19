@@ -1,2 +1,3 @@
-In :func:`inspect.signature`, if the 'base' class has ``__text_signature__``
-attribute, use 'base' to help parse it. Patch by Weipeng Hong.
+Fix a bug in :func:`inspect.signature` that was causing it to fail on some
+subclasses of classes with a ``__text_signature__`` referencing module
+globals. Patch by Weipeng Hong.
