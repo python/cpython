@@ -234,8 +234,10 @@ class UstarReadTest(ReadTest, unittest.TestCase):
                 finally:
                     os.rmdir(name)
             with tarfile.open(tmpname) as tar:
-                tar.getmember(name)
-                tar.getmember(name + '/')
+                self.assertEqual(
+                    tar.getmember(name),
+                    tar.getmember(name + '/')
+                )
 
 class GzipUstarReadTest(GzipTest, UstarReadTest):
     pass
