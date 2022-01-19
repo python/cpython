@@ -145,26 +145,25 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(pysqlite_connection_open_blob__doc__,
-"open_blob($self, table, column, row, /, *, readonly=False, name=\'main\')\n"
+PyDoc_STRVAR(blobopen__doc__,
+"blobopen($self, table, column, row, /, *, readonly=False, name=\'main\')\n"
 "--\n"
 "\n"
 "Return a blob object. Non-standard.");
 
-#define PYSQLITE_CONNECTION_OPEN_BLOB_METHODDEF    \
-    {"open_blob", (PyCFunction)(void(*)(void))pysqlite_connection_open_blob, METH_FASTCALL|METH_KEYWORDS, pysqlite_connection_open_blob__doc__},
+#define BLOBOPEN_METHODDEF    \
+    {"blobopen", (PyCFunction)(void(*)(void))blobopen, METH_FASTCALL|METH_KEYWORDS, blobopen__doc__},
 
 static PyObject *
-pysqlite_connection_open_blob_impl(pysqlite_Connection *self,
-                                   const char *table, const char *col,
-                                   int row, int readonly, const char *name);
+blobopen_impl(pysqlite_Connection *self, const char *table, const char *col,
+              int row, int readonly, const char *name);
 
 static PyObject *
-pysqlite_connection_open_blob(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+blobopen(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "", "", "readonly", "name", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "open_blob", 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "blobopen", 0};
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     const char *table;
@@ -178,7 +177,7 @@ pysqlite_connection_open_blob(pysqlite_Connection *self, PyObject *const *args, 
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("open_blob", "argument 1", "str", args[0]);
+        _PyArg_BadArgument("blobopen", "argument 1", "str", args[0]);
         goto exit;
     }
     Py_ssize_t table_length;
@@ -191,7 +190,7 @@ pysqlite_connection_open_blob(pysqlite_Connection *self, PyObject *const *args, 
         goto exit;
     }
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("open_blob", "argument 2", "str", args[1]);
+        _PyArg_BadArgument("blobopen", "argument 2", "str", args[1]);
         goto exit;
     }
     Py_ssize_t col_length;
@@ -220,7 +219,7 @@ pysqlite_connection_open_blob(pysqlite_Connection *self, PyObject *const *args, 
         }
     }
     if (!PyUnicode_Check(args[4])) {
-        _PyArg_BadArgument("open_blob", "argument 'name'", "str", args[4]);
+        _PyArg_BadArgument("blobopen", "argument 'name'", "str", args[4]);
         goto exit;
     }
     Py_ssize_t name_length;
@@ -233,7 +232,7 @@ pysqlite_connection_open_blob(pysqlite_Connection *self, PyObject *const *args, 
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = pysqlite_connection_open_blob_impl(self, table, col, row, readonly, name);
+    return_value = blobopen_impl(self, table, col, row, readonly, name);
 
 exit:
     return return_value;
@@ -930,4 +929,4 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-/*[clinic end generated code: output=ecc1c000c7217a90 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=959de9d109b85d3f input=a9049054013a1b77]*/

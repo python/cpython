@@ -997,7 +997,7 @@ class BlobTests(unittest.TestCase):
         self.cx.execute("create table test(b blob)")
         self.data = b"this blob data string is exactly fifty bytes long!"
         self.cx.execute("insert into test(b) values (?)", (self.data,))
-        self.blob = self.cx.open_blob("test", "b", 1)
+        self.blob = self.cx.blobopen("test", "b", 1)
 
     def tearDown(self):
         self.blob.close()
@@ -1097,7 +1097,7 @@ class BlobTests(unittest.TestCase):
             self.blob.write(b"aaa")
 
     def test_blob_write_error_readonly(self):
-        ro_blob = self.cx.open_blob("test", "b", 1, readonly=True)
+        ro_blob = self.cx.blobopen("test", "b", 1, readonly=True)
         with self.assertRaisesRegex(sqlite.OperationalError, "readonly"):
             ro_blob.write(b"aaa")
         ro_blob.close()
@@ -1113,7 +1113,7 @@ class BlobTests(unittest.TestCase):
         for args, kwds in dataset:
             with self.subTest(args=args, kwds=kwds):
                 with self.assertRaisesRegex(sqlite.OperationalError, regex):
-                    self.cx.open_blob(*args, **kwds)
+                    self.cx.blobopen(*args, **kwds)
 
     def test_blob_get_item(self):
         self.assertEqual(self.blob[5], b"b")
@@ -1211,7 +1211,7 @@ class BlobTests(unittest.TestCase):
 
     def test_blob_context_manager(self):
         data = b"a" * 50
-        with self.cx.open_blob("test", "b", 1) as blob:
+        with self.cx.blobopen("test", "b", 1) as blob:
             blob.write(data)
         actual = self.cx.execute("select b from test").fetchone()[0]
         self.assertEqual(actual, data)
@@ -1220,7 +1220,7 @@ class BlobTests(unittest.TestCase):
         with memory_database() as cx:
             cx.execute("create table test(b blob)")
             cx.execute("insert into test values (zeroblob(100))")
-            blob = cx.open_blob("test", "b", 1)
+            blob = cx.blobopen("test", "b", 1)
             blob.close()
 
             def assign(): blob[0] = b""
@@ -1246,7 +1246,7 @@ class BlobTests(unittest.TestCase):
         with memory_database() as cx:
             cx.execute("create table test(b blob)")
             cx.execute("insert into test values(zeroblob(1))")
-            blob = cx.open_blob("test", "b", 1)
+            blob = cx.blobopen("test", "b", 1)
             cx.close()
             self.assertRaisesRegex(sqlite.ProgrammingError,
                                    "Cannot operate on a closed database",
@@ -1256,7 +1256,7 @@ class BlobTests(unittest.TestCase):
         with memory_database() as cx:
             cx.execute("create table test(b blob)")
             cx.execute("insert into test(b) values (zeroblob(100))")
-            blob = cx.open_blob("test", "b", 1)
+            blob = cx.blobopen("test", "b", 1)
             cx.close()
             self.assertRaisesRegex(sqlite.ProgrammingError,
                                    "Cannot operate on a closed database",
@@ -1303,7 +1303,7 @@ class ThreadTests(unittest.TestCase):
             lambda: self.con.create_collation("foo", None),
             lambda: self.con.setlimit(sqlite.SQLITE_LIMIT_LENGTH, -1),
             lambda: self.con.getlimit(sqlite.SQLITE_LIMIT_LENGTH),
-            lambda: self.con.open_blob("test", "b", 1),
+            lambda: self.con.blobopen("test", "b", 1),
         ]
         for fn in fns:
             with self.subTest(fn=fn):

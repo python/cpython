@@ -394,7 +394,7 @@ Connection Objects
       supplied, this must be a callable returning an instance of :class:`Cursor`
       or its subclasses.
 
-   .. method:: open_blob(table, column, row, /, *, readonly=False, name="main")
+   .. method:: blobopen(table, column, row, /, *, readonly=False, name="main")
 
       On success, a :class:`Blob` handle to the :abbr:`BLOB (Binary Large
       OBject)` located in row *row*, column *column*, table *table* in database

@@ -438,7 +438,7 @@ pysqlite_connection_cursor_impl(pysqlite_Connection *self, PyObject *factory)
 }
 
 /*[clinic input]
-_sqlite3.Connection.open_blob as pysqlite_connection_open_blob
+_sqlite3.Connection.blobopen as blobopen
 
     table: str
     column as col: str
@@ -452,10 +452,9 @@ Return a blob object. Non-standard.
 [clinic start generated code]*/
 
 static PyObject *
-pysqlite_connection_open_blob_impl(pysqlite_Connection *self,
-                                   const char *table, const char *col,
-                                   int row, int readonly, const char *name)
-/*[clinic end generated code: output=5c11d18e7eb629ef input=9192dd28146d4e14]*/
+blobopen_impl(pysqlite_Connection *self, const char *table, const char *col,
+              int row, int readonly, const char *name)
+/*[clinic end generated code: output=0c8e2e58516d0b5c input=1eec15d2b87bf09e]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -2041,13 +2040,13 @@ static PyMethodDef connection_methods[] = {
     PYSQLITE_CONNECTION_INTERRUPT_METHODDEF
     PYSQLITE_CONNECTION_ITERDUMP_METHODDEF
     PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
-    PYSQLITE_CONNECTION_OPEN_BLOB_METHODDEF
     PYSQLITE_CONNECTION_ROLLBACK_METHODDEF
     PYSQLITE_CONNECTION_SET_AUTHORIZER_METHODDEF
     PYSQLITE_CONNECTION_SET_PROGRESS_HANDLER_METHODDEF
     PYSQLITE_CONNECTION_SET_TRACE_CALLBACK_METHODDEF
     SETLIMIT_METHODDEF
     GETLIMIT_METHODDEF
+    BLOBOPEN_METHODDEF
     {NULL, NULL}
 };
 
