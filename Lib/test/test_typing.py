@@ -434,10 +434,6 @@ class TupleTests(BaseTestCase):
         self.assertEqual(repr(Tuple[int, ...]), 'typing.Tuple[int, ...]')
         self.assertEqual(repr(Tuple[list[int]]), 'typing.Tuple[list[int]]')
 
-    def test_or_and_ror(self):
-        self.assertEqual(Tuple | int, Union[Tuple | int])
-        self.assertEqual(int | Tuple, Union[int, Tuple])
-
     def test_errors(self):
         with self.assertRaises(TypeError):
             issubclass(42, Tuple)
