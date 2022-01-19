@@ -203,7 +203,7 @@ implementations do nothing (except for :meth:`~HTMLParser.handle_startendtag`):
 .. method:: HTMLParser.handle_pi(data)
 
    Method called when a processing instruction is encountered.  The *data*
-   parameter will contain the entire processing instruction. For example, for the
+   parameter will be the entire processing instruction. For example, for the
    processing instruction ``<?proc color='red'>``, this method would be called as
    ``handle_pi("proc color='red'")``.  It is intended to be overridden by a derived
    class; the base class implementation does nothing.
