@@ -6,6 +6,7 @@
 #include "code.h"                 // PyCode_Addr2Line etc
 #include "frameobject.h"          // PyFrame_GetBack()
 #include "pycore_ast.h"           // asdl_seq_*
+#include "pycore_call.h"          // _PyObject_CallMethod()
 #include "pycore_compile.h"       // _PyAST_Optimize
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_frame.h"         // _PyFrame_GetCode()
@@ -31,11 +32,6 @@
 
 /* Function from Parser/tokenizer.c */
 extern char* _PyTokenizer_FindEncodingFilename(int, PyObject *);
-
-_Py_IDENTIFIER(TextIOWrapper);
-_Py_IDENTIFIER(close);
-_Py_IDENTIFIER(open);
-_Py_IDENTIFIER(path);
 
 /*[clinic input]
 class TracebackType "PyTracebackObject *" "&PyTraceback_Type"
@@ -317,6 +313,7 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
     const char* filepath;
     Py_ssize_t len;
     PyObject* result;
+    PyObject *open = NULL;
 
     filebytes = PyUnicode_EncodeFSDefault(filename);
     if (filebytes == NULL) {
@@ -333,11 +330,14 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
         tail++;
     taillen = strlen(tail);
 
-    syspath = _PySys_GetObjectId(&PyId_path);
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(path);
+    syspath = _PySys_GetAttr(tstate, attr);
     if (syspath == NULL || !PyList_Check(syspath))
         goto error;
     npath = PyList_Size(syspath);
 
+    open = PyObject_GetAttr(io, _Py_GET_GLOBAL_IDENTIFIER(open));
     for (i = 0; i < npath; i++) {
         v = PyList_GetItem(syspath, i);
         if (v == NULL) {
@@ -364,7 +364,7 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
             namebuf[len++] = SEP;
         strcpy(namebuf+len, tail);
 
-        binary = _PyObject_CallMethodId(io, &PyId_open, "ss", namebuf, "rb");
+        binary = _PyObject_CallMethod(tstate, open, "ss", namebuf, "rb");
         if (binary != NULL) {
             result = binary;
             goto finally;
@@ -376,6 +376,7 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
 error:
     result = NULL;
 finally:
+    Py_XDECREF(open);
     Py_DECREF(filebytes);
     return result;
 }
@@ -448,10 +449,15 @@ display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int
     }
 
     io = PyImport_ImportModule("io");
-    if (io == NULL)
+    if (io == NULL) {
         return -1;
-    binary = _PyObject_CallMethodId(io, &PyId_open, "Os", filename, "rb");
+    }
 
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(open);
+    PyObject *open = PyObject_GetAttr(io, attr);
+    binary = _PyObject_CallMethod(tstate, open, "Os", filename, "rb");
+    Py_DECREF(open);
     if (binary == NULL) {
         PyErr_Clear();
 
@@ -480,14 +486,18 @@ display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int
         PyMem_Free(found_encoding);
         return 0;
     }
-    fob = _PyObject_CallMethodId(io, &PyId_TextIOWrapper, "Os", binary, encoding);
+    attr = _Py_GET_GLOBAL_IDENTIFIER(TextIOWrapper);
+    PyObject *TextIOWrapper = PyObject_GetAttr(io, attr);
     Py_DECREF(io);
+    fob = _PyObject_CallMethod(tstate, TextIOWrapper, "Os", binary, encoding);
+    Py_DECREF(TextIOWrapper);
     PyMem_Free(found_encoding);
 
+    PyObject *close = _Py_GET_GLOBAL_IDENTIFIER(close);
     if (fob == NULL) {
         PyErr_Clear();
 
-        res = _PyObject_CallMethodIdNoArgs(binary, &PyId_close);
+        res = PyObject_CallMethodNoArgs(binary, close);
         Py_DECREF(binary);
         if (res)
             Py_DECREF(res);
@@ -506,7 +516,7 @@ display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int
             break;
         }
     }
-    res = _PyObject_CallMethodIdNoArgs(fob, &PyId_close);
+    res = PyObject_CallMethodNoArgs(fob, close);
     if (res) {
         Py_DECREF(res);
     }
