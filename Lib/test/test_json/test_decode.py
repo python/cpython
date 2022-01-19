@@ -2,6 +2,7 @@ import decimal
 from io import StringIO
 from collections import OrderedDict
 from test.test_json import PyTest, CTest
+from test import support
 import sys
 
 
@@ -97,10 +98,11 @@ class TestDecode:
         self.assertRaises(ValueError, d.raw_decode, 'a'*42, -50000)
 
     def test_limit_int(self):
-        maxdigits = sys.getintmaxdigits()
-        self.loads('1' * maxdigits)
-        with self.assertRaises(OverflowError):
-            self.loads('1' * (maxdigits + 1))
+        maxdigits = 5000
+        with support.setintmaxdigits(maxdigits):
+            self.loads('1' * maxdigits)
+            with self.assertRaises(OverflowError):
+                self.loads('1' * (maxdigits + 1))
 
 
 class TestPyDecode(TestDecode, PyTest): pass

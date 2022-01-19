@@ -521,6 +521,7 @@ always available.
    :const:`dev_mode`             :option:`-X dev <-X>` (:ref:`Python Development Mode <devmode>`)
    :const:`utf8_mode`            :option:`-X utf8 <-X>`
    :const:`safe_path`            :option:`-P`
+   :const:`intmaxdigits`         `:option:``-X intmaxdigits <-X>` (default: *-1*)
    ============================= ================================================================
 
    .. versionchanged:: 3.2
@@ -542,6 +543,9 @@ always available.
 
    .. versionchanged:: 3.11
       Added the ``safe_path`` attribute for :option:`-P` option.
+
+   .. versionchanged:: 3.12
+      Added ``intmaxdigits`` attribute
 
 
 .. data:: float_info
@@ -1002,18 +1006,26 @@ always available.
 
    .. tabularcolumns:: |l|L|
 
-   +-------------------------+----------------------------------------------+
-   | Attribute               | Explanation                                  |
-   +=========================+==============================================+
-   | :const:`bits_per_digit` | number of bits held in each digit.  Python   |
-   |                         | integers are stored internally in base       |
-   |                         | ``2**int_info.bits_per_digit``               |
-   +-------------------------+----------------------------------------------+
-   | :const:`sizeof_digit`   | size in bytes of the C type used to          |
-   |                         | represent a digit                            |
-   +-------------------------+----------------------------------------------+
+   +-------------------------------------+-----------------------------------------------+
+   | Attribute                           | Explanation                                   |
+   +=====================================+===============================================+
+   | :const:`bits_per_digit`             | number of bits held in each digit.  Python    |
+   |                                     | integers are stored internally in base        |
+   |                                     | ``2**int_info.bits_per_digit``                |
+   +-------------------------------------+-----------------------------------------------+
+   | :const:`sizeof_digit`               | size in bytes of the C type used to           |
+   |                                     | represent a digit                             |
+   +-------------------------------------+-----------------------------------------------+
+   | :const:`default_max_digits`         | default value for :func:`sys.getintmaxdigits` |
+   +-------------------------------------+-----------------------------------------------+
+   | :const:`max_digits_check_threshold` | minimum value value for                       |
+   |                                     | :func:`sys.setintmaxdigits`                   |
+   +-------------------------------------+-----------------------------------------------+
 
    .. versionadded:: 3.1
+
+   .. versionchanged:: 3.11
+      Added ``default_max_digits`` and ``max_digits_check_threshold``.
 
 
 .. data:: __interactivehook__

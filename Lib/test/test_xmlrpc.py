@@ -294,8 +294,10 @@ class XMLRPCTestCase(unittest.TestCase):
         with self.assertRaises(OverflowError):
             check('<int>123456780123456789</int>', None)
         with self.assertRaises(OverflowError):
-            s = '1' * (sys.getintmaxdigits() + 1)
-            check(f'<biginteger>{s}</biginteger>', None)
+            maxdigits = 5000
+            with support.setintmaxdigits(maxdigits):
+                s = '1' * (maxdigits + 1)
+                check(f'<biginteger>{s}</biginteger>', None)
 
     def test_get_host_info(self):
         # see bug #3613, this raised a TypeError

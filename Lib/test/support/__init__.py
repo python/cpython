@@ -2341,3 +2341,15 @@ def sleeping_retry(timeout, err_msg=None, /,
 
         time.sleep(delay)
         delay = min(delay * 2, max_delay)
+
+
+@contextlib.contextmanager
+def setintmaxdigits(maxdigits):
+    """Set integer max digits limit
+    """
+    current = sys.getintmaxdigits()
+    try:
+        sys.setintmaxdigits(maxdigits)
+        yield
+    finally:
+        sys.setintmaxdigits(current)

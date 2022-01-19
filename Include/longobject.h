@@ -72,8 +72,13 @@ PyAPI_FUNC(unsigned long long) PyLong_AsUnsignedLongLongMask(PyObject *);
 PyAPI_FUNC(long long) PyLong_AsLongLongAndOverflow(PyObject *, int *);
 
 /* Default limitation */
-#define _PY_LONG_DEFAULT_MAX_DIGITS 5000
-/* Don't check unless input / output is larger than threshold */
+#ifndef _PY_LONG_DEFAULT_MAX_DIGITS
+#  define _PY_LONG_DEFAULT_MAX_DIGITS 0
+#endif
+/* Threshold for max digits check. For performance reasons int() and
+   int.__str__ don't checks values that are smaller than the
+   threshold. For common cases it avoids a lookup of the interpreter
+   state in a hot path */
 #define _PY_LONG_MAX_DIGITS_TRESHOLD 1024
 
 PyAPI_FUNC(PyObject *) PyLong_FromString(const char *, char **, int);

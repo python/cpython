@@ -3,6 +3,7 @@
 # See test_cmd_line_script.py for testing of script execution
 
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -864,6 +865,38 @@ class CmdLineTest(unittest.TestCase):
         err_msg = "unknown option --unknown-option\nusage: "
         self.assertTrue(proc.stderr.startswith(err_msg), proc.stderr)
         self.assertNotEqual(proc.returncode, 0)
+
+    def test_intmaxdigits(self):
+        code = "import sys; print(sys.flags.intmaxdigits, sys.getintmaxdigits())"
+
+        assert_python_failure('-X', 'intmaxdigits', '-c', code)
+        assert_python_failure('-X', 'intmaxdigits=foo', '-c', code)
+        assert_python_failure('-X', 'intmaxdigits=100', '-c', code)
+
+        assert_python_failure('-c', code, PYTHONINTMAXDIGITS='foo')
+        assert_python_failure('-c', code, PYTHONINTMAXDIGITS='100')
+
+        def res2int(res):
+            out = res.out.strip().decode("utf-8")
+            return tuple(int(i) for i in out.split())
+
+        res = assert_python_ok('-c', code)
+        self.assertEqual(res2int(res), (-1, sys.getintmaxdigits()))
+        res = assert_python_ok('-X', 'intmaxdigits=0', '-c', code)
+        self.assertEqual(res2int(res), (0, 0))
+        res = assert_python_ok('-X', 'intmaxdigits=4000', '-c', code)
+        self.assertEqual(res2int(res), (4000, 4000))
+        res = assert_python_ok('-X', 'intmaxdigits=100000', '-c', code)
+        self.assertEqual(res2int(res), (100000, 100000))
+
+        res = assert_python_ok('-c', code, PYTHONINTMAXDIGITS='0')
+        self.assertEqual(res2int(res), (0, 0))
+        res = assert_python_ok('-c', code, PYTHONINTMAXDIGITS='4000')
+        self.assertEqual(res2int(res), (4000, 4000))
+        res = assert_python_ok(
+            '-X', 'intmaxdigits=6000', '-c', code, PYTHONINTMAXDIGITS='4000'
+        )
+        self.assertEqual(res2int(res), (6000, 6000))
 
 
 @unittest.skipIf(interpreter_requires_environment(),

@@ -828,6 +828,15 @@ PyConfig
 
       Default: ``0``.
 
+   .. c:member:: int intmaxdigits
+
+      If greater than 0, enable int digit limitation.
+
+      Configured by :option:`-X intmaxdigits <-X>` command line option or
+      :envvar:`PYTHONINTMAXDIGITS` env var.
+
+      Default: ``-1``.
+
    .. c:member:: int isolated
 
       If greater than ``0``, enable isolated mode:

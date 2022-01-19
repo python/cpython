@@ -505,11 +505,13 @@ Miscellaneous options
      stored in a traceback of a trace. Use ``-X tracemalloc=NFRAME`` to start
      tracing with a traceback limit of *NFRAME* frames. See the
      :func:`tracemalloc.start` for more information.
+   * ``-X intmaxdigits`` to enable or disable int conversion limit.
+     See also :envvar:`PYTHONPROFILEIMPORTTIME`.
    * ``-X importtime`` to show how long each import takes. It shows module
      name, cumulative time (including nested imports) and self time (excluding
      nested imports).  Note that its output may be broken in multi-threaded
      application.  Typical usage is ``python3 -X importtime -c 'import
-     asyncio'``.  See also :envvar:`PYTHONPROFILEIMPORTTIME`.
+     asyncio'``.  See also :envvar:`PYTHONINTMAXDIGITS`.
    * ``-X dev``: enable :ref:`Python Development Mode <devmode>`, introducing
      additional runtime checks that are too expensive to be enabled by
      default.
@@ -763,6 +765,11 @@ conflict.
 
    .. versionadded:: 3.2.3
 
+.. envvar:: PYTHONINTMAXDIGITS
+
+   TODO
+
+   .. versionadded:: 3.11
 
 .. envvar:: PYTHONIOENCODING
 

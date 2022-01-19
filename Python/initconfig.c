@@ -1775,8 +1775,8 @@ config_init_intmaxdigits(PyConfig *config)
     int maxdigits;
     int valid = 0;
 
-    /* set default limitation */
-    config->intmaxdigits = _PY_LONG_DEFAULT_MAX_DIGITS;
+    /* default to unconfigured, _PyLong_InitTypes() does the rest */
+    config->intmaxdigits = -1;
 
     const char *env = config_get_env(config, "PYTHONINTMAXDIGITS");
     if (env) {

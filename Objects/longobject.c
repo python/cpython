@@ -6114,7 +6114,7 @@ static PyStructSequence_Field int_info_fields[] = {
     {"bits_per_digit", "size of a digit in bits"},
     {"sizeof_digit", "size in bytes of the C type used to represent a digit"},
     {"default_max_digits", "maximum digits limitation"},
-    {"max_digits_threshold", "minimum threshold to check for max digits"},
+    {"max_digits_check_threshold", "minimum threshold to check for max digits"},
     {NULL, NULL}
 };
 
@@ -6169,6 +6169,9 @@ _PyLong_InitTypes(PyInterpreterState *interp)
         }
     }
     interp->intmaxdigits = _PyInterpreterState_GetConfig(interp)->intmaxdigits;
+    if (interp->intmaxdigits == -1) {
+        interp->intmaxdigits = _PY_LONG_DEFAULT_MAX_DIGITS;
+    }
 
     return _PyStatus_OK();
 }
