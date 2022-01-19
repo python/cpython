@@ -871,8 +871,10 @@ static const binaryfunc binary_ops[] = {
         DEOPT_IF(1 < Py_ABS(Py_SIZE(lhs)), BINARY_OP);                         \
         DEOPT_IF(1 < Py_ABS(Py_SIZE(rhs)), BINARY_OP);                         \
         STAT_INC(BINARY_OP, hit);                                              \
-        stwodigits l = Py_SIZE(lhs) * ((PyLongObject *)lhs)->ob_digit[0];      \
-        stwodigits r = Py_SIZE(rhs) * ((PyLongObject *)rhs)->ob_digit[0];      \
+        PyLongObject *lhs_long = (PyLongObject *)lhs;                          \
+        PyLongObject *rhs_long = (PyLongObject *)rhs;                          \
+        stwodigits l = Py_SIZE(lhs) * (sdigit)lhs_long->ob_digit[0];           \
+        stwodigits r = Py_SIZE(rhs) * (sdigit)rhs_long->ob_digit[0];           \
         stwodigits i = l OP r;                                                 \
         Py_DECREF(rhs);                                                        \
         STACK_SHRINK(1);                                                       \
@@ -891,7 +893,7 @@ static const binaryfunc binary_ops[] = {
             /*   _PyLong_SMALL_INTS, but didn't (see bpo-46361 for an       */ \
             /*   example of this.)                                          */ \
             assert(l < -_PY_NSMALLNEGINTS || _PY_NSMALLPOSINTS <= l);          \
-            ((PyLongObject *)lhs)->ob_digit[0] = (digit)Py_ABS(i);             \
+            lhs_long->ob_digit[0] = (digit)Py_ABS(i);                          \
             Py_SET_SIZE(lhs, i < 0 ? -1 : 1);                                  \
             DISPATCH();                                                        \
         }                                                                      \
