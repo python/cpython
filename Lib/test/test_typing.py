@@ -2468,7 +2468,6 @@ class GenericTests(BaseTestCase):
                     class Foo(obj):
                         pass
 
-
 class ClassVarTests(BaseTestCase):
 
     def test_basics(self):
