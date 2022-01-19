@@ -1624,12 +1624,6 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
             if (PyLong_CheckExact(lhs) &&
                 Py_ABS(Py_SIZE(lhs)) < 2 && Py_ABS(Py_SIZE(rhs)) < 2)
             {
-                int next_opcode = _Py_OPCODE(instr[1]);
-                if (next_opcode == STORE_FAST || 
-                    next_opcode == STORE_FAST__LOAD_FAST)
-                {
-                    adaptive->index = _Py_OPARG(instr[1]) + 1;
-                }
                 *instr = _Py_MAKECODEUNIT(BINARY_OP_ADD_INT, _Py_OPARG(*instr));
                 goto success_set_index;
             }
