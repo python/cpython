@@ -457,6 +457,41 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
         result_lines = self.get_exception(f_with_multiline)
         self.assertEqual(result_lines, expected_f.splitlines())
 
+    def test_caret_multiline_expression_syntax_error(self):
+        # Make sure an expression spanning multiple lines that has
+        # a syntax error is correctly marked with carets.
+        code = """
+def foo(*args, **kwargs):
+    pass
+
+a, b, c = 1, 2, 3
+
+foo(a, z \
+        for z in \
+            range(10), b, c)
+"""
+        def f_with_multiline():
+            # Need to defer the compilation until in self.get_exception(..)
+            return compile(code, "?", "exec")
+
+        lineno_f = f_with_multiline.__code__.co_firstlineno
+
+        expected_f = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ^^^^^^^^^^\n'
+            f'  File "{__file__}", line {lineno_f+2}, in f_with_multiline\n'
+            '    return compile(code, "?", "exec")\n'
+            '           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
+            '  File "?", line 7\n'
+            '    foo(a, z         for z in             range(10), b, c)\n'
+            '           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'
+        )
+
+        result_lines = self.get_exception(f_with_multiline)
+        self.assertEqual(result_lines, expected_f.splitlines())
+
     def test_caret_multiline_expression_bin_op(self):
         # Make sure no carets are printed for expressions spanning multiple
         # lines.
