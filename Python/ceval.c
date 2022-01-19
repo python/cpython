@@ -1345,7 +1345,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 #define CHECK_EVAL_BREAKER() \
     if (_Py_atomic_load_relaxed(eval_breaker)) { \
-        goto check_eval_breaker; \
+        goto handle_eval_breaker; \
     }
 
 
@@ -1756,7 +1756,13 @@ resume_frame:
 
     DISPATCH();
 
-check_eval_breaker:
+handle_eval_breaker:
+
+    /* Do periodic things, like check for signals and async I/0.
+     * We need to do reasonably frequently, but not too frequently.
+     * All loops should include a check of the eval breaker.
+     * We also check on return from any builtin function.
+     */
     if (eval_frame_handle_pending(tstate) != 0) {
         goto error;
     }
@@ -1795,7 +1801,7 @@ check_eval_breaker:
             }
             frame->f_state = FRAME_EXECUTING;
             if (_Py_atomic_load_relaxed(eval_breaker) && oparg < 2) {
-                goto check_eval_breaker;
+                goto handle_eval_breaker;
             }
             DISPATCH();
         }
@@ -4116,6 +4122,11 @@ check_eval_breaker:
         }
 
         TARGET(JUMP_NO_INTERRUPT) {
+            /* This bytecode is used in the `yield from` or `await` loop.
+             * If there is an interrupt, we want it handled in the innermost
+             * generator or coroutine, so we deliberately do not check it here.
+             * (see bpo-30039).
+             */
             frame->f_state = FRAME_EXECUTING;
             JUMPTO(oparg);
             DISPATCH();
