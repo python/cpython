@@ -104,9 +104,9 @@ def removesuffix(base: str, suffix: str) -> str:
 class Printer:
 
     def __init__(self, file: TextIO) -> None:
+        self.level = 0
         self.file = file
         self.cache: Dict[tuple[object, object, str], str] = {}
-        self.level = 0
         self.hits, self.misses = 0, 0
         self.patchups: list[str] = []
         self.write('#include "Python.h"')
