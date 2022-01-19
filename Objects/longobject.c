@@ -1635,7 +1635,7 @@ inplace_divrem1(digit *pout, digit *pin, Py_ssize_t size, digit n)
     return (digit)rem;
 }
 
-/* Remiander of long pin, w/ size digits, by non-zero digit n,
+/* Remainder of long pin, w/ size digits, by non-zero digit n,
    returning the remainder. pin points at the LSD. */
 
 static digit
