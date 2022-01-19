@@ -186,7 +186,7 @@ inner_write(pysqlite_Blob *self, const void *buf, Py_ssize_t len, int offset)
 
     int rc;
     Py_BEGIN_ALLOW_THREADS
-    rc = sqlite3_blob_write(self->blob, buf, len, offset);
+    rc = sqlite3_blob_write(self->blob, buf, (int)len, offset);
     Py_END_ALLOW_THREADS
 
     if (rc != SQLITE_OK) {
