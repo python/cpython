@@ -422,9 +422,10 @@ def decode_frozen_data(source: str) -> types.CodeType:
     return umarshal.loads(data)
 
 
-def generate(input: tuple[str, str], output: TextIO) -> None:
+def generate(args: list[str], output: TextIO) -> None:
     printer = Printer(output)
-    for file, modname in input:
+    for arg in args:
+        file, modname = arg.rsplit(':', 1)
         with open(file, "r", encoding="utf8") as fd:
             source = fd.read()
             if is_frozen_header(source):
@@ -437,11 +438,9 @@ def generate(input: tuple[str, str], output: TextIO) -> None:
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-o", "--output", help="Defaults to deepfreeze.c")
+parser.add_argument("-o", "--output", help="Defaults to deepfreeze.c", default="deepfreeze.c")
 parser.add_argument("-v", "--verbose", action="store_true", help="Print diagnostics")
-parser.add_argument("-i","--input", nargs=2, action='append', help="Input file and module name (required)", 
-                    metavar=('file', 'module'))
-
+parser.add_argument('args', nargs="+", help="Input file and module name (required) in file:modname format")
 
 @contextlib.contextmanager
 def report_time(label: str):
@@ -458,10 +457,10 @@ def main() -> None:
     global verbose
     args = parser.parse_args()
     verbose = args.verbose
-    output = args.output or "deepfreeze.c"
+    output = args.output
     with open(output, "w", encoding="utf-8") as file:
         with report_time("generate"):
-            generate(args.input, file)
+            generate(args.args, file)
     if verbose:
         print(f"Wrote {os.path.getsize(output)} bytes to {output}")
 

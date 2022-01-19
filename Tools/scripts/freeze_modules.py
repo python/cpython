@@ -577,7 +577,7 @@ def regen_makefile(modules):
     frozenfiles = []
     rules = ['']
     deepfreezerules = ["Python/deepfreeze/deepfreeze.c: $(DEEPFREEZE_DEPS)",
-                       "\t$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py"]
+                       "\t$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/deepfreeze.py \\"]
     for src in _iter_sources(modules):
         frozen_header = relpath_for_posix_display(src.frozenfile, ROOT_DIR)
         frozenfiles.append(f'\t\t{frozen_header} \\')
@@ -599,8 +599,8 @@ def regen_makefile(modules):
             f'\t{freeze}',
             '',
         ])
-        deepfreezerules[-1] += f" -i {frozen_header} {src.frozenid}"
-    deepfreezerules[-1] += ' -o Python/deepfreeze/deepfreeze.c'
+        deepfreezerules.append(f"\t{frozen_header}:{src.frozenid} \\")
+    deepfreezerules.append('\t-o Python/deepfreeze/deepfreeze.c')
     deepfreezerules.append('')
     pyfiles[-1] = pyfiles[-1].rstrip(" \\")
     frozenfiles[-1] = frozenfiles[-1].rstrip(" \\")
@@ -657,7 +657,7 @@ def regen_pcbuild(modules):
         filterlines.append(f'    <None Include="..\\{pyfile}">')
         filterlines.append('      <Filter>Python Files</Filter>')
         filterlines.append('    </None>')
-        deepfreezerules[-1] += f' "-i" "$(PySourcePath){header}" "{src.frozenid}"'
+        deepfreezerules[-1] += f' "$(PySourcePath){header}:{src.frozenid}"'
     deepfreezerules[-1] += ' "-o" "$(PySourcePath)Python\\deepfreeze\\deepfreeze.c"\'/>' 
 
     corelines.append(f'    <ClCompile Include="..\\Python\\deepfreeze\\deepfreeze.c" />')
