@@ -1119,7 +1119,7 @@ class TestSuppress(unittest.TestCase):
 class TestChdir(unittest.TestCase):
     def make_relative_path(self, *parts):
         return os.path.join(
-            os.path.dirname(os.path.normpath(__file__)),
+            os.path.dirname(os.path.realpath(__file__)),
             *parts,
         )
 
