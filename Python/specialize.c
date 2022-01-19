@@ -1624,13 +1624,19 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
             if (PyLong_CheckExact(lhs) &&
                 Py_ABS(Py_SIZE(lhs)) < 2 && Py_ABS(Py_SIZE(rhs)) < 2)
             {
+                int next_opcode = _Py_OPCODE(instr[1]);
+                if (next_opcode == STORE_FAST || 
+                    next_opcode == STORE_FAST__LOAD_FAST)
+                {
+                    adaptive->index = _Py_OPARG(instr[1]) + 1;
+                }
                 *instr = _Py_MAKECODEUNIT(BINARY_OP_ADD_INT, _Py_OPARG(*instr));
-                goto success;
+                goto success_set_index;
             }
             if (PyFloat_CheckExact(lhs)) {
                 *instr = _Py_MAKECODEUNIT(BINARY_OP_ADD_FLOAT,
                                           _Py_OPARG(*instr));
-                goto success;
+                goto success_set_index;
             }
             break;
         case NB_MULTIPLY:
@@ -1644,12 +1650,12 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
             {
                 *instr = _Py_MAKECODEUNIT(BINARY_OP_MULTIPLY_INT,
                                           _Py_OPARG(*instr));
-                goto success;
+                goto success_set_index;
             }
             if (PyFloat_CheckExact(lhs)) {
                 *instr = _Py_MAKECODEUNIT(BINARY_OP_MULTIPLY_FLOAT,
                                           _Py_OPARG(*instr));
-                goto success;
+                goto success_set_index;
             }
             break;
         case NB_SUBTRACT:
@@ -1663,12 +1669,12 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
             {
                 *instr = _Py_MAKECODEUNIT(BINARY_OP_SUBTRACT_INT,
                                           _Py_OPARG(*instr));
-                goto success;
+                goto success_set_index;
             }
             if (PyFloat_CheckExact(lhs)) {
                 *instr = _Py_MAKECODEUNIT(BINARY_OP_SUBTRACT_FLOAT,
                                           _Py_OPARG(*instr));
-                goto success;
+                goto success_set_index;
             }
             break;
         default:
@@ -1682,6 +1688,18 @@ failure:
     STAT_INC(BINARY_OP, failure);
     cache_backoff(adaptive);
     return;
+success_set_index:
+    ;  // The technology just isn't there yet...
+    int next_opcode = _Py_OPCODE(instr[1]);
+    int next_oparg = _Py_OPARG(instr[1]);
+    if ((next_opcode == STORE_FAST || next_opcode == STORE_FAST__LOAD_FAST) &&
+        next_oparg < UINT16_MAX)
+    {
+        adaptive->index = next_oparg + 1;
+    }
+    else {
+        adaptive->index = 0;
+    }
 success:
     STAT_INC(BINARY_OP, success);
     adaptive->counter = initial_counter_value();

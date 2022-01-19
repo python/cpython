@@ -857,11 +857,6 @@ static const binaryfunc binary_ops[] = {
     [NB_INPLACE_XOR] = PyNumber_InPlaceXor,
 };
 
-#define NEXT_OP_STORES(O)                                  \
-    ((_Py_OPCODE(*next_instr) == STORE_FAST ||             \
-      _Py_OPCODE(*next_instr) == STORE_FAST__LOAD_FAST) && \
-     GETLOCAL(_Py_OPARG(*next_instr)) == (O))              \
-
 #define BINARY_OP_FAST_INT(OP)                                                 \
     do {                                                                       \
         PyObject *lhs = SECOND();                                              \
@@ -885,13 +880,13 @@ static const binaryfunc binary_ops[] = {
             SET_TOP((PyObject *)res);                                          \
             DISPATCH();                                                        \
         }                                                                      \
-        bool inplace = NEXT_OP_STORES(lhs);                                    \
+        uint16_t maybe_store = GET_CACHE()->adaptive.index;                    \
+        bool inplace = maybe_store && GETLOCAL(maybe_store - 1) == lhs;        \
         if (Py_ABS(i) < PyLong_BASE && Py_REFCNT(lhs) == inplace + 1) {        \
             /* If this assert fails, it's probably one of two things:       */ \
             /* - If lhs lives in _PyLong_SMALL_INTS, its refcount is wrong. */ \
-            /* - Otherwise, whatever created lhs should have used           */ \
-            /*   _PyLong_SMALL_INTS, but didn't (see bpo-46361 for an       */ \
-            /*   example of this.)                                          */ \
+            /* - Whatever created lhs should have used _PyLong_SMALL_INTS,  */ \
+            /*   but didn't. Examples of this can be found in bpo-46361.    */ \
             assert(l < -_PY_NSMALLNEGINTS || _PY_NSMALLPOSINTS <= l);          \
             lhs_long->ob_digit[0] = (digit)Py_ABS(i);                          \
             Py_SET_SIZE(lhs, i < 0 ? -1 : 1);                                  \
@@ -906,30 +901,31 @@ static const binaryfunc binary_ops[] = {
         DISPATCH();                                                            \
     } while (0)
 
-#define BINARY_OP_FAST_FLOAT(OP)                       \
-    do {                                               \
-        PyObject *lhs = SECOND();                      \
-        PyObject *rhs = TOP();                         \
-        DEOPT_IF(!PyFloat_CheckExact(lhs), BINARY_OP); \
-        DEOPT_IF(!PyFloat_CheckExact(rhs), BINARY_OP); \
-        STAT_INC(BINARY_OP, hit);                      \
-        double l = PyFloat_AS_DOUBLE(lhs);             \
-        double r = PyFloat_AS_DOUBLE(rhs);             \
-        double d = l OP r;                             \
-        Py_DECREF(rhs);                                \
-        STACK_SHRINK(1);                               \
-        bool inplace = NEXT_OP_STORES(lhs);            \
-        if (Py_REFCNT(lhs) == inplace + 1) {           \
-            PyFloat_AS_DOUBLE(lhs) = d;                \
-            DISPATCH();                                \
-        }                                              \
-        Py_DECREF(lhs);                                \
-        PyObject *res = PyFloat_FromDouble(d);         \
-        SET_TOP(res);                                  \
-        if (res == NULL) {                             \
-            goto error;                                \
-        }                                              \
-        DISPATCH();                                    \
+#define BINARY_OP_FAST_FLOAT(OP)                                        \
+    do {                                                                \
+        PyObject *lhs = SECOND();                                       \
+        PyObject *rhs = TOP();                                          \
+        DEOPT_IF(!PyFloat_CheckExact(lhs), BINARY_OP);                  \
+        DEOPT_IF(!PyFloat_CheckExact(rhs), BINARY_OP);                  \
+        STAT_INC(BINARY_OP, hit);                                       \
+        double l = PyFloat_AS_DOUBLE(lhs);                              \
+        double r = PyFloat_AS_DOUBLE(rhs);                              \
+        double d = l OP r;                                              \
+        Py_DECREF(rhs);                                                 \
+        STACK_SHRINK(1);                                                \
+        uint16_t maybe_store = GET_CACHE()->adaptive.index;             \
+        bool inplace = maybe_store && GETLOCAL(maybe_store - 1) == lhs; \
+        if (Py_REFCNT(lhs) == inplace + 1) {                            \
+            PyFloat_AS_DOUBLE(lhs) = d;                                 \
+            DISPATCH();                                                 \
+        }                                                               \
+        Py_DECREF(lhs);                                                 \
+        PyObject *res = PyFloat_FromDouble(d);                          \
+        SET_TOP(res);                                                   \
+        if (res == NULL) {                                              \
+            goto error;                                                 \
+        }                                                               \
+        DISPATCH();                                                     \
     } while (0)
 
 // PEP 634: Structural Pattern Matching
