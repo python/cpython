@@ -1675,7 +1675,7 @@ sys_mdebug_impl(PyObject *module, int flag)
 /*[clinic input]
 sys.getintmaxdigits
 
-TODO
+Get value of integer maximum digits limit.
 [clinic start generated code]*/
 
 static PyObject *
@@ -1691,7 +1691,7 @@ sys.setintmaxdigits
 
     maxdigits: Py_ssize_t
 
-TODO
+Set value of integer maximum digits limit.
 [clinic start generated code]*/
 
 static PyObject *
