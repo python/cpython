@@ -479,8 +479,7 @@ OBJECT_OBJS=	\
 		Objects/unionobject.o \
 		Objects/weakrefobject.o
 
-DEEPFREEZE_OBJS = \
-		Python/deepfreeze/deepfreeze.o
+DEEPFREEZE_OBJS = Python/deepfreeze/deepfreeze.o
 
 ##########################################################################
 # objects that get linked into the Python library

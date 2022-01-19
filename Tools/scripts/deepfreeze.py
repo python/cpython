@@ -4,15 +4,15 @@ The script is executed by _bootstrap_python interpreter. Shared library
 extension modules are not available.
 """
 import argparse
+import ast
 import builtins
 import collections
 import contextlib
 import os
 import re
-import ast
 import time
 import types
-from typing import Dict, FrozenSet, Tuple, TextIO
+from typing import Dict, FrozenSet, TextIO, Tuple
 
 import umarshal
 
@@ -105,8 +105,8 @@ class Printer:
 
     def __init__(self, file: TextIO) -> None:
         self.file = file
-        self.level = 0
         self.cache: Dict[tuple[object, object, str], str] = {}
+        self.level = 0
         self.hits, self.misses = 0, 0
         self.patchups: list[str] = []
         self.write('#include "Python.h"')
@@ -349,7 +349,7 @@ class Printer:
         with self.block(f"static void {module}_do_patchups(void)"):
             for p in self.patchups:
                 self.write(p)
-            self.patchups.clear()
+        self.patchups.clear()
         self.write(EPILOGUE.replace("%%NAME%%", module))
 
     def generate(self, name: str, obj: object) -> str:
@@ -422,7 +422,7 @@ def decode_frozen_data(source: str) -> types.CodeType:
     return umarshal.loads(data)
 
 
-def generate(input: tuple[str,str], output: TextIO) -> None:
+def generate(input: tuple[str, str], output: TextIO) -> None:
     printer = Printer(output)
     for file, modname in input:
         with open(file, "r", encoding="utf8") as fd:
@@ -458,8 +458,8 @@ def main() -> None:
     global verbose
     args = parser.parse_args()
     verbose = args.verbose
-    output = args.output or 'deepfreeze.c'
-    with open(output, "w+", encoding="utf-8") as file:
+    output = args.output or "deepfreeze.c"
+    with open(output, "w", encoding="utf-8") as file:
         with report_time("generate"):
             generate(args.input, file)
     if verbose:
