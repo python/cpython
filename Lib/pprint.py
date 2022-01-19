@@ -246,7 +246,7 @@ class PrettyPrinter:
             else:
                 entries = object
             self._format_items(entries, stream, indent, allowance + 1,
-                                    context, level)
+                               context, level)
         write('])')
 
     _dict_keys_view = type({}.keys())
