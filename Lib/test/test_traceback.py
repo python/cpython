@@ -484,10 +484,13 @@ foo(a, z \
             f'  File "{__file__}", line {lineno_f+2}, in f_with_multiline\n'
             '    return compile(code, "?", "exec")\n'
             '           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
-            '  File "?", line 7\n'
-            '    foo(a, z         for z in             range(10), b, c)\n'
-            '           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'
         )
+        if not isinstance(self, CPythonTracebackErrorCaretTests):
+            expected_f += (
+                '  File "?", line 7\n'
+                '    foo(a, z         for z in             range(10), b, c)\n'
+                '           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'
+                )
 
         result_lines = self.get_exception(f_with_multiline)
         self.assertEqual(result_lines, expected_f.splitlines())
