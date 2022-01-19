@@ -4858,7 +4858,7 @@ in the ``GenericAlias`` object's :attr:`~genericalias.__args__`. ::
 
 
 Standard Generic Classes
-^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------
 
 The following standard library classes support parameterized generics. This
 list is non-exhaustive.
@@ -4925,7 +4925,7 @@ list is non-exhaustive.
 
 
 Special Attributes of ``GenericAlias`` objects
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+----------------------------------------------
 
 All parameterized generics implement special read-only attributes.
 
