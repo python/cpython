@@ -1127,7 +1127,7 @@ class BlobTests(unittest.TestCase):
             (b"", TypeError, "Blob indices must be integers"),
             (105, IndexError, "Blob index out of range"),
             (-105, IndexError, "Blob index out of range"),
-            (_testcapi.ULONG_MAX, IndexError, "cannot fit 'int'"),
+            (_testcapi.ULLONG_MAX, IndexError, "cannot fit 'int'"),
             (len(self.blob), IndexError, "Blob index out of range"),
         )
         for idx, exc, regex in dataset:
