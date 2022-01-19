@@ -521,7 +521,7 @@ always available.
    :const:`dev_mode`             :option:`-X dev <-X>` (:ref:`Python Development Mode <devmode>`)
    :const:`utf8_mode`            :option:`-X utf8 <-X>`
    :const:`safe_path`            :option:`-P`
-   :const:`intmaxdigits`         `:option:``-X intmaxdigits <-X>` (default: *-1*)
+   :const:`intmaxdigits`         :option:`-X intmaxdigits <-X>` (default: *-1*)
    ============================= ================================================================
 
    .. versionchanged:: 3.2

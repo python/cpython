@@ -1781,7 +1781,7 @@ config_init_intmaxdigits(PyConfig *config)
     const char *env = config_get_env(config, "PYTHONINTMAXDIGITS");
     if (env) {
         if (!_Py_str_to_int(env, &maxdigits)) {
-            valid = ((maxdigits == 0) || (maxdigits >= _PY_LONG_MAX_DIGITS_TRESHOLD));
+            valid = ((maxdigits == 0) || (maxdigits >= _PY_LONG_MAX_DIGITS_THRESHOLD));
         }
         if (!valid) {
             return _PyStatus_ERR("PYTHONINTMAXDIGITS: invalid limit");
@@ -1794,7 +1794,7 @@ config_init_intmaxdigits(PyConfig *config)
         const wchar_t *sep = wcschr(xoption, L'=');
         if (sep) {
             if (!config_wstr_to_int(sep + 1, &maxdigits)) {
-                valid = ((maxdigits == 0) || (maxdigits >= _PY_LONG_MAX_DIGITS_TRESHOLD));
+                valid = ((maxdigits == 0) || (maxdigits >= _PY_LONG_MAX_DIGITS_THRESHOLD));
             }
         }
         if (!valid) {

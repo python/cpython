@@ -1699,13 +1699,13 @@ sys_setintmaxdigits_impl(PyObject *module, Py_ssize_t maxdigits)
 /*[clinic end generated code: output=f08310ce0abd3fc7 input=6c9f05282da2c64e]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    if ((maxdigits == 0) || (maxdigits >= _PY_LONG_MAX_DIGITS_TRESHOLD)) {
+    if ((maxdigits == 0) || (maxdigits >= _PY_LONG_MAX_DIGITS_THRESHOLD)) {
         tstate->interp->intmaxdigits = maxdigits;
         Py_RETURN_NONE;
     } else {
         PyErr_Format(
             PyExc_ValueError, "maxdigits must be 0 or larger than %zd",
-            _PY_LONG_MAX_DIGITS_TRESHOLD);
+            _PY_LONG_MAX_DIGITS_THRESHOLD);
         return NULL;
     }
 }

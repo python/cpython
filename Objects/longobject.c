@@ -1815,7 +1815,7 @@ long_to_decimal_string_internal(PyObject *aa,
         tenpow *= 10;
         strlen++;
     }
-    if (strlen > _PY_LONG_MAX_DIGITS_TRESHOLD) {
+    if (strlen > _PY_LONG_MAX_DIGITS_THRESHOLD) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
         if ((interp->intmaxdigits > 0) && (strlen > interp->intmaxdigits)) {
             Py_DECREF(scratch);
@@ -2491,7 +2491,7 @@ digit beyond the first.
         }
 
         slen = scan - str;
-        if (slen > _PY_LONG_MAX_DIGITS_TRESHOLD) {
+        if (slen > _PY_LONG_MAX_DIGITS_THRESHOLD) {
             PyInterpreterState *interp = _PyInterpreterState_GET();
             if ((interp->intmaxdigits > 0 ) && (slen > interp->intmaxdigits)) {
                 PyErr_SetString(PyExc_OverflowError,
@@ -6140,7 +6140,7 @@ PyLong_GetInfo(void)
     PyStructSequence_SET_ITEM(int_info, field++,
                               PyLong_FromLong(_PY_LONG_DEFAULT_MAX_DIGITS));
         PyStructSequence_SET_ITEM(int_info, field++,
-                              PyLong_FromLong(_PY_LONG_MAX_DIGITS_TRESHOLD));
+                              PyLong_FromLong(_PY_LONG_MAX_DIGITS_THRESHOLD));
     if (PyErr_Occurred()) {
         Py_CLEAR(int_info);
         return NULL;

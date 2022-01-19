@@ -79,7 +79,7 @@ PyAPI_FUNC(long long) PyLong_AsLongLongAndOverflow(PyObject *, int *);
    int.__str__ don't checks values that are smaller than the
    threshold. For common cases it avoids a lookup of the interpreter
    state in a hot path */
-#define _PY_LONG_MAX_DIGITS_TRESHOLD 1024
+#define _PY_LONG_MAX_DIGITS_THRESHOLD 1024
 
 PyAPI_FUNC(PyObject *) PyLong_FromString(const char *, char **, int);
 
