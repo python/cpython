@@ -1819,8 +1819,8 @@ long_to_decimal_string_internal(PyObject *aa,
         PyInterpreterState *interp = _PyInterpreterState_GET();
         if ((interp->intmaxdigits > 0) && (strlen > interp->intmaxdigits)) {
             Py_DECREF(scratch);
-            PyErr_SetString(PyExc_OverflowError,
-                           "too many digits in integer");
+            PyErr_SetString(PyExc_ValueError,
+                           "input exceeds maximum integer digit limit");
             return -1;
         }
     }
@@ -2434,6 +2434,7 @@ digit beyond the first.
         twodigits c;           /* current input character */
         Py_ssize_t size_z;
         Py_ssize_t digits = 0;
+        Py_ssize_t underscores = 0;
         int i;
         int convwidth;
         twodigits convmultmax, convmult;
@@ -2470,6 +2471,7 @@ digit beyond the first.
 
         while (_PyLong_DigitValue[Py_CHARMASK(*scan)] < base || *scan == '_') {
             if (*scan == '_') {
+                ++underscores;
                 if (prev == '_') {
                     /* Only one underscore allowed. */
                     str = lastdigit + 1;
@@ -2490,12 +2492,24 @@ digit beyond the first.
             goto onError;
         }
 
-        slen = scan - str;
+        /* intmaxdigits limit ignores underscores and uses base 10
+         * as reference point.
+         * For other bases slen is transformed into base 10 equivalents.
+         * Our string to integer conversion algorithm scales less than
+         * linear with base value, for example int('1' * 300_000", 30)
+         * is slightly more than five times slower than int(..., 5).
+         * The naive scaling "slen / 10 * base" is close enough to
+         * compensate.
+         */
+        slen = scan - str - underscores;
+        if (base != 10) {
+            slen = (Py_ssize_t)(slen / 10 * base);
+        }
         if (slen > _PY_LONG_MAX_DIGITS_THRESHOLD) {
             PyInterpreterState *interp = _PyInterpreterState_GET();
             if ((interp->intmaxdigits > 0 ) && (slen > interp->intmaxdigits)) {
-                PyErr_SetString(PyExc_OverflowError,
-                               "too many digits in integer");
+                PyErr_SetString(PyExc_ValueError,
+                               "input exceeds maximum integer digit limit");
                 return NULL;
             }
         }

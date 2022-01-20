@@ -101,7 +101,7 @@ class TestDecode:
         maxdigits = 5000
         with support.setintmaxdigits(maxdigits):
             self.loads('1' * maxdigits)
-            with self.assertRaises(OverflowError):
+            with self.assertRaises(ValueError):
                 self.loads('1' * (maxdigits + 1))
 
 

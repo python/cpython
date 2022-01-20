@@ -5466,16 +5466,31 @@ Integer maximum digits limitation
 =================================
 
 CPython has a global limit for converting between :class:`int` and class:`str`
-to mitigate denial of service attacks. The limit is necessary because there
-exists no efficient algorithm, that can convert a string to an integer or
+to mitigate denial of service attacks. The limit is necessary because Python's
+integer type is an abitrary length number (also known as bignum). There
+exists no efficient algorithm that can convert a string to an integer or
 an integer to a string in linear time, unless the base is a power of *2*. Even
 the best known algorithms for base *10* have sub-quadratic complexity. A large
-input like::
+input like ``int('1' * 500_000)`` takes about a second at 100% CPU load on
+an X86_64 CPU from 2020 with 4.2 GHz max frequency.
 
-   int('1' * 500_000)
+The limit value uses base 10 as a reference point and scales with base.
+That means :class:`int` accepts longer input strings for smaller bases and
+fails earlier for larger bases. Underscores in input strings don't count
+towards the limit. 
 
-takes about a second at 100% CPU load on an X86_64 CPU from 2020 with 4.2 GHz
-max frequency.
+When an operation exceeds the limit, an :exc:`ValueError` is raised::
+
+   >>> sys.setintmaxdigits(2048)
+   >>> i = 10 ** 2047
+   >>> len(str(i))
+   2048
+   >>> i = 10 ** 2048
+   >>> len(str(i))
+   Traceback (most recent call last):
+   ...
+   ValueError: input exceeds maximum integer digit limit
+
 
 Configure limitations
 ---------------------
@@ -5494,13 +5509,8 @@ Configure limitations
   precedence. The flag defaults to *-1*.
 
 * :func:`sys.getintmaxdigits` and :func:`sys.setintmaxdigits` are getter
-  and setter for interpreter-wide limit.
-
-Recommended configuration::
-
-   import sys
-   if hasattr(sys.flags, "intmaxdigits") and sys.flags.intmaxdigits == -1:
-       sys.setintmaxdigits(4096)
+  and setter for interpreter-wide limit. Subinterpreters have their own
+  limit.
 
 Affected APIs
 -------------
@@ -5521,9 +5531,16 @@ The limitations do not apply to functions with a linear algorithm:
 * :func:`int.from_bytes` and :func:`int.to_bytes`
 * :func:`hex`, :func:`oct`, :func:`bin` (the resulting string may consume
   a substantial amount of memory)
-* :ref:`formatspec` for hex, octet, and binary types
+* :ref:`formatspec` for hex, octet, and binary numbers
 * :class:`str` to :class:`float`
 * :class:`str` to :class:`decimal.Decimal`
+
+Recommended configuration
+-------------------------
+
+   import sys
+   if hasattr(sys.flags, "intmaxdigits") and sys.flags.intmaxdigits == -1:
+       sys.setintmaxdigits(4096)
 
 
 .. rubric:: Footnotes

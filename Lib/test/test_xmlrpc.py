@@ -293,7 +293,7 @@ class XMLRPCTestCase(unittest.TestCase):
         check = self.check_loads
         with self.assertRaises(OverflowError):
             check('<int>123456780123456789</int>', None)
-        with self.assertRaises(OverflowError):
+        with self.assertRaises(ValueError):
             maxdigits = 5000
             with support.setintmaxdigits(maxdigits):
                 s = '1' * (maxdigits + 1)

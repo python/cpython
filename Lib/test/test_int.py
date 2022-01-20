@@ -591,23 +591,39 @@ class IntTestCases(unittest.TestCase):
             i = c('1' * 100_000)
             str(i)
 
-        # OverflowError
         def check(i, base=None):
-            with self.assertRaises(OverflowError):
+            with self.assertRaises(ValueError):
                 if base is None:
                     c(i)
                 else:
                     c(i, base)
 
-        maxdigits = 1024
+        maxdigits = 2048
         with support.setintmaxdigits(maxdigits):
+            assert maxdigits == sys.getintmaxdigits()
             check('1' * (maxdigits + 1))
             check('+' + '1' * (maxdigits + 1))
             check('1' * (maxdigits + 1))
 
             i = 10 ** maxdigits
-            with self.assertRaises(OverflowError):
+            with self.assertRaises(ValueError):
                 str(i)
+
+            # ignore power of two
+            for base in (2, 4, 8, 16, 32):
+                c('1' * (maxdigits + 1), base)
+                c('1' * 100_000, base)
+
+            # limit ignores underscores
+            s = '1111_' * ((maxdigits) // 4)
+            s = s[:-1]
+            int(s)
+            check(s + '1')
+
+            # limit is in equivalent of base 10 digits
+            s = '1' * 2147
+            assert len(str(int(s, 9))) == maxdigits
+            int(s + '1', 9)
 
     def test_maxdigits(self):
         self._test_maxdigits(int)
