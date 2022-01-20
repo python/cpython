@@ -840,6 +840,12 @@ compiler_next_instr(basicblock *b)
     (c)->u->u_end_lineno = -1;                  \
     (c)->u->u_end_col_offset = -1;
 
+#define UNSET_INSTR_LOC(inst)      \
+    (inst)->i_lineno = -1;          \
+    (inst)->i_col_offset = -1;      \
+    (inst)->i_end_lineno = -1;      \
+    (inst)->i_end_col_offset = -1;
+
 #define COPY_INSTR_LOC(old, new)                         \
     (new).i_lineno = (old).i_lineno;                     \
     (new).i_col_offset = (old).i_col_offset;             \
@@ -3234,6 +3240,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
         return 0;
     }
     /* `try` block */
+    NEXT_BLOCK(c);
     ADDOP_JUMP(c, SETUP_FINALLY, end);
     compiler_use_next_block(c, body);
     if (!compiler_push_fblock(c, FINALLY_TRY, body, end, s->v.Try.finalbody))
@@ -3286,6 +3293,7 @@ compiler_try_star_finally(struct compiler *c, stmt_ty s)
         return 0;
     }
     /* `try` block */
+    NEXT_BLOCK(c);
     ADDOP_JUMP(c, SETUP_FINALLY, end);
     compiler_use_next_block(c, body);
     if (!compiler_push_fblock(c, FINALLY_TRY, body, end, s->v.TryStar.finalbody)) {
@@ -3362,6 +3370,8 @@ compiler_try_except(struct compiler *c, stmt_ty s)
     cleanup = compiler_new_block(c);
     if (body == NULL || except == NULL || orelse == NULL || end == NULL || cleanup == NULL)
         return 0;
+
+    NEXT_BLOCK(c);
     ADDOP_JUMP(c, SETUP_FINALLY, except);
     compiler_use_next_block(c, body);
     if (!compiler_push_fblock(c, TRY_EXCEPT, body, NULL, NULL))
@@ -3552,6 +3562,7 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         return 0;
     }
 
+    NEXT_BLOCK(c);
     ADDOP_JUMP(c, SETUP_FINALLY, except);
     compiler_use_next_block(c, body);
     if (!compiler_push_fblock(c, TRY_EXCEPT, body, NULL, NULL)) {
@@ -7318,6 +7329,10 @@ convert_exception_handlers_to_nops(basicblock *entry) {
             struct instr *instr = &b->b_instr[i];
             if (is_block_push(instr) || instr->i_opcode == POP_BLOCK) {
                 instr->i_opcode = NOP;
+                if (b->b_iused == 1) {
+                    /* Allow the NOP to be dropped */
+                    UNSET_INSTR_LOC(instr);
+                }
             }
         }
     }
