@@ -1319,10 +1319,11 @@ class InstructionTests(InstructionTestCase):
         code_without_column_table = code.replace(co_columntable=b'')
         actual = dis.get_instructions(code_without_column_table)
         for instruction in actual:
-            if instruction.opname == "RESUME":
-                continue
             with self.subTest(instruction=instruction):
                 positions = instruction.positions
+                if instruction.opname == "RESUME":
+                    self.assertEqual(len(positions), 4)
+                    continue
                 self.assertEqual(positions.lineno, 1)
                 self.assertEqual(positions.end_lineno, 1)
                 self.assertIsNone(positions.col_offset)
@@ -1331,10 +1332,11 @@ class InstructionTests(InstructionTestCase):
         code_without_endline_table = code.replace(co_endlinetable=b'')
         actual = dis.get_instructions(code_without_endline_table)
         for instruction in actual:
-            if instruction.opname == "RESUME":
-                continue
             with self.subTest(instruction=instruction):
                 positions = instruction.positions
+                if instruction.opname == "RESUME":
+                    self.assertEqual(len(positions), 4)
+                    continue
                 self.assertEqual(positions.lineno, 1)
                 self.assertIsNone(positions.end_lineno)
                 self.assertIsNotNone(positions.col_offset)
