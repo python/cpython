@@ -2650,17 +2650,8 @@ handle_eval_breaker:
             }
             assert (gen_status == PYGEN_NEXT);
             assert (retval != NULL);
-            frame->f_state = FRAME_SUSPENDED;
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            TRACE_FUNCTION_EXIT();
-            DTRACE_FUNCTION_EXIT();
-            _Py_LeaveRecursiveCall(tstate);
-            /* Restore previous cframe and return. */
-            tstate->cframe = cframe.previous;
-            tstate->cframe->use_tracing = cframe.use_tracing;
-            assert(tstate->cframe->current_frame == frame->previous);
-            assert(!_PyErr_Occurred(tstate));
-            return retval;
+            PUSH(retval);
+            DISPATCH();
         }
 
         TARGET(ASYNC_GEN_WRAP) {
