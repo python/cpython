@@ -29,6 +29,7 @@ import unittest
 
 from test.support import (
     SHORT_TIMEOUT,
+    bigmemtest,
     check_disallow_instantiation,
     threading_helper,
 )
@@ -645,6 +646,13 @@ class SerializeTests(unittest.TestCase):
                 # deserialized database.
                 cx.execute("create table fail(f)")
 
+    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
+    @bigmemtest(size=2**63, memuse=3, dry_run=False)
+    def test_deserialize_too_much_data_64bit(self):
+        with memory_database() as cx:
+            with self.assertRaisesRegex(OverflowError, "'data' is too large"):
+                cx.deserialize(b"b" * size)
+
 
 class OpenTests(unittest.TestCase):
     _sql = "create table test(id integer)"
@@ -1074,6 +1082,7 @@ class ThreadTests(unittest.TestCase):
         ]
         if hasattr(sqlite.Connection, "serialize"):
             fns.append(lambda: self.con.serialize())
+            fns.append(lambda: self.con.deserialize(b""))
 
         for fn in fns:
             with self.subTest(fn=fn):

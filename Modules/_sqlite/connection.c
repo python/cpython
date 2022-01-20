@@ -1853,7 +1853,7 @@ serialize_impl(pysqlite_Connection *self, const char *name)
                      name);
         return NULL;
     }
-    PyObject *res = PyBytes_FromStringAndSize(data, (Py_ssize_t)size);
+    PyObject *res = PyBytes_FromStringAndSize(data, size);
     sqlite3_free((void *)data);
     return res;
 }
@@ -1887,18 +1887,24 @@ deserialize_impl(pysqlite_Connection *self, Py_buffer *data,
         return NULL;
     }
 
-    if (data->len > 9223372036854775807) {
-        PyErr_SetString(PyExc_OverflowError, "'data' is too large");
-        return NULL;
-    }
-
     /* Transfer ownership of the buffer to SQLite:
      * - Move buffer from Py to SQLite
      * - Tell SQLite to free buffer memory
      * - Tell SQLite that it is permitted to grow the resulting database
+     *
+     * Make sure we don't overflow sqlite3_deserialize(); it accepts a signed
+     * 64-bit int as its data size argument, but sqlite3_malloc64 accepts an
+     * unsigned 64-bit int as its size argument
+     *
+     * We can safely use sqlite3_malloc64 here, since it was introduced before
+     * the serialize APIs.
      */
+    if (data->len > 9223372036854775807) {
+        PyErr_SetString(PyExc_OverflowError, "'data' is too large");
+        return NULL;
+    }
     sqlite3_int64 size = (sqlite3_int64)data->len;
-    unsigned char *buf = sqlite3_malloc(size);
+    unsigned char *buf = sqlite3_malloc64(size);
     if (buf == NULL) {
         return PyErr_NoMemory();
     }
