@@ -130,7 +130,7 @@ Number-theoretic and representation functions
 
    Return the greatest common divisor of the specified integer arguments.
    If any of the arguments is nonzero, then the returned value is the largest
-   positive integer that is a divisor af all arguments.  If all arguments
+   positive integer that is a divisor of all arguments.  If all arguments
    are zero, then the returned value is ``0``.  ``gcd()`` without arguments
    returns ``0``.
 
@@ -342,11 +342,25 @@ necessarily has no fractional bits.
 Power and logarithmic functions
 -------------------------------
 
+.. function:: cbrt(x)
+
+   Return the cube root of *x*.
+
+   .. versionadded:: 3.11
+
+
 .. function:: exp(x)
 
    Return *e* raised to the power *x*, where *e* = 2.718281... is the base
    of natural logarithms.  This is usually more accurate than ``math.e ** x``
    or ``pow(math.e, x)``.
+
+
+.. function:: exp2(x)
+
+   Return *2* raised to the power *x*.
+
+   .. versionadded:: 3.11
 
 
 .. function:: expm1(x)
@@ -402,7 +416,7 @@ Power and logarithmic functions
 .. function:: pow(x, y)
 
    Return ``x`` raised to the power ``y``.  Exceptional cases follow
-   Annex 'F' of the C99 standard as far as possible.  In particular,
+   the IEEE 754 standard as far as possible.  In particular,
    ``pow(1.0, x)`` and ``pow(x, 0.0)`` always return ``1.0``, even
    when ``x`` is a zero or a NaN.  If both ``x`` and ``y`` are finite,
    ``x`` is negative, and ``y`` is not an integer then ``pow(x, y)``
@@ -411,6 +425,11 @@ Power and logarithmic functions
    Unlike the built-in ``**`` operator, :func:`math.pow` converts both
    its arguments to type :class:`float`.  Use ``**`` or the built-in
    :func:`pow` function for computing exact integer powers.
+
+   .. versionchanged:: 3.11
+      The special cases ``pow(0.0, -inf)`` and ``pow(-0.0, -inf)`` were
+      changed to return ``inf`` instead of raising :exc:`ValueError`,
+      for consistency with IEEE 754.
 
 
 .. function:: sqrt(x)
@@ -480,6 +499,11 @@ Trigonometric functions
    .. versionchanged:: 3.8
       Added support for n-dimensional points. Formerly, only the two
       dimensional case was supported.
+
+   .. versionchanged:: 3.10
+      Improved the algorithm's accuracy so that the maximum error is
+      under 1 ulp (unit in the last place).  More typically, the result
+      is almost always correctly rounded to within 1/2 ulp.
 
 
 .. function:: sin(x)

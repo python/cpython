@@ -175,8 +175,8 @@ convention. Patch by Dong-hee Na.
 .. nonce: FE9S21
 .. section: Core and Builtins
 
-Chaged list overallocation strategy. It no longer overallocates if the new
-size is closer to overalocated size than to the old size and adds padding.
+Changed list overallocation strategy. It no longer overallocates if the new
+size is closer to overallocated size than to the old size and adds padding.
 
 ..
 
@@ -232,7 +232,7 @@ exits before trying to take the GIL.
 
 Fix a possible :exc:`SystemError` in ``math.{atan2,copysign,remainder}()``
 when the first argument cannot be converted to a :class:`float`. Patch by
-Zachary Spytz.
+Zackery Spytz.
 
 ..
 

@@ -1,10 +1,19 @@
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
+// windows.h must be included before pycore internal headers
+#ifdef MS_WIN32
+#  include <windows.h>
+#endif
+
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "frameobject.h"
 
+#include <stdbool.h>
+
 #include <ffi.h>
-#ifdef MS_WIN32
-#include <windows.h>
-#endif
 #include "ctypes.h"
 
 /**************************************************************/
@@ -18,7 +27,7 @@ CThunkObject_dealloc(PyObject *myself)
     Py_XDECREF(self->callable);
     Py_XDECREF(self->restype);
     if (self->pcl_write)
-        ffi_closure_free(self->pcl_write);
+        Py_ffi_closure_free(self->pcl_write);
     PyObject_GC_Del(self);
 }
 
@@ -84,7 +93,7 @@ PrintError(const char *msg, ...)
     va_list marker;
 
     va_start(marker, msg);
-    vsnprintf(buf, sizeof(buf), msg, marker);
+    PyOS_vsnprintf(buf, sizeof(buf), msg, marker);
     va_end(marker);
     if (f != NULL && f != Py_None)
         PyFile_WriteString(buf, f);
@@ -109,8 +118,9 @@ TryAddRef(StgDictObject *dict, CDataObject *obj)
     IUnknown *punk;
     _Py_IDENTIFIER(_needs_com_addref_);
 
-    if (!_PyDict_GetItemIdWithError((PyObject *)dict, &PyId__needs_com_addref_)) {
-        if (PyErr_Occurred()) {
+    int r = _PyDict_ContainsId((PyObject *)dict, &PyId__needs_com_addref_);
+    if (r <= 0) {
+        if (r < 0) {
             PrintError("getting _needs_com_addref_");
         }
         return;
@@ -184,7 +194,7 @@ static void _CallPythonObject(void *mem,
             */
         } else if (dict) {
             /* Hm, shouldn't we use PyCData_AtAddress() or something like that instead? */
-            CDataObject *obj = (CDataObject *)_PyObject_CallNoArg(cnv);
+            CDataObject *obj = (CDataObject *)_PyObject_CallNoArgs(cnv);
             if (!obj) {
                 PrintError("create argument %zd:\n", i);
                 Py_DECREF(cnv);
@@ -361,8 +371,7 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
 
     assert(CThunk_CheckExact((PyObject *)p));
 
-    p->pcl_write = ffi_closure_alloc(sizeof(ffi_closure),
-                                                                         &p->pcl_exec);
+    p->pcl_write = Py_ffi_closure_alloc(sizeof(ffi_closure), &p->pcl_exec);
     if (p->pcl_write == NULL) {
         PyErr_NoMemory();
         goto error;
@@ -408,13 +417,42 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
                      "ffi_prep_cif failed with %d", result);
         goto error;
     }
-#if defined(X86_DARWIN) || defined(POWERPC_DARWIN)
-    result = ffi_prep_closure(p->pcl_write, &p->cif, closure_fcn, p);
-#else
-    result = ffi_prep_closure_loc(p->pcl_write, &p->cif, closure_fcn,
-                                  p,
-                                  p->pcl_exec);
+#if HAVE_FFI_PREP_CLOSURE_LOC
+#   if USING_APPLE_OS_LIBFFI
+#      define HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME __builtin_available(macos 10.15, ios 13, watchos 6, tvos 13, *)
+#   else
+#      define HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME 1
+#   endif
+    if (HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME) {
+        result = ffi_prep_closure_loc(p->pcl_write, &p->cif, closure_fcn,
+                                    p,
+                                    p->pcl_exec);
+    } else
 #endif
+    {
+#if USING_APPLE_OS_LIBFFI && defined(__arm64__)
+        PyErr_Format(PyExc_NotImplementedError, "ffi_prep_closure_loc() is missing");
+        goto error;
+#else
+#if defined(__clang__) || defined(MACOSX)
+        #pragma clang diagnostic push
+        #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
+#if defined(__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5)))
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+        result = ffi_prep_closure(p->pcl_write, &p->cif, closure_fcn, p);
+
+#if defined(__clang__) || defined(MACOSX)
+        #pragma clang diagnostic pop
+#endif
+#if defined(__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5)))
+        #pragma GCC diagnostic pop
+#endif
+
+#endif
+    }
     if (result != FFI_OK) {
         PyErr_Format(PyExc_RuntimeError,
                      "ffi_prep_closure failed with %d", result);
@@ -452,7 +490,7 @@ long Call_GetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
     if (context == NULL)
         context = PyUnicode_InternFromString("_ctypes.DllGetClassObject");
 
-    mod = PyImport_ImportModuleNoBlock("ctypes");
+    mod = PyImport_ImportModule("ctypes");
     if (!mod) {
         PyErr_WriteUnraisable(context ? context : Py_None);
         /* There has been a warning before about this already */
@@ -525,7 +563,7 @@ long Call_CanUnloadNow(void)
     if (context == NULL)
         context = PyUnicode_InternFromString("_ctypes.DllCanUnloadNow");
 
-    mod = PyImport_ImportModuleNoBlock("ctypes");
+    mod = PyImport_ImportModule("ctypes");
     if (!mod) {
 /*              OutputDebugString("Could not import ctypes"); */
         /* We assume that this error can only occur when shutting
@@ -541,7 +579,7 @@ long Call_CanUnloadNow(void)
         return E_FAIL;
     }
 
-    result = _PyObject_CallNoArg(func);
+    result = _PyObject_CallNoArgs(func);
     Py_DECREF(func);
     if (!result) {
         PyErr_WriteUnraisable(context ? context : Py_None);

@@ -141,7 +141,7 @@ class Message:
         header.  For backward compatibility reasons, if maxheaderlen is
         not specified it defaults to 0, so you must override it explicitly
         if you want a different maxheaderlen.  'policy' is passed to the
-        Generator instance used to serialize the mesasge; if it is not
+        Generator instance used to serialize the message; if it is not
         specified the policy associated with the message instance is used.
 
         If the message object contains binary data that is not encoded
@@ -948,7 +948,7 @@ class MIMEPart(Message):
         if policy is None:
             from email.policy import default
             policy = default
-        Message.__init__(self, policy)
+        super().__init__(policy)
 
 
     def as_string(self, unixfrom=False, maxheaderlen=None, policy=None):
@@ -958,14 +958,14 @@ class MIMEPart(Message):
         header.  maxheaderlen is retained for backward compatibility with the
         base Message class, but defaults to None, meaning that the policy value
         for max_line_length controls the header maximum length.  'policy' is
-        passed to the Generator instance used to serialize the mesasge; if it
+        passed to the Generator instance used to serialize the message; if it
         is not specified the policy associated with the message instance is
         used.
         """
         policy = self.policy if policy is None else policy
         if maxheaderlen is None:
             maxheaderlen = policy.max_line_length
-        return super().as_string(maxheaderlen=maxheaderlen, policy=policy)
+        return super().as_string(unixfrom, maxheaderlen, policy)
 
     def __str__(self):
         return self.as_string(policy=self.policy.clone(utf8=True))
@@ -982,7 +982,7 @@ class MIMEPart(Message):
             if subtype in preferencelist:
                 yield (preferencelist.index(subtype), part)
             return
-        if maintype != 'multipart':
+        if maintype != 'multipart' or not self.is_multipart():
             return
         if subtype != 'related':
             for subpart in part.iter_parts():
@@ -1087,7 +1087,7 @@ class MIMEPart(Message):
 
         Return an empty iterator for a non-multipart.
         """
-        if self.get_content_maintype() == 'multipart':
+        if self.is_multipart():
             yield from self.get_payload()
 
     def get_content(self, *args, content_manager=None, **kw):

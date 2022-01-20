@@ -7,7 +7,7 @@ extern "C" {
 
 /* Module support interface */
 
-#include <stdarg.h>
+#include <stdarg.h>               // va_list
 
 /* If PY_SSIZE_T_CLEAN is defined, each functions treats #-specifier
    to mean Py_ssize_t */
@@ -50,6 +50,7 @@ PyAPI_FUNC(PyObject *) Py_BuildValue(const char *, ...);
 PyAPI_FUNC(PyObject *) _Py_BuildValue_SizeT(const char *, ...);
 
 
+#define ANY_VARARGS(n) (n == PY_SSIZE_T_MAX)
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _PyArg_UnpackStack(
     PyObject *const *args,
@@ -73,7 +74,7 @@ PyAPI_FUNC(void) _PyArg_BadArgument(const char *, const char *, const char *, Py
 PyAPI_FUNC(int) _PyArg_CheckPositional(const char *, Py_ssize_t,
                                        Py_ssize_t, Py_ssize_t);
 #define _PyArg_CheckPositional(funcname, nargs, min, max) \
-    (((min) <= (nargs) && (nargs) <= (max)) \
+    ((!ANY_VARARGS(max) && (min) <= (nargs) && (nargs) <= (max)) \
      || _PyArg_CheckPositional((funcname), (nargs), (min), (max)))
 
 #endif
@@ -127,6 +128,14 @@ PyAPI_FUNC(PyObject * const *) _PyArg_UnpackKeywords(
         struct _PyArg_Parser *parser,
         int minpos, int maxpos, int minkw,
         PyObject **buf);
+
+PyAPI_FUNC(PyObject * const *) _PyArg_UnpackKeywordsWithVararg(
+        PyObject *const *args, Py_ssize_t nargs,
+        PyObject *kwargs, PyObject *kwnames,
+        struct _PyArg_Parser *parser,
+        int minpos, int maxpos, int minkw,
+        int vararg, PyObject **buf);
+
 #define _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, parser, minpos, maxpos, minkw, buf) \
     (((minkw) == 0 && (kwargs) == NULL && (kwnames) == NULL && \
       (minpos) <= (nargs) && (nargs) <= (maxpos) && args != NULL) ? (args) : \
@@ -136,7 +145,15 @@ PyAPI_FUNC(PyObject * const *) _PyArg_UnpackKeywords(
 void _PyArg_Fini(void);
 #endif   /* Py_LIMITED_API */
 
-PyAPI_FUNC(int) PyModule_AddObject(PyObject *, const char *, PyObject *);
+// Add an attribute with name 'name' and value 'obj' to the module 'mod.
+// On success, return 0 on success.
+// On error, raise an exception and return -1.
+PyAPI_FUNC(int) PyModule_AddObjectRef(PyObject *mod, const char *name, PyObject *value);
+
+// Similar to PyModule_AddObjectRef() but steal a reference to 'obj'
+// (Py_DECREF(obj)) on success (if it returns 0).
+PyAPI_FUNC(int) PyModule_AddObject(PyObject *mod, const char *, PyObject *value);
+
 PyAPI_FUNC(int) PyModule_AddIntConstant(PyObject *, const char *, long);
 PyAPI_FUNC(int) PyModule_AddStringConstant(PyObject *, const char *, const char *);
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000

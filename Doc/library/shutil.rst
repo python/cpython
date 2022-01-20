@@ -158,9 +158,9 @@ Directory and files operations
 .. function:: copy(src, dst, *, follow_symlinks=True)
 
    Copies the file *src* to the file or directory *dst*.  *src* and *dst*
-   should be strings.  If *dst* specifies a directory, the file will be
-   copied into *dst* using the base filename from *src*.  Returns the
-   path to the newly created file.
+   should be :term:`path-like objects <path-like object>` or strings.  If
+   *dst* specifies a directory, the file will be copied into *dst* using the
+   base filename from *src*.  Returns the path to the newly created file.
 
    If *follow_symlinks* is false, and *src* is a symbolic link,
    *dst* will be created as a symbolic link.  If *follow_symlinks*
@@ -218,7 +218,7 @@ Directory and files operations
       copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
-.. function:: ignore_patterns(\*patterns)
+.. function:: ignore_patterns(*patterns)
 
    This factory function creates a function that can be used as a callable for
    :func:`copytree`\'s *ignore* argument, ignoring files and directories that
@@ -349,7 +349,7 @@ Directory and files operations
    will be created in or as *dst* and *src* will be removed.
 
    If *copy_function* is given, it must be a callable that takes two arguments
-   *src* and *dst*, and will be used to copy *src* to *dest* if
+   *src* and *dst*, and will be used to copy *src* to *dst* if
    :func:`os.rename` cannot be used.  If the source is a directory,
    :func:`copytree` is called, passing it the :func:`copy_function`. The
    default *copy_function* is :func:`copy2`.  Using :func:`~shutil.copy` as the
@@ -443,8 +443,9 @@ Directory and files operations
 Platform-dependent efficient copy operations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Starting from Python 3.8 all functions involving a file copy (:func:`copyfile`,
-:func:`copy`, :func:`copy2`, :func:`copytree`, and :func:`move`) may use
+Starting from Python 3.8, all functions involving a file copy
+(:func:`copyfile`, :func:`~shutil.copy`, :func:`copy2`,
+:func:`copytree`, and :func:`move`) may use
 platform-specific "fast-copy" syscalls in order to copy the file more
 efficiently (see :issue:`33671`).
 "fast-copy" means that the copying operation occurs within the kernel, avoiding
@@ -570,12 +571,14 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    available), or "xztar" (if the :mod:`lzma` module is available).
 
    *root_dir* is a directory that will be the root directory of the
-   archive; for example, we typically chdir into *root_dir* before creating the
-   archive.
+   archive, all paths in the archive will be relative to it; for example,
+   we typically chdir into *root_dir* before creating the archive.
 
    *base_dir* is the directory where we start archiving from;
    i.e. *base_dir* will be the common prefix of all files and
-   directories in the archive.
+   directories in the archive.  *base_dir* must be given relative
+   to *root_dir*.  See :ref:`shutil-archiving-example-with-basedir` for how to
+   use *base_dir* and *root_dir* together.
 
    *root_dir* and *base_dir* both default to the current directory.
 
@@ -591,6 +594,10 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    The *verbose* argument is unused and deprecated.
 
    .. audit-event:: shutil.make_archive base_name,format,root_dir,base_dir shutil.make_archive
+
+   .. note::
+
+      This function is not thread-safe.
 
    .. versionchanged:: 3.8
       The modern pax (POSIX.1-2001) format is now used instead of
@@ -727,6 +734,48 @@ The resulting archive contains:
     -rw-r--r-- tarek/staff   37192 2010-02-06 18:23:10 ./known_hosts
 
 
+.. _shutil-archiving-example-with-basedir:
+
+Archiving example with *base_dir*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In this example, similar to the `one above <shutil-archiving-example_>`_,
+we show how to use :func:`make_archive`, but this time with the usage of
+*base_dir*.  We now have the following directory structure:
+
+.. code-block:: shell-session
+
+    $ tree tmp
+    tmp
+    └── root
+        └── structure
+            ├── content
+                └── please_add.txt
+            └── do_not_add.txt
+
+In the final archive, :file:`please_add.txt` should be included, but
+:file:`do_not_add.txt` should not.  Therefore we use the following::
+
+    >>> from shutil import make_archive
+    >>> import os
+    >>> archive_name = os.path.expanduser(os.path.join('~', 'myarchive'))
+    >>> make_archive(
+    ...     archive_name,
+    ...     'tar',
+    ...     root_dir='tmp/root',
+    ...     base_dir='structure/content',
+    ... )
+    '/Users/tarek/my_archive.tar'
+
+Listing the files in the resulting archive gives us:
+
+.. code-block:: shell-session
+
+    $ python -m tarfile -l /Users/tarek/myarchive.tar
+    structure/content/
+    structure/content/please_add.txt
+
+
 Querying the size of the output terminal
 ----------------------------------------
 
@@ -754,6 +803,10 @@ Querying the size of the output terminal
    `Other Environment Variables`_.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.11
+      The ``fallback`` values are also used if :func:`os.get_terminal_size`
+      returns zeroes.
 
 .. _`fcopyfile`:
    http://www.manpagez.com/man/3/copyfile/

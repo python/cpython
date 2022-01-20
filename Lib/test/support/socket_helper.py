@@ -146,7 +146,7 @@ def skip_unless_bind_unix_socket(test):
         return unittest.skip('No UNIX Sockets')(test)
     global _bind_nix_socket_error
     if _bind_nix_socket_error is None:
-        from test.support import TESTFN, unlink
+        from .os_helper import TESTFN, unlink
         path = TESTFN + "can_bind_unix_socket"
         with socket.socket(socket.AF_UNIX) as sock:
             try:
@@ -189,7 +189,7 @@ _NOT_SET = object()
 @contextlib.contextmanager
 def transient_internet(resource_name, *, timeout=_NOT_SET, errnos=()):
     """Return a context manager that raises ResourceDenied when various issues
-    with the Internet connection manifest themselves as exceptions."""
+    with the internet connection manifest themselves as exceptions."""
     import nntplib
     import urllib.error
     if timeout is _NOT_SET:
@@ -225,7 +225,7 @@ def transient_internet(resource_name, *, timeout=_NOT_SET, errnos=()):
 
     def filter_error(err):
         n = getattr(err, 'errno', None)
-        if (isinstance(err, socket.timeout) or
+        if (isinstance(err, TimeoutError) or
             (isinstance(err, socket.gaierror) and n in gai_errnos) or
             (isinstance(err, urllib.error.HTTPError) and
              500 <= err.code <= 599) or

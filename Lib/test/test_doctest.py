@@ -3,6 +3,8 @@ Test script for doctest.
 """
 
 from test import support
+from test.support import import_helper
+from test.support import os_helper
 import doctest
 import functools
 import os
@@ -13,6 +15,7 @@ import importlib.util
 import unittest
 import tempfile
 import shutil
+import types
 import contextlib
 
 # NOTE: There are some additional tests relating to interaction with
@@ -92,6 +95,17 @@ class SampleClass:
         >>> print(SampleClass(22).a_property)
         22
         """)
+
+    a_class_attribute = 42
+
+    @classmethod
+    @property
+    def a_classmethod_property(cls):
+        """
+        >>> print(SampleClass.a_classmethod_property)
+        42
+        """
+        return cls.a_class_attribute
 
     class NestedClass:
         """
@@ -441,7 +455,7 @@ We'll simulate a __file__ attr that ends in pyc:
     >>> tests = finder.find(sample_func)
 
     >>> print(tests)  # doctest: +ELLIPSIS
-    [<DocTest sample_func from ...:25 (1 example)>]
+    [<DocTest sample_func from test_doctest.py:28 (1 example)>]
 
 The exact name depends on how test_doctest was invoked, so allow for
 leading path components.
@@ -498,6 +512,7 @@ methods, classmethods, staticmethods, properties, and nested classes.
      1  SampleClass.NestedClass.__init__
      1  SampleClass.__init__
      2  SampleClass.a_classmethod
+     1  SampleClass.a_classmethod_property
      1  SampleClass.a_property
      1  SampleClass.a_staticmethod
      1  SampleClass.double
@@ -553,6 +568,7 @@ functions, classes, and the `__test__` dictionary, if it exists:
      1  some_module.SampleClass.NestedClass.__init__
      1  some_module.SampleClass.__init__
      2  some_module.SampleClass.a_classmethod
+     1  some_module.SampleClass.a_classmethod_property
      1  some_module.SampleClass.a_property
      1  some_module.SampleClass.a_staticmethod
      1  some_module.SampleClass.double
@@ -594,6 +610,7 @@ By default, an object with no doctests doesn't create any tests:
      1  SampleClass.NestedClass.__init__
      1  SampleClass.__init__
      2  SampleClass.a_classmethod
+     1  SampleClass.a_classmethod_property
      1  SampleClass.a_property
      1  SampleClass.a_staticmethod
      1  SampleClass.double
@@ -614,6 +631,7 @@ displays.
      0  SampleClass.NestedClass.square
      1  SampleClass.__init__
      2  SampleClass.a_classmethod
+     1  SampleClass.a_classmethod_property
      1  SampleClass.a_property
      1  SampleClass.a_staticmethod
      1  SampleClass.double
@@ -665,7 +683,7 @@ plain ol' Python and is guaranteed to be available.
 
     >>> import builtins
     >>> tests = doctest.DocTestFinder().find(builtins)
-    >>> 816 < len(tests) < 836 # approximate number of objects with docstrings
+    >>> 825 < len(tests) < 845 # approximate number of objects with docstrings
     True
     >>> real_tests = [t for t in tests if len(t.examples) > 0]
     >>> len(real_tests) # objects that actually have doctests
@@ -696,6 +714,18 @@ and 'int' is a type.
 
 class TestDocTestFinder(unittest.TestCase):
 
+    def test_issue35753(self):
+        # This import of `call` should trigger issue35753 when
+        # `support.run_doctest` is called due to unwrap failing,
+        # however with a patched doctest this should succeed.
+        from unittest.mock import call
+        dummy_module = types.ModuleType("dummy")
+        dummy_module.__dict__['inject_call'] = call
+        try:
+            support.run_doctest(dummy_module, verbosity=True)
+        except ValueError as e:
+            raise support.TestFailed("Doctest unwrap failed") from e
+
     def test_empty_namespace_package(self):
         pkg_name = 'doctest_empty_pkg'
         with tempfile.TemporaryDirectory() as parent_dir:
@@ -705,7 +735,7 @@ class TestDocTestFinder(unittest.TestCase):
             try:
                 mod = importlib.import_module(pkg_name)
             finally:
-                support.forget(pkg_name)
+                import_helper.forget(pkg_name)
                 sys.path.pop()
 
             include_empty_finder = doctest.DocTestFinder(exclude_empty=False)
@@ -2758,7 +2788,7 @@ whitespace if doctest does not correctly do the newline conversion.
     >>> dn = tempfile.mkdtemp()
     >>> pkg = os.path.join(dn, "doctest_testpkg")
     >>> os.mkdir(pkg)
-    >>> support.create_empty_file(os.path.join(pkg, "__init__.py"))
+    >>> os_helper.create_empty_file(os.path.join(pkg, "__init__.py"))
     >>> fn = os.path.join(pkg, "doctest_testfile.txt")
     >>> with open(fn, 'wb') as f:
     ...     f.write(
@@ -2793,10 +2823,12 @@ out of the binary module.
 
 try:
     os.fsencode("foo-bär@baz.py")
+    supports_unicode = True
 except UnicodeEncodeError:
     # Skip the test: the filesystem encoding is unable to encode the filename
-    pass
-else:
+    supports_unicode = False
+
+if supports_unicode and not support.has_no_debug_ranges():
     def test_unicode(): """
 Check doctest with a non-ascii filename:
 
@@ -2818,8 +2850,10 @@ Check doctest with a non-ascii filename:
         Traceback (most recent call last):
           File ...
             exec(compile(example.source, filename, "single",
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
           File "<doctest foo-bär@baz[0]>", line 1, in <module>
             raise Exception('clé')
+            ^^^^^^^^^^^^^^^^^^^^^^
         Exception: clé
     TestResults(failed=1, attempted=1)
     """
@@ -2840,10 +2874,11 @@ With those preliminaries out of the way, we'll start with a file with two
 simple tests and no errors.  We'll run both the unadorned doctest command, and
 the verbose version, and then check the output:
 
-    >>> from test.support import script_helper, temp_dir
+    >>> from test.support import script_helper
+    >>> from test.support.os_helper import temp_dir
     >>> with temp_dir() as tmpdir:
     ...     fn = os.path.join(tmpdir, 'myfile.doc')
-    ...     with open(fn, 'w') as f:
+    ...     with open(fn, 'w', encoding='utf-8') as f:
     ...         _ = f.write('This is a very simple test file.\n')
     ...         _ = f.write('   >>> 1 + 1\n')
     ...         _ = f.write('   2\n')
@@ -2891,10 +2926,11 @@ ability to process more than one file on the command line and, since the second
 file ends in '.py', its handling of python module files (as opposed to straight
 text files).
 
-    >>> from test.support import script_helper, temp_dir
+    >>> from test.support import script_helper
+    >>> from test.support.os_helper import temp_dir
     >>> with temp_dir() as tmpdir:
     ...     fn = os.path.join(tmpdir, 'myfile.doc')
-    ...     with open(fn, 'w') as f:
+    ...     with open(fn, 'w', encoding="utf-8") as f:
     ...         _ = f.write('This is another simple test file.\n')
     ...         _ = f.write('   >>> 1 + 1\n')
     ...         _ = f.write('   2\n')
@@ -2905,7 +2941,7 @@ text files).
     ...         _ = f.write('\n')
     ...         _ = f.write('And that is it.\n')
     ...     fn2 = os.path.join(tmpdir, 'myfile2.py')
-    ...     with open(fn2, 'w') as f:
+    ...     with open(fn2, 'w', encoding='utf-8') as f:
     ...         _ = f.write('def test_func():\n')
     ...         _ = f.write('   \"\"\"\n')
     ...         _ = f.write('   This is simple python test function.\n')
@@ -3035,10 +3071,11 @@ Invalid file name:
     ...         '-m', 'doctest', 'nosuchfile')
     >>> rc, out
     (1, b'')
+    >>> # The exact error message changes depending on the platform.
     >>> print(normalize(err))                    # doctest: +ELLIPSIS
     Traceback (most recent call last):
       ...
-    FileNotFoundError: [Errno ...] No such file or directory: 'nosuchfile'
+    FileNotFoundError: [Errno ...] ...nosuchfile...
 
 Invalid doctest option:
 
@@ -3092,24 +3129,15 @@ def test_no_trailing_whitespace_stripping():
     patches that contain trailing whitespace. More info on Issue 24746.
     """
 
-######################################################################
-## Main
-######################################################################
 
-def test_main():
-    # Check the doctest cases in doctest itself:
-    ret = support.run_doctest(doctest, verbosity=True)
-
-    # Check the doctest cases defined here:
-    from test import test_doctest
-    support.run_doctest(test_doctest, verbosity=True)
-
-    # Run unittests
-    support.run_unittest(__name__)
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite(doctest))
+    tests.addTest(doctest.DocTestSuite())
+    return tests
 
 
 def test_coverage(coverdir):
-    trace = support.import_module('trace')
+    trace = import_helper.import_module('trace')
     tracer = trace.Trace(ignoredirs=[sys.base_prefix, sys.base_exec_prefix,],
                          trace=0, count=1)
     tracer.run('test_main()')
@@ -3118,8 +3146,9 @@ def test_coverage(coverdir):
     r.write_results(show_missing=True, summary=True,
                     coverdir=coverdir)
 
+
 if __name__ == '__main__':
     if '-c' in sys.argv:
         test_coverage('/tmp/doctest.cover')
     else:
-        test_main()
+        unittest.main()

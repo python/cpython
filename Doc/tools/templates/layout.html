@@ -12,22 +12,14 @@
 
 {% block rootrellink %}
 {{ super() }}
-    <li>
-      {%- if switchers is defined %}
-      <span class="language_switcher_placeholder">{{ language or 'en' }}</span>
-      <span class="version_switcher_placeholder">{{ release }}</span>
-      <a href="{{ pathto('index') }}">{% trans %}Documentation {% endtrans %}</a>{{ reldelim1 }}
-      {%- else %}
+    <li id="cpython-language-and-version">
       <a href="{{ pathto('index') }}">{{ shorttitle }}</a>{{ reldelim1 }}
-      {%- endif %}
     </li>
 {% endblock %}
 
 {% block extrahead %}
     <link rel="canonical" href="https://docs.python.org/3/{{pagename}}.html" />
     {% if builder != "htmlhelp" %}
-      {% if switchers is defined and not embedded %}
-      <script type="text/javascript" src="{{ pathto('_static/switchers.js', 1) }}"></script>{% endif %}
       {% if pagename == 'whatsnew/changelog' and not embedded %}
       <script type="text/javascript" src="{{ pathto('_static/changelog_search.js', 1) }}"></script>{% endif %}
     {% endif %}

@@ -30,10 +30,15 @@ import inspect
 import pprint
 import sys
 import builtins
+import pkgutil
 from asyncio import iscoroutinefunction
 from types import CodeType, ModuleType, MethodType
 from unittest.util import safe_repr
 from functools import wraps, partial
+
+
+class InvalidSpecError(Exception):
+    """Indicates that an invalid value was used as a mock spec."""
 
 
 _builtins = {name for name in dir(builtins) if not name.startswith('_')}
@@ -406,7 +411,7 @@ class NonCallableMock(Base):
             # Check if spec is an async object or function
             bound_args = _MOCK_SIG.bind_partial(cls, *args, **kw).arguments
             spec_arg = bound_args.get('spec_set', bound_args.get('spec'))
-            if spec_arg and _is_async_obj(spec_arg):
+            if spec_arg is not None and _is_async_obj(spec_arg):
                 bases = (AsyncMockMixin, cls)
         new = type(cls.__name__, bases, {'__doc__': cls.__doc__})
         instance = _safe_super(NonCallableMock, cls).__new__(new)
@@ -631,9 +636,10 @@ class NonCallableMock(Base):
         elif _is_magic(name):
             raise AttributeError(name)
         if not self._mock_unsafe:
-            if name.startswith(('assert', 'assret')):
-                raise AttributeError("Attributes cannot start with 'assert' "
-                                     "or 'assret'")
+            if name.startswith(('assert', 'assret', 'asert', 'aseert', 'assrt')):
+                raise AttributeError(
+                    f"{name!r} is not a valid assertion. Use a spec "
+                    f"for the mock if {name!r} is meant to be an attribute.")
 
         result = self._mock_children.get(name)
         if result is _deleted:
@@ -652,10 +658,17 @@ class NonCallableMock(Base):
             self._mock_children[name]  = result
 
         elif isinstance(result, _SpecState):
-            result = create_autospec(
-                result.spec, result.spec_set, result.instance,
-                result.parent, result.name
-            )
+            try:
+                result = create_autospec(
+                    result.spec, result.spec_set, result.instance,
+                    result.parent, result.name
+                )
+            except InvalidSpecError:
+                target_name = self.__dict__['_mock_name'] or self
+                raise InvalidSpecError(
+                    f'Cannot autospec attr {name!r} from target '
+                    f'{target_name!r} as it has already been mocked out. '
+                    f'[target={self!r}, attr={result.spec!r}]')
             self._mock_children[name]  = result
 
         return result
@@ -992,6 +1005,11 @@ class NonCallableMock(Base):
         if _new_name in self.__dict__['_spec_asyncs']:
             return AsyncMock(**kw)
 
+        if self._mock_sealed:
+            attribute = f".{kw['name']}" if "name" in kw else "()"
+            mock_name = self._extract_mock_name() + attribute
+            raise AttributeError(mock_name)
+
         _type = type(self)
         if issubclass(_type, MagicMock) and _new_name in _async_method_magics:
             # Any asynchronous magic becomes an AsyncMock
@@ -1010,12 +1028,6 @@ class NonCallableMock(Base):
                 klass = Mock
         else:
             klass = _type.__mro__[1]
-
-        if self._mock_sealed:
-            attribute = "." + kw["name"] if "name" in kw else "()"
-            mock_name = self._extract_mock_name() + attribute
-            raise AttributeError(mock_name)
-
         return klass(**kw)
 
 
@@ -1203,6 +1215,11 @@ class Mock(CallableMixin, NonCallableMock):
       this is a new Mock (created on first access). See the
       `return_value` attribute.
 
+    * `unsafe`: By default, accessing any attribute whose name starts with
+      *assert*, *assret*, *asert*, *aseert* or *assrt* will raise an
+       AttributeError. Passing `unsafe=True` will allow access to
+      these attributes.
+
     * `wraps`: Item for the mock object to wrap. If `wraps` is not None then
       calling the Mock will pass the call through to the wrapped object
       (returning the real result). Attribute access on the mock will return a
@@ -1222,23 +1239,15 @@ class Mock(CallableMixin, NonCallableMock):
     """
 
 
-def _dot_lookup(thing, comp, import_path):
-    try:
-        return getattr(thing, comp)
-    except AttributeError:
-        __import__(import_path)
-        return getattr(thing, comp)
-
-
-def _importer(target):
-    components = target.split('.')
-    import_path = components.pop(0)
-    thing = __import__(import_path)
-
-    for comp in components:
-        import_path += ".%s" % comp
-        thing = _dot_lookup(thing, comp, import_path)
-    return thing
+# _check_spec_arg_typos takes kwargs from commands like patch and checks that
+# they don't contain common misspellings of arguments related to autospeccing.
+def _check_spec_arg_typos(kwargs_to_check):
+    typos = ("autospect", "auto_spec", "set_spec")
+    for typo in typos:
+        if typo in kwargs_to_check:
+            raise RuntimeError(
+                f"{typo!r} might be a typo; use unsafe=True if this is intended"
+            )
 
 
 class _patch(object):
@@ -1248,7 +1257,7 @@ class _patch(object):
 
     def __init__(
             self, getter, attribute, new, spec, create,
-            spec_set, autospec, new_callable, kwargs
+            spec_set, autospec, new_callable, kwargs, *, unsafe=False
         ):
         if new_callable is not None:
             if new is not DEFAULT:
@@ -1259,6 +1268,16 @@ class _patch(object):
                 raise ValueError(
                     "Cannot use 'autospec' and 'new_callable' together"
                 )
+        if not unsafe:
+            _check_spec_arg_typos(kwargs)
+        if _is_instance_mock(spec):
+            raise InvalidSpecError(
+                f'Cannot spec attr {attribute!r} as the spec '
+                f'has already been mocked out. [spec={spec!r}]')
+        if _is_instance_mock(spec_set):
+            raise InvalidSpecError(
+                f'Cannot spec attr {attribute!r} as the spec_set '
+                f'target has already been mocked out. [spec_set={spec_set!r}]')
 
         self.getter = getter
         self.attribute = attribute
@@ -1486,6 +1505,18 @@ class _patch(object):
             if autospec is True:
                 autospec = original
 
+            if _is_instance_mock(self.target):
+                raise InvalidSpecError(
+                    f'Cannot autospec attr {self.attribute!r} as the patch '
+                    f'target has already been mocked out. '
+                    f'[target={self.target!r}, attr={autospec!r}]')
+            if _is_instance_mock(autospec):
+                target_name = getattr(self.target, '__name__', self.target)
+                raise InvalidSpecError(
+                    f'Cannot autospec attr {self.attribute!r} from target '
+                    f'{target_name!r} as it has already been mocked out. '
+                    f'[target={self.target!r}, attr={autospec!r}]')
+
             new = create_autospec(autospec, spec_set=spec_set,
                                   _name=self.attribute, **kwargs)
         elif kwargs:
@@ -1561,14 +1592,13 @@ def _get_target(target):
     except (TypeError, ValueError):
         raise TypeError("Need a valid target to patch. You supplied: %r" %
                         (target,))
-    getter = lambda: _importer(target)
-    return getter, attribute
+    return partial(pkgutil.resolve_name, target), attribute
 
 
 def _patch_object(
         target, attribute, new=DEFAULT, spec=None,
         create=False, spec_set=None, autospec=None,
-        new_callable=None, **kwargs
+        new_callable=None, *, unsafe=False, **kwargs
     ):
     """
     patch the named member (`attribute`) on an object (`target`) with a mock
@@ -1590,7 +1620,7 @@ def _patch_object(
     getter = lambda: target
     return _patch(
         getter, attribute, new, spec, create,
-        spec_set, autospec, new_callable, kwargs
+        spec_set, autospec, new_callable, kwargs, unsafe=unsafe
     )
 
 
@@ -1617,7 +1647,7 @@ def _patch_multiple(target, spec=None, create=False, spec_set=None,
     for choosing which methods to wrap.
     """
     if type(target) is str:
-        getter = lambda: _importer(target)
+        getter = partial(pkgutil.resolve_name, target)
     else:
         getter = lambda: target
 
@@ -1645,7 +1675,7 @@ def _patch_multiple(target, spec=None, create=False, spec_set=None,
 
 def patch(
         target, new=DEFAULT, spec=None, create=False,
-        spec_set=None, autospec=None, new_callable=None, **kwargs
+        spec_set=None, autospec=None, new_callable=None, *, unsafe=False, **kwargs
     ):
     """
     `patch` acts as a function decorator, class decorator or a context
@@ -1707,6 +1737,10 @@ def patch(
     use "as" then the patched object will be bound to the name after the
     "as"; very useful if `patch` is creating a mock object for you.
 
+    Patch will raise a `RuntimeError` if passed some common misspellings of
+    the arguments autospec and spec_set. Pass the argument `unsafe` with the
+    value True to disable that check.
+
     `patch` takes arbitrary keyword arguments. These will be passed to
     `AsyncMock` if the patched object is asynchronous, to `MagicMock`
     otherwise or to `new_callable` if specified.
@@ -1717,7 +1751,7 @@ def patch(
     getter, attribute = _get_target(target)
     return _patch(
         getter, attribute, new, spec, create,
-        spec_set, autospec, new_callable, kwargs
+        spec_set, autospec, new_callable, kwargs, unsafe=unsafe
     )
 
 
@@ -1793,7 +1827,7 @@ class _patch_dict(object):
     def _patch_dict(self):
         values = self.values
         if isinstance(self.in_dict, str):
-            self.in_dict = _importer(self.in_dict)
+            self.in_dict = pkgutil.resolve_name(self.in_dict)
         in_dict = self.in_dict
         clear = self.clear
 
@@ -1894,7 +1928,7 @@ magic_methods = (
 )
 
 numerics = (
-    "add sub mul matmul div floordiv mod lshift rshift and xor or pow truediv"
+    "add sub mul matmul truediv floordiv mod lshift rshift and xor or pow"
 )
 inplace = ' '.join('i%s' % n for n in numerics.split())
 right = ' '.join('r%s' % n for n in numerics.split())
@@ -2156,7 +2190,7 @@ class AsyncMockMixin(Base):
                 try:
                     result = next(effect)
                 except StopIteration:
-                    # It is impossible to propogate a StopIteration
+                    # It is impossible to propagate a StopIteration
                     # through coroutines because of PEP 479
                     raise StopAsyncIteration
                 if _is_exception(result):
@@ -2567,7 +2601,7 @@ call = _Call(from_kall=False)
 
 
 def create_autospec(spec, spec_set=False, instance=False, _parent=None,
-                    _name=None, **kwargs):
+                    _name=None, *, unsafe=False, **kwargs):
     """Create a mock object using another object as a spec. Attributes on the
     mock will use the corresponding attribute on the `spec` object as their
     spec.
@@ -2583,6 +2617,10 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
     spec for an instance object by passing `instance=True`. The returned mock
     will only be callable if instances of the mock are callable.
 
+    `create_autospec` will raise a `RuntimeError` if passed some common
+    misspellings of the arguments autospec and spec_set. Pass the argument
+    `unsafe` with the value True to disable that check.
+
     `create_autospec` also takes arbitrary keyword arguments that are passed to
     the constructor of the created mock."""
     if _is_list(spec):
@@ -2591,6 +2629,9 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         spec = type(spec)
 
     is_type = isinstance(spec, type)
+    if _is_instance_mock(spec):
+        raise InvalidSpecError(f'Cannot autospec a Mock object. '
+                               f'[object={spec!r}]')
     is_async_func = _is_async_func(spec)
     _kwargs = {'spec': spec}
     if spec_set:
@@ -2600,6 +2641,8 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         _kwargs = {}
     if _kwargs and instance:
         _kwargs['_spec_as_instance'] = True
+    if not unsafe:
+        _check_spec_arg_typos(kwargs)
 
     _kwargs.update(kwargs)
 
@@ -2868,6 +2911,8 @@ def seal(mock):
         except AttributeError:
             continue
         if not isinstance(m, NonCallableMock):
+            continue
+        if isinstance(m._mock_children.get(attr), _SpecState):
             continue
         if m._mock_new_parent is mock:
             seal(m)

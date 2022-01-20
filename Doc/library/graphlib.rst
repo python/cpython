@@ -121,7 +121,7 @@
           if ts.is_active():
               ...
 
-      if possible to simply do::
+      it is possible to simply do::
 
           if ts:
               ...
@@ -154,9 +154,10 @@
 
    .. method:: static_order()
 
-      Returns an iterable of nodes in a topological order. Using this method
-      does not require to call :meth:`TopologicalSorter.prepare` or
-      :meth:`TopologicalSorter.done`. This method is equivalent to::
+      Returns an iterator object which will iterate over nodes in a topological
+      order. When using this method, :meth:`~TopologicalSorter.prepare` and
+      :meth:`~TopologicalSorter.done` should not be called. This method is
+      equivalent to::
 
           def static_order(self):
               self.prepare()

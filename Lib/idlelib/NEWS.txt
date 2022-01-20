@@ -1,7 +1,84 @@
+What's New in IDLE 3.10.0
+(since 3.9.0)
+Released on 2021-10-04?
+=========================
+
+
+bpo-44026: Include interpreter's typo fix suggestions in message line
+for NameErrors and AttributeErrors.  Patch by E. Paine.
+
+bpo-37903: Add mouse actions to the shell sidebar.  Left click and
+optional drag selects one or more lines of text, as with the
+editor line number sidebar.  Right click after selecting text lines
+displays a context menu with 'copy with prompts'.  This zips together
+prompts from the sidebar with lines from the selected text.  This option
+also appears on the context menu for the text.
+
+bpo-37892: Change Shell input indents from tabs to spaces.  Shell input
+now 'looks right'.  Making this feasible motivated the shell sidebar.
+
+bpo-37903: Move the Shell input prompt to a side bar.
+
+bpo-43655: Make window managers on macOS and X Window recognize
+IDLE dialog windows as dialogs.
+
+bpo-43283: Document why printing to IDLE's Shell is often slower than
+printing to a system terminal and that it can be made faster by
+pre-formatting a single string before printing.
+
+bpo-23544: Disable Debug=>Stack Viewer when user code is running or
+Debugger is active, to prevent hang or crash.  Patch by Zackery Spytz.
+
+bpo-43008: Make IDLE invoke :func:`sys.excepthook` in normal,
+2-process mode.  User hooks were previously ignored.
+Patch by Ken Hilton.
+
+bpo-33065: Fix problem debugging user classes with __repr__ method.
+
+bpo-32631: Finish zzdummy example extension module: make menu entries
+work; add docstrings and tests with 100% coverage.
+
+bpo-42508: Keep IDLE running on macOS.  Remove obsolete workaround
+that prevented running files with shortcuts when using new universal2
+installers built on macOS 11.
+
+bpo-42426: Fix reporting offset of the RE error in searchengine.
+
+bpo-42416: Display docstrings in IDLE calltips in more cases,
+by using inspect.getdoc.
+
+bpo-33987: Mostly finish using ttk widgets, mainly for editor,
+settings, and searches.  Some patches by Mark Roseman.
+
+bpo-41775: Make 'IDLE Shell' the shell title.
+
+bpo-35764: Rewrite the Calltips doc section.
+
+bpo-40181: In calltips, stop reminding that '/' marks the end of
+positional-only arguments.
+
+
 What's New in IDLE 3.9.0 (since 3.8.0)
 Released on 2020-10-05?
 ======================================
 
+bpo-41468: Improve IDLE run crash error message (which users should
+never see).
+
+bpo-41373: Save files loaded with no line ending, as when blank, or
+different line endings, by setting its line ending to the system
+default. Fix regression in 3.8.4 and 3.9.0b4.
+
+bpo-41300: Save files with non-ascii chars.  Fix regression in
+3.9.0b4 and 3.8.4.
+
+bpo-37765: Add keywords to module name completion list.  Rewrite
+Completions section of IDLE doc.
+
+bpo-41152: The encoding of ``stdin``, ``stdout`` and ``stderr`` in IDLE
+is now always UTF-8.
+
+bpo-41144: Make Open Module open a special module such as os.path.
 
 bpo-40723: Make test_idle pass when run after import.
 Patch by Florian Dahlitz.
@@ -52,9 +129,9 @@ bpo-38636: Fix IDLE Format menu tab toggle and file indent width. These
 functions (default shortcuts Alt-T and Alt-U) were mistakenly disabled
 in 3.7.5 and 3.8.0.
 
-bpo-4360: Add an option to toggle IDLE's cursor blink for shell,
+bpo-4630: Add an option to toggle IDLE's cursor blink for shell,
 editor, and output windows.  See Settings, General, Window Preferences,
-Cursor Blink.  Patch by Zachary Spytz.
+Cursor Blink.  Patch by Zackery Spytz.
 
 bpo-26353: Stop adding newline when saving an IDLE shell window.
 

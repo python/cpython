@@ -76,7 +76,7 @@ class Future:
         the default event loop.
         """
         if loop is None:
-            self._loop = events.get_event_loop()
+            self._loop = events._get_event_loop()
         else:
             self._loop = loop
         self._callbacks = []
@@ -115,7 +115,7 @@ class Future:
 
     @_log_traceback.setter
     def _log_traceback(self, val):
-        if bool(val):
+        if val:
             raise ValueError('_log_traceback can only be set to False')
         self.__log_traceback = False
 
@@ -408,7 +408,7 @@ def wrap_future(future, *, loop=None):
     assert isinstance(future, concurrent.futures.Future), \
         f'concurrent.futures.Future is expected, got {future!r}'
     if loop is None:
-        loop = events.get_event_loop()
+        loop = events._get_event_loop()
     new_future = loop.create_future()
     _chain_future(future, new_future)
     return new_future

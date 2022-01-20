@@ -51,10 +51,14 @@ class WeakSet:
             self.update(data)
 
     def _commit_removals(self):
-        l = self._pending_removals
+        pop = self._pending_removals.pop
         discard = self.data.discard
-        while l:
-            discard(l.pop())
+        while True:
+            try:
+                item = pop()
+            except IndexError:
+                return
+            discard(item)
 
     def __iter__(self):
         with _IterationGuard(self):

@@ -1,11 +1,10 @@
+import itertools
 import pathlib
 import shutil
-import tokenize
 import sysconfig
 import tempfile
-import itertools
-
-from typing import Optional, Tuple, List, IO, Set, Dict
+import tokenize
+from typing import IO, Dict, List, Optional, Set, Tuple
 
 from pegen.c_generator import CParserGenerator
 from pegen.grammar import Grammar
@@ -45,9 +44,9 @@ def compile_c_extension(
     of distutils (this is useful in case you want to use a temporary directory).
     """
     import distutils.log
-    from distutils.core import Distribution, Extension
-    from distutils.command.clean import clean  # type: ignore
     from distutils.command.build_ext import build_ext  # type: ignore
+    from distutils.command.clean import clean  # type: ignore
+    from distutils.core import Distribution, Extension
     from distutils.tests.support import fixup_build_ext  # type: ignore
 
     if verbose:
@@ -56,6 +55,9 @@ def compile_c_extension(
     source_file_path = pathlib.Path(generated_source_path)
     extension_name = source_file_path.stem
     extra_compile_args = get_extra_flags("CFLAGS", "PY_CFLAGS_NODIST")
+    extra_compile_args.append("-DPy_BUILD_CORE_MODULE")
+    # Define _Py_TEST_PEGEN to not call PyAST_Validate() in Parser/pegen.c
+    extra_compile_args.append("-D_Py_TEST_PEGEN")
     extra_link_args = get_extra_flags("LDFLAGS", "PY_LDFLAGS_NODIST")
     if keep_asserts:
         extra_compile_args.append("-UNDEBUG")
@@ -66,15 +68,16 @@ def compile_c_extension(
                 str(MOD_DIR.parent.parent.parent / "Python" / "Python-ast.c"),
                 str(MOD_DIR.parent.parent.parent / "Python" / "asdl.c"),
                 str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer.c"),
-                str(MOD_DIR.parent.parent.parent / "Parser" / "pegen" / "pegen.c"),
-                str(MOD_DIR.parent.parent.parent / "Parser" / "pegen" / "parse_string.c"),
+                str(MOD_DIR.parent.parent.parent / "Parser" / "pegen.c"),
+                str(MOD_DIR.parent.parent.parent / "Parser" / "pegen_errors.c"),
+                str(MOD_DIR.parent.parent.parent / "Parser" / "action_helpers.c"),
+                str(MOD_DIR.parent.parent.parent / "Parser" / "string_parser.c"),
                 str(MOD_DIR.parent / "peg_extension" / "peg_extension.c"),
                 generated_source_path,
             ],
             include_dirs=[
                 str(MOD_DIR.parent.parent.parent / "Include" / "internal"),
                 str(MOD_DIR.parent.parent.parent / "Parser"),
-                str(MOD_DIR.parent.parent.parent / "Parser" / "pegen"),
             ],
             extra_compile_args=extra_compile_args,
             extra_link_args=extra_link_args,
@@ -173,7 +176,10 @@ def build_c_generator(
 
 
 def build_python_generator(
-    grammar: Grammar, grammar_file: str, output_file: str, skip_actions: bool = False,
+    grammar: Grammar,
+    grammar_file: str,
+    output_file: str,
+    skip_actions: bool = False,
 ) -> ParserGenerator:
     with open(output_file, "w") as file:
         gen: ParserGenerator = PythonParserGenerator(grammar, file)  # TODO: skip_actions
@@ -244,5 +250,10 @@ def build_python_parser_and_generator(
         skip_actions (bool, optional): Whether to pretend no rule has any actions.
     """
     grammar, parser, tokenizer = build_parser(grammar_file, verbose_tokenizer, verbose_parser)
-    gen = build_python_generator(grammar, grammar_file, output_file, skip_actions=skip_actions,)
+    gen = build_python_generator(
+        grammar,
+        grammar_file,
+        output_file,
+        skip_actions=skip_actions,
+    )
     return grammar, parser, tokenizer, gen

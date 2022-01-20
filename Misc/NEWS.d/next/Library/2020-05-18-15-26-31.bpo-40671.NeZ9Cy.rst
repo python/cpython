@@ -1,1 +1,0 @@
-Prepare ``_hashlib`` for :pep:`489` and use :c:func:`PyModule_AddType`.

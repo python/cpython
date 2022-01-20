@@ -14,6 +14,7 @@ from test.support import (verbose,
                           run_with_tz, run_with_locale, cpython_only)
 from test.support import hashlib_helper
 from test.support import threading_helper
+from test.support import warnings_helper
 import unittest
 from unittest import mock
 from datetime import datetime, timezone, timedelta
@@ -95,7 +96,7 @@ if ssl:
 
         def get_request(self):
             newsocket, fromaddr = self.socket.accept()
-            context = ssl.SSLContext()
+            context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
             context.load_cert_chain(CERTFILE)
             connstream = context.wrap_socket(newsocket, server_side=True)
             return connstream, fromaddr
@@ -386,7 +387,7 @@ class NewIMAPTestsMixin():
         self.assertEqual(code, 'OK')
         self.assertEqual(server.response, b'ZmFrZQ==\r\n')  # b64 encoded 'fake'
 
-    @hashlib_helper.requires_hashdigest('md5')
+    @hashlib_helper.requires_hashdigest('md5', openssl=True)
     def test_login_cram_md5_bytes(self):
         class AuthHandler(SimpleIMAPHandler):
             capabilities = 'LOGINDISABLED AUTH=CRAM-MD5'
@@ -404,7 +405,7 @@ class NewIMAPTestsMixin():
         ret, _ = client.login_cram_md5("tim", b"tanstaaftanstaaf")
         self.assertEqual(ret, "OK")
 
-    @hashlib_helper.requires_hashdigest('md5')
+    @hashlib_helper.requires_hashdigest('md5', openssl=True)
     def test_login_cram_md5_plain_text(self):
         class AuthHandler(SimpleIMAPHandler):
             capabilities = 'LOGINDISABLED AUTH=CRAM-MD5'
@@ -475,7 +476,7 @@ class NewIMAPTestsMixin():
 
         _, server = self._setup(TimeoutHandler)
         addr = server.server_address[1]
-        with self.assertRaises(socket.timeout):
+        with self.assertRaises(TimeoutError):
             client = self.imap_class("localhost", addr, timeout=0.001)
 
     def test_with_statement(self):
@@ -575,7 +576,7 @@ class NewIMAPSSLTests(NewIMAPTestsMixin, unittest.TestCase):
     # to CPython stdlib
     @cpython_only
     def test_certfile_arg_warn(self):
-        with support.check_warnings(('', DeprecationWarning)):
+        with warnings_helper.check_warnings(('', DeprecationWarning)):
             with mock.patch.object(self.imap_class, 'open'):
                 with mock.patch.object(self.imap_class, '_connect'):
                     self.imap_class('localhost', 143, certfile=CERTFILE)
@@ -850,7 +851,7 @@ class ThreadedNetworkedTests(unittest.TestCase):
                              b'ZmFrZQ==\r\n')  # b64 encoded 'fake'
 
     @threading_helper.reap_threads
-    @hashlib_helper.requires_hashdigest('md5')
+    @hashlib_helper.requires_hashdigest('md5', openssl=True)
     def test_login_cram_md5(self):
 
         class AuthHandler(SimpleIMAPHandler):
@@ -975,6 +976,7 @@ class ThreadedNetworkedTestsSSL(ThreadedNetworkedTests):
 
 @unittest.skipUnless(
     support.is_resource_enabled('network'), 'network resource disabled')
+@unittest.skip('cyrus.andrew.cmu.edu blocks connections')
 class RemoteIMAPTest(unittest.TestCase):
     host = 'cyrus.andrew.cmu.edu'
     port = 143
@@ -1010,6 +1012,7 @@ class RemoteIMAPTest(unittest.TestCase):
 @unittest.skipUnless(ssl, "SSL not available")
 @unittest.skipUnless(
     support.is_resource_enabled('network'), 'network resource disabled')
+@unittest.skip('cyrus.andrew.cmu.edu blocks connections')
 class RemoteIMAP_STARTTLSTest(RemoteIMAPTest):
 
     def setUp(self):
@@ -1025,6 +1028,7 @@ class RemoteIMAP_STARTTLSTest(RemoteIMAPTest):
 
 
 @unittest.skipUnless(ssl, "SSL not available")
+@unittest.skip('cyrus.andrew.cmu.edu blocks connections')
 class RemoteIMAP_SSLTest(RemoteIMAPTest):
     port = 993
     imap_class = IMAP4_SSL

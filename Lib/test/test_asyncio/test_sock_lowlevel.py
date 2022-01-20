@@ -23,24 +23,28 @@ class MyProto(asyncio.Protocol):
             self.connected = loop.create_future()
             self.done = loop.create_future()
 
+    def _assert_state(self, *expected):
+        if self.state not in expected:
+            raise AssertionError(f'state: {self.state!r}, expected: {expected!r}')
+
     def connection_made(self, transport):
         self.transport = transport
-        assert self.state == 'INITIAL', self.state
+        self._assert_state('INITIAL')
         self.state = 'CONNECTED'
         if self.connected:
             self.connected.set_result(None)
         transport.write(b'GET / HTTP/1.0\r\nHost: example.com\r\n\r\n')
 
     def data_received(self, data):
-        assert self.state == 'CONNECTED', self.state
+        self._assert_state('CONNECTED')
         self.nbytes += len(data)
 
     def eof_received(self):
-        assert self.state == 'CONNECTED', self.state
+        self._assert_state('CONNECTED')
         self.state = 'EOF'
 
     def connection_lost(self, exc):
-        assert self.state in ('CONNECTED', 'EOF'), self.state
+        self._assert_state('CONNECTED', 'EOF')
         self.state = 'CLOSED'
         if self.done:
             self.done.set_result(None)
@@ -166,6 +170,7 @@ class BaseSockTestsMixin:
         listener.listen(1)
 
         # make connection
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1024)
         sock.setblocking(False)
         task = asyncio.create_task(
             self.loop.sock_connect(sock, listener.getsockname()))
@@ -176,10 +181,13 @@ class BaseSockTestsMixin:
         with server:
             await task
 
-            # fill the buffer
-            with self.assertRaises(BlockingIOError):
-                while True:
-                    sock.send(b' ' * 5)
+            # fill the buffer until sending 5 chars would block
+            size = 8192
+            while size >= 4:
+                with self.assertRaises(BlockingIOError):
+                    while True:
+                        sock.send(b' ' * size)
+                size = int(size / 2)
 
             # cancel a blocked sock_sendall
             task = asyncio.create_task(
@@ -187,19 +195,21 @@ class BaseSockTestsMixin:
             await asyncio.sleep(0)
             task.cancel()
 
-            # clear the buffer
-            async def recv_until():
-                data = b''
-                while not data:
-                    data = await self.loop.sock_recv(server, 1024)
-                    data = data.strip()
-                return data
-            task = asyncio.create_task(recv_until())
+            # receive everything that is not a space
+            async def recv_all():
+                rv = b''
+                while True:
+                    buf = await self.loop.sock_recv(server, 8192)
+                    if not buf:
+                        return rv
+                    rv += buf.strip()
+            task = asyncio.create_task(recv_all())
 
-            # immediately register another sock_sendall
+            # immediately make another sock_sendall call
             await self.loop.sock_sendall(sock, b'world')
+            sock.shutdown(socket.SHUT_WR)
             data = await task
-            # ProactorEventLoop could deliver hello
+            # ProactorEventLoop could deliver hello, so endswith is necessary
             self.assertTrue(data.endswith(b'world'))
 
     # After the first connect attempt before the listener is ready,
@@ -409,6 +419,25 @@ class BaseSockTestsMixin:
         conn.close()
         listener.close()
 
+    def test_cancel_sock_accept(self):
+        listener = socket.socket()
+        listener.setblocking(False)
+        listener.bind(('127.0.0.1', 0))
+        listener.listen(1)
+        sockaddr = listener.getsockname()
+        f = asyncio.wait_for(self.loop.sock_accept(listener), 0.1)
+        with self.assertRaises(asyncio.TimeoutError):
+            self.loop.run_until_complete(f)
+
+        listener.close()
+        client = socket.socket()
+        client.setblocking(False)
+        f = self.loop.sock_connect(client, sockaddr)
+        with self.assertRaises(ConnectionRefusedError):
+            self.loop.run_until_complete(f)
+
+        client.close()
+
     def test_create_connection_sock(self):
         with test_utils.run_test_server() as httpd:
             sock = None
@@ -426,7 +455,7 @@ class BaseSockTestsMixin:
                 else:
                     break
             else:
-                assert False, 'Can not create socket.'
+                self.fail('Can not create socket.')
 
             f = self.loop.create_connection(
                 lambda: MyProto(loop=self.loop), sock=sock)

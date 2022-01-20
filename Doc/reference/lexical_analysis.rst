@@ -296,7 +296,7 @@ Unicode Character Database as included in the :mod:`unicodedata` module.
 
 Identifiers are unlimited in length.  Case is significant.
 
-.. productionlist::
+.. productionlist:: python-grammar
    identifier: `xid_start` `xid_continue`*
    id_start: <all characters in general categories Lu, Ll, Lt, Lm, Lo, Nl, the underscore, and characters with the Other_ID_Start property>
    id_continue: <all characters in `id_start`, plus characters in the categories Mn, Mc, Nd, Pc and others with the Other_ID_Continue property>
@@ -316,7 +316,7 @@ The Unicode category codes mentioned above stand for:
 * *Nd* - decimal numbers
 * *Pc* - connector punctuations
 * *Other_ID_Start* - explicit list of characters in `PropList.txt
-  <https://www.unicode.org/Public/13.0.0/ucd/PropList.txt>`_ to support backwards
+  <https://www.unicode.org/Public/14.0.0/ucd/PropList.txt>`_ to support backwards
   compatibility
 * *Other_ID_Continue* - likewise
 
@@ -324,8 +324,8 @@ All identifiers are converted into the normal form NFKC while parsing; compariso
 of identifiers is based on NFKC.
 
 A non-normative HTML file listing all valid identifier characters for Unicode
-4.1 can be found at
-https://www.unicode.org/Public/13.0.0/ucd/DerivedCoreProperties.txt
+14.0.0 can be found at
+https://www.unicode.org/Public/14.0.0/ucd/DerivedCoreProperties.txt
 
 
 .. _keywords:
@@ -351,6 +351,27 @@ exactly as written here:
    assert     del        global     not        with
    async      elif       if         or         yield
 
+
+.. _soft-keywords:
+
+Soft Keywords
+-------------
+
+.. index:: soft keyword, keyword
+
+.. versionadded:: 3.10
+
+Some identifiers are only reserved under specific contexts. These are known as
+*soft keywords*.  The identifiers ``match``, ``case`` and ``_`` can
+syntactically act as keywords in contexts related to the pattern matching
+statement, but this distinction is done at the parser level, not when
+tokenizing.
+
+As soft keywords, their use with pattern matching is possible while still
+preserving compatibility with existing code that uses ``match``, ``case`` and ``_`` as
+identifier names.
+
+
 .. index::
    single: _, identifiers
    single: __, identifiers
@@ -364,16 +385,28 @@ classes are identified by the patterns of leading and trailing underscore
 characters:
 
 ``_*``
-   Not imported by ``from module import *``.  The special identifier ``_`` is used
-   in the interactive interpreter to store the result of the last evaluation; it is
-   stored in the :mod:`builtins` module.  When not in interactive mode, ``_``
-   has no special meaning and is not defined. See section :ref:`import`.
+   Not imported by ``from module import *``.
+
+``_``
+   In a ``case`` pattern within a :keyword:`match` statement, ``_`` is a
+   :ref:`soft keyword <soft-keywords>` that denotes a
+   :ref:`wildcard <wildcard-patterns>`.
+
+   Separately, the interactive interpreter makes the result of the last evaluation
+   available in the variable ``_``.
+   (It is stored in the :mod:`builtins` module, alongside built-in
+   functions like ``print``.)
+
+   Elsewhere, ``_`` is a regular identifier. It is often used to name
+   "special" items, but it is not special to Python itself.
 
    .. note::
 
       The name ``_`` is often used in conjunction with internationalization;
       refer to the documentation for the :mod:`gettext` module for more
       information on this convention.
+
+      It is also commonly used for unused variables.
 
 ``__*__``
    System-defined names, informally known as "dunder" names. These names are
@@ -412,7 +445,7 @@ String and Bytes literals
 
 String literals are described by the following lexical definitions:
 
-.. productionlist::
+.. productionlist:: python-grammar
    stringliteral: [`stringprefix`](`shortstring` | `longstring`)
    stringprefix: "r" | "u" | "R" | "U" | "f" | "F"
                : | "fr" | "Fr" | "fR" | "FR" | "rf" | "rF" | "Rf" | "RF"
@@ -424,7 +457,7 @@ String literals are described by the following lexical definitions:
    longstringchar: <any source character except "\">
    stringescapeseq: "\" <any source character>
 
-.. productionlist::
+.. productionlist:: python-grammar
    bytesliteral: `bytesprefix`(`shortbytes` | `longbytes`)
    bytesprefix: "b" | "B" | "br" | "Br" | "bR" | "BR" | "rb" | "rB" | "Rb" | "RB"
    shortbytes: "'" `shortbytesitem`* "'" | '"' `shortbytesitem`* '"'
@@ -436,10 +469,10 @@ String literals are described by the following lexical definitions:
    bytesescapeseq: "\" <any ASCII character>
 
 One syntactic restriction not indicated by these productions is that whitespace
-is not allowed between the :token:`stringprefix` or :token:`bytesprefix` and the
-rest of the literal. The source character set is defined by the encoding
-declaration; it is UTF-8 if no encoding declaration is given in the source file;
-see section :ref:`encodings`.
+is not allowed between the :token:`~python-grammar:stringprefix` or
+:token:`~python-grammar:bytesprefix` and the rest of the literal. The source
+character set is defined by the encoding declaration; it is UTF-8 if no encoding
+declaration is given in the source file; see section :ref:`encodings`.
 
 .. index:: triple-quoted string, Unicode Consortium, raw string
    single: """; string literal
@@ -637,9 +670,11 @@ and formatted string literals may be concatenated with plain string literals.
    single: string; formatted literal
    single: string; interpolated literal
    single: f-string
+   single: fstring
    single: {} (curly brackets); in formatted string literal
    single: ! (exclamation); in formatted string literal
    single: : (colon); in formatted string literal
+   single: = (equals); for help in debugging using string literals
 .. _f-strings:
 
 Formatted string literals
@@ -657,9 +692,9 @@ Escape sequences are decoded like in ordinary string literals (except when
 a literal is also marked as a raw string).  After decoding, the grammar
 for the contents of the string is:
 
-.. productionlist::
+.. productionlist:: python-grammar
    f_string: (`literal_char` | "{{" | "}}" | `replacement_field`)*
-   replacement_field: "{" `f_expression` ["!" `conversion`] [":" `format_spec`] "}"
+   replacement_field: "{" `f_expression` ["="] ["!" `conversion`] [":" `format_spec`] "}"
    f_expression: (`conditional_expression` | "*" `or_expr`)
                :   ("," `conditional_expression` | "," "*" `or_expr`)* [","]
                : | `yield_expression`
@@ -671,10 +706,11 @@ The parts of the string outside curly braces are treated literally,
 except that any doubled curly braces ``'{{'`` or ``'}}'`` are replaced
 with the corresponding single curly brace.  A single opening curly
 bracket ``'{'`` marks a replacement field, which starts with a
-Python expression.  After the expression, there may be a conversion field,
-introduced by an exclamation point ``'!'``.  A format specifier may also
-be appended, introduced by a colon ``':'``.  A replacement field ends
-with a closing curly bracket ``'}'``.
+Python expression. To display both the expression text and its value after
+evaluation, (useful in debugging), an equal sign ``'='`` may be added after the
+expression. A conversion field, introduced by an exclamation point ``'!'`` may
+follow.  A format specifier may also be appended, introduced by a colon ``':'``.
+A replacement field ends with a closing curly bracket ``'}'``.
 
 Expressions in formatted string literals are treated like regular
 Python expressions surrounded by parentheses, with a few exceptions.
@@ -690,6 +726,17 @@ left to right.
    containing an :keyword:`async for` clause were illegal in the expressions
    in formatted string literals due to a problem with the implementation.
 
+When the equal sign ``'='`` is provided, the output will have the expression
+text, the ``'='`` and the evaluated value. Spaces after the opening brace
+``'{'``, within the expression and after the ``'='`` are all retained in the
+output. By default, the ``'='`` causes the :func:`repr` of the expression to be
+provided, unless there is a format specified. When a format is specified it
+defaults to the :func:`str` of the expression unless a conversion ``'!r'`` is
+declared.
+
+.. versionadded:: 3.8
+   The equal sign ``'='``.
+
 If a conversion is specified, the result of evaluating the expression
 is converted before formatting.  Conversion ``'!s'`` calls :func:`str` on
 the result, ``'!r'`` calls :func:`repr`, and ``'!a'`` calls :func:`ascii`.
@@ -704,7 +751,7 @@ Top-level format specifiers may include nested replacement fields. These nested
 fields may include their own conversion fields and :ref:`format specifiers
 <formatspec>`, but may not include more deeply-nested replacement fields. The
 :ref:`format specifier mini-language <formatspec>` is the same as that used by
-the string .format() method.
+the :meth:`str.format` method.
 
 Formatted string literals may be concatenated, but replacement fields
 cannot be split across literals.
@@ -724,9 +771,22 @@ Some examples of formatted string literals::
    >>> today = datetime(year=2017, month=1, day=27)
    >>> f"{today:%B %d, %Y}"  # using date format specifier
    'January 27, 2017'
+   >>> f"{today=:%B %d, %Y}" # using date format specifier and debugging
+   'today=January 27, 2017'
    >>> number = 1024
    >>> f"{number:#0x}"  # using integer format specifier
    '0x400'
+   >>> foo = "bar"
+   >>> f"{ foo = }" # preserves whitespace
+   " foo = 'bar'"
+   >>> line = "The mill's closed"
+   >>> f"{line = }"
+   'line = "The mill\'s closed"'
+   >>> f"{line = :20}"
+   "line = The mill's closed   "
+   >>> f"{line = !r:20}"
+   'line = "The mill\'s closed" '
+
 
 A consequence of sharing the same syntax as regular string literals is
 that characters in the replacement fields must not conflict with the
@@ -793,7 +853,7 @@ Integer literals
 
 Integer literals are described by the following lexical definitions:
 
-.. productionlist::
+.. productionlist:: python-grammar
    integer: `decinteger` | `bininteger` | `octinteger` | `hexinteger`
    decinteger: `nonzerodigit` (["_"] `digit`)* | "0"+ (["_"] "0")*
    bininteger: "0" ("b" | "B") (["_"] `bindigit`)+
@@ -837,7 +897,7 @@ Floating point literals
 
 Floating point literals are described by the following lexical definitions:
 
-.. productionlist::
+.. productionlist:: python-grammar
    floatnumber: `pointfloat` | `exponentfloat`
    pointfloat: [`digitpart`] `fraction` | `digitpart` "."
    exponentfloat: (`digitpart` | `pointfloat`) `exponent`
@@ -867,7 +927,7 @@ Imaginary literals
 
 Imaginary literals are described by the following lexical definitions:
 
-.. productionlist::
+.. productionlist:: python-grammar
    imagnumber: (`floatnumber` | `digitpart`) ("j" | "J")
 
 An imaginary literal yields a complex number with a real part of 0.0.  Complex

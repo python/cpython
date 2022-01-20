@@ -115,9 +115,10 @@ _testembed
 
 These are miscellaneous sub-projects that don't really fit the other
 categories:
-_freeze_importlib
-    _freeze_importlib.exe, used to regenerate Python\importlib.h after
-    changes have been made to Lib\importlib\_bootstrap.py
+_freeze_module
+    _freeze_module.exe, used to regenerate frozen modules in Python
+    after changes have been made to the corresponding source files
+    (e.g. Lib\importlib\_bootstrap.py).
 pyshellext
     pyshellext.dll, the shell extension deployed with the launcher
 python3dll
@@ -125,6 +126,9 @@ python3dll
 xxlimited
     builds an example module that makes use of the PEP 384 Stable ABI,
     see Modules\xxlimited.c
+xxlimited_35
+    ditto for testing the Python 3.5 stable ABI, see
+    Modules\xxlimited_35.c
 
 The following sub-projects are for individual modules of the standard
 library which are implemented in C; each one builds a DLL (renamed to
@@ -166,7 +170,7 @@ _lzma
     Homepage:
         http://tukaani.org/xz/
 _ssl
-    Python wrapper for version 1.1.1c of the OpenSSL secure sockets
+    Python wrapper for version 1.1.1k of the OpenSSL secure sockets
     library, which is downloaded from our binaries repository at
     https://github.com/python/cpython-bin-deps.
 
@@ -185,7 +189,7 @@ _ssl
     again when building.
 
 _sqlite3
-    Wraps SQLite 3.31.1.0, which is itself built by sqlite3.vcxproj
+    Wraps SQLite 3.36.0, which is itself built by sqlite3.vcxproj
     Homepage:
         http://www.sqlite.org/
 _tkinter

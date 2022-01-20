@@ -1,2 +1,0 @@
-Fix reference leak in the :mod:`select` module when the the module is
-imported in a subinterpreter.

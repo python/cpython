@@ -2309,9 +2309,9 @@ Encoders:
   :c:func:`PyUnicode_AsUTF8String`
 * :c:func:`PyUnicode_EncodeUTF32`
 * :c:func:`PyUnicode_EncodeUTF16`
-* :c:func:`PyUnicode_EncodeUnicodeEscape:` use
+* :c:func:`PyUnicode_EncodeUnicodeEscape` use
   :c:func:`PyUnicode_AsUnicodeEscapeString`
-* :c:func:`PyUnicode_EncodeRawUnicodeEscape:` use
+* :c:func:`PyUnicode_EncodeRawUnicodeEscape` use
   :c:func:`PyUnicode_AsRawUnicodeEscapeString`
 * :c:func:`PyUnicode_EncodeLatin1`: use :c:func:`PyUnicode_AsLatin1String`
 * :c:func:`PyUnicode_EncodeASCII`: use :c:func:`PyUnicode_AsASCIIString`

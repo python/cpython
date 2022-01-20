@@ -54,11 +54,11 @@ whose size is determined when the object is allocated.
 
 /* Py_DEBUG implies Py_REF_DEBUG. */
 #if defined(Py_DEBUG) && !defined(Py_REF_DEBUG)
-#define Py_REF_DEBUG
+#  define Py_REF_DEBUG
 #endif
 
-#if defined(Py_LIMITED_API) && defined(Py_REF_DEBUG)
-#error Py_LIMITED_API is incompatible with Py_DEBUG, Py_TRACE_REFS, and Py_REF_DEBUG
+#if defined(Py_LIMITED_API) && defined(Py_TRACE_REFS)
+#  error Py_LIMITED_API is incompatible with Py_TRACE_REFS
 #endif
 
 /* PyTypeObject structure is defined in cpython/object.h.
@@ -74,8 +74,8 @@ typedef struct _typeobject PyTypeObject;
 #define _PyObject_EXTRA_INIT 0, 0,
 
 #else
-#define _PyObject_HEAD_EXTRA
-#define _PyObject_EXTRA_INIT
+#  define _PyObject_HEAD_EXTRA
+#  define _PyObject_EXTRA_INIT
 #endif
 
 /* PyObject_HEAD defines the initial segment of every PyObject. */
@@ -122,25 +122,33 @@ typedef struct {
 #define _PyVarObject_CAST_CONST(op) ((const PyVarObject*)(op))
 
 
+// Test if the 'x' object is the 'y' object, the same as "x is y" in Python.
+PyAPI_FUNC(int) Py_Is(PyObject *x, PyObject *y);
+#define Py_Is(x, y) ((x) == (y))
+
+
 static inline Py_ssize_t _Py_REFCNT(const PyObject *ob) {
     return ob->ob_refcnt;
 }
 #define Py_REFCNT(ob) _Py_REFCNT(_PyObject_CAST_CONST(ob))
 
 
+// bpo-39573: The Py_SET_TYPE() function must be used to set an object type.
+static inline PyTypeObject* _Py_TYPE(const PyObject *ob) {
+    return ob->ob_type;
+}
+#define Py_TYPE(ob) _Py_TYPE(_PyObject_CAST_CONST(ob))
+
+// bpo-39573: The Py_SET_SIZE() function must be used to set an object size.
 static inline Py_ssize_t _Py_SIZE(const PyVarObject *ob) {
     return ob->ob_size;
 }
 #define Py_SIZE(ob) _Py_SIZE(_PyVarObject_CAST_CONST(ob))
 
 
-static inline PyTypeObject* _Py_TYPE(const PyObject *ob) {
-    return ob->ob_type;
-}
-#define Py_TYPE(ob) _Py_TYPE(_PyObject_CAST_CONST(ob))
-
-
 static inline int _Py_IS_TYPE(const PyObject *ob, const PyTypeObject *type) {
+    // bpo-44378: Don't use Py_TYPE() since Py_TYPE() requires a non-const
+    // object.
     return ob->ob_type == type;
 }
 #define Py_IS_TYPE(ob, type) _Py_IS_TYPE(_PyObject_CAST_CONST(ob), type)
@@ -237,11 +245,18 @@ PyAPI_FUNC(PyObject*) PyType_FromModuleAndSpec(PyObject *, PyType_Spec *, PyObje
 PyAPI_FUNC(PyObject *) PyType_GetModule(struct _typeobject *);
 PyAPI_FUNC(void *) PyType_GetModuleState(struct _typeobject *);
 #endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030B0000
+PyAPI_FUNC(PyObject *) PyType_GetName(PyTypeObject *);
+PyAPI_FUNC(PyObject *) PyType_GetQualName(PyTypeObject *);
+#endif
 
 /* Generic type check */
 PyAPI_FUNC(int) PyType_IsSubtype(PyTypeObject *, PyTypeObject *);
-#define PyObject_TypeCheck(ob, tp) \
-    (Py_IS_TYPE(ob, tp) || PyType_IsSubtype(Py_TYPE(ob), (tp)))
+
+static inline int _PyObject_TypeCheck(PyObject *ob, PyTypeObject *type) {
+    return Py_IS_TYPE(ob, type) || PyType_IsSubtype(Py_TYPE(ob), type);
+}
+#define PyObject_TypeCheck(ob, type) _PyObject_TypeCheck(_PyObject_CAST(ob), type)
 
 PyAPI_DATA(PyTypeObject) PyType_Type; /* built-in 'type' */
 PyAPI_DATA(PyTypeObject) PyBaseObject_Type; /* built-in 'object' */
@@ -317,6 +332,27 @@ Code can use PyType_HasFeature(type_ob, flag_value) to test whether the
 given type object has a specified feature.
 */
 
+#ifndef Py_LIMITED_API
+
+/* Placement of dict (and values) pointers are managed by the VM, not by the type.
+ * The VM will automatically set tp_dictoffset. Should not be used for variable sized
+ * classes, such as classes that extend tuple.
+ */
+#define Py_TPFLAGS_MANAGED_DICT (1 << 4)
+
+/* Set if instances of the type object are treated as sequences for pattern matching */
+#define Py_TPFLAGS_SEQUENCE (1 << 5)
+/* Set if instances of the type object are treated as mappings for pattern matching */
+#define Py_TPFLAGS_MAPPING (1 << 6)
+#endif
+
+/* Disallow creating instances of the type: set tp_new to NULL and don't create
+ * the "__new__" key in the type dictionary. */
+#define Py_TPFLAGS_DISALLOW_INSTANTIATION (1UL << 7)
+
+/* Set if the type object is immutable: type attributes cannot be set nor deleted */
+#define Py_TPFLAGS_IMMUTABLETYPE (1UL << 8)
+
 /* Set if the type object is dynamically allocated */
 #define Py_TPFLAGS_HEAPTYPE (1UL << 9)
 
@@ -349,12 +385,16 @@ given type object has a specified feature.
 /* Objects behave like an unbound method */
 #define Py_TPFLAGS_METHOD_DESCRIPTOR (1UL << 17)
 
-/* Objects support type attribute cache */
-#define Py_TPFLAGS_HAVE_VERSION_TAG   (1UL << 18)
+/* Object has up-to-date type attribute cache */
 #define Py_TPFLAGS_VALID_VERSION_TAG  (1UL << 19)
 
 /* Type is abstract and cannot be instantiated */
 #define Py_TPFLAGS_IS_ABSTRACT (1UL << 20)
+
+// This undocumented flag gives certain built-ins their unique pattern-matching
+// behavior, which allows a single positional subpattern to match against the
+// subject itself (rather than a mapped attribute on it):
+#define _Py_TPFLAGS_MATCH_SELF (1UL << 22)
 
 /* These flags are used to determine if a type is a subclass. */
 #define Py_TPFLAGS_LONG_SUBCLASS        (1UL << 24)
@@ -368,19 +408,23 @@ given type object has a specified feature.
 
 #define Py_TPFLAGS_DEFAULT  ( \
                  Py_TPFLAGS_HAVE_STACKLESS_EXTENSION | \
-                 Py_TPFLAGS_HAVE_VERSION_TAG | \
                 0)
 
-/* NOTE: The following flags reuse lower bits (removed as part of the
+/* NOTE: Some of the following flags reuse lower bits (removed as part of the
  * Python 3.0 transition). */
 
-/* The following flag is kept for compatibility. Starting with 3.8,
- * binary compatibility of C extensions across feature releases of
- * Python is not supported anymore, except when using the stable ABI.
+/* The following flags are kept for compatibility; in previous
+ * versions they indicated presence of newer tp_* fields on the
+ * type struct.
+ * Starting with 3.8, binary compatibility of C extensions across
+ * feature releases of Python is not supported anymore (except when
+ * using the stable ABI, in which all classes are created dynamically,
+ * using the interpreter's memory layout.)
+ * Note that older extensions using the stable ABI set these flags,
+ * so the bits must not be repurposed.
  */
-
-/* Type structure has tp_finalize member (3.4) */
 #define Py_TPFLAGS_HAVE_FINALIZE (1UL << 0)
+#define Py_TPFLAGS_HAVE_VERSION_TAG   (1UL << 18)
 
 
 /*
@@ -419,22 +463,46 @@ PyAPI_FUNC(void) _Py_NegativeRefcount(const char *filename, int lineno,
 
 PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
 
+/*
+These are provided as conveniences to Python runtime embedders, so that
+they can have object code that is not dependent on Python compilation flags.
+*/
+PyAPI_FUNC(void) Py_IncRef(PyObject *);
+PyAPI_FUNC(void) Py_DecRef(PyObject *);
+
+// Similar to Py_IncRef() and Py_DecRef() but the argument must be non-NULL.
+// Private functions used by Py_INCREF() and Py_DECREF().
+PyAPI_FUNC(void) _Py_IncRef(PyObject *);
+PyAPI_FUNC(void) _Py_DecRef(PyObject *);
+
 static inline void _Py_INCREF(PyObject *op)
 {
+#if defined(Py_REF_DEBUG) && defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000
+    // Stable ABI for Python 3.10 built in debug mode.
+    _Py_IncRef(op);
+#else
+    // Non-limited C API and limited C API for Python 3.9 and older access
+    // directly PyObject.ob_refcnt.
 #ifdef Py_REF_DEBUG
     _Py_RefTotal++;
 #endif
     op->ob_refcnt++;
+#endif
 }
-
 #define Py_INCREF(op) _Py_INCREF(_PyObject_CAST(op))
 
 static inline void _Py_DECREF(
-#ifdef Py_REF_DEBUG
+#if defined(Py_REF_DEBUG) && !(defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000)
     const char *filename, int lineno,
 #endif
     PyObject *op)
 {
+#if defined(Py_REF_DEBUG) && defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000
+    // Stable ABI for Python 3.10 built in debug mode.
+    _Py_DecRef(op);
+#else
+    // Non-limited C API and limited C API for Python 3.9 and older access
+    // directly PyObject.ob_refcnt.
 #ifdef Py_REF_DEBUG
     _Py_RefTotal--;
 #endif
@@ -448,9 +516,9 @@ static inline void _Py_DECREF(
     else {
         _Py_Dealloc(op);
     }
+#endif
 }
-
-#ifdef Py_REF_DEBUG
+#if defined(Py_REF_DEBUG) && !(defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000)
 #  define Py_DECREF(op) _Py_DECREF(__FILE__, __LINE__, _PyObject_CAST(op))
 #else
 #  define Py_DECREF(op) _Py_DECREF(_PyObject_CAST(op))
@@ -519,12 +587,31 @@ static inline void _Py_XDECREF(PyObject *op)
 
 #define Py_XDECREF(op) _Py_XDECREF(_PyObject_CAST(op))
 
-/*
-These are provided as conveniences to Python runtime embedders, so that
-they can have object code that is not dependent on Python compilation flags.
-*/
-PyAPI_FUNC(void) Py_IncRef(PyObject *);
-PyAPI_FUNC(void) Py_DecRef(PyObject *);
+// Create a new strong reference to an object:
+// increment the reference count of the object and return the object.
+PyAPI_FUNC(PyObject*) Py_NewRef(PyObject *obj);
+
+// Similar to Py_NewRef(), but the object can be NULL.
+PyAPI_FUNC(PyObject*) Py_XNewRef(PyObject *obj);
+
+static inline PyObject* _Py_NewRef(PyObject *obj)
+{
+    Py_INCREF(obj);
+    return obj;
+}
+
+static inline PyObject* _Py_XNewRef(PyObject *obj)
+{
+    Py_XINCREF(obj);
+    return obj;
+}
+
+// Py_NewRef() and Py_XNewRef() are exported as functions for the stable ABI.
+// Names overridden with macros by static inline functions for best
+// performances.
+#define Py_NewRef(obj) _Py_NewRef(_PyObject_CAST(obj))
+#define Py_XNewRef(obj) _Py_XNewRef(_PyObject_CAST(obj))
+
 
 /*
 _Py_NoneStruct is an object of undefined type which can be used in contexts
@@ -535,8 +622,12 @@ Don't forget to apply Py_INCREF() when returning this value!!!
 PyAPI_DATA(PyObject) _Py_NoneStruct; /* Don't use this directly */
 #define Py_None (&_Py_NoneStruct)
 
+// Test if an object is the None singleton, the same as "x is None" in Python.
+PyAPI_FUNC(int) Py_IsNone(PyObject *x);
+#define Py_IsNone(x) Py_Is((x), Py_None)
+
 /* Macro for returning Py_None from a function */
-#define Py_RETURN_NONE return Py_INCREF(Py_None), Py_None
+#define Py_RETURN_NONE return Py_NewRef(Py_None)
 
 /*
 Py_NotImplemented is a singleton used to signal that an operation is
@@ -546,8 +637,7 @@ PyAPI_DATA(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
 #define Py_NotImplemented (&_Py_NotImplementedStruct)
 
 /* Macro for returning Py_NotImplemented from a function */
-#define Py_RETURN_NOTIMPLEMENTED \
-    return Py_INCREF(Py_NotImplemented), Py_NotImplemented
+#define Py_RETURN_NOTIMPLEMENTED return Py_NewRef(Py_NotImplemented)
 
 /* Rich comparison opcodes */
 #define Py_LT 0
@@ -556,6 +646,15 @@ PyAPI_DATA(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
 #define Py_NE 3
 #define Py_GT 4
 #define Py_GE 5
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
+/* Result of calling PyIter_Send */
+typedef enum {
+    PYGEN_RETURN = 0,
+    PYGEN_ERROR = -1,
+    PYGEN_NEXT = 1,
+} PySendResult;
+#endif
 
 /*
  * Macro for implementing rich comparisons
@@ -631,14 +730,22 @@ times.
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_OBJECT_H
-#  include  "cpython/object.h"
+#  include "cpython/object.h"
 #  undef Py_CPYTHON_OBJECT_H
 #endif
 
 
 static inline int
-PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
-    return ((PyType_GetFlags(type) & feature) != 0);
+PyType_HasFeature(PyTypeObject *type, unsigned long feature)
+{
+    unsigned long flags;
+#ifdef Py_LIMITED_API
+    // PyTypeObject is opaque in the limited C API
+    flags = PyType_GetFlags(type);
+#else
+    flags = type->tp_flags;
+#endif
+    return ((flags & feature) != 0);
 }
 
 #define PyType_FastSubclass(type, flag) PyType_HasFeature(type, flag)

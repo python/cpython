@@ -338,7 +338,7 @@ class ZoneInfo(tzinfo):
                 comp_idx = trans_idx[i + 1]
 
                 # If the following transition is also DST and we couldn't
-                # find the DST offset by this point, we're going ot have to
+                # find the DST offset by this point, we're going to have to
                 # skip it and hope this transition gets assigned later
                 if isdsts[comp_idx]:
                     continue

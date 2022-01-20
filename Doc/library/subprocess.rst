@@ -339,12 +339,12 @@ functions.
                  stderr=None, preexec_fn=None, close_fds=True, shell=False, \
                  cwd=None, env=None, universal_newlines=None, \
                  startupinfo=None, creationflags=0, restore_signals=True, \
-                 start_new_session=False, pass_fds=(), \*, group=None, \
+                 start_new_session=False, pass_fds=(), *, group=None, \
                  extra_groups=None, user=None, umask=-1, \
-                 encoding=None, errors=None, text=None)
+                 encoding=None, errors=None, text=None, pipesize=-1)
 
    Execute a child program in a new process.  On POSIX, the class uses
-   :meth:`os.execvp`-like behavior to execute the child program.  On Windows,
+   :meth:`os.execvpe`-like behavior to execute the child program.  On Windows,
    the class uses the Windows ``CreateProcess()`` function.  The arguments to
    :class:`Popen` are as follows.
 
@@ -355,6 +355,25 @@ functions.
    platform-dependent and described below.  See the *shell* and *executable*
    arguments for additional differences from the default behavior.  Unless
    otherwise stated, it is recommended to pass *args* as a sequence.
+
+   .. warning::
+
+      For maximum reliability, use a fully-qualified path for the executable.
+      To search for an unqualified name on :envvar:`PATH`, use
+      :meth:`shutil.which`. On all platforms, passing :data:`sys.executable`
+      is the recommended way to launch the current Python interpreter again,
+      and use the ``-m`` command-line format to launch an installed module.
+
+      Resolving the path of *executable* (or the first item of *args*) is
+      platform dependent. For POSIX, see :meth:`os.execvpe`, and note that
+      when resolving or searching for the executable path, *cwd* overrides the
+      current working directory and *env* can override the ``PATH``
+      environment variable. For Windows, see the documentation of the
+      ``lpApplicationName`` and ``lpCommandLine`` parameters of WinAPI
+      ``CreateProcess``, and note that when resolving or searching for the
+      executable path with ``shell=False``, *cwd* does not override the
+      current working directory and *env* cannot override the ``PATH``
+      environment variable. Using a full path avoids all of these variations.
 
    An example of passing some arguments to an external program
    as a sequence is::
@@ -524,7 +543,7 @@ functions.
 
    If *cwd* is not ``None``, the function changes the working directory to
    *cwd* before executing the child.  *cwd* can be a string, bytes or
-   :term:`path-like <path-like object>` object.  In particular, the function
+   :term:`path-like <path-like object>` object.  On POSIX, the function
    looks for *executable* (or for the first item in *args*) relative to *cwd*
    if the executable path is a relative path.
 
@@ -625,6 +644,14 @@ functions.
       * :data:`CREATE_DEFAULT_ERROR_MODE`
       * :data:`CREATE_BREAKAWAY_FROM_JOB`
 
+   *pipesize* can be used to change the size of the pipe when
+   :data:`PIPE` is used for *stdin*, *stdout* or *stderr*. The size of the pipe
+   is only changed on platforms that support this (only Linux at this time of
+   writing). Other platforms will ignore this parameter.
+
+   .. versionadded:: 3.10
+      The ``pipesize`` parameter was added.
+
    Popen objects are supported as context managers via the :keyword:`with` statement:
    on exit, standard file descriptors are closed, and the process is waited for.
    ::
@@ -662,7 +689,10 @@ execute, will be re-raised in the parent.
 
 The most common exception raised is :exc:`OSError`.  This occurs, for example,
 when trying to execute a non-existent file.  Applications should prepare for
-:exc:`OSError` exceptions.
+:exc:`OSError` exceptions. Note that, when ``shell=True``, :exc:`OSError`
+will be raised by the child only if the selected shell itself was not found.
+To determine if the shell failed to find the requested application, it is
+necessary to check the return code or output from the subprocess.
 
 A :exc:`ValueError` will be raised if :class:`Popen` is called with invalid
 arguments.
@@ -680,6 +710,7 @@ Exceptions defined in this module all inherit from :exc:`SubprocessError`.
    .. versionadded:: 3.3
       The :exc:`SubprocessError` base class was added.
 
+.. _subprocess-security:
 
 Security Considerations
 -----------------------
@@ -691,11 +722,8 @@ If the shell is invoked explicitly, via ``shell=True``, it is the application's
 responsibility to ensure that all whitespace and metacharacters are
 quoted appropriately to avoid
 `shell injection <https://en.wikipedia.org/wiki/Shell_injection#Shell_injection>`_
-vulnerabilities.
-
-When using ``shell=True``, the :func:`shlex.quote` function can be
-used to properly escape whitespace and shell metacharacters in strings
-that are going to be used to construct shell commands.
+vulnerabilities. On :ref:`some platforms <shlex-quote-warning>`, it is possible
+to use :func:`shlex.quote` for this escaping.
 
 
 Popen Objects
@@ -738,10 +766,11 @@ Instances of the :class:`Popen` class have the following methods:
 .. method:: Popen.communicate(input=None, timeout=None)
 
    Interact with process: Send data to stdin.  Read data from stdout and stderr,
-   until end-of-file is reached.  Wait for process to terminate.  The optional
-   *input* argument should be data to be sent to the child process, or
-   ``None``, if no data should be sent to the child.  If streams were opened in
-   text mode, *input* must be a string.  Otherwise, it must be bytes.
+   until end-of-file is reached.  Wait for process to terminate and set the
+   :attr:`~Popen.returncode` attribute.  The optional *input* argument should be
+   data to be sent to the child process, or ``None``, if no data should be sent
+   to the child.  If streams were opened in text mode, *input* must be a string.
+   Otherwise, it must be bytes.
 
    :meth:`communicate` returns a tuple ``(stdout_data, stderr_data)``.
    The data will be strings if streams were opened in text mode; otherwise,
@@ -1120,6 +1149,8 @@ calls these functions.
    code was zero then return, otherwise raise :exc:`CalledProcessError`. The
    :exc:`CalledProcessError` object will have the return code in the
    :attr:`~CalledProcessError.returncode` attribute.
+   If :func:`check_call` was unable to start the process it will propagate the exception
+   that was raised.
 
    Code needing to capture stdout or stderr should use :func:`run` instead::
 
@@ -1162,8 +1193,9 @@ calls these functions.
    The arguments shown above are merely some common ones.
    The full function signature is largely the same as that of :func:`run` -
    most arguments are passed directly through to that interface.
-   However, explicitly passing ``input=None`` to inherit the parent's
-   standard input file handle is not supported.
+   One API deviation from :func:`run` behavior exists: passing ``input=None``
+   will behave the same as ``input=b''`` (or ``input=''``, depending on other
+   arguments) rather than using the parent's standard input file handle.
 
    By default, this function will return the data as encoded bytes. The actual
    encoding of the output data may depend on the command being invoked, so the
@@ -1256,7 +1288,7 @@ be used directly:
 
 becomes::
 
-   output=check_output("dmesg | grep hda", shell=True)
+   output = check_output("dmesg | grep hda", shell=True)
 
 
 Replacing :func:`os.system`
@@ -1266,11 +1298,17 @@ Replacing :func:`os.system`
 
    sts = os.system("mycmd" + " myarg")
    # becomes
-   sts = call("mycmd" + " myarg", shell=True)
+   retcode = call("mycmd" + " myarg", shell=True)
 
 Notes:
 
 * Calling the program through the shell is usually not required.
+* The :func:`call` return value is encoded differently to that of
+  :func:`os.system`.
+
+* The :func:`os.system` function ignores SIGINT and SIGQUIT signals while
+  the command is running, but the caller must do this separately when
+  using the :mod:`subprocess` module.
 
 A more realistic example would look like this::
 

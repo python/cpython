@@ -1,8 +1,12 @@
 
 /* Testing module for multi-phase initialization of extension modules (PEP 489)
  */
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 
 #include "Python.h"
+#include "pycore_namespace.h"     // _PyNamespace_New()
 
 /* State for testing module state access from methods */
 
@@ -121,24 +125,30 @@ static PyType_Spec Example_Type_spec = {
 };
 
 
+static PyModuleDef def_meth_state_access;
+
 /*[clinic input]
 _testmultiphase.StateAccessType.get_defining_module
 
     cls: defining_class
 
 Return the module of the defining class.
+
+Also tests that result of _PyType_GetModuleByDef matches defining_class's
+module.
 [clinic start generated code]*/
 
 static PyObject *
 _testmultiphase_StateAccessType_get_defining_module_impl(StateAccessTypeObject *self,
                                                          PyTypeObject *cls)
-/*[clinic end generated code: output=ba2a14284a5d0921 input=946149f91cf72c0d]*/
+/*[clinic end generated code: output=ba2a14284a5d0921 input=356f999fc16e0933]*/
 {
     PyObject *retval;
     retval = PyType_GetModule(cls);
     if (retval == NULL) {
         return NULL;
     }
+    assert(_PyType_GetModuleByDef(Py_TYPE(self), &def_meth_state_access) == retval);
     Py_INCREF(retval);
     return retval;
 }
@@ -359,6 +369,7 @@ static int execfunc(PyObject *m)
         goto fail;
     }
     if (PyModule_AddObject(m, "Example", temp) != 0) {
+        Py_DECREF(temp);
         goto fail;
     }
 
@@ -369,6 +380,7 @@ static int execfunc(PyObject *m)
         goto fail;
     }
     if (PyModule_AddObject(m, "error", temp) != 0) {
+        Py_DECREF(temp);
         goto fail;
     }
 
@@ -378,6 +390,7 @@ static int execfunc(PyObject *m)
         goto fail;
     }
     if (PyModule_AddObject(m, "Str", temp) != 0) {
+        Py_DECREF(temp);
         goto fail;
     }
 
@@ -807,6 +820,7 @@ meth_state_access_exec(PyObject *m)
         return -1;
     }
     if (PyModule_AddObject(m, "StateAccessType", temp) != 0) {
+        Py_DECREF(temp);
         return -1;
     }
 
@@ -832,6 +846,28 @@ PyMODINIT_FUNC
 PyInit__testmultiphase_meth_state_access(PyObject *spec)
 {
     return PyModuleDef_Init(&def_meth_state_access);
+}
+
+static PyModuleDef def_module_state_shared = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_test_module_state_shared",
+    .m_doc = PyDoc_STR("Regression Test module for single-phase init."),
+    .m_size = -1,
+};
+
+PyMODINIT_FUNC
+PyInit__test_module_state_shared(PyObject *spec)
+{
+    PyObject *module = PyModule_Create(&def_module_state_shared);
+    if (module == NULL) {
+        return NULL;
+    }
+
+    if (PyModule_AddObjectRef(module, "Error", PyExc_Exception) < 0) {
+        Py_DECREF(module);
+        return NULL;
+    }
+    return module;
 }
 
 

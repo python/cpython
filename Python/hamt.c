@@ -1,6 +1,8 @@
 #include "Python.h"
 
+#include "pycore_bitutils.h"      // _Py_popcount32
 #include "pycore_hamt.h"
+#include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include <stddef.h>               // offsetof()
 
@@ -434,29 +436,9 @@ hamt_bitpos(int32_t hash, uint32_t shift)
 }
 
 static inline uint32_t
-hamt_bitcount(uint32_t i)
-{
-    /* We could use native popcount instruction but that would
-       require to either add configure flags to enable SSE4.2
-       support or to detect it dynamically.  Otherwise, we have
-       a risk of CPython not working properly on older hardware.
-
-       In practice, there's no observable difference in
-       performance between using a popcount instruction or the
-       following fallback code.
-
-       The algorithm is copied from:
-       https://graphics.stanford.edu/~seander/bithacks.html
-    */
-    i = i - ((i >> 1) & 0x55555555);
-    i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
-    return (((i + (i >> 4)) & 0xF0F0F0F) * 0x1010101) >> 24;
-}
-
-static inline uint32_t
 hamt_bitindex(uint32_t bitmap, uint32_t bit)
 {
-    return hamt_bitcount(bitmap & (bit - 1));
+    return (uint32_t)_Py_popcount32(bitmap & (bit - 1));
 }
 
 
@@ -820,7 +802,7 @@ hamt_node_bitmap_assoc(PyHamtNode_Bitmap *self,
     else {
         /* There was no key before with the same (shift,hash). */
 
-        uint32_t n = hamt_bitcount(self->b_bitmap);
+        uint32_t n = (uint32_t)_Py_popcount32(self->b_bitmap);
 
         if (n >= 16) {
             /* When we have a situation where we want to store more
@@ -2971,9 +2953,13 @@ PyTypeObject _PyHamt_CollisionNode_Type = {
 };
 
 
-int
-_PyHamt_Init(void)
+PyStatus
+_PyHamt_InitTypes(PyInterpreterState *interp)
 {
+    if (!_Py_IsMainInterpreter(interp)) {
+        return _PyStatus_OK();
+    }
+
     if ((PyType_Ready(&_PyHamt_Type) < 0) ||
         (PyType_Ready(&_PyHamt_ArrayNode_Type) < 0) ||
         (PyType_Ready(&_PyHamt_BitmapNode_Type) < 0) ||
@@ -2982,14 +2968,14 @@ _PyHamt_Init(void)
         (PyType_Ready(&_PyHamtValues_Type) < 0) ||
         (PyType_Ready(&_PyHamtItems_Type) < 0))
     {
-        return 0;
+        return _PyStatus_ERR("can't init hamt types");
     }
 
-    return 1;
+    return _PyStatus_OK();
 }
 
 void
-_PyHamt_Fini(void)
+_PyHamt_Fini(PyInterpreterState *interp)
 {
     Py_CLEAR(_empty_hamt);
     Py_CLEAR(_empty_bitmap_node);

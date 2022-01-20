@@ -10,6 +10,7 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "_iomodule.h"
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -33,6 +34,7 @@ PyObject *_PyIO_str_fileno = NULL;
 PyObject *_PyIO_str_flush = NULL;
 PyObject *_PyIO_str_getstate = NULL;
 PyObject *_PyIO_str_isatty = NULL;
+PyObject *_PyIO_str_locale = NULL;
 PyObject *_PyIO_str_newlines = NULL;
 PyObject *_PyIO_str_nl = NULL;
 PyObject *_PyIO_str_peek = NULL;
@@ -136,7 +138,6 @@ Character Meaning
 'b'       binary mode
 't'       text mode (default)
 '+'       open a disk file for updating (reading and writing)
-'U'       universal newline mode (deprecated)
 ========= ===============================================================
 
 The default mode is 'rt' (open for reading text). For binary random
@@ -151,10 +152,6 @@ bytes objects without any decoding. In text mode (the default, or when
 't' is appended to the mode argument), the contents of the file are
 returned as strings, the bytes having been first decoded using a
 platform-dependent encoding or using the specified encoding if given.
-
-'U' mode is deprecated and will raise an exception in future versions
-of Python.  It has no effect in Python 3.  Use newline to control
-universal newlines mode.
 
 buffering is an optional integer used to set the buffering policy.
 Pass 0 to switch buffering off (only allowed in binary mode), 1 to select
@@ -231,12 +228,12 @@ static PyObject *
 _io_open_impl(PyObject *module, PyObject *file, const char *mode,
               int buffering, const char *encoding, const char *errors,
               const char *newline, int closefd, PyObject *opener)
-/*[clinic end generated code: output=aefafc4ce2b46dc0 input=7295902222e6b311]*/
+/*[clinic end generated code: output=aefafc4ce2b46dc0 input=1543f4511d2356a5]*/
 {
     unsigned i;
 
     int creating = 0, reading = 0, writing = 0, appending = 0, updating = 0;
-    int text = 0, binary = 0, universal = 0;
+    int text = 0, binary = 0;
 
     char rawmode[6], *m;
     int line_buffering, is_number;
@@ -294,10 +291,6 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
         case 'b':
             binary = 1;
             break;
-        case 'U':
-            universal = 1;
-            reading = 1;
-            break;
         default:
             goto invalid_mode;
         }
@@ -320,18 +313,6 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     *m = '\0';
 
     /* Parameters validation */
-    if (universal) {
-        if (creating || writing || appending || updating) {
-            PyErr_SetString(PyExc_ValueError,
-                            "mode U cannot be combined with 'x', 'w', 'a', or '+'");
-            goto error;
-        }
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                         "'U' mode is deprecated", 1) < 0)
-            goto error;
-        reading = 1;
-    }
-
     if (text && binary) {
         PyErr_SetString(PyExc_ValueError,
                         "can't have text and binary mode at once");
@@ -504,6 +485,45 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     return NULL;
 }
 
+
+/*[clinic input]
+_io.text_encoding
+    encoding: object
+    stacklevel: int = 2
+    /
+
+A helper function to choose the text encoding.
+
+When encoding is not None, just return it.
+Otherwise, return the default text encoding (i.e. "locale").
+
+This function emits an EncodingWarning if encoding is None and
+sys.flags.warn_default_encoding is true.
+
+This can be used in APIs with an encoding=None parameter.
+However, please consider using encoding="utf-8" for new APIs.
+[clinic start generated code]*/
+
+static PyObject *
+_io_text_encoding_impl(PyObject *module, PyObject *encoding, int stacklevel)
+/*[clinic end generated code: output=91b2cfea6934cc0c input=bf70231213e2a7b4]*/
+{
+    if (encoding == NULL || encoding == Py_None) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        if (_PyInterpreterState_GetConfig(interp)->warn_default_encoding) {
+            if (PyErr_WarnEx(PyExc_EncodingWarning,
+                             "'encoding' argument not specified", stacklevel)) {
+                return NULL;
+            }
+        }
+        Py_INCREF(_PyIO_str_locale);
+        return _PyIO_str_locale;
+    }
+    Py_INCREF(encoding);
+    return encoding;
+}
+
+
 /*[clinic input]
 _io.open_code
 
@@ -593,39 +613,12 @@ _PyIO_get_module_state(void)
     return state;
 }
 
-PyObject *
-_PyIO_get_locale_module(_PyIO_State *state)
-{
-    PyObject *mod;
-    if (state->locale_module != NULL) {
-        assert(PyWeakref_CheckRef(state->locale_module));
-        mod = PyWeakref_GET_OBJECT(state->locale_module);
-        if (mod != Py_None) {
-            Py_INCREF(mod);
-            return mod;
-        }
-        Py_CLEAR(state->locale_module);
-    }
-    mod = PyImport_ImportModule("_bootlocale");
-    if (mod == NULL)
-        return NULL;
-    state->locale_module = PyWeakref_NewRef(mod, NULL);
-    if (state->locale_module == NULL) {
-        Py_DECREF(mod);
-        return NULL;
-    }
-    return mod;
-}
-
-
 static int
 iomodule_traverse(PyObject *mod, visitproc visit, void *arg) {
     _PyIO_State *state = get_io_state(mod);
     if (!state->initialized)
         return 0;
-    if (state->locale_module != NULL) {
-        Py_VISIT(state->locale_module);
-    }
+    Py_VISIT(state->locale_module);
     Py_VISIT(state->unsupported_operation);
     return 0;
 }
@@ -656,6 +649,7 @@ iomodule_free(PyObject *mod) {
 
 static PyMethodDef module_methods[] = {
     _IO_OPEN_METHODDEF
+    _IO_TEXT_ENCODING_METHODDEF
     _IO_OPEN_CODE_METHODDEF
     {NULL, NULL}
 };
@@ -774,6 +768,7 @@ PyInit__io(void)
     ADD_INTERNED(flush)
     ADD_INTERNED(getstate)
     ADD_INTERNED(isatty)
+    ADD_INTERNED(locale)
     ADD_INTERNED(newlines)
     ADD_INTERNED(peek)
     ADD_INTERNED(read)

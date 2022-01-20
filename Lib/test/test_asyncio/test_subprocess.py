@@ -10,6 +10,7 @@ from asyncio import base_subprocess
 from asyncio import subprocess
 from test.test_asyncio import utils as test_utils
 from test import support
+from test.support import os_helper
 
 if sys.platform != 'win32':
     from asyncio import unix_events
@@ -227,7 +228,7 @@ class SubprocessMixin:
         # buffer large enough to feed the whole pipe buffer
         large_data = b'x' * support.PIPE_MAX_SIZE
 
-        # the program ends before the stdin can be feeded
+        # the program ends before the stdin can be fed
         proc = self.loop.run_until_complete(
             asyncio.create_subprocess_exec(
                 sys.executable, '-c', 'pass',
@@ -626,33 +627,13 @@ class SubprocessMixin:
     def test_create_subprocess_exec_with_path(self):
         async def execute():
             p = await subprocess.create_subprocess_exec(
-                support.FakePath(sys.executable), '-c', 'pass')
+                os_helper.FakePath(sys.executable), '-c', 'pass')
             await p.wait()
             p = await subprocess.create_subprocess_exec(
-                sys.executable, '-c', 'pass', support.FakePath('.'))
+                sys.executable, '-c', 'pass', os_helper.FakePath('.'))
             await p.wait()
 
         self.assertIsNone(self.loop.run_until_complete(execute()))
-
-    def test_exec_loop_deprecated(self):
-        async def go():
-            with self.assertWarns(DeprecationWarning):
-                proc = await asyncio.create_subprocess_exec(
-                    sys.executable, '-c', 'pass',
-                    loop=self.loop,
-                )
-            await proc.wait()
-        self.loop.run_until_complete(go())
-
-    def test_shell_loop_deprecated(self):
-        async def go():
-            with self.assertWarns(DeprecationWarning):
-                proc = await asyncio.create_subprocess_shell(
-                    "exit 0",
-                    loop=self.loop,
-                )
-            await proc.wait()
-        self.loop.run_until_complete(go())
 
 
 if sys.platform != 'win32':
@@ -684,6 +665,8 @@ if sys.platform != 'win32':
 
         Watcher = unix_events.ThreadedChildWatcher
 
+    @unittest.skip("bpo-38323: MultiLoopChildWatcher has a race condition \
+                    and these tests can hang the test suite")
     class SubprocessMultiLoopWatcherTests(SubprocessWatcherMixin,
                                           test_utils.TestCase):
 
@@ -737,7 +720,7 @@ class GenericWatcherTests:
 
             with self.assertRaises(RuntimeError):
                 await subprocess.create_subprocess_exec(
-                    support.FakePath(sys.executable), '-c', 'pass')
+                    os_helper.FakePath(sys.executable), '-c', 'pass')
 
             watcher.add_child_handler.assert_not_called()
 

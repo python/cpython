@@ -8,7 +8,7 @@ tests of their own.
 import os
 import sys
 import unittest
-from test import support
+from test.support import import_helper
 
 from test.test_tools import scriptsdir, import_tool, skip_if_missing
 
@@ -16,21 +16,21 @@ skip_if_missing()
 
 class TestSundryScripts(unittest.TestCase):
     # At least make sure the rest don't have syntax errors.  When tests are
-    # added for a script it should be added to the whitelist below.
+    # added for a script it should be added to the allowlist below.
 
     # scripts that have independent tests.
-    whitelist = ['reindent', 'pdeps', 'gprof2html', 'md5sum']
+    allowlist = ['reindent', 'pdeps', 'gprof2html', 'md5sum']
     # scripts that can't be imported without running
-    blacklist = ['make_ctype']
+    denylist = ['make_ctype']
     # scripts that use windows-only modules
     windows_only = ['win_add2path']
-    # blacklisted for other reasons
+    # denylisted for other reasons
     other = ['analyze_dxp', '2to3']
 
-    skiplist = blacklist + whitelist + windows_only + other
+    skiplist = denylist + allowlist + windows_only + other
 
     def test_sundry(self):
-        old_modules = support.modules_setup()
+        old_modules = import_helper.modules_setup()
         try:
             for fn in os.listdir(scriptsdir):
                 if not fn.endswith('.py'):
@@ -43,7 +43,7 @@ class TestSundryScripts(unittest.TestCase):
                 import_tool(name)
         finally:
             # Unload all modules loaded in this test
-            support.modules_cleanup(*old_modules)
+            import_helper.modules_cleanup(*old_modules)
 
     @unittest.skipIf(sys.platform != "win32", "Windows-only test")
     def test_sundry_windows(self):

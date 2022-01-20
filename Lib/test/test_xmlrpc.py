@@ -15,6 +15,7 @@ import re
 import io
 import contextlib
 from test import support
+from test.support import os_helper
 from test.support import socket_helper
 from test.support import threading_helper
 from test.support import ALWAYS_EQ, LARGEST, SMALLEST
@@ -560,7 +561,7 @@ class DateTimeTestCase(unittest.TestCase):
 
 class BinaryTestCase(unittest.TestCase):
 
-    # XXX What should str(Binary(b"\xff")) return?  I'm chosing "\xff"
+    # XXX What should str(Binary(b"\xff")) return?  I'm choosing "\xff"
     # for now (i.e. interpreting the binary data as Latin-1-encoded
     # text).  But this feels very unsatisfactory.  Perhaps we should
     # only define repr(), and return r"Binary(b'\xff')" instead?
@@ -647,7 +648,7 @@ def http_server(evt, numrequests, requestHandler=None, encoding=None):
             serv.handle_request()
             numrequests -= 1
 
-    except socket.timeout:
+    except TimeoutError:
         pass
     finally:
         serv.socket.close()
@@ -697,11 +698,16 @@ def http_multi_server(evt, numrequests, requestHandler=None):
         #on AF_INET only.
         URL = "http://%s:%d"%(ADDR, PORT)
         serv.server_activate()
-        paths = ["/foo", "/foo/bar"]
+        paths = [
+            "/foo", "/foo/bar",
+            "/foo?k=v", "/foo#frag", "/foo?k=v#frag",
+            "", "/", "/RPC2", "?k=v", "#frag",
+        ]
         for path in paths:
             d = serv.add_dispatcher(path, xmlrpc.server.SimpleXMLRPCDispatcher())
             d.register_introspection_functions()
             d.register_multicall_functions()
+            d.register_function(lambda p=path: p, 'test')
         serv.get_dispatcher(paths[0]).register_function(pow)
         serv.get_dispatcher(paths[1]).register_function(lambda x,y: x+y, 'add')
         serv.add_dispatcher("/is/broken", BrokenDispatcher())
@@ -712,7 +718,7 @@ def http_multi_server(evt, numrequests, requestHandler=None):
             serv.handle_request()
             numrequests -= 1
 
-    except socket.timeout:
+    except TimeoutError:
         pass
     finally:
         serv.socket.close()
@@ -1016,6 +1022,39 @@ class MultiPathServerTestCase(BaseServerTestCase):
     def test_path3(self):
         p = xmlrpclib.ServerProxy(URL+"/is/broken")
         self.assertRaises(xmlrpclib.Fault, p.add, 6, 8)
+
+    def test_invalid_path(self):
+        p = xmlrpclib.ServerProxy(URL+"/invalid")
+        self.assertRaises(xmlrpclib.Fault, p.add, 6, 8)
+
+    def test_path_query_fragment(self):
+        p = xmlrpclib.ServerProxy(URL+"/foo?k=v#frag")
+        self.assertEqual(p.test(), "/foo?k=v#frag")
+
+    def test_path_fragment(self):
+        p = xmlrpclib.ServerProxy(URL+"/foo#frag")
+        self.assertEqual(p.test(), "/foo#frag")
+
+    def test_path_query(self):
+        p = xmlrpclib.ServerProxy(URL+"/foo?k=v")
+        self.assertEqual(p.test(), "/foo?k=v")
+
+    def test_empty_path(self):
+        p = xmlrpclib.ServerProxy(URL)
+        self.assertEqual(p.test(), "/RPC2")
+
+    def test_root_path(self):
+        p = xmlrpclib.ServerProxy(URL + "/")
+        self.assertEqual(p.test(), "/")
+
+    def test_empty_path_query(self):
+        p = xmlrpclib.ServerProxy(URL + "?k=v")
+        self.assertEqual(p.test(), "?k=v")
+
+    def test_empty_path_fragment(self):
+        p = xmlrpclib.ServerProxy(URL + "#frag")
+        self.assertEqual(p.test(), "#frag")
+
 
 #A test case that verifies that a server using the HTTP/1.1 keep-alive mechanism
 #does indeed serve subsequent requests on the same connection
@@ -1372,7 +1411,7 @@ class CGIHandlerTestCase(unittest.TestCase):
         self.cgi = None
 
     def test_cgi_get(self):
-        with support.EnvironmentVarGuard() as env:
+        with os_helper.EnvironmentVarGuard() as env:
             env['REQUEST_METHOD'] = 'GET'
             # if the method is GET and no request_text is given, it runs handle_get
             # get sysout output
@@ -1404,7 +1443,7 @@ class CGIHandlerTestCase(unittest.TestCase):
         </methodCall>
         """
 
-        with support.EnvironmentVarGuard() as env, \
+        with os_helper.EnvironmentVarGuard() as env, \
              captured_stdout(encoding=self.cgi.encoding) as data_out, \
              support.captured_stdin() as data_in:
             data_in.write(data)
@@ -1465,16 +1504,10 @@ class UseBuiltinTypesTestCase(unittest.TestCase):
         self.assertTrue(server.use_builtin_types)
 
 
-@threading_helper.reap_threads
-def test_main():
-    support.run_unittest(XMLRPCTestCase, HelperTestCase, DateTimeTestCase,
-            BinaryTestCase, FaultTestCase, UseBuiltinTypesTestCase,
-            SimpleServerTestCase, SimpleServerEncodingTestCase,
-            KeepaliveServerTestCase1, KeepaliveServerTestCase2,
-            GzipServerTestCase, GzipUtilTestCase, HeadersServerTestCase,
-            MultiPathServerTestCase, ServerProxyTestCase, FailingServerTestCase,
-            CGIHandlerTestCase, SimpleXMLRPCDispatcherTestCase)
+def setUpModule():
+    thread_info = threading_helper.threading_setup()
+    unittest.addModuleCleanup(threading_helper.threading_cleanup, *thread_info)
 
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

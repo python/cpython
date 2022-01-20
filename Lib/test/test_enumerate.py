@@ -2,6 +2,7 @@ import unittest
 import operator
 import sys
 import pickle
+import gc
 
 from test import support
 
@@ -133,6 +134,18 @@ class EnumerateTestCase(unittest.TestCase, PickleTest):
         # whenever nothing else holds a reference to it
         self.assertEqual(len(set(map(id, list(enumerate(self.seq))))), len(self.seq))
         self.assertEqual(len(set(map(id, enumerate(self.seq)))), min(1,len(self.seq)))
+
+    @support.cpython_only
+    def test_enumerate_result_gc(self):
+        # bpo-42536: enumerate's tuple-reuse speed trick breaks the GC's
+        # assumptions about what can be untracked. Make sure we re-track result
+        # tuples whenever we reuse them.
+        it = self.enum([[]])
+        gc.collect()
+        # That GC collection probably untracked the recycled internal result
+        # tuple, which is initialized to (None, None). Make sure it's re-tracked
+        # when it's mutated and returned from __next__:
+        self.assertTrue(gc.is_tracked(next(it)))
 
 class MyEnum(enumerate):
     pass

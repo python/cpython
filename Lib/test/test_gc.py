@@ -1,8 +1,9 @@
 import unittest
 import unittest.mock
-from test.support import (verbose, refcount_test, run_unittest,
-                          cpython_only, temp_dir, TESTFN, unlink,
-                          import_module)
+from test.support import (verbose, refcount_test,
+                          cpython_only)
+from test.support.import_helper import import_module
+from test.support.os_helper import temp_dir, TESTFN, unlink
 from test.support.script_helper import assert_python_ok, make_script
 from test.support import threading_helper
 
@@ -443,7 +444,7 @@ class GCTests(unittest.TestCase):
         # 0, thus mutating the trash graph as a side effect of merely asking
         # whether __del__ exists.  This used to (before 2.3b1) crash Python.
         # Now __getattr__ isn't called.
-        self.assertEqual(gc.collect(), 4)
+        self.assertEqual(gc.collect(), 2)
         self.assertEqual(len(gc.garbage), garbagelen)
 
     def test_boom2(self):
@@ -470,7 +471,7 @@ class GCTests(unittest.TestCase):
         # there isn't a second time, so this simply cleans up the trash cycle.
         # We expect a, b, a.__dict__ and b.__dict__ (4 objects) to get
         # reclaimed this way.
-        self.assertEqual(gc.collect(), 4)
+        self.assertEqual(gc.collect(), 2)
         self.assertEqual(len(gc.garbage), garbagelen)
 
     def test_boom_new(self):
@@ -490,7 +491,7 @@ class GCTests(unittest.TestCase):
         gc.collect()
         garbagelen = len(gc.garbage)
         del a, b
-        self.assertEqual(gc.collect(), 4)
+        self.assertEqual(gc.collect(), 2)
         self.assertEqual(len(gc.garbage), garbagelen)
 
     def test_boom2_new(self):
@@ -512,7 +513,7 @@ class GCTests(unittest.TestCase):
         gc.collect()
         garbagelen = len(gc.garbage)
         del a, b
-        self.assertEqual(gc.collect(), 4)
+        self.assertEqual(gc.collect(), 2)
         self.assertEqual(len(gc.garbage), garbagelen)
 
     def test_get_referents(self):
@@ -581,9 +582,9 @@ class GCTests(unittest.TestCase):
         self.assertTrue(gc.is_tracked(UserInt()))
         self.assertTrue(gc.is_tracked([]))
         self.assertTrue(gc.is_tracked(set()))
-        self.assertFalse(gc.is_tracked(UserClassSlots()))
-        self.assertFalse(gc.is_tracked(UserFloatSlots()))
-        self.assertFalse(gc.is_tracked(UserIntSlots()))
+        self.assertTrue(gc.is_tracked(UserClassSlots()))
+        self.assertTrue(gc.is_tracked(UserFloatSlots()))
+        self.assertTrue(gc.is_tracked(UserIntSlots()))
 
     def test_is_finalized(self):
         # Objects not tracked by the always gc return false
@@ -749,7 +750,7 @@ class GCTests(unittest.TestCase):
             a.link = a
             raise SystemExit(0)"""
         self.addCleanup(unlink, TESTFN)
-        with open(TESTFN, 'w') as script:
+        with open(TESTFN, 'w', encoding="utf-8") as script:
             script.write(code)
         rc, out, err = assert_python_ok(TESTFN)
         self.assertEqual(out.strip(), b'__del__ called')
@@ -942,8 +943,8 @@ class GCTests(unittest.TestCase):
             A()
         t = gc.collect()
         c, nc = getstats()
-        self.assertEqual(t, 2*N) # instance object & its dict
-        self.assertEqual(c - oldc, 2*N)
+        self.assertEqual(t, N) # instance objects
+        self.assertEqual(c - oldc, N)
         self.assertEqual(nc - oldnc, 0)
 
         # But Z() is not actually collected.
@@ -963,8 +964,8 @@ class GCTests(unittest.TestCase):
         Z()
         t = gc.collect()
         c, nc = getstats()
-        self.assertEqual(t, 2*N)
-        self.assertEqual(c - oldc, 2*N)
+        self.assertEqual(t, N)
+        self.assertEqual(c - oldc, N)
         self.assertEqual(nc - oldnc, 0)
 
         # The A() trash should have been reclaimed already but the
@@ -973,8 +974,8 @@ class GCTests(unittest.TestCase):
         zs.clear()
         t = gc.collect()
         c, nc = getstats()
-        self.assertEqual(t, 4)
-        self.assertEqual(c - oldc, 4)
+        self.assertEqual(t, 2)
+        self.assertEqual(c - oldc, 2)
         self.assertEqual(nc - oldnc, 0)
 
         gc.enable()
@@ -1127,8 +1128,7 @@ class GCCallbackTests(unittest.TestCase):
     @cpython_only
     def test_collect_garbage(self):
         self.preclean()
-        # Each of these cause four objects to be garbage: Two
-        # Uncollectables and their instance dicts.
+        # Each of these cause two objects to be garbage:
         Uncollectable()
         Uncollectable()
         C1055820(666)
@@ -1137,8 +1137,8 @@ class GCCallbackTests(unittest.TestCase):
             if v[1] != "stop":
                 continue
             info = v[2]
-            self.assertEqual(info["collected"], 2)
-            self.assertEqual(info["uncollectable"], 8)
+            self.assertEqual(info["collected"], 1)
+            self.assertEqual(info["uncollectable"], 4)
 
         # We should now have the Uncollectables in gc.garbage
         self.assertEqual(len(gc.garbage), 4)
@@ -1155,7 +1155,7 @@ class GCCallbackTests(unittest.TestCase):
                 continue
             info = v[2]
             self.assertEqual(info["collected"], 0)
-            self.assertEqual(info["uncollectable"], 4)
+            self.assertEqual(info["uncollectable"], 2)
 
         # Uncollectables should be gone
         self.assertEqual(len(gc.garbage), 0)
@@ -1360,26 +1360,55 @@ class GCTogglingTests(unittest.TestCase):
             # empty __dict__.
             self.assertEqual(x, None)
 
-def test_main():
+
+class PythonFinalizationTests(unittest.TestCase):
+    def test_ast_fini(self):
+        # bpo-44184: Regression test for subtype_dealloc() when deallocating
+        # an AST instance also destroy its AST type: subtype_dealloc() must
+        # not access the type memory after deallocating the instance, since
+        # the type memory can be freed as well. The test is also related to
+        # _PyAST_Fini() which clears references to AST types.
+        code = textwrap.dedent("""
+            import ast
+            import codecs
+
+            # Small AST tree to keep their AST types alive
+            tree = ast.parse("def f(x, y): return 2*x-y")
+            x = [tree]
+            x.append(x)
+
+            # Put the cycle somewhere to survive until the last GC collection.
+            # Codec search functions are only cleared at the end of
+            # interpreter_clear().
+            def search_func(encoding):
+                return None
+            search_func.a = x
+            codecs.register(search_func)
+        """)
+        assert_python_ok("-c", code)
+
+
+def setUpModule():
+    global enabled, debug
     enabled = gc.isenabled()
     gc.disable()
     assert not gc.isenabled()
     debug = gc.get_debug()
     gc.set_debug(debug & ~gc.DEBUG_LEAK) # this test is supposed to leak
+    gc.collect() # Delete 2nd generation garbage
 
-    try:
-        gc.collect() # Delete 2nd generation garbage
-        run_unittest(GCTests, GCTogglingTests, GCCallbackTests)
-    finally:
-        gc.set_debug(debug)
-        # test gc.enable() even if GC is disabled by default
-        if verbose:
-            print("restoring automatic collection")
-        # make sure to always test gc.enable()
-        gc.enable()
-        assert gc.isenabled()
-        if not enabled:
-            gc.disable()
+
+def tearDownModule():
+    gc.set_debug(debug)
+    # test gc.enable() even if GC is disabled by default
+    if verbose:
+        print("restoring automatic collection")
+    # make sure to always test gc.enable()
+    gc.enable()
+    assert gc.isenabled()
+    if not enabled:
+        gc.disable()
+
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

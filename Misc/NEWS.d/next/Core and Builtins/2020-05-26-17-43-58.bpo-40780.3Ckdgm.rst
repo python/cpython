@@ -1,2 +1,0 @@
-Fix a corner case where g-style string formatting of a float failed to
-remove trailing zeros.

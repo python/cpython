@@ -56,17 +56,17 @@ created.  Socket addresses are represented as follows:
   bytes-like object can be used for either type of address when
   passing it as an argument.
 
-   .. versionchanged:: 3.3
-      Previously, :const:`AF_UNIX` socket paths were assumed to use UTF-8
-      encoding.
+  .. versionchanged:: 3.3
+     Previously, :const:`AF_UNIX` socket paths were assumed to use UTF-8
+     encoding.
 
-   .. versionchanged:: 3.5
-      Writable :term:`bytes-like object` is now accepted.
+  .. versionchanged:: 3.5
+     Writable :term:`bytes-like object` is now accepted.
 
 .. _host_port:
 
 - A pair ``(host, port)`` is used for the :const:`AF_INET` address family,
-  where *host* is a string representing either a hostname in Internet domain
+  where *host* is a string representing either a hostname in internet domain
   notation like ``'daring.cwi.nl'`` or an IPv4 address like ``'100.50.200.5'``,
   and *port* is an integer.
 
@@ -188,7 +188,7 @@ created.  Socket addresses are represented as follows:
 
     - ``PACKET_HOST`` (the default) - Packet addressed to the local host.
     - ``PACKET_BROADCAST`` - Physical-layer broadcast packet.
-    - ``PACKET_MULTIHOST`` - Packet sent to a physical-layer multicast address.
+    - ``PACKET_MULTICAST`` - Packet sent to a physical-layer multicast address.
     - ``PACKET_OTHERHOST`` - Packet to some other host that has been caught by
       a device driver in promiscuous mode.
     - ``PACKET_OUTGOING`` - Packet originating from the local host that is
@@ -197,10 +197,14 @@ created.  Socket addresses are represented as follows:
   - *addr* - Optional bytes-like object specifying the hardware physical
     address, whose interpretation depends on the device.
 
+   .. availability:: Linux >= 2.2.
+
 - :const:`AF_QIPCRTR` is a Linux-only socket based interface for communicating
   with services running on co-processors in Qualcomm platforms. The address
   family is represented as a ``(node, port)`` tuple where the *node* and *port*
   are non-negative integers.
+
+   .. availability:: Linux >= 4.7.
 
   .. versionadded:: 3.8
 
@@ -283,6 +287,8 @@ Exceptions
 
 .. exception:: timeout
 
+   A deprecated alias of :exc:`TimeoutError`.
+
    A subclass of :exc:`OSError`, this exception is raised when a timeout
    occurs on a socket which has had timeouts enabled via a prior call to
    :meth:`~socket.settimeout` (or implicitly through
@@ -291,6 +297,9 @@ Exceptions
 
    .. versionchanged:: 3.3
       This class was made a subclass of :exc:`OSError`.
+
+   .. versionchanged:: 3.10
+      This class was made an alias of :exc:`TimeoutError`.
 
 
 Constants
@@ -373,6 +382,11 @@ Constants
 
       On Windows, ``TCP_KEEPIDLE``, ``TCP_KEEPINTVL`` appear if run-time Windows
       supports.
+
+   .. versionchanged:: 3.10
+      ``IP_RECVTOS`` was added.
+       Added ``TCP_KEEPALIVE``. On MacOS this constant can be used in the same
+       way that ``TCP_KEEPIDLE`` is used on Linux.
 
 .. data:: AF_CAN
           PF_CAN
@@ -506,7 +520,7 @@ Constants
 
 .. data:: AF_LINK
 
-  .. availability:: BSD, OSX.
+  .. availability:: BSD, macOS.
 
   .. versionadded:: 3.4
 
@@ -548,7 +562,7 @@ Creating sockets
 The following functions all create :ref:`socket objects <socket-objects>`.
 
 
-.. function:: socket(family=AF_INET, type=SOCK_STREAM, proto=0, fileno=None)
+.. class:: socket(family=AF_INET, type=SOCK_STREAM, proto=0, fileno=None)
 
    Create a new socket using the given address family, socket type and protocol
    number.  The address family should be :const:`AF_INET` (the default),
@@ -605,6 +619,9 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    .. versionchanged:: 3.9
        The CAN_J1939 protocol was added.
 
+   .. versionchanged:: 3.10
+       The IPPROTO_MPTCP protocol was added.
+
 .. function:: socketpair([family[, type[, proto]]])
 
    Build a pair of connected socket objects using the given address family, socket
@@ -627,7 +644,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 
 .. function:: create_connection(address[, timeout[, source_address]])
 
-   Connect to a TCP service listening on the Internet *address* (a 2-tuple
+   Connect to a TCP service listening on the internet *address* (a 2-tuple
    ``(host, port)``), and return the socket object.  This is a higher-level
    function than :meth:`socket.connect`: if *host* is a non-numeric hostname,
    it will try to resolve it for both :data:`AF_INET` and :data:`AF_INET6`,
@@ -777,9 +794,9 @@ The :mod:`socket` module also offers various network-related services:
    system if IPv6 isn't enabled)::
 
       >>> socket.getaddrinfo("example.org", 80, proto=socket.IPPROTO_TCP)
-      [(<AddressFamily.AF_INET6: 10>, <SocketType.SOCK_STREAM: 1>,
+      [(socket.AF_INET6, socket.SOCK_STREAM,
        6, '', ('2606:2800:220:1:248:1893:25c8:1946', 80, 0, 0)),
-       (<AddressFamily.AF_INET: 2>, <SocketType.SOCK_STREAM: 1>,
+       (socket.AF_INET, socket.SOCK_STREAM,
        6, '', ('93.184.216.34', 80))]
 
    .. versionchanged:: 3.2
@@ -795,8 +812,9 @@ The :mod:`socket` module also offers various network-related services:
    it is interpreted as the local host.  To find the fully qualified name, the
    hostname returned by :func:`gethostbyaddr` is checked, followed by aliases for the
    host, if available.  The first name which includes a period is selected.  In
-   case no fully qualified domain name is available, the hostname as returned by
-   :func:`gethostname` is returned.
+   case no fully qualified domain name is available and *name* was provided,
+   it is returned unchanged.  If *name* was empty or equal to ``'0.0.0.0'``,
+   the hostname from :func:`gethostname` is returned.
 
 
 .. function:: gethostbyname(hostname)
@@ -813,8 +831,8 @@ The :mod:`socket` module also offers various network-related services:
 .. function:: gethostbyname_ex(hostname)
 
    Translate a host name to IPv4 address format, extended interface. Return a
-   triple ``(hostname, aliaslist, ipaddrlist)`` where *hostname* is the primary
-   host name responding to the given *ip_address*, *aliaslist* is a (possibly
+   triple ``(hostname, aliaslist, ipaddrlist)`` where *hostname* is the host's
+   primary host name, *aliaslist* is a (possibly
    empty) list of alternative host names for the same address, and *ipaddrlist* is
    a list of IPv4 addresses for the same interface on the same host (often but not
    always a single address). :func:`gethostbyname_ex` does not support IPv6 name
@@ -864,7 +882,7 @@ The :mod:`socket` module also offers various network-related services:
 
 .. function:: getprotobyname(protocolname)
 
-   Translate an Internet protocol name (for example, ``'icmp'``) to a constant
+   Translate an internet protocol name (for example, ``'icmp'``) to a constant
    suitable for passing as the (optional) third argument to the :func:`.socket`
    function.  This is usually only needed for sockets opened in "raw" mode
    (:const:`SOCK_RAW`); for the normal socket modes, the correct protocol is chosen
@@ -873,7 +891,7 @@ The :mod:`socket` module also offers various network-related services:
 
 .. function:: getservbyname(servicename[, protocolname])
 
-   Translate an Internet service name and protocol name to a port number for that
+   Translate an internet service name and protocol name to a port number for that
    service.  The optional protocol name, if given, should be ``'tcp'`` or
    ``'udp'``, otherwise any protocol will match.
 
@@ -882,7 +900,7 @@ The :mod:`socket` module also offers various network-related services:
 
 .. function:: getservbyport(port[, protocolname])
 
-   Translate an Internet port number and protocol name to a service name for that
+   Translate an internet port number and protocol name to a service name for that
    service.  The optional protocol name, if given, should be ``'tcp'`` or
    ``'udp'``, otherwise any protocol will match.
 
@@ -902,11 +920,9 @@ The :mod:`socket` module also offers various network-related services:
    where the host byte order is the same as network byte order, this is a no-op;
    otherwise, it performs a 2-byte swap operation.
 
-   .. deprecated:: 3.7
-      In case *x* does not fit in 16-bit unsigned integer, but does fit in a
-      positive C int, it is silently truncated to 16-bit unsigned integer.
-      This silent truncation feature is deprecated, and will raise an
-      exception in future versions of Python.
+   .. versionchanged:: 3.10
+      Raises :exc:`OverflowError` if *x* does not fit in a 16-bit unsigned
+      integer.
 
 
 .. function:: htonl(x)
@@ -922,11 +938,9 @@ The :mod:`socket` module also offers various network-related services:
    where the host byte order is the same as network byte order, this is a no-op;
    otherwise, it performs a 2-byte swap operation.
 
-   .. deprecated:: 3.7
-      In case *x* does not fit in 16-bit unsigned integer, but does fit in a
-      positive C int, it is silently truncated to 16-bit unsigned integer.
-      This silent truncation feature is deprecated, and will raise an
-      exception in future versions of Python.
+   .. versionchanged:: 3.10
+      Raises :exc:`OverflowError` if *x* does not fit in a 16-bit unsigned
+      integer.
 
 
 .. function:: inet_aton(ip_string)
@@ -1091,6 +1105,19 @@ The :mod:`socket` module also offers various network-related services:
    .. versionchanged:: 3.8
       Windows support was added.
 
+   .. note::
+
+      On Windows network interfaces have different names in different contexts
+      (all names are examples):
+
+      * UUID: ``{FB605B73-AAC2-49A6-9A2F-25416AEA0573}``
+      * name: ``ethernet_32770``
+      * friendly name: ``vEthernet (nat)``
+      * description: ``Hyper-V Virtual Ethernet Adapter``
+
+      This function returns names of the second form from the list, ``ethernet_32770``
+      in this example case.
+
 
 .. function:: if_nametoindex(if_name)
 
@@ -1105,6 +1132,9 @@ The :mod:`socket` module also offers various network-related services:
    .. versionchanged:: 3.8
       Windows support was added.
 
+   .. seealso::
+      "Interface name" is a name as documented in :func:`if_nameindex`.
+
 
 .. function:: if_indextoname(if_index)
 
@@ -1118,6 +1148,35 @@ The :mod:`socket` module also offers various network-related services:
 
    .. versionchanged:: 3.8
       Windows support was added.
+
+   .. seealso::
+      "Interface name" is a name as documented in :func:`if_nameindex`.
+
+
+.. function:: send_fds(sock, buffers, fds[, flags[, address]])
+
+   Send the list of file descriptors *fds* over an :const:`AF_UNIX` socket *sock*.
+   The *fds* parameter is a sequence of file descriptors.
+   Consult :meth:`sendmsg` for the documentation of these parameters.
+
+   .. availability:: Unix supporting :meth:`~socket.sendmsg` and :const:`SCM_RIGHTS` mechanism.
+
+   .. versionadded:: 3.9
+
+
+.. function:: recv_fds(sock, bufsize, maxfds[, flags])
+
+   Receive up to *maxfds* file descriptors from an :const:`AF_UNIX` socket *sock*.
+   Return ``(msg, list(fds), flags, addr)``.
+   Consult :meth:`recvmsg` for the documentation of these parameters.
+
+   .. availability:: Unix supporting :meth:`~socket.recvmsg` and :const:`SCM_RIGHTS` mechanism.
+
+   .. versionadded:: 3.9
+
+   .. note::
+
+      Any truncated integers at the end of the list of file descriptors.
 
 
 .. _socket-objects:
@@ -1189,7 +1248,7 @@ to sockets.
    address family --- see above.)
 
    If the connection is interrupted by a signal, the method waits until the
-   connection completes, or raise a :exc:`socket.timeout` on timeout, if the
+   connection completes, or raise a :exc:`TimeoutError` on timeout, if the
    signal handler doesn't raise an exception and the socket is blocking or has
    a timeout. For non-blocking sockets, the method raises an
    :exc:`InterruptedError` exception if the connection is interrupted by a
@@ -1614,29 +1673,6 @@ to sockets.
 
    .. versionadded:: 3.6
 
-.. method:: socket.send_fds(sock, buffers, fds[, flags[, address]])
-
-   Send the list of file descriptors *fds* over an :const:`AF_UNIX` socket.
-   The *fds* parameter is a sequence of file descriptors.
-   Consult :meth:`sendmsg` for the documentation of these parameters.
-
-   .. availability:: Unix supporting :meth:`~socket.sendmsg` and :const:`SCM_RIGHTS` mechanism.
-
-   .. versionadded:: 3.9
-
-.. method:: socket.recv_fds(sock, bufsize, maxfds[, flags])
-
-   Receive up to *maxfds* file descriptors. Return ``(msg, list(fds), flags, addr)``. Consult
-   :meth:`recvmsg` for the documentation of these parameters.
-
-   .. availability:: Unix supporting :meth:`~socket.recvmsg` and :const:`SCM_RIGHTS` mechanism.
-
-   .. versionadded:: 3.9
-
-   .. note::
-
-      Any truncated integers at the end of the list of file descriptors.
-
 .. method:: socket.sendfile(file, offset=0, count=None)
 
    Send a file until EOF is reached by using high-performance
@@ -1695,7 +1731,9 @@ to sockets.
 
 .. method:: socket.setsockopt(level, optname, value: int)
 .. method:: socket.setsockopt(level, optname, value: buffer)
+   :noindex:
 .. method:: socket.setsockopt(level, optname, None, optlen: int)
+   :noindex:
 
    .. index:: module: struct
 

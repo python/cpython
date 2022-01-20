@@ -1,0 +1,2 @@
+Python uses the same time Epoch on all platforms. Add an explicit unit test
+to ensure that it's the case. Patch by Victor Stinner.

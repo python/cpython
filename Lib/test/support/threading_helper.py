@@ -157,7 +157,7 @@ class catch_threading_exception:
     Context manager catching threading.Thread exception using
     threading.excepthook.
 
-    Attributes set when an exception is catched:
+    Attributes set when an exception is caught:
 
     * exc_type
     * exc_value

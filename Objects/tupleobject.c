@@ -2,10 +2,12 @@
 /* Tuple object implementation */
 
 #include "Python.h"
-#include "pycore_abstract.h"   // _PyIndex_Check()
-#include "pycore_accu.h"
-#include "pycore_gc.h"         // _PyObject_GC_IS_TRACKED()
-#include "pycore_object.h"
+#include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
+#include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_pyerrors.h"      // _Py_FatalRefcountError()
+#include "pycore_tuple.h"         // struct _Py_tuple_state()
 
 /*[clinic input]
 class tuple "PyTupleObject *" "&PyTuple_Type"
@@ -14,19 +16,23 @@ class tuple "PyTupleObject *" "&PyTuple_Type"
 
 #include "clinic/tupleobject.c.h"
 
-static inline void
-tuple_gc_track(PyTupleObject *op)
+
+#if PyTuple_MAXSAVESIZE > 0
+static struct _Py_tuple_state *
+get_tuple_state(void)
 {
-    _PyObject_GC_TRACK(op);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return &interp->tuple;
 }
+#endif
+
 
 /* Print summary info about the state of the optimized allocator */
 void
 _PyTuple_DebugMallocStats(FILE *out)
 {
 #if PyTuple_MAXSAVESIZE > 0
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_tuple_state *state = &interp->tuple;
+    struct _Py_tuple_state *state = get_tuple_state();
     for (int i = 1; i < PyTuple_MAXSAVESIZE; i++) {
         char buf[128];
         PyOS_snprintf(buf, sizeof(buf),
@@ -37,28 +43,42 @@ _PyTuple_DebugMallocStats(FILE *out)
 #endif
 }
 
-/* Allocate an uninitialized tuple object. Before making it public following
+/* Allocate an uninitialized tuple object. Before making it public, following
    steps must be done:
-   - initialize its items
-   - call tuple_gc_track() on it
+
+   - Initialize its items.
+   - Call _PyObject_GC_TRACK() on it.
+
    Because the empty tuple is always reused and it's already tracked by GC,
    this function must not be called with size == 0 (unless from PyTuple_New()
    which wraps this function).
 */
 static PyTupleObject *
-tuple_alloc(struct _Py_tuple_state *state, Py_ssize_t size)
+tuple_alloc(Py_ssize_t size)
 {
     PyTupleObject *op;
+#if PyTuple_MAXSAVESIZE > 0
+    // If Python is built with the empty tuple singleton,
+    // tuple_alloc(0) must not be called.
+    assert(size != 0);
+#endif
     if (size < 0) {
         PyErr_BadInternalCall();
         return NULL;
     }
-#if PyTuple_MAXSAVESIZE > 0
+
+// Check for max save size > 1. Empty tuple singleton is special case.
+#if PyTuple_MAXSAVESIZE > 1
+    struct _Py_tuple_state *state = get_tuple_state();
+#ifdef Py_DEBUG
+    // tuple_alloc() must not be called after _PyTuple_Fini()
+    assert(state->numfree[0] != -1);
+#endif
     if (size < PyTuple_MAXSAVESIZE && (op = state->free_list[size]) != NULL) {
         assert(size != 0);
         state->free_list[size] = (PyTupleObject *) op->ob_item[0];
         state->numfree[size]--;
-        /* Inline PyObject_InitVar */
+        /* Inlined _PyObject_InitVar() without _PyType_HasFeature() test */
 #ifdef Py_TRACE_REFS
         Py_SET_SIZE(op, size);
         Py_SET_TYPE(op, &PyTuple_Type);
@@ -80,34 +100,66 @@ tuple_alloc(struct _Py_tuple_state *state, Py_ssize_t size)
     return op;
 }
 
+static int
+tuple_create_empty_tuple_singleton(struct _Py_tuple_state *state)
+{
+#if PyTuple_MAXSAVESIZE > 0
+    assert(state->free_list[0] == NULL);
+
+    PyTupleObject *op = PyObject_GC_NewVar(PyTupleObject, &PyTuple_Type, 0);
+    if (op == NULL) {
+        return -1;
+    }
+    // The empty tuple singleton is not tracked by the GC.
+    // It does not contain any Python object.
+
+    state->free_list[0] = op;
+    state->numfree[0]++;
+
+    assert(state->numfree[0] == 1);
+#endif
+    return 0;
+}
+
+
+static PyObject *
+tuple_get_empty(void)
+{
+#if PyTuple_MAXSAVESIZE > 0
+    struct _Py_tuple_state *state = get_tuple_state();
+    PyTupleObject *op = state->free_list[0];
+    // tuple_get_empty() must not be called before _PyTuple_Init()
+    // or after _PyTuple_Fini()
+    assert(op != NULL);
+#ifdef Py_DEBUG
+    assert(state->numfree[0] != -1);
+#endif
+
+    Py_INCREF(op);
+    return (PyObject *) op;
+#else
+    return PyTuple_New(0);
+#endif
+}
+
+
 PyObject *
 PyTuple_New(Py_ssize_t size)
 {
     PyTupleObject *op;
 #if PyTuple_MAXSAVESIZE > 0
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_tuple_state *state = &interp->tuple;
-    if (size == 0 && state->free_list[0]) {
-        op = state->free_list[0];
-        Py_INCREF(op);
-        return (PyObject *) op;
+    if (size == 0) {
+        return tuple_get_empty();
     }
 #endif
-    op = tuple_alloc(state, size);
+    op = tuple_alloc(size);
     if (op == NULL) {
         return NULL;
     }
     for (Py_ssize_t i = 0; i < size; i++) {
         op->ob_item[i] = NULL;
     }
-#if PyTuple_MAXSAVESIZE > 0
-    if (size == 0) {
-        state->free_list[0] = op;
-        ++state->numfree[0];
-        Py_INCREF(op);          /* extra INCREF so that this is never freed */
-    }
-#endif
-    tuple_gc_track(op);
+    _PyObject_GC_TRACK(op);
     return (PyObject *) op;
 }
 
@@ -187,14 +239,11 @@ PyTuple_Pack(Py_ssize_t n, ...)
     va_list vargs;
 
     if (n == 0) {
-        return PyTuple_New(0);
+        return tuple_get_empty();
     }
 
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_tuple_state *state = &interp->tuple;
-
     va_start(vargs, n);
-    PyTupleObject *result = tuple_alloc(state, n);
+    PyTupleObject *result = tuple_alloc(n);
     if (result == NULL) {
         va_end(vargs);
         return NULL;
@@ -206,7 +255,7 @@ PyTuple_Pack(Py_ssize_t n, ...)
         items[i] = o;
     }
     va_end(vargs);
-    tuple_gc_track(result);
+    _PyObject_GC_TRACK(result);
     return (PyObject *)result;
 }
 
@@ -225,11 +274,14 @@ tupledealloc(PyTupleObject *op)
             Py_XDECREF(op->ob_item[i]);
         }
 #if PyTuple_MAXSAVESIZE > 0
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        struct _Py_tuple_state *state = &interp->tuple;
-        if (len < PyTuple_MAXSAVESIZE &&
-            state->numfree[len] < PyTuple_MAXFREELIST &&
-            Py_IS_TYPE(op, &PyTuple_Type))
+        struct _Py_tuple_state *state = get_tuple_state();
+#ifdef Py_DEBUG
+        // tupledealloc() must not be called after _PyTuple_Fini()
+        assert(state->numfree[0] != -1);
+#endif
+        if (len < PyTuple_MAXSAVESIZE
+            && state->numfree[len] < PyTuple_MAXFREELIST
+            && Py_IS_TYPE(op, &PyTuple_Type))
         {
             op->ob_item[0] = (PyObject *) state->free_list[len];
             state->numfree[len]++;
@@ -238,7 +290,19 @@ tupledealloc(PyTupleObject *op)
         }
 #endif
     }
+#if defined(Py_DEBUG) && PyTuple_MAXSAVESIZE > 0
+    else {
+        assert(len == 0);
+        struct _Py_tuple_state *state = get_tuple_state();
+        // The empty tuple singleton must only be deallocated by
+        // _PyTuple_Fini(): not before, not after
+        if (op == state->free_list[0] && state->numfree[0] != 0) {
+            _Py_FatalRefcountError("deallocating the empty tuple singleton");
+        }
+    }
+#endif
     Py_TYPE(op)->tp_free((PyObject *)op);
+
 #if PyTuple_MAXSAVESIZE > 0
 done:
 #endif
@@ -405,12 +469,10 @@ PyObject *
 _PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
 {
     if (n == 0) {
-        return PyTuple_New(0);
+        return tuple_get_empty();
     }
 
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_tuple_state *state = &interp->tuple;
-    PyTupleObject *tuple = tuple_alloc(state, n);
+    PyTupleObject *tuple = tuple_alloc(n);
     if (tuple == NULL) {
         return NULL;
     }
@@ -420,7 +482,29 @@ _PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
         Py_INCREF(item);
         dst[i] = item;
     }
-    tuple_gc_track(tuple);
+    _PyObject_GC_TRACK(tuple);
+    return (PyObject *)tuple;
+}
+
+PyObject *
+_PyTuple_FromArraySteal(PyObject *const *src, Py_ssize_t n)
+{
+    if (n == 0) {
+        return tuple_get_empty();
+    }
+    PyTupleObject *tuple = tuple_alloc(n);
+    if (tuple == NULL) {
+        for (Py_ssize_t i = 0; i < n; i++) {
+            Py_DECREF(src[i]);
+        }
+        return NULL;
+    }
+    PyObject **dst = tuple->ob_item;
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *item = src[i];
+        dst[i] = item;
+    }
+    _PyObject_GC_TRACK(tuple);
     return (PyObject *)tuple;
 }
 
@@ -477,12 +561,10 @@ tupleconcat(PyTupleObject *a, PyObject *bb)
     assert((size_t)Py_SIZE(a) + (size_t)Py_SIZE(b) < PY_SSIZE_T_MAX);
     size = Py_SIZE(a) + Py_SIZE(b);
     if (size == 0) {
-        return PyTuple_New(0);
+        return tuple_get_empty();
     }
 
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_tuple_state *state = &interp->tuple;
-    np = tuple_alloc(state, size);
+    np = tuple_alloc(size);
     if (np == NULL) {
         return NULL;
     }
@@ -500,17 +582,15 @@ tupleconcat(PyTupleObject *a, PyObject *bb)
         Py_INCREF(v);
         dest[i] = v;
     }
-    tuple_gc_track(np);
+    _PyObject_GC_TRACK(np);
     return (PyObject *)np;
 }
 
 static PyObject *
 tuplerepeat(PyTupleObject *a, Py_ssize_t n)
 {
-    Py_ssize_t i, j;
     Py_ssize_t size;
     PyTupleObject *np;
-    PyObject **p, **items;
     if (Py_SIZE(a) == 0 || n == 1) {
         if (PyTuple_CheckExact(a)) {
             /* Since tuples are immutable, we can return a shared
@@ -520,26 +600,43 @@ tuplerepeat(PyTupleObject *a, Py_ssize_t n)
         }
     }
     if (Py_SIZE(a) == 0 || n <= 0) {
-        return PyTuple_New(0);
+        return tuple_get_empty();
     }
     if (n > PY_SSIZE_T_MAX / Py_SIZE(a))
         return PyErr_NoMemory();
     size = Py_SIZE(a) * n;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_tuple_state *state = &interp->tuple;
-    np = tuple_alloc(state, size);
+    np = tuple_alloc(size);
     if (np == NULL)
         return NULL;
-    p = np->ob_item;
-    items = a->ob_item;
-    for (i = 0; i < n; i++) {
-        for (j = 0; j < Py_SIZE(a); j++) {
-            *p = items[j];
-            Py_INCREF(*p);
-            p++;
+    PyObject **dest = np->ob_item;
+    PyObject **dest_end = dest + size;
+    if (Py_SIZE(a) == 1) {
+        PyObject *elem = a->ob_item[0];
+        Py_SET_REFCNT(elem, Py_REFCNT(elem) + n);
+#ifdef Py_REF_DEBUG
+        _Py_RefTotal += n;
+#endif
+        while (dest < dest_end) {
+            *dest++ = elem;
         }
     }
-    tuple_gc_track(np);
+    else {
+        PyObject **src = a->ob_item;
+        PyObject **src_end = src + Py_SIZE(a);
+        while (src < src_end) {
+            Py_SET_REFCNT(*src, Py_REFCNT(*src) + n);
+#ifdef Py_REF_DEBUG
+            _Py_RefTotal += n;
+#endif
+            *dest++ = *src++;
+        }
+        // Now src chases after dest in the same buffer
+        src = np->ob_item;
+        while (dest < dest_end) {
+            *dest++ = *src++;
+        }
+    }
+    _PyObject_GC_TRACK(np);
     return (PyObject *) np;
 }
 
@@ -698,10 +795,12 @@ tuple_new_impl(PyTypeObject *type, PyObject *iterable)
     if (type != &PyTuple_Type)
         return tuple_subtype_new(type, iterable);
 
-    if (iterable == NULL)
-        return PyTuple_New(0);
-    else
+    if (iterable == NULL) {
+        return tuple_get_empty();
+    }
+    else {
         return PySequence_Tuple(iterable);
+    }
 }
 
 static PyObject *
@@ -720,7 +819,9 @@ tuple_vectorcall(PyObject *type, PyObject * const*args,
     if (nargs) {
         return tuple_new_impl((PyTypeObject *)type, args[0]);
     }
-    return PyTuple_New(0);
+    else {
+        return tuple_get_empty();
+    }
 }
 
 static PyObject *
@@ -730,6 +831,9 @@ tuple_subtype_new(PyTypeObject *type, PyObject *iterable)
     Py_ssize_t i, n;
 
     assert(PyType_IsSubtype(type, &PyTuple_Type));
+    // tuple subclasses must implement the GC protocol
+    assert(_PyType_IS_GC(type));
+
     tmp = tuple_new_impl(&PyTuple_Type, iterable);
     if (tmp == NULL)
         return NULL;
@@ -745,6 +849,11 @@ tuple_subtype_new(PyTypeObject *type, PyObject *iterable)
         PyTuple_SET_ITEM(newobj, i, item);
     }
     Py_DECREF(tmp);
+
+    // Don't track if a subclass tp_alloc is PyType_GenericAlloc()
+    if (!_PyObject_GC_IS_TRACKED(newobj)) {
+        _PyObject_GC_TRACK(newobj);
+    }
     return newobj;
 }
 
@@ -783,7 +892,7 @@ tuplesubscript(PyTupleObject* self, PyObject* item)
                                             &stop, step);
 
         if (slicelength <= 0) {
-            return PyTuple_New(0);
+            return tuple_get_empty();
         }
         else if (start == 0 && step == 1 &&
                  slicelength == PyTuple_GET_SIZE(self) &&
@@ -792,9 +901,7 @@ tuplesubscript(PyTupleObject* self, PyObject* item)
             return (PyObject *)self;
         }
         else {
-            PyInterpreterState *interp = _PyInterpreterState_GET();
-            struct _Py_tuple_state *state = &interp->tuple;
-            PyTupleObject* result = tuple_alloc(state, slicelength);
+            PyTupleObject* result = tuple_alloc(slicelength);
             if (!result) return NULL;
 
             src = self->ob_item;
@@ -806,7 +913,7 @@ tuplesubscript(PyTupleObject* self, PyObject* item)
                 dest[i] = it;
             }
 
-            tuple_gc_track(result);
+            _PyObject_GC_TRACK(result);
             return (PyObject *)result;
         }
     }
@@ -833,7 +940,7 @@ static PyMethodDef tuple_methods[] = {
     TUPLE___GETNEWARGS___METHODDEF
     TUPLE_INDEX_METHODDEF
     TUPLE_COUNT_METHODDEF
-    {"__class_getitem__", (PyCFunction)Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -866,7 +973,8 @@ PyTypeObject PyTuple_Type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE | Py_TPFLAGS_TUPLE_SUBCLASS, /* tp_flags */
+        Py_TPFLAGS_BASETYPE | Py_TPFLAGS_TUPLE_SUBCLASS |
+        _Py_TPFLAGS_MATCH_SELF | Py_TPFLAGS_SEQUENCE,  /* tp_flags */
     tuple_new__doc__,                           /* tp_doc */
     (traverseproc)tupletraverse,                /* tp_traverse */
     0,                                          /* tp_clear */
@@ -956,10 +1064,10 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
 }
 
 void
-_PyTuple_ClearFreeList(PyThreadState *tstate)
+_PyTuple_ClearFreeList(PyInterpreterState *interp)
 {
 #if PyTuple_MAXSAVESIZE > 0
-    struct _Py_tuple_state *state = &tstate->interp->tuple;
+    struct _Py_tuple_state *state = &interp->tuple;
     for (Py_ssize_t i = 1; i < PyTuple_MAXSAVESIZE; i++) {
         PyTupleObject *p = state->free_list[i];
         state->free_list[i] = NULL;
@@ -974,16 +1082,53 @@ _PyTuple_ClearFreeList(PyThreadState *tstate)
 #endif
 }
 
+
+PyStatus
+_PyTuple_InitGlobalObjects(PyInterpreterState *interp)
+{
+    struct _Py_tuple_state *state = &interp->tuple;
+    if (tuple_create_empty_tuple_singleton(state) < 0) {
+        return _PyStatus_NO_MEMORY();
+    }
+    return _PyStatus_OK();
+}
+
+
+PyStatus
+_PyTuple_InitTypes(PyInterpreterState *interp)
+{
+    if (!_Py_IsMainInterpreter(interp)) {
+        return _PyStatus_OK();
+    }
+
+    if (PyType_Ready(&PyTuple_Type) < 0) {
+        return _PyStatus_ERR("Can't initialize tuple type");
+    }
+
+    if (PyType_Ready(&PyTupleIter_Type) < 0) {
+        return _PyStatus_ERR("Can't initialize tuple iterator type");
+    }
+
+    return _PyStatus_OK();
+}
+
 void
-_PyTuple_Fini(PyThreadState *tstate)
+_PyTuple_Fini(PyInterpreterState *interp)
 {
 #if PyTuple_MAXSAVESIZE > 0
-    struct _Py_tuple_state *state = &tstate->interp->tuple;
-    /* empty tuples are used all over the place and applications may
-     * rely on the fact that an empty tuple is a singleton. */
-    Py_CLEAR(state->free_list[0]);
+    struct _Py_tuple_state *state = &interp->tuple;
+    // The empty tuple singleton must not be tracked by the GC
+    assert(!_PyObject_GC_IS_TRACKED(state->free_list[0]));
 
-    _PyTuple_ClearFreeList(tstate);
+#ifdef Py_DEBUG
+    state->numfree[0] = 0;
+#endif
+    Py_CLEAR(state->free_list[0]);
+#ifdef Py_DEBUG
+    state->numfree[0] = -1;
+#endif
+
+    _PyTuple_ClearFreeList(interp);
 #endif
 }
 

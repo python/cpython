@@ -4,40 +4,32 @@
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_bytes_methods.h"
-#include "pycore_object.h"
+#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_strhex.h"        // _Py_strhex_with_sep()
 #include "bytesobject.h"
-#include "pystrhex.h"
 
 /*[clinic input]
 class bytearray "PyByteArrayObject *" "&PyByteArray_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=5535b77c37a119e0]*/
 
+/* For PyByteArray_AS_STRING(). */
 char _PyByteArray_empty_string[] = "";
-
-/* end nullbytes support */
 
 /* Helpers */
 
 static int
 _getbytevalue(PyObject* arg, int *value)
 {
-    long face_value;
+    int overflow;
+    long face_value = PyLong_AsLongAndOverflow(arg, &overflow);
 
-    if (PyLong_Check(arg)) {
-        face_value = PyLong_AsLong(arg);
-    } else {
-        PyObject *index = PyNumber_Index(arg);
-        if (index == NULL) {
-            *value = -1;
-            return 0;
-        }
-        face_value = PyLong_AsLong(index);
-        Py_DECREF(index);
+    if (face_value == -1 && PyErr_Occurred()) {
+        *value = -1;
+        return 0;
     }
-
     if (face_value < 0 || face_value >= 256) {
-        /* this includes the OverflowError in case the long is too large */
+        /* this includes an overflow in converting to C long */
         PyErr_SetString(PyExc_ValueError, "byte must be in range(0, 256)");
         *value = -1;
         return 0;
@@ -273,7 +265,9 @@ PyByteArray_Concat(PyObject *a, PyObject *b)
 
     result = (PyByteArrayObject *) \
         PyByteArray_FromStringAndSize(NULL, va.len + vb.len);
-    if (result != NULL) {
+    // result->ob_bytes is NULL if result is an empty bytearray:
+    // if va.len + vb.len equals zero.
+    if (result != NULL && result->ob_bytes != NULL) {
         memcpy(result->ob_bytes, va.buf, va.len);
         memcpy(result->ob_bytes + va.len, vb.buf, vb.len);
     }
@@ -327,6 +321,7 @@ bytearray_repeat(PyByteArrayObject *self, Py_ssize_t count)
     PyByteArrayObject *result;
     Py_ssize_t mysize;
     Py_ssize_t size;
+    const char *buf;
 
     if (count < 0)
         count = 0;
@@ -335,13 +330,14 @@ bytearray_repeat(PyByteArrayObject *self, Py_ssize_t count)
         return PyErr_NoMemory();
     size = mysize * count;
     result = (PyByteArrayObject *)PyByteArray_FromStringAndSize(NULL, size);
+    buf = PyByteArray_AS_STRING(self);
     if (result != NULL && size != 0) {
         if (mysize == 1)
-            memset(result->ob_bytes, self->ob_bytes[0], size);
+            memset(result->ob_bytes, buf[0], size);
         else {
             Py_ssize_t i;
             for (i = 0; i < count; i++)
-                memcpy(result->ob_bytes + i*mysize, self->ob_bytes, mysize);
+                memcpy(result->ob_bytes + i*mysize, buf, mysize);
         }
     }
     return (PyObject *)result;
@@ -743,13 +739,20 @@ bytearray_ass_subscript(PyByteArrayObject *self, PyObject *index, PyObject *valu
     }
 }
 
+/*[clinic input]
+bytearray.__init__
+
+    source as arg: object = NULL
+    encoding: str = NULL
+    errors: str = NULL
+
+[clinic start generated code]*/
+
 static int
-bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
+bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
+                        const char *encoding, const char *errors)
+/*[clinic end generated code: output=4ce1304649c2f8b3 input=1141a7122eefd7b9]*/
 {
-    static char *kwlist[] = {"source", "encoding", "errors", 0};
-    PyObject *arg = NULL;
-    const char *encoding = NULL;
-    const char *errors = NULL;
     Py_ssize_t count;
     PyObject *it;
     PyObject *(*iternext)(PyObject *);
@@ -759,11 +762,6 @@ bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
         if (PyByteArray_Resize((PyObject *)self, 0) < 0)
             return -1;
     }
-
-    /* Parse arguments */
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Oss:bytearray", kwlist,
-                                     &arg, &encoding, &errors))
-        return -1;
 
     /* Make a quick exit if no first argument */
     if (arg == NULL) {
@@ -1008,26 +1006,20 @@ bytearray_richcompare(PyObject *self, PyObject *other, int op)
 {
     Py_ssize_t self_size, other_size;
     Py_buffer self_bytes, other_bytes;
-    int cmp, rc;
+    int cmp;
 
-    /* Bytes can be compared to anything that supports the (binary)
-       buffer API.  Except that a comparison with Unicode is always an
-       error, even if the comparison is for equality. */
-    rc = PyObject_IsInstance(self, (PyObject*)&PyUnicode_Type);
-    if (!rc)
-        rc = PyObject_IsInstance(other, (PyObject*)&PyUnicode_Type);
-    if (rc < 0)
-        return NULL;
-    if (rc) {
-        if (_Py_GetConfig()->bytes_warning && (op == Py_EQ || op == Py_NE)) {
-            if (PyErr_WarnEx(PyExc_BytesWarning,
-                            "Comparison between bytearray and string", 1))
-                return NULL;
+    if (!PyObject_CheckBuffer(self) || !PyObject_CheckBuffer(other)) {
+        if (PyUnicode_Check(self) || PyUnicode_Check(other)) {
+            if (_Py_GetConfig()->bytes_warning && (op == Py_EQ || op == Py_NE)) {
+                if (PyErr_WarnEx(PyExc_BytesWarning,
+                                "Comparison between bytearray and string", 1))
+                    return NULL;
+            }
         }
-
         Py_RETURN_NOTIMPLEMENTED;
     }
 
+    /* Bytearrays can be compared to anything that supports the buffer API. */
     if (PyObject_GetBuffer(self, &self_bytes, PyBUF_SIMPLE) != 0) {
         PyErr_Clear();
         Py_RETURN_NOTIMPLEMENTED;
@@ -1335,7 +1327,7 @@ bytearray_translate_impl(PyByteArrayObject *self, PyObject *table,
         if (trans_table[c] != -1)
             *output++ = (char)trans_table[c];
     }
-    /* Fix the size of the resulting string */
+    /* Fix the size of the resulting bytearray */
     if (inlen > 0)
         if (PyByteArray_Resize(result, output - output_start) < 0) {
             Py_CLEAR(result);
@@ -1744,6 +1736,11 @@ bytearray_extend(PyByteArrayObject *self, PyObject *iterable_of_ints)
     }
     Py_DECREF(it);
 
+    if (PyErr_Occurred()) {
+        Py_DECREF(bytearray_obj);
+        return NULL;
+    }
+
     /* Resize down to exact size. */
     if (PyByteArray_Resize((PyObject *)bytearray_obj, len) < 0) {
         Py_DECREF(bytearray_obj);
@@ -1756,10 +1753,7 @@ bytearray_extend(PyByteArrayObject *self, PyObject *iterable_of_ints)
     }
     Py_DECREF(bytearray_obj);
 
-    if (PyErr_Occurred()) {
-        return NULL;
-    }
-
+    assert(!PyErr_Occurred());
     Py_RETURN_NONE;
 }
 
@@ -2090,7 +2084,7 @@ bytearray.hex
         How many bytes between separators.  Positive values count from the
         right, negative values count from the left.
 
-Create a str of hexadecimal numbers from a bytearray object.
+Create a string of hexadecimal numbers from a bytearray object.
 
 Example:
 >>> value = bytearray([0xb9, 0x01, 0xef])
@@ -2106,7 +2100,7 @@ Example:
 
 static PyObject *
 bytearray_hex_impl(PyByteArrayObject *self, PyObject *sep, int bytes_per_sep)
-/*[clinic end generated code: output=29c4e5ef72c565a0 input=814c15830ac8c4b5]*/
+/*[clinic end generated code: output=29c4e5ef72c565a0 input=808667e49bcccb54]*/
 {
     char* argbuf = PyByteArray_AS_STRING(self);
     Py_ssize_t arglen = PyByteArray_GET_SIZE(self);
@@ -2343,7 +2337,8 @@ PyTypeObject PyByteArray_Type = {
     PyObject_GenericGetAttr,            /* tp_getattro */
     0,                                  /* tp_setattro */
     &bytearray_as_buffer,               /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+        _Py_TPFLAGS_MATCH_SELF,       /* tp_flags */
     bytearray_doc,                      /* tp_doc */
     0,                                  /* tp_traverse */
     0,                                  /* tp_clear */
@@ -2359,13 +2354,13 @@ PyTypeObject PyByteArray_Type = {
     0,                                  /* tp_descr_get */
     0,                                  /* tp_descr_set */
     0,                                  /* tp_dictoffset */
-    (initproc)bytearray_init,           /* tp_init */
+    (initproc)bytearray___init__,       /* tp_init */
     PyType_GenericAlloc,                /* tp_alloc */
     PyType_GenericNew,                  /* tp_new */
     PyObject_Del,                       /* tp_free */
 };
 
-/*********************** Bytes Iterator ****************************/
+/*********************** Bytearray Iterator ****************************/
 
 typedef struct {
     PyObject_HEAD
