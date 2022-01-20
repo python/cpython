@@ -68,6 +68,9 @@ Summary -- Release highlights
 PEP-654: Exception Groups and ``except*``.
 (Contributed by Irit Katriel in :issue:`45292`.)
 
+PEP 646: Variadic Generics.
+(Contributed by Matthew Rahtz in :issue:`43224`.)
+
 New Features
 ============
 
