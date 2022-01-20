@@ -5477,7 +5477,7 @@ an X86_64 CPU from 2020 with 4.2 GHz max frequency.
 The limit value uses base 10 as a reference point and scales with base.
 That means :class:`int` accepts longer input strings for smaller bases and
 fails earlier for larger bases. Underscores in input strings don't count
-towards the limit. 
+towards the limit.
 
 When an operation exceeds the limit, an :exc:`ValueError` is raised::
 
@@ -5537,6 +5537,8 @@ The limitations do not apply to functions with a linear algorithm:
 
 Recommended configuration
 -------------------------
+
+Example::
 
    import sys
    if hasattr(sys.flags, "intmaxdigits") and sys.flags.intmaxdigits == -1:

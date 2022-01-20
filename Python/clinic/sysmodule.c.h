@@ -749,7 +749,7 @@ PyDoc_STRVAR(sys_getintmaxdigits__doc__,
 "getintmaxdigits($module, /)\n"
 "--\n"
 "\n"
-"TODO");
+"Get value of integer maximum digits limit.");
 
 #define SYS_GETINTMAXDIGITS_METHODDEF    \
     {"getintmaxdigits", (PyCFunction)sys_getintmaxdigits, METH_NOARGS, sys_getintmaxdigits__doc__},
@@ -767,7 +767,7 @@ PyDoc_STRVAR(sys_setintmaxdigits__doc__,
 "setintmaxdigits($module, /, maxdigits)\n"
 "--\n"
 "\n"
-"TODO");
+"Set value of integer maximum digits limit.");
 
 #define SYS_SETINTMAXDIGITS_METHODDEF    \
     {"setintmaxdigits", _PyCFunction_CAST(sys_setintmaxdigits), METH_FASTCALL|METH_KEYWORDS, sys_setintmaxdigits__doc__},
@@ -1328,4 +1328,4 @@ sys_is_stack_trampoline_active(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=43b44240211afe95 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6077bf7ef08d3318 input=a9049054013a1b77]*/

@@ -1680,7 +1680,7 @@ Get value of integer maximum digits limit.
 
 static PyObject *
 sys_getintmaxdigits_impl(PyObject *module)
-/*[clinic end generated code: output=be8245491b631377 input=a5e40c7ebebc3bc2]*/
+/*[clinic end generated code: output=be8245491b631377 input=4c6cf29e9858e10e]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     return PyLong_FromSsize_t(interp->intmaxdigits);
@@ -1696,7 +1696,7 @@ Set value of integer maximum digits limit.
 
 static PyObject *
 sys_setintmaxdigits_impl(PyObject *module, Py_ssize_t maxdigits)
-/*[clinic end generated code: output=f08310ce0abd3fc7 input=6c9f05282da2c64e]*/
+/*[clinic end generated code: output=f08310ce0abd3fc7 input=66814100429a2b99]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
     if ((maxdigits == 0) || (maxdigits >= _PY_LONG_MAX_DIGITS_THRESHOLD)) {
