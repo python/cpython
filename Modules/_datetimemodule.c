@@ -3506,7 +3506,21 @@ static PyMethodDef date_methods[] = {
      PyDoc_STR("Return ctime() style string.")},
 
     {"strftime",        (PyCFunction)(void(*)(void))date_strftime,     METH_VARARGS | METH_KEYWORDS,
-     PyDoc_STR("format -> strftime() style string.")},
+     PyDoc_STR(
+         "Convert to a string in the given format via time.strftime().\n\n"
+         "Formatting directives referring to hours, minutes or seconds\n"
+         "will use zero.\n\n"
+         "Commonly used formatting directives:\n"
+         "    %Y  Year with century as a decimal number.\n"
+         "    %m  Month as a decimal number [01,12].\n"
+         "    %d  Day of the month as a decimal number [01,31].\n"
+         "    %a  Locale's abbreviated weekday name.\n"
+         "    %A  Locale's full weekday name.\n"
+         "    %b  Locale's abbreviated month name.\n"
+         "    %B  Locale's full month name.\n"
+         "    %c  Locale's appropriate date and time representation.\n\n"
+         "For a complete list and detailed descriptions of formatting\n"
+         "directives, see the library reference manual.")},
 
     {"__format__",      (PyCFunction)date_format,       METH_VARARGS,
      PyDoc_STR("Formats self with strftime.")},
@@ -4674,7 +4688,20 @@ static PyMethodDef time_methods[] = {
                "'milliseconds' and 'microseconds'.\n")},
 
     {"strftime",        (PyCFunction)(void(*)(void))time_strftime,     METH_VARARGS | METH_KEYWORDS,
-     PyDoc_STR("format -> strftime() style string.")},
+     PyDoc_STR(
+         "Convert to a string in the given format via time.strftime().\n\n"
+         "Formatting directives referring to years will use 1900, and\n"
+         "those referring to months or days will use 1.\n\n"
+         "Commonly used formatting directives:\n"
+         "    %H  Hour (24-hour clock) as a decimal number [00,23].\n"
+         "    %M  Minute as a decimal number [00,59].\n"
+         "    %S  Second as a decimal number [00,61].\n"
+         "    %z  Time zone offset from UTC.\n"
+         "    %c  Locale's appropriate date and time representation.\n"
+         "    %I  Hour (12-hour clock) as a decimal number [01,12].\n"
+         "    %p  Locale's equivalent of either AM or PM.\n\n"
+         "For a complete list and detailed descriptions of formatting\n"
+         "directives, see the library reference manual.")},
 
     {"__format__",      (PyCFunction)date_format,       METH_VARARGS,
      PyDoc_STR("Formats self with strftime.")},
@@ -6363,6 +6390,27 @@ static PyMethodDef datetime_methods[] = {
 
     {"ctime",       (PyCFunction)datetime_ctime,        METH_NOARGS,
      PyDoc_STR("Return ctime() style string.")},
+
+    {"strftime",        (PyCFunction)(void(*)(void))date_strftime,     METH_VARARGS | METH_KEYWORDS,
+     PyDoc_STR(
+         "Convert to a string in the given format via time.strftime().\n\n"
+         "Commonly used formatting directives:\n"
+         "    %Y  Year with century as a decimal number.\n"
+         "    %m  Month as a decimal number [01,12].\n"
+         "    %d  Day of the month as a decimal number [01,31].\n"
+         "    %H  Hour (24-hour clock) as a decimal number [00,23].\n"
+         "    %M  Minute as a decimal number [00,59].\n"
+         "    %S  Second as a decimal number [00,61].\n"
+         "    %z  Time zone offset from UTC.\n"
+         "    %a  Locale's abbreviated weekday name.\n"
+         "    %A  Locale's full weekday name.\n"
+         "    %b  Locale's abbreviated month name.\n"
+         "    %B  Locale's full month name.\n"
+         "    %c  Locale's appropriate date and time representation.\n"
+         "    %I  Hour (12-hour clock) as a decimal number [01,12].\n"
+         "    %p  Locale's equivalent of either AM or PM.\n\n"
+         "For a complete list and detailed descriptions of formatting\n"
+         "directives, see the library reference manual.")},
 
     {"timetuple",   (PyCFunction)datetime_timetuple, METH_NOARGS,
      PyDoc_STR("Return time tuple, compatible with time.localtime().")},
