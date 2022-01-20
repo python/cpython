@@ -7,7 +7,7 @@ be run.
 
 import distutils.tests
 import test.support
-
+import unittest
 
 def load_tests(*_):
     # used by unittest

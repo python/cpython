@@ -3,7 +3,6 @@ import contextlib
 import filecmp
 import importlib.util
 import io
-import itertools
 import os
 import pathlib
 import py_compile
@@ -24,9 +23,8 @@ except ImportError:
 
 from test import support
 from test.support import script_helper
-
-from .test_py_compile import without_source_date_epoch
-from .test_py_compile import SourceDateEpochTestMeta
+from test.test_py_compile import without_source_date_epoch
+from test.test_py_compile import SourceDateEpochTestMeta
 
 
 def get_pyc(script, opt):
