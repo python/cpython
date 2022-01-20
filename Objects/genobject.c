@@ -897,11 +897,9 @@ make_gen(PyTypeObject *type, PyFunctionObject *func)
     gen->gi_exc_state.exc_value = NULL;
     gen->gi_exc_state.previous_item = NULL;
     assert(func->func_name != NULL);
-    Py_INCREF(func->func_name);
-    gen->gi_name = func->func_name;
+    gen->gi_name = Py_NewRef(func->func_name);
     assert(func->func_qualname != NULL);
-    Py_INCREF(func->func_qualname);
-    gen->gi_qualname = func->func_qualname;
+    gen->gi_qualname = Py_NewRef(func->func_qualname);
     _PyObject_GC_TRACK(gen);
     return (PyObject *)gen;
 }
