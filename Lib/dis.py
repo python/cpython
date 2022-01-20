@@ -414,7 +414,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
         argval = None
         argrepr = ''
         try:
-            positions = next(co_positions)
+            positions = Positions(*next(co_positions))
         except StopIteration:
             positions = None
         if arg is not None:
