@@ -316,7 +316,18 @@ details of bytecode instructions as :class:`Instruction` instances:
 
       ``True`` if other code jumps to here, otherwise ``False``
 
+
+   .. data:: positions
+
+      Optional namedtuple ``(lineno, end_lineno, col_offset, end_col_offset)``
+      holding the span of source code covered by this instruction.
+      All fields might be ``None`` if some information is missing.
+
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.11
+
+      Field ``positions`` is added.
 
 
 The Python compiler currently generates the following bytecode instructions.

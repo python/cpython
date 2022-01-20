@@ -1313,6 +1313,12 @@ class InstructionTests(InstructionTestCase):
         ]
         self.assertEqual(positions, expected)
 
+        named_positions = [
+            (pos.lineno, pos.end_lineno, pos.col_offset, pos.end_col_offset)
+            for pos in positions
+        ]
+        self.assertEqual(named_positions, expected)
+
     @requires_debug_ranges()
     def test_co_positions_missing_info(self):
         code = compile('x, y, z', '<test>', 'exec')
@@ -1321,8 +1327,8 @@ class InstructionTests(InstructionTestCase):
         for instruction in actual:
             with self.subTest(instruction=instruction):
                 positions = instruction.positions
+                self.assertEqual(len(positions), 4)
                 if instruction.opname == "RESUME":
-                    self.assertEqual(len(positions), 4)
                     continue
                 self.assertEqual(positions.lineno, 1)
                 self.assertEqual(positions.end_lineno, 1)
@@ -1334,8 +1340,8 @@ class InstructionTests(InstructionTestCase):
         for instruction in actual:
             with self.subTest(instruction=instruction):
                 positions = instruction.positions
+                self.assertEqual(len(positions), 4)
                 if instruction.opname == "RESUME":
-                    self.assertEqual(len(positions), 4)
                     continue
                 self.assertEqual(positions.lineno, 1)
                 self.assertIsNone(positions.end_lineno)
