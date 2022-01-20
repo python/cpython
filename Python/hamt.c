@@ -2,6 +2,7 @@
 
 #include "pycore_bitutils.h"      // _Py_popcount32
 #include "pycore_hamt.h"
+#include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include <stddef.h>               // offsetof()
 
@@ -2952,9 +2953,13 @@ PyTypeObject _PyHamt_CollisionNode_Type = {
 };
 
 
-int
-_PyHamt_Init(void)
+PyStatus
+_PyHamt_InitTypes(PyInterpreterState *interp)
 {
+    if (!_Py_IsMainInterpreter(interp)) {
+        return _PyStatus_OK();
+    }
+
     if ((PyType_Ready(&_PyHamt_Type) < 0) ||
         (PyType_Ready(&_PyHamt_ArrayNode_Type) < 0) ||
         (PyType_Ready(&_PyHamt_BitmapNode_Type) < 0) ||
@@ -2963,14 +2968,14 @@ _PyHamt_Init(void)
         (PyType_Ready(&_PyHamtValues_Type) < 0) ||
         (PyType_Ready(&_PyHamtItems_Type) < 0))
     {
-        return 0;
+        return _PyStatus_ERR("can't init hamt types");
     }
 
-    return 1;
+    return _PyStatus_OK();
 }
 
 void
-_PyHamt_Fini(void)
+_PyHamt_Fini(PyInterpreterState *interp)
 {
     Py_CLEAR(_empty_hamt);
     Py_CLEAR(_empty_bitmap_node);

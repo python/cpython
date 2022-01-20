@@ -44,7 +44,7 @@ import suspicious
 
 
 ISSUE_URI = 'https://bugs.python.org/issue%s'
-SOURCE_URI = 'https://github.com/python/cpython/tree/master/%s'
+SOURCE_URI = 'https://github.com/python/cpython/tree/main/%s'
 
 # monkey-patch reST parser to disable alphabetic and roman enumerated lists
 from docutils.parsers.rst.states import Body
@@ -224,6 +224,7 @@ class AuditEvent(Directive):
         info['source'].append((env.docname, target))
 
         pnode = nodes.paragraph(text, classes=["audit-hook"], ids=ids)
+        pnode.line = self.lineno
         if self.content:
             self.state.nested_parse(self.content, self.content_offset, pnode)
         else:
@@ -394,7 +395,12 @@ class DeprecatedRemoved(Directive):
                                    translatable=False)
             node.append(para)
         env = self.state.document.settings.env
-        env.get_domain('changeset').note_changeset(node)
+        # deprecated pre-Sphinx-2 method
+        if hasattr(env, 'note_versionchange'):
+            env.note_versionchange('deprecated', version[0], node, self.lineno)
+        # new method
+        else:
+            env.get_domain('changeset').note_changeset(node)
         return [node] + messages
 
 

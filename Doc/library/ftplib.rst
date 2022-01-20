@@ -17,7 +17,7 @@ This module defines the class :class:`FTP` and a few related items. The
 this to write Python programs that perform a variety of automated FTP jobs, such
 as mirroring other FTP servers.  It is also used by the module
 :mod:`urllib.request` to handle URLs that use FTP.  For more information on FTP
-(File Transfer Protocol), see Internet :rfc:`959`.
+(File Transfer Protocol), see internet :rfc:`959`.
 
 The default encoding is UTF-8, following :rfc:`2640`.
 
@@ -28,6 +28,7 @@ Here's a sample session using the :mod:`ftplib` module::
    >>> ftp.login()                     # user anonymous, passwd anonymous@
    '230 Login successful.'
    >>> ftp.cwd('debian')               # change into "debian" directory
+   '250 Directory successfully changed.'
    >>> ftp.retrlines('LIST')           # list directory contents
    -rw-rw-r--    1 1176     1176         1063 Jun 15 10:18 README
    ...
@@ -39,6 +40,7 @@ Here's a sample session using the :mod:`ftplib` module::
    >>>     ftp.retrbinary('RETR README', fp.write)
    '226 Transfer complete.'
    >>> ftp.quit()
+   '221 Goodbye.'
 
 
 The module defines the following items:

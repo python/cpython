@@ -1,0 +1,1 @@
+Optimize :meth:`pathlib.Path.iterdir` by removing an unnecessary check for special entries.

@@ -591,10 +591,13 @@ instance, with its traceback set to its argument), like so::
            __context__ (exception attribute)
 
 The ``from`` clause is used for exception chaining: if given, the second
-*expression* must be another exception class or instance, which will then be
-attached to the raised exception as the :attr:`__cause__` attribute (which is
-writable).  If the raised exception is not handled, both exceptions will be
-printed::
+*expression* must be another exception class or instance. If the second
+expression is an exception instance, it will be attached to the raised
+exception as the :attr:`__cause__` attribute (which is writable). If the
+expression is an exception class, the class will be instantiated and the
+resulting exception instance will be attached to the raised exception as the
+:attr:`__cause__` attribute. If the raised exception is not handled, both
+exceptions will be printed::
 
    >>> try:
    ...     print(1 / 0)
@@ -651,6 +654,12 @@ and information about handling exceptions is in section :ref:`try`.
 .. versionadded:: 3.3
     The ``__suppress_context__`` attribute to suppress automatic display of the
     exception context.
+
+.. versionchanged:: 3.11
+    If the traceback of the active exception is modified in an :keyword:`except`
+    clause, a subsequent ``raise`` statement re-raises the exception with the
+    modified traceback. Previously, the exception was re-raised with the
+    traceback it had when it was caught.
 
 .. _break:
 
@@ -731,7 +740,7 @@ The :keyword:`!import` statement
               : ("," `identifier` ["as" `identifier`])*
               : | "from" `relative_module` "import" "(" `identifier` ["as" `identifier`]
               : ("," `identifier` ["as" `identifier`])* [","] ")"
-              : | "from" `module` "import" "*"
+              : | "from" `relative_module` "import" "*"
    module: (`identifier` ".")* `identifier`
    relative_module: "."* `module` | "."+
 
@@ -950,7 +959,7 @@ Names listed in a :keyword:`global` statement must not be used in the same code
 block textually preceding that :keyword:`!global` statement.
 
 Names listed in a :keyword:`global` statement must not be defined as formal
-parameters or in a :keyword:`for` loop control target, :keyword:`class`
+parameters, or as targets in :keyword:`with` statements or :keyword:`except` clauses, or in a :keyword:`for` target list, :keyword:`class`
 definition, function definition, :keyword:`import` statement, or variable
 annotation.
 

@@ -3,6 +3,7 @@ import unittest
 from test import support
 from io import StringIO
 from pstats import SortKey
+from enum import StrEnum, _test_simple_enum
 
 import pstats
 import cProfile
@@ -67,6 +68,25 @@ class StatsTestCase(unittest.TestCase):
             self.assertEqual(
                     self.stats.sort_type,
                     self.stats.sort_arg_dict_default[member.value][-1])
+        class CheckedSortKey(StrEnum):
+            CALLS = 'calls', 'ncalls'
+            CUMULATIVE = 'cumulative', 'cumtime'
+            FILENAME = 'filename', 'module'
+            LINE = 'line'
+            NAME = 'name'
+            NFL = 'nfl'
+            PCALLS = 'pcalls'
+            STDNAME = 'stdname'
+            TIME = 'time', 'tottime'
+            def __new__(cls, *values):
+                value = values[0]
+                obj = str.__new__(cls, value)
+                obj._value_ = value
+                for other_value in values[1:]:
+                    cls._value2member_map_[other_value] = obj
+                obj._all_values = values
+                return obj
+        _test_simple_enum(CheckedSortKey, SortKey)
 
     def test_sort_starts_mix(self):
         self.assertRaises(TypeError, self.stats.sort_stats,

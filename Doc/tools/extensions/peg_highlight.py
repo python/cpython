@@ -27,6 +27,12 @@ class PEGLexer(RegexLexer):
     tokens = {
         "ws": [(r"\n", Text), (r"\s+", Text), (r"#.*$", Comment.Singleline),],
         "lookaheads": [
+            # Forced tokens
+            (r"(&&)(?=\w+\s?)", bygroups(None)),
+            (r"(&&)(?='.+'\s?)", bygroups(None)),
+            (r'(&&)(?=".+"\s?)', bygroups(None)),
+            (r"(&&)(?=\(.+\)\s?)", bygroups(None)),
+
             (r"(?<=\|\s)(&\w+\s?)", bygroups(None)),
             (r"(?<=\|\s)(&'.+'\s?)", bygroups(None)),
             (r'(?<=\|\s)(&".+"\s?)', bygroups(None)),
@@ -36,17 +42,22 @@ class PEGLexer(RegexLexer):
             (r"(@\w+ '''(.|\n)+?''')", bygroups(None)),
             (r"^(@.*)$", bygroups(None)),
         ],
-        "actions": [(r"{(.|\n)+?}", bygroups(None)),],
+        "actions": [
+            (r"{(.|\n)+?}", bygroups(None)),
+        ],
         "strings": [
             (r"'\w+?'", Keyword),
             (r'"\w+?"', Keyword),
             (r"'\W+?'", Text),
             (r'"\W+?"', Text),
         ],
-        "variables": [(_name + _text_ws + r"(\[.*\])?" + _text_ws + "(=)", bygroups(None, None, None, None, None),),],
+        "variables": [
+            (_name + _text_ws + "(=)", bygroups(None, None, None),),
+            (_name + _text_ws + r"(\[[\w\d_\*]+?\])" + _text_ws + "(=)", bygroups(None, None, None, None, None),),
+        ],
         "invalids": [
-            (r"^(\s+\|\s+invalid_\w+\s*\n)", bygroups(None)),
-            (r"^(\s+\|\s+incorrect_\w+\s*\n)", bygroups(None)),
+            (r"^(\s+\|\s+.*invalid_\w+.*\n)", bygroups(None)),
+            (r"^(\s+\|\s+.*incorrect_\w+.*\n)", bygroups(None)),
             (r"^(#.*invalid syntax.*(?:.|\n)*)", bygroups(None),),
         ],
         "root": [

@@ -13,7 +13,7 @@ Type Objects
    The C structure of the objects used to describe built-in types.
 
 
-.. c:var:: PyObject* PyType_Type
+.. c:var:: PyTypeObject PyType_Type
 
    This is the type object for type objects; it is the same object as
    :class:`type` in the Python layer.
@@ -23,12 +23,14 @@ Type Objects
 
    Return non-zero if the object *o* is a type object, including instances of
    types derived from the standard type object.  Return 0 in all other cases.
+   This function always succeeds.
 
 
 .. c:function:: int PyType_CheckExact(PyObject *o)
 
-   Return non-zero if the object *o* is a type object, but not a subtype of the
-   standard type object.  Return 0 in all other cases.
+   Return non-zero if the object *o* is a type object, but not a subtype of
+   the standard type object.  Return 0 in all other cases.  This function
+   always succeeds.
 
 
 .. c:function:: unsigned int PyType_ClearCache()
@@ -95,6 +97,28 @@ Type Objects
    from a type's base class.  Return ``0`` on success, or return ``-1`` and sets an
    exception on error.
 
+   .. note::
+       If some of the base classes implements the GC protocol and the provided
+       type does not include the :const:`Py_TPFLAGS_HAVE_GC` in its flags, then
+       the GC protocol will be automatically implemented from its parents. On
+       the contrary, if the type being created does include
+       :const:`Py_TPFLAGS_HAVE_GC` in its flags then it **must** implement the
+       GC protocol itself by at least implementing the
+       :c:member:`~PyTypeObject.tp_traverse` handle.
+
+.. c:function:: PyObject* PyType_GetName(PyTypeObject *type)
+
+   Return the type's name. Equivalent to getting the type's ``__name__`` attribute.
+
+   .. versionadded:: 3.11
+
+.. c:function:: PyObject* PyType_GetQualName(PyTypeObject *type)
+
+   Return the type's qualified name. Equivalent to getting the
+   type's ``__qualname__`` attribute.
+
+   .. versionadded:: 3.11
+
 .. c:function:: void* PyType_GetSlot(PyTypeObject *type, int slot)
 
    Return the function pointer stored in the given slot. If the
@@ -109,7 +133,7 @@ Type Objects
 
    .. versionchanged:: 3.10
       :c:func:`PyType_GetSlot` can now accept all types.
-      Previously, it was limited to heap types.
+      Previously, it was limited to :ref:`heap types <heap-types>`.
 
 .. c:function:: PyObject* PyType_GetModule(PyTypeObject *type)
 
@@ -151,7 +175,7 @@ The following functions and structs are used to create
 
 .. c:function:: PyObject* PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
 
-   Creates and returns a heap type object from the *spec*
+   Creates and returns a :ref:`heap type <heap-types>` from the *spec*
    (:const:`Py_TPFLAGS_HEAPTYPE`).
 
    The *bases* argument can be used to specify base classes; it can either
@@ -163,7 +187,7 @@ The following functions and structs are used to create
    The *module* argument can be used to record the module in which the new
    class is defined. It must be a module object or ``NULL``.
    If not ``NULL``, the module is associated with the new type and can later be
-   retreived with :c:func:`PyType_GetModule`.
+   retrieved with :c:func:`PyType_GetModule`.
    The associated module is not inherited by subclasses; it must be specified
    for each class individually.
 

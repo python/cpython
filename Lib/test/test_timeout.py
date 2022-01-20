@@ -290,13 +290,9 @@ class UDPTimeoutTestCase(TimeoutTestCase):
         self._sock_operation(1, 1.5, 'recvfrom', 1024)
 
 
-def test_main():
+def setUpModule():
     support.requires('network')
-    support.run_unittest(
-        CreationTestCase,
-        TCPTimeoutTestCase,
-        UDPTimeoutTestCase,
-    )
+
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

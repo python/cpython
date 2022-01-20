@@ -218,7 +218,7 @@ Directory and files operations
       copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
-.. function:: ignore_patterns(\*patterns)
+.. function:: ignore_patterns(*patterns)
 
    This factory function creates a function that can be used as a callable for
    :func:`copytree`\'s *ignore* argument, ignoring files and directories that
@@ -443,8 +443,9 @@ Directory and files operations
 Platform-dependent efficient copy operations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Starting from Python 3.8 all functions involving a file copy (:func:`copyfile`,
-:func:`copy`, :func:`copy2`, :func:`copytree`, and :func:`move`) may use
+Starting from Python 3.8, all functions involving a file copy
+(:func:`copyfile`, :func:`~shutil.copy`, :func:`copy2`,
+:func:`copytree`, and :func:`move`) may use
 platform-specific "fast-copy" syscalls in order to copy the file more
 efficiently (see :issue:`33671`).
 "fast-copy" means that the copying operation occurs within the kernel, avoiding
@@ -593,6 +594,10 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    The *verbose* argument is unused and deprecated.
 
    .. audit-event:: shutil.make_archive base_name,format,root_dir,base_dir shutil.make_archive
+
+   .. note::
+
+      This function is not thread-safe.
 
    .. versionchanged:: 3.8
       The modern pax (POSIX.1-2001) format is now used instead of
@@ -798,6 +803,10 @@ Querying the size of the output terminal
    `Other Environment Variables`_.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.11
+      The ``fallback`` values are also used if :func:`os.get_terminal_size`
+      returns zeroes.
 
 .. _`fcopyfile`:
    http://www.manpagez.com/man/3/copyfile/

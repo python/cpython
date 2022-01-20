@@ -9,6 +9,7 @@ machinery = util.import_importlib('importlib.machinery')
 import os
 from test.support import os_helper
 import unittest
+import warnings
 
 
 @util.case_insensitive_tests
@@ -64,7 +65,9 @@ class CaseSensitivityTest(util.CASEOKTestBase):
 
 class CaseSensitivityTestPEP302(CaseSensitivityTest):
     def find(self, finder):
-        return finder.find_module(self.name)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            return finder.find_module(self.name)
 
 
 (Frozen_CaseSensitivityTestPEP302,

@@ -17,7 +17,7 @@ class QueueFull(Exception):
     pass
 
 
-class Queue(mixins._LoopBoundedMixin):
+class Queue(mixins._LoopBoundMixin):
     """A queue, useful for coordinating producer and consumer coroutines.
 
     If maxsize is less than or equal to zero, the queue size is infinite. If it
@@ -29,7 +29,8 @@ class Queue(mixins._LoopBoundedMixin):
     interrupted between calling qsize() and doing an operation on the Queue.
     """
 
-    def __init__(self, maxsize=0):
+    def __init__(self, maxsize=0, *, loop=mixins._marker):
+        super().__init__(loop=loop)
         self._maxsize = maxsize
 
         # Futures.

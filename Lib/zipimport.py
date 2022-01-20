@@ -22,6 +22,7 @@ import _io  # for open
 import marshal  # for loads
 import sys  # for modules
 import time  # for mktime
+import _warnings  # For warn()
 
 __all__ = ['ZipImportError', 'zipimporter']
 
@@ -118,6 +119,9 @@ class zipimporter(_bootstrap_external._LoaderBasics):
 
         Deprecated since Python 3.10. Use find_spec() instead.
         """
+        _warnings.warn("zipimporter.find_loader() is deprecated and slated for "
+                       "removal in Python 3.12; use find_spec() instead",
+                       DeprecationWarning)
         mi = _get_module_info(self, fullname)
         if mi is not None:
             # This is a module or package.
@@ -151,6 +155,9 @@ class zipimporter(_bootstrap_external._LoaderBasics):
 
         Deprecated since Python 3.10. Use find_spec() instead.
         """
+        _warnings.warn("zipimporter.find_module() is deprecated and slated for "
+                       "removal in Python 3.12; use find_spec() instead",
+                       DeprecationWarning)
         return self.find_loader(fullname, path)[0]
 
     def find_spec(self, fullname, target=None):
@@ -184,7 +191,7 @@ class zipimporter(_bootstrap_external._LoaderBasics):
         """get_code(fullname) -> code object.
 
         Return the code object for the specified module. Raise ZipImportError
-        if the module couldn't be found.
+        if the module couldn't be imported.
         """
         code, ispackage, modpath = _get_module_code(self, fullname)
         return code
@@ -214,7 +221,8 @@ class zipimporter(_bootstrap_external._LoaderBasics):
     def get_filename(self, fullname):
         """get_filename(fullname) -> filename string.
 
-        Return the filename for the specified module.
+        Return the filename for the specified module or raise ZipImportError
+        if it couldn't be imported.
         """
         # Deciding the filename requires working out where the code
         # would come from if the module was actually loaded
@@ -266,10 +274,13 @@ class zipimporter(_bootstrap_external._LoaderBasics):
 
         Load the module specified by 'fullname'. 'fullname' must be the
         fully qualified (dotted) module name. It returns the imported
-        module, or raises ZipImportError if it wasn't found.
+        module, or raises ZipImportError if it could not be imported.
 
-        Deprecated since Python 3.10. use exec_module() instead.
+        Deprecated since Python 3.10. Use exec_module() instead.
         """
+        msg = ("zipimport.zipimporter.load_module() is deprecated and slated for "
+               "removal in Python 3.12; use exec_module() instead")
+        _warnings.warn(msg, DeprecationWarning)
         code, ispackage, modpath = _get_module_code(self, fullname)
         mod = sys.modules.get(fullname)
         if mod is None or not isinstance(mod, _module_type):
@@ -314,6 +325,16 @@ class zipimporter(_bootstrap_external._LoaderBasics):
             return None
         from importlib.readers import ZipReader
         return ZipReader(self, fullname)
+
+
+    def invalidate_caches(self):
+        """Reload the file data of the archive path."""
+        try:
+            self._files = _read_directory(self.archive)
+            _zip_directory_cache[self.archive] = self._files
+        except ZipImportError:
+            _zip_directory_cache.pop(self.archive, None)
+            self._files = {}
 
 
     def __repr__(self):
@@ -609,20 +630,15 @@ def _eq_mtime(t1, t2):
 
 
 # Given the contents of a .py[co] file, unmarshal the data
-# and return the code object. Return None if it the magic word doesn't
-# match, or if the recorded .py[co] metadata does not match the source,
-# (we do this instead of raising an exception as we fall back
-# to .py if available and we don't want to mask other errors).
+# and return the code object. Raises ImportError it the magic word doesn't
+# match, or if the recorded .py[co] metadata does not match the source.
 def _unmarshal_code(self, pathname, fullpath, fullname, data):
     exc_details = {
         'name': fullname,
         'path': fullpath,
     }
 
-    try:
-        flags = _bootstrap_external._classify_pyc(data, fullname, exc_details)
-    except ImportError:
-        return None
+    flags = _bootstrap_external._classify_pyc(data, fullname, exc_details)
 
     hash_based = flags & 0b1 != 0
     if hash_based:
@@ -636,11 +652,8 @@ def _unmarshal_code(self, pathname, fullpath, fullname, data):
                     source_bytes,
                 )
 
-                try:
-                    _bootstrap_external._validate_hash_pyc(
-                        data, source_hash, fullname, exc_details)
-                except ImportError:
-                    return None
+                _bootstrap_external._validate_hash_pyc(
+                    data, source_hash, fullname, exc_details)
     else:
         source_mtime, source_size = \
             _get_mtime_and_size_of_source(self, fullpath)
@@ -726,6 +739,7 @@ def _get_pyc_source(self, path):
 # 'fullname'.
 def _get_module_code(self, fullname):
     path = _get_module_path(self, fullname)
+    import_error = None
     for suffix, isbytecode, ispackage in _zip_searchorder:
         fullpath = path + suffix
         _bootstrap._verbose_message('trying {}{}{}', self.archive, path_sep, fullpath, verbosity=2)
@@ -736,8 +750,12 @@ def _get_module_code(self, fullname):
         else:
             modpath = toc_entry[0]
             data = _get_data(self.archive, toc_entry)
+            code = None
             if isbytecode:
-                code = _unmarshal_code(self, modpath, fullpath, fullname, data)
+                try:
+                    code = _unmarshal_code(self, modpath, fullpath, fullname, data)
+                except ImportError as exc:
+                    import_error = exc
             else:
                 code = _compile_source(modpath, data)
             if code is None:
@@ -747,4 +765,8 @@ def _get_module_code(self, fullname):
             modpath = toc_entry[0]
             return code, ispackage, modpath
     else:
-        raise ZipImportError(f"can't find module {fullname!r}", name=fullname)
+        if import_error:
+            msg = f"module load failed: {import_error}"
+            raise ZipImportError(msg, name=fullname) from import_error
+        else:
+            raise ZipImportError(f"can't find module {fullname!r}", name=fullname)

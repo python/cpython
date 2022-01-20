@@ -45,8 +45,8 @@ class PosixTester(unittest.TestCase):
 
     def setUp(self):
         # create empty file
-        fp = open(os_helper.TESTFN, 'w+')
-        fp.close()
+        with open(os_helper.TESTFN, "wb"):
+            pass
         self.teardown_files = [ os_helper.TESTFN ]
         self._warnings_manager = warnings_helper.check_warnings()
         self._warnings_manager.__enter__()
@@ -642,12 +642,17 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(posix, 'mkfifo'), "don't have mkfifo()")
     def test_mkfifo(self):
-        os_helper.unlink(os_helper.TESTFN)
+        if sys.platform == "vxworks":
+            fifo_path = os.path.join("/fifos/", os_helper.TESTFN)
+        else:
+            fifo_path = os_helper.TESTFN
+        os_helper.unlink(fifo_path)
+        self.addCleanup(os_helper.unlink, fifo_path)
         try:
-            posix.mkfifo(os_helper.TESTFN, stat.S_IRUSR | stat.S_IWUSR)
+            posix.mkfifo(fifo_path, stat.S_IRUSR | stat.S_IWUSR)
         except PermissionError as e:
             self.skipTest('posix.mkfifo(): %s' % e)
-        self.assertTrue(stat.S_ISFIFO(posix.stat(os_helper.TESTFN).st_mode))
+        self.assertTrue(stat.S_ISFIFO(posix.stat(fifo_path).st_mode))
 
     @unittest.skipUnless(hasattr(posix, 'mknod') and hasattr(stat, 'S_IFIFO'),
                          "don't have mknod()/S_IFIFO")
@@ -719,10 +724,19 @@ class PosixTester(unittest.TestCase):
         chown_func(first_param, uid, -1)
         check_stat(uid, gid)
 
-        if uid == 0:
+        if sys.platform == "vxworks":
+            # On VxWorks, root user id is 1 and 0 means no login user:
+            # both are super users.
+            is_root = (uid in (0, 1))
+        else:
+            is_root = (uid == 0)
+        if is_root:
             # Try an amusingly large uid/gid to make sure we handle
             # large unsigned values.  (chown lets you use any
             # uid/gid you like, even if they aren't defined.)
+            #
+            # On VxWorks uid_t is defined as unsigned short. A big
+            # value greater than 65535 will result in underflow error.
             #
             # This problem keeps coming up:
             #   http://bugs.python.org/issue1747858
@@ -733,7 +747,7 @@ class PosixTester(unittest.TestCase):
             # This part of the test only runs when run as root.
             # Only scary people run their tests as root.
 
-            big_value = 2**31
+            big_value = (2**31 if sys.platform != "vxworks" else 2**15)
             chown_func(first_param, big_value, big_value)
             check_stat(big_value, big_value)
             chown_func(first_param, -1, -1)
@@ -1040,6 +1054,7 @@ class PosixTester(unittest.TestCase):
 
 
     @unittest.skipUnless(hasattr(os, 'getegid'), "test needs os.getegid()")
+    @unittest.skipUnless(hasattr(os, 'popen'), "test needs os.popen()")
     def test_getgroups(self):
         with os.popen('id -G 2>/dev/null') as idg:
             groups = idg.read().strip()
@@ -1055,7 +1070,7 @@ class PosixTester(unittest.TestCase):
         # Issues 16698: OS X ABIs prior to 10.6 have limits on getgroups()
         if sys.platform == 'darwin':
             import sysconfig
-            dt = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET') or '10.0'
+            dt = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET') or '10.3'
             if tuple(int(n) for n in dt.split('.')[0:2]) < (10, 6):
                 raise unittest.SkipTest("getgroups(2) is broken prior to 10.6")
 
@@ -1089,7 +1104,8 @@ class PosixTester(unittest.TestCase):
         finally:
             posix.close(f)
 
-    @unittest.skipUnless(os.chown in os.supports_dir_fd, "test needs dir_fd support in os.chown()")
+    @unittest.skipUnless(hasattr(os, 'chown') and (os.chown in os.supports_dir_fd),
+                         "test needs dir_fd support in os.chown()")
     def test_chown_dir_fd(self):
         os_helper.unlink(os_helper.TESTFN)
         os_helper.create_empty_file(os_helper.TESTFN)
@@ -1184,7 +1200,9 @@ class PosixTester(unittest.TestCase):
             posix.close(f)
             os_helper.rmtree(os_helper.TESTFN + 'dir')
 
-    @unittest.skipUnless((os.mknod in os.supports_dir_fd) and hasattr(stat, 'S_IFIFO'),
+    @unittest.skipUnless(hasattr(os, 'mknod')
+                         and (os.mknod in os.supports_dir_fd)
+                         and hasattr(stat, 'S_IFIFO'),
                          "test requires both stat.S_IFIFO and dir_fd support for os.mknod()")
     def test_mknod_dir_fd(self):
         # Test using mknodat() to create a FIFO (the only use specified
@@ -1217,7 +1235,8 @@ class PosixTester(unittest.TestCase):
             posix.close(a)
             posix.close(b)
 
-    @unittest.skipUnless(os.readlink in os.supports_dir_fd, "test needs dir_fd support in os.readlink()")
+    @unittest.skipUnless(hasattr(os, 'readlink') and (os.readlink in os.supports_dir_fd),
+                         "test needs dir_fd support in os.readlink()")
     def test_readlink_dir_fd(self):
         os.symlink(os_helper.TESTFN, os_helper.TESTFN + 'link')
         f = posix.open(posix.getcwd(), posix.O_RDONLY)
@@ -1560,7 +1579,7 @@ class _PosixSpawnMixin:
         args = self.python_args('-c', script)
         pid = self.spawn_func(args[0], args, os.environ)
         support.wait_process(pid, exitcode=0)
-        with open(pidfile) as f:
+        with open(pidfile, encoding="utf-8") as f:
             self.assertEqual(f.read(), str(pid))
 
     def test_no_such_executable(self):
@@ -1583,14 +1602,14 @@ class _PosixSpawnMixin:
         self.addCleanup(os_helper.unlink, envfile)
         script = f"""if 1:
             import os
-            with open({envfile!r}, "w") as envfile:
+            with open({envfile!r}, "w", encoding="utf-8") as envfile:
                 envfile.write(os.environ['foo'])
         """
         args = self.python_args('-c', script)
         pid = self.spawn_func(args[0], args,
                               {**os.environ, 'foo': 'bar'})
         support.wait_process(pid, exitcode=0)
-        with open(envfile) as f:
+        with open(envfile, encoding="utf-8") as f:
             self.assertEqual(f.read(), 'bar')
 
     def test_none_file_actions(self):
@@ -1842,7 +1861,7 @@ class _PosixSpawnMixin:
                               file_actions=file_actions)
 
         support.wait_process(pid, exitcode=0)
-        with open(outfile) as f:
+        with open(outfile, encoding="utf-8") as f:
             self.assertEqual(f.read(), 'hello')
 
     def test_close_file(self):
@@ -1853,7 +1872,7 @@ class _PosixSpawnMixin:
             try:
                 os.fstat(0)
             except OSError as e:
-                with open({closefile!r}, 'w') as closefile:
+                with open({closefile!r}, 'w', encoding='utf-8') as closefile:
                     closefile.write('is closed %d' % e.errno)
             """
         args = self.python_args('-c', script)
@@ -1861,7 +1880,7 @@ class _PosixSpawnMixin:
                               file_actions=[(os.POSIX_SPAWN_CLOSE, 0)])
 
         support.wait_process(pid, exitcode=0)
-        with open(closefile) as f:
+        with open(closefile, encoding="utf-8") as f:
             self.assertEqual(f.read(), 'is closed %d' % errno.EBADF)
 
     def test_dup2(self):
@@ -1879,7 +1898,7 @@ class _PosixSpawnMixin:
             pid = self.spawn_func(args[0], args, os.environ,
                                   file_actions=file_actions)
             support.wait_process(pid, exitcode=0)
-        with open(dupfile) as f:
+        with open(dupfile, encoding="utf-8") as f:
             self.assertEqual(f.read(), 'hello')
 
 
@@ -1929,7 +1948,7 @@ class TestPosixSpawnP(unittest.TestCase, _PosixSpawnMixin):
 class TestPosixWeaklinking(unittest.TestCase):
     # These test cases verify that weak linking support on macOS works
     # as expected. These cases only test new behaviour introduced by weak linking,
-    # regular behaviour is tested by the normal test cases. 
+    # regular behaviour is tested by the normal test cases.
     #
     # See the section on Weak Linking in Mac/README.txt for more information.
     def setUp(self):
@@ -2152,17 +2171,9 @@ class TestPosixWeaklinking(unittest.TestCase):
                 os.utime("path", dir_fd=0)
 
 
-def test_main():
-    try:
-        support.run_unittest(
-            PosixTester,
-            PosixGroupsTester,
-            TestPosixSpawn,
-            TestPosixSpawnP,
-            TestPosixWeaklinking
-        )
-    finally:
-        support.reap_children()
+def tearDownModule():
+    support.reap_children()
+
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

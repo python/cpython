@@ -1,5 +1,0 @@
-:func:`time.perf_counter()` on Windows and :func:`time.monotonic()` on macOS
-are now system-wide. Previously, they used an offset computed at startup to
-reduce the precision loss caused by the float type. Use
-:func:`time.perf_counter_ns()` and :func:`time.monotonic_ns()` added in Python
-3.7 to avoid this precision loss.

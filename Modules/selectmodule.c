@@ -4,11 +4,16 @@
    have any value except INVALID_SOCKET.
 */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #if defined(HAVE_POLL_H) && !defined(_GNU_SOURCE)
-#define _GNU_SOURCE
+#  define _GNU_SOURCE
 #endif
 
 #include "Python.h"
+#include "pycore_fileutils.h"     // _Py_set_inheritable()
 #include "structmember.h"         // PyMemberDef
 
 #ifdef HAVE_SYS_DEVPOLL_H
@@ -294,9 +299,9 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
     wfd2obj = PyMem_NEW(pylist, FD_SETSIZE + 1);
     efd2obj = PyMem_NEW(pylist, FD_SETSIZE + 1);
     if (rfd2obj == NULL || wfd2obj == NULL || efd2obj == NULL) {
-        if (rfd2obj) PyMem_DEL(rfd2obj);
-        if (wfd2obj) PyMem_DEL(wfd2obj);
-        if (efd2obj) PyMem_DEL(efd2obj);
+        if (rfd2obj) PyMem_Free(rfd2obj);
+        if (wfd2obj) PyMem_Free(wfd2obj);
+        if (efd2obj) PyMem_Free(efd2obj);
         return PyErr_NoMemory();
     }
 #endif /* SELECT_USES_HEAP */
@@ -318,8 +323,9 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
     if (omax > max) max = omax;
     if (emax > max) max = emax;
 
-    if (tvp)
-        deadline = _PyTime_GetMonotonicClock() + timeout;
+    if (tvp) {
+        deadline = _PyDeadline_Init(timeout);
+    }
 
     do {
         Py_BEGIN_ALLOW_THREADS
@@ -335,7 +341,7 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
             goto finally;
 
         if (tvp) {
-            timeout = deadline - _PyTime_GetMonotonicClock();
+            timeout = _PyDeadline_Get(deadline);
             if (timeout < 0) {
                 /* bpo-35310: lists were unmodified -- clear them explicitly */
                 FD_ZERO(&ifdset);
@@ -344,7 +350,7 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
                 n = 0;
                 break;
             }
-            _PyTime_AsTimeval_noraise(timeout, &tv, _PyTime_ROUND_CEILING);
+            _PyTime_AsTimeval_clamp(timeout, &tv, _PyTime_ROUND_CEILING);
             /* retry select() with the recomputed timeout */
         }
     } while (1);
@@ -381,9 +387,9 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
     reap_obj(wfd2obj);
     reap_obj(efd2obj);
 #ifdef SELECT_USES_HEAP
-    PyMem_DEL(rfd2obj);
-    PyMem_DEL(wfd2obj);
-    PyMem_DEL(efd2obj);
+    PyMem_Free(rfd2obj);
+    PyMem_Free(wfd2obj);
+    PyMem_Free(efd2obj);
 #endif /* SELECT_USES_HEAP */
     return ret;
 }
@@ -601,7 +607,7 @@ select_poll_poll_impl(pollObject *self, PyObject *timeout_obj)
         }
 
         if (timeout >= 0) {
-            deadline = _PyTime_GetMonotonicClock() + timeout;
+            deadline = _PyDeadline_Init(timeout);
         }
     }
 
@@ -648,7 +654,7 @@ select_poll_poll_impl(pollObject *self, PyObject *timeout_obj)
         }
 
         if (timeout >= 0) {
-            timeout = deadline - _PyTime_GetMonotonicClock();
+            timeout = _PyDeadline_Get(deadline);
             if (timeout < 0) {
                 poll_result = 0;
                 break;
@@ -730,21 +736,14 @@ newPollObject(PyObject *module)
     return self;
 }
 
-static PyObject *
-poll_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
-{
-    PyErr_Format(PyExc_TypeError, "Cannot create '%.200s' instances", _PyType_Name(type));
-    return NULL;
-}
-
 static void
 poll_dealloc(pollObject *self)
 {
     PyObject* type = (PyObject *)Py_TYPE(self);
     if (self->ufds != NULL)
-        PyMem_DEL(self->ufds);
+        PyMem_Free(self->ufds);
     Py_XDECREF(self->dict);
-    PyObject_Del(self);
+    PyObject_Free(self);
     Py_DECREF(type);
 }
 
@@ -949,8 +948,9 @@ select_devpoll_poll_impl(devpollObject *self, PyObject *timeout_obj)
     dvp.dp_nfds = self->max_n_fds;
     dvp.dp_timeout = (int)ms;
 
-    if (timeout >= 0)
-        deadline = _PyTime_GetMonotonicClock() + timeout;
+    if (timeout >= 0) {
+        deadline = _PyDeadline_Init(timeout);
+    }
 
     do {
         /* call devpoll() */
@@ -967,7 +967,7 @@ select_devpoll_poll_impl(devpollObject *self, PyObject *timeout_obj)
             return NULL;
 
         if (timeout >= 0) {
-            timeout = deadline - _PyTime_GetMonotonicClock();
+            timeout = _PyDeadline_Get(deadline);
             if (timeout < 0) {
                 poll_result = 0;
                 break;
@@ -1110,7 +1110,7 @@ newDevPollObject(PyObject *module)
     self = PyObject_New(devpollObject, get_select_state(module)->devpoll_Type);
     if (self == NULL) {
         close(fd_devpoll);
-        PyMem_DEL(fds);
+        PyMem_Free(fds);
         return NULL;
     }
     self->fd_devpoll = fd_devpoll;
@@ -1121,20 +1121,13 @@ newDevPollObject(PyObject *module)
     return self;
 }
 
-static PyObject *
-devpoll_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
-{
-    PyErr_Format(PyExc_TypeError, "Cannot create '%.200s' instances", _PyType_Name(type));
-    return NULL;
-}
-
 static void
 devpoll_dealloc(devpollObject *self)
 {
     PyObject *type = (PyObject *)Py_TYPE(self);
     (void)devpoll_internal_close(self);
-    PyMem_DEL(self->fds);
-    PyObject_Del(self);
+    PyMem_Free(self->fds);
+    PyObject_Free(self);
     Py_DECREF(type);
 }
 
@@ -1142,7 +1135,6 @@ static PyType_Slot devpoll_Type_slots[] = {
     {Py_tp_dealloc, devpoll_dealloc},
     {Py_tp_getset, devpoll_getsetlist},
     {Py_tp_methods, devpoll_methods},
-    {Py_tp_new, devpoll_new},
     {0, 0},
 };
 
@@ -1150,7 +1142,7 @@ static PyType_Spec devpoll_Type_spec = {
     "select.devpoll",
     sizeof(devpollObject),
     0,
-    Py_TPFLAGS_DEFAULT,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     devpoll_Type_slots
 };
 
@@ -1569,7 +1561,7 @@ select_epoll_poll_impl(pyEpoll_Object *self, PyObject *timeout_obj,
         }
 
         if (timeout >= 0) {
-            deadline = _PyTime_GetMonotonicClock() + timeout;
+            deadline = _PyDeadline_Init(timeout);
         }
     }
 
@@ -1603,7 +1595,7 @@ select_epoll_poll_impl(pyEpoll_Object *self, PyObject *timeout_obj,
             goto error;
 
         if (timeout >= 0) {
-            timeout = deadline - _PyTime_GetMonotonicClock();
+            timeout = _PyDeadline_Get(deadline);
             if (timeout < 0) {
                 nfds = 0;
                 break;
@@ -2191,8 +2183,9 @@ select_kqueue_control_impl(kqueue_queue_Object *self, PyObject *changelist,
         }
     }
 
-    if (ptimeoutspec)
-        deadline = _PyTime_GetMonotonicClock() + timeout;
+    if (ptimeoutspec) {
+        deadline = _PyDeadline_Init(timeout);
+    }
 
     do {
         Py_BEGIN_ALLOW_THREADS
@@ -2209,7 +2202,7 @@ select_kqueue_control_impl(kqueue_queue_Object *self, PyObject *changelist,
             goto error;
 
         if (ptimeoutspec) {
-            timeout = deadline - _PyTime_GetMonotonicClock();
+            timeout = _PyDeadline_Get(deadline);
             if (timeout < 0) {
                 gotevents = 0;
                 break;
@@ -2279,16 +2272,14 @@ static PyMethodDef poll_methods[] = {
 static PyType_Slot poll_Type_slots[] = {
     {Py_tp_dealloc, poll_dealloc},
     {Py_tp_methods, poll_methods},
-    {Py_tp_new, poll_new},
     {0, 0},
 };
 
 static PyType_Spec poll_Type_spec = {
-    "select.poll",
-    sizeof(pollObject),
-    0,
-    Py_TPFLAGS_DEFAULT,
-    poll_Type_slots
+    .name = "select.poll",
+    .basicsize = sizeof(pollObject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .slots = poll_Type_slots,
 };
 
 #ifdef HAVE_SYS_DEVPOLL_H

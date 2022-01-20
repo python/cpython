@@ -108,8 +108,11 @@ def check_library(library, dynamic=False):
 
 def check_extensions():
     print(__file__)
-    srcdir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    filename = os.path.join(srcdir, "pybuilddir.txt")
+    # This assumes pybuilddir.txt is in same directory as pyconfig.h.
+    # In the case of out-of-tree builds, we can't assume pybuilddir.txt is
+    # in the source folder.
+    config_dir = os.path.dirname(sysconfig.get_config_h_filename())
+    filename = os.path.join(config_dir, "pybuilddir.txt")
     try:
         with open(filename, encoding="utf-8") as fp:
             pybuilddir = fp.readline()
@@ -118,7 +121,7 @@ def check_extensions():
         return True
 
     print(f"Check extension modules from {pybuilddir} directory")
-    builddir = os.path.join(srcdir, pybuilddir)
+    builddir = os.path.join(config_dir, pybuilddir)
     nsymbol = 0
     for name in os.listdir(builddir):
         if not name.endswith(".so"):
@@ -136,11 +139,14 @@ def check_extensions():
 
 
 def main():
+    nsymbol = 0
+
     # static library
     LIBRARY = sysconfig.get_config_var('LIBRARY')
     if not LIBRARY:
         raise Exception("failed to get LIBRARY variable from sysconfig")
-    nsymbol = check_library(LIBRARY)
+    if os.path.exists(LIBRARY):
+        nsymbol += check_library(LIBRARY)
 
     # dynamic library
     LDLIBRARY = sysconfig.get_config_var('LDLIBRARY')

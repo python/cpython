@@ -595,7 +595,12 @@ def main():
                 '__package__': None,
                 '__cached__': None,
             }
-        runctx(code, globs, None, options.outfile, options.sort)
+        try:
+            runctx(code, globs, None, options.outfile, options.sort)
+        except BrokenPipeError as exc:
+            # Prevent "Exception ignored" during interpreter shutdown.
+            sys.stdout = None
+            sys.exit(exc.errno)
     else:
         parser.print_usage()
     return parser
