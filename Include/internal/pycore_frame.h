@@ -41,12 +41,12 @@ typedef struct _interpreter_frame {
     PyObject *f_locals; /* Strong reference, may be NULL */
     PyCodeObject *f_code; /* Strong reference */
     PyFrameObject *frame_obj; /* Strong reference, may be NULL */
-    PyObject *generator; /* Borrowed reference, may be NULL */
     struct _interpreter_frame *previous;
     int f_lasti;       /* Last instruction if called */
     int stacktop;     /* Offset of TOS from localsplus  */
     PyFrameState f_state;  /* What state the frame is in */
     bool is_entry;  // Whether this is the "root" frame for the current CFrame.
+    bool is_generator;
     PyObject *localsplus[1];
 } InterpreterFrame;
 
@@ -100,10 +100,10 @@ _PyFrame_InitializeSpecials(
     frame->f_locals = Py_XNewRef(locals);
     frame->stacktop = nlocalsplus;
     frame->frame_obj = NULL;
-    frame->generator = NULL;
     frame->f_lasti = -1;
     frame->f_state = FRAME_CREATED;
     frame->is_entry = false;
+    frame->is_generator = false;
 }
 
 /* Gets the pointer to the locals array
