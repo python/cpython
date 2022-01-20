@@ -113,6 +113,7 @@ class Printer:
         self.write('#include "Python.h"')
         self.write('#include "internal/pycore_gc.h"')
         self.write('#include "internal/pycore_code.h"')
+        self.write('#include "internal/pycore_long.h"')
         self.write("")
 
     @contextlib.contextmanager
@@ -148,6 +149,8 @@ class Printer:
         self.write(f".{name} = {getattr(obj, name)},")
 
     def generate_bytes(self, name: str, b: bytes) -> str:
+        if b == b"":
+            return "(PyObject *)&_Py_SINGLETON(bytes_empty)"
         self.write("static")
         with self.indent():
             with self.block("struct"):
@@ -313,6 +316,8 @@ class Printer:
                 self.write(f".ob_digit = {{ {ds} }},")
 
     def generate_int(self, name: str, i: int) -> str:
+        if -5 <= i <= 256:
+            return f"(PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + {i}]"
         if abs(i) < 2**15:
             self._generate_int_for_bits(name, i, 2**15)
         else:
