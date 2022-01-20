@@ -329,6 +329,34 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         self.assertEqual(out, "Py_RunMain(): sys.argv=['-c', 'arg2']\n" * nloop)
         self.assertEqual(err, '')
 
+    def test_finalize_structseq(self):
+        # bpo-46417: Py_Finalize() clears structseq static types. Check that
+        # sys attributes using struct types still work when
+        # Py_Finalize()/Py_Initialize() is called multiple times.
+        code = textwrap.dedent(r'''
+            import sys
+            print(sys.get_asyncgen_hooks())
+            print(sys.flags)
+            print(sys.float_info)
+            print(sys.hash_info)
+            print(sys.int_info)
+            print(sys.thread_info)
+            print(f"{sys.version=!r}", flush=True)
+        ''')
+        if hasattr(sys, 'getwindowsversion'):
+            code += '\n' + 'print(sys.getwindowsversion())'
+        expected = textwrap.dedent(r'''
+            asyncgen_hooks(.*)
+            sys.flags(.*)
+            sys.float_info(.*)
+            sys.hash_info(.*)
+            sys.int_info(.*)
+            sys.thread_info(.*)
+            sys.version='.*'
+        ''')
+        out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
+        self.assertRegex(out, expected)
+
 
 class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     maxDiff = 4096
