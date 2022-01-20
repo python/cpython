@@ -2663,19 +2663,21 @@ handle_eval_breaker:
             return retval;
         }
 
+        TARGET(ASYNC_GEN_WRAP) {
+            PyObject *v = TOP();
+            assert(frame->f_code->co_flags & CO_ASYNC_GENERATOR);
+            PyObject *w = _PyAsyncGenValueWrapperNew(v);
+            if (w == NULL) {
+                goto error;
+            }
+            SET_TOP(w);
+            Py_DECREF(v);
+            DISPATCH();
+        }
+
         TARGET(YIELD_VALUE) {
             assert(frame->is_entry);
             PyObject *retval = POP();
-
-            if (frame->f_code->co_flags & CO_ASYNC_GENERATOR) {
-                PyObject *w = _PyAsyncGenValueWrapperNew(retval);
-                Py_DECREF(retval);
-                if (w == NULL) {
-                    retval = NULL;
-                    goto error;
-                }
-                retval = w;
-            }
             frame->f_state = FRAME_SUSPENDED;
             _PyFrame_SetStackPointer(frame, stack_pointer);
             TRACE_FUNCTION_EXIT();
