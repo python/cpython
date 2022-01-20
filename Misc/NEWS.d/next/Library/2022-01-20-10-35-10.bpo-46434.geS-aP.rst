@@ -1,0 +1,2 @@
+pdb help now gracefully handles any case where __doc__ is missing, for
+example when run from a windows embeddable package
