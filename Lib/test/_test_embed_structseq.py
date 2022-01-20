@@ -3,14 +3,24 @@ import types
 import unittest
 
 
-class TestStructseq(unittest.TestCase):
+# bpo-46417: Test that structseq types used by the sys module are still
+# valid when Py_Finalize()/Py_Initialize() are called multiple times.
+class TestStructSeq(unittest.TestCase):
+    # test PyTypeObject members
     def check_structseq(self, obj_type):
+        # ob_refcnt
         self.assertGreaterEqual(sys.getrefcount(obj_type), 1)
-        self.assertIsInstance(type.__name__, str)
+        # tp_base
         self.assertTrue(issubclass(obj_type, tuple))
+        # tp_bases
         self.assertEqual(obj_type.__bases__, (tuple,))
-        self.assertEqual(obj_type.__mro__, (obj_type, tuple, object))
+        # tp_dict
         self.assertIsInstance(obj_type.__dict__, types.MappingProxyType)
+        # tp_mro
+        self.assertEqual(obj_type.__mro__, (obj_type, tuple, object))
+        # tp_name
+        self.assertIsInstance(type.__name__, str)
+        # tp_subclasses
         self.assertEqual(obj_type.__subclasses__(), [])
 
     def test_sys_attrs(self):
