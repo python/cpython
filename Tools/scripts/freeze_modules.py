@@ -643,7 +643,7 @@ def regen_pcbuild(modules):
     projlines = []
     filterlines = []
     corelines = []
-    deepfreezerules = ['\t<Exec Command=\'$(PythonForBuild) "$(PySourcePath)Tools\\scripts\\deepfreeze.py"']
+    deepfreezerules = ['\t<Exec Command=\'$(PythonForBuild) "$(PySourcePath)Tools\\scripts\\deepfreeze.py" ^']
     for src in _iter_sources(modules):
         pyfile = relpath_for_windows_display(src.pyfile, ROOT_DIR)
         header = relpath_for_windows_display(src.frozenfile, ROOT_DIR)
@@ -657,8 +657,8 @@ def regen_pcbuild(modules):
         filterlines.append(f'    <None Include="..\\{pyfile}">')
         filterlines.append('      <Filter>Python Files</Filter>')
         filterlines.append('    </None>')
-        deepfreezerules[-1] += f' "$(PySourcePath){header}:{src.frozenid}"'
-    deepfreezerules[-1] += ' "-o" "$(PySourcePath)Python\\deepfreeze\\deepfreeze.c"\'/>' 
+        deepfreezerules.append(f'\t\t "$(PySourcePath){header}:{src.frozenid}" ^')
+    deepfreezerules.append('\t\t "-o" "$(PySourcePath)Python\\deepfreeze\\deepfreeze.c"\'/>' )
 
     corelines.append(f'    <ClCompile Include="..\\Python\\deepfreeze\\deepfreeze.c" />')
 
