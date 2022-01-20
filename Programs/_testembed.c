@@ -30,7 +30,7 @@ char **main_argv;
 /* Use path starting with "./" avoids a search along the PATH */
 #define PROGRAM_NAME L"./_testembed"
 
-#define INIT_LOOPS 16
+#define INIT_LOOPS 4
 
 // Ignore Py_DEPRECATED() compiler warnings: deprecated functions are
 // tested on purpose here.
@@ -45,10 +45,39 @@ static void error(const char *msg)
 }
 
 
+static void config_set_string(PyConfig *config, wchar_t **config_str, const wchar_t *str)
+{
+    PyStatus status = PyConfig_SetString(config, config_str, str);
+    if (PyStatus_Exception(status)) {
+        PyConfig_Clear(config);
+        Py_ExitStatusException(status);
+    }
+}
+
+
+static void config_set_program_name(PyConfig *config)
+{
+    const wchar_t *program_name = PROGRAM_NAME;
+    config_set_string(config, &config->program_name, program_name);
+}
+
+
+static void init_from_config_clear(PyConfig *config)
+{
+    PyStatus status = Py_InitializeFromConfig(config);
+    PyConfig_Clear(config);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+}
+
+
 static void _testembed_Py_Initialize(void)
 {
-    Py_SetProgramName(PROGRAM_NAME);
-    Py_Initialize();
+    PyConfig config;
+    _PyConfig_InitCompatConfig(&config);
+    config_set_program_name(&config);
+    init_from_config_clear(&config);
 }
 
 
@@ -391,16 +420,6 @@ static int test_init_initialize_config(void)
 }
 
 
-static void config_set_string(PyConfig *config, wchar_t **config_str, const wchar_t *str)
-{
-    PyStatus status = PyConfig_SetString(config, config_str, str);
-    if (PyStatus_Exception(status)) {
-        PyConfig_Clear(config);
-        Py_ExitStatusException(status);
-    }
-}
-
-
 static void config_set_argv(PyConfig *config, Py_ssize_t argc, wchar_t * const *argv)
 {
     PyStatus status = PyConfig_SetArgv(config, argc, argv);
@@ -418,23 +437,6 @@ config_set_wide_string_list(PyConfig *config, PyWideStringList *list,
     PyStatus status = PyConfig_SetWideStringList(config, list, length, items);
     if (PyStatus_Exception(status)) {
         PyConfig_Clear(config);
-        Py_ExitStatusException(status);
-    }
-}
-
-
-static void config_set_program_name(PyConfig *config)
-{
-    const wchar_t *program_name = PROGRAM_NAME;
-    config_set_string(config, &config->program_name, program_name);
-}
-
-
-static void init_from_config_clear(PyConfig *config)
-{
-    PyStatus status = Py_InitializeFromConfig(config);
-    PyConfig_Clear(config);
-    if (PyStatus_Exception(status)) {
         Py_ExitStatusException(status);
     }
 }
