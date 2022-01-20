@@ -1,0 +1,1 @@
+Add ASYNC_GEN_WRAP opcode to wrap value being yielded in asyn generators.
