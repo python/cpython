@@ -4074,7 +4074,11 @@ _PyDictKeys_DecRef(PyDictKeysObject *keys);
 void
 _PyStaticType_Dealloc(PyTypeObject *type)
 {
+    // _PyStaticType_Dealloc() must not be called if a type has subtypes.
+    // A subtype can inherit attributes and methods of its parent type,
+    // and a type must no longer be used once it's deallocated.
     assert(type->tp_subclasses == NULL);
+
     Py_CLEAR(type->tp_dict);
     Py_CLEAR(type->tp_bases);
     Py_CLEAR(type->tp_mro);

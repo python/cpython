@@ -540,7 +540,7 @@ _PyStructSequence_FiniType(PyTypeObject *type)
     assert(type->tp_name != NULL);
     assert(type->tp_base == &PyTuple_Type);
 
-    // Cannot delete a type if it still has alive subclasses
+    // Cannot delete a type if it still has subclasses
     if (type->tp_subclasses != NULL) {
         return;
     }
@@ -551,12 +551,12 @@ _PyStructSequence_FiniType(PyTypeObject *type)
 
     _PyStaticType_Dealloc(type);
     assert(Py_REFCNT(type) == 1);
-    // Undo _PyStructSequence_InitType() Py_INCREF(type).
-    // Don't use Py_DECREF(): static type must be deallocated
+    // Undo Py_INCREF(type) of _PyStructSequence_InitType().
+    // Don't use Py_DECREF(): static type must not be deallocated
     Py_SET_REFCNT(type, 0);
 
-    // Make sure that _PyStructSequence_InitType() will initialize the type
-    // again
+    // Make sure that _PyStructSequence_InitType() will initialize
+    // the type again
     assert(Py_REFCNT(type) == 0);
     assert(type->tp_name == NULL);
 }
