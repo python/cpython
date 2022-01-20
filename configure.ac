@@ -6384,6 +6384,8 @@ AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
       _gdbm
       _scproxy
       _tkinter
+      _xxsubinterpreters
+      grp
       nis
       ossaudiodev
       spwd

@@ -21323,7 +21323,7 @@ case $ac_sys_system/$ac_sys_emscripten_target in #(
    ;; #(
       Emscripten/node) :
 
-    py_stdlib_not_available="_ctypes _curses _curses_panel _dbm _gdbm _scproxy _tkinter nis ossaudiodev spwd syslog"
+    py_stdlib_not_available="_ctypes _curses _curses_panel _dbm _gdbm _scproxy _tkinter _xxsubinterpreters grp nis ossaudiodev spwd syslog"
    ;; #(
   *) :
     py_stdlib_not_available="_scproxy"
