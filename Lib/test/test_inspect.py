@@ -4150,7 +4150,7 @@ class TestSignatureDefinitions(unittest.TestCase):
 
     def test_base_class_have_text_signature(self):
         # see issue 43118
-        from .ann_module7 import BufferedReader
+        from test.ann_module7 import BufferedReader
         class MyBufferedReader(BufferedReader):
             """buffer reader class."""
 
