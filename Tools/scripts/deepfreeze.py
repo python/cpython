@@ -149,6 +149,8 @@ class Printer:
         self.write(f".{name} = {getattr(obj, name)},")
 
     def generate_bytes(self, name: str, b: bytes) -> str:
+        if b == b"":
+            return "(PyObject *)&_Py_SINGLETON(bytes_empty)"
         self.write("static")
         with self.indent():
             with self.block("struct"):
