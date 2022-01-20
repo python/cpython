@@ -2303,7 +2303,7 @@ check_eval_breaker:
             Py_DECREF(sub);
             SET_TOP(res);
             Py_DECREF(dict);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(BINARY_SUBSCR_GETITEM) {
@@ -2433,7 +2433,7 @@ check_eval_breaker:
             if (err != 0) {
                 goto error;
             }
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(DELETE_SUBSCR) {
@@ -4791,7 +4791,7 @@ check_eval_breaker:
             if (res == NULL) {
                 goto error;
             }
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(CALL_NO_KW_BUILTIN_O) {
@@ -4822,7 +4822,7 @@ check_eval_breaker:
             if (res == NULL) {
                 goto error;
             }
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(CALL_NO_KW_BUILTIN_FAST) {
@@ -4861,7 +4861,7 @@ check_eval_breaker:
                 */
                 goto error;
             }
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(CALL_NO_KW_LEN) {
@@ -4890,7 +4890,7 @@ check_eval_breaker:
             if (res == NULL) {
                 goto error;
             }
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(CALL_NO_KW_ISINSTANCE) {
@@ -4920,7 +4920,7 @@ check_eval_breaker:
             if (res == NULL) {
                 goto error;
             }
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(CALL_NO_KW_LIST_APPEND) {
