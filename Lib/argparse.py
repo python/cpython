@@ -1691,7 +1691,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     """Object for parsing command line strings into Python objects.
 
     Keyword Arguments:
-        - prog -- The name of the program (default: sys.argv[0])
+        - prog -- The name of the program (default:
+            ``os.path.basename(sys.argv[0])``)
         - usage -- A usage message (default: auto-generated from arguments)
         - description -- A description of what the program does
         - epilog -- Text following the argument descriptions

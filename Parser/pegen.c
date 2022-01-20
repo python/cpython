@@ -179,10 +179,10 @@ initialize_token(Parser *p, Token *token, const char *start, const char *end, in
     int col_offset = (start != NULL && start >= line_start) ? (int)(start - line_start) : -1;
     int end_col_offset = (end != NULL && end >= p->tok->line_start) ? (int)(end - p->tok->line_start) : -1;
 
-    token->lineno = p->starting_lineno + lineno;
-    token->col_offset = p->tok->lineno == 1 ? p->starting_col_offset + col_offset : col_offset;
-    token->end_lineno = p->starting_lineno + end_lineno;
-    token->end_col_offset = p->tok->lineno == 1 ? p->starting_col_offset + end_col_offset : end_col_offset;
+    token->lineno = lineno;
+    token->col_offset = p->tok->lineno == p->starting_lineno ? p->starting_col_offset + col_offset : col_offset;
+    token->end_lineno = end_lineno;
+    token->end_col_offset = p->tok->lineno == p->starting_lineno ? p->starting_col_offset + end_col_offset : end_col_offset;
 
     p->fill += 1;
 
