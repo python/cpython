@@ -641,6 +641,8 @@ form.
 
    An :class:`~enum.Enum` class containing the regex options listed below.
 
+   .. versionadded:: 3.6 (documented in 3.11)
+
 .. data:: A
           ASCII
 
@@ -716,6 +718,8 @@ form.
 .. data:: NOFLAG
 
    Indicates no flag being applied, the value is ``0``.
+
+   .. versionadded:: 3.11
 
 .. data:: S
           DOTALL

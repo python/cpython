@@ -137,7 +137,7 @@ __all__ = [
     "findall", "finditer", "compile", "purge", "template", "escape",
     "error", "Pattern", "Match", "A", "I", "L", "M", "S", "X", "U",
     "ASCII", "IGNORECASE", "LOCALE", "MULTILINE", "DOTALL", "VERBOSE",
-    "UNICODE", "RegexFlag",
+    "UNICODE", "NOFLAG", "RegexFlag",
 ]
 
 __version__ = "2.2.1"
