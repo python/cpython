@@ -1491,7 +1491,7 @@ def bœr():
         stdout, stderr = self.run_pdb_script(script, commands)
         output = (stdout or '') + (stderr or '')
         self.assertNotIn('AttributeError', output,
-                     'Calling help on a command with no docs should be handled gracefully')
+                         'Calling help on a command with no docs should be handled gracefully')
         self.assertIn("*** No help for 'testcmdwithnodocs'; __doc__ string missing", output,
                       'Calling help on a command with no docs should print an error')
 
