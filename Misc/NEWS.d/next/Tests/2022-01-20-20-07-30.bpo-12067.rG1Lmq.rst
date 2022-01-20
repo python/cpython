@@ -1,0 +1,2 @@
+Extend test_compare with order and equality comparisons.
+Original enhancement by terry.reedy.
