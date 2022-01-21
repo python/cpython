@@ -3041,7 +3041,7 @@ datetime.date.fromisocalendar
 
 int, int, int -> Construct a date from the ISO year, week number and weekday.
 
-This is the inverse of the date.isocalendar() function
+This is the inverse of the date.isocalendar() function.
 [clinic start generated code]*/
 
 static PyObject *
