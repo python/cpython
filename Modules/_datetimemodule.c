@@ -2984,19 +2984,19 @@ datetime_date_fromordinal_impl(PyTypeObject *type, int ordinal)
 @classmethod
 datetime.date.fromisoformat
 
-    date_string: object
+    date_string as dtstr: object
     /
 
 str -> Construct a date from the output of date.isoformat()
 [clinic start generated code]*/
 
 static PyObject *
-datetime_date_fromisoformat(PyTypeObject *type, PyObject *date_string)
-/*[clinic end generated code: output=6657c70f3442350a input=cecf94602c2e7fd8]*/
+datetime_date_fromisoformat(PyTypeObject *type, PyObject *dtstr)
+/*[clinic end generated code: output=0c55fa0175e3e94b input=6bebe824e582fd1e]*/
 {
-    assert(date_string != NULL);
+    assert(dtstr != NULL);
 
-    if (!PyUnicode_Check(date_string)) {
+    if (!PyUnicode_Check(dtstr)) {
         PyErr_SetString(PyExc_TypeError,
                         "fromisoformat: argument must be str");
         return NULL;
@@ -3004,7 +3004,7 @@ datetime_date_fromisoformat(PyTypeObject *type, PyObject *date_string)
 
     Py_ssize_t len;
 
-    const char *dt_ptr = PyUnicode_AsUTF8AndSize(date_string, &len);
+    const char *dt_ptr = PyUnicode_AsUTF8AndSize(dtstr, &len);
     if (dt_ptr == NULL) {
         goto invalid_string_error;
     }
@@ -3026,7 +3026,7 @@ datetime_date_fromisoformat(PyTypeObject *type, PyObject *date_string)
     return new_date_subclass_ex(year, month, day, (PyObject *) type);
 
 invalid_string_error:
-    PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %R", date_string);
+    PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %R", dtstr);
     return NULL;
 }
 
