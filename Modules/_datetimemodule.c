@@ -876,10 +876,10 @@ new_date_subclass_ex(int year, int month, int day, PyObject *cls)
 {
     PyObject *result;
     // We have "fast path" constructors for two subclasses: date and datetime
-    if ((PyTypeObject *)cls == &PyDateTime_DateType) {
+    if (cls == (PyObject *)&PyDateTime_DateType) {
         result = new_date_ex(year, month, day, (PyTypeObject *)cls);
     }
-    else if ((PyTypeObject *)cls == &PyDateTime_DateTimeType) {
+    else if (cls == (PyObject *)&PyDateTime_DateTimeType) {
         result = new_datetime_ex(year, month, day, 0, 0, 0, 0, Py_None,
                                  (PyTypeObject *)cls);
     }
@@ -942,7 +942,7 @@ new_datetime_subclass_fold_ex(int year, int month, int day, int hour, int minute
                               int second, int usecond, PyObject *tzinfo,
                               int fold, PyObject *cls) {
     PyObject* dt;
-    if ((PyTypeObject*)cls == &PyDateTime_DateTimeType) {
+    if (cls == (PyObject *)&PyDateTime_DateTimeType) {
         // Use the fast path constructor
         dt = new_datetime(year, month, day, hour, minute, second, usecond,
                           tzinfo, fold);
@@ -4603,7 +4603,7 @@ time_fromisoformat(PyObject *cls, PyObject *tstr) {
     }
 
     PyObject *t;
-    if ( (PyTypeObject *)cls == &PyDateTime_TimeType ) {
+    if (cls == (PyObject *)&PyDateTime_TimeType ) {
         t = new_time(hour, minute, second, microsecond, tzinfo, 0);
     } else {
         t = PyObject_CallFunction(cls, "iiiiO",

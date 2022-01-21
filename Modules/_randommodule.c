@@ -84,7 +84,7 @@
 #define LOWER_MASK 0x7fffffffU  /* least significant r bits */
 
 typedef struct {
-    PyObject *Random_Type;
+    PyTypeObject *Random_Type;
     PyObject *Long___abs__;
 } _randomstate;
 
@@ -531,8 +531,9 @@ random_init(RandomObject *self, PyObject *args, PyObject *kwds)
     PyObject *arg = NULL;
     _randomstate *state = _randomstate_type(Py_TYPE(self));
 
-    if ((Py_IS_TYPE(self, (PyTypeObject *)state->Random_Type) ||
-         Py_TYPE(self)->tp_init == ((PyTypeObject*)state->Random_Type)->tp_init) &&
+    PyTypeObject *Random_Type = state->Random_Type;
+    if ((Py_IS_TYPE(self, Random_Type) ||
+         Py_TYPE(self)->tp_init == Random_Type->tp_init) &&
         !_PyArg_NoKeywords("Random", kwds)) {
         return -1;
     }
@@ -586,12 +587,12 @@ _random_exec(PyObject *module)
 {
     _randomstate *state = get_random_state(module);
 
-    state->Random_Type = PyType_FromModuleAndSpec(
+    state->Random_Type = (PyTypeObject *)PyType_FromModuleAndSpec(
         module, &Random_Type_spec, NULL);
     if (state->Random_Type == NULL) {
         return -1;
     }
-    if (PyModule_AddType(module, (PyTypeObject *)state->Random_Type) < 0) {
+    if (PyModule_AddType(module, state->Random_Type) < 0) {
         return -1;
     }
 

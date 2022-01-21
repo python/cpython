@@ -2013,11 +2013,12 @@ static PyType_Spec connection_spec = {
 int
 pysqlite_connection_setup_types(PyObject *module)
 {
-    PyObject *type = PyType_FromModuleAndSpec(module, &connection_spec, NULL);
+    PyTypeObject *type;
+    type = (PyTypeObject *)PyType_FromModuleAndSpec(module, &connection_spec, NULL);
     if (type == NULL) {
         return -1;
     }
     pysqlite_state *state = pysqlite_get_state(module);
-    state->ConnectionType = (PyTypeObject *)type;
+    state->ConnectionType = type;
     return 0;
 }

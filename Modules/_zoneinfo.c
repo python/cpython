@@ -397,7 +397,7 @@ zoneinfo_no_cache(PyTypeObject *cls, PyObject *args, PyObject *kwargs)
 }
 
 static PyObject *
-zoneinfo_clear_cache(PyObject *cls, PyObject *args, PyObject *kwargs)
+zoneinfo_clear_cache(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *only_keys = NULL;
     static char *kwlist[] = {"only_keys", NULL};
@@ -407,7 +407,6 @@ zoneinfo_clear_cache(PyObject *cls, PyObject *args, PyObject *kwargs)
         return NULL;
     }
 
-    PyTypeObject *type = (PyTypeObject *)cls;
     PyObject *weak_cache = get_weak_cache(type);
 
     if (only_keys == NULL || only_keys == Py_None) {

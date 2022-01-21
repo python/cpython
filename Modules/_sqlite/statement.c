@@ -493,11 +493,12 @@ static PyType_Spec stmt_spec = {
 int
 pysqlite_statement_setup_types(PyObject *module)
 {
-    PyObject *type = PyType_FromModuleAndSpec(module, &stmt_spec, NULL);
+    PyTypeObject *type;
+    type = (PyTypeObject *)PyType_FromModuleAndSpec(module, &stmt_spec, NULL);
     if (type == NULL) {
         return -1;
     }
     pysqlite_state *state = pysqlite_get_state(module);
-    state->StatementType = (PyTypeObject *)type;
+    state->StatementType = type;
     return 0;
 }

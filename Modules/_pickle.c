@@ -5923,7 +5923,7 @@ newobj_unpickling_error(const char * msg, int use_kwargs, PyObject *arg)
 static int
 load_newobj(UnpicklerObject *self, int use_kwargs)
 {
-    PyObject *cls, *args, *kwargs = NULL;
+    PyObject *args, *kwargs = NULL;
     PyObject *obj;
 
     /* Stack is ... cls args [kwargs], and we want to call
@@ -5940,21 +5940,23 @@ load_newobj(UnpicklerObject *self, int use_kwargs)
         Py_XDECREF(kwargs);
         return -1;
     }
-    PDATA_POP(self->stack, cls);
-    if (cls == NULL) {
+    PyObject *cls_obj;
+    PDATA_POP(self->stack, cls_obj);
+    if (cls_obj == NULL) {
         Py_XDECREF(kwargs);
         Py_DECREF(args);
         return -1;
     }
 
-    if (!PyType_Check(cls)) {
+    if (!PyType_Check(cls_obj)) {
         newobj_unpickling_error("%s class argument must be a type, not %.200s",
-                                use_kwargs, cls);
+                                use_kwargs, cls_obj);
         goto error;
     }
-    if (((PyTypeObject *)cls)->tp_new == NULL) {
+    PyTypeObject *cls = (PyTypeObject *)cls_obj;
+    if (cls->tp_new == NULL) {
         newobj_unpickling_error("%s class argument '%.200s' doesn't have __new__",
-                                use_kwargs, cls);
+                                use_kwargs, (PyObject*)cls);
         goto error;
     }
     if (!PyTuple_Check(args)) {
@@ -5968,20 +5970,20 @@ load_newobj(UnpicklerObject *self, int use_kwargs)
         goto error;
     }
 
-    obj = ((PyTypeObject *)cls)->tp_new((PyTypeObject *)cls, args, kwargs);
+    obj = cls->tp_new(cls, args, kwargs);
     if (obj == NULL) {
         goto error;
     }
     Py_XDECREF(kwargs);
     Py_DECREF(args);
-    Py_DECREF(cls);
+    Py_DECREF(cls_obj);
     PDATA_PUSH(self->stack, obj, -1);
     return 0;
 
 error:
     Py_XDECREF(kwargs);
     Py_DECREF(args);
-    Py_DECREF(cls);
+    Py_DECREF(cls_obj);
     return -1;
 }
 

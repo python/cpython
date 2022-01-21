@@ -64,11 +64,12 @@ static PyType_Spec type_spec = {
 int
 pysqlite_prepare_protocol_setup_types(PyObject *module)
 {
-    PyObject *type = PyType_FromModuleAndSpec(module, &type_spec, NULL);
+    PyTypeObject *type;
+    type = (PyTypeObject *)PyType_FromModuleAndSpec(module, &type_spec, NULL);
     if (type == NULL) {
         return -1;
     }
     pysqlite_state *state = pysqlite_get_state(module);
-    state->PrepareProtocolType = (PyTypeObject *)type;
+    state->PrepareProtocolType = type;
     return 0;
 }

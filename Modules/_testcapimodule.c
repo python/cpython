@@ -1151,11 +1151,11 @@ test_get_type_name(PyObject *self, PyObject *Py_UNUSED(ignored))
     assert(strcmp(PyUnicode_AsUTF8(tp_name), "module") == 0);
     Py_DECREF(tp_name);
 
-    PyObject *HeapTypeNameType = PyType_FromSpec(&HeapTypeNameType_Spec);
+    PyTypeObject *HeapTypeNameType = (PyTypeObject *)PyType_FromSpec(&HeapTypeNameType_Spec);
     if (HeapTypeNameType == NULL) {
         Py_RETURN_NONE;
     }
-    tp_name = PyType_GetName((PyTypeObject *)HeapTypeNameType);
+    tp_name = PyType_GetName(HeapTypeNameType);
     assert(strcmp(PyUnicode_AsUTF8(tp_name), "HeapTypeNameType") == 0);
     Py_DECREF(tp_name);
 
@@ -1163,11 +1163,11 @@ test_get_type_name(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (name == NULL) {
         goto done;
     }
-    if (PyObject_SetAttrString(HeapTypeNameType, "__name__", name) < 0) {
+    if (PyObject_SetAttrString((PyObject*)HeapTypeNameType, "__name__", name) < 0) {
         Py_DECREF(name);
         goto done;
     }
-    tp_name = PyType_GetName((PyTypeObject *)HeapTypeNameType);
+    tp_name = PyType_GetName(HeapTypeNameType);
     assert(strcmp(PyUnicode_AsUTF8(tp_name), "test_name") == 0);
     Py_DECREF(name);
     Py_DECREF(tp_name);
@@ -1309,11 +1309,11 @@ test_get_type_qualname(PyObject *self, PyObject *Py_UNUSED(ignored))
     assert(strcmp(PyUnicode_AsUTF8(tp_qualname), "OrderedDict") == 0);
     Py_DECREF(tp_qualname);
 
-    PyObject *HeapTypeNameType = PyType_FromSpec(&HeapTypeNameType_Spec);
+    PyTypeObject *HeapTypeNameType = (PyTypeObject *)PyType_FromSpec(&HeapTypeNameType_Spec);
     if (HeapTypeNameType == NULL) {
         Py_RETURN_NONE;
     }
-    tp_qualname = PyType_GetQualName((PyTypeObject *)HeapTypeNameType);
+    tp_qualname = PyType_GetQualName(HeapTypeNameType);
     assert(strcmp(PyUnicode_AsUTF8(tp_qualname), "HeapTypeNameType") == 0);
     Py_DECREF(tp_qualname);
 
@@ -1321,12 +1321,12 @@ test_get_type_qualname(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (spec_name == NULL) {
         goto done;
     }
-    if (PyObject_SetAttrString(HeapTypeNameType,
+    if (PyObject_SetAttrString((PyObject*)HeapTypeNameType,
                                "__qualname__", spec_name) < 0) {
         Py_DECREF(spec_name);
         goto done;
     }
-    tp_qualname = PyType_GetQualName((PyTypeObject *)HeapTypeNameType);
+    tp_qualname = PyType_GetQualName(HeapTypeNameType);
     assert(strcmp(PyUnicode_AsUTF8(tp_qualname),
                   "_testcapi.HeapTypeNameType") == 0);
     Py_DECREF(spec_name);

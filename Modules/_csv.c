@@ -1691,24 +1691,24 @@ static struct PyMethodDef csv_methods[] = {
 static int
 csv_exec(PyObject *module) {
     const StyleDesc *style;
-    PyObject *temp;
     _csvstate *module_state = get_csv_state(module);
 
-    temp = PyType_FromModuleAndSpec(module, &Dialect_Type_spec, NULL);
-    module_state->dialect_type = (PyTypeObject *)temp;
-    if (PyModule_AddObjectRef(module, "Dialect", temp) < 0) {
+    PyTypeObject *type;
+    type = (PyTypeObject *)PyType_FromModuleAndSpec(module, &Dialect_Type_spec, NULL);
+    module_state->dialect_type = type;
+    if (PyModule_AddObjectRef(module, "Dialect", (PyObject*)type) < 0) {
         return -1;
     }
 
-    temp = PyType_FromModuleAndSpec(module, &Reader_Type_spec, NULL);
-    module_state->reader_type = (PyTypeObject *)temp;
-    if (PyModule_AddObjectRef(module, "Reader", temp) < 0) {
+    type = (PyTypeObject *)PyType_FromModuleAndSpec(module, &Reader_Type_spec, NULL);
+    module_state->reader_type = type;
+    if (PyModule_AddObjectRef(module, "Reader", (PyObject*)type) < 0) {
         return -1;
     }
 
-    temp = PyType_FromModuleAndSpec(module, &Writer_Type_spec, NULL);
-    module_state->writer_type = (PyTypeObject *)temp;
-    if (PyModule_AddObjectRef(module, "Writer", temp) < 0) {
+    type = (PyTypeObject *)PyType_FromModuleAndSpec(module, &Writer_Type_spec, NULL);
+    module_state->writer_type = type;
+    if (PyModule_AddObjectRef(module, "Writer", (PyObject*)type) < 0) {
         return -1;
     }
 
