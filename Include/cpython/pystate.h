@@ -53,12 +53,19 @@ typedef struct _cframe {
 } CFrame;
 
 typedef struct _err_stackitem {
-    /* This struct represents an entry on the exception stack, which is a
-     * per-coroutine state. (Coroutine in the computer science sense,
-     * including the thread and generators).
-     * This ensures that the exception state is not impacted by "yields"
-     * from an except handler.
+    /* This struct represents a single execution context where we might
+     * be currently handling an exception.  It is a per-coroutine state
+     * (coroutine in the computer science sense, including the thread
+     * and generators).
+     *
+     * This is used as an entry on the exception stack, where each
+     * entry indicates if it is currently handling an exception.
+     * This ensures that the exception state is not impacted
+     * by "yields" from an except handler.  The thread
+     * always has an entry (the bottom-most one).
      */
+
+    /* The exception currently being handled in this context, if any. */
     PyObject *exc_value;
 
     struct _err_stackitem *previous_item;
@@ -112,13 +119,9 @@ struct _ts {
     PyObject *curexc_value;
     PyObject *curexc_traceback;
 
-    /* The exception currently being handled, if no coroutines/generators
-     * are present. Always last element on the stack referred to be exc_info.
-     */
-    _PyErr_StackItem exc_state;
-
-    /* Pointer to the top of the stack of the exceptions currently
-     * being handled */
+    /* Pointer to the top of the exception stack for the exceptions
+     * we may be currently handling.  (See _PyErr_StackItem above.)
+     * This is never NULL. */
     _PyErr_StackItem *exc_info;
 
     PyObject *dict;  /* Stores per-thread state */
@@ -174,13 +177,26 @@ struct _ts {
     /* Unique thread state id. */
     uint64_t id;
 
-    CFrame root_cframe;
     PyTraceInfo trace_info;
 
     _PyStackChunk *datastack_chunk;
     PyObject **datastack_top;
     PyObject **datastack_limit;
     /* XXX signal handlers should also be here */
+
+    /* The following fields are here to avoid allocation during init.
+       The data is exposed through PyThreadState pointer fields.
+       These fields should not be accessed directly outside of init.
+
+       All other PyInterpreterState pointer fields are populated when
+       needed and default to NULL.
+       */
+
+    /* The thread's exception stack entry.  (Always the last entry.) */
+    _PyErr_StackItem _exc_state;
+
+    /* The bottom-most frame on the stack. */
+    CFrame _root_cframe;
 };
 
 

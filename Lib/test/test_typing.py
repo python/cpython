@@ -523,6 +523,10 @@ class BaseCallableTests:
         # Shouldn't crash; see https://github.com/python/typing/issues/259
         typing.List[Callable[..., str]]
 
+    def test_or_and_ror(self):
+        Callable = self.Callable
+        self.assertEqual(Callable | Tuple, Union[Callable, Tuple])
+        self.assertEqual(Tuple | Callable, Union[Tuple, Callable])
 
     def test_basic(self):
         Callable = self.Callable
@@ -2130,22 +2134,30 @@ class GenericTests(BaseTestCase):
     def test_immutability_by_copy_and_pickle(self):
         # Special forms like Union, Any, etc., generic aliases to containers like List,
         # Mapping, etc., and type variabcles are considered immutable by copy and pickle.
-        global TP, TPB, TPV  # for pickle
+        global TP, TPB, TPV, PP  # for pickle
         TP = TypeVar('TP')
         TPB = TypeVar('TPB', bound=int)
         TPV = TypeVar('TPV', bytes, str)
-        for X in [TP, TPB, TPV, List, typing.Mapping, ClassVar, typing.Iterable,
+        PP = ParamSpec('PP')
+        for X in [TP, TPB, TPV, PP,
+                  List, typing.Mapping, ClassVar, typing.Iterable,
                   Union, Any, Tuple, Callable]:
-            self.assertIs(copy(X), X)
-            self.assertIs(deepcopy(X), X)
-            self.assertIs(pickle.loads(pickle.dumps(X)), X)
+            with self.subTest(thing=X):
+                self.assertIs(copy(X), X)
+                self.assertIs(deepcopy(X), X)
+                for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                    self.assertIs(pickle.loads(pickle.dumps(X, proto)), X)
+        del TP, TPB, TPV, PP
+
         # Check that local type variables are copyable.
         TL = TypeVar('TL')
         TLB = TypeVar('TLB', bound=int)
         TLV = TypeVar('TLV', bytes, str)
-        for X in [TL, TLB, TLV]:
-            self.assertIs(copy(X), X)
-            self.assertIs(deepcopy(X), X)
+        PL = ParamSpec('PL')
+        for X in [TL, TLB, TLV, PL]:
+            with self.subTest(thing=X):
+                self.assertIs(copy(X), X)
+                self.assertIs(deepcopy(X), X)
 
     def test_copy_generic_instances(self):
         T = TypeVar('T')
@@ -3501,11 +3513,10 @@ class CollectionsAbcTests(BaseTestCase):
         self.assertNotIsInstance(42, typing.Container)
 
     def test_collection(self):
-        if hasattr(typing, 'Collection'):
-            self.assertIsInstance(tuple(), typing.Collection)
-            self.assertIsInstance(frozenset(), typing.Collection)
-            self.assertIsSubclass(dict, typing.Collection)
-            self.assertNotIsInstance(42, typing.Collection)
+        self.assertIsInstance(tuple(), typing.Collection)
+        self.assertIsInstance(frozenset(), typing.Collection)
+        self.assertIsSubclass(dict, typing.Collection)
+        self.assertNotIsInstance(42, typing.Collection)
 
     def test_abstractset(self):
         self.assertIsInstance(set(), typing.AbstractSet)
@@ -3897,6 +3908,10 @@ class CollectionsAbcTests(BaseTestCase):
         class B: ...
         A.register(B)
         self.assertIsSubclass(B, typing.Mapping)
+
+    def test_or_and_ror(self):
+        self.assertEqual(typing.Sized | typing.Awaitable, Union[typing.Sized, typing.Awaitable])
+        self.assertEqual(typing.Coroutine | typing.Hashable, Union[typing.Coroutine, typing.Hashable])
 
 
 class OtherABCTests(BaseTestCase):
@@ -4601,6 +4616,10 @@ class AnnotatedTests(BaseTestCase):
         with self.assertRaises(TypeError):
             issubclass(int, Annotated[int, "positive"])
 
+    def test_too_few_type_args(self):
+        with self.assertRaisesRegex(TypeError, 'at least two arguments'):
+            Annotated[int]
+
     def test_pickle(self):
         samples = [typing.Any, typing.Union[int, str],
                    typing.Optional[str], Tuple[int, ...],
@@ -5059,7 +5078,7 @@ class SpecialAttrsTests(BaseTestCase):
         )
         self.assertEqual(
             SpecialAttrsTests.TypeName.__module__,
-            'test.test_typing',
+            __name__,
         )
         # NewTypes are picklable assuming correct qualname information.
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -5073,7 +5092,7 @@ class SpecialAttrsTests(BaseTestCase):
         # __qualname__ is unnecessary.
         self.assertEqual(SpecialAttrsT.__name__, 'SpecialAttrsT')
         self.assertFalse(hasattr(SpecialAttrsT, '__qualname__'))
-        self.assertEqual(SpecialAttrsT.__module__, 'test.test_typing')
+        self.assertEqual(SpecialAttrsT.__module__, __name__)
         # Module-level type variables are picklable.
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             s = pickle.dumps(SpecialAttrsT, proto)
@@ -5082,7 +5101,7 @@ class SpecialAttrsTests(BaseTestCase):
 
         self.assertEqual(SpecialAttrsP.__name__, 'SpecialAttrsP')
         self.assertFalse(hasattr(SpecialAttrsP, '__qualname__'))
-        self.assertEqual(SpecialAttrsP.__module__, 'test.test_typing')
+        self.assertEqual(SpecialAttrsP.__module__, __name__)
         # Module-level ParamSpecs are picklable.
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             s = pickle.dumps(SpecialAttrsP, proto)
@@ -5110,8 +5129,9 @@ class AllTests(BaseTestCase):
         self.assertIn('ValuesView', a)
         self.assertIn('cast', a)
         self.assertIn('overload', a)
-        if hasattr(contextlib, 'AbstractContextManager'):
-            self.assertIn('ContextManager', a)
+        # Context managers.
+        self.assertIn('ContextManager', a)
+        self.assertIn('AsyncContextManager', a)
         # Check that io and re are not exported.
         self.assertNotIn('io', a)
         self.assertNotIn('re', a)
@@ -5125,8 +5145,6 @@ class AllTests(BaseTestCase):
         self.assertIn('SupportsComplex', a)
 
     def test_all_exported_names(self):
-        import typing
-
         actual_all = set(typing.__all__)
         computed_all = {
             k for k, v in vars(typing).items()

@@ -4834,33 +4834,54 @@ Generic Alias Type
    object: GenericAlias
    pair: Generic; Alias
 
-``GenericAlias`` objects are created by subscripting a class (usually a
-container), such as ``list[int]``.  They are intended primarily for
+``GenericAlias`` objects are generally created by
+:ref:`subscripting <subscriptions>` a class. They are most often used with
+:ref:`container classes <sequence-types>`, such as :class:`list` or
+:class:`dict`. For example, ``list[int]`` is a ``GenericAlias`` object created
+by subscripting the ``list`` class with the argument :class:`int`.
+``GenericAlias`` objects are intended primarily for use with
 :term:`type annotations <annotation>`.
 
-Usually, the :ref:`subscription <subscriptions>` of container objects calls the
-method :meth:`__getitem__` of the object.  However, the subscription of some
-containers' classes may call the classmethod :meth:`__class_getitem__` of the
-class instead. The classmethod :meth:`__class_getitem__` should return a
-``GenericAlias`` object.
-
 .. note::
-   If the :meth:`__getitem__` of the class' metaclass is present, it will take
-   precedence over the :meth:`__class_getitem__` defined in the class (see
-   :pep:`560` for more details).
 
-The ``GenericAlias`` object acts as a proxy for :term:`generic types
-<generic type>`, implementing *parameterized generics* - a specific instance
-of a generic which provides the types for container elements.
+   It is generally only possible to subscript a class if the class implements
+   the special method :meth:`~object.__class_getitem__`.
 
-The user-exposed type for the ``GenericAlias`` object can be accessed from
-:class:`types.GenericAlias` and used for :func:`isinstance` checks.  It can
-also be used to create ``GenericAlias`` objects directly.
+A ``GenericAlias`` object acts as a proxy for a :term:`generic type`,
+implementing *parameterized generics*.
+
+For a container class, the
+argument(s) supplied to a :ref:`subscription <subscriptions>` of the class may
+indicate the type(s) of the elements an object contains. For example,
+``set[bytes]`` can be used in type annotations to signify a :class:`set` in
+which all the elements are of type :class:`bytes`.
+
+For a class which defines :meth:`~object.__class_getitem__` but is not a
+container, the argument(s) supplied to a subscription of the class will often
+indicate the return type(s) of one or more methods defined on an object. For
+example, :mod:`regular expressions <re>` can be used on both the :class:`str` data
+type and the :class:`bytes` data type:
+
+* If ``x = re.search('foo', 'foo')``, ``x`` will be a
+  :ref:`re.Match <match-objects>` object where the return values of
+  ``x.group(0)`` and ``x[0]`` will both be of type :class:`str`. We can
+  represent this kind of object in type annotations with the ``GenericAlias``
+  ``re.Match[str]``.
+
+* If ``y = re.search(b'bar', b'bar')``, (note the ``b`` for :class:`bytes`),
+  ``y`` will also be an instance of ``re.Match``, but the return
+  values of ``y.group(0)`` and ``y[0]`` will both be of type
+  :class:`bytes`. In type annotations, we would represent this
+  variety of :ref:`re.Match <match-objects>` objects with ``re.Match[bytes]``.
+
+``GenericAlias`` objects are instances of the class
+:class:`types.GenericAlias`, which can also be used to create ``GenericAlias``
+objects directly.
 
 .. describe:: T[X, Y, ...]
 
-   Creates a ``GenericAlias`` representing a type ``T`` containing elements
-   of types *X*, *Y*, and more depending on the ``T`` used.
+   Creates a ``GenericAlias`` representing a type ``T`` parameterized by types
+   *X*, *Y*, and more depending on the ``T`` used.
    For example, a function expecting a :class:`list` containing
    :class:`float` elements::
 
@@ -4885,7 +4906,7 @@ The builtin functions :func:`isinstance` and :func:`issubclass` do not accept
 
 The Python runtime does not enforce :term:`type annotations <annotation>`.
 This extends to generic types and their type parameters. When creating
-an object from a ``GenericAlias``, container elements are not checked
+a container object from a ``GenericAlias``, the elements in the container are not checked
 against their type. For example, the following code is discouraged, but will
 run without errors::
 
@@ -4912,8 +4933,8 @@ Calling :func:`repr` or :func:`str` on a generic shows the parameterized type::
    >>> str(list[int])
    'list[int]'
 
-The :meth:`__getitem__` method of generics will raise an exception to disallow
-mistakes like ``dict[str][str]``::
+The :meth:`~object.__getitem__` method of generic containers will raise an
+exception to disallow mistakes like ``dict[str][str]``::
 
    >>> dict[str][str]
    Traceback (most recent call last):
@@ -4922,7 +4943,7 @@ mistakes like ``dict[str][str]``::
 
 However, such expressions are valid when :ref:`type variables <generics>` are
 used.  The index must have as many elements as there are type variable items
-in the ``GenericAlias`` object's :attr:`__args__ <genericalias.__args__>`. ::
+in the ``GenericAlias`` object's :attr:`~genericalias.__args__`. ::
 
    >>> from typing import TypeVar
    >>> Y = TypeVar('Y')
@@ -4930,10 +4951,11 @@ in the ``GenericAlias`` object's :attr:`__args__ <genericalias.__args__>`. ::
    dict[str, int]
 
 
-Standard Generic Collections
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Standard Generic Classes
+^^^^^^^^^^^^^^^^^^^^^^^^
 
-These standard library collections support parameterized generics.
+The following standard library classes support parameterized generics. This
+list is non-exhaustive.
 
 * :class:`tuple`
 * :class:`list`
@@ -4971,12 +4993,33 @@ These standard library collections support parameterized generics.
 * :class:`collections.abc.ValuesView`
 * :class:`contextlib.AbstractContextManager`
 * :class:`contextlib.AbstractAsyncContextManager`
+* :class:`dataclasses.Field`
+* :class:`functools.cached_property`
+* :class:`functools.partialmethod`
+* :class:`os.PathLike`
+* :class:`pathlib.Path`
+* :class:`pathlib.PurePath`
+* :class:`pathlib.PurePosixPath`
+* :class:`pathlib.PureWindowsPath`
+* :class:`queue.LifoQueue`
+* :class:`queue.Queue`
+* :class:`queue.PriorityQueue`
+* :class:`queue.SimpleQueue`
 * :ref:`re.Pattern <re-objects>`
 * :ref:`re.Match <match-objects>`
+* :class:`shelve.BsdDbShelf`
+* :class:`shelve.DbfilenameShelf`
+* :class:`shelve.Shelf`
+* :class:`types.MappingProxyType`
+* :class:`weakref.WeakKeyDictionary`
+* :class:`weakref.WeakMethod`
+* :class:`weakref.WeakSet`
+* :class:`weakref.WeakValueDictionary`
 
 
-Special Attributes of Generic Alias
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Special Attributes of ``GenericAlias`` objects
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 All parameterized generics implement special read-only attributes.
 
@@ -4991,8 +5034,8 @@ All parameterized generics implement special read-only attributes.
 .. attribute:: genericalias.__args__
 
    This attribute is a :class:`tuple` (possibly of length 1) of generic
-   types passed to the original :meth:`__class_getitem__`
-   of the generic container::
+   types passed to the original :meth:`~object.__class_getitem__` of the
+   generic class::
 
       >>> dict[str, list[int]].__args__
       (<class 'str'>, list[int])
@@ -5017,9 +5060,17 @@ All parameterized generics implement special read-only attributes.
 
 .. seealso::
 
-   * :pep:`585` -- "Type Hinting Generics In Standard Collections"
-   * :meth:`__class_getitem__` -- Used to implement parameterized generics.
-   * :ref:`generics` -- Generics in the :mod:`typing` module.
+   :pep:`484` - Type Hints
+      Introducing Python's framework for type annotations.
+
+   :pep:`585` - Type Hinting Generics In Standard Collections
+      Introducing the ability to natively parameterize standard-library
+      classes, provided they implement the special class method
+      :meth:`~object.__class_getitem__`.
+
+   :ref:`Generics`, :ref:`user-defined generics <user-defined-generics>` and :class:`typing.Generic`
+      Documentation on how to implement generic classes that can be
+      parameterized at runtime and understood by static type-checkers.
 
 .. versionadded:: 3.9
 

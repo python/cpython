@@ -351,7 +351,18 @@ if not home and not py_setpath:
         key, had_equ, value = line.partition('=')
         if had_equ and key.strip().lower() == 'home':
             executable_dir = real_executable_dir = value.strip()
-            base_executable = joinpath(executable_dir, basename(executable))
+            if not base_executable:
+                # First try to resolve symlinked executables, since that may be
+                # more accurate than assuming the executable in 'home'.
+                try:
+                    base_executable = realpath(executable)
+                    if base_executable == executable:
+                        # No change, so probably not a link. Clear it and fall back
+                        base_executable = ''
+                except OSError:
+                    pass
+                if not base_executable:
+                    base_executable = joinpath(executable_dir, basename(executable))
             break
     else:
         venv_prefix = None

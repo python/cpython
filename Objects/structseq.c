@@ -532,8 +532,38 @@ PyStructSequence_InitType(PyTypeObject *type, PyStructSequence_Desc *desc)
     (void)PyStructSequence_InitType2(type, desc);
 }
 
+
+void
+_PyStructSequence_FiniType(PyTypeObject *type)
+{
+    // Ensure that the type is initialized
+    assert(type->tp_name != NULL);
+    assert(type->tp_base == &PyTuple_Type);
+
+    // Cannot delete a type if it still has subclasses
+    if (type->tp_subclasses != NULL) {
+        return;
+    }
+
+    // Undo PyStructSequence_NewType()
+    type->tp_name = NULL;
+    PyMem_Free(type->tp_members);
+
+    _PyStaticType_Dealloc(type);
+    assert(Py_REFCNT(type) == 1);
+    // Undo Py_INCREF(type) of _PyStructSequence_InitType().
+    // Don't use Py_DECREF(): static type must not be deallocated
+    Py_SET_REFCNT(type, 0);
+
+    // Make sure that _PyStructSequence_InitType() will initialize
+    // the type again
+    assert(Py_REFCNT(type) == 0);
+    assert(type->tp_name == NULL);
+}
+
+
 PyTypeObject *
-PyStructSequence_NewType(PyStructSequence_Desc *desc)
+_PyStructSequence_NewType(PyStructSequence_Desc *desc, unsigned long tp_flags)
 {
     PyMemberDef *members;
     PyTypeObject *type;
@@ -566,7 +596,7 @@ PyStructSequence_NewType(PyStructSequence_Desc *desc)
     spec.name = desc->name;
     spec.basicsize = sizeof(PyStructSequence) - sizeof(PyObject *);
     spec.itemsize = sizeof(PyObject *);
-    spec.flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC;
+    spec.flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | tp_flags;
     spec.slots = slots;
 
     type = (PyTypeObject *)PyType_FromSpecWithBases(&spec, (PyObject *)&PyTuple_Type);
@@ -582,6 +612,13 @@ PyStructSequence_NewType(PyStructSequence_Desc *desc)
     }
 
     return type;
+}
+
+
+PyTypeObject *
+PyStructSequence_NewType(PyStructSequence_Desc *desc)
+{
+    return _PyStructSequence_NewType(desc, 0);
 }
 
 

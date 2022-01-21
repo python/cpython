@@ -499,7 +499,6 @@ initial_counter_value(void) {
 #define SPEC_FAIL_DIFFERENT_TYPES 12
 
 /* Calls */
-#define SPEC_FAIL_GENERATOR 7
 #define SPEC_FAIL_COMPLEX_PARAMETERS 8
 #define SPEC_FAIL_WRONG_NUMBER_ARGUMENTS 9
 #define SPEC_FAIL_CO_NOT_OPTIMIZED 10
@@ -1158,9 +1157,6 @@ _Py_IDENTIFIER(__getitem__);
 static int
 function_kind(PyCodeObject *code) {
     int flags = code->co_flags;
-    if (flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
-        return SPEC_FAIL_GENERATOR;
-    }
     if ((flags & (CO_VARKEYWORDS | CO_VARARGS)) || code->co_kwonlyargcount) {
         return SPEC_FAIL_COMPLEX_PARAMETERS;
     }
@@ -1245,7 +1241,7 @@ _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *ins
     if (container_type == &PyList_Type) {
         if (PyLong_CheckExact(sub)) {
             if ((Py_SIZE(sub) == 0 || Py_SIZE(sub) == 1)
-                && ((PyLongObject *)sub)->ob_digit[0] < PyList_GET_SIZE(container))
+                && ((PyLongObject *)sub)->ob_digit[0] < (size_t)PyList_GET_SIZE(container))
             {
                 *instr = _Py_MAKECODEUNIT(STORE_SUBSCR_LIST_INT,
                                           initial_counter_value());

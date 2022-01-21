@@ -775,8 +775,6 @@ MODULE__IO_TRUE
 MODULES_SETUP_STDLIB
 MODULE_BUILDTYPE
 TEST_MODULES
-LIBRARY_DEPS
-STATIC_LIBPYTHON
 OPENSSL_RPATH
 OPENSSL_LDFLAGS
 OPENSSL_LIBS
@@ -877,6 +875,10 @@ READELF
 ARFLAGS
 ac_ct_AR
 AR
+LINK_PYTHON_OBJS
+LINK_PYTHON_DEPS
+LIBRARY_DEPS
+STATIC_LIBPYTHON
 GNULD
 EXPORTSFROM
 EXPORTSYMS
@@ -1007,6 +1009,7 @@ with_cxx_main
 with_emscripten_target
 with_suffix
 enable_shared
+with_static_libpython
 enable_profiling
 with_pydebug
 with_trace_refs
@@ -1048,7 +1051,6 @@ with_openssl_rpath
 with_ssl_default_suites
 with_builtin_hashlib_hashes
 with_experimental_isolated_subinterpreters
-with_static_libpython
 enable_test_modules
 '
       ac_precious_vars='build_alias
@@ -1728,7 +1730,7 @@ Optional Features:
                           Doc/library/socket.rst (default is yes if supported)
   --enable-big-digits[=15|30]
                           use big digits (30 or 15 bits) for Python longs
-                          (default is system-dependent)]
+                          (default is 30)]
   --disable-test-modules  don't build nor install test modules
 
 Optional Packages:
@@ -1758,6 +1760,9 @@ Optional Packages:
                           Emscripten platform
   --with-suffix=SUFFIX    set executable suffix to SUFFIX (default is empty,
                           yes is mapped to '.exe')
+  --without-static-libpython
+                          do not build libpythonMAJOR.MINOR.a and do not
+                          install python.o (default is yes)
   --with-pydebug          build with Py_DEBUG defined (default is no)
   --with-trace-refs       enable tracing references for debugging purpose
                           (default is no)
@@ -1840,9 +1845,6 @@ Optional Packages:
   --with-experimental-isolated-subinterpreters
                           better isolate subinterpreters, experimental build
                           mode (default is no)
-  --without-static-libpython
-                          do not build libpythonMAJOR.MINOR.a and do not
-                          install python.o (default is yes)
 
 Some influential environment variables:
   PKG_CONFIG  path to pkg-config utility
@@ -6428,6 +6430,30 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_shared" >&5
 $as_echo "$enable_shared" >&6; }
 
+# --with-static-libpython
+STATIC_LIBPYTHON=1
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-static-libpython" >&5
+$as_echo_n "checking for --with-static-libpython... " >&6; }
+
+# Check whether --with-static-libpython was given.
+if test "${with_static_libpython+set}" = set; then :
+  withval=$with_static_libpython;
+if test "$withval" = no
+then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; };
+  STATIC_LIBPYTHON=0
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; };
+fi
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+fi
+
+
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-profiling" >&5
 $as_echo_n "checking for --enable-profiling... " >&6; }
 # Check whether --enable-profiling was given.
@@ -6550,6 +6576,37 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LDLIBRARY" >&5
 $as_echo "$LDLIBRARY" >&6; }
 
+# LIBRARY_DEPS, LINK_PYTHON_OBJS and LINK_PYTHON_DEPS variable
+case $ac_sys_system/$ac_sys_emscripten_target in #(
+  Emscripten/browser) :
+    LIBRARY_DEPS='$(PY3LIBRARY) $(WASM_STDLIB)' ;; #(
+  *) :
+    LIBRARY_DEPS='$(PY3LIBRARY) $(EXPORTSYMS)'
+ ;;
+esac
+LINK_PYTHON_DEPS='$(LIBRARY_DEPS)'
+if test "$PY_ENABLE_SHARED" = 1 || test "$enable_framework" ; then
+    LIBRARY_DEPS="\$(LDLIBRARY) $LIBRARY_DEPS"
+    if test "$STATIC_LIBPYTHON" = 1; then
+        LIBRARY_DEPS="\$(LIBRARY) $LIBRARY_DEPS"
+    fi
+    # Link Python program to the shared library
+    LINK_PYTHON_OBJS='$(BLDLIBRARY)'
+else
+    if test "$STATIC_LIBPYTHON" = 0; then
+        # Build Python needs object files but don't need to build
+        # Python static library
+        LINK_PYTHON_DEPS="$LIBRARY_DEPS \$(LIBRARY_OBJS)"
+    fi
+    LIBRARY_DEPS="\$(LIBRARY) $LIBRARY_DEPS"
+    # Link Python program to object files
+    LINK_PYTHON_OBJS='$(LIBRARY_OBJS)'
+fi
+
+
+
+
+# ar program
 
 if test -n "$ac_tool_prefix"; then
   for ac_prog in ar aal
@@ -7618,14 +7675,14 @@ fi
 case $ac_sys_system/$ac_sys_emscripten_target in #(
   Emscripten/browser) :
 
-    LDFLAGS_NODIST="$(LDFLAGS_NODIST) -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 --preload-file \$(WASM_ASSETS_DIR)"
+    LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 --preload-file \$(WASM_ASSETS_DIR)"
     WASM_ASSETS_DIR=".\$(prefix)"
     WASM_STDLIB="\$(WASM_ASSETS_DIR)/local/lib/python\$(VERSION)/os.py"
    ;; #(
   Emscripten/node) :
 
-    LDFLAGS_NODIST="$(LDFLAGS_NODIST) -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 -s NODERAWFS=1 -s EXIT_RUNTIME=1 -s USE_PTHREADS -s PROXY_TO_PTHREAD"
-    CFLAGS_NODIST="$(CFLAGS_NODIST) -pthread"
+    LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 -s NODERAWFS=1 -s EXIT_RUNTIME=1 -s USE_PTHREADS -s PROXY_TO_PTHREAD"
+    CFLAGS_NODIST="$CFLAGS_NODIST -pthread"
    ;; #(
   WASI) :
 
@@ -8883,7 +8940,8 @@ done
 
 
 # On Linux, can.h, can/bcm.h, can/j1939.h, can/raw.h require sys/socket.h
-for ac_header in linux/can.h linux/can/bcm.h linux/can/j1939.h linux/can/raw.h
+# On NetBSD, netcan/can.h requires sys/socket.h
+for ac_header in linux/can.h linux/can/bcm.h linux/can/j1939.h linux/can/raw.h netcan/can.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "
@@ -12947,6 +13005,10 @@ $as_echo "#define HAVE_BROKEN_POSIX_SEMAPHORES 1" >>confdefs.h
 
 		       ;;
       AIX/*)
+$as_echo "#define HAVE_BROKEN_POSIX_SEMAPHORES 1" >>confdefs.h
+
+		       ;;
+      NetBSD/*)
 $as_echo "#define HAVE_BROKEN_POSIX_SEMAPHORES 1" >>confdefs.h
 
 		       ;;
@@ -21213,48 +21275,6 @@ $as_echo "no" >&6; }
 fi
 
 
-# --with-static-libpython
-STATIC_LIBPYTHON=1
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-static-libpython" >&5
-$as_echo_n "checking for --with-static-libpython... " >&6; }
-
-# Check whether --with-static-libpython was given.
-if test "${with_static_libpython+set}" = set; then :
-  withval=$with_static_libpython;
-if test "$withval" = no
-then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; };
-  STATIC_LIBPYTHON=0
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; };
-fi
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-fi
-
-LIBRARY_DEPS='$(PY3LIBRARY) $(EXPORTSYMS)'
-if test "$PY_ENABLE_SHARED" = 1 || test "$enable_framework" ; then
-    LIBRARY_DEPS="\$(LDLIBRARY) $LIBRARY_DEPS"
-    if test "$STATIC_LIBPYTHON" = 1; then
-        LIBRARY_DEPS="\$(LIBRARY) $LIBRARY_DEPS"
-    fi
-else
-    LIBRARY_DEPS="\$(LIBRARY) $LIBRARY_DEPS"
-fi
-
-case $ac_sys_system/$ac_sys_emscripten_target in #(
-  Emscripten/browser) :
-    LIBRARY_DEPS="$LIBRARY_DEPS \$(WASM_STDLIB)" ;; #(
-  *) :
-     ;;
-esac
-
-
-
-
 # Check whether to disable test modules. Once set, setup.py will not build
 # test extension modules and "make install" will not install test suites.
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --disable-test-modules" >&5
@@ -21285,22 +21305,26 @@ $as_echo "yes" >&6; }
 fi
 
 
-case $ac_sys_system in #(
-  AIX) :
+case $ac_sys_system/$ac_sys_emscripten_target in #(
+  AIX/*) :
     py_stdlib_not_available="_scproxy spwd" ;; #(
-  VxWorks*) :
+  VxWorks*/*) :
     py_stdlib_not_available="_scproxy _crypt termios grp" ;; #(
-  Darwin) :
+  Darwin/*) :
     py_stdlib_not_available="ossaudiodev spwd" ;; #(
-  CYGWIN*) :
+  CYGWIN*/*) :
     py_stdlib_not_available="_scproxy nis" ;; #(
-  QNX*) :
+  QNX*/*) :
     py_stdlib_not_available="_scproxy nis" ;; #(
-  FreeBSD*) :
+  FreeBSD*/*) :
     py_stdlib_not_available="_scproxy spwd" ;; #(
-  Emscripten) :
+  Emscripten/browser) :
 
     py_stdlib_not_available="_ctypes _curses _curses_panel _dbm _gdbm _multiprocessing _posixshmem _posixsubprocess _scproxy _tkinter _xxsubinterpreters fcntl grp nis ossaudiodev resource readline spwd syslog termios"
+   ;; #(
+      Emscripten/node) :
+
+    py_stdlib_not_available="_ctypes _curses _curses_panel _dbm _gdbm _scproxy _tkinter _xxsubinterpreters grp nis ossaudiodev spwd syslog"
    ;; #(
   *) :
     py_stdlib_not_available="_scproxy"

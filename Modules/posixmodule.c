@@ -4240,6 +4240,48 @@ os_listdir_impl(PyObject *module, path_t *path)
 }
 
 #ifdef MS_WINDOWS
+int
+_PyOS_getfullpathname(const wchar_t *path, wchar_t **abspath_p)
+{
+    wchar_t woutbuf[MAX_PATH], *woutbufp = woutbuf;
+    DWORD result;
+
+    result = GetFullPathNameW(path,
+                              Py_ARRAY_LENGTH(woutbuf), woutbuf,
+                              NULL);
+    if (!result) {
+        return -1;
+    }
+
+    if (result >= Py_ARRAY_LENGTH(woutbuf)) {
+        if ((size_t)result <= (size_t)PY_SSIZE_T_MAX / sizeof(wchar_t)) {
+            woutbufp = PyMem_RawMalloc((size_t)result * sizeof(wchar_t));
+        }
+        else {
+            woutbufp = NULL;
+        }
+        if (!woutbufp) {
+            *abspath_p = NULL;
+            return 0;
+        }
+
+        result = GetFullPathNameW(path, result, woutbufp, NULL);
+        if (!result) {
+            PyMem_RawFree(woutbufp);
+            return -1;
+        }
+    }
+
+    if (woutbufp != woutbuf) {
+        *abspath_p = woutbufp;
+        return 0;
+    }
+
+    *abspath_p = _PyMem_RawWcsdup(woutbufp);
+    return 0;
+}
+
+
 /* A helper function for abspath on win32 */
 /*[clinic input]
 os._getfullpathname
@@ -4255,8 +4297,7 @@ os__getfullpathname_impl(PyObject *module, path_t *path)
 {
     wchar_t *abspath;
 
-    /* _Py_abspath() is implemented with GetFullPathNameW() on Windows */
-    if (_Py_abspath(path->wide, &abspath) < 0) {
+    if (_PyOS_getfullpathname(path->wide, &abspath) < 0) {
         return win32_error_object("GetFullPathNameW", path->object);
     }
     if (abspath == NULL) {
