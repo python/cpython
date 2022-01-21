@@ -67,15 +67,11 @@ Include/opcode.h                             generated
 Include/token.h                              generated
 Lib/keyword.py                               generated
 Lib/token.py                                 generated
-Modules/config.c                             generated
 Objects/typeslots.inc                        generated
 Parser/parser.c                              generated
 Parser/token.c                               generated
 Programs/test_frozenmain.h                   generated
 Python/Python-ast.c                          generated
-Python/deepfreeze/*.c                        generated
-Python/frozen_modules/*.h                    generated
-Python/frozen_modules/MANIFEST               generated
 Python/opcode_targets.h                      generated
 Python/stdlib_module_names.h                 generated
 Tools/peg_generator/pegen/grammar_parser.py  generated
