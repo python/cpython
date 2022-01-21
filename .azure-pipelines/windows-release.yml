@@ -5,10 +5,14 @@ parameters:
   displayName: "Git remote"
   type: string
   default: python
+  values:
+  - python
+  - ambv
+  - pablogsal
 - name: SourceTag
   displayName: "Git tag"
   type: string
-  default: ''
+  default: main
 - name: DoPublish
   displayName: "Publish release"
   type: boolean
@@ -47,8 +51,8 @@ parameters:
   default: true
 - name: BuildToPublish
   displayName: "Build number to publish"
-  type: string
-  default: ''
+  type: number
+  default: '0'
 
 variables:
     __RealSigningCertificate: 'Python Software Foundation'
@@ -63,7 +67,8 @@ variables:
     DoEmbed: ${{ parameters.DoEmbed }}
     DoMSI: ${{ parameters.DoMSI }}
     DoPublish: ${{ parameters.DoPublish }}
-    BuildToPublish: ${{ parameters.BuildToPublish }}
+    ${{ if ne(parameters.BuildToPublish, '0') }}:
+      BuildToPublish: ${{ parameters.BuildToPublish }}
 # QUEUE TIME VARIABLES
 #    PyDotOrgUsername: ''
 #    PyDotOrgServer: ''
