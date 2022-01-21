@@ -1841,9 +1841,10 @@ _PyTypes_InitState(PyInterpreterState *interp)
 static PyTypeObject* static_types[] = {
     // base types
     &PyAsyncGen_Type,
-    &PyBool_Type,
     &PyByteArrayIter_Type,
     &PyByteArray_Type,
+    &PyBytesIter_Type,
+    &PyBytes_Type,
     &PyCFunction_Type,
     &PyCallIter_Type,
     &PyCapsule_Type,
@@ -1866,6 +1867,7 @@ static PyTypeObject* static_types[] = {
     &PyDict_Type,
     &PyEllipsis_Type,
     &PyEnum_Type,
+    &PyFloat_Type,
     &PyFrame_Type,
     &PyFrozenSet_Type,
     &PyFunction_Type,
@@ -1876,6 +1878,7 @@ static PyTypeObject* static_types[] = {
     &PyListRevIter_Type,
     &PyList_Type,
     &PyLongRangeIter_Type,
+    &PyLong_Type,
     &PyMemberDescr_Type,
     &PyMemoryView_Type,
     &PyMethodDescr_Type,
@@ -1897,6 +1900,10 @@ static PyTypeObject* static_types[] = {
     &PyStdPrinter_Type,
     &PySuper_Type,
     &PyTraceBack_Type,
+    &PyTupleIter_Type,
+    &PyTuple_Type,
+    &PyUnicodeIter_Type,
+    &PyUnicode_Type,
     &PyWrapperDescr_Type,
     &Py_GenericAliasType,
     &_PyAnextAwaitable_Type,
@@ -1917,6 +1924,7 @@ static PyTypeObject* static_types[] = {
 
     // subclasses: _PyTypes_FiniTypes() deallocates them before their base
     // class
+    &PyBool_Type,         // base=&PyLong_Type
     &PyCMethod_Type,      // base=&PyCFunction_Type
     &PyODictItems_Type,   // base=&PyDictItems_Type
     &PyODictKeys_Type,    // base=&PyDictKeys_Type
