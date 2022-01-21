@@ -6,7 +6,7 @@ PyDoc_STRVAR(datetime_date_today__doc__,
 "today($type, /)\n"
 "--\n"
 "\n"
-"Return new date from current time.\n"
+"Current date or datetime.\n"
 "\n"
 "Same as self.__class__.fromtimestamp(time.time())");
 
@@ -79,7 +79,7 @@ PyDoc_STRVAR(datetime_date_fromisocalendar__doc__,
 "\n"
 "int, int, int -> Construct a date from the ISO year, week number and weekday.\n"
 "\n"
-"This is the inverse of the date.isocalendar() function");
+"This is the inverse of the date.isocalendar() function.");
 
 #define DATETIME_DATE_FROMISOCALENDAR_METHODDEF    \
     {"fromisocalendar", (PyCFunction)(void(*)(void))datetime_date_fromisocalendar, METH_FASTCALL|METH_KEYWORDS|METH_CLASS, datetime_date_fromisocalendar__doc__},
@@ -201,4 +201,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6b92790e74defece input=a9049054013a1b77]*/
+/*[clinic end generated code: output=45e5f93fa01f71fa input=a9049054013a1b77]*/

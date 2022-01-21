@@ -2887,7 +2887,7 @@ Same as self.__class__.fromtimestamp(time.time())
 
 static PyObject *
 datetime_date_today_impl(PyTypeObject *type)
-/*[clinic end generated code: output=d5474697df6b251c input=22b09b5b306fdccb]*/
+/*[clinic end generated code: output=d5474697df6b251c input=0dff9bfe3e2274b2]*/
 {
     PyObject *time;
     PyObject *result;
@@ -3047,7 +3047,7 @@ This is the inverse of the date.isocalendar() function.
 static PyObject *
 datetime_date_fromisocalendar_impl(PyTypeObject *type, int year, int week,
                                    int day)
-/*[clinic end generated code: output=7b26e15115d24df6 input=f13669bbed6c8bb6]*/
+/*[clinic end generated code: output=7b26e15115d24df6 input=e3daae6e2b75f1be]*/
 {
     // Year is bounded to 0 < year < 10000 because 9999-12-31 is (9999, 52, 5)
     if (year < MINYEAR || year > MAXYEAR) {
