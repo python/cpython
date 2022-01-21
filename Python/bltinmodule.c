@@ -536,7 +536,7 @@ static PyObject *
 filter_vectorcall(PyObject *type, PyObject * const*args,
                 size_t nargsf, PyObject *kwnames)
 {
-    PyTypeObject *tp = (PyTypeObject *)type;
+    PyTypeObject *tp = _PyType_CAST(type);
     if (tp == &PyFilter_Type && !_PyArg_NoKwnames("filter", kwnames)) {
         return NULL;
     }
@@ -1251,7 +1251,7 @@ static PyObject *
 map_vectorcall(PyObject *type, PyObject * const*args,
                 size_t nargsf, PyObject *kwnames)
 {
-    PyTypeObject *tp = (PyTypeObject *)type;
+    PyTypeObject *tp = _PyType_CAST(type);
     if (tp == &PyMap_Type && !_PyArg_NoKwnames("map", kwnames)) {
         return NULL;
     }
