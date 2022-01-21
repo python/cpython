@@ -15,11 +15,17 @@
 #include <stdlib.h>               // putenv()
 #include <wchar.h>
 
+int main_argc;
+char **main_argv;
+
 /*********************************************************
  * Embedded interpreter tests that need a custom exe
  *
  * Executed via 'EmbeddingTests' in Lib/test/test_capi.py
  *********************************************************/
+
+// Use to display the usage
+#define PROGRAM "test_embed"
 
 /* Use path starting with "./" avoids a search along the PATH */
 #define PROGRAM_NAME L"./_testembed"
@@ -112,6 +118,36 @@ PyInit_embedded_ext(void)
 {
     return PyModule_Create(&embedded_ext);
 }
+
+/****************************************************************************
+ * Call Py_Initialize()/Py_Finalize() multiple times and execute Python code
+ ***************************************************************************/
+
+// Used by bpo-46417 to test that structseq types used by the sys module are
+// cleared properly and initialized again properly when Python is finalized
+// multiple times.
+static int test_repeated_init_exec(void)
+{
+    if (main_argc < 3) {
+        fprintf(stderr, "usage: %s test_repeated_init_exec CODE\n", PROGRAM);
+        exit(1);
+    }
+    const char *code = main_argv[2];
+
+    for (int i=1; i <= INIT_LOOPS; i++) {
+        fprintf(stderr, "--- Loop #%d ---\n", i);
+        fflush(stderr);
+
+        _testembed_Py_Initialize();
+        int err = PyRun_SimpleString(code);
+        Py_Finalize();
+        if (err) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 
 /*****************************************************
  * Test forcing a particular IO encoding
@@ -1880,6 +1916,7 @@ struct TestCase
 
 static struct TestCase TestCases[] = {
     // Python initialization
+    {"test_repeated_init_exec", test_repeated_init_exec},
     {"test_forced_io_encoding", test_forced_io_encoding},
     {"test_repeated_init_and_subinterpreters", test_repeated_init_and_subinterpreters},
     {"test_repeated_init_and_inittab", test_repeated_init_and_inittab},
@@ -1946,6 +1983,9 @@ static struct TestCase TestCases[] = {
 
 int main(int argc, char *argv[])
 {
+    main_argc = argc;
+    main_argv = argv;
+
     if (argc > 1) {
         for (struct TestCase *tc = TestCases; tc && tc->name; tc++) {
             if (strcmp(argv[1], tc->name) == 0)

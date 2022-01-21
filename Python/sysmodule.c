@@ -3102,6 +3102,21 @@ error:
 }
 
 
+void
+_PySys_Fini(PyInterpreterState *interp)
+{
+    if (_Py_IsMainInterpreter(interp)) {
+        _PyStructSequence_FiniType(&VersionInfoType);
+        _PyStructSequence_FiniType(&FlagsType);
+#if defined(MS_WINDOWS)
+        _PyStructSequence_FiniType(&WindowsVersionType);
+#endif
+        _PyStructSequence_FiniType(&Hash_InfoType);
+        _PyStructSequence_FiniType(&AsyncGenHooksType);
+    }
+}
+
+
 static PyObject *
 makepathobject(const wchar_t *path, wchar_t delim)
 {
