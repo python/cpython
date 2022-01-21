@@ -32,7 +32,7 @@ API_PYTHON = 2
 # _PyCoreConfig_InitIsolatedConfig()
 API_ISOLATED = 3
 
-INIT_LOOPS = 16
+INIT_LOOPS = 4
 MAX_HASH_SEED = 4294967295
 
 
