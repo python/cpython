@@ -125,7 +125,7 @@ _Py_popcount32(uint32_t x)
     // Put count of each 8 bits into those 8 bits
     x = (x + (x >> 4)) & M4;
     // Sum of the 4 byte counts
-    return (uint32_t)((uint64_t)x * (uint64_t)SUM) >> 24;
+    return (x * SUM) >> 24;
 #endif
 }
 
