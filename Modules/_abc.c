@@ -155,8 +155,7 @@ _in_weak_set(PyObject *set, PyObject *obj)
 static PyObject *
 _destroy(PyObject *setweakref, PyObject *objweakref)
 {
-    PyObject *set;
-    set = PyWeakref_GET_OBJECT(setweakref);
+    PyObject *set = PyWeakref_GET_OBJECT(setweakref);
     if (set == Py_None) {
         Py_RETURN_NONE;
     }
@@ -502,7 +501,6 @@ set_collection_flag_recursive(PyTypeObject *child, unsigned long flag)
     assert(PyDict_CheckExact(grandchildren));
     Py_ssize_t i = 0;
     while (PyDict_Next(grandchildren, &i, NULL, &grandchildren)) {
-        assert(PyWeakref_CheckRef(grandchildren));
         PyObject *grandchild = PyWeakref_GET_OBJECT(grandchildren);
         if (PyType_Check(grandchild)) {
             set_collection_flag_recursive((PyTypeObject *)grandchild, flag);

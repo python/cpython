@@ -246,7 +246,7 @@ PyDict_SetItemProxy(PyObject *dict, PyObject *key, PyObject *item)
     return result;
 }
 
-PyObject *
+static PyObject *
 PyDict_GetItemProxy(PyObject *dict, PyObject *key)
 {
     PyObject *result;
@@ -256,7 +256,7 @@ PyDict_GetItemProxy(PyObject *dict, PyObject *key)
         return NULL;
     if (!PyWeakref_CheckProxy(item))
         return item;
-    result = PyWeakref_GET_OBJECT(item);
+    result = _PyWeakref_GET_OBJECT((PyWeakReference*)item);
     if (result == Py_None)
         return NULL;
     return result;

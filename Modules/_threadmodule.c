@@ -1031,7 +1031,6 @@ local_getattro(localobject *self, PyObject *name)
 static PyObject *
 _localdummy_destroyed(PyObject *localweakref, PyObject *dummyweakref)
 {
-    assert(PyWeakref_CheckRef(localweakref));
     PyObject *obj = PyWeakref_GET_OBJECT(localweakref);
     if (obj == Py_None) {
         Py_RETURN_NONE;
