@@ -563,7 +563,7 @@ _PyStructSequence_FiniType(PyTypeObject *type)
 
 
 PyTypeObject *
-PyStructSequence_NewType(PyStructSequence_Desc *desc)
+_PyStructSequence_NewType(PyStructSequence_Desc *desc, unsigned long tp_flags)
 {
     PyMemberDef *members;
     PyTypeObject *type;
@@ -596,7 +596,7 @@ PyStructSequence_NewType(PyStructSequence_Desc *desc)
     spec.name = desc->name;
     spec.basicsize = sizeof(PyStructSequence) - sizeof(PyObject *);
     spec.itemsize = sizeof(PyObject *);
-    spec.flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC;
+    spec.flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | tp_flags;
     spec.slots = slots;
 
     type = (PyTypeObject *)PyType_FromSpecWithBases(&spec, (PyObject *)&PyTuple_Type);
@@ -612,6 +612,13 @@ PyStructSequence_NewType(PyStructSequence_Desc *desc)
     }
 
     return type;
+}
+
+
+PyTypeObject *
+PyStructSequence_NewType(PyStructSequence_Desc *desc)
+{
+    return _PyStructSequence_NewType(desc, 0);
 }
 
 
