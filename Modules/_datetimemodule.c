@@ -2880,7 +2880,7 @@ date_fromtimestamp(PyObject *cls, PyObject *obj)
 @classmethod
 datetime.date.today
 
-Return new date from current time.
+Current date or datetime.
 
 Same as self.__class__.fromtimestamp(time.time())
 [clinic start generated code]*/
