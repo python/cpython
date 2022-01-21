@@ -687,27 +687,28 @@ static int recurse_down_subclasses(PyTypeObject *type, PyObject *name,
 static int
 mro_hierarchy(PyTypeObject *type, PyObject *temp)
 {
-    int res;
-    PyObject *new_mro, *old_mro;
-    PyObject *tuple;
-    PyObject *subclasses;
-    Py_ssize_t i, n;
-
-    res = mro_internal(type, &old_mro);
-    if (res <= 0)
+    PyObject *old_mro;
+    int res = mro_internal(type, &old_mro);
+    if (res <= 0) {
         /* error / reentrance */
         return res;
-    new_mro = type->tp_mro;
+    }
+    PyObject *new_mro = type->tp_mro;
 
-    if (old_mro != NULL)
+    PyObject *tuple;
+    if (old_mro != NULL) {
         tuple = PyTuple_Pack(3, type, new_mro, old_mro);
-    else
+    }
+    else {
         tuple = PyTuple_Pack(2, type, new_mro);
+    }
 
-    if (tuple != NULL)
+    if (tuple != NULL) {
         res = PyList_Append(temp, tuple);
-    else
+    }
+    else {
         res = -1;
+    }
     Py_XDECREF(tuple);
 
     if (res < 0) {
@@ -727,15 +728,18 @@ mro_hierarchy(PyTypeObject *type, PyObject *temp)
        Finally, this makes things simple avoiding the need to deal
        with dictionary iterators and weak references.
     */
-    subclasses = type___subclasses___impl(type);
-    if (subclasses == NULL)
+    PyObject *subclasses = _PyType_GetSubclasses(type);
+    if (subclasses == NULL) {
         return -1;
-    n = PyList_GET_SIZE(subclasses);
-    for (i = 0; i < n; i++) {
+    }
+
+    Py_ssize_t n = PyList_GET_SIZE(subclasses);
+    for (Py_ssize_t i = 0; i < n; i++) {
         PyTypeObject *subclass = _PyType_CAST(PyList_GET_ITEM(subclasses, i));
         res = mro_hierarchy(subclass, temp);
-        if (res < 0)
+        if (res < 0) {
             break;
+        }
     }
     Py_DECREF(subclasses);
 
@@ -4124,6 +4128,42 @@ type_dealloc(PyTypeObject *type)
     Py_TYPE(type)->tp_free((PyObject *)type);
 }
 
+
+PyObject*
+_PyType_GetSubclasses(PyTypeObject *self)
+{
+    PyObject *list = PyList_New(0);
+    if (list == NULL) {
+        return NULL;
+    }
+
+    // Hold a strong reference to tp_subclasses while iterating on it
+    PyObject *dict = Py_XNewRef(self->tp_subclasses);
+    if (dict == NULL) {
+        return list;
+    }
+    assert(PyDict_CheckExact(dict));
+
+    Py_ssize_t i = 0;
+    PyObject *ref;  // borrowed ref
+    while (PyDict_Next(dict, &i, NULL, &ref)) {
+        assert(PyWeakref_CheckRef(ref));
+        PyObject *obj = PyWeakref_GET_OBJECT(ref);  // borrowed ref
+        if (obj == Py_None) {
+            continue;
+        }
+        assert(PyType_Check(obj));
+        if (PyList_Append(list, obj) < 0) {
+            Py_CLEAR(list);
+            goto done;
+        }
+    }
+done:
+    Py_DECREF(dict);
+    return list;
+}
+
+
 /*[clinic input]
 type.__subclasses__
 
@@ -4134,28 +4174,7 @@ static PyObject *
 type___subclasses___impl(PyTypeObject *self)
 /*[clinic end generated code: output=eb5eb54485942819 input=5af66132436f9a7b]*/
 {
-    PyObject *list, *raw, *ref;
-    Py_ssize_t i;
-
-    list = PyList_New(0);
-    if (list == NULL)
-        return NULL;
-    raw = self->tp_subclasses;
-    if (raw == NULL)
-        return list;
-    assert(PyDict_CheckExact(raw));
-    i = 0;
-    while (PyDict_Next(raw, &i, NULL, &ref)) {
-        assert(PyWeakref_CheckRef(ref));
-        ref = PyWeakref_GET_OBJECT(ref);
-        if (ref != Py_None) {
-            if (PyList_Append(list, ref) < 0) {
-                Py_DECREF(list);
-                return NULL;
-            }
-        }
-    }
-    return list;
+    return _PyType_GetSubclasses(self);
 }
 
 static PyObject *
@@ -4164,6 +4183,7 @@ type_prepare(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
 {
     return PyDict_New();
 }
+
 
 /*
    Merge the __dict__ of aclass into dict, and recursively also all
