@@ -1775,8 +1775,7 @@ OSError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             PyObject *newtype;
             newtype = PyDict_GetItemWithError(state->errnomap, myerrno);
             if (newtype) {
-                assert(PyType_Check(newtype));
-                type = (PyTypeObject *) newtype;
+                type = _PyType_CAST(newtype);
             }
             else if (PyErr_Occurred())
                 goto error;
