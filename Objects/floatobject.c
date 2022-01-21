@@ -12,6 +12,7 @@
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_pymath.h"        // _Py_ADJUST_ERANGE1()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_structseq.h"     // _PyStructSequence_FiniType()
 
 #include <ctype.h>
 #include <float.h>
