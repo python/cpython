@@ -5,7 +5,8 @@ import sys
 import types
 from pathlib import Path, PurePath
 
-from test.test_importlib import data01, zipdata01
+from .. import data01
+from .. import zipdata01
 from importlib.abc import ResourceReader
 from test.support import import_helper
 
