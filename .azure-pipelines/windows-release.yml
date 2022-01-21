@@ -65,7 +65,7 @@ variables:
       GitRemote: ${{ parameters.GitReleaseRemote }}
     ${{ else }}:
       GitRemote: ${{ parameters.GitRemote }}
-    SourceTag: ${{ paremeters.SourceTag }}
+    SourceTag: ${{ parameters.SourceTag }}
     DoPGO: ${{ parameters.DoPGO }}
     SigningCertificate: ${{ parameters.SigningCertificate }}
     SigningDescription: ${{ parameters.SigningDescription }}
