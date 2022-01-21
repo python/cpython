@@ -434,6 +434,15 @@ def collect_time(info_add):
                 info_add('time.get_clock_info(%s)' % clock, clock_info)
 
 
+def collect_curses(info_add):
+    try:
+        import curses
+    except ImportError:
+        return
+
+    copy_attr(info_add, 'curses.ncurses_version', curses, 'ncurses_version')
+
+
 def collect_datetime(info_add):
     try:
         import datetime
@@ -752,6 +761,7 @@ def collect_info(info):
 
         collect_builtins,
         collect_cc,
+        collect_curses,
         collect_datetime,
         collect_decimal,
         collect_expat,
