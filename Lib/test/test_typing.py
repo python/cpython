@@ -4433,6 +4433,21 @@ class TypedDictTests(BaseTestCase):
             {'one': int, 'untotal': str, 'child': bool},
         )
 
+        class ChildWithTotalFalse(One, Untotal, total=False):
+            child: bool
+        self.assertEqual(
+            ChildWithTotalFalse.__required_keys__,
+            frozenset(['one']),
+        )
+        self.assertEqual(
+            ChildWithTotalFalse.__optional_keys__,
+            frozenset(['untotal', 'child']),
+        )
+        self.assertEqual(
+            ChildWithTotalFalse.__annotations__,
+            {'one': int, 'untotal': str, 'child': bool},
+        )
+
         class ChildWithInlineAndOptional(Untotal, Inline):
             child: bool
         self.assertEqual(
