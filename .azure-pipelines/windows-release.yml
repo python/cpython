@@ -1,19 +1,19 @@
 name: Release_$(Build.SourceBranchName)_$(SourceTag)_$(Date:yyyyMMdd)$(Rev:.rr)
 
 parameters:
-- name: GitReleaseRemote
+- name: GitRemote
   displayName: "Git remote"
   type: string
   default: python
   values:
-  - python
-  - ambv
-  - pablogsal
-  - Other
-- name: GitRemote
-  displayName: "Other Git remote"
+  - 'python'
+  - 'pablogsal'
+  - 'ambv'
+  - '(Other)'
+- name: GitRemote_Other
+  displayName: "If Other, specify Git remote"
   type: string
-  default: 'n/a'
+  default: 'python'
 - name: SourceTag
   displayName: "Git tag"
   type: string
@@ -26,6 +26,10 @@ parameters:
   displayName: "Code signing certificate"
   type: string
   default: 'Python Software Foundation'
+  values:
+  - 'Python Software Foundation'
+  - 'TestSign'
+  - 'Unsigned'
 - name: SigningDescription
   displayName: "Signature description"
   type: string
@@ -61,13 +65,14 @@ parameters:
 
 variables:
     __RealSigningCertificate: 'Python Software Foundation'
-    ${{ if ne(parameters.GitReleaseRemote, 'Other') }}:
-      GitRemote: ${{ parameters.GitReleaseRemote }}
-    ${{ else }}:
+    ${{ if ne(parameters.GitRemote, '(Other)') }}:
       GitRemote: ${{ parameters.GitRemote }}
+    ${{ else }}:
+      GitRemote: ${{ parameters.GitRemote_Other }}
     SourceTag: ${{ parameters.SourceTag }}
     DoPGO: ${{ parameters.DoPGO }}
-    SigningCertificate: ${{ parameters.SigningCertificate }}
+    ${{ if ne(parameters.SigningCertificate, 'Unsigned') }}:
+      SigningCertificate: ${{ parameters.SigningCertificate }}
     SigningDescription: ${{ parameters.SigningDescription }}
     DoLayout: ${{ parameters.DoLayout }}
     DoMSIX: ${{ parameters.DoMSIX }}
@@ -75,8 +80,6 @@ variables:
     DoEmbed: ${{ parameters.DoEmbed }}
     DoMSI: ${{ parameters.DoMSI }}
     DoPublish: ${{ parameters.DoPublish }}
-    ${{ if ne(parameters.BuildToPublish, '0') }}:
-      BuildToPublish: ${{ parameters.BuildToPublish }}
 # QUEUE TIME VARIABLES
 #    PyDotOrgUsername: ''
 #    PyDotOrgServer: ''
@@ -85,108 +88,96 @@ trigger: none
 pr: none
 
 stages:
-- stage: Build
-  displayName: Build binaries
-  condition: and(succeeded(), not(variables['BuildToPublish']))
-  jobs:
-  - template: windows-release/stage-build.yml
+- ${{ if eq(parameters.BuildToPublish, '0') }}:
+  - stage: Build
+    displayName: Build binaries
+    jobs:
+    - template: windows-release/stage-build.yml
 
-- stage: Sign
-  displayName: Sign binaries
-  dependsOn: Build
-  condition: and(succeeded(), not(variables['BuildToPublish']))
-  jobs:
-  - template: windows-release/stage-sign.yml
+  - stage: Sign
+    displayName: Sign binaries
+    dependsOn: Build
+    jobs:
+    - template: windows-release/stage-sign.yml
 
-- stage: Layout
-  displayName: Generate layouts
-  dependsOn: Sign
-  condition: and(succeeded(), not(variables['BuildToPublish']))
-  jobs:
-  - template: windows-release/stage-layout-full.yml
-  - template: windows-release/stage-layout-embed.yml
-  - template: windows-release/stage-layout-nuget.yml
+  - stage: Layout
+    displayName: Generate layouts
+    dependsOn: Sign
+    jobs:
+    - template: windows-release/stage-layout-full.yml
+    - template: windows-release/stage-layout-embed.yml
+    - template: windows-release/stage-layout-nuget.yml
 
-- stage: Pack
-  dependsOn: Layout
-  condition: and(succeeded(), not(variables['BuildToPublish']))
-  jobs:
-  - template: windows-release/stage-pack-nuget.yml
+  - stage: Pack
+    dependsOn: Layout
+    jobs:
+    - template: windows-release/stage-pack-nuget.yml
 
-- stage: Test
-  dependsOn: Pack
-  condition: and(succeeded(), not(variables['BuildToPublish']))
-  jobs:
-  - template: windows-release/stage-test-embed.yml
-  - template: windows-release/stage-test-nuget.yml
+  - stage: Test
+    dependsOn: Pack
+    jobs:
+    - template: windows-release/stage-test-embed.yml
+    - template: windows-release/stage-test-nuget.yml
 
-- stage: Layout_MSIX
-  displayName: Generate MSIX layouts
-  dependsOn: Sign
-  condition: and(succeeded(), and(eq(variables['DoMSIX'], 'true'), not(variables['BuildToPublish'])))
-  jobs:
-  - template: windows-release/stage-layout-msix.yml
+  - stage: Layout_MSIX
+    displayName: Generate MSIX layouts
+    dependsOn: Sign
+    condition: and(succeeded(), eq(variables['DoMSIX'], 'true'))
+    jobs:
+    - template: windows-release/stage-layout-msix.yml
 
-- stage: Pack_MSIX
-  displayName: Package MSIX
-  dependsOn: Layout_MSIX
-  condition: and(succeeded(), not(variables['BuildToPublish']))
-  jobs:
-  - template: windows-release/stage-pack-msix.yml
+  - stage: Pack_MSIX
+    displayName: Package MSIX
+    dependsOn: Layout_MSIX
+    jobs:
+    - template: windows-release/stage-pack-msix.yml
 
-- stage: Build_MSI
-  displayName: Build MSI installer
-  dependsOn: Sign
-  condition: and(succeeded(), and(eq(variables['DoMSI'], 'true'), not(variables['BuildToPublish'])))
-  jobs:
-  - template: windows-release/stage-msi.yml
+  - stage: Build_MSI
+    displayName: Build MSI installer
+    dependsOn: Sign
+    condition: and(succeeded(), eq(variables['DoMSI'], 'true'))
+    jobs:
+    - template: windows-release/stage-msi.yml
 
-- stage: Test_MSI
-  displayName: Test MSI installer
-  dependsOn: Build_MSI
-  condition: and(succeeded(), not(variables['BuildToPublish']))
-  jobs:
-  - template: windows-release/stage-test-msi.yml
+  - stage: Test_MSI
+    displayName: Test MSI installer
+    dependsOn: Build_MSI
+    jobs:
+    - template: windows-release/stage-test-msi.yml
 
-- stage: PublishPyDotOrg
-  displayName: Publish to python.org
-  dependsOn: ['Test_MSI', 'Test']
-  condition: and(succeeded(), and(eq(variables['DoPublish'], 'true'), not(variables['BuildToPublish'])))
-  jobs:
-  - template: windows-release/stage-publish-pythonorg.yml
+  - ${{ if eq(parameters.DoPublish, 'true') }}:
+    - stage: PublishPyDotOrg
+      displayName: Publish to python.org
+      dependsOn: ['Test_MSI', 'Test']
+      jobs:
+      - template: windows-release/stage-publish-pythonorg.yml
 
-- stage: PublishNuget
-  displayName: Publish to nuget.org
-  dependsOn: Test
-  condition: and(succeeded(), and(eq(variables['DoPublish'], 'true'), not(variables['BuildToPublish'])))
-  jobs:
-  - template: windows-release/stage-publish-nugetorg.yml
+    - stage: PublishNuget
+      displayName: Publish to nuget.org
+      dependsOn: Test
+      jobs:
+      - template: windows-release/stage-publish-nugetorg.yml
 
-- stage: PublishStore
-  displayName: Publish to Store
-  dependsOn: Pack_MSIX
-  condition: and(succeeded(), and(eq(variables['DoPublish'], 'true'), not(variables['BuildToPublish'])))
-  jobs:
-  - template: windows-release/stage-publish-store.yml
+    - stage: PublishStore
+      displayName: Publish to Store
+      dependsOn: Pack_MSIX
+      jobs:
+      - template: windows-release/stage-publish-store.yml
 
+- ${{ else }}:
+  - stage: PublishExisting
+    displayName: Publish existing build
+    dependsOn: []
+    condition: and(succeeded(), eq(variables['DoPublish'], 'true'))
+    jobs:
+    - template: windows-release/stage-publish-pythonorg.yml
+      parameters:
+        BuildToPublish: ${{ parameters.BuildToPublish }}
 
-- stage: PublishExistingPyDotOrg
-  displayName: Publish existing build to python.org
-  dependsOn: []
-  condition: and(succeeded(), and(eq(variables['DoPublish'], 'true'), variables['BuildToPublish']))
-  jobs:
-  - template: windows-release/stage-publish-pythonorg.yml
+    - template: windows-release/stage-publish-nugetorg.yml
+      parameters:
+        BuildToPublish: ${{ parameters.BuildToPublish }}
 
-- stage: PublishExistingNuget
-  displayName: Publish existing build to nuget.org
-  dependsOn: []
-  condition: and(succeeded(), and(eq(variables['DoPublish'], 'true'), variables['BuildToPublish']))
-  jobs:
-  - template: windows-release/stage-publish-nugetorg.yml
-
-- stage: PublishExistingStore
-  displayName: Publish existing build to Store
-  dependsOn: []
-  condition: and(succeeded(), and(eq(variables['DoPublish'], 'true'), variables['BuildToPublish']))
-  jobs:
-  - template: windows-release/stage-publish-store.yml
+    - template: windows-release/stage-publish-store.yml
+      parameters:
+        BuildToPublish: ${{ parameters.BuildToPublish }}
