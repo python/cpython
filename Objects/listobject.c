@@ -2858,8 +2858,7 @@ list_vectorcall(PyObject *type, PyObject * const*args,
         return NULL;
     }
 
-    assert(PyType_Check(type));
-    PyObject *list = PyType_GenericAlloc((PyTypeObject *)type, 0);
+    PyObject *list = PyType_GenericAlloc(_PyType_CAST(type), 0);
     if (list == NULL) {
         return NULL;
     }
