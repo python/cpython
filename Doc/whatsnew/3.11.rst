@@ -264,6 +264,13 @@ os
   (Contributed by Dong-hee Na in :issue:`44611`.)
 
 
+socket
+------
+
+* Add CAN Socket support for NetBSD.
+  (Contributed by Thomas Klausner in :issue:`30512`.)
+
+
 sqlite3
 -------
 
