@@ -104,7 +104,7 @@ provides three different variants:
 
    .. attribute:: request_version
 
-      The request version. For example, ``'HTTP/1.0'``.
+      The request HTTP version. For example, ``'HTTP/1.0'``.
 
    .. attribute:: headers
 
@@ -146,20 +146,20 @@ provides three different variants:
 
    .. attribute:: error_message_format
 
-      A format string that should be used by :meth:`send_error` method
-      for building an error response to the client. The string is filled by
-      default with variables from :attr:`responses` based on the status code
-      that passed to :meth:`send_error`.
+      A format string used by the :meth:`send_error` method for building
+      the message body of error responses. The method fills the string with
+      the variables *code*, *message*, and *explain*, specifying respectively
+      the status code, the reason phrase, and a long description of the error.
 
    .. attribute:: error_content_type
 
-      The Content-Type header of error responses sent to the
-      client.  The default value is ``'text/html'``.
+      The Content-Type header of error responses. The default value is ``'text/html'``.
 
    .. attribute:: protocol_version
 
-      The HTTP protocol version used in responses.  If set to
-      ``'HTTP/1.1'``, the server will permit HTTP persistent connections;
+      The highest HTTP version supported by the server.
+      It is the HTTP version used in responses.  If set to ``'HTTP/1.1'``,
+      the server will support HTTP persistent connections;
       however, your server *must* then include an accurate Content-Length
       header (using :meth:`send_header`) in all of its responses to clients.
       For backwards compatibility, the default value is ``'HTTP/1.0'``.
@@ -210,12 +210,11 @@ provides three different variants:
       *code* specifies the status code, *message* the reason phrase, and *explain*
       a long description of the error. If *message* or *explain* is not specified,
       the value corresponding to the status code in the :class:`http.HTTPStatus` enum is used.
-      For unknown status codes, the default value for both is the string ``???``.
-      *explain* will be formatted
-      using the :attr:`error_message_format` attribute and emitted, after
-      a complete set of headers, as the response body.
-      The body will be empty if the method is
-      HEAD or the status code is one of the following:
+      For unknown status codes, the default value for both is the string ``'???'``.
+      *code* and *message* are used in the status line.
+      *code*, *message*, and *explain* are used in the message body, formatted according
+      to the :attr:`error_message_format` attribute. The message body is omitted
+      if the method is HEAD method or the status code is one of the following:
       1xx, 204 (No Content), 205 (Reset Content), 304 (Not Modified).
 
       .. versionchanged:: 3.4
