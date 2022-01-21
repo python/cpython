@@ -67,7 +67,6 @@ Parser/parser.c                     linguist-generated=true diff=generated
 Parser/token.c                      linguist-generated=true diff=generated
 Programs/test_frozenmain.h          linguist-generated=true diff=generated
 Python/Python-ast.c                 linguist-generated=true diff=generated
-Python/Python-ast.c                 linguist-generated=true diff=generated
 Python/deepfreeze/*.c               linguist-generated=true diff=generated
 Python/frozen_modules/*.h           linguist-generated=true diff=generated
 Python/frozen_modules/MANIFEST      linguist-generated=true diff=generated
