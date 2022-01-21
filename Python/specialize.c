@@ -1339,8 +1339,7 @@ specialize_class_call(
     PyObject *callable, _Py_CODEUNIT *instr,
     int nargs, SpecializedCacheEntry *cache)
 {
-    assert(PyType_Check(callable));
-    PyTypeObject *tp = (PyTypeObject *)callable;
+    PyTypeObject *tp = _PyType_CAST(callable);
     if (_Py_OPCODE(instr[-1]) == PRECALL_METHOD) {
         SPECIALIZATION_FAIL(CALL_NO_KW, SPEC_FAIL_METHOD_CALL_CLASS);
         return -1;
