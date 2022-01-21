@@ -1676,6 +1676,7 @@ finalize_interp_types(PyInterpreterState *interp)
     _PyThread_FiniType(interp);
     _PyErr_FiniTypes(interp);
     _PyTypes_Fini(interp);
+    _PyTypes_FiniTypes(interp);
 
     // Call _PyUnicode_ClearInterned() before _PyDict_Fini() since it uses
     // a dict internally.

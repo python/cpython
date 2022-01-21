@@ -13,6 +13,7 @@ extern "C" {
 
 extern PyStatus _PyTypes_InitState(PyInterpreterState *);
 extern PyStatus _PyTypes_InitTypes(PyInterpreterState *);
+extern void _PyTypes_FiniTypes(PyInterpreterState *);
 extern void _PyTypes_Fini(PyInterpreterState *);
 
 

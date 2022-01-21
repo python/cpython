@@ -4071,6 +4071,18 @@ extern void
 _PyDictKeys_DecRef(PyDictKeysObject *keys);
 
 
+static void
+type_dealloc_common(PyTypeObject *type)
+{
+    PyObject *tp, *val, *tb;
+    PyErr_Fetch(&tp, &val, &tb);
+    remove_all_subclasses(type, type->tp_bases);
+    PyErr_Restore(tp, val, tb);
+
+    PyObject_ClearWeakRefs((PyObject *)type);
+}
+
+
 void
 _PyStaticType_Dealloc(PyTypeObject *type)
 {
@@ -4079,11 +4091,14 @@ _PyStaticType_Dealloc(PyTypeObject *type)
     // and a type must no longer be used once it's deallocated.
     assert(type->tp_subclasses == NULL);
 
+    type_dealloc_common(type);
+
     Py_CLEAR(type->tp_dict);
     Py_CLEAR(type->tp_bases);
     Py_CLEAR(type->tp_mro);
     Py_CLEAR(type->tp_cache);
     Py_CLEAR(type->tp_subclasses);
+
     type->tp_flags &= ~Py_TPFLAGS_READY;
 }
 
@@ -4091,22 +4106,19 @@ _PyStaticType_Dealloc(PyTypeObject *type)
 static void
 type_dealloc(PyTypeObject *type)
 {
-    PyObject *tp, *val, *tb;
-
     /* Assert this is a heap-allocated type object */
     _PyObject_ASSERT((PyObject *)type, type->tp_flags & Py_TPFLAGS_HEAPTYPE);
     _PyObject_GC_UNTRACK(type);
-    PyErr_Fetch(&tp, &val, &tb);
-    remove_all_subclasses(type, type->tp_bases);
-    PyErr_Restore(tp, val, tb);
 
-    PyObject_ClearWeakRefs((PyObject *)type);
+    type_dealloc_common(type);
+
     Py_XDECREF(type->tp_base);
     Py_XDECREF(type->tp_dict);
     Py_XDECREF(type->tp_bases);
     Py_XDECREF(type->tp_mro);
     Py_XDECREF(type->tp_cache);
     Py_XDECREF(type->tp_subclasses);
+
     /* A type's tp_doc is heap allocated, unlike the tp_doc slots
      * of most other objects.  It's okay to cast it to char *.
      */
@@ -6541,6 +6553,10 @@ remove_subclass(PyTypeObject *base, PyTypeObject *type)
         PyErr_Clear();
     }
     Py_XDECREF(key);
+
+    if (PyDict_Size(dict) == 0) {
+        Py_CLEAR(base->tp_subclasses);
+    }
 }
 
 static void
