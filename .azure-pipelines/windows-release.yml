@@ -1,22 +1,72 @@
 name: Release_$(Build.SourceBranchName)_$(SourceTag)_$(Date:yyyyMMdd)$(Rev:.rr)
 
+parameters:
+- name: GitRemote
+  displayName: "Git remote"
+  type: string
+  default: python
+- name: SourceTag
+  displayName: "Git tag"
+  type: string
+  default: ''
+- name: DoPublish
+  displayName: "Publish release"
+  type: boolean
+  default: false
+- name: SigningCertificate
+  displayName: "Code signing certificate"
+  type: string
+  default: 'Python Software Foundation'
+- name: SigningDescription
+  displayName: "Signature description"
+  type: string
+  default: 'Built: $(Build.BuildNumber)'
+- name: DoPGO
+  displayName: "Run PGO"
+  type: boolean
+  default: true
+- name: DoLayout
+  displayName: "Produce full layout artifact"
+  type: boolean
+  default: true
+- name: DoMSIX
+  displayName: "Produce Store packages"
+  type: boolean
+  default: true
+- name: DoNuget
+  displayName: "Produce Nuget packages"
+  type: boolean
+  default: true
+- name: DoEmbed
+  displayName: "Produce embeddable package"
+  type: boolean
+  default: true
+- name: DoMSI
+  displayName: "Produce traditional installer"
+  type: boolean
+  default: true
+- name: BuildToPublish
+  displayName: "Build number to publish"
+  type: string
+  default: ''
+
 variables:
     __RealSigningCertificate: 'Python Software Foundation'
+    GitRemote: ${{ parameters.GitRemote }}
+    SourceTag: ${{ paremeters.SourceTag }}
+    DoPGO: ${{ parameters.DoPGO }}
+    SigningCertificate: ${{ parameters.SigningCertificate }}
+    SigningDescription: ${{ parameters.SigningDescription }}
+    DoLayout: ${{ parameters.DoLayout }}
+    DoMSIX: ${{ parameters.DoMSIX }}
+    DoNuget: ${{ parameters.DoNuget }}
+    DoEmbed: ${{ parameters.DoEmbed }}
+    DoMSI: ${{ parameters.DoMSI }}
+    DoPublish: ${{ parameters.DoPublish }}
+    BuildToPublish: ${{ parameters.BuildToPublish }}
 # QUEUE TIME VARIABLES
-#   GitRemote: python
-#   SourceTag:
-#   DoPGO: true
-#   SigningCertificate: 'Python Software Foundation'
-#   SigningDescription: 'Built: $(Build.BuildNumber)'
-#   DoLayout: true
-#   DoMSIX: true
-#   DoNuget: true
-#   DoEmbed: true
-#   DoMSI: true
-#   DoPublish: false
-#   PyDotOrgUsername: ''
-#   PyDotOrgServer: ''
-#   BuildToPublish: ''
+#    PyDotOrgUsername: ''
+#    PyDotOrgServer: ''
 
 trigger: none
 pr: none
