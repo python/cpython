@@ -136,6 +136,9 @@ class MimeTypesTestCase(unittest.TestCase):
         all.append('.no-such-ext')
         all = self.db.guess_all_extensions('test-type')
         self.assertNotIn('.no-such-ext', all)
+        all = self.db.guess_all_extensions('text/javascript', strict=True)
+        self.assertTrue(set(all) >= {'.js', '.mjs'})
+        self.assertEqual(len(set(all)), len(all))
 
     def test_encoding(self):
         getpreferredencoding = locale.getpreferredencoding
