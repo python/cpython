@@ -25,24 +25,24 @@ PC/classicAppCompat.* binary
 [attr]noeol -text
 
 Lib/test/cjkencodings/*                    noeol
+Lib/test/coding20731.py                    noeol
 Lib/test/decimaltestdata/*.decTest         noeol
 Lib/test/test_email/data/*.txt             noeol
-Lib/test/xmltestdata/*                     noeol
-Lib/test/coding20731.py                    noeol
 Lib/test/test_importlib/data01/*           noeol
 Lib/test/test_importlib/namespacedata01/*  noeol
+Lib/test/xmltestdata/*                     noeol
 
 # CRLF files
 [attr]crlf text eol=crlf
 
 *.bat               crlf
+*.proj              crlf
+*.props             crlf
 *.ps1               crlf
 *.sln               crlf
 *.vcxproj*          crlf
-*.props             crlf
-*.proj              crlf
-PCbuild/readme.txt  crlf
 PC/readme.txt       crlf
+PCbuild/readme.txt  crlf
 
 # Generated files
 # https://github.com/github/linguist/blob/master/docs/overrides.md
