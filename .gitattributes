@@ -77,3 +77,5 @@ Python/frozen_modules/MANIFEST      linguist-generated=true diff=generated
 Python/opcode_targets.h             linguist-generated=true diff=generated
 Python/stdlib_module_names.h        linguist-generated=true diff=generated
 Tools/peg_generator/pegen/grammar_parser.py linguist-generated=true diff=generated
+aclocal.m4                          linguist-generated=true diff=generated
+configure                           linguist-generated=true diff=generated
