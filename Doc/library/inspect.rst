@@ -528,7 +528,7 @@ Retrieving source code
 .. function:: getmodule(object)
 
    Try to guess which module an object was defined in. Return ``None``
-   in case of an error.
+   if the module cannot be determined.
 
 
 .. function:: getsourcefile(object)
