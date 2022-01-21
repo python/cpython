@@ -20,6 +20,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pylifecycle.h"   // _PyErr_Print()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_sliceobject.h"   // _PySlice_Fini()
 #include "pycore_structseq.h"     // _PyStructSequence_InitState()
 #include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
@@ -677,11 +678,6 @@ pycore_init_global_objects(PyInterpreterState *interp)
     PyStatus status;
 
     _PyFloat_InitState(interp);
-
-    status = _PyBytes_InitGlobalObjects(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
 
     status = _PyUnicode_InitGlobalObjects(interp);
     if (_PyStatus_EXCEPTION(status)) {
@@ -1670,11 +1666,17 @@ flush_std_files(void)
 static void
 finalize_interp_types(PyInterpreterState *interp)
 {
+    _PySys_Fini(interp);
     _PyExc_Fini(interp);
     _PyFrame_Fini(interp);
     _PyAsyncGen_Fini(interp);
     _PyContext_Fini(interp);
+    _PyFloat_FiniType(interp);
+    _PyLong_FiniTypes(interp);
+    _PyThread_FiniType(interp);
+    _PyErr_FiniTypes(interp);
     _PyTypes_Fini(interp);
+
     // Call _PyUnicode_ClearInterned() before _PyDict_Fini() since it uses
     // a dict internally.
     _PyUnicode_ClearInterned(interp);
@@ -1685,7 +1687,6 @@ finalize_interp_types(PyInterpreterState *interp)
 
     _PySlice_Fini(interp);
 
-    _PyBytes_Fini(interp);
     _PyUnicode_Fini(interp);
     _PyFloat_Fini(interp);
 }

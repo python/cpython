@@ -1033,9 +1033,6 @@ class Path(PurePath):
             yield from self._iterdir_recursive()
             return
         for name in self._accessor.listdir(self):
-            if name in {'.', '..'}:
-                # Yielding a path object for these makes little sense
-                continue
             yield self._make_child_relpath(name)
 
     def glob(self, pattern):

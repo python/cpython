@@ -16,9 +16,10 @@ class reversed "reversedobject *" "&PyReversed_Type"
 typedef struct {
     PyObject_HEAD
     Py_ssize_t en_index;           /* current index of enumeration */
-    PyObject* en_sit;          /* secondary iterator of enumeration */
+    PyObject* en_sit;              /* secondary iterator of enumeration */
     PyObject* en_result;           /* result tuple  */
     PyObject* en_longindex;        /* index for sequences >= PY_SSIZE_T_MAX */
+    PyObject* one;                 /* borrowed reference */
 } enumobject;
 
 
@@ -78,6 +79,7 @@ enum_new_impl(PyTypeObject *type, PyObject *iterable, PyObject *start)
         Py_DECREF(en);
         return NULL;
     }
+    en->one = _PyLong_GetOne();    /* borrowed reference */
     return (PyObject *)en;
 }
 
@@ -157,7 +159,7 @@ enum_next_long(enumobject *en, PyObject* next_item)
     }
     next_index = en->en_longindex;
     assert(next_index != NULL);
-    stepped_up = PyNumber_Add(next_index, _PyLong_GetOne());
+    stepped_up = PyNumber_Add(next_index, en->one);
     if (stepped_up == NULL) {
         Py_DECREF(next_item);
         return NULL;

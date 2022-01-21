@@ -35,8 +35,6 @@ class _sqlite3.Cursor "pysqlite_Cursor *" "clinic_state()->CursorType"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=3c5b8115c5cf30f1]*/
 
-static const char errmsg_fetch_across_rollback[] = "Cursor needed to be reset because of commit/rollback and can no longer be fetched from.";
-
 /*[clinic input]
 _sqlite3.Cursor.__init__ as pysqlite_cursor_init
 
@@ -63,8 +61,6 @@ pysqlite_cursor_init_impl(pysqlite_Cursor *self,
 
     self->arraysize = 1;
     self->closed = 0;
-    self->reset = 0;
-
     self->rowcount = -1L;
 
     Py_INCREF(Py_None);
@@ -273,12 +269,6 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
     const char* colname;
     PyObject* error_msg;
 
-    if (self->reset) {
-        PyObject *exc = self->connection->InterfaceError;
-        PyErr_SetString(exc, errmsg_fetch_across_rollback);
-        return NULL;
-    }
-
     Py_BEGIN_ALLOW_THREADS
     numcols = sqlite3_data_count(self->statement->st);
     Py_END_ALLOW_THREADS
@@ -482,7 +472,6 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
     }
 
     self->locked = 1;
-    self->reset = 0;
 
     if (multiple) {
         if (PyIter_Check(second_argument)) {
@@ -731,8 +720,6 @@ pysqlite_cursor_executescript_impl(pysqlite_Cursor *self,
         return NULL;
     }
 
-    self->reset = 0;
-
     size_t sql_len = strlen(sql_script);
     int max_length = sqlite3_limit(self->connection->db,
                                    SQLITE_LIMIT_SQL_LENGTH, -1);
@@ -794,12 +781,6 @@ static PyObject *
 pysqlite_cursor_iternext(pysqlite_Cursor *self)
 {
     if (!check_cursor(self)) {
-        return NULL;
-    }
-
-    if (self->reset) {
-        PyObject *exc = self->connection->InterfaceError;
-        PyErr_SetString(exc, errmsg_fetch_across_rollback);
         return NULL;
     }
 

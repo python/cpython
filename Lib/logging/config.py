@@ -30,7 +30,6 @@ import logging
 import logging.handlers
 import re
 import struct
-import sys
 import threading
 import traceback
 
@@ -392,11 +391,9 @@ class BaseConfigurator(object):
                     self.importer(used)
                     found = getattr(found, frag)
             return found
-        except ImportError:
-            e, tb = sys.exc_info()[1:]
+        except ImportError as e:
             v = ValueError('Cannot resolve %r: %s' % (s, e))
-            v.__cause__, v.__traceback__ = e, tb
-            raise v
+            raise v from e
 
     def ext_convert(self, value):
         """Default converter for the ext:// protocol."""

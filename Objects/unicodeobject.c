@@ -214,6 +214,22 @@ extern "C" {
 #  define OVERALLOCATE_FACTOR 4
 #endif
 
+/* bpo-40521: Interned strings are shared by all interpreters. */
+#ifndef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+#  define INTERNED_STRINGS
+#endif
+
+/* This dictionary holds all interned unicode strings.  Note that references
+   to strings in this dictionary are *not* counted in the string's ob_refcnt.
+   When the interned string reaches a refcnt of 0 the string deallocation
+   function will delete the reference from this dictionary.
+
+   Another way to look at this is that to say that the actual reference
+   count of a string is:  s->ob_refcnt + (s->state ? 2 : 0)
+*/
+#ifdef INTERNED_STRINGS
+static PyObject *interned = NULL;
+#endif
 
 /* Forward declaration */
 static inline int
@@ -1950,7 +1966,7 @@ unicode_dealloc(PyObject *unicode)
 
     case SSTATE_INTERNED_MORTAL:
     {
-        struct _Py_unicode_state *state = get_unicode_state();
+#ifdef INTERNED_STRINGS
         /* Revive the dead object temporarily. PyDict_DelItem() removes two
            references (key and value) which were ignored by
            PyUnicode_InternInPlace(). Use refcnt=3 rather than refcnt=2
@@ -1958,12 +1974,13 @@ unicode_dealloc(PyObject *unicode)
            PyDict_DelItem(). */
         assert(Py_REFCNT(unicode) == 0);
         Py_SET_REFCNT(unicode, 3);
-        if (PyDict_DelItem(state->interned, unicode) != 0) {
+        if (PyDict_DelItem(interned, unicode) != 0) {
             _PyErr_WriteUnraisableMsg("deletion of interned string failed",
                                       NULL);
         }
         assert(Py_REFCNT(unicode) == 1);
         Py_SET_REFCNT(unicode, 0);
+#endif
         break;
     }
 
@@ -11342,11 +11359,13 @@ _PyUnicode_EqualToASCIIId(PyObject *left, _Py_Identifier *right)
     if (PyUnicode_CHECK_INTERNED(left))
         return 0;
 
+#ifdef INTERNED_STRINGS
     assert(_PyUnicode_HASH(right_uni) != -1);
     Py_hash_t hash = _PyUnicode_HASH(left);
     if (hash != -1 && hash != _PyUnicode_HASH(right_uni)) {
         return 0;
     }
+#endif
 
     return unicode_compare_eq(left, right_uni);
 }
@@ -15591,21 +15610,21 @@ PyUnicode_InternInPlace(PyObject **p)
         return;
     }
 
+#ifdef INTERNED_STRINGS
     if (PyUnicode_READY(s) == -1) {
         PyErr_Clear();
         return;
     }
 
-    struct _Py_unicode_state *state = get_unicode_state();
-    if (state->interned == NULL) {
-        state->interned = PyDict_New();
-        if (state->interned == NULL) {
+    if (interned == NULL) {
+        interned = PyDict_New();
+        if (interned == NULL) {
             PyErr_Clear(); /* Don't leave an exception */
             return;
         }
     }
 
-    PyObject *t = PyDict_SetDefault(state->interned, s, s);
+    PyObject *t = PyDict_SetDefault(interned, s, s);
     if (t == NULL) {
         PyErr_Clear();
         return;
@@ -15622,8 +15641,12 @@ PyUnicode_InternInPlace(PyObject **p)
        this. */
     Py_SET_REFCNT(s, Py_REFCNT(s) - 2);
     _PyUnicode_STATE(s).interned = SSTATE_INTERNED_MORTAL;
+#else
+    // PyDict expects that interned strings have their hash
+    // (PyASCIIObject.hash) already computed.
+    (void)unicode_hash(s);
+#endif
 }
-
 
 void
 PyUnicode_InternImmortal(PyObject **p)
@@ -15658,11 +15681,15 @@ PyUnicode_InternFromString(const char *cp)
 void
 _PyUnicode_ClearInterned(PyInterpreterState *interp)
 {
-    struct _Py_unicode_state *state = &interp->unicode;
-    if (state->interned == NULL) {
+    if (!_Py_IsMainInterpreter(interp)) {
+        // interned dict is shared by all interpreters
         return;
     }
-    assert(PyDict_CheckExact(state->interned));
+
+    if (interned == NULL) {
+        return;
+    }
+    assert(PyDict_CheckExact(interned));
 
     /* Interned unicode strings are not forcibly deallocated; rather, we give
        them their stolen references back, and then clear and DECREF the
@@ -15670,13 +15697,13 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
 
 #ifdef INTERNED_STATS
     fprintf(stderr, "releasing %zd interned strings\n",
-            PyDict_GET_SIZE(state->interned));
+            PyDict_GET_SIZE(interned));
 
     Py_ssize_t immortal_size = 0, mortal_size = 0;
 #endif
     Py_ssize_t pos = 0;
     PyObject *s, *ignored_value;
-    while (PyDict_Next(state->interned, &pos, &s, &ignored_value)) {
+    while (PyDict_Next(interned, &pos, &s, &ignored_value)) {
         assert(PyUnicode_IS_READY(s));
 
         switch (PyUnicode_CHECK_INTERNED(s)) {
@@ -15707,8 +15734,8 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
             mortal_size, immortal_size);
 #endif
 
-    PyDict_Clear(state->interned);
-    Py_CLEAR(state->interned);
+    PyDict_Clear(interned);
+    Py_CLEAR(interned);
 }
 
 
@@ -16079,8 +16106,7 @@ _PyUnicode_EnableLegacyWindowsFSEncoding(void)
 static inline int
 unicode_is_finalizing(void)
 {
-    struct _Py_unicode_state *state = get_unicode_state();
-    return (state->interned == NULL);
+    return (interned == NULL);
 }
 #endif
 
@@ -16090,8 +16116,10 @@ _PyUnicode_Fini(PyInterpreterState *interp)
 {
     struct _Py_unicode_state *state = &interp->unicode;
 
-    // _PyUnicode_ClearInterned() must be called before
-    assert(state->interned == NULL);
+    if (_Py_IsMainInterpreter(interp)) {
+        // _PyUnicode_ClearInterned() must be called before _PyUnicode_Fini()
+        assert(interned == NULL);
+    }
 
     _PyUnicode_FiniEncodings(&state->fs_codec);
 

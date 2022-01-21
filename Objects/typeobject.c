@@ -54,6 +54,11 @@ typedef struct PySlot_Offset {
 } PySlot_Offset;
 
 
+/* bpo-40521: Interned strings are shared by all subinterpreters */
+#ifndef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+#  define INTERN_NAME_STRINGS
+#endif
+
 /* alphabetical order */
 _Py_IDENTIFIER(__abstractmethods__);
 _Py_IDENTIFIER(__annotations__);
@@ -4028,6 +4033,7 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
             if (name == NULL)
                 return -1;
         }
+#ifdef INTERN_NAME_STRINGS
         if (!PyUnicode_CHECK_INTERNED(name)) {
             PyUnicode_InternInPlace(&name);
             if (!PyUnicode_CHECK_INTERNED(name)) {
@@ -4037,6 +4043,7 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
                 return -1;
             }
         }
+#endif
     }
     else {
         /* Will fail in _PyObject_GenericSetAttrWithDict. */
@@ -4063,10 +4070,27 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
 extern void
 _PyDictKeys_DecRef(PyDictKeysObject *keys);
 
+
+void
+_PyStaticType_Dealloc(PyTypeObject *type)
+{
+    // _PyStaticType_Dealloc() must not be called if a type has subtypes.
+    // A subtype can inherit attributes and methods of its parent type,
+    // and a type must no longer be used once it's deallocated.
+    assert(type->tp_subclasses == NULL);
+
+    Py_CLEAR(type->tp_dict);
+    Py_CLEAR(type->tp_bases);
+    Py_CLEAR(type->tp_mro);
+    Py_CLEAR(type->tp_cache);
+    Py_CLEAR(type->tp_subclasses);
+    type->tp_flags &= ~Py_TPFLAGS_READY;
+}
+
+
 static void
 type_dealloc(PyTypeObject *type)
 {
-    PyHeapTypeObject *et;
     PyObject *tp, *val, *tb;
 
     /* Assert this is a heap-allocated type object */
@@ -4075,8 +4099,8 @@ type_dealloc(PyTypeObject *type)
     PyErr_Fetch(&tp, &val, &tb);
     remove_all_subclasses(type, type->tp_bases);
     PyErr_Restore(tp, val, tb);
+
     PyObject_ClearWeakRefs((PyObject *)type);
-    et = (PyHeapTypeObject *)type;
     Py_XDECREF(type->tp_base);
     Py_XDECREF(type->tp_dict);
     Py_XDECREF(type->tp_bases);
@@ -4087,6 +4111,8 @@ type_dealloc(PyTypeObject *type)
      * of most other objects.  It's okay to cast it to char *.
      */
     PyObject_Free((char *)type->tp_doc);
+
+    PyHeapTypeObject *et = (PyHeapTypeObject *)type;
     Py_XDECREF(et->ht_name);
     Py_XDECREF(et->ht_qualname);
     Py_XDECREF(et->ht_slots);
@@ -8424,10 +8450,17 @@ _PyTypes_InitSlotDefs(void)
     for (slotdef *p = slotdefs; p->name; p++) {
         /* Slots must be ordered by their offset in the PyHeapTypeObject. */
         assert(!p[1].name || p->offset <= p[1].offset);
+#ifdef INTERN_NAME_STRINGS
         p->name_strobj = PyUnicode_InternFromString(p->name);
         if (!p->name_strobj || !PyUnicode_CHECK_INTERNED(p->name_strobj)) {
             return _PyStatus_NO_MEMORY();
         }
+#else
+        p->name_strobj = PyUnicode_FromString(p->name);
+        if (!p->name_strobj) {
+            return _PyStatus_NO_MEMORY();
+        }
+#endif
     }
     slotdefs_initialized = 1;
     return _PyStatus_OK();
@@ -8452,16 +8485,24 @@ update_slot(PyTypeObject *type, PyObject *name)
     int offset;
 
     assert(PyUnicode_CheckExact(name));
+#ifdef INTERN_NAME_STRINGS
     assert(PyUnicode_CHECK_INTERNED(name));
+#endif
 
     assert(slotdefs_initialized);
     pp = ptrs;
     for (p = slotdefs; p->name; p++) {
         assert(PyUnicode_CheckExact(p->name_strobj));
         assert(PyUnicode_CheckExact(name));
+#ifdef INTERN_NAME_STRINGS
         if (p->name_strobj == name) {
             *pp++ = p;
         }
+#else
+        if (p->name_strobj == name || _PyUnicode_EQ(p->name_strobj, name)) {
+            *pp++ = p;
+        }
+#endif
     }
     *pp = NULL;
     for (pp = ptrs; *pp; pp++) {

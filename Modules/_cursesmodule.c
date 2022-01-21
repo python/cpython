@@ -108,7 +108,7 @@ static const char PyCursesVersion[] = "2.2";
 
 #include "Python.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
-#include "pycore_structseq.h"     // PyStructSequence_InitType()
+#include "pycore_structseq.h"     // _PyStructSequence_NewType()
 
 #ifdef __hpux
 #define STRICT_SYSV_CURSES
@@ -4569,8 +4569,6 @@ PyDoc_STRVAR(ncurses_version__doc__,
 \n\
 Ncurses version information as a named tuple.");
 
-static PyTypeObject NcursesVersionType;
-
 static PyStructSequence_Field ncurses_version_fields[] = {
     {"major", "Major release number"},
     {"minor", "Minor release number"},
@@ -4586,12 +4584,12 @@ static PyStructSequence_Desc ncurses_version_desc = {
 };
 
 static PyObject *
-make_ncurses_version(void)
+make_ncurses_version(PyTypeObject *type)
 {
     PyObject *ncurses_version;
     int pos = 0;
 
-    ncurses_version = PyStructSequence_New(&NcursesVersionType);
+    ncurses_version = PyStructSequence_New(type);
     if (ncurses_version == NULL) {
         return NULL;
     }
@@ -4796,14 +4794,14 @@ PyInit__curses(void)
 
 #ifdef NCURSES_VERSION
     /* ncurses_version */
-    if (NcursesVersionType.tp_name == NULL) {
-        if (_PyStructSequence_InitType(&NcursesVersionType,
-                                       &ncurses_version_desc,
-                                       Py_TPFLAGS_DISALLOW_INSTANTIATION) < 0) {
-            return NULL;
-        }
+    PyTypeObject *version_type;
+    version_type = _PyStructSequence_NewType(&ncurses_version_desc,
+                                             Py_TPFLAGS_DISALLOW_INSTANTIATION);
+    if (version_type == NULL) {
+        return NULL;
     }
-    v = make_ncurses_version();
+    v = make_ncurses_version(version_type);
+    Py_DECREF(version_type);
     if (v == NULL) {
         return NULL;
     }

@@ -3,7 +3,7 @@ import unittest
 
 from importlib import resources
 
-from importlib._adapters import (
+from importlib.resources._adapters import (
     CompatibilityFiles,
     wrap_spec,
 )

@@ -1207,8 +1207,8 @@ collect_exception_group_leaves(PyObject *exc, PyObject *leaves)
  * of eg which contains all leaf exceptions that are contained
  * in any exception group in keep.
  */
-PyObject *
-_PyExc_ExceptionGroupProjection(PyObject *eg, PyObject *keep)
+static PyObject *
+exception_group_projection(PyObject *eg, PyObject *keep)
 {
     assert(_PyBaseExceptionGroup_Check(eg));
     assert(PyList_CheckExact(keep));
@@ -1242,6 +1242,122 @@ _PyExc_ExceptionGroupProjection(PyObject *eg, PyObject *keep)
     PyObject *result = split_result.match ?
         split_result.match : Py_NewRef(Py_None);
     assert(split_result.rest == NULL);
+    return result;
+}
+
+static bool
+is_same_exception_metadata(PyObject *exc1, PyObject *exc2)
+{
+    assert(PyExceptionInstance_Check(exc1));
+    assert(PyExceptionInstance_Check(exc2));
+
+    PyBaseExceptionObject *e1 = (PyBaseExceptionObject *)exc1;
+    PyBaseExceptionObject *e2 = (PyBaseExceptionObject *)exc2;
+
+    return (e1->note == e2->note &&
+            e1->traceback == e2->traceback &&
+            e1->cause == e2->cause &&
+            e1->context == e2->context);
+}
+
+/*
+   This function is used by the interpreter to calculate
+   the exception group to be raised at the end of a
+   try-except* construct.
+
+   orig: the original except that was caught.
+   excs: a list of exceptions that were raised/reraised
+         in the except* clauses.
+
+   Calculates an exception group to raise. It contains
+   all exceptions in excs, where those that were reraised
+   have same nesting structure as in orig, and those that
+   were raised (if any) are added as siblings in a new EG.
+
+   Returns NULL and sets an exception on failure.
+*/
+PyObject *
+_PyExc_PrepReraiseStar(PyObject *orig, PyObject *excs)
+{
+    assert(PyExceptionInstance_Check(orig));
+    assert(PyList_Check(excs));
+
+    Py_ssize_t numexcs = PyList_GET_SIZE(excs);
+
+    if (numexcs == 0) {
+        return Py_NewRef(Py_None);
+    }
+
+    if (!_PyBaseExceptionGroup_Check(orig)) {
+        /* a naked exception was caught and wrapped. Only one except* clause
+         * could have executed,so there is at most one exception to raise.
+         */
+
+        assert(numexcs == 1 || (numexcs == 2 && PyList_GET_ITEM(excs, 1) == Py_None));
+
+        PyObject *e = PyList_GET_ITEM(excs, 0);
+        assert(e != NULL);
+        return Py_NewRef(e);
+    }
+
+    PyObject *raised_list = PyList_New(0);
+    if (raised_list == NULL) {
+        return NULL;
+    }
+    PyObject* reraised_list = PyList_New(0);
+    if (reraised_list == NULL) {
+        Py_DECREF(raised_list);
+        return NULL;
+    }
+
+    /* Now we are holding refs to raised_list and reraised_list */
+
+    PyObject *result = NULL;
+
+    /* Split excs into raised and reraised by comparing metadata with orig */
+    for (Py_ssize_t i = 0; i < numexcs; i++) {
+        PyObject *e = PyList_GET_ITEM(excs, i);
+        assert(e != NULL);
+        if (Py_IsNone(e)) {
+            continue;
+        }
+        bool is_reraise = is_same_exception_metadata(e, orig);
+        PyObject *append_list = is_reraise ? reraised_list : raised_list;
+        if (PyList_Append(append_list, e) < 0) {
+            goto done;
+        }
+    }
+
+    PyObject *reraised_eg = exception_group_projection(orig, reraised_list);
+    if (reraised_eg == NULL) {
+        goto done;
+    }
+
+    if (!Py_IsNone(reraised_eg)) {
+        assert(is_same_exception_metadata(reraised_eg, orig));
+    }
+    Py_ssize_t num_raised = PyList_GET_SIZE(raised_list);
+    if (num_raised == 0) {
+        result = reraised_eg;
+    }
+    else if (num_raised > 0) {
+        int res = 0;
+        if (!Py_IsNone(reraised_eg)) {
+            res = PyList_Append(raised_list, reraised_eg);
+        }
+        Py_DECREF(reraised_eg);
+        if (res < 0) {
+            goto done;
+        }
+        result = _PyExc_CreateExceptionGroup("", raised_list);
+        if (result == NULL) {
+            goto done;
+        }
+    }
+
+done:
+    Py_XDECREF(raised_list);
+    Py_XDECREF(reraised_list);
     return result;
 }
 

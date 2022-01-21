@@ -1293,7 +1293,7 @@ class TestModule(unittest.TestCase):
         # tests validity but not completeness of the __all__ list
         self.assertTrue(set(random.__all__) <= set(dir(random)))
 
-    @unittest.skipUnless(hasattr(os, "fork"), "fork() required")
+    @test.support.requires_fork()
     def test_after_fork(self):
         # Test the global Random instance gets reseeded in child
         r, w = os.pipe()
