@@ -222,6 +222,12 @@ class ExceptTestCases(unittest.TestCase):
         finally:
             hit_finally = True
 
+        self.assertFalse(hit_inner_except)
+        self.assertTrue(hit_inner_else)
+        self.assertFalse(hit_else)
+        self.assertTrue(hit_finally)
+        self.assertTrue(hit_except)
+
     def test_nested_exception_in_finally_no_exception(self):
         hit_else = False
         hit_finally = False
