@@ -5949,3 +5949,14 @@ _PyLong_InitTypes(PyInterpreterState *interp)
 
     return _PyStatus_OK();
 }
+
+
+void
+_PyLong_FiniTypes(PyInterpreterState *interp)
+{
+    if (!_Py_IsMainInterpreter(interp)) {
+        return;
+    }
+
+    _PyStructSequence_FiniType(&Int_InfoType);
+}

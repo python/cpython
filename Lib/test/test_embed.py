@@ -329,6 +329,18 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         self.assertEqual(out, "Py_RunMain(): sys.argv=['-c', 'arg2']\n" * nloop)
         self.assertEqual(err, '')
 
+    def test_finalize_structseq(self):
+        # bpo-46417: Py_Finalize() clears structseq static types. Check that
+        # sys attributes using struct types still work when
+        # Py_Finalize()/Py_Initialize() is called multiple times.
+        # print() calls type->tp_repr(instance) and so checks that the types
+        # are still working properly.
+        script = support.findfile('_test_embed_structseq.py')
+        with open(script, encoding="utf-8") as fp:
+            code = fp.read()
+        out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
+        self.assertEqual(out, 'Tests passed\n' * INIT_LOOPS)
+
 
 class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     maxDiff = 4096
