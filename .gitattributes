@@ -41,11 +41,8 @@ PCbuild/readme.txt text eol=crlf
 PC/readme.txt text eol=crlf
 
 # Generated files
-# https://github.com/github/linguist#generated-code
-Modules/clinic/*.h          linguist-generated=true
-Objects/clinic/*.h          linguist-generated=true
-PC/clinic/*.h               linguist-generated=true
-Python/clinic/*.h           linguist-generated=true
+# https://github.com/github/linguist/blob/master/docs/overrides.md
+**/clinic/*.h               linguist-generated=true
 Python/deepfreeze/*.c       linguist-generated=true
 Python/frozen_modules/*.h   linguist-generated=true
 Python/frozen_modules/MANIFEST  linguist-generated=true

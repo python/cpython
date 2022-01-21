@@ -9,6 +9,7 @@
 #include "pycore_object.h"        // _PyObject_InitVar()
 #include "pycore_pystate.h"       // _Py_IsMainInterpreter()
 #include "pycore_runtime.h"       // _PY_NSMALLPOSINTS
+#include "pycore_structseq.h"     // _PyStructSequence_FiniType()
 
 #include <ctype.h>
 #include <float.h>
@@ -911,7 +912,7 @@ _PyLong_FromByteArray(const unsigned char* bytes, size_t n,
     }
 
     Py_SET_SIZE(v, is_signed ? -idigit : idigit);
-    return (PyObject *)long_normalize(v);
+    return (PyObject *)maybe_small_long(long_normalize(v));
 }
 
 int
@@ -4215,8 +4216,13 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
     /* k-ary values.  If the exponent is large enough, table is
      * precomputed so that table[i] == a**(2*i+1) % c for i in
      * range(EXP_TABLE_LEN).
+     * Note: this is uninitialzed stack trash: don't pay to set it to known
+     * values unless it's needed. Instead ensure that num_table_entries is
+     * set to the number of entries actually filled whenever a branch to the
+     * Error or Done labels is possible.
      */
-    PyLongObject *table[EXP_TABLE_LEN] = {0};
+    PyLongObject *table[EXP_TABLE_LEN];
+    Py_ssize_t num_table_entries = 0;
 
     /* a, b, c = v, w, x */
     CHECK_BINOP(v, w);
@@ -4408,10 +4414,14 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
          */
         Py_INCREF(a);
         table[0] = a;
+        num_table_entries = 1;
         MULT(a, a, a2);
         /* table[i] == a**(2*i + 1) % c */
-        for (i = 1; i < EXP_TABLE_LEN; ++i)
+        for (i = 1; i < EXP_TABLE_LEN; ++i) {
+            table[i] = NULL; /* must set to known value for MULT */
             MULT(table[i-1], a2, table[i]);
+            ++num_table_entries; /* incremented iff MULT succeeded */
+        }
         Py_CLEAR(a2);
 
         /* Repeatedly extract the next (no more than) EXP_WINDOW_SIZE bits
@@ -4472,10 +4482,8 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
     Py_CLEAR(z);
     /* fall through */
   Done:
-    if (Py_SIZE(b) > HUGE_EXP_CUTOFF / PyLong_SHIFT) {
-        for (i = 0; i < EXP_TABLE_LEN; ++i)
-            Py_XDECREF(table[i]);
-    }
+    for (i = 0; i < num_table_entries; ++i)
+        Py_DECREF(table[i]);
     Py_DECREF(a);
     Py_DECREF(b);
     Py_XDECREF(c);
@@ -5941,4 +5949,15 @@ _PyLong_InitTypes(PyInterpreterState *interp)
     }
 
     return _PyStatus_OK();
+}
+
+
+void
+_PyLong_FiniTypes(PyInterpreterState *interp)
+{
+    if (!_Py_IsMainInterpreter(interp)) {
+        return;
+    }
+
+    _PyStructSequence_FiniType(&Int_InfoType);
 }

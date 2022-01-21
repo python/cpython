@@ -12,6 +12,8 @@
    macro defined, but only the public C API must be tested here. */
 
 #undef Py_BUILD_CORE_MODULE
+#undef Py_BUILD_CORE_BUILTIN
+
 /* Always enable assertions */
 #undef NDEBUG
 

@@ -1,1 +1,0 @@
-:mod:`argparse` raises :exc:`ValueError` with clear message when trying to render usage for an empty mutually-exclusive group. Previously it raised a cryptic :exc:`IndexError`.
