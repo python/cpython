@@ -72,43 +72,43 @@ provides three different variants:
 
    .. attribute:: client_address
 
-      Contains a tuple of the form ``(host, port)`` referring to the client's
+      A tuple of the form ``(host, port)`` referring to the client's
       address.
 
    .. attribute:: server
 
-      Contains the server instance.
+      The server instance.
 
    .. attribute:: close_connection
 
-      Boolean that should be set before :meth:`handle_one_request` returns,
+      A Boolean that should be set before :meth:`handle_one_request` returns,
       indicating if another request may be expected, or if the connection should
       be shut down.
 
    .. attribute:: requestline
 
-      Contains the string representation of the HTTP request line. The
-      terminating CRLF is stripped. This attribute should be set by
+      The request line with the terminating CRLF stripped. For example, ``'GET / HTTP/1.1'``.
+      This attribute should be set by
       :meth:`handle_one_request`. If no valid request line was processed, it
       should be set to the empty string.
 
    .. attribute:: command
 
-      Contains the command (request type). For example, ``'GET'``.
+      The request method. For example, ``'GET'``.
 
    .. attribute:: path
 
-      Contains the request path. If query component of the URL is present,
+      The request target. If query component of the URL is present,
       then ``path`` includes the query. Using the terminology of :rfc:`3986`,
       ``path`` here includes ``hier-part`` and the ``query``.
 
    .. attribute:: request_version
 
-      Contains the version string from the request. For example, ``'HTTP/1.0'``.
+      The request version. For example, ``'HTTP/1.0'``.
 
    .. attribute:: headers
 
-      Holds an instance of the class specified by the :attr:`MessageClass` class
+      An instance of the class specified by the :attr:`MessageClass` class
       variable. This instance parses and manages the headers in the HTTP
       request. The :func:`~http.client.parse_headers` function from
       :mod:`http.client` is used to parse the headers and it requires that the
@@ -116,12 +116,12 @@ provides three different variants:
 
    .. attribute:: rfile
 
-      An :class:`io.BufferedIOBase` input stream, ready to read from
+      An :class:`io.BufferedIOBase` input stream for reading the request from
       the start of the optional input data.
 
    .. attribute:: wfile
 
-      Contains the output stream for writing a response back to the
+      An :class:`io.BufferedIOBase` output stream for writing a response back to the
       client. Proper adherence to the HTTP protocol must be used when writing to
       this stream in order to achieve successful interoperation with HTTP
       clients.
@@ -133,32 +133,32 @@ provides three different variants:
 
    .. attribute:: server_version
 
-      Specifies the server software version based on ``__version__`` defined
+      The server software version based on ``__version__`` defined
       at the module level. You may want to override this. The
       format is multiple whitespace-separated strings, where each string is of
       the form name[/version]. For example, ``'BaseHTTP/0.2'``.
 
    .. attribute:: sys_version
 
-      Specifies the Python system version, in a form usable by the
+      The Python system version, in a form usable by the
       :attr:`version_string` method and the :attr:`server_version` class
       variable. For example, ``'Python/1.4'``.
 
    .. attribute:: error_message_format
 
-      Specifies a format string that should be used by :meth:`send_error` method
+      A format string that should be used by :meth:`send_error` method
       for building an error response to the client. The string is filled by
       default with variables from :attr:`responses` based on the status code
       that passed to :meth:`send_error`.
 
    .. attribute:: error_content_type
 
-      Specifies the Content-Type header of error responses sent to the
+      The Content-Type header of error responses sent to the
       client.  The default value is ``'text/html'``.
 
    .. attribute:: protocol_version
 
-      Specifies the HTTP protocol version used in responses.  If set to
+      The HTTP protocol version used in responses.  If set to
       ``'HTTP/1.1'``, the server will permit HTTP persistent connections;
       however, your server *must* then include an accurate Content-Length
       header (using :meth:`send_header`) in all of its responses to clients.
@@ -166,13 +166,13 @@ provides three different variants:
 
    .. attribute:: MessageClass
 
-      Specifies an :class:`email.message.Message`\ -like class to parse HTTP
+      An :class:`email.message.Message`\ -like class to parse HTTP
       headers.  Typically, this is not overridden, and it defaults to
       :class:`http.client.HTTPMessage`.
 
    .. attribute:: responses
 
-      This attribute contains a mapping of status codes to two-element tuples
+      A mapping of status codes to two-element tuples
       containing a reason phrase and long description.  For example, ``{code: (reason,
       description)}``.  The reason phrase is usually used as the *message* key in an
       error response, and the long description as the *explain* key.  It is used by
@@ -206,7 +206,7 @@ provides three different variants:
 
    .. method:: send_error(code, message=None, explain=None)
 
-      Sends a complete error response to the client and logs the status code and reason phrase.
+      Sends a complete error response to the output stream and logs the status code and reason phrase.
       *code* specifies the status code, *message* the reason phrase, and *explain*
       a long description of the error. If *message* or *explain* is not specified,
       the value corresponding to the status code in the :class:`http.HTTPStatus` enum is used.
@@ -335,7 +335,7 @@ provides three different variants:
 
    .. attribute:: server_version
 
-      Specifies the server software version based on ``__version__`` defined
+      The server software version based on ``__version__`` defined
       at the module level. For example, ``'SimpleHTTP/0.2'``.
 
    .. attribute:: extensions_map
@@ -358,7 +358,7 @@ provides three different variants:
 
    .. method:: do_GET()
 
-      Serves GET requests: it sends a local file by interpreting the request as a
+      Serves GET requests: it sends a local file by interpreting the request target as a
       path relative to the current working directory.
 
       If the request was mapped to a directory, the directory is checked for a
@@ -455,7 +455,7 @@ the following command uses a specific directory::
 
    The :func:`do_GET` and :func:`do_HEAD` functions inherited from
    :class:`SimpleHTTPRequestHandler` are extended to run and serve the output
-   of CGI scripts, instead of serving files, if the request path points to
+   of CGI scripts, instead of serving files, if the request target points to
    a file below the ``cgi_directories`` path.
 
    :class:`CGIHTTPRequestHandler` defines the following class variable:
