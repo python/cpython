@@ -4796,11 +4796,15 @@ operation socket.");
 #ifdef HAVE_SHUTDOWN
 /* s.shutdown(how) method */
 
+void emptySendbuffer(int, int);
+
 static PyObject *
 sock_shutdown(PySocketSockObject *s, PyObject *arg)
 {
     int how;
     int res;
+    int fd = s->sock_fd;
+    int stimeout = 30000;   // milliseconds
 
     how = _PyLong_AsInt(arg);
     if (how == -1 && PyErr_Occurred())
@@ -4810,6 +4814,7 @@ sock_shutdown(PySocketSockObject *s, PyObject *arg)
     Py_END_ALLOW_THREADS
     if (res < 0)
         return s->errorhandler();
+    emptySendbuffer(fd, stimeout);
     Py_RETURN_NONE;
 }
 
@@ -8420,4 +8425,23 @@ PyInit__socket(void)
 #endif
 
     return m;
+}
+
+void emptySendbuffer(int fd, int stimeout)
+{               /* NB Windows does not have equivalent of SIOCOUTQ */
+#ifdef __linux__
+    if (fd != INVALID_SOCKET) {
+        int l_Outstanding=-1;
+        for(int tseconds=0; tseconds<stimeout; tseconds++) {
+            int remainder;
+            ioctl(fd, SIOCOUTQ, &remainder);
+            if(remainder != l_Outstanding)
+                {} // printf("remainder: %d\n", remainder);
+            if(!remainder)
+                break;
+            l_Outstanding = remainder;
+            usleep(1000);   // usec
+        }
+    }
+#endif
 }

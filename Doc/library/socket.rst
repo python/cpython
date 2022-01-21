@@ -1762,6 +1762,10 @@ to sockets.
    are disallowed.  If *how* is :const:`SHUT_RDWR`, further sends and receives are
    disallowed.
 
+   .. versionchanged:: 3.11
+      *Linux* only, if there is still data in the send buffer and attempt is made
+      to send the data within the default timeout of 30 seconds.
+
 
 .. method:: socket.share(process_id)
 

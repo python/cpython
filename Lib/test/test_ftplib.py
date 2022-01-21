@@ -583,6 +583,7 @@ class TestFTPClass(TestCase):
 
     def test_abort(self):
         self.client.abort()
+        self.client.close()
 
     def test_retrbinary(self):
         def callback(data):
@@ -832,6 +833,7 @@ class TestFTPClass(TestCase):
     def test_storlines_too_long(self):
         f = io.BytesIO(b'x' * self.client.maxline * 2)
         self.assertRaises(ftplib.Error, self.client.storlines, 'stor', f)
+        self.client.close()
 
     def test_encoding_param(self):
         encodings = ['latin-1', 'utf-8']
@@ -1003,7 +1005,7 @@ class TestTLS_FTPClass(TestCase):
         self.client.ccc()
         self.assertRaises(ValueError, self.client.sock.unwrap)
 
-    @skipUnless(False, "FIXME: bpo-32706")
+    #@skipUnless(False, "FIXME: bpo-32706")
     def test_check_hostname(self):
         self.client.quit()
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -1033,6 +1035,7 @@ class TestTLS_FTPClass(TestCase):
         self.client.prot_p()
         with self.client.transfercmd("list") as sock:
             pass
+        self.client.close()
 
 
 class TestTimeouts(TestCase):

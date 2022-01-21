@@ -39,6 +39,7 @@ python ftplib.py -d localhost -l -p -l
 import sys
 import socket
 from socket import _GLOBAL_DEFAULT_TIMEOUT
+import struct
 
 __all__ = ["FTP", "error_reply", "error_temp", "error_perm", "error_proto",
            "all_errors"]
@@ -155,6 +156,12 @@ class FTP:
         if source_address is not None:
             self.source_address = source_address
         sys.audit("ftplib.connect", self, self.host, self.port)
+        ''' Hints from https://blog.netherlabs.nl/
+        articles/2009/01/18/the-ultimate-so_linger-page-or-why-is-my-tcp-not-reliable
+        Set socket option to 1, 30 = Set On, 30 seconds '''
+        self.sock = socket.socket()
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER,
+                             struct.pack('ii', 1, 30))
         self.sock = socket.create_connection((self.host, self.port), self.timeout,
                                              source_address=self.source_address)
         self.af = self.sock.family
@@ -494,11 +501,13 @@ class FTP:
         Returns:
           The response code.
         """
+        end_of_file_reached = False
         self.voidcmd('TYPE I')
         with self.transfercmd(cmd, rest) as conn:
             while 1:
                 buf = fp.read(blocksize)
                 if not buf:
+                    end_of_file_reached = True
                     break
                 conn.sendall(buf)
                 if callback:
@@ -506,6 +515,8 @@ class FTP:
             # shutdown ssl layer
             if _SSLSocket is not None and isinstance(conn, _SSLSocket):
                 conn.unwrap()
+        if not end_of_file_reached:
+            raise EOFError
         return self.voidresp()
 
     def storlines(self, cmd, fp, callback=None):
@@ -520,6 +531,7 @@ class FTP:
         Returns:
           The response code.
         """
+        end_of_line_reached = False
         self.voidcmd('TYPE A')
         with self.transfercmd(cmd) as conn:
             while 1:
@@ -527,6 +539,7 @@ class FTP:
                 if len(buf) > self.maxline:
                     raise Error("got more than %d bytes" % self.maxline)
                 if not buf:
+                    end_of_line_reached = True
                     break
                 if buf[-2:] != B_CRLF:
                     if buf[-1] in B_CRLF: buf = buf[:-1]
@@ -537,6 +550,8 @@ class FTP:
             # shutdown ssl layer
             if _SSLSocket is not None and isinstance(conn, _SSLSocket):
                 conn.unwrap()
+        if not end_of_line_reached:
+            raise EOFError
         return self.voidresp()
 
     def acct(self, password):

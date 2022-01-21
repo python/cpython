@@ -83,6 +83,11 @@ The module defines the following items:
       The *encoding* parameter was added, and the default was changed from
       Latin-1 to UTF-8 to follow :rfc:`2640`.
 
+   .. versionchanged:: 3.11
+      Improved broken connection handling and an exception (EOFError) is 
+      raised if sent file or line not completed.
+
+
 .. class:: FTP_TLS(host='', user='', passwd='', acct='', keyfile=None, certfile=None, context=None, timeout=None, source_address=None, *, encoding='utf-8')
 
    A :class:`FTP` subclass which adds TLS support to FTP as described in
@@ -212,6 +217,10 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    .. versionchanged:: 3.3
       *source_address* parameter was added.
 
+   .. versionchanged:: 3.11
+      Ennable the SO_LINGER flag to improve broken connection handling. See 
+      setsockopt(3), Linux man page / LINGER (winsock.h).
+
 
 .. method:: FTP.getwelcome()
 
@@ -298,6 +307,10 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    .. versionchanged:: 3.2
       *rest* parameter added.
 
+   .. versionchanged:: 3.11
+      Ececption (EOFError) rasied if the sent file does not complete due to
+      broken connection.
+
 
 .. method:: FTP.storlines(cmd, fp, callback=None)
 
@@ -306,6 +319,10 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    :term:`file object` *fp* (opened in binary mode) using its :meth:`~io.IOBase.readline`
    method to provide the data to be stored.  *callback* is an optional single
    parameter callable that is called on each line after it is sent.
+
+   .. versionchanged:: 3.11
+      Ececption (EOFError) rasied if the sent line does not complete due to
+      broken connection.
 
 
 .. method:: FTP.transfercmd(cmd, rest=None)
