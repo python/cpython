@@ -4,6 +4,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_object.h"        // _PyType_GetSubclasses()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "clinic/_abc.c.h"
 
@@ -493,21 +494,20 @@ set_collection_flag_recursive(PyTypeObject *child, unsigned long flag)
     {
         return;
     }
+
     child->tp_flags &= ~COLLECTION_FLAGS;
     child->tp_flags |= flag;
-    PyObject *grandchildren = child->tp_subclasses;
+
+    PyObject *grandchildren = _PyType_GetSubclasses(child);
     if (grandchildren == NULL) {
         return;
     }
-    assert(PyDict_CheckExact(grandchildren));
-    Py_ssize_t i = 0;
-    while (PyDict_Next(grandchildren, &i, NULL, &grandchildren)) {
-        assert(PyWeakref_CheckRef(grandchildren));
-        PyObject *grandchild = PyWeakref_GET_OBJECT(grandchildren);
-        if (PyType_Check(grandchild)) {
-            set_collection_flag_recursive((PyTypeObject *)grandchild, flag);
-        }
+
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(grandchildren); i++) {
+        PyObject *grandchild = PyList_GET_ITEM(grandchildren, i);
+        set_collection_flag_recursive((PyTypeObject *)grandchild, flag);
     }
+    Py_DECREF(grandchildren);
 }
 
 /*[clinic input]
