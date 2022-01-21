@@ -6553,10 +6553,6 @@ remove_subclass(PyTypeObject *base, PyTypeObject *type)
         PyErr_Clear();
     }
     Py_XDECREF(key);
-
-    if (PyDict_Size(dict) == 0) {
-        Py_CLEAR(base->tp_subclasses);
-    }
 }
 
 static void
