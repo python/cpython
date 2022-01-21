@@ -194,19 +194,19 @@ provides three different variants:
 
    .. method:: handle_expect_100()
 
-      Sends a 100 (Continue) informational status line to the output stream.
+      Writes a 100 (Continue) informational status line to the output stream.
       When a HTTP/1.1 compliant server receives a request with an ``Expect: 100-continue``
       header which indicates that a request message body will follow, it must either
       send a 100 (Continue) informational response to tell the client to continue, or send a response
       with a final status code to tell the client to stop.
       This method can be overridden to tell the client to stop. E.g. the server can
-      choose to send a 417 (Expectation Failed) client error status line and ``return False``.
+      choose to write a 417 (Expectation Failed) client error status line to the output stream and ``return False``.
 
       .. versionadded:: 3.2
 
    .. method:: send_error(code, message=None, explain=None)
 
-      Sends a complete error response to the output stream and logs the status code and reason phrase.
+      Writes an error response to the output stream and logs the status code and reason phrase.
       *code* specifies the status code, *message* the reason phrase, and *explain*
       a long description of the error. If *message* or *explain* is not specified,
       the value corresponding to the status code in the :class:`http.HTTPStatus` enum is used.
@@ -266,7 +266,7 @@ provides three different variants:
 
    .. method:: flush_headers()
 
-      Sends the headers to the output stream and flush the internal buffer.
+      Writes the internal buffer to the output stream and flushes the internal buffer.
 
       .. versionadded:: 3.3
 
@@ -352,14 +352,14 @@ provides three different variants:
 
    .. method:: do_HEAD()
 
-      Serves HEAD requests: it sends the headers it
-      would send for the equivalent GET request. See the :meth:`do_GET`
+      Serves HEAD requests: it writes the headers to the output stream it
+      would write for the equivalent GET request. See the :meth:`do_GET`
       method for a more complete explanation of the possible headers.
 
    .. method:: do_GET()
 
-      Serves GET requests: it sends a local file by interpreting the request target as a
-      path relative to the current working directory.
+      Serves GET requests: it writes a local file to the output stream
+      by interpreting the request target as a path relative to the current working directory.
 
       If the request was mapped to a directory, the directory is checked for a
       file named ``index.html`` or ``index.htm`` (in that order). If found, the
@@ -445,8 +445,7 @@ the following command uses a specific directory::
 
       CGI scripts run by the :class:`CGIHTTPRequestHandler` class cannot
       send a 302 (Found) redirection status code, because a 200 (OK) successful status code is
-      sent prior to execution of the CGI script.  This pre-empts the status
-      code.
+      sent prior to execution of the CGI script.  This pre-empts the status code.
 
    The class will however, run the CGI script, instead of serving it as a file,
    if it guesses it to be a CGI script.  Only directory-based CGI are used ---
