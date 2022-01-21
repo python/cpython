@@ -18,7 +18,7 @@ import textwrap
 import traceback
 from functools import partial
 
-MODULE_PREFIX = f"{__name__}." if __name__ == '__main__' else ''
+MODULE_PREFIX = f'{__name__}.' if __name__ == '__main__' else ''
 
 test_code = namedtuple('code', ['co_filename', 'co_name'])
 test_code.co_positions = lambda _: iter([(6, 6, 0, 0)])
