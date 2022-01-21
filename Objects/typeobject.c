@@ -4070,30 +4070,61 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
 extern void
 _PyDictKeys_DecRef(PyDictKeysObject *keys);
 
-static void
-type_dealloc(PyTypeObject *type)
-{
-    PyHeapTypeObject *et;
-    PyObject *tp, *val, *tb;
 
-    /* Assert this is a heap-allocated type object */
-    _PyObject_ASSERT((PyObject *)type, type->tp_flags & Py_TPFLAGS_HEAPTYPE);
-    _PyObject_GC_UNTRACK(type);
+static void
+type_dealloc_common(PyTypeObject *type)
+{
+    PyObject *tp, *val, *tb;
     PyErr_Fetch(&tp, &val, &tb);
     remove_all_subclasses(type, type->tp_bases);
     PyErr_Restore(tp, val, tb);
+
     PyObject_ClearWeakRefs((PyObject *)type);
-    et = (PyHeapTypeObject *)type;
+}
+
+
+void
+_PyStaticType_Dealloc(PyTypeObject *type)
+{
+    // _PyStaticType_Dealloc() must not be called if a type has subtypes.
+    // A subtype can inherit attributes and methods of its parent type,
+    // and a type must no longer be used once it's deallocated.
+    assert(type->tp_subclasses == NULL);
+
+    type_dealloc_common(type);
+
+    Py_CLEAR(type->tp_dict);
+    Py_CLEAR(type->tp_bases);
+    Py_CLEAR(type->tp_mro);
+    Py_CLEAR(type->tp_cache);
+    Py_CLEAR(type->tp_subclasses);
+
+    type->tp_flags &= ~Py_TPFLAGS_READY;
+}
+
+
+static void
+type_dealloc(PyTypeObject *type)
+{
+    /* Assert this is a heap-allocated type object */
+    _PyObject_ASSERT((PyObject *)type, type->tp_flags & Py_TPFLAGS_HEAPTYPE);
+    _PyObject_GC_UNTRACK(type);
+
+    type_dealloc_common(type);
+
     Py_XDECREF(type->tp_base);
     Py_XDECREF(type->tp_dict);
     Py_XDECREF(type->tp_bases);
     Py_XDECREF(type->tp_mro);
     Py_XDECREF(type->tp_cache);
     Py_XDECREF(type->tp_subclasses);
+
     /* A type's tp_doc is heap allocated, unlike the tp_doc slots
      * of most other objects.  It's okay to cast it to char *.
      */
     PyObject_Free((char *)type->tp_doc);
+
+    PyHeapTypeObject *et = (PyHeapTypeObject *)type;
     Py_XDECREF(et->ht_name);
     Py_XDECREF(et->ht_qualname);
     Py_XDECREF(et->ht_slots);

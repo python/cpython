@@ -848,12 +848,9 @@ class UtimeTests(unittest.TestCase):
     def test_utime_dir_fd(self):
         def set_time(filename, ns):
             dirname, name = os.path.split(filename)
-            dirfd = os.open(dirname, os.O_RDONLY)
-            try:
+            with os_helper.open_dir_fd(dirname) as dirfd:
                 # pass dir_fd to test utimensat(timespec) or futimesat(timeval)
                 os.utime(name, dir_fd=dirfd, ns=ns)
-            finally:
-                os.close(dirfd)
         self._test_utime(set_time)
 
     def test_utime_directory(self):
@@ -4341,8 +4338,7 @@ class TestScandir(unittest.TestCase):
             os.symlink('file.txt', os.path.join(self.path, 'link'))
             expected_names.append('link')
 
-        fd = os.open(self.path, os.O_RDONLY)
-        try:
+        with os_helper.open_dir_fd(self.path) as fd:
             with os.scandir(fd) as it:
                 entries = list(it)
             names = [entry.name for entry in entries]
@@ -4357,8 +4353,6 @@ class TestScandir(unittest.TestCase):
                     self.assertEqual(entry.stat(), st)
                     st = os.stat(entry.name, dir_fd=fd, follow_symlinks=False)
                     self.assertEqual(entry.stat(follow_symlinks=False), st)
-        finally:
-            os.close(fd)
 
     def test_empty_path(self):
         self.assertRaises(FileNotFoundError, os.scandir, '')

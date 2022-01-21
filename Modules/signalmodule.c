@@ -136,6 +136,7 @@ typedef struct {
 #ifdef MS_WINDOWS
     HANDLE sigint_event;
 #endif
+    PyTypeObject *siginfo_type;
 } signal_state_t;
 
 // State shared by all Python interpreters
@@ -1136,12 +1137,13 @@ static PyStructSequence_Desc struct_siginfo_desc = {
     7          /* n_in_sequence */
 };
 
-static PyTypeObject SiginfoType;
 
 static PyObject *
 fill_siginfo(siginfo_t *si)
 {
-    PyObject *result = PyStructSequence_New(&SiginfoType);
+    signal_state_t *state = &signal_global_state;
+
+    PyObject *result = PyStructSequence_New(state->siginfo_type);
     if (!result)
         return NULL;
 
@@ -1660,7 +1662,7 @@ signal_module_exec(PyObject *m)
     }
 #endif
 #if defined(HAVE_SIGWAITINFO) || defined(HAVE_SIGTIMEDWAIT)
-    if (PyModule_AddType(m, &SiginfoType) < 0) {
+    if (PyModule_AddType(m, state->siginfo_type) < 0) {
         return -1;
     }
 #endif
@@ -1758,6 +1760,7 @@ _PySignal_Fini(void)
 
     Py_CLEAR(state->default_handler);
     Py_CLEAR(state->ignore_handler);
+    Py_CLEAR(state->siginfo_type);
 }
 
 
@@ -1966,10 +1969,9 @@ _PySignal_Init(int install_signal_handlers)
 #endif
 
 #if defined(HAVE_SIGWAITINFO) || defined(HAVE_SIGTIMEDWAIT)
-    if (SiginfoType.tp_name == NULL) {
-        if (PyStructSequence_InitType2(&SiginfoType, &struct_siginfo_desc) < 0) {
-            return -1;
-        }
+    state->siginfo_type = PyStructSequence_NewType(&struct_siginfo_desc);
+    if (state->siginfo_type == NULL) {
+        return -1;
     }
 #endif
 

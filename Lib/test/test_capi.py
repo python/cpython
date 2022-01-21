@@ -26,6 +26,10 @@ try:
     import _posixsubprocess
 except ImportError:
     _posixsubprocess = None
+try:
+    import _testmultiphase
+except ImportError:
+    _testmultiphase = None
 
 # Skip this test if the _testcapi module isn't available.
 _testcapi = import_helper.import_module('_testcapi')
@@ -798,6 +802,7 @@ class SubinterpreterTest(unittest.TestCase):
 
         self.assertFalse(hasattr(binascii.Error, "foobar"))
 
+    @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
     def test_module_state_shared_in_global(self):
         """
         bpo-44050: Extension module state should be shared between interpreters
@@ -991,6 +996,7 @@ class PyMemDefaultTests(PyMemDebugTests):
     PYTHONMALLOC = ''
 
 
+@unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
 class Test_ModuleStateAccess(unittest.TestCase):
     """Test access to module start (PEP 573)"""
 

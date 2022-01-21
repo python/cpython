@@ -881,7 +881,7 @@ class BooleanOptionalAction(Action):
                 option_string = '--no-' + option_string[2:]
                 _option_strings.append(option_string)
 
-        if help is not None and default is not None:
+        if help is not None and default is not None and default is not SUPPRESS:
             help += " (default: %(default)s)"
 
         super().__init__(
