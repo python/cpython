@@ -4468,6 +4468,7 @@ class TypedDictTests(BaseTestCase):
             (Regular, One),
             (One, Two, Regular),
             (Inline, Regular),
+            (Untotal, Regular),
         ]
         for bases in wrong_bases:
             with self.subTest(bases=bases):
