@@ -2082,6 +2082,14 @@ _PyFloat_Fini(PyInterpreterState *interp)
 #endif
 }
 
+void
+_PyFloat_FiniType(PyInterpreterState *interp)
+{
+    if (_Py_IsMainInterpreter(interp)) {
+        _PyStructSequence_FiniType(&FloatInfoType);
+    }
+}
+
 /* Print summary info about the state of the optimized allocator */
 void
 _PyFloat_DebugMallocStats(FILE *out)

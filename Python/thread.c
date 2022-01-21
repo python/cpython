@@ -243,3 +243,14 @@ PyThread_GetInfo(void)
     PyStructSequence_SET_ITEM(threadinfo, pos++, value);
     return threadinfo;
 }
+
+
+void
+_PyThread_FiniType(PyInterpreterState *interp)
+{
+    if (!_Py_IsMainInterpreter(interp)) {
+        return;
+    }
+
+    _PyStructSequence_FiniType(&ThreadInfoType);
+}

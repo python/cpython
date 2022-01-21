@@ -1666,11 +1666,17 @@ flush_std_files(void)
 static void
 finalize_interp_types(PyInterpreterState *interp)
 {
+    _PySys_Fini(interp);
     _PyExc_Fini(interp);
     _PyFrame_Fini(interp);
     _PyAsyncGen_Fini(interp);
     _PyContext_Fini(interp);
+    _PyFloat_FiniType(interp);
+    _PyLong_FiniTypes(interp);
+    _PyThread_FiniType(interp);
+    _PyErr_FiniTypes(interp);
     _PyTypes_Fini(interp);
+
     // Call _PyUnicode_ClearInterned() before _PyDict_Fini() since it uses
     // a dict internally.
     _PyUnicode_ClearInterned(interp);
