@@ -53,7 +53,7 @@ PC/readme.txt text eol=crlf
 # Generated files
 # https://github.com/github/linguist/blob/master/docs/overrides.md
 #
-# To automatically hide generated files in local diffs, mark them as binary:
+# To always hide generated files in local diffs, mark them as binary:
 # $ git config diff.generated.binary true
 #
 **/clinic/*.h                       linguist-generated=true diff=generated
