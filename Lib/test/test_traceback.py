@@ -1312,7 +1312,7 @@ class BaseExceptionReportingTests:
         err = self.get_report(A.B.X())
         str_value = 'I am X'
         str_name = '.'.join([A.B.X.__module__, A.B.X.__qualname__])
-        exp = f"{str_name}: {str_value}\n"
+        exp = "%s: %s\n" % (str_name, str_value)
         self.assertEqual(exp, MODULE_PREFIX + err)
 
     def test_exception_modulename(self):
