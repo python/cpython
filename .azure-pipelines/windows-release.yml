@@ -51,7 +51,7 @@ parameters:
   type: boolean
   default: true
 - name: DoMSI
-  displayName: "Produce traditional installer"
+  displayName: "Produce EXE/MSI installer"
   type: boolean
   default: true
 - name: BuildToPublish
