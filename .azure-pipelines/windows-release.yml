@@ -1,7 +1,7 @@
 name: Release_$(Build.SourceBranchName)_$(SourceTag)_$(Date:yyyyMMdd)$(Rev:.rr)
 
 parameters:
-- name: GitRemote
+- name: GitReleaseRemote
   displayName: "Git remote"
   type: string
   default: python
@@ -9,6 +9,11 @@ parameters:
   - python
   - ambv
   - pablogsal
+  - Other
+- name: GitRemote
+  displayName: "Other Git remote"
+  type: string
+  default: 'n/a'
 - name: SourceTag
   displayName: "Git tag"
   type: string
@@ -50,13 +55,16 @@ parameters:
   type: boolean
   default: true
 - name: BuildToPublish
-  displayName: "Build number to publish"
+  displayName: "Build number to publish (0 to skip)"
   type: number
   default: '0'
 
 variables:
     __RealSigningCertificate: 'Python Software Foundation'
-    GitRemote: ${{ parameters.GitRemote }}
+    ${{ if ne(parameters.GitReleaseRemote, 'Other') }}:
+      GitRemote: ${{ parameters.GitReleaseRemote }}
+    ${{ else }}:
+      GitRemote: ${{ parameters.GitRemote }}
     SourceTag: ${{ paremeters.SourceTag }}
     DoPGO: ${{ parameters.DoPGO }}
     SigningCertificate: ${{ parameters.SigningCertificate }}
