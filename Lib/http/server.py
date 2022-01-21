@@ -31,7 +31,6 @@ XXX To do:
 - send error log to separate file
 """
 
-
 # See also:
 #
 # HTTP Working Group                                        T. Berners-Lee
@@ -98,7 +97,7 @@ import os
 import posixpath
 import select
 import shutil
-import socket # For gethostbyaddr()
+import socket  # For gethostbyaddr()
 import socketserver
 import sys
 import time
@@ -107,7 +106,6 @@ import contextlib
 from functools import partial
 
 from http import HTTPStatus
-
 
 # Default error message template
 DEFAULT_ERROR_MESSAGE = """\
@@ -129,9 +127,9 @@ DEFAULT_ERROR_MESSAGE = """\
 
 DEFAULT_ERROR_CONTENT_TYPE = "text/html;charset=utf-8"
 
-class HTTPServer(socketserver.TCPServer):
 
-    allow_reuse_address = 1    # Seems to make sense in testing environment
+class HTTPServer(socketserver.TCPServer):
+    allow_reuse_address = 1  # Seems to make sense in testing environment
 
     def server_bind(self):
         """Override server_bind to store the server name."""
@@ -146,7 +144,6 @@ class ThreadingHTTPServer(socketserver.ThreadingMixIn, HTTPServer):
 
 
 class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
-
     """HTTP request handler base class.
 
     The following explanation of HTTP serves to guide you through the
@@ -463,9 +460,9 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         #  - RFC7231: 6.3.6. 205(Reset Content)
         body = None
         if (code >= 200 and
-            code not in (HTTPStatus.NO_CONTENT,
-                         HTTPStatus.RESET_CONTENT,
-                         HTTPStatus.NOT_MODIFIED)):
+                code not in (HTTPStatus.NO_CONTENT,
+                             HTTPStatus.RESET_CONTENT,
+                             HTTPStatus.NOT_MODIFIED)):
             # HTML encode to prevent Cross Site Scripting attacks
             # (see bug #1100201)
             content = (self.error_message_format % {
@@ -505,8 +502,8 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
             if not hasattr(self, '_headers_buffer'):
                 self._headers_buffer = []
             self._headers_buffer.append(("%s %d %s\r\n" %
-                    (self.protocol_version, code, message)).encode(
-                        'latin-1', 'strict'))
+                                         (self.protocol_version, code, message)).encode(
+                'latin-1', 'strict'))
 
     def send_header(self, keyword, value):
         """Send a MIME header to the headers buffer."""
@@ -578,7 +575,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         sys.stderr.write("%s - - [%s] %s\n" %
                          (self.address_string(),
                           self.log_date_time_string(),
-                          format%args))
+                          format % args))
 
     def version_string(self):
         """Return the server software version string."""
@@ -595,7 +592,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         now = time.time()
         year, month, day, hh, mm, ss, x, y, z = time.localtime(now)
         s = "%02d/%3s/%04d %02d:%02d:%02d" % (
-                day, self.monthname[month], year, hh, mm, ss)
+            day, self.monthname[month], year, hh, mm, ss)
         return s
 
     weekdayname = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -626,7 +623,6 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
 
 
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
-
     """Simple HTTP request handler with GET and HEAD commands.
 
     This serves files from the current directory and any of its
@@ -748,7 +744,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             self.send_header("Content-type", ctype)
             self.send_header("Content-Length", str(fs[6]))
             self.send_header("Last-Modified",
-                self.date_time_string(fs.st_mtime))
+                             self.date_time_string(fs.st_mtime))
             self.end_headers()
             return f
         except:
@@ -764,52 +760,26 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
         """
         try:
-            list = os.listdir(path)
+            list_of_files = os.listdir(path)
         except OSError:
             self.send_error(
                 HTTPStatus.NOT_FOUND,
                 "No permission to list directory")
             return None
-        list.sort(key=lambda a: a.lower())
-        r = []
+        list_of_files.sort(key=lambda a: a.lower())
         try:
-            displaypath = urllib.parse.unquote(self.path,
+            display_path = urllib.parse.unquote(self.path,
                                                errors='surrogatepass')
         except UnicodeDecodeError:
-            displaypath = urllib.parse.unquote(path)
-        displaypath = html.escape(displaypath, quote=False)
+            display_path = urllib.parse.unquote(path)
+        display_path = html.escape(display_path, quote=False)
         enc = sys.getfilesystemencoding()
-        title = 'Directory listing for %s' % displaypath
-        r.append('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" '
-                 '"http://www.w3.org/TR/html4/strict.dtd">')
-        r.append('<html>\n<head>')
-        r.append('<meta http-equiv="Content-Type" '
-                 'content="text/html; charset=%s">' % enc)
-        r.append('<title>%s</title>\n</head>' % title)
-        r.append('<body>\n<h1>%s</h1>' % title)
-        r.append('<hr>\n<ul>')
-        for name in list:
-            fullname = os.path.join(path, name)
-            displayname = linkname = name
-            # Append / for directories or @ for symbolic links
-            if os.path.isdir(fullname):
-                displayname = name + "/"
-                linkname = name + "/"
-            if os.path.islink(fullname):
-                displayname = name + "@"
-                # Note: a link to a directory displays with @ and links with /
-            r.append('<li><a href="%s">%s</a></li>'
-                    % (urllib.parse.quote(linkname,
-                                          errors='surrogatepass'),
-                       html.escape(displayname, quote=False)))
-        r.append('</ul>\n<hr>\n</body>\n</html>\n')
-        encoded = '\n'.join(r).encode(enc, 'surrogateescape')
+        encoded = self.directory_body(list_of_files, display_path, path, enc).encode(enc, 'surrogateescape')
         f = io.BytesIO()
         f.write(encoded)
         f.seek(0)
         self.send_response(HTTPStatus.OK)
-        self.send_header("Content-type", "text/html; charset=%s" % enc)
-        self.send_header("Content-Length", str(len(encoded)))
+        self.send_directory_headers(enc, str(len(encoded)))
         self.end_headers()
         return f
 
@@ -822,8 +792,8 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
         """
         # abandon query parameters
-        path = path.split('?',1)[0]
-        path = path.split('#',1)[0]
+        path = path.split('?', 1)[0]
+        path = path.split('#', 1)[0]
         # Don't forget explicit trailing slash when normalizing. Issue17324
         trailing_slash = path.rstrip().endswith('/')
         try:
@@ -884,6 +854,103 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             return guess
         return 'application/octet-stream'
 
+    def directory_body(self, list_of_files, displaypath, actual_path, enc) -> str:
+        """
+        Compose the list_of_files into body content
+
+        This method is a proxy method, to enable using the original
+        method when overriding the behaviour of the Handler
+
+        displaypath is a relative path str
+        actual_path is the full actual filesystem path
+        enc is the encoding of the system `sys.getfilesystemencoding()`
+        return the body text
+
+        Override this method to change how the server displays the files
+        Example:
+
+            from http.server import SimpleHTTPRequestHandler
+            from socketserver import TCPServer
+
+            def my_beautiful_body(self, list_of_files, displaypath, actual_path, enc) -> bytes:
+                ... whatever you want
+
+            Handler = SimpleHTTPRequestHandler
+            Handler.directory_body = my_beautiful_body
+
+            httpd = TCPServer(("", PORT), Handler)
+
+            print("Serving at port", PORT)
+            httpd.serve_forever()
+         """
+        return self.directory_body_html(list_of_files, displaypath, actual_path, enc)
+
+    def send_directory_headers(self, enc, content_length):
+        """
+        Headers to send in the list_directory request (do_GET)
+
+        Example:
+
+            from http.server import SimpleHTTPRequestHandler
+            from socketserver import TCPServer
+            from json import dumps
+
+            def my_json_body(self, list_of_files, displaypath, actual_path, enc) -> bytes:
+                return dumps({'files: list_of_files})
+
+            def send_json_headers(self, enc, len):
+                self.send_header('Content-type', 'application/json; charset=%s' % enc)
+                self.send_header('Content-Length', len)
+
+            Handler = SimpleHTTPRequestHandler
+            Handler.directory_body = my_json_body
+            Handler.send_directory_headers = send_json_headers
+
+            httpd = TCPServer(("", PORT), Handler)
+
+            print("Serving at port", PORT)
+            httpd.serve_forever()
+        """
+        self.send_header("Content-type", "text/html; charset=%s" % enc)
+        self.send_header("Content-Length", content_length)
+
+    @staticmethod
+    def link_and_display_name(actual_path, name) -> (str, str):
+        """
+        Returns the url link and a displayname of a file given a path
+
+        other users may want to use this method when customizing the html response of the handler
+        """
+        fullname = os.path.join(actual_path, name)
+        displayname = linkname = name
+        # Append / for directories or @ for symbolic links
+        if os.path.isdir(fullname):
+            displayname = name + "/"
+            linkname = name + "/"
+        if os.path.islink(fullname):
+            displayname = name + "@"
+            # Note: a link to a directory displays with @ and links with /
+        return (urllib.parse.quote(linkname,
+                                   errors='surrogatepass'),
+                html.escape(displayname, quote=False))
+
+    def directory_body_html(self, list_of_files, displaypath, actual_path, enc):
+        r = []
+        title = 'Directory listing for %s' % displaypath
+        r.append('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" '
+                 '"http://www.w3.org/TR/html4/strict.dtd">')
+        r.append('<html>\n<head>')
+        r.append('<meta http-equiv="Content-Type" '
+                 'content="text/html; charset=%s">' % enc)
+        r.append('<title>%s</title>\n</head>' % title)
+        r.append('<body>\n<h1>%s</h1>' % title)
+        r.append('<hr>\n<ul>')
+        for name in list_of_files:
+            r.append('<li><a href="%s">%s</a></li>'
+                     % self.link_and_display_name(actual_path, name))
+        r.append('</ul>\n<hr>\n</body>\n</html>\n')
+        return '\n'.join(r)
+
 
 # Utilities for CGIHTTPRequestHandler
 
@@ -911,9 +978,9 @@ def _url_collapse_path(path):
     head_parts = []
     for part in path_parts[:-1]:
         if part == '..':
-            head_parts.pop() # IndexError if more '..' than prior parts
+            head_parts.pop()  # IndexError if more '..' than prior parts
         elif part and part != '.':
-            head_parts.append( part )
+            head_parts.append(part)
     if path_parts:
         tail_part = path_parts.pop()
         if tail_part:
@@ -934,8 +1001,8 @@ def _url_collapse_path(path):
     return collapsed_path
 
 
-
 nobody = None
+
 
 def nobody_uid():
     """Internal routine to get nobody's uid"""
@@ -959,7 +1026,6 @@ def executable(path):
 
 
 class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
-
     """Complete HTTP server with GET, HEAD and POST commands.
 
     GET and HEAD also support running CGI scripts.
@@ -1014,13 +1080,12 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
         collapsed_path = _url_collapse_path(self.path)
         dir_sep = collapsed_path.find('/', 1)
         while dir_sep > 0 and not collapsed_path[:dir_sep] in self.cgi_directories:
-            dir_sep = collapsed_path.find('/', dir_sep+1)
+            dir_sep = collapsed_path.find('/', dir_sep + 1)
         if dir_sep > 0:
-            head, tail = collapsed_path[:dir_sep], collapsed_path[dir_sep+1:]
+            head, tail = collapsed_path[:dir_sep], collapsed_path[dir_sep + 1:]
             self.cgi_info = head, tail
             return True
         return False
-
 
     cgi_directories = ['/cgi-bin', '/htbin']
 
@@ -1037,15 +1102,15 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
         """Execute a CGI script."""
         dir, rest = self.cgi_info
         path = dir + '/' + rest
-        i = path.find('/', len(dir)+1)
+        i = path.find('/', len(dir) + 1)
         while i >= 0:
             nextdir = path[:i]
-            nextrest = path[i+1:]
+            nextrest = path[i + 1:]
 
             scriptdir = self.translate_path(nextdir)
             if os.path.isdir(scriptdir):
                 dir, rest = nextdir, nextrest
-                i = path.find('/', len(dir)+1)
+                i = path.find('/', len(dir) + 1)
             else:
                 break
 
@@ -1104,8 +1169,8 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
                 if authorization[0].lower() == "basic":
                     try:
                         authorization = authorization[1].encode('ascii')
-                        authorization = base64.decodebytes(authorization).\
-                                        decode('ascii')
+                        authorization = base64.decodebytes(authorization). \
+                            decode('ascii')
                     except (binascii.Error, UnicodeError):
                         pass
                     else:
@@ -1150,7 +1215,7 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
             if '=' not in decoded_query:
                 args.append(decoded_query)
             nobody = nobody_uid()
-            self.wfile.flush() # Always flush before forking
+            self.wfile.flush()  # Always flush before forking
             pid = os.fork()
             if pid != 0:
                 # Parent
@@ -1197,7 +1262,7 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
                                  stdin=subprocess.PIPE,
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE,
-                                 env = env
+                                 env=env
                                  )
             if self.command.lower() == "post" and nbytes > 0:
                 data = self.rfile.read(nbytes)
@@ -1254,18 +1319,19 @@ def test(HandlerClass=BaseHTTPRequestHandler,
             print("\nKeyboard interrupt received, exiting.")
             sys.exit(0)
 
+
 if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--cgi', action='store_true',
-                       help='Run as CGI Server')
+                        help='Run as CGI Server')
     parser.add_argument('--bind', '-b', metavar='ADDRESS',
                         help='Specify alternate bind address '
                              '[default: all interfaces]')
     parser.add_argument('--directory', '-d', default=os.getcwd(),
                         help='Specify alternative directory '
-                        '[default:current directory]')
+                             '[default:current directory]')
     parser.add_argument('port', action='store',
                         default=8000, type=int,
                         nargs='?',
@@ -1277,6 +1343,7 @@ if __name__ == '__main__':
         handler_class = partial(SimpleHTTPRequestHandler,
                                 directory=args.directory)
 
+
     # ensure dual-stack is not disabled; ref #38907
     class DualStackServer(ThreadingHTTPServer):
         def server_bind(self):
@@ -1285,6 +1352,7 @@ if __name__ == '__main__':
                 self.socket.setsockopt(
                     socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
             return super().server_bind()
+
 
     test(
         HandlerClass=handler_class,

@@ -1,0 +1,1 @@
+Refactors how SimpleHTTPRequestHandler builds a body and sends headers, enabling easier overriding of a smaller part of the code to customize the response body content and headers returned when using the SimpleHTTPRequestHandler.
