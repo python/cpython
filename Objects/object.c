@@ -1994,10 +1994,6 @@ _PyTypes_FiniTypes(PyInterpreterState *interp)
     // their base classes.
     for (Py_ssize_t i=Py_ARRAY_LENGTH(static_types)-1; i>=0; i--) {
         PyTypeObject *type = static_types[i];
-        // Cannot delete a type if it still has subclasses
-        if (type->tp_subclasses != NULL) {
-            continue;
-        }
         _PyStaticType_Dealloc(type);
     }
 }
