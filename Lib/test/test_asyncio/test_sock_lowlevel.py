@@ -1,5 +1,4 @@
 import socket
-import time
 import asyncio
 import sys
 import unittest
@@ -508,3 +507,7 @@ else:
 
         def create_event_loop(self):
             return asyncio.SelectorEventLoop(selectors.SelectSelector())
+
+
+if __name__ == '__main__':
+    unittest.main()
