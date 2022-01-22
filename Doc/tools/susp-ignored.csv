@@ -369,7 +369,6 @@ whatsnew/changelog,,::,default::DeprecationWarning
 library/importlib.metadata,,:main,"EntryPoint(name='wheel', value='wheel.cli:main', group='console_scripts')"
 library/importlib.metadata,,`,loading the metadata for packages for the indicated ``context``.
 library/re,,`,"`"
-using/configure,84,:db2,=db1:db2:...
 library/typing,,`,# Type of ``val`` is narrowed to ``str``
 library/typing,,`,"# Else, type of ``val`` is narrowed to ``float``."
 library/typing,,`,# Type of ``val`` is narrowed to ``list[str]``.
@@ -380,4 +379,5 @@ library/tkinter,,::,"grid [ttk::button .frm.btn -text ""Quit"" -command ""destro
 library/tkinter,,::,ttk::frame
 library/tkinter,,::,ttk::button
 library/tkinter,,::,ttk::widget
-reference/datamodel,2285,`,"""""""Return the result of the expression `obj[x]`"""""""
+whatsnew/changelog,305,::,Lib/email/mime/nonmultipart.py::MIMENonMultipart
+whatsnew/changelog,308,::,Lib/ctypes/test/test_functions.py::test_mro

@@ -344,7 +344,7 @@ _locate_pythons_for_key(HKEY root, LPCWSTR subkey, REGSAM flags, int bits,
                     }
                     else if (attrs & FILE_ATTRIBUTE_DIRECTORY) {
                         debug(L"locate_pythons_for_key: '%ls' is a directory\n",
-                              ip->executable, attrs);
+                              ip->executable);
                     }
                     else if (find_existing_python(ip->executable)) {
                         debug(L"locate_pythons_for_key: %ls: already found\n",
@@ -1268,7 +1268,9 @@ static PYC_MAGIC magic_values[] = {
     { 3400, 3419, L"3.8" },
     { 3420, 3429, L"3.9" },
     { 3430, 3449, L"3.10" },
-    { 3450, 3469, L"3.11" },
+    /* Allow 50 magic numbers per version from here on */
+    { 3450, 3499, L"3.11" },
+    { 3500, 3549, L"3.12" },
     { 0 }
 };
 

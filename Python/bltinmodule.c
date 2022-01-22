@@ -536,7 +536,7 @@ static PyObject *
 filter_vectorcall(PyObject *type, PyObject * const*args,
                 size_t nargsf, PyObject *kwnames)
 {
-    PyTypeObject *tp = (PyTypeObject *)type;
+    PyTypeObject *tp = _PyType_CAST(type);
     if (tp == &PyFilter_Type && !_PyArg_NoKwnames("filter", kwnames)) {
         return NULL;
     }
@@ -1091,11 +1091,6 @@ builtin_getattr(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 
     v = args[0];
     name = args[1];
-    if (!PyUnicode_Check(name)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "getattr(): attribute name must be string");
-        return NULL;
-    }
     if (nargs > 2) {
         if (_PyObject_LookupAttr(v, name, &result) == 0) {
             PyObject *dflt = args[2];
@@ -1156,11 +1151,6 @@ builtin_hasattr_impl(PyObject *module, PyObject *obj, PyObject *name)
 {
     PyObject *v;
 
-    if (!PyUnicode_Check(name)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "hasattr(): attribute name must be string");
-        return NULL;
-    }
     if (_PyObject_LookupAttr(obj, name, &v) < 0) {
         return NULL;
     }
@@ -1261,7 +1251,7 @@ static PyObject *
 map_vectorcall(PyObject *type, PyObject * const*args,
                 size_t nargsf, PyObject *kwnames)
 {
-    PyTypeObject *tp = (PyTypeObject *)type;
+    PyTypeObject *tp = _PyType_CAST(type);
     if (tp == &PyMap_Type && !_PyArg_NoKwnames("map", kwnames)) {
         return NULL;
     }

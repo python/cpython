@@ -24,7 +24,6 @@ extern "C" {
 #define MATCH_SEQUENCE                   32
 #define MATCH_KEYS                       33
 #define PUSH_EXC_INFO                    35
-#define POP_EXCEPT_AND_RERAISE           37
 #define WITH_EXCEPT_START                49
 #define GET_AITER                        50
 #define GET_ANEXT                        51
@@ -37,14 +36,15 @@ extern "C" {
 #define GET_YIELD_FROM_ITER              69
 #define PRINT_EXPR                       70
 #define LOAD_BUILD_CLASS                 71
-#define YIELD_FROM                       72
 #define GET_AWAITABLE                    73
 #define LOAD_ASSERTION_ERROR             74
+#define RETURN_GENERATOR                 75
 #define LIST_TO_TUPLE                    82
 #define RETURN_VALUE                     83
 #define IMPORT_STAR                      84
 #define SETUP_ANNOTATIONS                85
 #define YIELD_VALUE                      86
+#define PREP_RERAISE_STAR                88
 #define POP_EXCEPT                       89
 #define HAVE_ARGUMENT                    90
 #define STORE_NAME                       90
@@ -80,20 +80,22 @@ extern "C" {
 #define COPY                            120
 #define JUMP_IF_NOT_EXC_MATCH           121
 #define BINARY_OP                       122
+#define SEND                            123
 #define LOAD_FAST                       124
 #define STORE_FAST                      125
 #define DELETE_FAST                     126
-#define GEN_START                       129
+#define JUMP_IF_NOT_EG_MATCH            127
+#define POP_JUMP_IF_NOT_NONE            128
+#define POP_JUMP_IF_NONE                129
 #define RAISE_VARARGS                   130
-#define CALL_FUNCTION                   131
 #define MAKE_FUNCTION                   132
 #define BUILD_SLICE                     133
+#define JUMP_NO_INTERRUPT               134
 #define MAKE_CELL                       135
 #define LOAD_CLOSURE                    136
 #define LOAD_DEREF                      137
 #define STORE_DEREF                     138
 #define DELETE_DEREF                    139
-#define CALL_FUNCTION_KW                141
 #define CALL_FUNCTION_EX                142
 #define EXTENDED_ARG                    144
 #define LIST_APPEND                     145
@@ -101,17 +103,19 @@ extern "C" {
 #define MAP_ADD                         147
 #define LOAD_CLASSDEREF                 148
 #define COPY_FREE_VARS                  149
+#define RESUME                          151
 #define MATCH_CLASS                     152
 #define FORMAT_VALUE                    155
 #define BUILD_CONST_KEY_MAP             156
 #define BUILD_STRING                    157
 #define LOAD_METHOD                     160
-#define CALL_METHOD                     161
 #define LIST_EXTEND                     162
 #define SET_UPDATE                      163
 #define DICT_MERGE                      164
 #define DICT_UPDATE                     165
-#define CALL_METHOD_KW                  166
+#define PRECALL_METHOD                  168
+#define CALL_NO_KW                      169
+#define CALL_KW                         170
 #define BINARY_OP_ADAPTIVE                7
 #define BINARY_OP_ADD_INT                 8
 #define BINARY_OP_ADD_FLOAT              13
@@ -121,50 +125,59 @@ extern "C" {
 #define BINARY_OP_MULTIPLY_FLOAT         18
 #define BINARY_OP_SUBTRACT_INT           19
 #define BINARY_OP_SUBTRACT_FLOAT         20
-#define BINARY_SUBSCR_ADAPTIVE           21
-#define BINARY_SUBSCR_GETITEM            22
-#define BINARY_SUBSCR_LIST_INT           23
-#define BINARY_SUBSCR_TUPLE_INT          24
-#define BINARY_SUBSCR_DICT               26
-#define STORE_SUBSCR_ADAPTIVE            27
-#define STORE_SUBSCR_LIST_INT            28
-#define STORE_SUBSCR_DICT                29
-#define CALL_FUNCTION_ADAPTIVE           34
-#define CALL_FUNCTION_BUILTIN_O          36
-#define CALL_FUNCTION_BUILTIN_FAST       38
-#define CALL_FUNCTION_LEN                39
-#define CALL_FUNCTION_ISINSTANCE         40
-#define CALL_FUNCTION_PY_SIMPLE          41
-#define JUMP_ABSOLUTE_QUICK              42
-#define LOAD_ATTR_ADAPTIVE               43
-#define LOAD_ATTR_INSTANCE_VALUE         44
-#define LOAD_ATTR_WITH_HINT              45
-#define LOAD_ATTR_SLOT                   46
-#define LOAD_ATTR_MODULE                 47
-#define LOAD_GLOBAL_ADAPTIVE             48
-#define LOAD_GLOBAL_MODULE               55
-#define LOAD_GLOBAL_BUILTIN              56
-#define LOAD_METHOD_ADAPTIVE             57
-#define LOAD_METHOD_CACHED               58
-#define LOAD_METHOD_CLASS                59
-#define LOAD_METHOD_MODULE               62
-#define LOAD_METHOD_NO_DICT              63
-#define STORE_ATTR_ADAPTIVE              64
-#define STORE_ATTR_INSTANCE_VALUE        65
-#define STORE_ATTR_SLOT                  66
-#define STORE_ATTR_WITH_HINT             67
-#define LOAD_FAST__LOAD_FAST             75
-#define STORE_FAST__LOAD_FAST            76
-#define LOAD_FAST__LOAD_CONST            77
-#define LOAD_CONST__LOAD_FAST            78
-#define STORE_FAST__STORE_FAST           79
+#define COMPARE_OP_ADAPTIVE              21
+#define COMPARE_OP_FLOAT_JUMP            22
+#define COMPARE_OP_INT_JUMP              23
+#define COMPARE_OP_STR_JUMP              24
+#define BINARY_SUBSCR_ADAPTIVE           26
+#define BINARY_SUBSCR_GETITEM            27
+#define BINARY_SUBSCR_LIST_INT           28
+#define BINARY_SUBSCR_TUPLE_INT          29
+#define BINARY_SUBSCR_DICT               34
+#define STORE_SUBSCR_ADAPTIVE            36
+#define STORE_SUBSCR_LIST_INT            37
+#define STORE_SUBSCR_DICT                38
+#define CALL_NO_KW_ADAPTIVE              39
+#define CALL_NO_KW_BUILTIN_O             40
+#define CALL_NO_KW_BUILTIN_FAST          41
+#define CALL_NO_KW_LEN                   42
+#define CALL_NO_KW_ISINSTANCE            43
+#define CALL_NO_KW_PY_SIMPLE             44
+#define CALL_NO_KW_LIST_APPEND           45
+#define CALL_NO_KW_METHOD_DESCRIPTOR_O   46
+#define CALL_NO_KW_TYPE_1                47
+#define CALL_NO_KW_BUILTIN_CLASS_1       48
+#define CALL_NO_KW_METHOD_DESCRIPTOR_FAST  55
+#define JUMP_ABSOLUTE_QUICK              56
+#define LOAD_ATTR_ADAPTIVE               57
+#define LOAD_ATTR_INSTANCE_VALUE         58
+#define LOAD_ATTR_WITH_HINT              59
+#define LOAD_ATTR_SLOT                   62
+#define LOAD_ATTR_MODULE                 63
+#define LOAD_GLOBAL_ADAPTIVE             64
+#define LOAD_GLOBAL_MODULE               65
+#define LOAD_GLOBAL_BUILTIN              66
+#define LOAD_METHOD_ADAPTIVE             67
+#define LOAD_METHOD_CACHED               72
+#define LOAD_METHOD_CLASS                76
+#define LOAD_METHOD_MODULE               77
+#define LOAD_METHOD_NO_DICT              78
+#define STORE_ATTR_ADAPTIVE              79
+#define STORE_ATTR_INSTANCE_VALUE        80
+#define STORE_ATTR_SLOT                  81
+#define STORE_ATTR_WITH_HINT             87
+#define LOAD_FAST__LOAD_FAST            131
+#define STORE_FAST__LOAD_FAST           140
+#define LOAD_FAST__LOAD_CONST           141
+#define LOAD_CONST__LOAD_FAST           143
+#define STORE_FAST__STORE_FAST          150
 #define DO_TRACING                      255
 #ifdef NEED_OPCODE_JUMP_TABLES
 static uint32_t _PyOpcode_RelativeJump[8] = {
     0U,
     0U,
     536870912U,
-    16384U,
+    134234112U,
     0U,
     0U,
     0U,
@@ -174,8 +187,8 @@ static uint32_t _PyOpcode_Jump[8] = {
     0U,
     0U,
     536870912U,
-    34586624U,
-    0U,
+    2316288000U,
+    67U,
     0U,
     0U,
     0U,

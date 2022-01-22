@@ -474,7 +474,7 @@ PyBuffer_IsContiguous(const Py_buffer *view, char order)
 
 
 void*
-PyBuffer_GetPointer(Py_buffer *view, Py_ssize_t *indices)
+PyBuffer_GetPointer(const Py_buffer *view, const Py_ssize_t *indices)
 {
     char* pointer;
     int i;
@@ -564,12 +564,13 @@ done:
 }
 
 int
-PyBuffer_FromContiguous(Py_buffer *view, void *buf, Py_ssize_t len, char fort)
+PyBuffer_FromContiguous(const Py_buffer *view, const void *buf, Py_ssize_t len, char fort)
 {
     int k;
     void (*addone)(int, Py_ssize_t *, const Py_ssize_t *);
     Py_ssize_t *indices, elements;
-    char *src, *ptr;
+    char *ptr;
+    const char *src;
 
     if (len > view->len) {
         len = view->len;

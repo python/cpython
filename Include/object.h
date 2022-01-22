@@ -334,6 +334,12 @@ given type object has a specified feature.
 
 #ifndef Py_LIMITED_API
 
+/* Placement of dict (and values) pointers are managed by the VM, not by the type.
+ * The VM will automatically set tp_dictoffset. Should not be used for variable sized
+ * classes, such as classes that extend tuple.
+ */
+#define Py_TPFLAGS_MANAGED_DICT (1 << 4)
+
 /* Set if instances of the type object are treated as sequences for pattern matching */
 #define Py_TPFLAGS_SEQUENCE (1 << 5)
 /* Set if instances of the type object are treated as mappings for pattern matching */
@@ -748,6 +754,8 @@ static inline int _PyType_Check(PyObject *op) {
     return PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_TYPE_SUBCLASS);
 }
 #define PyType_Check(op) _PyType_Check(_PyObject_CAST(op))
+
+#define _PyType_CAST(op) (assert(PyType_Check(op)), (PyTypeObject*)(op))
 
 static inline int _PyType_CheckExact(PyObject *op) {
     return Py_IS_TYPE(op, &PyType_Type);

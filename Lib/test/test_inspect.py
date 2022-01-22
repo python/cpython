@@ -107,6 +107,9 @@ class IsTestBase(unittest.TestCase):
                 continue
             self.assertFalse(other(obj), 'not %s(%s)' % (other.__name__, exp))
 
+    def test__all__(self):
+        support.check__all__(self, inspect, not_exported=("k", "v", "mod_dict", "modulesbyfile"))
+
 def generator_function_example(self):
     for i in range(2):
         yield i
@@ -132,8 +135,8 @@ class TestPredicates(IsTestBase):
         self.istest(inspect.iscode, 'mod.spam.__code__')
         try:
             1/0
-        except:
-            tb = sys.exc_info()[2]
+        except Exception as e:
+            tb = e.__traceback__
             self.istest(inspect.isframe, 'tb.tb_frame')
             self.istest(inspect.istraceback, 'tb')
             if hasattr(types, 'GetSetDescriptorType'):
@@ -1214,6 +1217,23 @@ class TestClassesAndFunctions(unittest.TestCase):
                 return 'spam'
         self.assertIn(('eggs', 'scrambled'), inspect.getmembers(A))
         self.assertIn(('eggs', 'spam'), inspect.getmembers(A()))
+
+    def test_getmembers_static(self):
+        class A:
+            @property
+            def name(self):
+                raise NotImplementedError
+            @types.DynamicClassAttribute
+            def eggs(self):
+                raise NotImplementedError
+
+        a = A()
+        instance_members = inspect.getmembers_static(a)
+        class_members = inspect.getmembers_static(A)
+        self.assertIn(('name', inspect.getattr_static(a, 'name')), instance_members)
+        self.assertIn(('eggs', inspect.getattr_static(a, 'eggs')), instance_members)
+        self.assertIn(('name', inspect.getattr_static(A, 'name')), class_members)
+        self.assertIn(('eggs', inspect.getattr_static(A, 'eggs')), class_members)
 
     def test_getmembers_with_buggy_dir(self):
         class M(type):
@@ -4130,6 +4150,17 @@ class TestSignatureDefinitions(unittest.TestCase):
         func.__text_signature__ = '($self, a, b=1, /, *args, c, d=2, **kwargs)'
         sig = inspect.signature(func)
         self.assertEqual(str(sig), '(self, a, b=1, /, *args, c, d=2, **kwargs)')
+
+    def test_base_class_have_text_signature(self):
+        # see issue 43118
+        from test.ann_module7 import BufferedReader
+        class MyBufferedReader(BufferedReader):
+            """buffer reader class."""
+
+        text_signature = BufferedReader.__text_signature__
+        self.assertEqual(text_signature, '(raw, buffer_size=DEFAULT_BUFFER_SIZE)')
+        sig = inspect.signature(MyBufferedReader)
+        self.assertEqual(str(sig), '(raw, buffer_size=8192)')
 
 
 class NTimesUnwrappable:

@@ -1,8 +1,8 @@
 import unittest
 from importlib import resources
 
-from . import data01
-from .resources import util
+from test.test_importlib import data01
+from test.test_importlib.resources import util
 
 
 class ContentsTests:
@@ -15,8 +15,8 @@ class ContentsTests:
     }
 
     def test_contents(self):
-        with util.suppress_known_deprecation():
-            assert self.expected <= set(resources.contents(self.data))
+        contents = {path.name for path in resources.files(self.data).iterdir()}
+        assert self.expected <= contents
 
 
 class ContentsDiskTests(ContentsTests, unittest.TestCase):
@@ -38,6 +38,10 @@ class ContentsNamespaceTests(ContentsTests, unittest.TestCase):
     }
 
     def setUp(self):
-        from . import namespacedata01
+        from test.test_importlib import namespacedata01
 
         self.data = namespacedata01
+
+
+if __name__ == '__main__':
+    unittest.main()

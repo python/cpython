@@ -5,10 +5,13 @@
    This is used directly by Tools/scripts/freeze_modules.py, and indirectly by "make regen-frozen".
 
    See Python/frozen.c for more info.
+
+   Keep this file in sync with Programs/_freeze_module.py.
 */
 
 #include <Python.h>
 #include <marshal.h>
+#include "pycore_fileutils.h"     // _Py_stat_struct
 #include <pycore_import.h>
 
 #include <stdio.h>

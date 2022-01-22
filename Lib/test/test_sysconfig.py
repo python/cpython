@@ -102,6 +102,10 @@ class TestSysConfig(unittest.TestCase):
 
     def test_get_path(self):
         config_vars = get_config_vars()
+        if os.name == 'nt':
+            # On Windows, we replace the native platlibdir name with the
+            # default so that POSIX schemes resolve correctly
+            config_vars = config_vars | {'platlibdir': 'lib'}
         for scheme in _INSTALL_SCHEMES:
             for name in _INSTALL_SCHEMES[scheme]:
                 expected = _INSTALL_SCHEMES[scheme][name].format(**config_vars)
@@ -408,6 +412,8 @@ class TestSysConfig(unittest.TestCase):
                      'EXT_SUFFIX required for this test')
     def test_EXT_SUFFIX_in_vars(self):
         import _imp
+        if not _imp.extension_suffixes():
+            self.skipTest("stub loader has no suffixes")
         vars = sysconfig.get_config_vars()
         self.assertIsNotNone(vars['SO'])
         self.assertEqual(vars['SO'], vars['EXT_SUFFIX'])

@@ -34,7 +34,8 @@ def EXITCODE(exitcode):
 
 
 def SIGNAL(signum):
-    assert 1 <= signum <= 68
+    if not 1 <= signum <= 68:
+        raise AssertionError(f'invalid signum {signum}')
     return 32768 - signum
 
 

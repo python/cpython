@@ -89,7 +89,7 @@ def get_makefile_var(builddir, name):
     regex = re.compile(rf'^{name} *=\s*(.*?)\s*$')
     filename = os.path.join(builddir, 'Makefile')
     try:
-        infile = open(filename)
+        infile = open(filename, encoding='utf-8')
     except FileNotFoundError:
         return None
     with infile:
@@ -125,7 +125,7 @@ def prepare(script=None, outdir=None):
     if script:
         scriptfile = os.path.join(outdir, 'app.py')
         print(f'creating the script to be frozen at {scriptfile}')
-        with open(scriptfile, 'w') as outfile:
+        with open(scriptfile, 'w', encoding='utf-8') as outfile:
             outfile.write(script)
 
     # Make a copy of the repo to avoid affecting the current build

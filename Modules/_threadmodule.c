@@ -3,10 +3,10 @@
 /* Interface to Sjoerd's portable C thread library */
 
 #include "Python.h"
-#include "pycore_interp.h"        // _PyInterpreterState.num_threads
+#include "pycore_interp.h"        // _PyInterpreterState.threads.count
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pylifecycle.h"
-#include "pycore_pystate.h"       // _PyThreadState_Init()
+#include "pycore_pystate.h"       // _PyThreadState_SetCurrent()
 #include <stddef.h>               // offsetof()
 #include "structmember.h"         // PyMemberDef
 
@@ -28,6 +28,7 @@ static struct PyModuleDef thread_module;
 
 
 typedef struct {
+    PyTypeObject *excepthook_type;
     PyTypeObject *lock_type;
     PyTypeObject *local_type;
     PyTypeObject *local_dummy_type;
@@ -1087,9 +1088,9 @@ thread_run(void *boot_raw)
 #else
     tstate->native_thread_id = 0;
 #endif
-    _PyThreadState_Init(tstate);
+    _PyThreadState_SetCurrent(tstate);
     PyEval_AcquireThread(tstate);
-    tstate->interp->num_threads++;
+    tstate->interp->threads.count++;
 
     PyObject *res = PyObject_Call(boot->func, boot->args, boot->kwargs);
     if (res == NULL) {
@@ -1105,7 +1106,7 @@ thread_run(void *boot_raw)
     }
 
     thread_bootstate_free(boot);
-    tstate->interp->num_threads--;
+    tstate->interp->threads.count--;
     PyThreadState_Clear(tstate);
     _PyThreadState_DeleteCurrent(tstate);
 
@@ -1279,7 +1280,7 @@ static PyObject *
 thread__count(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return PyLong_FromLong(interp->num_threads);
+    return PyLong_FromLong(interp->threads.count);
 }
 
 PyDoc_STRVAR(_count_doc,
@@ -1473,8 +1474,6 @@ PyDoc_STRVAR(ExceptHookArgs__doc__,
 \n\
 Type used to pass arguments to threading.excepthook.");
 
-static PyTypeObject ExceptHookArgsType;
-
 static PyStructSequence_Field ExceptHookArgs_fields[] = {
     {"exc_type", "Exception type"},
     {"exc_value", "Exception value"},
@@ -1492,9 +1491,11 @@ static PyStructSequence_Desc ExceptHookArgs_desc = {
 
 
 static PyObject *
-thread_excepthook(PyObject *self, PyObject *args)
+thread_excepthook(PyObject *module, PyObject *args)
 {
-    if (!Py_IS_TYPE(args, &ExceptHookArgsType)) {
+    thread_module_state *state = get_thread_state(module);
+
+    if (!Py_IS_TYPE(args, state->excepthook_type)) {
         PyErr_SetString(PyExc_TypeError,
                         "_thread.excepthook argument type "
                         "must be ExceptHookArgs");
@@ -1629,18 +1630,17 @@ thread_module_exec(PyObject *module)
         return -1;
     }
 
-    if (ExceptHookArgsType.tp_name == NULL) {
-        if (PyStructSequence_InitType2(&ExceptHookArgsType,
-                                       &ExceptHookArgs_desc) < 0) {
-            return -1;
-        }
-    }
-
     // Add module attributes
     if (PyDict_SetItemString(d, "error", ThreadError) < 0) {
         return -1;
     }
-    if (PyModule_AddType(module, &ExceptHookArgsType) < 0) {
+
+    // _ExceptHookArgs type
+    state->excepthook_type = PyStructSequence_NewType(&ExceptHookArgs_desc);
+    if (state->excepthook_type == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(module, state->excepthook_type) < 0) {
         return -1;
     }
 
@@ -1664,6 +1664,7 @@ static int
 thread_module_traverse(PyObject *module, visitproc visit, void *arg)
 {
     thread_module_state *state = get_thread_state(module);
+    Py_VISIT(state->excepthook_type);
     Py_VISIT(state->lock_type);
     Py_VISIT(state->local_type);
     Py_VISIT(state->local_dummy_type);
@@ -1674,6 +1675,7 @@ static int
 thread_module_clear(PyObject *module)
 {
     thread_module_state *state = get_thread_state(module);
+    Py_CLEAR(state->excepthook_type);
     Py_CLEAR(state->lock_type);
     Py_CLEAR(state->local_type);
     Py_CLEAR(state->local_dummy_type);

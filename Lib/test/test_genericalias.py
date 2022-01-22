@@ -13,6 +13,7 @@ from contextlib import AbstractContextManager, AbstractAsyncContextManager
 from contextvars import ContextVar, Token
 from dataclasses import Field
 from functools import partial, partialmethod, cached_property
+from graphlib import TopologicalSorter
 from mailbox import Mailbox, _PartialFile
 try:
     import ctypes
@@ -56,6 +57,7 @@ class BaseTest(unittest.TestCase):
                      OrderedDict, Counter, UserDict, UserList,
                      Pattern, Match,
                      partial, partialmethod, cached_property,
+                     TopologicalSorter,
                      AbstractContextManager, AbstractAsyncContextManager,
                      Awaitable, Coroutine,
                      AsyncIterable, AsyncIterator,
