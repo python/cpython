@@ -6503,24 +6503,29 @@ PyType_Ready(PyTypeObject *type)
 static int
 add_subclass(PyTypeObject *base, PyTypeObject *type)
 {
-    int result = -1;
-    PyObject *dict, *key, *newobj;
+    PyObject *key = PyLong_FromVoidPtr((void *) type);
+    if (key == NULL)
+        return -1;
 
-    dict = base->tp_subclasses;
+    PyObject *ref = PyWeakref_NewRef((PyObject *)type, NULL);
+    if (ref == NULL) {
+        Py_DECREF(key);
+        return -1;
+    }
+
+    // Only get tp_subclasses after creating the key and value.
+    // PyWeakref_NewRef() can trigger a garbage collection which can execute
+    // arbitrary Python code and so modify base->tp_subclasses.
+    PyObject *dict = base->tp_subclasses;
     if (dict == NULL) {
         base->tp_subclasses = dict = PyDict_New();
         if (dict == NULL)
             return -1;
     }
     assert(PyDict_CheckExact(dict));
-    key = PyLong_FromVoidPtr((void *) type);
-    if (key == NULL)
-        return -1;
-    newobj = PyWeakref_NewRef((PyObject *)type, NULL);
-    if (newobj != NULL) {
-        result = PyDict_SetItem(dict, key, newobj);
-        Py_DECREF(newobj);
-    }
+
+    int result = PyDict_SetItem(dict, key, ref);
+    Py_DECREF(ref);
     Py_DECREF(key);
     return result;
 }
