@@ -1643,7 +1643,7 @@ inplace_divrem1(digit *pout, digit *pin, Py_ssize_t size, digit n)
         twodigits dividend;
         dividend = ((twodigits)remainder << PyLong_SHIFT) | pin[size];
         digit quotient;
-        quotient = dividend / n;
+        quotient = (digit)(dividend / n);
         remainder = dividend % n;
         pout[size] = quotient;
     }
