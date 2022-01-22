@@ -4079,10 +4079,12 @@ type_dealloc_common(PyTypeObject *type)
 void
 _PyStaticType_Dealloc(PyTypeObject *type)
 {
-    // _PyStaticType_Dealloc() must not be called if a type has subtypes.
+    // If a type still has subtypes, it cannot be deallocated.
     // A subtype can inherit attributes and methods of its parent type,
     // and a type must no longer be used once it's deallocated.
-    assert(type->tp_subclasses == NULL);
+    if (type->tp_subclasses != NULL) {
+        return;
+    }
 
     type_dealloc_common(type);
 
