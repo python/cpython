@@ -4277,7 +4277,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
                 goto Done;
             }
             else if (Py_SIZE(b) == 0) {
-                z = (PyLongObject *)PyLong_FromSsize_t(Py_SIZE(a));
+                z = (PyLongObject *)_PyLong_GetOne();
                 Py_INCREF(z);
                 goto Done;
             }
