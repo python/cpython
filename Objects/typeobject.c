@@ -4071,8 +4071,6 @@ type_dealloc_common(PyTypeObject *type)
         remove_all_subclasses(type, type->tp_bases);
         PyErr_Restore(tp, val, tb);
     }
-
-    PyObject_ClearWeakRefs((PyObject *)type);
 }
 
 
@@ -4094,6 +4092,11 @@ _PyStaticType_Dealloc(PyTypeObject *type)
     Py_CLEAR(type->tp_cache);
     // type->tp_subclasses is NULL
 
+    // PyObject_ClearWeakRefs() raises an exception if Py_REFCNT() != 0
+    if (Py_REFCNT(type) == 0) {
+        PyObject_ClearWeakRefs((PyObject *)type);
+    }
+
     type->tp_flags &= ~Py_TPFLAGS_READY;
 }
 
@@ -4101,11 +4104,16 @@ _PyStaticType_Dealloc(PyTypeObject *type)
 static void
 type_dealloc(PyTypeObject *type)
 {
-    /* Assert this is a heap-allocated type object */
+    // Assert this is a heap-allocated type object
     _PyObject_ASSERT((PyObject *)type, type->tp_flags & Py_TPFLAGS_HEAPTYPE);
+
     _PyObject_GC_UNTRACK(type);
 
     type_dealloc_common(type);
+
+    // PyObject_ClearWeakRefs() raises an exception if Py_REFCNT() != 0
+    assert(Py_REFCNT(type) == 0);
+    PyObject_ClearWeakRefs((PyObject *)type);
 
     Py_XDECREF(type->tp_base);
     Py_XDECREF(type->tp_dict);
