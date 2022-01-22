@@ -3,9 +3,8 @@ import unittest
 import uuid
 import pathlib
 
-from . import data01
-from . import zipdata01, zipdata02
-from .resources import util
+from test.test_importlib import data01, zipdata01, zipdata02
+from test.test_importlib.resources import util
 from importlib import resources, import_module
 from test.support import import_helper
 from test.support.os_helper import unlink
