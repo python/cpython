@@ -1,5 +1,6 @@
 """Tests for queues.py"""
 
+import unittest
 from unittest import mock
 
 import asyncio
