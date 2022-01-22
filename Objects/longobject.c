@@ -4277,7 +4277,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
                 goto Done;
             }
             else if (Py_SIZE(b) == 0) {
-                z = (PyLongObject *)get_small_int((sdigit)Py_SIZE(a));
+                z = (PyLongObject *)PyLong_FromSsize_t(Py_SIZE(a));
                 Py_INCREF(z);
                 goto Done;
             }
@@ -4728,7 +4728,7 @@ long_lshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
             z->ob_digit[wordshift] = (digit)(Py_SIZE(a) << remshift);
             return (PyObject *)maybe_small_long(z);
         }
-        z = (PyLongObject *)get_small_int((sdigit)Py_SIZE(a));
+        z = (PyLongObject *)PyLong_FromSsize_t(Py_SIZE(a));
         Py_INCREF(z);
         return (PyObject *)z;
     }
