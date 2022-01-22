@@ -4137,16 +4137,17 @@ _PyType_GetSubclasses(PyTypeObject *self)
         return NULL;
     }
 
-    // Hold a strong reference to tp_subclasses while iterating on it
-    PyObject *dict = Py_XNewRef(self->tp_subclasses);
-    if (dict == NULL) {
+    PyObject *subclasses = self->tp_subclasses;  // borrowed ref
+    if (subclasses == NULL) {
         return list;
     }
-    assert(PyDict_CheckExact(dict));
+    assert(PyDict_CheckExact(subclasses));
+    // The loop cannot modify tp_subclasses, there is no need
+    // to hold a strong reference (use a borrowed reference).
 
     Py_ssize_t i = 0;
     PyObject *ref;  // borrowed ref
-    while (PyDict_Next(dict, &i, NULL, &ref)) {
+    while (PyDict_Next(subclasses, &i, NULL, &ref)) {
         assert(PyWeakref_CheckRef(ref));
         PyObject *obj = PyWeakref_GET_OBJECT(ref);  // borrowed ref
         if (obj == Py_None) {
@@ -4154,12 +4155,10 @@ _PyType_GetSubclasses(PyTypeObject *self)
         }
         assert(PyType_Check(obj));
         if (PyList_Append(list, obj) < 0) {
-            Py_CLEAR(list);
-            goto done;
+            Py_DECREF(list);
+            return NULL;
         }
     }
-done:
-    Py_DECREF(dict);
     return list;
 }
 
@@ -6568,6 +6567,13 @@ remove_subclass(PyTypeObject *base, PyTypeObject *type)
         PyErr_Clear();
     }
     Py_XDECREF(key);
+
+    if (PyDict_Size(dict) == 0) {
+        // Delete the dictionary to save memory. _PyStaticType_Dealloc()
+        // callers also test if tp_subclasses is NULL to check if a static type
+        // has no subclass.
+        Py_CLEAR(base->tp_subclasses);
+    }
 }
 
 static void
