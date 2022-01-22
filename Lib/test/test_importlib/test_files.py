@@ -3,8 +3,8 @@ import unittest
 
 from importlib import resources
 from importlib.abc import Traversable
-from . import data01
-from .resources import util
+from test.test_importlib import data01
+from test.test_importlib.resources import util
 
 
 class FilesTests:
@@ -37,7 +37,7 @@ class OpenZipTests(FilesTests, util.ZipSetup, unittest.TestCase):
 
 class OpenNamespaceTests(FilesTests, unittest.TestCase):
     def setUp(self):
-        from . import namespacedata01
+        from test.test_importlib import namespacedata01
 
         self.data = namespacedata01
 
