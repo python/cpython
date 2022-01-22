@@ -4271,7 +4271,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
                 z = _PyLong_NewFillZero((j = i / PyLong_SHIFT) + 1);
                 if (z == NULL)
                     goto Error;
-                /* set the last digit of ob_digit to 1 << (b % PyLong_SHIFT) */
+                /* set the last digit of ob_digit to 1 << (i % PyLong_SHIFT) */
                 z->ob_digit[j] = 1 << (i - j*PyLong_SHIFT);
                 if (Py_SIZE(a) < 0)
                     Py_SET_SIZE(z, (j + 1) * (-(i & 1) | 1));
