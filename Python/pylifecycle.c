@@ -740,9 +740,8 @@ pycore_init_types(PyInterpreterState *interp)
         return status;
     }
 
-    status = _PyExc_InitTypes(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
+    if (_PyExc_InitTypes(interp) < 0) {
+        return _PyStatus_ERR("failed to initialize an exception type");
     }
 
     status = _PyExc_InitGlobalObjects(interp);
@@ -790,9 +789,8 @@ pycore_init_builtins(PyThreadState *tstate)
     Py_INCREF(builtins_dict);
     interp->builtins = builtins_dict;
 
-    PyStatus status = _PyBuiltins_AddExceptions(bimod);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
+    if (_PyBuiltins_AddExceptions(bimod) < 0) {
+        return _PyStatus_ERR("failed to add exceptions to builtins");
     }
 
     interp->builtins_copy = PyDict_Copy(interp->builtins);
