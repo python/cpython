@@ -2,8 +2,8 @@ import io
 import unittest
 
 from importlib import resources
-from test.test_importlib import data01
-from test.test_importlib.resources import util
+from . import data01
+from .resources import util
 
 
 class CommonTests(util.CommonTests, unittest.TestCase):
@@ -58,5 +58,5 @@ class PathZipTests(PathTests, util.ZipSetup, unittest.TestCase):
             path.unlink()
 
 
-if __name__ == '__main__':
-    unittest.main()
+# This module is not suitable to be executed directly.
+# Use appropriate test tool.

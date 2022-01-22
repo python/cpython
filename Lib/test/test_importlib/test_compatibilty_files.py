@@ -8,7 +8,7 @@ from importlib.resources._adapters import (
     wrap_spec,
 )
 
-from test.test_importlib.resources import util
+from . import util
 
 
 class CompatibilityFilesTests(unittest.TestCase):
@@ -102,5 +102,5 @@ class CompatibilityFilesNoReaderTests(unittest.TestCase):
         self.assertIsInstance(self.files / 'a', CompatibilityFiles.OrphanPath)
 
 
-if __name__ == '__main__':
-    unittest.main()
+# This module is not suitable to be executed directly.
+# Use appropriate test tool.

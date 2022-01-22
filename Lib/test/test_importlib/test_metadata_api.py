@@ -5,7 +5,7 @@ import warnings
 import importlib
 import contextlib
 
-from test.test_importlib import fixtures
+from . import fixtures
 from importlib.metadata import (
     Distribution,
     PackageNotFoundError,
@@ -315,5 +315,5 @@ class InvalidateCache(unittest.TestCase):
         importlib.invalidate_caches()
 
 
-if __name__ == '__main__':
-    unittest.main()
+# This module is not suitable to be executed directly.
+# Use appropriate test tool.

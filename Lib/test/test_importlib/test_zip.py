@@ -1,7 +1,7 @@
 import sys
 import unittest
 
-from test.test_importlib import fixtures
+from . import fixtures
 from importlib.metadata import (
     PackageNotFoundError,
     distribution,
@@ -61,5 +61,5 @@ class TestEgg(TestZip):
         dist = distribution('example')
         assert dist._normalized_name == 'example'
 
-if __name__ == '__main__':
-    unittest.main()
+# This module is not suitable to be executed directly.
+# Use appropriate test tool.

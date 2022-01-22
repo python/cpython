@@ -1,8 +1,8 @@
 import unittest
 
 from importlib import resources
-from test.test_importlib import data01
-from test.test_importlib.resources import util
+from . import data01
+from .resources import util
 
 
 class CommonBinaryTests(util.CommonTests, unittest.TestCase):
@@ -68,7 +68,7 @@ class OpenDiskTests(OpenTests, unittest.TestCase):
 
 class OpenDiskNamespaceTests(OpenTests, unittest.TestCase):
     def setUp(self):
-        from test.test_importlib import namespacedata01
+        from . import namespacedata01
 
         self.data = namespacedata01
 
@@ -77,5 +77,5 @@ class OpenZipTests(OpenTests, util.ZipSetup, unittest.TestCase):
     pass
 
 
-if __name__ == '__main__':
-    unittest.main()
+# This module is not suitable to be executed directly.
+# Use appropriate test tool.
