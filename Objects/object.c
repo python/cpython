@@ -4,6 +4,7 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
+#include "pycore_context.h"       // _PyContextTokenMissing_Type
 #include "pycore_dict.h"          // _PyObject_MakeDictFromInstanceAttributes()
 #include "pycore_floatobject.h"   // _PyFloat_DebugMallocStats()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
@@ -1853,6 +1854,9 @@ static PyTypeObject* static_types[] = {
     &PyClassMethod_Type,
     &PyCode_Type,
     &PyComplex_Type,
+    &PyContextToken_Type,
+    &PyContextVar_Type,
+    &PyContext_Type,
     &PyCoro_Type,
     &PyDictItems_Type,
     &PyDictIterItem_Type,
@@ -1867,6 +1871,7 @@ static PyTypeObject* static_types[] = {
     &PyDict_Type,
     &PyEllipsis_Type,
     &PyEnum_Type,
+    &PyFilter_Type,
     &PyFloat_Type,
     &PyFrame_Type,
     &PyFrozenSet_Type,
@@ -1879,6 +1884,7 @@ static PyTypeObject* static_types[] = {
     &PyList_Type,
     &PyLongRangeIter_Type,
     &PyLong_Type,
+    &PyMap_Type,
     &PyMemberDescr_Type,
     &PyMemoryView_Type,
     &PyMethodDescr_Type,
@@ -1905,12 +1911,21 @@ static PyTypeObject* static_types[] = {
     &PyUnicodeIter_Type,
     &PyUnicode_Type,
     &PyWrapperDescr_Type,
+    &PyZip_Type,
     &Py_GenericAliasType,
     &_PyAnextAwaitable_Type,
     &_PyAsyncGenASend_Type,
     &_PyAsyncGenAThrow_Type,
     &_PyAsyncGenWrappedValue_Type,
+    &_PyContextTokenMissing_Type,
     &_PyCoroWrapper_Type,
+    &_PyHamtItems_Type,
+    &_PyHamtKeys_Type,
+    &_PyHamtValues_Type,
+    &_PyHamt_ArrayNode_Type,
+    &_PyHamt_BitmapNode_Type,
+    &_PyHamt_CollisionNode_Type,
+    &_PyHamt_Type,
     &_PyInterpreterID_Type,
     &_PyManagedBuffer_Type,
     &_PyMethodWrapper_Type,
