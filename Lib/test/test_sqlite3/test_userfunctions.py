@@ -483,6 +483,9 @@ class WindowSumInt:
     def finalize(self):
         return self.count
 
+class WindowBogusException(Exception):
+    pass
+
 
 @unittest.skipIf(sqlite.sqlite_version_info < (3, 25, 0),
                  "Requires SQLite 3.25.0 or newer")
@@ -526,13 +529,13 @@ class WindowFunctionTests(unittest.TestCase):
                           self.con.create_window_function,
                           "shouldfail", -100, WindowSumInt)
 
-    @with_tracebacks(['raise effect'])
+    @with_tracebacks(WindowBogusException)
     def test_win_exception_in_method(self):
         # Fixme: "finalize" does not raise correct exception yet
         for meth in ["__init__", "step", "value", "inverse"]:
             with self.subTest(meth=meth):
                 with unittest.mock.patch.object(WindowSumInt, meth,
-                                                side_effect=Exception):
+                                                side_effect=WindowBogusException):
                     name = f"exc_{meth}"
                     self.con.create_window_function(name, 1, WindowSumInt)
                     err_str = f"'{meth}' method raised error"

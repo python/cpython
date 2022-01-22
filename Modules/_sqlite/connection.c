@@ -29,6 +29,8 @@
 #include "prepare_protocol.h"
 #include "util.h"
 
+#include <stdbool.h>
+
 #if SQLITE_VERSION_NUMBER >= 3014000
 #define HAVE_TRACE_V2
 #endif
@@ -1094,27 +1096,26 @@ value_callback(sqlite3_context *context)
                                "not defined";
         const char *err_msg  = "user-defined aggregate's 'value' method "
                                "raised error";
-        int attr_err = PyErr_ExceptionMatches(PyExc_AttributeError);
+        bool attr_err = PyErr_ExceptionMatches(PyExc_AttributeError);
         set_sqlite_error(context, attr_err ? attr_msg : err_msg);
-        goto exit;
+    }
+    else {
+        int rc = _pysqlite_set_result(context, res);
+        Py_DECREF(res);
+        if (rc < 0) {
+            set_sqlite_error(context,
+                             "unable to set result from user-defined "
+                             "aggregate's 'value' method");
+        }
     }
 
-    int rc = _pysqlite_set_result(context, res);
-    Py_DECREF(res);
-    if (rc < 0) {
-        set_sqlite_error(context,
-                         "unable to set result from user-defined aggregate's "
-                         "'value' method");
-        goto exit;
-    }
-
-exit:
     PyGILState_Release(gilstate);
 }
 
 /*[clinic input]
 _sqlite3.Connection.create_window_function as pysqlite_connection_create_window_function
 
+    cls: defining_class
     name: str
         The name of the SQL aggregate window function to be created or
         redefined.
@@ -1135,13 +1136,14 @@ Creates or redefines an aggregate window function. Non-standard.
 
 static PyObject *
 pysqlite_connection_create_window_function_impl(pysqlite_Connection *self,
+                                                PyTypeObject *cls,
                                                 const char *name,
                                                 int num_params,
                                                 PyObject *aggregate_class,
                                                 int deterministic,
                                                 int directonly,
                                                 int innocuous)
-/*[clinic end generated code: output=fbbfad556264ea1e input=877311e540865c3b]*/
+/*[clinic end generated code: output=f36d5595c0c930d5 input=34a9b57a2c411aea]*/
 {
     if (sqlite3_libversion_number() < 3025000) {
         PyErr_SetString(self->NotSupportedError,
@@ -1171,8 +1173,7 @@ pysqlite_connection_create_window_function_impl(pysqlite_Connection *self,
                                             0, 0, 0, 0, 0, 0);
     }
     else {
-        callback_context *ctx = create_callback_context(self->state,
-                                                        aggregate_class);
+        callback_context *ctx = create_callback_context(cls, aggregate_class);
         if (ctx == NULL) {
             return NULL;
         }

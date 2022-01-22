@@ -256,10 +256,11 @@ PyDoc_STRVAR(pysqlite_connection_create_window_function__doc__,
 "    Set to None to clear the window function.");
 
 #define PYSQLITE_CONNECTION_CREATE_WINDOW_FUNCTION_METHODDEF    \
-    {"create_window_function", (PyCFunction)(void(*)(void))pysqlite_connection_create_window_function, METH_FASTCALL|METH_KEYWORDS, pysqlite_connection_create_window_function__doc__},
+    {"create_window_function", (PyCFunction)(void(*)(void))pysqlite_connection_create_window_function, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pysqlite_connection_create_window_function__doc__},
 
 static PyObject *
 pysqlite_connection_create_window_function_impl(pysqlite_Connection *self,
+                                                PyTypeObject *cls,
                                                 const char *name,
                                                 int num_params,
                                                 PyObject *aggregate_class,
@@ -268,13 +269,11 @@ pysqlite_connection_create_window_function_impl(pysqlite_Connection *self,
                                                 int innocuous);
 
 static PyObject *
-pysqlite_connection_create_window_function(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+pysqlite_connection_create_window_function(pysqlite_Connection *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "", "", "deterministic", "directonly", "innocuous", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "create_window_function", 0};
-    PyObject *argsbuf[6];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
+    static _PyArg_Parser _parser = {"siO|$ppp:create_window_function", _keywords, 0};
     const char *name;
     int num_params;
     PyObject *aggregate_class;
@@ -282,55 +281,11 @@ pysqlite_connection_create_window_function(pysqlite_Connection *self, PyObject *
     int directonly = 0;
     int innocuous = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &name, &num_params, &aggregate_class, &deterministic, &directonly, &innocuous)) {
         goto exit;
     }
-    if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("create_window_function", "argument 1", "str", args[0]);
-        goto exit;
-    }
-    Py_ssize_t name_length;
-    name = PyUnicode_AsUTF8AndSize(args[0], &name_length);
-    if (name == NULL) {
-        goto exit;
-    }
-    if (strlen(name) != (size_t)name_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        goto exit;
-    }
-    num_params = _PyLong_AsInt(args[1]);
-    if (num_params == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-    aggregate_class = args[2];
-    if (!noptargs) {
-        goto skip_optional_kwonly;
-    }
-    if (args[3]) {
-        deterministic = PyObject_IsTrue(args[3]);
-        if (deterministic < 0) {
-            goto exit;
-        }
-        if (!--noptargs) {
-            goto skip_optional_kwonly;
-        }
-    }
-    if (args[4]) {
-        directonly = PyObject_IsTrue(args[4]);
-        if (directonly < 0) {
-            goto exit;
-        }
-        if (!--noptargs) {
-            goto skip_optional_kwonly;
-        }
-    }
-    innocuous = PyObject_IsTrue(args[5]);
-    if (innocuous < 0) {
-        goto exit;
-    }
-skip_optional_kwonly:
-    return_value = pysqlite_connection_create_window_function_impl(self, name, num_params, aggregate_class, deterministic, directonly, innocuous);
+    return_value = pysqlite_connection_create_window_function_impl(self, cls, name, num_params, aggregate_class, deterministic, directonly, innocuous);
 
 exit:
     return return_value;
@@ -943,4 +898,4 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-/*[clinic end generated code: output=635579f747369aad input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dcc8ff71a6779d53 input=a9049054013a1b77]*/
