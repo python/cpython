@@ -25,8 +25,9 @@ import sqlite3 as sqlite
 import unittest
 
 from test.support.os_helper import TESTFN, unlink
-from .test_dbapi import memory_database, cx_limit
-from .test_userfunctions import with_tracebacks
+
+from test.test_sqlite3.test_dbapi import memory_database, cx_limit
+from test.test_sqlite3.test_userfunctions import with_tracebacks
 
 
 @contextlib.contextmanager

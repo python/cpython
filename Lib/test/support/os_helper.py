@@ -455,6 +455,17 @@ def create_empty_file(filename):
     os.close(fd)
 
 
+@contextlib.contextmanager
+def open_dir_fd(path):
+    """Open a file descriptor to a directory."""
+    assert os.path.isdir(path)
+    dir_fd = os.open(path, os.O_RDONLY)
+    try:
+        yield dir_fd
+    finally:
+        os.close(dir_fd)
+
+
 def fs_is_case_insensitive(directory):
     """Detects if the file system for the specified directory
     is case-insensitive."""

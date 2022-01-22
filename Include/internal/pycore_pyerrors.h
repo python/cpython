@@ -12,6 +12,7 @@ extern "C" {
 /* runtime lifecycle */
 
 extern PyStatus _PyErr_InitTypes(PyInterpreterState *);
+extern void _PyErr_FiniTypes(PyInterpreterState *);
 
 
 /* other API */
