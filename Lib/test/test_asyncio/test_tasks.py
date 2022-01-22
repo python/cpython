@@ -11,10 +11,10 @@ import re
 import sys
 import textwrap
 import traceback
-import types
 import unittest
 import weakref
 from unittest import mock
+from types import GenericAlias
 
 import asyncio
 from asyncio import coroutines
@@ -107,6 +107,12 @@ class BaseTaskTests:
         self.loop = self.new_test_loop()
         self.loop.set_task_factory(self.new_task)
         self.loop.create_future = lambda: self.new_future(self.loop)
+
+
+    def test_generic_alias(self):
+        task = self.__class__.Task[str]
+        self.assertEqual(task.__args__, (str,))
+        self.assertIsInstance(task, GenericAlias)
 
     def test_task_cancel_message_getter(self):
         async def coro():

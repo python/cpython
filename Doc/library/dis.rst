@@ -596,8 +596,6 @@ iterations of the loop.
     has occurred in a :keyword:`with` statement.
 
     .. versionadded:: 3.9
-    .. versionchanged:: 3.11
-       The ``__exit__`` function is in position 8 of the stack rather than 7.
 
     .. versionchanged:: 3.11
        The ``__exit__`` function is in position 4 of the stack rather than 7.
@@ -942,6 +940,13 @@ All of the following opcodes use their arguments.
    Set bytecode counter to *target*.
 
 
+.. opcode:: JUMP_NO_INTERRUPT (target)
+
+   Set bytecode counter to *target*. Do not check for interrupts.
+
+   .. versionadded:: 3.11
+
+
 .. opcode:: FOR_ITER (delta)
 
    TOS is an :term:`iterator`.  Call its :meth:`~iterator.__next__` method.  If
@@ -1218,6 +1223,14 @@ All of the following opcodes use their arguments.
     * ``3`` After an ``await`` expression
 
    .. versionadded:: 3.11
+
+
+.. opcode:: RETURN_GENERATOR
+
+    Create a generator, coroutine, or async generator from the current frame.
+    Clear the current frame and return the newly created generator.
+
+    .. versionadded:: 3.11
 
 
 .. opcode:: HAVE_ARGUMENT

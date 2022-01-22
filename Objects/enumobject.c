@@ -16,9 +16,10 @@ class reversed "reversedobject *" "&PyReversed_Type"
 typedef struct {
     PyObject_HEAD
     Py_ssize_t en_index;           /* current index of enumeration */
-    PyObject* en_sit;          /* secondary iterator of enumeration */
+    PyObject* en_sit;              /* secondary iterator of enumeration */
     PyObject* en_result;           /* result tuple  */
     PyObject* en_longindex;        /* index for sequences >= PY_SSIZE_T_MAX */
+    PyObject* one;                 /* borrowed reference */
 } enumobject;
 
 
@@ -78,6 +79,7 @@ enum_new_impl(PyTypeObject *type, PyObject *iterable, PyObject *start)
         Py_DECREF(en);
         return NULL;
     }
+    en->one = _PyLong_GetOne();    /* borrowed reference */
     return (PyObject *)en;
 }
 
@@ -86,8 +88,7 @@ static PyObject *
 enumerate_vectorcall(PyObject *type, PyObject *const *args,
                      size_t nargsf, PyObject *kwnames)
 {
-    assert(PyType_Check(type));
-    PyTypeObject *tp = (PyTypeObject *)type;
+    PyTypeObject *tp = _PyType_CAST(type);
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     Py_ssize_t nkwargs = 0;
     if (nargs == 0) {
@@ -157,7 +158,7 @@ enum_next_long(enumobject *en, PyObject* next_item)
     }
     next_index = en->en_longindex;
     assert(next_index != NULL);
-    stepped_up = PyNumber_Add(next_index, _PyLong_GetOne());
+    stepped_up = PyNumber_Add(next_index, en->one);
     if (stepped_up == NULL) {
         Py_DECREF(next_item);
         return NULL;
@@ -371,8 +372,6 @@ static PyObject *
 reversed_vectorcall(PyObject *type, PyObject * const*args,
                 size_t nargsf, PyObject *kwnames)
 {
-    assert(PyType_Check(type));
-
     if (!_PyArg_NoKwnames("reversed", kwnames)) {
         return NULL;
     }
@@ -382,7 +381,7 @@ reversed_vectorcall(PyObject *type, PyObject * const*args,
         return NULL;
     }
 
-    return reversed_new_impl((PyTypeObject *)type, args[0]);
+    return reversed_new_impl(_PyType_CAST(type), args[0]);
 }
 
 static void

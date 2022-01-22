@@ -766,29 +766,22 @@ class EnumType(type):
         super().__delattr__(attr)
 
     def __dir__(cls):
-        # TODO: check for custom __init__, __new__, __format__, __repr__, __str__, __init_subclass__
-        # on object-based enums
+        interesting = set([
+                '__class__', '__contains__', '__doc__', '__getitem__',
+                '__iter__', '__len__', '__members__', '__module__',
+                '__name__', '__qualname__',
+                ]
+                + cls._member_names_
+                )
+        if cls._new_member_ is not object.__new__:
+            interesting.add('__new__')
+        if cls.__init_subclass__ is not object.__init_subclass__:
+            interesting.add('__init_subclass__')
         if cls._member_type_ is object:
-            interesting = set(cls._member_names_)
-            if cls._new_member_ is not object.__new__:
-                interesting.add('__new__')
-            if cls.__init_subclass__ is not object.__init_subclass__:
-                interesting.add('__init_subclass__')
-            for method in ('__init__', '__format__', '__repr__', '__str__'):
-                if getattr(cls, method) not in (getattr(Enum, method), getattr(Flag, method)):
-                    interesting.add(method)
-            return sorted(set([
-                    '__class__', '__contains__', '__doc__', '__getitem__',
-                    '__iter__', '__len__', '__members__', '__module__',
-                    '__name__', '__qualname__',
-                    ]) | interesting
-                    )
+            return sorted(interesting)
         else:
             # return whatever mixed-in data type has
-            return sorted(set(
-                    dir(cls._member_type_)
-                    + cls._member_names_
-                    ))
+            return sorted(set(dir(cls._member_type_)) | interesting)
 
     def __getattr__(cls, name):
         """

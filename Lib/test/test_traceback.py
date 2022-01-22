@@ -18,6 +18,7 @@ import textwrap
 import traceback
 from functools import partial
 
+MODULE_PREFIX = f'{__name__}.' if __name__ == '__main__' else ''
 
 test_code = namedtuple('code', ['co_filename', 'co_name'])
 test_code.co_positions = lambda _: iter([(6, 6, 0, 0)])
@@ -1312,7 +1313,7 @@ class BaseExceptionReportingTests:
         str_value = 'I am X'
         str_name = '.'.join([A.B.X.__module__, A.B.X.__qualname__])
         exp = "%s: %s\n" % (str_name, str_value)
-        self.assertEqual(exp, err)
+        self.assertEqual(exp, MODULE_PREFIX + err)
 
     def test_exception_modulename(self):
         class X(Exception):
@@ -1349,7 +1350,7 @@ class BaseExceptionReportingTests:
         err = self.get_report(X())
         str_value = '<exception str() failed>'
         str_name = '.'.join([X.__module__, X.__qualname__])
-        self.assertEqual(err, f"{str_name}: {str_value}\n")
+        self.assertEqual(MODULE_PREFIX + err, f"{str_name}: {str_value}\n")
 
 
     # #### Exception Groups ####
