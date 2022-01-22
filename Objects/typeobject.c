@@ -718,32 +718,34 @@ mro_hierarchy(PyTypeObject *type, PyObject *temp)
     }
     Py_XDECREF(old_mro);
 
-    /* Obtain a copy of subclasses list to iterate over.
-
-       Otherwise type->tp_subclasses might be altered
-       in the middle of the loop, for example, through a custom mro(),
-       by invoking type_set_bases on some subclass of the type
-       which in turn calls remove_subclass/add_subclass on this type.
-
-       Finally, this makes things simple avoiding the need to deal
-       with dictionary iterators and weak references.
-    */
-    PyObject *subclasses = _PyType_GetSubclasses(type);
-    if (subclasses == NULL) {
-        return -1;
-    }
-
-    Py_ssize_t n = PyList_GET_SIZE(subclasses);
-    for (Py_ssize_t i = 0; i < n; i++) {
-        PyTypeObject *subclass = _PyType_CAST(PyList_GET_ITEM(subclasses, i));
-        res = mro_hierarchy(subclass, temp);
-        if (res < 0) {
-            break;
+    // Avoid creating an empty list if there is no subclass
+    if (type->tp_subclasses != NULL) {
+        // Obtain a copy of subclasses list to iterate over.
+        //
+        // Otherwise type->tp_subclasses might be altered
+        // in the middle of the loop, for example, through a custom mro(),
+        // by invoking type_set_bases on some subclass of the type
+        // which in turn calls remove_subclass/add_subclass on this type.
+        //
+        // Finally, this makes things simple avoiding the need to deal
+        // with dictionary iterators and weak references.
+        PyObject *subclasses = _PyType_GetSubclasses(type);
+        if (subclasses == NULL) {
+            return -1;
         }
-    }
-    Py_DECREF(subclasses);
 
-    return res;
+        Py_ssize_t n = PyList_GET_SIZE(subclasses);
+        for (Py_ssize_t i = 0; i < n; i++) {
+            PyTypeObject *subclass = _PyType_CAST(PyList_GET_ITEM(subclasses, i));
+            if (mro_hierarchy(subclass, temp) < 0) {
+                Py_DECREF(subclasses);
+                return -1;
+            }
+        }
+        Py_DECREF(subclasses);
+    }
+
+    return 0;
 }
 
 static int
@@ -3809,7 +3811,6 @@ find_name_in_mro(PyTypeObject *type, PyObject *name, int *error)
     n = PyTuple_GET_SIZE(mro);
     for (i = 0; i < n; i++) {
         base = PyTuple_GET_ITEM(mro, i);
-        assert(PyType_Check(base));
         dict = _PyType_CAST(base)->tp_dict;
         assert(dict && PyDict_Check(dict));
         res = _PyDict_GetItem_KnownHash(dict, name, hash);
@@ -4137,16 +4138,17 @@ _PyType_GetSubclasses(PyTypeObject *self)
         return NULL;
     }
 
-    // Hold a strong reference to tp_subclasses while iterating on it
-    PyObject *dict = Py_XNewRef(self->tp_subclasses);
-    if (dict == NULL) {
+    PyObject *subclasses = self->tp_subclasses;  // borrowed ref
+    if (subclasses == NULL) {
         return list;
     }
-    assert(PyDict_CheckExact(dict));
+    assert(PyDict_CheckExact(subclasses));
+    // The loop cannot modify tp_subclasses, there is no need
+    // to hold a strong reference (use a borrowed reference).
 
     Py_ssize_t i = 0;
     PyObject *ref;  // borrowed ref
-    while (PyDict_Next(dict, &i, NULL, &ref)) {
+    while (PyDict_Next(subclasses, &i, NULL, &ref)) {
         assert(PyWeakref_CheckRef(ref));
         PyObject *obj = PyWeakref_GET_OBJECT(ref);  // borrowed ref
         if (obj == Py_None) {
@@ -4154,12 +4156,10 @@ _PyType_GetSubclasses(PyTypeObject *self)
         }
         assert(PyType_Check(obj));
         if (PyList_Append(list, obj) < 0) {
-            Py_CLEAR(list);
-            goto done;
+            Py_DECREF(list);
+            return NULL;
         }
     }
-done:
-    Py_DECREF(dict);
     return list;
 }
 
@@ -6563,20 +6563,27 @@ remove_subclass(PyTypeObject *base, PyTypeObject *type)
         PyErr_Clear();
     }
     Py_XDECREF(key);
+
+    if (PyDict_Size(dict) == 0) {
+        Py_CLEAR(base->tp_subclasses);
+    }
 }
 
 static void
 remove_all_subclasses(PyTypeObject *type, PyObject *bases)
 {
-    if (bases) {
-        Py_ssize_t i;
-        for (i = 0; i < PyTuple_GET_SIZE(bases); i++) {
-            PyObject *base = PyTuple_GET_ITEM(bases, i);
-            if (PyType_Check(base)) {
-                remove_subclass((PyTypeObject*) base, type);
-            }
-        }
+    // remove_subclass() can clear the current exception
+    assert(!PyErr_Occurred());
+
+    if (!bases) {
+        return;
     }
+
+    for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(bases); i++) {
+        PyTypeObject *base = _PyType_CAST(PyTuple_GET_ITEM(bases, i));
+        remove_subclass(base, type);
+    }
+    assert(!PyErr_Occurred());
 }
 
 static int
@@ -8658,38 +8665,44 @@ static int
 recurse_down_subclasses(PyTypeObject *type, PyObject *name,
                         update_callback callback, void *data)
 {
-    PyObject *ref, *subclasses, *dict;
-    Py_ssize_t i;
-
-    subclasses = type->tp_subclasses;
-    if (subclasses == NULL)
+    // Avoid creating an empty list if there is no subclass
+    if (type->tp_subclasses == NULL) {
         return 0;
-    assert(PyDict_CheckExact(subclasses));
-    i = 0;
-    while (PyDict_Next(subclasses, &i, NULL, &ref)) {
-        assert(PyWeakref_CheckRef(ref));
-        PyObject *obj = PyWeakref_GET_OBJECT(ref);
-        assert(obj != NULL);
-        if (obj == Py_None) {
-            continue;
-        }
-        PyTypeObject *subclass = _PyType_CAST(obj);
+    }
+
+    // Iterate on a copy of tp_subclasses beause the loop can modify
+    // tp_subclasses
+    PyObject *subclasses = _PyType_GetSubclasses(type);
+    if (subclasses == NULL) {
+        return -1;
+    }
+
+    Py_ssize_t n = PyList_GET_SIZE(subclasses);
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyTypeObject *subclass = _PyType_CAST(PyList_GET_ITEM(subclasses, i));
 
         /* Avoid recursing down into unaffected classes */
-        dict = subclass->tp_dict;
+        PyObject *dict = subclass->tp_dict;
         if (dict != NULL && PyDict_Check(dict)) {
-            int r = PyDict_Contains(dict, name);
-            if (r > 0) {
+            int res = PyDict_Contains(dict, name);
+            if (res < 0) {
+                goto error;
+            }
+            if (res > 0) {
                 continue;
             }
-            if (r < 0) {
-                return -1;
-            }
         }
-        if (update_subclasses(subclass, name, callback, data) < 0)
-            return -1;
+
+        if (update_subclasses(subclass, name, callback, data) < 0) {
+            goto error;
+        }
     }
+    Py_DECREF(subclasses);
     return 0;
+
+error:
+    Py_DECREF(subclasses);
+    return -1;
 }
 
 /* This function is called by PyType_Ready() to populate the type's
