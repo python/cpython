@@ -617,11 +617,9 @@ class Counter(dict):
         ['A', 'A', 'B', 'B', 'C', 'C']
 
         # Knuth's example for prime factors of 1836:  2**2 * 3**3 * 17**1
+        >>> import math
         >>> prime_factors = Counter({2: 2, 3: 3, 17: 1})
-        >>> product = 1
-        >>> for factor in prime_factors.elements():     # loop over factors
-        ...     product *= factor                       # and multiply them
-        >>> product
+        >>> math.prod(prime_factors.elements())
         1836
 
         Note, if an element's count has been set to zero or is a negative
