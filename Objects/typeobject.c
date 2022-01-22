@@ -4138,7 +4138,7 @@ _PyType_GetSubclasses(PyTypeObject *self)
     }
 
     // Hold a strong reference to tp_subclasses while iterating on it
-    PyObject *dict = Py_XNewRef(self->tp_subclasses);
+    PyObject *dict = self->tp_subclasses;
     if (dict == NULL) {
         return list;
     }
@@ -4159,7 +4159,6 @@ _PyType_GetSubclasses(PyTypeObject *self)
         }
     }
 done:
-    Py_DECREF(dict);
     return list;
 }
 
@@ -6568,6 +6567,10 @@ remove_subclass(PyTypeObject *base, PyTypeObject *type)
         PyErr_Clear();
     }
     Py_XDECREF(key);
+
+    if (PyDict_Size(dict) == 0) {
+        Py_CLEAR(base->tp_subclasses);
+    }
 }
 
 static void
