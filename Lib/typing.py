@@ -280,8 +280,6 @@ def _remove_dups_flatten(parameters):
     for p in parameters:
         if isinstance(p, (_UnionGenericAlias, types.UnionType)):
             params.extend(p.__args__)
-        elif isinstance(p, tuple) and len(p) > 0 and p[0] is Union:
-            params.extend(p[1:])
         else:
             params.append(p)
 
