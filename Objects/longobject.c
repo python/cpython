@@ -4716,7 +4716,7 @@ long_lshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
         stwodigits x = m < 0 ? -(-m << remshift) : m << remshift;
         return _PyLong_FromSTwoDigits(x);
     }
-    if (Py_SIZE(a) == 0 && a) {
+    if (Py_SIZE(a) == 0 && a->ob_digit[0] == 1) {
         /* shifting is guaranteed positive, so there is
            no need for filtering less than 0 shifting unlike
            long_pow */
