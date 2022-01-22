@@ -1001,7 +1001,7 @@ make_new_frozenset(PyTypeObject *type, PyObject *iterable)
         Py_INCREF(iterable);
         return iterable;
     }
-    return make_new_set((PyTypeObject *)type, iterable);
+    return make_new_set(type, iterable);
 }
 
 static PyObject *
@@ -1036,7 +1036,7 @@ frozenset_vectorcall(PyObject *type, PyObject * const*args,
     }
 
     PyObject *iterable = (nargs ? args[0] : NULL);
-    return make_new_frozenset((PyTypeObject *)type, iterable);
+    return make_new_frozenset(_PyType_CAST(type), iterable);
 }
 
 static PyObject *
@@ -1974,10 +1974,10 @@ set_vectorcall(PyObject *type, PyObject * const*args,
     }
 
     if (nargs) {
-        return make_new_set((PyTypeObject *)type, args[0]);
+        return make_new_set(_PyType_CAST(type), args[0]);
     }
 
-    return make_new_set((PyTypeObject *)type, NULL);
+    return make_new_set(_PyType_CAST(type), NULL);
 }
 
 static PySequenceMethods set_as_sequence = {

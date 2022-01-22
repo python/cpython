@@ -596,22 +596,10 @@ iterations of the loop.
     has occurred in a :keyword:`with` statement.
 
     .. versionadded:: 3.9
-    .. versionchanged:: 3.11
-       The ``__exit__`` function is in position 8 of the stack rather than 7.
 
     .. versionchanged:: 3.11
        The ``__exit__`` function is in position 4 of the stack rather than 7.
        Exception representation on the stack now consist of one, not three, items.
-
-.. opcode:: POP_EXCEPT_AND_RERAISE
-
-    Pops the exception currently on top of the stack. Pops the integer value on top
-    of the stack and sets the ``f_lasti`` attribute of the frame with that value.
-    Then pops the next exception from the stack uses it to restore the current exception.
-    Finally it re-raises the originally popped exception.
-    Used in exception handler cleanup.
-
-    .. versionadded:: 3.11
 
 
 .. opcode:: LOAD_ASSERTION_ERROR
@@ -906,6 +894,20 @@ All of the following opcodes use their arguments.
    .. versionadded:: 3.11
 
 
+.. opcode:: POP_JUMP_IF_NOT_NONE (target)
+
+   If TOS is not none, sets the bytecode counter to *target*.  TOS is popped.
+
+   .. versionadded:: 3.11
+
+
+.. opcode:: POP_JUMP_IF_NONE (target)
+
+   If TOS is none, sets the bytecode counter to *target*.  TOS is popped.
+
+   .. versionadded:: 3.11
+
+
 .. opcode:: PREP_RERAISE_STAR
 
    Combines the raised and reraised exceptions list from TOS, into an exception
@@ -936,6 +938,13 @@ All of the following opcodes use their arguments.
 .. opcode:: JUMP_ABSOLUTE (target)
 
    Set bytecode counter to *target*.
+
+
+.. opcode:: JUMP_NO_INTERRUPT (target)
+
+   Set bytecode counter to *target*. Do not check for interrupts.
+
+   .. versionadded:: 3.11
 
 
 .. opcode:: FOR_ITER (delta)
@@ -1185,14 +1194,6 @@ All of the following opcodes use their arguments.
       Previously, this instruction also pushed a boolean value indicating
       success (``True``) or failure (``False``).
 
-.. opcode:: GEN_START (kind)
-
-    Pops TOS. The ``kind`` operand corresponds to the type of generator or
-    coroutine. The legal kinds are 0 for generator, 1 for coroutine,
-    and 2 for async generator.
-
-   .. versionadded:: 3.10
-
 
 .. opcode:: ROT_N (count)
 
@@ -1208,6 +1209,28 @@ All of the following opcodes use their arguments.
    original location.
 
    .. versionadded:: 3.11
+
+
+.. opcode:: RESUME (where)
+
+    A no-op. Performs internal tracing, debugging and optimization checks.
+
+    The ``where`` operand marks where the ``RESUME`` occurs:
+
+    * ``0`` The start of a function
+    * ``1`` After a ``yield`` expression
+    * ``2`` After a ``yield from`` expression
+    * ``3`` After an ``await`` expression
+
+   .. versionadded:: 3.11
+
+
+.. opcode:: RETURN_GENERATOR
+
+    Create a generator, coroutine, or async generator from the current frame.
+    Clear the current frame and return the newly created generator.
+
+    .. versionadded:: 3.11
 
 
 .. opcode:: HAVE_ARGUMENT

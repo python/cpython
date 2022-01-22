@@ -16,11 +16,16 @@ extern PyStatus _PyStructSequence_InitState(PyInterpreterState *);
 
 /* other API */
 
+PyAPI_FUNC(PyTypeObject *) _PyStructSequence_NewType(
+    PyStructSequence_Desc *desc,
+    unsigned long tp_flags);
+
 PyAPI_FUNC(int) _PyStructSequence_InitType(
     PyTypeObject *type,
     PyStructSequence_Desc *desc,
     unsigned long tp_flags);
 
+extern void _PyStructSequence_FiniType(PyTypeObject *type);
 
 #ifdef __cplusplus
 }

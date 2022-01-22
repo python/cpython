@@ -12,6 +12,19 @@ extern "C" {
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
+
+#define _PyObject_IMMORTAL_INIT(type) \
+    { \
+        .ob_refcnt = 999999999, \
+        .ob_type = type, \
+    }
+#define _PyVarObject_IMMORTAL_INIT(type, size) \
+    { \
+        .ob_base = _PyObject_IMMORTAL_INIT(type), \
+        .ob_size = size, \
+    }
+
+
 PyAPI_FUNC(int) _PyType_CheckConsistency(PyTypeObject *type);
 PyAPI_FUNC(int) _PyDict_CheckConsistency(PyObject *mp, int check_content);
 
@@ -207,11 +220,12 @@ static inline PyObject **_PyObject_ManagedDictPointer(PyObject *obj)
     return ((PyObject **)obj)-3;
 }
 
-PyObject ** _PyObject_DictPointer(PyObject *);
-int _PyObject_VisitInstanceAttributes(PyObject *self, visitproc visit, void *arg);
-void _PyObject_ClearInstanceAttributes(PyObject *self);
-void _PyObject_FreeInstanceAttributes(PyObject *self);
-int _PyObject_IsInstanceDictEmpty(PyObject *);
+extern PyObject ** _PyObject_DictPointer(PyObject *);
+extern int _PyObject_VisitInstanceAttributes(PyObject *self, visitproc visit, void *arg);
+extern void _PyObject_ClearInstanceAttributes(PyObject *self);
+extern void _PyObject_FreeInstanceAttributes(PyObject *self);
+extern int _PyObject_IsInstanceDictEmpty(PyObject *);
+extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
 
 #ifdef __cplusplus
 }

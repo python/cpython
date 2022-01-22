@@ -198,7 +198,7 @@ class TestSupport(unittest.TestCase):
                                         f'temporary directory {path!r}: '),
                         warn)
 
-    @unittest.skipUnless(hasattr(os, "fork"), "test requires os.fork")
+    @support.requires_fork()
     def test_temp_dir__forked_child(self):
         """Test that a forked child process does not remove the directory."""
         # See bpo-30028 for details.
@@ -447,6 +447,7 @@ class TestSupport(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, 'waitpid') and hasattr(os, 'WNOHANG'),
                          'need os.waitpid() and os.WNOHANG')
+    @support.requires_fork()
     def test_reap_children(self):
         # Make sure that there is no other pending child process
         support.reap_children()

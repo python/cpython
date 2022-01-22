@@ -11,6 +11,7 @@
 
 #include <Python.h>
 #include <marshal.h>
+#include "pycore_fileutils.h"     // _Py_stat_struct
 #include <pycore_import.h>
 
 #include <stdio.h>

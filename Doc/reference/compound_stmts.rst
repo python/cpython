@@ -199,6 +199,7 @@ returns the list ``[0, 1, 2]``.
 
 .. _try:
 .. _except:
+.. _except_star:
 .. _finally:
 
 The :keyword:`!try` statement
@@ -216,12 +217,16 @@ The :keyword:`try` statement specifies exception handlers and/or cleanup code
 for a group of statements:
 
 .. productionlist:: python-grammar
-   try_stmt: `try1_stmt` | `try2_stmt`
+   try_stmt: `try1_stmt` | `try2_stmt` | `try3_stmt`
    try1_stmt: "try" ":" `suite`
             : ("except" [`expression` ["as" `identifier`]] ":" `suite`)+
             : ["else" ":" `suite`]
             : ["finally" ":" `suite`]
    try2_stmt: "try" ":" `suite`
+            : ("except" "*" `expression` ["as" `identifier`] ":" `suite`)+
+            : ["else" ":" `suite`]
+            : ["finally" ":" `suite`]
+   try3_stmt: "try" ":" `suite`
             : "finally" ":" `suite`
 
 
@@ -303,6 +308,47 @@ when leaving an exception handler::
    (<class 'TypeError'>, TypeError(), <traceback object at 0x10efad080>)
    >>> print(sys.exc_info())
    (None, None, None)
+
+.. index::
+   keyword: except_star
+
+The :keyword:`except*<except_star>` clause(s) are used for handling
+:exc:`ExceptionGroup`s. The exception type for matching is interpreted as in
+the case of :keyword:`except`, but in the case of exception groups we can have
+partial matches when the type matches some of the exceptions in the group.
+This means that multiple except* clauses can execute, each handling part of
+the exception group. Each clause executes once and handles an exception group
+of all matching exceptions.  Each exception in the group is handled by at most
+one except* clause, the first that matches it. ::
+
+   >>> try:
+   ...     raise ExceptionGroup("eg",
+   ...         [ValueError(1), TypeError(2), OSError(3), OSError(4)])
+   ... except* TypeError as e:
+   ...     print(f'caught {type(e)} with nested {e.exceptions}')
+   ... except* OSError as e:
+   ...     print(f'caught {type(e)} with nested {e.exceptions}')
+   ...
+   caught <class 'ExceptionGroup'> with nested (TypeError(2),)
+   caught <class 'ExceptionGroup'> with nested (OSError(3), OSError(4))
+     + Exception Group Traceback (most recent call last):
+     |   File "<stdin>", line 2, in <module>
+     | ExceptionGroup: eg
+     +-+---------------- 1 ----------------
+       | ValueError: 1
+       +------------------------------------
+   >>>
+
+   Any remaining exceptions that were not handled by any except* clause
+   are re-raised at the end, combined into an exception group along with
+   all exceptions that were raised from within except* clauses.
+
+   An except* clause must have a matching type, and this type cannot be a
+   subclass of :exc:`BaseExceptionGroup`. It is not possible to mix except
+   and except* in the same :keyword:`try`. :keyword:`break`,
+   :keyword:`continue` and :keyword:`return` cannot appear in an except*
+   clause.
+
 
 .. index::
    keyword: else

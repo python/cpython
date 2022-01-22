@@ -42,7 +42,6 @@ typedef struct
     PyObject* row_factory;
     pysqlite_Statement* statement;
     int closed;
-    int reset;
     int locked;
     int initialized;
 

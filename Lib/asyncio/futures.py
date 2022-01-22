@@ -8,6 +8,7 @@ import concurrent.futures
 import contextvars
 import logging
 import sys
+from types import GenericAlias
 
 from . import base_futures
 from . import events
@@ -106,8 +107,7 @@ class Future:
             context['source_traceback'] = self._source_traceback
         self._loop.call_exception_handler(context)
 
-    def __class_getitem__(cls, type):
-        return cls
+    __class_getitem__ = classmethod(GenericAlias)
 
     @property
     def _log_traceback(self):

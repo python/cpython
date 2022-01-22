@@ -2,8 +2,8 @@ import io
 import unittest
 
 from importlib import resources
-from . import data01
-from .resources import util
+from test.test_importlib import data01
+from test.test_importlib.resources import util
 
 
 class CommonTests(util.CommonTests, unittest.TestCase):

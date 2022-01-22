@@ -9,6 +9,7 @@
 #include "pycore_object.h"        // _PyObject_InitVar()
 #include "pycore_pystate.h"       // _Py_IsMainInterpreter()
 #include "pycore_runtime.h"       // _PY_NSMALLPOSINTS
+#include "pycore_structseq.h"     // _PyStructSequence_FiniType()
 
 #include <ctype.h>
 #include <float.h>
@@ -911,7 +912,7 @@ _PyLong_FromByteArray(const unsigned char* bytes, size_t n,
     }
 
     Py_SET_SIZE(v, is_signed ? -idigit : idigit);
-    return (PyObject *)long_normalize(v);
+    return (PyObject *)maybe_small_long(long_normalize(v));
 }
 
 int
@@ -3237,12 +3238,12 @@ x_mul(PyLongObject *a, PyLongObject *b)
          * via exploiting that each entry in the multiplication
          * pyramid appears twice (except for the size_a squares).
          */
+        digit *paend = a->ob_digit + size_a;
         for (i = 0; i < size_a; ++i) {
             twodigits carry;
             twodigits f = a->ob_digit[i];
             digit *pz = z->ob_digit + (i << 1);
             digit *pa = a->ob_digit + i + 1;
-            digit *paend = a->ob_digit + size_a;
 
             SIGCHECK({
                     Py_DECREF(z);
@@ -3265,13 +3266,27 @@ x_mul(PyLongObject *a, PyLongObject *b)
                 assert(carry <= (PyLong_MASK << 1));
             }
             if (carry) {
+                /* See comment below. pz points at the highest possible
+                 * carry position from the last outer loop iteration, so
+                 * *pz is at most 1.
+                 */
+                assert(*pz <= 1);
                 carry += *pz;
-                *pz++ = (digit)(carry & PyLong_MASK);
+                *pz = (digit)(carry & PyLong_MASK);
                 carry >>= PyLong_SHIFT;
+                if (carry) {
+                    /* If there's still a carry, it must be into a position
+                     * that still holds a 0. Where the base
+                     ^ B is 1 << PyLong_SHIFT, the last add was of a carry no
+                     * more than 2*B - 2 to a stored digit no more than 1.
+                     * So the sum was no more than 2*B - 1, so the current
+                     * carry no more than floor((2*B - 1)/B) = 1.
+                     */
+                    assert(carry == 1);
+                    assert(pz[1] == 0);
+                    pz[1] = (digit)carry;
+                }
             }
-            if (carry)
-                *pz += (digit)(carry & PyLong_MASK);
-            assert((carry >> PyLong_SHIFT) == 0);
         }
     }
     else {      /* a is not the same as b -- gradeschool int mult */
@@ -4201,8 +4216,13 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
     /* k-ary values.  If the exponent is large enough, table is
      * precomputed so that table[i] == a**(2*i+1) % c for i in
      * range(EXP_TABLE_LEN).
+     * Note: this is uninitialzed stack trash: don't pay to set it to known
+     * values unless it's needed. Instead ensure that num_table_entries is
+     * set to the number of entries actually filled whenever a branch to the
+     * Error or Done labels is possible.
      */
-    PyLongObject *table[EXP_TABLE_LEN] = {0};
+    PyLongObject *table[EXP_TABLE_LEN];
+    Py_ssize_t num_table_entries = 0;
 
     /* a, b, c = v, w, x */
     CHECK_BINOP(v, w);
@@ -4394,10 +4414,14 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
          */
         Py_INCREF(a);
         table[0] = a;
+        num_table_entries = 1;
         MULT(a, a, a2);
         /* table[i] == a**(2*i + 1) % c */
-        for (i = 1; i < EXP_TABLE_LEN; ++i)
+        for (i = 1; i < EXP_TABLE_LEN; ++i) {
+            table[i] = NULL; /* must set to known value for MULT */
             MULT(table[i-1], a2, table[i]);
+            ++num_table_entries; /* incremented iff MULT succeeded */
+        }
         Py_CLEAR(a2);
 
         /* Repeatedly extract the next (no more than) EXP_WINDOW_SIZE bits
@@ -4458,10 +4482,8 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
     Py_CLEAR(z);
     /* fall through */
   Done:
-    if (Py_SIZE(b) > HUGE_EXP_CUTOFF / PyLong_SHIFT) {
-        for (i = 0; i < EXP_TABLE_LEN; ++i)
-            Py_XDECREF(table[i]);
-    }
+    for (i = 0; i < num_table_entries; ++i)
+        Py_DECREF(table[i]);
     Py_DECREF(a);
     Py_DECREF(b);
     Py_XDECREF(c);
@@ -5927,4 +5949,15 @@ _PyLong_InitTypes(PyInterpreterState *interp)
     }
 
     return _PyStatus_OK();
+}
+
+
+void
+_PyLong_FiniTypes(PyInterpreterState *interp)
+{
+    if (!_Py_IsMainInterpreter(interp)) {
+        return;
+    }
+
+    _PyStructSequence_FiniType(&Int_InfoType);
 }

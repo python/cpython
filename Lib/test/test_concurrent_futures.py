@@ -578,6 +578,14 @@ create_executor_tests(ProcessPoolShutdownTest,
 
 
 class WaitTests:
+    def test_20369(self):
+        # See https://bugs.python.org/issue20369
+        future = self.executor.submit(time.sleep, 1.5)
+        done, not_done = futures.wait([future, future],
+                            return_when=futures.ALL_COMPLETED)
+        self.assertEqual({future}, done)
+        self.assertEqual(set(), not_done)
+
 
     def test_first_completed(self):
         future1 = self.executor.submit(mul, 21, 2)

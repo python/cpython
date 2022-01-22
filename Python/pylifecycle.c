@@ -20,6 +20,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pylifecycle.h"   // _PyErr_Print()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_sliceobject.h"   // _PySlice_Fini()
 #include "pycore_structseq.h"     // _PyStructSequence_InitState()
 #include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
@@ -677,11 +678,6 @@ pycore_init_global_objects(PyInterpreterState *interp)
     PyStatus status;
 
     _PyFloat_InitState(interp);
-
-    status = _PyBytes_InitGlobalObjects(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
 
     status = _PyUnicode_InitGlobalObjects(interp);
     if (_PyStatus_EXCEPTION(status)) {
@@ -1670,11 +1666,18 @@ flush_std_files(void)
 static void
 finalize_interp_types(PyInterpreterState *interp)
 {
+    _PySys_Fini(interp);
     _PyExc_Fini(interp);
     _PyFrame_Fini(interp);
     _PyAsyncGen_Fini(interp);
     _PyContext_Fini(interp);
+    _PyFloat_FiniType(interp);
+    _PyLong_FiniTypes(interp);
+    _PyThread_FiniType(interp);
+    _PyErr_FiniTypes(interp);
     _PyTypes_Fini(interp);
+    _PyTypes_FiniTypes(interp);
+
     // Call _PyUnicode_ClearInterned() before _PyDict_Fini() since it uses
     // a dict internally.
     _PyUnicode_ClearInterned(interp);
@@ -1685,7 +1688,6 @@ finalize_interp_types(PyInterpreterState *interp)
 
     _PySlice_Fini(interp);
 
-    _PyBytes_Fini(interp);
     _PyUnicode_Fini(interp);
     _PyFloat_Fini(interp);
 }
@@ -1861,12 +1863,6 @@ Py_FinalizeEx(void)
     /* dump hash stats */
     _PyHash_Fini();
 
-#ifdef Py_REF_DEBUG
-    if (show_ref_count) {
-        _PyDebug_PrintTotalRefs();
-    }
-#endif
-
 #ifdef Py_TRACE_REFS
     /* Display all objects still alive -- this can invoke arbitrary
      * __repr__ overrides, so requires a mostly-intact interpreter.
@@ -1893,6 +1889,12 @@ Py_FinalizeEx(void)
 
     finalize_interp_clear(tstate);
     finalize_interp_delete(tstate->interp);
+
+#ifdef Py_REF_DEBUG
+    if (show_ref_count) {
+        _PyDebug_PrintTotalRefs();
+    }
+#endif
 
 #ifdef Py_TRACE_REFS
     /* Display addresses (& refcnts) of all objects still alive.

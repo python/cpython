@@ -1837,6 +1837,102 @@ _PyTypes_InitState(PyInterpreterState *interp)
     return _PyStatus_OK();
 }
 
+
+static PyTypeObject* static_types[] = {
+    // base types
+    &PyAsyncGen_Type,
+    &PyByteArrayIter_Type,
+    &PyByteArray_Type,
+    &PyBytesIter_Type,
+    &PyBytes_Type,
+    &PyCFunction_Type,
+    &PyCallIter_Type,
+    &PyCapsule_Type,
+    &PyCell_Type,
+    &PyClassMethodDescr_Type,
+    &PyClassMethod_Type,
+    &PyCode_Type,
+    &PyComplex_Type,
+    &PyCoro_Type,
+    &PyDictItems_Type,
+    &PyDictIterItem_Type,
+    &PyDictIterKey_Type,
+    &PyDictIterValue_Type,
+    &PyDictKeys_Type,
+    &PyDictProxy_Type,
+    &PyDictRevIterItem_Type,
+    &PyDictRevIterKey_Type,
+    &PyDictRevIterValue_Type,
+    &PyDictValues_Type,
+    &PyDict_Type,
+    &PyEllipsis_Type,
+    &PyEnum_Type,
+    &PyFloat_Type,
+    &PyFrame_Type,
+    &PyFrozenSet_Type,
+    &PyFunction_Type,
+    &PyGen_Type,
+    &PyGetSetDescr_Type,
+    &PyInstanceMethod_Type,
+    &PyListIter_Type,
+    &PyListRevIter_Type,
+    &PyList_Type,
+    &PyLongRangeIter_Type,
+    &PyLong_Type,
+    &PyMemberDescr_Type,
+    &PyMemoryView_Type,
+    &PyMethodDescr_Type,
+    &PyMethod_Type,
+    &PyModuleDef_Type,
+    &PyModule_Type,
+    &PyODictIter_Type,
+    &PyPickleBuffer_Type,
+    &PyProperty_Type,
+    &PyRangeIter_Type,
+    &PyRange_Type,
+    &PyReversed_Type,
+    &PySTEntry_Type,
+    &PySeqIter_Type,
+    &PySetIter_Type,
+    &PySet_Type,
+    &PySlice_Type,
+    &PyStaticMethod_Type,
+    &PyStdPrinter_Type,
+    &PySuper_Type,
+    &PyTraceBack_Type,
+    &PyTupleIter_Type,
+    &PyTuple_Type,
+    &PyUnicodeIter_Type,
+    &PyUnicode_Type,
+    &PyWrapperDescr_Type,
+    &Py_GenericAliasType,
+    &_PyAnextAwaitable_Type,
+    &_PyAsyncGenASend_Type,
+    &_PyAsyncGenAThrow_Type,
+    &_PyAsyncGenWrappedValue_Type,
+    &_PyCoroWrapper_Type,
+    &_PyInterpreterID_Type,
+    &_PyManagedBuffer_Type,
+    &_PyMethodWrapper_Type,
+    &_PyNamespace_Type,
+    &_PyNone_Type,
+    &_PyNotImplemented_Type,
+    &_PyUnion_Type,
+    &_PyWeakref_CallableProxyType,
+    &_PyWeakref_ProxyType,
+    &_PyWeakref_RefType,
+
+    // subclasses: _PyTypes_FiniTypes() deallocates them before their base
+    // class
+    &PyBool_Type,         // base=&PyLong_Type
+    &PyCMethod_Type,      // base=&PyCFunction_Type
+    &PyODictItems_Type,   // base=&PyDictItems_Type
+    &PyODictKeys_Type,    // base=&PyDictKeys_Type
+    &PyODictValues_Type,  // base=&PyDictValues_Type
+    &PyODict_Type,        // base=&PyDict_Type
+};
+
+
 PyStatus
 _PyTypes_InitTypes(PyInterpreterState *interp)
 {
@@ -1858,88 +1954,41 @@ _PyTypes_InitTypes(PyInterpreterState *interp)
     assert(PyType_Type.tp_base == &PyBaseObject_Type);
 
     // All other static types (unless initialized elsewhere)
-    INIT_TYPE(PyAsyncGen_Type);
-    INIT_TYPE(PyBool_Type);
-    INIT_TYPE(PyByteArrayIter_Type);
-    INIT_TYPE(PyByteArray_Type);
-    INIT_TYPE(PyCFunction_Type);
-    INIT_TYPE(PyCMethod_Type);
-    INIT_TYPE(PyCallIter_Type);
-    INIT_TYPE(PyCapsule_Type);
-    INIT_TYPE(PyCell_Type);
-    INIT_TYPE(PyClassMethodDescr_Type);
-    INIT_TYPE(PyClassMethod_Type);
-    INIT_TYPE(PyCode_Type);
-    INIT_TYPE(PyComplex_Type);
-    INIT_TYPE(PyCoro_Type);
-    INIT_TYPE(PyDictItems_Type);
-    INIT_TYPE(PyDictIterItem_Type);
-    INIT_TYPE(PyDictIterKey_Type);
-    INIT_TYPE(PyDictIterValue_Type);
-    INIT_TYPE(PyDictKeys_Type);
-    INIT_TYPE(PyDictProxy_Type);
-    INIT_TYPE(PyDictRevIterItem_Type);
-    INIT_TYPE(PyDictRevIterKey_Type);
-    INIT_TYPE(PyDictRevIterValue_Type);
-    INIT_TYPE(PyDictValues_Type);
-    INIT_TYPE(PyDict_Type);
-    INIT_TYPE(PyEllipsis_Type);
-    INIT_TYPE(PyEnum_Type);
-    INIT_TYPE(PyFrame_Type);
-    INIT_TYPE(PyFrozenSet_Type);
-    INIT_TYPE(PyFunction_Type);
-    INIT_TYPE(PyGen_Type);
-    INIT_TYPE(PyGetSetDescr_Type);
-    INIT_TYPE(PyInstanceMethod_Type);
-    INIT_TYPE(PyListIter_Type);
-    INIT_TYPE(PyListRevIter_Type);
-    INIT_TYPE(PyList_Type);
-    INIT_TYPE(PyLongRangeIter_Type);
-    INIT_TYPE(PyMemberDescr_Type);
-    INIT_TYPE(PyMemoryView_Type);
-    INIT_TYPE(PyMethodDescr_Type);
-    INIT_TYPE(PyMethod_Type);
-    INIT_TYPE(PyModuleDef_Type);
-    INIT_TYPE(PyModule_Type);
-    INIT_TYPE(PyODictItems_Type);
-    INIT_TYPE(PyODictIter_Type);
-    INIT_TYPE(PyODictKeys_Type);
-    INIT_TYPE(PyODictValues_Type);
-    INIT_TYPE(PyODict_Type);
-    INIT_TYPE(PyPickleBuffer_Type);
-    INIT_TYPE(PyProperty_Type);
-    INIT_TYPE(PyRangeIter_Type);
-    INIT_TYPE(PyRange_Type);
-    INIT_TYPE(PyReversed_Type);
-    INIT_TYPE(PySTEntry_Type);
-    INIT_TYPE(PySeqIter_Type);
-    INIT_TYPE(PySetIter_Type);
-    INIT_TYPE(PySet_Type);
-    INIT_TYPE(PySlice_Type);
-    INIT_TYPE(PyStaticMethod_Type);
-    INIT_TYPE(PyStdPrinter_Type);
-    INIT_TYPE(PySuper_Type);
-    INIT_TYPE(PyTraceBack_Type);
-    INIT_TYPE(PyWrapperDescr_Type);
-    INIT_TYPE(Py_GenericAliasType);
-    INIT_TYPE(_PyAnextAwaitable_Type);
-    INIT_TYPE(_PyAsyncGenASend_Type);
-    INIT_TYPE(_PyAsyncGenAThrow_Type);
-    INIT_TYPE(_PyAsyncGenWrappedValue_Type);
-    INIT_TYPE(_PyCoroWrapper_Type);
-    INIT_TYPE(_PyInterpreterID_Type);
-    INIT_TYPE(_PyManagedBuffer_Type);
-    INIT_TYPE(_PyMethodWrapper_Type);
-    INIT_TYPE(_PyNamespace_Type);
-    INIT_TYPE(_PyNone_Type);
-    INIT_TYPE(_PyNotImplemented_Type);
-    INIT_TYPE(_PyWeakref_CallableProxyType);
-    INIT_TYPE(_PyWeakref_ProxyType);
-    INIT_TYPE(_PyWeakref_RefType);
-    INIT_TYPE(_PyUnion_Type);
+    for (size_t i=0; i < Py_ARRAY_LENGTH(static_types); i++) {
+        PyTypeObject *type = static_types[i];
+        if (PyType_Ready(type) < 0) {
+            return _PyStatus_ERR("Can't initialize types");
+        }
+    }
 
     return _PyStatus_OK();
 #undef INIT_TYPE
+}
+
+
+// Best-effort function clearing static types.
+//
+// Don't deallocate a type if it still has subclasses. If a Py_Finalize()
+// sub-function is interrupted by CTRL+C or fails with MemoryError, some
+// subclasses are not cleared properly. Leave the static type unchanged in this
+// case.
+void
+_PyTypes_FiniTypes(PyInterpreterState *interp)
+{
+    if (!_Py_IsMainInterpreter(interp)) {
+        return;
+    }
+
+    // Deallocate types in the reverse order to deallocate subclasses before
+    // their base classes.
+    for (Py_ssize_t i=Py_ARRAY_LENGTH(static_types)-1; i>=0; i--) {
+        PyTypeObject *type = static_types[i];
+        // Cannot delete a type if it still has subclasses
+        if (type->tp_subclasses != NULL) {
+            continue;
+        }
+        _PyStaticType_Dealloc(type);
+    }
 }
 
 

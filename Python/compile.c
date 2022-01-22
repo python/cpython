@@ -631,140 +631,6 @@ compiler_unit_free(struct compiler_unit *u)
 }
 
 static int
-compiler_enter_scope(struct compiler *c, identifier name,
-                     int scope_type, void *key, int lineno)
-{
-    struct compiler_unit *u;
-    basicblock *block;
-
-    u = (struct compiler_unit *)PyObject_Calloc(1, sizeof(
-                                            struct compiler_unit));
-    if (!u) {
-        PyErr_NoMemory();
-        return 0;
-    }
-    u->u_scope_type = scope_type;
-    u->u_argcount = 0;
-    u->u_posonlyargcount = 0;
-    u->u_kwonlyargcount = 0;
-    u->u_ste = PySymtable_Lookup(c->c_st, key);
-    if (!u->u_ste) {
-        compiler_unit_free(u);
-        return 0;
-    }
-    Py_INCREF(name);
-    u->u_name = name;
-    u->u_varnames = list2dict(u->u_ste->ste_varnames);
-    u->u_cellvars = dictbytype(u->u_ste->ste_symbols, CELL, 0, 0);
-    if (!u->u_varnames || !u->u_cellvars) {
-        compiler_unit_free(u);
-        return 0;
-    }
-    if (u->u_ste->ste_needs_class_closure) {
-        /* Cook up an implicit __class__ cell. */
-        _Py_IDENTIFIER(__class__);
-        PyObject *name;
-        int res;
-        assert(u->u_scope_type == COMPILER_SCOPE_CLASS);
-        assert(PyDict_GET_SIZE(u->u_cellvars) == 0);
-        name = _PyUnicode_FromId(&PyId___class__);
-        if (!name) {
-            compiler_unit_free(u);
-            return 0;
-        }
-        res = PyDict_SetItem(u->u_cellvars, name, _PyLong_GetZero());
-        if (res < 0) {
-            compiler_unit_free(u);
-            return 0;
-        }
-    }
-
-    u->u_freevars = dictbytype(u->u_ste->ste_symbols, FREE, DEF_FREE_CLASS,
-                               PyDict_GET_SIZE(u->u_cellvars));
-    if (!u->u_freevars) {
-        compiler_unit_free(u);
-        return 0;
-    }
-
-    u->u_blocks = NULL;
-    u->u_nfblocks = 0;
-    u->u_firstlineno = lineno;
-    u->u_lineno = 0;
-    u->u_col_offset = 0;
-    u->u_end_lineno = 0;
-    u->u_end_col_offset = 0;
-    u->u_consts = PyDict_New();
-    if (!u->u_consts) {
-        compiler_unit_free(u);
-        return 0;
-    }
-    u->u_names = PyDict_New();
-    if (!u->u_names) {
-        compiler_unit_free(u);
-        return 0;
-    }
-
-    u->u_private = NULL;
-
-    /* Push the old compiler_unit on the stack. */
-    if (c->u) {
-        PyObject *capsule = PyCapsule_New(c->u, CAPSULE_NAME, NULL);
-        if (!capsule || PyList_Append(c->c_stack, capsule) < 0) {
-            Py_XDECREF(capsule);
-            compiler_unit_free(u);
-            return 0;
-        }
-        Py_DECREF(capsule);
-        u->u_private = c->u->u_private;
-        Py_XINCREF(u->u_private);
-    }
-    c->u = u;
-
-    c->c_nestlevel++;
-
-    block = compiler_new_block(c);
-    if (block == NULL)
-        return 0;
-    c->u->u_curblock = block;
-
-    if (u->u_scope_type != COMPILER_SCOPE_MODULE) {
-        if (!compiler_set_qualname(c))
-            return 0;
-    }
-
-    return 1;
-}
-
-static void
-compiler_exit_scope(struct compiler *c)
-{
-    // Don't call PySequence_DelItem() with an exception raised
-    PyObject *exc_type, *exc_val, *exc_tb;
-    PyErr_Fetch(&exc_type, &exc_val, &exc_tb);
-
-    c->c_nestlevel--;
-    compiler_unit_free(c->u);
-    /* Restore c->u to the parent unit. */
-    Py_ssize_t n = PyList_GET_SIZE(c->c_stack) - 1;
-    if (n >= 0) {
-        PyObject *capsule = PyList_GET_ITEM(c->c_stack, n);
-        c->u = (struct compiler_unit *)PyCapsule_GetPointer(capsule, CAPSULE_NAME);
-        assert(c->u);
-        /* we are deleting from a list so this really shouldn't fail */
-        if (PySequence_DelItem(c->c_stack, n) < 0) {
-            _PyErr_WriteUnraisableMsg("on removing the last compiler "
-                                      "stack item", NULL);
-        }
-        compiler_unit_check(c->u);
-    }
-    else {
-        c->u = NULL;
-    }
-
-    PyErr_Restore(exc_type, exc_val, exc_tb);
-}
-
-static int
 compiler_set_qualname(struct compiler *c)
 {
     _Py_static_string(dot, ".");
@@ -995,6 +861,7 @@ stack_effect(int opcode, int oparg, int jump)
     switch (opcode) {
         case NOP:
         case EXTENDED_ARG:
+        case RESUME:
             return 0;
 
         /* Stack manipulation */
@@ -1049,8 +916,6 @@ stack_effect(int opcode, int oparg, int jump)
             return 0;
         case POP_EXCEPT:
             return -1;
-        case POP_EXCEPT_AND_RERAISE:
-            return -3;
 
         case STORE_NAME:
             return -1;
@@ -1104,6 +969,7 @@ stack_effect(int opcode, int oparg, int jump)
         /* Jumps */
         case JUMP_FORWARD:
         case JUMP_ABSOLUTE:
+        case JUMP_NO_INTERRUPT:
             return 0;
 
         case JUMP_IF_TRUE_OR_POP:
@@ -1112,6 +978,8 @@ stack_effect(int opcode, int oparg, int jump)
 
         case POP_JUMP_IF_FALSE:
         case POP_JUMP_IF_TRUE:
+        case POP_JUMP_IF_NONE:
+        case POP_JUMP_IF_NOT_NONE:
             return -1;
 
         case LOAD_GLOBAL:
@@ -1148,6 +1016,9 @@ stack_effect(int opcode, int oparg, int jump)
         case STORE_FAST:
             return -1;
         case DELETE_FAST:
+            return 0;
+
+        case RETURN_GENERATOR:
             return 0;
 
         case RAISE_VARARGS:
@@ -1210,8 +1081,6 @@ stack_effect(int opcode, int oparg, int jump)
             return 1;
         case LIST_TO_TUPLE:
             return 0;
-        case GEN_START:
-            return -1;
         case LIST_EXTEND:
         case SET_UPDATE:
         case DICT_MERGE:
@@ -1666,8 +1535,11 @@ compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
    the ASDL name to synthesize the name of the C type and the visit function.
 */
 
-#define ADD_YIELD_FROM(C) \
-    RETURN_IF_FALSE(compiler_add_yield_from((C)))
+#define ADD_YIELD_FROM(C, await) \
+    RETURN_IF_FALSE(compiler_add_yield_from((C), (await)))
+
+#define POP_EXCEPT_AND_RERAISE(C) \
+    RETURN_IF_FALSE(compiler_pop_except_and_reraise((C)))
 
 #define VISIT(C, TYPE, V) {\
     if (!compiler_visit_ ## TYPE((C), (V))) \
@@ -1712,6 +1584,144 @@ compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
     if (!(X)) {             \
         return 0;           \
     }
+
+static int
+compiler_enter_scope(struct compiler *c, identifier name,
+                     int scope_type, void *key, int lineno)
+{
+    struct compiler_unit *u;
+    basicblock *block;
+
+    u = (struct compiler_unit *)PyObject_Calloc(1, sizeof(
+                                            struct compiler_unit));
+    if (!u) {
+        PyErr_NoMemory();
+        return 0;
+    }
+    u->u_scope_type = scope_type;
+    u->u_argcount = 0;
+    u->u_posonlyargcount = 0;
+    u->u_kwonlyargcount = 0;
+    u->u_ste = PySymtable_Lookup(c->c_st, key);
+    if (!u->u_ste) {
+        compiler_unit_free(u);
+        return 0;
+    }
+    Py_INCREF(name);
+    u->u_name = name;
+    u->u_varnames = list2dict(u->u_ste->ste_varnames);
+    u->u_cellvars = dictbytype(u->u_ste->ste_symbols, CELL, 0, 0);
+    if (!u->u_varnames || !u->u_cellvars) {
+        compiler_unit_free(u);
+        return 0;
+    }
+    if (u->u_ste->ste_needs_class_closure) {
+        /* Cook up an implicit __class__ cell. */
+        _Py_IDENTIFIER(__class__);
+        PyObject *name;
+        int res;
+        assert(u->u_scope_type == COMPILER_SCOPE_CLASS);
+        assert(PyDict_GET_SIZE(u->u_cellvars) == 0);
+        name = _PyUnicode_FromId(&PyId___class__);
+        if (!name) {
+            compiler_unit_free(u);
+            return 0;
+        }
+        res = PyDict_SetItem(u->u_cellvars, name, _PyLong_GetZero());
+        if (res < 0) {
+            compiler_unit_free(u);
+            return 0;
+        }
+    }
+
+    u->u_freevars = dictbytype(u->u_ste->ste_symbols, FREE, DEF_FREE_CLASS,
+                               PyDict_GET_SIZE(u->u_cellvars));
+    if (!u->u_freevars) {
+        compiler_unit_free(u);
+        return 0;
+    }
+
+    u->u_blocks = NULL;
+    u->u_nfblocks = 0;
+    u->u_firstlineno = lineno;
+    u->u_lineno = lineno;
+    u->u_col_offset = 0;
+    u->u_end_lineno = lineno;
+    u->u_end_col_offset = 0;
+    u->u_consts = PyDict_New();
+    if (!u->u_consts) {
+        compiler_unit_free(u);
+        return 0;
+    }
+    u->u_names = PyDict_New();
+    if (!u->u_names) {
+        compiler_unit_free(u);
+        return 0;
+    }
+
+    u->u_private = NULL;
+
+    /* Push the old compiler_unit on the stack. */
+    if (c->u) {
+        PyObject *capsule = PyCapsule_New(c->u, CAPSULE_NAME, NULL);
+        if (!capsule || PyList_Append(c->c_stack, capsule) < 0) {
+            Py_XDECREF(capsule);
+            compiler_unit_free(u);
+            return 0;
+        }
+        Py_DECREF(capsule);
+        u->u_private = c->u->u_private;
+        Py_XINCREF(u->u_private);
+    }
+    c->u = u;
+
+    c->c_nestlevel++;
+
+    block = compiler_new_block(c);
+    if (block == NULL)
+        return 0;
+    c->u->u_curblock = block;
+
+    if (u->u_scope_type == COMPILER_SCOPE_MODULE) {
+        c->u->u_lineno = -1;
+    }
+    else {
+        if (!compiler_set_qualname(c))
+            return 0;
+    }
+    ADDOP_I(c, RESUME, 0);
+
+    return 1;
+}
+
+static void
+compiler_exit_scope(struct compiler *c)
+{
+    // Don't call PySequence_DelItem() with an exception raised
+    PyObject *exc_type, *exc_val, *exc_tb;
+    PyErr_Fetch(&exc_type, &exc_val, &exc_tb);
+
+    c->c_nestlevel--;
+    compiler_unit_free(c->u);
+    /* Restore c->u to the parent unit. */
+    Py_ssize_t n = PyList_GET_SIZE(c->c_stack) - 1;
+    if (n >= 0) {
+        PyObject *capsule = PyList_GET_ITEM(c->c_stack, n);
+        c->u = (struct compiler_unit *)PyCapsule_GetPointer(capsule, CAPSULE_NAME);
+        assert(c->u);
+        /* we are deleting from a list so this really shouldn't fail */
+        if (PySequence_DelItem(c->c_stack, n) < 0) {
+            _PyErr_WriteUnraisableMsg("on removing the last compiler "
+                                      "stack item", NULL);
+        }
+        compiler_unit_check(c->u);
+    }
+    else {
+        c->u = NULL;
+    }
+
+    PyErr_Restore(exc_type, exc_val, exc_tb);
+}
 
 /* Search if variable annotations are present statically in a block. */
 
@@ -1822,20 +1832,37 @@ compiler_call_exit_with_nones(struct compiler *c) {
 }
 
 static int
-compiler_add_yield_from(struct compiler *c)
+compiler_add_yield_from(struct compiler *c, int await)
 {
-    basicblock *start, *jump, *exit;
+    basicblock *start, *resume, *exit;
     start = compiler_new_block(c);
-    jump = compiler_new_block(c);
+    resume = compiler_new_block(c);
     exit = compiler_new_block(c);
-    if (start == NULL || jump == NULL || exit == NULL) {
+    if (start == NULL || resume == NULL || exit == NULL) {
         return 0;
     }
     compiler_use_next_block(c, start);
     ADDOP_JUMP(c, SEND, exit);
-    compiler_use_next_block(c, jump);
-    ADDOP_JUMP(c, JUMP_ABSOLUTE, start);
+    compiler_use_next_block(c, resume);
+    ADDOP_I(c, RESUME, await ? 3 : 2);
+    ADDOP_JUMP(c, JUMP_NO_INTERRUPT, start);
     compiler_use_next_block(c, exit);
+    return 1;
+}
+
+static int
+compiler_pop_except_and_reraise(struct compiler *c)
+{
+    /* Stack contents
+     * [exc_info, lasti, exc]            COPY        3
+     * [exc_info, lasti, exc, exc_info]  POP_EXCEPT
+     * [exc_info, lasti, exc]            RERAISE      1
+     * (exception_unwind clears the stack)
+     */
+
+    ADDOP_I(c, COPY, 3);
+    ADDOP(c, POP_EXCEPT);
+    ADDOP_I(c, RERAISE, 1);
     return 1;
 }
 
@@ -1911,7 +1938,7 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
             if (info->fb_type == ASYNC_WITH) {
                 ADDOP(c, GET_AWAITABLE);
                 ADDOP_LOAD_CONST(c, Py_None);
-                ADD_YIELD_FROM(c);
+                ADD_YIELD_FROM(c, 1);
             }
             ADDOP(c, POP_TOP);
             /* The exit block should appear to execute after the
@@ -2011,6 +2038,7 @@ compiler_body(struct compiler *c, asdl_stmt_seq *stmts)
             st = (stmt_ty)asdl_seq_GET(stmts, 0);
             assert(st->kind == Expr_kind);
             VISIT(c, expr, st->v.Expr.value);
+            UNSET_LOC(c);
             if (!compiler_nameop(c, __doc__, Store))
                 return 0;
         }
@@ -2030,9 +2058,10 @@ compiler_mod(struct compiler *c, mod_ty mod)
     if (module == NULL) {
         return 0;
     }
-    /* Use 0 for firstlineno initially, will fixup in assemble(). */
-    if (!compiler_enter_scope(c, module, COMPILER_SCOPE_MODULE, mod, 1))
+    if (!compiler_enter_scope(c, module, COMPILER_SCOPE_MODULE, mod, 1)) {
         return NULL;
+    }
+    c->u->u_lineno = 1;
     switch (mod->kind) {
     case Module_kind:
         if (!compiler_body(c, mod->v.Module.body)) {
@@ -2556,8 +2585,9 @@ compiler_class(struct compiler *c, stmt_ty s)
 
     /* 1. compile the class body into a code object */
     if (!compiler_enter_scope(c, s->v.ClassDef.name,
-                              COMPILER_SCOPE_CLASS, (void *)s, firstlineno))
+                              COMPILER_SCOPE_CLASS, (void *)s, firstlineno)) {
         return 0;
+    }
     /* this block represents what we do in the new scope */
     {
         /* use the class name for name mangling */
@@ -2892,9 +2922,9 @@ compiler_lambda(struct compiler *c, expr_ty e)
     }
 
     if (!compiler_enter_scope(c, name, COMPILER_SCOPE_LAMBDA,
-                              (void *)e, e->lineno))
+                              (void *)e, e->lineno)) {
         return 0;
-
+    }
     /* Make None the first constant, so the lambda can't have a
        docstring. */
     if (compiler_add_const(c, Py_None) < 0)
@@ -3024,7 +3054,7 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     ADDOP_JUMP(c, SETUP_FINALLY, except);
     ADDOP(c, GET_ANEXT);
     ADDOP_LOAD_CONST(c, Py_None);
-    ADD_YIELD_FROM(c);
+    ADD_YIELD_FROM(c, 1);
     ADDOP(c, POP_BLOCK);  /* for SETUP_FINALLY */
 
     /* Success block for __anext__ */
@@ -3235,7 +3265,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     compiler_pop_fblock(c, FINALLY_END, end);
     ADDOP_I(c, RERAISE, 0);
     compiler_use_next_block(c, cleanup);
-    ADDOP(c, POP_EXCEPT_AND_RERAISE);
+    POP_EXCEPT_AND_RERAISE(c);
     compiler_use_next_block(c, exit);
     return 1;
 }
@@ -3290,7 +3320,7 @@ compiler_try_star_finally(struct compiler *c, stmt_ty s)
     compiler_pop_fblock(c, FINALLY_END, end);
     ADDOP_I(c, RERAISE, 0);
     compiler_use_next_block(c, cleanup);
-    ADDOP(c, POP_EXCEPT_AND_RERAISE);
+    POP_EXCEPT_AND_RERAISE(c);
     compiler_use_next_block(c, exit);
     return 1;
 }
@@ -3446,10 +3476,9 @@ compiler_try_except(struct compiler *c, stmt_ty s)
     compiler_pop_fblock(c, EXCEPTION_HANDLER, NULL);
     ADDOP_I(c, RERAISE, 0);
     compiler_use_next_block(c, cleanup);
-    ADDOP(c, POP_EXCEPT_AND_RERAISE);
+    POP_EXCEPT_AND_RERAISE(c);
     compiler_use_next_block(c, orelse);
     VISIT_SEQ(c, stmt, s->v.Try.orelse);
-    ADDOP_JUMP(c, JUMP_FORWARD, end);
     compiler_use_next_block(c, end);
     return 1;
 }
@@ -3489,15 +3518,13 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 
    [orig, res]                                PREP_RERAISE_STAR
    [exc]                                      DUP_TOP
-   [exc, exc]                                 LOAD_CONST            None
-   [exc, exc, None]                           COMPARE_IS
-   [exc, is_none]                             POP_JUMP_IF_FALSE     RER
+   [exc, exc]                                 POP_JUMP_IF_NOT_NONE  RER
    [exc]                                      POP_TOP
    []                                         JUMP_FORWARD          L0
 
    [exc]                            RER:      ROT_TWO
    [exc, prev_exc_info]                       POP_EXCEPT
-   [exc]                                      RERAISE      0
+   [exc]                                      RERAISE               0
 
    []                               L0:       <next statement>
 */
@@ -3661,9 +3688,7 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
     compiler_use_next_block(c, reraise_star);
     ADDOP(c, PREP_RERAISE_STAR);
     ADDOP(c, DUP_TOP);
-    ADDOP_LOAD_CONST(c, Py_None);
-    ADDOP_COMPARE(c, Is);
-    ADDOP_JUMP(c, POP_JUMP_IF_FALSE, reraise);
+    ADDOP_JUMP(c, POP_JUMP_IF_NOT_NONE, reraise);
     NEXT_BLOCK(c);
 
     /* Nothing to reraise */
@@ -3677,10 +3702,9 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
     ADDOP(c, POP_EXCEPT);
     ADDOP_I(c, RERAISE, 0);
     compiler_use_next_block(c, cleanup);
-    ADDOP(c, POP_EXCEPT_AND_RERAISE);
+    POP_EXCEPT_AND_RERAISE(c);
     compiler_use_next_block(c, orelse);
     VISIT_SEQ(c, stmt, s->v.TryStar.orelse);
-    ADDOP_JUMP(c, JUMP_FORWARD, end);
     compiler_use_next_block(c, end);
     return 1;
 }
@@ -4213,7 +4237,7 @@ starunpack_helper(struct compiler *c, asdl_expr_seq *elts, int pushed,
             Py_INCREF(val);
             PyTuple_SET_ITEM(folded, i, val);
         }
-        if (tuple) {
+        if (tuple && !pushed) {
             ADDOP_LOAD_CONST_NEW(c, folded);
         } else {
             if (add == SET_ADD) {
@@ -4225,6 +4249,9 @@ starunpack_helper(struct compiler *c, asdl_expr_seq *elts, int pushed,
             ADDOP_I(c, build, pushed);
             ADDOP_LOAD_CONST_NEW(c, folded);
             ADDOP_I(c, extend, 1);
+            if (tuple) {
+                ADDOP(c, LIST_TO_TUPLE);
+            }
         }
         return 1;
     }
@@ -5118,6 +5145,7 @@ compiler_sync_comprehension_generator(struct compiler *c,
         case COMP_GENEXP:
             VISIT(c, expr, elt);
             ADDOP(c, YIELD_VALUE);
+            ADDOP_I(c, RESUME, 1);
             ADDOP(c, POP_TOP);
             break;
         case COMP_LISTCOMP:
@@ -5190,7 +5218,7 @@ compiler_async_comprehension_generator(struct compiler *c,
     ADDOP_JUMP(c, SETUP_FINALLY, except);
     ADDOP(c, GET_ANEXT);
     ADDOP_LOAD_CONST(c, Py_None);
-    ADD_YIELD_FROM(c);
+    ADD_YIELD_FROM(c, 1);
     ADDOP(c, POP_BLOCK);
     VISIT(c, expr, gen->target);
 
@@ -5216,6 +5244,7 @@ compiler_async_comprehension_generator(struct compiler *c,
         case COMP_GENEXP:
             VISIT(c, expr, elt);
             ADDOP(c, YIELD_VALUE);
+            ADDOP_I(c, RESUME, 1);
             ADDOP(c, POP_TOP);
             break;
         case COMP_LISTCOMP:
@@ -5340,7 +5369,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     if (is_async_generator && type != COMP_GENEXP) {
         ADDOP(c, GET_AWAITABLE);
         ADDOP_LOAD_CONST(c, Py_None);
-        ADD_YIELD_FROM(c);
+        ADD_YIELD_FROM(c, 1);
     }
 
     return 1;
@@ -5429,7 +5458,7 @@ compiler_with_except_finish(struct compiler *c, basicblock * cleanup) {
     NEXT_BLOCK(c);
     ADDOP_I(c, RERAISE, 2);
     compiler_use_next_block(c, cleanup);
-    ADDOP(c, POP_EXCEPT_AND_RERAISE);
+    POP_EXCEPT_AND_RERAISE(c);
     compiler_use_next_block(c, exit);
     ADDOP(c, POP_TOP); /* exc_value */
     ADDOP(c, POP_BLOCK);
@@ -5489,7 +5518,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP(c, BEFORE_ASYNC_WITH);
     ADDOP(c, GET_AWAITABLE);
     ADDOP_LOAD_CONST(c, Py_None);
-    ADD_YIELD_FROM(c);
+    ADD_YIELD_FROM(c, 1);
 
     ADDOP_JUMP(c, SETUP_WITH, final);
 
@@ -5526,7 +5555,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
         return 0;
     ADDOP(c, GET_AWAITABLE);
     ADDOP_LOAD_CONST(c, Py_None);
-    ADD_YIELD_FROM(c);
+    ADD_YIELD_FROM(c, 1);
 
     ADDOP(c, POP_TOP);
 
@@ -5540,7 +5569,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP(c, WITH_EXCEPT_START);
     ADDOP(c, GET_AWAITABLE);
     ADDOP_LOAD_CONST(c, Py_None);
-    ADD_YIELD_FROM(c);
+    ADD_YIELD_FROM(c, 1);
     compiler_with_except_finish(c, cleanup);
 
     compiler_use_next_block(c, exit);
@@ -5686,6 +5715,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
             ADDOP_LOAD_CONST(c, Py_None);
         }
         ADDOP(c, YIELD_VALUE);
+        ADDOP_I(c, RESUME, 1);
         break;
     case YieldFrom_kind:
         if (c->u->u_ste->ste_type != FunctionBlock)
@@ -5697,7 +5727,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         VISIT(c, expr, e->v.YieldFrom.value);
         ADDOP(c, GET_YIELD_FROM_ITER);
         ADDOP_LOAD_CONST(c, Py_None);
-        ADD_YIELD_FROM(c);
+        ADD_YIELD_FROM(c, 0);
         break;
     case Await_kind:
         if (!IS_TOP_LEVEL_AWAIT(c)){
@@ -5714,7 +5744,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         VISIT(c, expr, e->v.Await.value);
         ADDOP(c, GET_AWAITABLE);
         ADDOP_LOAD_CONST(c, Py_None);
-        ADD_YIELD_FROM(c);
+        ADD_YIELD_FROM(c, 1);
         break;
     case Compare_kind:
         return compiler_compare(c, e);
@@ -7029,11 +7059,11 @@ stackdepth(struct compiler *c)
             }
             depth = new_depth;
             if (instr->i_opcode == JUMP_ABSOLUTE ||
+                instr->i_opcode == JUMP_NO_INTERRUPT ||
                 instr->i_opcode == JUMP_FORWARD ||
                 instr->i_opcode == RETURN_VALUE ||
                 instr->i_opcode == RAISE_VARARGS ||
-                instr->i_opcode == RERAISE ||
-                instr->i_opcode == POP_EXCEPT_AND_RERAISE)
+                instr->i_opcode == RERAISE)
             {
                 /* remaining code is dead */
                 next = NULL;
@@ -7547,9 +7577,6 @@ normalize_jumps(struct assembler *a)
             if (last->i_target->b_visited == 0) {
                 last->i_opcode = JUMP_FORWARD;
             }
-            else if (b->b_iused >= 2 && b->b_instr[b->b_iused-2].i_opcode == SEND) {
-                last->i_opcode = JUMP_ABSOLUTE_QUICK;
-            }
         }
     }
 }
@@ -7971,6 +7998,35 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
     if (flags < 0) {
         return -1;
     }
+    assert(c->u->u_firstlineno > 0);
+
+    /* Add the generator prefix instructions. */
+    if (flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
+        struct instr make_gen = {
+            .i_opcode = RETURN_GENERATOR,
+            .i_oparg = 0,
+            .i_lineno = c->u->u_firstlineno,
+            .i_col_offset = -1,
+            .i_end_lineno = c->u->u_firstlineno,
+            .i_end_col_offset = -1,
+            .i_target = NULL,
+        };
+        if (insert_instruction(entryblock, 0, &make_gen) < 0) {
+            return -1;
+        }
+        struct instr pop_top = {
+            .i_opcode = POP_TOP,
+            .i_oparg = 0,
+            .i_lineno = -1,
+            .i_col_offset = -1,
+            .i_end_lineno = -1,
+            .i_end_col_offset = -1,
+            .i_target = NULL,
+        };
+        if (insert_instruction(entryblock, 1, &pop_top) < 0) {
+            return -1;
+        }
+    }
 
     /* Set up cells for any variable that escapes, to be put in a closure. */
     const int ncellvars = (int)PyDict_GET_SIZE(c->u->u_cellvars);
@@ -8008,33 +8064,6 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
             ncellsused += 1;
         }
         PyMem_RawFree(sorted);
-    }
-
-    /* Add the generator prefix instructions. */
-    if (flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
-        int kind;
-        if (flags & CO_COROUTINE) {
-            kind = 1;
-        }
-        else if (flags & CO_ASYNC_GENERATOR) {
-            kind = 2;
-        }
-        else {
-            kind = 0;
-        }
-
-        struct instr gen_start = {
-            .i_opcode = GEN_START,
-            .i_oparg = kind,
-            .i_lineno = -1,
-            .i_col_offset = -1,
-            .i_end_lineno = -1,
-            .i_end_col_offset = -1,
-            .i_target = NULL,
-        };
-        if (insert_instruction(entryblock, 0, &gen_start) < 0) {
-            return -1;
-        }
     }
 
     if (nfreevars) {
@@ -8186,17 +8215,19 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
 
+    /* Set firstlineno if it wasn't explicitly set. */
+    if (!c->u->u_firstlineno) {
+        if (entryblock->b_instr && entryblock->b_instr->i_lineno) {
+            c->u->u_firstlineno = entryblock->b_instr->i_lineno;
+        }
+        else {
+            c->u->u_firstlineno = 1;
+        }
+    }
+
     // This must be called before fix_cell_offsets().
     if (insert_prefix_instructions(c, entryblock, cellfixedoffsets, nfreevars)) {
         goto error;
-    }
-
-    /* Set firstlineno if it wasn't explicitly set. */
-    if (!c->u->u_firstlineno) {
-        if (entryblock->b_instr && entryblock->b_instr->i_lineno)
-            c->u->u_firstlineno = entryblock->b_instr->i_lineno;
-       else
-            c->u->u_firstlineno = 1;
     }
 
     if (!assemble_init(&a, nblocks, c->u->u_firstlineno))
@@ -8516,6 +8547,21 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                             bb->b_instr[i+1].i_opcode = NOP;
                         }
                         break;
+                    case IS_OP:
+                        cnt = get_const_value(inst->i_opcode, oparg, consts);
+                        if (cnt == NULL) {
+                            goto error;
+                        }
+                        int jump_op = i+2 < bb->b_iused ? bb->b_instr[i+2].i_opcode : 0;
+                        if (Py_IsNone(cnt) && (jump_op == POP_JUMP_IF_FALSE || jump_op == POP_JUMP_IF_TRUE)) {
+                            unsigned char nextarg = bb->b_instr[i+1].i_oparg;
+                            inst->i_opcode = NOP;
+                            bb->b_instr[i+1].i_opcode = NOP;
+                            bb->b_instr[i+2].i_opcode = nextarg ^ (jump_op == POP_JUMP_IF_FALSE) ?
+                                    POP_JUMP_IF_NOT_NONE : POP_JUMP_IF_NONE;
+                        }
+                        Py_DECREF(cnt);
+                        break;
                 }
                 break;
             }
@@ -8606,6 +8652,14 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                             --i;
                         }
                         break;
+                }
+                break;
+            case POP_JUMP_IF_NOT_NONE:
+            case POP_JUMP_IF_NONE:
+                switch (target->i_opcode) {
+                    case JUMP_ABSOLUTE:
+                    case JUMP_FORWARD:
+                        i -= jump_thread(inst, target, inst->i_opcode);
                 }
                 break;
             case POP_JUMP_IF_FALSE:
@@ -8756,14 +8810,16 @@ normalize_basic_block(basicblock *bb) {
             case RETURN_VALUE:
             case RAISE_VARARGS:
             case RERAISE:
-            case POP_EXCEPT_AND_RERAISE:
                 bb->b_exit = 1;
                 bb->b_nofallthrough = 1;
                 break;
             case JUMP_ABSOLUTE:
             case JUMP_FORWARD:
+            case JUMP_NO_INTERRUPT:
                 bb->b_nofallthrough = 1;
                 /* fall through */
+            case POP_JUMP_IF_NOT_NONE:
+            case POP_JUMP_IF_NONE:
             case POP_JUMP_IF_FALSE:
             case POP_JUMP_IF_TRUE:
             case JUMP_IF_FALSE_OR_POP:
@@ -8944,6 +9000,7 @@ optimize_cfg(struct compiler *c, struct assembler *a, PyObject *consts)
         if (b->b_iused > 0) {
             struct instr *b_last_instr = &b->b_instr[b->b_iused - 1];
             if (b_last_instr->i_opcode == JUMP_ABSOLUTE ||
+                b_last_instr->i_opcode == JUMP_NO_INTERRUPT ||
                 b_last_instr->i_opcode == JUMP_FORWARD) {
                 if (b_last_instr->i_target == b->b_next) {
                     assert(b->b_next->b_iused);
