@@ -1,0 +1,2 @@
+Ensure that "small" integers created by :meth:`int.from_bytes` and
+:class:`decimal.Decimal` are properly cached.

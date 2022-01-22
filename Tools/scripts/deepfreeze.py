@@ -1,19 +1,31 @@
+"""Deep freeze
+
+The script is executed by _bootstrap_python interpreter. Shared library
+extension modules are not available.
+"""
 import argparse
+import ast
 import builtins
 import collections
 import contextlib
 import os
-import sys
+import re
 import time
 import types
-import typing
+from typing import Dict, FrozenSet, TextIO, Tuple
+
+import umarshal
 
 verbose = False
 
 
+def isprintable(b: bytes) -> bool:
+    return all(0x20 <= c < 0x7f for c in b)
+
+
 def make_string_literal(b: bytes) -> str:
     res = ['"']
-    if b.isascii() and b.decode("ascii").isprintable():
+    if isprintable(b):
         res.append(b.decode("ascii").replace("\\", "\\\\").replace("\"", "\\\""))
     else:
         for i in b:
@@ -39,13 +51,14 @@ def get_localsplus(code: types.CodeType):
 
 
 def get_localsplus_counts(code: types.CodeType,
-                          names: tuple[str, ...],
-                          kinds: bytes) -> tuple[int, int, int, int]:
+                          names: Tuple[str, ...],
+                          kinds: bytes) -> Tuple[int, int, int, int]:
     nlocals = 0
     nplaincellvars = 0
     ncellvars = 0
     nfreevars = 0
-    for name, kind in zip(names, kinds, strict=True):
+    assert len(names) == len(kinds)
+    for name, kind in zip(names, kinds):
         if kind & CO_FAST_LOCAL:
             nlocals += 1
             if kind & CO_FAST_CELL:
@@ -55,7 +68,8 @@ def get_localsplus_counts(code: types.CodeType,
             nplaincellvars += 1
         elif kind & CO_FAST_FREE:
             nfreevars += 1
-    assert nlocals == len(code.co_varnames) == code.co_nlocals
+    assert nlocals == len(code.co_varnames) == code.co_nlocals, \
+        (nlocals, len(code.co_varnames), code.co_nlocals)
     assert ncellvars == len(code.co_cellvars)
     assert nfreevars == len(code.co_freevars)
     assert len(names) == nlocals + nplaincellvars + nfreevars
@@ -67,7 +81,7 @@ PyUnicode_2BYTE_KIND = 2
 PyUnicode_4BYTE_KIND = 4
 
 
-def analyze_character_width(s: str) -> tuple[int, bool]:
+def analyze_character_width(s: str) -> Tuple[int, bool]:
     maxchar = ' '
     for c in s:
         maxchar = max(maxchar, c)
@@ -82,17 +96,23 @@ def analyze_character_width(s: str) -> tuple[int, bool]:
     return kind, ascii
 
 
+def removesuffix(base: str, suffix: str) -> str:
+    if base.endswith(suffix):
+        return base[:len(base) - len(suffix)]
+    return base
+
 class Printer:
 
-    def __init__(self, file: typing.TextIO):
+    def __init__(self, file: TextIO) -> None:
         self.level = 0
         self.file = file
-        self.cache: dict[tuple[type, object], str] = {}
+        self.cache: Dict[tuple[type, object, str], str] = {}
         self.hits, self.misses = 0, 0
         self.patchups: list[str] = []
         self.write('#include "Python.h"')
         self.write('#include "internal/pycore_gc.h"')
         self.write('#include "internal/pycore_code.h"')
+        self.write('#include "internal/pycore_long.h"')
         self.write("")
 
     @contextlib.contextmanager
@@ -128,6 +148,8 @@ class Printer:
         self.write(f".{name} = {getattr(obj, name)},")
 
     def generate_bytes(self, name: str, b: bytes) -> str:
+        if b == b"":
+            return "(PyObject *)&_Py_SINGLETON(bytes_empty)"
         self.write("static")
         with self.indent():
             with self.block("struct"):
@@ -227,7 +249,7 @@ class Printer:
             # otherwise MSVC doesn't like it.
             self.write(f".co_consts = {co_consts},")
             self.write(f".co_names = {co_names},")
-            self.write(f".co_firstinstr = (_Py_CODEUNIT *) {co_code.removesuffix('.ob_base.ob_base')}.ob_sval,")
+            self.write(f".co_firstinstr = (_Py_CODEUNIT *) {removesuffix(co_code, '.ob_base.ob_base')}.ob_sval,")
             self.write(f".co_exceptiontable = {co_exceptiontable},")
             self.field(code, "co_flags")
             self.write(".co_warmup = QUICKENING_INITIAL_WARMUP_VALUE,")
@@ -255,7 +277,7 @@ class Printer:
             self.write(f".co_freevars = {co_freevars},")
         return f"& {name}.ob_base"
 
-    def generate_tuple(self, name: str, t: tuple[object, ...]) -> str:
+    def generate_tuple(self, name: str, t: Tuple[object, ...]) -> str:
         items = [self.generate(f"{name}_{i}", it) for i, it in enumerate(t)]
         self.write("static")
         with self.indent():
@@ -274,14 +296,7 @@ class Printer:
                             self.write(item + ",")
         return f"& {name}._object.ob_base.ob_base"
 
-    def generate_int(self, name: str, i: int) -> str:
-        maxint = sys.maxsize
-        if maxint == 2**31 - 1:
-            digit = 2**15
-        elif maxint == 2**63 - 1:
-            digit = 2**30
-        else:
-            assert False, f"What int size is this system?!? {maxint=}"
+    def _generate_int_for_bits(self, name: str, i: int, digit: int) -> None:
         sign = -1 if i < 0 else 0 if i == 0 else +1
         i = abs(i)
         digits: list[int] = []
@@ -298,6 +313,22 @@ class Printer:
             if digits:
                 ds = ", ".join(map(str, digits))
                 self.write(f".ob_digit = {{ {ds} }},")
+
+    def generate_int(self, name: str, i: int) -> str:
+        if -5 <= i <= 256:
+            return f"(PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + {i}]"
+        if abs(i) < 2**15:
+            self._generate_int_for_bits(name, i, 2**15)
+        else:
+            connective = "if"
+            for bits_in_digit in 15, 30:
+                self.write(f"#{connective} PYLONG_BITS_IN_DIGIT == {bits_in_digit}")
+                self._generate_int_for_bits(name, i, 2**bits_in_digit)
+                connective = "elif"
+            self.write("#else")
+            self.write('#error "PYLONG_BITS_IN_DIGIT should be 15 or 30"')
+            self.write("#endif")
+            # If neither clause applies, it won't compile
         return f"& {name}.ob_base.ob_base"
 
     def generate_float(self, name: str, x: float) -> str:
@@ -312,10 +343,19 @@ class Printer:
             self.write(f".cval = {{ {z.real}, {z.imag} }},")
         return f"&{name}.ob_base"
 
-    def generate_frozenset(self, name: str, fs: frozenset[object]) -> str:
+    def generate_frozenset(self, name: str, fs: FrozenSet[object]) -> str:
         ret = self.generate_tuple(name, tuple(sorted(fs)))
         self.write("// TODO: The above tuple should be a frozenset")
         return ret
+
+    def generate_file(self, module: str, code: object)-> None:
+        module = module.replace(".", "_")
+        self.generate(f"{module}_toplevel", code)
+        with self.block(f"static void {module}_do_patchups(void)"):
+            for p in self.patchups:
+                self.write(p)
+        self.patchups.clear()
+        self.write(EPILOGUE.replace("%%NAME%%", module))
 
     def generate(self, name: str, obj: object) -> str:
         # Use repr() in the key to distinguish -0.0 from +0.0
@@ -325,34 +365,33 @@ class Printer:
             # print(f"Cache hit {key!r:.40}: {self.cache[key]!r:.40}")
             return self.cache[key]
         self.misses += 1
-        match obj:
-            case types.CodeType() as code:
-                val = self.generate_code(name, code)
-            case tuple(t):
-                val = self.generate_tuple(name, t)
-            case str(s):
-                val = self.generate_unicode(name, s)
-            case bytes(b):
-                val = self.generate_bytes(name, b)
-            case True:
-                return "Py_True"
-            case False:
-                return "Py_False"
-            case int(i):
-                val = self.generate_int(name, i)
-            case float(x):
-                val = self.generate_float(name, x)
-            case complex() as z:
-                val = self.generate_complex(name, z)
-            case frozenset(fs):
-                val = self.generate_frozenset(name, fs)
-            case builtins.Ellipsis:
-                return "Py_Ellipsis"
-            case None:
-                return "Py_None"
-            case _:
-                raise TypeError(
-                    f"Cannot generate code for {type(obj).__name__} object")
+        if isinstance(obj, (types.CodeType, umarshal.Code)) :
+            val = self.generate_code(name, obj)
+        elif isinstance(obj, tuple):
+            val = self.generate_tuple(name, obj)
+        elif isinstance(obj, str):
+            val = self.generate_unicode(name, obj)
+        elif isinstance(obj, bytes):
+            val = self.generate_bytes(name, obj)
+        elif obj is True:
+            return "Py_True"
+        elif obj is False:
+            return "Py_False"
+        elif isinstance(obj, int):
+            val = self.generate_int(name, obj)
+        elif isinstance(obj, float):
+            val = self.generate_float(name, obj)
+        elif isinstance(obj, complex):
+            val = self.generate_complex(name, obj)
+        elif isinstance(obj, frozenset):
+            val = self.generate_frozenset(name, obj)
+        elif obj is builtins.Ellipsis:
+            return "Py_Ellipsis"
+        elif obj is None:
+            return "Py_None"
+        else:
+            raise TypeError(
+                f"Cannot generate code for {type(obj).__name__} object")
         # print(f"Cache store {key!r:.40}: {val!r:.40}")
         self.cache[key] = val
         return val
@@ -362,31 +401,51 @@ EPILOGUE = """
 PyObject *
 _Py_get_%%NAME%%_toplevel(void)
 {
-    do_patchups();
-    return (PyObject *) &toplevel;
+    %%NAME%%_do_patchups();
+    return (PyObject *) &%%NAME%%_toplevel;
 }
 """
 
-def generate(source: str, filename: str, modname: str, file: typing.TextIO) -> None:
-    code = compile(source, filename, "exec")
-    printer = Printer(file)
-    printer.generate("toplevel", code)
-    printer.write("")
-    with printer.block("static void do_patchups()"):
-        for p in printer.patchups:
-            printer.write(p)
-    here = os.path.dirname(__file__)
-    printer.write(EPILOGUE.replace("%%NAME%%", modname.replace(".", "_")))
+FROZEN_COMMENT_C = "/* Auto-generated by Programs/_freeze_module.c */"
+FROZEN_COMMENT_PY = "/* Auto-generated by Programs/_freeze_module.py */"
+
+FROZEN_DATA_LINE = r"\s*(\d+,\s*)+\s*"
+
+
+def is_frozen_header(source: str) -> bool:
+    return source.startswith((FROZEN_COMMENT_C, FROZEN_COMMENT_PY))
+
+
+def decode_frozen_data(source: str) -> types.CodeType:
+    lines = source.splitlines()
+    while lines and re.match(FROZEN_DATA_LINE, lines[0]) is None:
+        del lines[0]
+    while lines and re.match(FROZEN_DATA_LINE, lines[-1]) is None:
+        del lines[-1]
+    values: Tuple[int, ...] = ast.literal_eval("".join(lines).strip())
+    data = bytes(values)
+    return umarshal.loads(data)
+
+
+def generate(args: list[str], output: TextIO) -> None:
+    printer = Printer(output)
+    for arg in args:
+        file, modname = arg.rsplit(':', 1)
+        with open(file, "r", encoding="utf8") as fd:
+            source = fd.read()
+            if is_frozen_header(source):
+                code = decode_frozen_data(source)
+            else:
+                code = compile(fd.read(), f"<frozen {modname}>", "exec")
+            printer.generate_file(modname, code)
     if verbose:
         print(f"Cache hits: {printer.hits}, misses: {printer.misses}")
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-m", "--module", help="Defaults to basename(file)")
-parser.add_argument("-o", "--output", help="Defaults to MODULE.c")
+parser.add_argument("-o", "--output", help="Defaults to deepfreeze.c", default="deepfreeze.c")
 parser.add_argument("-v", "--verbose", action="store_true", help="Print diagnostics")
-parser.add_argument("file", help="Input file (required)")
-
+parser.add_argument('args', nargs="+", help="Input file and module name (required) in file:modname format")
 
 @contextlib.contextmanager
 def report_time(label: str):
@@ -403,13 +462,10 @@ def main() -> None:
     global verbose
     args = parser.parse_args()
     verbose = args.verbose
-    with open(args.file, encoding="utf-8") as f:
-        source = f.read()
-    modname = args.module or os.path.basename(args.file).removesuffix(".py")
-    output = args.output or modname + ".c"
+    output = args.output
     with open(output, "w", encoding="utf-8") as file:
         with report_time("generate"):
-            generate(source, f"<frozen {modname}>", modname, file)
+            generate(args.args, file)
     if verbose:
         print(f"Wrote {os.path.getsize(output)} bytes to {output}")
 

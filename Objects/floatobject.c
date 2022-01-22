@@ -6,11 +6,13 @@
 #include "Python.h"
 #include "pycore_dtoa.h"          // _Py_dg_dtoa()
 #include "pycore_floatobject.h"   // _PyFloat_FormatAdvancedWriter()
+#include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // _PyInterpreterState.float_state
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_pymath.h"        // _Py_ADJUST_ERANGE1()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_structseq.h"     // _PyStructSequence_FiniType()
 
 #include <ctype.h>
 #include <float.h>
@@ -1684,7 +1686,7 @@ float_vectorcall(PyObject *type, PyObject * const*args,
     }
 
     PyObject *x = nargs >= 1 ? args[0] : NULL;
-    return float_new_impl((PyTypeObject *)type, x);
+    return float_new_impl(_PyType_CAST(type), x);
 }
 
 
@@ -1981,8 +1983,12 @@ PyTypeObject PyFloat_Type = {
 };
 
 void
-_PyFloat_Init(void)
+_PyFloat_InitState(PyInterpreterState *interp)
 {
+    if (!_Py_IsMainInterpreter(interp)) {
+        return;
+    }
+
     /* We attempt to determine if this machine is using IEEE
        floating point formats by peering at the bits of some
        carefully chosen values.  If it looks like we are on an
@@ -2030,16 +2036,25 @@ _PyFloat_Init(void)
     float_format = detected_float_format;
 }
 
-int
-_PyFloat_InitTypes(void)
+PyStatus
+_PyFloat_InitTypes(PyInterpreterState *interp)
 {
+    if (!_Py_IsMainInterpreter(interp)) {
+        return _PyStatus_OK();
+    }
+
+    if (PyType_Ready(&PyFloat_Type) < 0) {
+        return _PyStatus_ERR("Can't initialize float type");
+    }
+
     /* Init float info */
     if (FloatInfoType.tp_name == NULL) {
         if (PyStructSequence_InitType2(&FloatInfoType, &floatinfo_desc) < 0) {
-            return -1;
+            return _PyStatus_ERR("can't init float info type");
         }
     }
-    return 0;
+
+    return _PyStatus_OK();
 }
 
 void
@@ -2066,6 +2081,14 @@ _PyFloat_Fini(PyInterpreterState *interp)
     struct _Py_float_state *state = &interp->float_state;
     state->numfree = -1;
 #endif
+}
+
+void
+_PyFloat_FiniType(PyInterpreterState *interp)
+{
+    if (_Py_IsMainInterpreter(interp)) {
+        _PyStructSequence_FiniType(&FloatInfoType);
+    }
 }
 
 /* Print summary info about the state of the optimized allocator */

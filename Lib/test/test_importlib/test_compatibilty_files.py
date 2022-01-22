@@ -3,12 +3,12 @@ import unittest
 
 from importlib import resources
 
-from importlib._adapters import (
+from importlib.resources._adapters import (
     CompatibilityFiles,
     wrap_spec,
 )
 
-from .resources import util
+from test.test_importlib.resources import util
 
 
 class CompatibilityFilesTests(unittest.TestCase):
@@ -100,3 +100,7 @@ class CompatibilityFilesNoReaderTests(unittest.TestCase):
 
     def test_spec_path_joinpath(self):
         self.assertIsInstance(self.files / 'a', CompatibilityFiles.OrphanPath)
+
+
+if __name__ == '__main__':
+    unittest.main()

@@ -3394,6 +3394,13 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
         return NULL;
     }
 
+    if (n == 1) {
+        sdigit val = mpd_arith_sign(x) * ob_digit[0];
+        mpd_free(ob_digit);
+        mpd_del(x);
+        return PyLong_FromLong(val);
+    }
+
     assert(n > 0);
     pylong = _PyLong_New(n);
     if (pylong == NULL) {

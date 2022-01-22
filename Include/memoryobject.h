@@ -26,7 +26,7 @@ PyAPI_FUNC(PyObject *) PyMemoryView_FromMemory(char *mem, Py_ssize_t size,
                                                int flags);
 #endif
 #ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject *) PyMemoryView_FromBuffer(Py_buffer *info);
+PyAPI_FUNC(PyObject *) PyMemoryView_FromBuffer(const Py_buffer *info);
 #endif
 PyAPI_FUNC(PyObject *) PyMemoryView_GetContiguous(PyObject *base,
                                                   int buffertype,

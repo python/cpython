@@ -64,7 +64,7 @@ an event loop:
 
 .. function:: new_event_loop()
 
-   Create a new event loop object.
+   Create and return a new event loop object.
 
 Note that the behaviour of :func:`get_event_loop`, :func:`set_event_loop`,
 and :func:`new_event_loop` functions can be altered by
@@ -631,6 +631,11 @@ Creating network servers
        assumed and a list of multiple sockets will be returned (most likely
        one for IPv4 and another one for IPv6).
 
+   * The *port* parameter can be set to specify which port the server should
+     listen on. If ``0`` or ``None`` (the default), a random unused port will
+     be selected (note that if *host* resolves to multiple network interfaces,
+     a different random port will be selected for each interface).
+
    * *family* can be set to either :data:`socket.AF_INET` or
      :data:`~socket.AF_INET6` to force the socket to use IPv4 or IPv6.
      If not set, the *family* will be determined from host name
@@ -892,7 +897,7 @@ convenient.
 
    .. versionchanged:: 3.7
       Even though the method was always documented as a coroutine
-      method, before Python 3.7 it returned an :class:`Future`.
+      method, before Python 3.7 it returned a :class:`Future`.
       Since Python 3.7, this is an ``async def`` method.
 
 .. coroutinemethod:: loop.sock_connect(sock, address)
@@ -1238,9 +1243,10 @@ async/await code consider using the high-level
 
 .. note::
 
-   The default asyncio event loop on **Windows** does not support
-   subprocesses. See :ref:`Subprocess Support on Windows
-   <asyncio-windows-subprocess>` for details.
+   On Windows, the default event loop :class:`ProactorEventLoop` supports
+   subprocesses, whereas :class:`SelectorEventLoop` does not. See
+   :ref:`Subprocess Support on Windows <asyncio-windows-subprocess>` for
+   details.
 
 .. coroutinemethod:: loop.subprocess_exec(protocol_factory, *args, \
                       stdin=subprocess.PIPE, stdout=subprocess.PIPE, \

@@ -53,6 +53,9 @@
 #include "frozen_modules/os.h"
 #include "frozen_modules/site.h"
 #include "frozen_modules/stat.h"
+#include "frozen_modules/importlib.util.h"
+#include "frozen_modules/importlib.machinery.h"
+#include "frozen_modules/runpy.h"
 #include "frozen_modules/__hello__.h"
 #include "frozen_modules/__phello__.h"
 #include "frozen_modules/__phello__.ham.h"
@@ -61,12 +64,7 @@
 #include "frozen_modules/frozen_only.h"
 /* End includes */
 
-#ifdef MS_WINDOWS
-/* Deepfreeze isn't supported on Windows yet. */
-#define GET_CODE(name) NULL
-#else
 #define GET_CODE(name) _Py_get_##name##_toplevel
-#endif
 
 /* Start extern declarations */
 extern PyObject *_Py_get_importlib__bootstrap_toplevel(void);
@@ -84,6 +82,9 @@ extern PyObject *_Py_get_posixpath_toplevel(void);
 extern PyObject *_Py_get_os_toplevel(void);
 extern PyObject *_Py_get_site_toplevel(void);
 extern PyObject *_Py_get_stat_toplevel(void);
+extern PyObject *_Py_get_importlib_util_toplevel(void);
+extern PyObject *_Py_get_importlib_machinery_toplevel(void);
+extern PyObject *_Py_get_runpy_toplevel(void);
 extern PyObject *_Py_get___hello___toplevel(void);
 extern PyObject *_Py_get___hello___toplevel(void);
 extern PyObject *_Py_get___hello___toplevel(void);
@@ -121,6 +122,11 @@ static const struct _frozen stdlib_modules[] = {
     {"os", _Py_M__os, (int)sizeof(_Py_M__os), GET_CODE(os)},
     {"site", _Py_M__site, (int)sizeof(_Py_M__site), GET_CODE(site)},
     {"stat", _Py_M__stat, (int)sizeof(_Py_M__stat), GET_CODE(stat)},
+
+    /* runpy - run module with -m */
+    {"importlib.util", _Py_M__importlib_util, (int)sizeof(_Py_M__importlib_util), GET_CODE(importlib_util)},
+    {"importlib.machinery", _Py_M__importlib_machinery, (int)sizeof(_Py_M__importlib_machinery), GET_CODE(importlib_machinery)},
+    {"runpy", _Py_M__runpy, (int)sizeof(_Py_M__runpy), GET_CODE(runpy)},
     {0, 0, 0} /* stdlib sentinel */
 };
 static const struct _frozen test_modules[] = {

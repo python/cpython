@@ -1625,7 +1625,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         goto Done;
     {
         PyObject *format;
-        PyObject *time = PyImport_ImportModuleNoBlock("time");
+        PyObject *time = PyImport_ImportModule("time");
 
         if (time == NULL)
             goto Done;
@@ -1655,7 +1655,7 @@ static PyObject *
 time_time(void)
 {
     PyObject *result = NULL;
-    PyObject *time = PyImport_ImportModuleNoBlock("time");
+    PyObject *time = PyImport_ImportModule("time");
 
     if (time != NULL) {
         _Py_IDENTIFIER(time);
@@ -1678,7 +1678,7 @@ build_struct_time(int y, int m, int d, int hh, int mm, int ss, int dstflag)
     PyObject *args;
 
 
-    time = PyImport_ImportModuleNoBlock("time");
+    time = PyImport_ImportModule("time");
     if (time == NULL) {
         return NULL;
     }
@@ -5161,7 +5161,7 @@ datetime_strptime(PyObject *cls, PyObject *args)
         return NULL;
 
     if (module == NULL) {
-        module = PyImport_ImportModuleNoBlock("_strptime");
+        module = PyImport_ImportModule("_strptime");
         if (module == NULL)
             return NULL;
     }

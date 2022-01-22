@@ -183,17 +183,17 @@ PyAPI_FUNC(int) PyObject_GetBuffer(PyObject *obj, Py_buffer *view,
 
 /* Get the memory area pointed to by the indices for the buffer given.
    Note that view->ndim is the assumed size of indices. */
-PyAPI_FUNC(void *) PyBuffer_GetPointer(Py_buffer *view, Py_ssize_t *indices);
+PyAPI_FUNC(void *) PyBuffer_GetPointer(const Py_buffer *view, const Py_ssize_t *indices);
 
 /* Return the implied itemsize of the data-format area from a
    struct-style description. */
 PyAPI_FUNC(Py_ssize_t) PyBuffer_SizeFromFormat(const char *format);
 
 /* Implementation in memoryobject.c */
-PyAPI_FUNC(int) PyBuffer_ToContiguous(void *buf, Py_buffer *view,
+PyAPI_FUNC(int) PyBuffer_ToContiguous(void *buf, const Py_buffer *view,
                                       Py_ssize_t len, char order);
 
-PyAPI_FUNC(int) PyBuffer_FromContiguous(Py_buffer *view, void *buf,
+PyAPI_FUNC(int) PyBuffer_FromContiguous(const Py_buffer *view, const void *buf,
                                         Py_ssize_t len, char order);
 
 /* Copy len bytes of data from the contiguous chunk of memory

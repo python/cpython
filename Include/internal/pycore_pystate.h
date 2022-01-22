@@ -21,19 +21,23 @@ _Py_IsMainThread(void)
 }
 
 
+static inline PyInterpreterState *
+_PyInterpreterState_Main(void)
+{
+    return _PyRuntime.interpreters.main;
+}
+
 static inline int
 _Py_IsMainInterpreter(PyInterpreterState *interp)
 {
-    /* Use directly _PyRuntime rather than tstate->interp->runtime, since
-       this function is used in performance critical code path (ceval) */
-    return (interp == _PyRuntime.interpreters.main);
+    return (interp == _PyInterpreterState_Main());
 }
 
 
 static inline const PyConfig *
 _Py_GetMainConfig(void)
 {
-    PyInterpreterState *interp = _PyRuntime.interpreters.main;
+    PyInterpreterState *interp = _PyInterpreterState_Main();
     if (interp == NULL) {
         return NULL;
     }
@@ -45,7 +49,7 @@ _Py_GetMainConfig(void)
 static inline int
 _Py_ThreadCanHandleSignals(PyInterpreterState *interp)
 {
-    return (_Py_IsMainThread() && interp == _PyRuntime.interpreters.main);
+    return (_Py_IsMainThread() && _Py_IsMainInterpreter(interp));
 }
 
 
@@ -127,6 +131,8 @@ static inline PyInterpreterState* _PyInterpreterState_GET(void) {
 
 // PyThreadState functions
 
+PyAPI_FUNC(void) _PyThreadState_SetCurrent(PyThreadState *tstate);
+// We keep this around exclusively for stable ABI compatibility.
 PyAPI_FUNC(void) _PyThreadState_Init(
     PyThreadState *tstate);
 PyAPI_FUNC(void) _PyThreadState_DeleteExcept(

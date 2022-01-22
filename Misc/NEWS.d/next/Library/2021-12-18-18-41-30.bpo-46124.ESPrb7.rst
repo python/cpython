@@ -1,0 +1,1 @@
+Update :mod:`zoneinfo` to rely on importlib.resources traversable API.
