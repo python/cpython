@@ -11,6 +11,7 @@ import re
 import sys
 import textwrap
 import traceback
+import types
 import unittest
 import weakref
 from unittest import mock
