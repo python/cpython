@@ -291,7 +291,7 @@ PyLong_FromLong(long ival)
     }
 
     /* Count digits (at least two - smaller cases were handled above). */
-    abs_ival = ival < 0 ? 0U-(unsigned long)ival : ival;
+    abs_ival = ival < 0 ? 0U-(unsigned long)ival : (unsigned long)ival;
     /* Do shift in two steps to avoid possible undefined behavior. */
     t = abs_ival >> PyLong_SHIFT >> PyLong_SHIFT;
     ndigits = 2;
@@ -1115,7 +1115,7 @@ PyLong_FromLongLong(long long ival)
     }
 
     /* Count digits (at least two - smaller cases were handled above). */
-    abs_ival = ival < 0 ? 0U-(unsigned long long)ival : ival;
+    abs_ival = ival < 0 ? 0U-(unsigned long long)ival : (unsigned long long)ival;
     /* Do shift in two steps to avoid possible undefined behavior. */
     t = abs_ival >> PyLong_SHIFT >> PyLong_SHIFT;
     ndigits = 2;
