@@ -4261,7 +4261,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
     }
     else if (x == Py_None) {
         c = NULL;
-        if (Py_SIZE(a) == 0 && a->ob_digit[0] == 2) {
+        if (IS_MEDIUM_VALUE(a) && a->ob_digit[0] == (digit)2) {
             /* only compute positive powers of 2 */
             if (Py_SIZE(b) > 0) {
                 /* b must fit a Py_ssize_t */
@@ -4272,12 +4272,12 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
                 if (z == NULL)
                     goto Error;
                 /* set the last digit of ob_digit to 1 << (b % PyLong_SHIFT) */
-                z->ob_digit[j] = 1 << (i - j*PyLong_SHIFT);
+                z->ob_digit[j] = (digit)(Py_SIZE(a) << (i - j*PyLong_SHIFT));
                 z = maybe_small_long(z);
                 goto Done;
             }
             else if (Py_SIZE(b) == 0) {
-                z = (PyLongObject *)_PyLong_GetOne();
+                z = (PyLongObject *)get_small_int((sdigit)Py_SIZE(a));
                 Py_INCREF(z);
                 goto Done;
             }
@@ -4716,7 +4716,7 @@ long_lshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
         stwodigits x = m < 0 ? -(-m << remshift) : m << remshift;
         return _PyLong_FromSTwoDigits(x);
     }
-    if (Py_SIZE(a) == 0 && a->ob_digit[0] == 1) {
+    if (IS_MEDIUM_VALUE(a) && a->ob_digit[0] == (digit)1) {
         /* shifting is guaranteed positive, so there is
            no need for filtering less than 0 shifting unlike
            long_pow */
@@ -4725,10 +4725,10 @@ long_lshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
             z = _PyLong_NewFillZero(wordshift + 1);
             if (z == NULL)
                 return NULL;
-            z->ob_digit[wordshift] = 1 << remshift;
+            z->ob_digit[wordshift] = (digit)(Py_SIZE(a) << remshift);
             return (PyObject *)maybe_small_long(z);
         }
-        z = (PyLongObject *)_PyLong_GetOne();
+        z = (PyLongObject *)get_small_int((sdigit)Py_SIZE(a));
         Py_INCREF(z);
         return (PyObject *)z;
     }
