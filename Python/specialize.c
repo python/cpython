@@ -1344,8 +1344,7 @@ specialize_class_call(
     PyObject *callable, _Py_CODEUNIT *instr,
     int nargs, PyObject *kwnames, SpecializedCacheEntry *cache)
 {
-    assert(PyType_Check(callable));
-    PyTypeObject *tp = (PyTypeObject *)callable;
+    PyTypeObject *tp = _PyType_CAST(callable);
     if (tp->tp_new == PyBaseObject_Type.tp_new) {
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_PYTHON_CLASS);
         return -1;

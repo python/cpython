@@ -1686,7 +1686,7 @@ float_vectorcall(PyObject *type, PyObject * const*args,
     }
 
     PyObject *x = nargs >= 1 ? args[0] : NULL;
-    return float_new_impl((PyTypeObject *)type, x);
+    return float_new_impl(_PyType_CAST(type), x);
 }
 
 
