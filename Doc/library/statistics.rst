@@ -116,10 +116,11 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    .. note::
 
-      The mean is strongly affected by outliers and is not a robust estimator
-      for central location: the mean is not necessarily a typical example of
-      the data points.  For more robust measures of central location, see
-      :func:`median` and :func:`mode`.
+      The mean is strongly affected by `outliers
+      <https://en.wikipedia.org/wiki/Outlier>`_ and is not necessarily a
+      typical example of the data points. For a more robust, although less
+      efficient, measure of `central tendency
+      <https://en.wikipedia.org/wiki/Central_tendency>`_, see :func:`median`.
 
       The sample mean gives an unbiased estimate of the true population mean,
       so that when taken on average over all the possible samples,
@@ -643,7 +644,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    .. versionadded:: 3.10
 
-.. function:: linear_regression(x, y, /)
+.. function:: linear_regression(x, y, /, *, proportional=False)
 
    Return the slope and intercept of `simple linear regression
    <https://en.wikipedia.org/wiki/Simple_linear_regression>`_
@@ -677,8 +678,18 @@ However, for reading convenience, most of the examples show sorted sequences.
       >>> round(slope * 2019 + intercept)
       16
 
+   If *proportional* is true, the independent variable *x* and the
+   dependent variable *y* are assumed to be directly proportional.
+   The data is fit to a line passing through the origin.
+   Since the *intercept* will always be 0.0, the underlying linear
+   function simplifies to:
+
+      *y = slope \* x + noise*
+
    .. versionadded:: 3.10
 
+   .. versionchanged:: 3.11
+      Added support for *proportional*.
 
 Exceptions
 ----------

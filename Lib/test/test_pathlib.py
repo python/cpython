@@ -324,7 +324,7 @@ class _BasePurePathTest(object):
         self.assertFalse(P('b/py').match('b.py'))
         self.assertFalse(P('/a.py').match('b.py'))
         self.assertFalse(P('b.py/c').match('b.py'))
-        # Wilcard relative pattern.
+        # Wildcard relative pattern.
         self.assertTrue(P('b.py').match('*.py'))
         self.assertTrue(P('a/b.py').match('*.py'))
         self.assertTrue(P('/a/b.py').match('*.py'))
@@ -1284,7 +1284,7 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertIs(False, P('/foo/bar').is_reserved())
         # UNC paths are never reserved.
         self.assertIs(False, P('//my/share/nul/con/aux').is_reserved())
-        # Case-insenstive DOS-device names are reserved.
+        # Case-insensitive DOS-device names are reserved.
         self.assertIs(True, P('nul').is_reserved())
         self.assertIs(True, P('aux').is_reserved())
         self.assertIs(True, P('prn').is_reserved())
@@ -2558,13 +2558,21 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
             othername = username
             otherhome = userhome
 
+        fakename = 'fakeuser'
+        # This user can theoretically exist on a test runner. Create unique name:
+        try:
+            while pwd.getpwnam(fakename):
+                fakename += '1'
+        except KeyError:
+            pass  # Non-existent name found
+
         p1 = P('~/Documents')
-        p2 = P('~' + username + '/Documents')
-        p3 = P('~' + othername + '/Documents')
-        p4 = P('../~' + username + '/Documents')
-        p5 = P('/~' + username + '/Documents')
+        p2 = P(f'~{username}/Documents')
+        p3 = P(f'~{othername}/Documents')
+        p4 = P(f'../~{username}/Documents')
+        p5 = P(f'/~{username}/Documents')
         p6 = P('')
-        p7 = P('~fakeuser/Documents')
+        p7 = P(f'~{fakename}/Documents')
 
         with os_helper.EnvironmentVarGuard() as env:
             env.pop('HOME', None)

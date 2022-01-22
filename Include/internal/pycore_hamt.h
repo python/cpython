@@ -8,6 +8,14 @@
 #define _Py_HAMT_MAX_TREE_DEPTH 7
 
 
+/* runtime lifecycle */
+
+PyStatus _PyHamt_InitTypes(PyInterpreterState *);
+void _PyHamt_Fini(PyInterpreterState *);
+
+
+/* other API */
+
 #define PyHamt_Check(o) Py_IS_TYPE(o, &_PyHamt_Type)
 
 
@@ -109,8 +117,5 @@ PyObject * _PyHamt_NewIterValues(PyHamtObject *o);
 
 /* Return a Items iterator over "o". */
 PyObject * _PyHamt_NewIterItems(PyHamtObject *o);
-
-int _PyHamt_Init(void);
-void _PyHamt_Fini(void);
 
 #endif /* !Py_INTERNAL_HAMT_H */

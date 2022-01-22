@@ -343,7 +343,7 @@ All of those tests treat missing elements as having zero counts so that
 ``Counter(a=1) == Counter(a=1, b=0)`` returns true.
 
 .. versionadded:: 3.10
-   Rich comparison operations we were added
+   Rich comparison operations were added.
 
 .. versionchanged:: 3.10
    In equality tests, missing elements are treated as having zero counts.
@@ -1120,14 +1120,16 @@ Some differences from :class:`dict` still remain:
         Move an existing *key* to either end of an ordered dictionary.  The item
         is moved to the right end if *last* is true (the default) or to the
         beginning if *last* is false.  Raises :exc:`KeyError` if the *key* does
-        not exist::
+        not exist:
+
+        .. doctest::
 
             >>> d = OrderedDict.fromkeys('abcde')
             >>> d.move_to_end('b')
-            >>> ''.join(d.keys())
+            >>> ''.join(d)
             'acdeb'
             >>> d.move_to_end('b', last=False)
-            >>> ''.join(d.keys())
+            >>> ''.join(d)
             'bacde'
 
         .. versionadded:: 3.2

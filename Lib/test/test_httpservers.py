@@ -1302,21 +1302,9 @@ class ScriptTestCase(unittest.TestCase):
             self.assertEqual(mock_server.address_family, socket.AF_INET)
 
 
-def test_main(verbose=None):
-    cwd = os.getcwd()
-    try:
-        support.run_unittest(
-            RequestHandlerLoggingTestCase,
-            BaseHTTPRequestHandlerTestCase,
-            BaseHTTPServerTestCase,
-            SimpleHTTPServerTestCase,
-            CGIHTTPServerTestCase,
-            SimpleHTTPRequestHandlerTestCase,
-            MiscTestCase,
-            ScriptTestCase
-        )
-    finally:
-        os.chdir(cwd)
+def setUpModule():
+    unittest.addModuleCleanup(os.chdir, os.getcwd())
+
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

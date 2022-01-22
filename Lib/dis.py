@@ -7,6 +7,7 @@ import io
 
 from opcode import *
 from opcode import __all__ as _opcodes_all
+from opcode import _nb_ops
 
 __all__ = ["code_info", "dis", "disassemble", "distb", "disco",
            "findlinestarts", "findlabels", "show_code",
@@ -26,6 +27,8 @@ FORMAT_VALUE_CONVERTERS = (
 MAKE_FUNCTION = opmap['MAKE_FUNCTION']
 MAKE_FUNCTION_FLAGS = ('defaults', 'kwdefaults', 'annotations', 'closure')
 
+LOAD_CONST = opmap['LOAD_CONST']
+BINARY_OP = opmap['BINARY_OP']
 
 def _try_compile(source, name):
     """Attempts to compile the given source, first as an expression and
@@ -317,19 +320,32 @@ def get_instructions(x, *, first_line=None):
                                    co.co_names, co.co_consts,
                                    linestarts, line_offset, co_positions=co.co_positions())
 
-def _get_const_info(const_index, const_list):
+def _get_const_value(op, arg, co_consts):
+    """Helper to get the value of the const in a hasconst op.
+
+       Returns the dereferenced constant if this is possible.
+       Otherwise (if it is a LOAD_CONST and co_consts is not
+       provided) returns the dis.UNKNOWN sentinel.
+    """
+    assert op in hasconst
+
+    argval = UNKNOWN
+    if op == LOAD_CONST:
+        if co_consts is not None:
+            argval = co_consts[arg]
+    return argval
+
+def _get_const_info(op, arg, co_consts):
     """Helper to get optional details about const references
 
-       Returns the dereferenced constant and its repr if the constant
-       list is defined.
+       Returns the dereferenced constant and its repr if the value
+       can be calculated.
        Otherwise returns the sentinel value dis.UNKNOWN for the value
        and an empty string for its repr.
     """
-    if const_list is not None:
-        argval = const_list[const_index]
-        return argval, repr(argval)
-    else:
-        return UNKNOWN, ''
+    argval = _get_const_value(op, arg, co_consts)
+    argrepr = repr(argval) if argval is not UNKNOWN else ''
+    return argval, argrepr
 
 def _get_name_info(name_index, get_name, **extrainfo):
     """Helper to get optional details about named references
@@ -371,14 +387,14 @@ def parse_exception_table(code):
         return entries
 
 def _get_instructions_bytes(code, varname_from_oparg=None,
-                            names=None, constants=None,
+                            names=None, co_consts=None,
                             linestarts=None, line_offset=0,
                             exception_entries=(), co_positions=None):
     """Iterate over the instructions in a bytecode string.
 
     Generates a sequence of Instruction namedtuples giving the details of each
     opcode.  Additional information about the code's runtime environment
-    (e.g. variable names, constants) can be specified using optional
+    (e.g. variable names, co_consts) can be specified using optional
     arguments.
 
     """
@@ -408,7 +424,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
             #    raw name index for LOAD_GLOBAL, LOAD_CONST, etc.
             argval = arg
             if op in hasconst:
-                argval, argrepr = _get_const_info(arg, constants)
+                argval, argrepr = _get_const_info(op, arg, co_consts)
             elif op in hasname:
                 argval, argrepr = _get_name_info(arg, get_name)
             elif op in hasjabs:
@@ -432,6 +448,8 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
             elif op == MAKE_FUNCTION:
                 argrepr = ', '.join(s for i, s in enumerate(MAKE_FUNCTION_FLAGS)
                                     if arg & (1<<i))
+            elif op == BINARY_OP:
+                _, argrepr = _nb_ops[arg]
         yield Instruction(opname[op], op,
                           arg, argval, argrepr,
                           offset, starts_line, is_jump_target, positions)
@@ -457,7 +475,7 @@ def _disassemble_recursive(co, *, file=None, depth=None):
                 _disassemble_recursive(x, file=file, depth=depth)
 
 def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
-                       names=None, constants=None, linestarts=None,
+                       names=None, co_consts=None, linestarts=None,
                        *, file=None, line_offset=0, exception_entries=(),
                        co_positions=None):
     # Omit the line number column entirely if we have no line number info
@@ -476,7 +494,7 @@ def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
     else:
         offset_width = 4
     for instr in _get_instructions_bytes(code, varname_from_oparg, names,
-                                         constants, linestarts,
+                                         co_consts, linestarts,
                                          line_offset=line_offset, exception_entries=exception_entries,
                                          co_positions=co_positions):
         new_source_line = (show_lineno and
@@ -509,6 +527,7 @@ def _unpack_opargs(code):
             extended_arg = (arg << 8) if op == EXTENDED_ARG else 0
         else:
             arg = None
+            extended_arg = 0
         yield (i, op, arg)
 
 def findlabels(code):
@@ -557,11 +576,13 @@ def _find_imports(co):
     opargs = [(op, arg) for _, op, arg in _unpack_opargs(co.co_code)
                   if op != EXTENDED_ARG]
     for i, (op, oparg) in enumerate(opargs):
-        if (op == IMPORT_NAME and i >= 2
-                and opargs[i-1][0] == opargs[i-2][0] == LOAD_CONST):
-            level = consts[opargs[i-2][1]]
-            fromlist = consts[opargs[i-1][1]]
-            yield (names[oparg], level, fromlist)
+        if op == IMPORT_NAME and i >= 2:
+            from_op = opargs[i-1]
+            level_op = opargs[i-2]
+            if (from_op[0] in hasconst and level_op[0] in hasconst):
+                level = _get_const_value(level_op[0], level_op[1], consts)
+                fromlist = _get_const_value(from_op[0], from_op[1], consts)
+                yield (names[oparg], level, fromlist)
 
 def _find_store_names(co):
     """Find names of variables which are written in the code
@@ -635,7 +656,7 @@ class Bytecode:
         with io.StringIO() as output:
             _disassemble_bytes(co.co_code,
                                varname_from_oparg=co._varname_from_oparg,
-                               names=co.co_names, constants=co.co_consts,
+                               names=co.co_names, co_consts=co.co_consts,
                                linestarts=self._linestarts,
                                line_offset=self._line_offset,
                                file=output,

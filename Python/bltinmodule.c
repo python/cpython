@@ -3,6 +3,7 @@
 #include "Python.h"
 #include <ctype.h>
 #include "pycore_ast.h"           // _PyAST_Validate()
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_compile.h"       // _PyAST_Compile()
 #include "pycore_object.h"        // _Py_AddToAllObjects()
 #include "pycore_pyerrors.h"      // _PyErr_NoMemory()
@@ -211,9 +212,8 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
                      Py_TYPE(ns)->tp_name);
         goto error;
     }
-    PyFrameConstructor *f =  PyFunction_AS_FRAME_CONSTRUCTOR(func);
-    PyThreadState *tstate = PyThreadState_GET();
-    cell = _PyEval_Vector(tstate, f, ns, NULL, 0, NULL);
+    PyThreadState *tstate = _PyThreadState_GET();
+    cell = _PyEval_Vector(tstate, (PyFunctionObject *)func, ns, NULL, 0, NULL);
     if (cell != NULL) {
         if (bases != orig_bases) {
             if (PyMapping_SetItemString(ns, "__orig_bases__", orig_bases) < 0) {
@@ -536,7 +536,7 @@ static PyObject *
 filter_vectorcall(PyObject *type, PyObject * const*args,
                 size_t nargsf, PyObject *kwnames)
 {
-    PyTypeObject *tp = (PyTypeObject *)type;
+    PyTypeObject *tp = _PyType_CAST(type);
     if (tp == &PyFilter_Type && !_PyArg_NoKwnames("filter", kwnames)) {
         return NULL;
     }
@@ -1091,11 +1091,6 @@ builtin_getattr(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 
     v = args[0];
     name = args[1];
-    if (!PyUnicode_Check(name)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "getattr(): attribute name must be string");
-        return NULL;
-    }
     if (nargs > 2) {
         if (_PyObject_LookupAttr(v, name, &result) == 0) {
             PyObject *dflt = args[2];
@@ -1156,11 +1151,6 @@ builtin_hasattr_impl(PyObject *module, PyObject *obj, PyObject *name)
 {
     PyObject *v;
 
-    if (!PyUnicode_Check(name)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "hasattr(): attribute name must be string");
-        return NULL;
-    }
     if (_PyObject_LookupAttr(obj, name, &v) < 0) {
         return NULL;
     }
@@ -1261,7 +1251,7 @@ static PyObject *
 map_vectorcall(PyObject *type, PyObject * const*args,
                 size_t nargsf, PyObject *kwnames)
 {
-    PyTypeObject *tp = (PyTypeObject *)type;
+    PyTypeObject *tp = _PyType_CAST(type);
     if (tp == &PyMap_Type && !_PyArg_NoKwnames("map", kwnames)) {
         return NULL;
     }
@@ -2305,7 +2295,7 @@ builtin_round_impl(PyObject *module, PyObject *number, PyObject *ndigits)
     }
 
     if (ndigits == Py_None)
-        result = _PyObject_CallNoArg(round);
+        result = _PyObject_CallNoArgs(round);
     else
         result = PyObject_CallOneArg(round, ndigits);
     Py_DECREF(round);
@@ -2479,7 +2469,16 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 return PyLong_FromLong(i_result);
             }
             if (PyLong_CheckExact(item) || PyBool_Check(item)) {
-                long b = PyLong_AsLongAndOverflow(item, &overflow);
+                long b;
+                overflow = 0;
+                /* Single digits are common, fast, and cannot overflow on unpacking. */
+                switch (Py_SIZE(item)) {
+                    case -1: b = -(sdigit) ((PyLongObject*)item)->ob_digit[0]; break;
+                    // Note: the continue goes to the top of the "while" loop that iterates over the elements
+                    case  0: Py_DECREF(item); continue;
+                    case  1: b = ((PyLongObject*)item)->ob_digit[0]; break;
+                    default: b = PyLong_AsLongAndOverflow(item, &overflow); break;
+                }
                 if (overflow == 0 &&
                     (i_result >= 0 ? (b <= LONG_MAX - i_result)
                                    : (b >= LONG_MIN - i_result)))

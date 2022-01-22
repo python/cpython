@@ -10,7 +10,6 @@ import struct
 import sys
 import unittest
 from subprocess import PIPE, Popen
-from test import support
 from test.support import import_helper
 from test.support import os_helper
 from test.support import _4G, bigmemtest
@@ -563,6 +562,14 @@ class TestGzip(BaseTest):
             datac = gzip.compress(data)
             self.assertEqual(gzip.decompress(datac), data)
 
+    def test_decompress_truncated_trailer(self):
+        compressed_data = gzip.compress(data1)
+        self.assertRaises(EOFError, gzip.decompress, compressed_data[:-4])
+
+    def test_decompress_missing_trailer(self):
+        compressed_data = gzip.compress(data1)
+        self.assertRaises(EOFError, gzip.decompress, compressed_data[:-8])
+
     def test_read_truncated(self):
         data = data1*50
         # Drop the CRC (4 bytes) and file size (4 bytes).
@@ -842,9 +849,5 @@ class TestCommandLine(unittest.TestCase):
         self.assertEqual(out, b'')
 
 
-def test_main(verbose=None):
-    support.run_unittest(TestGzip, TestOpen, TestCommandLine)
-
-
 if __name__ == "__main__":
-    test_main(verbose=True)
+    unittest.main()

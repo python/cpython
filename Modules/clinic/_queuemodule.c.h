@@ -139,7 +139,7 @@ PyDoc_STRVAR(_queue_SimpleQueue_get__doc__,
 
 static PyObject *
 _queue_SimpleQueue_get_impl(simplequeueobject *self, PyTypeObject *cls,
-                            int block, PyObject *timeout);
+                            int block, PyObject *timeout_obj);
 
 static PyObject *
 _queue_SimpleQueue_get(simplequeueobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -148,13 +148,13 @@ _queue_SimpleQueue_get(simplequeueobject *self, PyTypeObject *cls, PyObject *con
     static const char * const _keywords[] = {"block", "timeout", NULL};
     static _PyArg_Parser _parser = {"|pO:get", _keywords, 0};
     int block = 1;
-    PyObject *timeout = Py_None;
+    PyObject *timeout_obj = Py_None;
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &block, &timeout)) {
+        &block, &timeout_obj)) {
         goto exit;
     }
-    return_value = _queue_SimpleQueue_get_impl(self, cls, block, timeout);
+    return_value = _queue_SimpleQueue_get_impl(self, cls, block, timeout_obj);
 
 exit:
     return return_value;
@@ -248,4 +248,4 @@ _queue_SimpleQueue_qsize(simplequeueobject *self, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=96cc57168d72aab1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=acfaf0191d8935db input=a9049054013a1b77]*/

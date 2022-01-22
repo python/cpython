@@ -505,7 +505,7 @@ class ThreadTests(BaseTestCase):
         t = threading.Thread(daemon=True)
         self.assertTrue(t.daemon)
 
-    @unittest.skipUnless(hasattr(os, 'fork'), 'needs os.fork()')
+    @support.requires_fork()
     def test_fork_at_exit(self):
         # bpo-42350: Calling os.fork() after threading._shutdown() must
         # not log an error.
@@ -533,7 +533,7 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(out, b'')
         self.assertEqual(err.rstrip(), b'child process ok')
 
-    @unittest.skipUnless(hasattr(os, 'fork'), 'test needs fork()')
+    @support.requires_fork()
     def test_dummy_thread_after_fork(self):
         # Issue #14308: a dummy thread in the active list doesn't mess up
         # the after-fork mechanism.
@@ -560,7 +560,7 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(out, b'')
         self.assertEqual(err, b'')
 
-    @unittest.skipUnless(hasattr(os, 'fork'), "needs os.fork()")
+    @support.requires_fork()
     def test_is_alive_after_fork(self):
         # Try hard to trigger #18418: is_alive() could sometimes be True on
         # threads that vanished after a fork.
@@ -594,7 +594,7 @@ class ThreadTests(BaseTestCase):
         th.start()
         th.join()
 
-    @unittest.skipUnless(hasattr(os, 'fork'), "test needs os.fork()")
+    @support.requires_fork()
     @unittest.skipUnless(hasattr(os, 'waitpid'), "test needs os.waitpid()")
     def test_main_thread_after_fork(self):
         code = """if 1:
@@ -616,7 +616,7 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(data, "MainThread\nTrue\nTrue\n")
 
     @unittest.skipIf(sys.platform in platforms_to_skip, "due to known OS bug")
-    @unittest.skipUnless(hasattr(os, 'fork'), "test needs os.fork()")
+    @support.requires_fork()
     @unittest.skipUnless(hasattr(os, 'waitpid'), "test needs os.waitpid()")
     def test_main_thread_after_fork_from_nonmain_thread(self):
         code = """if 1:
@@ -928,6 +928,39 @@ class ThreadTests(BaseTestCase):
                b'is deprecated and will be removed in Python 3.12')
         self.assertIn(msg, err)
 
+    def test_import_from_another_thread(self):
+        # bpo-1596321: If the threading module is first import from a thread
+        # different than the main thread, threading._shutdown() must handle
+        # this case without logging an error at Python exit.
+        code = textwrap.dedent('''
+            import _thread
+            import sys
+
+            event = _thread.allocate_lock()
+            event.acquire()
+
+            def import_threading():
+                import threading
+                event.release()
+
+            if 'threading' in sys.modules:
+                raise Exception('threading is already imported')
+
+            _thread.start_new_thread(import_threading, ())
+
+            # wait until the threading module is imported
+            event.acquire()
+            event.release()
+
+            if 'threading' not in sys.modules:
+                raise Exception('threading is not imported')
+
+            # don't wait until the thread completes
+        ''')
+        rc, out, err = assert_python_ok("-c", code)
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
+
 
 class ThreadJoinOnShutdown(BaseTestCase):
 
@@ -960,7 +993,7 @@ class ThreadJoinOnShutdown(BaseTestCase):
             """
         self._run_and_join(script)
 
-    @unittest.skipUnless(hasattr(os, 'fork'), "needs os.fork()")
+    @support.requires_fork()
     @unittest.skipIf(sys.platform in platforms_to_skip, "due to known OS bug")
     def test_2_join_in_forked_process(self):
         # Like the test above, but from a forked interpreter
@@ -981,7 +1014,7 @@ class ThreadJoinOnShutdown(BaseTestCase):
             """
         self._run_and_join(script)
 
-    @unittest.skipUnless(hasattr(os, 'fork'), "needs os.fork()")
+    @support.requires_fork()
     @unittest.skipIf(sys.platform in platforms_to_skip, "due to known OS bug")
     def test_3_join_in_forked_from_thread(self):
         # Like the test above, but fork() was called from a worker thread
@@ -1026,8 +1059,9 @@ class ThreadJoinOnShutdown(BaseTestCase):
 
             def random_io():
                 '''Loop for a while sleeping random tiny amounts and doing some I/O.'''
+                import test.test_threading as mod
                 while True:
-                    with open(os.__file__, 'rb') as in_f:
+                    with open(mod.__file__, 'rb') as in_f:
                         stuff = in_f.read(200)
                         with open(os.devnull, 'wb') as null_f:
                             null_f.write(stuff)
@@ -1051,7 +1085,7 @@ class ThreadJoinOnShutdown(BaseTestCase):
         rc, out, err = assert_python_ok('-c', script)
         self.assertFalse(err)
 
-    @unittest.skipUnless(hasattr(os, 'fork'), "needs os.fork()")
+    @support.requires_fork()
     @unittest.skipIf(sys.platform in platforms_to_skip, "due to known OS bug")
     def test_reinit_tls_after_fork(self):
         # Issue #13817: fork() would deadlock in a multithreaded program with
@@ -1075,7 +1109,7 @@ class ThreadJoinOnShutdown(BaseTestCase):
         for t in threads:
             t.join()
 
-    @unittest.skipUnless(hasattr(os, 'fork'), "needs os.fork()")
+    @support.requires_fork()
     def test_clear_threads_states_after_fork(self):
         # Issue #17094: check that threads states are cleared after fork()
 

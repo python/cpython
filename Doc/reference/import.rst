@@ -605,7 +605,7 @@ the module.
 
    ``__file__`` is optional (if set, value must be a string). It indicates
    the pathname of the file from which the module was loaded (if
-   loaded from a file), or the pathname of the shared libray file
+   loaded from a file), or the pathname of the shared library file
    for extension modules loaded dynamically from a shared library.
    It might be missing for certain types of modules, such as C
    modules that are statically linked into the interpreter, and the

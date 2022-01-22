@@ -729,7 +729,6 @@ class BigmemTclTest(unittest.TestCase):
         self.assertRaises(OverflowError, tk.exprlong, value)
         self.assertRaises(OverflowError, tk.exprboolean, value)
         self.assertRaises(OverflowError, tk.splitlist, value)
-        self.assertRaises(OverflowError, tk.split, value)
         self.assertRaises(OverflowError, tk.createcommand, value, max)
         self.assertRaises(OverflowError, tk.deletecommand, value)
 
@@ -751,8 +750,5 @@ def setUpModule():
         print('patchlevel =', tcl.call('info', 'patchlevel'))
 
 
-def test_main():
-    support.run_unittest(TclTest, TkinterTest, BigmemTclTest)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

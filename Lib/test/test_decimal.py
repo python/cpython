@@ -62,7 +62,7 @@ if sys.platform == 'darwin':
 
 C = import_fresh_module('decimal', fresh=['_decimal'])
 P = import_fresh_module('decimal', blocked=['_decimal'])
-orig_sys_decimal = sys.modules['decimal']
+import decimal as orig_sys_decimal
 
 # fractions module must import the correct decimal module.
 cfractions = import_fresh_module('fractions', fresh=['fractions'])
@@ -2551,6 +2551,13 @@ class PythonAPItests(unittest.TestCase):
         self.assertRaises(ValueError, int, Decimal('snan'))
         self.assertRaises(OverflowError, int, Decimal('inf'))
         self.assertRaises(OverflowError, int, Decimal('-inf'))
+
+    @cpython_only
+    def test_small_ints(self):
+        Decimal = self.decimal.Decimal
+        # bpo-46361
+        for x in range(-5, 257):
+            self.assertIs(int(Decimal(x)), x)
 
     def test_trunc(self):
         Decimal = self.decimal.Decimal

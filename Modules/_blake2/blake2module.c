@@ -8,6 +8,10 @@
  * any warranty. http://creativecommons.org/publicdomain/zero/1.0/
  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 
 #include "impl/blake2.h"

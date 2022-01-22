@@ -322,7 +322,7 @@ Miscellaneous options
 
    Hash randomization is intended to provide protection against a
    denial-of-service caused by carefully-chosen inputs that exploit the worst
-   case performance of a dict construction, O(n^2) complexity.  See
+   case performance of a dict construction, O(n\ :sup:`2`) complexity.  See
    http://www.ocert.org/advisories/ocert-2011-003.html for details.
 
    :envvar:`PYTHONHASHSEED` allows you to set a fixed value for the hash
@@ -477,9 +477,16 @@ Miscellaneous options
    * ``-X no_debug_ranges`` disables the inclusion of the tables mapping extra
      location information (end line, start column offset and end column offset)
      to every instruction in code objects. This is useful when smaller code
-     objects and pyc files are desired as well as supressing the extra visual
+     objects and pyc files are desired as well as suppressing the extra visual
      location indicators when the interpreter displays tracebacks. See also
      :envvar:`PYTHONNODEBUGRANGES`.
+   * ``-X frozen_modules`` determines whether or not frozen modules are
+     ignored by the import machinery.  A value of "on" means they get
+     imported and "off" means they are ignored.  The default is "on"
+     if this is an installed Python (the normal case).  If it's under
+     development (running from the source tree) then the default is "off".
+     Note that the "importlib_bootstrap" and "importlib_bootstrap_external"
+     frozen modules are always used, even if this flag is set to "off".
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -517,6 +524,9 @@ Miscellaneous options
 
    .. versionadded:: 3.11
       The ``-X no_debug_ranges`` option.
+
+   .. versionadded:: 3.11
+      The ``-X frozen_modules`` option.
 
 
 Options you shouldn't use
@@ -647,7 +657,7 @@ conflict.
 .. envvar:: PYTHONCASEOK
 
    If this is set, Python ignores case in :keyword:`import` statements.  This
-   only works on Windows and OS X.
+   only works on Windows and macOS.
 
 
 .. envvar:: PYTHONDONTWRITEBYTECODE
@@ -730,7 +740,7 @@ conflict.
 
    If this environment variable is set, ``sys.argv[0]`` will be set to its
    value instead of the value got through the C runtime.  Only works on
-   Mac OS X.
+   macOS.
 
 .. envvar:: PYTHONWARNINGS
 
@@ -950,7 +960,7 @@ conflict.
    If this variable is set, it disables the inclusion of the tables mapping
    extra location information (end line, start column offset and end column
    offset) to every instruction in code objects. This is useful when smaller
-   code objects and pyc files are desired as well as supressing the extra visual
+   code objects and pyc files are desired as well as suppressing the extra visual
    location indicators when the interpreter displays tracebacks.
 
    .. versionadded:: 3.11

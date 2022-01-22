@@ -1,5 +1,0 @@
-Rename :meth:`traceback.StackSummary.format_frame` to
-:meth:`traceback.StackSummary.format_frame_summary`. This method was added
-for 3.11 so it was not released yet.
-
-Updated code and docs to better distinguish frame and FrameSummary.

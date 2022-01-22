@@ -3,11 +3,14 @@
 #include "pycore_pyerrors.h"      // _Py_DumpExtensionModules
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads
-#include <signal.h>
+
+#include "frameobject.h"
+
 #include <object.h>
-#include <frameobject.h>
 #include <signal.h>
-#if defined(HAVE_PTHREAD_SIGMASK) && !defined(HAVE_BROKEN_PTHREAD_SIGMASK)
+#include <signal.h>
+#include <stdlib.h>               // abort()
+#if defined(HAVE_PTHREAD_SIGMASK) && !defined(HAVE_BROKEN_PTHREAD_SIGMASK) && defined(HAVE_PTHREAD_H)
 #  include <pthread.h>
 #endif
 #ifdef MS_WINDOWS
@@ -710,7 +713,7 @@ faulthandler_dump_traceback_later(PyObject *self,
         return NULL;
     }
     /* Limit to LONG_MAX seconds for format_timeout() */
-    if (timeout_us >= PY_TIMEOUT_MAX || timeout_us / SEC_TO_US >= LONG_MAX) {
+    if (timeout_us > PY_TIMEOUT_MAX || timeout_us / SEC_TO_US > LONG_MAX) {
         PyErr_SetString(PyExc_OverflowError,
                         "timeout value is too large");
         return NULL;

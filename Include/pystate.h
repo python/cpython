@@ -66,18 +66,10 @@ PyAPI_FUNC(void) PyThreadState_Delete(PyThreadState *);
 
    The caller must hold the GIL.
 
-   See also PyThreadState_GET() and _PyThreadState_GET(). */
+   See also _PyThreadState_UncheckedGet() and _PyThreadState_GET(). */
 PyAPI_FUNC(PyThreadState *) PyThreadState_Get(void);
 
-/* Get the current Python thread state.
-
-   Macro using PyThreadState_Get() or _PyThreadState_GET() depending if
-   pycore_pystate.h is included or not (this header redefines the macro).
-
-   If PyThreadState_Get() is used, issue a fatal error if the current thread
-   state is NULL.
-
-   See also PyThreadState_Get() and _PyThreadState_GET(). */
+// Alias to PyThreadState_Get()
 #define PyThreadState_GET() PyThreadState_Get()
 
 PyAPI_FUNC(PyThreadState *) PyThreadState_Swap(PyThreadState *);
@@ -140,7 +132,7 @@ PyAPI_FUNC(PyThreadState *) PyGILState_GetThisThreadState(void);
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_PYSTATE_H
-#  include  "cpython/pystate.h"
+#  include "cpython/pystate.h"
 #  undef Py_CPYTHON_PYSTATE_H
 #endif
 

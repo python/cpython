@@ -1933,7 +1933,7 @@ b\
 c"""', """\
     STRING     'rb"\""a\\\\\\nb\\\\\\nc"\""' (1, 0) (3, 4)
     """)
- 
+
         self.check_tokenize('f"abc"', """\
     STRING     'f"abc"'      (1, 0) (1, 6)
     """)

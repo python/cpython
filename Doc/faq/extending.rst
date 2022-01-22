@@ -290,9 +290,6 @@ complete example using the GNU readline library (you may want to ignore
 
    #define PY_SSIZE_T_CLEAN
    #include <Python.h>
-   #include <object.h>
-   #include <compile.h>
-   #include <eval.h>
 
    int main (int argc, char* argv[])
    {

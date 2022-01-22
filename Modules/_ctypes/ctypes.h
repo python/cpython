@@ -208,7 +208,7 @@ typedef struct {
     PyObject *checker;
     int flags;                  /* calling convention and such */
 
-    /* pep3118 fields, pointers neeed PyMem_Free */
+    /* pep3118 fields, pointers need PyMem_Free */
     char *format;
     int ndim;
     Py_ssize_t *shape;

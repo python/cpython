@@ -89,7 +89,7 @@ To get at submitted form data, use the :class:`FieldStorage` class. If the form
 contains non-ASCII characters, use the *encoding* keyword parameter set to the
 value of the encoding defined for the document. It is usually contained in the
 META tag in the HEAD section of the HTML document or by the
-:mailheader:`Content-Type` header).  This reads the form contents from the
+:mailheader:`Content-Type` header.  This reads the form contents from the
 standard input or the environment (depending on the value of various
 environment variables set according to the CGI standard).  Since it may consume
 standard input, it should be instantiated only once.

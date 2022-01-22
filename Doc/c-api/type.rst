@@ -187,7 +187,7 @@ The following functions and structs are used to create
    The *module* argument can be used to record the module in which the new
    class is defined. It must be a module object or ``NULL``.
    If not ``NULL``, the module is associated with the new type and can later be
-   retreived with :c:func:`PyType_GetModule`.
+   retrieved with :c:func:`PyType_GetModule`.
    The associated module is not inherited by subclasses; it must be specified
    for each class individually.
 

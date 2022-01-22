@@ -82,7 +82,7 @@ typedef struct {
     Bytef *next_posi;
 } _Uint32Window;
 
-/* Initialize the buffer with an inital buffer size.
+/* Initialize the buffer with an initial buffer size.
 
    On success, return value >= 0
    On failure, return value < 0 */
@@ -1269,11 +1269,12 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
         return NULL;
     }
 
+    ENTER_ZLIB(self);
+
     if (PyObject_GetBuffer(self->unconsumed_tail, &data, PyBUF_SIMPLE) == -1) {
+        LEAVE_ZLIB(self);
         return NULL;
     }
-
-    ENTER_ZLIB(self);
 
     self->zst.next_in = data.buf;
     ibuflen = data.len;
@@ -1507,7 +1508,7 @@ PyDoc_STRVAR(zlib_module_documentation,
 "compressobj([level[, ...]]) -- Return a compressor object.\n"
 "crc32(string[, start]) -- Compute a CRC-32 checksum.\n"
 "decompress(string,[wbits],[bufsize]) -- Decompresses a compressed string.\n"
-"decompressobj([wbits[, zdict]]]) -- Return a decompressor object.\n"
+"decompressobj([wbits[, zdict]]) -- Return a decompressor object.\n"
 "\n"
 "'wbits' is window buffer size and container format.\n"
 "Compressor objects support compress() and flush() methods; decompressor\n"

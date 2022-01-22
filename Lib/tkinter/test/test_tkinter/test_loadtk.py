@@ -41,7 +41,6 @@ class TkLoadTest(unittest.TestCase):
             self.assertRaises(TclError, tcl.winfo_geometry)
             self.assertRaises(TclError, tcl.loadtk)
 
-tests_gui = (TkLoadTest, )
 
 if __name__ == "__main__":
-    test_support.run_unittest(*tests_gui)
+    unittest.main()

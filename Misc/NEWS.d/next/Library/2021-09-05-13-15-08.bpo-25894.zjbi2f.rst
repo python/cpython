@@ -1,4 +1,0 @@
-:mod:`unittest` now always reports skipped and failed subtests separately:
-separate characters in default mode and separate lines in verbose mode. Also
-the test description is now output for errors in test method, class and
-module cleanups.

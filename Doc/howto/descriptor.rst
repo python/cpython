@@ -1264,6 +1264,9 @@ Using the non-data descriptor protocol, a pure Python version of
         def __get__(self, obj, objtype=None):
             return self.f
 
+        def __call__(self, *args, **kwds):
+            return self.f(*args, **kwds)
+
 .. testcode::
     :hide:
 
@@ -1272,6 +1275,8 @@ Using the non-data descriptor protocol, a pure Python version of
         def f(x):
             return x * 10
 
+    wrapped_ord = StaticMethod(ord)
+
 .. doctest::
     :hide:
 
@@ -1279,6 +1284,8 @@ Using the non-data descriptor protocol, a pure Python version of
     30
     >>> E_sim().f(3)
     30
+    >>> wrapped_ord('A')
+    65
 
 
 Class methods
@@ -1344,7 +1351,7 @@ Using the non-data descriptor protocol, a pure Python version of
             if cls is None:
                 cls = type(obj)
             if hasattr(type(self.f), '__get__'):
-                return self.f.__get__(cls)
+                return self.f.__get__(cls, cls)
             return MethodType(self.f, cls)
 
 .. testcode::
@@ -1537,7 +1544,7 @@ variables:
         'Simulate how the type metaclass adds member objects for slots'
 
         def __new__(mcls, clsname, bases, mapping):
-            'Emuluate type_new() in Objects/typeobject.c'
+            'Emulate type_new() in Objects/typeobject.c'
             # type_new() calls PyTypeReady() which calls add_methods()
             slot_names = mapping.get('slot_names', [])
             for offset, name in enumerate(slot_names):
