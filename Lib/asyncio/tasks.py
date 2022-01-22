@@ -17,6 +17,7 @@ import itertools
 import types
 import warnings
 import weakref
+from types import GenericAlias
 
 from . import base_tasks
 from . import coroutines
@@ -123,8 +124,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             self._loop.call_exception_handler(context)
         super().__del__()
 
-    def __class_getitem__(cls, type):
-        return cls
+    __class_getitem__ = classmethod(GenericAlias)
 
     def _repr_info(self):
         return base_tasks._task_repr_info(self)
