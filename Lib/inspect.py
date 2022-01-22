@@ -2511,9 +2511,9 @@ def _signature_from_callable(obj, *,
                     pass
                 else:
                     if text_sig:
-                        # If 'obj' class has a __text_signature__ attribute:
+                        # If 'base' class has a __text_signature__ attribute:
                         # return a signature based on it
-                        return _signature_fromstr(sigcls, obj, text_sig)
+                        return _signature_fromstr(sigcls, base, text_sig)
 
             # No '__text_signature__' was found for the 'obj' class.
             # Last option is to check if its '__init__' is
