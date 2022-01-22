@@ -760,7 +760,7 @@ pycore_init_types(PyInterpreterState *interp)
         return status;
     }
 
-    status = _PyContext_InitTypes(interp);
+    status = _PyContext_Init(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
