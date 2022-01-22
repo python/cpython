@@ -24,9 +24,6 @@ class int "PyObject *" "&PyLong_Type"
 _Py_IDENTIFIER(little);
 _Py_IDENTIFIER(big);
 
-static PyLongObject *DIGIT_ONE = &_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + 1];
-static PyLongObject *DIGIT_TWO = &_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + 2];
-
 /* Is this PyLong of size 1, 0 or -1? */
 #define IS_MEDIUM_VALUE(x) (((size_t)Py_SIZE(x)) + 1U < 3U)
 
@@ -3799,7 +3796,7 @@ l_divmod(PyLongObject *v, PyLongObject *w,
             Py_DECREF(div);
             return -1;
         }
-        temp = (PyLongObject *) long_sub(div, DIGIT_ONE);
+        temp = (PyLongObject *) long_sub(div, (PyLongObject *)_PyLong_GetOne());
         if (temp == NULL) {
             Py_DECREF(mod);
             Py_DECREF(div);
@@ -4208,7 +4205,7 @@ long_invmod(PyLongObject *a, PyLongObject *n)
 
     Py_DECREF(c);
     Py_DECREF(n);
-    if (long_compare(a, DIGIT_ONE)) {
+    if (long_compare(a, (PyLongObject *)_PyLong_GetOne())) {
         /* a != 1; we don't have an inverse. */
         Py_DECREF(a);
         Py_DECREF(b);
@@ -4264,7 +4261,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
     }
     else if (x == Py_None) {
         c = NULL;
-        if (a == DIGIT_TWO) {
+        if (Py_SIZE(a) == 0 && a->ob_digit[0] == 2) {
             /* only compute positive powers of 2 */
             if (Py_SIZE(b) > 0) {
                 /* b must fit a Py_ssize_t */
@@ -4280,7 +4277,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
                 goto Done;
             }
             else if (Py_SIZE(b) == 0) {
-                z = DIGIT_ONE;
+                z = (PyLongObject *)_PyLong_GetOne();
                 Py_INCREF(z);
                 goto Done;
             }
@@ -4551,7 +4548,7 @@ long_invert(PyLongObject *v)
     PyLongObject *x;
     if (IS_MEDIUM_VALUE(v))
         return _PyLong_FromSTwoDigits(~medium_value(v));
-    x = (PyLongObject *) long_add(v, DIGIT_ONE);
+    x = (PyLongObject *) long_add(v, (PyLongObject *)_PyLong_GetOne());
     if (x == NULL)
         return NULL;
     _PyLong_Negate(&x);
@@ -4719,7 +4716,7 @@ long_lshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
         stwodigits x = m < 0 ? -(-m << remshift) : m << remshift;
         return _PyLong_FromSTwoDigits(x);
     }
-    if (a == DIGIT_ONE) {
+    if (Py_SIZE(a) == 0 && a) {
         /* shifting is guaranteed positive, so there is
            no need for filtering less than 0 shifting unlike
            long_pow */
@@ -4731,8 +4728,9 @@ long_lshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
             z->ob_digit[wordshift] = 1 << remshift;
             return (PyObject *)maybe_small_long(z);
         }
-        Py_INCREF(DIGIT_ONE);
-        return (PyObject *)DIGIT_ONE;
+        z = (PyLongObject *)_PyLong_GetOne();
+        Py_INCREF(z);
+        return (PyObject *)z;
     }
 
     oldsize = Py_ABS(Py_SIZE(a));
@@ -5383,7 +5381,7 @@ _PyLong_DivmodNear(PyObject *a, PyObject *b)
 
     /* compare twice the remainder with the divisor, to see
        if we need to adjust the quotient and remainder */
-    PyObject *one = (PyObject *)DIGIT_ONE;  // borrowed reference
+    PyObject *one = _PyLong_GetOne();  // borrowed reference
     twice_rem = long_lshift((PyObject *)rem, one);
     if (twice_rem == NULL)
         goto error;
@@ -5685,7 +5683,7 @@ int_as_integer_ratio_impl(PyObject *self)
     if (numerator == NULL) {
         return NULL;
     }
-    ratio_tuple = PyTuple_Pack(2, numerator, (PyObject *)DIGIT_ONE);
+    ratio_tuple = PyTuple_Pack(2, numerator, _PyLong_GetOne());
     Py_DECREF(numerator);
     return ratio_tuple;
 }
