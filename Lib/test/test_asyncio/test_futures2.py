@@ -16,3 +16,7 @@ class FutureTests(unittest.IsolatedAsyncioTestCase):
         # The check for returned string is not very reliable but
         # exact comparison for the whole string is even weaker.
         self.assertIn('...', repr(await asyncio.wait_for(func(), timeout=10)))
+
+
+if __name__ == '__main__':
+    unittest.main()
