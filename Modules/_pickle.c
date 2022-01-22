@@ -177,6 +177,10 @@ typedef struct {
     /* functools.partial, used for implementing __newobj_ex__ with protocols
        2 and 3 */
     PyObject *partial;
+
+    /* pickle heap type */
+    PyTypeObject *Pickler_Type;
+    PyTypeObject *Unpickler_Type;
 } PickleState;
 
 /* Forward declaration of the _pickle module definition. */
@@ -197,6 +201,11 @@ _Pickle_GetGlobalState(void)
     return _Pickle_GetState(PyState_FindModule(&_picklemodule));
 }
 
+#define find_pickle_state_by_type(tp) \
+    (_Pickle_GetState(_PyType_GetModuleByDef(tp, &_picklemodule)))
+#define get_pickle_state_by_class(cls) \
+    (_Pickle_GetState(PyType_GetModule(cls)))
+
 /* Clear the given pickle module state. */
 static void
 _Pickle_ClearState(PickleState *st)
@@ -215,6 +224,8 @@ _Pickle_ClearState(PickleState *st)
     Py_CLEAR(st->codecs_encode);
     Py_CLEAR(st->getattr);
     Py_CLEAR(st->partial);
+    Py_CLEAR(st->Pickler_Type);
+    Py_CLEAR(st->Unpickler_Type);
 }
 
 /* Initialize the given pickle module state. */
@@ -712,8 +723,6 @@ typedef struct {
 /* Forward declarations */
 static int save(PicklerObject *, PyObject *, int);
 static int save_reduce(PicklerObject *, PyObject *, PyObject *);
-static PyTypeObject Pickler_Type;
-static PyTypeObject Unpickler_Type;
 
 #include "clinic/_pickle.c.h"
 
@@ -1106,11 +1115,11 @@ _Pickler_Write(PicklerObject *self, const char *s, Py_ssize_t data_len)
 }
 
 static PicklerObject *
-_Pickler_New(void)
+_Pickler_New(PickleState *state)
 {
     PicklerObject *self;
 
-    self = PyObject_GC_New(PicklerObject, &Pickler_Type);
+    self = PyObject_GC_New(PicklerObject, state->Pickler_Type);
     if (self == NULL)
         return NULL;
 
@@ -1590,11 +1599,11 @@ _Unpickler_MemoCleanup(UnpicklerObject *self)
 }
 
 static UnpicklerObject *
-_Unpickler_New(void)
+_Unpickler_New(PickleState *state)
 {
     UnpicklerObject *self;
 
-    self = PyObject_GC_New(UnpicklerObject, &Unpickler_Type);
+    self = PyObject_GC_New(UnpicklerObject, state->Unpickler_Type);
     if (self == NULL)
         return NULL;
 
@@ -5070,47 +5079,26 @@ static PyGetSetDef Pickler_getsets[] = {
     {NULL}
 };
 
-static PyTypeObject Pickler_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_pickle.Pickler"  ,                /*tp_name*/
-    sizeof(PicklerObject),              /*tp_basicsize*/
-    0,                                  /*tp_itemsize*/
-    (destructor)Pickler_dealloc,        /*tp_dealloc*/
-    0,                                  /*tp_vectorcall_offset*/
-    0,                                  /*tp_getattr*/
-    0,                                  /*tp_setattr*/
-    0,                                  /*tp_as_async*/
-    0,                                  /*tp_repr*/
-    0,                                  /*tp_as_number*/
-    0,                                  /*tp_as_sequence*/
-    0,                                  /*tp_as_mapping*/
-    0,                                  /*tp_hash*/
-    0,                                  /*tp_call*/
-    0,                                  /*tp_str*/
-    0,                                  /*tp_getattro*/
-    0,                                  /*tp_setattro*/
-    0,                                  /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
-    _pickle_Pickler___init____doc__,    /*tp_doc*/
-    (traverseproc)Pickler_traverse,     /*tp_traverse*/
-    (inquiry)Pickler_clear,             /*tp_clear*/
-    0,                                  /*tp_richcompare*/
-    0,                                  /*tp_weaklistoffset*/
-    0,                                  /*tp_iter*/
-    0,                                  /*tp_iternext*/
-    Pickler_methods,                    /*tp_methods*/
-    Pickler_members,                    /*tp_members*/
-    Pickler_getsets,                    /*tp_getset*/
-    0,                                  /*tp_base*/
-    0,                                  /*tp_dict*/
-    0,                                  /*tp_descr_get*/
-    0,                                  /*tp_descr_set*/
-    0,                                  /*tp_dictoffset*/
-    _pickle_Pickler___init__,           /*tp_init*/
-    PyType_GenericAlloc,                /*tp_alloc*/
-    PyType_GenericNew,                  /*tp_new*/
-    PyObject_GC_Del,                    /*tp_free*/
-    0,                                  /*tp_is_gc*/
+static PyType_Slot Pickler_Type_spec_slots[] = {
+    {Py_tp_dealloc, (destructor)Pickler_dealloc},
+    {Py_tp_doc, (void *)_pickle_Pickler___init____doc__},
+    {Py_tp_traverse, (traverseproc)Pickler_traverse},
+    {Py_tp_clear, (inquiry)Pickler_clear},
+    {Py_tp_methods, Pickler_methods},
+    {Py_tp_members, Pickler_members},
+    {Py_tp_getset, Pickler_getsets},
+    {Py_tp_init, _pickle_Pickler___init__},
+    {Py_tp_alloc, PyType_GenericAlloc},
+    {Py_tp_new, PyType_GenericNew},
+    {Py_tp_free, PyObject_GC_Del},
+    {0, 0}
+};
+
+static PyType_Spec Pickler_Type_spec = {
+    .name = "_pickle.Pickler",
+    .basicsize = sizeof(PicklerObject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    .slots = Pickler_Type_spec_slots,
 };
 
 /* Temporary helper for calling self.find_class().
@@ -7592,47 +7580,25 @@ static PyGetSetDef Unpickler_getsets[] = {
     {NULL}
 };
 
-static PyTypeObject Unpickler_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_pickle.Unpickler",                /*tp_name*/
-    sizeof(UnpicklerObject),            /*tp_basicsize*/
-    0,                                  /*tp_itemsize*/
-    (destructor)Unpickler_dealloc,      /*tp_dealloc*/
-    0,                                  /*tp_vectorcall_offset*/
-    0,                                  /*tp_getattr*/
-    0,                                  /*tp_setattr*/
-    0,                                  /*tp_as_async*/
-    0,                                  /*tp_repr*/
-    0,                                  /*tp_as_number*/
-    0,                                  /*tp_as_sequence*/
-    0,                                  /*tp_as_mapping*/
-    0,                                  /*tp_hash*/
-    0,                                  /*tp_call*/
-    0,                                  /*tp_str*/
-    0,                                  /*tp_getattro*/
-    0,                                  /*tp_setattro*/
-    0,                                  /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
-    _pickle_Unpickler___init____doc__,  /*tp_doc*/
-    (traverseproc)Unpickler_traverse,   /*tp_traverse*/
-    (inquiry)Unpickler_clear,           /*tp_clear*/
-    0,                                  /*tp_richcompare*/
-    0,                                  /*tp_weaklistoffset*/
-    0,                                  /*tp_iter*/
-    0,                                  /*tp_iternext*/
-    Unpickler_methods,                  /*tp_methods*/
-    0,                                  /*tp_members*/
-    Unpickler_getsets,                  /*tp_getset*/
-    0,                                  /*tp_base*/
-    0,                                  /*tp_dict*/
-    0,                                  /*tp_descr_get*/
-    0,                                  /*tp_descr_set*/
-    0,                                  /*tp_dictoffset*/
-    _pickle_Unpickler___init__,         /*tp_init*/
-    PyType_GenericAlloc,                /*tp_alloc*/
-    PyType_GenericNew,                  /*tp_new*/
-    PyObject_GC_Del,                    /*tp_free*/
-    0,                                  /*tp_is_gc*/
+static PyType_Slot Unpickler_Type_spec_slots[] = {
+    {Py_tp_dealloc, (destructor)Unpickler_dealloc},
+    {Py_tp_doc, (void *)_pickle_Unpickler___init____doc__},
+    {Py_tp_traverse, (traverseproc)Unpickler_traverse},
+    {Py_tp_clear, (inquiry)Unpickler_clear},
+    {Py_tp_methods, Unpickler_methods},
+    {Py_tp_getset,  Unpickler_getsets},
+    {Py_tp_init, _pickle_Unpickler___init__},
+    {Py_tp_alloc, PyType_GenericAlloc},
+    {Py_tp_new, PyType_GenericNew},
+    {Py_tp_free, PyObject_GC_Del},
+    {0, 0}
+};
+
+static PyType_Spec Unpickler_Type_spec = {
+    .name = "_pickle.Unpickler",
+    .basicsize = sizeof(UnpicklerObject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    .slots = Unpickler_Type_spec_slots,
 };
 
 /*[clinic input]
@@ -7681,7 +7647,8 @@ _pickle_dump_impl(PyObject *module, PyObject *obj, PyObject *file,
                   PyObject *buffer_callback)
 /*[clinic end generated code: output=706186dba996490c input=5ed6653da99cd97c]*/
 {
-    PicklerObject *pickler = _Pickler_New();
+    PickleState *state = _Pickle_GetState(module);
+    PicklerObject *pickler = _Pickler_New(state);
 
     if (pickler == NULL)
         return NULL;
@@ -7746,7 +7713,8 @@ _pickle_dumps_impl(PyObject *module, PyObject *obj, PyObject *protocol,
 /*[clinic end generated code: output=fbab0093a5580fdf input=e543272436c6f987]*/
 {
     PyObject *result;
-    PicklerObject *pickler = _Pickler_New();
+    PickleState *state = _Pickle_GetState(module);
+    PicklerObject *pickler = _Pickler_New(state);
 
     if (pickler == NULL)
         return NULL;
@@ -7812,7 +7780,8 @@ _pickle_load_impl(PyObject *module, PyObject *file, int fix_imports,
 /*[clinic end generated code: output=250452d141c23e76 input=46c7c31c92f4f371]*/
 {
     PyObject *result;
-    UnpicklerObject *unpickler = _Unpickler_New();
+    PickleState *state = _Pickle_GetState(module);
+    UnpicklerObject *unpickler = _Unpickler_New(state);
 
     if (unpickler == NULL)
         return NULL;
@@ -7872,7 +7841,8 @@ _pickle_loads_impl(PyObject *module, PyObject *data, int fix_imports,
 /*[clinic end generated code: output=82ac1e6b588e6d02 input=b3615540d0535087]*/
 {
     PyObject *result;
-    UnpicklerObject *unpickler = _Unpickler_New();
+    PickleState *state = _Pickle_GetState(module);
+    UnpicklerObject *unpickler = _Unpickler_New(state);
 
     if (unpickler == NULL)
         return NULL;
@@ -7936,6 +7906,8 @@ pickle_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(st->codecs_encode);
     Py_VISIT(st->getattr);
     Py_VISIT(st->partial);
+    Py_VISIT(st->Pickler_Type);
+    Py_VISIT(st->Unpickler_Type);
     return 0;
 }
 
@@ -7955,7 +7927,7 @@ PyMODINIT_FUNC
 PyInit__pickle(void)
 {
     PyObject *m;
-    PickleState *st;
+    PickleState *state;
 
     m = PyState_FindModule(&_picklemodule);
     if (m) {
@@ -7975,43 +7947,47 @@ PyInit__pickle(void)
     if (m == NULL)
         return NULL;
 
+    state = _Pickle_GetState(m);
+
+    /* heap type init */
+    state->Pickler_Type = (PyTypeObject *)PyType_FromSpec(&Pickler_Type_spec);
+    state->Unpickler_Type = (PyTypeObject *)PyType_FromSpec(&Unpickler_Type_spec);
+
     /* Add types */
-    if (PyModule_AddType(m, &Pickler_Type) < 0) {
+    if (PyModule_AddType(m, state->Pickler_Type) < 0) {
         return NULL;
     }
-    if (PyModule_AddType(m, &Unpickler_Type) < 0) {
+    if (PyModule_AddType(m, state->Unpickler_Type) < 0) {
         return NULL;
     }
     if (PyModule_AddType(m, &PyPickleBuffer_Type) < 0) {
         return NULL;
     }
 
-    st = _Pickle_GetState(m);
-
     /* Initialize the exceptions. */
-    st->PickleError = PyErr_NewException("_pickle.PickleError", NULL, NULL);
-    if (st->PickleError == NULL)
+    state->PickleError = PyErr_NewException("_pickle.PickleError", NULL, NULL);
+    if (state->PickleError == NULL)
         return NULL;
-    st->PicklingError = \
-        PyErr_NewException("_pickle.PicklingError", st->PickleError, NULL);
-    if (st->PicklingError == NULL)
+    state->PicklingError = \
+        PyErr_NewException("_pickle.PicklingError", state->PickleError, NULL);
+    if (state->PicklingError == NULL)
         return NULL;
-    st->UnpicklingError = \
-        PyErr_NewException("_pickle.UnpicklingError", st->PickleError, NULL);
-    if (st->UnpicklingError == NULL)
-        return NULL;
-
-    Py_INCREF(st->PickleError);
-    if (PyModule_AddObject(m, "PickleError", st->PickleError) < 0)
-        return NULL;
-    Py_INCREF(st->PicklingError);
-    if (PyModule_AddObject(m, "PicklingError", st->PicklingError) < 0)
-        return NULL;
-    Py_INCREF(st->UnpicklingError);
-    if (PyModule_AddObject(m, "UnpicklingError", st->UnpicklingError) < 0)
+    state->UnpicklingError = \
+        PyErr_NewException("_pickle.UnpicklingError", state->PickleError, NULL);
+    if (state->UnpicklingError == NULL)
         return NULL;
 
-    if (_Pickle_InitState(st) < 0)
+    Py_INCREF(state->PickleError);
+    if (PyModule_AddObject(m, "PickleError", state->PickleError) < 0)
+        return NULL;
+    Py_INCREF(state->PicklingError);
+    if (PyModule_AddObject(m, "PicklingError", state->PicklingError) < 0)
+        return NULL;
+    Py_INCREF(state->UnpicklingError);
+    if (PyModule_AddObject(m, "UnpicklingError", state->UnpicklingError) < 0)
+        return NULL;
+
+    if (_Pickle_InitState(state) < 0)
         return NULL;
 
     return m;
