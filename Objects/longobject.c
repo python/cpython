@@ -4272,7 +4272,9 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
                 if (z == NULL)
                     goto Error;
                 /* set the last digit of ob_digit to 1 << (b % PyLong_SHIFT) */
-                z->ob_digit[j] = (digit)(Py_SIZE(a) << (i - j*PyLong_SHIFT));
+                z->ob_digit[j] = 1 << (i - j*PyLong_SHIFT);
+                if (Py_SIZE(a) < 0)
+                    Py_SET_SIZE(z, (j + 1) * (-(i & 1) | 1))
                 z = maybe_small_long(z);
                 goto Done;
             }
