@@ -3543,7 +3543,7 @@ _PyExc_FiniTypes(PyInterpreterState *interp)
         return;
     }
 
-    for (size_t i=0; i < Py_ARRAY_LENGTH(static_exceptions); i++) {
+    for (Py_ssize_t i=Py_ARRAY_LENGTH(static_exceptions) - 1; i >= 0; i--) {
         PyTypeObject *exc = static_exceptions[i].exc;
 
         // Cannot delete a type if it still has subclasses
