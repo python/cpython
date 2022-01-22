@@ -4731,9 +4731,7 @@ long_lshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
             Py_SET_SIZE(z, (wordshift + 1) * Py_SIZE(a));
             return (PyObject *)maybe_small_long(z);
         }
-        z = (PyLongObject *)PyLong_FromSsize_t(Py_SIZE(a));
-        Py_INCREF(z);
-        return (PyObject *)z;
+        return PyLong_FromSsize_t(Py_SIZE(a));
     }
 
     oldsize = Py_ABS(Py_SIZE(a));
