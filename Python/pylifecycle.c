@@ -29,6 +29,8 @@
 #include "pycore_typeobject.h"    // _PyTypes_InitTypes()
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
 
+extern void _PyIO_Fini(void);
+
 #include <locale.h>               // setlocale()
 #include <stdlib.h>               // getenv()
 
@@ -740,9 +742,8 @@ pycore_init_types(PyInterpreterState *interp)
         return status;
     }
 
-    status = _PyExc_InitTypes(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
+    if (_PyExc_InitTypes(interp) < 0) {
+        return _PyStatus_ERR("failed to initialize an exception type");
     }
 
     status = _PyExc_InitGlobalObjects(interp);
@@ -760,7 +761,7 @@ pycore_init_types(PyInterpreterState *interp)
         return status;
     }
 
-    status = _PyContext_InitTypes(interp);
+    status = _PyContext_Init(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -790,9 +791,8 @@ pycore_init_builtins(PyThreadState *tstate)
     Py_INCREF(builtins_dict);
     interp->builtins = builtins_dict;
 
-    PyStatus status = _PyBuiltins_AddExceptions(bimod);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
+    if (_PyBuiltins_AddExceptions(bimod) < 0) {
+        return _PyStatus_ERR("failed to add exceptions to builtins");
     }
 
     interp->builtins_copy = PyDict_Copy(interp->builtins);
@@ -1666,6 +1666,7 @@ flush_std_files(void)
 static void
 finalize_interp_types(PyInterpreterState *interp)
 {
+    _PyUnicode_FiniTypes(interp);
     _PySys_Fini(interp);
     _PyExc_Fini(interp);
     _PyFrame_Fini(interp);
@@ -1702,6 +1703,10 @@ finalize_interp_clear(PyThreadState *tstate)
 
     /* Clear interpreter state and all thread states */
     _PyInterpreterState_Clear(tstate);
+
+    if (is_main_interp) {
+        _PyIO_Fini();
+    }
 
     /* Clear all loghooks */
     /* Both _PySys_Audit function and users still need PyObject, such as tuple.

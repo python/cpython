@@ -596,8 +596,6 @@ iterations of the loop.
     has occurred in a :keyword:`with` statement.
 
     .. versionadded:: 3.9
-    .. versionchanged:: 3.11
-       The ``__exit__`` function is in position 8 of the stack rather than 7.
 
     .. versionchanged:: 3.11
        The ``__exit__`` function is in position 4 of the stack rather than 7.

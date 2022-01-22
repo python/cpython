@@ -2986,11 +2986,6 @@ _PyBuiltin_Init(PyInterpreterState *interp)
 
     const PyConfig *config = _PyInterpreterState_GetConfig(interp);
 
-    if (PyType_Ready(&PyFilter_Type) < 0 ||
-        PyType_Ready(&PyMap_Type) < 0 ||
-        PyType_Ready(&PyZip_Type) < 0)
-        return NULL;
-
     mod = _PyModule_CreateInitialized(&builtinsmodule, PYTHON_API_VERSION);
     if (mod == NULL)
         return NULL;

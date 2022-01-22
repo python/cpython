@@ -456,6 +456,8 @@ class SendfileMixin(SendfileBase):
     # themselves).
     @unittest.skipIf(sys.platform.startswith('sunos'),
                      "Doesn't work on Solaris")
+    @unittest.skipIf(sys.platform == "win32",
+                     "It is flaky on Windows and needs to be fixed")  # TODO: bpo-41682
     def test_sendfile_close_peer_in_the_middle_of_receiving(self):
         srv_proto, cli_proto = self.prepare_sendfile(close_after=1024)
         with self.assertRaises(ConnectionError):
@@ -565,3 +567,7 @@ else:
 
         def create_event_loop(self):
             return asyncio.SelectorEventLoop(selectors.SelectSelector())
+
+
+if __name__ == '__main__':
+    unittest.main()
