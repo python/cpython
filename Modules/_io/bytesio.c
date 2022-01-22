@@ -462,6 +462,42 @@ _io_BytesIO_read1_impl(bytesio *self, Py_ssize_t size)
     return _io_BytesIO_read_impl(self, size);
 }
 
+
+/*[clinic input]
+_io.BytesIO.peek
+    size: Py_ssize_t(accept={int, NoneType}) = -1
+    /
+
+Return bytes from the stream without advancing the position.
+
+Return an empty bytes object at EOF.
+[clinic start generated code]*/
+
+static PyObject *
+_io_BytesIO_peek_impl(bytesio *self, Py_ssize_t size)
+/*[clinic end generated code: output=fa4d8ce28b35db9b input=afc80e71b37e7c59]*/
+{
+    Py_ssize_t n;
+    const char *output;
+
+    CHECK_CLOSED(self);
+
+    /* adjust invalid sizes */
+    n = self->string_size - self->pos;
+    if (size < 1 || size > n) {
+        size = n;
+        if (size < 0)
+            size = 0;
+    }
+
+    assert(self->buf != NULL);
+    assert(size <= self->string_size);
+    output = PyBytes_AS_STRING(self->buf) + self->pos;
+    return PyBytes_FromStringAndSize(output, size);
+}
+
+
+
 /*[clinic input]
 _io.BytesIO.readline
     size: Py_ssize_t(accept={int, NoneType}) = -1
@@ -1019,6 +1055,7 @@ static struct PyMethodDef bytesio_methods[] = {
     _IO_BYTESIO_READLINE_METHODDEF
     _IO_BYTESIO_READLINES_METHODDEF
     _IO_BYTESIO_READ_METHODDEF
+    _IO_BYTESIO_PEEK_METHODDEF
     _IO_BYTESIO_GETBUFFER_METHODDEF
     _IO_BYTESIO_GETVALUE_METHODDEF
     _IO_BYTESIO_SEEK_METHODDEF

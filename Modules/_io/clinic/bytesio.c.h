@@ -232,6 +232,42 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_io_BytesIO_peek__doc__,
+"peek($self, size=-1, /)\n"
+"--\n"
+"\n"
+"Return bytes from the stream without advancing the position.\n"
+"\n"
+"Return an empty bytes object at EOF.");
+
+#define _IO_BYTESIO_PEEK_METHODDEF    \
+    {"peek", _PyCFunction_CAST(_io_BytesIO_peek), METH_FASTCALL, _io_BytesIO_peek__doc__},
+
+static PyObject *
+_io_BytesIO_peek_impl(bytesio *self, Py_ssize_t size);
+
+static PyObject *
+_io_BytesIO_peek(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t size = -1;
+
+    if (!_PyArg_CheckPositional("peek", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (!_Py_convert_optional_to_ssize_t(args[0], &size)) {
+        goto exit;
+    }
+skip_optional:
+    return_value = _io_BytesIO_peek_impl(self, size);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_io_BytesIO_readline__doc__,
 "readline($self, size=-1, /)\n"
 "--\n"
@@ -537,4 +573,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b753fdf1ba36c461 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=106d7918b585497c input=a9049054013a1b77]*/
