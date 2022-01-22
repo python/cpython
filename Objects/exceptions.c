@@ -3536,13 +3536,36 @@ _PyExc_InitTypes(PyInterpreterState *interp)
 }
 
 
+static void
+_PyExc_FiniTypes(PyInterpreterState *interp)
+{
+    if (!_Py_IsMainInterpreter(interp)) {
+        return;
+    }
+
+    for (Py_ssize_t i=Py_ARRAY_LENGTH(static_exceptions) - 1; i >= 0; i--) {
+        PyTypeObject *exc = static_exceptions[i].exc;
+
+        // Cannot delete a type if it still has subclasses
+        if (exc->tp_subclasses != NULL) {
+            continue;
+        }
+
+        _PyStaticType_Dealloc(exc);
+    }
+}
+
+
 PyStatus
 _PyExc_InitGlobalObjects(PyInterpreterState *interp)
 {
+    if (!_Py_IsMainInterpreter(interp)) {
+        return _PyStatus_OK();
+    }
+
     if (preallocate_memerrors() < 0) {
         return _PyStatus_NO_MEMORY();
     }
-
     return _PyStatus_OK();
 }
 
@@ -3656,6 +3679,8 @@ _PyExc_Fini(PyInterpreterState *interp)
     struct _Py_exc_state *state = &interp->exc_state;
     free_preallocated_memerrors(state);
     Py_CLEAR(state->errnomap);
+
+    _PyExc_FiniTypes(interp);
 }
 
 /* Helper to do the equivalent of "raise X from Y" in C, but always using
