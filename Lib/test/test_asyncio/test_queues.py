@@ -1,6 +1,7 @@
 """Tests for queues.py"""
 
-import unittest
+from unittest import mock
+
 import asyncio
 from types import GenericAlias
 from test.test_asyncio import utils as test_utils
