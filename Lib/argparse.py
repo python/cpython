@@ -2591,11 +2591,13 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         """error(message: string)
 
         Prints a usage message incorporating the message to stderr and
-        exits.
+        exits (or raises ArgumentError if exit_on_error is False).
 
         If you override this in a subclass, it should not return -- it
         should either exit or raise an exception.
         """
         self.print_usage(_sys.stderr)
         args = {'prog': self.prog, 'message': message}
-        self.exit(2, _('%(prog)s: error: %(message)s\n') % args)
+        if self.exit_on_error:
+            self.exit(2, _('%(prog)s: error: %(message)s\n') % args)
+        raise ArgumentError(None, message)

@@ -5452,7 +5452,8 @@ class TestExitOnError(TestCase):
 
     def setUp(self):
         self.parser = argparse.ArgumentParser(exit_on_error=False)
-        self.parser.add_argument('--integers', metavar='N', type=int)
+        self.parser.add_argument(
+            '--integers', metavar='N', type=int, required=True)
 
     def test_exit_on_error_with_good_args(self):
         ns = self.parser.parse_args('--integers 4'.split())
@@ -5461,6 +5462,9 @@ class TestExitOnError(TestCase):
     def test_exit_on_error_with_bad_args(self):
         with self.assertRaises(argparse.ArgumentError):
             self.parser.parse_args('--integers a'.split())
+        msg = 'the following arguments are required: --integers'
+        with self.assertRaisesRegex(argparse.ArgumentError, msg):
+            self.parser.parse_args([])
 
 
 def tearDownModule():
