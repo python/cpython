@@ -2024,8 +2024,8 @@ handle_eval_breaker:
             STAT_INC(BINARY_OP, hit);
             PyObject *prod = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
             SET_SECOND(prod);
-            Py_DECREF(right);
-            Py_DECREF(left);
+            _Py_DECREF_INT(right);
+            _Py_DECREF_INT(left);
             STACK_SHRINK(1);
             if (prod == NULL) {
                 goto error;
@@ -2043,8 +2043,8 @@ handle_eval_breaker:
                 ((PyFloatObject *)right)->ob_fval;
             PyObject *prod = PyFloat_FromDouble(dprod);
             SET_SECOND(prod);
-            Py_DECREF(right);
-            Py_DECREF(left);
+            _Py_DECREF_FLOAT(right);
+            _Py_DECREF_FLOAT(left);
             STACK_SHRINK(1);
             if (prod == NULL) {
                 goto error;
@@ -2060,8 +2060,8 @@ handle_eval_breaker:
             STAT_INC(BINARY_OP, hit);
             PyObject *sub = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
             SET_SECOND(sub);
-            Py_DECREF(right);
-            Py_DECREF(left);
+            _Py_DECREF_INT(right);
+            _Py_DECREF_INT(left);
             STACK_SHRINK(1);
             if (sub == NULL) {
                 goto error;
@@ -2078,8 +2078,8 @@ handle_eval_breaker:
             double dsub = ((PyFloatObject *)left)->ob_fval - ((PyFloatObject *)right)->ob_fval;
             PyObject *sub = PyFloat_FromDouble(dsub);
             SET_SECOND(sub);
-            Py_DECREF(right);
-            Py_DECREF(left);
+            _Py_DECREF_FLOAT(right);
+            _Py_DECREF_FLOAT(left);
             STACK_SHRINK(1);
             if (sub == NULL) {
                 goto error;
@@ -2096,8 +2096,8 @@ handle_eval_breaker:
             PyObject *res = PyUnicode_Concat(left, right);
             STACK_SHRINK(1);
             SET_TOP(res);
-            Py_DECREF(left);
-            Py_DECREF(right);
+            _Py_DECREF_STR(left);
+            _Py_DECREF_STR(right);
             if (TOP() == NULL) {
                 goto error;
             }
@@ -2122,10 +2122,10 @@ handle_eval_breaker:
             DEOPT_IF(var != left, BINARY_OP);
             STAT_INC(BINARY_OP, hit);
             GETLOCAL(next_oparg) = NULL;
-            Py_DECREF(left);
+            _Py_DECREF_STR(left);
             STACK_SHRINK(1);
             PyUnicode_Append(&TOP(), right);
-            Py_DECREF(right);
+            _Py_DECREF_STR(right);
             if (TOP() == NULL) {
                 goto error;
             }
@@ -2142,8 +2142,8 @@ handle_eval_breaker:
                 ((PyFloatObject *)right)->ob_fval;
             PyObject *sum = PyFloat_FromDouble(dsum);
             SET_SECOND(sum);
-            Py_DECREF(right);
-            Py_DECREF(left);
+            _Py_DECREF_FLOAT(right);
+            _Py_DECREF_FLOAT(left);
             STACK_SHRINK(1);
             if (sum == NULL) {
                 goto error;
@@ -2159,8 +2159,8 @@ handle_eval_breaker:
             STAT_INC(BINARY_OP, hit);
             PyObject *sum = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
             SET_SECOND(sum);
-            Py_DECREF(right);
-            Py_DECREF(left);
+            _Py_DECREF_INT(right);
+            _Py_DECREF_INT(left);
             STACK_SHRINK(1);
             if (sum == NULL) {
                 goto error;
@@ -2218,7 +2218,7 @@ handle_eval_breaker:
             assert(res != NULL);
             Py_INCREF(res);
             STACK_SHRINK(1);
-            Py_DECREF(sub);
+            _Py_DECREF_INT(sub);
             SET_TOP(res);
             Py_DECREF(list);
             DISPATCH();
@@ -2241,7 +2241,7 @@ handle_eval_breaker:
             assert(res != NULL);
             Py_INCREF(res);
             STACK_SHRINK(1);
-            Py_DECREF(sub);
+            _Py_DECREF_INT(sub);
             SET_TOP(res);
             Py_DECREF(tuple);
             DISPATCH();
@@ -2372,7 +2372,7 @@ handle_eval_breaker:
             STACK_SHRINK(3);
             assert(old_value != NULL);
             Py_DECREF(old_value);
-            Py_DECREF(sub);
+            _Py_DECREF_INT(sub);
             Py_DECREF(list);
             DISPATCH();
         }
@@ -3211,12 +3211,12 @@ handle_eval_breaker:
                 goto error;
             }
             str = _PyUnicode_JoinArray(empty, stack_pointer - oparg, oparg);
-            Py_DECREF(empty);
+            _Py_DECREF_STR(empty);
             if (str == NULL)
                 goto error;
             while (--oparg >= 0) {
                 PyObject *item = POP();
-                Py_DECREF(item);
+                _Py_DECREF_STR(item);
             }
             PUSH(str);
             DISPATCH();
@@ -3741,8 +3741,8 @@ handle_eval_breaker:
             STAT_INC(COMPARE_OP, hit);
             NEXTOPARG();
             STACK_SHRINK(2);
-            Py_DECREF(left);
-            Py_DECREF(right);
+            _Py_DECREF_FLOAT(left);
+            _Py_DECREF_FLOAT(right);
             assert(opcode == POP_JUMP_IF_TRUE || opcode == POP_JUMP_IF_FALSE);
             int jump = (1 << (sign + 1)) & when_to_jump_mask;
             if (!jump) {
@@ -3774,8 +3774,8 @@ handle_eval_breaker:
             int sign = (ileft > iright) - (ileft < iright);
             NEXTOPARG();
             STACK_SHRINK(2);
-            Py_DECREF(left);
-            Py_DECREF(right);
+            _Py_DECREF_INT(left);
+            _Py_DECREF_INT(right);
             assert(opcode == POP_JUMP_IF_TRUE || opcode == POP_JUMP_IF_FALSE);
             int jump = (1 << (sign + 1)) & when_to_jump_mask;
             if (!jump) {
@@ -3808,8 +3808,8 @@ handle_eval_breaker:
             NEXTOPARG();
             assert(opcode == POP_JUMP_IF_TRUE || opcode == POP_JUMP_IF_FALSE);
             STACK_SHRINK(2);
-            Py_DECREF(left);
-            Py_DECREF(right);
+            _Py_DECREF_STR(left);
+            _Py_DECREF_STR(right);
             assert(res == 0 || res == 1);
             assert(invert == 0 || invert == 1);
             int jump = res ^ invert;
@@ -3878,7 +3878,7 @@ handle_eval_breaker:
             }
 
             if (Py_IsNone(match)) {
-                Py_DECREF(match);
+                _Py_DECREF_NONE(match);
                 Py_XDECREF(rest);
                 /* no match - jump to target */
                 JUMPTO(oparg);
@@ -3981,11 +3981,11 @@ handle_eval_breaker:
             PyObject *cond = POP();
             int err;
             if (Py_IsTrue(cond)) {
-                Py_DECREF(cond);
+                _Py_DECREF_BOOL(cond);
                 DISPATCH();
             }
             if (Py_IsFalse(cond)) {
-                Py_DECREF(cond);
+                _Py_DECREF_BOOL(cond);
                 JUMPTO(oparg);
                 CHECK_EVAL_BREAKER();
                 DISPATCH();
@@ -4008,11 +4008,11 @@ handle_eval_breaker:
             PyObject *cond = POP();
             int err;
             if (Py_IsFalse(cond)) {
-                Py_DECREF(cond);
+                _Py_DECREF_BOOL(cond);
                 DISPATCH();
             }
             if (Py_IsTrue(cond)) {
-                Py_DECREF(cond);
+                _Py_DECREF_BOOL(cond);
                 JUMPTO(oparg);
                 CHECK_EVAL_BREAKER();
                 DISPATCH();
@@ -4038,14 +4038,14 @@ handle_eval_breaker:
                 CHECK_EVAL_BREAKER();
                 DISPATCH();
             }
-            Py_DECREF(value);
+            _Py_DECREF_NONE(value);
             DISPATCH();
         }
 
         TARGET(POP_JUMP_IF_NONE) {
             PyObject *value = POP();
             if (Py_IsNone(value)) {
-                Py_DECREF(value);
+                _Py_DECREF_NONE(value);
                 JUMPTO(oparg);
                 CHECK_EVAL_BREAKER();
                 DISPATCH();
@@ -4059,7 +4059,7 @@ handle_eval_breaker:
             int err;
             if (Py_IsTrue(cond)) {
                 STACK_SHRINK(1);
-                Py_DECREF(cond);
+                _Py_DECREF_BOOL(cond);
                 DISPATCH();
             }
             if (Py_IsFalse(cond)) {
@@ -4083,7 +4083,7 @@ handle_eval_breaker:
             int err;
             if (Py_IsFalse(cond)) {
                 STACK_SHRINK(1);
-                Py_DECREF(cond);
+                _Py_DECREF_BOOL(cond);
                 DISPATCH();
             }
             if (Py_IsTrue(cond)) {

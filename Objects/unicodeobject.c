@@ -15463,6 +15463,13 @@ onError:
     return NULL;
 }
 
+void
+_PyUnicode_ExactDealloc(PyUnicodeObject *op)
+{
+    assert(PyUnicode_CheckExact(op));
+    PyObject_Free(op);
+}
+
 PyDoc_STRVAR(unicode_doc,
 "str(object='') -> str\n\
 str(bytes_or_buffer[, encoding[, errors]]) -> str\n\

@@ -61,7 +61,7 @@ maybe_small_long(PyLongObject *v)
     if (v && IS_MEDIUM_VALUE(v)) {
         stwodigits ival = medium_value(v);
         if (IS_SMALL_INT(ival)) {
-            Py_DECREF(v);
+            _Py_DECREF_INT((PyObject *)v);
             return (PyLongObject *)get_small_int((sdigit)ival);
         }
     }
@@ -1824,7 +1824,7 @@ long_to_decimal_string_internal(PyObject *aa,
 #undef WRITE_DIGITS
 #undef WRITE_UNICODE_DIGITS
 
-    Py_DECREF(scratch);
+    _Py_DECREF_INT((PyObject *)scratch);
     if (writer) {
         writer->pos += strlen;
     }
@@ -3479,15 +3479,15 @@ k_mul(PyLongObject *a, PyLongObject *b)
      */
     i = Py_SIZE(ret) - shift;  /* # digits after shift */
     (void)v_isub(ret->ob_digit + shift, i, t2->ob_digit, Py_SIZE(t2));
-    Py_DECREF(t2);
+    _Py_DECREF_INT((PyObject *)t2);
 
     (void)v_isub(ret->ob_digit + shift, i, t1->ob_digit, Py_SIZE(t1));
-    Py_DECREF(t1);
+    _Py_DECREF_INT((PyObject *)t1);
 
     /* 6. t3 <- (ah+al)(bh+bl), and add into result. */
     if ((t1 = x_add(ah, al)) == NULL) goto fail;
-    Py_DECREF(ah);
-    Py_DECREF(al);
+    _Py_DECREF_INT((PyObject *)ah);
+    _Py_DECREF_INT((PyObject *)al);
     ah = al = NULL;
 
     if (a == b) {
@@ -3498,13 +3498,13 @@ k_mul(PyLongObject *a, PyLongObject *b)
         Py_DECREF(t1);
         goto fail;
     }
-    Py_DECREF(bh);
-    Py_DECREF(bl);
+    _Py_DECREF_INT((PyObject *)bh);
+    _Py_DECREF_INT((PyObject *)bl);
     bh = bl = NULL;
 
     t3 = k_mul(t1, t2);
-    Py_DECREF(t1);
-    Py_DECREF(t2);
+    _Py_DECREF_INT((PyObject *)t1);
+    _Py_DECREF_INT((PyObject *)t2);
     if (t3 == NULL) goto fail;
     assert(Py_SIZE(t3) >= 0);
 
@@ -3512,7 +3512,7 @@ k_mul(PyLongObject *a, PyLongObject *b)
      * See the (*) comment after this function.
      */
     (void)v_iadd(ret->ob_digit + shift, i, t3->ob_digit, Py_SIZE(t3));
-    Py_DECREF(t3);
+    _Py_DECREF_INT((PyObject *)t3);
 
     return long_normalize(ret);
 
@@ -3617,13 +3617,13 @@ k_lopsided_mul(PyLongObject *a, PyLongObject *b)
         /* Add into result. */
         (void)v_iadd(ret->ob_digit + nbdone, Py_SIZE(ret) - nbdone,
                      product->ob_digit, Py_SIZE(product));
-        Py_DECREF(product);
+        _Py_DECREF_INT((PyObject *)product);
 
         bsize -= nbtouse;
         nbdone += nbtouse;
     }
 
-    Py_DECREF(bslice);
+    _Py_DECREF_INT((PyObject *)bslice);
     return long_normalize(ret);
 
   fail:
@@ -5741,6 +5741,13 @@ int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
     }
 
     return long_obj;
+}
+
+void
+_PyLong_ExactDealloc(PyLongObject *op)
+{
+    assert(PyLong_CheckExact(op));
+    PyObject_Del(op);
 }
 
 static PyObject *

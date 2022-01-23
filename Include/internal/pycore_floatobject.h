@@ -38,6 +38,16 @@ struct _Py_float_state {
 #endif
 };
 
+PyAPI_FUNC(void) _PyFloat_ExactDealloc(PyFloatObject *op);
+
+static inline void
+_Py_DECREF_FLOAT(PyObject *op)
+{
+    assert(PyFloat_CheckExact(op));
+    _Py_DECREF_SPECIALIZED(op, (destructor)_PyFloat_ExactDealloc);
+}
+
+
 /* _PyFloat_{Pack,Unpack}{4,8}
  *
  * The struct and pickle (at least) modules need an efficient platform-

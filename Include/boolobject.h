@@ -30,6 +30,22 @@ PyAPI_FUNC(int) Py_IsTrue(PyObject *x);
 PyAPI_FUNC(int) Py_IsFalse(PyObject *x);
 #define Py_IsFalse(x) Py_Is((x), Py_False)
 
+static inline void
+_Py_DECREF_BOOL(PyObject *op)
+{
+    assert(PyBool_Check(op));
+#ifdef Py_REF_DEBUG
+    _Py_RefTotal--;
+#endif
+    op->ob_refcnt--;
+#ifdef Py_DEBUG
+    if (op->ob_refcnt <= 0) {
+        // Calls _Py_FatalRefcountError
+        _Py_Dealloc(op);
+    }
+#endif
+}
+
 /* Macros for returning Py_True or Py_False, respectively */
 #define Py_RETURN_TRUE return Py_NewRef(Py_True)
 #define Py_RETURN_FALSE return Py_NewRef(Py_False)

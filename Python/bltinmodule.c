@@ -2520,7 +2520,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
             }
             if (PyFloat_CheckExact(item)) {
                 f_result += PyFloat_AS_DOUBLE(item);
-                Py_DECREF(item);
+                _Py_DECREF_FLOAT(item);
                 continue;
             }
             if (PyLong_Check(item)) {

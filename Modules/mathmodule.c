@@ -60,7 +60,8 @@ raised for division by zero and mod by zero.
 #include "pycore_bitutils.h"      // _Py_bit_length()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_dtoa.h"          // _Py_dg_infinity()
-#include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_long.h"          // _PyLong_GetZero(), _Py_DECREF_INT
+#include "pycore_floatobject.h"   // _Py_DECREF_FLOAT
 /* For DBL_EPSILON in _math.h */
 #include <float.h>
 /* For _Py_log1p with workarounds for buggy handling of zeros. */
@@ -3139,7 +3140,7 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
         long i_result = PyLong_AsLongAndOverflow(result, &overflow);
         /* If this already overflowed, don't even enter the loop. */
         if (overflow == 0) {
-            Py_DECREF(result);
+            _Py_DECREF_INT(result);
             result = NULL;
         }
         /* Loop over all the items in the iterable until we finish, we overflow
@@ -3158,7 +3159,7 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 if (overflow == 0 && !_check_long_mult_overflow(i_result, b)) {
                     long x = i_result * b;
                     i_result = x;
-                    Py_DECREF(item);
+                    _Py_DECREF_INT(item);
                     continue;
                 }
             }
@@ -3187,7 +3188,7 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
     */
     if (PyFloat_CheckExact(result)) {
         double f_result = PyFloat_AS_DOUBLE(result);
-        Py_DECREF(result);
+        _Py_DECREF_FLOAT(result);
         result = NULL;
         while(result == NULL) {
             item = PyIter_Next(iter);
@@ -3200,7 +3201,7 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
             }
             if (PyFloat_CheckExact(item)) {
                 f_result *= PyFloat_AS_DOUBLE(item);
-                Py_DECREF(item);
+                _Py_DECREF_FLOAT(item);
                 continue;
             }
             if (PyLong_CheckExact(item)) {

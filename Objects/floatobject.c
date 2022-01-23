@@ -238,23 +238,34 @@ PyFloat_FromString(PyObject *v)
     return result;
 }
 
+void
+_PyFloat_ExactDealloc(PyFloatObject *op)
+{
+    assert(PyFloat_CheckExact(op));
+#if PyFloat_MAXFREELIST > 0
+    struct _Py_float_state *state = get_float_state();
+#ifdef Py_DEBUG
+    // float_dealloc() must not be called after _PyFloat_Fini()
+    assert(state->numfree != -1);
+#endif
+    if (state->numfree >= PyFloat_MAXFREELIST)  {
+        PyObject_Free(op);
+        return;
+    }
+    state->numfree++;
+    Py_SET_TYPE(op, (PyTypeObject *)state->free_list);
+    state->free_list = op;
+#else
+    PyObject_Free(op);
+#endif
+}
+
 static void
 float_dealloc(PyFloatObject *op)
 {
 #if PyFloat_MAXFREELIST > 0
     if (PyFloat_CheckExact(op)) {
-        struct _Py_float_state *state = get_float_state();
-#ifdef Py_DEBUG
-        // float_dealloc() must not be called after _PyFloat_Fini()
-        assert(state->numfree != -1);
-#endif
-        if (state->numfree >= PyFloat_MAXFREELIST)  {
-            PyObject_Free(op);
-            return;
-        }
-        state->numfree++;
-        Py_SET_TYPE(op, (PyTypeObject *)state->free_list);
-        state->free_list = op;
+        _PyFloat_ExactDealloc(op);
     }
     else
 #endif
