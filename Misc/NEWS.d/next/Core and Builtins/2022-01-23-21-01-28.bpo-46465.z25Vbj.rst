@@ -1,0 +1,2 @@
+Properly check for eval loop breaker in specialized ``CALL`` opcodes. Patch
+by Victor Stinner and Ken Jin.

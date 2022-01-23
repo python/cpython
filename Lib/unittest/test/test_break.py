@@ -6,6 +6,7 @@ import signal
 import weakref
 
 import unittest
+from test.support import cpython_warmup
 
 
 @unittest.skipUnless(hasattr(os, 'kill'), "Test requires os.kill")
@@ -23,7 +24,7 @@ class TestBreak(unittest.TestCase):
         unittest.signals._results = weakref.WeakKeyDictionary()
         unittest.signals._interrupt_handler = None
 
-
+    @cpython_warmup
     def testInstallHandler(self):
         default_handler = signal.getsignal(signal.SIGINT)
         unittest.installHandler()
@@ -121,7 +122,7 @@ class TestBreak(unittest.TestCase):
         self.assertTrue(result2.shouldStop)
         self.assertFalse(result3.shouldStop)
 
-
+    @cpython_warmup
     def testHandlerReplacedButCalled(self):
         # Can't use skipIf decorator because the signal handler may have
         # been changed after defining this method.

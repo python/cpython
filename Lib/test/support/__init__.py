@@ -56,6 +56,7 @@ __all__ = [
     "run_with_tz", "PGO", "missing_compiler_executable",
     "ALWAYS_EQ", "NEVER_EQ", "LARGEST", "SMALLEST",
     "LOOPBACK_TIMEOUT", "INTERNET_TIMEOUT", "SHORT_TIMEOUT", "LONG_TIMEOUT",
+    "cpython_warmup",
     ]
 
 
@@ -2118,3 +2119,19 @@ def clear_ignored_deprecations(*tokens: object) -> None:
     if warnings.filters != new_filters:
         warnings.filters[:] = new_filters
         warnings._filters_mutated()
+
+
+# This number should be CPython internal "hot" count times 2.
+CPYTHON_WARMUP_COUNT = 8*2
+
+
+def cpython_warmup(f):
+    """Makes a test "hot" so that PEP 659 adaptive interpreter opcodes will
+    execute instead of normal opcodes.
+    """
+    @functools.wraps(f)
+    def wrapper(self):
+        for i in range(CPYTHON_WARMUP_COUNT):
+            with self.subTest(i=i):
+                return f(self)
+    return wrapper
