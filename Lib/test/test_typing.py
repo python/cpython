@@ -36,7 +36,7 @@ import typing
 import weakref
 import types
 
-from test.support import import_helper, captured_stdout
+from test.support import import_helper, captured_stderr
 from test import mod_generics_cache
 from test import _typed_dict_helper
 
@@ -5112,9 +5112,9 @@ class SpecialAttrsTests(BaseTestCase):
 class RevealTypeTests(BaseTestCase):
     def test_reveal_type(self):
         obj = object()
-        with captured_stdout() as stdout:
+        with captured_stderr() as stderr:
             self.assertIs(obj, reveal_type(obj))
-        self.assertEqual(stdout.getvalue(), "Runtime type is 'object'\n")
+        self.assertEqual(stderr.getvalue(), "Runtime type is 'object'\n")
 
 
 class AllTests(BaseTestCase):

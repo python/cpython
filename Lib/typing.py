@@ -2686,5 +2686,5 @@ def reveal_type(obj: T, /) -> T:
     argument and returns it unchanged.
 
     """
-    print(f"Runtime type is {type(obj).__name__!r}")
+    print(f"Runtime type is {type(obj).__name__!r}", file=sys.stderr)
     return obj
