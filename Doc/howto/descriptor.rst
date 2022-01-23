@@ -1544,7 +1544,7 @@ variables:
         'Simulate how the type metaclass adds member objects for slots'
 
         def __new__(mcls, clsname, bases, mapping):
-            'Emuluate type_new() in Objects/typeobject.c'
+            'Emulate type_new() in Objects/typeobject.c'
             # type_new() calls PyTypeReady() which calls add_methods()
             slot_names = mapping.get('slot_names', [])
             for offset, name in enumerate(slot_names):

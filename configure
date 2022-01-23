@@ -8940,7 +8940,8 @@ done
 
 
 # On Linux, can.h, can/bcm.h, can/j1939.h, can/raw.h require sys/socket.h
-for ac_header in linux/can.h linux/can/bcm.h linux/can/j1939.h linux/can/raw.h
+# On NetBSD, netcan/can.h requires sys/socket.h
+for ac_header in linux/can.h linux/can/bcm.h linux/can/j1939.h linux/can/raw.h netcan/can.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "
@@ -13004,6 +13005,10 @@ $as_echo "#define HAVE_BROKEN_POSIX_SEMAPHORES 1" >>confdefs.h
 
 		       ;;
       AIX/*)
+$as_echo "#define HAVE_BROKEN_POSIX_SEMAPHORES 1" >>confdefs.h
+
+		       ;;
+      NetBSD/*)
 $as_echo "#define HAVE_BROKEN_POSIX_SEMAPHORES 1" >>confdefs.h
 
 		       ;;
@@ -21319,7 +21324,7 @@ case $ac_sys_system/$ac_sys_emscripten_target in #(
    ;; #(
       Emscripten/node) :
 
-    py_stdlib_not_available="_ctypes _curses _curses_panel _dbm _gdbm _scproxy _tkinter nis ossaudiodev spwd syslog"
+    py_stdlib_not_available="_ctypes _curses _curses_panel _dbm _gdbm _scproxy _tkinter _xxsubinterpreters grp nis ossaudiodev spwd syslog"
    ;; #(
   *) :
     py_stdlib_not_available="_scproxy"

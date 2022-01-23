@@ -1,10 +1,13 @@
+parameters:
+  BuildToPublish: ''
+
 jobs:
 - job: Publish_Python
   displayName: Publish python.org packages
   condition: and(succeeded(), and(eq(variables['DoMSI'], 'true'), eq(variables['DoEmbed'], 'true')))
 
   pool:
-    #vmImage: windows-2019
+    #vmImage: windows-2022
     name: 'Windows Release'
 
   workspace:
@@ -18,62 +21,61 @@ jobs:
     inputs:
       versionSpec: '>=3.6'
 
-  - task: DownloadPipelineArtifact@1
-    displayName: 'Download artifact: Doc'
-    condition: and(succeeded(), not(variables['BuildToPublish']))
-    inputs:
-      artifactName: Doc
-      targetPath: $(Build.BinariesDirectory)\Doc
+  - ${{ if parameters.BuildToPublish }}:
+    - task: DownloadPipelineArtifact@1
+      displayName: 'Download artifact from ${{ parameters.BuildToPublish }}: Doc'
+      inputs:
+        artifactName: Doc
+        targetPath: $(Build.BinariesDirectory)\Doc
+        buildType: specific
+        project: $(System.TeamProject)
+        pipeline: $(Build.DefinitionName)
+        buildVersionToDownload: specific
+        buildId: ${{ parameters.BuildToPublish }}
 
-  - task: DownloadPipelineArtifact@1
-    displayName: 'Download artifact: msi'
-    condition: and(succeeded(), not(variables['BuildToPublish']))
-    inputs:
-      artifactName: msi
-      targetPath: $(Build.BinariesDirectory)\msi
+    - task: DownloadPipelineArtifact@1
+      displayName: 'Download artifact from ${{ parameters.BuildToPublish }}: msi'
+      inputs:
+        artifactName: msi
+        targetPath: $(Build.BinariesDirectory)\msi
+        buildType: specific
+        project: $(System.TeamProject)
+        pipeline: $(Build.DefinitionName)
+        buildVersionToDownload: specific
+        buildId: ${{ parameters.BuildToPublish }}
 
-  - task: DownloadBuildArtifacts@0
-    displayName: 'Download artifact: embed'
-    condition: and(succeeded(), not(variables['BuildToPublish']))
-    inputs:
-      artifactName: embed
-      downloadPath: $(Build.BinariesDirectory)
+    # Note that embed is a 'build' artifact, not a 'pipeline' artifact
+    - task: DownloadBuildArtifacts@0
+      displayName: 'Download artifact from ${{ parameters.BuildToPublish }}: embed'
+      inputs:
+        artifactName: embed
+        downloadPath: $(Build.BinariesDirectory)
+        buildType: specific
+        project: $(System.TeamProject)
+        pipeline: $(Build.DefinitionName)
+        buildVersionToDownload: specific
+        buildId: ${{ parameters.BuildToPublish }}
 
-  - task: DownloadPipelineArtifact@1
-    displayName: 'Download artifact from $(BuildToPublish): Doc'
-    condition: and(succeeded(), variables['BuildToPublish'])
-    inputs:
-      artifactName: Doc
-      targetPath: $(Build.BinariesDirectory)\Doc
-      buildType: specific
-      project: cpython
-      pipeline: 21
-      buildVersionToDownload: specific
-      buildId: $(BuildToPublish)
+  - ${{ else }}:
+    - task: DownloadPipelineArtifact@1
+      displayName: 'Download artifact: Doc'
+      inputs:
+        artifactName: Doc
+        targetPath: $(Build.BinariesDirectory)\Doc
 
-  - task: DownloadPipelineArtifact@1
-    displayName: 'Download artifact from $(BuildToPublish): msi'
-    condition: and(succeeded(), variables['BuildToPublish'])
-    inputs:
-      artifactName: msi
-      targetPath: $(Build.BinariesDirectory)\msi
-      buildType: specific
-      project: cpython
-      pipeline: 21
-      buildVersionToDownload: specific
-      buildId: $(BuildToPublish)
+    - task: DownloadPipelineArtifact@1
+      displayName: 'Download artifact: msi'
+      inputs:
+        artifactName: msi
+        targetPath: $(Build.BinariesDirectory)\msi
 
-  - task: DownloadBuildArtifacts@0
-    displayName: 'Download artifact from $(BuildToPublish): embed'
-    condition: and(succeeded(), variables['BuildToPublish'])
-    inputs:
-      artifactName: embed
-      downloadPath: $(Build.BinariesDirectory)
-      buildType: specific
-      project: cpython
-      pipeline: Windows-Release
-      buildVersionToDownload: specific
-      buildId: $(BuildToPublish)
+    # Note that embed is a 'build' artifact, not a 'pipeline' artifact
+    - task: DownloadBuildArtifacts@0
+      displayName: 'Download artifact: embed'
+      inputs:
+        artifactName: embed
+        downloadPath: $(Build.BinariesDirectory)
+
 
   - powershell: 'gci *embed-arm*.zip | %{ Write-Host "Not publishing: $($_.Name)"; gi $_ } | del'
     displayName: 'Prevent publishing ARM/ARM64 packages'
@@ -105,6 +107,7 @@ jobs:
       "$(Build.SourcesDirectory)\Tools\msi\purge.py"
       (gci msi\*\python-*.exe | %{ $_.Name -replace 'python-(.+?)(-|\.exe).+', '$1' } | select -First 1)
     workingDirectory: $(Build.BinariesDirectory)
+    condition: and(succeeded(), eq(variables['SigningCertificate'], variables['__RealSigningCertificate']))
     displayName: 'Purge CDN'
 
   - powershell: |
@@ -124,7 +127,7 @@ jobs:
         Write-Error "Failed to validate $failures installers"
         exit 1
       }
-    #condition: and(succeeded(), eq(variables['SigningCertificate'], variables['__RealSigningCertificate']))
+    condition: and(succeeded(), eq(variables['SigningCertificate'], variables['__RealSigningCertificate']))
     workingDirectory: $(Build.BinariesDirectory)
     displayName: 'Test layouts'
 

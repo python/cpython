@@ -499,7 +499,6 @@ initial_counter_value(void) {
 #define SPEC_FAIL_DIFFERENT_TYPES 12
 
 /* Calls */
-#define SPEC_FAIL_GENERATOR 7
 #define SPEC_FAIL_COMPLEX_PARAMETERS 8
 #define SPEC_FAIL_WRONG_NUMBER_ARGUMENTS 9
 #define SPEC_FAIL_CO_NOT_OPTIMIZED 10
@@ -1153,9 +1152,6 @@ _Py_IDENTIFIER(__getitem__);
 static int
 function_kind(PyCodeObject *code) {
     int flags = code->co_flags;
-    if (flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
-        return SPEC_FAIL_GENERATOR;
-    }
     if ((flags & (CO_VARKEYWORDS | CO_VARARGS)) || code->co_kwonlyargcount) {
         return SPEC_FAIL_COMPLEX_PARAMETERS;
     }
@@ -1343,8 +1339,7 @@ specialize_class_call(
     PyObject *callable, _Py_CODEUNIT *instr,
     int nargs, SpecializedCacheEntry *cache)
 {
-    assert(PyType_Check(callable));
-    PyTypeObject *tp = (PyTypeObject *)callable;
+    PyTypeObject *tp = _PyType_CAST(callable);
     if (_Py_OPCODE(instr[-1]) == PRECALL_METHOD) {
         SPECIALIZATION_FAIL(CALL_NO_KW, SPEC_FAIL_METHOD_CALL_CLASS);
         return -1;

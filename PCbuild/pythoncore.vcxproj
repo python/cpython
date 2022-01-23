@@ -528,29 +528,7 @@
   </ItemGroup>
   <ItemGroup>
     <!-- BEGIN deepfreeze -->
-    <ClCompile Include="..\Python\deepfreeze\df.importlib._bootstrap.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.importlib._bootstrap_external.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.zipimport.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.abc.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.codecs.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.io.c" />
-    <ClCompile Include="..\Python\deepfreeze\df._collections_abc.c" />
-    <ClCompile Include="..\Python\deepfreeze\df._sitebuiltins.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.genericpath.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.ntpath.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.posixpath.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.os.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.site.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.stat.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.importlib.util.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.importlib.machinery.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.runpy.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.__hello__.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.__phello__.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.__phello__.ham.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.__phello__.ham.eggs.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.__phello__.spam.c" />
-    <ClCompile Include="..\Python\deepfreeze\df.frozen_only.c" />
+    <ClCompile Include="..\Python\deepfreeze\deepfreeze.c" />
     <!-- END deepfreeze -->
     </ItemGroup>
   <ItemGroup Condition="$(IncludeExternals)">

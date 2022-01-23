@@ -9,9 +9,9 @@ import importlib.metadata
 try:
     import pyfakefs.fake_filesystem_unittest as ffs
 except ImportError:
-    from .stubs import fake_filesystem_unittest as ffs
+    from test.test_importlib.stubs import fake_filesystem_unittest as ffs
 
-from . import fixtures
+from test.test_importlib import fixtures
 from importlib.metadata import (
     Distribution,
     EntryPoint,
@@ -315,3 +315,7 @@ class PackagesDistributionsTest(
             prefix=self.site_dir,
         )
         packages_distributions()
+
+
+if __name__ == '__main__':
+    unittest.main()

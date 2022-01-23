@@ -22,7 +22,6 @@ from typing import get_origin, get_args
 from typing import is_typeddict
 from typing import no_type_check, no_type_check_decorator
 from typing import Type
-from typing import NewType
 from typing import NamedTuple, TypedDict
 from typing import IO, TextIO, BinaryIO
 from typing import Pattern, Match
@@ -523,6 +522,10 @@ class BaseCallableTests:
         # Shouldn't crash; see https://github.com/python/typing/issues/259
         typing.List[Callable[..., str]]
 
+    def test_or_and_ror(self):
+        Callable = self.Callable
+        self.assertEqual(Callable | Tuple, Union[Callable, Tuple])
+        self.assertEqual(Tuple | Callable, Union[Tuple, Callable])
 
     def test_basic(self):
         Callable = self.Callable
@@ -3509,11 +3512,10 @@ class CollectionsAbcTests(BaseTestCase):
         self.assertNotIsInstance(42, typing.Container)
 
     def test_collection(self):
-        if hasattr(typing, 'Collection'):
-            self.assertIsInstance(tuple(), typing.Collection)
-            self.assertIsInstance(frozenset(), typing.Collection)
-            self.assertIsSubclass(dict, typing.Collection)
-            self.assertNotIsInstance(42, typing.Collection)
+        self.assertIsInstance(tuple(), typing.Collection)
+        self.assertIsInstance(frozenset(), typing.Collection)
+        self.assertIsSubclass(dict, typing.Collection)
+        self.assertNotIsInstance(42, typing.Collection)
 
     def test_abstractset(self):
         self.assertIsInstance(set(), typing.AbstractSet)
@@ -3905,6 +3907,10 @@ class CollectionsAbcTests(BaseTestCase):
         class B: ...
         A.register(B)
         self.assertIsSubclass(B, typing.Mapping)
+
+    def test_or_and_ror(self):
+        self.assertEqual(typing.Sized | typing.Awaitable, Union[typing.Sized, typing.Awaitable])
+        self.assertEqual(typing.Coroutine | typing.Hashable, Union[typing.Coroutine, typing.Hashable])
 
 
 class OtherABCTests(BaseTestCase):
@@ -4386,6 +4392,93 @@ class TypedDictTests(BaseTestCase):
             'voice': str,
         }
 
+    def test_multiple_inheritance(self):
+        class One(TypedDict):
+            one: int
+        class Two(TypedDict):
+            two: str
+        class Untotal(TypedDict, total=False):
+            untotal: str
+        Inline = TypedDict('Inline', {'inline': bool})
+        class Regular:
+            pass
+
+        class Child(One, Two):
+            child: bool
+        self.assertEqual(
+            Child.__required_keys__,
+            frozenset(['one', 'two', 'child']),
+        )
+        self.assertEqual(
+            Child.__optional_keys__,
+            frozenset([]),
+        )
+        self.assertEqual(
+            Child.__annotations__,
+            {'one': int, 'two': str, 'child': bool},
+        )
+
+        class ChildWithOptional(One, Untotal):
+            child: bool
+        self.assertEqual(
+            ChildWithOptional.__required_keys__,
+            frozenset(['one', 'child']),
+        )
+        self.assertEqual(
+            ChildWithOptional.__optional_keys__,
+            frozenset(['untotal']),
+        )
+        self.assertEqual(
+            ChildWithOptional.__annotations__,
+            {'one': int, 'untotal': str, 'child': bool},
+        )
+
+        class ChildWithTotalFalse(One, Untotal, total=False):
+            child: bool
+        self.assertEqual(
+            ChildWithTotalFalse.__required_keys__,
+            frozenset(['one']),
+        )
+        self.assertEqual(
+            ChildWithTotalFalse.__optional_keys__,
+            frozenset(['untotal', 'child']),
+        )
+        self.assertEqual(
+            ChildWithTotalFalse.__annotations__,
+            {'one': int, 'untotal': str, 'child': bool},
+        )
+
+        class ChildWithInlineAndOptional(Untotal, Inline):
+            child: bool
+        self.assertEqual(
+            ChildWithInlineAndOptional.__required_keys__,
+            frozenset(['inline', 'child']),
+        )
+        self.assertEqual(
+            ChildWithInlineAndOptional.__optional_keys__,
+            frozenset(['untotal']),
+        )
+        self.assertEqual(
+            ChildWithInlineAndOptional.__annotations__,
+            {'inline': bool, 'untotal': str, 'child': bool},
+        )
+
+        wrong_bases = [
+            (One, Regular),
+            (Regular, One),
+            (One, Two, Regular),
+            (Inline, Regular),
+            (Untotal, Regular),
+        ]
+        for bases in wrong_bases:
+            with self.subTest(bases=bases):
+                with self.assertRaisesRegex(
+                    TypeError,
+                    'cannot inherit from both a TypedDict type and a non-TypedDict',
+                ):
+                    class Wrong(*bases):
+                        pass
+
     def test_is_typeddict(self):
         assert is_typeddict(Point2D) is True
         assert is_typeddict(Union[str, int]) is False
@@ -4608,6 +4701,10 @@ class AnnotatedTests(BaseTestCase):
     def test_cannot_check_subclass(self):
         with self.assertRaises(TypeError):
             issubclass(int, Annotated[int, "positive"])
+
+    def test_too_few_type_args(self):
+        with self.assertRaisesRegex(TypeError, 'at least two arguments'):
+            Annotated[int]
 
     def test_pickle(self):
         samples = [typing.Any, typing.Union[int, str],
@@ -5067,7 +5164,7 @@ class SpecialAttrsTests(BaseTestCase):
         )
         self.assertEqual(
             SpecialAttrsTests.TypeName.__module__,
-            'test.test_typing',
+            __name__,
         )
         # NewTypes are picklable assuming correct qualname information.
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -5081,7 +5178,7 @@ class SpecialAttrsTests(BaseTestCase):
         # __qualname__ is unnecessary.
         self.assertEqual(SpecialAttrsT.__name__, 'SpecialAttrsT')
         self.assertFalse(hasattr(SpecialAttrsT, '__qualname__'))
-        self.assertEqual(SpecialAttrsT.__module__, 'test.test_typing')
+        self.assertEqual(SpecialAttrsT.__module__, __name__)
         # Module-level type variables are picklable.
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             s = pickle.dumps(SpecialAttrsT, proto)
@@ -5090,7 +5187,7 @@ class SpecialAttrsTests(BaseTestCase):
 
         self.assertEqual(SpecialAttrsP.__name__, 'SpecialAttrsP')
         self.assertFalse(hasattr(SpecialAttrsP, '__qualname__'))
-        self.assertEqual(SpecialAttrsP.__module__, 'test.test_typing')
+        self.assertEqual(SpecialAttrsP.__module__, __name__)
         # Module-level ParamSpecs are picklable.
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             s = pickle.dumps(SpecialAttrsP, proto)
@@ -5118,8 +5215,9 @@ class AllTests(BaseTestCase):
         self.assertIn('ValuesView', a)
         self.assertIn('cast', a)
         self.assertIn('overload', a)
-        if hasattr(contextlib, 'AbstractContextManager'):
-            self.assertIn('ContextManager', a)
+        # Context managers.
+        self.assertIn('ContextManager', a)
+        self.assertIn('AsyncContextManager', a)
         # Check that io and re are not exported.
         self.assertNotIn('io', a)
         self.assertNotIn('re', a)
@@ -5133,8 +5231,6 @@ class AllTests(BaseTestCase):
         self.assertIn('SupportsComplex', a)
 
     def test_all_exported_names(self):
-        import typing
-
         actual_all = set(typing.__all__)
         computed_all = {
             k for k, v in vars(typing).items()
