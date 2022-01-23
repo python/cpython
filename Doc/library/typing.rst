@@ -1955,7 +1955,7 @@ Functions and decorators
    ``typing`` allows your code to run without runtime errors and
    communicates intent more clearly.
 
-   At runtime, this function prints the runtime type of its argument
+   At runtime, this function prints the runtime type of its argument to stderr
    and returns it unchanged::
 
       x = reveal_type(1)  # prints "Runtime type is int"
