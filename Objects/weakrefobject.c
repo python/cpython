@@ -28,9 +28,8 @@ init_weakref(PyWeakReference *self, PyObject *ob, PyObject *callback)
     self->wr_object = ob;
     self->wr_prev = NULL;
     self->wr_next = NULL;
-    Py_XINCREF(callback);
-    self->wr_callback = callback;
-    self->vectorcall = weakref_vectorcall;
+    self->wr_callback = Py_XNewRef(callback);
+    self->vectorcall = (vectorcallfunc)weakref_vectorcall;
 }
 
 static PyWeakReference *
@@ -377,9 +376,9 @@ _PyWeakref_RefType = {
     .tp_basicsize = sizeof(PyWeakReference),
     .tp_dealloc = weakref_dealloc,
     .tp_vectorcall_offset = offsetof(PyWeakReference, vectorcall),
+    .tp_call = PyVectorcall_Call,
     .tp_repr = (reprfunc)weakref_repr,
     .tp_hash = (hashfunc)weakref_hash,
-    .tp_call = PyVectorcall_Call,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
                 Py_TPFLAGS_HAVE_VECTORCALL | Py_TPFLAGS_BASETYPE,
     .tp_traverse = (traverseproc)gc_traverse,
