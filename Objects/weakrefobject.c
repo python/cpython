@@ -132,11 +132,11 @@ static PyObject *
 weakref_vectorcall(PyWeakReference *self, PyObject *const *args,
                    size_t nargsf, PyObject *kwnames)
 {
-    if (!_PyArg_NoKwnames("__call__", kwnames)) {
+    if (!_PyArg_NoKwnames("weakref", kwnames)) {
         return NULL;
     }
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    if (!_PyArg_CheckPositional("__call__", nargs, 0, 0)) {
+    if (!_PyArg_CheckPositional("weakref", nargs, 0, 0)) {
         return NULL;
     }
     return Py_NewRef(PyWeakref_GET_OBJECT(self));
