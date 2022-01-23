@@ -729,6 +729,42 @@ def collect_windows(info_add):
     except (ImportError, AttributeError):
         pass
 
+    import subprocess
+    try:
+        proc = subprocess.Popen(["wmic", "os", "get", "Caption,Version", "/value"],
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                text=True)
+        output, stderr = proc.communicate()
+        if proc.returncode:
+            output = ""
+    except OSError:
+        pass
+    else:
+        for line in output.splitlines():
+            line = line.strip()
+            if line.startswith('Caption='):
+                line = line.removeprefix('Caption=')
+                info_add('windows.version_caption', line.strip())
+            elif line.startswith('Version='):
+                line = line.removeprefix('Version=')
+                info_add('windows.version', line.strip())
+
+    try:
+        proc = subprocess.Popen(["ver"], shell=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                text=True)
+        output = proc.communicate()[0]
+        if proc.returncode:
+            output = ""
+    except OSError:
+        return
+    else:
+        output = output.strip()
+        line = output.splitlines()[0]
+        info_add('windows.ver', line)
+
 
 def collect_fips(info_add):
     try:
