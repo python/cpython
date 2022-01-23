@@ -2436,6 +2436,21 @@ Samuele
 ...     else:
 ...         return starmap(func, repeat(args, times))
 
+>>> def grouper(iterable, n, *, incomplete='fill', fillvalue=None):
+...     "Collect data into non-overlapping fixed-length chunks or blocks"
+...     # grouper('ABCDEFG', 3, fillvalue='x') --> ABC DEF Gxx
+...     # grouper('ABCDEFG', 3, incomplete='strict') --> ABC DEF ValueError
+...     # grouper('ABCDEFG', 3, incomplete='ignore') --> ABC DEF
+...     args = [iter(iterable)] * n
+...     if incomplete == 'fill':
+...         return zip_longest(*args, fillvalue=fillvalue)
+...     if incomplete == 'strict':
+...         return zip(*args, strict=True)
+...     if incomplete == 'ignore':
+...         return zip(*args)
+...     else:
+...         raise ValueError('Expected fill, strict, or ignore')
+
 >>> def triplewise(iterable):
 ...     "Return overlapping triplets from an iterable"
 ...     # pairwise('ABCDEFG') -> ABC BCD CDE DEF EFG
@@ -2452,11 +2467,6 @@ Samuele
 ...     for x in it:
 ...         window.append(x)
 ...         yield tuple(window)
-
->>> def grouper(n, iterable, fillvalue=None):
-...     "grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx"
-...     args = [iter(iterable)] * n
-...     return zip_longest(*args, fillvalue=fillvalue)
 
 >>> def roundrobin(*iterables):
 ...     "roundrobin('ABC', 'D', 'EF') --> A D E B F C"
@@ -2626,8 +2636,21 @@ True
 >>> dotproduct([1,2,3], [4,5,6])
 32
 
->>> list(grouper(3, 'abcdefg', 'x'))
+>>> list(grouper('abcdefg', 3, fillvalue='x'))
 [('a', 'b', 'c'), ('d', 'e', 'f'), ('g', 'x', 'x')]
+
+>>> it = grouper('abcdefg', 3, incomplete='strict')
+>>> next(it)
+('a', 'b', 'c')
+>>> next(it)
+('d', 'e', 'f')
+>>> next(it)
+Traceback (most recent call last):
+  ...
+ValueError: zip() argument 2 is shorter than argument 1
+
+>>> list(grouper('abcdefg', n=3, incomplete='ignore'))
+[('a', 'b', 'c'), ('d', 'e', 'f')]
 
 >>> list(triplewise('ABCDEFG'))
 [('A', 'B', 'C'), ('B', 'C', 'D'), ('C', 'D', 'E'), ('D', 'E', 'F'), ('E', 'F', 'G')]
