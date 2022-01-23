@@ -571,18 +571,6 @@ class Distribution:
         )
         return filter(None, declared)
 
-    @classmethod
-    def _local(cls, root='.'):
-        from pep517 import build, meta
-
-        system = build.compat_system(root)
-        builder = functools.partial(
-            meta.build,
-            source_dir=root,
-            system=system,
-        )
-        return PathDistribution(zipfile.Path(meta.build_as_zip(builder)))
-
     @property
     def metadata(self) -> _meta.PackageMetadata:
         """Return the parsed metadata for this Distribution.
