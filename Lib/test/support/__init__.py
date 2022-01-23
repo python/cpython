@@ -56,7 +56,7 @@ __all__ = [
     "run_with_tz", "PGO", "missing_compiler_executable",
     "ALWAYS_EQ", "NEVER_EQ", "LARGEST", "SMALLEST",
     "LOOPBACK_TIMEOUT", "INTERNET_TIMEOUT", "SHORT_TIMEOUT", "LONG_TIMEOUT",
-    "cpython_warmup",
+    "repeat_cpython_adaptative",
     ]
 
 
@@ -2122,17 +2122,24 @@ def clear_ignored_deprecations(*tokens: object) -> None:
 
 
 # This number should be CPython internal "hot" (C macro QUICKENING_WARMUP_DELAY)
-# count times 2.
-CPYTHON_WARMUP_COUNT = 8*2
+# count + 1.
+CPYTHON_WARMUP_COUNT = 8+1
 
 
-def cpython_warmup(f):
-    """Makes a test "hot" so that PEP 659 adaptive interpreter opcodes will
-    execute instead of normal opcodes.
+def repeat_cpython_adaptative(f):
+    """Runs a test multiple times. First with PEP 659 adaptive opcodes, then
+    with specialized opcodes once the opcodes turn "hot". This catches bugs
+    related to specialized opcodes.
+
+    See bpo-46465 for an example bug affecting only specialized opcodes,
+    due to a missing CHECK_EVAL_BREAKER.
     """
-    @functools.wraps(f)
-    def wrapper(self):
-        for i in range(CPYTHON_WARMUP_COUNT):
-            with self.subTest(i=i):
-                return f(self)
-    return wrapper
+    if check_impl_detail(cpython=True):
+        @functools.wraps(f)
+        def wrapper(self):
+            for i in range(CPYTHON_WARMUP_COUNT):
+                with self.subTest(cpython_warmup_iter=i):
+                    return f(self)
+        return wrapper
+    else:
+        return f
