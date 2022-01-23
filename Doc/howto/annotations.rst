@@ -33,7 +33,7 @@ Accessing The Annotations Dict Of An Object In Python 3.10 And Newer
 ====================================================================
 
   Python 3.10 adds a new function to the standard library:
-  :func:`inspect.get_annotations`.  In Python versions 3.10
+  :func:`inspect.get_annotations`. In Python versions 3.10
   and newer, calling this function is the best practice for
   accessing the annotations dict of any object that supports
   annotations.  This function can also "un-stringize"
