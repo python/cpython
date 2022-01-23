@@ -619,6 +619,13 @@ class CalendarTestCase(unittest.TestCase):
                 self.assertEqual(days[0][1], firstweekday)
                 self.assertEqual(days[-1][1], (firstweekday - 1) % 7)
 
+    def test_iterweekdays(self):
+        for firstweekday in range(7):
+            cal = calendar.Calendar(firstweekday)
+            week = list(cal.iterweekdays())
+            self.assertEqual(week[0], firstweekday)
+            self.assertEqual(week[-1], (firstweekday - 1) % 7)
+
 
 class MonthCalendarTestCase(unittest.TestCase):
     def setUp(self):
