@@ -1215,8 +1215,13 @@ class TestClassesAndFunctions(unittest.TestCase):
             @types.DynamicClassAttribute
             def eggs(self):
                 return 'spam'
+        class B:
+            def __getattr__(self, attribute):
+                return None
         self.assertIn(('eggs', 'scrambled'), inspect.getmembers(A))
         self.assertIn(('eggs', 'spam'), inspect.getmembers(A()))
+        b = B()
+        self.assertIn(('__getattr__', b.__getattr__), inspect.getmembers(b))
 
     def test_getmembers_static(self):
         class A:
