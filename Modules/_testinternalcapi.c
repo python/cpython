@@ -100,6 +100,7 @@ test_popcount(PyObject *self, PyObject *Py_UNUSED(args))
     CHECK(0, 0);
     CHECK(1, 1);
     CHECK(0x08080808, 4);
+    CHECK(0x10000001, 2);
     CHECK(0x10101010, 4);
     CHECK(0x10204080, 4);
     CHECK(0xDEADCAFE, 22);

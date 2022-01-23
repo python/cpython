@@ -813,11 +813,20 @@ which incur interpreter overhead.
            return starmap(func, repeat(args))
        return starmap(func, repeat(args, times))
 
-   def grouper(iterable, n, fillvalue=None):
+   def grouper(iterable, n, *, incomplete='fill', fillvalue=None):
        "Collect data into non-overlapping fixed-length chunks or blocks"
-       # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx
+       # grouper('ABCDEFG', 3, fillvalue='x') --> ABC DEF Gxx
+       # grouper('ABCDEFG', 3, incomplete='strict') --> ABC DEF ValueError
+       # grouper('ABCDEFG', 3, incomplete='ignore') --> ABC DEF
        args = [iter(iterable)] * n
-       return zip_longest(*args, fillvalue=fillvalue)
+       if incomplete == 'fill':
+           return zip_longest(*args, fillvalue=fillvalue)
+       if incomplete == 'strict':
+           return zip(*args, strict=True)
+       if incomplete == 'ignore':
+           return zip(*args)
+       else:
+           raise ValueError('Expected fill, strict, or ignore')
 
    def triplewise(iterable):
        "Return overlapping triplets from an iterable"
