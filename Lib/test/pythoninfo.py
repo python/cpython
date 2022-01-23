@@ -744,11 +744,13 @@ def collect_windows(info_add):
         for line in output.splitlines():
             line = line.strip()
             if line.startswith('Caption='):
-                line = line.removeprefix('Caption=')
-                info_add('windows.version_caption', line.strip())
+                line = line.removeprefix('Caption=').strip()
+                if line:
+                    info_add('windows.version_caption', line)
             elif line.startswith('Version='):
-                line = line.removeprefix('Version=')
-                info_add('windows.version', line.strip())
+                line = line.removeprefix('Version=').strip()
+                if line:
+                    info_add('windows.version', line)
 
     try:
         proc = subprocess.Popen(["ver"], shell=True,
@@ -763,7 +765,8 @@ def collect_windows(info_add):
     else:
         output = output.strip()
         line = output.splitlines()[0]
-        info_add('windows.ver', line)
+        if line:
+            info_add('windows.ver', line)
 
 
 def collect_fips(info_add):
