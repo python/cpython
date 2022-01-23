@@ -2121,7 +2121,8 @@ def clear_ignored_deprecations(*tokens: object) -> None:
         warnings._filters_mutated()
 
 
-# This number should be CPython internal "hot" count times 2.
+# This number should be CPython internal "hot" (C macro QUICKENING_WARMUP_DELAY)
+# count times 2.
 CPYTHON_WARMUP_COUNT = 8*2
 
 
