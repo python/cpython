@@ -1175,3 +1175,13 @@ The :c:func:`PyUnicode_CHECK_INTERNED` macro has been excluded from the
 limited C API. It was never usable there, because it used internal
 structures which are not available in the limited C API. Patch by Victor
 Stinner.
+
+..
+
+.. bpo: 10202
+.. date: 2022-01-22-13-23
+.. nonce: FwKNcC
+.. section: ftplib
+
+Improved broken connection handling and an exception (EOFError) is 
+raised if sent file or line not completed. Patch by Mike McLeod.

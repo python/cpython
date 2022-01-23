@@ -84,7 +84,7 @@ The module defines the following items:
       Latin-1 to UTF-8 to follow :rfc:`2640`.
 
    .. versionchanged:: 3.11
-      Improved broken connection handling and an exception (EOFError) is 
+      Improved broken connection handling and an exception (EOFError) is
       raised if sent file or line not completed.
 
 
@@ -218,7 +218,7 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
       *source_address* parameter was added.
 
    .. versionchanged:: 3.11
-      Ennable the SO_LINGER flag to improve broken connection handling. See 
+      Ennable the SO_LINGER flag to improve broken connection handling. See
       setsockopt(3), Linux man page / LINGER (winsock.h).
 
 
