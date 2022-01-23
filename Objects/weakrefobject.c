@@ -19,6 +19,7 @@ _PyWeakref_GetWeakrefCount(PyWeakReference *head)
     return count;
 }
 
+static PyObject *weakref_vectorcall(PyObject *weak, PyObject *const *args, size_t nargsf, PyObject *kwnames);
 
 static void
 init_weakref(PyWeakReference *self, PyObject *ob, PyObject *callback)
@@ -29,6 +30,7 @@ init_weakref(PyWeakReference *self, PyObject *ob, PyObject *callback)
     self->wr_next = NULL;
     Py_XINCREF(callback);
     self->wr_callback = callback;
+    self->vectorcall = weakref_vectorcall;
 }
 
 static PyWeakReference *
@@ -128,18 +130,21 @@ gc_clear(PyWeakReference *self)
 
 
 static PyObject *
-weakref_call(PyWeakReference *self, PyObject *args, PyObject *kw)
+weakref_vectorcall(PyObject *callable, PyObject *const *args,
+                   size_t nargsf, PyObject *kwnames)
 {
-    static char *kwlist[] = {NULL};
-
-    if (PyArg_ParseTupleAndKeywords(args, kw, ":__call__", kwlist)) {
-        PyObject *object = PyWeakref_GET_OBJECT(self);
-        Py_INCREF(object);
-        return (object);
+    PyWeakReference *self = (PyWeakReference *)callable;
+    if (!_PyArg_NoKwnames("__call__", kwnames)) {
+        return NULL;
     }
-    return NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (!_PyArg_CheckPositional("__call__", nargs, 0, 0)) {
+        return NULL;
+    }
+    PyObject *obj = PyWeakref_GET_OBJECT(self);
+    Py_INCREF(obj);
+    return obj;
 }
-
 
 static Py_hash_t
 weakref_hash(PyWeakReference *self)
@@ -374,42 +379,44 @@ _PyWeakref_RefType = {
     "weakref",
     sizeof(PyWeakReference),
     0,
-    weakref_dealloc,            /*tp_dealloc*/
-    0,                          /*tp_vectorcall_offset*/
-    0,                          /*tp_getattr*/
-    0,                          /*tp_setattr*/
-    0,                          /*tp_as_async*/
-    (reprfunc)weakref_repr,     /*tp_repr*/
-    0,                          /*tp_as_number*/
-    0,                          /*tp_as_sequence*/
-    0,                          /*tp_as_mapping*/
-    (hashfunc)weakref_hash,     /*tp_hash*/
-    (ternaryfunc)weakref_call,  /*tp_call*/
-    0,                          /*tp_str*/
-    0,                          /*tp_getattro*/
-    0,                          /*tp_setattro*/
-    0,                          /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC
-        | Py_TPFLAGS_BASETYPE,  /*tp_flags*/
-    0,                          /*tp_doc*/
-    (traverseproc)gc_traverse,  /*tp_traverse*/
-    (inquiry)gc_clear,          /*tp_clear*/
-    (richcmpfunc)weakref_richcompare,   /*tp_richcompare*/
-    0,                          /*tp_weaklistoffset*/
-    0,                          /*tp_iter*/
-    0,                          /*tp_iternext*/
-    weakref_methods,            /*tp_methods*/
-    weakref_members,            /*tp_members*/
-    0,                          /*tp_getset*/
-    0,                          /*tp_base*/
-    0,                          /*tp_dict*/
-    0,                          /*tp_descr_get*/
-    0,                          /*tp_descr_set*/
-    0,                          /*tp_dictoffset*/
-    weakref___init__,           /*tp_init*/
-    PyType_GenericAlloc,        /*tp_alloc*/
-    weakref___new__,            /*tp_new*/
-    PyObject_GC_Del,            /*tp_free*/
+    weakref_dealloc,                        /*tp_dealloc*/
+    offsetof(PyWeakReference, vectorcall),  /*tp_vectorcall_offset*/
+    0,                                      /*tp_getattr*/
+    0,                                      /*tp_setattr*/
+    0,                                      /*tp_as_async*/
+    (reprfunc)weakref_repr,                 /*tp_repr*/
+    0,                                      /*tp_as_number*/
+    0,                                      /*tp_as_sequence*/
+    0,                                      /*tp_as_mapping*/
+    (hashfunc)weakref_hash,                 /*tp_hash*/
+    PyVectorcall_Call,                      /*tp_call*/
+    0,                                      /*tp_str*/
+    0,                                      /*tp_getattro*/
+    0,                                      /*tp_setattro*/
+    0,                                      /*tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT |
+    Py_TPFLAGS_HAVE_GC |
+    Py_TPFLAGS_HAVE_VECTORCALL |
+    Py_TPFLAGS_BASETYPE,                    /*tp_flags*/
+    0,                                      /*tp_doc*/
+    (traverseproc)gc_traverse,              /*tp_traverse*/
+    (inquiry)gc_clear,                      /*tp_clear*/
+    (richcmpfunc)weakref_richcompare,       /*tp_richcompare*/
+    0,                                      /*tp_weaklistoffset*/
+    0,                                      /*tp_iter*/
+    0,                                      /*tp_iternext*/
+    weakref_methods,                        /*tp_methods*/
+    weakref_members,                        /*tp_members*/
+    0,                                      /*tp_getset*/
+    0,                                      /*tp_base*/
+    0,                                      /*tp_dict*/
+    0,                                      /*tp_descr_get*/
+    0,                                      /*tp_descr_set*/
+    0,                                      /*tp_dictoffset*/
+    weakref___init__,                       /*tp_init*/
+    PyType_GenericAlloc,                    /*tp_alloc*/
+    weakref___new__,                        /*tp_new*/
+    PyObject_GC_Del,                        /*tp_free*/
 };
 
 
