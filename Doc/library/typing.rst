@@ -572,6 +572,32 @@ These can be used as types in annotations and do not support ``[]``.
    * Every type is compatible with :data:`Any`.
    * :data:`Any` is compatible with every type.
 
+.. data:: Never
+
+   Notation for the `bottom type <https://en.wikipedia.org/wiki/Bottom_type>`_,
+   a type that has no members.
+
+   This can be used to define a function that should never be
+   called, or a function that never returns::
+
+     from typing import Never
+
+     def never_call_me(arg: Never) -> None:
+         pass
+
+     never_call_me(1)  # type checker error
+
+     def stop() -> Never:
+         return 1  # type checker error
+
+   The :func:`assert_never()` function uses the ``Never`` type to statically
+   assert that code is unreachable.
+
+   .. versionadded:: 3.11
+
+      On older Python versions, :data:`NoReturn` may be used to express the
+      same concept. ``Never`` was added to make the intended meaning more explicit.
+
 .. data:: NoReturn
 
    Special type indicating that a function never returns.
@@ -581,6 +607,11 @@ These can be used as types in annotations and do not support ``[]``.
 
       def stop() -> NoReturn:
           raise RuntimeError('no way')
+
+   ``NoReturn`` can also be used as a general
+   `bottom type <https://en.wikipedia.org/wiki/Bottom_type>`_, a type that
+   has no values. The :data:`Never` type provides a more explicit name for
+   the same concept. Type checkers should treat the two equivalently.
 
    .. versionadded:: 3.5.4
    .. versionadded:: 3.6.2
@@ -1931,6 +1962,28 @@ Functions and decorators
    signals that the return value has the designated type, but at
    runtime we intentionally don't check anything (we want this
    to be as fast as possible).
+
+.. function:: assert_never(arg, /)
+
+   Statically assert that a line of code is unreachable.
+
+   Example::
+
+       def int_or_str(arg: int | str) -> None:
+           match arg:
+               case int():
+                   print("It's an int")
+               case str():
+                   print("It's a str")
+               case _:
+                   assert_never(arg)
+
+   If a type checker finds that a call to ``assert_never()`` is
+   reachable, it will emit an error.
+
+   At runtime, this throws an exception when called.
+
+   .. versionadded:: 3.11
 
 .. decorator:: overload
 

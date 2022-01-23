@@ -9,7 +9,7 @@ import warnings
 from unittest import TestCase, main, skipUnless, skip
 from copy import copy, deepcopy
 
-from typing import Any, NoReturn
+from typing import Any, NoReturn, Never, assert_never
 from typing import TypeVar, AnyStr
 from typing import T, KT, VT  # Not in __all__.
 from typing import Union, Optional, Literal
@@ -154,6 +154,46 @@ class NoReturnTests(BaseTestCase):
             NoReturn()
         with self.assertRaises(TypeError):
             type(NoReturn)()
+
+
+class NeverTests(BaseTestCase):
+
+    def test_never_instance_type_error(self):
+        with self.assertRaises(TypeError):
+            isinstance(42, Never)
+
+    def test_never_subclass_type_error(self):
+        with self.assertRaises(TypeError):
+            issubclass(Employee, Never)
+        with self.assertRaises(TypeError):
+            issubclass(Never, Employee)
+
+    def test_repr(self):
+        self.assertEqual(repr(Never), 'typing.Never')
+
+    def test_not_generic(self):
+        with self.assertRaises(TypeError):
+            Never[int]
+
+    def test_cannot_subclass(self):
+        with self.assertRaises(TypeError):
+            class A(Never):
+                pass
+        with self.assertRaises(TypeError):
+            class A(type(Never)):
+                pass
+
+    def test_cannot_instantiate(self):
+        with self.assertRaises(TypeError):
+            Never()
+        with self.assertRaises(TypeError):
+            type(Never)()
+
+
+class AssertNeverTests(BaseTestCase):
+    def test_exception(self):
+        with self.assertRaises(RuntimeError):
+            assert_never(None)
 
 
 class TypeVarTests(BaseTestCase):
