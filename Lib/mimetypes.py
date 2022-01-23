@@ -519,6 +519,7 @@ def _default_mime_types():
         '.aiff'   : 'audio/x-aiff',
         '.ra'     : 'audio/x-pn-realaudio',
         '.wav'    : 'audio/x-wav',
+        '.avif'   : 'image/avif',
         '.bmp'    : 'image/bmp',
         '.gif'    : 'image/gif',
         '.ief'    : 'image/ief',

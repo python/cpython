@@ -1,0 +1,1 @@
+Add '.avif' mime to 'image/avif'.
