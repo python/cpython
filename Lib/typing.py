@@ -130,6 +130,7 @@ __all__ = [
     'overload',
     'ParamSpecArgs',
     'ParamSpecKwargs',
+    'reveal_locals',
     'reveal_type',
     'runtime_checkable',
     'Text',
