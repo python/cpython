@@ -2688,3 +2688,23 @@ def reveal_type(obj: T, /) -> T:
     """
     print(f"Runtime type is {type(obj).__name__!r}", file=sys.stderr)
     return obj
+
+
+def reveal_locals() -> None:
+    """Reveal the inferred static types of all local variables.
+
+    When a static type checker encounters a call to this function,
+    it emits a diagnostic with the types of all variables in the current
+    scope. For example::
+
+        def greet(user_id: int) -> None:
+            message = f"Hello user #{user_id}"
+            reveal_locals()  # Revealed local types are: user_id: int, message: str
+
+    Like :func:`reveal_type`, this function is useful for debugging how
+    the type checker understands a piece of code.
+
+    At runtime, this function does nothing.
+
+    """
+    pass
