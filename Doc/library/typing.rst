@@ -1963,7 +1963,7 @@ Functions and decorators
 
    .. versionadded:: 3.11
 
-.. function:: reveal_locals
+.. function:: reveal_locals()
 
    Reveal the inferred static types of all local variables.
 
@@ -1979,6 +1979,8 @@ Functions and decorators
    the type checker understands a piece of code.
 
    At runtime, this function does nothing.
+
+   .. versionadded:: 3.11
 
 .. decorator:: overload
 
