@@ -31,8 +31,9 @@
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
 
 extern void _PyIO_Fini(void);
+#ifndef Py_NOT_FINI_DEEPFREEZE
 extern void _Py_Deepfreeze_Fini(void);
-
+#endif
 #include <locale.h>               // setlocale()
 #include <stdlib.h>               // getenv()
 
@@ -1727,9 +1728,11 @@ finalize_interp_clear(PyThreadState *tstate)
     }
 
     finalize_interp_types(tstate->interp);
+    #ifndef Py_NOT_FINI_DEEPFREEZE
     if (is_main_interp) {
         _Py_Deepfreeze_Fini();
     }
+    #endif
 }
 
 
