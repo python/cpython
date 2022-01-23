@@ -1635,38 +1635,6 @@ inplace_divrem1(digit *pout, digit *pin, Py_ssize_t size, digit n)
     return (digit)rem;
 }
 
-/* Remainder of long pin, w/ size digits, by non-zero digit n,
-   returning the remainder. pin points at the LSD. */
-
-static digit
-inplace_rem1(digit *pin, Py_ssize_t size, digit n)
-{
-    twodigits rem = 0;
-
-    assert(n > 0 && n <= PyLong_MASK);
-    pin += size;
-    while (--size >= 0) {
-        rem = (rem << PyLong_SHIFT) | *--pin;
-        rem %= n;
-    }
-    return (digit)rem;
-}
-
-/* Get the remainder of an integer divided by a digit, returning
-   the remainder as the result of the function. The sign of a is
-   ignored; n should not be zero. */
-
-static PyLongObject *
-rem1(PyLongObject *a, digit n)
-{
-    const Py_ssize_t size = Py_ABS(Py_SIZE(a));
-
-    assert(n > 0 && n <= PyLong_MASK);
-    return (PyLongObject *)PyLong_FromLong(
-        (long)inplace_rem1(a->ob_digit, size, n)
-    );
-}
-
 /* Divide an integer by a digit, returning both the quotient
    (as function result) and the remainder (through *prem).
    The sign of a is ignored; n should not be zero. */
@@ -1683,6 +1651,36 @@ divrem1(PyLongObject *a, digit n, digit *prem)
         return NULL;
     *prem = inplace_divrem1(z->ob_digit, a->ob_digit, size, n);
     return long_normalize(z);
+}
+
+/* Remainder of long pin, w/ size digits, by non-zero digit n,
+   returning the remainder. pin points at the LSD. */
+
+static digit
+inplace_rem1(digit *pin, Py_ssize_t size, digit n)
+{
+    twodigits rem = 0;
+
+    assert(n > 0 && n <= PyLong_MASK);
+    pin += size;
+    while (--size >= 0)
+        rem = ((rem << PyLong_SHIFT) | pin[size]) % n;
+    return (digit)rem;
+}
+
+/* Get the remainder of an integer divided by a digit, returning
+   the remainder as the result of the function. The sign of a is
+   ignored; n should not be zero. */
+
+static PyLongObject *
+rem1(PyLongObject *a, digit n)
+{
+    const Py_ssize_t size = Py_ABS(Py_SIZE(a));
+
+    assert(n > 0 && n <= PyLong_MASK);
+    return (PyLongObject *)PyLong_FromLong(
+        (long)inplace_rem1(a->ob_digit, size, n)
+    );
 }
 
 /* Convert an integer to a base 10 string.  Returns a new non-shared
