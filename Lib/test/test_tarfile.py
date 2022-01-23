@@ -225,7 +225,7 @@ class UstarReadTest(ReadTest, unittest.TestCase):
         self.add_dir_and_getmember('a'*101)
 
     def add_dir_and_getmember(self, name):
-        with os_helper.temp_cwd():
+        with support.temp_cwd():
             with tarfile.open(tmpname, 'w') as tar:
                 try:
                     os.mkdir(name)
