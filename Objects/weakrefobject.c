@@ -19,7 +19,7 @@ _PyWeakref_GetWeakrefCount(PyWeakReference *head)
     return count;
 }
 
-static PyObject *weakref_vectorcall(PyObject *weak, PyObject *const *args, size_t nargsf, PyObject *kwnames);
+static PyObject *weakref_vectorcall(PyWeakReference *self, PyObject *const *args, size_t nargsf, PyObject *kwnames);
 
 static void
 init_weakref(PyWeakReference *self, PyObject *ob, PyObject *callback)
@@ -130,10 +130,9 @@ gc_clear(PyWeakReference *self)
 
 
 static PyObject *
-weakref_vectorcall(PyObject *callable, PyObject *const *args,
+weakref_vectorcall(PyWeakReference *self, PyObject *const *args,
                    size_t nargsf, PyObject *kwnames)
 {
-    PyWeakReference *self = (PyWeakReference *)callable;
     if (!_PyArg_NoKwnames("__call__", kwnames)) {
         return NULL;
     }
@@ -376,7 +375,6 @@ _PyWeakref_RefType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "weakref",
     .tp_basicsize = sizeof(PyWeakReference),
-    .tp_itemsize = 0,
     .tp_dealloc = weakref_dealloc,
     .tp_vectorcall_offset = offsetof(PyWeakReference, vectorcall),
     .tp_repr = (reprfunc)weakref_repr,
