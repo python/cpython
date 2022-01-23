@@ -15,6 +15,8 @@ class list "PyListObject *" "&PyList_Type"
 
 #include "clinic/listobject.c.h"
 
+static PyObject *indexerr = NULL;
+
 #if PyList_MAXFREELIST > 0
 static struct _Py_list_state *
 get_list_state(void)
@@ -123,6 +125,10 @@ _PyList_Fini(PyInterpreterState *interp)
     struct _Py_list_state *state = &interp->list;
     state->numfree = -1;
 #endif
+
+    if (_Py_IsMainInterpreter(interp)) {
+        Py_CLEAR(indexerr);
+    }
 }
 
 /* Print summary info about the state of the optimized allocator */
@@ -223,8 +229,6 @@ valid_index(Py_ssize_t i, Py_ssize_t limit)
     */
     return (size_t) i < (size_t) limit;
 }
-
-static PyObject *indexerr = NULL;
 
 PyObject *
 PyList_GetItem(PyObject *op, Py_ssize_t i)
