@@ -1664,7 +1664,8 @@ inplace_rem1(digit *pin, Py_ssize_t size, digit n)
     assert(n > 0 && n <= PyLong_MASK);
     pin += size;
     while (--size >= 0)
-        rem = ((rem << PyLong_SHIFT) | pin[size]) % n;
+        rem = (rem << PyLong_SHIFT) | pin[size];
+        rem %= n;
     return (digit)rem;
 }
 
