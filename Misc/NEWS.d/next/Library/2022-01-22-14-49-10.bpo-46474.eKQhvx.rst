@@ -1,0 +1,2 @@
+In ``importlib.metadata.EntryPoint.pattern``, avoid potential REDoS by
+limiting ambiguity in consecutive whitespace.
