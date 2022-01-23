@@ -1590,8 +1590,8 @@ def _get_target(target):
     try:
         target, attribute = target.rsplit('.', 1)
     except (TypeError, ValueError, AttributeError):
-        raise TypeError("Need a valid target to patch. You supplied: %r" %
-                        (target,))
+        raise TypeError(
+            f"Need a valid target to patch. You supplied: {target!r}")
     return partial(pkgutil.resolve_name, target), attribute
 
 
