@@ -1,0 +1,1 @@
+Simplified :class:`pycompile.PyCompileError` so that it no longer has the redundant ``exc_type`` constructor arg and matching ``exc_type_name`` field. The ``exc_value`` field was renamed to ``exc``.  Neither the constructor signature not the exception fields are part of the documented API of this module.
