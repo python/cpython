@@ -115,6 +115,11 @@ class Printer:
         self.write('#include "internal/pycore_code.h"')
         self.write('#include "internal/pycore_long.h"')
         self.write("")
+        with self.block("static void dealloc_codeobject(PyCodeObject co)", ";"):
+            self.write("PyMem_Free(co.co_quickened);")
+            self.write("PyMem_Free(co.co_extra);")
+            with self.block("if (co.co_weakreflist != NULL)", ";"):
+                self.write("PyObject_ClearWeakRefs((PyObject *)&co);")         
 
     @contextlib.contextmanager
     def indent(self) -> None:
@@ -278,11 +283,7 @@ class Printer:
             self.write(f".co_varnames = {co_varnames},")
             self.write(f".co_cellvars = {co_cellvars},")
             self.write(f".co_freevars = {co_freevars},")
-        self.deallocs.append(f"PyMem_Free({name}.co_quickened);")
-        self.deallocs.append(f"PyMem_Free({name}.co_extra);")
-        self.deallocs.append(f"if ({name}.co_weakreflist != NULL) {{")
-        self.deallocs.append(f"PyObject_ClearWeakRefs((PyObject *)&{name});")
-        self.deallocs.append("};")
+        self.deallocs.append(f"dealloc_codeobject({name});")
         return f"& {name}.ob_base"
 
     def generate_tuple(self, name: str, t: Tuple[object, ...]) -> str:

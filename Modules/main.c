@@ -28,6 +28,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+/* For deepfrozen modules */
+extern void _Py_Deepfreeze_Fini(void);
 
 /* --- pymain_init() ---------------------------------------------- */
 
@@ -621,6 +623,7 @@ pymain_free(void)
     _PyPathConfig_ClearGlobal();
     _Py_ClearStandardStreamEncoding();
     _Py_ClearArgcArgv();
+    _Py_Deepfreeze_Fini();
     _PyRuntime_Finalize();
 }
 
