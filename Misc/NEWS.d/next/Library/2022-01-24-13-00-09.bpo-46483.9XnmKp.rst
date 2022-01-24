@@ -1,4 +1,4 @@
 Remove ``__class_getitem__`` from :class:`pathlib.PurePath`.
 
 Why? Because this class was not really generic: 
-`PurePath` only works with `str`. 
+``PurePath`` only works with ``str``. 
