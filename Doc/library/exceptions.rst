@@ -889,46 +889,46 @@ their subgroups based on the types of the contained exceptions.
 
    .. method:: subgroup(condition)
 
-   Returns an exception group that contains only the exceptions from the
-   current group that match *condition*, or ``None`` if the result is empty.
+      Returns an exception group that contains only the exceptions from the
+      current group that match *condition*, or ``None`` if the result is empty.
 
-   The condition can be either a function that accepts an exception and returns
-   true for those that should be in the subgroup, or it can be an exception type
-   or a tuple of exception types, which is used to check for a match using the
-   same check that is used in an ``except`` clause.
+      The condition can be either a function that accepts an exception and returns
+      true for those that should be in the subgroup, or it can be an exception type
+      or a tuple of exception types, which is used to check for a match using the
+      same check that is used in an ``except`` clause.
 
-   The nesting structure of the current exception is preserved in the result,
-   as are the values of its :attr:`message`, :attr:`__traceback__`,
-   :attr:`__cause__`, :attr:`__context__` and :attr:`__note__` fields.
-   Empty nested groups are omitted from the result.
+      The nesting structure of the current exception is preserved in the result,
+      as are the values of its :attr:`message`, :attr:`__traceback__`,
+      :attr:`__cause__`, :attr:`__context__` and :attr:`__note__` fields.
+      Empty nested groups are omitted from the result.
 
-   The condition is checked for all exceptions in the nested exception group,
-   including the top-level and any nested exception groups. If the condition is
-   true for such an exception group, it is included in the result in full.
+      The condition is checked for all exceptions in the nested exception group,
+      including the top-level and any nested exception groups. If the condition is
+      true for such an exception group, it is included in the result in full.
 
    .. method:: split(condition)
 
-   Like :meth:`subgroup`, but returns the pair ``(match, rest)`` where ``match``
-   is ``subgroup(condition)`` and ``rest`` is the remaining non-matching
-   part.
+      Like :meth:`subgroup`, but returns the pair ``(match, rest)`` where ``match``
+      is ``subgroup(condition)`` and ``rest`` is the remaining non-matching
+      part.
 
    .. method:: derive(excs)
 
-   Returns an exception group with the same :attr:`message`,
-   :attr:`__traceback__`, :attr:`__cause__`, :attr:`__context__`
-   and :attr:`__note__` but which wraps the exceptions in ``excs``.
+      Returns an exception group with the same :attr:`message`,
+      :attr:`__traceback__`, :attr:`__cause__`, :attr:`__context__`
+      and :attr:`__note__` but which wraps the exceptions in ``excs``.
 
-   This method is used by :meth:`subgroup` and :meth:`split`. A
-   subclass needs to override it in order to make :meth:`subgroup`
-   and :meth:`split` return instances of the subclass rather
-   than :exc:`ExceptionGroup`. ::
+      This method is used by :meth:`subgroup` and :meth:`split`. A
+      subclass needs to override it in order to make :meth:`subgroup`
+      and :meth:`split` return instances of the subclass rather
+      than :exc:`ExceptionGroup`. ::
 
-      >>> class MyGroup(ExceptionGroup):
-      ...     def derive(self, exc):
-      ...         return MyGroup(self.message, exc)
-      ...
-      >>> MyGroup("eg", [ValueError(1), TypeError(2)]).split(TypeError)
-      (MyGroup('eg', [TypeError(2)]), MyGroup('eg', [ValueError(1)]))
+         >>> class MyGroup(ExceptionGroup):
+         ...     def derive(self, exc):
+         ...         return MyGroup(self.message, exc)
+         ...
+         >>> MyGroup("eg", [ValueError(1), TypeError(2)]).split(TypeError)
+         (MyGroup('eg', [TypeError(2)]), MyGroup('eg', [ValueError(1)]))
 
    Note that :exc:`BaseExceptionGroup` defines :meth:`__new__`, so
    subclasses that need a different constructor signature need to
