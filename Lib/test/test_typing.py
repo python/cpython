@@ -5067,7 +5067,7 @@ class SpecialAttrsTests(BaseTestCase):
         )
         self.assertEqual(
             SpecialAttrsTests.TypeName.__module__,
-            'test.test_typing',
+            __name__,
         )
         # NewTypes are picklable assuming correct qualname information.
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -5081,7 +5081,7 @@ class SpecialAttrsTests(BaseTestCase):
         # __qualname__ is unnecessary.
         self.assertEqual(SpecialAttrsT.__name__, 'SpecialAttrsT')
         self.assertFalse(hasattr(SpecialAttrsT, '__qualname__'))
-        self.assertEqual(SpecialAttrsT.__module__, 'test.test_typing')
+        self.assertEqual(SpecialAttrsT.__module__, __name__)
         # Module-level type variables are picklable.
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             s = pickle.dumps(SpecialAttrsT, proto)
@@ -5090,7 +5090,7 @@ class SpecialAttrsTests(BaseTestCase):
 
         self.assertEqual(SpecialAttrsP.__name__, 'SpecialAttrsP')
         self.assertFalse(hasattr(SpecialAttrsP, '__qualname__'))
-        self.assertEqual(SpecialAttrsP.__module__, 'test.test_typing')
+        self.assertEqual(SpecialAttrsP.__module__, __name__)
         # Module-level ParamSpecs are picklable.
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             s = pickle.dumps(SpecialAttrsP, proto)
