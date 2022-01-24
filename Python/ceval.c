@@ -5000,7 +5000,7 @@ handle_eval_breaker:
             DEOPT_IF(call_shape.positional_args != 2, CALL);
             DEOPT_IF(call_shape.callable != cache1->obj, CALL);
             PyObject *list = SECOND();
-            DEOPT_IF(!PyList_CheckExact(list), CALL);
+            DEOPT_IF(!PyList_Check(list), CALL);
             STAT_INC(CALL, hit);
             PyObject *arg = TOP();
             int err = PyList_Append(list, arg);
