@@ -234,4 +234,7 @@ error:
     PyErr_Print();
     Py_Finalize();
     return 1;
-}
+};
+
+void _Py_Deepfreeze_Fini(void) {
+};

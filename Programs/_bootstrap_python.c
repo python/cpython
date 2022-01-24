@@ -103,3 +103,7 @@ error:
     }
     Py_ExitStatusException(status);
 }
+
+
+void _Py_Deepfreeze_Fini(void) {
+};
