@@ -2121,11 +2121,6 @@ def clear_ignored_deprecations(*tokens: object) -> None:
         warnings._filters_mutated()
 
 
-# This number should be CPython internal "hot" (C macro QUICKENING_WARMUP_DELAY)
-# count + 1.
-CPYTHON_WARMUP_COUNT = 8+1
-
-
 def repeat_cpython_adaptative(f):
     """Runs a test multiple times. First with PEP 659 adaptive opcodes, then
     with specialized opcodes once the opcodes turn "hot". This catches bugs
@@ -2134,12 +2129,17 @@ def repeat_cpython_adaptative(f):
     See bpo-46465 for an example bug affecting only specialized opcodes,
     due to a missing CHECK_EVAL_BREAKER.
     """
-    if check_impl_detail(cpython=True):
+    # _co_warmedup is only available in CPython
+    if check_impl_detail(cpython=True) and hasattr(f.__code__, "_co_warmedup"):
         @functools.wraps(f)
         def wrapper(self):
-            for i in range(CPYTHON_WARMUP_COUNT):
-                with self.subTest(cpython_warmup_iter=i):
-                    return f(self)
+            done = False
+            while not done:
+                is_warmedup = f.__code__._co_warmedup
+                if is_warmedup:
+                    done = True
+                with self.subTest(cpython_is_warmedup=is_warmedup):
+                    f(self)
         return wrapper
     else:
         return f

@@ -4731,7 +4731,6 @@ handle_eval_breaker:
             Py_DECREF(callable);
             Py_DECREF(obj);
             SET_TOP(res);
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -4855,7 +4854,6 @@ handle_eval_breaker:
             if (res == NULL) {
                 goto error;
             }
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -4912,7 +4910,6 @@ handle_eval_breaker:
             STACK_SHRINK(2);
             SET_TOP(Py_None);
             Py_DECREF(callable);
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 

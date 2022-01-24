@@ -1542,6 +1542,17 @@ code_getfreevars(PyCodeObject *code, void *closure)
     return _PyCode_GetFreevars(code);
 }
 
+static PyObject *
+code_iswarmedup(PyCodeObject *code, void *closure)
+{
+    if (code->co_quickened != NULL) {
+        Py_RETURN_TRUE;
+    }
+    else {
+        Py_RETURN_FALSE;
+    }
+}
+
 static PyGetSetDef code_getsetlist[] = {
     {"co_lnotab",    (getter)code_getlnotab, NULL, NULL},
     // The following old names are kept for backward compatibility.
@@ -1549,6 +1560,7 @@ static PyGetSetDef code_getsetlist[] = {
     {"co_varnames",  (getter)code_getvarnames, NULL, NULL},
     {"co_cellvars",  (getter)code_getcellvars, NULL, NULL},
     {"co_freevars",  (getter)code_getfreevars, NULL, NULL},
+    {"_co_warmedup", (getter)code_iswarmedup, NULL, NULL},
     {0}
 };
 
