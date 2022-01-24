@@ -413,10 +413,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
         is_jump_target = offset in labels
         argval = None
         argrepr = ''
-        try:
-            positions = next(co_positions)
-        except StopIteration:
-            positions = None
+        positions = Positions(*next(co_positions, ()))
         if arg is not None:
             #  Set argval to the dereferenced value of the argument when
             #  available, and argrepr to the string representation of argval.
