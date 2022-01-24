@@ -4641,6 +4641,8 @@ static struct PyMethodDef Pickler_methods[] = {
 static void
 Pickler_dealloc(PicklerObject *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
+
     PyObject_GC_UnTrack(self);
 
     Py_XDECREF(self->output_buffer);
@@ -4653,7 +4655,8 @@ Pickler_dealloc(PicklerObject *self)
 
     PyMemoTable_Del(self->memo);
 
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    tp->tp_free((PyObject *)self);
+    Py_DECREF(tp);
 }
 
 static int
@@ -7137,6 +7140,8 @@ static struct PyMethodDef Unpickler_methods[] = {
 static void
 Unpickler_dealloc(UnpicklerObject *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
+
     PyObject_GC_UnTrack((PyObject *)self);
     Py_XDECREF(self->readline);
     Py_XDECREF(self->readinto);
@@ -7156,7 +7161,8 @@ Unpickler_dealloc(UnpicklerObject *self)
     PyMem_Free(self->encoding);
     PyMem_Free(self->errors);
 
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    tp->tp_free((PyObject *)self);
+    Py_DECREF(tp);
 }
 
 static int
