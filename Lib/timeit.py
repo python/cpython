@@ -9,9 +9,10 @@ the Python Cookbook, published by O'Reilly.
 Library usage: see the Timer class.
 
 Command line usage:
-    python timeit.py [-n N] [-r N] [-s S] [-p] [-h] [--] [statement]
+    python timeit.py [-f S] [-n N] [-r N] [-s S] [-p] [-h] [--] [statement]
 
 Options:
+  -f/--file S: specify file to time
   -n/--number N: how many times to execute 'statement' (default: see below)
   -r/--repeat N: how many times to repeat the timer (default 5)
   -s/--setup S: statement to be executed once initially (default 'pass').
@@ -259,7 +260,7 @@ def main(args=None, *, _wrap_timer=None):
         args = sys.argv[1:]
     import getopt
     try:
-        opts, args = getopt.getopt(args, "n:u:s:r:tcpvh",
+        opts, args = getopt.getopt(args, "f:n:u:s:r:tcpvh",
                                    ["number=", "setup=", "repeat=",
                                     "time", "clock", "process",
                                     "verbose", "unit=", "help"])
@@ -277,7 +278,10 @@ def main(args=None, *, _wrap_timer=None):
     time_unit = None
     units = {"nsec": 1e-9, "usec": 1e-6, "msec": 1e-3, "sec": 1.0}
     precision = 3
+    filename = None
     for o, a in opts:
+        if o in ("-f", "--file"):
+            filename = a
         if o in ("-n", "--number"):
             number = int(a)
         if o in ("-s", "--setup"):
@@ -303,6 +307,15 @@ def main(args=None, *, _wrap_timer=None):
             print(__doc__, end=' ')
             return 0
     setup = "\n".join(setup) or "pass"
+    if stmt == "pass" and filename is not None:
+        try:
+            fd = open(filename, "r")
+            stmt = "".join(fd.readlines())
+            fd.close()
+        except OSError:
+            print(f"No such file or directory: {filename}")
+            sys.exit()
+        stmt = stmt.rstrip() # remove last newline
 
     # Include the current directory, so that local imports work (sys.path
     # contains the directory of this script, rather than the current
@@ -374,3 +387,4 @@ def main(args=None, *, _wrap_timer=None):
 
 if __name__ == "__main__":
     sys.exit(main())
+
