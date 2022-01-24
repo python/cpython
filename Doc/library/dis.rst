@@ -316,7 +316,29 @@ details of bytecode instructions as :class:`Instruction` instances:
 
       ``True`` if other code jumps to here, otherwise ``False``
 
+
+   .. data:: positions
+
+      :class:`dis.Positions` object holding the
+      start and end locations that are covered by this instruction.
+
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.11
+
+      Field ``positions`` is added.
+
+
+.. class:: Positions
+
+   In case the information is not available, some fields might be `None`.
+
+   .. data:: lineno
+   .. data:: end_lineno
+   .. data:: col_offset
+   .. data:: end_col_offset
+
+   .. versionadded:: 3.11
 
 
 The Python compiler currently generates the following bytecode instructions.
@@ -596,8 +618,6 @@ iterations of the loop.
     has occurred in a :keyword:`with` statement.
 
     .. versionadded:: 3.9
-    .. versionchanged:: 3.11
-       The ``__exit__`` function is in position 8 of the stack rather than 7.
 
     .. versionchanged:: 3.11
        The ``__exit__`` function is in position 4 of the stack rather than 7.
@@ -1231,6 +1251,22 @@ All of the following opcodes use their arguments.
 
     Create a generator, coroutine, or async generator from the current frame.
     Clear the current frame and return the newly created generator.
+
+    .. versionadded:: 3.11
+
+
+.. opcode:: SEND
+
+    Sends ``None`` to the sub-generator of this generator.
+    Used in ``yield from`` and ``await`` statements.
+
+    .. versionadded:: 3.11
+
+
+.. opcode:: ASYNC_GEN_WRAP
+
+    Wraps the value on top of the stack in an ``async_generator_wrapped_value``.
+    Used to yield in async generators.
 
     .. versionadded:: 3.11
 

@@ -44,6 +44,7 @@ extern "C" {
 #define IMPORT_STAR                      84
 #define SETUP_ANNOTATIONS                85
 #define YIELD_VALUE                      86
+#define ASYNC_GEN_WRAP                   87
 #define PREP_RERAISE_STAR                88
 #define POP_EXCEPT                       89
 #define HAVE_ARGUMENT                    90
@@ -166,17 +167,17 @@ extern "C" {
 #define LOAD_METHOD_ADAPTIVE             79
 #define LOAD_METHOD_CACHED               80
 #define LOAD_METHOD_CLASS                81
-#define LOAD_METHOD_MODULE               87
-#define LOAD_METHOD_NO_DICT             131
-#define STORE_ATTR_ADAPTIVE             140
-#define STORE_ATTR_INSTANCE_VALUE       141
-#define STORE_ATTR_SLOT                 143
-#define STORE_ATTR_WITH_HINT            150
-#define LOAD_FAST__LOAD_FAST            153
-#define STORE_FAST__LOAD_FAST           154
-#define LOAD_FAST__LOAD_CONST           158
-#define LOAD_CONST__LOAD_FAST           159
-#define STORE_FAST__STORE_FAST          161
+#define LOAD_METHOD_MODULE              131
+#define LOAD_METHOD_NO_DICT             140
+#define STORE_ATTR_ADAPTIVE             141
+#define STORE_ATTR_INSTANCE_VALUE       143
+#define STORE_ATTR_SLOT                 150
+#define STORE_ATTR_WITH_HINT            153
+#define LOAD_FAST__LOAD_FAST            154
+#define STORE_FAST__LOAD_FAST           158
+#define LOAD_FAST__LOAD_CONST           159
+#define LOAD_CONST__LOAD_FAST           161
+#define STORE_FAST__STORE_FAST          166
 #define DO_TRACING                      255
 #ifdef NEED_OPCODE_JUMP_TABLES
 static uint32_t _PyOpcode_RelativeJump[8] = {

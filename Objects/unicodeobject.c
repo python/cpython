@@ -15567,23 +15567,19 @@ _PyUnicode_InitTypes(PyInterpreterState *interp)
         return _PyStatus_OK();
     }
 
-    if (PyType_Ready(&PyUnicode_Type) < 0) {
-        return _PyStatus_ERR("Can't initialize unicode type");
-    }
-    if (PyType_Ready(&PyUnicodeIter_Type) < 0) {
-        return _PyStatus_ERR("Can't initialize unicode iterator type");
-    }
-
     if (PyType_Ready(&EncodingMapType) < 0) {
-         return _PyStatus_ERR("Can't initialize encoding map type");
+        goto error;
     }
     if (PyType_Ready(&PyFieldNameIter_Type) < 0) {
-        return _PyStatus_ERR("Can't initialize field name iterator type");
+        goto error;
     }
     if (PyType_Ready(&PyFormatterIter_Type) < 0) {
-        return _PyStatus_ERR("Can't initialize formatter iter type");
+        goto error;
     }
     return _PyStatus_OK();
+
+error:
+    return _PyStatus_ERR("Can't initialize unicode types");
 }
 
 
@@ -16109,6 +16105,19 @@ unicode_is_finalizing(void)
     return (interned == NULL);
 }
 #endif
+
+
+void
+_PyUnicode_FiniTypes(PyInterpreterState *interp)
+{
+    if (!_Py_IsMainInterpreter(interp)) {
+        return;
+    }
+
+    _PyStaticType_Dealloc(&EncodingMapType);
+    _PyStaticType_Dealloc(&PyFieldNameIter_Type);
+    _PyStaticType_Dealloc(&PyFormatterIter_Type);
+}
 
 
 void

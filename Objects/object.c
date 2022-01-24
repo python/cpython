@@ -4,6 +4,7 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
+#include "pycore_context.h"       // _PyContextTokenMissing_Type
 #include "pycore_dict.h"          // _PyObject_MakeDictFromInstanceAttributes()
 #include "pycore_floatobject.h"   // _PyFloat_DebugMallocStats()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
@@ -1839,7 +1840,12 @@ _PyTypes_InitState(PyInterpreterState *interp)
 
 
 static PyTypeObject* static_types[] = {
-    // base types
+    // The two most important base types: must be initialized first and
+    // deallocated last.
+    &PyBaseObject_Type,
+    &PyType_Type,
+
+    // Static types with base=&PyBaseObject_Type
     &PyAsyncGen_Type,
     &PyByteArrayIter_Type,
     &PyByteArray_Type,
@@ -1853,6 +1859,9 @@ static PyTypeObject* static_types[] = {
     &PyClassMethod_Type,
     &PyCode_Type,
     &PyComplex_Type,
+    &PyContextToken_Type,
+    &PyContextVar_Type,
+    &PyContext_Type,
     &PyCoro_Type,
     &PyDictItems_Type,
     &PyDictIterItem_Type,
@@ -1867,6 +1876,7 @@ static PyTypeObject* static_types[] = {
     &PyDict_Type,
     &PyEllipsis_Type,
     &PyEnum_Type,
+    &PyFilter_Type,
     &PyFloat_Type,
     &PyFrame_Type,
     &PyFrozenSet_Type,
@@ -1879,6 +1889,7 @@ static PyTypeObject* static_types[] = {
     &PyList_Type,
     &PyLongRangeIter_Type,
     &PyLong_Type,
+    &PyMap_Type,
     &PyMemberDescr_Type,
     &PyMemoryView_Type,
     &PyMethodDescr_Type,
@@ -1905,12 +1916,21 @@ static PyTypeObject* static_types[] = {
     &PyUnicodeIter_Type,
     &PyUnicode_Type,
     &PyWrapperDescr_Type,
+    &PyZip_Type,
     &Py_GenericAliasType,
     &_PyAnextAwaitable_Type,
     &_PyAsyncGenASend_Type,
     &_PyAsyncGenAThrow_Type,
     &_PyAsyncGenWrappedValue_Type,
+    &_PyContextTokenMissing_Type,
     &_PyCoroWrapper_Type,
+    &_PyHamtItems_Type,
+    &_PyHamtKeys_Type,
+    &_PyHamtValues_Type,
+    &_PyHamt_ArrayNode_Type,
+    &_PyHamt_BitmapNode_Type,
+    &_PyHamt_CollisionNode_Type,
+    &_PyHamt_Type,
     &_PyInterpreterID_Type,
     &_PyManagedBuffer_Type,
     &_PyMethodWrapper_Type,
@@ -1940,29 +1960,20 @@ _PyTypes_InitTypes(PyInterpreterState *interp)
         return _PyStatus_OK();
     }
 
-#define INIT_TYPE(TYPE) \
-    do { \
-        if (PyType_Ready(&(TYPE)) < 0) { \
-            return _PyStatus_ERR("Can't initialize " #TYPE " type"); \
-        } \
-    } while (0)
-
-    // Base types
-    INIT_TYPE(PyBaseObject_Type);
-    INIT_TYPE(PyType_Type);
-    assert(PyBaseObject_Type.tp_base == NULL);
-    assert(PyType_Type.tp_base == &PyBaseObject_Type);
-
     // All other static types (unless initialized elsewhere)
     for (size_t i=0; i < Py_ARRAY_LENGTH(static_types); i++) {
         PyTypeObject *type = static_types[i];
         if (PyType_Ready(type) < 0) {
             return _PyStatus_ERR("Can't initialize types");
         }
+        if (type == &PyType_Type) {
+            // Sanitify checks of the two most important types
+            assert(PyBaseObject_Type.tp_base == NULL);
+            assert(PyType_Type.tp_base == &PyBaseObject_Type);
+        }
     }
 
     return _PyStatus_OK();
-#undef INIT_TYPE
 }
 
 
@@ -1983,10 +1994,6 @@ _PyTypes_FiniTypes(PyInterpreterState *interp)
     // their base classes.
     for (Py_ssize_t i=Py_ARRAY_LENGTH(static_types)-1; i>=0; i--) {
         PyTypeObject *type = static_types[i];
-        // Cannot delete a type if it still has subclasses
-        if (type->tp_subclasses != NULL) {
-            continue;
-        }
         _PyStaticType_Dealloc(type);
     }
 }
