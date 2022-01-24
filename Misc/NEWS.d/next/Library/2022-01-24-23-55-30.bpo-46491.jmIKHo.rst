@@ -1,0 +1,1 @@
+Allow Annotated on outside of Final/ClassVar.
