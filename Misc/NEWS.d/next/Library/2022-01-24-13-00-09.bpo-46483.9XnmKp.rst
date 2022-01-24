@@ -1,4 +1,1 @@
-Remove ``__class_getitem__`` from :class:`pathlib.PurePath`.
-
-Why? Because this class was not really generic:
-``PurePath`` only works with ``str``.
+Remove :meth:`~object.__class_getitem__` from :class:`pathlib.PurePath` as this class was not supposed to be generic.
