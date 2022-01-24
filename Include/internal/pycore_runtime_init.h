@@ -1024,6 +1024,7 @@ extern "C" {
                 INIT_ID(__newobj__), \
                 INIT_ID(__newobj_ex__), \
                 INIT_ID(__next__), \
+                INIT_ID(__note__), \
                 INIT_ID(__or__), \
                 INIT_ID(__package__), \
                 INIT_ID(__path__), \

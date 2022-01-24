@@ -404,6 +404,7 @@ struct _Py_global_strings {
         ID(__newobj__)
         ID(__newobj_ex__)
         ID(__next__)
+        ID(__note__)
         ID(__or__)
         ID(__package__)
         ID(__path__)

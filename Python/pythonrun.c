@@ -38,20 +38,6 @@
 #endif
 
 
-_Py_IDENTIFIER(__main__);
-_Py_IDENTIFIER(builtins);
-_Py_IDENTIFIER(excepthook);
-_Py_IDENTIFIER(flush);
-_Py_IDENTIFIER(last_traceback);
-_Py_IDENTIFIER(last_type);
-_Py_IDENTIFIER(last_value);
-_Py_IDENTIFIER(ps1);
-_Py_IDENTIFIER(ps2);
-_Py_IDENTIFIER(stdin);
-_Py_IDENTIFIER(stdout);
-_Py_IDENTIFIER(stderr);
-_Py_static_string(PyId_string, "<string>");
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -130,14 +116,17 @@ _PyRun_InteractiveLoopObject(FILE *fp, PyObject *filename, PyCompilerFlags *flag
         flags = &local_flags;
     }
 
-    PyObject *v = _PySys_GetObjectId(&PyId_ps1);
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(ps1);
+    PyObject *v = _PySys_GetAttr(tstate, attr);
     if (v == NULL) {
-        _PySys_SetObjectId(&PyId_ps1, v = PyUnicode_FromString(">>> "));
+        _PySys_SetAttr(attr, v = PyUnicode_FromString(">>> "));
         Py_XDECREF(v);
     }
-    v = _PySys_GetObjectId(&PyId_ps2);
+    attr = _Py_GET_GLOBAL_IDENTIFIER(ps2);
+    v = _PySys_GetAttr(tstate, attr);
     if (v == NULL) {
-        _PySys_SetObjectId(&PyId_ps2, v = PyUnicode_FromString("... "));
+        _PySys_SetAttr(attr, v = PyUnicode_FromString("... "));
         Py_XDECREF(v);
     }
 
@@ -199,31 +188,29 @@ static int
 PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
                              PyCompilerFlags *flags)
 {
-    PyObject *m, *d, *v, *w, *oenc = NULL, *mod_name;
+    PyObject *m, *d, *v, *w, *oenc = NULL, *mod_name, *attr;
     mod_ty mod;
     PyArena *arena;
     const char *ps1 = "", *ps2 = "", *enc = NULL;
     int errcode = 0;
-    _Py_IDENTIFIER(encoding);
-    _Py_IDENTIFIER(__main__);
-
-    mod_name = _PyUnicode_FromId(&PyId___main__); /* borrowed */
-    if (mod_name == NULL) {
-        return -1;
-    }
+    PyThreadState *tstate = _PyThreadState_GET();
+    mod_name = _Py_GET_GLOBAL_IDENTIFIER(__main__);
 
     if (fp == stdin) {
         /* Fetch encoding from sys.stdin if possible. */
-        v = _PySys_GetObjectId(&PyId_stdin);
+        attr = _Py_GET_GLOBAL_IDENTIFIER(stdin);
+        v = _PySys_GetAttr(tstate, attr);
         if (v && v != Py_None) {
-            oenc = _PyObject_GetAttrId(v, &PyId_encoding);
+            attr = _Py_GET_GLOBAL_IDENTIFIER(encoding);
+            oenc = PyObject_GetAttr(v, attr);
             if (oenc)
                 enc = PyUnicode_AsUTF8(oenc);
             if (!enc)
                 PyErr_Clear();
         }
     }
-    v = _PySys_GetObjectId(&PyId_ps1);
+    attr = _Py_GET_GLOBAL_IDENTIFIER(ps1);
+    v = _PySys_GetAttr(tstate, attr);
     if (v != NULL) {
         v = PyObject_Str(v);
         if (v == NULL)
@@ -236,7 +223,8 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
             }
         }
     }
-    w = _PySys_GetObjectId(&PyId_ps2);
+    attr = _Py_GET_GLOBAL_IDENTIFIER(ps2);
+    w = _PySys_GetAttr(tstate, attr);
     if (w != NULL) {
         w = PyObject_Str(w);
         if (w == NULL)
@@ -519,38 +507,32 @@ parse_syntax_error(PyObject *err, PyObject **message, PyObject **filename,
                    PyObject **text)
 {
     Py_ssize_t hold;
-    PyObject *v;
-    _Py_IDENTIFIER(msg);
-    _Py_IDENTIFIER(filename);
-    _Py_IDENTIFIER(lineno);
-    _Py_IDENTIFIER(offset);
-    _Py_IDENTIFIER(end_lineno);
-    _Py_IDENTIFIER(end_offset);
-    _Py_IDENTIFIER(text);
+    PyObject *v, *attr;
 
     *message = NULL;
     *filename = NULL;
 
     /* new style errors.  `err' is an instance */
-    *message = _PyObject_GetAttrId(err, &PyId_msg);
+    attr = _Py_GET_GLOBAL_IDENTIFIER(msg);
+    *message = PyObject_GetAttr(err, attr);
     if (!*message)
         goto finally;
 
-    v = _PyObject_GetAttrId(err, &PyId_filename);
+    attr = _Py_GET_GLOBAL_IDENTIFIER(filename);
+    v = PyObject_GetAttr(err, attr);
     if (!v)
         goto finally;
     if (v == Py_None) {
         Py_DECREF(v);
-        *filename = _PyUnicode_FromId(&PyId_string);
-        if (*filename == NULL)
-            goto finally;
+        *filename = _Py_GET_GLOBAL_STRING(anon_string);
         Py_INCREF(*filename);
     }
     else {
         *filename = v;
     }
 
-    v = _PyObject_GetAttrId(err, &PyId_lineno);
+    attr = _Py_GET_GLOBAL_IDENTIFIER(lineno);
+    v = PyObject_GetAttr(err, attr);
     if (!v)
         goto finally;
     hold = PyLong_AsSsize_t(v);
@@ -559,7 +541,8 @@ parse_syntax_error(PyObject *err, PyObject **message, PyObject **filename,
         goto finally;
     *lineno = hold;
 
-    v = _PyObject_GetAttrId(err, &PyId_offset);
+    attr = _Py_GET_GLOBAL_IDENTIFIER(offset);
+    v = PyObject_GetAttr(err, attr);
     if (!v)
         goto finally;
     if (v == Py_None) {
@@ -574,7 +557,8 @@ parse_syntax_error(PyObject *err, PyObject **message, PyObject **filename,
     }
 
     if (Py_TYPE(err) == (PyTypeObject*)PyExc_SyntaxError) {
-        v = _PyObject_GetAttrId(err, &PyId_end_lineno);
+        attr = _Py_GET_GLOBAL_IDENTIFIER(end_lineno);
+        v = PyObject_GetAttr(err, attr);
         if (!v) {
             PyErr_Clear();
             *end_lineno = *lineno;
@@ -590,7 +574,8 @@ parse_syntax_error(PyObject *err, PyObject **message, PyObject **filename,
             *end_lineno = hold;
         }
 
-        v = _PyObject_GetAttrId(err, &PyId_end_offset);
+        attr = _Py_GET_GLOBAL_IDENTIFIER(end_offset);
+        v = PyObject_GetAttr(err, attr);
         if (!v) {
             PyErr_Clear();
             *end_offset = -1;
@@ -611,7 +596,8 @@ parse_syntax_error(PyObject *err, PyObject **message, PyObject **filename,
         *end_offset = -1;
     }
 
-    v = _PyObject_GetAttrId(err, &PyId_text);
+    attr = _Py_GET_GLOBAL_IDENTIFIER(text);
+    v = PyObject_GetAttr(err, attr);
     if (!v)
         goto finally;
     if (v == Py_None) {
@@ -745,8 +731,8 @@ _Py_HandleSystemExit(int *exitcode_p)
 
     if (PyExceptionInstance_Check(value)) {
         /* The error code should be in the `code' attribute. */
-        _Py_IDENTIFIER(code);
-        PyObject *code = _PyObject_GetAttrId(value, &PyId_code);
+        PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(code);
+        PyObject *code = PyObject_GetAttr(value, attr);
         if (code) {
             Py_DECREF(value);
             value = code;
@@ -761,7 +747,9 @@ _Py_HandleSystemExit(int *exitcode_p)
         exitcode = (int)PyLong_AsLong(value);
     }
     else {
-        PyObject *sys_stderr = _PySys_GetObjectId(&PyId_stderr);
+        PyThreadState *tstate = _PyThreadState_GET();
+        PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(stderr);
+        PyObject *sys_stderr = _PySys_GetAttr(tstate, attr);
         /* We clear the exception here to avoid triggering the assertion
          * in PyObject_Str that ensures it won't silently lose exception
          * details.
@@ -803,7 +791,7 @@ handle_system_exit(void)
 static void
 _PyErr_PrintEx(PyThreadState *tstate, int set_sys_last_vars)
 {
-    PyObject *exception, *v, *tb, *hook;
+    PyObject *exception, *v, *tb, *hook, *attr;
 
     handle_system_exit();
 
@@ -824,17 +812,21 @@ _PyErr_PrintEx(PyThreadState *tstate, int set_sys_last_vars)
 
     /* Now we know v != NULL too */
     if (set_sys_last_vars) {
-        if (_PySys_SetObjectId(&PyId_last_type, exception) < 0) {
+        attr = _Py_GET_GLOBAL_IDENTIFIER(last_type);
+        if (_PySys_SetAttr(attr, exception) < 0) {
             _PyErr_Clear(tstate);
         }
-        if (_PySys_SetObjectId(&PyId_last_value, v) < 0) {
+        attr = _Py_GET_GLOBAL_IDENTIFIER(last_value);
+        if (_PySys_SetAttr(attr, v) < 0) {
             _PyErr_Clear(tstate);
         }
-        if (_PySys_SetObjectId(&PyId_last_traceback, tb) < 0) {
+        attr = _Py_GET_GLOBAL_IDENTIFIER(last_traceback);
+        if (_PySys_SetAttr(attr, tb) < 0) {
             _PyErr_Clear(tstate);
         }
     }
-    hook = _PySys_GetObjectId(&PyId_excepthook);
+    attr = _Py_GET_GLOBAL_IDENTIFIER(excepthook);
+    hook = _PySys_GetAttr(tstate, attr);
     if (_PySys_Audit(tstate, "sys.excepthook", "OOOO", hook ? hook : Py_None,
                      exception, v, tb) < 0) {
         if (PyErr_ExceptionMatches(PyExc_RuntimeError)) {
@@ -979,9 +971,9 @@ print_exception_file_and_line(struct exception_print_context *ctx,
 {
     PyObject *f = ctx->file;
 
-    _Py_IDENTIFIER(print_file_and_line);
     PyObject *tmp;
-    int res = _PyObject_LookupAttrId(*value_p, &PyId_print_file_and_line, &tmp);
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(print_file_and_line);
+    int res = _PyObject_LookupAttr(*value_p, attr, &tmp);
     if (res <= 0) {
         if (res < 0) {
             PyErr_Clear();
@@ -1051,14 +1043,13 @@ print_exception_message(struct exception_print_context *ctx, PyObject *type,
 {
     PyObject *f = ctx->file;
 
-    _Py_IDENTIFIER(__module__);
-
     assert(PyExceptionClass_Check(type));
 
     if (write_indented_margin(ctx, f) < 0) {
         return -1;
     }
-    PyObject *modulename = _PyObject_GetAttrId(type, &PyId___module__);
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__module__);
+    PyObject *modulename = PyObject_GetAttr(type, attr);
     if (modulename == NULL || !PyUnicode_Check(modulename)) {
         Py_XDECREF(modulename);
         PyErr_Clear();
@@ -1067,8 +1058,8 @@ print_exception_message(struct exception_print_context *ctx, PyObject *type,
         }
     }
     else {
-        if (!_PyUnicode_EqualToASCIIId(modulename, &PyId_builtins) &&
-            !_PyUnicode_EqualToASCIIId(modulename, &PyId___main__))
+        if (!_PyUnicode_Equal(modulename, _Py_GET_GLOBAL_IDENTIFIER(builtins)) &&
+            !_PyUnicode_Equal(modulename, _Py_GET_GLOBAL_IDENTIFIER(__main__)))
         {
             int res = PyFile_WriteObject(modulename, f, Py_PRINT_RAW);
             Py_DECREF(modulename);
@@ -1168,9 +1159,8 @@ print_exception_note(struct exception_print_context *ctx, PyObject *value)
         return 0;
     }
 
-    _Py_IDENTIFIER(__note__);
-
-    PyObject *note = _PyObject_GetAttrId(value, &PyId___note__);
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__note__);
+    PyObject *note = PyObject_GetAttr(value, attr);
     if (note == NULL) {
         return -1;
     }
@@ -1553,7 +1543,8 @@ _PyErr_Display(PyObject *file, PyObject *exception, PyObject *value, PyObject *t
     Py_XDECREF(ctx.seen);
 
     /* Call file.flush() */
-    PyObject *res = _PyObject_CallMethodIdNoArgs(file, &PyId_flush);
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(flush);
+    PyObject *res = _PyObject_CallMethodNoArgs(file, attr);
     if (!res) {
         /* Silently ignore file.flush() error */
         PyErr_Clear();
@@ -1566,7 +1557,9 @@ _PyErr_Display(PyObject *file, PyObject *exception, PyObject *value, PyObject *t
 void
 PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
 {
-    PyObject *file = _PySys_GetObjectId(&PyId_stderr);
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(stderr);
+    PyObject *file = _PySys_GetAttr(tstate, attr);
     if (file == NULL) {
         _PyObject_Dump(value);
         fprintf(stderr, "lost sys.stderr\n");
@@ -1587,11 +1580,7 @@ PyRun_StringFlags(const char *str, int start, PyObject *globals,
     PyObject *ret = NULL;
     mod_ty mod;
     PyArena *arena;
-    PyObject *filename;
-
-    filename = _PyUnicode_FromId(&PyId_string); /* borrowed */
-    if (filename == NULL)
-        return NULL;
+    PyObject *filename = _Py_GET_GLOBAL_STRING(anon_string);
 
     arena = _PyArena_New();
     if (arena == NULL)
@@ -1658,21 +1647,25 @@ flush_io(void)
 {
     PyObject *f, *r;
     PyObject *type, *value, *traceback;
+    PyObject *flush = _Py_GET_GLOBAL_IDENTIFIER(flush);
 
     /* Save the current exception */
     PyErr_Fetch(&type, &value, &traceback);
 
-    f = _PySys_GetObjectId(&PyId_stderr);
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(stderr);
+    f = _PySys_GetAttr(tstate, attr);
     if (f != NULL) {
-        r = _PyObject_CallMethodIdNoArgs(f, &PyId_flush);
+        r = _PyObject_CallMethodNoArgs(f, flush);
         if (r)
             Py_DECREF(r);
         else
             PyErr_Clear();
     }
-    f = _PySys_GetObjectId(&PyId_stdout);
+    attr = _Py_GET_GLOBAL_IDENTIFIER(stdout);
+    f = _PySys_GetAttr(tstate, attr);
     if (f != NULL) {
-        r = _PyObject_CallMethodIdNoArgs(f, &PyId_flush);
+        r = _PyObject_CallMethodNoArgs(f, flush);
         if (r)
             Py_DECREF(r);
         else
