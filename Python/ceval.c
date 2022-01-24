@@ -857,31 +857,6 @@ static const binaryfunc binary_ops[] = {
     [NB_INPLACE_XOR] = PyNumber_InPlaceXor,
 };
 
-#define BINARY_OP_FAST_INT(OP)                                       \
-    do {                                                             \
-        PyObject *lhs = SECOND();                                    \
-        PyObject *rhs = TOP();                                       \
-        DEOPT_IF(!PyLong_CheckExact(lhs), BINARY_OP);                \
-        DEOPT_IF(!PyLong_CheckExact(rhs), BINARY_OP);                \
-        DEOPT_IF(1 < Py_ABS(Py_SIZE(lhs)), BINARY_OP);               \
-        DEOPT_IF(1 < Py_ABS(Py_SIZE(rhs)), BINARY_OP);               \
-        STAT_INC(BINARY_OP, hit);                                    \
-        PyLongObject *lhs_long = (PyLongObject *)lhs;                \
-        PyLongObject *rhs_long = (PyLongObject *)rhs;                \
-        stwodigits l = Py_SIZE(lhs) * (sdigit)lhs_long->ob_digit[0]; \
-        stwodigits r = Py_SIZE(rhs) * (sdigit)rhs_long->ob_digit[0]; \
-        stwodigits i = l OP r;                                       \
-        Py_DECREF(lhs);                                              \
-        Py_DECREF(rhs);                                              \
-        STACK_SHRINK(1);                                             \
-        PyObject *res = PyLong_FromLongLong(i);                      \
-        SET_TOP(res);                                                \
-        if (res == NULL) {                                           \
-            goto error;                                              \
-        }                                                            \
-        DISPATCH();                                                  \
-    } while (0)
-
 #define BINARY_OP_FAST_FLOAT(OP)                       \
     do {                                               \
         PyObject *lhs = SECOND();                      \
@@ -2067,7 +2042,20 @@ handle_eval_breaker:
         }
 
         TARGET(BINARY_OP_MULTIPLY_INT) {
-            BINARY_OP_FAST_INT(*);
+            PyObject *left = SECOND();
+            PyObject *right = TOP();
+            DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
+            DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
+            STAT_INC(BINARY_OP, hit);
+            PyObject *prod = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
+            SET_SECOND(prod);
+            Py_DECREF(right);
+            Py_DECREF(left);
+            STACK_SHRINK(1);
+            if (prod == NULL) {
+                goto error;
+            }
+            DISPATCH();
         }
 
         TARGET(BINARY_OP_MULTIPLY_FLOAT) {
@@ -2075,7 +2063,20 @@ handle_eval_breaker:
         }
 
         TARGET(BINARY_OP_SUBTRACT_INT) {
-            BINARY_OP_FAST_INT(-);
+            PyObject *left = SECOND();
+            PyObject *right = TOP();
+            DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
+            DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
+            STAT_INC(BINARY_OP, hit);
+            PyObject *sub = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
+            SET_SECOND(sub);
+            Py_DECREF(right);
+            Py_DECREF(left);
+            STACK_SHRINK(1);
+            if (sub == NULL) {
+                goto error;
+            }
+            DISPATCH();
         }
 
         TARGET(BINARY_OP_SUBTRACT_FLOAT) {
@@ -2132,7 +2133,20 @@ handle_eval_breaker:
         }
 
         TARGET(BINARY_OP_ADD_INT) {
-            BINARY_OP_FAST_INT(+);
+            PyObject *left = SECOND();
+            PyObject *right = TOP();
+            DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
+            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
+            STAT_INC(BINARY_OP, hit);
+            PyObject *sum = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
+            SET_SECOND(sum);
+            Py_DECREF(right);
+            Py_DECREF(left);
+            STACK_SHRINK(1);
+            if (sum == NULL) {
+                goto error;
+            }
+            DISPATCH();
         }
 
         TARGET(BINARY_SUBSCR) {

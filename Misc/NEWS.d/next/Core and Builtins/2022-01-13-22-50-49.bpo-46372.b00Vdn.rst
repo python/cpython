@@ -1,2 +1,2 @@
-Improve the performance of specialized :class:`int` and :class:`float`
+Improve the performance of specialized :class:`float`
 operations by mutating the left operand in-place when it is safe to do so.
