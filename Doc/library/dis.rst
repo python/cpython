@@ -319,8 +319,8 @@ details of bytecode instructions as :class:`Instruction` instances:
 
    .. data:: positions
 
-      Optional ::`dis.Positions` namedtuple holding
-      the span of source code covered by this instruction.
+      :class:`dis.Positions` object holding the
+      start and end locations that are covered by this instruction.
 
    .. versionadded:: 3.4
 
