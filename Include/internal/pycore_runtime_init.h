@@ -949,6 +949,7 @@ extern "C" {
                 INIT_ID(__builtins__), \
                 INIT_ID(__bytes__), \
                 INIT_ID(__call__), \
+                INIT_ID(__cantrace__), \
                 INIT_ID(__class__), \
                 INIT_ID(__class_getitem__), \
                 INIT_ID(__classcell__), \

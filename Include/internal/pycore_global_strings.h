@@ -329,6 +329,7 @@ struct _Py_global_strings {
         ID(__builtins__)
         ID(__bytes__)
         ID(__call__)
+        ID(__cantrace__)
         ID(__class__)
         ID(__class_getitem__)
         ID(__classcell__)
