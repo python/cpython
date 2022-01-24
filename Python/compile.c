@@ -910,6 +910,7 @@ stack_effect(int opcode, int oparg, int jump)
             return -1;
         case SETUP_ANNOTATIONS:
             return 0;
+        case ASYNC_GEN_WRAP:
         case YIELD_VALUE:
             return 0;
         case POP_BLOCK:
@@ -1541,6 +1542,9 @@ compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
 #define POP_EXCEPT_AND_RERAISE(C) \
     RETURN_IF_FALSE(compiler_pop_except_and_reraise((C)))
 
+#define ADDOP_YIELD(C) \
+    RETURN_IF_FALSE(addop_yield(C))
+
 #define VISIT(C, TYPE, V) {\
     if (!compiler_visit_ ## TYPE((C), (V))) \
         return 0; \
@@ -1844,6 +1848,7 @@ compiler_add_yield_from(struct compiler *c, int await)
     compiler_use_next_block(c, start);
     ADDOP_JUMP(c, SEND, exit);
     compiler_use_next_block(c, resume);
+    ADDOP(c, YIELD_VALUE);
     ADDOP_I(c, RESUME, await ? 3 : 2);
     ADDOP_JUMP(c, JUMP_NO_INTERRUPT, start);
     compiler_use_next_block(c, exit);
@@ -4094,6 +4099,17 @@ addop_binary(struct compiler *c, operator_ty binop, bool inplace)
     return 1;
 }
 
+
+static int
+addop_yield(struct compiler *c) {
+    if (c->u->u_ste->ste_generator && c->u->u_ste->ste_coroutine) {
+        ADDOP(c, ASYNC_GEN_WRAP);
+    }
+    ADDOP(c, YIELD_VALUE);
+    ADDOP_I(c, RESUME, 1);
+    return 1;
+}
+
 static int
 compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
 {
@@ -5144,8 +5160,7 @@ compiler_sync_comprehension_generator(struct compiler *c,
         switch (type) {
         case COMP_GENEXP:
             VISIT(c, expr, elt);
-            ADDOP(c, YIELD_VALUE);
-            ADDOP_I(c, RESUME, 1);
+            ADDOP_YIELD(c);
             ADDOP(c, POP_TOP);
             break;
         case COMP_LISTCOMP:
@@ -5243,8 +5258,7 @@ compiler_async_comprehension_generator(struct compiler *c,
         switch (type) {
         case COMP_GENEXP:
             VISIT(c, expr, elt);
-            ADDOP(c, YIELD_VALUE);
-            ADDOP_I(c, RESUME, 1);
+            ADDOP_YIELD(c);
             ADDOP(c, POP_TOP);
             break;
         case COMP_LISTCOMP:
@@ -5714,8 +5728,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         else {
             ADDOP_LOAD_CONST(c, Py_None);
         }
-        ADDOP(c, YIELD_VALUE);
-        ADDOP_I(c, RESUME, 1);
+        ADDOP_YIELD(c);
         break;
     case YieldFrom_kind:
         if (c->u->u_ste->ste_type != FunctionBlock)
