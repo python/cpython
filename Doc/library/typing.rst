@@ -17,13 +17,10 @@
 
 --------------
 
-This module provides runtime support for type hints as specified by
-:pep:`484`, :pep:`526`, :pep:`544`, :pep:`586`, :pep:`589`, :pep:`591`,
-:pep:`593`, :pep:`612`, :pep:`613` and :pep:`647`.
-The most fundamental support consists of the types :data:`Any`, :data:`Union`,
-:data:`Tuple`, :data:`Callable`, :class:`TypeVar`, and
-:class:`Generic`.  For full specification please see :pep:`484`.  For
-a simplified introduction to type hints see :pep:`483`.
+This module provides runtime support for type hints. The most fundamental
+support consists of the types :data:`Any`, :data:`Union`, :data:`Callable`,
+:class:`TypeVar`, and :class:`Generic`. For a full specification, please see
+:pep:`484`. For a simplified introduction to type hints, see :pep:`483`.
 
 
 The function below takes and returns a string and is annotated as follows::
@@ -34,6 +31,43 @@ The function below takes and returns a string and is annotated as follows::
 In the function ``greeting``, the argument ``name`` is expected to be of type
 :class:`str` and the return type :class:`str`. Subtypes are accepted as
 arguments.
+
+.. _relevant-peps:
+
+Relevant PEPs
+=============
+
+Since the initial introduction of type hints in :pep:`484` and :pep:`483`, a
+number of PEPs have modified and enhanced Python's framework for type
+annotations. These include:
+
+* :pep:`526`: Syntax for Variable Annotations
+     *Introducing* syntax for annotating variables outside of function
+     definitions, and :data:`ClassVar`
+* :pep:`544`: Protocols: Structural subtyping (static duck typing)
+     *Introducing* :class:`Protocol` and the
+     :func:`@runtime_checkable<runtime_checkable>` decorator
+* :pep:`585`: Type Hinting Generics In Standard Collections
+     *Introducing* :class:`types.GenericAlias` and the ability to use standard
+     library classes as :ref:`generic types<types-genericalias>`
+* :pep:`586`: Literal Types
+     *Introducing* :data:`Literal`
+* :pep:`589`: TypedDict: Type Hints for Dictionaries with a Fixed Set of Keys
+     *Introducing* :class:`TypedDict`
+* :pep:`591`: Adding a final qualifier to typing
+     *Introducing* :data:`Final` and the :func:`@final<final>` decorator
+* :pep:`593`: Flexible function and variable annotations
+     *Introducing* :data:`Annotated`
+* :pep:`604`: Allow writing union types as ``X | Y``
+     *Introducing* :data:`types.UnionType` and the ability to use
+     the binary-or operator ``|`` to signify a
+     :ref:`union of types<types-union>`
+* :pep:`612`: Parameter Specification Variables
+     *Introducing* :class:`ParamSpec` and :data:`Concatenate`
+* :pep:`613`: Explicit Type Aliases
+     *Introducing* :data:`TypeAlias`
+* :pep:`647`: User-Defined Type Guards
+     *Introducing* :data:`TypeGuard`
 
 .. _type-aliases:
 
@@ -222,6 +256,7 @@ called :class:`TypeVar`.
    def first(l: Sequence[T]) -> T:   # Generic function
        return l[0]
 
+.. _user-defined-generics:
 
 User-defined generic types
 ==========================
@@ -256,8 +291,8 @@ A user-defined class can be defined as a generic class.
 single type parameter ``T`` . This also makes ``T`` valid as a type within the
 class body.
 
-The :class:`Generic` base class defines :meth:`__class_getitem__` so that
-``LoggedVar[t]`` is valid as a type::
+The :class:`Generic` base class defines :meth:`~object.__class_getitem__` so
+that ``LoggedVar[t]`` is valid as a type::
 
    from collections.abc import Iterable
 
@@ -393,12 +428,12 @@ value of type :data:`Any` and assign it to any variable::
 
    from typing import Any
 
-   a = None    # type: Any
-   a = []      # OK
-   a = 2       # OK
+   a: Any = None
+   a = []          # OK
+   a = 2           # OK
 
-   s = ''      # type: str
-   s = a       # OK
+   s: str = ''
+   s = a           # OK
 
    def foo(item: Any) -> int:
        # Typechecks; 'item' could be any type,
@@ -590,7 +625,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
    Union type; ``Union[X, Y]`` is equivalent to ``X | Y`` and means either X or Y.
 
-   To define a union, use e.g. ``Union[int, str]`` or the shorthand ``int | str``.  Details:
+   To define a union, use e.g. ``Union[int, str]`` or the shorthand ``int | str``. Using that shorthand is recommended. Details:
 
    * The arguments must be types and there must be at least one.
 
@@ -702,7 +737,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
       from collections.abc import Callable
       from threading import Lock
-      from typing import Any, Concatenate, ParamSpec, TypeVar
+      from typing import Concatenate, ParamSpec, TypeVar
 
       P = ParamSpec('P')
       R = TypeVar('R')
@@ -1744,11 +1779,10 @@ Asynchronous programming
    correspond to those of :class:`Generator`, for example::
 
       from collections.abc import Coroutine
-      c = None # type: Coroutine[list[str], str, int]
-      ...
-      x = c.send('hi') # type: list[str]
+      c: Coroutine[list[str], str, int]  # Some coroutine defined elsewhere
+      x = c.send('hi')                   # Inferred type of 'x' is list[str]
       async def bar() -> None:
-          x = await c # type: int
+          y = await c                    # Inferred type of 'y' is int
 
    .. versionadded:: 3.5.3
 
@@ -1951,6 +1985,15 @@ Functions and decorators
 
    .. versionadded:: 3.8
 
+   .. versionchanged:: 3.11
+      The decorator will now set the ``__final__`` attribute to ``True``
+      on the decorated object. Thus, a check like
+      ``if getattr(obj, "__final__", False)`` can be used at runtime
+      to determine whether an object ``obj`` has been marked as final.
+      If the decorated object does not support setting attributes,
+      the decorator returns the object unchanged without raising an exception.
+
+
 .. decorator:: no_type_check
 
    Decorator to indicate that annotations are not type hints.
@@ -2099,7 +2142,7 @@ Constant
 
       If ``from __future__ import annotations`` is used in Python 3.7 or later,
       annotations are not evaluated at function definition time.
-      Instead, they are stored as strings in ``__annotations__``,
+      Instead, they are stored as strings in ``__annotations__``.
       This makes it unnecessary to use quotes around the annotation.
       (see :pep:`563`).
 

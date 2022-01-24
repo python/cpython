@@ -65,16 +65,11 @@ __all__ = ["Popen", "PIPE", "STDOUT", "call", "check_call", "getstatusoutput",
            # NOTE: We intentionally exclude list2cmdline as it is
            # considered an internal implementation detail.  issue10838.
 
-try:
+_mswindows = sys.platform == "win32"
+
+if _mswindows:
     import msvcrt
     import _winapi
-    _mswindows = True
-except ModuleNotFoundError:
-    _mswindows = False
-    import _posixsubprocess
-    import select
-    import selectors
-else:
     from _winapi import (CREATE_NEW_CONSOLE, CREATE_NEW_PROCESS_GROUP,
                          STD_INPUT_HANDLE, STD_OUTPUT_HANDLE,
                          STD_ERROR_HANDLE, SW_HIDE,
@@ -95,6 +90,10 @@ else:
                     "NORMAL_PRIORITY_CLASS", "REALTIME_PRIORITY_CLASS",
                     "CREATE_NO_WINDOW", "DETACHED_PROCESS",
                     "CREATE_DEFAULT_ERROR_MODE", "CREATE_BREAKAWAY_FROM_JOB"])
+else:
+    import _posixsubprocess
+    import select
+    import selectors
 
 
 # Exception classes used by this module.

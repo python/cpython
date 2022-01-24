@@ -320,26 +320,6 @@ corresponding Unix manual entries for more information on calls.");
 #    define HAVE_CWAIT      1
 #    define HAVE_FSYNC      1
 #    define fsync _commit
-#  else
-     /* Unix functions that the configure script doesn't check for */
-#    ifndef __VXWORKS__
-#      define HAVE_EXECV      1
-#      define HAVE_FORK       1
-#      if defined(__USLC__) && defined(__SCO_VERSION__)       /* SCO UDK Compiler */
-#        define HAVE_FORK1      1
-#      endif
-#    endif
-#    define HAVE_GETEGID    1
-#    define HAVE_GETEUID    1
-#    define HAVE_GETGID     1
-#    define HAVE_GETPPID    1
-#    define HAVE_GETUID     1
-#    define HAVE_KILL       1
-#    define HAVE_OPENDIR    1
-#    define HAVE_PIPE       1
-#    define HAVE_SYSTEM     1
-#    define HAVE_WAIT       1
-#    define HAVE_TTYNAME    1
 #  endif  /* _MSC_VER */
 #endif  /* ! __WATCOMC__ || __QNX__ */
 
@@ -3312,7 +3292,14 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
     }
     else
 #endif /* HAVE_FHCMODAT */
+    {
+#ifdef HAVE_CHMOD
         result = chmod(path->narrow, mode);
+#else
+        result = -1;
+        errno = ENOSYS;
+#endif
+    }
     Py_END_ALLOW_THREADS
 
     if (result) {
@@ -4253,6 +4240,48 @@ os_listdir_impl(PyObject *module, path_t *path)
 }
 
 #ifdef MS_WINDOWS
+int
+_PyOS_getfullpathname(const wchar_t *path, wchar_t **abspath_p)
+{
+    wchar_t woutbuf[MAX_PATH], *woutbufp = woutbuf;
+    DWORD result;
+
+    result = GetFullPathNameW(path,
+                              Py_ARRAY_LENGTH(woutbuf), woutbuf,
+                              NULL);
+    if (!result) {
+        return -1;
+    }
+
+    if (result >= Py_ARRAY_LENGTH(woutbuf)) {
+        if ((size_t)result <= (size_t)PY_SSIZE_T_MAX / sizeof(wchar_t)) {
+            woutbufp = PyMem_RawMalloc((size_t)result * sizeof(wchar_t));
+        }
+        else {
+            woutbufp = NULL;
+        }
+        if (!woutbufp) {
+            *abspath_p = NULL;
+            return 0;
+        }
+
+        result = GetFullPathNameW(path, result, woutbufp, NULL);
+        if (!result) {
+            PyMem_RawFree(woutbufp);
+            return -1;
+        }
+    }
+
+    if (woutbufp != woutbuf) {
+        *abspath_p = woutbufp;
+        return 0;
+    }
+
+    *abspath_p = _PyMem_RawWcsdup(woutbufp);
+    return 0;
+}
+
+
 /* A helper function for abspath on win32 */
 /*[clinic input]
 os._getfullpathname
@@ -4268,8 +4297,7 @@ os__getfullpathname_impl(PyObject *module, path_t *path)
 {
     wchar_t *abspath;
 
-    /* _Py_abspath() is implemented with GetFullPathNameW() on Windows */
-    if (_Py_abspath(path->wide, &abspath) < 0) {
+    if (_PyOS_getfullpathname(path->wide, &abspath) < 0) {
         return win32_error_object("GetFullPathNameW", path->object);
     }
     if (abspath == NULL) {
@@ -4463,6 +4491,33 @@ os__path_splitroot_impl(PyObject *module, path_t *path)
 
 #endif /* MS_WINDOWS */
 
+
+/*[clinic input]
+os._path_normpath
+
+    path: object
+
+Basic path normalization.
+[clinic start generated code]*/
+
+static PyObject *
+os__path_normpath_impl(PyObject *module, PyObject *path)
+/*[clinic end generated code: output=b94d696d828019da input=5e90c39e12549dc0]*/
+{
+    if (!PyUnicode_Check(path)) {
+        PyErr_Format(PyExc_TypeError, "expected 'str', not '%.200s'",
+            Py_TYPE(path)->tp_name);
+        return NULL;
+    }
+    Py_ssize_t len;
+    wchar_t *buffer = PyUnicode_AsWideCharString(path, &len);
+    if (!buffer) {
+        return NULL;
+    }
+    PyObject *result = PyUnicode_FromWideChar(_Py_normpath(buffer, len), -1);
+    PyMem_Free(buffer);
+    return result;
+}
 
 /*[clinic input]
 os.mkdir
@@ -4878,6 +4933,7 @@ os_system_impl(PyObject *module, PyObject *command)
 #endif /* HAVE_SYSTEM */
 
 
+#ifdef HAVE_UMASK
 /*[clinic input]
 os.umask
 
@@ -4896,6 +4952,7 @@ os_umask_impl(PyObject *module, int mask)
         return posix_error();
     return PyLong_FromLong((long)i);
 }
+#endif
 
 #ifdef MS_WINDOWS
 
@@ -5934,6 +5991,7 @@ parse_posix_spawn_flags(PyObject *module, const char *func_name, PyObject *setpg
 
     }
 
+#ifdef HAVE_SIGSET_T
    if (setsigmask) {
         sigset_t set;
         if (!_Py_Sigset_Converter(setsigmask, &set)) {
@@ -5959,6 +6017,13 @@ parse_posix_spawn_flags(PyObject *module, const char *func_name, PyObject *setpg
         }
         all_flags |= POSIX_SPAWN_SETSIGDEF;
     }
+#else
+    if (setsigmask || setsigdef) {
+        PyErr_SetString(PyExc_NotImplementedError,
+                        "sigset is not supported on this platform");
+        goto fail;
+    }
+#endif
 
     if (scheduler) {
 #ifdef POSIX_SPAWN_SETSCHEDULER
@@ -6681,7 +6746,7 @@ os_fork1_impl(PyObject *module)
 {
     pid_t pid;
 
-    if (_PyInterpreterState_GET() != PyInterpreterState_Main()) {
+    if (!_Py_IsMainInterpreter(_PyInterpreterState_GET())) {
         PyErr_SetString(PyExc_RuntimeError, "fork not supported for subinterpreters");
         return NULL;
     }
@@ -7333,7 +7398,7 @@ os_forkpty_impl(PyObject *module)
     int master_fd = -1;
     pid_t pid;
 
-    if (_PyInterpreterState_GET() != PyInterpreterState_Main()) {
+    if (!_Py_IsMainInterpreter(_PyInterpreterState_GET())) {
         PyErr_SetString(PyExc_RuntimeError, "fork not supported for subinterpreters");
         return NULL;
     }
@@ -8204,7 +8269,7 @@ wait_helper(PyObject *module, pid_t pid, int status, struct rusage *ru)
         memset(ru, 0, sizeof(*ru));
     }
 
-    PyObject *m = PyImport_ImportModuleNoBlock("resource");
+    PyObject *m = PyImport_ImportModule("resource");
     if (m == NULL)
         return NULL;
     struct_rusage = PyObject_GetAttr(m, get_posix_state(module)->struct_rusage);
@@ -14838,6 +14903,7 @@ static PyMethodDef posix_methods[] = {
     OS__GETFINALPATHNAME_METHODDEF
     OS__GETVOLUMEPATHNAME_METHODDEF
     OS__PATH_SPLITROOT_METHODDEF
+    OS__PATH_NORMPATH_METHODDEF
     OS_GETLOADAVG_METHODDEF
     OS_URANDOM_METHODDEF
     OS_SETRESUID_METHODDEF
@@ -15154,11 +15220,15 @@ all_ins(PyObject *m)
 #ifdef SF_NODISKIO
     if (PyModule_AddIntMacro(m, SF_NODISKIO)) return -1;
 #endif
+    /* is obsolete since the 11.x release */
 #ifdef SF_MNOWAIT
     if (PyModule_AddIntMacro(m, SF_MNOWAIT)) return -1;
 #endif
 #ifdef SF_SYNC
     if (PyModule_AddIntMacro(m, SF_SYNC)) return -1;
+#endif
+#ifdef SF_NOCACHE
+    if (PyModule_AddIntMacro(m, SF_NOCACHE)) return -1;
 #endif
 
     /* constants for posix_fadvise */

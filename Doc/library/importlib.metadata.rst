@@ -11,7 +11,7 @@
 .. versionchanged:: 3.10
    ``importlib.metadata`` is no longer provisional.
 
-**Source code:** :source:`Lib/importlib/metadata.py`
+**Source code:** :source:`Lib/importlib/metadata/__init__.py`
 
 ``importlib.metadata`` is a library that provides for access to installed
 package metadata.  Built in part on Python's import system, this library

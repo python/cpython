@@ -1,1 +1,0 @@
-Fixed :class:`http.client.HTTPConnection` to work properly in OSs that don't support the ``TCP_NODELAY`` socket option.

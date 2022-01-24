@@ -430,7 +430,7 @@ def get_appxmanifest(ns):
         ["python", "python{}".format(VER_MAJOR), "python{}".format(VER_DOT)],
         PYTHON_VE_DATA,
         "console",
-        ("python.file", [".py"], '"%1"', "Python File", PY_PNG),
+        ("python.file", [".py"], '"%1" %*', "Python File", PY_PNG),
     )
 
     add_application(
@@ -441,7 +441,7 @@ def get_appxmanifest(ns):
         ["pythonw", "pythonw{}".format(VER_MAJOR), "pythonw{}".format(VER_DOT)],
         PYTHONW_VE_DATA,
         "windows",
-        ("python.windowedfile", [".pyw"], '"%1"', "Python File (no console)", PY_PNG),
+        ("python.windowedfile", [".pyw"], '"%1" %*', "Python File (no console)", PY_PNG),
     )
 
     if ns.include_pip and ns.include_launchers:

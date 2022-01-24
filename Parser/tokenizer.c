@@ -87,7 +87,7 @@ tok_new(void)
     tok->async_def_indent = 0;
     tok->async_def_nl = 0;
     tok->interactive_underflow = IUNDERFLOW_NORMAL;
-
+    tok->str = NULL;
     return tok;
 }
 
@@ -461,7 +461,7 @@ fp_setreadl(struct tok_state *tok, const char* enc)
         return 0;
     }
 
-    io = PyImport_ImportModuleNoBlock("io");
+    io = PyImport_ImportModule("io");
     if (io == NULL)
         return 0;
 
@@ -819,10 +819,10 @@ tok_readline_raw(struct tok_state *tok)
             tok_concatenate_interactive_new_line(tok, line) == -1) {
             return 0;
         }
-        if (*tok->inp == '\0') {
+        tok->inp = strchr(tok->inp, '\0');
+        if (tok->inp == tok->buf) {
             return 0;
         }
-        tok->inp = strchr(tok->inp, '\0');
     } while (tok->inp[-1] != '\n');
     return 1;
 }
@@ -984,12 +984,9 @@ tok_underflow_file(struct tok_state *tok) {
     }
     /* The default encoding is UTF-8, so make sure we don't have any
        non-UTF-8 sequences in it. */
-    if (!tok->encoding
-        && (tok->decoding_state != STATE_NORMAL || tok->lineno >= 2)) {
-        if (!ensure_utf8(tok->cur, tok)) {
-            error_ret(tok);
-            return 0;
-        }
+    if (!tok->encoding && !ensure_utf8(tok->cur, tok)) {
+        error_ret(tok);
+        return 0;
     }
     assert(tok->done == E_OK);
     return tok->done == E_OK;
@@ -1048,7 +1045,7 @@ tok_nextc(struct tok_state *tok)
 #if defined(Py_DEBUG)
         if (Py_DebugFlag) {
             fprintf(stderr, "line[%d] = ", tok->lineno);
-            print_escape(stdout, tok->cur, tok->inp - tok->cur);
+            print_escape(stderr, tok->cur, tok->inp - tok->cur);
             fprintf(stderr, "  tok->done = %d\n", tok->done);
         }
 #endif
@@ -1970,7 +1967,6 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
         c = tok_nextc(tok);
         if (c != '\n') {
             tok->done = E_LINECONT;
-            tok->cur = tok->inp;
             return ERRORTOKEN;
         }
         c = tok_nextc(tok);
@@ -2044,6 +2040,12 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
             }
         }
         break;
+    }
+
+    if (!Py_UNICODE_ISPRINTABLE(c)) {
+        char hex[9];
+        (void)PyOS_snprintf(hex, sizeof(hex), "%04X", c);
+        return syntaxerror(tok, "invalid non-printable character U+%s", hex);
     }
 
     /* Punctuation character */

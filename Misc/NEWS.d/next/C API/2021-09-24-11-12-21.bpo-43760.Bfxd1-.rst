@@ -1,4 +1,0 @@
-Add new :c:func:`PyThreadState_EnterTracing`, and
-:c:func:`PyThreadState_LeaveTracing` functions to the limited C API to suspend
-and resume tracing and profiling.
-Patch by Victor Stinner.

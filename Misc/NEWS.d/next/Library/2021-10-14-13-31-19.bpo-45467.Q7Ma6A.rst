@@ -1,2 +1,0 @@
-Fix incremental decoder and stream reader in the "raw-unicode-escape" codec.
-Previously they failed if the escape sequence was split.

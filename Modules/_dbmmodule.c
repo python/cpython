@@ -12,20 +12,26 @@
 /* Some Linux systems install gdbm/ndbm.h, but not ndbm.h.  This supports
  * whichever configure was able to locate.
  */
-#if defined(HAVE_NDBM_H)
-#include <ndbm.h>
-static const char which_dbm[] = "GNU gdbm";  /* EMX port of GDBM */
-#elif defined(HAVE_GDBM_NDBM_H)
-#include <gdbm/ndbm.h>
-static const char which_dbm[] = "GNU gdbm";
-#elif defined(HAVE_GDBM_DASH_NDBM_H)
-#include <gdbm-ndbm.h>
-static const char which_dbm[] = "GNU gdbm";
-#elif defined(HAVE_BERKDB_H)
-#include <db.h>
-static const char which_dbm[] = "Berkeley DB";
+#if defined(USE_NDBM)
+  #include <ndbm.h>
+  static const char which_dbm[] = "GNU gdbm";  /* EMX port of GDBM */
+#elif defined(USE_GDBM_COMPAT)
+  #ifdef HAVE_GDBM_NDBM_H
+    #include <gdbm/ndbm.h>
+  #elif HAVE_GDBM_DASH_NDBM_H
+    #include <gdbm-ndbm.h>
+  #else
+    #error "No gdbm/ndbm.h or gdbm-ndbm.h available"
+  #endif
+  static const char which_dbm[] = "GNU gdbm";
+#elif defined(USE_BERKDB)
+  #ifndef DB_DBM_HSEARCH
+    #define DB_DBM_HSEARCH 1
+  #endif
+  #include <db.h>
+  static const char which_dbm[] = "Berkeley DB";
 #else
-#error "No ndbm.h available!"
+  #error "No ndbm.h available!"
 #endif
 
 typedef struct {

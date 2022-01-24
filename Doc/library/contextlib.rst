@@ -130,7 +130,9 @@ Functions and classes provided:
    either as decorators or with :keyword:`async with` statements::
 
      import time
+     from contextlib import asynccontextmanager
 
+     @asynccontextmanager
      async def timeit():
          now = time.monotonic()
          try:

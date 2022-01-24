@@ -1,7 +1,7 @@
 # bpo-42260: Test _PyInterpreterState_GetConfigCopy()
 # and _PyInterpreterState_SetConfig().
 #
-# Test run in a subinterpreter since set_config(get_config())
+# Test run in a subprocess since set_config(get_config())
 # does reset sys attributes to their state of the Python startup
 # (before the site module is run).
 
@@ -20,6 +20,7 @@ class SetConfigTests(unittest.TestCase):
         self.sys_copy = dict(sys.__dict__)
 
     def tearDown(self):
+        _testinternalcapi.reset_path_config()
         _testinternalcapi.set_config(self.old_config)
         sys.__dict__.clear()
         sys.__dict__.update(self.sys_copy)
@@ -61,7 +62,7 @@ class SetConfigTests(unittest.TestCase):
             'faulthandler',
             'tracemalloc',
             'import_time',
-            'no_debug_ranges',
+            'code_debug_ranges',
             'show_ref_count',
             'dump_refs',
             'malloc_stats',

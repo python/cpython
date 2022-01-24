@@ -280,8 +280,6 @@ def _remove_dups_flatten(parameters):
     for p in parameters:
         if isinstance(p, (_UnionGenericAlias, types.UnionType)):
             params.extend(p.__args__)
-        elif isinstance(p, tuple) and len(p) > 0 and p[0] is Union:
-            params.extend(p[1:])
         else:
             params.append(p)
 
@@ -411,9 +409,10 @@ class _SpecialForm(_Final, _root=True):
 
 
 class _LiteralSpecialForm(_SpecialForm, _root=True):
-    @_tp_cache(typed=True)
     def __getitem__(self, parameters):
-        return self._getitem(self, parameters)
+        if not isinstance(parameters, tuple):
+            parameters = (parameters,)
+        return self._getitem(self, *parameters)
 
 
 @_SpecialForm
@@ -536,7 +535,8 @@ def Optional(self, parameters):
     return Union[arg, type(None)]
 
 @_LiteralSpecialForm
-def Literal(self, parameters):
+@_tp_cache(typed=True)
+def Literal(self, *parameters):
     """Special typing form to define literal types (a.k.a. value types).
 
     This form can be used to indicate to type checkers that the corresponding
@@ -559,9 +559,6 @@ def Literal(self, parameters):
     """
     # There is no '_type_check' call because arguments to Literal[...] are
     # values, not types.
-    if not isinstance(parameters, tuple):
-        parameters = (parameters,)
-
     parameters = _flatten_literal_params(parameters)
 
     try:
@@ -806,9 +803,6 @@ class TypeVar( _Final, _Immutable, _TypeVarLike, _root=True):
     Note that only type variables defined in global scope can be pickled.
     """
 
-    __slots__ = ('__name__', '__bound__', '__constraints__',
-                 '__covariant__', '__contravariant__', '__dict__')
-
     def __init__(self, name, *constraints, bound=None,
                  covariant=False, contravariant=False):
         self.__name__ = name
@@ -908,9 +902,6 @@ class ParamSpec(_Final, _Immutable, _TypeVarLike, _root=True):
     be pickled.
     """
 
-    __slots__ = ('__name__', '__bound__', '__covariant__', '__contravariant__',
-                 '__dict__')
-
     @property
     def args(self):
         return ParamSpecArgs(self)
@@ -992,6 +983,9 @@ class _BaseGenericAlias(_Final, _root=True):
         raise TypeError("Subscripted generics cannot be used with"
                         " class and instance checks")
 
+    def __dir__(self):
+        return list(set(super().__dir__()
+                + [attr for attr in dir(self.__origin__) if not _is_dunder(attr)]))
 
 # Special typing constructs Union, Optional, Generic, Callable and Tuple
 # use three special attributes for internal bookkeeping of generic types:
@@ -2046,8 +2040,17 @@ def final(f):
       class Other(Leaf):  # Error reported by type checker
           ...
 
-    There is no runtime checking of these properties.
+    There is no runtime checking of these properties. The decorator
+    sets the ``__final__`` attribute to ``True`` on the decorated object
+    to allow runtime introspection.
     """
+    try:
+        f.__final__ = True
+    except (AttributeError, TypeError):
+        # Skip the attribute silently if it is not writable.
+        # AttributeError happens if the object has __slots__ or a
+        # read-only property, TypeError if it's a builtin class.
+        pass
     return f
 
 
@@ -2428,7 +2431,7 @@ class NewType:
     """NewType creates simple unique types with almost zero
     runtime overhead. NewType(name, tp) is considered a subtype of tp
     by static type checkers. At runtime, NewType(name, tp) returns
-    a dummy function that simply returns its argument. Usage::
+    a dummy callable that simply returns its argument. Usage::
 
         UserId = NewType('UserId', int)
 

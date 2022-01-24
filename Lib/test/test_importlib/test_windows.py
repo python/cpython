@@ -1,4 +1,4 @@
-from . import util as test_util
+from test.test_importlib import util as test_util
 machinery = test_util.import_importlib('importlib.machinery')
 
 import os
@@ -6,10 +6,9 @@ import re
 import sys
 import unittest
 import warnings
-from test import support
 from test.support import import_helper
 from contextlib import contextmanager
-from .util import temp_module
+from test.test_importlib.util import temp_module
 
 import_helper.import_module('winreg', required_on=['win'])
 from winreg import (
@@ -178,3 +177,6 @@ class WindowsBootstrapPathTests(unittest.TestCase):
         self.check_join("C:", "C:", "")
         self.check_join("//Server/Share\\", "//Server/Share/", "")
         self.check_join("//Server/Share\\", "//Server/Share", "")
+
+if __name__ == '__main__':
+    unittest.main()

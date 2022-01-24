@@ -212,9 +212,8 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
                      Py_TYPE(ns)->tp_name);
         goto error;
     }
-    PyFrameConstructor *f =  PyFunction_AS_FRAME_CONSTRUCTOR(func);
     PyThreadState *tstate = _PyThreadState_GET();
-    cell = _PyEval_Vector(tstate, f, ns, NULL, 0, NULL);
+    cell = _PyEval_Vector(tstate, (PyFunctionObject *)func, ns, NULL, 0, NULL);
     if (cell != NULL) {
         if (bases != orig_bases) {
             if (PyMapping_SetItemString(ns, "__orig_bases__", orig_bases) < 0) {
@@ -537,7 +536,7 @@ static PyObject *
 filter_vectorcall(PyObject *type, PyObject * const*args,
                 size_t nargsf, PyObject *kwnames)
 {
-    PyTypeObject *tp = (PyTypeObject *)type;
+    PyTypeObject *tp = _PyType_CAST(type);
     if (tp == &PyFilter_Type && !_PyArg_NoKwnames("filter", kwnames)) {
         return NULL;
     }
@@ -1092,11 +1091,6 @@ builtin_getattr(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 
     v = args[0];
     name = args[1];
-    if (!PyUnicode_Check(name)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "getattr(): attribute name must be string");
-        return NULL;
-    }
     if (nargs > 2) {
         if (_PyObject_LookupAttr(v, name, &result) == 0) {
             PyObject *dflt = args[2];
@@ -1157,11 +1151,6 @@ builtin_hasattr_impl(PyObject *module, PyObject *obj, PyObject *name)
 {
     PyObject *v;
 
-    if (!PyUnicode_Check(name)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "hasattr(): attribute name must be string");
-        return NULL;
-    }
     if (_PyObject_LookupAttr(obj, name, &v) < 0) {
         return NULL;
     }
@@ -1262,7 +1251,7 @@ static PyObject *
 map_vectorcall(PyObject *type, PyObject * const*args,
                 size_t nargsf, PyObject *kwnames)
 {
-    PyTypeObject *tp = (PyTypeObject *)type;
+    PyTypeObject *tp = _PyType_CAST(type);
     if (tp == &PyMap_Type && !_PyArg_NoKwnames("map", kwnames)) {
         return NULL;
     }
@@ -2996,11 +2985,6 @@ _PyBuiltin_Init(PyInterpreterState *interp)
     PyObject *mod, *dict, *debug;
 
     const PyConfig *config = _PyInterpreterState_GetConfig(interp);
-
-    if (PyType_Ready(&PyFilter_Type) < 0 ||
-        PyType_Ready(&PyMap_Type) < 0 ||
-        PyType_Ready(&PyZip_Type) < 0)
-        return NULL;
 
     mod = _PyModule_CreateInitialized(&builtinsmodule, PYTHON_API_VERSION);
     if (mod == NULL)

@@ -27,7 +27,7 @@ Data members:
 #include "pycore_pylifecycle.h"   // _PyErr_WriteUnraisableDefaultHook()
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_structseq.h"     // PyStructSequence_InitType()
+#include "pycore_structseq.h"     // _PyStructSequence_InitType()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 #include "code.h"
@@ -772,6 +772,28 @@ sys_excepthook_impl(PyObject *module, PyObject *exctype, PyObject *value,
 
 
 /*[clinic input]
+sys.exception
+
+Return the current exception.
+
+Return the most recent exception caught by an except clause
+in the current stack frame or in an older stack frame, or None
+if no such exception exists.
+[clinic start generated code]*/
+
+static PyObject *
+sys_exception_impl(PyObject *module)
+/*[clinic end generated code: output=2381ee2f25953e40 input=c88fbb94b6287431]*/
+{
+    _PyErr_StackItem *err_info = _PyErr_GetTopmostException(_PyThreadState_GET());
+    if (err_info->exc_value != NULL) {
+        return Py_NewRef(err_info->exc_value);
+    }
+    Py_RETURN_NONE;
+}
+
+
+/*[clinic input]
 sys.exc_info
 
 Return current exception information: (type, value, traceback).
@@ -785,12 +807,7 @@ sys_exc_info_impl(PyObject *module)
 /*[clinic end generated code: output=3afd0940cf3a4d30 input=b5c5bf077788a3e5]*/
 {
     _PyErr_StackItem *err_info = _PyErr_GetTopmostException(_PyThreadState_GET());
-    return Py_BuildValue(
-        "(OOO)",
-        err_info->exc_type != NULL ? err_info->exc_type : Py_None,
-        err_info->exc_value != NULL ? err_info->exc_value : Py_None,
-        err_info->exc_traceback != NULL ?
-            err_info->exc_traceback : Py_None);
+    return _PyErr_StackItemToExcInfoTuple(err_info);
 }
 
 
@@ -1187,20 +1204,14 @@ sys_setrecursionlimit_impl(PyObject *module, int new_limit)
         return NULL;
     }
 
-    /* Issue #25274: When the recursion depth hits the recursion limit in
-       _Py_CheckRecursiveCall(), the overflowed flag of the thread state is
-       set to 1 and a RecursionError is raised. The overflowed flag is reset
-       to 0 when the recursion depth goes below the low-water mark: see
-       Py_LeaveRecursiveCall().
-
-       Reject too low new limit if the current recursion depth is higher than
-       the new low-water mark. Otherwise it may not be possible anymore to
-       reset the overflowed flag to 0. */
-    if (tstate->recursion_depth >= new_limit) {
+    /* Reject too low new limit if the current recursion depth is higher than
+       the new low-water mark. */
+    int depth = tstate->recursion_limit - tstate->recursion_remaining;
+    if (depth >= new_limit) {
         _PyErr_Format(tstate, PyExc_RecursionError,
                       "cannot set the recursion limit to %i at "
                       "the recursion depth %i: the limit is too low",
-                      new_limit, tstate->recursion_depth);
+                      new_limit, depth);
         return NULL;
     }
 
@@ -1692,10 +1703,7 @@ _PySys_GetSizeOf(PyObject *o)
         return (size_t)-1;
     }
 
-    /* add gc_head size */
-    if (_PyObject_IS_GC(o))
-        return ((size_t)size) + sizeof(PyGC_Head);
-    return (size_t)size;
+    return (size_t)size + _PyType_PreHeaderSize(Py_TYPE(o));
 }
 
 static PyObject *
@@ -1977,6 +1985,7 @@ static PyMethodDef sys_methods[] = {
     SYS__CURRENT_FRAMES_METHODDEF
     SYS__CURRENT_EXCEPTIONS_METHODDEF
     SYS_DISPLAYHOOK_METHODDEF
+    SYS_EXCEPTION_METHODDEF
     SYS_EXC_INFO_METHODDEF
     SYS_EXCEPTHOOK_METHODDEF
     SYS_EXIT_METHODDEF
@@ -2471,7 +2480,8 @@ Functions:\n\
 \n\
 displayhook() -- print an object to the screen, and save it in builtins._\n\
 excepthook() -- print an exception and its traceback to sys.stderr\n\
-exc_info() -- return thread-safe information about the current exception\n\
+exception() -- return the current thread's active exception\n\
+exc_info() -- return information about the current thread's active exception\n\
 exit() -- exit the interpreter by raising SystemExit\n\
 getdlopenflags() -- returns flags to be used for dlopen() calls\n\
 getprofile() -- get the global profiling function\n\
@@ -2837,6 +2847,8 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
             goto type_init_failed;
         }
     }
+
+    SET_SYS_FROM_STRING("_vpath", VPATH);
 #endif
 
     /* float repr style: 0.03 (short) vs 0.029999999999999999 (legacy) */
@@ -3087,6 +3099,21 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
 
 error:
     return _PyStatus_ERR("can't initialize sys module");
+}
+
+
+void
+_PySys_Fini(PyInterpreterState *interp)
+{
+    if (_Py_IsMainInterpreter(interp)) {
+        _PyStructSequence_FiniType(&VersionInfoType);
+        _PyStructSequence_FiniType(&FlagsType);
+#if defined(MS_WINDOWS)
+        _PyStructSequence_FiniType(&WindowsVersionType);
+#endif
+        _PyStructSequence_FiniType(&Hash_InfoType);
+        _PyStructSequence_FiniType(&AsyncGenHooksType);
+    }
 }
 
 

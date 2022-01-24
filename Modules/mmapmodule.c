@@ -18,8 +18,13 @@
  / ftp://squirl.nightmare.com/pub/python/python-ext.
 */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
+#include "pycore_fileutils.h"     // _Py_stat_struct
 #include "structmember.h"         // PyMemberDef
 #include <stddef.h>               // offsetof()
 
@@ -32,7 +37,6 @@
 
 #ifdef MS_WINDOWS
 #include <windows.h>
-#include <winternl.h>
 static int
 my_getpagesize(void)
 {
@@ -505,21 +509,6 @@ mmap_resize_method(mmap_object *self,
     }
 
     {
-        /*
-        To resize an mmap on Windows:
-
-        - Close the existing mapping
-        - If the mapping is backed to a named file:
-            unmap the view, clear the data, and resize the file
-            If the file can't be resized (eg because it has other mapped references
-            to it) then let the mapping be recreated at the original size and set
-            an error code so an exception will be raised.
-        - Create a new mapping of the relevant size to the same file
-        - Map a new view of the resized file
-        - If the mapping is backed by the pagefile:
-            copy any previous data into the new mapped area
-            unmap the original view which will release the memory
-        */
 #ifdef MS_WINDOWS
         DWORD error = 0, file_resize_error = 0;
         char* old_data = self->data;
@@ -552,7 +541,8 @@ mmap_resize_method(mmap_object *self,
                 !SetEndOfFile(self->file_handle)) {
                 /* resizing failed. try to remap the file */
                 file_resize_error = GetLastError();
-                new_size = max_size.QuadPart = self->size;
+                max_size.QuadPart = self->size;
+                new_size = self->size;
             }
         }
 
@@ -567,6 +557,11 @@ mmap_resize_method(mmap_object *self,
             self->tagname);
 
         error = GetLastError();
+        /* ERROR_ALREADY_EXISTS implies that between our closing the handle above and
+        calling CreateFileMapping here, someone's created a different mapping with
+        the same name. There's nothing we can usefully do so we invalidate our
+        mapping and error out.
+        */
         if (error == ERROR_ALREADY_EXISTS) {
             CloseHandle(self->map_handle);
             self->map_handle = NULL;
@@ -1647,6 +1642,11 @@ mmap_exec(PyObject *module)
 #endif
 #ifdef MAP_POPULATE
     ADD_INT_MACRO(module, MAP_POPULATE);
+#endif
+#ifdef MAP_STACK
+    // Mostly a no-op on Linux and NetBSD, but useful on OpenBSD
+    // for stack usage (even on x86 arch)
+    ADD_INT_MACRO(module, MAP_STACK);
 #endif
     if (PyModule_AddIntConstant(module, "PAGESIZE", (long)my_getpagesize()) < 0 ) {
         return -1;

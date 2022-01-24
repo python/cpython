@@ -8,11 +8,15 @@
 #include <Python.h>
 #include "pycore_initconfig.h"    // _PyConfig_InitCompatConfig()
 #include "pycore_runtime.h"       // _PyRuntime
+#include "pycore_import.h"        // _PyImport_FrozenBootstrap
 #include <Python.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>               // putenv()
 #include <wchar.h>
+
+int main_argc;
+char **main_argv;
 
 /*********************************************************
  * Embedded interpreter tests that need a custom exe
@@ -20,10 +24,13 @@
  * Executed via 'EmbeddingTests' in Lib/test/test_capi.py
  *********************************************************/
 
+// Use to display the usage
+#define PROGRAM "test_embed"
+
 /* Use path starting with "./" avoids a search along the PATH */
 #define PROGRAM_NAME L"./_testembed"
 
-#define INIT_LOOPS 16
+#define INIT_LOOPS 4
 
 // Ignore Py_DEPRECATED() compiler warnings: deprecated functions are
 // tested on purpose here.
@@ -38,10 +45,39 @@ static void error(const char *msg)
 }
 
 
+static void config_set_string(PyConfig *config, wchar_t **config_str, const wchar_t *str)
+{
+    PyStatus status = PyConfig_SetString(config, config_str, str);
+    if (PyStatus_Exception(status)) {
+        PyConfig_Clear(config);
+        Py_ExitStatusException(status);
+    }
+}
+
+
+static void config_set_program_name(PyConfig *config)
+{
+    const wchar_t *program_name = PROGRAM_NAME;
+    config_set_string(config, &config->program_name, program_name);
+}
+
+
+static void init_from_config_clear(PyConfig *config)
+{
+    PyStatus status = Py_InitializeFromConfig(config);
+    PyConfig_Clear(config);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+}
+
+
 static void _testembed_Py_Initialize(void)
 {
-    Py_SetProgramName(PROGRAM_NAME);
-    Py_Initialize();
+    PyConfig config;
+    _PyConfig_InitCompatConfig(&config);
+    config_set_program_name(&config);
+    init_from_config_clear(&config);
 }
 
 
@@ -111,6 +147,36 @@ PyInit_embedded_ext(void)
 {
     return PyModule_Create(&embedded_ext);
 }
+
+/****************************************************************************
+ * Call Py_Initialize()/Py_Finalize() multiple times and execute Python code
+ ***************************************************************************/
+
+// Used by bpo-46417 to test that structseq types used by the sys module are
+// cleared properly and initialized again properly when Python is finalized
+// multiple times.
+static int test_repeated_init_exec(void)
+{
+    if (main_argc < 3) {
+        fprintf(stderr, "usage: %s test_repeated_init_exec CODE\n", PROGRAM);
+        exit(1);
+    }
+    const char *code = main_argv[2];
+
+    for (int i=1; i <= INIT_LOOPS; i++) {
+        fprintf(stderr, "--- Loop #%d ---\n", i);
+        fflush(stderr);
+
+        _testembed_Py_Initialize();
+        int err = PyRun_SimpleString(code);
+        Py_Finalize();
+        if (err) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 
 /*****************************************************
  * Test forcing a particular IO encoding
@@ -354,16 +420,6 @@ static int test_init_initialize_config(void)
 }
 
 
-static void config_set_string(PyConfig *config, wchar_t **config_str, const wchar_t *str)
-{
-    PyStatus status = PyConfig_SetString(config, config_str, str);
-    if (PyStatus_Exception(status)) {
-        PyConfig_Clear(config);
-        Py_ExitStatusException(status);
-    }
-}
-
-
 static void config_set_argv(PyConfig *config, Py_ssize_t argc, wchar_t * const *argv)
 {
     PyStatus status = PyConfig_SetArgv(config, argc, argv);
@@ -381,23 +437,6 @@ config_set_wide_string_list(PyConfig *config, PyWideStringList *list,
     PyStatus status = PyConfig_SetWideStringList(config, list, length, items);
     if (PyStatus_Exception(status)) {
         PyConfig_Clear(config);
-        Py_ExitStatusException(status);
-    }
-}
-
-
-static void config_set_program_name(PyConfig *config)
-{
-    const wchar_t *program_name = PROGRAM_NAME;
-    config_set_string(config, &config->program_name, program_name);
-}
-
-
-static void init_from_config_clear(PyConfig *config)
-{
-    PyStatus status = Py_InitializeFromConfig(config);
-    PyConfig_Clear(config);
-    if (PyStatus_Exception(status)) {
         Py_ExitStatusException(status);
     }
 }
@@ -530,7 +569,7 @@ static int test_init_from_config(void)
     config.import_time = 1;
 
     putenv("PYTHONNODEBUGRANGES=0");
-    config.no_debug_ranges = 1;
+    config.code_debug_ranges = 0;
 
     config.show_ref_count = 1;
     /* FIXME: test dump_refs: bpo-34223 */
@@ -1732,7 +1771,13 @@ static int check_use_frozen_modules(const char *rawval)
     if (rawval == NULL) {
         wcscpy(optval, L"frozen_modules");
     }
-    else if (swprintf(optval, 100, L"frozen_modules=%s", rawval) < 0) {
+    else if (swprintf(optval, 100,
+#if defined(_MSC_VER)
+        L"frozen_modules=%S",
+#else
+        L"frozen_modules=%s",
+#endif
+        rawval) < 0) {
         error("rawval is too long");
         return -1;
     }
@@ -1804,30 +1849,10 @@ static int test_unicode_id_init(void)
 
 static int test_frozenmain(void)
 {
-    // Get "_frozen_importlib" and "_frozen_importlib_external"
-    // from PyImport_FrozenModules
-    const struct _frozen *importlib = NULL, *importlib_external = NULL;
-    for (const struct _frozen *mod = PyImport_FrozenModules; mod->name != NULL; mod++) {
-        if (strcmp(mod->name, "_frozen_importlib") == 0) {
-            importlib = mod;
-        }
-        else if (strcmp(mod->name, "_frozen_importlib_external") == 0) {
-            importlib_external = mod;
-        }
-    }
-    if (importlib == NULL || importlib_external == NULL) {
-        error("cannot find frozen importlib and importlib_external");
-        return 1;
-    }
-
     static struct _frozen frozen_modules[4] = {
-        {0, 0, 0},  // importlib
-        {0, 0, 0},  // importlib_external
         {"__main__", M_test_frozenmain, sizeof(M_test_frozenmain)},
         {0, 0, 0}   // sentinel
     };
-    frozen_modules[0] = *importlib;
-    frozen_modules[1] = *importlib_external;
 
     char* argv[] = {
         "./argv0",
@@ -1839,21 +1864,6 @@ static int test_frozenmain(void)
     return Py_FrozenMain(Py_ARRAY_LENGTH(argv), argv);
 }
 #endif  // !MS_WINDOWS
-
-
-// List frozen modules.
-// Command used by Tools/scripts/generate_stdlib_module_names.py script.
-static int list_frozen(void)
-{
-    const struct _frozen *p;
-    for (p = PyImport_FrozenModules; ; p++) {
-        if (p->name == NULL)
-            break;
-        printf("%s\n", p->name);
-    }
-    return 0;
-}
-
 
 static int test_repeated_init_and_inittab(void)
 {
@@ -1908,6 +1918,7 @@ struct TestCase
 
 static struct TestCase TestCases[] = {
     // Python initialization
+    {"test_repeated_init_exec", test_repeated_init_exec},
     {"test_forced_io_encoding", test_forced_io_encoding},
     {"test_repeated_init_and_subinterpreters", test_repeated_init_and_subinterpreters},
     {"test_repeated_init_and_inittab", test_repeated_init_and_inittab},
@@ -1968,14 +1979,15 @@ static struct TestCase TestCases[] = {
     {"test_frozenmain", test_frozenmain},
 #endif
 
-    // Command
-    {"list_frozen", list_frozen},
     {NULL, NULL}
 };
 
 
 int main(int argc, char *argv[])
 {
+    main_argc = argc;
+    main_argv = argv;
+
     if (argc > 1) {
         for (struct TestCase *tc = TestCases; tc && tc->name; tc++) {
             if (strcmp(argv[1], tc->name) == 0)

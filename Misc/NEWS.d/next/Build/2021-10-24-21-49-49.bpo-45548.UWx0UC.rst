@@ -1,3 +1,0 @@
-The :mod:`math` and :mod:`cmath` implementation now require a C99 compatible
-``libm`` and no longer ship with workarounds for missing acosh, asinh, atanh,
-expm1, and log1p functions.

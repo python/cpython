@@ -61,7 +61,6 @@ class WidgetTest(AbstractTkTest, unittest.TestCase):
         self.widget = ttk.Button(self.root, width=0, text="Text")
         self.widget.pack()
 
-
     def test_identify(self):
         self.widget.update()
         self.assertEqual(self.widget.identify(
@@ -73,7 +72,6 @@ class WidgetTest(AbstractTkTest, unittest.TestCase):
         self.assertRaises(tkinter.TclError, self.widget.identify, None, 5)
         self.assertRaises(tkinter.TclError, self.widget.identify, 5, None)
         self.assertRaises(tkinter.TclError, self.widget.identify, 5, '')
-
 
     def test_widget_state(self):
         # XXX not sure about the portability of all these tests
@@ -287,6 +285,7 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
         'show', 'state', 'style', 'takefocus', 'textvariable',
         'validate', 'validatecommand', 'width', 'xscrollcommand',
     )
+    IDENTIFY_AS = 'Entry.field' if sys.platform == 'darwin' else 'textarea'
 
     def setUp(self):
         super().setUp()
@@ -319,29 +318,22 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
         widget = self.create()
         self.checkCommandParam(widget, 'validatecommand')
 
-
     def test_bbox(self):
         self.assertIsBoundingBox(self.entry.bbox(0))
         self.assertRaises(tkinter.TclError, self.entry.bbox, 'noindex')
         self.assertRaises(tkinter.TclError, self.entry.bbox, None)
-
 
     def test_identify(self):
         self.entry.pack()
         self.entry.update()
 
         # bpo-27313: macOS Cocoa widget differs from X, allow either
-        if sys.platform == 'darwin':
-            self.assertIn(self.entry.identify(5, 5),
-                ("textarea", "Combobox.button") )
-        else:
-            self.assertEqual(self.entry.identify(5, 5), "textarea")
+        self.assertEqual(self.entry.identify(5, 5), self.IDENTIFY_AS)
         self.assertEqual(self.entry.identify(-1, -1), "")
 
         self.assertRaises(tkinter.TclError, self.entry.identify, None, 5)
         self.assertRaises(tkinter.TclError, self.entry.identify, 5, None)
         self.assertRaises(tkinter.TclError, self.entry.identify, 5, '')
-
 
     def test_validation_options(self):
         success = []
@@ -370,7 +362,6 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
         self.entry['validatecommand'] = True
         self.assertRaises(tkinter.TclError, self.entry.validate)
 
-
     def test_validation(self):
         validation = []
         def validate(to_insert):
@@ -387,7 +378,6 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
         self.entry.insert('end', 'a')
         self.assertEqual(validation, [False, True])
         self.assertEqual(self.entry.get(), 'a')
-
 
     def test_revalidation(self):
         def validate(content):
@@ -424,6 +414,7 @@ class ComboboxTest(EntryTest, unittest.TestCase):
         'validate', 'validatecommand', 'values',
         'width', 'xscrollcommand',
     )
+    IDENTIFY_AS = 'Combobox.button' if sys.platform == 'darwin' else 'textarea'
 
     def setUp(self):
         super().setUp()
@@ -439,7 +430,8 @@ class ComboboxTest(EntryTest, unittest.TestCase):
     def _show_drop_down_listbox(self):
         width = self.combo.winfo_width()
         x, y = width - 5, 5
-        self.assertRegex(self.combo.identify(x, y), r'.*downarrow\Z')
+        if sys.platform != 'darwin':  # there's no down arrow on macOS
+            self.assertRegex(self.combo.identify(x, y), r'.*downarrow\Z')
         self.combo.event_generate('<ButtonPress-1>', x=x, y=y)
         self.combo.event_generate('<ButtonRelease-1>', x=x, y=y)
         self.combo.update_idletasks()
@@ -461,7 +453,6 @@ class ComboboxTest(EntryTest, unittest.TestCase):
 
         self.assertTrue(success)
 
-
     def test_configure_postcommand(self):
         success = []
 
@@ -476,7 +467,6 @@ class ComboboxTest(EntryTest, unittest.TestCase):
         self.combo['postcommand'] = ''
         self._show_drop_down_listbox()
         self.assertEqual(len(success), 1)
-
 
     def test_configure_values(self):
         def check_get_current(getval, currval):
@@ -592,7 +582,6 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
         other_child.destroy()
         self.assertRaises(tkinter.TclError, self.paned.pane, 0)
 
-
     def test_forget(self):
         self.assertRaises(tkinter.TclError, self.paned.forget, None)
         self.assertRaises(tkinter.TclError, self.paned.forget, 0)
@@ -600,7 +589,6 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
         self.paned.add(ttk.Label(self.root))
         self.paned.forget(0)
         self.assertRaises(tkinter.TclError, self.paned.forget, 0)
-
 
     def test_insert(self):
         self.assertRaises(tkinter.TclError, self.paned.insert, None, 0)
@@ -636,7 +624,6 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(self.paned.panes(),
             (str(child3), str(child2), str(child)))
 
-
     def test_pane(self):
         self.assertRaises(tkinter.TclError, self.paned.pane, 0)
 
@@ -652,7 +639,6 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
 
         self.assertRaises(tkinter.TclError, self.paned.pane, 0,
             badoption='somevalue')
-
 
     def test_sashpos(self):
         self.assertRaises(tkinter.TclError, self.paned.sashpos, None)
@@ -801,7 +787,6 @@ class ScaleTest(AbstractWidgetTest, unittest.TestCase):
 
         self.assertFalse(failure)
 
-
     def test_get(self):
         if self.wantobjects:
             conv = lambda x: x
@@ -818,7 +803,6 @@ class ScaleTest(AbstractWidgetTest, unittest.TestCase):
 
         self.assertRaises(tkinter.TclError, self.scale.get, '', 0)
         self.assertRaises(tkinter.TclError, self.scale.get, 0, '')
-
 
     def test_set(self):
         if self.wantobjects:
@@ -952,7 +936,6 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
         else:
             self.fail("Tab with text 'a' not found")
 
-
     def test_add_and_hidden(self):
         self.assertRaises(tkinter.TclError, self.nb.hide, -1)
         self.assertRaises(tkinter.TclError, self.nb.hide, 'hi')
@@ -981,7 +964,6 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
         # but the tab next to it (not hidden) is the one selected now
         self.assertEqual(self.nb.index('current'), curr + 1)
 
-
     def test_forget(self):
         self.assertRaises(tkinter.TclError, self.nb.forget, -1)
         self.assertRaises(tkinter.TclError, self.nb.forget, 'hi')
@@ -997,7 +979,6 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(self.nb.index(self.child1), 1)
         self.assertNotEqual(child1_index, self.nb.index(self.child1))
 
-
     def test_index(self):
         self.assertRaises(tkinter.TclError, self.nb.index, -1)
         self.assertRaises(tkinter.TclError, self.nb.index, None)
@@ -1006,7 +987,6 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(self.nb.index(self.child1), 0)
         self.assertEqual(self.nb.index(self.child2), 1)
         self.assertEqual(self.nb.index('end'), 2)
-
 
     def test_insert(self):
         # moving tabs
@@ -1040,7 +1020,6 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
         self.assertRaises(tkinter.TclError, self.nb.insert, None, 0)
         self.assertRaises(tkinter.TclError, self.nb.insert, None, None)
 
-
     def test_select(self):
         self.nb.pack()
         self.nb.update()
@@ -1060,7 +1039,6 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
         self.nb.update()
         self.assertTrue(tab_changed)
 
-
     def test_tab(self):
         self.assertRaises(tkinter.TclError, self.nb.tab, -1)
         self.assertRaises(tkinter.TclError, self.nb.tab, 'notab')
@@ -1074,7 +1052,6 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(self.nb.tab(self.child1, text=None), 'abc')
         self.assertEqual(self.nb.tab(self.child1, 'text'), 'abc')
 
-
     def test_configure_tabs(self):
         self.assertEqual(len(self.nb.tabs()), 2)
 
@@ -1083,14 +1060,14 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
 
         self.assertEqual(self.nb.tabs(), ())
 
-
     def test_traversal(self):
         self.nb.pack()
         self.nb.update()
 
         self.nb.select(0)
 
-        self.assertEqual(self.nb.identify(5, 5), 'focus')
+        focus_identify_as = 'focus' if sys.platform != 'darwin' else ''
+        self.assertEqual(self.nb.identify(5, 5), focus_identify_as)
         simulate_mouse_click(self.nb, 5, 5)
         self.nb.focus_force()
         self.nb.event_generate('<Control-Tab>')
@@ -1103,15 +1080,24 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(self.nb.select(), str(self.child2))
 
         self.nb.tab(self.child1, text='a', underline=0)
+        self.nb.tab(self.child2, text='e', underline=0)
         self.nb.enable_traversal()
         self.nb.focus_force()
-        self.assertEqual(self.nb.identify(5, 5), 'focus')
+        self.assertEqual(self.nb.identify(5, 5), focus_identify_as)
         simulate_mouse_click(self.nb, 5, 5)
+        # on macOS Emacs-style keyboard shortcuts are region-dependent;
+        # let's use the regular arrow keys instead
         if sys.platform == 'darwin':
-            self.nb.event_generate('<Option-a>')
+            begin = '<Left>'
+            end = '<Right>'
         else:
-            self.nb.event_generate('<Alt-a>')
+            begin = '<Alt-a>'
+            end = '<Alt-e>'
+        self.nb.event_generate(begin)
         self.assertEqual(self.nb.select(), str(self.child1))
+        self.nb.event_generate(end)
+        self.assertEqual(self.nb.select(), str(self.child2))
+
 
 @add_standard_options(IntegerSizeTests, StandardTtkOptionsTests)
 class SpinboxTest(EntryTest, unittest.TestCase):
@@ -1122,6 +1108,7 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         'takefocus', 'textvariable', 'to', 'validate', 'validatecommand',
         'values', 'width', 'wrap', 'xscrollcommand',
     )
+    IDENTIFY_AS = 'Spinbox.field' if sys.platform == 'darwin' else 'textarea'
 
     def setUp(self):
         super().setUp()
@@ -1370,7 +1357,6 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         child1 = self.tv.insert(item_id, 'end')
         self.assertEqual(self.tv.bbox(child1), '')
 
-
     def test_children(self):
         # no children yet, should get an empty tuple
         self.assertEqual(self.tv.get_children(), ())
@@ -1398,7 +1384,6 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         self.tv.set_children('')
         self.assertEqual(self.tv.get_children(), ())
 
-
     def test_column(self):
         # return a dict with all options/values
         self.assertIsInstance(self.tv.column('#0'), dict)
@@ -1424,7 +1409,6 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
             self.assertRaises(tkinter.TclError, self.tv.column, '#0',
                 **kw)
 
-
     def test_delete(self):
         self.assertRaises(tkinter.TclError, self.tv.delete, '#0')
 
@@ -1447,7 +1431,6 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
 
         self.tv.delete(item1, item2)
         self.assertFalse(self.tv.get_children())
-
 
     def test_detach_reattach(self):
         item_id = self.tv.insert('', 'end')
@@ -1490,7 +1473,6 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(self.tv.get_children(), ())
         self.assertEqual(self.tv.get_children(item_id), ())
 
-
     def test_exists(self):
         self.assertEqual(self.tv.exists('something'), False)
         self.assertEqual(self.tv.exists(''), True)
@@ -1500,7 +1482,6 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         # tk.call(treeview, "exists") which should result in an error
         # in the tcl interpreter since tk requires an item.
         self.assertRaises(tkinter.TclError, self.tv.exists, None)
-
 
     def test_focus(self):
         # nothing is focused right now
@@ -1515,7 +1496,6 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
 
         # try focusing inexistent item
         self.assertRaises(tkinter.TclError, self.tv.focus, 'hi')
-
 
     def test_heading(self):
         # check a dict is returned
@@ -1568,7 +1548,6 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         #self.tv.heading('#0', command='I dont exist')
         #simulate_heading_click(5, 5)
 
-
     def test_index(self):
         # item 'what' doesn't exist
         self.assertRaises(tkinter.TclError, self.tv.index, 'what')
@@ -1598,7 +1577,6 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         # but it fails after item has been deleted
         self.tv.delete(item1)
         self.assertRaises(tkinter.TclError, self.tv.index, c2)
-
 
     def test_insert_item(self):
         # parent 'none' doesn't exist
@@ -1676,7 +1654,6 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         self.assertRaises(tkinter.TclError, self.tv.insert, '', 'end', False)
         self.assertRaises(tkinter.TclError, self.tv.insert, '', 'end', '')
 
-
     def test_selection(self):
         self.assertRaises(TypeError, self.tv.selection, 'spam')
         # item 'none' doesn't exist
@@ -1747,7 +1724,6 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         self.tv.selection_toggle((c1, c3))
         self.assertEqual(self.tv.selection(), (c3, item2))
 
-
     def test_set(self):
         self.tv['columns'] = ['A', 'B']
         item = self.tv.insert('', 'end', values=['a', 'b'])
@@ -1780,7 +1756,6 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         # inexistent item
         self.assertRaises(tkinter.TclError, self.tv.set, 'notme')
 
-
     def test_tag_bind(self):
         events = []
         item1 = self.tv.insert('', 'end', tags=['call'])
@@ -1812,7 +1787,6 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(len(events), 4)
         for evt in zip(events[::2], events[1::2]):
             self.assertEqual(evt, (1, 2))
-
 
     def test_tag_configure(self):
         # Just testing parameter passing for now

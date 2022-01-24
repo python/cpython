@@ -1,3 +1,0 @@
-Move the ``interpreteridobject.h`` header file from ``Include/`` to
-``Include/internal/``. It only provides private functions. Patch by Victor
-Stinner.

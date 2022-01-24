@@ -101,9 +101,6 @@ uint32_t _PyFunction_GetVersionForCurrentState(PyFunctionObject *func);
 #define PyFunction_GET_ANNOTATIONS(func) \
         (((PyFunctionObject *)func) -> func_annotations)
 
-#define PyFunction_AS_FRAME_CONSTRUCTOR(func) \
-        ((PyFrameConstructor *)&((PyFunctionObject *)(func))->func_globals)
-
 /* The classmethod and staticmethod types lives here, too */
 PyAPI_DATA(PyTypeObject) PyClassMethod_Type;
 PyAPI_DATA(PyTypeObject) PyStaticMethod_Type;

@@ -420,11 +420,12 @@ class BaseSimpleQueueTest:
     def setUp(self):
         self.q = self.type2test()
 
-    def feed(self, q, seq, rnd):
+    def feed(self, q, seq, rnd, sentinel):
         while True:
             try:
                 val = seq.pop()
             except IndexError:
+                q.put(sentinel)
                 return
             q.put(val)
             if rnd.random() > 0.5:
@@ -463,11 +464,10 @@ class BaseSimpleQueueTest:
                 return
             results.append(val)
 
-    def run_threads(self, n_feeders, n_consumers, q, inputs,
-                    feed_func, consume_func):
+    def run_threads(self, n_threads, q, inputs, feed_func, consume_func):
         results = []
         sentinel = None
-        seq = inputs + [sentinel] * n_consumers
+        seq = inputs.copy()
         seq.reverse()
         rnd = random.Random(42)
 
@@ -481,11 +481,11 @@ class BaseSimpleQueueTest:
             return wrapper
 
         feeders = [threading.Thread(target=log_exceptions(feed_func),
-                                    args=(q, seq, rnd))
-                   for i in range(n_feeders)]
+                                    args=(q, seq, rnd, sentinel))
+                   for i in range(n_threads)]
         consumers = [threading.Thread(target=log_exceptions(consume_func),
                                       args=(q, results, sentinel))
-                     for i in range(n_consumers)]
+                     for i in range(n_threads)]
 
         with threading_helper.start_threads(feeders + consumers):
             pass
@@ -543,7 +543,7 @@ class BaseSimpleQueueTest:
         # Test a pair of concurrent put() and get()
         q = self.q
         inputs = list(range(100))
-        results = self.run_threads(1, 1, q, inputs, self.feed, self.consume)
+        results = self.run_threads(1, q, inputs, self.feed, self.consume)
 
         # One producer, one consumer => results appended in well-defined order
         self.assertEqual(results, inputs)
@@ -553,7 +553,7 @@ class BaseSimpleQueueTest:
         N = 50
         q = self.q
         inputs = list(range(10000))
-        results = self.run_threads(N, N, q, inputs, self.feed, self.consume)
+        results = self.run_threads(N, q, inputs, self.feed, self.consume)
 
         # Multiple consumers without synchronization append the
         # results in random order
@@ -564,7 +564,7 @@ class BaseSimpleQueueTest:
         N = 50
         q = self.q
         inputs = list(range(10000))
-        results = self.run_threads(N, N, q, inputs,
+        results = self.run_threads(N, q, inputs,
                                    self.feed, self.consume_nonblock)
 
         self.assertEqual(sorted(results), inputs)
@@ -574,7 +574,7 @@ class BaseSimpleQueueTest:
         N = 50
         q = self.q
         inputs = list(range(1000))
-        results = self.run_threads(N, N, q, inputs,
+        results = self.run_threads(N, q, inputs,
                                    self.feed, self.consume_timeout)
 
         self.assertEqual(sorted(results), inputs)

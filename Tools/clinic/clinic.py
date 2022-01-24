@@ -2820,8 +2820,6 @@ class bool_converter(CConverter):
 
     def parse_arg(self, argname, displayname):
         if self.format_unit == 'i':
-            # XXX PyFloat_Check can be removed after the end of the
-            # deprecation in _PyLong_FromNbIndexOrNbInt.
             return """
                 {paramname} = _PyLong_AsInt({argname});
                 if ({paramname} == -1 && PyErr_Occurred()) {{{{

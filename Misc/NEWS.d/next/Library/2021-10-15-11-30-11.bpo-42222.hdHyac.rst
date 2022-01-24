@@ -1,1 +1,0 @@
-Removed deprecated support for float arguments in *randrange()*.

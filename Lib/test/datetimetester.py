@@ -31,7 +31,10 @@ from datetime import timezone
 from datetime import date, datetime
 import time as _time
 
-import _testcapi
+try:
+    import _testcapi
+except ImportError:
+    _testcapi = None
 
 # Needed by test_datetime
 import _strptime
@@ -5918,6 +5921,7 @@ class IranTest(ZoneInfoTest):
     zonename = 'Asia/Tehran'
 
 
+@unittest.skipIf(_testcapi is None, 'need _testcapi module')
 class CapiTest(unittest.TestCase):
     def setUp(self):
         # Since the C API is not present in the _Pure tests, skip all tests
