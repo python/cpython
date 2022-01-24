@@ -2770,7 +2770,7 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
         /* The code used to compute the remainder via
          *     r = (digit)(vv - (twodigits)wm1 * q);
          * and compilers generally generated code to do the * and -.
-         * But modern p;ocessors generally compute q and r with a single
+         * But modern processors generally compute q and r with a single
          * instruction, and modern optimizing compilers exploit that if we
          * _don't_ try to optimize it.
          */
