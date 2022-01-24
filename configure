@@ -7684,7 +7684,7 @@ case $ac_sys_system/$ac_sys_emscripten_target in #(
     LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 -s NODERAWFS=1 -s EXIT_RUNTIME=1 -s USE_PTHREADS -s PROXY_TO_PTHREAD"
     CFLAGS_NODIST="$CFLAGS_NODIST -pthread"
    ;; #(
-  WASI) :
+  WASI/*) :
 
 
 $as_echo "#define _WASI_EMULATED_SIGNAL 1" >>confdefs.h
@@ -21345,6 +21345,8 @@ $as_echo_n "checking for additional Modules/Setup files... " >&6; }
 case $ac_sys_system in #(
   Emscripten) :
     MODULES_SETUP_STDLIB=Modules/Setup.stdlib ;; #(
+  WASI) :
+    MODULES_SETUP_STDLIB=Modules/Setup.stdlib ;; #(
   *) :
     MODULES_SETUP_STDLIB=
  ;;
@@ -23421,7 +23423,7 @@ $as_echo_n "checking for stdlib extension module _testimportmultiple... " >&6; }
     py_cv_module__testimportmultiple=n/a ;; #(
   *) :
     if test "$TEST_MODULES" = yes; then :
-  if true; then :
+  if test "$ac_cv_func_dlopen" = yes; then :
   py_cv_module__testimportmultiple=yes
 else
   py_cv_module__testimportmultiple=missing
@@ -23457,7 +23459,7 @@ $as_echo_n "checking for stdlib extension module _testmultiphase... " >&6; }
     py_cv_module__testmultiphase=n/a ;; #(
   *) :
     if test "$TEST_MODULES" = yes; then :
-  if true; then :
+  if test "$ac_cv_func_dlopen" = yes; then :
   py_cv_module__testmultiphase=yes
 else
   py_cv_module__testmultiphase=missing
@@ -23565,8 +23567,8 @@ $as_echo_n "checking for stdlib extension module xxlimited... " >&6; }
   *xxlimited*) :
     py_cv_module_xxlimited=n/a ;; #(
   *) :
-    if test "$with_trace_refs" = "no" -a "$ac_sys_system" != "Emscripten"; then :
-  if true; then :
+    if test "$with_trace_refs" = "no"; then :
+  if test "$ac_cv_func_dlopen" = yes; then :
   py_cv_module_xxlimited=yes
 else
   py_cv_module_xxlimited=missing
@@ -23601,8 +23603,8 @@ $as_echo_n "checking for stdlib extension module xxlimited_35... " >&6; }
   *xxlimited_35*) :
     py_cv_module_xxlimited_35=n/a ;; #(
   *) :
-    if test "$with_trace_refs" = "no" -a "$ac_sys_system" != "Emscripten"; then :
-  if true; then :
+    if test "$with_trace_refs" = "no"; then :
+  if test "$ac_cv_func_dlopen" = yes; then :
   py_cv_module_xxlimited_35=yes
 else
   py_cv_module_xxlimited_35=missing
