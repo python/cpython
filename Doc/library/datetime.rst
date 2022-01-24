@@ -1473,6 +1473,15 @@ Instance methods:
       >>> dt.isoformat(timespec='microseconds')
       '2015-01-01T12:30:59.000000'
 
+   .. warning::
+
+      Because naive ``datetime`` objects are treated by many ``datetime`` methods
+      as local times, it is preferred to use aware datetimes to represent times
+      in UTC. As such, make sure to always provide ``timezone.utc`` to
+      your datetime objects so the timezone modifier ``+00:00`` will be added
+      and the expected behaviour clear.
+
+
    .. versionadded:: 3.6
       Added the *timespec* argument.
 
