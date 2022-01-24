@@ -1,4 +1,4 @@
-"Test browser, coverage 81%."
+"Test browser, coverage 90%."
 
 from idlelib import browser
 from test.support import requires
