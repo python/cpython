@@ -1,0 +1,1 @@
+Remove ``__class_getitem__`` from :class:`pathlib.PurePath`
