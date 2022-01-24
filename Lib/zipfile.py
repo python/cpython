@@ -1366,7 +1366,10 @@ class ZipFile:
             print("given, inferred, offset", offset_cd, inferred, concat)
         # self.start_dir:  Position of start of central directory
         self.start_dir = offset_cd + concat
-        fp.seek(self.start_dir, 0)
+        try:
+            fp.seek(self.start_dir, 0)
+        except ValueError as e:
+            raise BadZipFile("Bad offset for central directory")
         data = fp.read(size_cd)
         fp = io.BytesIO(data)
         total = 0
