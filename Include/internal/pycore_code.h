@@ -317,6 +317,7 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define OPCODE_EXE_INC(opname) ((void)0)
 #endif
 
+extern const uint8_t _Py_AdaptiveOpcodes[256];
 
 #ifdef __cplusplus
 }

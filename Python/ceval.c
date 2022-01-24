@@ -5287,6 +5287,24 @@ handle_eval_breaker:
 
 /* Specialization misses */
 
+miss_with_cache:
+    {
+        STAT_INC(opcode, miss);
+        _PyAdaptiveEntry *cache = &GET_CACHE()->adaptive;
+        cache->counter--;
+        next_instr--;
+        TRACING_NEXTOPARG();
+        STAT_INC(opcode, miss);
+        if (cache->counter == 0) {
+            assert(_Py_AdaptiveOpcodes[opcode] != 0);
+            next_instr[-1] = _Py_MAKECODEUNIT(_Py_AdaptiveOpcodes[opcode], _Py_OPARG(next_instr[-1]));
+            STAT_INC(opcode, deopt);
+            cache_backoff(cache);
+        }
+        DISPATCH();
+    }
+
+
 #define MISS_WITH_CACHE(opname) \
 opname ## _miss: \
     { \

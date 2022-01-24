@@ -245,7 +245,7 @@ get_cache_count(SpecializedCacheOrInstruction *quickened) {
 
 /* Map from opcode to adaptive opcode.
   Values of zero are ignored. */
-static uint8_t adaptive_opcodes[256] = {
+uint8_t const  _Py_AdaptiveOpcodes[256] = {
     [LOAD_ATTR] = LOAD_ATTR_ADAPTIVE,
     [LOAD_GLOBAL] = LOAD_GLOBAL_ADAPTIVE,
     [LOAD_METHOD] = LOAD_METHOD_ADAPTIVE,
@@ -258,7 +258,7 @@ static uint8_t adaptive_opcodes[256] = {
 };
 
 /* The number of cache entries required for a "family" of instructions. */
-static uint8_t cache_requirements[256] = {
+static uint8_t const cache_requirements[256] = {
     [LOAD_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
     [LOAD_GLOBAL] = 2, /* _PyAdaptiveEntry and _PyLoadGlobalCache */
     [LOAD_METHOD] = 3, /* _PyAdaptiveEntry, _PyAttrCache and _PyObjectCache */
@@ -290,7 +290,7 @@ oparg_from_instruction_and_update_offset(int index, int opcode, int original_opa
     if (need == 0) {
         return original_oparg;
     }
-    assert(adaptive_opcodes[opcode] != 0);
+    assert(_Py_AdaptiveOpcodes[opcode] != 0);
     int oparg = oparg_from_offset_and_nexti(*cache_offset, nexti);
     assert(*cache_offset == offset_from_oparg_and_nexti(oparg, nexti));
     /* Some cache space is wasted here as the minimum possible offset is (nexti>>1) */
@@ -342,7 +342,7 @@ optimize(SpecializedCacheOrInstruction *quickened, int len)
     for(int i = 0; i < len; i++) {
         int opcode = _Py_OPCODE(instructions[i]);
         int oparg = _Py_OPARG(instructions[i]);
-        uint8_t adaptive_opcode = adaptive_opcodes[opcode];
+        uint8_t adaptive_opcode = _Py_AdaptiveOpcodes[opcode];
         if (adaptive_opcode && previous_opcode != EXTENDED_ARG) {
             int new_oparg = oparg_from_instruction_and_update_offset(
                 i, opcode, oparg, &cache_offset
