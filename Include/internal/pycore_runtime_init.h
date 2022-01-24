@@ -1107,6 +1107,8 @@ extern "C" {
                 INIT_ID(enable), \
                 INIT_ID(encode), \
                 INIT_ID(encoding), \
+                INIT_ID(end_lineno), \
+                INIT_ID(end_offset), \
                 INIT_ID(errors), \
                 INIT_ID(excepthook), \
                 INIT_ID(exception), \

@@ -487,6 +487,8 @@ struct _Py_global_strings {
         ID(enable)
         ID(encode)
         ID(encoding)
+        ID(end_lineno)
+        ID(end_offset)
         ID(errors)
         ID(excepthook)
         ID(exception)

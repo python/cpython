@@ -28,12 +28,6 @@ extern char *strerror(int);
 extern "C" {
 #endif
 
-_Py_IDENTIFIER(__main__);
-_Py_IDENTIFIER(__module__);
-_Py_IDENTIFIER(builtins);
-_Py_IDENTIFIER(stderr);
-_Py_IDENTIFIER(flush);
-
 /* Forward declarations */
 static PyObject *
 _PyErr_FormatV(PyThreadState *tstate, PyObject *exception,
@@ -1135,7 +1129,8 @@ PyErr_NewException(const char *name, PyObject *base, PyObject *dict)
             goto failure;
     }
 
-    int r = _PyDict_ContainsId(dict, &PyId___module__);
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__module__);
+    int r = PyDict_Contains(dict, attr);
     if (r < 0) {
         goto failure;
     }
@@ -1144,7 +1139,7 @@ PyErr_NewException(const char *name, PyObject *base, PyObject *dict)
                                              (Py_ssize_t)(dot-name));
         if (modulename == NULL)
             goto failure;
-        if (_PyDict_SetItemId(dict, &PyId___module__, modulename) != 0)
+        if (PyDict_SetItem(dict, attr, modulename) != 0)
             goto failure;
     }
     if (PyTuple_Check(base)) {
@@ -1347,7 +1342,8 @@ write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
 
     assert(PyExceptionClass_Check(exc_type));
 
-    PyObject *modulename = _PyObject_GetAttrId(exc_type, &PyId___module__);
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__module__);
+    PyObject *modulename = PyObject_GetAttr(exc_type, attr);
     if (modulename == NULL || !PyUnicode_Check(modulename)) {
         Py_XDECREF(modulename);
         _PyErr_Clear(tstate);
@@ -1356,8 +1352,10 @@ write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
         }
     }
     else {
-        if (!_PyUnicode_EqualToASCIIId(modulename, &PyId_builtins) &&
-            !_PyUnicode_EqualToASCIIId(modulename, &PyId___main__)) {
+        PyObject *builtins = _Py_GET_GLOBAL_IDENTIFIER(builtins);
+        PyObject *__main__ = _Py_GET_GLOBAL_IDENTIFIER(__main__);
+        if (!_PyUnicode_Equal(modulename, builtins) &&
+            !_PyUnicode_Equal(modulename, __main__)) {
             if (PyFile_WriteObject(modulename, file, Py_PRINT_RAW) < 0) {
                 Py_DECREF(modulename);
                 return -1;
@@ -1405,7 +1403,8 @@ write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
     }
 
     /* Explicitly call file.flush() */
-    PyObject *res = _PyObject_CallMethodIdNoArgs(file, &PyId_flush);
+    PyObject *flush = _Py_GET_GLOBAL_IDENTIFIER(flush);
+    PyObject *res = _PyObject_CallMethodNoArgs(file, flush);
     if (!res) {
         return -1;
     }
@@ -1420,7 +1419,8 @@ write_unraisable_exc(PyThreadState *tstate, PyObject *exc_type,
                      PyObject *exc_value, PyObject *exc_tb, PyObject *err_msg,
                      PyObject *obj)
 {
-    PyObject *file = _PySys_GetObjectId(&PyId_stderr);
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(stderr);
+    PyObject *file = _PySys_GetAttr(tstate, attr);
     if (file == NULL || file == Py_None) {
         return 0;
     }
@@ -1524,8 +1524,8 @@ _PyErr_WriteUnraisableMsg(const char *err_msg_str, PyObject *obj)
         goto error;
     }
 
-    _Py_IDENTIFIER(unraisablehook);
-    PyObject *hook = _PySys_GetObjectId(&PyId_unraisablehook);
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(unraisablehook);
+    PyObject *hook = _PySys_GetAttr(tstate, attr);
     if (hook == NULL) {
         Py_DECREF(hook_args);
         goto default_hook;
@@ -1599,15 +1599,7 @@ static void
 PyErr_SyntaxLocationObjectEx(PyObject *filename, int lineno, int col_offset,
                              int end_lineno, int end_col_offset)
 {
-    PyObject *exc, *v, *tb, *tmp;
-    _Py_IDENTIFIER(filename);
-    _Py_IDENTIFIER(lineno);
-    _Py_IDENTIFIER(end_lineno);
-    _Py_IDENTIFIER(msg);
-    _Py_IDENTIFIER(offset);
-    _Py_IDENTIFIER(end_offset);
-    _Py_IDENTIFIER(print_file_and_line);
-    _Py_IDENTIFIER(text);
+    PyObject *exc, *v, *tb, *tmp, *attr;
     PyThreadState *tstate = _PyThreadState_GET();
 
     /* add attributes for the line number and filename for the error */
@@ -1619,7 +1611,8 @@ PyErr_SyntaxLocationObjectEx(PyObject *filename, int lineno, int col_offset,
     if (tmp == NULL)
         _PyErr_Clear(tstate);
     else {
-        if (_PyObject_SetAttrId(v, &PyId_lineno, tmp)) {
+        attr = _Py_GET_GLOBAL_IDENTIFIER(lineno);
+        if (PyObject_SetAttr(v, attr, tmp)) {
             _PyErr_Clear(tstate);
         }
         Py_DECREF(tmp);
@@ -1631,7 +1624,8 @@ PyErr_SyntaxLocationObjectEx(PyObject *filename, int lineno, int col_offset,
             _PyErr_Clear(tstate);
         }
     }
-    if (_PyObject_SetAttrId(v, &PyId_offset, tmp ? tmp : Py_None)) {
+    attr = _Py_GET_GLOBAL_IDENTIFIER(offset);
+    if (PyObject_SetAttr(v, attr, tmp ? tmp : Py_None)) {
         _PyErr_Clear(tstate);
     }
     Py_XDECREF(tmp);
@@ -1643,7 +1637,8 @@ PyErr_SyntaxLocationObjectEx(PyObject *filename, int lineno, int col_offset,
             _PyErr_Clear(tstate);
         }
     }
-    if (_PyObject_SetAttrId(v, &PyId_end_lineno, tmp ? tmp : Py_None)) {
+    attr = _Py_GET_GLOBAL_IDENTIFIER(end_lineno);
+    if (PyObject_SetAttr(v, attr, tmp ? tmp : Py_None)) {
         _PyErr_Clear(tstate);
     }
     Py_XDECREF(tmp);
@@ -1655,20 +1650,23 @@ PyErr_SyntaxLocationObjectEx(PyObject *filename, int lineno, int col_offset,
             _PyErr_Clear(tstate);
         }
     }
-    if (_PyObject_SetAttrId(v, &PyId_end_offset, tmp ? tmp : Py_None)) {
+    attr = _Py_GET_GLOBAL_IDENTIFIER(end_offset);
+    if (PyObject_SetAttr(v, attr, tmp ? tmp : Py_None)) {
         _PyErr_Clear(tstate);
     }
     Py_XDECREF(tmp);
 
     tmp = NULL;
     if (filename != NULL) {
-        if (_PyObject_SetAttrId(v, &PyId_filename, filename)) {
+        attr = _Py_GET_GLOBAL_IDENTIFIER(filename);
+        if (PyObject_SetAttr(v, attr, filename)) {
             _PyErr_Clear(tstate);
         }
 
         tmp = PyErr_ProgramTextObject(filename, lineno);
         if (tmp) {
-            if (_PyObject_SetAttrId(v, &PyId_text, tmp)) {
+            attr = _Py_GET_GLOBAL_IDENTIFIER(text);
+            if (PyObject_SetAttr(v, attr, tmp)) {
                 _PyErr_Clear(tstate);
             }
             Py_DECREF(tmp);
@@ -1678,7 +1676,8 @@ PyErr_SyntaxLocationObjectEx(PyObject *filename, int lineno, int col_offset,
         }
     }
     if (exc != PyExc_SyntaxError) {
-        if (_PyObject_LookupAttrId(v, &PyId_msg, &tmp) < 0) {
+        attr = _Py_GET_GLOBAL_IDENTIFIER(msg);
+        if (_PyObject_LookupAttr(v, attr, &tmp) < 0) {
             _PyErr_Clear(tstate);
         }
         else if (tmp) {
@@ -1687,7 +1686,7 @@ PyErr_SyntaxLocationObjectEx(PyObject *filename, int lineno, int col_offset,
         else {
             tmp = PyObject_Str(v);
             if (tmp) {
-                if (_PyObject_SetAttrId(v, &PyId_msg, tmp)) {
+                if (PyObject_SetAttr(v, attr, tmp)) {
                     _PyErr_Clear(tstate);
                 }
                 Py_DECREF(tmp);
@@ -1696,15 +1695,16 @@ PyErr_SyntaxLocationObjectEx(PyObject *filename, int lineno, int col_offset,
                 _PyErr_Clear(tstate);
             }
         }
-        if (_PyObject_LookupAttrId(v, &PyId_print_file_and_line, &tmp) < 0) {
+
+        attr = _Py_GET_GLOBAL_IDENTIFIER(print_file_and_line);
+        if (_PyObject_LookupAttr(v, attr, &tmp) < 0) {
             _PyErr_Clear(tstate);
         }
         else if (tmp) {
             Py_DECREF(tmp);
         }
         else {
-            if (_PyObject_SetAttrId(v, &PyId_print_file_and_line,
-                                    Py_None)) {
+            if (PyObject_SetAttr(v, attr, Py_None)) {
                 _PyErr_Clear(tstate);
             }
         }
