@@ -68,6 +68,8 @@ annotations. These include:
      *Introducing* :data:`TypeAlias`
 * :pep:`647`: User-Defined Type Guards
      *Introducing* :data:`TypeGuard`
+* :pep:`673`: Self type
+    *Introducing* :data:`Self`
 
 .. _type-aliases:
 
@@ -584,6 +586,22 @@ These can be used as types in annotations and do not support ``[]``.
 
    .. versionadded:: 3.5.4
    .. versionadded:: 3.6.2
+
+.. data:: Self
+
+   Special annotation to represent the current enclosed class.
+   For Example::
+
+      from typing import Self
+
+      class ReturnsSelf:
+         def parse(self) -> Self:
+            ...
+            return self
+
+   For more info see :pep:`673`.
+
+   .. versionadded:: 3.11
 
 .. data:: TypeAlias
 
