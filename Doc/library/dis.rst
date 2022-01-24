@@ -1233,6 +1233,22 @@ All of the following opcodes use their arguments.
     .. versionadded:: 3.11
 
 
+.. opcode:: SEND
+
+    Sends ``None`` to the sub-generator of this generator.
+    Used in ``yield from`` and ``await`` statements.
+
+    .. versionadded:: 3.11
+
+
+.. opcode:: ASYNC_GEN_WRAP
+
+    Wraps the value on top of the stack in an ``async_generator_wrapped_value``.
+    Used to yield in async generators.
+
+    .. versionadded:: 3.11
+
+
 .. opcode:: HAVE_ARGUMENT
 
    This is not really an opcode.  It identifies the dividing line between
