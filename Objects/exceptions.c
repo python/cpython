@@ -685,7 +685,10 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *message = NULL;
     PyObject *exceptions = NULL;
 
-    if (!PyArg_ParseTuple(args, "UO", &message, &exceptions)) {
+    if (!PyArg_ParseTuple(args,
+                          "UO:BaseExceptionGroup.__new__",
+                          &message,
+                          &exceptions)) {
         return NULL;
     }
 
