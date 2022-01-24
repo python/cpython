@@ -322,7 +322,7 @@ Creating Futures and Tasks
 
 .. method:: loop.create_future()
 
-   Create an :class:`asyncio.Future` object attached to the event loop.
+   Create a :class:`asyncio.Future` object attached to the event loop.
 
    This is the preferred way to create Futures in asyncio. This lets
    third-party event loops provide alternative implementations of
