@@ -1616,16 +1616,11 @@ compiler_enter_scope(struct compiler *c, identifier name,
     }
     if (u->u_ste->ste_needs_class_closure) {
         /* Cook up an implicit __class__ cell. */
-        _Py_IDENTIFIER(__class__);
         PyObject *name;
         int res;
         assert(u->u_scope_type == COMPILER_SCOPE_CLASS);
         assert(PyDict_GET_SIZE(u->u_cellvars) == 0);
-        name = _PyUnicode_FromId(&PyId___class__);
-        if (!name) {
-            compiler_unit_free(u);
-            return 0;
-        }
+        name = _Py_GET_GLOBAL_IDENTIFIER(__class__);
         res = PyDict_SetItem(u->u_cellvars, name, _PyLong_GetZero());
         if (res < 0) {
             compiler_unit_free(u);
@@ -2011,11 +2006,7 @@ compiler_body(struct compiler *c, asdl_stmt_seq *stmts)
     int i = 0;
     stmt_ty st;
     PyObject *docstring;
-    _Py_IDENTIFIER(__doc__);
-    PyObject *__doc__ = _PyUnicode_FromId(&PyId___doc__);  /* borrowed ref*/
-    if (__doc__ == NULL) {
-        return 0;
-    }
+    PyObject *__doc__ = _Py_GET_GLOBAL_IDENTIFIER(__doc__);
 
     /* Set current line number to the line number of first statement.
        This way line number for SETUP_ANNOTATIONS will always
@@ -2054,11 +2045,7 @@ compiler_mod(struct compiler *c, mod_ty mod)
 {
     PyCodeObject *co;
     int addNone = 1;
-    _Py_static_string(PyId__module, "<module>");
-    PyObject *module = _PyUnicode_FromId(&PyId__module); /* borrowed ref */
-    if (module == NULL) {
-        return 0;
-    }
+    PyObject *module = _Py_GET_GLOBAL_STRING(anon_module);
     if (!compiler_enter_scope(c, module, COMPILER_SCOPE_MODULE, mod, 1)) {
         return NULL;
     }
@@ -2337,7 +2324,6 @@ compiler_visit_annotations(struct compiler *c, arguments_ty args,
 
        Return 0 on error, -1 if no annotations pushed, 1 if a annotations is pushed.
        */
-    _Py_IDENTIFIER(return);
     Py_ssize_t annotations_len = 0;
 
     if (!compiler_visit_argannotations(c, args->args, &annotations_len))
@@ -2355,10 +2341,7 @@ compiler_visit_annotations(struct compiler *c, arguments_ty args,
                                      args->kwarg->annotation, &annotations_len))
         return 0;
 
-    identifier return_str = _PyUnicode_FromId(&PyId_return); /* borrowed ref */
-    if (return_str == NULL) {
-        return 0;
-    }
+    identifier return_str = _Py_GET_GLOBAL_IDENTIFIER(return);
     if (!compiler_visit_argannotation(c, return_str, returns, &annotations_len)) {
         return 0;
     }
@@ -2904,7 +2887,6 @@ compiler_lambda(struct compiler *c, expr_ty e)
 {
     PyCodeObject *co;
     PyObject *qualname;
-    identifier name;
     Py_ssize_t funcflags;
     arguments_ty args = e->v.Lambda.args;
     assert(e->kind == Lambda_kind);
@@ -2912,17 +2894,12 @@ compiler_lambda(struct compiler *c, expr_ty e)
     if (!compiler_check_debug_args(c, args))
         return 0;
 
-    _Py_static_string(PyId_lambda, "<lambda>");
-    name = _PyUnicode_FromId(&PyId_lambda); /* borrowed ref */
-    if (name == NULL) {
-        return 0;
-    }
-
     funcflags = compiler_default_arguments(c, args);
     if (funcflags == -1) {
         return 0;
     }
 
+    identifier name = _Py_GET_GLOBAL_STRING(anon_lambda);
     if (!compiler_enter_scope(c, name, COMPILER_SCOPE_LAMBDA,
                               (void *)e, e->lineno)) {
         return 0;
@@ -3822,12 +3799,7 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 {
     Py_ssize_t i, n = asdl_seq_LEN(s->v.ImportFrom.names);
     PyObject *names;
-    _Py_static_string(PyId_empty_string, "");
-    PyObject *empty_string = _PyUnicode_FromId(&PyId_empty_string); /* borrowed ref */
-
-    if (empty_string == NULL) {
-        return 0;
-    }
+    PyObject *empty_string = _Py_GET_GLOBAL_STRING(empty);
 
     ADDOP_LOAD_CONST_NEW(c, PyLong_FromLong(s->v.ImportFrom.level));
 
@@ -5402,11 +5374,7 @@ error:
 static int
 compiler_genexp(struct compiler *c, expr_ty e)
 {
-    _Py_static_string(PyId_genexpr, "<genexpr>");
-    identifier name = _PyUnicode_FromId(&PyId_genexpr); /* borrowed ref */
-    if (name == NULL) {
-        return 0;
-    }
+    identifier name = _Py_GET_GLOBAL_STRING(anon_genexpr);
     assert(e->kind == GeneratorExp_kind);
     return compiler_comprehension(c, e, COMP_GENEXP, name,
                                   e->v.GeneratorExp.generators,
@@ -5416,11 +5384,7 @@ compiler_genexp(struct compiler *c, expr_ty e)
 static int
 compiler_listcomp(struct compiler *c, expr_ty e)
 {
-    _Py_static_string(PyId_listcomp, "<listcomp>");
-    identifier name = _PyUnicode_FromId(&PyId_listcomp); /* borrowed ref */
-    if (name == NULL) {
-        return 0;
-    }
+    identifier name = _Py_GET_GLOBAL_STRING(anon_listcomp);
     assert(e->kind == ListComp_kind);
     return compiler_comprehension(c, e, COMP_LISTCOMP, name,
                                   e->v.ListComp.generators,
@@ -5430,11 +5394,7 @@ compiler_listcomp(struct compiler *c, expr_ty e)
 static int
 compiler_setcomp(struct compiler *c, expr_ty e)
 {
-    _Py_static_string(PyId_setcomp, "<setcomp>");
-    identifier name = _PyUnicode_FromId(&PyId_setcomp); /* borrowed ref */
-    if (name == NULL) {
-        return 0;
-    }
+    identifier name = _Py_GET_GLOBAL_STRING(anon_setcomp);
     assert(e->kind == SetComp_kind);
     return compiler_comprehension(c, e, COMP_SETCOMP, name,
                                   e->v.SetComp.generators,
@@ -5445,11 +5405,7 @@ compiler_setcomp(struct compiler *c, expr_ty e)
 static int
 compiler_dictcomp(struct compiler *c, expr_ty e)
 {
-    _Py_static_string(PyId_dictcomp, "<dictcomp>");
-    identifier name = _PyUnicode_FromId(&PyId_dictcomp); /* borrowed ref */
-    if (name == NULL) {
-        return 0;
-    }
+    identifier name = _Py_GET_GLOBAL_STRING(anon_dictcomp);
     assert(e->kind == DictComp_kind);
     return compiler_comprehension(c, e, COMP_DICTCOMP, name,
                                   e->v.DictComp.generators,
@@ -5973,12 +5929,7 @@ compiler_annassign(struct compiler *c, stmt_ty s)
 {
     expr_ty targ = s->v.AnnAssign.target;
     PyObject* mangled;
-    _Py_IDENTIFIER(__annotations__);
-    /* borrowed ref*/
-    PyObject *__annotations__ = _PyUnicode_FromId(&PyId___annotations__);
-    if (__annotations__ == NULL) {
-        return 0;
-    }
+    PyObject *__annotations__ = _Py_GET_GLOBAL_IDENTIFIER(__annotations__);
 
     assert(s->kind == AnnAssign_kind);
 

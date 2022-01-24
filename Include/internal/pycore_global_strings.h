@@ -40,6 +40,7 @@ struct _Py_global_strings {
         STR(anon_genexpr, "<genexpr>")
         STR(anon_lambda, "<lambda>")
         STR(anon_listcomp, "<listcomp>")
+        STR(anon_module, "<module>")
         STR(anon_setcomp, "<setcomp>")
         STR(anon_string, "<string>")
         STR(dot_locals, ".<locals>")
