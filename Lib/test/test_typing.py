@@ -4868,27 +4868,17 @@ class ConcatenateTests(BaseTestCase):
         self.assertEqual(C4.__args__, (Concatenate[int, T, P], T))
         self.assertEqual(C4.__parameters__, (T, P))
 
-    def test_invalid_uses(self):
+    def test_semantically_invalid_uses_have_no_errors(self):
         P = ParamSpec('P')
         T = TypeVar('T')
 
-        with self.assertRaisesRegex(
-            TypeError,
-            'Cannot take a Concatenate of no types',
-        ):
-            Concatenate[()]
+        self.assertEqual(Concatenate[()].__args__, ())
+        self.assertEqual(Concatenate[int].__args__, (int,))
+        self.assertEqual(Concatenate[P, T].__args__, (P, T))
 
-        with self.assertRaisesRegex(
-            TypeError,
-            'The last parameter to Concatenate should be a ParamSpec variable',
-        ):
-            Concatenate[P, T]
-
-        with self.assertRaisesRegex(
-            TypeError,
-            'each arg must be a type',
-        ):
-            Concatenate[1, P]
+    def test_invalid_uses_that_generate_errors(self):
+        with self.assertRaises(TypeError):
+            Concatenate[1, 2]
 
 
 class TypeGuardTests(BaseTestCase):

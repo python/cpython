@@ -598,13 +598,8 @@ def Concatenate(self, parameters):
 
     See PEP 612 for detailed information.
     """
-    if parameters == ():
-        raise TypeError("Cannot take a Concatenate of no types.")
     if not isinstance(parameters, tuple):
         parameters = (parameters,)
-    if not isinstance(parameters[-1], ParamSpec):
-        raise TypeError("The last parameter to Concatenate should be a "
-                        "ParamSpec variable.")
     msg = "Concatenate[arg, ...]: each arg must be a type."
     parameters = tuple(_type_check(p, msg) for p in parameters)
     return _ConcatenateGenericAlias(self, parameters)
