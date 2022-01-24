@@ -429,17 +429,19 @@ buffered_clear(buffered *self)
 }
 
 #ifdef HAVE_FORK
-static PyObject *
-buffered_at_fork_reinit(buffered *self, PyObject *Py_UNUSED(ignored))
+int
+_PyIO_buffered_at_fork_reinit(PyObject *self)
 {
-    int ret = _PyThread_at_fork_reinit(&self->lock);
-    self->owner = 0;
-    if (ret == 0) {
-        Py_RETURN_TRUE;
+    Py_INCREF(self);
+    if (!Py_IS_TYPE(self, &PyBufferedWriter_Type)) {
+        Py_DECREF(self);
+        return 0;
     }
-    else {
-        Py_RETURN_FALSE;
-    }
+    buffered *buffer = (buffered *)self;
+    int ret = _PyThread_at_fork_reinit(&buffer->lock);
+    buffer->owner = 0;
+    Py_DECREF(self);
+    return ret;
 }
 #endif
 
@@ -2508,9 +2510,6 @@ static PyMethodDef bufferedwriter_methods[] = {
     _IO__BUFFERED_SEEK_METHODDEF
     {"tell", (PyCFunction)buffered_tell, METH_NOARGS},
     {"__sizeof__", (PyCFunction)buffered_sizeof, METH_NOARGS},
-#ifdef HAVE_FORK
-    {"_at_fork_reinit", (PyCFunction)buffered_at_fork_reinit, METH_NOARGS},
-#endif
     {NULL, NULL}
 };
 

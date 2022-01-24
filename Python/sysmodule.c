@@ -2862,6 +2862,8 @@ err_occurred:
 }
 
 #ifdef HAVE_FORK
+extern int _PyIO_buffered_at_fork_reinit(PyObject *);
+
 static int
 stdio_at_fork_reinit(_Py_Identifier *key)
 {
@@ -2892,19 +2894,9 @@ stdio_at_fork_reinit(_Py_Identifier *key)
         goto end;
     }
 
-    _Py_IDENTIFIER(_at_fork_reinit);
-    if (_PyObject_GetAttrId(buffer, &PyId__at_fork_reinit) == NULL) {
-        PyErr_Clear();
-        goto end;
-    }
+    /* reinitialize buffer->lock */
+    ret = _PyIO_buffered_at_fork_reinit(buffer);
 
-    result = _PyObject_CallMethodIdNoArgs(buffer, &PyId__at_fork_reinit);
-    if (Py_IsTrue(result)) {
-        goto end;
-    }
-
-    /* error */
-    ret = -1;
 end:
     Py_XDECREF(isatty);
     Py_XDECREF(buffer);
