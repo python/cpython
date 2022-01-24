@@ -21,16 +21,12 @@ class PyCompileError(Exception):
 
     To raise this exception, use
 
-        raise PyCompileError(exc_type,exc_value,file[,msg])
+        raise PyCompileError(exc, file [,msg])
 
     where
 
-        exc_type:   exception type to be used in error message
-                    type name can be accesses as class variable
-                    'exc_type_name'
-
-        exc_value:  exception value to be used in error message
-                    can be accesses as class variable 'exc_value'
+        exc:        exception to be used in error message can be accesses
+                    as class variable 'exc'
 
         file:       name of file being compiled to be used in error message
                     can be accesses as class variable 'file'
@@ -43,19 +39,20 @@ class PyCompileError(Exception):
 
     """
 
-    def __init__(self, exc_type, exc_value, file, msg=''):
-        exc_type_name = exc_type.__name__
-        if exc_type is SyntaxError:
-            tbtext = ''.join(traceback.format_exception_only(
-                exc_type, exc_value))
-            errmsg = tbtext.replace('File "<string>"', 'File "%s"' % file)
+    def __init__(self, exc, file, msg=''):
+        if msg:
+            errmsg = msg
         else:
-            errmsg = "Sorry: %s: %s" % (exc_type_name,exc_value)
+            if isinstance(exc, SyntaxError):
+                tbtext = ''.join(traceback.format_exception_only(exc))
+                errmsg = tbtext.replace('File "<string>"', 'File "%s"' % file)
+            else:
+                exc_type_name = type(exc).__name__
+                errmsg = "Sorry: %s: %s" % (exc_type_name, exc)
 
-        Exception.__init__(self,msg or errmsg,exc_type_name,exc_value,file)
+        super().__init__(msg or errmsg, exc, file)
 
-        self.exc_type_name = exc_type_name
-        self.exc_value = exc_value
+        self.exc = exc
         self.file = file
         self.msg = msg or errmsg
 
@@ -144,7 +141,7 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1,
         code = loader.source_to_code(source_bytes, dfile or file,
                                      _optimize=optimize)
     except Exception as err:
-        py_exc = PyCompileError(err.__class__, err, dfile or file)
+        py_exc = PyCompileError(err, dfile or file)
         if quiet < 2:
             if doraise:
                 raise py_exc
