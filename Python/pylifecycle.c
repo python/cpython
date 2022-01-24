@@ -3,6 +3,7 @@
 #include "Python.h"
 
 #include "pycore_bytesobject.h"   // _PyBytes_InitTypes()
+#include "pycore_call.h"          // _PyObject_CallMethod()
 #include "pycore_ceval.h"         // _PyEval_FiniGIL()
 #include "pycore_context.h"       // _PyContext_Init()
 #include "pycore_exceptions.h"    // _PyExc_InitTypes()
@@ -21,6 +22,7 @@
 #include "pycore_pylifecycle.h"   // _PyErr_Print()
 #include "pycore_pymem.h"         // _PyObject_DebugMallocStats()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_runtime.h"       // _Py_GET_GLOBAL_IDENTIFIER()
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_sliceobject.h"   // _PySlice_Fini()
 #include "pycore_structseq.h"     // _PyStructSequence_InitState()
@@ -63,13 +65,6 @@ extern void _PyIO_Fini(void);
 
 #define PUTS(fd, str) _Py_write_noraise(fd, str, (int)strlen(str))
 
-
-_Py_IDENTIFIER(flush);
-_Py_IDENTIFIER(name);
-_Py_IDENTIFIER(stdin);
-_Py_IDENTIFIER(stdout);
-_Py_IDENTIFIER(stderr);
-_Py_IDENTIFIER(threading);
 
 #ifdef __cplusplus
 extern "C" {
@@ -1450,8 +1445,8 @@ finalize_clear_modules_dict(PyObject *modules)
         PyDict_Clear(modules);
     }
     else {
-        _Py_IDENTIFIER(clear);
-        if (_PyObject_CallMethodIdNoArgs(modules, &PyId_clear) == NULL) {
+        PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(clear);
+        if (PyObject_CallMethodNoArgs(modules, attr) == NULL) {
             PyErr_WriteUnraisable(NULL);
         }
     }
@@ -1622,13 +1617,15 @@ file_is_closed(PyObject *fobj)
 static int
 flush_std_files(void)
 {
-    PyObject *fout = _PySys_GetObjectId(&PyId_stdout);
-    PyObject *ferr = _PySys_GetObjectId(&PyId_stderr);
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *fout = _PySys_GetAttr(tstate, _Py_GET_GLOBAL_IDENTIFIER(stdout));
+    PyObject *ferr = _PySys_GetAttr(tstate, _Py_GET_GLOBAL_IDENTIFIER(stderr));
+    PyObject *flush = _Py_GET_GLOBAL_IDENTIFIER(flush);
     PyObject *tmp;
     int status = 0;
 
     if (fout != NULL && fout != Py_None && !file_is_closed(fout)) {
-        tmp = _PyObject_CallMethodIdNoArgs(fout, &PyId_flush);
+        tmp = PyObject_CallMethodNoArgs(fout, flush);
         if (tmp == NULL) {
             PyErr_WriteUnraisable(fout);
             status = -1;
@@ -1638,7 +1635,7 @@ flush_std_files(void)
     }
 
     if (ferr != NULL && ferr != Py_None && !file_is_closed(ferr)) {
-        tmp = _PyObject_CallMethodIdNoArgs(ferr, &PyId_flush);
+        tmp = PyObject_CallMethodNoArgs(ferr, flush);
         if (tmp == NULL) {
             PyErr_Clear();
             status = -1;
@@ -2225,12 +2222,8 @@ create_stdio(const PyConfig *config, PyObject* io,
     PyObject *buf = NULL, *stream = NULL, *text = NULL, *raw = NULL, *res;
     const char* mode;
     const char* newline;
-    PyObject *line_buffering, *write_through;
+    PyObject *line_buffering, *write_through, *attr, *method;
     int buffering, isatty;
-    _Py_IDENTIFIER(open);
-    _Py_IDENTIFIER(isatty);
-    _Py_IDENTIFIER(TextIOWrapper);
-    _Py_IDENTIFIER(mode);
     const int buffered_stdio = config->buffered_stdio;
 
     if (!is_valid_fd(fd))
@@ -2249,16 +2242,23 @@ create_stdio(const PyConfig *config, PyObject* io,
         mode = "wb";
     else
         mode = "rb";
-    buf = _PyObject_CallMethodId(io, &PyId_open, "isiOOOO",
-                                 fd, mode, buffering,
-                                 Py_None, Py_None, /* encoding, errors */
-                                 Py_None, Py_False); /* newline, closefd */
+    attr = _Py_GET_GLOBAL_IDENTIFIER(open);
+    method = PyObject_GetAttr(io, attr);
+    if (method == NULL) {
+        goto error;
+    }
+    PyThreadState *tstate = _PyThreadState_GET();
+    buf = _PyObject_CallMethod(tstate, method, "isiOOOO",
+                               fd, mode, buffering,
+                               Py_None, Py_None, /* encoding, errors */
+                               Py_None, Py_False); /* newline, closefd */
+    Py_DECREF(method);
     if (buf == NULL)
         goto error;
 
     if (buffering) {
-        _Py_IDENTIFIER(raw);
-        raw = _PyObject_GetAttrId(buf, &PyId_raw);
+        attr = _Py_GET_GLOBAL_IDENTIFIER(raw);
+        raw = PyObject_GetAttr(buf, attr);
         if (raw == NULL)
             goto error;
     }
@@ -2274,9 +2274,11 @@ create_stdio(const PyConfig *config, PyObject* io,
 #endif
 
     text = PyUnicode_FromString(name);
-    if (text == NULL || _PyObject_SetAttrId(raw, &PyId_name, text) < 0)
+    attr = _Py_GET_GLOBAL_IDENTIFIER(name);
+    if (text == NULL || PyObject_SetAttr(raw, attr, text) < 0)
         goto error;
-    res = _PyObject_CallMethodIdNoArgs(raw, &PyId_isatty);
+    attr = _Py_GET_GLOBAL_IDENTIFIER(isatty);
+    res = PyObject_CallMethodNoArgs(raw, attr);
     if (res == NULL)
         goto error;
     isatty = PyObject_IsTrue(res);
@@ -2319,9 +2321,14 @@ create_stdio(const PyConfig *config, PyObject* io,
         goto error;
     }
 
-    stream = _PyObject_CallMethodId(io, &PyId_TextIOWrapper, "OOOsOO",
-                                    buf, encoding_str, errors_str,
-                                    newline, line_buffering, write_through);
+    attr = _Py_GET_GLOBAL_IDENTIFIER(TextIOWrapper);
+    method = PyObject_GetAttr(io, attr);
+    if (method == NULL) {
+        goto error;
+    }
+    stream = _PyObject_CallMethod(tstate, method, "OOOsOO",
+                                  buf, encoding_str, errors_str,
+                                  newline, line_buffering, write_through);
     Py_CLEAR(buf);
     Py_CLEAR(encoding_str);
     Py_CLEAR(errors_str);
@@ -2333,7 +2340,8 @@ create_stdio(const PyConfig *config, PyObject* io,
     else
         mode = "r";
     text = PyUnicode_FromString(mode);
-    if (!text || _PyObject_SetAttrId(stream, &PyId_mode, text) < 0)
+    attr = _Py_GET_GLOBAL_IDENTIFIER(mode);
+    if (!text || PyObject_SetAttr(stream, attr, text) < 0)
         goto error;
     Py_CLEAR(text);
     return stream;
@@ -2399,7 +2407,7 @@ init_sys_streams(PyThreadState *tstate)
     PyObject *iomod = NULL;
     PyObject *std = NULL;
     int fd;
-    PyObject * encoding_attr;
+    PyObject * encoding_attr, *attr;
     PyStatus res = _PyStatus_OK();
     const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
 
@@ -2432,7 +2440,8 @@ init_sys_streams(PyThreadState *tstate)
     if (std == NULL)
         goto error;
     PySys_SetObject("__stdin__", std);
-    _PySys_SetObjectId(&PyId_stdin, std);
+    attr = _Py_GET_GLOBAL_IDENTIFIER(stdin);
+    _PySys_SetAttr(attr, std);
     Py_DECREF(std);
 
     /* Set sys.stdout */
@@ -2443,7 +2452,8 @@ init_sys_streams(PyThreadState *tstate)
     if (std == NULL)
         goto error;
     PySys_SetObject("__stdout__", std);
-    _PySys_SetObjectId(&PyId_stdout, std);
+    attr = _Py_GET_GLOBAL_IDENTIFIER(stdout);
+    _PySys_SetAttr(attr, std);
     Py_DECREF(std);
 
 #if 1 /* Disable this if you have trouble debugging bootstrap stuff */
@@ -2472,7 +2482,8 @@ init_sys_streams(PyThreadState *tstate)
         Py_DECREF(std);
         goto error;
     }
-    if (_PySys_SetObjectId(&PyId_stderr, std) < 0) {
+    attr = _Py_GET_GLOBAL_IDENTIFIER(stderr);
+    if (_PySys_SetAttr(attr, std) < 0) {
         Py_DECREF(std);
         goto error;
     }
@@ -2512,7 +2523,7 @@ _Py_FatalError_DumpTracebacks(int fd, PyInterpreterState *interp,
 static int
 _Py_FatalError_PrintExc(PyThreadState *tstate)
 {
-    PyObject *ferr, *res;
+    PyObject *ferr, *res, *attr;
     PyObject *exception, *v, *tb;
     int has_tb;
 
@@ -2522,7 +2533,8 @@ _Py_FatalError_PrintExc(PyThreadState *tstate)
         return 0;
     }
 
-    ferr = _PySys_GetObjectId(&PyId_stderr);
+    attr = _Py_GET_GLOBAL_IDENTIFIER(stderr);
+    ferr = _PySys_GetAttr(tstate, attr);
     if (ferr == NULL || ferr == Py_None) {
         /* sys.stderr is not set yet or set to None,
            no need to try to display the exception */
@@ -2547,7 +2559,8 @@ _Py_FatalError_PrintExc(PyThreadState *tstate)
     Py_XDECREF(tb);
 
     /* sys.stderr may be buffered: call sys.stderr.flush() */
-    res = _PyObject_CallMethodIdNoArgs(ferr, &PyId_flush);
+    attr = _Py_GET_GLOBAL_IDENTIFIER(flush);
+    res = PyObject_CallMethodNoArgs(ferr, attr);
     if (res == NULL) {
         _PyErr_Clear(tstate);
     }
@@ -2899,9 +2912,9 @@ Py_ExitStatusException(PyStatus status)
 static void
 wait_for_thread_shutdown(PyThreadState *tstate)
 {
-    _Py_IDENTIFIER(_shutdown);
     PyObject *result;
-    PyObject *threading = _PyImport_GetModuleId(&PyId_threading);
+    PyObject *name = _Py_GET_GLOBAL_IDENTIFIER(threading);
+    PyObject *threading = PyImport_GetModule(name);
     if (threading == NULL) {
         if (_PyErr_Occurred(tstate)) {
             PyErr_WriteUnraisable(NULL);
@@ -2909,7 +2922,8 @@ wait_for_thread_shutdown(PyThreadState *tstate)
         /* else: threading not imported */
         return;
     }
-    result = _PyObject_CallMethodIdNoArgs(threading, &PyId__shutdown);
+    name = _Py_GET_GLOBAL_IDENTIFIER(_shutdown);
+    result = PyObject_CallMethodNoArgs(threading, name);
     if (result == NULL) {
         PyErr_WriteUnraisable(threading);
     }
