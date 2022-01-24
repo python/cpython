@@ -331,8 +331,7 @@ details of bytecode instructions as :class:`Instruction` instances:
 
 .. class:: Positions
 
-   Namedtuple with :class:`dis.Instruction` position information.
-   All fields might be ``None`` if some information is missing.
+   In case the information is not available, some fields might be `None`.
 
    .. data:: lineno
    .. data:: end_lineno
