@@ -126,6 +126,8 @@ PyAPI_FUNC(PyObject *) _PyErr_TrySetFromCause(
     ...
     );
 
+PyAPI_FUNC(int) BaseException_newargs_superinit(PyObject* self);
+
 /* In signalmodule.c */
 
 int PySignal_SetWakeupFd(int fd);

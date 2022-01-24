@@ -6793,19 +6793,20 @@ load_reduce(UnpicklerObject *self)
                 PyObject_HasAttrString(PyObject_GetAttrString(callable, "__init__"), "__code__"))
             {
                 flags = _PyLong_AsInt(PyObject_GetAttrString(PyObject_GetAttrString(PyObject_GetAttrString(callable, "__init__"), "__code__"), "co_flags"));
+                if (flags == -1 && PyErr_Occurred()) {
+                    return -1;
+                }
             }
-            if (PyTuple_Size(argtup) == 1 && PyDict_Check(PyTuple_GetItem(argtup, PyTuple_Size(argtup) - 1)) && (1 << 3 & flags)) {
+            if (PyTuple_Size(argtup) == 1 && PyDict_Check(PyTuple_GetItem(argtup, PyTuple_Size(argtup) - 1)) && (CO_VARKEYWORDS & flags)) {
                 obj = PyObject_Call(callable, PyTuple_New(0), PyTuple_GetItem(argtup, PyTuple_Size(argtup) - 1));
-                Py_DECREF(callable);
             }
-            else if (PyTuple_Size(argtup) > 1 && PyDict_Check(PyTuple_GetItem(argtup, PyTuple_Size(argtup) - 1)) && (1 << 3 & flags)) {
+            else if (PyTuple_Size(argtup) > 1 && PyDict_Check(PyTuple_GetItem(argtup, PyTuple_Size(argtup) - 1)) && (CO_VARKEYWORDS & flags)) {
                 obj = PyObject_Call(callable, PyTuple_GetSlice(argtup, 0, PyTuple_Size(argtup) - 1), PyTuple_GetItem(argtup, PyTuple_Size(argtup) - 1));
-                Py_DECREF(callable);
             }
             else {
                 obj = PyObject_CallObject(callable, argtup);
-                Py_DECREF(callable);
             }
+            Py_DECREF(callable);
         }
         else {
             obj = PyObject_CallObject(callable, argtup);

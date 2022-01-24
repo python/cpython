@@ -141,13 +141,62 @@ BaseException_repr(PyBaseExceptionObject *self)
         return PyUnicode_FromFormat("%s%R", name, self->args);
 }
 
+static int
+BaseException_newargs_superinit(PyObject* self) {
+    PyFrameObject* frame = PyEval_GetFrame();
+    if (frame == NULL) {
+        PyErr_SetString(PyExc_RuntimeError,
+            "super(): no current frame");
+        return -1;
+    }
+    PyCodeObject* co = PyFrame_GetCode(frame);
+    int flags = co->co_flags;
+    int num_arg = co->co_argcount;
+
+    PyObject* locals = _PyObject_CAST(_PyList_CAST(PyDict_Values(PyEval_GetLocals())));
+    PyObject* __newargs__ = PyList_New(0);
+    PyObject* newargs = PyList_GetSlice(locals, 1, num_arg);
+    PyObject* newkwargs;
+    if (CO_VARARGS & flags) {
+        _PyList_Extend((PyListObject*)newargs, PyList_GetItem(locals, num_arg));
+        num_arg++;
+    }
+    _PyList_Extend((PyListObject*)__newargs__, newargs);
+    if (CO_VARKEYWORDS & flags) {
+        newkwargs = PyList_GetItem(locals, num_arg);
+        PyList_Append(__newargs__, newkwargs);
+    }
+    __newargs__ = PyList_AsTuple(__newargs__);
+    if (!PyTuple_Check(__newargs__)) {
+        return -1;
+    }
+    Py_INCREF(__newargs__);
+    PyObject_SetAttrString(self, "__newargs__", __newargs__);
+    return 0;
+}
+
 static PyObject*
 BaseException_newargs_reduce(PyBaseExceptionObject* self, PyObject* Py_UNUSED(ignored)) {
     if (self->newargs != NULL) {
+        for (int i = 0; i < PyTuple_Size(self->newargs); i++) {
+            PyObject* arg = PyTuple_GetItem(self->newargs, i);
+            if (PyObject_HasAttrString(arg, "__name__")) {
+                int res = PyObject_RichCompareBool(PyObject_GetAttrString(arg, "__name__"), PyUnicode_FromString("<lambda>"), Py_EQ);
+                if (res) {
+                    goto return_args;
+                }
+                if (res < 0) {
+                    return NULL;
+                }
+            }
+        }
         Py_INCREF(self->newargs);
         return self->newargs;
     }
     return PyTuple_New(0);
+  return_args:
+    Py_INCREF(self->args);
+    return self->args;
 }
 
 /* Pickling support */

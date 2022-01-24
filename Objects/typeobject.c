@@ -9046,24 +9046,11 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
         Py_INCREF(obj);
     }
 
-    if (PyType_Check(type) && PyObject_IsSubclass((PyObject*)type, PyExc_BaseException) && PyObject_IsInstance(obj, (PyObject*)type)) {
-        PyObject* locals = _PyObject_CAST(_PyList_CAST(PyDict_Values(PyEval_GetLocals())));
-        int num_arg = _PyLong_AsInt(PyObject_GetAttrString(PyObject_GetAttrString(PyObject_GetAttrString(obj, "__init__"), "__code__"), "co_argcount"));
-        int flags = _PyLong_AsInt(PyObject_GetAttrString(PyObject_GetAttrString(PyObject_GetAttrString(obj, "__init__"), "__code__"), "co_flags"));
-        PyObject* __newargs__ = PyList_New(0);
-        PyObject* newargs = PyList_GetSlice(locals, 1, num_arg);
-        PyObject* newkwargs;
-        if (1 << 2 & flags) {
-            _PyList_Extend((PyListObject*)newargs, PyList_GetItem(locals, num_arg));
-            num_arg++;
+    if (PyExceptionInstance_Check(obj)) {
+        int res = BaseException_newargs_superinit(obj);
+        if (res < 0) {
+            return -1;
         }
-        _PyList_Extend((PyListObject*)__newargs__, newargs);
-        if (1 << 3 & flags) {
-            newkwargs = PyList_GetItem(locals, num_arg);
-            PyList_Append(__newargs__, newkwargs);
-        }
-        Py_INCREF(__newargs__);
-        PyObject_SetAttrString(obj, "__newargs__", PyList_AsTuple(__newargs__));
     }
     Py_INCREF(type);
     Py_XSETREF(su->type, type);
