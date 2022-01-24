@@ -703,7 +703,6 @@ r_string(Py_ssize_t n, RFILE *p)
         read = fread(p->buf, 1, n, p->fp);
     }
     else {
-        _Py_IDENTIFIER(readinto);
         PyObject *res, *mview;
         Py_buffer buf;
 
@@ -713,7 +712,14 @@ r_string(Py_ssize_t n, RFILE *p)
         if (mview == NULL)
             return NULL;
 
-        res = _PyObject_CallMethodId(p->readable, &PyId_readinto, "N", mview);
+        PyObject *readinto = _Py_GET_GLOBAL_IDENTIFIER(readinto);
+        PyObject *method = PyObject_GetAttr(p->readable, readinto);
+        if (method == NULL) {
+            return NULL;
+        }
+        PyThreadState *tstate = _PyThreadState_GET();
+        res = _PyObject_CallMethod(tstate, method, "N", mview);
+        Py_DECREF(method);
         if (res != NULL) {
             read = PyNumber_AsSsize_t(res, PyExc_ValueError);
             Py_DECREF(res);
@@ -1713,12 +1719,12 @@ marshal_dump_impl(PyObject *module, PyObject *value, PyObject *file,
     /* XXX Quick hack -- need to do this differently */
     PyObject *s;
     PyObject *res;
-    _Py_IDENTIFIER(write);
 
     s = PyMarshal_WriteObjectToString(value, version);
     if (s == NULL)
         return NULL;
-    res = _PyObject_CallMethodIdOneArg(file, &PyId_write, s);
+    PyObject *write = _Py_GET_GLOBAL_IDENTIFIER(write);
+    res = _PyObject_CallMethodOneArg(file, write, s);
     Py_DECREF(s);
     return res;
 }
@@ -1745,7 +1751,6 @@ marshal_load(PyObject *module, PyObject *file)
 /*[clinic end generated code: output=f8e5c33233566344 input=c85c2b594cd8124a]*/
 {
     PyObject *data, *result;
-    _Py_IDENTIFIER(read);
     RFILE rf;
 
     /*
@@ -1755,7 +1760,14 @@ marshal_load(PyObject *module, PyObject *file)
      * This can be removed if we guarantee good error handling
      * for r_string()
      */
-    data = _PyObject_CallMethodId(file, &PyId_read, "i", 0);
+    PyObject *read = _Py_GET_GLOBAL_IDENTIFIER(read);
+    PyObject *method = PyObject_GetAttr(file, read);
+    if (method == NULL) {
+        return NULL;
+    }
+    PyThreadState *tstate = _PyThreadState_GET();
+    data = _PyObject_CallMethod(tstate, method, "i", 0);
+    Py_DECREF(method);
     if (data == NULL)
         return NULL;
     if (!PyBytes_Check(data)) {
