@@ -163,6 +163,13 @@ _PySys_SetObjectId(_Py_Identifier *key, PyObject *v)
     return sys_set_object_id(interp, key, v);
 }
 
+int
+_PySys_SetAttr(PyObject *key, PyObject *v)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return sys_set_object(interp, key, v);
+}
+
 static int
 sys_set_object_str(PyInterpreterState *interp, const char *name, PyObject *v)
 {
