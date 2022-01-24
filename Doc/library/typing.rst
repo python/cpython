@@ -1932,6 +1932,21 @@ Functions and decorators
    runtime we intentionally don't check anything (we want this
    to be as fast as possible).
 
+.. function:: assert_type(val, typ, /)
+
+   Assert (to the type checker) that the value is of the given type.
+
+   When the type checker encounters a call to ``assert_type()``, it
+   emits an error if the value is not of the specified type::
+
+       def greet(name: str) -> None:
+           assert_type(name, str)  # ok
+           assert_type(name, int)  # type checker error
+
+   At runtime this returns the first argument unchanged.
+
+   .. versionadded:: 3.11
+
 .. decorator:: overload
 
    The ``@overload`` decorator allows describing functions and methods
