@@ -1674,7 +1674,7 @@ class Annotated:
                             "with at least two arguments (a type and an "
                             "annotation).")
         msg = "Annotated[t, ...]: t must be a type."
-        origin = _type_check(params[0], msg)
+        origin = _type_check(params[0], msg, is_class=True)
         metadata = tuple(params[1:])
         return _AnnotatedAlias(origin, metadata)
 
