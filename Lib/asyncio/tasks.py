@@ -634,7 +634,7 @@ def _ensure_future(coro_or_future, *, loop=None):
         loop = events._get_event_loop(stacklevel=4)
     try:
         return loop.create_task(coro_or_future)
-    except: 
+    except RuntimeError: 
         if not called_wrap_awaitable:
             coro_or_future.close()
         raise
