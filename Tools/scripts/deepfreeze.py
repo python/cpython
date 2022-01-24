@@ -280,7 +280,9 @@ class Printer:
             self.write(f".co_freevars = {co_freevars},")
         self.deallocs.append(f"PyMem_Free({name}.co_quickened);")
         self.deallocs.append(f"PyMem_Free({name}.co_extra);")
+        self.deallocs.append(f"if ({name}.co_weakreflist != NULL) {{")
         self.deallocs.append(f"PyObject_ClearWeakRefs((PyObject *)&{name});")
+        self.deallocs.append("};")
         return f"& {name}.ob_base"
 
     def generate_tuple(self, name: str, t: Tuple[object, ...]) -> str:
