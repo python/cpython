@@ -6,27 +6,22 @@ from idlelib import util
 
 
 class ExtensionTest(unittest.TestCase):
-    def test_pyi(self):
-        self.assertIn('.pyi', util.PYTHON_EXTENSIONS)
-
-    def test_py(self):
-        self.assertIn('.py', util.PYTHON_EXTENSIONS)
-
-    def test_pyw(self):
-        self.assertIn('.pyw', util.PYTHON_EXTENSIONS)
+    def test_extensions(self):
+        for extension in {'.pyi', '.py', '.pyw'}:
+            with self.subTest(extension=extension):
+                self.assertIn(extension, util.PYTHON_EXTENSIONS)
 
 
 class IsPythonExtensionTest(unittest.TestCase):    
     def test_positives(self):
         for extension in util.PYTHON_EXTENSIONS:
-            self.assertTrue(util.is_python_extension(extension))
+            with self.subTest(extension=extension):
+                self.assertTrue(util.is_python_extension(extension))
 
     def test_negatives(self):
-        self.assertFalse(util.is_python_extension('.pyc'))
-        self.assertFalse(util.is_python_extension('.p'))
-        self.assertFalse(util.is_python_extension('.pyy'))
-        self.assertFalse(util.is_python_extension('..py'))
-        self.assertFalse(util.is_python_extension('.ppy'))
+        for bad_extension in {'.pyc', '.p', '.pyy', '..py', '.ppy'}:
+            with self.subTest(bad_extension=bad_extension):
+                self.assertFalse(util.is_python_extension(bad_extension))
 
 
 class IsPythonSourceTest(unittest.TestCase):
@@ -57,41 +52,41 @@ class IsPythonSourceTest(unittest.TestCase):
                 util.is_python_source(filepath='%^*iupoukjcj&)9675889')
             )
 
-    def test_bad_filepath_good_firstline(self):        
+    def test_bad_filepath_good_firstline(self):
+        test_cases = (
+            ('ad^%^&*yoi724)', '#!python'),
+            ('7890J:IUJjhu435465$£^%£', '#!     python'),
+            ('$%^&554657jhasfnmnbnnnm', '#!asdfkpoijeqrjiumnbjypythonasdfjlh')
+        )
+
         with (
             mock.patch('os.path.isdir', return_value=False),
             mock.patch('idlelib.util.is_python_extension', return_value=False)
         ):
-            self.assertTrue(util.is_python_source(
-                filepath='ad^%^&*yoi724)',
-                firstline='#!python'
-            ))
-            self.assertTrue(util.is_python_source(
-                filepath='7890J:IUJjhu435465$£^%£',
-                firstline='#!     python'
-            ))
-            self.assertTrue(util.is_python_source(
-                filepath='$%^&554657jhasfnmnbnnnm',
-                firstline='#!asdfkpoijeqrjiumnbjypythonasdfjlh'
-            ))
+            for filepath, firstline in test_cases:
+                with self.subTest(filepath=filepath, firstline=firstline):
+                    self.assertTrue(util.is_python_source(
+                        filepath=filepath,
+                        firstline=firstline
+                    ))
 
     def test_bad_filepath_bad_firstline(self):
+        test_cases = (
+            ('tyyuiuoiu', '#python!'),
+            ('796923568%^&**$', '!#python'),
+            ('67879iy987kjl87', 'python#!')
+        )
+
         with (
             mock.patch('os.path.isdir', return_value=False),
             mock.patch('idlelib.util.is_python_extension', return_value=False)
         ):
-            self.assertFalse(util.is_python_source(
-                filepath='tyyuiuoiu',
-                firstline='#python!'
-            ))
-            self.assertFalse(util.is_python_source(
-                filepath='796923568%^&**$',
-                firstline='!#python'
-            ))
-            self.assertFalse(util.is_python_source(
-                filepath='67879iy987kjl87',
-                firstline='python#!'
-            ))
+            for filepath, firstline in test_cases:
+                with self.subTest(filepath=filepath, firstline=firstline):
+                    self.assertFalse(util.is_python_source(
+                        filepath=filepath,
+                        firstline=firstline
+                    ))
 
 
 if __name__ == '__main__':

@@ -348,7 +348,7 @@ class IOBinding:
     savedialog = None
 
     filetypes = (
-        ("Python files", "*.py *pyi *.pyw", "TEXT"),
+        ("Python files", "*.py *.pyi *.pyw", "TEXT"),
         ("Text files", "*.txt", "TEXT"),
         ("All files", "*"),
         )

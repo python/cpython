@@ -55,7 +55,10 @@ def _extension_is_in_IOBinding_dot_filetypes(extension):
 class FiletypesTest(unittest.TestCase):
     def test_python_source_files(self):
         for extension in util.PYTHON_EXTENSIONS:
-            self.assertTrue(_extension_is_in_IOBinding_dot_filetypes(extension))
+            with self.subTest(extension=extension):
+                self.assertTrue(
+                    _extension_is_in_IOBinding_dot_filetypes(extension)
+                )
 
     def test_text_files(self):
         self.assertTrue(_extension_is_in_IOBinding_dot_filetypes('.txt'))
