@@ -1013,6 +1013,16 @@ def create_empty_file(filename):
     fd = os.open(filename, os.O_WRONLY | os.O_CREAT | os.O_TRUNC)
     os.close(fd)
 
+@contextlib.contextmanager
+def open_dir_fd(path):
+    """Open a file descriptor to a directory."""
+    assert os.path.isdir(path)
+    dir_fd = os.open(path, os.O_RDONLY)
+    try:
+        yield dir_fd
+    finally:
+        os.close(dir_fd)
+
 def sortdict(dict):
     "Like repr(dict), but in sorted order."
     items = sorted(dict.items())
