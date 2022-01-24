@@ -122,72 +122,50 @@ class AnyTests(BaseTestCase):
         typing.IO[Any]
 
 
-class NoReturnTests(BaseTestCase):
+class BottomTypeTests:
+    bottom_type: ClassVar[Any]
 
-    def test_noreturn_instance_type_error(self):
+    def test_instance_type_error(self):
         with self.assertRaises(TypeError):
-            isinstance(42, NoReturn)
+            isinstance(42, self.bottom_type)
 
-    def test_noreturn_subclass_type_error(self):
+    def test_subclass_type_error(self):
         with self.assertRaises(TypeError):
-            issubclass(Employee, NoReturn)
+            issubclass(Employee, self.bottom_type)
         with self.assertRaises(TypeError):
-            issubclass(NoReturn, Employee)
+            issubclass(NoReturn, self.bottom_type)
+
+    def test_not_generic(self):
+        with self.assertRaises(TypeError):
+            self.bottom_type[int]
+
+    def test_cannot_subclass(self):
+        with self.assertRaises(TypeError):
+            class A(self.bottom_type):
+                pass
+        with self.assertRaises(TypeError):
+            class A(type(self.bottom_type)):
+                pass
+
+    def test_cannot_instantiate(self):
+        with self.assertRaises(TypeError):
+            self.bottom_type()
+        with self.assertRaises(TypeError):
+            type(self.bottom_type)()
+
+
+class NoReturnTests(BottomTypeTests, BaseTestCase):
+    bottom_type = NoReturn
 
     def test_repr(self):
         self.assertEqual(repr(NoReturn), 'typing.NoReturn')
 
-    def test_not_generic(self):
-        with self.assertRaises(TypeError):
-            NoReturn[int]
 
-    def test_cannot_subclass(self):
-        with self.assertRaises(TypeError):
-            class A(NoReturn):
-                pass
-        with self.assertRaises(TypeError):
-            class A(type(NoReturn)):
-                pass
-
-    def test_cannot_instantiate(self):
-        with self.assertRaises(TypeError):
-            NoReturn()
-        with self.assertRaises(TypeError):
-            type(NoReturn)()
-
-
-class NeverTests(BaseTestCase):
-
-    def test_never_instance_type_error(self):
-        with self.assertRaises(TypeError):
-            isinstance(42, Never)
-
-    def test_never_subclass_type_error(self):
-        with self.assertRaises(TypeError):
-            issubclass(Employee, Never)
-        with self.assertRaises(TypeError):
-            issubclass(Never, Employee)
+class NeverTests(BottomTypeTests, BaseTestCase):
+    bottom_type = Never
 
     def test_repr(self):
         self.assertEqual(repr(Never), 'typing.Never')
-
-    def test_not_generic(self):
-        with self.assertRaises(TypeError):
-            Never[int]
-
-    def test_cannot_subclass(self):
-        with self.assertRaises(TypeError):
-            class A(Never):
-                pass
-        with self.assertRaises(TypeError):
-            class A(type(Never)):
-                pass
-
-    def test_cannot_instantiate(self):
-        with self.assertRaises(TypeError):
-            Never()
-        with self.assertRaises(TypeError):
-            type(Never)()
 
 
 class AssertNeverTests(BaseTestCase):
