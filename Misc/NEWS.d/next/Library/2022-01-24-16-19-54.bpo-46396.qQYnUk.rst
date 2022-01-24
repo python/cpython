@@ -1,0 +1,3 @@
+:class:`typing.Concatenate` does not raise semantic errors anymore.
+
+We leave type validation to type-checkers.
