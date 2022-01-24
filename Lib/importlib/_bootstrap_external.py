@@ -381,6 +381,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.11a4 3473 (Add POP_JUMP_IF_NOT_NONE/POP_JUMP_IF_NONE opcodes)
 #     Python 3.11a4 3474 (Add RESUME opcode)
 #     Python 3.11a5 3475 (Add RETURN_GENERATOR opcode)
+#     Python 3.11a5 3476 (Add ASYNC_GEN_WRAP opcode)
 
 #     Python 3.12 will start with magic number 3500
 
@@ -394,7 +395,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3475).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3476).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
