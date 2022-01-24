@@ -1,0 +1,3 @@
+Remove the 3.11.0a3 Add ``max_tasks_per_child`` from
+:class:`concurrent.futures.ProcessPoolExecutor` as the implementation relied
+on mixing threads+fork which can cause deadlocks .
