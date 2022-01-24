@@ -1,3 +1,7 @@
-Remove the 3.11.0a3 Add ``max_tasks_per_child`` from
-:class:`concurrent.futures.ProcessPoolExecutor` as the implementation relied
-on mixing threads+fork which can cause deadlocks .
+Remove the 3.11.0a3 :issue:`44733` added ``max_tasks_per_child`` feature from
+:class:`concurrent.futures.ProcessPoolExecutor` as the implementation relied on
+mixing threading and fork() which can cause deadlocks in child processes.
+
+Remove the 3.9 :issue:`39207` performance enhancement from that spawned worker
+processes for :class:`concurrent.futures.ProcessPoolExecutor` on demand rather
+than up front as the implementation could cause deadlocks in the child process.
