@@ -936,14 +936,14 @@ their subgroups based on the types of the contained exceptions.
    defines an exception group subclass which accepts an exit_code and
    and constructs the group's message from it. ::
 
-      >>> class Errors(ExceptionGroup):
-      ...   def __new__(cls, errors, exit_code):
-      ...      self = super().__new__(Errors, f"exit code: {exit_code}", errors)
-      ...      self.exit_code = exit_code
-      ...      return self
-      ...
-      ...   def derive(self, excs):
-      ...      return Errors(excs, self.exit_code)
+      class Errors(ExceptionGroup):
+         def __new__(cls, errors, exit_code):
+            self = super().__new__(Errors, f"exit code: {exit_code}", errors)
+            self.exit_code = exit_code
+            return self
+
+         def derive(self, excs):
+            return Errors(excs, self.exit_code)
 
    .. versionadded:: 3.11
 
