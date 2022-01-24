@@ -167,8 +167,12 @@ def main():
         else:
             progname = args[0]
             sys.path.insert(0, os.path.dirname(progname))
-            with open(progname, 'rb') as fp:
-                code = compile(fp.read(), progname, 'exec')
+            try:
+                with open(progname, 'rb') as fp:
+                    code = compile(fp.read(), progname, 'exec')
+            except FileNotFoundError:
+                code = compile(progname, 'stdin', 'exec')
+                progname='stdin'
             globs = {
                 '__file__': progname,
                 '__name__': '__main__',
