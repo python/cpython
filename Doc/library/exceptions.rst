@@ -930,9 +930,9 @@ their subgroups based on the types of the contained exceptions.
       >>> MyGroup("eg", [ValueError(1), TypeError(2)]).split(TypeError)
       (MyGroup('eg', [TypeError(2)]), MyGroup('eg', [ValueError(1)]))
 
-   Note that :exc:``BaseExceptionGroup`` defines :meth:``__new__``, so
+   Note that :exc:`BaseExceptionGroup` defines :meth:`__new__`, so
    subclasses that need a different constructor signature need to
-   override that rather than :meth:``__init__``. For example, the following
+   override that rather than :meth:`__init__`. For example, the following
    defines an exception group subclass which accepts an exit_code and
    and constructs the group's message from it. ::
 
