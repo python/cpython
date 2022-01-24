@@ -878,6 +878,15 @@ their subgroups based on the types of the contained exceptions.
    raises a :exc:`TypeError` if any contained exception is not an
    :exc:`Exception` subclass.
 
+   .. attribute:: message
+
+       The ``msg`` argument to the constructor. This is a read-only attribute.
+
+   .. attribute:: exceptions
+
+       A tuple of the exceptions in the ``excs`` sequence given to the
+       constructor. This is a read-only attribute.
+
    .. method:: subgroup(condition)
 
    Returns an exception group that contains only the exceptions from the
@@ -920,6 +929,21 @@ their subgroups based on the types of the contained exceptions.
       ...
       >>> MyGroup("eg", [ValueError(1), TypeError(2)]).split(TypeError)
       (MyGroup('eg', [TypeError(2)]), MyGroup('eg', [ValueError(1)]))
+
+   Note that :exc:``BaseExceptionGroup`` defines :meth:``__new__``, so
+   subclasses that need a different constructor signature need to
+   override that rather than :meth:``__init__``. For example, the following
+   defines an exception group subclass which accepts an exit_code and
+   and constructs the group's message from it. ::
+
+      >>> class Errors(ExceptionGroup):
+      ...   def __new__(self, errors, exit_code):
+      ...      self = super().__new__(Errors, f"exit code: {exit_code}", errors)
+      ...      self.exit_code = exit_code
+      ...      return self
+      ...
+      ...   def derive(self, excs):
+      ...      return Errors(excs, self.exit_code)
 
    .. versionadded:: 3.11
 
