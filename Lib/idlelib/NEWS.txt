@@ -1,7 +1,11 @@
-What's New in IDLE 3.9 after 3.9.0
-until 3.9.12, 2022-05-16
-==================================
+What's New in IDLE 3.9.z
+after 3.9.0 until 3.9.12
+Released on 2022-05-16
+=========================
 
+
+bpo-45296: On Windows, change exit/quit message to suggest Ctrl-D, which
+works, instead of <Ctrl-Z Return>, which does not work in IDLE.
 
 bpo-40128: Mostly fix completions on macOS when not using tcl/tk 8.6.11
 (as with 3.9).
