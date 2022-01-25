@@ -397,7 +397,7 @@ def skip_if_sanitizer(reason=None, *, address=False, memory=False, ub=False):
         '--with-memory-sanitizer' in _config_args
     )
     address_sanitizer = (
-        '-fsanitize=address' in _cflags
+        '-fsanitize=address' in _cflags or
         '--with-memory-sanitizer' in _config_args
     )
     ub_sanitizer = (
