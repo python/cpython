@@ -271,6 +271,8 @@ def _split_list(s, predicate):
             no.append(x)
     return yes, no
 
+_future_feature_names = set(__future__.all_feature_names)
+
 def visiblename(name, all=None, obj=None):
     """Decide whether to show documentation on a variable."""
     # Certain special names are redundant or internal.
@@ -285,7 +287,7 @@ def visiblename(name, all=None, obj=None):
     # Namedtuples have public fields and methods with a single leading underscore
     if name.startswith('_') and hasattr(obj, '_fields'):
         return True
-    if name in __future__.all_feature_names:
+    if name in _future_feature_names:
         if isinstance(getattr(obj, name, None), __future__._Feature):
             return False
     if all is not None:
