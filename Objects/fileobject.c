@@ -26,8 +26,6 @@
 extern "C" {
 #endif
 
-_Py_IDENTIFIER(open);
-
 /* External C interface */
 
 PyObject *
@@ -40,10 +38,17 @@ PyFile_FromFd(int fd, const char *name, const char *mode, int buffering, const c
     io = PyImport_ImportModule("_io");
     if (io == NULL)
         return NULL;
-    stream = _PyObject_CallMethodId(io, &PyId_open, "isisssO", fd, mode,
-                                 buffering, encoding, errors,
-                                 newline, closefd ? Py_True : Py_False);
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(open);
+    PyObject *meth = PyObject_GetAttr(io, attr);
     Py_DECREF(io);
+    if (meth == NULL) {
+        return NULL;
+    }
+    PyThreadState *tstate = _PyThreadState_GET();
+    stream = _PyObject_CallMethod(tstate, meth, "isisssO", fd, mode,
+                                  buffering, encoding, errors,
+                                  newline, closefd ? Py_True : Py_False);
+    Py_DECREF(meth);
     if (stream == NULL)
         return NULL;
     /* ignore name attribute because the name attribute of _BufferedIOMixin
@@ -54,7 +59,6 @@ PyFile_FromFd(int fd, const char *name, const char *mode, int buffering, const c
 PyObject *
 PyFile_GetLine(PyObject *f, int n)
 {
-    _Py_IDENTIFIER(readline);
     PyObject *result;
 
     if (f == NULL) {
@@ -62,11 +66,18 @@ PyFile_GetLine(PyObject *f, int n)
         return NULL;
     }
 
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(readline);
     if (n <= 0) {
-        result = _PyObject_CallMethodIdNoArgs(f, &PyId_readline);
+        result = PyObject_CallMethodNoArgs(f, attr);
     }
     else {
-        result = _PyObject_CallMethodId(f, &PyId_readline, "i", n);
+        PyObject *meth = PyObject_GetAttr(f, attr);
+        if (meth == NULL) {
+            return NULL;
+        }
+        PyThreadState *tstate = _PyThreadState_GET();
+        result = _PyObject_CallMethod(tstate, meth, "i", n);
+        Py_DECREF(meth);
     }
     if (result != NULL && !PyBytes_Check(result) &&
         !PyUnicode_Check(result)) {
@@ -120,13 +131,13 @@ int
 PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
 {
     PyObject *writer, *value, *result;
-    _Py_IDENTIFIER(write);
 
     if (f == NULL) {
         PyErr_SetString(PyExc_TypeError, "writeobject with NULL file");
         return -1;
     }
-    writer = _PyObject_GetAttrId(f, &PyId_write);
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(write);
+    writer = PyObject_GetAttr(f, attr);
     if (writer == NULL)
         return -1;
     if (flags & Py_PRINT_RAW) {
@@ -182,12 +193,12 @@ PyObject_AsFileDescriptor(PyObject *o)
 {
     int fd;
     PyObject *meth;
-    _Py_IDENTIFIER(fileno);
 
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(fileno);
     if (PyLong_Check(o)) {
         fd = _PyLong_AsInt(o);
     }
-    else if (_PyObject_LookupAttrId(o, &PyId_fileno, &meth) < 0) {
+    else if (_PyObject_LookupAttr(o, attr, &meth) < 0) {
         return -1;
     }
     else if (meth != NULL) {
@@ -509,9 +520,14 @@ PyFile_OpenCodeObject(PyObject *path)
     } else {
         iomod = PyImport_ImportModule("_io");
         if (iomod) {
-            f = _PyObject_CallMethodId(iomod, &PyId_open, "Os",
-                                       path, "rb");
+            PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(open);
+            PyObject *meth = PyObject_GetAttr(iomod, attr);
             Py_DECREF(iomod);
+            if (meth != NULL) {
+                PyThreadState *tstate = _PyThreadState_GET();
+                f = _PyObject_CallMethod(tstate, meth, "Os", path, "rb");
+                Py_DECREF(meth);
+            }
         }
     }
 
