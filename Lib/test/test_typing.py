@@ -4679,6 +4679,14 @@ class AnnotatedTests(BaseTestCase):
         A.x = 5
         self.assertEqual(C.x, 5)
 
+    def test_special_form_containment(self):
+        class C:
+            classvar: Annotated[ClassVar[int], "a decoration"] = 4
+            const: Annotated[Final[int], "Const"] = 4
+
+        self.assertEqual(get_type_hints(C, globals())['classvar'], ClassVar[int])
+        self.assertEqual(get_type_hints(C, globals())['const'], Final[int])
+
     def test_hash_eq(self):
         self.assertEqual(len({Annotated[int, 4, 5], Annotated[int, 4, 5]}), 1)
         self.assertNotEqual(Annotated[int, 4, 5], Annotated[int, 5, 4])

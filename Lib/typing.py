@@ -151,7 +151,7 @@ def _type_convert(arg, module=None):
     return arg
 
 
-def _type_check(arg, msg, is_argument=True, module=None, *, is_class=False):
+def _type_check(arg, msg, is_argument=True, module=None, *, allow_special_forms=False):
     """Check that the argument is a type, and return it (internal helper).
 
     As a special case, accept None and return type(None) instead. Also wrap strings
@@ -164,7 +164,7 @@ def _type_check(arg, msg, is_argument=True, module=None, *, is_class=False):
     We append the repr() of the actual value (truncated to 100 chars).
     """
     invalid_generic_forms = (Generic, Protocol)
-    if not is_class:
+    if not allow_special_forms:
         invalid_generic_forms += (ClassVar,)
         if is_argument:
             invalid_generic_forms += (Final,)
@@ -697,7 +697,7 @@ class ForwardRef(_Final, _root=True):
                 eval(self.__forward_code__, globalns, localns),
                 "Forward references must evaluate to types.",
                 is_argument=self.__forward_is_argument__,
-                is_class=self.__forward_is_class__,
+                allow_special_forms=self.__forward_is_class__,
             )
             self.__forward_value__ = _eval_type(
                 type_, globalns, localns, recursive_guard | {self.__forward_arg__}
@@ -1674,7 +1674,7 @@ class Annotated:
                             "with at least two arguments (a type and an "
                             "annotation).")
         msg = "Annotated[t, ...]: t must be a type."
-        origin = _type_check(params[0], msg)
+        origin = _type_check(params[0], msg, allow_special_forms=True)
         metadata = tuple(params[1:])
         return _AnnotatedAlias(origin, metadata)
 
