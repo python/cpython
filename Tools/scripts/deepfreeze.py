@@ -114,7 +114,7 @@ class Printer:
         self.write('#include "internal/pycore_gc.h"')
         self.write('#include "internal/pycore_code.h"')
         self.write('#include "internal/pycore_long.h"')
-        self.write("")      
+        self.write("")
 
     @contextlib.contextmanager
     def indent(self) -> None:
