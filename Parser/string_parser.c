@@ -458,7 +458,7 @@ fstring_find_literal(Parser *p, const char **str, const char *end, int raw,
                    followed by a "{".  Just keep parsing this literal.  This
                    error will be caught later by
                    decode_unicode_with_escapes(). */
-                continue;
+                break;
             }
             if (ch == '{' && warn_invalid_escape_sequence(p, ch, t) < 0) {
                 return -1;
