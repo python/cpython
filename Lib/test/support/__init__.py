@@ -41,7 +41,7 @@ __all__ = [
     "requires_IEEE_754", "requires_zlib",
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
     "check__all__", "skip_if_buggy_ucrt_strfptime",
-    "check_disallow_instantiation",
+    "check_disallow_instantiation", "skip_if_sanitizer",
     # sys
     "is_jython", "is_android", "check_impl_detail", "unix_shell",
     "setswitchinterval",
@@ -55,7 +55,6 @@ __all__ = [
     "run_with_tz", "PGO", "missing_compiler_executable",
     "ALWAYS_EQ", "NEVER_EQ", "LARGEST", "SMALLEST",
     "LOOPBACK_TIMEOUT", "INTERNET_TIMEOUT", "SHORT_TIMEOUT", "LONG_TIMEOUT",
-    "skip_if_sanitizer",
     ]
 
 
@@ -399,6 +398,7 @@ def skip_if_sanitizer(reason=None, *, address=False, memory=False, ub=False):
     )
     address_sanitizer = (
         '-fsanitize=address' in _cflags
+        '--with-memory-sanitizer' in _config_args
     )
     ub_sanitizer = (
         '-fsanitize=undefined' in _cflags or
