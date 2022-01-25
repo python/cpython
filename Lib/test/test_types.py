@@ -629,8 +629,8 @@ class TypesTests(unittest.TestCase):
             raise OSError
         except OSError as e:
             exc = e
-        self.assertIsInstance(e.__traceback__, types.TracebackType)
-        self.assertIsInstance(e.__traceback__.tb_frame, types.FrameType)
+        self.assertIsInstance(exc.__traceback__, types.TracebackType)
+        self.assertIsInstance(exc.__traceback__.tb_frame, types.FrameType)
 
 
 class UnionTests(unittest.TestCase):
