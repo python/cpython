@@ -240,11 +240,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     long isatty = 0;
 
     PyObject *raw, *modeobj = NULL, *buffer, *wrapper, *result = NULL, *path_or_fd = NULL;
-
-    _Py_IDENTIFIER(_blksize);
-    _Py_IDENTIFIER(isatty);
-    _Py_IDENTIFIER(mode);
-    _Py_IDENTIFIER(close);
+    PyObject *attr;
 
     is_number = PyNumber_Check(file);
 
@@ -381,7 +377,8 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
 
     /* buffering */
     if (buffering < 0) {
-        PyObject *res = _PyObject_CallMethodIdNoArgs(raw, &PyId_isatty);
+        attr = _Py_GET_GLOBAL_IDENTIFIER(isatty);
+        PyObject *res = PyObject_CallMethodNoArgs(raw, attr);
         if (res == NULL)
             goto error;
         isatty = PyLong_AsLong(res);
@@ -399,7 +396,8 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
 
     if (buffering < 0) {
         PyObject *blksize_obj;
-        blksize_obj = _PyObject_GetAttrId(raw, &PyId__blksize);
+        attr = _Py_GET_GLOBAL_IDENTIFIER(_blksize);
+        blksize_obj = PyObject_GetAttr(raw, attr);
         if (blksize_obj == NULL)
             goto error;
         buffering = PyLong_AsLong(blksize_obj);
@@ -466,7 +464,8 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     result = wrapper;
     Py_DECREF(buffer);
 
-    if (_PyObject_SetAttrId(wrapper, &PyId_mode, modeobj) < 0)
+    attr = _Py_GET_GLOBAL_IDENTIFIER(mode);
+    if (PyObject_SetAttr(wrapper, attr, modeobj) < 0)
         goto error;
     Py_DECREF(modeobj);
     return result;
@@ -475,7 +474,8 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     if (result != NULL) {
         PyObject *exc, *val, *tb, *close_result;
         PyErr_Fetch(&exc, &val, &tb);
-        close_result = _PyObject_CallMethodIdNoArgs(result, &PyId_close);
+        attr = _Py_GET_GLOBAL_IDENTIFIER(close);
+        close_result = PyObject_CallMethodNoArgs(result, attr);
         _PyErr_ChainExceptions(exc, val, tb);
         Py_XDECREF(close_result);
         Py_DECREF(result);

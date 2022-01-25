@@ -72,8 +72,6 @@ typedef struct {
 
 PyTypeObject PyFileIO_Type;
 
-_Py_IDENTIFIER(name);
-
 #define PyFileIO_Check(op) (PyObject_TypeCheck((op), &PyFileIO_Type))
 
 /* Forward declarations */
@@ -146,9 +144,9 @@ _io_FileIO_close_impl(fileio *self)
     PyObject *res;
     PyObject *exc, *val, *tb;
     int rc;
-    _Py_IDENTIFIER(close);
-    res = _PyObject_CallMethodIdOneArg((PyObject*)&PyRawIOBase_Type,
-                                       &PyId_close, (PyObject *)self);
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(close);
+    res = PyObject_CallMethodOneArg((PyObject*)&PyRawIOBase_Type,
+                                     attr, (PyObject *)self);
     if (!self->closefd) {
         self->fd = -1;
         return res;
@@ -476,7 +474,8 @@ _Py_COMP_DIAG_POP
     _setmode(self->fd, O_BINARY);
 #endif
 
-    if (_PyObject_SetAttrId((PyObject *)self, &PyId_name, nameobj) < 0)
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(name);
+    if (PyObject_SetAttr((PyObject *)self, attr, nameobj) < 0)
         goto error;
 
     if (self->appending) {
@@ -1085,7 +1084,8 @@ fileio_repr(fileio *self)
     if (self->fd < 0)
         return PyUnicode_FromFormat("<_io.FileIO [closed]>");
 
-    if (_PyObject_LookupAttrId((PyObject *) self, &PyId_name, &nameobj) < 0) {
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(name);
+    if (_PyObject_LookupAttr((PyObject *) self, attr, &nameobj) < 0) {
         return NULL;
     }
     if (nameobj == NULL) {

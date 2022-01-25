@@ -156,8 +156,6 @@ typedef struct {
 
 PyTypeObject PyWindowsConsoleIO_Type;
 
-_Py_IDENTIFIER(name);
-
 int
 _PyWindowsConsoleIO_closed(PyObject *self)
 {
@@ -196,9 +194,9 @@ _io__WindowsConsoleIO_close_impl(winconsoleio *self)
     PyObject *res;
     PyObject *exc, *val, *tb;
     int rc;
-    _Py_IDENTIFIER(close);
-    res = _PyObject_CallMethodIdOneArg((PyObject*)&PyRawIOBase_Type,
-                                       &PyId_close, (PyObject*)self);
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(close);
+    res = PyObject_CallMethodOneArg((PyObject*)&PyRawIOBase_Type,
+                                    attr, (PyObject*)self);
     if (!self->closefd) {
         self->fd = -1;
         return res;
@@ -394,7 +392,8 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
     self->blksize = DEFAULT_BUFFER_SIZE;
     memset(self->buf, 0, 4);
 
-    if (_PyObject_SetAttrId((PyObject *)self, &PyId_name, nameobj) < 0)
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(name);
+    if (PyObject_SetAttr((PyObject *)self, attr, nameobj) < 0)
         goto error;
 
     goto done;
