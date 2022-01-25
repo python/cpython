@@ -19,6 +19,7 @@ from typing import get_origin, get_args
 from typing import is_typeddict
 from typing import no_type_check, no_type_check_decorator
 from typing import Type
+from typing import NewType
 from typing import NamedTuple, TypedDict
 from typing import IO, TextIO, BinaryIO
 from typing import Pattern, Match
