@@ -2767,8 +2767,15 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
         vtop = vk[size_w];
         assert(vtop <= wm1);
         vv = ((twodigits)vtop << PyLong_SHIFT) | vk[size_w-1];
+        /* The code used to compute the remainder via
+         *     r = (digit)(vv - (twodigits)wm1 * q);
+         * and compilers generally generated code to do the * and -.
+         * But modern processors generally compute q and r with a single
+         * instruction, and modern optimizing compilers exploit that if we
+         * _don't_ try to optimize it.
+         */
         q = (digit)(vv / wm1);
-        r = (digit)(vv - (twodigits)wm1 * q); /* r = vv % wm1 */
+        r = (digit)(vv % wm1);
         while ((twodigits)wm2 * q > (((twodigits)r << PyLong_SHIFT)
                                      | vk[size_w-2])) {
             --q;

@@ -56,6 +56,7 @@ class BuildExtTestCase(TempdirManager,
     def build_ext(self, *args, **kwargs):
         return build_ext(*args, **kwargs)
 
+    @support.requires_subprocess()
     def test_build_ext(self):
         cmd = support.missing_compiler_executable()
         if cmd is not None:
@@ -332,6 +333,7 @@ class BuildExtTestCase(TempdirManager,
         cmd.run()
         self.assertEqual(cmd.compiler, 'unix')
 
+    @support.requires_subprocess()
     def test_get_outputs(self):
         cmd = support.missing_compiler_executable()
         if cmd is not None:

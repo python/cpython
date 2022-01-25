@@ -17,6 +17,8 @@ import sysconfig
 import tempfile
 import textwrap
 
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test module requires subprocess")
 
 MS_WINDOWS = (os.name == 'nt')
 MACOS = (sys.platform == 'darwin')
