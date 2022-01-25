@@ -74,9 +74,6 @@ _Py_IDENTIFIER(threading);
 extern "C" {
 #endif
 
-/* Deepfreeze finalizer */
-extern void _Py_Deepfreeze_Fini(void);
-
 /* Forward declarations */
 static PyStatus add_main_module(PyInterpreterState *interp);
 static PyStatus init_import_site(void);
@@ -1725,9 +1722,9 @@ finalize_interp_clear(PyThreadState *tstate)
         _Py_HashRandomization_Fini();
         _PyArg_Fini();
         _Py_ClearFileSystemEncoding();
+        _Py_Deepfreeze_Fini();
     }
-    /* Finalize deepfrozen code objects */
-    _Py_Deepfreeze_Fini();
+    
     finalize_interp_types(tstate->interp);
 }
 
