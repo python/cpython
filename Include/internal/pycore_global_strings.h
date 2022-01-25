@@ -466,6 +466,7 @@ struct _Py_global_strings {
         ID(_shutdown)
         ID(_slotnames)
         ID(_strptime_time)
+        ID(_uninitialized_submodules)
         ID(_warn_unawaited_coroutine)
         ID(_xoptions)
         ID(append)

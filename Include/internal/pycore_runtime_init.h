@@ -1086,6 +1086,7 @@ extern "C" {
                 INIT_ID(_shutdown), \
                 INIT_ID(_slotnames), \
                 INIT_ID(_strptime_time), \
+                INIT_ID(_uninitialized_submodules), \
                 INIT_ID(_warn_unawaited_coroutine), \
                 INIT_ID(_xoptions), \
                 INIT_ID(append), \
