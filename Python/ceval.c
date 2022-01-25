@@ -2017,6 +2017,7 @@ handle_eval_breaker:
         }
 
         TARGET(BINARY_OP_MULTIPLY_INT) {
+            assert(cframe.use_tracing == 0);
             PyObject *left = SECOND();
             PyObject *right = TOP();
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
@@ -2030,10 +2031,11 @@ handle_eval_breaker:
             if (prod == NULL) {
                 goto error;
             }
-            DISPATCH();
+            NOTRACE_DISPATCH();
         }
 
         TARGET(BINARY_OP_MULTIPLY_FLOAT) {
+            assert(cframe.use_tracing == 0);
             PyObject *left = SECOND();
             PyObject *right = TOP();
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
@@ -2049,10 +2051,11 @@ handle_eval_breaker:
             if (prod == NULL) {
                 goto error;
             }
-            DISPATCH();
+            NOTRACE_DISPATCH();
         }
 
         TARGET(BINARY_OP_SUBTRACT_INT) {
+            assert(cframe.use_tracing == 0);
             PyObject *left = SECOND();
             PyObject *right = TOP();
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
@@ -2066,10 +2069,11 @@ handle_eval_breaker:
             if (sub == NULL) {
                 goto error;
             }
-            DISPATCH();
+            NOTRACE_DISPATCH();
         }
 
         TARGET(BINARY_OP_SUBTRACT_FLOAT) {
+            assert(cframe.use_tracing == 0);
             PyObject *left = SECOND();
             PyObject *right = TOP();
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
@@ -2084,10 +2088,11 @@ handle_eval_breaker:
             if (sub == NULL) {
                 goto error;
             }
-            DISPATCH();
+            NOTRACE_DISPATCH();
         }
 
         TARGET(BINARY_OP_ADD_UNICODE) {
+            assert(cframe.use_tracing == 0);
             PyObject *left = SECOND();
             PyObject *right = TOP();
             DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
@@ -2101,10 +2106,11 @@ handle_eval_breaker:
             if (TOP() == NULL) {
                 goto error;
             }
-            DISPATCH();
+            NOTRACE_DISPATCH();
         }
 
         TARGET(BINARY_OP_INPLACE_ADD_UNICODE) {
+            assert(cframe.use_tracing == 0);
             PyObject *left = SECOND();
             PyObject *right = TOP();
             DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
@@ -2129,10 +2135,11 @@ handle_eval_breaker:
             if (TOP() == NULL) {
                 goto error;
             }
-            DISPATCH();
+            NOTRACE_DISPATCH();
         }
 
         TARGET(BINARY_OP_ADD_FLOAT) {
+            assert(cframe.use_tracing == 0);
             PyObject *left = SECOND();
             PyObject *right = TOP();
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
@@ -2148,10 +2155,11 @@ handle_eval_breaker:
             if (sum == NULL) {
                 goto error;
             }
-            DISPATCH();
+            NOTRACE_DISPATCH();
         }
 
         TARGET(BINARY_OP_ADD_INT) {
+            assert(cframe.use_tracing == 0);
             PyObject *left = SECOND();
             PyObject *right = TOP();
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
@@ -2165,7 +2173,7 @@ handle_eval_breaker:
             if (sum == NULL) {
                 goto error;
             }
-            DISPATCH();
+            NOTRACE_DISPATCH();
         }
 
         TARGET(BINARY_SUBSCR) {
@@ -2202,6 +2210,7 @@ handle_eval_breaker:
         }
 
         TARGET(BINARY_SUBSCR_LIST_INT) {
+            assert(cframe.use_tracing == 0);
             PyObject *sub = TOP();
             PyObject *list = SECOND();
             DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
@@ -2221,10 +2230,11 @@ handle_eval_breaker:
             Py_DECREF(sub);
             SET_TOP(res);
             Py_DECREF(list);
-            DISPATCH();
+            NOTRACE_DISPATCH();
         }
 
         TARGET(BINARY_SUBSCR_TUPLE_INT) {
+            assert(cframe.use_tracing == 0);
             PyObject *sub = TOP();
             PyObject *tuple = SECOND();
             DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
@@ -2244,10 +2254,11 @@ handle_eval_breaker:
             Py_DECREF(sub);
             SET_TOP(res);
             Py_DECREF(tuple);
-            DISPATCH();
+            NOTRACE_DISPATCH();
         }
 
         TARGET(BINARY_SUBSCR_DICT) {
+            assert(cframe.use_tracing == 0);
             PyObject *dict = SECOND();
             DEOPT_IF(!PyDict_CheckExact(SECOND()), BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
@@ -2354,6 +2365,7 @@ handle_eval_breaker:
         }
 
         TARGET(STORE_SUBSCR_LIST_INT) {
+            assert(cframe.use_tracing == 0);
             PyObject *sub = TOP();
             PyObject *list = SECOND();
             PyObject *value = THIRD();
@@ -2374,10 +2386,11 @@ handle_eval_breaker:
             Py_DECREF(old_value);
             Py_DECREF(sub);
             Py_DECREF(list);
-            DISPATCH();
+            NOTRACE_DISPATCH();
         }
 
         TARGET(STORE_SUBSCR_DICT) {
+            assert(cframe.use_tracing == 0);
             PyObject *sub = TOP();
             PyObject *dict = SECOND();
             PyObject *value = THIRD();
@@ -3065,7 +3078,7 @@ handle_eval_breaker:
             STAT_INC(LOAD_GLOBAL, hit);
             Py_INCREF(res);
             PUSH(res);
-            DISPATCH();
+            NOTRACE_DISPATCH();
         }
 
         TARGET(LOAD_GLOBAL_BUILTIN) {
@@ -3085,7 +3098,7 @@ handle_eval_breaker:
             STAT_INC(LOAD_GLOBAL, hit);
             Py_INCREF(res);
             PUSH(res);
-            DISPATCH();
+            NOTRACE_DISPATCH();
         }
 
         TARGET(DELETE_FAST) {
@@ -3517,7 +3530,7 @@ handle_eval_breaker:
             Py_INCREF(res);
             SET_TOP(res);
             Py_DECREF(owner);
-            DISPATCH();
+            NOTRACE_DISPATCH();
         }
 
         TARGET(LOAD_ATTR_MODULE) {
@@ -3528,7 +3541,7 @@ handle_eval_breaker:
             LOAD_MODULE_ATTR_OR_METHOD(ATTR);
             SET_TOP(res);
             Py_DECREF(owner);
-            DISPATCH();
+            NOTRACE_DISPATCH();
         }
 
         TARGET(LOAD_ATTR_WITH_HINT) {
@@ -3556,7 +3569,7 @@ handle_eval_breaker:
             Py_INCREF(res);
             SET_TOP(res);
             Py_DECREF(owner);
-            DISPATCH();
+            NOTRACE_DISPATCH();
         }
 
         TARGET(LOAD_ATTR_SLOT) {
@@ -3576,7 +3589,7 @@ handle_eval_breaker:
             Py_INCREF(res);
             SET_TOP(res);
             Py_DECREF(owner);
-            DISPATCH();
+            NOTRACE_DISPATCH();
         }
 
         TARGET(STORE_ATTR_ADAPTIVE) {
@@ -3625,7 +3638,7 @@ handle_eval_breaker:
                 Py_DECREF(old_value);
             }
             Py_DECREF(owner);
-            DISPATCH();
+            NOTRACE_DISPATCH();
         }
 
         TARGET(STORE_ATTR_WITH_HINT) {
@@ -3660,7 +3673,7 @@ handle_eval_breaker:
             /* PEP 509 */
             dict->ma_version_tag = DICT_NEXT_VERSION();
             Py_DECREF(owner);
-            DISPATCH();
+            NOTRACE_DISPATCH();
         }
 
         TARGET(STORE_ATTR_SLOT) {
@@ -3680,7 +3693,7 @@ handle_eval_breaker:
             *(PyObject **)addr = value;
             Py_XDECREF(old_value);
             Py_DECREF(owner);
-            DISPATCH();
+            NOTRACE_DISPATCH();
         }
 
         TARGET(COMPARE_OP) {
@@ -4479,10 +4492,11 @@ handle_eval_breaker:
             Py_INCREF(res);
             SET_TOP(res);
             PUSH(self);
-            DISPATCH();
+            NOTRACE_DISPATCH();
         }
 
         TARGET(LOAD_METHOD_NO_DICT) {
+            assert(cframe.use_tracing == 0);
             PyObject *self = TOP();
             PyTypeObject *self_cls = Py_TYPE(self);
             SpecializedCacheEntry *caches = GET_CACHE();
@@ -4497,7 +4511,7 @@ handle_eval_breaker:
             Py_INCREF(res);
             SET_TOP(res);
             PUSH(self);
-            DISPATCH();
+            NOTRACE_DISPATCH();
         }
 
         TARGET(LOAD_METHOD_MODULE) {
@@ -4509,7 +4523,7 @@ handle_eval_breaker:
             SET_TOP(NULL);
             Py_DECREF(owner);
             PUSH(res);
-            DISPATCH();
+            NOTRACE_DISPATCH();
         }
 
         TARGET(LOAD_METHOD_CLASS) {
@@ -4532,7 +4546,7 @@ handle_eval_breaker:
             SET_TOP(NULL);
             Py_DECREF(cls);
             PUSH(res);
-            DISPATCH();
+            NOTRACE_DISPATCH();
         }
 
         TARGET(PRECALL_METHOD) {
@@ -4714,6 +4728,7 @@ handle_eval_breaker:
         }
 
         TARGET(CALL_NO_KW_TYPE_1) {
+            assert(cframe.use_tracing == 0);
             assert(STACK_ADJUST_IS_RESET);
             assert(GET_CACHE()->adaptive.original_oparg == 1);
             PyObject *obj = TOP();
@@ -4724,10 +4739,11 @@ handle_eval_breaker:
             Py_DECREF(callable);
             Py_DECREF(obj);
             SET_TOP(res);
-            DISPATCH();
+            NOTRACE_DISPATCH();
         }
 
         TARGET(CALL_NO_KW_BUILTIN_CLASS_1) {
+            assert(cframe.use_tracing == 0);
             assert(STACK_ADJUST_IS_RESET);
             SpecializedCacheEntry *caches = GET_CACHE();
             _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
@@ -4878,6 +4894,7 @@ handle_eval_breaker:
         }
 
         TARGET(CALL_NO_KW_LIST_APPEND) {
+            assert(cframe.use_tracing == 0);
             assert(_Py_OPCODE(next_instr[-2]) == PRECALL_METHOD);
             assert(GET_CACHE()->adaptive.original_oparg == 1);
             DEOPT_IF(extra_args == 0, CALL_NO_KW);
@@ -4899,7 +4916,7 @@ handle_eval_breaker:
             STACK_SHRINK(2);
             SET_TOP(Py_None);
             Py_DECREF(callable);
-            DISPATCH();
+            NOTRACE_DISPATCH();
         }
 
         TARGET(CALL_NO_KW_METHOD_DESCRIPTOR_O) {
