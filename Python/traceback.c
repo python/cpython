@@ -453,11 +453,8 @@ display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int
         return -1;
     }
 
-    PyThreadState *tstate = _PyThreadState_GET();
     PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(open);
-    PyObject *open = PyObject_GetAttr(io, attr);
-    binary = _PyObject_CallMethod(tstate, open, "Os", filename, "rb");
-    Py_DECREF(open);
+    binary = _PyObject_CallMethodObj(io, attr, "Os", filename, "rb");
     if (binary == NULL) {
         PyErr_Clear();
 
@@ -487,10 +484,8 @@ display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int
         return 0;
     }
     attr = _Py_GET_GLOBAL_IDENTIFIER(TextIOWrapper);
-    PyObject *TextIOWrapper = PyObject_GetAttr(io, attr);
+    fob = _PyObject_CallMethodObj(io, attr, "Os", binary, encoding);
     Py_DECREF(io);
-    fob = _PyObject_CallMethod(tstate, TextIOWrapper, "Os", binary, encoding);
-    Py_DECREF(TextIOWrapper);
     PyMem_Free(found_encoding);
 
     PyObject *close = _Py_GET_GLOBAL_IDENTIFIER(close);

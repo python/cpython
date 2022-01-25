@@ -39,16 +39,10 @@ PyFile_FromFd(int fd, const char *name, const char *mode, int buffering, const c
     if (io == NULL)
         return NULL;
     PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(open);
-    PyObject *meth = PyObject_GetAttr(io, attr);
+    stream = _PyObject_CallMethodObj(io, attr, "isisssO", fd, mode,
+                                     buffering, encoding, errors,
+                                     newline, closefd ? Py_True : Py_False);
     Py_DECREF(io);
-    if (meth == NULL) {
-        return NULL;
-    }
-    PyThreadState *tstate = _PyThreadState_GET();
-    stream = _PyObject_CallMethod(tstate, meth, "isisssO", fd, mode,
-                                  buffering, encoding, errors,
-                                  newline, closefd ? Py_True : Py_False);
-    Py_DECREF(meth);
     if (stream == NULL)
         return NULL;
     /* ignore name attribute because the name attribute of _BufferedIOMixin
@@ -71,13 +65,7 @@ PyFile_GetLine(PyObject *f, int n)
         result = PyObject_CallMethodNoArgs(f, attr);
     }
     else {
-        PyObject *meth = PyObject_GetAttr(f, attr);
-        if (meth == NULL) {
-            return NULL;
-        }
-        PyThreadState *tstate = _PyThreadState_GET();
-        result = _PyObject_CallMethod(tstate, meth, "i", n);
-        Py_DECREF(meth);
+        result = _PyObject_CallMethodObj(f, attr, "i", n);
     }
     if (result != NULL && !PyBytes_Check(result) &&
         !PyUnicode_Check(result)) {
@@ -521,13 +509,8 @@ PyFile_OpenCodeObject(PyObject *path)
         iomod = PyImport_ImportModule("_io");
         if (iomod) {
             PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(open);
-            PyObject *meth = PyObject_GetAttr(iomod, attr);
+            f = _PyObject_CallMethodObj(iomod, attr, "Os", path, "rb");
             Py_DECREF(iomod);
-            if (meth != NULL) {
-                PyThreadState *tstate = _PyThreadState_GET();
-                f = _PyObject_CallMethod(tstate, meth, "Os", path, "rb");
-                Py_DECREF(meth);
-            }
         }
     }
 

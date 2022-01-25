@@ -3,7 +3,6 @@
 #include "Python.h"
 
 #include "pycore_bytesobject.h"   // _PyBytes_InitTypes()
-#include "pycore_call.h"          // _PyObject_CallMethod()
 #include "pycore_ceval.h"         // _PyEval_FiniGIL()
 #include "pycore_context.h"       // _PyContext_Init()
 #include "pycore_exceptions.h"    // _PyExc_InitTypes()
@@ -2216,7 +2215,7 @@ create_stdio(const PyConfig *config, PyObject* io,
     PyObject *buf = NULL, *stream = NULL, *text = NULL, *raw = NULL, *res;
     const char* mode;
     const char* newline;
-    PyObject *line_buffering, *write_through, *attr, *method;
+    PyObject *line_buffering, *write_through, *attr;
     int buffering, isatty;
     const int buffered_stdio = config->buffered_stdio;
 
@@ -2237,16 +2236,10 @@ create_stdio(const PyConfig *config, PyObject* io,
     else
         mode = "rb";
     attr = _Py_GET_GLOBAL_IDENTIFIER(open);
-    method = PyObject_GetAttr(io, attr);
-    if (method == NULL) {
-        goto error;
-    }
-    PyThreadState *tstate = _PyThreadState_GET();
-    buf = _PyObject_CallMethod(tstate, method, "isiOOOO",
-                               fd, mode, buffering,
-                               Py_None, Py_None, /* encoding, errors */
-                               Py_None, Py_False); /* newline, closefd */
-    Py_DECREF(method);
+    buf = _PyObject_CallMethodObj(io, attr, "isiOOOO",
+                                  fd, mode, buffering,
+                                  Py_None, Py_None, /* encoding, errors */
+                                  Py_None, Py_False); /* newline, closefd */
     if (buf == NULL)
         goto error;
 
@@ -2316,13 +2309,9 @@ create_stdio(const PyConfig *config, PyObject* io,
     }
 
     attr = _Py_GET_GLOBAL_IDENTIFIER(TextIOWrapper);
-    method = PyObject_GetAttr(io, attr);
-    if (method == NULL) {
-        goto error;
-    }
-    stream = _PyObject_CallMethod(tstate, method, "OOOsOO",
-                                  buf, encoding_str, errors_str,
-                                  newline, line_buffering, write_through);
+    stream = _PyObject_CallMethodObj(io, attr, "OOOsOO",
+                                     buf, encoding_str, errors_str,
+                                     newline, line_buffering, write_through);
     Py_CLEAR(buf);
     Py_CLEAR(encoding_str);
     Py_CLEAR(errors_str);

@@ -79,13 +79,7 @@ get_encoded_name(PyObject *name, const char **hook_prefix) {
 
     /* Replace '-' by '_' */
     PyObject *replace = _Py_GET_GLOBAL_IDENTIFIER(replace);
-    PyObject *method = PyObject_GetAttr(encoded, replace);
-    if (method == NULL) {
-        goto error;
-    }
-    PyThreadState *tstate = _PyThreadState_GET();
-    modname = _PyObject_CallMethod(tstate, method, "cc", '-', '_');
-    Py_DECREF(method);
+    modname = _PyObject_CallMethodObj(encoded, replace, "cc", '-', '_');
     if (modname == NULL)
         goto error;
 

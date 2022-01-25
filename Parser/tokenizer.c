@@ -459,7 +459,6 @@ fp_setreadl(struct tok_state *tok, const char* enc)
         return 0;
     }
 
-    PyThreadState *tstate = _PyThreadState_GET();
     PyObject *str_open = _Py_GET_GLOBAL_IDENTIFIER(open);
     PyObject *str_readline = _Py_GET_GLOBAL_IDENTIFIER(readline);
 
@@ -467,14 +466,9 @@ fp_setreadl(struct tok_state *tok, const char* enc)
     if (io == NULL) {
         return 0;
     }
-    PyObject *open = PyObject_GetAttr(io, str_open);
-    Py_DECREF(io);
-    if (open == NULL) {
-        return 0;
-    }
-    stream = _PyObject_CallMethod(tstate, open, "isisOOO",
+    stream = _PyObject_CallMethodObj(io, str_open, "isisOOO",
                     fd, "r", -1, enc, Py_None, Py_None, Py_False);
-    Py_DECREF(open);
+    Py_DECREF(io);
     if (stream == NULL) {
         return 0;
     }
