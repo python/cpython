@@ -25,7 +25,6 @@
 #include "pycore_runtime.h"       // _Py_GET_GLOBAL_IDENTIFIER()
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_sliceobject.h"   // _PySlice_Fini()
-#include "pycore_structseq.h"     // _PyStructSequence_InitState()
 #include "pycore_symtable.h"      // _PySymtable_Fini()
 #include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
@@ -698,11 +697,6 @@ static PyStatus
 pycore_init_types(PyInterpreterState *interp)
 {
     PyStatus status;
-
-    status = _PyStructSequence_InitState(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
 
     status = _PyTypes_InitState(interp);
     if (_PyStatus_EXCEPTION(status)) {
