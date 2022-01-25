@@ -3861,17 +3861,19 @@ l_divmod(PyLongObject *v, PyLongObject *w,
 }
 
 /* Compute
- *     *pmod = mod(v)
- * NULL can be passed for pmod, in which case the function
- * never runs code.  The caller owns a reference to pmod.
+ *     *pmod = v % w
+ * An error should be raised if NULL is passed to pmod.
+ * The caller owns a reference to pmod.
  */
 static int
 l_mod(PyLongObject *v, PyLongObject *w, PyLongObject **pmod)
 {
     PyLongObject *mod;
 
-    if (pmod == NULL)
-        return 0;
+    if (pmod == NULL) {
+        PyErr_SetString(SystemError, "missing pmod argument to l_mod");
+        return -1;
+    }
     if (Py_ABS(Py_SIZE(v)) == 1 && Py_ABS(Py_SIZE(w)) == 1) {
         /* Fast path for single-digit longs */
         *pmod = (PyLongObject *)fast_mod(v, w);
@@ -4410,7 +4412,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
               while the "large exponent" case multiplies directly by base 31
               times.  It can be unboundedly faster to multiply by
               base % modulus instead.
-           We could _always_ do this reduction, but l_divmod() isn't cheap,
+           We could _always_ do this reduction, but l_mod() isn't cheap,
            so we only do it when it buys something. */
         if (Py_SIZE(a) < 0 || Py_SIZE(a) > Py_SIZE(c)) {
             if (l_mod(a, c, &temp) < 0)
