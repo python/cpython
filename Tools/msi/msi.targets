@@ -20,7 +20,7 @@
         </ItemGroup>
 
         <WriteLinesToFile File="$(_FileListTarget)" Lines="@(InstallFiles->'&quot;%(_Source)&quot;,&quot;%(_Target)&quot;,&quot;%(Group)&quot;,&quot;%(DiskId)&quot;,&quot;%(Condition)&quot;')" Overwrite="true" />
-        <Exec Command='"$(PythonForBuild)" csv_to_wxs.py "$(_FileListTarget)" "$(_InstallFilesTarget)"'
+        <Exec Command='$(PythonForBuild) csv_to_wxs.py "$(_FileListTarget)" "$(_InstallFilesTarget)"'
               WorkingDirectory="$(MSBuildThisFileDirectory)" />
 
         <ItemGroup>

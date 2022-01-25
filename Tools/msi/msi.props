@@ -178,7 +178,7 @@
             <_GenerateCommand>import uuid; print('\n'.join('{}={}'.format(i, uuid.uuid5(uuid.UUID('c8d9733e-a70c-43ff-ab0c-e26456f11083'), '$(ReleaseUri.Replace(`{arch}`, `$(ArchName)`))' + j)) for i,j in [$(_Uuids.Replace(`"`,`'`))]))</_GenerateCommand>
         </PropertyGroup>
         
-        <Exec Command='"$(PythonForBuild)" -c "$(_GenerateCommand)" &gt; "$(IntermediateOutputPath)$(OutputName)guids.txt"'
+        <Exec Command='$(PythonForBuild) -c "$(_GenerateCommand)" &gt; "$(IntermediateOutputPath)$(OutputName)guids.txt"'
               WorkingDirectory="$(MSBuildThisFileDirectory)"
               IgnoreExitCode="false" />
         
