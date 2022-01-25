@@ -3871,7 +3871,7 @@ l_mod(PyLongObject *v, PyLongObject *w, PyLongObject **pmod)
     PyLongObject *mod;
 
     if (pmod == NULL) {
-        PyErr_SetString(SystemError, "missing pmod argument to l_mod");
+        PyErr_SetString(PyExc_SystemError, "missing pmod argument to l_mod");
         return -1;
     }
     if (Py_ABS(Py_SIZE(v)) == 1 && Py_ABS(Py_SIZE(w)) == 1) {
