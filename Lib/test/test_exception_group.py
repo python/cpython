@@ -22,7 +22,7 @@ class TestExceptionGroupTypeHierarchy(unittest.TestCase):
 
 class BadConstructorArgs(unittest.TestCase):
     def test_bad_EG_construction__too_many_args(self):
-        MSG = 'BaseExceptionGroup.__new__\(\) takes exactly 2 arguments'
+        MSG = r'BaseExceptionGroup.__new__\(\) takes exactly 2 arguments'
         with self.assertRaisesRegex(TypeError, MSG):
             ExceptionGroup('no errors')
         with self.assertRaisesRegex(TypeError, MSG):
