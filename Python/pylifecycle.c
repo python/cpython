@@ -74,6 +74,7 @@ _Py_IDENTIFIER(threading);
 extern "C" {
 #endif
 
+
 /* Forward declarations */
 static PyStatus add_main_module(PyInterpreterState *interp);
 static PyStatus init_import_site(void);
@@ -1724,7 +1725,7 @@ finalize_interp_clear(PyThreadState *tstate)
         _Py_ClearFileSystemEncoding();
         _Py_Deepfreeze_Fini();
     }
-    
+
     finalize_interp_types(tstate->interp);
 }
 
