@@ -320,7 +320,6 @@ static int
 gen_close_iter(PyObject *yf)
 {
     PyObject *retval = NULL;
-    _Py_IDENTIFIER(close);
 
     if (PyGen_CheckExact(yf) || PyCoro_CheckExact(yf)) {
         retval = gen_close((PyGenObject *)yf, NULL);
@@ -329,7 +328,8 @@ gen_close_iter(PyObject *yf)
     }
     else {
         PyObject *meth;
-        if (_PyObject_LookupAttrId(yf, &PyId_close, &meth) < 0) {
+        PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(close);
+        if (_PyObject_LookupAttr(yf, attr, &meth) < 0) {
             PyErr_WriteUnraisable(yf);
         }
         if (meth) {
@@ -417,7 +417,6 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
            PyObject *typ, PyObject *val, PyObject *tb)
 {
     PyObject *yf = _PyGen_yf(gen);
-    _Py_IDENTIFIER(throw);
 
     if (yf) {
         InterpreterFrame *frame = (InterpreterFrame *)gen->gi_iframe;
@@ -462,7 +461,8 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
         } else {
             /* `yf` is an iterator or a coroutine-like object. */
             PyObject *meth;
-            if (_PyObject_LookupAttrId(yf, &PyId_throw, &meth) < 0) {
+            PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(throw);
+            if (_PyObject_LookupAttr(yf, attr, &meth) < 0) {
                 Py_DECREF(yf);
                 return NULL;
             }
