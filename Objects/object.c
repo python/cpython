@@ -31,11 +31,6 @@ extern "C" {
 /* Defined in tracemalloc.c */
 extern void _PyMem_DumpTraceback(int fd, const void *ptr);
 
-_Py_IDENTIFIER(Py_Repr);
-_Py_IDENTIFIER(__bytes__);
-_Py_IDENTIFIER(__dir__);
-_Py_IDENTIFIER(__isabstractmethod__);
-
 
 int
 _PyObject_CheckConsistency(PyObject *op, int check_content)
@@ -562,7 +557,8 @@ PyObject_Bytes(PyObject *v)
         return v;
     }
 
-    func = _PyObject_LookupSpecialId(v, &PyId___bytes__);
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__bytes__);
+    func = _PyObject_LookupSpecial(v, attr);
     if (func != NULL) {
         result = _PyObject_CallNoArgs(func);
         Py_DECREF(func);
@@ -600,12 +596,10 @@ def _PyObject_FunctionStr(x):
 PyObject *
 _PyObject_FunctionStr(PyObject *x)
 {
-    _Py_IDENTIFIER(__module__);
-    _Py_IDENTIFIER(__qualname__);
-    _Py_IDENTIFIER(builtins);
     assert(!PyErr_Occurred());
     PyObject *qualname;
-    int ret = _PyObject_LookupAttrId(x, &PyId___qualname__, &qualname);
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__qualname__);
+    int ret = _PyObject_LookupAttr(x, attr, &qualname);
     if (qualname == NULL) {
         if (ret < 0) {
             return NULL;
@@ -614,12 +608,10 @@ _PyObject_FunctionStr(PyObject *x)
     }
     PyObject *module;
     PyObject *result = NULL;
-    ret = _PyObject_LookupAttrId(x, &PyId___module__, &module);
+    attr = _Py_GET_GLOBAL_IDENTIFIER(__module__);
+    ret = _PyObject_LookupAttr(x, attr, &module);
     if (module != NULL && module != Py_None) {
-        PyObject *builtinsname = _PyUnicode_FromId(&PyId_builtins);
-        if (builtinsname == NULL) {
-            goto done;
-        }
+        PyObject *builtinsname = _Py_GET_GLOBAL_IDENTIFIER(builtins);
         ret = PyObject_RichCompareBool(module, builtinsname, Py_NE);
         if (ret < 0) {
             // error
@@ -858,7 +850,8 @@ _PyObject_IsAbstract(PyObject *obj)
     if (obj == NULL)
         return 0;
 
-    res = _PyObject_LookupAttrId(obj, &PyId___isabstractmethod__, &isabstract);
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__isabstractmethod__);
+    res = _PyObject_LookupAttr(obj, attr, &isabstract);
     if (res > 0) {
         res = PyObject_IsTrue(isabstract);
         Py_DECREF(isabstract);
@@ -892,17 +885,17 @@ static inline int
 set_attribute_error_context(PyObject* v, PyObject* name)
 {
     assert(PyErr_Occurred());
-    _Py_IDENTIFIER(name);
-    _Py_IDENTIFIER(obj);
     // Intercept AttributeError exceptions and augment them to offer
     // suggestions later.
     if (PyErr_ExceptionMatches(PyExc_AttributeError)){
         PyObject *type, *value, *traceback;
         PyErr_Fetch(&type, &value, &traceback);
         PyErr_NormalizeException(&type, &value, &traceback);
+        PyObject *attr1 = _Py_GET_GLOBAL_IDENTIFIER(name);
+        PyObject *attr2 = _Py_GET_GLOBAL_IDENTIFIER(obj);
         if (PyErr_GivenExceptionMatches(value, PyExc_AttributeError) &&
-            (_PyObject_SetAttrId(value, &PyId_name, name) ||
-             _PyObject_SetAttrId(value, &PyId_obj, v))) {
+            (PyObject_SetAttr(value, attr1, name) ||
+             PyObject_SetAttr(value, attr2, v))) {
             return 1;
         }
         PyErr_Restore(type, value, traceback);
@@ -1569,7 +1562,8 @@ static PyObject *
 _dir_object(PyObject *obj)
 {
     PyObject *result, *sorted;
-    PyObject *dirfunc = _PyObject_LookupSpecialId(obj, &PyId___dir__);
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__dir__);
+    PyObject *dirfunc = _PyObject_LookupSpecial(obj, attr);
 
     assert(obj != NULL);
     if (dirfunc == NULL) {
@@ -2148,7 +2142,8 @@ Py_ReprEnter(PyObject *obj)
        early on startup. */
     if (dict == NULL)
         return 0;
-    list = _PyDict_GetItemIdWithError(dict, &PyId_Py_Repr);
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(Py_Repr);
+    list = PyDict_GetItemWithError(dict, attr);
     if (list == NULL) {
         if (PyErr_Occurred()) {
             return -1;
@@ -2156,7 +2151,7 @@ Py_ReprEnter(PyObject *obj)
         list = PyList_New(0);
         if (list == NULL)
             return -1;
-        if (_PyDict_SetItemId(dict, &PyId_Py_Repr, list) < 0)
+        if (PyDict_SetItem(dict, attr, list) < 0)
             return -1;
         Py_DECREF(list);
     }
@@ -2184,7 +2179,8 @@ Py_ReprLeave(PyObject *obj)
     if (dict == NULL)
         goto finally;
 
-    list = _PyDict_GetItemIdWithError(dict, &PyId_Py_Repr);
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(Py_Repr);
+    list = PyDict_GetItemWithError(dict, attr);
     if (list == NULL || !PyList_Check(list))
         goto finally;
 

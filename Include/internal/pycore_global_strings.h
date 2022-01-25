@@ -533,6 +533,7 @@ struct _Py_global_strings {
         ID(n_unnamed_fields)
         ID(name)
         ID(newlines)
+        ID(obj)
         ID(offset)
         ID(onceregistry)
         ID(opcode)
