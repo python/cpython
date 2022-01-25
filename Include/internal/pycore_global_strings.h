@@ -511,6 +511,7 @@ struct _Py_global_strings {
         ID(imp)
         ID(importlib)
         ID(inf)
+        ID(intersection)
         ID(intersection_update)
         ID(isatty)
         ID(items)

@@ -1131,6 +1131,7 @@ extern "C" {
                 INIT_ID(imp), \
                 INIT_ID(importlib), \
                 INIT_ID(inf), \
+                INIT_ID(intersection), \
                 INIT_ID(intersection_update), \
                 INIT_ID(isatty), \
                 INIT_ID(items), \
