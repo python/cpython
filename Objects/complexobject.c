@@ -281,9 +281,9 @@ static PyObject *
 try_complex_special_method(PyObject *op)
 {
     PyObject *f;
-    _Py_IDENTIFIER(__complex__);
 
-    f = _PyObject_LookupSpecialId(op, &PyId___complex__);
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__complex__);
+    f = _PyObject_LookupSpecial(op, attr);
     if (f) {
         PyObject *res = _PyObject_CallNoArgs(f);
         Py_DECREF(f);
