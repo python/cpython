@@ -255,10 +255,6 @@ _Py_union_type_or(PyObject* self, PyObject* other)
 static int
 union_repr_item(_PyUnicodeWriter *writer, PyObject *p)
 {
-    _Py_IDENTIFIER(__module__);
-    _Py_IDENTIFIER(__qualname__);
-    _Py_IDENTIFIER(__origin__);
-    _Py_IDENTIFIER(__args__);
     PyObject *qualname = NULL;
     PyObject *module = NULL;
     PyObject *tmp;
@@ -269,13 +265,15 @@ union_repr_item(_PyUnicodeWriter *writer, PyObject *p)
         return _PyUnicodeWriter_WriteASCIIString(writer, "None", 4);
     }
 
-    if (_PyObject_LookupAttrId(p, &PyId___origin__, &tmp) < 0) {
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__origin__);
+    if (_PyObject_LookupAttr(p, attr, &tmp) < 0) {
         goto exit;
     }
 
     if (tmp) {
         Py_DECREF(tmp);
-        if (_PyObject_LookupAttrId(p, &PyId___args__, &tmp) < 0) {
+        attr = _Py_GET_GLOBAL_IDENTIFIER(__args__);
+        if (_PyObject_LookupAttr(p, attr, &tmp) < 0) {
             goto exit;
         }
         if (tmp) {
@@ -285,13 +283,15 @@ union_repr_item(_PyUnicodeWriter *writer, PyObject *p)
         }
     }
 
-    if (_PyObject_LookupAttrId(p, &PyId___qualname__, &qualname) < 0) {
+    attr = _Py_GET_GLOBAL_IDENTIFIER(__qualname__);
+    if (_PyObject_LookupAttr(p, attr, &qualname) < 0) {
         goto exit;
     }
     if (qualname == NULL) {
         goto use_repr;
     }
-    if (_PyObject_LookupAttrId(p, &PyId___module__, &module) < 0) {
+    attr = _Py_GET_GLOBAL_IDENTIFIER(__module__);
+    if (_PyObject_LookupAttr(p, attr, &module) < 0) {
         goto exit;
     }
     if (module == NULL || module == Py_None) {
