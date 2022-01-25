@@ -770,7 +770,6 @@ static PyObject *setiter_iternext(setiterobject *si);
 static PyObject *
 setiter_reduce(setiterobject *si, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(iter);
     /* copy the iterator state */
     setiterobject tmp = *si;
     Py_XINCREF(tmp.si_set);
@@ -781,7 +780,8 @@ setiter_reduce(setiterobject *si, PyObject *Py_UNUSED(ignored))
     if (list == NULL) {
         return NULL;
     }
-    return Py_BuildValue("N(N)", _PyEval_GetBuiltinId(&PyId_iter), list);
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(iter);
+    return Py_BuildValue("N(N)", _PyEval_GetBuiltin(attr), list);
 }
 
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
@@ -1906,7 +1906,6 @@ static PyObject *
 set_reduce(PySetObject *so, PyObject *Py_UNUSED(ignored))
 {
     PyObject *keys=NULL, *args=NULL, *result=NULL, *dict=NULL;
-    _Py_IDENTIFIER(__dict__);
 
     keys = PySequence_List((PyObject *)so);
     if (keys == NULL)
@@ -1914,7 +1913,8 @@ set_reduce(PySetObject *so, PyObject *Py_UNUSED(ignored))
     args = PyTuple_Pack(1, keys);
     if (args == NULL)
         goto done;
-    if (_PyObject_LookupAttrId((PyObject *)so, &PyId___dict__, &dict) < 0) {
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__dict__);
+    if (_PyObject_LookupAttr((PyObject *)so, attr, &dict) < 0) {
         goto done;
     }
     if (dict == NULL) {
