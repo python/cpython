@@ -1,3 +1,15 @@
+What's New in IDLE 3.11.0
+(since 3.10.0)
+Released on 2022-10-03
+=========================
+
+
+bpo-45495: Add context keywords 'case' and 'match' to completions list.
+
+bpo-45296: On Windows, change exit/quit message to suggest Ctrl-D, which
+works, instead of <Ctrl-Z Return>, which does not work in IDLE.
+
+
 What's New in IDLE 3.10.0
 (since 3.9.0)
 Released on 2021-10-04
