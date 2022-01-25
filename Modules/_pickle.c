@@ -229,6 +229,9 @@ _Pickle_ClearState(PickleState *st)
     Py_CLEAR(st->partial);
     Py_CLEAR(st->Pickler_Type);
     Py_CLEAR(st->Unpickler_Type);
+    Py_CLEAR(st->Pdata_Type);
+    Py_CLEAR(st->PicklerMemoProxyType);
+    Py_CLEAR(st->UnpicklerMemoProxyType);
 }
 
 /* Initialize the given pickle module state. */
@@ -7912,6 +7915,9 @@ pickle_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(st->partial);
     Py_VISIT(st->Pickler_Type);
     Py_VISIT(st->Unpickler_Type);
+    Py_VISIT(st->Pdata_Type);
+    Py_VISIT(st->PicklerMemoProxyType);
+    Py_VISIT(st->UnpicklerMemoProxyType);
     return 0;
 }
 
