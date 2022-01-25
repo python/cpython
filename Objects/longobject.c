@@ -22,9 +22,6 @@ class int "PyObject *" "&PyLong_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=ec0275e3422a36e3]*/
 
-_Py_IDENTIFIER(little);
-_Py_IDENTIFIER(big);
-
 /* Is this PyLong of size 1, 0 or -1? */
 #define IS_MEDIUM_VALUE(x) (((size_t)Py_SIZE(x)) + 1U < 3U)
 
@@ -5773,11 +5770,13 @@ int_to_bytes_impl(PyObject *self, Py_ssize_t length, PyObject *byteorder,
     int little_endian;
     PyObject *bytes;
 
+    PyObject *little = _Py_GET_GLOBAL_IDENTIFIER(little);
+    PyObject *big = _Py_GET_GLOBAL_IDENTIFIER(big);
     if (byteorder == NULL)
         little_endian = 0;
-    else if (_PyUnicode_EqualToASCIIId(byteorder, &PyId_little))
+    else if (_PyUnicode_Equal(byteorder, little))
         little_endian = 1;
-    else if (_PyUnicode_EqualToASCIIId(byteorder, &PyId_big))
+    else if (_PyUnicode_Equal(byteorder, big))
         little_endian = 0;
     else {
         PyErr_SetString(PyExc_ValueError,
@@ -5835,11 +5834,13 @@ int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
     int little_endian;
     PyObject *long_obj, *bytes;
 
+    PyObject *little = _Py_GET_GLOBAL_IDENTIFIER(little);
+    PyObject *big = _Py_GET_GLOBAL_IDENTIFIER(big);
     if (byteorder == NULL)
         little_endian = 0;
-    else if (_PyUnicode_EqualToASCIIId(byteorder, &PyId_little))
+    else if (_PyUnicode_Equal(byteorder, little))
         little_endian = 1;
-    else if (_PyUnicode_EqualToASCIIId(byteorder, &PyId_big))
+    else if (_PyUnicode_Equal(byteorder, big))
         little_endian = 0;
     else {
         PyErr_SetString(PyExc_ValueError,
