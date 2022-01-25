@@ -3883,10 +3883,8 @@ l_mod(PyLongObject *v, PyLongObject *w, PyLongObject **pmod)
         temp = (PyLongObject *) long_add(mod, w);
         Py_DECREF(mod);
         mod = temp;
-        if (mod == NULL) {
-            Py_DECREF(div);
+        if (mod == NULL)
             return -1;
-        }
     }
     *pmod = mod;
 
