@@ -1108,7 +1108,7 @@ which incur interpreter overhead.
     6
 
     >>> a = [[1, 2, 3], [4, 5, 6]]
-    >>> flatten(a)
+    >>> list(flatten(a))
     [1, 2, 3, 4, 5, 6]
 
     >>> list(repeatfunc(pow, 5, 2, 3))
