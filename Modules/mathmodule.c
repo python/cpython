@@ -60,8 +60,8 @@ raised for division by zero and mod by zero.
 #include "pycore_bitutils.h"      // _Py_bit_length()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_dtoa.h"          // _Py_dg_infinity()
-#include "pycore_long.h"          // _PyLong_GetZero(), _Py_DECREF_INT
-#include "pycore_floatobject.h"   // _Py_DECREF_FLOAT
+#include "pycore_long.h"          // _PyLong_GetZero(), _PyLong_ExactDealloc
+#include "pycore_floatobject.h"   // _PyFloat_ExactDealloc
 /* For DBL_EPSILON in _math.h */
 #include <float.h>
 /* For _Py_log1p with workarounds for buggy handling of zeros. */
@@ -3140,7 +3140,7 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
         long i_result = PyLong_AsLongAndOverflow(result, &overflow);
         /* If this already overflowed, don't even enter the loop. */
         if (overflow == 0) {
-            _Py_DECREF_INT(result);
+            _Py_DECREF_SPECIALIZED(result, (destructor)_PyLong_ExactDealloc);
             result = NULL;
         }
         /* Loop over all the items in the iterable until we finish, we overflow
@@ -3159,7 +3159,8 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 if (overflow == 0 && !_check_long_mult_overflow(i_result, b)) {
                     long x = i_result * b;
                     i_result = x;
-                    _Py_DECREF_INT(item);
+                    _Py_DECREF_SPECIALIZED(item,
+                                           (destructor)_PyLong_ExactDealloc);
                     continue;
                 }
             }
@@ -3188,7 +3189,7 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
     */
     if (PyFloat_CheckExact(result)) {
         double f_result = PyFloat_AS_DOUBLE(result);
-        _Py_DECREF_FLOAT(result);
+        _Py_DECREF_SPECIALIZED(result, (destructor)_PyFloat_ExactDealloc);
         result = NULL;
         while(result == NULL) {
             item = PyIter_Next(iter);
@@ -3201,7 +3202,8 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
             }
             if (PyFloat_CheckExact(item)) {
                 f_result *= PyFloat_AS_DOUBLE(item);
-                _Py_DECREF_FLOAT(item);
+                _Py_DECREF_SPECIALIZED(item,
+                                       (destructor)_PyFloat_ExactDealloc);
                 continue;
             }
             if (PyLong_CheckExact(item)) {

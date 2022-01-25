@@ -69,14 +69,6 @@ PyAPI_FUNC(char*) _PyLong_FormatBytesWriter(
 
 PyAPI_FUNC(void) _PyLong_ExactDealloc(PyLongObject *op);
 
-static inline void
-_Py_DECREF_INT(PyObject *op)
-{
-    assert(PyLong_CheckExact(op));
-    _Py_DECREF_SPECIALIZED(op, (destructor)_PyLong_ExactDealloc);
-}
-
-
 #ifdef __cplusplus
 }
 #endif

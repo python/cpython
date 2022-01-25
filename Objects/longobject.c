@@ -39,7 +39,16 @@ medium_value(PyLongObject *x)
 #define IS_SMALL_INT(ival) (-_PY_NSMALLNEGINTS <= (ival) && (ival) < _PY_NSMALLPOSINTS)
 #define IS_SMALL_UINT(ival) ((ival) < _PY_NSMALLPOSINTS)
 
-static inline int is_medium_int(stwodigits x)
+static inline void
+_Py_DECREF_INT(PyLongObject *op)
+{
+    assert(PyLong_CheckExact(op));
+    _Py_DECREF_SPECIALIZED((PyObject *)op,
+                           (destructor)_PyLong_ExactDealloc);
+}
+
+static inline int
+is_medium_int(stwodigits x)
 {
     /* Take care that we are comparing unsigned values. */
     twodigits x_plus_mask = ((twodigits)x) + PyLong_MASK;
@@ -61,7 +70,7 @@ maybe_small_long(PyLongObject *v)
     if (v && IS_MEDIUM_VALUE(v)) {
         stwodigits ival = medium_value(v);
         if (IS_SMALL_INT(ival)) {
-            _Py_DECREF_INT((PyObject *)v);
+            _Py_DECREF_INT(v);
             return (PyLongObject *)get_small_int((sdigit)ival);
         }
     }
@@ -1824,7 +1833,7 @@ long_to_decimal_string_internal(PyObject *aa,
 #undef WRITE_DIGITS
 #undef WRITE_UNICODE_DIGITS
 
-    _Py_DECREF_INT((PyObject *)scratch);
+    _Py_DECREF_INT(scratch);
     if (writer) {
         writer->pos += strlen;
     }
@@ -3479,15 +3488,15 @@ k_mul(PyLongObject *a, PyLongObject *b)
      */
     i = Py_SIZE(ret) - shift;  /* # digits after shift */
     (void)v_isub(ret->ob_digit + shift, i, t2->ob_digit, Py_SIZE(t2));
-    _Py_DECREF_INT((PyObject *)t2);
+    _Py_DECREF_INT(t2);
 
     (void)v_isub(ret->ob_digit + shift, i, t1->ob_digit, Py_SIZE(t1));
-    _Py_DECREF_INT((PyObject *)t1);
+    _Py_DECREF_INT(t1);
 
     /* 6. t3 <- (ah+al)(bh+bl), and add into result. */
     if ((t1 = x_add(ah, al)) == NULL) goto fail;
-    _Py_DECREF_INT((PyObject *)ah);
-    _Py_DECREF_INT((PyObject *)al);
+    _Py_DECREF_INT(ah);
+    _Py_DECREF_INT(al);
     ah = al = NULL;
 
     if (a == b) {
@@ -3498,13 +3507,13 @@ k_mul(PyLongObject *a, PyLongObject *b)
         Py_DECREF(t1);
         goto fail;
     }
-    _Py_DECREF_INT((PyObject *)bh);
-    _Py_DECREF_INT((PyObject *)bl);
+    _Py_DECREF_INT(bh);
+    _Py_DECREF_INT(bl);
     bh = bl = NULL;
 
     t3 = k_mul(t1, t2);
-    _Py_DECREF_INT((PyObject *)t1);
-    _Py_DECREF_INT((PyObject *)t2);
+    _Py_DECREF_INT(t1);
+    _Py_DECREF_INT(t2);
     if (t3 == NULL) goto fail;
     assert(Py_SIZE(t3) >= 0);
 
@@ -3512,7 +3521,7 @@ k_mul(PyLongObject *a, PyLongObject *b)
      * See the (*) comment after this function.
      */
     (void)v_iadd(ret->ob_digit + shift, i, t3->ob_digit, Py_SIZE(t3));
-    _Py_DECREF_INT((PyObject *)t3);
+    _Py_DECREF_INT(t3);
 
     return long_normalize(ret);
 
@@ -3617,13 +3626,13 @@ k_lopsided_mul(PyLongObject *a, PyLongObject *b)
         /* Add into result. */
         (void)v_iadd(ret->ob_digit + nbdone, Py_SIZE(ret) - nbdone,
                      product->ob_digit, Py_SIZE(product));
-        _Py_DECREF_INT((PyObject *)product);
+        _Py_DECREF_INT(product);
 
         bsize -= nbtouse;
         nbdone += nbtouse;
     }
 
-    _Py_DECREF_INT((PyObject *)bslice);
+    _Py_DECREF_INT(bslice);
     return long_normalize(ret);
 
   fail:

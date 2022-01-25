@@ -12,13 +12,6 @@ extern "C" {
 
 void _PyUnicode_ExactDealloc(PyUnicodeObject *op);
 
-static inline void
-_Py_DECREF_STR(PyObject *op)
-{
-    assert(PyUnicode_CheckExact(op));
-    _Py_DECREF_SPECIALIZED(op, (destructor)_PyUnicode_ExactDealloc);
-}
-
 /* runtime lifecycle */
 
 extern void _PyUnicode_InitState(PyInterpreterState *);
