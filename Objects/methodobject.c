@@ -179,12 +179,11 @@ meth_dealloc(PyCFunctionObject *m)
 static PyObject *
 meth_reduce(PyCFunctionObject *m, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(getattr);
-
     if (m->m_self == NULL || PyModule_Check(m->m_self))
         return PyUnicode_FromString(m->m_ml->ml_name);
 
-    return Py_BuildValue("N(Os)", _PyEval_GetBuiltinId(&PyId_getattr),
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(getattr);
+    return Py_BuildValue("N(Os)", _PyEval_GetBuiltin(attr),
                          m->m_self, m->m_ml->ml_name);
 }
 
@@ -223,14 +222,14 @@ meth_get__qualname__(PyCFunctionObject *m, void *closure)
        Otherwise return type(m.__self__).__qualname__ + '.' + m.__name__
        (e.g. [].append.__qualname__ == 'list.append') */
     PyObject *type, *type_qualname, *res;
-    _Py_IDENTIFIER(__qualname__);
 
     if (m->m_self == NULL || PyModule_Check(m->m_self))
         return PyUnicode_FromString(m->m_ml->ml_name);
 
     type = PyType_Check(m->m_self) ? m->m_self : (PyObject*)Py_TYPE(m->m_self);
 
-    type_qualname = _PyObject_GetAttrId(type, &PyId___qualname__);
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__qualname__);
+    type_qualname = PyObject_GetAttr(type, attr);
     if (type_qualname == NULL)
         return NULL;
 
