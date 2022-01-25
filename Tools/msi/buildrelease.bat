@@ -195,8 +195,6 @@ set BUILDOPTS=/p:Platform=%1 /p:BuildForRelease=true /p:DownloadUrl=%DOWNLOAD_UR
 if defined BUILDMSI (
     %MSBUILD% "%D%bundle\releaselocal.wixproj" /t:Rebuild %BUILDOPTS% %CERTOPTS% /p:RebuildAll=true
     if errorlevel 1 exit /B
-    %MSBUILD% "%D%bundle\releaseweb.wixproj" /t:Rebuild %BUILDOPTS% %CERTOPTS% /p:RebuildAll=false
-    if errorlevel 1 exit /B
 )
 
 if defined BUILDZIP (
