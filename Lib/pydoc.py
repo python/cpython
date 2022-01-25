@@ -54,6 +54,7 @@ Richard Chamberlain, for the first implementation of textdoc.
 #     the current directory is changed with os.chdir(), an incorrect
 #     path will be displayed.
 
+import __future__
 import builtins
 import importlib._bootstrap
 import importlib._bootstrap_external
@@ -284,6 +285,9 @@ def visiblename(name, all=None, obj=None):
     # Namedtuples have public fields and methods with a single leading underscore
     if name.startswith('_') and hasattr(obj, '_fields'):
         return True
+    if name in __future__.all_feature_names:
+        if isinstance(getattr(obj, name, None), __future__._Feature):
+            return False
     if all is not None:
         # only document that which the programmer exported in __all__
         return name in all

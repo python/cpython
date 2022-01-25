@@ -1,5 +1,7 @@
 """This is a test module for test_pydoc"""
 
+from __future__ import print_function
+
 __author__ = "Benjamin Peterson"
 __credits__ = "Nobody"
 __version__ = "1.2.3.4"
