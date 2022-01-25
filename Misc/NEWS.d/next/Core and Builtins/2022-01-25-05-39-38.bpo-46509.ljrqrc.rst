@@ -1,0 +1,1 @@
+Add type-specialized versions of the ``Py_DECREF()`` macro for ``float``, ``int``, ``str``, ``bool``, and ``None`` to avoid pointer-chasing at runtime when types are known at compile time.
