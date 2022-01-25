@@ -4958,7 +4958,7 @@ static PyObject *
 PicklerMemoProxy_New(PicklerObject *pickler)
 {
     PicklerMemoProxyObject *self;
-    PickleState *state = find_pickle_state_by_type(Py_TYPE(pickler));
+    PickleState *state = get_pickle_state_by_class(Py_TYPE(pickler));
 
     self = PyObject_GC_New(PicklerMemoProxyObject, state->PicklerMemoProxyType);
     if (self == NULL)
@@ -4988,7 +4988,7 @@ Pickler_set_memo(PicklerObject *self, PyObject *obj, void *Py_UNUSED(ignored))
         return -1;
     }
 
-    PickleState *state = find_pickle_state_by_type(Py_TYPE(self));
+    PickleState *state = get_pickle_state_by_class(Py_TYPE(self));
 
     if (Py_IS_TYPE(obj, state->PicklerMemoProxyType)) {
         PicklerObject *pickler =
