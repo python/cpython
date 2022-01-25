@@ -3862,18 +3862,14 @@ l_divmod(PyLongObject *v, PyLongObject *w,
 
 /* Compute
  *     *pmod = v % w
- * An error should be raised if NULL is passed to pmod.
- * The caller owns a reference to pmod.
+ * pmod cannot be NULL. The caller owns a reference to pmod.
  */
 static int
 l_mod(PyLongObject *v, PyLongObject *w, PyLongObject **pmod)
 {
     PyLongObject *mod;
 
-    if (pmod == NULL) {
-        PyErr_SetString(PyExc_SystemError, "missing pmod argument to l_mod");
-        return -1;
-    }
+    assert(pmod);
     if (Py_ABS(Py_SIZE(v)) == 1 && Py_ABS(Py_SIZE(w)) == 1) {
         /* Fast path for single-digit longs */
         *pmod = (PyLongObject *)fast_mod(v, w);
