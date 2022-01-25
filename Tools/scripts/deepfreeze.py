@@ -114,14 +114,7 @@ class Printer:
         self.write('#include "internal/pycore_gc.h"')
         self.write('#include "internal/pycore_code.h"')
         self.write('#include "internal/pycore_long.h"')
-        self.write("")
-        with self.block("static void dealloc_codeobject(PyCodeObject *co)"):
-            self.write("PyMem_Free(co->co_quickened);")
-            self.write("co->co_quickened = NULL;")
-            self.write("PyMem_Free(co->co_extra);")
-            self.write("co->co_extra = NULL;")
-            with self.block("if (co->co_weakreflist != NULL)"):
-                self.write("PyObject_ClearWeakRefs((PyObject *)co);")         
+        self.write("")      
 
     @contextlib.contextmanager
     def indent(self) -> None:
@@ -449,6 +442,13 @@ def generate(args: list[str], output: TextIO) -> None:
             else:
                 code = compile(fd.read(), f"<frozen {modname}>", "exec")
             printer.generate_file(modname, code)
+    with printer.block("static void dealloc_codeobject(PyCodeObject *co)"):
+            printer.write("PyMem_Free(co->co_quickened);")
+            printer.write("co->co_quickened = NULL;")
+            printer.write("PyMem_Free(co->co_extra);")
+            printer.write("co->co_extra = NULL;")
+            with printer.block("if (co->co_weakreflist != NULL)"):
+                printer.write("PyObject_ClearWeakRefs((PyObject *)co);")   
     with printer.block(f"void _Py_Deepfreeze_Fini(void)"):
             for p in printer.deallocs:
                 printer.write(p)
