@@ -1313,6 +1313,12 @@ class InstructionTests(InstructionTestCase):
         ]
         self.assertEqual(positions, expected)
 
+        named_positions = [
+            (pos.lineno, pos.end_lineno, pos.col_offset, pos.end_col_offset)
+            for pos in positions
+        ]
+        self.assertEqual(named_positions, expected)
+
     @requires_debug_ranges()
     def test_co_positions_missing_info(self):
         code = compile('x, y, z', '<test>', 'exec')
@@ -1320,25 +1326,27 @@ class InstructionTests(InstructionTestCase):
         actual = dis.get_instructions(code_without_column_table)
         for instruction in actual:
             with self.subTest(instruction=instruction):
-                start_line, end_line, start_offset, end_offset = instruction.positions
+                positions = instruction.positions
+                self.assertEqual(len(positions), 4)
                 if instruction.opname == "RESUME":
                     continue
-                assert start_line == 1
-                assert end_line == 1
-                assert start_offset is None
-                assert end_offset is None
+                self.assertEqual(positions.lineno, 1)
+                self.assertEqual(positions.end_lineno, 1)
+                self.assertIsNone(positions.col_offset)
+                self.assertIsNone(positions.end_col_offset)
 
         code_without_endline_table = code.replace(co_endlinetable=b'')
         actual = dis.get_instructions(code_without_endline_table)
         for instruction in actual:
             with self.subTest(instruction=instruction):
-                start_line, end_line, start_offset, end_offset = instruction.positions
+                positions = instruction.positions
+                self.assertEqual(len(positions), 4)
                 if instruction.opname == "RESUME":
                     continue
-                assert start_line == 1
-                assert end_line is None
-                assert start_offset is not None
-                assert end_offset is not None
+                self.assertEqual(positions.lineno, 1)
+                self.assertIsNone(positions.end_lineno)
+                self.assertIsNotNone(positions.col_offset)
+                self.assertIsNotNone(positions.end_col_offset)
 
 # get_instructions has its own tests above, so can rely on it to validate
 # the object oriented API

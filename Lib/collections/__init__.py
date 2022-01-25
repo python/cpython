@@ -617,11 +617,9 @@ class Counter(dict):
         ['A', 'A', 'B', 'B', 'C', 'C']
 
         # Knuth's example for prime factors of 1836:  2**2 * 3**3 * 17**1
+        >>> import math
         >>> prime_factors = Counter({2: 2, 3: 3, 17: 1})
-        >>> product = 1
-        >>> for factor in prime_factors.elements():     # loop over factors
-        ...     product *= factor                       # and multiply them
-        >>> product
+        >>> math.prod(prime_factors.elements())
         1836
 
         Note, if an element's count has been set to zero or is a negative
@@ -718,42 +716,6 @@ class Counter(dict):
         if elem in self:
             super().__delitem__(elem)
 
-    def __eq__(self, other):
-        'True if all counts agree. Missing counts are treated as zero.'
-        if not isinstance(other, Counter):
-            return NotImplemented
-        return all(self[e] == other[e] for c in (self, other) for e in c)
-
-    def __ne__(self, other):
-        'True if any counts disagree. Missing counts are treated as zero.'
-        if not isinstance(other, Counter):
-            return NotImplemented
-        return not self == other
-
-    def __le__(self, other):
-        'True if all counts in self are a subset of those in other.'
-        if not isinstance(other, Counter):
-            return NotImplemented
-        return all(self[e] <= other[e] for c in (self, other) for e in c)
-
-    def __lt__(self, other):
-        'True if all counts in self are a proper subset of those in other.'
-        if not isinstance(other, Counter):
-            return NotImplemented
-        return self <= other and self != other
-
-    def __ge__(self, other):
-        'True if all counts in self are a superset of those in other.'
-        if not isinstance(other, Counter):
-            return NotImplemented
-        return all(self[e] >= other[e] for c in (self, other) for e in c)
-
-    def __gt__(self, other):
-        'True if all counts in self are a proper superset of those in other.'
-        if not isinstance(other, Counter):
-            return NotImplemented
-        return self >= other and self != other
-
     def __repr__(self):
         if not self:
             return f'{self.__class__.__name__}()'
@@ -794,6 +756,42 @@ class Counter(dict):
     #         (cp < cq) == (sp < sq)
     #         (cp >= cq) == (sp >= sq)
     #         (cp > cq) == (sp > sq)
+
+    def __eq__(self, other):
+        'True if all counts agree. Missing counts are treated as zero.'
+        if not isinstance(other, Counter):
+            return NotImplemented
+        return all(self[e] == other[e] for c in (self, other) for e in c)
+
+    def __ne__(self, other):
+        'True if any counts disagree. Missing counts are treated as zero.'
+        if not isinstance(other, Counter):
+            return NotImplemented
+        return not self == other
+
+    def __le__(self, other):
+        'True if all counts in self are a subset of those in other.'
+        if not isinstance(other, Counter):
+            return NotImplemented
+        return all(self[e] <= other[e] for c in (self, other) for e in c)
+
+    def __lt__(self, other):
+        'True if all counts in self are a proper subset of those in other.'
+        if not isinstance(other, Counter):
+            return NotImplemented
+        return self <= other and self != other
+
+    def __ge__(self, other):
+        'True if all counts in self are a superset of those in other.'
+        if not isinstance(other, Counter):
+            return NotImplemented
+        return all(self[e] >= other[e] for c in (self, other) for e in c)
+
+    def __gt__(self, other):
+        'True if all counts in self are a proper superset of those in other.'
+        if not isinstance(other, Counter):
+            return NotImplemented
+        return self >= other and self != other
 
     def __add__(self, other):
         '''Add counts from two counters.

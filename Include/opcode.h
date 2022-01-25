@@ -39,6 +39,7 @@ extern "C" {
 #define IMPORT_STAR                      84
 #define SETUP_ANNOTATIONS                85
 #define YIELD_VALUE                      86
+#define ASYNC_GEN_WRAP                   87
 #define PREP_RERAISE_STAR                88
 #define POP_EXCEPT                       89
 #define HAVE_ARGUMENT                    90
@@ -165,7 +166,7 @@ extern "C" {
 #define STORE_FAST__LOAD_FAST            79
 #define LOAD_FAST__LOAD_CONST            80
 #define LOAD_CONST__LOAD_FAST            81
-#define STORE_FAST__STORE_FAST           87
+#define STORE_FAST__STORE_FAST          131
 #define DO_TRACING                      255
 #ifdef NEED_OPCODE_JUMP_TABLES
 static uint32_t _PyOpcode_RelativeJump[8] = {

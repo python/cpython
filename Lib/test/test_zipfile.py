@@ -21,7 +21,7 @@ from random import randint, random, randbytes
 
 from test.support import script_helper
 from test.support import (findfile, requires_zlib, requires_bz2,
-                          requires_lzma, captured_stdout)
+                          requires_lzma, captured_stdout, requires_subprocess)
 from test.support.os_helper import TESTFN, unlink, rmtree, temp_dir, temp_cwd
 
 
@@ -2771,6 +2771,7 @@ class TestExecutablePrependedZip(unittest.TestCase):
     @unittest.skipUnless(sys.executable, 'sys.executable required.')
     @unittest.skipUnless(os.access('/bin/bash', os.X_OK),
                          'Test relies on #!/bin/bash working.')
+    @requires_subprocess()
     def test_execute_zip2(self):
         output = subprocess.check_output([self.exe_zip, sys.executable])
         self.assertIn(b'number in executable: 5', output)
@@ -2778,6 +2779,7 @@ class TestExecutablePrependedZip(unittest.TestCase):
     @unittest.skipUnless(sys.executable, 'sys.executable required.')
     @unittest.skipUnless(os.access('/bin/bash', os.X_OK),
                          'Test relies on #!/bin/bash working.')
+    @requires_subprocess()
     def test_execute_zip64(self):
         output = subprocess.check_output([self.exe_zip64, sys.executable])
         self.assertIn(b'number in executable: 5', output)

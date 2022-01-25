@@ -32,7 +32,7 @@ import unittest.mock
 import sqlite3 as sqlite
 
 from test.support import bigmemtest, catch_unraisable_exception
-from .test_dbapi import cx_limit
+from test.test_sqlite3.test_dbapi import cx_limit
 
 
 def with_tracebacks(exc, regex="", name=""):

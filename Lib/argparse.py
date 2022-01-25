@@ -1875,8 +1875,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         if self.exit_on_error:
             try:
                 namespace, args = self._parse_known_args(args, namespace)
-            except ArgumentError:
-                err = _sys.exc_info()[1]
+            except ArgumentError as err:
                 self.error(str(err))
         else:
             namespace, args = self._parse_known_args(args, namespace)
@@ -2151,8 +2150,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                                 arg_strings.append(arg)
                         arg_strings = self._read_args_from_files(arg_strings)
                         new_arg_strings.extend(arg_strings)
-                except OSError:
-                    err = _sys.exc_info()[1]
+                except OSError as err:
                     self.error(str(err))
 
         # return the modified argument list
@@ -2502,9 +2500,9 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             result = type_func(arg_string)
 
         # ArgumentTypeErrors indicate errors
-        except ArgumentTypeError:
+        except ArgumentTypeError as err:
             name = getattr(action.type, '__name__', repr(action.type))
-            msg = str(_sys.exc_info()[1])
+            msg = str(err)
             raise ArgumentError(action, msg)
 
         # TypeErrors or ValueErrors also indicate errors
