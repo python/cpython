@@ -1,0 +1,1 @@
+fix concurrent.futures and io AttributeError messages
