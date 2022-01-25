@@ -525,8 +525,6 @@ struct _odictnode {
 #define _odict_FOREACH(od, node) \
     for (node = _odict_FIRST(od); node != NULL; node = _odictnode_NEXT(node))
 
-_Py_IDENTIFIER(items);
-
 /* Return the index into the hash table, regardless of a valid node. */
 static Py_ssize_t
 _odict_get_index_raw(PyODictObject *od, PyObject *key, Py_hash_t hash)
@@ -949,12 +947,12 @@ PyDoc_STRVAR(odict_reduce__doc__, "Return state information for pickling");
 static PyObject *
 odict_reduce(register PyODictObject *od, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(__dict__);
     PyObject *dict = NULL, *result = NULL;
     PyObject *items_iter, *items, *args = NULL;
 
     /* capture any instance state */
-    dict = _PyObject_GetAttrId((PyObject *)od, &PyId___dict__);
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__dict__);
+    dict = PyObject_GetAttr((PyObject *)od, attr);
     if (dict == NULL)
         goto Done;
     else {
@@ -973,7 +971,8 @@ odict_reduce(register PyODictObject *od, PyObject *Py_UNUSED(ignored))
     if (args == NULL)
         goto Done;
 
-    items = _PyObject_CallMethodIdNoArgs((PyObject *)od, &PyId_items);
+    attr = _Py_GET_GLOBAL_IDENTIFIER(items);
+    items = PyObject_CallMethodNoArgs((PyObject *)od, attr);
     if (items == NULL)
         goto Done;
 
@@ -1431,8 +1430,8 @@ odict_repr(PyODictObject *self)
         }
     }
     else {
-        PyObject *items = _PyObject_CallMethodIdNoArgs((PyObject *)self,
-                                                       &PyId_items);
+        PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(items);
+        PyObject *items = PyObject_CallMethodNoArgs((PyObject *)self, attr);
         if (items == NULL)
             goto Done;
         pieces = PySequence_List(items);
@@ -1808,7 +1807,6 @@ PyDoc_STRVAR(reduce_doc, "Return state information for pickling");
 static PyObject *
 odictiter_reduce(odictiterobject *di, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(iter);
     /* copy the iterator state */
     odictiterobject tmp = *di;
     Py_XINCREF(tmp.di_odict);
@@ -1821,7 +1819,8 @@ odictiter_reduce(odictiterobject *di, PyObject *Py_UNUSED(ignored))
     if (list == NULL) {
         return NULL;
     }
-    return Py_BuildValue("N(N)", _PyEval_GetBuiltinId(&PyId_iter), list);
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(iter);
+    return Py_BuildValue("N(N)", _PyEval_GetBuiltin(attr), list);
 }
 
 static PyMethodDef odictiter_methods[] = {
@@ -2217,9 +2216,9 @@ mutablemapping_update_arg(PyObject *self, PyObject *arg)
         Py_DECREF(items);
         return res;
     }
-    _Py_IDENTIFIER(keys);
     PyObject *func;
-    if (_PyObject_LookupAttrId(arg, &PyId_keys, &func) < 0) {
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(keys);
+    if (_PyObject_LookupAttr(arg, attr, &func) < 0) {
         return -1;
     }
     if (func != NULL) {
@@ -2251,7 +2250,8 @@ mutablemapping_update_arg(PyObject *self, PyObject *arg)
         }
         return 0;
     }
-    if (_PyObject_LookupAttrId(arg, &PyId_items, &func) < 0) {
+    attr = _Py_GET_GLOBAL_IDENTIFIER(items);
+    if (_PyObject_LookupAttr(arg, attr, &func) < 0) {
         return -1;
     }
     if (func != NULL) {
