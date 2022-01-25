@@ -85,14 +85,6 @@ call "%D%..\..\doc\make.bat" htmlhelp
 if errorlevel 1 goto :eof
 :skipdoc
 
-rem where dlltool /q && goto skipdlltoolsearch
-rem set _DLLTOOL_PATH=
-rem where /R "%EXTERNALS%\" dlltool > "%TEMP%\dlltool.loc" 2> nul && set /P _DLLTOOL_PATH= < "%TEMP%\dlltool.loc" & del "%TEMP%\dlltool.loc"
-rem if not exist "%_DLLTOOL_PATH%" echo Cannot find binutils on PATH or in external && exit /B 1
-rem for %%f in (%_DLLTOOL_PATH%) do set PATH=%PATH%;%%~dpf
-rem set _DLLTOOL_PATH=
-:skipdlltoolsearch
-
 if defined BUILDX86 (
     call :build x86
     if errorlevel 1 exit /B
