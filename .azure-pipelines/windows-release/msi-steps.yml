@@ -103,6 +103,7 @@ steps:
       Platform: x86
       Py_OutDir: $(Build.BinariesDirectory)
       PYTHON: $(Build.BinariesDirectory)\win32\python.exe
+      PythonForBuild: $(Build.BinariesDirectory)\win32\python.exe
       PYTHONHOME: $(Build.SourcesDirectory)
       TclTkLibraryDir: $(Build.BinariesDirectory)\tcltk_lib_win32
       BuildForRelease: true
@@ -115,6 +116,7 @@ steps:
       Platform: x64
       Py_OutDir: $(Build.BinariesDirectory)
       PYTHON: $(Build.BinariesDirectory)\amd64\python.exe
+      PythonForBuild: $(Build.BinariesDirectory)\amd64\python.exe
       PYTHONHOME: $(Build.SourcesDirectory)
       TclTkLibraryDir: $(Build.BinariesDirectory)\tcltk_lib_amd64
       BuildForRelease: true
@@ -128,6 +130,7 @@ steps:
       Platform: ARM64
       Py_OutDir: $(Build.BinariesDirectory)
       PYTHON: $(Build.BinariesDirectory)\win32\python.exe
+      PythonForBuild: $(Build.BinariesDirectory)\win32\python.exe
       PYTHONHOME: $(Build.SourcesDirectory)
       BuildForRelease: true
       SuppressMinGWLib: true
