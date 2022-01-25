@@ -977,6 +977,7 @@ extern "C" {
                 INIT_ID(__get__), \
                 INIT_ID(__getattr__), \
                 INIT_ID(__getattribute__), \
+                INIT_ID(__getinitargs__), \
                 INIT_ID(__getitem__), \
                 INIT_ID(__getnewargs__), \
                 INIT_ID(__getnewargs_ex__), \
@@ -1040,6 +1041,7 @@ extern "C" {
                 INIT_ID(__rand__), \
                 INIT_ID(__rdivmod__), \
                 INIT_ID(__reduce__), \
+                INIT_ID(__reduce_ex__), \
                 INIT_ID(__repr__), \
                 INIT_ID(__reversed__), \
                 INIT_ID(__rfloordiv__), \
@@ -1092,6 +1094,7 @@ extern "C" {
                 INIT_ID(_uninitialized_submodules), \
                 INIT_ID(_warn_unawaited_coroutine), \
                 INIT_ID(_xoptions), \
+                INIT_ID(add), \
                 INIT_ID(append), \
                 INIT_ID(big), \
                 INIT_ID(buffer), \
@@ -1109,6 +1112,7 @@ extern "C" {
                 INIT_ID(decode), \
                 INIT_ID(default), \
                 INIT_ID(defaultaction), \
+                INIT_ID(dispatch_table), \
                 INIT_ID(difference_update), \
                 INIT_ID(displayhook), \
                 INIT_ID(enable), \
@@ -1124,6 +1128,7 @@ extern "C" {
                 INIT_ID(fileno), \
                 INIT_ID(fillvalue), \
                 INIT_ID(filters), \
+                INIT_ID(find_class), \
                 INIT_ID(flush), \
                 INIT_ID(get), \
                 INIT_ID(get_source), \
@@ -1143,6 +1148,7 @@ extern "C" {
                 INIT_ID(last_traceback), \
                 INIT_ID(last_type), \
                 INIT_ID(last_value), \
+                INIT_ID(latin1), \
                 INIT_ID(line), \
                 INIT_ID(lineno), \
                 INIT_ID(little), \
@@ -1150,6 +1156,7 @@ extern "C" {
                 INIT_ID(match), \
                 INIT_ID(metaclass), \
                 INIT_ID(mode), \
+                INIT_ID(modules), \
                 INIT_ID(mro), \
                 INIT_ID(msg), \
                 INIT_ID(n_fields), \
@@ -1166,6 +1173,8 @@ extern "C" {
                 INIT_ID(partial), \
                 INIT_ID(path), \
                 INIT_ID(peek), \
+                INIT_ID(persistent_id), \
+                INIT_ID(persistent_load), \
                 INIT_ID(print_file_and_line), \
                 INIT_ID(ps1), \
                 INIT_ID(ps2), \
@@ -1177,6 +1186,7 @@ extern "C" {
                 INIT_ID(readinto), \
                 INIT_ID(readinto1), \
                 INIT_ID(readline), \
+                INIT_ID(reducer_override), \
                 INIT_ID(reload), \
                 INIT_ID(replace), \
                 INIT_ID(reset), \
