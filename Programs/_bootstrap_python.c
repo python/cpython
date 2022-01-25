@@ -104,6 +104,6 @@ error:
     Py_ExitStatusException(status);
 }
 
-
+/* Empty finalizer for deepfrozen modules*/
 void _Py_Deepfreeze_Fini(void) {
-};
+}

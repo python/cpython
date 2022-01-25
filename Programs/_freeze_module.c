@@ -234,7 +234,8 @@ error:
     PyErr_Print();
     Py_Finalize();
     return 1;
-};
+}
 
+/* Empty finalizer for deepfrozen modules*/
 void _Py_Deepfreeze_Fini(void) {
-};
+}
