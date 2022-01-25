@@ -658,8 +658,8 @@ PyEval_CallMethod(PyObject *obj, const char *name, const char *format, ...)
 
 
 PyObject *
-_PyObject_CallMethodObj(PyObject *obj, PyObject *name,
-                        const char *format, ...)
+_PyObject_CallMethod(PyObject *obj, PyObject *name,
+                     const char *format, ...)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     if (obj == NULL || name == NULL) {
@@ -706,7 +706,7 @@ _PyObject_CallMethodId(PyObject *obj, _Py_Identifier *name,
 
 
 PyObject * _PyObject_CallMethodFormat(PyThreadState *tstate, PyObject *callable,
-                                const char *format, ...)
+                                      const char *format, ...)
 {
     va_list va;
     va_start(va, format);

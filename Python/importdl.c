@@ -79,7 +79,7 @@ get_encoded_name(PyObject *name, const char **hook_prefix) {
 
     /* Replace '-' by '_' */
     PyObject *replace = _Py_GET_GLOBAL_IDENTIFIER(replace);
-    modname = _PyObject_CallMethodObj(encoded, replace, "cc", '-', '_');
+    modname = _PyObject_CallMethod(encoded, replace, "cc", '-', '_');
     if (modname == NULL)
         goto error;
 

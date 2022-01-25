@@ -466,7 +466,7 @@ fp_setreadl(struct tok_state *tok, const char* enc)
     if (io == NULL) {
         return 0;
     }
-    stream = _PyObject_CallMethodObj(io, str_open, "isisOOO",
+    stream = _PyObject_CallMethod(io, str_open, "isisOOO",
                     fd, "r", -1, enc, Py_None, Py_None, Py_False);
     Py_DECREF(io);
     if (stream == NULL) {

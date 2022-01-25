@@ -713,7 +713,7 @@ r_string(Py_ssize_t n, RFILE *p)
             return NULL;
 
         PyObject *readinto = _Py_GET_GLOBAL_IDENTIFIER(readinto);
-        res = _PyObject_CallMethodObj(p->readable, readinto, "N", mview);
+        res = _PyObject_CallMethod(p->readable, readinto, "N", mview);
         if (res != NULL) {
             read = PyNumber_AsSsize_t(res, PyExc_ValueError);
             Py_DECREF(res);
@@ -1755,7 +1755,7 @@ marshal_load(PyObject *module, PyObject *file)
      * for r_string()
      */
     PyObject *read = _Py_GET_GLOBAL_IDENTIFIER(read);
-    data = _PyObject_CallMethodObj(file, read, "i", 0);
+    data = _PyObject_CallMethod(file, read, "i", 0);
     if (data == NULL)
         return NULL;
     if (!PyBytes_Check(data)) {

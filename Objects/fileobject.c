@@ -39,9 +39,9 @@ PyFile_FromFd(int fd, const char *name, const char *mode, int buffering, const c
     if (io == NULL)
         return NULL;
     PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(open);
-    stream = _PyObject_CallMethodObj(io, attr, "isisssO", fd, mode,
-                                     buffering, encoding, errors,
-                                     newline, closefd ? Py_True : Py_False);
+    stream = _PyObject_CallMethod(io, attr, "isisssO", fd, mode,
+                                  buffering, encoding, errors,
+                                  newline, closefd ? Py_True : Py_False);
     Py_DECREF(io);
     if (stream == NULL)
         return NULL;
@@ -65,7 +65,7 @@ PyFile_GetLine(PyObject *f, int n)
         result = PyObject_CallMethodNoArgs(f, attr);
     }
     else {
-        result = _PyObject_CallMethodObj(f, attr, "i", n);
+        result = _PyObject_CallMethod(f, attr, "i", n);
     }
     if (result != NULL && !PyBytes_Check(result) &&
         !PyUnicode_Check(result)) {
@@ -509,7 +509,7 @@ PyFile_OpenCodeObject(PyObject *path)
         iomod = PyImport_ImportModule("_io");
         if (iomod) {
             PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(open);
-            f = _PyObject_CallMethodObj(iomod, attr, "Os", path, "rb");
+            f = _PyObject_CallMethod(iomod, attr, "Os", path, "rb");
             Py_DECREF(iomod);
         }
     }

@@ -2236,10 +2236,10 @@ create_stdio(const PyConfig *config, PyObject* io,
     else
         mode = "rb";
     attr = _Py_GET_GLOBAL_IDENTIFIER(open);
-    buf = _PyObject_CallMethodObj(io, attr, "isiOOOO",
-                                  fd, mode, buffering,
-                                  Py_None, Py_None, /* encoding, errors */
-                                  Py_None, Py_False); /* newline, closefd */
+    buf = _PyObject_CallMethod(io, attr, "isiOOOO",
+                               fd, mode, buffering,
+                               Py_None, Py_None, /* encoding, errors */
+                               Py_None, Py_False); /* newline, closefd */
     if (buf == NULL)
         goto error;
 
@@ -2309,9 +2309,9 @@ create_stdio(const PyConfig *config, PyObject* io,
     }
 
     attr = _Py_GET_GLOBAL_IDENTIFIER(TextIOWrapper);
-    stream = _PyObject_CallMethodObj(io, attr, "OOOsOO",
-                                     buf, encoding_str, errors_str,
-                                     newline, line_buffering, write_through);
+    stream = _PyObject_CallMethod(io, attr, "OOOsOO",
+                                  buf, encoding_str, errors_str,
+                                  newline, line_buffering, write_through);
     Py_CLEAR(buf);
     Py_CLEAR(encoding_str);
     Py_CLEAR(errors_str);

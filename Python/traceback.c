@@ -454,7 +454,7 @@ display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int
     }
 
     PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(open);
-    binary = _PyObject_CallMethodObj(io, attr, "Os", filename, "rb");
+    binary = _PyObject_CallMethod(io, attr, "Os", filename, "rb");
     if (binary == NULL) {
         PyErr_Clear();
 
@@ -484,7 +484,7 @@ display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int
         return 0;
     }
     attr = _Py_GET_GLOBAL_IDENTIFIER(TextIOWrapper);
-    fob = _PyObject_CallMethodObj(io, attr, "Os", binary, encoding);
+    fob = _PyObject_CallMethod(io, attr, "Os", binary, encoding);
     Py_DECREF(io);
     PyMem_Free(found_encoding);
 
