@@ -36,6 +36,10 @@
     <?if $(var.Platform)~="x64" ?>
     <Variable Name="DefaultAllUsersTargetDir" Value="[ProgramFiles64Folder]Python[WinVerNoDot]" bal:Overridable="yes" />
     <Variable Name="TargetPlatform" Value="x64" />
+    <?elseif $(var.Platform)~="ARM64" ?>
+    <!-- TODO: Determine correct ProgramFilesArmFolder -->
+    <Variable Name="DefaultAllUsersTargetDir" Value="[ProgramFilesFolder]Python[WinVerNoDot]" bal:Overridable="yes" />
+    <Variable Name="TargetPlatform" Value="ARM64" />
     <?else ?>
     <Variable Name="DefaultAllUsersTargetDir" Value="[ProgramFilesFolder]Python[WinVerNoDot]" bal:Overridable="yes" />
     <Variable Name="TargetPlatform" Value="x86" />
@@ -69,7 +73,12 @@
     <Variable Name="Include_test" Value="1" bal:Overridable="yes" />
     <Variable Name="Include_doc" Value="1" bal:Overridable="yes" />
     <Variable Name="Include_tools" Value="1" bal:Overridable="yes" />
+    <?if $(var.Platform)~="ARM64" ?>
+    <Variable Name="Include_tcltk" Value="0" />
+    <Variable Name="Include_tcltkState" Value="disable" />
+    <?else ?>
     <Variable Name="Include_tcltk" Value="1" bal:Overridable="yes" />
+    <?endif ?>
     <Variable Name="Include_pip" Value="1" bal:Overridable="yes" />
     <Variable Name="Include_launcher" Value="-1" bal:Overridable="yes" />
     <?if "$(var.PyTestExt)"="" ?>
@@ -94,7 +103,9 @@
     <Variable Name="SimpleInstallDescription" Value="" bal:Overridable="yes" />
     
     <Chain ParallelCache="yes">
+      <?if $(var.Platform)!="ARM64" ?>
       <PackageGroupRef Id="crt" />
+      <?endif ?>
       <PackageGroupRef Id="core" />
       <PackageGroupRef Id="dev" />
       <PackageGroupRef Id="exe" />
@@ -102,7 +113,9 @@
       <PackageGroupRef Id="test" />
       <PackageGroupRef Id="doc" />
       <PackageGroupRef Id="tools" />
+      <?if $(var.Platform)!="ARM64" ?>
       <PackageGroupRef Id="tcltk" />
+      <?endif ?>
       <PackageGroupRef Id="launcher" />
       <PackageGroupRef Id="pip" />
       <PackageGroupRef Id="packageinstall" />
