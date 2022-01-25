@@ -8438,11 +8438,103 @@ fold_tuple_on_constants(struct compiler *c,
 }
 
 
+// Replace an arbitrary run of SWAPs and NOPs with an optimal one that has the
+// same effect.
 static int
-swaptimize(struct instr *inst)
+swaptimize(basicblock *block, int start)
 {
-    // TODO
-    return 0;
+    // NOTE: Running "python -m test test_patma" serves as a good, quick stress
+    // test for this function. Make sure to blow away cached *.pyc files first!
+    assert(block->b_instr[start].i_opcode == SWAP);
+    // Find the end of the current run:
+    int stop = start;
+    while (++stop < block->b_iused && (block->b_instr[stop].i_opcode == SWAP ||
+                                       block->b_instr[stop].i_opcode == NOP));
+    // Find the maximum "depth" of the stack changes:
+    int depth = 0;
+    for (int i = start; i < stop; i++) {
+        if (block->b_instr[i].i_opcode == SWAP) {
+            depth = Py_MAX(depth, block->b_instr[i].i_oparg);
+        }
+    }
+    // Create an array of {0, 1, 2, ..., depth - 1}:
+    int stack[depth];
+    for (int i = 0; i < depth; i++) {
+        stack[i] = i;
+    }
+    // Simulate the combined effect of these instructions by "running" them on
+    // our "stack":
+    for (int i = start; i < stop; i++) {
+        if (block->b_instr[i].i_opcode == SWAP) {
+            int oparg = block->b_instr[i].i_oparg;
+            int top = stack[0];
+            stack[0] = stack[oparg - 1];
+            stack[oparg - 1] = top;
+        }
+    }
+    // Now we can begin! Our approach here is based on a solution to a closely
+    // related problem (https://cs.stackexchange.com/a/13938). It's easiest to
+    // think of this algorithm as determining the steps needed to efficiently
+    // "un-shuffle" our stack. By performing the moves in *reverse* order,
+    // though, we can efficiently *shuffle* it! For this reason, we will be
+    // replacing instructions starting from the *end* of the run, and moving
+    // towards the *start*. Since the solution is optimal, we don't need to
+    // worry about running out of space:
+    int i = stop;
+    for (int item = 0; item < depth; item++) {
+        // We will be replacing items with -1 to mark them as visited:
+        if (stack[item] < 0) {
+            continue;
+        }
+        // Okay, we've found an item that hasn't been visited. It forms a cycle
+        // with zero or more other items; traversing the cycle and swapping each
+        // item by its value will put them all in the right place:
+        int previous_i = i;
+        int size = 0;
+        while (0 <= stack[item]) {
+            // Skip the actual swap if our item is zero (this happens exactly
+            // twice, at the beginning and end of the first cycle). Swapping the
+            // top item with itself is pointless:
+            if (item) {
+                // SWAP(item + 1), since swaps are 1-indexed. We'll update the
+                // actual opcode later:
+                assert(start < i);
+                block->b_instr[--i].i_oparg = item + 1;
+            }
+            size++;
+            // Mark the current item as visited, and move on to the next one:
+            int next_item = stack[item];
+            stack[item] = -1;
+            item = next_item;
+        }
+        assert(size);
+        // Visit the original item to complete the cycle:
+        if (item && start < i) {
+            block->b_instr[--i].i_oparg = item + 1;
+        }
+        // If there was only one item in this cycle, then we just swapped it
+        // with itself twice! No meaningful work was done, so reset the current
+        // position (we'll overwrite those useless swaps on the next traversal):
+        if (size == 1) {
+            i = previous_i;
+        }
+        // If i == start before anchor == depth, it means that all remaining
+        // items form cycles with themselves, and are already in the correct
+        // location. Just bail if that happens:
+        if (i == start) {
+            break;
+        }
+    }
+    // NOP out any unused instructions:
+    while (start < i) {
+        block->b_instr[start++].i_opcode = NOP;
+    }
+    // Ensure that any used instructions are indeed SWAPs:
+    while (start < stop) {
+        block->b_instr[start++].i_opcode = SWAP;
+    }
+    // Nothing more to be done here! Jump ahead to the end of the original run:
+    return stop - 1;
 }
 
 // Attempt to eliminate jumps to jumps by updating inst to jump to
@@ -8689,7 +8781,7 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                 }
                 break;
             case SWAP:
-                i += swaptimize(inst);
+                i = swaptimize(bb, i);
                 break;
             default:
                 /* All HAS_CONST opcodes should be handled with LOAD_CONST */
