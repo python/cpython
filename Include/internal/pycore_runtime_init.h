@@ -1068,6 +1068,7 @@ extern "C" {
                 INIT_ID(__truediv__), \
                 INIT_ID(__trunc__), \
                 INIT_ID(__warningregistry__), \
+                INIT_ID(__weakref__), \
                 INIT_ID(__xor__), \
                 INIT_ID(_abc_impl), \
                 INIT_ID(_blksize), \

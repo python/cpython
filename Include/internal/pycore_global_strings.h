@@ -448,6 +448,7 @@ struct _Py_global_strings {
         ID(__truediv__)
         ID(__trunc__)
         ID(__warningregistry__)
+        ID(__weakref__)
         ID(__xor__)
         ID(_abc_impl)
         ID(_blksize)
