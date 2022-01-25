@@ -1005,7 +1005,13 @@ Module(
         malformed = ast.Dict(keys=[ast.Constant(1)], values=[ast.Constant(2), ast.Constant(3)])
         self.assertRaises(ValueError, ast.literal_eval, malformed)
 
-    def test_bad_integer(self):
+    def test_literal_eval_syntax_errors(self):
+        with self.assertRaisesRegex(SyntaxError, "unexpected indent"):
+            ast.literal_eval(r'''
+                \
+                (\
+            \ ''')
+
         # issue13436: Bad error message with invalid numeric values
         body = [ast.ImportFrom(module='time',
                                names=[ast.alias(name='sleep')],
