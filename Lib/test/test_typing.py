@@ -2006,6 +2006,23 @@ class GenericTests(BaseTestCase):
         def barfoo2(x: CT): ...
         self.assertIs(get_type_hints(barfoo2, globals(), locals())['x'], CT)
 
+    def test_generic_pep585_forward_ref(self):
+        # See https://bugs.python.org/issue41370
+
+        class N:
+            a: list['N']
+        self.assertEqual(
+            get_type_hints(N, globals(), locals()),
+            {'a': list[N]}
+        )
+
+        class M:
+            a: dict['N', list[List[list['M']]]]
+        self.assertEqual(
+            get_type_hints(M, globals(), locals()),
+            {'a': dict[N, list[List[list[M]]]]}
+        )
+
     def test_extended_generic_rules_subclassing(self):
         class T1(Tuple[T, KT]): ...
         class T2(Tuple[T, ...]): ...
