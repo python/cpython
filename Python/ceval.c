@@ -1638,8 +1638,8 @@ pop_frame(PyThreadState *tstate, InterpreterFrame *frame)
     return prev_frame;
 }
 
-/* It is only between a PRECALL_METHOD/FUNCTION instruction and the following instruction,
- * that these two values have any meaning.
+/* It is only between a PRECALL_METHOD/FUNCTION instruction and the following CALL,
+ * that these values have any meaning.
  */
 typedef struct {
     PyObject *callable;
@@ -4613,7 +4613,7 @@ handle_eval_breaker:
                 STACK_SHRINK(total_args);
                 InterpreterFrame *new_frame = _PyEvalFramePushAndInit(
                     tstate, (PyFunctionObject *)function, locals,
-                        stack_pointer, positional_args, call_shape.kwnames
+                    stack_pointer, positional_args, call_shape.kwnames
                 );
                 STACK_SHRINK(call_shape.postcall_shrink);
                 // The frame has stolen all the arguments from the stack,
@@ -4855,7 +4855,6 @@ handle_eval_breaker:
             /* Builtin METH_FASTCALL functions, without keywords */
             assert(call_shape.kwnames == NULL);
             PyObject *callable = call_shape.callable;
-            assert(call_shape.kwnames == NULL);
             DEOPT_IF(!PyCFunction_CheckExact(callable), CALL);
             DEOPT_IF(PyCFunction_GET_FLAGS(callable) != METH_FASTCALL,
                 CALL);
