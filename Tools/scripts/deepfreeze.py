@@ -278,7 +278,7 @@ class Printer:
             self.write(f".co_varnames = {co_varnames},")
             self.write(f".co_cellvars = {co_cellvars},")
             self.write(f".co_freevars = {co_freevars},")
-        self.deallocs.append(f"dealloc_codeobject(&{name});")
+        self.deallocs.append(f"dealloc_codeobject(&{name}, (_Py_CODEUNIT *) {removesuffix(co_code, '.ob_base.ob_base')}.ob_sval);")
         return f"& {name}.ob_base"
 
     def generate_tuple(self, name: str, t: Tuple[object, ...]) -> str:
@@ -442,11 +442,12 @@ def generate(args: list[str], output: TextIO) -> None:
             else:
                 code = compile(fd.read(), f"<frozen {modname}>", "exec")
             printer.generate_file(modname, code)
-    with printer.block("static void \ndealloc_codeobject(PyCodeObject *co)"):
+    with printer.block("static void \ndealloc_codeobject(PyCodeObject *co, _Py_CODEUNIT *firstinstr)"):
             printer.write("PyMem_Free(co->co_quickened);")
             printer.write("co->co_quickened = NULL;")
             printer.write("PyMem_Free(co->co_extra);")
             printer.write("co->co_extra = NULL;")
+            printer.write("co->co_firstinstr = firstinstr;")
             with printer.block("if (co->co_weakreflist != NULL)"):
                 printer.write("PyObject_ClearWeakRefs((PyObject *)co);")   
                 printer.write("co->co_weakreflist = NULL;")   
