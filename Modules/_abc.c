@@ -4,8 +4,9 @@
 #endif
 
 #include "Python.h"
-#include "pycore_object.h"        // _PyType_GetSubclasses()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_object.h"        // _PyType_GetSubclasses()
+#include "pycore_runtime.h"       // _Py_GET_GLOBAL_IDENTIFIER()
 #include "clinic/_abc.c.h"
 
 /*[clinic input]
@@ -15,15 +16,6 @@ module _abc
 
 PyDoc_STRVAR(_abc__doc__,
 "Module contains faster C implementation of abc.ABCMeta");
-
-_Py_IDENTIFIER(__abstractmethods__);
-_Py_IDENTIFIER(__class__);
-_Py_IDENTIFIER(__dict__);
-_Py_IDENTIFIER(__abc_tpflags__);
-_Py_IDENTIFIER(__bases__);
-_Py_IDENTIFIER(_abc_impl);
-_Py_IDENTIFIER(__subclasscheck__);
-_Py_IDENTIFIER(__subclasshook__);
 
 typedef struct {
     PyTypeObject *_abc_data_type;
@@ -122,7 +114,8 @@ static _abc_data *
 _get_impl(PyObject *module, PyObject *self)
 {
     _abcmodule_state *state = get_abc_state(module);
-    PyObject *impl = _PyObject_GetAttrId(self, &PyId__abc_impl);
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(_abc_impl);
+    PyObject *impl = PyObject_GetAttr(self, attr);
     if (impl == NULL) {
         return NULL;
     }
@@ -311,7 +304,8 @@ compute_abstract_methods(PyObject *self)
     PyObject *ns = NULL, *items = NULL, *bases = NULL;  // Py_XDECREF()ed on error.
 
     /* Stage 1: direct abstract methods. */
-    ns = _PyObject_GetAttrId(self, &PyId___dict__);
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__dict__);
+    ns = PyObject_GetAttr(self, attr);
     if (!ns) {
         goto error;
     }
@@ -355,7 +349,8 @@ compute_abstract_methods(PyObject *self)
     }
 
     /* Stage 2: inherited abstract methods. */
-    bases = _PyObject_GetAttrId(self, &PyId___bases__);
+    attr = _Py_GET_GLOBAL_IDENTIFIER(__bases__);
+    bases = PyObject_GetAttr(self, attr);
     if (!bases) {
         goto error;
     }
@@ -364,12 +359,12 @@ compute_abstract_methods(PyObject *self)
         goto error;
     }
 
+    attr = _Py_GET_GLOBAL_IDENTIFIER(__abstractmethods__);
     for (Py_ssize_t pos = 0; pos < PyTuple_GET_SIZE(bases); pos++) {
         PyObject *item = PyTuple_GET_ITEM(bases, pos);  // borrowed
         PyObject *base_abstracts, *iter;
 
-        if (_PyObject_LookupAttrId(item, &PyId___abstractmethods__,
-                                   &base_abstracts) < 0) {
+        if (_PyObject_LookupAttr(item, attr, &base_abstracts) < 0) {
             goto error;
         }
         if (base_abstracts == NULL) {
@@ -409,7 +404,7 @@ compute_abstract_methods(PyObject *self)
         }
     }
 
-    if (_PyObject_SetAttrId(self, &PyId___abstractmethods__, abstracts) < 0) {
+    if (PyObject_SetAttr(self, attr, abstracts) < 0) {
         goto error;
     }
 
@@ -448,7 +443,8 @@ _abc__abc_init(PyObject *module, PyObject *self)
     if (data == NULL) {
         return NULL;
     }
-    if (_PyObject_SetAttrId(self, &PyId__abc_impl, data) < 0) {
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(_abc_impl);
+    if (PyObject_SetAttr(self, attr, data) < 0) {
         Py_DECREF(data);
         return NULL;
     }
@@ -459,7 +455,8 @@ _abc__abc_init(PyObject *module, PyObject *self)
      * their special status w.r.t. pattern matching. */
     if (PyType_Check(self)) {
         PyTypeObject *cls = (PyTypeObject *)self;
-        PyObject *flags = _PyDict_GetItemIdWithError(cls->tp_dict, &PyId___abc_tpflags__);
+        PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__abc_tpflags__);
+        PyObject *flags = PyDict_GetItemWithError(cls->tp_dict, attr);
         if (flags == NULL) {
             if (PyErr_Occurred()) {
                 return NULL;
@@ -477,7 +474,7 @@ _abc__abc_init(PyObject *module, PyObject *self)
                 }
                 ((PyTypeObject *)self)->tp_flags |= (val & COLLECTION_FLAGS);
             }
-            if (_PyDict_DelItemId(cls->tp_dict, &PyId___abc_tpflags__) < 0) {
+            if (PyDict_DelItem(cls->tp_dict, attr) < 0) {
                 return NULL;
             }
         }
@@ -593,7 +590,8 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
         return NULL;
     }
 
-    subclass = _PyObject_GetAttrId(instance, &PyId___class__);
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__class__);
+    subclass = PyObject_GetAttr(instance, attr);
     if (subclass == NULL) {
         Py_DECREF(impl);
         return NULL;
@@ -609,6 +607,7 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
         goto end;
     }
     subtype = (PyObject *)Py_TYPE(instance);
+    attr = _Py_GET_GLOBAL_IDENTIFIER(__subclasscheck__);
     if (subtype == subclass) {
         if (impl->_abc_negative_cache_version == get_abc_state(module)->abc_invalidation_counter) {
             incache = _in_weak_set(impl->_abc_negative_cache, subclass);
@@ -622,12 +621,10 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
             }
         }
         /* Fall back to the subclass check. */
-        result = _PyObject_CallMethodIdOneArg(self, &PyId___subclasscheck__,
-                                              subclass);
+        result = PyObject_CallMethodOneArg(self, attr, subclass);
         goto end;
     }
-    result = _PyObject_CallMethodIdOneArg(self, &PyId___subclasscheck__,
-                                          subclass);
+    result = PyObject_CallMethodOneArg(self, attr, subclass);
     if (result == NULL) {
         goto end;
     }
@@ -639,8 +636,7 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
         break;
     case 0:
         Py_DECREF(result);
-        result = _PyObject_CallMethodIdOneArg(self, &PyId___subclasscheck__,
-                                              subtype);
+        result = PyObject_CallMethodOneArg(self, attr, subtype);
         break;
     case 1:  // Nothing to do.
         break;
@@ -723,8 +719,8 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
     }
 
     /* 3. Check the subclass hook. */
-    ok = _PyObject_CallMethodIdOneArg((PyObject *)self, &PyId___subclasshook__,
-                                      subclass);
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__subclasshook__);
+    ok = PyObject_CallMethodOneArg((PyObject *)self, attr, subclass);
     if (ok == NULL) {
         goto end;
     }

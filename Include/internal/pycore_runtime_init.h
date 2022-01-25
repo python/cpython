@@ -932,6 +932,7 @@ extern "C" {
                 INIT_ID(WarningMessage), \
                 INIT_ID(_), \
                 INIT_ID(__IOBase_closed), \
+                INIT_ID(__abc_tpflags__), \
                 INIT_ID(__abs__), \
                 INIT_ID(__abstractmethods__), \
                 INIT_ID(__add__), \

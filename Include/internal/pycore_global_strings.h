@@ -312,6 +312,7 @@ struct _Py_global_strings {
         ID(WarningMessage)
         ID(_)
         ID(__IOBase_closed)
+        ID(__abc_tpflags__)
         ID(__abs__)
         ID(__abstractmethods__)
         ID(__add__)
