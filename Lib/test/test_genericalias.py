@@ -41,6 +41,7 @@ from unittest.case import _AssertRaisesContext
 from queue import Queue, SimpleQueue
 from weakref import WeakSet, ReferenceType, ref
 import typing
+from typing import Callable, Dict, List
 
 from typing import TypeVar, TypeVarTuple
 T = TypeVar('T')
@@ -178,9 +179,7 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(a.__args__, (int,))
         self.assertEqual(a.__parameters__, ())
 
-    def test_parameters(self):
-        from typing import List, Dict, Callable
-
+    def test_dict_parameters(self):
         D0 = dict[str, int]
         self.assertEqual(D0.__args__, (str, int))
         self.assertEqual(D0.__parameters__, ())
@@ -197,6 +196,7 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(D2b.__args__, (T, T))
         self.assertEqual(D2b.__parameters__, (T,))
 
+    def test_list_parameters(self):
         L0 = list[str]
         self.assertEqual(L0.__args__, (str,))
         self.assertEqual(L0.__parameters__, ())
@@ -219,6 +219,7 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(L5.__args__, (Callable[[K, V], K],))
         self.assertEqual(L5.__parameters__, (K, V))
 
+    def test_tuple_parameters(self):
         with self.assertRaises(TypeError):
             tuple[*list[int]]
 
