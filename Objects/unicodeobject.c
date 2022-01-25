@@ -15467,7 +15467,7 @@ void
 _PyUnicode_ExactDealloc(PyUnicodeObject *op)
 {
     assert(PyUnicode_CheckExact(op));
-    PyObject_Free(op);
+    unicode_dealloc((PyObject *)op);
 }
 
 PyDoc_STRVAR(unicode_doc,
