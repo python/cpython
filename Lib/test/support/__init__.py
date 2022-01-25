@@ -43,7 +43,7 @@ __all__ = [
     "has_subprocess_support", "requires_subprocess",
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
     "check__all__", "skip_if_buggy_ucrt_strfptime",
-    "check_disallow_instantiation", "skip_if_sanitizer",
+    "check_disallow_instantiation", "check_sanitizer", "skip_if_sanitizer",
     # sys
     "is_jython", "is_android", "is_emscripten", "is_wasi",
     "check_impl_detail", "unix_shell", "setswitchinterval",
@@ -384,13 +384,11 @@ def skip_if_buildbot(reason=None):
         isbuildbot = os.environ.get('USER') == 'buildbot'
     return unittest.skipIf(isbuildbot, reason)
 
-def skip_if_sanitizer(reason=None, *, address=False, memory=False, ub=False):
-    """Decorator raising SkipTest if running with a sanitizer active."""
+def check_sanitizer(*, address=False, memory=False, ub=False):
+    """Returns True if Python is compiled with sanitizer support"""
     if not (address or memory or ub):
         raise ValueError('At least one of address, memory, or ub must be True')
 
-    if not reason:
-        reason = 'not working with sanitizers active'
 
     _cflags = sysconfig.get_config_var('CFLAGS') or ''
     _config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
@@ -406,11 +404,18 @@ def skip_if_sanitizer(reason=None, *, address=False, memory=False, ub=False):
         '-fsanitize=undefined' in _cflags or
         '--with-undefined-behavior-sanitizer' in _config_args
     )
-    skip = (
+    return (
         (memory and memory_sanitizer) or
         (address and address_sanitizer) or
         (ub and ub_sanitizer)
     )
+
+
+def skip_if_sanitizer(reason=None, *, address=False, memory=False, ub=False):
+    """Decorator raising SkipTest if running with a sanitizer active."""
+    if not reason:
+        reason = 'not working with sanitizers active'
+    skip = check_sanitizer(address=address, memory=memory, ub=ub)
     return unittest.skipIf(skip, reason)
 
 
