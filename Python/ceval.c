@@ -3878,7 +3878,7 @@ handle_eval_breaker:
             }
 
             if (Py_IsNone(match)) {
-                _Py_DECREF_NONE(match);
+                _Py_DECREF_IMMORTAL(match);
                 Py_XDECREF(rest);
                 /* no match - jump to target */
                 JUMPTO(oparg);
@@ -3981,11 +3981,11 @@ handle_eval_breaker:
             PyObject *cond = POP();
             int err;
             if (Py_IsTrue(cond)) {
-                _Py_DECREF_BOOL(cond);
+                _Py_DECREF_IMMORTAL(cond);
                 DISPATCH();
             }
             if (Py_IsFalse(cond)) {
-                _Py_DECREF_BOOL(cond);
+                _Py_DECREF_IMMORTAL(cond);
                 JUMPTO(oparg);
                 CHECK_EVAL_BREAKER();
                 DISPATCH();
@@ -4008,11 +4008,11 @@ handle_eval_breaker:
             PyObject *cond = POP();
             int err;
             if (Py_IsFalse(cond)) {
-                _Py_DECREF_BOOL(cond);
+                _Py_DECREF_IMMORTAL(cond);
                 DISPATCH();
             }
             if (Py_IsTrue(cond)) {
-                _Py_DECREF_BOOL(cond);
+                _Py_DECREF_IMMORTAL(cond);
                 JUMPTO(oparg);
                 CHECK_EVAL_BREAKER();
                 DISPATCH();
@@ -4038,14 +4038,14 @@ handle_eval_breaker:
                 CHECK_EVAL_BREAKER();
                 DISPATCH();
             }
-            _Py_DECREF_NONE(value);
+            _Py_DECREF_IMMORTAL(value);
             DISPATCH();
         }
 
         TARGET(POP_JUMP_IF_NONE) {
             PyObject *value = POP();
             if (Py_IsNone(value)) {
-                _Py_DECREF_NONE(value);
+                _Py_DECREF_IMMORTAL(value);
                 JUMPTO(oparg);
                 CHECK_EVAL_BREAKER();
                 DISPATCH();
@@ -4059,7 +4059,7 @@ handle_eval_breaker:
             int err;
             if (Py_IsTrue(cond)) {
                 STACK_SHRINK(1);
-                _Py_DECREF_BOOL(cond);
+                _Py_DECREF_IMMORTAL(cond);
                 DISPATCH();
             }
             if (Py_IsFalse(cond)) {
@@ -4083,7 +4083,7 @@ handle_eval_breaker:
             int err;
             if (Py_IsFalse(cond)) {
                 STACK_SHRINK(1);
-                _Py_DECREF_BOOL(cond);
+                _Py_DECREF_IMMORTAL(cond);
                 DISPATCH();
             }
             if (Py_IsTrue(cond)) {
