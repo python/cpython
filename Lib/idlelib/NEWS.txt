@@ -1,11 +1,29 @@
 What's New in IDLE 3.10.0
 (since 3.9.0)
-Released on 2021-10-04?
+Released on 2021-10-04
 =========================
 
 
+bpo-40128: Mostly fix completions on macOS when not using tcl/tk 8.6.11
+(as with 3.9).
+
+bpo-33962: Move the indent space setting from the Font tab to the new Windows
+tab. Patch by Mark Roseman and Terry Jan Reedy.
+
+bpo-40468: Split the settings dialog General tab into Windows and Shell/Ed
+tabs. Move help sources, which extend the Help menu, to the Extensions tab.
+Make space for new options and shorten the dialog. The latter makes the
+dialog better fit small screens.
+
+bpo-44010: Highlight the new match statement's soft keywords: match, case,
+and _. This highlighting is not perfect and will be incorrect in some rare
+cases, especially for some _s in case patterns.
+
 bpo-44026: Include interpreter's typo fix suggestions in message line
 for NameErrors and AttributeErrors.  Patch by E. Paine.
+
+bpo-41611: Avoid occasional uncaught exceptions and freezing when using
+completions on macOS.
 
 bpo-37903: Add mouse actions to the shell sidebar.  Left click and
 optional drag selects one or more lines of text, as with the
@@ -14,6 +32,9 @@ displays a context menu with 'copy with prompts'.  This zips together
 prompts from the sidebar with lines from the selected text.  This option
 also appears on the context menu for the text.
 
+bpo-43981: Fix reference leaks in test_sidebar and test_squeezer.
+Patches by Terry Jan Reedy and Pablo Galindo
+
 bpo-37892: Change Shell input indents from tabs to spaces.  Shell input
 now 'looks right'.  Making this feasible motivated the shell sidebar.
 
@@ -21,6 +42,9 @@ bpo-37903: Move the Shell input prompt to a side bar.
 
 bpo-43655: Make window managers on macOS and X Window recognize
 IDLE dialog windows as dialogs.
+
+bpo-42225: Document that IDLE can fail on Unix either from misconfigured IP
+masquerade rules or failure displaying complex colored (non-ascii) characters.
 
 bpo-43283: Document why printing to IDLE's Shell is often slower than
 printing to a system terminal and that it can be made faster by
@@ -49,6 +73,12 @@ by using inspect.getdoc.
 
 bpo-33987: Mostly finish using ttk widgets, mainly for editor,
 settings, and searches.  Some patches by Mark Roseman.
+
+bpo-40511: Stop unnecessary "flashing" when typing opening and closing
+parentheses inside the parentheses of a function call.
+
+bpo-38439: Add a 256x256 pixel IDLE icon to the Windows .ico file. Created by
+Andrew Clover. Remove the low-color gif variations from the .ico file.
 
 bpo-41775: Make 'IDLE Shell' the shell title.
 
