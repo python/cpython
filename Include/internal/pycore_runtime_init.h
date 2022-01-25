@@ -942,6 +942,7 @@ extern "C" {
                 INIT_ID(__and__), \
                 INIT_ID(__anext__), \
                 INIT_ID(__annotations__), \
+                INIT_ID(__args__), \
                 INIT_ID(__await__), \
                 INIT_ID(__bases__), \
                 INIT_ID(__bool__), \
@@ -1027,7 +1028,9 @@ extern "C" {
                 INIT_ID(__next__), \
                 INIT_ID(__note__), \
                 INIT_ID(__or__), \
+                INIT_ID(__origin__), \
                 INIT_ID(__package__), \
+                INIT_ID(__parameters__), \
                 INIT_ID(__path__), \
                 INIT_ID(__pos__), \
                 INIT_ID(__pow__), \
