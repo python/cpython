@@ -705,7 +705,7 @@ _PyObject_CallMethodId(PyObject *obj, _Py_Identifier *name,
 }
 
 
-PyObject * _PyObject_CallMethod(PyThreadState *tstate, PyObject *callable,
+PyObject * _PyObject_CallMethodFormat(PyThreadState *tstate, PyObject *callable,
                                 const char *format, ...)
 {
     va_list va;
