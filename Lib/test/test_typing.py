@@ -4001,7 +4001,6 @@ class NewTypeTests:
 
     @classmethod
     def setUpClass(cls):
-        raise ValueError
         sys.modules['typing'] = cls.module
         global UserId
         UserId = cls.module.NewType('UserId', int)
