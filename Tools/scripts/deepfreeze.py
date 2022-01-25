@@ -449,6 +449,7 @@ def generate(args: list[str], output: TextIO) -> None:
             printer.write("co->co_extra = NULL;")
             with printer.block("if (co->co_weakreflist != NULL)"):
                 printer.write("PyObject_ClearWeakRefs((PyObject *)co);")   
+                printer.write("co->co_weakreflist = NULL;")   
     with printer.block(f"void _Py_Deepfreeze_Fini(void)"):
             for p in printer.deallocs:
                 printer.write(p)
