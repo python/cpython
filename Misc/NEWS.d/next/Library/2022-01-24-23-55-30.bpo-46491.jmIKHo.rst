@@ -1,1 +1,1 @@
-Allow Annotated on outside of Final/ClassVar.
+Allow :data:`typing.Annotated` on outside of :data:`typing.Final`/:data:`typing.ClassVar`.
