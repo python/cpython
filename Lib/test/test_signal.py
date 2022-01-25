@@ -116,6 +116,7 @@ class PosixTests(unittest.TestCase):
         self.assertLess(len(s), signal.NSIG)
 
     @unittest.skipUnless(sys.executable, "sys.executable required.")
+    @support.requires_subprocess()
     def test_keyboard_interrupt_exit_code(self):
         """KeyboardInterrupt triggers exit via SIGINT."""
         process = subprocess.run(
@@ -166,6 +167,7 @@ class WindowsSignalTests(unittest.TestCase):
             signal.signal(7, handler)
 
     @unittest.skipUnless(sys.executable, "sys.executable required.")
+    @support.requires_subprocess()
     def test_keyboard_interrupt_exit_code(self):
         """KeyboardInterrupt triggers an exit using STATUS_CONTROL_C_EXIT."""
         # We don't test via os.kill(os.getpid(), signal.CTRL_C_EVENT) here
@@ -637,6 +639,7 @@ class WakeupSocketSignalTests(unittest.TestCase):
 
 @unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
 @unittest.skipUnless(hasattr(signal, 'siginterrupt'), "needs signal.siginterrupt()")
+@support.requires_subprocess()
 class SiginterruptTest(unittest.TestCase):
 
     def readpipe_interrupted(self, interrupt):
