@@ -40,11 +40,12 @@ __all__ = [
     "bigmemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
     "requires_IEEE_754", "requires_zlib",
     "has_fork_support", "requires_fork",
+    "has_subprocess_support", "requires_subprocess",
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
     "check__all__", "skip_if_buggy_ucrt_strfptime",
     "check_disallow_instantiation",
     # sys
-    "is_jython", "is_android", "is_emscripten",
+    "is_jython", "is_android", "is_emscripten", "is_wasi",
     "check_impl_detail", "unix_shell", "setswitchinterval",
     # network
     "open_urlresource",
@@ -467,14 +468,22 @@ if sys.platform not in ('win32', 'vxworks'):
 else:
     unix_shell = None
 
-# wasm32-emscripten is POSIX-like but does not provide a
-# working fork() or subprocess API.
+# wasm32-emscripten and -wasi are POSIX-like but do not
+# have subprocess or fork support.
 is_emscripten = sys.platform == "emscripten"
+is_wasi = sys.platform == "wasi"
 
-has_fork_support = hasattr(os, "fork") and not is_emscripten
+has_fork_support = hasattr(os, "fork") and not is_emscripten and not is_wasi
 
 def requires_fork():
     return unittest.skipUnless(has_fork_support, "requires working os.fork()")
+
+has_subprocess_support = not is_emscripten and not is_wasi
+
+def requires_subprocess():
+    """Used for subprocess, os.spawn calls"""
+    return unittest.skipUnless(has_subprocess_support, "requires subprocess support")
+
 
 # Define the URL of a dedicated HTTP server for the network tests.
 # The URL must use clear-text HTTP: no redirection to encrypted HTTPS.
