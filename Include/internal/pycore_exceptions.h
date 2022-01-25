@@ -13,7 +13,7 @@ extern "C" {
 
 extern PyStatus _PyExc_InitState(PyInterpreterState *);
 extern PyStatus _PyExc_InitGlobalObjects(PyInterpreterState *);
-extern PyStatus _PyExc_InitTypes(PyInterpreterState *);
+extern int _PyExc_InitTypes(PyInterpreterState *);
 extern void _PyExc_Fini(PyInterpreterState *);
 
 

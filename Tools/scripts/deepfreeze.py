@@ -150,6 +150,8 @@ class Printer:
     def generate_bytes(self, name: str, b: bytes) -> str:
         if b == b"":
             return "(PyObject *)&_Py_SINGLETON(bytes_empty)"
+        if len(b) == 1:
+            return f"(PyObject *)&_Py_SINGLETON(bytes_characters[{b[0]}])"
         self.write("static")
         with self.indent():
             with self.block("struct"):
