@@ -524,37 +524,6 @@ static inline void _Py_DECREF(
 #  define Py_DECREF(op) _Py_DECREF(_PyObject_CAST(op))
 #endif
 
-static inline void
-_Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
-{
-#ifdef Py_REF_DEBUG
-    _Py_RefTotal--;
-#endif
-    if (--op->ob_refcnt != 0) {
-        assert(op->ob_refcnt > 0);
-    }
-    else {
-#ifdef Py_TRACE_REFS
-        _Py_ForgetReference(op);
-#endif
-        destruct(op);
-    }
-}
-
-static inline void
-_Py_DECREF_IMMORTAL(PyObject *op)
-{
-#ifdef Py_REF_DEBUG
-    _Py_RefTotal--;
-#endif
-    op->ob_refcnt--;
-#ifdef Py_DEBUG
-    if (op->ob_refcnt <= 0) {
-        // Calls _Py_FatalRefcountError for None, True, and False
-        _Py_Dealloc(op);
-    }
-#endif
-}
 
 /* Safely decref `op` and set `op` to NULL, especially useful in tp_clear
  * and tp_dealloc implementations.
@@ -652,7 +621,6 @@ Don't forget to apply Py_INCREF() when returning this value!!!
 */
 PyAPI_DATA(PyObject) _Py_NoneStruct; /* Don't use this directly */
 #define Py_None (&_Py_NoneStruct)
-
 
 // Test if an object is the None singleton, the same as "x is None" in Python.
 PyAPI_FUNC(int) Py_IsNone(PyObject *x);

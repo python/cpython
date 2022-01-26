@@ -24,6 +24,37 @@ extern "C" {
         .ob_size = size, \
     }
 
+static inline void
+_Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
+{
+#ifdef Py_REF_DEBUG
+    _Py_RefTotal--;
+#endif
+    if (--op->ob_refcnt != 0) {
+        assert(op->ob_refcnt > 0);
+    }
+    else {
+#ifdef Py_TRACE_REFS
+        _Py_ForgetReference(op);
+#endif
+        destruct(op);
+    }
+}
+
+static inline void
+_Py_DECREF_IMMORTAL(PyObject *op)
+{
+#ifdef Py_REF_DEBUG
+    _Py_RefTotal--;
+#endif
+    op->ob_refcnt--;
+#ifdef Py_DEBUG
+    if (op->ob_refcnt <= 0) {
+        // Calls _Py_FatalRefcountError for None, True, and False
+        _Py_Dealloc(op);
+    }
+#endif
+}
 
 PyAPI_FUNC(int) _PyType_CheckConsistency(PyTypeObject *type);
 PyAPI_FUNC(int) _PyDict_CheckConsistency(PyObject *mp, int check_content);

@@ -62,6 +62,7 @@ raised for division by zero and mod by zero.
 #include "pycore_dtoa.h"          // _Py_dg_infinity()
 #include "pycore_long.h"          // _PyLong_GetZero(), _PyLong_ExactDealloc
 #include "pycore_floatobject.h"   // _PyFloat_ExactDealloc
+#include "pycore_object.h"        // _Py_DECREF_SPECIALIZED
 /* For DBL_EPSILON in _math.h */
 #include <float.h>
 /* For _Py_log1p with workarounds for buggy handling of zeros. */
