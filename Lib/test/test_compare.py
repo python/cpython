@@ -121,8 +121,8 @@ class ComparisonSimpleTest(unittest.TestCase):
 
     def test_issue_1393(self):
         x = lambda: None
-        self.assertEqual(x, self.Anything())
-        self.assertEqual(self.Anything(), x)
+        self.assertEqual(x, ALWAYS_EQ)
+        self.assertEqual(ALWAYS_EQ, x)
         y = object()
         self.assertEqual(y, self.Anything())
         self.assertEqual(self.Anything(), y)
