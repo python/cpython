@@ -127,6 +127,7 @@ _Py_GetSpecializationStats(void) {
     err += add_stat_dict(stats, CALL_NO_KW, "call_no_kw");
     err += add_stat_dict(stats, BINARY_OP, "binary_op");
     err += add_stat_dict(stats, COMPARE_OP, "compare_op");
+    err += add_stat_dict(stats, UNPACK_SEQUENCE, "unpack_sequence");
     if (err < 0) {
         Py_DECREF(stats);
         return NULL;
@@ -255,6 +256,7 @@ static uint8_t adaptive_opcodes[256] = {
     [STORE_ATTR] = STORE_ATTR_ADAPTIVE,
     [BINARY_OP] = BINARY_OP_ADAPTIVE,
     [COMPARE_OP] = COMPARE_OP_ADAPTIVE,
+    [UNPACK_SEQUENCE] = UNPACK_SEQUENCE_ADAPTIVE,
 };
 
 /* The number of cache entries required for a "family" of instructions. */
@@ -268,6 +270,7 @@ static uint8_t cache_requirements[256] = {
     [STORE_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
     [BINARY_OP] = 1,  // _PyAdaptiveEntry
     [COMPARE_OP] = 1, /* _PyAdaptiveEntry */
+    [UNPACK_SEQUENCE] = 1,  // _PyAdaptiveEntry
 };
 
 /* Return the oparg for the cache_offset and instruction index.
@@ -1744,5 +1747,36 @@ failure:
     return;
 success:
     STAT_INC(COMPARE_OP, success);
+    adaptive->counter = initial_counter_value();
+}
+
+void
+_Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
+                              SpecializedCacheEntry *cache)
+{
+    _PyAdaptiveEntry *adaptive = &cache->adaptive;
+    if (PyTuple_CheckExact(seq)) {
+        if (PyTuple_GET_SIZE(seq) != adaptive->original_oparg) {
+            SPECIALIZATION_FAIL(UNPACK_SEQUENCE, SPEC_FAIL_EXPECTED_ERROR);
+            goto failure;
+        }
+        *instr = _Py_MAKECODEUNIT(UNPACK_SEQUENCE_TUPLE, _Py_OPARG(*instr));
+        goto success;
+    }
+    if (PyList_CheckExact(seq)) {
+        if (PyList_GET_SIZE(seq) != adaptive->original_oparg) {
+            SPECIALIZATION_FAIL(UNPACK_SEQUENCE, SPEC_FAIL_EXPECTED_ERROR);
+            goto failure;
+        }
+        *instr = _Py_MAKECODEUNIT(UNPACK_SEQUENCE_LIST, _Py_OPARG(*instr));
+        goto success;
+    }
+    SPECIALIZATION_FAIL(UNPACK_SEQUENCE, SPEC_FAIL_OTHER);
+failure:
+    STAT_INC(UNPACK_SEQUENCE, failure);
+    cache_backoff(adaptive);
+    return;
+success:
+    STAT_INC(UNPACK_SEQUENCE, success);
     adaptive->counter = initial_counter_value();
 }

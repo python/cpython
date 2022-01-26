@@ -2837,46 +2837,77 @@ handle_eval_breaker:
 
         TARGET(UNPACK_SEQUENCE) {
             PREDICTED(UNPACK_SEQUENCE);
-            PyObject *seq = POP(), *item, **items;
-            if (PyTuple_CheckExact(seq) &&
-                PyTuple_GET_SIZE(seq) == oparg) {
-                items = ((PyTupleObject *)seq)->ob_item;
-                while (oparg--) {
-                    item = items[oparg];
-                    Py_INCREF(item);
-                    PUSH(item);
-                }
-            } else if (PyList_CheckExact(seq) &&
-                       PyList_GET_SIZE(seq) == oparg) {
-                items = ((PyListObject *)seq)->ob_item;
-                while (oparg--) {
-                    item = items[oparg];
-                    Py_INCREF(item);
-                    PUSH(item);
-                }
-            } else if (unpack_iterable(tstate, seq, oparg, -1,
-                                       stack_pointer + oparg)) {
-                STACK_GROW(oparg);
-            } else {
-                /* unpack_iterable() raised an exception */
+            PyObject *seq = TOP();
+            PyObject **top = stack_pointer + oparg - 1;
+            if (!unpack_iterable(tstate, seq, oparg, -1, top)) {
+                STACK_SHRINK(1);
                 Py_DECREF(seq);
                 goto error;
+            }
+            stack_pointer = top;
+            Py_DECREF(seq);
+            DISPATCH();
+        }
+
+        TARGET(UNPACK_SEQUENCE_ADAPTIVE) {
+            assert(cframe.use_tracing == 0);
+            SpecializedCacheEntry *cache = GET_CACHE();
+            if (cache->adaptive.counter == 0) {
+                PyObject *seq = TOP();
+                next_instr--;
+                _Py_Specialize_UnpackSequence(seq, next_instr, cache);
+                DISPATCH();
+            }
+            else {
+                STAT_INC(UNPACK_SEQUENCE, deferred);
+                cache->adaptive.counter--;
+                oparg = cache->adaptive.original_oparg;
+                JUMP_TO_INSTRUCTION(UNPACK_SEQUENCE);
+            }
+        }
+
+        TARGET(UNPACK_SEQUENCE_TUPLE) {
+            PyObject *seq = TOP();
+            int len = GET_CACHE()->adaptive.original_oparg;
+            DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
+            DEOPT_IF(PyTuple_GET_SIZE(seq) != len, UNPACK_SEQUENCE);
+            STAT_INC(UNPACK_SEQUENCE, hit);
+            BASIC_STACKADJ(len - 1);
+            PyObject **stack = &TOP();
+            PyObject **items = _PyTuple_ITEMS(seq);
+            while (len--) {
+                *stack-- = Py_NewRef(*items++);
+            }
+            Py_DECREF(seq);
+            DISPATCH();
+        }
+
+        TARGET(UNPACK_SEQUENCE_LIST) {
+            PyObject *seq = TOP();
+            int len = GET_CACHE()->adaptive.original_oparg;
+            DEOPT_IF(!PyList_CheckExact(seq), UNPACK_SEQUENCE);
+            DEOPT_IF(PyList_GET_SIZE(seq) != len, UNPACK_SEQUENCE);
+            STAT_INC(UNPACK_SEQUENCE, hit);
+            BASIC_STACKADJ(len - 1);
+            PyObject **stack = &TOP();
+            PyObject **items = _PyList_ITEMS(seq);
+            while (len--) {
+                *stack-- = Py_NewRef(*items++);
             }
             Py_DECREF(seq);
             DISPATCH();
         }
 
         TARGET(UNPACK_EX) {
-            int totalargs = 1 + (oparg & 0xFF) + (oparg >> 8);
-            PyObject *seq = POP();
-
-            if (unpack_iterable(tstate, seq, oparg & 0xFF, oparg >> 8,
-                                stack_pointer + totalargs)) {
-                stack_pointer += totalargs;
-            } else {
+            PyObject *seq = TOP();
+            int before = oparg & 0xFF, after = oparg >> 8;
+            PyObject **top = stack_pointer + before + after;
+            if (!unpack_iterable(tstate, seq, before, after, top)) {
+                STACK_SHRINK(1);
                 Py_DECREF(seq);
                 goto error;
             }
+            stack_pointer = top;
             Py_DECREF(seq);
             DISPATCH();
         }
@@ -5342,6 +5373,7 @@ MISS_WITH_CACHE(CALL_NO_KW)
 MISS_WITH_CACHE(BINARY_OP)
 MISS_WITH_CACHE(COMPARE_OP)
 MISS_WITH_CACHE(BINARY_SUBSCR)
+MISS_WITH_CACHE(UNPACK_SEQUENCE)
 MISS_WITH_OPARG_COUNTER(STORE_SUBSCR)
 
 binary_subscr_dict_error:
