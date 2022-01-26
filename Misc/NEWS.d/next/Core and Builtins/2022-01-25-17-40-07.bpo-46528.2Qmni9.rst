@@ -1,0 +1,3 @@
+Replace several stack manipulation instructions (``DUP_TOP``,
+``DUP_TOP_TWO``, ``ROT_TWO``, ``ROT_THREE``, ``ROT_FOUR``, and ``ROT_N``)
+with the existing :opcode:`COPY` and new :opcode:`SWAP` instructions.
