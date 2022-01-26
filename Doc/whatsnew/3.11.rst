@@ -413,7 +413,7 @@ CPython bytecode changes
 
 * Replace several stack manipulation instructions (``DUP_TOP``, ``DUP_TOP_TWO``,
   ``ROT_TWO``, ``ROT_THREE``, ``ROT_FOUR``, and ``ROT_N``) with new
-  :opcode:`COPY` and new :opcode:`SWAP` instructions.
+  :opcode:`COPY` and :opcode:`SWAP` instructions.
 
 * Add :opcode:`POP_JUMP_IF_NOT_NONE` and :opcode:`POP_JUMP_IF_NONE` opcodes to
   speed up conditional jumps.
