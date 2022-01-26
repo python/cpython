@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_runtime.h"       // _Py_GET_GLOBAL_IDENTIFIER()
 #include "clinic/_operator.c.h"
 
 typedef struct {
@@ -1693,11 +1694,11 @@ methodcaller_reduce(methodcallerobject *mc, PyObject *Py_UNUSED(ignored))
         PyObject *constructor;
         PyObject *newargs[2];
 
-        _Py_IDENTIFIER(partial);
         functools = PyImport_ImportModule("functools");
         if (!functools)
             return NULL;
-        partial = _PyObject_GetAttrId(functools, &PyId_partial);
+        PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(partial);
+        partial = PyObject_GetAttr(functools, attr);
         Py_DECREF(functools);
         if (!partial)
             return NULL;
