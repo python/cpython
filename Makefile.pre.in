@@ -1185,7 +1185,7 @@ regen-all: regen-opcode regen-opcode-targets regen-typeslots \
 	regen-token regen-ast regen-keyword regen-frozen clinic \
 	regen-pegen-metaparser regen-pegen regen-test-frozenmain
 	@echo
-	@echo "Note: make regen-stdlib-module-names and autoconf should be run manually"
+	@echo "Note: make regen-stdlib-module-names and make autoconf should be run manually"
 
 ############################################################################
 # Special rules for object files
