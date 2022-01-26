@@ -633,8 +633,6 @@ compiler_unit_free(struct compiler_unit *u)
 static int
 compiler_set_qualname(struct compiler *c)
 {
-    _Py_static_string(dot, ".");
-    _Py_static_string(dot_locals, ".<locals>");
     Py_ssize_t stack_size;
     struct compiler_unit *u = c->u;
     PyObject *name, *base, *dot_str, *dot_locals_str;
@@ -668,10 +666,9 @@ compiler_set_qualname(struct compiler *c)
         if (!force_global) {
             if (parent->u_scope_type == COMPILER_SCOPE_FUNCTION
                 || parent->u_scope_type == COMPILER_SCOPE_ASYNC_FUNCTION
-                || parent->u_scope_type == COMPILER_SCOPE_LAMBDA) {
-                dot_locals_str = _PyUnicode_FromId(&dot_locals);
-                if (dot_locals_str == NULL)
-                    return 0;
+                || parent->u_scope_type == COMPILER_SCOPE_LAMBDA)
+            {
+                dot_locals_str = _Py_GET_GLOBAL_STRING(dot_locals);
                 base = PyUnicode_Concat(parent->u_qualname, dot_locals_str);
                 if (base == NULL)
                     return 0;
@@ -684,11 +681,7 @@ compiler_set_qualname(struct compiler *c)
     }
 
     if (base != NULL) {
-        dot_str = _PyUnicode_FromId(&dot);
-        if (dot_str == NULL) {
-            Py_DECREF(base);
-            return 0;
-        }
+        dot_str = _Py_GET_GLOBAL_STRING(dot);
         name = PyUnicode_Concat(base, dot_str);
         Py_DECREF(base);
         if (name == NULL)
