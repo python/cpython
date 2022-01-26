@@ -9,7 +9,6 @@ import os
 import pickle
 import random
 import re
-import subprocess
 import sys
 import textwrap
 import threading
@@ -21,7 +20,11 @@ from test.support import MISSING_C_DOCSTRINGS
 from test.support import import_helper
 from test.support import threading_helper
 from test.support import warnings_helper
-from test.support.script_helper import assert_python_failure, assert_python_ok
+from test.support.script_helper import (
+    assert_python_failure,
+    assert_python_ok,
+    run_python_until_end,
+)
 try:
     import _posixsubprocess
 except ImportError:
@@ -68,13 +71,10 @@ class CAPITest(unittest.TestCase):
 
     @support.requires_subprocess()
     def test_no_FatalError_infinite_loop(self):
-        with support.SuppressCrashReport():
-            p = subprocess.Popen([sys.executable, "-c",
-                                  'import _testcapi;'
-                                  '_testcapi.crash_no_current_thread()'],
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
-        (out, err) = p.communicate()
+        run_result, _cmd_line = run_python_until_end(
+            '-c', 'import _testcapi;' '_testcapi.crash_no_current_thread()',
+        )
+        _rc, out, err = run_result
         self.assertEqual(out, b'')
         # This used to cause an infinite loop.
         self.assertTrue(err.rstrip().startswith(
