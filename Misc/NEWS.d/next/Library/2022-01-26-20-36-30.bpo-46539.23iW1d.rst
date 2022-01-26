@@ -1,0 +1,1 @@
+typing: Pass on status of special forms to forward references. Patch by Gregory Beauregard.
