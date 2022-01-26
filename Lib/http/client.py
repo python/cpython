@@ -188,7 +188,6 @@ class HTTPMessage(email.message.Message):
         returned, without interpretation.  If the header does not occur, an
         empty list is returned.  If the header occurs multiple times, all
         occurrences are returned.  Case is not important in the header name.
-
         """
         name = name.lower() + ':'
         n = len(name)
@@ -712,7 +711,7 @@ class HTTPResponse(io.BufferedIOBase):
         return self.fp.fileno()
 
     def getheader(self, name, default=None):
-        '''Returns the value of the header matching *name*.
+        """Returns the value of the header matching *name*.
 
         If there are multiple matching headers, the values are
         combined into a single string separated by commas and spaces.
@@ -721,8 +720,7 @@ class HTTPResponse(io.BufferedIOBase):
         the *default* is not specified.
 
         If the headers are unknown, raises http.client.ResponseNotReady.
-
-        '''
+        """
         if self.headers is None:
             raise ResponseNotReady()
         headers = self.headers.get_all(name) or default
@@ -745,7 +743,7 @@ class HTTPResponse(io.BufferedIOBase):
     # For compatibility with old-style urllib responses.
 
     def info(self):
-        '''Returns an instance of the class mimetools.Message containing
+        """Returns an instance of the class mimetools.Message containing
         meta-information associated with the URL.
 
         When the method is HTTP, these headers are those returned by
@@ -763,27 +761,24 @@ class HTTPResponse(io.BufferedIOBase):
         Content-Length giving file size, and a Content-Type
         containing a guess at the file's type. See also the
         description of the mimetools module.
-
-        '''
+        """
         return self.headers
 
     def geturl(self):
-        '''Return the real URL of the page.
+        """Return the real URL of the page.
 
         In some cases, the HTTP server redirects a client to another
         URL. The urlopen() function handles this transparently, but in
         some cases the caller needs to know which URL the client was
         redirected to. The geturl() method can be used to get at this
         redirected URL.
-
-        '''
+        """
         return self.url
 
     def getcode(self):
-        '''Return the HTTP status code that was sent with the response,
+        """Return the HTTP status code that was sent with the response,
         or None if the URL is not an HTTP URL.
-
-        '''
+        """
         return self.status
 
 class HTTPConnection:
