@@ -147,7 +147,7 @@ def _type_convert(arg, module=None, *, allow_special_forms=False):
     if arg is None:
         return type(None)
     if isinstance(arg, str):
-        return ForwardRef(arg, module=module, allow_special_forms=allow_special_forms)
+        return ForwardRef(arg, module=module, is_class=allow_special_forms)
     return arg
 
 
@@ -664,7 +664,7 @@ class ForwardRef(_Final, _root=True):
                  '__forward_is_argument__', '__forward_allow_special_forms__',
                  '__forward_module__')
 
-    def __init__(self, arg, is_argument=True, module=None, *, allow_special_forms=False):
+    def __init__(self, arg, is_argument=True, module=None, *, is_class=False):
         if not isinstance(arg, str):
             raise TypeError(f"Forward reference must be a string -- got {arg!r}")
         try:
@@ -676,7 +676,7 @@ class ForwardRef(_Final, _root=True):
         self.__forward_evaluated__ = False
         self.__forward_value__ = None
         self.__forward_is_argument__ = is_argument
-        self.__forward_allow_special_forms__ = allow_special_forms
+        self.__forward_allow_special_forms__ = is_class
         self.__forward_module__ = module
 
     def _evaluate(self, globalns, localns, recursive_guard):
@@ -1804,7 +1804,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
                 if value is None:
                     value = type(None)
                 if isinstance(value, str):
-                    value = ForwardRef(value, is_argument=False, allow_special_forms=True)
+                    value = ForwardRef(value, is_argument=False, is_class=True)
                 value = _eval_type(value, base_globals, base_locals)
                 hints[name] = value
         return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
@@ -1841,7 +1841,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
             value = ForwardRef(
                 value,
                 is_argument=not isinstance(obj, types.ModuleType),
-                allow_special_forms=False,
+                is_class=False,
             )
         value = _eval_type(value, globalns, localns)
         if name in defaults and defaults[name] is None:
