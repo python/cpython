@@ -1462,6 +1462,16 @@ class TestFinderMethods(unittest.TestCase):
                 res = tuple(dis._find_store_names(code))
                 self.assertEqual(res, expected)
 
+    def test_findlabels(self):
+        labels = dis.findlabels(jumpy.__code__.co_code)
+        jumps = [
+            instr.offset
+            for instr in expected_opinfo_jumpy
+            if instr.is_jump_target
+        ]
+
+        self.assertEqual(sorted(labels), sorted(jumps))
+
 
 class TestDisTraceback(unittest.TestCase):
     def setUp(self) -> None:

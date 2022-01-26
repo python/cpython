@@ -325,6 +325,15 @@ class UnionTests(BaseTestCase):
         u = Union[int | float]
         self.assertEqual(repr(u), 'typing.Union[int, float]')
 
+        u = Union[None, str]
+        self.assertEqual(repr(u), 'typing.Optional[str]')
+        u = Union[str, None]
+        self.assertEqual(repr(u), 'typing.Optional[str]')
+        u = Union[None, str, int]
+        self.assertEqual(repr(u), 'typing.Union[NoneType, str, int]')
+        u = Optional[str]
+        self.assertEqual(repr(u), 'typing.Optional[str]')
+
     def test_cannot_subclass(self):
         with self.assertRaises(TypeError):
             class C(Union):
