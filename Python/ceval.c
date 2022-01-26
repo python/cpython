@@ -2837,14 +2837,13 @@ handle_eval_breaker:
 
         TARGET(UNPACK_SEQUENCE) {
             PREDICTED(UNPACK_SEQUENCE);
-            PyObject *seq = TOP();
-            PyObject **top = stack_pointer + oparg - 1;
+            PyObject *seq = POP();
+            PyObject **top = stack_pointer + oparg;
             if (!unpack_iterable(tstate, seq, oparg, -1, top)) {
-                STACK_SHRINK(1);
                 Py_DECREF(seq);
                 goto error;
             }
-            stack_pointer = top;
+            STACK_GROW(oparg);
             Py_DECREF(seq);
             DISPATCH();
         }
@@ -2872,11 +2871,10 @@ handle_eval_breaker:
             DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
             DEOPT_IF(PyTuple_GET_SIZE(seq) != len, UNPACK_SEQUENCE);
             STAT_INC(UNPACK_SEQUENCE, hit);
-            BASIC_STACKADJ(len - 1);
-            PyObject **stack = &TOP();
+            STACK_SHRINK(1);
             PyObject **items = _PyTuple_ITEMS(seq);
             while (len--) {
-                *stack-- = Py_NewRef(*items++);
+                PUSH(Py_NewRef(items[len]));
             }
             Py_DECREF(seq);
             DISPATCH();
@@ -2888,26 +2886,24 @@ handle_eval_breaker:
             DEOPT_IF(!PyList_CheckExact(seq), UNPACK_SEQUENCE);
             DEOPT_IF(PyList_GET_SIZE(seq) != len, UNPACK_SEQUENCE);
             STAT_INC(UNPACK_SEQUENCE, hit);
-            BASIC_STACKADJ(len - 1);
-            PyObject **stack = &TOP();
+            STACK_SHRINK(1);
             PyObject **items = _PyList_ITEMS(seq);
             while (len--) {
-                *stack-- = Py_NewRef(*items++);
+                PUSH(Py_NewRef(items[len]));
             }
             Py_DECREF(seq);
             DISPATCH();
         }
 
         TARGET(UNPACK_EX) {
-            PyObject *seq = TOP();
-            int before = oparg & 0xFF, after = oparg >> 8;
-            PyObject **top = stack_pointer + before + after;
-            if (!unpack_iterable(tstate, seq, before, after, top)) {
-                STACK_SHRINK(1);
+            int totalargs = 1 + (oparg & 0xFF) + (oparg >> 8);
+            PyObject *seq = POP();
+            PyObject **top = stack_pointer + totalargs;
+            if (!unpack_iterable(tstate, seq, oparg & 0xFF, oparg >> 8, top)) {
                 Py_DECREF(seq);
                 goto error;
             }
-            stack_pointer = top;
+            STACK_GROW(totalargs);
             Py_DECREF(seq);
             DISPATCH();
         }
