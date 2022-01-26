@@ -254,6 +254,24 @@ For Red Hat, install the python-devel RPM to get the necessary files.
 
 For Debian, run ``apt-get install python-dev``.
 
+How do I tell "incomplete input" from "invalid input"?
+------------------------------------------------------
+
+Sometimes you want to emulate the Python interactive interpreter's behavior,
+where it gives you a continuation prompt when the input is incomplete (e.g. you
+typed the start of an "if" statement or you didn't close your parentheses or
+triple string quotes), but it gives you a syntax error message immediately when
+the input is invalid.
+
+In Python you can use the :mod:`codeop` module, which approximates the parser's
+behavior sufficiently.  IDLE uses this, for example.
+
+The easiest way to do it in C is to call :c:func:`PyRun_InteractiveLoop` (perhaps
+in a separate thread) and let the Python interpreter handle the input for
+you. You can also set the :c:func:`PyOS_ReadlineFunctionPointer` to point at your
+custom input function. See ``Modules/readline.c`` and ``Parser/myreadline.c``
+for more hints.
+
 How do I find undefined g++ symbols __builtin_new or __pure_virtual?
 --------------------------------------------------------------------
 
