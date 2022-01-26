@@ -8494,7 +8494,7 @@ swaptimize(basicblock *block, int ix)
     // though, we can efficiently *shuffle* it! For this reason, we will be
     // replacing instructions starting from the *end* of the run. Since the
     // solution is optimal, we don't need to worry about running out of space:
-    int j = len - 1;
+    int current = len - 1;
     for (int i = 0; i < depth; i++) {
         // Skip items that have already been visited, or just happen to be in
         // the correct location:
@@ -8505,29 +8505,30 @@ swaptimize(basicblock *block, int ix)
         // with other items; traversing the cycle and swapping each item with
         // the next will put them all in the correct place. The weird
         // loop-and-a-half is necessary to insert 0 into every cycle, since we
-        // can only swap from that position.
-        int item = i;
+        // can only swap from that position:
+        int j = i;
         while (true) {
             // Skip the actual swap if our item is zero, since swapping the top
-            // item with itself is pointless.
-            if (item) {
-                assert(0 <= j);
+            // item with itself is pointless:
+            if (j) {
+                assert(0 <= current);
                 // SWAPs are 1-indexed:
-                instructions[j].i_opcode = SWAP;
-                instructions[j--].i_oparg = item + 1;
+                instructions[current].i_opcode = SWAP;
+                instructions[current--].i_oparg = j + 1;
             }
-            if (stack[item] == VISITED) {
-                assert(item == i);
+            if (stack[j] == VISITED) {
+                // Completed the cycle:
+                assert(j == i);
                 break;
             }
-            int next_item = stack[item];
-            stack[item] = VISITED;
-            item = next_item;
+            int next_j = stack[j];
+            stack[j] = VISITED;
+            j = next_j;
         }
     }
     // NOP out any unused instructions:
-    while (0 <= j) {
-        instructions[j--].i_opcode = NOP;
+    while (0 <= current) {
+        instructions[current--].i_opcode = NOP;
     }
     // Done! Return the number of optimized instructions:
     PyMem_Free(stack);
