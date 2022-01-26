@@ -124,8 +124,8 @@ class ComparisonSimpleTest(unittest.TestCase):
         self.assertEqual(x, ALWAYS_EQ)
         self.assertEqual(ALWAYS_EQ, x)
         y = object()
-        self.assertEqual(y, self.Anything())
-        self.assertEqual(self.Anything(), y)
+        self.assertEqual(y, ALWAYS_EQ)
+        self.assertEqual(ALWAYS_EQ, y)
 
 
 class ComparisonFullTest(unittest.TestCase):
