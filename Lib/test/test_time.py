@@ -565,7 +565,7 @@ class TimeTestCase(unittest.TestCase):
         ]
 
         for name in clocks:
-            with self.subTest(name=name)
+            with self.subTest(name=name):
                 info = time.get_clock_info(name)
 
                 self.assertIsInstance(info.implementation, str)
