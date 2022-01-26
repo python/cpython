@@ -487,7 +487,7 @@ Reedy in :issue:`37765`.)
 New in 3.9 maintenance releases
 
 Make IDLE invoke :func:`sys.excepthook` (when started without '-n').
-User hooks were previously ignored.  (Patch by Ken Hilton in
+User hooks were previously ignored.  (Contributed by Ken Hilton in
 :issue:`43008`.)
 
 The changes above have been backported to 3.8 maintenance releases.
