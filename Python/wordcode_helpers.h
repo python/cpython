@@ -39,6 +39,6 @@ write_op_arg(_Py_CODEUNIT *codestr, unsigned char opcode,
             *codestr++ = PACKOPARG(opcode, oparg & 0xff);
             break;
         default:
-            assert(0);
+            Py_UNREACHABLE();
     }
 }

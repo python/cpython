@@ -1,8 +1,6 @@
 """
 Test equality and order comparisons.
 """
-
-
 import unittest
 from test.support import ALWAYS_EQ
 from fractions import Fraction
@@ -14,7 +12,6 @@ class ComparisonSimpleTest(unittest.TestCase):
     A testcase that verifies the behavior of equality and order comparisons for
     some simple cases.
     """
-
     class Empty:
         def __repr__(self):
             return '<Empty>'
@@ -28,8 +25,6 @@ class ComparisonSimpleTest(unittest.TestCase):
 
         def __eq__(self, other):
             return self.arg == other
-
-
 
     set1 = [2, 2.0, 2, 2+0j, Cmp(2.0)]
     set2 = [[1], (3,), None, Empty()]

@@ -42,6 +42,9 @@ get_encoded_name(PyObject *name, const char **hook_prefix) {
 
     /* Get the short name (substring after last dot) */
     name_len = PyUnicode_GetLength(name);
+    if (name_len < 0) {
+        return NULL;
+    }
     lastdot = PyUnicode_FindChar(name, '.', 0, name_len, -1);
     if (lastdot < -1) {
         return NULL;
@@ -103,6 +106,11 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
     if (name_unicode == NULL) {
         return NULL;
     }
+    if (!PyUnicode_Check(name_unicode)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "spec.name must be a string");
+        goto error;
+    }
 
     name = get_encoded_name(name_unicode, &hook_prefix);
     if (name == NULL) {
@@ -113,6 +121,11 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
     path = PyObject_GetAttrString(spec, "origin");
     if (path == NULL)
         goto error;
+
+    if (PySys_Audit("import", "OOOOO", name_unicode, path,
+                    Py_None, Py_None, Py_None) < 0) {
+        goto error;
+    }
 
 #ifdef MS_WINDOWS
     exportfunc = _PyImport_FindSharedFuncptrWindows(hook_prefix, name_buf,
@@ -171,7 +184,7 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
         m = NULL;
         goto error;
     }
-    if (Py_TYPE(m) == NULL) {
+    if (Py_IS_TYPE(m, NULL)) {
         /* This can happen when a PyModuleDef is returned without calling
          * PyModuleDef_Init on it
          */
@@ -194,7 +207,7 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
         /* don't allow legacy init for non-ASCII module names */
         PyErr_Format(
             PyExc_SystemError,
-            "initialization of * did not return PyModuleDef",
+            "initialization of %s did not return PyModuleDef",
             name_buf);
         goto error;
     }
@@ -210,12 +223,12 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
     def->m_base.m_init = p0;
 
     /* Remember the filename as the __file__ attribute */
-    if (PyModule_AddObject(m, "__file__", path) < 0)
+    if (PyModule_AddObjectRef(m, "__file__", path) < 0) {
         PyErr_Clear(); /* Not important enough to report */
-    else
-        Py_INCREF(path);
+    }
 
-    if (_PyImport_FixupExtensionObject(m, name_unicode, path) < 0)
+    PyObject *modules = PyImport_GetModuleDict();
+    if (_PyImport_FixupExtensionObject(m, name_unicode, path, modules) < 0)
         goto error;
 
     Py_DECREF(name_unicode);

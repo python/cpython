@@ -1,8 +1,8 @@
-'''Test idlelib.parenmatch.
+"""Test parenmatch, coverage 91%.
 
 This must currently be a gui test because ParenMatch methods use
 several text methods not defined on idlelib.idle_test.mock_tk.Text.
-'''
+"""
 from idlelib.parenmatch import ParenMatch
 from test.support import requires
 requires('gui')
@@ -17,7 +17,7 @@ class DummyEditwin:
         self.text = text
         self.indentwidth = 8
         self.tabwidth = 8
-        self.context_use_ps1 = True
+        self.prompt_last_line = '>>>' # Currently not used by parenmatch.
 
 
 class ParenMatchTest(unittest.TestCase):
@@ -58,7 +58,7 @@ class ParenMatchTest(unittest.TestCase):
                 ('expression', ('1.10', '1.15'), ('1.10', '1.16'))):
             with self.subTest(style=style):
                 text.delete('1.0', 'end')
-                pm.set_style(style)
+                pm.STYLE = style
                 text.insert('insert', 'def foobar(a, b')
 
                 pm.flash_paren_event('event')

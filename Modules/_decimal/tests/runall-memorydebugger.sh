@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Purpose: test with and without threads, all machine configurations, pydebug,
+# Purpose: test with and without contextvar, all machine configurations, pydebug,
 #          refleaks, release build and release build with valgrind.
 #
 # Synopsis: ./runall-memorydebugger.sh [--all-configs64 | --all-configs32]
@@ -18,7 +18,7 @@ CONFIGS_64="x64 uint128 ansi64 universal"
 CONFIGS_32="ppro ansi32 ansi-legacy universal"
 
 VALGRIND="valgrind --tool=memcheck --leak-resolution=high \
-          --db-attach=yes --suppressions=Misc/valgrind-python.supp"
+          --suppressions=Misc/valgrind-python.supp"
 
 # Get args
 case $@ in
@@ -57,7 +57,7 @@ print_config ()
 cd ..
 
 # test_decimal: refleak, regular and Valgrind tests
-for args in "--without-threads" ""; do
+for args in "--without-decimal-contextvar" ""; do
     for config in $CONFIGS; do
 
         unset PYTHON_DECIMAL_WITH_MACHINE
@@ -79,7 +79,7 @@ for args in "--without-threads" ""; do
         $GMAKE | grep _decimal
 
         printf "\n\n# ======================== refleak tests ===========================\n\n"
-        ./python -m test -uall -R 2:2 test_decimal
+        ./python -m test -uall -R 3:3 test_decimal
 
 
         ############ regular tests ###########
@@ -119,8 +119,8 @@ done
 
 # deccheck
 cd ../../
-for config in $CONFIGS; do
-    for args in "--without-threads" ""; do
+for args in "--without-decimal-contextvar" ""; do
+    for config in $CONFIGS; do
 
         unset PYTHON_DECIMAL_WITH_MACHINE
         if [ X"$config" != X"auto" ]; then
@@ -140,7 +140,7 @@ for config in $CONFIGS; do
         ./python Modules/_decimal/tests/deccheck.py
 
         ########### regular ###########
-        print_config "deccheck: config=$config " $args
+        print_config "deccheck: config=$config" $args
         printf "\nbuilding python ...\n\n"
 
         $GMAKE distclean > /dev/null 2>&1
@@ -160,7 +160,7 @@ for config in $CONFIGS; do
                   esac
         esac
 
-        print_config "valgrind deccheck: config=$config " $args
+        print_config "valgrind deccheck: config=$config" $args
         printf "\nbuilding python ...\n\n"
 
         $GMAKE distclean > /dev/null 2>&1

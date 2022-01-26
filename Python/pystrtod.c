@@ -1,6 +1,8 @@
 /* -*- Mode: C; c-file-style: "python" -*- */
 
 #include <Python.h>
+#include "pycore_dtoa.h"
+#include "pycore_pymath.h"        // _Py_SET_53BIT_PRECISION_START
 #include <locale.h>
 
 /* Case-insensitive string match used for nan and inf detection; t should be
@@ -254,7 +256,7 @@ _PyOS_ascii_strtod(const char *nptr, char **endptr)
         char *copy, *c;
         /* Create a copy of the input, with the '.' converted to the
            locale-specific decimal point */
-        copy = (char *)PyMem_MALLOC(end - digits_pos +
+        copy = (char *)PyMem_Malloc(end - digits_pos +
                                     1 + decimal_point_len);
         if (copy == NULL) {
             *endptr = (char *)nptr;
@@ -285,7 +287,7 @@ _PyOS_ascii_strtod(const char *nptr, char **endptr)
                     (fail_pos - copy);
         }
 
-        PyMem_FREE(copy);
+        PyMem_Free(copy);
 
     }
     else {
@@ -342,9 +344,7 @@ PyOS_string_to_double(const char *s,
     char *fail_pos;
 
     errno = 0;
-    PyFPE_START_PROTECT("PyOS_string_to_double", return -1.0)
     x = _PyOS_ascii_strtod(s, &fail_pos);
-    PyFPE_END_PROTECT(x)
 
     if (errno == ENOMEM) {
         PyErr_NoMemory();
@@ -353,15 +353,15 @@ PyOS_string_to_double(const char *s,
     else if (!endptr && (fail_pos == s || *fail_pos != '\0'))
         PyErr_Format(PyExc_ValueError,
                       "could not convert string to float: "
-                      "%.200s", s);
+                      "'%.200s'", s);
     else if (fail_pos == s)
         PyErr_Format(PyExc_ValueError,
                       "could not convert string to float: "
-                      "%.200s", s);
+                      "'%.200s'", s);
     else if (errno == ERANGE && fabs(x) >= 1.0 && overflow_exception)
         PyErr_Format(overflow_exception,
                       "value too large to convert to float: "
-                      "%.200s", s);
+                      "'%.200s'", s);
     else
         result = x;
 
@@ -391,11 +391,16 @@ _Py_string_to_number_with_underscores(
     char *dup, *end;
     PyObject *result;
 
+    assert(s[orig_len] == '\0');
+
     if (strchr(s, '_') == NULL) {
         return innerfunc(s, orig_len, arg);
     }
 
     dup = PyMem_Malloc(orig_len + 1);
+    if (dup == NULL) {
+        return PyErr_NoMemory();
+    }
     end = dup;
     prev = '\0';
     last = s + orig_len;
@@ -431,8 +436,8 @@ _Py_string_to_number_with_underscores(
   error:
     PyMem_Free(dup);
     PyErr_Format(PyExc_ValueError,
-		 "could not convert string to %s: "
-		 "%R", what, obj);
+                 "could not convert string to %s: "
+                 "%R", what, obj);
     return NULL;
 }
 
@@ -597,7 +602,8 @@ Py_LOCAL_INLINE(char *)
 ensure_decimal_point(char* buffer, size_t buf_size, int precision)
 {
     int digit_count, insert_count = 0, convert_to_exp = 0;
-    char *chars_to_insert, *digits_start;
+    const char *chars_to_insert;
+    char *digits_start;
 
     /* search for the first non-digit character */
     char *p = buffer;
@@ -788,7 +794,7 @@ _PyOS_ascii_formatd(char       *buffer,
 
 /* The fallback code to use if _Py_dg_dtoa is not available. */
 
-PyAPI_FUNC(char *) PyOS_double_to_string(double val,
+char * PyOS_double_to_string(double val,
                                          char format_code,
                                          int precision,
                                          int flags,
@@ -1059,9 +1065,7 @@ format_float_short(double d, char format_code,
         else {
             /* shouldn't get here: Gay's code should always return
                something starting with a digit, an 'I',  or 'N' */
-            strncpy(p, "ERR", 3);
-            /* p += 3; */
-            assert(0);
+            Py_UNREACHABLE();
         }
         goto exit;
     }
@@ -1237,7 +1241,7 @@ format_float_short(double d, char format_code,
 }
 
 
-PyAPI_FUNC(char *) PyOS_double_to_string(double val,
+char * PyOS_double_to_string(double val,
                                          char format_code,
                                          int precision,
                                          int flags,

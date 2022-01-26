@@ -1,0 +1,2 @@
+:mod:`pdb` now gracefully handles ``help`` when :attr:`__doc__` is missing,
+for example when run with pregenerated optimized ``.pyc`` files.

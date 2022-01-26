@@ -1,13 +1,13 @@
 import queue
 import sched
+import threading
 import time
 import unittest
-try:
-    import threading
-except ImportError:
-    threading = None
+from test import support
+from test.support import threading_helper
 
-TIMEOUT = 10
+
+TIMEOUT = support.SHORT_TIMEOUT
 
 
 class Timer:
@@ -58,7 +58,6 @@ class TestCase(unittest.TestCase):
         scheduler.run()
         self.assertEqual(l, [0.01, 0.02, 0.03, 0.04, 0.05])
 
-    @unittest.skipUnless(threading, 'Threading required for this test.')
     def test_enter_concurrent(self):
         q = queue.Queue()
         fun = q.put
@@ -84,8 +83,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual(q.get(timeout=TIMEOUT), 5)
         self.assertTrue(q.empty())
         timer.advance(1000)
-        t.join(timeout=TIMEOUT)
-        self.assertFalse(t.is_alive())
+        threading_helper.join_thread(t)
         self.assertTrue(q.empty())
         self.assertEqual(timer.time(), 5)
 
@@ -113,7 +111,6 @@ class TestCase(unittest.TestCase):
         scheduler.run()
         self.assertEqual(l, [0.02, 0.03, 0.04])
 
-    @unittest.skipUnless(threading, 'Threading required for this test.')
     def test_cancel_concurrent(self):
         q = queue.Queue()
         fun = q.put
@@ -141,10 +138,20 @@ class TestCase(unittest.TestCase):
         self.assertEqual(q.get(timeout=TIMEOUT), 4)
         self.assertTrue(q.empty())
         timer.advance(1000)
-        t.join(timeout=TIMEOUT)
-        self.assertFalse(t.is_alive())
+        threading_helper.join_thread(t)
         self.assertTrue(q.empty())
         self.assertEqual(timer.time(), 4)
+
+    def test_cancel_correct_event(self):
+        # bpo-19270
+        events = []
+        scheduler = sched.scheduler()
+        scheduler.enterabs(1, 1, events.append, ("a",))
+        b = scheduler.enterabs(1, 1, events.append, ("b",))
+        scheduler.enterabs(1, 1, events.append, ("c",))
+        scheduler.cancel(b)
+        scheduler.run()
+        self.assertEqual(events, ["a", "c"])
 
     def test_empty(self):
         l = []

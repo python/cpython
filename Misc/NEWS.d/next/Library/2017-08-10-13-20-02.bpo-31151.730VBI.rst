@@ -1,2 +1,0 @@
-socketserver.ForkingMixIn.server_close() now waits until all child processes
-completed to prevent leaking zombie processes.

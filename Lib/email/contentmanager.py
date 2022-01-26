@@ -144,15 +144,15 @@ def _encode_text(string, charset, cte, policy):
     linesep = policy.linesep.encode('ascii')
     def embedded_body(lines): return linesep.join(lines) + linesep
     def normal_body(lines): return b'\n'.join(lines) + b'\n'
-    if cte==None:
+    if cte is None:
         # Use heuristics to decide on the "best" encoding.
-        try:
-            return '7bit', normal_body(lines).decode('ascii')
-        except UnicodeDecodeError:
-            pass
-        if (policy.cte_type == '8bit' and
-                max(len(x) for x in lines) <= policy.max_line_length):
-            return '8bit', normal_body(lines).decode('ascii', 'surrogateescape')
+        if max((len(x) for x in lines), default=0) <= policy.max_line_length:
+            try:
+                return '7bit', normal_body(lines).decode('ascii')
+            except UnicodeDecodeError:
+                pass
+            if policy.cte_type == '8bit':
+                return '8bit', normal_body(lines).decode('ascii', 'surrogateescape')
         sniff = embedded_body(lines[:10])
         sniff_qp = quoprimime.body_encode(sniff.decode('latin-1'),
                                           policy.max_line_length)
@@ -238,9 +238,7 @@ def set_bytes_content(msg, data, maintype, subtype, cte='base64',
         data = binascii.b2a_qp(data, istext=False, header=False, quotetabs=True)
         data = data.decode('ascii')
     elif cte == '7bit':
-        # Make sure it really is only ASCII.  The early warning here seems
-        # worth the overhead...if you care write your own content manager :).
-        data.encode('ascii')
+        data = data.decode('ascii')
     elif cte in ('8bit', 'binary'):
         data = data.decode('ascii', 'surrogateescape')
     msg.set_payload(data)
