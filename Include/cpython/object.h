@@ -14,6 +14,43 @@ PyAPI_FUNC(Py_ssize_t) _Py_GetRefTotal(void);
 #endif
 
 
+/********************* String Literals ****************************************/
+/* This structure helps managing static strings. The basic usage goes like this:
+   Instead of doing
+
+       r = PyObject_CallMethod(o, "foo", "args", ...);
+
+   do
+
+       _Py_IDENTIFIER(foo);
+       ...
+       r = _PyObject_CallMethodId(o, &PyId_foo, "args", ...);
+
+   PyId_foo is a static variable, either on block level or file level. On first
+   usage, the string "foo" is interned, and the structures are linked. On interpreter
+   shutdown, all strings are released.
+
+   Alternatively, _Py_static_string allows choosing the variable name.
+   _PyUnicode_FromId returns a borrowed reference to the interned string.
+   _PyObject_{Get,Set,Has}AttrId are __getattr__ versions using _Py_Identifier*.
+*/
+typedef struct _Py_Identifier {
+    const char* string;
+    // Index in PyInterpreterState.unicode.ids.array. It is process-wide
+    // unique and must be initialized to -1.
+    Py_ssize_t index;
+} _Py_Identifier;
+
+#if !defined(Py_BUILD_CORE) || defined(Py_BUILD_CORE_MODULE)
+// For now we are keeping _Py_IDENTIFIER for continued use
+// in non-builtin extensions (and naughty PyPI modules).
+
+#define _Py_static_string_init(value) { .string = value, .index = -1 }
+#define _Py_static_string(varname, value)  static _Py_Identifier varname = _Py_static_string_init(value)
+#define _Py_IDENTIFIER(varname) _Py_static_string(PyId_##varname, #varname)
+
+#endif  /* ! Py_BUILD_CORE */
+
 /* buffer interface */
 typedef struct bufferinfo {
     void *buf;
@@ -264,19 +301,24 @@ typedef struct _heaptypeobject {
 
 PyAPI_FUNC(const char *) _PyType_Name(PyTypeObject *);
 PyAPI_FUNC(PyObject *) _PyType_Lookup(PyTypeObject *, PyObject *);
+PyAPI_FUNC(PyObject *) _PyType_LookupId(PyTypeObject *, _Py_Identifier *);
 PyAPI_FUNC(PyObject *) _PyObject_LookupSpecial(PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) _PyObject_LookupSpecialId(PyObject *, _Py_Identifier *);
 PyAPI_FUNC(PyTypeObject *) _PyType_CalculateMetaclass(PyTypeObject *, PyObject *);
 PyAPI_FUNC(PyObject *) _PyType_GetDocFromInternalDoc(const char *, const char *);
 PyAPI_FUNC(PyObject *) _PyType_GetTextSignatureFromInternalDoc(const char *, const char *);
 struct PyModuleDef;
 PyAPI_FUNC(PyObject *) _PyType_GetModuleByDef(PyTypeObject *, struct PyModuleDef *);
 
+struct _Py_Identifier;
 PyAPI_FUNC(int) PyObject_Print(PyObject *, FILE *, int);
 PyAPI_FUNC(void) _Py_BreakPoint(void);
 PyAPI_FUNC(void) _PyObject_Dump(PyObject *);
 PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
 
 PyAPI_FUNC(int) _PyObject_IsAbstract(PyObject *);
+PyAPI_FUNC(PyObject *) _PyObject_GetAttrId(PyObject *, struct _Py_Identifier *);
+PyAPI_FUNC(int) _PyObject_SetAttrId(PyObject *, struct _Py_Identifier *, PyObject *);
 /* Replacements of PyObject_GetAttr() and _PyObject_GetAttrId() which
    don't raise AttributeError.
 
@@ -287,6 +329,7 @@ PyAPI_FUNC(int) _PyObject_IsAbstract(PyObject *);
    is raised.
 */
 PyAPI_FUNC(int) _PyObject_LookupAttr(PyObject *, PyObject *, PyObject **);
+PyAPI_FUNC(int) _PyObject_LookupAttrId(PyObject *, struct _Py_Identifier *, PyObject **);
 
 PyAPI_FUNC(int) _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method);
 
@@ -304,50 +347,6 @@ _PyObject_GenericSetAttrWithDict(PyObject *, PyObject *,
                                  PyObject *, PyObject *);
 
 PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
-
-/********************* String Literals ****************************************/
-/* This structure helps managing static strings. The basic usage goes like this:
-   Instead of doing
-
-       r = PyObject_CallMethod(o, "foo", "args", ...);
-
-   do
-
-       _Py_IDENTIFIER(foo);
-       ...
-       r = _PyObject_CallMethodId(o, &PyId_foo, "args", ...);
-
-   PyId_foo is a static variable, either on block level or file level. On first
-   usage, the string "foo" is interned, and the structures are linked. On interpreter
-   shutdown, all strings are released.
-
-   Alternatively, _Py_static_string allows choosing the variable name.
-   _PyUnicode_FromId returns a borrowed reference to the interned string.
-   _PyObject_{Get,Set,Has}AttrId are __getattr__ versions using _Py_Identifier*.
-*/
-typedef struct _Py_Identifier {
-    const char* string;
-    // Index in PyInterpreterState.unicode.ids.array. It is process-wide
-    // unique and must be initialized to -1.
-    Py_ssize_t index;
-} _Py_Identifier;
-
-#if !defined(Py_BUILD_CORE) || defined(Py_BUILD_CORE_MODULE)
-// For now we are keeping _Py_IDENTIFIER for continued use
-// in non-builtin extensions (and naughty PyPI modules).
-
-#define _Py_static_string_init(value) { .string = value, .index = -1 }
-#define _Py_static_string(varname, value)  static _Py_Identifier varname = _Py_static_string_init(value)
-#define _Py_IDENTIFIER(varname) _Py_static_string(PyId_##varname, #varname)
-
-#endif  /* ! Py_BUILD_CORE */
-
-PyAPI_FUNC(PyObject *) _PyType_LookupId(PyTypeObject *, _Py_Identifier *);
-PyAPI_FUNC(PyObject *) _PyObject_LookupSpecialId(PyObject *, _Py_Identifier *);
-struct _Py_Identifier;
-PyAPI_FUNC(PyObject *) _PyObject_GetAttrId(PyObject *, struct _Py_Identifier *);
-PyAPI_FUNC(int) _PyObject_SetAttrId(PyObject *, struct _Py_Identifier *, PyObject *);
-PyAPI_FUNC(int) _PyObject_LookupAttrId(PyObject *, struct _Py_Identifier *, PyObject **);
 
 /* Safely decref `op` and set `op` to `op2`.
  *
