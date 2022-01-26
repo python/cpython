@@ -30,8 +30,6 @@ class ComparisonSimpleTest(unittest.TestCase):
             return self.arg == other
 
 
-        def __ne__(self, other):
-            return False
 
     set1 = [2, 2.0, 2, 2+0j, Cmp(2.0)]
     set2 = [[1], (3,), None, Empty()]
