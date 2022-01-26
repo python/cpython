@@ -95,7 +95,7 @@ enumerate_vectorcall(PyObject *type, PyObject *const *args,
         nkwargs = PyTuple_GET_SIZE(kwnames);
     }
 
-    // Manually implement enumerable(iterable, start=...)
+    // Manually implement enumerate(iterable, start=...)
     if (nargs + nkwargs == 2) {
         if (nkwargs == 1) {
             PyObject *kw = PyTuple_GET_ITEM(kwnames, 0);
