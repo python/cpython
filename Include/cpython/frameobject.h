@@ -12,7 +12,9 @@ struct _frame {
     int f_lineno;               /* Current line number. Only valid if non-zero */
     char f_trace_lines;         /* Emit per-line trace events? */
     char f_trace_opcodes;       /* Emit per-opcode trace events? */
-    char f_own_locals_memory;   /* This frame owns the memory for the locals */
+    char f_owns_frame;          /* This frame owns the frame */
+    /* The frame data, if this frame object owns the frame */
+    PyObject *_f_frame_data[1];
 };
 
 /* Standard object interface */
@@ -26,7 +28,7 @@ PyAPI_FUNC(PyFrameObject *) PyFrame_New(PyThreadState *, PyCodeObject *,
 
 /* only internal use */
 PyFrameObject*
-_PyFrame_New_NoTrack(struct _interpreter_frame *, int);
+_PyFrame_New_NoTrack(PyCodeObject *code);
 
 
 /* The rest of the interface is specific for frame objects */

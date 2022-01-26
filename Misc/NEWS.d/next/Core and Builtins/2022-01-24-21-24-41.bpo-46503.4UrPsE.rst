@@ -1,0 +1,1 @@
+Fix an assert when parsing some invalid \N escape sequences in f-strings.

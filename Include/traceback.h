@@ -16,7 +16,7 @@ PyAPI_DATA(PyTypeObject) PyTraceBack_Type;
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_TRACEBACK_H
-#  include  "cpython/traceback.h"
+#  include "cpython/traceback.h"
 #  undef Py_CPYTHON_TRACEBACK_H
 #endif
 

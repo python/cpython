@@ -289,6 +289,7 @@ typedef struct _heaptypeobject {
     PyObject *ht_name, *ht_slots, *ht_qualname;
     struct _dictkeysobject *ht_cached_keys;
     PyObject *ht_module;
+    char *_ht_tpname;  // Storage for "tp_name"; see PyType_FromModuleAndSpec
     /* here are optional user slots, followed by the members. */
 } PyHeapTypeObject;
 
@@ -534,7 +535,16 @@ PyAPI_FUNC(int) _PyTrash_cond(PyObject *op, destructor dealloc);
     Py_TRASHCAN_BEGIN_CONDITION(op, \
         _PyTrash_cond(_PyObject_CAST(op), (destructor)dealloc))
 
-/* For backwards compatibility, these macros enable the trashcan
- * unconditionally */
-#define Py_TRASHCAN_SAFE_BEGIN(op) Py_TRASHCAN_BEGIN_CONDITION(op, 1)
-#define Py_TRASHCAN_SAFE_END(op) Py_TRASHCAN_END
+/* The following two macros, Py_TRASHCAN_SAFE_BEGIN and
+ * Py_TRASHCAN_SAFE_END, are deprecated since version 3.11 and
+ * will be removed in the future.
+ * Use Py_TRASHCAN_BEGIN and Py_TRASHCAN_END instead.
+ */
+Py_DEPRECATED(3.11) typedef int UsingDeprecatedTrashcanMacro;
+#define Py_TRASHCAN_SAFE_BEGIN(op) \
+    do { \
+        UsingDeprecatedTrashcanMacro cond=1; \
+        Py_TRASHCAN_BEGIN_CONDITION(op, cond);
+#define Py_TRASHCAN_SAFE_END(op) \
+        Py_TRASHCAN_END; \
+    } while(0);

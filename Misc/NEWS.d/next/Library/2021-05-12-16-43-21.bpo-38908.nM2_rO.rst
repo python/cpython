@@ -1,5 +1,0 @@
-Subclasses of ``typing.Protocol`` which only have data variables declared
-will now raise a ``TypeError`` when checked with ``isinstance`` unless they
-are decorated with :func:`runtime_checkable`.  Previously, these checks
-passed silently.
-Patch provided by Yurii Karabas.

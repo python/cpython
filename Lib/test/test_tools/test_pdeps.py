@@ -19,7 +19,7 @@ class PdepsTests(unittest.TestCase):
         # Issue #14492: m_import.match(line) can be None.
         with tempfile.TemporaryDirectory() as tmpdir:
             fn = os.path.join(tmpdir, 'foo')
-            with open(fn, 'w') as stream:
+            with open(fn, 'w', encoding='utf-8') as stream:
                 stream.write("#!/this/will/fail")
             self.pdeps.process(fn, {})
 

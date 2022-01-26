@@ -1,5 +1,6 @@
 import enum
 import errno
+import inspect
 import os
 import random
 import signal
@@ -60,6 +61,14 @@ class GenericTests(unittest.TestCase):
                     )
             enum._test_simple_enum(CheckedSigmasks, Sigmasks)
 
+    def test_functions_module_attr(self):
+        # Issue #27718: If __all__ is not defined all non-builtin functions
+        # should have correct __module__ to be displayed by pydoc.
+        for name in dir(signal):
+            value = getattr(signal, name)
+            if inspect.isroutine(value) and not inspect.isbuiltin(value):
+                self.assertEqual(value.__module__, 'signal')
+
 
 @unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
 class PosixTests(unittest.TestCase):
@@ -107,6 +116,7 @@ class PosixTests(unittest.TestCase):
         self.assertLess(len(s), signal.NSIG)
 
     @unittest.skipUnless(sys.executable, "sys.executable required.")
+    @support.requires_subprocess()
     def test_keyboard_interrupt_exit_code(self):
         """KeyboardInterrupt triggers exit via SIGINT."""
         process = subprocess.run(
@@ -157,6 +167,7 @@ class WindowsSignalTests(unittest.TestCase):
             signal.signal(7, handler)
 
     @unittest.skipUnless(sys.executable, "sys.executable required.")
+    @support.requires_subprocess()
     def test_keyboard_interrupt_exit_code(self):
         """KeyboardInterrupt triggers an exit using STATUS_CONTROL_C_EXIT."""
         # We don't test via os.kill(os.getpid(), signal.CTRL_C_EVENT) here
@@ -628,6 +639,7 @@ class WakeupSocketSignalTests(unittest.TestCase):
 
 @unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
 @unittest.skipUnless(hasattr(signal, 'siginterrupt'), "needs signal.siginterrupt()")
+@support.requires_subprocess()
 class SiginterruptTest(unittest.TestCase):
 
     def readpipe_interrupted(self, interrupt):
@@ -899,7 +911,7 @@ class PendingSignalsTests(unittest.TestCase):
 
         %s
 
-        blocked = %r
+        blocked = %s
         signum = signal.SIGALRM
 
         # child: block and wait the signal

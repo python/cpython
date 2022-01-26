@@ -12,7 +12,7 @@ extern "C" {
 #endif
 
 
-    /* Instruction opcodes for compiled code */
+/* Instruction opcodes for compiled code */
 """.lstrip()
 
 footer = """
@@ -27,6 +27,8 @@ footer = """
 #endif
 #endif /* !Py_OPCODE_H */
 """
+
+DEFINE = "#define {:<31} {:>3}\n"
 
 UINT32_MASK = (1<<32)-1
 
@@ -51,6 +53,7 @@ def main(opcode_py, outfile='Include/opcode.h'):
         code = fp.read()
     exec(code, opcode)
     opmap = opcode['opmap']
+    hasconst = opcode['hasconst']
     hasjrel = opcode['hasjrel']
     hasjabs = opcode['hasjabs']
     used = [ False ] * 256
@@ -61,23 +64,35 @@ def main(opcode_py, outfile='Include/opcode.h'):
         fobj.write(header)
         for name in opcode['opname']:
             if name in opmap:
-                fobj.write("#define %-23s %3s\n" % (name, opmap[name]))
+                fobj.write(DEFINE.format(name, opmap[name]))
             if name == 'POP_EXCEPT': # Special entry for HAVE_ARGUMENT
-                fobj.write("#define %-23s %3d\n" %
-                            ('HAVE_ARGUMENT', opcode['HAVE_ARGUMENT']))
+                fobj.write(DEFINE.format("HAVE_ARGUMENT", opcode["HAVE_ARGUMENT"]))
+
         for name in opcode['_specialized_instructions']:
             while used[next_op]:
                 next_op += 1
-            fobj.write("#define %-23s %3s\n" % (name, next_op))
+            fobj.write(DEFINE.format(name, next_op))
             used[next_op] = True
+        fobj.write(DEFINE.format('DO_TRACING', 255))
         fobj.write("#ifdef NEED_OPCODE_JUMP_TABLES\n")
         write_int_array_from_ops("_PyOpcode_RelativeJump", opcode['hasjrel'], fobj)
         write_int_array_from_ops("_PyOpcode_Jump", opcode['hasjrel'] + opcode['hasjabs'], fobj)
         fobj.write("#endif /* OPCODE_TABLES */\n")
+
+        fobj.write("\n")
+        fobj.write("#define HAS_CONST(op) (false\\")
+        for op in hasconst:
+            fobj.write(f"\n    || ((op) == {op}) \\")
+        fobj.write("\n    )\n")
+
+        fobj.write("\n")
+        for i, (op, _) in enumerate(opcode["_nb_ops"]):
+            fobj.write(DEFINE.format(op, i))
+
         fobj.write(footer)
 
 
-    print("%s regenerated from %s" % (outfile, opcode_py))
+    print(f"{outfile} regenerated from {opcode_py}")
 
 
 if __name__ == '__main__':

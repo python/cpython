@@ -1,6 +1,7 @@
 /* enumerate object */
 
 #include "Python.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 
@@ -15,9 +16,10 @@ class reversed "reversedobject *" "&PyReversed_Type"
 typedef struct {
     PyObject_HEAD
     Py_ssize_t en_index;           /* current index of enumeration */
-    PyObject* en_sit;          /* secondary iterator of enumeration */
+    PyObject* en_sit;              /* secondary iterator of enumeration */
     PyObject* en_result;           /* result tuple  */
     PyObject* en_longindex;        /* index for sequences >= PY_SSIZE_T_MAX */
+    PyObject* one;                 /* borrowed reference */
 } enumobject;
 
 
@@ -77,7 +79,46 @@ enum_new_impl(PyTypeObject *type, PyObject *iterable, PyObject *start)
         Py_DECREF(en);
         return NULL;
     }
+    en->one = _PyLong_GetOne();    /* borrowed reference */
     return (PyObject *)en;
+}
+
+// TODO: Use AC when bpo-43447 is supported
+static PyObject *
+enumerate_vectorcall(PyObject *type, PyObject *const *args,
+                     size_t nargsf, PyObject *kwnames)
+{
+    PyTypeObject *tp = _PyType_CAST(type);
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    Py_ssize_t nkwargs = 0;
+    if (nargs == 0) {
+        PyErr_SetString(PyExc_TypeError,
+            "enumerate() missing required argument 'iterable'");
+        return NULL;
+    }
+    if (kwnames != NULL) {
+        nkwargs = PyTuple_GET_SIZE(kwnames);
+    }
+
+    if (nargs + nkwargs == 2) {
+        if (nkwargs == 1) {
+            PyObject *kw = PyTuple_GET_ITEM(kwnames, 0);
+            if (!_PyUnicode_EqualToASCIIString(kw, "start")) {
+                PyErr_Format(PyExc_TypeError,
+                    "'%S' is an invalid keyword argument for enumerate()", kw);
+                return NULL;
+            }
+        }
+        return enum_new_impl(tp, args[0], args[1]);
+    }
+
+    if (nargs == 1 && nkwargs == 0) {
+        return enum_new_impl(tp, args[0], NULL);
+    }
+
+    PyErr_Format(PyExc_TypeError,
+        "enumerate() takes at most 2 arguments (%d given)", nargs + nkwargs);
+    return NULL;
 }
 
 static void
@@ -117,7 +158,7 @@ enum_next_long(enumobject *en, PyObject* next_item)
     }
     next_index = en->en_longindex;
     assert(next_index != NULL);
-    stepped_up = PyNumber_Add(next_index, _PyLong_GetOne());
+    stepped_up = PyNumber_Add(next_index, en->one);
     if (stepped_up == NULL) {
         Py_DECREF(next_item);
         return NULL;
@@ -213,7 +254,7 @@ PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 
 static PyMethodDef enum_methods[] = {
     {"__reduce__", (PyCFunction)enum_reduce, METH_NOARGS, reduce_doc},
-    {"__class_getitem__",    (PyCFunction)Py_GenericAlias,
+    {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL,              NULL}           /* sentinel */
 };
@@ -260,6 +301,7 @@ PyTypeObject PyEnum_Type = {
     PyType_GenericAlloc,            /* tp_alloc */
     enum_new,                       /* tp_new */
     PyObject_GC_Del,                /* tp_free */
+    .tp_vectorcall = (vectorcallfunc)enumerate_vectorcall
 };
 
 /* Reversed Object ***************************************************************/
@@ -298,7 +340,7 @@ reversed_new_impl(PyTypeObject *type, PyObject *seq)
         return NULL;
     }
     if (reversed_meth != NULL) {
-        PyObject *res = _PyObject_CallNoArg(reversed_meth);
+        PyObject *res = _PyObject_CallNoArgs(reversed_meth);
         Py_DECREF(reversed_meth);
         return res;
     }
@@ -330,8 +372,6 @@ static PyObject *
 reversed_vectorcall(PyObject *type, PyObject * const*args,
                 size_t nargsf, PyObject *kwnames)
 {
-    assert(PyType_Check(type));
-
     if (!_PyArg_NoKwnames("reversed", kwnames)) {
         return NULL;
     }
@@ -341,7 +381,7 @@ reversed_vectorcall(PyObject *type, PyObject * const*args,
         return NULL;
     }
 
-    return reversed_new_impl((PyTypeObject *)type, args[0]);
+    return reversed_new_impl(_PyType_CAST(type), args[0]);
 }
 
 static void

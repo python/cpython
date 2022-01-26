@@ -17,18 +17,31 @@ typedef struct {
     uint8_t original_oparg;
     uint8_t counter;
     uint16_t index;
+    uint32_t version;
 } _PyAdaptiveEntry;
 
 
 typedef struct {
     uint32_t tp_version;
     uint32_t dk_version_or_hint;
-} _PyLoadAttrCache;
+} _PyAttrCache;
 
 typedef struct {
     uint32_t module_keys_version;
     uint32_t builtin_keys_version;
 } _PyLoadGlobalCache;
+
+typedef struct {
+    /* Borrowed ref in LOAD_METHOD */
+    PyObject *obj;
+} _PyObjectCache;
+
+typedef struct {
+    uint32_t func_version;
+    uint16_t defaults_start;
+    uint16_t defaults_len;
+} _PyCallCache;
+
 
 /* Add specialized versions of entries to this union.
  *
@@ -43,8 +56,10 @@ typedef struct {
 typedef union {
     _PyEntryZero zero;
     _PyAdaptiveEntry adaptive;
-    _PyLoadAttrCache load_attr;
+    _PyAttrCache attr;
     _PyLoadGlobalCache load_global;
+    _PyObjectCache obj;
+    _PyCallCache call;
 } SpecializedCacheEntry;
 
 #define INSTRUCTIONS_PER_ENTRY (sizeof(SpecializedCacheEntry)/sizeof(_Py_CODEUNIT))
@@ -123,23 +138,24 @@ _GetSpecializedCacheEntryForInstruction(const _Py_CODEUNIT *first_instr, int nex
 #define QUICKENING_INITIAL_WARMUP_VALUE (-QUICKENING_WARMUP_DELAY)
 #define QUICKENING_WARMUP_COLDEST 1
 
-static inline void
-PyCodeObject_IncrementWarmup(PyCodeObject * co)
-{
-    co->co_warmup++;
-}
-
-/* Used by the interpreter to determine when a code object should be quickened */
-static inline int
-PyCodeObject_IsWarmedUp(PyCodeObject * co)
-{
-    return (co->co_warmup == 0);
-}
-
 int _Py_Quicken(PyCodeObject *code);
 
-extern Py_ssize_t _Py_QuickenedCount;
+/* Returns 1 if quickening occurs.
+ * -1 if an error occurs
+ * 0 otherwise */
+static inline int
+_Py_IncrementCountAndMaybeQuicken(PyCodeObject *code)
+{
+    if (code->co_warmup != 0) {
+        code->co_warmup++;
+        if (code->co_warmup == 0) {
+            return _Py_Quicken(code) ? -1 : 1;
+        }
+    }
+    return 0;
+}
 
+extern Py_ssize_t _Py_QuickenedCount;
 
 /* "Locals plus" for a code object is the set of locals + cell vars +
  * free vars.  This relates to variable names as well as offsets into
@@ -240,53 +256,6 @@ PyAPI_FUNC(PyObject *) _PyCode_GetVarnames(PyCodeObject *);
 PyAPI_FUNC(PyObject *) _PyCode_GetCellvars(PyCodeObject *);
 PyAPI_FUNC(PyObject *) _PyCode_GetFreevars(PyCodeObject *);
 
-
-/* Cache hits and misses */
-
-static inline uint8_t
-saturating_increment(uint8_t c)
-{
-    return c<<1;
-}
-
-static inline uint8_t
-saturating_decrement(uint8_t c)
-{
-    return (c>>1) + 128;
-}
-
-static inline uint8_t
-saturating_zero(void)
-{
-    return 255;
-}
-
-/* Starting value for saturating counter.
- * Technically this should be 1, but that is likely to
- * cause a bit of thrashing when we optimize then get an immediate miss.
- * We want to give the counter a change to stabilize, so we start at 3.
- */
-static inline uint8_t
-saturating_start(void)
-{
-    return saturating_zero()<<3;
-}
-
-static inline void
-record_cache_hit(_PyAdaptiveEntry *entry) {
-    entry->counter = saturating_increment(entry->counter);
-}
-
-static inline void
-record_cache_miss(_PyAdaptiveEntry *entry) {
-    entry->counter = saturating_decrement(entry->counter);
-}
-
-static inline int
-too_many_cache_misses(_PyAdaptiveEntry *entry) {
-    return entry->counter == saturating_zero();
-}
-
 #define ADAPTIVE_CACHE_BACKOFF 64
 
 static inline void
@@ -297,37 +266,55 @@ cache_backoff(_PyAdaptiveEntry *entry) {
 /* Specialization functions */
 
 int _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
+int _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
 int _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
-int _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container, _Py_CODEUNIT *instr);
+int _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
+int _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache);
+int _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *instr);
+int _Py_Specialize_CallNoKw(PyObject *callable, _Py_CODEUNIT *instr, int nargs, SpecializedCacheEntry *cache, PyObject *builtins);
+void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
+                             SpecializedCacheEntry *cache);
+void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache);
 
-#define SPECIALIZATION_STATS 0
-#define SPECIALIZATION_STATS_DETAILED 0
 
-#if SPECIALIZATION_STATS
+#ifdef Py_STATS
 
-typedef struct _stats {
-    uint64_t specialization_success;
-    uint64_t specialization_failure;
+#define SPECIALIZATION_FAILURE_KINDS 30
+
+typedef struct _specialization_stats {
+    uint64_t success;
+    uint64_t failure;
     uint64_t hit;
     uint64_t deferred;
     uint64_t miss;
     uint64_t deopt;
-    uint64_t unquickened;
-#if SPECIALIZATION_STATS_DETAILED
-    PyObject *miss_types;
-#endif
+    uint64_t failure_kinds[SPECIALIZATION_FAILURE_KINDS];
 } SpecializationStats;
 
-extern SpecializationStats _specialization_stats[256];
-#define STAT_INC(opname, name) _specialization_stats[opname].name++
-#define STAT_DEC(opname, name) _specialization_stats[opname].name--
-void _Py_PrintSpecializationStats(void);
+typedef struct _opcode_stats {
+    SpecializationStats specialization;
+    uint64_t execution_count;
+    uint64_t pair_count[256];
+} OpcodeStats;
+
+typedef struct _stats {
+    OpcodeStats opcode_stats[256];
+} PyStats;
+
+extern PyStats _py_stats;
+
+#define STAT_INC(opname, name) _py_stats.opcode_stats[opname].specialization.name++
+#define STAT_DEC(opname, name) _py_stats.opcode_stats[opname].specialization.name--
+#define OPCODE_EXE_INC(opname) _py_stats.opcode_stats[opname].execution_count++
+
+void _Py_PrintSpecializationStats(int to_file);
 
 PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 
 #else
 #define STAT_INC(opname, name) ((void)0)
 #define STAT_DEC(opname, name) ((void)0)
+#define OPCODE_EXE_INC(opname) ((void)0)
 #endif
 
 

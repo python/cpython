@@ -20,6 +20,10 @@ try:
 except ImportError:
     gzip = None
 try:
+    import zlib
+except ImportError:
+    zlib = None
+try:
     import bz2
 except ImportError:
     bz2 = None
@@ -215,6 +219,25 @@ class UstarReadTest(ReadTest, unittest.TestCase):
 
     def test_issue14160(self):
         self._test_fileobj_link("symtype2", "ustar/regtype")
+
+    def test_add_dir_getmember(self):
+        # bpo-21987
+        self.add_dir_and_getmember('bar')
+        self.add_dir_and_getmember('a'*101)
+
+    def add_dir_and_getmember(self, name):
+        with os_helper.temp_cwd():
+            with tarfile.open(tmpname, 'w') as tar:
+                try:
+                    os.mkdir(name)
+                    tar.add(name)
+                finally:
+                    os.rmdir(name)
+            with tarfile.open(tmpname) as tar:
+                self.assertEqual(
+                    tar.getmember(name),
+                    tar.getmember(name + '/')
+                )
 
 class GzipUstarReadTest(GzipTest, UstarReadTest):
     pass
@@ -686,6 +709,16 @@ class MiscReadTestBase(CommonReadTest):
             for m1, m2 in zip(tar, tar):
                 self.assertEqual(m1.offset, m2.offset)
                 self.assertEqual(m1.get_info(), m2.get_info())
+
+    @unittest.skipIf(zlib is None, "requires zlib")
+    def test_zlib_error_does_not_leak(self):
+        # bpo-39039: tarfile.open allowed zlib exceptions to bubble up when
+        # parsing certain types of invalid data
+        with unittest.mock.patch("tarfile.TarInfo.fromtarfile") as mock:
+            mock.side_effect = zlib.error
+            with self.assertRaises(tarfile.ReadError):
+                tarfile.open(self.tarname)
+
 
 class MiscReadTest(MiscReadTestBase, unittest.TestCase):
     test_fail_comp = None
@@ -1706,15 +1739,30 @@ class CreateTest(WriteTestBase, unittest.TestCase):
 
 
 class GzipCreateTest(GzipTest, CreateTest):
-    pass
+
+    def test_create_with_compresslevel(self):
+        with tarfile.open(tmpname, self.mode, compresslevel=1) as tobj:
+            tobj.add(self.file_path)
+        with tarfile.open(tmpname, 'r:gz', compresslevel=1) as tobj:
+            pass
 
 
 class Bz2CreateTest(Bz2Test, CreateTest):
-    pass
+
+    def test_create_with_compresslevel(self):
+        with tarfile.open(tmpname, self.mode, compresslevel=1) as tobj:
+            tobj.add(self.file_path)
+        with tarfile.open(tmpname, 'r:bz2', compresslevel=1) as tobj:
+            pass
 
 
 class LzmaCreateTest(LzmaTest, CreateTest):
-    pass
+
+    # Unlike gz and bz2, xz uses the preset keyword instead of compresslevel.
+    # It does not allow for preset to be specified when reading.
+    def test_create_with_preset(self):
+        with tarfile.open(tmpname, self.mode, preset=1) as tobj:
+            tobj.add(self.file_path)
 
 
 class CreateWithXModeTest(CreateTest):

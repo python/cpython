@@ -1,0 +1,2 @@
+Fix invalid signature of ``_zoneinfo``'s ``module_free`` function to resolve
+a crash on wasm32-emscripten platform.
