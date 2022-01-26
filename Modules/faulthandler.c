@@ -32,11 +32,6 @@
 
 #define PUTS(fd, str) _Py_write_noraise(fd, str, strlen(str))
 
-_Py_IDENTIFIER(enable);
-_Py_IDENTIFIER(fileno);
-_Py_IDENTIFIER(flush);
-_Py_IDENTIFIER(stderr);
-
 #ifdef HAVE_SIGACTION
 typedef struct sigaction _Py_sighandler_t;
 #else
@@ -152,10 +147,12 @@ faulthandler_get_fileno(PyObject **file_ptr)
     PyObject *result;
     long fd_long;
     int fd;
-    PyObject *file = *file_ptr;
+    PyObject *attr, *file = *file_ptr;
 
     if (file == NULL || file == Py_None) {
-        file = _PySys_GetObjectId(&PyId_stderr);
+        PyThreadState *tstate = _PyThreadState_GET();
+        attr = _Py_GET_GLOBAL_IDENTIFIER(stderr);
+        file = _PySys_GetAttr(tstate, attr);
         if (file == NULL) {
             PyErr_SetString(PyExc_RuntimeError, "unable to get sys.stderr");
             return -1;
@@ -178,7 +175,8 @@ faulthandler_get_fileno(PyObject **file_ptr)
         return fd;
     }
 
-    result = _PyObject_CallMethodIdNoArgs(file, &PyId_fileno);
+    attr = _Py_GET_GLOBAL_IDENTIFIER(fileno);
+    result = PyObject_CallMethodNoArgs(file, attr);
     if (result == NULL)
         return -1;
 
@@ -196,7 +194,8 @@ faulthandler_get_fileno(PyObject **file_ptr)
         return -1;
     }
 
-    result = _PyObject_CallMethodIdNoArgs(file, &PyId_flush);
+    attr = _Py_GET_GLOBAL_IDENTIFIER(flush);
+    result = PyObject_CallMethodNoArgs(file, attr);
     if (result != NULL)
         Py_DECREF(result);
     else {
@@ -1336,7 +1335,8 @@ faulthandler_init_enable(void)
         return -1;
     }
 
-    PyObject *res = _PyObject_CallMethodIdNoArgs(module, &PyId_enable);
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(enable);
+    PyObject *res = PyObject_CallMethodNoArgs(module, attr);
     Py_DECREF(module);
     if (res == NULL) {
         return -1;
