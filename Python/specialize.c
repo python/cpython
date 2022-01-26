@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "pycore_code.h"
+#include "pycore_function.h"
 #include "pycore_dict.h"
 #include "pycore_long.h"
 #include "pycore_moduleobject.h"
@@ -473,6 +474,7 @@ initial_counter_value(void) {
 #define SPEC_FAIL_BUILTIN_CLASS_METHOD 17
 #define SPEC_FAIL_CLASS_METHOD_OBJ 18
 #define SPEC_FAIL_OBJECT_SLOT 19
+#define SPEC_FAIL_STATIC_METHOD_OBJ 20
 
 /* Binary subscr */
 
@@ -591,7 +593,8 @@ typedef enum {
     MUTABLE,   /* Instance of a mutable class; might, or might not, be a descriptor */
     ABSENT, /* Attribute is not present on the class */
     DUNDER_CLASS, /* __class__ attribute */
-    GETSET_OVERRIDDEN /* __getattribute__ or __setattr__ has been overridden */
+    GETSET_OVERRIDDEN, /* __getattribute__ or __setattr__ has been overridden */
+    STATIC_METHOD
 } DescriptorClassification;
 
 
@@ -648,6 +651,9 @@ analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, int sto
         if (Py_IS_TYPE(descriptor, &PyClassMethod_Type)) {
             return PYTHON_CLASSMETHOD;
         }
+        if (Py_IS_TYPE(descriptor, &PyStaticMethod_Type)) {
+            return STATIC_METHOD;
+        }
         return NON_OVERRIDING;
     }
     return NON_DESCRIPTOR;
@@ -660,8 +666,9 @@ specialize_dict_access(
     _PyAdaptiveEntry *cache0, _PyAttrCache *cache1,
     int base_op, int values_op, int hint_op)
 {
-    assert(kind == NON_OVERRIDING || kind == NON_DESCRIPTOR || kind == ABSENT ||
-        kind == BUILTIN_CLASSMETHOD || kind == PYTHON_CLASSMETHOD);
+    assert(kind == NON_OVERRIDING || kind == NON_DESCRIPTOR ||
+           kind == ABSENT || kind == BUILTIN_CLASSMETHOD ||
+           kind == PYTHON_CLASSMETHOD || kind == STATIC_METHOD);
     // No descriptor, or non overriding.
     if ((type->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
         SPECIALIZATION_FAIL(base_op, SPEC_FAIL_NOT_MANAGED_DICT);
@@ -774,6 +781,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
             goto fail;
         case BUILTIN_CLASSMETHOD:
         case PYTHON_CLASSMETHOD:
+        case STATIC_METHOD:
         case NON_OVERRIDING:
         case NON_DESCRIPTOR:
         case ABSENT:
@@ -855,6 +863,7 @@ _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, S
             goto fail;
         case BUILTIN_CLASSMETHOD:
         case PYTHON_CLASSMETHOD:
+        case STATIC_METHOD:
         case NON_OVERRIDING:
         case NON_DESCRIPTOR:
         case ABSENT:
@@ -909,6 +918,8 @@ load_method_fail_kind(DescriptorClassification kind)
             return SPEC_FAIL_BUILTIN_CLASS_METHOD;
         case PYTHON_CLASSMETHOD:
             return SPEC_FAIL_CLASS_METHOD_OBJ;
+        case STATIC_METHOD:
+            return SPEC_FAIL_STATIC_METHOD_OBJ;
         case NON_OVERRIDING:
             return SPEC_FAIL_NON_OVERRIDING_DESCRIPTOR;
         case NON_DESCRIPTOR:
@@ -934,6 +945,16 @@ specialize_class_load_method(PyObject *owner, _Py_CODEUNIT *instr, PyObject *nam
             cache1->tp_version = ((PyTypeObject *)owner)->tp_version_tag;
             cache2->obj = descr;
             *instr = _Py_MAKECODEUNIT(LOAD_METHOD_CLASS, _Py_OPARG(*instr));
+            return 0;
+        case STATIC_METHOD:
+            cache1->tp_version = ((PyTypeObject *)owner)->tp_version_tag;
+            cache2->obj = ((staticmethod *)descr)->sm_callable;
+            *instr = _Py_MAKECODEUNIT(LOAD_METHOD_CLASS, _Py_OPARG(*instr));
+            return 0;
+        case PYTHON_CLASSMETHOD:
+            cache1->tp_version = ((PyTypeObject *)owner)->tp_version_tag;
+            cache2->obj = ((classmethod *)descr)->cm_callable;
+            *instr = _Py_MAKECODEUNIT(LOAD_METHOD_CLASS_CLASSMETHOD, _Py_OPARG(*instr));
             return 0;
         default:
             SPECIALIZATION_FAIL(LOAD_METHOD, load_method_fail_kind(kind));

@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _PyEval_BuiltinsFromGlobals()
+#include "pycore_function.h"      // staticmethod
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "structmember.h"         // PyMemberDef
@@ -829,32 +830,6 @@ functools_wraps(PyObject *wrapper, PyObject *wrapped)
 }
 
 
-/* Class method object */
-
-/* A class method receives the class as implicit first argument,
-   just like an instance method receives the instance.
-   To declare a class method, use this idiom:
-
-     class C:
-         @classmethod
-         def f(cls, arg1, arg2, ...):
-             ...
-
-   It can be called either on the class (e.g. C.f()) or on an instance
-   (e.g. C().f()); the instance is ignored except for its class.
-   If a class method is called for a derived class, the derived class
-   object is passed as the implied first argument.
-
-   Class methods are different than C++ or Java static methods.
-   If you want those, see static methods below.
-*/
-
-typedef struct {
-    PyObject_HEAD
-    PyObject *cm_callable;
-    PyObject *cm_dict;
-} classmethod;
-
 static void
 cm_dealloc(classmethod *cm)
 {
@@ -1027,30 +1002,6 @@ PyClassMethod_New(PyObject *callable)
     return (PyObject *)cm;
 }
 
-
-/* Static method object */
-
-/* A static method does not receive an implicit first argument.
-   To declare a static method, use this idiom:
-
-     class C:
-         @staticmethod
-         def f(arg1, arg2, ...):
-             ...
-
-   It can be called either on the class (e.g. C.f()) or on an instance
-   (e.g. C().f()). Both the class and the instance are ignored, and
-   neither is passed implicitly as the first argument to the method.
-
-   Static methods in Python are similar to those found in Java or C++.
-   For a more advanced concept, see class methods above.
-*/
-
-typedef struct {
-    PyObject_HEAD
-    PyObject *sm_callable;
-    PyObject *sm_dict;
-} staticmethod;
 
 static void
 sm_dealloc(staticmethod *sm)

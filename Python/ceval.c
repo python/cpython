@@ -4471,7 +4471,7 @@ handle_eval_breaker:
         }
 
         TARGET(LOAD_METHOD_CLASS) {
-            /* LOAD_METHOD, for class methods */
+            /* LOAD_METHOD, for class attributes */
             assert(cframe.use_tracing == 0);
             SpecializedCacheEntry *caches = GET_CACHE();
             _PyAttrCache *cache1 = &caches[-1].attr;
@@ -4490,6 +4490,28 @@ handle_eval_breaker:
             SET_TOP(NULL);
             Py_DECREF(cls);
             PUSH(res);
+            NOTRACE_DISPATCH();
+        }
+
+        TARGET(LOAD_METHOD_CLASS_CLASSMETHOD) {
+            /* LOAD_METHOD, for classmethod on a class */
+            assert(cframe.use_tracing == 0);
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAttrCache *cache1 = &caches[-1].attr;
+            _PyObjectCache *cache2 = &caches[-2].obj;
+
+            PyObject *cls = TOP();
+            DEOPT_IF(!PyType_Check(cls), LOAD_METHOD);
+            DEOPT_IF(((PyTypeObject *)cls)->tp_version_tag != cache1->tp_version,
+                LOAD_METHOD);
+            assert(cache1->tp_version != 0);
+
+            STAT_INC(LOAD_METHOD, hit);
+            PyObject *res = cache2->obj;
+            assert(res != NULL);
+            Py_INCREF(res);
+            SET_TOP(res);
+            PUSH(cls);
             NOTRACE_DISPATCH();
         }
 
