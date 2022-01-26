@@ -4439,6 +4439,31 @@ handle_eval_breaker:
             NOTRACE_DISPATCH();
         }
 
+        TARGET(LOAD_METHOD_CLASSMETHOD) {
+            assert(cframe.use_tracing == 0);
+            PyObject *self = TOP();
+            PyTypeObject *self_cls = Py_TYPE(self);
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAttrCache *cache1 = &caches[-1].attr;
+            _PyObjectCache *cache2 = &caches[-2].obj;
+
+            DEOPT_IF(self_cls->tp_version_tag != cache1->tp_version, LOAD_METHOD);
+            assert(self_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+            PyDictObject *dict = *(PyDictObject**)_PyObject_ManagedDictPointer(self);
+            DEOPT_IF(dict != NULL, LOAD_METHOD);
+            DEOPT_IF(((PyHeapTypeObject *)self_cls)->ht_cached_keys->dk_version != cache1->dk_version_or_hint, LOAD_METHOD);
+            STAT_INC(LOAD_METHOD, hit);
+
+            PyObject *res = cache2->obj;
+            assert(res != NULL);
+            Py_INCREF(res);
+            SET_TOP(res);
+            Py_DECREF(self);
+            Py_INCREF(self_cls);
+            PUSH((PyObject *)self_cls);
+            NOTRACE_DISPATCH();
+        }
+
         TARGET(LOAD_METHOD_NO_DICT) {
             assert(cframe.use_tracing == 0);
             PyObject *self = TOP();
@@ -4512,6 +4537,30 @@ handle_eval_breaker:
             Py_INCREF(res);
             SET_TOP(res);
             PUSH(cls);
+            NOTRACE_DISPATCH();
+        }
+
+        TARGET(LOAD_METHOD_REPLACE) {
+            /* LOAD_METHOD specialization that replaces object with cached value */
+            assert(cframe.use_tracing == 0);
+            PyObject *self = TOP();
+            PyTypeObject *self_cls = Py_TYPE(self);
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAttrCache *cache1 = &caches[-1].attr;
+            _PyObjectCache *cache2 = &caches[-2].obj;
+
+            DEOPT_IF(self_cls->tp_version_tag != cache1->tp_version, LOAD_METHOD);
+            assert(self_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+            PyDictObject *dict = *(PyDictObject**)_PyObject_ManagedDictPointer(self);
+            DEOPT_IF(dict != NULL, LOAD_METHOD);
+            DEOPT_IF(((PyHeapTypeObject *)self_cls)->ht_cached_keys->dk_version != cache1->dk_version_or_hint, LOAD_METHOD);
+            STAT_INC(LOAD_METHOD, hit);
+            PyObject *res = cache2->obj;
+            assert(res != NULL);
+            Py_INCREF(res);
+            SET_TOP(NULL);
+            Py_DECREF(self);
+            PUSH(res);
             NOTRACE_DISPATCH();
         }
 

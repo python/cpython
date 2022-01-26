@@ -998,10 +998,6 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
     DescriptorClassification kind = 0;
     kind = analyze_descriptor(owner_cls, name, &descr, 0);
     assert(descr != NULL || kind == ABSENT || kind == GETSET_OVERRIDDEN);
-    if (kind != METHOD) {
-        SPECIALIZATION_FAIL(LOAD_METHOD, load_method_fail_kind(kind));
-        goto fail;
-    }
     if (owner_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
         PyObject **owner_dictptr = _PyObject_ManagedDictPointer(owner);
         if (*owner_dictptr) {
@@ -1020,9 +1016,31 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
             goto fail;
         }
         cache1->dk_version_or_hint = keys_version;
-        *instr = _Py_MAKECODEUNIT(LOAD_METHOD_CACHED, _Py_OPARG(*instr));
+        switch(kind) {
+            case METHOD:
+                *instr = _Py_MAKECODEUNIT(LOAD_METHOD_CACHED, _Py_OPARG(*instr));
+                break;
+            case PYTHON_CLASSMETHOD:
+                *instr = _Py_MAKECODEUNIT(LOAD_METHOD_CLASSMETHOD, _Py_OPARG(*instr));
+                descr = ((classmethod *)descr)->cm_callable;
+                break;
+            case STATIC_METHOD:
+                *instr = _Py_MAKECODEUNIT(LOAD_METHOD_REPLACE, _Py_OPARG(*instr));
+                descr = ((staticmethod *)descr)->sm_callable;
+                break;
+            case NON_DESCRIPTOR:
+                *instr = _Py_MAKECODEUNIT(LOAD_METHOD_REPLACE, _Py_OPARG(*instr));
+                break;
+            default:
+                SPECIALIZATION_FAIL(LOAD_METHOD, load_method_fail_kind(kind));
+            goto fail;
+        }
     }
     else {
+        if (kind != METHOD) {
+            SPECIALIZATION_FAIL(LOAD_METHOD, load_method_fail_kind(kind));
+            goto fail;
+        }
         if (owner_cls->tp_dictoffset == 0) {
             *instr = _Py_MAKECODEUNIT(LOAD_METHOD_NO_DICT, _Py_OPARG(*instr));
         }
