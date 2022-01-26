@@ -658,6 +658,9 @@ extern "C" {
                 INIT_STR(br_dbl_open, "{{"), \
                 INIT_STR(br_dbl_close, "}}"), \
                 \
+                INIT_STR(percent, "%"), \
+                INIT_STR(dbl_percent, "%%"), \
+                \
                 INIT_STR(anon_dictcomp, "<dictcomp>"), \
                 INIT_STR(anon_genexpr, "<genexpr>"), \
                 INIT_STR(anon_lambda, "<lambda>"), \

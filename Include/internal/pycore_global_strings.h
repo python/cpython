@@ -36,6 +36,9 @@ struct _Py_global_strings {
         STR(br_dbl_open, "{{")
         STR(br_dbl_close, "}}")
 
+        STR(percent, "%")
+        STR(dbl_percent, "%%")
+
         STR(anon_dictcomp, "<dictcomp>")
         STR(anon_genexpr, "<genexpr>")
         STR(anon_lambda, "<lambda>")
