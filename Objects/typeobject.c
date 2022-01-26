@@ -4563,7 +4563,6 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         PyObject *sorted_methods;
         PyObject *joined;
         PyObject *comma;
-        _Py_static_string(comma_id, ", ");
         Py_ssize_t method_count;
 
         /* Compute ", ".join(sorted(type.__abstractmethods__))
@@ -4579,11 +4578,7 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             Py_DECREF(sorted_methods);
             return NULL;
         }
-        comma = _PyUnicode_FromId(&comma_id);
-        if (comma == NULL) {
-            Py_DECREF(sorted_methods);
-            return NULL;
-        }
+        comma = _Py_GET_GLOBAL_STRING(comma_sep);
         joined = PyUnicode_Join(comma, sorted_methods);
         method_count = PyObject_Length(sorted_methods);
         Py_DECREF(sorted_methods);
