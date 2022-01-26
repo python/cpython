@@ -8465,8 +8465,12 @@ swaptimize(basicblock *block, int ix)
             break;
         }
     }
+    // It's already optimal if there's only one instruction:
+    if (len == 1) {
+        return 0;
+    }
     // Create an array with elements {0, 1, 2, ..., depth - 1}:
-    int stack[depth];
+    int *stack = PyMem_Malloc(depth * sizeof(int));
     for (int i = 0; i < depth; i++) {
         stack[i] = i;
     }
@@ -8522,6 +8526,7 @@ swaptimize(basicblock *block, int ix)
         instructions[i--].i_opcode = NOP;
     }
     // Done! Return the number of optimized instructions:
+    PyMem_Free(stack);
     return len - 1;
 }
 
