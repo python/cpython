@@ -460,14 +460,14 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
     def test_caret_multiline_expression_syntax_error(self):
         # Make sure an expression spanning multiple lines that has
         # a syntax error is correctly marked with carets.
-        code = textwrap.dedent(r"""
+        code = textwrap.dedent("""
         def foo(*args, **kwargs):
             pass
 
         a, b, c = 1, 2, 3
 
-        foo(a, z \
-                for z in \
+        foo(a, z
+                for z in
                     range(10), b, c)
         """)
 
@@ -485,13 +485,10 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
             f'  File "{__file__}", line {lineno_f+2}, in f_with_multiline\n'
             '    return compile(code, "?", "exec")\n'
             '           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
-        )
-        if not isinstance(self, CPythonTracebackErrorCaretTests):
-            expected_f += (
-                '  File "?", line 7\n'
-                '    foo(a, z \\\n'
-                '           ^^^'
-                )
+            '  File "?", line 7\n'
+            '    foo(a, z\n'
+            '           ^'
+            )
 
         result_lines = self.get_exception(f_with_multiline)
         self.assertEqual(result_lines, expected_f.splitlines())
@@ -708,16 +705,14 @@ class CPythonTracebackErrorCaretTests(TracebackErrorLocationCaretTests):
     Same set of tests as above but with Python's internal traceback printing.
     """
     def get_exception(self, callable):
-        from _testcapi import traceback_print
+        from _testcapi import exception_print
         try:
             callable()
             self.fail("No exception thrown.")
-        except:
-            type_, value, tb = sys.exc_info()
-
-            file_ = StringIO()
-            traceback_print(tb, file_)
-            return file_.getvalue().splitlines()
+        except Exception as e:
+            with captured_output("stderr") as tbstderr:
+                exception_print(e)
+            return tbstderr.getvalue().splitlines()[:-1]
 
     callable_line = get_exception.__code__.co_firstlineno + 3
 
