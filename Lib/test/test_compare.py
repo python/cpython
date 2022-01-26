@@ -29,9 +29,6 @@ class ComparisonSimpleTest(unittest.TestCase):
         def __eq__(self, other):
             return self.arg == other
 
-    class Anything:
-        def __eq__(self, other):
-            return True
 
         def __ne__(self, other):
             return False
