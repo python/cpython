@@ -1121,7 +1121,7 @@ static int
 symtable_add_def(struct symtable *st, PyObject *name, int flag,
                  int lineno, int col_offset, int end_lineno, int end_col_offset)
 {
-    return symtable_add_def_helper(st, name, flag, st->st_cur, 
+    return symtable_add_def_helper(st, name, flag, st->st_cur,
                         lineno, col_offset, end_lineno, end_col_offset);
 }
 
@@ -2134,7 +2134,7 @@ symtable_raise_if_annotation_block(struct symtable *st, const char *name, expr_t
 static int
 symtable_raise_if_comprehension_block(struct symtable *st, expr_ty e) {
     _Py_comprehension_ty type = st->st_cur->ste_comprehension;
-    PyErr_SetString(PyExc_SyntaxError, 
+    PyErr_SetString(PyExc_SyntaxError,
             (type == ListComprehension) ? "'yield' inside list comprehension" :
             (type == SetComprehension) ? "'yield' inside set comprehension" :
             (type == DictComprehension) ? "'yield' inside dict comprehension" :
@@ -2172,4 +2172,17 @@ _Py_SymtableStringObjectFlags(const char *str, PyObject *filename,
     PyObject_Free((void *)future);
     _PyArena_Free(arena);
     return st;
+}
+
+void
+_PySymtable_Fini(void)
+{
+    Py_CLEAR(top);
+    Py_CLEAR(lambda);
+    Py_CLEAR(genexpr);
+    Py_CLEAR(listcomp);
+    Py_CLEAR(setcomp);
+    Py_CLEAR(dictcomp);
+    Py_CLEAR(__class__);
+    Py_CLEAR(_annotation);
 }

@@ -88,8 +88,7 @@ static PyObject *
 enumerate_vectorcall(PyObject *type, PyObject *const *args,
                      size_t nargsf, PyObject *kwnames)
 {
-    assert(PyType_Check(type));
-    PyTypeObject *tp = (PyTypeObject *)type;
+    PyTypeObject *tp = _PyType_CAST(type);
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     Py_ssize_t nkwargs = 0;
     if (nargs == 0) {
@@ -373,8 +372,6 @@ static PyObject *
 reversed_vectorcall(PyObject *type, PyObject * const*args,
                 size_t nargsf, PyObject *kwnames)
 {
-    assert(PyType_Check(type));
-
     if (!_PyArg_NoKwnames("reversed", kwnames)) {
         return NULL;
     }
@@ -384,7 +381,7 @@ reversed_vectorcall(PyObject *type, PyObject * const*args,
         return NULL;
     }
 
-    return reversed_new_impl((PyTypeObject *)type, args[0]);
+    return reversed_new_impl(_PyType_CAST(type), args[0]);
 }
 
 static void

@@ -499,7 +499,6 @@ initial_counter_value(void) {
 #define SPEC_FAIL_DIFFERENT_TYPES 12
 
 /* Calls */
-#define SPEC_FAIL_GENERATOR 7
 #define SPEC_FAIL_COMPLEX_PARAMETERS 8
 #define SPEC_FAIL_WRONG_NUMBER_ARGUMENTS 9
 #define SPEC_FAIL_CO_NOT_OPTIMIZED 10
@@ -588,10 +587,10 @@ typedef enum {
     ABSENT, /* Attribute is not present on the class */
     DUNDER_CLASS, /* __class__ attribute */
     GETSET_OVERRIDDEN /* __getattribute__ or __setattr__ has been overridden */
-} DesciptorClassification;
+} DescriptorClassification;
 
 
-static DesciptorClassification
+static DescriptorClassification
 analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, int store)
 {
     if (store) {
@@ -652,7 +651,7 @@ analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, int sto
 static int
 specialize_dict_access(
     PyObject *owner, _Py_CODEUNIT *instr, PyTypeObject *type,
-    DesciptorClassification kind, PyObject *name,
+    DescriptorClassification kind, PyObject *name,
     _PyAdaptiveEntry *cache0, _PyAttrCache *cache1,
     int base_op, int values_op, int hint_op)
 {
@@ -719,7 +718,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
         }
     }
     PyObject *descr;
-    DesciptorClassification kind = analyze_descriptor(type, name, &descr, 0);
+    DescriptorClassification kind = analyze_descriptor(type, name, &descr, 0);
     switch(kind) {
         case OVERRIDING:
             SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OVERRIDING_DESCRIPTOR);
@@ -808,7 +807,7 @@ _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, S
         goto fail;
     }
     PyObject *descr;
-    DesciptorClassification kind = analyze_descriptor(type, name, &descr, 1);
+    DescriptorClassification kind = analyze_descriptor(type, name, &descr, 1);
     switch(kind) {
         case OVERRIDING:
             SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_OVERRIDING_DESCRIPTOR);
@@ -882,7 +881,7 @@ success:
 
 #ifdef Py_STATS
 static int
-load_method_fail_kind(DesciptorClassification kind)
+load_method_fail_kind(DescriptorClassification kind)
 {
     switch (kind) {
         case OVERRIDING:
@@ -922,7 +921,7 @@ specialize_class_load_method(PyObject *owner, _Py_CODEUNIT *instr, PyObject *nam
 {
 
     PyObject *descr = NULL;
-    DesciptorClassification kind = 0;
+    DescriptorClassification kind = 0;
     kind = analyze_descriptor((PyTypeObject *)owner, name, &descr, 0);
     switch (kind) {
         case METHOD:
@@ -970,7 +969,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
     }
 
     PyObject *descr = NULL;
-    DesciptorClassification kind = 0;
+    DescriptorClassification kind = 0;
     kind = analyze_descriptor(owner_cls, name, &descr, 0);
     assert(descr != NULL || kind == ABSENT || kind == GETSET_OVERRIDDEN);
     if (kind != METHOD) {
@@ -1153,9 +1152,6 @@ _Py_IDENTIFIER(__getitem__);
 static int
 function_kind(PyCodeObject *code) {
     int flags = code->co_flags;
-    if (flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
-        return SPEC_FAIL_GENERATOR;
-    }
     if ((flags & (CO_VARKEYWORDS | CO_VARARGS)) || code->co_kwonlyargcount) {
         return SPEC_FAIL_COMPLEX_PARAMETERS;
     }
@@ -1343,8 +1339,7 @@ specialize_class_call(
     PyObject *callable, _Py_CODEUNIT *instr,
     int nargs, SpecializedCacheEntry *cache)
 {
-    assert(PyType_Check(callable));
-    PyTypeObject *tp = (PyTypeObject *)callable;
+    PyTypeObject *tp = _PyType_CAST(callable);
     if (_Py_OPCODE(instr[-1]) == PRECALL_METHOD) {
         SPECIALIZATION_FAIL(CALL_NO_KW, SPEC_FAIL_METHOD_CALL_CLASS);
         return -1;

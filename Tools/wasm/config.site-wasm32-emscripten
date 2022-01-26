@@ -58,12 +58,14 @@ ac_cv_func_fchmodat=no
 ac_cv_func_dup3=no
 
 # Syscalls not implemented in emscripten
+# [Errno 52] Function not implemented
 ac_cv_func_preadv2=no
 ac_cv_func_preadv=no
 ac_cv_func_pwritev2=no
 ac_cv_func_pwritev=no
 ac_cv_func_pipe2=no
 ac_cv_func_nice=no
+ac_cv_func_setitimer=no
 
 # Syscalls that resulted in a segfault
 ac_cv_func_utimensat=no

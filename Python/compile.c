@@ -910,6 +910,7 @@ stack_effect(int opcode, int oparg, int jump)
             return -1;
         case SETUP_ANNOTATIONS:
             return 0;
+        case ASYNC_GEN_WRAP:
         case YIELD_VALUE:
             return 0;
         case POP_BLOCK:
@@ -969,6 +970,7 @@ stack_effect(int opcode, int oparg, int jump)
         /* Jumps */
         case JUMP_FORWARD:
         case JUMP_ABSOLUTE:
+        case JUMP_NO_INTERRUPT:
             return 0;
 
         case JUMP_IF_TRUE_OR_POP:
@@ -1015,6 +1017,9 @@ stack_effect(int opcode, int oparg, int jump)
         case STORE_FAST:
             return -1;
         case DELETE_FAST:
+            return 0;
+
+        case RETURN_GENERATOR:
             return 0;
 
         case RAISE_VARARGS:
@@ -1537,6 +1542,9 @@ compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
 #define POP_EXCEPT_AND_RERAISE(C) \
     RETURN_IF_FALSE(compiler_pop_except_and_reraise((C)))
 
+#define ADDOP_YIELD(C) \
+    RETURN_IF_FALSE(addop_yield(C))
+
 #define VISIT(C, TYPE, V) {\
     if (!compiler_visit_ ## TYPE((C), (V))) \
         return 0; \
@@ -1840,8 +1848,9 @@ compiler_add_yield_from(struct compiler *c, int await)
     compiler_use_next_block(c, start);
     ADDOP_JUMP(c, SEND, exit);
     compiler_use_next_block(c, resume);
+    ADDOP(c, YIELD_VALUE);
     ADDOP_I(c, RESUME, await ? 3 : 2);
-    ADDOP_JUMP(c, JUMP_ABSOLUTE, start);
+    ADDOP_JUMP(c, JUMP_NO_INTERRUPT, start);
     compiler_use_next_block(c, exit);
     return 1;
 }
@@ -4090,6 +4099,17 @@ addop_binary(struct compiler *c, operator_ty binop, bool inplace)
     return 1;
 }
 
+
+static int
+addop_yield(struct compiler *c) {
+    if (c->u->u_ste->ste_generator && c->u->u_ste->ste_coroutine) {
+        ADDOP(c, ASYNC_GEN_WRAP);
+    }
+    ADDOP(c, YIELD_VALUE);
+    ADDOP_I(c, RESUME, 1);
+    return 1;
+}
+
 static int
 compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
 {
@@ -5140,8 +5160,7 @@ compiler_sync_comprehension_generator(struct compiler *c,
         switch (type) {
         case COMP_GENEXP:
             VISIT(c, expr, elt);
-            ADDOP(c, YIELD_VALUE);
-            ADDOP_I(c, RESUME, 1);
+            ADDOP_YIELD(c);
             ADDOP(c, POP_TOP);
             break;
         case COMP_LISTCOMP:
@@ -5239,8 +5258,7 @@ compiler_async_comprehension_generator(struct compiler *c,
         switch (type) {
         case COMP_GENEXP:
             VISIT(c, expr, elt);
-            ADDOP(c, YIELD_VALUE);
-            ADDOP_I(c, RESUME, 1);
+            ADDOP_YIELD(c);
             ADDOP(c, POP_TOP);
             break;
         case COMP_LISTCOMP:
@@ -5710,8 +5728,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         else {
             ADDOP_LOAD_CONST(c, Py_None);
         }
-        ADDOP(c, YIELD_VALUE);
-        ADDOP_I(c, RESUME, 1);
+        ADDOP_YIELD(c);
         break;
     case YieldFrom_kind:
         if (c->u->u_ste->ste_type != FunctionBlock)
@@ -7055,6 +7072,7 @@ stackdepth(struct compiler *c)
             }
             depth = new_depth;
             if (instr->i_opcode == JUMP_ABSOLUTE ||
+                instr->i_opcode == JUMP_NO_INTERRUPT ||
                 instr->i_opcode == JUMP_FORWARD ||
                 instr->i_opcode == RETURN_VALUE ||
                 instr->i_opcode == RAISE_VARARGS ||
@@ -7572,9 +7590,6 @@ normalize_jumps(struct assembler *a)
             if (last->i_target->b_visited == 0) {
                 last->i_opcode = JUMP_FORWARD;
             }
-            else if (b->b_iused >= 2 && b->b_instr[b->b_iused-2].i_opcode == SEND) {
-                last->i_opcode = JUMP_ABSOLUTE_QUICK;
-            }
         }
     }
 }
@@ -7998,6 +8013,34 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
     }
     assert(c->u->u_firstlineno > 0);
 
+    /* Add the generator prefix instructions. */
+    if (flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
+        struct instr make_gen = {
+            .i_opcode = RETURN_GENERATOR,
+            .i_oparg = 0,
+            .i_lineno = c->u->u_firstlineno,
+            .i_col_offset = -1,
+            .i_end_lineno = c->u->u_firstlineno,
+            .i_end_col_offset = -1,
+            .i_target = NULL,
+        };
+        if (insert_instruction(entryblock, 0, &make_gen) < 0) {
+            return -1;
+        }
+        struct instr pop_top = {
+            .i_opcode = POP_TOP,
+            .i_oparg = 0,
+            .i_lineno = -1,
+            .i_col_offset = -1,
+            .i_end_lineno = -1,
+            .i_end_col_offset = -1,
+            .i_target = NULL,
+        };
+        if (insert_instruction(entryblock, 1, &pop_top) < 0) {
+            return -1;
+        }
+    }
+
     /* Set up cells for any variable that escapes, to be put in a closure. */
     const int ncellvars = (int)PyDict_GET_SIZE(c->u->u_cellvars);
     if (ncellvars) {
@@ -8034,22 +8077,6 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
             ncellsused += 1;
         }
         PyMem_RawFree(sorted);
-    }
-
-    /* Add the generator prefix instructions. */
-    if (flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
-        struct instr pop_top = {
-            .i_opcode = POP_TOP,
-            .i_oparg = 0,
-            .i_lineno = -1,
-            .i_col_offset = -1,
-            .i_end_lineno = -1,
-            .i_end_col_offset = -1,
-            .i_target = NULL,
-        };
-        if (insert_instruction(entryblock, 0, &pop_top) < 0) {
-            return -1;
-        }
     }
 
     if (nfreevars) {
@@ -8801,6 +8828,7 @@ normalize_basic_block(basicblock *bb) {
                 break;
             case JUMP_ABSOLUTE:
             case JUMP_FORWARD:
+            case JUMP_NO_INTERRUPT:
                 bb->b_nofallthrough = 1;
                 /* fall through */
             case POP_JUMP_IF_NOT_NONE:
@@ -8985,6 +9013,7 @@ optimize_cfg(struct compiler *c, struct assembler *a, PyObject *consts)
         if (b->b_iused > 0) {
             struct instr *b_last_instr = &b->b_instr[b->b_iused - 1];
             if (b_last_instr->i_opcode == JUMP_ABSOLUTE ||
+                b_last_instr->i_opcode == JUMP_NO_INTERRUPT ||
                 b_last_instr->i_opcode == JUMP_FORWARD) {
                 if (b_last_instr->i_target == b->b_next) {
                     assert(b->b_next->b_iused);

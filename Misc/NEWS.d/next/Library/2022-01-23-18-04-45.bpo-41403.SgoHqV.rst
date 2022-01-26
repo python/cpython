@@ -1,0 +1,3 @@
+Make :meth:`mock.patch` raise a :exc:`TypeError` with a relevant error
+message on invalid arg. Previously it allowed a cryptic
+:exc:`AttributeError` to escape.

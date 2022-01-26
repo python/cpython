@@ -268,17 +268,11 @@ class SimpleXMLRPCDispatcher:
         except Fault as fault:
             response = dumps(fault, allow_none=self.allow_none,
                              encoding=self.encoding)
-        except:
-            # report exception back to server
-            exc_type, exc_value, exc_tb = sys.exc_info()
-            try:
-                response = dumps(
-                    Fault(1, "%s:%s" % (exc_type, exc_value)),
-                    encoding=self.encoding, allow_none=self.allow_none,
-                    )
-            finally:
-                # Break reference cycle
-                exc_type = exc_value = exc_tb = None
+        except BaseException as exc:
+            response = dumps(
+                Fault(1, "%s:%s" % (type(exc), exc)),
+                encoding=self.encoding, allow_none=self.allow_none,
+                )
 
         return response.encode(self.encoding, 'xmlcharrefreplace')
 
@@ -368,16 +362,11 @@ class SimpleXMLRPCDispatcher:
                     {'faultCode' : fault.faultCode,
                      'faultString' : fault.faultString}
                     )
-            except:
-                exc_type, exc_value, exc_tb = sys.exc_info()
-                try:
-                    results.append(
-                        {'faultCode' : 1,
-                         'faultString' : "%s:%s" % (exc_type, exc_value)}
-                        )
-                finally:
-                    # Break reference cycle
-                    exc_type = exc_value = exc_tb = None
+            except BaseException as exc:
+                results.append(
+                    {'faultCode' : 1,
+                     'faultString' : "%s:%s" % (type(exc), exc)}
+                    )
         return results
 
     def _dispatch(self, method, params):
@@ -634,19 +623,14 @@ class MultiPathXMLRPCServer(SimpleXMLRPCServer):
         try:
             response = self.dispatchers[path]._marshaled_dispatch(
                data, dispatch_method, path)
-        except:
+        except BaseException as exc:
             # report low level exception back to server
             # (each dispatcher should have handled their own
             # exceptions)
-            exc_type, exc_value = sys.exc_info()[:2]
-            try:
-                response = dumps(
-                    Fault(1, "%s:%s" % (exc_type, exc_value)),
-                    encoding=self.encoding, allow_none=self.allow_none)
-                response = response.encode(self.encoding, 'xmlcharrefreplace')
-            finally:
-                # Break reference cycle
-                exc_type = exc_value = None
+            response = dumps(
+                Fault(1, "%s:%s" % (type(exc), exc)),
+                encoding=self.encoding, allow_none=self.allow_none)
+            response = response.encode(self.encoding, 'xmlcharrefreplace')
         return response
 
 class CGIXMLRPCRequestHandler(SimpleXMLRPCDispatcher):
