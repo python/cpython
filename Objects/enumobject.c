@@ -83,6 +83,18 @@ enum_new_impl(PyTypeObject *type, PyObject *iterable, PyObject *start)
     return (PyObject *)en;
 }
 
+static int check_keyword(PyObject *kwnames, int index,
+                         const char *name)
+{
+    PyObject *kw = PyTuple_GET_ITEM(kwnames, index);
+    if (!_PyUnicode_EqualToASCIIString(kw, name)) {
+        PyErr_Format(PyExc_TypeError,
+            "'%S' is an invalid keyword argument for enumerate()", kw);
+        return 0;
+    }
+    return 1;
+}
+
 // TODO: Use AC when bpo-43447 is supported
 static PyObject *
 enumerate_vectorcall(PyObject *type, PyObject *const *args,
@@ -98,31 +110,19 @@ enumerate_vectorcall(PyObject *type, PyObject *const *args,
     // Manually implement enumerate(iterable, start=...)
     if (nargs + nkwargs == 2) {
         if (nkwargs == 1) {
-            PyObject *kw = PyTuple_GET_ITEM(kwnames, 0);
-            if (!_PyUnicode_EqualToASCIIString(kw, "start")) {
-                PyErr_Format(PyExc_TypeError,
-                    "'%S' is an invalid keyword argument for enumerate()", kw);
+            if (!check_keyword(kwnames, 0, "start")) {
                 return NULL;
             }
         } else if (nkwargs == 2) {
             PyObject *kw0 = PyTuple_GET_ITEM(kwnames, 0);
-            PyObject *kw1 = PyTuple_GET_ITEM(kwnames, 1);
             if (_PyUnicode_EqualToASCIIString(kw0, "start")) {
-                if (!_PyUnicode_EqualToASCIIString(kw1, "iterable")) {
-                    PyErr_Format(PyExc_TypeError,
-                        "'%S' is an invalid keyword argument for enumerate()", kw1);
+                if (!check_keyword(kwnames, 1, "iterable")) {
                     return NULL;
                 }
                 return enum_new_impl(tp, args[1], args[0]);
             }
-            if (!_PyUnicode_EqualToASCIIString(kw0, "iterable")) {
-                PyErr_Format(PyExc_TypeError,
-                    "'%S' is an invalid keyword argument for enumerate()", kw0);
-                return NULL;
-            }
-            if (!_PyUnicode_EqualToASCIIString(kw1, "start")) {
-                PyErr_Format(PyExc_TypeError,
-                    "'%S' is an invalid keyword argument for enumerate()", kw1);
+            if (!check_keyword(kwnames, 0, "iterable") ||
+                !check_keyword(kwnames, 1, "start")) {
                 return NULL;
             }
 
@@ -131,13 +131,8 @@ enumerate_vectorcall(PyObject *type, PyObject *const *args,
     }
 
     if (nargs + nkwargs == 1) {
-        if (nkwargs == 1) {
-            PyObject *kw0 = PyTuple_GET_ITEM(kwnames, 0);
-            if (!_PyUnicode_EqualToASCIIString(kw0, "iterable")) {
-                PyErr_Format(PyExc_TypeError,
-                    "'%S' is an invalid keyword argument for enumerate()", kw0);
-                return NULL;
-            }
+        if (nkwargs == 1 && !check_keyword(kwnames, 0, "iterable")) {
+            return NULL;
         }
         return enum_new_impl(tp, args[0], NULL);
     }
