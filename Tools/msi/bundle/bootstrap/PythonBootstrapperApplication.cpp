@@ -2206,7 +2206,7 @@ private:
             return S_OK;
         }
         if (buffer[0]) {
-            wchar_t *p = &buffer[bufferLen / sizeof(wchar_t)];
+            wchar_t *p = &buffer[bufferLen / sizeof(wchar_t) - 1];
             while (*p == L'\\' || *p == L'\0') { p -= 1; }
             *++p = L'\\';
             *++p = L'\0';
