@@ -1,0 +1,2 @@
+Fix GCC detection in setup.py when cross-compiling. The C compiler is now
+run with LC_ALL=C. Previously, the detection failed with a German locale.
