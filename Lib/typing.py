@@ -142,12 +142,12 @@ __all__ = [
 # legitimate imports of those modules.
 
 
-def _type_convert(arg, module=None):
+def _type_convert(arg, module=None, *, allow_special_forms=False):
     """For converting None to type(None), and strings to ForwardRef."""
     if arg is None:
         return type(None)
     if isinstance(arg, str):
-        return ForwardRef(arg, module=module)
+        return ForwardRef(arg, module=module, allow_special_forms=allow_special_forms)
     return arg
 
 
@@ -169,7 +169,7 @@ def _type_check(arg, msg, is_argument=True, module=None, *, allow_special_forms=
         if is_argument:
             invalid_generic_forms += (Final,)
 
-    arg = _type_convert(arg, module=module)
+    arg = _type_convert(arg, module=module, allow_special_forms=allow_special_forms)
     if (isinstance(arg, _GenericAlias) and
             arg.__origin__ in invalid_generic_forms):
         raise TypeError(f"{arg} is not valid as type argument")
@@ -661,10 +661,10 @@ class ForwardRef(_Final, _root=True):
 
     __slots__ = ('__forward_arg__', '__forward_code__',
                  '__forward_evaluated__', '__forward_value__',
-                 '__forward_is_argument__', '__forward_is_class__',
+                 '__forward_is_argument__', '__forward_allow_special_forms__',
                  '__forward_module__')
 
-    def __init__(self, arg, is_argument=True, module=None, *, is_class=False):
+    def __init__(self, arg, is_argument=True, module=None, *, allow_special_forms=False):
         if not isinstance(arg, str):
             raise TypeError(f"Forward reference must be a string -- got {arg!r}")
         try:
@@ -676,7 +676,7 @@ class ForwardRef(_Final, _root=True):
         self.__forward_evaluated__ = False
         self.__forward_value__ = None
         self.__forward_is_argument__ = is_argument
-        self.__forward_is_class__ = is_class
+        self.__forward_allow_special_forms__ = allow_special_forms
         self.__forward_module__ = module
 
     def _evaluate(self, globalns, localns, recursive_guard):
@@ -697,7 +697,7 @@ class ForwardRef(_Final, _root=True):
                 eval(self.__forward_code__, globalns, localns),
                 "Forward references must evaluate to types.",
                 is_argument=self.__forward_is_argument__,
-                allow_special_forms=self.__forward_is_class__,
+                allow_special_forms=self.__forward_allow_special_forms__,
             )
             self.__forward_value__ = _eval_type(
                 type_, globalns, localns, recursive_guard | {self.__forward_arg__}
@@ -1804,7 +1804,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
                 if value is None:
                     value = type(None)
                 if isinstance(value, str):
-                    value = ForwardRef(value, is_argument=False, is_class=True)
+                    value = ForwardRef(value, is_argument=False, allow_special_forms=True)
                 value = _eval_type(value, base_globals, base_locals)
                 hints[name] = value
         return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
@@ -1841,7 +1841,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
             value = ForwardRef(
                 value,
                 is_argument=not isinstance(obj, types.ModuleType),
-                is_class=False,
+                allow_special_forms=False,
             )
         value = _eval_type(value, globalns, localns)
         if name in defaults and defaults[name] is None:

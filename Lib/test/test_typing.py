@@ -2870,6 +2870,13 @@ class ForwardRefTests(BaseTestCase):
         self.assertEqual(get_type_hints(foo, globals(), locals()),
                          {'a': Callable[..., T]})
 
+    def test_special_forms_forward(self):
+
+        class C:
+            a: Annotated['ClassVar[int]', (3, 5)] = 4
+
+        self.assertEqual(get_type_hints(C, globals())['a'], ClassVar[int])
+
     def test_syntax_error(self):
 
         with self.assertRaises(SyntaxError):
