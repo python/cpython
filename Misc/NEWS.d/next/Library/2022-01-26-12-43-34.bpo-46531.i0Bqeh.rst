@@ -1,0 +1,1 @@
+Simplify exception handling in ``doctest.py``.

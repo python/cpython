@@ -1349,8 +1349,8 @@ class DocTestRunner:
                 exception = None
             except KeyboardInterrupt:
                 raise
-            except:
-                exception = sys.exc_info()
+            except BaseException as exc:
+                exception = type(exc), exc, exc.__traceback__
                 self.debugger.set_continue() # ==== Example Finished ====
 
             got = self._fakeout.getvalue()  # the actual output
@@ -2637,11 +2637,11 @@ def debug_script(src, pm=False, globs=None):
     if pm:
         try:
             exec(src, globs, globs)
-        except:
-            print(sys.exc_info()[1])
+        except BaseException as exc:
+            print(exc)
             p = pdb.Pdb(nosigint=True)
             p.reset()
-            p.interaction(None, sys.exc_info()[2])
+            p.interaction(None, exc.__traceback__)
     else:
         pdb.Pdb(nosigint=True).run("exec(%r)" % src, globs, globs)
 
