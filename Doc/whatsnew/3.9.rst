@@ -484,7 +484,21 @@ Najera in :issue:`38944`.)
 Added keywords to module name completion list.  (Contributed by Terry J.
 Reedy in :issue:`37765`.)
 
+New in 3.9 maintenance releases
+
+Make IDLE invoke :func:`sys.excepthook` (when started without '-n').
+User hooks were previously ignored.  (Contributed by Ken Hilton in
+:issue:`43008`.)
+
 The changes above have been backported to 3.8 maintenance releases.
+
+Rearrange the settings dialog.  Split the General tab into Windows
+and Shell/Ed tabs.  Move help sources, which extend the Help menu, to the
+Extensions tab.  Make space for new options and shorten the dialog. The
+latter makes the dialog better fit small screens.  (Contributed by Terry Jan
+Reedy in :issue:`40468`.)  Move the indent space setting from the Font tab to
+the new Windows tab.  (Contributed by Mark Roseman and Terry Jan Reedy in
+:issue:`33962`.)
 
 imaplib
 -------
