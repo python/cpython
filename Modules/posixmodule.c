@@ -323,8 +323,6 @@ corresponding Unix manual entries for more information on calls.");
 #  endif  /* _MSC_VER */
 #endif  /* ! __WATCOMC__ || __QNX__ */
 
-_Py_IDENTIFIER(__fspath__);
-
 /*[clinic input]
 # one of the few times we lie about this name!
 module os
@@ -1159,7 +1157,8 @@ path_converter(PyObject *o, void *p)
         /* Inline PyOS_FSPath() for better error messages. */
         PyObject *func, *res;
 
-        func = _PyObject_LookupSpecialId(o, &PyId___fspath__);
+        PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__fspath__);
+        func = _PyObject_LookupSpecial(o, attr);
         if (NULL == func) {
             goto error_format;
         }
@@ -14437,7 +14436,8 @@ PyOS_FSPath(PyObject *path)
         return path;
     }
 
-    func = _PyObject_LookupSpecialId(path, &PyId___fspath__);
+    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__fspath__);
+    func = _PyObject_LookupSpecial(path, attr);
     if (NULL == func) {
         return PyErr_Format(PyExc_TypeError,
                             "expected str, bytes or os.PathLike object, "
