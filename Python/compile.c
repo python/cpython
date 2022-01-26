@@ -6243,7 +6243,7 @@ compiler_error_duplicate_store(struct compiler *c, identifier n)
 
 // Duplicate the effect of 3.10's ROT_* instructions using SWAPs.
 static int
-pattern_helper_rotate(struct compiler *c, int count)
+pattern_helper_rotate(struct compiler *c, Py_ssize_t count)
 {
     while (1 < count) {
         ADDOP_I(c, SWAP, count--);
@@ -8456,17 +8456,19 @@ swaptimize(basicblock *block, int ix)
     assert(instructions[0].i_opcode == SWAP);
     int depth = instructions[0].i_oparg;
     int len = 0;
+    int more = false;
     while (++len < block->b_iused - ix) {
         int opcode = instructions[len].i_opcode;
         if (opcode == SWAP) {
             depth = Py_MAX(depth, instructions[len].i_oparg);
+            more = true;
         }
         else if (opcode != NOP) {
             break;
         }
     }
-    // It's already optimal if there's only one instruction:
-    if (len == 1) {
+    // It's already optimal if there's only one SWAP:
+    if (!more) {
         return 0;
     }
     // Create an array with elements {0, 1, 2, ..., depth - 1}:
@@ -8492,28 +8494,30 @@ swaptimize(basicblock *block, int ix)
     // though, we can efficiently *shuffle* it! For this reason, we will be
     // replacing instructions starting from the *end* of the run. Since the
     // solution is optimal, we don't need to worry about running out of space:
-    int i = len - 1;
-    for (int item = 0; item < depth; item++) {
+    int j = len - 1;
+    for (int i = 0; i < depth; i++) {
         // Skip items that have already been visited, or just happen to be in
         // the correct location:
-        if (stack[item] == VISITED || stack[item] == item) {
+        if (stack[i] == VISITED || stack[i] == i) {
             continue;
         }
         // Okay, we've found an item that hasn't been visited. It forms a cycle
         // with other items; traversing the cycle and swapping each item with
         // the next will put them all in the correct place. The weird
-        // loop-and-a-half is necessary to insert 0 into every cycle, since
-        // we can only swap from that position.
+        // loop-and-a-half is necessary to insert 0 into every cycle, since we
+        // can only swap from that position.
+        int item = i;
         while (true) {
             // Skip the actual swap if our item is zero, since swapping the top
             // item with itself is pointless.
             if (item) {
-                assert(0 <= i);
+                assert(0 <= j);
                 // SWAPs are 1-indexed:
-                instructions[i].i_opcode = SWAP;
-                instructions[i--].i_oparg = item + 1;
+                instructions[j].i_opcode = SWAP;
+                instructions[j--].i_oparg = item + 1;
             }
             if (stack[item] == VISITED) {
+                assert(item == i);
                 break;
             }
             int next_item = stack[item];
@@ -8522,8 +8526,8 @@ swaptimize(basicblock *block, int ix)
         }
     }
     // NOP out any unused instructions:
-    while (0 <= i) {
-        instructions[i--].i_opcode = NOP;
+    while (0 <= j) {
+        instructions[j--].i_opcode = NOP;
     }
     // Done! Return the number of optimized instructions:
     PyMem_Free(stack);
@@ -8774,6 +8778,10 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                 }
                 break;
             case SWAP:
+                if (oparg == 1) {
+                    inst->i_opcode = NOP;
+                    break;
+                }
                 i += swaptimize(bb, i);
                 break;
             default:
