@@ -94,13 +94,14 @@ def_op('LOAD_BUILD_CLASS', 71)
 
 def_op('GET_AWAITABLE', 73)
 def_op('LOAD_ASSERTION_ERROR', 74)
+def_op('RETURN_GENERATOR', 75)
 
 def_op('LIST_TO_TUPLE', 82)
 def_op('RETURN_VALUE', 83)
 def_op('IMPORT_STAR', 84)
 def_op('SETUP_ANNOTATIONS', 85)
 def_op('YIELD_VALUE', 86)
-
+def_op('ASYNC_GEN_WRAP', 87)
 def_op('PREP_RERAISE_STAR', 88)
 def_op('POP_EXCEPT', 89)
 
@@ -155,7 +156,7 @@ def_op('RAISE_VARARGS', 130)    # Number of raise arguments (1, 2, or 3)
 
 def_op('MAKE_FUNCTION', 132)    # Flags
 def_op('BUILD_SLICE', 133)      # Number of items
-
+jabs_op('JUMP_NO_INTERRUPT', 134) # Target byte offset from beginning of code
 def_op('MAKE_CELL', 135)
 hasfree.append(135)
 def_op('LOAD_CLOSURE', 136)

@@ -288,6 +288,9 @@ otherwise, the context is used to determine what to instantiate.
   * ``filters`` (optional).  A list of ids of the filters for this
     handler.
 
+    .. versionchanged:: 3.11
+       ``filters`` can take filter instances in addition to ids.
+
   All *other* keys are passed through as keyword arguments to the
   handler's constructor.  For example, given the snippet:
 
@@ -325,6 +328,9 @@ otherwise, the context is used to determine what to instantiate.
 
   * ``filters`` (optional).  A list of ids of the filters for this
     logger.
+
+    .. versionchanged:: 3.11
+       ``filters`` can take filter instances in addition to ids.
 
   * ``handlers`` (optional).  A list of ids of the handlers for this
     logger.
@@ -523,6 +529,10 @@ The key ``'()'`` has been used as the special key because it is not a
 valid keyword parameter name, and so will not clash with the names of
 the keyword arguments used in the call.  The ``'()'`` also serves as a
 mnemonic that the corresponding value is a callable.
+
+    .. versionchanged:: 3.11
+       The ``filters`` member of ``handlers`` and ``loggers`` can take
+       filter instances in addition to ids.
 
 
 .. _logging-config-dict-externalobj:

@@ -817,7 +817,7 @@ tuple_vectorcall(PyObject *type, PyObject * const*args,
     }
 
     if (nargs) {
-        return tuple_new_impl((PyTypeObject *)type, args[0]);
+        return tuple_new_impl(_PyType_CAST(type), args[0]);
     }
     else {
         return tuple_get_empty();
