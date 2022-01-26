@@ -861,14 +861,6 @@ PyAPI_FUNC(PyObject *) _PyUnicode_JoinArray(
     Py_ssize_t seqlen
     );
 
-/* Test whether a unicode is equal to ASCII identifier.  Return 1 if true,
-   0 otherwise.  The right argument must be ASCII identifier.
-   Any error occurs inside will be cleared before return. */
-PyAPI_FUNC(int) _PyUnicode_EqualToASCIIId(
-    PyObject *left,             /* Left string */
-    _Py_Identifier *right       /* Right identifier */
-    );
-
 /* Test whether a unicode is equal to ASCII string.  Return 1 if true,
    0 otherwise.  The right argument must be ASCII-encoded string.
    Any error occurs inside will be cleared before return. */
@@ -1013,8 +1005,20 @@ PyAPI_FUNC(int) _PyUnicode_IsAlpha(
 
 PyAPI_FUNC(PyObject*) _PyUnicode_FormatLong(PyObject *, int, int, int);
 
+#ifdef _Py_IDENTIFIER
+
+/* Test whether a unicode is equal to ASCII identifier.  Return 1 if true,
+   0 otherwise.  The right argument must be ASCII identifier.
+   Any error occurs inside will be cleared before return. */
+PyAPI_FUNC(int) _PyUnicode_EqualToASCIIId(
+    PyObject *left,             /* Left string */
+    _Py_Identifier *right       /* Right identifier */
+    );
+
 /* Return an interned Unicode object for an Identifier; may fail if there is no memory.*/
 PyAPI_FUNC(PyObject*) _PyUnicode_FromId(_Py_Identifier*);
+
+#endif  /* _Py_IDENTIFIER */
 
 /* Fast equality check when the inputs are known to be exact unicode types
    and where the hash values are equal (i.e. a very probable match) */

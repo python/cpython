@@ -120,6 +120,8 @@ PyAPI_FUNC(PyObject *) _PyObject_CallMethod(PyObject *obj,
                                             PyObject *name,
                                             const char *format, ...);
 
+#ifdef _Py_IDENTIFIER
+
 /* Like PyObject_CallMethod(), but expect a _Py_Identifier*
    as the method name. */
 PyAPI_FUNC(PyObject *) _PyObject_CallMethodId(PyObject *obj,
@@ -164,6 +166,8 @@ _PyObject_CallMethodIdOneArg(PyObject *self, _Py_Identifier *name, PyObject *arg
     return _PyObject_VectorcallMethodId(name, args,
            2 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
 }
+
+#endif  /* _Py_IDENTIFIER */
 
 PyAPI_FUNC(int) _PyObject_HasLen(PyObject *o);
 

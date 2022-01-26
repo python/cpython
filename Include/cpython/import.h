@@ -6,7 +6,9 @@ PyMODINIT_FUNC PyInit__imp(void);
 
 PyAPI_FUNC(int) _PyImport_IsInitialized(PyInterpreterState *);
 
+#ifdef _Py_IDENTIFIER
 PyAPI_FUNC(PyObject *) _PyImport_GetModuleId(struct _Py_Identifier *name);
+#endif
 PyAPI_FUNC(int) _PyImport_SetModule(PyObject *name, PyObject *module);
 PyAPI_FUNC(int) _PyImport_SetModuleString(const char *name, PyObject* module);
 
