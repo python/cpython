@@ -4309,7 +4309,6 @@ fi
 
 # checks for compiler characteristics
 
-AC_C_CHAR_UNSIGNED
 AC_C_CONST
 
 works=no
