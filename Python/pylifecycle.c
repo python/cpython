@@ -20,13 +20,17 @@
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pylifecycle.h"   // _PyErr_Print()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_sliceobject.h"   // _PySlice_Fini()
 #include "pycore_structseq.h"     // _PyStructSequence_InitState()
+#include "pycore_symtable.h"      // _PySymtable_Fini()
 #include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
 #include "pycore_tuple.h"         // _PyTuple_InitTypes()
 #include "pycore_typeobject.h"    // _PyTypes_InitTypes()
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
+
+extern void _PyIO_Fini(void);
 
 #include <locale.h>               // setlocale()
 #include <stdlib.h>               // getenv()
@@ -678,11 +682,6 @@ pycore_init_global_objects(PyInterpreterState *interp)
 
     _PyFloat_InitState(interp);
 
-    status = _PyBytes_InitGlobalObjects(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
     status = _PyUnicode_InitGlobalObjects(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -744,9 +743,8 @@ pycore_init_types(PyInterpreterState *interp)
         return status;
     }
 
-    status = _PyExc_InitTypes(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
+    if (_PyExc_InitTypes(interp) < 0) {
+        return _PyStatus_ERR("failed to initialize an exception type");
     }
 
     status = _PyExc_InitGlobalObjects(interp);
@@ -764,7 +762,7 @@ pycore_init_types(PyInterpreterState *interp)
         return status;
     }
 
-    status = _PyContext_InitTypes(interp);
+    status = _PyContext_Init(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -794,9 +792,8 @@ pycore_init_builtins(PyThreadState *tstate)
     Py_INCREF(builtins_dict);
     interp->builtins = builtins_dict;
 
-    PyStatus status = _PyBuiltins_AddExceptions(bimod);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
+    if (_PyBuiltins_AddExceptions(bimod) < 0) {
+        return _PyStatus_ERR("failed to add exceptions to builtins");
     }
 
     interp->builtins_copy = PyDict_Copy(interp->builtins);
@@ -1670,11 +1667,19 @@ flush_std_files(void)
 static void
 finalize_interp_types(PyInterpreterState *interp)
 {
+    _PyUnicode_FiniTypes(interp);
+    _PySys_Fini(interp);
     _PyExc_Fini(interp);
     _PyFrame_Fini(interp);
     _PyAsyncGen_Fini(interp);
     _PyContext_Fini(interp);
+    _PyFloat_FiniType(interp);
+    _PyLong_FiniTypes(interp);
+    _PyThread_FiniType(interp);
+    _PyErr_FiniTypes(interp);
     _PyTypes_Fini(interp);
+    _PyTypes_FiniTypes(interp);
+
     // Call _PyUnicode_ClearInterned() before _PyDict_Fini() since it uses
     // a dict internally.
     _PyUnicode_ClearInterned(interp);
@@ -1685,7 +1690,6 @@ finalize_interp_types(PyInterpreterState *interp)
 
     _PySlice_Fini(interp);
 
-    _PyBytes_Fini(interp);
     _PyUnicode_Fini(interp);
     _PyFloat_Fini(interp);
 }
@@ -1697,9 +1701,16 @@ finalize_interp_clear(PyThreadState *tstate)
     int is_main_interp = _Py_IsMainInterpreter(tstate->interp);
 
     _PyExc_ClearExceptionGroupType(tstate->interp);
+    if (is_main_interp) {
+        _PySymtable_Fini();
+    }
 
     /* Clear interpreter state and all thread states */
     _PyInterpreterState_Clear(tstate);
+
+    if (is_main_interp) {
+        _PyIO_Fini();
+    }
 
     /* Clear all loghooks */
     /* Both _PySys_Audit function and users still need PyObject, such as tuple.
@@ -1861,12 +1872,6 @@ Py_FinalizeEx(void)
     /* dump hash stats */
     _PyHash_Fini();
 
-#ifdef Py_REF_DEBUG
-    if (show_ref_count) {
-        _PyDebug_PrintTotalRefs();
-    }
-#endif
-
 #ifdef Py_TRACE_REFS
     /* Display all objects still alive -- this can invoke arbitrary
      * __repr__ overrides, so requires a mostly-intact interpreter.
@@ -1893,6 +1898,12 @@ Py_FinalizeEx(void)
 
     finalize_interp_clear(tstate);
     finalize_interp_delete(tstate->interp);
+
+#ifdef Py_REF_DEBUG
+    if (show_ref_count) {
+        _PyDebug_PrintTotalRefs();
+    }
+#endif
 
 #ifdef Py_TRACE_REFS
     /* Display addresses (& refcnts) of all objects still alive.

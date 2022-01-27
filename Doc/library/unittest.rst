@@ -266,8 +266,7 @@ Test Discovery
 
 Unittest supports simple test discovery. In order to be compatible with test
 discovery, all of the test files must be :ref:`modules <tut-modules>` or
-:ref:`packages <tut-packages>` (including :term:`namespace packages
-<namespace package>`) importable from the top-level directory of
+:ref:`packages <tut-packages>` importable from the top-level directory of
 the project (this means that their filenames must be valid :ref:`identifiers
 <identifiers>`).
 
@@ -339,6 +338,24 @@ the `load_tests protocol`_.
    for the start directory. Note that you need to specify the top level
    directory too (e.g.
    ``python -m unittest discover -s root/namespace -t root``).
+
+.. versionchanged:: 3.11
+   Python 3.11 dropped the :term:`namespace packages <namespace package>`
+   support. It has been broken since Python 3.7. Start directory and
+   subdirectories containing tests must be regular package that have
+   ``__init__.py`` file.
+
+   Directories containing start directory still can be a namespace package.
+   In this case, you need to specify start directory as dotted package name,
+   and target directory explicitly. For example::
+
+      # proj/  <-- current directory
+      #   namespace/
+      #     mypkg/
+      #       __init__.py
+      #       test_mypkg.py
+
+      python -m unittest discover -s namespace.mypkg -t .
 
 
 .. _organizing-tests:
@@ -1238,6 +1255,9 @@ Test cases
          :meth:`.assertRegex`.
       .. versionadded:: 3.2
          :meth:`.assertNotRegex`.
+      .. versionadded:: 3.5
+         The name ``assertNotRegexpMatches`` is a deprecated alias
+         for :meth:`.assertNotRegex`.
 
 
    .. method:: assertCountEqual(first, second, msg=None)
@@ -1603,6 +1623,40 @@ Test cases
    :mod:`unittest`-based test framework.
 
 
+.. _deprecated-aliases:
+
+Deprecated aliases
+##################
+
+For historical reasons, some of the :class:`TestCase` methods had one or more
+aliases that are now deprecated.  The following table lists the correct names
+along with their deprecated aliases:
+
+   ==============================  ====================== =======================
+    Method Name                     Deprecated alias       Deprecated alias
+   ==============================  ====================== =======================
+    :meth:`.assertEqual`            failUnlessEqual        assertEquals
+    :meth:`.assertNotEqual`         failIfEqual            assertNotEquals
+    :meth:`.assertTrue`             failUnless             assert\_
+    :meth:`.assertFalse`            failIf
+    :meth:`.assertRaises`           failUnlessRaises
+    :meth:`.assertAlmostEqual`      failUnlessAlmostEqual  assertAlmostEquals
+    :meth:`.assertNotAlmostEqual`   failIfAlmostEqual      assertNotAlmostEquals
+    :meth:`.assertRegex`                                   assertRegexpMatches
+    :meth:`.assertNotRegex`                                assertNotRegexpMatches
+    :meth:`.assertRaisesRegex`                             assertRaisesRegexp
+   ==============================  ====================== =======================
+
+   .. deprecated:: 3.1
+         The fail* aliases listed in the second column have been deprecated.
+   .. deprecated:: 3.2
+         The assert* aliases listed in the third column have been deprecated.
+   .. deprecated:: 3.2
+         ``assertRegexpMatches`` and ``assertRaisesRegexp`` have been renamed to
+         :meth:`.assertRegex` and :meth:`.assertRaisesRegex`.
+   .. deprecated:: 3.5
+         The ``assertNotRegexpMatches`` name is deprecated in favor of :meth:`.assertNotRegex`.
+
 .. _testsuite-objects:
 
 Grouping tests
@@ -1728,7 +1782,7 @@ Loading and running tests
       case is created for that method instead.
 
 
-   .. method:: loadTestsFromModule(module, *, pattern=None)
+   .. method:: loadTestsFromModule(module, pattern=None)
 
       Return a suite of all test cases contained in the given module. This
       method searches *module* for classes derived from :class:`TestCase` and
@@ -1752,11 +1806,10 @@ Loading and running tests
          Support for ``load_tests`` added.
 
       .. versionchanged:: 3.5
-         Support for a keyword-only argument *pattern* has been added.
-
-      .. versionchanged:: 3.11
-         The undocumented and unofficial *use_load_tests* parameter has been
-         removed.
+         The undocumented and unofficial *use_load_tests* default argument is
+         deprecated and ignored, although it is still accepted for backward
+         compatibility.  The method also now accepts a keyword-only argument
+         *pattern* which is passed to ``load_tests`` as the third argument.
 
 
    .. method:: loadTestsFromName(name, module=None)
@@ -1857,6 +1910,10 @@ Loading and running tests
          Found packages are now checked for ``load_tests`` regardless of
          whether their path matches *pattern*, because it is impossible for
          a package name to match the default pattern.
+
+      .. versionchanged:: 3.11
+         *start_dir* can not be a :term:`namespace packages <namespace package>`.
+         It has been broken since Python 3.7 and Python 3.11 officially remove it.
 
 
    The following attributes of a :class:`TestLoader` can be configured either by
@@ -2109,6 +2166,8 @@ Loading and running tests
    :class:`TextTestRunner`.
 
    .. versionadded:: 3.2
+      This class was previously named ``_TextTestResult``. The old name still
+      exists as an alias but is deprecated.
 
 
 .. data:: defaultTestLoader
@@ -2131,7 +2190,10 @@ Loading and running tests
    By default this runner shows :exc:`DeprecationWarning`,
    :exc:`PendingDeprecationWarning`, :exc:`ResourceWarning` and
    :exc:`ImportWarning` even if they are :ref:`ignored by default
-   <warning-ignored>`.  This behavior can
+   <warning-ignored>`. Deprecation warnings caused by :ref:`deprecated unittest
+   methods <deprecated-aliases>` are also special-cased and, when the warning
+   filters are ``'default'`` or ``'always'``, they will appear only once
+   per-module, in order to avoid too many warning messages.  This behavior can
    be overridden using Python's :option:`!-Wd` or :option:`!-Wa` options
    (see :ref:`Warning control <using-on-warnings>`) and leaving
    *warnings* to ``None``.

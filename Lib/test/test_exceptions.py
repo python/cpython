@@ -268,6 +268,24 @@ class ExceptionTests(unittest.TestCase):
         check("(1+)", 1, 4)
         check("[interesting\nfoo()\n", 1, 1)
         check(b"\xef\xbb\xbf#coding: utf8\nprint('\xe6\x88\x91')\n", 0, -1)
+        check("""f'''
+            {
+            (123_a)
+            }'''""", 3, 17)
+        check("""f'''
+            {
+            f\"\"\"
+            {
+            (123_a)
+            }
+            \"\"\"
+            }'''""", 5, 17)
+        check('''f"""
+
+
+            {
+            6
+            0="""''', 5, 13)
 
         # Errors thrown by symtable.c
         check('x = [(yield i) for i in range(3)]', 1, 7)
@@ -653,15 +671,27 @@ class ExceptionTests(unittest.TestCase):
         self.assertTrue(str(Exception('a')))
         self.assertTrue(str(Exception('a', 'b')))
 
-    def testExceptionCleanupNames(self):
+    def test_exception_cleanup_names(self):
         # Make sure the local variable bound to the exception instance by
         # an "except" statement is only visible inside the except block.
         try:
             raise Exception()
         except Exception as e:
-            self.assertTrue(e)
+            self.assertIsInstance(e, Exception)
+        self.assertNotIn('e', locals())
+        with self.assertRaises(UnboundLocalError):
+            e
+
+    def test_exception_cleanup_names2(self):
+        # Make sure the cleanup doesn't break if the variable is explicitly deleted.
+        try:
+            raise Exception()
+        except Exception as e:
+            self.assertIsInstance(e, Exception)
             del e
         self.assertNotIn('e', locals())
+        with self.assertRaises(UnboundLocalError):
+            e
 
     def testExceptionCleanupState(self):
         # Make sure exception state is cleaned up as soon as the except

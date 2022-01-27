@@ -1,0 +1,2 @@
+Add :func:`test.support.requires_fork` decorators to mark tests that require
+a working :func:`os.fork`.

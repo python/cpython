@@ -19,6 +19,7 @@ python = sys.executable
 if ' ' in python:
     python = '"' + python + '"'     # quote embedded space for cmdline
 
+@support.requires_subprocess()
 class PopenTest(unittest.TestCase):
 
     def _do_test_commandline(self, cmdline, expected):

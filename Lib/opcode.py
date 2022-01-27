@@ -55,11 +55,6 @@ def jabs_op(name, op):
 # Blank lines correspond to available opcodes
 
 def_op('POP_TOP', 1)
-def_op('ROT_TWO', 2)
-def_op('ROT_THREE', 3)
-def_op('DUP_TOP', 4)
-def_op('DUP_TOP_TWO', 5)
-def_op('ROT_FOUR', 6)
 
 def_op('NOP', 9)
 def_op('UNARY_POSITIVE', 10)
@@ -94,13 +89,14 @@ def_op('LOAD_BUILD_CLASS', 71)
 
 def_op('GET_AWAITABLE', 73)
 def_op('LOAD_ASSERTION_ERROR', 74)
+def_op('RETURN_GENERATOR', 75)
 
 def_op('LIST_TO_TUPLE', 82)
 def_op('RETURN_VALUE', 83)
 def_op('IMPORT_STAR', 84)
 def_op('SETUP_ANNOTATIONS', 85)
 def_op('YIELD_VALUE', 86)
-
+def_op('ASYNC_GEN_WRAP', 87)
 def_op('PREP_RERAISE_STAR', 88)
 def_op('POP_EXCEPT', 89)
 
@@ -115,7 +111,7 @@ name_op('STORE_ATTR', 95)       # Index in name list
 name_op('DELETE_ATTR', 96)      # ""
 name_op('STORE_GLOBAL', 97)     # ""
 name_op('DELETE_GLOBAL', 98)    # ""
-def_op('ROT_N', 99)
+def_op('SWAP', 99)
 def_op('LOAD_CONST', 100)       # Index in const list
 hasconst.append(100)
 name_op('LOAD_NAME', 101)       # Index in name list
@@ -148,14 +144,14 @@ def_op('STORE_FAST', 125)       # Local variable number
 haslocal.append(125)
 def_op('DELETE_FAST', 126)      # Local variable number
 haslocal.append(126)
-
 jabs_op('JUMP_IF_NOT_EG_MATCH', 127)
-
+jabs_op('POP_JUMP_IF_NOT_NONE', 128)
+jabs_op('POP_JUMP_IF_NONE', 129)
 def_op('RAISE_VARARGS', 130)    # Number of raise arguments (1, 2, or 3)
 
 def_op('MAKE_FUNCTION', 132)    # Flags
 def_op('BUILD_SLICE', 133)      # Number of items
-
+jabs_op('JUMP_NO_INTERRUPT', 134) # Target byte offset from beginning of code
 def_op('MAKE_CELL', 135)
 hasfree.append(135)
 def_op('LOAD_CLOSURE', 136)
@@ -178,6 +174,7 @@ def_op('LOAD_CLASSDEREF', 148)
 hasfree.append(148)
 def_op('COPY_FREE_VARS', 149)
 
+def_op('RESUME', 151)
 def_op('MATCH_CLASS', 152)
 
 def_op('FORMAT_VALUE', 155)

@@ -846,7 +846,7 @@ complex_from_string_inner(const char *s, Py_ssize_t len, void *type)
     if (s-start != len)
         goto parse_error;
 
-    return complex_subtype_from_doubles((PyTypeObject *)type, x, y);
+    return complex_subtype_from_doubles(_PyType_CAST(type), x, y);
 
   parse_error:
     PyErr_SetString(PyExc_ValueError,

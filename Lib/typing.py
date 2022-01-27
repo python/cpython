@@ -142,16 +142,16 @@ __all__ = [
 # legitimate imports of those modules.
 
 
-def _type_convert(arg, module=None):
+def _type_convert(arg, module=None, *, allow_special_forms=False):
     """For converting None to type(None), and strings to ForwardRef."""
     if arg is None:
         return type(None)
     if isinstance(arg, str):
-        return ForwardRef(arg, module=module)
+        return ForwardRef(arg, module=module, is_class=allow_special_forms)
     return arg
 
 
-def _type_check(arg, msg, is_argument=True, module=None, *, is_class=False):
+def _type_check(arg, msg, is_argument=True, module=None, *, allow_special_forms=False):
     """Check that the argument is a type, and return it (internal helper).
 
     As a special case, accept None and return type(None) instead. Also wrap strings
@@ -164,12 +164,12 @@ def _type_check(arg, msg, is_argument=True, module=None, *, is_class=False):
     We append the repr() of the actual value (truncated to 100 chars).
     """
     invalid_generic_forms = (Generic, Protocol)
-    if not is_class:
+    if not allow_special_forms:
         invalid_generic_forms += (ClassVar,)
         if is_argument:
             invalid_generic_forms += (Final,)
 
-    arg = _type_convert(arg, module=module)
+    arg = _type_convert(arg, module=module, allow_special_forms=allow_special_forms)
     if (isinstance(arg, _GenericAlias) and
             arg.__origin__ in invalid_generic_forms):
         raise TypeError(f"{arg} is not valid as type argument")
@@ -280,8 +280,6 @@ def _remove_dups_flatten(parameters):
     for p in parameters:
         if isinstance(p, (_UnionGenericAlias, types.UnionType)):
             params.extend(p.__args__)
-        elif isinstance(p, tuple) and len(p) > 0 and p[0] is Union:
-            params.extend(p[1:])
         else:
             params.append(p)
 
@@ -699,7 +697,7 @@ class ForwardRef(_Final, _root=True):
                 eval(self.__forward_code__, globalns, localns),
                 "Forward references must evaluate to types.",
                 is_argument=self.__forward_is_argument__,
-                is_class=self.__forward_is_class__,
+                allow_special_forms=self.__forward_is_class__,
             )
             self.__forward_value__ = _eval_type(
                 type_, globalns, localns, recursive_guard | {self.__forward_arg__}
@@ -805,9 +803,6 @@ class TypeVar( _Final, _Immutable, _TypeVarLike, _root=True):
     Note that only type variables defined in global scope can be pickled.
     """
 
-    __slots__ = ('__name__', '__bound__', '__constraints__',
-                 '__covariant__', '__contravariant__', '__dict__')
-
     def __init__(self, name, *constraints, bound=None,
                  covariant=False, contravariant=False):
         self.__name__ = name
@@ -906,9 +901,6 @@ class ParamSpec(_Final, _Immutable, _TypeVarLike, _root=True):
     Note that only parameter specification variables defined in global scope can
     be pickled.
     """
-
-    __slots__ = ('__name__', '__bound__', '__covariant__', '__contravariant__',
-                 '__dict__')
 
     @property
     def args(self):
@@ -1682,7 +1674,7 @@ class Annotated:
                             "with at least two arguments (a type and an "
                             "annotation).")
         msg = "Annotated[t, ...]: t must be a type."
-        origin = _type_check(params[0], msg)
+        origin = _type_check(params[0], msg, allow_special_forms=True)
         metadata = tuple(params[1:])
         return _AnnotatedAlias(origin, metadata)
 
@@ -2048,8 +2040,17 @@ def final(f):
       class Other(Leaf):  # Error reported by type checker
           ...
 
-    There is no runtime checking of these properties.
+    There is no runtime checking of these properties. The decorator
+    sets the ``__final__`` attribute to ``True`` on the decorated object
+    to allow runtime introspection.
     """
+    try:
+        f.__final__ = True
+    except (AttributeError, TypeError):
+        # Skip the attribute silently if it is not writable.
+        # AttributeError happens if the object has __slots__ or a
+        # read-only property, TypeError if it's a builtin class.
+        pass
     return f
 
 
