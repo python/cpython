@@ -200,6 +200,11 @@ extern int _Py_CheckSlotResult(
 // See also the Py_TPFLAGS_READY flag.
 #define _PyType_IsReady(type) ((type)->tp_dict != NULL)
 
+// Test if a type supports weak references
+static inline int _PyType_SUPPORTS_WEAKREFS(PyTypeObject *type) {
+    return (type->tp_weaklistoffset > 0);
+}
+
 extern PyObject* _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems);
 
 extern int _PyObject_InitializeDict(PyObject *obj);

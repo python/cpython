@@ -2473,11 +2473,20 @@ type_init(PyObject *cls, PyObject *args, PyObject *kwds)
     return 0;
 }
 
+
 unsigned long
 PyType_GetFlags(PyTypeObject *type)
 {
     return type->tp_flags;
 }
+
+
+int
+PyType_SUPPORTS_WEAKREFS(PyTypeObject *type)
+{
+    return _PyType_SUPPORTS_WEAKREFS(type);
+}
+
 
 /* Determine the most derived metatype. */
 PyTypeObject *
