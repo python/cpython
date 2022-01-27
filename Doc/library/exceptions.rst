@@ -42,9 +42,7 @@ When raising a new exception while another exception
 is already being handled, the new exception's
 :attr:`__context__` attribute is automatically set to the handled
 exception.  An exception may be handled when an :keyword:`except` or
-:keyword:`finally` clause, or a :keyword:`with` statement, is used.  If the
-new exception is not handled, the traceback that is eventually displayed may
-include the context exception(s) as well as the final exception.
+:keyword:`finally` clause, or a :keyword:`with` statement, is used.
 
 This implicit exception context can be
 supplemented with an explicit cause by using :keyword:`!from` with
