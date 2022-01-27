@@ -259,7 +259,7 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
 
    >>> from hashlib import pbkdf2_hmac
    >>> our_app_iters = 500_000  # Application specific, read above.
-   >>> dk = pbkdf2_hmac('sha256', b'password', b'bad salt'\*2, our_app_iters)
+   >>> dk = pbkdf2_hmac('sha256', b'password', b'bad salt'*2, our_app_iters)
    >>> dk.hex()
    '15530bba69924174860db778f2c6f8104d3aaf9d26241840c8c4a641c8d000a9'
 
