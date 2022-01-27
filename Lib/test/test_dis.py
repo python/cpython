@@ -1217,8 +1217,8 @@ expected_opinfo_jumpy = [
   Instruction(opname='CALL', opcode=171, arg=0, argval=0, argrepr='', offset=170, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=172, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='LOAD_CONST', opcode=100, arg=0, argval=None, argrepr='None', offset=174, starts_line=25, is_jump_target=False, positions=None),
-  Instruction(opname='DUP_TOP', opcode=4, arg=None, argval=None, argrepr='', offset=176, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='DUP_TOP', opcode=4, arg=None, argval=None, argrepr='', offset=178, starts_line=None, is_jump_target=False, positions=None),
+  Instruction(opname='LOAD_CONST', opcode=100, arg=0, argval=None, argrepr='None', offset=176, starts_line=None, is_jump_target=False, positions=None),
+  Instruction(opname='LOAD_CONST', opcode=100, arg=0, argval=None, argrepr='None', offset=178, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='PRECALL_FUNCTION', opcode=167, arg=3, argval=3, argrepr='', offset=180, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='CALL', opcode=171, arg=0, argval=0, argrepr='', offset=182, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=184, starts_line=None, is_jump_target=False, positions=None),
@@ -1489,6 +1489,16 @@ class TestFinderMethods(unittest.TestCase):
                 code = compile(src, "<string>", "exec")
                 res = tuple(dis._find_store_names(code))
                 self.assertEqual(res, expected)
+
+    def test_findlabels(self):
+        labels = dis.findlabels(jumpy.__code__.co_code)
+        jumps = [
+            instr.offset
+            for instr in expected_opinfo_jumpy
+            if instr.is_jump_target
+        ]
+
+        self.assertEqual(sorted(labels), sorted(jumps))
 
 
 class TestDisTraceback(unittest.TestCase):

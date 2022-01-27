@@ -559,7 +559,11 @@ _pysqlite_set_result(sqlite3_context* context, PyObject* py_val)
             return -1;
         sqlite3_result_int64(context, value);
     } else if (PyFloat_Check(py_val)) {
-        sqlite3_result_double(context, PyFloat_AsDouble(py_val));
+        double value = PyFloat_AsDouble(py_val);
+        if (value == -1 && PyErr_Occurred()) {
+            return -1;
+        }
+        sqlite3_result_double(context, value);
     } else if (PyUnicode_Check(py_val)) {
         Py_ssize_t sz;
         const char *str = PyUnicode_AsUTF8AndSize(py_val, &sz);

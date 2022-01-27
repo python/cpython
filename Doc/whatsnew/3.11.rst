@@ -411,8 +411,9 @@ CPython bytecode changes
   indicate failure with :const:`None` (where a tuple of extracted values would
   otherwise be).
 
-* Added :opcode:`COPY`, which pushes the *i*-th item to the top of the stack.
-  The item is not removed from its original location.
+* Replace several stack manipulation instructions (``DUP_TOP``, ``DUP_TOP_TWO``,
+  ``ROT_TWO``, ``ROT_THREE``, ``ROT_FOUR``, and ``ROT_N``) with new
+  :opcode:`COPY` and :opcode:`SWAP` instructions.
 
 * Add :opcode:`POP_JUMP_IF_NOT_NONE` and :opcode:`POP_JUMP_IF_NONE` opcodes to
   speed up conditional jumps.
@@ -487,28 +488,6 @@ Removed
   :class:`xml.dom.pulldom.DOMEventStream`, :class:`wsgiref.util.FileWrapper`
   and :class:`fileinput.FileInput`, deprecated since Python 3.9.
   (Contributed by Hugo van Kemenade in :issue:`45132`.)
-
-* Removed many old deprecated :mod:`unittest` features:
-
-  - :class:`~unittest.TestCase` method aliases ``failUnlessEqual``,
-    ``failIfEqual``, ``failUnless``, ``failIf``, ``failUnlessRaises``,
-    ``failUnlessAlmostEqual``, ``failIfAlmostEqual`` (deprecated in Python 3.1),
-    ``assertEquals``, ``assertNotEquals``, ``assert_``, ``assertAlmostEquals``,
-    ``assertNotAlmostEquals``, ``assertRegexpMatches``, ``assertRaisesRegexp``
-    (deprecated in Python 3.2), and ``assertNotRegexpMatches`` (deprecated in
-    Python 3.5).
-
-  - Undocumented and broken :class:`~unittest.TestCase` method
-    ``assertDictContainsSubset`` (deprecated in Python 3.2).
-
-  - Undocumented :meth:`<unittest.TestLoader.loadTestsFromModule>
-    TestLoader.loadTestsFromModule` parameter *use_load_tests* (deprecated
-    and ignored since Python 3.2).
-
-  - An alias of the :class:`~unittest.TextTestResult` class:
-    ``_TextTestResult`` (deprecated in Python 3.2).
-
-  (Contributed by Serhiy Storchaka in :issue:`45162`.)
 
 * The following deprecated functions and methods are removed in the :mod:`gettext`
   module: :func:`~gettext.lgettext`, :func:`~gettext.ldgettext`,

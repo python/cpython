@@ -1185,7 +1185,7 @@ regen-all: regen-opcode regen-opcode-targets regen-typeslots \
 	regen-token regen-ast regen-keyword regen-frozen clinic \
 	regen-pegen-metaparser regen-pegen regen-test-frozenmain
 	@echo
-	@echo "Note: make regen-stdlib-module-names and autoconf should be run manually"
+	@echo "Note: make regen-stdlib-module-names and make autoconf should be run manually"
 
 ############################################################################
 # Special rules for object files
@@ -1505,6 +1505,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/code.h \
 		$(srcdir)/Include/cpython/compile.h \
 		$(srcdir)/Include/cpython/context.h \
+		$(srcdir)/Include/cpython/descrobject.h \
 		$(srcdir)/Include/cpython/dictobject.h \
 		$(srcdir)/Include/cpython/fileobject.h \
 		$(srcdir)/Include/cpython/fileutils.h \

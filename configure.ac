@@ -4699,7 +4699,6 @@ fi
 
 # checks for compiler characteristics
 
-AC_C_CHAR_UNSIGNED
 AC_C_CONST
 
 AC_CACHE_CHECK([for working signed char], [ac_cv_working_signed_char_c], [

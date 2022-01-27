@@ -325,6 +325,15 @@ class UnionTests(BaseTestCase):
         u = Union[int | float]
         self.assertEqual(repr(u), 'typing.Union[int, float]')
 
+        u = Union[None, str]
+        self.assertEqual(repr(u), 'typing.Optional[str]')
+        u = Union[str, None]
+        self.assertEqual(repr(u), 'typing.Optional[str]')
+        u = Union[None, str, int]
+        self.assertEqual(repr(u), 'typing.Union[NoneType, str, int]')
+        u = Optional[str]
+        self.assertEqual(repr(u), 'typing.Optional[str]')
+
     def test_cannot_subclass(self):
         with self.assertRaises(TypeError):
             class C(Union):
@@ -2860,6 +2869,20 @@ class ForwardRefTests(BaseTestCase):
 
         self.assertEqual(get_type_hints(foo, globals(), locals()),
                          {'a': Callable[..., T]})
+
+    def test_special_forms_forward(self):
+
+        class C:
+            a: Annotated['ClassVar[int]', (3, 5)] = 4
+            b: Annotated['Final[int]', "const"] = 4
+
+        class CF:
+            b: List['Final[int]'] = 4
+
+        self.assertEqual(get_type_hints(C, globals())['a'], ClassVar[int])
+        self.assertEqual(get_type_hints(C, globals())['b'], Final[int])
+        with self.assertRaises(TypeError):
+            get_type_hints(CF, globals()),
 
     def test_syntax_error(self):
 

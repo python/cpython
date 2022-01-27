@@ -348,7 +348,8 @@ The Python compiler currently generates the following bytecode instructions.
 
 .. opcode:: NOP
 
-   Do nothing code.  Used as a placeholder by the bytecode optimizer.
+   Do nothing code.  Used as a placeholder by the bytecode optimizer, and to
+   generate line tracing events.
 
 
 .. opcode:: POP_TOP
@@ -356,38 +357,19 @@ The Python compiler currently generates the following bytecode instructions.
    Removes the top-of-stack (TOS) item.
 
 
-.. opcode:: ROT_TWO
+.. opcode:: COPY (i)
 
-   Swaps the two top-most stack items.
+   Push the *i*-th item to the top of the stack. The item is not removed from its
+   original location.
 
-
-.. opcode:: ROT_THREE
-
-   Lifts second and third stack item one position up, moves top down to position
-   three.
+   .. versionadded:: 3.11
 
 
-.. opcode:: ROT_FOUR
+.. opcode:: SWAP (i)
 
-   Lifts second, third and fourth stack items one position up, moves top down
-   to position four.
+   Swap TOS with the item at position *i*.
 
-   .. versionadded:: 3.8
-
-
-.. opcode:: DUP_TOP
-
-   Duplicates the reference on top of the stack.
-
-   .. versionadded:: 3.2
-
-
-.. opcode:: DUP_TOP_TWO
-
-   Duplicates the two references on top of the stack, leaving them in the
-   same order.
-
-   .. versionadded:: 3.2
+   .. versionadded:: 3.11
 
 
 **Unary operations**
@@ -688,8 +670,6 @@ iterations of the loop.
       Previously, this instruction also pushed a boolean value indicating
       success (``True``) or failure (``False``).
 
-
-All of the following opcodes use their arguments.
 
 .. opcode:: STORE_NAME (namei)
 
@@ -1215,22 +1195,6 @@ All of the following opcodes use their arguments.
    .. versionchanged:: 3.11
       Previously, this instruction also pushed a boolean value indicating
       success (``True``) or failure (``False``).
-
-
-.. opcode:: ROT_N (count)
-
-   Lift the top *count* stack items one position up, and move TOS down to
-   position *count*.
-
-   .. versionadded:: 3.10
-
-
-.. opcode:: COPY (i)
-
-   Push the *i*-th item to the top of the stack. The item is not removed from its
-   original location.
-
-   .. versionadded:: 3.11
 
 
 .. opcode:: RESUME (where)
