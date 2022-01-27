@@ -52,14 +52,6 @@
    the 1st step is performed automatically for you, so in a C++ class
    constructor you would start directly with PyObject_Init/InitVar. */
 
-/* This function returns the number of allocated memory blocks, regardless of size */
-PyAPI_FUNC(Py_ssize_t) _Py_GetAllocatedBlocks(void);
-
-/* Macros */
-#ifdef WITH_PYMALLOC
-PyAPI_FUNC(int) _PyObject_DebugMallocStats(FILE *out);
-#endif
-
 
 typedef struct {
     /* user context passed as the first argument to the 2 functions */
