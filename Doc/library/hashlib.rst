@@ -247,8 +247,9 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
    a proper source, e.g. :func:`os.urandom`.
 
    The number of *iterations* should be chosen based on the hash algorithm and
-   computing power. As of 2021, at least 250,000 iterations of SHA-256 are
-   suggested.
+   computing power. As of 2022, at hundreds of thousands of iterations of
+   SHA-256 are suggested. For rationale as to why, read *Appendix A.2.2* of
+   NIST-SP-800-132_.
 
    *dklen* is the length of the derived key. If *dklen* is ``None`` then the
    digest size of the hash algorithm *hash_name* is used, e.g. 64 for SHA-512.
@@ -725,6 +726,7 @@ Domain Dedication 1.0 Universal:
 .. _SHA-3: https://en.wikipedia.org/wiki/NIST_hash_function_competition
 .. _ChaCha: https://cr.yp.to/chacha.html
 .. _pyblake2: https://pythonhosted.org/pyblake2/
+.. _NIST-SP-800-132: https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-132.pdf
 
 
 
@@ -748,3 +750,6 @@ Domain Dedication 1.0 Universal:
 
    https://www.ietf.org/rfc/rfc2898.txt
       PKCS #5: Password-Based Cryptography Specification Version 2.0
+      
+   https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-132.pdf
+      NIST Recommendation for Password-Based Key Derivation (aka "NIST SP 800-132").
