@@ -5,6 +5,25 @@ import unittest
 from test.support.bytecode_helper import BytecodeTestCase
 
 
+PATMA_TEMPLATE = """
+def f(a):
+    match a:
+        case {}:
+            pass
+"""
+
+PATMA_CAPTURES = [
+    ("_", "_", "_"),
+    ("_", "_", "x"),
+    ("_", "x", "_"),
+    ("_", "x", "y"),
+    ("x", "_", "_"),
+    ("x", "_", "y"),
+    ("x", "y", "_"),
+    ("x", "y", "z")
+]
+
+
 def count_instr_recursively(f, opname):
     count = 0
     for instr in dis.get_instructions(f):
@@ -579,6 +598,30 @@ class TestTranforms(BytecodeTestCase):
         with self.assertRaisesRegex(TypeError,
                     'not all arguments converted during string formatting'):
             eval("'%s, %s' % (x, *y)", {'x': 1, 'y': [2, 3]})
+
+    def test_static_swaps_unpack(self):
+        def f(a, b, c):
+            x, y = a, b
+            x, y, z = a, b, c
+        self.assertNotInBytecode(f, "SWAP")
+
+    def test_static_swaps_match_sequence(self):
+        known_swaps = {"*_, x, y", "x, *_, y", "x, y, *_"}
+        stars = ["{}, {}, {}", "{}, {}, *{}", "{}, *{}, {}", "*{}, {}, {}"]
+        for captures in PATMA_CAPTURES:
+            for star in stars:
+                pattern = star.format(*captures)
+                with self.subTest(pattern):
+                    source = PATMA_TEMPLATE.format(pattern)
+                    namespace = {}
+                    exec(source, namespace)
+                    f = namespace["f"]
+                    if pattern in known_swaps:
+                        # If this fails, great! Remove this pattern from
+                        # known_swaps to prevent regressing on any improvement:
+                        self.assertInBytecode(f, "SWAP")
+                    else:
+                        self.assertNotInBytecode(f, "SWAP")
 
 
 class TestBuglets(unittest.TestCase):
