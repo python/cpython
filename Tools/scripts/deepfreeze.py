@@ -278,7 +278,7 @@ class Printer:
             self.write(f".co_varnames = {co_varnames},")
             self.write(f".co_cellvars = {co_cellvars},")
             self.write(f".co_freevars = {co_freevars},")
-        self.deallocs.append(f"_PyStaticCode_Dealloc(&{name}, (_Py_CODEUNIT *) {removesuffix(co_code, '.ob_base.ob_base')}.ob_sval);")
+        self.deallocs.append(f"_PyStaticCode_Dealloc(&{name});")
         return f"& {name}.ob_base"
 
     def generate_tuple(self, name: str, t: Tuple[object, ...]) -> str:
