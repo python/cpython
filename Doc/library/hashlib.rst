@@ -247,9 +247,9 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
    a proper source, e.g. :func:`os.urandom`.
 
    The number of *iterations* should be chosen based on the hash algorithm and
-   computing power. As of 2022, at hundreds of thousands of iterations of
-   SHA-256 are suggested. For rationale as to why, read *Appendix A.2.2* of
-   NIST-SP-800-132_.
+   computing power. As of 2022, hundreds of thousands of iterations of SHA-256
+   are suggested. For rationale as to why and how to choose what is best for
+   your application, read *Appendix A.2.2* of NIST-SP-800-132_.
 
    *dklen* is the length of the derived key. If *dklen* is ``None`` then the
    digest size of the hash algorithm *hash_name* is used, e.g. 64 for SHA-512.
