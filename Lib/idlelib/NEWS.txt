@@ -4,6 +4,12 @@ Released on 2022-10-03
 =========================
 
 
+bpo-45296: Clarify close, quit, and exit in IDLE.  In the File menu,
+'Close' and 'Exit' are now 'Close Window' (the current one) and 'Exit'
+is now 'Exit IDLE' (by closing all windows).  In Shell, 'quit()' and
+'exit()' mean 'close Shell'.  If there are no other windows,
+this also exits IDLE.
+
 bpo-45495: Add context keywords 'case' and 'match' to completions list.
 
 bpo-45296: On Windows, change exit/quit message to suggest Ctrl-D, which
