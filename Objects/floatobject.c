@@ -239,9 +239,10 @@ PyFloat_FromString(PyObject *v)
 }
 
 void
-_PyFloat_ExactDealloc(PyFloatObject *op)
+_PyFloat_ExactDealloc(PyObject *obj)
 {
-    assert(PyFloat_CheckExact(op));
+    assert(PyFloat_CheckExact(obj));
+    PyFloatObject *op = (PyFloatObject *)obj;
 #if PyFloat_MAXFREELIST > 0
     struct _Py_float_state *state = get_float_state();
 #ifdef Py_DEBUG
@@ -261,8 +262,9 @@ _PyFloat_ExactDealloc(PyFloatObject *op)
 }
 
 static void
-float_dealloc(PyFloatObject *op)
+float_dealloc(PyObject *op)
 {
+    assert(PyFloat_Check(op));
 #if PyFloat_MAXFREELIST > 0
     if (PyFloat_CheckExact(op)) {
         _PyFloat_ExactDealloc(op);
@@ -270,7 +272,7 @@ float_dealloc(PyFloatObject *op)
     else
 #endif
     {
-        Py_TYPE(op)->tp_free((PyObject *)op);
+        Py_TYPE(op)->tp_free(op);
     }
 }
 

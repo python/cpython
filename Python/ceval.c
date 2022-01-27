@@ -2024,8 +2024,8 @@ handle_eval_breaker:
             STAT_INC(BINARY_OP, hit);
             PyObject *prod = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
             SET_SECOND(prod);
-            _Py_DECREF_SPECIALIZED(right, (destructor)_PyLong_ExactDealloc);
-            _Py_DECREF_SPECIALIZED(left, (destructor)_PyLong_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(right, _PyLong_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(left, _PyLong_ExactDealloc);
             STACK_SHRINK(1);
             if (prod == NULL) {
                 goto error;
@@ -2043,8 +2043,8 @@ handle_eval_breaker:
                 ((PyFloatObject *)right)->ob_fval;
             PyObject *prod = PyFloat_FromDouble(dprod);
             SET_SECOND(prod);
-            _Py_DECREF_SPECIALIZED(right, (destructor)_PyFloat_ExactDealloc);
-            _Py_DECREF_SPECIALIZED(left, (destructor)_PyFloat_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
             STACK_SHRINK(1);
             if (prod == NULL) {
                 goto error;
@@ -2060,8 +2060,8 @@ handle_eval_breaker:
             STAT_INC(BINARY_OP, hit);
             PyObject *sub = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
             SET_SECOND(sub);
-            _Py_DECREF_SPECIALIZED(right, (destructor)_PyLong_ExactDealloc);
-            _Py_DECREF_SPECIALIZED(left, (destructor)_PyLong_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(right, _PyLong_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(left, _PyLong_ExactDealloc);
             STACK_SHRINK(1);
             if (sub == NULL) {
                 goto error;
@@ -2078,8 +2078,8 @@ handle_eval_breaker:
             double dsub = ((PyFloatObject *)left)->ob_fval - ((PyFloatObject *)right)->ob_fval;
             PyObject *sub = PyFloat_FromDouble(dsub);
             SET_SECOND(sub);
-            _Py_DECREF_SPECIALIZED(right, (destructor)_PyFloat_ExactDealloc);
-            _Py_DECREF_SPECIALIZED(left, (destructor)_PyFloat_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
             STACK_SHRINK(1);
             if (sub == NULL) {
                 goto error;
@@ -2096,8 +2096,8 @@ handle_eval_breaker:
             PyObject *res = PyUnicode_Concat(left, right);
             STACK_SHRINK(1);
             SET_TOP(res);
-            _Py_DECREF_SPECIALIZED(left, (destructor)_PyUnicode_ExactDealloc);
-            _Py_DECREF_SPECIALIZED(right, (destructor)_PyUnicode_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
             if (TOP() == NULL) {
                 goto error;
             }
@@ -2122,10 +2122,10 @@ handle_eval_breaker:
             DEOPT_IF(var != left, BINARY_OP);
             STAT_INC(BINARY_OP, hit);
             GETLOCAL(next_oparg) = NULL;
-            _Py_DECREF_SPECIALIZED(left, (destructor)_PyUnicode_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
             STACK_SHRINK(1);
             PyUnicode_Append(&TOP(), right);
-            _Py_DECREF_SPECIALIZED(right, (destructor)_PyUnicode_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
             if (TOP() == NULL) {
                 goto error;
             }
@@ -2142,8 +2142,8 @@ handle_eval_breaker:
                 ((PyFloatObject *)right)->ob_fval;
             PyObject *sum = PyFloat_FromDouble(dsum);
             SET_SECOND(sum);
-            _Py_DECREF_SPECIALIZED(right, (destructor)_PyFloat_ExactDealloc);
-            _Py_DECREF_SPECIALIZED(left, (destructor)_PyFloat_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
             STACK_SHRINK(1);
             if (sum == NULL) {
                 goto error;
@@ -2159,8 +2159,8 @@ handle_eval_breaker:
             STAT_INC(BINARY_OP, hit);
             PyObject *sum = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
             SET_SECOND(sum);
-            _Py_DECREF_SPECIALIZED(right, (destructor)_PyLong_ExactDealloc);
-            _Py_DECREF_SPECIALIZED(left, (destructor)_PyLong_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(right, _PyLong_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(left, _PyLong_ExactDealloc);
             STACK_SHRINK(1);
             if (sum == NULL) {
                 goto error;
@@ -2218,7 +2218,7 @@ handle_eval_breaker:
             assert(res != NULL);
             Py_INCREF(res);
             STACK_SHRINK(1);
-            _Py_DECREF_SPECIALIZED(sub, (destructor)_PyLong_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(sub, _PyLong_ExactDealloc);
             SET_TOP(res);
             Py_DECREF(list);
             DISPATCH();
@@ -2241,7 +2241,7 @@ handle_eval_breaker:
             assert(res != NULL);
             Py_INCREF(res);
             STACK_SHRINK(1);
-            _Py_DECREF_SPECIALIZED(sub, (destructor)_PyLong_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(sub, _PyLong_ExactDealloc);
             SET_TOP(res);
             Py_DECREF(tuple);
             DISPATCH();
@@ -2372,7 +2372,7 @@ handle_eval_breaker:
             STACK_SHRINK(3);
             assert(old_value != NULL);
             Py_DECREF(old_value);
-            _Py_DECREF_SPECIALIZED(sub, (destructor)_PyLong_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(sub, _PyLong_ExactDealloc);
             Py_DECREF(list);
             DISPATCH();
         }
@@ -3211,12 +3211,12 @@ handle_eval_breaker:
                 goto error;
             }
             str = _PyUnicode_JoinArray(empty, stack_pointer - oparg, oparg);
-            _Py_DECREF_SPECIALIZED(empty, (destructor)_PyUnicode_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(empty, _PyUnicode_ExactDealloc);
             if (str == NULL)
                 goto error;
             while (--oparg >= 0) {
                 PyObject *item = POP();
-                _Py_DECREF_SPECIALIZED(item, (destructor)_PyUnicode_ExactDealloc);
+                _Py_DECREF_SPECIALIZED(item, _PyUnicode_ExactDealloc);
             }
             PUSH(str);
             DISPATCH();
@@ -3741,8 +3741,8 @@ handle_eval_breaker:
             STAT_INC(COMPARE_OP, hit);
             NEXTOPARG();
             STACK_SHRINK(2);
-            _Py_DECREF_SPECIALIZED(left, (destructor)_PyFloat_ExactDealloc);
-            _Py_DECREF_SPECIALIZED(right, (destructor)_PyFloat_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
             assert(opcode == POP_JUMP_IF_TRUE || opcode == POP_JUMP_IF_FALSE);
             int jump = (1 << (sign + 1)) & when_to_jump_mask;
             if (!jump) {
@@ -3774,8 +3774,8 @@ handle_eval_breaker:
             int sign = (ileft > iright) - (ileft < iright);
             NEXTOPARG();
             STACK_SHRINK(2);
-            _Py_DECREF_SPECIALIZED(left, (destructor)_PyLong_ExactDealloc);
-            _Py_DECREF_SPECIALIZED(right, (destructor)_PyLong_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(left, _PyLong_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(right, _PyLong_ExactDealloc);
             assert(opcode == POP_JUMP_IF_TRUE || opcode == POP_JUMP_IF_FALSE);
             int jump = (1 << (sign + 1)) & when_to_jump_mask;
             if (!jump) {
@@ -3808,8 +3808,8 @@ handle_eval_breaker:
             NEXTOPARG();
             assert(opcode == POP_JUMP_IF_TRUE || opcode == POP_JUMP_IF_FALSE);
             STACK_SHRINK(2);
-            _Py_DECREF_SPECIALIZED(left, (destructor)_PyUnicode_ExactDealloc);
-            _Py_DECREF_SPECIALIZED(right, (destructor)_PyUnicode_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
             assert(res == 0 || res == 1);
             assert(invert == 0 || invert == 1);
             int jump = res ^ invert;

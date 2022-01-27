@@ -5753,7 +5753,7 @@ int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
 }
 
 void
-_PyLong_ExactDealloc(PyLongObject *op)
+_PyLong_ExactDealloc(PyObject *op)
 {
     assert(PyLong_CheckExact(op));
     PyObject_Del(op);

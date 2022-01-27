@@ -15464,10 +15464,10 @@ onError:
 }
 
 void
-_PyUnicode_ExactDealloc(PyUnicodeObject *op)
+_PyUnicode_ExactDealloc(PyObject *op)
 {
     assert(PyUnicode_CheckExact(op));
-    unicode_dealloc((PyObject *)op);
+    unicode_dealloc(op);
 }
 
 PyDoc_STRVAR(unicode_doc,
