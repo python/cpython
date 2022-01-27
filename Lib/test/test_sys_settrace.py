@@ -664,6 +664,38 @@ class TraceTestCase(unittest.TestCase):
              (14, 'line'),
              (14, 'return')])
 
+    def test_try_exception_in_else(self):
+
+        def func():
+            try:
+                try:
+                    3
+                except:
+                    5
+                else:
+                    7
+                    raise Exception
+                finally:
+                    10
+            except:
+                12
+            finally:
+                14
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (7, 'line'),
+             (8, 'line'),
+             (8, 'exception'),
+             (10, 'line'),
+             (11, 'line'),
+             (12, 'line'),
+             (14, 'line'),
+             (14, 'return')])
+
     def test_nested_loops(self):
 
         def func():
