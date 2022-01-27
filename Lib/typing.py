@@ -142,12 +142,12 @@ __all__ = [
 # legitimate imports of those modules.
 
 
-def _type_convert(arg, module=None):
+def _type_convert(arg, module=None, *, allow_special_forms=False):
     """For converting None to type(None), and strings to ForwardRef."""
     if arg is None:
         return type(None)
     if isinstance(arg, str):
-        return ForwardRef(arg, module=module)
+        return ForwardRef(arg, module=module, is_class=allow_special_forms)
     return arg
 
 
@@ -169,7 +169,7 @@ def _type_check(arg, msg, is_argument=True, module=None, *, allow_special_forms=
         if is_argument:
             invalid_generic_forms += (Final,)
 
-    arg = _type_convert(arg, module=module)
+    arg = _type_convert(arg, module=module, allow_special_forms=allow_special_forms)
     if (isinstance(arg, _GenericAlias) and
             arg.__origin__ in invalid_generic_forms):
         raise TypeError(f"{arg} is not valid as type argument")
