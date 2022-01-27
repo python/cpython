@@ -232,6 +232,10 @@ extern void _PyObject_FreeInstanceAttributes(PyObject *self);
 extern int _PyObject_IsInstanceDictEmpty(PyObject *);
 extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
 
+// Access macro to the members which are floating "behind" the object
+#define _PyHeapType_GET_MEMBERS(etype) \
+    ((PyMemberDef *)(((char *)etype) + Py_TYPE(etype)->tp_basicsize))
+
 #ifdef __cplusplus
 }
 #endif
