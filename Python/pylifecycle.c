@@ -1723,6 +1723,7 @@ finalize_interp_clear(PyThreadState *tstate)
         _Py_HashRandomization_Fini();
         _PyArg_Fini();
         _Py_ClearFileSystemEncoding();
+        _Py_Deepfreeze_Fini();
     }
 
     finalize_interp_types(tstate->interp);
