@@ -8535,54 +8535,63 @@ swaptimize(basicblock *block, int ix)
     return len - 1;
 }
 
+// Attempt to apply swaps statically, rather than at runtime, by swapping
+// *instructions* rather than stack items. For example, consider this sequence:
+//     SWAP(2), POP_TOP, STORE_FAST(42) 
+// As long as the line numbers of the second two instructions are the same, we
+// can replace the entire sequence with:
+//     NOP, STORE_FAST(42), POP_TOP
 static void
-perform_static_swaps(basicblock *block, int i)
+apply_static_swaps(basicblock *block, int i)
 {
-    struct instr *instructions = block->b_instr;
-    // Now, see if we can perform some swaps statically! Instead of swapping
-    // stack items at runtime, we'll be swapping *instructions* right now:
-    while (true) {
-        if (i < 0) {
-            return;
-        }
-        int opcode = instructions[i].i_opcode;
-        if (opcode != SWAP) {
-            if (opcode == NOP || opcode == POP_TOP || opcode == STORE_FAST) {
-                i--;
+    do {
+        struct instr *swap = &block->b_instr[i];
+        switch (swap->i_opcode) {
+            case SWAP:
+                // Found one!
+                break;
+            case STORE_FAST:
+            case POP_TOP:
+            case NOP:
+                // Nope, but we know how to handle these. Keep looking:
                 continue;
-            }
-            return;
+            default:
+                // We can't reason about what this instruction does. Bail:
+                return;
         }
-        int j = i;
-        int swap = instructions[i].i_oparg;
-        assert(1 < swap);
         struct instr *top = NULL;
-        while (true) {
-            if (++j == block->b_iused) {
+        int count = swap->i_oparg;
+        for (int j = i + 1; j < block->b_iused; j++) {
+            struct instr *peek = &block->b_instr[j];
+            if (top && top->i_lineno != peek->i_lineno) {
+                // Optimizing this could cause user-visible changes in the names
+                // bound between line tracing events. Bail:
                 return;
             }
-            int opcode = instructions[j].i_opcode;
-            if (opcode == POP_TOP || opcode == STORE_FAST) {
+            if (peek->i_opcode == STORE_FAST || peek->i_opcode == POP_TOP) {
+                count--;
                 if (top == NULL) {
-                    top = &instructions[j];
+                    top = peek;
                 }
-                else if (--swap == 1) {
-                    struct instr peek = instructions[j];
-                    if (peek.i_lineno != top->i_lineno) {
-                        return;
-                    }
-                    instructions[i--].i_opcode = NOP;
-                    instructions[j] = *top;
-                    *top = peek;
-                    j = top - instructions;
+                if (count == 0) {
+                    // Success! Clear the SWAP...
+                    swap->i_opcode = NOP;
+                    // ...and just swap the instructions instead:
+                    struct instr tmp = *peek;
+                    *peek = *top;
+                    *top = tmp;
+                    // Then, try to do it again!
                     break;
                 }
             }
-            else if (opcode != NOP) {
+            else if (peek->i_opcode != NOP) {
+                // We can't reason about what this instruction does. Bail:
                 return;
             }
         }
-    }
+        // SWAPs are to our left, and potential swap-ees are to our right. Move
+        // leftward:
+    } while (0 <= --i);
 }
 
 // Attempt to eliminate jumps to jumps by updating inst to jump to
@@ -8834,7 +8843,7 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                     break;
                 }
                 i += swaptimize(bb, i);
-                perform_static_swaps(bb, i);
+                apply_static_swaps(bb, i);
                 break;
             default:
                 /* All HAS_CONST opcodes should be handled with LOAD_CONST */

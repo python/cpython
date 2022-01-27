@@ -1,27 +1,23 @@
 import dis
 from itertools import combinations, product
+import textwrap
 import unittest
 
 from test.support.bytecode_helper import BytecodeTestCase
 
 
-PATMA_TEMPLATE = """
-def f(a):
-    match a:
-        case {}:
-            pass
-"""
-
-PATMA_CAPTURES = [
-    ("_", "_", "_"),
-    ("_", "_", "x"),
-    ("_", "x", "_"),
-    ("_", "x", "y"),
-    ("x", "_", "_"),
-    ("x", "_", "y"),
-    ("x", "y", "_"),
-    ("x", "y", "z")
-]
+def compile_pattern_with_fast_locals(pattern):
+    source = textwrap.dedent(
+        f"""
+        def f(x):
+            match x:
+                case {pattern}:
+                    pass
+        """
+    )
+    namespace = {}
+    exec(source, namespace)
+    return namespace["f"].__code__
 
 
 def count_instr_recursively(f, opname):
@@ -599,29 +595,56 @@ class TestTranforms(BytecodeTestCase):
                     'not all arguments converted during string formatting'):
             eval("'%s, %s' % (x, *y)", {'x': 1, 'y': [2, 3]})
 
-    def test_static_swaps_unpack(self):
-        def f(a, b, c):
-            x, y = a, b
-            x, y, z = a, b, c
+    def test_static_swaps_unpack_two(self):
+        def f(a, b):
+            a, b = a, b
+            b, a = a, b
         self.assertNotInBytecode(f, "SWAP")
 
-    def test_static_swaps_match_sequence(self):
-        known_swaps = {"*_, x, y", "x, *_, y", "x, y, *_"}
-        stars = ["{}, {}, {}", "{}, {}, *{}", "{}, *{}, {}", "*{}, {}, {}"]
-        for captures in PATMA_CAPTURES:
-            for star in stars:
-                pattern = star.format(*captures)
+    def test_static_swaps_unpack_three(self):
+        def f(a, b, c):
+            a, b, c = a, b, c
+            a, c, b = a, b, c
+            b, a, c = a, b, c
+            b, c, a = a, b, c
+            c, b, a = a, b, c
+        self.assertNotInBytecode(f, "SWAP")
+
+    def test_static_swaps_match_mapping(self):
+        for a, b, c in product("_a", "_b", "_c"):
+            pattern = f"{{'a': {a}, 'b': {b}, 'c': {c}}}"
+            with self.subTest(pattern):
+                code = compile_pattern_with_fast_locals(pattern)
+                self.assertNotInBytecode(code, "SWAP")
+
+    def test_static_swaps_match_class(self):
+        forms = [
+            "C({}, {}, {})",
+            "C({}, {}, c={})",
+            "C({}, b={}, c={})",
+            "C(a={}, b={}, c={})"
+        ]
+        for a, b, c in product("_a", "_b", "_c"):
+            for form in forms:
+                pattern = form.format(a, b, c)
                 with self.subTest(pattern):
-                    source = PATMA_TEMPLATE.format(pattern)
-                    namespace = {}
-                    exec(source, namespace)
-                    f = namespace["f"]
-                    if pattern in known_swaps:
-                        # If this fails, great! Remove this pattern from
-                        # known_swaps to prevent regressing on any improvement:
-                        self.assertInBytecode(f, "SWAP")
+                    code = compile_pattern_with_fast_locals(pattern)
+                    self.assertNotInBytecode(code, "SWAP")
+
+    def test_static_swaps_match_sequence(self):
+        swaps = {"*_, b, c", "a, *_, c", "a, b, *_"}
+        forms = ["{}, {}, {}", "{}, {}, *{}", "{}, *{}, {}", "*{}, {}, {}"]
+        for a, b, c in product("_a", "_b", "_c"):
+            for form in forms:
+                pattern = form.format(a, b, c)
+                with self.subTest(pattern):
+                    code = compile_pattern_with_fast_locals(pattern)
+                    if pattern in swaps:
+                        # If this fails... great! Remove this pattern from swaps
+                        # to prevent regressing on any improvement:
+                        self.assertInBytecode(code, "SWAP")
                     else:
-                        self.assertNotInBytecode(f, "SWAP")
+                        self.assertNotInBytecode(code, "SWAP")
 
 
 class TestBuglets(unittest.TestCase):
