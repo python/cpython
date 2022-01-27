@@ -277,7 +277,7 @@ void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
 void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache);
 
 /* Deallocator function for static codeobjects used in deepfreeze.py */
-void _PyStaticCode_Dealloc(PyCodeObject *co, _Py_CODEUNIT *firstinstr);
+void _PyStaticCode_Dealloc(PyCodeObject *co);
 
 #ifdef Py_STATS
 
