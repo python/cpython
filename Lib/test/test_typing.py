@@ -192,9 +192,9 @@ class SelfTests(BaseTestCase):
         alias_1 = Tuple[Self, Self]
         alias_2 = List[Self]
         alias_3 = ClassVar[Self]
-        self.assertEqual(get_args(alias_1) == (Self, Self))
-        self.assertEqual(get_args(alias_2) == (Self,))
-        self.assertEqual(get_args(alias_3) == (Self,))
+        self.assertEqual(get_args(alias_1), (Self, Self))
+        self.assertEqual(get_args(alias_2), (Self,))
+        self.assertEqual(get_args(alias_3), (Self,))
 
 
 class TypeVarTests(BaseTestCase):
