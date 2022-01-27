@@ -456,11 +456,14 @@ def Self(self, parameters):
 
       from typing import Self
 
-      class ReturnsSelf:
-          def parse(self, data: bytes) -> Self:
+      class Foo:
+          def returns_self(self) -> Self:
               ...
               return self
 
+    This is especially useful for:
+        - classmethods that are used as alternative constructors
+        - annotating an `__enter__` method which returns self
     """
     raise TypeError(f"{self} is not subscriptable")
 

@@ -589,15 +589,24 @@ These can be used as types in annotations and do not support ``[]``.
 
 .. data:: Self
 
-   Special annotation to represent the current enclosed class.
-   For Example::
+   Special type to represent the current enclosed class.
+   For example::
 
       from typing import Self
 
-      class ReturnsSelf:
-         def parse(self) -> Self:
+      class Foo:
+         def returns_self(self) -> Self:
             ...
             return self
+
+   .. note::
+
+      This code would be semantically equivalent to a bound :class:`TypeVar` with the `bound=Foo`.
+
+   This is especially useful for:
+
+      - :class:`classmethod`\s that are used as alternative constructors
+      - Annotating an :meth:`object.__enter__` method which returns self
 
    For more info see :pep:`673`.
 
