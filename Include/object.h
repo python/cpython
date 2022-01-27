@@ -755,6 +755,8 @@ static inline int _PyType_Check(PyObject *op) {
 }
 #define PyType_Check(op) _PyType_Check(_PyObject_CAST(op))
 
+#define _PyType_CAST(op) (assert(PyType_Check(op)), (PyTypeObject*)(op))
+
 static inline int _PyType_CheckExact(PyObject *op) {
     return Py_IS_TYPE(op, &PyType_Type);
 }

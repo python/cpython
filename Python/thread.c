@@ -6,7 +6,8 @@
    Stuff shared by all thread_*.h files is collected here. */
 
 #include "Python.h"
-#include "pycore_pystate.h"   // _PyInterpreterState_GET()
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_structseq.h"     // _PyStructSequence_FiniType()
 
 #ifndef _POSIX_THREADS
 /* This means pthreads are not implemented in libc headers, hence the macro
@@ -242,4 +243,15 @@ PyThread_GetInfo(void)
     }
     PyStructSequence_SET_ITEM(threadinfo, pos++, value);
     return threadinfo;
+}
+
+
+void
+_PyThread_FiniType(PyInterpreterState *interp)
+{
+    if (!_Py_IsMainInterpreter(interp)) {
+        return;
+    }
+
+    _PyStructSequence_FiniType(&ThreadInfoType);
 }

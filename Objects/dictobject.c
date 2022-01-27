@@ -3450,13 +3450,12 @@ static PyObject *
 dict_vectorcall(PyObject *type, PyObject * const*args,
                 size_t nargsf, PyObject *kwnames)
 {
-    assert(PyType_Check(type));
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     if (!_PyArg_CheckPositional("dict", nargs, 0, 1)) {
         return NULL;
     }
 
-    PyObject *self = dict_new((PyTypeObject *)type, NULL, NULL);
+    PyObject *self = dict_new(_PyType_CAST(type), NULL, NULL);
     if (self == NULL) {
         return NULL;
     }

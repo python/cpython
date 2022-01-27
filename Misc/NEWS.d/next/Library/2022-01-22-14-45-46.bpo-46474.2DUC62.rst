@@ -1,0 +1,2 @@
+Removed private method from ``importlib.metadata.Path``. Sync with
+importlib_metadata 4.10.0.

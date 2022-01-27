@@ -27,7 +27,7 @@ Data members:
 #include "pycore_pylifecycle.h"   // _PyErr_WriteUnraisableDefaultHook()
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_structseq.h"     // PyStructSequence_InitType()
+#include "pycore_structseq.h"     // _PyStructSequence_InitType()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 #include "code.h"
@@ -3099,6 +3099,21 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
 
 error:
     return _PyStatus_ERR("can't initialize sys module");
+}
+
+
+void
+_PySys_Fini(PyInterpreterState *interp)
+{
+    if (_Py_IsMainInterpreter(interp)) {
+        _PyStructSequence_FiniType(&VersionInfoType);
+        _PyStructSequence_FiniType(&FlagsType);
+#if defined(MS_WINDOWS)
+        _PyStructSequence_FiniType(&WindowsVersionType);
+#endif
+        _PyStructSequence_FiniType(&Hash_InfoType);
+        _PyStructSequence_FiniType(&AsyncGenHooksType);
+    }
 }
 
 

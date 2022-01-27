@@ -22,7 +22,6 @@ from typing import get_origin, get_args
 from typing import is_typeddict
 from typing import no_type_check, no_type_check_decorator
 from typing import Type
-from typing import NewType
 from typing import NamedTuple, TypedDict
 from typing import IO, TextIO, BinaryIO
 from typing import Pattern, Match
@@ -325,6 +324,15 @@ class UnionTests(BaseTestCase):
         self.assertEqual(repr(u), 'typing.Union[list[int], dict[str, float]]')
         u = Union[int | float]
         self.assertEqual(repr(u), 'typing.Union[int, float]')
+
+        u = Union[None, str]
+        self.assertEqual(repr(u), 'typing.Optional[str]')
+        u = Union[str, None]
+        self.assertEqual(repr(u), 'typing.Optional[str]')
+        u = Union[None, str, int]
+        self.assertEqual(repr(u), 'typing.Union[NoneType, str, int]')
+        u = Optional[str]
+        self.assertEqual(repr(u), 'typing.Optional[str]')
 
     def test_cannot_subclass(self):
         with self.assertRaises(TypeError):
@@ -2862,6 +2870,20 @@ class ForwardRefTests(BaseTestCase):
         self.assertEqual(get_type_hints(foo, globals(), locals()),
                          {'a': Callable[..., T]})
 
+    def test_special_forms_forward(self):
+
+        class C:
+            a: Annotated['ClassVar[int]', (3, 5)] = 4
+            b: Annotated['Final[int]', "const"] = 4
+
+        class CF:
+            b: List['Final[int]'] = 4
+
+        self.assertEqual(get_type_hints(C, globals())['a'], ClassVar[int])
+        self.assertEqual(get_type_hints(C, globals())['b'], Final[int])
+        with self.assertRaises(TypeError):
+            get_type_hints(CF, globals()),
+
     def test_syntax_error(self):
 
         with self.assertRaises(SyntaxError):
@@ -4393,6 +4415,93 @@ class TypedDictTests(BaseTestCase):
             'voice': str,
         }
 
+    def test_multiple_inheritance(self):
+        class One(TypedDict):
+            one: int
+        class Two(TypedDict):
+            two: str
+        class Untotal(TypedDict, total=False):
+            untotal: str
+        Inline = TypedDict('Inline', {'inline': bool})
+        class Regular:
+            pass
+
+        class Child(One, Two):
+            child: bool
+        self.assertEqual(
+            Child.__required_keys__,
+            frozenset(['one', 'two', 'child']),
+        )
+        self.assertEqual(
+            Child.__optional_keys__,
+            frozenset([]),
+        )
+        self.assertEqual(
+            Child.__annotations__,
+            {'one': int, 'two': str, 'child': bool},
+        )
+
+        class ChildWithOptional(One, Untotal):
+            child: bool
+        self.assertEqual(
+            ChildWithOptional.__required_keys__,
+            frozenset(['one', 'child']),
+        )
+        self.assertEqual(
+            ChildWithOptional.__optional_keys__,
+            frozenset(['untotal']),
+        )
+        self.assertEqual(
+            ChildWithOptional.__annotations__,
+            {'one': int, 'untotal': str, 'child': bool},
+        )
+
+        class ChildWithTotalFalse(One, Untotal, total=False):
+            child: bool
+        self.assertEqual(
+            ChildWithTotalFalse.__required_keys__,
+            frozenset(['one']),
+        )
+        self.assertEqual(
+            ChildWithTotalFalse.__optional_keys__,
+            frozenset(['untotal', 'child']),
+        )
+        self.assertEqual(
+            ChildWithTotalFalse.__annotations__,
+            {'one': int, 'untotal': str, 'child': bool},
+        )
+
+        class ChildWithInlineAndOptional(Untotal, Inline):
+            child: bool
+        self.assertEqual(
+            ChildWithInlineAndOptional.__required_keys__,
+            frozenset(['inline', 'child']),
+        )
+        self.assertEqual(
+            ChildWithInlineAndOptional.__optional_keys__,
+            frozenset(['untotal']),
+        )
+        self.assertEqual(
+            ChildWithInlineAndOptional.__annotations__,
+            {'inline': bool, 'untotal': str, 'child': bool},
+        )
+
+        wrong_bases = [
+            (One, Regular),
+            (Regular, One),
+            (One, Two, Regular),
+            (Inline, Regular),
+            (Untotal, Regular),
+        ]
+        for bases in wrong_bases:
+            with self.subTest(bases=bases):
+                with self.assertRaisesRegex(
+                    TypeError,
+                    'cannot inherit from both a TypedDict type and a non-TypedDict',
+                ):
+                    class Wrong(*bases):
+                        pass
+
     def test_is_typeddict(self):
         assert is_typeddict(Point2D) is True
         assert is_typeddict(Union[str, int]) is False
@@ -4592,6 +4701,14 @@ class AnnotatedTests(BaseTestCase):
         self.assertEqual(A.classvar, 4)
         A.x = 5
         self.assertEqual(C.x, 5)
+
+    def test_special_form_containment(self):
+        class C:
+            classvar: Annotated[ClassVar[int], "a decoration"] = 4
+            const: Annotated[Final[int], "Const"] = 4
+
+        self.assertEqual(get_type_hints(C, globals())['classvar'], ClassVar[int])
+        self.assertEqual(get_type_hints(C, globals())['const'], Final[int])
 
     def test_hash_eq(self):
         self.assertEqual(len({Annotated[int, 4, 5], Annotated[int, 4, 5]}), 1)
