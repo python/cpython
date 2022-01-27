@@ -408,7 +408,7 @@ def generate_global_strings():
                         outfile.write('\n')
                         printer.write(f'// {name}')
                     else:
-                        printer.write(f'STR({name}, "{literal}")')
+                        printer.write(f'LITERAL({name}, "{literal}")')
             outfile.write('\n')
             with printer.block('struct', ' identifiers;'):
                 for name in sorted(IDENTIFIERS):
