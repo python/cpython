@@ -8,9 +8,6 @@
 /* Defined in tracemalloc.c */
 extern void _PyMem_DumpTraceback(int fd, const void *ptr);
 
-// Forward declaration
-int _PyObject_DebugMallocStats(FILE *out);
-
 
 /* Python's malloc wrappers (see pymem.h) */
 
