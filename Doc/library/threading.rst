@@ -314,7 +314,7 @@ since it is impossible to detect the termination of alien threads.
    or "Thread-*N* (target)" where "target" is ``target.__name__`` if the
    *target* argument is specified.
 
-   *args* is the argument tuple for the target invocation.  Defaults to ``()``.
+   *args* is a list or tuple of arguments for the target invocation.  Defaults to ``()``.
 
    *kwargs* is a dictionary of keyword arguments for the target invocation.
    Defaults to ``{}``.
