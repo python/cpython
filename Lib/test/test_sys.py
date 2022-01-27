@@ -399,6 +399,11 @@ class SysModuleTest(unittest.TestCase):
             is sys._getframe().f_code
         )
 
+    def test_getfunc(self):
+        self.assertRaises(TypeError, sys._getfunc, 42, 42)
+        self.assertRaises(ValueError, sys._getfunc, 2000000000)
+        self.assertIs(SysModuleTest.test_getfunc, sys._getfunc(0))
+
     # sys._current_frames() is a CPython-only gimmick.
     @threading_helper.reap_threads
     def test_current_frames(self):
