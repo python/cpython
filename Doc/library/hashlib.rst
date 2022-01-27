@@ -252,7 +252,7 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
    computing power. As of 2022, hundreds of thousands of iterations of SHA-256
    are suggested. For rationale as to why and how to choose what is best for
    your application, read *Appendix A.2.2* of NIST-SP-800-132_. The answers
-   on stackexchange-pbkdf2_ explain further.
+   on the `stackexchange pbkdf2 iterations question`_ explain in detail.
 
    *dklen* is the length of the derived key. If *dklen* is ``None`` then the
    digest size of the hash algorithm *hash_name* is used, e.g. 64 for SHA-512.
@@ -735,7 +735,7 @@ Domain Dedication 1.0 Universal:
 .. _ChaCha: https://cr.yp.to/chacha.html
 .. _pyblake2: https://pythonhosted.org/pyblake2/
 .. _NIST-SP-800-132: https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-132.pdf
-.. _stackexchange-pbkdf2: https://security.stackexchange.com/questions/3959/recommended-of-iterations-when-using-pbkdf2-sha256/
+.. _stackexchange pbkdf2 iterations question: https://security.stackexchange.com/questions/3959/recommended-of-iterations-when-using-pbkdf2-sha256/
 
 
 .. seealso::
