@@ -3353,15 +3353,14 @@ compiler_try_star_finally(struct compiler *c, stmt_ty s)
 static int
 compiler_try_except(struct compiler *c, stmt_ty s)
 {
-    basicblock *body, *orelse, *except, *end, *cleanup;
+    basicblock *body, *except, *end, *cleanup;
     Py_ssize_t i, n;
 
     body = compiler_new_block(c);
     except = compiler_new_block(c);
-    orelse = compiler_new_block(c);
     end = compiler_new_block(c);
     cleanup = compiler_new_block(c);
-    if (body == NULL || except == NULL || orelse == NULL || end == NULL || cleanup == NULL)
+    if (body == NULL || except == NULL || end == NULL || cleanup == NULL)
         return 0;
     ADDOP_JUMP(c, SETUP_FINALLY, except);
     compiler_use_next_block(c, body);
@@ -3370,7 +3369,11 @@ compiler_try_except(struct compiler *c, stmt_ty s)
     VISIT_SEQ(c, stmt, s->v.Try.body);
     compiler_pop_fblock(c, TRY_EXCEPT, body);
     ADDOP_NOLINE(c, POP_BLOCK);
-    ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, orelse);
+    if (s->v.Try.orelse && asdl_seq_LEN(s->v.Try.orelse)) {
+        NEXT_BLOCK(c);
+        VISIT_SEQ(c, stmt, s->v.Try.orelse);
+    }
+    ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, end);
     n = asdl_seq_LEN(s->v.Try.handlers);
     compiler_use_next_block(c, except);
 
@@ -3474,8 +3477,6 @@ compiler_try_except(struct compiler *c, stmt_ty s)
     ADDOP_I(c, RERAISE, 0);
     compiler_use_next_block(c, cleanup);
     POP_EXCEPT_AND_RERAISE(c);
-    compiler_use_next_block(c, orelse);
-    VISIT_SEQ(c, stmt, s->v.Try.orelse);
     compiler_use_next_block(c, end);
     return 1;
 }
