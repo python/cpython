@@ -1,1 +1,1 @@
-Update macOS installer to SQlite 3.37.2.
+Update macOS installer to SQLite 3.37.2.
