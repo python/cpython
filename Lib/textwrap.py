@@ -67,6 +67,7 @@ class TextWrapper:
     uspace = ord(' ')
     for x in _whitespace:
         unicode_whitespace_trans[ord(x)] = uspace
+    del x, uspace
 
     # This funky little regex is just the trick for splitting
     # text up into word-wrappable chunks.  E.g.
