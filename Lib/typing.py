@@ -604,7 +604,7 @@ def Concatenate(self, parameters):
         raise TypeError("The last parameter to Concatenate should be a "
                         "ParamSpec variable.")
     msg = "Concatenate[arg, ...]: each arg must be a type."
-    parameters = tuple(_type_check(p, msg) for p in parameters)
+    parameters = (*(_type_check(p, msg) for p in parameters[:-1]), parameters[-1])
     return _ConcatenateGenericAlias(self, parameters)
 
 
@@ -1273,6 +1273,16 @@ class _ConcatenateGenericAlias(_GenericAlias, _root=True):
         super().__init__(*args, **kwargs,
                          _typevar_types=(TypeVar, ParamSpec),
                          _paramspec_tvars=True)
+
+    def copy_with(self, params):
+        if isinstance(params[-1], (list, tuple)):
+            return (*params[:-1], *params[-1])
+        if isinstance(params[-1], _ConcatenateGenericAlias):
+            params = (*params[:-1], *params[-1].__args__)
+        elif not isinstance(params[-1], ParamSpec):
+            raise TypeError("The last parameter to Concatenate should be a "
+                            "ParamSpec variable.")
+        return super().copy_with(params)
 
 
 class Generic:
