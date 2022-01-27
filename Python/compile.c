@@ -8535,16 +8535,15 @@ swaptimize(basicblock *block, int ix)
     return len - 1;
 }
 
-// Attempt to apply swaps statically by swapping *instructions* instead of stack
-// items. For example, consider the sequence:
-//     SWAP(2), POP_TOP, STORE_FAST(42) 
-// As long as the line numbers of the last two instructions are the same, we can
-// replace the entire sequence with:
-//     NOP, STORE_FAST(42), POP_TOP
+// Attempt to apply SWAPs statically by swapping *instructions* rather than
+// stack items. For example, we can replace SWAP(2), POP_TOP, STORE_FAST(42)
+// with the more efficient NOP, STORE_FAST(42), POP_TOP.
 static void
 apply_static_swaps(basicblock *block, int i)
 {
-    do {
+    // SWAPs are to our left, and potential swaperands are to our right:
+    for (; 0 <= i; i--) {
+        assert(i < block->b_iused);
         struct instr *swap = &block->b_instr[i];
         switch (swap->i_opcode) {
             case SWAP:
@@ -8560,39 +8559,38 @@ apply_static_swaps(basicblock *block, int i)
                 return;
         }
         struct instr *top = NULL;
+        struct instr *peek = NULL;
         int count = swap->i_oparg;
-        assert(0 < count);
-        for (int j = i + 1; j < block->b_iused; j++) {
-            struct instr *peek = &block->b_instr[j];
+        for (int j = i + 1; count; j++) {
+            if (block->b_iused <= j) {
+                return;
+            }
+            peek = &block->b_instr[j];
             if (top && top->i_lineno != peek->i_lineno) {
-                // Optimizing this could cause user-visible changes in the names
-                // bound between line tracing events. Bail:
+                // Optimizing across this instruction could cause user-visible
+                // changes in the names bound between line tracing events. Bail:
                 return;
             }
             if (peek->i_opcode == STORE_FAST || peek->i_opcode == POP_TOP) {
-                count--;
                 if (top == NULL) {
                     top = peek;
                 }
-                if (count == 0) {
-                    // Success! Clear the SWAP...
-                    swap->i_opcode = NOP;
-                    // ...and just swap the instructions instead:
-                    struct instr tmp = *peek;
-                    *peek = *top;
-                    *top = tmp;
-                    // Then, try to do it again!
-                    break;
-                }
+                count--;
             }
             else if (peek->i_opcode != NOP) {
                 // We can't reason about what this instruction does. Bail:
                 return;
             }
         }
-        // SWAPs are to our left, and potential swap-ees are to our right. Move
-        // leftward:
-    } while (0 <= --i);
+        assert(top);
+        assert(peek);
+        // Success! Clear the SWAP...
+        swap->i_opcode = NOP;
+        // ...and just swap the instructions instead:
+        struct instr tmp = *peek;
+        *peek = *top;
+        *top = tmp;
+    }
 }
 
 // Attempt to eliminate jumps to jumps by updating inst to jump to
