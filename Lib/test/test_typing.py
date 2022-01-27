@@ -2024,6 +2024,7 @@ class GenericTests(BaseTestCase):
             {'a': dict[C1, list[List[list[C2]]]]}
         )
 
+        # Test stringified annotations
         scope = {}
         exec(textwrap.dedent('''
         from __future__ import annotations
@@ -2031,11 +2032,18 @@ class GenericTests(BaseTestCase):
             a: List[list["C2"]]
         '''), scope)
         C3 = scope['C3']
-
         self.assertEqual(C3.__annotations__['a'], "List[list['C2']]")
         self.assertEqual(
             get_type_hints(C3, globals(), locals()),
             {'a': List[list[C2]]}
+        )
+
+        # Test recursive types
+        X = list["X"]
+        def f(x: X): ...
+        self.assertEqual(
+            get_type_hints(f, globals(), locals()),
+            {'x': list[list[ForwardRef('X')]]}
         )
 
     def test_extended_generic_rules_subclassing(self):
