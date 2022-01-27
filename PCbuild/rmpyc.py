@@ -1,6 +1,4 @@
 # Remove all the .pyc files under ../Lib.
-
-
 def deltree(root):
     import os
     from os.path import join
@@ -12,7 +10,6 @@ def deltree(root):
             if name.endswith(('.pyc', '.pyo')):
                 npyc += 1
                 os.remove(join(root, name))
-
     return npyc
 
 npyc = deltree("../Lib")
