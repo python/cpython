@@ -8535,11 +8535,11 @@ swaptimize(basicblock *block, int ix)
     return len - 1;
 }
 
-// Attempt to apply swaps statically, rather than at runtime, by swapping
-// *instructions* rather than stack items. For example, consider this sequence:
+// Attempt to apply swaps statically by swapping *instructions* instead of stack
+// items. For example, consider the sequence:
 //     SWAP(2), POP_TOP, STORE_FAST(42) 
-// As long as the line numbers of the second two instructions are the same, we
-// can replace the entire sequence with:
+// As long as the line numbers of the last two instructions are the same, we can
+// replace the entire sequence with:
 //     NOP, STORE_FAST(42), POP_TOP
 static void
 apply_static_swaps(basicblock *block, int i)
@@ -8561,6 +8561,7 @@ apply_static_swaps(basicblock *block, int i)
         }
         struct instr *top = NULL;
         int count = swap->i_oparg;
+        assert(0 < count);
         for (int j = i + 1; j < block->b_iused; j++) {
             struct instr *peek = &block->b_instr[j];
             if (top && top->i_lineno != peek->i_lineno) {
