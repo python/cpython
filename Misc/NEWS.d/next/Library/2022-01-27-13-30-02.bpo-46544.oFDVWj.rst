@@ -1,0 +1,2 @@
+Don't leak ``x`` & ``uspace`` intermediate vars in
+:class:`textwrap.TextWrapper`.
