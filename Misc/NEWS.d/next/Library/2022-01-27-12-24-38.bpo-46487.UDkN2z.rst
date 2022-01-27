@@ -1,0 +1,1 @@
+Add ``get_write_buffer_limits`` to :class:`asyncio.transports.WriteTransport` and :class:`asyncio.sslproto._SSLProtocolTransport`.
