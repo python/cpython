@@ -256,10 +256,11 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
    *dklen* is the length of the derived key. If *dklen* is ``None`` then the
    digest size of the hash algorithm *hash_name* is used, e.g. 64 for SHA-512.
 
-   >>> import hashlib
-   >>> dk = hashlib.pbkdf2_hmac('sha256', b'password', b'salt', 100000)
+   >>> from hashlib import pbkdf2_hmac
+   >>> our_app_iters = 500_000  # Application specific, read above.
+   >>> dk = pbkdf2_hmac('sha256', b'password', b'bad salt'\*2, our_app_iters)
    >>> dk.hex()
-   '0394a2ede332c9a13eb82e9b24631604c31df978b4e2f0fbd2c549944f9d79a5'
+   '15530bba69924174860db778f2c6f8104d3aaf9d26241840c8c4a641c8d000a9'
 
    .. versionadded:: 3.4
 
