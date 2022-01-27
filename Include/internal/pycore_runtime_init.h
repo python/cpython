@@ -112,7 +112,7 @@ extern "C" {
         ._data = LITERAL, \
     }
 #define INIT_STR(NAME, LITERAL) \
-    .$ ## NAME = _PyASCIIObject_INIT(LITERAL)
+    .spamspamspam_ ## NAME = _PyASCIIObject_INIT(LITERAL)
 #define INIT_ID(NAME) \
     INIT_STR(NAME, #NAME)
 
