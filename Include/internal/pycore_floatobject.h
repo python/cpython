@@ -38,7 +38,7 @@ struct _Py_float_state {
 #endif
 };
 
-void _PyFloat_ExactDealloc(PyFloatObject *op);
+PyAPI_FUNC(void) _PyFloat_ExactDealloc(PyFloatObject *op);
 
 /* _PyFloat_{Pack,Unpack}{4,8}
  *
