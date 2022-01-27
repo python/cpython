@@ -758,6 +758,26 @@ always available.
       It is not guaranteed to exist in all implementations of Python.
 
 
+.. function:: _getfunc(depth=1)
+
+   Return a function object from the call stack.  If optional integer *depth* is
+   positive, return the function object that many calls below the top of the stack.  If
+   that is deeper than the call stack, :exc:`ValueError` is raised.  If
+   *depth* is zero, the function returns the currently executing function.
+
+   Unlike the similar :func:`_getframe`, this does not create a frame object
+   when called, making it less expensive to call.
+
+   .. versionadded:: 3.11
+
+   .. audit-event:: sys._getfunc "" sys._getfunc
+
+   .. impl-detail::
+
+      This function should be used for internal and specialized purposes only.
+      It is not guaranteed to exist in all implementations of Python.
+
+
 .. function:: getprofile()
 
    .. index::

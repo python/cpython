@@ -1800,6 +1800,49 @@ sys_getallocatedblocks_impl(PyObject *module)
 
 
 /*[clinic input]
+sys._getfunc
+
+    depth: int = 1
+    /
+
+Return a function object from the call stack.
+
+If optional integer depth is 1 or more, return the function object that many
+calls below the top of the stack.  If that is deeper than the call
+stack, ValueError is raised.  If depth is 0, return the current function
+object.
+
+This is similar to sys._getframe() but cheaper because it does not
+create a full frame object.
+
+This function should be used for internal and specialized purposes
+only.
+[clinic start generated code]*/
+
+static PyObject *
+sys__getfunc_impl(PyObject *module, int depth)
+/*[clinic end generated code: output=6a4f9e993f6c96d1 input=3c79a6f4642a5ba5]*/
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    InterpreterFrame *frame = tstate->cframe->current_frame;
+
+    if (_PySys_Audit(tstate, "sys._getfunc", NULL) < 0) {
+        return NULL;
+    }
+
+    while (depth > 0 && frame != NULL) {
+        frame = frame->previous;
+        --depth;
+    }
+    if (frame == NULL) {
+        _PyErr_SetString(tstate, PyExc_ValueError,
+                         "call stack is not deep enough");
+        return NULL;
+    }
+    return _Py_XNewRef(frame->f_func);
+}
+
+/*[clinic input]
 sys._getframe
 
     depth: int = 0
@@ -2007,6 +2050,7 @@ static PyMethodDef sys_methods[] = {
     {"getsizeof",   (PyCFunction)(void(*)(void))sys_getsizeof,
      METH_VARARGS | METH_KEYWORDS, getsizeof_doc},
     SYS__GETFRAME_METHODDEF
+    SYS__GETFUNC_METHODDEF
     SYS_GETWINDOWSVERSION_METHODDEF
     SYS__ENABLELEGACYWINDOWSFSENCODING_METHODDEF
     SYS_INTERN_METHODDEF

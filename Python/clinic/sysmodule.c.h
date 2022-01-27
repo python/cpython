@@ -787,6 +787,52 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(sys__getfunc__doc__,
+"_getfunc($module, depth=1, /)\n"
+"--\n"
+"\n"
+"Return a function object from the call stack.\n"
+"\n"
+"If optional integer depth is 1 or more, return the function object that many\n"
+"calls below the top of the stack.  If that is deeper than the call\n"
+"stack, ValueError is raised.  If depth is 0, return the current function\n"
+"object.\n"
+"\n"
+"This is similar to sys._getframe() but cheaper because it does not\n"
+"create a full frame object.\n"
+"\n"
+"This function should be used for internal and specialized purposes\n"
+"only.");
+
+#define SYS__GETFUNC_METHODDEF    \
+    {"_getfunc", (PyCFunction)(void(*)(void))sys__getfunc, METH_FASTCALL, sys__getfunc__doc__},
+
+static PyObject *
+sys__getfunc_impl(PyObject *module, int depth);
+
+static PyObject *
+sys__getfunc(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int depth = 1;
+
+    if (!_PyArg_CheckPositional("_getfunc", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    depth = _PyLong_AsInt(args[0]);
+    if (depth == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
+    return_value = sys__getfunc_impl(module, depth);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(sys__getframe__doc__,
 "_getframe($module, depth=0, /)\n"
 "--\n"
@@ -1014,4 +1060,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=60756bc6f683e0c8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=357e73ba2ac2bcc7 input=a9049054013a1b77]*/
