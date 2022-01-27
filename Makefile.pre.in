@@ -1173,6 +1173,13 @@ Python/deepfreeze/deepfreeze.c: $(DEEPFREEZE_DEPS)
 regen-importlib: regen-frozen
 
 ############################################################################
+# Global objects
+
+.PHONY: regen-global-objects
+regen-global-objects: $(srcdir)/Tools/scripts/generate_global_objects.py $(FREEZE_MODULE_DEPS)
+	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/generate_global_objects.py
+
+############################################################################
 # ABI
 
 regen-limited-abi: all
@@ -1183,7 +1190,8 @@ regen-limited-abi: all
 
 regen-all: regen-opcode regen-opcode-targets regen-typeslots \
 	regen-token regen-ast regen-keyword regen-frozen clinic \
-	regen-pegen-metaparser regen-pegen regen-test-frozenmain
+	regen-pegen-metaparser regen-pegen regen-test-frozenmain \
+	regen-global-objects
 	@echo
 	@echo "Note: make regen-stdlib-module-names and make autoconf should be run manually"
 
