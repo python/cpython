@@ -852,7 +852,7 @@ class Thread:
         *name* is the thread name. By default, a unique name is constructed of
         the form "Thread-N" where N is a small decimal number.
 
-        *args* is the argument tuple for the target invocation. Defaults to ().
+        *args* is a list or tuple of arguments for the target invocation. Defaults to ().
 
         *kwargs* is a dictionary of keyword arguments for the target
         invocation. Defaults to {}.
@@ -861,6 +861,19 @@ class Thread:
         the base class constructor (Thread.__init__()) before doing anything
         else to the thread.
 
+        Example to use list or tuple as *args* in constructor:
+
+            >>> from threading import Thread
+            >>> def func_print(arg1, arg2):
+            ...     print(arg1, arg2)
+            >>> Thread(target=func_print, args=[1, 2]).run()
+            1 2
+            >>> Thread(target=func_print, args=["str1", "str2"]).run()
+            str1 str2
+            >>> Thread(target=func_print, args=(1, 2,)).run()
+            1 2
+            >>> Thread(target=func_print, args=("str1", "str2",)).run()
+            str1 str2
         """
         assert group is None, "group argument must be None for now"
         if kwargs is None:
