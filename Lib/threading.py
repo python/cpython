@@ -864,16 +864,12 @@ class Thread:
         Example to use list or tuple as *args* in constructor:
 
             >>> from threading import Thread
-            >>> def func_print(arg1, arg2):
-            ...     print(arg1, arg2)
-            >>> Thread(target=func_print, args=[1, 2]).run()
-            1 2
-            >>> Thread(target=func_print, args=["str1", "str2"]).run()
-            str1 str2
-            >>> Thread(target=func_print, args=(1, 2,)).run()
-            1 2
-            >>> Thread(target=func_print, args=("str1", "str2",)).run()
-            str1 str2
+            >>> t = Thread(target=print, args=[1])
+            >>> t.run()
+            1
+            >>> t = Thread(target=print, args=(1,))
+            >>> t.run()
+            1
         """
         assert group is None, "group argument must be None for now"
         if kwargs is None:
