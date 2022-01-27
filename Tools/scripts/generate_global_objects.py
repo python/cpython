@@ -409,10 +409,6 @@ def generate_global_strings():
                         printer.write(f'// {name}')
                     else:
                         printer.write(f'STR({name}, "{literal}")')
-                outfile.write('\n')
-                printer.write('// The single character latin-1 (ASCII) strings.')
-                for i in range(256):
-                    printer.write(f'STR(latin1_{i}, "\\x{i:02X}")')
             outfile.write('\n')
             with printer.block('struct', ' identifiers;'):
                 for name in sorted(IDENTIFIERS):
@@ -473,9 +469,6 @@ def generate_runtime_init():
                                 printer.write('')
                             else:
                                 printer.write(f'INIT_STR({name}, "{literal}"),')
-                        printer.write('')
-                        for i in range(256):
-                            printer.write(f'INIT_STR(latin1_{i}, "\\x{i:02X}"),')
                     with printer.block('.identifiers =', ','):
                         for name in sorted(IDENTIFIERS):
                             assert name.isidentifier(), name
