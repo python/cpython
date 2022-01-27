@@ -1122,8 +1122,7 @@ iterations of the loop.
 .. opcode:: PRECALL_FUNCTION (args)
 
    Prefixes :opcode:`CALL` (possibly with an intervening ``KW_NAMES``).
-   Sets internal variables, so that :opcode:`CALL`
-   clean up after :opcode:`LOAD_METHOD` correctly.
+   Sets internal variables, so that :opcode:`CALL` can execute correctly.
 
    .. versionadded:: 3.11
 
