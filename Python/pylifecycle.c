@@ -19,6 +19,7 @@
 #include "pycore_pathconfig.h"    // _PyConfig_WritePathConfig()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pylifecycle.h"   // _PyErr_Print()
+#include "pycore_pymem.h"         // _PyObject_DebugMallocStats()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_sliceobject.h"   // _PySlice_Fini()
