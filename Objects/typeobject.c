@@ -7752,12 +7752,12 @@ slot_tp_setattro(PyObject *self, PyObject *name, PyObject *value)
 }
 
 static PyObject *name_op[] = {
-    _Py_RESOLVE_GLOBAL_IDENTIFIER(__lt__),
-    _Py_RESOLVE_GLOBAL_IDENTIFIER(__le__),
-    _Py_RESOLVE_GLOBAL_IDENTIFIER(__eq__),
-    _Py_RESOLVE_GLOBAL_IDENTIFIER(__ne__),
-    _Py_RESOLVE_GLOBAL_IDENTIFIER(__gt__),
-    _Py_RESOLVE_GLOBAL_IDENTIFIER(__ge__),
+    _Py_GET_GLOBAL_IDENTIFIER(__lt__),
+    _Py_GET_GLOBAL_IDENTIFIER(__le__),
+    _Py_GET_GLOBAL_IDENTIFIER(__eq__),
+    _Py_GET_GLOBAL_IDENTIFIER(__ne__),
+    _Py_GET_GLOBAL_IDENTIFIER(__gt__),
+    _Py_GET_GLOBAL_IDENTIFIER(__ge__),
 };
 
 static PyObject *
@@ -7766,8 +7766,7 @@ slot_tp_richcompare(PyObject *self, PyObject *other, int op)
     PyThreadState *tstate = _PyThreadState_GET();
 
     int unbound;
-    PyObject *name = _PyUnicode_InternSafe(name_op[op]);
-    PyObject *func = lookup_maybe_method(self, name, &unbound);
+    PyObject *func = lookup_maybe_method(self, name_op[op], &unbound);
     if (func == NULL) {
         PyErr_Clear();
         Py_RETURN_NOTIMPLEMENTED;
