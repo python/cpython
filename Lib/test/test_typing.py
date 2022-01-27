@@ -637,9 +637,10 @@ class BaseCallableTests:
         self.assertEqual(C[P2, int], Callable[Concatenate[int, P2], int])
         self.assertEqual(C[[str, float], int], Callable[[int, str, float], int])
         self.assertEqual(C[[], int], Callable[[int], int])
-        self.assertEqual(C[..., int], Callable[Concatenate[int, ...], int])
         self.assertEqual(C[Concatenate[str, P2], int],
                          Callable[Concatenate[int, str, P2], int])
+        with self.assertRaises(TypeError):
+            C[..., int]
 
         C = Callable[Concatenate[int, P], int]
         self.assertEqual(repr(C),
@@ -648,9 +649,10 @@ class BaseCallableTests:
         self.assertEqual(C[[str, float]], Callable[[int, str, float], int])
         self.assertEqual(C[str, float], Callable[[int, str, float], int])
         self.assertEqual(C[[]], Callable[[int], int])
-        self.assertEqual(C[...], Callable[Concatenate[int, ...], int])
         self.assertEqual(C[Concatenate[str, P2]],
                          Callable[Concatenate[int, str, P2], int])
+        with self.assertRaises(TypeError):
+            C[...]
 
     def test_errors(self):
         Callable = self.Callable
@@ -5017,17 +5019,19 @@ class ConcatenateTests(BaseTestCase):
         self.assertEqual(C[int, P2], Concatenate[int, P2])
         self.assertEqual(C[int, [str, float]], (int, str, float))
         self.assertEqual(C[int, []], (int,))
-        self.assertEqual(C[int, ...], Concatenate[int, ...])
         self.assertEqual(C[int, Concatenate[str, P2]],
                          Concatenate[int, str, P2])
+        with self.assertRaises(TypeError):
+            C[int, ...]
 
         C = Concatenate[int, P]
         self.assertEqual(C[P2], Concatenate[int, P2])
         self.assertEqual(C[[str, float]], (int, str, float))
         self.assertEqual(C[str, float], (int, str, float))
         self.assertEqual(C[[]], (int,))
-        self.assertEqual(C[...], Concatenate[int, ...])
         self.assertEqual(C[Concatenate[str, P2]], Concatenate[int, str, P2])
+        with self.assertRaises(TypeError):
+            C[...]
 
 class TypeGuardTests(BaseTestCase):
     def test_basics(self):
