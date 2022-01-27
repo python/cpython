@@ -30,6 +30,7 @@ from typing import TypeAlias
 from typing import ParamSpec, Concatenate, ParamSpecArgs, ParamSpecKwargs
 from typing import TypeGuard
 import abc
+import textwrap
 import typing
 import weakref
 import types
@@ -2009,18 +2010,32 @@ class GenericTests(BaseTestCase):
     def test_generic_pep585_forward_ref(self):
         # See https://bugs.python.org/issue41370
 
-        class N:
-            a: list['N']
+        class C1:
+            a: list['C1']
         self.assertEqual(
-            get_type_hints(N, globals(), locals()),
-            {'a': list[N]}
+            get_type_hints(C1, globals(), locals()),
+            {'a': list[C1]}
         )
 
-        class M:
-            a: dict['N', list[List[list['M']]]]
+        class C2:
+            a: dict['C1', list[List[list['C2']]]]
         self.assertEqual(
-            get_type_hints(M, globals(), locals()),
-            {'a': dict[N, list[List[list[M]]]]}
+            get_type_hints(C2, globals(), locals()),
+            {'a': dict[C1, list[List[list[C2]]]]}
+        )
+
+        scope = {}
+        exec(textwrap.dedent('''
+        from __future__ import annotations
+        class C3:
+            a: List[list["C2"]]
+        '''), scope)
+        C3 = scope['C3']
+
+        self.assertEqual(C3.__annotations__['a'], "List[list['C2']]")
+        self.assertEqual(
+            get_type_hints(C3, globals(), locals()),
+            {'a': List[list[C2]]}
         )
 
     def test_extended_generic_rules_subclassing(self):
