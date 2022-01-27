@@ -12,7 +12,7 @@
           dep:ProviderKey="CPython-$(var.MajorVersionNumber).$(var.MinorVersionNumber)$(var.PyArchExt)$(var.PyTestExt)">
     <BootstrapperApplication Id="PythonBA" SourceFile="$(var.BootstrapApp)">
         <Payload Compressed='yes' SourceFile='Default.thm' />
-        <Payload Compressed='yes' SourceFile='Default.wxl' />
+        <Payload Compressed='yes' SourceFile='$(var.DefaultWxl)' />
         <Payload Compressed='yes' SourceFile='SideBar.png' />
     </BootstrapperApplication>
 

@@ -59,7 +59,7 @@
         <Text X="205" Y="126" Width="-11" Height="24" TabStop="no" FontId="5">#(loc.Include_pipHelpLabel)</Text>
         
         <Checkbox Name="Include_tcltk" X="185" Y="151" Width="-11" Height="24" TabStop="yes" FontId="3" HideWhenDisabled="no">#(loc.Include_tcltkLabel)</Checkbox>
-        <Text X="205" Y="176" Width="-11" Height="24" TabStop="no" FontId="5">#(loc.Include_tcltkHelpLabel)</Text>
+        <Text Name="Include_tcltkLabel" X="205" Y="176" Width="-11" Height="24" TabStop="no" FontId="5">#(loc.Include_tcltkHelpLabel)</Text>
         
         <Checkbox Name="Include_test" X="185" Y="201" Width="-11" Height="24" TabStop="yes" FontId="3" HideWhenDisabled="no">#(loc.Include_testLabel)</Checkbox>
         <Text X="205" Y="226" Width="-11" Height="24" TabStop="no" FontId="5">#(loc.Include_testHelpLabel)</Text>
