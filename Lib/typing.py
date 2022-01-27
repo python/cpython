@@ -661,7 +661,7 @@ class ForwardRef(_Final, _root=True):
 
     __slots__ = ('__forward_arg__', '__forward_code__',
                  '__forward_evaluated__', '__forward_value__',
-                 '__forward_is_argument__', '__forward_allow_special_forms__',
+                 '__forward_is_argument__', '__forward_is_class__',
                  '__forward_module__')
 
     def __init__(self, arg, is_argument=True, module=None, *, is_class=False):
@@ -676,7 +676,7 @@ class ForwardRef(_Final, _root=True):
         self.__forward_evaluated__ = False
         self.__forward_value__ = None
         self.__forward_is_argument__ = is_argument
-        self.__forward_allow_special_forms__ = is_class
+        self.__forward_is_class__ = is_class
         self.__forward_module__ = module
 
     def _evaluate(self, globalns, localns, recursive_guard):
@@ -697,7 +697,7 @@ class ForwardRef(_Final, _root=True):
                 eval(self.__forward_code__, globalns, localns),
                 "Forward references must evaluate to types.",
                 is_argument=self.__forward_is_argument__,
-                allow_special_forms=self.__forward_allow_special_forms__,
+                allow_special_forms=self.__forward_is_class__,
             )
             self.__forward_value__ = _eval_type(
                 type_, globalns, localns, recursive_guard | {self.__forward_arg__}
