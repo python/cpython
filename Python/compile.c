@@ -8469,7 +8469,8 @@ swaptimize(basicblock *block, int ix)
     }
     // It's already optimal if there's only one SWAP:
     if (!more) {
-        return 0;
+        len = 1;
+        goto do_static_swaps;
     }
     // Create an array with elements {0, 1, 2, ..., depth - 1}:
     int *stack = PyMem_Malloc(depth * sizeof(int));
@@ -8530,9 +8531,46 @@ swaptimize(basicblock *block, int ix)
     while (0 <= current) {
         instructions[current--].i_opcode = NOP;
     }
-    // Done! Return the number of optimized instructions:
     PyMem_Free(stack);
-    return len - 1;
+do_static_swaps:
+    // Now, see if we can perform some swaps statically! Instead of swapping
+    // stack items at runtime, we'll be swapping *instructions* right now:
+    current = len - 1;
+    int retval = current;
+    while (true) {
+        len -= 1;
+        if (current < 0 || instructions[current].i_opcode != SWAP) {
+            return retval;
+        }
+        int swap = instructions[current].i_oparg;
+        assert(1 < swap);
+        struct instr *top = NULL;
+        while (true) {
+            if (++len == block->b_iused - ix) {
+                return retval;
+            }
+            int opcode = instructions[len].i_opcode;
+            if (opcode == STORE_FAST || opcode == POP_TOP) {
+                if (top == NULL) {
+                    top = &instructions[len];
+                }
+                else if (--swap == 1) {
+                    struct instr peek = instructions[len];
+                    if (peek.i_lineno != top->i_lineno) {
+                        return retval;
+                    }
+                    instructions[current--].i_opcode = NOP;
+                    instructions[len] = *top;
+                    *top = peek;
+                    len = top - instructions;
+                    break;
+                }
+            }
+            else if (opcode != NOP) {
+                return retval;
+            }
+        }
+    }
 }
 
 // Attempt to eliminate jumps to jumps by updating inst to jump to
