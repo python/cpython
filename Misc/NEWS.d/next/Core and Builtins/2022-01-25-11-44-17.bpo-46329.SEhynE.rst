@@ -1,7 +1,7 @@
 Use two or three bytecodes to implement most calls.
 
-Calls without named arguments are implemented as a sequenceof two
-instructions:  ``PRECALL; CALL`` Calls with named arguments are implemented
+Calls without named arguments are implemented as a sequence of two
+instructions: ``PRECALL; CALL``. Calls with named arguments are implemented
 as a sequence of three instructions: ``PRECALL; KW_NAMES; CALL``. There are
 two different ``PRECALL`` instructions: ``PRECALL_FUNTION`` and
 ``PRECALL_METHOD`` which pairs with ``LOAD_METHOD``.
