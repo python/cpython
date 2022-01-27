@@ -1986,7 +1986,7 @@ unicode_dealloc(PyObject *unicode)
 static int
 unicode_is_singleton(PyObject *unicode)
 {
-    if (_Py_IS_POINTER_FROM_VAR(unicode, _Py_SINGLETON(strings))) {
+    if (_PyObject_IsSingleton(unicode)) {
         return 1;
     }
 

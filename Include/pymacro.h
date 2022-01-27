@@ -68,10 +68,6 @@
 #define _Py_STRING_LENGTH(str) \
     (sizeof(str) / sizeof(char))
 
-#define _Py_IS_POINTER_FROM_VAR(PTR, VAR) \
-    (((uintptr_t)(PTR) >= (uintptr_t)(&(VAR))) && \
-     ((uintptr_t)(PTR) < (uintptr_t)((&(VAR)) + 1)))
-
 
 /* Define macros for inline documentation. */
 #define PyDoc_VAR(name) static const char name[]

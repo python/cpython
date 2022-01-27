@@ -8,9 +8,11 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include <stdbool.h>
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_runtime.h"       // _PyRuntime
 
 
 #define _PyObject_IMMORTAL_INIT(type) \
@@ -23,6 +25,18 @@ extern "C" {
         .ob_base = _PyObject_IMMORTAL_INIT(type), \
         .ob_size = size, \
     }
+
+
+static inline bool _PyObject_IsSingleton(PyObject *obj)
+{
+#define SINGLETONS (&_PyRuntime.global_objects.singletons)
+    if (((uintptr_t)obj >= (uintptr_t)(SINGLETONS)) &&
+        ((uintptr_t)obj < (uintptr_t)((SINGLETONS) + 1))) {
+#undef SINGLETONS
+        return true;
+    }
+    return false;
+}
 
 
 PyAPI_FUNC(int) _PyType_CheckConsistency(PyTypeObject *type);
