@@ -8469,8 +8469,7 @@ swaptimize(basicblock *block, int ix)
     }
     // It's already optimal if there's only one SWAP:
     if (!more) {
-        len = 1;
-        goto do_static_swaps;
+        return 0;
     }
     // Create an array with elements {0, 1, 2, ..., depth - 1}:
     int *stack = PyMem_Malloc(depth * sizeof(int));
@@ -8531,43 +8530,56 @@ swaptimize(basicblock *block, int ix)
     while (0 <= current) {
         instructions[current--].i_opcode = NOP;
     }
+    // Done! Return the number of optimized instructions:
     PyMem_Free(stack);
-do_static_swaps:
+    return len - 1;
+}
+
+static void
+perform_static_swaps(basicblock *block, int i)
+{
+    struct instr *instructions = block->b_instr;
     // Now, see if we can perform some swaps statically! Instead of swapping
     // stack items at runtime, we'll be swapping *instructions* right now:
-    current = len - 1;
-    int retval = current;
     while (true) {
-        len -= 1;
-        if (current < 0 || instructions[current].i_opcode != SWAP) {
-            return retval;
+        if (i < 0) {
+            return;
         }
-        int swap = instructions[current].i_oparg;
+        int opcode = instructions[i].i_opcode;
+        if (opcode != SWAP) {
+            if (opcode == NOP || opcode == POP_TOP || opcode == STORE_FAST) {
+                i--;
+                continue;
+            }
+            return;
+        }
+        int j = i;
+        int swap = instructions[i].i_oparg;
         assert(1 < swap);
         struct instr *top = NULL;
         while (true) {
-            if (++len == block->b_iused - ix) {
-                return retval;
+            if (++j == block->b_iused) {
+                return;
             }
-            int opcode = instructions[len].i_opcode;
-            if (opcode == STORE_FAST || opcode == POP_TOP) {
+            int opcode = instructions[j].i_opcode;
+            if (opcode == POP_TOP || opcode == STORE_FAST) {
                 if (top == NULL) {
-                    top = &instructions[len];
+                    top = &instructions[j];
                 }
                 else if (--swap == 1) {
-                    struct instr peek = instructions[len];
+                    struct instr peek = instructions[j];
                     if (peek.i_lineno != top->i_lineno) {
-                        return retval;
+                        return;
                     }
-                    instructions[current--].i_opcode = NOP;
-                    instructions[len] = *top;
+                    instructions[i--].i_opcode = NOP;
+                    instructions[j] = *top;
                     *top = peek;
-                    len = top - instructions;
+                    j = top - instructions;
                     break;
                 }
             }
             else if (opcode != NOP) {
-                return retval;
+                return;
             }
         }
     }
@@ -8822,6 +8834,7 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                     break;
                 }
                 i += swaptimize(bb, i);
+                perform_static_swaps(bb, i);
                 break;
             default:
                 /* All HAS_CONST opcodes should be handled with LOAD_CONST */
