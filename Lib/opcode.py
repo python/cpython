@@ -198,6 +198,7 @@ def_op('PRECALL_METHOD', 168)
 
 def_op('CALL', 171)
 def_op('KW_NAMES', 172)
+hasconst.append(172)
 
 del def_op, name_op, jrel_op, jabs_op
 

@@ -1668,10 +1668,10 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
 
     CFrame cframe;
     CallShape call_shape;
-    call_shape.kwnames = NULL;
+    call_shape.kwnames = NULL; // Borrowed reference
     call_shape.postcall_shrink = 0;
     call_shape.total_args = 0;
-    call_shape.callable = NULL;
+    call_shape.callable = NULL; // Borrowed reference
 
     /* WARNING: Because the CFrame lives on the C stack,
      * but can be accessed from a heap allocated object (tstate)
@@ -4607,8 +4607,8 @@ handle_eval_breaker:
         call_function:
             function = call_shape.callable;
             if (Py_TYPE(function) == &PyMethod_Type) {
-                PyObject *meth = ((PyMethodObject *)call_shape.callable)->im_func;
-                PyObject *self = ((PyMethodObject *)call_shape.callable)->im_self;
+                PyObject *meth = ((PyMethodObject *)function)->im_func;
+                PyObject *self = ((PyMethodObject *)function)->im_self;
                 Py_INCREF(meth);
                 Py_INCREF(self);
                 PEEK(call_shape.total_args + 1) = self;
