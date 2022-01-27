@@ -34,13 +34,13 @@ the following command can be used to display the disassembly of
 :func:`myfunc`::
 
    >>> dis.dis(myfunc)
-    1           0 RESUME                   0
+     1           0 RESUME                   0
 
-    2           2 LOAD_GLOBAL              0 (len)
-                4 LOAD_FAST                0 (alist)
-                6 PRECALL_FUNCTION         1
-                8 CALL                     0
-               10 RETURN_VALUE
+     2           2 LOAD_GLOBAL              0 (len)
+                 4 LOAD_FAST                0 (alist)
+                 6 PRECALL_FUNCTION         1
+                 8 CALL                     0
+                10 RETURN_VALUE
 
 (The "2" is a line number).
 
@@ -1128,7 +1128,7 @@ iterations of the loop.
    .. versionadded:: 3.11
 
 
-..opcode:: KW_NAMES (i)
+.. opcode:: KW_NAMES (i)
 
    Stores a reference to ``co_consts[consti]`` into an internal variable
    for use by :opcode:`CALL`. ``co_consts[consti]`` must be a tuple of strings.
