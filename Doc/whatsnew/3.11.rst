@@ -501,13 +501,6 @@ Removed
   the ``l*gettext()`` functions.
   (Contributed by Dong-hee Na and Serhiy Storchaka in :issue:`44235`.)
 
-* Removed from the :mod:`configparser` module:
-  the :class:`SafeConfigParser` class,
-  the :attr:`filename` property of the :class:`ParsingError` class,
-  the :meth:`readfp` method of the :class:`ConfigParser` class,
-  deprecated since Python 3.2.
-  (Contributed by Hugo van Kemenade in :issue:`45173`.)
-
 * The :func:`@asyncio.coroutine <asyncio.coroutine>` :term:`decorator` enabling
   legacy generator-based coroutines to be compatible with async/await code.
   The function has been deprecated since Python 3.8 and the removal was
