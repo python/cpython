@@ -59,7 +59,9 @@
     <Variable Name="DefaultCustomTargetDir" Value="" bal:Overridable="yes" />
 
     <Variable Name="InstallAllUsersState" Value="enabled" bal:Overridable="yes" />
-    <?if "$(var.PyTestExt)"="" and $(var.Platform)!="ARM64" ?>
+    <?if "$(var.Platform)"~="ARM64" ?>
+    <Variable Name="InstallLauncherAllUsersState" Value="hide" bal:Overridable="yes" />
+    <?elseif "$(var.PyTestExt)"="" ?>
     <Variable Name="InstallLauncherAllUsersState" Value="enabled" bal:Overridable="yes" />
     <?else ?>
     <Variable Name="InstallLauncherAllUsersState" Value="disable" bal:Overridable="yes" />

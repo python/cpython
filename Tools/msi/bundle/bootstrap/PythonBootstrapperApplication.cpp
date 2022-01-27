@@ -89,7 +89,6 @@ enum CONTROL_ID {
     ID_TARGETDIR_EDITBOX,
     ID_CUSTOM_ASSOCIATE_FILES_CHECKBOX,
     ID_CUSTOM_INSTALL_ALL_USERS_CHECKBOX,
-    ID_CUSTOM_INCLUDE_TCLTK_HELP_LABEL,
     ID_CUSTOM_INSTALL_LAUNCHER_ALL_USERS_CHECKBOX,
     ID_CUSTOM_INCLUDE_LAUNCHER_HELP_LABEL,
     ID_CUSTOM_COMPILE_ALL_CHECKBOX,
@@ -157,7 +156,6 @@ static THEME_ASSIGN_CONTROL_ID CONTROL_ID_NAMES[] = {
     { ID_CUSTOM_INSTALL_ALL_USERS_CHECKBOX, L"InstallAllUsers" },
     { ID_CUSTOM_INSTALL_LAUNCHER_ALL_USERS_CHECKBOX, L"CustomInstallLauncherAllUsers" },
     { ID_CUSTOM_INCLUDE_LAUNCHER_HELP_LABEL, L"Include_launcherHelp" },
-    { ID_CUSTOM_INCLUDE_TCLTK_HELP_LABEL, L"Include_tcltkHelpLabel" },
     { ID_CUSTOM_COMPILE_ALL_CHECKBOX, L"CompileAll" },
     { ID_CUSTOM_BROWSE_BUTTON, L"CustomBrowseButton" },
     { ID_CUSTOM_BROWSE_BUTTON_LABEL, L"CustomBrowseButtonLabel" },
@@ -444,11 +442,6 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
         ThemeControlElevates(_theme, ID_INSTALL_BUTTON, elevated);
         ThemeControlElevates(_theme, ID_INSTALL_SIMPLE_BUTTON, elevated);
         ThemeControlElevates(_theme, ID_INSTALL_UPGRADE_BUTTON, elevated);
-
-#ifdef ARM64
-        // Currently we do not support the launcher on ARM64, so hide its checkbox
-        ThemeShowControl(_theme, ID_INSTALL_LAUNCHER_ALL_USERS_CHECKBOX, SW_HIDE);
-#endif
     }
 
     void Custom1Page_Show() {

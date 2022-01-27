@@ -104,7 +104,7 @@
         </PropertyGroup>
     </Target>
 
-    <Target Name="AddDefaultWxl" BeforeTargets="BeforeBuild" Condition="!Exists('Default.$(Platform).xsl')">
+    <Target Name="AddDefaultWxl" AfterTargets="PrepareForBuild" Condition="!Exists('Default.$(Platform).xsl')">
         <ItemGroup>
             <EmbeddedResource Include="Default.wxl" />
         </ItemGroup>
@@ -112,7 +112,7 @@
             <DefineConstants>$(DefineConstants);DefaultWxl=Default.wxl</DefineConstants>
         </PropertyGroup>
     </Target>
-    <Target Name="AddUpdatedDefaultWxl" BeforeTargets="BeforeBuild" Condition="Exists('Default.$(Platform).xsl')">
+    <Target Name="AddUpdatedDefaultWxl" AfterTargets="PrepareForBuild" Condition="Exists('Default.$(Platform).xsl')">
         <XslTransformation XmlInputPaths="Default.wxl"
                            OutputPaths="$(IntermediateOutputPath)Default.wxl"
                            XslInputPath="Default.$(Platform).xsl"
