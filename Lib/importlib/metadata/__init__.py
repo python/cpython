@@ -305,6 +305,7 @@ class DeprecatedList(list):
         'sort',
     ]:
         locals()[method_name] = _wrap_deprecated_method(method_name)
+    del method_name
 
     def __add__(self, other):
         if not isinstance(other, tuple):

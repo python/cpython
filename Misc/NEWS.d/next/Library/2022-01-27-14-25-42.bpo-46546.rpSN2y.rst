@@ -1,0 +1,2 @@
+Remove ``method_name`` var leak from
+:class:`importlib.metadata.DeprecatedList`.
