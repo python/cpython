@@ -904,7 +904,7 @@ class EnumType(type):
         # module is ever developed
         if module is None:
             try:
-                module = sys._getframe(2).f_globals['__name__']
+                module = sys._getfunc(2).__globals__['__name__']
             except (AttributeError, ValueError, KeyError):
                 pass
         if module is None:

@@ -1436,8 +1436,8 @@ def _no_init_or_replace_init(self, *args, **kwargs):
 
 def _caller(depth=1, default='__main__'):
     try:
-        return sys._getframe(depth + 1).f_globals.get('__name__', default)
-    except (AttributeError, ValueError):  # For platforms without _getframe()
+        return sys._getfunc(depth + 1).__globals__.get('__name__', default)
+    except (AttributeError, ValueError):  # For platforms without _getfunc()
         return None
 
 
