@@ -354,7 +354,7 @@ exit:
 
 #endif /* defined(HAVE_GETITIMER) */
 
-#if defined(PYPTHREAD_SIGMASK)
+#if defined(HAVE_SIGSET_T) && defined(PYPTHREAD_SIGMASK)
 
 PyDoc_STRVAR(signal_pthread_sigmask__doc__,
 "pthread_sigmask($module, how, mask, /)\n"
@@ -391,9 +391,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(PYPTHREAD_SIGMASK) */
+#endif /* defined(HAVE_SIGSET_T) && defined(PYPTHREAD_SIGMASK) */
 
-#if defined(HAVE_SIGPENDING)
+#if defined(HAVE_SIGSET_T) && defined(HAVE_SIGPENDING)
 
 PyDoc_STRVAR(signal_sigpending__doc__,
 "sigpending($module, /)\n"
@@ -416,9 +416,9 @@ signal_sigpending(PyObject *module, PyObject *Py_UNUSED(ignored))
     return signal_sigpending_impl(module);
 }
 
-#endif /* defined(HAVE_SIGPENDING) */
+#endif /* defined(HAVE_SIGSET_T) && defined(HAVE_SIGPENDING) */
 
-#if defined(HAVE_SIGWAIT)
+#if defined(HAVE_SIGSET_T) && defined(HAVE_SIGWAIT)
 
 PyDoc_STRVAR(signal_sigwait__doc__,
 "sigwait($module, sigset, /)\n"
@@ -451,9 +451,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_SIGWAIT) */
+#endif /* defined(HAVE_SIGSET_T) && defined(HAVE_SIGWAIT) */
 
-#if (defined(HAVE_SIGFILLSET) || defined(MS_WINDOWS))
+#if ((defined(HAVE_SIGFILLSET) && defined(HAVE_SIGSET_T)) || defined(MS_WINDOWS))
 
 PyDoc_STRVAR(signal_valid_signals__doc__,
 "valid_signals($module, /)\n"
@@ -476,9 +476,9 @@ signal_valid_signals(PyObject *module, PyObject *Py_UNUSED(ignored))
     return signal_valid_signals_impl(module);
 }
 
-#endif /* (defined(HAVE_SIGFILLSET) || defined(MS_WINDOWS)) */
+#endif /* ((defined(HAVE_SIGFILLSET) && defined(HAVE_SIGSET_T)) || defined(MS_WINDOWS)) */
 
-#if defined(HAVE_SIGWAITINFO)
+#if defined(HAVE_SIGSET_T) && defined(HAVE_SIGWAITINFO)
 
 PyDoc_STRVAR(signal_sigwaitinfo__doc__,
 "sigwaitinfo($module, sigset, /)\n"
@@ -509,9 +509,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_SIGWAITINFO) */
+#endif /* defined(HAVE_SIGSET_T) && defined(HAVE_SIGWAITINFO) */
 
-#if defined(HAVE_SIGTIMEDWAIT)
+#if defined(HAVE_SIGSET_T) && defined(HAVE_SIGTIMEDWAIT)
 
 PyDoc_STRVAR(signal_sigtimedwait__doc__,
 "sigtimedwait($module, sigset, timeout, /)\n"
@@ -548,7 +548,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_SIGTIMEDWAIT) */
+#endif /* defined(HAVE_SIGSET_T) && defined(HAVE_SIGTIMEDWAIT) */
 
 #if defined(HAVE_PTHREAD_KILL)
 
@@ -698,4 +698,4 @@ exit:
 #ifndef SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
     #define SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
 #endif /* !defined(SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF) */
-/*[clinic end generated code: output=59c33f0af42aebb5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c353e686367bc384 input=a9049054013a1b77]*/

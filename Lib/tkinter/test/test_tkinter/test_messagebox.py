@@ -1,6 +1,6 @@
 import unittest
 import tkinter
-from test.support import requires, run_unittest, swap_attr
+from test.support import requires, swap_attr
 from tkinter.test.support import AbstractDefaultRootTest
 from tkinter.commondialog import Dialog
 from tkinter.messagebox import showinfo
@@ -32,7 +32,5 @@ class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
             self.assertRaises(RuntimeError, showinfo, "Spam", "Egg Information")
 
 
-tests_gui = (DefaultRootTest,)
-
 if __name__ == "__main__":
-    run_unittest(*tests_gui)
+    unittest.main()

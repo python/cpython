@@ -6,6 +6,7 @@ Original by Michael Schneider
 
 import cmd
 import sys
+import doctest
 import unittest
 import io
 from test import support
@@ -219,10 +220,9 @@ class TestAlternateInput(unittest.TestCase):
              "(Cmd) *** Unknown syntax: EOF\n"))
 
 
-def test_main(verbose=None):
-    from test import test_cmd
-    support.run_doctest(test_cmd, verbose)
-    support.run_unittest(TestAlternateInput)
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite())
+    return tests
 
 def test_coverage(coverdir):
     trace = support.import_module('trace')
@@ -239,4 +239,4 @@ if __name__ == "__main__":
     elif "-i" in sys.argv:
         samplecmdclass().cmdloop()
     else:
-        test_main()
+        unittest.main()

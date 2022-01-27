@@ -5,12 +5,15 @@
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_bytes_methods.h" // _Py_bytes_startswith()
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_format.h"        // F_LJUST
+#include "pycore_global_objects.h"  // _Py_GET_GLOBAL_OBJECT()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_long.h"          // _PyLong_DigitValue
 #include "pycore_object.h"        // _PyObject_GC_TRACK
 #include "pycore_pymem.h"         // PYMEM_CLEANBYTE
+#include "pycore_strhex.h"        // _Py_strhex_with_sep()
 
-#include "pystrhex.h"
 #include <stddef.h>
 
 /*[clinic input]
@@ -35,49 +38,24 @@ Py_LOCAL_INLINE(Py_ssize_t) _PyBytesWriter_GetSize(_PyBytesWriter *writer,
                                                    char *str);
 
 
-static struct _Py_bytes_state*
-get_bytes_state(void)
-{
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    return &interp->bytes;
-}
+#define CHARACTERS _Py_SINGLETON(bytes_characters)
+#define CHARACTER(ch) \
+     ((PyBytesObject *)&(CHARACTERS[ch]));
+#define EMPTY (&_Py_SINGLETON(bytes_empty))
 
 
 // Return a borrowed reference to the empty bytes string singleton.
 static inline PyObject* bytes_get_empty(void)
 {
-    struct _Py_bytes_state *state = get_bytes_state();
-    // bytes_get_empty() must not be called before _PyBytes_Init()
-    // or after _PyBytes_Fini()
-    assert(state->empty_string != NULL);
-    return state->empty_string;
+    return &EMPTY->ob_base.ob_base;
 }
 
 
 // Return a strong reference to the empty bytes string singleton.
 static inline PyObject* bytes_new_empty(void)
 {
-    PyObject *empty = bytes_get_empty();
-    Py_INCREF(empty);
-    return (PyObject *)empty;
-}
-
-
-static int
-bytes_create_empty_string_singleton(struct _Py_bytes_state *state)
-{
-    // Create the empty bytes string singleton
-    PyBytesObject *op = (PyBytesObject *)PyObject_Malloc(PyBytesObject_SIZE);
-    if (op == NULL) {
-        return -1;
-    }
-    _PyObject_InitVar((PyVarObject*)op, &PyBytes_Type, 0);
-    op->ob_shash = -1;
-    op->ob_sval[0] = '\0';
-
-    assert(state->empty_string == NULL);
-    state->empty_string = (PyObject *)op;
-    return 0;
+    Py_INCREF(EMPTY);
+    return (PyObject *)EMPTY;
 }
 
 
@@ -145,12 +123,9 @@ PyBytes_FromStringAndSize(const char *str, Py_ssize_t size)
         return NULL;
     }
     if (size == 1 && str != NULL) {
-        struct _Py_bytes_state *state = get_bytes_state();
-        op = state->characters[*str & UCHAR_MAX];
-        if (op != NULL) {
-            Py_INCREF(op);
-            return (PyObject *)op;
-        }
+        op = CHARACTER(*str & 255);
+        Py_INCREF(op);
+        return (PyObject *)op;
     }
     if (size == 0) {
         return bytes_new_empty();
@@ -163,12 +138,6 @@ PyBytes_FromStringAndSize(const char *str, Py_ssize_t size)
         return (PyObject *) op;
 
     memcpy(op->ob_sval, str, size);
-    /* share short strings */
-    if (size == 1) {
-        struct _Py_bytes_state *state = get_bytes_state();
-        Py_INCREF(op);
-        state->characters[*str & UCHAR_MAX] = op;
-    }
     return (PyObject *) op;
 }
 
@@ -186,16 +155,13 @@ PyBytes_FromString(const char *str)
         return NULL;
     }
 
-    struct _Py_bytes_state *state = get_bytes_state();
     if (size == 0) {
         return bytes_new_empty();
     }
     else if (size == 1) {
-        op = state->characters[*str & UCHAR_MAX];
-        if (op != NULL) {
-            Py_INCREF(op);
-            return (PyObject *)op;
-        }
+        op = CHARACTER(*str & 255);
+        Py_INCREF(op);
+        return (PyObject *)op;
     }
 
     /* Inline PyObject_NewVar */
@@ -206,12 +172,6 @@ PyBytes_FromString(const char *str)
     _PyObject_InitVar((PyVarObject*)op, &PyBytes_Type, size);
     op->ob_shash = -1;
     memcpy(op->ob_sval, str, size+1);
-    /* share short strings */
-    if (size == 1) {
-        assert(state->characters[*str & UCHAR_MAX] == NULL);
-        Py_INCREF(op);
-        state->characters[*str & UCHAR_MAX] = op;
-    }
     return (PyObject *) op;
 }
 
@@ -572,7 +532,7 @@ format_obj(PyObject *v, const char **pbuf, Py_ssize_t *plen)
     /* does it support __bytes__? */
     func = _PyObject_LookupSpecial(v, &PyId___bytes__);
     if (func != NULL) {
-        result = _PyObject_CallNoArg(func);
+        result = _PyObject_CallNoArgs(func);
         Py_DECREF(func);
         if (result == NULL)
             return NULL;
@@ -1687,6 +1647,25 @@ static PyBufferProcs bytes_as_buffer = {
 };
 
 
+/*[clinic input]
+bytes.__bytes__
+Convert this value to exact type bytes.
+[clinic start generated code]*/
+
+static PyObject *
+bytes___bytes___impl(PyBytesObject *self)
+/*[clinic end generated code: output=63a306a9bc0caac5 input=34ec5ddba98bd6bb]*/
+{
+    if (PyBytes_CheckExact(self)) {
+        Py_INCREF(self);
+        return (PyObject *)self;
+    }
+    else {
+        return PyBytes_FromStringAndSize(self->ob_sval, Py_SIZE(self));
+    }
+}
+
+
 #define LEFTSTRIP 0
 #define RIGHTSTRIP 1
 #define BOTHSTRIP 2
@@ -2474,6 +2453,7 @@ bytes_getnewargs(PyBytesObject *v, PyObject *Py_UNUSED(ignored))
 static PyMethodDef
 bytes_methods[] = {
     {"__getnewargs__",          (PyCFunction)bytes_getnewargs,  METH_NOARGS},
+    BYTES___BYTES___METHODDEF
     {"capitalize", stringlib_capitalize, METH_NOARGS,
      _Py_capitalize__doc__},
     STRINGLIB_CENTER_METHODDEF
@@ -2602,7 +2582,7 @@ bytes_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
        integer argument before deferring to PyBytes_FromObject, something
        PyObject_Bytes doesn't do. */
     else if ((func = _PyObject_LookupSpecial(x, &PyId___bytes__)) != NULL) {
-        bytes = _PyObject_CallNoArg(func);
+        bytes = _PyObject_CallNoArgs(func);
         Py_DECREF(func);
         if (bytes == NULL)
             return NULL;
@@ -2912,7 +2892,8 @@ PyTypeObject PyBytes_Type = {
     0,                                          /* tp_setattro */
     &bytes_as_buffer,                           /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-        Py_TPFLAGS_BYTES_SUBCLASS,              /* tp_flags */
+        Py_TPFLAGS_BYTES_SUBCLASS |
+        _Py_TPFLAGS_MATCH_SELF,               /* tp_flags */
     bytes_doc,                                  /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
@@ -2923,7 +2904,7 @@ PyTypeObject PyBytes_Type = {
     bytes_methods,                              /* tp_methods */
     0,                                          /* tp_members */
     0,                                          /* tp_getset */
-    &PyBaseObject_Type,                         /* tp_base */
+    0,                                          /* tp_base */
     0,                                          /* tp_dict */
     0,                                          /* tp_descr_get */
     0,                                          /* tp_descr_set */
@@ -3063,25 +3044,23 @@ error:
 
 
 PyStatus
-_PyBytes_Init(PyThreadState *tstate)
+_PyBytes_InitTypes(PyInterpreterState *interp)
 {
-    struct _Py_bytes_state *state = &tstate->interp->bytes;
-    if (bytes_create_empty_string_singleton(state) < 0) {
-        return _PyStatus_NO_MEMORY();
+    if (!_Py_IsMainInterpreter(interp)) {
+        return _PyStatus_OK();
     }
+
+    if (PyType_Ready(&PyBytes_Type) < 0) {
+        return _PyStatus_ERR("Can't initialize bytes type");
+    }
+
+    if (PyType_Ready(&PyBytesIter_Type) < 0) {
+        return _PyStatus_ERR("Can't initialize bytes iterator type");
+    }
+
     return _PyStatus_OK();
 }
 
-
-void
-_PyBytes_Fini(PyThreadState *tstate)
-{
-    struct _Py_bytes_state* state = &tstate->interp->bytes;
-    for (int i = 0; i < UCHAR_MAX + 1; i++) {
-        Py_CLEAR(state->characters[i]);
-    }
-    Py_CLEAR(state->empty_string);
-}
 
 /*********************** Bytes Iterator ****************************/
 

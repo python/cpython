@@ -1,0 +1,3 @@
+Add ASYNC_GEN_WRAP opcode to wrap the value to be yielded in async
+generators. Removes the need to special case async generators in the
+``YIELD_VALUE`` instruction.

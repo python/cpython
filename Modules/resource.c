@@ -480,6 +480,10 @@ resource_exec(PyObject *module)
     ADD_INT(module, RLIMIT_NPTS);
 #endif
 
+#ifdef RLIMIT_KQUEUES
+    ADD_INT(module, RLIMIT_KQUEUES);
+#endif
+
     PyObject *v;
     if (sizeof(RLIM_INFINITY) > sizeof(long)) {
         v = PyLong_FromLongLong((long long) RLIM_INFINITY);

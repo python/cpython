@@ -59,7 +59,7 @@ PEERCERT = {
     'issuer': ((('countryName', 'XY'),),
             (('organizationName', 'Python Software Foundation CA'),),
             (('commonName', 'our-ca-server'),)),
-    'notAfter': 'Jul  7 14:23:16 2028 GMT',
+    'notAfter': 'Oct 28 14:23:16 2037 GMT',
     'notBefore': 'Aug 29 14:23:16 2018 GMT',
     'serialNumber': 'CB2D80995A69525C',
     'subject': ((('countryName', 'XY'),),
@@ -91,7 +91,7 @@ def dummy_ssl_context():
     if ssl is None:
         return None
     else:
-        return ssl.SSLContext(ssl.PROTOCOL_TLS)
+        return simple_client_sslcontext(disable_verify=True)
 
 
 def run_briefly(loop):
@@ -158,7 +158,7 @@ class SSLWSGIServerMixin:
         # contains the ssl key and certificate files) differs
         # between the stdlib and stand-alone asyncio.
         # Prefer our own if we can find it.
-        context = ssl.SSLContext()
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         context.load_cert_chain(ONLYCERT, ONLYKEY)
 
         ssock = context.wrap_socket(request, server_side=True)
@@ -409,12 +409,13 @@ class TestLoop(base_events.BaseEventLoop):
             return False
 
     def assert_writer(self, fd, callback, *args):
-        assert fd in self.writers, 'fd {} is not registered'.format(fd)
+        if fd not in self.writers:
+            raise AssertionError(f'fd {fd} is not registered')
         handle = self.writers[fd]
-        assert handle._callback == callback, '{!r} != {!r}'.format(
-            handle._callback, callback)
-        assert handle._args == args, '{!r} != {!r}'.format(
-            handle._args, args)
+        if handle._callback != callback:
+            raise AssertionError(f'{handle._callback!r} != {callback!r}')
+        if handle._args != args:
+            raise AssertionError(f'{handle._args!r} != {args!r}')
 
     def _ensure_fd_no_transport(self, fd):
         if not isinstance(fd, int):
@@ -530,7 +531,8 @@ class TestCase(unittest.TestCase):
                         thread.join()
 
     def set_event_loop(self, loop, *, cleanup=True):
-        assert loop is not None
+        if loop is None:
+            raise AssertionError('loop is None')
         # ensure that the event loop is passed explicitly in asyncio
         events.set_event_loop(None)
         if cleanup:

@@ -2,6 +2,24 @@
 preserve
 [clinic start generated code]*/
 
+PyDoc_STRVAR(bytes___bytes____doc__,
+"__bytes__($self, /)\n"
+"--\n"
+"\n"
+"Convert this value to exact type bytes.");
+
+#define BYTES___BYTES___METHODDEF    \
+    {"__bytes__", (PyCFunction)bytes___bytes__, METH_NOARGS, bytes___bytes____doc__},
+
+static PyObject *
+bytes___bytes___impl(PyBytesObject *self);
+
+static PyObject *
+bytes___bytes__(PyBytesObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return bytes___bytes___impl(self);
+}
+
 PyDoc_STRVAR(bytes_split__doc__,
 "split($self, /, sep=None, maxsplit=-1)\n"
 "--\n"
@@ -878,4 +896,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b3f0ec2753246b9c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d706344859f40122 input=a9049054013a1b77]*/

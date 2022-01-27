@@ -1,11 +1,15 @@
 #include "Python.h"
+#include "pycore_fileutils.h"     // _Py_write_noraise()
 #include "pycore_gc.h"            // PyGC_Head
+#include "pycore_hashtable.h"     // _Py_hashtable_t
 #include "pycore_pymem.h"         // _Py_tracemalloc_config
 #include "pycore_traceback.h"
-#include "pycore_hashtable.h"
-#include "frameobject.h"          // PyFrame_GetBack()
+#include <pycore_frame.h>
+
+#include <stdlib.h>               // malloc()
 
 #include "clinic/_tracemalloc.c.h"
+
 /*[clinic input]
 module _tracemalloc
 [clinic start generated code]*/
@@ -299,18 +303,16 @@ hashtable_compare_traceback(const void *key1, const void *key2)
 
 
 static void
-tracemalloc_get_frame(PyFrameObject *pyframe, frame_t *frame)
+tracemalloc_get_frame(InterpreterFrame *pyframe, frame_t *frame)
 {
     frame->filename = unknown_filename;
-    int lineno = PyFrame_GetLineNumber(pyframe);
+    int lineno = PyCode_Addr2Line(pyframe->f_code, pyframe->f_lasti*sizeof(_Py_CODEUNIT));
     if (lineno < 0) {
         lineno = 0;
     }
     frame->lineno = (unsigned int)lineno;
 
-    PyCodeObject *code = PyFrame_GetCode(pyframe);
-    PyObject *filename = code->co_filename;
-    Py_DECREF(code);
+    PyObject *filename = pyframe->f_code->co_filename;
 
     if (filename == NULL) {
 #ifdef TRACE_DEBUG
@@ -395,7 +397,7 @@ traceback_get_frames(traceback_t *traceback)
         return;
     }
 
-    PyFrameObject *pyframe = PyThreadState_GetFrame(tstate);
+    InterpreterFrame *pyframe = tstate->cframe->current_frame;
     for (; pyframe != NULL;) {
         if (traceback->nframe < _Py_tracemalloc_config.max_nframe) {
             tracemalloc_get_frame(pyframe, &traceback->frames[traceback->nframe]);
@@ -406,8 +408,7 @@ traceback_get_frames(traceback_t *traceback)
             traceback->total_nframe++;
         }
 
-        PyFrameObject *back = PyFrame_GetBack(pyframe);
-        Py_DECREF(pyframe);
+        InterpreterFrame *back = pyframe->previous;
         pyframe = back;
     }
 }
@@ -836,7 +837,7 @@ tracemalloc_clear_filename(void *value)
 static void
 tracemalloc_clear_traces(void)
 {
-    /* The GIL protects variables againt concurrent access */
+    /* The GIL protects variables against concurrent access */
     assert(PyGILState_Check());
 
     TABLES_LOCK();
@@ -1241,6 +1242,9 @@ tracemalloc_copy_domain(_Py_hashtable_t *domains,
     _Py_hashtable_t *traces = (_Py_hashtable_t *)value;
 
     _Py_hashtable_t *traces2 = tracemalloc_copy_traces(traces);
+    if (traces2 == NULL) {
+        return -1;
+    }
     if (_Py_hashtable_set(domains2, TO_PTR(domain), traces2) < 0) {
         _Py_hashtable_destroy(traces2);
         return -1;

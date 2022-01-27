@@ -8,9 +8,22 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_gc.h"         // _PyObject_GC_IS_TRACKED()
-#include "pycore_interp.h"     // PyInterpreterState.gc
-#include "pycore_pystate.h"    // _PyThreadState_GET()
+#include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
+#include "pycore_interp.h"        // PyInterpreterState.gc
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+
+
+#define _PyObject_IMMORTAL_INIT(type) \
+    { \
+        .ob_refcnt = 999999999, \
+        .ob_type = type, \
+    }
+#define _PyVarObject_IMMORTAL_INIT(type, size) \
+    { \
+        .ob_base = _PyObject_IMMORTAL_INIT(type), \
+        .ob_size = size, \
+    }
+
 
 PyAPI_FUNC(int) _PyType_CheckConsistency(PyTypeObject *type);
 PyAPI_FUNC(int) _PyDict_CheckConsistency(PyObject *mp, int check_content);
@@ -85,8 +98,8 @@ static inline void _PyObject_GC_TRACK(
                           "object is in generation which is garbage collected",
                           filename, lineno, __func__);
 
-    PyThreadState *tstate = _PyThreadState_GET();
-    PyGC_Head *generation0 = tstate->interp->gc.generation0;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyGC_Head *generation0 = interp->gc.generation0;
     PyGC_Head *last = (PyGC_Head*)(generation0->_gc_prev);
     _PyGCHead_SET_NEXT(last, gc);
     _PyGCHead_SET_PREV(gc, last);
@@ -167,6 +180,66 @@ _PyObject_IS_GC(PyObject *obj)
 
 // Fast inlined version of PyType_IS_GC()
 #define _PyType_IS_GC(t) _PyType_HasFeature((t), Py_TPFLAGS_HAVE_GC)
+
+static inline size_t
+_PyType_PreHeaderSize(PyTypeObject *tp)
+{
+    return _PyType_IS_GC(tp) * sizeof(PyGC_Head) +
+        _PyType_HasFeature(tp, Py_TPFLAGS_MANAGED_DICT) * 2 * sizeof(PyObject *);
+}
+
+void _PyObject_GC_Link(PyObject *op);
+
+// Usage: assert(_Py_CheckSlotResult(obj, "__getitem__", result != NULL));
+extern int _Py_CheckSlotResult(
+    PyObject *obj,
+    const char *slot_name,
+    int success);
+
+// PyType_Ready() must be called if _PyType_IsReady() is false.
+// See also the Py_TPFLAGS_READY flag.
+#define _PyType_IsReady(type) ((type)->tp_dict != NULL)
+
+// Test if a type supports weak references
+static inline int _PyType_SUPPORTS_WEAKREFS(PyTypeObject *type) {
+    return (type->tp_weaklistoffset > 0);
+}
+
+extern PyObject* _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems);
+
+extern int _PyObject_InitializeDict(PyObject *obj);
+extern int _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
+                                          PyObject *name, PyObject *value);
+PyObject * _PyObject_GetInstanceAttribute(PyObject *obj, PyDictValues *values,
+                                        PyObject *name);
+
+static inline PyDictValues **_PyObject_ValuesPointer(PyObject *obj)
+{
+    assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+    return ((PyDictValues **)obj)-4;
+}
+
+static inline PyObject **_PyObject_ManagedDictPointer(PyObject *obj)
+{
+    assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+    return ((PyObject **)obj)-3;
+}
+
+extern PyObject ** _PyObject_DictPointer(PyObject *);
+extern int _PyObject_VisitInstanceAttributes(PyObject *self, visitproc visit, void *arg);
+extern void _PyObject_ClearInstanceAttributes(PyObject *self);
+extern void _PyObject_FreeInstanceAttributes(PyObject *self);
+extern int _PyObject_IsInstanceDictEmpty(PyObject *);
+extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
+
+/* This function returns the number of allocated memory blocks, regardless of size */
+PyAPI_FUNC(Py_ssize_t) _Py_GetAllocatedBlocks(void);
+
+/* Macros */
+#ifdef WITH_PYMALLOC
+// Export the symbol for the 3rd party guppy3 project
+PyAPI_FUNC(int) _PyObject_DebugMallocStats(FILE *out);
+#endif
 
 #ifdef __cplusplus
 }

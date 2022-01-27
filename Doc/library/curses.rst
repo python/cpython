@@ -368,7 +368,7 @@ The module :mod:`curses` defines the following functions:
 
    Set the maximum time in milliseconds that can elapse between press and release
    events in order for them to be recognized as a click, and return the previous
-   interval value.  The default value is 200 msec, or one fifth of a second.
+   interval value.  The default value is 200 milliseconds, or one fifth of a second.
 
 
 .. function:: mousemask(mousemask)
@@ -914,6 +914,9 @@ the following methods and attributes:
    enclosed by the given window, returning ``True`` or ``False``.  It is useful for
    determining what subset of the screen windows enclose the location of a mouse
    event.
+
+   .. versionchanged:: 3.10
+      Previously it returned ``1`` or ``0`` instead of ``True`` or ``False``.
 
 
 .. attribute:: window.encoding

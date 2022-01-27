@@ -65,7 +65,10 @@ PATHS = [
     "python-{}-webinstall.exe".format(m.group(0)),
     "python-{}-amd64.exe".format(m.group(0)),
     "python-{}-amd64-webinstall.exe".format(m.group(0)),
+    "python-{}-embed-amd64.zip".format(m.group(0)),
+    "python-{}-embed-win32.zip".format(m.group(0)),
 ] + ["win32{}/{}".format(REL, f) for f in FILES] + ["amd64{}/{}".format(REL, f) for f in FILES]
+PATHS = PATHS + [p + ".asc" for p in PATHS]
 
 print('Purged:')
 for n in PATHS:

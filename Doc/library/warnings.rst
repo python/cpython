@@ -105,7 +105,7 @@ The following warnings category classes are currently defined:
 |                                  | :class:`bytes` and :class:`bytearray`.        |
 +----------------------------------+-----------------------------------------------+
 | :exc:`ResourceWarning`           | Base category for warnings related to         |
-|                                  | resource usage.                               |
+|                                  | resource usage (ignored by default).          |
 +----------------------------------+-----------------------------------------------+
 
 .. versionchanged:: 3.7
@@ -229,7 +229,7 @@ In regular release builds, the default warning filter has the following entries
     ignore::ImportWarning
     ignore::ResourceWarning
 
-In debug builds, the list of default warning filters is empty.
+In a :ref:`debug build <debug-build>`, the list of default warning filters is empty.
 
 .. versionchanged:: 3.2
    :exc:`DeprecationWarning` is now ignored by default in addition to

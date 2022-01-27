@@ -1,9 +1,8 @@
 """Tests for queues.py"""
 
 import unittest
-from unittest import mock
-
 import asyncio
+from types import GenericAlias
 from test.test_asyncio import utils as test_utils
 
 
@@ -73,6 +72,11 @@ class QueueBasicTests(_QueueTestBase):
 
     def test_str(self):
         self._test_repr_or_str(str, False)
+
+    def test_generic_alias(self):
+        q = asyncio.Queue[int]
+        self.assertEqual(q.__args__, (int,))
+        self.assertIsInstance(q, GenericAlias)
 
     def test_empty(self):
         q = asyncio.Queue()
@@ -273,12 +277,12 @@ class QueueGetTests(_QueueTestBase):
             queue._get_loop()
             return queue
 
-        q = self.loop.run_until_complete(create_queue())
+        async def test():
+            q = await create_queue()
+            await asyncio.gather(producer(q, producer_num_items),
+                                 consumer(q, producer_num_items))
 
-        self.loop.run_until_complete(
-            asyncio.gather(producer(q, producer_num_items),
-                           consumer(q, producer_num_items)),
-            )
+        self.loop.run_until_complete(test())
 
     def test_cancelled_getters_not_being_held_in_self_getters(self):
         def a_generator():
@@ -516,11 +520,14 @@ class QueuePutTests(_QueueTestBase):
             for _ in range(num):
                 item = queue.get_nowait()
 
-        t0 = putter(0)
-        t1 = putter(1)
-        t2 = putter(2)
-        t3 = putter(3)
-        self.loop.run_until_complete(asyncio.gather(getter(), t0, t1, t2, t3))
+        async def test():
+            t0 = putter(0)
+            t1 = putter(1)
+            t2 = putter(2)
+            t3 = putter(3)
+            await asyncio.gather(getter(), t0, t1, t2, t3)
+
+        self.loop.run_until_complete(test())
 
     def test_cancelled_puts_not_being_held_in_self_putters(self):
         def a_generator():

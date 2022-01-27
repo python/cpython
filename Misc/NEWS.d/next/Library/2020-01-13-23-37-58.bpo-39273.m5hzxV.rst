@@ -1,2 +1,0 @@
-The ``BUTTON5_*`` constants are now exposed in the :mod:`curses` module if
-available.

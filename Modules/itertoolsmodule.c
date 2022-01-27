@@ -1,7 +1,6 @@
-
-
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
@@ -863,7 +862,7 @@ static PyObject *
 tee_fromiterable(PyObject *iterable)
 {
     teeobject *to;
-    PyObject *it = NULL;
+    PyObject *it;
 
     it = PyObject_GetIter(iterable);
     if (it == NULL)
@@ -873,21 +872,22 @@ tee_fromiterable(PyObject *iterable)
         goto done;
     }
 
-    to = PyObject_GC_New(teeobject, &tee_type);
-    if (to == NULL)
-        goto done;
-    to->dataobj = (teedataobject *)teedataobject_newinternal(it);
-    if (!to->dataobj) {
-        PyObject_GC_Del(to);
+    PyObject *dataobj = teedataobject_newinternal(it);
+    if (!dataobj) {
         to = NULL;
         goto done;
     }
-
+    to = PyObject_GC_New(teeobject, &tee_type);
+    if (to == NULL) {
+        Py_DECREF(dataobj);
+        goto done;
+    }
+    to->dataobj = (teedataobject *)dataobj;
     to->index = 0;
     to->weakreflist = NULL;
     PyObject_GC_Track(to);
 done:
-    Py_XDECREF(it);
+    Py_DECREF(it);
     return (PyObject *)to;
 }
 
@@ -1057,7 +1057,7 @@ itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n)
 
     PyTuple_SET_ITEM(result, 0, copyable);
     for (i = 1; i < n; i++) {
-        copyable = _PyObject_CallNoArg(copyfunc);
+        copyable = _PyObject_CallNoArgs(copyfunc);
         if (copyable == NULL) {
             Py_DECREF(copyfunc);
             Py_DECREF(result);
@@ -1613,7 +1613,8 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     Py_ssize_t numargs;
     isliceobject *lz;
 
-    if (type == &islice_type && !_PyArg_NoKeywords("islice", kwds))
+    if ((type == &islice_type || type->tp_init == islice_type.tp_init) &&
+        !_PyArg_NoKeywords("islice", kwds))
         return NULL;
 
     if (!PyArg_UnpackTuple(args, "islice", 2, 4, &seq, &a1, &a2, &a3))
@@ -2020,7 +2021,8 @@ chain_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyObject *source;
 
-    if (type == &chain_type && !_PyArg_NoKeywords("chain", kwds))
+    if ((type == &chain_type || type->tp_init == chain_type.tp_init) &&
+        !_PyArg_NoKeywords("chain", kwds))
         return NULL;
 
     source = PyObject_GetIter(args);
@@ -2162,7 +2164,7 @@ static PyMethodDef chain_methods[] = {
      reduce_doc},
     {"__setstate__",    (PyCFunction)chain_setstate,    METH_O,
      setstate_doc},
-    {"__class_getitem__",    (PyCFunction)Py_GenericAlias,
+    {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL,              NULL}           /* sentinel */
 };

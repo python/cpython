@@ -1,4 +1,5 @@
 import _compression
+import array
 from io import BytesIO, UnsupportedOperation, DEFAULT_BUFFER_SIZE
 import os
 import pathlib
@@ -8,9 +9,7 @@ import sys
 from test import support
 import unittest
 
-from test.support import (
-    _4G, bigmemtest, run_unittest
-)
+from test.support import _4G, bigmemtest
 from test.support.import_helper import import_module
 from test.support.os_helper import (
     TESTFN, unlink
@@ -1231,6 +1230,14 @@ class FileTestCase(unittest.TestCase):
         self.assertTrue(d2.eof)
         self.assertEqual(out1 + out2, entire)
 
+    def test_issue44439(self):
+        q = array.array('Q', [1, 2, 3, 4, 5])
+        LENGTH = len(q) * q.itemsize
+
+        with LZMAFile(BytesIO(), 'w') as f:
+            self.assertEqual(f.write(q), LENGTH)
+            self.assertEqual(f.tell(), LENGTH)
+
 
 class OpenTestCase(unittest.TestCase):
 
@@ -1250,14 +1257,14 @@ class OpenTestCase(unittest.TestCase):
     def test_text_modes(self):
         uncompressed = INPUT.decode("ascii")
         uncompressed_raw = uncompressed.replace("\n", os.linesep)
-        with lzma.open(BytesIO(COMPRESSED_XZ), "rt") as f:
+        with lzma.open(BytesIO(COMPRESSED_XZ), "rt", encoding="ascii") as f:
             self.assertEqual(f.read(), uncompressed)
         with BytesIO() as bio:
-            with lzma.open(bio, "wt") as f:
+            with lzma.open(bio, "wt", encoding="ascii") as f:
                 f.write(uncompressed)
             file_data = lzma.decompress(bio.getvalue()).decode("ascii")
             self.assertEqual(file_data, uncompressed_raw)
-            with lzma.open(bio, "at") as f:
+            with lzma.open(bio, "at", encoding="ascii") as f:
                 f.write(uncompressed)
             file_data = lzma.decompress(bio.getvalue()).decode("ascii")
             self.assertEqual(file_data, uncompressed_raw * 2)
@@ -1334,17 +1341,18 @@ class OpenTestCase(unittest.TestCase):
         # Test with explicit newline (universal newline mode disabled).
         text = INPUT.decode("ascii")
         with BytesIO() as bio:
-            with lzma.open(bio, "wt", newline="\n") as f:
+            with lzma.open(bio, "wt", encoding="ascii", newline="\n") as f:
                 f.write(text)
             bio.seek(0)
-            with lzma.open(bio, "rt", newline="\r") as f:
+            with lzma.open(bio, "rt", encoding="ascii", newline="\r") as f:
                 self.assertEqual(f.readlines(), [text])
 
     def test_x_mode(self):
         self.addCleanup(unlink, TESTFN)
         for mode in ("x", "xb", "xt"):
             unlink(TESTFN)
-            with lzma.open(TESTFN, mode):
+            encoding = "ascii" if "t" in mode else None
+            with lzma.open(TESTFN, mode, encoding=encoding):
                 pass
             with self.assertRaises(FileExistsError):
                 with lzma.open(TESTFN, mode):
@@ -1931,14 +1939,5 @@ ISSUE_21872_DAT = (
 )
 
 
-def test_main():
-    run_unittest(
-        CompressorDecompressorTestCase,
-        CompressDecompressFunctionTestCase,
-        FileTestCase,
-        OpenTestCase,
-        MiscellaneousTestCase,
-    )
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

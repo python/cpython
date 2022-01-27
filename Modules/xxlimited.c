@@ -1,4 +1,3 @@
-
 /* Use this file as a template to start implementing a module that
    also declares object types. All occurrences of 'Xxo' should be changed
    to something reasonable for your objects. After that, all other
@@ -55,6 +54,8 @@
           pass
    */
 
+#define Py_LIMITED_API 0x030b0000
+
 #include "Python.h"
 
 // Module state
@@ -101,6 +102,13 @@ Xxo_traverse(XxoObject *self, visitproc visit, void *arg)
 
     // Visit the attribute dict
     Py_VISIT(self->x_attr);
+    return 0;
+}
+
+static int
+Xxo_clear(XxoObject *self)
+{
+    Py_CLEAR(self->x_attr);
     return 0;
 }
 
@@ -212,6 +220,7 @@ PyDoc_STRVAR(Xxo_doc,
 static PyType_Slot Xxo_Type_slots[] = {
     {Py_tp_doc, (char *)Xxo_doc},
     {Py_tp_traverse, Xxo_traverse},
+    {Py_tp_clear, Xxo_clear},
     {Py_tp_finalize, Xxo_finalize},
     {Py_tp_dealloc, Xxo_dealloc},
     {Py_tp_getattro, Xxo_getattro},

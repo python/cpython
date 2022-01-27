@@ -1,5 +1,10 @@
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 #include <stddef.h>               // offsetof()
 
 
@@ -225,7 +230,7 @@ get_running_loop(PyObject **loop)
 {
     PyObject *rl;
 
-    PyThreadState *ts = PyThreadState_Get();
+    PyThreadState *ts = _PyThreadState_GET();
     uint64_t ts_id = PyThreadState_GetID(ts);
     if (ts_id == cached_running_holder_tsid && cached_running_holder != NULL) {
         // Fast path, check the cache.
@@ -287,7 +292,7 @@ set_running_loop(PyObject *loop)
 {
     PyObject *ts_dict = NULL;
 
-    PyThreadState *tstate = PyThreadState_Get();
+    PyThreadState *tstate = _PyThreadState_GET();
     if (tstate != NULL) {
         ts_dict = _PyThreadState_GetDict(tstate);  // borrowed
     }
@@ -319,7 +324,7 @@ set_running_loop(PyObject *loop)
 
 
 static PyObject *
-get_event_loop(void)
+get_event_loop(int stacklevel)
 {
     PyObject *loop;
     PyObject *policy;
@@ -329,6 +334,13 @@ get_event_loop(void)
     }
     if (loop != NULL) {
         return loop;
+    }
+
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "There is no current event loop",
+                     stacklevel))
+    {
+        return NULL;
     }
 
     policy = PyObject_CallNoArgs(asyncio_get_event_loop_policy);
@@ -489,7 +501,7 @@ future_init(FutureObj *fut, PyObject *loop)
     fut->fut_blocking = 0;
 
     if (loop == Py_None) {
-        loop = get_event_loop();
+        loop = get_event_loop(1);
         if (loop == NULL) {
             return -1;
         }
@@ -798,9 +810,7 @@ FutureObj_traverse(FutureObj *fut, visitproc visit, void *arg)
     Py_VISIT(fut->dict);
 
     _PyErr_StackItem *exc_state = &fut->fut_cancelled_exc_state;
-    Py_VISIT(exc_state->exc_type);
     Py_VISIT(exc_state->exc_value);
-    Py_VISIT(exc_state->exc_traceback);
 
     return 0;
 }
@@ -1359,10 +1369,11 @@ _asyncio_Future__make_cancelled_error_impl(FutureObj *self)
 {
     PyObject *exc = create_cancelled_error(self->fut_cancel_msg);
     _PyErr_StackItem *exc_state = &self->fut_cancelled_exc_state;
-    /* Transfer ownership of exc_value from exc_state to exc since we are
-       done with it. */
-    PyException_SetContext(exc, exc_state->exc_value);
-    exc_state->exc_value = NULL;
+
+    if (exc_state->exc_value) {
+        PyException_SetContext(exc, Py_NewRef(exc_state->exc_value));
+        _PyErr_ClearExcState(exc_state);
+    }
 
     return exc;
 }
@@ -1469,13 +1480,6 @@ finally:
     PyErr_Restore(error_type, error_value, error_traceback);
 }
 
-static PyObject *
-future_cls_getitem(PyObject *cls, PyObject *type)
-{
-    Py_INCREF(cls);
-    return cls;
-}
-
 static PyAsyncMethods FutureType_as_async = {
     (unaryfunc)future_new_iter,         /* am_await */
     0,                                  /* am_aiter */
@@ -1496,7 +1500,7 @@ static PyMethodDef FutureType_methods[] = {
     _ASYNCIO_FUTURE_GET_LOOP_METHODDEF
     _ASYNCIO_FUTURE__MAKE_CANCELLED_ERROR_METHODDEF
     _ASYNCIO_FUTURE__REPR_INFO_METHODDEF
-    {"__class_getitem__", future_cls_getitem, METH_O|METH_CLASS, NULL},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL, NULL}        /* Sentinel */
 };
 
@@ -1757,8 +1761,7 @@ static PyTypeObject FutureIterType = {
     .tp_dealloc = (destructor)FutureIter_dealloc,
     .tp_as_async = &FutureIterType_as_async,
     .tp_getattro = PyObject_GenericGetAttr,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_HAVE_AM_SEND,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_traverse = (traverseproc)FutureIter_traverse,
     .tp_iter = PyObject_SelfIter,
     .tp_iternext = (iternextfunc)FutureIter_iternext,
@@ -2439,13 +2442,6 @@ done:
     FutureObj_finalize((FutureObj*)task);
 }
 
-static PyObject *
-task_cls_getitem(PyObject *cls, PyObject *type)
-{
-    Py_INCREF(cls);
-    return cls;
-}
-
 static void TaskObj_dealloc(PyObject *);  /* Needs Task_CheckExact */
 
 static PyMethodDef TaskType_methods[] = {
@@ -2465,7 +2461,7 @@ static PyMethodDef TaskType_methods[] = {
     _ASYNCIO_TASK_GET_NAME_METHODDEF
     _ASYNCIO_TASK_SET_NAME_METHODDEF
     _ASYNCIO_TASK_GET_CORO_METHODDEF
-    {"__class_getitem__", task_cls_getitem, METH_O|METH_CLASS, NULL},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL, NULL}        /* Sentinel */
 };
 
@@ -2686,26 +2682,29 @@ task_step_impl(TaskObj *task, PyObject *exc)
         if (PyErr_ExceptionMatches(asyncio_CancelledError)) {
             /* CancelledError */
             PyErr_Fetch(&et, &ev, &tb);
+            assert(et);
+            PyErr_NormalizeException(&et, &ev, &tb);
+            if (tb != NULL) {
+                PyException_SetTraceback(ev, tb);
+                Py_DECREF(tb);
+            }
+            Py_XDECREF(et);
 
             FutureObj *fut = (FutureObj*)task;
             _PyErr_StackItem *exc_state = &fut->fut_cancelled_exc_state;
-            exc_state->exc_type = et;
             exc_state->exc_value = ev;
-            exc_state->exc_traceback = tb;
 
             return future_cancel(fut, NULL);
         }
 
         /* Some other exception; pop it and call Task.set_exception() */
         PyErr_Fetch(&et, &ev, &tb);
-
         assert(et);
-        if (!ev || !PyObject_TypeCheck(ev, (PyTypeObject *) et)) {
-            PyErr_NormalizeException(&et, &ev, &tb);
-        }
+        PyErr_NormalizeException(&et, &ev, &tb);
         if (tb != NULL) {
             PyException_SetTraceback(ev, tb);
         }
+
         o = future_set_exception((FutureObj*)task, ev);
         if (!o) {
             /* An exception in Task.set_exception() */
@@ -2949,7 +2948,7 @@ task_step(TaskObj *task, PyObject *exc)
         PyObject *et, *ev, *tb;
         PyErr_Fetch(&et, &ev, &tb);
         leave_task(task->task_loop, (PyObject*)task);
-        _PyErr_ChainExceptions(et, ev, tb);
+        _PyErr_ChainExceptions(et, ev, tb); /* Normalizes (et, ev, tb) */
         return NULL;
     }
     else {
@@ -2998,8 +2997,10 @@ task_wakeup(TaskObj *task, PyObject *o)
     }
 
     PyErr_Fetch(&et, &ev, &tb);
-    if (!ev || !PyObject_TypeCheck(ev, (PyTypeObject *) et)) {
-        PyErr_NormalizeException(&et, &ev, &tb);
+    assert(et);
+    PyErr_NormalizeException(&et, &ev, &tb);
+    if (tb != NULL) {
+        PyException_SetTraceback(ev, tb);
     }
 
     result = task_step(task, ev);
@@ -3078,7 +3079,19 @@ static PyObject *
 _asyncio_get_event_loop_impl(PyObject *module)
 /*[clinic end generated code: output=2a2d8b2f824c648b input=9364bf2916c8655d]*/
 {
-    return get_event_loop();
+    return get_event_loop(1);
+}
+
+/*[clinic input]
+_asyncio._get_event_loop
+    stacklevel: int = 3
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio__get_event_loop_impl(PyObject *module, int stacklevel)
+/*[clinic end generated code: output=9c1d6d3c802e67c9 input=d17aebbd686f711d]*/
+{
+    return get_event_loop(stacklevel-1);
 }
 
 /*[clinic input]
@@ -3221,6 +3234,9 @@ new_running_loop_holder(PyObject *loop)
 static void
 PyRunningLoopHolder_tp_dealloc(PyRunningLoopHolder *rl)
 {
+    if (cached_running_holder == (PyObject *)rl) {
+        cached_running_holder = NULL;
+    }
     Py_CLEAR(rl->rl_loop);
     PyObject_Free(rl);
 }
@@ -3288,16 +3304,13 @@ static int
 module_init(void)
 {
     PyObject *module = NULL;
+    if (module_initialized) {
+        return 0;
+    }
 
     asyncio_mod = PyImport_ImportModule("asyncio");
     if (asyncio_mod == NULL) {
         goto fail;
-    }
-    if (module_initialized != 0) {
-        return 0;
-    }
-    else {
-        module_initialized = 1;
     }
 
     current_tasks = PyDict_New();
@@ -3359,6 +3372,7 @@ module_init(void)
         goto fail;
     }
 
+    module_initialized = 1;
     Py_DECREF(module);
     return 0;
 
@@ -3375,6 +3389,7 @@ PyDoc_STRVAR(module_doc, "Accelerator module for asyncio");
 
 static PyMethodDef asyncio_methods[] = {
     _ASYNCIO_GET_EVENT_LOOP_METHODDEF
+    _ASYNCIO__GET_EVENT_LOOP_METHODDEF
     _ASYNCIO_GET_RUNNING_LOOP_METHODDEF
     _ASYNCIO__GET_RUNNING_LOOP_METHODDEF
     _ASYNCIO__SET_RUNNING_LOOP_METHODDEF

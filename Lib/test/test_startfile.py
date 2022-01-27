@@ -18,11 +18,11 @@ from os import path
 startfile = support.get_attribute(os, 'startfile')
 
 
+@unittest.skipIf(platform.win32_is_iot(), "starting files is not supported on Windows IoT Core or nanoserver")
 class TestCase(unittest.TestCase):
     def test_nonexisting(self):
         self.assertRaises(OSError, startfile, "nonexisting.vbs")
 
-    @unittest.skipIf(platform.win32_is_iot(), "starting files is not supported on Windows IoT Core or nanoserver")
     def test_empty(self):
         # We need to make sure the child process starts in a directory
         # we're not about to delete. If we're running under -j, that
@@ -32,6 +32,14 @@ class TestCase(unittest.TestCase):
             empty = path.join(path.dirname(__file__), "empty.vbs")
             startfile(empty)
             startfile(empty, "open")
+        startfile(empty, cwd=path.dirname(sys.executable))
+
+    def test_python(self):
+        # Passing "-V" ensures that it closes quickly, though still not
+        # quickly enough that we can run in the test directory
+        cwd, name = path.split(sys.executable)
+        startfile(name, arguments="-V", cwd=cwd)
+        startfile(name, arguments="-V", cwd=cwd, show_cmd=0)
 
 if __name__ == "__main__":
     unittest.main()
