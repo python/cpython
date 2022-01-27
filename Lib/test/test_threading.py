@@ -123,6 +123,30 @@ class ThreadTests(BaseTestCase):
             thread = threading.Thread(target=func)
             self.assertEqual(thread.name, "Thread-5 (func)")
 
+    def test_run_with_list_args(self):
+        """
+        Using list or tuple as *args* in constructor could achieve the same effect.
+        """
+        num_list = [1, 2]
+
+        def func_with_num_args(arg1, arg2):
+            self.assertEqual(arg1, num_list[0])
+            self.assertEqual(arg2, num_list[1])
+
+        str_list = ["str1", "str2"]
+
+        def func_with_str_args(arg1, arg2):
+            self.assertEqual(arg1, str_list[0])
+            self.assertEqual(arg2, str_list[1])
+
+        test_suits = [
+            [num_list, func_with_num_args],
+            [str_list, func_with_str_args],
+        ]
+        for test_case in test_suits:
+            t = threading.Thread(target=test_case[1], args=test_case[0])
+            t.start()
+
     @cpython_only
     def test_disallow_instantiation(self):
         # Ensure that the type disallows instantiation (bpo-43916)
