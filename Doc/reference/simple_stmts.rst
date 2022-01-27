@@ -564,9 +564,9 @@ The :keyword:`!raise` statement
    raise_stmt: "raise" [`expression` ["from" `expression`]]
 
 If no expressions are present, :keyword:`raise` re-raises the
-exception that is being handled.  If no exception is being handled,
-a :exc:`RuntimeError` exception is raised indicating that this is an
-error.
+exception that is currently being handled, which is also known as the *active exception*.
+If there isn't currently an active exception, a :exc:`RuntimeError` exception is raised
+indicating that this is an error.
 
 Otherwise, :keyword:`raise` evaluates the first expression as the exception
 object.  It must be either a subclass or an instance of :class:`BaseException`.

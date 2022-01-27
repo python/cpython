@@ -38,13 +38,13 @@ information on defining exceptions is available in the Python Tutorial under
 Exception context
 -----------------
 
-When raising a new exception and an exception
+When raising a new exception while another exception
 is already being handled, the new exception's
-:attr:`__context__` attribute is automatically set to the originating
+:attr:`__context__` attribute is automatically set to the handled
 exception.  An exception may be handled when an :keyword:`except` or
 :keyword:`finally` clause, or a :keyword:`with` statement, is used.  If the
 new exception is not handled, the traceback that is eventually displayed may
-include the originating exception(s) and the final exception.
+include the context exception(s) as well as the final exception.
 
 This implicit exception context can be
 supplemented with an explicit cause by using :keyword:`!from` with
