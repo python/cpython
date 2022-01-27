@@ -1906,3 +1906,18 @@ _PyCode_ConstantKey(PyObject *op)
     }
     return key;
 }
+
+void 
+_PyStaticCode_Dealloc(PyCodeObject *co, _Py_CODEUNIT *firstinstr)
+{
+    PyMem_Free(co->co_quickened);
+    co->co_quickened = NULL;
+    PyMem_Free(co->co_extra);
+    co->co_extra = NULL;
+    co->co_firstinstr = firstinstr;
+    if (co->co_weakreflist != NULL) {
+        PyObject_ClearWeakRefs((PyObject *)co);
+        co->co_weakreflist = NULL;
+    }
+    co->co_warmup = QUICKENING_INITIAL_WARMUP_VALUE;
+}
