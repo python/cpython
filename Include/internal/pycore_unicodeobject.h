@@ -53,6 +53,8 @@ struct _Py_unicode_state {
     struct _Py_unicode_ids ids;
 };
 
+PyAPI_FUNC(PyObject *) _PyUnicode_InternSafe(PyObject *);
+
 extern void _PyUnicode_ClearInterned(PyInterpreterState *interp);
 
 

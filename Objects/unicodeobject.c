@@ -15559,6 +15559,58 @@ error:
 }
 
 
+static PyObject *
+unicode_intern(PyObject *s)
+{
+    if (PyUnicode_CHECK_INTERNED(s)) {
+        return s;
+    }
+
+#ifdef INTERNED_STRINGS
+    if (PyUnicode_READY(s) == -1) {
+        return NULL;
+    }
+
+    if (interned == NULL) {
+        interned = PyDict_New();
+        if (interned == NULL) {
+            return NULL;
+        }
+    }
+
+    PyObject *t = PyDict_SetDefault(interned, s, s);
+    if (t == NULL) {
+        return NULL;
+    }
+    if (t != s) {
+        return t;
+    }
+
+    /* The two references in interned dict (key and value) are not counted by
+       refcnt. unicode_dealloc() and _PyUnicode_ClearInterned() take care of
+       this. */
+    Py_SET_REFCNT(s, Py_REFCNT(s) - 2);
+    _PyUnicode_STATE(s).interned = SSTATE_INTERNED_MORTAL;
+#else
+    // PyDict expects that interned strings have their hash
+    // (PyASCIIObject.hash) already computed.
+    (void)unicode_hash(s);
+#endif
+    return s;
+}
+
+/* Return true if already interned. */
+PyObject *
+_PyUnicode_InternSafe(PyObject *s)
+{
+    PyObject *actual = unicode_intern(s);
+    if (actual == NULL) {
+        PyErr_Clear(); /* Don't leave an exception */
+        actual = s;
+    }
+    return actual;
+}
+
 void
 PyUnicode_InternInPlace(PyObject **p)
 {
@@ -15578,46 +15630,13 @@ PyUnicode_InternInPlace(PyObject **p)
         return;
     }
 
-    if (PyUnicode_CHECK_INTERNED(s)) {
-        return;
-    }
-
-#ifdef INTERNED_STRINGS
-    if (PyUnicode_READY(s) == -1) {
-        PyErr_Clear();
-        return;
-    }
-
-    if (interned == NULL) {
-        interned = PyDict_New();
-        if (interned == NULL) {
-            PyErr_Clear(); /* Don't leave an exception */
-            return;
-        }
-    }
-
-    PyObject *t = PyDict_SetDefault(interned, s, s);
+    PyObject *t = unicode_intern(s);
     if (t == NULL) {
-        PyErr_Clear();
-        return;
-    }
-
-    if (t != s) {
+        PyErr_Clear(); /* Don't leave an exception */
+    } else if (t != s) {
         Py_INCREF(t);
         Py_SETREF(*p, t);
-        return;
     }
-
-    /* The two references in interned dict (key and value) are not counted by
-       refcnt. unicode_dealloc() and _PyUnicode_ClearInterned() take care of
-       this. */
-    Py_SET_REFCNT(s, Py_REFCNT(s) - 2);
-    _PyUnicode_STATE(s).interned = SSTATE_INTERNED_MORTAL;
-#else
-    // PyDict expects that interned strings have their hash
-    // (PyASCIIObject.hash) already computed.
-    (void)unicode_hash(s);
-#endif
 }
 
 void
