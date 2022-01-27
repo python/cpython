@@ -1986,10 +1986,11 @@ unicode_dealloc(PyObject *unicode)
 static int
 unicode_is_singleton(PyObject *unicode)
 {
-    struct _Py_unicode_state *state = get_unicode_state();
-    if (unicode == _Py_GET_GLOBAL_STRING(empty)) {
+    if (_Py_IS_POINTER_FROM_VAR(unicode, _Py_SINGLETON(strings))) {
         return 1;
     }
+
+    struct _Py_unicode_state *state = get_unicode_state();
     PyASCIIObject *ascii = (PyASCIIObject *)unicode;
     if (ascii->state.kind != PyUnicode_WCHAR_KIND && ascii->length == 1) {
         Py_UCS4 ch = PyUnicode_READ_CHAR(unicode, 0);
