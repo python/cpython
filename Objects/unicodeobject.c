@@ -15529,8 +15529,14 @@ _PyUnicode_InitState(PyInterpreterState *interp)
 PyStatus
 _PyUnicode_InitGlobalObjects(PyInterpreterState *interp)
 {
+    if (!_Py_IsMainInterpreter(interp)) {
+        return _PyStatus_OK();
+    }
+
+#ifdef Py_DEBUG
     PyObject *empty = _Py_GET_GLOBAL_STRING(empty);
     assert(_PyUnicode_CheckConsistency(empty, 1));
+#endif
 
     return _PyStatus_OK();
 }
