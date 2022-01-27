@@ -215,7 +215,7 @@ provides three different variants:
       *code*, *message*, and *explain* are used in the message body, formatted according
       to the :attr:`error_message_format` attribute. The message body is omitted
       if the method is HEAD method or the status code is one of the following:
-      1xx, 204 (No Content), 205 (Reset Content), 304 (Not Modified).
+      1xx (Informational), 204 (No Content), 205 (Reset Content), 304 (Not Modified).
 
       .. versionchanged:: 3.4
          The error response includes a Content-Length header.
