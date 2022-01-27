@@ -260,11 +260,7 @@ get_unicode_state(void)
 // Return a borrowed reference to the empty string singleton.
 static inline PyObject* unicode_get_empty(void)
 {
-    struct _Py_unicode_state *state = get_unicode_state();
-    // unicode_get_empty() must not be called before _PyUnicode_Init()
-    // or after _PyUnicode_Fini()
-    assert(state->empty_string != NULL);
-    return state->empty_string;
+    return _Py_GET_GLOBAL_STRING(empty);
 }
 
 
@@ -1388,25 +1384,6 @@ _PyUnicode_Dump(PyObject *op)
 }
 #endif
 
-static int
-unicode_create_empty_string_singleton(struct _Py_unicode_state *state)
-{
-    // Use size=1 rather than size=0, so PyUnicode_New(0, maxchar) can be
-    // optimized to always use state->empty_string without having to check if
-    // it is NULL or not.
-    PyObject *empty = PyUnicode_New(1, 0);
-    if (empty == NULL) {
-        return -1;
-    }
-    PyUnicode_1BYTE_DATA(empty)[0] = 0;
-    _PyUnicode_LENGTH(empty) = 0;
-    assert(_PyUnicode_CheckConsistency(empty, 1));
-
-    assert(state->empty_string == NULL);
-    state->empty_string = empty;
-    return 0;
-}
-
 
 PyObject *
 PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
@@ -2010,7 +1987,7 @@ static int
 unicode_is_singleton(PyObject *unicode)
 {
     struct _Py_unicode_state *state = get_unicode_state();
-    if (unicode == state->empty_string) {
+    if (unicode == _Py_GET_GLOBAL_STRING(empty)) {
         return 1;
     }
     PyASCIIObject *ascii = (PyASCIIObject *)unicode;
@@ -15551,10 +15528,8 @@ _PyUnicode_InitState(PyInterpreterState *interp)
 PyStatus
 _PyUnicode_InitGlobalObjects(PyInterpreterState *interp)
 {
-    struct _Py_unicode_state *state = &interp->unicode;
-    if (unicode_create_empty_string_singleton(state) < 0) {
-        return _PyStatus_NO_MEMORY();
-    }
+    PyObject *empty = _Py_GET_GLOBAL_STRING(empty);
+    assert(_PyUnicode_CheckConsistency(empty, 1));
 
     return _PyStatus_OK();
 }
@@ -16137,7 +16112,6 @@ _PyUnicode_Fini(PyInterpreterState *interp)
     for (Py_ssize_t i = 0; i < 256; i++) {
         Py_CLEAR(state->latin1[i]);
     }
-    Py_CLEAR(state->empty_string);
 }
 
 
