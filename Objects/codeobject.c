@@ -1908,7 +1908,8 @@ _PyCode_ConstantKey(PyObject *op)
 }
 
 void 
-_PyStaticCode_Dealloc(PyCodeObject *co, _Py_CODEUNIT *firstinstr) {
+_PyStaticCode_Dealloc(PyCodeObject *co, _Py_CODEUNIT *firstinstr)
+{
     PyMem_Free(co->co_quickened);
     co->co_quickened = NULL;
     PyMem_Free(co->co_extra);
