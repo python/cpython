@@ -607,6 +607,7 @@ class TestTranforms(BytecodeTestCase):
             a, c, b = a, b, c
             b, a, c = a, b, c
             b, c, a = a, b, c
+            c, a, b = a, b, c
             c, b, a = a, b, c
         self.assertNotInBytecode(f, "SWAP")
 
