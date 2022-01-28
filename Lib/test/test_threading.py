@@ -123,37 +123,25 @@ class ThreadTests(BaseTestCase):
             thread = threading.Thread(target=func)
             self.assertEqual(thread.name, "Thread-5 (func)")
 
-    def test_run_with_diff_args(self):
+    def test_args_argument(self):
         # Using list or tuple as *args* in constructor could
         # achieve the same effect.
         num_list = [1]
         num_tuple = (1,)
 
-        def func_with_num_args(arg):
-            self.assertEqual(arg, 1)
-
         str_list = ["str"]
         str_tuple = ("str",)
-
-        def func_with_str_args(arg):
-            self.assertEqual(arg, "str")
 
         list_in_tuple = ([1],)
         tuple_in_list = [(1,)]
 
-        def func_with_list_args(arg):
-            self.assertEqual(arg, [1])
-
-        def func_with_tuple_args(arg):
-            self.assertEqual(arg, (1,))
-
         test_cases = [
-            [num_list, func_with_num_args],
-            [num_tuple, func_with_num_args],
-            [str_list, func_with_str_args],
-            [str_tuple, func_with_str_args],
-            [list_in_tuple, func_with_list_args],
-            [tuple_in_list, func_with_tuple_args]
+            [num_list, lambda arg: self.assertEqual(arg, 1)],
+            [num_tuple, lambda arg: self.assertEqual(arg, 1)],
+            [str_list, lambda arg: self.assertEqual(arg, "str")],
+            [str_tuple, lambda arg: self.assertEqual(arg, "str")],
+            [list_in_tuple, lambda arg: self.assertEqual(arg, [1])],
+            [tuple_in_list, lambda arg: self.assertEqual(arg, (1,))]
         ]
         for test_case in test_cases:
             t = threading.Thread(target=test_case[1], args=test_case[0])
