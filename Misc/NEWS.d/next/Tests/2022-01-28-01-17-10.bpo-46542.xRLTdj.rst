@@ -1,0 +1,2 @@
+Fix ``test_json`` tests checking for :exc:`RecursionError`: modify these tests
+to use ``support.infinite_recursion()``. Patch by Victor Stinner.
