@@ -1,9 +1,7 @@
-import argparse
-import ast
-import builtins
-import collections
 import contextlib
+import glob
 import os.path
+import re
 import sys
 
 
@@ -478,15 +476,156 @@ def generate_runtime_init():
 
 
 #######################################
+# checks
+
+def err(msg):
+    print(msg, file=sys.stderr)
+
+
+GETTER_RE = re.compile(r'''
+    ^
+    .*?
+    (?:
+        (?:
+            _Py_GET_GLOBAL_IDENTIFIER
+            [(]
+            ( \w+ )  # <identifier>
+            [)]
+         )
+        |
+        (?:
+            _Py_GET_GLOBAL_STRING
+            [(]
+            ( \w+ )  # <literal>
+            [)]
+         )
+     )
+''', re.VERBOSE)
+TYPESLOTS_RE = re.compile(r'''
+    ^
+    .*?
+    (?:
+        (?:
+            SLOT0 [(] .*?, \s*
+            ( \w+ )  # <slot0>
+            [)]
+         )
+        |
+        (?:
+            SLOT1 [(] .*?, \s*
+            ( \w+ )  # <slot1>
+            , .* [)]
+         )
+        |
+        (?:
+            SLOT1BIN [(] .*?, .*?, \s*
+            ( \w+ )  # <slot1bin>
+            , \s*
+            ( \w+ )  # <reverse>
+            [)]
+         )
+        |
+        (?:
+            SLOT1BINFULL [(] .*?, .*?, .*?, \s*
+            ( \w+ )  # <slot1binfull>
+            , \s*
+            ( \w+ )  # <fullreverse>
+            [)]
+         )
+        |
+        ( SLOT \d .* [^)] $ )  # <wrapped>
+     )
+''', re.VERBOSE)
+
+def check_orphan_strings():
+    literals = set(n for n, s in STRING_LITERALS.items() if s)
+    identifiers = set(IDENTIFIERS)
+    files = glob.iglob(os.path.join(ROOT, '**', '*.[ch]'), recursive=True)
+    for i, filename in enumerate(files, start=1):
+        print('.', end='')
+        if i % 5 == 0:
+            print(' ', end='')
+        if i % 20 == 0:
+            print()
+        if i % 100 == 0:
+            print()
+        with open(filename) as infile:
+            wrapped = None
+            for line in infile:
+                identifier = literal = reverse = None
+
+                line = line.splitlines()[0]
+                if wrapped:
+                    line = f'{wrapped.rstrip()} {line}'
+                    wrapped = None
+
+                if os.path.basename(filename) == '_warnings.c':
+                    m = re.match(r'^.* = GET_WARNINGS_ATTR[(][^,]*, (\w+),', line)
+                    if m:
+                        identifier, = m.groups()
+                elif os.path.basename(filename) == 'typeobject.c':
+                    m = TYPESLOTS_RE.match(line)
+                    if m:
+                        (slot0,
+                         slot1,
+                         slot1bin, reverse,
+                         slot1binfull, fullreverse,
+                         wrapped,
+                         ) = m.groups()
+                        identifier = slot0 or slot1 or slot1bin or slot1binfull
+                        reverse = reverse or fullreverse
+
+                if not identifier and not literal:
+                    m = GETTER_RE.match(line)
+                    if not m:
+                        continue
+                    identifier, literal = m.groups()
+
+                if literal:
+                    if literals and literal in literals:
+                        literals.remove(literal)
+                if identifier:
+                    if identifiers and identifier in identifiers:
+                        identifiers.remove(identifier)
+                if reverse:
+                    if identifiers and reverse in identifiers:
+                        identifiers.remove(reverse)
+                if not literals and not identifiers:
+                    break
+            else:
+                continue
+            break
+    if i % 20:
+        print()
+    if not literals and not identifiers:
+        return
+    print('ERROR:', file=sys.stderr)
+    if literals:
+        err(' unused global string literals:')
+        for name in sorted(literals):
+            err(f'   {name}')
+    if identifiers:
+        if literals:
+            print()
+        err(' unused global identifiers:')
+        for name in sorted(identifiers):
+            err(f'   {name}')
+
+
+#######################################
 # the script
 
-def main() -> None:
+def main(*, check=False) -> None:
     generate_global_strings()
     generate_runtime_init()
 
+    if check:
+        check_orphan_strings()
+
 
 if __name__ == '__main__':
-    argv = sys.argv[1:]
-    if argv:
-        sys.exit(f'ERROR: got unexpected args {argv}')
-    main()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--check', action='store_true')
+    args = parser.parse_args()
+    main(**vars(args))
