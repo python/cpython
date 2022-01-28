@@ -189,6 +189,9 @@ _PyThreadState_BumpFramePointer(PyThreadState *tstate, size_t size)
 
 void _PyThreadState_PopFrame(PyThreadState *tstate, InterpreterFrame *frame);
 
+InterpreterFrame *
+_PyFrame_Push(PyThreadState *tstate, PyFunctionObject *func);
+
 #ifdef __cplusplus
 }
 #endif

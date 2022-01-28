@@ -109,9 +109,10 @@ extern "C" {
 #define SET_UPDATE                      163
 #define DICT_MERGE                      164
 #define DICT_UPDATE                     165
+#define PRECALL_FUNCTION                167
 #define PRECALL_METHOD                  168
-#define CALL_NO_KW                      169
-#define CALL_KW                         170
+#define CALL                            171
+#define KW_NAMES                        172
 #define BINARY_OP_ADAPTIVE                2
 #define BINARY_OP_ADD_INT                 3
 #define BINARY_OP_ADD_FLOAT               4
@@ -195,6 +196,7 @@ static uint32_t _PyOpcode_Jump[8] = {
 
 #define HAS_CONST(op) (false\
     || ((op) == 100) \
+    || ((op) == 172) \
     )
 
 #define NB_ADD                            0
