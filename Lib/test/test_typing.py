@@ -2071,7 +2071,7 @@ class GenericTests(BaseTestCase):
         with self.assertRaises(TypeError):
             Tuple[Optional]
         with self.assertRaises(TypeError):
-            ClassVar[ClassVar]
+            ClassVar[ClassVar[int]]
         with self.assertRaises(TypeError):
             List[ClassVar[int]]
 
@@ -2896,12 +2896,16 @@ class ForwardRefTests(BaseTestCase):
         class C:
             a: Annotated['ClassVar[int]', (3, 5)] = 4
             b: Annotated['Final[int]', "const"] = 4
+            x: 'ClassVar' = 4
+            y: 'Final' = 4
 
         class CF:
             b: List['Final[int]'] = 4
 
         self.assertEqual(get_type_hints(C, globals())['a'], ClassVar[int])
         self.assertEqual(get_type_hints(C, globals())['b'], Final[int])
+        self.assertEqual(get_type_hints(C, globals())['x'], ClassVar)
+        self.assertEqual(get_type_hints(C, globals())['y'], Final)
         with self.assertRaises(TypeError):
             get_type_hints(CF, globals()),
 
