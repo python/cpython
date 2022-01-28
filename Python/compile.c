@@ -8535,6 +8535,34 @@ swaptimize(basicblock *block, int ix)
     return len - 1;
 }
 
+// This list is pretty small, since it's only okay to reorder opcodes that:
+// - can't affect control flow (like jumping or raising exceptions)
+// - can't invoke arbitrary code (besides finalizers)
+// - only touch the TOS (and pop it when finished)
+#define SWAPPABLE(opcode) \
+    ((opcode) == STORE_FAST || (opcode) == POP_TOP || (opcode) == STORE_DEREF)
+
+static int
+next_swappable_instruction(basicblock *block, int i, int lineno)
+{
+    while (++i < block->b_iused) {
+        struct instr *instruction = &block->b_instr[i];
+        if (0 <= lineno && instruction->i_lineno != lineno) {
+            // Optimizing across this instruction could cause user-visible
+            // changes in the names bound between line tracing events!
+            return -1;
+        }
+        if (instruction->i_opcode == NOP) {
+            continue;
+        }
+        if (SWAPPABLE(instruction->i_opcode)) {
+            return i;
+        }
+        return -1;
+    }
+    return -1;
+}
+
 // Attempt to apply SWAPs statically by swapping *instructions* rather than
 // stack items. For example, we can replace SWAP(2), POP_TOP, STORE_FAST(42)
 // with the more efficient NOP, STORE_FAST(42), POP_TOP.
@@ -8545,51 +8573,31 @@ apply_static_swaps(basicblock *block, int i)
     for (; 0 <= i; i--) {
         assert(i < block->b_iused);
         struct instr *swap = &block->b_instr[i];
-        switch (swap->i_opcode) {
-            case SWAP:
-                // Found one!
-                break;
-            case STORE_FAST:
-            case POP_TOP:
-            case NOP:
+        if (swap->i_opcode != SWAP) {
+            if (swap->i_opcode == NOP || SWAPPABLE(swap->i_opcode)) {
                 // Nope, but we know how to handle these. Keep looking:
                 continue;
-            default:
-                // We can't reason about what this instruction does. Bail:
-                return;
+            }
+            // We can't reason about what this instruction does. Bail:
+            return;
         }
-        struct instr *top = NULL;
-        struct instr *peek = NULL;
-        int count = swap->i_oparg;
-        for (int j = i + 1; count; j++) {
-            if (block->b_iused <= j) {
-                return;
-            }
-            peek = &block->b_instr[j];
-            if (top && top->i_lineno != peek->i_lineno) {
-                // Optimizing across this instruction could cause user-visible
-                // changes in the names bound between line tracing events. Bail:
-                return;
-            }
-            if (peek->i_opcode == STORE_FAST || peek->i_opcode == POP_TOP) {
-                if (top == NULL) {
-                    top = peek;
-                }
-                count--;
-            }
-            else if (peek->i_opcode != NOP) {
-                // We can't reason about what this instruction does. Bail:
+        int j = next_swappable_instruction(block, i, -1);
+        if (j < 0) {
+            return;
+        }
+        int k = j;
+        int lineno = block->b_instr[j].i_lineno;
+        for (int count = swap->i_oparg - 1; 0 < count; count--) {
+            k = next_swappable_instruction(block, k, lineno);
+            if (k < 0) {
                 return;
             }
         }
-        assert(top);
-        assert(peek);
-        // Success! Clear the SWAP...
+        // Success!
         swap->i_opcode = NOP;
-        // ...and just swap the instructions instead:
-        struct instr tmp = *peek;
-        *peek = *top;
-        *top = tmp;
+        struct instr temp = block->b_instr[j];
+        block->b_instr[j] = block->b_instr[k];
+        block->b_instr[k] = temp;
     }
 }
 
