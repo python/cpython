@@ -1021,11 +1021,14 @@ stack_effect(int opcode, int oparg, int jump)
 
         /* Functions and calls */
         case PRECALL_METHOD:
-            return -1;
-        case CALL_NO_KW:
-            return -oparg;
-        case CALL_KW:
             return -oparg-1;
+        case PRECALL_FUNCTION:
+            return -oparg;
+        case KW_NAMES:
+            return 0;
+        case CALL:
+            return 0;
+
         case CALL_FUNCTION_EX:
             return -1 - ((oparg & 0x01) != 0);
         case MAKE_FUNCTION:
@@ -1823,7 +1826,8 @@ compiler_call_exit_with_nones(struct compiler *c) {
     ADDOP_LOAD_CONST(c, Py_None);
     ADDOP_LOAD_CONST(c, Py_None);
     ADDOP_LOAD_CONST(c, Py_None);
-    ADDOP_I(c, CALL_NO_KW, 3);
+    ADDOP_I(c, PRECALL_FUNCTION, 3);
+    ADDOP_I(c, CALL, 0);
     return 1;
 }
 
@@ -2208,7 +2212,8 @@ compiler_apply_decorators(struct compiler *c, asdl_expr_seq* decos)
     int old_end_col_offset = c->u->u_end_col_offset;
     for (Py_ssize_t i = asdl_seq_LEN(decos) - 1; i > -1; i--) {
         SET_LOC(c, (expr_ty)asdl_seq_GET(decos, i));
-        ADDOP_I(c, CALL_NO_KW, 1);
+        ADDOP_I(c, PRECALL_FUNCTION, 1);
+        ADDOP_I(c, CALL, 0);
     }
     c->u->u_lineno = old_lineno;
     c->u->u_end_lineno = old_end_lineno;
@@ -3903,7 +3908,8 @@ compiler_assert(struct compiler *c, stmt_ty s)
     ADDOP(c, LOAD_ASSERTION_ERROR);
     if (s->v.Assert.msg) {
         VISIT(c, expr, s->v.Assert.msg);
-        ADDOP_I(c, CALL_NO_KW, 1);
+        ADDOP_I(c, PRECALL_FUNCTION, 1);
+        ADDOP_I(c, CALL, 0);
     }
     ADDOP_I(c, RAISE_VARARGS, 1);
     compiler_use_next_block(c, end);
@@ -4723,15 +4729,16 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
     VISIT_SEQ(c, expr, e->v.Call.args);
 
     if (kwdsl) {
+        VISIT_SEQ(c, keyword, kwds);
+        ADDOP_I(c, PRECALL_METHOD, argsl + kwdsl);
         if (!compiler_call_simple_kw_helper(c, kwds, kwdsl)) {
             return 0;
         };
-        ADDOP_I(c, PRECALL_METHOD, argsl + kwdsl+1);
-        ADDOP_I(c, CALL_KW, argsl + kwdsl);
+        ADDOP_I(c, CALL, kwdsl);
     }
     else {
         ADDOP_I(c, PRECALL_METHOD, argsl);
-        ADDOP_I(c, CALL_NO_KW, argsl);
+        ADDOP_I(c, CALL, 0);
     }
     c->u->u_lineno = old_lineno;
     return 1;
@@ -4799,7 +4806,7 @@ compiler_joined_str(struct compiler *c, expr_ty e)
             ADDOP_I(c, LIST_APPEND, 1);
         }
         ADDOP_I(c, PRECALL_METHOD, 1);
-        ADDOP_I(c, CALL_NO_KW, 1);
+        ADDOP_I(c, CALL, 0);
     }
     else {
         VISIT_SEQ(c, expr, e->v.JoinedStr.values);
@@ -4900,21 +4907,15 @@ compiler_subkwargs(struct compiler *c, asdl_keyword_seq *keywords, Py_ssize_t be
 }
 
 /* Used by compiler_call_helper and maybe_optimize_method_call to emit
-LOAD_CONST kw1
-LOAD_CONST kw2
-...
-LOAD_CONST <tuple of kwnames>
-before a CALL_(FUNCTION|METHOD)_KW.
-
-Returns 1 on success, 0 on error.
-*/
+ * KW_NAMES before CALL.
+ * Returns 1 on success, 0 on error.
+ */
 static int
 compiler_call_simple_kw_helper(struct compiler *c,
                                asdl_keyword_seq *keywords,
                                Py_ssize_t nkwelts)
 {
     PyObject *names;
-    VISIT_SEQ(c, keyword, keywords);
     names = PyTuple_New(nkwelts);
     if (names == NULL) {
         return 0;
@@ -4924,7 +4925,12 @@ compiler_call_simple_kw_helper(struct compiler *c,
         Py_INCREF(kw->arg);
         PyTuple_SET_ITEM(names, i, kw->arg);
     }
-    ADDOP_LOAD_CONST_NEW(c, names);
+    Py_ssize_t arg = compiler_add_const(c, names);
+    if (arg < 0) {
+        return 0;
+    }
+    Py_DECREF(names);
+    ADDOP_I(c, KW_NAMES, arg);
     return 1;
 }
 
@@ -4968,14 +4974,17 @@ compiler_call_helper(struct compiler *c,
         VISIT(c, expr, elt);
     }
     if (nkwelts) {
+        VISIT_SEQ(c, keyword, keywords);
+        ADDOP_I(c, PRECALL_FUNCTION, n + nelts + nkwelts);
         if (!compiler_call_simple_kw_helper(c, keywords, nkwelts)) {
             return 0;
         };
-        ADDOP_I(c, CALL_KW, n + nelts + nkwelts);
+        ADDOP_I(c, CALL, nkwelts);
         return 1;
     }
     else {
-        ADDOP_I(c, CALL_NO_KW, n + nelts);
+        ADDOP_I(c, PRECALL_FUNCTION, n + nelts);
+        ADDOP_I(c, CALL, 0);
         return 1;
     }
 
@@ -5372,7 +5381,8 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
         ADDOP(c, GET_ITER);
     }
 
-    ADDOP_I(c, CALL_NO_KW, 1);
+    ADDOP_I(c, PRECALL_FUNCTION, 1);
+    ADDOP_I(c, CALL, 0);
 
     if (is_async_generator && type != COMP_GENEXP) {
         ADDOP(c, GET_AWAITABLE);
@@ -6709,7 +6719,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
                     // rotated = pc_stores[:rotations]
                     // del pc_stores[:rotations]
                     // pc_stores[icontrol-istores:icontrol-istores] = rotated
-                    // Do the same thing to the stack, using several 
+                    // Do the same thing to the stack, using several
                     // rotations:
                     while (rotations--) {
                         if (!pattern_helper_rotate(c, icontrol + 1)){
@@ -8786,6 +8796,8 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                 }
                 i += swaptimize(bb, i);
                 break;
+            case KW_NAMES:
+                break;
             default:
                 /* All HAS_CONST opcodes should be handled with LOAD_CONST */
                 assert (!HAS_CONST(inst->i_opcode));
@@ -9097,7 +9109,8 @@ trim_unused_consts(struct compiler *c, struct assembler *a, PyObject *consts)
     int max_const_index = 0;
     for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
-            if (b->b_instr[i].i_opcode == LOAD_CONST &&
+            if ((b->b_instr[i].i_opcode == LOAD_CONST ||
+                b->b_instr[i].i_opcode == KW_NAMES) &&
                     b->b_instr[i].i_oparg > max_const_index) {
                 max_const_index = b->b_instr[i].i_oparg;
             }
