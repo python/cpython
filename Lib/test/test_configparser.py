@@ -1048,10 +1048,12 @@ class ConfigParserTestCaseLegacyInterpolation(ConfigParserTestCase):
         self.assertEqual(cf.get("sect", "option2"), "foo%%bar")
 
 
-class ConfigParserTestCaseInterpolationIsInstantiated(unittest.TestCase):
-    def test_error_on_uninstantiated_interpolation(self):
-        with self.assertRaises(configparser.InterpolationTypeError) as context:
-            cf = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation)
+class ConfigParserTestCaseInvalidInterpolationType(unittest.TestCase):
+    def test_error_on_wrong_type_for_interpolation(self):
+        for value in [configparser.ExtendedInterpolation,  42,  "a string"]:
+            with self.subTest(value=value):
+                with self.assertRaises(TypeError):
+                    configparser.ConfigParser(interpolation=value)
 
 
 class ConfigParserTestCaseNonStandardDelimiters(ConfigParserTestCase):

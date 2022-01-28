@@ -150,8 +150,8 @@ import sys
 __all__ = ["NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
            "NoOptionError", "InterpolationError", "InterpolationDepthError",
            "InterpolationMissingOptionError", "InterpolationSyntaxError",
-           "InterpolationTypeError", "ParsingError",
-           "MissingSectionHeaderError", "ConfigParser", "RawConfigParser",
+           "ParsingError", "MissingSectionHeaderError",
+           "ConfigParser", "RawConfigParser",
            "Interpolation", "BasicInterpolation",  "ExtendedInterpolation",
            "LegacyInterpolation", "SectionProxy", "ConverterMapping",
            "DEFAULTSECT", "MAX_INTERPOLATION_DEPTH"]
@@ -279,13 +279,6 @@ class InterpolationSyntaxError(InterpolationError):
     which substitutions are made does not conform to the required syntax.
     """
 
-class InterpolationTypeError(Error):
-    """Raised when the _interpolation is not an instance of Interpolation
-
-    Giving users faster and more clear feedback on how to fix a common error
-    """
-    def __init__(self):
-        msg = ("interpolation is not an instance of Interpolation")
 
 class InterpolationDepthError(InterpolationError):
     """Raised when substitutions are nested too deeply."""
@@ -620,7 +613,7 @@ class RawConfigParser(MutableMapping):
         if self._interpolation is None:
             self._interpolation = Interpolation()
         if not isinstance(self._interpolation, Interpolation):
-            raise InterpolationTypeError()
+            raise TypeError("interpolation is not an instance of Interpolation")
         if converters is not _UNSET:
             self._converters.update(converters)
         if defaults:

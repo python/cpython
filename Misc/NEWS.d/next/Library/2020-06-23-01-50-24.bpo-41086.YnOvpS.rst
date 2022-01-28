@@ -1,1 +1,1 @@
-Added validation check of instantiation on ConfigParser's interpolation parameter.
+Make the :class:`configparser.ConfigParser` constructor raise :exc:`TypeError` if the ``interpolation`` parameter is not of type :class:`configparser.Interpolation`
