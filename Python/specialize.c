@@ -1385,12 +1385,12 @@ specialize_class_call(
     }
 
     _Py_CODEUNIT next_instr = instr[1];
-    /* Adaptive super instruction of CALL_NO_KW andLOAD_METHOD_ADAPTIVE. */
+    /* Adaptive super instruction of CALL and LOAD_METHOD_ADAPTIVE. */
     if (tp == &PySuper_Type &&
         _Py_OPCODE(next_instr) == LOAD_METHOD_ADAPTIVE &&
         (nargs == 0 || nargs == 2)) {
         /* Use load_method cache entries too. */
-        _PyAdaptiveEntry *lm_adaptive = &cache[-cache_requirements[CALL_NO_KW]].adaptive;
+        _PyAdaptiveEntry *lm_adaptive = &cache[-cache_requirements[CALL]].adaptive;
         _PyObjectCache *cache1 = &cache[-1].obj;
         PyObject *su_obj;
         PyTypeObject *su_type;

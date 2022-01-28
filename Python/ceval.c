@@ -4634,7 +4634,7 @@ handle_eval_breaker:
                 int err = _Py_Specialize_CallNoKw(
                     call_shape.callable, next_instr, nargs,
                     call_shape.kwnames, cache, BUILTINS(),
-                    tack_pointer, frame, names);
+                    stack_pointer, frame, names);
                 if (err < 0) {
                     goto error;
                 }
@@ -5087,18 +5087,18 @@ handle_eval_breaker:
             PyObject *meth;
             PyObject *super_callable = TOP();
 
-            DEOPT_IF(_PyType_CAST(super_callable) != &PySuper_Type, CALL_NO_KW);
+            DEOPT_IF(_PyType_CAST(super_callable) != &PySuper_Type, CALL);
 
             /* super() - zero argument form */
             if (_PySuper_GetTypeArgs(frame, frame->f_code, &su_type, &su_obj) < 0) {
                 PyErr_Clear();
-                DEOPT_IF(1, CALL_NO_KW);
+                DEOPT_IF(1, CALL);
             }
             assert(su_obj != NULL);
-            DEOPT_IF(lm_adaptive->version != Py_TYPE(su_obj)->tp_version_tag, CALL_NO_KW);
-            DEOPT_IF(cache0->version != su_type->tp_version_tag, CALL_NO_KW);
+            DEOPT_IF(lm_adaptive->version != Py_TYPE(su_obj)->tp_version_tag, CALL);
+            DEOPT_IF(cache0->version != su_type->tp_version_tag, CALL);
 
-            STAT_INC(CALL_NO_KW, hit);
+            STAT_INC(CALL, hit);
 
             /* LOAD_METHOD_CACHED */
             meth = cache1->obj;
@@ -5132,13 +5132,13 @@ handle_eval_breaker:
             PyObject *super_callable = THIRD();
             PyObject *meth;
 
-            DEOPT_IF(_PyType_CAST(super_callable) != &PySuper_Type, CALL_NO_KW);
+            DEOPT_IF(_PyType_CAST(super_callable) != &PySuper_Type, CALL);
 
             assert(su_obj != NULL);
-            DEOPT_IF(lm_adaptive->version != Py_TYPE(su_obj)->tp_version_tag, CALL_NO_KW);
-            DEOPT_IF(cache0->version != su_type->tp_version_tag, CALL_NO_KW);
+            DEOPT_IF(lm_adaptive->version != Py_TYPE(su_obj)->tp_version_tag, CALL);
+            DEOPT_IF(cache0->version != su_type->tp_version_tag, CALL);
 
-            STAT_INC(CALL_NO_KW, hit);
+            STAT_INC(CALL, hit);
 
             (void)(POP());
             /* LOAD_METHOD_CACHED */
