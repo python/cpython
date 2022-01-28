@@ -2246,7 +2246,7 @@ def _showwarning(message, category, filename, lineno, file=None, line=None):
         logger = getLogger("py.warnings")
         if not logger.handlers:
             logger.addHandler(NullHandler())
-        logger.warning("%s", s)
+        logger.warning(str(s))
 
 def captureWarnings(capture):
     """
