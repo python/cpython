@@ -5056,7 +5056,14 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
             PyErr_SetObject(PyExc_AttributeError, name);
             return -1;
         }
-        OBJECT_STAT_INC(dict_materialized_new_key);
+#ifdef Py_STATS
+        if (shared_keys_usable_size(keys) > 14) {
+            OBJECT_STAT_INC(dict_materialized_too_big);
+        }
+        else {
+            OBJECT_STAT_INC(dict_materialized_new_key);
+        }
+#endif
         PyObject *dict = make_dict_from_instance_attributes(keys, values);
         if (dict == NULL) {
             return -1;

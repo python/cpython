@@ -180,6 +180,7 @@ print_object_stats(FILE *out, ObjectStats *stats)
     fprintf(out, "Object new dicts: %" PRIu64 "\n", stats->new_dict);
     fprintf(out, "Object materialize dict (on request): %" PRIu64 "\n", stats->dict_materialized_on_request);
     fprintf(out, "Object materialize dict (new key): %" PRIu64 "\n", stats->dict_materialized_new_key);
+    fprintf(out, "Object materialize dict (too big): %" PRIu64 "\n", stats->dict_materialized_too_big);
 }
 
 static void
