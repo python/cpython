@@ -8540,7 +8540,7 @@ swaptimize(basicblock *block, int ix)
 // - can't invoke arbitrary code (besides finalizers)
 // - only touch the TOS (and pop it when finished)
 #define SWAPPABLE(opcode) \
-    ((opcode) == STORE_FAST || (opcode) == POP_TOP || (opcode) == STORE_DEREF)
+    ((opcode) == STORE_FAST || (opcode) == POP_TOP)
 
 static int
 next_swappable_instruction(basicblock *block, int i, int lineno)
