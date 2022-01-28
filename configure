@@ -6090,6 +6090,11 @@ EOF
 
 if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
   PLATFORM_TRIPLET=`grep -v '^#' conftest.out | grep -v '^ *$' | tr -d ' 	'`
+  case "$build_os" in
+  linux-musl*)
+    PLATFORM_TRIPLET=`echo "$PLATFORM_TRIPLET" | sed 's/linux-gnu/linux-musl/'`
+    ;;
+  esac
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PLATFORM_TRIPLET" >&5
 $as_echo "$PLATFORM_TRIPLET" >&6; }
 else
