@@ -1,0 +1,1 @@
+Make sure arguments to __get__ are owned
