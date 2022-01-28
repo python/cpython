@@ -19,6 +19,9 @@ try:
 except ImportError:
     _testcapi = None
 
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test module requires subprocess")
+
 TIMEOUT = 0.5
 MS_WINDOWS = (os.name == 'nt')
 

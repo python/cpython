@@ -66,6 +66,10 @@ ac_cv_func_pwritev=no
 ac_cv_func_pipe2=no
 ac_cv_func_nice=no
 ac_cv_func_setitimer=no
+# unsupported syscall: __syscall_prlimit64
+ac_cv_func_prlimit=no
+# unsupported syscall: __syscall_getrusage
+ac_cv_func_getrusage=no
 
 # Syscalls that resulted in a segfault
 ac_cv_func_utimensat=no
