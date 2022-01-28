@@ -5,7 +5,7 @@ import subprocess
 import shutil
 from copy import copy
 
-from test.support import (captured_stdout, PythonSymlink)
+from test.support import (captured_stdout, PythonSymlink, requires_subprocess)
 from test.support.import_helper import import_module
 from test.support.os_helper import (TESTFN, unlink, skip_unless_symlink,
                                     change_cwd)
@@ -273,6 +273,7 @@ class TestSysConfig(unittest.TestCase):
         self.assertEqual(get_scheme_names(), tuple(sorted(wanted)))
 
     @skip_unless_symlink
+    @requires_subprocess()
     def test_symlink(self): # Issue 7880
         with PythonSymlink() as py:
             cmd = "-c", "import sysconfig; print(sysconfig.get_platform())"
@@ -326,6 +327,7 @@ class TestSysConfig(unittest.TestCase):
         self.assertIn(ldflags, ldshared)
 
     @unittest.skipUnless(sys.platform == "darwin", "test only relevant on MacOSX")
+    @requires_subprocess()
     def test_platform_in_subprocess(self):
         my_platform = sysconfig.get_platform()
 

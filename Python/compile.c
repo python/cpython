@@ -867,14 +867,8 @@ stack_effect(int opcode, int oparg, int jump)
         /* Stack manipulation */
         case POP_TOP:
             return -1;
-        case ROT_TWO:
-        case ROT_THREE:
-        case ROT_FOUR:
+        case SWAP:
             return 0;
-        case DUP_TOP:
-            return 1;
-        case DUP_TOP_TWO:
-            return 2;
 
         /* Unary operators */
         case UNARY_POSITIVE:
@@ -910,6 +904,7 @@ stack_effect(int opcode, int oparg, int jump)
             return -1;
         case SETUP_ANNOTATIONS:
             return 0;
+        case ASYNC_GEN_WRAP:
         case YIELD_VALUE:
             return 0;
         case POP_BLOCK:
@@ -1093,8 +1088,6 @@ stack_effect(int opcode, int oparg, int jump)
         case MATCH_SEQUENCE:
         case MATCH_KEYS:
             return 1;
-        case ROT_N:
-            return 0;
         case COPY:
             return 1;
         case BINARY_OP:
@@ -1541,6 +1534,9 @@ compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
 #define POP_EXCEPT_AND_RERAISE(C) \
     RETURN_IF_FALSE(compiler_pop_except_and_reraise((C)))
 
+#define ADDOP_YIELD(C) \
+    RETURN_IF_FALSE(addop_yield(C))
+
 #define VISIT(C, TYPE, V) {\
     if (!compiler_visit_ ## TYPE((C), (V))) \
         return 0; \
@@ -1825,8 +1821,8 @@ compiler_pop_fblock(struct compiler *c, enum fblocktype t, basicblock *b)
 static int
 compiler_call_exit_with_nones(struct compiler *c) {
     ADDOP_LOAD_CONST(c, Py_None);
-    ADDOP(c, DUP_TOP);
-    ADDOP(c, DUP_TOP);
+    ADDOP_LOAD_CONST(c, Py_None);
+    ADDOP_LOAD_CONST(c, Py_None);
     ADDOP_I(c, CALL_NO_KW, 3);
     return 1;
 }
@@ -1844,6 +1840,7 @@ compiler_add_yield_from(struct compiler *c, int await)
     compiler_use_next_block(c, start);
     ADDOP_JUMP(c, SEND, exit);
     compiler_use_next_block(c, resume);
+    ADDOP(c, YIELD_VALUE);
     ADDOP_I(c, RESUME, await ? 3 : 2);
     ADDOP_JUMP(c, JUMP_NO_INTERRUPT, start);
     compiler_use_next_block(c, exit);
@@ -1885,7 +1882,7 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
         case FOR_LOOP:
             /* Pop the iterator */
             if (preserve_tos) {
-                ADDOP(c, ROT_TWO);
+                ADDOP_I(c, SWAP, 2);
             }
             ADDOP(c, POP_TOP);
             return 1;
@@ -1915,11 +1912,11 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
 
         case FINALLY_END:
             if (preserve_tos) {
-                ADDOP(c, ROT_TWO);
+                ADDOP_I(c, SWAP, 2);
             }
             ADDOP(c, POP_TOP); /* exc_value */
             if (preserve_tos) {
-                ADDOP(c, ROT_TWO);
+                ADDOP_I(c, SWAP, 2);
             }
             ADDOP(c, POP_BLOCK);
             ADDOP(c, POP_EXCEPT);
@@ -1930,7 +1927,7 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
             SET_LOC(c, (stmt_ty)info->fb_datum);
             ADDOP(c, POP_BLOCK);
             if (preserve_tos) {
-                ADDOP(c, ROT_TWO);
+                ADDOP_I(c, SWAP, 2);
             }
             if(!compiler_call_exit_with_nones(c)) {
                 return 0;
@@ -1952,7 +1949,7 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
                 ADDOP(c, POP_BLOCK);
             }
             if (preserve_tos) {
-                ADDOP(c, ROT_TWO);
+                ADDOP_I(c, SWAP, 2);
             }
             ADDOP(c, POP_BLOCK);
             ADDOP(c, POP_EXCEPT);
@@ -1965,7 +1962,7 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
 
         case POP_VALUE:
             if (preserve_tos) {
-                ADDOP(c, ROT_TWO);
+                ADDOP_I(c, SWAP, 2);
             }
             ADDOP(c, POP_TOP);
             return 1;
@@ -2642,7 +2639,7 @@ compiler_class(struct compiler *c, stmt_ty s)
             assert(i == 0);
 
             ADDOP_I(c, LOAD_CLOSURE, i);
-            ADDOP(c, DUP_TOP);
+            ADDOP_I(c, COPY, 1);
             str = PyUnicode_InternFromString("__classcell__");
             if (!str || !compiler_nameop(c, str, Store)) {
                 Py_XDECREF(str);
@@ -2838,8 +2835,8 @@ compiler_jump_if(struct compiler *c, expr_ty e, basicblock *next, int cond)
             for (i = 0; i < n; i++) {
                 VISIT(c, expr,
                     (expr_ty)asdl_seq_GET(e->v.Compare.comparators, i));
-                ADDOP(c, DUP_TOP);
-                ADDOP(c, ROT_THREE);
+                ADDOP_I(c, SWAP, 2);
+                ADDOP_I(c, COPY, 2);
                 ADDOP_COMPARE(c, asdl_seq_GET(e->v.Compare.ops, i));
                 ADDOP_JUMP(c, POP_JUMP_IF_FALSE, cleanup);
                 NEXT_BLOCK(c);
@@ -3495,9 +3492,9 @@ compiler_try_except(struct compiler *c, stmt_ty s)
    []                                         POP_BLOCK
    []                                         JUMP_FORWARD          L0
 
-   [exc]                            L1:       DUP_TOP      )  save copy of the original exception
+   [exc]                            L1:       COPY 1      )  save copy of the original exception
    [orig, exc]                                BUILD_LIST   )  list for raised/reraised excs ("result")
-   [orig, exc, res]                           ROT_TWO
+   [orig, exc, res]                           SWAP 2
 
    [orig, res, exc]                           <evaluate E1>
    [orig, res, exc, E1]                       JUMP_IF_NOT_EG_MATCH L2
@@ -3517,12 +3514,12 @@ compiler_try_except(struct compiler *c, stmt_ty s)
    [orig, res, rest]                Ln+1:     LIST_APPEND 1  ) add unhandled exc to res (could be None)
 
    [orig, res]                                PREP_RERAISE_STAR
-   [exc]                                      DUP_TOP
+   [exc]                                      COPY 1
    [exc, exc]                                 POP_JUMP_IF_NOT_NONE  RER
    [exc]                                      POP_TOP
    []                                         JUMP_FORWARD          L0
 
-   [exc]                            RER:      ROT_TWO
+   [exc]                            RER:      SWAP 2
    [exc, prev_exc_info]                       POP_EXCEPT
    [exc]                                      RERAISE               0
 
@@ -3587,19 +3584,19 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         if (i == 0) {
             /* Push the original EG into the stack */
             /*
-               [exc]            DUP_TOP
+               [exc]            COPY 1
                [orig, exc]
             */
-            ADDOP(c, DUP_TOP);
+            ADDOP_I(c, COPY, 1);
 
             /* create empty list for exceptions raised/reraise in the except* blocks */
             /*
                [orig, exc]       BUILD_LIST
-               [orig, exc, []]   ROT_TWO
+               [orig, exc, []]   SWAP 2
                [orig, [], exc]
             */
             ADDOP_I(c, BUILD_LIST, 0);
-            ADDOP(c, ROT_TWO);
+            ADDOP_I(c, SWAP, 2);
         }
         if (handler->v.ExceptHandler.type) {
             VISIT(c, expr, handler->v.ExceptHandler.type);
@@ -3687,7 +3684,7 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
 
     compiler_use_next_block(c, reraise_star);
     ADDOP(c, PREP_RERAISE_STAR);
-    ADDOP(c, DUP_TOP);
+    ADDOP_I(c, COPY, 1);
     ADDOP_JUMP(c, POP_JUMP_IF_NOT_NONE, reraise);
     NEXT_BLOCK(c);
 
@@ -3698,7 +3695,7 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
     ADDOP_JUMP(c, JUMP_FORWARD, end);
     compiler_use_next_block(c, reraise);
     ADDOP(c, POP_BLOCK);
-    ADDOP(c, ROT_TWO);
+    ADDOP_I(c, SWAP, 2);
     ADDOP(c, POP_EXCEPT);
     ADDOP_I(c, RERAISE, 0);
     compiler_use_next_block(c, cleanup);
@@ -3756,7 +3753,7 @@ compiler_import_as(struct compiler *c, identifier name, identifier asname)
             if (dot == -1) {
                 break;
             }
-            ADDOP(c, ROT_TWO);
+            ADDOP_I(c, SWAP, 2);
             ADDOP(c, POP_TOP);
         }
         if (!compiler_nameop(c, asname, Store)) {
@@ -3956,8 +3953,9 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
         n = asdl_seq_LEN(s->v.Assign.targets);
         VISIT(c, expr, s->v.Assign.value);
         for (i = 0; i < n; i++) {
-            if (i < n - 1)
-                ADDOP(c, DUP_TOP);
+            if (i < n - 1) {
+                ADDOP_I(c, COPY, 1);
+            }
             VISIT(c, expr,
                   (expr_ty)asdl_seq_GET(s->v.Assign.targets, i));
         }
@@ -4091,6 +4089,17 @@ addop_binary(struct compiler *c, operator_ty binop, bool inplace)
             return 0;
     }
     ADDOP_I(c, BINARY_OP, oparg);
+    return 1;
+}
+
+
+static int
+addop_yield(struct compiler *c) {
+    if (c->u->u_ste->ste_generator && c->u->u_ste->ste_coroutine) {
+        ADDOP(c, ASYNC_GEN_WRAP);
+    }
+    ADDOP(c, YIELD_VALUE);
+    ADDOP_I(c, RESUME, 1);
     return 1;
 }
 
@@ -4516,8 +4525,8 @@ compiler_compare(struct compiler *c, expr_ty e)
         for (i = 0; i < n; i++) {
             VISIT(c, expr,
                 (expr_ty)asdl_seq_GET(e->v.Compare.comparators, i));
-            ADDOP(c, DUP_TOP);
-            ADDOP(c, ROT_THREE);
+            ADDOP_I(c, SWAP, 2);
+            ADDOP_I(c, COPY, 2);
             ADDOP_COMPARE(c, asdl_seq_GET(e->v.Compare.ops, i));
             ADDOP_JUMP(c, JUMP_IF_FALSE_OR_POP, cleanup);
             NEXT_BLOCK(c);
@@ -4529,7 +4538,7 @@ compiler_compare(struct compiler *c, expr_ty e)
             return 0;
         ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, end);
         compiler_use_next_block(c, cleanup);
-        ADDOP(c, ROT_TWO);
+        ADDOP_I(c, SWAP, 2);
         ADDOP(c, POP_TOP);
         compiler_use_next_block(c, end);
     }
@@ -5144,8 +5153,7 @@ compiler_sync_comprehension_generator(struct compiler *c,
         switch (type) {
         case COMP_GENEXP:
             VISIT(c, expr, elt);
-            ADDOP(c, YIELD_VALUE);
-            ADDOP_I(c, RESUME, 1);
+            ADDOP_YIELD(c);
             ADDOP(c, POP_TOP);
             break;
         case COMP_LISTCOMP:
@@ -5243,8 +5251,7 @@ compiler_async_comprehension_generator(struct compiler *c,
         switch (type) {
         case COMP_GENEXP:
             VISIT(c, expr, elt);
-            ADDOP(c, YIELD_VALUE);
-            ADDOP_I(c, RESUME, 1);
+            ADDOP_YIELD(c);
             ADDOP(c, POP_TOP);
             break;
         case COMP_LISTCOMP:
@@ -5675,7 +5682,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
     switch (e->kind) {
     case NamedExpr_kind:
         VISIT(c, expr, e->v.NamedExpr.value);
-        ADDOP(c, DUP_TOP);
+        ADDOP_I(c, COPY, 1);
         VISIT(c, expr, e->v.NamedExpr.target);
         break;
     case BoolOp_kind:
@@ -5714,8 +5721,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         else {
             ADDOP_LOAD_CONST(c, Py_None);
         }
-        ADDOP(c, YIELD_VALUE);
-        ADDOP_I(c, RESUME, 1);
+        ADDOP_YIELD(c);
         break;
     case YieldFrom_kind:
         if (c->u->u_ste->ste_type != FunctionBlock)
@@ -5841,7 +5847,7 @@ compiler_augassign(struct compiler *c, stmt_ty s)
     switch (e->kind) {
     case Attribute_kind:
         VISIT(c, expr, e->v.Attribute.value);
-        ADDOP(c, DUP_TOP);
+        ADDOP_I(c, COPY, 1);
         int old_lineno = c->u->u_lineno;
         c->u->u_lineno = e->end_lineno;
         ADDOP_NAME(c, LOAD_ATTR, e->v.Attribute.attr, names);
@@ -5850,7 +5856,8 @@ compiler_augassign(struct compiler *c, stmt_ty s)
     case Subscript_kind:
         VISIT(c, expr, e->v.Subscript.value);
         VISIT(c, expr, e->v.Subscript.slice);
-        ADDOP(c, DUP_TOP_TWO);
+        ADDOP_I(c, COPY, 2);
+        ADDOP_I(c, COPY, 2);
         ADDOP(c, BINARY_SUBSCR);
         break;
     case Name_kind:
@@ -5877,11 +5884,12 @@ compiler_augassign(struct compiler *c, stmt_ty s)
     switch (e->kind) {
     case Attribute_kind:
         c->u->u_lineno = e->end_lineno;
-        ADDOP(c, ROT_TWO);
+        ADDOP_I(c, SWAP, 2);
         ADDOP_NAME(c, STORE_ATTR, e->v.Attribute.attr, names);
         break;
     case Subscript_kind:
-        ADDOP(c, ROT_THREE);
+        ADDOP_I(c, SWAP, 3);
+        ADDOP_I(c, SWAP, 2);
         ADDOP(c, STORE_SUBSCR);
         break;
     case Name_kind:
@@ -6233,6 +6241,16 @@ compiler_error_duplicate_store(struct compiler *c, identifier n)
     return compiler_error(c, "multiple assignments to name %R in pattern", n);
 }
 
+// Duplicate the effect of 3.10's ROT_* instructions using SWAPs.
+static int
+pattern_helper_rotate(struct compiler *c, Py_ssize_t count)
+{
+    while (1 < count) {
+        ADDOP_I(c, SWAP, count--);
+    }
+    return 1;
+}
+
 static int
 pattern_helper_store_name(struct compiler *c, identifier n, pattern_context *pc)
 {
@@ -6252,7 +6270,8 @@ pattern_helper_store_name(struct compiler *c, identifier n, pattern_context *pc)
         return compiler_error_duplicate_store(c, n);
     }
     // Rotate this object underneath any items we need to preserve:
-    ADDOP_I(c, ROT_N, pc->on_top + PyList_GET_SIZE(pc->stores) + 1);
+    Py_ssize_t rotations = pc->on_top + PyList_GET_SIZE(pc->stores) + 1;
+    RETURN_IF_FALSE(pattern_helper_rotate(c, rotations));
     return !PyList_Append(pc->stores, n);
 }
 
@@ -6321,7 +6340,7 @@ pattern_helper_sequence_subscr(struct compiler *c, asdl_pattern_seq *patterns,
             assert(WILDCARD_STAR_CHECK(pattern));
             continue;
         }
-        ADDOP(c, DUP_TOP);
+        ADDOP_I(c, COPY, 1);
         if (i < star) {
             ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(i));
         }
@@ -6370,7 +6389,7 @@ compiler_pattern_as(struct compiler *c, pattern_ty p, pattern_context *pc)
     }
     // Need to make a copy for (possibly) storing later:
     pc->on_top++;
-    ADDOP(c, DUP_TOP);
+    ADDOP_I(c, COPY, 1);
     RETURN_IF_FALSE(compiler_pattern(c, p->v.MatchAs.pattern, pc));
     // Success! Store it:
     pc->on_top--;
@@ -6445,7 +6464,7 @@ compiler_pattern_class(struct compiler *c, pattern_ty p, pattern_context *pc)
     }
     ADDOP_LOAD_CONST_NEW(c, attr_names);
     ADDOP_I(c, MATCH_CLASS, nargs);
-    ADDOP(c, DUP_TOP);
+    ADDOP_I(c, COPY, 1);
     ADDOP_LOAD_CONST(c, Py_None);
     ADDOP_I(c, IS_OP, 1);
     // TOS is now a tuple of (nargs + nattrs) attributes (or None):
@@ -6563,7 +6582,7 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
     ADDOP(c, MATCH_KEYS);
     // There's now a tuple of keys and a tuple of values on top of the subject:
     pc->on_top += 2;
-    ADDOP(c, DUP_TOP);
+    ADDOP_I(c, COPY, 1);
     ADDOP_LOAD_CONST(c, Py_None);
     ADDOP_I(c, IS_OP, 1);
     RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
@@ -6587,13 +6606,12 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
         // for key in TOS:
         //     del rest[key]
         ADDOP_I(c, BUILD_MAP, 0);           // [subject, keys, empty]
-        ADDOP(c, ROT_THREE);                // [empty, subject, keys]
-        ADDOP(c, ROT_TWO);                  // [empty, keys, subject]
+        ADDOP_I(c, SWAP, 3);                // [empty, keys, subject]
         ADDOP_I(c, DICT_UPDATE, 2);         // [copy, keys]
         ADDOP_I(c, UNPACK_SEQUENCE, size);  // [copy, keys...]
         while (size) {
             ADDOP_I(c, COPY, 1 + size--);   // [copy, keys..., copy]
-            ADDOP(c, ROT_TWO);              // [copy, keys..., copy, key]
+            ADDOP_I(c, SWAP, 2);            // [copy, keys..., copy, key]
             ADDOP(c, DELETE_SUBSCR);        // [copy, keys...]
         }
         RETURN_IF_FALSE(pattern_helper_store_name(c, star_target, pc));
@@ -6638,7 +6656,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
         pc->fail_pop = NULL;
         pc->fail_pop_size = 0;
         pc->on_top = 0;
-        if (!compiler_addop(c, DUP_TOP) || !compiler_pattern(c, alt, pc)) {
+        if (!compiler_addop_i(c, COPY, 1) || !compiler_pattern(c, alt, pc)) {
             goto error;
         }
         // Success!
@@ -6670,7 +6688,8 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
                     // this; the current solution is potentially very
                     // inefficient when each alternative subpattern binds lots
                     // of names in different orders. It's fine for reasonable
-                    // cases, though.
+                    // cases, though, and the peephole optimizer will ensure
+                    // that the final code is as efficient as possible.
                     assert(istores < icontrol);
                     Py_ssize_t rotations = istores + 1;
                     // Perform the same rotation on pc->stores:
@@ -6689,9 +6708,10 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
                     // rotated = pc_stores[:rotations]
                     // del pc_stores[:rotations]
                     // pc_stores[icontrol-istores:icontrol-istores] = rotated
-                    // Do the same thing to the stack, using several ROT_Ns:
+                    // Do the same thing to the stack, using several 
+                    // rotations:
                     while (rotations--) {
-                        if (!compiler_addop_i(c, ROT_N, icontrol + 1)) {
+                        if (!pattern_helper_rotate(c, icontrol + 1)){
                             goto error;
                         }
                     }
@@ -6717,7 +6737,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
     }
     compiler_use_next_block(c, end);
     Py_ssize_t nstores = PyList_GET_SIZE(control);
-    // There's a bunch of stuff on the stack between any where the new stores
+    // There's a bunch of stuff on the stack between where the new stores
     // are and where they need to be:
     // - The other stores.
     // - A copy of the subject.
@@ -6726,7 +6746,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
     Py_ssize_t nrots = nstores + 1 + pc->on_top + PyList_GET_SIZE(pc->stores);
     for (Py_ssize_t i = 0; i < nstores; i++) {
         // Rotate this capture to its proper place on the stack:
-        if (!compiler_addop_i(c, ROT_N, nrots)) {
+        if (!pattern_helper_rotate(c, nrots)) {
             goto error;
         }
         // Update the list of previous stores with this new name, checking for
@@ -6885,7 +6905,7 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
         SET_LOC(c, m->pattern);
         // Only copy the subject if we're *not* on the last case:
         if (i != cases - has_default - 1) {
-            ADDOP(c, DUP_TOP);
+            ADDOP_I(c, COPY, 1);
         }
         RETURN_IF_FALSE(pc->stores = PyList_New(0));
         // Irrefutable cases must be either guarded, last, or both:
@@ -8420,36 +8440,99 @@ fold_tuple_on_constants(struct compiler *c,
     return 0;
 }
 
+#define VISITED (-1)
 
-// Eliminate n * ROT_N(n).
-static void
-fold_rotations(struct instr *inst, int n)
+// Replace an arbitrary run of SWAPs and NOPs with an optimal one that has the
+// same effect. Return the number of instructions that were optimized.
+static int
+swaptimize(basicblock *block, int ix)
 {
-    for (int i = 0; i < n; i++) {
-        int rot;
-        switch (inst[i].i_opcode) {
-            case ROT_N:
-                rot = inst[i].i_oparg;
-                break;
-            case ROT_FOUR:
-                rot = 4;
-                break;
-            case ROT_THREE:
-                rot = 3;
-                break;
-            case ROT_TWO:
-                rot = 2;
-                break;
-            default:
-                return;
+    // NOTE: "./python -m test test_patma" serves as a good, quick stress test
+    // for this function. Make sure to blow away cached *.pyc files first!
+    assert(ix < block->b_iused);
+    struct instr *instructions = &block->b_instr[ix];
+    // Find the length of the current sequence of SWAPs and NOPs, and record the
+    // maximum depth of the stack manipulations:
+    assert(instructions[0].i_opcode == SWAP);
+    int depth = instructions[0].i_oparg;
+    int len = 0;
+    int more = false;
+    while (++len < block->b_iused - ix) {
+        int opcode = instructions[len].i_opcode;
+        if (opcode == SWAP) {
+            depth = Py_MAX(depth, instructions[len].i_oparg);
+            more = true;
         }
-        if (rot != n) {
-            return;
+        else if (opcode != NOP) {
+            break;
         }
     }
-    for (int i = 0; i < n; i++) {
-        inst[i].i_opcode = NOP;
+    // It's already optimal if there's only one SWAP:
+    if (!more) {
+        return 0;
     }
+    // Create an array with elements {0, 1, 2, ..., depth - 1}:
+    int *stack = PyMem_Malloc(depth * sizeof(int));
+    for (int i = 0; i < depth; i++) {
+        stack[i] = i;
+    }
+    // Simulate the combined effect of these instructions by "running" them on
+    // our "stack":
+    for (int i = 0; i < len; i++) {
+        if (instructions[i].i_opcode == SWAP) {
+            int oparg = instructions[i].i_oparg;
+            int top = stack[0];
+            // SWAPs are 1-indexed:
+            stack[0] = stack[oparg - 1];
+            stack[oparg - 1] = top;
+        }
+    }
+    // Now we can begin! Our approach here is based on a solution to a closely
+    // related problem (https://cs.stackexchange.com/a/13938). It's easiest to
+    // think of this algorithm as determining the steps needed to efficiently
+    // "un-shuffle" our stack. By performing the moves in *reverse* order,
+    // though, we can efficiently *shuffle* it! For this reason, we will be
+    // replacing instructions starting from the *end* of the run. Since the
+    // solution is optimal, we don't need to worry about running out of space:
+    int current = len - 1;
+    for (int i = 0; i < depth; i++) {
+        // Skip items that have already been visited, or just happen to be in
+        // the correct location:
+        if (stack[i] == VISITED || stack[i] == i) {
+            continue;
+        }
+        // Okay, we've found an item that hasn't been visited. It forms a cycle
+        // with other items; traversing the cycle and swapping each item with
+        // the next will put them all in the correct place. The weird
+        // loop-and-a-half is necessary to insert 0 into every cycle, since we
+        // can only swap from that position:
+        int j = i;
+        while (true) {
+            // Skip the actual swap if our item is zero, since swapping the top
+            // item with itself is pointless:
+            if (j) {
+                assert(0 <= current);
+                // SWAPs are 1-indexed:
+                instructions[current].i_opcode = SWAP;
+                instructions[current--].i_oparg = j + 1;
+            }
+            if (stack[j] == VISITED) {
+                // Completed the cycle:
+                assert(j == i);
+                break;
+            }
+            int next_j = stack[j];
+            stack[j] = VISITED;
+            j = next_j;
+        }
+    }
+    // NOP out any unused instructions:
+    while (0 <= current) {
+        instructions[current--].i_opcode = NOP;
+    }
+    // Done! Return the number of optimized instructions:
+    PyMem_Free(stack);
+    return len - 1;
 }
 
 // Attempt to eliminate jumps to jumps by updating inst to jump to
@@ -8578,12 +8661,16 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                             bb->b_instr[i+1].i_opcode = NOP;
                             break;
                         case 2:
-                            inst->i_opcode = ROT_TWO;
+                            inst->i_opcode = SWAP;
+                            inst->i_oparg = 2;
                             bb->b_instr[i+1].i_opcode = NOP;
+                            i--;
                             break;
                         case 3:
-                            inst->i_opcode = ROT_THREE;
-                            bb->b_instr[i+1].i_opcode = ROT_TWO;
+                            inst->i_opcode = SWAP;
+                            inst->i_oparg = 3;
+                            bb->b_instr[i+1].i_opcode = NOP;
+                            i--;
                     }
                     break;
                 }
@@ -8691,30 +8778,12 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                     i -= jump_thread(inst, target, FOR_ITER);
                 }
                 break;
-            case ROT_N:
-                switch (oparg) {
-                    case 0:
-                    case 1:
-                        inst->i_opcode = NOP;
-                        continue;
-                    case 2:
-                        inst->i_opcode = ROT_TWO;
-                        break;
-                    case 3:
-                        inst->i_opcode = ROT_THREE;
-                        break;
-                    case 4:
-                        inst->i_opcode = ROT_FOUR;
-                        break;
-                }
-                if (i >= oparg - 1) {
-                    fold_rotations(inst - oparg + 1, oparg);
-                }
-                break;
-            case COPY:
+            case SWAP:
                 if (oparg == 1) {
-                    inst->i_opcode = DUP_TOP;
+                    inst->i_opcode = NOP;
+                    break;
                 }
+                i += swaptimize(bb, i);
                 break;
             default:
                 /* All HAS_CONST opcodes should be handled with LOAD_CONST */

@@ -55,11 +55,6 @@ def jabs_op(name, op):
 # Blank lines correspond to available opcodes
 
 def_op('POP_TOP', 1)
-def_op('ROT_TWO', 2)
-def_op('ROT_THREE', 3)
-def_op('DUP_TOP', 4)
-def_op('DUP_TOP_TWO', 5)
-def_op('ROT_FOUR', 6)
 
 def_op('NOP', 9)
 def_op('UNARY_POSITIVE', 10)
@@ -101,7 +96,7 @@ def_op('RETURN_VALUE', 83)
 def_op('IMPORT_STAR', 84)
 def_op('SETUP_ANNOTATIONS', 85)
 def_op('YIELD_VALUE', 86)
-
+def_op('ASYNC_GEN_WRAP', 87)
 def_op('PREP_RERAISE_STAR', 88)
 def_op('POP_EXCEPT', 89)
 
@@ -116,7 +111,7 @@ name_op('STORE_ATTR', 95)       # Index in name list
 name_op('DELETE_ATTR', 96)      # ""
 name_op('STORE_GLOBAL', 97)     # ""
 name_op('DELETE_GLOBAL', 98)    # ""
-def_op('ROT_N', 99)
+def_op('SWAP', 99)
 def_op('LOAD_CONST', 100)       # Index in const list
 hasconst.append(100)
 name_op('LOAD_NAME', 101)       # Index in name list

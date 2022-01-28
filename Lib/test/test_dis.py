@@ -1195,8 +1195,8 @@ expected_opinfo_jumpy = [
   Instruction(opname='CALL_NO_KW', opcode=169, arg=1, argval=1, argrepr='', offset=156, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=158, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='LOAD_CONST', opcode=100, arg=0, argval=None, argrepr='None', offset=160, starts_line=25, is_jump_target=False, positions=None),
-  Instruction(opname='DUP_TOP', opcode=4, arg=None, argval=None, argrepr='', offset=162, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='DUP_TOP', opcode=4, arg=None, argval=None, argrepr='', offset=164, starts_line=None, is_jump_target=False, positions=None),
+  Instruction(opname='LOAD_CONST', opcode=100, arg=0, argval=None, argrepr='None', offset=162, starts_line=None, is_jump_target=False, positions=None),
+  Instruction(opname='LOAD_CONST', opcode=100, arg=0, argval=None, argrepr='None', offset=164, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='CALL_NO_KW', opcode=169, arg=3, argval=3, argrepr='', offset=166, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=168, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='JUMP_FORWARD', opcode=110, arg=25, argval=222, argrepr='to 222', offset=170, starts_line=None, is_jump_target=False, positions=None),
@@ -1313,6 +1313,12 @@ class InstructionTests(InstructionTestCase):
         ]
         self.assertEqual(positions, expected)
 
+        named_positions = [
+            (pos.lineno, pos.end_lineno, pos.col_offset, pos.end_col_offset)
+            for pos in positions
+        ]
+        self.assertEqual(named_positions, expected)
+
     @requires_debug_ranges()
     def test_co_positions_missing_info(self):
         code = compile('x, y, z', '<test>', 'exec')
@@ -1320,25 +1326,27 @@ class InstructionTests(InstructionTestCase):
         actual = dis.get_instructions(code_without_column_table)
         for instruction in actual:
             with self.subTest(instruction=instruction):
-                start_line, end_line, start_offset, end_offset = instruction.positions
+                positions = instruction.positions
+                self.assertEqual(len(positions), 4)
                 if instruction.opname == "RESUME":
                     continue
-                assert start_line == 1
-                assert end_line == 1
-                assert start_offset is None
-                assert end_offset is None
+                self.assertEqual(positions.lineno, 1)
+                self.assertEqual(positions.end_lineno, 1)
+                self.assertIsNone(positions.col_offset)
+                self.assertIsNone(positions.end_col_offset)
 
         code_without_endline_table = code.replace(co_endlinetable=b'')
         actual = dis.get_instructions(code_without_endline_table)
         for instruction in actual:
             with self.subTest(instruction=instruction):
-                start_line, end_line, start_offset, end_offset = instruction.positions
+                positions = instruction.positions
+                self.assertEqual(len(positions), 4)
                 if instruction.opname == "RESUME":
                     continue
-                assert start_line == 1
-                assert end_line is None
-                assert start_offset is not None
-                assert end_offset is not None
+                self.assertEqual(positions.lineno, 1)
+                self.assertIsNone(positions.end_lineno)
+                self.assertIsNotNone(positions.col_offset)
+                self.assertIsNotNone(positions.end_col_offset)
 
 # get_instructions has its own tests above, so can rely on it to validate
 # the object oriented API
@@ -1453,6 +1461,16 @@ class TestFinderMethods(unittest.TestCase):
                 code = compile(src, "<string>", "exec")
                 res = tuple(dis._find_store_names(code))
                 self.assertEqual(res, expected)
+
+    def test_findlabels(self):
+        labels = dis.findlabels(jumpy.__code__.co_code)
+        jumps = [
+            instr.offset
+            for instr in expected_opinfo_jumpy
+            if instr.is_jump_target
+        ]
+
+        self.assertEqual(sorted(labels), sorted(jumps))
 
 
 class TestDisTraceback(unittest.TestCase):
