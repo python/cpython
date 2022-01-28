@@ -648,17 +648,10 @@ extern "C" {
         .strings = { \
             .literals = { \
                 INIT_STR(empty, ""), \
-                INIT_STR(newline, "\n"), \
                 INIT_STR(dot, "."), \
                 INIT_STR(comma_sep, ", "), \
                 INIT_STR(percent, "%"), \
                 INIT_STR(dbl_percent, "%%"), \
-                INIT_STR(replace_inf, "1eNN"), \
-                \
-                INIT_STR(br_open, "{"), \
-                INIT_STR(br_close, "}"), \
-                INIT_STR(br_dbl_open, "{{"), \
-                INIT_STR(br_dbl_close, "}}"), \
                 \
                 INIT_STR(anon_dictcomp, "<dictcomp>"), \
                 INIT_STR(anon_genexpr, "<genexpr>"), \
@@ -821,7 +814,6 @@ extern "C" {
                 INIT_ID(__xor__), \
                 INIT_ID(_abc_impl), \
                 INIT_ID(_blksize), \
-                INIT_ID(_bootstrap), \
                 INIT_ID(_dealloc_warn), \
                 INIT_ID(_finalizing), \
                 INIT_ID(_find_and_load), \
@@ -843,30 +835,22 @@ extern "C" {
                 INIT_ID(big), \
                 INIT_ID(buffer), \
                 INIT_ID(builtins), \
-                INIT_ID(c_call), \
-                INIT_ID(c_exception), \
-                INIT_ID(c_return), \
-                INIT_ID(call), \
                 INIT_ID(clear), \
                 INIT_ID(close), \
-                INIT_ID(closed), \
                 INIT_ID(code), \
                 INIT_ID(copy), \
                 INIT_ID(copyreg), \
                 INIT_ID(decode), \
-                INIT_ID(default), \
                 INIT_ID(defaultaction), \
                 INIT_ID(difference_update), \
                 INIT_ID(dispatch_table), \
                 INIT_ID(displayhook), \
                 INIT_ID(enable), \
-                INIT_ID(encode), \
                 INIT_ID(encoding), \
                 INIT_ID(end_lineno), \
                 INIT_ID(end_offset), \
                 INIT_ID(errors), \
                 INIT_ID(excepthook), \
-                INIT_ID(exception), \
                 INIT_ID(extend), \
                 INIT_ID(filename), \
                 INIT_ID(fileno), \
@@ -877,14 +861,8 @@ extern "C" {
                 INIT_ID(get), \
                 INIT_ID(get_source), \
                 INIT_ID(getattr), \
-                INIT_ID(getpreferredencoding), \
-                INIT_ID(getstate), \
-                INIT_ID(ignore), \
-                INIT_ID(imp), \
                 INIT_ID(importlib), \
-                INIT_ID(inf), \
                 INIT_ID(intersection), \
-                INIT_ID(intersection_update), \
                 INIT_ID(isatty), \
                 INIT_ID(items), \
                 INIT_ID(iter), \
@@ -893,10 +871,8 @@ extern "C" {
                 INIT_ID(last_type), \
                 INIT_ID(last_value), \
                 INIT_ID(latin1), \
-                INIT_ID(line), \
                 INIT_ID(lineno), \
                 INIT_ID(little), \
-                INIT_ID(locale), \
                 INIT_ID(match), \
                 INIT_ID(metaclass), \
                 INIT_ID(mode), \
@@ -907,11 +883,9 @@ extern "C" {
                 INIT_ID(n_sequence_fields), \
                 INIT_ID(n_unnamed_fields), \
                 INIT_ID(name), \
-                INIT_ID(newlines), \
                 INIT_ID(obj), \
                 INIT_ID(offset), \
                 INIT_ID(onceregistry), \
-                INIT_ID(opcode), \
                 INIT_ID(open), \
                 INIT_ID(parent), \
                 INIT_ID(partial), \
@@ -941,20 +915,16 @@ extern "C" {
                 INIT_ID(send), \
                 INIT_ID(setstate), \
                 INIT_ID(sort), \
-                INIT_ID(st_mode), \
                 INIT_ID(stderr), \
                 INIT_ID(stdin), \
                 INIT_ID(stdout), \
                 INIT_ID(strict), \
-                INIT_ID(struct_rusage), \
                 INIT_ID(symmetric_difference_update), \
                 INIT_ID(tell), \
                 INIT_ID(text), \
                 INIT_ID(threading), \
                 INIT_ID(throw), \
-                INIT_ID(truncate), \
                 INIT_ID(unraisablehook), \
-                INIT_ID(update), \
                 INIT_ID(values), \
                 INIT_ID(version), \
                 INIT_ID(warnings), \
