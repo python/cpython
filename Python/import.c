@@ -1321,6 +1321,9 @@ unmarshal_frozen_code(struct frozen_info *info)
     if (info->get_code) {
         PyObject *code = info->get_code();
         assert(code != NULL);
+        assert(PyCode_Check(code));
+        // refcnt should be consistent
+        assert(Py_REFCNT(code) == 1000000000);
         return code;
     }
     PyObject *co = PyMarshal_ReadObjectFromString(info->data, info->size);
