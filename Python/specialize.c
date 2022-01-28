@@ -1375,6 +1375,52 @@ specialize_class_call(
                 return 0;
             }
         }
+        /* Adaptive super instruction of CALL and LOAD_METHOD_ADAPTIVE. */
+        if (tp == &PySuper_Type &&
+            _Py_OPCODE(instr[1]) == LOAD_METHOD_ADAPTIVE &&
+            _Py_OPCODE(instr[-1]) == PRECALL_FUNCTION &&
+            (nargs == 0 || nargs == 2)) {
+            /* Use load_method cache entries too. */
+            _PyAdaptiveEntry *lm_adaptive = &cache[-cache_requirements[CALL]].adaptive;
+            _PyObjectCache *cache1 = &cache[-1].obj;
+            PyObject *su_obj;
+            PyTypeObject *su_type;
+            PyObject *meth;
+            int meth_found;
+            PyObject *name = PyTuple_GET_ITEM(names, lm_adaptive->original_oparg);
+
+            /* Note (KJ): the following operations must not affect tp_version_tag. */
+            /* super() zero arg form. */
+            if (nargs == 0) {
+                if (_PySuper_GetTypeArgs(frame, frame->f_code, &su_type, &su_obj) < 0) {
+                    PyErr_Clear();
+                    SPECIALIZATION_FAIL(CALL, SPEC_FAIL_NOT_DESCRIPTOR);
+                    return -1;
+                }
+            }
+            /* super(su_type, su_obj) two arg form. */
+            else if (nargs == 2) {
+                su_type = _PyType_CAST(stack_pointer[-2]);
+                su_obj = stack_pointer[-1];
+            }
+            meth = _PySuper_Lookup(su_type, su_obj, name, &meth_found);
+            if (meth == NULL) {
+                assert(PyErr_Occurred());
+                PyErr_Clear();
+                SPECIALIZATION_FAIL(CALL, SPEC_FAIL_OTHER);
+                return -1;
+            }
+            if (!meth_found) {
+                SPECIALIZATION_FAIL(CALL, SPEC_FAIL_NOT_DESCRIPTOR);
+                return -1;
+            }
+            cache->adaptive.version = su_type->tp_version_tag;
+            cache1->obj = meth;
+            lm_adaptive->version = Py_TYPE(su_obj)->tp_version_tag;
+            *instr = _Py_MAKECODEUNIT(nargs == 0 ? CALL_NO_KW_SUPER_0__LOAD_METHOD_CACHED
+                : CALL_NO_KW_SUPER_2__LOAD_METHOD_CACHED, _Py_OPARG(*instr));
+            return 0;
+        }
         if (tp->tp_vectorcall != NULL) {
             *instr = _Py_MAKECODEUNIT(CALL_BUILTIN_CLASS, _Py_OPARG(*instr));
             return 0;
@@ -1384,49 +1430,6 @@ specialize_class_call(
         return -1;
     }
 
-    _Py_CODEUNIT next_instr = instr[1];
-    /* Adaptive super instruction of CALL and LOAD_METHOD_ADAPTIVE. */
-    if (tp == &PySuper_Type &&
-        _Py_OPCODE(next_instr) == LOAD_METHOD_ADAPTIVE &&
-        (nargs == 0 || nargs == 2)) {
-        /* Use load_method cache entries too. */
-        _PyAdaptiveEntry *lm_adaptive = &cache[-cache_requirements[CALL]].adaptive;
-        _PyObjectCache *cache1 = &cache[-1].obj;
-        PyObject *su_obj;
-        PyTypeObject *su_type;
-        PyObject *meth;
-        int meth_found;
-        PyObject *name = PyTuple_GET_ITEM(names, lm_adaptive->original_oparg);
-
-        /* Note (KJ): the following operations must not affect tp_version_tag. */
-        /* super() zero arg form. */
-        if (nargs == 0) {
-            if (_PySuper_GetTypeArgs(frame, frame->f_code, &su_type, &su_obj) < 0) {
-                PyErr_Clear();
-                goto fail;
-            }
-        }
-        /* super(su_type, su_obj) two arg form. */
-        else if (nargs == 2) {
-            su_type = _PyType_CAST(stack_pointer[-2]);
-            su_obj = stack_pointer[-1];
-        }
-        meth = _PySuper_Lookup(su_type, su_obj, name, &meth_found);
-        if (meth == NULL) {
-            assert(PyErr_Occurred());
-            PyErr_Clear();
-            goto fail;
-        }
-        if (!meth_found) {
-            goto fail;
-        }
-        cache->adaptive.version = su_type->tp_version_tag;
-        cache1->obj = meth;
-        lm_adaptive->version = Py_TYPE(su_obj)->tp_version_tag;
-        *instr = _Py_MAKECODEUNIT(nargs == 0 ? CALL_NO_KW_SUPER_0__LOAD_METHOD_CACHED
-            : CALL_NO_KW_SUPER_2__LOAD_METHOD_CACHED, _Py_OPARG(*instr));
-        return 0;
-    }
 fail:
     SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CLASS_MUTABLE);
     return -1;

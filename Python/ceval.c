@@ -5088,7 +5088,6 @@ handle_eval_breaker:
             PyObject *super_callable = TOP();
 
             DEOPT_IF(_PyType_CAST(super_callable) != &PySuper_Type, CALL);
-
             /* super() - zero argument form */
             if (_PySuper_GetTypeArgs(frame, frame->f_code, &su_type, &su_obj) < 0) {
                 PyErr_Clear();
@@ -5097,7 +5096,6 @@ handle_eval_breaker:
             assert(su_obj != NULL);
             DEOPT_IF(lm_adaptive->version != Py_TYPE(su_obj)->tp_version_tag, CALL);
             DEOPT_IF(cache0->version != su_type->tp_version_tag, CALL);
-
             STAT_INC(CALL, hit);
 
             /* LOAD_METHOD_CACHED */
@@ -5133,11 +5131,9 @@ handle_eval_breaker:
             PyObject *meth;
 
             DEOPT_IF(_PyType_CAST(super_callable) != &PySuper_Type, CALL);
-
             assert(su_obj != NULL);
             DEOPT_IF(lm_adaptive->version != Py_TYPE(su_obj)->tp_version_tag, CALL);
             DEOPT_IF(cache0->version != su_type->tp_version_tag, CALL);
-
             STAT_INC(CALL, hit);
 
             (void)(POP());
