@@ -1669,7 +1669,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
     call_shape.kwnames = NULL; // Borrowed reference
     call_shape.postcall_shrink = 0;
     call_shape.total_args = 0;
-    call_shape.callable = NULL; // Borrowed reference
+    call_shape.callable = NULL; // Strong reference
 
     /* WARNING: Because the CFrame lives on the C stack,
      * but can be accessed from a heap allocated object (tstate)
@@ -4494,8 +4494,10 @@ handle_eval_breaker:
         }
 
         TARGET(PRECALL_FUNCTION) {
+            /* Move ownership of reference from stack to call_shape */
             call_shape.callable = PEEK(oparg + 1);
             call_shape.postcall_shrink = 1;
+
             call_shape.total_args = oparg;
             call_shape.kwnames = NULL;
             DISPATCH();
@@ -4530,9 +4532,12 @@ handle_eval_breaker:
             */
             int is_method = (PEEK(oparg + 2) != NULL);
             int nargs = oparg + is_method;
+            /* Move ownership of reference from stack to call_shape
+             * and make sure that NULL is cleared from stack */
             call_shape.callable = PEEK(nargs + 1);
-            call_shape.total_args = nargs;
             call_shape.postcall_shrink = 2-is_method;
+
+            call_shape.total_args = nargs;
             call_shape.kwnames = NULL;
             DISPATCH();
         }
