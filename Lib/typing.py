@@ -867,7 +867,7 @@ class ParamSpec(_Final, _Immutable, _TypeVarLike, _root=True):
     type checkers.  They are used to forward the parameter types of one
     callable to another callable, a pattern commonly found in higher order
     functions and decorators.  They are only valid when used in ``Concatenate``,
-    or s the first argument to ``Callable``, or as parameters for user-defined
+    or as the first argument to ``Callable``, or as parameters for user-defined
     Generics.  See class Generic for more information on generic types.  An
     example for annotating a decorator::
 
