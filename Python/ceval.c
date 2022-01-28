@@ -4591,7 +4591,7 @@ handle_eval_breaker:
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 new_frame->previous = frame;
                 cframe.current_frame = frame = new_frame;
-                    CALL_STAT_INC(inlined_py_calls);
+                CALL_STAT_INC(inlined_py_calls);
                 goto start_frame;
             }
             /* Callable is not a normal Python function */
