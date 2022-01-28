@@ -1445,6 +1445,12 @@ class _BasePathTest(object):
     def assertEqualNormCase(self, path_a, path_b):
         self.assertEqual(os.path.normcase(path_a), os.path.normcase(path_b))
 
+    def test_context_manager(self):
+        # bpo-46556: path context managers are deprecated in Python 3.11.
+        with self.assertWarns(DeprecationWarning):
+            with self.cls():
+                pass
+
     def _test_cwd(self, p):
         q = self.cls(os.getcwd())
         self.assertEqual(p, q)
