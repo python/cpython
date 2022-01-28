@@ -108,7 +108,7 @@ class IsTestBase(unittest.TestCase):
             self.assertFalse(other(obj), 'not %s(%s)' % (other.__name__, exp))
 
     def test__all__(self):
-        support.check__all__(self, inspect, not_exported=("k", "v", "mod_dict", "modulesbyfile"))
+        support.check__all__(self, inspect, not_exported=("modulesbyfile",))
 
 def generator_function_example(self):
     for i in range(2):
