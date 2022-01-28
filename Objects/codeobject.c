@@ -1923,4 +1923,8 @@ _PyStaticCode_Dealloc(PyCodeObject *co)
         PyObject_ClearWeakRefs((PyObject *)co);
         co->co_weakreflist = NULL;
     }
+#ifdef Py_REF_DEBUG
+    /* Adjust _Py_RefTotal for Py_INCREF/Py_DECREF on immortal codeobjects */
+    _Py_RefTotal += 999999999 - Py_REFCNT((PyObject *)co);
+#endif
 }
