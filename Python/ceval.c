@@ -1651,6 +1651,7 @@ PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int throwflag)
 {
     _Py_EnsureTstateNotNULL(tstate);
+    CALL_STAT_INC(pyeval_calls);
 
 #if USE_COMPUTED_GOTOS
 /* Import the static jump table */
@@ -2252,6 +2253,7 @@ handle_eval_breaker:
             _PyFrame_SetStackPointer(frame, stack_pointer);
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
+            CALL_STAT_INC(inlined_py_calls);
             goto start_frame;
         }
 
@@ -4589,6 +4591,7 @@ handle_eval_breaker:
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 new_frame->previous = frame;
                 cframe.current_frame = frame = new_frame;
+                CALL_STAT_INC(inlined_py_calls);
                 goto start_frame;
             }
             /* Callable is not a normal Python function */
@@ -4705,6 +4708,7 @@ handle_eval_breaker:
             _PyFrame_SetStackPointer(frame, stack_pointer);
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
+            CALL_STAT_INC(inlined_py_calls);
             goto start_frame;
         }
 
