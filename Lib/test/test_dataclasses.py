@@ -11,7 +11,7 @@ import builtins
 import types
 import unittest
 from unittest.mock import Mock
-from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, Protocol
+from typing import Annotated, ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, Protocol
 from typing import get_type_hints
 from collections import deque, OrderedDict, namedtuple
 from functools import total_ordering
@@ -1022,19 +1022,25 @@ class TestCase(unittest.TestCase):
         class C:
             x: int
             y: int = 10
-            z: ClassVar[int] = 1000
-            w: ClassVar[int] = 2000
-            t: ClassVar[int] = 3000
-            s: ClassVar      = 4000
+            z: ClassVar[int]                    = 1000
+            w: ClassVar[int]                    = 2000
+            t: ClassVar[int]                    = 3000
+            s: ClassVar                         = 4000
+            a: Annotated[ClassVar, "meta"]      = 5000
+            b: Annotated[ClassVar[int], 'meta'] = 6000
+            c: Annotated['ClassVar', "meta"]    = 7000
 
         c = C(5)
         self.assertEqual(repr(c), 'TestCase.test_class_var.<locals>.C(x=5, y=10)')
         self.assertEqual(len(fields(C)), 2)                 # We have 2 fields.
-        self.assertEqual(len(C.__annotations__), 6)         # And 4 ClassVars.
+        self.assertEqual(len(C.__annotations__), 9)         # And 7 ClassVars.
         self.assertEqual(c.z, 1000)
         self.assertEqual(c.w, 2000)
         self.assertEqual(c.t, 3000)
         self.assertEqual(c.s, 4000)
+        self.assertEqual(c.a, 5000)
+        self.assertEqual(c.b, 6000)
+        self.assertEqual(c.c, 7000)
         C.z += 1
         self.assertEqual(c.z, 1001)
         c = C(20)
@@ -1043,6 +1049,9 @@ class TestCase(unittest.TestCase):
         self.assertEqual(c.w, 2000)
         self.assertEqual(c.t, 3000)
         self.assertEqual(c.s, 4000)
+        self.assertEqual(c.a, 5000)
+        self.assertEqual(c.b, 6000)
+        self.assertEqual(c.c, 7000)
 
     def test_class_var_no_default(self):
         # If a ClassVar has no default value, it should not be set on the class.
@@ -1138,13 +1147,14 @@ class TestCase(unittest.TestCase):
         class C:
             x: int = None
             init_param: InitVar[int] = None
+            annotated_init_param: Annotated[InitVar[int], 'meta'] = None
 
-            def __post_init__(self, init_param):
+            def __post_init__(self, init_param, annotated_init_param):
                 if self.x is None:
-                    self.x = init_param*2
+                    self.x = init_param*2 + annotated_init_param
 
-        c = C(init_param=10)
-        self.assertEqual(c.x, 20)
+        c = C(init_param=10, annotated_init_param=5)
+        self.assertEqual(c.x, 25)
 
     def test_init_var_preserve_type(self):
         self.assertEqual(InitVar[int].type, int)
@@ -3025,16 +3035,21 @@ class TestStringAnnotations(unittest.TestCase):
         # typing import *" have been run in this file.
         for typestr in ('ClassVar[int]',
                         'ClassVar [int]',
-                        ' ClassVar [int]',
                         'ClassVar',
-                        ' ClassVar ',
                         'typing.ClassVar[int]',
                         'typing.ClassVar[str]',
-                        ' typing.ClassVar[str]',
                         'typing .ClassVar[str]',
                         'typing. ClassVar[str]',
                         'typing.ClassVar [str]',
                         'typing.ClassVar [ str]',
+                        'Annotated[ClassVar[int], (3, 5)]',
+                        'Annotated[Annotated[ClassVar[int], (3, 5)], (3, 6)]',
+                        'Annotated[typing.ClassVar[int], (3, 5)]',
+                        'Annotated [ClassVar[int], (3, 5)]',
+                        'Annotated[ ClassVar[int], (3, 5)]',
+                        'typing.Annotated[ClassVar[int], (3, 5)]',
+                        'typing .Annotated[ClassVar[int], (3, 5)]',
+                        'typing. Annotated[ClassVar[int], (3, 5)]',
 
                         # Not syntactically valid, but these will
                         #  be treated as ClassVars.
@@ -3077,17 +3092,22 @@ class TestStringAnnotations(unittest.TestCase):
         # These tests assume that both "import dataclasses" and "from
         #  dataclasses import *" have been run in this file.
         for typestr in ('InitVar[int]',
-                        'InitVar [int]'
-                        ' InitVar [int]',
+                        'InitVar [int]',
                         'InitVar',
-                        ' InitVar ',
                         'dataclasses.InitVar[int]',
                         'dataclasses.InitVar[str]',
-                        ' dataclasses.InitVar[str]',
                         'dataclasses .InitVar[str]',
                         'dataclasses. InitVar[str]',
                         'dataclasses.InitVar [str]',
                         'dataclasses.InitVar [ str]',
+                        'Annotated[InitVar[int], (3, 5)]',
+                        'Annotated[Annotated[InitVar[int], (3, 5)], (3, 6)]',
+                        'Annotated[dataclasses.InitVar[int], (3, 5)]',
+                        'Annotated [InitVar[int], (3, 5)]',
+                        'Annotated[ InitVar[int], (3, 5)]',
+                        'typing.Annotated[InitVar[int], (3, 5)]',
+                        'typing .Annotated[InitVar[int], (3, 5)]',
+                        'typing. Annotated[InitVar[int], (3, 5)]',
 
                         # Not syntactically valid, but these will
                         #  be treated as InitVars.
@@ -3801,6 +3821,18 @@ class TestKeywordArgs(unittest.TestCase):
         class A:
             a: int
             _: 'dataclasses.KW_ONLY'
+            b: int
+            c: int
+        A(3, c=5, b=4)
+        msg = "takes 2 positional arguments but 4 were given"
+        with self.assertRaisesRegex(TypeError, msg):
+            A(3, 4, 5)
+
+    def test_KW_ONLY_annotated(self):
+        @dataclass
+        class A:
+            a: int
+            _: Annotated[KW_ONLY, 'meta']
             b: int
             c: int
         A(3, c=5, b=4)

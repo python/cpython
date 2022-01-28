@@ -188,7 +188,8 @@ MISSING = _MISSING_TYPE()
 # A sentinel object to indicate that following fields are keyword-only by
 # default.  Use a class to give it a better repr.
 class _KW_ONLY_TYPE:
-    pass
+    def __call__(self, *args, **kwds):
+        raise TypeError(f"Cannot instantiate {self!r}")
 KW_ONLY = _KW_ONLY_TYPE()
 
 # Since most per-field metadata will be unused, create an empty
@@ -220,7 +221,8 @@ _POST_INIT_NAME = '__post_init__'
 # String regex that string annotations for ClassVar or InitVar must match.
 # Allows "identifier.identifier[" or "identifier[".
 # https://bugs.python.org/issue33453 for details.
-_MODULE_IDENTIFIER_RE = re.compile(r'^(?:\s*(\w+)\s*\.)?\s*(\w+)')
+_MODULE_IDENTIFIER_RE = re.compile(
+    r'^(?:(?:\w+\s*\.\s*)?Annotated\s*\[\s*)*(?:(\w+)\s*\.)?\s*(\w+)')
 
 class InitVar:
     __slots__ = ('type', )
@@ -238,6 +240,9 @@ class InitVar:
 
     def __class_getitem__(cls, type):
         return InitVar(type)
+
+    def __call__(self, *args, **kwds):
+        raise TypeError(f"Cannot instantiate {self!r}")
 
 # Instances of Field are only ever created from within this module,
 # and only from the field() function, although Field instances are
@@ -643,21 +648,41 @@ def _hash_fn(fields, globals):
                       globals=globals)
 
 
-def _is_classvar(a_type, typing):
+def _is_classvar(cls, a_type, typing):
     # This test uses a typing internal class, but it's the best way to
     # test if this is a ClassVar.
+    if isinstance(a_type, typing._AnnotatedAlias):
+        a_type = a_type.__origin__
+        return (_is_classvar(cls, a_type, typing)
+                or isinstance(a_type, typing.ForwardRef)
+                and _is_type(a_type.__forward_arg__, cls, typing,
+                             typing.ClassVar, _is_classvar))
     return (a_type is typing.ClassVar
             or (type(a_type) is typing._GenericAlias
                 and a_type.__origin__ is typing.ClassVar))
 
 
-def _is_initvar(a_type, dataclasses):
+def _is_initvar(cls, a_type, dataclasses):
     # The module we're checking against is the module we're
     # currently in (dataclasses.py).
+    typing = sys.modules.get('typing')
+    if typing and isinstance(a_type, typing._AnnotatedAlias):
+        a_type = a_type.__origin__
+        return (_is_initvar(cls, a_type, dataclasses)
+                or isinstance(a_type, typing.ForwardRef)
+                and _is_type(a_type.__forward_arg__, cls, dataclasses,
+                             dataclasses.InitVar, _is_initvar))
     return (a_type is dataclasses.InitVar
             or type(a_type) is dataclasses.InitVar)
 
-def _is_kw_only(a_type, dataclasses):
+def _is_kw_only(cls, a_type, dataclasses):
+    typing = sys.modules.get('typing')
+    if typing and isinstance(a_type, typing._AnnotatedAlias):
+        a_type = a_type.__origin__
+        return (_is_kw_only(cls, a_type, dataclasses)
+                or isinstance(a_type, typing.ForwardRef)
+                and _is_type(a_type.__forward_arg__, cls, dataclasses,
+                             dataclasses.KW_ONLY, _is_kw_only))
     return a_type is dataclasses.KW_ONLY
 
 
@@ -715,7 +740,7 @@ def _is_type(annotation, cls, a_module, a_type, is_type_predicate):
             module = sys.modules.get(cls.__module__)
             if module and module.__dict__.get(module_name) is a_module:
                 ns = sys.modules.get(a_type.__module__).__dict__
-        if ns and is_type_predicate(ns.get(match.group(2)), a_module):
+        if ns and is_type_predicate(cls, ns.get(match.group(2)), a_module):
             return True
     return False
 
@@ -762,7 +787,7 @@ def _get_field(cls, a_name, a_type, default_kw_only):
     # module).
     typing = sys.modules.get('typing')
     if typing:
-        if (_is_classvar(a_type, typing)
+        if (_is_classvar(cls, a_type, typing)
             or (isinstance(f.type, str)
                 and _is_type(f.type, cls, typing, typing.ClassVar,
                              _is_classvar))):
@@ -774,7 +799,7 @@ def _get_field(cls, a_name, a_type, default_kw_only):
         # The module we're checking against is the module we're
         # currently in (dataclasses.py).
         dataclasses = sys.modules[__name__]
-        if (_is_initvar(a_type, dataclasses)
+        if (_is_initvar(cls, a_type, dataclasses)
             or (isinstance(f.type, str)
                 and _is_type(f.type, cls, dataclasses, dataclasses.InitVar,
                              _is_initvar))):
@@ -942,7 +967,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     dataclasses = sys.modules[__name__]
     for name, type in cls_annotations.items():
         # See if this is a marker to change the value of kw_only.
-        if (_is_kw_only(type, dataclasses)
+        if (_is_kw_only(cls, type, dataclasses)
             or (isinstance(type, str)
                 and _is_type(type, cls, dataclasses, dataclasses.KW_ONLY,
                              _is_kw_only))):
