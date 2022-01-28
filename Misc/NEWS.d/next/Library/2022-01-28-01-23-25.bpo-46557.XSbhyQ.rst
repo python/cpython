@@ -1,1 +1,1 @@
-Captured warnings from the warnings module are now logged without a format string to prevent systems that group logs by the format string from grouping all warnings together
+Captured warnings from the warnings module are now logged without a format string to prevent systems that group logs by the format string from grouping all warnings together.
