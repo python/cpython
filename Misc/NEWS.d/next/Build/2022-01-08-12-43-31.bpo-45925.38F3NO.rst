@@ -1,1 +1,1 @@
-Updated Windows and Mac installers to sqlite 3.37.2.
+Update Windows installer to use SQLite 3.37.2.
