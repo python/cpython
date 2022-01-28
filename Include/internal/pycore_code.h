@@ -283,7 +283,6 @@ void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
 /* Deallocator function for static codeobjects used in deepfreeze.py */
 void _PyStaticCode_Dealloc(PyCodeObject *co);
 
-#define Py_STATS
 
 #ifdef Py_STATS
 
