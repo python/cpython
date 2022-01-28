@@ -1377,6 +1377,7 @@ specialize_class_call(
         }
         /* Adaptive super instruction of CALL and LOAD_METHOD_ADAPTIVE. */
         if (tp == &PySuper_Type &&
+            kwnames == NULL &&
             _Py_OPCODE(instr[1]) == LOAD_METHOD_ADAPTIVE &&
             _Py_OPCODE(instr[-1]) == PRECALL_FUNCTION &&
             (nargs == 0 || nargs == 2)) {
@@ -1430,7 +1431,6 @@ specialize_class_call(
         return -1;
     }
 
-fail:
     SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CLASS_MUTABLE);
     return -1;
 }

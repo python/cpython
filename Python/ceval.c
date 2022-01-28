@@ -5078,7 +5078,7 @@ handle_eval_breaker:
             _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
             _PyObjectCache *cache1 = &caches[-1].obj;
             _PyAdaptiveEntry *lm_adaptive = &caches[-2].adaptive;
-            int nargs = cache0->original_oparg;
+            int nargs = call_shape.total_args;
             assert(nargs == 0);
 
             /* CALL_NO_KW_SUPER */
@@ -5119,9 +5119,9 @@ handle_eval_breaker:
             _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
             _PyObjectCache *cache1 = &caches[-1].obj;
             _PyAdaptiveEntry *lm_adaptive = &caches[-2].adaptive;
-            int nargs = cache0->original_oparg;
-            int lm_oparg = cache0->index;
+            int nargs = call_shape.total_args;
             assert(nargs == 2);
+            assert(call_shape.kwnames == NULL);
 
             /* CALL_NO_KW_SUPER */
             /* super(type, obj) - two argument form */
