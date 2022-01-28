@@ -4856,7 +4856,7 @@ handle_eval_breaker:
 
         TARGET(CALL_BUILTIN_FAST_WITH_KEYWORDS) {
             assert(cframe.use_tracing == 0);
-            /* Builtin METH_FASTCALL functions, without keywords */
+            /* Builtin METH_FASTCALL | METH_KEYWORDS functions */
             PyObject *callable = call_shape.callable;
             DEOPT_IF(!PyCFunction_CheckExact(callable), CALL);
             DEOPT_IF(PyCFunction_GET_FLAGS(callable) !=
