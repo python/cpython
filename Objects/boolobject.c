@@ -1,7 +1,7 @@
 /* Boolean type, a subtype of int */
 
 #include "Python.h"
-#include "pycore_pyerrors.h"      // _Py_FatalRefcountError()
+#include "pycore_object.h"      // _Py_FatalRefcountError()
 
 /* We define bool_repr to return "False" or "True" */
 

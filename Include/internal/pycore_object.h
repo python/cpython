@@ -12,7 +12,6 @@ extern "C" {
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
-
 #define _PyObject_IMMORTAL_INIT(type) \
     { \
         .ob_refcnt = 999999999, \
@@ -23,6 +22,12 @@ extern "C" {
         .ob_base = _PyObject_IMMORTAL_INIT(type), \
         .ob_size = size, \
     }
+
+PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
+    const char *func,
+    const char *message);
+
+#define _Py_FatalRefcountError(message) _Py_FatalRefcountErrorFunc(__func__, message)
 
 static inline void
 _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
@@ -50,8 +55,7 @@ _Py_DECREF_IMMORTAL(PyObject *op)
     op->ob_refcnt--;
 #ifdef Py_DEBUG
     if (op->ob_refcnt <= 0) {
-        // Calls _Py_FatalRefcountError for None, True, and False
-        _Py_Dealloc(op);
+        _Py_FatalRefcountError("deallocating a singleton");
     }
 #endif
 }
