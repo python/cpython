@@ -753,7 +753,6 @@ def _get_field(cls, a_name, a_type, default_kw_only):
     f.name = a_name
     f.type = a_type
 
-
     # Assume it's a normal field until proven otherwise.  We're next
     # going to decide if it's a ClassVar or InitVar, everything else
     # is just a normal field.
