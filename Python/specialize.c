@@ -163,9 +163,18 @@ print_spec_stats(FILE *out, OpcodeStats *stats)
 }
 #undef PRINT_STAT
 
+
+static void
+print_call_stats(FILE *out, CallStats *stats)
+{
+    fprintf(out, "Calls to PyEval_EvalDefault: %" PRIu64 "\n", stats->pyeval_calls);
+    fprintf(out, "Calls to Python functions inlined: %" PRIu64 "\n", stats->inlined_py_calls);
+}
+
 static void
 print_stats(FILE *out, PyStats *stats) {
     print_spec_stats(out, stats->opcode_stats);
+    print_call_stats(out, &stats->call_stats);
 }
 
 void
