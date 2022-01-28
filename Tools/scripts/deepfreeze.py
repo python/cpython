@@ -406,7 +406,7 @@ PyObject *
 _Py_get_%%NAME%%_toplevel(void)
 {
     %%NAME%%_do_patchups();
-    return (PyObject *) &%%NAME%%_toplevel;
+    return Py_NewRef((PyObject *) &%%NAME%%_toplevel);
 }
 """
 
