@@ -43,6 +43,11 @@ extern PyStatus _PyTypes_InitSlotDefs(void);
 
 extern void _PyStaticType_Dealloc(PyTypeObject *type);
 
+/* _interpreter_frame is defined in pycore_frame.h */
+typedef struct _interpreter_frame InterpreterFrame;
+
+PyObject *_PySuper_Lookup(PyTypeObject *, PyObject *, PyObject *, int *);
+int _PySuper_GetTypeArgs(InterpreterFrame *, PyCodeObject *, PyTypeObject **, PyObject **);
 
 #ifdef __cplusplus
 }

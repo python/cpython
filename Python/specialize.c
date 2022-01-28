@@ -4,6 +4,7 @@
 #include "pycore_long.h"
 #include "pycore_moduleobject.h"
 #include "pycore_object.h"
+#include "pycore_frame.h"
 #include "opcode.h"
 #include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
 
@@ -1337,7 +1338,8 @@ success:
 static int
 specialize_class_call(
     PyObject *callable, _Py_CODEUNIT *instr,
-    int nargs, SpecializedCacheEntry *cache)
+    int nargs, SpecializedCacheEntry *cache, PyObject **stack_pointer,
+    InterpreterFrame *frame, PyObject *names)
 {
     PyTypeObject *tp = _PyType_CAST(callable);
     if (_Py_OPCODE(instr[-1]) == PRECALL_METHOD) {
@@ -1359,6 +1361,51 @@ specialize_class_call(
             return 0;
         }
     }
+
+    _Py_CODEUNIT next_instr = instr[1];
+    /* Adaptive super instruction of CALL_NO_KW andLOAD_METHOD_ADAPTIVE. */
+    if (tp == &PySuper_Type &&
+        _Py_OPCODE(next_instr) == LOAD_METHOD_ADAPTIVE &&
+        (nargs == 0 || nargs == 2)) {
+        /* Use load_method cache entries too. */
+        _PyAdaptiveEntry *lm_adaptive = &cache[-cache_requirements[CALL_NO_KW]].adaptive;
+        _PyObjectCache *cache1 = &cache[-1].obj;
+        PyObject *su_obj;
+        PyTypeObject *su_type;
+        PyObject *meth;
+        int meth_found;
+        PyObject *name = PyTuple_GET_ITEM(names, lm_adaptive->original_oparg);
+
+        /* Note (KJ): the following operations must not affect tp_version_tag. */
+        /* super() zero arg form. */
+        if (nargs == 0) {
+            if (_PySuper_GetTypeArgs(frame, frame->f_code, &su_type, &su_obj) < 0) {
+                PyErr_Clear();
+                goto fail;
+            }
+        }
+        /* super(su_type, su_obj) two arg form. */
+        else if (nargs == 2) {
+            su_type = _PyType_CAST(stack_pointer[-2]);
+            su_obj = stack_pointer[-1];
+        }
+        meth = _PySuper_Lookup(su_type, su_obj, name, &meth_found);
+        if (meth == NULL) {
+            assert(PyErr_Occurred());
+            PyErr_Clear();
+            goto fail;
+        }
+        if (!meth_found) {
+            goto fail;
+        }
+        cache->adaptive.version = su_type->tp_version_tag;
+        cache1->obj = meth;
+        lm_adaptive->version = Py_TYPE(su_obj)->tp_version_tag;
+        *instr = _Py_MAKECODEUNIT(nargs == 0 ? CALL_NO_KW_SUPER_0__LOAD_METHOD_CACHED
+            : CALL_NO_KW_SUPER_2__LOAD_METHOD_CACHED, _Py_OPARG(*instr));
+        return 0;
+    }
+fail:
     SPECIALIZATION_FAIL(CALL_NO_KW, SPEC_FAIL_CLASS);
     return -1;
 }
@@ -1560,7 +1607,8 @@ int
 _Py_Specialize_CallNoKw(
     PyObject *callable, _Py_CODEUNIT *instr,
     int nargs, SpecializedCacheEntry *cache,
-    PyObject *builtins)
+    PyObject *builtins, PyObject **stack_pointer, InterpreterFrame *frame,
+    PyObject *names)
 {
     int fail;
     if (PyCFunction_CheckExact(callable)) {
@@ -1570,7 +1618,8 @@ _Py_Specialize_CallNoKw(
         fail = specialize_py_call((PyFunctionObject *)callable, instr, nargs, cache);
     }
     else if (PyType_Check(callable)) {
-        fail = specialize_class_call(callable, instr, nargs, cache);
+        fail = specialize_class_call(callable, instr, nargs, cache, stack_pointer,
+            frame, names);
     }
     else if (Py_IS_TYPE(callable, &PyMethodDescr_Type)) {
         fail = specialize_method_descriptor(

@@ -8846,16 +8846,18 @@ super_repr(PyObject *self)
             "<super: <class '%s'>, NULL>",
             su->type ? su->type->tp_name : "NULL");
 }
+/* Forward */
+static PyTypeObject *supercheck(PyTypeObject *type, PyObject *obj);
 
 static PyObject *
-super_getattro(PyObject *self, PyObject *name)
+do_super_lookup(superobject *su, PyTypeObject *su_type, PyObject *su_obj,
+                PyTypeObject *su_obj_type, PyObject *name, int *meth_found)
 {
-    superobject *su = (superobject *)self;
     PyTypeObject *starttype;
     PyObject *mro;
     Py_ssize_t i, n;
 
-    starttype = su->obj_type;
+    starttype = su_obj_type;
     if (starttype == NULL)
         goto skip;
 
@@ -8875,7 +8877,7 @@ super_getattro(PyObject *self, PyObject *name)
 
     /* No need to check the last one: it's gonna be skipped anyway.  */
     for (i = 0; i+1 < n; i++) {
-        if ((PyObject *)(su->type) == PyTuple_GET_ITEM(mro, i))
+        if ((PyObject *)(su_type) == PyTuple_GET_ITEM(mro, i))
             break;
     }
     i++;  /* skip su->type (if any)  */
@@ -8893,17 +8895,25 @@ super_getattro(PyObject *self, PyObject *name)
         PyObject *res = PyDict_GetItemWithError(dict, name);
         if (res != NULL) {
             Py_INCREF(res);
-
-            descrgetfunc f = Py_TYPE(res)->tp_descr_get;
-            if (f != NULL) {
-                PyObject *res2;
-                res2 = f(res,
-                    /* Only pass 'obj' param if this is instance-mode super
-                       (See SF ID #743627)  */
-                    (su->obj == (PyObject *)starttype) ? NULL : su->obj,
-                    (PyObject *)starttype);
-                Py_DECREF(res);
-                res = res2;
+            if (meth_found &&
+                _PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
+                *meth_found = 1;
+            }
+            else {
+                if (meth_found) {
+                    *meth_found = 0;
+                }
+                descrgetfunc f = Py_TYPE(res)->tp_descr_get;
+                if (f != NULL) {
+                    PyObject *res2;
+                    res2 = f(res,
+                            /* Only pass 'obj' param if this is instance-mode super
+                            (See SF ID #743627)  */
+                            (su_obj == (PyObject *)starttype) ? NULL : su_obj,
+                            (PyObject *)starttype);
+                    Py_DECREF(res);
+                    res = res2;
+                }
             }
 
             Py_DECREF(mro);
@@ -8919,7 +8929,27 @@ super_getattro(PyObject *self, PyObject *name)
     Py_DECREF(mro);
 
   skip:
-    return PyObject_GenericGetAttr(self, name);
+    assert(su != NULL);
+    return PyObject_GenericGetAttr((PyObject *)su, name);
+}
+
+static PyObject *
+super_getattro(PyObject *self, PyObject *name)
+{
+    superobject *su = (superobject *)self;
+    return do_super_lookup(su, su->type, su->obj, su->obj_type, name, NULL);
+}
+
+PyObject *
+_PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj, PyObject *name, int *meth_found)
+{
+    PyTypeObject *starttype = supercheck(su_type, su_obj);
+    if (starttype == NULL) {
+        return NULL;
+    }
+    PyObject *res = do_super_lookup(NULL, su_type, su_obj, starttype, name, meth_found);
+    Py_DECREF(starttype);
+    return res;
 }
 
 static PyTypeObject *
@@ -9011,8 +9041,8 @@ super_descr_get(PyObject *self, PyObject *obj, PyObject *type)
     }
 }
 
-static int
-super_init_without_args(PyFrameObject *f, PyCodeObject *co,
+int
+_PySuper_GetTypeArgs(InterpreterFrame *f, PyCodeObject *co,
                         PyTypeObject **type_p, PyObject **obj_p)
 {
     if (co->co_argcount == 0) {
@@ -9021,13 +9051,13 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
         return -1;
     }
 
-    assert(f->f_frame->f_code->co_nlocalsplus > 0);
-    PyObject *firstarg = _PyFrame_GetLocalsArray(f->f_frame)[0];
+    assert(f->f_code->co_nlocalsplus > 0);
+    PyObject *firstarg = _PyFrame_GetLocalsArray(f)[0];
     // The first argument might be a cell.
     if (firstarg != NULL && (_PyLocals_GetKind(co->co_localspluskinds, 0) & CO_FAST_CELL)) {
         // "firstarg" is a cell here unless (very unlikely) super()
         // was called from the C-API before the first MAKE_CELL op.
-        if (f->f_frame->f_lasti >= 0) {
+        if (f->f_lasti >= 0) {
             assert(_Py_OPCODE(*co->co_firstinstr) == MAKE_CELL || _Py_OPCODE(*co->co_firstinstr) == COPY_FREE_VARS);
             assert(PyCell_Check(firstarg));
             firstarg = PyCell_GET(firstarg);
@@ -9047,7 +9077,7 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
         assert(PyUnicode_Check(name));
         if (_PyUnicode_EqualToASCIIId(name, &PyId___class__)) {
-            PyObject *cell = _PyFrame_GetLocalsArray(f->f_frame)[i];
+            PyObject *cell = _PyFrame_GetLocalsArray(f)[i];
             if (cell == NULL || !PyCell_Check(cell)) {
                 PyErr_SetString(PyExc_RuntimeError,
                   "super(): bad __class__ cell");
@@ -9096,17 +9126,14 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
         /* Call super(), without args -- fill in from __class__
            and first local variable on the stack. */
         PyThreadState *tstate = _PyThreadState_GET();
-        PyFrameObject *frame = PyThreadState_GetFrame(tstate);
+        InterpreterFrame *frame = tstate->cframe->current_frame;
         if (frame == NULL) {
             PyErr_SetString(PyExc_RuntimeError,
                             "super(): no current frame");
             return -1;
         }
 
-        PyCodeObject *code = PyFrame_GetCode(frame);
-        int res = super_init_without_args(frame, code, &type, &obj);
-        Py_DECREF(frame);
-        Py_DECREF(code);
+        int res = _PySuper_GetTypeArgs(frame, frame->f_code, &type, &obj);
 
         if (res < 0) {
             return -1;

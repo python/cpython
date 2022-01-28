@@ -4613,7 +4613,8 @@ handle_eval_breaker:
                 next_instr--;
                 int nargs = oparg+extra_args;
                 if (_Py_Specialize_CallNoKw(
-                    PEEK(nargs + 1), next_instr, nargs, cache, BUILTINS()) < 0) {
+                    PEEK(nargs + 1), next_instr, nargs, cache, BUILTINS(),
+                    stack_pointer, frame, names) < 0) {
                     goto error;
                 }
                 DISPATCH();
@@ -4927,6 +4928,90 @@ handle_eval_breaker:
             if (res == NULL) {
                 goto error;
             }
+            DISPATCH();
+        }
+
+        TARGET(CALL_NO_KW_SUPER_0__LOAD_METHOD_CACHED) {
+            /* super().meth */
+            assert(_Py_OPCODE(next_instr[0]) == LOAD_METHOD_ADAPTIVE);
+            assert(_Py_OPCODE(next_instr[-2]) != PRECALL_METHOD);
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            _PyObjectCache *cache1 = &caches[-1].obj;
+            _PyAdaptiveEntry *lm_adaptive = &caches[-2].adaptive;
+            int nargs = cache0->original_oparg;
+            assert(nargs == 0);
+
+            /* CALL_NO_KW_SUPER */
+            PyObject *su_obj;
+            PyTypeObject *su_type;
+            PyObject *meth;
+            PyObject *super_callable = TOP();
+
+            DEOPT_IF(_PyType_CAST(super_callable) != &PySuper_Type, CALL_NO_KW);
+
+            /* super() - zero argument form */
+            if (_PySuper_GetTypeArgs(frame, frame->f_code, &su_type, &su_obj) < 0) {
+                PyErr_Clear();
+                DEOPT_IF(1, CALL_NO_KW);
+            }
+            assert(su_obj != NULL);
+            DEOPT_IF(lm_adaptive->version != Py_TYPE(su_obj)->tp_version_tag, CALL_NO_KW);
+            DEOPT_IF(cache0->version != su_type->tp_version_tag, CALL_NO_KW);
+
+            STAT_INC(CALL_NO_KW, hit);
+
+            /* LOAD_METHOD_CACHED */
+            meth = cache1->obj;
+            assert(meth != NULL && _PyType_HasFeature(Py_TYPE(meth), Py_TPFLAGS_METHOD_DESCRIPTOR));
+            Py_INCREF(meth);
+            SET_TOP(meth);
+            Py_INCREF(su_obj);
+            PUSH(su_obj);
+
+            Py_DECREF(super_callable);
+            next_instr++;
+            DISPATCH();
+        }
+
+        TARGET(CALL_NO_KW_SUPER_2__LOAD_METHOD_CACHED) {
+            /* super(type, obj).meth */
+            assert(_Py_OPCODE(next_instr[0]) == LOAD_METHOD_ADAPTIVE);
+            assert(_Py_OPCODE(next_instr[-2]) != PRECALL_METHOD);
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            _PyObjectCache *cache1 = &caches[-1].obj;
+            _PyAdaptiveEntry *lm_adaptive = &caches[-2].adaptive;
+            int nargs = cache0->original_oparg;
+            int lm_oparg = cache0->index;
+            assert(nargs == 2);
+
+            /* CALL_NO_KW_SUPER */
+            /* super(type, obj) - two argument form */
+            PyObject *su_obj = TOP();
+            PyTypeObject *su_type = _PyType_CAST(SECOND());
+            PyObject *super_callable = THIRD();
+            PyObject *meth;
+
+            DEOPT_IF(_PyType_CAST(super_callable) != &PySuper_Type, CALL_NO_KW);
+
+            assert(su_obj != NULL);
+            DEOPT_IF(lm_adaptive->version != Py_TYPE(su_obj)->tp_version_tag, CALL_NO_KW);
+            DEOPT_IF(cache0->version != su_type->tp_version_tag, CALL_NO_KW);
+
+            STAT_INC(CALL_NO_KW, hit);
+
+            (void)(POP());
+            /* LOAD_METHOD_CACHED */
+            meth = cache1->obj;
+            assert(meth != NULL && _PyType_HasFeature(Py_TYPE(meth), Py_TPFLAGS_METHOD_DESCRIPTOR));
+            Py_INCREF(meth);
+            SET_SECOND(meth);
+            SET_TOP(su_obj);
+
+            Py_DECREF(super_callable);
+            Py_DECREF(su_type);
+            next_instr++;
             DISPATCH();
         }
 

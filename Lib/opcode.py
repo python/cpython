@@ -280,6 +280,9 @@ _specialized_instructions = [
     "LOAD_FAST__LOAD_CONST",
     "LOAD_CONST__LOAD_FAST",
     "STORE_FAST__STORE_FAST",
+    # Specialized super instructions.
+    "CALL_NO_KW_SUPER_0__LOAD_METHOD_CACHED",
+    "CALL_NO_KW_SUPER_2__LOAD_METHOD_CACHED",
 ]
 _specialization_stats = [
     "success",

@@ -1,0 +1,5 @@
+Method calls on :class:`super` are sped up. The 2-argument form,
+``super(type, obj).meth()`` is now nearly as fast as an equivalent
+``self.meth()`` call. The 0-argument form, while still slower, is still
+faster than in previous versions of CPython. Patch by Ken Jin, with
+additional contributions by Vladimir Matveev.
