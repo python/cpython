@@ -1209,7 +1209,7 @@ traverse_slots(PyTypeObject *type, PyObject *self, visitproc visit, void *arg)
     PyMemberDef *mp;
 
     n = Py_SIZE(type);
-    mp = PyHeapType_GET_MEMBERS((PyHeapTypeObject *)type);
+    mp = _PyHeapType_GET_MEMBERS((PyHeapTypeObject *)type);
     for (i = 0; i < n; i++, mp++) {
         if (mp->type == T_OBJECT_EX) {
             char *addr = (char *)self + mp->offset;
@@ -1281,7 +1281,7 @@ clear_slots(PyTypeObject *type, PyObject *self)
     PyMemberDef *mp;
 
     n = Py_SIZE(type);
-    mp = PyHeapType_GET_MEMBERS((PyHeapTypeObject *)type);
+    mp = _PyHeapType_GET_MEMBERS((PyHeapTypeObject *)type);
     for (i = 0; i < n; i++, mp++) {
         if (mp->type == T_OBJECT_EX && !(mp->flags & READONLY)) {
             char *addr = (char *)self + mp->offset;
@@ -2977,7 +2977,7 @@ type_new_descriptors(const type_new_ctx *ctx, PyTypeObject *type)
     PyHeapTypeObject *et = (PyHeapTypeObject *)type;
     Py_ssize_t slotoffset = ctx->base->tp_basicsize;
     if (et->ht_slots != NULL) {
-        PyMemberDef *mp = PyHeapType_GET_MEMBERS(et);
+        PyMemberDef *mp = _PyHeapType_GET_MEMBERS(et);
         Py_ssize_t nslot = PyTuple_GET_SIZE(et->ht_slots);
         for (Py_ssize_t i = 0; i < nslot; i++, mp++) {
             mp->name = PyUnicode_AsUTF8(
@@ -3014,7 +3014,7 @@ type_new_descriptors(const type_new_ctx *ctx, PyTypeObject *type)
 
     type->tp_basicsize = slotoffset;
     type->tp_itemsize = ctx->base->tp_itemsize;
-    type->tp_members = PyHeapType_GET_MEMBERS(et);
+    type->tp_members = _PyHeapType_GET_MEMBERS(et);
     return 0;
 }
 
@@ -3570,8 +3570,8 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
         else if (slot->slot == Py_tp_members) {
             /* Move the slots to the heap type itself */
             size_t len = Py_TYPE(type)->tp_itemsize * nmembers;
-            memcpy(PyHeapType_GET_MEMBERS(res), slot->pfunc, len);
-            type->tp_members = PyHeapType_GET_MEMBERS(res);
+            memcpy(_PyHeapType_GET_MEMBERS(res), slot->pfunc, len);
+            type->tp_members = _PyHeapType_GET_MEMBERS(res);
         }
         else {
             /* Copy other slots directly */

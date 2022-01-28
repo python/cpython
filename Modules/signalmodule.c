@@ -136,7 +136,6 @@ typedef struct {
 #ifdef MS_WINDOWS
     HANDLE sigint_event;
 #endif
-    PyTypeObject *siginfo_type;
 } signal_state_t;
 
 // State shared by all Python interpreters
@@ -152,6 +151,7 @@ typedef struct {
 #ifdef PYHAVE_ITIMER_ERROR
     PyObject *itimer_error;
 #endif
+    PyTypeObject *siginfo_type;
 } _signal_module_state;
 
 
@@ -1139,10 +1139,8 @@ static PyStructSequence_Desc struct_siginfo_desc = {
 
 
 static PyObject *
-fill_siginfo(siginfo_t *si)
+fill_siginfo(_signal_module_state *state, siginfo_t *si)
 {
-    signal_state_t *state = &signal_global_state;
-
     PyObject *result = PyStructSequence_New(state->siginfo_type);
     if (!result)
         return NULL;
@@ -1206,7 +1204,8 @@ signal_sigwaitinfo_impl(PyObject *module, sigset_t sigset)
     if (err == -1)
         return (!async_err) ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
 
-    return fill_siginfo(&si);
+    _signal_module_state *state = get_signal_state(module);
+    return fill_siginfo(state, &si);
 }
 
 #endif   /* #ifdef HAVE_SIGWAITINFO */
@@ -1274,7 +1273,8 @@ signal_sigtimedwait_impl(PyObject *module, sigset_t sigset,
         }
     } while (1);
 
-    return fill_siginfo(&si);
+    _signal_module_state *state = get_signal_state(module);
+    return fill_siginfo(state, &si);
 }
 
 #endif   /* #ifdef HAVE_SIGTIMEDWAIT */
@@ -1661,8 +1661,15 @@ signal_module_exec(PyObject *m)
         return -1;
     }
 #endif
+
 #if defined(HAVE_SIGWAITINFO) || defined(HAVE_SIGTIMEDWAIT)
-    if (PyModule_AddType(m, state->siginfo_type) < 0) {
+    modstate->siginfo_type = PyStructSequence_NewType(&struct_siginfo_desc);
+    if (modstate->siginfo_type == NULL) {
+        return -1;
+    }
+#endif
+#if defined(HAVE_SIGWAITINFO) || defined(HAVE_SIGTIMEDWAIT)
+    if (PyModule_AddType(m, modstate->siginfo_type) < 0) {
         return -1;
     }
 #endif
@@ -1683,16 +1690,18 @@ signal_module_exec(PyObject *m)
 static int
 _signal_module_traverse(PyObject *module, visitproc visit, void *arg)
 {
-    _signal_module_state *modstate = get_signal_state(module);
-    Py_VISIT(modstate->itimer_error);
+    _signal_module_state *state = get_signal_state(module);
+    Py_VISIT(state->itimer_error);
+    Py_VISIT(state->siginfo_type);
     return 0;
 }
 
 static int
 _signal_module_clear(PyObject *module)
 {
-    _signal_module_state *modstate = get_signal_state(module);
-    Py_CLEAR(modstate->itimer_error);
+    _signal_module_state *state = get_signal_state(module);
+    Py_CLEAR(state->itimer_error);
+    Py_CLEAR(state->siginfo_type);
     return 0;
 }
 
@@ -1760,7 +1769,6 @@ _PySignal_Fini(void)
 
     Py_CLEAR(state->default_handler);
     Py_CLEAR(state->ignore_handler);
-    Py_CLEAR(state->siginfo_type);
 }
 
 
@@ -1964,13 +1972,6 @@ _PySignal_Init(int install_signal_handlers)
     state->sigint_event = CreateEvent(NULL, TRUE, FALSE, FALSE);
     if (state->sigint_event == NULL) {
         PyErr_SetFromWindowsErr(0);
-        return -1;
-    }
-#endif
-
-#if defined(HAVE_SIGWAITINFO) || defined(HAVE_SIGTIMEDWAIT)
-    state->siginfo_type = PyStructSequence_NewType(&struct_siginfo_desc);
-    if (state->siginfo_type == NULL) {
         return -1;
     }
 #endif
