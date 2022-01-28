@@ -861,9 +861,8 @@ class Thread:
         the base class constructor (Thread.__init__()) before doing anything
         else to the thread.
 
-        Example to use list or tuple as *args* in constructor:
+        Example of using this constructor with a list or tuple *args*:
 
-            >>> from threading import Thread
             >>> t = Thread(target=print, args=[1])
             >>> t.run()
             1
