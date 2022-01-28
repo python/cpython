@@ -232,14 +232,9 @@ extern void _PyObject_FreeInstanceAttributes(PyObject *self);
 extern int _PyObject_IsInstanceDictEmpty(PyObject *);
 extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
 
-/* This function returns the number of allocated memory blocks, regardless of size */
-PyAPI_FUNC(Py_ssize_t) _Py_GetAllocatedBlocks(void);
-
-/* Macros */
-#ifdef WITH_PYMALLOC
-// Export the symbol for the 3rd party guppy3 project
-PyAPI_FUNC(int) _PyObject_DebugMallocStats(FILE *out);
-#endif
+// Access macro to the members which are floating "behind" the object
+#define _PyHeapType_GET_MEMBERS(etype) \
+    ((PyMemberDef *)(((char *)etype) + Py_TYPE(etype)->tp_basicsize))
 
 #ifdef __cplusplus
 }
