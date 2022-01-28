@@ -1296,7 +1296,7 @@ find_frozen(PyObject *nameobj, struct frozen_info *info)
     if (info != NULL) {
         info->nameobj = nameobj;  // borrowed
         info->data = (const char *)p->code;
-        info->get_code = p->get_code;
+        info->get_code = p->get_code; // function returns borrowed ref
         info->size = p->size < 0 ? -(p->size) : p->size;
         info->is_package = p->size < 0 ? true : false;
         info->origname = name;
@@ -1321,7 +1321,7 @@ unmarshal_frozen_code(struct frozen_info *info)
     if (info->get_code) {
         PyObject *code = info->get_code();
         assert(code != NULL);
-        return code;
+        return Py_NewRef(code);
     }
     PyObject *co = PyMarshal_ReadObjectFromString(info->data, info->size);
     if (co == NULL) {
