@@ -124,7 +124,7 @@ class ThreadTests(BaseTestCase):
             self.assertEqual(thread.name, "Thread-5 (func)")
 
     def test_args_argument(self):
-        # Using list or tuple as *args* in constructor could
+        # bpo-45735: Using list or tuple as *args* in constructor could
         # achieve the same effect.
         num_list = [1]
         num_tuple = (1,)

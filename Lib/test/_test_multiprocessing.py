@@ -247,6 +247,30 @@ class _TestProcess(BaseTestCase):
         self.assertEqual(current.ident, os.getpid())
         self.assertEqual(current.exitcode, None)
 
+    def test_args_argument(self):
+        # bpo-45735: Using list or tuple as *args* in constructor could
+        # achieve the same effect.
+        num_list = [1]
+        num_tuple = (1,)
+
+        str_list = ["str"]
+        str_tuple = ("str",)
+
+        list_in_tuple = ([1],)
+        tuple_in_list = [(1,)]
+
+        test_cases = [
+            [num_list, lambda arg: self.assertEqual(arg, 1)],
+            [num_tuple, lambda arg: self.assertEqual(arg, 1)],
+            [str_list, lambda arg: self.assertEqual(arg, "str")],
+            [str_tuple, lambda arg: self.assertEqual(arg, "str")],
+            [list_in_tuple, lambda arg: self.assertEqual(arg, [1])],
+            [tuple_in_list, lambda arg: self.assertEqual(arg, (1,))]
+        ]
+        for test_case in test_cases:
+            p = multiprocessing.Process(target=test_case[1], args=test_case[0])
+            p.start()
+
     def test_daemon_argument(self):
         if self.TYPE == "threads":
             self.skipTest('test not appropriate for {}'.format(self.TYPE))

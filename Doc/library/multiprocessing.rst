@@ -485,7 +485,9 @@ The :mod:`multiprocessing` package mostly replicates the API of the
    to ``True`` or ``False``.  If ``None`` (the default), this flag will be
    inherited from the creating process.
 
-   By default, no arguments are passed to *target*.
+   By default, no arguments are passed to *target*, the *args* is set to ``()``.
+   Besides, similar to :class:`threading.Thread`, it is feasible to use a list or
+   tuple as the *args* to pass arguments.
 
    If a subclass overrides the constructor, it must make sure it invokes the
    base class constructor (:meth:`Process.__init__`) before doing anything else
@@ -502,6 +504,19 @@ The :mod:`multiprocessing` package mostly replicates the API of the
       method invokes the callable object passed to the object's constructor as
       the target argument, if any, with sequential and keyword arguments taken
       from the *args* and *kwargs* arguments, respectively.
+
+      Using list or tuple as the *args* argument which passed to the :class:`Process`
+      could achieve the same effect.
+
+      Example::
+
+         >>> from multiprocessing import Process
+         >>> p = Process(target=print, args=[1])
+         >>> p.run()
+         1
+         >>> p = Process(target=print, args=(1,))
+         >>> p.run()
+         1
 
    .. method:: start()
 
