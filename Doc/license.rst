@@ -100,7 +100,7 @@ PSF LICENSE AGREEMENT FOR PYTHON |release|
       analyze, test, perform and/or display publicly, prepare derivative works,
       distribute, and otherwise use Python |release| alone or in any derivative
       version, provided, however, that PSF's License Agreement and PSF's notice of
-      copyright, i.e., "Copyright © 2001-2021 Python Software Foundation; All Rights
+      copyright, i.e., "Copyright © 2001-2022 Python Software Foundation; All Rights
       Reserved" are retained in Python |release| alone or in any derivative version
       prepared by Licensee.
 
@@ -655,7 +655,7 @@ OpenSSL
 
 The modules :mod:`hashlib`, :mod:`posix`, :mod:`ssl`, :mod:`crypt` use
 the OpenSSL library for added performance if made available by the
-operating system. Additionally, the Windows and Mac OS X installers for
+operating system. Additionally, the Windows and macOS installers for
 Python may include a copy of the OpenSSL libraries, so we include a copy
 of the OpenSSL license here::
 

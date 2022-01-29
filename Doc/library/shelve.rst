@@ -45,6 +45,9 @@ lots of shared  sub-objects.  The keys are ordinary strings.
       :data:`pickle.DEFAULT_PROTOCOL` is now used as the default pickle
       protocol.
 
+   .. versionchanged:: 3.11
+      Accepts :term:`path-like object` for filename.
+
    .. note::
 
       Do not rely on the shelf being closed automatically; always call

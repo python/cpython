@@ -1,7 +1,7 @@
 """Pseudo terminal utilities."""
 
 # Bugs: No signal handling.  Doesn't set slave termios and window size.
-#       Only tested on Linux.
+#       Only tested on Linux, FreeBSD, and macOS.
 # See:  W. Richard Stevens. 1992.  Advanced Programming in the
 #       UNIX Environment.  Chapter 19.
 # Author: Steen Lumholt -- with additions by Guido.

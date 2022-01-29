@@ -96,11 +96,13 @@ Save Copy As...
 Print Window
    Print the current window to the default printer.
 
-Close
-   Close the current window (ask to save if unsaved).
+Close Window
+   Close the current window (if an unsaved editor, ask to save; if an unsaved
+   Shell, ask to quit execution).  Calling ``exit()`` or ``close()`` in the Shell
+   window also closes Shell.  If this is the only window, also exit IDLE.
 
-Exit
-   Close all windows and quit IDLE (ask to save unsaved windows).
+Exit IDLE
+   Close all windows and quit IDLE (ask to save unsaved edit windows).
 
 Edit menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -518,7 +520,7 @@ and not restarting the Shell thereafter.  This is especially useful
 after adding imports at the top of a file.  This also increases
 possible attribute completions.
 
-Completion boxes intially exclude names beginning with '_' or, for
+Completion boxes initially exclude names beginning with '_' or, for
 modules, not included in '__all__'.  The hidden names can be accessed
 by typing '_' after '.', either before or after the box is opened.
 

@@ -1,2 +1,0 @@
-:class:`zipfile.Path` now supports :attr:`zipfile.Path.stem`,
-:attr:`zipfile.Path.suffixes`, and :attr:`zipfile.Path.suffix` attributes.

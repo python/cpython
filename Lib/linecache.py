@@ -154,7 +154,7 @@ def lazycache(filename, module_globals):
 
     :return: True if a lazy load is registered in the cache,
         otherwise False. To register such a load a module loader with a
-        get_source method must be found, the filename must be a cachable
+        get_source method must be found, the filename must be a cacheable
         filename, and the filename must not be already cached.
     """
     if filename in cache:
