@@ -28,7 +28,7 @@ import sys
 from _ast import *
 from contextlib import contextmanager, nullcontext
 from enum import IntEnum, auto, _simple_enum
-import keyword
+from keyword import iskeyword
 
 
 def parse(source, filename='<unknown>', mode='exec', *,
@@ -677,7 +677,7 @@ def _mangle_keyword(x):
     won't be parsed as a keyword, as desired."""
     return (
         x if x in ('True', 'False', 'None') else
-        chr(ord(x[0]) + _MANGLE_INCR) + x[1:] if keyword.iskeyword(x) else
+        chr(ord(x[0]) + _MANGLE_INCR) + x[1:] if iskeyword(x) else
         x)
 
 
