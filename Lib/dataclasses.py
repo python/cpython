@@ -188,8 +188,7 @@ MISSING = _MISSING_TYPE()
 # A sentinel object to indicate that following fields are keyword-only by
 # default.  Use a class to give it a better repr.
 class _KW_ONLY_TYPE:
-    def __call__(self, *args, **kwds):
-        raise TypeError(f"Cannot instantiate {self!r}")
+    pass
 KW_ONLY = _KW_ONLY_TYPE()
 
 # Since most per-field metadata will be unused, create an empty
@@ -952,13 +951,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     # Get a reference to this module for the _is_kw_only() test.
     KW_ONLY_seen = False
     dataclasses = sys.modules[__name__]
-    typing = sys.modules.get('typing')
     for name, type in cls_annotations.items():
-        if typing:
-            while isinstance(type, typing._AnnotatedAlias):
-                type = type.__origin__
-                if isinstance(type, typing.ForwardRef):
-                    type = type.__forward_arg__
         # See if this is a marker to change the value of kw_only.
         if (_is_kw_only(type, dataclasses)
             or (isinstance(type, str)

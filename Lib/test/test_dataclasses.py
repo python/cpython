@@ -3828,18 +3828,6 @@ class TestKeywordArgs(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, msg):
             A(3, 4, 5)
 
-    def test_KW_ONLY_annotated(self):
-        @dataclass
-        class A:
-            a: int
-            _: Annotated[KW_ONLY, 'meta']
-            b: int
-            c: int
-        A(3, c=5, b=4)
-        msg = "takes 2 positional arguments but 4 were given"
-        with self.assertRaisesRegex(TypeError, msg):
-            A(3, 4, 5)
-
     def test_KW_ONLY_twice(self):
         msg = "'Y' is KW_ONLY, but KW_ONLY has already been specified"
 
