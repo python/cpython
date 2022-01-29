@@ -1022,18 +1022,20 @@ class TestCase(unittest.TestCase):
         class C:
             x: int
             y: int = 10
-            z: ClassVar[int]                    = 1000
-            w: ClassVar[int]                    = 2000
-            t: ClassVar[int]                    = 3000
-            s: ClassVar                         = 4000
-            a: Annotated[ClassVar, "meta"]      = 5000
-            b: Annotated[ClassVar[int], 'meta'] = 6000
-            c: Annotated['ClassVar', "meta"]    = 7000
+            z: ClassVar[int]                                    = 1000
+            w: ClassVar[int]                                    = 2000
+            t: ClassVar[int]                                    = 3000
+            s: ClassVar                                         = 4000
+            a: Annotated[ClassVar, 'meta']                      = 5000
+            b: Annotated[ClassVar[int], 'meta']                 = 6000
+            c: Annotated['ClassVar', 'meta']                    = 7000
+            d: Annotated[Annotated[ClassVar, 'meta'], 'meta']   = 8000
+            e: Annotated['Annotated[ClassVar, "meta"]', 'meta'] = 9000
 
         c = C(5)
         self.assertEqual(repr(c), 'TestCase.test_class_var.<locals>.C(x=5, y=10)')
         self.assertEqual(len(fields(C)), 2)                 # We have 2 fields.
-        self.assertEqual(len(C.__annotations__), 9)         # And 7 ClassVars.
+        self.assertEqual(len(C.__annotations__), 11)        # And 9 ClassVars.
         self.assertEqual(c.z, 1000)
         self.assertEqual(c.w, 2000)
         self.assertEqual(c.t, 3000)
@@ -1041,6 +1043,8 @@ class TestCase(unittest.TestCase):
         self.assertEqual(c.a, 5000)
         self.assertEqual(c.b, 6000)
         self.assertEqual(c.c, 7000)
+        self.assertEqual(c.d, 8000)
+        self.assertEqual(c.e, 9000)
         C.z += 1
         self.assertEqual(c.z, 1001)
         c = C(20)
@@ -1052,6 +1056,8 @@ class TestCase(unittest.TestCase):
         self.assertEqual(c.a, 5000)
         self.assertEqual(c.b, 6000)
         self.assertEqual(c.c, 7000)
+        self.assertEqual(c.d, 8000)
+        self.assertEqual(c.e, 9000)
 
     def test_class_var_no_default(self):
         # If a ClassVar has no default value, it should not be set on the class.
