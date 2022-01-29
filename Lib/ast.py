@@ -910,13 +910,12 @@ class _Unparser(NodeVisitor):
             self.write(", ")
             self.traverse(node.msg)
 
-    def visit_Global(self, node):
-        self.fill("global ")
+    def visit_Global(self, node, kw="global "):
+        self.fill(kw)
         self.interleave(lambda: self.write(", "), self.write, node.names)
 
     def visit_Nonlocal(self, node):
-        self.fill("nonlocal ")
-        self.interleave(lambda: self.write(", "), self.write, node.names)
+        self.visit_Global(node, kw="nonlocal ")
 
     def visit_Await(self, node):
         with self.require_parens(_Precedence.AWAIT, node):
