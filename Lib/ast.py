@@ -1699,7 +1699,7 @@ class _Unparser(NodeVisitor):
             with self.require_parens(_Precedence.TEST, node):
                 self.set_precedence(_Precedence.BOR, node.pattern)
                 self.traverse(node.pattern)
-                self.write(f" as {node.name}")
+                self.write(f" as {_mangle_keyword(node.name)}")
 
     def visit_MatchOr(self, node):
         with self.require_parens(_Precedence.BOR, node):

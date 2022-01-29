@@ -295,6 +295,14 @@ class UnparseTestCase(ASTTestCase):
         self.check_ast_roundtrip('foo.𝕝𝕒𝕞𝕓𝕕𝕒')
         self.check_ast_roundtrip('lambda 𝕝𝕒𝕞𝕓𝕕𝕒: 1')
         self.check_ast_roundtrip('(𝕕𝕖𝕗 := 1)')
+        # `match` is parsed unusually, allowing ASCII keywords in many
+        # places.
+        self.check_ast_roundtrip('''match match:
+            case [*case]: 1
+            case {**case}: 1
+            case 𝕔𝕝𝕒𝕤𝕤(case = 1): 1
+            case case as 𝕒𝕤: 1'''
+        )
 
     def test_bytes(self):
         self.check_ast_roundtrip("b'123'")
