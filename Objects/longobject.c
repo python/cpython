@@ -43,8 +43,7 @@ static inline void
 _Py_DECREF_INT(PyLongObject *op)
 {
     assert(PyLong_CheckExact(op));
-    _Py_DECREF_SPECIALIZED((PyObject *)op,
-                           (destructor)_PyLong_ExactDealloc);
+    _Py_DECREF_SPECIALIZED((PyObject *)op, _PyLong_ExactDealloc);
 }
 
 static inline int
