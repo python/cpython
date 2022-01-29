@@ -1421,12 +1421,13 @@ specialize_class_call(
                 SPECIALIZATION_FAIL(CALL, SPEC_FAIL_OTHER);
                 return -1;
             }
+            Py_DECREF(meth);
             if (!meth_found) {
                 SPECIALIZATION_FAIL(CALL, SPEC_FAIL_NOT_DESCRIPTOR);
                 return -1;
             }
             cache->adaptive.version = su_type->tp_version_tag;
-            cache1->obj = meth;
+            cache1->obj = meth; /* borrowed */
             lm_adaptive->version = Py_TYPE(su_obj)->tp_version_tag;
             *instr = _Py_MAKECODEUNIT(nargs == 0 ? CALL_NO_KW_SUPER_0__LOAD_METHOD_CACHED
                 : CALL_NO_KW_SUPER_2__LOAD_METHOD_CACHED, _Py_OPARG(*instr));
