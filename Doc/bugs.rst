@@ -4,12 +4,12 @@
 Dealing with Bugs
 *****************
 
-Python is a mature programming language which has established a reputation for
+Python is a mature programming language that has established a reputation for
 stability.  In order to maintain this reputation, the developers would like to
 know of any deficiencies you find in Python.
 
 It can be sometimes faster to fix bugs yourself and contribute patches to
-Python as it streamlines the process and involves less people. Learn how to
+Python as it streamlines the process and involves fewer people. Learn how to
 :ref:`contribute <contributing-to-python>`.
 
 Documentation bugs
@@ -41,7 +41,7 @@ Using the Python issue tracker
 ==============================
 
 Bug reports for Python itself should be submitted via the Python Bug Tracker
-(https://bugs.python.org/).  The bug tracker offers a web form which allows
+(https://bugs.python.org/).  The bug tracker offers a web form that allows
 pertinent information to be entered and submitted to the developers.
 
 The first step in filing a report is to determine whether the problem has
@@ -77,7 +77,7 @@ taken on the bug.
 .. seealso::
 
    `How to Report Bugs Effectively <https://www.chiark.greenend.org.uk/~sgtatham/bugs.html>`_
-      Article which goes into some detail about how to create a useful bug report.
+      An article which goes into some detail about how to create a useful bug report.
       This describes what kind of information is useful and why it is useful.
 
    `Bug Writing Guidelines <https://bugzilla.mozilla.org/page.cgi?id=bug-writing.html>`_
