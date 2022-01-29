@@ -175,7 +175,7 @@ def _is_subtype(expected, basetype):
 def _heuristic_diff(a: list[str], b: list[str]) -> Iterator[str]:
     """After testing the magnitude of the inputs, preferably return the output
     of difflib.ndiff, but fallback to difflib.unified_diff for prohibitively
-    expensive inputs.
+    expensive inputs. How cost is calculated:
 
     Cost is calculated according to this heuristic:
 
