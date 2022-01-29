@@ -485,9 +485,9 @@ The :mod:`multiprocessing` package mostly replicates the API of the
    to ``True`` or ``False``.  If ``None`` (the default), this flag will be
    inherited from the creating process.
 
-   By default, no arguments are passed to *target*, the *args* is set to ``()``.
-   Besides, similar to :class:`threading.Thread`, it is feasible to use a list or
-   tuple as the *args* to pass arguments.
+   By default, no arguments are passed to *target*. The *args* argument,
+   which defaults to ``()``, can be used to specify a list or  tuple of  the arguments
+   to pass to *target*.
 
    If a subclass overrides the constructor, it must make sure it invokes the
    base class constructor (:meth:`Process.__init__`) before doing anything else
