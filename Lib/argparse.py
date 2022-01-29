@@ -1844,10 +1844,12 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         args, argv = self.parse_known_args(args, namespace)
         if argv:
             msg = _('unrecognized arguments: %s')
-            raise ArgumentError(
-                None,
-                msg % ' '.join(argv)
-            )
+            if not self.exit_on_error:
+                raise ArgumentError(
+                    None,
+                    msg % ' '.join(argv)
+                )
+            self.error(msg % ' '.join(argv))
         return args
 
     def parse_known_args(self, args=None, namespace=None):
