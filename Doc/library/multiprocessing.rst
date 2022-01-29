@@ -505,8 +505,8 @@ The :mod:`multiprocessing` package mostly replicates the API of the
       the target argument, if any, with sequential and keyword arguments taken
       from the *args* and *kwargs* arguments, respectively.
 
-      Using list or tuple as the *args* argument which passed to the :class:`Process`
-      could achieve the same effect.
+      Using a list or tuple as the *args* argument passed to :class:`Process`
+      achieves the same effect.
 
       Example::
 
