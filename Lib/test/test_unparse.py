@@ -279,6 +279,10 @@ class UnparseTestCase(ASTTestCase):
     def test_raise_from(self):
         self.check_ast_roundtrip(raise_from)
 
+    def test_unicode_mangled_keywords(self):
+        # See issue 46520
+        self.check_ast_roundtrip('𝕕𝕖𝕗 = 1')
+
     def test_bytes(self):
         self.check_ast_roundtrip("b'123'")
 

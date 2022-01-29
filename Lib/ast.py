@@ -28,6 +28,7 @@ import sys
 from _ast import *
 from contextlib import contextmanager, nullcontext
 from enum import IntEnum, auto, _simple_enum
+import keyword
 
 
 def parse(source, filename='<unknown>', mode='exec', *,
@@ -668,6 +669,18 @@ class _Precedence:
             return self
 
 
+_MANGLE_INCR = -ord('a') + ord('𝐚')
+
+def _mangle_keyword(x):
+    """If the input would be a keyword, replace the first character with a
+    non-ASCII character that's equivalent according to NFKC. Then it
+    won't be parsed as a keyword, as desired."""
+    return (
+        x if x in ('True', 'False', 'None') else
+        chr(ord(x[0]) + _MANGLE_INCR) + x[1:] if keyword.iskeyword(x) else
+        x)
+
+
 _SINGLE_QUOTES = ("'", '"')
 _MULTI_QUOTES = ('"""', "'''")
 _ALL_QUOTES = (*_SINGLE_QUOTES, *_MULTI_QUOTES)
@@ -1214,7 +1227,7 @@ class _Unparser(NodeVisitor):
                 self._write_fstring_inner(node.format_spec)
 
     def visit_Name(self, node):
-        self.write(node.id)
+        self.write(_mangle_keyword(node.id))
 
     def _write_docstring(self, node):
         self.fill()
