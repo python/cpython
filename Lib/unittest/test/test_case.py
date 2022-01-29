@@ -823,7 +823,7 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         self.assertEqual(self.maxDiff, 80*8)
         seq1 = 'a' + 'x' * 80**2
         seq2 = 'b' + 'x' * 80**2
-        diff = unittest.case._heuristic_diff(pprint.pformat(seq1).splitlines(),  # type: ignore
+        diff = unittest.case._heuristic_diff(pprint.pformat(seq1).splitlines(),
                                              pprint.pformat(seq2).splitlines())
         diff = '\n'.join(diff)
         # the +1 is the leading \n added by assertSequenceEqual
@@ -1998,7 +1998,7 @@ class Test_HeuristicDiff(unittest.TestCase):
 
     def assertHeuristicDiffReturns(self, a, b, expect: tuple[str, ...]):
         """check that _heuristic_diff(a, b) == expect"""
-        diff_iterable = unittest.case._heuristic_diff(a, b)  # type: ignore
+        diff_iterable = unittest.case._heuristic_diff(a, b)
         diff = tuple(diff_iterable)
         self.assertTrue(diff == expect)
 
@@ -2033,7 +2033,7 @@ class Test_HeuristicDiff(unittest.TestCase):
         a = ''
         b = ''
         n = expect_switch_at // 2
-        while '@' not in ''.join(unittest.case._heuristic_diff(a, b)):  # type: ignore
+        while '@' not in ''.join(unittest.case._heuristic_diff(a, b)):
             n *= 1.3
             a = ('a' * int(n),)
             b = ('b' * int(n),)
@@ -2048,7 +2048,7 @@ class Test_HeuristicDiff(unittest.TestCase):
         a = ''
         b = ''
         n = expect_switch_at // 2
-        while '@' not in ''.join(unittest.case._heuristic_diff(a, b)):  # type: ignore
+        while '@' not in ''.join(unittest.case._heuristic_diff(a, b)):
             n *= 1.3
             a = ('a\n' * int(n),)
             b = ('b\n' * int(n),)
@@ -2169,7 +2169,7 @@ class Test_HeuristicDiff(unittest.TestCase):
             # after all that, we have `foo` and `bar`; two string sequences
             # with differences as specified by the Case parameters, scaled
             # by a factor of `N`.
-            diff = unittest.case._heuristic_diff(foo, bar)  # type: ignore
+            diff = unittest.case._heuristic_diff(foo, bar)
 
                     # --- Make Assertions ---
 
@@ -2201,7 +2201,7 @@ class Test_HeuristicDiff(unittest.TestCase):
         a = ('foo ' * 5 + '\n') * 10_000
         b = ('foo ' * 5 + '\n') *  9_999 + ('bar ' * 5 + '\n')
 
-        diff = unittest.case._heuristic_diff(a, b)  # type: ignore
+        diff = unittest.case._heuristic_diff(a, b)
         self.assertFalse(self.is_unified_diff(diff))
 
 
