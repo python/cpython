@@ -3,6 +3,7 @@
 import sys
 import argparse
 import os
+import warnings
 
 from . import loader, runner
 from .signals import installHandler
@@ -99,6 +100,16 @@ class TestProgram(object):
         self.progName = os.path.basename(argv[0])
         self.parseArgs(argv)
         self.runTests()
+
+    def usageExit(self, msg=None):
+        warnings.warn("function \"usageExit\" is being deprecated and will be"
+                      " removed in 3.13", DeprecationWarning)
+        if msg:
+            print(msg)
+        if self._discovery_parser is None:
+            self._initArgParsers()
+        self._print_help()
+        sys.exit(2)
 
     def _print_help(self, *args, **kwargs):
         if self.module is None:
