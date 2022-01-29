@@ -240,6 +240,9 @@ class InitVar:
     def __class_getitem__(cls, type):
         return InitVar(type)
 
+    # This is needed to pass the callable() check in typing._type_check,
+    # which is run whenever the InitVar is contained within an Annotated
+    # annotation.
     def __call__(self, *args, **kwds):
         raise TypeError(f"Cannot instantiate {self!r}")
 
