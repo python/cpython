@@ -1,0 +1,2 @@
+fixed bug in "The Very High Level Layer" of c-api that prevented
+PyRun_InteractiveOne\*() parsing from the provided FD.
