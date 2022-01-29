@@ -2133,7 +2133,7 @@ class Test_HeuristicDiff(unittest.TestCase):
             given `N` constant value. Check if the test has passed as
             specified."""
 
-            # we are working out way towards _heuristic_diff(foo, bar)
+            # we are working our way towards _heuristic_diff(foo, bar)
 
                     # --- Construct Differing Strings ---
 
