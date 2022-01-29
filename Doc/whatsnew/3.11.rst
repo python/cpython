@@ -400,8 +400,7 @@ CPython bytecode changes
 
 * Replaced the three call instructions: :opcode:`CALL_FUNCTION`,
   :opcode:`CALL_FUNCTION_KW` and :opcode:`CALL_METHOD` with
-  :opcode:`PRECALL_FUNCTION`, :opcode:`PRECALL_METHOD`, :opcode:`CALL`,
-  and :opcode:`KW_NAMES`.
+  :opcode:`CALL_NO_KW`, :opcode:`CALL_KW` and :opcode:`PRECALL_METHOD`.
   This decouples the argument shifting for methods from the handling of
   keyword arguments and allows better specialization of calls.
 
