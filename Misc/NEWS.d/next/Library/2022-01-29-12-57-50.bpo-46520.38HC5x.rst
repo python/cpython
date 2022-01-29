@@ -1,0 +1,2 @@
+``ast.unparse`` can now handle the result of parsing code that uses
+not-quite-Python-keywords like "𝕕𝕖𝕗".
