@@ -624,11 +624,11 @@ PyDoc_STRVAR(itertools_count__doc__,
 "Return a count object whose .__next__() method returns consecutive values.\n"
 "\n"
 "Equivalent to:\n"
-"    def count(firstval=0, step=1):\n"
-"        x = firstval\n"
+"    def count(start=0, step=1):\n"
+"        x = start\n"
 "        while 1:\n"
 "            yield x\n"
-"            x += step");
+"            x = x + step");
 
 static PyObject *
 itertools_count_impl(PyTypeObject *type, PyObject *long_cnt,

@@ -308,24 +308,25 @@ loops that truncate the stream.
 
 .. function:: count(start=0, step=1)
 
-   Make an iterator that returns evenly spaced values starting with number *start*. Often
+   Make an iterator returning *step* repeatedly added to *start*. Often
    used as an argument to :func:`map` to generate consecutive data points.
    Also, used with :func:`zip` to add sequence numbers.  Roughly equivalent to::
 
       def count(start=0, step=1):
-          # count(10) --> 10 11 12 13 14 ...
+          # count(10) -> 10 11 12 13 14 ...
           # count(2.5, 0.5) -> 2.5 3.0 3.5 ...
+          # count('', 'a') -> '' 'a' 'aa' ...
           n = start
           while True:
               yield n
-              n += step
+              n = n + step
 
    When counting with floating point numbers, better accuracy can sometimes be
    achieved by substituting multiplicative code such as: ``(start + step * i
    for i in count())``.
 
    .. versionchanged:: 3.1
-      Added *step* argument and allowed non-integer arguments.
+      Added *step* argument and allowed non-integer numeric arguments.
 
 .. function:: cycle(iterable)
 

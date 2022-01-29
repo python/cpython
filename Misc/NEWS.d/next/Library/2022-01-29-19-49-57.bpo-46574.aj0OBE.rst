@@ -1,0 +1,1 @@
+``itertools.count`` now accepts non-numeric arguments

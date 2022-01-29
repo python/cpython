@@ -532,7 +532,7 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(take(2, zip('abc',count(-1))), [('a', -1), ('b', 0)])
         self.assertEqual(take(2, zip('abc',count(-3))), [('a', -3), ('b', -2)])
         self.assertRaises(TypeError, count, 2, 3, 4)
-        self.assertRaises(TypeError, count, 'a')
+        self.assertRaises(TypeError, lambda: take(2, count('a')))
         self.assertEqual(take(10, count(maxsize-5)),
                          list(range(maxsize-5, maxsize+5)))
         self.assertEqual(take(10, count(-maxsize-5)),
@@ -563,7 +563,7 @@ class TestBasicOps(unittest.TestCase):
             self.assertEqual(r1, r2)
 
         # check copy, deepcopy, pickle
-        for value in -3, 3, maxsize-5, maxsize+5:
+        for value in -3, 3, maxsize-5, maxsize+5, Decimal(1), Decimal(0.5), 0.5, 1., 1j, (1.+0j):
             c = count(value)
             self.assertEqual(next(copy.copy(c)), value)
             self.assertEqual(next(copy.deepcopy(c)), value)
@@ -579,7 +579,6 @@ class TestBasicOps(unittest.TestCase):
                          [('a', 2), ('b', 5), ('c', 8)])
         self.assertEqual(lzip('abc',count(step=-1)),
                          [('a', 0), ('b', -1), ('c', -2)])
-        self.assertRaises(TypeError, count, 'a', 'b')
         self.assertEqual(lzip('abc',count(2,0)), [('a', 2), ('b', 2), ('c', 2)])
         self.assertEqual(lzip('abc',count(2,1)), [('a', 2), ('b', 3), ('c', 4)])
         self.assertEqual(lzip('abc',count(2,3)), [('a', 2), ('b', 5), ('c', 8)])
@@ -595,6 +594,12 @@ class TestBasicOps(unittest.TestCase):
                          [Fraction(2,3), Fraction(17,21), Fraction(20,21)])
         BIGINT = 1<<1000
         self.assertEqual(take(3, count(step=BIGINT)), [0, BIGINT, 2*BIGINT])
+        self.assertEqual(take(3, count('a', 'b')),
+                         ['a', 'ab', 'abb'])
+        self.assertEqual(take(3, count((), (1,))),
+                         [(), (1,), (1, 1)])
+        self.assertEqual(take(3, count([], [1])),
+                         [[], [1], [1, 1]])
         self.assertEqual(repr(take(3, count(10, 2.5))), repr([10, 12.5, 15.0]))
         c = count(3, 5)
         self.assertEqual(repr(c), 'count(3, 5)')
@@ -611,22 +616,51 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(repr(c), 'count(-12, -3)')
         self.assertEqual(repr(count(10.5, 1.25)), 'count(10.5, 1.25)')
         self.assertEqual(repr(count(10.5, 1)), 'count(10.5)')           # suppress step=1 when it's an int
-        self.assertEqual(repr(count(10.5, 1.00)), 'count(10.5, 1.0)')   # do show float values lilke 1.0
+        self.assertEqual(repr(count(10.5, 1.00)), 'count(10.5, 1.0)')   # do show float values like 1.0
         self.assertEqual(repr(count(10, 1.00)), 'count(10, 1.0)')
+        self.assertEqual(repr(count('', 'a')), 'count(' + repr('') + ', ' + repr('a') + ')')
         c = count(10, 1.0)
         self.assertEqual(type(next(c)), int)
         self.assertEqual(type(next(c)), float)
-        for i in (-sys.maxsize-5, -sys.maxsize+5 ,-10, -1, 0, 10, sys.maxsize-5, sys.maxsize+5):
-            for j in  (-sys.maxsize-5, -sys.maxsize+5 ,-10, -1, 0, 1, 10, sys.maxsize-5, sys.maxsize+5):
+        for i in (-sys.maxsize-5, -sys.maxsize+5 ,-10, -1, 0, 10, sys.maxsize-5, sys.maxsize+5, 1j):
+            for j in  (-sys.maxsize-5, -sys.maxsize+5 ,-10, -1, 0, 1, 10, sys.maxsize-5, sys.maxsize+5, 1j):
                 # Test repr
-                r1 = repr(count(i, j))
+                c = count(i, j)
+                r1 = repr(c)
                 if j == 1:
                     r2 = ('count(%r)' % i)
                 else:
                     r2 = ('count(%r, %r)' % (i, j))
                 self.assertEqual(r1, r2)
+                self.assertEqual(r1, repr(copy.copy(c)))
+                self.assertEqual(r1, repr(copy.deepcopy(c)))
+                self.assertEqual([i,i+j,i+j+j], take(3, copy.copy(c)))
+                self.assertEqual([i,i+j,i+j+j], take(3, c))
                 for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                     self.pickletest(proto, count(i, j))
+        # Test non-numbers
+        for start, step in ([], []), ((), ()), ([], [1]), ('', 'a'):
+            c = count(start, step)
+            r = 'count(%r, %r)' % (start, step)
+            self.assertEqual(r, repr(c))
+            self.assertEqual(r, repr(copy.deepcopy(c)))
+            self.assertEqual(r, repr(copy.copy(c)))
+            self.assertEqual([start,start+step,start+step+step], take(3, copy.copy(c)))
+            self.assertEqual([start,start+step,start+step+step], take(3, c))
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                self.pickletest(proto, count(start, step))
+        # Test deepcopy
+        l = []  # At no point should this be mutated
+        self.assertIs(next(count(l, [1])), l)
+        self.assertEqual(l, [])
+        c = count(l, [1])
+        self.assertEqual(l, [])
+        dc = copy.deepcopy(c)
+        self.assertEqual(l, [])
+        l2 = next(dc)
+        self.assertEqual(l, [])
+        self.assertIsNot(l2, l)
+        self.assertEqual(l2, l)
 
     def test_cycle(self):
         self.assertEqual(take(10, cycle('abc')), list('abcabcabca'))

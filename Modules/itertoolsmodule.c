@@ -4140,15 +4140,15 @@ fast_mode:  when cnt an integer < PY_SSIZE_T_MAX and no step is specified.
 
     assert(cnt != PY_SSIZE_T_MAX && long_cnt == NULL && long_step==PyLong(1));
     Advances with:  cnt += 1
-    When count hits Y_SSIZE_T_MAX, switch to slow_mode.
+    When count hits PY_SSIZE_T_MAX, switch to slow_mode.
 
-slow_mode:  when cnt == PY_SSIZE_T_MAX, step is not int(1), or cnt is a float.
+slow_mode:  when cnt == PY_SSIZE_T_MAX, step is not int(1), or cnt is not an int.
 
     assert(cnt == PY_SSIZE_T_MAX && long_cnt != NULL && long_step != NULL);
     All counting is done with python objects (no overflows or underflows).
-    Advances with:  long_cnt += long_step
+    Advances with:  long_cnt = long_cnt + long_step
     Step may be zero -- effectively a slow version of repeat(cnt).
-    Either long_cnt or long_step may be a float, Fraction, or Decimal.
+    Either long_cnt or long_step may be non-integers (like float, Fraction, Decimal, str, or list).
 */
 
 /*[clinic input]
@@ -4159,11 +4159,11 @@ itertools.count.__new__
 Return a count object whose .__next__() method returns consecutive values.
 
 Equivalent to:
-    def count(firstval=0, step=1):
-        x = firstval
+    def count(start=0, step=1):
+        x = start
         while 1:
             yield x
-            x += step
+            x = x + step
 [clinic start generated code]*/
 
 static PyObject *
@@ -4175,12 +4175,6 @@ itertools_count_impl(PyTypeObject *type, PyObject *long_cnt,
     int fast_mode;
     Py_ssize_t cnt = 0;
     long step;
-
-    if ((long_cnt != NULL && !PyNumber_Check(long_cnt)) ||
-        (long_step != NULL && !PyNumber_Check(long_step))) {
-                    PyErr_SetString(PyExc_TypeError, "a number is required");
-                    return NULL;
-    }
 
     fast_mode = (long_cnt == NULL || PyLong_Check(long_cnt)) &&
                 (long_step == NULL || PyLong_Check(long_step));
