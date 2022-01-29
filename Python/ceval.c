@@ -1361,6 +1361,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 /* The integer overflow is checked by an assertion below. */
 #define INSTR_OFFSET() ((int)(next_instr - first_instr))
+#define NEXT_INSTR_OFFSET() ((int)(next_instr+1 - first_instr))
 #define NEXTOPARG()  do { \
         _Py_CODEUNIT word = *next_instr; \
         opcode = _Py_OPCODE(word); \
@@ -1486,6 +1487,9 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define GET_CACHE() \
     _GetSpecializedCacheEntryForInstruction(first_instr, INSTR_OFFSET(), oparg)
 
+# define GET_NEXT_INSTR_CACHE() \
+    _GetSpecializedCacheEntryForInstruction(first_instr, NEXT_INSTR_OFFSET(), \
+    _Py_OPARG(*next_instr))
 
 #define DEOPT_IF(cond, instname) if (cond) { goto instname ## _miss; }
 
@@ -5078,8 +5082,8 @@ handle_eval_breaker:
             _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
             _PyObjectCache *cache1 = &caches[-1].obj;
             _PyAdaptiveEntry *lm_adaptive = &caches[-2].adaptive;
-            int nargs = call_shape.total_args;
-            assert(nargs == 0);
+            assert(lm_adaptive == &GET_NEXT_INSTR_CACHE()[0].adaptive);
+            assert(call_shape.total_args == 0);
 
             /* CALL_NO_KW_SUPER */
             PyObject *su_obj;
@@ -5119,8 +5123,8 @@ handle_eval_breaker:
             _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
             _PyObjectCache *cache1 = &caches[-1].obj;
             _PyAdaptiveEntry *lm_adaptive = &caches[-2].adaptive;
-            int nargs = call_shape.total_args;
-            assert(nargs == 2);
+            assert(lm_adaptive == &GET_NEXT_INSTR_CACHE()[0].adaptive);
+            assert(call_shape.total_args == 2);
             assert(call_shape.kwnames == NULL);
 
             /* CALL_NO_KW_SUPER */

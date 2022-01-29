@@ -962,6 +962,12 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
     _PyObjectCache *cache2 = &cache[-2].obj;
 
     PyTypeObject *owner_cls = Py_TYPE(owner);
+    _Py_CODEUNIT prev_instr = _Py_OPCODE(instr[-1]);
+    if (prev_instr == CALL_NO_KW_SUPER_0__LOAD_METHOD_CACHED ||
+        prev_instr == CALL_NO_KW_SUPER_2__LOAD_METHOD_CACHED) {
+        /* Our own cache entries are already being used by superinstructions. */
+        goto fail;
+    }
     if (PyModule_CheckExact(owner)) {
         int err = specialize_module_load_attr(owner, instr, name, cache0, cache1,
             LOAD_METHOD, LOAD_METHOD_MODULE);
@@ -1378,6 +1384,10 @@ specialize_class_call(
         /* Adaptive super instruction of CALL and LOAD_METHOD_ADAPTIVE. */
         if (tp == &PySuper_Type &&
             kwnames == NULL &&
+            /* Important: this also protects us from accidentally overriding a
+               the next specialized instruction's cache. We can only use the
+               subsequent LOAD_METHOD cache if it hasn't specialized yet.
+            */
             _Py_OPCODE(instr[1]) == LOAD_METHOD_ADAPTIVE &&
             _Py_OPCODE(instr[-1]) == PRECALL_FUNCTION &&
             (nargs == 0 || nargs == 2)) {
@@ -1430,7 +1440,6 @@ specialize_class_call(
             SPEC_FAIL_CALL_STR : SPEC_FAIL_CLASS_NO_VECTORCALL);
         return -1;
     }
-
     SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CLASS_MUTABLE);
     return -1;
 }

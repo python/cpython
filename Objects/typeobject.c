@@ -8929,7 +8929,11 @@ do_super_lookup(superobject *su, PyTypeObject *su_type, PyObject *su_obj,
     Py_DECREF(mro);
 
   skip:
-    assert(su != NULL);
+    /* only happens when using manual _PySuper_Lookup, never happens in super_getattro */
+    if (su == NULL) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
     return PyObject_GenericGetAttr((PyObject *)su, name);
 }
 
