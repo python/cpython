@@ -175,26 +175,37 @@ def _is_subtype(expected, basetype):
 def _heuristic_diff(a: list[str], b: list[str]) -> Iterator[str]:
     """After testing the magnitude of the inputs, preferably return the output
     of difflib.ndiff, but fallback to difflib.unified_diff for prohibitively
-    expensive inputs. How cost is calclated:
+    expensive inputs.
+
+    Cost is calculated according to this heuristic:
 
         cost = (number of differing lines
                 * total length of all differing lines)
 
-    See bpo-19217 for context.
-    """
-    cost_limit = 1_000_000
+    This heuristic is used because the time complexity of ndiff is
+    approximately O((diff)^2), where `diff` is the product of the number of
+    differing lines, and the total length of differing lines. On the other
+    hand, unified_diff's cost is the same as the cost of producing `diff`
+    by itself: O(a + b).
 
-    # unified diff is always cheap, so we can use it to measure the magnitude
-    # of the differences, which is a proxy for the cost of difflib.ndiff
+    See bpo-19217 for additional context.
+    """
+    COST_LIMIT = 1_000_000
+
+    # call unified_diff
     udiff = list(difflib.unified_diff(a, b, fromfile="expected", tofile="got"))
     udiff_differing_lines = [l for l in udiff
                              if l.startswith(('-', '+'))]
+
+    # inspect unified_diff output
     num_difflines = len(udiff_differing_lines)
     total_diffline_length = sum(len(l) for l in udiff_differing_lines)
 
+    # now, we know what it will cost to call `ndiff`, according to the
+    # heuristic
     diff_cost = num_difflines * total_diffline_length
 
-    if diff_cost > cost_limit:
+    if diff_cost > COST_LIMIT:
         yield from udiff
     else:
         yield from difflib.ndiff(a, b)
