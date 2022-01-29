@@ -144,8 +144,9 @@ class ThreadTests(BaseTestCase):
             [tuple_in_list, lambda arg: self.assertEqual(arg, (1,))]
         ]
         for test_case in test_cases:
-            t = threading.Thread(target=test_case[1], args=test_case[0])
-            t.start()
+            with self.subTest(test_case=test_case):
+                t = threading.Thread(target=test_case[1], args=test_case[0])
+                t.start()
 
     @cpython_only
     def test_disallow_instantiation(self):
