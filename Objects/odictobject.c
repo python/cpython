@@ -1249,6 +1249,7 @@ PyDoc_STRVAR(odict_reversed__doc__, "od.__reversed__() <==> reversed(od)");
 #define _odict_ITER_REVERSED 1
 #define _odict_ITER_KEYS 2
 #define _odict_ITER_VALUES 4
+#define _odict_ITER_ITEMS (_odict_ITER_KEYS|_odict_ITER_VALUES)
 
 /* forward */
 static PyObject * odictiter_new(PyODictObject *, int);
@@ -1666,7 +1667,7 @@ odictiter_dealloc(odictiterobject *di)
     _PyObject_GC_UNTRACK(di);
     Py_XDECREF(di->di_odict);
     Py_XDECREF(di->di_current);
-    if (di->kind & (_odict_ITER_KEYS | _odict_ITER_VALUES)) {
+    if ((di->kind & _odict_ITER_ITEMS) == _odict_ITER_ITEMS) {
         Py_DECREF(di->di_result);
     }
     PyObject_GC_Del(di);
@@ -1872,15 +1873,16 @@ odictiter_new(PyODictObject *od, int kind)
     if (di == NULL)
         return NULL;
 
-    if (kind & (_odict_ITER_KEYS | _odict_ITER_VALUES)){
+    if ((kind & _odict_ITER_ITEMS) == _odict_ITER_ITEMS) {
         di->di_result = PyTuple_Pack(2, Py_None, Py_None);
         if (di->di_result == NULL) {
             Py_DECREF(di);
             return NULL;
         }
     }
-    else
+    else {
         di->di_result = NULL;
+    }
 
     di->kind = kind;
     node = reversed ? _odict_LAST(od) : _odict_FIRST(od);

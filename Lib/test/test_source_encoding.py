@@ -1,7 +1,7 @@
 # -*- coding: koi8-r -*-
 
 import unittest
-from test.support import script_helper, captured_stdout
+from test.support import script_helper, captured_stdout, requires_subprocess
 from test.support.os_helper import TESTFN, unlink, rmtree
 from test.support.import_helper import unload
 import importlib
@@ -65,6 +65,7 @@ class MiscSourceEncodingTest(unittest.TestCase):
         # two bytes in common with the UTF-8 BOM
         self.assertRaises(SyntaxError, eval, b'\xef\xbb\x20')
 
+    @requires_subprocess()
     def test_20731(self):
         sub = subprocess.Popen([sys.executable,
                         os.path.join(os.path.dirname(__file__),

@@ -1569,8 +1569,9 @@ new_arena(void)
         const char *opt = Py_GETENV("PYTHONMALLOCSTATS");
         debug_stats = (opt != NULL && *opt != '\0');
     }
-    if (debug_stats)
+    if (debug_stats) {
         _PyObject_DebugMallocStats(stderr);
+    }
 
     if (unused_arena_objects == NULL) {
         uint i;

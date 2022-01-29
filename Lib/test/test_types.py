@@ -624,6 +624,14 @@ class TypesTests(unittest.TestCase):
     def test_none_type(self):
         self.assertIsInstance(None, types.NoneType)
 
+    def test_traceback_and_frame_types(self):
+        try:
+            raise OSError
+        except OSError as e:
+            exc = e
+        self.assertIsInstance(exc.__traceback__, types.TracebackType)
+        self.assertIsInstance(exc.__traceback__.tb_frame, types.FrameType)
+
 
 class UnionTests(unittest.TestCase):
 
