@@ -2081,13 +2081,13 @@ class Test_HeuristicDiff(unittest.TestCase):
                 line_length_factor=1,
                 num_lines_factor=2,
                 extent_differing=1,
-                expect_unified_diff_at = 22,
+                expect_unified_diff_at=22,
             ),
             Case(
                 line_length_factor=2,
                 num_lines_factor=1,
                 extent_differing=1,
-                expect_unified_diff_at = 28,
+                expect_unified_diff_at=28,
             ),
 
             # scale width and length by ratios of 3:1
@@ -2095,13 +2095,13 @@ class Test_HeuristicDiff(unittest.TestCase):
                 line_length_factor=1,
                 num_lines_factor=3,
                 extent_differing=1,
-                expect_unified_diff_at = 16,
+                expect_unified_diff_at=16,
             ),
             Case(
                 line_length_factor=3,
                 num_lines_factor=1,
                 extent_differing=1,
-                expect_unified_diff_at = 24,
+                expect_unified_diff_at=24,
             ),
 
             # # scale by ratios of 3:1, with only 40% differing
@@ -2109,19 +2109,19 @@ class Test_HeuristicDiff(unittest.TestCase):
                 line_length_factor=3,
                 num_lines_factor=1,
                 extent_differing=1,
-                expect_unified_diff_at = 24,
+                expect_unified_diff_at=24,
             ),
             Case(
                 line_length_factor=1,
                 num_lines_factor=3,
                 extent_differing=0.4,
-                expect_unified_diff_at = 16,
+                expect_unified_diff_at=16,
             ),
             Case(
                 line_length_factor=3,
                 num_lines_factor=1,
                 extent_differing=0.4,
-                expect_unified_diff_at = 23,
+                expect_unified_diff_at=23,
             ),
         )
 
