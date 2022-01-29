@@ -188,7 +188,7 @@ def _heuristic_diff(a: list[str], b: list[str]) -> Iterator[str]:
     # of the differences, which is a proxy for the cost of difflib.ndiff
     udiff = list(difflib.unified_diff(a, b, fromfile="expected", tofile="got"))
     udiff_differing_lines = [l for l in udiff
-                             if l.startswith('-') or l.startswith('+')]
+                             if l.startswith(('-', '+'))]
     num_difflines = len(udiff_differing_lines)
     total_diffline_length = sum(len(l) for l in udiff_differing_lines)
 
