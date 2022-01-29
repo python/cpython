@@ -2159,10 +2159,10 @@ class Test_HeuristicDiff(unittest.TestCase):
                                  * int(N
                                        * case.num_lines_factor
                                        * (1 - case.extent_differing)))
-                bar = tuple((*bar_a_lines, *bar_b_lines, *bar_a_padding))
+                bar = (*bar_a_lines, *bar_b_lines, *bar_a_padding)
             else:
                 bar_b_lines = ((bar_b_line,) * int(N * case.num_lines_factor))
-                bar = tuple((*bar_a_lines, *bar_b_lines))
+                bar = (*bar_a_lines, *bar_b_lines)
 
                     # --- Perform Diff ---
 
