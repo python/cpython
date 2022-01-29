@@ -1,2 +1,2 @@
-Optimize unittest.TestCase.assertEqual method for long sequences of varied
+Optimize :meth:`~unittest.TestCase.assertEqual` method for long sequences of varied
 items.
