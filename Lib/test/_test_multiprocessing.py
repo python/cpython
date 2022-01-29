@@ -268,7 +268,7 @@ class _TestProcess(BaseTestCase):
             [tuple_in_list, lambda arg: self.assertEqual(arg, (1,))]
         ]
         for test_case in test_cases:
-            p = multiprocessing.Process(target=test_case[1], args=test_case[0])
+            p = self.Process(target=test_case[1], args=test_case[0])
             p.start()
 
     def test_daemon_argument(self):
