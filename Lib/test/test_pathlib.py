@@ -1460,7 +1460,7 @@ class _BasePathTest(object):
     def test_absolute_common(self):
         P = self.cls
 
-        with mock.patch("pathlib._normal_accessor.getcwd") as getcwd:
+        with mock.patch("os.getcwd") as getcwd:
             getcwd.return_value = BASE
 
             # Simple relative paths.
@@ -2675,7 +2675,7 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
         self.assertEqual(str(P(share + 'a\\b').absolute()), share + 'a\\b')
 
         # UNC relative paths.
-        with mock.patch("pathlib._normal_accessor.getcwd") as getcwd:
+        with mock.patch("os.getcwd") as getcwd:
             getcwd.return_value = share
 
             self.assertEqual(str(P().absolute()), share)
