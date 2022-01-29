@@ -867,7 +867,7 @@ class _Unparser(NodeVisitor):
         self.fill("from ")
         self.write("." * node.level)
         if node.module:
-            self.write(node.module)
+            self.write(_mangle_keyword(node.module))
         self.write(" import ")
         self.interleave(lambda: self.write(", "), self.traverse, node.names)
 
@@ -925,7 +925,7 @@ class _Unparser(NodeVisitor):
 
     def visit_Global(self, node, kw="global "):
         self.fill(kw)
-        self.interleave(lambda: self.write(", "), self.write, node.names)
+        self.interleave(lambda: self.write(", "), self.write, map(_mangle_keyword, node.names))
 
     def visit_Nonlocal(self, node):
         self.visit_Global(node, kw="nonlocal ")
@@ -1004,7 +1004,7 @@ class _Unparser(NodeVisitor):
             self.traverse(node.type)
         if node.name:
             self.write(" as ")
-            self.write(node.name)
+            self.write(_mangle_keyword(node.name))
         with self.block():
             self.traverse(node.body)
 
@@ -1013,7 +1013,7 @@ class _Unparser(NodeVisitor):
         for deco in node.decorator_list:
             self.fill("@")
             self.traverse(deco)
-        self.fill("class " + node.name)
+        self.fill("class " + _mangle_keyword(node.name))
         with self.delimit_if("(", ")", condition = node.bases or node.keywords):
             comma = False
             for e in node.bases:
@@ -1043,7 +1043,7 @@ class _Unparser(NodeVisitor):
         for deco in node.decorator_list:
             self.fill("@")
             self.traverse(deco)
-        def_str = fill_suffix + " " + node.name
+        def_str = fill_suffix + " " + _mangle_keyword(node.name)
         self.fill(def_str)
         with self.delimit("(", ")"):
             self.traverse(node.args)
@@ -1467,7 +1467,7 @@ class _Unparser(NodeVisitor):
         if isinstance(node.value, Constant) and isinstance(node.value.value, int):
             self.write(" ")
         self.write(".")
-        self.write(node.attr)
+        self.write(_mangle_keyword(node.attr))
 
     def visit_Call(self, node):
         self.set_precedence(_Precedence.ATOM, node.func)
@@ -1532,7 +1532,7 @@ class _Unparser(NodeVisitor):
                 self.traverse(case)
 
     def visit_arg(self, node):
-        self.write(node.arg)
+        self.write(_mangle_keyword(node.arg))
         if node.annotation:
             self.write(": ")
             self.traverse(node.annotation)
@@ -1563,7 +1563,7 @@ class _Unparser(NodeVisitor):
                 self.write(", ")
             self.write("*")
             if node.vararg:
-                self.write(node.vararg.arg)
+                self.write(_mangle_keyword(node.vararg.arg))
                 if node.vararg.annotation:
                     self.write(": ")
                     self.traverse(node.vararg.annotation)
@@ -1583,7 +1583,7 @@ class _Unparser(NodeVisitor):
                 first = False
             else:
                 self.write(", ")
-            self.write("**" + node.kwarg.arg)
+            self.write("**" + _mangle_keyword(node.kwarg.arg))
             if node.kwarg.annotation:
                 self.write(": ")
                 self.traverse(node.kwarg.annotation)
@@ -1592,7 +1592,7 @@ class _Unparser(NodeVisitor):
         if node.arg is None:
             self.write("**")
         else:
-            self.write(node.arg)
+            self.write(_mangle_keyword(node.arg))
             self.write("=")
         self.traverse(node.value)
 
@@ -1608,9 +1608,9 @@ class _Unparser(NodeVisitor):
             self.traverse(node.body)
 
     def visit_alias(self, node):
-        self.write(node.name)
+        self.write(_mangle_keyword(node.name))
         if node.asname:
-            self.write(" as " + node.asname)
+            self.write(" as " + _mangle_keyword(node.asname))
 
     def visit_withitem(self, node):
         self.traverse(node.context_expr)
