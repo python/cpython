@@ -12,6 +12,7 @@ from errno import ENOENT, ENOTDIR, EBADF, ELOOP
 from operator import attrgetter
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from urllib.parse import quote_from_bytes as urlquote_from_bytes
+from types import GenericAlias
 
 
 __all__ = [
@@ -603,8 +604,7 @@ class PurePath(object):
             return NotImplemented
         return self._cparts >= other._cparts
 
-    def __class_getitem__(cls, type):
-        return cls
+    __class_getitem__ = classmethod(GenericAlias)
 
     drive = property(attrgetter('_drv'),
                      doc="""The drive prefix (letter or UNC path), if any.""")
@@ -961,13 +961,11 @@ class Path(PurePath):
             yield p
 
     def absolute(self):
-        """Return an absolute version of this path.  This function works
-        even if the path doesn't point to anything.
+        """Return an absolute version of this path by prepending the current
+        working directory. No normalization or symlink resolution is performed.
 
-        No normalization is done, i.e. all '.' and '..' will be kept along.
         Use resolve() to get the canonical path to a file.
         """
-        # XXX untested yet!
         if self.is_absolute():
             return self
         return self._from_parts([self.cwd()] + self._parts)
@@ -975,8 +973,7 @@ class Path(PurePath):
     def resolve(self, strict=False):
         """
         Make the path absolute, resolving all symlinks on the way and also
-        normalizing it (for example turning slashes into backslashes under
-        Windows).
+        normalizing it.
         """
 
         def check_eloop(e):

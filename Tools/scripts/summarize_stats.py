@@ -98,6 +98,14 @@ def main():
     for i, opcode_stat in enumerate(opcode_stats):
         name = opname[i]
         print_specialization_stats(name, opcode_stat)
+    print("Call stats:")
+    total = 0
+    for key, value in stats.items():
+        if "Calls to" in key:
+            total += value
+    for key, value in stats.items():
+        if "Calls to" in key:
+            print(f"{key}: {value} {100*value/total:0.1f}%")
 
 if __name__ == "__main__":
     main()

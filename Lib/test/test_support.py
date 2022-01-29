@@ -491,6 +491,7 @@ class TestSupport(unittest.TestCase):
         # pending child process
         support.reap_children()
 
+    @support.requires_subprocess()
     def check_options(self, args, func, expected=None):
         code = f'from test.support import {func}; print(repr({func}()))'
         cmd = [sys.executable, *args, '-c', code]

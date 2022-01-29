@@ -109,6 +109,7 @@ class Printer:
         self.cache: Dict[tuple[type, object, str], str] = {}
         self.hits, self.misses = 0, 0
         self.patchups: list[str] = []
+        self.deallocs: list[str] = []
         self.write('#include "Python.h"')
         self.write('#include "internal/pycore_gc.h"')
         self.write('#include "internal/pycore_code.h"')
@@ -150,6 +151,8 @@ class Printer:
     def generate_bytes(self, name: str, b: bytes) -> str:
         if b == b"":
             return "(PyObject *)&_Py_SINGLETON(bytes_empty)"
+        if len(b) == 1:
+            return f"(PyObject *)&_Py_SINGLETON(bytes_characters[{b[0]}])"
         self.write("static")
         with self.indent():
             with self.block("struct"):
@@ -275,6 +278,7 @@ class Printer:
             self.write(f".co_varnames = {co_varnames},")
             self.write(f".co_cellvars = {co_cellvars},")
             self.write(f".co_freevars = {co_freevars},")
+        self.deallocs.append(f"_PyStaticCode_Dealloc(&{name});")
         return f"& {name}.ob_base"
 
     def generate_tuple(self, name: str, t: Tuple[object, ...]) -> str:
@@ -402,7 +406,7 @@ PyObject *
 _Py_get_%%NAME%%_toplevel(void)
 {
     %%NAME%%_do_patchups();
-    return (PyObject *) &%%NAME%%_toplevel;
+    return Py_NewRef((PyObject *) &%%NAME%%_toplevel);
 }
 """
 
@@ -438,6 +442,9 @@ def generate(args: list[str], output: TextIO) -> None:
             else:
                 code = compile(fd.read(), f"<frozen {modname}>", "exec")
             printer.generate_file(modname, code)
+    with printer.block(f"void\n_Py_Deepfreeze_Fini(void)"):
+            for p in printer.deallocs:
+                printer.write(p)
     if verbose:
         print(f"Cache hits: {printer.hits}, misses: {printer.misses}")
 

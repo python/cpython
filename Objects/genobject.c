@@ -353,7 +353,7 @@ _PyGen_yf(PyGenObject *gen)
         PyObject *bytecode = gen->gi_code->co_code;
         unsigned char *code = (unsigned char *)PyBytes_AS_STRING(bytecode);
 
-        if (frame->f_lasti < 0) {
+        if (frame->f_lasti < 1) {
             /* Return immediately if the frame didn't start yet. SEND
                always come after LOAD_CONST: a code object should not start
                with SEND */
@@ -361,7 +361,7 @@ _PyGen_yf(PyGenObject *gen)
             return NULL;
         }
 
-        if (code[frame->f_lasti*sizeof(_Py_CODEUNIT)] != SEND || frame->stacktop < 0)
+        if (code[(frame->f_lasti-1)*sizeof(_Py_CODEUNIT)] != SEND || frame->stacktop < 0)
             return NULL;
         yf = _PyFrame_StackPeek(frame);
         Py_INCREF(yf);
@@ -488,6 +488,8 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             assert(frame->f_lasti >= 0);
             PyObject *bytecode = gen->gi_code->co_code;
             unsigned char *code = (unsigned char *)PyBytes_AS_STRING(bytecode);
+            /* Backup to SEND */
+            frame->f_lasti--;
             assert(code[frame->f_lasti*sizeof(_Py_CODEUNIT)] == SEND);
             int jump = code[frame->f_lasti*sizeof(_Py_CODEUNIT)+1];
             frame->f_lasti += jump;
