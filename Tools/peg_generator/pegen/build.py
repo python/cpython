@@ -32,6 +32,7 @@ def compile_c_extension(
     build_dir: Optional[str] = None,
     verbose: bool = False,
     keep_asserts: bool = True,
+    disable_optimization: bool = True,  # Significant test_peg_generator speedup.
 ) -> str:
     """Compile the generated source for a parser generator into an extension module.
 
@@ -61,6 +62,8 @@ def compile_c_extension(
     extra_link_args = get_extra_flags("LDFLAGS", "PY_LDFLAGS_NODIST")
     if keep_asserts:
         extra_compile_args.append("-UNDEBUG")
+    if disable_optimization:
+        extra_compile_args.append("-O0")
     extension = [
         Extension(
             extension_name,
