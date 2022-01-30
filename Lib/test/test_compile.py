@@ -837,9 +837,8 @@ if 1:
                 opcodes = list(dis.get_instructions(func))
                 instructions = [opcode.opname for opcode in opcodes]
                 self.assertNotIn('LOAD_METHOD', instructions)
-                self.assertNotIn('CALL_METHOD', instructions)
                 self.assertIn('LOAD_ATTR', instructions)
-                self.assertIn('CALL_NO_KW', instructions)
+                self.assertIn('PRECALL_FUNCTION', instructions)
 
     def test_lineno_procedure_call(self):
         def call():
@@ -1096,7 +1095,7 @@ f(
 )
 """
         compiled_code, _ = self.check_positions_against_ast(snippet)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'CALL_NO_KW',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'CALL',
             line=1, end_line=3, column=0, end_column=1)
 
     def test_very_long_line_end_offset(self):
@@ -1106,7 +1105,7 @@ f(
         snippet = f"g('{long_string}')"
 
         compiled_code, _ = self.check_positions_against_ast(snippet)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'CALL_NO_KW',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'CALL',
             line=1, end_line=1, column=None, end_column=None)
 
     def test_complex_single_line_expression(self):

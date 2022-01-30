@@ -1501,6 +1501,9 @@ private:
         hr = UpdateUIStrings(_command.action);
         BalExitOnFailure(hr, "Failed to load UI strings.");
 
+        hr = FindProgramFilesArm();
+        BalExitOnFailure(hr, "Fatal error locating Program Files (Arm)");
+
         GetBundleFileVersion();
         // don't fail if we couldn't get the version info; best-effort only
     LExit:
@@ -2179,6 +2182,37 @@ private:
             );
         }
         return hr;
+    }
+
+    HRESULT FindProgramFilesArm() {
+        wchar_t buffer[MAX_PATH + 1];
+        DWORD bufferLen = MAX_PATH;
+        LSTATUS res = RegGetValueW(
+            HKEY_LOCAL_MACHINE,
+            L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion",
+            L"ProgramFilesDir (Arm)",
+            RRF_RT_REG_SZ | RRF_RT_REG_EXPAND_SZ | RRF_SUBKEY_WOW6464KEY,
+            NULL,
+            buffer,
+            &bufferLen
+        );
+        if (res != ERROR_SUCCESS) {
+            // ProgramFilesArmFolder will default to ProgramFilesFolder. We only report
+            // an error if the value existed, as it will simply just be absent on non-ARM
+            // devices.
+            if (res != ERROR_FILE_NOT_FOUND) {
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Failed to query 'ProgramFilesDir (Arm)': error code %d", res);
+            }
+            return S_OK;
+        }
+        if (buffer[0]) {
+            wchar_t *p = &buffer[bufferLen / sizeof(wchar_t) - 1];
+            while (*p == L'\\' || *p == L'\0') { p -= 1; }
+            *++p = L'\\';
+            *++p = L'\0';
+            _engine->SetVariableString(L"ProgramFilesArmFolder", buffer);
+        }
+        return S_OK;
     }
 
     //

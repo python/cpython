@@ -685,7 +685,10 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *message = NULL;
     PyObject *exceptions = NULL;
 
-    if (!PyArg_ParseTuple(args, "UO", &message, &exceptions)) {
+    if (!PyArg_ParseTuple(args,
+                          "UO:BaseExceptionGroup.__new__",
+                          &message,
+                          &exceptions)) {
         return NULL;
     }
 
@@ -3726,7 +3729,7 @@ _PyErr_TrySetFromCause(const char *format, ...)
     base_exc_size = _PyExc_BaseException.tp_basicsize;
     same_basic_size = (
         caught_type_size == base_exc_size ||
-        (PyType_SUPPORTS_WEAKREFS(caught_type) &&
+        (_PyType_SUPPORTS_WEAKREFS(caught_type) &&
             (caught_type_size == base_exc_size + (Py_ssize_t)sizeof(PyObject *))
         )
     );
