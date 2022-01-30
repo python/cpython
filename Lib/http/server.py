@@ -1258,15 +1258,19 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--cgi', action='store_true',
                         help='run as CGI server')
-    parser.add_argument('--bind', '-b', metavar='ADDRESS',
-                        help='specify alternate bind address '
+    parser.add_argument('-b', '--bind', metavar='ADDRESS',
+                        help='specify the address to bind to '
                              '(default: all interfaces)')
-    parser.add_argument('--directory', '-d', default=os.getcwd(),
-                        help='specify alternate directory '
+    parser.add_argument('-d', '--directory', default=os.getcwd(),
+                        help='specify the directory to serve '
                              '(default: current directory)')
+    parser.add_argument('-p', '--protocol', default='HTTP/1.0',
+                        help='specify the HTTP version to conform to '
+                             '(default: %(default)s)')
     parser.add_argument('port', action='store', default=8000, type=int,
                         nargs='?',
-                        help='specify alternate port (default: 8000)')
+                        help='specify the port to bind to '
+                             '(default: %(default)s)')
     args = parser.parse_args()
     if args.cgi:
         handler_class = CGIHTTPRequestHandler
@@ -1292,4 +1296,5 @@ if __name__ == '__main__':
         ServerClass=DualStackServer,
         port=args.port,
         bind=args.bind,
+        protocol=args.protocol,
     )
