@@ -308,6 +308,8 @@ slash_with_default[SlashWithDefault*]:
 star_etc[StarEtc*]:
     | '*' a=param_no_default b=param_maybe_default* c=[kwds] {
         _PyPegen_star_etc(p, a, b, c) }
+    | '*' a=param_no_default_star_annotation b=param_maybe_default* c=[kwds] {
+        _PyPegen_star_etc(p, a, b, c) }
     | '*' ',' b=param_maybe_default+ c=[kwds] {
         _PyPegen_star_etc(p, NULL, b, c) }
     | a=kwds { _PyPegen_star_etc(p, NULL, NULL, a) }
@@ -331,6 +333,9 @@ kwds[arg_ty]: '**' a=param_no_default { a }
 param_no_default[arg_ty]:
     | a=param ',' tc=TYPE_COMMENT? { _PyPegen_add_type_comment_to_arg(p, a, tc) }
     | a=param tc=TYPE_COMMENT? &')' { _PyPegen_add_type_comment_to_arg(p, a, tc) }
+param_no_default_star_annotation[arg_ty]:
+    | a=param_star_annotation ',' tc=TYPE_COMMENT? { _PyPegen_add_type_comment_to_arg(p, a, tc) }
+    | a=param_star_annotation tc=TYPE_COMMENT? &')' { _PyPegen_add_type_comment_to_arg(p, a, tc) }
 param_with_default[NameDefaultPair*]:
     | a=param c=default ',' tc=TYPE_COMMENT? { _PyPegen_name_default_pair(p, a, c, tc) }
     | a=param c=default tc=TYPE_COMMENT? &')' { _PyPegen_name_default_pair(p, a, c, tc) }
@@ -338,7 +343,9 @@ param_maybe_default[NameDefaultPair*]:
     | a=param c=default? ',' tc=TYPE_COMMENT? { _PyPegen_name_default_pair(p, a, c, tc) }
     | a=param c=default? tc=TYPE_COMMENT? &')' { _PyPegen_name_default_pair(p, a, c, tc) }
 param[arg_ty]: a=NAME b=annotation? { _PyAST_arg(a->v.Name.id, b, NULL, EXTRA) }
+param_star_annotation[arg_ty]: a=NAME b=star_annotation { _PyAST_arg(a->v.Name.id, b, NULL, EXTRA) }
 annotation[expr_ty]: ':' a=expression { a }
+star_annotation[expr_ty]: ':' a=star_expression { a }
 default[expr_ty]: '=' a=expression { a }
 
 # If statement
@@ -780,7 +787,7 @@ primary[expr_ty]:
 
 slices[expr_ty]:
     | a=slice !',' { a }
-    | a[asdl_expr_seq*]=','.slice+ [','] { _PyAST_Tuple(a, Load, EXTRA) }
+    | a[asdl_expr_seq*]=','.(slice | starred_expression)+ [','] { _PyAST_Tuple(a, Load, EXTRA) }
 
 slice[expr_ty]:
     | a=[expression] ':' b=[expression] c=[':' d=[expression] { d }] { _PyAST_Slice(a, b, c, EXTRA) }
