@@ -135,17 +135,18 @@ class ThreadTests(BaseTestCase):
         list_in_tuple = ([1],)
         tuple_in_list = [(1,)]
 
-        test_cases = [
-            [num_list, lambda arg: self.assertEqual(arg, 1)],
-            [num_tuple, lambda arg: self.assertEqual(arg, 1)],
-            [str_list, lambda arg: self.assertEqual(arg, "str")],
-            [str_tuple, lambda arg: self.assertEqual(arg, "str")],
-            [list_in_tuple, lambda arg: self.assertEqual(arg, [1])],
-            [tuple_in_list, lambda arg: self.assertEqual(arg, (1,))]
-        ]
-        for test_case in test_cases:
-            with self.subTest(test_case=test_case):
-                t = threading.Thread(target=test_case[1], args=test_case[0])
+        test_cases = (
+            (num_list, lambda arg: self.assertEqual(arg, 1)),
+            (num_tuple, lambda arg: self.assertEqual(arg, 1)),
+            (str_list, lambda arg: self.assertEqual(arg, "str")),
+            (str_tuple, lambda arg: self.assertEqual(arg, "str")),
+            (list_in_tuple, lambda arg: self.assertEqual(arg, [1])),
+            (tuple_in_list, lambda arg: self.assertEqual(arg, (1,)))
+        )
+
+        for args, target in test_cases:
+            with self.subTest(target=target, args=args):
+                t = threading.Thread(target=target, args=args)
                 t.start()
 
     @cpython_only
