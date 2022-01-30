@@ -599,16 +599,15 @@ These can be used as types in annotations and do not support ``[]``.
             ...
             return self
 
-   .. note::
 
-      This code would be semantically equivalent to a bound :class:`TypeVar` with the `bound=Foo`.
+   This annotation is semantically equivalent to using a :class:`TypeVar` with `bound=Foo` as both the return annotation and the annotation for the `self` parameter.
 
-   This is especially useful for:
+   Common use cases include:
 
       - :class:`classmethod`\s that are used as alternative constructors
       - Annotating an :meth:`object.__enter__` method which returns self
 
-   For more info see :pep:`673`.
+   For more information, see :pep:`673`.
 
    .. versionadded:: 3.11
 
