@@ -434,6 +434,15 @@ def collect_time(info_add):
                 info_add('time.get_clock_info(%s)' % clock, clock_info)
 
 
+def collect_curses(info_add):
+    try:
+        import curses
+    except ImportError:
+        return
+
+    copy_attr(info_add, 'curses.ncurses_version', curses, 'ncurses_version')
+
+
 def collect_datetime(info_add):
     try:
         import datetime
@@ -720,6 +729,48 @@ def collect_windows(info_add):
     except (ImportError, AttributeError):
         pass
 
+    import subprocess
+    try:
+        # When wmic.exe output is redirected to a pipe,
+        # it uses the OEM code page
+        proc = subprocess.Popen(["wmic", "os", "get", "Caption,Version", "/value"],
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                encoding="oem",
+                                text=True)
+        output, stderr = proc.communicate()
+        if proc.returncode:
+            output = ""
+    except OSError:
+        pass
+    else:
+        for line in output.splitlines():
+            line = line.strip()
+            if line.startswith('Caption='):
+                line = line.removeprefix('Caption=').strip()
+                if line:
+                    info_add('windows.version_caption', line)
+            elif line.startswith('Version='):
+                line = line.removeprefix('Version=').strip()
+                if line:
+                    info_add('windows.version', line)
+
+    try:
+        proc = subprocess.Popen(["ver"], shell=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                text=True)
+        output = proc.communicate()[0]
+        if proc.returncode:
+            output = ""
+    except OSError:
+        return
+    else:
+        output = output.strip()
+        line = output.splitlines()[0]
+        if line:
+            info_add('windows.ver', line)
+
 
 def collect_fips(info_add):
     try:
@@ -752,6 +803,7 @@ def collect_info(info):
 
         collect_builtins,
         collect_cc,
+        collect_curses,
         collect_datetime,
         collect_decimal,
         collect_expat,

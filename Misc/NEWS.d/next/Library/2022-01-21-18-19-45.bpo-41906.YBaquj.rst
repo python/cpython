@@ -1,0 +1,2 @@
+Support passing filter instances in the ``filters`` values of ``handlers`` and
+``loggers`` in the dictionary passed to :func:`logging.config.dictConfig`.

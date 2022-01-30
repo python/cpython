@@ -159,6 +159,13 @@ class TimeTestCase(unittest.TestCase):
         self.assertRaises(ValueError, time.sleep, -1)
         time.sleep(1.2)
 
+    def test_epoch(self):
+        # bpo-43869: Make sure that Python use the same Epoch on all platforms:
+        # January 1, 1970, 00:00:00 (UTC).
+        epoch = time.gmtime(0)
+        # Only test the date and time, ignore other gmtime() members
+        self.assertEqual(tuple(epoch)[:6], (1970, 1, 1, 0, 0, 0), epoch)
+
     def test_strftime(self):
         tt = time.gmtime(self.t)
         for directive in ('a', 'A', 'b', 'B', 'c', 'd', 'H', 'I',
@@ -549,20 +556,26 @@ class TimeTestCase(unittest.TestCase):
         self.assertRaises(ValueError, time.ctime, float("nan"))
 
     def test_get_clock_info(self):
-        clocks = ['monotonic', 'perf_counter', 'process_time', 'time']
+        clocks = [
+            'monotonic',
+            'perf_counter',
+            'process_time',
+            'time',
+            'thread_time',
+        ]
 
         for name in clocks:
-            info = time.get_clock_info(name)
+            with self.subTest(name=name):
+                info = time.get_clock_info(name)
 
-            #self.assertIsInstance(info, dict)
-            self.assertIsInstance(info.implementation, str)
-            self.assertNotEqual(info.implementation, '')
-            self.assertIsInstance(info.monotonic, bool)
-            self.assertIsInstance(info.resolution, float)
-            # 0.0 < resolution <= 1.0
-            self.assertGreater(info.resolution, 0.0)
-            self.assertLessEqual(info.resolution, 1.0)
-            self.assertIsInstance(info.adjustable, bool)
+                self.assertIsInstance(info.implementation, str)
+                self.assertNotEqual(info.implementation, '')
+                self.assertIsInstance(info.monotonic, bool)
+                self.assertIsInstance(info.resolution, float)
+                # 0.0 < resolution <= 1.0
+                self.assertGreater(info.resolution, 0.0)
+                self.assertLessEqual(info.resolution, 1.0)
+                self.assertIsInstance(info.adjustable, bool)
 
         self.assertRaises(ValueError, time.get_clock_info, 'xxx')
 

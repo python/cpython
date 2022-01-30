@@ -392,11 +392,14 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
         return NULL;
     }
     Py_INCREF(p->tok->filename);
+
     tok->filename = p->tok->filename;
+    tok->lineno = t->lineno + lines - 1;
 
     Parser *p2 = _PyPegen_Parser_New(tok, Py_fstring_input, p->flags, p->feature_version,
                                      NULL, p->arena);
-    p2->starting_lineno = t->lineno + lines - 1;
+
+    p2->starting_lineno = t->lineno + lines;
     p2->starting_col_offset = t->col_offset + cols;
 
     expr = _PyPegen_run_parser(p2);
@@ -439,12 +442,23 @@ fstring_find_literal(Parser *p, const char **str, const char *end, int raw,
         if (!raw && ch == '\\' && s < end) {
             ch = *s++;
             if (ch == 'N') {
+                /* We need to look at and skip matching braces for "\N{name}"
+                   sequences because otherwise we'll think the opening '{'
+                   starts an expression, which is not the case with "\N".
+                   Keep looking for either a matched '{' '}' pair, or the end
+                   of the string. */
+
                 if (s < end && *s++ == '{') {
                     while (s < end && *s++ != '}') {
                     }
                     continue;
                 }
-                break;
+
+                /* This is an invalid "\N" sequence, since it's a "\N" not
+                   followed by a "{".  Just keep parsing this literal.  This
+                   error will be caught later by
+                   decode_unicode_with_escapes(). */
+                continue;
             }
             if (ch == '{' && warn_invalid_escape_sequence(p, ch, t) < 0) {
                 return -1;
@@ -488,7 +502,8 @@ done:
             *literal = PyUnicode_DecodeUTF8Stateful(literal_start,
                                                     s - literal_start,
                                                     NULL, NULL);
-        } else {
+        }
+        else {
             *literal = decode_unicode_with_escapes(p, literal_start,
                                                    s - literal_start, t);
         }
