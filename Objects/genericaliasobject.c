@@ -677,8 +677,7 @@ ga_iter(PyObject *self) {
     gaiterobject *gi = PyObject_GC_New(gaiterobject, &Py_GenericAliasIterType);
     if (gi == NULL)
         return NULL;
-    gi->obj = self;
-    Py_INCREF(self);
+    gi->obj = Py_NewRef(self);
     _PyObject_GC_TRACK(gi);
     return (PyObject *) gi;
 }
