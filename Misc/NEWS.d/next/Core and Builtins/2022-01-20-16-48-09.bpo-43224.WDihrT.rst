@@ -1,1 +1,1 @@
-Add support for PEP 646.
+Make grammar changes required for PEP 646.
