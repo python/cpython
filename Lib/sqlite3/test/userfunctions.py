@@ -237,8 +237,8 @@ class FunctionTests(unittest.TestCase):
 
     def test_func_return_too_large_int(self):
         cur = self.con.cursor()
-        self.assertRaisesRegex(sqlite.DataError, "string or blob too big",
-                               self.con.execute, "select returntoolargeint()")
+        with self.assertRaises(sqlite.OperationalError):
+            self.con.execute("select returntoolargeint()")
 
     def test_func_exception(self):
         cur = self.con.cursor()
