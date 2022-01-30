@@ -600,7 +600,8 @@ These can be used as types in annotations and do not support ``[]``.
             return self
 
 
-   This annotation is semantically equivalent to using a :class:`TypeVar` with `bound=Foo` as both the return annotation and the annotation for the `self` parameter.
+   This annotation is semantically equivalent to using a :class:`TypeVar` with `bound=Foo` as
+   both the return annotation and the annotation for the `self` parameter.
 
    Common use cases include:
 
