@@ -671,12 +671,6 @@ static PyTypeObject Py_GenericAliasIterType = {
 
 static PyObject *
 ga_iter(PyObject *self) {
-    gaobject *alias = (gaobject *)self;
-    if ((PyTypeObject *)alias->origin != &PyTuple_Type) {
-        PyErr_SetString(PyExc_TypeError, "Only tuple types can be unpacked with *");
-        return NULL;
-    }
-
     gaiterobject *gi = PyObject_GC_New(gaiterobject, &Py_GenericAliasIterType);
     if (gi == NULL)
         return NULL;
