@@ -1018,6 +1018,11 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
        A = Callable[[], None]  # _CallableGenericAlias
        B = Callable[[T], None]  # _CallableGenericAlias
        C = B[int]  # _CallableGenericAlias
+    * Parameterized `Final`, `ClassVar` and `TypeGuard`:
+       # All _GenericAlias
+       Final[int]
+       ClassVar[float]
+       TypeVar[bool]
     """
 
     def __init__(self, origin, args, *, inst=True, name=None,
@@ -1060,7 +1065,7 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
           T3 = TypeVar('T3')
           class A(Generic[T1]): pass
           B = A[T2]  # B is a _GenericAlias
-          C = B[T2]  # Invokes _GenericAlias.__getitem__
+          C = B[T3]  # Invokes _GenericAlias.__getitem__
 
         We also arrive here when parameterizing a generic `Callable` alias:
           T = TypeVar('T')
