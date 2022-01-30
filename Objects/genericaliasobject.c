@@ -646,6 +646,9 @@ ga_iternext(gaiterobject *gi) {
     }
     gaobject *alias = (gaobject *)gi->obj;
     PyObject *starred_tuple = Py_GenericAlias(alias->origin, alias->args);
+    if (starred_tuple == NULL) {
+        return NULL;
+    }
     ((gaobject *)starred_tuple)->starred = 1;
     Py_SETREF(gi->obj, NULL);
     return starred_tuple;
