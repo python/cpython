@@ -1305,8 +1305,6 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
             _check_type_parameter_count(self, params)
 
         subst = _determine_typevar_substitution(self.__parameters__, params)
-        print()
-        print('!!! subst:', subst)
         new_args = []
         for old_arg in self.__args__:
             if isinstance(old_arg, UnpackedTypeVarTuple):
