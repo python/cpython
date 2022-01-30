@@ -162,6 +162,24 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(repr(list[str]), 'list[str]')
         self.assertEqual(repr(list[()]), 'list[()]')
         self.assertEqual(repr(tuple[int, ...]), 'tuple[int, ...]')
+        x1 = tuple[
+            tuple(  # Effectively the same as starring; TODO
+                tuple[int]
+            )
+        ]
+        self.assertEqual(repr(x1), 'tuple[*tuple[int]]')
+        x2 = tuple[
+            tuple(  # Ditto TODO
+                tuple[int, str]
+            )
+        ]
+        self.assertEqual(repr(x2), 'tuple[*tuple[int, str]]')
+        x3 = tuple[
+            tuple(  # Ditto TODO
+                tuple[int, ...]
+            )
+        ]
+        self.assertEqual(repr(x3), 'tuple[*tuple[int, ...]]')
         self.assertTrue(repr(MyList[int]).endswith('.BaseTest.test_repr.<locals>.MyList[int]'))
         self.assertEqual(repr(list[str]()), '[]')  # instances should keep their normal repr
 
@@ -175,6 +193,7 @@ class BaseTest(unittest.TestCase):
 
     def test_parameters(self):
         from typing import List, Dict, Callable
+
         D0 = dict[str, int]
         self.assertEqual(D0.__args__, (str, int))
         self.assertEqual(D0.__parameters__, ())
@@ -190,6 +209,7 @@ class BaseTest(unittest.TestCase):
         D2b = dict[T, T]
         self.assertEqual(D2b.__args__, (T, T))
         self.assertEqual(D2b.__parameters__, (T,))
+
         L0 = list[str]
         self.assertEqual(L0.__args__, (str,))
         self.assertEqual(L0.__parameters__, ())
@@ -211,6 +231,52 @@ class BaseTest(unittest.TestCase):
         L5 = list[Callable[[K, V], K]]
         self.assertEqual(L5.__args__, (Callable[[K, V], K],))
         self.assertEqual(L5.__parameters__, (K, V))
+
+        with self.assertRaises(TypeError):
+            tuple[
+                tuple(  # Effectively the same as starring; TODO
+                    list[int]
+                )
+            ]
+
+        T1 = tuple[
+            tuple(  # Ditto TODO
+                tuple[int]
+            )
+        ]
+        self.assertEqual(
+            T1.__args__,
+            tuple(  # Ditto TODO
+                tuple[int]
+            )
+        )
+        self.assertEqual(T1.__parameters__, ())
+
+        T2 = tuple[
+            tuple(  # Ditto TODO
+                tuple[T]
+            )
+        ]
+        self.assertEqual(
+            T2.__args__,
+            tuple(  # Ditto TODO
+                tuple[T]
+            )
+        )
+        self.assertEqual(T2.__parameters__, (T,))
+
+        T4 = tuple[
+            tuple(  # Ditto TODO
+                tuple[int, str]
+            )
+        ]
+        self.assertEqual(
+            T4.__args__,
+            tuple(  # Ditto TODO
+                tuple[int, str]
+            )
+        )
+        self.assertEqual(T4.__parameters__, ())
 
     def test_parameter_chaining(self):
         from typing import List, Dict, Union, Callable
@@ -242,6 +308,19 @@ class BaseTest(unittest.TestCase):
     def test_equality(self):
         self.assertEqual(list[int], list[int])
         self.assertEqual(dict[str, int], dict[str, int])
+        self.assertEqual((*tuple[int],)[0], (*tuple[int],)[0])
+        self.assertEqual(
+            tuple[
+                tuple(  # Effectively the same as starring; TODO
+                    tuple[int]
+                )
+            ],
+            tuple[
+                tuple(  # Ditto TODO
+                    tuple[int]
+                )
+            ]
+        )
         self.assertNotEqual(dict[str, int], dict[str, str])
         self.assertNotEqual(list, list[int])
         self.assertNotEqual(list[int], list)

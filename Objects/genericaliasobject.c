@@ -11,7 +11,15 @@ typedef struct {
     PyObject *args;
     PyObject *parameters;
     PyObject* weakreflist;
+    // Whether we're a starred type, e.g. *tuple[int].
+    // Only supported for `tuple`.
+    int starred;
 } gaobject;
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *obj;  /* Set to NULL when iterator is exhausted */
+} gaiterobject;
 
 static void
 ga_dealloc(PyObject *self)
@@ -118,12 +126,17 @@ done:
 static PyObject *
 ga_repr(PyObject *self)
 {
-    gaobject *alias = (gaobject *)self;
+    gaobject *alias = (gaobject *) self;
     Py_ssize_t len = PyTuple_GET_SIZE(alias->args);
 
     _PyUnicodeWriter writer;
     _PyUnicodeWriter_Init(&writer);
 
+    if (alias->starred) {
+        if (_PyUnicodeWriter_WriteASCIIString(&writer, "*", 1) < 0) {
+            goto error;
+        }
+    }
     if (ga_repr_item(&writer, alias->origin) < 0) {
         goto error;
     }
@@ -626,6 +639,50 @@ static PyNumberMethods ga_as_number = {
         .nb_or = _Py_union_type_or, // Add __or__ function
 };
 
+static PyObject *
+ga_iternext(gaiterobject *gi) {
+    if (gi->obj == NULL) {
+        return NULL;
+    }
+    gaobject *alias = (gaobject *) gi->obj;
+    PyObject *starred_tuple = Py_GenericAlias(alias->origin, alias->args);
+    ((gaobject * ) starred_tuple)->starred = 1;
+    Py_SETREF(gi->obj, NULL);
+    return starred_tuple;
+}
+
+static void
+ga_iter_dealloc(gaiterobject *gi) {
+    _PyObject_GC_UNTRACK(gi);
+    PyObject_GC_Del(gi);
+}
+
+static PyTypeObject Py_GenericAliasIterType = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    .tp_name = "generic_alias_iter",
+    .tp_basicsize = sizeof(gaiterobject),
+    .tp_iternext = (iternextfunc)ga_iternext,
+    .tp_dealloc = (destructor)ga_iter_dealloc,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+};
+
+static PyObject *
+ga_iter(PyObject *self) {
+    gaobject *alias = (gaobject *) self;
+    if ((PyTypeObject *) alias->origin != &PyTuple_Type) {
+        PyErr_SetString(PyExc_TypeError, "Only tuple types can be unpacked with *");
+        return NULL;
+    }
+
+    gaiterobject *gi = PyObject_GC_New(gaiterobject, &Py_GenericAliasIterType);
+    if (gi == NULL)
+        return NULL;
+    gi->obj = self;
+    Py_INCREF(self);
+    _PyObject_GC_TRACK(gi);
+    return (PyObject *) gi;
+}
+
 // TODO:
 // - argument clinic?
 // - __doc__?
@@ -654,6 +711,7 @@ PyTypeObject Py_GenericAliasType = {
     .tp_new = ga_new,
     .tp_free = PyObject_GC_Del,
     .tp_getset = ga_properties,
+    .tp_iter = (getiterfunc)ga_iter,
 };
 
 PyObject *
