@@ -232,13 +232,6 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(L5.__args__, (Callable[[K, V], K],))
         self.assertEqual(L5.__parameters__, (K, V))
 
-        with self.assertRaises(TypeError):
-            tuple[
-                tuple(  # Effectively the same as starring; TODO
-                    list[int]
-                )
-            ]
-
         T1 = tuple[
             tuple(  # Ditto TODO
                 tuple[int]
