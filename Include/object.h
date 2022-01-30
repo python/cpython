@@ -95,7 +95,7 @@ typedef struct _typeobject PyTypeObject;
  * not necessarily a byte count.
  */
 #define PyObject_VAR_HEAD      PyVarObject ob_base;
-#define Py_INVALID_SIZE (Py_ssize_t)-1
+#define Py_INVALID_SIZE ((Py_ssize_t)-1)
 
 /* Nothing is actually declared to be a PyObject, but every pointer to
  * a Python object can be cast to a PyObject*.  This is inheritance built
