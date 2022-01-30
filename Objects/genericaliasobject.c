@@ -126,7 +126,7 @@ done:
 static PyObject *
 ga_repr(PyObject *self)
 {
-    gaobject *alias = (gaobject *) self;
+    gaobject *alias = (gaobject *)self;
     Py_ssize_t len = PyTuple_GET_SIZE(alias->args);
 
     _PyUnicodeWriter writer;
@@ -644,9 +644,9 @@ ga_iternext(gaiterobject *gi) {
     if (gi->obj == NULL) {
         return NULL;
     }
-    gaobject *alias = (gaobject *) gi->obj;
+    gaobject *alias = (gaobject *)gi->obj;
     PyObject *starred_tuple = Py_GenericAlias(alias->origin, alias->args);
-    ((gaobject * ) starred_tuple)->starred = 1;
+    ((gaobject *)starred_tuple)->starred = 1;
     Py_SETREF(gi->obj, NULL);
     return starred_tuple;
 }
@@ -668,8 +668,8 @@ static PyTypeObject Py_GenericAliasIterType = {
 
 static PyObject *
 ga_iter(PyObject *self) {
-    gaobject *alias = (gaobject *) self;
-    if ((PyTypeObject *) alias->origin != &PyTuple_Type) {
+    gaobject *alias = (gaobject *)self;
+    if ((PyTypeObject *)alias->origin != &PyTuple_Type) {
         PyErr_SetString(PyExc_TypeError, "Only tuple types can be unpacked with *");
         return NULL;
     }
@@ -679,7 +679,7 @@ ga_iter(PyObject *self) {
         return NULL;
     gi->obj = Py_NewRef(self);
     _PyObject_GC_TRACK(gi);
-    return (PyObject *) gi;
+    return (PyObject *)gi;
 }
 
 // TODO:
