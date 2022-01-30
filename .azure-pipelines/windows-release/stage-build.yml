@@ -2,8 +2,8 @@ jobs:
 - job: Build_Docs
   displayName: Docs build
   pool:
-    name: 'Windows Release'
-    #vmImage: windows-2019
+    #name: 'Windows Release'
+    vmImage: windows-2022
 
   workspace:
     clean: all
@@ -45,7 +45,7 @@ jobs:
   displayName: Python build
 
   pool:
-    vmImage: windows-2019
+    vmImage: windows-2022
 
   workspace:
     clean: all
@@ -91,7 +91,7 @@ jobs:
   condition: and(succeeded(), ne(variables['DoPGO'], 'true'))
 
   pool:
-    vmImage: windows-2019
+    vmImage: windows-2022
 
   workspace:
     clean: all
@@ -141,7 +141,7 @@ jobs:
   displayName: Publish Tcl/Tk Library
 
   pool:
-    vmImage: windows-2019
+    vmImage: windows-2022
 
   workspace:
     clean: all

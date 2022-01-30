@@ -426,7 +426,7 @@ subclass which installs setuptools and pip into a created virtual environment::
                                                          'more target '
                                                          'directories.')
             parser.add_argument('dirs', metavar='ENV_DIR', nargs='+',
-                                help='A directory in which to create the
+                                help='A directory in which to create the '
                                      'virtual environment.')
             parser.add_argument('--no-setuptools', default=False,
                                 action='store_true', dest='nodist',

@@ -4,13 +4,16 @@
  * and as an extension module (Py_BUILD_CORE_MODULE define) on other
  * platforms. */
 
-#if !defined(Py_BUILD_CORE_BUILTIN) && !defined(Py_BUILD_CORE_MODULE)
-#  error "Py_BUILD_CORE_BUILTIN or Py_BUILD_CORE_MODULE must be defined"
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
 #endif
 
 #include "Python.h"
+#include "pycore_floatobject.h"   // _PyFloat_Pack8()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "structmember.h"         // PyMemberDef
+
+#include <stdlib.h>               // strtol()
 
 PyDoc_STRVAR(pickle_module_doc,
 "Optimized C implementation for the Python pickle module.");
@@ -4527,7 +4530,7 @@ dump(PicklerObject *self, PyObject *obj)
      * call when setting the reducer_override attribute of the Pickler instance
      * to a bound method of the same instance. This is important as the Pickler
      * instance holds a reference to each object it has pickled (through its
-     * memo): thus, these objects wont be garbage-collected as long as the
+     * memo): thus, these objects won't be garbage-collected as long as the
      * Pickler itself is not collected. */
     Py_CLEAR(self->reducer_override);
     return status;
@@ -6540,7 +6543,7 @@ do_setitems(UnpicklerObject *self, Py_ssize_t x)
         return 0;
     if ((len - x) % 2 != 0) {
         PickleState *st = _Pickle_GetGlobalState();
-        /* Currupt or hostile pickle -- we never write one like this. */
+        /* Corrupt or hostile pickle -- we never write one like this. */
         PyErr_SetString(st->UnpicklingError,
                         "odd number of items for SETITEMS");
         return -1;

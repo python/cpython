@@ -3,19 +3,19 @@
 #include "Python.h"
 
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
-#include "pycore_initconfig.h"
-#include "pycore_pyerrors.h"
-#include "pycore_pyhash.h"
+#include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_interp.h"        // _PyInterpreterState_ClearModules()
+#include "pycore_namespace.h"     // _PyNamespace_Type
+#include "pycore_pyerrors.h"      // _PyErr_SetString()
+#include "pycore_pyhash.h"        // _Py_KeyedHash()
 #include "pycore_pylifecycle.h"
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
-#include "pycore_interp.h"        // _PyInterpreterState_ClearModules()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_sysmodule.h"
-#include "errcode.h"
-#include "marshal.h"
-#include "code.h"
-#include "importdl.h"
-#include "pydtrace.h"
+#include "pycore_sysmodule.h"     // _PySys_Audit()
+#include "marshal.h"              // PyMarshal_ReadObjectFromString()
+#include "importdl.h"             // _PyImport_DynLoadFiletab
+#include "pydtrace.h"             // PyDTrace_IMPORT_FIND_LOAD_START_ENABLED()
+#include <stdbool.h>              // bool
 
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
@@ -441,7 +441,9 @@ _PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
         return -1;
     }
 
-    if (_Py_IsMainInterpreter(tstate->interp)) {
+    // bpo-44050: Extensions and def->m_base.m_copy can be updated
+    // when the extension module doesn't support sub-interpreters.
+    if (_Py_IsMainInterpreter(tstate->interp) || def->m_size == -1) {
         if (def->m_size == -1) {
             if (def->m_base.m_copy) {
                 /* Somebody already imported the module,
@@ -884,10 +886,6 @@ _imp__fix_co_filename_impl(PyObject *module, PyCodeObject *code,
 }
 
 
-/* Forward */
-static const struct _frozen * find_frozen(PyObject *);
-
-
 /* Helper to test for built-in module */
 
 static int
@@ -1047,68 +1045,299 @@ _imp_create_builtin(PyObject *module, PyObject *spec)
 }
 
 
+/* Return true if the name is an alias.  In that case, "alias" is set
+   to the original module name.  If it is an alias but the original
+   module isn't known then "alias" is set to NULL while true is returned. */
+static bool
+resolve_module_alias(const char *name, const struct _module_alias *aliases,
+                     const char **alias)
+{
+    const struct _module_alias *entry;
+    for (entry = aliases; ; entry++) {
+        if (entry->name == NULL) {
+            /* It isn't an alias. */
+            return false;
+        }
+        if (strcmp(name, entry->name) == 0) {
+            if (alias != NULL) {
+                *alias = entry->orig;
+            }
+            return true;
+        }
+    }
+}
+
+
 /* Frozen modules */
 
+static bool
+use_frozen(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    int override = interp->override_frozen_modules;
+    if (override > 0) {
+        return true;
+    }
+    else if (override < 0) {
+        return false;
+    }
+    else {
+        return interp->config.use_frozen_modules;
+    }
+}
+
+static PyObject *
+list_frozen_module_names(void)
+{
+    PyObject *names = PyList_New(0);
+    if (names == NULL) {
+        return NULL;
+    }
+    bool enabled = use_frozen();
+    const struct _frozen *p;
+#define ADD_MODULE(name) \
+    do { \
+        PyObject *nameobj = PyUnicode_FromString(name); \
+        if (nameobj == NULL) { \
+            goto error; \
+        } \
+        int res = PyList_Append(names, nameobj); \
+        Py_DECREF(nameobj); \
+        if (res != 0) { \
+            goto error; \
+        } \
+    } while(0)
+    // We always use the bootstrap modules.
+    for (p = _PyImport_FrozenBootstrap; ; p++) {
+        if (p->name == NULL) {
+            break;
+        }
+        ADD_MODULE(p->name);
+    }
+    // Frozen stdlib modules may be disabled.
+    for (p = _PyImport_FrozenStdlib; ; p++) {
+        if (p->name == NULL) {
+            break;
+        }
+        if (enabled) {
+            ADD_MODULE(p->name);
+        }
+    }
+    for (p = _PyImport_FrozenTest; ; p++) {
+        if (p->name == NULL) {
+            break;
+        }
+        if (enabled) {
+            ADD_MODULE(p->name);
+        }
+    }
+#undef ADD_MODULE
+    // Add any custom modules.
+    if (PyImport_FrozenModules != NULL) {
+        for (p = PyImport_FrozenModules; ; p++) {
+            if (p->name == NULL) {
+                break;
+            }
+            PyObject *nameobj = PyUnicode_FromString(p->name);
+            if (nameobj == NULL) {
+                goto error;
+            }
+            int found = PySequence_Contains(names, nameobj);
+            if (found < 0) {
+                Py_DECREF(nameobj);
+                goto error;
+            }
+            else if (found) {
+                Py_DECREF(nameobj);
+            }
+            else {
+                int res = PyList_Append(names, nameobj);
+                Py_DECREF(nameobj);
+                if (res != 0) {
+                    goto error;
+                }
+            }
+        }
+    }
+    return names;
+
+error:
+    Py_DECREF(names);
+    return NULL;
+}
+
+typedef enum {
+    FROZEN_OKAY,
+    FROZEN_BAD_NAME,    // The given module name wasn't valid.
+    FROZEN_NOT_FOUND,   // It wasn't in PyImport_FrozenModules.
+    FROZEN_DISABLED,    // -X frozen_modules=off (and not essential)
+    FROZEN_EXCLUDED,    /* The PyImport_FrozenModules entry has NULL "code"
+                           (module is present but marked as unimportable, stops search). */
+    FROZEN_INVALID,     /* The PyImport_FrozenModules entry is bogus
+                           (eg. does not contain executable code). */
+} frozen_status;
+
+static inline void
+set_frozen_error(frozen_status status, PyObject *modname)
+{
+    const char *err = NULL;
+    switch (status) {
+        case FROZEN_BAD_NAME:
+        case FROZEN_NOT_FOUND:
+            err = "No such frozen object named %R";
+            break;
+        case FROZEN_DISABLED:
+            err = "Frozen modules are disabled and the frozen object named %R is not essential";
+            break;
+        case FROZEN_EXCLUDED:
+            err = "Excluded frozen object named %R";
+            break;
+        case FROZEN_INVALID:
+            err = "Frozen object named %R is invalid";
+            break;
+        case FROZEN_OKAY:
+            // There was no error.
+            break;
+        default:
+            Py_UNREACHABLE();
+    }
+    if (err != NULL) {
+        PyObject *msg = PyUnicode_FromFormat(err, modname);
+        if (msg == NULL) {
+            PyErr_Clear();
+        }
+        PyErr_SetImportError(msg, modname, NULL);
+        Py_XDECREF(msg);
+    }
+}
+
 static const struct _frozen *
-find_frozen(PyObject *name)
+look_up_frozen(const char *name)
 {
     const struct _frozen *p;
-
-    if (name == NULL)
-        return NULL;
-
-    for (p = PyImport_FrozenModules; ; p++) {
-        if (p->name == NULL)
-            return NULL;
-        if (_PyUnicode_EqualToASCIIString(name, p->name))
+    // We always use the bootstrap modules.
+    for (p = _PyImport_FrozenBootstrap; ; p++) {
+        if (p->name == NULL) {
+            // We hit the end-of-list sentinel value.
             break;
+        }
+        if (strcmp(name, p->name) == 0) {
+            return p;
+        }
     }
-    return p;
+    // Prefer custom modules, if any.  Frozen stdlib modules can be
+    // disabled here by setting "code" to NULL in the array entry.
+    if (PyImport_FrozenModules != NULL) {
+        for (p = PyImport_FrozenModules; ; p++) {
+            if (p->name == NULL) {
+                break;
+            }
+            if (strcmp(name, p->name) == 0) {
+                return p;
+            }
+        }
+    }
+    // Frozen stdlib modules may be disabled.
+    if (use_frozen()) {
+        for (p = _PyImport_FrozenStdlib; ; p++) {
+            if (p->name == NULL) {
+                break;
+            }
+            if (strcmp(name, p->name) == 0) {
+                return p;
+            }
+        }
+        for (p = _PyImport_FrozenTest; ; p++) {
+            if (p->name == NULL) {
+                break;
+            }
+            if (strcmp(name, p->name) == 0) {
+                return p;
+            }
+        }
+    }
+    return NULL;
 }
 
-static PyObject *
-get_frozen_object(PyObject *name)
-{
-    const struct _frozen *p = find_frozen(name);
-    int size;
+struct frozen_info {
+    PyObject *nameobj;
+    const char *data;
+    PyObject *(*get_code)(void);
+    Py_ssize_t size;
+    bool is_package;
+    bool is_alias;
+    const char *origname;
+};
 
-    if (p == NULL) {
-        PyErr_Format(PyExc_ImportError,
-                     "No such frozen object named %R",
-                     name);
-        return NULL;
+static frozen_status
+find_frozen(PyObject *nameobj, struct frozen_info *info)
+{
+    if (info != NULL) {
+        memset(info, 0, sizeof(*info));
     }
+
+    if (nameobj == NULL || nameobj == Py_None) {
+        return FROZEN_BAD_NAME;
+    }
+    const char *name = PyUnicode_AsUTF8(nameobj);
+    if (name == NULL) {
+        // Note that this function previously used
+        // _PyUnicode_EqualToASCIIString().  We clear the error here
+        // (instead of propagating it) to match the earlier behavior
+        // more closely.
+        PyErr_Clear();
+        return FROZEN_BAD_NAME;
+    }
+
+    const struct _frozen *p = look_up_frozen(name);
+    if (p == NULL) {
+        return FROZEN_NOT_FOUND;
+    }
+    if (info != NULL) {
+        info->nameobj = nameobj;  // borrowed
+        info->data = (const char *)p->code;
+        info->get_code = p->get_code;
+        info->size = p->size < 0 ? -(p->size) : p->size;
+        info->is_package = p->size < 0 ? true : false;
+        info->origname = name;
+        info->is_alias = resolve_module_alias(name, _PyImport_FrozenAliases,
+                                              &info->origname);
+    }
+
     if (p->code == NULL) {
-        PyErr_Format(PyExc_ImportError,
-                     "Excluded frozen object named %R",
-                     name);
-        return NULL;
+        /* It is frozen but marked as un-importable. */
+        return FROZEN_EXCLUDED;
     }
-    size = p->size;
-    if (size < 0)
-        size = -size;
-    return PyMarshal_ReadObjectFromString((const char *)p->code, size);
+    if (p->code[0] == '\0' || p->size == 0) {
+        /* Does not contain executable code. */
+        return FROZEN_INVALID;
+    }
+    return FROZEN_OKAY;
 }
 
 static PyObject *
-is_frozen_package(PyObject *name)
+unmarshal_frozen_code(struct frozen_info *info)
 {
-    const struct _frozen *p = find_frozen(name);
-    int size;
-
-    if (p == NULL) {
-        PyErr_Format(PyExc_ImportError,
-                     "No such frozen object named %R",
-                     name);
+    if (info->get_code) {
+        PyObject *code = info->get_code();
+        assert(code != NULL);
+        return code;
+    }
+    PyObject *co = PyMarshal_ReadObjectFromString(info->data, info->size);
+    if (co == NULL) {
+        /* Does not contain executable code. */
+        set_frozen_error(FROZEN_INVALID, info->nameobj);
         return NULL;
     }
-
-    size = p->size;
-
-    if (size < 0)
-        Py_RETURN_TRUE;
-    else
-        Py_RETURN_FALSE;
+    if (!PyCode_Check(co)) {
+        // We stick with TypeError for backward compatibility.
+        PyErr_Format(PyExc_TypeError,
+                     "frozen object %R is not a code object",
+                     info->nameobj);
+        Py_DECREF(co);
+        return NULL;
+    }
+    return co;
 }
 
 
@@ -1121,38 +1350,28 @@ int
 PyImport_ImportFrozenModuleObject(PyObject *name)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    const struct _frozen *p;
-    PyObject *co, *m, *d;
-    int ispackage;
-    int size;
+    PyObject *co, *m, *d = NULL;
+    int err;
 
-    p = find_frozen(name);
-
-    if (p == NULL)
+    struct frozen_info info;
+    frozen_status status = find_frozen(name, &info);
+    if (status == FROZEN_NOT_FOUND || status == FROZEN_DISABLED) {
         return 0;
-    if (p->code == NULL) {
-        _PyErr_Format(tstate, PyExc_ImportError,
-                      "Excluded frozen object named %R",
-                      name);
+    }
+    else if (status == FROZEN_BAD_NAME) {
+        return 0;
+    }
+    else if (status != FROZEN_OKAY) {
+        set_frozen_error(status, name);
         return -1;
     }
-    size = p->size;
-    ispackage = (size < 0);
-    if (ispackage)
-        size = -size;
-    co = PyMarshal_ReadObjectFromString((const char *)p->code, size);
-    if (co == NULL)
+    co = unmarshal_frozen_code(&info);
+    if (co == NULL) {
         return -1;
-    if (!PyCode_Check(co)) {
-        _PyErr_Format(tstate, PyExc_TypeError,
-                      "frozen object %R is not a code object",
-                      name);
-        goto err_return;
     }
-    if (ispackage) {
+    if (info.is_package) {
         /* Set __path__ to the empty list */
         PyObject *l;
-        int err;
         m = import_add_module(tstate, name);
         if (m == NULL)
             goto err_return;
@@ -1173,15 +1392,33 @@ PyImport_ImportFrozenModuleObject(PyObject *name)
         goto err_return;
     }
     m = exec_code_in_module(tstate, name, d, co);
-    Py_DECREF(d);
     if (m == NULL) {
         goto err_return;
     }
-    Py_DECREF(co);
     Py_DECREF(m);
+    /* Set __origname__ (consumed in FrozenImporter._setup_module()). */
+    PyObject *origname;
+    if (info.origname) {
+        origname = PyUnicode_FromString(info.origname);
+        if (origname == NULL) {
+            goto err_return;
+        }
+    }
+    else {
+        Py_INCREF(Py_None);
+        origname = Py_None;
+    }
+    err = PyDict_SetItemString(d, "__origname__", origname);
+    Py_DECREF(origname);
+    if (err != 0) {
+        goto err_return;
+    }
+    Py_DECREF(d);
+    Py_DECREF(co);
     return 1;
 
 err_return:
+    Py_XDECREF(d);
     Py_DECREF(co);
     return -1;
 }
@@ -1888,19 +2125,116 @@ _imp_init_frozen_impl(PyObject *module, PyObject *name)
 }
 
 /*[clinic input]
+_imp.find_frozen
+
+    name: unicode
+    /
+    *
+    withdata: bool = False
+
+Return info about the corresponding frozen module (if there is one) or None.
+
+The returned info (a 2-tuple):
+
+ * data         the raw marshalled bytes
+ * is_package   whether or not it is a package
+ * origname     the originally frozen module's name, or None if not
+                a stdlib module (this will usually be the same as
+                the module's current name)
+[clinic start generated code]*/
+
+static PyObject *
+_imp_find_frozen_impl(PyObject *module, PyObject *name, int withdata)
+/*[clinic end generated code: output=8c1c3c7f925397a5 input=22a8847c201542fd]*/
+{
+    struct frozen_info info;
+    frozen_status status = find_frozen(name, &info);
+    if (status == FROZEN_NOT_FOUND || status == FROZEN_DISABLED) {
+        Py_RETURN_NONE;
+    }
+    else if (status == FROZEN_BAD_NAME) {
+        Py_RETURN_NONE;
+    }
+    else if (status != FROZEN_OKAY) {
+        set_frozen_error(status, name);
+        return NULL;
+    }
+
+    PyObject *data = NULL;
+    if (withdata) {
+        data = PyMemoryView_FromMemory((char *)info.data, info.size, PyBUF_READ);
+        if (data == NULL) {
+            return NULL;
+        }
+    }
+
+    PyObject *origname = NULL;
+    if (info.origname != NULL && info.origname[0] != '\0') {
+        origname = PyUnicode_FromString(info.origname);
+        if (origname == NULL) {
+            Py_DECREF(data);
+            return NULL;
+        }
+    }
+
+    PyObject *result = PyTuple_Pack(3, data ? data : Py_None,
+                                    info.is_package ? Py_True : Py_False,
+                                    origname ? origname : Py_None);
+    Py_XDECREF(origname);
+    Py_XDECREF(data);
+    return result;
+}
+
+/*[clinic input]
 _imp.get_frozen_object
 
     name: unicode
+    data as dataobj: object = None
     /
 
 Create a code object for a frozen module.
 [clinic start generated code]*/
 
 static PyObject *
-_imp_get_frozen_object_impl(PyObject *module, PyObject *name)
-/*[clinic end generated code: output=2568cc5b7aa0da63 input=ed689bc05358fdbd]*/
+_imp_get_frozen_object_impl(PyObject *module, PyObject *name,
+                            PyObject *dataobj)
+/*[clinic end generated code: output=54368a673a35e745 input=034bdb88f6460b7b]*/
 {
-    return get_frozen_object(name);
+    struct frozen_info info = {0};
+    Py_buffer buf = {0};
+    if (PyObject_CheckBuffer(dataobj)) {
+        if (PyObject_GetBuffer(dataobj, &buf, PyBUF_READ) != 0) {
+            return NULL;
+        }
+        info.data = (const char *)buf.buf;
+        info.size = buf.len;
+    }
+    else if (dataobj != Py_None) {
+        _PyArg_BadArgument("get_frozen_object", "argument 2", "bytes", dataobj);
+        return NULL;
+    }
+    else {
+        frozen_status status = find_frozen(name, &info);
+        if (status != FROZEN_OKAY) {
+            set_frozen_error(status, name);
+            return NULL;
+        }
+    }
+
+    if (info.nameobj == NULL) {
+        info.nameobj = name;
+    }
+    if (info.size == 0) {
+        /* Does not contain executable code. */
+        set_frozen_error(FROZEN_INVALID, name);
+        return NULL;
+    }
+
+    PyObject *codeobj = unmarshal_frozen_code(&info);
+    if (dataobj != Py_None) {
+        PyBuffer_Release(&buf);
+    }
+    return codeobj;
 }
 
 /*[clinic input]
@@ -1916,7 +2250,13 @@ static PyObject *
 _imp_is_frozen_package_impl(PyObject *module, PyObject *name)
 /*[clinic end generated code: output=e70cbdb45784a1c9 input=81b6cdecd080fbb8]*/
 {
-    return is_frozen_package(name);
+    struct frozen_info info;
+    frozen_status status = find_frozen(name, &info);
+    if (status != FROZEN_OKAY && status != FROZEN_EXCLUDED) {
+        set_frozen_error(status, name);
+        return NULL;
+    }
+    return PyBool_FromLong(info.is_package);
 }
 
 /*[clinic input]
@@ -1948,10 +2288,46 @@ static PyObject *
 _imp_is_frozen_impl(PyObject *module, PyObject *name)
 /*[clinic end generated code: output=01f408f5ec0f2577 input=7301dbca1897d66b]*/
 {
-    const struct _frozen *p;
+    struct frozen_info info;
+    frozen_status status = find_frozen(name, &info);
+    if (status != FROZEN_OKAY) {
+        Py_RETURN_FALSE;
+    }
+    Py_RETURN_TRUE;
+}
 
-    p = find_frozen(name);
-    return PyBool_FromLong((long) (p == NULL ? 0 : p->size));
+/*[clinic input]
+_imp._frozen_module_names
+
+Returns the list of available frozen modules.
+[clinic start generated code]*/
+
+static PyObject *
+_imp__frozen_module_names_impl(PyObject *module)
+/*[clinic end generated code: output=80609ef6256310a8 input=76237fbfa94460d2]*/
+{
+    return list_frozen_module_names();
+}
+
+/*[clinic input]
+_imp._override_frozen_modules_for_tests
+
+    override: int
+    /
+
+(internal-only) Override PyConfig.use_frozen_modules.
+
+(-1: "off", 1: "on", 0: no override)
+See frozen_modules() in Lib/test/support/import_helper.py.
+[clinic start generated code]*/
+
+static PyObject *
+_imp__override_frozen_modules_for_tests_impl(PyObject *module, int override)
+/*[clinic end generated code: output=36d5cb1594160811 input=8f1f95a3ef21aec3]*/
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    interp->override_frozen_modules = override;
+    Py_RETURN_NONE;
 }
 
 /* Common implementation for _imp.exec_dynamic and _imp.exec_builtin */
@@ -2108,12 +2484,15 @@ static PyMethodDef imp_methods[] = {
     _IMP_LOCK_HELD_METHODDEF
     _IMP_ACQUIRE_LOCK_METHODDEF
     _IMP_RELEASE_LOCK_METHODDEF
+    _IMP_FIND_FROZEN_METHODDEF
     _IMP_GET_FROZEN_OBJECT_METHODDEF
     _IMP_IS_FROZEN_PACKAGE_METHODDEF
     _IMP_CREATE_BUILTIN_METHODDEF
     _IMP_INIT_FROZEN_METHODDEF
     _IMP_IS_BUILTIN_METHODDEF
     _IMP_IS_FROZEN_METHODDEF
+    _IMP__FROZEN_MODULE_NAMES_METHODDEF
+    _IMP__OVERRIDE_FROZEN_MODULES_FOR_TESTS_METHODDEF
     _IMP_CREATE_DYNAMIC_METHODDEF
     _IMP_EXEC_DYNAMIC_METHODDEF
     _IMP_EXEC_BUILTIN_METHODDEF
@@ -2176,7 +2555,7 @@ _PyImport_BootstrapImp(PyThreadState *tstate)
     // Mock a ModuleSpec object just good enough for PyModule_FromDefAndSpec():
     // an object with just a name attribute.
     //
-    // _imp.__spec__ is overriden by importlib._bootstrap._instal() anyway.
+    // _imp.__spec__ is overridden by importlib._bootstrap._instal() anyway.
     PyObject *attrs = Py_BuildValue("{sO}", "name", name);
     if (attrs == NULL) {
         goto error;

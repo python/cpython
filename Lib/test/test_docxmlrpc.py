@@ -90,7 +90,17 @@ class DocXMLRPCHTTPGETServer(unittest.TestCase):
         response = self.client.getresponse()
 
         self.assertEqual(response.status, 200)
-        self.assertEqual(response.getheader("Content-type"), "text/html")
+        self.assertEqual(response.getheader("Content-type"), "text/html; charset=UTF-8")
+
+        # Server raises an exception if we don't start to read the data
+        response.read()
+
+    def test_get_css(self):
+        self.client.request("GET", "/pydoc.css")
+        response = self.client.getresponse()
+
+        self.assertEqual(response.status, 200)
+        self.assertEqual(response.getheader("Content-type"), "text/css; charset=UTF-8")
 
         # Server raises an exception if we don't start to read the data
         response.read()

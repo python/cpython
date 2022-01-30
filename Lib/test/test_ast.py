@@ -86,6 +86,8 @@ exec_tests = [
     "try:\n  pass\nexcept Exception:\n  pass",
     # TryFinally
     "try:\n  pass\nfinally:\n  pass",
+    # TryStarExcept
+    "try:\n  pass\nexcept* Exception:\n  pass",
     # Assert
     "assert v",
     # Import
@@ -1075,6 +1077,13 @@ Module(
         with self.assertRaisesRegex(ValueError, msg):
             ast.literal_eval(node)
 
+    def test_literal_eval_syntax_errors(self):
+        with self.assertRaisesRegex(SyntaxError, "unexpected indent"):
+            ast.literal_eval(r'''
+                \
+                (\
+            \ ''')
+
     def test_bad_integer(self):
         # issue13436: Bad error message with invalid numeric values
         body = [ast.ImportFrom(module='time',
@@ -1300,6 +1309,26 @@ class ASTValidatorTests(unittest.TestCase):
         t = ast.Try([p], e, [ast.Expr(ast.Name("x", ast.Store()))], [p])
         self.stmt(t, "must have Load context")
         t = ast.Try([p], e, [p], [ast.Expr(ast.Name("x", ast.Store()))])
+        self.stmt(t, "must have Load context")
+
+    def test_try_star(self):
+        p = ast.Pass()
+        t = ast.TryStar([], [], [], [p])
+        self.stmt(t, "empty body on TryStar")
+        t = ast.TryStar([ast.Expr(ast.Name("x", ast.Store()))], [], [], [p])
+        self.stmt(t, "must have Load context")
+        t = ast.TryStar([p], [], [], [])
+        self.stmt(t, "TryStar has neither except handlers nor finalbody")
+        t = ast.TryStar([p], [], [p], [p])
+        self.stmt(t, "TryStar has orelse but no except handlers")
+        t = ast.TryStar([p], [ast.ExceptHandler(None, "x", [])], [], [])
+        self.stmt(t, "empty body on ExceptHandler")
+        e = [ast.ExceptHandler(ast.Name("x", ast.Store()), "y", [p])]
+        self.stmt(ast.TryStar([p], e, [], []), "must have Load context")
+        e = [ast.ExceptHandler(None, "x", [p])]
+        t = ast.TryStar([p], e, [ast.Expr(ast.Name("x", ast.Store()))], [p])
+        self.stmt(t, "must have Load context")
+        t = ast.TryStar([p], e, [p], [ast.Expr(ast.Name("x", ast.Store()))])
         self.stmt(t, "must have Load context")
 
     def test_assert(self):
@@ -2308,6 +2337,7 @@ exec_results = [
 ('Module', [('Raise', (1, 0, 1, 25), ('Call', (1, 6, 1, 25), ('Name', (1, 6, 1, 15), 'Exception', ('Load',)), [('Constant', (1, 16, 1, 24), 'string', None)], []), None)], []),
 ('Module', [('Try', (1, 0, 4, 6), [('Pass', (2, 2, 2, 6))], [('ExceptHandler', (3, 0, 4, 6), ('Name', (3, 7, 3, 16), 'Exception', ('Load',)), None, [('Pass', (4, 2, 4, 6))])], [], [])], []),
 ('Module', [('Try', (1, 0, 4, 6), [('Pass', (2, 2, 2, 6))], [], [], [('Pass', (4, 2, 4, 6))])], []),
+('Module', [('TryStar', (1, 0, 4, 6), [('Pass', (2, 2, 2, 6))], [('ExceptHandler', (3, 0, 4, 6), ('Name', (3, 8, 3, 17), 'Exception', ('Load',)), None, [('Pass', (4, 2, 4, 6))])], [], [])], []),
 ('Module', [('Assert', (1, 0, 1, 8), ('Name', (1, 7, 1, 8), 'v', ('Load',)), None)], []),
 ('Module', [('Import', (1, 0, 1, 10), [('alias', (1, 7, 1, 10), 'sys', None)])], []),
 ('Module', [('ImportFrom', (1, 0, 1, 17), 'sys', [('alias', (1, 16, 1, 17), 'v', None)], 0)], []),

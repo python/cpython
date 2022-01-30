@@ -1,9 +1,5 @@
-This is Python version 3.11.0 alpha 0
+This is Python version 3.11.0 alpha 4
 =====================================
-
-.. image:: https://travis-ci.com/python/cpython.svg?branch=main
-   :alt: CPython build status on Travis CI
-   :target: https://travis-ci.com/python/cpython
 
 .. image:: https://github.com/python/cpython/workflows/Tests/badge.svg
    :alt: CPython build status on GitHub Actions
@@ -18,7 +14,7 @@ This is Python version 3.11.0 alpha 0
    :target: https://discuss.python.org/
 
 
-Copyright (c) 2001-2021 Python Software Foundation.  All rights reserved.
+Copyright (c) 2001-2022 Python Software Foundation.  All rights reserved.
 
 See the end of this file for further copyright and license information.
 
@@ -229,24 +225,25 @@ Proposals for enhancement
 -------------------------
 
 If you have a proposal to change Python, you may want to send an email to the
-comp.lang.python or `python-ideas`_ mailing lists for initial feedback.  A
+`comp.lang.python`_ or `python-ideas`_ mailing lists for initial feedback.  A
 Python Enhancement Proposal (PEP) may be submitted if your idea gains ground.
 All current PEPs, as well as guidelines for submitting a new PEP, are listed at
 `python.org/dev/peps/ <https://www.python.org/dev/peps/>`_.
 
 .. _python-ideas: https://mail.python.org/mailman/listinfo/python-ideas/
+.. _comp.lang.python: https://mail.python.org/mailman/listinfo/python-list
 
 
 Release Schedule
 ----------------
 
-See :pep:`619` for Python 3.10 release details.
+See :pep:`664` for Python 3.11 release details.
 
 
 Copyright and License Information
 ---------------------------------
 
-Copyright (c) 2001-2021 Python Software Foundation.  All rights reserved.
+Copyright (c) 2001-2022 Python Software Foundation.  All rights reserved.
 
 Copyright (c) 2000 BeOpen.com.  All rights reserved.
 

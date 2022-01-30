@@ -28,7 +28,6 @@ import pickle
 import random
 import signal
 import sys
-import sysconfig
 import textwrap
 import threading
 import time
@@ -44,6 +43,7 @@ from test.support import import_helper
 from test.support import os_helper
 from test.support import threading_helper
 from test.support import warnings_helper
+from test.support import skip_if_sanitizer
 from test.support.os_helper import FakePath
 
 import codecs
@@ -65,13 +65,6 @@ else:
         return obj
     class EmptyStruct(ctypes.Structure):
         pass
-
-_cflags = sysconfig.get_config_var('CFLAGS') or ''
-_config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
-MEMORY_SANITIZER = (
-    '-fsanitize=memory' in _cflags or
-    '--with-memory-sanitizer' in _config_args
-)
 
 # Does io.IOBase finalizer log the exception if the close() method fails?
 # The exception is ignored silently by default in release build.
@@ -1546,8 +1539,8 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
 class CBufferedReaderTest(BufferedReaderTest, SizeofTest):
     tp = io.BufferedReader
 
-    @unittest.skipIf(MEMORY_SANITIZER, "MSan defaults to crashing "
-                     "instead of returning NULL for malloc failure.")
+    @skip_if_sanitizer(memory=True, address=True, reason= "sanitizer defaults to crashing "
+                       "instead of returning NULL for malloc failure.")
     def test_constructor(self):
         BufferedReaderTest.test_constructor(self)
         # The allocation can succeed on 32-bit builds, e.g. with more
@@ -1911,8 +1904,8 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
 class CBufferedWriterTest(BufferedWriterTest, SizeofTest):
     tp = io.BufferedWriter
 
-    @unittest.skipIf(MEMORY_SANITIZER, "MSan defaults to crashing "
-                     "instead of returning NULL for malloc failure.")
+    @skip_if_sanitizer(memory=True, address=True, reason= "sanitizer defaults to crashing "
+                       "instead of returning NULL for malloc failure.")
     def test_constructor(self):
         BufferedWriterTest.test_constructor(self)
         # The allocation can succeed on 32-bit builds, e.g. with more
@@ -2410,8 +2403,8 @@ class BufferedRandomTest(BufferedReaderTest, BufferedWriterTest):
 class CBufferedRandomTest(BufferedRandomTest, SizeofTest):
     tp = io.BufferedRandom
 
-    @unittest.skipIf(MEMORY_SANITIZER, "MSan defaults to crashing "
-                     "instead of returning NULL for malloc failure.")
+    @skip_if_sanitizer(memory=True, address=True, reason= "sanitizer defaults to crashing "
+                       "instead of returning NULL for malloc failure.")
     def test_constructor(self):
         BufferedRandomTest.test_constructor(self)
         # The allocation can succeed on 32-bit builds, e.g. with more
@@ -3954,16 +3947,6 @@ class MiscIOTest(unittest.TestCase):
         self.assertEqual(f.mode, "wb")
         f.close()
 
-        with warnings_helper.check_warnings(('', DeprecationWarning)):
-            f = self.open(os_helper.TESTFN, "U", encoding="utf-8")
-        self.assertEqual(f.name,            os_helper.TESTFN)
-        self.assertEqual(f.buffer.name,     os_helper.TESTFN)
-        self.assertEqual(f.buffer.raw.name, os_helper.TESTFN)
-        self.assertEqual(f.mode,            "U")
-        self.assertEqual(f.buffer.mode,     "rb")
-        self.assertEqual(f.buffer.raw.mode, "rb")
-        f.close()
-
         f = self.open(os_helper.TESTFN, "w+", encoding="utf-8")
         self.assertEqual(f.mode,            "w+")
         self.assertEqual(f.buffer.mode,     "rb+") # Does it really matter?
@@ -3976,6 +3959,13 @@ class MiscIOTest(unittest.TestCase):
         self.assertEqual(g.raw.name, f.fileno())
         f.close()
         g.close()
+
+    def test_removed_u_mode(self):
+        # bpo-37330: The "U" mode has been removed in Python 3.11
+        for mode in ("U", "rU", "r+U"):
+            with self.assertRaises(ValueError) as cm:
+                self.open(os_helper.TESTFN, mode)
+            self.assertIn('invalid mode', str(cm.exception))
 
     def test_open_pipe_with_append(self):
         # bpo-27805: Ignore ESPIPE from lseek() in open().
@@ -4372,6 +4362,31 @@ class SignalsTest(unittest.TestCase):
         """Check that a partial write, when it gets interrupted, properly
         invokes the signal handler, and bubbles up the exception raised
         in the latter."""
+
+        # XXX This test has three flaws that appear when objects are
+        # XXX not reference counted.
+
+        # - if wio.write() happens to trigger a garbage collection,
+        #   the signal exception may be raised when some __del__
+        #   method is running; it will not reach the assertRaises()
+        #   call.
+
+        # - more subtle, if the wio object is not destroyed at once
+        #   and survives this function, the next opened file is likely
+        #   to have the same fileno (since the file descriptor was
+        #   actively closed).  When wio.__del__ is finally called, it
+        #   will close the other's test file...  To trigger this with
+        #   CPython, try adding "global wio" in this function.
+
+        # - This happens only for streams created by the _pyio module,
+        #   because a wio.close() that fails still consider that the
+        #   file needs to be closed again.  You can try adding an
+        #   "assert wio.closed" at the end of the function.
+
+        # Fortunately, a little gc.collect() seems to be enough to
+        # work around all these issues.
+        support.gc_collect()  # For PyPy or other GCs.
+
         read_results = []
         def _read():
             s = os.read(r, 1)
@@ -4582,7 +4597,7 @@ class PySignalsTest(SignalsTest):
     test_reentrant_write_text = None
 
 
-def load_tests(*args):
+def load_tests(loader, tests, pattern):
     tests = (CIOTest, PyIOTest, APIMismatchTest,
              CBufferedReaderTest, PyBufferedReaderTest,
              CBufferedWriterTest, PyBufferedWriterTest,
@@ -4614,7 +4629,9 @@ def load_tests(*args):
             for name, obj in py_io_ns.items():
                 setattr(test, name, obj)
 
-    suite = unittest.TestSuite([unittest.makeSuite(test) for test in tests])
+    suite = loader.suiteClass()
+    for test in tests:
+        suite.addTest(loader.loadTestsFromTestCase(test))
     return suite
 
 if __name__ == "__main__":

@@ -5,7 +5,7 @@ import sys
 import unittest
 import site
 
-from test.support import captured_stdout, run_unittest
+from test.support import captured_stdout, run_unittest, requires_subprocess
 
 from distutils import sysconfig
 from distutils.command.install import install, HAS_USER_SITE
@@ -208,6 +208,7 @@ class InstallTestCase(support.TempdirManager,
                     'UNKNOWN-0.0.0-py%s.%s.egg-info' % sys.version_info[:2]]
         self.assertEqual(found, expected)
 
+    @requires_subprocess()
     def test_record_extensions(self):
         cmd = test_support.missing_compiler_executable()
         if cmd is not None:
@@ -254,7 +255,7 @@ class InstallTestCase(support.TempdirManager,
 
 
 def test_suite():
-    return unittest.makeSuite(InstallTestCase)
+    return unittest.TestLoader().loadTestsFromTestCase(InstallTestCase)
 
 if __name__ == "__main__":
     run_unittest(test_suite())

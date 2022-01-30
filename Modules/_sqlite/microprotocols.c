@@ -49,7 +49,8 @@ pysqlite_microprotocols_init(PyObject *module)
 /* pysqlite_microprotocols_add - add a reverse type-caster to the dictionary */
 
 int
-pysqlite_microprotocols_add(PyTypeObject *type, PyObject *proto, PyObject *cast)
+pysqlite_microprotocols_add(pysqlite_state *state, PyTypeObject *type,
+                            PyObject *proto, PyObject *cast)
 {
     PyObject* key;
     int rc;
@@ -61,7 +62,6 @@ pysqlite_microprotocols_add(PyTypeObject *type, PyObject *proto, PyObject *cast)
         return -1;
     }
 
-    pysqlite_state *state = pysqlite_get_state(NULL);
     rc = PyDict_SetItem(state->psyco_adapters, key, cast);
     Py_DECREF(key);
 

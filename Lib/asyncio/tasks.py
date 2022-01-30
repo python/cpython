@@ -17,6 +17,7 @@ import itertools
 import types
 import warnings
 import weakref
+from types import GenericAlias
 
 from . import base_tasks
 from . import coroutines
@@ -123,8 +124,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             self._loop.call_exception_handler(context)
         super().__del__()
 
-    def __class_getitem__(cls, type):
-        return cls
+    __class_getitem__ = classmethod(GenericAlias)
 
     def _repr_info(self):
         return base_tasks._task_repr_info(self)
@@ -415,11 +415,9 @@ async def wait_for(fut, timeout):
 
         await _cancel_and_wait(fut, loop=loop)
         try:
-            fut.result()
+            return fut.result()
         except exceptions.CancelledError as exc:
             raise exceptions.TimeoutError() from exc
-        else:
-            raise exceptions.TimeoutError()
 
     waiter = loop.create_future()
     timeout_handle = loop.call_later(timeout, _release_waiter, waiter)
@@ -455,11 +453,9 @@ async def wait_for(fut, timeout):
             # exception, we should re-raise it
             # See https://bugs.python.org/issue40607
             try:
-                fut.result()
+                return fut.result()
             except exceptions.CancelledError as exc:
                 raise exceptions.TimeoutError() from exc
-            else:
-                raise exceptions.TimeoutError()
     finally:
         timeout_handle.cancel()
 
@@ -625,17 +621,23 @@ def _ensure_future(coro_or_future, *, loop=None):
             raise ValueError('The future belongs to a different loop than '
                             'the one specified as the loop argument')
         return coro_or_future
-
+    called_wrap_awaitable = False
     if not coroutines.iscoroutine(coro_or_future):
         if inspect.isawaitable(coro_or_future):
             coro_or_future = _wrap_awaitable(coro_or_future)
+            called_wrap_awaitable = True
         else:
             raise TypeError('An asyncio.Future, a coroutine or an awaitable '
                             'is required')
 
     if loop is None:
         loop = events._get_event_loop(stacklevel=4)
-    return loop.create_task(coro_or_future)
+    try:
+        return loop.create_task(coro_or_future)
+    except RuntimeError: 
+        if not called_wrap_awaitable:
+            coro_or_future.close()
+        raise
 
 
 @types.coroutine

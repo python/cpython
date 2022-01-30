@@ -485,25 +485,24 @@ Some details you should read once, but won't need to remember:
 
 .. index:: single: ^ (caret); marker
 
-* For some :exc:`SyntaxError`\ s, Python displays the character position of the
-  syntax error, using a ``^`` marker::
+* For some exceptions, Python displays the position of the error using ``^``
+  markers and tildes::
 
-     >>> 1 1
+     >>> 1 + None
        File "<stdin>", line 1
-         1 1
-           ^
-     SyntaxError: invalid syntax
+         1 + None
+         ~~^~~~~~
+     TypeError: unsupported operand type(s) for +: 'int' and 'NoneType'
 
   Since the lines showing the position of the error come before the exception type
   and detail, they are not checked by doctest.  For example, the following test
   would pass, even though it puts the ``^`` marker in the wrong location::
 
-     >>> 1 1
-     Traceback (most recent call last):
+     >>> 1 + None
        File "<stdin>", line 1
-         1 1
-         ^
-     SyntaxError: invalid syntax
+         1 + None
+         ^~~~~~~~
+     TypeError: unsupported operand type(s) for +: 'int' and 'NoneType'
 
 
 .. _option-flags-and-directives:

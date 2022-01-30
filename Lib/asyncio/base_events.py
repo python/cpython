@@ -66,10 +66,6 @@ _HAS_IPv6 = hasattr(socket, 'AF_INET6')
 # Maximum timeout passed to select to avoid OS limitations
 MAXIMUM_SELECT_TIMEOUT = 24 * 3600
 
-# Used for deprecation and removal of `loop.create_datagram_endpoint()`'s
-# *reuse_address* parameter
-_unset = object()
-
 
 def _format_handle(handle):
     cb = handle._callback
@@ -710,6 +706,8 @@ class BaseEventLoop(events.AbstractEventLoop):
         Any positional arguments after the callback will be passed to
         the callback when it is called.
         """
+        if delay is None:
+            raise TypeError('delay must not be None')
         timer = self.call_at(self.time() + delay, callback, *args,
                              context=context)
         if timer._source_traceback:
@@ -721,6 +719,8 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         Absolute time corresponds to the event loop's time() method.
         """
+        if when is None:
+            raise TypeError("when cannot be None")
         self._check_closed()
         if self._debug:
             self._check_thread()
@@ -1235,7 +1235,7 @@ class BaseEventLoop(events.AbstractEventLoop):
     async def create_datagram_endpoint(self, protocol_factory,
                                        local_addr=None, remote_addr=None, *,
                                        family=0, proto=0, flags=0,
-                                       reuse_address=_unset, reuse_port=None,
+                                       reuse_port=None,
                                        allow_broadcast=None, sock=None):
         """Create datagram connection."""
         if sock is not None:
@@ -1248,7 +1248,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                 # show the problematic kwargs in exception msg
                 opts = dict(local_addr=local_addr, remote_addr=remote_addr,
                             family=family, proto=proto, flags=flags,
-                            reuse_address=reuse_address, reuse_port=reuse_port,
+                            reuse_port=reuse_port,
                             allow_broadcast=allow_broadcast)
                 problems = ', '.join(f'{k}={v}' for k, v in opts.items() if v)
                 raise ValueError(
@@ -1285,8 +1285,8 @@ class BaseEventLoop(events.AbstractEventLoop):
                 addr_infos = {}  # Using order preserving dict
                 for idx, addr in ((0, local_addr), (1, remote_addr)):
                     if addr is not None:
-                        assert isinstance(addr, tuple) and len(addr) == 2, (
-                            '2-tuple is expected')
+                        if not (isinstance(addr, tuple) and len(addr) == 2):
+                            raise TypeError('2-tuple is expected')
 
                         infos = await self._ensure_resolved(
                             addr, family=family, type=socket.SOCK_DGRAM,
@@ -1310,19 +1310,6 @@ class BaseEventLoop(events.AbstractEventLoop):
                     raise ValueError('can not get address information')
 
             exceptions = []
-
-            # bpo-37228
-            if reuse_address is not _unset:
-                if reuse_address:
-                    raise ValueError("Passing `reuse_address=True` is no "
-                                     "longer supported, as the usage of "
-                                     "SO_REUSEPORT in UDP poses a significant "
-                                     "security concern.")
-                else:
-                    warnings.warn("The *reuse_address* parameter has been "
-                                  "deprecated as of 3.5.10 and is scheduled "
-                                  "for removal in 3.11.", DeprecationWarning,
-                                  stacklevel=2)
 
             for ((family, proto),
                  (local_address, remote_address)) in addr_pairs_info:
@@ -1439,7 +1426,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                     'host/port and sock can not be specified at the same time')
 
             if reuse_address is None:
-                reuse_address = os.name == 'posix' and sys.platform != 'cygwin'
+                reuse_address = os.name == "posix" and sys.platform != "cygwin"
             sockets = []
             if host == '':
                 hosts = [None]
