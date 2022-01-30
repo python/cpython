@@ -10,7 +10,7 @@ from unittest import TestCase, main, skipUnless, skip
 from copy import copy, deepcopy
 
 from typing import Any, NoReturn
-from typing import TypeVar, TypeVarTuple, Unpack, UnpackedTypeVarTuple, AnyStr
+from typing import TypeVar, TypeVarTuple, Unpack, AnyStr
 from typing import _determine_typevar_substitution
 from typing import T, KT, VT  # Not in __all__.
 from typing import Union, Optional, Literal
@@ -256,6 +256,24 @@ class TypeVarTests(BaseTestCase):
             TypeVar('T', covariant=True, contravariant=True)
 
 
+class UnpackTests(BaseTestCase):
+
+    def test_accepts_single_type(self):
+        Unpack[Tuple[int]]
+
+    def test_rejects_multiple_types(self):
+        with self.assertRaises(TypeError):
+            Unpack[Tuple[int], Tuple[str]]
+
+    def test_rejects_multiple_parameterization(self):
+        with self.assertRaises(TypeError):
+            Unpack[Tuple[int]][Tuple[int]]
+
+    def test_cannot_be_called(self):
+        with self.assertRaises(TypeError):
+            Unpack()
+
+
 class TypeVarTupleTests(BaseTestCase):
 
     def test_instance_is_equal_to_itself(self):
@@ -295,28 +313,14 @@ class TypeVarTupleTests(BaseTestCase):
             Tuple[Unpack[Ts2], Unpack[Ts1]],
         )
 
-    def test_unpacked_isinstance_of_unpackedtypevartuple(self):
-        Ts = TypeVarTuple('Ts')
-        self.assertIsInstance(Unpack[Ts], UnpackedTypeVarTuple)
-
     def test_tuple_args_and_parameters_are_correct(self):
         Ts = TypeVarTuple('Ts')
         t1 = tuple[Unpack[Ts]]
-        self.assertEqual(t1.__args__, (Ts._unpacked,))
+        self.assertEqual(t1.__args__, (Unpack[Ts],))
         self.assertEqual(t1.__parameters__, (Ts,))
         t2 = Tuple[Unpack[Ts]]
-        self.assertEqual(t2.__args__, (Ts._unpacked,))
+        self.assertEqual(t2.__args__, (Unpack[Ts],))
         self.assertEqual(t2.__parameters__, (Ts,))
-
-    def test_unpack_cannot_be_called(self):
-        with self.assertRaises(TypeError):
-            Unpack()
-
-    def test_unpack_fails_for_non_tuple_types(self):
-        with self.assertRaises(TypeError):
-            Unpack[list[int]]
-        with self.assertRaises(TypeError):
-            Unpack[dict[str, int]]
 
     def test_repr_is_correct(self):
         Ts = TypeVarTuple('Ts')
@@ -324,6 +328,8 @@ class TypeVarTupleTests(BaseTestCase):
         self.assertEqual(repr(Unpack[Ts]), '*Ts')
         self.assertEqual(repr(tuple[Unpack[Ts]]), 'tuple[*Ts]')
         self.assertEqual(repr(Tuple[Unpack[Ts]]), 'typing.Tuple[*Ts]')
+        self.assertEqual(repr(Unpack[tuple[Unpack[Ts]]]), '*tuple[*Ts]')
+        self.assertEqual(repr(Unpack[Tuple[Unpack[Ts]]]), '*typing.Tuple[*Ts]')
 
     def test_variadic_class_repr_is_correct(self):
         Ts = TypeVarTuple('Ts')
@@ -3885,13 +3891,6 @@ class GetUtilitiesTestCase(TestCase):
         self.assertIs(get_origin(Annotated[T, 'thing']), Annotated)
         self.assertIs(get_origin(List), list)
         self.assertIs(get_origin(Tuple), tuple)
-
-        self.assertIs(get_origin(tuple[Unpack[Ts]]), tuple)
-        self.assertIs(get_origin(Tuple[Unpack[Ts]]), tuple)
-
-        self.assertIs(get_origin(Unpack[tuple[int]]), tuple)
-        self.assertIs(get_origin(Unpack[Tuple[int]]), tuple)
-
         self.assertIs(get_origin(Callable), collections.abc.Callable)
         self.assertIs(get_origin(list[int]), list)
         self.assertIs(get_origin(list), None)
