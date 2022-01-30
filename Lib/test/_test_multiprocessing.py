@@ -250,27 +250,19 @@ class _TestProcess(BaseTestCase):
     def test_args_argument(self):
         # bpo-45735: Using list or tuple as *args* in constructor could
         # achieve the same effect.
-        num_list = [1]
-        num_tuple = (1,)
+        test_cases = [1, "str", [1], (1,)]
 
-        str_list = ["str"]
-        str_tuple = ("str",)
-
-        list_in_tuple = ([1],)
-        tuple_in_list = [(1,)]
-
-        test_cases = [
-            [num_list, lambda arg: self.assertEqual(arg, 1)],
-            [num_tuple, lambda arg: self.assertEqual(arg, 1)],
-            [str_list, lambda arg: self.assertEqual(arg, "str")],
-            [str_tuple, lambda arg: self.assertEqual(arg, "str")],
-            [list_in_tuple, lambda arg: self.assertEqual(arg, [1])],
-            [tuple_in_list, lambda arg: self.assertEqual(arg, (1,))]
-        ]
         for test_case in test_cases:
-            with self.subTest(test_case=test_case):
-                p = self.Process(target=test_case[1], args=test_case[0])
-                p.start()
+            for args_type in [list, tuple]:
+                with self.subTest(test_case=test_case, args_type=args_type):
+                    q = self.Queue(1)
+                    # pass a tuple or list as args
+                    args = args_type([q, test_case])
+                    p = self.Process(target=self._test, args=args)
+                    p.start()
+                    child_recv_args = q.get()
+                    self.assertEqual(child_recv_args[0], test_case)
+                    p.join()
 
     def test_daemon_argument(self):
         if self.TYPE == "threads":
