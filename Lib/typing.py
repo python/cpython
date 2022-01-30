@@ -272,7 +272,7 @@ def _check_type_parameter_count(
         raise TypeError(msg)
 
     # Second, if we can't determine the exact number of type parameters
-    # expected, can we determine the minimum type of type parameters expected?
+    # expected, can we determine the minimum number of type parameters expected?
 
     if any(isinstance(p, TypeVarTuple) for p in cls.__parameters__):
         min_num_type_params = len([
