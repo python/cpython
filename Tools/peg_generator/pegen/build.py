@@ -1,6 +1,7 @@
 import itertools
 import pathlib
 import shutil
+import sys
 import sysconfig
 import tempfile
 import tokenize
@@ -63,7 +64,11 @@ def compile_c_extension(
     if keep_asserts:
         extra_compile_args.append("-UNDEBUG")
     if disable_optimization:
-        extra_compile_args.append("-O0")
+        if sys.platform == 'win32':
+            extra_compile_args.append("/Od")
+            extra_link_args.append("/LTCG:OFF")
+        else:
+            extra_compile_args.append("-O0")
     extension = [
         Extension(
             extension_name,
