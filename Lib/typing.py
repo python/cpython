@@ -232,10 +232,7 @@ def _collect_type_vars(types_, typevar_types=None):
     return tuple(tvars)
 
 
-def _check_type_parameter_count(
-        cls,
-        type_params,
-):
+def _check_type_parameter_count(cls, type_params):
     """Checks whether number of type parameters to a generic class is correct.
 
     This function uses introspection on `cls` to determine the expected number
