@@ -1,5 +1,5 @@
 from ctypes import *
-import unittest, sys
+import unittest
 from test import support
 
 ################################################################
@@ -10,10 +10,8 @@ from _ctypes import PyObj_FromPtr
 ################################################################
 
 from sys import getrefcount as grc
-if sys.version_info > (2, 4):
-    c_py_ssize_t = c_size_t
-else:
-    c_py_ssize_t = c_int
+
+c_py_ssize_t = c_size_t
 
 class PythonAPITestCase(unittest.TestCase):
 
