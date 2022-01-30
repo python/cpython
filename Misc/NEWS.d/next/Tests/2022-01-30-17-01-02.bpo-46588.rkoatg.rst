@@ -1,0 +1,5 @@
+* `Lib/idlelib/idle_test/test_calltip.py` test_properly_formated → **test_properly_formatted**
+
+<!-- issue-number: [bpo-46588](https://bugs.python.org/issue46588) -->
+https://bugs.python.org/issue46588
+<!-- /issue-number -->
