@@ -11,15 +11,13 @@ from _ctypes import PyObj_FromPtr
 
 from sys import getrefcount as grc
 
-c_py_ssize_t = c_size_t
-
 class PythonAPITestCase(unittest.TestCase):
 
     def test_PyBytes_FromStringAndSize(self):
         PyBytes_FromStringAndSize = pythonapi.PyBytes_FromStringAndSize
 
         PyBytes_FromStringAndSize.restype = py_object
-        PyBytes_FromStringAndSize.argtypes = c_char_p, c_py_ssize_t
+        PyBytes_FromStringAndSize.argtypes = c_char_p, c_size_t
 
         self.assertEqual(PyBytes_FromStringAndSize(b"abcdefghi", 3), b"abc")
 
