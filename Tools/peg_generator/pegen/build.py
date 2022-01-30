@@ -1,6 +1,7 @@
 import itertools
 import pathlib
 import shutil
+import sys
 import sysconfig
 import tempfile
 import tokenize
@@ -61,6 +62,9 @@ def compile_c_extension(
     extra_link_args = get_extra_flags("LDFLAGS", "PY_LDFLAGS_NODIST")
     if keep_asserts:
         extra_compile_args.append("-UNDEBUG")
+    if sys.platform == "win32":
+        extra_compile_args.append("/Od")
+        extra_link_args.append("/LTCG:OFF")
     extension = [
         Extension(
             extension_name,
