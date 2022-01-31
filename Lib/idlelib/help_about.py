@@ -95,7 +95,7 @@ class AboutDialog(Toplevel):
                      f"{version[:version.rindex('.')]}/library/idle.html",
                      justify=LEFT, fg=self.fg, bg=self.bg)
         docs.grid(row=7, column=0, columnspan=2, sticky=W, padx=10, pady=0)
-        docs.bind("<Button-1>", webbrowser.open_new(docs.text))
+        docs.bind("<Button-1>", lambda: webbrowser.open(docs.text))
 
         Frame(frame_background, borderwidth=1, relief=SUNKEN,
               height=2, bg=self.bg).grid(row=8, column=0, sticky=EW,
