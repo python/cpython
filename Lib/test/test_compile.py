@@ -109,7 +109,7 @@ class TestSpecifics(unittest.TestCase):
         self.assertEqual(d['z'], 12)
 
     def test_extended_arg(self):
-        longexpr = 'x = x or ' + '-x' * 2500
+        longexpr = 'x = x or ' + '-x' * 2000
         g = {}
         code = '''
 def f(x):

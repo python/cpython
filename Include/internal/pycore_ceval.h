@@ -13,7 +13,11 @@ struct pyruntimestate;
 struct _ceval_runtime_state;
 
 #ifndef Py_DEFAULT_RECURSION_LIMIT
-#  define Py_DEFAULT_RECURSION_LIMIT 1000
+#  ifdef Py_DEBUG
+#    define Py_DEFAULT_RECURSION_LIMIT 850
+#  else
+#    define Py_DEFAULT_RECURSION_LIMIT 1000
+#  endif
 #endif
 
 #include "pycore_interp.h"        // PyInterpreterState.eval_frame
