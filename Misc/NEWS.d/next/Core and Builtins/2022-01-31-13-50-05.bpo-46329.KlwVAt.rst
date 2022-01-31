@@ -1,0 +1,2 @@
+Temporarily reduce default recursion to 800 for debug builds. This prevents
+C stack overflows with Clang debug builds.
