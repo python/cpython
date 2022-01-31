@@ -1,5 +1,5 @@
 # Verify that 2to3 falls back from the recursive pattern matching scheme to a
-# slower, iterative scheme in the event on RecursionError.
+# slower, iterative scheme in the event of a RecursionError.
 from ctypes import *
 STRING = c_char_p
 
