@@ -17,7 +17,7 @@ CORE_VENV_DEPS = ('pip', 'setuptools')
 logger = logging.getLogger(__name__)
 
 def _venv_path(name):
-    return sysconfig.get_path(name, scheme='venv').removeprefix(f'{sys.prefix}/')
+    return sysconfig.get_path(name, scheme='venv').removeprefix(sys.prefix + os.sep)
 
 
 class EnvBuilder:
