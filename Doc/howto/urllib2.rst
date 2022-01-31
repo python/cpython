@@ -97,7 +97,7 @@ schemes.  For example, you can make an FTP request like so::
 
 In the case of HTTP, there are two extra things that Request objects allow you
 to do: First, you can pass data to be sent to the server.  Second, you can pass
-extra information ("metadata") *about* the data or the about request itself, to
+extra information ("metadata") *about* the data or about the request itself, to
 the server - this information is sent as HTTP "headers".  Let's look at each of
 these in turn.
 
@@ -239,7 +239,7 @@ a different URL, urllib will handle that for you). For those it can't handle,
 urlopen will raise an :exc:`HTTPError`. Typical errors include '404' (page not
 found), '403' (request forbidden), and '401' (authentication required).
 
-See section 10 of RFC 2616 for a reference on all the HTTP error codes.
+See section 10 of :rfc:`2616` for a reference on all the HTTP error codes.
 
 The :exc:`HTTPError` instance raised will have an integer 'code' attribute, which
 corresponds to the error sent by the server.
@@ -252,7 +252,7 @@ codes in the 100--299 range indicate success, you will usually only see error
 codes in the 400--599 range.
 
 :attr:`http.server.BaseHTTPRequestHandler.responses` is a useful dictionary of
-response codes in that shows all the response codes used by RFC 2616. The
+response codes in that shows all the response codes used by :rfc:`2616`. The
 dictionary is reproduced here for convenience ::
 
     # Table mapping response codes to messages; entries have the

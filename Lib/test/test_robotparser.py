@@ -4,6 +4,8 @@ import threading
 import unittest
 import urllib.robotparser
 from test import support
+from test.support import socket_helper
+from test.support import threading_helper
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 
@@ -12,6 +14,7 @@ class BaseRobotTest:
     agent = 'test_robotparser'
     good = []
     bad = []
+    site_maps = None
 
     def setUp(self):
         lines = io.StringIO(self.robots_txt).readlines()
@@ -35,6 +38,9 @@ class BaseRobotTest:
             agent, url = self.get_agent_and_url(url)
             with self.subTest(url=url, agent=agent):
                 self.assertFalse(self.parser.can_fetch(agent, url))
+
+    def test_site_maps(self):
+        self.assertEqual(self.parser.site_maps(), self.site_maps)
 
 
 class UserAgentWildcardTest(BaseRobotTest, unittest.TestCase):
@@ -65,6 +71,23 @@ Disallow:
     bad = ['/cyberworld/map/index.html']
 
 
+class SitemapTest(BaseRobotTest, unittest.TestCase):
+    robots_txt = """\
+# robots.txt for http://www.example.com/
+
+User-agent: *
+Sitemap: http://www.gstatic.com/s2/sitemaps/profiles-sitemap.xml
+Sitemap: http://www.google.com/hostednews/sitemap_index.xml
+Request-rate: 3/15
+Disallow: /cyberworld/map/ # This is an infinite virtual URL space
+
+    """
+    good = ['/', '/test.html']
+    bad = ['/cyberworld/map/index.html']
+    site_maps = ['http://www.gstatic.com/s2/sitemaps/profiles-sitemap.xml',
+                 'http://www.google.com/hostednews/sitemap_index.xml']
+
+
 class RejectAllRobotsTest(BaseRobotTest, unittest.TestCase):
     robots_txt = """\
 # go away
@@ -76,28 +99,36 @@ Disallow: /
 
 
 class BaseRequestRateTest(BaseRobotTest):
+    request_rate = None
+    crawl_delay = None
 
     def test_request_rate(self):
+        parser = self.parser
         for url in self.good + self.bad:
             agent, url = self.get_agent_and_url(url)
             with self.subTest(url=url, agent=agent):
-                if self.crawl_delay:
-                    self.assertEqual(
-                        self.parser.crawl_delay(agent), self.crawl_delay
-                    )
-                if self.request_rate:
+                self.assertEqual(parser.crawl_delay(agent), self.crawl_delay)
+
+                parsed_request_rate = parser.request_rate(agent)
+                self.assertEqual(parsed_request_rate, self.request_rate)
+                if self.request_rate is not None:
                     self.assertIsInstance(
-                        self.parser.request_rate(agent),
+                        parsed_request_rate,
                         urllib.robotparser.RequestRate
                     )
                     self.assertEqual(
-                        self.parser.request_rate(agent).requests,
+                        parsed_request_rate.requests,
                         self.request_rate.requests
                     )
                     self.assertEqual(
-                        self.parser.request_rate(agent).seconds,
+                        parsed_request_rate.seconds,
                         self.request_rate.seconds
                     )
+
+
+class EmptyFileTest(BaseRequestRateTest, unittest.TestCase):
+    robots_txt = ''
+    good = ['/foo']
 
 
 class CrawlDelayAndRequestRateTest(BaseRequestRateTest, unittest.TestCase):
@@ -120,10 +151,6 @@ Disallow: /%7ejoe/index.html
 
 class DifferentAgentTest(CrawlDelayAndRequestRateTest):
     agent = 'FigTree Robot libwww-perl/5.04'
-    # these are not actually tested, but we still need to parse it
-    # in order to accommodate the input parameters
-    request_rate = None
-    crawl_delay = None
 
 
 class InvalidRequestRateTest(BaseRobotTest, unittest.TestCase):
@@ -246,6 +273,32 @@ Disallow: /cyberworld/map/
     bad = ['/cyberworld/map/index.html']
 
 
+class StringFormattingTest(BaseRobotTest, unittest.TestCase):
+    robots_txt = """\
+User-agent: *
+Crawl-delay: 1
+Request-rate: 3/15
+Disallow: /cyberworld/map/ # This is an infinite virtual URL space
+
+# Cybermapper knows where to go.
+User-agent: cybermapper
+Disallow: /some/path
+    """
+
+    expected_output = """\
+User-agent: cybermapper
+Disallow: /some/path
+
+User-agent: *
+Crawl-delay: 1
+Request-rate: 3/15
+Disallow: /cyberworld/map/\
+"""
+
+    def test_string_formatting(self):
+        self.assertEqual(str(self.parser), self.expected_output)
+
+
 class RobotHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
@@ -258,7 +311,10 @@ class RobotHandler(BaseHTTPRequestHandler):
 class PasswordProtectedSiteTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.server = HTTPServer((support.HOST, 0), RobotHandler)
+        # clear _opener global variable
+        self.addCleanup(urllib.request.urlcleanup)
+
+        self.server = HTTPServer((socket_helper.HOST, 0), RobotHandler)
 
         self.t = threading.Thread(
             name='HTTPServer serving',
@@ -275,10 +331,10 @@ class PasswordProtectedSiteTestCase(unittest.TestCase):
         self.t.join()
         self.server.server_close()
 
-    @support.reap_threads
+    @threading_helper.reap_threads
     def testPasswordProtectedSite(self):
         addr = self.server.server_address
-        url = 'http://' + support.HOST + ':' + str(addr[1])
+        url = 'http://' + socket_helper.HOST + ':' + str(addr[1])
         robots_url = url + "/robots.txt"
         parser = urllib.robotparser.RobotFileParser()
         parser.set_url(url)
@@ -294,7 +350,7 @@ class NetworkTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         support.requires('network')
-        with support.transient_internet(cls.base_url):
+        with socket_helper.transient_internet(cls.base_url):
             cls.parser = urllib.robotparser.RobotFileParser(cls.robots_txt)
             cls.parser.read()
 

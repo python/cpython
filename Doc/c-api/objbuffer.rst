@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 Old Buffer Protocol
 -------------------
@@ -39,7 +39,11 @@ an object, and :c:func:`PyBuffer_Release` when the buffer view can be released.
 .. c:function:: int PyObject_CheckReadBuffer(PyObject *o)
 
    Returns ``1`` if *o* supports the single-segment readable buffer interface.
-   Otherwise returns ``0``.
+   Otherwise returns ``0``.  This function always succeeds.
+
+   Note that this function tries to get and release a buffer, and exceptions
+   which occur while calling corresponding functions will get suppressed.
+   To get error reporting use :c:func:`PyObject_GetBuffer()` instead.
 
 
 .. c:function:: int PyObject_AsWriteBuffer(PyObject *obj, void **buffer, Py_ssize_t *buffer_len)

@@ -1,0 +1,1 @@
+Detect musl libc as a separate SOABI (tagged as ``linux-musl``).

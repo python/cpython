@@ -11,6 +11,15 @@ with a prompt are output from the interpreter. Note that a secondary prompt on a
 line by itself in an example means you must type a blank line; this is used to
 end a multi-line command.
 
+.. only:: html
+
+   You can toggle the display of prompts and output by clicking on ``>>>``
+   in the upper-right corner of an example box.  If you hide the prompts
+   and output for an example, then you can easily copy and paste the input
+   lines into your interpreter.
+
+.. index:: single: # (hash); comment
+
 Many of the examples in this manual, even those entered at the interactive
 prompt, include comments.  Comments in Python start with the hash character,
 ``#``, and extend to the end of the physical line.  A comment may appear at the
@@ -71,7 +80,7 @@ operator; to calculate the remainder you can use ``%``::
    5
    >>> 17 % 3  # the % operator returns the remainder of the division
    2
-   >>> 5 * 3 + 2  # result * divisor + remainder
+   >>> 5 * 3 + 2  # floored quotient * divisor + remainder
    17
 
 With Python, it is possible to use the ``**`` operator to calculate powers [#]_::
@@ -143,12 +152,12 @@ to escape quotes::
    "doesn't"
    >>> "doesn't"  # ...or use double quotes instead
    "doesn't"
-   >>> '"Yes," he said.'
-   '"Yes," he said.'
-   >>> "\"Yes,\" he said."
-   '"Yes," he said.'
-   >>> '"Isn\'t," she said.'
-   '"Isn\'t," she said.'
+   >>> '"Yes," they said.'
+   '"Yes," they said.'
+   >>> "\"Yes,\" they said."
+   '"Yes," they said.'
+   >>> '"Isn\'t," they said.'
+   '"Isn\'t," they said.'
 
 In the interactive interpreter, the output string is enclosed in quotes and
 special characters are escaped with backslashes.  While this might sometimes
@@ -159,10 +168,10 @@ enclosed in single quotes.  The :func:`print` function produces a more
 readable output, by omitting the enclosing quotes and by printing escaped
 and special characters::
 
-   >>> '"Isn\'t," she said.'
-   '"Isn\'t," she said.'
-   >>> print('"Isn\'t," she said.')
-   "Isn't," she said.
+   >>> '"Isn\'t," they said.'
+   '"Isn\'t," they said.'
+   >>> print('"Isn\'t," they said.')
+   "Isn't," they said.
    >>> s = 'First line.\nSecond line.'  # \n means newline
    >>> s  # without print(), \n is included in the output
    'First line.\nSecond line.'
@@ -223,10 +232,14 @@ This only works with two literals though, not with variables or expressions::
 
    >>> prefix = 'Py'
    >>> prefix 'thon'  # can't concatenate a variable and a string literal
-     ...
+     File "<stdin>", line 1
+       prefix 'thon'
+                   ^
    SyntaxError: invalid syntax
    >>> ('un' * 3) 'ium'
-     ...
+     File "<stdin>", line 1
+       ('un' * 3) 'ium'
+                      ^
    SyntaxError: invalid syntax
 
 If you want to concatenate variables or a variable and a literal, use ``+``::
@@ -263,14 +276,6 @@ to obtain individual characters, *slicing* allows you to obtain substring::
    >>> word[2:5]  # characters from position 2 (included) to 5 (excluded)
    'tho'
 
-Note how the start is always included, and the end always excluded.  This
-makes sure that ``s[:i] + s[i:]`` is always equal to ``s``::
-
-   >>> word[:2] + word[2:]
-   'Python'
-   >>> word[:4] + word[4:]
-   'Python'
-
 Slice indices have useful defaults; an omitted first index defaults to zero, an
 omitted second index defaults to the size of the string being sliced. ::
 
@@ -280,6 +285,14 @@ omitted second index defaults to the size of the string being sliced. ::
    'on'
    >>> word[-2:]  # characters from the second-last (included) to the end
    'on'
+
+Note how the start is always included, and the end always excluded.  This
+makes sure that ``s[:i] + s[i:]`` is always equal to ``s``::
+
+   >>> word[:2] + word[2:]
+   'Python'
+   >>> word[:4] + word[4:]
+   'Python'
 
 One way to remember how slices work is to think of the indices as pointing
 *between* characters, with the left edge of the first character numbered 0.
@@ -320,10 +333,12 @@ Python strings cannot be changed --- they are :term:`immutable`.
 Therefore, assigning to an indexed position in the string results in an error::
 
    >>> word[0] = 'J'
-     ...
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
    TypeError: 'str' object does not support item assignment
    >>> word[2:] = 'py'
-     ...
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
    TypeError: 'str' object does not support item assignment
 
 If you need a different string, you should create a new one::
@@ -375,7 +390,7 @@ items of different types, but usually the items all have the same type. ::
    >>> squares
    [1, 4, 9, 16, 25]
 
-Like strings (and all other built-in :term:`sequence` type), lists can be
+Like strings (and all other built-in :term:`sequence` types), lists can be
 indexed and sliced::
 
    >>> squares[0]  # indexing returns the item
@@ -386,7 +401,8 @@ indexed and sliced::
    [9, 16, 25]
 
 All slice operations return a new list containing the requested elements.  This
-means that the following slice returns a new (shallow) copy of the list::
+means that the following slice returns a
+:ref:`shallow copy <shallow_vs_deep_copy>` of the list::
 
    >>> squares[:]
    [1, 4, 9, 16, 25]

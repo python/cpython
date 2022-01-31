@@ -12,21 +12,30 @@ def _task_repr_info(task):
         # replace status
         info[0] = 'cancelling'
 
+    info.insert(1, 'name=%r' % task.get_name())
+
     coro = coroutines._format_coroutine(task._coro)
-    info.insert(1, f'coro=<{coro}>')
+    info.insert(2, f'coro=<{coro}>')
 
     if task._fut_waiter is not None:
-        info.insert(2, f'wait_for={task._fut_waiter!r}')
+        info.insert(3, f'wait_for={task._fut_waiter!r}')
     return info
 
 
 def _task_get_stack(task, limit):
     frames = []
-    try:
-        # 'async def' coroutines
+    if hasattr(task._coro, 'cr_frame'):
+        # case 1: 'async def' coroutines
         f = task._coro.cr_frame
-    except AttributeError:
+    elif hasattr(task._coro, 'gi_frame'):
+        # case 2: legacy coroutines
         f = task._coro.gi_frame
+    elif hasattr(task._coro, 'ag_frame'):
+        # case 3: async generators
+        f = task._coro.ag_frame
+    else:
+        # case 4: unknown objects
+        f = None
     if f is not None:
         while f is not None:
             if limit is not None:

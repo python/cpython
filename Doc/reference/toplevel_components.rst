@@ -48,14 +48,15 @@ a complete program; each statement is executed in the namespace of
 
 .. index::
    single: UNIX
+   single: Windows
    single: command line
    single: standard input
 
-Under Unix, a complete program can be passed to the interpreter in three forms:
-with the :option:`-c` *string* command line option, as a file passed as the
-first command line argument, or as standard input.  If the file or standard
-input is a tty device, the interpreter enters interactive mode; otherwise, it
-executes the file as a complete program.
+A complete program can be passed to the interpreter
+in three forms: with the :option:`-c` *string* command line option, as a file
+passed as the first command line argument, or as standard input.  If the file
+or standard input is a tty device, the interpreter enters interactive mode;
+otherwise, it executes the file as a complete program.
 
 
 .. _file-input:
@@ -65,7 +66,7 @@ File input
 
 All input read from non-interactive files has the same form:
 
-.. productionlist::
+.. productionlist:: python-grammar
    file_input: (NEWLINE | `statement`)*
 
 This syntax is used in the following situations:
@@ -84,7 +85,7 @@ Interactive input
 
 Input in interactive mode is parsed using the following grammar:
 
-.. productionlist::
+.. productionlist:: python-grammar
    interactive_input: [`stmt_list`] NEWLINE | `compound_stmt` NEWLINE
 
 Note that a (top-level) compound statement must be followed by a blank line in
@@ -102,5 +103,5 @@ Expression input
 :func:`eval` is used for expression input.  It ignores leading whitespace. The
 string argument to :func:`eval` must have the following form:
 
-.. productionlist::
+.. productionlist:: python-grammar
    eval_input: `expression_list` NEWLINE*

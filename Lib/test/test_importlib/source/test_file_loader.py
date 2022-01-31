@@ -1,5 +1,4 @@
-from .. import abc
-from .. import util
+from test.test_importlib import abc, util
 
 importlib = util.import_importlib('importlib')
 importlib_abc = util.import_importlib('importlib.abc')
@@ -17,7 +16,10 @@ import types
 import unittest
 import warnings
 
-from test.support import make_legacy_pyc, unload
+from test.support.import_helper import make_legacy_pyc, unload
+
+from test.test_py_compile import without_source_date_epoch
+from test.test_py_compile import SourceDateEpochTestMeta
 
 
 class SimpleTest(abc.LoaderTests):
@@ -121,7 +123,7 @@ class SimpleTest(abc.LoaderTests):
                 module = loader.load_module('_temp')
             module_id = id(module)
             module_dict_id = id(module.__dict__)
-            with open(mapping['_temp'], 'w') as file:
+            with open(mapping['_temp'], 'w', encoding='utf-8') as file:
                 file.write("testing_var = 42\n")
             with warnings.catch_warnings():
                 warnings.simplefilter('ignore', DeprecationWarning)
@@ -142,7 +144,7 @@ class SimpleTest(abc.LoaderTests):
             orig_module = types.ModuleType(name)
             for attr in attributes:
                 setattr(orig_module, attr, value)
-            with open(mapping[name], 'w') as file:
+            with open(mapping[name], 'w', encoding='utf-8') as file:
                 file.write('+++ bad syntax +++')
             loader = self.machinery.SourceFileLoader('_temp', mapping['_temp'])
             with self.assertRaises(SyntaxError):
@@ -159,7 +161,7 @@ class SimpleTest(abc.LoaderTests):
     # [syntax error]
     def test_bad_syntax(self):
         with util.create_modules('_temp') as mapping:
-            with open(mapping['_temp'], 'w') as file:
+            with open(mapping['_temp'], 'w', encoding='utf-8') as file:
                 file.write('=')
             loader = self.machinery.SourceFileLoader('_temp', mapping['_temp'])
             with self.assertRaises(SyntaxError):
@@ -172,7 +174,7 @@ class SimpleTest(abc.LoaderTests):
         # Loading a module found from an empty string entry on sys.path should
         # not only work, but keep all attributes relative.
         file_path = '_temp.py'
-        with open(file_path, 'w') as file:
+        with open(file_path, 'w', encoding='utf-8') as file:
             file.write("# test file for importlib")
         try:
             with util.uncache('_temp'):
@@ -196,7 +198,7 @@ class SimpleTest(abc.LoaderTests):
         with util.create_modules('_temp') as mapping:
             source = mapping['_temp']
             compiled = self.util.cache_from_source(source)
-            with open(source, 'w') as f:
+            with open(source, 'w', encoding='utf-8') as f:
                 f.write("x = 5")
             try:
                 os.utime(source, (2 ** 33 - 5, 2 ** 33 - 5))
@@ -322,7 +324,7 @@ class SimpleTest(abc.LoaderTests):
             )
 
     @util.writes_bytecode_files
-    def test_overiden_unchecked_hash_based_pyc(self):
+    def test_overridden_unchecked_hash_based_pyc(self):
         with util.create_modules('_temp') as mapping, \
              unittest.mock.patch('_imp.check_hash_based_pycs', 'always'):
             source = mapping['_temp']
@@ -357,6 +359,17 @@ class SimpleTest(abc.LoaderTests):
  Source_SimpleTest
  ) = util.test_both(SimpleTest, importlib=importlib, machinery=machinery,
                     abc=importlib_abc, util=importlib_util)
+
+
+class SourceDateEpochTestMeta(SourceDateEpochTestMeta,
+                              type(Source_SimpleTest)):
+    pass
+
+
+class SourceDateEpoch_SimpleTest(Source_SimpleTest,
+                                 metaclass=SourceDateEpochTestMeta,
+                                 source_date_epoch=True):
+    pass
 
 
 class BadBytecodeTest:
@@ -617,6 +630,7 @@ class SourceLoaderBadBytecodeTest:
 
     # [bad timestamp]
     @util.writes_bytecode_files
+    @without_source_date_epoch
     def test_old_timestamp(self):
         # When the timestamp is older than the source, bytecode should be
         # regenerated.
@@ -629,7 +643,7 @@ class SourceLoaderBadBytecodeTest:
                 bytecode_file.write(zeros)
             self.import_(mapping['_temp'], '_temp')
             source_mtime = os.path.getmtime(mapping['_temp'])
-            source_timestamp = self.importlib._w_long(source_mtime)
+            source_timestamp = self.importlib._pack_uint32(source_mtime)
             with open(bytecode_path, 'rb') as bytecode_file:
                 bytecode_file.seek(8)
                 self.assertEqual(bytecode_file.read(4), source_timestamp)
