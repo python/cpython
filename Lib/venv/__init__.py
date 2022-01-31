@@ -16,6 +16,9 @@ import types
 CORE_VENV_DEPS = ('pip', 'setuptools')
 logger = logging.getLogger(__name__)
 
+def _venv_path(name):
+    return sysconfig.get_path(name, scheme='venv').removeprefix(f'{sys.prefix}/')
+
 
 class EnvBuilder:
     """
@@ -120,16 +123,10 @@ class EnvBuilder:
         context.executable = executable
         context.python_dir = dirname
         context.python_exe = exename
-        if sys.platform == 'win32':
-            binname = 'Scripts'
-            incpath = 'Include'
-            libpath = os.path.join(env_dir, 'Lib', 'site-packages')
-        else:
-            binname = 'bin'
-            incpath = 'include'
-            libpath = os.path.join(env_dir, 'lib',
-                                   'python%d.%d' % sys.version_info[:2],
-                                   'site-packages')
+        binname = _venv_path('scripts')
+        incpath = _venv_path('include')
+        libpath = os.path.join(env_dir, _venv_path('purelib'))
+
         context.inc_path = path = os.path.join(env_dir, incpath)
         create_if_needed(path)
         create_if_needed(libpath)

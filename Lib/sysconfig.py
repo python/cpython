@@ -58,6 +58,28 @@ _INSTALL_SCHEMES = {
         },
     }
 
+# Downstream distributors can overwrite the default install scheme.
+# This is done to support downstream modifications where distributors change
+# the installation layout (eg. different site-packages directory).
+# So, distributors will change the default scheme to one that correctly
+# represents their layout.
+# This presents an issue for projects/people that need to bootstrap virtual
+# environments, like virtualenv. As distributors might now be customizing
+# the default install scheme, there is no guarantee that the information
+# returned by sysconfig.get_default_scheme/get_paths is correct for
+# a virtual environment, the only guarantee we have is that it correct
+# for the *current* environment. When bootstrapping a virtual environment,
+# we need to know its layout, so that we can place the files in the
+# correct locations.
+# The "venv" install scheme is a scheme to bootstrap virtual environments,
+# essentially identical to the default posix_prefix/nt schemes.
+# Downstream distributors will need to change this,
+# if their posix_prefix/nt scheme is not venv-compatible.
+if os.name == 'nt':
+    _INSTALL_SCHEMES['venv'] = dict(_INSTALL_SCHEMES['nt'])
+else:
+    _INSTALL_SCHEMES['venv'] = dict(_INSTALL_SCHEMES['posix_prefix'])
+
 
 # NOTE: site.py has copy of this function.
 # Sync it when modify this function.

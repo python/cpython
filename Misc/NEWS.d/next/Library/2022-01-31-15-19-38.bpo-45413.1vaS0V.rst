@@ -1,0 +1,9 @@
+Define a ``"venv"`` :mod:`sysconfig` installation scheme to be used for
+bootstrapping new virtual environments. It is a copy of the
+``"posix_prefix"`` or ``"nt"`` install scheme depending on the platform. The
+:mod:`venv` module now uses that scheme to create new virtual environments
+instead of hardcoding the paths depending only on the platform. Downstream
+Python distributors customizing the ``"posix_prefix"`` or ``"nt"`` install
+scheme in a way that is not compatible with the install scheme used in
+virtual environments are encouraged to supply a modified working ``"venv"``
+scheme.
