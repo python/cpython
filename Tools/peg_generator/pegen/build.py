@@ -69,6 +69,8 @@ def compile_c_extension(
             extra_link_args.append("/LTCG:OFF")
         else:
             extra_compile_args.append("-O0")
+            if sysconfig.get_config_var("GNULD") == "yes":
+                extra_link_args.append("-fno-lto")
     extension = [
         Extension(
             extension_name,
