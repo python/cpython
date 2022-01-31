@@ -75,7 +75,7 @@ _INSTALL_SCHEMES = {
 # essentially identical to the default posix_prefix/nt schemes.
 # Downstream distributors will need to change this,
 # if their posix_prefix/nt scheme is not venv-compatible.
-if os.name == 'nt':
+if sys.platform == 'win32':
     _INSTALL_SCHEMES['venv'] = dict(_INSTALL_SCHEMES['nt'])
 else:
     _INSTALL_SCHEMES['venv'] = dict(_INSTALL_SCHEMES['posix_prefix'])
