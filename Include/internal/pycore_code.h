@@ -38,7 +38,7 @@ typedef struct {
 
 typedef struct {
     uint32_t func_version;
-    uint16_t defaults_start;
+    uint16_t min_args;
     uint16_t defaults_len;
 } _PyCallCache;
 
@@ -271,11 +271,14 @@ int _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins, _Py_CODEUNI
 int _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
 int _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache);
 int _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *instr);
-int _Py_Specialize_CallNoKw(PyObject *callable, _Py_CODEUNIT *instr, int nargs, SpecializedCacheEntry *cache, PyObject *builtins);
+int _Py_Specialize_CallNoKw(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
+    PyObject *kwnames, SpecializedCacheEntry *cache, PyObject *builtins);
 void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                              SpecializedCacheEntry *cache);
 void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache);
 
+/* Deallocator function for static codeobjects used in deepfreeze.py */
+void _PyStaticCode_Dealloc(PyCodeObject *co);
 
 #ifdef Py_STATS
 
@@ -297,8 +300,14 @@ typedef struct _opcode_stats {
     uint64_t pair_count[256];
 } OpcodeStats;
 
+typedef struct _call_stats {
+    uint64_t inlined_py_calls;
+    uint64_t pyeval_calls;
+} CallStats;
+
 typedef struct _stats {
     OpcodeStats opcode_stats[256];
+    CallStats call_stats;
 } PyStats;
 
 extern PyStats _py_stats;
@@ -306,6 +315,7 @@ extern PyStats _py_stats;
 #define STAT_INC(opname, name) _py_stats.opcode_stats[opname].specialization.name++
 #define STAT_DEC(opname, name) _py_stats.opcode_stats[opname].specialization.name--
 #define OPCODE_EXE_INC(opname) _py_stats.opcode_stats[opname].execution_count++
+#define CALL_STAT_INC(name) _py_stats.call_stats.name++
 
 void _Py_PrintSpecializationStats(int to_file);
 
@@ -315,6 +325,7 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define STAT_INC(opname, name) ((void)0)
 #define STAT_DEC(opname, name) ((void)0)
 #define OPCODE_EXE_INC(opname) ((void)0)
+#define CALL_STAT_INC(name) ((void)0)
 #endif
 
 

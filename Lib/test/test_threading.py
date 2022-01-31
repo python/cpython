@@ -3,7 +3,7 @@ Tests for the threading module.
 """
 
 import test.support
-from test.support import threading_helper
+from test.support import threading_helper, requires_subprocess
 from test.support import verbose, cpython_only, os_helper
 from test.support.import_helper import import_module
 from test.support.script_helper import assert_python_ok, assert_python_failure
@@ -1259,6 +1259,7 @@ class ThreadingExceptionTests(BaseTestCase):
         lock = threading.Lock()
         self.assertRaises(RuntimeError, lock.release)
 
+    @requires_subprocess()
     def test_recursion_limit(self):
         # Issue 9670
         # test that excessive recursion within a non-main thread causes

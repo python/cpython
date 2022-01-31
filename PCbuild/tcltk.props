@@ -29,6 +29,7 @@
     <tcltkLib>$(tcltkDir)lib\tcl$(TclMajorVersion)$(TclMinorVersion)t$(TclDebugExt).lib;$(tcltkDir)lib\tk$(TkMajorVersion)$(TkMinorVersion)t$(TclDebugExt).lib</tcltkLib>
     <TclMachine>IX86</TclMachine>
     <TclMachine Condition="'$(Platform)' == 'x64'">AMD64</TclMachine>
+    <TclMachine Condition="'$(Platform)' == 'ARM64'">ARM64</TclMachine>
     <TclVersions>TCL_MAJOR_VERSION=$(TclMajorVersion) TCL_MINOR_VERSION=$(TclMinorVersion) TCL_PATCH_LEVEL=$(TclPatchLevel)</TclVersions>
     <TclShortVersions>TCL_MAJOR=$(TclMajorVersion) TCL_MINOR=$(TclMinorVersion) TCL_PATCH=$(TclPatchLevel)</TclShortVersions>
     <TkVersions>TK_MAJOR_VERSION=$(TkMajorVersion) TK_MINOR_VERSION=$(TkMinorVersion) TK_PATCH_LEVEL=$(TkPatchLevel)</TkVersions>

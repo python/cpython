@@ -6,6 +6,7 @@ from tokenize import (tokenize, _tokenize, untokenize, NUMBER, NAME, OP,
                      NEWLINE, _generate_tokens_from_c_tokenizer)
 from io import BytesIO, StringIO
 import unittest
+from textwrap import dedent
 from unittest import TestCase, mock
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
@@ -44,7 +45,6 @@ class TokenizeTest(TestCase):
         # The ENDMARKER and final NEWLINE are omitted.
         f = BytesIO(s.encode('utf-8'))
         result = stringify_tokens_from_source(tokenize(f.readline), s)
-
         self.assertEqual(result,
                          ["    ENCODING   'utf-8'       (0, 0) (0, 0)"] +
                          expected.rstrip().splitlines())
@@ -2511,7 +2511,105 @@ async def f():
 
         self.assertRaises(SyntaxError, get_tokens, "("*1000+"a"+")"*1000)
         self.assertRaises(SyntaxError, get_tokens, "]")
+    
+    def test_continuation_lines_indentation(self): 
+        def get_tokens(string):
+            return [(kind, string) for (kind, string, *_) in _generate_tokens_from_c_tokenizer(string)]
 
+        code = dedent("""
+            def fib(n):
+                \\
+            '''Print a Fibonacci series up to n.'''
+                \\
+            a, b = 0, 1
+        """)
+
+        self.check_tokenize(code, """\
+    NAME       'def'         (2, 0) (2, 3)
+    NAME       'fib'         (2, 4) (2, 7)
+    LPAR       '('           (2, 7) (2, 8)
+    NAME       'n'           (2, 8) (2, 9)
+    RPAR       ')'           (2, 9) (2, 10)
+    COLON      ':'           (2, 10) (2, 11)
+    NEWLINE    ''            (2, 11) (2, 11)
+    INDENT     ''            (4, -1) (4, -1)
+    STRING     "'''Print a Fibonacci series up to n.'''" (4, 0) (4, 39)
+    NEWLINE    ''            (4, 39) (4, 39)
+    NAME       'a'           (6, 0) (6, 1)
+    COMMA      ','           (6, 1) (6, 2)
+    NAME       'b'           (6, 3) (6, 4)
+    EQUAL      '='           (6, 5) (6, 6)
+    NUMBER     '0'           (6, 7) (6, 8)
+    COMMA      ','           (6, 8) (6, 9)
+    NUMBER     '1'           (6, 10) (6, 11)
+    NEWLINE    ''            (6, 11) (6, 11)
+    DEDENT     ''            (6, -1) (6, -1)
+        """)
+
+        code_no_cont = dedent("""
+            def fib(n):
+                '''Print a Fibonacci series up to n.'''
+                a, b = 0, 1
+        """)
+        
+        self.assertEqual(get_tokens(code), get_tokens(code_no_cont))
+
+        code = dedent("""
+            pass
+                \\
+
+            pass
+        """)
+
+        self.check_tokenize(code, """\
+    NAME       'pass'        (2, 0) (2, 4)
+    NEWLINE    ''            (2, 4) (2, 4)
+    NAME       'pass'        (5, 0) (5, 4)
+    NEWLINE    ''            (5, 4) (5, 4)
+        """)
+
+        code_no_cont = dedent("""
+            pass
+            pass
+        """)
+        
+        self.assertEqual(get_tokens(code), get_tokens(code_no_cont))
+
+        code = dedent("""
+            if x:
+                y = 1
+                \\
+                        \\
+                    \\
+                \\
+                foo = 1
+        """)
+
+        self.check_tokenize(code, """\
+    NAME       'if'          (2, 0) (2, 2)
+    NAME       'x'           (2, 3) (2, 4)
+    COLON      ':'           (2, 4) (2, 5)
+    NEWLINE    ''            (2, 5) (2, 5)
+    INDENT     ''            (3, -1) (3, -1)
+    NAME       'y'           (3, 4) (3, 5)
+    EQUAL      '='           (3, 6) (3, 7)
+    NUMBER     '1'           (3, 8) (3, 9)
+    NEWLINE    ''            (3, 9) (3, 9)
+    NAME       'foo'         (8, 4) (8, 7)
+    EQUAL      '='           (8, 8) (8, 9)
+    NUMBER     '1'           (8, 10) (8, 11)
+    NEWLINE    ''            (8, 11) (8, 11)
+    DEDENT     ''            (8, -1) (8, -1)
+        """)
+
+        code_no_cont = dedent("""
+            if x:
+                y = 1
+                foo = 1
+        """)
+
+        self.assertEqual(get_tokens(code), get_tokens(code_no_cont))
+ 
 
 if __name__ == "__main__":
     unittest.main()

@@ -5,13 +5,6 @@
 
 #include "Python.h"
 
-#if defined(__CHAR_UNSIGNED__)
-#if defined(signed)
-/* This module currently does not work on systems where only unsigned
-   characters are available.  Take it out of Setup.  Sorry. */
-#endif
-#endif
-
 static const int maxvals[] = {0, 0x7F, 0x7FFF, 0x7FFFFF, 0x7FFFFFFF};
 /* -1 trick is needed on Windows to support -0x80000000 without a warning */
 static const int minvals[] = {0, -0x80, -0x8000, -0x800000, -0x7FFFFFFF-1};
