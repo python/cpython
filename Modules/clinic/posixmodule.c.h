@@ -5920,7 +5920,7 @@ exit:
 
 #endif /* defined(HAVE_MKFIFO) */
 
-#if (defined(HAVE_MKNOD) && defined(HAVE_MAKEDEV))
+#if defined(HAVE_MKNOD)
 
 PyDoc_STRVAR(os_mknod__doc__,
 "mknod($module, /, path, mode=384, device=0, *, dir_fd=None)\n"
@@ -6004,7 +6004,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_MKNOD) && defined(HAVE_MAKEDEV)) */
+#endif /* defined(HAVE_MKNOD) */
 
 #if defined(HAVE_DEVICE_MACROS)
 
@@ -9303,4 +9303,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=d95ba7b0b9c52685 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=817f2f2b53ef93b2 input=a9049054013a1b77]*/

@@ -881,7 +881,7 @@ fail:
 #define _PyLong_FromDev PyLong_FromLongLong
 
 
-#if defined(HAVE_MKNOD) && defined(HAVE_MAKEDEV)
+#if defined(HAVE_MKNOD) || defined(HAVE_DEVICE_MACROS)
 static int
 _Py_Dev_Converter(PyObject *obj, void *p)
 {
@@ -890,7 +890,7 @@ _Py_Dev_Converter(PyObject *obj, void *p)
         return 0;
     return 1;
 }
-#endif /* HAVE_MKNOD && HAVE_MAKEDEV */
+#endif /* HAVE_MKNOD || HAVE_DEVICE_MACROS */
 
 
 #ifdef AT_FDCWD
@@ -10625,7 +10625,7 @@ os_mkfifo_impl(PyObject *module, path_t *path, int mode, int dir_fd)
 #endif /* HAVE_MKFIFO */
 
 
-#if defined(HAVE_MKNOD) && defined(HAVE_MAKEDEV)
+#if defined(HAVE_MKNOD)
 /*[clinic input]
 os.mknod
 
@@ -10674,7 +10674,7 @@ os_mknod_impl(PyObject *module, path_t *path, int mode, dev_t device,
 
     Py_RETURN_NONE;
 }
-#endif /* defined(HAVE_MKNOD) && defined(HAVE_MAKEDEV) */
+#endif /* defined(HAVE_MKNOD) */
 
 
 #ifdef HAVE_DEVICE_MACROS
