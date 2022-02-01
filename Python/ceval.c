@@ -4951,6 +4951,7 @@ handle_eval_breaker:
             PyObject *inst = TOP();
             int retval = PyObject_IsInstance(inst, cls);
             if (retval < 0) {
+                Py_DECREF(cls);
                 goto error;
             }
             PyObject *res = PyBool_FromLong(retval);

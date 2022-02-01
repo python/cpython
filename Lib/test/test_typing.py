@@ -4643,6 +4643,13 @@ class RETests(BaseTestCase):
 
 class AnnotatedTests(BaseTestCase):
 
+    def test_new(self):
+        with self.assertRaisesRegex(
+            TypeError,
+            'Type Annotated cannot be instantiated',
+        ):
+            Annotated()
+
     def test_repr(self):
         self.assertEqual(
             repr(Annotated[int, 4, 5]),
