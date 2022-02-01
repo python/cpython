@@ -9102,8 +9102,7 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
                             "super(): no current frame");
             return -1;
         }
-        PyCodeObject *code = cframe->f_code;
-        int res = super_init_without_args(cframe, code, &type, &obj);
+        int res = super_init_without_args(cframe, cframe->f_code, &type, &obj);
 
         if (res < 0) {
             return -1;
