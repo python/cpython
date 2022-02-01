@@ -37,6 +37,13 @@ enum {
     DEFAULT_PROTOCOL = 4
 };
 
+#ifdef MS_WINDOWS
+// These are already typedefs from windows.h, pulled in via pycore_runtime.h.
+#define FLOAT FLOAT_
+#define INT INT_
+#define LONG LONG_
+#endif
+
 /* Pickle opcodes. These must be kept updated with pickle.py.
    Extensive docs are in pickletools.py. */
 enum opcode {
