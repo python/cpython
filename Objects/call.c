@@ -673,7 +673,7 @@ _PyObject_CallMethod(PyObject *obj, PyObject *name,
 
     va_list va;
     va_start(va, format);
-    PyObject *retval = callmethod(tstate, callable, format, va, 0);
+    PyObject *retval = callmethod(tstate, callable, format, va, 1);
     va_end(va);
 
     Py_DECREF(callable);
@@ -717,31 +717,7 @@ PyObject * _PyObject_CallMethodFormat(PyThreadState *tstate, PyObject *callable,
 
 
 PyObject *
-_PyObject_CallMethodString_SizeT(PyObject *obj, const char *name,
-                                 const char *format, ...)
-{
-    PyThreadState *tstate = _PyThreadState_GET();
-    if (obj == NULL || name == NULL) {
-        return null_error(tstate);
-    }
-
-    PyObject *callable = PyObject_GetAttrString(obj, name);
-    if (callable == NULL) {
-        return NULL;
-    }
-
-    va_list va;
-    va_start(va, format);
-    PyObject *retval = callmethod(tstate, callable, format, va, 1);
-    va_end(va);
-
-    Py_DECREF(callable);
-    return retval;
-}
-
-
-PyObject *
-_PyObject_CallMethod_SizeT(PyObject *obj, PyObject *name,
+_PyObject_CallMethod_SizeT(PyObject *obj, const char *name,
                            const char *format, ...)
 {
     PyThreadState *tstate = _PyThreadState_GET();
@@ -749,7 +725,7 @@ _PyObject_CallMethod_SizeT(PyObject *obj, PyObject *name,
         return null_error(tstate);
     }
 
-    PyObject *callable = PyObject_GetAttr(obj, name);
+    PyObject *callable = PyObject_GetAttrString(obj, name);
     if (callable == NULL) {
         return NULL;
     }

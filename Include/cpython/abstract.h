@@ -5,7 +5,6 @@
 /* === Object Protocol ================================================== */
 
 #ifdef PY_SSIZE_T_CLEAN
-#  define _PyObject_CallMethod _PyObject_CallMethod_SizeT
 #  define _PyObject_CallMethodId _PyObject_CallMethodId_SizeT
 #endif
 
@@ -126,11 +125,6 @@ PyAPI_FUNC(PyObject *) _PyObject_CallMethod(PyObject *obj,
 PyAPI_FUNC(PyObject *) _PyObject_CallMethodId(PyObject *obj,
                                               _Py_Identifier *name,
                                               const char *format, ...);
-
-PyAPI_FUNC(PyObject *) _PyObject_CallMethod_SizeT(PyObject *obj,
-                                                  PyObject *name,
-                                                  const char *format,
-                                                  ...);
 
 PyAPI_FUNC(PyObject *) _PyObject_CallMethodId_SizeT(PyObject *obj,
                                                     _Py_Identifier *name,

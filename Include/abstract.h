@@ -137,7 +137,7 @@ extern "C" {
 
 #ifdef PY_SSIZE_T_CLEAN
 #  define PyObject_CallFunction _PyObject_CallFunction_SizeT
-#  define PyObject_CallMethod _PyObject_CallMethodString_SizeT
+#  define PyObject_CallMethod _PyObject_CallMethod_SizeT
 #endif
 
 
@@ -199,10 +199,10 @@ PyAPI_FUNC(PyObject *) _PyObject_CallFunction_SizeT(PyObject *callable,
                                                     const char *format,
                                                     ...);
 
-PyAPI_FUNC(PyObject *) _PyObject_CallMethodString_SizeT(PyObject *obj,
-                                                        const char *name,
-                                                        const char *format,
-                                                        ...);
+PyAPI_FUNC(PyObject *) _PyObject_CallMethod_SizeT(PyObject *obj,
+                                                  const char *name,
+                                                  const char *format,
+                                                  ...);
 
 /* Call a callable Python object 'callable' with a variable number of C
    arguments. The C arguments are provided as PyObject* values, terminated
