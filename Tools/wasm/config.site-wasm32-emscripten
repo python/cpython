@@ -95,5 +95,5 @@ ac_cv_func_setresgid=no
 ac_cv_func_alarm=no
 
 # To use dlopen, you need to use Emscripten's linking support,
-# see https://github.com/emscripten-core/emscripten/wiki/Linking)
+# see https://emscripten.org/docs/compiling/Dynamic-Linking.html
 ac_cv_func_dlopen=no
