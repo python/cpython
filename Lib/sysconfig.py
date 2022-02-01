@@ -282,6 +282,8 @@ def get_preferred_scheme(key):
 
 
 def get_default_scheme():
+    if sys.prefix != sys.base_prefix:
+        return 'venv'
     return get_preferred_scheme('prefix')
 
 
