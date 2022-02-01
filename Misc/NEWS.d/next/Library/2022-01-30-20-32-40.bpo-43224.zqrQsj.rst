@@ -1,6 +1,1 @@
-Allow unpacking `types.GenericAlias` objects, e.g. `*tuple[int]`.
-
-Part of PEP 646 - e.g:
-
-    Ts = TypeVarTuple('Ts')
-    def foo(*args: *tuple[int, *Ts]): ...
+Allow unpacking types.GenericAlias objects, e.g. ``*tuple[int, str]``.
