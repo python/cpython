@@ -1539,6 +1539,8 @@ _PyErr_Display(PyObject *file, PyObject *exception, PyObject *value, PyObject *t
     }
     if (print_exception_recursive(&ctx, value) < 0) {
         PyErr_Clear();
+        _PyObject_Dump(value);
+        fprintf(stderr, "lost sys.stderr\n");
     }
     Py_XDECREF(ctx.seen);
 
