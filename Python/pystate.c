@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"
+#include "pycore_code.h"           // stats
 #include "pycore_frame.h"
 #include "pycore_initconfig.h"
 #include "pycore_object.h"        // _PyType_InitCache()
@@ -2219,6 +2220,7 @@ _PyThreadState_PushFrame(PyThreadState *tstate, PyFunctionObject *func, PyObject
     int nlocalsplus = code->co_nlocalsplus;
     size_t size = nlocalsplus + code->co_stacksize +
         FRAME_SPECIALS_SIZE;
+    CALL_STAT_INC(frames_pushed);
     InterpreterFrame *frame  = _PyThreadState_BumpFramePointer(tstate, size);
     if (frame == NULL) {
         return NULL;

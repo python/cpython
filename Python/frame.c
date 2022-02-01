@@ -1,6 +1,7 @@
 
 #include "Python.h"
 #include "frameobject.h"
+#include "pycore_code.h"           // stats
 #include "pycore_frame.h"
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "opcode.h"
@@ -113,6 +114,7 @@ _PyFrame_Push(PyThreadState *tstate, PyFunctionObject *func)
 {
     PyCodeObject *code = (PyCodeObject *)func->func_code;
     size_t size = code->co_nlocalsplus + code->co_stacksize + FRAME_SPECIALS_SIZE;
+    CALL_STAT_INC(frames_pushed);
     InterpreterFrame *new_frame = _PyThreadState_BumpFramePointer(tstate, size);
     if (new_frame == NULL) {
         return NULL;

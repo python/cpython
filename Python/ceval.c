@@ -2238,6 +2238,7 @@ handle_eval_breaker:
             PyCodeObject *code = (PyCodeObject *)getitem->func_code;
             size_t size = code->co_nlocalsplus + code->co_stacksize + FRAME_SPECIALS_SIZE;
             assert(code->co_argcount == 2);
+            CALL_STAT_INC(frames_pushed);
             InterpreterFrame *new_frame = _PyThreadState_BumpFramePointer(tstate, size);
             if (new_frame == NULL) {
                 goto error;
@@ -6078,6 +6079,7 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
 {
     PyCodeObject * code = (PyCodeObject *)func->func_code;
     size_t size = code->co_nlocalsplus + code->co_stacksize + FRAME_SPECIALS_SIZE;
+    CALL_STAT_INC(frames_pushed);
     InterpreterFrame *frame = _PyThreadState_BumpFramePointer(tstate, size);
     if (frame == NULL) {
         goto fail;
