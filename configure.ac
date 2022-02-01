@@ -1792,7 +1792,7 @@ case $CC in
 esac
 
 # Check if CC supports -Og optimization level
-save_CFLAGS="$CFLAGS"
+_SAVE_VAR([CFLAGS])
 CFLAGS="-Og"
 AC_CACHE_CHECK([if $CC supports -Og optimization level],
                [ac_cv_cc_supports_og],
@@ -1805,7 +1805,7 @@ AC_CACHE_CHECK([if $CC supports -Og optimization level],
       ac_cv_cc_supports_og=no
     ])
 )
-CFLAGS="$save_CFLAGS"
+_RESTORE_VAR([CFLAGS])
 
 # Optimization messes up debuggers, so turn it off for
 # debug builds.

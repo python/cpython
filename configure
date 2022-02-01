@@ -7624,7 +7624,7 @@ case $CC in
 esac
 
 # Check if CC supports -Og optimization level
-save_CFLAGS="$CFLAGS"
+save_CFLAGS=$CFLAGS
 CFLAGS="-Og"
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking if $CC supports -Og optimization level" >&5
 $as_echo_n "checking if $CC supports -Og optimization level... " >&6; }
@@ -7658,7 +7658,7 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_cc_supports_og" >&5
 $as_echo "$ac_cv_cc_supports_og" >&6; }
-CFLAGS="$save_CFLAGS"
+CFLAGS=$save_CFLAGS
 
 # Optimization messes up debuggers, so turn it off for
 # debug builds.
