@@ -5,5 +5,5 @@ bootstrapping new virtual environments. It is a copy of the
 instead of hardcoding the paths depending only on the platform. Downstream
 Python distributors customizing the ``"posix_prefix"`` or ``"nt"`` install
 scheme in a way that is not compatible with the install scheme used in
-virtual environments are encouraged to supply a modified working ``"venv"``
-scheme.
+virtual environments are encouraged to do it after the ``"venv"`` scheme
+is created or to supply a modified working ``"venv"`` scheme.

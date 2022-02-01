@@ -73,8 +73,8 @@ _INSTALL_SCHEMES = {
 # correct locations.
 # The "venv" install scheme is a scheme to bootstrap virtual environments,
 # essentially identical to the default posix_prefix/nt schemes.
-# Downstream distributors will need to change this,
-# if their posix_prefix/nt scheme is not venv-compatible.
+# Downstream distributors who patch posix_prefix/nt scheme are encouraged to do
+# it after this copy is made:
 if sys.platform == 'win32':
     _INSTALL_SCHEMES['venv'] = dict(_INSTALL_SCHEMES['nt'])
 else:
