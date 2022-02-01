@@ -1056,21 +1056,21 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
 
     @_tp_cache
     def __getitem__(self, args):
-        """Parameterizes an already-parameterized object.
+        # Parameterizes an already-parameterized object.
+        #
+        # For example, we arrive here doing something like:
+        #   T1 = TypeVar('T1')
+        #   T2 = TypeVar('T2')
+        #   T3 = TypeVar('T3')
+        #   class A(Generic[T1]): pass
+        #   B = A[T2]  # B is a _GenericAlias
+        #   C = B[T3]  # Invokes _GenericAlias.__getitem__
+        #
+        # We also arrive here when parameterizing a generic `Callable` alias:
+        #   T = TypeVar('T')
+        #   C = Callable[[T], None]
+        #   C[int]  # Invokes _GenericAlias.__getitem__
 
-        For example, we arrive here doing something like:
-          T1 = TypeVar('T1')
-          T2 = TypeVar('T2')
-          T3 = TypeVar('T3')
-          class A(Generic[T1]): pass
-          B = A[T2]  # B is a _GenericAlias
-          C = B[T3]  # Invokes _GenericAlias.__getitem__
-
-        We also arrive here when parameterizing a generic `Callable` alias:
-          T = TypeVar('T')
-          C = Callable[[T], None]
-          C[int]  # Invokes _GenericAlias.__getitem__
-        """
         if self.__origin__ in (Generic, Protocol):
             # Can't subscript Generic[...] or Protocol[...].
             raise TypeError(f"Cannot subscript already-subscripted {self}")
@@ -1090,20 +1090,19 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         return r
 
     def _determine_new_args(self, args):
-        """Determines new __args__ for __getitem__.
-
-        For example, suppose we had:
-          T1 = TypeVar('T1')
-          T2 = TypeVar('T2')
-          class A(Generic[T1, T2]): pass
-          T3 = TypeVar('T3')
-          B = A[int, T3]
-          C = B[str]
-        `B.__args__` is `(int, T3)`, so `C.__args__` should be `(int, str)`.
-        Unfortunately, this is harder than it looks, because if `T3` is
-        anything more exotic than a plain `TypeVar`, we need to consider
-        edge cases.
-        """
+        # Determines new __args__ for __getitem__.
+        #
+        # For example, suppose we had:
+        #   T1 = TypeVar('T1')
+        #   T2 = TypeVar('T2')
+        #   class A(Generic[T1, T2]): pass
+        #   T3 = TypeVar('T3')
+        #   B = A[int, T3]
+        #   C = B[str]
+        # `B.__args__` is `(int, T3)`, so `C.__args__` should be `(int, str)`.
+        # Unfortunately, this is harder than it looks, because if `T3` is
+        # anything more exotic than a plain `TypeVar`, we need to consider
+        # edge cases.
 
         # In the example above, this would be {T3: str}
         new_arg_by_param = dict(zip(self.__parameters__, args))
