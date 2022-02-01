@@ -9846,7 +9846,7 @@ if test "$ac_cv_sizeof_off_t" -gt "$ac_cv_sizeof_long" -a \
 	"$ac_cv_sizeof_long_long" -ge "$ac_cv_sizeof_off_t"; then
   have_largefile_support="yes"
 else
-  have_largefile_support=no
+  have_largefile_support="no"
 fi
 case $ac_sys_system in #(
   Emscripten) :
