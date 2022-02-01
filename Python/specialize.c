@@ -533,6 +533,14 @@ initial_counter_value(void) {
 #define SPEC_FAIL_STRING_COMPARE 13
 #define SPEC_FAIL_NOT_FOLLOWED_BY_COND_JUMP 14
 #define SPEC_FAIL_BIG_INT 15
+#define SPEC_FAIL_COMPARE_BYTES 16
+#define SPEC_FAIL_COMPARE_TUPLE 17
+#define SPEC_FAIL_COMPARE_LIST 18
+#define SPEC_FAIL_COMPARE_SET 19
+#define SPEC_FAIL_COMPARE_BOOL 20
+#define SPEC_FAIL_COMPARE_BASEOBJECT 21
+#define SPEC_FAIL_COMPARE_FLOAT_LONG 22
+#define SPEC_FAIL_COMPARE_LONG_FLOAT 23
 
 static int
 specialize_module_load_attr(
@@ -1764,6 +1772,16 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
         when_to_jump_mask = (1 | 2 | 4) & ~when_to_jump_mask;
     }
     if (Py_TYPE(lhs) != Py_TYPE(rhs)) {
+#ifdef Py_STATS
+        if (PyFloat_CheckExact(lhs) && PyLong_CheckExact(rhs)) {
+            SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_COMPARE_FLOAT_LONG);
+            goto failure;
+        }
+        if (PyLong_CheckExact(lhs) && PyFloat_CheckExact(rhs)) {
+            SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_COMPARE_LONG_FLOAT);
+            goto failure;
+        }
+#endif
         SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_DIFFERENT_TYPES);
         goto failure;
     }
@@ -1794,6 +1812,32 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
             goto success;
         }
     }
+#ifdef Py_STATS
+    if (PyBytes_CheckExact(lhs)) {
+        SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_COMPARE_BYTES);
+        goto failure;
+    }
+    if (PyTuple_CheckExact(lhs)) {
+        SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_COMPARE_TUPLE);
+        goto failure;
+    }
+    if (PyList_CheckExact(lhs)) {
+        SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_COMPARE_LIST);
+        goto failure;
+    }
+    if (PySet_CheckExact(lhs) || PyFrozenSet_CheckExact(lhs)) {
+        SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_COMPARE_SET);
+        goto failure;
+    }
+    if (PyBool_Check(lhs)) {
+        SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_COMPARE_BOOL);
+        goto failure;
+    }
+    if (Py_TYPE(lhs)->tp_richcompare == PyBaseObject_Type.tp_richcompare) {
+        SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_COMPARE_BASEOBJECT);
+        goto failure;
+    }
+#endif
     SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_OTHER);
 failure:
     STAT_INC(COMPARE_OP, failure);
