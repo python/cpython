@@ -1429,6 +1429,15 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    .. versionadded:: 3.3
 
+.. data:: SF_NOCACHE
+
+   Parameter to the :func:`sendfile` function, if the implementation supports
+   it. The data won't be cached in the virtual memory and will be freed afterwards.
+
+   .. availability:: Unix.
+
+   .. versionadded:: 3.11
+
 
 .. function:: splice(src, dst, count, offset_src=None, offset_dst=None)
 
@@ -4245,20 +4254,20 @@ written in Python, such as a mail server's external command delivery program.
    Returns the current global process times.
    The return value is an object with five attributes:
 
-   * :attr:`user` - user time
-   * :attr:`system` - system time
-   * :attr:`children_user` - user time of all child processes
-   * :attr:`children_system` - system time of all child processes
-   * :attr:`elapsed` - elapsed real time since a fixed point in the past
+   * :attr:`!user` - user time
+   * :attr:`!system` - system time
+   * :attr:`!children_user` - user time of all child processes
+   * :attr:`!children_system` - system time of all child processes
+   * :attr:`!elapsed` - elapsed real time since a fixed point in the past
 
    For backwards compatibility, this object also behaves like a five-tuple
-   containing :attr:`user`, :attr:`system`, :attr:`children_user`,
-   :attr:`children_system`, and :attr:`elapsed` in that order.
+   containing :attr:`!user`, :attr:`!system`, :attr:`!children_user`,
+   :attr:`!children_system`, and :attr:`!elapsed` in that order.
 
    See the Unix manual page
    :manpage:`times(2)` and :manpage:`times(3)` manual page on Unix or `the GetProcessTimes MSDN
    <https://docs.microsoft.com/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocesstimes>`_
-   on Windows. On Windows, only :attr:`user` and :attr:`system` are known; the other attributes are zero.
+   on Windows. On Windows, only :attr:`!user` and :attr:`!system` are known; the other attributes are zero.
 
    .. availability:: Unix, Windows.
 
@@ -4870,7 +4879,7 @@ Random numbers
 
 .. function:: urandom(size)
 
-   Return a string of *size* random bytes suitable for cryptographic use.
+   Return a bytestring of *size* random bytes suitable for cryptographic use.
 
    This function returns random bytes from an OS-specific randomness source.  The
    returned data should be unpredictable enough for cryptographic applications,

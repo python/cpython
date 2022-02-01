@@ -15,6 +15,10 @@ try:
     import _testcapi
 except ImportError:
     _testcapi = None
+try:
+    import _testinternalcapi
+except ImportError:
+    _testinternalcapi = None
 
 try:
     import ctypes
@@ -3345,7 +3349,7 @@ class StreamRecoderTest(unittest.TestCase):
         self.assertEqual(sr.readline(), b'789\n')
 
 
-@unittest.skipIf(_testcapi is None, 'need _testcapi module')
+@unittest.skipIf(_testinternalcapi is None, 'need _testinternalcapi module')
 class LocaleCodecTest(unittest.TestCase):
     """
     Test indirectly _Py_DecodeUTF8Ex() and _Py_EncodeUTF8Ex().
@@ -3359,7 +3363,7 @@ class LocaleCodecTest(unittest.TestCase):
     SURROGATES = "\uDC80\uDCFF"
 
     def encode(self, text, errors="strict"):
-        return _testcapi.EncodeLocaleEx(text, 0, errors)
+        return _testinternalcapi.EncodeLocaleEx(text, 0, errors)
 
     def check_encode_strings(self, errors):
         for text in self.STRINGS:
@@ -3399,7 +3403,7 @@ class LocaleCodecTest(unittest.TestCase):
         self.assertEqual(str(cm.exception), 'unsupported error handler')
 
     def decode(self, encoded, errors="strict"):
-        return _testcapi.DecodeLocaleEx(encoded, 0, errors)
+        return _testinternalcapi.DecodeLocaleEx(encoded, 0, errors)
 
     def check_decode_strings(self, errors):
         is_utf8 = (self.ENCODING == "utf-8")

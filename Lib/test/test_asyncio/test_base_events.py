@@ -18,10 +18,9 @@ from test import support
 from test.support.script_helper import assert_python_ok
 from test.support import os_helper
 from test.support import socket_helper
-
+import warnings
 
 MOCK_ANY = mock.ANY
-PY34 = sys.version_info >= (3, 4)
 
 
 def tearDownModule():
@@ -596,18 +595,10 @@ class BaseEventLoopTests(test_utils.TestCase):
             self.loop.run_forever()
             fut = None # Trigger Future.__del__ or futures._TracebackLogger
             support.gc_collect()
-            if PY34:
-                # Future.__del__ in Python 3.4 logs error with
-                # an actual exception context
-                log.error.assert_called_with(
-                    test_utils.MockPattern('.*exception was never retrieved'),
-                    exc_info=(ZeroDivisionError, MOCK_ANY, MOCK_ANY))
-            else:
-                # futures._TracebackLogger logs only textual traceback
-                log.error.assert_called_with(
-                    test_utils.MockPattern(
-                        '.*exception was never retrieved.*ZeroDiv'),
-                    exc_info=False)
+            # Future.__del__ in logs error with an actual exception context
+            log.error.assert_called_with(
+                test_utils.MockPattern('.*exception was never retrieved'),
+                exc_info=(ZeroDivisionError, MOCK_ANY, MOCK_ANY))
 
     def test_set_exc_handler_invalid(self):
         with self.assertRaisesRegex(TypeError, 'A callable object or None'):
@@ -804,6 +795,17 @@ class BaseEventLoopTests(test_utils.TestCase):
         # make warnings quiet
         task._log_destroy_pending = False
         coro.close()
+
+    def test_create_task_error_closes_coro(self):
+        async def test():
+            pass
+        loop = asyncio.new_event_loop()
+        loop.close()
+        with warnings.catch_warnings(record=True) as w:
+            with self.assertRaises(RuntimeError):
+                asyncio.ensure_future(test(), loop=loop)
+            self.assertEqual(len(w), 0)
+
 
     def test_create_named_task_with_default_factory(self):
         async def test():
@@ -1603,11 +1605,11 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         coro = self.loop.create_datagram_endpoint(
             MyDatagramProto, local_addr='localhost')
         self.assertRaises(
-            AssertionError, self.loop.run_until_complete, coro)
+            TypeError, self.loop.run_until_complete, coro)
         coro = self.loop.create_datagram_endpoint(
             MyDatagramProto, local_addr=('localhost', 1, 2, 3))
         self.assertRaises(
-            AssertionError, self.loop.run_until_complete, coro)
+            TypeError, self.loop.run_until_complete, coro)
 
     def test_create_datagram_endpoint_connect_err(self):
         self.loop.sock_connect = mock.Mock()

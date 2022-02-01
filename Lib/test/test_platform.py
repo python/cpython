@@ -79,6 +79,7 @@ class PlatformTest(unittest.TestCase):
         res = platform.architecture()
 
     @os_helper.skip_unless_symlink
+    @support.requires_subprocess()
     def test_architecture_via_symlink(self): # issue3762
         with support.PythonSymlink() as py:
             cmd = "-c", "import platform; print(platform.architecture())"
@@ -269,6 +270,7 @@ class PlatformTest(unittest.TestCase):
         self.assertEqual(res[:5], expected[:5])
 
     @unittest.skipIf(sys.platform in ['win32', 'OpenVMS'], "uname -p not used")
+    @support.requires_subprocess()
     def test_uname_processor(self):
         """
         On some systems, the processor must match the output

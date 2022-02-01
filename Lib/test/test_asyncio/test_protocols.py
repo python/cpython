@@ -55,3 +55,7 @@ class ProtocolsAbsTests(unittest.TestCase):
         self.assertIsNone(sp.pipe_connection_lost(1, f))
         self.assertIsNone(sp.process_exited())
         self.assertFalse(hasattr(sp, '__dict__'))
+
+
+if __name__ == '__main__':
+    unittest.main()

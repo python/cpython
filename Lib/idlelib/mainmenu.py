@@ -34,8 +34,8 @@ menudefs = [
    None,
    ('Prin_t Window', '<<print-window>>'),
    None,
-   ('_Close', '<<close-window>>'),
-   ('E_xit', '<<close-all-windows>>'),
+   ('_Close Window', '<<close-window>>'),
+   ('E_xit IDLE', '<<close-all-windows>>'),
    ]),
 
  ('edit', [

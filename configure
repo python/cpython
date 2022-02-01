@@ -775,8 +775,6 @@ MODULE__IO_TRUE
 MODULES_SETUP_STDLIB
 MODULE_BUILDTYPE
 TEST_MODULES
-LIBRARY_DEPS
-STATIC_LIBPYTHON
 OPENSSL_RPATH
 OPENSSL_LDFLAGS
 OPENSSL_LIBS
@@ -846,6 +844,8 @@ SHLIB_SUFFIX
 LIBTOOL_CRUFT
 OTHER_LIBTOOL_OPT
 UNIVERSAL_ARCH_FLAGS
+WASM_STDLIB
+WASM_ASSETS_DIR
 LDFLAGS_NOLTO
 LDFLAGS_NODIST
 CFLAGS_NODIST
@@ -875,6 +875,10 @@ READELF
 ARFLAGS
 ac_ct_AR
 AR
+LINK_PYTHON_OBJS
+LINK_PYTHON_DEPS
+LIBRARY_DEPS
+STATIC_LIBPYTHON
 GNULD
 EXPORTSFROM
 EXPORTSYMS
@@ -1002,8 +1006,10 @@ with_universal_archs
 with_framework_name
 enable_framework
 with_cxx_main
+with_emscripten_target
 with_suffix
 enable_shared
+with_static_libpython
 enable_profiling
 with_pydebug
 with_trace_refs
@@ -1045,7 +1051,6 @@ with_openssl_rpath
 with_ssl_default_suites
 with_builtin_hashlib_hashes
 with_experimental_isolated_subinterpreters
-with_static_libpython
 enable_test_modules
 '
       ac_precious_vars='build_alias
@@ -1725,7 +1730,7 @@ Optional Features:
                           Doc/library/socket.rst (default is yes if supported)
   --enable-big-digits[=15|30]
                           use big digits (30 or 15 bits) for Python longs
-                          (default is system-dependent)]
+                          (default is 30)]
   --disable-test-modules  don't build nor install test modules
 
 Optional Packages:
@@ -1751,8 +1756,13 @@ Optional Packages:
   --with-cxx-main[=COMPILER]
                           compile main() and link Python executable with C++
                           compiler specified in COMPILER (default is $CXX)
+  --with-emscripten-target=[browser|node]
+                          Emscripten platform
   --with-suffix=SUFFIX    set executable suffix to SUFFIX (default is empty,
                           yes is mapped to '.exe')
+  --without-static-libpython
+                          do not build libpythonMAJOR.MINOR.a and do not
+                          install python.o (default is yes)
   --with-pydebug          build with Py_DEBUG defined (default is no)
   --with-trace-refs       enable tracing references for debugging purpose
                           (default is no)
@@ -1835,9 +1845,6 @@ Optional Packages:
   --with-experimental-isolated-subinterpreters
                           better isolate subinterpreters, experimental build
                           mode (default is no)
-  --without-static-libpython
-                          do not build libpythonMAJOR.MINOR.a and do not
-                          install python.o (default is yes)
 
 Some influential environment variables:
   PKG_CONFIG  path to pkg-config utility
@@ -6083,6 +6090,11 @@ EOF
 
 if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
   PLATFORM_TRIPLET=`grep -v '^#' conftest.out | grep -v '^ *$' | tr -d ' 	'`
+  case "$build_os" in
+  linux-musl*)
+    PLATFORM_TRIPLET=`echo "$PLATFORM_TRIPLET" | sed 's/linux-gnu/linux-musl/'`
+    ;;
+  esac
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PLATFORM_TRIPLET" >&5
 $as_echo "$PLATFORM_TRIPLET" >&6; }
 else
@@ -6091,10 +6103,20 @@ $as_echo "none" >&6; }
 fi
 rm -f conftest.c conftest.out
 
-if test x$PLATFORM_TRIPLET != xdarwin; then
-  MULTIARCH=$($CC --print-multiarch 2>/dev/null)
-fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for multiarch" >&5
+$as_echo_n "checking for multiarch... " >&6; }
+case $ac_sys_system in #(
+  Darwin*) :
+    MULTIARCH="" ;; #(
+  FreeBSD*) :
+    MULTIARCH="" ;; #(
+  *) :
+    MULTIARCH=$($CC --print-multiarch 2>/dev/null)
+ ;;
+esac
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $MULTIARCH" >&5
+$as_echo "$MULTIARCH" >&6; }
 
 if test x$PLATFORM_TRIPLET != x && test x$MULTIARCH != x; then
   if test x$PLATFORM_TRIPLET != x$MULTIARCH; then
@@ -6103,6 +6125,7 @@ if test x$PLATFORM_TRIPLET != x && test x$MULTIARCH != x; then
 elif test x$PLATFORM_TRIPLET != x && test x$MULTIARCH = x; then
   MULTIARCH=$PLATFORM_TRIPLET
 fi
+
 
 if test x$MULTIARCH != x; then
   MULTIARCH_CPPFLAGS="-DMULTIARCH=\\\"$MULTIARCH\\\""
@@ -6194,6 +6217,41 @@ case $ac_sys_system/$ac_sys_release in #(
      ;;
 esac
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-emscripten-target" >&5
+$as_echo_n "checking for --with-emscripten-target... " >&6; }
+
+# Check whether --with-emscripten-target was given.
+if test "${with_emscripten_target+set}" = set; then :
+  withval=$with_emscripten_target;
+	if test "x$ac_sys_system" = xEmscripten; then :
+
+    case $with_emscripten_target in #(
+  browser) :
+    ac_sys_emscripten_target=browser ;; #(
+  node) :
+    ac_sys_emscripten_target=node ;; #(
+  *) :
+    as_fn_error $? "Invalid argument: --with-emscripten-target=browser|node" "$LINENO" 5
+     ;;
+esac
+
+else
+
+    as_fn_error $? "--with-emscripten-target only applies to Emscripten" "$LINENO" 5
+
+fi
+
+else
+
+  if test "x$ac_sys_system" = xEmscripten; then :
+  ac_sys_emscripten_target=browser
+fi
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_sys_emscripten_target" >&5
+$as_echo "$ac_sys_emscripten_target" >&6; }
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-suffix" >&5
 $as_echo_n "checking for --with-suffix... " >&6; }
 
@@ -6212,8 +6270,12 @@ esac
 
 else
 
-  case $ac_sys_system in #(
-  Emscripten) :
+  case $ac_sys_system/$ac_sys_emscripten_target in #(
+  Emscripten/browser) :
+    EXEEXT=.html ;; #(
+  Emscripten/node) :
+    EXEEXT=.js ;; #(
+  WASI/*) :
     EXEEXT=.wasm ;; #(
   *) :
     EXEEXT=
@@ -6373,6 +6435,30 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_shared" >&5
 $as_echo "$enable_shared" >&6; }
 
+# --with-static-libpython
+STATIC_LIBPYTHON=1
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-static-libpython" >&5
+$as_echo_n "checking for --with-static-libpython... " >&6; }
+
+# Check whether --with-static-libpython was given.
+if test "${with_static_libpython+set}" = set; then :
+  withval=$with_static_libpython;
+if test "$withval" = no
+then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; };
+  STATIC_LIBPYTHON=0
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; };
+fi
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+fi
+
+
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-profiling" >&5
 $as_echo_n "checking for --enable-profiling... " >&6; }
 # Check whether --enable-profiling was given.
@@ -6495,6 +6581,37 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LDLIBRARY" >&5
 $as_echo "$LDLIBRARY" >&6; }
 
+# LIBRARY_DEPS, LINK_PYTHON_OBJS and LINK_PYTHON_DEPS variable
+case $ac_sys_system/$ac_sys_emscripten_target in #(
+  Emscripten/browser) :
+    LIBRARY_DEPS='$(PY3LIBRARY) $(WASM_STDLIB)' ;; #(
+  *) :
+    LIBRARY_DEPS='$(PY3LIBRARY) $(EXPORTSYMS)'
+ ;;
+esac
+LINK_PYTHON_DEPS='$(LIBRARY_DEPS)'
+if test "$PY_ENABLE_SHARED" = 1 || test "$enable_framework" ; then
+    LIBRARY_DEPS="\$(LDLIBRARY) $LIBRARY_DEPS"
+    if test "$STATIC_LIBPYTHON" = 1; then
+        LIBRARY_DEPS="\$(LIBRARY) $LIBRARY_DEPS"
+    fi
+    # Link Python program to the shared library
+    LINK_PYTHON_OBJS='$(BLDLIBRARY)'
+else
+    if test "$STATIC_LIBPYTHON" = 0; then
+        # Build Python needs object files but don't need to build
+        # Python static library
+        LINK_PYTHON_DEPS="$LIBRARY_DEPS \$(LIBRARY_OBJS)"
+    fi
+    LIBRARY_DEPS="\$(LIBRARY) $LIBRARY_DEPS"
+    # Link Python program to object files
+    LINK_PYTHON_OBJS='$(LIBRARY_OBJS)'
+fi
+
+
+
+
+# ar program
 
 if test -n "$ac_tool_prefix"; then
   for ac_prog in ar aal
@@ -6992,6 +7109,7 @@ else
 $as_echo "no" >&6; }
 fi
 
+
 if test "$Py_OPT" = 'true' ; then
   # Intentionally not forcing Py_LTO='true' here.  Too many toolchains do not
   # compile working code using it and both test_distutils and test_gdb are
@@ -7042,8 +7160,10 @@ fi
 
       ;;
   esac
-
-
+elif test "$ac_sys_system" = "Emscripten"; then
+      DEF_MAKE_ALL_RULE="build_platform"
+  REQUIRE_PGO="no"
+  DEF_MAKE_RULE="all"
 else
   DEF_MAKE_ALL_RULE="build_all"
   REQUIRE_PGO="no"
@@ -7503,6 +7623,50 @@ case $CC in
         fi
 esac
 
+# Check if CC supports -Og optimization level
+save_CFLAGS=$CFLAGS
+CFLAGS="-Og"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if $CC supports -Og optimization level" >&5
+$as_echo_n "checking if $CC supports -Og optimization level... " >&6; }
+if ${ac_cv_cc_supports_og+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+      ac_cv_cc_supports_og=yes
+
+else
+
+      ac_cv_cc_supports_og=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_cc_supports_og" >&5
+$as_echo "$ac_cv_cc_supports_og" >&6; }
+CFLAGS=$save_CFLAGS
+
+# Optimization messes up debuggers, so turn it off for
+# debug builds.
+PYDEBUG_CFLAGS="-O0"
+if test "x$ac_cv_cc_supports_og" = xyes; then :
+  PYDEBUG_CFLAGS="-Og"
+fi
+
 # tweak OPT based on compiler and platform, only if the user didn't set
 # it on the command line
 
@@ -7528,13 +7692,7 @@ then
 	case $ac_cv_prog_cc_g in
 	yes)
 	    if test "$Py_DEBUG" = 'true' ; then
-		# Optimization messes up debuggers, so turn it off for
-		# debug builds.
-                if "$CC" -v --help 2>/dev/null |grep -- -Og > /dev/null; then
-                    OPT="-g -Og -Wall"
-                else
-                    OPT="-g -O0 -Wall"
-                fi
+		OPT="-g $PYDEBUG_CFLAGS -Wall"
 	    else
 		OPT="-g $WRAP -O3 -Wall"
 	    fi
@@ -7555,6 +7713,34 @@ then
 	;;
     esac
 fi
+
+# WASM flags
+case $ac_sys_system/$ac_sys_emscripten_target in #(
+  Emscripten/browser) :
+
+    LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 --preload-file \$(WASM_ASSETS_DIR)"
+    WASM_ASSETS_DIR=".\$(prefix)"
+    WASM_STDLIB="\$(WASM_ASSETS_DIR)/local/lib/python\$(VERSION)/os.py"
+   ;; #(
+  Emscripten/node) :
+
+    LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 -s NODERAWFS=1 -s EXIT_RUNTIME=1 -s USE_PTHREADS -s PROXY_TO_PTHREAD"
+    CFLAGS_NODIST="$CFLAGS_NODIST -pthread"
+   ;; #(
+  WASI/*) :
+
+
+$as_echo "#define _WASI_EMULATED_SIGNAL 1" >>confdefs.h
+
+    LIBS="$LIBS -lwasi-emulated-signal"
+    echo "#define _WASI_EMULATED_SIGNAL 1" >> confdefs.h
+
+ ;; #(
+  *) :
+     ;;
+esac
+
+
 
 
 
@@ -8466,7 +8652,7 @@ for ac_header in  \
   alloca.h asm/types.h bluetooth.h conio.h crypt.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
   ieeefp.h io.h langinfo.h libintl.h libutil.h linux/memfd.h linux/random.h linux/soundcard.h \
   linux/tipc.h linux/wait.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
-  sched.h shadow.h signal.h spawn.h stropts.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
+  sched.h setjmp.h shadow.h signal.h spawn.h stropts.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
   sys/loadavg.h sys/lock.h sys/memfd.h sys/mkdev.h sys/mman.h sys/modem.h sys/param.h sys/poll.h \
   sys/random.h sys/resource.h sys/select.h sys/sendfile.h sys/socket.h sys/soundcard.h sys/stat.h \
@@ -8797,7 +8983,8 @@ done
 
 
 # On Linux, can.h, can/bcm.h, can/j1939.h, can/raw.h require sys/socket.h
-for ac_header in linux/can.h linux/can/bcm.h linux/can/j1939.h linux/can/raw.h
+# On NetBSD, netcan/can.h requires sys/socket.h
+for ac_header in linux/can.h linux/can/bcm.h linux/can/j1939.h linux/can/raw.h netcan/can.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "
@@ -10304,7 +10491,7 @@ then
 		# small for the default recursion limit. Increase the stack size
 		# to ensure that tests don't crash
     stack_size="1000000"  # 16 MB
-    if test "$with_ubsan" == "yes"
+    if test "$with_ubsan" = "yes"
     then
         # Undefined behavior sanitizer requires an even deeper stack
         stack_size="4000000"  # 64 MB
@@ -12864,6 +13051,10 @@ $as_echo "#define HAVE_BROKEN_POSIX_SEMAPHORES 1" >>confdefs.h
 $as_echo "#define HAVE_BROKEN_POSIX_SEMAPHORES 1" >>confdefs.h
 
 		       ;;
+      NetBSD/*)
+$as_echo "#define HAVE_BROKEN_POSIX_SEMAPHORES 1" >>confdefs.h
+
+		       ;;
       esac
 
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking if PTHREAD_SCOPE_SYSTEM is supported" >&5
@@ -13553,7 +13744,7 @@ fi
 
 # checks for library functions
 for ac_func in  \
-  accept4 alarm bind_textdomain_codeset chown clock close_range confstr \
+  accept4 alarm bind_textdomain_codeset chmod chown clock close_range confstr \
   copy_file_range ctermid dup3 execv explicit_bzero explicit_memset \
   faccessat fchmod fchmodat fchown fchownat fdopendir fdwalk fexecve \
   fork fork1 fpathconf fstatat ftime ftruncate futimens futimes futimesat \
@@ -13575,7 +13766,7 @@ for ac_func in  \
   sigfillset siginterrupt sigpending sigrelse sigtimedwait sigwait \
   sigwaitinfo snprintf splice strftime strlcpy strsignal symlinkat sync \
   sysconf system tcgetpgrp tcsetpgrp tempnam timegm times tmpfile \
-  tmpnam tmpnam_r truncate ttyname uname unlinkat utimensat utimes vfork \
+  tmpnam tmpnam_r truncate ttyname umask uname unlinkat utimensat utimes vfork \
   wait wait3 wait4 waitid waitpid wcscoll wcsftime wcsxfrm wmemcmp writev \
 
 do :
@@ -13839,9 +14030,9 @@ fi
 
 
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for epoll" >&5
-$as_echo_n "checking for epoll... " >&6; }
-if ${ac_cv_func_epoll+:} false; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for epoll_create" >&5
+$as_echo_n "checking for epoll_create... " >&6; }
+if ${ac_cv_func_epoll_create+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -13850,22 +14041,22 @@ else
 int
 main ()
 {
-void *x=epoll
+void *x=epoll_create
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-  ac_cv_func_epoll=yes
+  ac_cv_func_epoll_create=yes
 else
-  ac_cv_func_epoll=no
+  ac_cv_func_epoll_create=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_epoll" >&5
-$as_echo "$ac_cv_func_epoll" >&6; }
-  if test "x$ac_cv_func_epoll" = xyes; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_epoll_create" >&5
+$as_echo "$ac_cv_func_epoll_create" >&6; }
+  if test "x$ac_cv_func_epoll_create" = xyes; then :
 
 $as_echo "#define HAVE_EPOLL 1" >>confdefs.h
 
@@ -16914,39 +17105,6 @@ $as_echo "#define HAVE_SOCKADDR_ALG 1" >>confdefs.h
 fi
 
 # checks for compiler characteristics
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether char is unsigned" >&5
-$as_echo_n "checking whether char is unsigned... " >&6; }
-if ${ac_cv_c_char_unsigned+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-$ac_includes_default
-int
-main ()
-{
-static int test_array [1 - 2 * !(((char) -1) < 0)];
-test_array [0] = 0;
-return test_array [0];
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ac_cv_c_char_unsigned=no
-else
-  ac_cv_c_char_unsigned=yes
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_c_char_unsigned" >&5
-$as_echo "$ac_cv_c_char_unsigned" >&6; }
-if test $ac_cv_c_char_unsigned = yes && test "$GCC" != yes; then
-  $as_echo "#define __CHAR_UNSIGNED__ 1" >>confdefs.h
-
-fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for an ANSI C-conforming const" >&5
 $as_echo_n "checking for an ANSI C-conforming const... " >&6; }
@@ -21127,40 +21285,6 @@ $as_echo "no" >&6; }
 fi
 
 
-# --with-static-libpython
-STATIC_LIBPYTHON=1
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-static-libpython" >&5
-$as_echo_n "checking for --with-static-libpython... " >&6; }
-
-# Check whether --with-static-libpython was given.
-if test "${with_static_libpython+set}" = set; then :
-  withval=$with_static_libpython;
-if test "$withval" = no
-then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; };
-  STATIC_LIBPYTHON=0
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; };
-fi
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-fi
-
-LIBRARY_DEPS='$(PY3LIBRARY) $(EXPORTSYMS)'
-if test "$PY_ENABLE_SHARED" = 1 || test "$enable_framework" ; then
-    LIBRARY_DEPS="\$(LDLIBRARY) $LIBRARY_DEPS"
-    if test "$STATIC_LIBPYTHON" = 1; then
-        LIBRARY_DEPS="\$(LIBRARY) $LIBRARY_DEPS"
-    fi
-else
-    LIBRARY_DEPS="\$(LIBRARY) $LIBRARY_DEPS"
-fi
-
-
-
 # Check whether to disable test modules. Once set, setup.py will not build
 # test extension modules and "make install" will not install test suites.
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --disable-test-modules" >&5
@@ -21173,8 +21297,8 @@ fi
 if test "$enable_test_modules" = no; then
     TEST_MODULES=no
 else
-    case $ac_sys_system in #(
-  Emscripten) :
+    case $ac_sys_system/$ac_sys_emscripten_target in #(
+  Emscripten/browser) :
     TEST_MODULES=no ;; #(
   *) :
     TEST_MODULES=yes
@@ -21191,22 +21315,26 @@ $as_echo "yes" >&6; }
 fi
 
 
-case $ac_sys_system in #(
-  AIX) :
+case $ac_sys_system/$ac_sys_emscripten_target in #(
+  AIX/*) :
     py_stdlib_not_available="_scproxy spwd" ;; #(
-  VxWorks*) :
+  VxWorks*/*) :
     py_stdlib_not_available="_scproxy _crypt termios grp" ;; #(
-  Darwin) :
+  Darwin/*) :
     py_stdlib_not_available="ossaudiodev spwd" ;; #(
-  CYGWIN*) :
+  CYGWIN*/*) :
     py_stdlib_not_available="_scproxy nis" ;; #(
-  QNX*) :
+  QNX*/*) :
     py_stdlib_not_available="_scproxy nis" ;; #(
-  FreeBSD*) :
+  FreeBSD*/*) :
     py_stdlib_not_available="_scproxy spwd" ;; #(
-  Emscripten) :
+  Emscripten/browser) :
 
     py_stdlib_not_available="_ctypes _curses _curses_panel _dbm _gdbm _multiprocessing _posixshmem _posixsubprocess _scproxy _tkinter _xxsubinterpreters fcntl grp nis ossaudiodev resource readline spwd syslog termios"
+   ;; #(
+      Emscripten/node) :
+
+    py_stdlib_not_available="_ctypes _curses _curses_panel _dbm _gdbm _scproxy _tkinter _xxsubinterpreters grp nis ossaudiodev spwd syslog"
    ;; #(
   *) :
     py_stdlib_not_available="_scproxy"
@@ -21226,6 +21354,8 @@ esac
 $as_echo_n "checking for additional Modules/Setup files... " >&6; }
 case $ac_sys_system in #(
   Emscripten) :
+    MODULES_SETUP_STDLIB=Modules/Setup.stdlib ;; #(
+  WASI) :
     MODULES_SETUP_STDLIB=Modules/Setup.stdlib ;; #(
   *) :
     MODULES_SETUP_STDLIB=
@@ -23303,7 +23433,7 @@ $as_echo_n "checking for stdlib extension module _testimportmultiple... " >&6; }
     py_cv_module__testimportmultiple=n/a ;; #(
   *) :
     if test "$TEST_MODULES" = yes; then :
-  if true; then :
+  if test "$ac_cv_func_dlopen" = yes; then :
   py_cv_module__testimportmultiple=yes
 else
   py_cv_module__testimportmultiple=missing
@@ -23339,7 +23469,7 @@ $as_echo_n "checking for stdlib extension module _testmultiphase... " >&6; }
     py_cv_module__testmultiphase=n/a ;; #(
   *) :
     if test "$TEST_MODULES" = yes; then :
-  if true; then :
+  if test "$ac_cv_func_dlopen" = yes; then :
   py_cv_module__testmultiphase=yes
 else
   py_cv_module__testmultiphase=missing
@@ -23448,7 +23578,7 @@ $as_echo_n "checking for stdlib extension module xxlimited... " >&6; }
     py_cv_module_xxlimited=n/a ;; #(
   *) :
     if test "$with_trace_refs" = "no"; then :
-  if true; then :
+  if test "$ac_cv_func_dlopen" = yes; then :
   py_cv_module_xxlimited=yes
 else
   py_cv_module_xxlimited=missing
@@ -23484,7 +23614,7 @@ $as_echo_n "checking for stdlib extension module xxlimited_35... " >&6; }
     py_cv_module_xxlimited_35=n/a ;; #(
   *) :
     if test "$with_trace_refs" = "no"; then :
-  if true; then :
+  if test "$ac_cv_func_dlopen" = yes; then :
   py_cv_module_xxlimited_35=yes
 else
   py_cv_module_xxlimited_35=missing
