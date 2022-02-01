@@ -1999,7 +1999,7 @@ def wait_process(pid, *, exitcode, timeout=None):
             # process is still running
 
             dt = time.monotonic() - t0
-            if dt > SHORT_TIMEOUT:
+            if dt > timeout:
                 try:
                     os.kill(pid, signal.SIGKILL)
                     os.waitpid(pid, 0)
