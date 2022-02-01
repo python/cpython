@@ -41,7 +41,7 @@ typedef struct _Py_Identifier {
     Py_ssize_t index;
 } _Py_Identifier;
 
-#if !defined(Py_BUILD_CORE) || defined(Py_BUILD_CORE_MODULE)
+#if defined(NEEDS_PY_IDENTIFIER) || !defined(Py_BUILD_CORE)
 // For now we are keeping _Py_IDENTIFIER for continued use
 // in non-builtin extensions (and naughty PyPI modules).
 
@@ -49,7 +49,7 @@ typedef struct _Py_Identifier {
 #define _Py_static_string(varname, value)  static _Py_Identifier varname = _Py_static_string_init(value)
 #define _Py_IDENTIFIER(varname) _Py_static_string(PyId_##varname, #varname)
 
-#endif  /* ! Py_BUILD_CORE */
+#endif  /* NEEDS_PY_IDENTIFIER */
 
 /* buffer interface */
 typedef struct bufferinfo {

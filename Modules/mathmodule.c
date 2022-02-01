@@ -55,6 +55,7 @@ raised for division by zero and mod by zero.
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
+#define NEEDS_PY_IDENTIFIER
 
 #include "Python.h"
 #include "pycore_bitutils.h"      // _Py_bit_length()

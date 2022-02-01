@@ -54,6 +54,8 @@
 
  */
 
+#define NEEDS_PY_IDENTIFIER
+
 #include "Python.h"
 #include "structmember.h"         // PyMemberDef
 
