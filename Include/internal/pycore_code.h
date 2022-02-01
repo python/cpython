@@ -309,7 +309,6 @@ typedef struct _object_stats {
     uint64_t allocations;
     uint64_t frees;
     uint64_t new_values;
-    uint64_t new_dict;
     uint64_t dict_materialized_on_request;
     uint64_t dict_materialized_new_key;
     uint64_t dict_materialized_too_big;

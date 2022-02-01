@@ -4997,11 +4997,9 @@ _PyObject_InitializeDict(PyObject *obj)
     PyObject *dict;
     if (_PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE) && CACHED_KEYS(tp)) {
         dictkeys_incref(CACHED_KEYS(tp));
-        OBJECT_STAT_INC(new_dict);
         dict = new_dict_with_shared_keys(CACHED_KEYS(tp));
     }
     else {
-        OBJECT_STAT_INC(new_dict);
         dict = PyDict_New();
     }
     if (dict == NULL) {
