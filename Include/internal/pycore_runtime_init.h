@@ -841,6 +841,7 @@ extern "C" {
                 INIT_ID(copy), \
                 INIT_ID(copyreg), \
                 INIT_ID(decode), \
+                INIT_ID(default), \
                 INIT_ID(defaultaction), \
                 INIT_ID(difference_update), \
                 INIT_ID(dispatch_table), \
@@ -861,6 +862,7 @@ extern "C" {
                 INIT_ID(get), \
                 INIT_ID(get_source), \
                 INIT_ID(getattr), \
+                INIT_ID(ignore), \
                 INIT_ID(importlib), \
                 INIT_ID(intersection), \
                 INIT_ID(isatty), \
