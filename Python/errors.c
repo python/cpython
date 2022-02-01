@@ -526,12 +526,18 @@ PyErr_GetActiveException(void)
 }
 
 void
-PyErr_SetActiveException(PyObject *exc)
+_PyErr_SetActiveException(PyThreadState *tstate, PyObject *exc)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
     PyObject *oldexc = tstate->exc_info->exc_value;
     tstate->exc_info->exc_value = Py_XNewRef(exc);
     Py_XDECREF(oldexc);
+}
+
+void
+PyErr_SetActiveException(PyObject *exc)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyErr_SetActiveException(tstate, exc);
 }
 
 void
