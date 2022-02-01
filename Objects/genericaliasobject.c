@@ -5,6 +5,8 @@
 #include "pycore_unionobject.h"   // _Py_union_type_or, _PyGenericAlias_Check
 #include "structmember.h"         // PyMemberDef
 
+#include <stdbool.h>
+
 typedef struct {
     PyObject_HEAD
     PyObject *origin;
@@ -13,7 +15,7 @@ typedef struct {
     PyObject* weakreflist;
     // Whether we're a starred type, e.g. *tuple[int].
     // Only supported for `tuple`.
-    int starred;
+    bool starred;
 } gaobject;
 
 typedef struct {
@@ -649,7 +651,7 @@ ga_iternext(gaiterobject *gi) {
     if (starred_tuple == NULL) {
         return NULL;
     }
-    ((gaobject *)starred_tuple)->starred = 1;
+    ((gaobject *)starred_tuple)->starred = true;
     Py_SETREF(gi->obj, NULL);
     return starred_tuple;
 }
