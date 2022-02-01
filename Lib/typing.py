@@ -999,31 +999,30 @@ class _BaseGenericAlias(_Final, _root=True):
 
 
 class _GenericAlias(_BaseGenericAlias, _root=True):
-    """The type of parameterized generics.
-
-    That is, for example, `type(List[int])` is `_GenericAlias`.
-
-    Objects which are instances of this class include:
-    * Parameterized container types, e.g. `Tuple[int]`, `List[int]`
-      * Note that native container types, e.g. `tuple`, `list`, use
-        `types.GenericAlias` instead.
-    * Parameterized classes:
-        T = TypeVar('T')
-        class C(Generic[T]): pass
-        # C[int] is a _GenericAlias
-    * `Callable` aliases, generic `Callable` aliases, and
-      parameterized `Callable` aliases:
-       T = TypeVar('T')
-       # _CallableGenericAlias inherits from _GenericAlias.
-       A = Callable[[], None]  # _CallableGenericAlias
-       B = Callable[[T], None]  # _CallableGenericAlias
-       C = B[int]  # _CallableGenericAlias
-    * Parameterized `Final`, `ClassVar` and `TypeGuard`:
-       # All _GenericAlias
-       Final[int]
-       ClassVar[float]
-       TypeVar[bool]
-    """
+    # The type of parameterized generics.
+    #
+    # That is, for example, `type(List[int])` is `_GenericAlias`.
+    #
+    # Objects which are instances of this class include:
+    # * Parameterized container types, e.g. `Tuple[int]`, `List[int]`.
+    #  * Note that native container types, e.g. `tuple`, `list`, use
+    #    `types.GenericAlias` instead.
+    # * Parameterized classes:
+    #     T = TypeVar('T')
+    #     class C(Generic[T]): pass
+    #     # C[int] is a _GenericAlias
+    # * `Callable` aliases, generic `Callable` aliases, and
+    #   parameterized `Callable` aliases:
+    #     T = TypeVar('T')
+    #     # _CallableGenericAlias inherits from _GenericAlias.
+    #     A = Callable[[], None]  # _CallableGenericAlias
+    #     B = Callable[[T], None]  # _CallableGenericAlias
+    #     C = B[int]  # _CallableGenericAlias
+    # * Parameterized `Final`, `ClassVar` and `TypeGuard`:
+    #     # All _GenericAlias
+    #     Final[int]
+    #     ClassVar[float]
+    #     TypeVar[bool]
 
     def __init__(self, origin, args, *, inst=True, name=None,
                  _typevar_types=TypeVar,
