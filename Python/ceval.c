@@ -2238,11 +2238,11 @@ handle_eval_breaker:
             PyCodeObject *code = (PyCodeObject *)getitem->func_code;
             size_t size = code->co_nlocalsplus + code->co_stacksize + FRAME_SPECIALS_SIZE;
             assert(code->co_argcount == 2);
-            CALL_STAT_INC(frames_pushed);
             InterpreterFrame *new_frame = _PyThreadState_BumpFramePointer(tstate, size);
             if (new_frame == NULL) {
                 goto error;
             }
+            CALL_STAT_INC(frames_pushed);
             _PyFrame_InitializeSpecials(new_frame, getitem,
                                         NULL, code->co_nlocalsplus);
             STACK_SHRINK(2);
@@ -4661,6 +4661,7 @@ handle_eval_breaker:
             if (new_frame == NULL) {
                 goto error;
             }
+            CALL_STAT_INC(inlined_py_calls);
             STACK_SHRINK(argcount);
             for (int i = 0; i < argcount; i++) {
                 new_frame->localsplus[i] = stack_pointer[i];
@@ -4691,6 +4692,7 @@ handle_eval_breaker:
             if (new_frame == NULL) {
                 goto error;
             }
+            CALL_STAT_INC(inlined_py_calls);
             STACK_SHRINK(argcount);
             for (int i = 0; i < argcount; i++) {
                 new_frame->localsplus[i] = stack_pointer[i];
@@ -4709,7 +4711,6 @@ handle_eval_breaker:
             _PyFrame_SetStackPointer(frame, stack_pointer);
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
-            CALL_STAT_INC(inlined_py_calls);
             goto start_frame;
         }
 
