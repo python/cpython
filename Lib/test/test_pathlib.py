@@ -1456,6 +1456,28 @@ class _BasePathTest(object):
         p = self.cls.cwd()
         self._test_cwd(p)
 
+    def test_absolute_common(self):
+        P = self.cls
+
+        with mock.patch("pathlib._normal_accessor.getcwd") as getcwd:
+            getcwd.return_value = BASE
+
+            # Simple relative paths.
+            self.assertEqual(str(P().absolute()), BASE)
+            self.assertEqual(str(P('.').absolute()), BASE)
+            self.assertEqual(str(P('a').absolute()), os.path.join(BASE, 'a'))
+            self.assertEqual(str(P('a', 'b', 'c').absolute()), os.path.join(BASE, 'a', 'b', 'c'))
+
+            # Symlinks should not be resolved.
+            self.assertEqual(str(P('linkB', 'fileB').absolute()), os.path.join(BASE, 'linkB', 'fileB'))
+            self.assertEqual(str(P('brokenLink').absolute()), os.path.join(BASE, 'brokenLink'))
+            self.assertEqual(str(P('brokenLinkLoop').absolute()), os.path.join(BASE, 'brokenLinkLoop'))
+
+            # '..' entries should be preserved and not normalised.
+            self.assertEqual(str(P('..').absolute()), os.path.join(BASE, '..'))
+            self.assertEqual(str(P('a', '..').absolute()), os.path.join(BASE, 'a', '..'))
+            self.assertEqual(str(P('..', 'b').absolute()), os.path.join(BASE, '..', 'b'))
+
     def _test_home(self, p):
         q = self.cls(os.path.expanduser('~'))
         self.assertEqual(p, q)
@@ -2463,6 +2485,17 @@ class PathTest(_BasePathTest, unittest.TestCase):
 class PosixPathTest(_BasePathTest, unittest.TestCase):
     cls = pathlib.PosixPath
 
+    def test_absolute(self):
+        P = self.cls
+        self.assertEqual(str(P('/').absolute()), '/')
+        self.assertEqual(str(P('/a').absolute()), '/a')
+        self.assertEqual(str(P('/a/b').absolute()), '/a/b')
+
+        # '//'-prefixed absolute path (supported by POSIX).
+        self.assertEqual(str(P('//').absolute()), '//')
+        self.assertEqual(str(P('//a').absolute()), '//a')
+        self.assertEqual(str(P('//a/b').absolute()), '//a/b')
+
     def _check_symlink_loop(self, *args, strict=True):
         path = self.cls(*args)
         with self.assertRaises(RuntimeError):
@@ -2627,6 +2660,31 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
 @only_nt
 class WindowsPathTest(_BasePathTest, unittest.TestCase):
     cls = pathlib.WindowsPath
+
+    def test_absolute(self):
+        P = self.cls
+
+        # Simple absolute paths.
+        self.assertEqual(str(P('c:\\').absolute()), 'c:\\')
+        self.assertEqual(str(P('c:\\a').absolute()), 'c:\\a')
+        self.assertEqual(str(P('c:\\a\\b').absolute()), 'c:\\a\\b')
+
+        # UNC absolute paths.
+        share = '\\\\server\\share\\'
+        self.assertEqual(str(P(share).absolute()), share)
+        self.assertEqual(str(P(share + 'a').absolute()), share + 'a')
+        self.assertEqual(str(P(share + 'a\\b').absolute()), share + 'a\\b')
+
+        # UNC relative paths.
+        with mock.patch("pathlib._normal_accessor.getcwd") as getcwd:
+            getcwd.return_value = share
+
+            self.assertEqual(str(P().absolute()), share)
+            self.assertEqual(str(P('.').absolute()), share)
+            self.assertEqual(str(P('a').absolute()), os.path.join(share, 'a'))
+            self.assertEqual(str(P('a', 'b', 'c').absolute()),
+                             os.path.join(share, 'a', 'b', 'c'))
+
 
     def test_glob(self):
         P = self.cls

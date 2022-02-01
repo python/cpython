@@ -200,6 +200,11 @@ extern int _Py_CheckSlotResult(
 // See also the Py_TPFLAGS_READY flag.
 #define _PyType_IsReady(type) ((type)->tp_dict != NULL)
 
+// Test if a type supports weak references
+static inline int _PyType_SUPPORTS_WEAKREFS(PyTypeObject *type) {
+    return (type->tp_weaklistoffset > 0);
+}
+
 extern PyObject* _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems);
 
 extern int _PyObject_InitializeDict(PyObject *obj);
@@ -226,6 +231,10 @@ extern void _PyObject_ClearInstanceAttributes(PyObject *self);
 extern void _PyObject_FreeInstanceAttributes(PyObject *self);
 extern int _PyObject_IsInstanceDictEmpty(PyObject *);
 extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
+
+// Access macro to the members which are floating "behind" the object
+#define _PyHeapType_GET_MEMBERS(etype) \
+    ((PyMemberDef *)(((char *)etype) + Py_TYPE(etype)->tp_basicsize))
 
 #ifdef __cplusplus
 }
