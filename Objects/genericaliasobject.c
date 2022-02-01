@@ -677,7 +677,7 @@ ga_iter(PyObject *self) {
     if (gi == NULL)
         return NULL;
     gi->obj = Py_NewRef(self);
-    _PyObject_GC_TRACK(gi);
+    PyObject_GC_Track(gi);
     return (PyObject *)gi;
 }
 
