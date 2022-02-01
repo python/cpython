@@ -1959,11 +1959,13 @@ def no_type_check(arg):
     This mutates the function(s) or class(es) in place.
     """
     if isinstance(arg, type):
-        arg_attrs = arg.__dict__.copy()
-        for attr, val in arg.__dict__.items():
-            if val in arg.__bases__ + (arg,):
-                arg_attrs.pop(attr)
-        for obj in arg_attrs.values():
+        for obj in arg.__dict__.values():
+            if (hasattr(obj, '__qualname__')
+                    and obj.__qualname__ != f'{arg.__qualname__}.{obj.__name__}'):
+                # We only modify objects that are defined in this type directly.
+                # If classes / methods are nested in multiple layers,
+                # we will modify them when processing their direct holders.
+                continue
             if isinstance(obj, types.FunctionType):
                 obj.__no_type_check__ = True
             if isinstance(obj, type):

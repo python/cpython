@@ -1,0 +1,2 @@
+Improve :func:`typing.no_type_check` to not modify foreign functions and
+types.
