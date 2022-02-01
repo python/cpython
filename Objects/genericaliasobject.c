@@ -658,7 +658,7 @@ ga_iternext(gaiterobject *gi) {
 
 static void
 ga_iter_dealloc(gaiterobject *gi) {
-    _PyObject_GC_UNTRACK(gi);
+    PyObject_GC_UnTrack(gi);
     PyObject_GC_Del(gi);
 }
 
