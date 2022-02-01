@@ -6,3 +6,4 @@ Fix wasm32-emscripten test failures and platform issues.
 - Add workarounds for missing _multiprocessing and failing socket.accept()
 - Enable bzip2 again
 - Disable large file support
+- Disable signal.alarm for now
