@@ -1,1 +1,1 @@
-Do not create frame objects for creating :class:`super` object.
+Do not create frame objects for creating :class:`super` object. Patch by Kumar Aditya.
