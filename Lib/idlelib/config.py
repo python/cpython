@@ -778,7 +778,7 @@ class IdleConf:
         for key in self.defaultCfg:
             self.defaultCfg[key].Load()
         for key in self.userCfg:
-            self.userCfg[key].Load() #not nessicerally same keys, could be more
+            self.userCfg[key].Load() #not necessarily same keys, could be more
 
     def SaveUserCfgFiles(self):
         "Write all loaded user configuration files to disk."
