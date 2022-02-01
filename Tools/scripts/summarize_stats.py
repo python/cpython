@@ -105,7 +105,17 @@ def main():
             total += value
     for key, value in stats.items():
         if "Calls to" in key:
-            print(f"{key}: {value} {100*value/total:0.1f}%")
+            print(f"    {key}: {value} {100*value/total:0.1f}%")
+    print("Object stats:")
+    total = stats.get("Object new values")
+    for key, value in stats.items():
+        if key.startswith("Object"):
+            if "materialize" in key:
+                print(f"    {key}: {value} {100*value/total:0.1f}%")
+            else:
+                print(f"    {key}: {value}")
+    total = 0
+
 
 if __name__ == "__main__":
     main()
