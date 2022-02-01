@@ -1,0 +1,3 @@
+Propagates :attribute:`~typing._GenericAlias._typevar_types` and
+:attribute:`~typing._GenericAlias._paramspec_tvars` via
+:method:`~typing._GenericAlias.copy_with`.

@@ -305,6 +305,14 @@ class BaseTest(unittest.TestCase):
             self.assertEqual(copied.__args__, alias.__args__)
             self.assertEqual(copied.__parameters__, alias.__parameters__)
 
+    def test_copy_with(self):
+        # bpo-46581
+        from typing import Callable, ParamSpec
+        P = ParamSpec('P')
+        original = Callable[P, int]
+        copied = original.copy_with((P, int))
+        self.assertEqual(original.__parameters__, copied.__parameters__)
+
     def test_union(self):
         a = typing.Union[list[int], list[str]]
         self.assertEqual(a.__args__, (list[int], list[str]))
