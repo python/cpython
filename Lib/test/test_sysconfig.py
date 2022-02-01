@@ -139,6 +139,37 @@ class TestSysConfig(unittest.TestCase):
         self.assertIsInstance(schemes, dict)
         self.assertEqual(set(schemes), expected_schemes)
 
+    def test_venv_scheme(self):
+        # The following directories were hardcoded in the venv module
+        # before bpo-45413, here we assert the venv scheme does not regress
+        if sys.platform == 'win32':
+            binname = 'Scripts'
+            incpath = 'Include'
+            libpath = os.path.join('Lib', 'site-packages')
+        else:
+            binname = 'bin'
+            incpath = 'include'
+            libpath = os.path.join('lib',
+                                   'python%d.%d' % sys.version_info[:2],
+                                   'site-packages')
+
+        # Resolve the paths in prefix
+        binname = os.path.join(sys.prefix, binname)
+        incpath = os.path.join(sys.prefix, incpath)
+        libpath = os.path.join(sys.prefix, libpath)
+
+        self.assertEqual(binname, sysconfig.get_path('scripts', scheme='venv'))
+        self.assertEqual(libpath, sysconfig.get_path('purelib', scheme='venv'))
+
+        # The include directory on POSIX isn't exactly the same as before,
+        # but it is "within"
+        sysconfig_includedir = sysconfig.get_path('include', scheme='venv')
+        if sys.platform == 'win32':
+            self.assertEqual(incpath, sysconfig.get_path('include', scheme='venv'))
+        else:
+            self.assertTrue(sysconfig_includedir.startswith(incpath + os.sep))
+
+
     def test_get_config_vars(self):
         cvars = get_config_vars()
         self.assertIsInstance(cvars, dict)
