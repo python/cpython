@@ -193,7 +193,7 @@ class IdleConf:
                     except OSError:
                         pass
                 userDir = '~'
-        else: # still no path to home!
+        if userDir == '~': # still no path to home!
             # traditionally IDLE has defaulted to os.getcwd(), is this adequate?
             userDir = os.getcwd()
         userDir = os.path.join(userDir, cfgDir)
