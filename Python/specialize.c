@@ -1621,6 +1621,14 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                 goto success;
             }
             if (PyFloat_CheckExact(lhs)) {
+                if (adaptive->original_oparg == NB_INPLACE_ADD &&
+                    (_Py_OPCODE(instr[1]) == STORE_FAST ||
+                     _Py_OPCODE(instr[1]) == STORE_FAST__LOAD_FAST))
+                {
+                    *instr = _Py_MAKECODEUNIT(BINARY_OP_INPLACE_ADD_FLOAT,
+                                              _Py_OPARG(*instr));
+                    goto success;
+                }
                 *instr = _Py_MAKECODEUNIT(BINARY_OP_ADD_FLOAT,
                                           _Py_OPARG(*instr));
                 goto success;
@@ -1655,6 +1663,14 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                 goto success;
             }
             if (PyFloat_CheckExact(lhs)) {
+                if (adaptive->original_oparg == NB_INPLACE_SUBTRACT &&
+                    (_Py_OPCODE(instr[1]) == STORE_FAST ||
+                     _Py_OPCODE(instr[1]) == STORE_FAST__LOAD_FAST))
+                {
+                    *instr = _Py_MAKECODEUNIT(BINARY_OP_INPLACE_SUBTRACT_FLOAT,
+                                              _Py_OPARG(*instr));
+                    goto success;
+                }
                 *instr = _Py_MAKECODEUNIT(BINARY_OP_SUBTRACT_FLOAT,
                                           _Py_OPARG(*instr));
                 goto success;
