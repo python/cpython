@@ -1975,8 +1975,8 @@ Functions and decorators
                    print("It's an int")
                case str():
                    print("It's a str")
-               case _:
-                   assert_never(arg)
+               case _ as unreachable:
+                   assert_never(unreachable)
 
    If a type checker finds that a call to ``assert_never()`` is
    reachable, it will emit an error.
