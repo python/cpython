@@ -106,6 +106,9 @@ def main():
     for key, value in stats.items():
         if "Calls to" in key:
             print(f"    {key}: {value} {100*value/total:0.1f}%")
+    for key, value in stats.items():
+        if key.startswith("Frame"):
+            print(f"    {key}: {value} {100*value/total:0.1f}%")
     print("Object stats:")
     total = stats.get("Object new values")
     for key, value in stats.items():
