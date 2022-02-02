@@ -855,7 +855,7 @@ tok_underflow_interactive(struct tok_state *tok) {
         tok->done = E_INTERACT_STOP;
         return 1;
     }
-    char *newtok = PyOS_Readline(stdin, stdout, tok->prompt);
+    char *newtok = PyOS_Readline(tok->fp ? tok->fp : stdin, stdout, tok->prompt);
     if (newtok != NULL) {
         char *translated = translate_newlines(newtok, 0, tok);
         PyMem_Free(newtok);

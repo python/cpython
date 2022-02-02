@@ -20,6 +20,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import test.support
 import unittest
 
 # Local imports
@@ -589,25 +590,31 @@ class TestParserIdempotency(support.TestCase):
 
     """A cut-down version of pytree_idempotency.py."""
 
+    def parse_file(self, filepath):
+        if test.support.verbose:
+            print(f"Parse file: {filepath}")
+        with open(filepath, "rb") as fp:
+            encoding = tokenize.detect_encoding(fp.readline)[0]
+        self.assertIsNotNone(encoding,
+                             "can't detect encoding for %s" % filepath)
+        with open(filepath, "r", encoding=encoding) as fp:
+            source = fp.read()
+        try:
+            tree = driver.parse_string(source)
+        except ParseError:
+            try:
+                tree = driver_no_print_statement.parse_string(source)
+            except ParseError as err:
+                self.fail('ParseError on file %s (%s)' % (filepath, err))
+        new = str(tree)
+        if new != source:
+            print(diff_texts(source, new, filepath))
+            self.fail("Idempotency failed: %s" % filepath)
+
     def test_all_project_files(self):
         for filepath in support.all_project_files():
-            with open(filepath, "rb") as fp:
-                encoding = tokenize.detect_encoding(fp.readline)[0]
-            self.assertIsNotNone(encoding,
-                                 "can't detect encoding for %s" % filepath)
-            with open(filepath, "r", encoding=encoding) as fp:
-                source = fp.read()
-            try:
-                tree = driver.parse_string(source)
-            except ParseError:
-                try:
-                    tree = driver_no_print_statement.parse_string(source)
-                except ParseError as err:
-                    self.fail('ParseError on file %s (%s)' % (filepath, err))
-            new = str(tree)
-            if new != source:
-                print(diff_texts(source, new, filepath))
-                self.fail("Idempotency failed: %s" % filepath)
+            with self.subTest(filepath=filepath):
+                self.parse_file(filepath)
 
     def test_extended_unpacking(self):
         driver.parse_string("a, *b, c = x\n")
