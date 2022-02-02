@@ -37,7 +37,8 @@ This module defines the following functions:
 .. function:: load(fp, /, *, parse_float=float)
 
    Read a TOML file. The first argument should be a readable and binary file object.
-   Return a :class:`dict`.
+   Return a :class:`dict`. Convert TOML types to Python using this
+   :ref:`conversion table <toml-to-py-table>`.
 
    *parse_float* will be called with the string of every TOML
    float to be decoded.  By default, this is equivalent to ``float(num_str)``.
@@ -51,8 +52,9 @@ This module defines the following functions:
 
 .. function:: loads(s, /, *, parse_float=float)
 
-   Load TOML from a :class:`str` object. The *parse_float* argument has the
-   same meaning as in :func:`load`.
+   Load TOML from a :class:`str` object. Return a :class:`dict`. Convert TOML
+   types to Python using this :ref:`conversion table <toml-to-py-table>`. The
+   *parse_float* argument has the same meaning as in :func:`load`.
 
    A :exc:`TOMLDecodeError` will be raised on an invalid TOML document.
 
@@ -84,3 +86,33 @@ Parsing a TOML string::
     """
 
     data = tomllib.loads(toml_str)
+
+
+Conversion Table
+----------------
+
+.. _toml-to-py-table:
+
++------------------+--------------------------------------------------------------------------------------+
+| TOML             | Python                                                                               |
++==================+======================================================================================+
+| table            | dict                                                                                 |
++------------------+--------------------------------------------------------------------------------------+
+| string           | str                                                                                  |
++------------------+--------------------------------------------------------------------------------------+
+| integer          | int                                                                                  |
++------------------+--------------------------------------------------------------------------------------+
+| float            | float (configurable with *parse_float*)                                              |
++------------------+--------------------------------------------------------------------------------------+
+| boolean          | bool                                                                                 |
++------------------+--------------------------------------------------------------------------------------+
+| offset date-time | datetime.datetime (``tzinfo`` attribute set to an instance of ``datetime.timezone``) |
++------------------+--------------------------------------------------------------------------------------+
+| local date-time  | datetime.datetime (``tzinfo`` attribute set to ``None``)                             |
++------------------+--------------------------------------------------------------------------------------+
+| local date       | datetime.date                                                                        |
++------------------+--------------------------------------------------------------------------------------+
+| local time       | datetime.time                                                                        |
++------------------+--------------------------------------------------------------------------------------+
+| array            | list                                                                                 |
++------------------+--------------------------------------------------------------------------------------+
