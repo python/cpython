@@ -1201,6 +1201,28 @@ ConfigParser Objects
       names is stripped before :meth:`optionxform` is called.
 
 
+   .. method:: readfp(fp, filename=None)
+
+      .. deprecated:: 3.2
+         Use :meth:`read_file` instead.
+
+      .. versionchanged:: 3.2
+         :meth:`readfp` now iterates on *fp* instead of calling ``fp.readline()``.
+
+      For existing code calling :meth:`readfp` with arguments which don't
+      support iteration, the following generator may be used as a wrapper
+      around the file-like object::
+
+         def readline_generator(fp):
+             line = fp.readline()
+             while line:
+                 yield line
+                 line = fp.readline()
+
+      Instead of ``parser.readfp(fp)`` use
+      ``parser.read_file(readline_generator(fp))``.
+
+
 .. data:: MAX_INTERPOLATION_DEPTH
 
    The maximum depth for recursive interpolation for :meth:`get` when the *raw*
@@ -1337,9 +1359,6 @@ Exceptions
    .. versionchanged:: 3.2
       The ``filename`` attribute and :meth:`__init__` argument were renamed to
       ``source`` for consistency.
-
-   .. versionchanged:: 3.11
-      The deprecated ``filename`` attribute was removed.
 
 
 .. rubric:: Footnotes

@@ -114,6 +114,7 @@ As a consequence of this, split keys have a maximum size of 16.
 #include "Python.h"
 #include "pycore_bitutils.h"      // _Py_bit_length
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_code.h"          // stats
 #include "pycore_dict.h"          // PyDictKeysObject
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
@@ -4990,6 +4991,7 @@ _PyObject_InitializeDict(PyObject *obj)
         return 0;
     }
     if (tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
+        OBJECT_STAT_INC(new_values);
         return init_inline_values(obj, tp);
     }
     PyObject *dict;
@@ -5033,6 +5035,7 @@ _PyObject_MakeDictFromInstanceAttributes(PyObject *obj, PyDictValues *values)
 {
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
     PyDictKeysObject *keys = CACHED_KEYS(Py_TYPE(obj));
+    OBJECT_STAT_INC(dict_materialized_on_request);
     return make_dict_from_instance_attributes(keys, values);
 }
 
@@ -5051,6 +5054,14 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
             PyErr_SetObject(PyExc_AttributeError, name);
             return -1;
         }
+#ifdef Py_STATS
+        if (shared_keys_usable_size(keys) > 14) {
+            OBJECT_STAT_INC(dict_materialized_too_big);
+        }
+        else {
+            OBJECT_STAT_INC(dict_materialized_new_key);
+        }
+#endif
         PyObject *dict = make_dict_from_instance_attributes(keys, values);
         if (dict == NULL) {
             return -1;
@@ -5183,6 +5194,7 @@ PyObject_GenericGetDict(PyObject *obj, void *context)
         PyObject **dictptr = _PyObject_ManagedDictPointer(obj);
         if (*values_ptr) {
             assert(*dictptr == NULL);
+            OBJECT_STAT_INC(dict_materialized_on_request);
             *dictptr = dict = make_dict_from_instance_attributes(CACHED_KEYS(tp), *values_ptr);
             if (dict != NULL) {
                 *values_ptr = NULL;

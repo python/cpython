@@ -5942,7 +5942,7 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for the platform triplet based on compiler characteristics" >&5
 $as_echo_n "checking for the platform triplet based on compiler characteristics... " >&6; }
-cat >> conftest.c <<EOF
+cat > conftest.c <<EOF
 #undef bfin
 #undef cris
 #undef fr30
@@ -6169,7 +6169,7 @@ $as_echo "$ac_cv_wl_no_as_needed" >&6; }
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for the Android API level" >&5
 $as_echo_n "checking for the Android API level... " >&6; }
-cat >> conftest.c <<EOF
+cat > conftest.c <<EOF
 #ifdef __ANDROID__
 android_api = __ANDROID_API__
 arm_arch = __ARM_ARCH
@@ -7623,6 +7623,50 @@ case $CC in
         fi
 esac
 
+# Check if CC supports -Og optimization level
+save_CFLAGS=$CFLAGS
+CFLAGS="-Og"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if $CC supports -Og optimization level" >&5
+$as_echo_n "checking if $CC supports -Og optimization level... " >&6; }
+if ${ac_cv_cc_supports_og+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+      ac_cv_cc_supports_og=yes
+
+else
+
+      ac_cv_cc_supports_og=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_cc_supports_og" >&5
+$as_echo "$ac_cv_cc_supports_og" >&6; }
+CFLAGS=$save_CFLAGS
+
+# Optimization messes up debuggers, so turn it off for
+# debug builds.
+PYDEBUG_CFLAGS="-O0"
+if test "x$ac_cv_cc_supports_og" = xyes; then :
+  PYDEBUG_CFLAGS="-Og"
+fi
+
 # tweak OPT based on compiler and platform, only if the user didn't set
 # it on the command line
 
@@ -7648,13 +7692,7 @@ then
 	case $ac_cv_prog_cc_g in
 	yes)
 	    if test "$Py_DEBUG" = 'true' ; then
-		# Optimization messes up debuggers, so turn it off for
-		# debug builds.
-                if "$CC" -v --help 2>/dev/null |grep -- -Og > /dev/null; then
-                    OPT="-g -Og -Wall"
-                else
-                    OPT="-g -O0 -Wall"
-                fi
+		OPT="-g $PYDEBUG_CFLAGS -Wall"
 	    else
 		OPT="-g $WRAP -O3 -Wall"
 	    fi
