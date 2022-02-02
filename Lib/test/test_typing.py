@@ -2681,8 +2681,9 @@ class AssertTypeTests(BaseTestCase):
 
     def test_errors(self):
         # Bogus calls are not expected to fail.
-        assert_type(42, 42)
-        assert_type(42, 'hello')
+        arg = 42
+        self.assertIs(assert_type(arg, 42), arg)
+        self.assertIs(assert_type(arg, 'hello'), arg)
 
 
 class ForwardRefTests(BaseTestCase):

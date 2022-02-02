@@ -1742,7 +1742,8 @@ def assert_type(val, typ, /):
             assert_type(name, str)  # ok
             assert_type(name, int)  # type checker error
 
-    At runtime this returns the first argument unchanged.
+    At runtime this returns the first argument unchanged and otherwise
+    does nothing.
 
     """
     return val
