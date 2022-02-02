@@ -1069,6 +1069,9 @@ class Test_ModuleStateAccess(unittest.TestCase):
                     increment_count(1, 2, 3)
 
     def test_get_module_bad_def(self):
+        # _PyType_GetModuleByDef fails gracefully if it doesn't
+        # find what it's looking for.
+        # see bpo-46433
         instance = self.module.StateAccessType()
         with self.assertRaises(TypeError):
             instance.getmodulebydef_bad_def()
@@ -1076,6 +1079,7 @@ class Test_ModuleStateAccess(unittest.TestCase):
     def test_get_module_static_in_mro(self):
         # Here, the class _PyType_GetModuleByDef is looking for
         # appears in the MRO after a static type (Exception).
+        # see bpo-46433
         class Subclass(BaseException, self.module.StateAccessType):
             pass
         self.assertIs(Subclass().get_defining_module(), self.module)
