@@ -322,6 +322,20 @@ sys
   (equivalent to ``sys.exc_info()[1]``).
   (Contributed by Irit Katriel in :issue:`46328`.)
 
+
+sysconfig
+---------
+
+* A new *venv* :ref:`installation scheme <installation_paths>` was added
+  and is used when Python creates new virtual environments or when it
+  is running from a virtual environment.
+  This is useful for downstream distributors who modify
+  :func:`sysconfig.get_preferred_scheme`.
+  Third party code that creates new virtual environments should use this new
+  *venv* installation scheme to determine the paths, as does :mod:`venv`.
+  (Contributed by Miro Hrončok in :issue:`45413`.)
+
+
 threading
 ---------
 
