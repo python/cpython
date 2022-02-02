@@ -1955,7 +1955,7 @@ Functions and decorators
    ``typing`` allows your code to run without runtime errors and
    communicates intent more clearly.
 
-   At runtime, this function prints the runtime type of its argument
+   At runtime, this function prints the runtime type of its argument to stderr
    and returns it unchanged::
 
       x = reveal_type(1)  # prints "Runtime type is int"
@@ -2192,7 +2192,7 @@ Constant
 
       If ``from __future__ import annotations`` is used in Python 3.7 or later,
       annotations are not evaluated at function definition time.
-      Instead, they are stored as strings in ``__annotations__``,
+      Instead, they are stored as strings in ``__annotations__``.
       This makes it unnecessary to use quotes around the annotation.
       (see :pep:`563`).
 

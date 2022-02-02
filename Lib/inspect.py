@@ -540,23 +540,23 @@ def isabstract(object):
     return False
 
 def _getmembers(object, predicate, getter):
-    if isclass(object):
-        mro = (object,) + getmro(object)
-    else:
-        mro = ()
     results = []
     processed = set()
     names = dir(object)
-    # :dd any DynamicClassAttributes to the list of names if object is a class;
-    # this may result in duplicate entries if, for example, a virtual
-    # attribute with the same name as a DynamicClassAttribute exists
-    try:
-        for base in object.__bases__:
-            for k, v in base.__dict__.items():
-                if isinstance(v, types.DynamicClassAttribute):
-                    names.append(k)
-    except AttributeError:
-        pass
+    if isclass(object):
+        mro = (object,) + getmro(object)
+        # add any DynamicClassAttributes to the list of names if object is a class;
+        # this may result in duplicate entries if, for example, a virtual
+        # attribute with the same name as a DynamicClassAttribute exists
+        try:
+            for base in object.__bases__:
+                for k, v in base.__dict__.items():
+                    if isinstance(v, types.DynamicClassAttribute):
+                        names.append(k)
+        except AttributeError:
+            pass
+    else:
+        mro = ()
     for key in names:
         # First try to get the value via getattr.  Some descriptors don't
         # like calling their __get__ (see bug #1785), so fall back to
@@ -1819,11 +1819,11 @@ def getgeneratorstate(generator):
     """
     if generator.gi_running:
         return GEN_RUNNING
+    if generator.gi_suspended:
+        return GEN_SUSPENDED
     if generator.gi_frame is None:
         return GEN_CLOSED
-    if generator.gi_frame.f_lasti == -1:
-        return GEN_CREATED
-    return GEN_SUSPENDED
+    return GEN_CREATED
 
 
 def getgeneratorlocals(generator):
@@ -1861,11 +1861,11 @@ def getcoroutinestate(coroutine):
     """
     if coroutine.cr_running:
         return CORO_RUNNING
+    if coroutine.cr_suspended:
+        return CORO_SUSPENDED
     if coroutine.cr_frame is None:
         return CORO_CLOSED
-    if coroutine.cr_frame.f_lasti == -1:
-        return CORO_CREATED
-    return CORO_SUSPENDED
+    return CORO_CREATED
 
 
 def getcoroutinelocals(coroutine):
@@ -2511,9 +2511,9 @@ def _signature_from_callable(obj, *,
                     pass
                 else:
                     if text_sig:
-                        # If 'obj' class has a __text_signature__ attribute:
+                        # If 'base' class has a __text_signature__ attribute:
                         # return a signature based on it
-                        return _signature_fromstr(sigcls, obj, text_sig)
+                        return _signature_fromstr(sigcls, base, text_sig)
 
             # No '__text_signature__' was found for the 'obj' class.
             # Last option is to check if its '__init__' is

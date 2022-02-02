@@ -694,6 +694,7 @@ class SysModuleTest(unittest.TestCase):
     def test_clear_type_cache(self):
         sys._clear_type_cache()
 
+    @support.requires_subprocess()
     def test_ioencoding(self):
         env = dict(os.environ)
 
@@ -741,6 +742,7 @@ class SysModuleTest(unittest.TestCase):
                          'requires OS support of non-ASCII encodings')
     @unittest.skipUnless(sys.getfilesystemencoding() == locale.getpreferredencoding(False),
                          'requires FS encoding to match locale')
+    @support.requires_subprocess()
     def test_ioencoding_nonascii(self):
         env = dict(os.environ)
 
@@ -753,6 +755,7 @@ class SysModuleTest(unittest.TestCase):
 
     @unittest.skipIf(sys.base_prefix != sys.prefix,
                      'Test is not venv-compatible')
+    @support.requires_subprocess()
     def test_executable(self):
         # sys.executable should be absolute
         self.assertEqual(os.path.abspath(sys.executable), sys.executable)
@@ -854,9 +857,11 @@ class SysModuleTest(unittest.TestCase):
                          'stdout: surrogateescape\n'
                          'stderr: backslashreplace\n')
 
+    @support.requires_subprocess()
     def test_c_locale_surrogateescape(self):
         self.check_locale_surrogateescape('C')
 
+    @support.requires_subprocess()
     def test_posix_locale_surrogateescape(self):
         self.check_locale_surrogateescape('POSIX')
 
@@ -1005,6 +1010,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertIsInstance(level, int)
         self.assertGreater(level, 0)
 
+    @support.requires_subprocess()
     def test_sys_tracebacklimit(self):
         code = """if 1:
             import sys
@@ -1051,6 +1057,7 @@ class SysModuleTest(unittest.TestCase):
         out = out.decode('ascii', 'replace').rstrip()
         self.assertEqual(out, 'mbcs replace')
 
+    @support.requires_subprocess()
     def test_orig_argv(self):
         code = textwrap.dedent('''
             import sys
@@ -1375,7 +1382,7 @@ class SizeofTest(unittest.TestCase):
         x = codecs.charmap_build(encodings.iso8859_3.decoding_table)
         check(x, size('32B2iB'))
         # enumerate
-        check(enumerate([]), size('n3P'))
+        check(enumerate([]), size('n4P'))
         # reverse
         check(reversed(''), size('nP'))
         # float
@@ -1386,7 +1393,7 @@ class SizeofTest(unittest.TestCase):
         def func():
             return sys._getframe()
         x = func()
-        check(x, size('3Pi3c8P2ic?P'))
+        check(x, size('3Pi3c7P2ic??P'))
         # function
         def func(): pass
         check(func, size('14Pi'))
@@ -1403,7 +1410,7 @@ class SizeofTest(unittest.TestCase):
             check(bar, size('PP'))
         # generator
         def get_gen(): yield 1
-        check(get_gen(), size('P2P4P4c8P2ic?P'))
+        check(get_gen(), size('P2P4P4c7P2ic??P'))
         # iterator
         check(iter('abc'), size('lP'))
         # callable-iterator
@@ -1538,11 +1545,11 @@ class SizeofTest(unittest.TestCase):
         # TODO: add check that forces layout of unicodefields
         # weakref
         import weakref
-        check(weakref.ref(int), size('2Pn2P'))
+        check(weakref.ref(int), size('2Pn3P'))
         # weakproxy
         # XXX
         # weakcallableproxy
-        check(weakref.proxy(int), size('2Pn2P'))
+        check(weakref.proxy(int), size('2Pn3P'))
 
     def check_slots(self, obj, base, extra):
         expected = sys.getsizeof(base) + struct.calcsize(extra)

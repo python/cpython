@@ -3,6 +3,12 @@ from test import support
 from test.support import warnings_helper
 import os
 import sys
+import types
+
+try:
+    import _multiprocessing
+except ModuleNotFoundError:
+    _multiprocessing = None
 
 
 class NoAll(RuntimeError):
@@ -13,6 +19,17 @@ class FailedImport(RuntimeError):
 
 
 class AllTest(unittest.TestCase):
+
+    def setUp(self):
+        # concurrent.futures uses a __getattr__ hook. Its __all__ triggers
+        # import of a submodule, which fails when _multiprocessing is not
+        # available.
+        if _multiprocessing is None:
+            sys.modules["_multiprocessing"] = types.ModuleType("_multiprocessing")
+
+    def tearDown(self):
+        if _multiprocessing is None:
+            sys.modules.pop("_multiprocessing")
 
     def check_all(self, modname):
         names = {}

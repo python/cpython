@@ -6,6 +6,7 @@
 #include "pycore_initconfig.h"    // _PyStatus_ERR()
 #include "pycore_pyerrors.h"      // _PyErr_Format()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_structseq.h"     // _PyStructSequence_FiniType()
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_traceback.h"     // _PyTraceBack_FromFrame()
 
@@ -1238,6 +1239,17 @@ _PyErr_InitTypes(PyInterpreterState *interp)
         }
     }
     return _PyStatus_OK();
+}
+
+
+void
+_PyErr_FiniTypes(PyInterpreterState *interp)
+{
+    if (!_Py_IsMainInterpreter(interp)) {
+        return;
+    }
+
+    _PyStructSequence_FiniType(&UnraisableHookArgsType);
 }
 
 
