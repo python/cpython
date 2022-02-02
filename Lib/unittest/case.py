@@ -1180,10 +1180,8 @@ class TestCase(object):
             - [0, 0, 1] and [0, 1] compare unequal.
 
         """
-        from typing import Dict
-
-        first_seq = first.items() if isinstance(first, Dict) else list(first)
-        second_seq = second.items() if isinstance(second, Dict) else list(second)
+        first_seq = first.items() if isinstance(first, dict) else list(first)
+        second_seq = second.items() if isinstance(second, dict) else list(second)
         try:
             first = collections.Counter(first_seq)
             second = collections.Counter(second_seq)
