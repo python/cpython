@@ -60,7 +60,10 @@ def setup_module(machinery, name, path=None):
         root = machinery.WindowsRegistryFinder.REGISTRY_KEY
     key = root.format(fullname=name,
                       sys_version='%d.%d' % sys.version_info[:2])
-    base_key = "Software\\Python\\PythonCore\\{}.{}".format(*sys.version_info[:2])
+    base_key = "Software\\Python\\PythonCore\\{}.{}".format(
+        sys.version_info.major, sys.version_info.minor)
+    assert key.casefold().startswith(base_key.casefold()), (
+        "expected key '{}' to start with '{}'".format(key, base_key))
     try:
         with temp_module(name, "a = 1") as location:
             try:
@@ -78,7 +81,6 @@ def setup_module(machinery, name, path=None):
             yield
     finally:
         if delete_key:
-            print("DELETING", delete_key)
             delete_registry_tree(HKEY_CURRENT_USER, delete_key)
 
 
