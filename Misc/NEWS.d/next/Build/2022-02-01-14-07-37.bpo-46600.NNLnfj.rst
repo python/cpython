@@ -1,0 +1,3 @@
+Fix the test checking if the C compiler supports ``-Og`` option in the
+``./configure`` script to also use ``-Og`` on clang which supports it. Patch
+by Victor Stinner.

@@ -1,0 +1,1 @@
+Tidied up configure.ac so that conftest.c is truncated rather than appended.  This assists in the case where the 'rm' of conftest.c fails to happen between tests.  Downstream issues such as a clobbered SOABI can result.

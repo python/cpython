@@ -172,9 +172,21 @@ print_call_stats(FILE *out, CallStats *stats)
 }
 
 static void
+print_object_stats(FILE *out, ObjectStats *stats)
+{
+    fprintf(out, "Object allocations: %" PRIu64 "\n", stats->allocations);
+    fprintf(out, "Object frees: %" PRIu64 "\n", stats->frees);
+    fprintf(out, "Object new values: %" PRIu64 "\n", stats->new_values);
+    fprintf(out, "Object materialize dict (on request): %" PRIu64 "\n", stats->dict_materialized_on_request);
+    fprintf(out, "Object materialize dict (new key): %" PRIu64 "\n", stats->dict_materialized_new_key);
+    fprintf(out, "Object materialize dict (too big): %" PRIu64 "\n", stats->dict_materialized_too_big);
+}
+
+static void
 print_stats(FILE *out, PyStats *stats) {
     print_spec_stats(out, stats->opcode_stats);
     print_call_stats(out, &stats->call_stats);
+    print_object_stats(out, &stats->object_stats);
 }
 
 void
