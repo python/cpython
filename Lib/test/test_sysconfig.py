@@ -143,22 +143,22 @@ class TestSysConfig(unittest.TestCase):
         # The following directories were hardcoded in the venv module
         # before bpo-45413, here we assert the venv scheme does not regress
         if sys.platform == 'win32':
-            binname = 'Scripts'
+            binpath = 'Scripts'
             incpath = 'Include'
             libpath = os.path.join('Lib', 'site-packages')
         else:
-            binname = 'bin'
+            binpath = 'bin'
             incpath = 'include'
             libpath = os.path.join('lib',
                                    'python%d.%d' % sys.version_info[:2],
                                    'site-packages')
 
         # Resolve the paths in prefix
-        binname = os.path.join(sys.prefix, binname)
+        binpath = os.path.join(sys.prefix, binpath)
         incpath = os.path.join(sys.prefix, incpath)
         libpath = os.path.join(sys.prefix, libpath)
 
-        self.assertEqual(binname, sysconfig.get_path('scripts', scheme='venv'))
+        self.assertEqual(binpath, sysconfig.get_path('scripts', scheme='venv'))
         self.assertEqual(libpath, sysconfig.get_path('purelib', scheme='venv'))
 
         # The include directory on POSIX isn't exactly the same as before,
