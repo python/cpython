@@ -1297,8 +1297,8 @@ find_frozen(PyObject *nameobj, struct frozen_info *info)
         info->nameobj = nameobj;  // borrowed
         info->data = (const char *)p->code;
         info->get_code = p->get_code;
-        info->size = p->size < 0 ? -(p->size) : p->size;
-        info->is_package = p->size < 0 ? true : false;
+        info->size = p->size;
+        info->is_package = p->is_package;
         info->origname = name;
         info->is_alias = resolve_module_alias(name, _PyImport_FrozenAliases,
                                               &info->origname);

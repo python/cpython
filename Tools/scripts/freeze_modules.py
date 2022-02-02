@@ -501,13 +501,13 @@ def regen_frozen(modules, deepfreeze_only: bool):
         externlines.append("extern PyObject *%s(void);" % get_code_name)
 
         symbol = mod.symbol
-        pkg = '-' if mod.ispkg else ''
+        pkg = 'true' if mod.ispkg else 'false'
         if deepfreeze_only:
-            line = ('{"%s", NULL, 0, GET_CODE(%s)},'
-                ) % (mod.name, code_name)
+            line = ('{"%s", NULL, 0, %s, GET_CODE(%s)},'
+                ) % (mod.name, pkg, code_name)
         else:
-            line = ('{"%s", %s, %s(int)sizeof(%s), GET_CODE(%s)},'
-                ) % (mod.name, symbol, pkg, symbol, code_name)
+            line = ('{"%s", %s, (int)sizeof(%s), %s, GET_CODE(%s)},'
+                ) % (mod.name, symbol, symbol, pkg, code_name)
         lines.append(line)
 
         if mod.isalias:
