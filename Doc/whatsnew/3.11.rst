@@ -370,6 +370,20 @@ unicodedata
 * The Unicode database has been updated to version 14.0.0. (:issue:`45190`).
 
 
+venv
+----
+
+* When new Python virtual environments are created,
+  the *venv* :ref:`sysconfig installation scheme <installation_paths>` is used
+  to determine the paths inside the environment.
+  When Python runs in a virtual environment, the same installation scheme
+  is the default.
+  That means, downstream distributors can change the default sysconfig install
+  scheme without changing behavior of virtual environments.
+  Third party code that also creates new virtual environments should do the same.
+  (Contributed by Miro Hrončok in :issue:`45413`.)
+
+
 fcntl
 -----
 
