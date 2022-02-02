@@ -17,7 +17,7 @@ extern "C" {
  *
  */
 
-typedef struct bufferinfo {
+typedef struct {
     void *buf;
     PyObject *obj;        /* owned reference */
     Py_ssize_t len;
