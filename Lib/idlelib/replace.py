@@ -158,8 +158,11 @@ class ReplaceDialog(SearchDialogBase):
         first = last = None
         # XXX ought to replace circular instead of top-to-bottom when wrapping
         text.undo_block_start()
-        while (res := self.engine.search_forward(
-                text, prog, line, col, wrap=False, ok=ok)):
+        while True:
+            res = self.engine.search_forward(text, prog, line, col,
+                                             wrap=False, ok=ok)
+            if not res:
+                break
             line, m = res
             chars = text.get("%d.0" % line, "%d.0" % (line+1))
             orig = m.group()

@@ -474,7 +474,10 @@ class ShellSidebarTest(unittest.TestCase):
         index = text.index("@0,0")
         if index.split('.', 1)[1] != '0':
             index = text.index(f"{index} +1line linestart")
-        while (lineinfo := text.dlineinfo(index)) is not None:
+        while True:
+            lineinfo = text.dlineinfo(index)
+            if lineinfo is None:
+                break
             y_coords.append(lineinfo[1])
             index = text.index(f"{index} +1line")
         return y_coords
