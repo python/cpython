@@ -123,7 +123,7 @@ class AnyTests(BaseTestCase):
         typing.IO[Any]
 
 
-class BottomTypeTests:
+class BottomTypeTestsMixin:
     bottom_type: ClassVar[Any]
 
     def test_instance_type_error(self):
@@ -155,14 +155,14 @@ class BottomTypeTests:
             type(self.bottom_type)()
 
 
-class NoReturnTests(BottomTypeTests, BaseTestCase):
+class NoReturnTests(BottomTypeTestsMixin, BaseTestCase):
     bottom_type = NoReturn
 
     def test_repr(self):
         self.assertEqual(repr(NoReturn), 'typing.NoReturn')
 
 
-class NeverTests(BottomTypeTests, BaseTestCase):
+class NeverTests(BottomTypeTestsMixin, BaseTestCase):
     bottom_type = Never
 
     def test_repr(self):
