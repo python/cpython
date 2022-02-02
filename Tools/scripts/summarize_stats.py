@@ -26,7 +26,7 @@ for name in opcode.opname[1:]:
 TOTAL = "specialization.deferred", "specialization.hit", "specialization.miss", "execution_count"
 
 def print_specialization_stats(name, family_stats):
-    if "specialization.deferred" not in family_stats:
+    if "specialization.failure" not in family_stats:
         return
     total = sum(family_stats.get(kind, 0) for kind in TOTAL)
     if total == 0:
