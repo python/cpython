@@ -1304,6 +1304,7 @@ find_frozen(PyObject *nameobj, struct frozen_info *info)
                                               &info->origname);
     }
     if (p->code == NULL && p->size == 0 && p->get_code != NULL) {
+        /* It is only deepfrozen. */
         return FROZEN_OKAY;
     }
     if (p->code == NULL) {
