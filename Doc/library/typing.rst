@@ -1932,6 +1932,37 @@ Functions and decorators
    runtime we intentionally don't check anything (we want this
    to be as fast as possible).
 
+.. function:: reveal_type(obj)
+
+   Reveal the inferred static type of an expression.
+
+   When a static type checker encounters a call to this function,
+   it emits a diagnostic with the type of the argument. For example::
+
+      x: int = 1
+      reveal_type(x)  # Revealed type is "builtins.int"
+
+   This can be useful when you want to debug how your type checker
+   handles a particular piece of code.
+
+   The function returns its argument unchanged, which allows using
+   it within an expression::
+
+      x = reveal_type(1)  # Revealed type is "builtins.int"
+
+   Most type checkers support ``reveal_type()`` anywhere, even if the
+   name is not imported from ``typing``. Importing the name from
+   ``typing`` allows your code to run without runtime errors and
+   communicates intent more clearly.
+
+   At runtime, this function prints the runtime type of its argument to stderr
+   and returns it unchanged::
+
+      x = reveal_type(1)  # prints "Runtime type is int"
+      print(x)  # prints "1"
+
+   .. versionadded:: 3.11
+
 .. decorator:: overload
 
    The ``@overload`` decorator allows describing functions and methods
