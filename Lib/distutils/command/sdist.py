@@ -333,7 +333,11 @@ class sdist(Command):
                             collapse_join=1)
 
         try:
-            while (line := template.readline()) is not None:  # eof
+            while True:
+                line = template.readline()
+                if line is None:            # end of file
+                    break
+
                 try:
                     self.filelist.process_template_line(line)
                 # the call above can raise a DistutilsTemplateError for

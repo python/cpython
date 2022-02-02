@@ -204,7 +204,10 @@ class config(Command):
 
         with open(out) as file:
             match = False
-            while (line := file.readline()) != '':
+            while True:
+                line = file.readline()
+                if line == '':
+                    break
                 if pattern.search(line):
                     match = True
                     break

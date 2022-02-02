@@ -273,9 +273,11 @@ class TextFile:
         """Read and return the list of all logical lines remaining in the
            current file."""
         lines = []
-        while (line := self.readline()) is not None:
+        while True:
+            line = self.readline()
+            if line is None:
+                return lines
             lines.append(line)
-        return lines
 
     def unreadline(self, line):
         """Push 'line' (a string) onto an internal buffer that will be
