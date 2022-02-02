@@ -1,0 +1,2 @@
+test_ftplib now silently ignores socket errors to prevent logging unhandled
+threading exceptions. Patch by Victor Stinner.
