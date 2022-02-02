@@ -271,7 +271,7 @@ For example::
     .. versionadded:: 3.1
 
     .. versionchanged:: 3.7 As a :class:`dict` subclass, :class:`Counter`
-       Inherited the capability to remember insertion order.  Math operations
+       inherited the capability to remember insertion order.  Math operations
        on *Counter* objects also preserve order.  Results are ordered
        according to when an element is first encountered in the left operand
        and then by the order encountered in the right operand.
@@ -366,8 +366,11 @@ Several mathematical operations are provided for combining :class:`Counter`
 objects to produce multisets (counters that have counts greater than zero).
 Addition and subtraction combine counters by adding or subtracting the counts
 of corresponding elements.  Intersection and union return the minimum and
-maximum of corresponding counts.  Each operation can accept inputs with signed
+maximum of corresponding counts.  Equality and inclusion compare
+corresponding counts.  Each operation can accept inputs with signed
 counts, but the output will exclude results with counts of zero or less.
+
+.. doctest::
 
     >>> c = Counter(a=3, b=1)
     >>> d = Counter(a=1, b=2)
@@ -375,10 +378,14 @@ counts, but the output will exclude results with counts of zero or less.
     Counter({'a': 4, 'b': 3})
     >>> c - d                       # subtract (keeping only positive counts)
     Counter({'a': 2})
-    >>> c & d                       # intersection:  min(c[x], d[x]) # doctest: +SKIP
+    >>> c & d                       # intersection:  min(c[x], d[x])
     Counter({'a': 1, 'b': 1})
     >>> c | d                       # union:  max(c[x], d[x])
     Counter({'a': 3, 'b': 2})
+    >>> c == d                      # equality:  c[x] == d[x]
+    False
+    >>> c <= d                      # inclusion:  c[x] <= d[x]
+    False
 
 Unary addition and subtraction are shortcuts for adding an empty counter
 or subtracting from an empty counter.
