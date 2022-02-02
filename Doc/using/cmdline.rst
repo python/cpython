@@ -1003,7 +1003,7 @@ Finding modules
 A module search path is initialized when Python starts. This module search path
 may be accessed at :data:`sys.path`.
 
-The first entry in the module search path is the directoy containing the input
+The first entry in the module search path is the directory containing the input
 script (or the the current directory when no file is specified).
 
 On Windows a default Python installation adds the :file:`/Lib` directory and
