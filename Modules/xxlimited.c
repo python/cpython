@@ -19,7 +19,6 @@
           def __init__(self):
               # In the C class, "_x_attr" is not accessible from Python code
               self._x_attr = {}
-              self._x_buffer = bytesarray(10)
               self._x_exports = 0
 
           def __getattr__(self, name):
@@ -33,6 +32,9 @@
 
           @property
           def x_exports(self):
+              """Return the number of times an internal buffer is exported."""
+              # Each Xxo instance has a 10-byte buffer that can be
+              # accessed via the buffer interface (e.g. `memoryview`).
               return self._x_exports
 
           def demo(o, /):
