@@ -1742,10 +1742,10 @@ success:
 }
 
 
+#ifdef Py_STATS
 static int
 compare_op_fail_kind(PyObject *lhs, PyObject *rhs)
 {
-#ifdef Py_STATS
     if (Py_TYPE(lhs) != Py_TYPE(rhs)) {
         if (PyFloat_CheckExact(lhs) && PyLong_CheckExact(rhs)) {
             return SPEC_FAIL_COMPARE_FLOAT_LONG;
@@ -1773,9 +1773,10 @@ compare_op_fail_kind(PyObject *lhs, PyObject *rhs)
     if (Py_TYPE(lhs)->tp_richcompare == PyBaseObject_Type.tp_richcompare) {
         return SPEC_FAIL_COMPARE_BASEOBJECT;
     }
-#endif
     return SPEC_FAIL_OTHER;
 }
+#endif
+
 
 static int compare_masks[] = {
     // 1-bit: jump if less than
