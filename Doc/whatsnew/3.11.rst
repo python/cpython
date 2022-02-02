@@ -657,6 +657,26 @@ New Features
   :c:macro:`PY_VERSION_HEX`.
   (Contributed by  Gabriele N. Tornetta in :issue:`43931`.)
 
+* :c:type:`Py_buffer` and APIs are now part of the limited API and the stable
+  ABI:
+
+  * :c:func:`PyObject_CheckBuffer`
+  * :c:func:`PyObject_GetBuffer`
+  * :c:func:`PyBuffer_GetPointer`
+  * :c:func:`PyBuffer_SizeFromFormat`
+  * :c:func:`PyBuffer_ToContiguous`
+  * :c:func:`PyBuffer_FromContiguous`
+  * :c:func:`PyBuffer_CopyData`
+  * :c:func:`PyBuffer_IsContiguous`
+  * :c:func:`PyBuffer_FillContiguousStrides`
+  * :c:func:`PyBuffer_FillInfo`
+  * :c:func:`PyBuffer_Release`
+  * :c:func:`PyMemoryView_FromBuffer`
+  * :c:member:`~PyBufferProcs.bf_getbuffer` and
+    :c:member:`~PyBufferProcs.bf_releasebuffer` type slots
+
+  (Contributed by Christian Heimes in :issue:`45459`.)
+
 
 Porting to Python 3.11
 ----------------------
