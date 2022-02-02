@@ -530,6 +530,12 @@ class PurePath(object):
             self._drv, self._root, self._parts, drv, root, parts)
         return self._from_parsed_parts(drv, root, parts)
 
+    def _make_child_relpath(self, part):
+        # This is an optimization used for dir walking.  `part` must be
+        # a single part relative to this path.
+        parts = self._parts + [part]
+        return self._from_parsed_parts(self._drv, self._root, parts)
+
     def __str__(self):
         """Return the string representation of the path, suitable for
         passing to system calls."""
@@ -872,12 +878,6 @@ class Path(PurePath):
             raise NotImplementedError("cannot instantiate %r on your system"
                                       % (cls.__name__,))
         return self
-
-    def _make_child_relpath(self, part):
-        # This is an optimization used for dir walking.  `part` must be
-        # a single part relative to this path.
-        parts = self._parts + [part]
-        return self._from_parsed_parts(self._drv, self._root, parts)
 
     def __enter__(self):
         return self
