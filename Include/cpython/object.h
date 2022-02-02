@@ -2,6 +2,8 @@
 #  error "this header file must not be included directly"
 #endif
 
+#include "buffer.h" // for Py_buffer, included after PyObject has been defined
+
 PyAPI_FUNC(void) _Py_NewReference(PyObject *op);
 
 #ifdef Py_TRACE_REFS
@@ -45,8 +47,6 @@ typedef struct _Py_Identifier {
 #define _Py_static_string(varname, value)  static _Py_Identifier varname = _Py_static_string_init(value)
 #define _Py_IDENTIFIER(varname) _Py_static_string(PyId_##varname, #varname)
 
-/* Py_buffer is defined in buffer.h */
-typedef struct bufferinfo Py_buffer;
 typedef int (*getbufferproc)(PyObject *, Py_buffer *, int);
 typedef void (*releasebufferproc)(PyObject *, Py_buffer *);
 
