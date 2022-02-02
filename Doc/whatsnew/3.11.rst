@@ -67,6 +67,8 @@ Summary -- Release highlights
 
 PEP-654: Exception Groups and ``except*``.
 (Contributed by Irit Katriel in :issue:`45292`.)
+PEP-673: ``Self`` Type.
+(Contributed by James Hilton-Balfe and Pradeep Kumar in :issue:`30924`.)
 
 New Features
 ============
