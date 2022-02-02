@@ -14,6 +14,15 @@ from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from urllib.parse import quote_from_bytes as urlquote_from_bytes
 from types import GenericAlias
 
+try:
+    import pwd
+except ImportError:
+    pwd = None
+try:
+    import grp
+except ImportError:
+    grp = None
+
 
 __all__ = [
     "PurePath", "PurePosixPath", "PureWindowsPath",
@@ -1348,19 +1357,13 @@ class Path(_AbstractPath):
     def stat(self, *, follow_symlinks=True):
         return os.stat(self, follow_symlinks=follow_symlinks)
 
-    def owner(self):
-        try:
-            import pwd
+    if hasattr(pwd, 'getpwuid'):
+        def owner(self):
             return pwd.getpwuid(self.stat().st_uid).pw_name
-        except ImportError:
-            raise NotImplementedError("Path.owner() is unsupported on this system")
 
-    def group(self):
-        try:
-            import grp
+    if hasattr(grp, 'getgrgid'):
+        def group(self):
             return grp.getgrgid(self.stat().st_gid).gr_name
-        except ImportError:
-            raise NotImplementedError("Path.group() is unsupported on this system")
 
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
@@ -1368,10 +1371,9 @@ class Path(_AbstractPath):
             encoding = io.text_encoding(encoding)
         return io.open(self, mode, buffering, encoding, errors, newline)
 
-    def readlink(self):
-        if not hasattr(os, "readlink"):
-            raise NotImplementedError("os.readlink() not available on this system")
-        return self._from_parts((os.readlink(self),))
+    if hasattr(os, 'readlink'):
+        def readlink(self):
+            return self._from_parts((os.readlink(self),))
 
     def touch(self, mode=0o666, exist_ok=True):
         if exist_ok:
@@ -1426,15 +1428,13 @@ class Path(_AbstractPath):
         os.replace(self, target)
         return self.__class__(target)
 
-    def symlink_to(self, target, target_is_directory=False):
-        if not hasattr(os, "symlink"):
-            raise NotImplementedError("os.symlink() not available on this system")
-        os.symlink(target, self, target_is_directory)
+    if hasattr(os, 'symlink'):
+        def symlink_to(self, target, target_is_directory=False):
+            os.symlink(target, self, target_is_directory)
 
-    def hardlink_to(self, target):
-        if not hasattr(os, "link"):
-            raise NotImplementedError("os.link() not available on this system")
-        os.link(target, self)
+    if hasattr(os, 'link'):
+        def hardlink_to(self, target):
+            os.link(target, self)
 
     def expanduser(self):
         if (not (self._drv or self._root) and
