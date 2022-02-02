@@ -833,7 +833,7 @@ fi
 
 
 AC_MSG_CHECKING([for the platform triplet based on compiler characteristics])
-cat >> conftest.c <<EOF
+cat > conftest.c <<EOF
 #undef bfin
 #undef cris
 #undef fr30
@@ -1028,7 +1028,7 @@ AC_CACHE_CHECK([for -Wl,--no-as-needed], [ac_cv_wl_no_as_needed], [
 AC_SUBST(NO_AS_NEEDED)
 
 AC_MSG_CHECKING([for the Android API level])
-cat >> conftest.c <<EOF
+cat > conftest.c <<EOF
 #ifdef __ANDROID__
 android_api = __ANDROID_API__
 arm_arch = __ARM_ARCH
