@@ -548,6 +548,23 @@ initial_counter_value(void) {
 #define SPEC_FAIL_NOT_FOLLOWED_BY_COND_JUMP 14
 #define SPEC_FAIL_BIG_INT 15
 
+/* FOR_ITER */
+#define SPEC_FAIL_ITER_GENERATOR 10
+#define SPEC_FAIL_ITER_COROUTINE 11
+#define SPEC_FAIL_ITER_ASYNC_GENERATOR 12
+#define SPEC_FAIL_ITER_LIST 13
+#define SPEC_FAIL_ITER_TUPLE 14
+#define SPEC_FAIL_ITER_SET 15
+#define SPEC_FAIL_ITER_STRING 16
+#define SPEC_FAIL_ITER_BYTES 17
+#define SPEC_FAIL_ITER_RANGE 18
+#define SPEC_FAIL_ITER_ITERTOOLS 19
+#define SPEC_FAIL_ITER_DICT_KEYS 20
+#define SPEC_FAIL_ITER_DICT_ITEMS 21
+#define SPEC_FAIL_ITER_DICT_VALUES 22
+#define SPEC_FAIL_ITER_ENUMERATE 23
+
+
 static int
 specialize_module_load_attr(
     PyObject *owner, _Py_CODEUNIT *instr, PyObject *name,
@@ -1816,4 +1833,55 @@ failure:
 success:
     STAT_INC(COMPARE_OP, success);
     adaptive->counter = initial_counter_value();
+}
+
+
+int
+ _PySpecialization_ClassifyIterator(PyObject *iter)
+{
+    if (PyGen_CheckExact(iter)) {
+        return SPEC_FAIL_ITER_GENERATOR;
+    }
+    if (PyCoro_CheckExact(iter)) {
+        return SPEC_FAIL_ITER_COROUTINE;
+    }
+    if (PyAsyncGen_CheckExact(iter)) {
+        return SPEC_FAIL_ITER_ASYNC_GENERATOR;
+    }
+    PyTypeObject *t = _Py_TYPE(iter);
+    if (t == &PyListIter_Type) {
+        return SPEC_FAIL_ITER_LIST;
+    }
+    if (t == &PyTupleIter_Type) {
+        return SPEC_FAIL_ITER_TUPLE;
+    }
+    if (t == &PyDictIterKey_Type) {
+        return SPEC_FAIL_ITER_DICT_KEYS;
+    }
+    if (t == &PyDictIterValue_Type) {
+        return SPEC_FAIL_ITER_DICT_VALUES;
+    }
+    if (t == &PyDictIterItem_Type) {
+        return SPEC_FAIL_ITER_DICT_ITEMS;
+    }
+    if (t == &PySetIter_Type) {
+        return SPEC_FAIL_ITER_SET;
+    }
+    if (t == &PyUnicodeIter_Type) {
+        return SPEC_FAIL_ITER_STRING;
+    }
+    if (t == &PyBytesIter_Type) {
+        return SPEC_FAIL_ITER_BYTES;
+    }
+    if (t == &PyRangeIter_Type) {
+        return SPEC_FAIL_ITER_RANGE;
+    }
+    if (t == &PyEnum_Type) {
+        return SPEC_FAIL_ITER_ENUMERATE;
+    }
+
+    if (strncmp(t->tp_name, "itertools", 8) == 0) {
+        return SPEC_FAIL_ITER_ITERTOOLS;
+    }
+    return SPEC_FAIL_OTHER;
 }
