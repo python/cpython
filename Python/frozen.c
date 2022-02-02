@@ -75,8 +75,6 @@ extern PyObject *_Py_get___phello___spam_toplevel(void);
 extern PyObject *_Py_get_frozen_only_toplevel(void);
 /* End extern declarations */
 
-/* Note that a negative size indicates a package. */
-
 static const struct _frozen bootstrap_modules[] = {
     {"_frozen_importlib", NULL, 0, false, GET_CODE(importlib__bootstrap)},
     {"_frozen_importlib_external", NULL, 0, false, GET_CODE(importlib__bootstrap_external)},
