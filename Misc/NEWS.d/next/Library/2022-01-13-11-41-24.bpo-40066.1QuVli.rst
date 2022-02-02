@@ -1,0 +1,2 @@
+``IntEnum``, ``IntFlag``, and ``StrEnum`` use the mixed-in type for their
+``str()`` and ``format()`` output.

@@ -1,0 +1,1 @@
+Use ``dis.Positions`` in ``dis.Instruction`` instead of a regular ``tuple``.

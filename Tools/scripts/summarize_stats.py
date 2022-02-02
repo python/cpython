@@ -28,7 +28,7 @@ TOTAL = "specialization.deferred", "specialization.hit", "specialization.miss", 
 def print_specialization_stats(name, family_stats):
     if "specialization.deferred" not in family_stats:
         return
-    total = sum(family_stats[kind] for kind in TOTAL)
+    total = sum(family_stats.get(kind, 0) for kind in TOTAL)
     if total == 0:
         return
     print(name+":")
@@ -44,7 +44,7 @@ def print_specialization_stats(name, family_stats):
     for key in ("specialization.success",  "specialization.failure"):
         label = key[len("specialization."):]
         print(f"  {label}:{family_stats.get(key, 0):>12}")
-    total_failures = family_stats["specialization.failure"]
+    total_failures = family_stats.get("specialization.failure", 0)
     failure_kinds = [ 0 ] * 30
     for key in family_stats:
         if not key.startswith("specialization.failure_kind"):
@@ -98,6 +98,14 @@ def main():
     for i, opcode_stat in enumerate(opcode_stats):
         name = opname[i]
         print_specialization_stats(name, opcode_stat)
+    print("Call stats:")
+    total = 0
+    for key, value in stats.items():
+        if "Calls to" in key:
+            total += value
+    for key, value in stats.items():
+        if "Calls to" in key:
+            print(f"{key}: {value} {100*value/total:0.1f}%")
 
 if __name__ == "__main__":
     main()

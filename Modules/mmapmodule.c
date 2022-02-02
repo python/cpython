@@ -18,8 +18,13 @@
  / ftp://squirl.nightmare.com/pub/python/python-ext.
 */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
+#include "pycore_fileutils.h"     // _Py_stat_struct
 #include "structmember.h"         // PyMemberDef
 #include <stddef.h>               // offsetof()
 
@@ -1637,6 +1642,11 @@ mmap_exec(PyObject *module)
 #endif
 #ifdef MAP_POPULATE
     ADD_INT_MACRO(module, MAP_POPULATE);
+#endif
+#ifdef MAP_STACK
+    // Mostly a no-op on Linux and NetBSD, but useful on OpenBSD
+    // for stack usage (even on x86 arch)
+    ADD_INT_MACRO(module, MAP_STACK);
 #endif
     if (PyModule_AddIntConstant(module, "PAGESIZE", (long)my_getpagesize()) < 0 ) {
         return -1;

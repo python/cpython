@@ -15,6 +15,8 @@ from test.support.script_helper import (
     interpreter_requires_environment
 )
 
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test module requires subprocess")
 
 # Debug build?
 Py_DEBUG = hasattr(sys, "gettotalrefcount")
@@ -119,7 +121,10 @@ class CmdLineTest(unittest.TestCase):
         rc, out, err = run_python('-X', 'showrefcount', '-c', code)
         self.assertEqual(out.rstrip(), b"{'showrefcount': True}")
         if Py_DEBUG:
-            self.assertRegex(err, br'^\[\d+ refs, \d+ blocks\]')
+            # bpo-46417: Tolerate negative reference count which can occur
+            # because of bugs in C extensions. This test is only about checking
+            # the showrefcount feature.
+            self.assertRegex(err, br'^\[-?\d+ refs, \d+ blocks\]')
         else:
             self.assertEqual(err, b'')
 

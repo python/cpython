@@ -952,6 +952,34 @@ class TestExceptStarExceptionGroupSubclass(ExceptStarTest):
         self.assertEqual(teg.code, 42)
         self.assertEqual(teg.exceptions[0].code, 101)
 
+    def test_falsy_exception_group_subclass(self):
+        class FalsyEG(ExceptionGroup):
+            def __bool__(self):
+               return False
+
+            def derive(self, excs):
+                return FalsyEG(self.message, excs)
+
+        try:
+            try:
+                raise FalsyEG("eg", [TypeError(1), ValueError(2)])
+            except *TypeError as e:
+                tes = e
+                raise
+            except *ValueError as e:
+                ves = e
+                pass
+        except Exception as e:
+            exc = e
+
+        for e in [tes, ves, exc]:
+            self.assertFalse(e)
+            self.assertIsInstance(e, FalsyEG)
+
+        self.assertExceptionIsLike(exc, FalsyEG("eg", [TypeError(1)]))
+        self.assertExceptionIsLike(tes, FalsyEG("eg", [TypeError(1)]))
+        self.assertExceptionIsLike(ves, FalsyEG("eg", [ValueError(2)]))
+
 
 class TestExceptStarCleanup(ExceptStarTest):
     def test_exc_info_restored(self):
