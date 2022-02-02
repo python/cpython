@@ -46,6 +46,20 @@ steps:
       targetPath: $(Build.BinariesDirectory)\amd64
 
   - task: DownloadPipelineArtifact@1
+    displayName: 'Download artifact: bin_arm64'
+    condition: and(succeeded(), eq(variables['PublishARM64'], 'true'))
+    inputs:
+      artifactName: bin_arm64
+      targetPath: $(Build.BinariesDirectory)\arm64
+
+  - task: DownloadPipelineArtifact@1
+    displayName: 'Download artifact: bin_arm64_d'
+    condition: and(succeeded(), eq(variables['PublishARM64'], 'true'))
+    inputs:
+      artifactName: bin_arm64_d
+      targetPath: $(Build.BinariesDirectory)\arm64
+
+  - task: DownloadPipelineArtifact@1
     displayName: 'Download artifact: tcltk_lib_win32'
     inputs:
       artifactName: tcltk_lib_win32
@@ -84,12 +98,12 @@ steps:
 
   - script: |
       %MSBUILD% Tools\msi\bundle\releaselocal.wixproj /t:Rebuild /p:RebuildAll=true
-      %MSBUILD% Tools\msi\bundle\releaseweb.wixproj /t:Rebuild /p:RebuildAll=false
     displayName: 'Build win32 installer'
     env:
       Platform: x86
       Py_OutDir: $(Build.BinariesDirectory)
       PYTHON: $(Build.BinariesDirectory)\win32\python.exe
+      PythonForBuild: $(Build.BinariesDirectory)\win32\python.exe
       PYTHONHOME: $(Build.SourcesDirectory)
       TclTkLibraryDir: $(Build.BinariesDirectory)\tcltk_lib_win32
       BuildForRelease: true
@@ -97,19 +111,32 @@ steps:
 
   - script: |
       %MSBUILD% Tools\msi\bundle\releaselocal.wixproj /t:Rebuild /p:RebuildAll=true
-      %MSBUILD% Tools\msi\bundle\releaseweb.wixproj /t:Rebuild /p:RebuildAll=false
     displayName: 'Build amd64 installer'
     env:
       Platform: x64
       Py_OutDir: $(Build.BinariesDirectory)
       PYTHON: $(Build.BinariesDirectory)\amd64\python.exe
+      PythonForBuild: $(Build.BinariesDirectory)\amd64\python.exe
       PYTHONHOME: $(Build.SourcesDirectory)
       TclTkLibraryDir: $(Build.BinariesDirectory)\tcltk_lib_amd64
       BuildForRelease: true
       SuppressMinGWLib: true
 
+  - script: |
+      %MSBUILD% Tools\msi\bundle\releaselocal.wixproj /t:Rebuild /p:RebuildAll=true
+    displayName: 'Build arm64 installer'
+    condition: and(succeeded(), eq(variables['PublishARM64'], 'true'))
+    env:
+      Platform: ARM64
+      Py_OutDir: $(Build.BinariesDirectory)
+      PYTHON: $(Build.BinariesDirectory)\win32\python.exe
+      PythonForBuild: $(Build.BinariesDirectory)\win32\python.exe
+      PYTHONHOME: $(Build.SourcesDirectory)
+      BuildForRelease: true
+      SuppressMinGWLib: true
+
   - task: CopyFiles@2
-    displayName: 'Assemble artifact: msi (1/2)'
+    displayName: 'Assemble artifact: msi (win32)'
     inputs:
       sourceFolder: $(Build.BinariesDirectory)\win32\en-us
       targetFolder: $(Build.ArtifactStagingDirectory)\msi\win32
@@ -119,10 +146,21 @@ steps:
         *.exe
 
   - task: CopyFiles@2
-    displayName: 'Assemble artifact: msi (2/2)'
+    displayName: 'Assemble artifact: msi (amd64)'
     inputs:
       sourceFolder: $(Build.BinariesDirectory)\amd64\en-us
       targetFolder: $(Build.ArtifactStagingDirectory)\msi\amd64
+      contents: |
+        *.msi
+        *.cab
+        *.exe
+
+  - task: CopyFiles@2
+    displayName: 'Assemble artifact: msi (arm64)'
+    condition: and(succeeded(), eq(variables['PublishARM64'], 'true'))
+    inputs:
+      sourceFolder: $(Build.BinariesDirectory)\arm64\en-us
+      targetFolder: $(Build.ArtifactStagingDirectory)\msi\arm64
       contents: |
         *.msi
         *.cab
