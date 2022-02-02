@@ -42,7 +42,9 @@ This module defines the following functions:
    *parse_float* will be called with the string of every TOML
    float to be decoded.  By default, this is equivalent to ``float(num_str)``.
    This can be used to use another datatype or parser for TOML floats
-   (e.g. :class:`decimal.Decimal`).
+   (e.g. :class:`decimal.Decimal`). The callable must not return a
+   :class:`dict`, a :class:`list`, or anything that has the ``append``
+   attribute. These illegal types produce undefined behavior.
 
    A :exc:`TOMLDecodeError` will be raised on an invalid TOML document.
 
