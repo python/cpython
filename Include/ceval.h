@@ -156,10 +156,10 @@ PyAPI_FUNC(void) PyEval_ReleaseThread(PyThreadState *tstate);
             _save = PyEval_SaveThread(); \
         }
 #define _Py_END_ALLOW_THREADS_COND \
-            if (_save != NULL) { \
-                PyEval_RestoreThread(_save); \
-            } \
-        }
+        if (_save != NULL) { \
+            PyEval_RestoreThread(_save); \
+        } \
+    }
 
 /* Masks and values used by FORMAT_VALUE opcode. */
 #define FVC_MASK      0x3
