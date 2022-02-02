@@ -1,0 +1,3 @@
+test_peg_generator now disables compiler optimization when testing
+compilation of its own C extensions to significantly speed up the
+testing on non-debug builds of CPython.
