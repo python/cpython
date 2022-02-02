@@ -1303,7 +1303,9 @@ find_frozen(PyObject *nameobj, struct frozen_info *info)
         info->is_alias = resolve_module_alias(name, _PyImport_FrozenAliases,
                                               &info->origname);
     }
-
+    if (p->code == NULL && p->size == 0 && p->get_code != NULL) {
+        return FROZEN_OKAY;
+    }
     if (p->code == NULL) {
         /* It is frozen but marked as un-importable. */
         return FROZEN_EXCLUDED;
@@ -2224,7 +2226,7 @@ _imp_get_frozen_object_impl(PyObject *module, PyObject *name,
     if (info.nameobj == NULL) {
         info.nameobj = name;
     }
-    if (info.size == 0) {
+    if (info.size == 0 && info.get_code == NULL) {
         /* Does not contain executable code. */
         set_frozen_error(FROZEN_INVALID, name);
         return NULL;
