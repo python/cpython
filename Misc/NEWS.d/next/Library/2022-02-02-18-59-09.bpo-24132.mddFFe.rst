@@ -1,0 +1,2 @@
+Add :class:`pathlib._AbstractPath` class. This internal class sets the stage
+for supporting user-defined path subclasses in a future version of Python.
