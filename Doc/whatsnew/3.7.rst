@@ -2474,7 +2474,7 @@ Windows-only Changes
 
 The file used to override :data:`sys.path` is now called
 ``<python-executable>._pth`` instead of ``'sys.path'``.
-See :ref:`finding_modules` for more information.
+See :ref:`windows_finding_modules` for more information.
 (Contributed by Steve Dower in :issue:`28137`.)
 
 

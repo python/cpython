@@ -1132,9 +1132,10 @@ always available.
 
 
    .. seealso::
-      Module :mod:`site` This describes how to use .pth files to extend
-      :data:`sys.path`.
-
+      * Module :mod:`site` This describes how to use .pth files to 
+        extend :data:`sys.path`.
+      * :ref:`using-on-finding-modules` for further details about the 
+        initialization of :data:`sys.path`.
 
 .. data:: path_hooks
 

@@ -51,6 +51,9 @@ managing aspects of Python packages:
     The :func:`.__import__` function
         The :keyword:`import` statement is syntactic sugar for this function.
 
+    :ref:`using-on-finding-modules`
+        The initialization of :data:`sys.path`.
+
     :pep:`235`
         Import on Case-Insensitive Platforms
 

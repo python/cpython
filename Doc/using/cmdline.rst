@@ -994,3 +994,71 @@ Debug-mode variables
    Need Python configured with the :option:`--with-trace-refs` build option.
 
    .. versionadded:: 3.11
+
+.. _using-on-finding-modules:
+
+Finding modules
+---------------
+
+A module search path is initialized when Python starts. This module search path 
+may be accessed at :data:`sys.path`.
+
+The first entry in the module search path is the directoy containing the input 
+script (or the the current directory when no file is specified).
+
+On Windows a default Python installation adds the :file:`/Lib` directory and 
+the :file:`/Lib/site-packages` directory to the module search path. These 
+locations are relative to the :file:`python.exe` location. Standard modules 
+are usually found in the Lib directory and third-party modules in the 
+Lib/site-packages directory.
+
+On Unix the lib and lib/site-packages directories are added by looking for 
+:file:`/exec_prefix/lib/pythonversion` , :file:`/exec_prefix/lib/pythonversion/site-packages` ,
+:file:`/prefix/lib/pythonversion` and :file:`/prefix/lib/pythonversion/site-packages` .
+Often ``exec_prefix`` and ``prefix`` are the same and a common result is 
+adding :file:`/usr/lib/pythonversion` and :file:`/usr/lib/pythonversion/site-packages` 
+to the module search path. See :ref:`using-on-unix` for details.
+
+The :envvar:`PYTHONPATH` environment variable is often used to add directories 
+to the search path.
+
+Another common way to set the search path is to create :mod:`sitecustomize` 
+or :mod:`usercustomize` modules as described in the :mod:`site` module 
+documentation. 
+
+Virtual environments
+~~~~~~~~~~~~~~~~~~~~
+
+If Python is run in a virtual environment (as described at :ref:`tut-venv`) 
+the Lib and Lib/site-packages directories are specific to the virtual 
+environment.
+
+If a ``pyvenv.cfg`` file is found alongside the main executable, or in the
+directory one level above the executable, the following variations apply:
+
+* If ``home`` is an absolute path and :envvar:`PYTHONHOME` is not set, this
+  path is used instead of the path to the main executable when deducing the
+  Lib and Lib/site-packages directory locations.
+
+_pth files
+~~~~~~~~~~
+
+To completely override :data:`sys.path`, create a ``._pth`` file with the same
+name as the DLL/dylib/so (``python311._pth``) or the executable (``python._pth``) 
+and specify one line for each path to add to :data:`sys.path`. The file based on 
+the library name overrides the one based on the executable, which allows paths 
+to be restricted for any program loading the runtime if desired.
+
+When the file exists, all registry and environment variables are ignored,
+isolated mode is enabled, and :mod:`site` is not imported unless one line in the
+file specifies ``import site``. Blank paths and lines starting with ``#`` are
+ignored. Each path may be absolute or relative to the location of the file.
+Import statements other than to ``site`` are not permitted, and arbitrary code
+cannot be specified.
+
+Note that ``.pth`` files (without leading underscore) will be processed normally
+by the :mod:`site` module when ``import site`` has been specified.
+
+.. seealso::
+
+   :ref:`windows_finding_modules` for detailed Windows notes.
