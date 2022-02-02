@@ -2669,6 +2669,18 @@ class CastTests(BaseTestCase):
         cast('hello', 42)
 
 
+# We need this to make sure that `@no_type_check` respects `__module__` attr:
+from test import ann_module8
+
+@no_type_check
+class NoTypeCheck_Outer:
+    Inner = ann_module8.NoTypeCheck_Outer.Inner
+
+@no_type_check
+class NoTypeCheck_WithFunction:
+    NoTypeCheck_function = ann_module8.NoTypeCheck_function
+
+
 class ForwardRefTests(BaseTestCase):
 
     def test_basics(self):
@@ -3004,6 +3016,30 @@ class ForwardRefTests(BaseTestCase):
                     not_modified.__no_type_check__
                 self.assertNotEqual(get_type_hints(not_modified), {})
 
+    def test_no_type_check_class_and_static_methods(self):
+        @no_type_check
+        class Some:
+            @staticmethod
+            def st(x: int) -> int: ...
+            @classmethod
+            def cl(cls, y: int) -> int: ...
+
+        self.assertTrue(Some.st.__no_type_check__)
+        self.assertEqual(get_type_hints(Some.st), {})
+        self.assertTrue(Some.cl.__no_type_check__)
+        self.assertEqual(get_type_hints(Some.cl), {})
+
+    def test_no_type_check_other_module(self):
+        self.assertTrue(NoTypeCheck_Outer.__no_type_check__)
+        with self.assertRaises(AttributeError):
+            ann_module8.NoTypeCheck_Outer.__no_type_check__
+        with self.assertRaises(AttributeError):
+            ann_module8.NoTypeCheck_Outer.Inner.__no_type_check__
+
+        self.assertTrue(NoTypeCheck_WithFunction.__no_type_check__)
+        with self.assertRaises(AttributeError):
+            ann_module8.NoTypeCheck_function.__no_type_check__
+
     def test_no_type_check_foreign_functions(self):
         # We should not modify this function:
         def some(*args: int) -> int:
@@ -3017,6 +3053,7 @@ class ForwardRefTests(BaseTestCase):
 
         with self.assertRaises(AttributeError):
             some.__no_type_check__
+        self.assertEqual(get_type_hints(some), {'args': int, 'return': int})
 
     def test_no_type_check_lambda(self):
         @no_type_check
