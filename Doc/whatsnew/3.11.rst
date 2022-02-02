@@ -458,6 +458,16 @@ Deprecated
   as deprecated, its docstring is now corrected).
   (Contributed by Hugo van Kemenade in :issue:`45837`.)
 
+* The following have been deprecated in :mod:`configparser` since Python 3.2.
+  Their deprecation warnings have now been updated to note they will removed in
+  Python 3.12:
+
+  * the :class:`configparser.SafeConfigParser` class
+  * the :attr:`configparser.ParsingError.filename` property
+  * the :meth:`configparser.ParsingError.readfp` method
+
+  (Contributed by Hugo van Kemenade in :issue:`45173`.)
+
 Removed
 =======
 
@@ -501,13 +511,6 @@ Removed
   :func:`~gettext.install` are also removed, since they are only used for
   the ``l*gettext()`` functions.
   (Contributed by Dong-hee Na and Serhiy Storchaka in :issue:`44235`.)
-
-* Removed from the :mod:`configparser` module:
-  the :class:`SafeConfigParser` class,
-  the :attr:`filename` property of the :class:`ParsingError` class,
-  the :meth:`readfp` method of the :class:`ConfigParser` class,
-  deprecated since Python 3.2.
-  (Contributed by Hugo van Kemenade in :issue:`45173`.)
 
 * The :func:`@asyncio.coroutine <asyncio.coroutine>` :term:`decorator` enabling
   legacy generator-based coroutines to be compatible with async/await code.
