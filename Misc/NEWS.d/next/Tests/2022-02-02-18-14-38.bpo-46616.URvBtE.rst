@@ -1,0 +1,2 @@
+Ensures ``test_importlib.test_windows`` cleans up registry keys after
+completion.
