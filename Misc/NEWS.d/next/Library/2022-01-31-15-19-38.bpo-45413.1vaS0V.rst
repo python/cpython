@@ -8,4 +8,5 @@ scheme in a way that is not compatible with the install scheme used in
 virtual environments are encouraged to do it after the ``"venv"`` scheme
 is created or to supply a modified working ``"venv"`` scheme.
 When Python itself runs in a virtual environment,
-:func:`sysconfig.get_default_scheme` returns ``"venv"``.
+:func:`sysconfig.get_default_scheme` and
+:func:`sysconfig.get_preferred_scheme` with ``key="prefix"`` returns ``"venv"``.

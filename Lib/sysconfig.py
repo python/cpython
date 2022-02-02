@@ -272,6 +272,8 @@ def _get_preferred_schemes():
 
 
 def get_preferred_scheme(key):
+    if key == 'prefix' and sys.prefix != sys.base_prefix:
+        return 'venv'
     scheme = _get_preferred_schemes()[key]
     if scheme not in _INSTALL_SCHEMES:
         raise ValueError(
@@ -282,8 +284,6 @@ def get_preferred_scheme(key):
 
 
 def get_default_scheme():
-    if sys.prefix != sys.base_prefix:
-        return 'venv'
     return get_preferred_scheme('prefix')
 
 
