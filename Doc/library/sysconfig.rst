@@ -86,7 +86,7 @@ Python currently supports seven schemes:
 - *nt*: scheme for NT platforms like Windows.
 - *nt_user*: scheme for NT platforms, when the *user* option is used.
 - *osx_framework_user*: scheme for macOS, when the *user* option is used.
-- *venv*: scheme for creating :mod:`Python virtual environments <venv>`;
+- *venv*: scheme for :mod:`Python virtual environments <venv>`;
   by default, this is a copy of *posix_prefix* on POSIX
   or a copy of *nt* for NT platforms.
 
