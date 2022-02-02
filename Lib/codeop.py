@@ -41,7 +41,7 @@ _features = [getattr(__future__, fname)
 __all__ = ["compile_command", "Compile", "CommandCompiler"]
 
 # The following flags match the values from Include/cpython/compile.h
-# Caveat emptor: These flags are undocummented on pourpose and depending
+# Caveat emptor: These flags are undocumented on purpose and depending
 # on their effect outside the standard library is **unsupported**.
 PyCF_DONT_IMPLY_DEDENT = 0x200          
 PyCF_ALLOW_INCOMPLETE_INPUT = 0x4000
