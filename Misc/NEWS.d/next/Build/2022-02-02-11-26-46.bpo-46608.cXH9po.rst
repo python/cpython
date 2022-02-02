@@ -1,0 +1,1 @@
+Exclude marshalled-frozen data if deep-freezing to save 300 KB disk space. Patch by Kumar Aditya.
