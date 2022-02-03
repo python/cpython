@@ -21,8 +21,6 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#define NEEDS_PY_IDENTIFIER
-
 #include "connection.h"
 #include "statement.h"
 #include "cursor.h"
@@ -185,10 +183,9 @@ pysqlite_register_converter_impl(PyObject *module, PyObject *orig_name,
 {
     PyObject* name = NULL;
     PyObject* retval = NULL;
-    _Py_IDENTIFIER(upper);
 
     /* convert the name to upper case */
-    name = _PyObject_CallMethodIdNoArgs(orig_name, &PyId_upper);
+    name = PyObject_CallMethodNoArgs(orig_name, &_Py_ID(upper));
     if (!name) {
         goto error;
     }

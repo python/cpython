@@ -23,8 +23,15 @@
 
 #ifndef PYSQLITE_MODULE_H
 #define PYSQLITE_MODULE_H
+
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+
+#include "pycore_runtime.h" // _Py_ID()
 
 #define PYSQLITE_VERSION "2.6.0"
 #define MODULE_NAME "sqlite3"

@@ -667,6 +667,7 @@ extern "C" {
                 INIT_ID(__abc_tpflags__), \
                 INIT_ID(__abs__), \
                 INIT_ID(__abstractmethods__), \
+                INIT_ID(__adapt__), \
                 INIT_ID(__add__), \
                 INIT_ID(__aenter__), \
                 INIT_ID(__aexit__), \
@@ -688,6 +689,7 @@ extern "C" {
                 INIT_ID(__class_getitem__), \
                 INIT_ID(__classcell__), \
                 INIT_ID(__complex__), \
+                INIT_ID(__conform__), \
                 INIT_ID(__contains__), \
                 INIT_ID(__copy__), \
                 INIT_ID(__del__), \
