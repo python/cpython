@@ -2450,15 +2450,6 @@ class _BasePathTest(object):
     def test_complex_symlinks_relative_dot_dot(self):
         self._check_complex_symlinks(os.path.join('dirA', '..'))
 
-    def test_class_getitem(self):
-        from types import GenericAlias
-
-        alias = self.cls[str]
-        self.assertIsInstance(alias, GenericAlias)
-        self.assertIs(alias.__origin__, self.cls)
-        self.assertEqual(alias.__args__, (str,))
-        self.assertEqual(alias.__parameters__, ())
-
 
 class PathTest(_BasePathTest, unittest.TestCase):
     cls = pathlib.Path

@@ -12,7 +12,6 @@ from errno import ENOENT, ENOTDIR, EBADF, ELOOP
 from operator import attrgetter
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from urllib.parse import quote_from_bytes as urlquote_from_bytes
-from types import GenericAlias
 
 
 __all__ = [
@@ -603,8 +602,6 @@ class PurePath(object):
         if not isinstance(other, PurePath) or self._flavour is not other._flavour:
             return NotImplemented
         return self._cparts >= other._cparts
-
-    __class_getitem__ = classmethod(GenericAlias)
 
     drive = property(attrgetter('_drv'),
                      doc="""The drive prefix (letter or UNC path), if any.""")
