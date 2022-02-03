@@ -496,6 +496,10 @@ initial_counter_value(void) {
 #define SPEC_FAIL_BUILTIN_CLASS_METHOD 17
 #define SPEC_FAIL_CLASS_METHOD_OBJ 18
 #define SPEC_FAIL_OBJECT_SLOT 19
+#define SPEC_FAIL_HAS_DICT 20
+#define SPEC_FAIL_HAS_MANAGED_DICT 21
+#define SPEC_FAIL_INSTANCE_ATTRIBUTE 22
+#define SPEC_FAIL_METACLASS_ATTRIBUTE 23
 
 /* Binary subscr */
 
@@ -954,7 +958,7 @@ load_method_fail_kind(DescriptorClassification kind)
         case NON_DESCRIPTOR:
             return SPEC_FAIL_NOT_DESCRIPTOR;
         case ABSENT:
-            return SPEC_FAIL_EXPECTED_ERROR;
+            return SPEC_FAIL_INSTANCE_ATTRIBUTE;
     }
     Py_UNREACHABLE();
 }
@@ -975,6 +979,14 @@ specialize_class_load_method(PyObject *owner, _Py_CODEUNIT *instr, PyObject *nam
             cache2->obj = descr;
             *instr = _Py_MAKECODEUNIT(LOAD_METHOD_CLASS, _Py_OPARG(*instr));
             return 0;
+        case ABSENT:
+            if (_PyType_Lookup(Py_TYPE(owner), name) != NULL) {
+                SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_METACLASS_ATTRIBUTE);
+            }
+            else {
+                SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_EXPECTED_ERROR);
+            }
+            return -1;
         default:
             SPECIALIZATION_FAIL(LOAD_METHOD, load_method_fail_kind(kind));
             return -1;
@@ -1024,7 +1036,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
     if (owner_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
         PyObject **owner_dictptr = _PyObject_ManagedDictPointer(owner);
         if (*owner_dictptr) {
-            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_IS_ATTR);
+            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_HAS_MANAGED_DICT);
             goto fail;
         }
         PyDictKeysObject *keys = ((PyHeapTypeObject *)owner_cls)->ht_cached_keys;
@@ -1046,7 +1058,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
             *instr = _Py_MAKECODEUNIT(LOAD_METHOD_NO_DICT, _Py_OPARG(*instr));
         }
         else {
-            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_IS_ATTR);
+            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_HAS_DICT);
             goto fail;
         }
     }
