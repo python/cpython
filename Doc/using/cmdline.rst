@@ -1003,8 +1003,10 @@ Finding modules
 A module search path is initialized when Python starts. This module search path
 may be accessed at :data:`sys.path`.
 
-The first entry in the module search path is the directory containing the input
-script (or the the current directory when no file is specified).
+The first entry in the module search path is the directory that contains the
+input script, if there is one. Otherwise, the first entry is the current
+directory, which is the case when executing the REPL shell, a ``-c`` command,
+or ``-m`` module.
 
 On Windows a default Python installation adds the :file:`/Lib` directory and
 the :file:`/Lib/site-packages` directory to the module search path. These
