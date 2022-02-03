@@ -1005,8 +1005,8 @@ may be accessed at :data:`sys.path`.
 
 The first entry in the module search path is the directory that contains the
 input script, if there is one. Otherwise, the first entry is the current
-directory, which is the case when executing the REPL shell, a ``-c`` command,
-or ``-m`` module.
+directory, which is the case when executing the interactive shell, a ``-c``
+command, or ``-m`` module.
 
 On Windows a default Python installation adds the :file:`/Lib` directory and
 the :file:`/Lib/site-packages` directory to the module search path. These
@@ -1015,8 +1015,8 @@ are usually found in the Lib directory and third-party modules in the
 Lib/site-packages directory.
 
 On Unix the lib and lib/site-packages directories are added by looking for
-:file:`/exec_prefix/lib/pythonversion` , :file:`/exec_prefix/lib/pythonversion/site-packages` ,
-:file:`/prefix/lib/pythonversion` and :file:`/prefix/lib/pythonversion/site-packages` .
+:file:`/{exec_prefix}/lib/pythonversion/site-packages` , :file:`/{exec_prefix}/lib/pythonversion/lib-dynload` ,
+:file:`/{prefix}/lib/pythonversion` and :file:`/{prefix}/lib/pythonversion/site-packages` .
 Often ``exec_prefix`` and ``prefix`` are the same and a common result is
 adding :file:`/usr/lib/pythonversion` and :file:`/usr/lib/pythonversion/site-packages`
 to the module search path. See :ref:`using-on-unix` for details.
@@ -1046,7 +1046,7 @@ _pth files
 ~~~~~~~~~~
 
 To completely override :data:`sys.path`, create a ``._pth`` file with the same
-name as the DLL/dylib/so (``python311._pth``) or the executable (``python._pth``)
+name as the DLL/dylib (``python311._pth``) or the executable (``python._pth``)
 and specify one line for each path to add to :data:`sys.path`. The file based on
 the library name overrides the one based on the executable, which allows paths
 to be restricted for any program loading the runtime if desired.
