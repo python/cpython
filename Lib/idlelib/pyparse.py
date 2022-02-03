@@ -179,7 +179,7 @@ class Parser:
         # Peeking back worked; look forward until _synchre no longer
         # matches.
         i = pos + 1
-        while (m := _synchre(code, i)):
+        while m := _synchre(code, i):
             s, i = m.span()
             if not is_char_in_string(s):
                 pos = s
