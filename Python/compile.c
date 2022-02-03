@@ -7827,7 +7827,7 @@ compute_localsplus_info(struct compiler *c, int nlocalsplus,
 
 static PyCodeObject *
 makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
-         int maxdepth, int nlocalsplus)
+         int maxdepth, int nlocalsplus, int flags)
 {
     PyCodeObject *co = NULL;
     PyObject *names = NULL;
@@ -7840,11 +7840,6 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
         goto error;
     }
     if (!merge_const_one(c, &names)) {
-        goto error;
-    }
-
-    int flags = compute_code_flags(c);
-    if (flags < 0) {
         goto error;
     }
 
@@ -8022,13 +8017,8 @@ insert_instruction(basicblock *block, int pos, struct instr *instr) {
 
 static int
 insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
-                           int *fixed, int nfreevars)
+                           int *fixed, int nfreevars, int flags)
 {
-
-    int flags = compute_code_flags(c);
-    if (flags < 0) {
-        return -1;
-    }
     assert(c->u->u_firstlineno > 0);
 
     /* Add the generator prefix instructions. */
@@ -8212,6 +8202,11 @@ assemble(struct compiler *c, int addNone)
         ADDOP(c, RETURN_VALUE);
     }
 
+    int code_flags = compute_code_flags(c);
+    if (code_flags < 0) {
+        return NULL;
+    }
+
     for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
         if (normalize_basic_block(b)) {
             return NULL;
@@ -8257,7 +8252,8 @@ assemble(struct compiler *c, int addNone)
     }
 
     // This must be called before fix_cell_offsets().
-    if (insert_prefix_instructions(c, entryblock, cellfixedoffsets, nfreevars)) {
+    if (insert_prefix_instructions(c, entryblock, cellfixedoffsets,
+                                   nfreevars, code_flags)) {
         goto error;
     }
 
@@ -8356,7 +8352,9 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
 
-    co = makecode(c, &a, consts, maxdepth, nlocalsplus);
+    assert(code_flags == compute_code_flags(c));
+    co = makecode(c, &a, consts, maxdepth, nlocalsplus, code_flags);
+
  error:
     Py_XDECREF(consts);
     assemble_free(&a);
