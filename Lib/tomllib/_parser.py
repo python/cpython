@@ -75,6 +75,7 @@ def loads(s: str, /, *, parse_float: ParseFloat = float) -> dict[str, Any]:  # n
     pos = 0
     out = Output(NestedDict(), Flags())
     header: Key = ()
+    parse_float = make_safe_parse_float(parse_float)
 
     # Parse one statement at a time
     # (typically means one line in TOML source)
@@ -216,10 +217,9 @@ class NestedDict:
         last_key = key[-1]
         if last_key in cont:
             list_ = cont[last_key]
-            try:
-                list_.append({})
-            except AttributeError:
+            if not isinstance(list_, list):
                 raise KeyError("An object other than list found behind this key")
+            list_.append({})
         else:
             cont[last_key] = [{}]
 
@@ -668,3 +668,24 @@ def suffixed_err(src: str, pos: Pos, msg: str) -> TOMLDecodeError:
 
 def is_unicode_scalar_value(codepoint: int) -> bool:
     return (0 <= codepoint <= 55295) or (57344 <= codepoint <= 1114111)
+
+
+def make_safe_parse_float(parse_float: ParseFloat) -> ParseFloat:
+    """A decorator to make `parse_float` safe.
+
+    `parse_float` must not return dicts or lists, because these types
+    would be mixed with parsed TOML tables and arrays, thus confusing
+    the parser. The returned decorated callable raises `ValueError`
+    instead of returning illegal types.
+    """
+    # The default `float` callable never returns illegal types. Optimize it.
+    if parse_float is float:  # type: ignore[comparison-overlap]
+        return float
+
+    def safe_parse_float(float_str: str) -> Any:
+        float_value = parse_float(float_str)
+        if isinstance(float_value, (dict, list)):
+            raise ValueError("parse_float must not return dicts or lists")
+        return float_value
+
+    return safe_parse_float

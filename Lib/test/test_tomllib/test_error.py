@@ -41,3 +41,17 @@ class TestError(unittest.TestCase):
 
     def test_module_name(self):
         self.assertEqual(tomllib.TOMLDecodeError().__module__, tomllib.__name__)
+
+    def test_invalid_parse_float(self):
+        def dict_returner(s: str) -> dict:
+            return {}
+
+        def list_returner(s: str) -> list:
+            return []
+
+        for invalid_parse_float in (dict_returner, list_returner):
+            with self.assertRaises(ValueError) as exc_info:
+                tomllib.loads("f=0.1", parse_float=invalid_parse_float)
+            self.assertEqual(
+                str(exc_info.exception), "parse_float must not return dicts or lists"
+            )
