@@ -7,7 +7,7 @@ sphinx==4.2.0
 
 blurb
 
-sphinx-lint
+sphinx-lint<1
 
 # The theme used by the documentation is stored separately, so we need
 # to install that as well.
