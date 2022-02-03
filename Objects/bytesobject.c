@@ -1680,29 +1680,44 @@ bytes.split
     maxsplit: Py_ssize_t = -1
         Maximum number of splits to do.
         -1 (the default value) means no limit.
+    keepempty: object = None
+        Determines whether or not to keep empty strings in the final list
 
 Return a list of the sections in the bytes, using sep as the delimiter.
 [clinic start generated code]*/
 
 static PyObject *
-bytes_split_impl(PyBytesObject *self, PyObject *sep, Py_ssize_t maxsplit)
-/*[clinic end generated code: output=52126b5844c1d8ef input=8b809b39074abbfa]*/
+bytes_split_impl(PyBytesObject *self, PyObject *sep, Py_ssize_t maxsplit,
+                 PyObject *keepempty)
+/*[clinic end generated code: output=e1b678240fbff2e0 input=e58ccb5eb2569eb4]*/
 {
     Py_ssize_t len = PyBytes_GET_SIZE(self), n;
     const char *s = PyBytes_AS_STRING(self), *sub;
     Py_buffer vsub;
     PyObject *list;
+    int prune;
+
+    if (keepempty == Py_None) {
+        if (sep == Py_None)
+            prune = 1;
+        else
+            prune = 0;
+    } else {
+        prune = PyObject_Not(keepempty);
+        if (prune < 0)
+            return NULL;
+    }
 
     if (maxsplit < 0)
         maxsplit = PY_SSIZE_T_MAX;
     if (sep == Py_None)
-        return stringlib_split_whitespace((PyObject*) self, s, len, maxsplit);
+        return stringlib_split_whitespace((PyObject*) self, s, len, maxsplit, prune);
     if (PyObject_GetBuffer(sep, &vsub, PyBUF_SIMPLE) != 0)
         return NULL;
     sub = vsub.buf;
     n = vsub.len;
 
-    list = stringlib_split((PyObject*) self, s, len, sub, n, maxsplit);
+    list = stringlib_split((PyObject*) self, s, len, sub, n, maxsplit, prune);
     PyBuffer_Release(&vsub);
     return list;
 }
@@ -1770,24 +1785,37 @@ Splitting is done starting at the end of the bytes and working to the front.
 [clinic start generated code]*/
 
 static PyObject *
-bytes_rsplit_impl(PyBytesObject *self, PyObject *sep, Py_ssize_t maxsplit)
-/*[clinic end generated code: output=ba698d9ea01e1c8f input=0f86c9f28f7d7b7b]*/
+bytes_rsplit_impl(PyBytesObject *self, PyObject *sep, Py_ssize_t maxsplit,
+                  PyObject *keepempty)
+/*[clinic end generated code: output=0e304d20c12f7ac0 input=0f86c9f28f7d7b7b]*/
 {
     Py_ssize_t len = PyBytes_GET_SIZE(self), n;
     const char *s = PyBytes_AS_STRING(self), *sub;
     Py_buffer vsub;
     PyObject *list;
+    int prune;
+
+    if (keepempty == Py_None) {
+        if (sep == Py_None)
+            prune = 1;
+        else
+            prune = 0;
+    } else {
+        prune = PyObject_Not(keepempty);
+        if (prune < 0)
+            return NULL;
+    }
 
     if (maxsplit < 0)
         maxsplit = PY_SSIZE_T_MAX;
     if (sep == Py_None)
-        return stringlib_rsplit_whitespace((PyObject*) self, s, len, maxsplit);
+        return stringlib_rsplit_whitespace((PyObject*) self, s, len, maxsplit, prune);
     if (PyObject_GetBuffer(sep, &vsub, PyBUF_SIMPLE) != 0)
         return NULL;
     sub = vsub.buf;
     n = vsub.len;
 
-    list = stringlib_rsplit((PyObject*) self, s, len, sub, n, maxsplit);
+    list = stringlib_rsplit((PyObject*) self, s, len, sub, n, maxsplit, prune);
     PyBuffer_Release(&vsub);
     return list;
 }

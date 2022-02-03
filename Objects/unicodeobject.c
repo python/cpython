@@ -10414,7 +10414,8 @@ PyUnicode_Splitlines(PyObject *string, int keepends)
 static PyObject *
 split(PyObject *self,
       PyObject *substring,
-      Py_ssize_t maxcount)
+      Py_ssize_t maxcount,
+      int prune)
 {
     int kind1, kind2;
     const void *buf1, *buf2;
@@ -10433,22 +10434,22 @@ split(PyObject *self,
             if (PyUnicode_IS_ASCII(self))
                 return asciilib_split_whitespace(
                     self,  PyUnicode_1BYTE_DATA(self),
-                    PyUnicode_GET_LENGTH(self), maxcount
+                    PyUnicode_GET_LENGTH(self), maxcount, prune
                     );
             else
                 return ucs1lib_split_whitespace(
                     self,  PyUnicode_1BYTE_DATA(self),
-                    PyUnicode_GET_LENGTH(self), maxcount
+                    PyUnicode_GET_LENGTH(self), maxcount, prune
                     );
         case PyUnicode_2BYTE_KIND:
             return ucs2lib_split_whitespace(
                 self,  PyUnicode_2BYTE_DATA(self),
-                PyUnicode_GET_LENGTH(self), maxcount
+                PyUnicode_GET_LENGTH(self), maxcount, prune
                 );
         case PyUnicode_4BYTE_KIND:
             return ucs4lib_split_whitespace(
                 self,  PyUnicode_4BYTE_DATA(self),
-                PyUnicode_GET_LENGTH(self), maxcount
+                PyUnicode_GET_LENGTH(self), maxcount, prune
                 );
         default:
             Py_UNREACHABLE();
@@ -10462,12 +10463,14 @@ split(PyObject *self,
     len1 = PyUnicode_GET_LENGTH(self);
     len2 = PyUnicode_GET_LENGTH(substring);
     if (kind1 < kind2 || len1 < len2) {
-        out = PyList_New(1);
-        if (out == NULL)
-            return NULL;
-        Py_INCREF(self);
-        PyList_SET_ITEM(out, 0, self);
-        return out;
+        if (len1 > 0 ) {
+            out = PyList_New(1);
+            if (out == NULL)
+                return NULL;
+            Py_INCREF(self);
+            PyList_SET_ITEM(out, 0, self);
+            return out;
+        }
     }
     buf1 = PyUnicode_DATA(self);
     buf2 = PyUnicode_DATA(substring);
@@ -10480,19 +10483,15 @@ split(PyObject *self,
     switch (kind1) {
     case PyUnicode_1BYTE_KIND:
         if (PyUnicode_IS_ASCII(self) && PyUnicode_IS_ASCII(substring))
-            out = asciilib_split(
-                self,  buf1, len1, buf2, len2, maxcount);
+            out = asciilib_split(self, buf1, len1, buf2, len2, maxcount, prune);
         else
-            out = ucs1lib_split(
-                self,  buf1, len1, buf2, len2, maxcount);
+            out = ucs1lib_split(self, buf1, len1, buf2, len2, maxcount, prune);
         break;
     case PyUnicode_2BYTE_KIND:
-        out = ucs2lib_split(
-            self,  buf1, len1, buf2, len2, maxcount);
+        out = ucs2lib_split(self, buf1, len1, buf2, len2, maxcount, prune);
         break;
     case PyUnicode_4BYTE_KIND:
-        out = ucs4lib_split(
-            self,  buf1, len1, buf2, len2, maxcount);
+        out = ucs4lib_split(self, buf1, len1, buf2, len2, maxcount, prune);
         break;
     default:
         out = NULL;
@@ -10506,7 +10505,8 @@ split(PyObject *self,
 static PyObject *
 rsplit(PyObject *self,
        PyObject *substring,
-       Py_ssize_t maxcount)
+       Py_ssize_t maxcount,
+       int prune)
 {
     int kind1, kind2;
     const void *buf1, *buf2;
@@ -10524,23 +10524,23 @@ rsplit(PyObject *self,
         case PyUnicode_1BYTE_KIND:
             if (PyUnicode_IS_ASCII(self))
                 return asciilib_rsplit_whitespace(
-                    self,  PyUnicode_1BYTE_DATA(self),
-                    PyUnicode_GET_LENGTH(self), maxcount
+                    self, PyUnicode_1BYTE_DATA(self),
+                    PyUnicode_GET_LENGTH(self), maxcount, prune
                     );
             else
                 return ucs1lib_rsplit_whitespace(
-                    self,  PyUnicode_1BYTE_DATA(self),
-                    PyUnicode_GET_LENGTH(self), maxcount
+                    self, PyUnicode_1BYTE_DATA(self),
+                    PyUnicode_GET_LENGTH(self), maxcount, prune
                     );
         case PyUnicode_2BYTE_KIND:
             return ucs2lib_rsplit_whitespace(
-                self,  PyUnicode_2BYTE_DATA(self),
-                PyUnicode_GET_LENGTH(self), maxcount
+                self, PyUnicode_2BYTE_DATA(self),
+                PyUnicode_GET_LENGTH(self), maxcount, prune
                 );
         case PyUnicode_4BYTE_KIND:
             return ucs4lib_rsplit_whitespace(
-                self,  PyUnicode_4BYTE_DATA(self),
-                PyUnicode_GET_LENGTH(self), maxcount
+                self, PyUnicode_4BYTE_DATA(self),
+                PyUnicode_GET_LENGTH(self), maxcount, prune
                 );
         default:
             Py_UNREACHABLE();
@@ -10553,7 +10553,7 @@ rsplit(PyObject *self,
     kind2 = PyUnicode_KIND(substring);
     len1 = PyUnicode_GET_LENGTH(self);
     len2 = PyUnicode_GET_LENGTH(substring);
-    if (kind1 < kind2 || len1 < len2) {
+    if (kind1 < kind2 || (len1 > 0 && len1 < len2)) {
         out = PyList_New(1);
         if (out == NULL)
             return NULL;
@@ -10572,19 +10572,15 @@ rsplit(PyObject *self,
     switch (kind1) {
     case PyUnicode_1BYTE_KIND:
         if (PyUnicode_IS_ASCII(self) && PyUnicode_IS_ASCII(substring))
-            out = asciilib_rsplit(
-                self,  buf1, len1, buf2, len2, maxcount);
+            out = asciilib_rsplit(self, buf1, len1, buf2, len2, maxcount, prune);
         else
-            out = ucs1lib_rsplit(
-                self,  buf1, len1, buf2, len2, maxcount);
+            out = ucs1lib_rsplit(self, buf1, len1, buf2, len2, maxcount, prune);
         break;
     case PyUnicode_2BYTE_KIND:
-        out = ucs2lib_rsplit(
-            self,  buf1, len1, buf2, len2, maxcount);
+        out = ucs2lib_rsplit(self, buf1, len1, buf2, len2, maxcount, prune);
         break;
     case PyUnicode_4BYTE_KIND:
-        out = ucs4lib_rsplit(
-            self,  buf1, len1, buf2, len2, maxcount);
+        out = ucs4lib_rsplit(self, buf1, len1, buf2, len2, maxcount, prune);
         break;
     default:
         out = NULL;
@@ -13210,10 +13206,14 @@ unicode_rjust_impl(PyObject *self, Py_ssize_t width, Py_UCS4 fillchar)
 PyObject *
 PyUnicode_Split(PyObject *s, PyObject *sep, Py_ssize_t maxsplit)
 {
+    int prune;
+
     if (ensure_unicode(s) < 0 || (sep != NULL && ensure_unicode(sep) < 0))
         return NULL;
 
-    return split(s, sep, maxsplit);
+    prune = (sep == Py_None) ? 1 : 0;
+
+    return split(s, sep, maxsplit, prune);
 }
 
 /*[clinic input]
@@ -13226,18 +13226,41 @@ str.split as unicode_split
     maxsplit: Py_ssize_t = -1
         Maximum number of splits to do.
         -1 (the default value) means no limit.
+    keepempty: object = None
+        Determines whether or not to keep empty strings in the final list.
 
 Return a list of the words in the string, using sep as the delimiter string.
+
+If maxsplit is given, at most maxsplit splits are done.
+If sep is not specified or is None, any whitespace string is a separator.
+If keepempty is False, empty strings are removed from the result.
+If keepempty is True, empty strings are retained in the result.
+If keepempty is not given or None, the default behaviour is used: it is set to True if
+sep is None, False otherwise.
 [clinic start generated code]*/
 
 static PyObject *
-unicode_split_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit)
-/*[clinic end generated code: output=3a65b1db356948dc input=606e750488a82359]*/
+unicode_split_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit,
+                   PyObject *keepempty)
+/*[clinic end generated code: output=c182ae533ca1ef53 input=2fe5525dbaaf44ee]*/
 {
+    int prune;
+
+    if (keepempty == Py_None) {
+        if (sep == Py_None)
+            prune = 1;
+        else
+            prune = 0;
+    } else {
+        prune = PyObject_Not(keepempty);
+        if (prune < 0)
+            return NULL;
+    }
+
     if (sep == Py_None)
-        return split(self, NULL, maxsplit);
+        return split(self, NULL, maxsplit, prune);
     if (PyUnicode_Check(sep))
-        return split(self, sep, maxsplit);
+        return split(self, sep, maxsplit, prune);
 
     PyErr_Format(PyExc_TypeError,
                  "must be str or None, not %.100s",
@@ -13394,10 +13417,14 @@ unicode_rpartition(PyObject *self, PyObject *sep)
 PyObject *
 PyUnicode_RSplit(PyObject *s, PyObject *sep, Py_ssize_t maxsplit)
 {
+    int prune;
+
     if (ensure_unicode(s) < 0 || (sep != NULL && ensure_unicode(sep) < 0))
         return NULL;
 
-    return rsplit(s, sep, maxsplit);
+    prune = (sep == Py_None) ? 1 : 0;
+
+    return rsplit(s, sep, maxsplit, prune);
 }
 
 /*[clinic input]
@@ -13409,13 +13436,27 @@ Splits are done starting at the end of the string and working to the front.
 [clinic start generated code]*/
 
 static PyObject *
-unicode_rsplit_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit)
-/*[clinic end generated code: output=c2b815c63bcabffc input=12ad4bf57dd35f15]*/
+unicode_rsplit_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit,
+                    PyObject *keepempty)
+/*[clinic end generated code: output=27ba2177eb6cdfcf input=12ad4bf57dd35f15]*/
 {
+    int prune;
+
+    if (keepempty == Py_None) {
+        if (sep == Py_None)
+            prune = 1;
+        else
+            prune = 0;
+    } else {
+        prune = PyObject_Not(keepempty);
+        if (prune < 0)
+            return NULL;
+    }
+
     if (sep == Py_None)
-        return rsplit(self, NULL, maxsplit);
+        return rsplit(self, NULL, maxsplit, prune);
     if (PyUnicode_Check(sep))
-        return rsplit(self, sep, maxsplit);
+        return rsplit(self, sep, maxsplit, prune);
 
     PyErr_Format(PyExc_TypeError,
                  "must be str or None, not %.100s",
