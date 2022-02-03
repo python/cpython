@@ -303,11 +303,23 @@ typedef struct _opcode_stats {
 typedef struct _call_stats {
     uint64_t inlined_py_calls;
     uint64_t pyeval_calls;
+    uint64_t frames_pushed;
+    uint64_t frame_objects_created;
 } CallStats;
+
+typedef struct _object_stats {
+    uint64_t allocations;
+    uint64_t frees;
+    uint64_t new_values;
+    uint64_t dict_materialized_on_request;
+    uint64_t dict_materialized_new_key;
+    uint64_t dict_materialized_too_big;
+} ObjectStats;
 
 typedef struct _stats {
     OpcodeStats opcode_stats[256];
     CallStats call_stats;
+    ObjectStats object_stats;
 } PyStats;
 
 extern PyStats _py_stats;
@@ -316,6 +328,7 @@ extern PyStats _py_stats;
 #define STAT_DEC(opname, name) _py_stats.opcode_stats[opname].specialization.name--
 #define OPCODE_EXE_INC(opname) _py_stats.opcode_stats[opname].execution_count++
 #define CALL_STAT_INC(name) _py_stats.call_stats.name++
+#define OBJECT_STAT_INC(name) _py_stats.object_stats.name++
 
 void _Py_PrintSpecializationStats(int to_file);
 
@@ -326,6 +339,7 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define STAT_DEC(opname, name) ((void)0)
 #define OPCODE_EXE_INC(opname) ((void)0)
 #define CALL_STAT_INC(name) ((void)0)
+#define OBJECT_STAT_INC(name) ((void)0)
 #endif
 
 

@@ -187,16 +187,19 @@ struct _ts {
     /* The following fields are here to avoid allocation during init.
        The data is exposed through PyThreadState pointer fields.
        These fields should not be accessed directly outside of init.
+       This is indicated by an underscore prefix on the field names.
 
        All other PyInterpreterState pointer fields are populated when
        needed and default to NULL.
        */
+       // Note some fields do not have a leading underscore for backward
+       // compatibility.  See https://bugs.python.org/issue45953#msg412046.
 
     /* The thread's exception stack entry.  (Always the last entry.) */
-    _PyErr_StackItem _exc_state;
+    _PyErr_StackItem exc_state;
 
     /* The bottom-most frame on the stack. */
-    CFrame _root_cframe;
+    CFrame root_cframe;
 };
 
 

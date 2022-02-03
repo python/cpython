@@ -26,7 +26,7 @@ for name in opcode.opname[1:]:
 TOTAL = "specialization.deferred", "specialization.hit", "specialization.miss", "execution_count"
 
 def print_specialization_stats(name, family_stats):
-    if "specialization.deferred" not in family_stats:
+    if "specialization.failure" not in family_stats:
         return
     total = sum(family_stats.get(kind, 0) for kind in TOTAL)
     if total == 0:
@@ -105,7 +105,20 @@ def main():
             total += value
     for key, value in stats.items():
         if "Calls to" in key:
-            print(f"{key}: {value} {100*value/total:0.1f}%")
+            print(f"    {key}: {value} {100*value/total:0.1f}%")
+    for key, value in stats.items():
+        if key.startswith("Frame"):
+            print(f"    {key}: {value} {100*value/total:0.1f}%")
+    print("Object stats:")
+    total = stats.get("Object new values")
+    for key, value in stats.items():
+        if key.startswith("Object"):
+            if "materialize" in key:
+                print(f"    {key}: {value} {100*value/total:0.1f}%")
+            else:
+                print(f"    {key}: {value}")
+    total = 0
+
 
 if __name__ == "__main__":
     main()
