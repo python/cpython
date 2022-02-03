@@ -979,6 +979,7 @@ specialize_class_load_method(PyObject *owner, _Py_CODEUNIT *instr, PyObject *nam
             cache2->obj = descr;
             *instr = _Py_MAKECODEUNIT(LOAD_METHOD_CLASS, _Py_OPARG(*instr));
             return 0;
+#ifdef Py_STATS
         case ABSENT:
             if (_PyType_Lookup(Py_TYPE(owner), name) != NULL) {
                 SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_METACLASS_ATTRIBUTE);
@@ -987,6 +988,7 @@ specialize_class_load_method(PyObject *owner, _Py_CODEUNIT *instr, PyObject *nam
                 SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_EXPECTED_ERROR);
             }
             return -1;
+#endif
         default:
             SPECIALIZATION_FAIL(LOAD_METHOD, load_method_fail_kind(kind));
             return -1;
