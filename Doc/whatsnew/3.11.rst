@@ -458,6 +458,16 @@ Deprecated
   as deprecated, its docstring is now corrected).
   (Contributed by Hugo van Kemenade in :issue:`45837`.)
 
+* The following have been deprecated in :mod:`configparser` since Python 3.2.
+  Their deprecation warnings have now been updated to note they will removed in
+  Python 3.12:
+
+  * the :class:`configparser.SafeConfigParser` class
+  * the :attr:`configparser.ParsingError.filename` property
+  * the :meth:`configparser.ParsingError.readfp` method
+
+  (Contributed by Hugo van Kemenade in :issue:`45173`.)
+
 Removed
 =======
 
@@ -501,13 +511,6 @@ Removed
   :func:`~gettext.install` are also removed, since they are only used for
   the ``l*gettext()`` functions.
   (Contributed by Dong-hee Na and Serhiy Storchaka in :issue:`44235`.)
-
-* Removed from the :mod:`configparser` module:
-  the :class:`SafeConfigParser` class,
-  the :attr:`filename` property of the :class:`ParsingError` class,
-  the :meth:`readfp` method of the :class:`ConfigParser` class,
-  deprecated since Python 3.2.
-  (Contributed by Hugo van Kemenade in :issue:`45173`.)
 
 * The :func:`@asyncio.coroutine <asyncio.coroutine>` :term:`decorator` enabling
   legacy generator-based coroutines to be compatible with async/await code.
@@ -657,6 +660,26 @@ New Features
   :c:macro:`PY_VERSION_HEX`.
   (Contributed by  Gabriele N. Tornetta in :issue:`43931`.)
 
+* :c:type:`Py_buffer` and APIs are now part of the limited API and the stable
+  ABI:
+
+  * :c:func:`PyObject_CheckBuffer`
+  * :c:func:`PyObject_GetBuffer`
+  * :c:func:`PyBuffer_GetPointer`
+  * :c:func:`PyBuffer_SizeFromFormat`
+  * :c:func:`PyBuffer_ToContiguous`
+  * :c:func:`PyBuffer_FromContiguous`
+  * :c:func:`PyBuffer_CopyData`
+  * :c:func:`PyBuffer_IsContiguous`
+  * :c:func:`PyBuffer_FillContiguousStrides`
+  * :c:func:`PyBuffer_FillInfo`
+  * :c:func:`PyBuffer_Release`
+  * :c:func:`PyMemoryView_FromBuffer`
+  * :c:member:`~PyBufferProcs.bf_getbuffer` and
+    :c:member:`~PyBufferProcs.bf_releasebuffer` type slots
+
+  (Contributed by Christian Heimes in :issue:`45459`.)
+
 
 Porting to Python 3.11
 ----------------------
@@ -759,12 +782,19 @@ Porting to Python 3.11
   which are not available in the limited C API.
   (Contributed by Victor Stinner in :issue:`46007`.)
 
-* Changes of the :c:type:`PyFrameObject` structure members:
+* Changes of the private :c:type:`PyFrameObject` structure members.
+
+  While the documentation notes that the fields of ``PyFrameObject`` are
+  subject to change at any time, they have been stable for a long time
+  and were used in several popular extensions.
+  In Python 3.11, the frame struct was reorganized to allow performance
+  optimizations. Rather than reading the fields directly, extensions should
+  use functions:
 
   * ``f_code``: removed, use :c:func:`PyFrame_GetCode` instead.
     Warning: the function returns a :term:`strong reference`, need to call
     :c:func:`Py_DECREF`.
-  * ``f_back``: changed, use :c:func:`PyFrame_GetBack`.
+  * ``f_back``: changed (see below), use :c:func:`PyFrame_GetBack`.
   * ``f_builtins``: removed,
     use ``PyObject_GetAttrString(frame, "f_builtins")``.
   * ``f_globals``: removed,
@@ -773,13 +803,17 @@ Porting to Python 3.11
     use ``PyObject_GetAttrString(frame, "f_locals")``.
   * ``f_lasti``: removed,
     use ``PyObject_GetAttrString(frame, "f_lasti")``.
-  * ``f_valuesstack``: removed.
-  * ``f_stackdepth``: removed.
-  * ``f_gen``: removed.
-  * ``f_iblock``: removed.
-  * ``f_state``: removed.
-  * ``f_blockstack``: removed.
-  * ``f_localsplus``: removed.
+
+  The following fields were removed entirely, as they were details
+  of the old implementation:
+
+  * ``f_valuesstack``
+  * ``f_stackdepth``
+  * ``f_gen``
+  * ``f_iblock``
+  * ``f_state``
+  * ``f_blockstack``
+  * ``f_localsplus``
 
   The Python frame object is now created lazily. A side effect is that the
   ``f_back`` member must not be accessed directly, since its value is now also

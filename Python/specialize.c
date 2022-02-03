@@ -169,12 +169,26 @@ print_call_stats(FILE *out, CallStats *stats)
 {
     fprintf(out, "Calls to PyEval_EvalDefault: %" PRIu64 "\n", stats->pyeval_calls);
     fprintf(out, "Calls to Python functions inlined: %" PRIu64 "\n", stats->inlined_py_calls);
+    fprintf(out, "Frames pushed: %" PRIu64 "\n", stats->frames_pushed);
+    fprintf(out, "Frame objects created: %" PRIu64 "\n", stats->frame_objects_created);
+}
+
+static void
+print_object_stats(FILE *out, ObjectStats *stats)
+{
+    fprintf(out, "Object allocations: %" PRIu64 "\n", stats->allocations);
+    fprintf(out, "Object frees: %" PRIu64 "\n", stats->frees);
+    fprintf(out, "Object new values: %" PRIu64 "\n", stats->new_values);
+    fprintf(out, "Object materialize dict (on request): %" PRIu64 "\n", stats->dict_materialized_on_request);
+    fprintf(out, "Object materialize dict (new key): %" PRIu64 "\n", stats->dict_materialized_new_key);
+    fprintf(out, "Object materialize dict (too big): %" PRIu64 "\n", stats->dict_materialized_too_big);
 }
 
 static void
 print_stats(FILE *out, PyStats *stats) {
     print_spec_stats(out, stats->opcode_stats);
     print_call_stats(out, &stats->call_stats);
+    print_object_stats(out, &stats->object_stats);
 }
 
 void
@@ -533,6 +547,23 @@ initial_counter_value(void) {
 #define SPEC_FAIL_STRING_COMPARE 13
 #define SPEC_FAIL_NOT_FOLLOWED_BY_COND_JUMP 14
 #define SPEC_FAIL_BIG_INT 15
+
+/* FOR_ITER */
+#define SPEC_FAIL_ITER_GENERATOR 10
+#define SPEC_FAIL_ITER_COROUTINE 11
+#define SPEC_FAIL_ITER_ASYNC_GENERATOR 12
+#define SPEC_FAIL_ITER_LIST 13
+#define SPEC_FAIL_ITER_TUPLE 14
+#define SPEC_FAIL_ITER_SET 15
+#define SPEC_FAIL_ITER_STRING 16
+#define SPEC_FAIL_ITER_BYTES 17
+#define SPEC_FAIL_ITER_RANGE 18
+#define SPEC_FAIL_ITER_ITERTOOLS 19
+#define SPEC_FAIL_ITER_DICT_KEYS 20
+#define SPEC_FAIL_ITER_DICT_ITEMS 21
+#define SPEC_FAIL_ITER_DICT_VALUES 22
+#define SPEC_FAIL_ITER_ENUMERATE 23
+
 
 static int
 specialize_module_load_attr(
@@ -1802,4 +1833,55 @@ failure:
 success:
     STAT_INC(COMPARE_OP, success);
     adaptive->counter = initial_counter_value();
+}
+
+
+int
+ _PySpecialization_ClassifyIterator(PyObject *iter)
+{
+    if (PyGen_CheckExact(iter)) {
+        return SPEC_FAIL_ITER_GENERATOR;
+    }
+    if (PyCoro_CheckExact(iter)) {
+        return SPEC_FAIL_ITER_COROUTINE;
+    }
+    if (PyAsyncGen_CheckExact(iter)) {
+        return SPEC_FAIL_ITER_ASYNC_GENERATOR;
+    }
+    PyTypeObject *t = _Py_TYPE(iter);
+    if (t == &PyListIter_Type) {
+        return SPEC_FAIL_ITER_LIST;
+    }
+    if (t == &PyTupleIter_Type) {
+        return SPEC_FAIL_ITER_TUPLE;
+    }
+    if (t == &PyDictIterKey_Type) {
+        return SPEC_FAIL_ITER_DICT_KEYS;
+    }
+    if (t == &PyDictIterValue_Type) {
+        return SPEC_FAIL_ITER_DICT_VALUES;
+    }
+    if (t == &PyDictIterItem_Type) {
+        return SPEC_FAIL_ITER_DICT_ITEMS;
+    }
+    if (t == &PySetIter_Type) {
+        return SPEC_FAIL_ITER_SET;
+    }
+    if (t == &PyUnicodeIter_Type) {
+        return SPEC_FAIL_ITER_STRING;
+    }
+    if (t == &PyBytesIter_Type) {
+        return SPEC_FAIL_ITER_BYTES;
+    }
+    if (t == &PyRangeIter_Type) {
+        return SPEC_FAIL_ITER_RANGE;
+    }
+    if (t == &PyEnum_Type) {
+        return SPEC_FAIL_ITER_ENUMERATE;
+    }
+
+    if (strncmp(t->tp_name, "itertools", 8) == 0) {
+        return SPEC_FAIL_ITER_ITERTOOLS;
+    }
+    return SPEC_FAIL_OTHER;
 }
