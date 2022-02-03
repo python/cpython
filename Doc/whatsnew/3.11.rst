@@ -458,6 +458,11 @@ Deprecated
   as deprecated, its docstring is now corrected).
   (Contributed by Hugo van Kemenade in :issue:`45837`.)
 
+* The delegation of :func:`int` to :meth:`__trunc__` is now deprecated. Calling
+  ``int(a)`` when ``type(a)`` implements :meth:`__trunc__` but not
+  :meth:`__int__` or :meth:`__index__` now raises a :exc:`DeprecationWarning`.
+  (Contributed by Zackery Spytz in :issue:`44977`.)
+
 * The following have been deprecated in :mod:`configparser` since Python 3.2.
   Their deprecation warnings have now been updated to note they will removed in
   Python 3.12:
@@ -467,6 +472,7 @@ Deprecated
   * the :meth:`configparser.ParsingError.readfp` method
 
   (Contributed by Hugo van Kemenade in :issue:`45173`.)
+
 
 Removed
 =======
