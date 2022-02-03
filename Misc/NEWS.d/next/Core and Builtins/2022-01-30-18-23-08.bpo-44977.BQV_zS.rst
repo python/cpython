@@ -1,3 +1,0 @@
-The delegation of :func:`int` to :meth:`__trunc__` is now deprecated.
-Calling ``int(a)`` when ``type(a)`` implements :meth:`__trunc__` but not
-:meth:`__int__` or :meth:`__index__` now raises a :exc:`DeprecationWarning`.
