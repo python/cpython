@@ -50,6 +50,12 @@ intern_strings(PyObject *tuple)
     return 0;
 }
 
+int
+_intern_strings(PyObject *tuple)
+{
+    return intern_strings(tuple);
+}
+
 /* Intern selected string constants */
 static int
 intern_string_constants(PyObject *tuple, int *modified)
@@ -105,6 +111,12 @@ intern_string_constants(PyObject *tuple, int *modified)
         }
     }
     return 0;
+}
+
+int
+_intern_string_constants(PyObject *tuple, int *modified)
+{
+    return intern_string_constants(tuple, modified);
 }
 
 /* Return a shallow copy of a tuple that is

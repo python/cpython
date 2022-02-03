@@ -256,6 +256,10 @@ PyAPI_FUNC(PyObject *) _PyCode_GetVarnames(PyCodeObject *);
 PyAPI_FUNC(PyObject *) _PyCode_GetCellvars(PyCodeObject *);
 PyAPI_FUNC(PyObject *) _PyCode_GetFreevars(PyCodeObject *);
 
+/* Intern selected string constants of PyCodeObject. */
+PyAPI_FUNC(int) _intern_strings(PyObject *);
+PyAPI_FUNC(int) _intern_string_constants(PyObject *, int *);
+
 #define ADAPTIVE_CACHE_BACKOFF 64
 
 static inline void

@@ -406,6 +406,15 @@ PyObject *
 _Py_get_%%NAME%%_toplevel(void)
 {
     %%NAME%%_do_patchups();
+    if (_intern_strings(%%NAME%%_toplevel.co_names) < 0) {
+        return NULL;
+    }
+    if (_intern_string_constants(%%NAME%%_toplevel.co_consts, NULL) < 0) {
+        return NULL;
+    }
+    if (_intern_strings(%%NAME%%_toplevel.co_localsplusnames) < 0) {
+        return NULL;
+    }
     return Py_NewRef((PyObject *) &%%NAME%%_toplevel);
 }
 """
