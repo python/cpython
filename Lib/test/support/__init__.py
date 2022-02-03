@@ -5,6 +5,7 @@ if __name__ != 'test.support':
 
 import contextlib
 import functools
+import getpass
 import os
 import re
 import stat
@@ -378,10 +379,11 @@ def skip_if_buildbot(reason=None):
     """Decorator raising SkipTest if running on a buildbot."""
     if not reason:
         reason = 'not suitable for buildbots'
-    if sys.platform == 'win32':
-        isbuildbot = os.environ.get('USERNAME') == 'Buildbot'
-    else:
-        isbuildbot = os.environ.get('USER') == 'buildbot'
+    try:
+        isbuildbot = getpass.getuser().lower() == 'buildbot'
+    except (KeyError, EnvironmentError) as err:
+        warnings.warn(f'getpass.getuser() failed {err}.', RuntimeWarning)
+        isbuildbot = False
     return unittest.skipIf(isbuildbot, reason)
 
 def check_sanitizer(*, address=False, memory=False, ub=False):
