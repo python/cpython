@@ -558,6 +558,7 @@ class FormatTest(unittest.TestCase):
         self.assertEqual(f"{-1.:z6.1f}", "  -1.0")
         self.assertEqual(f"{-0.:z.1f}", "0.0")
         self.assertEqual(f"{.01:z.1f}", "0.0")
+        self.assertEqual(f"{-0:z.1f}", "0.0")  # z is allowed for integer input
         self.assertEqual(f"{-.01:z.1f}", "0.0")
         self.assertEqual(f"{0.:z.2f}", "0.00")
         self.assertEqual(f"{-0.:z.2f}", "0.00")
