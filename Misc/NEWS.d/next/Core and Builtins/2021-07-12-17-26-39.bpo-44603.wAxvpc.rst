@@ -1,0 +1,3 @@
+In the interactive REPL, typing "exit" or "quit" will directly exit the
+interpreter session instead of printing a message suggesting to use "exit()"
+or "quit()" instead. Patch by Pablo Galindo
