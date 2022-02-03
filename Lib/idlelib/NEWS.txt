@@ -4,6 +4,9 @@ Released on 2022-10-03
 =========================
 
 
+bpo-46630: Make query dialogs on Windows start with a cursor in the
+entry box.
+
 bpo-46591: Make the IDLE doc URL on the About IDLE dialog clickable.
 
 bpo-45296: Clarify close, quit, and exit in IDLE.  In the File menu,
