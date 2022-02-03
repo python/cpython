@@ -49,7 +49,7 @@ class Parser:
         feedparser = FeedParser(self._class, policy=self.policy)
         if headersonly:
             feedparser._set_headersonly()
-        while (data := fp.read(8192)):
+        while data := fp.read(8192):
             feedparser.feed(data)
         return feedparser.close()
 

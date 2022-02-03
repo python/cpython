@@ -266,7 +266,7 @@ def urlretrieve(url, filename=None, reporthook=None, data=None):
             if reporthook:
                 reporthook(blocknum, bs, size)
 
-            while (block := fp.read(bs)):
+            while block := fp.read(bs):
                 read += len(block)
                 tfp.write(block)
                 blocknum += 1
@@ -1842,7 +1842,7 @@ class URLopener:
                     size = int(headers["Content-Length"])
                 if reporthook:
                     reporthook(blocknum, bs, size)
-                while (block := fp.read(bs)):
+                while block := fp.read(bs):
                     read += len(block)
                     tfp.write(block)
                     blocknum += 1

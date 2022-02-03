@@ -470,7 +470,7 @@ class SimpleHandler(BaseHandler):
         from warnings import warn
         warn("SimpleHandler.stdout.write() should not do partial writes",
             DeprecationWarning)
-        while (data := data[result:]):
+        while data := data[result:]:
             result = self.stdout.write(data)
 
     def _flush(self):

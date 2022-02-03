@@ -1127,7 +1127,7 @@ if __name__ == '__main__':
     toaddrs = prompt("To").split(',')
     print("Enter message, end with ^D:")
     msg = ''
-    while (line := sys.stdin.readline()):
+    while line := sys.stdin.readline():
         msg = msg + line
     print("Message length is %d" % len(msg))
 

@@ -579,7 +579,7 @@ class ElementTree:
                     # it with chunks.
                     self._root = parser._parse_whole(source)
                     return self._root
-            while (data := source.read(65536)):
+            while data := source.read(65536):
                 parser.feed(data)
             self._root = parser.close()
             return self._root

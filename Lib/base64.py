@@ -508,7 +508,7 @@ MAXBINSIZE = (MAXLINESIZE//4)*3
 
 def encode(input, output):
     """Encode a file; input and output are binary files."""
-    while (s := input.read(MAXBINSIZE)):
+    while s := input.read(MAXBINSIZE):
         while len(s) < MAXBINSIZE:
             ns = input.read(MAXBINSIZE-len(s))
             if not ns:
@@ -520,7 +520,7 @@ def encode(input, output):
 
 def decode(input, output):
     """Decode a file; input and output are binary files."""
-    while (line := input.readline()):
+    while line := input.readline():
         s = binascii.a2b_base64(line)
         output.write(s)
 

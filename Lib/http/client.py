@@ -980,7 +980,7 @@ class HTTPConnection:
             encode = self._is_textIO(data)
             if encode and self.debuglevel > 0:
                 print("encoding file using iso-8859-1")
-            while (datablock := data.read(self.blocksize)):
+            while datablock := data.read(self.blocksize):
                 if encode:
                     datablock = datablock.encode("iso-8859-1")
                 sys.audit("http.client.send", self, datablock)
@@ -1010,7 +1010,7 @@ class HTTPConnection:
         encode = self._is_textIO(readable)
         if encode and self.debuglevel > 0:
             print("encoding file using iso-8859-1")
-        while (datablock := readable.read(self.blocksize)):
+        while datablock := readable.read(self.blocksize):
             if encode:
                 datablock = datablock.encode("iso-8859-1")
             yield datablock

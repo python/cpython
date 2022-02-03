@@ -200,7 +200,7 @@ class ExpatBuilder:
         parser = self.getParser()
         first_buffer = True
         try:
-            while (buffer := file.read(16*1024)):
+            while buffer := file.read(16*1024):
                 parser.Parse(buffer, False)
                 if first_buffer and self.document.documentElement:
                     self._setup_subset(buffer)

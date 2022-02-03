@@ -219,7 +219,7 @@ class MimeTypes:
         list of standard types, else to the list of non-standard
         types.
         """
-        while (line := fp.readline()):
+        while line := fp.readline():
             words = line.split()
             for i in range(len(words)):
                 if words[i][0] == '#':
