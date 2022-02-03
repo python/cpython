@@ -2792,6 +2792,12 @@ handle_eval_breaker:
         TARGET(UNPACK_SEQUENCE) {
             PREDICTED(UNPACK_SEQUENCE);
             PyObject *seq = POP(), *item, **items;
+#ifdef Py_STATS
+            extern int _PySpecialization_ClassifySequence(PyObject *);
+            _py_stats.opcode_stats[UNPACK_SEQUENCE].specialization.failure++;
+            _py_stats.opcode_stats[UNPACK_SEQUENCE].specialization.
+                failure_kinds[_PySpecialization_ClassifySequence(seq)]++;
+#endif
             if (PyTuple_CheckExact(seq) &&
                 PyTuple_GET_SIZE(seq) == oparg) {
                 items = ((PyTupleObject *)seq)->ob_item;

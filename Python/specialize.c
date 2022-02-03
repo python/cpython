@@ -572,6 +572,10 @@ initial_counter_value(void) {
 #define SPEC_FAIL_ITER_DICT_VALUES 22
 #define SPEC_FAIL_ITER_ENUMERATE 23
 
+/* UNPACK_SEQUENCE */
+#define SPEC_FAIL_TUPLE 10
+#define SPEC_FAIL_LIST 11
+
 
 static int
 specialize_module_load_attr(
@@ -1880,7 +1884,6 @@ success:
     adaptive->counter = initial_counter_value();
 }
 
-
 int
  _PySpecialization_ClassifyIterator(PyObject *iter)
 {
@@ -1927,6 +1930,18 @@ int
 
     if (strncmp(t->tp_name, "itertools", 8) == 0) {
         return SPEC_FAIL_ITER_ITERTOOLS;
+    }
+    return SPEC_FAIL_OTHER;
+}
+
+int
+_PySpecialization_ClassifySequence(PyObject *seq)
+{
+    if (PyTuple_CheckExact(seq)) {
+        return SPEC_FAIL_TUPLE;
+    }
+    if (PyList_CheckExact(seq)) {
+        return SPEC_FAIL_LIST;
     }
     return SPEC_FAIL_OTHER;
 }
