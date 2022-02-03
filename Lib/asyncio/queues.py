@@ -41,11 +41,11 @@ class Queue(mixins._LoopBoundMixin):
         self._unfinished_tasks = 0
         self._finished = locks.Event()
         self._finished.set()
-        self._init(maxsize)
+        self._init()
 
     # These three are overridable in subclasses.
 
-    def _init(self, maxsize):
+    def _init(self):
         self._queue = collections.deque()
 
     def _get(self):
