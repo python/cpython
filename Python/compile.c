@@ -8661,29 +8661,22 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
             }
 
                 /* Try to fold tuples of constants.
-                   Skip over BUILD_SEQN 1 UNPACK_SEQN 1.
-                   Replace BUILD_SEQN 2 UNPACK_SEQN 2 with ROT2.
-                   Replace BUILD_SEQN 3 UNPACK_SEQN 3 with ROT3 ROT2. */
+                   Skip over BUILD_TUPLE(1) UNPACK_SEQUENCE(1).
+                   Replace BUILD_TUPLE(2) UNPACK_SEQUENCE(2) with SWAP(2).
+                   Replace BUILD_TUPLE(3) UNPACK_SEQUENCE(3) with SWAP(3). */
             case BUILD_TUPLE:
                 if (nextop == UNPACK_SEQUENCE && oparg == bb->b_instr[i+1].i_oparg) {
                     switch(oparg) {
                         case 1:
                             inst->i_opcode = NOP;
                             bb->b_instr[i+1].i_opcode = NOP;
-                            break;
+                            continue;
                         case 2:
-                            inst->i_opcode = SWAP;
-                            inst->i_oparg = 2;
-                            bb->b_instr[i+1].i_opcode = NOP;
-                            i--;
-                            break;
                         case 3:
-                            inst->i_opcode = SWAP;
-                            inst->i_oparg = 3;
-                            bb->b_instr[i+1].i_opcode = NOP;
-                            i--;
+                            inst->i_opcode = NOP;
+                            bb->b_instr[i+1].i_opcode = SWAP;
+                            continue;
                     }
-                    break;
                 }
                 if (i >= oparg) {
                     if (fold_tuple_on_constants(c, inst-oparg, oparg, consts)) {

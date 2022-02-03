@@ -1,0 +1,1 @@
+Make the IDLE doc URL on the About IDLE dialog clickable.

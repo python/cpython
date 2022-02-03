@@ -1,0 +1,2 @@
+Fix test_gdb.test_pycfunction() for Python built with ``clang -Og``.
+Tolerate inlined functions in the gdb traceback. Patch by Victor Stinner.
