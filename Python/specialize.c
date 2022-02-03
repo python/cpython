@@ -547,6 +547,14 @@ initial_counter_value(void) {
 #define SPEC_FAIL_STRING_COMPARE 13
 #define SPEC_FAIL_NOT_FOLLOWED_BY_COND_JUMP 14
 #define SPEC_FAIL_BIG_INT 15
+#define SPEC_FAIL_COMPARE_BYTES 16
+#define SPEC_FAIL_COMPARE_TUPLE 17
+#define SPEC_FAIL_COMPARE_LIST 18
+#define SPEC_FAIL_COMPARE_SET 19
+#define SPEC_FAIL_COMPARE_BOOL 20
+#define SPEC_FAIL_COMPARE_BASEOBJECT 21
+#define SPEC_FAIL_COMPARE_FLOAT_LONG 22
+#define SPEC_FAIL_COMPARE_LONG_FLOAT 23
 
 /* FOR_ITER */
 #define SPEC_FAIL_ITER_GENERATOR 10
@@ -1764,6 +1772,43 @@ success:
     adaptive->counter = initial_counter_value();
 }
 
+
+#ifdef Py_STATS
+static int
+compare_op_fail_kind(PyObject *lhs, PyObject *rhs)
+{
+    if (Py_TYPE(lhs) != Py_TYPE(rhs)) {
+        if (PyFloat_CheckExact(lhs) && PyLong_CheckExact(rhs)) {
+            return SPEC_FAIL_COMPARE_FLOAT_LONG;
+        }
+        if (PyLong_CheckExact(lhs) && PyFloat_CheckExact(rhs)) {
+            return SPEC_FAIL_COMPARE_LONG_FLOAT;
+        }
+        return SPEC_FAIL_DIFFERENT_TYPES;
+    }
+    if (PyBytes_CheckExact(lhs)) {
+        return SPEC_FAIL_COMPARE_BYTES;
+    }
+    if (PyTuple_CheckExact(lhs)) {
+        return SPEC_FAIL_COMPARE_TUPLE;
+    }
+    if (PyList_CheckExact(lhs)) {
+        return SPEC_FAIL_COMPARE_LIST;
+    }
+    if (PySet_CheckExact(lhs) || PyFrozenSet_CheckExact(lhs)) {
+        return SPEC_FAIL_COMPARE_SET;
+    }
+    if (PyBool_Check(lhs)) {
+        return SPEC_FAIL_COMPARE_BOOL;
+    }
+    if (Py_TYPE(lhs)->tp_richcompare == PyBaseObject_Type.tp_richcompare) {
+        return SPEC_FAIL_COMPARE_BASEOBJECT;
+    }
+    return SPEC_FAIL_OTHER;
+}
+#endif
+
+
 static int compare_masks[] = {
     // 1-bit: jump if less than
     // 2-bit: jump if equal
@@ -1795,7 +1840,7 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
         when_to_jump_mask = (1 | 2 | 4) & ~when_to_jump_mask;
     }
     if (Py_TYPE(lhs) != Py_TYPE(rhs)) {
-        SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_DIFFERENT_TYPES);
+        SPECIALIZATION_FAIL(COMPARE_OP, compare_op_fail_kind(lhs, rhs));
         goto failure;
     }
     if (PyFloat_CheckExact(lhs)) {
@@ -1825,7 +1870,7 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
             goto success;
         }
     }
-    SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_OTHER);
+    SPECIALIZATION_FAIL(COMPARE_OP, compare_op_fail_kind(lhs, rhs));
 failure:
     STAT_INC(COMPARE_OP, failure);
     cache_backoff(adaptive);
