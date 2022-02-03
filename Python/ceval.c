@@ -2243,6 +2243,7 @@ handle_eval_breaker:
                 goto error;
             }
             CALL_STAT_INC(frames_pushed);
+            Py_INCREF(getitem);
             _PyFrame_InitializeSpecials(new_frame, getitem,
                                         NULL, code->co_nlocalsplus);
             STACK_SHRINK(2);
@@ -4585,7 +4586,6 @@ handle_eval_breaker:
                 STACK_SHRINK(call_shape.postcall_shrink);
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
-                Py_DECREF(function);
                 if (new_frame == NULL) {
                     goto error;
                 }
@@ -4670,7 +4670,6 @@ handle_eval_breaker:
                 new_frame->localsplus[i] = NULL;
             }
             STACK_SHRINK(call_shape.postcall_shrink);
-            Py_DECREF(func);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
@@ -4707,7 +4706,6 @@ handle_eval_breaker:
                 new_frame->localsplus[i] = NULL;
             }
             STACK_SHRINK(call_shape.postcall_shrink);
-            Py_DECREF(func);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
@@ -6072,7 +6070,7 @@ fail_post_args:
     return -1;
 }
 
-/* Consumes all the references to the args */
+/* Consumes references to func and all the args */
 static InterpreterFrame *
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
                         PyObject *locals, PyObject* const* args,
@@ -6126,7 +6124,9 @@ _PyEval_Vector(PyThreadState *tstate, PyFunctionObject *func,
                PyObject* const* args, size_t argcount,
                PyObject *kwnames)
 {
-    /* _PyEvalFramePushAndInit consumes all the references to its arguments */
+    /* _PyEvalFramePushAndInit consumes the references
+     * to func and all its arguments */
+    Py_INCREF(func);
     for (size_t i = 0; i < argcount; i++) {
         Py_INCREF(args[i]);
     }
