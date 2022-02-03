@@ -267,11 +267,14 @@ class TypeVarTests(BaseTestCase):
         self.assertIs(T[None,], type(None))
         self.assertIs(T[T,], T)
         self.assertIs(T[(int,)], int)
+        self.assertEqual(T[int|str,], int|str)
+        self.assertEqual(T[Union[int, str],], Union[int, str])
 
     def test_bad_subscript(self):
         T = TypeVar('T')
+        P = ParamSpec("P")
         bad_args = (
-            42, ..., [int], (), (int, str), Union,
+            42, ..., [int], (), (int, str), P, Union,
             Generic, Generic[T], Protocol, Protocol[T],
             Final, Final[int], ClassVar, ClassVar[int],
         )
@@ -5030,7 +5033,7 @@ class ParamSpecTests(BaseTestCase):
     def test_bad_subscript(self):
         T = TypeVar('T')
         P = ParamSpec('P')
-        bad_args = (42, int, None, T)
+        bad_args = (42, int, None, T, int|str, Union[int, str])
         for arg in bad_args:
             with self.subTest(arg=arg):
                 with self.assertRaises(TypeError):
