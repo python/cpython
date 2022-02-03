@@ -420,7 +420,7 @@ Data Types
 
    .. note:: :meth:`__str__` is :func:`str.__str__` to better support the
       *replacement of existing constants* use-case.  :meth:`__format__` is likewise
-      :func:`int.__format__` for that same reason.
+      :func:`str.__format__` for that same reason.
 
    .. versionadded:: 3.11
 
