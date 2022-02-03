@@ -21,14 +21,13 @@
 # 3. This notice may not be removed or altered from any source distribution.
 
 import datetime
-import sys
 import unittest
 import sqlite3 as sqlite
 import weakref
 import functools
-from test import support
 
-from .test_dbapi import memory_database, managed_connect, cx_limit
+from test import support
+from test.test_sqlite3.test_dbapi import memory_database, managed_connect, cx_limit
 
 
 class RegressionTests(unittest.TestCase):

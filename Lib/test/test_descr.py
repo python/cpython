@@ -2061,7 +2061,6 @@ order (MRO) for bases """
             ("__format__", format, format_impl, set(), {}),
             ("__floor__", math.floor, zero, set(), {}),
             ("__trunc__", math.trunc, zero, set(), {}),
-            ("__trunc__", int, zero, set(), {}),
             ("__ceil__", math.ceil, zero, set(), {}),
             ("__dir__", dir, empty_seq, set(), {}),
             ("__round__", round, zero, set(), {}),
@@ -4922,6 +4921,23 @@ order (MRO) for bases """
                 # Create this large list to corrupt some unused memory
                 cls.lst = [2**i for i in range(10000)]
         X.descr
+
+    def test_remove_subclass(self):
+        # bpo-46417: when the last subclass of a type is deleted,
+        # remove_subclass() clears the internal dictionary of subclasses:
+        # set PyTypeObject.tp_subclasses to NULL. remove_subclass() is called
+        # when a type is deallocated.
+        class Parent:
+            pass
+        self.assertEqual(Parent.__subclasses__(), [])
+
+        class Child(Parent):
+            pass
+        self.assertEqual(Parent.__subclasses__(), [Child])
+
+        del Child
+        gc.collect()
+        self.assertEqual(Parent.__subclasses__(), [])
 
 
 class DictProxyTests(unittest.TestCase):

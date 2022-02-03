@@ -833,7 +833,7 @@ fi
 
 
 AC_MSG_CHECKING([for the platform triplet based on compiler characteristics])
-cat >> conftest.c <<EOF
+cat > conftest.c <<EOF
 #undef bfin
 #undef cris
 #undef fr30
@@ -981,6 +981,11 @@ EOF
 
 if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
   PLATFORM_TRIPLET=`grep -v '^#' conftest.out | grep -v '^ *$' | tr -d ' 	'`
+  case "$build_os" in
+  linux-musl*)
+    PLATFORM_TRIPLET=`echo "$PLATFORM_TRIPLET" | sed 's/linux-gnu/linux-musl/'`
+    ;;
+  esac
   AC_MSG_RESULT([$PLATFORM_TRIPLET])
 else
   AC_MSG_RESULT([none])
@@ -1023,7 +1028,7 @@ AC_CACHE_CHECK([for -Wl,--no-as-needed], [ac_cv_wl_no_as_needed], [
 AC_SUBST(NO_AS_NEEDED)
 
 AC_MSG_CHECKING([for the Android API level])
-cat >> conftest.c <<EOF
+cat > conftest.c <<EOF
 #ifdef __ANDROID__
 android_api = __ANDROID_API__
 arm_arch = __ARM_ARCH
@@ -1786,6 +1791,28 @@ case $CC in
         fi
 esac
 
+# Check if CC supports -Og optimization level
+_SAVE_VAR([CFLAGS])
+CFLAGS="-Og"
+AC_CACHE_CHECK([if $CC supports -Og optimization level],
+               [ac_cv_cc_supports_og],
+  AC_COMPILE_IFELSE(
+    [
+      AC_LANG_PROGRAM([[]], [[]])
+    ],[
+      ac_cv_cc_supports_og=yes
+    ],[
+      ac_cv_cc_supports_og=no
+    ])
+)
+_RESTORE_VAR([CFLAGS])
+
+# Optimization messes up debuggers, so turn it off for
+# debug builds.
+PYDEBUG_CFLAGS="-O0"
+AS_VAR_IF([ac_cv_cc_supports_og], [yes],
+          [PYDEBUG_CFLAGS="-Og"])
+
 # tweak OPT based on compiler and platform, only if the user didn't set
 # it on the command line
 AC_SUBST(OPT)
@@ -1811,13 +1838,7 @@ then
 	case $ac_cv_prog_cc_g in
 	yes)
 	    if test "$Py_DEBUG" = 'true' ; then
-		# Optimization messes up debuggers, so turn it off for
-		# debug builds.
-                if "$CC" -v --help 2>/dev/null |grep -- -Og > /dev/null; then
-                    OPT="-g -Og -Wall"
-                else
-                    OPT="-g -O0 -Wall"
-                fi
+		OPT="-g $PYDEBUG_CFLAGS -Wall"
 	    else
 		OPT="-g $WRAP -O3 -Wall"
 	    fi
@@ -1850,7 +1871,7 @@ AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
     LDFLAGS_NODIST="$LDFLAGS_NODIST -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 -s NODERAWFS=1 -s EXIT_RUNTIME=1 -s USE_PTHREADS -s PROXY_TO_PTHREAD"
     CFLAGS_NODIST="$CFLAGS_NODIST -pthread"
   ],
-  [WASI], [
+  [WASI/*], [
     AC_DEFINE([_WASI_EMULATED_SIGNAL], [1], [Define to 1 if you want to emulate signals on WASI])
     LIBS="$LIBS -lwasi-emulated-signal"
     echo "#define _WASI_EMULATED_SIGNAL 1" >> confdefs.h
@@ -2411,7 +2432,8 @@ AC_CHECK_HEADERS(linux/vm_sockets.h,,,[
 ])
 
 # On Linux, can.h, can/bcm.h, can/j1939.h, can/raw.h require sys/socket.h
-AC_CHECK_HEADERS(linux/can.h linux/can/bcm.h linux/can/j1939.h linux/can/raw.h,,,[
+# On NetBSD, netcan/can.h requires sys/socket.h
+AC_CHECK_HEADERS(linux/can.h linux/can/bcm.h linux/can/j1939.h linux/can/raw.h netcan/can.h,,,[
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
@@ -3716,6 +3738,9 @@ if test "$posix_threads" = "yes"; then
       AIX/*) AC_DEFINE(HAVE_BROKEN_POSIX_SEMAPHORES, 1,
 		       [Define if the Posix semaphores do not work on your system])
 		       ;;
+      NetBSD/*) AC_DEFINE(HAVE_BROKEN_POSIX_SEMAPHORES, 1,
+		       [Define if the Posix semaphores do not work on your system])
+		       ;;
       esac
 
       AC_CACHE_CHECK([if PTHREAD_SCOPE_SYSTEM is supported], [ac_cv_pthread_system_supported],
@@ -4695,7 +4720,6 @@ fi
 
 # checks for compiler characteristics
 
-AC_C_CHAR_UNSIGNED
 AC_C_CONST
 
 AC_CACHE_CHECK([for working signed char], [ac_cv_working_signed_char_c], [
@@ -5084,7 +5108,7 @@ AC_CHECK_DECLS([RTLD_LAZY, RTLD_NOW, RTLD_GLOBAL, RTLD_LOCAL, RTLD_NODELETE, RTL
 # determine what size digit to use for Python's longs
 AC_MSG_CHECKING([digit size for Python's longs])
 AC_ARG_ENABLE(big-digits,
-AS_HELP_STRING([--enable-big-digits@<:@=15|30@:>@],[use big digits (30 or 15 bits) for Python longs (default is system-dependent)]]),
+AS_HELP_STRING([--enable-big-digits@<:@=15|30@:>@],[use big digits (30 or 15 bits) for Python longs (default is 30)]]),
 [case $enable_big_digits in
 yes)
   enable_big_digits=30 ;;
@@ -6381,6 +6405,8 @@ AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
       _gdbm
       _scproxy
       _tkinter
+      _xxsubinterpreters
+      grp
       nis
       ossaudiodev
       spwd
@@ -6401,6 +6427,7 @@ dnl Use Modules/Setup.stdlib as additional provider?
 AC_MSG_CHECKING([for additional Modules/Setup files])
 AS_CASE([$ac_sys_system],
     [Emscripten], [MODULES_SETUP_STDLIB=Modules/Setup.stdlib],
+    [WASI], [MODULES_SETUP_STDLIB=Modules/Setup.stdlib],
     [MODULES_SETUP_STDLIB=]
 )
 AC_MSG_RESULT([$MODULES_SETUP_STDLIB])
@@ -6593,16 +6620,16 @@ dnl test modules
 PY_STDLIB_MOD([_testcapi], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testinternalcapi], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testbuffer], [test "$TEST_MODULES" = yes])
-PY_STDLIB_MOD([_testimportmultiple], [test "$TEST_MODULES" = yes])
-PY_STDLIB_MOD([_testmultiphase], [test "$TEST_MODULES" = yes])
+PY_STDLIB_MOD([_testimportmultiple], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
+PY_STDLIB_MOD([_testmultiphase], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
 PY_STDLIB_MOD([_xxtestfuzz], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_ctypes_test], [test "$TEST_MODULES" = yes], [], [], [-lm])
 
 dnl Limited API template modules.
 dnl The limited C API is not compatible with the Py_TRACE_REFS macro.
 dnl Emscripten does not support shared libraries yet.
-PY_STDLIB_MOD([xxlimited], [test "$with_trace_refs" = "no" -a "$ac_sys_system" != "Emscripten"])
-PY_STDLIB_MOD([xxlimited_35], [test "$with_trace_refs" = "no" -a "$ac_sys_system" != "Emscripten"])
+PY_STDLIB_MOD([xxlimited], [test "$with_trace_refs" = "no"], [test "$ac_cv_func_dlopen" = yes])
+PY_STDLIB_MOD([xxlimited_35], [test "$with_trace_refs" = "no"], [test "$ac_cv_func_dlopen" = yes])
 
 # substitute multiline block, must come after last PY_STDLIB_MOD()
 AC_SUBST([MODULE_BLOCK])

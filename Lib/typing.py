@@ -130,6 +130,7 @@ __all__ = [
     'overload',
     'ParamSpecArgs',
     'ParamSpecKwargs',
+    'reveal_type',
     'runtime_checkable',
     'Text',
     'TYPE_CHECKING',
@@ -142,16 +143,16 @@ __all__ = [
 # legitimate imports of those modules.
 
 
-def _type_convert(arg, module=None):
+def _type_convert(arg, module=None, *, allow_special_forms=False):
     """For converting None to type(None), and strings to ForwardRef."""
     if arg is None:
         return type(None)
     if isinstance(arg, str):
-        return ForwardRef(arg, module=module)
+        return ForwardRef(arg, module=module, is_class=allow_special_forms)
     return arg
 
 
-def _type_check(arg, msg, is_argument=True, module=None, *, is_class=False):
+def _type_check(arg, msg, is_argument=True, module=None, *, allow_special_forms=False):
     """Check that the argument is a type, and return it (internal helper).
 
     As a special case, accept None and return type(None) instead. Also wrap strings
@@ -164,16 +165,16 @@ def _type_check(arg, msg, is_argument=True, module=None, *, is_class=False):
     We append the repr() of the actual value (truncated to 100 chars).
     """
     invalid_generic_forms = (Generic, Protocol)
-    if not is_class:
+    if not allow_special_forms:
         invalid_generic_forms += (ClassVar,)
         if is_argument:
             invalid_generic_forms += (Final,)
 
-    arg = _type_convert(arg, module=module)
+    arg = _type_convert(arg, module=module, allow_special_forms=allow_special_forms)
     if (isinstance(arg, _GenericAlias) and
             arg.__origin__ in invalid_generic_forms):
         raise TypeError(f"{arg} is not valid as type argument")
-    if arg in (Any, NoReturn, Final):
+    if arg in (Any, NoReturn, ClassVar, Final):
         return arg
     if isinstance(arg, _SpecialForm) or arg in (Generic, Protocol):
         raise TypeError(f"Plain {arg} is not valid as type argument")
@@ -280,8 +281,6 @@ def _remove_dups_flatten(parameters):
     for p in parameters:
         if isinstance(p, (_UnionGenericAlias, types.UnionType)):
             params.extend(p.__args__)
-        elif isinstance(p, tuple) and len(p) > 0 and p[0] is Union:
-            params.extend(p[1:])
         else:
             params.append(p)
 
@@ -606,7 +605,7 @@ def Concatenate(self, parameters):
         raise TypeError("The last parameter to Concatenate should be a "
                         "ParamSpec variable.")
     msg = "Concatenate[arg, ...]: each arg must be a type."
-    parameters = tuple(_type_check(p, msg) for p in parameters)
+    parameters = (*(_type_check(p, msg) for p in parameters[:-1]), parameters[-1])
     return _ConcatenateGenericAlias(self, parameters)
 
 
@@ -699,7 +698,7 @@ class ForwardRef(_Final, _root=True):
                 eval(self.__forward_code__, globalns, localns),
                 "Forward references must evaluate to types.",
                 is_argument=self.__forward_is_argument__,
-                is_class=self.__forward_is_class__,
+                allow_special_forms=self.__forward_is_class__,
             )
             self.__forward_value__ = _eval_type(
                 type_, globalns, localns, recursive_guard | {self.__forward_arg__}
@@ -869,7 +868,7 @@ class ParamSpec(_Final, _Immutable, _TypeVarLike, _root=True):
     type checkers.  They are used to forward the parameter types of one
     callable to another callable, a pattern commonly found in higher order
     functions and decorators.  They are only valid when used in ``Concatenate``,
-    or s the first argument to ``Callable``, or as parameters for user-defined
+    or as the first argument to ``Callable``, or as parameters for user-defined
     Generics.  See class Generic for more information on generic types.  An
     example for annotating a decorator::
 
@@ -1276,6 +1275,16 @@ class _ConcatenateGenericAlias(_GenericAlias, _root=True):
                          _typevar_types=(TypeVar, ParamSpec),
                          _paramspec_tvars=True)
 
+    def copy_with(self, params):
+        if isinstance(params[-1], (list, tuple)):
+            return (*params[:-1], *params[-1])
+        if isinstance(params[-1], _ConcatenateGenericAlias):
+            params = (*params[:-1], *params[-1].__args__)
+        elif not isinstance(params[-1], ParamSpec):
+            raise TypeError("The last parameter to Concatenate should be a "
+                            "ParamSpec variable.")
+        return super().copy_with(params)
+
 
 class Generic:
     """Abstract base class for generic types.
@@ -1676,7 +1685,7 @@ class Annotated:
                             "with at least two arguments (a type and an "
                             "annotation).")
         msg = "Annotated[t, ...]: t must be a type."
-        origin = _type_check(params[0], msg)
+        origin = _type_check(params[0], msg, allow_special_forms=True)
         metadata = tuple(params[1:])
         return _AnnotatedAlias(origin, metadata)
 
@@ -2667,3 +2676,23 @@ class re(metaclass=_DeprecatedType):
 
 re.__name__ = __name__ + '.re'
 sys.modules[re.__name__] = re
+
+
+def reveal_type(obj: T, /) -> T:
+    """Reveal the inferred type of a variable.
+
+    When a static type checker encounters a call to ``reveal_type()``,
+    it will emit the inferred type of the argument::
+
+        x: int = 1
+        reveal_type(x)
+
+    Running a static type checker (e.g., ``mypy``) on this example
+    will produce output similar to 'Revealed type is "builtins.int"'.
+
+    At runtime, the function prints the runtime type of the
+    argument and returns it unchanged.
+
+    """
+    print(f"Runtime type is {type(obj).__name__!r}", file=sys.stderr)
+    return obj

@@ -1,2 +1,0 @@
-When Python is configured with :option:`--without-static-libpython`, the Python
-static library (libpython.a) is no longer built. Patch by Victor Stinner.

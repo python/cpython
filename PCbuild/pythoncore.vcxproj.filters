@@ -366,6 +366,9 @@
     <ClInclude Include="..\Include\cpython\context.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\descrobject.h">
+      <Filter>Include\cpython</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\dictobject.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
