@@ -545,6 +545,9 @@ Removed
   Python 3.4 but has been broken since Python 3.7.
   (Contributed by Inada Naoki in :issue:`23882`.)
 
+* Remove ``__class_getitem__`` method from :class:`pathlib.PurePath`,
+  because it was not used and added by mistake in previous versions.
+  (Contributed by Nikita Sobolev in :issue:`46483`.)
 
 Porting to Python 3.11
 ======================
