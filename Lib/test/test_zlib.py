@@ -44,8 +44,8 @@ requires_Decompress_copy = unittest.skipUnless(
 #   zlib.decompress(func1()) == zlib.decompress(func2()) == datasrc
 #
 # Make the assumption that s390x always has an accelerator to simplify the
-# skip condition.
-skip_on_s390x = unittest.skipIf(os.uname().machine == 's390x',
+# skip condition. Don't skip on Windows which doesn't have os.uname().
+skip_on_s390x = unittest.skipIf(hasattr(os, 'uname') and os.uname().machine == 's390x',
                                 'skipped on s390x')
 
 
