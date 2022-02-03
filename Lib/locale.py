@@ -746,6 +746,7 @@ locale_encoding_alias = {
 for k, v in sorted(locale_encoding_alias.items()):
     k = k.replace('_', '')
     locale_encoding_alias.setdefault(k, v)
+del k, v
 
 #
 # The locale_alias table maps lowercase alias names to C locale names
