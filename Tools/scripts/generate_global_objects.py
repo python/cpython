@@ -381,7 +381,7 @@ def generate_global_strings():
             with printer.block('struct', ' identifiers;'):
                 for name in sorted(IDENTIFIERS):
                     assert name.isidentifier(), name
-                    printer.write(f'ID({name})')
+                    printer.write(f'STRUCT_FOR_ID({name})')
         printer.write(END)
         printer.write(after)
 
