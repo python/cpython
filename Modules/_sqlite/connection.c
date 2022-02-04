@@ -123,8 +123,6 @@ class _sqlite3.Connection "pysqlite_Connection *" "clinic_state()->ConnectionTyp
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=67369db2faf80891]*/
 
-_Py_IDENTIFIER(cursor);
-
 static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self);
 static void free_callback_context(callback_context *ctx);
 static void set_callback_context(callback_context **ctx_pp,
@@ -1431,10 +1429,9 @@ pysqlite_connection_execute_impl(pysqlite_Connection *self, PyObject *sql,
 /*[clinic end generated code: output=5be05ae01ee17ee4 input=fbd17c75c7140271]*/
 {
     _Py_IDENTIFIER(execute);
-    PyObject* cursor = 0;
     PyObject* result = 0;
 
-    cursor = _PyObject_CallMethodIdNoArgs((PyObject*)self, &PyId_cursor);
+    PyObject *cursor = pysqlite_connection_cursor_impl(self, NULL);
     if (!cursor) {
         goto error;
     }
@@ -1466,10 +1463,9 @@ pysqlite_connection_executemany_impl(pysqlite_Connection *self,
 /*[clinic end generated code: output=776cd2fd20bfe71f input=4feab80659ffc82b]*/
 {
     _Py_IDENTIFIER(executemany);
-    PyObject* cursor = 0;
     PyObject* result = 0;
 
-    cursor = _PyObject_CallMethodIdNoArgs((PyObject*)self, &PyId_cursor);
+    PyObject *cursor = pysqlite_connection_cursor_impl(self, NULL);
     if (!cursor) {
         goto error;
     }
@@ -1501,10 +1497,9 @@ pysqlite_connection_executescript(pysqlite_Connection *self,
 /*[clinic end generated code: output=4c4f9d77aa0ae37d input=b27ae5c24ffb8b43]*/
 {
     _Py_IDENTIFIER(executescript);
-    PyObject* cursor = 0;
     PyObject* result = 0;
 
-    cursor = _PyObject_CallMethodIdNoArgs((PyObject*)self, &PyId_cursor);
+    PyObject *cursor = pysqlite_connection_cursor_impl(self, NULL);
     if (!cursor) {
         goto error;
     }
