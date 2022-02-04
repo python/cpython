@@ -639,9 +639,9 @@ form.
 
 .. class:: RegexFlag
 
-   An :class:`~enum.Enum` class containing the regex options listed below.
+   An :class:`enum.IntFlag` class containing the regex options listed below.
 
-   .. versionadded:: 3.6 (documented in 3.11)
+   .. versionadded:: added to ``__all__`` in 3.11)
 
 .. data:: A
           ASCII
