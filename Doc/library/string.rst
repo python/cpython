@@ -386,7 +386,7 @@ The ``'z'`` option causes negative zero to be coerced to zero.  This
 option is only valid for float and complex types.
 
 .. versionchanged:: 3.11
-   Added the ``'z'`` option.
+   Added the ``'z'`` option (see also :pep:`682`).
 
 .. index:: single: # (hash); in string formatting
 
