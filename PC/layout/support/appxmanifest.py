@@ -412,14 +412,22 @@ def get_appxmanifest(ns):
         if value:
             node.text = value
 
-    winver = sys.getwindowsversion()[:3]
+    try:
+        winver = [int(i) for i in os.getenv("APPX_DATA_WINVER", "").split(".", maxsplit=3)]
+    except (TypeError, ValueError):
+        winver = []
+
+    # Default "known good" version is 10.0.22000, first Windows 11 release
+    winver = ((tuple(winver) + (0, 0, 0))[:3]) if winver else (10, 0, 22000)
+
     if winver < (10, 0, 17763):
         winver = 10, 0, 17763
     find_or_add(xml, "m:Dependencies/m:TargetDeviceFamily").set(
         "MaxVersionTested", "{}.{}.{}.0".format(*winver)
     )
 
-    if winver > (10, 0, 17763):
+    # Only for Python 3.11 and later. Older versions do not disable virtualization
+    if (VER_MAJOR, VER_MINOR) >= (3, 11) and winver > (10, 0, 17763):
         disable_registry_virtualization(xml)
 
     app = add_application(
