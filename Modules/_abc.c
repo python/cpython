@@ -114,8 +114,7 @@ static _abc_data *
 _get_impl(PyObject *module, PyObject *self)
 {
     _abcmodule_state *state = get_abc_state(module);
-    PyObject *attr = _Py_ID(_abc_impl);
-    PyObject *impl = PyObject_GetAttr(self, attr);
+    PyObject *impl = PyObject_GetAttr(self, _Py_ID(_abc_impl));
     if (impl == NULL) {
         return NULL;
     }
@@ -304,8 +303,7 @@ compute_abstract_methods(PyObject *self)
     PyObject *ns = NULL, *items = NULL, *bases = NULL;  // Py_XDECREF()ed on error.
 
     /* Stage 1: direct abstract methods. */
-    PyObject *attr = _Py_ID(__dict__);
-    ns = PyObject_GetAttr(self, attr);
+    ns = PyObject_GetAttr(self, _Py_ID(__dict__));
     if (!ns) {
         goto error;
     }
@@ -349,8 +347,7 @@ compute_abstract_methods(PyObject *self)
     }
 
     /* Stage 2: inherited abstract methods. */
-    attr = _Py_ID(__bases__);
-    bases = PyObject_GetAttr(self, attr);
+    bases = PyObject_GetAttr(self, _Py_ID(__bases__));
     if (!bases) {
         goto error;
     }
@@ -359,12 +356,12 @@ compute_abstract_methods(PyObject *self)
         goto error;
     }
 
-    attr = _Py_ID(__abstractmethods__);
     for (Py_ssize_t pos = 0; pos < PyTuple_GET_SIZE(bases); pos++) {
         PyObject *item = PyTuple_GET_ITEM(bases, pos);  // borrowed
         PyObject *base_abstracts, *iter;
 
-        if (_PyObject_LookupAttr(item, attr, &base_abstracts) < 0) {
+        if (_PyObject_LookupAttr(item, _Py_ID(__abstractmethods__),
+                                 &base_abstracts) < 0) {
             goto error;
         }
         if (base_abstracts == NULL) {
@@ -404,7 +401,7 @@ compute_abstract_methods(PyObject *self)
         }
     }
 
-    if (PyObject_SetAttr(self, attr, abstracts) < 0) {
+    if (PyObject_SetAttr(self, _Py_ID(__abstractmethods__), abstracts) < 0) {
         goto error;
     }
 
@@ -443,8 +440,7 @@ _abc__abc_init(PyObject *module, PyObject *self)
     if (data == NULL) {
         return NULL;
     }
-    PyObject *attr = _Py_ID(_abc_impl);
-    if (PyObject_SetAttr(self, attr, data) < 0) {
+    if (PyObject_SetAttr(self, _Py_ID(_abc_impl), data) < 0) {
         Py_DECREF(data);
         return NULL;
     }
@@ -455,8 +451,8 @@ _abc__abc_init(PyObject *module, PyObject *self)
      * their special status w.r.t. pattern matching. */
     if (PyType_Check(self)) {
         PyTypeObject *cls = (PyTypeObject *)self;
-        PyObject *attr = _Py_ID(__abc_tpflags__);
-        PyObject *flags = PyDict_GetItemWithError(cls->tp_dict, attr);
+        PyObject *flags = PyDict_GetItemWithError(cls->tp_dict,
+                                                  _Py_ID(__abc_tpflags__));
         if (flags == NULL) {
             if (PyErr_Occurred()) {
                 return NULL;
@@ -474,7 +470,7 @@ _abc__abc_init(PyObject *module, PyObject *self)
                 }
                 ((PyTypeObject *)self)->tp_flags |= (val & COLLECTION_FLAGS);
             }
-            if (PyDict_DelItem(cls->tp_dict, attr) < 0) {
+            if (PyDict_DelItem(cls->tp_dict, _Py_ID(__abc_tpflags__)) < 0) {
                 return NULL;
             }
         }
@@ -590,8 +586,7 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
         return NULL;
     }
 
-    PyObject *attr = _Py_ID(__class__);
-    subclass = PyObject_GetAttr(instance, attr);
+    subclass = PyObject_GetAttr(instance, _Py_ID(__class__));
     if (subclass == NULL) {
         Py_DECREF(impl);
         return NULL;
@@ -607,7 +602,6 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
         goto end;
     }
     subtype = (PyObject *)Py_TYPE(instance);
-    attr = _Py_ID(__subclasscheck__);
     if (subtype == subclass) {
         if (impl->_abc_negative_cache_version == get_abc_state(module)->abc_invalidation_counter) {
             incache = _in_weak_set(impl->_abc_negative_cache, subclass);
@@ -621,10 +615,12 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
             }
         }
         /* Fall back to the subclass check. */
-        result = PyObject_CallMethodOneArg(self, attr, subclass);
+        result = PyObject_CallMethodOneArg(self, _Py_ID(__subclasscheck__),
+                                           subclass);
         goto end;
     }
-    result = PyObject_CallMethodOneArg(self, attr, subclass);
+    result = PyObject_CallMethodOneArg(self, _Py_ID(__subclasscheck__),
+                                       subclass);
     if (result == NULL) {
         goto end;
     }
@@ -636,7 +632,8 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
         break;
     case 0:
         Py_DECREF(result);
-        result = PyObject_CallMethodOneArg(self, attr, subtype);
+        result = PyObject_CallMethodOneArg(self, _Py_ID(__subclasscheck__),
+                                           subtype);
         break;
     case 1:  // Nothing to do.
         break;
@@ -719,8 +716,8 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
     }
 
     /* 3. Check the subclass hook. */
-    PyObject *attr = _Py_ID(__subclasshook__);
-    ok = PyObject_CallMethodOneArg((PyObject *)self, attr, subclass);
+    ok = PyObject_CallMethodOneArg(
+            (PyObject *)self, _Py_ID(__subclasshook__), subclass);
     if (ok == NULL) {
         goto end;
     }

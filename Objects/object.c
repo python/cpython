@@ -557,8 +557,7 @@ PyObject_Bytes(PyObject *v)
         return v;
     }
 
-    PyObject *attr = _Py_ID(__bytes__);
-    func = _PyObject_LookupSpecial(v, attr);
+    func = _PyObject_LookupSpecial(v, _Py_ID(__bytes__));
     if (func != NULL) {
         result = _PyObject_CallNoArgs(func);
         Py_DECREF(func);
@@ -598,8 +597,7 @@ _PyObject_FunctionStr(PyObject *x)
 {
     assert(!PyErr_Occurred());
     PyObject *qualname;
-    PyObject *attr = _Py_ID(__qualname__);
-    int ret = _PyObject_LookupAttr(x, attr, &qualname);
+    int ret = _PyObject_LookupAttr(x, _Py_ID(__qualname__), &qualname);
     if (qualname == NULL) {
         if (ret < 0) {
             return NULL;
@@ -608,11 +606,9 @@ _PyObject_FunctionStr(PyObject *x)
     }
     PyObject *module;
     PyObject *result = NULL;
-    attr = _Py_ID(__module__);
-    ret = _PyObject_LookupAttr(x, attr, &module);
+    ret = _PyObject_LookupAttr(x, _Py_ID(__module__), &module);
     if (module != NULL && module != Py_None) {
-        PyObject *builtinsname = _Py_ID(builtins);
-        ret = PyObject_RichCompareBool(module, builtinsname, Py_NE);
+        ret = PyObject_RichCompareBool(module, _Py_ID(builtins), Py_NE);
         if (ret < 0) {
             // error
             goto done;
@@ -850,8 +846,7 @@ _PyObject_IsAbstract(PyObject *obj)
     if (obj == NULL)
         return 0;
 
-    PyObject *attr = _Py_ID(__isabstractmethod__);
-    res = _PyObject_LookupAttr(obj, attr, &isabstract);
+    res = _PyObject_LookupAttr(obj, _Py_ID(__isabstractmethod__), &isabstract);
     if (res > 0) {
         res = PyObject_IsTrue(isabstract);
         Py_DECREF(isabstract);
@@ -891,11 +886,9 @@ set_attribute_error_context(PyObject* v, PyObject* name)
         PyObject *type, *value, *traceback;
         PyErr_Fetch(&type, &value, &traceback);
         PyErr_NormalizeException(&type, &value, &traceback);
-        PyObject *attr1 = _Py_ID(name);
-        PyObject *attr2 = _Py_ID(obj);
         if (PyErr_GivenExceptionMatches(value, PyExc_AttributeError) &&
-            (PyObject_SetAttr(value, attr1, name) ||
-             PyObject_SetAttr(value, attr2, v))) {
+            (PyObject_SetAttr(value, _Py_ID(name), name) ||
+             PyObject_SetAttr(value, _Py_ID(obj), v))) {
             return 1;
         }
         PyErr_Restore(type, value, traceback);
@@ -1562,8 +1555,7 @@ static PyObject *
 _dir_object(PyObject *obj)
 {
     PyObject *result, *sorted;
-    PyObject *attr = _Py_ID(__dir__);
-    PyObject *dirfunc = _PyObject_LookupSpecial(obj, attr);
+    PyObject *dirfunc = _PyObject_LookupSpecial(obj, _Py_ID(__dir__));
 
     assert(obj != NULL);
     if (dirfunc == NULL) {
@@ -2142,8 +2134,7 @@ Py_ReprEnter(PyObject *obj)
        early on startup. */
     if (dict == NULL)
         return 0;
-    PyObject *attr = _Py_ID(Py_Repr);
-    list = PyDict_GetItemWithError(dict, attr);
+    list = PyDict_GetItemWithError(dict, _Py_ID(Py_Repr));
     if (list == NULL) {
         if (PyErr_Occurred()) {
             return -1;
@@ -2151,7 +2142,7 @@ Py_ReprEnter(PyObject *obj)
         list = PyList_New(0);
         if (list == NULL)
             return -1;
-        if (PyDict_SetItem(dict, attr, list) < 0)
+        if (PyDict_SetItem(dict, _Py_ID(Py_Repr), list) < 0)
             return -1;
         Py_DECREF(list);
     }
@@ -2179,8 +2170,7 @@ Py_ReprLeave(PyObject *obj)
     if (dict == NULL)
         goto finally;
 
-    PyObject *attr = _Py_ID(Py_Repr);
-    list = PyDict_GetItemWithError(dict, attr);
+    list = PyDict_GetItemWithError(dict, _Py_ID(Py_Repr));
     if (list == NULL || !PyList_Check(list))
         goto finally;
 

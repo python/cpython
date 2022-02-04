@@ -1349,8 +1349,7 @@ deque_reduce(dequeobject *deque, PyObject *Py_UNUSED(ignored))
 {
     PyObject *dict, *it;
 
-    PyObject *attr = _Py_ID(__dict__);
-    if (_PyObject_LookupAttr((PyObject *)deque, attr, &dict) < 0) {
+    if (_PyObject_LookupAttr((PyObject *)deque, _Py_ID(__dict__), &dict) < 0) {
         return NULL;
     }
     if (dict == NULL) {
@@ -2071,8 +2070,7 @@ defdict_reduce(defdictobject *dd, PyObject *Py_UNUSED(ignored))
         args = PyTuple_Pack(1, dd->default_factory);
     if (args == NULL)
         return NULL;
-    PyObject *attr = _Py_ID(items);
-    items = PyObject_CallMethodNoArgs((PyObject *)dd, attr);
+    items = PyObject_CallMethodNoArgs((PyObject *)dd, _Py_ID(items));
     if (items == NULL) {
         Py_DECREF(args);
         return NULL;
@@ -2327,13 +2325,10 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
     /* Only take the fast path when get() and __setitem__()
      * have not been overridden.
      */
-    PyObject *attr = _Py_ID(get);
-    mapping_get = _PyType_Lookup(Py_TYPE(mapping), attr);
-    dict_get = _PyType_Lookup(&PyDict_Type, attr);
-    attr = _Py_ID(__setitem__);
-    mapping_setitem = _PyType_Lookup(Py_TYPE(mapping), attr);
-    attr = _Py_ID(__setitem__);
-    dict_setitem = _PyType_Lookup(&PyDict_Type, attr);
+    mapping_get = _PyType_Lookup(Py_TYPE(mapping), _Py_ID(get));
+    dict_get = _PyType_Lookup(&PyDict_Type, _Py_ID(get));
+    mapping_setitem = _PyType_Lookup(Py_TYPE(mapping), _Py_ID(__setitem__));
+    dict_setitem = _PyType_Lookup(&PyDict_Type, _Py_ID(__setitem__));
 
     if (mapping_get != NULL && mapping_get == dict_get &&
         mapping_setitem != NULL && mapping_setitem == dict_setitem &&
@@ -2382,8 +2377,7 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
         }
     }
     else {
-        attr = _Py_ID(get);
-        bound_get = PyObject_GetAttr(mapping, attr);
+        bound_get = PyObject_GetAttr(mapping, _Py_ID(get));
         if (bound_get == NULL)
             goto done;
 

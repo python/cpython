@@ -576,8 +576,8 @@ calculate_qualname(PyDescrObject *descr)
         return NULL;
     }
 
-    PyObject *attr = _Py_ID(__qualname__);
-    type_qualname = PyObject_GetAttr((PyObject *)descr->d_type, attr);
+    type_qualname = PyObject_GetAttr(
+            (PyObject *)descr->d_type, _Py_ID(__qualname__));
     if (type_qualname == NULL)
         return NULL;
 
@@ -605,8 +605,7 @@ descr_get_qualname(PyDescrObject *descr, void *Py_UNUSED(ignored))
 static PyObject *
 descr_reduce(PyDescrObject *descr, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *attr = _Py_ID(getattr);
-    return Py_BuildValue("N(OO)", _PyEval_GetBuiltin(attr),
+    return Py_BuildValue("N(OO)", _PyEval_GetBuiltin(_Py_ID(getattr)),
                          PyDescr_TYPE(descr), PyDescr_NAME(descr));
 }
 
@@ -1084,8 +1083,7 @@ mappingproxy_get(mappingproxyobject *pp, PyObject *const *args, Py_ssize_t nargs
     {
         return NULL;
     }
-    PyObject *attr = _Py_ID(get);
-    return _PyObject_VectorcallMethod(attr, newargs,
+    return _PyObject_VectorcallMethod(_Py_ID(get), newargs,
                                         3 | PY_VECTORCALL_ARGUMENTS_OFFSET,
                                         NULL);
 }
@@ -1093,36 +1091,31 @@ mappingproxy_get(mappingproxyobject *pp, PyObject *const *args, Py_ssize_t nargs
 static PyObject *
 mappingproxy_keys(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *attr = _Py_ID(keys);
-    return PyObject_CallMethodNoArgs(pp->mapping, attr);
+    return PyObject_CallMethodNoArgs(pp->mapping, _Py_ID(keys));
 }
 
 static PyObject *
 mappingproxy_values(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *attr = _Py_ID(values);
-    return PyObject_CallMethodNoArgs(pp->mapping, attr);
+    return PyObject_CallMethodNoArgs(pp->mapping, _Py_ID(values));
 }
 
 static PyObject *
 mappingproxy_items(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *attr = _Py_ID(items);
-    return PyObject_CallMethodNoArgs(pp->mapping, attr);
+    return PyObject_CallMethodNoArgs(pp->mapping, _Py_ID(items));
 }
 
 static PyObject *
 mappingproxy_copy(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *attr = _Py_ID(copy);
-    return PyObject_CallMethodNoArgs(pp->mapping, attr);
+    return PyObject_CallMethodNoArgs(pp->mapping, _Py_ID(copy));
 }
 
 static PyObject *
 mappingproxy_reversed(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *attr = _Py_ID(__reversed__);
-    return PyObject_CallMethodNoArgs(pp->mapping, attr);
+    return PyObject_CallMethodNoArgs(pp->mapping, _Py_ID(__reversed__));
 }
 
 /* WARNING: mappingproxy methods must not give access
@@ -1319,8 +1312,7 @@ wrapper_repr(wrapperobject *wp)
 static PyObject *
 wrapper_reduce(wrapperobject *wp, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *attr = _Py_ID(getattr);
-    return Py_BuildValue("N(OO)", _PyEval_GetBuiltin(attr),
+    return Py_BuildValue("N(OO)", _PyEval_GetBuiltin(_Py_ID(getattr)),
                          wp->self, PyDescr_NAME(wp->descr));
 }
 
@@ -1756,8 +1748,7 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
     /* if no docstring given and the getter has one, use that one */
     if ((doc == NULL || doc == Py_None) && fget != NULL) {
         PyObject *get_doc;
-        PyObject *attr = _Py_ID(__doc__);
-        int rc = _PyObject_LookupAttr(fget, attr, &get_doc);
+        int rc = _PyObject_LookupAttr(fget, _Py_ID(__doc__), &get_doc);
         if (rc <= 0) {
             return rc;
         }
@@ -1769,7 +1760,8 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
                in dict of the subclass instance instead,
                otherwise it gets shadowed by __doc__ in the
                class's dict. */
-            int err = PyObject_SetAttr((PyObject *)self, attr, get_doc);
+            int err = PyObject_SetAttr(
+                    (PyObject *)self, _Py_ID(__doc__), get_doc);
             Py_DECREF(get_doc);
             if (err < 0)
                 return -1;

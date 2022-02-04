@@ -933,8 +933,7 @@ local_setattro(localobject *self, PyObject *name, PyObject *v)
         return -1;
     }
 
-    PyObject *str_dict = _Py_ID(__dict__);
-    int r = PyObject_RichCompareBool(name, str_dict, Py_EQ);
+    int r = PyObject_RichCompareBool(name, _Py_ID(__dict__), Py_EQ);
     if (r == -1) {
         return -1;
     }
@@ -985,8 +984,7 @@ local_getattro(localobject *self, PyObject *name)
     if (ldict == NULL)
         return NULL;
 
-    PyObject *str_dict = _Py_ID(__dict__);
-    int r = PyObject_RichCompareBool(name, str_dict, Py_EQ);
+    int r = PyObject_RichCompareBool(name, _Py_ID(__dict__), Py_EQ);
     if (r == 1) {
         return Py_NewRef(ldict);
     }
@@ -1407,8 +1405,7 @@ thread_excepthook_file(PyObject *file, PyObject *exc_type, PyObject *exc_value,
 
     PyObject *name = NULL;
     if (thread != Py_None) {
-        PyObject *attr = _Py_ID(name);
-        if (_PyObject_LookupAttr(thread, attr, &name) < 0) {
+        if (_PyObject_LookupAttr(thread, _Py_ID(name), &name) < 0) {
             return -1;
         }
     }
@@ -1446,8 +1443,7 @@ thread_excepthook_file(PyObject *file, PyObject *exc_type, PyObject *exc_value,
     _PyErr_Display(file, exc_type, exc_value, exc_traceback);
 
     /* Call file.flush() */
-    PyObject *attr = _Py_ID(flush);
-    PyObject *res = PyObject_CallMethodNoArgs(file, attr);
+    PyObject *res = PyObject_CallMethodNoArgs(file, _Py_ID(flush));
     if (!res) {
         return -1;
     }
@@ -1503,8 +1499,7 @@ thread_excepthook(PyObject *module, PyObject *args)
     PyObject *thread = PyStructSequence_GET_ITEM(args, 3);
 
     PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *attr = _Py_ID(stderr);
-    PyObject *file = _PySys_GetAttr(tstate, attr);
+    PyObject *file = _PySys_GetAttr(tstate, _Py_ID(stderr));
     if (file == NULL || file == Py_None) {
         if (thread == Py_None) {
             /* do nothing if sys.stderr is None and thread is None */

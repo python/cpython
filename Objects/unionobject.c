@@ -265,15 +265,13 @@ union_repr_item(_PyUnicodeWriter *writer, PyObject *p)
         return _PyUnicodeWriter_WriteASCIIString(writer, "None", 4);
     }
 
-    PyObject *attr = _Py_ID(__origin__);
-    if (_PyObject_LookupAttr(p, attr, &tmp) < 0) {
+    if (_PyObject_LookupAttr(p, _Py_ID(__origin__), &tmp) < 0) {
         goto exit;
     }
 
     if (tmp) {
         Py_DECREF(tmp);
-        attr = _Py_ID(__args__);
-        if (_PyObject_LookupAttr(p, attr, &tmp) < 0) {
+        if (_PyObject_LookupAttr(p, _Py_ID(__args__), &tmp) < 0) {
             goto exit;
         }
         if (tmp) {
@@ -283,15 +281,13 @@ union_repr_item(_PyUnicodeWriter *writer, PyObject *p)
         }
     }
 
-    attr = _Py_ID(__qualname__);
-    if (_PyObject_LookupAttr(p, attr, &qualname) < 0) {
+    if (_PyObject_LookupAttr(p, _Py_ID(__qualname__), &qualname) < 0) {
         goto exit;
     }
     if (qualname == NULL) {
         goto use_repr;
     }
-    attr = _Py_ID(__module__);
-    if (_PyObject_LookupAttr(p, attr, &module) < 0) {
+    if (_PyObject_LookupAttr(p, _Py_ID(__module__), &module) < 0) {
         goto exit;
     }
     if (module == NULL || module == Py_None) {

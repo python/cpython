@@ -1502,13 +1502,11 @@ ImportError_getstate(PyImportErrorObject *self)
         dict = dict ? PyDict_Copy(dict) : PyDict_New();
         if (dict == NULL)
             return NULL;
-        PyObject *attr = _Py_ID(name);
-        if (self->name && PyDict_SetItem(dict, attr, self->name) < 0) {
+        if (self->name && PyDict_SetItem(dict, _Py_ID(name), self->name) < 0) {
             Py_DECREF(dict);
             return NULL;
         }
-        attr = _Py_ID(path);
-        if (self->path && PyDict_SetItem(dict, attr, self->path) < 0) {
+        if (self->path && PyDict_SetItem(dict, _Py_ID(path), self->path) < 0) {
             Py_DECREF(dict);
             return NULL;
         }

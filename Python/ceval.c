@@ -873,14 +873,12 @@ match_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
     PyObject *seen = NULL;
     PyObject *dummy = NULL;
     PyObject *values = NULL;
-    PyObject *get_name = NULL;
     PyObject *get = NULL;
     // We use the two argument form of map.get(key, default) for two reasons:
     // - Atomically check for a key and get its value without error handling.
     // - Don't cause key creation or resizing in dict subclasses like
     //   collections.defaultdict that define __missing__ (or similar).
-    get_name = _Py_ID(get);
-    int meth_found = _PyObject_GetMethod(map, get_name, &get);
+    int meth_found = _PyObject_GetMethod(map, _Py_ID(get), &get);
     if (get == NULL) {
         goto fail;
     }
@@ -1731,8 +1729,7 @@ resume_frame:
 
 #ifdef LLTRACE
     {
-        PyObject *key = _Py_ID(__ltrace__);
-        int r = PyDict_Contains(GLOBALS(), key);
+        int r = PyDict_Contains(GLOBALS(), _Py_ID(__ltrace__));
         if (r < 0) {
             goto exit_unwind;
         }
@@ -2367,8 +2364,7 @@ handle_eval_breaker:
 
         TARGET(PRINT_EXPR) {
             PyObject *value = POP();
-            PyObject *key = _Py_ID(displayhook);
-            PyObject *hook = _PySys_GetAttr(tstate, key);
+            PyObject *hook = _PySys_GetAttr(tstate, _Py_ID(displayhook));
             PyObject *res;
             if (hook == NULL) {
                 _PyErr_SetString(tstate, PyExc_RuntimeError,
@@ -2577,8 +2573,7 @@ handle_eval_breaker:
                     retval = Py_TYPE(receiver)->tp_iternext(receiver);
                 }
                 else {
-                    PyObject *name = _Py_ID(send);
-                    retval = PyObject_CallMethodOneArg(receiver, name, v);
+                    retval = PyObject_CallMethodOneArg(receiver, _Py_ID(send), v);
                 }
                 if (retval == NULL) {
                     if (tstate->c_tracefunc != NULL
@@ -2713,8 +2708,8 @@ handle_eval_breaker:
         TARGET(LOAD_BUILD_CLASS) {
             PyObject *bc;
             if (PyDict_CheckExact(BUILTINS())) {
-                PyObject *name = _Py_ID(__build_class__);
-                bc = _PyDict_GetItemWithError(BUILTINS(), name);
+                bc = _PyDict_GetItemWithError(BUILTINS(),
+                                              _Py_ID(__build_class__));
                 if (bc == NULL) {
                     if (!_PyErr_Occurred(tstate)) {
                         _PyErr_SetString(tstate, PyExc_NameError,
@@ -2725,8 +2720,7 @@ handle_eval_breaker:
                 Py_INCREF(bc);
             }
             else {
-                PyObject *build_class_str = _Py_ID(__build_class__);
-                bc = PyObject_GetItem(BUILTINS(), build_class_str);
+                bc = PyObject_GetItem(BUILTINS(), _Py_ID(__build_class__));
                 if (bc == NULL) {
                     if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError))
                         _PyErr_SetString(tstate, PyExc_NameError,
@@ -3288,8 +3282,8 @@ handle_eval_breaker:
             }
             /* check if __annotations__ in locals()... */
             if (PyDict_CheckExact(LOCALS())) {
-                PyObject *key = _Py_ID(__annotations__);
-                ann_dict = _PyDict_GetItemWithError(LOCALS(), key);
+                ann_dict = _PyDict_GetItemWithError(LOCALS(),
+                                                    _Py_ID(__annotations__));
                 if (ann_dict == NULL) {
                     if (_PyErr_Occurred(tstate)) {
                         goto error;
@@ -3299,7 +3293,8 @@ handle_eval_breaker:
                     if (ann_dict == NULL) {
                         goto error;
                     }
-                    err = PyDict_SetItem(LOCALS(), key, ann_dict);
+                    err = PyDict_SetItem(LOCALS(), _Py_ID(__annotations__),
+                                         ann_dict);
                     Py_DECREF(ann_dict);
                     if (err != 0) {
                         goto error;
@@ -3308,8 +3303,7 @@ handle_eval_breaker:
             }
             else {
                 /* do the same if locals() is not a dict */
-                PyObject *ann_str = _Py_ID(__annotations__);
-                ann_dict = PyObject_GetItem(LOCALS(), ann_str);
+                ann_dict = PyObject_GetItem(LOCALS(), _Py_ID(__annotations__));
                 if (ann_dict == NULL) {
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
                         goto error;
@@ -3319,7 +3313,8 @@ handle_eval_breaker:
                     if (ann_dict == NULL) {
                         goto error;
                     }
-                    err = PyObject_SetItem(LOCALS(), ann_str, ann_dict);
+                    err = PyObject_SetItem(LOCALS(), _Py_ID(__annotations__),
+                                           ann_dict);
                     Py_DECREF(ann_dict);
                     if (err != 0) {
                         goto error;
@@ -4223,8 +4218,7 @@ handle_eval_breaker:
         TARGET(BEFORE_ASYNC_WITH) {
             PyObject *mgr = TOP();
             PyObject *res;
-            PyObject *str_aenter = _Py_ID(__aenter__);
-            PyObject *enter = _PyObject_LookupSpecial(mgr, str_aenter);
+            PyObject *enter = _PyObject_LookupSpecial(mgr, _Py_ID(__aenter__));
             if (enter == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
@@ -4234,8 +4228,7 @@ handle_eval_breaker:
                 }
                 goto error;
             }
-            PyObject *str_aexit = _Py_ID(__aexit__);
-            PyObject *exit = _PyObject_LookupSpecial(mgr, str_aexit);
+            PyObject *exit = _PyObject_LookupSpecial(mgr, _Py_ID(__aexit__));
             if (exit == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
@@ -4261,8 +4254,7 @@ handle_eval_breaker:
         TARGET(BEFORE_WITH) {
             PyObject *mgr = TOP();
             PyObject *res;
-            PyObject *str_enter = _Py_ID(__enter__);
-            PyObject *enter = _PyObject_LookupSpecial(mgr, str_enter);
+            PyObject *enter = _PyObject_LookupSpecial(mgr, _Py_ID(__enter__));
             if (enter == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
@@ -4272,8 +4264,7 @@ handle_eval_breaker:
                 }
                 goto error;
             }
-            PyObject *str_exit = _Py_ID(__exit__);
-            PyObject *exit = _PyObject_LookupSpecial(mgr, str_exit);
+            PyObject *exit = _PyObject_LookupSpecial(mgr, _Py_ID(__exit__));
             if (exit == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
@@ -7072,8 +7063,7 @@ import_name(PyThreadState *tstate, InterpreterFrame *frame,
     PyObject *import_func, *res;
     PyObject* stack[5];
 
-    PyObject *key = _Py_ID(__import__);
-    import_func = _PyDict_GetItemWithError(frame->f_builtins, key);
+    import_func = _PyDict_GetItemWithError(frame->f_builtins, _Py_ID(__import__));
     if (import_func == NULL) {
         if (!_PyErr_Occurred(tstate)) {
             _PyErr_SetString(tstate, PyExc_ImportError, "__import__ not found");
@@ -7120,8 +7110,7 @@ import_from(PyThreadState *tstate, PyObject *v, PyObject *name)
     /* Issue #17636: in case this failed because of a circular relative
        import, try to fallback on reading the module directly from
        sys.modules. */
-    PyObject *attr = _Py_ID(__name__);
-    pkgname = PyObject_GetAttr(v, attr);
+    pkgname = PyObject_GetAttr(v, _Py_ID(__name__));
     if (pkgname == NULL) {
         goto error;
     }
@@ -7163,8 +7152,7 @@ import_from(PyThreadState *tstate, PyObject *v, PyObject *name)
         PyErr_SetImportError(errmsg, pkgname, NULL);
     }
     else {
-        PyObject *attr = _Py_ID(__spec__);
-        PyObject *spec = PyObject_GetAttr(v, attr);
+        PyObject *spec = PyObject_GetAttr(v, _Py_ID(__spec__));
         const char *fmt =
             _PyModuleSpec_IsInitializing(spec) ?
             "cannot import name %R from partially initialized module %R "
@@ -7190,13 +7178,11 @@ import_all_from(PyThreadState *tstate, PyObject *locals, PyObject *v)
     int skip_leading_underscores = 0;
     int pos, err;
 
-    PyObject *attr = _Py_ID(__all__);
-    if (_PyObject_LookupAttr(v, attr, &all) < 0) {
+    if (_PyObject_LookupAttr(v, _Py_ID(__all__), &all) < 0) {
         return -1; /* Unexpected error */
     }
     if (all == NULL) {
-        attr = _Py_ID(__dict__);
-        if (_PyObject_LookupAttr(v, attr, &dict) < 0) {
+        if (_PyObject_LookupAttr(v, _Py_ID(__dict__), &dict) < 0) {
             return -1;
         }
         if (dict == NULL) {
@@ -7223,8 +7209,7 @@ import_all_from(PyThreadState *tstate, PyObject *locals, PyObject *v)
             break;
         }
         if (!PyUnicode_Check(name)) {
-            attr = _Py_ID(__name__);
-            PyObject *modname = PyObject_GetAttr(v, attr);
+            PyObject *modname = PyObject_GetAttr(v, _Py_ID(__name__));
             if (modname == NULL) {
                 Py_DECREF(name);
                 err = -1;
@@ -7430,8 +7415,7 @@ format_exc_check_arg(PyThreadState *tstate, PyObject *exc,
         if (PyErr_GivenExceptionMatches(value, PyExc_NameError)) {
             // We do not care if this fails because we are going to restore the
             // NameError anyway.
-            PyObject *attr = _Py_ID(name);
-            (void)PyObject_SetAttr(value, attr, obj);
+            (void)PyObject_SetAttr(value, _Py_ID(name), obj);
         }
         PyErr_Restore(type, value, traceback);
     }

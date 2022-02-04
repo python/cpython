@@ -1609,12 +1609,11 @@ compiler_enter_scope(struct compiler *c, identifier name,
     }
     if (u->u_ste->ste_needs_class_closure) {
         /* Cook up an implicit __class__ cell. */
-        PyObject *name;
         int res;
         assert(u->u_scope_type == COMPILER_SCOPE_CLASS);
         assert(PyDict_GET_SIZE(u->u_cellvars) == 0);
-        name = _Py_ID(__class__);
-        res = PyDict_SetItem(u->u_cellvars, name, _PyLong_GetZero());
+        res = PyDict_SetItem(u->u_cellvars, _Py_ID(__class__),
+                             _PyLong_GetZero());
         if (res < 0) {
             compiler_unit_free(u);
             return 0;
@@ -1999,7 +1998,6 @@ compiler_body(struct compiler *c, asdl_stmt_seq *stmts)
     int i = 0;
     stmt_ty st;
     PyObject *docstring;
-    PyObject *__doc__ = _Py_ID(__doc__);
 
     /* Set current line number to the line number of first statement.
        This way line number for SETUP_ANNOTATIONS will always
@@ -2024,7 +2022,7 @@ compiler_body(struct compiler *c, asdl_stmt_seq *stmts)
             assert(st->kind == Expr_kind);
             VISIT(c, expr, st->v.Expr.value);
             UNSET_LOC(c);
-            if (!compiler_nameop(c, __doc__, Store))
+            if (!compiler_nameop(c, _Py_ID(__doc__), Store))
                 return 0;
         }
     }
@@ -2334,8 +2332,8 @@ compiler_visit_annotations(struct compiler *c, arguments_ty args,
                                      args->kwarg->annotation, &annotations_len))
         return 0;
 
-    identifier return_str = _Py_ID(return);
-    if (!compiler_visit_argannotation(c, return_str, returns, &annotations_len)) {
+    if (!compiler_visit_argannotation(c, _Py_ID(return), returns,
+                                      &annotations_len)) {
         return 0;
     }
 
@@ -5922,7 +5920,6 @@ compiler_annassign(struct compiler *c, stmt_ty s)
 {
     expr_ty targ = s->v.AnnAssign.target;
     PyObject* mangled;
-    PyObject *__annotations__ = _Py_ID(__annotations__);
 
     assert(s->kind == AnnAssign_kind);
 
@@ -5945,7 +5942,7 @@ compiler_annassign(struct compiler *c, stmt_ty s)
             else {
                 VISIT(c, expr, s->v.AnnAssign.annotation);
             }
-            ADDOP_NAME(c, LOAD_NAME, __annotations__, names);
+            ADDOP_NAME(c, LOAD_NAME, _Py_ID(__annotations__), names);
             mangled = _Py_Mangle(c->u->u_private, targ->v.Name.id);
             ADDOP_LOAD_CONST_NEW(c, mangled);
             ADDOP(c, STORE_SUBSCR);

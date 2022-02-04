@@ -951,8 +951,7 @@ odict_reduce(register PyODictObject *od, PyObject *Py_UNUSED(ignored))
     PyObject *items_iter, *items, *args = NULL;
 
     /* capture any instance state */
-    PyObject *attr = _Py_ID(__dict__);
-    dict = PyObject_GetAttr((PyObject *)od, attr);
+    dict = PyObject_GetAttr((PyObject *)od, _Py_ID(__dict__));
     if (dict == NULL)
         goto Done;
     else {
@@ -971,8 +970,7 @@ odict_reduce(register PyODictObject *od, PyObject *Py_UNUSED(ignored))
     if (args == NULL)
         goto Done;
 
-    attr = _Py_ID(items);
-    items = PyObject_CallMethodNoArgs((PyObject *)od, attr);
+    items = PyObject_CallMethodNoArgs((PyObject *)od, _Py_ID(items));
     if (items == NULL)
         goto Done;
 
@@ -1430,8 +1428,8 @@ odict_repr(PyODictObject *self)
         }
     }
     else {
-        PyObject *attr = _Py_ID(items);
-        PyObject *items = PyObject_CallMethodNoArgs((PyObject *)self, attr);
+        PyObject *items = PyObject_CallMethodNoArgs(
+                (PyObject *)self, _Py_ID(items));
         if (items == NULL)
             goto Done;
         pieces = PySequence_List(items);
@@ -1819,8 +1817,7 @@ odictiter_reduce(odictiterobject *di, PyObject *Py_UNUSED(ignored))
     if (list == NULL) {
         return NULL;
     }
-    PyObject *attr = _Py_ID(iter);
-    return Py_BuildValue("N(N)", _PyEval_GetBuiltin(attr), list);
+    return Py_BuildValue("N(N)", _PyEval_GetBuiltin(_Py_ID(iter)), list);
 }
 
 static PyMethodDef odictiter_methods[] = {
@@ -2217,8 +2214,7 @@ mutablemapping_update_arg(PyObject *self, PyObject *arg)
         return res;
     }
     PyObject *func;
-    PyObject *attr = _Py_ID(keys);
-    if (_PyObject_LookupAttr(arg, attr, &func) < 0) {
+    if (_PyObject_LookupAttr(arg, _Py_ID(keys), &func) < 0) {
         return -1;
     }
     if (func != NULL) {
@@ -2250,8 +2246,7 @@ mutablemapping_update_arg(PyObject *self, PyObject *arg)
         }
         return 0;
     }
-    attr = _Py_ID(items);
-    if (_PyObject_LookupAttr(arg, attr, &func) < 0) {
+    if (_PyObject_LookupAttr(arg, _Py_ID(items), &func) < 0) {
         return -1;
     }
     if (func != NULL) {

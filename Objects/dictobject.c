@@ -2160,8 +2160,8 @@ dict_subscript(PyDictObject *mp, PyObject *key)
         if (!PyDict_CheckExact(mp)) {
             /* Look up __missing__ method if we're a subclass. */
             PyObject *missing, *res;
-            PyObject *attr = _Py_ID(__missing__);
-            missing = _PyObject_LookupSpecial((PyObject *)mp, attr);
+            missing = _PyObject_LookupSpecial(
+                    (PyObject *)mp, _Py_ID(__missing__));
             if (missing != NULL) {
                 res = PyObject_CallOneArg(missing, key);
                 Py_DECREF(missing);
@@ -2364,8 +2364,7 @@ dict_update_arg(PyObject *self, PyObject *arg)
         return PyDict_Merge(self, arg, 1);
     }
     PyObject *func;
-    PyObject *attr = _Py_ID(keys);
-    if (_PyObject_LookupAttr(arg, attr, &func) < 0) {
+    if (_PyObject_LookupAttr(arg, _Py_ID(keys), &func) < 0) {
         return -1;
     }
     if (func != NULL) {
@@ -4130,8 +4129,7 @@ dictiter_reduce(dictiterobject *di, PyObject *Py_UNUSED(ignored))
     if (list == NULL) {
         return NULL;
     }
-    PyObject *attr = _Py_ID(iter);
-    return Py_BuildValue("N(N)", _PyEval_GetBuiltin(attr), list);
+    return Py_BuildValue("N(N)", _PyEval_GetBuiltin(_Py_ID(iter)), list);
 }
 
 PyTypeObject PyDictRevIterItem_Type = {
@@ -4401,8 +4399,8 @@ dictviews_sub(PyObject *self, PyObject *other)
         return NULL;
     }
 
-    PyObject *attr = _Py_ID(difference_update);
-    PyObject *tmp = PyObject_CallMethodOneArg(result, attr, other);
+    PyObject *tmp = PyObject_CallMethodOneArg(
+            result, _Py_ID(difference_update), other);
     if (tmp == NULL) {
         Py_DECREF(result);
         return NULL;
@@ -4438,8 +4436,8 @@ _PyDictView_Intersect(PyObject* self, PyObject *other)
     /* if other is a set and self is smaller than other,
        reuse set intersection logic */
     if (PySet_CheckExact(other) && len_self <= PyObject_Size(other)) {
-        PyObject *attr = _Py_ID(intersection);
-        return PyObject_CallMethodObjArgs(other, attr, self, NULL);
+        return PyObject_CallMethodObjArgs(
+                other, _Py_ID(intersection), self, NULL);
     }
 
     /* if other is another dict view, and it is bigger than self,
@@ -4579,8 +4577,8 @@ dictitems_xor(PyObject *self, PyObject *other)
     }
     key = val1 = val2 = NULL;
 
-    PyObject *attr = _Py_ID(items);
-    PyObject *remaining_pairs = PyObject_CallMethodNoArgs(temp_dict, attr);
+    PyObject *remaining_pairs = PyObject_CallMethodNoArgs(
+            temp_dict, _Py_ID(items));
     if (remaining_pairs == NULL) {
         goto error;
     }
@@ -4612,8 +4610,8 @@ dictviews_xor(PyObject* self, PyObject *other)
         return NULL;
     }
 
-    PyObject *attr = _Py_ID(symmetric_difference_update);
-    PyObject *tmp = PyObject_CallMethodOneArg(result, attr, other);
+    PyObject *tmp = PyObject_CallMethodOneArg(
+            result, _Py_ID(symmetric_difference_update), other);
     if (tmp == NULL) {
         Py_DECREF(result);
         return NULL;

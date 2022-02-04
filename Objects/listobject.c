@@ -3505,21 +3505,19 @@ listreviter_setstate(listreviterobject *it, PyObject *state)
 static PyObject *
 listiter_reduce_general(void *_it, int forward)
 {
-    PyObject *list, *attr;
+    PyObject *list;
 
     /* the objects are not the same, index is of different types! */
     if (forward) {
         listiterobject *it = (listiterobject *)_it;
         if (it->it_seq) {
-            attr = _Py_ID(iter);
-            return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(attr),
+            return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(_Py_ID(iter)),
                                  it->it_seq, it->it_index);
         }
     } else {
         listreviterobject *it = (listreviterobject *)_it;
         if (it->it_seq) {
-            attr = _Py_ID(reversed);
-            return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(attr),
+            return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(_Py_ID(reversed)),
                                  it->it_seq, it->it_index);
         }
     }
@@ -3527,6 +3525,5 @@ listiter_reduce_general(void *_it, int forward)
     list = PyList_New(0);
     if (list == NULL)
         return NULL;
-    attr = _Py_ID(iter);
-    return Py_BuildValue("N(N)", _PyEval_GetBuiltin(attr), list);
+    return Py_BuildValue("N(N)", _PyEval_GetBuiltin(_Py_ID(iter)), list);
 }
