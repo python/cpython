@@ -524,7 +524,7 @@ parse_syntax_error(PyObject *err, PyObject **message, PyObject **filename,
         goto finally;
     if (v == Py_None) {
         Py_DECREF(v);
-        *filename = _Py_GET_GLOBAL_STRING(anon_string);
+        *filename = _Py_STR(anon_string);
         Py_INCREF(*filename);
     }
     else {
@@ -1582,7 +1582,7 @@ PyRun_StringFlags(const char *str, int start, PyObject *globals,
     PyObject *ret = NULL;
     mod_ty mod;
     PyArena *arena;
-    PyObject *filename = _Py_GET_GLOBAL_STRING(anon_string);
+    PyObject *filename = _Py_STR(anon_string);
 
     arena = _PyArena_New();
     if (arena == NULL)

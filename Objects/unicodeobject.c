@@ -260,7 +260,7 @@ get_unicode_state(void)
 // Return a borrowed reference to the empty string singleton.
 static inline PyObject* unicode_get_empty(void)
 {
-    return _Py_GET_GLOBAL_STRING(empty);
+    return _Py_STR(empty);
 }
 
 
@@ -15534,7 +15534,7 @@ _PyUnicode_InitGlobalObjects(PyInterpreterState *interp)
     }
 
 #ifdef Py_DEBUG
-    PyObject *empty = _Py_GET_GLOBAL_STRING(empty);
+    PyObject *empty = _Py_STR(empty);
     assert(_PyUnicode_CheckConsistency(empty, 1));
 #endif
 

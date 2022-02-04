@@ -4578,7 +4578,7 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             Py_DECREF(sorted_methods);
             return NULL;
         }
-        comma = _Py_GET_GLOBAL_STRING(comma_sep);
+        comma = _Py_STR(comma_sep);
         joined = PyUnicode_Join(comma, sorted_methods);
         method_count = PyObject_Length(sorted_methods);
         Py_DECREF(sorted_methods);

@@ -464,7 +464,7 @@ GETTER_RE = re.compile(r'''
          )
         |
         (?:
-            _Py_GET_GLOBAL_STRING
+            _Py_STR
             [(]
             ( \w+ )  # <literal>
             [)]

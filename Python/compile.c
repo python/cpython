@@ -668,7 +668,7 @@ compiler_set_qualname(struct compiler *c)
                 || parent->u_scope_type == COMPILER_SCOPE_ASYNC_FUNCTION
                 || parent->u_scope_type == COMPILER_SCOPE_LAMBDA)
             {
-                dot_locals_str = _Py_GET_GLOBAL_STRING(dot_locals);
+                dot_locals_str = _Py_STR(dot_locals);
                 base = PyUnicode_Concat(parent->u_qualname, dot_locals_str);
                 if (base == NULL)
                     return 0;
@@ -681,7 +681,7 @@ compiler_set_qualname(struct compiler *c)
     }
 
     if (base != NULL) {
-        dot_str = _Py_GET_GLOBAL_STRING(dot);
+        dot_str = _Py_STR(dot);
         name = PyUnicode_Concat(base, dot_str);
         Py_DECREF(base);
         if (name == NULL)
@@ -2038,7 +2038,7 @@ compiler_mod(struct compiler *c, mod_ty mod)
 {
     PyCodeObject *co;
     int addNone = 1;
-    PyObject *module = _Py_GET_GLOBAL_STRING(anon_module);
+    PyObject *module = _Py_STR(anon_module);
     if (!compiler_enter_scope(c, module, COMPILER_SCOPE_MODULE, mod, 1)) {
         return NULL;
     }
@@ -2892,7 +2892,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
         return 0;
     }
 
-    identifier name = _Py_GET_GLOBAL_STRING(anon_lambda);
+    identifier name = _Py_STR(anon_lambda);
     if (!compiler_enter_scope(c, name, COMPILER_SCOPE_LAMBDA,
                               (void *)e, e->lineno)) {
         return 0;
@@ -3792,7 +3792,7 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 {
     Py_ssize_t i, n = asdl_seq_LEN(s->v.ImportFrom.names);
     PyObject *names;
-    PyObject *empty_string = _Py_GET_GLOBAL_STRING(empty);
+    PyObject *empty_string = _Py_STR(empty);
 
     ADDOP_LOAD_CONST_NEW(c, PyLong_FromLong(s->v.ImportFrom.level));
 
@@ -5367,7 +5367,7 @@ error:
 static int
 compiler_genexp(struct compiler *c, expr_ty e)
 {
-    identifier name = _Py_GET_GLOBAL_STRING(anon_genexpr);
+    identifier name = _Py_STR(anon_genexpr);
     assert(e->kind == GeneratorExp_kind);
     return compiler_comprehension(c, e, COMP_GENEXP, name,
                                   e->v.GeneratorExp.generators,
@@ -5377,7 +5377,7 @@ compiler_genexp(struct compiler *c, expr_ty e)
 static int
 compiler_listcomp(struct compiler *c, expr_ty e)
 {
-    identifier name = _Py_GET_GLOBAL_STRING(anon_listcomp);
+    identifier name = _Py_STR(anon_listcomp);
     assert(e->kind == ListComp_kind);
     return compiler_comprehension(c, e, COMP_LISTCOMP, name,
                                   e->v.ListComp.generators,
@@ -5387,7 +5387,7 @@ compiler_listcomp(struct compiler *c, expr_ty e)
 static int
 compiler_setcomp(struct compiler *c, expr_ty e)
 {
-    identifier name = _Py_GET_GLOBAL_STRING(anon_setcomp);
+    identifier name = _Py_STR(anon_setcomp);
     assert(e->kind == SetComp_kind);
     return compiler_comprehension(c, e, COMP_SETCOMP, name,
                                   e->v.SetComp.generators,
@@ -5398,7 +5398,7 @@ compiler_setcomp(struct compiler *c, expr_ty e)
 static int
 compiler_dictcomp(struct compiler *c, expr_ty e)
 {
-    identifier name = _Py_GET_GLOBAL_STRING(anon_dictcomp);
+    identifier name = _Py_STR(anon_dictcomp);
     assert(e->kind == DictComp_kind);
     return compiler_comprehension(c, e, COMP_DICTCOMP, name,
                                   e->v.DictComp.generators,
