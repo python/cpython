@@ -1,1 +1,2 @@
-Exclude marshalled-frozen data if deep-freezing to save 300 KB disk space. Patch by Kumar Aditya.
+Exclude marshalled-frozen data if deep-freezing to save 300 KB disk space.  This includes adding
+a new ``is_package`` field to :cstruct:`_frozen`.  Patch by Kumar Aditya.
