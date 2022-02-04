@@ -22,11 +22,12 @@
 #  include "pycore_bitutils.h"    // _Py_popcount32()
 #endif
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_fileutils.h"     // _Py_closerange()
-#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_ceval.h"         // _PyEval_ReInitThreads()
+#include "pycore_fileutils.h"     // _Py_closerange()
 #include "pycore_import.h"        // _PyImport_ReInitLock()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_object.h"        // _PyObject_LookupSpecial()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 #include "structmember.h"         // PyMemberDef

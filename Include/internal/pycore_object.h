@@ -238,6 +238,8 @@ extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
 #define _PyHeapType_GET_MEMBERS(etype) \
     ((PyMemberDef *)(((char *)etype) + Py_TYPE(etype)->tp_basicsize))
 
+PyAPI_FUNC(PyObject *) _PyObject_LookupSpecial(PyObject *, PyObject *);
+
 #ifdef __cplusplus
 }
 #endif
