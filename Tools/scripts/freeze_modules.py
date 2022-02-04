@@ -727,7 +727,7 @@ def main(deepfreeze_only: bool):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--deepfreeze-only", action="store_true",
-        help="Only use deepfrozen modules", default=True)
+    parser.add_argument("--deepfreeze-only", choices=("true", "false"),
+        help="Only use deepfrozen modules.", default="true")
     args = parser.parse_args()
-    main(args.deepfreeze_only)
+    main(args.deepfreeze_only == "true")
