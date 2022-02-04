@@ -1877,6 +1877,9 @@ class TestMutatingOps:
     def test_sub_with_mutation(self):
         self.check_set_op_does_not_crash(lambda a, b: a - b)
 
+    def test_xor_with_mutation(self):
+        self.check_set_op_does_not_crash(lambda a, b: a ^ b)
+
     def test_isdisjoint_with_mutation(self):
         self.check_set_op_does_not_crash(lambda a, b: a.isdisjoint(b))
 
@@ -1893,6 +1896,11 @@ class TestMutatingOps:
     def test_isub_with_mutation(self):
         def f(a, b):
             a -= b
+        self.check_set_op_does_not_crash(f)
+
+    def test_ixor_with_mutation(self):
+        def f(a, b):
+            a ^= b
         self.check_set_op_does_not_crash(f)
 
     def test_iteration_with_mutation(self):
