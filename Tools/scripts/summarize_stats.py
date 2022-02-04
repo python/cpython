@@ -22,11 +22,10 @@ for name in opcode.opname[1:]:
             pass
     opname.append(name)
 
-
 TOTAL = "specialization.deferred", "specialization.hit", "specialization.miss", "execution_count"
 
 def print_specialization_stats(name, family_stats):
-    if "specialization.failure" not in family_stats:
+    if "specializable" not in family_stats:
         return
     total = sum(family_stats.get(kind, 0) for kind in TOTAL)
     if total == 0:
@@ -87,13 +86,18 @@ def main():
     for i, opcode_stat in enumerate(opcode_stats):
         if "execution_count" in opcode_stat:
             count = opcode_stat['execution_count']
-            counts.append((count, opname[i]))
+            miss = 0
+            if "specializable" not in opcode_stat:
+                miss = opcode_stat.get("specialization.miss")
+            counts.append((count, opname[i], miss))
             total += count
     counts.sort(reverse=True)
     cummulative = 0
-    for (count, name) in counts:
+    for (count, name, miss) in counts:
         cummulative += count
         print(f"{name}: {count} {100*count/total:0.1f}% {100*cummulative/total:0.1f}%")
+        if miss:
+            print(f"    Misses: {miss} {100*miss/count:0.1f}%")
     print("Specialization stats:")
     for i, opcode_stat in enumerate(opcode_stats):
         name = opname[i]
