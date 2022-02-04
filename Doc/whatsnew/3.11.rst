@@ -638,6 +638,10 @@ C API Changes
   fields of the result from the exception instance (the ``value`` field).
   (Contributed by Irit Katriel in :issue:`45711`.)
 
+* :c:struct:`_frozen` has a new ``is_package`` field that indicates whether
+  the frozen module is a package instead of negating the value of ``size``
+  field.
+  (Contributed by Kumar Aditya in :issue:`46608`.)
 
 New Features
 ------------
