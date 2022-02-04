@@ -256,8 +256,12 @@ Importing Modules
           const char *name;
           const unsigned char *code;
           int size;
+          bool is_package;
       };
 
+   .. versionchanged:: 3.11
+      The ``is_package`` is used to indicate whether the module is a package instead of 
+      negating the value of the ``size`` field.
 
 .. c:var:: const struct _frozen* PyImport_FrozenModules
 
