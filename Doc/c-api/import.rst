@@ -260,8 +260,8 @@ Importing Modules
       };
 
    .. versionchanged:: 3.11
-      Added ``is_package`` field is used to indicate whether the module is a package
-      instead of negating the value of the ``size`` field.
+      The new ``is_package`` field indicates whether the module is a package or not.
+      This replaces setting the ``size`` field to a negative value.
 
 .. c:var:: const struct _frozen* PyImport_FrozenModules
 
