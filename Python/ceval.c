@@ -2233,6 +2233,8 @@ handle_eval_breaker:
             if (new_frame == NULL) {
                 goto error;
             }
+            CALL_STAT_INC(frames_pushed);
+            Py_INCREF(getitem);
             _PyFrame_InitializeSpecials(new_frame, getitem,
                                         NULL, code->co_nlocalsplus);
             STACK_SHRINK(2);
@@ -2775,6 +2777,12 @@ handle_eval_breaker:
         TARGET(UNPACK_SEQUENCE) {
             PREDICTED(UNPACK_SEQUENCE);
             PyObject *seq = POP(), *item, **items;
+#ifdef Py_STATS
+            extern int _PySpecialization_ClassifySequence(PyObject *);
+            _py_stats.opcode_stats[UNPACK_SEQUENCE].specialization.failure++;
+            _py_stats.opcode_stats[UNPACK_SEQUENCE].specialization.
+                failure_kinds[_PySpecialization_ClassifySequence(seq)]++;
+#endif
             if (PyTuple_CheckExact(seq) &&
                 PyTuple_GET_SIZE(seq) == oparg) {
                 items = ((PyTupleObject *)seq)->ob_item;
@@ -4192,6 +4200,11 @@ handle_eval_breaker:
             PREDICTED(FOR_ITER);
             /* before: [iter]; after: [iter, iter()] *or* [] */
             PyObject *iter = TOP();
+#ifdef Py_STATS
+            extern int _PySpecialization_ClassifyIterator(PyObject *);
+            _py_stats.opcode_stats[FOR_ITER].specialization.failure++;
+            _py_stats.opcode_stats[FOR_ITER].specialization.failure_kinds[_PySpecialization_ClassifyIterator(iter)]++;
+#endif
             PyObject *next = (*Py_TYPE(iter)->tp_iternext)(iter);
             if (next != NULL) {
                 PUSH(next);
@@ -4561,7 +4574,6 @@ handle_eval_breaker:
                 STACK_SHRINK(call_shape.postcall_shrink);
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
-                Py_DECREF(function);
                 if (new_frame == NULL) {
                     goto error;
                 }
@@ -4637,6 +4649,7 @@ handle_eval_breaker:
             if (new_frame == NULL) {
                 goto error;
             }
+            CALL_STAT_INC(inlined_py_calls);
             STACK_SHRINK(argcount);
             for (int i = 0; i < argcount; i++) {
                 new_frame->localsplus[i] = stack_pointer[i];
@@ -4645,7 +4658,6 @@ handle_eval_breaker:
                 new_frame->localsplus[i] = NULL;
             }
             STACK_SHRINK(call_shape.postcall_shrink);
-            Py_DECREF(func);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
@@ -4667,6 +4679,7 @@ handle_eval_breaker:
             if (new_frame == NULL) {
                 goto error;
             }
+            CALL_STAT_INC(inlined_py_calls);
             STACK_SHRINK(argcount);
             for (int i = 0; i < argcount; i++) {
                 new_frame->localsplus[i] = stack_pointer[i];
@@ -4681,11 +4694,9 @@ handle_eval_breaker:
                 new_frame->localsplus[i] = NULL;
             }
             STACK_SHRINK(call_shape.postcall_shrink);
-            Py_DECREF(func);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
-            CALL_STAT_INC(inlined_py_calls);
             goto start_frame;
         }
 
@@ -5369,6 +5380,7 @@ handle_eval_breaker:
 #define MISS_WITH_CACHE(opname) \
 opname ## _miss: \
     { \
+        STAT_INC(opcode, miss); \
         STAT_INC(opname, miss); \
         _PyAdaptiveEntry *cache = &GET_CACHE()->adaptive; \
         cache->counter--; \
@@ -6047,7 +6059,7 @@ fail_post_args:
     return -1;
 }
 
-/* Consumes all the references to the args */
+/* Consumes references to func and all the args */
 static InterpreterFrame *
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
                         PyObject *locals, PyObject* const* args,
@@ -6055,6 +6067,7 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
 {
     PyCodeObject * code = (PyCodeObject *)func->func_code;
     size_t size = code->co_nlocalsplus + code->co_stacksize + FRAME_SPECIALS_SIZE;
+    CALL_STAT_INC(frames_pushed);
     InterpreterFrame *frame = _PyThreadState_BumpFramePointer(tstate, size);
     if (frame == NULL) {
         goto fail;
@@ -6100,7 +6113,9 @@ _PyEval_Vector(PyThreadState *tstate, PyFunctionObject *func,
                PyObject* const* args, size_t argcount,
                PyObject *kwnames)
 {
-    /* _PyEvalFramePushAndInit consumes all the references to its arguments */
+    /* _PyEvalFramePushAndInit consumes the references
+     * to func and all its arguments */
+    Py_INCREF(func);
     for (size_t i = 0; i < argcount; i++) {
         Py_INCREF(args[i]);
     }
