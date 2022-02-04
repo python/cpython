@@ -106,7 +106,7 @@ PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
             return res;
         }
     }
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__length_hint__);
+    PyObject *attr = _Py_ID(__length_hint__);
     hint = _PyObject_LookupSpecial(o, attr);
     if (hint == NULL) {
         if (PyErr_Occurred()) {
@@ -183,7 +183,7 @@ PyObject_GetItem(PyObject *o, PyObject *key)
             return Py_GenericAlias(o, key);
         }
 
-        PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__class_getitem__);
+        PyObject *attr = _Py_ID(__class_getitem__);
         if (_PyObject_LookupAttr(o, attr, &meth) < 0) {
             return NULL;
         }
@@ -796,7 +796,7 @@ PyObject_Format(PyObject *obj, PyObject *format_spec)
     }
 
     /* Find the (unbound!) __format__ method */
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__format__);
+    PyObject *attr = _Py_ID(__format__);
     meth = _PyObject_LookupSpecial(obj, attr);
     if (meth == NULL) {
         PyThreadState *tstate = _PyThreadState_GET();
@@ -1561,7 +1561,7 @@ PyNumber_Long(PyObject *o)
     if (m && m->nb_index) {
         return PyNumber_Index(o);
     }
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__trunc__);
+    PyObject *attr = _Py_ID(__trunc__);
     trunc_func = _PyObject_LookupSpecial(o, attr);
     if (trunc_func) {
         result = _PyObject_CallNoArgs(trunc_func);
@@ -2438,7 +2438,7 @@ PyMapping_Keys(PyObject *o)
     if (PyDict_CheckExact(o)) {
         return PyDict_Keys(o);
     }
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(keys);
+    PyObject *attr = _Py_ID(keys);
     return method_output_as_list(o, attr);
 }
 
@@ -2451,7 +2451,7 @@ PyMapping_Items(PyObject *o)
     if (PyDict_CheckExact(o)) {
         return PyDict_Items(o);
     }
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(items);
+    PyObject *attr = _Py_ID(items);
     return method_output_as_list(o, attr);
 }
 
@@ -2464,7 +2464,7 @@ PyMapping_Values(PyObject *o)
     if (PyDict_CheckExact(o)) {
         return PyDict_Values(o);
     }
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(values);
+    PyObject *attr = _Py_ID(values);
     return method_output_as_list(o, attr);
 }
 
@@ -2499,7 +2499,7 @@ abstract_get_bases(PyObject *cls)
 {
     PyObject *bases;
 
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__bases__);
+    PyObject *attr = _Py_ID(__bases__);
     (void)_PyObject_LookupAttr(cls, attr, &bases);
     if (bases != NULL && !PyTuple_Check(bases)) {
         Py_DECREF(bases);
@@ -2581,7 +2581,7 @@ object_isinstance(PyObject *inst, PyObject *cls)
 {
     PyObject *icls;
     int retval;
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__class__);
+    PyObject *attr = _Py_ID(__class__);
     if (PyType_Check(cls)) {
         retval = PyObject_TypeCheck(inst, (PyTypeObject *)cls);
         if (retval == 0) {
@@ -2646,7 +2646,7 @@ object_recursive_isinstance(PyThreadState *tstate, PyObject *inst, PyObject *cls
         return r;
     }
 
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__instancecheck__);
+    PyObject *attr = _Py_ID(__instancecheck__);
     PyObject *checker = _PyObject_LookupSpecial(cls, attr);
     if (checker != NULL) {
         if (_Py_EnterRecursiveCall(tstate, " in __instancecheck__")) {
@@ -2734,7 +2734,7 @@ object_issubclass(PyThreadState *tstate, PyObject *derived, PyObject *cls)
         return r;
     }
 
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__subclasscheck__);
+    PyObject *attr = _Py_ID(__subclasscheck__);
     checker = _PyObject_LookupSpecial(cls, attr);
     if (checker != NULL) {
         int ok = -1;
@@ -2881,7 +2881,7 @@ PyIter_Send(PyObject *iter, PyObject *arg, PyObject **result)
         *result = Py_TYPE(iter)->tp_iternext(iter);
     }
     else {
-        PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(send);
+        PyObject *attr = _Py_ID(send);
         *result = PyObject_CallMethodOneArg(iter, attr, arg);
     }
     if (*result != NULL) {

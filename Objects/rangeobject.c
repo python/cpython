@@ -811,7 +811,7 @@ rangeiter_reduce(rangeiterobject *r, PyObject *Py_UNUSED(ignored))
     if (range == NULL)
         goto err;
     /* return the result */
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(iter);
+    PyObject *attr = _Py_ID(iter);
     return Py_BuildValue("N(N)l", _PyEval_GetBuiltin(attr), range, r->index);
 err:
     Py_XDECREF(start);
@@ -965,7 +965,7 @@ longrangeiter_reduce(longrangeiterobject *r, PyObject *Py_UNUSED(ignored))
     }
 
     /* return the result */
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(iter);
+    PyObject *attr = _Py_ID(iter);
     return Py_BuildValue("N(N)O", _PyEval_GetBuiltin(attr), range, r->index);
 }
 

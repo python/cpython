@@ -105,7 +105,7 @@ init_filters(PyInterpreterState *interp)
     size_t pos = 0;  /* Post-incremented in each use. */
 #define ADD(TYPE, ACTION, MODNAME) \
     do { \
-        PyObject *action = _Py_GET_GLOBAL_IDENTIFIER(ACTION); \
+        PyObject *action = _Py_ID(ACTION); \
         PyList_SET_ITEM(filters, pos++, create_filter(TYPE, action, MODNAME)); \
     } while (0)
     ADD(PyExc_DeprecationWarning, default, "__main__");
@@ -179,7 +179,7 @@ check_matched(PyInterpreterState *interp, PyObject *obj, PyObject *arg)
     }
 
     /* Otherwise assume a regex filter and call its match() method */
-    PyObject *str_match = _Py_GET_GLOBAL_IDENTIFIER(match);
+    PyObject *str_match = _Py_ID(match);
     result = PyObject_CallMethodOneArg(obj, str_match, arg);
     if (result == NULL)
         return -1;
@@ -191,7 +191,7 @@ check_matched(PyInterpreterState *interp, PyObject *obj, PyObject *arg)
 
 #define GET_WARNINGS_ATTR(interp, attr, try_import) \
     get_warnings_attr(interp, \
-                      _Py_GET_GLOBAL_IDENTIFIER(attr), \
+                      _Py_ID(attr), \
                       try_import)
 
 /*
@@ -204,7 +204,7 @@ get_warnings_attr(PyInterpreterState *interp, PyObject *attr, int try_import)
     PyObject *warnings_str;
     PyObject *warnings_module, *obj;
 
-    warnings_str = _Py_GET_GLOBAL_IDENTIFIER(warnings);
+    warnings_str = _Py_ID(warnings);
 
     /* don't try to import after the start of the Python finallization */
     if (try_import && !_Py_IsFinalizing()) {
@@ -413,7 +413,7 @@ already_warned(PyInterpreterState *interp, PyObject *registry, PyObject *key,
     if (st == NULL) {
         return -1;
     }
-    PyObject *str_version = _Py_GET_GLOBAL_IDENTIFIER(version);
+    PyObject *str_version = _Py_ID(version);
     version_obj = _PyDict_GetItemWithError(registry, str_version);
     if (version_obj == NULL
         || !PyLong_CheckExact(version_obj)
@@ -512,13 +512,13 @@ show_warning(PyThreadState *tstate, PyObject *filename, int lineno,
 
     PyOS_snprintf(lineno_str, sizeof(lineno_str), ":%d: ", lineno);
 
-    attr = _Py_GET_GLOBAL_IDENTIFIER(__name__);
+    attr = _Py_ID(__name__);
     name = PyObject_GetAttr(category, attr);
     if (name == NULL) {
         goto error;
     }
 
-    attr = _Py_GET_GLOBAL_IDENTIFIER(stderr);
+    attr = _Py_ID(stderr);
     f_stderr = _PySys_GetAttr(tstate, attr);
     if (f_stderr == NULL) {
         fprintf(stderr, "lost sys.stderr\n");
@@ -891,7 +891,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     /* Setup registry. */
     assert(globals != NULL);
     assert(PyDict_Check(globals));
-    PyObject *key = _Py_GET_GLOBAL_IDENTIFIER(__warningregistry__);
+    PyObject *key = _Py_ID(__warningregistry__);
     *registry = _PyDict_GetItemWithError(globals, key);
     if (*registry == NULL) {
         int rc;
@@ -911,7 +911,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
         Py_INCREF(*registry);
 
     /* Setup module. */
-    key = _Py_GET_GLOBAL_IDENTIFIER(__name__);
+    key = _Py_ID(__name__);
     *module = _PyDict_GetItemWithError(globals, key);
     if (*module == Py_None || (*module != NULL && PyUnicode_Check(*module))) {
         Py_INCREF(*module);
@@ -1020,13 +1020,13 @@ get_source_line(PyInterpreterState *interp, PyObject *module_globals, int lineno
     PyObject *source_line;
 
     /* Check/get the requisite pieces needed for the loader. */
-    key = _Py_GET_GLOBAL_IDENTIFIER(__loader__);
+    key = _Py_ID(__loader__);
     loader = _PyDict_GetItemWithError(module_globals, key);
     if (loader == NULL) {
         return NULL;
     }
     Py_INCREF(loader);
-    key = _Py_GET_GLOBAL_IDENTIFIER(__name__);
+    key = _Py_ID(__name__);
     module_name = _PyDict_GetItemWithError(module_globals, key);
     if (!module_name) {
         Py_DECREF(loader);
@@ -1035,7 +1035,7 @@ get_source_line(PyInterpreterState *interp, PyObject *module_globals, int lineno
     Py_INCREF(module_name);
 
     /* Make sure the loader implements the optional get_source() method. */
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(get_source);
+    PyObject *attr = _Py_ID(get_source);
     (void)_PyObject_LookupAttr(loader, attr, &get_source);
     Py_DECREF(loader);
     if (!get_source) {

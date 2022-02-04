@@ -5770,8 +5770,8 @@ int_to_bytes_impl(PyObject *self, Py_ssize_t length, PyObject *byteorder,
     int little_endian;
     PyObject *bytes;
 
-    PyObject *little = _Py_GET_GLOBAL_IDENTIFIER(little);
-    PyObject *big = _Py_GET_GLOBAL_IDENTIFIER(big);
+    PyObject *little = _Py_ID(little);
+    PyObject *big = _Py_ID(big);
     if (byteorder == NULL)
         little_endian = 0;
     else if (_PyUnicode_Equal(byteorder, little))
@@ -5834,8 +5834,8 @@ int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
     int little_endian;
     PyObject *long_obj, *bytes;
 
-    PyObject *little = _Py_GET_GLOBAL_IDENTIFIER(little);
-    PyObject *big = _Py_GET_GLOBAL_IDENTIFIER(big);
+    PyObject *little = _Py_ID(little);
+    PyObject *big = _Py_ID(big);
     if (byteorder == NULL)
         little_endian = 0;
     else if (_PyUnicode_Equal(byteorder, little))

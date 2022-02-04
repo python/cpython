@@ -1078,7 +1078,7 @@ PyFrame_GetBack(PyFrameObject *frame)
 PyObject*
 _PyEval_BuiltinsFromGlobals(PyThreadState *tstate, PyObject *globals)
 {
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__builtins__);
+    PyObject *attr = _Py_ID(__builtins__);
     PyObject *builtins = PyDict_GetItemWithError(globals, attr);
     if (builtins) {
         if (PyModule_Check(builtins)) {

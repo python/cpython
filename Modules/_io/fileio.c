@@ -144,7 +144,7 @@ _io_FileIO_close_impl(fileio *self)
     PyObject *res;
     PyObject *exc, *val, *tb;
     int rc;
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(close);
+    PyObject *attr = _Py_ID(close);
     res = PyObject_CallMethodOneArg((PyObject*)&PyRawIOBase_Type,
                                      attr, (PyObject *)self);
     if (!self->closefd) {
@@ -474,7 +474,7 @@ _Py_COMP_DIAG_POP
     _setmode(self->fd, O_BINARY);
 #endif
 
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(name);
+    PyObject *attr = _Py_ID(name);
     if (PyObject_SetAttr((PyObject *)self, attr, nameobj) < 0)
         goto error;
 
@@ -1084,7 +1084,7 @@ fileio_repr(fileio *self)
     if (self->fd < 0)
         return PyUnicode_FromFormat("<_io.FileIO [closed]>");
 
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(name);
+    PyObject *attr = _Py_ID(name);
     if (_PyObject_LookupAttr((PyObject *) self, attr, &nameobj) < 0) {
         return NULL;
     }

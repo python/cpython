@@ -576,7 +576,7 @@ calculate_qualname(PyDescrObject *descr)
         return NULL;
     }
 
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__qualname__);
+    PyObject *attr = _Py_ID(__qualname__);
     type_qualname = PyObject_GetAttr((PyObject *)descr->d_type, attr);
     if (type_qualname == NULL)
         return NULL;
@@ -605,7 +605,7 @@ descr_get_qualname(PyDescrObject *descr, void *Py_UNUSED(ignored))
 static PyObject *
 descr_reduce(PyDescrObject *descr, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(getattr);
+    PyObject *attr = _Py_ID(getattr);
     return Py_BuildValue("N(OO)", _PyEval_GetBuiltin(attr),
                          PyDescr_TYPE(descr), PyDescr_NAME(descr));
 }
@@ -1084,7 +1084,7 @@ mappingproxy_get(mappingproxyobject *pp, PyObject *const *args, Py_ssize_t nargs
     {
         return NULL;
     }
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(get);
+    PyObject *attr = _Py_ID(get);
     return _PyObject_VectorcallMethod(attr, newargs,
                                         3 | PY_VECTORCALL_ARGUMENTS_OFFSET,
                                         NULL);
@@ -1093,35 +1093,35 @@ mappingproxy_get(mappingproxyobject *pp, PyObject *const *args, Py_ssize_t nargs
 static PyObject *
 mappingproxy_keys(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(keys);
+    PyObject *attr = _Py_ID(keys);
     return PyObject_CallMethodNoArgs(pp->mapping, attr);
 }
 
 static PyObject *
 mappingproxy_values(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(values);
+    PyObject *attr = _Py_ID(values);
     return PyObject_CallMethodNoArgs(pp->mapping, attr);
 }
 
 static PyObject *
 mappingproxy_items(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(items);
+    PyObject *attr = _Py_ID(items);
     return PyObject_CallMethodNoArgs(pp->mapping, attr);
 }
 
 static PyObject *
 mappingproxy_copy(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(copy);
+    PyObject *attr = _Py_ID(copy);
     return PyObject_CallMethodNoArgs(pp->mapping, attr);
 }
 
 static PyObject *
 mappingproxy_reversed(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__reversed__);
+    PyObject *attr = _Py_ID(__reversed__);
     return PyObject_CallMethodNoArgs(pp->mapping, attr);
 }
 
@@ -1319,7 +1319,7 @@ wrapper_repr(wrapperobject *wp)
 static PyObject *
 wrapper_reduce(wrapperobject *wp, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(getattr);
+    PyObject *attr = _Py_ID(getattr);
     return Py_BuildValue("N(OO)", _PyEval_GetBuiltin(attr),
                          wp->self, PyDescr_NAME(wp->descr));
 }
@@ -1756,7 +1756,7 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
     /* if no docstring given and the getter has one, use that one */
     if ((doc == NULL || doc == Py_None) && fget != NULL) {
         PyObject *get_doc;
-        PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__doc__);
+        PyObject *attr = _Py_ID(__doc__);
         int rc = _PyObject_LookupAttr(fget, attr, &get_doc);
         if (rc <= 0) {
             return rc;

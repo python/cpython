@@ -37,13 +37,13 @@ get_type_attr_as_size(PyTypeObject *tp, PyObject *name)
 
 #define VISIBLE_SIZE(op) Py_SIZE(op)
 #define VISIBLE_SIZE_TP(tp) \
-    get_type_attr_as_size(tp, _Py_GET_GLOBAL_IDENTIFIER(n_sequence_fields))
+    get_type_attr_as_size(tp, _Py_ID(n_sequence_fields))
 #define REAL_SIZE_TP(tp) \
-    get_type_attr_as_size(tp, _Py_GET_GLOBAL_IDENTIFIER(n_fields))
+    get_type_attr_as_size(tp, _Py_ID(n_fields))
 #define REAL_SIZE(op) REAL_SIZE_TP(Py_TYPE(op))
 
 #define UNNAMED_FIELDS_TP(tp) \
-    get_type_attr_as_size(tp, _Py_GET_GLOBAL_IDENTIFIER(n_unnamed_fields))
+    get_type_attr_as_size(tp, _Py_ID(n_unnamed_fields))
 #define UNNAMED_FIELDS(op) UNNAMED_FIELDS_TP(Py_TYPE(op))
 
 

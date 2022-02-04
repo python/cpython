@@ -73,7 +73,7 @@ _PyImportZip_Init(PyThreadState *tstate)
         }
     }
     else {
-        PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(zipimporter);
+        PyObject *attr = _Py_ID(zipimporter);
         PyObject *zipimporter = PyObject_GetAttr(zipimport, attr);
         Py_DECREF(zipimport);
         if (zipimporter == NULL) {
@@ -348,12 +348,12 @@ import_ensure_initialized(PyInterpreterState *interp, PyObject *mod, PyObject *n
        NOTE: because of this, initializing must be set *before*
        stuffing the new module in sys.modules.
     */
-    attr = _Py_GET_GLOBAL_IDENTIFIER(__spec__);
+    attr = _Py_ID(__spec__);
     spec = PyObject_GetAttr(mod, attr);
     int busy = _PyModuleSpec_IsInitializing(spec);
     Py_XDECREF(spec);
     if (busy) {
-        attr = _Py_GET_GLOBAL_IDENTIFIER(_lock_unlock_module);
+        attr = _Py_ID(_lock_unlock_module);
         /* Wait until module is done importing. */
         PyObject *value = _PyObject_CallMethodOneArg(
             interp->importlib, attr, name);
@@ -716,7 +716,7 @@ PyImport_ExecCodeModuleWithPathnames(const char *name, PyObject *co,
         external= PyObject_GetAttrString(interp->importlib,
                                          "_bootstrap_external");
         if (external != NULL) {
-            PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(_get_sourcefile);
+            PyObject *attr = _Py_ID(_get_sourcefile);
             pathobj = _PyObject_CallMethodOneArg(external, attr, cpathobj);
             Py_DECREF(external);
         }
@@ -745,7 +745,7 @@ module_dict_for_exec(PyThreadState *tstate, PyObject *name)
     /* If the module is being reloaded, we get the old module back
        and re-use its dict to exec the new code. */
     d = PyModule_GetDict(m);
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__builtins__);
+    PyObject *attr = _Py_ID(__builtins__);
     int r = PyDict_Contains(d, attr);
     if (r == 0) {
         r = PyDict_SetItem(d, attr, PyEval_GetBuiltins());
@@ -805,7 +805,7 @@ PyImport_ExecCodeModuleObject(PyObject *name, PyObject *co, PyObject *pathname,
         Py_DECREF(d);
         return NULL;
     }
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(_fix_up_module);
+    PyObject *attr = _Py_ID(_fix_up_module);
     res = PyObject_CallMethodObjArgs(external, attr,
                                      d, name, pathname, cpathname, NULL);
     Py_DECREF(external);
@@ -1544,7 +1544,7 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
         _PyErr_SetString(tstate, PyExc_TypeError, "globals must be a dict");
         goto error;
     }
-    attr = _Py_GET_GLOBAL_IDENTIFIER(__package__);
+    attr = _Py_ID(__package__);
     package = PyDict_GetItemWithError(globals, attr);
     if (package == Py_None) {
         package = NULL;
@@ -1552,7 +1552,7 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
     else if (package == NULL && _PyErr_Occurred(tstate)) {
         goto error;
     }
-    attr = _Py_GET_GLOBAL_IDENTIFIER(__spec__);
+    attr = _Py_ID(__spec__);
     spec = PyDict_GetItemWithError(globals, attr);
     if (spec == NULL && _PyErr_Occurred(tstate)) {
         goto error;
@@ -1567,7 +1567,7 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
         }
         else if (spec != NULL && spec != Py_None) {
             int equal;
-            attr = _Py_GET_GLOBAL_IDENTIFIER(parent);
+            attr = _Py_ID(parent);
             PyObject *parent = PyObject_GetAttr(spec, attr);
             if (parent == NULL) {
                 goto error;
@@ -1587,7 +1587,7 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
         }
     }
     else if (spec != NULL && spec != Py_None) {
-        attr = _Py_GET_GLOBAL_IDENTIFIER(parent);
+        attr = _Py_ID(parent);
         package = PyObject_GetAttr(spec, attr);
         if (package == NULL) {
             goto error;
@@ -1605,7 +1605,7 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
             goto error;
         }
 
-        attr = _Py_GET_GLOBAL_IDENTIFIER(__name__);
+        attr = _Py_ID(__name__);
         package = PyDict_GetItemWithError(globals, attr);
         if (package == NULL) {
             if (!_PyErr_Occurred(tstate)) {
@@ -1622,7 +1622,7 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
             goto error;
         }
 
-        attr = _Py_GET_GLOBAL_IDENTIFIER(__path__);
+        attr = _Py_ID(__path__);
         int haspath = PyDict_Contains(globals, attr);
         if (haspath < 0) {
             goto error;
@@ -1731,7 +1731,7 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
     if (PyDTrace_IMPORT_FIND_LOAD_START_ENABLED())
         PyDTrace_IMPORT_FIND_LOAD_START(PyUnicode_AsUTF8(abs_name));
 
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(_find_and_load);
+    PyObject *attr = _Py_ID(_find_and_load);
     mod = PyObject_CallMethodObjArgs(interp->importlib, attr, abs_name,
                                       interp->import_func, NULL);
 
@@ -1897,13 +1897,13 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     }
     else {
         PyObject *path;
-        PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__path__);
+        PyObject *attr = _Py_ID(__path__);
         if (_PyObject_LookupAttr(mod, attr, &path) < 0) {
             goto error;
         }
         if (path) {
             Py_DECREF(path);
-            attr = _Py_GET_GLOBAL_IDENTIFIER(_handle_fromlist);
+            attr = _Py_ID(_handle_fromlist);
             final_mod = PyObject_CallMethodObjArgs(
                         interp->importlib, attr,
                         mod, fromlist, interp->import_func, NULL);
@@ -1946,7 +1946,7 @@ PyObject *
 PyImport_ReloadModule(PyObject *m)
 {
     PyObject *reloaded_module = NULL;
-    PyObject *name = _Py_GET_GLOBAL_IDENTIFIER(importlib);
+    PyObject *name = _Py_ID(importlib);
     PyObject *importlib = PyImport_GetModule(name);
     if (importlib == NULL) {
         if (PyErr_Occurred()) {
@@ -1959,7 +1959,7 @@ PyImport_ReloadModule(PyObject *m)
         }
     }
 
-    name = _Py_GET_GLOBAL_IDENTIFIER(reload);
+    name = _Py_ID(reload);
     reloaded_module = PyObject_CallMethodOneArg(importlib, name, m);
     Py_DECREF(importlib);
     return reloaded_module;
@@ -1984,8 +1984,8 @@ PyImport_Import(PyObject *module_name)
     PyObject *builtins = NULL;
     PyObject *r = NULL;
 
-    PyObject *import_str = _Py_GET_GLOBAL_IDENTIFIER(__import__);
-    PyObject *builtins_str = _Py_GET_GLOBAL_IDENTIFIER(__builtins__);
+    PyObject *import_str = _Py_ID(__import__);
+    PyObject *builtins_str = _Py_ID(__builtins__);
 
     PyObject *from_list = PyList_New(0);
     if (from_list == NULL) {

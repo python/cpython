@@ -951,7 +951,7 @@ odict_reduce(register PyODictObject *od, PyObject *Py_UNUSED(ignored))
     PyObject *items_iter, *items, *args = NULL;
 
     /* capture any instance state */
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__dict__);
+    PyObject *attr = _Py_ID(__dict__);
     dict = PyObject_GetAttr((PyObject *)od, attr);
     if (dict == NULL)
         goto Done;
@@ -971,7 +971,7 @@ odict_reduce(register PyODictObject *od, PyObject *Py_UNUSED(ignored))
     if (args == NULL)
         goto Done;
 
-    attr = _Py_GET_GLOBAL_IDENTIFIER(items);
+    attr = _Py_ID(items);
     items = PyObject_CallMethodNoArgs((PyObject *)od, attr);
     if (items == NULL)
         goto Done;
@@ -1430,7 +1430,7 @@ odict_repr(PyODictObject *self)
         }
     }
     else {
-        PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(items);
+        PyObject *attr = _Py_ID(items);
         PyObject *items = PyObject_CallMethodNoArgs((PyObject *)self, attr);
         if (items == NULL)
             goto Done;
@@ -1819,7 +1819,7 @@ odictiter_reduce(odictiterobject *di, PyObject *Py_UNUSED(ignored))
     if (list == NULL) {
         return NULL;
     }
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(iter);
+    PyObject *attr = _Py_ID(iter);
     return Py_BuildValue("N(N)", _PyEval_GetBuiltin(attr), list);
 }
 
@@ -2217,7 +2217,7 @@ mutablemapping_update_arg(PyObject *self, PyObject *arg)
         return res;
     }
     PyObject *func;
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(keys);
+    PyObject *attr = _Py_ID(keys);
     if (_PyObject_LookupAttr(arg, attr, &func) < 0) {
         return -1;
     }
@@ -2250,7 +2250,7 @@ mutablemapping_update_arg(PyObject *self, PyObject *arg)
         }
         return 0;
     }
-    attr = _Py_GET_GLOBAL_IDENTIFIER(items);
+    attr = _Py_ID(items);
     if (_PyObject_LookupAttr(arg, attr, &func) < 0) {
         return -1;
     }

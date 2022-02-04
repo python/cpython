@@ -170,7 +170,7 @@ weakref_repr(PyWeakReference *self)
     }
 
     Py_INCREF(obj);
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__name__);
+    PyObject *attr = _Py_ID(__name__);
     if (_PyObject_LookupAttr(obj, attr, &name) < 0) {
         Py_DECREF(obj);
         return NULL;
@@ -464,7 +464,7 @@ proxy_checkref(PyWeakReference *proxy)
     method(PyObject *proxy, PyObject *Py_UNUSED(ignored)) { \
             UNWRAP(proxy); \
             Py_INCREF(proxy); \
-            PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(special); \
+            PyObject *attr = _Py_ID(special); \
             PyObject* res = PyObject_CallMethodNoArgs(proxy, attr); \
             Py_DECREF(proxy); \
             return res; \

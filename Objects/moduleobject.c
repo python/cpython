@@ -58,19 +58,19 @@ module_init_dict(PyModuleObject *mod, PyObject *md_dict,
     if (doc == NULL)
         doc = Py_None;
 
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__name__);
+    PyObject *attr = _Py_ID(__name__);
     if (PyDict_SetItem(md_dict, attr, name) != 0)
         return -1;
-    attr = _Py_GET_GLOBAL_IDENTIFIER(__doc__);
+    attr = _Py_ID(__doc__);
     if (PyDict_SetItem(md_dict, attr, doc) != 0)
         return -1;
-    attr = _Py_GET_GLOBAL_IDENTIFIER(__package__);
+    attr = _Py_ID(__package__);
     if (PyDict_SetItem(md_dict, attr, Py_None) != 0)
         return -1;
-    attr = _Py_GET_GLOBAL_IDENTIFIER(__loader__);
+    attr = _Py_ID(__loader__);
     if (PyDict_SetItem(md_dict, attr, Py_None) != 0)
         return -1;
-    attr = _Py_GET_GLOBAL_IDENTIFIER(__spec__);
+    attr = _Py_ID(__spec__);
     if (PyDict_SetItem(md_dict, attr, Py_None) != 0)
         return -1;
     if (PyUnicode_CheckExact(name)) {
@@ -467,7 +467,7 @@ int
 PyModule_SetDocString(PyObject *m, const char *doc)
 {
     PyObject *v;
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__doc__);
+    PyObject *attr = _Py_ID(__doc__);
 
     v = PyUnicode_FromString(doc);
     if (v == NULL || PyObject_SetAttr(m, attr, v) != 0) {
@@ -497,7 +497,7 @@ PyModule_GetNameObject(PyObject *m)
         PyErr_BadArgument();
         return NULL;
     }
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__name__);
+    PyObject *attr = _Py_ID(__name__);
     d = ((PyModuleObject *)m)->md_dict;
     if (d == NULL || !PyDict_Check(d) ||
         (name = PyDict_GetItemWithError(d, attr)) == NULL ||
@@ -531,7 +531,7 @@ PyModule_GetFilenameObject(PyObject *m)
         PyErr_BadArgument();
         return NULL;
     }
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__file__);
+    PyObject *attr = _Py_ID(__file__);
     d = ((PyModuleObject *)m)->md_dict;
     if (d == NULL ||
         (fileobj = PyDict_GetItemWithError(d, attr)) == NULL ||
@@ -723,7 +723,7 @@ int
 _PyModuleSpec_IsInitializing(PyObject *spec)
 {
     if (spec != NULL) {
-        PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(_initializing);
+        PyObject *attr = _Py_ID(_initializing);
         PyObject *value = PyObject_GetAttr(spec, attr);
         if (value != NULL) {
             int initializing = PyObject_IsTrue(value);
@@ -747,7 +747,7 @@ _PyModuleSpec_IsUninitializedSubmodule(PyObject *spec, PyObject *name)
          return 0;
     }
 
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(_uninitialized_submodules);
+    PyObject *attr = _Py_ID(_uninitialized_submodules);
     PyObject *value = PyObject_GetAttr(spec, attr);
     if (value == NULL) {
         return 0;
@@ -771,7 +771,7 @@ module_getattro(PyModuleObject *m, PyObject *name)
     }
     PyErr_Clear();
     assert(m->md_dict != NULL);
-    str = _Py_GET_GLOBAL_IDENTIFIER(__getattr__);
+    str = _Py_ID(__getattr__);
     getattr = PyDict_GetItemWithError(m->md_dict, str);
     if (getattr) {
         return PyObject_CallOneArg(getattr, name);
@@ -779,11 +779,11 @@ module_getattro(PyModuleObject *m, PyObject *name)
     if (PyErr_Occurred()) {
         return NULL;
     }
-    str = _Py_GET_GLOBAL_IDENTIFIER(__name__);
+    str = _Py_ID(__name__);
     mod_name = PyDict_GetItemWithError(m->md_dict, str);
     if (mod_name && PyUnicode_Check(mod_name)) {
         Py_INCREF(mod_name);
-        str = _Py_GET_GLOBAL_IDENTIFIER(__spec__);
+        str = _Py_ID(__spec__);
         PyObject *spec = PyDict_GetItemWithError(m->md_dict, str);
         if (spec == NULL && PyErr_Occurred()) {
             Py_DECREF(mod_name);
@@ -860,12 +860,12 @@ static PyObject *
 module_dir(PyObject *self, PyObject *args)
 {
     PyObject *result = NULL;
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__dict__);
+    PyObject *attr = _Py_ID(__dict__);
     PyObject *dict = PyObject_GetAttr(self, attr);
 
     if (dict != NULL) {
         if (PyDict_Check(dict)) {
-            attr = _Py_GET_GLOBAL_IDENTIFIER(__dir__);
+            attr = _Py_ID(__dir__);
             PyObject *dirfunc = PyDict_GetItemWithError(dict, attr);
             if (dirfunc) {
                 result = _PyObject_CallNoArgs(dirfunc);
@@ -892,7 +892,7 @@ static PyMethodDef module_methods[] = {
 static PyObject *
 module_get_annotations(PyModuleObject *m, void *Py_UNUSED(ignored))
 {
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__dict__);
+    PyObject *attr = _Py_ID(__dict__);
     PyObject *dict = PyObject_GetAttr((PyObject *)m, attr);
 
     if ((dict == NULL) || !PyDict_Check(dict)) {
@@ -902,7 +902,7 @@ module_get_annotations(PyModuleObject *m, void *Py_UNUSED(ignored))
     }
 
     PyObject *annotations;
-    attr = _Py_GET_GLOBAL_IDENTIFIER(__annotations__);
+    attr = _Py_ID(__annotations__);
     /* there's no _PyDict_GetItemId without WithError, so let's LBYL. */
     if (PyDict_Contains(dict, attr)) {
         annotations = PyDict_GetItemWithError(dict, attr);
@@ -931,7 +931,7 @@ static int
 module_set_annotations(PyModuleObject *m, PyObject *value, void *Py_UNUSED(ignored))
 {
     int ret = -1;
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__dict__);
+    PyObject *attr = _Py_ID(__dict__);
     PyObject *dict = PyObject_GetAttr((PyObject *)m, attr);
 
     if ((dict == NULL) || !PyDict_Check(dict)) {
@@ -939,7 +939,7 @@ module_set_annotations(PyModuleObject *m, PyObject *value, void *Py_UNUSED(ignor
         goto exit;
     }
 
-    attr = _Py_GET_GLOBAL_IDENTIFIER(__annotations__);
+    attr = _Py_ID(__annotations__);
     if (value != NULL) {
         /* set */
         ret = PyDict_SetItem(dict, attr, value);

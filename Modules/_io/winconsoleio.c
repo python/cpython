@@ -194,7 +194,7 @@ _io__WindowsConsoleIO_close_impl(winconsoleio *self)
     PyObject *res;
     PyObject *exc, *val, *tb;
     int rc;
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(close);
+    PyObject *attr = _Py_ID(close);
     res = PyObject_CallMethodOneArg((PyObject*)&PyRawIOBase_Type,
                                     attr, (PyObject*)self);
     if (!self->closefd) {
@@ -392,7 +392,7 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
     self->blksize = DEFAULT_BUFFER_SIZE;
     memset(self->buf, 0, 4);
 
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(name);
+    PyObject *attr = _Py_ID(name);
     if (PyObject_SetAttr((PyObject *)self, attr, nameobj) < 0)
         goto error;
 

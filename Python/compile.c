@@ -1613,7 +1613,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
         int res;
         assert(u->u_scope_type == COMPILER_SCOPE_CLASS);
         assert(PyDict_GET_SIZE(u->u_cellvars) == 0);
-        name = _Py_GET_GLOBAL_IDENTIFIER(__class__);
+        name = _Py_ID(__class__);
         res = PyDict_SetItem(u->u_cellvars, name, _PyLong_GetZero());
         if (res < 0) {
             compiler_unit_free(u);
@@ -1999,7 +1999,7 @@ compiler_body(struct compiler *c, asdl_stmt_seq *stmts)
     int i = 0;
     stmt_ty st;
     PyObject *docstring;
-    PyObject *__doc__ = _Py_GET_GLOBAL_IDENTIFIER(__doc__);
+    PyObject *__doc__ = _Py_ID(__doc__);
 
     /* Set current line number to the line number of first statement.
        This way line number for SETUP_ANNOTATIONS will always
@@ -2334,7 +2334,7 @@ compiler_visit_annotations(struct compiler *c, arguments_ty args,
                                      args->kwarg->annotation, &annotations_len))
         return 0;
 
-    identifier return_str = _Py_GET_GLOBAL_IDENTIFIER(return);
+    identifier return_str = _Py_ID(return);
     if (!compiler_visit_argannotation(c, return_str, returns, &annotations_len)) {
         return 0;
     }
@@ -5922,7 +5922,7 @@ compiler_annassign(struct compiler *c, stmt_ty s)
 {
     expr_ty targ = s->v.AnnAssign.target;
     PyObject* mangled;
-    PyObject *__annotations__ = _Py_GET_GLOBAL_IDENTIFIER(__annotations__);
+    PyObject *__annotations__ = _Py_ID(__annotations__);
 
     assert(s->kind == AnnAssign_kind);
 

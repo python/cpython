@@ -1,7 +1,7 @@
 #include "Python.h"
 #include "pycore_code.h"
 #include "pycore_dict.h"
-#include "pycore_global_strings.h"  // _Py_GET_GLOBAL_IDENTIFIER()
+#include "pycore_global_strings.h"  // _Py_ID()
 #include "pycore_long.h"
 #include "pycore_moduleobject.h"
 #include "pycore_object.h"
@@ -565,7 +565,7 @@ specialize_module_load_attr(
         SPECIALIZATION_FAIL(opcode, SPEC_FAIL_NON_STRING_OR_SPLIT);
         return -1;
     }
-    PyObject *getattr = _Py_GET_GLOBAL_IDENTIFIER(__getattr__);
+    PyObject *getattr = _Py_ID(__getattr__);
     Py_ssize_t index = _PyDict_GetItemHint(dict, getattr, -1,  &value);
     assert(index != DKIX_ERROR);
     if (index != DKIX_EMPTY) {
@@ -1209,7 +1209,7 @@ _Py_Specialize_BinarySubscr(
         goto success;
     }
     PyTypeObject *cls = Py_TYPE(container);
-    PyObject *getitem = _Py_GET_GLOBAL_IDENTIFIER(__getitem__);
+    PyObject *getitem = _Py_ID(__getitem__);
     PyObject *descriptor = _PyType_Lookup(cls, getitem);
     if (descriptor && Py_TYPE(descriptor) == &PyFunction_Type) {
         PyFunctionObject *func = (PyFunctionObject *)descriptor;
@@ -1327,7 +1327,7 @@ _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *ins
         }
         goto fail;
     }
-    PyObject *setitem = _Py_GET_GLOBAL_IDENTIFIER(__setitem__);
+    PyObject *setitem = _Py_ID(__setitem__);
     PyObject *descriptor = _PyType_Lookup(container_type, setitem);
     if (descriptor && Py_TYPE(descriptor) == &PyFunction_Type) {
         PyFunctionObject *func = (PyFunctionObject *)descriptor;
@@ -1427,7 +1427,7 @@ specialize_method_descriptor(
         return -1;
     }
     if (_list_append == NULL) {
-        PyObject *append = _Py_GET_GLOBAL_IDENTIFIER(append);
+        PyObject *append = _Py_ID(append);
         _list_append = (PyMethodDescrObject *)_PyType_Lookup(&PyList_Type, append);
     }
     assert(_list_append != NULL);

@@ -557,7 +557,7 @@ PyObject_Bytes(PyObject *v)
         return v;
     }
 
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__bytes__);
+    PyObject *attr = _Py_ID(__bytes__);
     func = _PyObject_LookupSpecial(v, attr);
     if (func != NULL) {
         result = _PyObject_CallNoArgs(func);
@@ -598,7 +598,7 @@ _PyObject_FunctionStr(PyObject *x)
 {
     assert(!PyErr_Occurred());
     PyObject *qualname;
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__qualname__);
+    PyObject *attr = _Py_ID(__qualname__);
     int ret = _PyObject_LookupAttr(x, attr, &qualname);
     if (qualname == NULL) {
         if (ret < 0) {
@@ -608,10 +608,10 @@ _PyObject_FunctionStr(PyObject *x)
     }
     PyObject *module;
     PyObject *result = NULL;
-    attr = _Py_GET_GLOBAL_IDENTIFIER(__module__);
+    attr = _Py_ID(__module__);
     ret = _PyObject_LookupAttr(x, attr, &module);
     if (module != NULL && module != Py_None) {
-        PyObject *builtinsname = _Py_GET_GLOBAL_IDENTIFIER(builtins);
+        PyObject *builtinsname = _Py_ID(builtins);
         ret = PyObject_RichCompareBool(module, builtinsname, Py_NE);
         if (ret < 0) {
             // error
@@ -850,7 +850,7 @@ _PyObject_IsAbstract(PyObject *obj)
     if (obj == NULL)
         return 0;
 
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__isabstractmethod__);
+    PyObject *attr = _Py_ID(__isabstractmethod__);
     res = _PyObject_LookupAttr(obj, attr, &isabstract);
     if (res > 0) {
         res = PyObject_IsTrue(isabstract);
@@ -891,8 +891,8 @@ set_attribute_error_context(PyObject* v, PyObject* name)
         PyObject *type, *value, *traceback;
         PyErr_Fetch(&type, &value, &traceback);
         PyErr_NormalizeException(&type, &value, &traceback);
-        PyObject *attr1 = _Py_GET_GLOBAL_IDENTIFIER(name);
-        PyObject *attr2 = _Py_GET_GLOBAL_IDENTIFIER(obj);
+        PyObject *attr1 = _Py_ID(name);
+        PyObject *attr2 = _Py_ID(obj);
         if (PyErr_GivenExceptionMatches(value, PyExc_AttributeError) &&
             (PyObject_SetAttr(value, attr1, name) ||
              PyObject_SetAttr(value, attr2, v))) {
@@ -1562,7 +1562,7 @@ static PyObject *
 _dir_object(PyObject *obj)
 {
     PyObject *result, *sorted;
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__dir__);
+    PyObject *attr = _Py_ID(__dir__);
     PyObject *dirfunc = _PyObject_LookupSpecial(obj, attr);
 
     assert(obj != NULL);
@@ -2142,7 +2142,7 @@ Py_ReprEnter(PyObject *obj)
        early on startup. */
     if (dict == NULL)
         return 0;
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(Py_Repr);
+    PyObject *attr = _Py_ID(Py_Repr);
     list = PyDict_GetItemWithError(dict, attr);
     if (list == NULL) {
         if (PyErr_Occurred()) {
@@ -2179,7 +2179,7 @@ Py_ReprLeave(PyObject *obj)
     if (dict == NULL)
         goto finally;
 
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(Py_Repr);
+    PyObject *attr = _Py_ID(Py_Repr);
     list = PyDict_GetItemWithError(dict, attr);
     if (list == NULL || !PyList_Check(list))
         goto finally;

@@ -53,13 +53,13 @@ ga_repr_item(_PyUnicodeWriter *writer, PyObject *p)
         goto done;
     }
 
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__origin__);
+    PyObject *attr = _Py_ID(__origin__);
     if (_PyObject_LookupAttr(p, attr, &tmp) < 0) {
         goto done;
     }
     if (tmp != NULL) {
         Py_DECREF(tmp);
-        attr = _Py_GET_GLOBAL_IDENTIFIER(__args__);
+        attr = _Py_ID(__args__);
         if (_PyObject_LookupAttr(p, attr, &tmp) < 0) {
             goto done;
         }
@@ -70,14 +70,14 @@ ga_repr_item(_PyUnicodeWriter *writer, PyObject *p)
         }
     }
 
-    attr = _Py_GET_GLOBAL_IDENTIFIER(__qualname__);
+    attr = _Py_ID(__qualname__);
     if (_PyObject_LookupAttr(p, attr, &qualname) < 0) {
         goto done;
     }
     if (qualname == NULL) {
         goto use_repr;
     }
-    attr = _Py_GET_GLOBAL_IDENTIFIER(__module__);
+    attr = _Py_ID(__module__);
     if (_PyObject_LookupAttr(p, attr, &module) < 0) {
         goto done;
     }
@@ -219,7 +219,7 @@ _Py_make_parameters(PyObject *args)
         }
         else {
             PyObject *subparams;
-            PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__parameters__);
+            PyObject *attr = _Py_ID(__parameters__);
             if (_PyObject_LookupAttr(t, attr, &subparams) < 0) {
                 Py_DECREF(parameters);
                 return NULL;
@@ -261,7 +261,7 @@ static PyObject *
 subs_tvars(PyObject *obj, PyObject *params, PyObject **argitems)
 {
     PyObject *subparams;
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__parameters__);
+    PyObject *attr = _Py_ID(__parameters__);
     if (_PyObject_LookupAttr(obj, attr, &subparams) < 0) {
         return NULL;
     }

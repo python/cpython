@@ -459,8 +459,8 @@ fp_setreadl(struct tok_state *tok, const char* enc)
         return 0;
     }
 
-    PyObject *str_open = _Py_GET_GLOBAL_IDENTIFIER(open);
-    PyObject *str_readline = _Py_GET_GLOBAL_IDENTIFIER(readline);
+    PyObject *str_open = _Py_ID(open);
+    PyObject *str_readline = _Py_ID(readline);
 
     io = PyImport_ImportModule("io");
     if (io == NULL) {

@@ -780,7 +780,7 @@ setiter_reduce(setiterobject *si, PyObject *Py_UNUSED(ignored))
     if (list == NULL) {
         return NULL;
     }
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(iter);
+    PyObject *attr = _Py_ID(iter);
     return Py_BuildValue("N(N)", _PyEval_GetBuiltin(attr), list);
 }
 
@@ -1913,7 +1913,7 @@ set_reduce(PySetObject *so, PyObject *Py_UNUSED(ignored))
     args = PyTuple_Pack(1, keys);
     if (args == NULL)
         goto done;
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__dict__);
+    PyObject *attr = _Py_ID(__dict__);
     if (_PyObject_LookupAttr((PyObject *)so, attr, &dict) < 0) {
         goto done;
     }

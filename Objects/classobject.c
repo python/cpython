@@ -122,12 +122,12 @@ method_reduce(PyMethodObject *im, PyObject *Py_UNUSED(ignored))
     PyObject *func = PyMethod_GET_FUNCTION(im);
     PyObject *funcname;
 
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__name__);
+    PyObject *attr = _Py_ID(__name__);
     funcname = PyObject_GetAttr(func, attr);
     if (funcname == NULL) {
         return NULL;
     }
-    attr = _Py_GET_GLOBAL_IDENTIFIER(getattr);
+    attr = _Py_ID(getattr);
     return Py_BuildValue("N(ON)", _PyEval_GetBuiltin(attr), self, funcname);
 }
 
@@ -278,8 +278,8 @@ method_repr(PyMethodObject *a)
     PyObject *funcname, *result;
     const char *defname = "?";
 
-    PyObject *attr1 = _Py_GET_GLOBAL_IDENTIFIER(__qualname__);
-    PyObject *attr2 = _Py_GET_GLOBAL_IDENTIFIER(__name__);
+    PyObject *attr1 = _Py_ID(__qualname__);
+    PyObject *attr2 = _Py_ID(__name__);
     if (_PyObject_LookupAttr(func, attr1, &funcname) < 0 ||
         (funcname == NULL && _PyObject_LookupAttr(func, attr2, &funcname) < 0))
     {
@@ -514,7 +514,7 @@ instancemethod_repr(PyObject *self)
         return NULL;
     }
 
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__name__);
+    PyObject *attr = _Py_ID(__name__);
     if (_PyObject_LookupAttr(func, attr, &funcname) < 0) {
         return NULL;
     }

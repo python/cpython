@@ -528,7 +528,7 @@ format_obj(PyObject *v, const char **pbuf, Py_ssize_t *plen)
         return v;
     }
     /* does it support __bytes__? */
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__bytes__);
+    PyObject *attr = _Py_ID(__bytes__);
     func = _PyObject_LookupSpecial(v, attr);
     if (func != NULL) {
         result = _PyObject_CallNoArgs(func);
@@ -2550,7 +2550,7 @@ bytes_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
     PyObject *bytes;
     PyObject *func;
     Py_ssize_t size;
-    PyObject *__bytes__ = _Py_GET_GLOBAL_IDENTIFIER(__bytes__);
+    PyObject *__bytes__ = _Py_ID(__bytes__);
 
     if (x == NULL) {
         if (encoding != NULL || errors != NULL) {
@@ -3121,7 +3121,7 @@ PyDoc_STRVAR(length_hint_doc,
 static PyObject *
 striter_reduce(striterobject *it, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(iter);
+    PyObject *attr = _Py_ID(iter);
     if (it->it_seq != NULL) {
         return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(attr),
                              it->it_seq, it->it_index);

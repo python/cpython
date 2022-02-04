@@ -32,7 +32,7 @@ update_bases(PyObject *bases, PyObject *const *args, Py_ssize_t nargs)
             }
             continue;
         }
-        PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__mro_entries__);
+        PyObject *attr = _Py_ID(__mro_entries__);
         if (_PyObject_LookupAttr(base, attr, &meth) < 0) {
             goto error;
         }
@@ -134,7 +134,7 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
             goto error;
         }
 
-        PyObject *key = _Py_GET_GLOBAL_IDENTIFIER(metaclass);
+        PyObject *key = _Py_ID(metaclass);
         meta = _PyDict_GetItemWithError(mkw, key);
         if (meta != NULL) {
             Py_INCREF(meta);
@@ -178,7 +178,7 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
     }
     /* else: meta is not a class, so we cannot do the metaclass
        calculation, so we will use the explicitly given object as it is */
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__prepare__);
+    PyObject *attr = _Py_ID(__prepare__);
     if (_PyObject_LookupAttr(meta, attr, &prep) < 0) {
         ns = NULL;
     }
@@ -934,7 +934,7 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
         return NULL;
     }
 
-    PyObject *key = _Py_GET_GLOBAL_IDENTIFIER(__builtins__);
+    PyObject *key = _Py_ID(__builtins__);
     int r = PyDict_Contains(globals, key);
     if (r == 0) {
         r = PyDict_SetItem(globals, key, PyEval_GetBuiltins());
@@ -1022,7 +1022,7 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
             Py_TYPE(locals)->tp_name);
         return NULL;
     }
-    PyObject *key = _Py_GET_GLOBAL_IDENTIFIER(__builtins__);
+    PyObject *key = _Py_ID(__builtins__);
     int r = PyDict_Contains(globals, key);
     if (r == 0) {
         r = PyDict_SetItem(globals, key, PyEval_GetBuiltins());
@@ -1949,7 +1949,7 @@ builtin_print_impl(PyObject *module, PyObject *args, PyObject *sep,
 
     if (file == Py_None) {
         PyThreadState *tstate = _PyThreadState_GET();
-        PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(stdout);
+        PyObject *attr = _Py_ID(stdout);
         file = _PySys_GetAttr(tstate, attr);
         if (file == NULL) {
             PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
@@ -2010,7 +2010,7 @@ builtin_print_impl(PyObject *module, PyObject *args, PyObject *sep,
     }
 
     if (flush) {
-        PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(flush);
+        PyObject *attr = _Py_ID(flush);
         PyObject *tmp = PyObject_CallMethodNoArgs(file, attr);
         if (tmp == NULL) {
             return NULL;
@@ -2043,11 +2043,11 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *fin = _PySys_GetAttr(
-        tstate, _Py_GET_GLOBAL_IDENTIFIER(stdin));
+        tstate, _Py_ID(stdin));
     PyObject *fout = _PySys_GetAttr(
-        tstate, _Py_GET_GLOBAL_IDENTIFIER(stdout));
+        tstate, _Py_ID(stdout));
     PyObject *ferr = _PySys_GetAttr(
-        tstate, _Py_GET_GLOBAL_IDENTIFIER(stderr));
+        tstate, _Py_ID(stderr));
     PyObject *tmp;
     long fd;
     int tty;
@@ -2074,7 +2074,7 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
     }
 
     /* First of all, flush stderr */
-    PyObject *str_flush = _Py_GET_GLOBAL_IDENTIFIER(flush);
+    PyObject *str_flush = _Py_ID(flush);
     tmp = PyObject_CallMethodNoArgs(ferr, str_flush);
     if (tmp == NULL)
         PyErr_Clear();
@@ -2084,7 +2084,7 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
     /* We should only use (GNU) readline if Python's sys.stdin and
        sys.stdout are the same as C's stdin and stdout, because we
        need to pass it those. */
-    PyObject *str_fileno = _Py_GET_GLOBAL_IDENTIFIER(fileno);
+    PyObject *str_fileno = _Py_ID(fileno);
     tmp = PyObject_CallMethodNoArgs(fin, str_fileno);
     if (tmp == NULL) {
         PyErr_Clear();
@@ -2122,8 +2122,8 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
         const char *stdin_encoding_str, *stdin_errors_str;
         PyObject *result;
         size_t len;
-        PyObject *str_encoding = _Py_GET_GLOBAL_IDENTIFIER(encoding);
-        PyObject *str_errors = _Py_GET_GLOBAL_IDENTIFIER(errors);
+        PyObject *str_encoding = _Py_ID(encoding);
+        PyObject *str_errors = _Py_ID(errors);
 
         /* stdin is a text stream, so it must have an encoding. */
         stdin_encoding = PyObject_GetAttr(fin, str_encoding);
@@ -2284,7 +2284,7 @@ builtin_round_impl(PyObject *module, PyObject *number, PyObject *ndigits)
             return NULL;
     }
 
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__round__);
+    PyObject *attr = _Py_ID(__round__);
     round = _PyObject_LookupSpecial(number, attr);
     if (round == NULL) {
         if (!PyErr_Occurred())
@@ -2346,7 +2346,7 @@ builtin_sorted(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
     if (newlist == NULL)
         return NULL;
 
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(sort);
+    PyObject *attr = _Py_ID(sort);
     callable = PyObject_GetAttr(newlist, attr);
     if (callable == NULL) {
         Py_DECREF(newlist);
@@ -2379,7 +2379,7 @@ builtin_vars(PyObject *self, PyObject *args)
         Py_XINCREF(d);
     }
     else {
-        PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__dict__);
+        PyObject *attr = _Py_ID(__dict__);
         if (_PyObject_LookupAttr(v, attr, &d) == 0) {
             PyErr_SetString(PyExc_TypeError,
                 "vars() argument must have __dict__ attribute");

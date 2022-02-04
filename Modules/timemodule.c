@@ -4,7 +4,7 @@
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_namespace.h"     // _PyNamespace_New()
-#include "pycore_runtime.h"       // _Py_GET_GLOBAL_IDENTIFIER()
+#include "pycore_runtime.h"       // _Py_ID()
 
 #include <ctype.h>
 
@@ -916,7 +916,7 @@ time_strptime(PyObject *self, PyObject *args)
     if (!module)
         return NULL;
 
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(_strptime_time);
+    PyObject *attr = _Py_ID(_strptime_time);
     func = PyObject_GetAttr(module, attr);
     Py_DECREF(module);
     if (!func) {

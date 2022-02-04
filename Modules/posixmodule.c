@@ -1157,7 +1157,7 @@ path_converter(PyObject *o, void *p)
         /* Inline PyOS_FSPath() for better error messages. */
         PyObject *func, *res;
 
-        PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__fspath__);
+        PyObject *attr = _Py_ID(__fspath__);
         func = _PyObject_LookupSpecial(o, attr);
         if (NULL == func) {
             goto error_format;
@@ -14436,7 +14436,7 @@ PyOS_FSPath(PyObject *path)
         return path;
     }
 
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__fspath__);
+    PyObject *attr = _Py_ID(__fspath__);
     func = _PyObject_LookupSpecial(path, attr);
     if (NULL == func) {
         return PyErr_Format(PyExc_TypeError,

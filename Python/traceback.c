@@ -331,13 +331,13 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
     taillen = strlen(tail);
 
     PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(path);
+    PyObject *attr = _Py_ID(path);
     syspath = _PySys_GetAttr(tstate, attr);
     if (syspath == NULL || !PyList_Check(syspath))
         goto error;
     npath = PyList_Size(syspath);
 
-    open = PyObject_GetAttr(io, _Py_GET_GLOBAL_IDENTIFIER(open));
+    open = PyObject_GetAttr(io, _Py_ID(open));
     for (i = 0; i < npath; i++) {
         v = PyList_GetItem(syspath, i);
         if (v == NULL) {
@@ -453,7 +453,7 @@ display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int
         return -1;
     }
 
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(open);
+    PyObject *attr = _Py_ID(open);
     binary = _PyObject_CallMethod(io, attr, "Os", filename, "rb");
     if (binary == NULL) {
         PyErr_Clear();
@@ -483,12 +483,12 @@ display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int
         PyMem_Free(found_encoding);
         return 0;
     }
-    attr = _Py_GET_GLOBAL_IDENTIFIER(TextIOWrapper);
+    attr = _Py_ID(TextIOWrapper);
     fob = _PyObject_CallMethod(io, attr, "Os", binary, encoding);
     Py_DECREF(io);
     PyMem_Free(found_encoding);
 
-    PyObject *close = _Py_GET_GLOBAL_IDENTIFIER(close);
+    PyObject *close = _Py_ID(close);
     if (fob == NULL) {
         PyErr_Clear();
 

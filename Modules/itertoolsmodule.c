@@ -504,7 +504,7 @@ static PyObject *
 _grouper_reduce(_grouperobject *lz, PyObject *Py_UNUSED(ignored))
 {
     if (((groupbyobject *)lz->parent)->currgrouper != lz) {
-        PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(iter);
+        PyObject *attr = _Py_ID(iter);
         return Py_BuildValue("N(())", _PyEval_GetBuiltin(attr));
     }
     return Py_BuildValue("O(OO)", Py_TYPE(lz), lz->parent, lz->tgtkey);
@@ -1031,7 +1031,7 @@ itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n)
         return NULL;
     }
 
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__copy__);
+    PyObject *attr = _Py_ID(__copy__);
     if (_PyObject_LookupAttr(it, attr, &copyfunc) < 0) {
         Py_DECREF(it);
         Py_DECREF(result);
@@ -1179,7 +1179,7 @@ cycle_reduce(cycleobject *lz, PyObject *Py_UNUSED(ignored))
         if (it == NULL)
             return NULL;
         if (lz->index != 0) {
-            PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__setstate__);
+            PyObject *attr = _Py_ID(__setstate__);
             PyObject *res = _PyObject_CallMethod(it, attr, "n", lz->index);
             if (res == NULL) {
                 Py_DECREF(it);
@@ -4554,7 +4554,7 @@ zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (kwds != NULL && PyDict_CheckExact(kwds) && PyDict_GET_SIZE(kwds) > 0) {
         fillvalue = NULL;
         if (PyDict_GET_SIZE(kwds) == 1) {
-            PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(fillvalue);
+            PyObject *attr = _Py_ID(fillvalue);
             fillvalue = PyDict_GetItemWithError(kwds, attr);
         }
         if (fillvalue == NULL) {

@@ -38,7 +38,7 @@ PyFile_FromFd(int fd, const char *name, const char *mode, int buffering, const c
     io = PyImport_ImportModule("_io");
     if (io == NULL)
         return NULL;
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(open);
+    PyObject *attr = _Py_ID(open);
     stream = _PyObject_CallMethod(io, attr, "isisssO", fd, mode,
                                   buffering, encoding, errors,
                                   newline, closefd ? Py_True : Py_False);
@@ -60,7 +60,7 @@ PyFile_GetLine(PyObject *f, int n)
         return NULL;
     }
 
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(readline);
+    PyObject *attr = _Py_ID(readline);
     if (n <= 0) {
         result = PyObject_CallMethodNoArgs(f, attr);
     }
@@ -124,7 +124,7 @@ PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
         PyErr_SetString(PyExc_TypeError, "writeobject with NULL file");
         return -1;
     }
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(write);
+    PyObject *attr = _Py_ID(write);
     writer = PyObject_GetAttr(f, attr);
     if (writer == NULL)
         return -1;
@@ -182,7 +182,7 @@ PyObject_AsFileDescriptor(PyObject *o)
     int fd;
     PyObject *meth;
 
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(fileno);
+    PyObject *attr = _Py_ID(fileno);
     if (PyLong_Check(o)) {
         fd = _PyLong_AsInt(o);
     }
@@ -508,7 +508,7 @@ PyFile_OpenCodeObject(PyObject *path)
     } else {
         iomod = PyImport_ImportModule("_io");
         if (iomod) {
-            PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(open);
+            PyObject *attr = _Py_ID(open);
             f = _PyObject_CallMethod(iomod, attr, "Os", path, "rb");
             Py_DECREF(iomod);
         }

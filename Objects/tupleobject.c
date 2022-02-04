@@ -1193,7 +1193,7 @@ PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(
 static PyObject *
 tupleiter_reduce(tupleiterobject *it, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(iter);
+    PyObject *attr = _Py_ID(iter);
     if (it->it_seq)
         return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(attr),
                              it->it_seq, it->it_index);

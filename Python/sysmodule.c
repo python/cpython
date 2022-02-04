@@ -268,7 +268,7 @@ sys_audit_tstate(PyThreadState *ts, const char *event,
 
         /* Disallow tracing in hooks unless explicitly enabled */
         PyThreadState_EnterTracing(ts);
-        PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__cantrace__);
+        PyObject *attr = _Py_ID(__cantrace__);
         while ((hook = PyIter_Next(hooks)) != NULL) {
             PyObject *o;
             int canTrace = _PyObject_LookupAttr(hook, attr, &o);
@@ -642,7 +642,7 @@ sys_displayhook_unencodable(PyObject *outf, PyObject *o)
     const char *stdout_encoding_str;
     int ret;
 
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(encoding);
+    PyObject *attr = _Py_ID(encoding);
     stdout_encoding = PyObject_GetAttr(outf, attr);
     if (stdout_encoding == NULL)
         goto error;
@@ -660,13 +660,13 @@ sys_displayhook_unencodable(PyObject *outf, PyObject *o)
     if (encoded == NULL)
         goto error;
 
-    attr = _Py_GET_GLOBAL_IDENTIFIER(buffer);
+    attr = _Py_ID(buffer);
     if (_PyObject_LookupAttr(outf, attr, &buffer) < 0) {
         Py_DECREF(encoded);
         goto error;
     }
     if (buffer) {
-        attr = _Py_GET_GLOBAL_IDENTIFIER(write);
+        attr = _Py_ID(write);
         result = PyObject_CallMethodOneArg(buffer, attr, encoded);
         Py_DECREF(buffer);
         Py_DECREF(encoded);
@@ -713,7 +713,7 @@ sys_displayhook(PyObject *module, PyObject *o)
     static PyObject *newline = NULL;
     PyThreadState *tstate = _PyThreadState_GET();
 
-    PyObject *str = _Py_GET_GLOBAL_IDENTIFIER(builtins);
+    PyObject *str = _Py_ID(builtins);
     builtins = PyImport_GetModule(str);
     if (builtins == NULL) {
         if (!_PyErr_Occurred(tstate)) {
@@ -730,10 +730,10 @@ sys_displayhook(PyObject *module, PyObject *o)
     if (o == Py_None) {
         Py_RETURN_NONE;
     }
-    str = _Py_GET_GLOBAL_IDENTIFIER(_);
+    str = _Py_ID(_);
     if (PyObject_SetAttr(builtins, str, Py_None) != 0)
         return NULL;
-    outf = _PySys_GetAttr(tstate, _Py_GET_GLOBAL_IDENTIFIER(stdout));
+    outf = _PySys_GetAttr(tstate, _Py_ID(stdout));
     if (outf == NULL || outf == Py_None) {
         _PyErr_SetString(tstate, PyExc_RuntimeError, "lost sys.stdout");
         return NULL;
@@ -1692,7 +1692,7 @@ _PySys_GetSizeOf(PyObject *o)
         return (size_t)-1;
     }
 
-    PyObject *str = _Py_GET_GLOBAL_IDENTIFIER(__sizeof__);
+    PyObject *str = _Py_ID(__sizeof__);
     method = _PyObject_LookupSpecial(o, str);
     if (method == NULL) {
         if (!_PyErr_Occurred(tstate)) {
@@ -2235,7 +2235,7 @@ _PySys_ReadPreinitXOptions(PyConfig *config)
 static PyObject *
 get_warnoptions(PyThreadState *tstate)
 {
-    PyObject *str = _Py_GET_GLOBAL_IDENTIFIER(warnoptions);
+    PyObject *str = _Py_ID(warnoptions);
     PyObject *warnoptions = _PySys_GetAttr(tstate, str);
     if (warnoptions == NULL || !PyList_Check(warnoptions)) {
         /* PEP432 TODO: we can reach this if warnoptions is NULL in the main
@@ -2270,7 +2270,7 @@ PySys_ResetWarnOptions(void)
         return;
     }
 
-    PyObject *str = _Py_GET_GLOBAL_IDENTIFIER(warnoptions);
+    PyObject *str = _Py_ID(warnoptions);
     PyObject *warnoptions = _PySys_GetAttr(tstate, str);
     if (warnoptions == NULL || !PyList_Check(warnoptions))
         return;
@@ -2325,7 +2325,7 @@ int
 PySys_HasWarnOptions(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *str = _Py_GET_GLOBAL_IDENTIFIER(warnoptions);
+    PyObject *str = _Py_ID(warnoptions);
     PyObject *warnoptions = _PySys_GetAttr(tstate, str);
     return (warnoptions != NULL && PyList_Check(warnoptions)
             && PyList_GET_SIZE(warnoptions) > 0);
@@ -2334,7 +2334,7 @@ PySys_HasWarnOptions(void)
 static PyObject *
 get_xoptions(PyThreadState *tstate)
 {
-    PyObject *str = _Py_GET_GLOBAL_IDENTIFIER(_xoptions);
+    PyObject *str = _Py_ID(_xoptions);
     PyObject *xoptions = _PySys_GetAttr(tstate, str);
     if (xoptions == NULL || !PyDict_Check(xoptions)) {
         /* PEP432 TODO: we can reach this if xoptions is NULL in the main
@@ -3053,7 +3053,7 @@ _PySys_SetPreliminaryStderr(PyObject *sysdict)
     if (pstderr == NULL) {
         goto error;
     }
-    PyObject *str = _Py_GET_GLOBAL_IDENTIFIER(stderr);
+    PyObject *str = _Py_ID(stderr);
     if (PyDict_SetItem(sysdict, str, pstderr) < 0) {
         goto error;
     }
@@ -3179,7 +3179,7 @@ PySys_SetPath(const wchar_t *path)
     if ((v = makepathobject(path, DELIM)) == NULL)
         Py_FatalError("can't create sys.path");
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyObject *str = _Py_GET_GLOBAL_IDENTIFIER(path);
+    PyObject *str = _Py_ID(path);
     if (sys_set_object(interp, str, v) != 0) {
         Py_FatalError("can't assign sys.path");
     }
@@ -3237,7 +3237,7 @@ PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
                 Py_FatalError("can't compute path0 from argv");
             }
 
-            PyObject *str = _Py_GET_GLOBAL_IDENTIFIER(path);
+            PyObject *str = _Py_ID(path);
             PyObject *sys_path = _PySys_GetAttr(tstate, str);
             if (sys_path != NULL) {
                 if (PyList_Insert(sys_path, 0, path0) < 0) {
@@ -3265,7 +3265,7 @@ sys_pyfile_write_unicode(PyObject *unicode, PyObject *file)
     if (file == NULL)
         return -1;
     assert(unicode != NULL);
-    PyObject *str = _Py_GET_GLOBAL_IDENTIFIER(write);
+    PyObject *str = _Py_ID(write);
     PyObject *result = _PyObject_CallMethodOneArg(file, str, unicode);
     if (result == NULL) {
         return -1;
@@ -3350,7 +3350,7 @@ PySys_WriteStdout(const char *format, ...)
     va_list va;
 
     va_start(va, format);
-    PyObject *str = _Py_GET_GLOBAL_IDENTIFIER(stdout);
+    PyObject *str = _Py_ID(stdout);
     sys_write(str, stdout, format, va);
     va_end(va);
 }
@@ -3361,7 +3361,7 @@ PySys_WriteStderr(const char *format, ...)
     va_list va;
 
     va_start(va, format);
-    PyObject *str = _Py_GET_GLOBAL_IDENTIFIER(stderr);
+    PyObject *str = _Py_ID(stderr);
     sys_write(str, stderr, format, va);
     va_end(va);
 }
@@ -3395,7 +3395,7 @@ PySys_FormatStdout(const char *format, ...)
     va_list va;
 
     va_start(va, format);
-    PyObject *str = _Py_GET_GLOBAL_IDENTIFIER(stdout);
+    PyObject *str = _Py_ID(stdout);
     sys_format(str, stdout, format, va);
     va_end(va);
 }
@@ -3406,7 +3406,7 @@ PySys_FormatStderr(const char *format, ...)
     va_list va;
 
     va_start(va, format);
-    PyObject *str = _Py_GET_GLOBAL_IDENTIFIER(stderr);
+    PyObject *str = _Py_ID(stderr);
     sys_format(str, stderr, format, va);
     va_end(va);
 }

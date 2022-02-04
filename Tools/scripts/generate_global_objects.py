@@ -457,7 +457,7 @@ GETTER_RE = re.compile(r'''
     .*?
     (?:
         (?:
-            _Py_GET_GLOBAL_IDENTIFIER
+            _Py_ID
             [(]
             ( \w+ )  # <identifier>
             [)]

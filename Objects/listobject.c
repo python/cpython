@@ -3511,14 +3511,14 @@ listiter_reduce_general(void *_it, int forward)
     if (forward) {
         listiterobject *it = (listiterobject *)_it;
         if (it->it_seq) {
-            attr = _Py_GET_GLOBAL_IDENTIFIER(iter);
+            attr = _Py_ID(iter);
             return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(attr),
                                  it->it_seq, it->it_index);
         }
     } else {
         listreviterobject *it = (listreviterobject *)_it;
         if (it->it_seq) {
-            attr = _Py_GET_GLOBAL_IDENTIFIER(reversed);
+            attr = _Py_ID(reversed);
             return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(attr),
                                  it->it_seq, it->it_index);
         }
@@ -3527,6 +3527,6 @@ listiter_reduce_general(void *_it, int forward)
     list = PyList_New(0);
     if (list == NULL)
         return NULL;
-    attr = _Py_GET_GLOBAL_IDENTIFIER(iter);
+    attr = _Py_ID(iter);
     return Py_BuildValue("N(N)", _PyEval_GetBuiltin(attr), list);
 }

@@ -325,7 +325,7 @@ struct _Py_global_strings {
 #undef STR
 
 
-#define _Py_GET_GLOBAL_IDENTIFIER(NAME) \
+#define _Py_ID(NAME) \
      (&_Py_SINGLETON(strings.identifiers.spamspamspam_ ## NAME._ascii.ob_base))
 #define _Py_GET_GLOBAL_STRING(NAME) \
      (&_Py_SINGLETON(strings.literals.spamspamspam_ ## NAME._ascii.ob_base))

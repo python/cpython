@@ -712,7 +712,7 @@ r_string(Py_ssize_t n, RFILE *p)
         if (mview == NULL)
             return NULL;
 
-        PyObject *readinto = _Py_GET_GLOBAL_IDENTIFIER(readinto);
+        PyObject *readinto = _Py_ID(readinto);
         res = _PyObject_CallMethod(p->readable, readinto, "N", mview);
         if (res != NULL) {
             read = PyNumber_AsSsize_t(res, PyExc_ValueError);
@@ -1717,7 +1717,7 @@ marshal_dump_impl(PyObject *module, PyObject *value, PyObject *file,
     s = PyMarshal_WriteObjectToString(value, version);
     if (s == NULL)
         return NULL;
-    PyObject *write = _Py_GET_GLOBAL_IDENTIFIER(write);
+    PyObject *write = _Py_ID(write);
     res = _PyObject_CallMethodOneArg(file, write, s);
     Py_DECREF(s);
     return res;
@@ -1754,7 +1754,7 @@ marshal_load(PyObject *module, PyObject *file)
      * This can be removed if we guarantee good error handling
      * for r_string()
      */
-    PyObject *read = _Py_GET_GLOBAL_IDENTIFIER(read);
+    PyObject *read = _Py_ID(read);
     data = _PyObject_CallMethod(file, read, "i", 0);
     if (data == NULL)
         return NULL;

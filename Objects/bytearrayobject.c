@@ -2113,7 +2113,7 @@ _common_reduce(PyByteArrayObject *self, int proto)
     PyObject *dict;
     char *buf;
 
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__dict__);
+    PyObject *attr = _Py_ID(__dict__);
     if (_PyObject_LookupAttr((PyObject *)self, attr, &dict) < 0) {
         return NULL;
     }
@@ -2427,7 +2427,7 @@ PyDoc_STRVAR(length_hint_doc,
 static PyObject *
 bytearrayiter_reduce(bytesiterobject *it, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(iter);
+    PyObject *attr = _Py_ID(iter);
     if (it->it_seq != NULL) {
         return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(attr),
                              it->it_seq, it->it_index);

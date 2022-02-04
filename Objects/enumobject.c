@@ -357,7 +357,7 @@ reversed_new_impl(PyTypeObject *type, PyObject *seq)
     PyObject *reversed_meth;
     reversedobject *ro;
 
-    PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(__reversed__);
+    PyObject *attr = _Py_ID(__reversed__);
     reversed_meth = _PyObject_LookupSpecial(seq, attr);
     if (reversed_meth == Py_None) {
         Py_DECREF(reversed_meth);

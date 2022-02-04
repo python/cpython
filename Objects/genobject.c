@@ -328,7 +328,7 @@ gen_close_iter(PyObject *yf)
     }
     else {
         PyObject *meth;
-        PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(close);
+        PyObject *attr = _Py_ID(close);
         if (_PyObject_LookupAttr(yf, attr, &meth) < 0) {
             PyErr_WriteUnraisable(yf);
         }
@@ -461,7 +461,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
         } else {
             /* `yf` is an iterator or a coroutine-like object. */
             PyObject *meth;
-            PyObject *attr = _Py_GET_GLOBAL_IDENTIFIER(throw);
+            PyObject *attr = _Py_ID(throw);
             if (_PyObject_LookupAttr(yf, attr, &meth) < 0) {
                 Py_DECREF(yf);
                 return NULL;

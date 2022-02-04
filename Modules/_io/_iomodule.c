@@ -377,7 +377,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
 
     /* buffering */
     if (buffering < 0) {
-        attr = _Py_GET_GLOBAL_IDENTIFIER(isatty);
+        attr = _Py_ID(isatty);
         PyObject *res = PyObject_CallMethodNoArgs(raw, attr);
         if (res == NULL)
             goto error;
@@ -396,7 +396,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
 
     if (buffering < 0) {
         PyObject *blksize_obj;
-        attr = _Py_GET_GLOBAL_IDENTIFIER(_blksize);
+        attr = _Py_ID(_blksize);
         blksize_obj = PyObject_GetAttr(raw, attr);
         if (blksize_obj == NULL)
             goto error;
@@ -464,7 +464,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     result = wrapper;
     Py_DECREF(buffer);
 
-    attr = _Py_GET_GLOBAL_IDENTIFIER(mode);
+    attr = _Py_ID(mode);
     if (PyObject_SetAttr(wrapper, attr, modeobj) < 0)
         goto error;
     Py_DECREF(modeobj);
@@ -474,7 +474,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     if (result != NULL) {
         PyObject *exc, *val, *tb, *close_result;
         PyErr_Fetch(&exc, &val, &tb);
-        attr = _Py_GET_GLOBAL_IDENTIFIER(close);
+        attr = _Py_ID(close);
         close_result = PyObject_CallMethodNoArgs(result, attr);
         _PyErr_ChainExceptions(exc, val, tb);
         Py_XDECREF(close_result);
