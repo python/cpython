@@ -96,10 +96,7 @@ extern "C" {
 #define _PyASCIIObject_INIT(LITERAL) \
     { \
         ._ascii = { \
-            .ob_base = { \
-                .ob_refcnt = 999999999, \
-                .ob_type = &PyUnicode_Type, \
-            }, \
+            .ob_base = _PyObject_IMMORTAL_INIT(&PyUnicode_Type), \
             .length = _Py_STRING_LENGTH(LITERAL) - 1, \
             .hash = -1, \
             .state = { \
