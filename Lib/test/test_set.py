@@ -1816,7 +1816,7 @@ class TestWeirdBugs(unittest.TestCase):
         s.update(other)
 
 
-class TestMutatingOps:
+class TestOperationsMutating:
     """Regression test for bpo-46615"""
 
     constructor1 = None
@@ -1847,8 +1847,12 @@ class TestMutatingOps:
             set1, set2 = self.make_sets_of_bad_objects()
             try:
                 function(set1, set2)
-            except Exception:
-                pass
+            except RuntimeError as e:
+                # Just make sure we don't crash here.
+                self.assertIn("changed size during iteration", str(e))
+
+
+class TestBinaryOpsMutating(TestOperationsMutating):
 
     def test_eq_with_mutation(self):
         self.check_set_op_does_not_crash(lambda a, b: a == b)
@@ -1879,9 +1883,6 @@ class TestMutatingOps:
 
     def test_xor_with_mutation(self):
         self.check_set_op_does_not_crash(lambda a, b: a ^ b)
-
-    def test_isdisjoint_with_mutation(self):
-        self.check_set_op_does_not_crash(lambda a, b: a.isdisjoint(b))
 
     def test_iadd_with_mutation(self):
         def f(a, b):
@@ -1921,27 +1922,81 @@ class TestMutatingOps:
         self.check_set_op_does_not_crash(f2)
         self.check_set_op_does_not_crash(f3)
 
-class TestMutatingOps_Set_Set(TestMutatingOps, unittest.TestCase):
+
+class TestMutatingBinaryOps_Set_Set(TestBinaryOpsMutating, unittest.TestCase):
     constructor1 = set
     constructor2 = set
 
-class TestMutatingOps_Subclass_Subclass(TestMutatingOps, unittest.TestCase):
+class TestMutatingBinaryOps_Subclass_Subclass(TestBinaryOpsMutating, unittest.TestCase):
     constructor1 = SetSubclass
     constructor2 = SetSubclass
 
-class TestMutatingOps_Set_Subclass(TestMutatingOps, unittest.TestCase):
+class TestMutatingBinaryOps_Set_Subclass(TestBinaryOpsMutating, unittest.TestCase):
     constructor1 = set
     constructor2 = SetSubclass
 
-class TestMutatingOps_Subclass_Set(TestMutatingOps, unittest.TestCase):
+class TestMutatingBinaryOps_Subclass_Set(TestBinaryOpsMutating, unittest.TestCase):
     constructor1 = SetSubclass
     constructor2 = set
 
-class TestMutatingOps_Set_Dict(TestMutatingOps, unittest.TestCase):
+
+class TestMethodsMutating(TestOperationsMutating):
+
+    def test_issubset_with_mutation(self):
+        self.check_set_op_does_not_crash(set.issubset)
+
+    def test_issuperset_with_mutation(self):
+        self.check_set_op_does_not_crash(set.issuperset)
+
+    def test_intersection_with_mutation(self):
+        self.check_set_op_does_not_crash(set.intersection)
+
+    def test_union_with_mutation(self):
+        self.check_set_op_does_not_crash(set.union)
+
+    def test_difference_with_mutation(self):
+        self.check_set_op_does_not_crash(set.difference)
+
+    def test_symmetric_difference_with_mutation(self):
+        self.check_set_op_does_not_crash(set.symmetric_difference)
+
+    def test_isdisjoint_with_mutation(self):
+        self.check_set_op_does_not_crash(set.isdisjoint)
+
+    def test_difference_update_with_mutation(self):
+        self.check_set_op_does_not_crash(set.difference_update)
+
+    def test_intersection_update_with_mutation(self):
+        self.check_set_op_does_not_crash(set.intersection_update)
+
+    def test_symmetric_difference_update_with_mutation(self):
+        self.check_set_op_does_not_crash(set.symmetric_difference_update)
+
+    def test_update_with_mutation(self):
+        self.check_set_op_does_not_crash(set.update)
+
+
+class TestMutatingBinaryOps_Set_Set(TestMethodsMutating, unittest.TestCase):
+    constructor1 = set
+    constructor2 = set
+
+class TestMutatingBinaryOps_Subclass_Subclass(TestMethodsMutating, unittest.TestCase):
+    constructor1 = SetSubclass
+    constructor2 = SetSubclass
+
+class TestMutatingBinaryOps_Set_Subclass(TestMethodsMutating, unittest.TestCase):
+    constructor1 = set
+    constructor2 = SetSubclass
+
+class TestMutatingBinaryOps_Subclass_Set(TestMethodsMutating, unittest.TestCase):
+    constructor1 = SetSubclass
+    constructor2 = set
+
+class TestMutatingOps_Set_Dict(TestMethodsMutating, unittest.TestCase):
     constructor1 = set
     constructor2 = dict.fromkeys
 
-class TestMutatingOps_Set_List(TestMutatingOps, unittest.TestCase):
+class TestMutatingOps_Set_List(TestMethodsMutating, unittest.TestCase):
     constructor1 = set
     constructor2 = list
 
