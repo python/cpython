@@ -1923,19 +1923,19 @@ class TestBinaryOpsMutating(TestOperationsMutating):
         self.check_set_op_does_not_crash(f3)
 
 
-class TestMutatingBinaryOps_Set_Set(TestBinaryOpsMutating, unittest.TestCase):
+class TestBinaryOpsMutating_Set_Set(TestBinaryOpsMutating, unittest.TestCase):
     constructor1 = set
     constructor2 = set
 
-class TestMutatingBinaryOps_Subclass_Subclass(TestBinaryOpsMutating, unittest.TestCase):
+class TestBinaryOpsMutating_Subclass_Subclass(TestBinaryOpsMutating, unittest.TestCase):
     constructor1 = SetSubclass
     constructor2 = SetSubclass
 
-class TestMutatingBinaryOps_Set_Subclass(TestBinaryOpsMutating, unittest.TestCase):
+class TestBinaryOpsMutating_Set_Subclass(TestBinaryOpsMutating, unittest.TestCase):
     constructor1 = set
     constructor2 = SetSubclass
 
-class TestMutatingBinaryOps_Subclass_Set(TestBinaryOpsMutating, unittest.TestCase):
+class TestBinaryOpsMutating_Subclass_Set(TestBinaryOpsMutating, unittest.TestCase):
     constructor1 = SetSubclass
     constructor2 = set
 
@@ -1976,29 +1976,30 @@ class TestMethodsMutating(TestOperationsMutating):
         self.check_set_op_does_not_crash(set.update)
 
 
-class TestMutatingBinaryOps_Set_Set(TestMethodsMutating, unittest.TestCase):
+class TestMethodsMutating_Set_Set(TestMethodsMutating, unittest.TestCase):
     constructor1 = set
     constructor2 = set
 
-class TestMutatingBinaryOps_Subclass_Subclass(TestMethodsMutating, unittest.TestCase):
+class TestMethodsMutating_Subclass_Subclass(TestMethodsMutating, unittest.TestCase):
     constructor1 = SetSubclass
     constructor2 = SetSubclass
 
-class TestMutatingBinaryOps_Set_Subclass(TestMethodsMutating, unittest.TestCase):
+class TestMethodsMutating_Set_Subclass(TestMethodsMutating, unittest.TestCase):
     constructor1 = set
     constructor2 = SetSubclass
 
-class TestMutatingBinaryOps_Subclass_Set(TestMethodsMutating, unittest.TestCase):
+class TestMethodsMutating_Subclass_Set(TestMethodsMutating, unittest.TestCase):
     constructor1 = SetSubclass
     constructor2 = set
 
-class TestMutatingOps_Set_Dict(TestMethodsMutating, unittest.TestCase):
+class TestMethodsMutating_Set_Dict(TestMethodsMutating, unittest.TestCase):
     constructor1 = set
     constructor2 = dict.fromkeys
 
-class TestMutatingOps_Set_List(TestMethodsMutating, unittest.TestCase):
+class TestMethodsMutating_Set_List(TestMethodsMutating, unittest.TestCase):
     constructor1 = set
     constructor2 = list
+
 
 # Application tests (based on David Eppstein's graph recipes ====================================
 
