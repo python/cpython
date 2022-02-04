@@ -976,8 +976,8 @@ class Path(PurePath):
         # In Python 3.11 __enter__() began emitting DeprecationWarning.
         # In Python 3.13 __enter__() and __exit__() should be removed.
         warnings.warn("pathlib.Path.__enter__() is deprecated and scheduled "
-                      "for removal in Python 3.13. Path objects should not "
-                      "be used as context managers.",
+                      "for removal in Python 3.13; Path objects as context "
+                      "managers is a no-op",
                       DeprecationWarning, stacklevel=2)
         return self
 
