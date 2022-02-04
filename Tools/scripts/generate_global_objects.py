@@ -376,7 +376,7 @@ def generate_global_strings():
                         outfile.write('\n')
                         printer.write(f'// {name}')
                     else:
-                        printer.write(f'LITERAL({name}, "{literal}")')
+                        printer.write(f'STRUCT_FOR_STR({name}, "{literal}")')
             outfile.write('\n')
             with printer.block('struct', ' identifiers;'):
                 for name in sorted(IDENTIFIERS):
