@@ -27,26 +27,6 @@ extern "C" {
     }
 
 
-static inline bool _PyObject_IsSingleton(PyObject *obj)
-{
-    /* The _PyRuntimeState global objects are all singletons so we can
-       check if the object is in the address range of the relevant
-       substruct.  Per the C99 spec (6.5.8 and 7.18.1.4), this is safe
-       only if we convert to void* and then uint64_t before comparing.
-       For that conversion we rely on the same uniqueness guarantees
-       that the builtin id() does.
-       */
-    if (((uintptr_t)(void *)obj >=
-         (uintptr_t)(void *)(&_PyRuntime.global_objects.singletons)) &&
-        ((uintptr_t)(void *)obj <
-         (uintptr_t)(void *)((&_PyRuntime.global_objects.singletons) + 1)))
-    {
-        return true;
-    }
-    return false;
-}
-
-
 PyAPI_FUNC(int) _PyType_CheckConsistency(PyTypeObject *type);
 PyAPI_FUNC(int) _PyDict_CheckConsistency(PyObject *mp, int check_content);
 

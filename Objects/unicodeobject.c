@@ -1986,7 +1986,7 @@ unicode_dealloc(PyObject *unicode)
 static int
 unicode_is_singleton(PyObject *unicode)
 {
-    if (_PyObject_IsSingleton(unicode)) {
+    if (unicode == _Py_STR(empty)) {
         return 1;
     }
 
