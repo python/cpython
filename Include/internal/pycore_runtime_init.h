@@ -97,7 +97,7 @@ extern "C" {
     { \
         ._ascii = { \
             .ob_base = _PyObject_IMMORTAL_INIT(&PyUnicode_Type), \
-            .length = _Py_STRING_LENGTH(LITERAL) - 1, \
+            .length = sizeof(LITERAL) - 1, \
             .hash = -1, \
             .state = { \
                 .kind = 1, \

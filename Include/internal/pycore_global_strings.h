@@ -16,7 +16,7 @@ extern "C" {
 #define STRUCT_FOR_ASCII_STR(LITERAL) \
     struct { \
         PyASCIIObject _ascii; \
-        uint8_t _data[_Py_STRING_LENGTH(LITERAL)]; \
+        uint8_t _data[sizeof(LITERAL)]; \
     }
 #define STRUCT_FOR_STR(NAME, LITERAL) \
     STRUCT_FOR_ASCII_STR(LITERAL) _ ## NAME;

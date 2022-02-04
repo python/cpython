@@ -65,9 +65,6 @@
     (sizeof(array) / sizeof((array)[0]))
 #endif
 
-#define _Py_STRING_LENGTH(str) \
-    (sizeof(str) / sizeof(char))
-
 
 /* Define macros for inline documentation. */
 #define PyDoc_VAR(name) static const char name[]
