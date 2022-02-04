@@ -4536,7 +4536,6 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         PyObject *abstract_methods;
         PyObject *sorted_methods;
         PyObject *joined;
-        PyObject *comma;
         Py_ssize_t method_count;
 
         /* Compute ", ".join(sorted(type.__abstractmethods__))
@@ -4552,8 +4551,7 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             Py_DECREF(sorted_methods);
             return NULL;
         }
-        comma = _Py_STR(comma_sep);
-        joined = PyUnicode_Join(comma, sorted_methods);
+        joined = PyUnicode_Join(_Py_STR(comma_sep), sorted_methods);
         method_count = PyObject_Length(sorted_methods);
         Py_DECREF(sorted_methods);
         if (joined == NULL)

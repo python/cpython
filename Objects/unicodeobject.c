@@ -15534,8 +15534,7 @@ _PyUnicode_InitGlobalObjects(PyInterpreterState *interp)
     }
 
 #ifdef Py_DEBUG
-    PyObject *empty = _Py_STR(empty);
-    assert(_PyUnicode_CheckConsistency(empty, 1));
+    assert(_PyUnicode_CheckConsistency(_Py_STR(empty), 1));
 #endif
 
     return _PyStatus_OK();

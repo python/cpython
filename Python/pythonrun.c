@@ -1557,16 +1557,16 @@ PyRun_StringFlags(const char *str, int start, PyObject *globals,
     PyObject *ret = NULL;
     mod_ty mod;
     PyArena *arena;
-    PyObject *filename = _Py_STR(anon_string);
 
     arena = _PyArena_New();
     if (arena == NULL)
         return NULL;
 
-    mod = _PyParser_ASTFromString(str, filename, start, flags, arena);
+    mod = _PyParser_ASTFromString(
+            str, _Py_STR(anon_string), start, flags, arena);
 
     if (mod != NULL)
-        ret = run_mod(mod, filename, globals, locals, flags, arena);
+        ret = run_mod(mod, _Py_STR(anon_string), globals, locals, flags, arena);
     _PyArena_Free(arena);
     return ret;
 }

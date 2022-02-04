@@ -635,7 +635,7 @@ compiler_set_qualname(struct compiler *c)
 {
     Py_ssize_t stack_size;
     struct compiler_unit *u = c->u;
-    PyObject *name, *base, *dot_str, *dot_locals_str;
+    PyObject *name, *base;
 
     base = NULL;
     stack_size = PyList_GET_SIZE(c->c_stack);
@@ -668,8 +668,8 @@ compiler_set_qualname(struct compiler *c)
                 || parent->u_scope_type == COMPILER_SCOPE_ASYNC_FUNCTION
                 || parent->u_scope_type == COMPILER_SCOPE_LAMBDA)
             {
-                dot_locals_str = _Py_STR(dot_locals);
-                base = PyUnicode_Concat(parent->u_qualname, dot_locals_str);
+                base = PyUnicode_Concat(parent->u_qualname,
+                                        _Py_STR(dot_locals));
                 if (base == NULL)
                     return 0;
             }
@@ -681,8 +681,7 @@ compiler_set_qualname(struct compiler *c)
     }
 
     if (base != NULL) {
-        dot_str = _Py_STR(dot);
-        name = PyUnicode_Concat(base, dot_str);
+        name = PyUnicode_Concat(base, _Py_STR(dot));
         Py_DECREF(base);
         if (name == NULL)
             return 0;
@@ -2036,8 +2035,8 @@ compiler_mod(struct compiler *c, mod_ty mod)
 {
     PyCodeObject *co;
     int addNone = 1;
-    PyObject *module = _Py_STR(anon_module);
-    if (!compiler_enter_scope(c, module, COMPILER_SCOPE_MODULE, mod, 1)) {
+    if (!compiler_enter_scope(c, _Py_STR(anon_module), COMPILER_SCOPE_MODULE,
+                              mod, 1)) {
         return NULL;
     }
     c->u->u_lineno = 1;
@@ -2890,8 +2889,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
         return 0;
     }
 
-    identifier name = _Py_STR(anon_lambda);
-    if (!compiler_enter_scope(c, name, COMPILER_SCOPE_LAMBDA,
+    if (!compiler_enter_scope(c, _Py_STR(anon_lambda), COMPILER_SCOPE_LAMBDA,
                               (void *)e, e->lineno)) {
         return 0;
     }
@@ -3790,7 +3788,6 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 {
     Py_ssize_t i, n = asdl_seq_LEN(s->v.ImportFrom.names);
     PyObject *names;
-    PyObject *empty_string = _Py_STR(empty);
 
     ADDOP_LOAD_CONST_NEW(c, PyLong_FromLong(s->v.ImportFrom.level));
 
@@ -3817,7 +3814,7 @@ compiler_from_import(struct compiler *c, stmt_ty s)
         ADDOP_NAME(c, IMPORT_NAME, s->v.ImportFrom.module, names);
     }
     else {
-        ADDOP_NAME(c, IMPORT_NAME, empty_string, names);
+        ADDOP_NAME(c, IMPORT_NAME, _Py_STR(empty), names);
     }
     for (i = 0; i < n; i++) {
         alias_ty alias = (alias_ty)asdl_seq_GET(s->v.ImportFrom.names, i);
@@ -5365,9 +5362,8 @@ error:
 static int
 compiler_genexp(struct compiler *c, expr_ty e)
 {
-    identifier name = _Py_STR(anon_genexpr);
     assert(e->kind == GeneratorExp_kind);
-    return compiler_comprehension(c, e, COMP_GENEXP, name,
+    return compiler_comprehension(c, e, COMP_GENEXP, _Py_STR(anon_genexpr),
                                   e->v.GeneratorExp.generators,
                                   e->v.GeneratorExp.elt, NULL);
 }
@@ -5375,9 +5371,8 @@ compiler_genexp(struct compiler *c, expr_ty e)
 static int
 compiler_listcomp(struct compiler *c, expr_ty e)
 {
-    identifier name = _Py_STR(anon_listcomp);
     assert(e->kind == ListComp_kind);
-    return compiler_comprehension(c, e, COMP_LISTCOMP, name,
+    return compiler_comprehension(c, e, COMP_LISTCOMP, _Py_STR(anon_listcomp),
                                   e->v.ListComp.generators,
                                   e->v.ListComp.elt, NULL);
 }
@@ -5385,9 +5380,8 @@ compiler_listcomp(struct compiler *c, expr_ty e)
 static int
 compiler_setcomp(struct compiler *c, expr_ty e)
 {
-    identifier name = _Py_STR(anon_setcomp);
     assert(e->kind == SetComp_kind);
-    return compiler_comprehension(c, e, COMP_SETCOMP, name,
+    return compiler_comprehension(c, e, COMP_SETCOMP, _Py_STR(anon_setcomp),
                                   e->v.SetComp.generators,
                                   e->v.SetComp.elt, NULL);
 }
@@ -5396,9 +5390,8 @@ compiler_setcomp(struct compiler *c, expr_ty e)
 static int
 compiler_dictcomp(struct compiler *c, expr_ty e)
 {
-    identifier name = _Py_STR(anon_dictcomp);
     assert(e->kind == DictComp_kind);
-    return compiler_comprehension(c, e, COMP_DICTCOMP, name,
+    return compiler_comprehension(c, e, COMP_DICTCOMP, _Py_STR(anon_dictcomp),
                                   e->v.DictComp.generators,
                                   e->v.DictComp.key, e->v.DictComp.value);
 }
