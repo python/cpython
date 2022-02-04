@@ -1840,8 +1840,8 @@ class TestMutationDoesNotCrash(unittest.TestCase):
         return set1, set2
 
     def check_set_op_does_not_crash(self, function):
-        set1, set2 = self.make_sets_of_bad_objects()
         for _ in range(100):
+            set1, set2 = self.make_sets_of_bad_objects()
             try:
                 function(set1, set2)
             except Exception:
