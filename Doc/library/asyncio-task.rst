@@ -991,7 +991,7 @@ Generator-based Coroutines
 .. note::
 
    Support for generator-based coroutines is **deprecated** and
-   is scheduled for removal in Python 3.10.
+   is removed in Python 3.11.
 
 Generator-based coroutines predate async/await syntax.  They are
 Python generators that use ``yield from`` expressions to await
@@ -1019,7 +1019,7 @@ enforced.
     This decorator should not be used for :keyword:`async def`
     coroutines.
 
-    .. deprecated-removed:: 3.8 3.10
+    .. deprecated-removed:: 3.8 3.11
 
        Use :keyword:`async def` instead.
 
