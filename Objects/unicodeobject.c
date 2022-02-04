@@ -260,7 +260,7 @@ get_unicode_state(void)
 // Return a borrowed reference to the empty string singleton.
 static inline PyObject* unicode_get_empty(void)
 {
-    return _Py_STR(empty);
+    return &_Py_STR(empty);
 }
 
 
@@ -1986,7 +1986,7 @@ unicode_dealloc(PyObject *unicode)
 static int
 unicode_is_singleton(PyObject *unicode)
 {
-    if (unicode == _Py_STR(empty)) {
+    if (unicode == &_Py_STR(empty)) {
         return 1;
     }
 
@@ -15534,7 +15534,7 @@ _PyUnicode_InitGlobalObjects(PyInterpreterState *interp)
     }
 
 #ifdef Py_DEBUG
-    assert(_PyUnicode_CheckConsistency(_Py_STR(empty), 1));
+    assert(_PyUnicode_CheckConsistency(&_Py_STR(empty), 1));
 #endif
 
     return _PyStatus_OK();
@@ -15780,13 +15780,13 @@ static PyObject *
 unicodeiter_reduce(unicodeiterobject *it, PyObject *Py_UNUSED(ignored))
 {
     if (it->it_seq != NULL) {
-        return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(_Py_ID(iter)),
+        return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(&_Py_ID(iter)),
                              it->it_seq, it->it_index);
     } else {
         PyObject *u = (PyObject *)_PyUnicode_New(0);
         if (u == NULL)
             return NULL;
-        return Py_BuildValue("N(N)", _PyEval_GetBuiltin(_Py_ID(iter)), u);
+        return Py_BuildValue("N(N)", _PyEval_GetBuiltin(&_Py_ID(iter)), u);
     }
 }
 

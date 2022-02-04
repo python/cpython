@@ -5772,9 +5772,9 @@ int_to_bytes_impl(PyObject *self, Py_ssize_t length, PyObject *byteorder,
 
     if (byteorder == NULL)
         little_endian = 0;
-    else if (_PyUnicode_Equal(byteorder, _Py_ID(little)))
+    else if (_PyUnicode_Equal(byteorder, &_Py_ID(little)))
         little_endian = 1;
-    else if (_PyUnicode_Equal(byteorder, _Py_ID(big)))
+    else if (_PyUnicode_Equal(byteorder, &_Py_ID(big)))
         little_endian = 0;
     else {
         PyErr_SetString(PyExc_ValueError,
@@ -5834,9 +5834,9 @@ int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
 
     if (byteorder == NULL)
         little_endian = 0;
-    else if (_PyUnicode_Equal(byteorder, _Py_ID(little)))
+    else if (_PyUnicode_Equal(byteorder, &_Py_ID(little)))
         little_endian = 1;
-    else if (_PyUnicode_Equal(byteorder, _Py_ID(big)))
+    else if (_PyUnicode_Equal(byteorder, &_Py_ID(big)))
         little_endian = 0;
     else {
         PyErr_SetString(PyExc_ValueError,

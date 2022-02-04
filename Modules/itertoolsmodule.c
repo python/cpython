@@ -504,7 +504,7 @@ static PyObject *
 _grouper_reduce(_grouperobject *lz, PyObject *Py_UNUSED(ignored))
 {
     if (((groupbyobject *)lz->parent)->currgrouper != lz) {
-        return Py_BuildValue("N(())", _PyEval_GetBuiltin(_Py_ID(iter)));
+        return Py_BuildValue("N(())", _PyEval_GetBuiltin(&_Py_ID(iter)));
     }
     return Py_BuildValue("O(OO)", Py_TYPE(lz), lz->parent, lz->tgtkey);
 }
@@ -1030,7 +1030,7 @@ itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n)
         return NULL;
     }
 
-    if (_PyObject_LookupAttr(it, _Py_ID(__copy__), &copyfunc) < 0) {
+    if (_PyObject_LookupAttr(it, &_Py_ID(__copy__), &copyfunc) < 0) {
         Py_DECREF(it);
         Py_DECREF(result);
         return NULL;
@@ -1045,7 +1045,7 @@ itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n)
             Py_DECREF(result);
             return NULL;
         }
-        copyfunc = PyObject_GetAttr(copyable, _Py_ID(__copy__));
+        copyfunc = PyObject_GetAttr(copyable, &_Py_ID(__copy__));
         if (copyfunc == NULL) {
             Py_DECREF(copyable);
             Py_DECREF(result);
@@ -1177,7 +1177,7 @@ cycle_reduce(cycleobject *lz, PyObject *Py_UNUSED(ignored))
         if (it == NULL)
             return NULL;
         if (lz->index != 0) {
-            PyObject *res = _PyObject_CallMethod(it, _Py_ID(__setstate__),
+            PyObject *res = _PyObject_CallMethod(it, &_Py_ID(__setstate__),
                                                  "n", lz->index);
             if (res == NULL) {
                 Py_DECREF(it);
@@ -4552,7 +4552,7 @@ zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (kwds != NULL && PyDict_CheckExact(kwds) && PyDict_GET_SIZE(kwds) > 0) {
         fillvalue = NULL;
         if (PyDict_GET_SIZE(kwds) == 1) {
-            fillvalue = PyDict_GetItemWithError(kwds, _Py_ID(fillvalue));
+            fillvalue = PyDict_GetItemWithError(kwds, &_Py_ID(fillvalue));
         }
         if (fillvalue == NULL) {
             if (!PyErr_Occurred()) {

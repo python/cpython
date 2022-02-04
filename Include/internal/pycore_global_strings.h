@@ -326,9 +326,9 @@ struct _Py_global_strings {
 
 
 #define _Py_ID(NAME) \
-     (&_Py_SINGLETON(strings.identifiers._ ## NAME._ascii.ob_base))
+     (_Py_SINGLETON(strings.identifiers._ ## NAME._ascii.ob_base))
 #define _Py_STR(NAME) \
-     (&_Py_SINGLETON(strings.literals._ ## NAME._ascii.ob_base))
+     (_Py_SINGLETON(strings.literals._ ## NAME._ascii.ob_base))
 
 
 #ifdef __cplusplus

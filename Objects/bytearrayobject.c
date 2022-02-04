@@ -2113,7 +2113,7 @@ _common_reduce(PyByteArrayObject *self, int proto)
     PyObject *dict;
     char *buf;
 
-    if (_PyObject_LookupAttr((PyObject *)self, _Py_ID(__dict__), &dict) < 0) {
+    if (_PyObject_LookupAttr((PyObject *)self, &_Py_ID(__dict__), &dict) < 0) {
         return NULL;
     }
     if (dict == NULL) {
@@ -2427,10 +2427,10 @@ static PyObject *
 bytearrayiter_reduce(bytesiterobject *it, PyObject *Py_UNUSED(ignored))
 {
     if (it->it_seq != NULL) {
-        return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(_Py_ID(iter)),
+        return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(&_Py_ID(iter)),
                              it->it_seq, it->it_index);
     } else {
-        return Py_BuildValue("N(())", _PyEval_GetBuiltin(_Py_ID(iter)));
+        return Py_BuildValue("N(())", _PyEval_GetBuiltin(&_Py_ID(iter)));
     }
 }
 

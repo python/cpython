@@ -151,7 +151,7 @@ _PyType_CheckConsistency(PyTypeObject *type)
 
     if (type->tp_flags & Py_TPFLAGS_DISALLOW_INSTANTIATION) {
         CHECK(type->tp_new == NULL);
-        CHECK(PyDict_Contains(type->tp_dict, _Py_ID(__new__)) == 0);
+        CHECK(PyDict_Contains(type->tp_dict, &_Py_ID(__new__)) == 0);
     }
 
     return 1;
@@ -350,11 +350,11 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
 
     if (custom) {
         mro_meth = lookup_maybe_method(
-            (PyObject *)type, _Py_ID(mro), &unbound);
+            (PyObject *)type, &_Py_ID(mro), &unbound);
         if (mro_meth == NULL)
             goto clear;
         type_mro_meth = lookup_maybe_method(
-            (PyObject *)&PyType_Type, _Py_ID(mro), &unbound);
+            (PyObject *)&PyType_Type, &_Py_ID(mro), &unbound);
         if (type_mro_meth == NULL)
             goto clear;
         if (mro_meth != type_mro_meth)
@@ -548,7 +548,7 @@ type_module(PyTypeObject *type, void *context)
     PyObject *mod;
 
     if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
-        mod = PyDict_GetItemWithError(type->tp_dict, _Py_ID(__module__));
+        mod = PyDict_GetItemWithError(type->tp_dict, &_Py_ID(__module__));
         if (mod == NULL) {
             if (!PyErr_Occurred()) {
                 PyErr_Format(PyExc_AttributeError, "__module__");
@@ -566,7 +566,7 @@ type_module(PyTypeObject *type, void *context)
                 PyUnicode_InternInPlace(&mod);
         }
         else {
-            mod = _Py_ID(builtins);
+            mod = &_Py_ID(builtins);
             Py_INCREF(mod);
         }
     }
@@ -581,7 +581,7 @@ type_set_module(PyTypeObject *type, PyObject *value, void *context)
 
     PyType_Modified(type);
 
-    return PyDict_SetItem(type->tp_dict, _Py_ID(__module__), value);
+    return PyDict_SetItem(type->tp_dict, &_Py_ID(__module__), value);
 }
 
 static PyObject *
@@ -592,10 +592,10 @@ type_abstractmethods(PyTypeObject *type, void *context)
        that. */
     if (type != &PyType_Type)
         mod = PyDict_GetItemWithError(type->tp_dict,
-                                      _Py_ID(__abstractmethods__));
+                                      &_Py_ID(__abstractmethods__));
     if (!mod) {
         if (!PyErr_Occurred()) {
-            PyErr_SetObject(PyExc_AttributeError, _Py_ID(__abstractmethods__));
+            PyErr_SetObject(PyExc_AttributeError, &_Py_ID(__abstractmethods__));
         }
         return NULL;
     }
@@ -615,13 +615,13 @@ type_set_abstractmethods(PyTypeObject *type, PyObject *value, void *context)
         abstract = PyObject_IsTrue(value);
         if (abstract < 0)
             return -1;
-        res = PyDict_SetItem(type->tp_dict, _Py_ID(__abstractmethods__), value);
+        res = PyDict_SetItem(type->tp_dict, &_Py_ID(__abstractmethods__), value);
     }
     else {
         abstract = 0;
-        res = PyDict_DelItem(type->tp_dict, _Py_ID(__abstractmethods__));
+        res = PyDict_DelItem(type->tp_dict, &_Py_ID(__abstractmethods__));
         if (res && PyErr_ExceptionMatches(PyExc_KeyError)) {
-            PyErr_SetObject(PyExc_AttributeError, _Py_ID(__abstractmethods__));
+            PyErr_SetObject(PyExc_AttributeError, &_Py_ID(__abstractmethods__));
             return -1;
         }
     }
@@ -875,7 +875,7 @@ type_get_doc(PyTypeObject *type, void *context)
     if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE) && type->tp_doc != NULL) {
         return _PyType_GetDocFromInternalDoc(type->tp_name, type->tp_doc);
     }
-    result = PyDict_GetItemWithError(type->tp_dict, _Py_ID(__doc__));
+    result = PyDict_GetItemWithError(type->tp_dict, &_Py_ID(__doc__));
     if (result == NULL) {
         if (!PyErr_Occurred()) {
             result = Py_None;
@@ -904,7 +904,7 @@ type_set_doc(PyTypeObject *type, PyObject *value, void *context)
     if (!check_set_special_type_attr(type, value, "__doc__"))
         return -1;
     PyType_Modified(type);
-    return PyDict_SetItem(type->tp_dict, _Py_ID(__doc__), value);
+    return PyDict_SetItem(type->tp_dict, &_Py_ID(__doc__), value);
 }
 
 static PyObject *
@@ -917,9 +917,9 @@ type_get_annotations(PyTypeObject *type, void *context)
 
     PyObject *annotations;
     /* there's no _PyDict_GetItemId without WithError, so let's LBYL. */
-    if (PyDict_Contains(type->tp_dict, _Py_ID(__annotations__))) {
+    if (PyDict_Contains(type->tp_dict, &_Py_ID(__annotations__))) {
         annotations = PyDict_GetItemWithError(
-                type->tp_dict, _Py_ID(__annotations__));
+                type->tp_dict, &_Py_ID(__annotations__));
         /*
         ** PyDict_GetItemWithError could still fail,
         ** for instance with a well-timed Ctrl-C or a MemoryError.
@@ -937,7 +937,7 @@ type_get_annotations(PyTypeObject *type, void *context)
         annotations = PyDict_New();
         if (annotations) {
             int result = PyDict_SetItem(
-                    type->tp_dict, _Py_ID(__annotations__), annotations);
+                    type->tp_dict, &_Py_ID(__annotations__), annotations);
             if (result) {
                 Py_CLEAR(annotations);
             } else {
@@ -961,14 +961,14 @@ type_set_annotations(PyTypeObject *type, PyObject *value, void *context)
     int result;
     if (value != NULL) {
         /* set */
-        result = PyDict_SetItem(type->tp_dict, _Py_ID(__annotations__), value);
+        result = PyDict_SetItem(type->tp_dict, &_Py_ID(__annotations__), value);
     } else {
         /* delete */
-        if (!PyDict_Contains(type->tp_dict, _Py_ID(__annotations__))) {
+        if (!PyDict_Contains(type->tp_dict, &_Py_ID(__annotations__))) {
             PyErr_Format(PyExc_AttributeError, "__annotations__");
             return -1;
         }
-        result = PyDict_DelItem(type->tp_dict, _Py_ID(__annotations__));
+        result = PyDict_DelItem(type->tp_dict, &_Py_ID(__annotations__));
     }
 
     if (result == 0) {
@@ -1049,7 +1049,7 @@ type_repr(PyTypeObject *type)
         return NULL;
     }
 
-    if (mod != NULL && !_PyUnicode_Equal(mod, _Py_ID(builtins)))
+    if (mod != NULL && !_PyUnicode_Equal(mod, &_Py_ID(builtins)))
         rtn = PyUnicode_FromFormat("<class '%U.%U'>", mod, name);
     else
         rtn = PyUnicode_FromFormat("<class '%s'>", type->tp_name);
@@ -1753,7 +1753,7 @@ static PyObject *
 class_name(PyObject *cls)
 {
     PyObject *name;
-    if (_PyObject_LookupAttr(cls, _Py_ID(__name__), &name) == 0) {
+    if (_PyObject_LookupAttr(cls, &_Py_ID(__name__), &name) == 0) {
         name = PyObject_Repr(cls);
     }
     return name;
@@ -2077,7 +2077,7 @@ mro_invoke(PyTypeObject *type)
     if (custom) {
         int unbound;
         PyObject *mro_meth = lookup_method(
-            (PyObject *)type, _Py_ID(mro), &unbound);
+            (PyObject *)type, &_Py_ID(mro), &unbound);
         if (mro_meth == NULL)
             return NULL;
         mro_result = call_unbound_noarg(unbound, mro_meth, (PyObject *)type);
@@ -2292,7 +2292,7 @@ get_dict_descriptor(PyTypeObject *type)
 {
     PyObject *descr;
 
-    descr = _PyType_Lookup(type, _Py_ID(__dict__));
+    descr = _PyType_Lookup(type, &_Py_ID(__dict__));
     if (descr == NULL || !PyDescr_IsData(descr))
         return NULL;
 
@@ -2541,7 +2541,7 @@ type_new_visit_slots(type_new_ctx *ctx)
             return -1;
         }
         assert(PyUnicode_Check(name));
-        if (_PyUnicode_Equal(name, _Py_ID(__dict__))) {
+        if (_PyUnicode_Equal(name, &_Py_ID(__dict__))) {
             if (!ctx->may_add_dict || ctx->add_dict != 0) {
                 PyErr_SetString(PyExc_TypeError,
                     "__dict__ slot disallowed: "
@@ -2550,7 +2550,7 @@ type_new_visit_slots(type_new_ctx *ctx)
             }
             ctx->add_dict++;
         }
-        if (_PyUnicode_Equal(name, _Py_ID(__weakref__))) {
+        if (_PyUnicode_Equal(name, &_Py_ID(__weakref__))) {
             if (!ctx->may_add_weak || ctx->add_weak != 0) {
                 PyErr_SetString(PyExc_TypeError,
                     "__weakref__ slot disallowed: "
@@ -2584,8 +2584,8 @@ type_new_copy_slots(type_new_ctx *ctx, PyObject *dict)
     Py_ssize_t j = 0;
     for (Py_ssize_t i = 0; i < nslot; i++) {
         PyObject *slot = PyTuple_GET_ITEM(slots, i);
-        if ((ctx->add_dict && _PyUnicode_Equal(slot, _Py_ID(__dict__))) ||
-            (ctx->add_weak && _PyUnicode_Equal(slot, _Py_ID(__weakref__))))
+        if ((ctx->add_dict && _PyUnicode_Equal(slot, &_Py_ID(__dict__))) ||
+            (ctx->add_weak && _PyUnicode_Equal(slot, &_Py_ID(__weakref__))))
         {
             continue;
         }
@@ -2604,8 +2604,8 @@ type_new_copy_slots(type_new_ctx *ctx, PyObject *dict)
             /* CPython inserts __qualname__ and __classcell__ (when needed)
                into the namespace when creating a class.  They will be deleted
                below so won't act as class variables. */
-            if (!_PyUnicode_Equal(slot, _Py_ID(__qualname__)) &&
-                !_PyUnicode_Equal(slot, _Py_ID(__classcell__)))
+            if (!_PyUnicode_Equal(slot, &_Py_ID(__qualname__)) &&
+                !_PyUnicode_Equal(slot, &_Py_ID(__classcell__)))
             {
                 PyErr_Format(PyExc_ValueError,
                              "%R in __slots__ conflicts with class variable",
@@ -2800,7 +2800,7 @@ type_new_set_name(const type_new_ctx *ctx, PyTypeObject *type)
 static int
 type_new_set_module(PyTypeObject *type)
 {
-    int r = PyDict_Contains(type->tp_dict, _Py_ID(__module__));
+    int r = PyDict_Contains(type->tp_dict, &_Py_ID(__module__));
     if (r < 0) {
         return -1;
     }
@@ -2813,7 +2813,7 @@ type_new_set_module(PyTypeObject *type)
         return 0;
     }
 
-    PyObject *module = PyDict_GetItemWithError(globals, _Py_ID(__name__));
+    PyObject *module = PyDict_GetItemWithError(globals, &_Py_ID(__name__));
     if (module == NULL) {
         if (PyErr_Occurred()) {
             return -1;
@@ -2821,7 +2821,7 @@ type_new_set_module(PyTypeObject *type)
         return 0;
     }
 
-    if (PyDict_SetItem(type->tp_dict, _Py_ID(__module__), module) < 0) {
+    if (PyDict_SetItem(type->tp_dict, &_Py_ID(__module__), module) < 0) {
         return -1;
     }
     return 0;
@@ -2835,7 +2835,7 @@ type_new_set_ht_name(PyTypeObject *type)
 {
     PyHeapTypeObject *et = (PyHeapTypeObject *)type;
     PyObject *qualname = PyDict_GetItemWithError(
-            type->tp_dict, _Py_ID(__qualname__));
+            type->tp_dict, &_Py_ID(__qualname__));
     if (qualname != NULL) {
         if (!PyUnicode_Check(qualname)) {
             PyErr_Format(PyExc_TypeError,
@@ -2844,7 +2844,7 @@ type_new_set_ht_name(PyTypeObject *type)
             return -1;
         }
         et->ht_qualname = Py_NewRef(qualname);
-        if (PyDict_DelItem(type->tp_dict, _Py_ID(__qualname__)) < 0) {
+        if (PyDict_DelItem(type->tp_dict, &_Py_ID(__qualname__)) < 0) {
             return -1;
         }
     }
@@ -2864,7 +2864,7 @@ type_new_set_ht_name(PyTypeObject *type)
 static int
 type_new_set_doc(PyTypeObject *type)
 {
-    PyObject *doc = PyDict_GetItemWithError(type->tp_dict, _Py_ID(__doc__));
+    PyObject *doc = PyDict_GetItemWithError(type->tp_dict, &_Py_ID(__doc__));
     if (doc == NULL) {
         if (PyErr_Occurred()) {
             return -1;
@@ -3034,7 +3034,7 @@ static int
 type_new_set_classcell(PyTypeObject *type)
 {
     PyObject *cell = PyDict_GetItemWithError(
-            type->tp_dict, _Py_ID(__classcell__));
+            type->tp_dict, &_Py_ID(__classcell__));
     if (cell == NULL) {
         if (PyErr_Occurred()) {
             return -1;
@@ -3051,7 +3051,7 @@ type_new_set_classcell(PyTypeObject *type)
     }
 
     (void)PyCell_Set(cell, (PyObject *) type);
-    if (PyDict_DelItem(type->tp_dict, _Py_ID(__classcell__)) < 0) {
+    if (PyDict_DelItem(type->tp_dict, &_Py_ID(__classcell__)) < 0) {
         return -1;
     }
     return 0;
@@ -3079,16 +3079,16 @@ type_new_set_attrs(const type_new_ctx *ctx, PyTypeObject *type)
 
     /* Special-case __new__: if it's a plain function,
        make it a static function */
-    if (type_new_staticmethod(type, _Py_ID(__new__)) < 0) {
+    if (type_new_staticmethod(type, &_Py_ID(__new__)) < 0) {
         return -1;
     }
 
     /* Special-case __init_subclass__ and __class_getitem__:
        if they are plain functions, make them classmethods */
-    if (type_new_classmethod(type, _Py_ID(__init_subclass__)) < 0) {
+    if (type_new_classmethod(type, &_Py_ID(__init_subclass__)) < 0) {
         return -1;
     }
-    if (type_new_classmethod(type, _Py_ID(__class_getitem__)) < 0) {
+    if (type_new_classmethod(type, &_Py_ID(__class_getitem__)) < 0) {
         return -1;
     }
 
@@ -3108,7 +3108,7 @@ type_new_set_attrs(const type_new_ctx *ctx, PyTypeObject *type)
 static int
 type_new_get_slots(type_new_ctx *ctx, PyObject *dict)
 {
-    PyObject *slots = PyDict_GetItemWithError(dict, _Py_ID(__slots__));
+    PyObject *slots = PyDict_GetItemWithError(dict, &_Py_ID(__slots__));
     if (slots == NULL) {
         if (PyErr_Occurred()) {
             return -1;
@@ -3237,7 +3237,7 @@ type_new_get_bases(type_new_ctx *ctx, PyObject **type)
             continue;
         }
         PyObject *mro_entries;
-        if (_PyObject_LookupAttr(base, _Py_ID(__mro_entries__),
+        if (_PyObject_LookupAttr(base, &_Py_ID(__mro_entries__),
                                  &mro_entries) < 0) {
             return -1;
         }
@@ -3587,7 +3587,7 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
         PyObject *__doc__ = PyUnicode_FromString(_PyType_DocWithoutSignature(type->tp_name, type->tp_doc));
         if (!__doc__)
             goto fail;
-        r = PyDict_SetItem(type->tp_dict, _Py_ID(__doc__), __doc__);
+        r = PyDict_SetItem(type->tp_dict, &_Py_ID(__doc__), __doc__);
         Py_DECREF(__doc__);
         if (r < 0)
             goto fail;
@@ -3605,7 +3605,7 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
     }
 
     /* Set type.__module__ */
-    r = PyDict_Contains(type->tp_dict, _Py_ID(__module__));
+    r = PyDict_Contains(type->tp_dict, &_Py_ID(__module__));
     if (r < 0) {
         goto fail;
     }
@@ -3617,7 +3617,7 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
             if (modname == NULL) {
                 goto fail;
             }
-            r = PyDict_SetItem(type->tp_dict, _Py_ID(__module__), modname);
+            r = PyDict_SetItem(type->tp_dict, &_Py_ID(__module__), modname);
             Py_DECREF(modname);
             if (r != 0)
                 goto fail;
@@ -4202,7 +4202,7 @@ merge_class_dict(PyObject *dict, PyObject *aclass)
     assert(aclass);
 
     /* Merge in the type's dict (if any). */
-    if (_PyObject_LookupAttr(aclass, _Py_ID(__dict__), &classdict) < 0) {
+    if (_PyObject_LookupAttr(aclass, &_Py_ID(__dict__), &classdict) < 0) {
         return -1;
     }
     if (classdict != NULL) {
@@ -4213,7 +4213,7 @@ merge_class_dict(PyObject *dict, PyObject *aclass)
     }
 
     /* Recursively merge in the base types' (if any) dicts. */
-    if (_PyObject_LookupAttr(aclass, _Py_ID(__bases__), &bases) < 0) {
+    if (_PyObject_LookupAttr(aclass, &_Py_ID(__bases__), &bases) < 0) {
         return -1;
     }
     if (bases != NULL) {
@@ -4551,7 +4551,7 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             Py_DECREF(sorted_methods);
             return NULL;
         }
-        joined = PyUnicode_Join(_Py_STR(comma_sep), sorted_methods);
+        joined = PyUnicode_Join(&_Py_STR(comma_sep), sorted_methods);
         method_count = PyObject_Length(sorted_methods);
         Py_DECREF(sorted_methods);
         if (joined == NULL)
@@ -4604,7 +4604,7 @@ object_repr(PyObject *self)
         Py_XDECREF(mod);
         return NULL;
     }
-    if (mod != NULL && !_PyUnicode_Equal(mod, _Py_ID(builtins)))
+    if (mod != NULL && !_PyUnicode_Equal(mod, &_Py_ID(builtins)))
         rtn = PyUnicode_FromFormat("<%U.%U object at %p>", mod, name, self);
     else
         rtn = PyUnicode_FromFormat("<%s object at %p>",
@@ -4902,14 +4902,14 @@ import_copyreg(void)
        by storing a reference to the cached module in a static variable, but
        this broke when multiple embedded interpreters were in use (see issue
        #17408 and #19088). */
-    PyObject *copyreg_module = PyImport_GetModule(_Py_ID(copyreg));
+    PyObject *copyreg_module = PyImport_GetModule(&_Py_ID(copyreg));
     if (copyreg_module != NULL) {
         return copyreg_module;
     }
     if (PyErr_Occurred()) {
         return NULL;
     }
-    return PyImport_Import(_Py_ID(copyreg));
+    return PyImport_Import(&_Py_ID(copyreg));
 }
 
 static PyObject *
@@ -4921,7 +4921,7 @@ _PyType_GetSlotNames(PyTypeObject *cls)
     assert(PyType_Check(cls));
 
     /* Get the slot names from the cache in the class if possible. */
-    slotnames = PyDict_GetItemWithError(cls->tp_dict, _Py_ID(__slotnames__));
+    slotnames = PyDict_GetItemWithError(cls->tp_dict, &_Py_ID(__slotnames__));
     if (slotnames != NULL) {
         if (slotnames != Py_None && !PyList_Check(slotnames)) {
             PyErr_Format(PyExc_TypeError,
@@ -4948,7 +4948,7 @@ _PyType_GetSlotNames(PyTypeObject *cls)
        by this class and its bases. This function will cache the result
        in __slotnames__. */
     slotnames = PyObject_CallMethodOneArg(
-            copyreg, _Py_ID(_slotnames), (PyObject *)cls);
+            copyreg, &_Py_ID(_slotnames), (PyObject *)cls);
     Py_DECREF(copyreg);
     if (slotnames == NULL)
         return NULL;
@@ -4969,7 +4969,7 @@ _PyObject_GetState(PyObject *obj, int required)
     PyObject *state;
     PyObject *getstate;
 
-    if (_PyObject_LookupAttr(obj, _Py_ID(__getstate__), &getstate) < 0) {
+    if (_PyObject_LookupAttr(obj, &_Py_ID(__getstate__), &getstate) < 0) {
         return NULL;
     }
     if (getstate == NULL) {
@@ -5113,7 +5113,7 @@ _PyObject_GetNewArguments(PyObject *obj, PyObject **args, PyObject **kwargs)
 
     /* We first attempt to fetch the arguments for __new__ by calling
        __getnewargs_ex__ on the object. */
-    getnewargs_ex = _PyObject_LookupSpecial(obj, _Py_ID(__getnewargs_ex__));
+    getnewargs_ex = _PyObject_LookupSpecial(obj, &_Py_ID(__getnewargs_ex__));
     if (getnewargs_ex != NULL) {
         PyObject *newargs = _PyObject_CallNoArgs(getnewargs_ex);
         Py_DECREF(getnewargs_ex);
@@ -5166,7 +5166,7 @@ _PyObject_GetNewArguments(PyObject *obj, PyObject **args, PyObject **kwargs)
 
     /* The object does not have __getnewargs_ex__ so we fallback on using
        __getnewargs__ instead. */
-    getnewargs = _PyObject_LookupSpecial(obj, _Py_ID(__getnewargs__));
+    getnewargs = _PyObject_LookupSpecial(obj, &_Py_ID(__getnewargs__));
     if (getnewargs != NULL) {
         *args = _PyObject_CallNoArgs(getnewargs);
         Py_DECREF(getnewargs);
@@ -5219,7 +5219,7 @@ _PyObject_GetItemsIter(PyObject *obj, PyObject **listitems,
         Py_INCREF(*dictitems);
     }
     else {
-        PyObject *items = PyObject_CallMethodNoArgs(obj, _Py_ID(items));
+        PyObject *items = PyObject_CallMethodNoArgs(obj, &_Py_ID(items));
         if (items == NULL) {
             Py_CLEAR(*listitems);
             return -1;
@@ -5267,7 +5267,7 @@ reduce_newobj(PyObject *obj)
         Py_ssize_t i, n;
 
         Py_XDECREF(kwargs);
-        newobj = PyObject_GetAttr(copyreg, _Py_ID(__newobj__));
+        newobj = PyObject_GetAttr(copyreg, &_Py_ID(__newobj__));
         Py_DECREF(copyreg);
         if (newobj == NULL) {
             Py_XDECREF(args);
@@ -5291,7 +5291,7 @@ reduce_newobj(PyObject *obj)
         Py_XDECREF(args);
     }
     else if (args != NULL) {
-        newobj = PyObject_GetAttr(copyreg, _Py_ID(__newobj_ex__));
+        newobj = PyObject_GetAttr(copyreg, &_Py_ID(__newobj_ex__));
         Py_DECREF(copyreg);
         if (newobj == NULL) {
             Py_DECREF(args);
@@ -5400,13 +5400,13 @@ object___reduce_ex___impl(PyObject *self, int protocol)
 
     if (objreduce == NULL) {
         objreduce = PyDict_GetItemWithError(
-                PyBaseObject_Type.tp_dict, _Py_ID(__reduce__));
+                PyBaseObject_Type.tp_dict, &_Py_ID(__reduce__));
         if (objreduce == NULL && PyErr_Occurred()) {
             return NULL;
         }
     }
 
-    if (_PyObject_LookupAttr(self, _Py_ID(__reduce__), &reduce) < 0) {
+    if (_PyObject_LookupAttr(self, &_Py_ID(__reduce__), &reduce) < 0) {
         return NULL;
     }
     if (reduce != NULL) {
@@ -5414,7 +5414,7 @@ object___reduce_ex___impl(PyObject *self, int protocol)
         int override;
 
         cls = (PyObject *) Py_TYPE(self);
-        clsreduce = PyObject_GetAttr(cls, _Py_ID(__reduce__));
+        clsreduce = PyObject_GetAttr(cls, &_Py_ID(__reduce__));
         if (clsreduce == NULL) {
             Py_DECREF(reduce);
             return NULL;
@@ -5522,7 +5522,7 @@ object___dir___impl(PyObject *self)
     PyObject *itsclass = NULL;
 
     /* Get __dict__ (which may or may not be a real dict...) */
-    if (_PyObject_LookupAttr(self, _Py_ID(__dict__), &dict) < 0) {
+    if (_PyObject_LookupAttr(self, &_Py_ID(__dict__), &dict) < 0) {
         return NULL;
     }
     if (dict == NULL) {
@@ -5543,7 +5543,7 @@ object___dir___impl(PyObject *self)
         goto error;
 
     /* Merge in attrs reachable from its class. */
-    if (_PyObject_LookupAttr(self, _Py_ID(__class__), &itsclass) < 0) {
+    if (_PyObject_LookupAttr(self, &_Py_ID(__class__), &itsclass) < 0) {
         goto error;
     }
     /* XXX(tomer): Perhaps fall back to Py_TYPE(obj) if no
@@ -5811,9 +5811,9 @@ overrides_hash(PyTypeObject *type)
     PyObject *dict = type->tp_dict;
 
     assert(dict != NULL);
-    int r = PyDict_Contains(dict, _Py_ID(__eq__));
+    int r = PyDict_Contains(dict, &_Py_ID(__eq__));
     if (r == 0) {
-        r = PyDict_Contains(dict, _Py_ID(__hash__));
+        r = PyDict_Contains(dict, &_Py_ID(__hash__));
     }
     return r;
 }
@@ -6128,7 +6128,7 @@ type_ready_set_dict(PyTypeObject *type)
 static int
 type_dict_set_doc(PyTypeObject *type)
 {
-    int r = PyDict_Contains(type->tp_dict, _Py_ID(__doc__));
+    int r = PyDict_Contains(type->tp_dict, &_Py_ID(__doc__));
     if (r < 0) {
         return -1;
     }
@@ -6144,14 +6144,14 @@ type_dict_set_doc(PyTypeObject *type)
             return -1;
         }
 
-        if (PyDict_SetItem(type->tp_dict, _Py_ID(__doc__), doc) < 0) {
+        if (PyDict_SetItem(type->tp_dict, &_Py_ID(__doc__), doc) < 0) {
             Py_DECREF(doc);
             return -1;
         }
         Py_DECREF(doc);
     }
     else {
-        if (PyDict_SetItem(type->tp_dict, _Py_ID(__doc__), Py_None) < 0) {
+        if (PyDict_SetItem(type->tp_dict, &_Py_ID(__doc__), Py_None) < 0) {
             return -1;
         }
     }
@@ -6299,7 +6299,7 @@ type_ready_set_hash(PyTypeObject *type)
         return 0;
     }
 
-    int r = PyDict_Contains(type->tp_dict, _Py_ID(__hash__));
+    int r = PyDict_Contains(type->tp_dict, &_Py_ID(__hash__));
     if (r < 0) {
         return -1;
     }
@@ -6307,7 +6307,7 @@ type_ready_set_hash(PyTypeObject *type)
         return 0;
     }
 
-    if (PyDict_SetItem(type->tp_dict, _Py_ID(__hash__), Py_None) < 0) {
+    if (PyDict_SetItem(type->tp_dict, &_Py_ID(__hash__), Py_None) < 0) {
         return -1;
     }
     type->tp_hash = PyObject_HashNotImplemented;
@@ -7124,7 +7124,7 @@ static struct PyMethodDef tp_new_methoddef[] = {
 static int
 add_tp_new_wrapper(PyTypeObject *type)
 {
-    int r = PyDict_Contains(type->tp_dict, _Py_ID(__new__));
+    int r = PyDict_Contains(type->tp_dict, &_Py_ID(__new__));
     if (r > 0) {
         return 0;
     }
@@ -7136,7 +7136,7 @@ add_tp_new_wrapper(PyTypeObject *type)
     if (func == NULL) {
         return -1;
     }
-    r = PyDict_SetItem(type->tp_dict, _Py_ID(__new__), func);
+    r = PyDict_SetItem(type->tp_dict, &_Py_ID(__new__), func);
     Py_DECREF(func);
     return r;
 }
@@ -7149,7 +7149,7 @@ static PyObject * \
 FUNCNAME(PyObject *self) \
 { \
     PyObject* stack[1] = {self}; \
-    return vectorcall_method(_Py_ID(DUNDER), stack, 1); \
+    return vectorcall_method(&_Py_ID(DUNDER), stack, 1); \
 }
 
 #define SLOT1(FUNCNAME, DUNDER, ARG1TYPE) \
@@ -7157,7 +7157,7 @@ static PyObject * \
 FUNCNAME(PyObject *self, ARG1TYPE arg1) \
 { \
     PyObject* stack[2] = {self, arg1}; \
-    return vectorcall_method(_Py_ID(DUNDER), stack, 2); \
+    return vectorcall_method(&_Py_ID(DUNDER), stack, 2); \
 }
 
 /* Boolean helper for SLOT1BINFULL().
@@ -7206,14 +7206,14 @@ FUNCNAME(PyObject *self, PyObject *other) \
         Py_TYPE(self)->tp_as_number->SLOTNAME == TESTFUNC) { \
         PyObject *r; \
         if (do_other && PyType_IsSubtype(Py_TYPE(other), Py_TYPE(self))) { \
-            int ok = method_is_overloaded(self, other, _Py_ID(RDUNDER)); \
+            int ok = method_is_overloaded(self, other, &_Py_ID(RDUNDER)); \
             if (ok < 0) { \
                 return NULL; \
             } \
             if (ok) { \
                 stack[0] = other; \
                 stack[1] = self; \
-                r = vectorcall_maybe(tstate, _Py_ID(RDUNDER), stack, 2); \
+                r = vectorcall_maybe(tstate, &_Py_ID(RDUNDER), stack, 2); \
                 if (r != Py_NotImplemented) \
                     return r; \
                 Py_DECREF(r); \
@@ -7222,7 +7222,7 @@ FUNCNAME(PyObject *self, PyObject *other) \
         } \
         stack[0] = self; \
         stack[1] = other; \
-        r = vectorcall_maybe(tstate, _Py_ID(DUNDER), stack, 2); \
+        r = vectorcall_maybe(tstate, &_Py_ID(DUNDER), stack, 2); \
         if (r != Py_NotImplemented || \
             Py_IS_TYPE(other, Py_TYPE(self))) \
             return r; \
@@ -7231,7 +7231,7 @@ FUNCNAME(PyObject *self, PyObject *other) \
     if (do_other) { \
         stack[0] = other; \
         stack[1] = self; \
-        return vectorcall_maybe(tstate, _Py_ID(RDUNDER), stack, 2); \
+        return vectorcall_maybe(tstate, &_Py_ID(RDUNDER), stack, 2); \
     } \
     Py_RETURN_NOTIMPLEMENTED; \
 }
@@ -7243,7 +7243,7 @@ static Py_ssize_t
 slot_sq_length(PyObject *self)
 {
     PyObject* stack[1] = {self};
-    PyObject *res = vectorcall_method(_Py_ID(__len__), stack, 1);
+    PyObject *res = vectorcall_method(&_Py_ID(__len__), stack, 1);
     Py_ssize_t len;
 
     if (res == NULL)
@@ -7275,7 +7275,7 @@ slot_sq_item(PyObject *self, Py_ssize_t i)
         return NULL;
     }
     PyObject *stack[2] = {self, ival};
-    PyObject *retval = vectorcall_method(_Py_ID(__getitem__), stack, 2);
+    PyObject *retval = vectorcall_method(&_Py_ID(__getitem__), stack, 2);
     Py_DECREF(ival);
     return retval;
 }
@@ -7295,11 +7295,11 @@ slot_sq_ass_item(PyObject *self, Py_ssize_t index, PyObject *value)
     stack[0] = self;
     stack[1] = index_obj;
     if (value == NULL) {
-        res = vectorcall_method(_Py_ID(__delitem__), stack, 2);
+        res = vectorcall_method(&_Py_ID(__delitem__), stack, 2);
     }
     else {
         stack[2] = value;
-        res = vectorcall_method(_Py_ID(__setitem__), stack, 3);
+        res = vectorcall_method(&_Py_ID(__setitem__), stack, 3);
     }
     Py_DECREF(index_obj);
 
@@ -7317,7 +7317,7 @@ slot_sq_contains(PyObject *self, PyObject *value)
     PyObject *func, *res;
     int result = -1, unbound;
 
-    func = lookup_maybe_method(self, _Py_ID(__contains__), &unbound);
+    func = lookup_maybe_method(self, &_Py_ID(__contains__), &unbound);
     if (func == Py_None) {
         Py_DECREF(func);
         PyErr_Format(PyExc_TypeError,
@@ -7355,11 +7355,11 @@ slot_mp_ass_subscript(PyObject *self, PyObject *key, PyObject *value)
     stack[0] = self;
     stack[1] = key;
     if (value == NULL) {
-        res = vectorcall_method(_Py_ID(__delitem__), stack, 2);
+        res = vectorcall_method(&_Py_ID(__delitem__), stack, 2);
     }
     else {
         stack[2] = value;
-        res = vectorcall_method(_Py_ID(__setitem__), stack, 3);
+        res = vectorcall_method(&_Py_ID(__setitem__), stack, 3);
     }
 
     if (res == NULL)
@@ -7390,7 +7390,7 @@ slot_nb_power(PyObject *self, PyObject *other, PyObject *modulus)
     if (Py_TYPE(self)->tp_as_number != NULL &&
         Py_TYPE(self)->tp_as_number->nb_power == slot_nb_power) {
         PyObject* stack[3] = {self, other, modulus};
-        return vectorcall_method(_Py_ID(__pow__), stack, 3);
+        return vectorcall_method(&_Py_ID(__pow__), stack, 3);
     }
     Py_RETURN_NOTIMPLEMENTED;
 }
@@ -7406,13 +7406,13 @@ slot_nb_bool(PyObject *self)
     int result, unbound;
     int using_len = 0;
 
-    func = lookup_maybe_method(self, _Py_ID(__bool__), &unbound);
+    func = lookup_maybe_method(self, &_Py_ID(__bool__), &unbound);
     if (func == NULL) {
         if (PyErr_Occurred()) {
             return -1;
         }
 
-        func = lookup_maybe_method(self, _Py_ID(__len__), &unbound);
+        func = lookup_maybe_method(self, &_Py_ID(__len__), &unbound);
         if (func == NULL) {
             if (PyErr_Occurred()) {
                 return -1;
@@ -7456,7 +7456,7 @@ static PyObject *
 slot_nb_index(PyObject *self)
 {
     PyObject *stack[1] = {self};
-    return vectorcall_method(_Py_ID(__index__), stack, 1);
+    return vectorcall_method(&_Py_ID(__index__), stack, 1);
 }
 
 
@@ -7479,7 +7479,7 @@ static PyObject *
 slot_nb_inplace_power(PyObject *self, PyObject * arg1, PyObject *arg2)
 {
     PyObject *stack[2] = {self, arg1};
-    return vectorcall_method(_Py_ID(__ipow__), stack, 2);
+    return vectorcall_method(&_Py_ID(__ipow__), stack, 2);
 }
 SLOT1(slot_nb_inplace_lshift, __ilshift__, PyObject *)
 SLOT1(slot_nb_inplace_rshift, __irshift__, PyObject *)
@@ -7498,7 +7498,7 @@ slot_tp_repr(PyObject *self)
     PyObject *func, *res;
     int unbound;
 
-    func = lookup_maybe_method(self, _Py_ID(__repr__), &unbound);
+    func = lookup_maybe_method(self, &_Py_ID(__repr__), &unbound);
     if (func != NULL) {
         res = call_unbound_noarg(unbound, func, self);
         Py_DECREF(func);
@@ -7518,7 +7518,7 @@ slot_tp_hash(PyObject *self)
     Py_ssize_t h;
     int unbound;
 
-    func = lookup_maybe_method(self, _Py_ID(__hash__), &unbound);
+    func = lookup_maybe_method(self, &_Py_ID(__hash__), &unbound);
 
     if (func == Py_None) {
         Py_DECREF(func);
@@ -7565,7 +7565,7 @@ slot_tp_call(PyObject *self, PyObject *args, PyObject *kwds)
     PyThreadState *tstate = _PyThreadState_GET();
     int unbound;
 
-    PyObject *meth = lookup_method(self, _Py_ID(__call__), &unbound);
+    PyObject *meth = lookup_method(self, &_Py_ID(__call__), &unbound);
     if (meth == NULL) {
         return NULL;
     }
@@ -7597,7 +7597,7 @@ static PyObject *
 slot_tp_getattro(PyObject *self, PyObject *name)
 {
     PyObject *stack[2] = {self, name};
-    return vectorcall_method(_Py_ID(__getattribute__), stack, 2);
+    return vectorcall_method(&_Py_ID(__getattribute__), stack, 2);
 }
 
 static PyObject *
@@ -7629,7 +7629,7 @@ slot_tp_getattr_hook(PyObject *self, PyObject *name)
        __getattr__, even when the attribute is present. So we use
        _PyType_Lookup and create the method only when needed, with
        call_attribute. */
-    getattr = _PyType_Lookup(tp, _Py_ID(__getattr__));
+    getattr = _PyType_Lookup(tp, &_Py_ID(__getattr__));
     if (getattr == NULL) {
         /* No __getattr__ hook: use a simpler dispatcher */
         tp->tp_getattro = slot_tp_getattro;
@@ -7641,7 +7641,7 @@ slot_tp_getattr_hook(PyObject *self, PyObject *name)
        __getattr__, even when self has the default __getattribute__
        method. So we use _PyType_Lookup and create the method only when
        needed, with call_attribute. */
-    getattribute = _PyType_Lookup(tp, _Py_ID(__getattribute__));
+    getattribute = _PyType_Lookup(tp, &_Py_ID(__getattribute__));
     if (getattribute == NULL ||
         (Py_IS_TYPE(getattribute, &PyWrapperDescr_Type) &&
          ((PyWrapperDescrObject *)getattribute)->d_wrapped ==
@@ -7669,11 +7669,11 @@ slot_tp_setattro(PyObject *self, PyObject *name, PyObject *value)
     stack[0] = self;
     stack[1] = name;
     if (value == NULL) {
-        res = vectorcall_method(_Py_ID(__delattr__), stack, 2);
+        res = vectorcall_method(&_Py_ID(__delattr__), stack, 2);
     }
     else {
         stack[2] = value;
-        res = vectorcall_method(_Py_ID(__setattr__), stack, 3);
+        res = vectorcall_method(&_Py_ID(__setattr__), stack, 3);
     }
     if (res == NULL)
         return -1;
@@ -7682,12 +7682,12 @@ slot_tp_setattro(PyObject *self, PyObject *name, PyObject *value)
 }
 
 static PyObject *name_op[] = {
-    _Py_ID(__lt__),
-    _Py_ID(__le__),
-    _Py_ID(__eq__),
-    _Py_ID(__ne__),
-    _Py_ID(__gt__),
-    _Py_ID(__ge__),
+    &_Py_ID(__lt__),
+    &_Py_ID(__le__),
+    &_Py_ID(__eq__),
+    &_Py_ID(__ne__),
+    &_Py_ID(__gt__),
+    &_Py_ID(__ge__),
 };
 
 static PyObject *
@@ -7714,7 +7714,7 @@ slot_tp_iter(PyObject *self)
     int unbound;
     PyObject *func, *res;
 
-    func = lookup_maybe_method(self, _Py_ID(__iter__), &unbound);
+    func = lookup_maybe_method(self, &_Py_ID(__iter__), &unbound);
     if (func == Py_None) {
         Py_DECREF(func);
         PyErr_Format(PyExc_TypeError,
@@ -7730,7 +7730,7 @@ slot_tp_iter(PyObject *self)
     }
 
     PyErr_Clear();
-    func = lookup_maybe_method(self, _Py_ID(__getitem__), &unbound);
+    func = lookup_maybe_method(self, &_Py_ID(__getitem__), &unbound);
     if (func == NULL) {
         PyErr_Format(PyExc_TypeError,
                      "'%.200s' object is not iterable",
@@ -7745,7 +7745,7 @@ static PyObject *
 slot_tp_iternext(PyObject *self)
 {
     PyObject *stack[1] = {self};
-    return vectorcall_method(_Py_ID(__next__), stack, 1);
+    return vectorcall_method(&_Py_ID(__next__), stack, 1);
 }
 
 static PyObject *
@@ -7754,7 +7754,7 @@ slot_tp_descr_get(PyObject *self, PyObject *obj, PyObject *type)
     PyTypeObject *tp = Py_TYPE(self);
     PyObject *get;
 
-    get = _PyType_Lookup(tp, _Py_ID(__get__));
+    get = _PyType_Lookup(tp, &_Py_ID(__get__));
     if (get == NULL) {
         /* Avoid further slowdowns */
         if (tp->tp_descr_get == slot_tp_descr_get)
@@ -7778,11 +7778,11 @@ slot_tp_descr_set(PyObject *self, PyObject *target, PyObject *value)
     stack[0] = self;
     stack[1] = target;
     if (value == NULL) {
-        res = vectorcall_method(_Py_ID(__delete__), stack, 2);
+        res = vectorcall_method(&_Py_ID(__delete__), stack, 2);
     }
     else {
         stack[2] = value;
-        res = vectorcall_method(_Py_ID(__set__), stack, 3);
+        res = vectorcall_method(&_Py_ID(__set__), stack, 3);
     }
     if (res == NULL)
         return -1;
@@ -7796,7 +7796,7 @@ slot_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
     PyThreadState *tstate = _PyThreadState_GET();
 
     int unbound;
-    PyObject *meth = lookup_method(self, _Py_ID(__init__), &unbound);
+    PyObject *meth = lookup_method(self, &_Py_ID(__init__), &unbound);
     if (meth == NULL) {
         return -1;
     }
@@ -7828,7 +7828,7 @@ slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *func, *result;
 
-    func = PyObject_GetAttr((PyObject *)type, _Py_ID(__new__));
+    func = PyObject_GetAttr((PyObject *)type, &_Py_ID(__new__));
     if (func == NULL) {
         return NULL;
     }
@@ -7849,7 +7849,7 @@ slot_tp_finalize(PyObject *self)
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
 
     /* Execute __del__ method, if any. */
-    del = lookup_maybe_method(self, _Py_ID(__del__), &unbound);
+    del = lookup_maybe_method(self, &_Py_ID(__del__), &unbound);
     if (del != NULL) {
         res = call_unbound_noarg(unbound, del, self);
         if (res == NULL)
@@ -7869,7 +7869,7 @@ slot_am_await(PyObject *self)
     int unbound;
     PyObject *func, *res;
 
-    func = lookup_maybe_method(self, _Py_ID(__await__), &unbound);
+    func = lookup_maybe_method(self, &_Py_ID(__await__), &unbound);
     if (func != NULL) {
         res = call_unbound_noarg(unbound, func, self);
         Py_DECREF(func);
@@ -7887,7 +7887,7 @@ slot_am_aiter(PyObject *self)
     int unbound;
     PyObject *func, *res;
 
-    func = lookup_maybe_method(self, _Py_ID(__aiter__), &unbound);
+    func = lookup_maybe_method(self, &_Py_ID(__aiter__), &unbound);
     if (func != NULL) {
         res = call_unbound_noarg(unbound, func, self);
         Py_DECREF(func);
@@ -7905,7 +7905,7 @@ slot_am_anext(PyObject *self)
     int unbound;
     PyObject *func, *res;
 
-    func = lookup_maybe_method(self, _Py_ID(__anext__), &unbound);
+    func = lookup_maybe_method(self, &_Py_ID(__anext__), &unbound);
     if (func != NULL) {
         res = call_unbound_noarg(unbound, func, self);
         Py_DECREF(func);
@@ -8538,7 +8538,7 @@ type_new_set_names(PyTypeObject *type)
     PyObject *key, *value;
     while (PyDict_Next(names_to_set, &i, &key, &value)) {
         PyObject *set_name = _PyObject_LookupSpecial(value,
-                                                     _Py_ID(__set_name__));
+                                                     &_Py_ID(__set_name__));
         if (set_name == NULL) {
             if (PyErr_Occurred()) {
                 goto error;
@@ -8578,7 +8578,7 @@ type_new_init_subclass(PyTypeObject *type, PyObject *kwds)
         return -1;
     }
 
-    PyObject *func = PyObject_GetAttr(super, _Py_ID(__init_subclass__));
+    PyObject *func = PyObject_GetAttr(super, &_Py_ID(__init_subclass__));
     Py_DECREF(super);
     if (func == NULL) {
         return -1;
@@ -8788,7 +8788,7 @@ super_getattro(PyObject *self, PyObject *name)
        (i.e. super, or a subclass), not the class of su->obj. */
     if (PyUnicode_Check(name) &&
         PyUnicode_GET_LENGTH(name) == 9 &&
-        _PyUnicode_Equal(name, _Py_ID(__class__)))
+        _PyUnicode_Equal(name, &_Py_ID(__class__)))
         goto skip;
 
     mro = starttype->tp_mro;
@@ -8880,7 +8880,7 @@ supercheck(PyTypeObject *type, PyObject *obj)
         /* Try the slow way */
         PyObject *class_attr;
 
-        if (_PyObject_LookupAttr(obj, _Py_ID(__class__), &class_attr) < 0) {
+        if (_PyObject_LookupAttr(obj, &_Py_ID(__class__), &class_attr) < 0) {
             return NULL;
         }
         if (class_attr != NULL &&
@@ -8971,7 +8971,7 @@ super_init_without_args(InterpreterFrame *cframe, PyCodeObject *co,
         assert((_PyLocals_GetKind(co->co_localspluskinds, i) & CO_FAST_FREE) != 0);
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
         assert(PyUnicode_Check(name));
-        if (_PyUnicode_Equal(name, _Py_ID(__class__))) {
+        if (_PyUnicode_Equal(name, &_Py_ID(__class__))) {
             PyObject *cell = _PyFrame_GetLocalsArray(cframe)[i];
             if (cell == NULL || !PyCell_Check(cell)) {
                 PyErr_SetString(PyExc_RuntimeError,

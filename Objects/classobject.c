@@ -122,12 +122,12 @@ method_reduce(PyMethodObject *im, PyObject *Py_UNUSED(ignored))
     PyObject *func = PyMethod_GET_FUNCTION(im);
     PyObject *funcname;
 
-    funcname = PyObject_GetAttr(func, _Py_ID(__name__));
+    funcname = PyObject_GetAttr(func, &_Py_ID(__name__));
     if (funcname == NULL) {
         return NULL;
     }
     return Py_BuildValue(
-            "N(ON)", _PyEval_GetBuiltin(_Py_ID(getattr)), self, funcname);
+            "N(ON)", _PyEval_GetBuiltin(&_Py_ID(getattr)), self, funcname);
 }
 
 static PyMethodDef method_methods[] = {
@@ -277,9 +277,9 @@ method_repr(PyMethodObject *a)
     PyObject *funcname, *result;
     const char *defname = "?";
 
-    if (_PyObject_LookupAttr(func, _Py_ID(__qualname__), &funcname) < 0 ||
+    if (_PyObject_LookupAttr(func, &_Py_ID(__qualname__), &funcname) < 0 ||
         (funcname == NULL &&
-         _PyObject_LookupAttr(func, _Py_ID(__name__), &funcname) < 0))
+         _PyObject_LookupAttr(func, &_Py_ID(__name__), &funcname) < 0))
     {
         return NULL;
     }
@@ -512,7 +512,7 @@ instancemethod_repr(PyObject *self)
         return NULL;
     }
 
-    if (_PyObject_LookupAttr(func, _Py_ID(__name__), &funcname) < 0) {
+    if (_PyObject_LookupAttr(func, &_Py_ID(__name__), &funcname) < 0) {
         return NULL;
     }
     if (funcname != NULL && !PyUnicode_Check(funcname)) {

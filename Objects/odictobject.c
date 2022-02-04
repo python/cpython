@@ -951,7 +951,7 @@ odict_reduce(register PyODictObject *od, PyObject *Py_UNUSED(ignored))
     PyObject *items_iter, *items, *args = NULL;
 
     /* capture any instance state */
-    dict = PyObject_GetAttr((PyObject *)od, _Py_ID(__dict__));
+    dict = PyObject_GetAttr((PyObject *)od, &_Py_ID(__dict__));
     if (dict == NULL)
         goto Done;
     else {
@@ -970,7 +970,7 @@ odict_reduce(register PyODictObject *od, PyObject *Py_UNUSED(ignored))
     if (args == NULL)
         goto Done;
 
-    items = PyObject_CallMethodNoArgs((PyObject *)od, _Py_ID(items));
+    items = PyObject_CallMethodNoArgs((PyObject *)od, &_Py_ID(items));
     if (items == NULL)
         goto Done;
 
@@ -1429,7 +1429,7 @@ odict_repr(PyODictObject *self)
     }
     else {
         PyObject *items = PyObject_CallMethodNoArgs(
-                (PyObject *)self, _Py_ID(items));
+                (PyObject *)self, &_Py_ID(items));
         if (items == NULL)
             goto Done;
         pieces = PySequence_List(items);
@@ -1817,7 +1817,7 @@ odictiter_reduce(odictiterobject *di, PyObject *Py_UNUSED(ignored))
     if (list == NULL) {
         return NULL;
     }
-    return Py_BuildValue("N(N)", _PyEval_GetBuiltin(_Py_ID(iter)), list);
+    return Py_BuildValue("N(N)", _PyEval_GetBuiltin(&_Py_ID(iter)), list);
 }
 
 static PyMethodDef odictiter_methods[] = {
@@ -2214,7 +2214,7 @@ mutablemapping_update_arg(PyObject *self, PyObject *arg)
         return res;
     }
     PyObject *func;
-    if (_PyObject_LookupAttr(arg, _Py_ID(keys), &func) < 0) {
+    if (_PyObject_LookupAttr(arg, &_Py_ID(keys), &func) < 0) {
         return -1;
     }
     if (func != NULL) {
@@ -2246,7 +2246,7 @@ mutablemapping_update_arg(PyObject *self, PyObject *arg)
         }
         return 0;
     }
-    if (_PyObject_LookupAttr(arg, _Py_ID(items), &func) < 0) {
+    if (_PyObject_LookupAttr(arg, &_Py_ID(items), &func) < 0) {
         return -1;
     }
     if (func != NULL) {

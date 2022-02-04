@@ -161,7 +161,7 @@ pymain_sys_path_add_path0(PyInterpreterState *interp, PyObject *path0)
     PyObject *sys_path;
     PyObject *sysdict = interp->sysdict;
     if (sysdict != NULL) {
-        sys_path = PyDict_GetItemWithError(sysdict, _Py_ID(path));
+        sys_path = PyDict_GetItemWithError(sysdict, &_Py_ID(path));
         if (sys_path == NULL && PyErr_Occurred()) {
             return -1;
         }

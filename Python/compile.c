@@ -669,7 +669,7 @@ compiler_set_qualname(struct compiler *c)
                 || parent->u_scope_type == COMPILER_SCOPE_LAMBDA)
             {
                 base = PyUnicode_Concat(parent->u_qualname,
-                                        _Py_STR(dot_locals));
+                                        &_Py_STR(dot_locals));
                 if (base == NULL)
                     return 0;
             }
@@ -681,7 +681,7 @@ compiler_set_qualname(struct compiler *c)
     }
 
     if (base != NULL) {
-        name = PyUnicode_Concat(base, _Py_STR(dot));
+        name = PyUnicode_Concat(base, &_Py_STR(dot));
         Py_DECREF(base);
         if (name == NULL)
             return 0;
@@ -1611,7 +1611,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
         int res;
         assert(u->u_scope_type == COMPILER_SCOPE_CLASS);
         assert(PyDict_GET_SIZE(u->u_cellvars) == 0);
-        res = PyDict_SetItem(u->u_cellvars, _Py_ID(__class__),
+        res = PyDict_SetItem(u->u_cellvars, &_Py_ID(__class__),
                              _PyLong_GetZero());
         if (res < 0) {
             compiler_unit_free(u);
@@ -2021,7 +2021,7 @@ compiler_body(struct compiler *c, asdl_stmt_seq *stmts)
             assert(st->kind == Expr_kind);
             VISIT(c, expr, st->v.Expr.value);
             UNSET_LOC(c);
-            if (!compiler_nameop(c, _Py_ID(__doc__), Store))
+            if (!compiler_nameop(c, &_Py_ID(__doc__), Store))
                 return 0;
         }
     }
@@ -2035,7 +2035,7 @@ compiler_mod(struct compiler *c, mod_ty mod)
 {
     PyCodeObject *co;
     int addNone = 1;
-    if (!compiler_enter_scope(c, _Py_STR(anon_module), COMPILER_SCOPE_MODULE,
+    if (!compiler_enter_scope(c, &_Py_STR(anon_module), COMPILER_SCOPE_MODULE,
                               mod, 1)) {
         return NULL;
     }
@@ -2331,7 +2331,7 @@ compiler_visit_annotations(struct compiler *c, arguments_ty args,
                                      args->kwarg->annotation, &annotations_len))
         return 0;
 
-    if (!compiler_visit_argannotation(c, _Py_ID(return), returns,
+    if (!compiler_visit_argannotation(c, &_Py_ID(return), returns,
                                       &annotations_len)) {
         return 0;
     }
@@ -2889,7 +2889,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
         return 0;
     }
 
-    if (!compiler_enter_scope(c, _Py_STR(anon_lambda), COMPILER_SCOPE_LAMBDA,
+    if (!compiler_enter_scope(c, &_Py_STR(anon_lambda), COMPILER_SCOPE_LAMBDA,
                               (void *)e, e->lineno)) {
         return 0;
     }
@@ -3814,7 +3814,7 @@ compiler_from_import(struct compiler *c, stmt_ty s)
         ADDOP_NAME(c, IMPORT_NAME, s->v.ImportFrom.module, names);
     }
     else {
-        ADDOP_NAME(c, IMPORT_NAME, _Py_STR(empty), names);
+        ADDOP_NAME(c, IMPORT_NAME, &_Py_STR(empty), names);
     }
     for (i = 0; i < n; i++) {
         alias_ty alias = (alias_ty)asdl_seq_GET(s->v.ImportFrom.names, i);
@@ -5363,7 +5363,7 @@ static int
 compiler_genexp(struct compiler *c, expr_ty e)
 {
     assert(e->kind == GeneratorExp_kind);
-    return compiler_comprehension(c, e, COMP_GENEXP, _Py_STR(anon_genexpr),
+    return compiler_comprehension(c, e, COMP_GENEXP, &_Py_STR(anon_genexpr),
                                   e->v.GeneratorExp.generators,
                                   e->v.GeneratorExp.elt, NULL);
 }
@@ -5372,7 +5372,7 @@ static int
 compiler_listcomp(struct compiler *c, expr_ty e)
 {
     assert(e->kind == ListComp_kind);
-    return compiler_comprehension(c, e, COMP_LISTCOMP, _Py_STR(anon_listcomp),
+    return compiler_comprehension(c, e, COMP_LISTCOMP, &_Py_STR(anon_listcomp),
                                   e->v.ListComp.generators,
                                   e->v.ListComp.elt, NULL);
 }
@@ -5381,7 +5381,7 @@ static int
 compiler_setcomp(struct compiler *c, expr_ty e)
 {
     assert(e->kind == SetComp_kind);
-    return compiler_comprehension(c, e, COMP_SETCOMP, _Py_STR(anon_setcomp),
+    return compiler_comprehension(c, e, COMP_SETCOMP, &_Py_STR(anon_setcomp),
                                   e->v.SetComp.generators,
                                   e->v.SetComp.elt, NULL);
 }
@@ -5391,7 +5391,7 @@ static int
 compiler_dictcomp(struct compiler *c, expr_ty e)
 {
     assert(e->kind == DictComp_kind);
-    return compiler_comprehension(c, e, COMP_DICTCOMP, _Py_STR(anon_dictcomp),
+    return compiler_comprehension(c, e, COMP_DICTCOMP, &_Py_STR(anon_dictcomp),
                                   e->v.DictComp.generators,
                                   e->v.DictComp.key, e->v.DictComp.value);
 }
@@ -5935,7 +5935,7 @@ compiler_annassign(struct compiler *c, stmt_ty s)
             else {
                 VISIT(c, expr, s->v.AnnAssign.annotation);
             }
-            ADDOP_NAME(c, LOAD_NAME, _Py_ID(__annotations__), names);
+            ADDOP_NAME(c, LOAD_NAME, &_Py_ID(__annotations__), names);
             mangled = _Py_Mangle(c->u->u_private, targ->v.Name.id);
             ADDOP_LOAD_CONST_NEW(c, mangled);
             ADDOP(c, STORE_SUBSCR);

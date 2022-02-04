@@ -1697,7 +1697,7 @@ methodcaller_reduce(methodcallerobject *mc, PyObject *Py_UNUSED(ignored))
         functools = PyImport_ImportModule("functools");
         if (!functools)
             return NULL;
-        partial = PyObject_GetAttr(functools, _Py_ID(partial));
+        partial = PyObject_GetAttr(functools, &_Py_ID(partial));
         Py_DECREF(functools);
         if (!partial)
             return NULL;

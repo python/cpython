@@ -51,8 +51,8 @@ _bufferediobase_readinto_generic(PyObject *self, Py_buffer *buffer, char readint
     PyObject *data;
 
     PyObject *attr = readinto1
-        ? _Py_ID(read1)
-        : _Py_ID(read);
+        ? &_Py_ID(read1)
+        : &_Py_ID(read);
     data = _PyObject_CallMethod(self, attr, "n", buffer->len);
     if (data == NULL)
         return NULL;
@@ -422,7 +422,7 @@ buffered_dealloc_warn(buffered *self, PyObject *source)
 {
     if (self->ok && self->raw) {
         PyObject *r;
-        r = PyObject_CallMethodOneArg(self->raw, _Py_ID(_dealloc_warn), source);
+        r = PyObject_CallMethodOneArg(self->raw, &_Py_ID(_dealloc_warn), source);
         if (r)
             Py_DECREF(r);
         else
@@ -568,14 +568,14 @@ static PyObject *
 buffered_name_get(buffered *self, void *context)
 {
     CHECK_INITIALIZED(self)
-    return PyObject_GetAttr(self->raw, _Py_ID(name));
+    return PyObject_GetAttr(self->raw, &_Py_ID(name));
 }
 
 static PyObject *
 buffered_mode_get(buffered *self, void *context)
 {
     CHECK_INITIALIZED(self)
-    return PyObject_GetAttr(self->raw, _Py_ID(mode));
+    return PyObject_GetAttr(self->raw, &_Py_ID(mode));
 }
 
 /* Lower-level APIs */
@@ -1366,7 +1366,7 @@ buffered_repr(buffered *self)
 {
     PyObject *nameobj, *res;
 
-    if (_PyObject_LookupAttr((PyObject *) self, _Py_ID(name), &nameobj) < 0) {
+    if (_PyObject_LookupAttr((PyObject *) self, &_Py_ID(name), &nameobj) < 0) {
         if (!PyErr_ExceptionMatches(PyExc_ValueError)) {
             return NULL;
         }
@@ -2161,67 +2161,67 @@ _forward_call(buffered *self, PyObject *name, PyObject *args)
 static PyObject *
 bufferedrwpair_read(rwpair *self, PyObject *args)
 {
-    return _forward_call(self->reader, _Py_ID(read), args);
+    return _forward_call(self->reader, &_Py_ID(read), args);
 }
 
 static PyObject *
 bufferedrwpair_peek(rwpair *self, PyObject *args)
 {
-    return _forward_call(self->reader, _Py_ID(peek), args);
+    return _forward_call(self->reader, &_Py_ID(peek), args);
 }
 
 static PyObject *
 bufferedrwpair_read1(rwpair *self, PyObject *args)
 {
-    return _forward_call(self->reader, _Py_ID(read1), args);
+    return _forward_call(self->reader, &_Py_ID(read1), args);
 }
 
 static PyObject *
 bufferedrwpair_readinto(rwpair *self, PyObject *args)
 {
-    return _forward_call(self->reader, _Py_ID(readinto), args);
+    return _forward_call(self->reader, &_Py_ID(readinto), args);
 }
 
 static PyObject *
 bufferedrwpair_readinto1(rwpair *self, PyObject *args)
 {
-    return _forward_call(self->reader, _Py_ID(readinto1), args);
+    return _forward_call(self->reader, &_Py_ID(readinto1), args);
 }
 
 static PyObject *
 bufferedrwpair_write(rwpair *self, PyObject *args)
 {
-    return _forward_call(self->writer, _Py_ID(write), args);
+    return _forward_call(self->writer, &_Py_ID(write), args);
 }
 
 static PyObject *
 bufferedrwpair_flush(rwpair *self, PyObject *Py_UNUSED(ignored))
 {
-    return _forward_call(self->writer, _Py_ID(flush), NULL);
+    return _forward_call(self->writer, &_Py_ID(flush), NULL);
 }
 
 static PyObject *
 bufferedrwpair_readable(rwpair *self, PyObject *Py_UNUSED(ignored))
 {
-    return _forward_call(self->reader, _Py_ID(readable), NULL);
+    return _forward_call(self->reader, &_Py_ID(readable), NULL);
 }
 
 static PyObject *
 bufferedrwpair_writable(rwpair *self, PyObject *Py_UNUSED(ignored))
 {
-    return _forward_call(self->writer, _Py_ID(writable), NULL);
+    return _forward_call(self->writer, &_Py_ID(writable), NULL);
 }
 
 static PyObject *
 bufferedrwpair_close(rwpair *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *exc = NULL, *val, *tb;
-    PyObject *ret = _forward_call(self->writer, _Py_ID(close), NULL);
+    PyObject *ret = _forward_call(self->writer, &_Py_ID(close), NULL);
     if (ret == NULL)
         PyErr_Fetch(&exc, &val, &tb);
     else
         Py_DECREF(ret);
-    ret = _forward_call(self->reader, _Py_ID(close), NULL);
+    ret = _forward_call(self->reader, &_Py_ID(close), NULL);
     if (exc != NULL) {
         _PyErr_ChainExceptions(exc, val, tb);
         Py_CLEAR(ret);
@@ -2232,7 +2232,7 @@ bufferedrwpair_close(rwpair *self, PyObject *Py_UNUSED(ignored))
 static PyObject *
 bufferedrwpair_isatty(rwpair *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *ret = _forward_call(self->writer, _Py_ID(isatty), NULL);
+    PyObject *ret = _forward_call(self->writer, &_Py_ID(isatty), NULL);
 
     if (ret != Py_False) {
         /* either True or exception */
@@ -2240,7 +2240,7 @@ bufferedrwpair_isatty(rwpair *self, PyObject *Py_UNUSED(ignored))
     }
     Py_DECREF(ret);
 
-    return _forward_call(self->reader, _Py_ID(isatty), NULL);
+    return _forward_call(self->reader, &_Py_ID(isatty), NULL);
 }
 
 static PyObject *

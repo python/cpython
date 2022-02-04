@@ -3511,13 +3511,13 @@ listiter_reduce_general(void *_it, int forward)
     if (forward) {
         listiterobject *it = (listiterobject *)_it;
         if (it->it_seq) {
-            return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(_Py_ID(iter)),
+            return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(&_Py_ID(iter)),
                                  it->it_seq, it->it_index);
         }
     } else {
         listreviterobject *it = (listreviterobject *)_it;
         if (it->it_seq) {
-            return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(_Py_ID(reversed)),
+            return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(&_Py_ID(reversed)),
                                  it->it_seq, it->it_index);
         }
     }
@@ -3525,5 +3525,5 @@ listiter_reduce_general(void *_it, int forward)
     list = PyList_New(0);
     if (list == NULL)
         return NULL;
-    return Py_BuildValue("N(N)", _PyEval_GetBuiltin(_Py_ID(iter)), list);
+    return Py_BuildValue("N(N)", _PyEval_GetBuiltin(&_Py_ID(iter)), list);
 }

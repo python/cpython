@@ -53,12 +53,12 @@ ga_repr_item(_PyUnicodeWriter *writer, PyObject *p)
         goto done;
     }
 
-    if (_PyObject_LookupAttr(p, _Py_ID(__origin__), &tmp) < 0) {
+    if (_PyObject_LookupAttr(p, &_Py_ID(__origin__), &tmp) < 0) {
         goto done;
     }
     if (tmp != NULL) {
         Py_DECREF(tmp);
-        if (_PyObject_LookupAttr(p, _Py_ID(__args__), &tmp) < 0) {
+        if (_PyObject_LookupAttr(p, &_Py_ID(__args__), &tmp) < 0) {
             goto done;
         }
         if (tmp != NULL) {
@@ -68,13 +68,13 @@ ga_repr_item(_PyUnicodeWriter *writer, PyObject *p)
         }
     }
 
-    if (_PyObject_LookupAttr(p, _Py_ID(__qualname__), &qualname) < 0) {
+    if (_PyObject_LookupAttr(p, &_Py_ID(__qualname__), &qualname) < 0) {
         goto done;
     }
     if (qualname == NULL) {
         goto use_repr;
     }
-    if (_PyObject_LookupAttr(p, _Py_ID(__module__), &module) < 0) {
+    if (_PyObject_LookupAttr(p, &_Py_ID(__module__), &module) < 0) {
         goto done;
     }
     if (module == NULL || module == Py_None) {
@@ -215,7 +215,7 @@ _Py_make_parameters(PyObject *args)
         }
         else {
             PyObject *subparams;
-            if (_PyObject_LookupAttr(t, _Py_ID(__parameters__),
+            if (_PyObject_LookupAttr(t, &_Py_ID(__parameters__),
                                      &subparams) < 0) {
                 Py_DECREF(parameters);
                 return NULL;
@@ -257,7 +257,7 @@ static PyObject *
 subs_tvars(PyObject *obj, PyObject *params, PyObject **argitems)
 {
     PyObject *subparams;
-    if (_PyObject_LookupAttr(obj, _Py_ID(__parameters__), &subparams) < 0) {
+    if (_PyObject_LookupAttr(obj, &_Py_ID(__parameters__), &subparams) < 0) {
         return NULL;
     }
     if (subparams && PyTuple_Check(subparams) && PyTuple_GET_SIZE(subparams)) {
