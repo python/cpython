@@ -1816,8 +1816,11 @@ class TestWeirdBugs(unittest.TestCase):
         s.update(other)
 
 
-class TestMutationDoesNotCrash(unittest.TestCase):
+class TestMutatingOps:
     """Regression test for bpo-46615"""
+
+    constructor1 = None
+    constructor2 = None
 
     def make_sets_of_bad_objects(self):
         class Bad:
@@ -1830,11 +1833,11 @@ class TestMutationDoesNotCrash(unittest.TestCase):
                     set2.clear()
                 return bool(randrange(2))
             def __hash__(self):
-                return 42
+                return randrange(2)
         # Don't behave poorly during construction.
         enabled = False
-        set1 = {Bad() for _ in range(randrange(50))}
-        set2 = {Bad() for _ in range(randrange(50))}
+        set1 = self.constructor1(Bad() for _ in range(randrange(50)))
+        set2 = self.constructor2(Bad() for _ in range(randrange(50)))
         # Now start behaving poorly
         enabled = True
         return set1, set2
@@ -1909,6 +1912,30 @@ class TestMutationDoesNotCrash(unittest.TestCase):
         self.check_set_op_does_not_crash(f1)
         self.check_set_op_does_not_crash(f2)
         self.check_set_op_does_not_crash(f3)
+
+class TestMutatingOps_Set_Set(TestMutatingOps, unittest.TestCase):
+    constructor1 = set
+    constructor2 = set
+
+class TestMutatingOps_Subclass_Subclass(TestMutatingOps, unittest.TestCase):
+    constructor1 = SetSubclass
+    constructor2 = SetSubclass
+
+class TestMutatingOps_Set_Subclass(TestMutatingOps, unittest.TestCase):
+    constructor1 = set
+    constructor2 = SetSubclass
+
+class TestMutatingOps_Subclass_Set(TestMutatingOps, unittest.TestCase):
+    constructor1 = SetSubclass
+    constructor2 = set
+
+class TestMutatingOps_Set_Dict(TestMutatingOps, unittest.TestCase):
+    constructor1 = set
+    constructor2 = dict.fromkeys
+
+class TestMutatingOps_Set_List(TestMutatingOps, unittest.TestCase):
+    constructor1 = set
+    constructor2 = list
 
 # Application tests (based on David Eppstein's graph recipes ====================================
 
