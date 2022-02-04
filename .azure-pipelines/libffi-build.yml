@@ -11,7 +11,7 @@ variables:
 
 jobs:
 - job: Build_LibFFI
-  displayName: LibFFI
+  displayName: Build LibFFI
   pool:
     vmImage: windows-latest
 
