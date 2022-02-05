@@ -101,16 +101,23 @@ node --experimental-wasm-threads --experimental-wasm-bulk-memory builddir/emscri
   ``os.setgroups``, ``os.chown``, and so on.
 - Offset and iovec I/O functions (e.g. ``os.pread``, ``os.preadv``) are not
   available.
-- ``os.mknod`` and ``os.mkfifo`` don't work and are disabled.
+- ``os.mknod`` and ``os.mkfifo``
+  [don't work](https://github.com/emscripten-core/emscripten/issues/16158)
+  and are disabled.
 - Large file support crashes the runtime and is disabled.
 - ``mmap`` module is unstable. flush (``msync``) can crash the runtime.
 - Resource-related functions like ``os.nice`` and most functions of the
   ``resource`` module are not available.
 - Some time and datetime features are broken. ``strftime`` and ``strptime``
-  have known bugs. Extended glibc formatting features are not available.
-- ``locales`` module is affected by musl libc issues.
-- ``uuid`` module is affected by memory leak and crasher in 
-  Emscripten's ``freeaddrinfo``.
+  have known bugs, e.g.
+  [%% quoting](https://github.com/emscripten-core/emscripten/issues/16155),
+  [%U off-by-one](https://github.com/emscripten-core/emscripten/issues/16156).
+  Extended glibc formatting features are not available.
+- ``locales`` module is affected by musl libc issues,
+  [bpo-46390](https://bugs.python.org/issue46390).
+- ``uuid`` module is affected by
+  [memory leak](https://github.com/emscripten-core/emscripten/issues/16081)
+  and crasher in Emscripten's ``freeaddrinfo``,
 - Recursive ``glob`` leaks file descriptors.
 - Python's object allocator ``obmalloc`` is disabled by default.
 - ``ensurepip`` is not available.
