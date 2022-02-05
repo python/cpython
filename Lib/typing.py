@@ -818,6 +818,9 @@ class TypeVar( _Final, _Immutable, _TypeVarLike, _root=True):
         if def_mod != 'typing':
             self.__module__ = def_mod
 
+    def __mro_entries__(self, bases):
+        raise TypeError("Cannot subclass an instance of TypeVar.")
+
 
 class ParamSpecArgs(_Final, _Immutable, _root=True):
     """The args for a ParamSpec object.
