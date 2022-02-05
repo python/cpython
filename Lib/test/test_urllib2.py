@@ -1791,9 +1791,10 @@ class MiscTests(unittest.TestCase):
     @unittest.skipUnless(support.is_resource_enabled('network'),
                          'test requires network access')
     def test_issue16464(self):
-        with socket_helper.transient_internet("http://www.example.com/"):
+        url = "http://httpbin.org/post"
+        with socket_helper.transient_internet(url):
             opener = urllib.request.build_opener()
-            request = urllib.request.Request("http://www.example.com/")
+            request = urllib.request.Request(url)
             self.assertEqual(None, request.data)
 
             opener.open(request, "1".encode("us-ascii"))

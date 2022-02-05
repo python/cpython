@@ -1,0 +1,3 @@
+The test_issue16464() test of test_urllib2 now uses
+``http://httpbin.org/post`` URL instead of ``http://www.example.com/``.
+Patch by Victor Stinner.
