@@ -5056,6 +5056,10 @@ class ParamSpecTests(BaseTestCase):
         self.assertEqual(G1.__parameters__, (P, T))
         self.assertEqual(G2.__parameters__, (P, T))
         self.assertEqual(G3.__parameters__, (P, T))
+        C = Callable[[int, str], float]
+        self.assertEqual(G1[[int, str], float], List[C])
+        self.assertEqual(G2[[int, str], float], list[C])
+        self.assertEqual(G3[[int, str], float], list[C] | int)
 
 
 class ConcatenateTests(BaseTestCase):
