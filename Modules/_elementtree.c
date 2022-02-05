@@ -3669,7 +3669,7 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
                            (unsigned long)_Py_HashSecret.expat.hashsalt);
     }
 
-    if (target) {
+    if (target && target != Py_None) {
         Py_INCREF(target);
     } else {
         target = treebuilder_new(&TreeBuilder_Type, NULL, NULL);

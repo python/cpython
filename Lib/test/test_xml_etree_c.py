@@ -133,6 +133,15 @@ class MiscTests(unittest.TestCase):
         self.assertIsNone(parser.entity)
         self.assertIsNone(parser.target)
 
+    def test_initialize_parser_without_target(self):
+        # Explicit None
+        parser = cET.XMLParser(target=None)
+        self.assertIsInstance(parser.target, cET.TreeBuilder)
+
+        # Implicit None
+        parser2 = cET.XMLParser()
+        self.assertIsInstance(parser2.target, cET.TreeBuilder)
+
     def test_setstate_leaks(self):
         # Test reference leaks
         elem = cET.Element.__new__(cET.Element)
