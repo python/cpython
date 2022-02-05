@@ -4240,8 +4240,6 @@ class NamedTupleTests(BaseTestCase):
             NamedTuple('Emp', [('_name', str)])
         with self.assertRaises(TypeError):
             NamedTuple(typename='Emp', name=str, id=int)
-        with self.assertRaises(TypeError):
-            NamedTuple('Emp', fields=[('name', str), ('id', int)])
 
     def test_copy_and_pickle(self):
         global Emp  # pickle wants to reference the class by name
@@ -4314,11 +4312,8 @@ class TypedDictTests(BaseTestCase):
             TypedDict()
         with self.assertRaises(TypeError):
             TypedDict('Emp', [('name', str)], None)
-
         with self.assertRaises(TypeError):
             TypedDict(_typename='Emp', name=str, id=int)
-        with self.assertRaises(TypeError):
-            TypedDict('Emp', _fields={'name': str, 'id': int})
 
     def test_typeddict_errors(self):
         Emp = TypedDict('Emp', {'name': str, 'id': int})
