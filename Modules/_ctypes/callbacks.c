@@ -147,6 +147,7 @@ static void _CallPythonObject(void *mem,
                               void **pArgs)
 {
     PyObject *result;
+    PyObject **args = NULL;
     Py_ssize_t nArgs;
     PyObject *error_object = NULL;
     int *space;
@@ -162,7 +163,6 @@ static void _CallPythonObject(void *mem,
     }
 
     PyObject *args_stack[_PY_FASTCALL_SMALL_STACK];
-    PyObject **args;
     if (nArgs <= (Py_ssize_t)Py_ARRAY_LENGTH(args_stack)) {
         args = args_stack;
     }
