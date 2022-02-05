@@ -463,10 +463,10 @@ def replace_block(lines, start_marker, end_marker, replacements, file):
     return lines[:start_pos + 1] + replacements + lines[end_pos:]
 
 
-def regen_frozen(modules, deepfreeze_only: bool):
+def regen_frozen(modules, frozen_modules: bool):
     headerlines = []
     parentdir = os.path.dirname(FROZEN_FILE)
-    if not deepfreeze_only:
+    if frozen_modules:
         for src in _iter_sources(modules):
             # Adding a comment to separate sections here doesn't add much,
             # so we don't.
@@ -502,7 +502,7 @@ def regen_frozen(modules, deepfreeze_only: bool):
 
         symbol = mod.symbol
         pkg = 'true' if mod.ispkg else 'false'
-        if deepfreeze_only:
+        if not frozen_modules:
             line = ('{"%s", NULL, 0, %s, GET_CODE(%s)},'
                 ) % (mod.name, pkg, code_name)
         else:
@@ -715,19 +715,21 @@ def regen_pcbuild(modules):
 #######################################
 # the script
 
-def main(deepfreeze_only: bool):
+parser = argparse.ArgumentParser()
+parser.add_argument("--frozen-modules", action="store_true",
+        help="Use both frozen and deepfrozen modules. (default: uses only deepfrozen modules)")
+
+def main():
+    args = parser.parse_args()
+    frozen_modules: bool = args.frozen_modules
     # Expand the raw specs, preserving order.
     modules = list(parse_frozen_specs())
 
     # Regen build-related files.
     regen_makefile(modules)
     regen_pcbuild(modules)
-    regen_frozen(modules, deepfreeze_only)
+    regen_frozen(modules, frozen_modules)
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--deepfreeze-only", action="store_true",
-        help="Only use deepfrozen modules", default=True)
-    args = parser.parse_args()
-    main(args.deepfreeze_only)
+    main()    
