@@ -27,9 +27,6 @@ ac_cv_func_prlimit=no
 # unsupported syscall, https://github.com/emscripten-core/emscripten/issues/13393
 ac_cv_func_shutdown=no
 
-# breaks build, see https://github.com/ethanhs/python-wasm/issues/16
-ac_cv_lib_bz2_BZ2_bzCompress=no
-
 # clock_nanosleep() causes time.sleep() to sleep forever.
 # nanosleep() works correctly
 ac_cv_func_clock_nanosleep=no
@@ -66,6 +63,11 @@ ac_cv_func_pwritev=no
 ac_cv_func_pipe2=no
 ac_cv_func_nice=no
 ac_cv_func_setitimer=no
+# unsupported syscall: __syscall_prlimit64
+ac_cv_func_prlimit=no
+# unsupported syscall: __syscall_getrusage
+ac_cv_func_getrusage=no
+ac_cv_func_posix_fallocate=no
 
 # Syscalls that resulted in a segfault
 ac_cv_func_utimensat=no
@@ -78,6 +80,20 @@ ac_cv_header_sys_ioctl_h=no
 ac_cv_func_openpty=no
 ac_cv_func_forkpty=no
 
+# mkfifo and mknod are broken, create regular file
+ac_cv_func_mkfifo=no
+ac_cv_func_mkfifoat=no
+ac_cv_func_mknod=no
+ac_cv_func_mknodat=no
+
+# always fails with permission error
+ac_cv_func_setgroups=no
+ac_cv_func_setresuid=no
+ac_cv_func_setresgid=no
+
+# alarm signal is not delivered, may need a callback into the event loop?
+ac_cv_func_alarm=no
+
 # To use dlopen, you need to use Emscripten's linking support,
-# see https://github.com/emscripten-core/emscripten/wiki/Linking)
+# see https://emscripten.org/docs/compiling/Dynamic-Linking.html
 ac_cv_func_dlopen=no

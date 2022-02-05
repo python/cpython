@@ -2554,15 +2554,24 @@ AC_CHECK_SIZEOF(off_t, [], [
 AC_MSG_CHECKING(whether to enable large file support)
 if test "$ac_cv_sizeof_off_t" -gt "$ac_cv_sizeof_long" -a \
 	"$ac_cv_sizeof_long_long" -ge "$ac_cv_sizeof_off_t"; then
+  have_largefile_support="yes"
+else
+  have_largefile_support="no"
+fi
+dnl LFS does not work with Emscripten 3.1
+AS_CASE([$ac_sys_system],
+  [Emscripten], [have_largefile_support="no"]
+)
+AS_VAR_IF([have_largefile_support], [yes], [
   AC_DEFINE(HAVE_LARGEFILE_SUPPORT, 1,
   [Defined to enable large file support when an off_t is bigger than a long
    and long long is at least as big as an off_t. You may need
    to add some flags for configuration and compilation to enable this mode.
    (For Solaris and Linux, the necessary defines are already defined.)])
   AC_MSG_RESULT(yes)
-else
+], [
   AC_MSG_RESULT(no)
-fi
+])
 
 AC_CHECK_SIZEOF(time_t, [], [
 #ifdef HAVE_SYS_TYPES_H
@@ -4144,7 +4153,7 @@ AC_CHECK_FUNCS([ \
   gai_strerror getegid getentropy geteuid getgid getgrgid getgrgid_r \
   getgrnam_r getgrouplist getgroups getitimer getloadavg getlogin \
   getpeername getpgid getpid getppid getpriority _getpty \
-  getpwent getpwnam_r getpwuid_r getresgid getresuid getsid getspent \
+  getpwent getpwnam_r getpwuid_r getresgid getresuid getrusage getsid getspent \
   getspnam getuid getwd if_nameindex initgroups kill killpg lchown linkat \
   lockf lstat lutimes madvise mbrtowc memrchr mkdirat mkfifo mkfifoat \
   mknod mknodat mktime mmap mremap nice openat opendir pathconf pause pipe \
