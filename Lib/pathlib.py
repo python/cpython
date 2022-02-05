@@ -5,6 +5,7 @@ import ntpath
 import os
 import posixpath
 import re
+import shutil
 import sys
 import warnings
 from _collections_abc import Sequence
@@ -1176,6 +1177,16 @@ class Path(PurePath):
         """
         os.replace(self, target)
         return self.__class__(target)
+
+    def move(self, target, copy_function=shutil.copy2):
+        """
+        Recursively move a file or directory to another location (target),
+        using ``shutil.move``.
+        If *target* is on the current filesystem, then ``os.rename()`` is used.
+        Otherwise, *target* will be copied using *copy_function* and then removed.
+        Returns the new Path instance pointing to the target path.
+        """
+        return self.__class__(shutil.move(self, target, copy_function))
 
     def symlink_to(self, target, target_is_directory=False):
         """

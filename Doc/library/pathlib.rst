@@ -1034,6 +1034,10 @@ call fails (for example because the path doesn't exist).
    relative to the current working directory, *not* the directory of the Path
    object.
 
+   .. note::
+      This method can't move files from one filesystem to another.
+      Use :meth:`Path.move` for such cases.
+
    .. versionchanged:: 3.8
       Added return value, return the new Path instance.
 
@@ -1048,8 +1052,33 @@ call fails (for example because the path doesn't exist).
    relative to the current working directory, *not* the directory of the Path
    object.
 
+   .. note::
+      This method can't move files from one filesystem to another.
+      Use :meth:`Path.move` for such cases.
+
    .. versionchanged:: 3.8
       Added return value, return the new Path instance.
+
+
+.. method:: Path.move(target, copy_function=shutil.copy2)
+
+   Rename this file or directory to the given *target*, and return a new Path
+   instance pointing to *target*.  If *target* points to an existing file,
+   it will be unconditionally replaced. If *target* points to a directory,
+   then *src* is moved inside that directory.
+
+   The target path may be absolute or relative. Relative paths are interpreted
+   relative to the current working directory, *not* the directory of the Path
+   object.
+
+   This method uses :func:`shutil.move` to execute the renaming, and can receive
+   an optional `copy_function`. In none in given :func:`shutil.copy2` will be used.
+
+   .. note::
+      :func:`shutil.copy2` will try and preserve the metadata. In case that, copying
+      the metadata is not possible, you can use func:`shutil.copy` as the *copy_function*.
+      This allows the move to succeed when it is not possible to also copy the metadata,
+      at the expense of not copying any of the metadata.
 
 
 .. method:: Path.absolute()

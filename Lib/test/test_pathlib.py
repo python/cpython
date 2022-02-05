@@ -2046,6 +2046,48 @@ class _BasePathTest(object):
         self.assertEqual(os.stat(r).st_size, size)
         self.assertFileNotFound(q.stat)
 
+    def test_move(self):
+        P = self.cls(BASE)
+        p = P / 'fileA'
+        size = p.stat().st_size
+        # Replacing a non-existing path.
+        q = P / 'dirA' / 'fileAA'
+        replaced_p = p.move(q)
+        self.assertEqual(replaced_p, q)
+        self.assertEqual(q.stat().st_size, size)
+        self.assertFileNotFound(p.stat)
+        # Replacing another (existing) path.
+        r = rel_join('dirB', 'fileB')
+        replaced_q = q.move(r)
+        self.assertEqual(replaced_q, self.cls(r))
+        self.assertEqual(os.stat(r).st_size, size)
+        self.assertFileNotFound(q.stat)
+
+        # test moving to existing directory
+        newdir = P / 'newDir/'
+        newdir.mkdir()
+
+        replaced_q.move(newdir)
+        self.assertTrue(newdir.joinpath(replaced_q.stem).exists())
+
+    def test_move_is_calling_os_rename(self):
+        P = self.cls(BASE)
+        src = P / 'fileA'
+        dst = src / 'dirA'
+        with mock.patch("os.rename") as rename:
+            src.move(dst)
+            self.assertTrue(rename.called)
+            rename.assert_called()
+            rename.assert_called_with(src.joinpath(), dst.joinpath())
+
+    @os_helper.skip_unless_symlink
+    def test_move_symlink(self):
+        P = self.cls(BASE)
+        link = P / 'linkA'
+        link.move( P / 'newLink')
+        newlink = P / 'newLink'
+        self.assertTrue(newlink.is_symlink())
+
     @os_helper.skip_unless_symlink
     def test_readlink(self):
         P = self.cls(BASE)

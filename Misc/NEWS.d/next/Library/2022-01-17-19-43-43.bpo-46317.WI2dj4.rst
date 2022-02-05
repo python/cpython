@@ -1,0 +1,5 @@
+Add ``Pathlib.move`` that can handle rename across FS
+With this change, ``Pathlib.move`` adds the ability
+to handle renaming across file system and also preserve metadata
+when renaming, since ``shutil.move`` using ``shutil.copy2`` is used
+under the hood.
