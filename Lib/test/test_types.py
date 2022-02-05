@@ -704,7 +704,7 @@ class UnionTests(unittest.TestCase):
         self.assertEqual(hash(int | str), hash(typing.Union[int, str]))
 
     def test_instancecheck_and_subclasscheck(self):
-        for x in [int | str, typing.Union[int, str]]:
+        for x in (int | str, typing.Union[int, str]):
             with self.subTest(x=x):
                 self.assertIsInstance(1, x)
                 self.assertIsInstance(True, x)
@@ -715,15 +715,15 @@ class UnionTests(unittest.TestCase):
                 self.assertTrue(issubclass(str, x))
                 self.assertFalse(issubclass(type(None), x))
 
-        for x in [int | None, typing.Union[int, None]]:
+        for x in (int | None, typing.Union[int, None]):
             with self.subTest(x=x):
                 self.assertIsInstance(None, x)
                 self.assertTrue(issubclass(type(None), x))
 
-        for x in [
+        for x in (
             int | collections.abc.Mapping,
             typing.Union[int, collections.abc.Mapping],
-        ]:
+        ):
             with self.subTest(x=x):
                 self.assertIsInstance({}, x)
                 self.assertNotIsInstance((), x)
@@ -733,19 +733,19 @@ class UnionTests(unittest.TestCase):
     def test_instancecheck_and_subclasscheck_order(self):
         T = typing.TypeVar('T')
 
-        will_resolve = [
+        will_resolve = (
             int | T,
             typing.Union[int, T],
-        ]
+        )
         for x in will_resolve:
             with self.subTest(x=x):
                 self.assertIsInstance(1, x)
                 self.assertTrue(issubclass(int, x))
 
-        wont_resolve = [
+        wont_resolve = (
             T | int,
             typing.Union[T, int],
-        ]
+        )
         for x in wont_resolve:
             with self.subTest(x=x):
                 with self.assertRaises(TypeError):
@@ -753,7 +753,7 @@ class UnionTests(unittest.TestCase):
                 with self.assertRaises(TypeError):
                     isinstance(1, x)
 
-        for x in [*will_resolve, *wont_resolve]:
+        for x in (*will_resolve, *wont_resolve):
             with self.subTest(x=x):
                 with self.assertRaises(TypeError):
                     issubclass(object, x)
