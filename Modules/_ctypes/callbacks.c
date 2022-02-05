@@ -146,34 +146,34 @@ static void _CallPythonObject(void *mem,
                               int flags,
                               void **pArgs)
 {
-    PyObject *result;
+    PyObject *result = NULL;
     PyObject **args = NULL;
-    Py_ssize_t nArgs;
+    Py_ssize_t i = 0, j = 0, n_args = 0;
     PyObject *error_object = NULL;
     int *space;
     PyGILState_STATE state = PyGILState_Ensure();
 
-    nArgs = PySequence_Length(converters);
+    n_args = PySequence_Length(converters);
     /* Hm. What to return in case of error?
        For COM, 0xFFFFFFFF seems better than 0.
     */
-    if (nArgs < 0) {
+    if (n_args < 0) {
         PrintError("BUG: PySequence_Length");
         goto Done;
     }
 
     PyObject *args_stack[_PY_FASTCALL_SMALL_STACK];
-    if (nArgs <= (Py_ssize_t)Py_ARRAY_LENGTH(args_stack)) {
+    if (n_args <= (Py_ssize_t)Py_ARRAY_LENGTH(args_stack)) {
         args = args_stack;
     }
     else {
-        args = PyMem_Malloc(nArgs * sizeof(PyObject *));
+        args = PyMem_Malloc(n_args * sizeof(PyObject *));
         if (args == NULL) {
             PyErr_NoMemory();
             goto Done;
         }
     }
-    for (Py_ssize_t i = 0; i < nArgs; ++i) {
+    for (i = 0; i < n_args; i++) {
         /* Note: new reference! */
         PyObject *cnv = PySequence_GetItem(converters, i);
         StgDictObject *dict;
@@ -246,7 +246,7 @@ static void _CallPythonObject(void *mem,
 #endif
     }
 
-    result = PyObject_Vectorcall(callable, args, nArgs, NULL);
+    result = PyObject_Vectorcall(callable, args, n_args, NULL);
     if (result == NULL) {
         _PyErr_WriteUnraisableMsg("on calling ctypes callback function",
                                   callable);
@@ -313,8 +313,8 @@ static void _CallPythonObject(void *mem,
     Py_XDECREF(result);
 
   Done:
-    for (Py_ssize_t i = 0; i < nArgs; i++) {
-        Py_XDECREF(args[i]);
+    for (j = 0; j < i; j++) {
+        Py_DECREF(args[j]);
     }
     if (args != args_stack) {
         PyMem_Free(args);
