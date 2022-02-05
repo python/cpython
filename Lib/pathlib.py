@@ -922,7 +922,6 @@ class PureWindowsPath(PurePath):
     __slots__ = ()
 
     def as_uri(self):
-        """Return the path as a 'file' URI."""
         if not self.is_absolute():
             raise ValueError("relative path can't be expressed as a file URI")
         # Under Windows, file URIs use the UTF-8 encoding.
