@@ -239,7 +239,7 @@ class SizeofTest(unittest.TestCase):
 @support.cpython_only
 class BoolTest(unittest.TestCase):
     def test_warning(self):
-        e = cET.Element('a')
+        e = cET.fromstring('<a style="new"></a>')
         msg = (
             r"The behavior of this method will change in future versions.  "
             r"Use specific 'len\(elem\)' or 'elem is not None' test instead.")

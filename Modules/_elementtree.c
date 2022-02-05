@@ -1476,10 +1476,10 @@ element_bool(PyObject* self_)
         "FutureWarning: The behavior of this method will change in future versions.  "
         "Use specific 'len(elem)' or 'elem is not None' test instead.",
         2);
-    if (!self->extra) {
-        return false;
+    if (self->extra ? self->extra->length : 0) {
+        return true;
     }
-    return true;
+    return false;
 }
 
 /*[clinic input]
