@@ -157,11 +157,48 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_sre_SRE_Pattern_prefixmatch__doc__,
+"prefixmatch($self, /, string, pos=0, endpos=sys.maxsize)\n"
+"--\n"
+"\n"
+"Matches zero or more characters at the beginning of the string.");
+
+#define _SRE_SRE_PATTERN_PREFIXMATCH_METHODDEF    \
+    {"prefixmatch", (PyCFunction)(void(*)(void))_sre_SRE_Pattern_prefixmatch, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_prefixmatch__doc__},
+
+static PyObject *
+_sre_SRE_Pattern_prefixmatch_impl(PatternObject *self, PyTypeObject *cls,
+                                  PyObject *string, Py_ssize_t pos,
+                                  Py_ssize_t endpos);
+
+static PyObject *
+_sre_SRE_Pattern_prefixmatch(PatternObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"string", "pos", "endpos", NULL};
+    static _PyArg_Parser _parser = {"O|nn:prefixmatch", _keywords, 0};
+    PyObject *string;
+    Py_ssize_t pos = 0;
+    Py_ssize_t endpos = PY_SSIZE_T_MAX;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &string, &pos, &endpos)) {
+        goto exit;
+    }
+    return_value = _sre_SRE_Pattern_prefixmatch_impl(self, cls, string, pos, endpos);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_sre_SRE_Pattern_match__doc__,
 "match($self, /, string, pos=0, endpos=sys.maxsize)\n"
 "--\n"
 "\n"
-"Matches zero or more characters at the beginning of the string.");
+"Matches zero or more characters at the beginning of the string.\n"
+"\n"
+"This is the legacy non-explicit method name. Prefer using it\'s\n"
+"explicit spelling of prefixmatch in 3.11+ code.");
 
 #define _SRE_SRE_PATTERN_MATCH_METHODDEF    \
     {"match", (PyCFunction)(void(*)(void))_sre_SRE_Pattern_match, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_match__doc__},
@@ -855,6 +892,34 @@ PyDoc_STRVAR(_sre_SRE_Match___deepcopy____doc__,
 #define _SRE_SRE_MATCH___DEEPCOPY___METHODDEF    \
     {"__deepcopy__", (PyCFunction)_sre_SRE_Match___deepcopy__, METH_O, _sre_SRE_Match___deepcopy____doc__},
 
+PyDoc_STRVAR(_sre_SRE_Scanner_prefixmatch__doc__,
+"prefixmatch($self, /)\n"
+"--\n"
+"\n");
+
+#define _SRE_SRE_SCANNER_PREFIXMATCH_METHODDEF    \
+    {"prefixmatch", (PyCFunction)(void(*)(void))_sre_SRE_Scanner_prefixmatch, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Scanner_prefixmatch__doc__},
+
+static PyObject *
+_sre_SRE_Scanner_prefixmatch_impl(ScannerObject *self, PyTypeObject *cls);
+
+static PyObject *
+_sre_SRE_Scanner_prefixmatch(ScannerObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = { NULL};
+    static _PyArg_Parser _parser = {":prefixmatch", _keywords, 0};
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
+        )) {
+        goto exit;
+    }
+    return_value = _sre_SRE_Scanner_prefixmatch_impl(self, cls);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_sre_SRE_Scanner_match__doc__,
 "match($self, /)\n"
 "--\n"
@@ -910,4 +975,4 @@ _sre_SRE_Scanner_search(ScannerObject *self, PyTypeObject *cls, PyObject *const 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=518f7bb775c1184f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=18612f48d6853239 input=a9049054013a1b77]*/

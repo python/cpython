@@ -264,6 +264,17 @@ os
   (Contributed by Dong-hee Na in :issue:`44611`.)
 
 
+re
+--
+
+* :func:`re.prefixmatch` and a corresponding :meth:`re.Pattern.prefixmatch`
+  have been added as alternate names for the existing :func:`re.match` and
+  :meth:`re.Pattern.prefixmatch` APIs. These are intended to be used to
+  alleviate confusion around what "match" means by following *"Explicit is
+  better than implicit"*. Other popular language regular expression libraries
+  use an API named ``match`` to mean what Python has always called ``search``.
+
+
 socket
 ------
 
