@@ -922,8 +922,6 @@ class PureWindowsPath(PurePath):
     __slots__ = ()
 
     def is_reserved(self):
-        """Return True if the path contains one of the special names reserved
-        by the system, if any."""
         # NOTE: the rules for reserved names seem somewhat complicated
         # (e.g. r"..\NUL" is reserved but not r"foo\NUL" if "foo" does not
         # exist). We err on the side of caution and return True for paths
