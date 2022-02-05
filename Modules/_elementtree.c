@@ -1468,6 +1468,20 @@ element_getitem(PyObject* self_, Py_ssize_t index)
     return self->extra->children[index];
 }
 
+static int
+element_bool(PyObject* self_)
+{
+    ElementObject* self = (ElementObject*) self_;
+    (void)PyErr_WarnEx(PyExc_FutureWarning,
+        "FutureWarning: The behavior of this method will change in future versions.  "
+        "Use specific 'len(elem)' or 'elem is not None' test instead.",
+        2);
+    if (!self->extra) {
+        return false;
+    }
+    return true;
+}
+
 /*[clinic input]
 _elementtree.Element.insert
 
@@ -2057,6 +2071,20 @@ static PySequenceMethods element_as_sequence = {
     0,
     element_setitem,
     0,
+};
+
+static PyNumberMethods element_as_number = {
+    0,                                  /* nb_add */
+    0,                                  /* nb_subtract */
+    0,                                  /* nb_multiply */
+    0,                                  /* nb_remainder */
+    0,                                  /* nb_divmod */
+    0,                                  /* nb_power */
+    0,                                  /* nb_negative */
+    0,                                  /* nb_positive */
+    0,                                  /* nb_absolute */
+    element_bool,                       /* nb_bool */
+    0,                                  /* nb_invert */
 };
 
 /******************************* Element iterator ****************************/
@@ -4223,7 +4251,7 @@ static PyTypeObject Element_Type = {
     0,                                              /* tp_setattr */
     0,                                              /* tp_as_async */
     (reprfunc)element_repr,                         /* tp_repr */
-    0,                                              /* tp_as_number */
+    &element_as_number,                             /* tp_as_number */
     &element_as_sequence,                           /* tp_as_sequence */
     &element_as_mapping,                            /* tp_as_mapping */
     0,                                              /* tp_hash */

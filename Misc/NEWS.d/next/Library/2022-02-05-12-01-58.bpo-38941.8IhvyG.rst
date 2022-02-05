@@ -1,0 +1,3 @@
+The C implementation of the :mod:`xml.etree.ElementTree` module now emits
+:exc:`FutureWarning` when testing the truth value of an
+:class:`xml.etree.ElementTree.Element`, just like the Python implementation.
