@@ -831,12 +831,6 @@ class UnionTests(unittest.TestCase):
             self.assertEqual(copied.__args__, orig.__args__)
             self.assertEqual(copied.__parameters__, orig.__parameters__)
 
-    def test_union_parameter_substitution_errors(self):
-        T = typing.TypeVar("T")
-        x = int | T
-        with self.assertRaises(TypeError):
-            x[42]
-
     def test_or_type_operator_with_forward(self):
         T = typing.TypeVar('T')
         ForwardAfter = T | 'Forward'
