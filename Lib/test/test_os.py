@@ -1175,7 +1175,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
     def _test_underlying_process_env(self, var, expected):
         if not (unix_shell and os.path.exists(unix_shell)):
             return
-        if not support.has_subprocess_support:
+        elif not support.has_subprocess_support:
             return
 
         with os.popen(f"{unix_shell} -c 'echo ${var}'") as popen:

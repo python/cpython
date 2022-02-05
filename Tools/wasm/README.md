@@ -81,13 +81,13 @@ node --experimental-wasm-threads --experimental-wasm-bulk-memory builddir/emscri
 
 ## wasm32-emscripten limitations and issues
 
-- Most stdlib modules with dependency on external libraries are missing:
+- Most stdlib modules with a dependency on external libraries are missing:
   ``ctypes``, ``readline``, ``sqlite3``, ``ssl``, and more.
 - Shared extension modules are not implemented yet. All extension modules
   are statically linked into the main binary.
-- Processes are not supported. Calls like fork, popen, and subprocess
+- Processes are not supported. System calls like fork, popen, and subprocess
   fail with ``ENOSYS`` or ``ENOSUP``.
-- Blocking sockets are not available. Non-blocking sockets don't work
+- Blocking sockets are not available and non-blocking sockets don't work
   correctly, e.g. ``socket.accept`` crashes the runtime. ``gethostbyname``
   does not resolve to a real IP address. IPv6 is not available.
 - The ``select`` module is limited. ``select.select()`` crashes the runtime
@@ -117,7 +117,7 @@ node --experimental-wasm-threads --experimental-wasm-bulk-memory builddir/emscri
 
 ### wasm32-emscripten in browsers
 
-- The bundles stdlib is limited. Network-related modules,
+- The bundled stdlib is limited. Network-related modules,
   distutils, multiprocessing, dbm, tests and similar modules
   are not shipped. All other modules are bundled as pre-compiled
   ``pyc`` files.
@@ -126,9 +126,9 @@ node --experimental-wasm-threads --experimental-wasm-bulk-memory builddir/emscri
 ### wasm32-emscripten in node
 
 Node builds use ``NODERAWFS``, ``USE_PTHREADS`` and ``PROXY_TO_PTHREAD``
-linker option.
+linker options.
 
-- Node RawFS allows direct access to the hosts file system.
+- Node RawFS allows direct access to the host file system.
 - pthread support requires WASM threads and SharedArrayBuffer (bulk memory).
   The runtime keeps a pool of web workers around. Each web worker uses
   several file descriptors (eventfd, epoll, pipe).
