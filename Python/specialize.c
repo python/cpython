@@ -38,6 +38,33 @@
  <instr N-1>
 */
 
+/* Map from opcode to adaptive opcode.
+  Values of zero are ignored. */
+static uint8_t adaptive_opcodes[256] = {
+    [LOAD_ATTR] = LOAD_ATTR_ADAPTIVE,
+    [LOAD_GLOBAL] = LOAD_GLOBAL_ADAPTIVE,
+    [LOAD_METHOD] = LOAD_METHOD_ADAPTIVE,
+    [BINARY_SUBSCR] = BINARY_SUBSCR_ADAPTIVE,
+    [STORE_SUBSCR] = STORE_SUBSCR_ADAPTIVE,
+    [CALL] = CALL_ADAPTIVE,
+    [STORE_ATTR] = STORE_ATTR_ADAPTIVE,
+    [BINARY_OP] = BINARY_OP_ADAPTIVE,
+    [COMPARE_OP] = COMPARE_OP_ADAPTIVE,
+};
+
+/* The number of cache entries required for a "family" of instructions. */
+static uint8_t cache_requirements[256] = {
+    [LOAD_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
+    [LOAD_GLOBAL] = 2, /* _PyAdaptiveEntry and _PyLoadGlobalCache */
+    [LOAD_METHOD] = 3, /* _PyAdaptiveEntry, _PyAttrCache and _PyObjectCache */
+    [BINARY_SUBSCR] = 2, /* _PyAdaptiveEntry, _PyObjectCache */
+    [STORE_SUBSCR] = 0,
+    [CALL] = 2, /* _PyAdaptiveEntry and _PyObjectCache/_PyCallCache */
+    [STORE_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
+    [BINARY_OP] = 1,  // _PyAdaptiveEntry
+    [COMPARE_OP] = 1, /* _PyAdaptiveEntry */
+};
+
 Py_ssize_t _Py_QuickenedCount = 0;
 #ifdef Py_STATS
 PyStats _py_stats = { 0 };
@@ -144,7 +171,14 @@ _Py_GetSpecializationStats(void) {
 static void
 print_spec_stats(FILE *out, OpcodeStats *stats)
 {
+    /* Mark some opcodes as specializable for stats,
+     * even though we don't specialize them yet. */
+    fprintf(out, "    opcode[%d].specializable : 1\n", FOR_ITER);
+    fprintf(out, "    opcode[%d].specializable : 1\n", UNPACK_SEQUENCE);
     for (int i = 0; i < 256; i++) {
+        if (adaptive_opcodes[i]) {
+            fprintf(out, "    opcode[%d].specializable : 1\n", i);
+        }
         PRINT_STAT(i, specialization.success);
         PRINT_STAT(i, specialization.failure);
         PRINT_STAT(i, specialization.hit);
@@ -265,33 +299,6 @@ static int
 get_cache_count(SpecializedCacheOrInstruction *quickened) {
     return quickened[0].entry.zero.cache_count;
 }
-
-/* Map from opcode to adaptive opcode.
-  Values of zero are ignored. */
-static uint8_t adaptive_opcodes[256] = {
-    [LOAD_ATTR] = LOAD_ATTR_ADAPTIVE,
-    [LOAD_GLOBAL] = LOAD_GLOBAL_ADAPTIVE,
-    [LOAD_METHOD] = LOAD_METHOD_ADAPTIVE,
-    [BINARY_SUBSCR] = BINARY_SUBSCR_ADAPTIVE,
-    [STORE_SUBSCR] = STORE_SUBSCR_ADAPTIVE,
-    [CALL] = CALL_ADAPTIVE,
-    [STORE_ATTR] = STORE_ATTR_ADAPTIVE,
-    [BINARY_OP] = BINARY_OP_ADAPTIVE,
-    [COMPARE_OP] = COMPARE_OP_ADAPTIVE,
-};
-
-/* The number of cache entries required for a "family" of instructions. */
-static uint8_t cache_requirements[256] = {
-    [LOAD_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
-    [LOAD_GLOBAL] = 2, /* _PyAdaptiveEntry and _PyLoadGlobalCache */
-    [LOAD_METHOD] = 3, /* _PyAdaptiveEntry, _PyAttrCache and _PyObjectCache */
-    [BINARY_SUBSCR] = 2, /* _PyAdaptiveEntry, _PyObjectCache */
-    [STORE_SUBSCR] = 0,
-    [CALL] = 2, /* _PyAdaptiveEntry and _PyObjectCache/_PyCallCache */
-    [STORE_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
-    [BINARY_OP] = 1,  // _PyAdaptiveEntry
-    [COMPARE_OP] = 1, /* _PyAdaptiveEntry */
-};
 
 /* Return the oparg for the cache_offset and instruction index.
  *
@@ -571,6 +578,10 @@ initial_counter_value(void) {
 #define SPEC_FAIL_ITER_DICT_ITEMS 21
 #define SPEC_FAIL_ITER_DICT_VALUES 22
 #define SPEC_FAIL_ITER_ENUMERATE 23
+
+/* UNPACK_SEQUENCE */
+#define SPEC_FAIL_TUPLE 10
+#define SPEC_FAIL_LIST 11
 
 
 static int
@@ -1880,7 +1891,6 @@ success:
     adaptive->counter = initial_counter_value();
 }
 
-
 int
  _PySpecialization_ClassifyIterator(PyObject *iter)
 {
@@ -1927,6 +1937,18 @@ int
 
     if (strncmp(t->tp_name, "itertools", 8) == 0) {
         return SPEC_FAIL_ITER_ITERTOOLS;
+    }
+    return SPEC_FAIL_OTHER;
+}
+
+int
+_PySpecialization_ClassifySequence(PyObject *seq)
+{
+    if (PyTuple_CheckExact(seq)) {
+        return SPEC_FAIL_TUPLE;
+    }
+    if (PyList_CheckExact(seq)) {
+        return SPEC_FAIL_LIST;
     }
     return SPEC_FAIL_OTHER;
 }
