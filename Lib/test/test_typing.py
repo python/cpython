@@ -5043,6 +5043,9 @@ class TypeGuardTests(BaseTestCase):
         def foo(arg) -> TypeGuard[int]: ...
         self.assertEqual(gth(foo), {'return': TypeGuard[int]})
 
+        with self.assertRaises(TypeError):
+            TypeGuard[int, str]
+
     def test_repr(self):
         self.assertEqual(repr(TypeGuard), 'typing.TypeGuard')
         cv = TypeGuard[int]
