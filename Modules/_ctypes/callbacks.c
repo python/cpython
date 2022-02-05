@@ -146,9 +146,7 @@ static void _CallPythonObject(void *mem,
                               int flags,
                               void **pArgs)
 {
-    Py_ssize_t i;
     PyObject *result;
-    PyObject *arglist = NULL;
     Py_ssize_t nArgs;
     PyObject *error_object = NULL;
     int *space;
@@ -163,12 +161,19 @@ static void _CallPythonObject(void *mem,
         goto Done;
     }
 
-    arglist = PyTuple_New(nArgs);
-    if (!arglist) {
-        PrintError("PyTuple_New()");
-        goto Done;
+    PyObject *args_stack[_PY_FASTCALL_SMALL_STACK];
+    PyObject **args;
+    if (nArgs <= (Py_ssize_t)Py_ARRAY_LENGTH(args_stack)) {
+        args = args_stack;
     }
-    for (i = 0; i < nArgs; ++i) {
+    else {
+        args = PyMem_Malloc(nArgs * sizeof(PyObject *));
+        if (args == NULL) {
+            PyErr_NoMemory();
+            goto Done;
+        }
+    }
+    for (Py_ssize_t i = 0; i < nArgs; ++i) {
         /* Note: new reference! */
         PyObject *cnv = PySequence_GetItem(converters, i);
         StgDictObject *dict;
@@ -186,7 +191,7 @@ static void _CallPythonObject(void *mem,
                 Py_DECREF(cnv);
                 goto Done;
             }
-            PyTuple_SET_ITEM(arglist, i, v);
+            args[i] = v;
             /* XXX XXX XX
                We have the problem that c_byte or c_short have dict->size of
                1 resp. 4, but these parameters are pushed as sizeof(int) bytes.
@@ -207,7 +212,7 @@ static void _CallPythonObject(void *mem,
                 goto Done;
             }
             memcpy(obj->b_ptr, *pArgs, dict->size);
-            PyTuple_SET_ITEM(arglist, i, (PyObject *)obj);
+            args[i] = (PyObject *)obj;
 #ifdef MS_WIN32
             TryAddRef(dict, obj);
 #endif
@@ -241,7 +246,7 @@ static void _CallPythonObject(void *mem,
 #endif
     }
 
-    result = PyObject_CallObject(callable, arglist);
+    result = PyObject_Vectorcall(callable, args, nArgs, NULL);
     if (result == NULL) {
         _PyErr_WriteUnraisableMsg("on calling ctypes callback function",
                                   callable);
@@ -308,7 +313,12 @@ static void _CallPythonObject(void *mem,
     Py_XDECREF(result);
 
   Done:
-    Py_XDECREF(arglist);
+    for (Py_ssize_t i = 0; i < nArgs; i++) {
+        Py_XDECREF(args[i]);
+    }
+    if (args != args_stack) {
+        PyMem_Free(args);
+    }
     PyGILState_Release(state);
 }
 

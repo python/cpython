@@ -1,0 +1,2 @@
+Use :c:func:`PyObject_Vectorcall` while calling ctypes callback funtion.
+Patch by Dong-hee Na.
