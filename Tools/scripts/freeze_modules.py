@@ -715,7 +715,13 @@ def regen_pcbuild(modules):
 #######################################
 # the script
 
-def main(frozen_modules: bool):
+parser = argparse.ArgumentParser()
+parser.add_argument("--frozen-modules", action="store_true",
+        help="Use both frozen and deepfrozen modules. (default: uses only deepfrozen modules)")
+
+def main():
+    args = parser.parse_args()
+    frozen_modules: bool = args.frozen_modules
     # Expand the raw specs, preserving order.
     modules = list(parse_frozen_specs())
 
@@ -726,8 +732,4 @@ def main(frozen_modules: bool):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--frozen-modules", action="store_true",
-        help="Use both frozen and deepfrozen modules.", default=False)
-    args = parser.parse_args()
-    main(args.frozen_modules)
+    main()    
