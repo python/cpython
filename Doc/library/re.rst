@@ -641,7 +641,7 @@ form.
 
    An :class:`enum.IntFlag` class containing the regex options listed below.
 
-   .. versionadded:: added to ``__all__`` in 3.11)
+   .. versionadded:: 3.11 - added to ``__all__``
 
 .. data:: A
           ASCII
