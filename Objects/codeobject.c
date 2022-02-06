@@ -1924,3 +1924,18 @@ _PyStaticCode_Dealloc(PyCodeObject *co)
         co->co_weakreflist = NULL;
     }
 }
+
+int
+_PyStaticCode_InternStrings(PyCodeObject *co) 
+{
+    if (intern_strings(co->co_names) < 0) {
+        return -1;
+    }
+    if (intern_string_constants(co->co_consts, NULL) < 0) {
+        return -1;
+    }
+    if (intern_strings(co->co_localsplusnames) < 0) {
+        return -1;
+    }
+    return 0;
+}
