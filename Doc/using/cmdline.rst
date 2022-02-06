@@ -1043,7 +1043,7 @@ and :data:`sys.exec_prefix`.
 Finally, the :mod:`site` module is processed and :file:`site-packages` directories
 are added to the module search path. A common way to customize the search path is
 to create :mod:`sitecustomize` or :mod:`usercustomize` modules as described in
-the :mod:`site` module documentation. 
+the :mod:`site` module documentation.
 
 .. note::
 
