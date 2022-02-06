@@ -1934,4 +1934,5 @@ _PyStaticCode_InternStrings(PyCodeObject *co)
     assert(res == 0);
     res = intern_strings(co->co_localsplusnames);
     assert(res == 0);
+    (void)res;
 }
