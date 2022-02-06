@@ -1,0 +1,1 @@
+Enabling ``os.sendfile`` on shlib on Solaris based systems.
