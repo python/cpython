@@ -1496,23 +1496,33 @@ class _ConcatenateGenericAlias(_GenericAlias, _root=True):
 
 @_SpecialForm
 def Unpack(self, parameters):
-    """Implementation of the type unpack operator for older versions of Python.
+    """Type unpack operator.
 
-    The type unpack operator takes the child types from some container type
-    such as `Tuple[int, str]` and "pulls them out". For example,
-    `Dict[Unpack[Tuple[int, str]]` is equivalent to `Dict[int, str]`.
-    In newer versions of Python, this is implemented using the `*` operator.
+    The type unpack operator takes the child types from some container type,
+    such as `tuple[int, str]` or a `TypeVarTuple`, and 'pulls them out'. For
+    example:
 
-    The type unpack operator can be applied to a `TypeVarTuple` instance:
+      # For some generic class `Foo`:
+      Foo[Unpack[tuple[int, str]]]  # Equivalent to Foo[int, str]
 
       Ts = TypeVarTuple('Ts')
-      Tuple[Unpack[Ts]]  # Equivalent to Tuple[*Ts]
+      # Specifies that `Bar` is generic in an arbitrary number of types.
+      # (Think of `Ts` as a tuple of an arbitrary number of individual
+      #  `TypeVar`s, which the `Unpack` is 'pulling out' directly into the
+      #  `Generic[]`.)
+      class Bar(Generic[Unpack[Ts]]): ...
+      Bar[int]  # Valid
+      Bar[int, str]  # Also valid
 
-    Or to a parameterised `Tuple`:
+    From Python 3.11, this can also be done using the `*` operator:
 
-      Tuple[Unpack[Tuple[int, str]]]  # Equivalent to Tuple[*Tuple[int, str]]
+        Foo[*tuple[int, str]]
+        class Bar(Generic[*Ts]): ...
 
-    There is no runtime checking of this operator.
+    Note that there is only some runtime checking of this operator. Not
+    everything the runtime allows may be accepted by static type checkers.
+
+    For more information, see PEP 646.
     """
     item = _type_check(parameters, f'{self} accepts only single type.')
     return _UnpackGenericAlias(origin=self, params=(item,))
