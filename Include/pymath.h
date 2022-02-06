@@ -51,16 +51,15 @@
 #endif
 
 /* Py_NAN
- * A value that evaluates to a NaN. On IEEE 754 platforms INF*0 or
- * INF/INF works. Define Py_NO_NAN in pyconfig.h if your platform
- * doesn't support NaNs.
+ * A value that evaluates to a quiet Not-a-Number (NaN).
+ * Define Py_NO_NAN in pyconfig.h if your platform doesn't support NaNs.
  */
 #if !defined(Py_NAN) && !defined(Py_NO_NAN)
 #  if _Py__has_builtin(__builtin_nan)
      // Built-in implementation of the ISO C99 function nan(): quiet NaN.
 #    define Py_NAN (__builtin_nan(""))
 #else
-     // Use C99 NAN constant: quiet Not-A-Number (when supported).
+     // Use C99 NAN constant: quiet Not-A-Number.
      // NAN is a float, Py_NAN is a double: cast to double.
 #    define Py_NAN ((double)NAN)
 #  endif
