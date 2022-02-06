@@ -1008,39 +1008,60 @@ input script, if there is one. Otherwise, the first entry is the current
 directory, which is the case when executing the interactive shell, a ``-c``
 command, or ``-m`` module.
 
-On Windows a default Python installation adds the :file:`/Lib` directory and
-the :file:`/Lib/site-packages` directory to the module search path. These
-locations are relative to the :file:`python.exe` location. Standard modules
-are usually found in the Lib directory and third-party modules in the
-Lib/site-packages directory.
-
-On Unix the lib and lib/site-packages directories are added by looking for
-:file:`/{exec_prefix}/lib/pythonversion/site-packages` , :file:`/{exec_prefix}/lib/pythonversion/lib-dynload` ,
-:file:`/{prefix}/lib/pythonversion` and :file:`/{prefix}/lib/pythonversion/site-packages` .
-Often ``exec_prefix`` and ``prefix`` are the same and a common result is
-adding :file:`/usr/lib/pythonversion` and :file:`/usr/lib/pythonversion/site-packages`
-to the module search path. See :ref:`using-on-unix` for details.
-
 The :envvar:`PYTHONPATH` environment variable is often used to add directories
-to the search path.
+to the search path. If this environment variable is found then the contents are
+added to the module search path.
 
-Another common way to set the search path is to create :mod:`sitecustomize`
-or :mod:`usercustomize` modules as described in the :mod:`site` module
-documentation.
+The next items added are the directories containing standard Python modules as
+well as any shared libraries (DLL/dylib/so) that these modules depend on. The
+directory with the platform-independent Python modules is called ``prefix``.
+The directory with the shared libraries is called ``exec_prefix``.
+
+The :envvar:`PYTHONHOME` environment variable may be used to set the ``prefix``
+and ``exec_prefix`` locations. Otherwise these directories are found by using
+the Python executable as a starting point and then looking for various 'landmark'
+files and directories. Note that any symbolic links are followed so the real
+Python executable location is used as the search starting point. On MacOS, the
+:envvar:`PYTHONEXECUTABLE` environment variable may be used to set the Python
+executable location. The Python executable location is called ``home``.
+
+Once ``home`` is determined, the ``prefix`` directory is found by first looking
+for :file:`python{majorversion}{minorversion}.zip` (``python311.zip``). On Windows
+the zip archive is searched for in :file:`Lib` and on Unix the archive is expected
+to be in :file:`lib`. Note that the expected zip archive location is added to the
+module search path even if the archive does not exist. If no archive was found,
+Python on Windows will continue the search for ``prefix`` by looking for :file:`Lib\\os.py`
+or :file:`Lib\\os.pyc`. Python on Unix will look for :file:`lib/python{majorversion}.{minorversion}/os.py`
+(``lib/python3.11/os.py``) or :file:`lib/python{majorversion}.{minorversion}/os.pyc` (``lib/python3.11/os.pyc``).
+On Windows ``prefix`` and ``exec_prefix`` are the same, however on other platforms
+:file:`lib/python{majorversion}.{minorversion}/lib-dynload` (``lib/python3.11/lib-dynload``)
+is searched for and used as an anchor for ``exec_prefix``.
+
+Once found, ``prefix`` and ``exec_prefix`` may be accessed at :data:`sys.prefix`
+and :data:`sys.exec_prefix`.
+
+Finally, the :mod:`site` module is processed and :file:`site-packages` directories
+are added to the module search path. A common way to customize the search path is
+to create :mod:`sitecustomize` or :mod:`usercustomize` modules as described in
+the :mod:`site` module documentation. 
+
+.. note::
+
+   The effect of :mod:`site` on the module search path may be seen by running
+   Python with ``-S`` which will start Python without importing site.
 
 Virtual environments
 ~~~~~~~~~~~~~~~~~~~~
 
 If Python is run in a virtual environment (as described at :ref:`tut-venv`)
-the Lib and Lib/site-packages directories are specific to the virtual
-environment.
+then ``prefix`` and ``exec_prefix`` are specific to the virtual environment.
 
 If a ``pyvenv.cfg`` file is found alongside the main executable, or in the
 directory one level above the executable, the following variations apply:
 
 * If ``home`` is an absolute path and :envvar:`PYTHONHOME` is not set, this
-  path is used instead of the path to the main executable when deducing the
-  Lib and Lib/site-packages directory locations.
+  path is used instead of the path to the main executable when deducing ``prefix``
+  and ``exec_prefix``.
 
 _pth files
 ~~~~~~~~~~
@@ -1061,6 +1082,13 @@ cannot be specified.
 Note that ``.pth`` files (without leading underscore) will be processed normally
 by the :mod:`site` module when ``import site`` has been specified.
 
+Embedded Python
+~~~~~~~~~~~~~~~
+
+If Python is embedded within another application :c:func:`Py_SetPath` can be used to
+bypass the initialization of the module search path.
+
 .. seealso::
 
-   :ref:`windows_finding_modules` for detailed Windows notes.
+   * :ref:`windows_finding_modules` for detailed Windows notes.
+   * :ref:`using-on-unix` for Unix details.
