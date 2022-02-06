@@ -775,6 +775,8 @@ class ForwardRef(_Final, _root=True):
 def _is_unpacked_typevartuple(x):
     return (
             isinstance(x, _UnpackGenericAlias)
+            # If x is Unpack[tuple[...]], __parameters__ will be empty.
+            and x.__parameters__
             and isinstance(x.__parameters__[0], TypeVarTuple)
     )
 
