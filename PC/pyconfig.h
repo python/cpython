@@ -473,6 +473,9 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* Define if you want to use the GNU readline library */
 /* #define WITH_READLINE 1 */
 
+/* Define Python uses mimalloc memory allocator. */
+#define WITH_MIMALLOC 1
+
 /* Use Python's own small-block memory-allocator. */
 #define WITH_PYMALLOC 1
 

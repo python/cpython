@@ -724,7 +724,9 @@ class CmdLineTest(unittest.TestCase):
             code = "import _testcapi; print(_testcapi.pymem_getallocatorsname())"
             with support.SuppressCrashReport():
                 out = self.run_xdev("-c", code, check_exitcode=False)
-            if support.with_pymalloc():
+            if support.with_mimalloc():
+                alloc_name = "mimalloc_debug"
+            elif support.with_pymalloc():
                 alloc_name = "pymalloc_debug"
             else:
                 alloc_name = "malloc_debug"
@@ -802,7 +804,11 @@ class CmdLineTest(unittest.TestCase):
     def test_pythonmalloc(self):
         # Test the PYTHONMALLOC environment variable
         pymalloc = support.with_pymalloc()
-        if pymalloc:
+        mimalloc = support.with_mimalloc()
+        if mimalloc:
+            default_name = 'mimalloc_debug' if support.Py_DEBUG else 'mimalloc'
+            default_name_debug = 'mimalloc_debug'
+        elif pymalloc:
             default_name = 'pymalloc_debug' if support.Py_DEBUG else 'pymalloc'
             default_name_debug = 'pymalloc_debug'
         else:
@@ -815,6 +821,11 @@ class CmdLineTest(unittest.TestCase):
             ('malloc', 'malloc'),
             ('malloc_debug', 'malloc_debug'),
         ]
+        if mimalloc:
+            tests.extend((
+                ('mimalloc', 'mimalloc'),
+                ('mimalloc_debug', 'mimalloc_debug'),
+            ))
         if pymalloc:
             tests.extend((
                 ('pymalloc', 'pymalloc'),

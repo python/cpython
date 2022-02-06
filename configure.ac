@@ -4597,6 +4597,29 @@ then
 fi
 AC_MSG_RESULT($with_doc_strings)
 
+# --with-mimalloc
+AC_MSG_CHECKING(for --with-mimalloc)
+AC_ARG_WITH(mimalloc,
+  AS_HELP_STRING([--with-mimalloc],
+                 [build with mimalloc memory allocator (default is yes)]),
+  [],
+  [with_mimalloc="yes"]
+)
+
+if test "$with_mimalloc" != no; then
+  AC_MSG_RESULT(yes)
+  # disable pymalloc with mimalloc
+  # with_pymalloc="no"
+  # with_freelists="no"
+  AC_DEFINE(WITH_MIMALLOC, 1, Define Python uses mimalloc memory allocator.)
+  AC_SUBST(WITH_MIMALLOC, 1)
+  AC_SUBST(MIMALLOC_HEADERS, '$(MIMALLOC_HEADERS)')
+  AC_SUBST(MIMALLOC_INCLUDES, '$(MIMALLOC_INCLUDES)')
+else
+  AC_MSG_RESULT(no)
+fi
+
+
 # Check for Python-specific malloc support
 AC_MSG_CHECKING(for --with-pymalloc)
 AC_ARG_WITH(pymalloc,
@@ -6610,6 +6633,7 @@ SRCDIRS="\
   Modules/cjkcodecs \
   Modules/expat \
   Objects \
+  Objects/mimalloc \
   Parser \
   Programs \
   Python \
@@ -6727,6 +6751,11 @@ AS_VAR_IF([ac_cv_header_stdatomic_h], [yes], [
     AC_DEFINE(HAVE_STD_ATOMIC, 1,
               [Has stdatomic.h with atomic_int and atomic_uintptr_t])
 ])
+
+if test "$ac_cv_header_stdatomic_h" != yes -a "$with_mimalloc" != no; then
+    # mimalloc-atomic.h wants C11 stdatomic.h on POSIX
+    AC_MSG_ERROR([--with-mimalloc requires stdatomic.h on your platform])
+fi
 
 # Check for GCC >= 4.7 and clang __atomic builtin functions
 AC_CACHE_CHECK([for builtin __atomic_load_n and __atomic_store_n functions], [ac_cv_builtin_atomic], [

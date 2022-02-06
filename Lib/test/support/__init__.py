@@ -1933,8 +1933,11 @@ class SaveSignals:
 
 
 def with_pymalloc():
-    import _testcapi
-    return _testcapi.WITH_PYMALLOC
+    return sys._malloc_info.with_pymalloc
+
+
+def with_mimalloc():
+    return sys._malloc_info.with_mimalloc
 
 
 class _ALWAYS_EQ:

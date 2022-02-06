@@ -497,3 +497,59 @@
    fun:PyUnicode_FSConverter
 }
 
+# mimalloc
+
+{
+   Use of uninitialised value
+   Memcheck:Value8
+   fun:_Py_DECREF
+   fun:PyUnicode_InternInPlace
+   fun:PyUnicode_InternFromString
+}
+
+{
+   Page malloc generic
+   Memcheck:Addr8
+   fun:_Py__mi_page_malloc
+   fun:_Py__mi_malloc_generic
+   fun:_Py_mi_heap_malloc
+}
+
+{
+   Page malloc small
+   Memcheck:Addr8
+   fun:_Py__mi_page_malloc
+   fun:_Py_mi_heap_malloc_small
+   fun:_Py_mi_heap_malloc
+}
+
+{
+   Realloc aligned
+   Memcheck:Addr8
+   fun:memmove
+   fun:_mi_memcpy_aligned
+   fun:_Py__mi_heap_realloc_zero
+   fun:_Py_mi_heap_realloc
+}
+
+{
+   Malloc zero
+   Memcheck:Addr8
+   fun:memset
+   fun:_Py__mi_block_zero_init
+}
+
+{
+   Page free collect
+   Memcheck:Addr8
+   fun:mi_block_nextx
+   fun:mi_block_next
+}
+
+{
+   Page free collect set
+   Memcheck:Addr8
+   fun:mi_block_set_nextx
+   fun:mi_block_set_next
+}
+

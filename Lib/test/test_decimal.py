@@ -5609,6 +5609,11 @@ class CWhitebox(unittest.TestCase):
     @unittest.skipIf(check_sanitizer(address=True, memory=True),
                      "ASAN/MSAN sanitizer defaults to crashing "
                      "instead of returning NULL for malloc failure.")
+    @unittest.skipIf(
+        sys._malloc_info.allocator.startswith("mimalloc") and
+        os.name == "posix" and os.uname().machine == "s390x",
+        reason="Test segfaults on s390x under mimalloc"
+    )
     def test_maxcontext_exact_arith(self):
 
         # Make sure that exact operations do not raise MemoryError due

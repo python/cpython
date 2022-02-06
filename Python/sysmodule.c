@@ -1926,7 +1926,7 @@ static PyObject *
 sys__debugmallocstats_impl(PyObject *module)
 /*[clinic end generated code: output=ec3565f8c7cee46a input=33c0c9c416f98424]*/
 {
-#ifdef WITH_PYMALLOC
+#if defined(WITH_PYMALLOC) || defined(WITH_MIMALLOC)
     if (_PyObject_DebugMallocStats(stderr)) {
         fputc('\n', stderr);
     }
@@ -1934,6 +1934,81 @@ sys__debugmallocstats_impl(PyObject *module)
     _PyObject_DebugTypeStats(stderr);
 
     Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(malloc_info__doc__,
+"sys._malloc_info\n\
+\n\
+Memory allocator info as a named tuple.");
+
+static PyTypeObject MallocInfoType;
+
+static PyStructSequence_Field malloc_info_fields[] = {
+    {"allocator", "current memory allocator"},
+    {"with_freelists", "uses freelists"},
+    {"with_pymalloc", "supports pymalloc (aka obmalloc)"},
+    {"with_mimalloc", "supports mimalloc"},
+    {0}
+};
+
+static PyStructSequence_Desc malloc_info_desc = {
+    "sys._malloc_info",     /* name */
+    malloc_info__doc__ ,    /* doc */
+    malloc_info_fields,     /* fields */
+    4
+};
+
+static PyObject *
+make_malloc_info(void)
+{
+    PyObject *malloc_info;
+    const char *name;
+    PyObject *v;
+    int pos = 0;
+
+    malloc_info = PyStructSequence_New(&MallocInfoType);
+    if (malloc_info == NULL) {
+        return NULL;
+    }
+
+    name = _PyMem_GetCurrentAllocatorName();
+    if (name == NULL) {
+        name = "unknown";
+    }
+    v = PyUnicode_FromString(name);
+    if (v == NULL) {
+        Py_DECREF(malloc_info);
+        return NULL;
+    }
+
+    PyStructSequence_SET_ITEM(malloc_info, pos++, v);
+
+#ifdef WITH_FREELISTS
+    v = Py_True;
+#else
+    v = Py_False;
+#endif
+    PyStructSequence_SET_ITEM(malloc_info, pos++, _Py_NewRef(v));
+
+#ifdef WITH_PYMALLOC
+    v = Py_True;
+#else
+    v = Py_False;
+#endif
+    PyStructSequence_SET_ITEM(malloc_info, pos++, _Py_NewRef(v));
+
+#ifdef WITH_MIMALLOC
+    v = Py_True;
+#else
+    v = Py_False;
+#endif
+    PyStructSequence_SET_ITEM(malloc_info, pos++, _Py_NewRef(v));
+
+    if (PyErr_Occurred()) {
+        Py_CLEAR(malloc_info);
+        return NULL;
+    }
+    return malloc_info;
 }
 
 #ifdef Py_TRACE_REFS
@@ -3124,6 +3199,16 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
 #endif
 
     SET_SYS("thread_info", PyThread_GetInfo());
+
+    /* malloc_info */
+    if (MallocInfoType.tp_name == NULL) {
+        if (_PyStructSequence_InitType(&MallocInfoType,
+                                       &malloc_info_desc,
+                                       Py_TPFLAGS_DISALLOW_INSTANTIATION) < 0) {
+            goto type_init_failed;
+        }
+    }
+    SET_SYS("_malloc_info", make_malloc_info());
 
     /* initialize asyncgen_hooks */
     if (AsyncGenHooksType.tp_name == NULL) {

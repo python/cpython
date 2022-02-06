@@ -841,6 +841,9 @@ DTRACE_OBJS
 DTRACE_HEADERS
 DFLAGS
 DTRACE
+MIMALLOC_INCLUDES
+MIMALLOC_HEADERS
+WITH_MIMALLOC
 GDBM_LIBS
 GDBM_CFLAGS
 X11_LIBS
@@ -1071,6 +1074,7 @@ enable_loadable_sqlite_extensions
 with_dbmliborder
 enable_ipv6
 with_doc_strings
+with_mimalloc
 with_pymalloc
 with_freelists
 with_c_locale_coercion
@@ -1860,6 +1864,8 @@ Optional Packages:
                           value is a colon separated string with the backend
                           names `ndbm', `gdbm' and `bdb'.
   --with-doc-strings      enable documentation strings (default is yes)
+  --with-mimalloc         build with mimalloc memory allocator (default is
+                          yes)
   --with-pymalloc         enable specialized mallocs (default is yes)
   --with-freelists        enable object freelists (default is yes)
   --with-c-locale-coercion
@@ -15770,6 +15776,40 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_doc_strings" >&5
 $as_echo "$with_doc_strings" >&6; }
 
+# --with-mimalloc
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-mimalloc" >&5
+$as_echo_n "checking for --with-mimalloc... " >&6; }
+
+# Check whether --with-mimalloc was given.
+if test "${with_mimalloc+set}" = set; then :
+  withval=$with_mimalloc;
+else
+  with_mimalloc="yes"
+
+fi
+
+
+if test "$with_mimalloc" != no; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+  # disable pymalloc with mimalloc
+  # with_pymalloc="no"
+  # with_freelists="no"
+
+$as_echo "#define WITH_MIMALLOC 1" >>confdefs.h
+
+  WITH_MIMALLOC=1
+
+  MIMALLOC_HEADERS='$(MIMALLOC_HEADERS)'
+
+  MIMALLOC_INCLUDES='$(MIMALLOC_INCLUDES)'
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
 # Check for Python-specific malloc support
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-pymalloc" >&5
 $as_echo_n "checking for --with-pymalloc... " >&6; }
@@ -24471,6 +24511,7 @@ SRCDIRS="\
   Modules/cjkcodecs \
   Modules/expat \
   Objects \
+  Objects/mimalloc \
   Parser \
   Programs \
   Python \
@@ -24662,6 +24703,11 @@ if test "x$ac_cv_header_stdatomic_h" = xyes; then :
 $as_echo "#define HAVE_STD_ATOMIC 1" >>confdefs.h
 
 
+fi
+
+if test "$ac_cv_header_stdatomic_h" != yes -a "$with_mimalloc" != no; then
+    # mimalloc-atomic.h wants C11 stdatomic.h on POSIX
+    as_fn_error $? "--with-mimalloc requires stdatomic.h on your platform" "$LINENO" 5
 fi
 
 # Check for GCC >= 4.7 and clang __atomic builtin functions

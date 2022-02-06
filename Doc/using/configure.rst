@@ -262,6 +262,12 @@ also be used to improve performance.
 
    See also :envvar:`PYTHONMALLOC` environment variable.
 
+.. cmdoption:: --with-mimalloc
+
+   Enable :ref:`mimalloc <mimalloc>` memory allocator (disabled by default).
+
+   See also :envvar:`PYTHONMALLOC` environment variable.
+
 .. cmdoption:: --without-doc-strings
 
    Disable static documentation strings to reduce the memory footprint (enabled

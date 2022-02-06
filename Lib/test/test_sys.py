@@ -10,7 +10,7 @@ import sys
 import sysconfig
 import test.support
 from test import support
-from test.support import os_helper
+from test.support import missing_compiler_executable, os_helper
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test.support import threading_helper
 from test.support import import_helper
@@ -916,16 +916,28 @@ class SysModuleTest(unittest.TestCase):
         # The sysconfig vars are not available on Windows.
         if sys.platform != "win32":
             with_freelists = sysconfig.get_config_var("WITH_FREELISTS")
-            with_pymalloc = sysconfig.get_config_var("WITH_PYMALLOC")
+            pymalloc = sys._malloc_info.allocator.startswith("pymalloc")
+            mimalloc = sys._malloc_info.allocator.startswith("mimalloc")
             if with_freelists:
                 self.assertIn(b"free PyDictObjects", err)
-            if with_pymalloc:
+            if pymalloc:
                 self.assertIn(b'Small block threshold', err)
-            if not with_freelists and not with_pymalloc:
+            if mimalloc:
+                self.assertIn(b'mimalloc (version:', err)
+            if not with_freelists and not pymalloc and not mimalloc:
                 self.assertFalse(err)
 
         # The function has no parameter
         self.assertRaises(TypeError, sys._debugmallocstats, True)
+
+    @test.support.cpython_only
+    def test_malloc_info(self):
+        info = sys._malloc_info
+        self.assertEqual(len(info), 4)
+        self.assertIsInstance(info.allocator, str)
+        self.assertIsInstance(info.with_freelists, bool)
+        self.assertIsInstance(info.with_pymalloc, bool)
+        self.assertIsInstance(info.with_mimalloc, bool)
 
     @unittest.skipUnless(hasattr(sys, "getallocatedblocks"),
                          "sys.getallocatedblocks unavailable on this build")

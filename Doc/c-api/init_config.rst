@@ -243,14 +243,27 @@ PyPreConfig
       * ``PYMEM_ALLOCATOR_PYMALLOC_DEBUG`` (``6``): :ref:`Python pymalloc
         memory allocator <pymalloc>` with :ref:`debug hooks
         <pymem-debug-hooks>`.
+      * ``PYMEM_ALLOCATOR_MIMALLOC`` (``7``): :ref:`mimalloc
+        memory allocator <mimalloc>`.
+      * ``PYMEM_ALLOCATOR_MIMALLOC_DEBUG`` (``8``): :ref:`mimalloc
+        memory allocator <mimalloc>` with :ref:`debug hooks
+        <pymem-debug-hooks>`.
 
       ``PYMEM_ALLOCATOR_PYMALLOC`` and ``PYMEM_ALLOCATOR_PYMALLOC_DEBUG`` are
       not supported if Python is :option:`configured using --without-pymalloc
       <--without-pymalloc>`.
 
+      ``PYMEM_ALLOCATOR_MIMALLOC`` and ``PYMEM_ALLOCATOR_MIMALLOC_DEBUG`` are
+      not supported unless Python is :option:`configured using --with-mimalloc
+      <--with-mimalloc>`.
+
       See :ref:`Memory Management <memory>`.
 
       Default: ``PYMEM_ALLOCATOR_NOT_SET``.
+
+      .. versionchanged:: 3.11
+         Added ``PYMEM_ALLOCATOR_MIMALLOC`` and
+         ``PYMEM_ALLOCATOR_MIMALLOC_DEBUG``.
 
    .. c:member:: int configure_locale
 

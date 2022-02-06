@@ -156,6 +156,10 @@
     <ClInclude Include="..\Include\cpython\longintrepr.h" />
     <ClInclude Include="..\Include\cpython\longobject.h" />
     <ClInclude Include="..\Include\cpython\methodobject.h" />
+    <ClInclude Include="..\Include\mimalloc\mimalloc-atomic.h" />
+    <ClInclude Include="..\Include\mimalloc\mimalloc.h" />
+    <ClInclude Include="..\Include\mimalloc\mimalloc-internal.h" />
+    <ClInclude Include="..\Include\mimalloc\mimalloc-types.h" />
     <ClInclude Include="..\Include\cpython\modsupport.h" />
     <ClInclude Include="..\Include\cpython\object.h" />
     <ClInclude Include="..\Include\cpython\objimpl.h" />

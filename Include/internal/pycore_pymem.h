@@ -103,9 +103,21 @@ void _PyObject_VirtualFree(void *, size_t size);
 PyAPI_FUNC(Py_ssize_t) _Py_GetAllocatedBlocks(void);
 
 /* Macros */
-#ifdef WITH_PYMALLOC
+#if defined(WITH_PYMALLOC) || defined(WITH_MIMALLOC)
 // Export the symbol for the 3rd party guppy3 project
 PyAPI_FUNC(int) _PyObject_DebugMallocStats(FILE *out);
+#endif
+
+/* Simple valgrind integration */
+#ifdef WITH_VALGRIND
+#include <valgrind/valgrind.h>
+#include <valgrind/memcheck.h>
+#else
+#define VALGRIND_MALLOCLIKE_BLOCK(addr, sizeB, rzB, is_zeroed) do {} while(0)
+#define VALGRIND_RESIZEINPLACE_BLOCK(addr, oldSizeB, newSizeB, rzB) do {} while(0)
+#define VALGRIND_FREELIKE_BLOCK(addr, rzB) do {} while(0)
+#define VALGRIND_MAKE_MEM_UNDEFINED(addr, size) do {} while(0)
+#define VALGRIND_MAKE_MEM_DEFINED(addr, size) do {} while(0)
 #endif
 
 #ifdef __cplusplus

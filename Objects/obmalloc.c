@@ -3,12 +3,16 @@
 #include "pycore_code.h"         // stats
 
 #include <stdbool.h>
+#ifdef WITH_MIMALLOC
+#include "pycore_mimalloc.h"
+#include "mimalloc/static.c"
+#else
 #include <stdlib.h>               // malloc()
+#endif
 
 
 /* Defined in tracemalloc.c */
 extern void _PyMem_DumpTraceback(int fd, const void *ptr);
-
 
 /* Python's malloc wrappers (see pymem.h) */
 
@@ -130,6 +134,84 @@ _PyMem_RawFree(void *Py_UNUSED(ctx), void *ptr)
 }
 
 
+#ifdef WITH_MIMALLOC
+#ifdef WITH_VALGRIND
+#define WITH_VALGRIND_MIMALLOC 1
+#endif
+
+static void *
+_PyMimalloc_Malloc(void *ctx, size_t size)
+{
+    if (size == 0)
+        size = 1;
+    void *r = mi_malloc(size);
+#ifdef WITH_VALGRIND_MIMALLOC
+    // macro handles r == NULL for us
+    VALGRIND_MALLOCLIKE_BLOCK(r, mi_usable_size(r), 0, 1);
+    VALGRIND_MAKE_MEM_DEFINED(r, size);
+#endif
+    return r;
+}
+
+static void *
+_PyMimalloc_Calloc(void *ctx, size_t nelem, size_t elsize)
+{
+    if (nelem == 0 || elsize == 0) {
+        nelem = 1;
+        elsize = 1;
+    }
+    void *r = mi_calloc(nelem, elsize);
+#ifdef WITH_VALGRIND_MIMALLOC
+    VALGRIND_MALLOCLIKE_BLOCK(r, nelem * elsize, 0, 1);
+    VALGRIND_MAKE_MEM_DEFINED(r, nelem * elsize);
+#endif
+    return r;
+}
+
+static void *
+_PyMimalloc_Realloc(void *ctx, void *ptr, size_t size)
+{
+#ifdef WITH_VALGRIND_MIMALLOC
+    size_t osize = mi_usable_size(ptr);
+#endif
+    if (size == 0)
+        size = 1;
+    void *r = mi_realloc(ptr, size);
+#ifdef WITH_VALGRIND_MIMALLOC
+    if (r == ptr) {
+        // inplace resize
+        VALGRIND_RESIZEINPLACE_BLOCK(r, osize, mi_usable_size(r), 0);
+        VALGRIND_MAKE_MEM_DEFINED(r, size);
+    } else {
+        // old block deallocated
+        VALGRIND_FREELIKE_BLOCK(ptr, 0);
+        if (r != NULL) {
+            VALGRIND_MALLOCLIKE_BLOCK(r, mi_usable_size(r), 0, 1);
+            VALGRIND_MAKE_MEM_DEFINED(r, osize);
+        } else {
+            VALGRIND_MAKE_MEM_UNDEFINED(ptr, osize);
+        }
+    }
+#endif
+    return r;
+}
+
+static void
+_PyMimalloc_Free(void *ctx, void *ptr)
+{
+#ifdef WITH_VALGRIND_MIMALLOC
+    size_t osize = mi_usable_size(ptr);
+#endif
+    mi_free(ptr);
+#ifdef WITH_VALGRIND_MIMALLOC
+    VALGRIND_FREELIKE_BLOCK(ptr, 0);
+    VALGRIND_MAKE_MEM_DEFINED(ptr, osize);
+#endif
+}
+
+#endif // WITH_MIMALLOC
+
+
 #ifdef MS_WINDOWS
 static void *
 _PyObject_ArenaVirtualAlloc(void *Py_UNUSED(ctx), size_t size)
@@ -179,17 +261,34 @@ _PyObject_ArenaFree(void *Py_UNUSED(ctx), void *ptr, size_t Py_UNUSED(size))
 #endif
 
 #define MALLOC_ALLOC {NULL, _PyMem_RawMalloc, _PyMem_RawCalloc, _PyMem_RawRealloc, _PyMem_RawFree}
+#ifdef WITH_MIMALLOC
+#  define MIMALLOC_ALLOC {NULL, _PyMimalloc_Malloc, _PyMimalloc_Calloc, _PyMimalloc_Realloc, _PyMimalloc_Free}
+#endif
 #ifdef WITH_PYMALLOC
 #  define PYMALLOC_ALLOC {NULL, _PyObject_Malloc, _PyObject_Calloc, _PyObject_Realloc, _PyObject_Free}
 #endif
 
-#define PYRAW_ALLOC MALLOC_ALLOC
-#ifdef WITH_PYMALLOC
+#ifdef WITH_MIMALLOC
+// XXX: MIMALLOC_ALLOC as raw malloc breaks tests in debug mode
+// alloc_for_runtime() initializes PYMEM_DOMAIN_RAW before the env var
+// PYTHONMALLOC is parsed.
+#  ifdef Py_DEBUG
+#    define PYRAW_ALLOC MALLOC_ALLOC
+#  else
+#    define PYRAW_ALLOC MIMALLOC_ALLOC
+#  endif
+#  define PYOBJ_ALLOC MIMALLOC_ALLOC
+#  define PYMEM_ALLOC MIMALLOC_ALLOC
+#elif defined(WITH_PYMALLOC)
+#  define PYRAW_ALLOC MALLOC_ALLOC
 #  define PYOBJ_ALLOC PYMALLOC_ALLOC
+#  define PYMEM_ALLOC PYMALLOC_ALLOC
 #else
+#  define PYRAW_ALLOC MALLOC_ALLOC
 #  define PYOBJ_ALLOC MALLOC_ALLOC
-#endif
-#define PYMEM_ALLOC PYOBJ_ALLOC
+#  define PYMEM_ALLOC MALLOC_ALLOC
+#endif // WITH_MIMALLOC
+
 
 typedef struct {
     /* We tag each block with an API ID in order to tag API violations */
@@ -292,6 +391,14 @@ _PyMem_GetAllocatorName(const char *name, PyMemAllocatorName *allocator)
         *allocator = PYMEM_ALLOCATOR_PYMALLOC_DEBUG;
     }
 #endif
+#ifdef WITH_MIMALLOC
+    else if (strcmp(name, "mimalloc") == 0) {
+        *allocator = PYMEM_ALLOCATOR_MIMALLOC;
+    }
+    else if (strcmp(name, "mimalloc_debug") == 0) {
+        *allocator = PYMEM_ALLOCATOR_MIMALLOC_DEBUG;
+    }
+#endif
     else if (strcmp(name, "malloc") == 0) {
         *allocator = PYMEM_ALLOCATOR_MALLOC;
     }
@@ -343,7 +450,26 @@ _PyMem_SetupAllocators(PyMemAllocatorName allocator)
         break;
     }
 #endif
+#ifdef WITH_MIMALLOC
+    case PYMEM_ALLOCATOR_MIMALLOC:
+    case PYMEM_ALLOCATOR_MIMALLOC_DEBUG:
+    {
+        PyMemAllocatorEx mimalloc = MIMALLOC_ALLOC;
+#ifdef Py_DEBUG
+        PyMemAllocatorEx malloc_alloc = MALLOC_ALLOC;
+        PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &malloc_alloc);
+#else
+        PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &mimalloc);
+#endif
+        PyMem_SetAllocator(PYMEM_DOMAIN_MEM, &mimalloc);
+        PyMem_SetAllocator(PYMEM_DOMAIN_OBJ, &mimalloc);
 
+        if (allocator == PYMEM_ALLOCATOR_MIMALLOC_DEBUG) {
+            PyMem_SetupDebugHooks();
+        }
+        break;
+    }
+#endif
     case PYMEM_ALLOCATOR_MALLOC:
     case PYMEM_ALLOCATOR_MALLOC_DEBUG:
     {
@@ -380,6 +506,9 @@ _PyMem_GetCurrentAllocatorName(void)
 #ifdef WITH_PYMALLOC
     PyMemAllocatorEx pymalloc = PYMALLOC_ALLOC;
 #endif
+#ifdef WITH_MIMALLOC
+    PyMemAllocatorEx mimalloc = MIMALLOC_ALLOC;
+#endif
 
     if (pymemallocator_eq(&_PyMem_Raw, &malloc_alloc) &&
         pymemallocator_eq(&_PyMem, &malloc_alloc) &&
@@ -393,6 +522,19 @@ _PyMem_GetCurrentAllocatorName(void)
         pymemallocator_eq(&_PyObject, &pymalloc))
     {
         return "pymalloc";
+    }
+#endif
+#ifdef WITH_MIMALLOC
+    if (
+#ifdef Py_DEBUG
+        pymemallocator_eq(&_PyMem_Raw, &malloc_alloc) &&
+#else
+        pymemallocator_eq(&_PyMem_Raw, &mimalloc) &&
+#endif
+        pymemallocator_eq(&_PyMem, &mimalloc) &&
+        pymemallocator_eq(&_PyObject, &mimalloc))
+    {
+        return "mimalloc";
     }
 #endif
 
@@ -419,6 +561,19 @@ _PyMem_GetCurrentAllocatorName(void)
             return "pymalloc_debug";
         }
 #endif
+#ifdef WITH_MIMALLOC
+        if (
+#ifdef Py_DEBUG
+            pymemallocator_eq(&_PyMem_Debug.raw.alloc, &malloc_alloc) &&
+#else
+            pymemallocator_eq(&_PyMem_Debug.raw.alloc, &mimalloc) &&
+#endif
+            pymemallocator_eq(&_PyMem_Debug.mem.alloc, &mimalloc) &&
+            pymemallocator_eq(&_PyMem_Debug.obj.alloc, &mimalloc))
+        {
+            return "mimalloc_debug";
+        }
+#endif
     }
     return NULL;
 }
@@ -426,6 +581,7 @@ _PyMem_GetCurrentAllocatorName(void)
 
 #undef MALLOC_ALLOC
 #undef PYMALLOC_ALLOC
+#undef MIMALLOC_ALLOC
 #undef PYRAW_ALLOC
 #undef PYMEM_ALLOC
 #undef PYOBJ_ALLOC
@@ -444,13 +600,27 @@ static PyObjectArenaAllocator _PyObject_Arena = {NULL,
 #endif
     };
 
-#ifdef WITH_PYMALLOC
+#if defined(WITH_PYMALLOC) || defined(WITH_MIMALLOC)
 static int
 _PyMem_DebugEnabled(void)
 {
     return (_PyObject.malloc == _PyMem_DebugMalloc);
 }
 
+#ifdef WITH_MIMALLOC
+static int
+_PyMem_MimallocEnabled(void)
+{
+    if (_PyMem_DebugEnabled()) {
+        return (_PyMem_Debug.obj.alloc.malloc == _PyMimalloc_Malloc);
+    }
+    else {
+        return (_PyObject.malloc == _PyMimalloc_Malloc);
+    }
+}
+#endif
+
+#ifdef WITH_PYMALLOC
 static int
 _PyMem_PymallocEnabled(void)
 {
@@ -462,7 +632,7 @@ _PyMem_PymallocEnabled(void)
     }
 }
 #endif
-
+#endif // WITH_PYMALLOC || WITH_MIMALLOC
 
 static void
 _PyMem_SetupDebugHooksDomain(PyMemAllocatorDomain domain)
@@ -2924,6 +3094,22 @@ _PyDebugAllocatorStats(FILE *out,
     (void)printone(out, buf2, num_blocks * sizeof_block);
 }
 
+#ifdef WITH_MIMALLOC
+
+static void
+mimalloc_output(const char *msg, void *arg) {
+    fputs(msg, (FILE *)arg);
+}
+
+static int
+_PyObject_DebugMimallocStats(FILE *out) {
+    fprintf(out, "mimalloc (version: %i)\n", mi_version());
+    mi_stats_print_out(mimalloc_output, (void *)out);
+    fputc('\n', out);
+    return 0;
+}
+#endif
+
 
 #ifdef WITH_PYMALLOC
 
@@ -2955,13 +3141,9 @@ pool_is_in_list(const poolp target, poolp list)
  * Return 0 if the memory debug hooks are not installed or no statistics was
  * written into out, return 1 otherwise.
  */
-int
-_PyObject_DebugMallocStats(FILE *out)
+static int
+_PyObject_DebugObjectMallocStats(FILE *out)
 {
-    if (!_PyMem_PymallocEnabled()) {
-        return 0;
-    }
-
     uint i;
     const uint numclasses = SMALL_REQUEST_THRESHOLD >> ALIGNMENT_SHIFT;
     /* # of pools, allocated blocks, and free blocks per class index */
@@ -3118,3 +3300,23 @@ _PyObject_DebugMallocStats(FILE *out)
 }
 
 #endif /* #ifdef WITH_PYMALLOC */
+
+
+/* Print summary info to "out" about the state of mimalloc/pymalloc
+ */
+
+int
+_PyObject_DebugMallocStats(FILE *out)
+{
+#ifdef WITH_PYMALLOC
+    if (_PyMem_PymallocEnabled()) {
+        return _PyObject_DebugObjectMallocStats(out);
+    }
+#endif
+#ifdef WITH_MIMALLOC
+    if (_PyMem_MimallocEnabled()) {
+        return _PyObject_DebugMimallocStats(out);
+    }
+#endif
+    return 0;
+}

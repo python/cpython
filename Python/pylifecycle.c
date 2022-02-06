@@ -1798,7 +1798,7 @@ Py_FinalizeEx(void)
     int dump_refs = tstate->interp->config.dump_refs;
     wchar_t *dump_refs_file = tstate->interp->config.dump_refs_file;
 #endif
-#ifdef WITH_PYMALLOC
+#if defined(WITH_PYMALLOC) || defined(WITH_MIMALLOC)
     int malloc_stats = tstate->interp->config.malloc_stats;
 #endif
 
@@ -1931,7 +1931,7 @@ Py_FinalizeEx(void)
         fclose(dump_refs_fp);
     }
 #endif /* Py_TRACE_REFS */
-#ifdef WITH_PYMALLOC
+#if defined(WITH_PYMALLOC) || defined(WITH_MIMALLOC)
     if (malloc_stats) {
         _PyObject_DebugMallocStats(stderr);
     }

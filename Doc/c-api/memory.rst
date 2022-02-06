@@ -377,10 +377,12 @@ Default memory allocators:
 ===============================  ====================  ==================  =====================  ====================
 Configuration                    Name                  PyMem_RawMalloc     PyMem_Malloc           PyObject_Malloc
 ===============================  ====================  ==================  =====================  ====================
-Release build                    ``"pymalloc"``        ``malloc``          ``pymalloc``           ``pymalloc``
-Debug build                      ``"pymalloc_debug"``  ``malloc`` + debug  ``pymalloc`` + debug   ``pymalloc`` + debug
-Release build, without pymalloc  ``"malloc"``          ``malloc``          ``malloc``             ``malloc``
-Debug build, without pymalloc    ``"malloc_debug"``    ``malloc`` + debug  ``malloc`` + debug     ``malloc`` + debug
+Release build, with mimalloc     ``"mimalloc"``        ``mimalloc``        ``mimalloc``           ``mimalloc``
+Debug build, with mimalloc       ``"mimalloc_debug"``  ``malloc`` + debug  ``mimalloc`` + debug   ``mimalloc`` + debug
+Release build, without mimalloc  ``"pymalloc"``        ``malloc``          ``pymalloc``           ``pymalloc``
+Debug build, without mimalloc    ``"pymalloc_debug"``  ``malloc`` + debug  ``pymalloc`` + debug   ``pymalloc`` + debug
+Release build, without both      ``"malloc"``          ``malloc``          ``malloc``             ``malloc``
+Debug build, without both        ``"malloc_debug"``    ``malloc`` + debug  ``malloc`` + debug     ``malloc`` + debug
 ===============================  ====================  ==================  =====================  ====================
 
 Legend:
@@ -389,6 +391,7 @@ Legend:
 * ``malloc``: system allocators from the standard C library, C functions:
   :c:func:`malloc`, :c:func:`calloc`, :c:func:`realloc` and :c:func:`free`.
 * ``pymalloc``: :ref:`pymalloc memory allocator <pymalloc>`.
+* ``mimalloc``: :ref:`mimalloc memory allocator <mimalloc>`.
 * "+ debug": with :ref:`debug hooks on the Python memory allocators
   <pymem-debug-hooks>`.
 * "Debug build": :ref:`Python build in debug mode <debug-build>`.
@@ -641,6 +644,21 @@ Customize pymalloc Arena Allocator
 .. c:function:: void PyObject_SetArenaAllocator(PyObjectArenaAllocator *allocator)
 
    Set the arena allocator.
+
+
+.. _mimalloc:
+
+The mimalloc allocator
+======================
+
+`mimalloc (pronounced "me-malloc") <https://github.com/microsoft/mimalloc>`_
+is a general purpose allocator with excellent performance characteristics.
+
+This allocator is disabled by default unless Python is configured with the
+:option:`--with-mimalloc` option. It can also be disabled at runtime using
+the :envvar:`PYTHONMALLOC` environment variable (ex: ``PYTHONMALLOC=malloc``).
+If Python is configured with both :ref:`pymalloc <pymalloc>` and mimalloc, then
+mimalloc is preferred.
 
 
 tracemalloc C API
