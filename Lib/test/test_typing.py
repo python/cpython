@@ -240,6 +240,8 @@ class TypeVarTests(BaseTestCase):
 
     def test_bound_errors(self):
         with self.assertRaises(TypeError):
+            TypeVar('X', bound=Union)
+        with self.assertRaises(TypeError):
             TypeVar('X', str, float, bound=Employee)
 
     def test_missing__name__(self):
