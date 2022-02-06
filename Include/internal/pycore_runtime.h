@@ -148,21 +148,6 @@ typedef struct pyruntimestate {
     PyInterpreterState _main_interpreter;
 } _PyRuntimeState;
 
-#define _PyThreadState_INIT \
-    { \
-        ._static = 1, \
-    }
-#define _PyInterpreterState_INIT \
-    { \
-        ._static = 1, \
-        ._initial_thread = _PyThreadState_INIT, \
-    }
-#define _PyRuntimeState_INIT \
-    { \
-        .global_objects = _Py_global_objects_INIT, \
-        ._main_interpreter = _PyInterpreterState_INIT, \
-    }
-
 
 /* other API */
 

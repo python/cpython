@@ -2191,6 +2191,34 @@ function PyType_GetQualName
 data PyStructSequence_UnnamedField
     added 3.11
 
+# Add stable Py_buffer API in Python 3.11 (https://bugs.python.org/issue45459)
+struct Py_buffer
+    added 3.11
+function PyObject_CheckBuffer
+    added 3.11
+function PyObject_GetBuffer
+    added 3.11
+function PyBuffer_GetPointer
+    added 3.11
+function PyBuffer_SizeFromFormat
+    added 3.11
+function PyBuffer_ToContiguous
+    added 3.11
+function PyBuffer_FromContiguous
+    added 3.11
+function PyObject_CopyData
+    added 3.11
+function PyBuffer_IsContiguous
+    added 3.11
+function PyBuffer_FillContiguousStrides
+    added 3.11
+function PyBuffer_FillInfo
+    added 3.11
+function PyBuffer_Release
+    added 3.11
+function PyMemoryView_FromBuffer
+    added 3.11
+
 # (Detailed comments aren't really needed for further entries: from here on
 #  we can use version control logs.)
 

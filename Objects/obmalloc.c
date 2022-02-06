@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "pycore_pymem.h"         // _PyTraceMalloc_Config
+#include "pycore_code.h"         // stats
 
 #include <stdbool.h>
 #ifdef WITH_MIMALLOC
@@ -865,6 +866,7 @@ PyObject_Malloc(size_t size)
     /* see PyMem_RawMalloc() */
     if (size > (size_t)PY_SSIZE_T_MAX)
         return NULL;
+    OBJECT_STAT_INC(allocations);
     return _PyObject.malloc(_PyObject.ctx, size);
 }
 
@@ -874,6 +876,7 @@ PyObject_Calloc(size_t nelem, size_t elsize)
     /* see PyMem_RawMalloc() */
     if (elsize != 0 && nelem > (size_t)PY_SSIZE_T_MAX / elsize)
         return NULL;
+    OBJECT_STAT_INC(allocations);
     return _PyObject.calloc(_PyObject.ctx, nelem, elsize);
 }
 
@@ -889,6 +892,7 @@ PyObject_Realloc(void *ptr, size_t new_size)
 void
 PyObject_Free(void *ptr)
 {
+    OBJECT_STAT_INC(frees);
     _PyObject.free(_PyObject.ctx, ptr);
 }
 
@@ -1739,8 +1743,9 @@ new_arena(void)
         const char *opt = Py_GETENV("PYTHONMALLOCSTATS");
         debug_stats = (opt != NULL && *opt != '\0');
     }
-    if (debug_stats)
+    if (debug_stats) {
         _PyObject_DebugMallocStats(stderr);
+    }
 
     if (unused_arena_objects == NULL) {
         uint i;

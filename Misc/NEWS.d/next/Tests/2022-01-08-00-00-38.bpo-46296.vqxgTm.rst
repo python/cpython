@@ -1,2 +1,0 @@
-Add a test case for :mod:`enum`
-with ``_use_args_ == True`` and ``_member_type_ == object``.

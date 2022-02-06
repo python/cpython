@@ -6,8 +6,8 @@ import unittest
 
 from test import support
 from test.support import os_helper
+from test.test_tools import imports_under_tool, skip_if_missing
 
-from . import imports_under_tool, skip_if_missing
 skip_if_missing('freeze')
 with imports_under_tool('freeze', 'test'):
     import freeze as helper
