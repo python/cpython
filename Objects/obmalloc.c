@@ -135,9 +135,6 @@ _PyMem_RawFree(void *Py_UNUSED(ctx), void *ptr)
 
 
 #ifdef WITH_MIMALLOC
-#ifdef WITH_VALGRIND
-#define WITH_VALGRIND_MIMALLOC 1
-#endif
 
 static void *
 _PyMimalloc_Malloc(void *ctx, size_t size)
@@ -145,11 +142,6 @@ _PyMimalloc_Malloc(void *ctx, size_t size)
     if (size == 0)
         size = 1;
     void *r = mi_malloc(size);
-#ifdef WITH_VALGRIND_MIMALLOC
-    // macro handles r == NULL for us
-    VALGRIND_MALLOCLIKE_BLOCK(r, mi_usable_size(r), 0, 1);
-    VALGRIND_MAKE_MEM_DEFINED(r, size);
-#endif
     return r;
 }
 
@@ -161,52 +153,22 @@ _PyMimalloc_Calloc(void *ctx, size_t nelem, size_t elsize)
         elsize = 1;
     }
     void *r = mi_calloc(nelem, elsize);
-#ifdef WITH_VALGRIND_MIMALLOC
-    VALGRIND_MALLOCLIKE_BLOCK(r, nelem * elsize, 0, 1);
-    VALGRIND_MAKE_MEM_DEFINED(r, nelem * elsize);
-#endif
     return r;
 }
 
 static void *
 _PyMimalloc_Realloc(void *ctx, void *ptr, size_t size)
 {
-#ifdef WITH_VALGRIND_MIMALLOC
-    size_t osize = mi_usable_size(ptr);
-#endif
+
     if (size == 0)
         size = 1;
-    void *r = mi_realloc(ptr, size);
-#ifdef WITH_VALGRIND_MIMALLOC
-    if (r == ptr) {
-        // inplace resize
-        VALGRIND_RESIZEINPLACE_BLOCK(r, osize, mi_usable_size(r), 0);
-        VALGRIND_MAKE_MEM_DEFINED(r, size);
-    } else {
-        // old block deallocated
-        VALGRIND_FREELIKE_BLOCK(ptr, 0);
-        if (r != NULL) {
-            VALGRIND_MALLOCLIKE_BLOCK(r, mi_usable_size(r), 0, 1);
-            VALGRIND_MAKE_MEM_DEFINED(r, osize);
-        } else {
-            VALGRIND_MAKE_MEM_UNDEFINED(ptr, osize);
-        }
-    }
-#endif
-    return r;
+    return mi_realloc(ptr, size);
 }
 
 static void
 _PyMimalloc_Free(void *ctx, void *ptr)
 {
-#ifdef WITH_VALGRIND_MIMALLOC
-    size_t osize = mi_usable_size(ptr);
-#endif
     mi_free(ptr);
-#ifdef WITH_VALGRIND_MIMALLOC
-    VALGRIND_FREELIKE_BLOCK(ptr, 0);
-    VALGRIND_MAKE_MEM_DEFINED(ptr, osize);
-#endif
 }
 
 #endif // WITH_MIMALLOC
