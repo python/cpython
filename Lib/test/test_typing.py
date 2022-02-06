@@ -255,7 +255,7 @@ class TypeVarTests(BaseTestCase):
         with self.assertRaises(ValueError):
             TypeVar('T', covariant=True, contravariant=True)
 
-    def test_subscript(self):
+    def test_var_substitution(self):
         T = TypeVar('T')
         self.assertEqual(T.__parameters__, (T,))
         self.assertIs(T.__parameters__[0], T)
@@ -270,7 +270,7 @@ class TypeVarTests(BaseTestCase):
         self.assertEqual(T[int|str,], int|str)
         self.assertEqual(T[Union[int, str],], Union[int, str])
 
-    def test_bad_subscript(self):
+    def test_bad_var_substitution(self):
         T = TypeVar('T')
         P = ParamSpec("P")
         bad_args = (
@@ -5018,7 +5018,7 @@ class ParamSpecTests(BaseTestCase):
         self.assertEqual(G1.__args__, ((int, str), (bytes,)))
         self.assertEqual(G2.__args__, ((int,), (str, bytes)))
 
-    def test_subscript(self):
+    def test_var_substitution(self):
         T = TypeVar("T")
         P = ParamSpec("P")
         self.assertEqual(P.__parameters__, (P,))
@@ -5030,7 +5030,7 @@ class ParamSpecTests(BaseTestCase):
         self.assertIs(P[P,], P)
         self.assertEqual(P[Concatenate[int, P],], Concatenate[int, P])
 
-    def test_bad_subscript(self):
+    def test_bad_var_substitution(self):
         T = TypeVar('T')
         P = ParamSpec('P')
         bad_args = (42, int, None, T, int|str, Union[int, str])

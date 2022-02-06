@@ -9844,14 +9844,30 @@ _ACEOF
 $as_echo_n "checking whether to enable large file support... " >&6; }
 if test "$ac_cv_sizeof_off_t" -gt "$ac_cv_sizeof_long" -a \
 	"$ac_cv_sizeof_long_long" -ge "$ac_cv_sizeof_off_t"; then
+  have_largefile_support="yes"
+else
+  have_largefile_support="no"
+fi
+case $ac_sys_system in #(
+  Emscripten) :
+    have_largefile_support="no"
+ ;; #(
+  *) :
+     ;;
+esac
+if test "x$have_largefile_support" = xyes; then :
+
 
 $as_echo "#define HAVE_LARGEFILE_SUPPORT 1" >>confdefs.h
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
+
 else
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
+
 fi
 
 # The cast to long int works around a bug in the HP C Compiler
@@ -13751,7 +13767,7 @@ for ac_func in  \
   gai_strerror getegid getentropy geteuid getgid getgrgid getgrgid_r \
   getgrnam_r getgrouplist getgroups getitimer getloadavg getlogin \
   getpeername getpgid getpid getppid getpriority _getpty \
-  getpwent getpwnam_r getpwuid_r getresgid getresuid getsid getspent \
+  getpwent getpwnam_r getpwuid_r getresgid getresuid getrusage getsid getspent \
   getspnam getuid getwd if_nameindex initgroups kill killpg lchown linkat \
   lockf lstat lutimes madvise mbrtowc memrchr mkdirat mkfifo mkfifoat \
   mknod mknodat mktime mmap mremap nice openat opendir pathconf pause pipe \

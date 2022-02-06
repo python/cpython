@@ -184,7 +184,7 @@ class PosixTester(unittest.TestCase):
         posix.truncate(os_helper.TESTFN, 0)
 
     @unittest.skipUnless(getattr(os, 'execve', None) in os.supports_fd, "test needs execve() to support the fd parameter")
-    @unittest.skipUnless(hasattr(os, 'fork'), "test needs os.fork()")
+    @support.requires_fork()
     def test_fexecve(self):
         fp = os.open(sys.executable, os.O_RDONLY)
         try:
@@ -199,7 +199,7 @@ class PosixTester(unittest.TestCase):
 
 
     @unittest.skipUnless(hasattr(posix, 'waitid'), "test needs posix.waitid()")
-    @unittest.skipUnless(hasattr(os, 'fork'), "test needs os.fork()")
+    @support.requires_fork()
     def test_waitid(self):
         pid = os.fork()
         if pid == 0:
@@ -209,7 +209,7 @@ class PosixTester(unittest.TestCase):
             res = posix.waitid(posix.P_PID, pid, posix.WEXITED)
             self.assertEqual(pid, res.si_pid)
 
-    @unittest.skipUnless(hasattr(os, 'fork'), "test needs os.fork()")
+    @support.requires_fork()
     def test_register_at_fork(self):
         with self.assertRaises(TypeError, msg="Positional args not allowed"):
             os.register_at_fork(lambda: None)
@@ -1056,6 +1056,7 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, 'getegid'), "test needs os.getegid()")
     @unittest.skipUnless(hasattr(os, 'popen'), "test needs os.popen()")
+    @support.requires_subprocess()
     def test_getgroups(self):
         with os.popen('id -G 2>/dev/null') as idg:
             groups = idg.read().strip()
@@ -1481,7 +1482,7 @@ class TestPosixDirFd(unittest.TestCase):
                 self.addCleanup(posix.unlink, fullname)
                 raise
 
-    @unittest.skipUnless(os.mkfifo in os.supports_dir_fd, "test needs dir_fd support in os.mkfifo()")
+    @unittest.skipUnless(hasattr(os, 'mkfifo') and os.mkfifo in os.supports_dir_fd, "test needs dir_fd support in os.mkfifo()")
     def test_mkfifo_dir_fd(self):
         with self.prepare() as (dir_fd, name, fullname):
             try:
