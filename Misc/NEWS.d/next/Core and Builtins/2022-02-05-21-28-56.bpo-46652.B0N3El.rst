@@ -1,0 +1,4 @@
+Use the code.co_qualname field to provide richer information in traceback output
+generation.
+
+Patch by Gabriele N. Tornetta

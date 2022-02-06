@@ -2159,7 +2159,7 @@ class BaseTaskTests:
         self.assertEqual(task._source_traceback[-2][:3],
                          (__file__,
                           lineno,
-                          'test_task_source_traceback'))
+                          self.test_task_source_traceback.__qualname__))
         self.loop.run_until_complete(task)
 
     def _test_cancel_wait_for(self, timeout):

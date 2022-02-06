@@ -472,7 +472,7 @@ class Trace:
         else:
             modulename = None
 
-        funcname = code.co_name
+        funcname = code.co_qualname
         clsname = None
         if code in self._caller_cache:
             if self._caller_cache[code] is not None:
@@ -500,8 +500,6 @@ class Trace:
                         # _caller_cache could be flushed if functions in
                         # the new module get called.
                         self._caller_cache[code] = clsname
-        if clsname is not None:
-            funcname = "%s.%s" % (clsname, funcname)
 
         return filename, modulename, funcname
 

@@ -461,11 +461,11 @@ class HandlerExceptionTest(unittest.TestCase):
             entries = traceback.extract_tb(e.__traceback__)
             self.assertEqual(len(entries), 3)
             self.check_traceback_entry(entries[0],
-                                       "test_pyexpat.py", "test_exception")
+                                       "test_pyexpat.py", self.test_exception.__qualname__)
             self.check_traceback_entry(entries[1],
                                        "pyexpat.c", "StartElement")
             self.check_traceback_entry(entries[2],
-                                       "test_pyexpat.py", "StartElementHandler")
+                                       "test_pyexpat.py", self.StartElementHandler.__qualname__)
             if (sysconfig.is_python_build()
                 and not (sys.platform == 'win32' and platform.machine() == 'ARM')
                 and not is_emscripten

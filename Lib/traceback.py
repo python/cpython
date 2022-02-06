@@ -416,7 +416,7 @@ class StackSummary(list):
         for f, (lineno, end_lineno, colno, end_colno) in frame_gen:
             co = f.f_code
             filename = co.co_filename
-            name = co.co_name
+            name = co.co_qualname
 
             fnames.add(filename)
             linecache.lazycache(filename, f.f_globals)

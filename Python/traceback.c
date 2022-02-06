@@ -941,7 +941,7 @@ tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit,
         cnt++;
         if (cnt <= TB_RECURSIVE_CUTOFF) {
             if (tb_displayline(tb, f, code->co_filename, tb->tb_lineno,
-                               tb->tb_frame, code->co_name, indent, margin) < 0) {
+                               tb->tb_frame, code->co_qualname, indent, margin) < 0) {
                 goto error;
             }
 
@@ -1189,9 +1189,9 @@ dump_frame(int fd, InterpreterFrame *frame)
     }
     PUTS(fd, " in ");
 
-    if (code->co_name != NULL
-       && PyUnicode_Check(code->co_name)) {
-        _Py_DumpASCII(fd, code->co_name);
+    PyObject *name = code->co_qualname ? code->co_qualname : code->co_name;
+    if (name != NULL && PyUnicode_Check(code->co_qualname)) {
+        _Py_DumpASCII(fd, code->co_qualname);
     }
     else {
         PUTS(fd, "???");

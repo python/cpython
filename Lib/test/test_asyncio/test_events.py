@@ -2245,7 +2245,7 @@ class HandleTests(test_utils.TestCase):
             self.assertEqual(h._source_traceback[-1][:3],
                              (__file__,
                               lineno,
-                              'test_handle_source_traceback'))
+                              self.test_handle_source_traceback.__qualname__))
 
         # call_soon
         h = loop.call_soon(noop)

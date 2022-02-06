@@ -317,10 +317,10 @@ class TestFuncs(unittest.TestCase):
 
         expected = {
             self.filemod + ('traced_decorated_function',): 1,
-            self.filemod + ('decorator_fabric',): 1,
-            self.filemod + ('decorator2',): 1,
-            self.filemod + ('decorator1',): 1,
-            self.filemod + ('func',): 1,
+            self.filemod + ('traced_decorated_function.<locals>.decorator_fabric',): 1,
+            self.filemod + ('traced_decorated_function.<locals>.decorator_fabric.<locals>.decorator2',): 1,
+            self.filemod + ('traced_decorated_function.<locals>.decorator1',): 1,
+            self.filemod + ('traced_decorated_function.<locals>.func',): 1,
         }
         self.assertEqual(self.tracer.results().calledfuncs, expected)
 

@@ -557,7 +557,7 @@ class BaseFutureTests:
         self.assertEqual(future._source_traceback[-2][:3],
                          (__file__,
                           lineno,
-                          'test_future_source_traceback'))
+                          self.test_future_source_traceback.__qualname__))
 
     @mock.patch('asyncio.base_events.logger')
     def check_future_exception_never_retrieved(self, debug, m_log):

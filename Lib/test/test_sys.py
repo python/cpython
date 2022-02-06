@@ -449,7 +449,7 @@ class SysModuleTest(unittest.TestCase):
         frame = d.pop(thread_id)
         stack = traceback.extract_stack(frame)
         for i, (filename, lineno, funcname, sourceline) in enumerate(stack):
-            if funcname == "f123":
+            if funcname == f123.__qualname__:
                 break
         else:
             self.fail("didn't find f123() on thread's call stack")
@@ -458,7 +458,7 @@ class SysModuleTest(unittest.TestCase):
 
         # And the next record must be for g456().
         filename, lineno, funcname, sourceline = stack[i+1]
-        self.assertEqual(funcname, "g456")
+        self.assertEqual(funcname, g456.__qualname__)
         self.assertIn(sourceline, ["leave_g.wait()", "entered_g.set()"])
 
         # Reap the spawned thread.
@@ -516,7 +516,7 @@ class SysModuleTest(unittest.TestCase):
         exc_type, exc_value, exc_tb = d.pop(thread_id)
         stack = traceback.extract_stack(exc_tb.tb_frame)
         for i, (filename, lineno, funcname, sourceline) in enumerate(stack):
-            if funcname == "f123":
+            if funcname == f123.__qualname__:
                 break
         else:
             self.fail("didn't find f123() on thread's call stack")
@@ -525,7 +525,7 @@ class SysModuleTest(unittest.TestCase):
 
         # And the next record must be for g456().
         filename, lineno, funcname, sourceline = stack[i+1]
-        self.assertEqual(funcname, "g456")
+        self.assertEqual(funcname, g456.__qualname__)
         self.assertTrue(sourceline.startswith("if leave_g.wait("))
 
         # Reap the spawned thread.

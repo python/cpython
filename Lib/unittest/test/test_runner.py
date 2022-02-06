@@ -96,10 +96,10 @@ class TestCleanUp(unittest.TestCase):
         self.assertFalse(outcome.success)
 
         (_, msg2), (_, msg1) = result.errors
-        self.assertIn('in cleanup1', msg1)
+        self.assertIn(f'in {cleanup1.__qualname__}', msg1)
         self.assertIn('raise CleanUpExc', msg1)
         self.assertIn('Exception: foo', msg1)
-        self.assertIn('in cleanup2', msg2)
+        self.assertIn(f'in {cleanup2.__qualname__}', msg2)
         self.assertIn('raise exc2', msg2)
         self.assertIn('Exception: bar', msg2)
 

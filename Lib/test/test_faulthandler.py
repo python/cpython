@@ -198,7 +198,7 @@ class FaultHandlerTests(unittest.TestCase):
             """,
             9,
             'Segmentation fault',
-            function='__del__',
+            function='RefCycle.__del__',
             garbage_collecting=True)
 
     def test_fatal_error_c_thread(self):
@@ -575,10 +575,10 @@ class FaultHandlerTests(unittest.TestCase):
             lineno = 10
         regex = r"""
             ^Thread 0x[0-9a-f]+ \(most recent call first\):
-            (?:  File ".*threading.py", line [0-9]+ in [_a-z]+
-            ){{1,3}}  File "<string>", line 23 in run
-              File ".*threading.py", line [0-9]+ in _bootstrap_inner
-              File ".*threading.py", line [0-9]+ in _bootstrap
+            (?:  File ".*threading.py", line [0-9]+ in [._a-zA-Z]+
+            ){{1,3}}  File "<string>", line 23 in Waiter.run
+              File ".*threading.py", line [0-9]+ in Thread._bootstrap_inner
+              File ".*threading.py", line [0-9]+ in Thread._bootstrap
 
             Current thread 0x[0-9a-f]+ \(most recent call first\):
               File "<string>", line {lineno} in dump
