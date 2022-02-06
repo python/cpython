@@ -1925,17 +1925,13 @@ _PyStaticCode_Dealloc(PyCodeObject *co)
     }
 }
 
-int
+void
 _PyStaticCode_InternStrings(PyCodeObject *co) 
 {
-    if (intern_strings(co->co_names) < 0) {
-        return -1;
-    }
-    if (intern_string_constants(co->co_consts, NULL) < 0) {
-        return -1;
-    }
-    if (intern_strings(co->co_localsplusnames) < 0) {
-        return -1;
-    }
-    return 0;
+    int res = intern_strings(co->co_names);
+    assert(res == 0);
+    res = intern_string_constants(co->co_consts, NULL);
+    assert(res == 0);
+    res = intern_strings(co->co_localsplusnames);
+    assert(res == 0);
 }
