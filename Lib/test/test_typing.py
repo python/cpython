@@ -4866,6 +4866,11 @@ class TypeAliasTests(BaseTestCase):
         with self.assertRaises(TypeError):
             isinstance(42, TypeAlias)
 
+    def test_stringized_usage(self):
+        class A:
+            a: "TypeAlias"
+        self.assertEqual(get_type_hints(A), {'a': TypeAlias})
+
     def test_no_issubclass(self):
         with self.assertRaises(TypeError):
             issubclass(Employee, TypeAlias)
