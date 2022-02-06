@@ -881,7 +881,7 @@ fail:
 #define _PyLong_FromDev PyLong_FromLongLong
 
 
-#if defined(HAVE_MKNOD) && defined(HAVE_MAKEDEV)
+#if (defined(HAVE_MKNOD) && defined(HAVE_MAKEDEV)) || defined(HAVE_DEVICE_MACROS)
 static int
 _Py_Dev_Converter(PyObject *obj, void *p)
 {
@@ -890,7 +890,7 @@ _Py_Dev_Converter(PyObject *obj, void *p)
         return 0;
     return 1;
 }
-#endif /* HAVE_MKNOD && HAVE_MAKEDEV */
+#endif /* (HAVE_MKNOD && HAVE_MAKEDEV) || HAVE_DEVICE_MACROS */
 
 
 #ifdef AT_FDCWD
