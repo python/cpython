@@ -788,6 +788,7 @@ class TestBuggyCases(GetSourceBase):
         self.assertSourceEqual(mod2.cls213, 218, 222)
         self.assertSourceEqual(mod2.cls213().func219(), 220, 221)
 
+    @unittest.skipIf(support.is_emscripten, "socket.accept is broken")
     def test_nested_class_definition_inside_async_function(self):
         import asyncio
         self.addCleanup(asyncio.set_event_loop_policy, None)

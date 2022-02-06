@@ -349,7 +349,7 @@ class _Final:
 
     __slots__ = ('__weakref__',)
 
-    def __init_subclass__(self, /, *args, **kwds):
+    def __init_subclass__(cls, /, *args, **kwds):
         if '_root' not in kwds:
             raise TypeError("Cannot subclass special typing classes")
 
