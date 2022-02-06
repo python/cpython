@@ -3756,11 +3756,10 @@ _PyType_GetModuleByDef(PyTypeObject *type, struct PyModuleDef *def)
     Py_ssize_t n = PyTuple_GET_SIZE(mro);
     for (Py_ssize_t i = 0; i < n; i++) {
         PyObject *super = PyTuple_GET_ITEM(mro, i);
-        // _PyType_GetModuleByDef() must only be called on a heap type created
-        // by PyType_FromModuleAndSpec() or on its subclasses.
-        // type_ready_mro() ensures that a static type cannot inherit from a
-        // heap type.
-        assert(_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE));
+        if(!_PyType_HasFeature((PyTypeObject *)super, Py_TPFLAGS_HEAPTYPE)) {
+            // Static types in the MRO need to be skipped
+            continue;
+        }
 
         PyHeapTypeObject *ht = (PyHeapTypeObject*)super;
         PyObject *module = ht->ht_module;

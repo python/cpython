@@ -1,1 +1,0 @@
-Fixed bug in the tokenizer that prevented ``PyRun_InteractiveOne`` from parsing from the provided FD.

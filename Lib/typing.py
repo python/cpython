@@ -176,7 +176,7 @@ def _type_check(arg, msg, is_argument=True, module=None, *, allow_special_forms=
     if (isinstance(arg, _GenericAlias) and
             arg.__origin__ in invalid_generic_forms):
         raise TypeError(f"{arg} is not valid as type argument")
-    if arg in (Any, NoReturn, Never, ClassVar, Final):
+    if arg in (Any, NoReturn, Never, ClassVar, Final, TypeAlias):
         return arg
     if isinstance(arg, _SpecialForm) or arg in (Generic, Protocol):
         raise TypeError(f"Plain {arg} is not valid as type argument")
@@ -351,7 +351,7 @@ class _Final:
 
     __slots__ = ('__weakref__',)
 
-    def __init_subclass__(self, /, *args, **kwds):
+    def __init_subclass__(cls, /, *args, **kwds):
         if '_root' not in kwds:
             raise TypeError("Cannot subclass special typing classes")
 

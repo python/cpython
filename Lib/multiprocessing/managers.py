@@ -49,11 +49,11 @@ def reduce_array(a):
 reduction.register(array.array, reduce_array)
 
 view_types = [type(getattr({}, name)()) for name in ('items','keys','values')]
-if view_types[0] is not list:       # only needed in Py3.0
-    def rebuild_as_list(obj):
-        return list, (list(obj),)
-    for view_type in view_types:
-        reduction.register(view_type, rebuild_as_list)
+def rebuild_as_list(obj):
+    return list, (list(obj),)
+for view_type in view_types:
+    reduction.register(view_type, rebuild_as_list)
+del view_type, view_types
 
 #
 # Type for identifying shared objects

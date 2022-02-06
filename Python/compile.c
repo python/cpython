@@ -8757,7 +8757,6 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                 switch (target->i_opcode) {
                     case JUMP_ABSOLUTE:
                     case JUMP_FORWARD:
-                    case JUMP_IF_FALSE_OR_POP:
                         i -= jump_thread(inst, target, POP_JUMP_IF_FALSE);
                 }
                 break;
@@ -8765,7 +8764,6 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                 switch (target->i_opcode) {
                     case JUMP_ABSOLUTE:
                     case JUMP_FORWARD:
-                    case JUMP_IF_TRUE_OR_POP:
                         i -= jump_thread(inst, target, POP_JUMP_IF_TRUE);
                 }
                 break;

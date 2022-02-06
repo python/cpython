@@ -87,12 +87,12 @@ static inline void _PyFrame_StackPush(InterpreterFrame *f, PyObject *value) {
 
 void _PyFrame_Copy(InterpreterFrame *src, InterpreterFrame *dest);
 
+/* Consumes reference to func */
 static inline void
 _PyFrame_InitializeSpecials(
     InterpreterFrame *frame, PyFunctionObject *func,
     PyObject *locals, int nlocalsplus)
 {
-    Py_INCREF(func);
     frame->f_func = func;
     frame->f_code = (PyCodeObject *)Py_NewRef(func->func_code);
     frame->f_builtins = func->func_builtins;
@@ -166,9 +166,6 @@ _PyFrame_FastToLocalsWithError(InterpreterFrame *frame);
 void
 _PyFrame_LocalsToFast(InterpreterFrame *frame, int clear);
 
-InterpreterFrame *_PyThreadState_PushFrame(
-    PyThreadState *tstate, PyFunctionObject *func, PyObject *locals);
-
 extern InterpreterFrame *
 _PyThreadState_BumpFramePointerSlow(PyThreadState *tstate, size_t size);
 
@@ -189,6 +186,7 @@ _PyThreadState_BumpFramePointer(PyThreadState *tstate, size_t size)
 
 void _PyThreadState_PopFrame(PyThreadState *tstate, InterpreterFrame *frame);
 
+/* Consume reference to func */
 InterpreterFrame *
 _PyFrame_Push(PyThreadState *tstate, PyFunctionObject *func);
 
