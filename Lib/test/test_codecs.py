@@ -3190,15 +3190,6 @@ class CodePageTest(unittest.TestCase):
                                           False)
         self.assertEqual(decoded, ('abc', 3))
 
-    def test_mbcs_alias(self):
-        # On Windows, the encoding name must be the ANSI code page
-        encoding = locale.getpreferredencoding(False)
-        self.assertTrue(encoding.startswith('cp'), encoding)
-
-        # The encodings module create a "mbcs" alias to the ANSI code page
-        codec = codecs.lookup(encoding)
-        self.assertEqual(codec.name, "mbcs")
-
     @support.bigmemtest(size=2**31, memuse=7, dry_run=False)
     def test_large_input(self, size):
         # Test input longer than INT_MAX.

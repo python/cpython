@@ -1,0 +1,3 @@
+Python no longer creates an alias for the ANSI code page to the "mbcs"
+codec: always use the Python implementation of the code page. Patch by
+Victor Stinner.
