@@ -1904,7 +1904,10 @@ class BasicUnicodeTest(unittest.TestCase, MixInCheckStateHandling):
                 name += "_codec"
             elif encoding == "latin_1":
                 name = "latin_1"
-            self.assertEqual(encoding.replace("_", "-"), name.replace("_", "-"))
+            # Skip the mbcs alias on Windows
+            if name != "mbcs":
+                self.assertEqual(encoding.replace("_", "-"),
+                                 name.replace("_", "-"))
 
             (b, size) = codecs.getencoder(encoding)(s)
             self.assertEqual(size, len(s), "encoding=%r" % encoding)
