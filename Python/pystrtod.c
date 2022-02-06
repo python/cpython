@@ -82,12 +82,10 @@ _Py_parse_inf_or_nan(const char *p, char **endptr)
             s += 5;
         retval = negate ? -Py_HUGE_VAL : Py_HUGE_VAL;
     }
-#ifdef Py_NAN
     else if (case_insensitive_match(s, "nan")) {
         s += 3;
         retval = negate ? -Py_NAN : Py_NAN;
     }
-#endif
     else {
         s = p;
         retval = -1.0;
