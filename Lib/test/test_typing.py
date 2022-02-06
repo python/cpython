@@ -225,8 +225,10 @@ class TypeVarTests(BaseTestCase):
         self.assertNotEqual(TypeVar('T', int, str), TypeVar('T', int, str))
 
     def test_cannot_subclass_vars(self):
-        with self.assertRaises(TypeError):
-            class V(TypeVar('T')):
+        with self.assertRaisesRegex(
+            TypeError, r"Cannot subclass an instance of TypeVar\."
+        ):
+            class V(TypeVar("T")):
                 pass
 
     def test_cannot_subclass_var_itself(self):
