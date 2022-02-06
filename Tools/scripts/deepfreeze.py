@@ -279,7 +279,7 @@ class Printer:
             self.write(f".co_cellvars = {co_cellvars},")
             self.write(f".co_freevars = {co_freevars},")
         self.deallocs.append(f"_PyStaticCode_Dealloc(&{name});")
-        self.patchups.append(f"if (_PyStaticCode_InternStrings({name}) < 0){{")
+        self.patchups.append(f"if (_PyStaticCode_InternStrings(&{name}) < 0){{")
         self.patchups.append(f"  return NULL;")
         self.patchups.append(f"}};")
         return f"& {name}.ob_base"
