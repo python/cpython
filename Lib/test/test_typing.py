@@ -465,18 +465,21 @@ class TypeVarTupleTests(BaseTestCase):
         class A(Generic[T1, T2, Unpack[Ts]]): pass
         A[int, str]
         A[int, str, float]
+        A[int, str, float, bool]
         with self.assertRaises(TypeError):
             A[int]
 
         class B(Generic[T1, Unpack[Ts], T2]): pass
         B[int, str]
         B[int, str, float]
+        B[int, str, float, bool]
         with self.assertRaises(TypeError):
             B[int]
 
         class C(Generic[Unpack[Ts], T1, T2]): pass
         C[int, str]
         C[int, str, float]
+        C[int, str, float, bool]
         with self.assertRaises(TypeError):
             C[int]
 
