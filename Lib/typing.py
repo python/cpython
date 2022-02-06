@@ -130,6 +130,7 @@ __all__ = [
     'overload',
     'ParamSpecArgs',
     'ParamSpecKwargs',
+    'reveal_type',
     'runtime_checkable',
     'Self',
     'Text',
@@ -174,7 +175,7 @@ def _type_check(arg, msg, is_argument=True, module=None, *, allow_special_forms=
     if (isinstance(arg, _GenericAlias) and
             arg.__origin__ in invalid_generic_forms):
         raise TypeError(f"{arg} is not valid as type argument")
-    if arg in (Any, NoReturn, Self, ClassVar, Final):
+    if arg in (Any, NoReturn, Self, ClassVar, Final, TypeAlias):
         return arg
     if isinstance(arg, _SpecialForm) or arg in (Generic, Protocol):
         raise TypeError(f"Plain {arg} is not valid as type argument")
@@ -349,7 +350,7 @@ class _Final:
 
     __slots__ = ('__weakref__',)
 
-    def __init_subclass__(self, /, *args, **kwds):
+    def __init_subclass__(cls, /, *args, **kwds):
         if '_root' not in kwds:
             raise TypeError("Cannot subclass special typing classes")
 
@@ -2697,3 +2698,23 @@ class re(metaclass=_DeprecatedType):
 
 re.__name__ = __name__ + '.re'
 sys.modules[re.__name__] = re
+
+
+def reveal_type(obj: T, /) -> T:
+    """Reveal the inferred type of a variable.
+
+    When a static type checker encounters a call to ``reveal_type()``,
+    it will emit the inferred type of the argument::
+
+        x: int = 1
+        reveal_type(x)
+
+    Running a static type checker (e.g., ``mypy``) on this example
+    will produce output similar to 'Revealed type is "builtins.int"'.
+
+    At runtime, the function prints the runtime type of the
+    argument and returns it unchanged.
+
+    """
+    print(f"Runtime type is {type(obj).__name__!r}", file=sys.stderr)
+    return obj

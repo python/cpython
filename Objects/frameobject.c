@@ -784,6 +784,8 @@ _Py_IDENTIFIER(__builtins__);
 static void
 init_frame(InterpreterFrame *frame, PyFunctionObject *func, PyObject *locals)
 {
+    /* _PyFrame_InitializeSpecials consumes reference to func */
+    Py_INCREF(func);
     PyCodeObject *code = (PyCodeObject *)func->func_code;
     _PyFrame_InitializeSpecials(frame, func, locals, code->co_nlocalsplus);
     for (Py_ssize_t i = 0; i < code->co_nlocalsplus; i++) {
@@ -794,6 +796,7 @@ init_frame(InterpreterFrame *frame, PyFunctionObject *func, PyObject *locals)
 PyFrameObject*
 _PyFrame_New_NoTrack(PyCodeObject *code)
 {
+    CALL_STAT_INC(frame_objects_created);
     int slots = code->co_nlocalsplus + code->co_stacksize;
     PyFrameObject *f = PyObject_GC_NewVar(PyFrameObject, &PyFrame_Type, slots);
     if (f == NULL) {

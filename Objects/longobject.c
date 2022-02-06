@@ -2744,7 +2744,7 @@ long_rem(PyLongObject *a, PyLongObject *b, PyLongObject **prem)
     }
     else {
         /* Slow path using divrem. */
-        x_divrem(a, b, prem);
+        Py_XDECREF(x_divrem(a, b, prem));
         if (*prem == NULL)
             return -1;
     }

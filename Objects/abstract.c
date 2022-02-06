@@ -1564,6 +1564,11 @@ PyNumber_Long(PyObject *o)
     }
     trunc_func = _PyObject_LookupSpecial(o, &PyId___trunc__);
     if (trunc_func) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "The delegation of int() to __trunc__ is deprecated.", 1)) {
+            Py_DECREF(trunc_func);
+            return NULL;
+        }
         result = _PyObject_CallNoArgs(trunc_func);
         Py_DECREF(trunc_func);
         if (result == NULL || PyLong_CheckExact(result)) {
