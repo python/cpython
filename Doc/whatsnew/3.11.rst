@@ -604,6 +604,12 @@ Build Changes
   ``isinf()``, ``isnan()``, ``round()``.
   (Contributed by Victor Stinner in :issue:`45440`.)
 
+* Building Python now requires a C99 ``<math.h>`` header file providing
+  a ``NAN`` constant, or the ``__builtin_nan()`` built-in function. If a
+  platform does not support Not-a-Number (NaN), the ``Py_NO_NAN`` macro can be
+  defined in the ``pyconfig.h`` file.
+  (Contributed by Victor Stinner in :issue:`46640`.)
+
 * Freelists for object structs can now be disabled. A new :program:`configure`
   option :option:`!--without-freelists` can be used to disable all freelists
   except empty tuple singleton.
