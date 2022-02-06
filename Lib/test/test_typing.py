@@ -261,6 +261,12 @@ class UnionTests(BaseTestCase):
     def test_basics(self):
         u = Union[int, float]
         self.assertNotEqual(u, Union)
+        with self.assertRaises(TypeError):
+            Union[int, 42]
+        with self.assertRaises(TypeError):
+            Union[int, chr]
+        with self.assertRaises(TypeError):
+            Union[int, ...]
 
     def test_subclass_error(self):
         with self.assertRaises(TypeError):
@@ -386,10 +392,6 @@ class UnionTests(BaseTestCase):
         def f(x: u): ...
         self.assertIs(get_type_hints(f)['x'], u)
 
-    def test_function_repr_union(self):
-        def fun() -> int: ...
-        self.assertEqual(repr(Union[fun, int]), 'typing.Union[fun, int]')
-
     def test_union_str_pattern(self):
         # Shouldn't crash; see http://bugs.python.org/issue25390
         A = Union[str, Pattern]
@@ -401,11 +403,6 @@ class UnionTests(BaseTestCase):
         from xml.etree.ElementTree import Element
 
         Union[Element, str]  # Shouldn't crash
-
-        def Elem(*args):
-            return Element(*args)
-
-        Union[Elem, str]  # Nor should this
 
 
 class TupleTests(BaseTestCase):
@@ -2500,6 +2497,8 @@ class ClassVarTests(BaseTestCase):
         with self.assertRaises(TypeError):
             ClassVar[1]
         with self.assertRaises(TypeError):
+            ClassVar[chr]
+        with self.assertRaises(TypeError):
             ClassVar[int, str]
         with self.assertRaises(TypeError):
             ClassVar[int][str]
@@ -2539,6 +2538,8 @@ class FinalTests(BaseTestCase):
         Final[int]  # OK
         with self.assertRaises(TypeError):
             Final[1]
+        with self.assertRaises(TypeError):
+            Final[chr]
         with self.assertRaises(TypeError):
             Final[int, str]
         with self.assertRaises(TypeError):

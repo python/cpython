@@ -178,11 +178,10 @@ def _type_check(arg, msg, is_argument=True, module=None, *, allow_special_forms=
         return arg
     if isinstance(arg, _SpecialForm) or arg in (Generic, Protocol):
         raise TypeError(f"Plain {arg} is not valid as type argument")
-    if isinstance(arg, (type, TypeVar, ForwardRef, types.UnionType, ParamSpec)):
+    if isinstance(arg, (type, TypeVar, ForwardRef, types.UnionType, ParamSpec,
+                        _GenericAlias, _SpecialGenericAlias, NewType)):
         return arg
-    if not callable(arg):
-        raise TypeError(f"{msg} Got {arg!r:.100}.")
-    return arg
+    raise TypeError(f"{msg} Got {arg!r:.100}.")
 
 
 def _is_param_expr(arg):
@@ -2065,6 +2064,50 @@ def final(f):
     return f
 
 
+class NewType:
+    """NewType creates simple unique types with almost zero
+    runtime overhead. NewType(name, tp) is considered a subtype of tp
+    by static type checkers. At runtime, NewType(name, tp) returns
+    a dummy callable that simply returns its argument. Usage::
+
+        UserId = NewType('UserId', int)
+
+        def name_by_id(user_id: UserId) -> str:
+            ...
+
+        UserId('user')          # Fails type check
+
+        name_by_id(42)          # Fails type check
+        name_by_id(UserId(42))  # OK
+
+        num = UserId(5) + 1     # type: int
+    """
+
+    __call__ = _idfunc
+
+    def __init__(self, name, tp):
+        self.__qualname__ = name
+        if '.' in name:
+            name = name.rpartition('.')[-1]
+        self.__name__ = name
+        self.__supertype__ = tp
+        def_mod = _caller()
+        if def_mod != 'typing':
+            self.__module__ = def_mod
+
+    def __repr__(self):
+        return f'{self.__module__}.{self.__qualname__}'
+
+    def __reduce__(self):
+        return self.__qualname__
+
+    def __or__(self, other):
+        return Union[self, other]
+
+    def __ror__(self, other):
+        return Union[other, self]
+
+
 # Some unconstrained type variables.  These are used by the container types.
 # (These are not for export.)
 T = TypeVar('T')  # Any type.
@@ -2436,50 +2479,6 @@ def TypedDict(typename, fields=None, /, *, total=True, **kwargs):
 
 _TypedDict = type.__new__(_TypedDictMeta, 'TypedDict', (), {})
 TypedDict.__mro_entries__ = lambda bases: (_TypedDict,)
-
-
-class NewType:
-    """NewType creates simple unique types with almost zero
-    runtime overhead. NewType(name, tp) is considered a subtype of tp
-    by static type checkers. At runtime, NewType(name, tp) returns
-    a dummy callable that simply returns its argument. Usage::
-
-        UserId = NewType('UserId', int)
-
-        def name_by_id(user_id: UserId) -> str:
-            ...
-
-        UserId('user')          # Fails type check
-
-        name_by_id(42)          # Fails type check
-        name_by_id(UserId(42))  # OK
-
-        num = UserId(5) + 1     # type: int
-    """
-
-    __call__ = _idfunc
-
-    def __init__(self, name, tp):
-        self.__qualname__ = name
-        if '.' in name:
-            name = name.rpartition('.')[-1]
-        self.__name__ = name
-        self.__supertype__ = tp
-        def_mod = _caller()
-        if def_mod != 'typing':
-            self.__module__ = def_mod
-
-    def __repr__(self):
-        return f'{self.__module__}.{self.__qualname__}'
-
-    def __reduce__(self):
-        return self.__qualname__
-
-    def __or__(self, other):
-        return Union[self, other]
-
-    def __ror__(self, other):
-        return Union[other, self]
 
 
 # Python-version-specific alias (Python 2: unicode; Python 3: str)

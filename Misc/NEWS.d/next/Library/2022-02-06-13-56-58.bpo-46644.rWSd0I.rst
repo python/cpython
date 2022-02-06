@@ -1,0 +1,2 @@
+No longer accept arbitrary callables as type arguments in generics. E.g.
+``List[chr]`` is now an error.
