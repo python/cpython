@@ -731,9 +731,12 @@ def collect_windows(info_add):
 
     import subprocess
     try:
+        # When wmic.exe output is redirected to a pipe,
+        # it uses the OEM code page
         proc = subprocess.Popen(["wmic", "os", "get", "Caption,Version", "/value"],
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
+                                encoding="oem",
                                 text=True)
         output, stderr = proc.communicate()
         if proc.returncode:

@@ -8,11 +8,6 @@ extern "C" {
 
 /* Instruction opcodes for compiled code */
 #define POP_TOP                           1
-#define ROT_TWO                           2
-#define ROT_THREE                         3
-#define DUP_TOP                           4
-#define DUP_TOP_TWO                       5
-#define ROT_FOUR                          6
 #define NOP                               9
 #define UNARY_POSITIVE                   10
 #define UNARY_NEGATIVE                   11
@@ -57,7 +52,7 @@ extern "C" {
 #define DELETE_ATTR                      96
 #define STORE_GLOBAL                     97
 #define DELETE_GLOBAL                    98
-#define ROT_N                            99
+#define SWAP                             99
 #define LOAD_CONST                      100
 #define LOAD_NAME                       101
 #define BUILD_TUPLE                     102
@@ -114,40 +109,46 @@ extern "C" {
 #define SET_UPDATE                      163
 #define DICT_MERGE                      164
 #define DICT_UPDATE                     165
+#define PRECALL_FUNCTION                167
 #define PRECALL_METHOD                  168
-#define CALL_NO_KW                      169
-#define CALL_KW                         170
-#define BINARY_OP_ADAPTIVE                7
-#define BINARY_OP_ADD_INT                 8
-#define BINARY_OP_ADD_FLOAT              13
-#define BINARY_OP_ADD_UNICODE            14
-#define BINARY_OP_INPLACE_ADD_UNICODE    16
-#define BINARY_OP_MULTIPLY_INT           17
-#define BINARY_OP_MULTIPLY_FLOAT         18
-#define BINARY_OP_SUBTRACT_INT           19
-#define BINARY_OP_SUBTRACT_FLOAT         20
-#define COMPARE_OP_ADAPTIVE              21
-#define COMPARE_OP_FLOAT_JUMP            22
-#define COMPARE_OP_INT_JUMP              23
-#define COMPARE_OP_STR_JUMP              24
-#define BINARY_SUBSCR_ADAPTIVE           26
-#define BINARY_SUBSCR_GETITEM            27
-#define BINARY_SUBSCR_LIST_INT           28
-#define BINARY_SUBSCR_TUPLE_INT          29
-#define BINARY_SUBSCR_DICT               34
-#define STORE_SUBSCR_ADAPTIVE            36
-#define STORE_SUBSCR_LIST_INT            37
-#define STORE_SUBSCR_DICT                38
-#define CALL_NO_KW_ADAPTIVE              39
-#define CALL_NO_KW_BUILTIN_O             40
-#define CALL_NO_KW_BUILTIN_FAST          41
-#define CALL_NO_KW_LEN                   42
-#define CALL_NO_KW_ISINSTANCE            43
-#define CALL_NO_KW_PY_SIMPLE             44
-#define CALL_NO_KW_LIST_APPEND           45
-#define CALL_NO_KW_METHOD_DESCRIPTOR_O   46
-#define CALL_NO_KW_TYPE_1                47
-#define CALL_NO_KW_BUILTIN_CLASS_1       48
+#define CALL                            171
+#define KW_NAMES                        172
+#define BINARY_OP_ADAPTIVE                2
+#define BINARY_OP_ADD_INT                 3
+#define BINARY_OP_ADD_FLOAT               4
+#define BINARY_OP_ADD_UNICODE             5
+#define BINARY_OP_INPLACE_ADD_UNICODE     6
+#define BINARY_OP_MULTIPLY_INT            7
+#define BINARY_OP_MULTIPLY_FLOAT          8
+#define BINARY_OP_SUBTRACT_INT           13
+#define BINARY_OP_SUBTRACT_FLOAT         14
+#define COMPARE_OP_ADAPTIVE              16
+#define COMPARE_OP_FLOAT_JUMP            17
+#define COMPARE_OP_INT_JUMP              18
+#define COMPARE_OP_STR_JUMP              19
+#define BINARY_SUBSCR_ADAPTIVE           20
+#define BINARY_SUBSCR_GETITEM            21
+#define BINARY_SUBSCR_LIST_INT           22
+#define BINARY_SUBSCR_TUPLE_INT          23
+#define BINARY_SUBSCR_DICT               24
+#define STORE_SUBSCR_ADAPTIVE            26
+#define STORE_SUBSCR_LIST_INT            27
+#define STORE_SUBSCR_DICT                28
+#define CALL_ADAPTIVE                    29
+#define CALL_BUILTIN_CLASS               34
+#define CALL_NO_KW_BUILTIN_O             36
+#define CALL_NO_KW_BUILTIN_FAST          37
+#define CALL_BUILTIN_FAST_WITH_KEYWORDS  38
+#define CALL_NO_KW_LEN                   39
+#define CALL_NO_KW_ISINSTANCE            40
+#define CALL_PY_EXACT_ARGS               41
+#define CALL_PY_WITH_DEFAULTS            42
+#define CALL_NO_KW_LIST_APPEND           43
+#define CALL_NO_KW_METHOD_DESCRIPTOR_O   44
+#define CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS  45
+#define CALL_NO_KW_STR_1                 46
+#define CALL_NO_KW_TUPLE_1               47
+#define CALL_NO_KW_TYPE_1                48
 #define CALL_NO_KW_METHOD_DESCRIPTOR_FAST  55
 #define JUMP_ABSOLUTE_QUICK              56
 #define LOAD_ATTR_ADAPTIVE               57
@@ -198,6 +199,7 @@ static uint32_t _PyOpcode_Jump[8] = {
 
 #define HAS_CONST(op) (false\
     || ((op) == 100) \
+    || ((op) == 172) \
     )
 
 #define NB_ADD                            0

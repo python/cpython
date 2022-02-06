@@ -1148,10 +1148,18 @@ IDLE and idlelib
 ----------------
 
 Make IDLE invoke :func:`sys.excepthook` (when started without '-n').
-User hooks were previously ignored.  (Patch by Ken Hilton in
+User hooks were previously ignored.  (Contributed by Ken Hilton in
 :issue:`43008`.)
 
-This change was backported to a 3.9 maintenance release.
+Rearrange the settings dialog.  Split the General tab into Windows
+and Shell/Ed tabs.  Move help sources, which extend the Help menu, to the
+Extensions tab.  Make space for new options and shorten the dialog. The
+latter makes the dialog better fit small screens.  (Contributed by Terry Jan
+Reedy in :issue:`40468`.)  Move the indent space setting from the Font tab to
+the new Windows tab.  (Contributed by Mark Roseman and Terry Jan Reedy in
+:issue:`33962`.)
+
+These changes were backported to a 3.9 maintenance release.
 
 Add a Shell sidebar.  Move the primary prompt ('>>>') to the sidebar.
 Add secondary prompts ('...') to the sidebar.  Left click and optional
@@ -1164,11 +1172,8 @@ in :issue:`37903`.)
 
 Use spaces instead of tabs to indent interactive code.  This makes
 interactive code entries 'look right'.  Making this feasible was a
-major motivation for adding the shell sidebar.  Contributed by
+major motivation for adding the shell sidebar.  (Contributed by
 Terry Jan Reedy in :issue:`37892`.)
-
-We expect to backport these shell changes to a future 3.9 maintenance
-release.
 
 Highlight the new :ref:`soft keywords <soft-keywords>` :keyword:`match`,
 :keyword:`case <match>`, and :keyword:`_ <wildcard-patterns>` in

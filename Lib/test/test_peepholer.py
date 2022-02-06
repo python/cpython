@@ -119,14 +119,14 @@ class TestTranforms(BytecodeTestCase):
     def test_pack_unpack(self):
         for line, elem in (
             ('a, = a,', 'LOAD_CONST',),
-            ('a, b = a, b', 'ROT_TWO',),
-            ('a, b, c = a, b, c', 'ROT_THREE',),
+            ('a, b = a, b', 'SWAP',),
+            ('a, b, c = a, b, c', 'SWAP',),
             ):
             with self.subTest(line=line):
                 code = compile(line,'','single')
                 self.assertInBytecode(code, elem)
                 self.assertNotInBytecode(code, 'BUILD_TUPLE')
-                self.assertNotInBytecode(code, 'UNPACK_TUPLE')
+                self.assertNotInBytecode(code, 'UNPACK_SEQUENCE')
                 self.check_lnotab(code)
 
     def test_folding_of_tuples_of_constants(self):
