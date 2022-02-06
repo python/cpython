@@ -441,9 +441,15 @@ struct mi_heap_s {
 // Debug
 // ------------------------------------------------------
 
+#if !defined(MI_DEBUG_UNINIT)
 #define MI_DEBUG_UNINIT     (0xD0)
+#endif
+#if !defined(MI_DEBUG_FREED)
 #define MI_DEBUG_FREED      (0xDF)
+#endif
+#if !defined(MI_DEBUG_PADDING)
 #define MI_DEBUG_PADDING    (0xDE)
+#endif
 
 #if (MI_DEBUG)
 // use our own assertion to print without memory allocation

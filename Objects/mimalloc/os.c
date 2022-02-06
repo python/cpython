@@ -229,10 +229,10 @@ void _mi_os_init() {
 static void os_detect_overcommit(void) {
 #if defined(__linux__)
   int fd = open("/proc/sys/vm/overcommit_memory", O_RDONLY);
-	if (fd < 0) return;
+        if (fd < 0) return;
   char buf[128];
   ssize_t nread = read(fd, &buf, sizeof(buf));
-	close(fd);
+        close(fd);
   // <https://www.kernel.org/doc/Documentation/vm/overcommit-accounting>
   // 0: heuristic overcommit, 1: always overcommit, 2: never overcommit (ignore NORESERVE)
   if (nread >= 1) {
@@ -635,11 +635,11 @@ static void* mi_os_mem_alloc(size_t size, size_t try_alignment, bool commit, boo
     if (commit) flags |= MEM_COMMIT;
     p = mi_win_virtual_alloc(NULL, size, try_alignment, flags, false, allow_large, is_large);
   #elif defined(MI_USE_SBRK)
-    KK_UNUSED(allow_large);
+    MI_UNUSED(allow_large);
     *is_large = false;
     p = mi_sbrk_heap_grow(size, try_alignment);
   #elif defined(__wasi__)
-    KK_UNUSED(allow_large);
+    MI_UNUSED(allow_large);
     *is_large = false;
     p = mi_wasm_heap_grow(size, try_alignment);
   #else
@@ -987,7 +987,7 @@ static  bool mi_os_protectx(void* addr, size_t size, bool protect) {
   if (csize == 0) return false;
   /*
   if (_mi_os_is_huge_reserved(addr)) {
-	  _mi_warning_message("cannot mprotect memory allocated in huge OS pages\n");
+          _mi_warning_message("cannot mprotect memory allocated in huge OS pages\n");
   }
   */
   int err = 0;
