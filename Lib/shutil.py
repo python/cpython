@@ -42,7 +42,8 @@ elif _WINDOWS:
 COPY_BUFSIZE = 1024 * 1024 if _WINDOWS else 64 * 1024
 # This should never be removed, see rationale in:
 # https://bugs.python.org/issue43743#msg393429
-_USE_CP_SENDFILE = hasattr(os, "sendfile") and sys.platform.startswith("linux")
+# senfile on solaris systems is capable of copying on regular file descriptors.
+_USE_CP_SENDFILE = hasattr(os, "sendfile") and (sys.platform.startswith("linux") or sys.platform.startswith("sunos"))
 _HAS_FCOPYFILE = posix and hasattr(posix, "_fcopyfile")  # macOS
 
 # CMD defaults in Windows 10
@@ -106,7 +107,7 @@ def _fastcopy_fcopyfile(fsrc, fdst, flags):
 def _fastcopy_sendfile(fsrc, fdst):
     """Copy data from one regular mmap-like fd to another by using
     high-performance sendfile(2) syscall.
-    This should work on Linux >= 2.6.33 only.
+    This should work on Linux >= 2.6.33 and Solaris systems.
     """
     # Note: copyfileobj() is left alone in order to not introduce any
     # unexpected breakage. Possible risks by using zero-copy calls
