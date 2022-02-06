@@ -24,14 +24,20 @@ from filecmp import dircmp
 from fileinput import FileInput
 from itertools import chain
 from http.cookies import Morsel
-from multiprocessing.managers import ValueProxy
-from multiprocessing.pool import ApplyResult
+try:
+    from multiprocessing.managers import ValueProxy
+    from multiprocessing.pool import ApplyResult
+    from multiprocessing.queues import SimpleQueue as MPSimpleQueue
+except ImportError:
+    # _multiprocessing module is optional
+    ValueProxy = None
+    ApplyResult = None
+    MPSimpleQueue = None
 try:
     from multiprocessing.shared_memory import ShareableList
 except ImportError:
     # multiprocessing.shared_memory is not available on e.g. Android
     ShareableList = None
-from multiprocessing.queues import SimpleQueue as MPSimpleQueue
 from os import DirEntry
 from re import Pattern, Match
 from types import GenericAlias, MappingProxyType, AsyncGeneratorType
@@ -79,13 +85,14 @@ class BaseTest(unittest.TestCase):
                      Queue, SimpleQueue,
                      _AssertRaisesContext,
                      SplitResult, ParseResult,
-                     ValueProxy, ApplyResult,
                      WeakSet, ReferenceType, ref,
-                     ShareableList, MPSimpleQueue,
+                     ShareableList,
                      Future, _WorkItem,
                      Morsel]
     if ctypes is not None:
         generic_types.extend((ctypes.Array, ctypes.LibraryLoader))
+    if ValueProxy is not None:
+        generic_types.extend((ValueProxy, ApplyResult, MPSimpleQueue))
 
     def test_subscriptable(self):
         for t in self.generic_types:
