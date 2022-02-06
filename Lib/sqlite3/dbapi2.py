@@ -64,7 +64,9 @@ def register_adapters_and_converters():
     def convert_timestamp(val):
         datepart, timepart = val.split(b" ")
         year, month, day = map(int, datepart.split(b"-"))
-        timepart_full = timepart.split(b".")
+        # timepart_parts[0] == time, timepart_parts[1] == timezone info if any
+        timepart_parts = timepart.split(b"+")
+        timepart_full = timepart_parts[0].split(b".")
         hours, minutes, seconds = map(int, timepart_full[0].split(b":"))
         if len(timepart_full) == 2:
             microseconds = int('{:0<6.6}'.format(timepart_full[1].decode()))
