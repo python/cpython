@@ -1282,7 +1282,7 @@ _PyTime_GetProcessTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 #endif
 
     /* getrusage(RUSAGE_SELF) */
-#if defined(HAVE_SYS_RESOURCE_H)
+#if defined(HAVE_SYS_RESOURCE_H) && defined(HAVE_GETRUSAGE)
     struct rusage ru;
 
     if (getrusage(RUSAGE_SELF, &ru) == 0) {
