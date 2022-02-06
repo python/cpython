@@ -54,6 +54,7 @@ class PythonValuesTestCase(unittest.TestCase):
             _fields_ = [("name", c_char_p),
                         ("code", POINTER(c_ubyte)),
                         ("size", c_int),
+                        ("is_package", c_bool),
                         ("get_code", POINTER(c_ubyte)),  # Function ptr
                         ]
         FrozenTable = POINTER(struct_frozen)
@@ -71,13 +72,14 @@ class PythonValuesTestCase(unittest.TestCase):
                 modname = entry.name.decode("ascii")
                 modules.append(modname)
                 with self.subTest(modname):
-                    # Do a sanity check on entry.size and entry.code.
-                    self.assertGreater(abs(entry.size), 10)
-                    self.assertTrue([entry.code[i] for i in range(abs(entry.size))])
+                    if entry.size != 0:
+                        # Do a sanity check on entry.size and entry.code.
+                        self.assertGreater(abs(entry.size), 10)
+                        self.assertTrue([entry.code[i] for i in range(abs(entry.size))])
                     # Check the module's package-ness.
                     with import_helper.frozen_modules():
                         spec = importlib.util.find_spec(modname)
-                    if entry.size < 0:
+                    if entry.is_package:
                         # It's a package.
                         self.assertIsNotNone(spec.submodule_search_locations)
                     else:

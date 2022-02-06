@@ -537,6 +537,9 @@
 /* Define to 1 if you have the `getresuid' function. */
 #undef HAVE_GETRESUID
 
+/* Define to 1 if you have the `getrusage' function. */
+#undef HAVE_GETRUSAGE
+
 /* Define to 1 if you have the `getsid' function. */
 #undef HAVE_GETSID
 

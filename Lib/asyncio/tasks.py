@@ -621,17 +621,23 @@ def _ensure_future(coro_or_future, *, loop=None):
             raise ValueError('The future belongs to a different loop than '
                             'the one specified as the loop argument')
         return coro_or_future
-
+    called_wrap_awaitable = False
     if not coroutines.iscoroutine(coro_or_future):
         if inspect.isawaitable(coro_or_future):
             coro_or_future = _wrap_awaitable(coro_or_future)
+            called_wrap_awaitable = True
         else:
             raise TypeError('An asyncio.Future, a coroutine or an awaitable '
                             'is required')
 
     if loop is None:
         loop = events._get_event_loop(stacklevel=4)
-    return loop.create_task(coro_or_future)
+    try:
+        return loop.create_task(coro_or_future)
+    except RuntimeError: 
+        if not called_wrap_awaitable:
+            coro_or_future.close()
+        raise
 
 
 @types.coroutine

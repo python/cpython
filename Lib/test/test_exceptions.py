@@ -1163,6 +1163,56 @@ class ExceptionTests(unittest.TestCase):
         self.assertIs(b.__context__, a)
         self.assertIs(a.__context__, c)
 
+    def test_context_of_exception_in_try_and_finally(self):
+        try:
+            try:
+                te = TypeError(1)
+                raise te
+            finally:
+                ve = ValueError(2)
+                raise ve
+        except Exception as e:
+            exc = e
+
+        self.assertIs(exc, ve)
+        self.assertIs(exc.__context__, te)
+
+    def test_context_of_exception_in_except_and_finally(self):
+        try:
+            try:
+                te = TypeError(1)
+                raise te
+            except:
+                ve = ValueError(2)
+                raise ve
+            finally:
+                oe = OSError(3)
+                raise oe
+        except Exception as e:
+            exc = e
+
+        self.assertIs(exc, oe)
+        self.assertIs(exc.__context__, ve)
+        self.assertIs(exc.__context__.__context__, te)
+
+    def test_context_of_exception_in_else_and_finally(self):
+        try:
+            try:
+                pass
+            except:
+                pass
+            else:
+                ve = ValueError(1)
+                raise ve
+            finally:
+                oe = OSError(2)
+                raise oe
+        except Exception as e:
+            exc = e
+
+        self.assertIs(exc, oe)
+        self.assertIs(exc.__context__, ve)
+
     def test_unicode_change_attributes(self):
         # See issue 7309. This was a crasher.
 
