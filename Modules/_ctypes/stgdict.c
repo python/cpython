@@ -504,7 +504,6 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     if (stgdict->format == NULL)
         return -1;
 
-#define realdict ((PyObject *)&stgdict->dict)
     for (i = 0; i < len; ++i) {
         PyObject *name = NULL, *desc = NULL;
         PyObject *pair = PySequence_GetItem(fields, i);
@@ -635,7 +634,6 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         Py_DECREF(pair);
         Py_DECREF(prop);
     }
-#undef realdict
 
     if (isStruct && !isPacked) {
         char *ptr = stgdict->format;
