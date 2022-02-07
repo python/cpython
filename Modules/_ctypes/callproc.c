@@ -1119,14 +1119,6 @@ GetComError(HRESULT errcode, GUID *riid, IUnknown *pIunk)
 #endif
 
 /*
- * bpo-13097: Max number of arguments _ctypes_callproc will accept.
- *
- * This limit is enforced for the `alloca()` call in `_ctypes_callproc`,
- * to avoid allocating a massive buffer on the stack.
- */
-#define CTYPES_MAX_ARGCOUNT 1024
-
-/*
  * Requirements, must be ensured by the caller:
  * - argtuple is tuple of arguments
  * - argtypes is either NULL, or a tuple of the same size as argtuple
