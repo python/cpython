@@ -37,7 +37,6 @@
 
 
 #define DEFAULT_BLOCK_SIZE 16
-#define DEFAULT_BLOCKS 8
 #define DEFAULT_CODE_SIZE 128
 #define DEFAULT_LNOTAB_SIZE 16
 #define DEFAULT_CNOTAB_SIZE 32
@@ -1472,13 +1471,6 @@ compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
     Py_DECREF(__new_const); \
 }
 
-#define ADDOP_O(C, OP, O, TYPE) { \
-    assert(!HAS_CONST(OP)); /* use ADDOP_LOAD_CONST */ \
-    if (!compiler_addop_o((C), (OP), (C)->u->u_ ## TYPE, (O))) \
-        return 0; \
-}
-
-/* Same as ADDOP_O, but steals a reference. */
 #define ADDOP_N(C, OP, O, TYPE) { \
     assert(!HAS_CONST(OP)); /* use ADDOP_LOAD_CONST_NEW */ \
     if (!compiler_addop_o((C), (OP), (C)->u->u_ ## TYPE, (O))) { \
@@ -1550,11 +1542,6 @@ compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
         compiler_exit_scope(c); \
         return 0; \
     } \
-}
-
-#define VISIT_SLICE(C, V, CTX) {\
-    if (!compiler_visit_slice((C), (V), (CTX))) \
-        return 0; \
 }
 
 #define VISIT_SEQ(C, TYPE, SEQ) { \
