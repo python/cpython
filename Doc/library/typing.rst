@@ -585,13 +585,18 @@ These can be used as types in annotations and do not support ``[]``.
      def never_call_me(arg: Never) -> None:
          pass
 
-     never_call_me(1)  # type checker error
+     def int_or_str(arg: int | str) -> None:
+         never_call_me(arg)  # type checker error
+         match arg:
+             case int():
+                 print("It's an int")
+             case str():
+                 print("It's a str")
+             case _:
+                 never_call_me(arg)  # ok, arg is of type Never
 
      def stop() -> Never:
-         return 1  # type checker error
-
-   The :func:`assert_never()` function uses the ``Never`` type to statically
-   assert that code is unreachable.
+         raise RuntimeError('no way')
 
    .. versionadded:: 3.11
 
@@ -608,10 +613,11 @@ These can be used as types in annotations and do not support ``[]``.
       def stop() -> NoReturn:
           raise RuntimeError('no way')
 
-   ``NoReturn`` can also be used as a general
+   ``NoReturn`` can also be used as a
    `bottom type <https://en.wikipedia.org/wiki/Bottom_type>`_, a type that
-   has no values. The :data:`Never` type provides a more explicit name for
-   the same concept. Type checkers should treat the two equivalently.
+   has no values. Starting in Python 3.11, the :data:`Never` type should
+   be used for this concept instead. Type checkers should treat the two
+   equivalently.
 
    .. versionadded:: 3.5.4
    .. versionadded:: 3.6.2
@@ -1965,7 +1971,7 @@ Functions and decorators
 
 .. function:: assert_never(arg, /)
 
-   Statically assert that a line of code is unreachable.
+   Assert to the type checker that a line of code is unreachable.
 
    Example::
 

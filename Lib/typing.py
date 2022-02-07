@@ -442,32 +442,44 @@ def NoReturn(self, parameters):
       def stop() -> NoReturn:
           raise Exception('no way')
 
-    Static type checkers treat this as a general bottom type,
-    a type with no members. The typing.Never type provides a
-    more explicit name for that concept.
+    NoReturn can also be used as a bottom type, a type that
+    has no values. Starting in Python 3.11, the Never type should
+    be used for this concept instead. Type checkers should treat the two
+    equivalently.
 
     """
     raise TypeError(f"{self} is not subscriptable")
 
+# This is semantically identical to NoReturn, but it is implemented
+# separately so that type checkers can distinguish between the two
+# if they want.
 @_SpecialForm
 def Never(self, parameters):
-    """Notation for the bottom type, a type that has no members.
+    """The bottom type, a type that has no members.
+
+    The `bottom type <https://en.wikipedia.org/wiki/Bottom_type>`_,
+    a type that has no members.
 
     This can be used to define a function that should never be
     called, or a function that never returns::
 
-      from typing import Never
+        from typing import Never
 
-      def never_call_me(arg: Never) -> None:
-          pass
+        def never_call_me(arg: Never) -> None:
+            pass
 
-      never_call_me(1)  # type checker error
+        def int_or_str(arg: int | str) -> None:
+            never_call_me(arg)  # type checker error
+            match arg:
+                case int():
+                    print("It's an int")
+                case str():
+                    print("It's a str")
+                case _:
+                    never_call_me(arg)  # ok, arg is of type Never
 
-      def stop() -> Never:
-          return 1  # type checker error
-
-    The assert_never() function uses the Never type to statically
-    assert that code is unreachable.
+        def stop() -> Never:
+            raise RuntimeError('no way')
     """
     raise TypeError(f"{self} is not subscriptable")
 
