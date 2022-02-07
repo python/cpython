@@ -69,7 +69,7 @@ The constants defined in this module are:
 
    A string containing all ASCII characters that are considered whitespace.
    This includes the characters space, tab, linefeed, return, formfeed, and
-   vertical tab.
+   vertical tab (``' \t\n\r\x0b\x0c'``).
 
 
 .. _string-formatting:
