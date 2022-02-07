@@ -574,7 +574,7 @@ These can be used as types in annotations and do not support ``[]``.
 
 .. data:: Never
 
-   Notation for the `bottom type <https://en.wikipedia.org/wiki/Bottom_type>`_,
+   The `bottom type <https://en.wikipedia.org/wiki/Bottom_type>`_,
    a type that has no members.
 
    This can be used to define a function that should never be
