@@ -1000,16 +1000,41 @@ class _BaseGenericAlias(_Final, _root=True):
 
 
 class _GenericAlias(_BaseGenericAlias, _root=True):
-    def __init__(self, origin, params, *, inst=True, name=None,
+    # The type of parameterized generics.
+    #
+    # That is, for example, `type(List[int])` is `_GenericAlias`.
+    #
+    # Objects which are instances of this class include:
+    # * Parameterized container types, e.g. `Tuple[int]`, `List[int]`.
+    #  * Note that native container types, e.g. `tuple`, `list`, use
+    #    `types.GenericAlias` instead.
+    # * Parameterized classes:
+    #     T = TypeVar('T')
+    #     class C(Generic[T]): pass
+    #     # C[int] is a _GenericAlias
+    # * `Callable` aliases, generic `Callable` aliases, and
+    #   parameterized `Callable` aliases:
+    #     T = TypeVar('T')
+    #     # _CallableGenericAlias inherits from _GenericAlias.
+    #     A = Callable[[], None]  # _CallableGenericAlias
+    #     B = Callable[[T], None]  # _CallableGenericAlias
+    #     C = B[int]  # _CallableGenericAlias
+    # * Parameterized `Final`, `ClassVar` and `TypeGuard`:
+    #     # All _GenericAlias
+    #     Final[int]
+    #     ClassVar[float]
+    #     TypeVar[bool]
+
+    def __init__(self, origin, args, *, inst=True, name=None,
                  _typevar_types=TypeVar,
                  _paramspec_tvars=False):
         super().__init__(origin, inst=inst, name=name)
-        if not isinstance(params, tuple):
-            params = (params,)
+        if not isinstance(args, tuple):
+            args = (args,)
         self.__args__ = tuple(... if a is _TypingEllipsis else
                               () if a is _TypingEmpty else
-                              a for a in params)
-        self.__parameters__ = _collect_type_vars(params, typevar_types=_typevar_types)
+                              a for a in args)
+        self.__parameters__ = _collect_type_vars(args, typevar_types=_typevar_types)
         self._typevar_types = _typevar_types
         self._paramspec_tvars = _paramspec_tvars
         if not name:
@@ -1031,44 +1056,97 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         return Union[left, self]
 
     @_tp_cache
-    def __getitem__(self, params):
+    def __getitem__(self, args):
+        # Parameterizes an already-parameterized object.
+        #
+        # For example, we arrive here doing something like:
+        #   T1 = TypeVar('T1')
+        #   T2 = TypeVar('T2')
+        #   T3 = TypeVar('T3')
+        #   class A(Generic[T1]): pass
+        #   B = A[T2]  # B is a _GenericAlias
+        #   C = B[T3]  # Invokes _GenericAlias.__getitem__
+        #
+        # We also arrive here when parameterizing a generic `Callable` alias:
+        #   T = TypeVar('T')
+        #   C = Callable[[T], None]
+        #   C[int]  # Invokes _GenericAlias.__getitem__
+
         if self.__origin__ in (Generic, Protocol):
             # Can't subscript Generic[...] or Protocol[...].
             raise TypeError(f"Cannot subscript already-subscripted {self}")
-        if not isinstance(params, tuple):
-            params = (params,)
-        params = tuple(_type_convert(p) for p in params)
+
+        # Preprocess `args`.
+        if not isinstance(args, tuple):
+            args = (args,)
+        args = tuple(_type_convert(p) for p in args)
         if (self._paramspec_tvars
                 and any(isinstance(t, ParamSpec) for t in self.__parameters__)):
-            params = _prepare_paramspec_params(self, params)
+            args = _prepare_paramspec_params(self, args)
         else:
-            _check_generic(self, params, len(self.__parameters__))
+            _check_generic(self, args, len(self.__parameters__))
 
-        subst = dict(zip(self.__parameters__, params))
+        new_args = self._determine_new_args(args)
+        r = self.copy_with(new_args)
+        return r
+
+    def _determine_new_args(self, args):
+        # Determines new __args__ for __getitem__.
+        #
+        # For example, suppose we had:
+        #   T1 = TypeVar('T1')
+        #   T2 = TypeVar('T2')
+        #   class A(Generic[T1, T2]): pass
+        #   T3 = TypeVar('T3')
+        #   B = A[int, T3]
+        #   C = B[str]
+        # `B.__args__` is `(int, T3)`, so `C.__args__` should be `(int, str)`.
+        # Unfortunately, this is harder than it looks, because if `T3` is
+        # anything more exotic than a plain `TypeVar`, we need to consider
+        # edge cases.
+
+        # In the example above, this would be {T3: str}
+        new_arg_by_param = dict(zip(self.__parameters__, args))
+
         new_args = []
-        for arg in self.__args__:
-            if isinstance(arg, self._typevar_types):
-                if isinstance(arg, ParamSpec):
-                    arg = subst[arg]
-                    if not _is_param_expr(arg):
-                        raise TypeError(f"Expected a list of types, an ellipsis, "
-                                        f"ParamSpec, or Concatenate. Got {arg}")
-                else:
-                    arg = subst[arg]
-            elif isinstance(arg, (_GenericAlias, GenericAlias, types.UnionType)):
-                subparams = arg.__parameters__
-                if subparams:
-                    subargs = tuple(subst[x] for x in subparams)
-                    arg = arg[subargs]
-            # Required to flatten out the args for CallableGenericAlias
-            if self.__origin__ == collections.abc.Callable and isinstance(arg, tuple):
-                new_args.extend(arg)
-            else:
-                new_args.append(arg)
-        return self.copy_with(tuple(new_args))
+        for old_arg in self.__args__:
 
-    def copy_with(self, params):
-        return self.__class__(self.__origin__, params, name=self._name, inst=self._inst)
+            if isinstance(old_arg, ParamSpec):
+                new_arg = new_arg_by_param[old_arg]
+                if not _is_param_expr(new_arg):
+                    raise TypeError(f"Expected a list of types, an ellipsis, "
+                                    f"ParamSpec, or Concatenate. Got {new_arg}")
+            elif isinstance(old_arg, self._typevar_types):
+                new_arg = new_arg_by_param[old_arg]
+            elif isinstance(old_arg, (_GenericAlias, GenericAlias, types.UnionType)):
+                subparams = old_arg.__parameters__
+                if not subparams:
+                    new_arg = old_arg
+                else:
+                    subargs = tuple(new_arg_by_param[x] for x in subparams)
+                    new_arg = old_arg[subargs]
+            else:
+                new_arg = old_arg
+
+            if self.__origin__ == collections.abc.Callable and isinstance(new_arg, tuple):
+                # Consider the following `Callable`.
+                #   C = Callable[[int], str]
+                # Here, `C.__args__` should be (int, str) - NOT ([int], str).
+                # That means that if we had something like...
+                #   P = ParamSpec('P')
+                #   T = TypeVar('T')
+                #   C = Callable[P, T]
+                #   D = C[[int, str], float]
+                # ...we need to be careful; `new_args` should end up as
+                # `(int, str, float)` rather than `([int, str], float)`.
+                new_args.extend(new_arg)
+            else:
+                new_args.append(new_arg)
+
+        return tuple(new_args)
+
+    def copy_with(self, args):
+        return self.__class__(self.__origin__, args, name=self._name, inst=self._inst)
 
     def __repr__(self):
         if self._name:
