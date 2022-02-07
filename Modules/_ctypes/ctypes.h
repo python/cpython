@@ -11,6 +11,15 @@
 #define PARAMFLAG_FLCID 0x4
 #endif
 
+/*
+ * bpo-13097: Max number of arguments CFuncPtr._argtypes_ and
+ * _ctypes_callproc() will accept.
+ *
+ * This limit is enforced for the `alloca()` call in `_ctypes_callproc`,
+ * to avoid allocating a massive buffer on the stack.
+ */
+#define CTYPES_MAX_ARGCOUNT 1024
+
 typedef struct tagPyCArgObject PyCArgObject;
 typedef struct tagCDataObject CDataObject;
 typedef PyObject *(* GETFUNC)(void *, Py_ssize_t size);
