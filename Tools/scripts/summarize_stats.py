@@ -22,11 +22,10 @@ for name in opcode.opname[1:]:
             pass
     opname.append(name)
 
-
 TOTAL = "specialization.deferred", "specialization.hit", "specialization.miss", "execution_count"
 
 def print_specialization_stats(name, family_stats):
-    if "specialization.deferred" not in family_stats:
+    if "specializable" not in family_stats:
         return
     total = sum(family_stats.get(kind, 0) for kind in TOTAL)
     if total == 0:
@@ -87,13 +86,18 @@ def main():
     for i, opcode_stat in enumerate(opcode_stats):
         if "execution_count" in opcode_stat:
             count = opcode_stat['execution_count']
-            counts.append((count, opname[i]))
+            miss = 0
+            if "specializable" not in opcode_stat:
+                miss = opcode_stat.get("specialization.miss")
+            counts.append((count, opname[i], miss))
             total += count
     counts.sort(reverse=True)
     cummulative = 0
-    for (count, name) in counts:
+    for (count, name, miss) in counts:
         cummulative += count
         print(f"{name}: {count} {100*count/total:0.1f}% {100*cummulative/total:0.1f}%")
+        if miss:
+            print(f"    Misses: {miss} {100*miss/count:0.1f}%")
     print("Specialization stats:")
     for i, opcode_stat in enumerate(opcode_stats):
         name = opname[i]
@@ -105,7 +109,20 @@ def main():
             total += value
     for key, value in stats.items():
         if "Calls to" in key:
-            print(f"{key}: {value} {100*value/total:0.1f}%")
+            print(f"    {key}: {value} {100*value/total:0.1f}%")
+    for key, value in stats.items():
+        if key.startswith("Frame"):
+            print(f"    {key}: {value} {100*value/total:0.1f}%")
+    print("Object stats:")
+    total = stats.get("Object new values")
+    for key, value in stats.items():
+        if key.startswith("Object"):
+            if "materialize" in key:
+                print(f"    {key}: {value} {100*value/total:0.1f}%")
+            else:
+                print(f"    {key}: {value}")
+    total = 0
+
 
 if __name__ == "__main__":
     main()

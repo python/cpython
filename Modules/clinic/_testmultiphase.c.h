@@ -35,6 +35,36 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_testmultiphase_StateAccessType_getmodulebydef_bad_def__doc__,
+"getmodulebydef_bad_def($self, /)\n"
+"--\n"
+"\n"
+"Test that result of _PyType_GetModuleByDef with a bad def is NULL.");
+
+#define _TESTMULTIPHASE_STATEACCESSTYPE_GETMODULEBYDEF_BAD_DEF_METHODDEF    \
+    {"getmodulebydef_bad_def", (PyCFunction)(void(*)(void))_testmultiphase_StateAccessType_getmodulebydef_bad_def, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _testmultiphase_StateAccessType_getmodulebydef_bad_def__doc__},
+
+static PyObject *
+_testmultiphase_StateAccessType_getmodulebydef_bad_def_impl(StateAccessTypeObject *self,
+                                                            PyTypeObject *cls);
+
+static PyObject *
+_testmultiphase_StateAccessType_getmodulebydef_bad_def(StateAccessTypeObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = { NULL};
+    static _PyArg_Parser _parser = {":getmodulebydef_bad_def", _keywords, 0};
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
+        )) {
+        goto exit;
+    }
+    return_value = _testmultiphase_StateAccessType_getmodulebydef_bad_def_impl(self, cls);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_testmultiphase_StateAccessType_increment_count_clinic__doc__,
 "increment_count_clinic($self, /, n=1, *, twice=False)\n"
 "--\n"
@@ -101,4 +131,4 @@ _testmultiphase_StateAccessType_get_count(StateAccessTypeObject *self, PyTypeObj
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f01137bb3b373e14 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=eb1b8c2ee6290be3 input=a9049054013a1b77]*/
