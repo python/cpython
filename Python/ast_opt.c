@@ -660,15 +660,6 @@ static int astfold_pattern(pattern_ty node_, PyArena *ctx_, _PyASTOptimizeState 
     } \
 }
 
-#define CALL_INT_SEQ(FUNC, TYPE, ARG) { \
-    int i; \
-    asdl_int_seq *seq = (ARG); /* avoid variable capture */ \
-    for (i = 0; i < asdl_seq_LEN(seq); i++) { \
-        TYPE elt = (TYPE)asdl_seq_GET(seq, i); \
-        if (!FUNC(elt, ctx_, state)) \
-            return 0; \
-    } \
-}
 
 static int
 astfold_body(asdl_stmt_seq *stmts, PyArena *ctx_, _PyASTOptimizeState *state)
@@ -1085,7 +1076,6 @@ astfold_match_case(match_case_ty node_, PyArena *ctx_, _PyASTOptimizeState *stat
 #undef CALL
 #undef CALL_OPT
 #undef CALL_SEQ
-#undef CALL_INT_SEQ
 
 /* See comments in symtable.c. */
 #define COMPILER_STACK_FRAME_SCALE 3
