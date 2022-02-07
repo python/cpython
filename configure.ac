@@ -833,7 +833,7 @@ fi
 
 
 AC_MSG_CHECKING([for the platform triplet based on compiler characteristics])
-cat >> conftest.c <<EOF
+cat > conftest.c <<EOF
 #undef bfin
 #undef cris
 #undef fr30
@@ -1028,7 +1028,7 @@ AC_CACHE_CHECK([for -Wl,--no-as-needed], [ac_cv_wl_no_as_needed], [
 AC_SUBST(NO_AS_NEEDED)
 
 AC_MSG_CHECKING([for the Android API level])
-cat >> conftest.c <<EOF
+cat > conftest.c <<EOF
 #ifdef __ANDROID__
 android_api = __ANDROID_API__
 arm_arch = __ARM_ARCH
@@ -1791,6 +1791,28 @@ case $CC in
         fi
 esac
 
+# Check if CC supports -Og optimization level
+_SAVE_VAR([CFLAGS])
+CFLAGS="-Og"
+AC_CACHE_CHECK([if $CC supports -Og optimization level],
+               [ac_cv_cc_supports_og],
+  AC_COMPILE_IFELSE(
+    [
+      AC_LANG_PROGRAM([[]], [[]])
+    ],[
+      ac_cv_cc_supports_og=yes
+    ],[
+      ac_cv_cc_supports_og=no
+    ])
+)
+_RESTORE_VAR([CFLAGS])
+
+# Optimization messes up debuggers, so turn it off for
+# debug builds.
+PYDEBUG_CFLAGS="-O0"
+AS_VAR_IF([ac_cv_cc_supports_og], [yes],
+          [PYDEBUG_CFLAGS="-Og"])
+
 # tweak OPT based on compiler and platform, only if the user didn't set
 # it on the command line
 AC_SUBST(OPT)
@@ -1816,13 +1838,7 @@ then
 	case $ac_cv_prog_cc_g in
 	yes)
 	    if test "$Py_DEBUG" = 'true' ; then
-		# Optimization messes up debuggers, so turn it off for
-		# debug builds.
-                if "$CC" -v --help 2>/dev/null |grep -- -Og > /dev/null; then
-                    OPT="-g -Og -Wall"
-                else
-                    OPT="-g -O0 -Wall"
-                fi
+		OPT="-g $PYDEBUG_CFLAGS -Wall"
 	    else
 		OPT="-g $WRAP -O3 -Wall"
 	    fi
@@ -2538,15 +2554,24 @@ AC_CHECK_SIZEOF(off_t, [], [
 AC_MSG_CHECKING(whether to enable large file support)
 if test "$ac_cv_sizeof_off_t" -gt "$ac_cv_sizeof_long" -a \
 	"$ac_cv_sizeof_long_long" -ge "$ac_cv_sizeof_off_t"; then
+  have_largefile_support="yes"
+else
+  have_largefile_support="no"
+fi
+dnl LFS does not work with Emscripten 3.1
+AS_CASE([$ac_sys_system],
+  [Emscripten], [have_largefile_support="no"]
+)
+AS_VAR_IF([have_largefile_support], [yes], [
   AC_DEFINE(HAVE_LARGEFILE_SUPPORT, 1,
   [Defined to enable large file support when an off_t is bigger than a long
    and long long is at least as big as an off_t. You may need
    to add some flags for configuration and compilation to enable this mode.
    (For Solaris and Linux, the necessary defines are already defined.)])
   AC_MSG_RESULT(yes)
-else
+], [
   AC_MSG_RESULT(no)
-fi
+])
 
 AC_CHECK_SIZEOF(time_t, [], [
 #ifdef HAVE_SYS_TYPES_H
@@ -4128,7 +4153,7 @@ AC_CHECK_FUNCS([ \
   gai_strerror getegid getentropy geteuid getgid getgrgid getgrgid_r \
   getgrnam_r getgrouplist getgroups getitimer getloadavg getlogin \
   getpeername getpgid getpid getppid getpriority _getpty \
-  getpwent getpwnam_r getpwuid_r getresgid getresuid getsid getspent \
+  getpwent getpwnam_r getpwuid_r getresgid getresuid getrusage getsid getspent \
   getspnam getuid getwd if_nameindex initgroups kill killpg lchown linkat \
   lockf lstat lutimes madvise mbrtowc memrchr mkdirat mkfifo mkfifoat \
   mknod mknodat mktime mmap mremap nice openat opendir pathconf pause pipe \
