@@ -2617,12 +2617,6 @@ FTRUNCATE
     #define FSTATAT_DIR_FD_CONVERTER dir_fd_unavailable
 #endif
 
-#ifdef HAVE_LINKAT
-    #define LINKAT_DIR_FD_CONVERTER dir_fd_converter
-#else
-    #define LINKAT_DIR_FD_CONVERTER dir_fd_unavailable
-#endif
-
 #ifdef HAVE_MKDIRAT
     #define MKDIRAT_DIR_FD_CONVERTER dir_fd_converter
 #else
