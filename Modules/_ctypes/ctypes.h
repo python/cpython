@@ -362,7 +362,7 @@ PyObject *_ctypes_get_errobj(int **pspace);
 extern PyObject *ComError;
 #endif
 
-#if USING_MALLOC_CLOSURE_DOT_C
+#ifdef USING_MALLOC_CLOSURE_DOT_C
 void Py_ffi_closure_free(void *p);
 void *Py_ffi_closure_alloc(size_t size, void** codeloc);
 #else
