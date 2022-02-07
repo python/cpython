@@ -1,0 +1,1 @@
+Change exception message of :func:`min()` and :func:`max()` to refer to an iterable rather than a sequence if an empty iterable of values to select from was provided..
