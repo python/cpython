@@ -2,8 +2,6 @@
 #  error "this header file must not be included directly"
 #endif
 
-#include "buffer.h" // for Py_buffer, included after PyObject has been defined
-
 PyAPI_FUNC(void) _Py_NewReference(PyObject *op);
 
 #ifdef Py_TRACE_REFS

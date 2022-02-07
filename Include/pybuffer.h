@@ -17,6 +17,9 @@ extern "C" {
  *
  */
 
+// Forward declaration
+typedef struct _object PyObject;
+
 typedef struct {
     void *buf;
     PyObject *obj;        /* owned reference */
