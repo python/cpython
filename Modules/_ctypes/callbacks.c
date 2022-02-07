@@ -178,14 +178,14 @@ static void _CallPythonObject(void *mem,
     for (i = 0; i < n_args; i++) {
         PyObject *cnv = cnvs[i];
         StgDictObject *dict;
-        if (cnv) {
-            Py_INCREF(cnv);
-            dict = PyType_stgdict(cnv);
-        }
-        else {
+
+        if (cnv == NULL) {
             PrintError("Getting argument converter %zd\n", i);
             goto Done;
         }
+
+        Py_INCREF(cnv);
+        dict = PyType_stgdict(cnv);
 
         if (dict && dict->getfunc && !_ctypes_simple_instance(cnv)) {
             PyObject *v = dict->getfunc(*pArgs, dict->size);
