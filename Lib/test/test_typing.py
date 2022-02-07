@@ -4930,6 +4930,8 @@ class ParamSpecTests(BaseTestCase):
         self.assertIsInstance(P.kwargs, ParamSpecKwargs)
         self.assertIs(P.args.__origin__, P)
         self.assertIs(P.kwargs.__origin__, P)
+        self.assertEqual(P.args, P.args)
+        self.assertEqual(P.kwargs, P.kwargs)
         self.assertEqual(repr(P.args), "P.args")
         self.assertEqual(repr(P.kwargs), "P.kwargs")
 
