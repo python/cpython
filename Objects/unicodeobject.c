@@ -61,7 +61,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endif
 
 #ifdef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
-#include "pycore_fileutils.h"     // _Py_LocaleUsesNonUnicodeWchar()
+#  include "pycore_fileutils.h"   // _Py_LocaleUsesNonUnicodeWchar()
 #endif
 
 /* Uncomment to display statistics on interned strings at exit
@@ -3344,7 +3344,7 @@ PyUnicode_AsWideChar(PyObject *unicode,
     }
     unicode_copy_as_widechar(unicode, w, size);
 
-#if HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
+#ifdef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
     /* Oracle Solaris uses non-Unicode internal wchar_t form for
        non-Unicode locales and hence needs conversion first. */
     if (_Py_LocaleUsesNonUnicodeWchar()) {
@@ -3381,7 +3381,7 @@ PyUnicode_AsWideCharString(PyObject *unicode,
     }
     unicode_copy_as_widechar(unicode, buffer, buflen + 1);
 
-#if HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
+#ifdef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
     /* Oracle Solaris uses non-Unicode internal wchar_t form for
        non-Unicode locales and hence needs conversion first. */
     if (_Py_LocaleUsesNonUnicodeWchar()) {
