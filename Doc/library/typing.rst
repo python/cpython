@@ -600,13 +600,33 @@ These can be used as types in annotations and do not support ``[]``.
             return self
 
 
-   This annotation is semantically equivalent to using a :class:`TypeVar` with ``bound=Foo`` as
-   both the return annotation and the annotation for the ``self`` parameter.
+   This annotation is semantically equivalent to the following,
+   albeit in a more succinct fashion::
 
-   Common use cases include:
+      from typing import TypeVar
 
-      - :class:`classmethod`\s that are used as alternative constructors
-      - Annotating an :meth:`object.__enter__` method which returns self
+      Self = TypeVar("Self", bound="Foo")
+
+      class Foo:
+         def returns_self(self: Self) -> Self:
+            ...
+            return self
+
+   In general if something currently follows the pattern of::
+
+      class Foo:
+         def return_self(self) -> "Foo":
+            ...
+            return self
+
+   You should use use :data:`Self` as calls to ``SubclassOfFoo.returns_self`` would have
+   ``Foo`` as the return type and not ``SubclassOfFoo``.
+
+   Other common use cases include:
+
+      - :class:`classmethod`\s that are used as alternative constructors and return instances
+        of the ``cls`` parameter.
+      - Annotating an :meth:`object.__enter__` method which returns self.
 
    For more information, see :pep:`673`.
 
