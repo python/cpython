@@ -603,123 +603,62 @@ class TypeVarTupleTests(BaseTestCase):
         T2 = TypeVar('T2')
         Ts = TypeVarTuple('Ts')
 
-        # Too few parameters
-        self.assertRaises(
-            TypeError,
-            _determine_typevar_substitution,
-            typevars=(T1,), params=(),
-        )
-        self.assertRaises(
-            TypeError,
-            _determine_typevar_substitution,
-            typevars=(T1, T2), params=(int,),
-        )
-        self.assertRaises(
-            TypeError,
-            _determine_typevar_substitution,
-            typevars=(Ts, T1), params=(),
-        )
-        self.assertRaises(
-            TypeError,
-            _determine_typevar_substitution,
-            typevars=(T1, Ts), params=(),
-        )
-        self.assertRaises(
-            TypeError,
-            _determine_typevar_substitution,
-            typevars=(Ts, T1, T2), params=(),
-        )
-        self.assertRaises(
-            TypeError,
-            _determine_typevar_substitution,
-            typevars=(T1, Ts, T2), params=(int,),
-        )
-        self.assertRaises(
-            TypeError,
-            _determine_typevar_substitution,
-            typevars=(T1, T2, Ts), params=(),
-        )
+        # Cases which should generate a TypeError.
+        # These are tuples of (typevars, params) arguments to
+        # _determine_typevar_substitution..
+        test_cases = [
+            # Too few parameters
+            ((T1,),        ()),
+            ((T1, T2),     (int,)),
+            ((Ts, T1),     ()),
+            ((T1, Ts),     ()),
+            ((Ts, T1, T2), ()),
+            ((Ts, T1, T2), (int,)),
+            ((T1, Ts, T2), ()),
+            ((T1, Ts, T2), (int,)),
+            ((T1, T2, Ts), ()),
+            ((T1, T2, Ts), (int,)),
+            # Too many parameters
+            ((T1,),        (int, str)),
+            ((T1, T2),     (int, str, float)),
+            # Too many TypeVarTuples
+            ((Ts, Ts),     ()),
+            ((Ts, Ts),     (int,)),
+            ((Ts, Ts),     (int, str)),
+        ]
+        for typevars, params in test_cases:
+            with self.subTest(f'typevars={typevars}, params={params}'):
+                with self.assertRaises(TypeError):
+                    _determine_typevar_substitution(typevars, params)
 
-        # Too many parameters
-        self.assertRaises(
-            TypeError,
-            _determine_typevar_substitution,
-            typevars=(T1,), params=(int, str),
-        )
-        self.assertRaises(
-            TypeError,
-            _determine_typevar_substitution,
-            typevars=(T1, T2), params=(int, str, float),
-        )
-
-        # Too many TypeVarTuples
-        self.assertRaises(
-            TypeError,
-            _determine_typevar_substitution,
-            typevars=(Ts, Ts), params=(int, str),
-        )
-
-        # Correct number of parameters, TypeVars only
-        self.assertEqual(
-            _determine_typevar_substitution((T1,), (int,)),
-            {T1: int},
-        )
-        self.assertEqual(
-            _determine_typevar_substitution((T1, T2), (int, str)),
-            {T1: int, T2: str},
-        )
-
-        # Correct number of parameters, TypeVarTuples only
-        self.assertEqual(
-            _determine_typevar_substitution((Ts,), ()),
-            {Ts: ()},
-        )
-        self.assertEqual(
-            _determine_typevar_substitution((Ts,), (int,)),
-            {Ts: (int,)},
-        )
-        self.assertEqual(
-            _determine_typevar_substitution((Ts,), (int, str)),
-            {Ts: (int, str)},
-        )
-
-        # Correct number of parameters, TypeVarTuple at the beginning
-        self.assertEqual(
-            _determine_typevar_substitution((Ts, T1), (int,)),
-            {Ts: (), T1: int},
-        )
-        self.assertEqual(
-            _determine_typevar_substitution((Ts, T1), (int, str)),
-            {Ts: (int,), T1: str},
-        )
-        self.assertEqual(
-            _determine_typevar_substitution((Ts, T1), (int, str, float)),
-            {Ts: (int, str), T1: float},
-        )
-
-        # Correct number of parameters, TypeVarTuple at the end
-        self.assertEqual(
-            _determine_typevar_substitution((T1, Ts), (int,)),
-            {T1: int, Ts: ()},
-        )
-        self.assertEqual(
-            _determine_typevar_substitution((T1, Ts), (int, str)),
-            {T1: int, Ts: (str,)},
-        )
-        self.assertEqual(
-            _determine_typevar_substitution((T1, Ts), (int, str, float)),
-            {T1: int, Ts: (str, float)},
-        )
-
-        # Correct number of parameters, TypeVarTuple in the middle
-        self.assertEqual(
-            _determine_typevar_substitution((T1, Ts, T2), (int, str)),
-            {T1: int, Ts: (), T2: str},
-        )
-        self.assertEqual(
-            _determine_typevar_substitution((T1, Ts, T2), (int, float, str)),
-            {T1: int, Ts: (float,), T2: str},
-        )
+        # Cases which should succeed.
+        # These are tuples of (typevars, params, expected_result).
+        test_cases = [
+            # Correct number of parameters, TypeVars only
+            ((T1,),        (int,),            {T1: int}),
+            ((T1, T2),     (int, str),        {T1: int, T2: str}),
+            # Correct number of parameters, TypeVarTuple only
+            ((Ts,),        (),                {Ts: ()}),
+            ((Ts,),        (int,),            {Ts: (int,)}),
+            ((Ts,),        (int, str),        {Ts: (int, str)}),
+            # Correct number of parameters, TypeVarTuple at the beginning
+            ((Ts, T1),     (int,),            {Ts: (), T1: int}),
+            ((Ts, T1),     (int, str),        {Ts: (int,), T1: str}),
+            ((Ts, T1),     (int, str, float), {Ts: (int, str), T1: float}),
+            # Correct number of parameters, TypeVarTuple at the end
+            ((T1, Ts),     (int,),            {T1: int, Ts: ()}),
+            ((T1, Ts),     (int, str),        {T1: int, Ts: (str,)}),
+            ((T1, Ts),     (int, str, float), {T1: int, Ts: (str, float)}),
+            # Correct number of parameters, TypeVarTuple in the middle
+            ((T1, Ts, T2), (int, str),        {T1: int, Ts: (), T2: str}),
+            ((T1, Ts, T2), (int, float, str), {T1: int, Ts: (float,), T2: str}),
+        ]
+        for typevars, params, result_or_exception in test_cases:
+            with self.subTest(f'typevars={typevars}, params={params}'):
+                self.assertEqual(
+                    _determine_typevar_substitution(typevars, params),
+                    result_or_exception
+                )
 
     def test_callable_args_is_correct(self):
         Ts = TypeVarTuple('Ts')
