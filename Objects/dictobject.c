@@ -5075,7 +5075,7 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
             return -1;
         }
 #ifdef Py_STATS
-        if (shared_keys_usable_size(keys) > 14) {
+        if (shared_keys_usable_size(keys) == SHARED_KEYS_MAX_SIZE) {
             OBJECT_STAT_INC(dict_materialized_too_big);
         }
         else {
