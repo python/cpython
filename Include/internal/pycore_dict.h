@@ -138,7 +138,7 @@ extern uint64_t _pydict_global_version;
 PyObject *_PyObject_MakeDictFromInstanceAttributes(PyObject *obj, PyDictValues *values);
 
 static inline void
-_PyDictValues_AddToInsertionOrder(PyDictValues *values, int ix)
+_PyDictValues_AddToInsertionOrder(PyDictValues *values, Py_ssize_t ix)
 {
     assert(ix < SHARED_KEYS_MAX_SIZE);
     uint8_t *size_ptr = ((uint8_t *)values)-2;

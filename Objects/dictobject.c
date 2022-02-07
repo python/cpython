@@ -1038,7 +1038,7 @@ insertion_resize(PyDictObject *mp)
     return dictresize(mp, calculate_log2_keysize(GROWTH_RATE(mp)));
 }
 
-static int
+static Py_ssize_t
 insert_into_dictkeys(PyDictKeysObject *keys, PyObject *name)
 {
     assert(PyUnicode_CheckExact(name));
@@ -1069,7 +1069,7 @@ insert_into_dictkeys(PyDictKeysObject *keys, PyObject *name)
         keys->dk_nentries++;
     }
     assert (ix < SHARED_KEYS_MAX_SIZE);
-    return (int)ix;
+    return ix;
 }
 
 /*
@@ -3051,7 +3051,7 @@ PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
         ep->me_key = key;
         ep->me_hash = hash;
         if (_PyDict_HasSplitTable(mp)) {
-            int index = (int)mp->ma_keys->dk_nentries;
+            Py_ssize_t index = (int)mp->ma_keys->dk_nentries;
             assert(index < SHARED_KEYS_MAX_SIZE);
             assert(mp->ma_values->values[index] == NULL);
             mp->ma_values->values[index] = value;
@@ -5068,7 +5068,7 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
     assert(keys != NULL);
     assert(values != NULL);
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-    int ix = insert_into_dictkeys(keys, name);
+    Py_ssize_t ix = insert_into_dictkeys(keys, name);
     if (ix == DKIX_EMPTY) {
         if (value == NULL) {
             PyErr_SetObject(PyExc_AttributeError, name);
