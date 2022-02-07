@@ -20,15 +20,6 @@ static PyMemberDef frame_memberlist[] = {
     {NULL}      /* Sentinel */
 };
 
-#if PyFrame_MAXFREELIST > 0
-static struct _Py_frame_state *
-get_frame_state(void)
-{
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    return &interp->frame;
-}
-#endif
-
 
 static PyObject *
 frame_getlocals(PyFrameObject *f, void *closure)
