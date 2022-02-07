@@ -432,11 +432,10 @@ buffered_clear(buffered *self)
 int
 _PyIO_buffered_at_fork_reinit(PyObject *self)
 {
-    Py_INCREF(self);
     if (!Py_IS_TYPE(self, &PyBufferedWriter_Type)) {
-        Py_DECREF(self);
         return 0;
     }
+    Py_INCREF(self);
     buffered *buffer = (buffered *)self;
     int ret = _PyThread_at_fork_reinit(&buffer->lock);
     buffer->owner = 0;
