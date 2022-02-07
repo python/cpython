@@ -457,9 +457,6 @@ def NoReturn(self, parameters):
 def Never(self, parameters):
     """The bottom type, a type that has no members.
 
-    The `bottom type <https://en.wikipedia.org/wiki/Bottom_type>`_,
-    a type that has no members.
-
     This can be used to define a function that should never be
     called, or a function that never returns::
 

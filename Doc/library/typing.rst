@@ -595,9 +595,6 @@ These can be used as types in annotations and do not support ``[]``.
              case _:
                  never_call_me(arg)  # ok, arg is of type Never
 
-     def stop() -> Never:
-         raise RuntimeError('no way')
-
    .. versionadded:: 3.11
 
       On older Python versions, :data:`NoReturn` may be used to express the
