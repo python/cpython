@@ -173,12 +173,15 @@ static void _CallPythonObject(void *mem,
             goto Done;
         }
     }
+
+    PyObject **cnvs = PySequence_Fast_ITEMS(converters);
     for (i = 0; i < n_args; i++) {
-        /* Note: new reference! */
-        PyObject *cnv = PySequence_GetItem(converters, i);
+        PyObject *cnv = cnvs[i];
         StgDictObject *dict;
-        if (cnv)
+        if (cnv) {
+            Py_INCREF(cnv);
             dict = PyType_stgdict(cnv);
+        }
         else {
             PrintError("Getting argument converter %zd\n", i);
             goto Done;
@@ -388,10 +391,12 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
     }
 
     p->flags = flags;
+    PyObject **cnvs = PySequence_Fast_ITEMS(converters);
     for (i = 0; i < nArgs; ++i) {
-        PyObject *cnv = PySequence_GetItem(converters, i);
+        PyObject *cnv = cnvs[i];
         if (cnv == NULL)
             goto error;
+        Py_INCREF(cnv);
         p->atypes[i] = _ctypes_get_ffi_type(cnv);
         Py_DECREF(cnv);
     }
