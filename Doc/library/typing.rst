@@ -68,6 +68,8 @@ annotations. These include:
      *Introducing* :data:`TypeAlias`
 * :pep:`647`: User-Defined Type Guards
      *Introducing* :data:`TypeGuard`
+* :pep:`673`: Self type
+    *Introducing* :data:`Self`
 
 .. _type-aliases:
 
@@ -584,6 +586,51 @@ These can be used as types in annotations and do not support ``[]``.
 
    .. versionadded:: 3.5.4
    .. versionadded:: 3.6.2
+
+.. data:: Self
+
+   Special type to represent the current enclosed class.
+   For example::
+
+      from typing import Self
+
+      class Foo:
+         def returns_self(self) -> Self:
+            ...
+            return self
+
+
+   This annotation is semantically equivalent to the following,
+   albeit in a more succinct fashion::
+
+      from typing import TypeVar
+
+      Self = TypeVar("Self", bound="Foo")
+
+      class Foo:
+         def returns_self(self: Self) -> Self:
+            ...
+            return self
+
+   In general if something currently follows the pattern of::
+
+      class Foo:
+         def return_self(self) -> "Foo":
+            ...
+            return self
+
+   You should use use :data:`Self` as calls to ``SubclassOfFoo.returns_self`` would have
+   ``Foo`` as the return type and not ``SubclassOfFoo``.
+
+   Other common use cases include:
+
+      - :class:`classmethod`\s that are used as alternative constructors and return instances
+        of the ``cls`` parameter.
+      - Annotating an :meth:`object.__enter__` method which returns self.
+
+   For more information, see :pep:`673`.
+
+   .. versionadded:: 3.11
 
 .. data:: TypeAlias
 

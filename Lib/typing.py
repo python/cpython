@@ -132,6 +132,7 @@ __all__ = [
     'ParamSpecKwargs',
     'reveal_type',
     'runtime_checkable',
+    'Self',
     'Text',
     'TYPE_CHECKING',
     'TypeAlias',
@@ -174,7 +175,7 @@ def _type_check(arg, msg, is_argument=True, module=None, *, allow_special_forms=
     if (isinstance(arg, _GenericAlias) and
             arg.__origin__ in invalid_generic_forms):
         raise TypeError(f"{arg} is not valid as type argument")
-    if arg in (Any, NoReturn, ClassVar, Final, TypeAlias):
+    if arg in (Any, NoReturn, Self, ClassVar, Final, TypeAlias):
         return arg
     if isinstance(arg, _SpecialForm) or arg in (Generic, Protocol):
         raise TypeError(f"Plain {arg} is not valid as type argument")
@@ -444,6 +445,27 @@ def NoReturn(self, parameters):
     will fail in static type checkers.
     """
     raise TypeError(f"{self} is not subscriptable")
+
+
+@_SpecialForm
+def Self(self, parameters):
+    """Used to spell the type of "self" in classes.
+
+    Example::
+
+      from typing import Self
+
+      class Foo:
+          def returns_self(self) -> Self:
+              ...
+              return self
+
+    This is especially useful for:
+        - classmethods that are used as alternative constructors
+        - annotating an `__enter__` method which returns self
+    """
+    raise TypeError(f"{self} is not subscriptable")
+
 
 @_SpecialForm
 def ClassVar(self, parameters):
