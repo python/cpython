@@ -21,6 +21,7 @@ from typing import cast, runtime_checkable
 from typing import get_type_hints
 from typing import get_origin, get_args
 from typing import is_typeddict
+from typing import reveal_type
 from typing import no_type_check, no_type_check_decorator
 from typing import Type
 from typing import NamedTuple, TypedDict
@@ -35,7 +36,7 @@ import typing
 import weakref
 import types
 
-from test.support import import_helper
+from test.support import import_helper, captured_stderr
 from test import mod_generics_cache
 from test import _typed_dict_helper
 
@@ -254,6 +255,15 @@ class TypeVarTests(BaseTestCase):
     def test_no_bivariant(self):
         with self.assertRaises(ValueError):
             TypeVar('T', covariant=True, contravariant=True)
+
+    def test_bad_var_substitution(self):
+        T = TypeVar('T')
+        for arg in (), (int, str):
+            with self.subTest(arg=arg):
+                with self.assertRaises(TypeError):
+                    List[T][arg]
+                with self.assertRaises(TypeError):
+                    list[T][arg]
 
 
 class UnpackTests(BaseTestCase):
@@ -876,6 +886,8 @@ class TupleTests(BaseTestCase):
         class MyTuple(tuple):
             pass
         self.assertIsSubclass(MyTuple, Tuple)
+        self.assertIsSubclass(Tuple, Tuple)
+        self.assertIsSubclass(tuple, Tuple)
 
     def test_tuple_instance_type_error(self):
         with self.assertRaises(TypeError):
@@ -903,6 +915,7 @@ class BaseCallableTests:
         with self.assertRaises(TypeError):
             issubclass(types.FunctionType, Callable[[int], int])
         self.assertIsSubclass(types.FunctionType, Callable)
+        self.assertIsSubclass(Callable, Callable)
 
     def test_eq_hash(self):
         Callable = self.Callable
@@ -1014,8 +1027,11 @@ class BaseCallableTests:
         C2 = Callable[[KT, T], VT]
         C3 = Callable[..., T]
         self.assertEqual(C1[str], Callable[[int, str], str])
+        if Callable is typing.Callable:
+            self.assertEqual(C1[None], Callable[[int, type(None)], type(None)])
         self.assertEqual(C2[int, float, str], Callable[[int, float], str])
         self.assertEqual(C3[int], Callable[..., int])
+        self.assertEqual(C3[NoReturn], Callable[..., NoReturn])
 
         # multi chaining
         C4 = C2[int, VT, str]
@@ -5123,6 +5139,13 @@ class RETests(BaseTestCase):
 
 class AnnotatedTests(BaseTestCase):
 
+    def test_new(self):
+        with self.assertRaisesRegex(
+            TypeError,
+            'Type Annotated cannot be instantiated',
+        ):
+            Annotated()
+
     def test_repr(self):
         self.assertEqual(
             repr(Annotated[int, 4, 5]),
@@ -5326,6 +5349,11 @@ class TypeAliasTests(BaseTestCase):
         with self.assertRaises(TypeError):
             isinstance(42, TypeAlias)
 
+    def test_stringized_usage(self):
+        class A:
+            a: "TypeAlias"
+        self.assertEqual(get_type_hints(A), {'a': TypeAlias})
+
     def test_no_issubclass(self):
         with self.assertRaises(TypeError):
             issubclass(Employee, TypeAlias)
@@ -5453,6 +5481,17 @@ class ParamSpecTests(BaseTestCase):
         self.assertEqual(G1.__args__, ((int, str), (bytes,)))
         self.assertEqual(G2.__args__, ((int,), (str, bytes)))
 
+    def test_bad_var_substitution(self):
+        T = TypeVar('T')
+        P = ParamSpec('P')
+        bad_args = (42, int, None, T, int|str, Union[int, str])
+        for arg in bad_args:
+            with self.subTest(arg=arg):
+                with self.assertRaises(TypeError):
+                    typing.Callable[P, T][arg, str]
+                with self.assertRaises(TypeError):
+                    collections.abc.Callable[P, T][arg, str]
+
     def test_no_paramspec_in__parameters__(self):
         # ParamSpec should not be found in __parameters__
         # of generics. Usages outside Callable, Concatenate
@@ -5482,6 +5521,10 @@ class ParamSpecTests(BaseTestCase):
         self.assertEqual(G1.__parameters__, (P, T))
         self.assertEqual(G2.__parameters__, (P, T))
         self.assertEqual(G3.__parameters__, (P, T))
+        C = Callable[[int, str], float]
+        self.assertEqual(G1[[int, str], float], List[C])
+        self.assertEqual(G2[[int, str], float], list[C])
+        self.assertEqual(G3[[int, str], float], list[C] | int)
 
 
 class ConcatenateTests(BaseTestCase):
@@ -5760,6 +5803,14 @@ class SpecialAttrsTests(BaseTestCase):
         # in dir() of the GenericAlias. See bpo-45755.
         self.assertIn('bar', dir(Foo[int]))
         self.assertIn('baz', dir(Foo[int]))
+
+
+class RevealTypeTests(BaseTestCase):
+    def test_reveal_type(self):
+        obj = object()
+        with captured_stderr() as stderr:
+            self.assertIs(obj, reveal_type(obj))
+        self.assertEqual(stderr.getvalue(), "Runtime type is 'object'\n")
 
 
 class AllTests(BaseTestCase):

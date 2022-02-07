@@ -108,7 +108,7 @@ class IsTestBase(unittest.TestCase):
             self.assertFalse(other(obj), 'not %s(%s)' % (other.__name__, exp))
 
     def test__all__(self):
-        support.check__all__(self, inspect, not_exported=("k", "v", "mod_dict", "modulesbyfile"))
+        support.check__all__(self, inspect, not_exported=("modulesbyfile",))
 
 def generator_function_example(self):
     for i in range(2):
@@ -788,6 +788,7 @@ class TestBuggyCases(GetSourceBase):
         self.assertSourceEqual(mod2.cls213, 218, 222)
         self.assertSourceEqual(mod2.cls213().func219(), 220, 221)
 
+    @unittest.skipIf(support.is_emscripten, "socket.accept is broken")
     def test_nested_class_definition_inside_async_function(self):
         import asyncio
         self.addCleanup(asyncio.set_event_loop_policy, None)

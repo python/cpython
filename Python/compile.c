@@ -37,7 +37,6 @@
 
 
 #define DEFAULT_BLOCK_SIZE 16
-#define DEFAULT_BLOCKS 8
 #define DEFAULT_CODE_SIZE 128
 #define DEFAULT_LNOTAB_SIZE 16
 #define DEFAULT_CNOTAB_SIZE 32
@@ -1472,13 +1471,6 @@ compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
     Py_DECREF(__new_const); \
 }
 
-#define ADDOP_O(C, OP, O, TYPE) { \
-    assert(!HAS_CONST(OP)); /* use ADDOP_LOAD_CONST */ \
-    if (!compiler_addop_o((C), (OP), (C)->u->u_ ## TYPE, (O))) \
-        return 0; \
-}
-
-/* Same as ADDOP_O, but steals a reference. */
 #define ADDOP_N(C, OP, O, TYPE) { \
     assert(!HAS_CONST(OP)); /* use ADDOP_LOAD_CONST_NEW */ \
     if (!compiler_addop_o((C), (OP), (C)->u->u_ ## TYPE, (O))) { \
@@ -1550,11 +1542,6 @@ compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
         compiler_exit_scope(c); \
         return 0; \
     } \
-}
-
-#define VISIT_SLICE(C, V, CTX) {\
-    if (!compiler_visit_slice((C), (V), (CTX))) \
-        return 0; \
 }
 
 #define VISIT_SEQ(C, TYPE, SEQ) { \
@@ -8661,29 +8648,22 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
             }
 
                 /* Try to fold tuples of constants.
-                   Skip over BUILD_SEQN 1 UNPACK_SEQN 1.
-                   Replace BUILD_SEQN 2 UNPACK_SEQN 2 with ROT2.
-                   Replace BUILD_SEQN 3 UNPACK_SEQN 3 with ROT3 ROT2. */
+                   Skip over BUILD_TUPLE(1) UNPACK_SEQUENCE(1).
+                   Replace BUILD_TUPLE(2) UNPACK_SEQUENCE(2) with SWAP(2).
+                   Replace BUILD_TUPLE(3) UNPACK_SEQUENCE(3) with SWAP(3). */
             case BUILD_TUPLE:
                 if (nextop == UNPACK_SEQUENCE && oparg == bb->b_instr[i+1].i_oparg) {
                     switch(oparg) {
                         case 1:
                             inst->i_opcode = NOP;
                             bb->b_instr[i+1].i_opcode = NOP;
-                            break;
+                            continue;
                         case 2:
-                            inst->i_opcode = SWAP;
-                            inst->i_oparg = 2;
-                            bb->b_instr[i+1].i_opcode = NOP;
-                            i--;
-                            break;
                         case 3:
-                            inst->i_opcode = SWAP;
-                            inst->i_oparg = 3;
-                            bb->b_instr[i+1].i_opcode = NOP;
-                            i--;
+                            inst->i_opcode = NOP;
+                            bb->b_instr[i+1].i_opcode = SWAP;
+                            continue;
                     }
-                    break;
                 }
                 if (i >= oparg) {
                     if (fold_tuple_on_constants(c, inst-oparg, oparg, consts)) {
@@ -8764,7 +8744,6 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                 switch (target->i_opcode) {
                     case JUMP_ABSOLUTE:
                     case JUMP_FORWARD:
-                    case JUMP_IF_FALSE_OR_POP:
                         i -= jump_thread(inst, target, POP_JUMP_IF_FALSE);
                 }
                 break;
@@ -8772,7 +8751,6 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                 switch (target->i_opcode) {
                     case JUMP_ABSOLUTE:
                     case JUMP_FORWARD:
-                    case JUMP_IF_TRUE_OR_POP:
                         i -= jump_thread(inst, target, POP_JUMP_IF_TRUE);
                 }
                 break;

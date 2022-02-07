@@ -6060,8 +6060,6 @@ static PyMethodDef TestMethods[] = {
     {NULL, NULL} /* sentinel */
 };
 
-#define AddSym(d, n, f, v) {PyObject *o = f(v); PyDict_SetItemString(d, n, o); Py_DECREF(o);}
-
 typedef struct {
     char bool_member;
     char byte_member;

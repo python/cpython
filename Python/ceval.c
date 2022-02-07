@@ -40,9 +40,8 @@
 #include <stdbool.h>
 
 #ifdef Py_DEBUG
-/* For debugging the interpreter: */
-#define LLTRACE  1      /* Low-level trace feature */
-#define CHECKEXC 1      /* Double-check exception checking */
+   /* For debugging the interpreter: */
+#  define LLTRACE  1      /* Low-level trace feature */
 #endif
 
 #if !defined(Py_BUILD_CORE)
@@ -114,16 +113,6 @@ _PyEvalFrameClearAndPop(PyThreadState *tstate, InterpreterFrame *frame);
 #define UNBOUNDFREE_ERROR_MSG \
     "cannot access free variable '%s' where it is not associated with a" \
     " value in enclosing scope"
-
-/* Dynamic execution profile */
-#ifdef DYNAMIC_EXECUTION_PROFILE
-#ifdef DXPAIRS
-static long dxpairs[257][256];
-#define dxp dxpairs[256]
-#else
-static long dxp[256];
-#endif
-#endif
 
 #ifndef NDEBUG
 /* Ensure that tstate is valid: sanity check for PyEval_AcquireThread() and
@@ -1239,10 +1228,6 @@ eval_frame_handle_pending(PyThreadState *tstate)
    faster than the normal "switch" version, depending on the compiler and the
    CPU architecture.
 
-   We disable the optimization if DYNAMIC_EXECUTION_PROFILE is defined,
-   because it would render the measurements invalid.
-
-
    NOTE: care must be taken that the compiler doesn't try to "optimize" the
    indirect jumps by sharing them between all opcodes. Such optimizations
    can be disabled on gcc by using the -fno-gcse flag (or possibly
@@ -1254,21 +1239,11 @@ eval_frame_handle_pending(PyThreadState *tstate)
  * We want to be sure that the compiler knows this before it generates
  * the CFG.
  */
-#ifdef LLTRACE
-#define LLTRACE_INSTR() if (lltrace) { lltrace_instruction(frame, opcode, oparg); }
-#else
-#define LLTRACE_INSTR() ((void)0)
-#endif
 
 #ifdef WITH_DTRACE
 #define OR_DTRACE_LINE | (PyDTrace_LINE_ENABLED() ? 255 : 0)
 #else
 #define OR_DTRACE_LINE
-#endif
-
-#ifdef DYNAMIC_EXECUTION_PROFILE
-#undef USE_COMPUTED_GOTOS
-#define USE_COMPUTED_GOTOS 0
 #endif
 
 #ifdef HAVE_COMPUTED_GOTOS
@@ -1284,7 +1259,14 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #endif
 
 #ifdef Py_STATS
-#define INSTRUCTION_START(op) frame->f_lasti = INSTR_OFFSET(); next_instr++; OPCODE_EXE_INC(op);
+#define INSTRUCTION_START(op) \
+    do { \
+        frame->f_lasti = INSTR_OFFSET(); \
+        next_instr++; \
+        OPCODE_EXE_INC(op); \
+        _py_stats.opcode_stats[lastopcode].pair_count[op]++; \
+        lastopcode = op; \
+    } while (0)
 #else
 #define INSTRUCTION_START(op) frame->f_lasti = INSTR_OFFSET(); next_instr++
 #endif
@@ -1297,33 +1279,11 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define DISPATCH_GOTO() goto dispatch_opcode
 #endif
 
-/* RECORD_DXPROFILE()  records the dxprofile information, if enabled. Normally a no-op */
-#ifdef DYNAMIC_EXECUTION_PROFILE
-#ifdef DXPAIRS
-#define RECORD_DXPROFILE() \
-    do { \
-        dxpairs[lastopcode][opcode]++; \
-        lastopcode = opcode; \
-        dxp[opcode]++; \
-    } while (0)
+/* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
+#ifdef LLTRACE
+#define PRE_DISPATCH_GOTO() if (lltrace) { lltrace_instruction(frame, opcode, oparg); }
 #else
-  #define RECORD_DXPROFILE() \
-    do { \
-        dxp[opcode]++; \
-    } while (0)
-#endif
-#else
-#define RECORD_DXPROFILE() ((void)0)
-#endif
-
-/* PRE_DISPATCH_GOTO() does lltrace and dxprofile if either is enabled. Normally a no-op */
-#ifndef LLTRACE
-#ifndef DYNAMIC_EXECUTION_PROFILE
 #define PRE_DISPATCH_GOTO() ((void)0)
-#endif
-#endif
-#ifndef PRE_DISPATCH_GOTO
-#define PRE_DISPATCH_GOTO() do { LLTRACE_INSTR(); RECORD_DXPROFILE(); } while (0)
 #endif
 
 #define NOTRACE_DISPATCH() \
@@ -1404,7 +1364,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 #define PREDICT_ID(op)          PRED_##op
 
-#if defined(DYNAMIC_EXECUTION_PROFILE) || USE_COMPUTED_GOTOS
+#if USE_COMPUTED_GOTOS
 #define PREDICT(op)             if (0) goto PREDICT_ID(op)
 #else
 #define PREDICT(op) \
@@ -1456,15 +1416,11 @@ eval_frame_handle_pending(PyThreadState *tstate)
                             (void)(BASIC_STACKADJ(-(n))); \
                             assert(STACK_LEVEL() <= frame->f_code->co_stacksize); \
                         } while (0)
-#define EXT_POP(STACK_POINTER) ((void)(lltrace && \
-                                prtrace(tstate, (STACK_POINTER)[-1], "ext_pop")), \
-                                *--(STACK_POINTER))
 #else
 #define PUSH(v)                BASIC_PUSH(v)
 #define POP()                  BASIC_POP()
 #define STACK_GROW(n)          BASIC_STACKADJ(n)
 #define STACK_SHRINK(n)        BASIC_STACKADJ(-(n))
-#define EXT_POP(STACK_POINTER) (*--(STACK_POINTER))
 #endif
 
 /* Local variable macros */
@@ -1658,7 +1614,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
 #include "opcode_targets.h"
 #endif
 
-#ifdef DXPAIRS
+#ifdef Py_STATS
     int lastopcode = 0;
 #endif
     int opcode;        /* Current opcode */
@@ -2242,6 +2198,8 @@ handle_eval_breaker:
             if (new_frame == NULL) {
                 goto error;
             }
+            CALL_STAT_INC(frames_pushed);
+            Py_INCREF(getitem);
             _PyFrame_InitializeSpecials(new_frame, getitem,
                                         NULL, code->co_nlocalsplus);
             STACK_SHRINK(2);
@@ -2790,6 +2748,12 @@ handle_eval_breaker:
         TARGET(UNPACK_SEQUENCE) {
             PREDICTED(UNPACK_SEQUENCE);
             PyObject *seq = POP(), *item, **items;
+#ifdef Py_STATS
+            extern int _PySpecialization_ClassifySequence(PyObject *);
+            _py_stats.opcode_stats[UNPACK_SEQUENCE].specialization.failure++;
+            _py_stats.opcode_stats[UNPACK_SEQUENCE].specialization.
+                failure_kinds[_PySpecialization_ClassifySequence(seq)]++;
+#endif
             if (PyTuple_CheckExact(seq) &&
                 PyTuple_GET_SIZE(seq) == oparg) {
                 items = ((PyTupleObject *)seq)->ob_item;
@@ -4211,6 +4175,11 @@ handle_eval_breaker:
             PREDICTED(FOR_ITER);
             /* before: [iter]; after: [iter, iter()] *or* [] */
             PyObject *iter = TOP();
+#ifdef Py_STATS
+            extern int _PySpecialization_ClassifyIterator(PyObject *);
+            _py_stats.opcode_stats[FOR_ITER].specialization.failure++;
+            _py_stats.opcode_stats[FOR_ITER].specialization.failure_kinds[_PySpecialization_ClassifyIterator(iter)]++;
+#endif
             PyObject *next = (*Py_TYPE(iter)->tp_iternext)(iter);
             if (next != NULL) {
                 PUSH(next);
@@ -4584,7 +4553,6 @@ handle_eval_breaker:
                 STACK_SHRINK(call_shape.postcall_shrink);
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
-                Py_DECREF(function);
                 if (new_frame == NULL) {
                     goto error;
                 }
@@ -4660,6 +4628,7 @@ handle_eval_breaker:
             if (new_frame == NULL) {
                 goto error;
             }
+            CALL_STAT_INC(inlined_py_calls);
             STACK_SHRINK(argcount);
             for (int i = 0; i < argcount; i++) {
                 new_frame->localsplus[i] = stack_pointer[i];
@@ -4668,7 +4637,6 @@ handle_eval_breaker:
                 new_frame->localsplus[i] = NULL;
             }
             STACK_SHRINK(call_shape.postcall_shrink);
-            Py_DECREF(func);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
@@ -4690,6 +4658,7 @@ handle_eval_breaker:
             if (new_frame == NULL) {
                 goto error;
             }
+            CALL_STAT_INC(inlined_py_calls);
             STACK_SHRINK(argcount);
             for (int i = 0; i < argcount; i++) {
                 new_frame->localsplus[i] = stack_pointer[i];
@@ -4704,11 +4673,9 @@ handle_eval_breaker:
                 new_frame->localsplus[i] = NULL;
             }
             STACK_SHRINK(call_shape.postcall_shrink);
-            Py_DECREF(func);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
-            CALL_STAT_INC(inlined_py_calls);
             goto start_frame;
         }
 
@@ -5392,6 +5359,7 @@ handle_eval_breaker:
 #define MISS_WITH_CACHE(opname) \
 opname ## _miss: \
     { \
+        STAT_INC(opcode, miss); \
         STAT_INC(opname, miss); \
         _PyAdaptiveEntry *cache = &GET_CACHE()->adaptive; \
         cache->counter--; \
@@ -6070,7 +6038,7 @@ fail_post_args:
     return -1;
 }
 
-/* Consumes all the references to the args */
+/* Consumes references to func and all the args */
 static InterpreterFrame *
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
                         PyObject *locals, PyObject* const* args,
@@ -6078,6 +6046,7 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
 {
     PyCodeObject * code = (PyCodeObject *)func->func_code;
     size_t size = code->co_nlocalsplus + code->co_stacksize + FRAME_SPECIALS_SIZE;
+    CALL_STAT_INC(frames_pushed);
     InterpreterFrame *frame = _PyThreadState_BumpFramePointer(tstate, size);
     if (frame == NULL) {
         goto fail;
@@ -6123,7 +6092,9 @@ _PyEval_Vector(PyThreadState *tstate, PyFunctionObject *func,
                PyObject* const* args, size_t argcount,
                PyObject *kwnames)
 {
-    /* _PyEvalFramePushAndInit consumes all the references to its arguments */
+    /* _PyEvalFramePushAndInit consumes the references
+     * to func and all its arguments */
+    Py_INCREF(func);
     for (size_t i = 0; i < argcount; i++) {
         Py_INCREF(args[i]);
     }
@@ -7479,16 +7450,16 @@ format_awaitable_error(PyThreadState *tstate, PyTypeObject *type, int prevprevpr
     }
 }
 
-#ifdef DYNAMIC_EXECUTION_PROFILE
+#ifdef Py_STATS
 
 static PyObject *
-getarray(long a[256])
+getarray(uint64_t a[256])
 {
     int i;
     PyObject *l = PyList_New(256);
     if (l == NULL) return NULL;
     for (i = 0; i < 256; i++) {
-        PyObject *x = PyLong_FromLong(a[i]);
+        PyObject *x = PyLong_FromUnsignedLongLong(a[i]);
         if (x == NULL) {
             Py_DECREF(l);
             return NULL;
@@ -7503,14 +7474,11 @@ getarray(long a[256])
 PyObject *
 _Py_GetDXProfile(PyObject *self, PyObject *args)
 {
-#ifndef DXPAIRS
-    return getarray(dxp);
-#else
     int i;
     PyObject *l = PyList_New(257);
     if (l == NULL) return NULL;
     for (i = 0; i < 257; i++) {
-        PyObject *x = getarray(dxpairs[i]);
+        PyObject *x = getarray(_py_stats.opcode_stats[i].pair_count);
         if (x == NULL) {
             Py_DECREF(l);
             return NULL;
@@ -7518,7 +7486,6 @@ _Py_GetDXProfile(PyObject *self, PyObject *args)
         PyList_SET_ITEM(l, i, x);
     }
     return l;
-#endif
 }
 
 #endif
