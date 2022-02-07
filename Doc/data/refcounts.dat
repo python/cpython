@@ -1073,8 +1073,8 @@ PyInterpreterState_New:PyInterpreterState*:::
 PyIter_Check:int:::
 PyIter_Check:PyObject*:o:0:
 
-PyAiter_Check:int:::
-PyAiter_Check:PyObject*:o:0:
+PyAIter_Check:int:::
+PyAIter_Check:PyObject*:o:0:
 
 PyIter_Next:PyObject*::+1:
 PyIter_Next:PyObject*:o:0:
@@ -1700,8 +1700,8 @@ PyObject_GetItem:PyObject*:key:0:
 PyObject_GetIter:PyObject*::+1:
 PyObject_GetIter:PyObject*:o:0:
 
-PyObject_GetAiter:PyObject*::+1:
-PyObject_GetAiter:PyObject*:o:0:
+PyObject_GetAIter:PyObject*::+1:
+PyObject_GetAIter:PyObject*:o:0:
 
 PyObject_HasAttr:int:::
 PyObject_HasAttr:PyObject*:o:0:

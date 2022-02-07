@@ -789,8 +789,6 @@ class ComplexTest(unittest.TestCase):
         self.assertEqual(format(complex(INF, 1), 'F'), 'INF+1.000000j')
         self.assertEqual(format(complex(INF, -1), 'F'), 'INF-1.000000j')
 
-def test_main():
-    support.run_unittest(ComplexTest)
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

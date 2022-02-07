@@ -1,4 +1,4 @@
-# Copyright 2001-2019 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2021 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -16,7 +16,7 @@
 
 """Test harness for the logging module. Run all tests.
 
-Copyright (C) 2001-2019 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2021 Vinay Sajip. All Rights Reserved.
 """
 
 import logging
@@ -36,6 +36,7 @@ import os
 import queue
 import random
 import re
+import shutil
 import socket
 import struct
 import sys
@@ -3446,6 +3447,44 @@ class ConfigDictTest(BaseTest):
             logging.info('some log')
         self.assertEqual(stderr.getvalue(), 'some log my_type\n')
 
+    def test_config_callable_filter_works(self):
+        def filter_(_):
+            return 1
+        self.apply_config({
+            "version": 1, "root": {"level": "DEBUG", "filters": [filter_]}
+        })
+        assert logging.getLogger().filters[0] is filter_
+        logging.getLogger().filters = []
+
+    def test_config_filter_works(self):
+        filter_ = logging.Filter("spam.eggs")
+        self.apply_config({
+            "version": 1, "root": {"level": "DEBUG", "filters": [filter_]}
+        })
+        assert logging.getLogger().filters[0] is filter_
+        logging.getLogger().filters = []
+
+    def test_config_filter_method_works(self):
+        class FakeFilter:
+            def filter(self, _):
+                return 1
+        filter_ = FakeFilter()
+        self.apply_config({
+            "version": 1, "root": {"level": "DEBUG", "filters": [filter_]}
+        })
+        assert logging.getLogger().filters[0] is filter_
+        logging.getLogger().filters = []
+
+    def test_invalid_type_raises(self):
+        class NotAFilter: pass
+        for filter_ in [None, 1, NotAFilter()]:
+            self.assertRaises(
+                ValueError,
+                self.apply_config,
+                {"version": 1, "root": {"level": "DEBUG", "filters": [filter_]}}
+            )
+
+
 class ManagerTest(BaseTest):
     def test_manager_loggerclass(self):
         logged = []
@@ -4437,8 +4476,10 @@ class LogRecordTest(BaseTest):
             name = mp.current_process().name
 
             r1 = logging.makeLogRecord({'msg': f'msg1_{key}'})
-            del sys.modules['multiprocessing']
-            r2 = logging.makeLogRecord({'msg': f'msg2_{key}'})
+
+            # https://bugs.python.org/issue45128
+            with support.swap_item(sys.modules, 'multiprocessing', None):
+                r2 = logging.makeLogRecord({'msg': f'msg2_{key}'})
 
             results = {'processName'  : name,
                        'r1.processName': r1.processName,
@@ -4486,7 +4527,6 @@ class LogRecordTest(BaseTest):
         finally:
             if multiprocessing_imported:
                 import multiprocessing
-
 
     def test_optional(self):
         r = logging.makeLogRecord({})
@@ -5215,6 +5255,13 @@ class RotatingFileHandlerTest(BaseFileTest):
                 self.fn, encoding="utf-8", maxBytes=0)
         self.assertFalse(rh.shouldRollover(None))
         rh.close()
+        # bpo-45401 - test with special file
+        # We set maxBytes to 1 so that rollover would normally happen, except
+        # for the check for regular files
+        rh = logging.handlers.RotatingFileHandler(
+                os.devnull, encoding="utf-8", maxBytes=1)
+        self.assertFalse(rh.shouldRollover(self.next_rec()))
+        rh.close()
 
     def test_should_rollover(self):
         rh = logging.handlers.RotatingFileHandler(self.fn, encoding="utf-8", maxBytes=1)
@@ -5309,6 +5356,15 @@ class RotatingFileHandlerTest(BaseFileTest):
         rh.close()
 
 class TimedRotatingFileHandlerTest(BaseFileTest):
+    def test_should_not_rollover(self):
+        # See bpo-45401. Should only ever rollover regular files
+        fh = logging.handlers.TimedRotatingFileHandler(
+                os.devnull, 'S', encoding="utf-8", backupCount=1)
+        time.sleep(1.1)    # a little over a second ...
+        r = logging.makeLogRecord({'msg': 'testing - device file'})
+        self.assertFalse(fh.shouldRollover(r))
+        fh.close()
+
     # other test methods added below
     def test_rollover(self):
         fh = logging.handlers.TimedRotatingFileHandler(
@@ -5417,6 +5473,54 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
             finally:
                 rh.close()
 
+    def test_compute_files_to_delete(self):
+        # See bpo-46063 for background
+        wd = tempfile.mkdtemp(prefix='test_logging_')
+        self.addCleanup(shutil.rmtree, wd)
+        times = []
+        dt = datetime.datetime.now()
+        for i in range(10):
+            times.append(dt.strftime('%Y-%m-%d_%H-%M-%S'))
+            dt += datetime.timedelta(seconds=5)
+        prefixes = ('a.b', 'a.b.c', 'd.e', 'd.e.f')
+        files = []
+        rotators = []
+        for prefix in prefixes:
+            p = os.path.join(wd, '%s.log' % prefix)
+            rotator = logging.handlers.TimedRotatingFileHandler(p, when='s',
+                                                                interval=5,
+                                                                backupCount=7,
+                                                                delay=True)
+            rotators.append(rotator)
+            if prefix.startswith('a.b'):
+                for t in times:
+                    files.append('%s.log.%s' % (prefix, t))
+            else:
+                rotator.namer = lambda name: name.replace('.log', '') + '.log'
+                for t in times:
+                    files.append('%s.%s.log' % (prefix, t))
+        # Create empty files
+        for fn in files:
+            p = os.path.join(wd, fn)
+            with open(p, 'wb') as f:
+                pass
+        # Now the checks that only the correct files are offered up for deletion
+        for i, prefix in enumerate(prefixes):
+            rotator = rotators[i]
+            candidates = rotator.getFilesToDelete()
+            self.assertEqual(len(candidates), 3)
+            if prefix.startswith('a.b'):
+                p = '%s.log.' % prefix
+                for c in candidates:
+                    d, fn = os.path.split(c)
+                    self.assertTrue(fn.startswith(p))
+            else:
+                for c in candidates:
+                    d, fn = os.path.split(c)
+                    self.assertTrue(fn.endswith('.log'))
+                    self.assertTrue(fn.startswith(prefix + '.') and
+                                    fn[len(prefix) + 2].isdigit())
+
 
 def secs(**kw):
     return datetime.timedelta(**kw) // datetime.timedelta(seconds=1)
@@ -5458,8 +5562,8 @@ for when, exp in (('S', 1),
                     print('currentSecond: %s' % currentSecond, file=sys.stderr)
                     print('r: %s' % r, file=sys.stderr)
                     print('result: %s' % result, file=sys.stderr)
-                except Exception:
-                    print('exception in diagnostic code: %s' % sys.exc_info()[1], file=sys.stderr)
+                except Exception as e:
+                    print('exception in diagnostic code: %s' % e, file=sys.stderr)
         self.assertEqual(exp, actual)
         rh.close()
     setattr(TimedRotatingFileHandlerTest, "test_compute_rollover_%s" % when, test_compute_rollover)
@@ -5514,25 +5618,11 @@ class MiscTestCase(unittest.TestCase):
 # Set the locale to the platform-dependent default.  I have no idea
 # why the test does this, but in any case we save the current locale
 # first and restore it at the end.
-@support.run_with_locale('LC_ALL', '')
-def test_main():
-    tests = [
-        BuiltinLevelsTest, BasicFilterTest, CustomLevelsAndFiltersTest,
-        HandlerTest, MemoryHandlerTest, ConfigFileTest, SocketHandlerTest,
-        DatagramHandlerTest, MemoryTest, EncodingTest, WarningsTest,
-        ConfigDictTest, ManagerTest, FormatterTest, BufferingFormatterTest,
-        StreamHandlerTest, LogRecordFactoryTest, ChildLoggerTest,
-        QueueHandlerTest, ShutdownTest, ModuleLevelMiscTest, BasicConfigTest,
-        LoggerAdapterTest, LoggerTest, SMTPHandlerTest, FileHandlerTest,
-        RotatingFileHandlerTest,  LastResortTest, LogRecordTest,
-        ExceptionTest, SysLogHandlerTest, IPv6SysLogHandlerTest, HTTPHandlerTest,
-        NTEventLogHandlerTest, TimedRotatingFileHandlerTest,
-        UnixSocketHandlerTest, UnixDatagramHandlerTest, UnixSysLogHandlerTest,
-        MiscTestCase
-    ]
-    if hasattr(logging.handlers, 'QueueListener'):
-        tests.append(QueueListenerTest)
-    support.run_unittest(*tests)
+def setUpModule():
+    cm = support.run_with_locale('LC_ALL', '')
+    cm.__enter__()
+    unittest.addModuleCleanup(cm.__exit__, None, None, None)
+
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

@@ -378,7 +378,7 @@ Several other key features of this statement:
 - Mapping patterns: ``{"bandwidth": b, "latency": l}`` captures the
   ``"bandwidth"`` and ``"latency"`` values from a dictionary.  Unlike sequence
   patterns, extra keys are ignored.  An unpacking like ``**rest`` is also
-  supported.  (But ``**_`` would be redundant, so it not allowed.)
+  supported.  (But ``**_`` would be redundant, so it is not allowed.)
 
 - Subpatterns may be captured using the ``as`` keyword::
 
@@ -395,9 +395,11 @@ Several other key features of this statement:
 
       from enum import Enum
       class Color(Enum):
-          RED = 0
-          GREEN = 1
-          BLUE = 2
+          RED = 'red'
+          GREEN = 'green'
+          BLUE = 'blue'
+
+      color = Color(input("Enter your choice of 'red', 'blue' or 'green': "))
 
       match color:
           case Color.RED:

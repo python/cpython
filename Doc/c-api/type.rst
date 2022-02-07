@@ -187,7 +187,7 @@ The following functions and structs are used to create
    The *module* argument can be used to record the module in which the new
    class is defined. It must be a module object or ``NULL``.
    If not ``NULL``, the module is associated with the new type and can later be
-   retreived with :c:func:`PyType_GetModule`.
+   retrieved with :c:func:`PyType_GetModule`.
    The associated module is not inherited by subclasses; it must be specified
    for each class individually.
 
@@ -272,12 +272,6 @@ The following functions and structs are used to create
       * :c:member:`~PyTypeObject.tp_vectorcall_offset`
         (see :ref:`PyMemberDef <pymemberdef-offsets>`)
 
-      The following fields cannot be set using :c:type:`PyType_Spec` and
-      :c:type:`PyType_Slot` under the limited API:
-
-      * :c:member:`~PyBufferProcs.bf_getbuffer`
-      * :c:member:`~PyBufferProcs.bf_releasebuffer`
-
       Setting :c:data:`Py_tp_bases` or :c:data:`Py_tp_base` may be
       problematic on some platforms.
       To avoid issues, use the *bases* argument of
@@ -286,6 +280,11 @@ The following functions and structs are used to create
      .. versionchanged:: 3.9
 
         Slots in :c:type:`PyBufferProcs` in may be set in the unlimited API.
+
+     .. versionchanged:: 3.11
+        :c:member:`~PyBufferProcs.bf_getbuffer` and
+        :c:member:`~PyBufferProcs.bf_releasebuffer` are now available
+        under limited API.
 
    .. c:member:: void *PyType_Slot.pfunc
 

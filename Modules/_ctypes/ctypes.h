@@ -208,7 +208,7 @@ typedef struct {
     PyObject *checker;
     int flags;                  /* calling convention and such */
 
-    /* pep3118 fields, pointers neeed PyMem_Free */
+    /* pep3118 fields, pointers need PyMem_Free */
     char *format;
     int ndim;
     Py_ssize_t *shape;
@@ -362,7 +362,7 @@ PyObject *_ctypes_get_errobj(int **pspace);
 extern PyObject *ComError;
 #endif
 
-#if USING_MALLOC_CLOSURE_DOT_C
+#ifdef USING_MALLOC_CLOSURE_DOT_C
 void Py_ffi_closure_free(void *p);
 void *Py_ffi_closure_alloc(size_t size, void** codeloc);
 #else

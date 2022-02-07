@@ -1,9 +1,5 @@
-This is Python version 3.11.0 alpha 0
+This is Python version 3.11.0 alpha 5
 =====================================
-
-.. image:: https://travis-ci.com/python/cpython.svg?branch=main
-   :alt: CPython build status on Travis CI
-   :target: https://travis-ci.com/python/cpython
 
 .. image:: https://github.com/python/cpython/workflows/Tests/badge.svg
    :alt: CPython build status on GitHub Actions
@@ -18,7 +14,7 @@ This is Python version 3.11.0 alpha 0
    :target: https://discuss.python.org/
 
 
-Copyright (c) 2001-2021 Python Software Foundation.  All rights reserved.
+Copyright (c) 2001-2022 Python Software Foundation.  All rights reserved.
 
 See the end of this file for further copyright and license information.
 
@@ -241,13 +237,13 @@ All current PEPs, as well as guidelines for submitting a new PEP, are listed at
 Release Schedule
 ----------------
 
-See :pep:`619` for Python 3.10 release details.
+See :pep:`664` for Python 3.11 release details.
 
 
 Copyright and License Information
 ---------------------------------
 
-Copyright (c) 2001-2021 Python Software Foundation.  All rights reserved.
+Copyright (c) 2001-2022 Python Software Foundation.  All rights reserved.
 
 Copyright (c) 2000 BeOpen.com.  All rights reserved.
 

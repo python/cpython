@@ -8,14 +8,13 @@
 .. index::
    module: uu
    module: base64
-   module: binhex
 
 --------------
 
 The :mod:`binascii` module contains a number of methods to convert between
 binary and various ASCII-encoded binary representations. Normally, you will not
-use these functions directly but use wrapper modules like :mod:`uu`,
-:mod:`base64`, or :mod:`binhex` instead. The :mod:`binascii` module contains
+use these functions directly but use wrapper modules like :mod:`uu` or
+:mod:`base64` instead. The :mod:`binascii` module contains
 low-level functions written in C for greater speed that are used by the
 higher-level modules.
 
@@ -96,45 +95,6 @@ The :mod:`binascii` module defines the following functions:
    optional argument *header* is present and false, newline characters will be
    encoded as well; otherwise linefeed conversion might corrupt the binary data
    stream.
-
-
-.. function:: a2b_hqx(string)
-
-   Convert binhex4 formatted ASCII data to binary, without doing RLE-decompression.
-   The string should contain a complete number of binary bytes, or (in case of the
-   last portion of the binhex4 data) have the remaining bits zero.
-
-   .. deprecated:: 3.9
-
-
-.. function:: rledecode_hqx(data)
-
-   Perform RLE-decompression on the data, as per the binhex4 standard. The
-   algorithm uses ``0x90`` after a byte as a repeat indicator, followed by a count.
-   A count of ``0`` specifies a byte value of ``0x90``. The routine returns the
-   decompressed data, unless data input data ends in an orphaned repeat indicator,
-   in which case the :exc:`Incomplete` exception is raised.
-
-   .. versionchanged:: 3.2
-      Accept only bytestring or bytearray objects as input.
-
-   .. deprecated:: 3.9
-
-
-.. function:: rlecode_hqx(data)
-
-   Perform binhex4 style RLE-compression on *data* and return the result.
-
-   .. deprecated:: 3.9
-
-
-.. function:: b2a_hqx(data)
-
-   Perform hexbin4 binary-to-ASCII translation and return the resulting string. The
-   argument should already be RLE-coded, and have a length divisible by 3 (except
-   possibly the last fragment).
-
-   .. deprecated:: 3.9
 
 
 .. function:: crc_hqx(data, value)
@@ -221,9 +181,6 @@ The :mod:`binascii` module defines the following functions:
    Module :mod:`base64`
       Support for RFC compliant base64-style encoding in base 16, 32, 64,
       and 85.
-
-   Module :mod:`binhex`
-      Support for the binhex format used on the Macintosh.
 
    Module :mod:`uu`
       Support for UU encoding used on Unix.

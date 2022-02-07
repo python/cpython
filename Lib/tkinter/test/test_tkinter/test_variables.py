@@ -338,10 +338,5 @@ class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
         self.assertRaises(RuntimeError, Variable)
 
 
-tests_gui = (TestVariable, TestStringVar, TestIntVar,
-             TestDoubleVar, TestBooleanVar, DefaultRootTest)
-
-
 if __name__ == "__main__":
-    from test.support import run_unittest
-    run_unittest(*tests_gui)
+    unittest.main()

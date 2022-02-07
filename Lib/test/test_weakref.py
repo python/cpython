@@ -1,5 +1,6 @@
 import gc
 import sys
+import doctest
 import unittest
 import collections
 import weakref
@@ -1472,7 +1473,7 @@ class MappingTestCase(TestBase):
         o = Object(123456)
         with testcontext():
             n = len(dict)
-            # Since underlaying dict is ordered, first item is popped
+            # Since underlying dict is ordered, first item is popped
             dict.pop(next(dict.keys()))
             self.assertEqual(len(dict), n - 1)
             dict[o] = o
@@ -2233,18 +2234,10 @@ OK
 
 __test__ = {'libreftest' : libreftest}
 
-def test_main():
-    support.run_unittest(
-        ReferencesTestCase,
-        WeakMethodTestCase,
-        MappingTestCase,
-        WeakValueDictionaryTestCase,
-        WeakKeyDictionaryTestCase,
-        SubclassableWeakrefTestCase,
-        FinalizeTestCase,
-        )
-    support.run_doctest(sys.modules[__name__])
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite())
+    return tests
 
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

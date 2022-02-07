@@ -418,6 +418,8 @@ static const char* const attr_exceptions[] = {
     "__mro_entries__",
     "__reduce_ex__",  // needed so we don't look up object.__reduce_ex__
     "__reduce__",
+    "__copy__",
+    "__deepcopy__",
     NULL,
 };
 

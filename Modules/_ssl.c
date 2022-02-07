@@ -949,8 +949,9 @@ _ssl__SSLSocket_do_handshake_impl(PySSLSocket *self)
 
     timeout = GET_SOCKET_TIMEOUT(sock);
     has_timeout = (timeout > 0);
-    if (has_timeout)
-        deadline = _PyTime_GetMonotonicClock() + timeout;
+    if (has_timeout) {
+        deadline = _PyDeadline_Init(timeout);
+    }
 
     /* Actually negotiate SSL connection */
     /* XXX If SSL_do_handshake() returns 0, it's also a failure. */
@@ -965,7 +966,7 @@ _ssl__SSLSocket_do_handshake_impl(PySSLSocket *self)
             goto error;
 
         if (has_timeout)
-            timeout = deadline - _PyTime_GetMonotonicClock();
+            timeout = _PyDeadline_Get(deadline);
 
         if (err.ssl == SSL_ERROR_WANT_READ) {
             sockstate = PySSL_select(sock, 0, timeout);
@@ -2264,7 +2265,7 @@ PySSL_select(PySocketSockObject *s, int writing, _PyTime_t timeout)
     if (!_PyIsSelectable_fd(s->sock_fd))
         return SOCKET_TOO_LARGE_FOR_SELECT;
 
-    _PyTime_AsTimeval_noraise(timeout, &tv, _PyTime_ROUND_CEILING);
+    _PyTime_AsTimeval_clamp(timeout, &tv, _PyTime_ROUND_CEILING);
 
     FD_ZERO(&fds);
     FD_SET(s->sock_fd, &fds);
@@ -2326,8 +2327,9 @@ _ssl__SSLSocket_write_impl(PySSLSocket *self, Py_buffer *b)
 
     timeout = GET_SOCKET_TIMEOUT(sock);
     has_timeout = (timeout > 0);
-    if (has_timeout)
-        deadline = _PyTime_GetMonotonicClock() + timeout;
+    if (has_timeout) {
+        deadline = _PyDeadline_Init(timeout);
+    }
 
     sockstate = PySSL_select(sock, 1, timeout);
     if (sockstate == SOCKET_HAS_TIMED_OUT) {
@@ -2354,8 +2356,9 @@ _ssl__SSLSocket_write_impl(PySSLSocket *self, Py_buffer *b)
         if (PyErr_CheckSignals())
             goto error;
 
-        if (has_timeout)
-            timeout = deadline - _PyTime_GetMonotonicClock();
+        if (has_timeout) {
+            timeout = _PyDeadline_Get(deadline);
+        }
 
         if (err.ssl == SSL_ERROR_WANT_READ) {
             sockstate = PySSL_select(sock, 0, timeout);
@@ -2494,7 +2497,7 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
     timeout = GET_SOCKET_TIMEOUT(sock);
     has_timeout = (timeout > 0);
     if (has_timeout)
-        deadline = _PyTime_GetMonotonicClock() + timeout;
+        deadline = _PyDeadline_Init(timeout);
 
     do {
         PySSL_BEGIN_ALLOW_THREADS
@@ -2506,8 +2509,9 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
         if (PyErr_CheckSignals())
             goto error;
 
-        if (has_timeout)
-            timeout = deadline - _PyTime_GetMonotonicClock();
+        if (has_timeout) {
+            timeout = _PyDeadline_Get(deadline);
+        }
 
         if (err.ssl == SSL_ERROR_WANT_READ) {
             sockstate = PySSL_select(sock, 0, timeout);
@@ -2592,8 +2596,9 @@ _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
 
     timeout = GET_SOCKET_TIMEOUT(sock);
     has_timeout = (timeout > 0);
-    if (has_timeout)
-        deadline = _PyTime_GetMonotonicClock() + timeout;
+    if (has_timeout) {
+        deadline = _PyDeadline_Init(timeout);
+    }
 
     while (1) {
         PySSL_BEGIN_ALLOW_THREADS
@@ -2626,8 +2631,9 @@ _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
             continue;
         }
 
-        if (has_timeout)
-            timeout = deadline - _PyTime_GetMonotonicClock();
+        if (has_timeout) {
+            timeout = _PyDeadline_Get(deadline);
+        }
 
         /* Possibly retry shutdown until timeout or failure */
         if (err.ssl == SSL_ERROR_WANT_READ)
@@ -3767,7 +3773,7 @@ _password_callback(char *buf, int size, int rwflag, void *userdata)
     }
 
     if (pw_info->callable) {
-        fn_ret = _PyObject_CallNoArg(pw_info->callable);
+        fn_ret = PyObject_CallNoArgs(pw_info->callable);
         if (!fn_ret) {
             /* TODO: It would be nice to move _ctypes_add_traceback() into the
                core python API, so we could use it to add a frame here */
