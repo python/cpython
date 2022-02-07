@@ -2872,7 +2872,6 @@ stdio_at_fork_reinit(_Py_Identifier *key)
 
     PyObject *isatty = NULL;
     PyObject *buffer = NULL;
-    PyObject *result = NULL;
 
     PyObject *stdio = _PySys_GetObjectId(key);
 
@@ -2900,7 +2899,6 @@ stdio_at_fork_reinit(_Py_Identifier *key)
 end:
     Py_XDECREF(isatty);
     Py_XDECREF(buffer);
-    Py_XDECREF(result);
     return ret;
 }
 
