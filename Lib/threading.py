@@ -1570,6 +1570,8 @@ def _after_fork():
         # Dangling thread instances must still have their locks reset,
         # because someone may join() them.
         threads = set(_enumerate())
+        # Looping over a WeakSet (_dangling) isn't safe as it can be updated from another
+        # thread while we do so. Therefore we copy it prior updating the local.
         threads.update(_dangling.copy())
         for thread in threads:
             # Any lock/condition variable may be currently locked or in an
