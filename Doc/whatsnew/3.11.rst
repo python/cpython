@@ -591,6 +591,12 @@ Changes in the Python API
   of sorting simply isn't well-defined in the absence of a total ordering
   on list elements.
 
+* :mod:`calendar`: The :class:`calendar.LocaleTextCalendar` and
+  :class:`calendar.LocaleHTMLCalendar` classes now use
+  :func:`locale.getlocale`, instead of using :func:`locale.getdefaultlocale`,
+  if no locale is specified.
+  (Contributed by Victor Stinner in :issue:`46659`.)
+
 
 Build Changes
 =============
