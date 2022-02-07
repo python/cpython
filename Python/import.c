@@ -24,8 +24,6 @@
 extern "C" {
 #endif
 
-#define CACHEDIR "__pycache__"
-
 /* Forward references */
 static PyObject *import_add_module(PyThreadState *tstate, PyObject *name);
 
