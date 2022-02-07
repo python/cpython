@@ -27,6 +27,7 @@ from typing import NamedTuple, TypedDict
 from typing import IO, TextIO, BinaryIO
 from typing import Pattern, Match
 from typing import Annotated, ForwardRef
+from typing import Self
 from typing import TypeAlias
 from typing import ParamSpec, Concatenate, ParamSpecArgs, ParamSpecKwargs
 from typing import TypeGuard
@@ -157,8 +158,48 @@ class NoReturnTests(BaseTestCase):
             type(NoReturn)()
 
 
-class TypeVarTests(BaseTestCase):
+class SelfTests(BaseTestCase):
+    def test_basics(self):
+        class Foo:
+            def bar(self) -> Self: ...
 
+        self.assertEqual(gth(Foo.bar), {'return': Self})
+
+    def test_repr(self):
+        self.assertEqual(repr(Self), 'typing.Self')
+
+    def test_cannot_subscript(self):
+        with self.assertRaises(TypeError):
+            Self[int]
+
+    def test_cannot_subclass(self):
+        with self.assertRaises(TypeError):
+            class C(type(Self)):
+                pass
+
+    def test_cannot_init(self):
+        with self.assertRaises(TypeError):
+            Self()
+        with self.assertRaises(TypeError):
+            type(Self)()
+
+    def test_no_isinstance(self):
+        with self.assertRaises(TypeError):
+            isinstance(1, Self)
+        with self.assertRaises(TypeError):
+            issubclass(int, Self)
+
+    def test_alias(self):
+        # TypeAliases are not actually part of the spec
+        alias_1 = Tuple[Self, Self]
+        alias_2 = List[Self]
+        alias_3 = ClassVar[Self]
+        self.assertEqual(get_args(alias_1), (Self, Self))
+        self.assertEqual(get_args(alias_2), (Self,))
+        self.assertEqual(get_args(alias_3), (Self,))
+
+
+class TypeVarTests(BaseTestCase):
     def test_basic_plain(self):
         T = TypeVar('T')
         # T equals itself.
