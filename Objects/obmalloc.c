@@ -900,7 +900,6 @@ static int running_on_valgrind = -1;
  * currently targets.
  */
 #define SYSTEM_PAGE_SIZE        (4 * 1024)
-#define SYSTEM_PAGE_SIZE_MASK   (SYSTEM_PAGE_SIZE - 1)
 
 /*
  * Maximum amount of memory managed by the allocator for small requests.
