@@ -4924,6 +4924,7 @@ class ParamSpecTests(BaseTestCase):
 
     def test_args_kwargs(self):
         P = ParamSpec('P')
+        P_2 = ParamSpec('P_2')
         self.assertIn('args', dir(P))
         self.assertIn('kwargs', dir(P))
         self.assertIsInstance(P.args, ParamSpecArgs)
@@ -4932,6 +4933,8 @@ class ParamSpecTests(BaseTestCase):
         self.assertIs(P.kwargs.__origin__, P)
         self.assertEqual(P.args, P.args)
         self.assertEqual(P.kwargs, P.kwargs)
+        self.assertNotEqual(P.args, P_2.args)
+        self.assertNotEqual(P.kwargs, P_2.kwargs)
         self.assertEqual(repr(P.args), "P.args")
         self.assertEqual(repr(P.kwargs), "P.kwargs")
 
