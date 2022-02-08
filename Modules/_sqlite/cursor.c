@@ -21,6 +21,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#define NEEDS_PY_IDENTIFIER
+
 #include "cursor.h"
 #include "module.h"
 #include "util.h"
