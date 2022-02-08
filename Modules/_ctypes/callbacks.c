@@ -153,7 +153,8 @@ static void _CallPythonObject(void *mem,
     int *space;
     PyGILState_STATE state = PyGILState_Ensure();
 
-    n_args = PySequence_Length(converters);
+    assert(PyTuple_Check(converters));
+    n_args = PyTuple_GET_SIZE(converters);
     /* Hm. What to return in case of error?
        For COM, 0xFFFFFFFF seems better than 0.
     */
@@ -162,8 +163,8 @@ static void _CallPythonObject(void *mem,
         goto Done;
     }
 
-    PyObject *args_stack[_PY_FASTCALL_SMALL_STACK];
-    if (n_args <= (Py_ssize_t)Py_ARRAY_LENGTH(args_stack)) {
+    PyObject *args_stack[CTYPES_MAX_ARGCOUNT];
+    if (n_args <= CTYPES_MAX_ARGCOUNT) {
         args = args_stack;
     }
     else {
@@ -178,11 +179,6 @@ static void _CallPythonObject(void *mem,
     for (i = 0; i < n_args; i++) {
         PyObject *cnv = cnvs[i];
         StgDictObject *dict;
-
-        if (cnv == NULL) {
-            PrintError("Getting argument converter %zd\n", i);
-            goto Done;
-        }
 
         Py_INCREF(cnv);
         dict = PyType_stgdict(cnv);
@@ -377,7 +373,8 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
     Py_ssize_t nArgs, i;
     ffi_abi cc;
 
-    nArgs = PySequence_Size(converters);
+    assert(PyTuple_Check(converters));
+    nArgs = PyTuple_GET_SIZE(converters);
     p = CThunkObject_new(nArgs);
     if (p == NULL)
         return NULL;
