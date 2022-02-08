@@ -1817,8 +1817,8 @@ only.
 [clinic start generated code]*/
 
 static PyObject *
-sys__getfunc_impl(PyObject *module, int depth)
-/*[clinic end generated code: output=6a4f9e993f6c96d1 input=3c79a6f4642a5ba5]*/
+sys__getcaller_impl(PyObject *module, int depth)
+/*[clinic end generated code: output=250f47adb2372e4a input=242cb11f8e6d7a60]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
     InterpreterFrame *frame = tstate->cframe->current_frame;
@@ -1862,7 +1862,7 @@ only.
 
 static PyObject *
 sys__getframe_impl(PyObject *module, int depth)
-/*[clinic end generated code: output=d438776c04d59804 input=c1be8a6464b11ee5]*/
+/*[clinic end generated code: output=d438776c04d59804 input=a57ecc9db9b721ad]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
     InterpreterFrame *frame = tstate->cframe->current_frame;
@@ -2051,7 +2051,7 @@ static PyMethodDef sys_methods[] = {
     {"getsizeof",   (PyCFunction)(void(*)(void))sys_getsizeof,
      METH_VARARGS | METH_KEYWORDS, getsizeof_doc},
     SYS__GETFRAME_METHODDEF
-    SYS__GETFUNC_METHODDEF
+    SYS__GETCALLER_METHODDEF
     SYS_GETWINDOWSVERSION_METHODDEF
     SYS__ENABLELEGACYWINDOWSFSENCODING_METHODDEF
     SYS_INTERN_METHODDEF

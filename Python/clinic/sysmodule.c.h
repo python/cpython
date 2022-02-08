@@ -787,8 +787,8 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(sys__getfunc__doc__,
-"_getcaller($module, depth=1, /)\n"
+PyDoc_STRVAR(sys__getcaller__doc__,
+"_getcaller($module, depth=0, /)\n"
 "--\n"
 "\n"
 "Return a function object from the call stack.\n"
@@ -798,23 +798,20 @@ PyDoc_STRVAR(sys__getfunc__doc__,
 "stack, ValueError is raised.  If depth is 0, return the current function\n"
 "object.\n"
 "\n"
-"This is similar to sys._getframe() but cheaper because it does not\n"
-"create a full frame object.\n"
-"\n"
 "This function should be used for internal and specialized purposes\n"
 "only.");
 
-#define SYS__GETFUNC_METHODDEF    \
-    {"_getcaller", (PyCFunction)(void(*)(void))sys__getcaller, METH_FASTCALL, sys__getfunc__doc__},
+#define SYS__GETCALLER_METHODDEF    \
+    {"_getcaller", (PyCFunction)(void(*)(void))sys__getcaller, METH_FASTCALL, sys__getcaller__doc__},
 
 static PyObject *
-sys__getfunc_impl(PyObject *module, int depth);
+sys__getcaller_impl(PyObject *module, int depth);
 
 static PyObject *
 sys__getcaller(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    int depth = 1;
+    int depth = 0;
 
     if (!_PyArg_CheckPositional("_getcaller", nargs, 0, 1)) {
         goto exit;
@@ -827,7 +824,7 @@ sys__getcaller(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
-    return_value = sys__getfunc_impl(module, depth);
+    return_value = sys__getcaller_impl(module, depth);
 
 exit:
     return return_value;
@@ -843,6 +840,10 @@ PyDoc_STRVAR(sys__getframe__doc__,
 "calls below the top of the stack.  If that is deeper than the call\n"
 "stack, ValueError is raised.  The default for depth is zero, returning\n"
 "the frame at the top of the call stack.\n"
+"\n"
+"Unlike the similar sys._getcaller, this returns a full frame object,\n"
+"making it more expensive to execute and harder to port to alternative\n"
+"implementations of Python.\n"
 "\n"
 "This function should be used for internal and specialized purposes\n"
 "only.");
@@ -1060,4 +1061,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=357e73ba2ac2bcc7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=32a5bed6e0473b5d input=a9049054013a1b77]*/
