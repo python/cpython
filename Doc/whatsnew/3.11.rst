@@ -67,6 +67,8 @@ Summary -- Release highlights
 
 PEP-654: Exception Groups and ``except*``.
 (Contributed by Irit Katriel in :issue:`45292`.)
+PEP-673: ``Self`` Type.
+(Contributed by James Hilton-Balfe and Pradeep Kumar in :issue:`30924`.)
 
 New Features
 ============
@@ -588,6 +590,12 @@ Changes in the Python API
   information on total ordering).  It's generally true that the result
   of sorting simply isn't well-defined in the absence of a total ordering
   on list elements.
+
+* :mod:`calendar`: The :class:`calendar.LocaleTextCalendar` and
+  :class:`calendar.LocaleHTMLCalendar` classes now use
+  :func:`locale.getlocale`, instead of using :func:`locale.getdefaultlocale`,
+  if no locale is specified.
+  (Contributed by Victor Stinner in :issue:`46659`.)
 
 
 Build Changes

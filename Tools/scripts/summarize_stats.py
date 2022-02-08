@@ -77,6 +77,33 @@ def extract_opcode_stats(stats):
     return opcode_stats
 
 
+def categorized_counts(opcode_stats):
+    basic = 0
+    specialized = 0
+    not_specialized = 0
+    specialized_instructions = {
+        op for op in opcode._specialized_instructions
+        if "__" not in op and "ADAPTIVE" not in op}
+    adaptive_instructions = {
+        op for op in opcode._specialized_instructions
+        if "ADAPTIVE" in op}
+    for i, opcode_stat in enumerate(opcode_stats):
+        if "execution_count" not in opcode_stat:
+            continue
+        count = opcode_stat['execution_count']
+        name = opname[i]
+        if "specializable" in opcode_stat:
+            not_specialized += count
+        elif name in adaptive_instructions:
+            not_specialized += count
+        elif name in specialized_instructions:
+            miss = opcode_stat.get("specialization.miss", 0)
+            not_specialized += miss
+            specialized += count - miss
+        else:
+            basic += count
+    return basic, not_specialized, specialized
+
 def main():
     stats = gather_stats()
     opcode_stats = extract_opcode_stats(stats)
@@ -102,6 +129,11 @@ def main():
     for i, opcode_stat in enumerate(opcode_stats):
         name = opname[i]
         print_specialization_stats(name, opcode_stat)
+    basic, not_specialized, specialized = categorized_counts(opcode_stats)
+    print("Specialization effectiveness:")
+    print(f"    Base instructions {basic} {basic*100/total:0.1f}%")
+    print(f"    Not specialized {not_specialized} {not_specialized*100/total:0.1f}%")
+    print(f"    Specialized {specialized} {specialized*100/total:0.1f}%")
     print("Call stats:")
     total = 0
     for key, value in stats.items():

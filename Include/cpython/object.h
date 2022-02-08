@@ -43,9 +43,15 @@ typedef struct _Py_Identifier {
     Py_ssize_t index;
 } _Py_Identifier;
 
+#if defined(NEEDS_PY_IDENTIFIER) || !defined(Py_BUILD_CORE)
+// For now we are keeping _Py_IDENTIFIER for continued use
+// in non-builtin extensions (and naughty PyPI modules).
+
 #define _Py_static_string_init(value) { .string = value, .index = -1 }
 #define _Py_static_string(varname, value)  static _Py_Identifier varname = _Py_static_string_init(value)
 #define _Py_IDENTIFIER(varname) _Py_static_string(PyId_##varname, #varname)
+
+#endif  /* NEEDS_PY_IDENTIFIER */
 
 typedef int (*getbufferproc)(PyObject *, Py_buffer *, int);
 typedef void (*releasebufferproc)(PyObject *, Py_buffer *);
@@ -249,7 +255,12 @@ typedef struct _heaptypeobject {
 PyAPI_FUNC(const char *) _PyType_Name(PyTypeObject *);
 PyAPI_FUNC(PyObject *) _PyType_Lookup(PyTypeObject *, PyObject *);
 PyAPI_FUNC(PyObject *) _PyType_LookupId(PyTypeObject *, _Py_Identifier *);
-PyAPI_FUNC(PyObject *) _PyObject_LookupSpecial(PyObject *, _Py_Identifier *);
+PyAPI_FUNC(PyObject *) _PyObject_LookupSpecialId(PyObject *, _Py_Identifier *);
+#ifndef Py_BUILD_CORE
+// Backward compatibility for 3rd-party extensions
+// that may be using the old name.
+#define _PyObject_LookupSpecial _PyObject_LookupSpecialId
+#endif
 PyAPI_FUNC(PyTypeObject *) _PyType_CalculateMetaclass(PyTypeObject *, PyObject *);
 PyAPI_FUNC(PyObject *) _PyType_GetDocFromInternalDoc(const char *, const char *);
 PyAPI_FUNC(PyObject *) _PyType_GetTextSignatureFromInternalDoc(const char *, const char *);

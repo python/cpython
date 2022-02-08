@@ -9,7 +9,7 @@ import warnings
 from unittest import TestCase, main, skipUnless, skip
 from copy import copy, deepcopy
 
-from typing import Any, NoReturn
+from typing import Any, NoReturn, Never, assert_never
 from typing import TypeVar, AnyStr
 from typing import T, KT, VT  # Not in __all__.
 from typing import Union, Optional, Literal
@@ -27,6 +27,7 @@ from typing import NamedTuple, TypedDict
 from typing import IO, TextIO, BinaryIO
 from typing import Pattern, Match
 from typing import Annotated, ForwardRef
+from typing import Self
 from typing import TypeAlias
 from typing import ParamSpec, Concatenate, ParamSpecArgs, ParamSpecKwargs
 from typing import TypeGuard
@@ -123,42 +124,100 @@ class AnyTests(BaseTestCase):
         typing.IO[Any]
 
 
-class NoReturnTests(BaseTestCase):
+class BottomTypeTestsMixin:
+    bottom_type: ClassVar[Any]
 
-    def test_noreturn_instance_type_error(self):
+    def test_instance_type_error(self):
         with self.assertRaises(TypeError):
-            isinstance(42, NoReturn)
+            isinstance(42, self.bottom_type)
 
-    def test_noreturn_subclass_type_error(self):
+    def test_subclass_type_error(self):
         with self.assertRaises(TypeError):
-            issubclass(Employee, NoReturn)
+            issubclass(Employee, self.bottom_type)
         with self.assertRaises(TypeError):
-            issubclass(NoReturn, Employee)
-
-    def test_repr(self):
-        self.assertEqual(repr(NoReturn), 'typing.NoReturn')
+            issubclass(NoReturn, self.bottom_type)
 
     def test_not_generic(self):
         with self.assertRaises(TypeError):
-            NoReturn[int]
+            self.bottom_type[int]
 
     def test_cannot_subclass(self):
         with self.assertRaises(TypeError):
-            class A(NoReturn):
+            class A(self.bottom_type):
                 pass
         with self.assertRaises(TypeError):
-            class A(type(NoReturn)):
+            class A(type(self.bottom_type)):
                 pass
 
     def test_cannot_instantiate(self):
         with self.assertRaises(TypeError):
-            NoReturn()
+            self.bottom_type()
         with self.assertRaises(TypeError):
-            type(NoReturn)()
+            type(self.bottom_type)()
+
+
+class NoReturnTests(BottomTypeTestsMixin, BaseTestCase):
+    bottom_type = NoReturn
+
+    def test_repr(self):
+        self.assertEqual(repr(NoReturn), 'typing.NoReturn')
+
+
+class NeverTests(BottomTypeTestsMixin, BaseTestCase):
+    bottom_type = Never
+
+    def test_repr(self):
+        self.assertEqual(repr(Never), 'typing.Never')
+
+
+class AssertNeverTests(BaseTestCase):
+    def test_exception(self):
+        with self.assertRaises(AssertionError):
+            assert_never(None)
+
+
+class SelfTests(BaseTestCase):
+    def test_basics(self):
+        class Foo:
+            def bar(self) -> Self: ...
+
+        self.assertEqual(gth(Foo.bar), {'return': Self})
+
+    def test_repr(self):
+        self.assertEqual(repr(Self), 'typing.Self')
+
+    def test_cannot_subscript(self):
+        with self.assertRaises(TypeError):
+            Self[int]
+
+    def test_cannot_subclass(self):
+        with self.assertRaises(TypeError):
+            class C(type(Self)):
+                pass
+
+    def test_cannot_init(self):
+        with self.assertRaises(TypeError):
+            Self()
+        with self.assertRaises(TypeError):
+            type(Self)()
+
+    def test_no_isinstance(self):
+        with self.assertRaises(TypeError):
+            isinstance(1, Self)
+        with self.assertRaises(TypeError):
+            issubclass(int, Self)
+
+    def test_alias(self):
+        # TypeAliases are not actually part of the spec
+        alias_1 = Tuple[Self, Self]
+        alias_2 = List[Self]
+        alias_3 = ClassVar[Self]
+        self.assertEqual(get_args(alias_1), (Self, Self))
+        self.assertEqual(get_args(alias_2), (Self,))
+        self.assertEqual(get_args(alias_3), (Self,))
 
 
 class TypeVarTests(BaseTestCase):
-
     def test_basic_plain(self):
         T = TypeVar('T')
         # T equals itself.
@@ -4924,12 +4983,20 @@ class ParamSpecTests(BaseTestCase):
 
     def test_args_kwargs(self):
         P = ParamSpec('P')
+        P_2 = ParamSpec('P_2')
         self.assertIn('args', dir(P))
         self.assertIn('kwargs', dir(P))
         self.assertIsInstance(P.args, ParamSpecArgs)
         self.assertIsInstance(P.kwargs, ParamSpecKwargs)
         self.assertIs(P.args.__origin__, P)
         self.assertIs(P.kwargs.__origin__, P)
+        self.assertEqual(P.args, P.args)
+        self.assertEqual(P.kwargs, P.kwargs)
+        self.assertNotEqual(P.args, P_2.args)
+        self.assertNotEqual(P.kwargs, P_2.kwargs)
+        self.assertNotEqual(P.args, P.kwargs)
+        self.assertNotEqual(P.kwargs, P.args)
+        self.assertNotEqual(P.args, P_2.kwargs)
         self.assertEqual(repr(P.args), "P.args")
         self.assertEqual(repr(P.kwargs), "P.kwargs")
 

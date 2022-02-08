@@ -1,6 +1,7 @@
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
+#define NEEDS_PY_IDENTIFIER
 
 #include "Python.h"
 // windows.h must be included before pycore internal headers
@@ -146,47 +147,48 @@ static void _CallPythonObject(void *mem,
                               int flags,
                               void **pArgs)
 {
-    Py_ssize_t i;
-    PyObject *result;
-    PyObject *arglist = NULL;
-    Py_ssize_t nArgs;
+    PyObject *result = NULL;
+    PyObject **args = NULL;
+    Py_ssize_t i = 0, j = 0, nargs = 0;
     PyObject *error_object = NULL;
     int *space;
     PyGILState_STATE state = PyGILState_Ensure();
 
-    nArgs = PySequence_Length(converters);
+    assert(PyTuple_Check(converters));
+    nargs = PyTuple_GET_SIZE(converters);
     /* Hm. What to return in case of error?
        For COM, 0xFFFFFFFF seems better than 0.
     */
-    if (nArgs < 0) {
+    if (nargs < 0) {
         PrintError("BUG: PySequence_Length");
         goto Done;
     }
 
-    arglist = PyTuple_New(nArgs);
-    if (!arglist) {
-        PrintError("PyTuple_New()");
-        goto Done;
+    PyObject *args_stack[CTYPES_MAX_ARGCOUNT];
+    if (nargs <= CTYPES_MAX_ARGCOUNT) {
+        args = args_stack;
     }
-    for (i = 0; i < nArgs; ++i) {
-        /* Note: new reference! */
-        PyObject *cnv = PySequence_GetItem(converters, i);
-        StgDictObject *dict;
-        if (cnv)
-            dict = PyType_stgdict(cnv);
-        else {
-            PrintError("Getting argument converter %zd\n", i);
+    else {
+        args = PyMem_Malloc(nargs * sizeof(PyObject *));
+        if (args == NULL) {
+            PyErr_NoMemory();
             goto Done;
         }
+    }
+
+    PyObject **cnvs = PySequence_Fast_ITEMS(converters);
+    for (i = 0; i < nargs; i++) {
+        PyObject *cnv = cnvs[i]; // borrowed ref
+        StgDictObject *dict;
+        dict = PyType_stgdict(cnv);
 
         if (dict && dict->getfunc && !_ctypes_simple_instance(cnv)) {
             PyObject *v = dict->getfunc(*pArgs, dict->size);
             if (!v) {
                 PrintError("create argument %zd:\n", i);
-                Py_DECREF(cnv);
                 goto Done;
             }
-            PyTuple_SET_ITEM(arglist, i, v);
+            args[i] = v;
             /* XXX XXX XX
                We have the problem that c_byte or c_short have dict->size of
                1 resp. 4, but these parameters are pushed as sizeof(int) bytes.
@@ -202,12 +204,11 @@ static void _CallPythonObject(void *mem,
             }
             if (!CDataObject_Check(obj)) {
                 Py_DECREF(obj);
-                Py_DECREF(cnv);
                 PrintError("unexpected result of create argument %zd:\n", i);
                 goto Done;
             }
             memcpy(obj->b_ptr, *pArgs, dict->size);
-            PyTuple_SET_ITEM(arglist, i, (PyObject *)obj);
+            args[i] = (PyObject *)obj;
 #ifdef MS_WIN32
             TryAddRef(dict, obj);
 #endif
@@ -215,10 +216,8 @@ static void _CallPythonObject(void *mem,
             PyErr_SetString(PyExc_TypeError,
                             "cannot build parameter");
             PrintError("Parsing argument %zd\n", i);
-            Py_DECREF(cnv);
             goto Done;
         }
-        Py_DECREF(cnv);
         /* XXX error handling! */
         pArgs++;
     }
@@ -241,7 +240,7 @@ static void _CallPythonObject(void *mem,
 #endif
     }
 
-    result = PyObject_CallObject(callable, arglist);
+    result = PyObject_Vectorcall(callable, args, nargs, NULL);
     if (result == NULL) {
         _PyErr_WriteUnraisableMsg("on calling ctypes callback function",
                                   callable);
@@ -308,7 +307,12 @@ static void _CallPythonObject(void *mem,
     Py_XDECREF(result);
 
   Done:
-    Py_XDECREF(arglist);
+    for (j = 0; j < i; j++) {
+        Py_DECREF(args[j]);
+    }
+    if (args != args_stack) {
+        PyMem_Free(args);
+    }
     PyGILState_Release(state);
 }
 
@@ -328,12 +332,12 @@ static void closure_fcn(ffi_cif *cif,
                       args);
 }
 
-static CThunkObject* CThunkObject_new(Py_ssize_t nArgs)
+static CThunkObject* CThunkObject_new(Py_ssize_t nargs)
 {
     CThunkObject *p;
     Py_ssize_t i;
 
-    p = PyObject_GC_NewVar(CThunkObject, &PyCThunk_Type, nArgs);
+    p = PyObject_GC_NewVar(CThunkObject, &PyCThunk_Type, nargs);
     if (p == NULL) {
         return NULL;
     }
@@ -348,7 +352,7 @@ static CThunkObject* CThunkObject_new(Py_ssize_t nArgs)
     p->setfunc = NULL;
     p->ffi_restype = NULL;
 
-    for (i = 0; i < nArgs + 1; ++i)
+    for (i = 0; i < nargs + 1; ++i)
         p->atypes[i] = NULL;
     PyObject_GC_Track((PyObject *)p);
     return p;
@@ -361,11 +365,12 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
 {
     int result;
     CThunkObject *p;
-    Py_ssize_t nArgs, i;
+    Py_ssize_t nargs, i;
     ffi_abi cc;
 
-    nArgs = PySequence_Size(converters);
-    p = CThunkObject_new(nArgs);
+    assert(PyTuple_Check(converters));
+    nargs = PyTuple_GET_SIZE(converters);
+    p = CThunkObject_new(nargs);
     if (p == NULL)
         return NULL;
 
@@ -378,12 +383,10 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
     }
 
     p->flags = flags;
-    for (i = 0; i < nArgs; ++i) {
-        PyObject *cnv = PySequence_GetItem(converters, i);
-        if (cnv == NULL)
-            goto error;
+    PyObject **cnvs = PySequence_Fast_ITEMS(converters);
+    for (i = 0; i < nargs; ++i) {
+        PyObject *cnv = cnvs[i]; // borrowed ref
         p->atypes[i] = _ctypes_get_ffi_type(cnv);
-        Py_DECREF(cnv);
     }
     p->atypes[i] = NULL;
 
@@ -409,7 +412,7 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
         cc = FFI_STDCALL;
 #endif
     result = ffi_prep_cif(&p->cif, cc,
-                          Py_SAFE_DOWNCAST(nArgs, Py_ssize_t, int),
+                          Py_SAFE_DOWNCAST(nargs, Py_ssize_t, int),
                           _ctypes_get_ffi_type(restype),
                           &p->atypes[0]);
     if (result != FFI_OK) {
