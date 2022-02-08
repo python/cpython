@@ -62,6 +62,7 @@ _Py_IDENTIFIER(buffer);
 _Py_IDENTIFIER(builtins);
 _Py_IDENTIFIER(encoding);
 _Py_IDENTIFIER(path);
+_Py_IDENTIFIER(stdin);
 _Py_IDENTIFIER(stdout);
 _Py_IDENTIFIER(stderr);
 _Py_IDENTIFIER(warnoptions);
@@ -2865,40 +2866,26 @@ err_occurred:
 extern int _PyIO_buffered_at_fork_reinit(PyObject *);
 
 static int
-stdio_at_fork_reinit(_Py_Identifier *key)
+stream_at_fork_reinit(_Py_Identifier *stream_id)
 {
+    PyObject *stream = _PySys_GetObjectId(stream_id);
 
-    int ret = 0;
+    if (stream == NULL || Py_IsNone(stream)) {
+        return 0;
+    }
 
-    PyObject *isatty = NULL;
-    PyObject *buffer = NULL;
-
-    PyObject *stdio = _PySys_GetObjectId(key);
-
-    _Py_IDENTIFIER(isatty);
-    isatty = _PyObject_CallMethodIdNoArgs(stdio, &PyId_isatty);
-    if (isatty == NULL) {
+    /* The buffer attribute is not part of the TextIOBase API
+     * and may not exist in some implementations. If not present,
+     * we have no locks to reinitialize. */
+    PyObject *buffer = _PyObject_GetAttrId(stream, &PyId_buffer);
+    if (buffer == NULL) {
         PyErr_Clear();
-        goto end;
-    }
-    if (Py_IsFalse(isatty)) {
-        goto end;
+        return 0;
     }
 
-    _Py_IDENTIFIER(buffer);
-    if (_PyObject_LookupAttrId(stdio, &PyId_buffer, &buffer) < 0) {
-        /* stdout.buffer and stderr.buffer are not part of the
-         * TextIOBase API and may not exist in some implementations.
-         * If not present, no need to reinitialize their locks. */
-        goto end;
-    }
-
-    /* reinitialize buffer->lock */
-    ret = _PyIO_buffered_at_fork_reinit(buffer);
-
-end:
-    Py_XDECREF(isatty);
-    Py_XDECREF(buffer);
+    /* Reinitialize buffer->lock */
+    int ret = _PyIO_buffered_at_fork_reinit(buffer);
+    Py_DECREF(buffer);
     return ret;
 }
 
@@ -2907,11 +2894,12 @@ end:
 PyStatus
 _PySys_ReInitStdio(void)
 {
-    int reinit_stdout = stdio_at_fork_reinit(&PyId_stdout);
-    int reinit_stderr = stdio_at_fork_reinit(&PyId_stderr);
+    int reinit_stdin  = stream_at_fork_reinit(&PyId_stdin);
+    int reinit_stdout = stream_at_fork_reinit(&PyId_stdout);
+    int reinit_stderr = stream_at_fork_reinit(&PyId_stderr);
 
-    if (reinit_stdout < 0 || reinit_stderr < 0) {
-        return _PyStatus_ERR("Failed to reinitialize stdout and stderr");
+    if (reinit_stdin < 0 || reinit_stdout < 0 || reinit_stderr < 0) {
+        return _PyStatus_ERR("Failed to reinitialize standard streams");
     }
     return _PyStatus_OK();
 }
