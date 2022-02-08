@@ -177,9 +177,8 @@ static void _CallPythonObject(void *mem,
 
     PyObject **cnvs = PySequence_Fast_ITEMS(converters);
     for (i = 0; i < n_args; i++) {
-        PyObject *cnv = cnvs[i];
+        PyObject *cnv = cnvs[i]; // borrowed ref
         StgDictObject *dict;
-
         dict = PyType_stgdict(cnv);
 
         if (dict && dict->getfunc && !_ctypes_simple_instance(cnv)) {
@@ -332,12 +331,12 @@ static void closure_fcn(ffi_cif *cif,
                       args);
 }
 
-static CThunkObject* CThunkObject_new(Py_ssize_t nArgs)
+static CThunkObject* CThunkObject_new(Py_ssize_t n_args)
 {
     CThunkObject *p;
     Py_ssize_t i;
 
-    p = PyObject_GC_NewVar(CThunkObject, &PyCThunk_Type, nArgs);
+    p = PyObject_GC_NewVar(CThunkObject, &PyCThunk_Type, n_args);
     if (p == NULL) {
         return NULL;
     }
@@ -352,7 +351,7 @@ static CThunkObject* CThunkObject_new(Py_ssize_t nArgs)
     p->setfunc = NULL;
     p->ffi_restype = NULL;
 
-    for (i = 0; i < nArgs + 1; ++i)
+    for (i = 0; i < n_args + 1; ++i)
         p->atypes[i] = NULL;
     PyObject_GC_Track((PyObject *)p);
     return p;
@@ -365,12 +364,12 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
 {
     int result;
     CThunkObject *p;
-    Py_ssize_t nArgs, i;
+    Py_ssize_t n_args, i;
     ffi_abi cc;
 
     assert(PyTuple_Check(converters));
-    nArgs = PyTuple_GET_SIZE(converters);
-    p = CThunkObject_new(nArgs);
+    n_args = PyTuple_GET_SIZE(converters);
+    p = CThunkObject_new(n_args);
     if (p == NULL)
         return NULL;
 
@@ -384,8 +383,8 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
 
     p->flags = flags;
     PyObject **cnvs = PySequence_Fast_ITEMS(converters);
-    for (i = 0; i < nArgs; ++i) {
-        PyObject *cnv = cnvs[i];
+    for (i = 0; i < n_args; ++i) {
+        PyObject *cnv = cnvs[i]; // borrowed ref
         p->atypes[i] = _ctypes_get_ffi_type(cnv);
     }
     p->atypes[i] = NULL;
@@ -412,7 +411,7 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
         cc = FFI_STDCALL;
 #endif
     result = ffi_prep_cif(&p->cif, cc,
-                          Py_SAFE_DOWNCAST(nArgs, Py_ssize_t, int),
+                          Py_SAFE_DOWNCAST(n_args, Py_ssize_t, int),
                           _ctypes_get_ffi_type(restype),
                           &p->atypes[0]);
     if (result != FFI_OK) {
