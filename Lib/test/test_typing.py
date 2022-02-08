@@ -172,7 +172,7 @@ class NeverTests(BottomTypeTestsMixin, BaseTestCase):
 
 class AssertNeverTests(BaseTestCase):
     def test_exception(self):
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(AssertionError):
             assert_never(None)
 
 

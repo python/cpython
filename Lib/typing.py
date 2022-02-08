@@ -2103,7 +2103,7 @@ def assert_never(arg: Never, /) -> Never:
     At runtime, this throws an exception when called.
 
     """
-    raise RuntimeError("Expected code to be unreachable")
+    raise AssertionError("Expected code to be unreachable")
 
 
 def no_type_check(arg):
