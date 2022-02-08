@@ -2426,8 +2426,9 @@ def TypedDict(typename, fields=None, /, *, total=True, **kwargs):
                         " but not both")
     if kwargs:
         warnings.warn(
-            "The kwargs-based syntax for TypedDict definition is deprecated "
-            " in Python 3.11 and will be removed in Python 3.13.",
+            "The kwargs-based syntax for TypedDict definitions is deprecated "
+            "in Python 3.11, will be removed in Python 3.13, and may not be "
+            "understood by third-party type checkers.",
             DeprecationWarning,
             stacklevel=2,
         )

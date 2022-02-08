@@ -1389,18 +1389,18 @@ These are not used in annotations. They are building blocks for declaring types.
    ``Point2D.__optional_keys__``.
    To allow using this feature with older versions of Python that do not
    support :pep:`526`, ``TypedDict`` supports two additional equivalent
-   syntactic forms.
-   Using dict as the second argument::
+   syntactic forms. Firstly, using a literal :class:`dict` as the
+   second argument::
 
       Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
    
-   Using keyword arguments::
+   Secondly, using keyword arguments::
    
       Point2D = TypedDict('Point2D', x=int, y=int, label=str)
 
    .. deprecated-removed:: 3.11 3.13
-      The keyword arguments syntax is deprecated in 3.11 and will be removed
-      in 3.13. Currently it might not be supported by typecheckers.
+      The keyword-argument syntax is deprecated in 3.11 and will be removed
+      in 3.13. It may also be unsupported by third-party type-checking tools.
 
    By default, all keys must be present in a ``TypedDict``. It is possible to
    override this by specifying totality.
