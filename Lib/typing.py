@@ -1081,28 +1081,28 @@ class _BaseGenericAlias(_Final, _root=True):
         return list(set(super().__dir__()
                 + [attr for attr in dir(self.__origin__) if not _is_dunder(attr)]))
 
-def _determine_typevar_substitution(typevars, params):
-    """Determines how to assign type parameters to type variables.
+def _determine_typevar_substitution(typevars, args):
+    """Determines how to assign type arguments to type variables.
 
     Args:
         typevars: A tuple of TypeVars and (at most one) TypeVarTuple.
-        params: A tuple of type parameters to substitute into type variables.
+        args: A tuple of type arguments to substitute into type variables.
 
     Examples:
         T1 = TypeVar('T1')
         T2 = TypeVar('T2')
         Ts = TypeVarTuple('Ts')
 
-        typevars=(T1,),     params=()           => TypeError
-        typevars=(T1,),     params=(int,)       => {T1: int}
-        typevars=(T1,),     params=(int, str)   => TypeError
-        typevars=(T1, T2),  params=(int, str)   => {T1: int, T2: str}
-        typevars=(Ts,),     params=()           => {Ts: ()}
-        typevars=(Ts,),     params=(int,)       => {Ts: (int,)}
-        typevars=(Ts,),     params=(int, str)   => {Ts: (int, str)}
-        typevars=(T, Ts),   params=()           => TypeError
-        typevars=(T, Ts),   params=(int,)       => {T: int, Ts: ()}
-        typevars=(T, Ts)    params=(int, str)   => {T, int, Ts: (str,)}
+        typevars=(T1,),     args=()           => TypeError
+        typevars=(T1,),     args=(int,)       => {T1: int}
+        typevars=(T1,),     args=(int, str)   => TypeError
+        typevars=(T1, T2),  args=(int, str)   => {T1: int, T2: str}
+        typevars=(Ts,),     args=()           => {Ts: ()}
+        typevars=(Ts,),     args=(int,)       => {Ts: (int,)}
+        typevars=(Ts,),     args=(int, str)   => {Ts: (int, str)}
+        typevars=(T, Ts),   args=()           => TypeError
+        typevars=(T, Ts),   args=(int,)       => {T: int, Ts: ()}
+        typevars=(T, Ts)    args=(int, str)   => {T, int, Ts: (str,)}
     """
     if not typevars:
         return {}
@@ -1116,11 +1116,11 @@ def _determine_typevar_substitution(typevars, params):
     # Case 1: typevars does not contain any TypeVarTuples
 
     if num_typevartuples == 0:
-        if len(typevars) != len(params):
+        if len(typevars) != len(args):
             raise TypeError(f"Number of type variables ({len(typevars)}) "
                             f"doesn't match number of type "
-                            f"parameters ({len(params)})")
-        return dict(zip(typevars, params))
+                            f"parameters ({len(args)})")
+        return dict(zip(typevars, args))
 
     # Case 2: typevars contains a single TypeVarTuple
 
@@ -1134,15 +1134,15 @@ def _determine_typevar_substitution(typevars, params):
     # * If typevartuple_idx == 2 there are 0 TypeVars at
     #   the end of typevars.
     num_end_typevars = len(typevars) - typevartuple_idx - 1
-    if len(params) < num_start_typevars + num_end_typevars:
+    if len(args) < num_start_typevars + num_end_typevars:
         raise TypeError(
             "Expected at least {} type parameters, but only got {}".format(
-                num_start_typevars + num_end_typevars, len(params)
+                num_start_typevars + num_end_typevars, len(args)
             )
         )
 
     if num_start_typevars == num_end_typevars == 0:
-        return {typevars[0]: params}
+        return {typevars[0]: args}
     elif num_end_typevars == 0:
         # Ideally we wouldn't need this block, but if num_end_typevars == 0,
         # list[num_start_typevars:-num_end_typevars] doesn't work as expected.
@@ -1150,24 +1150,24 @@ def _determine_typevar_substitution(typevars, params):
             **dict(
                 zip(
                     typevars[:num_start_typevars],
-                    params[:num_start_typevars],
+                    args[:num_start_typevars],
                 ),
             ),
-            typevartuple: params[num_start_typevars:],
+            typevartuple: args[num_start_typevars:],
         }
     else:
         return {
             **dict(
                 zip(
                     typevars[:num_start_typevars],
-                    params[:num_start_typevars],
+                    args[:num_start_typevars],
                 ),
             ),
-            typevartuple: params[num_start_typevars:-num_end_typevars],
+            typevartuple: args[num_start_typevars:-num_end_typevars],
             **dict(
                 zip(
                     typevars[-num_end_typevars:],
-                    params[-num_end_typevars:],
+                    args[-num_end_typevars:],
                 )
             ),
         }
