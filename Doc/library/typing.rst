@@ -1393,9 +1393,9 @@ These are not used in annotations. They are building blocks for declaring types.
    second argument::
 
       Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
-   
+
    Secondly, using keyword arguments::
-   
+
       Point2D = TypedDict('Point2D', x=int, y=int, label=str)
 
    .. deprecated-removed:: 3.11 3.13
