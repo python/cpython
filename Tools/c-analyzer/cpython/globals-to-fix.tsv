@@ -250,7 +250,7 @@ Objects/exceptions.c	-	PyExc_ResourceWarning	-
 Objects/boolobject.c	-	_Py_FalseStruct	-
 Objects/boolobject.c	-	_Py_TrueStruct	-
 Objects/dictobject.c	-	empty_keys_struct	-
-Objects/dictobject.c	-	empty_values	-
+Objects/dictobject.c	-	empty_values_struct	-
 Objects/object.c	-	_Py_NoneStruct	-
 Objects/object.c	-	_Py_NotImplementedStruct	-
 Objects/setobject.c	-	_dummy_struct	-

@@ -1454,7 +1454,6 @@ Modules/termios.c	-	termios_constants	-
 Modules/timemodule.c	init_timezone	YEAR	-
 Objects/bytearrayobject.c	-	_PyByteArray_empty_string	-
 Objects/complexobject.c	-	c_1	-
-Objects/dictobject.c	-	empty_values_struct	-
 Objects/exceptions.c	-	static_exceptions	-
 Objects/genobject.c	-	ASYNC_GEN_IGNORED_EXIT_MSG	-
 Objects/genobject.c	-	NON_INIT_CORO_MSG	-
