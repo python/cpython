@@ -1,1 +1,2 @@
-Remove kwargs-based syntax for TypedDict definition
+Deprecate kwargs-based syntax for :class:`typing.TypedDict` definitions.
+It was unsupported by type checkers. Patch by Jingchen Ye.
