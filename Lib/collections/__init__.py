@@ -736,6 +736,10 @@ class Counter(dict):
     # To strip negative and zero counts, add-in an empty counter:
     #       c += Counter()
     #
+    # Results are ordered according to when an element is first
+    # encountered in the left operand and then by the order
+    # encountered in the right operand.
+    #
     # When the multiplicities are all zero or one, multiset operations
     # are guaranteed to be equivalent to the corresponding operations
     # for regular sets.

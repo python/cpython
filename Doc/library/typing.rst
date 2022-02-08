@@ -68,6 +68,8 @@ annotations. These include:
      *Introducing* :data:`TypeAlias`
 * :pep:`647`: User-Defined Type Guards
      *Introducing* :data:`TypeGuard`
+* :pep:`673`: Self type
+    *Introducing* :data:`Self`
 
 .. _type-aliases:
 
@@ -584,6 +586,51 @@ These can be used as types in annotations and do not support ``[]``.
 
    .. versionadded:: 3.5.4
    .. versionadded:: 3.6.2
+
+.. data:: Self
+
+   Special type to represent the current enclosed class.
+   For example::
+
+      from typing import Self
+
+      class Foo:
+         def returns_self(self) -> Self:
+            ...
+            return self
+
+
+   This annotation is semantically equivalent to the following,
+   albeit in a more succinct fashion::
+
+      from typing import TypeVar
+
+      Self = TypeVar("Self", bound="Foo")
+
+      class Foo:
+         def returns_self(self: Self) -> Self:
+            ...
+            return self
+
+   In general if something currently follows the pattern of::
+
+      class Foo:
+         def return_self(self) -> "Foo":
+            ...
+            return self
+
+   You should use use :data:`Self` as calls to ``SubclassOfFoo.returns_self`` would have
+   ``Foo`` as the return type and not ``SubclassOfFoo``.
+
+   Other common use cases include:
+
+      - :class:`classmethod`\s that are used as alternative constructors and return instances
+        of the ``cls`` parameter.
+      - Annotating an :meth:`object.__enter__` method which returns self.
+
+   For more information, see :pep:`673`.
+
+   .. versionadded:: 3.11
 
 .. data:: TypeAlias
 
@@ -1931,6 +1978,37 @@ Functions and decorators
    signals that the return value has the designated type, but at
    runtime we intentionally don't check anything (we want this
    to be as fast as possible).
+
+.. function:: reveal_type(obj)
+
+   Reveal the inferred static type of an expression.
+
+   When a static type checker encounters a call to this function,
+   it emits a diagnostic with the type of the argument. For example::
+
+      x: int = 1
+      reveal_type(x)  # Revealed type is "builtins.int"
+
+   This can be useful when you want to debug how your type checker
+   handles a particular piece of code.
+
+   The function returns its argument unchanged, which allows using
+   it within an expression::
+
+      x = reveal_type(1)  # Revealed type is "builtins.int"
+
+   Most type checkers support ``reveal_type()`` anywhere, even if the
+   name is not imported from ``typing``. Importing the name from
+   ``typing`` allows your code to run without runtime errors and
+   communicates intent more clearly.
+
+   At runtime, this function prints the runtime type of its argument to stderr
+   and returns it unchanged::
+
+      x = reveal_type(1)  # prints "Runtime type is int"
+      print(x)  # prints "1"
+
+   .. versionadded:: 3.11
 
 .. decorator:: overload
 

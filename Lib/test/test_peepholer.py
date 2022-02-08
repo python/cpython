@@ -126,7 +126,7 @@ class TestTranforms(BytecodeTestCase):
                 code = compile(line,'','single')
                 self.assertInBytecode(code, elem)
                 self.assertNotInBytecode(code, 'BUILD_TUPLE')
-                self.assertNotInBytecode(code, 'UNPACK_TUPLE')
+                self.assertNotInBytecode(code, 'UNPACK_SEQUENCE')
                 self.check_lnotab(code)
 
     def test_folding_of_tuples_of_constants(self):

@@ -22,11 +22,10 @@ for name in opcode.opname[1:]:
             pass
     opname.append(name)
 
-
 TOTAL = "specialization.deferred", "specialization.hit", "specialization.miss", "execution_count"
 
 def print_specialization_stats(name, family_stats):
-    if "specialization.deferred" not in family_stats:
+    if "specializable" not in family_stats:
         return
     total = sum(family_stats.get(kind, 0) for kind in TOTAL)
     if total == 0:
@@ -78,6 +77,33 @@ def extract_opcode_stats(stats):
     return opcode_stats
 
 
+def categorized_counts(opcode_stats):
+    basic = 0
+    specialized = 0
+    not_specialized = 0
+    specialized_instructions = {
+        op for op in opcode._specialized_instructions
+        if "__" not in op and "ADAPTIVE" not in op}
+    adaptive_instructions = {
+        op for op in opcode._specialized_instructions
+        if "ADAPTIVE" in op}
+    for i, opcode_stat in enumerate(opcode_stats):
+        if "execution_count" not in opcode_stat:
+            continue
+        count = opcode_stat['execution_count']
+        name = opname[i]
+        if "specializable" in opcode_stat:
+            not_specialized += count
+        elif name in adaptive_instructions:
+            not_specialized += count
+        elif name in specialized_instructions:
+            miss = opcode_stat.get("specialization.miss", 0)
+            not_specialized += miss
+            specialized += count - miss
+        else:
+            basic += count
+    return basic, not_specialized, specialized
+
 def main():
     stats = gather_stats()
     opcode_stats = extract_opcode_stats(stats)
@@ -87,17 +113,48 @@ def main():
     for i, opcode_stat in enumerate(opcode_stats):
         if "execution_count" in opcode_stat:
             count = opcode_stat['execution_count']
-            counts.append((count, opname[i]))
+            miss = 0
+            if "specializable" not in opcode_stat:
+                miss = opcode_stat.get("specialization.miss")
+            counts.append((count, opname[i], miss))
             total += count
     counts.sort(reverse=True)
     cummulative = 0
-    for (count, name) in counts:
+    for (count, name, miss) in counts:
         cummulative += count
         print(f"{name}: {count} {100*count/total:0.1f}% {100*cummulative/total:0.1f}%")
+        if miss:
+            print(f"    Misses: {miss} {100*miss/count:0.1f}%")
     print("Specialization stats:")
     for i, opcode_stat in enumerate(opcode_stats):
         name = opname[i]
         print_specialization_stats(name, opcode_stat)
+    basic, not_specialized, specialized = categorized_counts(opcode_stats)
+    print("Specialization effectiveness:")
+    print(f"    Base instructions {basic} {basic*100/total:0.1f}%")
+    print(f"    Not specialized {not_specialized} {not_specialized*100/total:0.1f}%")
+    print(f"    Specialized {specialized} {specialized*100/total:0.1f}%")
+    print("Call stats:")
+    total = 0
+    for key, value in stats.items():
+        if "Calls to" in key:
+            total += value
+    for key, value in stats.items():
+        if "Calls to" in key:
+            print(f"    {key}: {value} {100*value/total:0.1f}%")
+    for key, value in stats.items():
+        if key.startswith("Frame"):
+            print(f"    {key}: {value} {100*value/total:0.1f}%")
+    print("Object stats:")
+    total = stats.get("Object new values")
+    for key, value in stats.items():
+        if key.startswith("Object"):
+            if "materialize" in key:
+                print(f"    {key}: {value} {100*value/total:0.1f}%")
+            else:
+                print(f"    {key}: {value}")
+    total = 0
+
 
 if __name__ == "__main__":
     main()

@@ -1645,7 +1645,7 @@ thread_module_exec(PyObject *module)
     }
 
     // TIMEOUT_MAX
-    double timeout_max = (_PyTime_t)PY_TIMEOUT_MAX * 1e-6;
+    double timeout_max = (double)PY_TIMEOUT_MAX * 1e-6;
     double time_max = _PyTime_AsSecondsDouble(_PyTime_MAX);
     timeout_max = Py_MIN(timeout_max, time_max);
     // Round towards minus infinity

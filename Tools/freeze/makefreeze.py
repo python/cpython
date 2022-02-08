@@ -45,19 +45,19 @@ def makefreeze(base, dict, debug=0, entry_point=None, fail_import=()):
                     print("freezing", mod, "...")
                 str = marshal.dumps(m.__code__)
                 size = len(str)
+                is_package = 'false'
                 if m.__path__:
-                    # Indicate package by negative size
-                    size = -size
-                done.append((mod, mangled, size))
+                    is_package = 'true'
+                done.append((mod, mangled, size, is_package))
                 writecode(outfp, mangled, str)
     if debug:
         print("generating table of frozen modules")
     with bkfile.open(base + 'frozen.c', 'w') as outfp:
-        for mod, mangled, size in done:
+        for mod, mangled, size, _ in done:
             outfp.write('extern unsigned char M_%s[];\n' % mangled)
         outfp.write(header)
-        for mod, mangled, size in done:
-            outfp.write('\t{"%s", M_%s, %d},\n' % (mod, mangled, size))
+        for mod, mangled, size, is_package in done:
+            outfp.write('\t{"%s", M_%s, %d, %s},\n' % (mod, mangled, size, is_package))
         outfp.write('\n')
         # The following modules have a NULL code pointer, indicating
         # that the frozen program should not search for them on the host

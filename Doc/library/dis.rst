@@ -34,10 +34,13 @@ the following command can be used to display the disassembly of
 :func:`myfunc`::
 
    >>> dis.dis(myfunc)
-     2           0 LOAD_GLOBAL              0 (len)
-                 2 LOAD_FAST                0 (alist)
-                 4 CALL_NO_KW               1
-                 6 RETURN_VALUE
+     1           0 RESUME                   0
+
+     2           2 LOAD_GLOBAL              0 (len)
+                 4 LOAD_FAST                0 (alist)
+                 6 PRECALL_FUNCTION         1
+                 8 CALL                     0
+                10 RETURN_VALUE
 
 (The "2" is a line number).
 
@@ -102,9 +105,11 @@ Example::
     >>> for instr in bytecode:
     ...     print(instr.opname)
     ...
+    RESUME
     LOAD_GLOBAL
     LOAD_FAST
-    CALL_NO_KW
+    PRECALL_FUNCTION
+    CALL
     RETURN_VALUE
 
 
@@ -617,7 +622,7 @@ iterations of the loop.
 .. opcode:: LOAD_BUILD_CLASS
 
    Pushes :func:`builtins.__build_class__` onto the stack.  It is later called
-   by :opcode:`CALL_NO_KW` to construct a class.
+   to construct a class.
 
 
 .. opcode:: BEFORE_WITH (delta)
@@ -1058,30 +1063,19 @@ iterations of the loop.
      with ``__cause__`` set to ``TOS``)
 
 
-.. opcode:: CALL_NO_KW (argc)
+.. opcode:: CALL (named)
 
-   Calls a callable object with positional arguments.
-   *argc* indicates the number of positional arguments.
-   The top of the stack contains positional arguments, with the right-most
-   argument on top.  Below the arguments is a callable object to call.
-   ``CALL_NO_KW`` pops all arguments and the callable object off the stack,
-   calls the callable object with those arguments, and pushes the return value
-   returned by the callable object.
+   Calls a callable object with the number of positional arguments specified by
+   the preceding :opcode:`PRECALL_FUNCTION` or :opcode:`PRECALL_METHOD` and
+   the named arguments specified by the preceding :opcode:`KW_NAMES`, if any.
+   *named* indicates the number of named arguments.
+   On the stack are (in ascending order):
 
-   .. versionadded:: 3.11
+   * The callable
+   * The positional arguments
+   * The named arguments
 
-
-.. opcode:: CALL_KW (argc)
-
-   Calls a callable object with positional (if any) and keyword arguments.
-   *argc* indicates the total number of positional and keyword arguments.
-   The top element on the stack contains a tuple with the names of the
-   keyword arguments, which must be strings.
-   Below that are the values for the keyword arguments,
-   in the order corresponding to the tuple.
-   Below that are positional arguments, with the right-most parameter on
-   top.  Below the arguments is a callable object to call.
-   ``CALL_KW`` pops all arguments and the callable object off the stack,
+   ``CALL`` pops all arguments and the callable object off the stack,
    calls the callable object with those arguments, and pushes the return value
    returned by the callable object.
 
@@ -1108,7 +1102,7 @@ iterations of the loop.
    Loads a method named ``co_names[namei]`` from the TOS object. TOS is popped.
    This bytecode distinguishes two cases: if TOS has a method with the correct
    name, the bytecode pushes the unbound method and TOS. TOS will be used as
-   the first argument (``self``) by :opcode:`CALL_METHOD` when calling the
+   the first argument (``self``) by :opcode:`PRECALL_METHOD` when calling the
    unbound method. Otherwise, ``NULL`` and the object return by the attribute
    lookup are pushed.
 
@@ -1117,10 +1111,26 @@ iterations of the loop.
 
 .. opcode:: PRECALL_METHOD (argc)
 
-   Prefixes either :opcode:`CALL_NO_KW` or :opcode:`CALL_KW`.
+   Prefixes :opcode:`CALL` (possibly with an intervening ``KW_NAMES``).
    This opcode is designed to be used with :opcode:`LOAD_METHOD`.
-   Sets internal variables, so that :opcode:`CALL_NO_KW` or :opcode:`CALL_KW`
+   Sets internal variables, so that :opcode:`CALL`
    clean up after :opcode:`LOAD_METHOD` correctly.
+
+   .. versionadded:: 3.11
+
+
+.. opcode:: PRECALL_FUNCTION (args)
+
+   Prefixes :opcode:`CALL` (possibly with an intervening ``KW_NAMES``).
+   Sets internal variables, so that :opcode:`CALL` can execute correctly.
+
+   .. versionadded:: 3.11
+
+
+.. opcode:: KW_NAMES (i)
+
+   Stores a reference to ``co_consts[consti]`` into an internal variable
+   for use by :opcode:`CALL`. ``co_consts[consti]`` must be a tuple of strings.
 
    .. versionadded:: 3.11
 

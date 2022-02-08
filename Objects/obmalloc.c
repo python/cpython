@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "pycore_pymem.h"         // _PyTraceMalloc_Config
+#include "pycore_code.h"         // stats
 
 #include <stdbool.h>
 #include <stdlib.h>               // malloc()
@@ -7,9 +8,6 @@
 
 /* Defined in tracemalloc.c */
 extern void _PyMem_DumpTraceback(int fd, const void *ptr);
-
-// Forward declaration
-int _PyObject_DebugMallocStats(FILE *out);
 
 
 /* Python's malloc wrappers (see pymem.h) */
@@ -698,6 +696,7 @@ PyObject_Malloc(size_t size)
     /* see PyMem_RawMalloc() */
     if (size > (size_t)PY_SSIZE_T_MAX)
         return NULL;
+    OBJECT_STAT_INC(allocations);
     return _PyObject.malloc(_PyObject.ctx, size);
 }
 
@@ -707,6 +706,7 @@ PyObject_Calloc(size_t nelem, size_t elsize)
     /* see PyMem_RawMalloc() */
     if (elsize != 0 && nelem > (size_t)PY_SSIZE_T_MAX / elsize)
         return NULL;
+    OBJECT_STAT_INC(allocations);
     return _PyObject.calloc(_PyObject.ctx, nelem, elsize);
 }
 
@@ -722,6 +722,7 @@ PyObject_Realloc(void *ptr, size_t new_size)
 void
 PyObject_Free(void *ptr)
 {
+    OBJECT_STAT_INC(frees);
     _PyObject.free(_PyObject.ctx, ptr);
 }
 
@@ -899,7 +900,6 @@ static int running_on_valgrind = -1;
  * currently targets.
  */
 #define SYSTEM_PAGE_SIZE        (4 * 1024)
-#define SYSTEM_PAGE_SIZE_MASK   (SYSTEM_PAGE_SIZE - 1)
 
 /*
  * Maximum amount of memory managed by the allocator for small requests.

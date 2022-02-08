@@ -77,10 +77,11 @@ jobs:
         downloadPath: $(Build.BinariesDirectory)
 
 
+  # Note that ARM64 MSIs are skipped at build when this option is specified
   - powershell: 'gci *embed-arm*.zip | %{ Write-Host "Not publishing: $($_.Name)"; gi $_ } | del'
-    displayName: 'Prevent publishing ARM/ARM64 packages'
+    displayName: 'Prevent publishing ARM64 packages'
     workingDirectory: '$(Build.BinariesDirectory)\embed'
-    condition: and(succeeded(), not(variables['PublishArmPackages']))
+    condition: and(succeeded(), eq(variables['PublishARM64'], 'true'))
 
 
   - template: ./gpg-sign.yml
