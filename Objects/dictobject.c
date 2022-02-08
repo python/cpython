@@ -292,7 +292,6 @@ _PyDict_DebugMallocStats(FILE *out)
 }
 
 #define DK_MASK(dk) (DK_SIZE(dk)-1)
-#define IS_POWER_OF_2(x) (((x) & (x-1)) == 0)
 
 static void free_keys_object(PyDictKeysObject *keys);
 

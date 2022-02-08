@@ -67,6 +67,8 @@ Summary -- Release highlights
 
 PEP-654: Exception Groups and ``except*``.
 (Contributed by Irit Katriel in :issue:`45292`.)
+PEP-673: ``Self`` Type.
+(Contributed by James Hilton-Balfe and Pradeep Kumar in :issue:`30924`.)
 
 New Features
 ============
@@ -589,6 +591,12 @@ Changes in the Python API
   of sorting simply isn't well-defined in the absence of a total ordering
   on list elements.
 
+* :mod:`calendar`: The :class:`calendar.LocaleTextCalendar` and
+  :class:`calendar.LocaleHTMLCalendar` classes now use
+  :func:`locale.getlocale`, instead of using :func:`locale.getdefaultlocale`,
+  if no locale is specified.
+  (Contributed by Victor Stinner in :issue:`46659`.)
+
 
 Build Changes
 =============
@@ -816,13 +824,13 @@ Porting to Python 3.11
     :c:func:`Py_DECREF`.
   * ``f_back``: changed (see below), use :c:func:`PyFrame_GetBack`.
   * ``f_builtins``: removed,
-    use ``PyObject_GetAttrString(frame, "f_builtins")``.
+    use ``PyObject_GetAttrString((PyObject*)frame, "f_builtins")``.
   * ``f_globals``: removed,
-    use ``PyObject_GetAttrString(frame, "f_globals")``.
+    use ``PyObject_GetAttrString((PyObject*)frame, "f_globals")``.
   * ``f_locals``: removed,
-    use ``PyObject_GetAttrString(frame, "f_locals")``.
+    use ``PyObject_GetAttrString((PyObject*)frame, "f_locals")``.
   * ``f_lasti``: removed,
-    use ``PyObject_GetAttrString(frame, "f_lasti")``.
+    use ``PyObject_GetAttrString((PyObject*)frame, "f_lasti")``.
 
   The following fields were removed entirely, as they were details
   of the old implementation:

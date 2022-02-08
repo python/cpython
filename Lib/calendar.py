@@ -566,7 +566,7 @@ class LocaleTextCalendar(TextCalendar):
     def __init__(self, firstweekday=0, locale=None):
         TextCalendar.__init__(self, firstweekday)
         if locale is None:
-            locale = _locale.getdefaultlocale()
+            locale = _locale.getlocale(_locale.LC_TIME)
         self.locale = locale
 
     def formatweekday(self, day, width):
@@ -586,7 +586,7 @@ class LocaleHTMLCalendar(HTMLCalendar):
     def __init__(self, firstweekday=0, locale=None):
         HTMLCalendar.__init__(self, firstweekday)
         if locale is None:
-            locale = _locale.getdefaultlocale()
+            locale = _locale.getlocale(_locale.LC_TIME)
         self.locale = locale
 
     def formatweekday(self, day):
