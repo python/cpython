@@ -8,6 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_global_strings.h"  // struct _Py_global_strings
+
 
 // These would be in pycore_long.h if it weren't for an include cycle.
 #define _PY_NSMALLPOSINTS           257
@@ -36,6 +38,8 @@ struct _Py_global_objects {
             PyBytesObject ob;
             char eos;
         } bytes_characters[256];
+
+        struct _Py_global_strings strings;
     } singletons;
 };
 

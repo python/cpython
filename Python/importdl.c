@@ -2,6 +2,9 @@
 /* Support for dynamic loading of extension modules */
 
 #include "Python.h"
+#include "pycore_call.h"
+#include "pycore_pystate.h"
+#include "pycore_runtime.h"
 
 /* ./configure sets HAVE_DYNAMIC_LOADING if dynamic loading of modules is
    supported on this platform. configure will then compile and link in one
@@ -38,7 +41,6 @@ get_encoded_name(PyObject *name, const char **hook_prefix) {
     PyObject *encoded = NULL;
     PyObject *modname = NULL;
     Py_ssize_t name_len, lastdot;
-    _Py_IDENTIFIER(replace);
 
     /* Get the short name (substring after last dot) */
     name_len = PyUnicode_GetLength(name);
@@ -76,7 +78,7 @@ get_encoded_name(PyObject *name, const char **hook_prefix) {
     }
 
     /* Replace '-' by '_' */
-    modname = _PyObject_CallMethodId(encoded, &PyId_replace, "cc", '-', '_');
+    modname = _PyObject_CallMethod(encoded, &_Py_ID(replace), "cc", '-', '_');
     if (modname == NULL)
         goto error;
 
