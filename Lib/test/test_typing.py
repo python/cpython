@@ -4935,6 +4935,9 @@ class ParamSpecTests(BaseTestCase):
         self.assertEqual(P.kwargs, P.kwargs)
         self.assertNotEqual(P.args, P_2.args)
         self.assertNotEqual(P.kwargs, P_2.kwargs)
+        self.assertNotEqual(P.args, P.kwargs)
+        self.assertNotEqual(P.kwargs, P.args)
+        self.assertNotEqual(P.args, P_2.kwargs)
         self.assertEqual(repr(P.args), "P.args")
         self.assertEqual(repr(P.kwargs), "P.kwargs")
 
