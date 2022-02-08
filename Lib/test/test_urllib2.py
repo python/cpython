@@ -1785,6 +1785,8 @@ class MiscTests(unittest.TestCase):
 
     @unittest.skipUnless(support.is_resource_enabled('network'),
                          'test requires network access')
+    # bpo-46648: test fails randomly with "http://www.example.com/" URL
+    @unittest.skipIf(True, "POST request to http://www.example.com/ fail randomly")
     def test_issue16464(self):
         with support.transient_internet("http://www.example.com/"):
             opener = urllib.request.build_opener()
