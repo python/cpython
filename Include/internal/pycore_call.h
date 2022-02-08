@@ -30,6 +30,9 @@ PyAPI_FUNC(PyObject *) _PyObject_Call(
     PyObject *args,
     PyObject *kwargs);
 
+extern PyObject * _PyObject_CallMethodFormat(
+        PyThreadState *tstate, PyObject *callable, const char *format, ...);
+
 
 // Static inline variant of public PyVectorcall_Function().
 static inline vectorcallfunc

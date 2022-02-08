@@ -21,6 +21,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#define NEEDS_PY_IDENTIFIER
+
 #include "module.h"
 #include "structmember.h"         // PyMemberDef
 #include "connection.h"
