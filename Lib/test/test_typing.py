@@ -5441,7 +5441,7 @@ class RevealTypeTests(BaseTestCase):
         self.assertEqual(stderr.getvalue(), "Runtime type is 'object'\n")
 
 
-class AllTests(BaseTestCase):
+class DunderAllTests(BaseTestCase):
     """Tests for __all__."""
 
     def test_all(self):
