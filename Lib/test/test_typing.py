@@ -172,11 +172,12 @@ class NoReturnTests(BottomTypeTestsMixin, BaseTestCase):
 
     def test_get_type_hints(self):
         def some(arg: NoReturn) -> NoReturn: ...
+        def some_str(arg: 'NoReturn') -> 'typing.NoReturn': ...
 
-        self.assertEqual(
-            get_type_hints(some),
-            {'arg': NoReturn, 'return': NoReturn},
-        )
+        expected = {'arg': NoReturn, 'return': NoReturn}
+        for target in [some, some_str]:
+            with self.subTest(target=target):
+                self.assertEqual(gth(target), expected)
 
     def test_not_equality(self):
         self.assertNotEqual(NoReturn, Never)
@@ -191,11 +192,12 @@ class NeverTests(BottomTypeTestsMixin, BaseTestCase):
 
     def test_get_type_hints(self):
         def some(arg: Never) -> Never: ...
+        def some_str(arg: 'Never') -> 'typing.Never': ...
 
-        self.assertEqual(
-            get_type_hints(some),
-            {'arg': Never, 'return': Never},
-        )
+        expected = {'arg': Never, 'return': Never}
+        for target in [some, some_str]:
+            with self.subTest(target=target):
+                self.assertEqual(gth(target), expected)
 
 
 class AssertNeverTests(BaseTestCase):
@@ -213,8 +215,14 @@ class SelfTests(BaseTestCase):
     def test_basics(self):
         class Foo:
             def bar(self) -> Self: ...
+        class FooStr:
+            def bar(self) -> 'Self': ...
+        class FooStrTyping:
+            def bar(self) -> 'typing.Self': ...
 
-        self.assertEqual(gth(Foo.bar), {'return': Self})
+        for target in [Foo, FooStr, FooStrTyping]:
+            with self.subTest(target=target):
+                self.assertEqual(gth(target.bar), {'return': Self})
         self.assertIs(get_origin(Self), None)
 
     def test_repr(self):
@@ -5332,11 +5340,13 @@ class SpecialAttrsTests(BaseTestCase):
             typing.Literal: 'Literal',
             typing.NewType: 'NewType',
             typing.NoReturn: 'NoReturn',
+            typing.Never: 'Never',
             typing.Optional: 'Optional',
             typing.TypeAlias: 'TypeAlias',
             typing.TypeGuard: 'TypeGuard',
             typing.TypeVar: 'TypeVar',
             typing.Union: 'Union',
+            typing.Self: 'Self',
             # Subscribed special forms
             typing.Annotated[Any, "Annotation"]: 'Annotated',
             typing.ClassVar[Any]: 'ClassVar',
