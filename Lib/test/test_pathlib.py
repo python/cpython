@@ -21,6 +21,15 @@ try:
 except ImportError:
     grp = pwd = None
 
+try:
+    import pwd
+    all_users = [u.pw_uid for u in pwd.getpwall()]
+except (ImportError, AttributeError):
+    all_users = []
+
+root_in_posix = False
+if hasattr(os, 'geteuid'):
+    root_in_posix = (os.geteuid() == 0)
 
 class _BaseFlavourTest(object):
 
@@ -1874,33 +1883,69 @@ class _BasePathTest(object):
         p.chmod(new_mode)
         self.assertEqual(p.stat().st_mode, new_mode)
 
-    def test_chown(self):
+    @unittest.skipUnless(root_in_posix and len(all_users) > 1,
+                         "test needs root privilege and more than one user")
+    def test_chown_with_root(self):
+        # original uid and gid
         p = self.cls(BASE) / 'fileA'
         uid = p.stat().st_uid
         gid = p.stat().st_gid
-        new_uid = 2000
-        new_gid = 2000
-        p.chown(uid=new_uid, gid=new_gid)
-        self.assertEqual(p.stat().st_uid, new_uid)
-        self.assertEqual(p.stat().st_gid, new_gid)
-        # Set back
-        p.chown(uid=uid, gid=gid)
-        self.assertEqual(p.stat().st_uid, uid)
-        self.assertEqual(p.stat().st_gid, gid)
 
-    def test_lchown(self):
+        # get users and groups for testing
+        uid_1, uid_2 = all_users[:2]
+        groups = os.getgroups()
+        if len(groups) < 2:
+            self.skipTest("test needs at least 2 groups")
+        gid_1, gid_2 = groups[:2]
+
+        p.chown(uid=uid_1, gid=gid_1)
+        self.assertEqual(p.stat().st_uid, uid_1)
+        self.assertEqual(p.stat().st_gid, gid_1)
+        p.chown(uid=uid_2, gid=gid_2)
+        self.assertEqual(p.stat().st_uid, uid_2)
+        self.assertEqual(p.stat().st_gid, gid_2)
+
+        # Set back to original
+        p.chown(uid=uid, gid=gid)
+
+    @unittest.skipUnless(not root_in_posix and len(all_users) > 1,
+                         "test needs non-root account and more than one user")
+    def test_chown_without_permission(self):
         p = self.cls(BASE) / 'fileA'
-        uid = p.stat().st_uid
-        gid = p.stat().st_gid
-        new_uid = 2000
-        new_gid = 2000
-        p.lchown(uid=new_uid, gid=new_gid)
-        self.assertEqual(p.stat().st_uid, new_uid)
-        self.assertEqual(p.stat().st_gid, new_gid)
-        # Set back
-        p.lchown(uid=uid, gid=gid)
-        self.assertEqual(p.stat().st_uid, uid)
-        self.assertEqual(p.stat().st_gid, gid)
+
+        new_uid = 503
+        new_gid = 503
+        with self.assertRaises(PermissionError):
+            p.chown(uid=new_uid, gid=new_gid)
+
+    @only_nt
+    def test_chown_windows(self):
+        p = self.cls(BASE) / 'fileA'
+
+        new_uid = 503
+        new_gid = 503
+        with self.assertRaises(NotImplementedError):
+            p.chown(uid=new_uid, gid=new_gid)
+    
+    @only_posix
+    @mock.patch('pathlib.Path.chown')
+    def test_lchown(self, chown_mock):
+        new_uid = 503
+        new_gid = 503
+
+        p = self.cls(BASE) / 'fileA'
+
+        p.lchown(new_uid, new_gid)
+        chown_mock.assert_called_with(new_uid, new_gid, dir_fd=None, follow_symlinks=False)
+
+    @only_nt
+    def test_lchown_windows(self):
+        p = self.cls(BASE) / 'fileA'
+
+        new_uid = 503
+        new_gid = 503
+        with self.assertRaises(NotImplementedError):
+            p.lchown(uid=new_uid, gid=new_gid)
 
     # On Windows, os.chmod does not follow symlinks (issue #15411)
     @only_posix
