@@ -2416,8 +2416,8 @@ def TypedDict(typename, fields=None, /, *, total=True, **kwargs):
     the total argument. True is the default, and makes all items defined in the
     class body be required.
 
-    The class syntax is only supported in Python 3.6+, while two other
-    syntax forms work for Python 2.7 and 3.2+
+    The class syntax is only supported in Python 3.6+, while the other
+    syntax form works for Python 2.7 and 3.2+
     """
     if fields is None:
         fields = kwargs
