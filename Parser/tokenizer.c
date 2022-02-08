@@ -40,7 +40,7 @@
 static struct tok_state *tok_new(void);
 static int tok_nextc(struct tok_state *tok);
 static void tok_backup(struct tok_state *tok, int c);
-
+static int syntaxerror(struct tok_state *tok, const char *format, ...);
 
 /* Spaces in this constant are treated as "zero or more spaces or tabs" when
    tokenizing. */
@@ -1031,8 +1031,9 @@ tok_nextc(struct tok_state *tok)
         if (tok->cur != tok->inp) {
             return Py_CHARMASK(*tok->cur++); /* Fast path */
         }
-        if (tok->done != E_OK)
-            return EOF;
+        if (tok->done != E_OK) {
+           return EOF;
+        }
         if (tok->fp == NULL) {
             rc = tok_underflow_string(tok);
         }
@@ -1964,16 +1965,21 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
                 tok->line_start = tok->multi_line_start;
                 int start = tok->lineno;
                 tok->lineno = tok->first_lineno;
-
                 if (quote_size == 3) {
-                    return syntaxerror(tok,
-                                       "unterminated triple-quoted string literal"
-                                       " (detected at line %d)", start);
+                    syntaxerror(tok, "unterminated triple-quoted string literal"
+                                     " (detected at line %d)", start);
+                    if (c != '\n') {
+                        tok->done = E_EOFS;
+                    }
+                    return ERRORTOKEN;
                 }
                 else {
-                    return syntaxerror(tok,
-                                       "unterminated string literal (detected at"
-                                       " line %d)", start);
+                    syntaxerror(tok, "unterminated string literal (detected at"
+                                     " line %d)", start);
+                    if (c != '\n') {
+                        tok->done = E_EOLS;
+                    }
+                    return ERRORTOKEN;
                 }
             }
             if (c == quote) {
