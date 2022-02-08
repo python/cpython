@@ -16,6 +16,11 @@
 #include <ffi.h>
 #include "ctypes.h"
 
+#ifdef HAVE_ALLOCA_H
+/* AIX needs alloca.h for alloca() */
+#include <alloca.h>
+#endif
+
 /**************************************************************/
 
 static void
@@ -155,20 +160,17 @@ static void _CallPythonObject(void *mem,
 
     assert(PyTuple_Check(converters));
     nargs = PyTuple_GET_SIZE(converters);
-    /* Hm. What to return in case of error?
-       For COM, 0xFFFFFFFF seems better than 0.
-    */
     if (nargs < 0) {
         PrintError("BUG: PySequence_Length");
         goto Done;
     }
 
-    PyObject *args_stack[CTYPES_MAX_ARGCOUNT];
-    if (nargs <= CTYPES_MAX_ARGCOUNT) {
+    PyObject *args_stack[_PY_FASTCALL_SMALL_STACK];
+    if (nargs <= _PY_FASTCALL_SMALL_STACK) {
         args = args_stack;
     }
     else {
-        args = PyMem_Malloc(nargs * sizeof(PyObject *));
+        args = (PyObject **)alloca(nargs * sizeof(PyObject *));
         if (args == NULL) {
             PyErr_NoMemory();
             goto Done;
@@ -308,9 +310,6 @@ static void _CallPythonObject(void *mem,
   Done:
     for (j = 0; j < i; j++) {
         Py_DECREF(args[j]);
-    }
-    if (args != args_stack) {
-        PyMem_Free(args);
     }
     PyGILState_Release(state);
 }
