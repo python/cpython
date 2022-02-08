@@ -1571,6 +1571,10 @@
 /* Define to 1 if you have the perf trampoline. */
 #undef PY_HAVE_PERF_TRAMPOLINE
 
+/* Define to 1, 2, 3, or 4 to enable mimalloc's security mitigations (Py_DEBUG
+   forces 4) */
+#undef PY_MIMALLOC_SECURE
+
 /* Define to 1 to build the sqlite module with loadable extensions support. */
 #undef PY_SQLITE_ENABLE_LOAD_EXTENSION
 
@@ -1737,7 +1741,7 @@
 /* Define to 1 if libintl is needed for locale functions. */
 #undef WITH_LIBINTL
 
-/* Define Python uses mimalloc memory allocator. */
+/* Define if you want to compile in mimalloc memory allocator. */
 #undef WITH_MIMALLOC
 
 /* Define if you want to produce an OpenStep/Rhapsody framework (shared

@@ -268,6 +268,23 @@ also be used to improve performance.
 
    See also :envvar:`PYTHONMALLOC` environment variable.
 
+   .. versionadded:: 3.11
+
+.. cmdoption:: --enable-mimalloc-secure[=yes|no|1|2|3|4]
+
+   Enable mimalloc's secure mode and various mitigations against exploits.
+   Secure mode comes with small performance penalty and uses additional
+   memory for guard pages. Each level includes the previous levels. *yes*
+   enables the highest security level.
+
+   * *1* enables guard pages around metadata
+   * *2* enables guard pages around mimalloc page
+   * *3* enables encoded free lists and detects corrupted free lists as
+     well as invalid pointer frees.
+   * *4* enables expensive checks for double free.
+
+   .. versionadded:: 3.11
+
 .. cmdoption:: --without-doc-strings
 
    Disable static documentation strings to reduce the memory footprint (enabled

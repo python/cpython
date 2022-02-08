@@ -843,7 +843,6 @@ DFLAGS
 DTRACE
 MIMALLOC_INCLUDES
 MIMALLOC_HEADERS
-WITH_MIMALLOC
 GDBM_LIBS
 GDBM_CFLAGS
 X11_LIBS
@@ -1075,6 +1074,7 @@ with_dbmliborder
 enable_ipv6
 with_doc_strings
 with_mimalloc
+enable_mimalloc_secure
 with_pymalloc
 with_freelists
 with_c_locale_coercion
@@ -1793,6 +1793,10 @@ Optional Features:
                           see Doc/library/sqlite3.rst (default is no)
   --enable-ipv6           enable ipv6 (with ipv4) support, see
                           Doc/library/socket.rst (default is yes if supported)
+  --enable-mimalloc-secure[=yes|no|1|2|3|4]
+                          enable mimalloc security mitigations (default is
+                          no), 1: guard metadata, 2: guard pages, 3: encode
+                          freelists, 4/yes: detect double free
   --enable-big-digits[=15|30]
                           use big digits (30 or 15 bits) for Python longs
                           (default is 30)]
@@ -15790,25 +15794,56 @@ fi
 
 
 if test "$with_mimalloc" != no; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-  # disable pymalloc with mimalloc
-  # with_pymalloc="no"
-  # with_freelists="no"
+  with_mimalloc=yes
 
 $as_echo "#define WITH_MIMALLOC 1" >>confdefs.h
-
-  WITH_MIMALLOC=1
 
   MIMALLOC_HEADERS='$(MIMALLOC_HEADERS)'
 
   MIMALLOC_INCLUDES='$(MIMALLOC_INCLUDES)'
 
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_mimalloc" >&5
+$as_echo "$with_mimalloc" >&6; }
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-mimalloc-secure" >&5
+$as_echo_n "checking for --enable-mimalloc-secure... " >&6; }
+# Check whether --enable-mimalloc-secure was given.
+if test "${enable_mimalloc_secure+set}" = set; then :
+  enableval=$enable_mimalloc_secure;
+    case $enable_mimalloc_secure in #(
+  yes) :
+    enable_mimalloc_secure=4 ;; #(
+  1|2|3|4) :
+     ;; #(
+  no) :
+     ;; #(
+  *) :
+    enable_mimalloc_secure=invalid
+     ;;
+esac
+    if test "x$enable_mimalloc_secure" = xinvalid; then :
+  as_fn_error $? "bad value $enable_mimalloc_secure for --enable-mimalloc-secure" "$LINENO" 5
 fi
 
+else
+  enable_mimalloc_secure="no"
+
+fi
+
+
+if test "$enable_mimalloc_secure" != "no"; then
+  if test "x$with_mimalloc" = xno; then :
+  as_fn_error $? "--with-mimalloc-secure requires --with-mimalloc" "$LINENO" 5
+fi
+
+cat >>confdefs.h <<_ACEOF
+#define PY_MIMALLOC_SECURE $enable_mimalloc_secure
+_ACEOF
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_mimalloc_secure" >&5
+$as_echo "$enable_mimalloc_secure" >&6; }
 
 # Check for Python-specific malloc support
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-pymalloc" >&5
@@ -24707,7 +24742,7 @@ fi
 
 if test "$ac_cv_header_stdatomic_h" != yes -a "$with_mimalloc" != no; then
     # mimalloc-atomic.h wants C11 stdatomic.h on POSIX
-    as_fn_error $? "--with-mimalloc requires stdatomic.h on your platform" "$LINENO" 5
+    as_fn_error $? "mimalloc requires stdatomic.h, use --without-mimalloc to disable mimalloc. A future version of Python will require stdatomic.h." "$LINENO" 5
 fi
 
 # Check for GCC >= 4.7 and clang __atomic builtin functions

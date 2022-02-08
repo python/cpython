@@ -20,6 +20,8 @@
 #  define MI_DEBUG 2
 // check for double free, buffer overflows and invalid pointer free
 #  define MI_SECURE 4
+#elif defined(PY_MIMALLOC_SECURE)
+#  define MI_SECURE PY_MIMALLOC_SECURE
 #endif
 
 /* Prefix all non-static symbols with "_Py_"

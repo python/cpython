@@ -933,11 +933,12 @@ class SysModuleTest(unittest.TestCase):
     @test.support.cpython_only
     def test_malloc_info(self):
         info = sys._malloc_info
-        self.assertEqual(len(info), 4)
+        self.assertEqual(len(info), 5)
         self.assertIsInstance(info.allocator, str)
-        self.assertIsInstance(info.with_freelists, bool)
         self.assertIsInstance(info.with_pymalloc, bool)
         self.assertIsInstance(info.with_mimalloc, bool)
+        self.assertIsInstance(info.mimalloc_secure, int)
+        self.assertIsInstance(info.mimalloc_debug, int)
 
     @unittest.skipUnless(hasattr(sys, "getallocatedblocks"),
                          "sys.getallocatedblocks unavailable on this build")

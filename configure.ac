@@ -4598,27 +4598,47 @@ fi
 AC_MSG_RESULT($with_doc_strings)
 
 # --with-mimalloc
-AC_MSG_CHECKING(for --with-mimalloc)
-AC_ARG_WITH(mimalloc,
-  AS_HELP_STRING([--with-mimalloc],
-                 [build with mimalloc memory allocator (default is yes)]),
+AC_MSG_CHECKING([for --with-mimalloc])
+AC_ARG_WITH([mimalloc],
+  [AS_HELP_STRING([--with-mimalloc],
+                 [build with mimalloc memory allocator (default is yes)])],
   [],
   [with_mimalloc="yes"]
 )
 
 if test "$with_mimalloc" != no; then
-  AC_MSG_RESULT(yes)
-  # disable pymalloc with mimalloc
-  # with_pymalloc="no"
-  # with_freelists="no"
-  AC_DEFINE(WITH_MIMALLOC, 1, Define Python uses mimalloc memory allocator.)
-  AC_SUBST(WITH_MIMALLOC, 1)
-  AC_SUBST(MIMALLOC_HEADERS, '$(MIMALLOC_HEADERS)')
-  AC_SUBST(MIMALLOC_INCLUDES, '$(MIMALLOC_INCLUDES)')
-else
-  AC_MSG_RESULT(no)
+  with_mimalloc=yes
+  AC_DEFINE([WITH_MIMALLOC], [1], [Define if you want to compile in mimalloc memory allocator.])
+  AC_SUBST([MIMALLOC_HEADERS], ['$(MIMALLOC_HEADERS)'])
+  AC_SUBST([MIMALLOC_INCLUDES], ['$(MIMALLOC_INCLUDES)'])
 fi
+AC_MSG_RESULT([$with_mimalloc])
 
+AC_MSG_CHECKING([for --enable-mimalloc-secure])
+AC_ARG_ENABLE([mimalloc-secure],
+  [AS_HELP_STRING([--enable-mimalloc-secure@<:@=yes|no|1|2|3|4@:>@],
+                  [enable mimalloc security mitigations (default is no), 1: guard metadata, 2: guard pages, 3: encode freelists, 4/yes: detect double free])],
+  [
+    AS_CASE([$enable_mimalloc_secure],
+      [yes], [enable_mimalloc_secure=4],
+      [1|2|3|4], [],
+      [no], [],
+      [enable_mimalloc_secure=invalid]
+    )
+    AS_VAR_IF([enable_mimalloc_secure], [invalid], [AC_MSG_ERROR([bad value $enable_mimalloc_secure for --enable-mimalloc-secure])])
+  ],
+  [enable_mimalloc_secure="no"]
+)
+
+if test "$enable_mimalloc_secure" != "no"; then
+  AS_VAR_IF([with_mimalloc], [no], [AC_MSG_ERROR([--with-mimalloc-secure requires --with-mimalloc])])
+  AC_DEFINE_UNQUOTED(
+    [PY_MIMALLOC_SECURE],
+    [$enable_mimalloc_secure],
+    [Define to 1, 2, 3, or 4 to enable mimalloc's security mitigations (Py_DEBUG forces 4)]
+    )
+fi
+AC_MSG_RESULT([$enable_mimalloc_secure])
 
 # Check for Python-specific malloc support
 AC_MSG_CHECKING(for --with-pymalloc)
@@ -6754,7 +6774,7 @@ AS_VAR_IF([ac_cv_header_stdatomic_h], [yes], [
 
 if test "$ac_cv_header_stdatomic_h" != yes -a "$with_mimalloc" != no; then
     # mimalloc-atomic.h wants C11 stdatomic.h on POSIX
-    AC_MSG_ERROR([--with-mimalloc requires stdatomic.h on your platform])
+    AC_MSG_ERROR([mimalloc requires stdatomic.h, use --without-mimalloc to disable mimalloc. A future version of Python will require stdatomic.h.])
 fi
 
 # Check for GCC >= 4.7 and clang __atomic builtin functions
