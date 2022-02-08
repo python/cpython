@@ -215,6 +215,7 @@ Python/import.c	PyMODINIT_FUNC	PyObject*
 Modules/_testcapimodule.c	PyAPI_FUNC(RTYPE)	RTYPE
 Python/getargs.c	PyAPI_FUNC(RTYPE)	RTYPE
 Objects/stringlib/unicode_format.h	Py_LOCAL_INLINE(type)	static inline type
+Include/pymath.h	_Py__has_builtin(x)	0
 
 # implied include of pymacro.h
 */clinic/*.c.h	PyDoc_VAR(name)	static const char name[]
