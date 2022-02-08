@@ -475,8 +475,6 @@ def Never(self, parameters):
                 case _:
                     never_call_me(arg)  # ok, arg is of type Never
 
-        def stop() -> Never:
-            raise RuntimeError('no way')
     """
     raise TypeError(f"{self} is not subscriptable")
 
