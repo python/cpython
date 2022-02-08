@@ -618,7 +618,7 @@ fill_number(_PyUnicodeWriter *writer, const NumberFieldWidths *spec,
     /* Used to keep track of digits, decimal, and remainder. */
     Py_ssize_t d_pos = d_start;
     const unsigned int kind = writer->kind;
-    const void *data = writer->data;
+    void *data = writer->data;
     Py_ssize_t r;
 
     if (spec->n_lpadding) {

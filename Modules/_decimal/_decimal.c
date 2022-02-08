@@ -1895,7 +1895,7 @@ is_space(enum PyUnicode_Kind kind, const void *data, Py_ssize_t pos)
    Return NULL if malloc fails and an empty string if invalid characters
    are found. */
 static char *
-numeric_as_ascii(const PyObject *u, int strip_ws, int ignore_underscores)
+numeric_as_ascii(PyObject *u, int strip_ws, int ignore_underscores)
 {
     enum PyUnicode_Kind kind;
     const void *data;
@@ -2009,7 +2009,7 @@ PyDecType_FromCStringExact(PyTypeObject *type, const char *s,
 
 /* Return a new PyDecObject or a subtype from a PyUnicodeObject. */
 static PyObject *
-PyDecType_FromUnicode(PyTypeObject *type, const PyObject *u,
+PyDecType_FromUnicode(PyTypeObject *type, PyObject *u,
                       PyObject *context)
 {
     PyObject *dec;
@@ -2029,7 +2029,7 @@ PyDecType_FromUnicode(PyTypeObject *type, const PyObject *u,
  * conversion. If the conversion is not exact, fail with InvalidOperation.
  * Allow leading and trailing whitespace in the input operand. */
 static PyObject *
-PyDecType_FromUnicodeExactWS(PyTypeObject *type, const PyObject *u,
+PyDecType_FromUnicodeExactWS(PyTypeObject *type, PyObject *u,
                              PyObject *context)
 {
     PyObject *dec;

@@ -505,7 +505,7 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
     Py_UCS4 *output;
     Py_ssize_t i, o, osize;
     int kind;
-    const void *data;
+    void *data;
     /* Longest decomposition in Unicode 3.2: U+FDFA */
     Py_UCS4 stack[20];
     Py_ssize_t space, isize;

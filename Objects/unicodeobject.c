@@ -599,7 +599,7 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
         const void *data;
         Py_UCS4 ch;
 
-        data = PyUnicode_DATA(ascii);
+        data = PyUnicode_DATA(op);
         for (i=0; i < ascii->length; i++)
         {
             ch = PyUnicode_READ(kind, data, i);
@@ -13649,7 +13649,7 @@ unicode_zfill_impl(PyObject *self, Py_ssize_t width)
     Py_ssize_t fill;
     PyObject *u;
     int kind;
-    const void *data;
+    void *data;
     Py_UCS4 chr;
 
     if (PyUnicode_READY(self) == -1)
