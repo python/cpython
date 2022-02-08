@@ -859,6 +859,11 @@ class ParamSpecArgs(_Final, _Immutable, _root=True):
     def __repr__(self):
         return f"{self.__origin__.__name__}.args"
 
+    def __eq__(self, other):
+        if not isinstance(other, ParamSpecArgs):
+            return NotImplemented
+        return self.__origin__ == other.__origin__
+
 
 class ParamSpecKwargs(_Final, _Immutable, _root=True):
     """The kwargs for a ParamSpec object.
@@ -877,6 +882,11 @@ class ParamSpecKwargs(_Final, _Immutable, _root=True):
 
     def __repr__(self):
         return f"{self.__origin__.__name__}.kwargs"
+
+    def __eq__(self, other):
+        if not isinstance(other, ParamSpecKwargs):
+            return NotImplemented
+        return self.__origin__ == other.__origin__
 
 
 class ParamSpec(_Final, _Immutable, _TypeVarLike, _root=True):
