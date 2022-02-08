@@ -3,7 +3,7 @@ items. Based on an internal heuristic, the algorithm used to produce the diff
 method will switch based on the relevant magnitude of inputs. As a result, diff
 output after a failing assertion may appear differently for large inputs.
 Specifically, unittest will internally switch from using :func:`difflib.ndiff`
-(slow) to using :func:`difflib.unified_diff` (fast).
+(slow) to using :func:`difflib.unified_diff` (less likely to be slow).
 
-This optimization ensures that the non-linear time complexity of
-:func:`difflib.ndiff` does not cause a test suite to hang.
+This optimization reduces that chance that non-linear time complexity of
+diff algorithms do not cause a test suite's failing test to hang.
