@@ -2392,6 +2392,7 @@ converters_from_argtypes(PyObject *ob)
 
     Py_ssize_t nArgs = PyTuple_GET_SIZE(ob);
     if (nArgs > CTYPES_MAX_ARGCOUNT) {
+        Py_DECREF(ob);
         PyErr_Format(PyExc_ArgError,
                      "_argtypes_ has too many arguments (%zi), maximum is %i",
                      nArgs, CTYPES_MAX_ARGCOUNT);
