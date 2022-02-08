@@ -3536,14 +3536,13 @@ handle_eval_breaker:
             PyDictValues *values = *_PyObject_ValuesPointer(owner);
             DEOPT_IF(values == NULL, STORE_ATTR);
             STAT_INC(STORE_ATTR, hit);
-            int index = cache0->index;
+            Py_ssize_t index = cache0->index;
             STACK_SHRINK(1);
             PyObject *value = POP();
             PyObject *old_value = values->values[index];
             values->values[index] = value;
             if (old_value == NULL) {
-                assert(index < 16);
-                values->mv_order = (values->mv_order << 4) | index;
+                _PyDictValues_AddToInsertionOrder(values, index);
             }
             else {
                 Py_DECREF(old_value);
