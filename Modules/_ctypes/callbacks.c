@@ -180,14 +180,12 @@ static void _CallPythonObject(void *mem,
         PyObject *cnv = cnvs[i];
         StgDictObject *dict;
 
-        Py_INCREF(cnv);
         dict = PyType_stgdict(cnv);
 
         if (dict && dict->getfunc && !_ctypes_simple_instance(cnv)) {
             PyObject *v = dict->getfunc(*pArgs, dict->size);
             if (!v) {
                 PrintError("create argument %zd:\n", i);
-                Py_DECREF(cnv);
                 goto Done;
             }
             args[i] = v;
@@ -206,7 +204,6 @@ static void _CallPythonObject(void *mem,
             }
             if (!CDataObject_Check(obj)) {
                 Py_DECREF(obj);
-                Py_DECREF(cnv);
                 PrintError("unexpected result of create argument %zd:\n", i);
                 goto Done;
             }
@@ -219,10 +216,8 @@ static void _CallPythonObject(void *mem,
             PyErr_SetString(PyExc_TypeError,
                             "cannot build parameter");
             PrintError("Parsing argument %zd\n", i);
-            Py_DECREF(cnv);
             goto Done;
         }
-        Py_DECREF(cnv);
         /* XXX error handling! */
         pArgs++;
     }
@@ -391,11 +386,7 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
     PyObject **cnvs = PySequence_Fast_ITEMS(converters);
     for (i = 0; i < nArgs; ++i) {
         PyObject *cnv = cnvs[i];
-        if (cnv == NULL)
-            goto error;
-        Py_INCREF(cnv);
         p->atypes[i] = _ctypes_get_ffi_type(cnv);
-        Py_DECREF(cnv);
     }
     p->atypes[i] = NULL;
 
