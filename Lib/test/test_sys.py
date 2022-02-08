@@ -1504,15 +1504,16 @@ class SizeofTest(unittest.TestCase):
                   '6P')
         class newstyleclass(object): pass
         # Separate block for PyDictKeysObject with 8 keys and 5 entries
-        check(newstyleclass, s + calcsize(DICT_KEY_STRUCT_FORMAT) + 32 + 21*calcsize("n2P"))
+        check(newstyleclass, s + calcsize(DICT_KEY_STRUCT_FORMAT) + 64 + 42*calcsize("n2P"))
         # dict with shared keys
-        check(newstyleclass().__dict__, size('nQ2P') + 15*self.P)
+        [newstyleclass() for _ in range(100)]
+        check(newstyleclass().__dict__, size('nQ2P') + self.P)
         o = newstyleclass()
         o.a = o.b = o.c = o.d = o.e = o.f = o.g = o.h = 1
         # Separate block for PyDictKeysObject with 16 keys and 10 entries
-        check(newstyleclass, s + calcsize(DICT_KEY_STRUCT_FORMAT) + 32 + 21*calcsize("n2P"))
+        check(newstyleclass, s + calcsize(DICT_KEY_STRUCT_FORMAT) + 64 + 42*calcsize("n2P"))
         # dict with shared keys
-        check(newstyleclass().__dict__, size('nQ2P') + 13*self.P)
+        check(newstyleclass().__dict__, size('nQ2P') + self.P)
         # unicode
         # each tuple contains a string and its expected character size
         # don't put any static strings here, as they may contain

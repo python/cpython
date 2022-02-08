@@ -453,8 +453,14 @@ static PyDictKeysObject empty_keys_struct = {
 };
 
 
-static PyDictValues empty_values_struct = { 0, { NULL }};
-#define empty_values (&empty_values_struct)
+struct {
+    uint8_t prefix[sizeof(PyObject *)];
+    PyDictValues values;
+} empty_values_struct = {
+    { [sizeof(PyObject *)-1] = sizeof(PyObject *) },
+    {{NULL}}
+};
+#define empty_values (&empty_values_struct.values)
 
 #define Py_EMPTY_KEYS &empty_keys_struct
 
@@ -470,9 +476,9 @@ static PyDictValues empty_values_struct = { 0, { NULL }};
 static inline int
 get_index_from_order(PyDictObject *mp, Py_ssize_t i)
 {
-    assert(mp->ma_used <= 16);
-    int shift = (int)(mp->ma_used-1-i)*4;
-    return (int)(mp->ma_values->mv_order >> shift) & 15;
+    assert(mp->ma_used <= SHARED_KEYS_MAX_SIZE);
+    assert(i < (((char *)mp->ma_values)[-2]));
+    return ((char *)mp->ma_values)[-3-i];
 }
 
 int
@@ -636,11 +642,25 @@ free_keys_object(PyDictKeysObject *keys)
 static inline PyDictValues*
 new_values(Py_ssize_t size)
 {
-    Py_ssize_t n = sizeof(PyDictValues) + sizeof(PyObject *) * (size-1);
-    return (PyDictValues*)PyMem_Malloc(n);
+    assert(size > 0);
+    size_t prefix_size = _Py_SIZE_ROUND_UP(size+2, sizeof(PyObject *));
+    assert(prefix_size < 256);
+    size_t n = prefix_size + size * sizeof(PyObject *);
+    uint8_t *mem = PyMem_Malloc(n);
+    if (mem == NULL) {
+        return NULL;
+    }
+    assert(prefix_size % sizeof(PyObject *) == 0);
+    mem[prefix_size-1] = (uint8_t)prefix_size;
+    return (PyDictValues*)(mem + prefix_size);
 }
 
-#define free_values(values) PyMem_Free(values)
+static inline void
+free_values(PyDictValues *values)
+{
+    int prefix_size = ((uint8_t *)values)[-1];
+    PyMem_Free(((char *)values)-prefix_size);
+}
 
 /* Consumes a reference to the keys object */
 static PyObject *
@@ -699,7 +719,7 @@ new_dict_with_shared_keys(PyDictKeysObject *keys)
         dictkeys_decref(keys);
         return PyErr_NoMemory();
     }
-    values->mv_order = 0;
+    ((char *)values)[-2] = 0;
     for (i = 0; i < size; i++) {
         values->values[i] = NULL;
     }
@@ -1017,7 +1037,7 @@ insertion_resize(PyDictObject *mp)
     return dictresize(mp, calculate_log2_keysize(GROWTH_RATE(mp)));
 }
 
-static int
+static Py_ssize_t
 insert_into_dictkeys(PyDictKeysObject *keys, PyObject *name)
 {
     assert(PyUnicode_CheckExact(name));
@@ -1048,7 +1068,7 @@ insert_into_dictkeys(PyDictKeysObject *keys, PyObject *name)
         keys->dk_nentries++;
     }
     assert (ix < SHARED_KEYS_MAX_SIZE);
-    return (int)ix;
+    return ix;
 }
 
 /*
@@ -1093,9 +1113,7 @@ insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value)
         ep->me_hash = hash;
         if (mp->ma_values) {
             Py_ssize_t index = mp->ma_keys->dk_nentries;
-            assert(index < SHARED_KEYS_MAX_SIZE);
-            assert((mp->ma_values->mv_order >> 60) == 0);
-            mp->ma_values->mv_order = ((mp->ma_values->mv_order)<<4) | index;
+            _PyDictValues_AddToInsertionOrder(mp->ma_values, index);
             assert (mp->ma_values->values[index] == NULL);
             mp->ma_values->values[index] = value;
         }
@@ -1115,7 +1133,7 @@ insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value)
         if (_PyDict_HasSplitTable(mp)) {
             mp->ma_values->values[ix] = value;
             if (old_value == NULL) {
-                mp->ma_values->mv_order = (mp->ma_values->mv_order << 4) | ix;
+                _PyDictValues_AddToInsertionOrder(mp->ma_values, ix);
                 mp->ma_used++;
             }
         }
@@ -1598,19 +1616,20 @@ _PyDict_SetItem_KnownHash(PyObject *op, PyObject *key, PyObject *value,
     return insertdict(mp, key, hash, value);
 }
 
-static uint64_t
-delete_index_from_order(uint64_t order, Py_ssize_t ix)
-{        /* Update order */
-    for (int i = 0;; i+= 4) {
-        assert (i < 64);
-        if (((order >> i) & 15) == (uint64_t)ix) {
-            /* Remove 4 bits at ith position */
-            uint64_t high = ((order>>i)>>4)<<i;
-            uint64_t low = order & ((((uint64_t)1)<<i)-1);
-            return high | low;
-        }
+static void
+delete_index_from_values(PyDictValues *values, Py_ssize_t ix)
+{
+    uint8_t *size_ptr = ((uint8_t *)values)-2;
+    int size = *size_ptr;
+    int i;
+    for (i = 1; size_ptr[-i] != ix; i++) {
+        assert(i <= size);
     }
-    Py_UNREACHABLE();
+    assert(i <= size);
+    for (; i < size; i++) {
+        size_ptr[-i] = size_ptr[-i-1];
+    }
+    *size_ptr = size -1;
 }
 
 static int
@@ -1631,8 +1650,7 @@ delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
         mp->ma_values->values[ix] = NULL;
         assert(ix < SHARED_KEYS_MAX_SIZE);
         /* Update order */
-        mp->ma_values->mv_order =
-            delete_index_from_order(mp->ma_values->mv_order, ix);
+        delete_index_from_values(mp->ma_values, ix);
         ASSERT_CONSISTENT(mp);
     }
     else {
@@ -2729,7 +2747,8 @@ PyDict_Copy(PyObject *o)
             free_values(newvalues);
             return NULL;
         }
-        newvalues->mv_order = mp->ma_values->mv_order;
+        size_t prefix_size = ((uint8_t *)newvalues)[-1];
+        memcpy(((char *)newvalues)-prefix_size, ((char *)mp->ma_values)-prefix_size, prefix_size-1);
         split_copy->ma_values = newvalues;
         split_copy->ma_keys = mp->ma_keys;
         split_copy->ma_used = mp->ma_used;
@@ -3031,11 +3050,11 @@ PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
         ep->me_key = key;
         ep->me_hash = hash;
         if (_PyDict_HasSplitTable(mp)) {
-            int index = (int)mp->ma_keys->dk_nentries;
+            Py_ssize_t index = (int)mp->ma_keys->dk_nentries;
             assert(index < SHARED_KEYS_MAX_SIZE);
             assert(mp->ma_values->values[index] == NULL);
             mp->ma_values->values[index] = value;
-            mp->ma_values->mv_order = (mp->ma_values->mv_order << 4) | index;
+            _PyDictValues_AddToInsertionOrder(mp->ma_values, index);
         }
         else {
             ep->me_value = value;
@@ -3053,7 +3072,7 @@ PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
         Py_INCREF(value);
         MAINTAIN_TRACKING(mp, key, value);
         mp->ma_values->values[ix] = value;
-        mp->ma_values->mv_order = (mp->ma_values->mv_order << 4) | ix;
+        _PyDictValues_AddToInsertionOrder(mp->ma_values, ix);
         mp->ma_used++;
         mp->ma_version_tag = DICT_NEXT_VERSION();
     }
@@ -4941,7 +4960,7 @@ dictvalues_reversed(_PyDictViewObject *dv, PyObject *Py_UNUSED(ignored))
 PyDictKeysObject *
 _PyDict_NewKeysForClass(void)
 {
-    PyDictKeysObject *keys = new_keys_object(5); /* log2(32) */
+    PyDictKeysObject *keys = new_keys_object(NEXT_LOG2_SHARED_KEYS_MAX_SIZE);
     if (keys == NULL) {
         PyErr_Clear();
     }
@@ -4974,7 +4993,8 @@ init_inline_values(PyObject *obj, PyTypeObject *tp)
         PyErr_NoMemory();
         return -1;
     }
-    values->mv_order = 0;
+    assert(((uint8_t *)values)[-1] >= size+2);
+    ((uint8_t *)values)[-2] = 0;
     for (int i = 0; i < size; i++) {
         values->values[i] = NULL;
     }
@@ -5047,14 +5067,14 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
     assert(keys != NULL);
     assert(values != NULL);
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-    int ix = insert_into_dictkeys(keys, name);
+    Py_ssize_t ix = insert_into_dictkeys(keys, name);
     if (ix == DKIX_EMPTY) {
         if (value == NULL) {
             PyErr_SetObject(PyExc_AttributeError, name);
             return -1;
         }
 #ifdef Py_STATS
-        if (shared_keys_usable_size(keys) > 14) {
+        if (shared_keys_usable_size(keys) == SHARED_KEYS_MAX_SIZE) {
             OBJECT_STAT_INC(dict_materialized_too_big);
         }
         else {
@@ -5077,11 +5097,11 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
             PyErr_SetObject(PyExc_AttributeError, name);
             return -1;
         }
-        values->mv_order = (values->mv_order << 4) | ix;
+        _PyDictValues_AddToInsertionOrder(values, ix);
     }
     else {
         if (value == NULL) {
-            values->mv_order = delete_index_from_order(values->mv_order, ix);
+            delete_index_from_values(values, ix);
         }
         Py_DECREF(old_value);
     }
