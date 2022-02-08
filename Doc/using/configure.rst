@@ -264,7 +264,8 @@ also be used to improve performance.
 
 .. cmdoption:: --with-mimalloc
 
-   Enable :ref:`mimalloc <mimalloc>` memory allocator (disabled by default).
+   Enable :ref:`mimalloc <mimalloc>` memory allocator. mimalloc is enabled
+   by default when compiler and platform provide C11 ``stdatomic.h``.
 
    See also :envvar:`PYTHONMALLOC` environment variable.
 
