@@ -1202,6 +1202,9 @@ compute_parser_flags(PyCompilerFlags *flags)
     if ((flags->cf_flags & PyCF_ONLY_AST) && flags->cf_feature_version < 7) {
         parser_flags |= PyPARSE_ASYNC_HACKS;
     }
+    if (flags->cf_flags & PyCF_ALLOW_INCOMPLETE_INPUT) {
+        parser_flags |= PyPARSE_ALLOW_INCOMPLETE_INPUT;
+    }
     return parser_flags;
 }
 
@@ -1327,15 +1330,29 @@ exit:
     return ret;
 }
 
+
+static inline int
+_is_end_of_source(Parser *p) {
+    int err = p->tok->done;
+    return err == E_EOF || err == E_EOFS || err == E_EOLS;
+}
+
 void *
 _PyPegen_run_parser(Parser *p)
 {
     void *res = _PyPegen_parse(p);
     assert(p->level == 0);
     if (res == NULL) {
+        if ((p->flags & PyPARSE_ALLOW_INCOMPLETE_INPUT) &&  _is_end_of_source(p)) {
+            PyErr_Clear();
+            return RAISE_SYNTAX_ERROR("incomplete input");
+        }
         if (PyErr_Occurred() && !PyErr_ExceptionMatches(PyExc_SyntaxError)) {
             return NULL;
         }
+        // Make a second parser pass. In this pass we activate heavier and slower checks
+        // to produce better error messages and more complete diagnostics. Extra "invalid_*"
+        // rules will be active during parsing.
         Token *last_token = p->tokens[p->fill - 1];
         reset_parser_state(p);
         _PyPegen_parse(p);
