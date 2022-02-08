@@ -1211,7 +1211,7 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
     #     TypeVar[bool]
 
     def __init__(self, origin, args, *, inst=True, name=None,
-                 _typevar_types=TypeVar,
+                 _typevar_types=(TypeVar, TypeVarTuple),
                  _paramspec_tvars=False):
         super().__init__(origin, inst=inst, name=name)
         if not isinstance(args, tuple):
@@ -1291,7 +1291,9 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         # edge cases.
 
         # In the example above, this would be {T3: str}
-        new_arg_by_param = dict(zip(self.__parameters__, args))
+        new_arg_by_param = _determine_typevar_substitution(
+            self.__parameters__, args,
+        )
 
         new_args = []
         for old_arg in self.__args__:
@@ -1303,6 +1305,10 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
                                     f"ParamSpec, or Concatenate. Got {new_arg}")
             elif isinstance(old_arg, self._typevar_types):
                 new_arg = new_arg_by_param[old_arg]
+            elif (TypeVarTuple in self._typevar_types
+                  and _is_unpacked_typevartuple(old_arg)):
+                original_typevartuple = old_arg.__parameters__[0]
+                new_arg = new_arg_by_param[original_typevartuple]
             elif isinstance(old_arg, (_GenericAlias, GenericAlias, types.UnionType)):
                 subparams = old_arg.__parameters__
                 if not subparams:
@@ -1312,6 +1318,7 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
                     new_arg = old_arg[subargs]
             else:
                 new_arg = old_arg
+
 
             if self.__origin__ == collections.abc.Callable and isinstance(new_arg, tuple):
                 # Consider the following `Callable`.
@@ -1324,6 +1331,17 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
                 #   D = C[[int, str], float]
                 # ...we need to be careful; `new_args` should end up as
                 # `(int, str, float)` rather than `([int, str], float)`.
+                new_args.extend(new_arg)
+            elif _is_unpacked_typevartuple(old_arg):
+                # Consider the following `_GenericAlias`, `B`:
+                #   class A(Generic[*Ts]): ...
+                #   B = A[T, *Ts]
+                # If we then do:
+                #   B[float, int, str]
+                # The `new_arg` corresponding to `T` will be `float`, and the
+                # `new_arg` corresponding to `*Ts` will be `(int, str)`. We
+                # should join all these types together in a flat list
+                # `(float, int, str)` - so again, we should `extend`.
                 new_args.extend(new_arg)
             else:
                 new_args.append(new_arg)
@@ -1583,7 +1601,7 @@ def Unpack(self, parameters):
     For more information, see PEP 646.
     """
     item = _type_check(parameters, f'{self} accepts only single type.')
-    return _UnpackGenericAlias(origin=self, params=(item,))
+    return _UnpackGenericAlias(origin=self, args=(item,))
 
 
 class _UnpackGenericAlias(_GenericAlias, _root=True):
