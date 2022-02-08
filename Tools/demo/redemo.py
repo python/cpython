@@ -5,13 +5,14 @@
 from tkinter import *
 import re
 
+
 class ReDemo:
 
     def __init__(self, master):
         self.master = master
 
         self.promptdisplay = Label(self.master, anchor=W,
-                text="Enter a Perl-style regular expression:")
+                                   text="Enter a Perl-style regular expression:")
         self.promptdisplay.pack(side=TOP, fill=X)
 
         self.regexdisplay = Entry(self.master)
@@ -24,7 +25,7 @@ class ReDemo:
         self.statusdisplay.pack(side=TOP, fill=X)
 
         self.labeldisplay = Label(self.master, anchor=W,
-                text="Enter a string to search:")
+                                  text="Enter a string to search:")
         self.labeldisplay.pack(fill=X)
         self.labeldisplay.pack(fill=X)
 
@@ -35,7 +36,7 @@ class ReDemo:
         self.showvar.set("first")
 
         self.showfirstradio = Radiobutton(self.showframe,
-                                         text="Highlight first match",
+                                          text="Highlight first match",
                                           variable=self.showvar,
                                           value="first",
                                           command=self.recompile)
@@ -85,9 +86,9 @@ class ReDemo:
             val = getattr(re, name).value
             var = IntVar()
             box = Checkbutton(frame,
-                    variable=var, text=name,
-                    offvalue=0, onvalue=val,
-                    command=self.recompile)
+                              variable=var, text=name,
+                              offvalue=0, onvalue=val,
+                              command=self.recompile)
             box.pack(side=LEFT)
             self.boxes.append(box)
             self.vars.append(var)
@@ -107,8 +108,8 @@ class ReDemo:
         except re.error as msg:
             self.compiled = None
             self.statusdisplay.config(
-                    text="re.error: %s" % str(msg),
-                    background="red")
+                text="re.error: %s" % str(msg),
+                background="red")
         self.reevaluate()
 
     def reevaluate(self, event=None):
@@ -134,7 +135,7 @@ class ReDemo:
                 break
             first, last = m.span()
             if last == first:
-                last = first+1
+                last = first + 1
                 tag = "hit0"
             else:
                 tag = "hit"
@@ -166,6 +167,7 @@ def main():
     demo = ReDemo(root)
     root.protocol('WM_DELETE_WINDOW', root.quit)
     root.mainloop()
+
 
 if __name__ == '__main__':
     main()
