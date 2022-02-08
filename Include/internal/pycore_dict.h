@@ -145,7 +145,7 @@ _PyDictValues_AddToInsertionOrder(PyDictValues *values, Py_ssize_t ix)
     int size = *size_ptr;
     assert(size+2 < ((uint8_t *)values)[-1]);
     size++;
-    size_ptr[-size] = ix;
+    size_ptr[-size] = (uint8_t)ix;
     *size_ptr = size;
 }
 

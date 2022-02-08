@@ -652,7 +652,7 @@ new_values(Py_ssize_t size)
         return NULL;
     }
     assert(prefix_size % sizeof(PyObject *) == 0);
-    mem[prefix_size-1] = prefix_size;
+    mem[prefix_size-1] = (uint8_t)prefix_size;
     return (PyDictValues*)(mem + prefix_size);
 }
 
