@@ -1874,6 +1874,34 @@ class _BasePathTest(object):
         p.chmod(new_mode)
         self.assertEqual(p.stat().st_mode, new_mode)
 
+    def test_chown(self):
+        p = self.cls(BASE) / 'fileA'
+        uid = p.stat().st_uid
+        gid = p.stat().st_gid
+        new_uid = 2000
+        new_gid = 2000
+        p.chown(uid=new_uid, gid=new_gid)
+        self.assertEqual(p.stat().st_uid, new_uid)
+        self.assertEqual(p.stat().st_gid, new_gid)
+        # Set back
+        p.chown(uid=uid, gid=gid)
+        self.assertEqual(p.stat().st_uid, uid)
+        self.assertEqual(p.stat().st_gid, gid)
+
+    def test_lchown(self):
+        p = self.cls(BASE) / 'fileA'
+        uid = p.stat().st_uid
+        gid = p.stat().st_gid
+        new_uid = 2000
+        new_gid = 2000
+        p.lchown(uid=new_uid, gid=new_gid)
+        self.assertEqual(p.stat().st_uid, new_uid)
+        self.assertEqual(p.stat().st_gid, new_gid)
+        # Set back
+        p.lchown(uid=uid, gid=gid)
+        self.assertEqual(p.stat().st_uid, uid)
+        self.assertEqual(p.stat().st_gid, gid)
+
     # On Windows, os.chmod does not follow symlinks (issue #15411)
     @only_posix
     def test_chmod_follow_symlinks_true(self):
