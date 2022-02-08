@@ -127,6 +127,14 @@ class AnyTests(BaseTestCase):
 class BottomTypeTestsMixin:
     bottom_type: ClassVar[Any]
 
+    def test_equality(self):
+        self.assertEqual(self.bottom_type, self.bottom_type)
+        self.assertIs(self.bottom_type, self.bottom_type)
+        self.assertNotEqual(self.bottom_type, None)
+
+    def test_get_origin(self):
+        self.assertIs(get_origin(self.bottom_type), None)
+
     def test_instance_type_error(self):
         with self.assertRaises(TypeError):
             isinstance(42, self.bottom_type)
@@ -162,12 +170,32 @@ class NoReturnTests(BottomTypeTestsMixin, BaseTestCase):
     def test_repr(self):
         self.assertEqual(repr(NoReturn), 'typing.NoReturn')
 
+    def test_get_type_hints(self):
+        def some(arg: NoReturn) -> NoReturn: ...
+
+        self.assertEqual(
+            get_type_hints(some),
+            {'arg': NoReturn, 'return': NoReturn},
+        )
+
+    def test_not_equality(self):
+        self.assertNotEqual(NoReturn, Never)
+        self.assertNotEqual(Never, NoReturn)
+
 
 class NeverTests(BottomTypeTestsMixin, BaseTestCase):
     bottom_type = Never
 
     def test_repr(self):
         self.assertEqual(repr(Never), 'typing.Never')
+
+    def test_get_type_hints(self):
+        def some(arg: Never) -> Never: ...
+
+        self.assertEqual(
+            get_type_hints(some),
+            {'arg': Never, 'return': Never},
+        )
 
 
 class AssertNeverTests(BaseTestCase):
@@ -177,11 +205,17 @@ class AssertNeverTests(BaseTestCase):
 
 
 class SelfTests(BaseTestCase):
+    def test_equality(self):
+        self.assertEqual(Self, Self)
+        self.assertIs(Self, Self)
+        self.assertNotEqual(Self, None)
+
     def test_basics(self):
         class Foo:
             def bar(self) -> Self: ...
 
         self.assertEqual(gth(Foo.bar), {'return': Self})
+        self.assertIs(get_origin(Self), None)
 
     def test_repr(self):
         self.assertEqual(repr(Self), 'typing.Self')
@@ -193,6 +227,9 @@ class SelfTests(BaseTestCase):
     def test_cannot_subclass(self):
         with self.assertRaises(TypeError):
             class C(type(Self)):
+                pass
+        with self.assertRaises(TypeError):
+            class C(Self):
                 pass
 
     def test_cannot_init(self):
@@ -2791,6 +2828,10 @@ class ForwardRefTests(BaseTestCase):
         fr = typing.ForwardRef('int')
         with self.assertRaises(TypeError):
             issubclass(int, fr)
+
+    def test_forwardref_only_str_arg(self):
+        with self.assertRaises(TypeError):
+            typing.ForwardRef(1)  # only `str` type is allowed
 
     def test_forward_equality(self):
         fr = typing.ForwardRef('int')
