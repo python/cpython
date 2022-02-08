@@ -1081,6 +1081,49 @@ class _BaseGenericAlias(_Final, _root=True):
         return list(set(super().__dir__()
                 + [attr for attr in dir(self.__origin__) if not _is_dunder(attr)]))
 
+
+def _is_unpacked_tuple(x):
+    # Is `x` something like `*tuple[int]` or `*tuple[int, ...]`?
+    if not isinstance(x, _UnpackGenericAlias):
+        return False
+    # Alright, `x` is `Unpack[something]`.
+
+    # `x` will always have `__args__`, because Unpack[] and Unpack[()]
+    # aren't legal.
+    unpacked_type = x.__args__[0]
+
+    if (hasattr(unpacked_type, '__origin__')
+            and unpacked_type.__origin__ is tuple):
+        return True
+    else:
+        return False
+
+
+def _is_unpacked_arbitrary_length_tuple(x):
+    if not _is_unpacked_tuple(x):
+        return False
+    unpacked_tuple = x.__args__[0]
+
+    if not hasattr(unpacked_tuple, '__args__'):
+        # It's `Unpack[tuple]`. We can't make any assumptions about the length
+        # of the tuple, so it's effectively an arbitrary-length tuple.
+        return True
+
+    tuple_args = unpacked_tuple.__args__
+    if not tuple_args:
+        # It's `Unpack[tuple[()]]`.
+        return False
+
+    last_arg = tuple_args[-1]
+    if last_arg is Ellipsis:
+        # It's `Unpack[tuple[something, ...]]`, which is arbitrary-length.
+        return True
+
+    # If the arguments didn't end with an ellipsis, then it's not an
+    # arbitrary-length tuple.
+    return False
+
+
 def _determine_typevar_substitution(typevars, args):
     """Determines how to assign type arguments to type variables.
 
@@ -1093,17 +1136,76 @@ def _determine_typevar_substitution(typevars, args):
         T2 = TypeVar('T2')
         Ts = TypeVarTuple('Ts')
 
-        typevars=(T1,),     args=()           => TypeError
-        typevars=(T1,),     args=(int,)       => {T1: int}
-        typevars=(T1,),     args=(int, str)   => TypeError
-        typevars=(T1, T2),  args=(int, str)   => {T1: int, T2: str}
-        typevars=(Ts,),     args=()           => {Ts: ()}
-        typevars=(Ts,),     args=(int,)       => {Ts: (int,)}
-        typevars=(Ts,),     args=(int, str)   => {Ts: (int, str)}
-        typevars=(T, Ts),   args=()           => TypeError
-        typevars=(T, Ts),   args=(int,)       => {T: int, Ts: ()}
-        typevars=(T, Ts)    args=(int, str)   => {T, int, Ts: (str,)}
+        # ==== A single TypeVar ====
+
+        # == Too few args ==
+
+        typevars=(T1,),     args=()                   => TypeError
+        typevars=(T1,),     args=(*tuple[()],)        => TypeError
+        # tuple[int, ...] means ">= 0 ints", but we require "== 1"
+        typevars=(T1,),     args=(*tuple[int, ...],)  => TypeError
+
+        # == Right number of args ==
+
+        typevars=(T1,),     args=(int,)               => {T1: int}
+        typevars=(T1,),     args=(*tuple[int],)       => {T1: int}
+
+        # == Too many args ==
+
+        typevars=(T1,),     args=(int, str)           => TypeError
+        typevars=(T1,),     args=(*tuple[int, str],)  => TypeError
+        # We could have two ints, so this might be too many.
+        typevars=(T1,),     args=(*tuple[int, ...],)  => TypeError
+
+        # ===== Two TypeVars =====
+
+        typevars=(T1, T2),  args=(int, str)           => {T1: int, T2: str}
+        typevars=(T1, T2),  args=(*tuple[int, str],)  => {T1: int, T2: str}
+
+        # ===== A single TypeVarTuple =====
+
+        typevars=(Ts,),     args=()                   => {Ts: ()}
+        typevars=(Ts,),     args=(int,)               => {Ts: (int,)}
+        typevars=(Ts,),     args=(int, str)           => {Ts: (int, str)}
+        typevars=(Ts,),     args=(*tuple[()],)        => {Ts: ()}
+        typevars=(Ts,),     args=(*tuple[int],)       => {Ts: (int,)}
+        typevars=(Ts,),     args=(*tuple[int, str],)  => {Ts: (int, str)}
+        typevars=(Ts,),     args=(*tuple[int, ...],)  => {Ts: (*tuple[int, ...])}
+
+        # ===== A single TypeVar and a single TypeVarTuple =====
+
+        # == Too few args ==
+
+        typevars=(T, Ts),   args=()                  => TypeError
+        typevars=(T, Ts),   args=(*tuple[()],)       => TypeError
+        # Again, this means ">= 0 ints", but we need ">= 1".
+        typevars=(T, Ts),   args=(*tuple[int, ...])  => TypeError
+
+        # == Right number of args ==
+
+        typevars=(T, Ts),   args=(int,)              => {T: int, Ts: ()}
+        typevars=(T, Ts)    args=(int, str)          => {T, int, Ts: (str,)}
+        typevars=(T, Ts),   args=(*tuple[int])       => {T: int, Ts: ()}
+        typevars=(T, Ts),   args=(*tuple[int, str])  => {T: int, Ts: (str,)}
+        typevars=(T, Ts),   args=(int, *tuple[str, ...])
+                                            => {T: int, Ts: (*tuple[str, ...],)}
+        typevars=(T, Ts),   args=(*tuple[int], *tuple[str, ...])
+                                            => {T: int, Ts: (*tuple[str, ...],)}
     """
+
+    # This would be a pretty complicated algorithm in its full generality.
+    # Fortunately, we can make two observations, which simplify things:
+    # 1. As of PEP 646, there can only be a maximum of one TypeVarTuple.
+    # 2. When considering unpacked arbitrary-length tuples
+    #    like *tuple[int, ...], we can't assign them or any part of them to
+    #    regular TypeVars:
+    #    * We can't assign the whole *tuple[int, ...] to a single TypeVar
+    #      because...well, it represents an arbitrary number of types, and a
+    #      TypeVar only holds exactly one type.
+    #    * We can't assign one of the `int`s to a TypeVar, because we can't
+    #      be sure there'll be any `int`s at all: tuple[int, ...] is a tuple
+    #      of *zero* or more ints.
+
     if not typevars:
         return {}
 
@@ -1113,13 +1215,28 @@ def _determine_typevar_substitution(typevars, args):
         raise TypeError("At most 1 TypeVarTuple may be used in a type "
                         f"parameter list, but saw {num_typevartuples}")
 
+    # First, we should go through `args` to replace e.g. *tuple[int] with int.
+    new_args = []
+    for arg in args:
+        if (_is_unpacked_tuple(arg)
+                and not _is_unpacked_arbitrary_length_tuple(arg)):
+            arg_tuple = arg.__args__[0]  # The actual tuple[int]
+            new_args.extend(arg_tuple.__args__)
+        else:
+            new_args.append(arg)
+    args = tuple(new_args)
+
     # Case 1: typevars does not contain any TypeVarTuples
 
     if num_typevartuples == 0:
+        if any(_is_unpacked_arbitrary_length_tuple(arg) for arg in args):
+            raise TypeError(f"Cannot assign type arguments '{args}' to type "
+                            f"variables '{typevars}': cannot assign "
+                            "unpacked arbitrary-length tuple to a TypeVar")
         if len(typevars) != len(args):
             raise TypeError(f"Number of type variables ({len(typevars)}) "
                             f"doesn't match number of type "
-                            f"parameters ({len(args)})")
+                            f"arguments ({len(args)})")
         return dict(zip(typevars, args))
 
     # Case 2: typevars contains a single TypeVarTuple
@@ -1134,6 +1251,11 @@ def _determine_typevar_substitution(typevars, args):
     # * If typevartuple_idx == 2 there are 0 TypeVars at
     #   the end of typevars.
     num_end_typevars = len(typevars) - typevartuple_idx - 1
+
+    # Even if one of the args is an unpacked arbitrary-length tuple, we still
+    # need at least as many args as normal TypeVars.
+    # Couldn't we split the arbitrary-length tuples across multiple TypeVars?
+    # No, because an arbitrary-length tuple could have length zero!
     if len(args) < num_start_typevars + num_end_typevars:
         raise TypeError(
             "Expected at least {} type parameters, but only got {}".format(
@@ -1142,34 +1264,33 @@ def _determine_typevar_substitution(typevars, args):
         )
 
     if num_start_typevars == num_end_typevars == 0:
+        # It's just a single TypeVarTuple.
         return {typevars[0]: args}
     elif num_end_typevars == 0:
-        # Ideally we wouldn't need this block, but if num_end_typevars == 0,
-        # list[num_start_typevars:-num_end_typevars] doesn't work as expected.
+        args_for_typevartuple = args[num_start_typevars:]
+        args_for_typevars = args[:num_start_typevars]
+        if any(_is_unpacked_arbitrary_length_tuple(arg)
+               for arg in args_for_typevars):
+            raise TypeError(f"Cannot assign type arguments '{args}' to type "
+                            f"variables '{typevars}': cannot assign "
+                            "arbitrary-length tuple to a TypeVar")
         return {
-            **dict(
-                zip(
-                    typevars[:num_start_typevars],
-                    args[:num_start_typevars],
-                ),
-            ),
-            typevartuple: args[num_start_typevars:],
+            **dict(zip(typevars[:num_start_typevars], args_for_typevars)),
+            typevartuple: args_for_typevartuple,
         }
     else:
+        args_for_left_typevars = args[:num_start_typevars]
+        args_for_typevartuple = args[num_start_typevars:-num_end_typevars]
+        args_for_right_typevars = args[-num_end_typevars:]
+        if any(_is_unpacked_arbitrary_length_tuple(arg)
+               for arg in args_for_left_typevars + args_for_right_typevars):
+            raise TypeError(f"Cannot assign type arguments '{args}' to type "
+                            f"variables '{typevars}': cannot assign "
+                            "arbitrary-length tuple to a TypeVar")
         return {
-            **dict(
-                zip(
-                    typevars[:num_start_typevars],
-                    args[:num_start_typevars],
-                ),
-            ),
-            typevartuple: args[num_start_typevars:-num_end_typevars],
-            **dict(
-                zip(
-                    typevars[-num_end_typevars:],
-                    args[-num_end_typevars:],
-                )
-            ),
+            **dict(zip(typevars[:num_start_typevars], args_for_left_typevars)),
+            typevartuple: args_for_typevartuple,
+            **dict(zip(typevars[-num_end_typevars:], args_for_right_typevars)),
         }
 
 
