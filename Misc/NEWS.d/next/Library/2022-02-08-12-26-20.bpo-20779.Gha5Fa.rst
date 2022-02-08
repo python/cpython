@@ -1,0 +1,2 @@
+Add :func:`pathlib.Path.chown` and :func:`pathlib.Path.lchown`
+to :class:`pathlib.Path`. Patch by Jaspar Stach.
