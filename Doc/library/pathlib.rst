@@ -755,6 +755,30 @@ call fails (for example because the path doesn't exist).
    .. versionchanged:: 3.10
       The *follow_symlinks* parameter was added.
 
+.. method:: Path.chown(uid, gid, *, dir_fd=None, follow_symlinks=True)
+
+   Change the file ownership, like :func:`os.chown`.
+
+   This method normally follows symlinks. Some Unix flavours support changing
+   permissions on the symlink itself; on these platforms you may add the
+   argument ``follow_symlinks=False``, or use :meth:`~Path.lchown`.
+
+   ::
+
+      >>> p = Path('setup.py')
+      >>> p.stat().st_uid
+      1000
+      >>> p.stat().st_gid
+      1000
+      >>> p.chown(1, 20)
+      >>> p.stat().st_uid
+      1
+      >>> p.stat().st_gid
+      20
+
+   .. availability:: Unix.
+
+
 .. method:: Path.exists()
 
    Whether the path points to an existing file or directory::
@@ -923,9 +947,17 @@ call fails (for example because the path doesn't exist).
    symbolic link's mode is changed rather than its target's.
 
 
+.. method:: Path.lchown(uid, gid, *, dir_fd=None)
+
+   Like :meth:`Path.chown`, but if the path points to a symbolic link, the
+   symbolic link's mode is changed rather than its target's.
+
+   .. availability:: Unix.
+
+
 .. method:: Path.lstat()
 
-   Like :meth:`Path.stat` but, if the path points to a symbolic link, return
+   Like :meth:`Path.stat`, but if the path points to a symbolic link, return
    the symbolic link's information rather than its target's.
 
 
@@ -1260,6 +1292,7 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 :func:`os.path.abspath`                :meth:`Path.absolute` [#]_
 :func:`os.path.realpath`               :meth:`Path.resolve`
 :func:`os.chmod`                       :meth:`Path.chmod`
+:func:`os.chown`                       :meth:`Path.chown`
 :func:`os.mkdir`                       :meth:`Path.mkdir`
 :func:`os.makedirs`                    :meth:`Path.mkdir`
 :func:`os.rename`                      :meth:`Path.rename`
