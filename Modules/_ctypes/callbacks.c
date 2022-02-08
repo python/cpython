@@ -148,27 +148,27 @@ static void _CallPythonObject(void *mem,
 {
     PyObject *result = NULL;
     PyObject **args = NULL;
-    Py_ssize_t i = 0, j = 0, n_args = 0;
+    Py_ssize_t i = 0, j = 0, nargs = 0;
     PyObject *error_object = NULL;
     int *space;
     PyGILState_STATE state = PyGILState_Ensure();
 
     assert(PyTuple_Check(converters));
-    n_args = PyTuple_GET_SIZE(converters);
+    nargs = PyTuple_GET_SIZE(converters);
     /* Hm. What to return in case of error?
        For COM, 0xFFFFFFFF seems better than 0.
     */
-    if (n_args < 0) {
+    if (nargs < 0) {
         PrintError("BUG: PySequence_Length");
         goto Done;
     }
 
     PyObject *args_stack[CTYPES_MAX_ARGCOUNT];
-    if (n_args <= CTYPES_MAX_ARGCOUNT) {
+    if (nargs <= CTYPES_MAX_ARGCOUNT) {
         args = args_stack;
     }
     else {
-        args = PyMem_Malloc(n_args * sizeof(PyObject *));
+        args = PyMem_Malloc(nargs * sizeof(PyObject *));
         if (args == NULL) {
             PyErr_NoMemory();
             goto Done;
@@ -176,7 +176,7 @@ static void _CallPythonObject(void *mem,
     }
 
     PyObject **cnvs = PySequence_Fast_ITEMS(converters);
-    for (i = 0; i < n_args; i++) {
+    for (i = 0; i < nargs; i++) {
         PyObject *cnv = cnvs[i]; // borrowed ref
         StgDictObject *dict;
         dict = PyType_stgdict(cnv);
@@ -239,7 +239,7 @@ static void _CallPythonObject(void *mem,
 #endif
     }
 
-    result = PyObject_Vectorcall(callable, args, n_args, NULL);
+    result = PyObject_Vectorcall(callable, args, nargs, NULL);
     if (result == NULL) {
         _PyErr_WriteUnraisableMsg("on calling ctypes callback function",
                                   callable);
@@ -331,12 +331,12 @@ static void closure_fcn(ffi_cif *cif,
                       args);
 }
 
-static CThunkObject* CThunkObject_new(Py_ssize_t n_args)
+static CThunkObject* CThunkObject_new(Py_ssize_t nargs)
 {
     CThunkObject *p;
     Py_ssize_t i;
 
-    p = PyObject_GC_NewVar(CThunkObject, &PyCThunk_Type, n_args);
+    p = PyObject_GC_NewVar(CThunkObject, &PyCThunk_Type, nargs);
     if (p == NULL) {
         return NULL;
     }
@@ -351,7 +351,7 @@ static CThunkObject* CThunkObject_new(Py_ssize_t n_args)
     p->setfunc = NULL;
     p->ffi_restype = NULL;
 
-    for (i = 0; i < n_args + 1; ++i)
+    for (i = 0; i < nargs + 1; ++i)
         p->atypes[i] = NULL;
     PyObject_GC_Track((PyObject *)p);
     return p;
@@ -364,12 +364,12 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
 {
     int result;
     CThunkObject *p;
-    Py_ssize_t n_args, i;
+    Py_ssize_t nargs, i;
     ffi_abi cc;
 
     assert(PyTuple_Check(converters));
-    n_args = PyTuple_GET_SIZE(converters);
-    p = CThunkObject_new(n_args);
+    nargs = PyTuple_GET_SIZE(converters);
+    p = CThunkObject_new(nargs);
     if (p == NULL)
         return NULL;
 
@@ -383,7 +383,7 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
 
     p->flags = flags;
     PyObject **cnvs = PySequence_Fast_ITEMS(converters);
-    for (i = 0; i < n_args; ++i) {
+    for (i = 0; i < nargs; ++i) {
         PyObject *cnv = cnvs[i]; // borrowed ref
         p->atypes[i] = _ctypes_get_ffi_type(cnv);
     }
@@ -411,7 +411,7 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
         cc = FFI_STDCALL;
 #endif
     result = ffi_prep_cif(&p->cif, cc,
-                          Py_SAFE_DOWNCAST(n_args, Py_ssize_t, int),
+                          Py_SAFE_DOWNCAST(nargs, Py_ssize_t, int),
                           _ctypes_get_ffi_type(restype),
                           &p->atypes[0]);
     if (result != FFI_OK) {
