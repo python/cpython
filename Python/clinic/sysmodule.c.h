@@ -788,7 +788,7 @@ exit:
 }
 
 PyDoc_STRVAR(sys__getfunc__doc__,
-"_getfunc($module, depth=1, /)\n"
+"_getcaller($module, depth=1, /)\n"
 "--\n"
 "\n"
 "Return a function object from the call stack.\n"
@@ -805,18 +805,18 @@ PyDoc_STRVAR(sys__getfunc__doc__,
 "only.");
 
 #define SYS__GETFUNC_METHODDEF    \
-    {"_getfunc", (PyCFunction)(void(*)(void))sys__getfunc, METH_FASTCALL, sys__getfunc__doc__},
+    {"_getcaller", (PyCFunction)(void(*)(void))sys__getcaller, METH_FASTCALL, sys__getfunc__doc__},
 
 static PyObject *
 sys__getfunc_impl(PyObject *module, int depth);
 
 static PyObject *
-sys__getfunc(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+sys__getcaller(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int depth = 1;
 
-    if (!_PyArg_CheckPositional("_getfunc", nargs, 0, 1)) {
+    if (!_PyArg_CheckPositional("_getcaller", nargs, 0, 1)) {
         goto exit;
     }
     if (nargs < 1) {

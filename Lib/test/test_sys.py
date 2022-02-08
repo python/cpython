@@ -399,26 +399,26 @@ class SysModuleTest(unittest.TestCase):
             is sys._getframe().f_code
         )
 
-    def test_getfunc(self):
-        self.assertRaises(TypeError, sys._getfunc, 42, 42)
-        self.assertRaises(ValueError, sys._getfunc, 2000000000)
-        self.assertIs(SysModuleTest.test_getfunc, sys._getfunc(0))
+    def test_getcaller(self):
+        self.assertRaises(TypeError, sys._getcaller, 42, 42)
+        self.assertRaises(ValueError, sys._getcaller, 2000000000)
+        self.assertIs(SysModuleTest.test_getcaller, sys._getcaller(0))
 
         def save_parent():
-            return sys._getfunc()
+            return sys._getcaller(1)
 
-        self.assertIs(SysModuleTest.test_getfunc, save_parent())
+        self.assertIs(SysModuleTest.test_getcaller, save_parent())
 
         class X:
-            func = sys._getfunc(0)
+            func = sys._getcaller(0)
             func2 = save_parent()
 
         self.assertEqual(X.func.__name__, "X")
         self.assertIs(X.func, X.func2)
 
-        from test import sys_getfunc
+        from test import sys_getcaller
 
-        self.assertEqual(sys_getfunc.func.__name__, "<module>")
+        self.assertEqual(sys_getcaller.func.__name__, "<module>")
 
     # sys._current_frames() is a CPython-only gimmick.
     @threading_helper.reap_threads

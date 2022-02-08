@@ -490,12 +490,12 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
 
     # For pickling to work, the __module__ variable needs to be set to the frame
     # where the named tuple is created.  Bypass this step in environments where
-    # sys._getfunc is not defined or sys._getfunc is not
+    # sys._getcaller is not defined or sys._getcaller is not
     # defined for arguments greater than 0, or where the user has
     # specified a particular module.
     if module is None:
         try:
-            module = _sys._getfunc(1).__globals__.get('__name__', '__main__')
+            module = _sys._getcaller(1).__globals__.get('__name__', '__main__')
         except (AttributeError, ValueError):
             pass
     if module is not None:

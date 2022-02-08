@@ -1800,7 +1800,7 @@ sys_getallocatedblocks_impl(PyObject *module)
 
 
 /*[clinic input]
-sys._getfunc
+sys._getcaller
 
     depth: int = 1
     /
@@ -1826,7 +1826,7 @@ sys__getfunc_impl(PyObject *module, int depth)
     PyThreadState *tstate = _PyThreadState_GET();
     InterpreterFrame *frame = tstate->cframe->current_frame;
 
-    if (_PySys_Audit(tstate, "sys._getfunc", NULL) < 0) {
+    if (_PySys_Audit(tstate, "sys._getcaller", NULL) < 0) {
         return NULL;
     }
 

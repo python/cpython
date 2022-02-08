@@ -1,1 +1,1 @@
-Add :func:`sys._getfunc`. Patch by Jelle Zijlstra.
+Add :func:`sys._getcaller`. Patch by Jelle Zijlstra.

@@ -758,7 +758,7 @@ always available.
       It is not guaranteed to exist in all implementations of Python.
 
 
-.. function:: _getfunc(depth=1)
+.. function:: _getcaller(depth=1)
 
    Return a function object from the call stack.  If optional integer *depth* is
    positive, return the function object that many calls below the top of the stack.  If
@@ -770,7 +770,7 @@ always available.
 
    .. versionadded:: 3.11
 
-   .. audit-event:: sys._getfunc "" sys._getfunc
+   .. audit-event:: sys._getcaller "" sys._getcaller
 
    .. impl-detail::
 
