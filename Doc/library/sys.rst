@@ -750,6 +750,10 @@ always available.
    that is deeper than the call stack, :exc:`ValueError` is raised.  The default
    for *depth* is zero, returning the frame at the top of the call stack.
 
+   Unlike the similar :func:`_getcaller` (new in Python 3.11), this returns a
+   full frame object, making it more expensive to execute and harder to port
+   to alternative implementations of Python.
+
    .. audit-event:: sys._getframe "" sys._getframe
 
    .. impl-detail::
@@ -758,15 +762,12 @@ always available.
       It is not guaranteed to exist in all implementations of Python.
 
 
-.. function:: _getcaller(depth=1)
+.. function:: _getcaller([depth])
 
    Return a function object from the call stack.  If optional integer *depth* is
    positive, return the function object that many calls below the top of the stack.  If
-   that is deeper than the call stack, :exc:`ValueError` is raised.  If
-   *depth* is zero, the function returns the currently executing function.
-
-   Unlike the similar :func:`_getframe`, this does not create a frame object
-   when called, making it less expensive to call.
+   that is deeper than the call stack, :exc:`ValueError` is raised.  The default
+   for *depth* is zero, returning the currently executing function.
 
    .. versionadded:: 3.11
 

@@ -1802,7 +1802,7 @@ sys_getallocatedblocks_impl(PyObject *module)
 /*[clinic input]
 sys._getcaller
 
-    depth: int = 1
+    depth: int = 0
     /
 
 Return a function object from the call stack.
@@ -1811,9 +1811,6 @@ If optional integer depth is 1 or more, return the function object that many
 calls below the top of the stack.  If that is deeper than the call
 stack, ValueError is raised.  If depth is 0, return the current function
 object.
-
-This is similar to sys._getframe() but cheaper because it does not
-create a full frame object.
 
 This function should be used for internal and specialized purposes
 only.
@@ -1854,6 +1851,10 @@ If optional integer depth is given, return the frame object that many
 calls below the top of the stack.  If that is deeper than the call
 stack, ValueError is raised.  The default for depth is zero, returning
 the frame at the top of the call stack.
+
+Unlike the similar sys._getcaller, this returns a full frame object,
+making it more expensive to execute and harder to port to alternative
+implementations of Python.
 
 This function should be used for internal and specialized purposes
 only.
