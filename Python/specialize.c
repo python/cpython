@@ -1917,7 +1917,7 @@ int
     if (PyAsyncGen_CheckExact(iter)) {
         return SPEC_FAIL_ITER_ASYNC_GENERATOR;
     }
-    PyTypeObject *t = _Py_TYPE(iter);
+    PyTypeObject *t = Py_TYPE(iter);
     if (t == &PyListIter_Type) {
         return SPEC_FAIL_ITER_LIST;
     }
