@@ -9,7 +9,7 @@ import warnings
 from unittest import TestCase, main, skipUnless, skip
 from copy import copy, deepcopy
 
-from typing import Any, NoReturn
+from typing import Any, NoReturn, Never, assert_never
 from typing import TypeVar, AnyStr
 from typing import T, KT, VT  # Not in __all__.
 from typing import Union, Optional, Literal
@@ -124,38 +124,56 @@ class AnyTests(BaseTestCase):
         typing.IO[Any]
 
 
-class NoReturnTests(BaseTestCase):
+class BottomTypeTestsMixin:
+    bottom_type: ClassVar[Any]
 
-    def test_noreturn_instance_type_error(self):
+    def test_instance_type_error(self):
         with self.assertRaises(TypeError):
-            isinstance(42, NoReturn)
+            isinstance(42, self.bottom_type)
 
-    def test_noreturn_subclass_type_error(self):
+    def test_subclass_type_error(self):
         with self.assertRaises(TypeError):
-            issubclass(Employee, NoReturn)
+            issubclass(Employee, self.bottom_type)
         with self.assertRaises(TypeError):
-            issubclass(NoReturn, Employee)
-
-    def test_repr(self):
-        self.assertEqual(repr(NoReturn), 'typing.NoReturn')
+            issubclass(NoReturn, self.bottom_type)
 
     def test_not_generic(self):
         with self.assertRaises(TypeError):
-            NoReturn[int]
+            self.bottom_type[int]
 
     def test_cannot_subclass(self):
         with self.assertRaises(TypeError):
-            class A(NoReturn):
+            class A(self.bottom_type):
                 pass
         with self.assertRaises(TypeError):
-            class A(type(NoReturn)):
+            class A(type(self.bottom_type)):
                 pass
 
     def test_cannot_instantiate(self):
         with self.assertRaises(TypeError):
-            NoReturn()
+            self.bottom_type()
         with self.assertRaises(TypeError):
-            type(NoReturn)()
+            type(self.bottom_type)()
+
+
+class NoReturnTests(BottomTypeTestsMixin, BaseTestCase):
+    bottom_type = NoReturn
+
+    def test_repr(self):
+        self.assertEqual(repr(NoReturn), 'typing.NoReturn')
+
+
+class NeverTests(BottomTypeTestsMixin, BaseTestCase):
+    bottom_type = Never
+
+    def test_repr(self):
+        self.assertEqual(repr(Never), 'typing.Never')
+
+
+class AssertNeverTests(BaseTestCase):
+    def test_exception(self):
+        with self.assertRaises(AssertionError):
+            assert_never(None)
 
 
 class SelfTests(BaseTestCase):
