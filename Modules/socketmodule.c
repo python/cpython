@@ -7505,6 +7505,9 @@ PyInit__socket(void)
 #ifdef SO_EXCLUSIVEADDRUSE
     PyModule_AddIntMacro(m, SO_EXCLUSIVEADDRUSE);
 #endif
+#ifdef SO_INCOMING_CPU
+    PyModule_AddIntMacro(m, SO_INCOMING_CPU);
+#endif
 
 #ifdef  SO_KEEPALIVE
     PyModule_AddIntMacro(m, SO_KEEPALIVE);
