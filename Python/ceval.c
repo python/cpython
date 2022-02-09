@@ -1615,7 +1615,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
 
     CFrame cframe;
     CallShape call_shape;
-    call_shape.kwnames = NULL; // Borrowed reference
+    call_shape.kwnames = NULL; // Borrowed reference. Reset by CALL instructions.
+    /* The following three values are always set by the PRECALL instructions.
+       They are set here to keep the compiler happy. */
     call_shape.postcall_shrink = 0;
     call_shape.total_args = 0;
     call_shape.callable = NULL; // Strong reference
