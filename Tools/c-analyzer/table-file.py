@@ -92,6 +92,7 @@ def collate_sections(lines):
 # the commands
 
 def cmd_count_by_section(lines):
+    div = ' ' + '-' * 50
     total = 0
     def render_tree(root, depth=0):
         nonlocal total
@@ -100,11 +101,14 @@ def cmd_count_by_section(lines):
             subroot, rows, totalrows = data
             sectotal = f'({len(totalrows)})' if totalrows != rows else ''
             count = len(rows) if rows else ''
+            if depth == 0:
+                yield div
             yield f'{sectotal:>7} {count:>4}  {indent}{name}'
             yield from render_tree(subroot, depth+1)
             total += len(rows)
     sections = collate_sections(lines)
     yield from render_tree(sections)
+    yield div
     yield f'(total: {total})'
 
 
