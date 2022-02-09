@@ -3193,7 +3193,7 @@ class CodePageTest(unittest.TestCase):
     def test_mbcs_alias(self):
         # Check that looking up our 'default' codepage will return
         # mbcs when we don't have a more specific one available
-        code_page = 9999
+        code_page = 99_999
         name = f'cp{code_page}'
         with mock.patch('_winapi.GetACP', return_value=code_page):
             try:
