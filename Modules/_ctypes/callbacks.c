@@ -164,17 +164,12 @@ static void _CallPythonObject(void *mem,
 
     assert(PyTuple_Check(converters));
     nargs = PyTuple_GET_SIZE(converters);
-    if (nargs < 0) {
-        PrintError("BUG: PySequence_Length");
-        goto Done;
-    }
-
     assert(nargs <= CTYPES_MAX_ARGCOUNT);
-    if (nargs == 0) {
-        args = NULL;
+    if (nargs > 0) {
+        args = alloca(nargs * sizeof(PyObject *));
     }
     else {
-        args = alloca(nargs * sizeof(PyObject *));
+        args = NULL;
     }
 
     PyObject **cnvs = PySequence_Fast_ITEMS(converters);
