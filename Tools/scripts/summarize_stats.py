@@ -24,7 +24,7 @@ for name in opcode.opname[1:]:
 
 TOTAL = "specialization.deferred", "specialization.hit", "specialization.miss", "execution_count"
 
-def print_specialization_stats(name, family_stats):
+def print_specialization_stats(name, family_stats, defines):
     if "specializable" not in family_stats:
         return
     total = sum(family_stats.get(kind, 0) for kind in TOTAL)
@@ -51,10 +51,12 @@ def print_specialization_stats(name, family_stats):
         _, index = key[:-1].split("[")
         index =  int(index)
         failure_kinds[index] = family_stats[key]
-    for index, value in enumerate(failure_kinds):
+    failures = [(value, index) for (index, value) in enumerate(failure_kinds)]
+    failures.sort(reverse=True)
+    for value, index in failures:
         if not value:
             continue
-        print(f"    kind {index:>2}: {value:>8} {100*value/total_failures:0.1f}%")
+        print(f"    {kind_to_text(index, defines, name)}: {value:>8} {100*value/total_failures:0.1f}%")
 
 def gather_stats():
     stats = collections.Counter()
@@ -76,6 +78,31 @@ def extract_opcode_stats(stats):
         opcode_stats[int(n)][rest.strip(".")] = value
     return opcode_stats
 
+def parse_kinds(spec_src):
+    defines = collections.defaultdict(list)
+    for line in spec_src:
+        line = line.strip()
+        if not line.startswith("#define SPEC_FAIL_"):
+            continue
+        line = line[len("#define SPEC_FAIL_"):]
+        name, val = line.split()
+        defines[int(val.strip())].append(name.strip())
+    return defines
+
+def pretty(defname):
+    return defname.replace("_", " ").lower()
+
+def kind_to_text(kind, defines, opname):
+    if kind < 7:
+        return pretty(defines[kind][0])
+    if opname.endswith("ATTR"):
+        opname = "ATTR"
+    if opname.endswith("SUBSCR"):
+        opname = "SUBSCR"
+    for name in defines[kind]:
+        if name.startswith(opname):
+            return pretty(name[len(opname)+1:])
+    return "kind " + str(kind)
 
 def categorized_counts(opcode_stats):
     basic = 0
@@ -104,12 +131,12 @@ def categorized_counts(opcode_stats):
             basic += count
     return basic, not_specialized, specialized
 
-def main():
-    stats = gather_stats()
-    opcode_stats = extract_opcode_stats(stats)
-    print("Execution counts:")
+def title(name):
+    print(name + ":")
+
+def emit_execution_counts(opcode_stats, total):
+    title("Execution counts")
     counts = []
-    total = 0
     for i, opcode_stat in enumerate(opcode_stats):
         if "execution_count" in opcode_stat:
             count = opcode_stat['execution_count']
@@ -117,7 +144,6 @@ def main():
             if "specializable" not in opcode_stat:
                 miss = opcode_stat.get("specialization.miss")
             counts.append((count, opname[i], miss))
-            total += count
     counts.sort(reverse=True)
     cummulative = 0
     for (count, name, miss) in counts:
@@ -125,16 +151,25 @@ def main():
         print(f"{name}: {count} {100*count/total:0.1f}% {100*cummulative/total:0.1f}%")
         if miss:
             print(f"    Misses: {miss} {100*miss/count:0.1f}%")
-    print("Specialization stats:")
+
+def emit_specialization_stats(opcode_stats):
+    spec_path = os.path.join(os.path.dirname(__file__), "../../Python/specialize.c")
+    with open(spec_path) as spec_src:
+        defines = parse_kinds(spec_src)
+    title("Specialization stats")
     for i, opcode_stat in enumerate(opcode_stats):
         name = opname[i]
-        print_specialization_stats(name, opcode_stat)
+        print_specialization_stats(name, opcode_stat, defines)
+
+def emit_specialization_overview(opcode_stats, total):
     basic, not_specialized, specialized = categorized_counts(opcode_stats)
-    print("Specialization effectiveness:")
+    title("Specialization effectiveness")
     print(f"    Base instructions {basic} {basic*100/total:0.1f}%")
     print(f"    Not specialized {not_specialized} {not_specialized*100/total:0.1f}%")
     print(f"    Specialized {specialized} {specialized*100/total:0.1f}%")
-    print("Call stats:")
+
+def emit_call_stats(stats):
+    title("Call stats")
     total = 0
     for key, value in stats.items():
         if "Calls to" in key:
@@ -145,7 +180,9 @@ def main():
     for key, value in stats.items():
         if key.startswith("Frame"):
             print(f"    {key}: {value} {100*value/total:0.1f}%")
-    print("Object stats:")
+
+def emit_object_stats(stats):
+    title("Object stats")
     total = stats.get("Object new values")
     for key, value in stats.items():
         if key.startswith("Object"):
@@ -153,8 +190,19 @@ def main():
                 print(f"    {key}: {value} {100*value/total:0.1f}%")
             else:
                 print(f"    {key}: {value}")
-    total = 0
 
+def main():
+    stats = gather_stats()
+    opcode_stats = extract_opcode_stats(stats)
+    total = 0
+    for i, opcode_stat in enumerate(opcode_stats):
+        if "execution_count" in opcode_stat:
+            total += opcode_stat['execution_count']
+    emit_execution_counts(opcode_stats, total)
+    emit_specialization_stats(opcode_stats)
+    emit_specialization_overview(opcode_stats, total)
+    emit_call_stats(stats)
+    emit_object_stats(stats)
 
 if __name__ == "__main__":
     main()
