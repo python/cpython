@@ -255,7 +255,7 @@ Objects/setobject.c	-	_PySet_Dummy	-
 Objects/sliceobject.c	-	_Py_EllipsisObject	-
 
 #-----------------------
-# cached PyUnicodeObject - initialized once
+# cached - initialized once
 
 # manually cached PyUnicodeObject
 Objects/boolobject.c	-	false_str	-
@@ -311,9 +311,7 @@ Python/sysmodule.c	-	whatstrings	-
 # XXX This should have been found by the analyzer but wasn't:
 Python/sysmodule.c	sys_displayhook	newline	-
 
-#-----------------------
 # _PyArg_Parser
-
 Objects/clinic/bytearrayobject.c.h	bytearray___init__	_parser	-
 Objects/clinic/bytearrayobject.c.h	bytearray_decode	_parser	-
 Objects/clinic/bytearrayobject.c.h	bytearray_hex	_parser	-
@@ -369,16 +367,16 @@ Python/clinic/sysmodule.c.h	sys_addaudithook	_parser	-
 Python/clinic/sysmodule.c.h	sys_set_coroutine_origin_tracking_depth	_parser	-
 Python/clinic/traceback.c.h	tb_new	_parser	-
 
-#-----------------------
 # other
-
-# cache - initialized once
 Objects/typeobject.c	-	method_cache	-
 Objects/unicodeobject.c	-	_string_module	-
 Objects/unicodeobject.c	-	interned	-
 Objects/unicodeobject.c	-	static_strings	-
 
-# non-cache - initialized once
+#-----------------------
+# other
+
+# initialized once
 Objects/exceptions.c	-	PyExc_BaseExceptionGroup	-
 Objects/exceptions.c	-	PyExc_EncodingWarning	-
 # XXX This should have been found by the analyzer but wasn't:
@@ -583,7 +581,7 @@ Modules/_threadmodule.c	-	ThreadError	-
 Modules/signalmodule.c	-	ItimerError	-
 
 #-----------------------
-# cached PyUnicodeObject - initialized once
+# cached - initialized once
 
 # manually cached PyUnicodeOjbect
 Modules/_io/_iomodule.c	-	_PyIO_str_close	-
@@ -616,9 +614,7 @@ Modules/_io/_iomodule.c	-	_PyIO_empty_str	-
 Modules/_threadmodule.c	-	str_dict	-
 Modules/_tracemalloc.c	-	unknown_filename	-
 
-#-----------------------
 # _PyArg_Parser
-
 Modules/clinic/_codecsmodule.c.h	_codecs_decode	_parser	-
 Modules/clinic/_codecsmodule.c.h	_codecs_encode	_parser	-
 Modules/clinic/_sre.c.h	_sre_SRE_Match_expand	_parser	-
@@ -927,7 +923,7 @@ Modules/xxlimited.c	-	ErrorObject	-
 Modules/xxmodule.c	-	ErrorObject	-
 
 #-----------------------
-# cached PyUnicodeObject - initialized once
+# cached - initialized once
 
 # _Py_IDENTIFIER (global)
 Modules/_asynciomodule.c	-	PyId___asyncio_running_event_loop__	-
@@ -1117,9 +1113,7 @@ Modules/_json.c	encoder_listencode_list	open_array	-
 Modules/_json.c	encoder_listencode_list	close_array	-
 Modules/_json.c	encoder_listencode_list	empty_array	-
 
-#-----------------------
 # _PyArg_Parser
-
 Modules/clinic/_asynciomodule.c.h	_asyncio_Future___init__	_parser	-
 Modules/clinic/_asynciomodule.c.h	_asyncio_Future_add_done_callback	_parser	-
 Modules/clinic/_asynciomodule.c.h	_asyncio_Future_cancel	_parser	-
@@ -1245,10 +1239,7 @@ Modules/clinic/zlibmodule.c.h	zlib_compressobj	_parser	-
 Modules/clinic/zlibmodule.c.h	zlib_decompress	_parser	-
 Modules/clinic/zlibmodule.c.h	zlib_decompressobj	_parser	-
 
-#-----------------------
-# other
-
-# cached during module init - initialized once
+# other - during module init
 Modules/_asynciomodule.c	-	asyncio_mod	-
 Modules/_asynciomodule.c	-	traceback_extract_stack	-
 Modules/_asynciomodule.c	-	asyncio_get_event_loop_policy	-
@@ -1263,7 +1254,10 @@ Modules/_zoneinfo.c	-	io_open	-
 Modules/_zoneinfo.c	-	_tzpath_find_tzfile	-
 Modules/_zoneinfo.c	-	_common_mod	-
 
-# other - initialized once
+#-----------------------
+# other
+
+# initialized once
 Modules/_ctypes/_ctypes.c	-	_unpickle	-
 Modules/_ctypes/_ctypes.c	PyCArrayType_from_ctype	cache	-
 Modules/_cursesmodule.c	-	ModDict	-
