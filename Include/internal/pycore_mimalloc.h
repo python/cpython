@@ -14,11 +14,31 @@
 #define MI_DEBUG_FREED      PYMEM_DEADBYTE
 #define MI_DEBUG_PADDING    PYMEM_FORBIDDENBYTE
 
+ /* ASAN builds don't use MI_DEBUG. ASAN + MI_DEBUG triggers additional
+  * checks, which can cause mimalloc to print warnings to stderr. The
+  * warnings break some tests.
+  *
+  *   mi_usable_size: pointer might not point to a valid heap region:
+  *   ...
+  *   yes, the previous pointer ... was valid after all
+  */
+#if defined(__has_feature)
+#  if __has_feature(address_sanitizer)
+#    define MI_DEBUG 0
+#  endif
+#elif defined(__GNUC__) && defined(__SANITIZE_ADDRESS__)
+#  define MI_DEBUG 0
+#endif
+
+/* Perform additional checks in debug builds, see mimalloc-types.h
+ * - enable basic and internal assertion checks with MI_DEBUG 2
+ * - check for double free, invalid pointer free
+ * - use guard pages to check for buffer overflows
+ */
 #ifdef Py_DEBUG
-// see mimalloc-types.h
-// basic and internal assertion checks
-#  define MI_DEBUG 2
-// check for double free, buffer overflows and invalid pointer free
+#  ifndef MI_DEBUG
+#    define MI_DEBUG 2
+#  endif
 #  define MI_SECURE 4
 #elif defined(PY_MIMALLOC_SECURE)
 #  define MI_SECURE PY_MIMALLOC_SECURE
