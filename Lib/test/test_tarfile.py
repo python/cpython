@@ -375,6 +375,18 @@ class CommonReadTest(ReadTest):
         with open(self.tarname, "rb") as fobj:
             self.assertTrue(tarfile.is_tarfile(io.BytesIO(fobj.read())))
 
+    def test_is_tarfile_keeps_position(self):
+        # Test for issue44289: tarfile.is_tarfile() modifies
+        # file object's current position
+        with open(self.tarname, "rb") as fobj:
+            tarfile.is_tarfile(fobj)
+            self.assertEqual(fobj.tell(), 0)
+
+        with open(self.tarname, "rb") as fobj:
+            file_like = io.BytesIO(fobj.read())
+            tarfile.is_tarfile(file_like)
+            self.assertEqual(file_like.tell(), 0)
+
     def test_empty_tarfile(self):
         # Test for issue6123: Allow opening empty archives.
         # This test checks if tarfile.open() is able to open an empty tar
