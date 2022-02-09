@@ -32,6 +32,7 @@ from . import _parser, REPO_ROOT
 _DATA_DIR = os.path.dirname(__file__)
 KNOWN_FILE = os.path.join(_DATA_DIR, 'known.tsv')
 IGNORED_FILE = os.path.join(_DATA_DIR, 'ignored.tsv')
+NEED_FIX_FILE = os.path.join(_DATA_DIR, 'globals-to-fix.tsv')
 KNOWN_IN_DOT_C = {
     'struct _odictobject': False,
     'PyTupleObject': False,
@@ -85,6 +86,7 @@ def write_known():
 def read_ignored():
     if not _IGNORED:
         _IGNORED.update(_datafiles.read_ignored(IGNORED_FILE, relroot=REPO_ROOT))
+        _IGNORED.update(_datafiles.read_ignored(NEED_FIX_FILE, relroot=REPO_ROOT))
     return dict(_IGNORED)
 
 
