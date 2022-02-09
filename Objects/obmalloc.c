@@ -136,6 +136,18 @@ _PyMem_RawFree(void *Py_UNUSED(ctx), void *ptr)
 
 #ifdef WITH_MIMALLOC
 
+static void
+_PyMimalloc_Config(void) {
+    /* XXX Some options cannot be changed because
+       PyRuntime_Initialize() -> alloc_for_runtime()
+       allocates memory, which initializes mimalloc.
+
+       verbose logging breaks some tests in debug mode:
+       "pointer might not point to a valid heap region"
+    */
+    mi_option_disable(mi_option_verbose);
+}
+
 static void *
 _PyMimalloc_Malloc(void *ctx, size_t size)
 {
@@ -429,6 +441,10 @@ _PyMem_SetupAllocators(PyMemAllocatorName allocator)
         if (allocator == PYMEM_ALLOCATOR_MIMALLOC_DEBUG) {
             PyMem_SetupDebugHooks();
         }
+
+        // set global mimalloc flags
+        _PyMimalloc_Config();
+
         break;
     }
 #endif
