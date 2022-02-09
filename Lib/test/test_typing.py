@@ -2792,6 +2792,10 @@ class ForwardRefTests(BaseTestCase):
         with self.assertRaises(TypeError):
             issubclass(int, fr)
 
+    def test_forwardref_only_str_arg(self):
+        with self.assertRaises(TypeError):
+            typing.ForwardRef(1)  # only `str` type is allowed
+
     def test_forward_equality(self):
         fr = typing.ForwardRef('int')
         self.assertEqual(fr, typing.ForwardRef('int'))
