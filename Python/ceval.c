@@ -2865,6 +2865,17 @@ handle_eval_breaker:
             }
         }
 
+        TARGET(UNPACK_SEQUENCE_TWO_TUPLE) {
+            PyObject *seq = TOP();
+            DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
+            DEOPT_IF(PyTuple_GET_SIZE(seq) != 2, UNPACK_SEQUENCE);
+            STAT_INC(UNPACK_SEQUENCE, hit);
+            SET_TOP(Py_NewRef(PyTuple_GET_ITEM(seq, 1)));
+            PUSH(Py_NewRef(PyTuple_GET_ITEM(seq, 0)));
+            Py_DECREF(seq);
+            DISPATCH();
+        }
+
         TARGET(UNPACK_SEQUENCE_TUPLE) {
             PyObject *seq = TOP();
             int len = GET_CACHE()->adaptive.original_oparg;

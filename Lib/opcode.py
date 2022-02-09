@@ -282,6 +282,7 @@ _specialized_instructions = [
     "UNPACK_SEQUENCE_ADAPTIVE",
     "UNPACK_SEQUENCE_LIST",
     "UNPACK_SEQUENCE_TUPLE",
+    "UNPACK_SEQUENCE_TWO_TUPLE",
     # Super instructions
     "LOAD_FAST__LOAD_FAST",
     "STORE_FAST__LOAD_FAST",
