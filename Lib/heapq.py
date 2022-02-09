@@ -130,7 +130,7 @@ __all__ = ['heappush', 'heappop', 'heapify', 'heapreplace', 'merge',
 def heappush(heap, item):
     """Push item onto heap, maintaining the heap invariant."""
     heap.append(item)
-    _siftdown(heap, 0, len(heap)-1)
+    return _siftdown(heap, 0, len(heap)-1)
 
 def heappop(heap):
     """Pop the smallest item off the heap, maintaining the heap invariant."""
@@ -215,6 +215,7 @@ def _siftdown(heap, startpos, pos):
             continue
         break
     heap[pos] = newitem
+    return pos
 
 # The child indices of heap index pos are already heaps, and we want to make
 # a heap at index pos too.  We do this by bubbling the smaller child of
@@ -273,7 +274,8 @@ def _siftup(heap, pos):
     # The leaf at pos is empty now.  Put newitem there, and bubble it up
     # to its final resting place (by sifting its parents down).
     heap[pos] = newitem
-    _siftdown(heap, startpos, pos)
+    return _siftdown(heap, startpos, pos)
+    
 
 def _siftdown_max(heap, startpos, pos):
     'Maxheap variant of _siftdown'
