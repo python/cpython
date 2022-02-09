@@ -54,6 +54,8 @@
 
  */
 
+#define NEEDS_PY_IDENTIFIER
+
 #include "Python.h"
 #include "structmember.h"         // PyMemberDef
 
@@ -826,7 +828,7 @@ static int _call_function_pointer(int flags,
         cc = FFI_STDCALL;
 #endif
 
-#   if USING_APPLE_OS_LIBFFI
+#   ifdef USING_APPLE_OS_LIBFFI
 #      define HAVE_FFI_PREP_CIF_VAR_RUNTIME __builtin_available(macos 10.15, ios 13, watchos 6, tvos 13, *)
 #   elif HAVE_FFI_PREP_CIF_VAR
 #      define HAVE_FFI_PREP_CIF_VAR_RUNTIME true
@@ -1117,14 +1119,6 @@ GetComError(HRESULT errcode, GUID *riid, IUnknown *pIunk)
 #define POW2(x) (((x & ~(x - 1)) == x) ? x : 0)
 #define IS_PASS_BY_REF(x) (x > 8 || !POW2(x))
 #endif
-
-/*
- * bpo-13097: Max number of arguments _ctypes_callproc will accept.
- *
- * This limit is enforced for the `alloca()` call in `_ctypes_callproc`,
- * to avoid allocating a massive buffer on the stack.
- */
-#define CTYPES_MAX_ARGCOUNT 1024
 
 /*
  * Requirements, must be ensured by the caller:

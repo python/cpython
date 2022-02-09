@@ -1613,6 +1613,36 @@ pass
         except SyntaxError:
             self.fail("Empty line after a line continuation character is valid.")
 
+        # See issue-46091
+        s1 = r"""\
+def fib(n):
+    \
+'''Print a Fibonacci series up to n.'''
+    \
+a, b = 0, 1
+"""
+        s2 = r"""\
+def fib(n):
+    '''Print a Fibonacci series up to n.'''
+    a, b = 0, 1
+"""
+        try:
+            self.assertEqual(compile(s1, '<string>', 'exec'), compile(s2, '<string>', 'exec'))
+        except SyntaxError:
+            self.fail("Indented statement over multiple lines is valid")
+    
+    def test_continuation_bad_indentation(self): 
+        # Check that code that breaks indentation across multiple lines raises a syntax error
+
+        code = r"""\
+if x:
+    y = 1
+  \
+  foo = 1
+        """
+
+        self.assertRaises(IndentationError, exec, code)
+
     @support.cpython_only
     def test_nested_named_except_blocks(self):
         code = ""

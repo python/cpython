@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>IDLE &#8212; Python 3.11.0a0 documentation</title>
+    <title>IDLE &#8212; Python 3.11.0a4 documentation</title>
     <link rel="stylesheet" href="../_static/pydoctheme.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
 
@@ -18,7 +18,7 @@
     <script src="../_static/sidebar.js"></script>
 
     <link rel="search" type="application/opensearchdescription+xml"
-          title="Search within Python 3.11.0a0 documentation"
+          title="Search within Python 3.11.0a4 documentation"
           href="../_static/opensearch.xml"/>
     <link rel="author" title="About these documents" href="../about.html" />
     <link rel="index" title="Index" href="../genindex.html" />
@@ -71,7 +71,7 @@
 
 
     <li id="cpython-language-and-version">
-      <a href="../index.html">3.11.0a0 Documentation</a> &#187;
+      <a href="../index.html">3.11.0a4 Documentation</a> &#187;
     </li>
 
           <li class="nav-item nav-item-1"><a href="index.html" >The Python Standard Library</a> &#187;</li>
@@ -163,9 +163,11 @@ file.</p>
 </dd>
 <dt>Print Window</dt><dd><p>Print the current window to the default printer.</p>
 </dd>
-<dt>Close</dt><dd><p>Close the current window (ask to save if unsaved).</p>
+<dt>Close Window</dt><dd><p>Close the current window (if an unsaved editor, ask to save; if an unsaved
+Shell, ask to quit execution).  Calling <code class="docutils literal notranslate"><span class="pre">exit()</span></code> or <code class="docutils literal notranslate"><span class="pre">close()</span></code> in the Shell
+window also closes Shell.  If this is the only window, also exit IDLE.</p>
 </dd>
-<dt>Exit</dt><dd><p>Close all windows and quit IDLE (ask to save unsaved windows).</p>
+<dt>Exit IDLE</dt><dd><p>Close all windows and quit IDLE (ask to save unsaved edit windows).</p>
 </dd>
 </dl>
 </div>
@@ -976,7 +978,7 @@ also used for testing.</p>
 
 
     <li id="cpython-language-and-version">
-      <a href="../index.html">3.11.0a0 Documentation</a> &#187;
+      <a href="../index.html">3.11.0a4 Documentation</a> &#187;
     </li>
 
           <li class="nav-item nav-item-1"><a href="index.html" >The Python Standard Library</a> &#187;</li>
@@ -1000,7 +1002,7 @@ also used for testing.</p>
       </ul>
     </div>
     <div class="footer">
-    &copy; <a href="../copyright.html">Copyright</a> 2001-2021, Python Software Foundation.
+    &copy; <a href="../copyright.html">Copyright</a> 2001-2022, Python Software Foundation.
     <br />
 
     The Python Software Foundation is a non-profit corporation.
@@ -1008,8 +1010,8 @@ also used for testing.</p>
 <br />
     <br />
 
-    Last updated on Sep 06, 2021.
-    <a href="https://docs.python.org/3/bugs.html">Found a bug</a>?
+    Last updated on Jan 26, 2022.
+    <a href="/bugs.html">Found a bug</a>?
     <br />
 
     Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.

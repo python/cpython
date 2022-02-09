@@ -20,15 +20,6 @@ static PyMemberDef frame_memberlist[] = {
     {NULL}      /* Sentinel */
 };
 
-#if PyFrame_MAXFREELIST > 0
-static struct _Py_frame_state *
-get_frame_state(void)
-{
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    return &interp->frame;
-}
-#endif
-
 
 static PyObject *
 frame_getlocals(PyFrameObject *f, void *closure)
@@ -242,6 +233,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     break;
                 }
                 case JUMP_ABSOLUTE:
+                case JUMP_NO_INTERRUPT:
                     j = get_arg(code, i);
                     assert(j < len);
                     if (stacks[j] == UNINITIALIZED && j < i) {
@@ -625,7 +617,7 @@ frame_dealloc(PyFrameObject *f)
 {
     /* It is the responsibility of the owning generator/coroutine
      * to have cleared the generator pointer */
-    assert(f->f_frame->generator == NULL);
+    assert(!f->f_frame->is_generator);
 
     if (_PyObject_GC_IS_TRACKED(f)) {
         _PyObject_GC_UNTRACK(f);
@@ -698,8 +690,11 @@ frame_clear(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
                         "cannot clear an executing frame");
         return NULL;
     }
-    if (f->f_frame->generator) {
-        _PyGen_Finalize(f->f_frame->generator);
+    if (f->f_frame->is_generator) {
+        assert(!f->f_owns_frame);
+        size_t offset_in_gen = offsetof(PyGenObject, gi_iframe);
+        PyObject *gen = (PyObject *)(((char *)f->f_frame) - offset_in_gen);
+        _PyGen_Finalize(gen);
     }
     (void)frame_tp_clear(f);
     Py_RETURN_NONE;
@@ -775,11 +770,11 @@ PyTypeObject PyFrame_Type = {
     0,                                          /* tp_dict */
 };
 
-_Py_IDENTIFIER(__builtins__);
-
 static void
 init_frame(InterpreterFrame *frame, PyFunctionObject *func, PyObject *locals)
 {
+    /* _PyFrame_InitializeSpecials consumes reference to func */
+    Py_INCREF(func);
     PyCodeObject *code = (PyCodeObject *)func->func_code;
     _PyFrame_InitializeSpecials(frame, func, locals, code->co_nlocalsplus);
     for (Py_ssize_t i = 0; i < code->co_nlocalsplus; i++) {
@@ -790,6 +785,7 @@ init_frame(InterpreterFrame *frame, PyFunctionObject *func, PyObject *locals)
 PyFrameObject*
 _PyFrame_New_NoTrack(PyCodeObject *code)
 {
+    CALL_STAT_INC(frame_objects_created);
     int slots = code->co_nlocalsplus + code->co_stacksize;
     PyFrameObject *f = PyObject_GC_NewVar(PyFrameObject, &PyFrame_Type, slots);
     if (f == NULL) {
@@ -1076,7 +1072,7 @@ PyFrame_GetBack(PyFrameObject *frame)
 PyObject*
 _PyEval_BuiltinsFromGlobals(PyThreadState *tstate, PyObject *globals)
 {
-    PyObject *builtins = _PyDict_GetItemIdWithError(globals, &PyId___builtins__);
+    PyObject *builtins = PyDict_GetItemWithError(globals, &_Py_ID(__builtins__));
     if (builtins) {
         if (PyModule_Check(builtins)) {
             builtins = _PyModule_GetDict(builtins);

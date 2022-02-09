@@ -126,6 +126,8 @@ static PyType_Spec Example_Type_spec = {
 
 
 static PyModuleDef def_meth_state_access;
+static PyModuleDef def_nonmodule;
+static PyModuleDef def_nonmodule_with_methods;
 
 /*[clinic input]
 _testmultiphase.StateAccessType.get_defining_module
@@ -151,6 +153,24 @@ _testmultiphase_StateAccessType_get_defining_module_impl(StateAccessTypeObject *
     assert(_PyType_GetModuleByDef(Py_TYPE(self), &def_meth_state_access) == retval);
     Py_INCREF(retval);
     return retval;
+}
+
+/*[clinic input]
+_testmultiphase.StateAccessType.getmodulebydef_bad_def
+
+    cls: defining_class
+
+Test that result of _PyType_GetModuleByDef with a bad def is NULL.
+[clinic start generated code]*/
+
+static PyObject *
+_testmultiphase_StateAccessType_getmodulebydef_bad_def_impl(StateAccessTypeObject *self,
+                                                            PyTypeObject *cls)
+/*[clinic end generated code: output=64509074dfcdbd31 input=906047715ee293cd]*/
+{
+    _PyType_GetModuleByDef(Py_TYPE(self), &def_nonmodule);  // should raise
+    assert(PyErr_Occurred());
+    return NULL;
 }
 
 /*[clinic input]
@@ -249,6 +269,7 @@ _testmultiphase_StateAccessType_get_count_impl(StateAccessTypeObject *self,
 
 static PyMethodDef StateAccessType_methods[] = {
     _TESTMULTIPHASE_STATEACCESSTYPE_GET_DEFINING_MODULE_METHODDEF
+    _TESTMULTIPHASE_STATEACCESSTYPE_GETMODULEBYDEF_BAD_DEF_METHODDEF
     _TESTMULTIPHASE_STATEACCESSTYPE_GET_COUNT_METHODDEF
     _TESTMULTIPHASE_STATEACCESSTYPE_INCREMENT_COUNT_CLINIC_METHODDEF
     {
@@ -436,9 +457,6 @@ PyInit__testmultiphase(PyObject *spec)
 
 
 /**** Importing a non-module object ****/
-
-static PyModuleDef def_nonmodule;
-static PyModuleDef def_nonmodule_with_methods;
 
 /* Create a SimpleNamespace(three=3) */
 static PyObject*

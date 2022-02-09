@@ -22,6 +22,7 @@
 #define OPENSSL_NO_DEPRECATED 1
 
 #define PY_SSIZE_T_CLEAN
+#define NEEDS_PY_IDENTIFIER
 
 #include "Python.h"
 
@@ -40,8 +41,6 @@
 #define PySSL_BEGIN_ALLOW_THREADS { \
             PyThreadState *_save = NULL;  \
             PySSL_BEGIN_ALLOW_THREADS_S(_save);
-#define PySSL_BLOCK_THREADS     PySSL_END_ALLOW_THREADS_S(_save);
-#define PySSL_UNBLOCK_THREADS   PySSL_BEGIN_ALLOW_THREADS_S(_save);
 #define PySSL_END_ALLOW_THREADS PySSL_END_ALLOW_THREADS_S(_save); }
 
 

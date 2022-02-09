@@ -6,6 +6,7 @@
 */
 
 #define PY_SSIZE_T_CLEAN
+#define NEEDS_PY_IDENTIFIER
 
 #include "Python.h"
 #include "structmember.h"         // PyMemberDef
