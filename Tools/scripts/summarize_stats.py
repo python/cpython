@@ -31,47 +31,47 @@ def print_specialization_stats(name, family_stats, defines):
     total = sum(family_stats.get(kind, 0) for kind in TOTAL)
     if total == 0:
         return
-    print_title(name, 3)
-    rows = []
-    for key in sorted(family_stats):
-        if key.startswith("specialization.failure_kinds"):
-            continue
-        if key.startswith("specialization."):
+    with Section(name, 3, f"specialization stats for {name} family"):
+        rows = []
+        for key in sorted(family_stats):
+            if key.startswith("specialization.failure_kinds"):
+                continue
+            if key.startswith("specialization."):
+                label = key[len("specialization."):]
+            elif key == "execution_count":
+                label = "unquickened"
+            else:
+                label = key
+            if key not in ("specialization.success",  "specialization.failure", "specializable"):
+                rows.append((f"{label:>12}", f"{family_stats[key]:>12}", f"{100*family_stats[key]/total:0.1f}%"))
+        emit_table(("Kind", "Count", "Ratio"), rows)
+        print_title("Specialization attempts", 4)
+        total_attempts = 0
+        for key in ("specialization.success",  "specialization.failure"):
+            total_attempts += family_stats.get(key, 0)
+        rows = []
+        for key in ("specialization.success",  "specialization.failure"):
             label = key[len("specialization."):]
-        elif key == "execution_count":
-            label = "unquickened"
-        else:
-            label = key
-        if key not in ("specialization.success",  "specialization.failure", "specializable"):
-            rows.append((f"{label:>12}", f"{family_stats[key]:>12}", f"{100*family_stats[key]/total:0.1f}%"))
-    emit_table(("Kind", "Count", "Ratio"), rows)
-    print_title("Specialization attempts", 4)
-    total_attempts = 0
-    for key in ("specialization.success",  "specialization.failure"):
-        total_attempts += family_stats.get(key, 0)
-    rows = []
-    for key in ("specialization.success",  "specialization.failure"):
-        label = key[len("specialization."):]
-        label = label[0].upper() + label[1:]
-        val = family_stats.get(key, 0)
-        rows.append((label, val, f"{100*val/total_attempts:0.1f}%"))
-    emit_table(("", "Count", "Ratio"), rows)
-    total_failures = family_stats.get("specialization.failure", 0)
-    failure_kinds = [ 0 ] * 30
-    for key in family_stats:
-        if not key.startswith("specialization.failure_kind"):
-            continue
-        _, index = key[:-1].split("[")
-        index =  int(index)
-        failure_kinds[index] = family_stats[key]
-    failures = [(value, index) for (index, value) in enumerate(failure_kinds)]
-    failures.sort(reverse=True)
-    rows = []
-    for value, index in failures:
-        if not value:
-            continue
-        rows.append((kind_to_text(index, defines, name), value, f"{100*value/total_failures:0.1f}%"))
-    emit_table(("Failure kind", "Count", "Ratio"), rows)
+            label = label[0].upper() + label[1:]
+            val = family_stats.get(key, 0)
+            rows.append((label, val, f"{100*val/total_attempts:0.1f}%"))
+        emit_table(("", "Count", "Ratio"), rows)
+        total_failures = family_stats.get("specialization.failure", 0)
+        failure_kinds = [ 0 ] * 30
+        for key in family_stats:
+            if not key.startswith("specialization.failure_kind"):
+                continue
+            _, index = key[:-1].split("[")
+            index =  int(index)
+            failure_kinds[index] = family_stats[key]
+        failures = [(value, index) for (index, value) in enumerate(failure_kinds)]
+        failures.sort(reverse=True)
+        rows = []
+        for value, index in failures:
+            if not value:
+                continue
+            rows.append((kind_to_text(index, defines, name), value, f"{100*value/total_failures:0.1f}%"))
+        emit_table(("Failure kind", "Count", "Ratio"), rows)
 
 def gather_stats():
     stats = collections.Counter()
