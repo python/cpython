@@ -1400,7 +1400,7 @@ These are not used in annotations. They are building blocks for declaring types.
 
    .. deprecated-removed:: 3.11 3.13
       The keyword-argument syntax is deprecated in 3.11 and will be removed
-      in 3.13. It may also be unsupported by third-party type-checking tools.
+      in 3.13. It may also be unsupported by static type checkers.
 
    By default, all keys must be present in a ``TypedDict``. It is possible to
    override this by specifying totality.

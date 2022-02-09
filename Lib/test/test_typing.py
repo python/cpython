@@ -4316,7 +4316,8 @@ class TypedDictTests(BaseTestCase):
         self.assertEqual(Emp.__total__, True)
 
     def test_typeddict_special_keyword_names(self):
-        TD = TypedDict("TD", {'cls': type, 'self': object, 'typename': str, '_typename': int, 'fields': list, '_fields': dict})
+        with self.assertWarns(DeprecationWarning):
+            TD = TypedDict("TD", cls=type, self=object, typename=str, _typename=int, fields=list, _fields=dict)
         self.assertEqual(TD.__name__, 'TD')
         self.assertEqual(TD.__annotations__, {'cls': type, 'self': object, 'typename': str, '_typename': int, 'fields': list, '_fields': dict})
         a = TD(cls=str, self=42, typename='foo', _typename=53, fields=[('bar', tuple)], _fields={'baz', set})
