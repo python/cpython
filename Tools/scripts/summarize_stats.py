@@ -5,6 +5,7 @@ default stats folders.
 import collections
 import os.path
 import opcode
+from datetime import date
 
 if os.name == "nt":
     DEFAULT_DIR = "c:\\temp\\py_stats\\"
@@ -30,7 +31,8 @@ def print_specialization_stats(name, family_stats, defines):
     total = sum(family_stats.get(kind, 0) for kind in TOTAL)
     if total == 0:
         return
-    print(name+":")
+    print_title(name, 3)
+    rows = []
     for key in sorted(family_stats):
         if key.startswith("specialization.failure_kinds"):
             continue
@@ -38,11 +40,22 @@ def print_specialization_stats(name, family_stats, defines):
             label = key[len("specialization."):]
         elif key == "execution_count":
             label = "unquickened"
-        if key not in ("specialization.success",  "specialization.failure"):
-            print(f"{label:>12}:{family_stats[key]:>12} {100*family_stats[key]/total:0.1f}%")
+        else:
+            label = key
+        if key not in ("specialization.success",  "specialization.failure", "specializable"):
+            rows.append((f"{label:>12}", f"{family_stats[key]:>12}", f"{100*family_stats[key]/total:0.1f}%"))
+    emit_table(("Kind", "Count", "Ratio"), rows)
+    print_title("Specialization attempts", 4)
+    total_attempts = 0
+    for key in ("specialization.success",  "specialization.failure"):
+        total_attempts += family_stats.get(key, 0)
+    rows = []
     for key in ("specialization.success",  "specialization.failure"):
         label = key[len("specialization."):]
-        print(f"  {label}:{family_stats.get(key, 0):>12}")
+        label = label[0].upper() + label[1:]
+        val = family_stats.get(key, 0)
+        rows.append((label, val, f"{100*val/total_attempts:0.1f}%"))
+    emit_table(("", "Count", "Ratio"), rows)
     total_failures = family_stats.get("specialization.failure", 0)
     failure_kinds = [ 0 ] * 30
     for key in family_stats:
@@ -53,10 +66,12 @@ def print_specialization_stats(name, family_stats, defines):
         failure_kinds[index] = family_stats[key]
     failures = [(value, index) for (index, value) in enumerate(failure_kinds)]
     failures.sort(reverse=True)
+    rows = []
     for value, index in failures:
         if not value:
             continue
-        print(f"    {kind_to_text(index, defines, name)}: {value:>8} {100*value/total_failures:0.1f}%")
+        rows.append((kind_to_text(index, defines, name), value, f"{100*value/total_failures:0.1f}%"))
+    emit_table(("Failure kind", "Count", "Ratio"), rows)
 
 def gather_stats():
     stats = collections.Counter()
@@ -131,65 +146,116 @@ def categorized_counts(opcode_stats):
             basic += count
     return basic, not_specialized, specialized
 
-def title(name):
-    print(name + ":")
+def print_title(name, level=2):
+    print("#"*level, name)
+    print()
+
+class Section:
+
+    def __init__(self, title, level=2, summary=None):
+        self.title = title
+        self.level = level
+        if summary is None:
+            self.summary = title.lower()
+        else:
+            self.summary = summary
+
+    def __enter__(self):
+        print_title(self.title, self.level)
+        print("<details>")
+        print("<summary>", self.summary, "</summary>")
+        print()
+        return self
+
+    def __exit__(*args):
+        print()
+        print("</details>")
+        print()
+
+def emit_table(header, rows):
+    width = len(header)
+    print("|", " | ".join(header), "|")
+    print("|", " | ".join(["---"]*width), "|")
+    for row in rows:
+        if width is not None and len(row) != width:
+            raise ValueError("Wrong number of elements in row '" + str(rows) + "'")
+        print("|", " | ".join(str(i) for i in row), "|")
+    print()
 
 def emit_execution_counts(opcode_stats, total):
-    title("Execution counts")
-    counts = []
-    for i, opcode_stat in enumerate(opcode_stats):
-        if "execution_count" in opcode_stat:
-            count = opcode_stat['execution_count']
-            miss = 0
-            if "specializable" not in opcode_stat:
-                miss = opcode_stat.get("specialization.miss")
-            counts.append((count, opname[i], miss))
-    counts.sort(reverse=True)
-    cummulative = 0
-    for (count, name, miss) in counts:
-        cummulative += count
-        print(f"{name}: {count} {100*count/total:0.1f}% {100*cummulative/total:0.1f}%")
-        if miss:
-            print(f"    Misses: {miss} {100*miss/count:0.1f}%")
+    with Section("Execution counts", summary="execution counts for all instructions"):
+        counts = []
+        for i, opcode_stat in enumerate(opcode_stats):
+            if "execution_count" in opcode_stat:
+                count = opcode_stat['execution_count']
+                miss = 0
+                if "specializable" not in opcode_stat:
+                    miss = opcode_stat.get("specialization.miss")
+                counts.append((count, opname[i], miss))
+        counts.sort(reverse=True)
+        cumulative = 0
+        rows = []
+        for (count, name, miss) in counts:
+            cumulative += count
+            if miss:
+                miss =  f"{100*miss/count:0.1f}%"
+            else:
+                miss = ""
+            rows.append((name, count, f"{100*count/total:0.1f}%",
+                        f"{100*cumulative/total:0.1f}%", miss))
+        emit_table(
+            ("Name", "Count", "Self", "Cumulative", "Miss ratio"),
+            rows
+        )
+
 
 def emit_specialization_stats(opcode_stats):
     spec_path = os.path.join(os.path.dirname(__file__), "../../Python/specialize.c")
     with open(spec_path) as spec_src:
         defines = parse_kinds(spec_src)
-    title("Specialization stats")
-    for i, opcode_stat in enumerate(opcode_stats):
-        name = opname[i]
-        print_specialization_stats(name, opcode_stat, defines)
+    with Section("Specialization stats", summary="specialization stats by family"):
+        for i, opcode_stat in enumerate(opcode_stats):
+            name = opname[i]
+            print_specialization_stats(name, opcode_stat, defines)
 
 def emit_specialization_overview(opcode_stats, total):
     basic, not_specialized, specialized = categorized_counts(opcode_stats)
-    title("Specialization effectiveness")
-    print(f"    Base instructions {basic} {basic*100/total:0.1f}%")
-    print(f"    Not specialized {not_specialized} {not_specialized*100/total:0.1f}%")
-    print(f"    Specialized {specialized} {specialized*100/total:0.1f}%")
+    with Section("Specialization effectiveness"):
+        emit_table(("Instructions", "Count", "Ratio"), (
+            ("Basic", basic, f"{basic*100/total:0.1f}%"),
+            ("Not specialized", not_specialized, f"{not_specialized*100/total:0.1f}%"),
+            ("Specialized", specialized, f"{specialized*100/total:0.1f}%"),
+        ))
 
 def emit_call_stats(stats):
-    title("Call stats")
-    total = 0
-    for key, value in stats.items():
-        if "Calls to" in key:
-            total += value
-    for key, value in stats.items():
-        if "Calls to" in key:
-            print(f"    {key}: {value} {100*value/total:0.1f}%")
-    for key, value in stats.items():
-        if key.startswith("Frame"):
-            print(f"    {key}: {value} {100*value/total:0.1f}%")
+    with Section("Call stats", summary="Inlined calls and frame stats"):
+        total = 0
+        for key, value in stats.items():
+            if "Calls to" in key:
+                total += value
+        rows = []
+        for key, value in stats.items():
+            if "Calls to" in key:
+                rows.append((key, value, f"{100*value/total:0.1f}%"))
+        for key, value in stats.items():
+            if key.startswith("Frame"):
+                rows.append((key, value, f"{100*value/total:0.1f}%"))
+        emit_table(("", "Count", "Ratio"), rows)
 
 def emit_object_stats(stats):
-    title("Object stats")
-    total = stats.get("Object new values")
-    for key, value in stats.items():
-        if key.startswith("Object"):
-            if "materialize" in key:
-                print(f"    {key}: {value} {100*value/total:0.1f}%")
-            else:
-                print(f"    {key}: {value}")
+    with Section("Object stats", summary="allocations, frees and dict materializatons"):
+        total = stats.get("Object new values")
+        rows = []
+        for key, value in stats.items():
+            if key.startswith("Object"):
+                if "materialize" in key:
+                    materialize = f"{100*value/total:0.1f}%"
+                else:
+                    materialize = ""
+                label = key[6:].strip()
+                label = label[0].upper() + label[1:]
+                rows.append((label, value, materialize))
+        emit_table(("",  "Count", "Ratio"), rows)
 
 def main():
     stats = gather_stats()
@@ -203,6 +269,8 @@ def main():
     emit_specialization_overview(opcode_stats, total)
     emit_call_stats(stats)
     emit_object_stats(stats)
+    print("---")
+    print("Stats gathered on:", date.today())
 
 if __name__ == "__main__":
     main()
