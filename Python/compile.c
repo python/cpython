@@ -8375,21 +8375,22 @@ fold_tuple_on_constants(struct compiler *c,
 #define VISITED (-1)
 
 // Replace an arbitrary run of SWAPs and NOPs with an optimal one that has the
-// same effect. Return the number of instructions that were optimized.
+// same effect.
 static int
-swaptimize(basicblock *block, int ix)
+swaptimize(basicblock *block, int *ix)
 {
     // NOTE: "./python -m test test_patma" serves as a good, quick stress test
     // for this function. Make sure to blow away cached *.pyc files first!
-    assert(ix < block->b_iused);
-    struct instr *instructions = &block->b_instr[ix];
+    assert(*ix < block->b_iused);
+    struct instr *instructions = &block->b_instr[*ix];
     // Find the length of the current sequence of SWAPs and NOPs, and record the
     // maximum depth of the stack manipulations:
     assert(instructions[0].i_opcode == SWAP);
     int depth = instructions[0].i_oparg;
     int len = 0;
     int more = false;
-    while (++len < block->b_iused - ix) {
+    int limit = block->b_iused - *ix;
+    while (++len < limit) {
         int opcode = instructions[len].i_opcode;
         if (opcode == SWAP) {
             depth = Py_MAX(depth, instructions[len].i_oparg);
@@ -8405,6 +8406,10 @@ swaptimize(basicblock *block, int ix)
     }
     // Create an array with elements {0, 1, 2, ..., depth - 1}:
     int *stack = PyMem_Malloc(depth * sizeof(int));
+    if (stack == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
     for (int i = 0; i < depth; i++) {
         stack[i] = i;
     }
@@ -8462,9 +8467,9 @@ swaptimize(basicblock *block, int ix)
     while (0 <= current) {
         instructions[current--].i_opcode = NOP;
     }
-    // Done! Return the number of optimized instructions:
     PyMem_Free(stack);
-    return len - 1;
+    *ix += len - 1;
+    return 0;
 }
 
 // Attempt to eliminate jumps to jumps by updating inst to jump to
@@ -8706,7 +8711,9 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                     inst->i_opcode = NOP;
                     break;
                 }
-                i += swaptimize(bb, i);
+                if (swaptimize(bb, &i)) {
+                    goto error;
+                }
                 break;
             case KW_NAMES:
                 break;
