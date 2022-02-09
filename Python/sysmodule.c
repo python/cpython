@@ -20,7 +20,9 @@ Data members:
 #include "pycore_code.h"          // _Py_QuickenedCount
 #include "pycore_frame.h"         // _PyInterpreterFrame
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
-#include "pycore_mimalloc.h"      // MI_SECURE, MI_DEBUG
+#ifdef WITH_MIMALLOC
+#  include "pycore_mimalloc.h"    // MI_SECURE, MI_DEBUG
+#endif
 #include "pycore_namespace.h"     // _PyNamespace_New()
 #include "pycore_object.h"        // _PyObject_IS_GC()
 #include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
@@ -2002,8 +2004,13 @@ make_malloc_info(void)
 #endif
     PyStructSequence_SET_ITEM(malloc_info, pos++, _Py_NewRef(v));
 
+#ifdef WITH_MIMALLOC
     SetIntItem(MI_SECURE);
     SetIntItem(MI_DEBUG);
+#else
+    SetIntItem(-1);
+    SetIntItem(-1);
+#endif
 
 #undef SetIntItem
 
