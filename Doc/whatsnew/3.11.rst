@@ -322,6 +322,10 @@ sys
   (equivalent to ``sys.exc_info()[1]``).
   (Contributed by Irit Katriel in :issue:`46328`.)
 
+* Add :func:`sys.is_interned` which tests the given string is interned.
+  (Contributed by Inada Naoki in :issue:`46688`.)
+
+
 threading
 ---------
 

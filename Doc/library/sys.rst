@@ -1017,6 +1017,13 @@ always available.
    value of :func:`intern` around to benefit from it.
 
 
+.. function:: intern(string)
+
+   Return ``True`` if *string* is interned. Otherwise, return ``False``.
+
+   .. versionadded: 3.11
+
+
 .. function:: is_finalizing()
 
    Return :const:`True` if the Python interpreter is

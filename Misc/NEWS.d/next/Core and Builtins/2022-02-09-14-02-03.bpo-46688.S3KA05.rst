@@ -1,0 +1,1 @@
+Add ``sys.is_interned(s)`` to test the given Unicode is interned.

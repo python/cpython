@@ -637,9 +637,12 @@ class SysModuleTest(unittest.TestCase):
         INTERN_NUMRUNS += 1
         self.assertRaises(TypeError, sys.intern)
         s = "never interned before" + str(INTERN_NUMRUNS)
-        self.assertTrue(sys.intern(s) is s)
+        self.assertFalse(sys.is_interned(s))
+        self.assertIs(sys.intern(s), s)
+        self.assertTrue(sys.is_interned(s))
         s2 = s.swapcase().swapcase()
-        self.assertTrue(sys.intern(s2) is s)
+        self.assertFalse(s2)
+        self.assertIs(sys.intern(s2), s)
 
         # Subclasses of string can't be interned, because they
         # provide too much opportunity for insane things to happen.

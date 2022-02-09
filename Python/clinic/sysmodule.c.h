@@ -263,6 +263,38 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(sys_is_interned__doc__,
+"is_interned($module, string, /)\n"
+"--\n"
+"\n"
+"Test if the given string is interned.");
+
+#define SYS_IS_INTERNED_METHODDEF    \
+    {"is_interned", (PyCFunction)sys_is_interned, METH_O, sys_is_interned__doc__},
+
+static PyObject *
+sys_is_interned_impl(PyObject *module, PyObject *s);
+
+static PyObject *
+sys_is_interned(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyObject *s;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("is_interned", "argument", "str", arg);
+        goto exit;
+    }
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    s = arg;
+    return_value = sys_is_interned_impl(module, s);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(sys_gettrace__doc__,
 "gettrace($module, /)\n"
 "--\n"
@@ -1014,4 +1046,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=60756bc6f683e0c8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0f15f151d7a1a83d input=a9049054013a1b77]*/
