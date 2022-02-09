@@ -181,7 +181,8 @@ def _type_check(arg, msg, is_argument=True, module=None, *, allow_special_forms=
         return arg
     if isinstance(arg, _SpecialForm) or arg in (Generic, Protocol):
         raise TypeError(f"Plain {arg} is not valid as type argument")
-    if isinstance(arg, (type, TypeVar, ForwardRef, types.UnionType, ParamSpec)):
+    if isinstance(arg, (type, TypeVar, ForwardRef, types.UnionType, ParamSpec,
+                        ParamSpecArgs, ParamSpecKwargs)):
         return arg
     if not callable(arg):
         raise TypeError(f"{msg} Got {arg!r:.100}.")
