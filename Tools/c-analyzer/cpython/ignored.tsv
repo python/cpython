@@ -1,7 +1,10 @@
 filename	funcname	name	reason
 #???	-	somevar	???
 
-# XXX The analyzer should have ignored these (forward/extern references):
+##################################
+# forward/extern references
+# XXX The analyzer should have ignored these.
+
 Include/py_curses.h	-	PyCurses_API	-
 Include/pydecimal.h	-	_decimal_api	-
 Modules/_blake2/blake2module.c	-	blake2b_type_spec	-
@@ -60,7 +63,6 @@ Python/importdl.h	-	_PyImport_DynLoadFiletab	-
 
 ##################################
 # test code
-# []
 
 Modules/_ctypes/_ctypes_test.c	-	_ctypes_test_slots	-
 Modules/_ctypes/_ctypes_test.c	-	_ctypes_testmodule	-
@@ -255,14 +257,14 @@ Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	AST_LITERAL_EVAL_INITIALIZED
 
 
 ##################################
-# temporary whitelist - should be const
+# should be const
+# XXX Make them const.
 
 # These are all variables that we will be leaving global.
 
 #-----------------------
 # keywords for PyArg_ParseTupleAndKeywords()
 # "static char *name[]" -> "static const char * const name[]"
-# []
 
 Modules/cjkcodecs/multibytecodec.c	-	incnewkwarglist	-
 Modules/cjkcodecs/multibytecodec.c	-	streamkwarglist	-
@@ -385,7 +387,6 @@ Objects/exceptions.c	AttributeError_init	kwlist	-
 
 #-----------------------
 # PyModuleDef
-# []
 
 Modules/_multiprocessing/posixshmem.c	-	_posixshmemmodule	-
 Modules/_sqlite/module.h	-	_sqlite3module	-
@@ -399,7 +400,6 @@ Modules/xxlimited_35.c	-	xxmodule	-
 
 #-----------------------
 # PyModuleDef_Slot
-# []
 
 Modules/_abc.c	-	_abcmodule_slots	-
 Modules/_blake2/blake2module.c	-	_blake2_slots	-
@@ -482,7 +482,6 @@ Python/marshal.c	-	marshalmodule_slots	-
 
 #-----------------------
 # PyMethodDef and PyMethodDef[], for static types and modules
-# []
 
 Modules/_abc.c	-	_abcmodule_methods	-
 Modules/_abc.c	-	_destroy_def	-
@@ -815,7 +814,6 @@ Python/traceback.c	-	tb_methods	-
 
 #-----------------------
 # PyMemberDef[], for static types and strucseq
-# []
 
 Modules/_bz2module.c	-	BZ2Decompressor_members	-
 Modules/_collectionsmodule.c	-	defdict_members	-
@@ -911,9 +909,8 @@ Python/traceback.c	-	tb_memberlist	-
 
 #-----------------------
 # for static types
-# []
 
-# PyNumberMethods  []
+# PyNumberMethods
 Modules/_collectionsmodule.c	-	deque_as_number	-
 Modules/_collectionsmodule.c	-	defdict_as_number	-
 Modules/_ctypes/_ctypes.c	-	PyCFuncPtr_as_number	-
@@ -946,7 +943,7 @@ Objects/unicodeobject.c	-	unicode_as_number	-
 Objects/unionobject.c	-	union_as_number	-
 Objects/weakrefobject.c	-	proxy_as_number	-
 
-# PySequenceMethods  []
+# PySequenceMethods
 Modules/arraymodule.c	-	array_as_sequence	-
 Modules/_collectionsmodule.c	-	deque_as_sequence	-
 Modules/_ctypes/_ctypes.c	-	CDataType_as_sequence	-
@@ -971,7 +968,7 @@ Objects/weakrefobject.c	-	proxy_as_sequence	-
 Python/context.c	-	PyContext_as_sequence	-
 Python/hamt.c	-	PyHamt_as_sequence	-
 
-# PyMappingMethods  []
+# PyMappingMethods
 Modules/arraymodule.c	-	array_as_mapping	-
 Modules/_ctypes/_ctypes.c	-	Array_as_mapping	-
 Modules/_ctypes/_ctypes.c	-	Pointer_as_mapping	-
@@ -996,7 +993,7 @@ Python/context.c	-	PyContext_as_mapping	-
 Python/hamt.c	-	PyHamtIterator_as_mapping	-
 Python/hamt.c	-	PyHamt_as_mapping	-
 
-# PyAsyncMethods  []
+# PyAsyncMethods
 Modules/_asynciomodule.c	-	FutureIterType_as_async	-
 Modules/_asynciomodule.c	-	FutureType_as_async	-
 Objects/genobject.c	-	async_gen_as_async	-
@@ -1006,7 +1003,7 @@ Objects/genobject.c	-	coro_as_async	-
 Objects/genobject.c	-	gen_as_async	-
 Objects/iterobject.c	-	anextawaitable_as_async	-
 
-# PyBufferProcs  []
+# PyBufferProcs
 Modules/arraymodule.c	-	array_as_buffer	-
 Modules/_ctypes/_ctypes.c	-	PyCData_as_buffer	-
 Modules/_io/bytesio.c	-	bytesiobuf_as_buffer	-
@@ -1016,7 +1013,7 @@ Objects/bytesobject.c	-	bytes_as_buffer	-
 Objects/memoryobject.c	-	memory_as_buffer	-
 Objects/picklebufobject.c	-	picklebuf_as_buffer	-
 
-# PyGetSetDef  []
+# PyGetSetDef
 Modules/_asynciomodule.c	-	FutureType_getsetlist	-
 Modules/_asynciomodule.c	-	TaskStepMethWrapper_getsetlist	-
 Modules/_asynciomodule.c	-	TaskType_getsetlist	-
@@ -1125,9 +1122,8 @@ Python/traceback.c	-	tb_getsetters	-
 
 #-----------------------
 # for heap types
-# []
 
-# PyType_Slot  []
+# PyType_Slot
 Modules/_abc.c	-	_abc_data_type_spec_slots	-
 Modules/_blake2/blake2b_impl.c	-	blake2b_type_slots	-
 Modules/_blake2/blake2s_impl.c	-	blake2s_type_slots	-
@@ -1223,7 +1219,7 @@ Modules/zlibmodule.c	-	Comptype_slots	-
 Modules/zlibmodule.c	-	Decomptype_slots	-
 Python/Python-ast.c	-	AST_type_slots	-
 
-# PyType_Spec  []
+# PyType_Spec
 Modules/_abc.c	-	_abc_data_type_spec	-
 Modules/_blake2/blake2b_impl.c	-	blake2b_type_spec	-
 Modules/_blake2/blake2s_impl.c	-	blake2s_type_spec	-
@@ -1324,9 +1320,8 @@ Python/Python-ast.c	-	AST_type_spec	-
 
 #-----------------------
 # for structseq
-# []
 
-# PyStructSequence_Field[]  []
+# PyStructSequence_Field[]
 Modules/_cursesmodule.c	-	ncurses_version_fields	-
 Modules/grpmodule.c	-	struct_group_type_fields	-
 Modules/_lsprof.c	-	profiler_entry_fields	-
@@ -1354,7 +1349,7 @@ Python/sysmodule.c	-	flags_fields	-
 Python/sysmodule.c	-	version_info_fields	-
 Python/thread.c	-	threadinfo_fields	-
 
-# PyStructSequence_Desc  []
+# PyStructSequence_Desc
 Modules/_cursesmodule.c	-	ncurses_version_desc	-
 Modules/grpmodule.c	-	struct_group_type_desc	-
 Modules/_lsprof.c	-	profiler_entry_desc	-
@@ -1384,7 +1379,6 @@ Python/thread.c	-	threadinfo_desc	-
 
 #-----------------------
 # other vars that are actually constant
-# []
 
 Modules/_csv.c	-	quote_styles	-
 Modules/_ctypes/cfield.c	-	ffi_type_double	-
