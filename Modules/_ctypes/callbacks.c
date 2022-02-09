@@ -156,7 +156,6 @@ static void _CallPythonObject(void *mem,
                               void **pArgs)
 {
     PyObject *result = NULL;
-    PyObject **args = NULL;
     Py_ssize_t i = 0, j = 0, nargs = 0;
     PyObject *error_object = NULL;
     int *space;
@@ -165,11 +164,9 @@ static void _CallPythonObject(void *mem,
     assert(PyTuple_Check(converters));
     nargs = PyTuple_GET_SIZE(converters);
     assert(nargs <= CTYPES_MAX_ARGCOUNT);
+    PyObject **args = NULL;
     if (nargs > 0) {
         args = alloca(nargs * sizeof(PyObject *));
-    }
-    else {
-        args = NULL;
     }
 
     PyObject **cnvs = PySequence_Fast_ITEMS(converters);
