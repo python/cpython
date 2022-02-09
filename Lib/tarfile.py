@@ -2493,7 +2493,9 @@ def is_tarfile(name):
     """
     try:
         if hasattr(name, "read"):
+            pos = name.tell()
             t = open(fileobj=name)
+            name.seek(pos)
         else:
             t = open(name)
         t.close()
