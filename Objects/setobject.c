@@ -770,7 +770,6 @@ static PyObject *setiter_iternext(setiterobject *si);
 static PyObject *
 setiter_reduce(setiterobject *si, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(iter);
     /* copy the iterator state */
     setiterobject tmp = *si;
     Py_XINCREF(tmp.si_set);
@@ -781,7 +780,7 @@ setiter_reduce(setiterobject *si, PyObject *Py_UNUSED(ignored))
     if (list == NULL) {
         return NULL;
     }
-    return Py_BuildValue("N(N)", _PyEval_GetBuiltinId(&PyId_iter), list);
+    return Py_BuildValue("N(N)", _PyEval_GetBuiltin(&_Py_ID(iter)), list);
 }
 
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
@@ -1001,7 +1000,7 @@ make_new_frozenset(PyTypeObject *type, PyObject *iterable)
         Py_INCREF(iterable);
         return iterable;
     }
-    return make_new_set((PyTypeObject *)type, iterable);
+    return make_new_set(type, iterable);
 }
 
 static PyObject *
@@ -1036,7 +1035,7 @@ frozenset_vectorcall(PyObject *type, PyObject * const*args,
     }
 
     PyObject *iterable = (nargs ? args[0] : NULL);
-    return make_new_frozenset((PyTypeObject *)type, iterable);
+    return make_new_frozenset(_PyType_CAST(type), iterable);
 }
 
 static PyObject *
@@ -1906,7 +1905,6 @@ static PyObject *
 set_reduce(PySetObject *so, PyObject *Py_UNUSED(ignored))
 {
     PyObject *keys=NULL, *args=NULL, *result=NULL, *dict=NULL;
-    _Py_IDENTIFIER(__dict__);
 
     keys = PySequence_List((PyObject *)so);
     if (keys == NULL)
@@ -1914,7 +1912,7 @@ set_reduce(PySetObject *so, PyObject *Py_UNUSED(ignored))
     args = PyTuple_Pack(1, keys);
     if (args == NULL)
         goto done;
-    if (_PyObject_LookupAttrId((PyObject *)so, &PyId___dict__, &dict) < 0) {
+    if (_PyObject_LookupAttr((PyObject *)so, &_Py_ID(__dict__), &dict) < 0) {
         goto done;
     }
     if (dict == NULL) {
@@ -1974,10 +1972,10 @@ set_vectorcall(PyObject *type, PyObject * const*args,
     }
 
     if (nargs) {
-        return make_new_set((PyTypeObject *)type, args[0]);
+        return make_new_set(_PyType_CAST(type), args[0]);
     }
 
-    return make_new_set((PyTypeObject *)type, NULL);
+    return make_new_set(_PyType_CAST(type), NULL);
 }
 
 static PySequenceMethods set_as_sequence = {

@@ -2065,8 +2065,6 @@ static PyMemberDef s_members[] = {
     {NULL}  /* sentinel */
 };
 
-#define OFF(x) offsetof(PyStructObject, x)
-
 static PyGetSetDef s_getsetlist[] = {
     {"format", (getter)s_get_format, (setter)NULL, "struct format string", NULL},
     {"size", (getter)s_get_size, (setter)NULL, "struct size in bytes", NULL},

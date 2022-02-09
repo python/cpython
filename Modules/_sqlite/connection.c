@@ -21,6 +21,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#define NEEDS_PY_IDENTIFIER
+
 #include "module.h"
 #include "structmember.h"         // PyMemberDef
 #include "connection.h"
@@ -272,28 +274,6 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
 
     self->initialized = 1;
     return 0;
-}
-
-static void
-pysqlite_do_all_statements(pysqlite_Connection *self)
-{
-    // Reset all statements
-    sqlite3_stmt *stmt = NULL;
-    while ((stmt = sqlite3_next_stmt(self->db, stmt))) {
-        if (sqlite3_stmt_busy(stmt)) {
-            (void)sqlite3_reset(stmt);
-        }
-    }
-
-    // Reset all cursors
-    for (int i = 0; i < PyList_Size(self->cursors); i++) {
-        PyObject *weakref = PyList_GetItem(self->cursors, i);
-        PyObject *object = PyWeakref_GetObject(weakref);
-        if (object != Py_None) {
-            pysqlite_Cursor *cursor = (pysqlite_Cursor *)object;
-            cursor->reset = 1;
-        }
-    }
 }
 
 #define VISIT_CALLBACK_CONTEXT(ctx) \
@@ -549,8 +529,6 @@ pysqlite_connection_rollback_impl(pysqlite_Connection *self)
     }
 
     if (!sqlite3_get_autocommit(self->db)) {
-        pysqlite_do_all_statements(self);
-
         int rc;
 
         Py_BEGIN_ALLOW_THREADS
@@ -583,7 +561,11 @@ _pysqlite_set_result(sqlite3_context* context, PyObject* py_val)
             return -1;
         sqlite3_result_int64(context, value);
     } else if (PyFloat_Check(py_val)) {
-        sqlite3_result_double(context, PyFloat_AsDouble(py_val));
+        double value = PyFloat_AsDouble(py_val);
+        if (value == -1 && PyErr_Occurred()) {
+            return -1;
+        }
+        sqlite3_result_double(context, value);
     } else if (PyUnicode_Check(py_val)) {
         Py_ssize_t sz;
         const char *str = PyUnicode_AsUTF8AndSize(py_val, &sz);

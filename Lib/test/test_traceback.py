@@ -9,7 +9,8 @@ import unittest
 import re
 from test import support
 from test.support import (Error, captured_output, cpython_only, ALWAYS_EQ,
-                          requires_debug_ranges, has_no_debug_ranges)
+                          requires_debug_ranges, has_no_debug_ranges,
+                          requires_subprocess)
 from test.support.os_helper import TESTFN, unlink
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
@@ -18,6 +19,7 @@ import textwrap
 import traceback
 from functools import partial
 
+MODULE_PREFIX = f'{__name__}.' if __name__ == '__main__' else ''
 
 test_code = namedtuple('code', ['co_filename', 'co_name'])
 test_code.co_positions = lambda _: iter([(6, 6, 0, 0)])
@@ -202,6 +204,7 @@ class TracebackCases(unittest.TestCase):
             str_name = '.'.join([X.__module__, X.__qualname__])
         self.assertEqual(err[0], "%s: %s\n" % (str_name, str_value))
 
+    @requires_subprocess()
     def test_encoded_file(self):
         # Test that tracebacks are correctly printed for encoded source files:
         # - correct line number (Issue2384)
@@ -457,6 +460,42 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
         result_lines = self.get_exception(f_with_multiline)
         self.assertEqual(result_lines, expected_f.splitlines())
 
+    def test_caret_multiline_expression_syntax_error(self):
+        # Make sure an expression spanning multiple lines that has
+        # a syntax error is correctly marked with carets.
+        code = textwrap.dedent("""
+        def foo(*args, **kwargs):
+            pass
+
+        a, b, c = 1, 2, 3
+
+        foo(a, z
+                for z in
+                    range(10), b, c)
+        """)
+
+        def f_with_multiline():
+            # Need to defer the compilation until in self.get_exception(..)
+            return compile(code, "?", "exec")
+
+        lineno_f = f_with_multiline.__code__.co_firstlineno
+
+        expected_f = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ^^^^^^^^^^\n'
+            f'  File "{__file__}", line {lineno_f+2}, in f_with_multiline\n'
+            '    return compile(code, "?", "exec")\n'
+            '           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
+            '  File "?", line 7\n'
+            '    foo(a, z\n'
+            '           ^'
+            )
+
+        result_lines = self.get_exception(f_with_multiline)
+        self.assertEqual(result_lines, expected_f.splitlines())
+
     def test_caret_multiline_expression_bin_op(self):
         # Make sure no carets are printed for expressions spanning multiple
         # lines.
@@ -669,16 +708,14 @@ class CPythonTracebackErrorCaretTests(TracebackErrorLocationCaretTests):
     Same set of tests as above but with Python's internal traceback printing.
     """
     def get_exception(self, callable):
-        from _testcapi import traceback_print
+        from _testcapi import exception_print
         try:
             callable()
             self.fail("No exception thrown.")
-        except:
-            type_, value, tb = sys.exc_info()
-
-            file_ = StringIO()
-            traceback_print(tb, file_)
-            return file_.getvalue().splitlines()
+        except Exception as e:
+            with captured_output("stderr") as tbstderr:
+                exception_print(e)
+            return tbstderr.getvalue().splitlines()[:-1]
 
     callable_line = get_exception.__code__.co_firstlineno + 3
 
@@ -1312,7 +1349,7 @@ class BaseExceptionReportingTests:
         str_value = 'I am X'
         str_name = '.'.join([A.B.X.__module__, A.B.X.__qualname__])
         exp = "%s: %s\n" % (str_name, str_value)
-        self.assertEqual(exp, err)
+        self.assertEqual(exp, MODULE_PREFIX + err)
 
     def test_exception_modulename(self):
         class X(Exception):
@@ -1349,7 +1386,7 @@ class BaseExceptionReportingTests:
         err = self.get_report(X())
         str_value = '<exception str() failed>'
         str_name = '.'.join([X.__module__, X.__qualname__])
-        self.assertEqual(err, f"{str_name}: {str_value}\n")
+        self.assertEqual(MODULE_PREFIX + err, f"{str_name}: {str_value}\n")
 
 
     # #### Exception Groups ####

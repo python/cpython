@@ -18,8 +18,14 @@
  / ftp://squirl.nightmare.com/pub/python/python-ext.
 */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+#define NEEDS_PY_IDENTIFIER
+
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
+#include "pycore_fileutils.h"     // _Py_stat_struct
 #include "structmember.h"         // PyMemberDef
 #include <stddef.h>               // offsetof()
 
