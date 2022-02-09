@@ -12,15 +12,9 @@ Floating Point Arithmetic:  Issues and Limitations
 
 
 Floating-point numbers are represented in computer hardware as base 2 (binary)
-fractions.  For example, the decimal fraction ::
-
-   0.125
-
-has value 1/10 + 2/100 + 5/1000, and in the same way the binary fraction ::
-
-   0.001
-
-has value 0/2 + 0/4 + 1/8.  These two fractions have identical values, the only
+fractions.  For example, the **decimal** fraction ``0.125``
+has value 1/10 + 2/100 + 5/1000, and in the same way the **binary** fraction ``0.001``
+has value 0/2 + 0/4 + 1/8. These two fractions have identical values, the only
 real difference being that the first is written in base 10 fractional notation,
 and the second in base 2.
 

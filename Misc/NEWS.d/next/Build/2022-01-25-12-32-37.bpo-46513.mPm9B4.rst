@@ -1,2 +1,0 @@
-:program:`configure` no longer uses ``AC_C_CHAR_UNSIGNED`` macro and
-``pyconfig.h`` no longer defines reserved symbol ``__CHAR_UNSIGNED__``.

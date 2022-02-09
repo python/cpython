@@ -489,6 +489,9 @@ class NonCallableMock(Base):
 
     def _mock_add_spec(self, spec, spec_set, _spec_as_instance=False,
                        _eat_self=False):
+        if _is_instance_mock(spec):
+            raise InvalidSpecError(f'Cannot spec a Mock object. [object={spec!r}]')
+
         _spec_class = None
         _spec_signature = None
         _spec_asyncs = []
@@ -2789,6 +2792,7 @@ FunctionTypes = (
 
 
 file_spec = None
+open_spec = None
 
 
 def _to_stream(read_data):
@@ -2845,8 +2849,12 @@ def mock_open(mock=None, read_data=''):
         import _io
         file_spec = list(set(dir(_io.TextIOWrapper)).union(set(dir(_io.BytesIO))))
 
+    global open_spec
+    if open_spec is None:
+        import _io
+        open_spec = list(set(dir(_io.open)))
     if mock is None:
-        mock = MagicMock(name='open', spec=open)
+        mock = MagicMock(name='open', spec=open_spec)
 
     handle = MagicMock(spec=file_spec)
     handle.__enter__.return_value = handle

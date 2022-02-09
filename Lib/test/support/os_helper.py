@@ -502,7 +502,7 @@ class FakePath:
 def fd_count():
     """Count the number of open file descriptors.
     """
-    if sys.platform.startswith(('linux', 'freebsd')):
+    if sys.platform.startswith(('linux', 'freebsd', 'emscripten')):
         try:
             names = os.listdir("/proc/self/fd")
             # Subtract one because listdir() internally opens a file

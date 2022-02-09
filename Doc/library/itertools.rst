@@ -893,6 +893,12 @@ which incur interpreter overhead.
            yield from it
        return true_iterator(), remainder_iterator()
 
+   def subslices(seq):
+       "Return all contiguous non-empty subslices of a sequence"
+       # subslices('ABCD') --> A AB ABC ABCD B BC BCD C CD D
+       slices = starmap(slice, combinations(range(len(seq) + 1), 2))
+       return map(operator.getitem, repeat(seq), slices)
+
    def powerset(iterable):
        "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
        s = list(iterable)
@@ -1187,6 +1193,9 @@ which incur interpreter overhead.
     'ABC'
     >>> ''.join(remainder)
     'dEfGhI'
+
+    >>> list(subslices('ABCD'))
+    ['A', 'AB', 'ABC', 'ABCD', 'B', 'BC', 'BCD', 'C', 'CD', 'D']
 
     >>> list(powerset([1,2,3]))
     [(), (1,), (2,), (3,), (1, 2), (1, 3), (2, 3), (1, 2, 3)]

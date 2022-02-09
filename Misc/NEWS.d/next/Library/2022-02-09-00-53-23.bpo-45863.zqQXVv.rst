@@ -1,0 +1,1 @@
+When the :mod:`tarfile` module creates a pax format archive, it will put an integer representation of timestamps in the ustar header (if possible) for the benefit of older unarchivers, in addition to the existing full-precision timestamps in the pax extended header.
