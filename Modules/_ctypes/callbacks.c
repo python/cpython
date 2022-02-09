@@ -165,16 +165,12 @@ static void _CallPythonObject(void *mem,
         goto Done;
     }
 
-    PyObject *args_stack[_PY_FASTCALL_SMALL_STACK];
-    if (nargs <= _PY_FASTCALL_SMALL_STACK) {
-        args = args_stack;
+    assert(nargs <= CTYPES_MAX_ARGCOUNT);
+    if (nargs == 0) {
+        args = NULL;
     }
     else {
-        args = (PyObject **)alloca(nargs * sizeof(PyObject *));
-        if (args == NULL) {
-            PyErr_NoMemory();
-            goto Done;
-        }
+        args = alloca(nargs * sizeof(PyObject *));
     }
 
     PyObject **cnvs = PySequence_Fast_ITEMS(converters);
