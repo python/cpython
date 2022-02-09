@@ -13,6 +13,10 @@
 
 #include <stdbool.h>
 
+#ifdef MS_WIN32
+#  include <malloc.h>
+#endif
+
 #include <ffi.h>
 #include "ctypes.h"
 
