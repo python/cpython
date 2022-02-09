@@ -1027,7 +1027,7 @@ executable location. The Python executable location is called ``home``.
 
 Once ``home`` is determined, the ``prefix`` directory is found by first looking
 for :file:`python{majorversion}{minorversion}.zip` (``python311.zip``). On Windows
-the zip archive is searched for in :file:`Lib` and on Unix the archive is expected
+the zip archive is searched for in ``home`` and on Unix the archive is expected
 to be in :file:`lib`. Note that the expected zip archive location is added to the
 module search path even if the archive does not exist. If no archive was found,
 Python on Windows will continue the search for ``prefix`` by looking for :file:`Lib\\os.py`
