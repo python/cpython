@@ -1906,3 +1906,33 @@ _PyCode_ConstantKey(PyObject *op)
     }
     return key;
 }
+
+void 
+_PyStaticCode_Dealloc(PyCodeObject *co)
+{
+    if (co->co_quickened) {
+        PyMem_Free(co->co_quickened);
+        co->co_quickened = NULL;
+         _Py_QuickenedCount--;
+    }
+    co->co_warmup = QUICKENING_INITIAL_WARMUP_VALUE;
+    PyMem_Free(co->co_extra);
+    co->co_extra = NULL;
+    co->co_firstinstr = (_Py_CODEUNIT *)PyBytes_AS_STRING(co->co_code);
+    if (co->co_weakreflist != NULL) {
+        PyObject_ClearWeakRefs((PyObject *)co);
+        co->co_weakreflist = NULL;
+    }
+}
+
+void
+_PyStaticCode_InternStrings(PyCodeObject *co) 
+{
+    int res = intern_strings(co->co_names);
+    assert(res == 0);
+    res = intern_string_constants(co->co_consts, NULL);
+    assert(res == 0);
+    res = intern_strings(co->co_localsplusnames);
+    assert(res == 0);
+    (void)res;
+}

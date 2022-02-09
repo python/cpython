@@ -660,6 +660,24 @@ class TestUrlopen(unittest.TestCase):
                              (index, len(lines[index]), len(line)))
         self.assertEqual(index + 1, len(lines))
 
+    def test_issue16464(self):
+        # See https://bugs.python.org/issue16464
+        # and https://bugs.python.org/issue46648
+        handler = self.start_server([
+            (200, [], b'any'),
+            (200, [], b'any'),
+        ])
+        opener = urllib.request.build_opener()
+        request = urllib.request.Request("http://localhost:%s" % handler.port)
+        self.assertEqual(None, request.data)
+
+        opener.open(request, "1".encode("us-ascii"))
+        self.assertEqual(b"1", request.data)
+        self.assertEqual("1", request.get_header("Content-length"))
+
+        opener.open(request, "1234567890".encode("us-ascii"))
+        self.assertEqual(b"1234567890", request.data)
+        self.assertEqual("10", request.get_header("Content-length"))
 
 def setUpModule():
     thread_info = threading_helper.threading_setup()

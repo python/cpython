@@ -266,6 +266,7 @@ _setException(PyObject *exc, const char* altmsg, ...)
         } else {
             PyErr_FormatV(exc, altmsg, vargs);
         }
+        va_end(vargs);
         return NULL;
     }
     va_end(vargs);

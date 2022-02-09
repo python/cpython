@@ -171,6 +171,7 @@ Objects/stringlib/codecs.h	Py_BUILD_CORE	1
 Objects/stringlib/unicode_format.h	Py_BUILD_CORE	1
 Python/ceval_gil.h	Py_BUILD_CORE	1
 Python/condvar.h	Py_BUILD_CORE	1
+Modules/getpath_noop.c	Py_BUILD_CORE	1
 
 Modules/_json.c	Py_BUILD_CORE_BUILTIN	1
 Modules/_pickle.c	Py_BUILD_CORE_BUILTIN	1
@@ -214,6 +215,7 @@ Python/import.c	PyMODINIT_FUNC	PyObject*
 Modules/_testcapimodule.c	PyAPI_FUNC(RTYPE)	RTYPE
 Python/getargs.c	PyAPI_FUNC(RTYPE)	RTYPE
 Objects/stringlib/unicode_format.h	Py_LOCAL_INLINE(type)	static inline type
+Include/pymath.h	_Py__has_builtin(x)	0
 
 # implied include of pymacro.h
 */clinic/*.c.h	PyDoc_VAR(name)	static const char name[]
@@ -232,6 +234,7 @@ Include/**/*.h	SIZEOF_WCHAR_T	4
 
 # implied include of <unistd.h>
 Include/**/*.h	_POSIX_THREADS	1
+Include/**/*.h	HAVE_PTHREAD_H	1
 
 # from Makefile
 Modules/getpath.c	PYTHONPATH	1
@@ -239,6 +242,7 @@ Modules/getpath.c	PREFIX	...
 Modules/getpath.c	EXEC_PREFIX	...
 Modules/getpath.c	VERSION	...
 Modules/getpath.c	VPATH	...
+Modules/getpath.c	PLATLIBDIR	...
 
 # from Modules/_sha3/sha3module.c
 Modules/_sha3/kcp/KeccakP-1600-inplace32BI.c	PLATFORM_BYTE_ORDER	4321  # force big-endian

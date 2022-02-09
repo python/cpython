@@ -7,8 +7,6 @@
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "structmember.h"         // PyMemberDef
 
-_Py_IDENTIFIER(getattr);
-
 /*[clinic input]
 class mappingproxy "mappingproxyobject *" "&PyDictProxy_Type"
 class property "propertyobject *" "&PyProperty_Type"
@@ -571,7 +569,6 @@ static PyObject *
 calculate_qualname(PyDescrObject *descr)
 {
     PyObject *type_qualname, *res;
-    _Py_IDENTIFIER(__qualname__);
 
     if (descr->d_name == NULL || !PyUnicode_Check(descr->d_name)) {
         PyErr_SetString(PyExc_TypeError,
@@ -579,8 +576,8 @@ calculate_qualname(PyDescrObject *descr)
         return NULL;
     }
 
-    type_qualname = _PyObject_GetAttrId((PyObject *)descr->d_type,
-                                        &PyId___qualname__);
+    type_qualname = PyObject_GetAttr(
+            (PyObject *)descr->d_type, &_Py_ID(__qualname__));
     if (type_qualname == NULL)
         return NULL;
 
@@ -608,7 +605,7 @@ descr_get_qualname(PyDescrObject *descr, void *Py_UNUSED(ignored))
 static PyObject *
 descr_reduce(PyDescrObject *descr, PyObject *Py_UNUSED(ignored))
 {
-    return Py_BuildValue("N(OO)", _PyEval_GetBuiltinId(&PyId_getattr),
+    return Py_BuildValue("N(OO)", _PyEval_GetBuiltin(&_Py_ID(getattr)),
                          PyDescr_TYPE(descr), PyDescr_NAME(descr));
 }
 
@@ -1086,8 +1083,7 @@ mappingproxy_get(mappingproxyobject *pp, PyObject *const *args, Py_ssize_t nargs
     {
         return NULL;
     }
-    _Py_IDENTIFIER(get);
-    return _PyObject_VectorcallMethodId(&PyId_get, newargs,
+    return _PyObject_VectorcallMethod(&_Py_ID(get), newargs,
                                         3 | PY_VECTORCALL_ARGUMENTS_OFFSET,
                                         NULL);
 }
@@ -1095,36 +1091,31 @@ mappingproxy_get(mappingproxyobject *pp, PyObject *const *args, Py_ssize_t nargs
 static PyObject *
 mappingproxy_keys(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(keys);
-    return _PyObject_CallMethodIdNoArgs(pp->mapping, &PyId_keys);
+    return PyObject_CallMethodNoArgs(pp->mapping, &_Py_ID(keys));
 }
 
 static PyObject *
 mappingproxy_values(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(values);
-    return _PyObject_CallMethodIdNoArgs(pp->mapping, &PyId_values);
+    return PyObject_CallMethodNoArgs(pp->mapping, &_Py_ID(values));
 }
 
 static PyObject *
 mappingproxy_items(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(items);
-    return _PyObject_CallMethodIdNoArgs(pp->mapping, &PyId_items);
+    return PyObject_CallMethodNoArgs(pp->mapping, &_Py_ID(items));
 }
 
 static PyObject *
 mappingproxy_copy(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(copy);
-    return _PyObject_CallMethodIdNoArgs(pp->mapping, &PyId_copy);
+    return PyObject_CallMethodNoArgs(pp->mapping, &_Py_ID(copy));
 }
 
 static PyObject *
 mappingproxy_reversed(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(__reversed__);
-    return _PyObject_CallMethodIdNoArgs(pp->mapping, &PyId___reversed__);
+    return PyObject_CallMethodNoArgs(pp->mapping, &_Py_ID(__reversed__));
 }
 
 /* WARNING: mappingproxy methods must not give access
@@ -1321,7 +1312,7 @@ wrapper_repr(wrapperobject *wp)
 static PyObject *
 wrapper_reduce(wrapperobject *wp, PyObject *Py_UNUSED(ignored))
 {
-    return Py_BuildValue("N(OO)", _PyEval_GetBuiltinId(&PyId_getattr),
+    return Py_BuildValue("N(OO)", _PyEval_GetBuiltin(&_Py_ID(getattr)),
                          wp->self, PyDescr_NAME(wp->descr));
 }
 
@@ -1756,9 +1747,8 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
 
     /* if no docstring given and the getter has one, use that one */
     if ((doc == NULL || doc == Py_None) && fget != NULL) {
-        _Py_IDENTIFIER(__doc__);
         PyObject *get_doc;
-        int rc = _PyObject_LookupAttrId(fget, &PyId___doc__, &get_doc);
+        int rc = _PyObject_LookupAttr(fget, &_Py_ID(__doc__), &get_doc);
         if (rc <= 0) {
             return rc;
         }
@@ -1770,7 +1760,8 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
                in dict of the subclass instance instead,
                otherwise it gets shadowed by __doc__ in the
                class's dict. */
-            int err = _PyObject_SetAttrId((PyObject *)self, &PyId___doc__, get_doc);
+            int err = PyObject_SetAttr(
+                    (PyObject *)self, &_Py_ID(__doc__), get_doc);
             Py_DECREF(get_doc);
             if (err < 0)
                 return -1;

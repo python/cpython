@@ -34,10 +34,13 @@ the following command can be used to display the disassembly of
 :func:`myfunc`::
 
    >>> dis.dis(myfunc)
-     2           0 LOAD_GLOBAL              0 (len)
-                 2 LOAD_FAST                0 (alist)
-                 4 CALL_NO_KW               1
-                 6 RETURN_VALUE
+     1           0 RESUME                   0
+
+     2           2 LOAD_GLOBAL              0 (len)
+                 4 LOAD_FAST                0 (alist)
+                 6 PRECALL_FUNCTION         1
+                 8 CALL                     0
+                10 RETURN_VALUE
 
 (The "2" is a line number).
 
@@ -102,9 +105,11 @@ Example::
     >>> for instr in bytecode:
     ...     print(instr.opname)
     ...
+    RESUME
     LOAD_GLOBAL
     LOAD_FAST
-    CALL_NO_KW
+    PRECALL_FUNCTION
+    CALL
     RETURN_VALUE
 
 
@@ -348,7 +353,8 @@ The Python compiler currently generates the following bytecode instructions.
 
 .. opcode:: NOP
 
-   Do nothing code.  Used as a placeholder by the bytecode optimizer.
+   Do nothing code.  Used as a placeholder by the bytecode optimizer, and to
+   generate line tracing events.
 
 
 .. opcode:: POP_TOP
@@ -356,38 +362,19 @@ The Python compiler currently generates the following bytecode instructions.
    Removes the top-of-stack (TOS) item.
 
 
-.. opcode:: ROT_TWO
+.. opcode:: COPY (i)
 
-   Swaps the two top-most stack items.
+   Push the *i*-th item to the top of the stack. The item is not removed from its
+   original location.
 
-
-.. opcode:: ROT_THREE
-
-   Lifts second and third stack item one position up, moves top down to position
-   three.
+   .. versionadded:: 3.11
 
 
-.. opcode:: ROT_FOUR
+.. opcode:: SWAP (i)
 
-   Lifts second, third and fourth stack items one position up, moves top down
-   to position four.
+   Swap TOS with the item at position *i*.
 
-   .. versionadded:: 3.8
-
-
-.. opcode:: DUP_TOP
-
-   Duplicates the reference on top of the stack.
-
-   .. versionadded:: 3.2
-
-
-.. opcode:: DUP_TOP_TWO
-
-   Duplicates the two references on top of the stack, leaving them in the
-   same order.
-
-   .. versionadded:: 3.2
+   .. versionadded:: 3.11
 
 
 **Unary operations**
@@ -635,7 +622,7 @@ iterations of the loop.
 .. opcode:: LOAD_BUILD_CLASS
 
    Pushes :func:`builtins.__build_class__` onto the stack.  It is later called
-   by :opcode:`CALL_NO_KW` to construct a class.
+   to construct a class.
 
 
 .. opcode:: BEFORE_WITH (delta)
@@ -688,8 +675,6 @@ iterations of the loop.
       Previously, this instruction also pushed a boolean value indicating
       success (``True``) or failure (``False``).
 
-
-All of the following opcodes use their arguments.
 
 .. opcode:: STORE_NAME (namei)
 
@@ -1078,30 +1063,19 @@ All of the following opcodes use their arguments.
      with ``__cause__`` set to ``TOS``)
 
 
-.. opcode:: CALL_NO_KW (argc)
+.. opcode:: CALL (named)
 
-   Calls a callable object with positional arguments.
-   *argc* indicates the number of positional arguments.
-   The top of the stack contains positional arguments, with the right-most
-   argument on top.  Below the arguments is a callable object to call.
-   ``CALL_NO_KW`` pops all arguments and the callable object off the stack,
-   calls the callable object with those arguments, and pushes the return value
-   returned by the callable object.
+   Calls a callable object with the number of positional arguments specified by
+   the preceding :opcode:`PRECALL_FUNCTION` or :opcode:`PRECALL_METHOD` and
+   the named arguments specified by the preceding :opcode:`KW_NAMES`, if any.
+   *named* indicates the number of named arguments.
+   On the stack are (in ascending order):
 
-   .. versionadded:: 3.11
+   * The callable
+   * The positional arguments
+   * The named arguments
 
-
-.. opcode:: CALL_KW (argc)
-
-   Calls a callable object with positional (if any) and keyword arguments.
-   *argc* indicates the total number of positional and keyword arguments.
-   The top element on the stack contains a tuple with the names of the
-   keyword arguments, which must be strings.
-   Below that are the values for the keyword arguments,
-   in the order corresponding to the tuple.
-   Below that are positional arguments, with the right-most parameter on
-   top.  Below the arguments is a callable object to call.
-   ``CALL_KW`` pops all arguments and the callable object off the stack,
+   ``CALL`` pops all arguments and the callable object off the stack,
    calls the callable object with those arguments, and pushes the return value
    returned by the callable object.
 
@@ -1128,7 +1102,7 @@ All of the following opcodes use their arguments.
    Loads a method named ``co_names[namei]`` from the TOS object. TOS is popped.
    This bytecode distinguishes two cases: if TOS has a method with the correct
    name, the bytecode pushes the unbound method and TOS. TOS will be used as
-   the first argument (``self``) by :opcode:`CALL_METHOD` when calling the
+   the first argument (``self``) by :opcode:`PRECALL_METHOD` when calling the
    unbound method. Otherwise, ``NULL`` and the object return by the attribute
    lookup are pushed.
 
@@ -1137,10 +1111,26 @@ All of the following opcodes use their arguments.
 
 .. opcode:: PRECALL_METHOD (argc)
 
-   Prefixes either :opcode:`CALL_NO_KW` or :opcode:`CALL_KW`.
+   Prefixes :opcode:`CALL` (possibly with an intervening ``KW_NAMES``).
    This opcode is designed to be used with :opcode:`LOAD_METHOD`.
-   Sets internal variables, so that :opcode:`CALL_NO_KW` or :opcode:`CALL_KW`
+   Sets internal variables, so that :opcode:`CALL`
    clean up after :opcode:`LOAD_METHOD` correctly.
+
+   .. versionadded:: 3.11
+
+
+.. opcode:: PRECALL_FUNCTION (args)
+
+   Prefixes :opcode:`CALL` (possibly with an intervening ``KW_NAMES``).
+   Sets internal variables, so that :opcode:`CALL` can execute correctly.
+
+   .. versionadded:: 3.11
+
+
+.. opcode:: KW_NAMES (i)
+
+   Stores a reference to ``co_consts[consti]`` into an internal variable
+   for use by :opcode:`CALL`. ``co_consts[consti]`` must be a tuple of strings.
 
    .. versionadded:: 3.11
 
@@ -1215,22 +1205,6 @@ All of the following opcodes use their arguments.
    .. versionchanged:: 3.11
       Previously, this instruction also pushed a boolean value indicating
       success (``True``) or failure (``False``).
-
-
-.. opcode:: ROT_N (count)
-
-   Lift the top *count* stack items one position up, and move TOS down to
-   position *count*.
-
-   .. versionadded:: 3.10
-
-
-.. opcode:: COPY (i)
-
-   Push the *i*-th item to the top of the stack. The item is not removed from its
-   original location.
-
-   .. versionadded:: 3.11
 
 
 .. opcode:: RESUME (where)

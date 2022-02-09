@@ -313,7 +313,7 @@ when leaving an exception handler::
    keyword: except_star
 
 The :keyword:`except*<except_star>` clause(s) are used for handling
-:exc:`ExceptionGroup`s. The exception type for matching is interpreted as in
+:exc:`ExceptionGroup`\ s. The exception type for matching is interpreted as in
 the case of :keyword:`except`, but in the case of exception groups we can have
 partial matches when the type matches some of the exceptions in the group.
 This means that multiple except* clauses can execute, each handling part of

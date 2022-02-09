@@ -69,9 +69,6 @@ PyDoc_STRVAR(iobase_doc,
    of the IOBase object rather than the virtual `closed` attribute as returned
    by whatever subclass. */
 
-_Py_IDENTIFIER(__IOBase_closed);
-_Py_IDENTIFIER(read);
-
 
 /* Internal methods */
 static PyObject *
@@ -114,9 +111,7 @@ static PyObject *
 _io__IOBase_tell_impl(PyObject *self)
 /*[clinic end generated code: output=89a1c0807935abe2 input=04e615fec128801f]*/
 {
-    _Py_IDENTIFIER(seek);
-
-    return _PyObject_CallMethodId(self, &PyId_seek, "ii", 0, 1);
+    return _PyObject_CallMethod(self, &_Py_ID(seek), "ii", 0, 1);
 }
 
 PyDoc_STRVAR(iobase_truncate_doc,
@@ -138,7 +133,7 @@ iobase_is_closed(PyObject *self)
     int ret;
     /* This gets the derived attribute, which is *not* __IOBase_closed
        in most cases! */
-    ret = _PyObject_LookupAttrId(self, &PyId___IOBase_closed, &res);
+    ret = _PyObject_LookupAttr(self, &_Py_ID(__IOBase_closed), &res);
     Py_XDECREF(res);
     return ret;
 }
@@ -239,7 +234,7 @@ _io__IOBase_close_impl(PyObject *self)
     res = PyObject_CallMethodNoArgs(self, _PyIO_str_flush);
 
     PyErr_Fetch(&exc, &val, &tb);
-    rc = _PyObject_SetAttrId(self, &PyId___IOBase_closed, Py_True);
+    rc = PyObject_SetAttr(self, &_Py_ID(__IOBase_closed), Py_True);
     _PyErr_ChainExceptions(exc, val, tb);
     if (rc < 0) {
         Py_CLEAR(res);
@@ -260,7 +255,6 @@ iobase_finalize(PyObject *self)
     PyObject *res;
     PyObject *error_type, *error_value, *error_traceback;
     int closed;
-    _Py_IDENTIFIER(_finalizing);
 
     /* Save the current exception, if any. */
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
@@ -280,7 +274,7 @@ iobase_finalize(PyObject *self)
     if (closed == 0) {
         /* Signal close() that it was called as part of the object
            finalization process. */
-        if (_PyObject_SetAttrId(self, &PyId__finalizing, Py_True))
+        if (PyObject_SetAttr(self, &_Py_ID(_finalizing), Py_True))
             PyErr_Clear();
         res = PyObject_CallMethodNoArgs((PyObject *)self, _PyIO_str_close);
         /* Silencing I/O errors is bad, but printing spurious tracebacks is
@@ -597,7 +591,7 @@ _io__IOBase_readline_impl(PyObject *self, Py_ssize_t limit)
             Py_DECREF(readahead);
         }
 
-        b = _PyObject_CallMethodId(self, &PyId_read, "n", nreadahead);
+        b = _PyObject_CallMethod(self, &_Py_ID(read), "n", nreadahead);
         if (b == NULL) {
             /* NOTE: PyErr_SetFromErrno() calls PyErr_CheckSignals()
                when EINTR occurs so we needn't do it ourselves. */
@@ -697,10 +691,8 @@ _io__IOBase_readlines_impl(PyObject *self, Py_ssize_t hint)
         /* XXX special-casing this made sense in the Python version in order
            to remove the bytecode interpretation overhead, but it could
            probably be removed here. */
-        _Py_IDENTIFIER(extend);
-        PyObject *ret = _PyObject_CallMethodIdObjArgs(result, &PyId_extend,
-                                                      self, NULL);
-
+        PyObject *ret = PyObject_CallMethodObjArgs(result, &_Py_ID(extend),
+                                                   self, NULL);
         if (ret == NULL) {
             goto error;
         }
@@ -919,9 +911,7 @@ _io__RawIOBase_read_impl(PyObject *self, Py_ssize_t n)
     PyObject *b, *res;
 
     if (n < 0) {
-        _Py_IDENTIFIER(readall);
-
-        return _PyObject_CallMethodIdNoArgs(self, &PyId_readall);
+        return PyObject_CallMethodNoArgs(self, &_Py_ID(readall));
     }
 
     /* TODO: allocate a bytes object directly instead and manually construct
@@ -967,8 +957,8 @@ _io__RawIOBase_readall_impl(PyObject *self)
         return NULL;
 
     while (1) {
-        PyObject *data = _PyObject_CallMethodId(self, &PyId_read,
-                                                "i", DEFAULT_BUFFER_SIZE);
+        PyObject *data = _PyObject_CallMethod(self, &_Py_ID(read),
+                                              "i", DEFAULT_BUFFER_SIZE);
         if (!data) {
             /* NOTE: PyErr_SetFromErrno() calls PyErr_CheckSignals()
                when EINTR occurs so we needn't do it ourselves. */
