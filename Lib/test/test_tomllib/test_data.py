@@ -17,9 +17,7 @@ class MissingFile:
 DATA_DIR = Path(__file__).parent / "data"
 
 VALID_FILES = tuple((DATA_DIR / "valid").glob("**/*.toml"))
-# VALID_FILES_EXPECTED = tuple(
-#     json.loads(p.with_suffix(".json").read_bytes().decode()) for p in VALID_FILES
-# )
+
 _expected_files = []
 for p in VALID_FILES:
     json_path = p.with_suffix(".json")
@@ -28,8 +26,8 @@ for p in VALID_FILES:
     except FileNotFoundError:
         text = MissingFile(json_path)
     _expected_files.append(text)
-
 VALID_FILES_EXPECTED = tuple(_expected_files)
+
 INVALID_FILES = tuple((DATA_DIR / "invalid").glob("**/*.toml"))
 
 
