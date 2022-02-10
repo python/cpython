@@ -1,0 +1,3 @@
+The :func:`functools.cached_property` can now decorate an async function. It
+would cache a wrapper to the coroutine returned by the function, and await
+it when the wrapper is first awaited.

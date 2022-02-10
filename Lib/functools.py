@@ -963,6 +963,30 @@ class singledispatchmethod:
 _NOT_FOUND = object()
 
 
+class _CachedAwaitable:
+    """Wrapper to return if @cached_proeprty is used on a coroutine function.
+
+    A coroutine shouldn't simply be cached since it can only be awaited once.
+    This wrapper is cached instead, which awaits the underlying coroutine at
+    most once and cache the result for subsequent calls.
+    """
+
+    def __init__(self, coro):
+        self.coro = coro
+        self.lock = RLock()
+        self.cache = _NOT_FOUND
+
+    def __await__(self):
+        if self.cache is not _NOT_FOUND:
+            return self.cache
+        with self.lock:
+            # check if another thread got the result while we awaited lock
+            if self.cache is not _NOT_FOUND:
+                return self.cache
+            self.cache = yield from self.coro.__await__()
+        return self.cache
+
+
 class cached_property:
     def __init__(self, func):
         self.func = func
@@ -980,6 +1004,8 @@ class cached_property:
             )
 
     def __get__(self, instance, owner=None):
+        import inspect
+
         if instance is None:
             return self
         if self.attrname is None:
@@ -1000,6 +1026,8 @@ class cached_property:
                 val = cache.get(self.attrname, _NOT_FOUND)
                 if val is _NOT_FOUND:
                     val = self.func(instance)
+                    if inspect.iscoroutinefunction(self.func):
+                        val = _CachedAwaitable(val)
                     try:
                         cache[self.attrname] = val
                     except TypeError:

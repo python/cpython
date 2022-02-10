@@ -109,6 +109,8 @@ The :mod:`functools` module defines the following functions:
 
    .. versionadded:: 3.8
 
+   .. versionchanged:: 3.11
+      Added support for caching an async function's return value.
 
 .. function:: cmp_to_key(func)
 

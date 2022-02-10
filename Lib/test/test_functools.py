@@ -21,6 +21,7 @@ import contextlib
 
 from test.support import import_helper
 from test.support import threading_helper
+from test.support.async_helper import async_test
 from test.support.script_helper import assert_python_ok
 
 import functools
@@ -2909,6 +2910,15 @@ class CachedCostItemWithSlots:
         raise RuntimeError('never called, slots not supported')
 
 
+class CachedCostItemAsync:
+    _cost = 1
+
+    @py_functools.cached_property
+    async def cost(self):
+        self._cost += 1
+        return self._cost
+
+
 class TestCachedProperty(unittest.TestCase):
     def test_cached(self):
         item = CachedCostItem()
@@ -3021,6 +3031,12 @@ class TestCachedProperty(unittest.TestCase):
 
     def test_doc(self):
         self.assertEqual(CachedCostItem.cost.__doc__, "The cost of the item.")
+
+    @async_test
+    async def test_async(self):
+        item = CachedCostItemAsync()
+        self.assertEqual(await item.cost, 2)
+        self.assertEqual(await item.cost, 2)  # not 3
 
 
 if __name__ == '__main__':
