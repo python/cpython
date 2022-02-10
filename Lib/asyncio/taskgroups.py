@@ -17,7 +17,7 @@
 #
 
 
-from __future__ import annotations
+__all__ = ["TaskGroup"]
 
 import asyncio
 import itertools
