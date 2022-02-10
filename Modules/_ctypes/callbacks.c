@@ -165,11 +165,7 @@ static void _CallPythonObject(void *mem,
     assert(PyTuple_Check(converters));
     nargs = PyTuple_GET_SIZE(converters);
     assert(nargs <= CTYPES_MAX_ARGCOUNT);
-    PyObject **args = NULL;
-    if (nargs > 0) {
-        args = alloca(nargs * sizeof(PyObject *));
-    }
-
+    PyObject **args = alloca(nargs * sizeof(PyObject *));
     PyObject **cnvs = PySequence_Fast_ITEMS(converters);
     for (i = 0; i < nargs; i++) {
         PyObject *cnv = cnvs[i]; // borrowed ref
