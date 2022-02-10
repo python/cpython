@@ -1,0 +1,1 @@
+Calling ``operator.itemgetter`` objects and ``operator.attrgetter`` objects is now faster due to use of the vectorcall calling convention.
