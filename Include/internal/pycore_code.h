@@ -279,6 +279,8 @@ void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
 
 /* Deallocator function for static codeobjects used in deepfreeze.py */
 void _PyStaticCode_Dealloc(PyCodeObject *co);
+/* Function to intern strings of codeobjects */
+void _PyStaticCode_InternStrings(PyCodeObject *co);
 
 #ifdef Py_STATS
 
@@ -303,6 +305,8 @@ typedef struct _opcode_stats {
 typedef struct _call_stats {
     uint64_t inlined_py_calls;
     uint64_t pyeval_calls;
+    uint64_t frames_pushed;
+    uint64_t frame_objects_created;
 } CallStats;
 
 typedef struct _object_stats {

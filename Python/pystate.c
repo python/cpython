@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"
+#include "pycore_code.h"           // stats
 #include "pycore_frame.h"
 #include "pycore_initconfig.h"
 #include "pycore_object.h"        // _PyType_InitCache()
@@ -2209,25 +2210,6 @@ _PyThreadState_BumpFramePointerSlow(PyThreadState *tstate, size_t size)
         tstate->datastack_top = top;
     }
     return (InterpreterFrame *)base;
-}
-
-
-InterpreterFrame *
-_PyThreadState_PushFrame(PyThreadState *tstate, PyFunctionObject *func, PyObject *locals)
-{
-    PyCodeObject *code = (PyCodeObject *)func->func_code;
-    int nlocalsplus = code->co_nlocalsplus;
-    size_t size = nlocalsplus + code->co_stacksize +
-        FRAME_SPECIALS_SIZE;
-    InterpreterFrame *frame  = _PyThreadState_BumpFramePointer(tstate, size);
-    if (frame == NULL) {
-        return NULL;
-    }
-    _PyFrame_InitializeSpecials(frame, func, locals, nlocalsplus);
-    for (int i=0; i < nlocalsplus; i++) {
-        frame->localsplus[i] = NULL;
-    }
-    return frame;
 }
 
 void

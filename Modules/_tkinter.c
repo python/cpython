@@ -318,10 +318,6 @@ typedef struct {
 
 #define Tkapp_Interp(v) (((TkappObject *) (v))->interp)
 
-#define DEBUG_REFCNT(v) (printf("DEBUG: id=%p, refcnt=%i\n", \
-(void *) v, Py_REFCNT(v)))
-
-
 
 /**** Error Handling ****/
 

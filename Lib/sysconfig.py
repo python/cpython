@@ -192,6 +192,7 @@ if _PYTHON_BUILD:
         scheme['headers'] = scheme['include']
         scheme['include'] = '{srcdir}/Include'
         scheme['platinclude'] = '{projectbase}/.'
+    del scheme
 
 
 def _subst_vars(s, local_vars):
