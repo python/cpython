@@ -1,0 +1,2 @@
+Avoid potential exponential backtracking when producing some syntax errors
+involving lots of brackets. Patch by Pablo Galindo.

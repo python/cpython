@@ -1617,6 +1617,14 @@ while 1:
                 with self.assertRaises(MemoryError):
                     compile(source, "<string>", mode)
 
+    @support.cpython_only
+    def test_deep_invalid_rule(self):
+        # Check that a very deep invalid rule in the PEG
+        # parser doesn't have exponential backtracking.
+        source = "d{{{{{{{{{{{{{{{{{{{{{{{{{```{{{{{{{ef f():y"
+        with self.assertRaises(SyntaxError):
+            compile(source, "<string>", "exec")
+
 
 def test_main():
     support.run_unittest(SyntaxTestCase)
