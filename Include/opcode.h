@@ -164,19 +164,20 @@ extern "C" {
 #define LOAD_METHOD_CLASS                76
 #define LOAD_METHOD_MODULE               77
 #define LOAD_METHOD_NO_DICT              78
-#define STORE_ATTR_ADAPTIVE              79
-#define STORE_ATTR_INSTANCE_VALUE        80
-#define STORE_ATTR_SLOT                  81
-#define STORE_ATTR_WITH_HINT            131
-#define UNPACK_SEQUENCE_ADAPTIVE        140
-#define UNPACK_SEQUENCE_LIST            141
-#define UNPACK_SEQUENCE_TUPLE           143
-#define UNPACK_SEQUENCE_TWO_TUPLE       150
-#define LOAD_FAST__LOAD_FAST            153
-#define STORE_FAST__LOAD_FAST           154
-#define LOAD_FAST__LOAD_CONST           158
-#define LOAD_CONST__LOAD_FAST           159
-#define STORE_FAST__STORE_FAST          161
+#define RESUME_QUICK                     79
+#define STORE_ATTR_ADAPTIVE              80
+#define STORE_ATTR_INSTANCE_VALUE        81
+#define STORE_ATTR_SLOT                 131
+#define STORE_ATTR_WITH_HINT            140
+#define UNPACK_SEQUENCE_ADAPTIVE        141
+#define UNPACK_SEQUENCE_LIST            143
+#define UNPACK_SEQUENCE_TUPLE           150
+#define UNPACK_SEQUENCE_TWO_TUPLE       153
+#define LOAD_FAST__LOAD_FAST            154
+#define STORE_FAST__LOAD_FAST           158
+#define LOAD_FAST__LOAD_CONST           159
+#define LOAD_CONST__LOAD_FAST           161
+#define STORE_FAST__STORE_FAST          166
 #define DO_TRACING                      255
 #ifdef NEED_OPCODE_JUMP_TABLES
 static uint32_t _PyOpcode_RelativeJump[8] = {

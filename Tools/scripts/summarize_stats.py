@@ -55,7 +55,7 @@ def print_specialization_stats(name, family_stats, defines):
             label = label[0].upper() + label[1:]
             val = family_stats.get(key, 0)
             rows.append((label, val, f"{100*val/total_attempts:0.1f}%"))
-        emit_table(("", "Count", "Ratio"), rows)
+        emit_table(("", "Count:", "Ratio:"), rows)
         total_failures = family_stats.get("specialization.failure", 0)
         failure_kinds = [ 0 ] * 30
         for key in family_stats:
@@ -71,7 +71,7 @@ def print_specialization_stats(name, family_stats, defines):
             if not value:
                 continue
             rows.append((kind_to_text(index, defines, name), value, f"{100*value/total_failures:0.1f}%"))
-        emit_table(("Failure kind", "Count", "Ratio"), rows)
+        emit_table(("Failure kind", "Count:", "Ratio:"), rows)
 
 def gather_stats():
     stats = collections.Counter()
@@ -114,6 +114,8 @@ def kind_to_text(kind, defines, opname):
         opname = "ATTR"
     if opname.endswith("SUBSCR"):
         opname = "SUBSCR"
+    if opname.startswith("PRECALL"):
+        opname = "CALL"
     for name in defines[kind]:
         if name.startswith(opname):
             return pretty(name[len(opname)+1:])
@@ -174,8 +176,17 @@ class Section:
 
 def emit_table(header, rows):
     width = len(header)
-    print("|", " | ".join(header), "|")
-    print("|", " | ".join(["---"]*width), "|")
+    header_line = "|"
+    under_line = "|"
+    for item in header:
+        under = "---"
+        if item.endswith(":"):
+            item = item[:-1]
+            under += ":"
+        header_line += item + " | "
+        under_line += under + "|"
+    print(header_line)
+    print(under_line)
     for row in rows:
         if width is not None and len(row) != width:
             raise ValueError("Wrong number of elements in row '" + str(rows) + "'")
@@ -204,7 +215,7 @@ def emit_execution_counts(opcode_stats, total):
             rows.append((name, count, f"{100*count/total:0.1f}%",
                         f"{100*cumulative/total:0.1f}%", miss))
         emit_table(
-            ("Name", "Count", "Self", "Cumulative", "Miss ratio"),
+            ("Name", "Count:", "Self:", "Cumulative:", "Miss ratio:"),
             rows
         )
 
@@ -221,7 +232,7 @@ def emit_specialization_stats(opcode_stats):
 def emit_specialization_overview(opcode_stats, total):
     basic, not_specialized, specialized = categorized_counts(opcode_stats)
     with Section("Specialization effectiveness"):
-        emit_table(("Instructions", "Count", "Ratio"), (
+        emit_table(("Instructions", "Count:", "Ratio:"), (
             ("Basic", basic, f"{basic*100/total:0.1f}%"),
             ("Not specialized", not_specialized, f"{not_specialized*100/total:0.1f}%"),
             ("Specialized", specialized, f"{specialized*100/total:0.1f}%"),
@@ -240,7 +251,7 @@ def emit_call_stats(stats):
         for key, value in stats.items():
             if key.startswith("Frame"):
                 rows.append((key, value, f"{100*value/total:0.1f}%"))
-        emit_table(("", "Count", "Ratio"), rows)
+        emit_table(("", "Count:", "Ratio:"), rows)
 
 def emit_object_stats(stats):
     with Section("Object stats", summary="allocations, frees and dict materializatons"):
@@ -255,7 +266,7 @@ def emit_object_stats(stats):
                 label = key[6:].strip()
                 label = label[0].upper() + label[1:]
                 rows.append((label, value, materialize))
-        emit_table(("",  "Count", "Ratio"), rows)
+        emit_table(("",  "Count:", "Ratio:"), rows)
 
 def main():
     stats = gather_stats()

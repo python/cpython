@@ -8375,21 +8375,22 @@ fold_tuple_on_constants(struct compiler *c,
 #define VISITED (-1)
 
 // Replace an arbitrary run of SWAPs and NOPs with an optimal one that has the
-// same effect. Return the number of instructions that were optimized.
+// same effect.
 static int
-swaptimize(basicblock *block, int ix)
+swaptimize(basicblock *block, int *ix)
 {
     // NOTE: "./python -m test test_patma" serves as a good, quick stress test
     // for this function. Make sure to blow away cached *.pyc files first!
-    assert(ix < block->b_iused);
-    struct instr *instructions = &block->b_instr[ix];
+    assert(*ix < block->b_iused);
+    struct instr *instructions = &block->b_instr[*ix];
     // Find the length of the current sequence of SWAPs and NOPs, and record the
     // maximum depth of the stack manipulations:
     assert(instructions[0].i_opcode == SWAP);
     int depth = instructions[0].i_oparg;
     int len = 0;
     int more = false;
-    while (++len < block->b_iused - ix) {
+    int limit = block->b_iused - *ix;
+    while (++len < limit) {
         int opcode = instructions[len].i_opcode;
         if (opcode == SWAP) {
             depth = Py_MAX(depth, instructions[len].i_oparg);
@@ -8405,6 +8406,10 @@ swaptimize(basicblock *block, int ix)
     }
     // Create an array with elements {0, 1, 2, ..., depth - 1}:
     int *stack = PyMem_Malloc(depth * sizeof(int));
+    if (stack == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
     for (int i = 0; i < depth; i++) {
         stack[i] = i;
     }
@@ -8462,9 +8467,75 @@ swaptimize(basicblock *block, int ix)
     while (0 <= current) {
         instructions[current--].i_opcode = NOP;
     }
-    // Done! Return the number of optimized instructions:
     PyMem_Free(stack);
-    return len - 1;
+    *ix += len - 1;
+    return 0;
+}
+
+// This list is pretty small, since it's only okay to reorder opcodes that:
+// - can't affect control flow (like jumping or raising exceptions)
+// - can't invoke arbitrary code (besides finalizers)
+// - only touch the TOS (and pop it when finished)
+#define SWAPPABLE(opcode) \
+    ((opcode) == STORE_FAST || (opcode) == POP_TOP)
+
+static int
+next_swappable_instruction(basicblock *block, int i, int lineno)
+{
+    while (++i < block->b_iused) {
+        struct instr *instruction = &block->b_instr[i];
+        if (0 <= lineno && instruction->i_lineno != lineno) {
+            // Optimizing across this instruction could cause user-visible
+            // changes in the names bound between line tracing events!
+            return -1;
+        }
+        if (instruction->i_opcode == NOP) {
+            continue;
+        }
+        if (SWAPPABLE(instruction->i_opcode)) {
+            return i;
+        }
+        return -1;
+    }
+    return -1;
+}
+
+// Attempt to apply SWAPs statically by swapping *instructions* rather than
+// stack items. For example, we can replace SWAP(2), POP_TOP, STORE_FAST(42)
+// with the more efficient NOP, STORE_FAST(42), POP_TOP.
+static void
+apply_static_swaps(basicblock *block, int i)
+{
+    // SWAPs are to our left, and potential swaperands are to our right:
+    for (; 0 <= i; i--) {
+        assert(i < block->b_iused);
+        struct instr *swap = &block->b_instr[i];
+        if (swap->i_opcode != SWAP) {
+            if (swap->i_opcode == NOP || SWAPPABLE(swap->i_opcode)) {
+                // Nope, but we know how to handle these. Keep looking:
+                continue;
+            }
+            // We can't reason about what this instruction does. Bail:
+            return;
+        }
+        int j = next_swappable_instruction(block, i, -1);
+        if (j < 0) {
+            return;
+        }
+        int k = j;
+        int lineno = block->b_instr[j].i_lineno;
+        for (int count = swap->i_oparg - 1; 0 < count; count--) {
+            k = next_swappable_instruction(block, k, lineno);
+            if (k < 0) {
+                return;
+            }
+        }
+        // Success!
+        swap->i_opcode = NOP;
+        struct instr temp = block->b_instr[j];
+        block->b_instr[j] = block->b_instr[k];
+        block->b_instr[k] = temp;
+    }
 }
 
 // Attempt to eliminate jumps to jumps by updating inst to jump to
@@ -8706,7 +8777,10 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                     inst->i_opcode = NOP;
                     break;
                 }
-                i += swaptimize(bb, i);
+                if (swaptimize(bb, &i)) {
+                    goto error;
+                }
+                apply_static_swaps(bb, i);
                 break;
             case KW_NAMES:
                 break;

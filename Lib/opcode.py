@@ -278,6 +278,7 @@ _specialized_instructions = [
     "LOAD_METHOD_CLASS",
     "LOAD_METHOD_MODULE",
     "LOAD_METHOD_NO_DICT",
+    "RESUME_QUICK",
     "STORE_ATTR_ADAPTIVE",
     "STORE_ATTR_INSTANCE_VALUE",
     "STORE_ATTR_SLOT",
