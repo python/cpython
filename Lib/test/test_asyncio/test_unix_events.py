@@ -27,11 +27,11 @@ from asyncio import unix_events
 from test.test_asyncio import utils as test_utils
 
 
-MOCK_ANY = mock.ANY
-
-
 def tearDownModule():
     asyncio.set_event_loop_policy(None)
+
+
+MOCK_ANY = mock.ANY
 
 
 def close_pipe_transport(transport):
