@@ -2218,7 +2218,7 @@ handle_eval_breaker:
             Py_DECREF(v);
             if (err != 0)
                 goto error;
-            PREDICT(JUMP_ABSOLUTE_QUICK);
+            PREDICT(JUMP_ABSOLUTE);
             DISPATCH();
         }
 
@@ -2230,7 +2230,7 @@ handle_eval_breaker:
             Py_DECREF(v);
             if (err != 0)
                 goto error;
-            PREDICT(JUMP_ABSOLUTE_QUICK);
+            PREDICT(JUMP_ABSOLUTE);
             DISPATCH();
         }
 
@@ -3369,7 +3369,7 @@ handle_eval_breaker:
             if (_PyDict_SetItem_Take2((PyDictObject *)map, key, value) != 0) {
                 goto error;
             }
-            PREDICT(JUMP_ABSOLUTE_QUICK);
+            PREDICT(JUMP_ABSOLUTE);
             DISPATCH();
         }
 
@@ -4005,6 +4005,7 @@ handle_eval_breaker:
         }
 
         TARGET(JUMP_ABSOLUTE) {
+            PREDICTED(JUMP_ABSOLUTE);
             int err = _Py_IncrementCountAndMaybeQuicken(frame->f_code);
             if (err) {
                 if (err < 0) {
@@ -4492,6 +4493,7 @@ handle_eval_breaker:
 
         TARGET(KW_NAMES) {
             assert(call_shape.kwnames == NULL);
+            assert(oparg < PyTuple_GET_SIZE(consts));
             call_shape.kwnames = GETITEM(consts, oparg);
             DISPATCH();
         }
