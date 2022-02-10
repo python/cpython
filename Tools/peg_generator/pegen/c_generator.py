@@ -115,6 +115,7 @@ class CCallMakerVisitor(GrammarVisitor):
         self.cache: Dict[Any, FunctionCall] = {}
         self.keyword_cache: Dict[str, int] = {}
         self.soft_keywords: Set[str] = set()
+        self.cleanup_statements: List[str] = []
 
     def keyword_helper(self, keyword: str) -> FunctionCall:
         if keyword not in self.keyword_cache:
@@ -357,6 +358,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         self._varname_counter = 0
         self.debug = debug
         self.skip_actions = skip_actions
+        self.cleanup_statements: List[str] = []
 
     def add_level(self) -> None:
         self.print("if (p->level++ == MAXSTACK) {")
@@ -369,6 +371,8 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         self.print("p->level--;")
 
     def add_return(self, ret_val: str) -> None:
+        for stmt in self.cleanup_statements:
+            self.print(stmt)
         self.remove_level()
         self.print(f"return {ret_val};")
 
@@ -539,9 +543,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                     f"_PyPegen_update_memo(p, _mark, {node.name}_type, _res)", "_res"
                 )
                 self.print("p->mark = _mark;")
-                self.print("p->in_raw_rule++;")
                 self.print(f"void *_raw = {node.name}_raw(p);")
-                self.print("p->in_raw_rule--;")
                 self.print("if (p->error_indicator) {")
                 with self.indent():
                     self.add_return("NULL")
@@ -649,10 +651,21 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             self._set_up_rule_memoization(node, result_type)
 
         self.print("{")
+
+        if node.name.endswith("without_invalid"):
+            with self.indent():
+                self.print("int _prev_call_invalid = p->call_invalid_rules;")
+                self.print("p->call_invalid_rules = 0;")
+                self.cleanup_statements.append("p->call_invalid_rules = _prev_call_invalid;")
+
         if is_loop:
             self._handle_loop_rule_body(node, rhs)
         else:
             self._handle_default_rule_body(node, rhs, result_type)
+
+        if node.name.endswith("without_invalid"):
+            self.cleanup_statements.pop()
+
         self.print("}")
 
     def visit_NamedItem(self, node: NamedItem) -> None:
