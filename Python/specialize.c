@@ -176,6 +176,7 @@ print_spec_stats(FILE *out, OpcodeStats *stats)
      * even though we don't specialize them yet. */
     fprintf(out, "    opcode[%d].specializable : 1\n", FOR_ITER);
     fprintf(out, "    opcode[%d].specializable : 1\n", PRECALL_FUNCTION);
+    fprintf(out, "    opcode[%d].specializable : 1\n", PRECALL_METHOD);
     fprintf(out, "    opcode[%d].specializable : 1\n", UNPACK_SEQUENCE);
     for (int i = 0; i < 256; i++) {
         if (adaptive_opcodes[i]) {
