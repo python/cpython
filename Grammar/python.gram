@@ -1095,13 +1095,15 @@ invalid_expression:
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax. Perhaps you forgot a comma?") }
    | a=disjunction 'if' b=disjunction !('else'|':') { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "expected 'else' after 'if' expression") }
 
+invalid_left_assignment_prefixes(memo): list|tuple|genexp|'True'|'None'|'False'
+
 invalid_named_expression:
     | a=expression ':=' expression {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
             a, "cannot use assignment expressions with %s", _PyPegen_get_expr_name(a)) }
     | a=NAME '=' b=bitwise_or !('='|':=') {
         p->in_raw_rule ? NULL : RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax. Maybe you meant '==' or ':=' instead of '='?") }
-    | !(list|tuple|genexp|'True'|'None'|'False') a=bitwise_or b='=' bitwise_or !('='|':=') {
+    | !invalid_left_assignment_prefixes a=bitwise_or b='=' bitwise_or !('='|':=') {
         p->in_raw_rule ? NULL : RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot assign to %s here. Maybe you meant '==' instead of '='?",
                                           _PyPegen_get_expr_name(a)) }
 
