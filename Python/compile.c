@@ -5034,17 +5034,16 @@ compiler_sync_comprehension_generator(struct compiler *c,
        and then write to the element */
 
     comprehension_ty gen;
-    basicblock *start, *anchor, *skip, *if_cleanup;
+    basicblock *start, *anchor, *if_cleanup;
     Py_ssize_t i, n;
 
     start = compiler_new_block(c);
-    skip = compiler_new_block(c);
     if_cleanup = compiler_new_block(c);
     anchor = compiler_new_block(c);
 
-    if (start == NULL || skip == NULL || if_cleanup == NULL ||
-        anchor == NULL)
+    if (start == NULL || if_cleanup == NULL || anchor == NULL) {
         return 0;
+    }
 
     gen = (comprehension_ty)asdl_seq_GET(generators, gen_index);
 
@@ -5131,8 +5130,6 @@ compiler_sync_comprehension_generator(struct compiler *c,
         default:
             return 0;
         }
-
-        compiler_use_next_block(c, skip);
     }
     compiler_use_next_block(c, if_cleanup);
     if (start) {
