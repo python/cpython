@@ -1734,9 +1734,6 @@ handle_eval_breaker:
         }
 
         TARGET(RESUME) {
-            assert(tstate->cframe == &cframe);
-            assert(frame == cframe.current_frame);
-
             int err = _Py_IncrementCountAndMaybeQuicken(frame->f_code);
             if (err) {
                 if (err < 0) {
@@ -1747,6 +1744,13 @@ handle_eval_breaker:
                 first_instr = frame->f_code->co_firstinstr;
                 next_instr = first_instr + nexti;
             }
+            JUMP_TO_INSTRUCTION(RESUME_QUICK);
+        }
+
+        TARGET(RESUME_QUICK) {
+            PREDICTED(RESUME_QUICK);
+            assert(tstate->cframe == &cframe);
+            assert(frame == cframe.current_frame);
             frame->f_state = FRAME_EXECUTING;
             if (_Py_atomic_load_relaxed(eval_breaker) && oparg < 2) {
                 goto handle_eval_breaker;
@@ -4004,7 +4008,6 @@ handle_eval_breaker:
 
         TARGET(JUMP_ABSOLUTE) {
             PREDICTED(JUMP_ABSOLUTE);
-            assert(oparg < INSTR_OFFSET());
             int err = _Py_IncrementCountAndMaybeQuicken(frame->f_code);
             if (err) {
                 if (err < 0) {
@@ -4015,9 +4018,7 @@ handle_eval_breaker:
                 first_instr = frame->f_code->co_firstinstr;
                 next_instr = first_instr + nexti;
             }
-            JUMPTO(oparg);
-            CHECK_EVAL_BREAKER();
-            DISPATCH();
+            JUMP_TO_INSTRUCTION(JUMP_ABSOLUTE_QUICK);
         }
 
         TARGET(JUMP_NO_INTERRUPT) {
@@ -4032,6 +4033,7 @@ handle_eval_breaker:
         }
 
         TARGET(JUMP_ABSOLUTE_QUICK) {
+            PREDICTED(JUMP_ABSOLUTE_QUICK);
             assert(oparg < INSTR_OFFSET());
             JUMPTO(oparg);
             CHECK_EVAL_BREAKER();

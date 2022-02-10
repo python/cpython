@@ -407,6 +407,9 @@ optimize(SpecializedCacheOrInstruction *quickened, int len)
                 case JUMP_ABSOLUTE:
                     instructions[i] = _Py_MAKECODEUNIT(JUMP_ABSOLUTE_QUICK, oparg);
                     break;
+                case RESUME:
+                    instructions[i] = _Py_MAKECODEUNIT(RESUME_QUICK, oparg);
+                    break;
                 case LOAD_FAST:
                     switch(previous_opcode) {
                         case LOAD_FAST:
