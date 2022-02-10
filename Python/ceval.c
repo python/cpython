@@ -2768,7 +2768,7 @@ handle_eval_breaker:
             SET_TOP(Py_NewRef(PyTuple_GET_ITEM(seq, 1)));
             PUSH(Py_NewRef(PyTuple_GET_ITEM(seq, 0)));
             Py_DECREF(seq);
-            DISPATCH();
+            NOTRACE_DISPATCH();
         }
 
         TARGET(UNPACK_SEQUENCE_TUPLE) {
@@ -2783,7 +2783,7 @@ handle_eval_breaker:
                 PUSH(Py_NewRef(items[len]));
             }
             Py_DECREF(seq);
-            DISPATCH();
+            NOTRACE_DISPATCH();
         }
 
         TARGET(UNPACK_SEQUENCE_LIST) {
@@ -2798,7 +2798,7 @@ handle_eval_breaker:
                 PUSH(Py_NewRef(items[len]));
             }
             Py_DECREF(seq);
-            DISPATCH();
+            NOTRACE_DISPATCH();
         }
 
         TARGET(UNPACK_EX) {
