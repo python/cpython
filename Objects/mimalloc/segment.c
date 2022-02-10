@@ -747,7 +747,8 @@ static mi_page_t* mi_segment_span_allocate(mi_segment_t* segment, size_t slice_i
   }
 
   // and also for the last one (if not set already) (the last one is needed for coalescing)
-  mi_slice_t* last = &segment->slices[slice_index + slice_count - 1];
+  // note: the cast is needed for ubsan since the index can be larger than MI_SLICES_PER_SEGMENT for huge allocations (see #543)
+  mi_slice_t* last = &((mi_slice_t*)segment->slices)[slice_index + slice_count - 1];
   if (last < mi_segment_slices_end(segment) && last >= slice) {
     last->slice_offset = (uint32_t)(sizeof(mi_slice_t)*(slice_count-1));
     last->slice_count = 0;
