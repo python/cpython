@@ -4447,6 +4447,11 @@ handle_eval_breaker:
 
             call_shape.total_args = oparg;
             call_shape.kwnames = NULL;
+#ifdef Py_STATS
+            extern int _PySpecialization_ClassifyCallable(PyObject *);
+            _py_stats.opcode_stats[PRECALL_FUNCTION].specialization.failure++;
+            _py_stats.opcode_stats[PRECALL_FUNCTION].specialization.failure_kinds[_PySpecialization_ClassifyCallable(call_shape.callable)]++;
+#endif
             DISPATCH();
         }
 
