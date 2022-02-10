@@ -19,15 +19,18 @@
 
 import asyncio
 
-from edb.common import taskgroup
-from edb.testbase import server as tb
+from asyncio import taskgroups as taskgroup
+import unittest
 
 
 class MyExc(Exception):
     pass
 
 
-class TestTaskGroup(tb.TestCase):
+class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
+
+    def setUp(self):
+        self.loop = asyncio.get_event_loop()
 
     async def test_taskgroup_01(self):
 
