@@ -13,10 +13,10 @@ GLOBS = [
     'Modules/**/*.c',
     'Objects/**/*.h',
     'Objects/**/*.c',
-    'Python/**/*.h',
+    'Parser/**/*.h',
     'Parser/**/*.c',
     'Python/**/*.h',
-    'Parser/**/*.c',
+    'Python/**/*.c',
 ]
 LEVEL_GLOBS = {
     'stable': 'Include/*.h',

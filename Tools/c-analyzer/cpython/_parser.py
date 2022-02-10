@@ -81,6 +81,7 @@ Modules/unicodename_db.h
 Objects/unicodetype_db.h
 
 # generated
+Python/deepfreeze/*.c
 Python/frozen_modules/*.h
 Python/opcode_targets.h
 Python/stdlib_module_names.h
@@ -157,6 +158,7 @@ Modules/cmathmodule.c	Py_BUILD_CORE	1
 Modules/faulthandler.c	Py_BUILD_CORE	1
 Modules/gcmodule.c	Py_BUILD_CORE	1
 Modules/getpath.c	Py_BUILD_CORE	1
+Modules/getpath_noop.c	Py_BUILD_CORE	1
 Modules/itertoolsmodule.c	Py_BUILD_CORE	1
 Modules/main.c	Py_BUILD_CORE	1
 Modules/mathmodule.c	Py_BUILD_CORE	1
@@ -169,9 +171,10 @@ Modules/timemodule.c	Py_BUILD_CORE	1
 Modules/unicodedata.c	Py_BUILD_CORE	1
 Objects/stringlib/codecs.h	Py_BUILD_CORE	1
 Objects/stringlib/unicode_format.h	Py_BUILD_CORE	1
+Parser/string_parser.h	Py_BUILD_CORE	1
+Parser/pegen.h	Py_BUILD_CORE	1
 Python/ceval_gil.h	Py_BUILD_CORE	1
 Python/condvar.h	Py_BUILD_CORE	1
-Modules/getpath_noop.c	Py_BUILD_CORE	1
 
 Modules/_json.c	Py_BUILD_CORE_BUILTIN	1
 Modules/_pickle.c	Py_BUILD_CORE_BUILTIN	1
@@ -293,6 +296,9 @@ MAX_SIZES = {
     _abs('Modules/expat/expat.h'): (10_000, 400),
     _abs('Objects/stringlib/unicode_format.h'): (10_000, 400),
     _abs('Objects/typeobject.c'): (20_000, 200),
+    _abs('Python/compile.c'): (20_000, 500),
+    _abs('Python/pylifecycle.c'): (200_000, 5000),
+    _abs('Python/pystate.c'): (200_000, 5000),
 }
 
 
