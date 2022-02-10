@@ -231,7 +231,7 @@ class ExceptionTests(unittest.TestCase):
         check('a = « hello » « world »', 1, 5)
         check('[\nfile\nfor str(file)\nin\n[]\n]', 3, 5)
         check('[file for\n str(file) in []]', 2, 2)
-        check("ages = {'Alice'=22, 'Bob'=23}", 1, 16)
+        check("ages = {'Alice'=22, 'Bob'=23}", 1, 9)
         check('match ...:\n    case {**rest, "key": value}:\n        ...', 2, 19)
         check("[a b c d e f]", 1, 2)
         check("for x yfff:", 1, 7)
