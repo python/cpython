@@ -5,6 +5,10 @@ from unittest import mock
 from test.test_asyncio import utils as test_utils
 
 
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 class TestPolicy(asyncio.AbstractEventLoopPolicy):
 
     def __init__(self, loop_factory):
