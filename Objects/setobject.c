@@ -1713,10 +1713,10 @@ set_issubset(PySetObject *so, PyObject *other)
 
     if (!PyAnySet_Check(other)) {
         PyObject *tmp, *result;
-        tmp = make_new_set(&PySet_Type, other);
+        tmp = set_intersection(so, other);
         if (tmp == NULL)
             return NULL;
-        result = set_issubset(so, tmp);
+        result = (PySet_GET_SIZE(so, tmp) == PySet_GET_SIZE(so));
         Py_DECREF(tmp);
         return result;
     }
