@@ -19,7 +19,7 @@
 
 import asyncio
 
-from asyncio import taskgroups as taskgroup
+from asyncio import taskgroups
 import unittest
 
 
@@ -42,7 +42,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
             await asyncio.sleep(0.2)
             return 11
 
-        async with taskgroup.TaskGroup() as g:
+        async with taskgroups.TaskGroup() as g:
             t1 = g.create_task(foo1())
             t2 = g.create_task(foo2())
 
@@ -59,7 +59,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
             await asyncio.sleep(0.2)
             return 11
 
-        async with taskgroup.TaskGroup() as g:
+        async with taskgroups.TaskGroup() as g:
             t1 = g.create_task(foo1())
             await asyncio.sleep(0.15)
             t2 = g.create_task(foo2())
@@ -77,7 +77,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
             await asyncio.sleep(0.2)
             return 11
 
-        async with taskgroup.TaskGroup() as g:
+        async with taskgroups.TaskGroup() as g:
             t1 = g.create_task(foo1())
             await asyncio.sleep(0.15)
             # cancel t1 explicitly, i.e. everything should continue
@@ -111,13 +111,13 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
         async def runner():
             nonlocal NUM, t2
 
-            async with taskgroup.TaskGroup() as g:
+            async with taskgroups.TaskGroup() as g:
                 g.create_task(foo1())
                 t2 = g.create_task(foo2())
 
             NUM += 10
 
-        with self.assertRaisesRegex(taskgroup.TaskGroupError,
+        with self.assertRaisesRegex(taskgroups.TaskGroupError,
                                     r'1 sub errors: \(ZeroDivisionError\)'):
             await self.loop.create_task(runner())
 
@@ -147,7 +147,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
         async def runner():
             nonlocal NUM, runner_cancel
 
-            async with taskgroup.TaskGroup() as g:
+            async with taskgroups.TaskGroup() as g:
                 g.create_task(foo1())
                 g.create_task(foo1())
                 g.create_task(foo1())
@@ -163,7 +163,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
         # The 3 foo1 sub tasks can be racy when the host is busy - if the
         # cancellation happens in the middle, we'll see partial sub errors here
         with self.assertRaisesRegex(
-            taskgroup.TaskGroupError,
+            taskgroups.TaskGroupError,
             r'(1|2|3) sub errors: \(ZeroDivisionError\)',
         ):
             await self.loop.create_task(runner())
@@ -185,7 +185,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
                 raise
 
         async def runner():
-            async with taskgroup.TaskGroup() as g:
+            async with taskgroups.TaskGroup() as g:
                 for _ in range(5):
                     g.create_task(foo())
 
@@ -213,7 +213,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
 
         async def runner():
             nonlocal NUM
-            async with taskgroup.TaskGroup() as g:
+            async with taskgroups.TaskGroup() as g:
                 for _ in range(5):
                     g.create_task(foo())
 
@@ -240,7 +240,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
             1 / 0
 
         async def runner():
-            async with taskgroup.TaskGroup() as g:
+            async with taskgroups.TaskGroup() as g:
                 for _ in range(5):
                     g.create_task(foo())
 
@@ -271,7 +271,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
 
         async def runner():
             nonlocal t1, t2
-            async with taskgroup.TaskGroup() as g:
+            async with taskgroups.TaskGroup() as g:
                 t1 = g.create_task(foo1())
                 t2 = g.create_task(foo2())
                 await asyncio.sleep(0.1)
@@ -279,7 +279,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
 
         try:
             await runner()
-        except taskgroup.TaskGroupError as t:
+        except taskgroups.TaskGroupError as t:
             self.assertEqual(t.get_error_types(), {ZeroDivisionError})
         else:
             self.fail('TaskGroupError was not raised')
@@ -301,14 +301,14 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
 
         async def runner():
             nonlocal t1, t2
-            async with taskgroup.TaskGroup() as g:
+            async with taskgroups.TaskGroup() as g:
                 t1 = g.create_task(foo1())
                 t2 = g.create_task(foo2())
                 1 / 0
 
         try:
             await runner()
-        except taskgroup.TaskGroupError as t:
+        except taskgroups.TaskGroupError as t:
             self.assertEqual(t.get_error_types(), {ZeroDivisionError})
         else:
             self.fail('TaskGroupError was not raised')
@@ -323,8 +323,8 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
             1 / 0
 
         async def runner():
-            async with taskgroup.TaskGroup():
-                async with taskgroup.TaskGroup() as g2:
+            async with taskgroups.TaskGroup():
+                async with taskgroups.TaskGroup() as g2:
                     for _ in range(5):
                         g2.create_task(foo())
 
@@ -348,10 +348,10 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
             1 / 0
 
         async def runner():
-            async with taskgroup.TaskGroup() as g1:
+            async with taskgroups.TaskGroup() as g1:
                 g1.create_task(asyncio.sleep(10))
 
-                async with taskgroup.TaskGroup() as g2:
+                async with taskgroups.TaskGroup() as g2:
                     for _ in range(5):
                         g2.create_task(foo())
 
@@ -375,14 +375,14 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
             raise ValueError(t)
 
         async def runner():
-            async with taskgroup.TaskGroup(name='g1') as g1:
+            async with taskgroups.TaskGroup(name='g1') as g1:
                 g1.create_task(crash_after(0.1))
 
-                async with taskgroup.TaskGroup(name='g2') as g2:
+                async with taskgroups.TaskGroup(name='g2') as g2:
                     g2.create_task(crash_after(0.2))
 
         r = self.loop.create_task(runner())
-        with self.assertRaisesRegex(taskgroup.TaskGroupError, r'1 sub errors'):
+        with self.assertRaisesRegex(taskgroups.TaskGroupError, r'1 sub errors'):
             await r
 
     async def test_taskgroup_14(self):
@@ -392,14 +392,14 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
             raise ValueError(t)
 
         async def runner():
-            async with taskgroup.TaskGroup(name='g1') as g1:
+            async with taskgroups.TaskGroup(name='g1') as g1:
                 g1.create_task(crash_after(0.2))
 
-                async with taskgroup.TaskGroup(name='g2') as g2:
+                async with taskgroups.TaskGroup(name='g2') as g2:
                     g2.create_task(crash_after(0.1))
 
         r = self.loop.create_task(runner())
-        with self.assertRaisesRegex(taskgroup.TaskGroupError, r'1 sub errors'):
+        with self.assertRaisesRegex(taskgroups.TaskGroupError, r'1 sub errors'):
             await r
 
     async def test_taskgroup_15(self):
@@ -409,7 +409,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
             1 / 0
 
         async def runner():
-            async with taskgroup.TaskGroup(name='g1') as g1:
+            async with taskgroups.TaskGroup(name='g1') as g1:
                 g1.create_task(crash_soon())
                 try:
                     await asyncio.sleep(10)
@@ -432,7 +432,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
             1 / 0
 
         async def nested_runner():
-            async with taskgroup.TaskGroup(name='g1') as g1:
+            async with taskgroups.TaskGroup(name='g1') as g1:
                 g1.create_task(crash_soon())
                 try:
                     await asyncio.sleep(10)
@@ -457,7 +457,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
 
         async def runner():
             nonlocal NUM
-            async with taskgroup.TaskGroup():
+            async with taskgroups.TaskGroup():
                 try:
                     await asyncio.sleep(10)
                 except asyncio.CancelledError:
@@ -479,7 +479,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
 
         async def runner():
             nonlocal NUM
-            async with taskgroup.TaskGroup():
+            async with taskgroups.TaskGroup():
                 try:
                     await asyncio.sleep(10)
                 except asyncio.CancelledError:
@@ -496,7 +496,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
 
         try:
             await r
-        except taskgroup.TaskGroupError as t:
+        except taskgroups.TaskGroupError as t:
             self.assertEqual(t.get_error_types(), {MyExc})
         else:
             self.fail('TaskGroupError was not raised')
@@ -515,14 +515,14 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
                 raise MyExc
 
         async def runner():
-            async with taskgroup.TaskGroup() as g:
+            async with taskgroups.TaskGroup() as g:
                 g.create_task(crash_soon())
                 await nested()
 
         r = self.loop.create_task(runner())
         try:
             await r
-        except taskgroup.TaskGroupError as t:
+        except taskgroups.TaskGroupError as t:
             self.assertEqual(t.get_error_types(), {MyExc, ZeroDivisionError})
         else:
             self.fail('TasgGroupError was not raised')
@@ -539,7 +539,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
                 raise KeyboardInterrupt
 
         async def runner():
-            async with taskgroup.TaskGroup() as g:
+            async with taskgroups.TaskGroup() as g:
                 g.create_task(crash_soon())
                 await nested()
 
@@ -561,7 +561,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
                 raise TypeError
 
         async def runner():
-            async with taskgroup.TaskGroup() as g:
+            async with taskgroups.TaskGroup() as g:
                 g.create_task(crash_soon())
                 await nested()
 
@@ -579,7 +579,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
             return 11
 
         async def runner():
-            async with taskgroup.TaskGroup() as g:
+            async with taskgroups.TaskGroup() as g:
                 g.create_task(foo1())
                 g.create_task(foo2())
 
@@ -595,7 +595,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
         async def do_job(delay):
             await asyncio.sleep(delay)
 
-        async with taskgroup.TaskGroup() as g:
+        async with taskgroups.TaskGroup() as g:
             for count in range(10):
                 await asyncio.sleep(0.1)
                 g.create_task(do_job(0.3))
