@@ -1904,7 +1904,6 @@ success:
     adaptive->counter = initial_counter_value();
 }
 
-
 void
 _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
                               SpecializedCacheEntry *cache)
@@ -1940,7 +1939,6 @@ success:
     STAT_INC(UNPACK_SEQUENCE, success);
     adaptive->counter = initial_counter_value();
 }
-
 
 int
  _PySpecialization_ClassifyIterator(PyObject *iter)
