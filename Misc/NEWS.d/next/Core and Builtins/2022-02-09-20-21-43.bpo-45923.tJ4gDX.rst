@@ -1,0 +1,1 @@
+Add a quickened form of :opcode:`RESUME` that skips quickening checks.
