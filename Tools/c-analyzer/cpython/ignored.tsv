@@ -2,6 +2,12 @@ filename	funcname	name	reason
 #???	-	somevar	???
 
 ##################################
+# ignored by design
+
+Python/pylifecycle.c	-	_PyRuntime	-
+
+
+##################################
 # forward/extern references
 # XXX The analyzer should have ignored these.
 
@@ -384,6 +390,13 @@ Objects/interpreteridobject.c	interpid_new	kwlist	-
 Objects/weakrefobject.c	weakref_call	kwlist	-
 Objects/exceptions.c	NameError_init	kwlist	-
 Objects/exceptions.c	AttributeError_init	kwlist	-
+Python/_warnings.c	warnings_warn_explicit	kwd_list	-
+Python/bltinmodule.c	builtin___import__	kwlist	-
+Python/bltinmodule.c	min_max	kwlist	-
+Python/bltinmodule.c	zip_new	kwlist	-
+Python/context.c	contextvar_tp_new	kwlist	-
+Python/sysmodule.c	sys_getsizeof	kwlist	-
+Python/sysmodule.c	sys_set_asyncgen_hooks	keywords	-
 
 #-----------------------
 # PyModuleDef
@@ -397,6 +410,13 @@ Modules/_threadmodule.c	-	thread_module	-
 Modules/_typingmodule.c	-	typingmodule	-
 Modules/signalmodule.c	-	signal_module	-
 Modules/xxlimited_35.c	-	xxmodule	-
+Python/Python-ast.c	-	_astmodule	-
+Python/Python-tokenize.c	-	_tokenizemodule	-
+Python/_warnings.c	-	warnings_module	-
+Python/bltinmodule.c	-	builtinsmodule	-
+Python/import.c	-	imp_module	-
+Python/marshal.c	-	marshalmodule	-
+Python/sysmodule.c	-	sysmodule	-
 
 #-----------------------
 # PyModuleDef_Slot
@@ -478,6 +498,8 @@ Modules/xxmodule.c	-	xx_slots	-
 Modules/xxsubtype.c	-	xxsubtype_slots	-
 Modules/zlibmodule.c	-	zlib_slots	-
 Python/Python-ast.c	-	astmodule_slots	-
+Python/Python-tokenize.c	-	tokenizemodule_slots	-
+Python/_warnings.c	-	warnings_slots	-
 Python/marshal.c	-	marshalmodule_slots	-
 
 #-----------------------
@@ -798,6 +820,7 @@ Objects/unionobject.c	-	union_methods	-
 Objects/weakrefobject.c	-	proxy_methods	-
 Objects/weakrefobject.c	-	weakref_methods	-
 Python/Python-ast.c	-	ast_type_methods	-
+Python/Python-tokenize.c	-	tokenize_methods	-
 Python/_warnings.c	-	warnings_functions	-
 Python/bltinmodule.c	-	builtin_methods	-
 Python/bltinmodule.c	-	filter_methods	-
@@ -807,6 +830,7 @@ Python/context.c	-	PyContextTokenType_methods	-
 Python/context.c	-	PyContextVar_methods	-
 Python/context.c	-	PyContext_methods	-
 Python/hamt.c	-	PyHamt_methods	-
+Python/import.c	-	imp_slots	-
 Python/import.c	-	imp_methods	-
 Python/marshal.c	-	marshal_methods	-
 Python/sysmodule.c	-	sys_methods	-
@@ -1218,6 +1242,7 @@ Modules/xxlimited_35.c	-	Xxo_Type_slots	-
 Modules/zlibmodule.c	-	Comptype_slots	-
 Modules/zlibmodule.c	-	Decomptype_slots	-
 Python/Python-ast.c	-	AST_type_slots	-
+Python/Python-tokenize.c	-	tokenizeriter_slots	-
 
 # PyType_Spec
 Modules/_abc.c	-	_abc_data_type_spec	-
@@ -1317,6 +1342,7 @@ Modules/xxlimited_35.c	-	Xxo_Type_spec	-
 Modules/zlibmodule.c	-	Comptype_spec	-
 Modules/zlibmodule.c	-	Decomptype_spec	-
 Python/Python-ast.c	-	AST_type_spec	-
+Python/Python-tokenize.c	-	tokenizeriter_spec	-
 
 #-----------------------
 # for structseq
@@ -1470,4 +1496,24 @@ Objects/unicodeobject.c	unicode_translate_call_errorhandler	argparse	-
 Parser/parser.c	-	reserved_keywords	-
 Parser/parser.c	-	soft_keywords	-
 Parser/tokenizer.c	-	type_comment_prefix	-
+Python/ast_opt.c	fold_unaryop	ops	-
+Python/codecs.c	-	Py_hexdigits	-
+Python/codecs.c	-	ucnhash_capi	-
+Python/codecs.c	_PyCodecRegistry_Init	methods	-
+Python/dynload_shlib.c	-	_PyImport_DynLoadFiletab	-
+Python/dynload_stub.c	-	_PyImport_DynLoadFiletab	-
+Python/frozen.c	-	aliases	-
+Python/frozen.c	-	bootstrap_modules	-
+Python/frozen.c	-	stdlib_modules	-
+Python/frozen.c	-	test_modules	-
+Python/getopt.c	-	longopts	-
+Python/import.c	-	_PyImport_Inittab	-
+Python/import.c	-	_PySys_ImplCacheTag	-
 Python/opcode_targets.h	-	opcode_targets	-
+Python/pyhash.c	-	PyHash_Func	-
+Python/pylifecycle.c	-	_C_LOCALE_WARNING	-
+Python/pylifecycle.c	-	_PyOS_mystrnicmp_hack	-
+Python/pylifecycle.c	-	_TARGET_LOCALES	-
+Python/specialize.c	-	adaptive_opcodes	-
+Python/specialize.c	-	cache_requirements	-
+Python/specialize.c	-	compare_masks	-
