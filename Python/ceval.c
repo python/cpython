@@ -4451,8 +4451,11 @@ handle_eval_breaker:
             assert(call_shape.kwnames == NULL);
 #ifdef Py_STATS
             extern int _PySpecialization_ClassifyCallable(PyObject *);
-            _py_stats.opcode_stats[PRECALL_FUNCTION].specialization.failure++;
-            _py_stats.opcode_stats[PRECALL_FUNCTION].specialization.failure_kinds[_PySpecialization_ClassifyCallable(call_shape.callable)]++;
+            SpecializationStats *stats =
+                &_py_stats.opcode_stats[PRECALL_FUNCTION].specialization;
+            stats->failure++;
+            int kind = _PySpecialization_ClassifyCallable(call_shape.callable);
+            stats->failure_kinds[kind]++;
 #endif
             DISPATCH();
         }
@@ -4493,6 +4496,14 @@ handle_eval_breaker:
 
             call_shape.total_args = nargs;
             assert(call_shape.kwnames == NULL);
+#ifdef Py_STATS
+            extern int _PySpecialization_ClassifyCallable(PyObject *);
+            SpecializationStats *stats =
+                &_py_stats.opcode_stats[PRECALL_METHOD].specialization;
+            stats->failure++;
+            int kind = _PySpecialization_ClassifyCallable(call_shape.callable);
+            stats->failure_kinds[kind]++;
+#endif
             DISPATCH();
         }
 
