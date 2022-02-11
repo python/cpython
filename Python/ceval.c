@@ -4722,6 +4722,7 @@ handle_eval_breaker:
             Py_DECREF(obj);
             STACK_SHRINK(call_shape.postcall_shrink);
             SET_TOP(res);
+            CHECK_EVAL_BREAKER();
             NOTRACE_DISPATCH();
         }
 
@@ -4742,6 +4743,7 @@ handle_eval_breaker:
             if (res == NULL) {
                 goto error;
             }
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -4761,6 +4763,7 @@ handle_eval_breaker:
             if (res == NULL) {
                 goto error;
             }
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -4785,6 +4788,7 @@ handle_eval_breaker:
             if (res == NULL) {
                 goto error;
             }
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -4816,6 +4820,7 @@ handle_eval_breaker:
             if (res == NULL) {
                 goto error;
             }
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -4854,6 +4859,7 @@ handle_eval_breaker:
                 */
                 goto error;
             }
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -4896,6 +4902,7 @@ handle_eval_breaker:
             if (res == NULL) {
                 goto error;
             }
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -4927,6 +4934,7 @@ handle_eval_breaker:
             if (res == NULL) {
                 goto error;
             }
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -4960,6 +4968,7 @@ handle_eval_breaker:
             if (res == NULL) {
                 goto error;
             }
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -4984,6 +4993,7 @@ handle_eval_breaker:
             Py_INCREF(Py_None);
             SET_TOP(Py_None);
             Py_DECREF(call_shape.callable);
+            CHECK_EVAL_BREAKER();
             NOTRACE_DISPATCH();
         }
 
@@ -5013,6 +5023,7 @@ handle_eval_breaker:
             if (res == NULL) {
                 goto error;
             }
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -5040,6 +5051,7 @@ handle_eval_breaker:
             if (res == NULL) {
                 goto error;
             }
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -5067,6 +5079,7 @@ handle_eval_breaker:
             if (res == NULL) {
                 goto error;
             }
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
