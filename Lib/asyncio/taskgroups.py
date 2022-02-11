@@ -17,7 +17,7 @@
 #
 
 
-__all__ = ["TaskGroup"]
+__all__ = ["TaskGroup", "TaskGroupError"]
 
 import asyncio
 import itertools
