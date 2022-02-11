@@ -126,7 +126,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
 
             NUM += 10
 
-        with self.assertRaises(taskgroups.TaskGroupError) as cm:
+        with self.assertRaises(ExceptionGroup) as cm:
             await self.loop.create_task(runner())
 
         self.assertEqual(get_error_types(cm.exception), {ZeroDivisionError})
@@ -172,7 +172,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
 
         # The 3 foo1 sub tasks can be racy when the host is busy - if the
         # cancellation happens in the middle, we'll see partial sub errors here
-        with self.assertRaises(taskgroups.TaskGroupError) as cm:
+        with self.assertRaises(ExceptionGroup) as cm:
             await self.loop.create_task(runner())
 
         self.assertEqual(get_error_types(cm.exception), {ZeroDivisionError})
@@ -287,10 +287,10 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
 
         try:
             await runner()
-        except taskgroups.TaskGroupError as t:
+        except ExceptionGroup as t:
             self.assertEqual(get_error_types(t), {ZeroDivisionError})
         else:
-            self.fail('TaskGroupError was not raised')
+            self.fail('ExceptionGroup was not raised')
 
         self.assertTrue(t1.cancelled())
         self.assertTrue(t2.cancelled())
@@ -316,10 +316,10 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
 
         try:
             await runner()
-        except taskgroups.TaskGroupError as t:
+        except ExceptionGroup as t:
             self.assertEqual(get_error_types(t), {ZeroDivisionError})
         else:
-            self.fail('TaskGroupError was not raised')
+            self.fail('ExceptionGroup was not raised')
 
         self.assertTrue(t1.cancelled())
         self.assertTrue(t2.cancelled())
@@ -390,7 +390,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
                     g2.create_task(crash_after(0.2))
 
         r = self.loop.create_task(runner())
-        with self.assertRaises(taskgroups.TaskGroupError) as cm:
+        with self.assertRaises(ExceptionGroup) as cm:
             await r
 
         self.assertEqual(get_error_types(cm.exception), {ValueError})
@@ -409,11 +409,11 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
                     g2.create_task(crash_after(0.1))
 
         r = self.loop.create_task(runner())
-        with self.assertRaises(taskgroups.TaskGroupError) as cm:
+        with self.assertRaises(ExceptionGroup) as cm:
             await r
 
         # TODO(guido): Check that the nested exception group is expected
-        self.assertEqual(get_error_types(cm.exception), {taskgroups.TaskGroupError})
+        self.assertEqual(get_error_types(cm.exception), {ExceptionGroup})
         self.assertEqual(get_error_types(cm.exception.exceptions[0]), {ValueError})
 
     async def test_taskgroup_15(self):
@@ -510,10 +510,10 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
 
         try:
             await r
-        except taskgroups.TaskGroupError as t:
+        except ExceptionGroup as t:
             self.assertEqual(get_error_types(t),{MyExc})
         else:
-            self.fail('TaskGroupError was not raised')
+            self.fail('ExceptionGroup was not raised')
 
         self.assertEqual(NUM, 10)
 
@@ -536,7 +536,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
         r = self.loop.create_task(runner())
         try:
             await r
-        except taskgroups.TaskGroupError as t:
+        except ExceptionGroup as t:
             self.assertEqual(get_error_types(t), {MyExc, ZeroDivisionError})
         else:
             self.fail('TasgGroupError was not raised')

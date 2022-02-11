@@ -17,7 +17,7 @@
 #
 
 
-__all__ = ["TaskGroup", "TaskGroupError"]
+__all__ = ["TaskGroup"]
 
 import asyncio
 import itertools
@@ -164,7 +164,7 @@ class TaskGroup:
             errors = self._errors
             self._errors = None
 
-            me = TaskGroupError('unhandled errors in a TaskGroup', errors)
+            me = BaseExceptionGroup('unhandled errors in a TaskGroup', errors)
             raise me from None
 
     def create_task(self, coro):
@@ -265,10 +265,6 @@ class TaskGroup:
             #                                 # after TaskGroup is finished.
             self._parent_cancel_requested = True
             self._parent_task.cancel()
-
-
-class TaskGroupError(ExceptionGroup):
-    pass
 
 
 _name_counter = itertools.count(1).__next__
