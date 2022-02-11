@@ -2065,7 +2065,8 @@ def wait_process(pid, *, exitcode, timeout=None):
                     pass
 
                 raise AssertionError(f"process {pid} is still running "
-                                     f"after {dt:.1f} seconds")
+                                     f"after {dt:.1f} seconds, "
+                                     f"timeout is {timeout} seconds")
 
             sleep = min(sleep * 2, max_sleep)
             time.sleep(sleep)
