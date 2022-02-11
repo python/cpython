@@ -42,6 +42,20 @@ Typical usage:
     # make a UUID from a 16-byte string
     >>> uuid.UUID(bytes=x.bytes)
     UUID('00010203-0405-0607-0809-0a0b0c0d0e0f')
+
+Command-Line usage:
+
+    python -m uuid [-h] | COMMAND [NAMESPACE] [NAME]
+
+    # generate a random uuid
+    >>> python -m uuid
+
+    # generate a uuid1
+    >>> python -m uuid uuid1
+
+    # generate a uuid3 or uuid5
+    >>> python -m uuid uuid5 NAMESPACE_DNS python.org
+
 """
 
 import os
@@ -727,3 +741,43 @@ NAMESPACE_DNS = UUID('6ba7b810-9dad-11d1-80b4-00c04fd430c8')
 NAMESPACE_URL = UUID('6ba7b811-9dad-11d1-80b4-00c04fd430c8')
 NAMESPACE_OID = UUID('6ba7b812-9dad-11d1-80b4-00c04fd430c8')
 NAMESPACE_X500 = UUID('6ba7b814-9dad-11d1-80b4-00c04fd430c8')
+
+if __name__ == '__main__':
+    """
+    Enables uuid to be called from the command line
+    """
+
+    allowed_cmds = ['-h','--help','uuid1', 'uuid3', 'uuid4', 'uuid5']
+    if len(sys.argv) == 1:
+        # By default, print a random uuid.
+        print(uuid4())
+    else:
+        cmd = sys.argv[1]
+        if cmd not in allowed_cmds:
+            raise Exception(f"Command not found: [{cmd}]. Run `python -m uuid -h` for more information.")
+        if cmd in ['-h', '--help']:
+            print(__doc__)
+        if cmd == 'uuid1':
+            print(uuid1())
+        if cmd in ['uuid3', 'uuid5']:
+            if len(sys.argv) != 4:
+                raise Exception(f"Incorrect number of arguments. Example usage: \n python -m uuid {cmd} NAMESPACE NAME")
+            else:
+                namespace = sys.argv[2]
+                name      = sys.argv[3]
+                if namespace == "NAMESPACE_DNS":
+                    namespace = NAMESPACE_DNS
+                elif namespace == "NAMESPACE_URL":
+                    namespace = NAMESPACE_URL
+                elif namespace == "NAMESPACE_OID":
+                    namespace = NAMESPACE_OID
+                elif namespace == "NAMESPACE_X500":
+                    namespace = NAMESPACE_X500
+                else:
+                    namespace = UUID(namespace)
+            if cmd == "uuid3":
+                print(uuid3(namespace, name))
+            else:
+                print(uuid5(namespace, name))
+        if cmd == 'uuid4':
+            print(uuid4())
