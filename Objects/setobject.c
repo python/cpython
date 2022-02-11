@@ -1431,7 +1431,7 @@ set_difference_update_internal(PySetObject *so, PyObject *other)
         while (set_next((PySetObject *)other, &pos, &entry)) {
             PyObject *key = entry->key;
             Py_INCREF(key);
-            if (set_discard_entry(so, entry->key, entry->hash) < 0) {
+            if (set_discard_entry(so, key, entry->hash) < 0) {
                 Py_DECREF(other);
                 Py_DECREF(key);
                 return -1;
