@@ -4,7 +4,6 @@ import sys
 import types
 import collections
 import io
-import ctypes
 
 from opcode import *
 from opcode import __all__ as _opcodes_all
@@ -517,14 +516,47 @@ def _disassemble_str(source, **kwargs):
 disco = disassemble                     # XXX For backwards compatibility
 
 
-# The number of bits in a signed int
-_c_int_bit_size = ctypes.sizeof(ctypes.c_int()) * 8
-# The maximum value that can be stored in a signed int
-_c_int_upper_limit = (2 ** (_c_int_bit_size - 1)) - 1
-# The number of values that can be stored in a signed int
-_c_int_length = 2 ** _c_int_bit_size
 
 def _unpack_opargs(code):
+
+    # When the ctypes import is at the top level, the tests raise an error, so it is imported inline:
+    # Traceback (most recent call last):
+    #   File "<frozen runpy>", line 198, in _run_module_as_main
+    #   File "<frozen runpy>", line 88, in _run_code
+    #   File "/home/runner/work/cpython/cpython/Lib/sysconfig.py", line 810, in <module>
+    #     _main()
+    #     ^^^^^^^
+    #   File "/home/runner/work/cpython/cpython/Lib/sysconfig.py", line 798, in _main
+    #     _generate_posix_vars()
+    #     ^^^^^^^^^^^^^^^^^^^^^^
+    #   File "/home/runner/work/cpython/cpython/Lib/sysconfig.py", line 418, in _generate_posix_vars
+    #     import pprint
+    #     ^^^^^^^^^^^^^
+    #   File "/home/runner/work/cpython/cpython/Lib/pprint.py", line 38, in <module>
+    #     import dataclasses as _dataclasses
+    #     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    #   File "/home/runner/work/cpython/cpython/Lib/dataclasses.py", line 5, in <module>
+    #     import inspect
+    #     ^^^^^^^^^^^^^^
+    #   File "/home/runner/work/cpython/cpython/Lib/inspect.py", line 137, in <module>
+    #     import dis
+    #     ^^^^^^^^^^
+    #   File "/home/runner/work/cpython/cpython/Lib/dis.py", line 7, in <module>
+    #     import ctypes
+    #     ^^^^^^^^^^^^^
+    #   File "/home/runner/work/cpython/cpython/Lib/ctypes/__init__.py", line 8, in <module>
+    #     from _ctypes import Union, Structure, Array
+    #     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    # ModuleNotFoundError: No module named '_ctypes'
+    import ctypes
+    # The number of bits in a signed int
+    c_int_bit_size = ctypes.sizeof(ctypes.c_int()) * 8
+    # The maximum value that can be stored in a signed int
+    c_int_upper_limit = (2 ** (c_int_bit_size - 1)) - 1
+    # The number of values that can be stored in a signed int
+    c_int_length = 2 ** c_int_bit_size
+
+
     extended_arg = 0
     for i in range(0, len(code), 2):
         op = code[i]
@@ -534,8 +566,8 @@ def _unpack_opargs(code):
             # The oparg is stored as a signed integer
             # If the value exceeds its upper limit, it will overflow and wrap
             # This makes the dis output match the current behavior of the interpreter
-            if extended_arg > _c_int_upper_limit:
-                extended_arg -= _c_int_length
+            if extended_arg > c_int_upper_limit:
+                extended_arg -= c_int_length
         else:
             arg = None
             extended_arg = 0
