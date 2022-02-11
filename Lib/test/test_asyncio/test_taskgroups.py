@@ -33,7 +33,7 @@ def get_error_types(eg):
 
 class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
 
-    def setUp(self):
+    async def asyncSetUp(self):
         self.loop = asyncio.get_event_loop()
 
     async def test_taskgroup_01(self):
