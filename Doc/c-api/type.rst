@@ -168,10 +168,10 @@ Type Objects
 
    .. versionadded:: 3.9
 
-.. c:function::  PyObject* PyType_GetModuleByDef(PyTypeObject *type, struct PyModuleDef *def)
+.. c:function:: PyObject* PyType_GetModuleByDef(PyTypeObject *type, struct PyModuleDef *def)
 
    Find the first superclass whose module was created from
-   the given :ctype:`PyModuleDef` *def*, and return that module.
+   the given :c:type:`PyModuleDef` *def*, and return that module.
 
    If no module is found, raises a :py:class:`TypeError` and returns ``NULL``.
 
