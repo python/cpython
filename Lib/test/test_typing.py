@@ -2616,14 +2616,6 @@ class ForwardRefTests(BaseTestCase):
         self.assertEqual(frm, typing.ForwardRef('int', module=__name__))
         self.assertNotEqual(frm, typing.ForwardRef('int', module='__other_name__'))
 
-    def test_forward_hash(self):
-        fr = typing.ForwardRef('int')
-        self.assertEqual(hash(fr), hash(typing.ForwardRef('int')))
-        self.assertNotEqual(hash(fr), hash(typing.ForwardRef('int', module=__name__)))
-        frm = typing.ForwardRef('int', module=__name__)
-        self.assertEqual(hash(frm), hash(typing.ForwardRef('int', module=__name__)))
-        self.assertNotEqual(hash(frm), hash(typing.ForwardRef('int', module='__other_name__')))
-
     def test_forward_equality_gth(self):
         c1 = typing.ForwardRef('C')
         c1_gth = typing.ForwardRef('C')
@@ -2658,6 +2650,14 @@ class ForwardRefTests(BaseTestCase):
         self.assertEqual(hash(c1), hash(c2))
         self.assertEqual(hash(c1_gth), hash(c2_gth))
         self.assertEqual(hash(c1), hash(c1_gth))
+
+        c3 = typing.ForwardRef('int', module=__name__)
+        c4 = typing.ForwardRef('int', module='__other_name__')
+
+        self.assertNotEqual(hash(c3), hash(c1))
+        self.assertNotEqual(hash(c3), hash(c1_gth))
+        self.assertNotEqual(hash(c3), hash(c4))
+        self.assertEqual(hash(c3), hash(typing.ForwardRef('int', module=__name__)))
 
     def test_forward_equality_namespace(self):
         class A:
