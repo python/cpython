@@ -168,12 +168,12 @@ Type Objects
 
    .. versionadded:: 3.9
 
-.. c:function:: void* PyType_GetModuleByDef(PyTypeObject *type, struct PyModuleDef *def)
+.. c:function::  PyObject* PyType_GetModuleByDef(PyTypeObject *type, struct PyModuleDef *def)
 
    Find the first superclass whose module was created from
-   the given PyModuleDef, and return that module.
+   the given :ctype:`PyModuleDef` *def*, and return that module.
 
-   If no module is found, sets :py:class:`TypeError` and returns ``NULL``.
+   If no module is found, raises a :py:class:`TypeError` and returns ``NULL``.
 
    This function is intended to be used together with
    :c:func:`PyModule_GetState()` to get module state from slot methods (such as
