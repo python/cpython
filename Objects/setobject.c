@@ -1753,7 +1753,7 @@ set_issubset(PySetObject *so, PyObject *other)
     while (set_next(so, &pos, &entry)) {
         PyObject *key = entry->key;
         Py_INCREF(key);
-        rv = set_contains_entry((PySetObject *)other, entry->key, entry->hash);
+        rv = set_contains_entry((PySetObject *)other, key, entry->hash);
         Py_DECREF(key);
         if (rv < 0) {
             return NULL;
