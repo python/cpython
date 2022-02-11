@@ -755,10 +755,13 @@ class EditorWindow:
             self.center()
 
     def ispythonsource(self, filename):
-        return idlelib.util.is_python_source(
-            filepath=filename,
-            firstline=self.text.get('1.0', '1.0 lineend')
-        )
+        if not filename or os.path.isdir(filename):
+            return True
+        base, ext = os.path.splitext(os.path.basename(filename))
+        if os.path.normcase(ext) in (".py", ".pyw"):
+            return True
+        line = self.text.get('1.0', '1.0 lineend')
+        return line.startswith('#!') and 'python' in line
 
     def close_hook(self):
         if self.flist:
