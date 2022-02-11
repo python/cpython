@@ -1,7 +1,6 @@
 """Test util, coverage 100%"""
 
 import unittest
-#from unittest import mock
 from idlelib import util
 
 
