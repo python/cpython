@@ -647,7 +647,6 @@ SYMBOL_NAMES = (
     "PyType_GenericNew",
     "PyType_GetFlags",
     "PyType_GetModule",
-    "PyType_GetModuleByDef",
     "PyType_GetModuleState",
     "PyType_GetName",
     "PyType_GetQualName",
