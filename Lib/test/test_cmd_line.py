@@ -15,6 +15,8 @@ from test.support.script_helper import (
     interpreter_requires_environment
 )
 
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test module requires subprocess")
 
 # Debug build?
 Py_DEBUG = hasattr(sys, "gettotalrefcount")

@@ -1173,6 +1173,13 @@ Python/deepfreeze/deepfreeze.c: $(DEEPFREEZE_DEPS)
 regen-importlib: regen-frozen
 
 ############################################################################
+# Global objects
+
+.PHONY: regen-global-objects
+regen-global-objects: $(srcdir)/Tools/scripts/generate_global_objects.py $(FREEZE_MODULE_DEPS)
+	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/scripts/generate_global_objects.py
+
+############################################################################
 # ABI
 
 regen-limited-abi: all
@@ -1183,9 +1190,10 @@ regen-limited-abi: all
 
 regen-all: regen-opcode regen-opcode-targets regen-typeslots \
 	regen-token regen-ast regen-keyword regen-frozen clinic \
-	regen-pegen-metaparser regen-pegen regen-test-frozenmain
+	regen-pegen-metaparser regen-pegen regen-test-frozenmain \
+	regen-global-objects
 	@echo
-	@echo "Note: make regen-stdlib-module-names and autoconf should be run manually"
+	@echo "Note: make regen-stdlib-module-names and make autoconf should be run manually"
 
 ############################################################################
 # Special rules for object files
@@ -1431,6 +1439,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/abstract.h \
 		$(srcdir)/Include/bltinmodule.h \
 		$(srcdir)/Include/boolobject.h \
+		$(srcdir)/Include/buffer.h \
 		$(srcdir)/Include/bytearrayobject.h \
 		$(srcdir)/Include/bytesobject.h \
 		$(srcdir)/Include/ceval.h \
@@ -1505,6 +1514,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/code.h \
 		$(srcdir)/Include/cpython/compile.h \
 		$(srcdir)/Include/cpython/context.h \
+		$(srcdir)/Include/cpython/descrobject.h \
 		$(srcdir)/Include/cpython/dictobject.h \
 		$(srcdir)/Include/cpython/fileobject.h \
 		$(srcdir)/Include/cpython/fileutils.h \
@@ -2425,6 +2435,9 @@ patchcheck: @DEF_MAKE_RULE@
 
 check-limited-abi: all
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/stable_abi.py --all $(srcdir)/Misc/stable_abi.txt
+
+check-global-objects: all
+	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/generate_global_objects.py --check
 
 .PHONY: update-config
 update-config:

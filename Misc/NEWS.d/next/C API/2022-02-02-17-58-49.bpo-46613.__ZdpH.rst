@@ -1,0 +1,2 @@
+Added function :c:func:`PyType_GetModuleByDef`, which allows accesss to
+module state when a method's defining class is not available.

@@ -1,0 +1,1 @@
+When iterating over sets internally in ``setobject.c``, acquire strong references to the resulting items from the set.  This prevents crashes in corner-cases of various set operations where the set gets mutated.

@@ -22,6 +22,12 @@
 #include <unistd.h>
 #endif
 
+/* Empty finalizer for deepfrozen modules */
+void
+_Py_Deepfreeze_Fini(void)
+{
+}
+
 /* To avoid a circular dependency on frozen.o, we create our own structure
    of frozen modules instead, left deliberately blank so as to avoid
    unintentional import of a stale version of _frozen_importlib. */
@@ -235,3 +241,4 @@ error:
     Py_Finalize();
     return 1;
 }
+

@@ -685,7 +685,10 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *message = NULL;
     PyObject *exceptions = NULL;
 
-    if (!PyArg_ParseTuple(args, "UO", &message, &exceptions)) {
+    if (!PyArg_ParseTuple(args,
+                          "UO:BaseExceptionGroup.__new__",
+                          &message,
+                          &exceptions)) {
         return NULL;
     }
 
@@ -1496,16 +1499,14 @@ ImportError_getstate(PyImportErrorObject *self)
 {
     PyObject *dict = ((PyBaseExceptionObject *)self)->dict;
     if (self->name || self->path) {
-        _Py_IDENTIFIER(name);
-        _Py_IDENTIFIER(path);
         dict = dict ? PyDict_Copy(dict) : PyDict_New();
         if (dict == NULL)
             return NULL;
-        if (self->name && _PyDict_SetItemId(dict, &PyId_name, self->name) < 0) {
+        if (self->name && PyDict_SetItem(dict, &_Py_ID(name), self->name) < 0) {
             Py_DECREF(dict);
             return NULL;
         }
-        if (self->path && _PyDict_SetItemId(dict, &PyId_path, self->path) < 0) {
+        if (self->path && PyDict_SetItem(dict, &_Py_ID(path), self->path) < 0) {
             Py_DECREF(dict);
             return NULL;
         }
@@ -3726,7 +3727,7 @@ _PyErr_TrySetFromCause(const char *format, ...)
     base_exc_size = _PyExc_BaseException.tp_basicsize;
     same_basic_size = (
         caught_type_size == base_exc_size ||
-        (PyType_SUPPORTS_WEAKREFS(caught_type) &&
+        (_PyType_SUPPORTS_WEAKREFS(caught_type) &&
             (caught_type_size == base_exc_size + (Py_ssize_t)sizeof(PyObject *))
         )
     );
