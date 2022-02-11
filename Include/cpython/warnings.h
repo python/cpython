@@ -7,13 +7,13 @@ PyAPI_FUNC(int) PyErr_WarnExplicitObject(
     PyObject *message,
     PyObject *filename,
     int lineno,
-    PyObject *module,
+    PyObject *mod,
     PyObject *registry);
 
 PyAPI_FUNC(int) PyErr_WarnExplicitFormat(
     PyObject *category,
     const char *filename, int lineno,
-    const char *module, PyObject *registry,
+    const char *mod, PyObject *registry,
     const char *format, ...);
 
 // DEPRECATED: Use PyErr_WarnEx() instead.

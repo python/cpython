@@ -158,7 +158,7 @@ PyAPI_FUNC(int) PyModule_AddIntConstant(PyObject *, const char *, long);
 PyAPI_FUNC(int) PyModule_AddStringConstant(PyObject *, const char *, const char *);
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000
 /* New in 3.9 */
-PyAPI_FUNC(int) PyModule_AddType(PyObject *module, PyTypeObject *type);
+PyAPI_FUNC(int) PyModule_AddType(PyObject *mod, PyTypeObject *type);
 #endif /* Py_LIMITED_API */
 #define PyModule_AddIntMacro(m, c) PyModule_AddIntConstant(m, #c, c)
 #define PyModule_AddStringMacro(m, c) PyModule_AddStringConstant(m, #c, c)
@@ -167,7 +167,7 @@ PyAPI_FUNC(int) PyModule_AddType(PyObject *module, PyTypeObject *type);
 /* New in 3.5 */
 PyAPI_FUNC(int) PyModule_SetDocString(PyObject *, const char *);
 PyAPI_FUNC(int) PyModule_AddFunctions(PyObject *, PyMethodDef *);
-PyAPI_FUNC(int) PyModule_ExecDef(PyObject *module, PyModuleDef *def);
+PyAPI_FUNC(int) PyModule_ExecDef(PyObject *mod, PyModuleDef *def);
 #endif
 
 #define Py_CLEANUP_SUPPORTED 0x20000
