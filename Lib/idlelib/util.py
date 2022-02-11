@@ -15,7 +15,7 @@ TODO:
 from os import path
 
 # .pyw is for Windows; .pyi is for stub files.
-py_extensions = frozenset(('.py', '.pyw', '.pyi'))
+py_extensions = ('.py', '.pyw', '.pyi')  # Order needed for open/save dialogs.
 
 if __name__ == '__main__':
     from unittest import main
