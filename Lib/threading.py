@@ -1121,12 +1121,14 @@ class Thread:
             assert self._is_stopped
             return
 
+        locked = False
+
         try:
-            if lock.acquire(block, timeout):
+            if locked := lock.acquire(block, timeout):
                 lock.release()
                 self._stop()
         except:
-            if lock.locked():
+            if locked:
                 # bpo-45274: lock.acquire() acquired the lock, but the function
                 # was interrupted with an exception before reaching the
                 # lock.release(). It can happen if a signal handler raises an
