@@ -1234,8 +1234,6 @@ class TestSSL(test_utils.TestCase):
         sslctx = self._create_server_ssl_context(
             test_utils.ONLYCERT, test_utils.ONLYKEY)
         client_sslctx = self._create_client_ssl_context()
-        if hasattr(ssl, 'OP_NO_TLSv1_3'):
-            client_sslctx.options |= ssl.OP_NO_TLSv1_3
 
         future = None
 
