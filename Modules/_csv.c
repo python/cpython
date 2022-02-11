@@ -374,7 +374,7 @@ static char *dialect_kws[] = {
 static _csvstate *
 _csv_state_from_type(PyTypeObject *type, const char *name)
 {
-    PyObject *module = _PyType_GetModuleByDef(type, &_csvmodule);
+    PyObject *module = PyType_GetModuleByDef(type, &_csvmodule);
     if (module == NULL) {
         return NULL;
     }

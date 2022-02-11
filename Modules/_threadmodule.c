@@ -786,7 +786,7 @@ local_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         }
     }
 
-    PyObject *module = _PyType_GetModuleByDef(type, &thread_module);
+    PyObject *module = PyType_GetModuleByDef(type, &thread_module);
     thread_module_state *state = get_thread_state(module);
 
     localobject *self = (localobject *)type->tp_alloc(type, 0);
@@ -925,7 +925,7 @@ _ldict(localobject *self, thread_module_state *state)
 static int
 local_setattro(localobject *self, PyObject *name, PyObject *v)
 {
-    PyObject *module = _PyType_GetModuleByDef(Py_TYPE(self), &thread_module);
+    PyObject *module = PyType_GetModuleByDef(Py_TYPE(self), &thread_module);
     thread_module_state *state = get_thread_state(module);
 
     PyObject *ldict = _ldict(self, state);
@@ -977,7 +977,7 @@ static PyType_Spec local_type_spec = {
 static PyObject *
 local_getattro(localobject *self, PyObject *name)
 {
-    PyObject *module = _PyType_GetModuleByDef(Py_TYPE(self), &thread_module);
+    PyObject *module = PyType_GetModuleByDef(Py_TYPE(self), &thread_module);
     thread_module_state *state = get_thread_state(module);
 
     PyObject *ldict = _ldict(self, state);

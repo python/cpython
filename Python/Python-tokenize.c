@@ -13,7 +13,7 @@ get_tokenize_state(PyObject *module) {
 }
 
 #define _tokenize_get_state_by_type(type) \
-    get_tokenize_state(_PyType_GetModuleByDef(type, &_tokenizemodule))
+    get_tokenize_state(PyType_GetModuleByDef(type, &_tokenizemodule))
 
 #include "clinic/Python-tokenize.c.h"
 

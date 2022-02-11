@@ -33,7 +33,7 @@ static struct PyModuleDef _multibytecodecmodule;
 static _multibytecodec_state *
 _multibyte_codec_find_state_by_type(PyTypeObject *type)
 {
-    PyObject *module = _PyType_GetModuleByDef(type, &_multibytecodecmodule);
+    PyObject *module = PyType_GetModuleByDef(type, &_multibytecodecmodule);
     assert(module != NULL);
     return _multibytecodec_get_state(module);
 }
