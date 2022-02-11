@@ -486,7 +486,7 @@ The :mod:`multiprocessing` package mostly replicates the API of the
    inherited from the creating process.
 
    By default, no arguments are passed to *target*. The *args* argument,
-   which defaults to ``()``, can be used to specify a list or  tuple of  the arguments
+   which defaults to ``()``, can be used to specify a list or tuple of the arguments
    to pass to *target*.
 
    If a subclass overrides the constructor, it must make sure it invokes the
