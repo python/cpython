@@ -4,6 +4,7 @@ import sys
 import types
 import collections
 import io
+import ctypes
 
 from opcode import *
 from opcode import __all__ as _opcodes_all
@@ -515,6 +516,14 @@ def _disassemble_str(source, **kwargs):
 
 disco = disassemble                     # XXX For backwards compatibility
 
+
+# The number of bits in a signed int
+_c_int_bit_size = ctypes.sizeof(ctypes.c_int()) * 8
+# The maximum value that can be stored in a signed int
+_c_int_upper_limit = (2 ** (_c_int_bit_size - 1)) - 1
+# The number of values that can be stored in a signed int
+_c_int_length = 2 ** _c_int_bit_size
+
 def _unpack_opargs(code):
     extended_arg = 0
     for i in range(0, len(code), 2):
@@ -522,6 +531,11 @@ def _unpack_opargs(code):
         if op >= HAVE_ARGUMENT:
             arg = code[i+1] | extended_arg
             extended_arg = (arg << 8) if op == EXTENDED_ARG else 0
+            # The oparg is stored as a signed integer
+            # If the value exceeds its upper limit, it will overflow and wrap
+            # This makes the dis output match the current behavior of the interpreter
+            if extended_arg > _c_int_upper_limit:
+                extended_arg -= _c_int_length
         else:
             arg = None
             extended_arg = 0
