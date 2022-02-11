@@ -420,6 +420,18 @@
     <None Include="..\Lib\codecs.py">
       <Filter>Python Files</Filter>
     </None>
+    <None Include="..\Lib\encodings\__init__.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\aliases.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\ascii.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\utf_8.py">
+      <Filter>Python Files</Filter>
+    </None>
     <None Include="..\Lib\io.py">
       <Filter>Python Files</Filter>
     </None>

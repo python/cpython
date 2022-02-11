@@ -49,10 +49,10 @@ FROZEN = [
     ('stdlib - startup, without site (python -S)', [
         'abc',
         'codecs',
-        # For now we do not freeze the encodings, due # to the noise all
-        # those extra modules add to the text printed during the build.
-        # (See https://github.com/python/cpython/pull/28398#pullrequestreview-756856469.)
-        #'<encodings.*>',
+        '<encodings>', # this is equivalent to encodings.__init__
+        'encodings.aliases',
+        'encodings.ascii',
+        'encodings.utf_8',
         'io',
         ]),
     ('stdlib - startup, with site', [

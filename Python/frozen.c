@@ -49,6 +49,10 @@ extern PyObject *_Py_get_importlib__bootstrap_external_toplevel(void);
 extern PyObject *_Py_get_zipimport_toplevel(void);
 extern PyObject *_Py_get_abc_toplevel(void);
 extern PyObject *_Py_get_codecs_toplevel(void);
+extern PyObject *_Py_get_encodings_toplevel(void);
+extern PyObject *_Py_get_encodings_aliases_toplevel(void);
+extern PyObject *_Py_get_encodings_ascii_toplevel(void);
+extern PyObject *_Py_get_encodings_utf_8_toplevel(void);
 extern PyObject *_Py_get_io_toplevel(void);
 extern PyObject *_Py_get__collections_abc_toplevel(void);
 extern PyObject *_Py_get__sitebuiltins_toplevel(void);
@@ -85,6 +89,10 @@ static const struct _frozen stdlib_modules[] = {
     /* stdlib - startup, without site (python -S) */
     {"abc", NULL, 0, false, GET_CODE(abc)},
     {"codecs", NULL, 0, false, GET_CODE(codecs)},
+    {"encodings", NULL, 0, true, GET_CODE(encodings)},
+    {"encodings.aliases", NULL, 0, false, GET_CODE(encodings_aliases)},
+    {"encodings.ascii", NULL, 0, false, GET_CODE(encodings_ascii)},
+    {"encodings.utf_8", NULL, 0, false, GET_CODE(encodings_utf_8)},
     {"io", NULL, 0, false, GET_CODE(io)},
 
     /* stdlib - startup, with site */

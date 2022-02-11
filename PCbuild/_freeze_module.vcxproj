@@ -262,6 +262,26 @@
       <IntFile>$(IntDir)codecs.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\codecs.h</OutFile>
     </None>
+    <None Include="..\Lib\encodings\__init__.py">
+      <ModName>encodings</ModName>
+      <IntFile>$(IntDir)encodings.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\aliases.py">
+      <ModName>encodings.aliases</ModName>
+      <IntFile>$(IntDir)encodings.aliases.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.aliases.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\ascii.py">
+      <ModName>encodings.ascii</ModName>
+      <IntFile>$(IntDir)encodings.ascii.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.ascii.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\utf_8.py">
+      <ModName>encodings.utf_8</ModName>
+      <IntFile>$(IntDir)encodings.utf_8.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\encodings.utf_8.h</OutFile>
+    </None>
     <None Include="..\Lib\io.py">
       <ModName>io</ModName>
       <IntFile>$(IntDir)io.g.h</IntFile>
@@ -400,6 +420,10 @@
 		 "$(PySourcePath)Python\frozen_modules\zipimport.h:zipimport" ^
 		 "$(PySourcePath)Python\frozen_modules\abc.h:abc" ^
 		 "$(PySourcePath)Python\frozen_modules\codecs.h:codecs" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.h:encodings" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.aliases.h:encodings.aliases" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.ascii.h:encodings.ascii" ^
+		 "$(PySourcePath)Python\frozen_modules\encodings.utf_8.h:encodings.utf_8" ^
 		 "$(PySourcePath)Python\frozen_modules\io.h:io" ^
 		 "$(PySourcePath)Python\frozen_modules\_collections_abc.h:_collections_abc" ^
 		 "$(PySourcePath)Python\frozen_modules\_sitebuiltins.h:_sitebuiltins" ^

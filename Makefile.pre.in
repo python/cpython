@@ -994,6 +994,10 @@ FROZEN_FILES_IN = \
 		Lib/zipimport.py \
 		Lib/abc.py \
 		Lib/codecs.py \
+		Lib/encodings/__init__.py \
+		Lib/encodings/aliases.py \
+		Lib/encodings/ascii.py \
+		Lib/encodings/utf_8.py \
 		Lib/io.py \
 		Lib/_collections_abc.py \
 		Lib/_sitebuiltins.py \
@@ -1019,6 +1023,10 @@ FROZEN_FILES_OUT = \
 		Python/frozen_modules/zipimport.h \
 		Python/frozen_modules/abc.h \
 		Python/frozen_modules/codecs.h \
+		Python/frozen_modules/encodings.h \
+		Python/frozen_modules/encodings.aliases.h \
+		Python/frozen_modules/encodings.ascii.h \
+		Python/frozen_modules/encodings.utf_8.h \
 		Python/frozen_modules/io.h \
 		Python/frozen_modules/_collections_abc.h \
 		Python/frozen_modules/_sitebuiltins.h \
@@ -1066,6 +1074,18 @@ Python/frozen_modules/abc.h: Lib/abc.py $(FREEZE_MODULE_DEPS)
 
 Python/frozen_modules/codecs.h: Lib/codecs.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) codecs $(srcdir)/Lib/codecs.py Python/frozen_modules/codecs.h
+
+Python/frozen_modules/encodings.h: Lib/encodings/__init__.py $(FREEZE_MODULE_DEPS)
+	$(FREEZE_MODULE) encodings $(srcdir)/Lib/encodings/__init__.py Python/frozen_modules/encodings.h
+
+Python/frozen_modules/encodings.aliases.h: Lib/encodings/aliases.py $(FREEZE_MODULE_DEPS)
+	$(FREEZE_MODULE) encodings.aliases $(srcdir)/Lib/encodings/aliases.py Python/frozen_modules/encodings.aliases.h
+
+Python/frozen_modules/encodings.ascii.h: Lib/encodings/ascii.py $(FREEZE_MODULE_DEPS)
+	$(FREEZE_MODULE) encodings.ascii $(srcdir)/Lib/encodings/ascii.py Python/frozen_modules/encodings.ascii.h
+
+Python/frozen_modules/encodings.utf_8.h: Lib/encodings/utf_8.py $(FREEZE_MODULE_DEPS)
+	$(FREEZE_MODULE) encodings.utf_8 $(srcdir)/Lib/encodings/utf_8.py Python/frozen_modules/encodings.utf_8.h
 
 Python/frozen_modules/io.h: Lib/io.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) io $(srcdir)/Lib/io.py Python/frozen_modules/io.h
@@ -1146,6 +1166,10 @@ Python/deepfreeze/deepfreeze.c: $(DEEPFREEZE_DEPS)
 	Python/frozen_modules/zipimport.h:zipimport \
 	Python/frozen_modules/abc.h:abc \
 	Python/frozen_modules/codecs.h:codecs \
+	Python/frozen_modules/encodings.h:encodings \
+	Python/frozen_modules/encodings.aliases.h:encodings.aliases \
+	Python/frozen_modules/encodings.ascii.h:encodings.ascii \
+	Python/frozen_modules/encodings.utf_8.h:encodings.utf_8 \
 	Python/frozen_modules/io.h:io \
 	Python/frozen_modules/_collections_abc.h:_collections_abc \
 	Python/frozen_modules/_sitebuiltins.h:_sitebuiltins \
