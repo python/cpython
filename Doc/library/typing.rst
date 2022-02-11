@@ -2166,6 +2166,14 @@ Functions and decorators
 Introspection helpers
 ---------------------
 
+.. function:: eval_type(t, globalns=None, localns=None)
+
+   Evaluate the given type ``t`` by resolving any forward references.
+
+   For usage of ``globalns`` and ``localns`` see :func:`get_type_hints`.
+
+   .. versionadded:: 3.10
+
 .. function:: get_type_hints(obj, globalns=None, localns=None, include_extras=False)
 
    Return a dictionary containing type hints for a function, method, module

@@ -16,7 +16,7 @@ from typing import Union, Optional, Literal
 from typing import Tuple, List, Dict, MutableMapping
 from typing import Callable
 from typing import Generic, ClassVar, Final, final, Protocol
-from typing import cast, runtime_checkable
+from typing import cast, eval_type, runtime_checkable
 from typing import get_type_hints
 from typing import get_origin, get_args
 from typing import is_typeddict
@@ -5402,6 +5402,19 @@ class RevealTypeTests(BaseTestCase):
         with captured_stderr() as stderr:
             self.assertIs(obj, reveal_type(obj))
         self.assertEqual(stderr.getvalue(), "Runtime type is 'object'\n")
+
+
+class EvalTypeTests(BaseTestCase):
+    def test_simple_reference(self):
+        self.assertIs(eval_type(str), str)
+
+    def test_forward_reference(self):
+        self.assertIs(eval_type(ForwardRef('int')), int)
+
+        class C:
+            pass
+
+        self.assertIs(eval_type(ForwardRef('C'), localns=locals()), C)
 
 
 class AllTests(BaseTestCase):
