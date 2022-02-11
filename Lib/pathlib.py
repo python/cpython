@@ -8,6 +8,7 @@ import re
 import sys
 import warnings
 from _collections_abc import Sequence
+from abc import ABC, abstractmethod
 from errno import ENOENT, ENOTDIR, EBADF, ELOOP
 from operator import attrgetter
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
@@ -458,7 +459,7 @@ class _PathParents(Sequence):
         return "<{}.parents>".format(self._pathcls.__name__)
 
 
-class PurePath(object):
+class PurePath(os.PathLike):
     """Base class for manipulating paths without I/O.
 
     PurePath represents a filesystem path and offers operations which
@@ -840,10 +841,6 @@ class PurePath(object):
                 return False
         return True
 
-# Can't subclass os.PathLike from PurePath and keep the constructor
-# optimizations in PurePath._parse_args().
-os.PathLike.register(PurePath)
-
 
 class PurePosixPath(PurePath):
     """PurePath subclass for non-Windows systems.
@@ -868,7 +865,7 @@ class PureWindowsPath(PurePath):
 # Filesystem-accessing classes
 
 
-class _AbstractPath(PurePath):
+class _AbstractPath(PurePath, ABC):
     """PurePath subclass with abstract methods for making system calls.
 
     In a future version of Python, the this class's interface may be exposed
@@ -919,6 +916,7 @@ class _AbstractPath(PurePath):
             other_st = self.__class__(other_path).stat()
         return os.path.samestat(st, other_st)
 
+    @abstractmethod
     def iterdir(self):
         """Iterate over the files in this directory.  Does not yield any
         result for the special paths '.' and '..'.
@@ -975,6 +973,7 @@ class _AbstractPath(PurePath):
         """
         raise NotImplementedError
 
+    @abstractmethod
     def stat(self, *, follow_symlinks=True):
         """
         Return the result of the stat() system call on this path, like
@@ -994,6 +993,7 @@ class _AbstractPath(PurePath):
         """
         raise NotImplementedError
 
+    @abstractmethod
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
         """
