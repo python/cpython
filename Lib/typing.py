@@ -779,7 +779,11 @@ class ForwardRef(_Final, _root=True):
         return Union[other, self]
 
     def __repr__(self):
-        return f'ForwardRef({self.__forward_arg__!r})'
+        if self.__forward_module__ is None:
+            module_repr = ''
+        else:
+            module_repr = f', module={self.__forward_module__!r}'
+        return f'ForwardRef({self.__forward_arg__!r}{module_repr})'
 
 class _TypeVarLike:
     """Mixin for TypeVar-like types (TypeVar and ParamSpec)."""
