@@ -71,7 +71,7 @@ class Popen(object):
             # start process
             try:
                 hp, ht, pid, tid = _winapi.CreateProcess(
-                    os.fsdecode(python_exe), cmd,
+                    python_exe, cmd,
                     None, None, False, 0, env, None, None)
                 _winapi.CloseHandle(ht)
             except:
