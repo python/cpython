@@ -164,8 +164,7 @@ class TaskGroup:
             errors = self._errors
             self._errors = None
 
-            me = TaskGroupError('unhandled errors in a TaskGroup',
-                                errors=errors)
+            me = TaskGroupError('unhandled errors in a TaskGroup', errors)
             raise me from None
 
     def create_task(self, coro):
@@ -268,29 +267,7 @@ class TaskGroup:
             self._parent_task.cancel()
 
 
-class MultiError(Exception):
-
-    def __init__(self, msg, *args, errors=()):
-        if errors:
-            types = set(type(e).__name__ for e in errors)
-            msg = f'{msg}; {len(errors)} sub errors: ({", ".join(types)})'
-            for er in errors:
-                msg += f'\n + {type(er).__name__}: {er}'
-                if er.__traceback__:
-                    er_tb = ''.join(traceback.format_tb(er.__traceback__))
-                    er_tb = textwrap.indent(er_tb, ' | ')
-                    msg += f'\n{er_tb}\n'
-        super().__init__(msg, *args)
-        self.__errors__ = tuple(errors)
-
-    def get_error_types(self):
-        return {type(e) for e in self.__errors__}
-
-    def __reduce__(self):
-        return (type(self), (self.args,), {'__errors__': self.__errors__})
-
-
-class TaskGroupError(MultiError):
+class TaskGroupError(ExceptionGroup):
     pass
 
 
