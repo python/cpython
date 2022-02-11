@@ -23,6 +23,11 @@ from asyncio import taskgroups
 import unittest
 
 
+# To prevent a warning "test altered the execution environment"
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 class MyExc(Exception):
     pass
 
