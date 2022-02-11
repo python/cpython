@@ -40,13 +40,13 @@ else:
 
 def set_executable(exe):
     global _python_exe
-    _python_exe = exe
+    if sys.platform == 'win32':
+        _python_exe = os.fsdecode(exe)
+    else:
+        _python_exe = os.fsencode(exe)
 
 def get_executable():
-    if sys.platform == 'win32':
-        return os.fsdecode(_python_exe)
-    else:
-        return os.fsencode(_python_exe)
+    return _python_exe
 
 #
 #
