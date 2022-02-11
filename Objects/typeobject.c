@@ -3707,7 +3707,6 @@ _PyType_GetModuleByDef(PyTypeObject *type, struct PyModuleDef *def)
     // to check i < PyTuple_GET_SIZE(mro) at the first loop iteration.
     assert(PyTuple_GET_SIZE(mro) >= 1);
 
-    Py_ssize_t i = 0;
     Py_ssize_t n = PyTuple_GET_SIZE(mro);
     for (Py_ssize_t i = 0; i < n; i++) {
         PyObject *super = PyTuple_GET_ITEM(mro, i);
