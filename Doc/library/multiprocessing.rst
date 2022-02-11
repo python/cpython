@@ -1060,6 +1060,9 @@ Miscellaneous
    .. versionchanged:: 3.4
       Now supported on Unix when the ``'spawn'`` start method is used.
 
+   .. versionchanged:: 3.11
+      Accepts a :term:`path-like object`.
+
 .. function:: set_start_method(method)
 
    Set the method which should be used to start child processes.
@@ -2290,7 +2293,7 @@ with the :class:`Pool` class.
       Wait for the worker processes to exit.  One must call :meth:`close` or
       :meth:`terminate` before using :meth:`join`.
 
-   .. versionadded:: 3.3
+   .. versionadded:: 3.11
       Pool objects now support the context management protocol -- see
       :ref:`typecontextmanager`.  :meth:`~contextmanager.__enter__` returns the
       pool object, and :meth:`~contextmanager.__exit__` calls :meth:`terminate`.
