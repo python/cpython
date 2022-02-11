@@ -63,7 +63,7 @@ always available.
 
 .. data:: argv
 
-   The list of command line arguments passed to a Python script (argv means 
+   The list of command line arguments passed to a Python script (``argv`` means 
    argument vector). ``argv[0]`` is the script name (it is operating system
    dependent whether this is a full pathname or not).  If the command was executed 
    using the :option:`-c` command line option to the interpreter, ``argv[0]`` 
