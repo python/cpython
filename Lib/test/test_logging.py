@@ -747,7 +747,7 @@ class HandlerTest(BaseTest):
             fork_happened__release_locks_and_end_thread.set()
             lock_holder_thread.join()
 
-            support.wait_process(pid, exitcode=0)
+            support.wait_process(pid, exitcode=0, timeout=support.LONG_TIMEOUT)
 
 
 class BadStream(object):
