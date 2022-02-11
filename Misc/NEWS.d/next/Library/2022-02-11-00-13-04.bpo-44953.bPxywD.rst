@@ -1,0 +1,1 @@
+This is my news entry. Hopefully a newline is added.
