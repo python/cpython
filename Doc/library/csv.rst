@@ -95,7 +95,7 @@ The :mod:`csv` module defines the following functions:
    :func:`list_dialects` function.  The other optional *fmtparams* keyword arguments
    can be given to override individual formatting parameters in the current
    dialect.  For full details about dialects and formatting parameters, see
-   the :ref:`csv-fmt-params` section.  To make it
+   the :ref:`csv-fmt-params` section. To make it
    as easy as possible to interface with modules which implement the DB API, the
    value :const:`None` is written as the empty string.  While this isn't a
    reversible transformation, it makes it easier to dump SQL NULL data values to
@@ -114,10 +114,10 @@ The :mod:`csv` module defines the following functions:
 
 .. function:: register_dialect(name[, dialect[, **fmtparams]])
 
-   Associate *dialect* with *name*.  *name* must be a string.  The
+   Associate *dialect* with *name*.  *name* must be a string. The
    dialect can be specified either by passing a sub-class of :class:`Dialect`, or
    by *fmtparams* keyword arguments, or both, with keyword arguments overriding
-   parameters of the dialect.  For full details about dialects and formatting
+   parameters of the dialect. For full details about dialects and formatting
    parameters, see section :ref:`csv-fmt-params`.
 
 
@@ -140,7 +140,7 @@ The :mod:`csv` module defines the following functions:
 
 .. function:: field_size_limit([new_limit])
 
-   Returns the current maximum field size allowed by the parser.  If *new_limit* is
+   Returns the current maximum field size allowed by the parser. If *new_limit* is
    given, this becomes the new limit.
 
 
@@ -212,9 +212,11 @@ The :mod:`csv` module defines the following classes:
    A short usage example::
 
        import csv
+
        with open('names.csv', 'w', newline='') as csvfile:
            fieldnames = ['first_name', 'last_name']
            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
            writer.writeheader()
            writer.writerow({'first_name': 'Baked', 'last_name': 'Beans'})
            writer.writerow({'first_name': 'Lovely', 'last_name': 'Spam'})
@@ -234,6 +236,7 @@ The :mod:`csv` module defines the following classes:
    classes through their initializer (``__init__``) functions like this::
 
        import csv
+
        with open('students.csv', 'w', newline='') as csvfile:
            writer = csv.writer(csvfile, dialect='unix')
                                         ^^^^^^^^^^^^^^
@@ -365,7 +368,7 @@ Dialects support the following attributes:
 .. attribute:: Dialect.doublequote
 
    Controls how instances of *quotechar* appearing inside a field should
-   themselves be quoted.  When :const:`True`, the character is doubled.  When
+   themselves be quoted.  When :const:`True`, the character is doubled. When
    :const:`False`, the *escapechar* is used as a prefix to the *quotechar*.  It
    defaults to :const:`True`.
 
@@ -377,8 +380,8 @@ Dialects support the following attributes:
 
    A one-character string used by the writer to escape the *delimiter* if *quoting*
    is set to :const:`QUOTE_NONE` and the *quotechar* if *doublequote* is
-   :const:`False`.  On reading, the *escapechar* removes any special meaning from
-   the following character.  It defaults to :const:`None`, which disables escaping.
+   :const:`False`. On reading, the *escapechar* removes any special meaning from
+   the following character. It defaults to :const:`None`, which disables escaping.
 
    .. versionchanged:: 3.11
       An empty *escapechar* is not allowed.
@@ -445,7 +448,7 @@ Reader objects have the following public attributes:
 
 .. attribute:: csvreader.line_num
 
-   The number of lines read from the source iterator.  This is not the same as the
+   The number of lines read from the source iterator. This is not the same as the
    number of records returned, as records can span multiple lines.
 
 
@@ -467,14 +470,14 @@ the :func:`writer` function) have the following public methods.  A *row* must be
 an iterable of strings or numbers for objects returned by :func:`writer` and a dictionary
 mapping fieldnames to strings or numbers (by passing them through :func:`str`
 first) for :class:`DictWriter` instances.  Note that complex numbers are written
-out surrounded by parens.  This may cause some problems for other programs which
+out surrounded by parens. This may cause some problems for other programs which
 read CSV files (assuming they support complex numbers at all).
 
 
 .. method:: csvwriter.writerow(row)
 
    Write the *row* parameter to the writer's file object, formatted according
-   to the current :class:`Dialect`.  Return the return value of the call to the
+   to the current :class:`Dialect`. Return the return value of the call to the
    *write* method of the underlying file object.
 
    .. versionchanged:: 3.5
@@ -500,7 +503,7 @@ Writer objects have the following public attribute:
 .. method:: DictWriter.writeheader()
 
    Write a row with the field names (as specified in the constructor) to
-   the writer's file object, formatted according to the current dialect.  Return
+   the writer's file object, formatted according to the current dialect. Return
    the return value of the :meth:`csvwriter.writerow` call used internally.
 
    .. versionadded:: 3.2
