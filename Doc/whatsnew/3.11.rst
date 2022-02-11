@@ -650,6 +650,8 @@ Build Changes
   be removed at some point in the future. (Contributed by Mark Dickinson in
   :issue:`45569`.)
 
+* Python.h is now compatible with C++20 compilers. (Contributed by by Hasan
+  Aliyev in :issue:`39355`.)
 
 C API Changes
 =============
