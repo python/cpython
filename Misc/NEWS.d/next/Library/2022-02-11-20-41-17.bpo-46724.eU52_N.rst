@@ -1,1 +1,1 @@
-Fixes dis behavior on bytecode arguments which overflow to match Python interpreter
+Fixes dis behavior on bytecode arguments which overflow to support negative args
