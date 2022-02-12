@@ -714,6 +714,7 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         goto error;
     }
 
+    Py_ssize_t leaf_count = 0;
     bool nested_base_exceptions = false;
     for (Py_ssize_t i = 0; i < numexcs; i++) {
         PyObject *exc = PyTuple_GET_ITEM(exceptions, i);
@@ -733,6 +734,12 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
         else if (is_nonbase_exception == 0) {
             nested_base_exceptions = true;
+        }
+        if (_PyBaseExceptionGroup_Check(exc)) {
+            leaf_count += ((PyBaseExceptionGroupObject *)exc)->leaf_count;
+        }
+        else {
+            leaf_count++;
         }
     }
 
@@ -770,6 +777,7 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     self->msg = Py_NewRef(message);
     self->excs = exceptions;
+    self->leaf_count = leaf_count;
     return (PyObject*)self;
 error:
     Py_DECREF(exceptions);
@@ -836,7 +844,10 @@ BaseExceptionGroup_str(PyBaseExceptionGroupObject *self)
 {
     assert(self->msg);
     assert(PyUnicode_Check(self->msg));
-    return Py_NewRef(self->msg);
+
+    return PyUnicode_FromFormat(
+        "%S (group of %zd exception%s)",
+        self->msg, self->leaf_count, self->leaf_count > 1 ? "s" : "");
 }
 
 static PyObject *
