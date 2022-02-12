@@ -1,1 +1,1 @@
-vendor expat 2.4.4
+expat: Update libexpat from 2.4.1 to 2.4.4 to fix security issue (CVE-2021-45960)
