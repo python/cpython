@@ -189,7 +189,6 @@ static void _CallPythonObject(void *mem,
             CDataObject *obj = (CDataObject *)_PyObject_CallNoArgs(cnv);
             if (!obj) {
                 PrintError("create argument %zd:\n", i);
-                Py_DECREF(cnv);
                 goto Done;
             }
             if (!CDataObject_Check(obj)) {
