@@ -20,6 +20,7 @@ import subprocess
 import signal
 import textwrap
 import traceback
+import _testcapi
 
 from unittest import mock
 from test import lock_tests
@@ -960,6 +961,85 @@ class ThreadTests(BaseTestCase):
         rc, out, err = assert_python_ok("-c", code)
         self.assertEqual(out, b'')
         self.assertEqual(err, b'')
+
+    def test_thread_state_name(self):
+        exc = None
+        tstate_ref = None
+
+        def target():
+            nonlocal exc, tstate_ref
+            try:
+                thread = threading.current_thread()
+
+                self.assertIs(thread.name, _testcapi.get_thread_name(thread._tstate))
+
+                thread.name = "new-thread-name"
+                self.assertIs(thread.name, _testcapi.get_thread_name(thread._tstate))
+
+                # Hold on to tstate reference
+                tstate_ref = thread._tstate
+            except Exception as e:
+                exc = e
+                raise
+
+        thread = threading.Thread(target=target, name="test-thread-name")
+        thread.start()
+
+        main_thread = threading.current_thread()
+        self.assertIs(main_thread.name, _testcapi.get_thread_name(main_thread._tstate))
+
+        thread.join()
+        if exc is not None:
+            raise exc
+
+        # Once the thread terminates, the underlying thread state structure is
+        # deallocated and the reference should become invalid
+        self.assertIsNotNone(tstate_ref)
+        self.assertIsNone(_testcapi.get_thread_name(tstate_ref))
+
+        # Check we can still set the name after the thread terminated without
+        # crashing the interpreter
+        thread.name = "foo"
+
+        # Test that we can also set the name after creation but before start
+        thread = threading.Thread(target=target, name="test-thread-name")
+        thread.name = "actual-thread-name"
+
+        # Ensure we didn't change the name on the main thread's state
+        main_thread = threading.current_thread()
+        self.assertIs(main_thread.name, _testcapi.get_thread_name(main_thread._tstate))
+
+        thread.start()
+        thread.join()
+        if exc is not None:
+            raise exc
+
+    def test_thread_set_name_with_non_ref_object(self):
+        exc = None
+
+        with self.assertRaises(SystemError):
+            _thread.set_name("bogus", "new-name")
+
+        def target():
+            nonlocal exc
+            try:
+                thread = threading.current_thread()
+
+                old_name = _testcapi.get_thread_name(thread._tstate)
+                new_name = "new-name"
+                _thread.set_name(thread._tstate, new_name)
+
+                self.assertIs(thread.name, old_name)
+                self.assertIs(_testcapi.get_thread_name(thread._tstate), new_name)
+            except Exception as e:
+                exc = e
+                raise
+
+        thread = threading.Thread(target=target, name="test-thread-name")
+        thread.start()
+        thread.join()
+        if exc is not None:
+            raise exc
 
 
 class ThreadJoinOnShutdown(BaseTestCase):

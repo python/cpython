@@ -14,12 +14,19 @@ removed (with effort). */
 /* Forward declarations for PyFrameObject, PyThreadState
    and PyInterpreterState */
 struct _ts;
+struct _tsr;
 struct _is;
 
 /* struct _ts is defined in cpython/pystate.h */
 typedef struct _ts PyThreadState;
+/* struct _tsr is defined in cpython/pystate.h */
+typedef struct _tsr PyTStateRef;
 /* struct _is is defined in internal/pycore_interp.h */
 typedef struct _is PyInterpreterState;
+
+PyAPI_DATA(PyTypeObject) PyTStateRef_Type;
+
+#define PyTStateRef_Check(op) Py_IS_TYPE(op, &PyTStateRef_Type)
 
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_New(void);
 PyAPI_FUNC(void) PyInterpreterState_Clear(PyInterpreterState *);

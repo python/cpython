@@ -200,6 +200,16 @@ struct _ts {
 
     /* The bottom-most frame on the stack. */
     CFrame root_cframe;
+
+    PyTStateRef *ref;
+    PyObject *thread_name;
+};
+
+
+// The PyTStateRef typedef is in Include/pystate.h.
+struct _tsr {
+    PyObject_HEAD
+    PyThreadState *tstate;
 };
 
 

@@ -5770,6 +5770,21 @@ test_tstate_capi(PyObject *self, PyObject *Py_UNUSED(args))
     Py_RETURN_NONE;
 }
 
+static PyObject *
+get_thread_name(PyObject *self, PyObject *arg)
+{
+    if (!PyTStateRef_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a thread state reference");
+        return NULL;
+    }
+    
+    PyTStateRef * tsr = (PyTStateRef *)arg;
+    if (tsr->tstate == NULL)
+        return Py_NewRef(Py_None);
+    
+    return Py_NewRef(tsr->tstate->thread_name);
+}
+
 
 static PyObject *negative_dictoffset(PyObject *, PyObject *);
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
@@ -6057,6 +6072,7 @@ static PyMethodDef TestMethods[] = {
      PyDoc_STR("fatal_error(message, release_gil=False): call Py_FatalError(message)")},
     {"type_get_version", type_get_version, METH_O, PyDoc_STR("type->tp_version_tag")},
     {"test_tstate_capi", test_tstate_capi, METH_NOARGS, NULL},
+    {"get_thread_name", get_thread_name, METH_O},
     {NULL, NULL} /* sentinel */
 };
 

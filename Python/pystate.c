@@ -783,7 +783,7 @@ init_threadstate(PyThreadState *tstate,
     tstate->datastack_chunk = NULL;
     tstate->datastack_top = NULL;
     tstate->datastack_limit = NULL;
-
+    
     tstate->_initialized = 1;
 }
 
@@ -1034,6 +1034,11 @@ PyThreadState_Clear(PyThreadState *tstate)
     Py_CLEAR(tstate->async_gen_finalizer);
 
     Py_CLEAR(tstate->context);
+    
+    if (tstate->ref != NULL)
+        tstate->ref->tstate = NULL;
+    Py_CLEAR(tstate->ref);
+    Py_CLEAR(tstate->thread_name);
 
     if (tstate->on_delete != NULL) {
         tstate->on_delete(tstate->on_delete_data);

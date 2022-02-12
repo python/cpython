@@ -35,6 +35,8 @@ _start_new_thread = _thread.start_new_thread
 _allocate_lock = _thread.allocate_lock
 _set_sentinel = _thread._set_sentinel
 get_ident = _thread.get_ident
+_set_thread_name = _thread.set_name
+_get_tstate = _thread.get_tstate
 try:
     get_native_id = _thread.get_native_id
     _HAVE_THREAD_NATIVE_ID = True
@@ -891,6 +893,7 @@ class Thread:
         self._started = Event()
         self._is_stopped = False
         self._initialized = True
+        self._tstate = None
         # Copy of sys.stderr used by self._invoke_excepthook()
         self._stderr = _sys.stderr
         self._invoke_excepthook = _make_invoke_excepthook()
@@ -1011,12 +1014,17 @@ class Thread:
                 _maintain_shutdown_locks()
                 _shutdown_locks.add(self._tstate_lock)
 
+    def _set_tstate(self):
+        self._tstate = _get_tstate()
+
     def _bootstrap_inner(self):
         try:
             self._set_ident()
             self._set_tstate_lock()
+            self._set_tstate()
             if _HAVE_THREAD_NATIVE_ID:
                 self._set_native_id()
+            _set_thread_name(self._tstate, self._name)
             self._started.set()
             with _active_limbo_lock:
                 _active[self._ident] = self
@@ -1056,6 +1064,7 @@ class Thread:
             assert not lock.locked()
         self._is_stopped = True
         self._tstate_lock = None
+        self._tstate = None
         if not self.daemon:
             with _shutdown_locks_lock:
                 # Remove our lock and other released locks from _shutdown_locks
@@ -1064,6 +1073,7 @@ class Thread:
     def _delete(self):
         "Remove current thread from the dict of currently running threads."
         with _active_limbo_lock:
+            self._tstate = None
             del _active[get_ident()]
             # There must not be any python code between the previous line
             # and after the lock is released.  Otherwise a tracing function
@@ -1150,6 +1160,8 @@ class Thread:
     def name(self, name):
         assert self._initialized, "Thread.__init__() not called"
         self._name = str(name)
+        if self._tstate is not None:
+            _set_thread_name(self._tstate, self._name)
 
     @property
     def ident(self):
@@ -1397,10 +1409,12 @@ class _MainThread(Thread):
         self._set_tstate_lock()
         self._started.set()
         self._set_ident()
+        self._set_tstate()
         if _HAVE_THREAD_NATIVE_ID:
             self._set_native_id()
         with _active_limbo_lock:
             _active[self._ident] = self
+        _set_thread_name(self._tstate, self._name)
 
 
 # Dummy thread class to represent threads not started here.

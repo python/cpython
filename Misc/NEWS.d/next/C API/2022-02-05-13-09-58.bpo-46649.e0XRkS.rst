@@ -1,0 +1,4 @@
+The name of Python threads is now propagated to the PyThreadState structure to
+make it easier for tools that rely on the ABI to retrieve such information.
+
+Patch by Gabriele N. Tornetta

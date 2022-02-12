@@ -1075,6 +1075,23 @@ thread_bootstate_free(struct bootstate *boot)
 }
 
 
+static inline PyTStateRef *
+tstateref_new(PyThreadState *tstate) {
+    if (tstate == NULL)
+        return NULL;
+
+    PyTStateRef *tsr = PyObject_New(PyTStateRef, &PyTStateRef_Type);
+    if (tsr == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    tsr->tstate = tstate;
+
+    return tsr;
+}
+
+
 static void
 thread_run(void *boot_raw)
 {
@@ -1091,6 +1108,10 @@ thread_run(void *boot_raw)
     _PyThreadState_SetCurrent(tstate);
     PyEval_AcquireThread(tstate);
     tstate->interp->threads.count++;
+
+    tstate->ref = tstateref_new(tstate);
+    if (tstate->ref == NULL)
+        return;
 
     PyObject *res = PyObject_Call(boot->func, boot->args, boot->kwargs);
     if (res == NULL) {
@@ -1551,6 +1572,77 @@ PyDoc_STRVAR(excepthook_doc,
 \n\
 Handle uncaught Thread.run() exception.");
 
+
+static PyObject *
+tstate_ref_repr(PyTStateRef *tsr)
+{
+    return PyUnicode_FromFormat("<tstate reference object at %p>", tsr->tstate);
+}
+
+
+PyTypeObject PyTStateRef_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "TStateRef",
+    sizeof(PyTStateRef),
+    0,
+    .tp_dealloc = (destructor)PyObject_Free,
+    .tp_repr = (reprfunc)tstate_ref_repr,
+    .tp_flags = Py_TPFLAGS_DISALLOW_INSTANTIATION,
+};
+
+
+static PyObject*
+thread_set_name(PyObject *self, PyObject *args) {
+    PyTStateRef *tsr = NULL;
+    PyObject *name = NULL;
+
+    if (!PyArg_UnpackTuple(args, "thread_set_name", 2, 2,
+                           &tsr, &name))
+        return NULL;
+
+    if (!PyTStateRef_Check(tsr) || tsr->tstate == NULL) {
+        return NULL;
+    }
+
+    PyThreadState *tstate = tsr->tstate;
+
+    Py_XDECREF(tstate->thread_name);
+    tstate->thread_name = Py_NewRef(name);
+
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(set_name_doc,
+"set_name(tstate, name)\n\
+\n\
+Set the name for the thread state.");
+
+
+static PyObject*
+thread_get_tstate(PyObject *self, PyObject *Py_UNUSED(ignored)) {
+    PyThreadState *tstate = PyThreadState_Get();
+
+    if (tstate != NULL) {
+        if (tstate->ref == NULL) {
+            tstate->ref = tstateref_new(tstate);
+            if (tstate->ref == NULL)
+                return NULL;
+        }
+        if (tstate->ref->tstate == NULL) {
+            tstate->ref->tstate = tstate;
+        }
+        return Py_NewRef(tstate->ref);
+    }
+
+    return Py_NewRef(Py_None);
+}
+
+PyDoc_STRVAR(get_tstate_doc,
+"get_tstate()\n\
+\n\
+Return the current thread state.");
+
+
 static PyMethodDef thread_methods[] = {
     {"start_new_thread",        (PyCFunction)thread_PyThread_start_new_thread,
      METH_VARARGS, start_new_doc},
@@ -1578,8 +1670,12 @@ static PyMethodDef thread_methods[] = {
      METH_VARARGS, stack_size_doc},
     {"_set_sentinel",           thread__set_sentinel,
      METH_NOARGS, _set_sentinel_doc},
-    {"_excepthook",              thread_excepthook,
+    {"_excepthook",             thread_excepthook,
      METH_O, excepthook_doc},
+    {"set_name",                thread_set_name,
+     METH_VARARGS, set_name_doc},
+    {"get_tstate",              thread_get_tstate,
+     METH_NOARGS, get_tstate_doc},
     {NULL,                      NULL}           /* sentinel */
 };
 
