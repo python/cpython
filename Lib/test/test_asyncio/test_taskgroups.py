@@ -32,6 +32,10 @@ class MyExc(Exception):
     pass
 
 
+class MyBaseExc(BaseException):
+    pass
+
+
 def get_error_types(eg):
     return {type(exc) for exc in eg.exceptions}
 
@@ -560,6 +564,29 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(KeyboardInterrupt):
             await runner()
 
+    async def test_taskgroup_20a(self):
+        async def crash_soon():
+            await asyncio.sleep(0.1)
+            1 / 0
+
+        async def nested():
+            try:
+                await asyncio.sleep(10)
+            finally:
+                raise MyBaseExc
+
+        async def runner():
+            async with taskgroups.TaskGroup() as g:
+                g.create_task(crash_soon())
+                await nested()
+
+        with self.assertRaises(BaseExceptionGroup) as cm:
+            await runner()
+
+        self.assertEqual(
+            get_error_types(cm.exception), {MyBaseExc, ZeroDivisionError}
+        )
+
     async def _test_taskgroup_21(self):
         # This test doesn't work as asyncio, currently, doesn't
         # correctly propagate KeyboardInterrupt (or SystemExit) --
@@ -585,6 +612,28 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
 
         with self.assertRaises(KeyboardInterrupt):
             await runner()
+
+    async def test_taskgroup_21a(self):
+
+        async def crash_soon():
+            await asyncio.sleep(0.1)
+            raise MyBaseExc
+
+        async def nested():
+            try:
+                await asyncio.sleep(10)
+            finally:
+                raise TypeError
+
+        async def runner():
+            async with taskgroups.TaskGroup() as g:
+                g.create_task(crash_soon())
+                await nested()
+
+        with self.assertRaises(BaseExceptionGroup) as cm:
+            await runner()
+
+        self.assertEqual(get_error_types(cm.exception), {MyBaseExc, TypeError})
 
     async def test_taskgroup_22(self):
 
