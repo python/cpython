@@ -170,8 +170,8 @@ class TaskGroup:
     def create_task(self, coro):
         if not self._entered:
             raise RuntimeError(f"TaskGroup {self!r} has not been entered")
-        if self._exiting:
-            raise RuntimeError(f"TaskGroup {self!r} is awaiting in exit")
+        if self._exiting and self._unfinished_tasks == 0:
+            raise RuntimeError(f"TaskGroup {self!r} is finished")
         task = self._loop.create_task(coro)
         task.add_done_callback(self._on_task_done)
         self._unfinished_tasks += 1
@@ -217,7 +217,7 @@ class TaskGroup:
         self._unfinished_tasks -= 1
         assert self._unfinished_tasks >= 0
 
-        if self._exiting and not self._unfinished_tasks:
+        if self._on_completed_fut is not None and not self._unfinished_tasks:
             if not self._on_completed_fut.done():
                 self._on_completed_fut.set_result(True)
 

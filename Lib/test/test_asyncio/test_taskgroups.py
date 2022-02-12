@@ -670,3 +670,45 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
                     self.assertLess(len(g._tasks), 5)
             await asyncio.sleep(1.35)
             self.assertEqual(len(g._tasks), 0)
+
+    async def test_taskgroup_24(self):
+
+        async def root(g):
+            await asyncio.sleep(0.1)
+            g.create_task(coro1(0.1))
+            g.create_task(coro1(0.2))
+
+        async def coro1(delay):
+            await asyncio.sleep(delay)
+
+        async def runner():
+            async with taskgroups.TaskGroup() as g:
+                g.create_task(root(g))
+
+        await runner()
+
+    async def test_taskgroup_25(self):
+        nhydras = 0
+
+        async def hydra(g):
+            nonlocal nhydras
+            nhydras += 1
+            await asyncio.sleep(0.01)
+            g.create_task(hydra(g))
+            g.create_task(hydra(g))
+
+        async def hercules():
+            while nhydras < 10:
+                await asyncio.sleep(0.015)
+            1 / 0
+
+        async def runner():
+            async with taskgroups.TaskGroup() as g:
+                g.create_task(hydra(g))
+                g.create_task(hercules())
+
+        with self.assertRaises(ExceptionGroup) as cm:
+            await runner()
+
+        self.assertEqual(get_error_types(cm.exception), {ZeroDivisionError})
+        self.assertGreaterEqual(nhydras, 10)
