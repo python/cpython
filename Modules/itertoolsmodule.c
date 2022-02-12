@@ -2924,7 +2924,7 @@ itertools.combinations_with_replacement.__new__
     r: Py_ssize_t
 Return successive r-length combinations of elements in the iterable allowing individual elements to have successive repeats.
 
-combinations_with_replacement('ABC', 2) --> AA AB AC BB BC CC
+combinations_with_replacement('ABC', 2) --> ('A','A'), ('A','B'), ('A','C'), ('B','B'), ('B','C'), ('C','C')
 [clinic start generated code]*/
 
 static PyObject *
